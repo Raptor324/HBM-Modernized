@@ -5,6 +5,9 @@ import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.inventory.material.MaterialStack;
 import com.hbm_m.inventory.material.MaterialType;
 import com.hbm_m.item.material.ItemCastMold;
+import com.hbm_m.platform.PlatformHooks;
+import com.hbm_m.platform.recipe.RecipeHooks;
+import com.hbm_m.recipe.MoldCastingRecipe;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -24,7 +27,7 @@ import org.jetbrains.annotations.Nullable;
  *   sideways flow from channels
  * - casts once the basin is completely full, after a cool-off period
  */
-public class MachineFoundryBasinBlockEntity extends BlockEntity implements ICrucibleAcceptor {
+public class MachineFoundryBasinBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity implements ICrucibleAcceptor {
 
     /** Original: cooloff starts at 100 and resets to 200 after each cast. */
     public static final int COOLOFF_TIME = 200;
@@ -90,12 +93,20 @@ public class MachineFoundryBasinBlockEntity extends BlockEntity implements ICruc
     public int getCapacity() {
         ItemCastMold mold = getInstalledMold();
         if (mold == null) return 0;
-        return com.hbm_m.recipe.MoldCastingRecipes.getCost(mold.getMoldType());
+        return mold.getMoldType().getCostMb();
     }
 
     private @Nullable ItemStack getResultFor(MaterialType type, ItemCastMold.MoldType mold) {
-        ItemStack out = com.hbm_m.recipe.MoldCastingRecipes.getOutput(mold, type);
-        return out.isEmpty() ? null : out;
+        if (level == null) return null;
+        // MoldCasting теперь data-driven (JSON) — ищем MoldCastingRecipe по паре (mold, material)
+        // через RecipeHooks (кросс-версионный мост). Статический MoldCastingRecipes удалён.
+        for (MoldCastingRecipe r : RecipeHooks.getAllRecipes(level, MoldCastingRecipe.Type.INSTANCE)) {
+            if (r.matches(mold, type)) {
+                ItemStack out = r.getOutput();
+                return out.isEmpty() ? null : out;
+            }
+        }
+        return null;
     }
 
     /* ── tick ───────────────────────────────────────────────────────────── */
@@ -198,36 +209,29 @@ public class MachineFoundryBasinBlockEntity extends BlockEntity implements ICruc
 
     /* ── NBT / sync ─────────────────────────────────────────────────────── */
 
+    
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         if (type != null) tag.putString("mat_type", type.name);
         tag.putInt("mat_amount", amount);
-        if (!moldSlot.isEmpty())   tag.put("mold",   moldSlot.save(new CompoundTag()));
-        if (!outputSlot.isEmpty()) tag.put("output", outputSlot.save(new CompoundTag()));
+        if (!moldSlot.isEmpty())   tag.put("mold",   com.hbm_m.platform.PlatformHooks.saveItemStack(moldSlot, new CompoundTag(), registries));
+        if (!outputSlot.isEmpty()) tag.put("output", com.hbm_m.platform.PlatformHooks.saveItemStack(outputSlot, new CompoundTag(), registries));
         tag.putInt("cooloff", cooloff);
         tag.putFloat("fillLevel", fillLevel);
         tag.putInt("fillColor", fillColor);
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         if (tag.contains("mat_type")) type = MaterialType.byName(tag.getString("mat_type"));
         else type = null;
         amount = tag.getInt("mat_amount");
-        moldSlot   = tag.contains("mold")   ? ItemStack.of(tag.getCompound("mold"))   : ItemStack.EMPTY;
-        outputSlot = tag.contains("output") ? ItemStack.of(tag.getCompound("output")) : ItemStack.EMPTY;
+        moldSlot   = tag.contains("mold")   ? com.hbm_m.platform.PlatformHooks.itemStackOf(tag.getCompound("mold"), registries)   : ItemStack.EMPTY;
+        outputSlot = tag.contains("output") ? com.hbm_m.platform.PlatformHooks.itemStackOf(tag.getCompound("output"), registries) : ItemStack.EMPTY;
         cooloff = tag.contains("cooloff") ? tag.getInt("cooloff") : 100;
         fillLevel = tag.getFloat("fillLevel");
         fillColor = tag.getInt("fillColor");
-    }
-
-    @Override
-    public CompoundTag getUpdateTag() { CompoundTag t = super.getUpdateTag(); saveAdditional(t); return t; }
-
-    @Override
-    public Packet<ClientGamePacketListener> getUpdatePacket() {
-        return ClientboundBlockEntityDataPacket.create(this);
     }
 }

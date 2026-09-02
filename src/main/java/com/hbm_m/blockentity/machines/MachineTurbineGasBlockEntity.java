@@ -233,8 +233,8 @@ public class MachineTurbineGasBlockEntity extends BaseMachineBlockEntity impleme
     // ── NBT ─────────────────────────────────────────────────────────────────
 
     @Override
-    public void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.putBoolean("active", active);
         tag.putDouble("fuel_to_consume", fuelToConsume);
         tag.putDouble("water_to_boil_acc", waterToBoilAcc);
@@ -245,8 +245,8 @@ public class MachineTurbineGasBlockEntity extends BaseMachineBlockEntity impleme
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         active = tag.getBoolean("active");
         fuelToConsume = tag.getDouble("fuel_to_consume");
         waterToBoilAcc = tag.getDouble("water_to_boil_acc");

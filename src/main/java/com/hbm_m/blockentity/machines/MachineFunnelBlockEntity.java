@@ -90,16 +90,17 @@ public class MachineFunnelBlockEntity extends BaseMachineBlockEntity {
         }
         SimpleCraftingContainer grid = new SimpleCraftingContainer(gridItems, width, height);
 
-        Optional<CraftingRecipe> recipeOpt = level.getRecipeManager().getRecipeFor(RecipeType.CRAFTING, grid, level);
+        // 1.21.1: getRecipeFor/assemble требуют CraftingInput — хелперы RecipeHooks.
+        Optional<CraftingRecipe> recipeOpt = com.hbm_m.platform.recipe.RecipeHooks.getCraftingRecipeFor(level, grid);
         if (recipeOpt.isEmpty()) return false;
 
-        ItemStack result = recipeOpt.get().assemble(grid, level.registryAccess());
+        ItemStack result = com.hbm_m.platform.recipe.RecipeHooks.assembleCrafting(recipeOpt.get(), grid, level);
         if (result.isEmpty()) return false;
 
         int outputSlot = OUTPUT_START + index;
         ItemStack outSlot = inventory.getStackInSlot(outputSlot);
         if (!outSlot.isEmpty()) {
-            if (!ItemStack.isSameItemSameTags(outSlot, result)) return false;
+            if (!com.hbm_m.platform.PlatformHooks.isSameItemSameTags(outSlot, result)) return false;
             if (outSlot.getCount() + result.getCount() > outSlot.getMaxStackSize()) return false;
         }
 
@@ -123,14 +124,14 @@ public class MachineFunnelBlockEntity extends BaseMachineBlockEntity {
     }
 
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.putInt("mode", mode);
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         mode = tag.getInt("mode");
     }
 

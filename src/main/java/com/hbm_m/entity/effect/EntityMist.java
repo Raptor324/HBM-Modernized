@@ -44,12 +44,24 @@ public class EntityMist extends Entity {
         this.noPhysics = true;
     }
 
+    //? if < 1.21.1 {
+
     @Override
     protected void defineSynchedData() {
         this.entityData.define(DATA_FLUID_ID, BuiltInRegistries.FLUID.getId(ModFluids.NONE.getSource()));
         this.entityData.define(DATA_WIDTH, 0.0F);
         this.entityData.define(DATA_HEIGHT, 0.0F);
     }
+    //?} else {
+    /*@Override
+    protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
+
+        builder.define(DATA_FLUID_ID, BuiltInRegistries.FLUID.getId(ModFluids.NONE.getSource()));
+        builder.define(DATA_WIDTH, 0.0F);
+        builder.define(DATA_HEIGHT, 0.0F);
+    
+    }
+    *///?}
 
     public EntityMist setFluidType(FluidType fluidType) {
         Fluid fluid = fluidType.getFluid();

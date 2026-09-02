@@ -73,6 +73,13 @@ public class ModBlockTagProvider extends BlockTagsProvider {
                 ModBlocks.ALUMINUM_ORE.get(),
                 ModBlocks.ALUMINUM_ORE_DEEPSLATE.get(),
                 ModBlocks.LIGNITE_ORE.get(),
+                ModBlocks.LIGNITE_ORE_DEEPSLATE.get(),
+                ModBlocks.NITER_ORE.get(),
+                ModBlocks.NITER_ORE_DEEPSLATE.get(),
+                ModBlocks.LITHIUM_ORE.get(),
+                ModBlocks.LITHIUM_ORE_DEEPSLATE.get(),
+                ModBlocks.COLTAN_ORE.get(),
+                ModBlocks.COLTAN_ORE_DEEPSLATE.get(),
                 ModBlocks.RESOURCE_BAUXITE.get(),
                 ModBlocks.RESOURCE_LIMESTONE.get(),
                 ModBlocks.RESOURCE_MALACHITE.get(),
@@ -213,6 +220,28 @@ public class ModBlockTagProvider extends BlockTagsProvider {
                 .add(Blocks.TRIPWIRE)
                 .add(Blocks.TRIPWIRE_HOOK)
                 .add(Blocks.CAMPFIRE);
+
+        // Соединяемые при генерации структур блоки (фикс стыков решёток/паней после спавна)
+        this.tag(BlockTags.create(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "structure_connectables")))
+                .add(Blocks.IRON_BARS)
+                .add(Blocks.GLASS_PANE)
+                                .add(Blocks.WHITE_STAINED_GLASS_PANE)
+                .add(Blocks.ORANGE_STAINED_GLASS_PANE)
+                .add(Blocks.MAGENTA_STAINED_GLASS_PANE)
+                .add(Blocks.LIGHT_BLUE_STAINED_GLASS_PANE)
+                .add(Blocks.YELLOW_STAINED_GLASS_PANE)
+                .add(Blocks.LIME_STAINED_GLASS_PANE)
+                .add(Blocks.PINK_STAINED_GLASS_PANE)
+                .add(Blocks.GRAY_STAINED_GLASS_PANE)
+                .add(Blocks.LIGHT_GRAY_STAINED_GLASS_PANE)
+                .add(Blocks.CYAN_STAINED_GLASS_PANE)
+                .add(Blocks.PURPLE_STAINED_GLASS_PANE)
+                .add(Blocks.BLUE_STAINED_GLASS_PANE)
+                .add(Blocks.BROWN_STAINED_GLASS_PANE)
+                .add(Blocks.GREEN_STAINED_GLASS_PANE)
+                .add(Blocks.RED_STAINED_GLASS_PANE)
+                .add(Blocks.BLACK_STAINED_GLASS_PANE)
+                .add(ModBlocks.REINFORCED_GLASS_PANE.get());
         //?}
 
 

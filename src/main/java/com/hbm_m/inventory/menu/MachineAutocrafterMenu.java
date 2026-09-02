@@ -53,13 +53,7 @@ public class MachineAutocrafterMenu extends AbstractContainerMenu {
         this.addSlot(new Slot(container, SLOT_BATTERY, 17, 71) {
             @Override
             public boolean mayPlace(ItemStack stack) {
-                if (ItemEnergyAccess.getHbmProvider(stack).isPresent()) return true;
-                //? if forge {
-                return stack.getCapability(ForgeCapabilities.ENERGY).isPresent();
-                //?}
-                //? if fabric {
-                /*return false;
-                *///?}
+                return isEnergyItem(stack);
             }
         });
 
@@ -74,6 +68,17 @@ public class MachineAutocrafterMenu extends AbstractContainerMenu {
         for (int col = 0; col < 9; col++) {
             this.addSlot(new Slot(inventory, col, playerInvX + col * 18, hotbarY));
         }
+    }
+
+    private static boolean isEnergyItem(ItemStack stack) {
+        if (ItemEnergyAccess.getHbmProvider(stack).isPresent()) return true;
+        //? if forge {
+        return stack.getCapability(ForgeCapabilities.ENERGY).isPresent();
+        //?} elif neoforge {
+        /*return stack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM) != null;
+        *///?} else {
+        /*return false;
+        *///?}
     }
 
     private static MachineAutocrafterBlockEntity getBlockEntity(Inventory inventory, FriendlyByteBuf buffer) {
@@ -112,10 +117,7 @@ public class MachineAutocrafterMenu extends AbstractContainerMenu {
                     return ItemStack.EMPTY;
                 }
             } else {
-                boolean isEnergySource = ItemEnergyAccess.getHbmProvider(slotStack).isPresent()
-                        //? if forge {
-                        || slotStack.getCapability(ForgeCapabilities.ENERGY).isPresent();
-                        //?}
+                boolean isEnergySource = isEnergyItem(slotStack);
                 if (isEnergySource) {
                     if (!this.moveItemStackTo(slotStack, SLOT_BATTERY, SLOT_BATTERY + 1, false)) {
                         return ItemStack.EMPTY;

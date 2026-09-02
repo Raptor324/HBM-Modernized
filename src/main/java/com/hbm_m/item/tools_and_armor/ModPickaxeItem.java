@@ -1,6 +1,9 @@
 package com.hbm_m.item.tools_and_armor;
 
+import com.hbm_m.item.ITooltipProvider;
+import com.hbm_m.platform.ItemHooks;
 import com.hbm_m.client.overlay.OverlayInfoToast;
+import com.hbm_m.platform.PlatformHooks;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
@@ -15,9 +18,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.PickaxeItem;
 import net.minecraft.world.item.Tier;
 import net.minecraft.world.item.TooltipFlag;
-import net.minecraft.world.item.enchantment.Enchantment;
-import net.minecraft.world.item.enchantment.EnchantmentHelper;
-import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
@@ -26,15 +26,13 @@ import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 import net.minecraft.world.phys.Vec3;
 
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 
-public class ModPickaxeItem extends PickaxeItem {
+public class ModPickaxeItem extends PickaxeItem implements ITooltipProvider {
     private static final String NBT_VEIN_MINER = "VeinMinerEnabled";
     private static final String NBT_AOE = "AOEEnabled";
     private static final String NBT_AOE_LEVEL = "AOELevel";
@@ -55,9 +53,15 @@ public class ModPickaxeItem extends PickaxeItem {
     private final int silkTouchLevel;
     private final int fortuneLevel;
 
+    //? if < 1.21.1 {
     public ModPickaxeItem(Tier tier, int attackDamage, float attackSpeed, Properties properties,
                           int veinMinerLevel, int aoeLevel, int silkTouchLevel, int fortuneLevel) {
         super(tier, attackDamage, attackSpeed, properties);
+    //?} else {
+    /*public ModPickaxeItem(Tier tier, int attackDamage, float attackSpeed, Properties properties,
+                          int veinMinerLevel, int aoeLevel, int silkTouchLevel, int fortuneLevel) {
+        super(tier, properties.attributes(PickaxeItem.createAttributes(tier, (float) attackDamage, attackSpeed)));
+    *///?}
         this.veinMinerLevel = Math.max(0, Math.min(6, veinMinerLevel));
         this.aoeLevel = Math.max(0, Math.min(3, aoeLevel));
         this.silkTouchLevel = Math.max(0, Math.min(1, silkTouchLevel));
@@ -69,13 +73,9 @@ public class ModPickaxeItem extends PickaxeItem {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, Level level, List<Component> tooltip, TooltipFlag flag) {
-        super.appendHoverText(stack, level, tooltip, flag);
-
-        // Заголовок списка способностей
+    public void appendHbmTooltip(ItemStack stack, Level level, List<Component> tooltip, TooltipFlag flag) {
         tooltip.add(Component.translatable("tooltip.hbm_m.abilities").withStyle(ChatFormatting.BLUE));
 
-        // Vein Miner
         if (veinMinerLevel > 0) {
             boolean isActive = isVeinMinerEnabled(stack);
             ChatFormatting color = isActive ? ChatFormatting.YELLOW : ChatFormatting.GOLD;
@@ -84,21 +84,16 @@ public class ModPickaxeItem extends PickaxeItem {
                             .withStyle(color)));
         }
 
-        // AOE - показываем все уровни вплоть до максимального
         if (aoeLevel > 0) {
             for (int i = 1; i <= aoeLevel; i++) {
-                // Проверяем, активен ли этот уровень сейчас
                 boolean isActive = isAOEEnabled(stack) && getAOELevelNBT(stack) == i;
                 ChatFormatting color = isActive ? ChatFormatting.YELLOW : ChatFormatting.GOLD;
-
-                // Теперь передаем в перевод только переменную 'i' (сам уровень)
                 tooltip.add(Component.literal(" ")
                         .append(Component.translatable("tooltip.hbm_m.aoe", i)
                                 .withStyle(color)));
             }
         }
 
-        // Silk Touch
         if (silkTouchLevel > 0) {
             boolean isActive = isSilkTouchEnabled(stack);
             ChatFormatting color = isActive ? ChatFormatting.YELLOW : ChatFormatting.GOLD;
@@ -107,7 +102,6 @@ public class ModPickaxeItem extends PickaxeItem {
                             .withStyle(color)));
         }
 
-        // Fortune
         if (fortuneLevel > 0) {
             boolean isActive = isFortuneEnabled(stack);
             ChatFormatting color = isActive ? ChatFormatting.YELLOW : ChatFormatting.GOLD;
@@ -116,7 +110,6 @@ public class ModPickaxeItem extends PickaxeItem {
                             .withStyle(color)));
         }
 
-        // Инструкции по использованию
         tooltip.add(Component.literal(""));
         tooltip.add(Component.translatable("tooltip.hbm_m.right_click").withStyle(ChatFormatting.GRAY));
         tooltip.add(Component.translatable("tooltip.hbm_m.shift_right_click").withStyle(ChatFormatting.GRAY));
@@ -203,12 +196,12 @@ public class ModPickaxeItem extends PickaxeItem {
 
     private ModeFeedback disableAllAbilities(ItemStack stack, Player player, boolean apply) {
         if (apply) {
-            stack.getOrCreateTag().putBoolean(NBT_VEIN_MINER, false);
-            stack.getOrCreateTag().putBoolean(NBT_AOE, false);
-            stack.getOrCreateTag().putBoolean(NBT_SILK_TOUCH, false);
-            stack.getOrCreateTag().putBoolean(NBT_FORTUNE, false);
-            clearModeFortune(stack);
-            clearModeSilkTouch(stack);
+            PlatformHooks.putBoolean(stack, NBT_VEIN_MINER, false);
+            PlatformHooks.putBoolean(stack, NBT_AOE, false);
+            PlatformHooks.putBoolean(stack, NBT_SILK_TOUCH, false);
+            PlatformHooks.putBoolean(stack, NBT_FORTUNE, false);
+            clearModeFortune(stack, player.level());
+            clearModeSilkTouch(stack, player.level());
             playToggleSound(player, false);
         }
         return new ModeFeedback(
@@ -239,13 +232,13 @@ public class ModPickaxeItem extends PickaxeItem {
 
     private ModeFeedback toggleVeinMiner(ItemStack stack, Player player, boolean enable, boolean apply) {
         if (apply) {
-            stack.getOrCreateTag().putBoolean(NBT_VEIN_MINER, enable);
+            PlatformHooks.putBoolean(stack, NBT_VEIN_MINER, enable);
             if (enable) {
-                stack.getOrCreateTag().putBoolean(NBT_AOE, false);
-                stack.getOrCreateTag().putBoolean(NBT_SILK_TOUCH, false);
-                stack.getOrCreateTag().putBoolean(NBT_FORTUNE, false);
-                clearModeSilkTouch(stack);
-                clearModeFortune(stack);
+                PlatformHooks.putBoolean(stack, NBT_AOE, false);
+                PlatformHooks.putBoolean(stack, NBT_SILK_TOUCH, false);
+                PlatformHooks.putBoolean(stack, NBT_FORTUNE, false);
+                clearModeSilkTouch(stack, player.level());
+                clearModeFortune(stack, player.level());
             }
             playToggleSound(player, enable);
         }
@@ -262,13 +255,13 @@ public class ModPickaxeItem extends PickaxeItem {
     private ModeFeedback toggleAOE(ItemStack stack, Player player, int level, boolean apply) {
         if (level > 0) {
             if (apply) {
-                stack.getOrCreateTag().putBoolean(NBT_AOE, true);
-                stack.getOrCreateTag().putInt(NBT_AOE_LEVEL, level);
-                stack.getOrCreateTag().putBoolean(NBT_VEIN_MINER, false);
-                stack.getOrCreateTag().putBoolean(NBT_SILK_TOUCH, false);
-                stack.getOrCreateTag().putBoolean(NBT_FORTUNE, false);
-                clearModeSilkTouch(stack);
-                clearModeFortune(stack);
+                PlatformHooks.putBoolean(stack, NBT_AOE, true);
+                PlatformHooks.putInt(stack, NBT_AOE_LEVEL, level);
+                PlatformHooks.putBoolean(stack, NBT_VEIN_MINER, false);
+                PlatformHooks.putBoolean(stack, NBT_SILK_TOUCH, false);
+                PlatformHooks.putBoolean(stack, NBT_FORTUNE, false);
+                clearModeSilkTouch(stack, player.level());
+                clearModeFortune(stack, player.level());
                 playToggleSound(player, true);
             }
             int size = 1 + (level * 2);
@@ -278,23 +271,23 @@ public class ModPickaxeItem extends PickaxeItem {
             );
         }
         if (apply) {
-            stack.getOrCreateTag().putBoolean(NBT_AOE, false);
-            stack.getOrCreateTag().putInt(NBT_AOE_LEVEL, 0);
+            PlatformHooks.putBoolean(stack, NBT_AOE, false);
+            PlatformHooks.putInt(stack, NBT_AOE_LEVEL, 0);
         }
         return null;
     }
 
     private ModeFeedback toggleSilkTouch(ItemStack stack, Player player, boolean enable, boolean apply) {
         if (apply) {
-            stack.getOrCreateTag().putBoolean(NBT_SILK_TOUCH, enable);
+            PlatformHooks.putBoolean(stack, NBT_SILK_TOUCH, enable);
             if (enable) {
-                stack.getOrCreateTag().putBoolean(NBT_VEIN_MINER, false);
-                stack.getOrCreateTag().putBoolean(NBT_AOE, false);
-                stack.getOrCreateTag().putBoolean(NBT_FORTUNE, false);
-                clearModeFortune(stack);
-                applyModeSilkTouch(stack);
+                PlatformHooks.putBoolean(stack, NBT_VEIN_MINER, false);
+                PlatformHooks.putBoolean(stack, NBT_AOE, false);
+                PlatformHooks.putBoolean(stack, NBT_FORTUNE, false);
+                clearModeFortune(stack, player.level());
+                applyModeSilkTouch(stack, player.level());
             } else {
-                clearModeSilkTouch(stack);
+                clearModeSilkTouch(stack, player.level());
             }
             playToggleSound(player, enable);
         }
@@ -309,15 +302,15 @@ public class ModPickaxeItem extends PickaxeItem {
 
     private ModeFeedback toggleFortune(ItemStack stack, Player player, boolean enable, boolean apply) {
         if (apply) {
-            stack.getOrCreateTag().putBoolean(NBT_FORTUNE, enable);
+            PlatformHooks.putBoolean(stack, NBT_FORTUNE, enable);
             if (enable) {
-                stack.getOrCreateTag().putBoolean(NBT_VEIN_MINER, false);
-                stack.getOrCreateTag().putBoolean(NBT_AOE, false);
-                stack.getOrCreateTag().putBoolean(NBT_SILK_TOUCH, false);
-                clearModeSilkTouch(stack);
-                applyModeFortune(stack);
+                PlatformHooks.putBoolean(stack, NBT_VEIN_MINER, false);
+                PlatformHooks.putBoolean(stack, NBT_AOE, false);
+                PlatformHooks.putBoolean(stack, NBT_SILK_TOUCH, false);
+                clearModeSilkTouch(stack, player.level());
+                applyModeFortune(stack, player.level());
             } else {
-                clearModeFortune(stack);
+                clearModeFortune(stack, player.level());
             }
             playToggleSound(player, enable);
         }
@@ -331,71 +324,61 @@ public class ModPickaxeItem extends PickaxeItem {
         );
     }
 
-    private void applyModeFortune(ItemStack stack) {
-        int vanilla = EnchantmentHelper.getItemEnchantmentLevel(Enchantments.BLOCK_FORTUNE, stack);
-        stack.getOrCreateTag().putInt(NBT_PRE_FORTUNE, vanilla);
-        Map<Enchantment, Integer> enchants = new HashMap<>(EnchantmentHelper.getEnchantments(stack));
-        enchants.put(Enchantments.BLOCK_FORTUNE, Math.max(vanilla, fortuneLevel));
-        EnchantmentHelper.setEnchantments(enchants, stack);
+    private void applyModeFortune(ItemStack stack, Level level) {
+        int vanilla = ItemHooks.getEnchantmentLevel(stack, level, "minecraft:fortune");
+        PlatformHooks.putInt(stack, NBT_PRE_FORTUNE, vanilla);
+        ItemHooks.setEnchantmentLevel(stack, level, "minecraft:fortune", Math.max(vanilla, fortuneLevel));
     }
 
-    private void clearModeFortune(ItemStack stack) {
-        if (!stack.hasTag() || !stack.getTag().contains(NBT_PRE_FORTUNE)) {
+    private void clearModeFortune(ItemStack stack, Level level) {
+        if (!PlatformHooks.hasItemTag(stack) || !PlatformHooks.contains(stack, NBT_PRE_FORTUNE)) {
             return;
         }
-        int vanilla = stack.getTag().getInt(NBT_PRE_FORTUNE);
-        Map<Enchantment, Integer> enchants = new HashMap<>(EnchantmentHelper.getEnchantments(stack));
+        int vanilla = PlatformHooks.getInt(stack, NBT_PRE_FORTUNE);
         if (vanilla > 0) {
-            enchants.put(Enchantments.BLOCK_FORTUNE, vanilla);
+            ItemHooks.setEnchantmentLevel(stack, level, "minecraft:fortune", vanilla);
         } else {
-            enchants.remove(Enchantments.BLOCK_FORTUNE);
+            ItemHooks.removeEnchantment(stack, level, "minecraft:fortune");
         }
-        EnchantmentHelper.setEnchantments(enchants, stack);
-        stack.getTag().remove(NBT_PRE_FORTUNE);
+        PlatformHooks.remove(stack, NBT_PRE_FORTUNE);
     }
 
-    private void applyModeSilkTouch(ItemStack stack) {
-        int vanilla = EnchantmentHelper.getItemEnchantmentLevel(Enchantments.SILK_TOUCH, stack);
-        stack.getOrCreateTag().putInt(NBT_PRE_SILK, vanilla);
-        Map<Enchantment, Integer> enchants = new HashMap<>(EnchantmentHelper.getEnchantments(stack));
-        enchants.put(Enchantments.SILK_TOUCH, Math.max(vanilla, 1));
-        EnchantmentHelper.setEnchantments(enchants, stack);
+    private void applyModeSilkTouch(ItemStack stack, Level level) {
+        int vanilla = ItemHooks.getEnchantmentLevel(stack, level, "minecraft:silk_touch");
+        PlatformHooks.putInt(stack, NBT_PRE_SILK, vanilla);
+        ItemHooks.setEnchantmentLevel(stack, level, "minecraft:silk_touch", Math.max(vanilla, 1));
     }
 
-    private void clearModeSilkTouch(ItemStack stack) {
-        if (!stack.hasTag() || !stack.getTag().contains(NBT_PRE_SILK)) {
+    private void clearModeSilkTouch(ItemStack stack, Level level) {
+        if (!PlatformHooks.hasItemTag(stack) || !PlatformHooks.contains(stack, NBT_PRE_SILK)) {
             return;
         }
-        int vanilla = stack.getTag().getInt(NBT_PRE_SILK);
-        Map<Enchantment, Integer> enchants = new HashMap<>(EnchantmentHelper.getEnchantments(stack));
+        int vanilla = PlatformHooks.getInt(stack, NBT_PRE_SILK);
         if (vanilla > 0) {
-            enchants.put(Enchantments.SILK_TOUCH, vanilla);
+            ItemHooks.setEnchantmentLevel(stack, level, "minecraft:silk_touch", vanilla);
         } else {
-            enchants.remove(Enchantments.SILK_TOUCH);
+            ItemHooks.removeEnchantment(stack, level, "minecraft:silk_touch");
         }
-        EnchantmentHelper.setEnchantments(enchants, stack);
-        stack.getTag().remove(NBT_PRE_SILK);
+        PlatformHooks.remove(stack, NBT_PRE_SILK);
     }
 
-    private int getEffectiveFortune(ItemStack stack) {
-        int vanilla = EnchantmentHelper.getItemEnchantmentLevel(Enchantments.BLOCK_FORTUNE, stack);
+    private int getEffectiveFortune(ItemStack stack, Level level) {
+        int vanilla = ItemHooks.getEnchantmentLevel(stack, level, "minecraft:fortune");
         if (isFortuneEnabled(stack)) {
             return Math.max(vanilla, fortuneLevel);
         }
         return vanilla;
     }
 
-    private ItemStack getToolForDrops(ItemStack stack) {
+    private ItemStack getToolForDrops(ItemStack stack, Level level) {
         ItemStack tool = stack.copy();
-        Map<Enchantment, Integer> enchants = new HashMap<>(EnchantmentHelper.getEnchantments(stack));
         if (isFortuneEnabled(stack)) {
-            enchants.put(Enchantments.BLOCK_FORTUNE, getEffectiveFortune(stack));
+            ItemHooks.setEnchantmentLevel(tool, level, "minecraft:fortune", getEffectiveFortune(stack, level));
         }
         if (isSilkTouchEnabled(stack)) {
-            int silk = EnchantmentHelper.getItemEnchantmentLevel(Enchantments.SILK_TOUCH, stack);
-            enchants.put(Enchantments.SILK_TOUCH, Math.max(silk, 1));
+            int silk = ItemHooks.getEnchantmentLevel(stack, level, "minecraft:silk_touch");
+            ItemHooks.setEnchantmentLevel(tool, level, "minecraft:silk_touch", Math.max(silk, 1));
         }
-        EnchantmentHelper.setEnchantments(enchants, tool);
         return tool;
     }
 
@@ -406,23 +389,23 @@ public class ModPickaxeItem extends PickaxeItem {
     }
 
     private boolean isVeinMinerEnabled(ItemStack stack) {
-        return stack.hasTag() && stack.getTag().getBoolean(NBT_VEIN_MINER);
+        return PlatformHooks.hasItemTag(stack) && PlatformHooks.getBoolean(stack, NBT_VEIN_MINER);
     }
 
     private boolean isAOEEnabled(ItemStack stack) {
-        return stack.hasTag() && stack.getTag().getBoolean(NBT_AOE);
+        return PlatformHooks.hasItemTag(stack) && PlatformHooks.getBoolean(stack, NBT_AOE);
     }
 
     private boolean isSilkTouchEnabled(ItemStack stack) {
-        return stack.hasTag() && stack.getTag().getBoolean(NBT_SILK_TOUCH);
+        return PlatformHooks.hasItemTag(stack) && PlatformHooks.getBoolean(stack, NBT_SILK_TOUCH);
     }
 
     private boolean isFortuneEnabled(ItemStack stack) {
-        return stack.hasTag() && stack.getTag().getBoolean(NBT_FORTUNE);
+        return PlatformHooks.hasItemTag(stack) && PlatformHooks.getBoolean(stack, NBT_FORTUNE);
     }
 
     private int getAOELevelNBT(ItemStack stack) {
-        return stack.hasTag() ? stack.getTag().getInt(NBT_AOE_LEVEL) : 0;
+        return PlatformHooks.hasItemTag(stack) ? PlatformHooks.getInt(stack, NBT_AOE_LEVEL) : 0;
     }
 
     private void veinMine(Level level, BlockPos startPos, Block targetBlock, ItemStack stack, LivingEntity entity, int radius) {
@@ -497,10 +480,10 @@ public class ModPickaxeItem extends PickaxeItem {
         if (!stack.isCorrectToolForDrops(blockState)) return;
 
         if (level instanceof ServerLevel serverLevel) {
-            ItemStack toolForDrops = getToolForDrops(stack);
+            ItemStack toolForDrops = getToolForDrops(stack, level);
             Block.dropResources(blockState, level, pos, level.getBlockEntity(pos), entity, toolForDrops);
 
-            int effectiveFortune = getEffectiveFortune(stack);
+            int effectiveFortune = getEffectiveFortune(stack, level);
             if (isFortuneEnabled(stack) && effectiveFortune >= 4) {
                 LootParams.Builder builder = new LootParams.Builder(serverLevel)
                         .withParameter(LootContextParams.ORIGIN, Vec3.atCenterOf(pos))
@@ -520,8 +503,6 @@ public class ModPickaxeItem extends PickaxeItem {
             level.removeBlock(pos, false);
         }
 
-        stack.hurtAndBreak(1, entity, (e) -> {
-            e.broadcastBreakEvent(InteractionHand.MAIN_HAND);
-        });
+        ItemHooks.hurtAndBreak(stack, 1, entity, InteractionHand.MAIN_HAND);
     }
 }

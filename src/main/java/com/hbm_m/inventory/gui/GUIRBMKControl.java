@@ -1,4 +1,5 @@
 package com.hbm_m.inventory.gui;
+import com.hbm_m.client.GuiCompat;
 
 import com.hbm_m.blockentity.machines.rbmk.RBMKControlBlockEntity;
 import com.hbm_m.inventory.menu.RBMKControlMenu;
@@ -36,6 +37,8 @@ public class GUIRBMKControl extends GuiInfoScreen<RBMKControlMenu> {
         RenderSystem.setShader(GameRenderer::getPositionTexShader);
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
         g.blit(TEXTURE, leftPos, topPos, 0, 0, imageWidth, imageHeight);
+        // тайл может отсутствовать в реплее Flashback
+        if (be == null) return;
 
         // Rod-level bar: the higher the rod is withdrawn, the taller the "empty" overlay drawn from the top.
         int height = (int) (56 * (1.0 - be.level));
@@ -51,7 +54,7 @@ public class GUIRBMKControl extends GuiInfoScreen<RBMKControlMenu> {
 
     @Override
     public void render(GuiGraphics g, int mx, int my, float partial) {
-        renderBackground(g);
+        GuiCompat.renderBackground(this, g, mx, my, partial);
         super.render(g, mx, my, partial);
 
         drawCustomInfoStat(g, mx, my, 71, 29, 16, 56, mx, my,
@@ -62,6 +65,8 @@ public class GUIRBMKControl extends GuiInfoScreen<RBMKControlMenu> {
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        // тайл может отсутствовать в реплее Flashback
+        if (be == null) return super.mouseClicked(mouseX, mouseY, button);
         boolean handled = super.mouseClicked(mouseX, mouseY, button);
 
         for (int k = 0; k < 5; k++) {

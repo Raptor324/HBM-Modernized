@@ -7,15 +7,6 @@ import org.joml.Matrix4f;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 
-//? if forge {
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-//?}
-//? if fabric {
-/*import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
-*///?}
-
 // =====================================================================
 // Phase 2 split of InstancedStaticPartRenderer (contract; logic stays in class).
 //
@@ -36,11 +27,14 @@ import net.fabricmc.api.Environment;
  * {@code ExtendedShader}, producing correct G-buffer / shadow-pass /
  * pack-uniform output. Implementation: {@link InstancedStaticPartRenderer}.
  */
+
 //? if forge {
-@OnlyIn(Dist.CLIENT)
-//?}
-//? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
+@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+//?} elif fabric {
+/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
+*///?} elif neoforge {
+/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+*///?}
 public interface IrisCompanionMeshRenderer {
 
     /**

@@ -18,7 +18,7 @@ import net.minecraft.world.level.block.state.BlockState;
  * Knoten ein Torch-Waypoint ist - Provider/Requester/Dock koennen sich nur ueber diese Bloecke
  * verbinden, nicht direkt).
  */
-public class MachineDroneWaypointRequestBlockEntity extends BlockEntity {
+public class MachineDroneWaypointRequestBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity {
 
     public static final int MIN_HEIGHT = 1;
     public static final int MAX_HEIGHT = 15;
@@ -52,14 +52,12 @@ public class MachineDroneWaypointRequestBlockEntity extends BlockEntity {
     }
 
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         tag.putInt("height", height);
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         height = tag.contains("height") ? tag.getInt("height") : DEFAULT_HEIGHT;
     }
 }

@@ -44,6 +44,14 @@ public class MachineEPressMenu extends AbstractContainerMenu {
         this.addSlot(new StampSlot(container, 1, 80, 17));
         this.addSlot(new MaterialSlot(container, 2, 80, 53));
         this.addSlot(new OutputSlot(container, 3, 139, 34));
+        // Upgrade slot - the original has one (ContainerMachineEPress, SlotUpgrade); placed to fit
+        // this port's own GUI layout rather than the original's coordinates.
+        this.addSlot(new Slot(container, 4, 139, 53) {
+            @Override public boolean mayPlace(net.minecraft.world.item.ItemStack stack) {
+                return stack.getItem() instanceof com.hbm_m.item.industrial.ItemMachineUpgrade;
+            }
+            @Override public int getMaxStackSize() { return 1; }
+        });
 
         addDataSlots(data);
     }
@@ -83,7 +91,7 @@ public class MachineEPressMenu extends AbstractContainerMenu {
     private static final int VANILLA_SLOT_COUNT = HOTBAR_SLOT_COUNT + PLAYER_INVENTORY_SLOT_COUNT;
     private static final int VANILLA_FIRST_SLOT_INDEX = 0;
     private static final int TE_INVENTORY_FIRST_SLOT_INDEX = VANILLA_FIRST_SLOT_INDEX + VANILLA_SLOT_COUNT;
-    private static final int TE_INVENTORY_SLOT_COUNT = 4;
+    private static final int TE_INVENTORY_SLOT_COUNT = 5;
 
     @Override
     public ItemStack quickMoveStack(Player playerIn, int index) {
@@ -147,8 +155,9 @@ public class MachineEPressMenu extends AbstractContainerMenu {
             if (ItemEnergyAccess.getHbmProvider(stack).isPresent()) return true;
             //? if forge {
             return stack.getCapability(ForgeCapabilities.ENERGY).isPresent();
-            //?}
-            //? if fabric {
+            //?} elif neoforge {
+            /*return stack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM) != null;
+            *///?} else {
             /*return false;
             *///?}
         }

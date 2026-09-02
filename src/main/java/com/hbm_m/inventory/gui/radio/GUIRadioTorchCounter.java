@@ -1,6 +1,7 @@
 package com.hbm_m.inventory.gui.radio;
 
 import com.hbm_m.blockentity.network.radio.RadioTorchCounterBlockEntity;
+import com.hbm_m.client.GuiCompat;
 import com.hbm_m.inventory.filter.ModulePatternMatcher;
 import com.hbm_m.inventory.menu.radio.RadioTorchCounterMenu;
 import com.hbm_m.network.RadioTorchControlPacket;
@@ -47,7 +48,7 @@ public class GUIRadioTorchCounter extends AbstractContainerScreen<RadioTorchCoun
             addRenderableWidget(box);
         }
 
-        pollingBox = new Checkbox(left + 10, top + 62, 100, 18, Component.literal("Polling"), counter.polling);
+        pollingBox = com.hbm_m.client.GuiCompat.checkbox(left + 10, top + 62, 100, 18, Component.literal("Polling"), counter.polling);
         addRenderableWidget(pollingBox);
 
         addRenderableWidget(Button.builder(Component.literal("Save"), b -> save())
@@ -68,7 +69,7 @@ public class GUIRadioTorchCounter extends AbstractContainerScreen<RadioTorchCoun
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        this.renderBackground(guiGraphics);
+        com.hbm_m.client.GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
 
         for (int i = 0; i < 3; i++) {

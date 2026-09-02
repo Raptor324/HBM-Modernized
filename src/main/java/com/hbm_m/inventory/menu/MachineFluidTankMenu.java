@@ -3,8 +3,10 @@ package com.hbm_m.inventory.menu;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import com.hbm_m.api.fluids.FluidItemAccess;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.blockentity.machines.MachineFluidTankBlockEntity;
+import com.hbm_m.inventory.ModItemStackHandlerContainer;
 import com.hbm_m.interfaces.IItemFluidIdentifier;
 
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -24,15 +26,6 @@ import net.minecraft.world.level.material.Fluids;
 
 import dev.architectury.fluid.FluidStack;
 
-//? if forge {
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.items.SlotItemHandler;
-//?}
-
-//? if fabric {
-/*import net.fabricmc.fabric.api.transfer.v1.context.ContainerItemContext;
-import net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage;
-*///?}
 
 @SuppressWarnings("UnstableApiUsage")
 public class MachineFluidTankMenu extends AbstractContainerMenu {
@@ -58,61 +51,10 @@ public class MachineFluidTankMenu extends AbstractContainerMenu {
 
         checkContainerDataCount(data, 7);
 
-        //? if forge {
-        this.blockEntity.getCapability(ForgeCapabilities.ITEM_HANDLER).ifPresent(handler -> {
-            // Fluid identifier input: (8, 17) - только IItemFluidIdentifier
-            this.addSlot(new SlotItemHandler(handler, MachineFluidTankBlockEntity.SLOT_ID_IN, 8, 17) {
-                @Override
-                public boolean mayPlace(@NotNull ItemStack stack) {
-                    return stack.getItem() instanceof IItemFluidIdentifier;
-                }
-            });
-            
-            // Fluid identifier output: (8, 53) - только для вывода
-            this.addSlot(new SlotItemHandler(handler, MachineFluidTankBlockEntity.SLOT_ID_OUT, 8, 53) {
-                @Override
-                public boolean mayPlace(@NotNull ItemStack stack) {
-                    return false; // Только для вывода
-                }
-            });
+        // Слоты машины напрямую через ModItemStackHandler (кросс-платформенно, без Forge SlotItemHandler).
+        Container handlerContainer = new ModItemStackHandlerContainer(blockEntity.getItemHandler(), blockEntity::setChanged);
 
-            // Load input: (35, 17) - только предметы с FLUID_HANDLER_ITEM
-            this.addSlot(new SlotItemHandler(handler, MachineFluidTankBlockEntity.SLOT_LOAD_IN, 35, 17) {
-                @Override
-                public boolean mayPlace(@NotNull ItemStack stack) {
-                    return stack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).isPresent();
-                }
-            });
-            
-            // Load output: (35, 53) - только для вывода
-            this.addSlot(new SlotItemHandler(handler, MachineFluidTankBlockEntity.SLOT_LOAD_OUT, 35, 53) {
-                @Override
-                public boolean mayPlace(@NotNull ItemStack stack) {
-                    return false; // Только для вывода
-                }
-            });
-
-            // Unload input: (125, 17) - только предметы с FLUID_HANDLER_ITEM
-            this.addSlot(new SlotItemHandler(handler, MachineFluidTankBlockEntity.SLOT_UNLOAD_IN, 125, 17) {
-                @Override
-                public boolean mayPlace(@NotNull ItemStack stack) {
-                    return stack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).isPresent();
-                }
-            });
-            
-            // Unload output: (125, 53) - только для вывода
-            this.addSlot(new SlotItemHandler(handler, MachineFluidTankBlockEntity.SLOT_UNLOAD_OUT, 125, 53) {
-                @Override
-                public boolean mayPlace(@NotNull ItemStack stack) {
-                    return false; // Только для вывода
-                }
-            });
-        });
-        //?} else {
-        /*// Fabric: слоты напрямую через ModItemStackHandler (без Forge capabilities)
-        Container handlerContainer = new HandlerContainer(blockEntity.getItemHandler());
-
-        // Fluid identifier input: (8, 17)
+        // Fluid identifier input: (8, 17) - только IItemFluidIdentifier
         this.addSlot(new Slot(handlerContainer, MachineFluidTankBlockEntity.SLOT_ID_IN, 8, 17) {
             @Override
             public boolean mayPlace(@NotNull ItemStack stack) {
@@ -120,27 +62,23 @@ public class MachineFluidTankMenu extends AbstractContainerMenu {
             }
         });
 
-        // Fluid identifier output: (8, 53) - output only
+        // Fluid identifier output: (8, 53) - только для вывода
         this.addSlot(new Slot(handlerContainer, MachineFluidTankBlockEntity.SLOT_ID_OUT, 8, 53) {
             @Override
             public boolean mayPlace(@NotNull ItemStack stack) {
-                return false;
+                return false; // Только для вывода
             }
         });
 
-        // Load input: (35, 17) - fluid containers
+        // Load input: (35, 17) - только предметы с fluid-handler
         this.addSlot(new Slot(handlerContainer, MachineFluidTankBlockEntity.SLOT_LOAD_IN, 35, 17) {
             @Override
             public boolean mayPlace(@NotNull ItemStack stack) {
-                //? if fabric {
-                /^return FluidStorage.ITEM.find(stack, ContainerItemContext.withConstant(stack)) != null;
-                ^///?} else {
-                return false;
-                //?}
+                return FluidItemAccess.hasFluidHandler(stack);
             }
         });
 
-        // Load output: (35, 53) - output only
+        // Load output: (35, 53) - только для вывода
         this.addSlot(new Slot(handlerContainer, MachineFluidTankBlockEntity.SLOT_LOAD_OUT, 35, 53) {
             @Override
             public boolean mayPlace(@NotNull ItemStack stack) {
@@ -148,26 +86,21 @@ public class MachineFluidTankMenu extends AbstractContainerMenu {
             }
         });
 
-        // Unload input: (125, 17) - fluid containers
+        // Unload input: (125, 17) - только предметы с fluid-handler
         this.addSlot(new Slot(handlerContainer, MachineFluidTankBlockEntity.SLOT_UNLOAD_IN, 125, 17) {
             @Override
             public boolean mayPlace(@NotNull ItemStack stack) {
-                //? if fabric {
-                /^return FluidStorage.ITEM.find(stack, ContainerItemContext.withConstant(stack)) != null;
-                ^///?} else {
-                return false;
-                //?}
+                return FluidItemAccess.hasFluidHandler(stack);
             }
         });
 
-        // Unload output: (125, 53) - output only
+        // Unload output: (125, 53) - только для вывода
         this.addSlot(new Slot(handlerContainer, MachineFluidTankBlockEntity.SLOT_UNLOAD_OUT, 125, 53) {
             @Override
             public boolean mayPlace(@NotNull ItemStack stack) {
                 return false;
             }
         });
-        *///?}
 
         addDataSlots(data);
 
@@ -224,50 +157,6 @@ public class MachineFluidTankMenu extends AbstractContainerMenu {
 
     @Override
     public ItemStack quickMoveStack(Player playerIn, int index) {
-        //? if fabric {
-        /*ItemStack sourceStack = ItemStack.EMPTY;
-        Slot slot = this.slots.get(index);
-
-        if (slot == null || !slot.hasItem()) {
-            return ItemStack.EMPTY;
-        }
-
-        ItemStack stackInSlot = slot.getItem();
-        sourceStack = stackInSlot.copy();
-
-        if (index < MACHINE_SLOTS) {
-            if (!moveItemStackTo(stackInSlot, PLAYER_INVENTORY_START, HOTBAR_END, true)) {
-                return ItemStack.EMPTY;
-            }
-        } else {
-            if (stackInSlot.getItem() instanceof IItemFluidIdentifier) {
-                if (!moveItemStackTo(stackInSlot, MachineFluidTankBlockEntity.SLOT_ID_IN, MachineFluidTankBlockEntity.SLOT_ID_IN + 1, false)) {
-                    return ItemStack.EMPTY;
-                }
-            } else if (FluidStorage.ITEM.find(stackInSlot, ContainerItemContext.withConstant(stackInSlot)) != null) {
-                if (!moveItemStackTo(stackInSlot, MachineFluidTankBlockEntity.SLOT_LOAD_IN, MachineFluidTankBlockEntity.SLOT_LOAD_IN + 1, false)) {
-                    if (!moveItemStackTo(stackInSlot, MachineFluidTankBlockEntity.SLOT_UNLOAD_IN, MachineFluidTankBlockEntity.SLOT_UNLOAD_IN + 1, false)) {
-                        return ItemStack.EMPTY;
-                    }
-                }
-            } else {
-                return ItemStack.EMPTY;
-            }
-        }
-
-        if (stackInSlot.isEmpty()) {
-            slot.set(ItemStack.EMPTY);
-        } else {
-            slot.setChanged();
-        }
-
-        if (stackInSlot.getCount() == sourceStack.getCount()) {
-            return ItemStack.EMPTY;
-        }
-
-        slot.onTake(playerIn, stackInSlot);
-        return sourceStack;
-        *///?} else {
         ItemStack sourceStack = ItemStack.EMPTY;
         Slot slot = this.slots.get(index);
 
@@ -287,7 +176,7 @@ public class MachineFluidTankMenu extends AbstractContainerMenu {
                     if (!moveItemStackTo(stackInSlot, MACHINE_SLOTS + 0, MACHINE_SLOTS + 1, false)) {
                         return ItemStack.EMPTY;
                     }
-                } else if (stackInSlot.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).isPresent()) {
+                } else if (FluidItemAccess.hasFluidHandler(stackInSlot)) {
                     // Try to put into LOAD_IN slot first
                     if (!moveItemStackTo(stackInSlot, MachineFluidTankBlockEntity.SLOT_LOAD_IN, MachineFluidTankBlockEntity.SLOT_LOAD_IN + 1, false)) {
                         // If that fails, try UNLOAD_IN slot
@@ -313,7 +202,6 @@ public class MachineFluidTankMenu extends AbstractContainerMenu {
             slot.onTake(playerIn, stackInSlot);
         }
         return sourceStack;
-        //?}
     }
 
     @Override
@@ -321,62 +209,4 @@ public class MachineFluidTankMenu extends AbstractContainerMenu {
         return stillValid(ContainerLevelAccess.create(blockEntity.getLevel(), blockEntity.getBlockPos()),
                 player, ModBlocks.FLUID_TANK.get());
     }
-
-    //? if fabric {
-    /*private static final class HandlerContainer implements Container {
-        private final com.hbm_m.platform.ModItemStackHandler handler;
-
-        HandlerContainer(com.hbm_m.platform.ModItemStackHandler handler) {
-            this.handler = handler;
-        }
-
-        @Override
-        public int getContainerSize() {
-            return handler.getSlots();
-        }
-
-        @Override
-        public boolean isEmpty() {
-            for (int i = 0; i < handler.getSlots(); i++) {
-                if (!handler.getStackInSlot(i).isEmpty()) return false;
-            }
-            return true;
-        }
-
-        @Override
-        public @NotNull ItemStack getItem(int slot) {
-            return handler.getStackInSlot(slot);
-        }
-
-        @Override
-        public @NotNull ItemStack removeItem(int slot, int amount) {
-            return handler.extractItem(slot, amount, false);
-        }
-
-        @Override
-        public @NotNull ItemStack removeItemNoUpdate(int slot) {
-            ItemStack existing = handler.getStackInSlot(slot);
-            handler.setStackInSlot(slot, ItemStack.EMPTY);
-            return existing;
-        }
-
-        @Override
-        public void setItem(int slot, @NotNull ItemStack stack) {
-            handler.setStackInSlot(slot, stack);
-        }
-
-        @Override
-        public void setChanged() {}
-
-        @Override
-        public boolean stillValid(@NotNull Player player) {
-            return true;
-        }
-
-        @Override
-        public void clearContent() {
-            for (int i = 0; i < handler.getSlots(); i++) handler.setStackInSlot(i, ItemStack.EMPTY);
-        }
-    }
-    *///?}
 }

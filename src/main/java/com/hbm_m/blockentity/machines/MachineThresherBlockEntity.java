@@ -35,7 +35,7 @@ import net.minecraft.world.phys.AABB;
  * drei entfallen. Kernmechanik (Standard-{@code CropBlock}-Reife-Erkennung + Erneut-Pflanzen,
  * Zuckerrohr/Kaktus-Saeulen-Schnitt, Entitaeten-Schaden-AoE, Fluid-Tank-Betrieb) ist 1:1 erhalten.
  */
-public class MachineThresherBlockEntity extends BlockEntity implements IFluidStandardReceiverMK2 {
+public class MachineThresherBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity implements IFluidStandardReceiverMK2 {
 
     private final FluidTank tank = new FluidTank(100);
 
@@ -182,8 +182,7 @@ public class MachineThresherBlockEntity extends BlockEntity implements IFluidSta
     // ==================== NBT ====================
 
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         tag.putBoolean("isOn", isOn);
         tag.putFloat("angle", angle);
         tag.putInt("state", state);
@@ -192,8 +191,7 @@ public class MachineThresherBlockEntity extends BlockEntity implements IFluidSta
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         isOn = tag.getBoolean("isOn");
         angle = tag.getFloat("angle");
         state = tag.getInt("state");

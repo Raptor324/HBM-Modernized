@@ -18,10 +18,10 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
-//?}
-//? if fabric {
-/*import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;*///?}
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -41,7 +41,8 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.AbstractFurnaceBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
-import net.minecraft.world.item.crafting.RecipeType;
+import com.hbm_m.platform.recipe.RecipeHooks;
+import com.hbm_m.platform.recipe.RecipeInputWrapper;
 
 public class MachinePressBlockEntity extends BaseMachineBlockEntity {
     
@@ -263,11 +264,9 @@ public class MachinePressBlockEntity extends BaseMachineBlockEntity {
             sendUpdateToClient();
         }
     }
-//? if forge {
-@OnlyIn(Dist.CLIENT)
-//?}
-//? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
+    //? if forge || neoforge {
+    @OnlyIn(Dist.CLIENT)
+    //?}
     private void clientTick() {
         float target = convertPressToProgress();
         if (!clientPressInitialized) {
@@ -278,11 +277,9 @@ public class MachinePressBlockEntity extends BaseMachineBlockEntity {
         prevVisualPressPosition = visualPressPosition;
         visualPressPosition = Mth.lerp(0.25F, visualPressPosition, target);
     }
-//? if forge {
-@OnlyIn(Dist.CLIENT)
-//?}
-//? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
+    //? if forge || neoforge {
+    @OnlyIn(Dist.CLIENT)
+    //?}
     public float getPressAnimationProgress(float partialTick) {
         float interpolated = Mth.lerp(partialTick, prevVisualPressPosition, visualPressPosition);
         return Mth.clamp(interpolated, 0.0F, 1.0F);
@@ -363,12 +360,9 @@ public class MachinePressBlockEntity extends BaseMachineBlockEntity {
             container.setItem(i, inventory.getStackInSlot(i));
         }
 
-        // getRecipeFor() иногда не сходится по дженерикам в зависимости от маппингов,
-        // поэтому берём список рецептов и матчим вручную.
-        @SuppressWarnings("rawtypes")
-        RecipeType type = (RecipeType) PressRecipe.Type.INSTANCE;
-        for (Object holderObj : level.getRecipeManager().getAllRecipesFor(type)) {
-            if (holderObj instanceof PressRecipe recipe && recipe.matches(container, level)) {
+        RecipeInputWrapper wrapper = new RecipeInputWrapper(container);
+        for (PressRecipe recipe : RecipeHooks.getAllRecipes(level, PressRecipe.Type.INSTANCE)) {
+            if (recipe.matchesRecipe(wrapper, level)) {
                 return Optional.of(recipe);
             }
         }
@@ -413,8 +407,8 @@ public class MachinePressBlockEntity extends BaseMachineBlockEntity {
     // ==================== NBT ====================
     
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag); // ОБЯЗАТЕЛЬНО ПЕРВЫМ
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries); // ОБЯЗАТЕЛЬНО ПЕРВЫМ
         tag.putInt("press", press);
         tag.putInt("burnTime", burnTime);
         tag.putInt("speed", speed);
@@ -425,8 +419,8 @@ public class MachinePressBlockEntity extends BaseMachineBlockEntity {
     }
     
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         press = tag.getInt("press");
         burnTime = tag.getInt("burnTime");
         speed = tag.getInt("speed");

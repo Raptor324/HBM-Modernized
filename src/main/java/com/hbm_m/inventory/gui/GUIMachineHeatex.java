@@ -1,6 +1,7 @@
 package com.hbm_m.inventory.gui;
 
 import com.hbm_m.blockentity.machines.MachineHeatexBlockEntity;
+import com.hbm_m.client.GuiCompat;
 import com.hbm_m.inventory.menu.MachineHeatexMenu;
 import com.hbm_m.lib.RefStrings;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -38,8 +39,10 @@ public class GUIMachineHeatex extends GuiInfoScreen<MachineHeatexMenu> {
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
         guiGraphics.blit(TEXTURE, this.leftPos, this.topPos, 0, 0, this.imageWidth, this.imageHeight);
 
-        be.getHotTank().renderTank(guiGraphics, leftPos + TANK_HOT_X, topPos + TANK_Y, TANK_W, TANK_H);
-        be.getColdTank().renderTank(guiGraphics, leftPos + TANK_COLD_X, topPos + TANK_Y, TANK_W, TANK_H);
+        if (be != null) {
+            be.getHotTank().renderTank(guiGraphics, leftPos + TANK_HOT_X, topPos + TANK_Y, TANK_W, TANK_H);
+            be.getColdTank().renderTank(guiGraphics, leftPos + TANK_COLD_X, topPos + TANK_Y, TANK_W, TANK_H);
+        }
     }
 
     @Override
@@ -51,11 +54,13 @@ public class GUIMachineHeatex extends GuiInfoScreen<MachineHeatexMenu> {
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        this.renderBackground(guiGraphics);
+        com.hbm_m.client.GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
 
-        be.getHotTank().renderTankInfo(guiGraphics, this.font, mouseX, mouseY, leftPos + TANK_HOT_X, topPos + TANK_Y, TANK_W, TANK_H);
-        be.getColdTank().renderTankInfo(guiGraphics, this.font, mouseX, mouseY, leftPos + TANK_COLD_X, topPos + TANK_Y, TANK_W, TANK_H);
+        if (be != null) {
+            be.getHotTank().renderTankInfo(guiGraphics, this.font, mouseX, mouseY, leftPos + TANK_HOT_X, topPos + TANK_Y, TANK_W, TANK_H);
+            be.getColdTank().renderTankInfo(guiGraphics, this.font, mouseX, mouseY, leftPos + TANK_COLD_X, topPos + TANK_Y, TANK_W, TANK_H);
+        }
 
         this.renderTooltip(guiGraphics, mouseX, mouseY);
     }

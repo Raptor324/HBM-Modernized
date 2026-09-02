@@ -109,15 +109,15 @@ public class MachineCondenserPoweredBlockEntity extends BaseMachineBlockEntity i
     // ==================== NBT ====================
 
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         spentSteamTank.writeToNBT(tag, "tank_spentsteam");
         waterTank.writeToNBT(tag, "tank_water");
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         spentSteamTank.readFromNBT(tag, "tank_spentsteam");
         waterTank.readFromNBT(tag, "tank_water");
     }

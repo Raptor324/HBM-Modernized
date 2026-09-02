@@ -1,6 +1,7 @@
 package com.hbm_m.inventory.menu;
 
 import com.hbm_m.blockentity.machines.MachineRadarBlockEntity;
+import com.hbm_m.platform.DummyItemStackHandler;
 
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.Container;
@@ -34,7 +35,11 @@ public class MachineRadarSlotsMenu extends AbstractContainerMenu {
         super(ModMenuTypes.RADAR_SLOTS_MENU.get(), id);
         this.blockEntity = blockEntity;
 
-        Container machineContainer = new MachineRadarMenu.HandlerContainer(blockEntity.getInventory());
+        // На клиенте тайл может отсутствовать (реплей Flashback) — подставляем пустую заглушку,
+        // чтобы конструктор дошёл до конца и пакет открытия меню не уронил клиент
+        Container machineContainer = new MachineRadarMenu.HandlerContainer(blockEntity != null
+                ? blockEntity.getInventory()
+                : new DummyItemStackHandler(MACHINE_SLOTS));
 
         // 8 линк-слотов (0..7).
         for (int i = 0; i < 8; i++) {
@@ -60,7 +65,8 @@ public class MachineRadarSlotsMenu extends AbstractContainerMenu {
         this.addSlot(new Slot(container, index, x, y) {
             @Override
             public boolean mayPlace(ItemStack stack) {
-                return blockEntity.canPlaceItemInSlot(index, stack);
+                // тайл может отсутствовать на клиенте (реплей Flashback)
+                return blockEntity != null && blockEntity.canPlaceItemInSlot(index, stack);
             }
         });
     }
@@ -71,11 +77,13 @@ public class MachineRadarSlotsMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
+        // Без проверки дистанции (как в MachineRadarMenu, порт 1.7.10):
+        // саб-меню слотов может открываться с Radar Screen, который находится
+        // далеко от самого радара. distanceToSqr <= 64 закрывал GUI через секунду.
         if (blockEntity == null || blockEntity.getLevel() != player.level()) {
             return false;
         }
-        var pos = blockEntity.getBlockPos();
-        return player.distanceToSqr(pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D) <= 64.0D;
+        return !blockEntity.isRemoved();
     }
 
     @Override
@@ -93,7 +101,8 @@ public class MachineRadarSlotsMenu extends AbstractContainerMenu {
                 }
             } else {
                 // Из инвентаря — батарея → слот 9, иначе линк-слоты 0..8.
-                if (blockEntity.canPlaceItemInSlot(9, stack)) {
+                // тайл может отсутствовать на клиенте (реплей Flashback)
+                if (blockEntity != null && blockEntity.canPlaceItemInSlot(9, stack)) {
                     if (!this.moveItemStackTo(stack, 9, 10, false)) {
                         return ItemStack.EMPTY;
                     }

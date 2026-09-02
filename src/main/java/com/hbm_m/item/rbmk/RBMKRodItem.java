@@ -2,6 +2,8 @@ package com.hbm_m.item.rbmk;
 
 import com.hbm_m.blockentity.machines.rbmk.IRBMKFluxReceiver.NType;
 import com.hbm_m.handler.rbmk.RBMKDials;
+import com.hbm_m.item.ITooltipProvider;
+import com.hbm_m.platform.PlatformHooks;
 import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -18,7 +20,7 @@ import java.util.Locale;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
-public class RBMKRodItem extends Item {
+public class RBMKRodItem extends Item implements ITooltipProvider {
 
     // ─── Static registry of all pellet-derived rods ───────────────────────────
 
@@ -45,6 +47,13 @@ public class RBMKRodItem extends Item {
     public double heatCoeffLength = 0;
     public boolean specialFluxCurve = false;
 
+    /**
+     * The pellet this rod disassembles back into (original: {@code ItemRBMKRod.pellet}).
+     * Held as a supplier because pellets are registered after some rods in {@link
+     * com.hbm_m.item.ModItems}; a null supplier means the rod cannot be disassembled.
+     */
+    private java.util.function.Supplier<Item> pelletSupplier;
+
     private BiFunction<Double, Double, Double> ratioCurve;
     private BiFunction<Double, Double, Double> fluxCurve;
 
@@ -64,20 +73,36 @@ public class RBMKRodItem extends Item {
         this.fullName = fullName;
     }
 
-    // ─── Craft remainder (returns empty rod casing) ───────────────────────────
+    public RBMKRodItem setPellet(java.util.function.Supplier<Item> pellet) {
+        this.pelletSupplier = pellet;
+        // Rods built through the string constructor + setPellet never reached craftableRods, so
+        // that list sat permanently empty and anything driven off it (recipe listings, creative
+        // helpers) silently had nothing to show.
+        if (!craftableRods.contains(this)) craftableRods.add(this);
+        return this;
+    }
 
-    //? if < 1.21.1 {
-    // @Override omitted intentionally — Stonecutter removes this block for >= 1.21.1
-    public boolean hasCraftingRemainingItem(ItemStack stack) { return true; }
-    public ItemStack getCraftingRemainingItem(ItemStack stack) {
+    /** The pellet this rod yields when disassembled, or null if it has none. */
+    public RBMKPelletItem getPellet() {
+        if (pelletSupplier == null) return null;
+        Item item = pelletSupplier.get();
+        return item instanceof RBMKPelletItem pellet ? pellet : null;
+    }
+
+    // ─── Craft remainder (returns empty rod casing) ───────────────────────────
+    //
+    // NOTE: no-arg Item.getCraftingRemainingItem() помечен final как на 1.21.1 (vanilla),
+    // так и в сборке 1.20.1-forge (Forge backport) — override невозможен.
+    // Поэтому используем перегрузку (ItemStack), которая не final на обеих версиях и
+    // вызывается ванильным крафтом. Альтернатива — Properties.craftRemainder(...) при
+    // регистрации, но это потребует правки конструктора/регистрации; оставлено как есть
+    // ради fidelity к 1.7.10.
+    // TODO: при необходимости точной parity — вынести в Properties.craftRemainder(EMPTY).
+
+    @Override public boolean hasCraftingRemainingItem(ItemStack stack) { return true; }
+    @Override public ItemStack getCraftingRemainingItem(ItemStack stack) {
         return new ItemStack(com.hbm_m.item.ModItems.RBMK_FUEL_EMPTY.get());
     }
-    //?} else {
-    /*@Override public boolean hasCraftingRemainingItem() { return true; }
-    @Override public ItemStack getCraftingRemainingItem() {
-        return new ItemStack(com.hbm_m.item.ModItems.RBMK_FUEL_EMPTY.get());
-    }
-    *///?}
 
     // ─── Builder setters ──────────────────────────────────────────────────────
 
@@ -239,12 +264,12 @@ public class RBMKRodItem extends Item {
 
     //? if < 1.21.1 {
     private static CompoundTag getOrCreateTag(ItemStack stack) {
-        if (!stack.hasTag()) {
+        if (!PlatformHooks.hasItemTag(stack)) {
             CompoundTag tag = new CompoundTag();
             if (stack.getItem() instanceof RBMKRodItem rod) tag.putDouble("yield", rod.yield);
             tag.putDouble("core", 20.0);
             tag.putDouble("hull", 20.0);
-            stack.setTag(tag);
+            PlatformHooks.setItemTag(stack, tag);
         }
         return stack.getOrCreateTag();
     }
@@ -293,13 +318,8 @@ public class RBMKRodItem extends Item {
 
     // ─── Tooltip ─────────────────────────────────────────────────────────────
 
-    //? if < 1.21.1 {
-    // @Override omitted intentionally — Stonecutter removes this block for >= 1.21.1
-    public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> list, TooltipFlag flag) {
-    //?} else {
-    /*@Override
-    public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> list, TooltipFlag flag) {
-    *///?}
+    @Override
+    public void appendHbmTooltip(ItemStack stack, @Nullable Level level, List<Component> list, TooltipFlag flag) {
         list.add(Component.literal(ChatFormatting.ITALIC + fullName));
 
         double hull = getHullHeat(stack);
@@ -341,7 +361,14 @@ public class RBMKRodItem extends Item {
     // ─── Durability bar (depletion) ───────────────────────────────────────────
 
     @Override public boolean isBarVisible(ItemStack stack)  { return getEnrichment(stack) < 1.0; }
-    @Override public int    getBarWidth(ItemStack stack)    { return Math.round((float)(1.0 - getEnrichment(stack)) * 13); }
+    /**
+     * The bar shows what is <b>left</b>, not what is gone. CE returns the damage fraction
+     * ({@code 1 - enrichment}) from {@code getDurabilityForDisplay} and 1.12 subtracts it from the
+     * full width; modern {@code getBarWidth} wants the filled width directly, so the port's
+     * straight copy of the 1.12 expression drew the bar inverted - a fresh rod showed as empty and
+     * a spent one as full.
+     */
+    @Override public int    getBarWidth(ItemStack stack)    { return Math.round((float) getEnrichment(stack) * 13); }
 
     // ─── Enums ───────────────────────────────────────────────────────────────
 

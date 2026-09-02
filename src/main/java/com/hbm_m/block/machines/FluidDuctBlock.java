@@ -74,8 +74,10 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 //? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-import net.minecraftforge.client.event.RenderGuiEvent;
-//?}
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /**
  * Fluid duct: multipart blockstate + Forge OBJ visibility on {@code pipe_neo.obj}. Fluid type lives in the block entity.
@@ -421,8 +423,20 @@ public class FluidDuctBlock extends BaseEntityBlock implements ILookOverlay {
         }
     }
 
+    //? if < 1.21.1 {
     @Override
     public InteractionResult use(@NotNull BlockState state, @NotNull Level level, @NotNull BlockPos pos,
+            @NotNull Player player, @NotNull InteractionHand hand, @NotNull BlockHitResult hit) {
+        return hbmOnUse(state, level, pos, player, hand, hit);
+    }
+    //?} else {
+    /*@Override
+    protected InteractionResult useWithoutItem(@NotNull BlockState state, @NotNull Level level, @NotNull BlockPos pos, @NotNull Player player, @NotNull BlockHitResult hit) {
+        return hbmOnUse(state, level, pos, player, InteractionHand.MAIN_HAND, hit);
+    }
+    *///?}
+
+    private InteractionResult hbmOnUse(@NotNull BlockState state, @NotNull Level level, @NotNull BlockPos pos,
             @NotNull Player player, @NotNull InteractionHand hand, @NotNull BlockHitResult hit) {
         ItemStack stack = player.getItemInHand(hand);
         if (stack.isEmpty() || !(stack.getItem() instanceof IItemFluidIdentifier idItem)) {
@@ -560,6 +574,7 @@ public class FluidDuctBlock extends BaseEntityBlock implements ILookOverlay {
         return RenderShape.MODEL;
     }
 
+    //? if < 1.21.1 {
     @NotNull
     @Override
     public ItemStack getCloneItemStack(@NotNull BlockGetter level, @NotNull BlockPos pos, @NotNull BlockState state) {
@@ -571,6 +586,19 @@ public class FluidDuctBlock extends BaseEntityBlock implements ILookOverlay {
         }
         return stack;
     }
+    //?} else {
+    /*@NotNull
+    @Override
+    public ItemStack getCloneItemStack(@NotNull net.minecraft.world.level.LevelReader level, @NotNull BlockPos pos, @NotNull BlockState state) {
+        ItemStack stack = new ItemStack(getDuctItem());
+        BlockEntity be = level.getBlockEntity(pos);
+        if (be instanceof FluidDuctBlockEntity ductBe
+                && ductBe.getFluidType() != Fluids.EMPTY) {
+            FluidDuctItem.setFluidType(stack, ductBe.getFluidType());
+        }
+        return stack;
+    }
+    *///?}
 
     private net.minecraft.world.item.Item getDuctItem() {
         return switch (pipeStyle) {
@@ -592,7 +620,7 @@ public class FluidDuctBlock extends BaseEntityBlock implements ILookOverlay {
     }
 
     @Override
-//? if forge {
+//? if forge || neoforge {
 @OnlyIn(Dist.CLIENT)
 //?}
 //? if fabric {
@@ -612,4 +640,13 @@ public class FluidDuctBlock extends BaseEntityBlock implements ILookOverlay {
         text.add(Component.literal(name).withStyle(Style.EMPTY.withColor(TextColor.fromRgb(rgb))));
         ILookOverlay.printGeneric(guiGraphics, Component.translatable(getDescriptionId()), 0xffff00, 0x404000, text);
     }
+
+    //? if >1.20.1 {
+    /*public static final com.mojang.serialization.MapCodec<FluidDuctBlock> CODEC = simpleCodec(props -> new FluidDuctBlock(props, PipeStyle.NEO));
+
+    @Override
+    protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
+        return CODEC;
+    }
+    *///?}
 }

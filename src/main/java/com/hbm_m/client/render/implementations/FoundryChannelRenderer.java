@@ -13,16 +13,21 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
+
 import org.joml.Matrix4f;
 
 /**
  * Renders the molten metal flowing through a foundry channel:
  * a center quad plus one quad per connected direction.
  */
-@OnlyIn(Dist.CLIENT)
-public class FoundryChannelRenderer implements BlockEntityRenderer<MachineFoundryChannelBlockEntity> {
+//? if forge {
+@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+//?} elif fabric {
+/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
+*///?} elif neoforge {
+/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+*///?}
+public class FoundryChannelRenderer implements com.hbm_m.client.render.HbmBerBounds<MachineFoundryChannelBlockEntity> {
 
     private static final ResourceLocation LAVA_TEXTURE =
             ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/block/fluids/lava.png");
@@ -72,10 +77,14 @@ public class FoundryChannelRenderer implements BlockEntityRenderer<MachineFoundr
                              float x0, float x1, float z0, float z1, float y,
                              float r, float g, float b, float a) {
         int fullbright = 0xF000F0;
-        vc.vertex(m, x0, y, z0).color(r, g, b, a).uv(0, 0).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(fullbright).normal(0, 1, 0).endVertex();
-        vc.vertex(m, x0, y, z1).color(r, g, b, a).uv(0, 1).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(fullbright).normal(0, 1, 0).endVertex();
-        vc.vertex(m, x1, y, z1).color(r, g, b, a).uv(1, 1).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(fullbright).normal(0, 1, 0).endVertex();
-        vc.vertex(m, x1, y, z0).color(r, g, b, a).uv(1, 0).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(fullbright).normal(0, 1, 0).endVertex();
+        int rI = (int)(r * 255);
+        int gI = (int)(g * 255);
+        int bI = (int)(b * 255);
+        int aI = (int)(a * 255);
+        com.hbm_m.platform.RenderHooks.vertexFull(vc, m, x0, y, z0, rI, gI, bI, aI, 0, 0, OverlayTexture.NO_OVERLAY, fullbright, 0, 1, 0);
+        com.hbm_m.platform.RenderHooks.vertexFull(vc, m, x0, y, z1, rI, gI, bI, aI, 0, 1, OverlayTexture.NO_OVERLAY, fullbright, 0, 1, 0);
+        com.hbm_m.platform.RenderHooks.vertexFull(vc, m, x1, y, z1, rI, gI, bI, aI, 1, 1, OverlayTexture.NO_OVERLAY, fullbright, 0, 1, 0);
+        com.hbm_m.platform.RenderHooks.vertexFull(vc, m, x1, y, z0, rI, gI, bI, aI, 1, 0, OverlayTexture.NO_OVERLAY, fullbright, 0, 1, 0);
     }
 
     @Override

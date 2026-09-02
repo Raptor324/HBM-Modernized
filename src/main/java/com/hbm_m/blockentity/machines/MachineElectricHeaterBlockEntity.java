@@ -99,15 +99,15 @@ public class MachineElectricHeaterBlockEntity extends BaseMachineBlockEntity imp
     }
 
     @Override
-    public void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.putInt("setting", setting);
         tag.putInt("heat", heat);
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         setting = tag.getInt("setting");
         heat = tag.getInt("heat");
     }

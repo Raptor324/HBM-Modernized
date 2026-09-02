@@ -22,7 +22,7 @@ import net.minecraft.world.level.block.state.BlockState;
  * SCOPE-Vereinfachung: Der {@code "selfdestruct"}-Sonderfall entfaellt, siehe
  * {@link RadioTorchReceiverBlockEntity}.
  */
-public class RadioTorchControllerBlockEntity extends BlockEntity implements IRadioTorchConfigurable {
+public class RadioTorchControllerBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity implements IRadioTorchConfigurable {
 
     public String channel = "";
     public String prev = "";
@@ -62,26 +62,17 @@ public class RadioTorchControllerBlockEntity extends BlockEntity implements IRad
     }
 
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         tag.putBoolean("polling", polling);
         tag.putString("channel", channel);
         tag.putString("prev", prev);
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         polling = tag.getBoolean("polling");
         channel = tag.getString("channel");
         prev = tag.getString("prev");
     }
 
-    @Override
-    public CompoundTag getUpdateTag() { CompoundTag t = super.getUpdateTag(); saveAdditional(t); return t; }
-
-    @Override
-    public Packet<ClientGamePacketListener> getUpdatePacket() {
-        return ClientboundBlockEntityDataPacket.create(this);
-    }
 }

@@ -14,36 +14,68 @@ public class RBMKGaugeBlockEntity extends RBMKPanelDeviceBlockEntity {
 
     public static final int UNITS = 4;
     public final String[] channel = new String[UNITS];
-    public final String[] label   = new String[UNITS];
-    public final int[]    color   = new int[UNITS];
     public final double[] min     = new double[UNITS];
     public final double[] max     = new double[UNITS];
     public final double[] value   = new double[UNITS];
+    /** GaugeUnit.lastRenderValue - previous tick's value, for needle interpolation. */
+    public final double[] lastValue = new double[UNITS];
+
+    /**
+     * {@code GaugeUnit.polling}: a polling gauge re-reads its channel every tick and drops back to
+     * zero the moment the signal stops, so it reads as a live instrument. A non-polling one latches
+     * the last value it saw. The port had no polling flag at all, so every gauge behaved as
+     * latching and a dead channel left the needle frozen at its last reading.
+     */
+    public final boolean[] polling = new boolean[UNITS];
 
     public RBMKGaugeBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.RBMK_GAUGE_BE.get(), pos, state);
         Arrays.fill(channel, "");
-        Arrays.fill(label, "");
         Arrays.fill(max, 100.0);
+        for (int i = 0; i < UNITS; i++) unitLabel[i] = "Gauge " + (i + 1);
+    }
+
+    /** CE's per-index needle colours (GaugeUnit constructor). */
+    @Override
+    protected int defaultUnitColor(int index) {
+        return switch (index) {
+            case 0 -> 0x800000;
+            case 1 -> 0x804000;
+            case 2 -> 0x808000;
+            default -> 0x000080;
+        };
     }
 
     @Override
     protected void onPanelTick(Level level, BlockPos pos) {
         for (int i = 0; i < UNITS; i++) {
+            lastValue[i] = value[i];
+
+            // CE's GaugeUnit.update bails on an inactive unit; the port updated every unit whether
+            // the operator had switched it on or not.
+            if (!isUnitActive(i)) continue;
             if (channel[i] == null || channel[i].isEmpty()) continue;
+
             RTTYNetwork.RttyChannel ch = RTTYNetwork.listen(level, channel[i]);
-            if (ch != null && ch.signal != null) value[i] = parseNum(String.valueOf(ch.signal), value[i]);
+            if (ch != null && ch.signal != null) {
+                value[i] = parseNum(String.valueOf(ch.signal), value[i]);
+            } else if (polling[i]) {
+                value[i] = 0;
+            }
         }
     }
 
+    /** Original per-unit array size (see the matching *Unit inner class). */
+    @Override public int unitCount() { return UNITS; }
+
     @Override
     public void receiveControl(CompoundTag data) {
+        receiveSharedControl(data);
         for (int i = 0; i < UNITS; i++) {
             if (data.contains("channel" + i)) channel[i] = data.getString("channel" + i);
-            if (data.contains("label" + i))   label[i]   = data.getString("label" + i);
-            if (data.contains("color" + i))   color[i]   = data.getInt("color" + i);
             if (data.contains("min" + i))     min[i]     = data.getDouble("min" + i);
             if (data.contains("max" + i))     max[i]     = data.getDouble("max" + i);
+            if (data.contains("polling" + i)) polling[i] = data.getBoolean("polling" + i);
         }
         setChanged();
         syncToClient();
@@ -55,11 +87,10 @@ public class RBMKGaugeBlockEntity extends RBMKPanelDeviceBlockEntity {
         super.saveAdditional(tag);
         for (int i = 0; i < UNITS; i++) {
             tag.putString("channel" + i, channel[i]);
-            tag.putString("label" + i, label[i]);
-            tag.putInt("color" + i, color[i]);
             tag.putDouble("min" + i, min[i]);
             tag.putDouble("max" + i, max[i]);
             tag.putDouble("value" + i, value[i]);
+            tag.putBoolean("polling" + i, polling[i]);
         }
     }
 
@@ -68,11 +99,10 @@ public class RBMKGaugeBlockEntity extends RBMKPanelDeviceBlockEntity {
         super.load(tag);
         for (int i = 0; i < UNITS; i++) {
             channel[i] = tag.contains("channel" + i) ? tag.getString("channel" + i) : "";
-            label[i]   = tag.contains("label" + i)   ? tag.getString("label" + i)   : "";
-            color[i]   = tag.getInt("color" + i);
             min[i]     = tag.getDouble("min" + i);
             max[i]     = tag.contains("max" + i) ? tag.getDouble("max" + i) : 100.0;
             value[i]   = tag.getDouble("value" + i);
+            polling[i] = tag.getBoolean("polling" + i);
         }
     }
     //?} else {
@@ -81,11 +111,10 @@ public class RBMKGaugeBlockEntity extends RBMKPanelDeviceBlockEntity {
         super.saveAdditional(tag, registries);
         for (int i = 0; i < UNITS; i++) {
             tag.putString("channel" + i, channel[i]);
-            tag.putString("label" + i, label[i]);
-            tag.putInt("color" + i, color[i]);
             tag.putDouble("min" + i, min[i]);
             tag.putDouble("max" + i, max[i]);
             tag.putDouble("value" + i, value[i]);
+            tag.putBoolean("polling" + i, polling[i]);
         }
     }
 
@@ -94,11 +123,10 @@ public class RBMKGaugeBlockEntity extends RBMKPanelDeviceBlockEntity {
         super.loadAdditional(tag, registries);
         for (int i = 0; i < UNITS; i++) {
             channel[i] = tag.contains("channel" + i) ? tag.getString("channel" + i) : "";
-            label[i]   = tag.contains("label" + i)   ? tag.getString("label" + i)   : "";
-            color[i]   = tag.getInt("color" + i);
             min[i]     = tag.getDouble("min" + i);
             max[i]     = tag.contains("max" + i) ? tag.getDouble("max" + i) : 100.0;
             value[i]   = tag.getDouble("value" + i);
+            polling[i] = tag.getBoolean("polling" + i);
         }
     }
     *///?}

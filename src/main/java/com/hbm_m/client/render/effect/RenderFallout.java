@@ -29,21 +29,20 @@ public class RenderFallout extends EntityRenderer<EntityFalloutRain> {
     //?}
 
 
-    /** Максимальный радиус рендера fallout-колонн (в блоках). */
-    private static final int MAX_RENDER_RADIUS = 40;
+    /** Максимальный радиус рендера fallout-колонн (в блоках). Уменьшен для оптимизации. */
+    private static final int MAX_RENDER_RADIUS = 32;
     /**
-     * Высота «шторы» осадков над поверхностью (блоки). Не привязываем к {@code scale} взрыва - иначе
-     * при большом радиусе рисуются километровые столбы, видимые с огромного расстояния.
+     * Высота «шторы» осадков над поверхностью (блоки). Уменьшена для оптимизации.
      */
-    private static final int MAX_VISUAL_HEIGHT_ABOVE_SURFACE = 40;
+    private static final int MAX_VISUAL_HEIGHT_ABOVE_SURFACE = 24;
     /**
      * Горизонтальная дистанция камеры до сущности (эпицентра осадков). Согласовано с {@code clientTrackingRange(6)} чанков (~96 бл.).
      */
     private static final double MAX_EPICENTER_CAMERA_HORIZONTAL_DIST_SQ = 88.0 * 88.0;
     /**
-     * Колонны только рядом с игроком (как у ванильного дождя вокруг камеры).
+     * Колонны только рядом с игроком (как у ванильного дождя вокруг камеры). Уменьшено для оптимизации.
      */
-    private static final double MAX_COLUMN_CAMERA_HORIZONTAL_DIST_SQ = 64.0 * 64.0;
+    private static final double MAX_COLUMN_CAMERA_HORIZONTAL_DIST_SQ = 48.0 * 48.0;
     /** Радиус кэш-сетки для колонн (всегда >= MAX_RENDER_RADIUS). */
     private static final int CACHE_RADIUS = MAX_RENDER_RADIUS;
     /** Ширина кэш-сетки: (2 * CACHE_RADIUS + 1)^2 ячеек. */

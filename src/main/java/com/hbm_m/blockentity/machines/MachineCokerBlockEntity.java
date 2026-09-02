@@ -8,8 +8,8 @@ import com.hbm_m.interfaces.IHeatSource;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.inventory.menu.MachineCokerMenu;
 import com.hbm_m.item.liquids.FluidIdentifierItem;
-import com.hbm_m.recipe.CokerRecipes;
-import com.hbm_m.recipe.CokerRecipes.Recipe;
+import com.hbm_m.platform.recipe.RecipeHooks;
+import com.hbm_m.recipe.CokerRecipe;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -29,9 +29,9 @@ import net.minecraft.world.level.material.Fluids;
  * Coker - Port von {@code TileEntityMachineCoker} (1.7.10 Original). Keine Strom-Beteiligung (das
  * Original implementiert kein {@code IEnergyReceiverMK2}) - laeuft rein ueber Waerme von einer
  * {@link IHeatSource} darunter (identisches Pull-/Decay-Schema wie {@code
- * MachineBoilerBlockEntity}, nur mit {@code DIFFUSION=0.25}). Rezepte kommen aus {@link
- * CokerRecipes} (Fluid Tank 0 -> Item + optionales Byproduct-Fluid in Tank 1), {@code burn =
- * heat/100} Fortschritt pro Tick - 1:1 aus dem Original.
+ * MachineBoilerBlockEntity}, nur mit {@code DIFFUSION=0.25}). Rezepte sind data-driven
+ * ({@link CokerRecipe}, Fluid Tank 0 -> Item + optionales Byproduct-Fluid in Tank 1),
+ * {@code burn = heat/100} Fortschritt pro Tick - 1:1 aus dem Original.
  * <p>
  * SCOPE-Entscheidung: Pollution (SOOT beim Laufen) entfaellt (fehlende Infrastruktur, wie bei
  * allen anderen Maschinen dieser Session dokumentiert).
@@ -92,20 +92,21 @@ public class MachineCokerBlockEntity extends BaseMachineBlockEntity implements I
                 if (progress >= PROCESS_TIME) {
                     progress -= PROCESS_TIME;
 
-                    Recipe recipe = CokerRecipes.get(tank0.getTankType());
+                    CokerRecipe recipe = findCokerRecipe();
                     if (recipe != null) {
-                        if (recipe.output() != null && !recipe.output().isEmpty()) {
+                        ItemStack out = recipe.getOutput();
+                        if (out != null && !out.isEmpty()) {
                             ItemStack current = inventory.getStackInSlot(SLOT_OUTPUT);
                             if (current.isEmpty()) {
-                                inventory.setStackInSlot(SLOT_OUTPUT, recipe.output().copy());
+                                inventory.setStackInSlot(SLOT_OUTPUT, out.copy());
                             } else {
-                                current.grow(recipe.output().getCount());
+                                current.grow(out.getCount());
                             }
                         }
-                        if (recipe.byproduct() != null) {
-                            tank1.fillMb(recipe.byproduct(), recipe.byproductMb());
+                        if (recipe.getByproductFluid() != null) {
+                            tank1.fillMb(recipe.getByproductFluid(), recipe.getByproductMb());
                         }
-                        tank0.drainMb(recipe.inputMb());
+                        tank0.drainMb(recipe.getInputMb());
                     }
                 }
             }
@@ -141,26 +142,39 @@ public class MachineCokerBlockEntity extends BaseMachineBlockEntity implements I
     }
 
     private boolean canProcess() {
-        Recipe recipe = CokerRecipes.get(tank0.getTankType());
+        CokerRecipe recipe = findCokerRecipe();
         if (recipe == null) return false;
 
-        if (recipe.byproduct() != null) {
-            tank1.setTankType(recipe.byproduct());
+        if (recipe.getByproductFluid() != null) {
+            tank1.setTankType(recipe.getByproductFluid());
         }
 
-        if (tank0.getFluidAmountMb() < recipe.inputMb()) return false;
-        if (recipe.byproduct() != null && recipe.byproductMb() + tank1.getFluidAmountMb() > tank1.getCapacityMb()) return false;
+        if (tank0.getFluidAmountMb() < recipe.getInputMb()) return false;
+        if (recipe.getByproductFluid() != null && recipe.getByproductMb() + tank1.getFluidAmountMb() > tank1.getCapacityMb()) return false;
 
-        if (recipe.output() != null && !recipe.output().isEmpty()) {
+        ItemStack out = recipe.getOutput();
+        if (out != null && !out.isEmpty()) {
             ItemStack current = inventory.getStackInSlot(SLOT_OUTPUT);
             if (!current.isEmpty()) {
-                if (!ItemStack.isSameItemSameTags(current, recipe.output())) return false;
-                if (current.getCount() + recipe.output().getCount() > recipe.output().getMaxStackSize()) return false;
+                if (!com.hbm_m.platform.PlatformHooks.isSameItemSameTags(current, out)) return false;
+                if (current.getCount() + out.getCount() > out.getMaxStackSize()) return false;
             }
         }
 
         return true;
     }
+
+
+    /** Data-driven поиск CokerRecipe по типу жидкости бака 0 (заменяет статический CokerRecipes.get). */
+    @org.jetbrains.annotations.Nullable
+    private CokerRecipe findCokerRecipe() {
+        if (level == null) return null;
+        for (CokerRecipe recipe : RecipeHooks.getAllRecipes(level, CokerRecipe.Type.INSTANCE)) {
+            if (recipe.matchesFluidType(tank0.getTankType())) return recipe;
+        }
+        return null;
+    }
+
 
     // ── Inventory helpers ────────────────────────────────────────────────────
 
@@ -193,7 +207,11 @@ public class MachineCokerBlockEntity extends BaseMachineBlockEntity implements I
     @Override
     public boolean canConnect(Fluid fluid, Direction fromDir) {
         if (fromDir == null || fluid == null || fluid == Fluids.EMPTY) return false;
-        return CokerRecipes.has(fluid);
+        if (level == null) return false;
+        for (CokerRecipe recipe : RecipeHooks.getAllRecipes(level, CokerRecipe.Type.INSTANCE)) {
+            if (recipe.matchesFluidType(fluid)) return true;
+        }
+        return false;
     }
 
     // ── Accessors ────────────────────────────────────────────────────────────
@@ -209,8 +227,8 @@ public class MachineCokerBlockEntity extends BaseMachineBlockEntity implements I
     // ── NBT ─────────────────────────────────────────────────────────────────
 
     @Override
-    public void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.putInt("heat", heat);
         tag.putInt("progress", progress);
         tag.putBoolean("wasOn", wasOn);
@@ -219,8 +237,8 @@ public class MachineCokerBlockEntity extends BaseMachineBlockEntity implements I
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         heat = tag.getInt("heat");
         progress = tag.getInt("progress");
         wasOn = tag.getBoolean("wasOn");

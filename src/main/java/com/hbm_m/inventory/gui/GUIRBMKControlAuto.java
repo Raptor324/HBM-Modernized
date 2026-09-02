@@ -1,6 +1,7 @@
 package com.hbm_m.inventory.gui;
 
 import com.hbm_m.blockentity.machines.rbmk.RBMKControlAutoBlockEntity;
+import com.hbm_m.client.GuiCompat;
 import com.hbm_m.inventory.menu.RBMKControlAutoMenu;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.network.RBMKControlPacket;
@@ -72,6 +73,8 @@ public class GUIRBMKControlAuto extends GuiInfoScreen<RBMKControlAutoMenu> {
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
         g.blit(TEXTURE, leftPos, topPos, 0, 0, imageWidth, imageHeight);
 
+        // тайл может отсутствовать в реплее Flashback
+        if (be != null) {
         // Rod-level bar (same formula as the manual RBMKControl GUI).
         int height = (int) (56 * (1.0 - be.level));
         if (height > 0) {
@@ -81,6 +84,7 @@ public class GUIRBMKControlAuto extends GuiInfoScreen<RBMKControlAutoMenu> {
         // Interpolation-function icon (Linear / Quadratic / Inverse Quadratic).
         int f = be.function.ordinal();
         g.blit(TEXTURE, leftPos + 59, topPos + 27, 184, f * 19, 26, 19);
+        }
 
         for (EditBox box : fields) {
             box.render(g, mx, my, partial);
@@ -89,9 +93,11 @@ public class GUIRBMKControlAuto extends GuiInfoScreen<RBMKControlAutoMenu> {
 
     @Override
     public void render(GuiGraphics g, int mx, int my, float partial) {
-        renderBackground(g);
+        com.hbm_m.client.GuiCompat.renderBackground(this, g, mx, my, partial);
         super.render(g, mx, my, partial);
 
+        // тайл может отсутствовать в реплее Flashback
+        if (be != null) {
         drawCustomInfoStat(g, mx, my, 124, 29, 16, 56, mx, my,
                 Component.literal((int) (be.level * 100) + "%"));
 
@@ -114,6 +120,7 @@ public class GUIRBMKControlAuto extends GuiInfoScreen<RBMKControlAutoMenu> {
                 Component.literal("Min heat"), Component.literal("Must be smaller than max heat"));
         drawCustomInfoStat(g, mx, my, 28, 70, 30, 10, mx, my,
                 Component.literal("Save parameters"));
+        }
 
         renderTooltip(g, mx, my);
     }
@@ -128,6 +135,8 @@ public class GUIRBMKControlAuto extends GuiInfoScreen<RBMKControlAutoMenu> {
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        // тайл может отсутствовать в реплее Flashback
+        if (be == null) return super.mouseClicked(mouseX, mouseY, button);
         boolean handled = super.mouseClicked(mouseX, mouseY, button);
 
         if (isPointInRect(28, 70, 30, 10, (int) mouseX, (int) mouseY)) {
@@ -149,9 +158,10 @@ public class GUIRBMKControlAuto extends GuiInfoScreen<RBMKControlAutoMenu> {
     }
 
     private void saveFields() {
+        // тайл может отсутствовать в реплее Flashback
+        if (be == null) return;
         double[] vals = new double[4];
-        for (int k = 0; k < 4; k++) {
-            double clamp = k < 2 ? 100 : 9999;
+        for (int k = 0; k < 4; k++) {            double clamp = k < 2 ? 100 : 9999;
             String text = fields[k].getValue();
             double parsed;
             try {

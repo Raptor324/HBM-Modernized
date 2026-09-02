@@ -1,4 +1,5 @@
 package com.hbm_m.inventory.gui;
+import com.hbm_m.client.GuiCompat;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -7,6 +8,7 @@ import com.hbm_m.item.ModItems;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.network.ItemDesignatorPacket;
 import com.hbm_m.network.ModPacketHandler;
+import com.hbm_m.platform.PlatformHooks;
 
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.Screen;
@@ -49,13 +51,15 @@ public class DesignatorScreen extends Screen {
     @Override
     protected void init() {
         super.init();
+        // игрок может отсутствовать в реплее Flashback
+        if (player == null) return;
         leftPos = (width - WIDTH) / 2;
         topPos = (height - HEIGHT) / 2;
         shownX = 0;
         shownZ = 0;
         ItemStack stack = player.getItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND);
-        if (!stack.isEmpty() && stack.is(ModItems.DESIGNATOR_MANUAL.get()) && stack.hasTag()) {
-            var tag = stack.getTag();
+        if (!stack.isEmpty() && stack.is(ModItems.DESIGNATOR_MANUAL.get()) && PlatformHooks.hasItemTag(stack)) {
+            var tag = PlatformHooks.getItemTag(stack);
             if (tag != null && tag.contains("xCoord")) {
                 shownX = tag.getInt("xCoord");
                 shownZ = tag.getInt("zCoord");
@@ -98,7 +102,7 @@ public class DesignatorScreen extends Screen {
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        renderBackground(guiGraphics);
+        GuiCompat.renderFlatBlurredBackground(this, guiGraphics, partialTick);
         guiGraphics.blit(TEXTURE, leftPos, topPos, 0, 0, WIDTH, HEIGHT);
         for (FolderButton b : buttons) {
             b.drawButton(guiGraphics, b.isMouseOnButton(mouseX, mouseY));
@@ -112,7 +116,7 @@ public class DesignatorScreen extends Screen {
                 b.drawTooltip(guiGraphics, mouseX, mouseY);
             }
         }
-        super.render(guiGraphics, mouseX, mouseY, partialTick);
+        GuiCompat.renderWidgetsOnly(this, guiGraphics, mouseX, mouseY, partialTick);
     }
 
     @Override
@@ -129,6 +133,8 @@ public class DesignatorScreen extends Screen {
     @Override
     public void tick() {
         super.tick();
+        // игрок может отсутствовать в реплее Flashback
+        if (player == null) return;
         ItemStack stack = player.getItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND);
         if (stack.isEmpty() || !stack.is(ModItems.DESIGNATOR_MANUAL.get())) {
             onClose();

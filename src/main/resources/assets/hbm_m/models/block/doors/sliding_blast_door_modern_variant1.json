@@ -1,15 +1,9 @@
 {
-    "loader": "hbm_m:door",
-    "model": "hbm_m:models/block/doors/sliding_blast_door_old.obj",
-    "parts": ["DoorFrame", "DoorLeft", "DoorRight", "Window", "DoorCircleLeft", "DoorCircleRight"],
+    "loader": "hbm_m:dae",
+    "model": "hbm_m:models/block/doors/sliding_blast_door",
     "textures": {
         "default": "hbm_m:block/doors/sliding_blast_door_variant1_old",
         "particle": "hbm_m:block/doors/sliding_blast_door_variant1_old"
-    },
-    "transform": {
-        "rotation": [0, 0, 0],
-        "translation": [ 0, 0, 0 ],
-        "scale": 1.0
     },
     "display": {
         "gui": {

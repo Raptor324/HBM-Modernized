@@ -125,7 +125,7 @@ public class MachineDroneCrateBlockEntity extends BaseMachineBlockEntity impleme
             if (current.isEmpty()) {
                 inventory.setStackInSlot(i, stack);
                 return ItemStack.EMPTY;
-            } else if (ItemStack.isSameItemSameTags(current, stack)) {
+            } else if (com.hbm_m.platform.PlatformHooks.isSameItemSameTags(current, stack)) {
                 int space = current.getMaxStackSize() - current.getCount();
                 if (space > 0) {
                     int toMove = Math.min(space, stack.getCount());
@@ -175,8 +175,8 @@ public class MachineDroneCrateBlockEntity extends BaseMachineBlockEntity impleme
     // ── NBT ─────────────────────────────────────────────────────────────────
 
     @Override
-    public void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.putBoolean("sendingMode", sendingMode);
         tag.putBoolean("itemType", itemType);
         if (nextTarget != null) tag.putLong("nextTarget", nextTarget.asLong());
@@ -184,8 +184,8 @@ public class MachineDroneCrateBlockEntity extends BaseMachineBlockEntity impleme
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         sendingMode = tag.getBoolean("sendingMode");
         itemType = tag.getBoolean("itemType");
         nextTarget = tag.contains("nextTarget") ? BlockPos.of(tag.getLong("nextTarget")) : null;

@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.IdentityHashMap;
 import java.util.List;
 
+import com.hbm_m.client.render.shader.ModShaders;
 import org.joml.Matrix4f;
 import org.lwjgl.opengl.ARBDrawIndirect;
 import org.lwjgl.opengl.ARBMultiDrawIndirect;
@@ -32,14 +33,6 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.client.renderer.texture.TextureAtlas;
-//? if forge {
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-//?}
-//? if fabric {
-/*import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
-*///?}
 
 /**
  * Optional Multi-Draw Indirect aggregation path for {@link InstancedStaticPartRenderer}.
@@ -65,22 +58,21 @@ import net.fabricmc.api.Environment;
  * <b>Eligibility constraints for an individual flush:</b>
  * <ul>
  *   <li>Iris/Oculus NOT active (we only optimise the vanilla shader path).</li>
- *   <li>Unsliced light layout ({@code useSlicedLight == false}). Sliced parts
- *       use a different attribute layout (loc 7..14 + 15) and a different
- *       shader, so they fall through to the legacy path.</li>
  *   <li>Renderer initialised, instanceCount &gt; 0.</li>
- *   <li>{@link ModClothConfig#useMultiDrawIndirect} enabled.</li>
  * </ul>
  * <p>
  * <b>Iris path:</b> untouched. {@link InstancedStaticPartRenderer#flush(Matrix4f)}
  * still routes to {@code flushBatchIris} when an external shader is active —
  * the coordinator's eligibility test rejects those flushes up front.
  */
+
 //? if forge {
-@OnlyIn(Dist.CLIENT)
-//?}
-//? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
+@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+//?} elif fabric {
+/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
+*///?} elif neoforge {
+/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+*///?}
 public final class MdiBatchCoordinator {
 
     /**
@@ -230,10 +222,6 @@ public final class MdiBatchCoordinator {
         if (ShaderCompatibilityDetector.isExternalShaderActive()) {
             return null;
         }
-        ModClothConfig cfg;
-        try { cfg = ModClothConfig.get(); }
-        catch (Throwable t) { return null; }
-        if (cfg == null || !cfg.useMultiDrawIndirect) return null;
         if (!isMdiAvailable()) return null;
 
         MdiBatchCoordinator session = new MdiBatchCoordinator(projectionMatrix);
@@ -746,7 +734,12 @@ public final class MdiBatchCoordinator {
 
                 var mc = Minecraft.getInstance();
                 if (mc.gameRenderer != null) {
+                    //? if < 1.21.1 {
                     mc.gameRenderer.lightTexture().updateLightTexture(mc.getFrameTime());
+                    //?} else {
+                    /*// 1.21.1: getPartialTick() удалён — частичное время тика через DeltaTracker.Timer.
+                    mc.gameRenderer.lightTexture().updateLightTexture(mc.getTimer().getGameTimeDeltaPartialTick(true));
+                    *///?}
                 }
 
                 RenderSystem.setShader(() -> shader);

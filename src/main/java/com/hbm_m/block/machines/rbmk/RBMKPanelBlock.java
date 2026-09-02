@@ -12,7 +12,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import org.jetbrains.annotations.Nullable;
 
 /** Shared block class for all RBMK panel blocks (gauge, indicator, lever, numitron, etc.). */
-public class RBMKPanelBlock extends RBMKColumnBlock {
+public class RBMKPanelBlock extends RBMKMiniPanelBlock {
 
     public RBMKPanelBlock(Properties props) { super(props); }
 
@@ -25,4 +25,13 @@ public class RBMKPanelBlock extends RBMKColumnBlock {
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
         return createTickerHelper(type, ModBlockEntities.RBMK_PANEL_BE.get(), RBMKPanelBlockEntity::tick);
     }
+
+    //? if >1.20.1 {
+    /*public static final com.mojang.serialization.MapCodec<RBMKPanelBlock> CODEC = simpleCodec(RBMKPanelBlock::new);
+
+    @Override
+    protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
+        return CODEC;
+    }
+    *///?}
 }

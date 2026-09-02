@@ -1,0 +1,149 @@
+{
+  "loader": "forge:obj",
+  "model": "hbm_m:models/block/red_pylon_medium.obj",
+  "flip_v": true,
+  "render_type": "minecraft:solid",
+  "textures": {
+    "particle": "hbm_m:block/red_pylon_medium_steel",
+    "surface": "hbm_m:block/red_pylon_medium_steel"
+  },
+  "display": {
+    "gui": {
+      "rotation": [
+        30,
+        225,
+        0
+      ],
+      "translation": [
+        0,
+        -3.9,
+        0
+      ],
+      "scale": [
+        0.11,
+        0.11,
+        0.11
+      ]
+    },
+    "thirdperson_righthand": {
+      "rotation": [
+        75,
+        45,
+        0
+      ],
+      "translation": [
+        0,
+        -0.8399999999999999,
+        0
+      ],
+      "scale": [
+        0.11,
+        0.11,
+        0.11
+      ]
+    },
+    "thirdperson_lefthand": {
+      "rotation": [
+        75,
+        45,
+        0
+      ],
+      "translation": [
+        0,
+        -0.8399999999999999,
+        0
+      ],
+      "scale": [
+        0.11,
+        0.11,
+        0.11
+      ]
+    },
+    "firstperson_righthand": {
+      "rotation": [
+        0,
+        225,
+        0
+      ],
+      "translation": [
+        0,
+        -3.9,
+        0
+      ],
+      "scale": [
+        0.12100000000000001,
+        0.12100000000000001,
+        0.12100000000000001
+      ]
+    },
+    "firstperson_lefthand": {
+      "rotation": [
+        0,
+        225,
+        0
+      ],
+      "translation": [
+        0,
+        -3.9,
+        0
+      ],
+      "scale": [
+        0.12100000000000001,
+        0.12100000000000001,
+        0.12100000000000001
+      ]
+    },
+    "fixed": {
+      "rotation": [
+        0,
+        180,
+        0
+      ],
+      "translation": [
+        0,
+        -3.9,
+        0
+      ],
+      "scale": [
+        0.11,
+        0.11,
+        0.11
+      ]
+    },
+    "ground": {
+      "translation": [
+        0,
+        -3.9,
+        0
+      ],
+      "scale": [
+        0.11,
+        0.11,
+        0.11
+      ]
+    },
+    "head": {
+      "translation": [
+        0,
+        -3.9,
+        0
+      ],
+      "scale": [
+        0.11,
+        0.11,
+        0.11
+      ]
+    }
+  },
+  "transform": {
+    "translation": [
+      0.5,
+      0,
+      0.5
+    ]
+  },
+  "visibility": {
+    "Pylon": true,
+    "Transformer": false
+  }
+}

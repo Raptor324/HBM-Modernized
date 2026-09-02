@@ -31,6 +31,28 @@ public class RBMKCraneConsoleBlockEntity extends RBMKColumnBlockEntity {
 
     private static final double SPEED = 0.05D;
 
+    /**
+     * CE moves the crane in whole-block steps, not continuously. A direction is latched into
+     * {@code craneUp/Down/Left/Right} only once every {@link #COOL_DOWN} ticks; while latched the
+     * gantry travels {@link #SPEED} per tick, so one latch is worth exactly
+     * {@code 0.05 * 20 = 1.0} blocks and the crane always comes to rest centred over a column.
+     *
+     * <p>The port applied the movement directly from the live key state instead, so the crane
+     * drifted for as long as the key was held and stopped wherever the operator let go - never
+     * lining up with a channel.</p>
+     */
+    private static final short COOL_DOWN = 20;
+    private short ticksSince = 0;
+    private boolean craneUp, craneDown, craneLeft, craneRight;
+
+    private boolean isCooledDown() {
+        if (ticksSince < COOL_DOWN) {
+            ticksSince++;
+            return false;
+        }
+        return true;
+    }
+
     public boolean setUpCrane = false;
     public Direction facing = Direction.NORTH;
     public int craneRotationOffset = 0;
@@ -107,15 +129,36 @@ public class RBMKCraneConsoleBlockEntity extends RBMKColumnBlockEntity {
         tiltFront = 0;
         tiltLeft = 0;
 
+        boolean up = false, down = false, left2 = false, right2 = false;
+
         if (!players.isEmpty() && !isCraneLoading()) {
             RBMKCraneKeyState.Keys keys = RBMKCraneKeyState.get(players.get(0).getUUID());
 
-            if (keys.up && !keys.down)    { tiltFront = 30;  posFront += SPEED; }
-            if (!keys.up && keys.down)    { tiltFront = -30; posFront -= SPEED; }
-            if (keys.left && !keys.right) { tiltLeft = 30;   posLeft  += SPEED; }
-            if (!keys.left && keys.right) { tiltLeft = -30;  posLeft  -= SPEED; }
+            // Opposite keys cancel out, as in CE's processInput.
+            up    = keys.up   && !keys.down;
+            down  = keys.down && !keys.up;
+            left2 = keys.left && !keys.right;
+            right2 = keys.right && !keys.left;
+
+            if (up)    tiltFront = 30;
+            if (down)  tiltFront = -30;
+            if (left2) tiltLeft  = 30;
+            if (right2) tiltLeft = -30;
+
             if (keys.load) goesDown = true;
         }
+
+        if (isCooledDown()) {
+            // Re-arm whenever the requested direction changes, or to keep an existing move going.
+            if (craneUp != up || craneDown != down || craneLeft != left2 || craneRight != right2) ticksSince = 1;
+            else if (craneUp || craneDown || craneLeft || craneRight) ticksSince = 1;
+            craneUp = up; craneDown = down; craneLeft = left2; craneRight = right2;
+        }
+
+        if (craneUp)    posFront += SPEED;
+        if (craneDown)  posFront -= SPEED;
+        if (craneLeft)  posLeft  += SPEED;
+        if (craneRight) posLeft  -= SPEED;
 
         posFront = Math.max(-spanB, Math.min(spanF, posFront));
         posLeft  = Math.max(-spanR, Math.min(spanL, posLeft));
@@ -124,8 +167,9 @@ public class RBMKCraneConsoleBlockEntity extends RBMKColumnBlockEntity {
             loadedHeat       = RBMKRodItem.getHullHeat(loadedItem);
             loadedEnrichment = RBMKRodItem.getEnrichment(loadedItem);
         } else {
-            loadedHeat = 0;
-            loadedEnrichment = 0;
+            // CE parks both gauges at 20 when the claw is empty, not at 0.
+            loadedHeat = 20;
+            loadedEnrichment = 20;
         }
 
         setChanged();
@@ -141,12 +185,20 @@ public class RBMKCraneConsoleBlockEntity extends RBMKColumnBlockEntity {
         return hasItemLoaded() ? column.canLoad(loadedItem) : column.canUnload();
     }
 
+    /**
+     * The column the crane is currently over.
+     *
+     * <p>{@code center.getY() - 1} is the <b>top</b> of the column, which is a filler block with no
+     * block entity of its own - CE resolves it with {@code findCore} and walks down to the real
+     * one. The port looked the position up directly, so this always returned null and the crane
+     * could neither pick a rod up nor put one down, no matter where it was parked.</p>
+     */
     public RBMKColumnBlockEntity getColumnAtPos(Level level) {
         Direction left = facing.getClockWise();
         int x = (int) Math.floor(center.getX() - facing.getStepX() * posFront - left.getStepX() * posLeft + 0.5D);
         int y = center.getY() - 1;
         int z = (int) Math.floor(center.getZ() - facing.getStepZ() * posFront - left.getStepZ() * posLeft + 0.5D);
-        return level.getBlockEntity(new BlockPos(x, y, z)) instanceof RBMKColumnBlockEntity col ? col : null;
+        return RBMKSteamInletBlockEntity.findColumnCore(level, new BlockPos(x, y, z));
     }
 
     public IRBMKLoadable getLoadableAtPos(Level level) {
@@ -195,10 +247,10 @@ public class RBMKCraneConsoleBlockEntity extends RBMKColumnBlockEntity {
 
     // ─── NBT ─────────────────────────────────────────────────────────────────
 
-    //? if < 1.21.1 {
+    
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.putBoolean("setUpCrane", setUpCrane);
         tag.putString("facing", facing.getName());
         tag.putInt("craneRotationOffset", craneRotationOffset);
@@ -213,12 +265,12 @@ public class RBMKCraneConsoleBlockEntity extends RBMKColumnBlockEntity {
         tag.putDouble("posFront", posFront);
         tag.putDouble("posLeft", posLeft);
         tag.putDouble("progress", progress);
-        if (!loadedItem.isEmpty()) tag.put("loadedItem", safeItemSave(loadedItem));
+        if (!loadedItem.isEmpty()) tag.put("loadedItem", com.hbm_m.platform.PlatformHooks.safeItemSave(loadedItem, registries));
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         setUpCrane = tag.getBoolean("setUpCrane");
         facing = Direction.byName(tag.getString("facing"));
         if (facing == null) facing = Direction.NORTH;
@@ -232,47 +284,6 @@ public class RBMKCraneConsoleBlockEntity extends RBMKColumnBlockEntity {
         posFront = tag.getDouble("posFront");
         posLeft  = tag.getDouble("posLeft");
         progress = tag.contains("progress") ? tag.getDouble("progress") : 1D;
-        loadedItem = tag.contains("loadedItem") ? ItemStack.of(tag.getCompound("loadedItem")) : ItemStack.EMPTY;
+        loadedItem = tag.contains("loadedItem") ? com.hbm_m.platform.PlatformHooks.itemStackOf(tag.getCompound("loadedItem"), registries) : ItemStack.EMPTY;
     }
-    //?} else {
-    /*@Override
-    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-        super.saveAdditional(tag, registries);
-        tag.putBoolean("setUpCrane", setUpCrane);
-        tag.putString("facing", facing.getName());
-        tag.putInt("craneRotationOffset", craneRotationOffset);
-        tag.putInt("centerX", center.getX());
-        tag.putInt("centerY", center.getY());
-        tag.putInt("centerZ", center.getZ());
-        tag.putInt("spanF", spanF);
-        tag.putInt("spanB", spanB);
-        tag.putInt("spanL", spanL);
-        tag.putInt("spanR", spanR);
-        tag.putInt("height", height);
-        tag.putDouble("posFront", posFront);
-        tag.putDouble("posLeft", posLeft);
-        tag.putDouble("progress", progress);
-        if (!loadedItem.isEmpty()) tag.put("loadedItem", safeItemSave(loadedItem, registries));
-    }
-
-    @Override
-    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-        super.loadAdditional(tag, registries);
-        setUpCrane = tag.getBoolean("setUpCrane");
-        facing = Direction.byName(tag.getString("facing"));
-        if (facing == null) facing = Direction.NORTH;
-        craneRotationOffset = tag.getInt("craneRotationOffset");
-        center = new BlockPos(tag.getInt("centerX"), tag.getInt("centerY"), tag.getInt("centerZ"));
-        spanF = tag.getInt("spanF");
-        spanB = tag.getInt("spanB");
-        spanL = tag.getInt("spanL");
-        spanR = tag.getInt("spanR");
-        height = tag.getInt("height");
-        posFront = tag.getDouble("posFront");
-        posLeft  = tag.getDouble("posLeft");
-        progress = tag.contains("progress") ? tag.getDouble("progress") : 1D;
-        loadedItem = tag.contains("loadedItem")
-                ? ItemStack.parseOptional(registries, tag.getCompound("loadedItem")) : ItemStack.EMPTY;
-    }
-    *///?}
 }

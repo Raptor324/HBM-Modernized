@@ -1,0 +1,23 @@
+{
+  "_comment": "POOL_SILO — части ракет из шахт (порт ItemPoolsComponent.POOL_SILO из 1.7.10)",
+  "type": "minecraft:chest",
+  "pools": [
+    {
+      "rolls": { "min": 4, "max": 7 },
+      "entries": [
+        { "type": "item", "name": "hbm_m:missile_generic", "weight": 4 },
+        { "type": "item", "name": "hbm_m:missile_incendiary", "weight": 4 },
+        { "type": "item", "name": "hbm_m:missile_cluster", "weight": 2 },
+        { "type": "item", "name": "hbm_m:gas_mask_m65", "weight": 5 },
+        { "type": "item", "name": "hbm_m:battery_red_cell_6", "weight": 3 },
+        { "type": "item", "name": "hbm_m:designator", "weight": 5 },
+        { "type": "item", "name": "hbm_m:designator_manual", "weight": 4 },
+        { "type": "item", "name": "hbm_m:airstrike_heavy", "weight": 2 },
+        { "type": "item", "name": "hbm_m:bottle_nuka", "weight": 10, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 3 } } ] },
+        { "type": "item", "name": "hbm_m:launch_code_piece", "weight": 1 },
+        { "type": "item", "name": "hbm_m:coin_token", "weight": 3 },
+        { "type": "item", "name": "hbm_m:steel_ingot", "weight": 6, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 4 } } ] }
+      ]
+    }
+  ]
+}

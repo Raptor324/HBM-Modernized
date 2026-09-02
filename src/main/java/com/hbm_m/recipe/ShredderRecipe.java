@@ -2,34 +2,33 @@ package com.hbm_m.recipe;
 
 import com.google.gson.JsonObject;
 import com.hbm_m.lib.RefStrings;
+import com.hbm_m.platform.recipe.PlatformRecipe;
+import com.hbm_m.platform.recipe.PlatformRecipeSerializer;
+import com.hbm_m.platform.recipe.RecipeHooks;
+import com.hbm_m.platform.recipe.RecipeInputWrapper;
 
-import net.minecraft.core.RegistryAccess;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.GsonHelper;
-import net.minecraft.world.Container;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.Recipe;
+import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
-import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.level.Level;
-import org.jetbrains.annotations.Nullable;
 
-public class ShredderRecipe implements Recipe<Container> {
+public class ShredderRecipe extends PlatformRecipe {
 
-    private final ResourceLocation id;
     private final Ingredient input;
     private final ItemStack output;
 
     public ShredderRecipe(ResourceLocation id, Ingredient input, ItemStack output) {
-        this.id = id;
+        super(id);
         this.input = input;
         this.output = output;
     }
 
     @Override
-    public boolean matches(Container container, Level level) {
+    public boolean matchesRecipe(RecipeInputWrapper container, Level level) {
         if (level.isClientSide()) {
             return false;
         }
@@ -37,23 +36,13 @@ public class ShredderRecipe implements Recipe<Container> {
     }
 
     @Override
-    public ItemStack assemble(Container container, RegistryAccess registryAccess) {
+    public ItemStack assembleSafe() {
         return output.copy();
     }
 
     @Override
-    public boolean canCraftInDimensions(int width, int height) {
-        return true;
-    }
-
-    @Override
-    public ItemStack getResultItem(RegistryAccess registryAccess) {
+    public ItemStack getResultItemSafe() {
         return output.copy();
-    }
-
-    @Override
-    public ResourceLocation getId() {
-        return id;
     }
 
     @Override
@@ -79,18 +68,17 @@ public class ShredderRecipe implements Recipe<Container> {
         public static final String ID = "shredding";
     }
 
-    public static class Serializer implements RecipeSerializer<ShredderRecipe> {
+    public static class Serializer extends PlatformRecipeSerializer<ShredderRecipe> {
         public static final Serializer INSTANCE = new Serializer();
         //? if fabric && < 1.21.1 {
         /*public static final ResourceLocation ID = new ResourceLocation(RefStrings.MODID, "shredding");
         *///?} else {
-                public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "shredding");
+        public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "shredding");
         //?}
 
-
         @Override
-        public ShredderRecipe fromJson(ResourceLocation recipeId, JsonObject json) {
-            Ingredient input = Ingredient.fromJson(GsonHelper.getAsJsonObject(json, "ingredient"));
+        public ShredderRecipe readJson(ResourceLocation recipeId, JsonObject json) {
+            Ingredient input = RecipeHooks.ingredientFromJson(GsonHelper.getAsJsonObject(json, "ingredient"));
             JsonObject result = GsonHelper.getAsJsonObject(json, "result");
             ItemStack output = new ItemStack(
                     GsonHelper.getAsItem(result, "item"),
@@ -101,16 +89,16 @@ public class ShredderRecipe implements Recipe<Container> {
         }
 
         @Override
-        public @Nullable ShredderRecipe fromNetwork(ResourceLocation recipeId, FriendlyByteBuf buffer) {
-            Ingredient input = Ingredient.fromNetwork(buffer);
-            ItemStack output = buffer.readItem();
+        public ShredderRecipe readNetwork(ResourceLocation recipeId, FriendlyByteBuf buffer) {
+            Ingredient input = RecipeHooks.readIngredient(buffer);
+            ItemStack output = RecipeHooks.readItem(buffer);
             return new ShredderRecipe(recipeId, input, output);
         }
 
         @Override
-        public void toNetwork(FriendlyByteBuf buffer, ShredderRecipe recipe) {
-            recipe.input.toNetwork(buffer);
-            buffer.writeItem(recipe.output);
+        public void writeNetwork(FriendlyByteBuf buffer, ShredderRecipe recipe) {
+            RecipeHooks.writeIngredient(buffer, recipe.input);
+            RecipeHooks.writeItem(buffer, recipe.output);
         }
     }
 }

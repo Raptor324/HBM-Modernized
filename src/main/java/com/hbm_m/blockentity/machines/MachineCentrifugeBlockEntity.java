@@ -1,10 +1,11 @@
 package com.hbm_m.blockentity.machines;
 
+import com.hbm_m.platform.PlatformHooks;
+
 import com.hbm_m.api.energy.ItemEnergyAccess;
 import com.hbm_m.blockentity.BaseMachineBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.inventory.menu.MachineCentrifugeMenu;
-import com.hbm_m.recipe.CentrifugeRecipes;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.Containers;
@@ -139,20 +140,12 @@ public class MachineCentrifugeBlockEntity extends BaseMachineBlockEntity {
     }
 
     private boolean canProcess() {
-        ItemStack input = inventory.getStackInSlot(INPUT_SLOT);
-        if (input.isEmpty()) {
+        var recipe = findMatchingRecipe();
+        if (recipe == null) {
             return false;
         }
 
-        if (level == null) {
-            return false;
-        }
-
-        ItemStack[] outputs = CentrifugeRecipes.getOutput(input);
-        if (outputs == null) {
-            // No recipe found - cannot process
-            return false;
-        }
+        ItemStack[] outputs = recipe.getOutputs();
 
         for (int i = 0; i < OUTPUT_SLOTS && i < outputs.length; i++) {
             ItemStack result = outputs[i];
@@ -165,7 +158,7 @@ public class MachineCentrifugeBlockEntity extends BaseMachineBlockEntity {
                 continue;
             }
 
-            if (!ItemStack.isSameItemSameTags(outputSlot, result)) {
+            if (!PlatformHooks.isSameItemSameTags(outputSlot, result)) {
                 return false;
             }
 
@@ -178,16 +171,12 @@ public class MachineCentrifugeBlockEntity extends BaseMachineBlockEntity {
     }
 
     private void finishCycle() {
-        ItemStack input = inventory.getStackInSlot(INPUT_SLOT);
-        if (input.isEmpty()) {
+        var recipe = findMatchingRecipe();
+        if (recipe == null) {
             return;
         }
 
-        ItemStack[] outputs = CentrifugeRecipes.getOutput(input);
-        if (outputs == null) {
-            // No recipe - should not happen if canProcess() was called first
-            return;
-        }
+        ItemStack[] outputs = recipe.getOutputs();
 
         for (int i = 0; i < OUTPUT_SLOTS && i < outputs.length; i++) {
             ItemStack result = outputs[i];
@@ -197,12 +186,30 @@ public class MachineCentrifugeBlockEntity extends BaseMachineBlockEntity {
             ItemStack outputSlot = inventory.getStackInSlot(slot);
             if (outputSlot.isEmpty()) {
                 inventory.setStackInSlot(slot, result.copy());
-            } else if (ItemStack.isSameItemSameTags(outputSlot, result)) {
+            } else if (PlatformHooks.isSameItemSameTags(outputSlot, result)) {
                 outputSlot.grow(result.getCount());
             }
         }
 
-        input.shrink(1);
+        inventory.getStackInSlot(INPUT_SLOT).shrink(1);
+    }
+
+    @Nullable
+    private com.hbm_m.recipe.CentrifugeRecipe findMatchingRecipe() {
+        ItemStack input = inventory.getStackInSlot(INPUT_SLOT);
+        if (input.isEmpty() || level == null) {
+            return null;
+        }
+
+        // 1.21.1: getRecipeFor требует RecipeInput, а SimpleContainer им не является —
+        // используем устоявшийся в проекте паттерн: getAllRecipes + matchesRecipe(RecipeInputWrapper).
+        com.hbm_m.platform.recipe.RecipeInputWrapper wrapper =
+                new com.hbm_m.platform.recipe.RecipeInputWrapper(new net.minecraft.world.SimpleContainer(input));
+        return com.hbm_m.platform.recipe.RecipeHooks
+                .getAllRecipes(level, com.hbm_m.recipe.ModRecipes.CENTRIFUGE_TYPE.get()).stream()
+                .filter(r -> r.matchesRecipe(wrapper, level))
+                .findFirst()
+                .orElse(null);
     }
 
     private void chargeFromBattery() {

@@ -1,52 +1,37 @@
 package com.hbm_m.client.render;
 
-
-//? if forge {
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-//?}
-//? if fabric {
-/*import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;*///?}
-
-import java.util.List;
-
 import org.joml.Matrix4f;
 
 import com.hbm_m.interfaces.IDoorAnimator;
 import com.hbm_m.util.MultipartFacingTransforms;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
 
-import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.renderer.block.model.BakedQuad;
-import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.Direction;
+
 //? if forge {
-@OnlyIn(Dist.CLIENT)
-//?}
-//? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
+@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+//?} elif fabric {
+/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
+*///?} elif neoforge {
+/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+*///?}
+/**
+ * Transform-фасад (портирован из 1.7.10): обёртка над PoseStack для
+ * канонических блочных трансформов и дверных оффсетов ({@link IDoorAnimator}).
+ * Немедленный рендер квадов вырезан — вся геометрия идёт через VBO-пайплайн
+ * (фабрика {@link com.hbm_m.client.render.machine.MachineRenderers}) или фолбэки движка.
+ */
 public class LegacyAnimator implements IDoorAnimator {
 
     protected final PoseStack poseStack;
-    final VertexConsumer buffer;
-    private final int packedLight;
-    private final int packedOverlay;
 
-    public LegacyAnimator(PoseStack poseStack, VertexConsumer buffer, int packedLight, int packedOverlay) {
+    public LegacyAnimator(PoseStack poseStack) {
         this.poseStack = poseStack;
-        this.buffer = buffer;
-        this.packedLight = packedLight;
-        this.packedOverlay = packedOverlay;
     }
 
-    public static LegacyAnimator create(PoseStack poseStack, MultiBufferSource bufferSource,
-                                        int packedLight, int packedOverlay) {
-        VertexConsumer buffer = bufferSource.getBuffer(RenderType.cutout());
-        return new LegacyAnimator(poseStack, buffer, packedLight, packedOverlay);
+    public static LegacyAnimator create(PoseStack poseStack) {
+        return new LegacyAnimator(poseStack);
     }
 
     // ===== Трансформации =====
@@ -77,29 +62,7 @@ public class LegacyAnimator implements IDoorAnimator {
         rotate(MultipartFacingTransforms.chemicalPlantPoseRotationY(facing), 0, 1, 0);
     }
 
-    // ===== CPU рендер =====
-    public void renderQuads(List<BakedQuad> quads) {
-        if (quads == null || quads.isEmpty()) return;
-        PoseStack.Pose pose = poseStack.last();
-        for (BakedQuad quad : quads) {
-            //? if forge {
-            buffer.putBulkData(pose, quad, 1.0f, 1.0f, 1.0f, 1.0f, packedLight, packedOverlay, false);
-            //?} else {
-            /*buffer.putBulkData(pose, quad, 1.0f, 1.0f, 1.0f, packedLight, packedOverlay);
-            *///?}
-        }
-    }
-
-    @Deprecated
-    public void renderPart(BakedModel modelPart) {
-        if (modelPart == null) return;
-        String tempKey = "Temp:" + System.identityHashCode(modelPart);
-        List<BakedQuad> quads = MeshRenderCache.getOrCompile(tempKey, modelPart);
-        renderQuads(quads);
-    }
-
     public Matrix4f currentMatrix() {
         return new Matrix4f(poseStack.last().pose());
     }
 }
-

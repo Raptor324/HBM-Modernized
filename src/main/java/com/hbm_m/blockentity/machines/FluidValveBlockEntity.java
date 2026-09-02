@@ -7,20 +7,19 @@ import com.hbm_m.api.fluids.FluidNode;
 import com.hbm_m.api.fluids.IFluidPipeMK2;
 import com.hbm_m.api.fluids.VanillaFluidEquivalence;
 import com.hbm_m.api.network.UniNodespace;
+import com.hbm_m.blockentity.BaseHbmBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.protocol.Packet;
-import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
@@ -32,7 +31,7 @@ import net.minecraft.world.level.material.Fluids;
  * При открытом — ведёт себя как обычная труба.
  * Управляется сигналом редстоуна: по умолчанию открыт (нет сигнала).
  */
-public class FluidValveBlockEntity extends BlockEntity implements IFluidPipeMK2 {
+public class FluidValveBlockEntity extends BaseHbmBlockEntity implements IFluidPipeMK2 {
 
     private static final String NBT_FLUID_TYPE = "FluidType";
     private static final String NBT_OPEN       = "ValveOpen";
@@ -182,33 +181,21 @@ public class FluidValveBlockEntity extends BlockEntity implements IFluidPipeMK2 
     // NBT
     // =====================================================================================
 
+    // === NBT (через BaseHbmBlockEntity — без stonecutter-ветвей) ===
+
     @Override
-    protected void saveAdditional( @NotNull CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(@NotNull CompoundTag tag, HolderLookup.Provider registries) {
         ResourceLocation loc = BuiltInRegistries.FLUID.getKey(fluidType);
         if (loc != null) tag.putString(NBT_FLUID_TYPE, loc.toString());
         tag.putBoolean(NBT_OPEN, open);
     }
 
     @Override
-    public void load(@NotNull CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(@NotNull CompoundTag tag, HolderLookup.Provider registries) {
         if (tag.contains(NBT_FLUID_TYPE)) {
             Fluid f = BuiltInRegistries.FLUID.get(ResourceLocation.tryParse(tag.getString(NBT_FLUID_TYPE)));
             this.fluidType = f != null ? f : Fluids.EMPTY;
         }
         open = !tag.contains(NBT_OPEN) || tag.getBoolean(NBT_OPEN);
-    }
-
-    @Override
-    public CompoundTag getUpdateTag() {
-        CompoundTag tag = super.getUpdateTag();
-        saveAdditional(tag);
-        return tag;
-    }
-
-    @Override
-    public Packet<ClientGamePacketListener> getUpdatePacket() {
-        return ClientboundBlockEntityDataPacket.create(this);
     }
 }

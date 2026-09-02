@@ -12,7 +12,9 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 //? if forge {
 import net.minecraftforge.items.SlotItemHandler;
-//?}
+//?} elif neoforge {
+/*import net.neoforged.neoforge.items.SlotItemHandler;
+*///?}
 
 /** Slot-Koordinaten 1:1 aus {@code ContainerMicrowave} (1.7.10 Original): Input (80,35),
  *  Output (140,35, extraktionsonly), Batterie (8,53). */
@@ -29,14 +31,12 @@ public class MachineMicrowaveMenu extends AbstractContainerMenu {
         super(ModMenuTypes.MICROWAVE_MENU.get(), id);
         this.blockEntity = be;
 
-        //? if forge {
         var handler = be.getInventory();
         addSlot(new SlotItemHandler(handler, MachineMicrowaveBlockEntity.SLOT_INPUT, 80, 35));
         addSlot(new SlotItemHandler(handler, MachineMicrowaveBlockEntity.SLOT_OUTPUT, 140, 35) {
             @Override public boolean mayPlace(ItemStack s) { return false; }
         });
         addSlot(new SlotItemHandler(handler, MachineMicrowaveBlockEntity.SLOT_BATTERY, 8, 53));
-        //?}
 
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 9; col++) {

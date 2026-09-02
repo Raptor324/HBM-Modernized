@@ -1,4 +1,3 @@
-//? if forge {
 package com.hbm_m.powerarmor.render;
 
 import com.google.gson.JsonObject;
@@ -45,5 +44,4 @@ public class AJRArmorModelLoader extends AbstractObjPartModelLoader<AJRArmorBake
         return true;
     }
 }
-//?}
 

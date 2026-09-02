@@ -6,8 +6,7 @@ import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.biome.Biome;
 
-//? if !fabric {
-
+//? if forge {
 import dev.architectury.registry.registries.DeferredRegister;
 import dev.architectury.registry.registries.RegistrySupplier;
 //?}
@@ -59,8 +58,7 @@ public class ModBiomes {
                     //?}
                     );
 
-    //? if !fabric {
-
+    //? if forge {
     public static final DeferredRegister<Biome> BIOMES =
             DeferredRegister.create(MainRegistry.MOD_ID, Registries.BIOME);
 
@@ -78,12 +76,11 @@ public class ModBiomes {
             "outer_crater",
             CraterBiomes::createOuterCraterBiome
     );
-    //?}
+//?}
 
     public static void init() {
-        //? if !fabric {
-
+        //? if forge {
         BIOMES.register();
-        //?}
+//?}
     }
 }

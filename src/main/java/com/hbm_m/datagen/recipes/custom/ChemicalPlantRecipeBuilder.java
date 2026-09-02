@@ -2,9 +2,7 @@ package com.hbm_m.datagen.recipes.custom;
 //? if forge {
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Consumer;
 
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import com.google.gson.JsonArray;
@@ -12,31 +10,20 @@ import com.google.gson.JsonObject;
 import com.hbm_m.recipe.AssemblerRecipe;
 import com.hbm_m.recipe.ChemicalPlantRecipe;
 
-import net.minecraft.advancements.Advancement;
-import net.minecraft.advancements.CriterionTriggerInstance;
+import dev.architectury.fluid.FluidStack;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.data.recipes.FinishedRecipe;
-import net.minecraft.data.recipes.RecipeBuilder;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.level.material.Fluid;
 
 /**
  * Datagen builder for {@link ChemicalPlantRecipe}.
- *
- * <p>Формат JSON совпадает с {@link ChemicalPlantRecipe.Serializer}:\n
- * <ul>
- *   <li>{@code item_inputs}: массив объектов Ingredient + {@code count}</li>
- *   <li>{@code fluid_inputs}: массив объектов {@code {fluid, amount}}</li>
- *   <li>{@code item_outputs}: массив объектов ItemStack</li>
- *   <li>{@code fluid_outputs}: массив объектов {@code {fluid, amount}}</li>
- *   <li>{@code duration}, {@code power}, опционально {@code blueprint_pool}</li>
- * </ul>
  */
-public class ChemicalPlantRecipeBuilder implements RecipeBuilder {
+public class ChemicalPlantRecipeBuilder extends BaseRecipeBuilder<ChemicalPlantRecipeBuilder> {
 
     private final int duration;
     private final int power;
@@ -54,8 +41,6 @@ public class ChemicalPlantRecipeBuilder implements RecipeBuilder {
 
     @Nullable
     private String blueprintPool;
-
-    private final Advancement.Builder advancement = Advancement.Builder.advancement();
 
     private ChemicalPlantRecipeBuilder(int duration, int power) {
         this.duration = duration;
@@ -90,6 +75,21 @@ public class ChemicalPlantRecipeBuilder implements RecipeBuilder {
         return this;
     }
 
+    /** Переход на единый FluidStack-вход: вместo {@code Fluid + int} принимаем {@link FluidStack}. */
+    public ChemicalPlantRecipeBuilder addFluidInput(FluidStack stack) {
+        if (stack != null && !stack.isEmpty()) {
+            this.fluidInputs.add(new FluidAmount(stack.getFluid(), (int) stack.getAmount()));
+        }
+        return this;
+    }
+
+    public ChemicalPlantRecipeBuilder addFluidOutput(FluidStack stack) {
+        if (stack != null && !stack.isEmpty()) {
+            this.fluidOutputs.add(new FluidAmount(stack.getFluid(), (int) stack.getAmount()));
+        }
+        return this;
+    }
+
     public ChemicalPlantRecipeBuilder withIconItem(ItemStack stack) {
         this.iconItem = (stack == null || stack.isEmpty()) ? null : stack.copy();
         return this;
@@ -114,139 +114,68 @@ public class ChemicalPlantRecipeBuilder implements RecipeBuilder {
     private record FluidAmount(Fluid fluid, int amount) {}
 
     @Override
-    public RecipeBuilder unlockedBy(@NotNull String name, @NotNull CriterionTriggerInstance criterion) {
-        this.advancement.addCriterion(name, criterion);
-        return this;
-    }
-
-    @Override
-    public RecipeBuilder group(@Nullable String groupName) {
-        return this;
-    }
-
-    @Override
     public Item getResult() {
-        // Для custom machine recipe это значение неважно; вернём первый item-output либо AIR.
         for (ItemStack stack : itemOutputs) {
             if (!stack.isEmpty()) return stack.getItem();
         }
-        return net.minecraft.world.item.Items.AIR;
+        return Items.AIR;
     }
 
     @Override
-    public void save(@NotNull Consumer<FinishedRecipe> writer, @NotNull ResourceLocation recipeId) {
-        writer.accept(new Result(recipeId, this));
+    protected void serializeRecipeData(JsonObject json) {
+        json.addProperty("duration", duration);
+        json.addProperty("power", power);
+
+        if (blueprintPool != null) {
+            json.addProperty("blueprint_pool", blueprintPool);
+        }
+
+        if (iconItem != null && !iconItem.isEmpty()) {
+            // Унифицированная сериализация иконки-предмета (через BaseRecipeBuilder.stackToJson).
+            json.add("icon_item", stackToJson(iconItem));
+        }
+
+        if (iconFluid != null) {
+            ResourceLocation fluidId = BuiltInRegistries.FLUID.getKey(iconFluid);
+            if (fluidId != null) {
+                json.addProperty("icon_fluid", fluidId.toString());
+            }
+        }
+
+        JsonArray itemInputsJson = new JsonArray();
+        for (CountedIngredient ci : itemInputs) {
+            itemInputsJson.add(AssemblerRecipe.toCountedIngredientJson(ci.ingredient(), ci.count()));
+        }
+        json.add("item_inputs", itemInputsJson);
+
+        // Жидкостные входы: единый формат { "fluid", "amount" } через fluidStackToJson.
+        JsonArray fluidInputsJson = new JsonArray();
+        for (FluidAmount fa : fluidInputs) {
+            if (fa.fluid() == null) continue;
+            fluidInputsJson.add(fluidStackToJson(FluidStack.create(fa.fluid(), fa.amount())));
+        }
+        json.add("fluid_inputs", fluidInputsJson);
+
+        // Предметные выходы — единый формат через stackToJson.
+        JsonArray itemOutputsJson = new JsonArray();
+        for (ItemStack out : itemOutputs) {
+            if (out == null || out.isEmpty()) continue;
+            itemOutputsJson.add(stackToJson(out));
+        }
+        json.add("item_outputs", itemOutputsJson);
+
+        // Жидкостные выходы — единый формат через fluidStackToJson.
+        JsonArray fluidOutputsJson = new JsonArray();
+        for (FluidAmount fa : fluidOutputs) {
+            if (fa.fluid() == null) continue;
+            fluidOutputsJson.add(fluidStackToJson(FluidStack.create(fa.fluid(), fa.amount())));
+        }
+        json.add("fluid_outputs", fluidOutputsJson);
     }
 
-    public void save(@NotNull Consumer<FinishedRecipe> writer, @NotNull String path) {
-        //? if fabric && < 1.21.1 {
-        /*save(writer, new ResourceLocation("hbm_m", path));
-        *///?} else {
-                save(writer, ResourceLocation.fromNamespaceAndPath("hbm_m", path));
-        //?}
-
-    }
-
-    private static final class Result implements FinishedRecipe {
-        private final ResourceLocation id;
-        private final ChemicalPlantRecipeBuilder builder;
-
-        private Result(ResourceLocation id, ChemicalPlantRecipeBuilder builder) {
-            this.id = id;
-            this.builder = builder;
-        }
-
-        @Override
-        public void serializeRecipeData(@NotNull JsonObject json) {
-            json.addProperty("duration", builder.duration);
-            json.addProperty("power", builder.power);
-
-            if (builder.blueprintPool != null) {
-                json.addProperty("blueprint_pool", builder.blueprintPool);
-            }
-
-            if (builder.iconItem != null && !builder.iconItem.isEmpty()) {
-                JsonObject o = new JsonObject();
-                ResourceLocation itemId = BuiltInRegistries.ITEM.getKey(builder.iconItem.getItem());
-                if (itemId != null) {
-                    o.addProperty("item", itemId.toString());
-                    if (builder.iconItem.getCount() > 1) {
-                        o.addProperty("count", builder.iconItem.getCount());
-                    }
-                    json.add("icon_item", o);
-                }
-            }
-
-            if (builder.iconFluid != null) {
-                ResourceLocation fluidId = BuiltInRegistries.FLUID.getKey(builder.iconFluid);
-                if (fluidId != null) {
-                    json.addProperty("icon_fluid", fluidId.toString());
-                }
-            }
-
-            JsonArray itemInputs = new JsonArray();
-            for (CountedIngredient ci : builder.itemInputs) {
-                itemInputs.add(AssemblerRecipe.toCountedIngredientJson(ci.ingredient(), ci.count()));
-            }
-            json.add("item_inputs", itemInputs);
-
-            JsonArray fluidInputs = new JsonArray();
-            for (FluidAmount fa : builder.fluidInputs) {
-                ResourceLocation fluidId = BuiltInRegistries.FLUID.getKey(fa.fluid());
-                if (fluidId == null) continue;
-                JsonObject obj = new JsonObject();
-                obj.addProperty("fluid", fluidId.toString());
-                obj.addProperty("amount", fa.amount());
-                fluidInputs.add(obj);
-            }
-            json.add("fluid_inputs", fluidInputs);
-
-            JsonArray itemOutputs = new JsonArray();
-            for (ItemStack out : builder.itemOutputs) {
-                JsonObject o = new JsonObject();
-                ResourceLocation itemId = BuiltInRegistries.ITEM.getKey(out.getItem());
-                if (itemId == null) continue;
-                o.addProperty("item", itemId.toString());
-                if (out.getCount() > 1) {
-                    o.addProperty("count", out.getCount());
-                }
-                itemOutputs.add(o);
-            }
-            json.add("item_outputs", itemOutputs);
-
-            JsonArray fluidOutputs = new JsonArray();
-            for (FluidAmount fa : builder.fluidOutputs) {
-                ResourceLocation fluidId = BuiltInRegistries.FLUID.getKey(fa.fluid());
-                if (fluidId == null) continue;
-                JsonObject obj = new JsonObject();
-                obj.addProperty("fluid", fluidId.toString());
-                obj.addProperty("amount", fa.amount());
-                fluidOutputs.add(obj);
-            }
-            json.add("fluid_outputs", fluidOutputs);
-        }
-
-        @Override
-        public ResourceLocation getId() {
-            return id;
-        }
-
-        @Override
-        public RecipeSerializer<?> getType() {
-            return ChemicalPlantRecipe.Serializer.INSTANCE;
-        }
-
-        @Nullable
-        @Override
-        public JsonObject serializeAdvancement() {
-            return null;
-        }
-
-        @Nullable
-        @Override
-        public ResourceLocation getAdvancementId() {
-            return null;
-        }
+    @Override
+    protected RecipeSerializer<?> getType() {
+        return ChemicalPlantRecipe.Serializer.INSTANCE;
     }
 }
 //?}

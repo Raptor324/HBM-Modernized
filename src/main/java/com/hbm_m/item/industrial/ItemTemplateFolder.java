@@ -1,6 +1,7 @@
 package com.hbm_m.item.industrial;
 
 
+import com.hbm_m.item.ITooltipProvider;
 import java.util.List;
 
 import org.jetbrains.annotations.NotNull;
@@ -22,7 +23,7 @@ import net.minecraft.world.level.Level;
 // Предмет-папка для хранения и управления шаблонами мультиблоков.
 // При использовании открывает GUI с возможностью получать шаблоны.
 
-public class ItemTemplateFolder extends Item {
+public class ItemTemplateFolder extends Item implements ITooltipProvider {
     public ItemTemplateFolder(Properties pProperties) {
         super(pProperties);
     }
@@ -45,7 +46,7 @@ public class ItemTemplateFolder extends Item {
         }
     }
     @Override
-    public void appendHoverText(@NotNull ItemStack pStack, @Nullable Level pLevel, @NotNull List<Component> pTooltipComponents, @NotNull TooltipFlag pIsAdvanced) {
+    public void appendHbmTooltip(@NotNull ItemStack pStack, @Nullable Level pLevel, @NotNull List<Component> pTooltipComponents, @NotNull TooltipFlag pIsAdvanced) {
         // Получаем нашу строку из файла локализации
             String fullDesc = Component.translatable("item.hbm_m.template_folder.desc").getString();
             

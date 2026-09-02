@@ -56,7 +56,7 @@ public class MachineHeatexBlockEntity extends BaseMachineBlockEntity implements 
     public @org.jetbrains.annotations.NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(
             net.minecraftforge.common.capabilities.Capability<T> cap, @Nullable Direction side) {
         if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER) {
-            return hotTank.getCapability().cast();
+            return hotTank.getForgeFluidCapability().cast();
         }
         return super.getCapability(cap, side);
     }
@@ -163,16 +163,16 @@ public class MachineHeatexBlockEntity extends BaseMachineBlockEntity implements 
     }
 
     @Override
-    public void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.putInt("heat", heat);
         tag.put("hotTank", hotTank.writeNBT(new CompoundTag()));
         tag.put("coldTank", coldTank.writeNBT(new CompoundTag()));
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         heat = tag.getInt("heat");
         if (tag.contains("hotTank")) hotTank.readNBT(tag.getCompound("hotTank"));
         if (tag.contains("coldTank")) coldTank.readNBT(tag.getCompound("coldTank"));

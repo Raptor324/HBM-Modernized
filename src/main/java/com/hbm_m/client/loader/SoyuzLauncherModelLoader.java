@@ -1,4 +1,3 @@
-//? if forge {
 package com.hbm_m.client.loader;
 
 import java.util.HashMap;
@@ -10,6 +9,7 @@ import com.google.gson.JsonObject;
 import com.hbm_m.client.model.SoyuzLauncherBakedModel;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.main.MainRegistry;
+import com.hbm_m.platform.LoaderHooks;
 import com.mojang.math.Transformation;
 import org.jetbrains.annotations.NotNull;
 
@@ -23,10 +23,11 @@ import net.minecraft.client.resources.model.ModelBaker;
 import net.minecraft.client.resources.model.ModelState;
 import net.minecraft.client.resources.model.UnbakedModel;
 import net.minecraft.resources.ResourceLocation;
+
+//? if < 1.21.1 {
 import net.minecraftforge.client.model.geometry.IGeometryBakingContext;
 import net.minecraftforge.client.model.geometry.IGeometryLoader;
 import net.minecraftforge.client.model.geometry.IUnbakedGeometry;
-import net.minecraftforge.client.model.obj.ObjLoader;
 import net.minecraftforge.client.model.obj.ObjModel;
 
 /**
@@ -37,6 +38,13 @@ import net.minecraftforge.client.model.obj.ObjModel;
  * baked quads is skipped entirely (16-bit chunk mesh overflow on the ~60
  * block tall masts).
  */
+//?} else {
+/*import net.neoforged.neoforge.client.model.geometry.IGeometryBakingContext;
+import net.neoforged.neoforge.client.model.geometry.IGeometryLoader;
+import net.neoforged.neoforge.client.model.geometry.IUnbakedGeometry;
+import net.neoforged.neoforge.client.model.obj.ObjModel;
+*///?}
+
 public class SoyuzLauncherModelLoader implements IGeometryLoader<SoyuzLauncherModelLoader.Geometry> {
 
     private record PartDef(String name, ResourceLocation model, ResourceLocation texture) {}
@@ -69,14 +77,22 @@ public class SoyuzLauncherModelLoader implements IGeometryLoader<SoyuzLauncherMo
     public static class Geometry implements IUnbakedGeometry<Geometry> {
 
         @Override
-        public void resolveParents(Function<ResourceLocation, UnbakedModel> modelGetter, IGeometryBakingContext context) {
-        }
+        public void resolveParents(Function<ResourceLocation, UnbakedModel> modelGetter, IGeometryBakingContext context) {}
 
+        //? if < 1.21.1 {
         @Override
-        public BakedModel bake(IGeometryBakingContext context, ModelBaker baker,
-                                Function<Material, TextureAtlasSprite> spriteGetter,
-                                ModelState modelState, ItemOverrides overrides,
-                                ResourceLocation modelName) {
+        public BakedModel bake(IGeometryBakingContext context, ModelBaker baker, Function<Material, TextureAtlasSprite> spriteGetter, ModelState modelState, ItemOverrides overrides, ResourceLocation modelLocation) {
+            return doBake(context, baker, spriteGetter, modelState, overrides, modelLocation);
+        }
+        //?} else {
+        /*@Override
+        public BakedModel bake(IGeometryBakingContext context, ModelBaker baker, Function<Material, TextureAtlasSprite> spriteGetter, ModelState modelState, ItemOverrides overrides) {
+            ResourceLocation modelLocation = ResourceLocation.parse(context.getModelName());
+            return doBake(context, baker, spriteGetter, modelState, overrides, modelLocation);
+        }
+        *///?}
+
+        private BakedModel doBake(IGeometryBakingContext context, ModelBaker baker, Function<Material, TextureAtlasSprite> spriteGetter, ModelState modelState, ItemOverrides overrides, ResourceLocation modelName) {
             HashMap<String, BakedModel> bakedParts = new LinkedHashMap<>();
             ModelState identityState = new ModelState() {
                 @Override
@@ -87,13 +103,12 @@ public class SoyuzLauncherModelLoader implements IGeometryLoader<SoyuzLauncherMo
 
             for (PartDef part : PARTS) {
                 try {
-                    ObjModel objModel = ObjLoader.INSTANCE.loadModel(
-                        new ObjModel.ModelSettings(part.model(), false, true, true, true, null));
+                    ObjModel objModel = LoaderHooks.loadObjModel(part.model(), true);
                     IGeometryBakingContext partContext = new PartContext(context, part.texture());
-                    BakedModel baked = objModel.bake(partContext, baker, spriteGetter, identityState, overrides, modelName);
+                    BakedModel baked = LoaderHooks.bakeObjModel(objModel, partContext, baker, spriteGetter, identityState, overrides, modelName);
                     bakedParts.put(part.name(), baked);
                 } catch (Exception e) {
-                    MainRegistry.LOGGER.error("SoyuzLauncherModelLoader: failed to load/bake part '{}' ({})", part.name(), part.model(), e);
+                    MainRegistry.LOGGER.error("SoyuzLauncherModelLoader: failed to load/bake part '{}'", part.name(), e);
                 }
             }
 
@@ -124,4 +139,3 @@ public class SoyuzLauncherModelLoader implements IGeometryLoader<SoyuzLauncherMo
         @Override public boolean isComponentVisible(String component, boolean fallback) { return true; }
     }
 }
-//?}

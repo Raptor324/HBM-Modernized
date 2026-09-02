@@ -1,6 +1,7 @@
 package com.hbm_m.inventory.gui.radio;
 
 import com.hbm_m.blockentity.network.RadioAutocalBlockEntity;
+import com.hbm_m.client.GuiCompat;
 import com.hbm_m.network.RadioTorchControlPacket;
 
 import net.minecraft.client.gui.GuiGraphics;
@@ -50,11 +51,11 @@ public class GUIRadioAutocal extends Screen {
         }
 
         int y = top + SCRIPT_LINES * 13 + 6;
-        onBox = new Checkbox(cx - 120, y, 70, 18, Component.literal("On"), blockEntity.isOn);
+        onBox = com.hbm_m.client.GuiCompat.checkbox(cx - 120, y, 70, 18, Component.literal("On"), blockEntity.isOn);
         addRenderableWidget(onBox);
-        ignoreBox = new Checkbox(cx - 40, y, 90, 18, Component.literal("Ignore err"), blockEntity.ignoreError);
+        ignoreBox = com.hbm_m.client.GuiCompat.checkbox(cx - 40, y, 90, 18, Component.literal("Ignore err"), blockEntity.ignoreError);
         addRenderableWidget(ignoreBox);
-        autoBox = new Checkbox(cx + 60, y, 90, 18, Component.literal("Auto reboot"), blockEntity.autoReboot);
+        autoBox = com.hbm_m.client.GuiCompat.checkbox(cx + 60, y, 90, 18, Component.literal("Auto reboot"), blockEntity.autoReboot);
         addRenderableWidget(autoBox);
         y += 24;
 
@@ -80,7 +81,7 @@ public class GUIRadioAutocal extends Screen {
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        this.renderBackground(guiGraphics);
+        com.hbm_m.client.GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
 
         guiGraphics.drawCenteredString(this.font, this.title, this.width / 2, this.height / 2 - 128, 0xFFFFFF);

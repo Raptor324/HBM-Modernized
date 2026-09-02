@@ -1,6 +1,7 @@
 package com.hbm_m.inventory.gui;
 
 import com.hbm_m.blockentity.machines.MachineAmmoPressBlockEntity;
+import com.hbm_m.client.GuiCompat;
 import com.hbm_m.inventory.menu.MachineAmmoPressMenu;
 import com.hbm_m.lib.RefStrings;
 
@@ -38,7 +39,7 @@ public class GUIMachineAmmoPress extends AbstractContainerScreen<MachineAmmoPres
         int y = topPos;
         guiGraphics.blit(TEXTURE, x, y, 0, 0, imageWidth, imageHeight);
 
-        if (blockEntity.isPressing()) {
+        if (blockEntity != null && blockEntity.isPressing()) { // тайл может отсутствовать в реплее Flashback
             guiGraphics.fill(x + 96, y + 20, x + 116, y + 52, 0xA0FF3020);
         }
     }
@@ -51,7 +52,7 @@ public class GUIMachineAmmoPress extends AbstractContainerScreen<MachineAmmoPres
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        renderBackground(guiGraphics);
+        com.hbm_m.client.GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
         renderTooltip(guiGraphics, mouseX, mouseY);
     }

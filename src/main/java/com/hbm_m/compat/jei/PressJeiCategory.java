@@ -90,7 +90,7 @@ public class PressJeiCategory implements IRecipeCategory<PressRecipe> {
         addItemSlot(builder, RecipeIngredientRole.INPUT, MATERIAL_X, MATERIAL_Y)
                 .addIngredients(material);
         addItemSlot(builder, RecipeIngredientRole.OUTPUT, OUTPUT_X, OUTPUT_Y)
-                .addItemStack(recipe.getResultItem(null));
+                .addItemStack(recipe.getResultItemSafe());
     }
 
     @Override

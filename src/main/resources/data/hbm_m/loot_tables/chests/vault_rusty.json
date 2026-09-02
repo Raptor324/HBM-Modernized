@@ -1,0 +1,40 @@
+{
+  "_comment": "Авторский лут ржавого убежища — поношенные личные вещи, одежда, барахло (порт POOL_VAULT_RUSTY)",
+  "type": "minecraft:chest",
+  "pools": [
+    {
+      "rolls": { "min": 5, "max": 9 },
+      "entries": [
+        { "type": "item", "name": "hbm_m:robes_helmet", "weight": 2 },
+        { "type": "item", "name": "hbm_m:robes_plate", "weight": 2 },
+        { "type": "item", "name": "hbm_m:robes_legs", "weight": 2 },
+        { "type": "item", "name": "hbm_m:robes_boots", "weight": 2 },
+        { "type": "item", "name": "hbm_m:jackt", "weight": 2 },
+        { "type": "item", "name": "hbm_m:jackt2", "weight": 1 },
+        { "type": "item", "name": "hbm_m:gas_mask_m65", "weight": 3 },
+        { "type": "item", "name": "hbm_m:gas_mask_mono", "weight": 3 },
+        { "type": "item", "name": "hbm_m:gas_mask_filter", "weight": 6 },
+        { "type": "item", "name": "hbm_m:rag", "weight": 7, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 3 } } ] },
+        { "type": "item", "name": "hbm_m:armor_polish", "weight": 4 },
+        { "type": "item", "name": "hbm_m:definitelyfood", "weight": 6, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 5 } } ] },
+        { "type": "item", "name": "hbm_m:can_creature", "weight": 5, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 3 } } ] },
+        { "type": "item", "name": "hbm_m:can_smart", "weight": 4 },
+        { "type": "item", "name": "hbm_m:can_mrsugar", "weight": 4 },
+        { "type": "item", "name": "hbm_m:cigarette", "weight": 6, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 12 } } ] },
+        { "type": "item", "name": "hbm_m:flame_opinion", "weight": 5, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 3 } } ] },
+        { "type": "item", "name": "hbm_m:flame_conspiracy", "weight": 5, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 3 } } ] },
+        { "type": "item", "name": "hbm_m:cap_nuka", "weight": 8, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 16 } } ] },
+        { "type": "item", "name": "hbm_m:bottle_nuka", "weight": 5, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 2 } } ] },
+        { "type": "item", "name": "hbm_m:pill_herbal", "weight": 4 },
+        { "type": "item", "name": "minecraft:paper", "weight": 8, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 8 } } ] },
+        { "type": "item", "name": "minecraft:book", "weight": 6, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 3 } } ] },
+        { "type": "item", "name": "minecraft:clock", "weight": 3 },
+        { "type": "item", "name": "minecraft:iron_ingot", "weight": 6, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 4 } } ] },
+        { "type": "item", "name": "hbm_m:scrap", "weight": 7, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 4 } } ] },
+        { "type": "item", "name": "hbm_m:coin_token", "weight": 6 },
+        { "type": "item", "name": "hbm_m:blueprint_folder", "weight": 3 },
+        { "type": "item", "name": "hbm_m:tape_recorder", "weight": 2 }
+      ]
+    }
+  ]
+}

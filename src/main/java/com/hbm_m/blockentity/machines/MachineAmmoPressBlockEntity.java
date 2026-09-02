@@ -20,7 +20,6 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 
@@ -68,7 +67,7 @@ public class MachineAmmoPressBlockEntity extends BaseMachineBlockEntity {
         ItemStack output = recipe.getOutput();
         ItemStack outSlot = inventory.getStackInSlot(SLOT_OUTPUT);
         if (!outSlot.isEmpty()) {
-            if (!ItemStack.isSameItemSameTags(outSlot, output)) return;
+            if (!com.hbm_m.platform.PlatformHooks.isSameItemSameTags(outSlot, output)) return;
             if (outSlot.getCount() + output.getCount() > outSlot.getMaxStackSize()) return;
         }
 
@@ -88,7 +87,6 @@ public class MachineAmmoPressBlockEntity extends BaseMachineBlockEntity {
         sendUpdateToClient();
     }
 
-    @SuppressWarnings({"unchecked", "rawtypes"})
     @Nullable
     private AmmoPressRecipe findRecipe(Level level) {
         NonNullList<ItemStack> grid = NonNullList.withSize(GRID_SIZE, ItemStack.EMPTY);
@@ -100,8 +98,8 @@ public class MachineAmmoPressBlockEntity extends BaseMachineBlockEntity {
         }
         if (!anyItem) return null;
 
-        RecipeType type = (RecipeType) AmmoPressRecipe.Type.INSTANCE;
-        List<AmmoPressRecipe> recipes = level.getRecipeManager().getAllRecipesFor(type);
+        // Кросс-версионный доступ: RecipeHooks.getAllRecipes разворачивает RecipeHolder на 1.21.1.
+        List<AmmoPressRecipe> recipes = com.hbm_m.platform.recipe.RecipeHooks.getAllRecipes(level, AmmoPressRecipe.Type.INSTANCE);
         for (AmmoPressRecipe recipe : recipes) {
             if (recipe.matchesGrid(grid)) return recipe;
         }
@@ -117,14 +115,14 @@ public class MachineAmmoPressBlockEntity extends BaseMachineBlockEntity {
     }
 
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.putInt("anim_ticks", animTicks);
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         animTicks = tag.getInt("anim_ticks");
     }
 

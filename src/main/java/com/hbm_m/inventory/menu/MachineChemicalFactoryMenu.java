@@ -53,11 +53,10 @@ public class MachineChemicalFactoryMenu extends AbstractContainerMenu {
             @Override
             public boolean mayPlace(@NotNull ItemStack stack) {
                 if (ItemEnergyAccess.getHbmProvider(stack).isPresent() || ItemEnergyAccess.getHbmReceiver(stack).isPresent()) return true;
-                //? if fabric {
-                /*return EnergyStorage.ITEM.find(stack, null) != null;
-                *///?} else {
+                //? if neoforge {
+                /*if (stack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM) != null) return true;
+                *///?}
                 return false;
-                //?}
             }
         });
         addSlot(new UpgradeSlot(container, 1, 224, 100));
@@ -149,8 +148,8 @@ public class MachineChemicalFactoryMenu extends AbstractContainerMenu {
         } else {
             if (ItemEnergyAccess.getHbmProvider(stack).isPresent()
                     || ItemEnergyAccess.getHbmReceiver(stack).isPresent()
-                    //? if fabric {
-                    /*|| EnergyStorage.ITEM.find(stack, null) != null
+                    //? if neoforge {
+                    /*|| stack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM) != null
                     *///?}
             ) {
                 if (!moveItemStackTo(stack, 0, 1, false)) return ItemStack.EMPTY;

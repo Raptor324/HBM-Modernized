@@ -1,0 +1,33 @@
+{
+  "_comment": "Десовский ящик — ценный лут высокого уровня: редкие материалы, продвинутые схемы, амовские запчасти",
+  "type": "minecraft:chest",
+  "pools": [
+    {
+      "rolls": { "min": 4, "max": 7 },
+      "entries": [
+        { "type": "item", "name": "hbm_m:desh_ingot", "weight": 8, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 3 } } ] },
+        { "type": "item", "name": "hbm_m:desh_powder", "weight": 5, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 4 } } ] },
+        { "type": "item", "name": "hbm_m:advanced_alloy_ingot", "weight": 7, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 3 } } ] },
+        { "type": "item", "name": "hbm_m:combine_steel_ingot", "weight": 5, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 2 } } ] },
+        { "type": "item", "name": "hbm_m:schrabidium_ingot", "weight": 2 },
+        { "type": "item", "name": "hbm_m:nugget_schrabidium", "weight": 3, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 3 } } ] },
+        { "type": "item", "name": "hbm_m:advanced_circuit", "weight": 6, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 2 } } ] },
+        { "type": "item", "name": "hbm_m:integrated_circuit", "weight": 4 },
+        { "type": "item", "name": "hbm_m:capacitor_gold", "weight": 5 },
+        { "type": "item", "name": "hbm_m:capacitor_niobium", "weight": 3 },
+        { "type": "item", "name": "hbm_m:coil_magnetized_tungsten", "weight": 4 },
+        { "type": "item", "name": "hbm_m:battery_advanced", "weight": 4 },
+        { "type": "item", "name": "hbm_m:battery_lithium", "weight": 3 },
+        { "type": "item", "name": "hbm_m:fusion_core", "weight": 3 },
+        { "type": "item", "name": "hbm_m:motor_desh", "weight": 3 },
+        { "type": "item", "name": "hbm_m:plate_desh", "weight": 5, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 3 } } ] },
+        { "type": "item", "name": "hbm_m:blades_desh", "weight": 2 },
+        { "type": "item", "name": "hbm_m:piston_set_desh", "weight": 2 },
+        { "type": "item", "name": "hbm_m:stealth_boy", "weight": 2 },
+        { "type": "item", "name": "hbm_m:bottle_quantum", "weight": 3 },
+        { "type": "item", "name": "hbm_m:ams_catalyst_schrabidium", "weight": 1 },
+        { "type": "item", "name": "hbm_m:crystal_schrabidium", "weight": 1 }
+      ]
+    }
+  ]
+}

@@ -1,5 +1,6 @@
 package com.hbm_m.item.satellite;
 
+import com.hbm_m.item.ITooltipProvider;
 import java.util.List;
 
 import com.hbm_m.item.ISatChip;
@@ -24,7 +25,7 @@ import net.minecraft.world.level.Level;
  * screen isn't ported (out of scope - see Satellite Manager plan), so frequency is set with a
  * simple sneak + right-click cycle instead.
  */
-public class ItemSatChip extends Item implements ISatChip {
+public class ItemSatChip extends Item implements ISatChip, ITooltipProvider {
 
     private static final int MAX_FREQ = 1000;
 
@@ -52,7 +53,7 @@ public class ItemSatChip extends Item implements ISatChip {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, Level level, List<Component> tooltip, TooltipFlag flag) {
+    public void appendHbmTooltip(ItemStack stack, Level level, List<Component> tooltip, TooltipFlag flag) {
         tooltip.add(Component.translatable("tooltip.hbm_m.satchip.freq", getFreq(stack)).withStyle(ChatFormatting.GRAY));
     }
 }

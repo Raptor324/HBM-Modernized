@@ -1,4 +1,3 @@
-//? if forge {
 package com.hbm_m.client.loader;
 
 import java.util.HashMap;
@@ -9,6 +8,7 @@ import com.google.gson.JsonObject;
 import com.hbm_m.client.model.SoyuzRocketBakedModel;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.main.MainRegistry;
+import com.hbm_m.platform.LoaderHooks;
 import com.mojang.math.Transformation;
 import org.jetbrains.annotations.NotNull;
 
@@ -20,10 +20,11 @@ import net.minecraft.client.resources.model.ModelState;
 import net.minecraft.client.resources.model.UnbakedModel;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.resources.ResourceLocation;
+
+//? if < 1.21.1 {
 import net.minecraftforge.client.model.geometry.IGeometryBakingContext;
 import net.minecraftforge.client.model.geometry.IGeometryLoader;
 import net.minecraftforge.client.model.geometry.IUnbakedGeometry;
-import net.minecraftforge.client.model.obj.ObjLoader;
 import net.minecraftforge.client.model.obj.ObjModel;
 
 /**
@@ -33,10 +34,16 @@ import net.minecraftforge.client.model.obj.ObjModel;
  * (unlike the launcher, this is one part with many materials, not many
  * parts with one material each - so no per-part texture override needed).
  */
+//?} else {
+/*import net.neoforged.neoforge.client.model.geometry.IGeometryBakingContext;
+import net.neoforged.neoforge.client.model.geometry.IGeometryLoader;
+import net.neoforged.neoforge.client.model.geometry.IUnbakedGeometry;
+import net.neoforged.neoforge.client.model.obj.ObjModel;
+*///?}
+
 public class SoyuzRocketModelLoader implements IGeometryLoader<SoyuzRocketModelLoader.Geometry> {
 
-    private static final ResourceLocation MODEL =
-        ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/soyuz/soyuz.obj");
+    private static final ResourceLocation MODEL = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/soyuz/soyuz.obj");
 
     @Override
     public Geometry read(JsonObject jsonObject, JsonDeserializationContext deserializationContext) {
@@ -46,14 +53,22 @@ public class SoyuzRocketModelLoader implements IGeometryLoader<SoyuzRocketModelL
     public static class Geometry implements IUnbakedGeometry<Geometry> {
 
         @Override
-        public void resolveParents(Function<ResourceLocation, UnbakedModel> modelGetter, IGeometryBakingContext context) {
-        }
+        public void resolveParents(Function<ResourceLocation, UnbakedModel> modelGetter, IGeometryBakingContext context) {}
 
+        //? if < 1.21.1 {
         @Override
-        public BakedModel bake(IGeometryBakingContext context, ModelBaker baker,
-                                Function<Material, TextureAtlasSprite> spriteGetter,
-                                ModelState modelState, ItemOverrides overrides,
-                                ResourceLocation modelName) {
+        public BakedModel bake(IGeometryBakingContext context, ModelBaker baker, Function<Material, TextureAtlasSprite> spriteGetter, ModelState modelState, ItemOverrides overrides, ResourceLocation modelLocation) {
+            return doBake(context, baker, spriteGetter, modelState, overrides, modelLocation);
+        }
+        //?} else {
+        /*@Override
+        public BakedModel bake(IGeometryBakingContext context, ModelBaker baker, Function<Material, TextureAtlasSprite> spriteGetter, ModelState modelState, ItemOverrides overrides) {
+            ResourceLocation modelLocation = ResourceLocation.parse(context.getModelName());
+            return doBake(context, baker, spriteGetter, modelState, overrides, modelLocation);
+        }
+        *///?}
+
+        private BakedModel doBake(IGeometryBakingContext context, ModelBaker baker, Function<Material, TextureAtlasSprite> spriteGetter, ModelState modelState, ItemOverrides overrides, ResourceLocation modelName) {
             HashMap<String, BakedModel> bakedParts = new HashMap<>();
             ModelState identityState = new ModelState() {
                 @Override
@@ -63,9 +78,8 @@ public class SoyuzRocketModelLoader implements IGeometryLoader<SoyuzRocketModelL
             };
 
             try {
-                ObjModel objModel = ObjLoader.INSTANCE.loadModel(
-                    new ObjModel.ModelSettings(MODEL, false, true, true, true, null));
-                BakedModel baked = objModel.bake(context, baker, spriteGetter, identityState, overrides, modelName);
+                ObjModel objModel = LoaderHooks.loadObjModel(MODEL, true);
+                BakedModel baked = LoaderHooks.bakeObjModel(objModel, context, baker, spriteGetter, identityState, overrides, modelName);
                 bakedParts.put(SoyuzRocketBakedModel.ROCKET, baked);
             } catch (Exception e) {
                 MainRegistry.LOGGER.error("SoyuzRocketModelLoader: failed to load/bake soyuz.obj", e);
@@ -75,4 +89,3 @@ public class SoyuzRocketModelLoader implements IGeometryLoader<SoyuzRocketModelL
         }
     }
 }
-//?}

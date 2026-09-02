@@ -94,9 +94,9 @@ public class RadioTorchCounterBlockEntity extends BaseMachineBlockEntity impleme
         if (level != null && !level.isClientSide) level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
     }
 
+    //? if < 1.21.1 {
     @Override
     public void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
         tag.putBoolean("polling", polling);
         for (int i = 0; i < SLOT_COUNT; i++) {
             tag.putString("channel" + i, channel[i]);
@@ -104,10 +104,20 @@ public class RadioTorchCounterBlockEntity extends BaseMachineBlockEntity impleme
         }
         matcher.writeToNBT(tag);
     }
+    //?} else {
+    /*@Override
+    public void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+    tag.putBoolean("polling", polling);
+    for (int i = 0; i < SLOT_COUNT; i++) {
+    tag.putString("channel" + i, channel[i]);
+    tag.putInt("lastCount" + i, lastCount[i]);
+    }
+    matcher.writeToNBT(tag);
+    }
+    *///?}
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         polling = tag.getBoolean("polling");
         for (int i = 0; i < SLOT_COUNT; i++) {
             channel[i] = tag.contains("channel" + i) ? tag.getString("channel" + i) : "";

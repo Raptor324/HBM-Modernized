@@ -1,10 +1,12 @@
 package com.hbm_m.item.tool;
 
+import com.hbm_m.item.ITooltipProvider;
 import java.util.List;
 
 import com.hbm_m.blockentity.IRadarCommandReceiver;
 import com.hbm_m.multiblock.MultiblockInteractionHelper;
 import com.hbm_m.sound.ModSounds;
+import com.hbm_m.platform.PlatformHooks;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
@@ -29,7 +31,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
  *
  * NBT-ключи {@code xCoord/yCoord/zCoord} совпадают с {@code ItemCoordinateBase.getPosition}.
  */
-public class ItemRadarLinker extends Item {
+public class ItemRadarLinker extends Item implements ITooltipProvider {
 
     public ItemRadarLinker(Properties properties) {
         super(properties.stacksTo(1));
@@ -52,8 +54,8 @@ public class ItemRadarLinker extends Item {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, Level level, List<Component> tooltip, TooltipFlag flag) {
-        CompoundTag tag = stack.getTag();
+    public void appendHbmTooltip(ItemStack stack, Level level, List<Component> tooltip, TooltipFlag flag) {
+        CompoundTag tag = PlatformHooks.getItemTag(stack);
         if (tag != null && tag.contains("xCoord")) {
             tooltip.add(Component.translatable("tooltip.hbm_m.radar_linker.linked"));
             tooltip.add(Component.literal("X: " + tag.getInt("xCoord")).withStyle(ChatFormatting.GRAY));
@@ -75,10 +77,11 @@ public class ItemRadarLinker extends Item {
         }
 
         ItemStack stack = context.getItemInHand();
-        CompoundTag tag = stack.getOrCreateTag();
-        tag.putInt("xCoord", pos.getX());
-        tag.putInt("yCoord", pos.getY());
-        tag.putInt("zCoord", pos.getZ());
+        PlatformHooks.editItemTag(stack, tag -> {
+            tag.putInt("xCoord", pos.getX());
+            tag.putInt("yCoord", pos.getY());
+            tag.putInt("zCoord", pos.getZ());
+        });
 
         if (level.isClientSide()) {
             Player player = context.getPlayer();

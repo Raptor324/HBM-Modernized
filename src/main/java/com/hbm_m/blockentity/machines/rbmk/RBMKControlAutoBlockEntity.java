@@ -21,6 +21,9 @@ public class RBMKControlAutoBlockEntity extends RBMKControlBlockEntity {
 
     public boolean moderated  = false;
 
+    /** Set from the block variant; see {@link com.hbm_m.block.machines.rbmk.RBMKControlAutoBlock}. */
+    public String texturePrefix = null;
+
     public RBMKFunction function  = RBMKFunction.LINEAR;
     public double levelLower = 0.0;    // percent 0-100
     public double levelUpper = 100.0;  // percent 0-100
@@ -32,7 +35,9 @@ public class RBMKControlAutoBlockEntity extends RBMKControlBlockEntity {
     }
 
     @Override public boolean isModerated()             { return moderated; }
-    @Override public String  getRenderTexturePrefix() { return "rbmk_control_auto"; }
+    @Override public String  getRenderTexturePrefix() {
+        return texturePrefix != null ? texturePrefix : "rbmk_control_auto";
+    }
 
     /** Lets the console mini-map tell auto rods apart from manual ones (purple dot vs yellow),
      *  matching the original's separate CONTROL/CONTROL_AUTO console column types. */
@@ -49,6 +54,7 @@ public class RBMKControlAutoBlockEntity extends RBMKControlBlockEntity {
     public static void tick(Level level, BlockPos pos, BlockState state, RBMKControlAutoBlockEntity be) {
         baseTick(level, pos, state, be);
         if (!level.isClientSide) {
+            be.updatePower(level);
             be.lastLevel = be.level;
             be.computeTarget();
             be.moveLevelToTarget(level);
@@ -86,9 +92,10 @@ public class RBMKControlAutoBlockEntity extends RBMKControlBlockEntity {
 
     // ─── NBT ─────────────────────────────────────────────────────────────────
 
+    
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.putInt("function",    function.ordinal());
         tag.putDouble("levelLower", levelLower);
         tag.putDouble("levelUpper", levelUpper);
@@ -97,8 +104,8 @@ public class RBMKControlAutoBlockEntity extends RBMKControlBlockEntity {
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         if (tag.contains("function"))
             function = RBMKFunction.values()[Mth.clamp(tag.getInt("function"), 0, RBMKFunction.values().length - 1)];
         levelLower = tag.getDouble("levelLower");

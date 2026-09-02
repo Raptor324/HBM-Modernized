@@ -8,8 +8,7 @@ import com.hbm_m.blockentity.BaseMachineBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.inventory.menu.MachineCompressorMenu;
-import com.hbm_m.recipe.CompressorRecipes;
-import com.hbm_m.recipe.CompressorRecipes.Recipe;
+import com.hbm_m.recipe.CompressorRecipe;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -27,7 +26,7 @@ import net.minecraft.world.level.material.Fluid;
  * Compressor: Direktport der Kernlogik aus {@code TileEntityMachineCompressorBase}/
  * {@code TileEntityMachineCompressor} (1.7.10 Original) - komprimiert ein Eingangs-Fluid auf
  * einen um 1 hoeheren Druck ({@link FluidTank#getPressure()}), sofern kein spezielles Rezept
- * ({@link CompressorRecipes}) greift, das ein anderes Ausgangs-Fluid definiert.
+ * ({@link CompressorRecipe}) greift, das ein anderes Ausgangs-Fluid definiert.
  * <p>
  * Vereinfachungen: kein Item-Upgrade-System (SPEED/POWER/OVERDRIVE-Slots entfallen, feste
  * Basiswerte), kein manueller Ziel-Druck-Regler (das Original erlaubt per Steuer-Paket die Wahl
@@ -71,7 +70,7 @@ public class MachineCompressorBlockEntity extends BaseMachineBlockEntity impleme
 
         be.setupOutputTank();
 
-        Recipe recipe = CompressorRecipes.get(be.tanks[0].getTankType(), be.tanks[0].getPressure());
+        CompressorRecipe recipe = CompressorRecipe.getRecipe(level, be.tanks[0].getTankType(), be.tanks[0].getPressure());
         int powerRequirement = POWER_REQUIREMENT_BASE;
 
         if (be.canProcess(recipe, powerRequirement)) {
@@ -93,34 +92,34 @@ public class MachineCompressorBlockEntity extends BaseMachineBlockEntity impleme
     }
 
     private void setupOutputTank() {
-        Recipe recipe = CompressorRecipes.get(tanks[0].getTankType(), tanks[0].getPressure());
+        CompressorRecipe recipe = CompressorRecipe.getRecipe(getLevel(), tanks[0].getTankType(), tanks[0].getPressure());
         if (recipe == null) {
             if (tanks[1].getFill() <= 0) {
                 tanks[1].withPressure(tanks[0].getPressure() + 1);
             }
         } else {
             if (tanks[1].getFill() <= 0) {
-                tanks[1].withPressure(recipe.outPressure());
+                tanks[1].withPressure(recipe.getOutputPressure());
             }
         }
     }
 
-    private boolean canProcess(@Nullable Recipe recipe, int powerRequirement) {
+    private boolean canProcess(@Nullable CompressorRecipe recipe, int powerRequirement) {
         if (energy <= powerRequirement) return false;
 
         if (recipe == null) {
             return tanks[0].getFill() >= 1000 && tanks[1].getFill() + 1000 <= tanks[1].getMaxFill();
         }
-        return tanks[0].getFill() >= recipe.inputAmount() && tanks[1].getFill() + recipe.outAmount() <= tanks[1].getMaxFill();
+        return tanks[0].getFill() >= recipe.getInputMb() && tanks[1].getFill() + recipe.getOutputMb() <= tanks[1].getMaxFill();
     }
 
-    private void process(@Nullable Recipe recipe) {
+    private void process(@Nullable CompressorRecipe recipe) {
         if (recipe == null) {
             tanks[0].drainMb(1000);
             tanks[1].fillMb(tanks[1].getTankType(), 1000);
         } else {
-            tanks[0].drainMb(recipe.inputAmount());
-            tanks[1].fillMb(recipe.outFluid(), recipe.outAmount());
+            tanks[0].drainMb(recipe.getInputMb());
+            tanks[1].fillMb(recipe.getOutputFluid(), recipe.getOutputMb());
         }
     }
 
@@ -148,16 +147,16 @@ public class MachineCompressorBlockEntity extends BaseMachineBlockEntity impleme
     // ==================== NBT ====================
 
     @Override
-    public void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.putInt("progress", progress);
         tanks[0].writeToNBT(tag, "tank0");
         tanks[1].writeToNBT(tag, "tank1");
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         progress = tag.getInt("progress");
         tanks[0].readFromNBT(tag, "tank0");
         tanks[1].readFromNBT(tag, "tank1");

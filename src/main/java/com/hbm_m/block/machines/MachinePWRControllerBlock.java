@@ -34,7 +34,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
-import net.minecraftforge.network.NetworkHooks;
+import dev.architectury.registry.menu.MenuRegistry;
 
 /**
  * PWR reactor controller. 1:1 port of {@code com.hbm.blocks.machine.MachinePWRController}
@@ -102,8 +102,10 @@ public class MachinePWRControllerBlock extends BaseEntityBlock {
         return createTickerHelper(type, ModBlockEntities.PWR_CONTROLLER_BE.get(), PWRControllerBlockEntity::tick);
     }
 
+    //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+
         if (level.isClientSide) {
             return InteractionResult.SUCCESS;
         }
@@ -121,10 +123,37 @@ public class MachinePWRControllerBlock extends BaseEntityBlock {
         }
 
         if (level.getBlockEntity(pos) instanceof MenuProvider menuProvider) {
-            NetworkHooks.openScreen((ServerPlayer) player, menuProvider, pos);
+            MenuRegistry.openExtendedMenu((ServerPlayer) player, menuProvider, buf -> buf.writeBlockPos(pos));
         }
         return InteractionResult.SUCCESS;
-    }
+        }
+    //?} else {
+    /*@Override
+    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+
+        if (level.isClientSide) {
+            return InteractionResult.SUCCESS;
+        }
+        if (!(level.getBlockEntity(pos) instanceof PWRControllerBlockEntity controller)) {
+            return InteractionResult.PASS;
+        }
+
+        if (!controller.assembled) {
+            assemble(level, pos, state.getValue(FACING), player);
+            return InteractionResult.SUCCESS;
+        }
+
+        if (player.getItemInHand(InteractionHand.MAIN_HAND).getItem() == ModItems.PWR_PRINTER.get()) {
+            return InteractionResult.PASS;
+        }
+
+        if (level.getBlockEntity(pos) instanceof MenuProvider menuProvider) {
+            MenuRegistry.openExtendedMenu((ServerPlayer) player, menuProvider, buf -> buf.writeBlockPos(pos));
+        }
+        return InteractionResult.SUCCESS;
+        }
+    *///?}
+
 
     // ── Assembly (1:1 port of MachinePWRController.assemble/floodFill) ────────
 
@@ -215,4 +244,13 @@ public class MachinePWRControllerBlock extends BaseEntityBlock {
             com.hbm_m.network.HighlightBlocksPacket.sendTo(serverPlayer, java.util.List.of(pos));
         }
     }
+
+    //? if >1.20.1 {
+    /*public static final com.mojang.serialization.MapCodec<MachinePWRControllerBlock> CODEC = simpleCodec(MachinePWRControllerBlock::new);
+
+    @Override
+    protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
+        return CODEC;
+    }
+    *///?}
 }

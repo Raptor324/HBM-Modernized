@@ -9,10 +9,11 @@ import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import com.hbm_m.blockentity.BaseHbmBlockEntity;
+import com.hbm_m.blockentity.ModBlockEntities;
+
 //? if forge {
 import net.minecraftforge.common.capabilities.Capability;
-
-import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.capability.ModCapabilities;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
@@ -21,107 +22,29 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 //?}
 
-//? if fabric {
-/*import team.reborn.energy.api.EnergyStorage;
-import team.reborn.energy.api.base.SimpleEnergyStorage;
-*///?}
-
-@SuppressWarnings("UnstableApiUsage")
-public class ConverterBlockEntity extends BlockEntity implements IEnergyReceiver, IEnergyProvider {
+public class ConverterBlockEntity extends BaseHbmBlockEntity implements IEnergyReceiver, IEnergyProvider {
 
     private long energy = 0;
 
-    // Тиры
     private static final long[] TIERS = { 1_000L, 10_000L, 50_000L, 100_000L, 1_000_000L, 100_000_000L, (long)Integer.MAX_VALUE };
     private int tierIndex = 2;
     private long currentLimit = TIERS[tierIndex];
 
-    // Режимы: 0=Bi, 1=Export(H->F), 2=Import(F->H)
     private int ioMode = 0;
 
-    // Capabilities
-    private final HbmForgeWrapper forgeWrapper = new HbmForgeWrapper(this);
-
     //? if forge {
+    private final HbmForgeWrapper forgeWrapper = new HbmForgeWrapper(this);
     private LazyOptional<IEnergyStorage> forgeCap = LazyOptional.of(() -> forgeWrapper);
     private final LazyOptional<IEnergyProvider> hbmProviderCap = LazyOptional.of(() -> this);
     private final LazyOptional<IEnergyReceiver> hbmReceiverCap = LazyOptional.of(() -> this);
-    //?}
 
-    //? if fabric {
-    /*/^*
-     * Team Reborn EnergyStorage — адаптер для Fabric-стороны.
-     * Делегирует все операции в HBM-методы этого же BlockEntity.
-     ^/
-    private final EnergyStorage fabricEnergyStorage = new EnergyStorage() {
-        @Override
-        public long insert(long maxAmount, net.fabricmc.fabric.api.transfer.v1.transaction.TransactionContext transaction) {
-            if (!canReceive()) return 0;
-            long received = receiveEnergy(maxAmount, true);
-            if (received > 0) {
-                transaction.addCloseCallback((ctx, result) -> {
-                    if (result.wasCommitted()) receiveEnergy(received, false);
-                });
-            }
-            return received;
-        }
-
-        @Override
-        public long extract(long maxAmount, net.fabricmc.fabric.api.transfer.v1.transaction.TransactionContext transaction) {
-            if (!canExtract()) return 0;
-            long extracted = extractEnergy(maxAmount, true);
-            if (extracted > 0) {
-                transaction.addCloseCallback((ctx, result) -> {
-                    if (result.wasCommitted()) extractEnergy(extracted, false);
-                });
-            }
-            return extracted;
-        }
-
-        @Override
-        public long getAmount() { return energy; }
-
-        @Override
-        public long getCapacity() { return currentLimit; }
-
-        @Override
-        public boolean supportsInsertion() { return canReceive(); }
-
-        @Override
-        public boolean supportsExtraction() { return canExtract(); }
-    };
-
-    public EnergyStorage getForgeWrapper() {
-        return fabricEnergyStorage;
-    }
-    *///?}
-
-    //? if forge {
     public HbmForgeWrapper getForgeWrapper() {
         return forgeWrapper;
     }
-    //?}
 
-    /** Locked to a fixed direction by subclasses (e.g. the original's one-way HE-RF/RF-HE converters); {@code null} = freely cycleable (default generic converter). */
-    private Integer lockedMode = null;
-
-    public ConverterBlockEntity(BlockPos pos, BlockState state) {
-        super(ModBlockEntities.CONVERTER_BE.get(), pos, state);
-    }
-
-    /** Used by fixed-direction subclasses ({@code machine_converter_he_rf}/{@code rf_he}), which reuse this class's logic wholesale under their own registered type. */
-    protected ConverterBlockEntity(net.minecraft.world.level.block.entity.BlockEntityType<?> type, BlockPos pos, BlockState state, int lockedIoMode) {
-        super(type, pos, state);
-        this.lockedMode = lockedIoMode;
-        this.ioMode = lockedIoMode;
-    }
-
-    // ЖИЗНЕННЫЙ ЦИКЛ
-    //? if forge {
     @Override
     public void onLoad() {
         super.onLoad();
-        // Пересоздаем капу при загрузке, если она умерла
         if (!forgeCap.isPresent()) {
             forgeCap = LazyOptional.of(() -> forgeWrapper);
         }
@@ -131,12 +54,30 @@ public class ConverterBlockEntity extends BlockEntity implements IEnergyReceiver
     public void invalidateCaps() {
         super.invalidateCaps();
         forgeCap.invalidate();
-        // Примечание: HBM капы у нас статические (this), их можно не инвалидировать жестко,
-        // но для чистоты можно. Главное - ForgeCap.
-    }//?}
+    }
 
+    @Override
+    public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
+        if (cap == ForgeCapabilities.ENERGY) return forgeCap.cast();
+        if (cap == ModCapabilities.HBM_ENERGY_PROVIDER) return hbmProviderCap.cast();
+        if (cap == ModCapabilities.HBM_ENERGY_RECEIVER) return hbmReceiverCap.cast();
+        if (cap == ModCapabilities.HBM_ENERGY_CONNECTOR) return hbmProviderCap.cast();
+        return super.getCapability(cap, side);
+    }
+    //?}
 
-    // --- Управление ---
+    private Integer lockedMode = null;
+
+    public ConverterBlockEntity(BlockPos pos, BlockState state) {
+        super(ModBlockEntities.CONVERTER_BE.get(), pos, state);
+    }
+
+    protected ConverterBlockEntity(net.minecraft.world.level.block.entity.BlockEntityType<?> type, BlockPos pos, BlockState state, int lockedIoMode) {
+        super(type, pos, state);
+        this.lockedMode = lockedIoMode;
+        this.ioMode = lockedIoMode;
+    }
+
     public void cycleLimit() {
         tierIndex = (tierIndex + 1) % TIERS.length;
         currentLimit = TIERS[tierIndex];
@@ -156,12 +97,15 @@ public class ConverterBlockEntity extends BlockEntity implements IEnergyReceiver
             default -> "Bi-Directional";
         };
     }
+
     public long getCurrentLimit() { return currentLimit; }
 
-    // --- Логика ---
     public static void serverTick(Level level, BlockPos pos, BlockState state, ConverterBlockEntity be) {
+        if (!level.isClientSide) {
+            com.hbm_m.api.energy.EnergySubscriptions.update(be);
+        }
         if (be.energy <= 0) return;
-        if (be.ioMode == 2) return; // Импорт онли
+        if (be.ioMode == 2) return;
 
         for (Direction dir : Direction.values()) {
             BlockEntity neighbor = level.getBlockEntity(pos.relative(dir));
@@ -177,18 +121,18 @@ public class ConverterBlockEntity extends BlockEntity implements IEnergyReceiver
                             be.setChanged();
                         }
                     }
-                });//?}
-                //? if fabric {
-                /*team.reborn.energy.api.EnergyStorage storage = team.reborn.energy.api.EnergyStorage.SIDED.find(level, pos.relative(dir), dir.getOpposite());
-                if (storage != null && storage.supportsInsertion()) {
+                });
+                //?} else {
+                /*net.neoforged.neoforge.energy.IEnergyStorage storage = level.getCapability(
+                        net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.BLOCK,
+                        pos.relative(dir), dir.getOpposite());
+                if (storage != null && storage.canReceive()) {
                     long canExtract = Math.min(be.energy, be.currentLimit);
-                    try (net.fabricmc.fabric.api.transfer.v1.transaction.Transaction t = net.fabricmc.fabric.api.transfer.v1.transaction.Transaction.openOuter()) {
-                        long accepted = storage.insert(canExtract, t);
-                        if (accepted > 0) {
-                            be.energy -= accepted;
-                            be.setChanged();
-                            t.commit();
-                        }
+                    int toPush = (int) Math.min(canExtract, Integer.MAX_VALUE);
+                    int accepted = storage.receiveEnergy(toPush, false);
+                    if (accepted > 0) {
+                        be.energy -= accepted;
+                        be.setChanged();
                     }
                 }
                 *///?}
@@ -196,7 +140,6 @@ public class ConverterBlockEntity extends BlockEntity implements IEnergyReceiver
         }
     }
 
-    // --- HBM ---
     @Override
     public boolean canExtract() { return (ioMode == 0 || ioMode == 2) && energy > 0; }
 
@@ -236,27 +179,18 @@ public class ConverterBlockEntity extends BlockEntity implements IEnergyReceiver
     @Override public Priority getPriority() { return Priority.NORMAL; }
     @Override public boolean canConnectEnergy(Direction side) { return true; }
 
-    //? if forge {
+    
     @Override
-    public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
-        if (cap == ForgeCapabilities.ENERGY) return forgeCap.cast();
-        if (cap == ModCapabilities.HBM_ENERGY_PROVIDER) return hbmProviderCap.cast();
-        if (cap == ModCapabilities.HBM_ENERGY_RECEIVER) return hbmReceiverCap.cast();
-        if (cap == ModCapabilities.HBM_ENERGY_CONNECTOR) return hbmProviderCap.cast();
-        return super.getCapability(cap, side);
-    }//?}
-
-    @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.putLong("energy", energy);
         tag.putInt("tierIndex", tierIndex);
         tag.putInt("ioMode", ioMode);
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         energy = tag.getLong("energy");
         if (tag.contains("tierIndex")) {
             tierIndex = tag.getInt("tierIndex");

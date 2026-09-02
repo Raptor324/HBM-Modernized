@@ -1,6 +1,7 @@
 package com.hbm_m.inventory.gui;
 
 import com.hbm_m.blockentity.machines.MachineReactorResearchBlockEntity;
+import com.hbm_m.client.GuiCompat;
 import com.hbm_m.inventory.menu.MachineReactorResearchMenu;
 import com.hbm_m.lib.RefStrings;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -50,9 +51,11 @@ public class GUIMachineReactorResearch extends GuiInfoScreen<MachineReactorResea
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        this.renderBackground(guiGraphics);
+        com.hbm_m.client.GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
 
+        // тайл может отсутствовать в реплее Flashback
+        if (reactor != null) {
         drawCustomInfoStat(guiGraphics, mouseX, mouseY,
                 6, 22, 33, 16, mouseX, mouseY,
                 Component.literal(String.valueOf(reactor.getTotalFlux())));
@@ -62,6 +65,7 @@ public class GUIMachineReactorResearch extends GuiInfoScreen<MachineReactorResea
         drawCustomInfoStat(guiGraphics, mouseX, mouseY,
                 6, 98, 33, 16, mouseX, mouseY,
                 Component.literal(Math.round(reactor.getRodLevel() * 100) + " %"));
+        }
 
         this.renderTooltip(guiGraphics, mouseX, mouseY);
     }

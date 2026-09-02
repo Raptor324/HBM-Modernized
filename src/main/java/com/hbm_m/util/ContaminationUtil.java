@@ -40,6 +40,88 @@ public final class ContaminationUtil {
     private ContaminationUtil() {
     }
 
+    // ── Neutron activation ──────────────────────────────────────────────────
+    //
+    // 1:1 with CE's ContaminationUtil. An ordinary item left sitting in a neutron flux (the RBMK
+    // outgasser's channel, when it holds something with no activation recipe) becomes induced-
+    // radioactive: a float is written into the stack's NBT under this key and the carrier is then
+    // dosed by it, on top of whatever the item is normally worth. Storage drums decay it back down.
+    //
+    // The port had none of this, so an unrecognised item in an outgasser simply absorbed the flux
+    // and stayed inert - the mechanic that makes leaving your pickaxe in a running reactor a bad
+    // idea did not exist.
+
+    public static final String NTM_NEUTRON_NBT_KEY = "ntmNeutron";
+
+    /** Items that are radioactive in their own right never take induced activation on top. */
+    public static boolean isRadItem(net.minecraft.world.item.ItemStack stack) {
+        if (stack == null || stack.isEmpty()) return false;
+        return com.hbm_m.hazard.HazardSystem.getHazardLevelFromStack(
+                stack, com.hbm_m.hazard.HazardRegistry.RADIATION) > 0;
+    }
+
+    /**
+     * Adds {@code rad} to the stack's stored activation after decaying what was already there by
+     * {@code decay}, and prunes the tag once the value falls below the noise floor.
+     *
+     * <p>Only single-item stacks can be activated - CE's guard, and a necessary one: the value is
+     * per-item, so activating a stack of 64 and then splitting it would multiply the dose.</p>
+     *
+     * @return true when the stack's NBT actually changed
+     */
+    public static boolean neutronActivateItem(net.minecraft.world.item.ItemStack stack, float rad, float decay) {
+        if (stack == null || stack.isEmpty() || stack.getCount() != 1 || isRadItem(stack)) return false;
+
+        // NBT ueber PlatformHooks: 1.21 hat kein com.hbm_m.platform.PlatformHooks.getItemTag(ItemStack)/setTag() mehr.
+        net.minecraft.nbt.CompoundTag tag = com.hbm_m.platform.PlatformHooks.getItemTag(stack);
+        float prevActivation = tag != null && tag.contains(NTM_NEUTRON_NBT_KEY)
+                ? tag.getFloat(NTM_NEUTRON_NBT_KEY) : 0F;
+
+        float newActivation = prevActivation * decay + (rad / stack.getCount());
+
+        if (newActivation < 0.0001F) {
+            if (prevActivation > 0 && tag != null) {
+                com.hbm_m.platform.PlatformHooks.remove(stack, NTM_NEUTRON_NBT_KEY);
+                return true;
+            }
+            return false;
+        }
+
+        if (Math.abs(newActivation - prevActivation) > 1e-6F) {
+            com.hbm_m.platform.PlatformHooks.editItemTag(stack,
+                    t -> t.putFloat(NTM_NEUTRON_NBT_KEY, newActivation));
+            return true;
+        }
+        return false;
+    }
+
+    /** The whole stack's induced dose (the stored per-item value times the count). */
+    public static float getNeutronRads(net.minecraft.world.item.ItemStack stack) {
+        if (stack == null || stack.isEmpty() || isRadItem(stack)) return 0F;
+        net.minecraft.nbt.CompoundTag tag = com.hbm_m.platform.PlatformHooks.getItemTag(stack);
+        if (tag == null || !tag.contains(NTM_NEUTRON_NBT_KEY)) return 0F;
+        return tag.getFloat(NTM_NEUTRON_NBT_KEY) * stack.getCount();
+    }
+
+    public static boolean isContaminated(net.minecraft.world.item.ItemStack stack) {
+        net.minecraft.nbt.CompoundTag tag = stack == null ? null : com.hbm_m.platform.PlatformHooks.getItemTag(stack);
+        return tag != null && tag.contains(NTM_NEUTRON_NBT_KEY);
+    }
+
+    /** Decays every activated stack in a player's inventory except the one they are holding. */
+    public static boolean neutronActivateInventory(Player player, float rad, float decay) {
+        boolean changed = false;
+        var inv = player.getInventory();
+        for (int i = 0; i < inv.items.size(); i++) {
+            if (i == inv.selected) continue;
+            if (neutronActivateItem(inv.items.get(i), rad, decay)) changed = true;
+        }
+        for (net.minecraft.world.item.ItemStack armor : inv.armor) {
+            if (neutronActivateItem(armor, rad, decay)) changed = true;
+        }
+        return changed;
+    }
+
     public static float calculateRadiationMod(LivingEntity entity) {
         if (entity instanceof Player player) {
             float koeff = 10.0F;

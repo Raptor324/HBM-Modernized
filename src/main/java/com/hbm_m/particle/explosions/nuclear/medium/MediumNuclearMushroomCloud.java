@@ -20,7 +20,7 @@ public class MediumNuclearMushroomCloud {
     private static final Logger LOGGER = LoggerFactory.getLogger(MediumNuclearMushroomCloud.class);
 
     /**
-     * ⚫ ЧЕРНАЯ СФЕРА (Вспышка)
+     * ЧЕРНАЯ СФЕРА (Вспышка)
      */
     public static void spawnBlackSphere(ServerLevel level, double x, double y, double z, RandomSource random) {
         SimpleParticleType type = (SimpleParticleType) ModExplosionParticles.DARK_SMOKE.get();
@@ -44,7 +44,7 @@ public class MediumNuclearMushroomCloud {
     }
 
     /**
-     * 💥 УДАРНАЯ ВОЛНА (Черное кольцо)
+     *  УДАРНАЯ ВОЛНА (Черное кольцо)
      */
     public static void spawnShockwaveRing(ServerLevel level, double x, double y, double z, RandomSource random) {
         for (int i = 0; i < 350; i++) {
@@ -63,7 +63,7 @@ public class MediumNuclearMushroomCloud {
     }
 
     /**
-     * 🌵 СЕГМЕНТ НОЖКИ (Для анимированного роста)
+     * СЕГМЕНТ НОЖКИ (Для анимированного роста)
      * Спавнит небольшой кусочек столба на заданной высоте Y.
      */
     public static void spawnStemSegment(ServerLevel level, double x, double y, double z, RandomSource random) {
@@ -85,7 +85,7 @@ public class MediumNuclearMushroomCloud {
     }
 
     /**
-     * ⚓ ОСНОВАНИЕ "АЙСБЕРГ" (Широкое)
+     *  ОСНОВАНИЕ "АЙСБЕРГ" (Широкое)
      */
     public static void spawnMushroomBase(ServerLevel level, double centerX, double centerY, double centerZ, RandomSource random) {
         for (int i = 0; i < 200; i++) {
@@ -106,7 +106,7 @@ public class MediumNuclearMushroomCloud {
     }
 
     /**
-     * 🍄 ШАПКА ГРИБА
+     * ШАПКА ГРИБА
      * Спавнится на высоте (centerY + 20)
      */
     public static void spawnMushroomCap(ServerLevel level, double centerX, double centerY, double centerZ, RandomSource random) {
@@ -128,7 +128,7 @@ public class MediumNuclearMushroomCloud {
     }
 
     /**
-     * ☁️ КОЛЬЦО КОНДЕНСАЦИИ
+     * КОЛЬЦО КОНДЕНСАЦИИ
      */
     public static void spawnCondensationRing(ServerLevel level, double x, double y, double z, RandomSource random) {
         int particles = 50;
@@ -144,7 +144,7 @@ public class MediumNuclearMushroomCloud {
     }
 
     /**
-     * 🛠️ ВНУТРЕННИЙ СПАВНЕР (Клиентский)
+     * ВНУТРЕННИЙ СПАВНЕР (Клиентский)
      */
     private static void spawnNuclearParticle(ServerLevel level, double x, double y, double z, double xSpeed, double ySpeed, double zSpeed, boolean isSpark, boolean isMushroomSmoke, boolean isDarkSmoke) {
         SimpleParticleType particleType;

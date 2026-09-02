@@ -35,10 +35,7 @@ public final class ForgeEntrypoint {
         // выполняется только когда Create загружен.
         modBus.addListener(com.hbm_m.compat.create.CreateCompat::commonSetup);
 
-        MinecraftForge.EVENT_BUS.register(new BombDefuser());
         MinecraftForge.EVENT_BUS.register(new ForgeMainEvents());
-        MinecraftForge.EVENT_BUS.register(ChunkRadiationManager.INSTANCE);
-        MinecraftForge.EVENT_BUS.register(new PlayerHandler());
     }
 }
 //?}

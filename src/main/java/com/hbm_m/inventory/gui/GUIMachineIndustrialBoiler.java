@@ -1,6 +1,7 @@
 package com.hbm_m.inventory.gui;
 
 import com.hbm_m.api.fluids.HbmFluidRegistry;
+import com.hbm_m.client.GuiCompat;
 import com.hbm_m.client.gui.FluidGuiRendering;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.inventory.menu.MachineIndustrialBoilerMenu;
@@ -55,8 +56,10 @@ public class GUIMachineIndustrialBoiler extends GuiInfoScreen<MachineIndustrialB
         guiGraphics.blit(TEXTURE, this.leftPos, this.topPos, 0, 0, this.imageWidth, this.imageHeight);
 
         var be = menu.getBlockEntity();
-        renderTank(guiGraphics, WATER_TANK_X, be.getTankFluid(true), menu.getWaterAmount(), menu.getWaterCapacity());
-        renderTank(guiGraphics, STEAM_TANK_X, be.getTankFluid(false), menu.getSteamAmount(), menu.getSteamCapacity());
+        if (be != null) { // тайл может отсутствовать в реплее Flashback
+            renderTank(guiGraphics, WATER_TANK_X, be.getTankFluid(true), menu.getWaterAmount(), menu.getWaterCapacity());
+            renderTank(guiGraphics, STEAM_TANK_X, be.getTankFluid(false), menu.getSteamAmount(), menu.getSteamCapacity());
+        }
     }
 
     private void renderTank(GuiGraphics guiGraphics, int relX, Fluid fluid, int fill, int capacity) {
@@ -94,7 +97,7 @@ public class GUIMachineIndustrialBoiler extends GuiInfoScreen<MachineIndustrialB
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float delta) {
-        renderBackground(guiGraphics);
+        com.hbm_m.client.GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, delta);
         super.render(guiGraphics, mouseX, mouseY, delta);
         renderTooltip(guiGraphics, mouseX, mouseY);
 

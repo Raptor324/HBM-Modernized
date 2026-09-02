@@ -419,6 +419,20 @@ public final class MissileTrackClient {
                     curr, prev != null ? prev : curr,
                     interpX, interpY, interpZ, interpYaw, interpPitch);
         }
+
+        /**
+         * Текущая экстраполированная позиция трека (логический тик клиента).
+         * Используется звуковым движком ({@code MissileSoundEngine}) как поза источника,
+         * чтобы звук работал на дистанциях, где ванильная сущность давно выгружена.
+         */
+        public Vec3 visualPos() {
+            return new Vec3(x, y, z);
+        }
+
+        /** Позиция трека на предыдущий логический тик — для оценки скорости источника. */
+        public Vec3 visualPrevPos() {
+            return new Vec3(xo, yo, zo);
+        }
     }
 
     public record InterpolatedPose(

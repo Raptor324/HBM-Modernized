@@ -1,4 +1,5 @@
 package com.hbm_m.inventory.gui;
+import com.hbm_m.client.GuiCompat;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -45,7 +46,7 @@ public class GUIBatterySocket extends AbstractContainerScreen<BatterySocketMenu>
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTick) {
-        renderBackground(graphics);
+        GuiCompat.renderBackground(this, graphics, mouseX, mouseY, partialTick);
         super.render(graphics, mouseX, mouseY, partialTick);
         renderTooltip(graphics, mouseX, mouseY);
     }
@@ -156,7 +157,7 @@ public class GUIBatterySocket extends AbstractContainerScreen<BatterySocketMenu>
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (button == 0) {
+        if (button == 0 && menu.blockEntity != null) { // тайл может отсутствовать в реплее Flashback
             if (isMouseOver(mouseX, mouseY, 106, 16, 18, 18)) {
                 playClick();
                 ModPacketHandler.sendToServer(ModPacketHandler.UPDATE_BATTERY,

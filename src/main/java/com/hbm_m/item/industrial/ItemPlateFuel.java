@@ -4,6 +4,8 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 
+import com.hbm_m.platform.PlatformHooks;
+
 /**
  * Direkter Java-Port von {@code ItemPlateFuel} (1.7.10 Original, {@code
  * com.hbm.items.machine.ItemPlateFuel}) - Brennstoffplatte fuer den Research Reactor. Die
@@ -30,11 +32,11 @@ public class ItemPlateFuel extends Item {
     }
 
     public static long getLifeTime(ItemStack stack) {
-        return stack.getOrCreateTag().getLong("lifetime");
+        return PlatformHooks.getLong(stack, "lifetime");
     }
 
     public static void setLifeTime(ItemStack stack, long value) {
-        stack.getOrCreateTag().putLong("lifetime", value);
+        PlatformHooks.putLong(stack, "lifetime", value);
     }
 
     /** 1:1 aus dem Original ({@code react(World, ItemStack, int)}). */

@@ -17,10 +17,12 @@ import com.hbm_m.main.MainRegistry;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
 import com.hbm_m.sound.ClientSoundBootstrap;
+import com.hbm_m.platform.PlatformHooks;
 
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.RegistryAccess;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
@@ -33,15 +35,9 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 // Forge-only model-data / distmarker imports intentionally removed for Fabric compilation.
-//? if fabric {
-/*import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;*///?}
-//? if forge {
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.api.distmarker.OnlyIn;
-//?}
 
-public class DoorBlockEntity extends BlockEntity implements IMultiblockPart
+
+public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity implements IMultiblockPart
     //? if fabric {
     /*, net.fabricmc.fabric.api.rendering.data.v1.RenderAttachmentBlockEntity
     *///?}
@@ -61,13 +57,22 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart
     private DoorModelSelection modelSelection = DoorModelSelection.DEFAULT;
     
     /**
-     * Кэшированные ModelData для производительности
+     * Кэшированные ModelData для производительности.
+     *
+     * <p>ВНИМАНИЕ: поле НЕ помечено @OnlyIn(Dist.CLIENT)/@Environment(EnvType.CLIENT).
+     * Раньше было, но Forge {@code RuntimeDistCleaner} удаляет @OnlyIn(Dist.CLIENT) ПОЛЯ
+     * (а не только методы) на dedicated-сервере → серверный {@code load(CompoundTag)}
+     * (m_142466_) падал с {@link NoSuchFieldError} на {@code this.cachedModelData = null;},
+     * BlockEntity skipped → Create-disassembly не могла восстановить BlockEntity двери →
+     * поезд разбирался наполовину, часть блоков пропадала бесследно. Двойная разборка —
+     * первый цикл восстанавливал BE частично (BE null), сущность contraption оставалась
+     * живой; второй цикл убивал contraption окончательно, теряя невосстановленные блоки.
+     *
+     * <p>Plain Object поле безопасно держать и на сервере (null по умолчанию, никто не
+     * мутирует на сервере). Все клиент-специфичные методы, которые пишут/читают его,
+     * остаются @OnlyIn(Dist.CLIENT) на уровне метода — runtimedistcleaner удаляет только
+     * методы, а не поля, поэтому отсутствие @OnlyIn на поле безопасно.
      */
-//? if forge {
-@OnlyIn(Dist.CLIENT)
-//?}
-//? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
     private Object cachedModelData;
 
     private String doorDeclId;
@@ -77,19 +82,20 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart
     private PartRole partRole = PartRole.DEFAULT;
 
     private java.util.Set<Direction> allowedClimbSides = java.util.EnumSet.noneOf(Direction.class);
-//? if forge {
-@OnlyIn(Dist.CLIENT)
-//?}
-//? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
+    // См. комментарий у cachedModelData: @OnlyIn(Dist.CLIENT) на ПОЛЕ ломает загрузку
+    // BlockEntity на dedicated-сервере (NoSuchFieldError после RuntimeDistCleaner) и
+    // вторично ломает Create-disassembly поезда. Поле держим plain Object (null default).
     private Object loopingSound;
 
     /** Called from DoorAnimationDelayHelper when delay expires. Client-only. */
-//? if forge {
-@OnlyIn(Dist.CLIENT)
-//?}
-//? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
+
+    //? if forge {
+    @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+    //?} elif fabric {
+    /*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
+    *///?} elif neoforge {
+    /*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+    *///?}
     public void clearAnimationDelayClient() {
         this.cachedModelData = null;
         // requestModelDataUpdate() is Forge-only (model data system). On Fabric it's a no-op.
@@ -604,11 +610,13 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart
     // }
 
     // ==================== Client Sound Handling ====================
-//? if forge {
-@OnlyIn(Dist.CLIENT)
-//?}
-//? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
+    //? if forge {
+    @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+    //?} elif fabric {
+    /*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
+    *///?} elif neoforge {
+    /*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+    *///?}
     private void handleNewState(byte oldState, byte newState) {
         if (oldState == newState) return;
         if (!isController()) return;
@@ -632,11 +640,13 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart
             ClientSoundBootstrap.stopSound(level, worldPosition);
         }
     }
-//? if forge {
-@OnlyIn(Dist.CLIENT)
-//?}
-//? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
+    //? if forge {
+    @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+    //?} elif fabric {
+    /*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
+    *///?} elif neoforge {
+    /*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+    *///?}
     private void handleSoundTransition(SoundEvent startSound, SoundEvent loopSound, SoundEvent loopSound2) {
         // 1. Разовый звук старта
         if (startSound != null) {
@@ -653,11 +663,13 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart
             ClientSoundBootstrap.updateDoorSoundRaw(level, worldPosition, "loop2", true, () -> createLoopingSoundReflect(loopSound2));
         }
     }
-//? if forge {
-@OnlyIn(Dist.CLIENT)
-//?}
-//? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
+    //? if forge {
+    @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+    //?} elif fabric {
+    /*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
+    *///?} elif neoforge {
+    /*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+    *///?}
     private void handleSoundEnd(SoundEvent endSound) {
         // Останавливаем ОБА цикла
         ClientSoundBootstrap.stopSpecificSound(level, worldPosition, "loop1");
@@ -668,11 +680,14 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart
             ClientSoundBootstrap.playOneShotSound(level, worldPosition, endSound, getDoorDecl().getSoundVolume());
         }
     }
-//? if forge {
-@OnlyIn(Dist.CLIENT)
-//?}
-//? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
+
+    //? if forge {
+    @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+    //?} elif fabric {
+    /*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
+    *///?} elif neoforge {
+    /*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+    *///?}
     private Object createLoopingSoundReflect(SoundEvent sound) {
         try {
             return Class.forName(DOOR_LOOP_SOUND_FACTORY)
@@ -692,9 +707,10 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart
     }
 
     // ==================== NBT & Sync ====================
+    
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.putByte("state", state);
         tag.putInt("openTicks", openTicks);
         tag.putLong("animStartTime", animStartTime);
@@ -714,8 +730,8 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         byte oldState = this.state; // Запоминаем старое состояние
         
         this.state = tag.getByte("state");
@@ -739,7 +755,7 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart
 
         if (tag.contains("doorDeclId")) {
             this.doorDeclId = tag.getString("doorDeclId");
-        }        
+        }
         
         if (tag.contains("partRole")) {
             try {
@@ -782,11 +798,14 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart
      * Если hadModelSelectionInNbt=true - не перезаписывать: значение уже загружено из NBT
      * (в т.ч. явный выбор LEGACY, который равен DoorModelSelection.DEFAULT).
      */
-//? if forge {
-@OnlyIn(Dist.CLIENT)
-//?}
-//? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
+
+    //? if forge {
+    @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+    //?} elif fabric {
+    /*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
+    *///?} elif neoforge {
+    /*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+    *///?}
     public void initModelSelection(boolean applyConfigDefault) {
         if (!applyConfigDefault) {
             return; // Значение из NBT - не перезаписывать
@@ -804,25 +823,20 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart
         }
     }
 
-    @Override
-    public CompoundTag getUpdateTag() {
-        CompoundTag tag = super.getUpdateTag();
-        saveAdditional(tag);
-        return tag;
-    }
+    // getUpdateTag: удалён — BaseHbmBlockEntity уже делает super + writeNbtData.
     //? if forge {
     @Override
     //?}
 
     public void handleUpdateTag(CompoundTag tag) {
+        //? if < 1.21.1 {
         load(tag);
+        //?} else {
+        /*// 1.21.1: BlockEntity.load(CompoundTag) удалён — loadCustomOnly с registries из level.
+        PlatformHooks.loadBlockEntityTag(this, tag, this.level != null ? this.level.registryAccess() : RegistryAccess.EMPTY);
+        *///?}
     }
 
-    @Nullable
-    @Override
-    public Packet<ClientGamePacketListener> getUpdatePacket() {
-        return ClientboundBlockEntityDataPacket.create(this);
-    }
 
     public int getOpenTicks() {
         return this.openTicks;
@@ -832,13 +846,18 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart
     @Override
     //?}
     public void onDataPacket(net.minecraft.network.Connection net, ClientboundBlockEntityDataPacket pkt) {
-        CompoundTag tag = pkt.getTag();
+        CompoundTag tag = PlatformHooks.getItemTag(pkt);
         if (tag != null) {
             // Сохраняем предыдущее видимое состояние ДО загрузки - чтобы определить, нужна ли инвалидация
             byte prevState = this.state;
             DoorModelSelection prevSelection = this.modelSelection;
 
+            //? if < 1.21.1 {
             load(tag);
+            //?} else {
+            /*// 1.21.1: BlockEntity.load(CompoundTag) удалён — loadCustomOnly с registries из level.
+            PlatformHooks.loadBlockEntityTag(this, tag, this.level != null ? this.level.registryAccess() : RegistryAccess.EMPTY);
+            *///?}
 
             if (level != null && level.isClientSide) {
                 // Инвалидируем чанк только при реальном изменении видимого состояния:
@@ -893,7 +912,12 @@ public class DoorBlockEntity extends BlockEntity implements IMultiblockPart
 
     @Override
     public void setAllowedClimbSides(java.util.Set<Direction> sides) {
-        this.allowedClimbSides = java.util.EnumSet.copyOf(sides);
+        // Безопасная defensive-копия: EnumSet.copyOf бросает IAE на пустой коллекции.
+        java.util.EnumSet<Direction> out = java.util.EnumSet.noneOf(Direction.class);
+        if (sides != null && !sides.isEmpty()) {
+            out.addAll(sides);
+        }
+        this.allowedClimbSides = out;
         this.setChanged();
     }
 

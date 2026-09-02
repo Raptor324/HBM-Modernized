@@ -5,6 +5,7 @@ import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.block.machines.MachineElectricFurnaceBlock;
 import com.hbm_m.blockentity.BaseMachineBlockEntity;
+import com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.inventory.menu.MachineElectricFurnaceMenu;
 
@@ -40,7 +41,16 @@ public class MachineElectricFurnaceBlockEntity extends BaseMachineBlockEntity {
     public static final int SLOT_BATTERY = 0;
     public static final int SLOT_INPUT = 1;
     public static final int SLOT_OUTPUT = 2;
-    private static final int SLOT_COUNT = 3;
+    /** ContainerElectricFurnace puts a SlotUpgrade at index 3 (111, 34); this port had no upgrade
+     *  slot at all, so speed/power upgrades could never be fitted to an electric furnace. */
+    public static final int SLOT_UPGRADE = 3;
+    private static final int SLOT_COUNT = 4;
+
+    private static final java.util.Map<UpgradeType, Integer> VALID_UPGRADES = java.util.Map.of(
+            UpgradeType.SPEED, 3,
+            UpgradeType.POWER, 3);
+
+    private final com.hbm_m.inventory.UpgradeManager upgradeManager = new com.hbm_m.inventory.UpgradeManager();
 
     private static final long MAX_POWER = 100_000L;
     private static final long CONSUMPTION = 50L;
@@ -87,13 +97,21 @@ public class MachineElectricFurnaceBlockEntity extends BaseMachineBlockEntity {
         if (level.isClientSide()) return;
 
         be.chargeFromBatterySlot(SLOT_BATTERY);
+        be.upgradeManager.checkSlots(be.inventory, SLOT_UPGRADE, SLOT_UPGRADE, VALID_UPGRADES);
+
+        // Same scaling the chemical factory uses: speed shortens the cycle and costs more power,
+        // power upgrades take a quarter off the draw per level.
+        int speedLevel = Math.min(be.upgradeManager.getLevel(UpgradeType.SPEED), 3);
+        int powerLevel = Math.min(be.upgradeManager.getLevel(UpgradeType.POWER), 3);
+        int step = 1 + speedLevel;
+        long draw = Math.max(1L, (long) (CONSUMPTION * (1.0 + speedLevel) * (1.0 - 0.25 * powerLevel)));
 
         boolean wasLit = be.progress > 0;
-        boolean hasPower = be.energy >= CONSUMPTION;
+        boolean hasPower = be.energy >= draw;
 
         if (hasPower && be.canSmelt(level)) {
-            be.progress++;
-            be.setEnergyStored(be.energy - CONSUMPTION);
+            be.progress += step;
+            be.setEnergyStored(be.energy - draw);
 
             if (be.progress >= MAX_PROGRESS) {
                 be.progress = 0;
@@ -128,7 +146,7 @@ public class MachineElectricFurnaceBlockEntity extends BaseMachineBlockEntity {
     private boolean canAcceptResult(ItemStack result) {
         ItemStack current = inventory.getStackInSlot(SLOT_OUTPUT);
         if (current.isEmpty()) return true;
-        if (!ItemStack.isSameItemSameTags(current, result)) return false;
+        if (!com.hbm_m.platform.PlatformHooks.isSameItemSameTags(current, result)) return false;
         return current.getCount() + result.getCount() <= current.getMaxStackSize();
     }
 
@@ -151,21 +169,21 @@ public class MachineElectricFurnaceBlockEntity extends BaseMachineBlockEntity {
     }
 
     private java.util.Optional<SmeltingRecipe> getRecipe(Level level, ItemStack input) {
-        recipeInput.setItem(0, input);
-        return level.getRecipeManager().getRecipeFor(RecipeType.SMELTING, recipeInput, level);
+        // 1.21.1: getRecipeFor требует RecipeInput (SingleRecipeInput) и возвращает RecipeHolder.
+        return com.hbm_m.platform.recipe.RecipeHooks.getRecipeFor(level, RecipeType.SMELTING, input);
     }
 
     // ==================== NBT ====================
 
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.putInt("progress", progress);
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         progress = tag.getInt("progress");
     }
 

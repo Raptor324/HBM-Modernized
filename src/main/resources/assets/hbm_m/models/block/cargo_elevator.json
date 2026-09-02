@@ -1,3 +1,9 @@
 {
-  "parent": "minecraft:block/air"
+  "loader": "hbm_m:cargo_elevator",
+  "model": "hbm_m:models/block/cargo_elevator.obj",
+  "parts": ["Base", "Platform", "Piston", "Guides"],
+  "textures": {
+    "default": "hbm_m:block/cargo_elevator",
+    "particle": "hbm_m:block/cargo_elevator"
+  }
 }

@@ -23,10 +23,7 @@ public final class PackedEnergyCapabilityProvider {
     private final LazyOptional<IEnergyStorage> feHigh;
 
     public PackedEnergyCapabilityProvider(IEnergyConnector handler) {
-        // LOW биты (0 - 2,147,483,647) - для большинства модов
         this.feLow = LazyOptional.of(() -> new LongEnergyWrapper(handler, LongEnergyWrapper.BitMode.LOW));
-
-        // HIGH биты (множитель 2^32) - для огромных значений
         this.feHigh = LazyOptional.of(() -> new LongEnergyWrapper(handler, LongEnergyWrapper.BitMode.HIGH));
     }
 
@@ -37,7 +34,6 @@ public final class PackedEnergyCapabilityProvider {
      */
     public <T> LazyOptional<T> getCapability(Capability<T> cap, @Nullable Direction side) {
         if (cap == ForgeCapabilities.ENERGY) {
-            // DOWN сторона = HIGH биты, остальные = LOW биты
             return (side == Direction.DOWN ? feHigh : feLow).cast();
         }
         return LazyOptional.empty();
@@ -64,16 +60,17 @@ public final class PackedEnergyCapabilityProvider {
 }
 //?}
 
-//? if fabric {
+//? if neoforge {
 /*package com.hbm_m.api.energy;
-
-import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.interfaces.IEnergyConnector;
 
 /^*
- * Fabric stub: Forge Energy capability отсутствует, но общий код ожидает провайдер.
- * Реальная интеграция энергии для Fabric делается через TR Energy API в FabricEntrypoint.
+ * NeoForge stub (исторический): на 1.21.1 NeoForge полностью убрал getCapability/invalidateCaps
+ * у BlockEntity, поэтому этот Forge-style провайдер здесь не применяется. Реальная FE-интеграция
+ * для NeoForge живёт в ModCapabilities.registerEnergyForType (цикл по всем BlockEntityType с
+ * LongEnergyWrapper/HbmForgeWrapper). Класс сохранён как no-op заглушка для любого кода, который
+ * всё ещё ссылается на него через import на neoforge-ветке.
  ^/
 public final class PackedEnergyCapabilityProvider {
     public PackedEnergyCapabilityProvider(IEnergyConnector handler) {

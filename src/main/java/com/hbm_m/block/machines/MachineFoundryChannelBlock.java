@@ -110,4 +110,13 @@ public class MachineFoundryChannelBlock extends BaseEntityBlock {
         return createTickerHelper(type, ModBlockEntities.FOUNDRY_CHANNEL_BE.get(),
                 MachineFoundryChannelBlockEntity::tick);
     }
+
+    //? if >1.20.1 {
+    /*public static final com.mojang.serialization.MapCodec<MachineFoundryChannelBlock> CODEC = simpleCodec(MachineFoundryChannelBlock::new);
+
+    @Override
+    protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
+        return CODEC;
+    }
+    *///?}
 }

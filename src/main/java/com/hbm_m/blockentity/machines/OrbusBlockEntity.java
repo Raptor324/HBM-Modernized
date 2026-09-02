@@ -4,7 +4,7 @@ import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.blockentity.ModBlockEntities;
-import com.hbm_m.inventory.menu.OrbusMenu;
+import com.hbm_m.inventory.menu.FluidTankMenu;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
@@ -39,6 +39,6 @@ public class OrbusBlockEntity extends MachineFluidTankBlockEntity {
     @Nullable
     @Override
     public AbstractContainerMenu createMenu(int id, Inventory inventory, Player player) {
-        return new OrbusMenu(id, inventory, this, this.data);
+        return new FluidTankMenu(id, inventory, this, this.data);
     }
 }

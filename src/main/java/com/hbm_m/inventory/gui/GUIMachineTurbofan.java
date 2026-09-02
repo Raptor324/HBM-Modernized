@@ -1,6 +1,7 @@
 package com.hbm_m.inventory.gui;
 
 import com.hbm_m.blockentity.machines.MachineTurbofanBlockEntity;
+import com.hbm_m.client.GuiCompat;
 import com.hbm_m.inventory.menu.MachineTurbofanMenu;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.util.EnergyFormatter;
@@ -52,6 +53,8 @@ public class GUIMachineTurbofan extends AbstractContainerScreen<MachineTurbofanM
         int x = leftPos;
         int y = topPos;
         guiGraphics.blit(TEXTURE, x, y, 0, 0, imageWidth, imageHeight);
+        // тайл может отсутствовать в реплее Flashback
+        if (turbofan == null) return;
 
         // Energie-Balken: 1:1-Original-UV (drawTexturedModalRect(guiLeft+143, guiTop+69-i, 176+16, 52-i, 16, i))
         long maxPower = turbofan.getMaxEnergyStored();
@@ -77,9 +80,10 @@ public class GUIMachineTurbofan extends AbstractContainerScreen<MachineTurbofanM
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        renderBackground(guiGraphics);
+        com.hbm_m.client.GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
-
+        // тайл может отсутствовать в реплее Flashback
+        if (turbofan != null) {
         if (isPointInRect(POWER_X, POWER_Y, 16, POWER_H, mouseX, mouseY)) {
             guiGraphics.renderTooltip(font, Component.translatable("gui.hbm_m.energy",
                     EnergyFormatter.format(turbofan.getEnergyStored()), EnergyFormatter.format(turbofan.getMaxEnergyStored())), mouseX, mouseY);
@@ -87,6 +91,7 @@ public class GUIMachineTurbofan extends AbstractContainerScreen<MachineTurbofanM
         if (isPointInRect(TANK_X, TANK_Y, TANK_W, TANK_H, mouseX, mouseY)) {
             var tank = turbofan.getTank();
             guiGraphics.renderTooltip(font, Component.literal(tank.getFill() + " / " + tank.getMaxFill() + " mB"), mouseX, mouseY);
+        }
         }
 
         renderTooltip(guiGraphics, mouseX, mouseY);

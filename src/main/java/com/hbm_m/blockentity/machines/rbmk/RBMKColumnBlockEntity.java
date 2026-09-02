@@ -1,12 +1,16 @@
 package com.hbm_m.blockentity.machines.rbmk;
 
+import com.hbm_m.blockentity.BaseHbmBlockEntity;
 import com.hbm_m.handler.rbmk.NeutronNodeWorld;
 import com.hbm_m.handler.rbmk.RBMKDials;
 import com.hbm_m.handler.rbmk.RBMKNeutronHandler;
 import com.hbm_m.handler.rbmk.RBMKNeutronHandler.RBMKType;
 import com.hbm_m.item.ModItems;
+import com.hbm_m.platform.PlatformHooks;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.Packet;
@@ -17,7 +21,6 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 
@@ -27,8 +30,10 @@ import java.util.Deque;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-public abstract class RBMKColumnBlockEntity extends BlockEntity {
+public abstract class RBMKColumnBlockEntity extends BaseHbmBlockEntity {
 
     public double heat        = 20.0;
     public int reasimWater    = 0;
@@ -36,8 +41,20 @@ public abstract class RBMKColumnBlockEntity extends BlockEntity {
     public static final int MAX_WATER = 16_000;
     public static final int MAX_STEAM = 16_000;
     public int craneIndicator = 0;
-    /** 0 = no lid, 1 = concrete lid, 2 = glass lid */
-    protected int lidState = 1;
+    /**
+     * 0 = no lid, 1 = concrete lid, 2 = glass lid.
+     *
+     * <p>A freshly placed column has <b>no</b> lid: CE's {@code RBMKBase.getDirModified} forces
+     * every column's placement metadata to {@code DIR_NO_LID}, and lids are a separate item you put
+     * on top afterwards. The port defaulted this to 1, so every column arrived pre-lidded and the
+     * two lid items had nothing to do - and now that the neutron handler irradiates through open
+     * columns again, that default also silently suppressed the radiation leak an uncapped channel
+     * is supposed to produce.
+     *
+     * <p>The NBT fallback below stays at 1 so columns saved by older versions of this port keep the
+     * lid they were built with.
+     */
+    protected int lidState = 0;
 
     private static final Direction[] NEIGHBOR_DIRS = {
         Direction.NORTH, Direction.EAST, Direction.SOUTH, Direction.WEST
@@ -64,8 +81,6 @@ public abstract class RBMKColumnBlockEntity extends BlockEntity {
         }
     }
 
-    // â"€â"€â"€ Base Tick â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
-
     protected static void baseTick(Level level, BlockPos pos, BlockState state, RBMKColumnBlockEntity be) {
         if (level.isClientSide) return;
         if (be.craneIndicator > 0) be.craneIndicator--;
@@ -88,35 +103,79 @@ public abstract class RBMKColumnBlockEntity extends BlockEntity {
 
     // â"€â"€â"€ Heat â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 
+    /**
+     * 1:1 with the CE {@code TileEntityRBMKBase.moveHeat}. Two things the earlier port got wrong:
+     *
+     * <ul>
+     *   <li>the four cardinal neighbours are <b>cached</b> in {@link #neighbourCache} and only
+     *       re-resolved when a slot is empty or its block entity went invalid, instead of doing
+     *       four {@code getBlockEntity} lookups on every column on every tick;</li>
+     *   <li>the ReaSim water/steam <b>remainder</b> is handed out one unit at a time to the
+     *       neighbours first and only what is left over goes to this column. The port gave the
+     *       whole remainder to itself on top of its already-assigned share, which quietly
+     *       duplicated up to {@code members-1} mB of water and steam per column per tick.</li>
+     * </ul>
+     */
+    protected final RBMKColumnBlockEntity[] neighbourCache = new RBMKColumnBlockEntity[4];
+
     private void moveHeat(Level level) {
         boolean reasim = RBMKDials.getReasimBoilers(level);
-        List<RBMKColumnBlockEntity> rec = new ArrayList<>();
-        rec.add(this);
+
         double heatTot = heat;
         int waterTot = reasimWater, steamTot = reasimSteam;
+        int members = 1; // includes self
 
+        int index = 0;
         for (Direction dir : NEIGHBOR_DIRS) {
-            BlockPos np = getBlockPos().offset(dir.getStepX(), 0, dir.getStepZ());
-            if (level.getBlockEntity(np) instanceof RBMKColumnBlockEntity n && n.participatesInHeatNetwork()) {
-                rec.add(n);
-                heatTot += n.heat;
-                if (reasim) { waterTot += n.reasimWater; steamTot += n.reasimSteam; }
+            if (neighbourCache[index] != null && neighbourCache[index].isRemoved())
+                neighbourCache[index] = null;
+
+            if (neighbourCache[index] == null) {
+                BlockPos np = getBlockPos().offset(dir.getStepX(), 0, dir.getStepZ());
+                if (level.getBlockEntity(np) instanceof RBMKColumnBlockEntity n && n.participatesInHeatNetwork())
+                    neighbourCache[index] = n;
             }
+
+            RBMKColumnBlockEntity neighbor = neighbourCache[index];
+            if (neighbor != null) {
+                members++;
+                heatTot += neighbor.heat;
+                if (reasim) { waterTot += neighbor.reasimWater; steamTot += neighbor.reasimSteam; }
+            }
+            index++;
         }
 
-        int members = rec.size();
+        double stepSize = RBMKDials.getColumnHeatFlow(level);
+
         if (members > 1) {
-            double targetHeat = heatTot / members;
-            double step = RBMKDials.getColumnHeatFlow(level);
-            int tWater = waterTot / members, rWater = waterTot % members;
-            int tSteam  = steamTot  / members, rSteam  = steamTot  % members;
-            for (RBMKColumnBlockEntity c : rec) {
-                c.heat += (targetHeat - c.heat) * step;
-                if (reasim) { c.reasimWater = tWater; c.reasimSteam = tSteam; }
+            double targetHeat = heatTot / (double) members;
+
+            int tWater = 0, rWater = 0, tSteam = 0, rSteam = 0;
+            if (reasim) {
+                tWater = waterTot / members; rWater = waterTot % members;
+                tSteam = steamTot / members; rSteam = steamTot % members;
             }
-            if (reasim) { reasimWater += rWater; reasimSteam += rSteam; }
+
+            for (RBMKColumnBlockEntity neighbor : neighbourCache) {
+                if (neighbor == null) continue;
+                neighbor.heat += (targetHeat - neighbor.heat) * stepSize;
+                if (reasim) {
+                    neighbor.reasimWater = tWater;
+                    neighbor.reasimSteam = tSteam;
+                    if (rWater > 0) { neighbor.reasimWater++; rWater--; }
+                    if (rSteam > 0) { neighbor.reasimSteam++; rSteam--; }
+                }
+                neighbor.setChanged();
+            }
+
+            heat += (targetHeat - heat) * stepSize;
+            if (reasim) {
+                reasimWater = tWater + Math.max(rWater, 0);
+                reasimSteam = tSteam + Math.max(rSteam, 0);
+            }
             setChanged();
         }
+
         coolPassively(level, members - 1);
     }
 
@@ -138,8 +197,6 @@ public abstract class RBMKColumnBlockEntity extends BlockEntity {
         if (heat < 20) heat = 20.0;
     }
 
-    // â"€â"€â"€ Melt â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
-
     public double maxHeat() { return 1500.0; }
 
     /**
@@ -159,8 +216,21 @@ public abstract class RBMKColumnBlockEntity extends BlockEntity {
      * {@code reduce} (less destruction), columns near the center get a larger one (more
      * destruction), matching the original's {@code minDist+1} computation.
      */
+    /**
+     * {@code TileEntityRBMKBase.pipes}: every steam network a melting boiler channel was feeding.
+     * Collected during the onMelt pass and consumed once at the end of the meltdown, so a network
+     * shared by several channels is only torn apart once.
+     */
+    public static final Set<com.hbm_m.api.fluids.FluidNet> overpressureNets = new HashSet<>();
+
     public static void meltdownReactor(Level level, RBMKColumnBlockEntity origin) {
         if (level.isClientSide) return;
+
+        // The original brackets the whole meltdown with RBMKBase.dropLids = false/true. Without
+        // it every column that still had a lid dropped it as an item *and* launched it as debris,
+        // so a meltdown quietly duplicated the entire reactor's lids across the crater floor.
+        com.hbm_m.block.machines.rbmk.RBMKColumnBlock.dropLids = false;
+        overpressureNets.clear();
 
         BlockPos originPos = origin.getBlockPos();
         Set<BlockPos> visited = new HashSet<>();
@@ -173,7 +243,12 @@ public abstract class RBMKColumnBlockEntity extends BlockEntity {
         int minX = originPos.getX(), maxX = originPos.getX();
         int minZ = originPos.getZ(), maxZ = originPos.getZ();
 
-        while (!queue.isEmpty()) {
+        // CE's getFF caps the flood fill at 50000 columns and refuses to touch unloaded chunks, so a
+        // world-edited mega-structure cannot freeze the server or force-load half the world mid-melt.
+        int safetyLimit = 50_000;
+
+        while (!queue.isEmpty() && safetyLimit > 0) {
+            safetyLimit--;
             RBMKColumnBlockEntity col = queue.poll();
             columns.add(col);
             BlockPos p = col.getBlockPos();
@@ -183,8 +258,9 @@ public abstract class RBMKColumnBlockEntity extends BlockEntity {
             for (Direction dir : NEIGHBOR_DIRS) {
                 BlockPos np = p.relative(dir);
                 if (visited.contains(np)) continue;
+                visited.add(np);
+                if (!level.isLoaded(np)) continue;
                 if (level.getBlockEntity(np) instanceof RBMKColumnBlockEntity n) {
-                    visited.add(np);
                     queue.add(n);
                 }
             }
@@ -202,6 +278,7 @@ public abstract class RBMKColumnBlockEntity extends BlockEntity {
         // 3x3x3 neighborhood with a 1-in-3 chance of turning ordinary/burning debris into the
         // more severe digamma or radiating variant, matching the original's post-meltdown sweep.
         for (RBMKColumnBlockEntity col : columns) {
+            if (!(col instanceof RBMKRodBlockEntity)) continue;
             BlockPos p = col.getBlockPos();
             if (!level.getBlockState(p).is(com.hbm_m.block.ModBlocks.RBMK_CORIUM.get())) continue;
 
@@ -221,7 +298,98 @@ public abstract class RBMKColumnBlockEntity extends BlockEntity {
                 }
             }
         }
+
+        handleOverpressure(level);
+
+        // The meltdown's own effect: one mushroom cloud scaled to the reactor's smaller footprint,
+        // centred on the group rather than on whichever column happened to trigger it, plus the
+        // explosion report. Both were missing - the RBMK_MUSH particle was registered but never
+        // spawned by anything, so a meltdown was silent and left no cloud at all.
+        int smallDim = Math.max(maxX - minX, maxZ - minZ) * 2;
+        double avgX = minX + (maxX - minX) / 2 + 0.5;
+        double avgZ = minZ + (maxZ - minZ) / 2 + 0.5;
+        double cloudY = originPos.getY() + 1;
+
+        if (level instanceof net.minecraft.server.level.ServerLevel server) {
+            // Count 0 makes the client take xd/yd/zd as literal values instead of a random
+            // spread, which is how the provider receives the cloud's scale.
+            server.sendParticles(com.hbm_m.particle.ModParticleTypes.RBMK_MUSH.get(),
+                    avgX, cloudY, avgZ, 0, smallDim, 0, 0, 1);
+        }
+        level.playSound(null, avgX, cloudY, avgZ,
+                com.hbm_m.sound.ModSounds.RBMK_EXPLOSION.get(),
+                net.minecraft.sounds.SoundSource.BLOCKS, 50.0F, 1.0F);
+
+        com.hbm_m.advancement.ModAdvancements.grantNearby(level, avgX, cloudY, avgZ, 50D,
+                com.hbm_m.advancement.ModAdvancements.RBMK_BOOM);
+
+        // A meltdown carrying digamma fuel calls down the lance, a hundred blocks above the
+        // reactor's centre. Note the original reads the flag here, *after* onMelt has run - the
+        // reset below is what stops it firing again on the next, ordinary meltdown.
+        if (digamma) {
+            com.hbm_m.entity.effect.SpearEntity spear =
+                    com.hbm_m.entity.ModEntities.DIGAMMA_SPEAR.get().create(level);
+            if (spear != null) {
+                spear.setPos(avgX, originPos.getY() + 100, avgZ);
+                level.addFreshEntity(spear);
+            }
+        }
+
+        com.hbm_m.block.machines.rbmk.RBMKColumnBlock.dropLids = true;
         digamma = false;
+    }
+
+    /**
+     * 1:1 port of the original's overpressure event. A meltdown does not stop at the reactor: the
+     * steam still in the pipework has to go somewhere, so the networks the melting channels were
+     * feeding rupture too.
+     *
+     * <p>Pipes go first, but only a fraction of them - {@code min(count / 5, 100)} - so a long
+     * run is left mangled rather than erased, and a huge network cannot stall the server. Every
+     * receiver on those networks is then destroyed: machines that implement
+     * {@link com.hbm_m.api.tile.IOverpressurable} decide for themselves what that looks like,
+     * anything else is removed and replaced with a plain five-power explosion.</p>
+     */
+    private static void handleOverpressure(Level level) {
+        if (!RBMKDials.getOverpressure(level) || overpressureNets.isEmpty()) {
+            overpressureNets.clear();
+            return;
+        }
+
+        // Unify first: two channels feeding one network must not process it twice.
+        Set<com.hbm_m.api.network.GenNode<?>> pipeNodes = new java.util.LinkedHashSet<>();
+        Set<com.hbm_m.api.fluids.IFluidReceiverMK2> receivers = new java.util.LinkedHashSet<>();
+        for (com.hbm_m.api.fluids.FluidNet net : overpressureNets) {
+            if (net == null) continue;
+            pipeNodes.addAll(net.links);
+            receivers.addAll(net.receiverEntries.keySet());
+        }
+
+        int max = Math.min(pipeNodes.size() / 5, 100);
+        int count = 0;
+        for (com.hbm_m.api.network.GenNode<?> node : pipeNodes) {
+            if (count >= max) break;
+            for (BlockPos pos : node.positions) {
+                if (level.getBlockEntity(pos) != null) {
+                    level.setBlock(pos, Blocks.AIR.defaultBlockState(), 3);
+                }
+            }
+            count++;
+        }
+
+        for (com.hbm_m.api.fluids.IFluidReceiverMK2 receiver : receivers) {
+            if (!(receiver instanceof BlockEntity be)) continue;
+            BlockPos pos = be.getBlockPos();
+            if (receiver instanceof com.hbm_m.api.tile.IOverpressurable overpressurable) {
+                overpressurable.explode(level, pos);
+            } else {
+                level.setBlock(pos, Blocks.AIR.defaultBlockState(), 3);
+                level.explode(null, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
+                        5F, Level.ExplosionInteraction.NONE);
+            }
+        }
+
+        overpressureNets.clear();
     }
 
     public void onMelt(Level level, int reduce) {
@@ -248,52 +416,56 @@ public abstract class RBMKColumnBlockEntity extends BlockEntity {
                 level.setBlock(base.above(i), Blocks.AIR.defaultBlockState(), 3);
             }
         }
-        // Cosmetic-only blast (matches the original's newExplosion(...,5F,false,false)): sound and
-        // particles to sell the meltdown without double-damaging terrain we already rewrote above.
-        level.explode(null, base.getX() + 0.5, base.getY() + 0.5, base.getZ() + 0.5, 5F, Level.ExplosionInteraction.NONE);
+        // No per-column explosion. CE's standardMelt only rewrites the column's blocks; the single
+        // reactor-wide blast (sound + mushroom particle) is fired once by meltdownReactor. The port
+        // used to detonate a 5-power explosion for *every* melting column, so a 30-column reactor
+        // spawned 30 overlapping explosions in one tick.
     }
 
     /**
-     * Flings a piece of debris outward from the top of the column, matching the original's
-     * {@code EntityRBMKDebris} arc (gaussian horizontal spread, strong upward kick). Reuses vanilla
-     * {@link ItemEntity} physics rather than a bespoke entity class - visually equivalent (tumbling,
-     * bouncing, gravity) since the debris items themselves are wrapped as ItemStacks.
+     * Flings a piece of debris outward from the top of the column, 1:1 with the original's
+     * {@code TileEntityRBMKBase.spawnDebris}: gaussian horizontal spread, strong upward kick, and
+     * a lid that gets a softer sideways push but a harder one upward so it clears the building.
+     *
+     * <p>This used to drop a plain vanilla {@link ItemEntity} as a stand-in, which looked roughly
+     * right but lost everything that makes the debris matter: the lid no longer punched through
+     * the ceiling, fuel and graphite chunks stopped irradiating anyone near them, and the
+     * per-type lifetimes and models were gone. It now spawns the real
+     * {@link com.hbm_m.entity.rbmk.RBMKDebrisEntity}.</p>
      */
     protected void spawnDebris(Level level, String type) {
         if (level.isClientSide) return;
-        Item item = debrisItem(type);
-        if (item == null) return;
+
+        com.hbm_m.entity.rbmk.RBMKDebrisEntity.DebrisType debrisType = debrisType(type);
+        if (debrisType == null) return;
 
         BlockPos base = getBlockPos();
-        ItemEntity debris = new ItemEntity(level,
-                base.getX() + 0.5, base.getY() + 4.0, base.getZ() + 0.5, new ItemStack(item));
+        com.hbm_m.entity.rbmk.RBMKDebrisEntity debris = com.hbm_m.entity.rbmk.RBMKDebrisEntity.create(
+                level, base.getX() + 0.5, base.getY() + 4.0, base.getZ() + 0.5, debrisType);
+
         double vx = level.random.nextGaussian() * 0.25;
         double vz = level.random.nextGaussian() * 0.25;
-        double vy = 0.25 + level.random.nextDouble() * 1.25;
-        if (type.equals("lid")) { vx *= 0.5; vz *= 0.5; vy += 0.5; }
+        double vy = 0.5 + level.random.nextDouble() * 1.5;
+        if (debrisType == com.hbm_m.entity.rbmk.RBMKDebrisEntity.DebrisType.LID) {
+            vx *= 0.5;
+            vz *= 0.5;
+            vy += 0.5;
+        }
         debris.setDeltaMovement(vx, vy, vz);
-        debris.setPickUpDelay(100);
         level.addFreshEntity(debris);
     }
 
-    /**
-     * 1:1 with the original's {@code EntityRBMKDebris} pickup mapping: BLANK/ELEMENT/ROD debris
-     * all drop the same plain {@code debris_metal} beam item (not a dedicated "element" item -
-     * that registration exists but the original never actually uses it for this), and LID debris
-     * drops the real, placeable {@code rbmk_lid} item (recoverable even after a meltdown),
-     * not a decorative stand-in.
-     */
-    private static Item debrisItem(String type) {
+    private static com.hbm_m.entity.rbmk.RBMKDebrisEntity.DebrisType debrisType(String type) {
         return switch (type) {
-            case "fuel"                      -> ModItems.DEBRIS_FUEL.get();
-            case "graphite"                  -> ModItems.DEBRIS_GRAPHITE.get();
-            case "blank", "element", "rod"    -> ModItems.DEBRIS_METAL.get();
-            case "lid"                        -> ModItems.RBMK_LID.get();
+            case "fuel"     -> com.hbm_m.entity.rbmk.RBMKDebrisEntity.DebrisType.FUEL;
+            case "graphite" -> com.hbm_m.entity.rbmk.RBMKDebrisEntity.DebrisType.GRAPHITE;
+            case "element"  -> com.hbm_m.entity.rbmk.RBMKDebrisEntity.DebrisType.ELEMENT;
+            case "rod"      -> com.hbm_m.entity.rbmk.RBMKDebrisEntity.DebrisType.ROD;
+            case "lid"      -> com.hbm_m.entity.rbmk.RBMKDebrisEntity.DebrisType.LID;
+            case "blank"    -> com.hbm_m.entity.rbmk.RBMKDebrisEntity.DebrisType.BLANK;
             default -> null;
         };
     }
-
-    // â"€â"€â"€ Lid â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 
     public boolean hasLid()         { return lidState != 0; }
     public int    getLidState()     { return lidState; }
@@ -309,12 +481,8 @@ public abstract class RBMKColumnBlockEntity extends BlockEntity {
         setChanged();
     }
 
-    // â"€â"€â"€ Neutron â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
-
     public RBMKType getRBMKType()  { return RBMKType.OTHER; }
     public boolean  isModerated()  { return false; }
-
-    // â"€â"€â"€ Console â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 
     public enum ColumnType {
         BLANK, FUEL, CONTROL, MODERATOR, ABSORBER, REFLECTOR, COOLER, BOILER, HEATER, OUTGASSER, STORAGE
@@ -359,16 +527,17 @@ public abstract class RBMKColumnBlockEntity extends BlockEntity {
 
     // ─── NBT ─────────────────────────────────────────────────────────────────────
 
-    //? if < 1.21.1 {
-    protected static CompoundTag safeItemSave(net.minecraft.world.item.ItemStack stack) {
-        CompoundTag t = new CompoundTag();
-        stack.save(t);
-        return t;
+    /**
+     * Версионно-независимое сохранение ItemStack в новый CompoundTag.
+     * Делегирует в {@link PlatformHooks#safeItemSave} (наследники RBMK используют в своём NBT).
+     */
+    protected static CompoundTag safeItemSave(ItemStack stack) {
+        return PlatformHooks.safeItemSave(stack, PlatformHooks.bestEffortProvider());
     }
 
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(@NotNull CompoundTag tag, @Nullable HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.putDouble("heat", heat);
         tag.putInt("reasimWater", reasimWater);
         tag.putInt("reasimSteam", reasimSteam);
@@ -376,58 +545,13 @@ public abstract class RBMKColumnBlockEntity extends BlockEntity {
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(@NotNull CompoundTag tag, @Nullable HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         heat        = tag.getDouble("heat");
         reasimWater = tag.getInt("reasimWater");
         reasimSteam = tag.getInt("reasimSteam");
         lidState    = tag.contains("lidState") ? tag.getInt("lidState") : 1;
     }
-    //?} else {
-    /*protected static CompoundTag safeItemSave(net.minecraft.world.item.ItemStack stack, net.minecraft.core.HolderLookup.Provider registries) {
-        return (CompoundTag) stack.save(registries);
-    }
 
-    @Override
-    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-        super.saveAdditional(tag, registries);
-        tag.putDouble("heat", heat);
-        tag.putInt("reasimWater", reasimWater);
-        tag.putInt("reasimSteam", reasimSteam);
-        tag.putInt("lidState", lidState);
-    }
-
-    @Override
-    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-        super.loadAdditional(tag, registries);
-        heat        = tag.getDouble("heat");
-        reasimWater = tag.getInt("reasimWater");
-        reasimSteam = tag.getInt("reasimSteam");
-        lidState    = tag.contains("lidState") ? tag.getInt("lidState") : 1;
-    }
-    *///?}
-
-    // ─── Sync ─────────────────────────────────────────────────────────────────────
-
-    //? if < 1.21.1 {
-    @Override
-    public CompoundTag getUpdateTag() {
-        CompoundTag tag = super.getUpdateTag();
-        saveAdditional(tag);
-        return tag;
-    }
-    //?} else {
-    /*@Override
-    public CompoundTag getUpdateTag(net.minecraft.core.HolderLookup.Provider registries) {
-        CompoundTag tag = super.getUpdateTag(registries);
-        saveAdditional(tag, registries);
-        return tag;
-    }
-    *///?}
-
-    @Override
-    public Packet<ClientGamePacketListener> getUpdatePacket() {
-        return ClientboundBlockEntityDataPacket.create(this);
-    }
 }
 

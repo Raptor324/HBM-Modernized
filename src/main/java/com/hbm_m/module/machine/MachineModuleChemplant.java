@@ -6,6 +6,7 @@ import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.recipe.ChemicalPlantRecipe;
+import com.hbm_m.platform.recipe.RecipeHooks;
 
 import dev.architectury.fluid.FluidStack;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -53,7 +54,11 @@ public class MachineModuleChemplant extends MachineModuleBase<ChemicalPlantRecip
             return true;
         }
 
+        boolean wasProcessing = this.didProcess;
         super.update(speed, powerMul, extraCondition, blueprint);
+        if (wasProcessing && !this.didProcess) {
+            this.needsSync = true;
+        }
         return needsSync;
     }
 
@@ -115,7 +120,7 @@ public class MachineModuleChemplant extends MachineModuleBase<ChemicalPlantRecip
     @Override
     protected boolean matchesCurrentRecipe(ChemicalPlantRecipe recipe) {
         if (selectedRecipeId == null) return false;
-        return recipe != null && selectedRecipeId.equals(recipe.getId());
+        return recipe != null && selectedRecipeId.equals(RecipeHooks.recipeId(level.getRecipeManager(), getRecipeType(), recipe));
     }
 
     @Override
@@ -146,10 +151,11 @@ public class MachineModuleChemplant extends MachineModuleBase<ChemicalPlantRecip
 
     public void setupTanks(@Nullable ChemicalPlantRecipe recipe) {
         if (recipe == null) return;
-        List<ChemicalPlantRecipe.FluidIngredient> fluidInputs = recipe.getFluidInputs();
+        // Жидкостные входы теперь List<FluidStack> (Architectury) — единый формат с выходами.
+        List<FluidStack> fluidInputs = recipe.getFluidInputs();
         for (int i = 0; i < inputTanks.length; i++) {
-            if (i < fluidInputs.size()) {
-                Fluid fluid = BuiltInRegistries.FLUID.get(fluidInputs.get(i).fluidId());
+            if (i < fluidInputs.size() && !fluidInputs.get(i).isEmpty()) {
+                Fluid fluid = fluidInputs.get(i).getFluid();
                 if (fluid != null && fluid != Fluids.EMPTY) {
                     inputTanks[i].conform(fluid);
                 } else {
@@ -179,16 +185,17 @@ public class MachineModuleChemplant extends MachineModuleBase<ChemicalPlantRecip
             if (!req.ingredient().test(slotStack) || slotStack.getCount() < req.count()) return false;
         }
 
-        List<ChemicalPlantRecipe.FluidIngredient> fluidInputs = recipe.getFluidInputs();
+        List<FluidStack> fluidInputs = recipe.getFluidInputs();
         for (int i = 0; i < fluidInputs.size(); i++) {
             if (i >= inputTanks.length) return false;
-            ChemicalPlantRecipe.FluidIngredient req = fluidInputs.get(i);
-            Fluid fluid = BuiltInRegistries.FLUID.get(req.fluidId());
-            if (fluid == null) return false;
+            FluidStack req = fluidInputs.get(i);
+            if (req == null || req.isEmpty()) return false;
+            Fluid fluid = req.getFluid();
+            if (fluid == null || fluid == Fluids.EMPTY) return false;
             FluidTank tank = inputTanks[i];
             if (tank.isEmpty()
                     || !com.hbm_m.api.fluids.VanillaFluidEquivalence.sameSubstance(tank.getStoredFluid(), fluid)
-                    || tank.getFluidAmountMb() < req.amount()) {
+                    || tank.getFluidAmountMb() < (int) req.getAmount()) {
                 return false;
             }
         }
@@ -217,9 +224,11 @@ public class MachineModuleChemplant extends MachineModuleBase<ChemicalPlantRecip
             itemHandler.getStackInSlot(slot).shrink(itemInputs.get(i).count());
         }
 
-        List<ChemicalPlantRecipe.FluidIngredient> fluidInputs = recipe.getFluidInputs();
+        List<FluidStack> fluidInputs = recipe.getFluidInputs();
         for (int i = 0; i < fluidInputs.size(); i++) {
-            inputTanks[i].drainMb(fluidInputs.get(i).amount());
+            FluidStack req = fluidInputs.get(i);
+            if (req == null || req.isEmpty()) continue;
+            inputTanks[i].drainMb((int) req.getAmount());
         }
 
         List<ItemStack> itemOutputs = recipe.getItemOutputs();

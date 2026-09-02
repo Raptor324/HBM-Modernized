@@ -5,19 +5,19 @@ import org.jetbrains.annotations.NotNull;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.hbm_m.lib.RefStrings;
+import com.hbm_m.platform.recipe.PlatformRecipe;
+import com.hbm_m.platform.recipe.PlatformRecipeSerializer;
+import com.hbm_m.platform.recipe.RecipeHooks;
+import com.hbm_m.platform.recipe.RecipeInputWrapper;
 
 import net.minecraft.core.NonNullList;
-import net.minecraft.core.RegistryAccess;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.GsonHelper;
-import net.minecraft.world.Container;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
-import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
-import net.minecraft.world.item.crafting.ShapedRecipe;
 import net.minecraft.world.level.Level;
 
 /**
@@ -28,17 +28,20 @@ import net.minecraft.world.level.Level;
  * das gesamte Raster ausfuellt (dort ist wegen der vollen Breite/Hoehe ohnehin keine Verschiebung
  * moeglich). Deshalb hier als eigener, einfacherer Recipe-Typ mit 9 festen {@link Ingredient}-
  * Slots statt vanilla Pattern-Key-Syntax.
+ *
+ * <p>Наследуется от {@link PlatformRecipe} (кросс-версионная база: {@code Recipe<Container>} на 1.20.1,
+ * {@code Recipe<RecipeInput>} на 1.21.1). Сериализатор наследуется от {@link PlatformRecipeSerializer},
+ * который предоставляет {@code codec()}/{@code streamCodec()} для 1.21.1.</p>
  */
-public class AmmoPressRecipe implements Recipe<Container> {
+public class AmmoPressRecipe extends PlatformRecipe {
 
     public static final int GRID_SIZE = 9;
 
-    private final ResourceLocation id;
     private final NonNullList<Ingredient> inputs;
     private final ItemStack output;
 
     public AmmoPressRecipe(ResourceLocation id, NonNullList<Ingredient> inputs, ItemStack output) {
-        this.id = id;
+        super(id);
         this.inputs = inputs;
         this.output = output;
     }
@@ -59,16 +62,26 @@ public class AmmoPressRecipe implements Recipe<Container> {
         return true;
     }
 
+    // =====================================================================================
+    //  PlatformRecipe: кросс-версионные контракты.
+    //  matches/assemble/getResultItem на обеих версиях делегируют сюда (см. PlatformRecipe).
+    // =====================================================================================
+
     @Override
-    public boolean matches(@NotNull Container container, @NotNull Level level) {
+    public boolean matchesRecipe(RecipeInputWrapper input, Level level) {
         for (int i = 0; i < GRID_SIZE; i++) {
-            if (!inputs.get(i).test(container.getItem(i))) return false;
+            if (!inputs.get(i).test(input.getItem(i))) return false;
         }
         return true;
     }
 
     @Override
-    public @NotNull ItemStack assemble(@NotNull Container container, @NotNull RegistryAccess registryAccess) {
+    public ItemStack assembleSafe() {
+        return getOutput();
+    }
+
+    @Override
+    public ItemStack getResultItemSafe() {
         return getOutput();
     }
 
@@ -78,22 +91,17 @@ public class AmmoPressRecipe implements Recipe<Container> {
     }
 
     @Override
-    public @NotNull ItemStack getResultItem(@NotNull RegistryAccess registryAccess) {
-        return getOutput();
+    public NonNullList<Ingredient> getIngredients() {
+        return inputs;
     }
 
     @Override
-    public @NotNull ResourceLocation getId() {
-        return id;
-    }
-
-    @Override
-    public @NotNull RecipeSerializer<?> getSerializer() {
+    public RecipeSerializer<?> getSerializer() {
         return Serializer.INSTANCE;
     }
 
     @Override
-    public @NotNull RecipeType<?> getType() {
+    public RecipeType<?> getType() {
         return Type.INSTANCE;
     }
 
@@ -102,7 +110,7 @@ public class AmmoPressRecipe implements Recipe<Container> {
         public static final String ID = "ammo_press";
     }
 
-    public static class Serializer implements RecipeSerializer<AmmoPressRecipe> {
+    public static class Serializer extends PlatformRecipeSerializer<AmmoPressRecipe> {
         public static final Serializer INSTANCE = new Serializer();
         //? if fabric && < 1.21.1 {
         /*public static final ResourceLocation ID = new ResourceLocation(RefStrings.MODID, "ammo_press");
@@ -111,34 +119,34 @@ public class AmmoPressRecipe implements Recipe<Container> {
         //?}
 
         @Override
-        public @NotNull AmmoPressRecipe fromJson(@NotNull ResourceLocation recipeId, @NotNull JsonObject json) {
+        public AmmoPressRecipe readJson(ResourceLocation recipeId, JsonObject json) {
             JsonArray ingredientsArray = GsonHelper.getAsJsonArray(json, "ingredients");
             NonNullList<Ingredient> inputs = NonNullList.withSize(AmmoPressRecipe.GRID_SIZE, Ingredient.EMPTY);
             for (int i = 0; i < AmmoPressRecipe.GRID_SIZE && i < ingredientsArray.size(); i++) {
-                inputs.set(i, Ingredient.fromJson(ingredientsArray.get(i)));
+                inputs.set(i, RecipeHooks.ingredientFromJson(ingredientsArray.get(i)));
             }
 
-            ItemStack output = ShapedRecipe.itemStackFromJson(GsonHelper.getAsJsonObject(json, "result"));
+            ItemStack output = RecipeHooks.itemStackFromJson(GsonHelper.getAsJsonObject(json, "result"));
 
             return new AmmoPressRecipe(recipeId, inputs, output);
         }
 
         @Override
-        public AmmoPressRecipe fromNetwork(@NotNull ResourceLocation recipeId, @NotNull FriendlyByteBuf buf) {
+        public AmmoPressRecipe readNetwork(ResourceLocation recipeId, FriendlyByteBuf buf) {
             NonNullList<Ingredient> inputs = NonNullList.withSize(AmmoPressRecipe.GRID_SIZE, Ingredient.EMPTY);
             for (int i = 0; i < AmmoPressRecipe.GRID_SIZE; i++) {
-                inputs.set(i, Ingredient.fromNetwork(buf));
+                inputs.set(i, RecipeHooks.readIngredient(buf));
             }
-            ItemStack output = buf.readItem();
+            ItemStack output = RecipeHooks.readItem(buf);
             return new AmmoPressRecipe(recipeId, inputs, output);
         }
 
         @Override
-        public void toNetwork(@NotNull FriendlyByteBuf buf, @NotNull AmmoPressRecipe recipe) {
+        public void writeNetwork(FriendlyByteBuf buf, AmmoPressRecipe recipe) {
             for (int i = 0; i < AmmoPressRecipe.GRID_SIZE; i++) {
-                recipe.inputs.get(i).toNetwork(buf);
+                RecipeHooks.writeIngredient(buf, recipe.inputs.get(i));
             }
-            buf.writeItem(recipe.output);
+            RecipeHooks.writeItem(buf, recipe.output);
         }
     }
 }

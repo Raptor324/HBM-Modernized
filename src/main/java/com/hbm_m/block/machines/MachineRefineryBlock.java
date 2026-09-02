@@ -5,7 +5,6 @@ import java.util.function.Supplier;
 
 import org.jetbrains.annotations.Nullable;
 
-import com.hbm_m.api.energy.EnergyNetworkManager;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.blockentity.machines.MachineRefineryBlockEntity;
@@ -49,7 +48,17 @@ import net.minecraftforge.common.capabilities.ForgeCapabilities;
  * Refinery - processes crude oil into various petroleum products.
  * Multiblock structure: 3x10x3 (10 слоёв по вертикали, сетка 3x3).
  */
+import net.minecraft.world.level.Explosion;
+
 public class MachineRefineryBlock extends BaseEntityBlock implements IMultiblockController {
+
+    /**
+     * Whether this machine has been blown up. Drives the model swap to the wrecked variant - the
+     * original renders {@code *_exploded.obj} in its place - and is set from the block entity's
+     * {@code explode()} / {@code repair()}.
+     */
+    public static final net.minecraft.world.level.block.state.properties.BooleanProperty EXPLODED =
+            net.minecraft.world.level.block.state.properties.BooleanProperty.create("exploded");
 
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
 
@@ -58,7 +67,7 @@ public class MachineRefineryBlock extends BaseEntityBlock implements IMultiblock
     public MachineRefineryBlock(BlockBehaviour.Properties properties) {
         super(properties);
         this.registerDefaultState(this.stateDefinition.any()
-                .setValue(FACING, Direction.NORTH));
+                .setValue(FACING, Direction.NORTH).setValue(EXPLODED, false));
         this.structureHelper = defineStructure();
     }
 
@@ -101,7 +110,7 @@ public class MachineRefineryBlock extends BaseEntityBlock implements IMultiblock
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(FACING);
+        builder.add(FACING, EXPLODED);
     }
 
     @Nullable
@@ -115,20 +124,7 @@ public class MachineRefineryBlock extends BaseEntityBlock implements IMultiblock
         super.onPlace(state, level, pos, oldState, isMoving);
 
         if (!state.is(oldState.getBlock()) && !level.isClientSide()) {
-            BlockPos core = placeMultiblockStructure(level, pos, state);
-            if (core == null) {
-                return;
-            }
-            Direction facing = state.getValue(FACING);
-            EnergyNetworkManager.get((ServerLevel) level).addNode(core);
-
-            for (BlockPos gridPos : structureHelper.getStructureMap().keySet()) {
-                PartRole role = structureHelper.resolvePartRole(gridPos, this);
-                if (role.canReceiveEnergy()) {
-                    BlockPos worldPos = structureHelper.getRotatedPos(core, gridPos, facing);
-                    EnergyNetworkManager.get((ServerLevel) level).addNode(worldPos);
-                }
-            }
+            placeMultiblockStructure(level, pos, state);
         }
     }
 
@@ -142,16 +138,6 @@ public class MachineRefineryBlock extends BaseEntityBlock implements IMultiblock
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
         if (state.getBlock() != newState.getBlock() && !level.isClientSide()) {
             Direction facing = state.getValue(FACING);
-
-            EnergyNetworkManager.get((ServerLevel) level).removeNode(pos);
-
-            for (BlockPos gridPos : structureHelper.getStructureMap().keySet()) {
-                PartRole role = structureHelper.resolvePartRole(gridPos, this);
-                if (role.canReceiveEnergy()) {
-                    BlockPos worldPos = structureHelper.getRotatedPos(pos, gridPos, facing);
-                    EnergyNetworkManager.get((ServerLevel) level).removeNode(worldPos);
-                }
-            }
 
             BlockEntity blockEntity = level.getBlockEntity(pos);
             if (blockEntity instanceof com.hbm_m.blockentity.BaseMachineBlockEntity be) {
@@ -169,8 +155,19 @@ public class MachineRefineryBlock extends BaseEntityBlock implements IMultiblock
         return new MachineRefineryBlockEntity(pos, state);
     }
 
+    //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        return openMenu(state, level, pos, player, hand, hit);
+    }
+    //?} else {
+    /*@Override
+    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+        return openMenu(state, level, pos, player, InteractionHand.MAIN_HAND, hit);
+    }
+    *///?}
+
+    private InteractionResult openMenu(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         if (!level.isClientSide()) {
             if (level.getBlockEntity(pos) instanceof MenuProvider provider) {
                 MenuRegistry.openExtendedMenu((ServerPlayer) player, provider, buf -> buf.writeBlockPos(pos));
@@ -214,4 +211,53 @@ public class MachineRefineryBlock extends BaseEntityBlock implements IMultiblock
     public PartRole getPartRole(BlockPos localOffset) {
         return structureHelper.resolvePartRole(localOffset, this);
     }
+
+    /**
+     * 1:1 port of {@code MachineRefinery.onBlockExploded}. A blast anywhere on the structure sets
+     * the whole thing alight rather than knocking out a single block; a second blast on an already
+     * burning refinery finishes it off.
+     *
+     * <p>Doing this with a bomblet zeta is the original's {@code achInferno}, which is the only
+     * way that advancement can be earned.</p>
+     */
+    @Override
+    public void onBlockExploded(BlockState state, Level level, BlockPos pos, Explosion explosion) {
+        BlockEntity be = level.getBlockEntity(pos);
+        if (!(be instanceof com.hbm_m.blockentity.machines.MachineRefineryBlockEntity core)) {
+            super.onBlockExploded(state, level, pos, explosion);
+            return;
+        }
+
+        // One explosion touches many blocks of the same machine; only the first one counts.
+        if (core.lastExplosion == explosion) return;
+        core.lastExplosion = explosion;
+
+        if (core.hasExploded) {
+            level.removeBlock(pos, false);
+            return;
+        }
+
+        core.explode();
+
+        if (explosion.getDirectSourceEntity() instanceof com.hbm_m.entity.projectile.EntityBombletZeta) {
+            com.hbm_m.advancement.ModAdvancements.grantNearby(level,
+                    pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 100D,
+                    com.hbm_m.advancement.ModAdvancements.INFERNO);
+        }
+    }
+
+    /** {@code canDropFromExplosion}: a bombed refinery leaves nothing to pick up. */
+    @Override
+    public boolean dropFromExplosion(Explosion explosion) {
+        return false;
+    }
+
+    //? if >1.20.1 {
+    /*public static final com.mojang.serialization.MapCodec<MachineRefineryBlock> CODEC = simpleCodec(MachineRefineryBlock::new);
+
+    @Override
+    protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
+        return CODEC;
+    }
+    *///?}
 }

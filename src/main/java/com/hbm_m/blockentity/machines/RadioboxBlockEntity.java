@@ -90,15 +90,15 @@ public class RadioboxBlockEntity extends BaseMachineBlockEntity {
     }
 
     @Override
-    public void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.putBoolean("isOn", isOn);
         tag.putBoolean("infinite", infinite);
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         isOn = tag.getBoolean("isOn");
         infinite = tag.getBoolean("infinite");
     }

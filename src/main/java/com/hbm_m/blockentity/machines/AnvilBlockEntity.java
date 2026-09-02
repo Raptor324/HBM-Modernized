@@ -10,12 +10,14 @@ import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.block.machines.anvils.AnvilBlock;
 import com.hbm_m.block.machines.anvils.AnvilTier;
+import com.hbm_m.blockentity.BaseHbmBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.inventory.menu.AnvilMenu;
 import com.hbm_m.item.fekal_electric.ModBatteryItem;
 import com.hbm_m.platform.ModItemStackHandler;
 import com.hbm_m.recipe.AnvilRecipe;
 import com.hbm_m.recipe.AnvilRecipeManager;
+import com.hbm_m.platform.PlatformHooks;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -38,12 +40,12 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
-public class AnvilBlockEntity extends BlockEntity implements MenuProvider {
+public class AnvilBlockEntity extends BaseHbmBlockEntity implements MenuProvider {
 
     private final ModItemStackHandler itemHandler = new ModItemStackHandler(3) {
         @Override
         protected void onContentsChanged(int slot) {
-            // Если изменились входные слоты, нужно пересчитать выход
+            // Р•СЃР»Рё РёР·РјРµРЅРёР»РёСЃСЊ РІС…РѕРґРЅС‹Рµ СЃР»РѕС‚С‹, РЅСѓР¶РЅРѕ РїРµСЂРµСЃС‡РёС‚Р°С‚СЊ РІС‹С…РѕРґ
             if (slot == 0 || slot == 1) {
                 updateCrafting();
             }
@@ -65,23 +67,25 @@ public class AnvilBlockEntity extends BlockEntity implements MenuProvider {
 
     // Forge item handler capabilities removed for Fabric compilation.
 
+    
+    // (устраняет вложенный stonecutter-баг в load())
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        // Просто сохраняем весь инвентарь как есть, включая слот 2
-        tag.put("inventory", itemHandler.serializeNBT());
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        // РџСЂРѕСЃС‚Рѕ СЃРѕС…СЂР°РЅСЏРµРј РІРµСЃСЊ РёРЅРІРµРЅС‚Р°СЂСЊ РєР°Рє РµСЃС‚СЊ, РІРєР»СЋС‡Р°СЏ СЃР»РѕС‚ 2
+        tag.put("inventory", com.hbm_m.platform.ItemStackSerialization.serialize(itemHandler, registries));
 
         if (selectedRecipeId != null) {
             tag.putString("SelectedRecipe", selectedRecipeId.toString());
         }
 
-        super.saveAdditional(tag);
+        super.writeNbtData(tag, registries);
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
-        itemHandler.deserializeNBT(tag.getCompound("inventory"));
-        selectedRecipeId = tag.contains("SelectedRecipe") ? 
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
+        com.hbm_m.platform.ItemStackSerialization.deserialize(itemHandler, tag.getCompound("inventory"), registries);
+        selectedRecipeId = tag.contains("SelectedRecipe") ?
             ResourceLocation.tryParse(tag.getString("SelectedRecipe")) : null;
     }
 
@@ -129,12 +133,12 @@ public class AnvilBlockEntity extends BlockEntity implements MenuProvider {
             (recipeId != null && !recipeId.equals(this.selectedRecipeId))) {
             this.selectedRecipeId = recipeId;
             setChangedAndNotify();
-            updateCrafting(); // Обновляем выходной слот
+            updateCrafting(); // РћР±РЅРѕРІР»СЏРµРј РІС‹С…РѕРґРЅРѕР№ СЃР»РѕС‚
         }
     }
 
     /**
-     * Обновляет выходной слот на основе текущих входов и выбранного рецепта
+     * РћР±РЅРѕРІР»СЏРµС‚ РІС‹С…РѕРґРЅРѕР№ СЃР»РѕС‚ РЅР° РѕСЃРЅРѕРІРµ С‚РµРєСѓС‰РёС… РІС…РѕРґРѕРІ Рё РІС‹Р±СЂР°РЅРЅРѕРіРѕ СЂРµС†РµРїС‚Р°
      */
     public void updateCrafting() {
         Level level = getLevel();
@@ -150,7 +154,7 @@ public class AnvilBlockEntity extends BlockEntity implements MenuProvider {
     
         ItemStack currentOutput = itemHandler.getStackInSlot(2);
         
-        // Обновляем только если результат изменился, чтобы не спамить пакетами
+        // РћР±РЅРѕРІР»СЏРµРј С‚РѕР»СЊРєРѕ РµСЃР»Рё СЂРµР·СѓР»СЊС‚Р°С‚ РёР·РјРµРЅРёР»СЃСЏ, С‡С‚РѕР±С‹ РЅРµ СЃРїР°РјРёС‚СЊ РїР°РєРµС‚Р°РјРё
         if (!ItemStack.matches(result, currentOutput)) {
             itemHandler.setStackInSlot(2, result);
             setChangedAndNotify(); 
@@ -158,7 +162,7 @@ public class AnvilBlockEntity extends BlockEntity implements MenuProvider {
     }
     
     /**
-     * Проверяет, можно ли выполнить рецепт с текущими материалами
+     * РџСЂРѕРІРµСЂСЏРµС‚, РјРѕР¶РЅРѕ Р»Рё РІС‹РїРѕР»РЅРёС‚СЊ СЂРµС†РµРїС‚ СЃ С‚РµРєСѓС‰РёРјРё РјР°С‚РµСЂРёР°Р»Р°РјРё
      */
     private boolean canCraftRecipe(AnvilRecipe recipe, ItemStack slotA, ItemStack slotB) {
         if (!hasMatchingInputs(slotA, slotB, recipe)) {
@@ -168,7 +172,7 @@ public class AnvilBlockEntity extends BlockEntity implements MenuProvider {
     }
 
     /**
-     * Проверяет соответствие стека рецепту
+     * РџСЂРѕРІРµСЂСЏРµС‚ СЃРѕРѕС‚РІРµС‚СЃС‚РІРёРµ СЃС‚РµРєР° СЂРµС†РµРїС‚Сѓ
      */
     private boolean matchesInput(ItemStack actual, ItemStack required) {
         if (required.isEmpty()) {
@@ -229,21 +233,21 @@ public class AnvilBlockEntity extends BlockEntity implements MenuProvider {
     }
 
     private void shrinkSlotInput(ItemStack slotA, ItemStack slotB, AnvilRecipe recipe, InputOrientation orientation, int craftCount) {
-        // Определяем, какой слот соответствует какому требованию рецепта
+        // РћРїСЂРµРґРµР»СЏРµРј, РєР°РєРѕР№ СЃР»РѕС‚ СЃРѕРѕС‚РІРµС‚СЃС‚РІСѓРµС‚ РєР°РєРѕРјСѓ С‚СЂРµР±РѕРІР°РЅРёСЋ СЂРµС†РµРїС‚Р°
         // NORMAL: slotA -> inputA, slotB -> inputB
         // SWAPPED: slotA -> inputB, slotB -> inputA
         
         boolean isNormal = orientation == InputOrientation.NORMAL;
         
-        // Требуемые предметы (для расчета количества, если нужно)
+        // РўСЂРµР±СѓРµРјС‹Рµ РїСЂРµРґРјРµС‚С‹ (РґР»СЏ СЂР°СЃС‡РµС‚Р° РєРѕР»РёС‡РµСЃС‚РІР°, РµСЃР»Рё РЅСѓР¶РЅРѕ)
         ItemStack reqForSlotA = isNormal ? recipe.getInputA() : recipe.getInputB();
         ItemStack reqForSlotB = isNormal ? recipe.getInputB() : recipe.getInputA();
     
-        // Проверяем, нужно ли потреблять предметы в слоте A
-        // Если ориентация NORMAL, смотрим consumesA. Если SWAPPED, смотрим consumesB.
+        // РџСЂРѕРІРµСЂСЏРµРј, РЅСѓР¶РЅРѕ Р»Рё РїРѕС‚СЂРµР±Р»СЏС‚СЊ РїСЂРµРґРјРµС‚С‹ РІ СЃР»РѕС‚Рµ A
+        // Р•СЃР»Рё РѕСЂРёРµРЅС‚Р°С†РёСЏ NORMAL, СЃРјРѕС‚СЂРёРј consumesA. Р•СЃР»Рё SWAPPED, СЃРјРѕС‚СЂРёРј consumesB.
         boolean shouldConsumeSlotA = isNormal ? recipe.consumesA() : recipe.consumesB();
         
-        // Аналогично для слота B
+        // РђРЅР°Р»РѕРіРёС‡РЅРѕ РґР»СЏ СЃР»РѕС‚Р° B
         boolean shouldConsumeSlotB = isNormal ? recipe.consumesB() : recipe.consumesA();
     
         if (shouldConsumeSlotA) {
@@ -323,11 +327,11 @@ public class AnvilBlockEntity extends BlockEntity implements MenuProvider {
     }
 
     /**
-     * Расходует материалы после крафта
+     * Р Р°СЃС…РѕРґСѓРµС‚ РјР°С‚РµСЂРёР°Р»С‹ РїРѕСЃР»Рµ РєСЂР°С„С‚Р°
      * 
-     * @param player игрок, выполняющий крафт
-     * @param craftMax если true, крафтит максимальное количество
-     * @return true, если материалы были успешно расходованы
+     * @param player РёРіСЂРѕРє, РІС‹РїРѕР»РЅСЏСЋС‰РёР№ РєСЂР°С„С‚
+     * @param craftMax РµСЃР»Рё true, РєСЂР°С„С‚РёС‚ РјР°РєСЃРёРјР°Р»СЊРЅРѕРµ РєРѕР»РёС‡РµСЃС‚РІРѕ
+     * @return true, РµСЃР»Рё РјР°С‚РµСЂРёР°Р»С‹ Р±С‹Р»Рё СѓСЃРїРµС€РЅРѕ СЂР°СЃС…РѕРґРѕРІР°РЅС‹
      */
     public boolean consumeMaterials(Player player, boolean craftMax, @Nullable EnergyTransferTracker tracker) {
         Level level = getLevel();
@@ -418,7 +422,7 @@ public class AnvilBlockEntity extends BlockEntity implements MenuProvider {
     }
 
     /**
-     * Выполняет крафт и помещает результат в инвентарь игрока
+     * Р’С‹РїРѕР»РЅСЏРµС‚ РєСЂР°С„С‚ Рё РїРѕРјРµС‰Р°РµС‚ СЂРµР·СѓР»СЊС‚Р°С‚ РІ РёРЅРІРµРЅС‚Р°СЂСЊ РёРіСЂРѕРєР°
      */
     public boolean craft(Player player, boolean craftMax) {
         Level level = getLevel();
@@ -629,7 +633,7 @@ public class AnvilBlockEntity extends BlockEntity implements MenuProvider {
         }
 
         for (ItemStack existing : stacks) {
-            if (ItemStack.isSameItemSameTags(existing, addition)) {
+            if (PlatformHooks.isSameItemSameTags(existing, addition)) {
                 existing.grow(addition.getCount());
                 return;
             }
@@ -736,8 +740,8 @@ public class AnvilBlockEntity extends BlockEntity implements MenuProvider {
         if (actual.isEmpty()) {
             return false;
         }
-        if (required.hasTag()) {
-            return ItemStack.isSameItemSameTags(actual, required);
+        if (PlatformHooks.hasItemTag(required)) {
+            return PlatformHooks.isSameItemSameTags(actual, required);
         }
         return actual.is(required.getItem());
     }
@@ -773,24 +777,12 @@ public class AnvilBlockEntity extends BlockEntity implements MenuProvider {
         NONE
     }
 
-    @Override
-    public CompoundTag getUpdateTag() {
-        CompoundTag tag = super.getUpdateTag();
-        saveAdditional(tag);
-        return tag;
-    }
+    // getUpdateTag / getUpdatePacket / handleUpdateTag удалены:
+    // их семантика (super + saveAdditional / load) полностью покрывается BaseHbmBlockEntity.
 
-    @Nullable
     @Override
-    public Packet<ClientGamePacketListener> getUpdatePacket() {
-        return ClientboundBlockEntityDataPacket.create(this);
+    public @Nullable Object getItemHandler(@Nullable net.minecraft.core.Direction side) {
+        return this.itemHandler;
     }
-
-    //? if forge {
-    @Override
-    public void handleUpdateTag(CompoundTag tag) {
-        load(tag);
-    }
-    //?}
 }
 

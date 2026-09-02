@@ -36,9 +36,18 @@ public class EntityNukeExplosionMK3 extends EntityExplosionChunkloading {
         return Math.min(12, Math.max(super.getChunkLoadRadius(), (this.destructionRange + 15) >> 4) + 1);
     }
 
+    //? if < 1.21.1 {
+
     @Override
     protected void defineSynchedData() {
     }
+    //?} else {
+    /*@Override
+    protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
+
+    
+    }
+    *///?}
 
     @Override
     public void tick() {
@@ -49,6 +58,8 @@ public class EntityNukeExplosionMK3 extends EntityExplosionChunkloading {
         }
 
         if (!this.did) {
+            com.hbm_m.advancement.ModAdvancements.grantAll(level(),
+                    com.hbm_m.advancement.ModAdvancements.MANHATTAN);
             this.expl = new ExplosionFleija(
                     (int) getX(), (int) getY(), (int) getZ(),
                     level(), this.destructionRange, this.coefficient, this.coefficient2);

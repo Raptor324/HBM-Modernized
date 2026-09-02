@@ -1,6 +1,7 @@
 package com.hbm_m.inventory.gui;
 
 import com.hbm_m.blockentity.machines.MachineTurbineGasBlockEntity;
+import com.hbm_m.client.GuiCompat;
 import com.hbm_m.inventory.menu.MachineTurbineGasMenu;
 import com.hbm_m.lib.RefStrings;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -37,6 +38,8 @@ public class GUIMachineTurbineGas extends GuiInfoScreen<MachineTurbineGasMenu> {
         RenderSystem.setShader(GameRenderer::getPositionTexShader);
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
         guiGraphics.blit(TEXTURE, this.leftPos, this.topPos, 0, 0, this.imageWidth, this.imageHeight);
+        // тайл может отсутствовать в реплее Flashback
+        if (turbine == null) return;
 
         int power = (int) Math.min(142, turbine.getEnergyStored() * 142 / Math.max(1L, turbine.getMaxEnergyStored()));
         guiGraphics.blit(TEXTURE, this.leftPos + 26, this.topPos + 109, 0, 223, power, 16);
@@ -56,9 +59,11 @@ public class GUIMachineTurbineGas extends GuiInfoScreen<MachineTurbineGasMenu> {
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        this.renderBackground(guiGraphics);
+        com.hbm_m.client.GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
 
+        // тайл может отсутствовать в реплее Flashback
+        if (turbine != null) {
         turbine.getGasTank().renderTankInfo(guiGraphics, this.font, mouseX, mouseY, this.leftPos + 8, this.topPos + 16, 16, 48);
         turbine.getLubeTank().renderTankInfo(guiGraphics, this.font, mouseX, mouseY, this.leftPos + 8, this.topPos + 70, 16, 32);
         turbine.getWaterTank().renderTankInfo(guiGraphics, this.font, mouseX, mouseY, this.leftPos + 147, this.topPos + 61, 16, 36);
@@ -74,6 +79,7 @@ public class GUIMachineTurbineGas extends GuiInfoScreen<MachineTurbineGasMenu> {
                 turbine.isActive()
                         ? Component.literal("Generator running")
                         : Component.literal("Generator offline"));
+        }
 
         this.renderTooltip(guiGraphics, mouseX, mouseY);
     }

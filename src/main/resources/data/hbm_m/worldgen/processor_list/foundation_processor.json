@@ -1,3 +1,10 @@
 {
-  "processors": []
+  "processors": [
+    {
+      "processor_type": "hbm_m:loot_processor"
+    },
+    {
+      "processor_type": "hbm_m:connection_fix_processor"
+    }
+  ]
 }

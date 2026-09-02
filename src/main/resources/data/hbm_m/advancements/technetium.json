@@ -1,0 +1,23 @@
+{
+  "display": {
+    "icon": {
+      "item": "hbm_m:nugget_technetium"
+    },
+    "title": {
+      "translate": "advancements.hbm_m.technetium.title"
+    },
+    "description": {
+      "translate": "advancements.hbm_m.technetium.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "granted": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "parent": "hbm_m:centrifuge"
+}

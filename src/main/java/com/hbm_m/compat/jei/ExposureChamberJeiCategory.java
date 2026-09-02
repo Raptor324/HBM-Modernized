@@ -2,7 +2,7 @@ package com.hbm_m.compat.jei;
 
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.lib.RefStrings;
-import com.hbm_m.recipe.ExposureChamberRecipes;
+import com.hbm_m.recipe.ExposureChamberRecipe;
 
 import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
 import mezz.jei.api.helpers.IGuiHelper;
@@ -10,17 +10,16 @@ import mezz.jei.api.recipe.RecipeIngredientRole;
 import mezz.jei.api.recipe.RecipeType;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.Ingredient;
 
 /**
  * JEI category for Exposure Chamber recipes - Partikel + Zutat -&gt; Ausgabe (siehe
- * {@link ExposureChamberRecipes}).
+ * {@link ExposureChamberRecipe}).
  */
 //? if forge {
-public class ExposureChamberJeiCategory extends JeiGenericRecipeCategory<ExposureChamberRecipes.Recipe> {
+public class ExposureChamberJeiCategory extends JeiGenericRecipeCategory<ExposureChamberRecipe> {
 
-    public static final RecipeType<ExposureChamberRecipes.Recipe> RECIPE_TYPE =
-            RecipeType.create(RefStrings.MODID, "exposure_chamber", ExposureChamberRecipes.Recipe.class);
+    public static final RecipeType<ExposureChamberRecipe> RECIPE_TYPE =
+            RecipeType.create(RefStrings.MODID, "exposure_chamber", ExposureChamberRecipe.class);
 
     public ExposureChamberJeiCategory(IGuiHelper guiHelper) {
         super(guiHelper, new ItemStack[]{
@@ -29,7 +28,7 @@ public class ExposureChamberJeiCategory extends JeiGenericRecipeCategory<Exposur
     }
 
     @Override
-    public RecipeType<ExposureChamberRecipes.Recipe> getRecipeType() {
+    public RecipeType<ExposureChamberRecipe> getRecipeType() {
         return RECIPE_TYPE;
     }
 
@@ -39,36 +38,36 @@ public class ExposureChamberJeiCategory extends JeiGenericRecipeCategory<Exposur
     }
 
     @Override
-    protected int getInputCount(ExposureChamberRecipes.Recipe recipe) {
+    protected int getInputCount(ExposureChamberRecipe recipe) {
         return 2;
     }
 
     @Override
-    protected int getOutputCount(ExposureChamberRecipes.Recipe recipe) {
+    protected int getOutputCount(ExposureChamberRecipe recipe) {
         return 1;
     }
 
     @Override
-    protected boolean hasBlueprintTemplate(ExposureChamberRecipes.Recipe recipe) {
+    protected boolean hasBlueprintTemplate(ExposureChamberRecipe recipe) {
         return false;
     }
 
     @Override
-    protected void addInputSlots(IRecipeLayoutBuilder builder, ExposureChamberRecipes.Recipe recipe, int inputXOffset) {
+    protected void addInputSlots(IRecipeLayoutBuilder builder, ExposureChamberRecipe recipe, int inputXOffset) {
         addItemSlot(builder, RecipeIngredientRole.INPUT, inputXOffset, 13)
-                .addItemStack(new ItemStack(recipe.particle()));
+                .addItemStack(recipe.getParticle());
         var slot = addItemSlot(builder, RecipeIngredientRole.INPUT, inputXOffset, 31);
-        JeiIngredientSlots.addCountedIngredient(slot, recipe.ingredient(), 1);
+        JeiIngredientSlots.addCountedIngredient(slot, recipe.getIngredient(), 1);
     }
 
     @Override
-    protected void addOutputSlots(IRecipeLayoutBuilder builder, ExposureChamberRecipes.Recipe recipe, int outputXOffset) {
+    protected void addOutputSlots(IRecipeLayoutBuilder builder, ExposureChamberRecipe recipe, int outputXOffset) {
         addItemSlot(builder, RecipeIngredientRole.OUTPUT, outputXOffset + 22, 22)
-                .addItemStack(recipe.output());
+                .addItemStack(recipe.getOutput());
     }
 
     @Override
-    protected void addBlueprintSlot(IRecipeLayoutBuilder builder, ExposureChamberRecipes.Recipe recipe, int machineXOffset) {
+    protected void addBlueprintSlot(IRecipeLayoutBuilder builder, ExposureChamberRecipe recipe, int machineXOffset) {
         // Kein Blueprint-Slot fuer Exposure-Chamber-Rezepte.
     }
 }

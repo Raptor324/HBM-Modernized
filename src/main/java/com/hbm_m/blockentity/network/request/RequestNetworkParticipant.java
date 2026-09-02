@@ -83,8 +83,14 @@ public class RequestNetworkParticipant {
         Vec3 vec2 = new Vec3(pos2.getX() + 0.5, pos2.getY() + 0.5, pos2.getZ() + 0.5);
         if (vec1.distanceTo(vec2) > MAX_RANGE) return false;
 
+        //? if < 1.21.1 {
         HitResult hit1 = level.clip(new ClipContext(vec1, vec2, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, null));
         HitResult hit2 = level.clip(new ClipContext(vec2, vec1, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, null));
+        //?} else {
+        /*// 1.21.1: конструктор ClipContext неоднозначен (Entity vs CollisionContext для null) — типизируем null.
+        HitResult hit1 = level.clip(new ClipContext(vec1, vec2, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, (net.minecraft.world.entity.Entity) null));
+        HitResult hit2 = level.clip(new ClipContext(vec2, vec1, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, (net.minecraft.world.entity.Entity) null));
+        *///?}
         return hit1.getType() == HitResult.Type.MISS && hit2.getType() == HitResult.Type.MISS;
     }
 }

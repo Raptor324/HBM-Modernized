@@ -8,8 +8,7 @@ import com.hbm_m.blockentity.BaseMachineBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.inventory.menu.MachineVacuumDistillMenu;
-import com.hbm_m.recipe.VacuumDistillRecipes;
-import com.hbm_m.recipe.VacuumDistillRecipes.Output;
+import com.hbm_m.recipe.VacuumDistillRecipe;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -26,7 +25,7 @@ import net.minecraft.world.level.material.Fluid;
 /**
  * Vakuumdestillator: Portierung der Kernlogik aus {@code TileEntityMachineVacuumDistill} (1.7.10
  * Original). Spaltet 100mB Rohoel (Tank 0) pro Tick in vier leichtere Fraktionen (Tanks 1-4) auf,
- * ueber die feste Rezeptliste {@link VacuumDistillRecipes} (Direktport von
+ * ueber die data-driven Rezeptliste {@link VacuumDistillRecipe} (Port von
  * {@code VacuumRefineryRecipes}). Energie kommt wie im Original aus einer Batterie im Slot statt
  * aus dem HBM-Energienetz.
  * <p>
@@ -54,7 +53,8 @@ public class MachineVacuumDistillBlockEntity extends BaseMachineBlockEntity impl
         tanks[0] = new FluidTank(OIL_CAPACITY_MB) {
             @Override
             public boolean isFluidValid(Fluid fluid) {
-                return VacuumDistillRecipes.has(fluid);
+                // Data-driven: рецепт ищется в RecipeManager (заменяет VacuumDistillRecipes.has).
+                return VacuumDistillRecipe.hasRecipe(level, fluid);
             }
         };
         tanks[1] = new FluidTank(OUTPUT_CAPACITY_MB);
@@ -84,31 +84,33 @@ public class MachineVacuumDistillBlockEntity extends BaseMachineBlockEntity impl
     }
 
     private void setupTanks() {
-        Output out = VacuumDistillRecipes.get(tanks[0].getTankType());
-        if (out == null) return;
-        if (tanks[1].isEmpty()) tanks[1].conform(out.heavy());
-        if (tanks[2].isEmpty()) tanks[2].conform(out.reformate());
-        if (tanks[3].isEmpty()) tanks[3].conform(out.light());
-        if (tanks[4].isEmpty()) tanks[4].conform(out.sour());
+        VacuumDistillRecipe recipe = VacuumDistillRecipe.getRecipe(level, tanks[0].getTankType());
+        if (recipe == null) return;
+        if (tanks[1].isEmpty()) tanks[1].conform(recipe.getHeavy());
+        if (tanks[2].isEmpty()) tanks[2].conform(recipe.getReformate());
+        if (tanks[3].isEmpty()) tanks[3].conform(recipe.getLight());
+        if (tanks[4].isEmpty()) tanks[4].conform(recipe.getSour());
     }
 
-    /** Direktport von {@code refine()}. */
+    /** Direktport von {@code refine()} — объёмы фракций берутся из JSON (совпадают с константами
+     *  {@link VacuumDistillRecipe#HEAVY_MB}/{@link VacuumDistillRecipe#REFORMATE_MB}/
+     *  {@link VacuumDistillRecipe#LIGHT_MB}/{@link VacuumDistillRecipe#SOUR_MB}). */
     private boolean refine() {
-        Output out = VacuumDistillRecipes.get(tanks[0].getTankType());
-        if (out == null) return false;
+        VacuumDistillRecipe recipe = VacuumDistillRecipe.getRecipe(level, tanks[0].getTankType());
+        if (recipe == null) return false;
         if (getEnergyStored() < POWER_PER_CYCLE) return false;
         if (tanks[0].getFill() < OIL_PER_CYCLE_MB) return false;
-        if (tanks[1].getFill() + VacuumDistillRecipes.HEAVY_MB > tanks[1].getMaxFill()) return false;
-        if (tanks[2].getFill() + VacuumDistillRecipes.REFORMATE_MB > tanks[2].getMaxFill()) return false;
-        if (tanks[3].getFill() + VacuumDistillRecipes.LIGHT_MB > tanks[3].getMaxFill()) return false;
-        if (tanks[4].getFill() + VacuumDistillRecipes.SOUR_MB > tanks[4].getMaxFill()) return false;
+        if (tanks[1].getFill() + recipe.getHeavyMb() > tanks[1].getMaxFill()) return false;
+        if (tanks[2].getFill() + recipe.getReformateMb() > tanks[2].getMaxFill()) return false;
+        if (tanks[3].getFill() + recipe.getLightMb() > tanks[3].getMaxFill()) return false;
+        if (tanks[4].getFill() + recipe.getSourMb() > tanks[4].getMaxFill()) return false;
 
         setEnergyStored(getEnergyStored() - POWER_PER_CYCLE);
         tanks[0].drainMb(OIL_PER_CYCLE_MB);
-        tanks[1].fillMb(out.heavy(), VacuumDistillRecipes.HEAVY_MB);
-        tanks[2].fillMb(out.reformate(), VacuumDistillRecipes.REFORMATE_MB);
-        tanks[3].fillMb(out.light(), VacuumDistillRecipes.LIGHT_MB);
-        tanks[4].fillMb(out.sour(), VacuumDistillRecipes.SOUR_MB);
+        tanks[1].fillMb(recipe.getHeavy(), recipe.getHeavyMb());
+        tanks[2].fillMb(recipe.getReformate(), recipe.getReformateMb());
+        tanks[3].fillMb(recipe.getLight(), recipe.getLightMb());
+        tanks[4].fillMb(recipe.getSour(), recipe.getSourMb());
         return true;
     }
 
@@ -146,7 +148,7 @@ public class MachineVacuumDistillBlockEntity extends BaseMachineBlockEntity impl
 
     @Override
     public boolean canConnect(Fluid fluid, Direction fromDir) {
-        return fromDir != null && (VacuumDistillRecipes.has(fluid)
+        return fromDir != null && (VacuumDistillRecipe.hasRecipe(level, fluid)
                 || tanks[1].getTankType() == fluid || tanks[2].getTankType() == fluid
                 || tanks[3].getTankType() == fluid || tanks[4].getTankType() == fluid);
     }
@@ -154,8 +156,8 @@ public class MachineVacuumDistillBlockEntity extends BaseMachineBlockEntity impl
     // ==================== NBT ====================
 
     @Override
-    public void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         for (int i = 0; i < tanks.length; i++) {
             tanks[i].writeToNBT(tag, "tank" + i);
         }
@@ -163,8 +165,8 @@ public class MachineVacuumDistillBlockEntity extends BaseMachineBlockEntity impl
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         for (int i = 0; i < tanks.length; i++) {
             tanks[i].readFromNBT(tag, "tank" + i);
         }

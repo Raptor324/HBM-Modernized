@@ -63,4 +63,11 @@ public class SimpleCraftingContainer implements CraftingContainer {
     public void fillStackedContents(StackedContents contents) {
         for (ItemStack stack : items) contents.accountStack(stack);
     }
+
+    //? if >= 1.21.1 {
+    /*// 1.21.1: CraftingRecipe.assemble/getRecipeFor требуют CraftingInput вместо CraftingContainer.
+    public net.minecraft.world.item.crafting.CraftingInput toCraftingInput() {
+        return net.minecraft.world.item.crafting.CraftingInput.of(width, height, new java.util.ArrayList<>(items));
+    }
+    *///?}
 }

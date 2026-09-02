@@ -10,6 +10,7 @@ import java.util.Map;
 
 import com.hbm_m.blockentity.machines.CargoElevatorBlockEntity;
 import com.hbm_m.lib.RefStrings;
+import com.hbm_m.platform.RenderHooks;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.Minecraft;
@@ -27,6 +28,11 @@ import org.joml.Matrix4f;
  * platform+pistons) from the core position only — non-core cells render nothing. Uses the same
  * manual named-group OBJ rendering approach as {@link RBMKColumnRenderer}.
  */
+//? if forge {
+@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+//?} elif neoforge {
+/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+*///?}
 public class CargoElevatorRenderer implements BlockEntityRenderer<CargoElevatorBlockEntity> {
 
     private static final Map<String, Map<String, List<float[]>>> OBJ_CACHE = new HashMap<>();
@@ -115,8 +121,7 @@ public class CargoElevatorRenderer implements BlockEntityRenderer<CargoElevatorB
                 float nx = tri[base + 5], ny = tri[base + 6], nz = tri[base + 7];
                 float au = u0 + u * (u1 - u0);
                 float av = v0 + (1f - v) * (v1 - v0);
-                vc.vertex(m, x, y, z).color(1f, 1f, 1f, 1f).uv(au, av)
-                        .overlayCoords(overlay).uv2(light).normal(nx, ny, nz).endVertex();
+                RenderHooks.vertexFull(vc, m, x, y, z, 255, 255, 255, 255, au, av, overlay, light, nx, ny, nz);
             }
         }
     }

@@ -12,39 +12,43 @@ import com.google.gson.JsonObject;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.item.liquids.FluidIdentifierItem;
 import com.hbm_m.lib.RefStrings;
+import com.hbm_m.platform.recipe.PlatformRecipe;
+import com.hbm_m.platform.recipe.PlatformRecipeSerializer;
+import com.hbm_m.platform.recipe.RecipeHooks;
+import com.hbm_m.platform.recipe.RecipeInputWrapper;
 
 import dev.architectury.fluid.FluidStack;
 import net.minecraft.core.NonNullList;
-import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.GsonHelper;
-import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
-import net.minecraft.world.item.crafting.Recipe;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
-import net.minecraft.world.item.crafting.ShapedRecipe;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
 
 /**
- * PUREX recipe (1.20.1).
+ * PUREX recipe (cross-version 1.20.1 / 1.21.1).
  *
- * <p>Важно: {@link #matches(SimpleContainer, Level)} здесь не используется машиной напрямую — химзавод
+ * <p>Важно: {@link #matchesRecipe(RecipeInputWrapper, Level)} здесь не используется машиной напрямую — химзавод
  * работает позиционно по своим слотам/бакам и выбирает рецепт по ID. Тем не менее, рецепт должен быть
  * валиден для загрузки/показа/синхронизации и datagen.</p>
+ *
+ * <p>Наследуется от {@link PlatformRecipe} (кросс-версионная база: {@code Recipe<Container>} на 1.20.1,
+ * {@code Recipe<RecipeInput>} на 1.21.1). Сериализатор наследуется от {@link PlatformRecipeSerializer},
+ * который предоставляет {@code codec()}/{@code streamCodec()} для 1.21.1 через декоратор над
+ * {@code readJson}/{@code readNetwork}/{@code writeNetwork}.</p>
  */
-public class PurexRecipe implements Recipe<SimpleContainer> {
+public class PurexRecipe extends PlatformRecipe {
 
     public record CountedIngredient(Ingredient ingredient, int count) {}
 
     public record FluidIngredient(ResourceLocation fluidId, int amount) {}
 
-    private final ResourceLocation id;
     private final List<CountedIngredient> itemInputs;
     private final List<FluidIngredient> fluidInputs;
     private final List<ItemStack> itemOutputs;
@@ -71,7 +75,7 @@ public class PurexRecipe implements Recipe<SimpleContainer> {
                                @Nullable ItemStack iconItem,
                                @Nullable ResourceLocation iconFluid,
                                @Nullable String blueprintPool) {
-        this.id = id;
+        super(id);
         this.itemInputs = itemInputs != null ? itemInputs : List.of();
         this.fluidInputs = fluidInputs != null ? fluidInputs : List.of();
         this.itemOutputs = itemOutputs != null ? itemOutputs : List.of();
@@ -116,24 +120,24 @@ public class PurexRecipe implements Recipe<SimpleContainer> {
         return blueprintPool != null && !blueprintPool.isEmpty();
     }
 
+    // =====================================================================================
+    //  PlatformRecipe: кросс-версионные контракты.
+    //  matches/assemble/getResultItem на обеих версиях делегируют сюда (см. PlatformRecipe).
+    // =====================================================================================
+
     @Override
-    public boolean matches(@NotNull SimpleContainer container, @NotNull Level level) {
+    public boolean matchesRecipe(RecipeInputWrapper input, Level level) {
         // Машина не использует стандартный shaped-мэтчинг.
         return false;
     }
 
     @Override
-    public ItemStack assemble(@NotNull SimpleContainer container, @NotNull RegistryAccess registryAccess) {
+    public ItemStack assembleSafe() {
         return ItemStack.EMPTY;
     }
 
     @Override
-    public boolean canCraftInDimensions(int width, int height) {
-        return true;
-    }
-
-    @Override
-    public ItemStack getResultItem(@NotNull RegistryAccess registryAccess) {
+    public ItemStack getResultItemSafe() {
         if (iconItem != null && !iconItem.isEmpty()) {
             return iconItem.copy();
         }
@@ -163,11 +167,6 @@ public class PurexRecipe implements Recipe<SimpleContainer> {
     }
 
     @Override
-    public ResourceLocation getId() {
-        return id;
-    }
-
-    @Override
     public RecipeSerializer<?> getSerializer() {
         return Serializer.INSTANCE;
     }
@@ -182,7 +181,7 @@ public class PurexRecipe implements Recipe<SimpleContainer> {
         public static final String ID = "purex";
     }
 
-    public static final class Serializer implements RecipeSerializer<PurexRecipe> {
+    public static final class Serializer extends PlatformRecipeSerializer<PurexRecipe> {
         public static final Serializer INSTANCE = new Serializer();
         //? if fabric && < 1.21.1 {
         /*public static final ResourceLocation ID = new ResourceLocation(RefStrings.MODID, "purex");
@@ -192,7 +191,7 @@ public class PurexRecipe implements Recipe<SimpleContainer> {
 
 
         @Override
-        public PurexRecipe fromJson(@NotNull ResourceLocation recipeId, @NotNull JsonObject json) {
+        public PurexRecipe readJson(ResourceLocation recipeId, JsonObject json) {
             int duration = GsonHelper.getAsInt(json, "duration", 100);
             int power = GsonHelper.getAsInt(json, "power", 1000);
             String blueprintPool = GsonHelper.getAsString(json, "blueprint_pool", null);
@@ -209,19 +208,19 @@ public class PurexRecipe implements Recipe<SimpleContainer> {
         }
 
         @Override
-        public @Nullable PurexRecipe fromNetwork(@NotNull ResourceLocation recipeId, @NotNull FriendlyByteBuf buf) {
+        public PurexRecipe readNetwork(ResourceLocation recipeId, FriendlyByteBuf buf) {
             int duration = buf.readVarInt();
             int power = buf.readVarInt();
             String blueprintPool = buf.readBoolean() ? buf.readUtf() : null;
 
-            ItemStack iconItem = buf.readBoolean() ? buf.readItem() : ItemStack.EMPTY;
+            ItemStack iconItem = buf.readBoolean() ? RecipeHooks.readItem(buf) : ItemStack.EMPTY;
             ResourceLocation iconFluid = buf.readBoolean() ? buf.readResourceLocation() : null;
             iconItem = finalizeIconStack(iconItem, iconFluid);
 
             int itemInCount = buf.readVarInt();
             List<CountedIngredient> itemInputs = new ArrayList<>(itemInCount);
             for (int i = 0; i < itemInCount; i++) {
-                Ingredient ing = Ingredient.fromNetwork(buf);
+                Ingredient ing = RecipeHooks.readIngredient(buf);
                 int count = buf.readVarInt();
                 itemInputs.add(new CountedIngredient(ing, count));
             }
@@ -237,7 +236,7 @@ public class PurexRecipe implements Recipe<SimpleContainer> {
             int itemOutCount = buf.readVarInt();
             List<ItemStack> itemOutputs = new ArrayList<>(itemOutCount);
             for (int i = 0; i < itemOutCount; i++) {
-                itemOutputs.add(buf.readItem());
+                itemOutputs.add(RecipeHooks.readItem(buf));
             }
 
             int fluidOutCount = buf.readVarInt();
@@ -250,7 +249,7 @@ public class PurexRecipe implements Recipe<SimpleContainer> {
         }
 
         @Override
-        public void toNetwork(@NotNull FriendlyByteBuf buf, @NotNull PurexRecipe recipe) {
+        public void writeNetwork(FriendlyByteBuf buf, PurexRecipe recipe) {
             buf.writeVarInt(recipe.duration);
             buf.writeVarInt(recipe.powerConsumption);
 
@@ -263,7 +262,7 @@ public class PurexRecipe implements Recipe<SimpleContainer> {
 
             if (recipe.iconItem != null && !recipe.iconItem.isEmpty()) {
                 buf.writeBoolean(true);
-                buf.writeItem(recipe.iconItem);
+                RecipeHooks.writeItem(buf, recipe.iconItem);
             } else {
                 buf.writeBoolean(false);
             }
@@ -277,7 +276,7 @@ public class PurexRecipe implements Recipe<SimpleContainer> {
 
             buf.writeVarInt(recipe.itemInputs.size());
             for (CountedIngredient ci : recipe.itemInputs) {
-                ci.ingredient().toNetwork(buf);
+                RecipeHooks.writeIngredient(buf, ci.ingredient());
                 buf.writeVarInt(ci.count());
             }
 
@@ -289,7 +288,7 @@ public class PurexRecipe implements Recipe<SimpleContainer> {
 
             buf.writeVarInt(recipe.itemOutputs.size());
             for (ItemStack out : recipe.itemOutputs) {
-                buf.writeItem(out);
+                RecipeHooks.writeItem(buf, out);
             }
 
             buf.writeVarInt(recipe.fluidOutputs.size());
@@ -301,7 +300,7 @@ public class PurexRecipe implements Recipe<SimpleContainer> {
         private static ItemStack readIconItem(JsonObject json) {
             if (!json.has("icon_item")) return ItemStack.EMPTY;
             JsonObject obj = GsonHelper.getAsJsonObject(json, "icon_item");
-            return ShapedRecipe.itemStackFromJson(obj);
+            return RecipeHooks.itemStackFromJson(obj);
         }
 
         @Nullable
@@ -392,11 +391,11 @@ public class PurexRecipe implements Recipe<SimpleContainer> {
                 int count = GsonHelper.getAsInt(obj, "count", 1);
                 Ingredient ing;
                 if (obj.has("items")) {
-                    ing = Ingredient.fromJson(obj.get("items"));
+                    ing = RecipeHooks.ingredientFromJson(obj.get("items"));
                 } else {
                     JsonObject clone = obj.deepCopy();
                     clone.remove("count");
-                    ing = Ingredient.fromJson(clone);
+                    ing = RecipeHooks.ingredientFromJson(clone);
                 }
                 result.add(new CountedIngredient(ing, count));
             }
@@ -422,7 +421,7 @@ public class PurexRecipe implements Recipe<SimpleContainer> {
             JsonArray arr = GsonHelper.getAsJsonArray(json, "item_outputs");
             List<ItemStack> result = new ArrayList<>(arr.size());
             for (JsonElement el : arr) {
-                result.add(ShapedRecipe.itemStackFromJson(el.getAsJsonObject()));
+                result.add(RecipeHooks.itemStackFromJson(el.getAsJsonObject()));
             }
             return result;
         }
@@ -444,4 +443,3 @@ public class PurexRecipe implements Recipe<SimpleContainer> {
         }
     }
 }
-

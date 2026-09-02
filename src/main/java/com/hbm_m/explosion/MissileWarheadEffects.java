@@ -5,11 +5,17 @@ import com.hbm_m.block.bomb.BlockTaint;
 import com.hbm_m.entity.ModEntities;
 import com.hbm_m.entity.effect.BlackHoleEntity;
 import com.hbm_m.entity.logic.EmpPulseEntity;
+import com.hbm_m.explosion.vanillant.ExplosionVNT;
+import com.hbm_m.explosion.vanillant.standard.BlockAllocatorStandard;
+import com.hbm_m.explosion.vanillant.standard.BlockMutatorFire;
+import com.hbm_m.explosion.vanillant.standard.BlockProcessorStandard;
+import com.hbm_m.explosion.vanillant.standard.EntityProcessorCross;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.particle.ModExplosionParticles;
 import com.hbm_m.particle.ModParticleTypes;
 import com.hbm_m.particle.explosions.ServerExplosionParticles;
 import com.hbm_m.particle.explosions.basic.ExplosionParticleUtils;
+import com.hbm_m.particle.helper.ExplosionCreator;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.BlockParticleOption;
 import net.minecraft.core.particles.ParticleTypes;
@@ -69,29 +75,48 @@ public final class MissileWarheadEffects {
         }
     }
 
-    public static void standardExplode(Entity source, Level level, BlockPos pos, float power, boolean causesFire) {
-        level.explode(source, pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D,
-                power, causesFire ? Level.ExplosionInteraction.BLOCK : Level.ExplosionInteraction.TNT);
+    /**
+     * Тихое разрушение блоков — порт {@code EntityMissileBaseNT.explodeStandard} (1.7.10):
+     * ExplosionVNT БЕЗ {@code setSFX}, поэтому НЕ воспроизводится ванильный звук
+     * {@code GENERIC_EXPLODE} и частицы {@code EXPLOSION_EMITTER}. Единственный звук
+     * баллистической боеголовки при попадании — отложенный explosionLarge (near/far) из
+     * {@link ExplosionCreator} с реалистичной задержкой {@code dist/8.575} тиков (скорость
+     * звука) в пределах soundRange (150/200/350). Устраняет «двойной бум» (немедленный
+     * ванильный + отложенный explosionLarge), возникавший из-за прежнего {@code level.explode}.
+     *
+     * @param resolution разрешение рейкаста разрушения (1.7.10: tier1=24, tier2=32,
+     *                   tier3=48, stealth=24, shuttle=64)
+     */
+    public static void standardExplode(Entity source, Level level, BlockPos pos, float power, boolean causesFire, int resolution) {
+        ExplosionVNT xnt = new ExplosionVNT(level, pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D, power, source);
+        xnt.setBlockAllocator(new BlockAllocatorStandard(resolution));
+        xnt.setBlockProcessor(new BlockProcessorStandard().setNoDrop().withBlockEffect(causesFire ? new BlockMutatorFire() : null));
+        xnt.setEntityProcessor(new EntityProcessorCross(7.5D).withRangeMod(2));
+        xnt.explode();
     }
 
     public static void warheadTier1(Entity source, ServerLevel level, BlockPos pos, boolean fire) {
         composeEffectSmall(level, pos);
-        standardExplode(source, level, pos, 15.0F, fire);
+        // 1.7.10 EntityMissileTier1: explodeStandard(15F, 24, fire)
+        standardExplode(source, level, pos, 15.0F, fire, 24);
     }
 
     public static void warheadTier2(Entity source, ServerLevel level, BlockPos pos, boolean fire) {
         composeEffectStandard(level, pos);
-        standardExplode(source, level, pos, 30.0F, fire);
+        // 1.7.10 EntityMissileTier2: explodeStandard(30F, 32, fire)
+        standardExplode(source, level, pos, 30.0F, fire, 32);
     }
 
     public static void warheadTier3Large(Entity source, ServerLevel level, BlockPos pos, boolean fire) {
         composeEffectLarge(level, pos);
-        standardExplode(source, level, pos, 50.0F, fire);
+        // 1.7.10 EntityMissileTier3: explodeStandard(50F, 48, fire)
+        standardExplode(source, level, pos, 50.0F, fire, 48);
     }
 
     public static void warheadStealth(Entity source, ServerLevel level, BlockPos pos) {
         composeEffectStandard(level, pos);
-        standardExplode(source, level, pos, 20.0F, false);
+        // 1.7.10 EntityMissileStealth: explodeStandard(20F, 24, false)
+        standardExplode(source, level, pos, 20.0F, false, 24);
     }
 
     public static void warheadShuttle(Entity source, ServerLevel level, BlockPos pos) {
@@ -99,7 +124,8 @@ public final class MissileWarheadEffects {
         double y = pos.getY() + 1.0D;
         double z = pos.getZ() + 0.5D;
         composeEffectLarge(level, pos);
-        standardExplode(source, level, pos, 20.0F, false);
+        // 1.7.10 EntityMissileShuttle: ExplosionNT(...20F).overrideResolution(64), NOSOUND+NOPARTICLE
+        standardExplode(source, level, pos, 20.0F, false, 64);
         ExplosionParticleUtils.spawnAirBombMushroomCloud(level, x, y, z);
         SimpleParticleType smoke = (SimpleParticleType) ModExplosionParticles.LARGE_DARK_SMOKE.get();
         for (int i = 0; i < 80; i++) {
@@ -145,33 +171,52 @@ public final class MissileWarheadEffects {
         ExplosionParticleUtils.spawnImpactJoltShockwave(level, x, pos.getY(), z);
     }
 
-    /** Small compose (tier 1 generic / incendiary). */
+    /**
+     * Small compose (tier 1 generic / incendiary).
+     * 1.7.10-паритет: звук near/far с задержкой по расстоянию (скорость звука 8.575 б/тик,
+     * soundRange=150) + волна/столб дыма/обломки — см. {@link ExplosionCreator#composeEffectSmall}.
+     */
     public static void composeEffectSmall(ServerLevel level, BlockPos pos) {
         double x = pos.getX() + 0.5D;
         double y = pos.getY() + 0.5D;
         double z = pos.getZ() + 0.5D;
+        // 1.7.10 ExplosionCreator.composeEffectSmall: delayed-звук + партиклы
+        ExplosionCreator.composeEffectSmall(level, x, y, z);
         SimpleParticleType flash = (SimpleParticleType) ModExplosionParticles.EXPLOSION_FLASH.get();
         level.sendParticles(flash, x, y, z, 1, 0.0D, 0.0D, 0.0D, 0.0D);
         ExplosionParticleUtils.spawnCustomExplosion(level, x, y, z, 0.5F,
                 (SimpleParticleType) ModExplosionParticles.EXPLOSION_SPARK.get());
     }
 
-    /** Standard compose (tier 2, stealth). */
+    /**
+     * Standard compose (tier 2, stealth).
+     * 1.7.10-паритет: soundRange=200, см. {@link ExplosionCreator#composeEffectStandard}.
+     */
     public static void composeEffectStandard(ServerLevel level, BlockPos pos) {
         double x = pos.getX() + 0.5D;
         double y = pos.getY() + 0.5D;
         double z = pos.getZ() + 0.5D;
-        composeEffectSmall(level, pos);
+        // 1.7.10 ExplosionCreator.composeEffectStandard: delayed-звук + партиклы
+        ExplosionCreator.composeEffectStandard(level, x, y, z);
+        SimpleParticleType flash = (SimpleParticleType) ModExplosionParticles.EXPLOSION_FLASH.get();
+        level.sendParticles(flash, x, y, z, 1, 0.0D, 0.0D, 0.0D, 0.0D);
+        ExplosionParticleUtils.spawnCustomExplosion(level, x, y, z, 0.5F,
+                (SimpleParticleType) ModExplosionParticles.EXPLOSION_SPARK.get());
         level.getServer().tell(new TickTask(2, () ->
                 ExplosionParticleUtils.spawnCustomExplosion(level, x, y, z, 1.0F,
                         (SimpleParticleType) ModExplosionParticles.EXPLOSION_SPARK.get())));
     }
 
-    /** Large compose (tier 3 burst, shuttle aux). */
+    /**
+     * Large compose (tier 3 burst, shuttle aux).
+     * 1.7.10-паритет: soundRange=350, см. {@link ExplosionCreator#composeEffectLarge}.
+     */
     public static void composeEffectLarge(ServerLevel level, BlockPos pos) {
         double x = pos.getX() + 0.5D;
         double y = pos.getY() + 0.5D;
         double z = pos.getZ() + 0.5D;
+        // 1.7.10 ExplosionCreator.composeEffectLarge: delayed-звук + партиклы
+        ExplosionCreator.composeEffectLarge(level, x, y, z);
         SimpleParticleType flash = (SimpleParticleType) ModExplosionParticles.EXPLOSION_FLASH.get();
         level.sendParticles(flash, x, y, z, 2, 0.1D, 0.1D, 0.1D, 0.0D);
         ExplosionParticleUtils.spawnAirBombSparks(level, x, y, z);

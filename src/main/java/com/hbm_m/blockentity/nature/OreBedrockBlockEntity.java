@@ -1,7 +1,9 @@
 package com.hbm_m.blockentity.nature;
 
+import com.hbm_m.blockentity.BaseHbmBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.inventory.fluid.ModFluids;
+import com.hbm_m.platform.PlatformHooks;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -20,7 +22,7 @@ import net.minecraft.world.level.material.Fluids;
  * haelt das per Ring-Mining zu gewinnende Item, den benoetigten Bohr-Fluid-Typ/Menge und den
  * Mindest-Drillbit-Tier. Wird beim Weltgen einmalig gesetzt (siehe {@link com.hbm_m.worldgen.BedrockOreFeature}).
  */
-public class OreBedrockBlockEntity extends BlockEntity {
+public class OreBedrockBlockEntity extends BaseHbmBlockEntity {
 
     public ItemStack resource = ItemStack.EMPTY;
     public Fluid acidType = Fluids.EMPTY;
@@ -31,11 +33,13 @@ public class OreBedrockBlockEntity extends BlockEntity {
         super(ModBlockEntities.ORE_BEDROCK_BE.get(), pos, state);
     }
 
+    
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         if (!resource.isEmpty()) {
-            tag.put("resource", resource.save(new CompoundTag()));
+            // PlatformHooks.saveItemStack null-safe: 1.20.1 — stack.save(tag), 1.21.1 — через Provider
+            tag.put("resource", PlatformHooks.saveItemStack(resource, new CompoundTag(), registries));
         }
         tag.putString("acid_type", BuiltInRegistries.FLUID.getKey(acidType).toString());
         tag.putInt("acid_amount", acidAmountMb);
@@ -43,10 +47,11 @@ public class OreBedrockBlockEntity extends BlockEntity {
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         if (tag.contains("resource")) {
-            resource = ItemStack.of(tag.getCompound("resource"));
+            // PlatformHooks.itemStackOf null-safe: 1.20.1 — ItemStack.of, 1.21.1 — через Provider
+            resource = PlatformHooks.itemStackOf(tag.getCompound("resource"), registries);
         }
         if (tag.contains("acid_type")) {
             ResourceLocation id = ResourceLocation.tryParse(tag.getString("acid_type"));
@@ -56,10 +61,5 @@ public class OreBedrockBlockEntity extends BlockEntity {
         tier = tag.getInt("tier");
     }
 
-    @Override
-    public CompoundTag getUpdateTag() {
-        CompoundTag tag = super.getUpdateTag();
-        saveAdditional(tag);
-        return tag;
-    }
+    // getUpdateTag удалён: семантика (super + saveAdditional) полностью покрывается BaseHbmBlockEntity.
 }

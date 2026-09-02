@@ -50,7 +50,7 @@ public class ScrewdriverInteractionHandler {
     }
 
     private static boolean isScrewdriverStack(ItemStack stack) {
-        return !stack.isEmpty() && stack.getItem() == ModItems.SCREWDRIVER.get();
+        return !stack.isEmpty() && stack.getItem() == ModItems.SCREWDRIVER.get() || stack.getItem() == ModItems.SCREWDRIVER_DESH.get();
     }
 
     private static DoorBlockEntity resolveDoorController(Level level, BlockPos clickedPos) {

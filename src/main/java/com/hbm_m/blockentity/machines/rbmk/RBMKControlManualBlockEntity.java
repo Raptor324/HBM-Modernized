@@ -11,8 +11,11 @@ public class RBMKControlManualBlockEntity extends RBMKControlBlockEntity {
 
     public boolean moderated = false;
 
+    /** Set from the block variant; see {@link com.hbm_m.block.machines.rbmk.RBMKControlManualBlock}. */
+    public String texturePrefix = null;
+
     /** Snapshot of {@link #level} taken when a withdrawal ({@code setTarget}) begins - drives the surge in {@link #getMult}. */
-    private double startingLevel = 1.0;
+    private double startingLevel = 0.0;
 
     public RBMKControlManualBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.RBMK_CONTROL_BE.get(), pos, state);
@@ -32,6 +35,7 @@ public class RBMKControlManualBlockEntity extends RBMKControlBlockEntity {
      */
     @Override
     public String getRenderTexturePrefix() {
+        if (texturePrefix != null) return texturePrefix;
         return moderated ? "rbmk_control_mod" : super.getRenderTexturePrefix();
     }
 
@@ -76,9 +80,40 @@ public class RBMKControlManualBlockEntity extends RBMKControlBlockEntity {
         };
     }
 
+    // CE persists startingLevel (TileEntityRBMKControlManual.writeToNBT). Without it a reload
+    // mid-withdrawal resets the surge reference point and the tip effect silently vanishes.
+    //? if < 1.21.1 {
+    @Override
+    protected void saveAdditional(net.minecraft.nbt.CompoundTag tag) {
+        super.saveAdditional(tag);
+        tag.putDouble("startingLevel", startingLevel);
+    }
+    //?} else {
+    /*@Override
+    protected void saveAdditional(net.minecraft.nbt.CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.saveAdditional(tag, registries);
+        tag.putDouble("startingLevel", startingLevel);
+    }
+    *///?}
+
+    //? if < 1.21.1 {
+    @Override
+    public void load(net.minecraft.nbt.CompoundTag tag) {
+        super.load(tag);
+        if (tag.contains("startingLevel")) startingLevel = tag.getDouble("startingLevel");
+    }
+    //?} else {
+    /*@Override
+    protected void loadAdditional(net.minecraft.nbt.CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.loadAdditional(tag, registries);
+        if (tag.contains("startingLevel")) startingLevel = tag.getDouble("startingLevel");
+    }
+    *///?}
+
     public static void tick(Level level, BlockPos pos, BlockState state, RBMKControlManualBlockEntity be) {
         baseTick(level, pos, state, be);
         if (!level.isClientSide) {
+            be.updatePower(level);
             be.lastLevel = be.level;
             be.moveLevelToTarget(level);
         }

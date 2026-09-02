@@ -1,4 +1,3 @@
-//? if forge {
 package com.hbm_m.client.loader;
 
 import java.util.HashMap;
@@ -13,6 +12,7 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParseException;
 import com.hbm_m.client.model.PressBakedModel;
 import com.hbm_m.main.MainRegistry;
+import com.hbm_m.platform.LoaderHooks;
 import com.mojang.math.Transformation;
 
 import net.minecraft.client.renderer.block.model.ItemOverrides;
@@ -25,11 +25,18 @@ import net.minecraft.client.resources.model.ModelState;
 import net.minecraft.client.resources.model.UnbakedModel;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.GsonHelper;
+
+//? if < 1.21.1 {
 import net.minecraftforge.client.model.geometry.IGeometryBakingContext;
 import net.minecraftforge.client.model.geometry.IGeometryLoader;
 import net.minecraftforge.client.model.geometry.IUnbakedGeometry;
-import net.minecraftforge.client.model.obj.ObjLoader;
 import net.minecraftforge.client.model.obj.ObjModel;
+//?} else {
+/*import net.neoforged.neoforge.client.model.geometry.IGeometryBakingContext;
+import net.neoforged.neoforge.client.model.geometry.IGeometryLoader;
+import net.neoforged.neoforge.client.model.geometry.IUnbakedGeometry;
+import net.neoforged.neoforge.client.model.obj.ObjModel;
+*///?}
 
 public class PressModelLoader implements IGeometryLoader<PressModelLoader.PressGeometry> {
 
@@ -82,11 +89,20 @@ public class PressModelLoader implements IGeometryLoader<PressModelLoader.PressG
         @Override
         public void resolveParents(Function<ResourceLocation, UnbakedModel> modelGetter, IGeometryBakingContext context) { }
 
+        //? if < 1.21.1 {
         @Override
-        public BakedModel bake(IGeometryBakingContext context, ModelBaker baker,
-                               Function<Material, TextureAtlasSprite> spriteGetter,
-                               ModelState modelState, ItemOverrides overrides,
-                               ResourceLocation modelLocation) {
+        public BakedModel bake(IGeometryBakingContext context, ModelBaker baker, Function<Material, TextureAtlasSprite> spriteGetter, ModelState modelState, ItemOverrides overrides, ResourceLocation modelLocation) {
+            return doBake(context, baker, spriteGetter, modelState, overrides, modelLocation);
+        }
+        //?} else {
+        /*@Override
+        public BakedModel bake(IGeometryBakingContext context, ModelBaker baker, Function<Material, TextureAtlasSprite> spriteGetter, ModelState modelState, ItemOverrides overrides) {
+            ResourceLocation modelLocation = ResourceLocation.parse(context.getModelName());
+            return doBake(context, baker, spriteGetter, modelState, overrides, modelLocation);
+        }
+        *///?}
+
+        private BakedModel doBake(IGeometryBakingContext context, ModelBaker baker, Function<Material, TextureAtlasSprite> spriteGetter, ModelState modelState, ItemOverrides overrides, ResourceLocation modelLocation) {
             Map<String, BakedModel> bakedParts = new HashMap<>();
             bakedParts.put("Base", bakeObjPart(baseModelLocation, context, baker, spriteGetter, overrides, modelLocation));
             bakedParts.put("Head", bakeObjPart(headModelLocation, context, baker, spriteGetter, overrides, modelLocation));
@@ -99,10 +115,8 @@ public class PressModelLoader implements IGeometryLoader<PressModelLoader.PressG
                                        ModelBaker baker, Function<Material, TextureAtlasSprite> spriteGetter,
                                        ItemOverrides overrides, ResourceLocation rootModel) {
             try {
-                ObjModel model = ObjLoader.INSTANCE.loadModel(
-                    new ObjModel.ModelSettings(modelLocation, flipV, false, true, true, null)
-                );
-                return model.bake(context, baker, spriteGetter, identityState(), overrides, rootModel);
+                ObjModel model = LoaderHooks.loadObjModel(modelLocation, flipV);
+                return LoaderHooks.bakeObjModel(model, context, baker, spriteGetter, identityState(), overrides, rootModel);
             } catch (Exception e) {
                 MainRegistry.LOGGER.error("Failed to bake OBJ part for {}", modelLocation, e);
                 throw new RuntimeException("Failed to bake press model part: " + modelLocation, e);
@@ -119,19 +133,3 @@ public class PressModelLoader implements IGeometryLoader<PressModelLoader.PressG
         }
     }
 }
-//?}
-
-//? if fabric {
-/*package com.hbm_m.client.loader;
-
-/^*
- * Fabric: Forge geometry/OBJ pipeline isn't available.
- * Stub to keep compilation working across loaders.
- ^/
-public class PressModelLoader {
-    public PressModelLoader() {
-        throw new UnsupportedOperationException("PressModelLoader is not implemented on Fabric yet.");
-    }
-}
-*///?}
-

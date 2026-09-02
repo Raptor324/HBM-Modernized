@@ -25,7 +25,7 @@ import net.minecraft.world.phys.AABB;
  * carries real state; every other block of the shaft just points at the core via
  * {@link IDummyCorePart#getCorePos()}.
  */
-public class CargoElevatorBlockEntity extends BlockEntity implements IDummyCorePart {
+public class CargoElevatorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity implements IDummyCorePart {
 
     public static final double SPEED = 2.0 / 20.0; // 2 blocks/second
 
@@ -128,10 +128,9 @@ public class CargoElevatorBlockEntity extends BlockEntity implements IDummyCoreP
     }
 
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         if (corePos != null) {
-            tag.put("CorePos", NbtUtils.writeBlockPos(corePos));
+            com.hbm_m.platform.PlatformHooks.writeBlockPos(tag, "CorePos", corePos);
         }
         tag.putInt("height", height);
         tag.putDouble("extension", extension);
@@ -139,41 +138,13 @@ public class CargoElevatorBlockEntity extends BlockEntity implements IDummyCoreP
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
-        corePos = tag.contains("CorePos") ? NbtUtils.readBlockPos(tag.getCompound("CorePos")) : null;
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        corePos = tag.contains("CorePos") ? com.hbm_m.platform.PlatformHooks.readBlockPos(tag, "CorePos") : null;
         height = tag.getInt("height");
         extension = tag.getDouble("extension");
         prevExtension = extension;
         isExtending = tag.getBoolean("isExtending");
     }
 
-    @Override
-    public CompoundTag getUpdateTag() {
-        CompoundTag tag = super.getUpdateTag();
-        saveAdditional(tag);
-        return tag;
-    }
 
-    //? if forge {
-    @Override
-    public void handleUpdateTag(CompoundTag tag) {
-        load(tag);
-    }
-    //?}
-
-    @Nullable
-    @Override
-    public ClientboundBlockEntityDataPacket getUpdatePacket() {
-        return ClientboundBlockEntityDataPacket.create(this);
-    }
-
-    //? if forge {
-    @Override
-    public void onDataPacket(Connection net, ClientboundBlockEntityDataPacket pkt) {
-        if (pkt.getTag() != null) {
-            load(pkt.getTag());
-        }
-    }
-    //?}
 }

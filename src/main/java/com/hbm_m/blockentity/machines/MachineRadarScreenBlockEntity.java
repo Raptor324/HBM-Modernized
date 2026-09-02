@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import com.hbm_m.blockentity.ModBlockEntities;
+import com.hbm_m.platform.PlatformHooks;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -24,7 +25,7 @@ import net.minecraft.world.phys.AABB;
  *
  * Поля linked/refX/refY/refZ/range/entries синкаются через getUpdateTag.
  */
-public class MachineRadarScreenBlockEntity extends BlockEntity {
+public class MachineRadarScreenBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity {
 
     private static final int MAP_SYNC_SLICES = 5;
     private boolean fullMapSyncPending = true;
@@ -47,23 +48,63 @@ public class MachineRadarScreenBlockEntity extends BlockEntity {
     /**
      * Вызывается радаром серверно: принимает список целей и координаты радара-источника
      * (порт {@code TileEntityMachineRadarNT.updateEntity} → screen.entries = ...).
+     *
+     * <p>setChanged() вызывается ТОЛЬКО при реальной смене персистентного состояния
+     * (линк/координаты радара/режим карты). Координаты целей и содержимое карты —
+     * транзитные данные: они синкаются на клиент по сети (sendBlockUpdated), но
+     * не должны помечать чанк грязным и заставлять сервер каждые 5 тиков
+     * сериализовать 40 КБ height_map на диск.
+     *
+     * @return true, если набор целей изменился с прошлого вызова.
      */
-    public void receiveFromRadar(List<int[]> sourceEntries, int refX, int refY, int refZ, int range,
-                                 boolean showMap, byte[] sourceMap) {
+    public boolean receiveFromRadar(List<int[]> sourceEntries, int refX, int refY, int refZ, int range,
+                                    boolean showMap, byte[] sourceMap) {
         if (level == null || level.isClientSide) {
-            return;
+            return false;
         }
-        this.entries.clear();
+
+        // Канонизируем список, чтобы сравнивать набор целей по entityID,
+        // а не по порядку сканирования (он недетерминирован для HashSet/mixed списков).
+        List<int[]> canon = new ArrayList<>(sourceEntries.size());
         for (int[] e : sourceEntries) {
             if (e != null && e.length >= 5) {
+                canon.add(e);
+            }
+        }
+        canon.sort((a, b) -> Integer.compare(a.length >= 7 ? a[6] : -1, b.length >= 7 ? b[6] : -1));
+
+        boolean targetsChanged = canon.size() != this.entries.size();
+        if (!targetsChanged) {
+            // Грубый детект изменений: суммы координат/типов/eid. Для радарного
+            // экрана ложноположительный детект безвреден (лишний сетевой пакет),
+            // ложноотрицательный сведётся к пропуску одного периода обновления.
+            long oldSig = 0, newSig = 0;
+            for (int i = 0; i < canon.size(); i++) {
+                int[] ne = canon.get(i);
+                int[] oe = this.entries.get(i);
+                newSig += ne[0] * 31L + ne[1] * 37L + ne[2] * 41L + ne[3] * 43L + ne[4]
+                        + (ne.length >= 7 ? ne[6] * 47L : 0);
+                oldSig += oe[0] * 31L + oe[1] * 37L + oe[2] * 41L + oe[3] * 43L + oe[4]
+                        + (oe.length >= 7 ? oe[6] * 47L : 0);
+            }
+            targetsChanged = oldSig != newSig;
+        }
+
+        if (targetsChanged) {
+            this.entries.clear();
+            for (int[] e : canon) {
                 this.entries.add(e.clone());
             }
         }
+
+        boolean persistedChanged = this.refX != refX || this.refY != refY || this.refZ != refZ
+                || this.range != range;
         this.refX = refX;
         this.refY = refY;
         this.refZ = refZ;
         this.range = range;
         this.linked = true;
+
         boolean mapChanged = this.showMap != showMap;
         this.showMap = showMap;
         if (mapChanged && showMap) {
@@ -77,19 +118,34 @@ public class MachineRadarScreenBlockEntity extends BlockEntity {
                 heightMap = new byte[MachineRadarBlockEntity.MAP_LENGTH];
             }
             System.arraycopy(sourceMap, 0, heightMap, 0, MachineRadarBlockEntity.MAP_LENGTH);
+            persistedChanged = true; // height_map сериализуется на диск
         } else if (!showMap && mapChanged) {
             Arrays.fill(heightMap, (byte) 0);
+            persistedChanged = true;
         }
-        setChanged();
-        if (level != null && !level.isClientSide && !isRemoved()
-                && (mapChanged || level.getGameTime() % 5L == 0L)) {
+
+        // Диск: только при изменении персистентного состояния.
+        if (persistedChanged) {
+            setChanged();
+        }
+
+        // Сеть: при любом релевантном изменении, но не чаще раза в 5 тиков
+        // (движущиеся цели не требуют пакета каждый тик — 4 Гц достаточно).
+        if (!isRemoved()
+                && (targetsChanged || mapChanged || level.getGameTime() % 5L == 0L)) {
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
         }
+        return targetsChanged;
     }
 
     /** Периодически проверяет источник, чтобы сломанный радар не оставлял экран linked=true. */
     public static void tick(Level level, BlockPos pos, BlockState state, MachineRadarScreenBlockEntity screen) {
         if (level.isClientSide || level.getGameTime() % 5L != 0L) {
+            return;
+        }
+        // Экран никогда не был прилинкован (координаты радара неизвестны) —
+        // нечего проверять, и чанк (0,0,0) дёргать не нужно.
+        if (!screen.linked && screen.refX == 0 && screen.refY == 0 && screen.refZ == 0) {
             return;
         }
         BlockPos radarPos = new BlockPos(screen.refX, screen.refY, screen.refZ);
@@ -122,6 +178,11 @@ public class MachineRadarScreenBlockEntity extends BlockEntity {
         if (level == null || level.isClientSide) {
             return;
         }
+        // Идемпотентность: если связи уже нет и целей нет — ничего не изменилось,
+        // незачем помечать чанк грязным и слать пакет каждые 5 тиков.
+        if (!this.linked && this.entries.isEmpty()) {
+            return;
+        }
         this.linked = false;
         this.entries.clear();
         this.range = 0;
@@ -139,8 +200,7 @@ public class MachineRadarScreenBlockEntity extends BlockEntity {
     }
 
     @Override
-    public CompoundTag getUpdateTag() {
-        CompoundTag tag = super.getUpdateTag();
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         tag.putBoolean("linked", linked);
         tag.putInt("refX", refX);
         tag.putInt("refY", refY);
@@ -171,12 +231,13 @@ public class MachineRadarScreenBlockEntity extends BlockEntity {
             int[] e = entries.get(i);
             tag.putIntArray("e" + i, e);
         }
-        return tag;
+        if (heightMap != null && heightMap.length == MachineRadarBlockEntity.MAP_LENGTH) {
+            tag.putByteArray("height_map", Arrays.copyOf(heightMap, MachineRadarBlockEntity.MAP_LENGTH));
+        }
     }
 
     @Override
-    public void handleUpdateTag(CompoundTag tag) {
-        super.handleUpdateTag(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         linked = tag.getBoolean("linked");
         refX = tag.getInt("refX");
         refY = tag.getInt("refY");
@@ -210,6 +271,12 @@ public class MachineRadarScreenBlockEntity extends BlockEntity {
         } else if (!showMap && heightMap != null) {
             Arrays.fill(heightMap, (byte) 0);
         }
+        if (tag.contains("height_map")) {
+            byte[] savedMap = tag.getByteArray("height_map");
+            if (savedMap.length == MachineRadarBlockEntity.MAP_LENGTH) {
+                heightMap = savedMap.clone();
+            }
+        }
         entries.clear();
         int count = tag.getInt("count");
         for (int i = 0; i < count; i++) {
@@ -217,56 +284,9 @@ public class MachineRadarScreenBlockEntity extends BlockEntity {
         }
     }
 
+    //? if forge {
     @Override
-    public ClientboundBlockEntityDataPacket getUpdatePacket() {
-        return ClientboundBlockEntityDataPacket.create(this);
-    }
-
-    @Override
-    public void onDataPacket(net.minecraft.network.Connection net, ClientboundBlockEntityDataPacket pkt) {
-        super.onDataPacket(net, pkt);
-        if (pkt.getTag() != null) {
-            handleUpdateTag(pkt.getTag());
-        }
-    }
-
-    @Override
-    public void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
-        tag.putBoolean("linked", linked);
-        tag.putInt("refX", refX);
-        tag.putInt("refY", refY);
-        tag.putInt("refZ", refZ);
-        tag.putInt("range", range);
-        tag.putBoolean("show_map", showMap);
-        if (heightMap != null && heightMap.length == MachineRadarBlockEntity.MAP_LENGTH) {
-            // IOWorker пишет chunk NBT на отдельном потоке, а экран обновляет карту
-            // из радара каждые 5 тиков. Передаём только снимок массива.
-            tag.putByteArray("height_map", Arrays.copyOf(heightMap, MachineRadarBlockEntity.MAP_LENGTH));
-        }
-    }
-
-    @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
-        linked = tag.getBoolean("linked");
-        refX = tag.getInt("refX");
-        refY = tag.getInt("refY");
-        refZ = tag.getInt("refZ");
-        range = tag.getInt("range");
-        showMap = tag.getBoolean("show_map");
-        if (tag.contains("height_map")) {
-            byte[] savedMap = tag.getByteArray("height_map");
-            if (savedMap.length == MachineRadarBlockEntity.MAP_LENGTH) {
-                // clone() обязателен: массив принадлежит ByteArrayTag загруженного
-                // chunk NBT. Без копии receiveFromRadar правил бы тот же массив,
-                // который IOWorker сериализует в другом потоке.
-                heightMap = savedMap.clone();
-            }
-        }
-    }
-
-    @Override
+    //?}
     public AABB getRenderBoundingBox() {
         return new AABB(
                 worldPosition.getX() - 1,

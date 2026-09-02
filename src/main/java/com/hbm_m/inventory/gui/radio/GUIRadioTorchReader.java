@@ -1,6 +1,7 @@
 package com.hbm_m.inventory.gui.radio;
 
 import com.hbm_m.blockentity.network.radio.RadioTorchReaderBlockEntity;
+import com.hbm_m.client.GuiCompat;
 import com.hbm_m.network.RadioTorchControlPacket;
 
 import net.minecraft.client.gui.GuiGraphics;
@@ -33,7 +34,7 @@ public class GUIRadioTorchReader extends Screen {
         int cx = this.width / 2;
         int y = this.height / 2 - 90;
 
-        pollingBox = new Checkbox(cx - 75, y, 150, 18, Component.literal("Polling"), blockEntity.polling);
+        pollingBox = com.hbm_m.client.GuiCompat.checkbox(cx - 75, y, 150, 18, Component.literal("Polling"), blockEntity.polling);
         addRenderableWidget(pollingBox);
         y += 24;
 
@@ -71,7 +72,7 @@ public class GUIRadioTorchReader extends Screen {
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        this.renderBackground(guiGraphics);
+        com.hbm_m.client.GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
         guiGraphics.drawCenteredString(this.font, this.title, this.width / 2, this.height / 2 - 110, 0xFFFFFF);
     }

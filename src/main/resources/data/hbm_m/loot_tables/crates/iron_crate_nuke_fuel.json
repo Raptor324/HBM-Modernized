@@ -1,0 +1,29 @@
+{
+  "_comment": "POOL_NUKE_FUEL — топливные изотопы из бункеров и лабораторий (порт ItemPoolsComponent.POOL_NUKE_FUEL из 1.7.10)",
+  "type": "minecraft:chest",
+  "pools": [
+    {
+      "rolls": { "min": 4, "max": 7 },
+      "entries": [
+        { "type": "item", "name": "hbm_m:billet_uranium", "weight": 4, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 4 } } ] },
+        { "type": "item", "name": "hbm_m:billet_th232", "weight": 3, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 3 } } ] },
+        { "type": "item", "name": "hbm_m:billet_uranium_fuel", "weight": 5, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 3 } } ] },
+        { "type": "item", "name": "hbm_m:billet_mox_fuel", "weight": 5, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 3 } } ] },
+        { "type": "item", "name": "hbm_m:billet_thorium_fuel", "weight": 3, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 3 } } ] },
+        { "type": "item", "name": "hbm_m:billet_ra226be", "weight": 2, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 2 } } ] },
+        { "type": "item", "name": "hbm_m:billet_beryllium", "weight": 1 },
+        { "type": "item", "name": "hbm_m:nugget_u233", "weight": 1 },
+        { "type": "item", "name": "hbm_m:nugget_uranium_fuel", "weight": 1 },
+        { "type": "item", "name": "hbm_m:rod_empty", "weight": 3, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 3 } } ] },
+        { "type": "item", "name": "hbm_m:graphite_ingot", "weight": 3, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 4 } } ] },
+        { "type": "item", "name": "hbm_m:pile_rod_uranium", "weight": 3, "functions": [ { "function": "minecraft:set_count", "count": { "min": 2, "max": 5 } } ] },
+        { "type": "item", "name": "hbm_m:pile_rod_source", "weight": 2, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 2 } } ] },
+        { "type": "item", "name": "hbm_m:reacher", "weight": 3 },
+        { "type": "item", "name": "hbm_m:screwdriver", "weight": 2 },
+        { "type": "item", "name": "hbm_m:hazmat_kit", "weight": 2 },
+        { "type": "item", "name": "hbm_m:gas_mask_m65", "weight": 4 },
+        { "type": "item", "name": "hbm_m:gas_mask_filter", "weight": 5 }
+      ]
+    }
+  ]
+}

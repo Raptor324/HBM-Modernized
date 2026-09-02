@@ -22,7 +22,7 @@ import net.minecraft.world.level.block.state.BlockState;
  * Port of {@code TileEntityDiFurnaceRTG} (1.7.10 Original) - the RTG-heated variant of the
  * Blast/DiFurnace: same 2-ingredient recipe lookup as {@link BlastFurnaceBlockEntity} (reused
  * directly via {@link BlastFurnaceRecipe}), but heated by RTG pellets (6 slots) instead of solid
- * fuel items, using the same heat table as {@link MachineRtgBlockEntity} via {@link RtgPelletHeat}.
+ * fuel items, using the same heat table as the removed RTG block entity via {@link RtgPelletHeat}.
  */
 public class MachineDifurnaceRtgBlockEntity extends BaseMachineBlockEntity {
 
@@ -78,7 +78,11 @@ public class MachineDifurnaceRtgBlockEntity extends BaseMachineBlockEntity {
         SimpleContainer container = new SimpleContainer(4);
         container.setItem(1, top);
         container.setItem(2, bottom);
-        return level.getRecipeManager().getRecipeFor(BlastFurnaceRecipe.Type.INSTANCE, container, level);
+        // 1.21.1: getRecipeFor требует RecipeInput — используем getAllRecipes + matchesRecipe.
+        return com.hbm_m.platform.recipe.RecipeHooks
+                .getAllRecipes(level, BlastFurnaceRecipe.Type.INSTANCE).stream()
+                .filter(r -> r.matchesRecipe(new com.hbm_m.platform.recipe.RecipeInputWrapper(container), level))
+                .findFirst();
     }
 
     private void craftItem(Level level) {
@@ -125,14 +129,14 @@ public class MachineDifurnaceRtgBlockEntity extends BaseMachineBlockEntity {
     }
 
     @Override
-    public void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.putInt("progress", progress);
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         progress = tag.getInt("progress");
     }
 }

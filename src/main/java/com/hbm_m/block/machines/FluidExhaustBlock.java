@@ -40,4 +40,13 @@ public class FluidExhaustBlock extends BaseEntityBlock {
         return level.isClientSide ? null
                 : createTickerHelper(type, ModBlockEntities.FLUID_EXHAUST_BE.get(), FluidExhaustBlockEntity::tick);
     }
+
+    //? if >1.20.1 {
+    /*public static final com.mojang.serialization.MapCodec<FluidExhaustBlock> CODEC = simpleCodec(FluidExhaustBlock::new);
+
+    @Override
+    protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
+        return CODEC;
+    }
+    *///?}
 }

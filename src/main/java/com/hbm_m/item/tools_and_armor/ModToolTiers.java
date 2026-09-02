@@ -16,6 +16,11 @@ import net.minecraftforge.common.TierSortingRegistry;
 
 import java.util.List;
 //?}
+//? if >= 1.21.1 {
+/*import net.minecraft.tags.BlockTags;
+import net.minecraft.tags.TagKey;
+import net.minecraft.world.level.block.Block;
+*///?}
 
 public class ModToolTiers {
     public static final Tier ALLOY =
@@ -26,7 +31,6 @@ public class ModToolTiers {
                     ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "alloy"), List.of(Tiers.NETHERITE), List.of()
             );
             //?} else {
-
             /*new SimpleTier(4, 1500, 6f, 6f, 25, () -> Ingredient.of(ModItems.PLATE_STEEL.get()));
             *///?}
 
@@ -38,7 +42,6 @@ public class ModToolTiers {
                     ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "steel"), List.of(Tiers.IRON), List.of()
             );
             //?} else {
-
             /*new SimpleTier(3, 600, 4f, 4f, 18, () -> Ingredient.of(ModItems.PLATE_STEEL.get()));
             *///?}
 
@@ -51,7 +54,6 @@ public class ModToolTiers {
                     ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "starmetal"), List.of(Tiers.IRON), List.of()
             );
             //?} else {
-
             /*new SimpleTier(5, 19000, 9f, 8f, 25, () -> Ingredient.of(ModItems.PLATE_STEEL.get()));
             *///?}
 
@@ -64,7 +66,6 @@ public class ModToolTiers {
                     ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "titanium"), List.of(Tiers.IRON), List.of()
             );
             //?} else {
-
             /*new SimpleTier(3, 750, 3.25f, 3f, 15, () -> Ingredient.of(ModItems.PLATE_STEEL.get()));
             *///?}
 
@@ -107,10 +108,12 @@ public class ModToolTiers {
             return attackDamageBonus;
         }
 
+        //? if < 1.21.1 {
         @Override
         public int getLevel() {
             return level;
         }
+        //?}
 
         @Override
         public int getEnchantmentValue() {
@@ -124,5 +127,18 @@ public class ModToolTiers {
             }
             return resolvedRepair;
         }
+
+        //? if >= 1.21.1 {
+        /*@Override
+        public TagKey<Block> getIncorrectBlocksForDrops() {
+            return switch (this.level) {
+                case 0, 1 -> BlockTags.INCORRECT_FOR_WOODEN_TOOL;
+                case 2    -> BlockTags.INCORRECT_FOR_STONE_TOOL;
+                case 3    -> BlockTags.INCORRECT_FOR_IRON_TOOL;
+                case 4    -> BlockTags.INCORRECT_FOR_DIAMOND_TOOL;
+                default   -> BlockTags.INCORRECT_FOR_NETHERITE_TOOL;
+            };
+        }
+        *///?}
     }
 }

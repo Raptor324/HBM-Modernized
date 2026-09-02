@@ -8,9 +8,9 @@ import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.inventory.menu.MachineSilexMenu;
-import com.hbm_m.recipe.SilexRecipes;
-import com.hbm_m.recipe.SilexRecipes.SilexRecipe;
-import com.hbm_m.recipe.SilexRecipes.WeightedOutput;
+import com.hbm_m.platform.recipe.RecipeHooks;
+import com.hbm_m.recipe.SilexRecipe;
+import com.hbm_m.recipe.SilexRecipe.WeightedOutput;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -34,7 +34,7 @@ import net.minecraft.world.level.material.Fluid;
  * ist eine einstufige Version: Item + Peroxid-Fluid werden direkt verbraucht, keine Laser-Gating-Mechanik,
  * kein Warteschlangen-System (Original: Slots 5-10) - stattdessen ein einzelner Ausgabeslot mit
  * Item-Stack-Akkumulation, analog zu allen anderen einfachen Item-Ausgabemaschinen in diesem Port.
- * Die Rezeptliste {@link SilexRecipes} ist ein Direktport der Gewichtsverteilungen aus {@code SILEXRecipes}
+ * Die Rezeptliste {@link SilexRecipe} ist ein Direktport der Gewichtsverteilungen aus {@code SILEXRecipes}
  * (U -> U235/U238, Pu-Mix -> Pu239/Pu240, Am-Mix -> Am241/Am242).
  */
 public class MachineSilexBlockEntity extends BaseMachineBlockEntity implements IFluidStandardReceiverMK2 {
@@ -86,7 +86,7 @@ public class MachineSilexBlockEntity extends BaseMachineBlockEntity implements I
             be.setEnergyStored(be.getEnergyStored() - ENERGY_PER_TICK);
             be.progress++;
             dirty = true;
-            if (be.progress >= recipe.processTicks()) {
+            if (be.progress >= recipe.getDuration()) {
                 be.progress = 0;
                 be.completeCycle(recipe, level);
             }
@@ -104,33 +104,43 @@ public class MachineSilexBlockEntity extends BaseMachineBlockEntity implements I
     private SilexRecipe currentRecipe() {
         ItemStack input = inventory.getStackInSlot(SLOT_INPUT);
         if (input.isEmpty()) return null;
-        return SilexRecipes.get(input.getItem());
+        return findRecipe(input);
+    }
+
+    /** Data-driven поиск SilexRecipe по входному стаку (заменяет статический SilexRecipes.get/has). */
+    private SilexRecipe findRecipe(ItemStack input) {
+        Level level = getLevel();
+        if (level == null || input.isEmpty()) return null;
+        for (SilexRecipe recipe : RecipeHooks.getAllRecipes(level, SilexRecipe.Type.INSTANCE)) {
+            if (recipe.matches(input)) return recipe;
+        }
+        return null;
     }
 
     private boolean canProcess(SilexRecipe recipe) {
         if (recipe == null) return false;
         if (getEnergyStored() < ENERGY_PER_TICK) return false;
-        if (tank.getFill() < recipe.fluidConsumedMb()) return false;
+        if (tank.getFill() < recipe.getPeroxideMb()) return false;
         return hasOutputSpace(recipe);
     }
 
     private boolean hasOutputSpace(SilexRecipe recipe) {
         ItemStack existing = inventory.getStackInSlot(SLOT_OUTPUT);
         if (existing.isEmpty()) return true;
-        for (WeightedOutput out : recipe.outputs()) {
-            if (!ItemStack.isSameItemSameTags(existing, out.stack())) return false;
+        for (WeightedOutput out : recipe.getOutputs()) {
+            if (!com.hbm_m.platform.PlatformHooks.isSameItemSameTags(existing, out.stack())) return false;
         }
         return existing.getCount() < existing.getMaxStackSize();
     }
 
     private void completeCycle(SilexRecipe recipe, Level level) {
         inventory.extractItem(SLOT_INPUT, 1, false);
-        tank.drainMb(recipe.fluidConsumedMb());
+        tank.drainMb(recipe.getPeroxideMb());
 
-        int totalWeight = Math.max(1, recipe.totalWeight());
+        int totalWeight = Math.max(1, recipe.getTotalWeight());
         int roll = level.getRandom().nextInt(totalWeight);
         int weight = 0;
-        for (WeightedOutput out : recipe.outputs()) {
+        for (WeightedOutput out : recipe.getOutputs()) {
             weight += out.weight();
             if (roll < weight) {
                 insertOutput(out.stack().copy());
@@ -143,7 +153,7 @@ public class MachineSilexBlockEntity extends BaseMachineBlockEntity implements I
         ItemStack existing = inventory.getStackInSlot(SLOT_OUTPUT);
         if (existing.isEmpty()) {
             inventory.setStackInSlot(SLOT_OUTPUT, stack);
-        } else if (ItemStack.isSameItemSameTags(existing, stack)) {
+        } else if (com.hbm_m.platform.PlatformHooks.isSameItemSameTags(existing, stack)) {
             existing.grow(stack.getCount());
         }
     }
@@ -156,7 +166,7 @@ public class MachineSilexBlockEntity extends BaseMachineBlockEntity implements I
 
     public int getMaxProgress() {
         SilexRecipe recipe = currentRecipe();
-        return recipe != null ? recipe.processTicks() : 100;
+        return recipe != null ? recipe.getDuration() : 100;
     }
 
     public int getProgressScaled(int scale) {
@@ -197,16 +207,16 @@ public class MachineSilexBlockEntity extends BaseMachineBlockEntity implements I
     // ==================== NBT ====================
 
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.putInt("progress", progress);
         tag.putBoolean("active", active);
         tank.writeToNBT(tag, "tank");
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         progress = tag.getInt("progress");
         active = tag.getBoolean("active");
         tank.readFromNBT(tag, "tank");
@@ -225,7 +235,7 @@ public class MachineSilexBlockEntity extends BaseMachineBlockEntity implements I
     @Override
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
         if (slot == SLOT_INPUT) {
-            return SilexRecipes.has(stack.getItem());
+            return findRecipe(stack) != null;
         }
         if (slot == SLOT_BATTERY) {
             return isEnergyProviderItem(stack);

@@ -104,6 +104,44 @@ public class MachineRefineryBlockEntity extends BaseMachineBlockEntity implement
     private int sulfurProgress = 0;
     private boolean isOn = false;
 
+    /**
+     * {@code hasExploded} / {@code onFire}: a refinery that has been blown up stops working and
+     * burns until someone puts it out. The port had neither - a bomb landing on a refinery simply
+     * broke the block like any other, which is also why {@code inferno} had no trigger.
+     */
+    public boolean hasExploded = false;
+    public boolean onFire = false;
+    /** Guards against one blast calling into every block of the multiblock in turn. */
+    public Object lastExplosion = null;
+
+    public void explode() {
+        if (this.hasExploded) return;
+        this.hasExploded = true;
+        this.onFire = true;
+        this.isOn = false;
+        this.setChanged();
+        syncExplodedState();
+    }
+
+    public void repair() {
+        this.hasExploded = false;
+        this.onFire = false;
+        this.setChanged();
+        syncExplodedState();
+    }
+    /**
+     * Pushes {@code hasExploded} into the blockstate so the wrecked model is used. The state is
+     * the single source of truth for rendering; the field stays authoritative for behaviour.
+     */
+    private void syncExplodedState() {
+        if (level == null || level.isClientSide) return;
+        net.minecraft.world.level.block.state.BlockState state = getBlockState();
+        if (!state.hasProperty(com.hbm_m.block.machines.MachineRefineryBlock.EXPLODED)) return;
+        if (state.getValue(com.hbm_m.block.machines.MachineRefineryBlock.EXPLODED) == this.hasExploded) return;
+        level.setBlock(worldPosition, state.setValue(com.hbm_m.block.machines.MachineRefineryBlock.EXPLODED, this.hasExploded), 3);
+    }
+
+
     //? if forge {
     private LazyOptional<IFluidHandler> fluidHandler = LazyOptional.empty();
     //?}
@@ -392,25 +430,57 @@ public class MachineRefineryBlockEntity extends BaseMachineBlockEntity implement
         }
     }
 
+    //? if < 1.21.1 {
     @Override
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
+        tag.putBoolean("hasExploded", hasExploded);
+        tag.putBoolean("onFire", onFire);
         for (int i = 0; i < tanks.length; i++) {
             tanks[i].writeToNBT(tag, "tank_" + i);
         }
         tag.putInt("sulfurProgress", sulfurProgress);
         tag.putBoolean("isOn", isOn);
     }
+    //?} else {
+    /*@Override
+    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.saveAdditional(tag, registries);
+        tag.putBoolean("hasExploded", hasExploded);
+        tag.putBoolean("onFire", onFire);
+        for (int i = 0; i < tanks.length; i++) {
+            tanks[i].writeToNBT(tag, "tank_" + i);
+        }
+        tag.putInt("sulfurProgress", sulfurProgress);
+        tag.putBoolean("isOn", isOn);
+    }
+    *///?}
 
+    //? if < 1.21.1 {
     @Override
     public void load(CompoundTag tag) {
         super.load(tag);
+        hasExploded = tag.getBoolean("hasExploded");
+        onFire = tag.getBoolean("onFire");
         for (int i = 0; i < tanks.length; i++) {
             tanks[i].readFromNBT(tag, "tank_" + i);
         }
         sulfurProgress = tag.getInt("sulfurProgress");
         isOn = tag.getBoolean("isOn");
     }
+    //?} else {
+    /*@Override
+    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.loadAdditional(tag, registries);
+        hasExploded = tag.getBoolean("hasExploded");
+        onFire = tag.getBoolean("onFire");
+        for (int i = 0; i < tanks.length; i++) {
+            tanks[i].readFromNBT(tag, "tank_" + i);
+        }
+        sulfurProgress = tag.getInt("sulfurProgress");
+        isOn = tag.getBoolean("isOn");
+    }
+    *///?}
 
     @Override
     public Component getDisplayName() {
@@ -442,19 +512,7 @@ public class MachineRefineryBlockEntity extends BaseMachineBlockEntity implement
     //? if forge {
     @Override
     protected void setupFluidCapability() {
-        fluidHandler = LazyOptional.of(() -> new RefineryFluidHandler(this));
-    }
-
-    @Override
-    public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
-        if (cap == ForgeCapabilities.FLUID_HANDLER) return fluidHandler.cast();
-        return super.getCapability(cap, side);
-    }
-
-    @Override
-    public void invalidateCaps() {
-        super.invalidateCaps();
-        fluidHandler.invalidate();
+        setFluidHandler(new RefineryFluidHandler(this));
     }
     //?}
 
@@ -467,4 +525,22 @@ public class MachineRefineryBlockEntity extends BaseMachineBlockEntity implement
     }
 
     private record RefineryRecipe(Fluid[] outputFluids, int[] outputAmounts, ItemStack solidByproduct) {}
-}
+
+    // Энергопорты мультиблока: позиции фантомов структуры, ранее регистрировавшиеся блоком.
+    // Ядро (worldPosition) подписывается в BaseMachineBlockEntity.ensureNetworkInitialized().
+    @Override
+    protected BlockPos[] getExtraEnergyPorts() {
+        if (level == null || level.isClientSide) return new BlockPos[0];
+        if (!(getBlockState().getBlock() instanceof com.hbm_m.block.machines.MachineRefineryBlock block)) return new BlockPos[0];
+
+        var helper = block.getStructureHelper();
+        Direction facing = getBlockState().getValue(net.minecraft.world.level.block.HorizontalDirectionalBlock.FACING);
+
+        java.util.List<BlockPos> ports = new java.util.ArrayList<>();
+        for (BlockPos localPos : helper.getStructureMap().keySet()) {
+            if (helper.resolvePartRole(localPos, block).canReceiveEnergy()) {
+                ports.add(helper.getRotatedPos(worldPosition, localPos, facing));
+            }
+        }
+        return ports.toArray(new BlockPos[0]);
+    }}

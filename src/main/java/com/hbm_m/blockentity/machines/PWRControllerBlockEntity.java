@@ -489,8 +489,7 @@ public class PWRControllerBlockEntity extends BaseMachineBlockEntity
     // ── NBT ───────────────────────────────────────────────────────────────
 
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         coolantTank.writeToNBT(tag, "tank_coolant");
         coolantHotTank.writeToNBT(tag, "tank_coolant_hot");
         tag.putBoolean("assembled", assembled);
@@ -515,17 +514,16 @@ public class PWRControllerBlockEntity extends BaseMachineBlockEntity
 
         tag.putInt("portCount", ports.size());
         for (int i = 0; i < ports.size(); i++) {
-            tag.put("port" + i, NbtUtils.writeBlockPos(ports.get(i)));
+            com.hbm_m.platform.PlatformHooks.writeBlockPos(tag, "port" + i, ports.get(i));
         }
         tag.putInt("rodPosCount", rods.size());
         for (int i = 0; i < rods.size(); i++) {
-            tag.put("rodPos" + i, NbtUtils.writeBlockPos(rods.get(i)));
+            com.hbm_m.platform.PlatformHooks.writeBlockPos(tag, "rodPos" + i, rods.get(i));
         }
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         coolantTank.readFromNBT(tag, "tank_coolant");
         coolantHotTank.readFromNBT(tag, "tank_coolant_hot");
         assembled = tag.getBoolean("assembled");
@@ -551,12 +549,12 @@ public class PWRControllerBlockEntity extends BaseMachineBlockEntity
         ports.clear();
         int portCount = tag.getInt("portCount");
         for (int i = 0; i < portCount; i++) {
-            if (tag.contains("port" + i)) ports.add(NbtUtils.readBlockPos(tag.getCompound("port" + i)));
+            if (tag.contains("port" + i)) ports.add(com.hbm_m.platform.PlatformHooks.readBlockPos(tag, "port" + i));
         }
         rods.clear();
         int rodPosCount = tag.getInt("rodPosCount");
         for (int i = 0; i < rodPosCount; i++) {
-            if (tag.contains("rodPos" + i)) rods.add(NbtUtils.readBlockPos(tag.getCompound("rodPos" + i)));
+            if (tag.contains("rodPos" + i)) rods.add(com.hbm_m.platform.PlatformHooks.readBlockPos(tag, "rodPos" + i));
         }
     }
 

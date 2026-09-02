@@ -1,0 +1,23 @@
+{
+  "display": {
+    "icon": {
+      "item": "hbm_m:struct_watz_core"
+    },
+    "title": {
+      "translate": "advancements.hbm_m.watz.title"
+    },
+    "description": {
+      "translate": "advancements.hbm_m.watz.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "granted": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "parent": "hbm_m:schrab"
+}

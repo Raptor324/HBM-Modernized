@@ -1,0 +1,23 @@
+{
+  "display": {
+    "icon": {
+      "item": "hbm_m:geiger_counter"
+    },
+    "title": {
+      "translate": "advancements.hbm_m.root.title"
+    },
+    "description": {
+      "translate": "advancements.hbm_m.root.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false,
+    "background": "hbm_m:textures/block/block_uranium.png"
+  },
+  "criteria": {
+    "in_world": {
+      "trigger": "minecraft:tick"
+    }
+  }
+}

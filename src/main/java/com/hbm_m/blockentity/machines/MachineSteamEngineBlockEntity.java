@@ -56,7 +56,7 @@ public class MachineSteamEngineBlockEntity extends BaseMachineBlockEntity implem
     public @org.jetbrains.annotations.NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(
             net.minecraftforge.common.capabilities.Capability<T> cap, @Nullable Direction side) {
         if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER) {
-            return steamTank.getCapability().cast();
+            return steamTank.getForgeFluidCapability().cast();
         }
         return super.getCapability(cap, side);
     }
@@ -126,15 +126,15 @@ public class MachineSteamEngineBlockEntity extends BaseMachineBlockEntity implem
     // ==================== NBT ====================
 
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         steamTank.writeToNBT(tag, "tank_steam");
         spentSteamTank.writeToNBT(tag, "tank_spentsteam");
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         steamTank.readFromNBT(tag, "tank_steam");
         spentSteamTank.readFromNBT(tag, "tank_spentsteam");
     }

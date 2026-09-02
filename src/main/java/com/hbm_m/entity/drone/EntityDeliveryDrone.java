@@ -15,6 +15,7 @@ import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import com.hbm_m.platform.PlatformHooks;
 
 import java.util.Arrays;
 
@@ -49,12 +50,21 @@ public class EntityDeliveryDrone extends EntityDroneBase {
         return drone;
     }
 
+    //? if < 1.21.1 {
     @Override
     protected void defineSynchedData() {
         super.defineSynchedData();
         this.entityData.define(EXPRESS, false);
         this.entityData.define(CHUNK_LOADING, false);
     }
+    //?} else {
+    /*@Override
+    protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(EXPRESS, false);
+        builder.define(CHUNK_LOADING, false);
+    }
+    *///?}
 
     public boolean isExpress() { return this.entityData.get(EXPRESS); }
     public boolean isChunkLoading() { return this.entityData.get(CHUNK_LOADING); }
@@ -151,7 +161,9 @@ public class EntityDeliveryDrone extends EntityDroneBase {
         for (int i = 0; i < list.size(); i++) {
             CompoundTag entry = list.getCompound(i);
             int slot = entry.getInt("slot");
-            if (slot >= 0 && slot < items.length) items[slot] = ItemStack.of(entry);
+            if (slot >= 0 && slot < items.length) {
+                items[slot] = PlatformHooks.itemStackOf(entry, this.level().registryAccess());
+            }
         }
 
         if (tag.contains("fluidTank")) fluidTank.readNBT(tag.getCompound("fluidTank"));
@@ -166,7 +178,7 @@ public class EntityDeliveryDrone extends EntityDroneBase {
         ListTag list = new ListTag();
         for (int i = 0; i < items.length; i++) {
             if (!items[i].isEmpty()) {
-                CompoundTag entry = items[i].save(new CompoundTag());
+                CompoundTag entry = PlatformHooks.safeItemSave(items[i], this.level().registryAccess());
                 entry.putInt("slot", i);
                 list.add(entry);
             }

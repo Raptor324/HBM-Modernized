@@ -25,7 +25,7 @@ import java.util.List;
  * a foundry channel), or equalizes/swaps amounts with an adjacent tank - 1:1 with the original's
  * three-tier fallback.
  */
-public class MachineFoundryTankBlockEntity extends BlockEntity implements ICrucibleAcceptor {
+public class MachineFoundryTankBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity implements ICrucibleAcceptor {
 
     public static final int CAPACITY = MaterialStack.BUCKET * 4;
 
@@ -147,26 +147,17 @@ public class MachineFoundryTankBlockEntity extends BlockEntity implements ICruci
     /* ── NBT / sync ─────────────────────────────────────────────────────── */
 
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         if (type != null) tag.putString("mat_type", type.name);
         tag.putInt("mat_amount", amount);
         tag.putInt("nextUpdate", nextUpdate);
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         type = tag.contains("mat_type") ? MaterialType.byName(tag.getString("mat_type")) : null;
         amount = tag.getInt("mat_amount");
         nextUpdate = tag.getInt("nextUpdate");
     }
 
-    @Override
-    public CompoundTag getUpdateTag() { CompoundTag t = super.getUpdateTag(); saveAdditional(t); return t; }
-
-    @Override
-    public Packet<ClientGamePacketListener> getUpdatePacket() {
-        return ClientboundBlockEntityDataPacket.create(this);
-    }
 }

@@ -1,4 +1,5 @@
 package com.hbm_m.inventory.gui;
+import com.hbm_m.client.GuiCompat;
 
 import com.hbm_m.blockentity.machines.MachineShredderBlockEntity;
 import com.hbm_m.inventory.menu.MachineShredderMenu;
@@ -163,7 +164,7 @@ public class GUIMachineShredder extends GuiInfoScreen<MachineShredderMenu> {
     }
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float delta) {
-        renderBackground(guiGraphics);
+        GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, delta);
         super.render(guiGraphics, mouseX, mouseY, delta);
         renderTooltip(guiGraphics, mouseX, mouseY);
         renderCustomTooltips(guiGraphics, mouseX, mouseY);
@@ -202,6 +203,8 @@ public class GUIMachineShredder extends GuiInfoScreen<MachineShredderMenu> {
 
     private boolean shouldShowBladeWarning() {
         MachineShredderBlockEntity blockEntity = menu.getBlockEntity();
+        // тайл может отсутствовать в реплее Flashback
+        if (blockEntity == null) return false;
         int gearLeft = blockEntity.getGearLeft();
         int gearRight = blockEntity.getGearRight();
         return (gearLeft == 0 || gearLeft == 3) || (gearRight == 0 || gearRight == 3);

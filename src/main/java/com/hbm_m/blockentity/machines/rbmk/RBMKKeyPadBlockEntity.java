@@ -26,16 +26,26 @@ public class RBMKKeyPadBlockEntity extends RBMKPanelDeviceBlockEntity {
     public final String[]  command = new String[UNITS];
     public final boolean[] polling = new boolean[UNITS];
 
+    /** KeyUnit.isPressed - latched for toggle buttons, momentary while polling. */
+    public final boolean[] isPressed = new boolean[UNITS];
+
+    /** KeyUnit's constructor defaults (TileEntityRBMKKeyPad:99-103). */
+    @Override
+    protected int defaultUnitColor(int index) {
+        return switch (index) {
+            case 0 -> 0xFF0000;
+            case 1 -> 0xFFFF00;
+            case 2 -> 0x0080FF;
+            case 3 -> 0x00FF00;
+            default -> 0x00FF00;
+        };
+    }
+
     /**
-     * Which unit (if any) is currently repeating, for polling mode. -1 = none.
-     * <p>
-     * SCOPE-Vereinfachung: the original repeats a polling button's broadcast every tick it's
-     * physically held down by the player. A block right-click in this port is a single discrete
-     * event with no "held" signal, so polling mode here is click-to-start / click-again-to-stop
-     * instead - functionally equivalent for automation use (a continuous signal on the channel)
-     * without needing a dedicated continuous-hold packet just for this one button type.
+     * Countdown that keeps a non-polling button visually depressed after a click
+     * ({@code KeyUnit.clickTimer}, 7 ticks in the original).
      */
-    private int heldUnit = -1;
+    private final int[] clickTimer = new int[UNITS];
 
     public RBMKKeyPadBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.RBMK_KEYPAD_BE.get(), pos, state);
@@ -45,7 +55,18 @@ public class RBMKKeyPadBlockEntity extends RBMKPanelDeviceBlockEntity {
 
     @Override
     protected void onPanelTick(Level level, BlockPos pos) {
-        if (heldUnit >= 0) broadcast(level, heldUnit);
+        // KeyUnit.update(): a latched polling button re-broadcasts every tick; a one-shot button
+        // just counts its press animation down.
+        for (int i = 0; i < UNITS; i++) {
+            if (!isUnitActive(i)) continue;
+
+            if (polling[i] && isPressed[i]) {
+                broadcast(level, i);
+            } else if (!polling[i] && isPressed[i] && --clickTimer[i] <= 0) {
+                isPressed[i] = false;
+                syncToClient();
+            }
+        }
     }
 
     /** Quadrant hit-test matching the original's 2x2 grid layout. */
@@ -57,16 +78,27 @@ public class RBMKKeyPadBlockEntity extends RBMKPanelDeviceBlockEntity {
         return row * 2 + col;
     }
 
+    /**
+     * 1:1 with {@code KeyUnit.click()}: a plain button fires once and stays lit for
+     * {@code clickTimer} ticks, a polling button latches on and off. The click sound's pitch
+     * follows the resulting pressed state, exactly as the original does.
+     */
     public void click(Level level, BlockPos pos, Player player, int unit) {
         if (unit < 0 || unit >= UNITS) return;
-        level.playSound(null, pos, SoundEvents.STONE_BUTTON_CLICK_ON, SoundSource.BLOCKS, 0.5f, 1.2f);
+        if (!isUnitActive(unit)) return;
 
-        if (polling[unit]) {
-            heldUnit = (heldUnit == unit) ? -1 : unit;
-            if (heldUnit == unit) broadcast(level, unit);
-        } else {
+        if (!polling[unit]) {
             broadcast(level, unit);
+            isPressed[unit] = true;
+            clickTimer[unit] = 7;
+        } else {
+            isPressed[unit] = !isPressed[unit];
+            setChanged();
         }
+
+        level.playSound(null, pos, SoundEvents.STONE_BUTTON_CLICK_ON, SoundSource.BLOCKS,
+                1f, isPressed[unit] ? 1f : 0.75f);
+        syncToClient();
     }
 
     private void broadcast(Level level, int unit) {
@@ -77,8 +109,12 @@ public class RBMKKeyPadBlockEntity extends RBMKPanelDeviceBlockEntity {
         }
     }
 
+    /** Original per-unit array size (see the matching *Unit inner class). */
+    @Override public int unitCount() { return UNITS; }
+
     @Override
     public void receiveControl(CompoundTag data) {
+        receiveSharedControl(data);
         for (int i = 0; i < UNITS; i++) {
             if (data.contains("channel" + i)) channel[i] = data.getString("channel" + i);
             if (data.contains("command" + i)) command[i] = data.getString("command" + i);
@@ -88,45 +124,24 @@ public class RBMKKeyPadBlockEntity extends RBMKPanelDeviceBlockEntity {
         syncToClient();
     }
 
-    //? if < 1.21.1 {
+    
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         for (int i = 0; i < UNITS; i++) {
-            tag.putString("channel" + i, channel[i]);
-            tag.putString("command" + i, command[i]);
-            tag.putBoolean("polling" + i, polling[i]);
+        tag.putString("channel" + i, channel[i]);
+        tag.putString("command" + i, command[i]);
+        tag.putBoolean("polling" + i, polling[i]);
         }
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         for (int i = 0; i < UNITS; i++) {
-            channel[i] = tag.contains("channel" + i) ? tag.getString("channel" + i) : "";
-            command[i] = tag.contains("command" + i) ? tag.getString("command" + i) : "1";
-            polling[i] = tag.getBoolean("polling" + i);
+        channel[i] = tag.contains("channel" + i) ? tag.getString("channel" + i) : "";
+        command[i] = tag.contains("command" + i) ? tag.getString("command" + i) : "1";
+        polling[i] = tag.getBoolean("polling" + i);
         }
     }
-    //?} else {
-    /*@Override
-    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-        super.saveAdditional(tag, registries);
-        for (int i = 0; i < UNITS; i++) {
-            tag.putString("channel" + i, channel[i]);
-            tag.putString("command" + i, command[i]);
-            tag.putBoolean("polling" + i, polling[i]);
-        }
-    }
-
-    @Override
-    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-        super.loadAdditional(tag, registries);
-        for (int i = 0; i < UNITS; i++) {
-            channel[i] = tag.contains("channel" + i) ? tag.getString("channel" + i) : "";
-            command[i] = tag.contains("command" + i) ? tag.getString("command" + i) : "1";
-            polling[i] = tag.getBoolean("polling" + i);
-        }
-    }
-    *///?}
 }

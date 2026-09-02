@@ -13,6 +13,8 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
 
+import com.hbm_m.platform.PlatformHooks;
+
 /**
  * A fresh (non-depleted) Watz fuel/absorber pellet. Ported from
  * {@code com.hbm.items.machine.ItemWatzPellet} (1.7.10), but as a plain item-per-type
@@ -22,7 +24,7 @@ import net.minecraft.world.level.Level;
  * reactor tick; when it reaches zero {@link MachineWatzPowerplantBlockEntityHooks} (see
  * {@code MachineWatzPowerplantBlockEntity}) swaps the stack for the matching depleted item.
  */
-public class WatzPelletItem extends Item {
+public class WatzPelletItem extends Item implements com.hbm_m.item.ITooltipProvider {
 
     private static final String NBT_YIELD = "watz_yield";
 
@@ -39,13 +41,13 @@ public class WatzPelletItem extends Item {
 
     public static double getYield(ItemStack stack) {
         if (!(stack.getItem() instanceof WatzPelletItem pellet)) return 0D;
-        CompoundTag tag = stack.getTag();
+        CompoundTag tag = PlatformHooks.getItemTag(stack);
         if (tag == null || !tag.contains(NBT_YIELD)) return pellet.type.yield;
         return tag.getDouble(NBT_YIELD);
     }
 
     public static void setYield(ItemStack stack, double yield) {
-        stack.getOrCreateTag().putDouble(NBT_YIELD, Math.max(0D, yield));
+        PlatformHooks.editItemTag(stack, tag -> tag.putDouble(NBT_YIELD, Math.max(0D, yield)));
     }
 
     public static double getEnrichment(ItemStack stack) {
@@ -70,8 +72,7 @@ public class WatzPelletItem extends Item {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
-        super.appendHoverText(stack, level, tooltip, flag);
+    public void appendHbmTooltip(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
         double depletion = (1D - getEnrichment(stack)) * 100D;
         tooltip.add(Component.literal(String.format(Locale.US, "Depletion: %.1f%%", depletion)).withStyle(ChatFormatting.YELLOW));
 

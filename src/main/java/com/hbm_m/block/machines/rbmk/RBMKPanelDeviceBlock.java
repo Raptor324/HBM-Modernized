@@ -26,7 +26,7 @@ import java.util.function.Supplier;
  * screen, and (for Lever/KeyPad) a primary left-click action - everything else (screwdriver
  * opens config, RTTY tick wiring) is identical.
  */
-public class RBMKPanelDeviceBlock extends RBMKColumnBlock {
+public class RBMKPanelDeviceBlock extends RBMKMiniPanelBlock {
 
     /** Fires the device's primary action (lever flip / keypad press) on a plain right-click. */
     public interface PrimaryClick {
@@ -73,9 +73,11 @@ public class RBMKPanelDeviceBlock extends RBMKColumnBlock {
                 (lvl, pos, st, be) -> { if (be instanceof RBMKPanelDeviceBlockEntity p) p.tickPanel(lvl, pos); });
     }
 
+    //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos,
                                   Player player, InteractionHand hand, BlockHitResult hit) {
+
         BlockEntity be = level.getBlockEntity(pos);
         if (!(be instanceof RBMKPanelDeviceBlockEntity panel)) return InteractionResult.PASS;
 
@@ -99,5 +101,43 @@ public class RBMKPanelDeviceBlock extends RBMKColumnBlock {
                     com.hbm_m.client.gui.rbmk.RBMKPanelScreenOpener.open(screenId, pos));
         }
         return InteractionResult.sidedSuccess(level.isClientSide);
+        }
+    //?} else {
+    /*@Override
+    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+
+        BlockEntity be = level.getBlockEntity(pos);
+        if (!(be instanceof RBMKPanelDeviceBlockEntity panel)) return InteractionResult.PASS;
+
+        ItemStack held = player.getItemInHand(InteractionHand.MAIN_HAND);
+        boolean screwdriver = held.getItem() instanceof ScrewdriverItem;
+
+        // Original behavior: Gauge/Indicator/Numitron/Graph open their config screen only via
+        // screwdriver (IToolable#onScrew); Lever/KeyPad fire their primary action on a plain
+        // click and fall back to the screwdriver for configuration; Terminal opens on any click.
+        // Matches the original's explicit `if(player.isSneaking()) return false;` in
+        // RBMKLever#onBlockActivated - a sneak-click never fires the primary action.
+        if (primaryClick != null && !screwdriver && !player.isShiftKeyDown()) {
+            if (!level.isClientSide) primaryClick.click(panel, level, pos, player, hit);
+            return InteractionResult.sidedSuccess(level.isClientSide);
+        }
+
+        if (requireScrewdriver && !screwdriver) return InteractionResult.PASS;
+
+        if (level.isClientSide) {
+            dev.architectury.utils.EnvExecutor.runInEnv(dev.architectury.utils.Env.CLIENT, () -> () ->
+                    com.hbm_m.client.gui.rbmk.RBMKPanelScreenOpener.open(screenId, pos));
+        }
+        return InteractionResult.sidedSuccess(level.isClientSide);
+        }
+    *///?}
+
+
+    //? if >1.20.1 {
+    /*@Override
+    protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
+        return simpleCodec(p -> new RBMKPanelDeviceBlock(p, this.factory, this.typeSupplier, this.screenId, this.requireScrewdriver, this.primaryClick));
     }
+    *///?}
+
 }

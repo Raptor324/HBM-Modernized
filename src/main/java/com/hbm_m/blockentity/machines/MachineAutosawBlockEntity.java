@@ -36,7 +36,7 @@ import net.minecraft.world.phys.Vec3;
  * {@code Level.destroyBlock(pos, true)} fuer Abbau+Drop in einem Schritt statt manuellem
  * Drop-Handling. Kein Audio-Loop-System (dieser Port hat keine {@code AudioWrapper}-Entsprechung).
  */
-public class MachineAutosawBlockEntity extends BlockEntity implements IFluidStandardReceiverMK2 {
+public class MachineAutosawBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity implements IFluidStandardReceiverMK2 {
 
     private static final int MIN_DIST = 2;
     private static final int MAX_DIST = 9;
@@ -208,8 +208,7 @@ public class MachineAutosawBlockEntity extends BlockEntity implements IFluidStan
     // ==================== NBT ====================
 
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         tag.putBoolean("isOn", isOn);
         tag.putFloat("yaw", rotationYaw);
         tag.putFloat("pitch", rotationPitch);
@@ -219,8 +218,7 @@ public class MachineAutosawBlockEntity extends BlockEntity implements IFluidStan
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         isOn = tag.getBoolean("isOn");
         rotationYaw = tag.getFloat("yaw");
         rotationPitch = tag.getFloat("pitch");

@@ -3,28 +3,23 @@ package com.hbm_m.datagen.recipes.custom;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
-import java.util.function.Consumer;
 
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.hbm_m.block.machines.anvils.AnvilTier;
+import com.hbm_m.platform.PlatformHooks;
 import com.hbm_m.recipe.AnvilRecipe;
 
-import net.minecraft.advancements.Advancement;
-import net.minecraft.advancements.CriterionTriggerInstance;
 import net.minecraft.core.registries.BuiltInRegistries;
-import net.minecraft.data.recipes.FinishedRecipe;
-import net.minecraft.data.recipes.RecipeBuilder;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 
-public class AnvilRecipeBuilder implements RecipeBuilder {
+public class AnvilRecipeBuilder extends BaseRecipeBuilder<AnvilRecipeBuilder> {
+
     private final ItemStack inputA;
     private final ItemStack inputB;
     private boolean consumeA = true;
@@ -33,7 +28,7 @@ public class AnvilRecipeBuilder implements RecipeBuilder {
     private final List<ItemStack> inventoryInputs = new ArrayList<>();
     private final List<OutputEntry> outputs = new ArrayList<>();
     private final AnvilTier tier;
-    private final Advancement.Builder advancement = Advancement.Builder.advancement();
+
     @Nullable
     private String blueprintPool;
     @Nullable
@@ -48,6 +43,10 @@ public class AnvilRecipeBuilder implements RecipeBuilder {
         this.tier = tier;
     }
 
+    public static AnvilRecipeBuilder anvilRecipe(ItemStack inputA, ItemStack inputB, ItemStack output, AnvilTier tier) {
+        return new AnvilRecipeBuilder(inputA, inputB, output, tier);
+    }
+
     public AnvilRecipeBuilder keepInputA() {
         this.consumeA = false;
         return this;
@@ -56,10 +55,6 @@ public class AnvilRecipeBuilder implements RecipeBuilder {
     public AnvilRecipeBuilder keepInputB() {
         this.consumeB = false;
         return this;
-    }
-
-    public static AnvilRecipeBuilder anvilRecipe(ItemStack inputA, ItemStack inputB, ItemStack output, AnvilTier tier) {
-        return new AnvilRecipeBuilder(inputA, inputB, output, tier);
     }
 
     public AnvilRecipeBuilder addRequirement(ItemStack stack) {
@@ -101,111 +96,70 @@ public class AnvilRecipeBuilder implements RecipeBuilder {
     }
 
     @Override
-    public AnvilRecipeBuilder unlockedBy(@NotNull String criterionName, @NotNull CriterionTriggerInstance criterionTrigger) {
-        this.advancement.addCriterion(criterionName, criterionTrigger);
-        return this;
-    }
-
-    @Override
-    public AnvilRecipeBuilder group(@Nullable String groupName) {
-        return this;
-    }
-
-    @Override
     public Item getResult() {
         return this.primaryOutput.getItem();
     }
 
     @Override
-    public void save(@NotNull Consumer<FinishedRecipe> consumer, @NotNull ResourceLocation recipeId) {
-        consumer.accept(new Result(recipeId, this));
-    }
-
-    private static JsonObject stackToJson(ItemStack stack) {
+    protected JsonObject stackToJson(ItemStack stack) {
         JsonObject obj = new JsonObject();
         obj.addProperty("item", BuiltInRegistries.ITEM.getKey(stack.getItem()).toString());
         if (stack.getCount() > 1) {
             obj.addProperty("count", stack.getCount());
         }
-        if (stack.hasTag()) {
-            obj.addProperty("nbt", stack.getTag().toString());
+        if (PlatformHooks.hasItemTag(stack)) {
+            obj.addProperty("nbt", PlatformHooks.getItemTag(stack).toString());
         }
         return obj;
     }
 
-    private static class Result implements FinishedRecipe {
-        private final ResourceLocation id;
-        private final AnvilRecipeBuilder builder;
-
-        private Result(ResourceLocation id, AnvilRecipeBuilder builder) {
-            this.id = id;
-            this.builder = builder;
+    @Override
+    protected void serializeRecipeData(JsonObject json) {
+        if (!inputA.isEmpty()) {
+            json.add("input_a", stackToJson(inputA));
+        }
+        if (!inputB.isEmpty()) {
+            json.add("input_b", stackToJson(inputB));
         }
 
-        @Override
-        public void serializeRecipeData(@NotNull JsonObject json) {
-            if (!builder.inputA.isEmpty()) {
-                json.add("input_a", stackToJson(builder.inputA));
-            }
-            if (!builder.inputB.isEmpty()) {
-                json.add("input_b", stackToJson(builder.inputB));
-            }
+        if (!consumeA) json.addProperty("consume_a", false);
+        if (!consumeB) json.addProperty("consume_b", false);
 
-            if (!builder.consumeA) json.addProperty("consume_a", false);
-            if (!builder.consumeB) json.addProperty("consume_b", false);
-
-            if (!builder.inventoryInputs.isEmpty()) {
-                JsonArray array = new JsonArray();
-                builder.inventoryInputs.forEach(stack -> array.add(stackToJson(stack)));
-                json.add("required_items", array);
-            }
-
-            if (builder.outputs.isEmpty()) {
-                throw new IllegalStateException("Anvil recipe " + id + " has no outputs");
-            }
-            JsonArray outputsArray = new JsonArray();
-            builder.outputs.forEach(entry -> {
-                JsonObject entryJson = stackToJson(entry.stack());
-                if (entry.chance() < 1.0F) {
-                    entryJson.addProperty("chance", entry.chance());
-                }
-                outputsArray.add(entryJson);
-            });
-            json.add("outputs", outputsArray);
-
-            json.addProperty("tier", builder.tier.name().toLowerCase(Locale.ROOT));
-            if (builder.upperTier != null) {
-                json.addProperty("tier_upper", builder.upperTier.name().toLowerCase(Locale.ROOT));
-            }
-            if (builder.blueprintPool != null) {
-                json.addProperty("blueprint_pool", builder.blueprintPool);
-            }
-            if (builder.overlay != AnvilRecipe.OverlayType.NONE) {
-                json.addProperty("overlay", builder.overlay.name().toLowerCase(Locale.ROOT));
-            }
+        if (!inventoryInputs.isEmpty()) {
+            JsonArray array = new JsonArray();
+            inventoryInputs.forEach(stack -> array.add(stackToJson(stack)));
+            json.add("required_items", array);
         }
 
-        @Override
-        public ResourceLocation getId() {
-            return id;
+        if (outputs.isEmpty()) {
+            throw new IllegalStateException("Anvil recipe has no outputs");
         }
 
-        @Override
-        public RecipeSerializer<?> getType() {
-            return AnvilRecipe.Serializer.INSTANCE;
-        }
+        JsonArray outputsArray = new JsonArray();
+        outputs.forEach(entry -> {
+            JsonObject entryJson = stackToJson(entry.stack());
+            if (entry.chance() < 1.0F) {
+                entryJson.addProperty("chance", entry.chance());
+            }
+            outputsArray.add(entryJson);
+        });
+        json.add("outputs", outputsArray);
 
-        @Nullable
-        @Override
-        public JsonObject serializeAdvancement() {
-            return null;
+        json.addProperty("tier", tier.name().toLowerCase(Locale.ROOT));
+        if (upperTier != null) {
+            json.addProperty("tier_upper", upperTier.name().toLowerCase(Locale.ROOT));
         }
+        if (blueprintPool != null) {
+            json.addProperty("blueprint_pool", blueprintPool);
+        }
+        if (overlay != AnvilRecipe.OverlayType.NONE) {
+            json.addProperty("overlay", overlay.name().toLowerCase(Locale.ROOT));
+        }
+    }
 
-        @Nullable
-        @Override
-        public ResourceLocation getAdvancementId() {
-            return null;
-        }
+    @Override
+    protected RecipeSerializer<?> getType() {
+        return AnvilRecipe.Serializer.INSTANCE;
     }
 
     private record OutputEntry(ItemStack stack, float chance) { }

@@ -17,7 +17,7 @@ import net.minecraft.world.level.block.state.BlockState;
  * SCOPE-Vereinfachung: Die OpenComputers-{@code @Callback}-Methoden des Originals entfallen (kein
  * OpenComputers-Support in diesem Port).
  */
-public abstract class RadioTorchBaseBlockEntity extends BlockEntity implements IRadioTorchConfigurable {
+public abstract class RadioTorchBaseBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity implements IRadioTorchConfigurable {
 
     /** Channel we're broadcasting on/listening to. */
     public String channel = "";
@@ -37,8 +37,7 @@ public abstract class RadioTorchBaseBlockEntity extends BlockEntity implements I
     }
 
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         tag.putBoolean("polling", polling);
         tag.putBoolean("customMap", customMap);
         tag.putInt("lastState", lastState);
@@ -48,8 +47,7 @@ public abstract class RadioTorchBaseBlockEntity extends BlockEntity implements I
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         polling = tag.getBoolean("polling");
         customMap = tag.getBoolean("customMap");
         lastState = tag.getInt("lastState");
@@ -58,13 +56,6 @@ public abstract class RadioTorchBaseBlockEntity extends BlockEntity implements I
         for (int i = 0; i < 16; i++) mapping[i] = tag.contains("mapping" + i) ? tag.getString("mapping" + i) : null;
     }
 
-    @Override
-    public CompoundTag getUpdateTag() { CompoundTag t = super.getUpdateTag(); saveAdditional(t); return t; }
-
-    @Override
-    public Packet<ClientGamePacketListener> getUpdatePacket() {
-        return ClientboundBlockEntityDataPacket.create(this);
-    }
 
     /** Applies a settings-save packet from the client GUI. Subclasses extend for their own extra fields. */
     public void receiveControl(CompoundTag data) {

@@ -25,16 +25,25 @@ public class RBMKRodBlock extends RBMKColumnBlock {
 
     /** Whether this fuel channel has a built-in graphite moderator. */
     public final boolean moderated;
+    /** ReaSim fuel channels spread flux in eight directions instead of four
+     *  (original: TileEntityRBMKRodReaSim). */
+    public final boolean reaSim;
 
     public RBMKRodBlock(boolean moderated, Properties props) {
+        this(moderated, false, props);
+    }
+
+    public RBMKRodBlock(boolean moderated, boolean reaSim, Properties props) {
         super(props);
         this.moderated = moderated;
+        this.reaSim = reaSim;
     }
 
     @Nullable @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
         RBMKRodBlockEntity be = new RBMKRodBlockEntity(pos, state);
         be.moderated = moderated;
+        be.reaSim = reaSim;
         return be;
     }
 
@@ -43,9 +52,21 @@ public class RBMKRodBlock extends RBMKColumnBlock {
         return createTickerHelper(type, ModBlockEntities.RBMK_ROD_BE.get(), RBMKRodBlockEntity::tick);
     }
 
+    //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos,
                                   Player player, InteractionHand hand, BlockHitResult hit) {
+        return hbmOnUse(state, level, pos, player, hand, hit);
+    }
+    //?} else {
+    /*@Override
+    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+        return hbmOnUse(state, level, pos, player, InteractionHand.MAIN_HAND, hit);
+    }
+    *///?}
+
+    private InteractionResult hbmOnUse(BlockState state, Level level, BlockPos pos,
+                                       Player player, InteractionHand hand, BlockHitResult hit) {
         if (level.isClientSide) return InteractionResult.SUCCESS;
 
         BlockEntity be = level.getBlockEntity(pos);
@@ -64,7 +85,11 @@ public class RBMKRodBlock extends RBMKColumnBlock {
             return InteractionResult.SUCCESS;
         }
 
+        //? if < 1.21.1 {
         return super.use(state, level, pos, player, hand, hit);
+        //?} else {
+        /*return InteractionResult.PASS;
+        *///?}
     }
 
     @Override
@@ -82,4 +107,13 @@ public class RBMKRodBlock extends RBMKColumnBlock {
         }
         super.onColumnRemoved(col, level, pos);
     }
+
+    //? if >1.20.1 {
+    /*public static final com.mojang.serialization.MapCodec<RBMKRodBlock> CODEC = simpleCodec(props -> new RBMKRodBlock(false, props));
+
+    @Override
+    protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
+        return CODEC;
+    }
+    *///?}
 }

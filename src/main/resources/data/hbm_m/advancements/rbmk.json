@@ -1,0 +1,23 @@
+{
+  "display": {
+    "icon": {
+      "item": "hbm_m:rbmk_fuel_ueu"
+    },
+    "title": {
+      "translate": "advancements.hbm_m.rbmk.title"
+    },
+    "description": {
+      "translate": "advancements.hbm_m.rbmk.description"
+    },
+    "frame": "task",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "granted": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "parent": "hbm_m:concrete"
+}

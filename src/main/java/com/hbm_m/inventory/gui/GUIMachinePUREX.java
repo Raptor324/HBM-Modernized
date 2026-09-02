@@ -1,6 +1,7 @@
 package com.hbm_m.inventory.gui;
 
 import com.hbm_m.blockentity.machines.MachinePUREXBlockEntity;
+import com.hbm_m.client.GuiCompat;
 import com.hbm_m.inventory.menu.MachinePUREXMenu;
 import com.hbm_m.lib.RefStrings;
 
@@ -36,6 +37,8 @@ public class GUIMachinePUREX extends AbstractContainerScreen<MachinePUREXMenu> {
         int x = leftPos;
         int y = topPos;
         guiGraphics.blit(TEXTURE, x, y, 0, 0, imageWidth, imageHeight);
+        // тайл может отсутствовать в реплее Flashback
+        if (blockEntity == null) return;
 
         if (blockEntity.isActive()) {
             int w = blockEntity.getProgressScaled(24);
@@ -65,7 +68,7 @@ public class GUIMachinePUREX extends AbstractContainerScreen<MachinePUREXMenu> {
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        renderBackground(guiGraphics);
+        com.hbm_m.client.GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
         renderTooltip(guiGraphics, mouseX, mouseY);
     }

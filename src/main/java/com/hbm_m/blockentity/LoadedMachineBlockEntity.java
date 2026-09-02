@@ -2,18 +2,17 @@ package com.hbm_m.blockentity;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.protocol.Packet;
-import net.minecraft.network.protocol.game.ClientGamePacketListener;
-import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 
 /**
  * Базовый класс для BlockEntity, который отслеживает загрузку чанка
- * и управляет синхронизацией с клиентом
+ * и управляет синхронизацией с клиентом.
+ *
+ * <p>Наследует {@link BaseHbmBlockEntity} : персистенция и клиент-синхронизация
+ * идут через writeNbtData/readNbtData/applyClientUpdate — без stonecutter-ветвлений.
  */
-public abstract class LoadedMachineBlockEntity extends BlockEntity {
+public abstract class LoadedMachineBlockEntity extends BaseHbmBlockEntity {
     
     protected boolean isLoaded = true;
     protected boolean muffled = false;
@@ -59,27 +58,15 @@ public abstract class LoadedMachineBlockEntity extends BlockEntity {
     }
     
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.putBoolean("muffled", muffled);
     }
-    
+
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         this.muffled = tag.getBoolean("muffled");
-    }
-    
-    @Override
-    public CompoundTag getUpdateTag() {
-        CompoundTag tag = super.getUpdateTag();
-        saveAdditional(tag);
-        return tag;
-    }
-    
-    @Override
-    public Packet<ClientGamePacketListener> getUpdatePacket() {
-        return ClientboundBlockEntityDataPacket.create(this);
     }
 
     @Override

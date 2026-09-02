@@ -54,7 +54,7 @@ public class MachineDroneProviderBlockEntity extends BaseMachineBlockEntity {
     public ItemStack extractMatching(ItemStack pattern, int amount) {
         for (int i = 0; i < INVENTORY_SIZE; i++) {
             ItemStack stack = inventory.getStackInSlot(i);
-            if (stack.isEmpty() || !ItemStack.isSameItemSameTags(stack, pattern)) continue;
+            if (stack.isEmpty() || !com.hbm_m.platform.PlatformHooks.isSameItemSameTags(stack, pattern)) continue;
 
             int toTake = Math.min(amount, stack.getCount());
             ItemStack taken = stack.copy();

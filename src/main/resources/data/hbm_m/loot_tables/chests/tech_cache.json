@@ -1,0 +1,37 @@
+{
+  "_comment": "Авторский тех-тайник — продвинутые схемы, компоненты, катушки, реактивные элементы",
+  "type": "minecraft:chest",
+  "pools": [
+    {
+      "rolls": { "min": 5, "max": 9 },
+      "entries": [
+        { "type": "item", "name": "hbm_m:vacuum_tube", "weight": 8, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 2 } } ] },
+        { "type": "item", "name": "hbm_m:analog_circuit", "weight": 7 },
+        { "type": "item", "name": "hbm_m:advanced_circuit", "weight": 5 },
+        { "type": "item", "name": "hbm_m:pcb", "weight": 8, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 3 } } ] },
+        { "type": "item", "name": "hbm_m:integrated_circuit", "weight": 4 },
+        { "type": "item", "name": "hbm_m:silicon_circuit", "weight": 3 },
+        { "type": "item", "name": "hbm_m:circuit_star", "weight": 2 },
+        { "type": "item", "name": "hbm_m:capacitor_copper", "weight": 6 },
+        { "type": "item", "name": "hbm_m:capacitor_gold", "weight": 5 },
+        { "type": "item", "name": "hbm_m:capacitor_niobium", "weight": 4 },
+        { "type": "item", "name": "hbm_m:capacitor_tantalium", "weight": 3 },
+        { "type": "item", "name": "hbm_m:coil_copper", "weight": 7, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 4 } } ] },
+        { "type": "item", "name": "hbm_m:coil_copper_torus", "weight": 5 },
+        { "type": "item", "name": "hbm_m:coil_gold", "weight": 4, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 2 } } ] },
+        { "type": "item", "name": "hbm_m:coil_tungsten", "weight": 5 },
+        { "type": "item", "name": "hbm_m:coil_magnetized_tungsten", "weight": 3 },
+        { "type": "item", "name": "hbm_m:motor", "weight": 5, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 2 } } ] },
+        { "type": "item", "name": "hbm_m:wire_fine", "weight": 8, "functions": [ { "function": "minecraft:set_count", "count": { "min": 2, "max": 10 } } ] },
+        { "type": "item", "name": "hbm_m:piston_selenium", "weight": 4 },
+        { "type": "item", "name": "hbm_m:battery_advanced", "weight": 4 },
+        { "type": "item", "name": "hbm_m:battery_lithium", "weight": 3 },
+        { "type": "item", "name": "hbm_m:fusion_core", "weight": 3 },
+        { "type": "item", "name": "hbm_m:plate_polymer", "weight": 6, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 4 } } ] },
+        { "type": "item", "name": "hbm_m:blowtorch", "weight": 3 },
+        { "type": "item", "name": "hbm_m:screwdriver", "weight": 5 },
+        { "type": "item", "name": "hbm_m:blueprint_folder", "weight": 4 }
+      ]
+    }
+  ]
+}

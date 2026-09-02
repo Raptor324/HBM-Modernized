@@ -8,7 +8,7 @@ import com.hbm_m.explosion.MissileWarheadEffects;
 import com.mojang.logging.LogUtils;
 import org.slf4j.Logger;
 
-import api.hbm.entity.IRadarDetectable;
+import api.hbm_m.entity.IRadarDetectable;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -51,7 +51,6 @@ public abstract class MissileBaseEntity extends Projectile implements IRadarDete
     private static final TicketType<UUID> CHUNK_TICKET =
             TicketType.create("hbm_m_missile", Comparator.comparing(UUID::toString));
 
-    /** Радиус region ticket'а (в чанках). */
     private static final int CHUNK_TICKET_RADIUS = 3;
 
     /** Макс. длина сегмента raycast за тик (как в 1.7.10 — один луч, но без туннелирования). */
@@ -155,6 +154,7 @@ public abstract class MissileBaseEntity extends Projectile implements IRadarDete
         return RadarTargetType.MISSILE_TIER0;
     }
 
+    //? if < 1.21.1 {
     @Override
     public void lerpTo(double x, double y, double z, float yRot, float xRot, int steps, boolean teleport) {
         this.lerpX = x;
@@ -164,6 +164,17 @@ public abstract class MissileBaseEntity extends Projectile implements IRadarDete
         this.lerpXRot = xRot;
         this.lerpSteps = steps + 1;
     }
+    //?} else {
+    /*@Override
+    public void lerpTo(double x, double y, double z, float yRot, float xRot, int steps) {
+        this.lerpX = x;
+        this.lerpY = y;
+        this.lerpZ = z;
+        this.lerpYRot = yRot;
+        this.lerpXRot = xRot;
+        this.lerpSteps = steps + 1;
+    }
+    *///?}
 
     @Override
     public void recreateFromPacket(ClientboundAddEntityPacket packet) {
@@ -409,7 +420,6 @@ public abstract class MissileBaseEntity extends Projectile implements IRadarDete
     }
 
     protected void updateRotationFromMotion() {
-
         Vec3 motion = this.getDeltaMovement();
 
         // Защита от поворота на бок (pitch = -90) и случайного рыскания при нулевой скорости.
@@ -458,10 +468,27 @@ public abstract class MissileBaseEntity extends Projectile implements IRadarDete
         return true;
     }
 
+    //? if < 1.21.1 {
     @Override
     protected void defineSynchedData() {
         this.entityData.define(DATA_LAUNCH_FACING, Direction.NORTH);
     }
+
+    @Override
+    public Packet<ClientGamePacketListener> getAddEntityPacket() {
+        return new ClientboundAddEntityPacket(this, MobCategory.MISC.ordinal());
+    }
+    //?} else {
+    /*@Override
+    protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
+        builder.define(DATA_LAUNCH_FACING, Direction.NORTH);
+    }
+
+    @Override
+    public Packet<ClientGamePacketListener> getAddEntityPacket(net.minecraft.server.level.ServerEntity serverEntity) {
+        return new ClientboundAddEntityPacket(this, serverEntity);
+    }
+    *///?}
 
     @Override
     public void addAdditionalSaveData(CompoundTag tag) {
@@ -516,7 +543,9 @@ public abstract class MissileBaseEntity extends Projectile implements IRadarDete
         }
         releaseChunkTicket();
         if (!this.level().isClientSide && this.level() instanceof ServerLevel server) {
-            server.explode(this, this.getX(), this.getY(), this.getZ(), 5.0F, Level.ExplosionInteraction.NONE);
+            // 1.7.10 EntityMissileBaseNT.killMissile: ОДИН createExplosion(5F) + shrapnel + debris.
+            // Лишний server.explode(NONE) убран — он давал второй «бум» поверх explosion из
+            // missileDestroyed (TNT), который и выполняет разрушение блоков + звук.
             Vec3 motion = this.getDeltaMovement();
             MissileWarheadEffects.missileDestroyed(server, this,
                     this.getX(), this.getY(), this.getZ(),
@@ -558,9 +587,21 @@ public abstract class MissileBaseEntity extends Projectile implements IRadarDete
         this.loadedChunk = null;
     }
 
+    //? if < 1.21.1 {
     @Override
     public void onAddedToWorld() {
         super.onAddedToWorld();
+        onAddedToLevelHook();
+    }
+    //?} else {
+    /*@Override
+    public void onAddedToLevel() {
+        super.onAddedToLevel();
+        onAddedToLevelHook();
+    }
+    *///?}
+
+    private void onAddedToLevelHook() {
         if (!this.level().isClientSide && this.level() instanceof ServerLevel server) {
             // Ракета сама держит region‑тикет на свой чанк, чтобы летать сквозь выгруженные
             // чанки. Вдали от игрока PersistentEntitySectionManager изредка ре‑десериализует
@@ -582,22 +623,29 @@ public abstract class MissileBaseEntity extends Projectile implements IRadarDete
         }
     }
 
+    //? if < 1.21.1 {
     @Override
     public void onRemovedFromWorld() {
+        onRemovedFromLevelHook();
+        super.onRemovedFromWorld();
+    }
+    //?} else {
+    /*@Override
+    public void onRemovedFromLevel() {
+        onRemovedFromLevelHook();
+        super.onRemovedFromLevel();
+    }
+    *///?}
+
+    private void onRemovedFromLevelHook() {
         if (!this.level().isClientSide) {
             com.hbm_m.server.missile.MissileTrackBroadcaster.onMissileRemoved(this);
         }
-        super.onRemovedFromWorld();
         releaseChunkTicket();
     }
 
     @Override
     public boolean shouldRenderAtSqrDistance(double distance) {
         return true;
-    }
-
-    @Override
-    public Packet<ClientGamePacketListener> getAddEntityPacket() {
-        return new ClientboundAddEntityPacket(this, MobCategory.MISC.ordinal());
     }
 }

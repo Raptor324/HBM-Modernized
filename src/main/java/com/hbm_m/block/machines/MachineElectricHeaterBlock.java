@@ -39,8 +39,10 @@ public class MachineElectricHeaterBlock extends BaseEntityBlock {
                 (lvl, pos, st, be) -> MachineElectricHeaterBlockEntity.tick(lvl, pos, st, (MachineElectricHeaterBlockEntity) be));
     }
 
+    //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+
         ItemStack held = player.getItemInHand(hand);
         if (held.getItem() == ModItems.SCREWDRIVER.get()) {
             if (!level.isClientSide() && level.getBlockEntity(pos) instanceof MachineElectricHeaterBlockEntity be) {
@@ -50,5 +52,30 @@ public class MachineElectricHeaterBlock extends BaseEntityBlock {
             return InteractionResult.sidedSuccess(level.isClientSide());
         }
         return InteractionResult.PASS;
+        }
+    //?} else {
+    /*@Override
+    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+
+        ItemStack held = player.getItemInHand(InteractionHand.MAIN_HAND);
+        if (held.getItem() == ModItems.SCREWDRIVER.get()) {
+            if (!level.isClientSide() && level.getBlockEntity(pos) instanceof MachineElectricHeaterBlockEntity be) {
+                be.cycleSetting();
+                player.displayClientMessage(Component.literal("Setting: " + be.getSetting()), true);
+            }
+            return InteractionResult.sidedSuccess(level.isClientSide());
+        }
+        return InteractionResult.PASS;
+        }
+    *///?}
+
+
+    //? if >1.20.1 {
+    /*public static final com.mojang.serialization.MapCodec<MachineElectricHeaterBlock> CODEC = simpleCodec(MachineElectricHeaterBlock::new);
+
+    @Override
+    protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
+        return CODEC;
     }
+    *///?}
 }

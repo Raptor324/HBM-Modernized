@@ -1,6 +1,7 @@
 package com.hbm_m.inventory.menu;
 
 import com.hbm_m.armormod.menu.ArmorTableMenu;
+import com.hbm_m.block.ModBlocks;
 import com.hbm_m.lib.RefStrings;
 
 import dev.architectury.registry.menu.MenuRegistry;
@@ -8,6 +9,7 @@ import dev.architectury.registry.registries.DeferredRegister;
 import dev.architectury.registry.registries.RegistrySupplier;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.world.inventory.MenuType;
+import net.minecraft.world.level.block.Block;
 
 public class ModMenuTypes {
 
@@ -41,8 +43,6 @@ public class ModMenuTypes {
     public static final RegistrySupplier<MenuType<MachineDifurnaceRtgMenu>> MACHINE_DIFURNACE_RTG_MENU =
             MENUS.register("machine_difurnace_rtg_menu", () -> MenuRegistry.ofExtended(MachineDifurnaceRtgMenu::new));
 
-    public static final RegistrySupplier<MenuType<MachinePrecAssMenu>> MACHINE_PRECASS_MENU =
-            MENUS.register("machine_precass_menu", () -> MenuRegistry.ofExtended(MachinePrecAssMenu::new));
 
     public static final RegistrySupplier<MenuType<MachineBatteryMenu>> MACHINE_BATTERY_MENU =
             MENUS.register("machine_battery_menu", () -> MenuRegistry.ofExtended(MachineBatteryMenu::new));
@@ -122,9 +122,6 @@ public class ModMenuTypes {
     public static final RegistrySupplier<MenuType<IronCrateMenu>> IRON_CRATE_MENU =
             MENUS.register("iron_crate_menu", () -> MenuRegistry.ofExtended(IronCrateMenu::new));
 
-    public static final RegistrySupplier<MenuType<IronCrateMenu>> PORTABLE_IRON_CRATE_MENU =
-            MENUS.register("portable_iron_crate_menu", () -> MenuRegistry.ofExtended(IronCrateMenu::new));
-
     public static final RegistrySupplier<MenuType<SteelCrateMenu>> STEEL_CRATE_MENU =
             MENUS.register("steel_crate_menu", () -> MenuRegistry.ofExtended(SteelCrateMenu::new));
 
@@ -143,23 +140,32 @@ public class ModMenuTypes {
     public static final RegistrySupplier<MenuType<Bat9000Menu>> BAT9000_MENU =
             MENUS.register("bat9000_menu", () -> MenuRegistry.ofExtended(Bat9000Menu::new));
 
+    public static final RegistrySupplier<MenuType<com.hbm_m.inventory.menu.BookMenu>> BOOK_MENU =
+            MENUS.register("book_menu", () -> MenuRegistry.ofExtended(com.hbm_m.inventory.menu.BookMenu::new));
+
     public static final RegistrySupplier<MenuType<BarrelIronMenu>> BARREL_IRON_MENU =
             MENUS.register("barrel_iron_menu", () -> MenuRegistry.ofExtended(BarrelIronMenu::new));
 
     public static final RegistrySupplier<MenuType<BarrelSteelMenu>> BARREL_STEEL_MENU =
             MENUS.register("barrel_steel_menu", () -> MenuRegistry.ofExtended(BarrelSteelMenu::new));
 
-    public static final RegistrySupplier<MenuType<BarrelTcalloyMenu>> BARREL_TCALLOY_MENU =
-            MENUS.register("barrel_tcalloy_menu", () -> MenuRegistry.ofExtended(BarrelTcalloyMenu::new));
+    // Единый класс FluidTankMenu для всех вариантов бочек: тип меню определяется по блоку,
+    // см. fluidTankMenuType() и javadoc FluidTankMenu
 
-    public static final RegistrySupplier<MenuType<BarrelCorrodedMenu>> BARREL_CORRODED_MENU =
-            MENUS.register("barrel_corroded_menu", () -> MenuRegistry.ofExtended(BarrelCorrodedMenu::new));
+    /** Таблица «блок → тип меню» для единого {@link FluidTankMenu}. Заполняется при регистрации. */
+    private static final java.util.List<Object[]> FLUID_TANK_MENUS = new java.util.ArrayList<>();
 
-    public static final RegistrySupplier<MenuType<BarrelPlasticMenu>> BARREL_PLASTIC_MENU =
-            MENUS.register("barrel_plastic_menu", () -> MenuRegistry.ofExtended(BarrelPlasticMenu::new));
+    public static final RegistrySupplier<MenuType<FluidTankMenu>> BARREL_TCALLOY_MENU =
+            registerFluidTankMenu("barrel_tcalloy_menu", ModBlocks.BARREL_TCALLOY);
 
-    public static final RegistrySupplier<MenuType<BarrelAntimatterMenu>> BARREL_ANTIMATTER_MENU =
-            MENUS.register("barrel_antimatter_menu", () -> MenuRegistry.ofExtended(BarrelAntimatterMenu::new));
+    public static final RegistrySupplier<MenuType<FluidTankMenu>> BARREL_CORRODED_MENU =
+            registerFluidTankMenu("barrel_corroded_menu", ModBlocks.BARREL_CORRODED);
+
+    public static final RegistrySupplier<MenuType<FluidTankMenu>> BARREL_PLASTIC_MENU =
+            registerFluidTankMenu("barrel_plastic_menu", ModBlocks.BARREL_PLASTIC);
+
+    public static final RegistrySupplier<MenuType<FluidTankMenu>> BARREL_ANTIMATTER_MENU =
+            registerFluidTankMenu("barrel_antimatter_menu", ModBlocks.BARREL_ANTIMATTER);
 
     public static final RegistrySupplier<MenuType<MachineChemicalPlantMenu>> CHEMICAL_PLANT_MENU =
             MENUS.register("chemical_plant_menu", () -> MenuRegistry.ofExtended(MachineChemicalPlantMenu::new));
@@ -264,11 +270,9 @@ public class ModMenuTypes {
     public static final RegistrySupplier<MenuType<MachineMassStorageMenu>> MACHINE_MASS_STORAGE_MENU =
             MENUS.register("mass_storage_menu", () -> MenuRegistry.ofExtended(MachineMassStorageMenu::new));
 
-    public static final RegistrySupplier<MenuType<OrbusMenu>> ORBUS_MENU =
-            MENUS.register("orbus_menu", () -> MenuRegistry.ofExtended(OrbusMenu::new));
+    public static final RegistrySupplier<MenuType<FluidTankMenu>> ORBUS_MENU =
+            registerFluidTankMenu("orbus_menu", ModBlocks.ORBUS);
 
-    public static final RegistrySupplier<MenuType<MachineRtgMenu>> MACHINE_RTG_MENU =
-            MENUS.register("machine_rtg_menu", () -> MenuRegistry.ofExtended(MachineRtgMenu::new));
 
     public static final RegistrySupplier<MenuType<MachineWasteDrumMenu>> MACHINE_WASTE_DRUM_MENU =
             MENUS.register("machine_waste_drum_menu", () -> MenuRegistry.ofExtended(MachineWasteDrumMenu::new));
@@ -344,6 +348,27 @@ public class ModMenuTypes {
 
     public static final RegistrySupplier<MenuType<NukePrototypeMenu>> NUKE_PROTOTYPE_MENU =
             MENUS.register("nuke_prototype_menu", () -> MenuRegistry.ofExtended(NukePrototypeMenu::new));
+
+    public static final RegistrySupplier<MenuType<LargeNukeMenu>> LARGE_NUKE_MENU =
+            MENUS.register("large_nuke_menu", () -> MenuRegistry.ofExtended(LargeNukeMenu::new));
+
+    public static final RegistrySupplier<MenuType<NukeFleijaMenu>> NUKE_FLEIJA_MENU =
+            MENUS.register("nuke_fleija_menu", () -> MenuRegistry.ofExtended(NukeFleijaMenu::new));
+
+    public static final RegistrySupplier<MenuType<NukeSoliniumMenu>> NUKE_SOLINIUM_MENU =
+            MENUS.register("nuke_solinium_menu", () -> MenuRegistry.ofExtended(NukeSoliniumMenu::new));
+
+    public static final RegistrySupplier<MenuType<NukeN2Menu>> NUKE_N2_MENU =
+            MENUS.register("nuke_n2_menu", () -> MenuRegistry.ofExtended(NukeN2Menu::new));
+
+    public static final RegistrySupplier<MenuType<NukeFstbmbMenu>> NUKE_FSTBMB_MENU =
+            MENUS.register("nuke_fstbmb_menu", () -> MenuRegistry.ofExtended(NukeFstbmbMenu::new));
+
+    public static final RegistrySupplier<MenuType<NukeCustomMenu>> NUKE_CUSTOM_MENU =
+            MENUS.register("nuke_custom_menu", () -> MenuRegistry.ofExtended(NukeCustomMenu::new));
+
+    public static final RegistrySupplier<MenuType<BombMultiMenu>> BOMB_MULTI_MENU =
+            MENUS.register("bomb_multi_menu", () -> MenuRegistry.ofExtended(BombMultiMenu::new));
 
     public static final RegistrySupplier<MenuType<HeatingOvenMenu>> HEATING_OVEN_MENU =
             MENUS.register("heating_oven_menu", () -> MenuRegistry.ofExtended(HeatingOvenMenu::new));
@@ -428,6 +453,27 @@ public class ModMenuTypes {
 
     public static final RegistrySupplier<MenuType<com.hbm_m.inventory.menu.MachineCompressorMenu>> COMPRESSOR_MENU =
             MENUS.register("compressor_menu", () -> MenuRegistry.ofExtended(com.hbm_m.inventory.menu.MachineCompressorMenu::new));
+
+    private static RegistrySupplier<MenuType<FluidTankMenu>> registerFluidTankMenu(String name, RegistrySupplier<Block> block) {
+        RegistrySupplier<MenuType<FluidTankMenu>> type =
+                MENUS.register(name, () -> MenuRegistry.ofExtended(FluidTankMenu::new));
+        FLUID_TANK_MENUS.add(new Object[]{block, type});
+        return type;
+    }
+
+    /** Возвращает {@link MenuType} единого {@link FluidTankMenu} для данного блока бочки. */
+    public static MenuType<FluidTankMenu> fluidTankMenuType(Block block) {
+        for (Object[] entry : FLUID_TANK_MENUS) {
+            @SuppressWarnings("unchecked")
+            RegistrySupplier<Block> blockSupplier = (RegistrySupplier<Block>) entry[0];
+            @SuppressWarnings("unchecked")
+            RegistrySupplier<MenuType<FluidTankMenu>> typeSupplier = (RegistrySupplier<MenuType<FluidTankMenu>>) entry[1];
+            if (blockSupplier.get() == block) {
+                return typeSupplier.get();
+            }
+        }
+        throw new IllegalArgumentException("No FluidTankMenu registered for block " + block);
+    }
 
     public static void init() {
         MENUS.register();

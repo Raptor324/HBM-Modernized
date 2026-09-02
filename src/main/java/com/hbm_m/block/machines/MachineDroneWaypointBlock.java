@@ -82,8 +82,10 @@ public class MachineDroneWaypointBlock extends BaseEntityBlock {
                 (lvl, pos, st, be) -> MachineDroneWaypointBlockEntity.tick(lvl, pos, st, (MachineDroneWaypointBlockEntity) be));
     }
 
+    //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+
         if (level.isClientSide()) return InteractionResult.SUCCESS;
 
         BlockEntity be = level.getBlockEntity(pos);
@@ -91,5 +93,28 @@ public class MachineDroneWaypointBlock extends BaseEntityBlock {
             waypoint.adjustHeight(!player.isShiftKeyDown());
         }
         return InteractionResult.CONSUME;
+        }
+    //?} else {
+    /*@Override
+    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+
+        if (level.isClientSide()) return InteractionResult.SUCCESS;
+
+        BlockEntity be = level.getBlockEntity(pos);
+        if (be instanceof MachineDroneWaypointBlockEntity waypoint) {
+            waypoint.adjustHeight(!player.isShiftKeyDown());
+        }
+        return InteractionResult.CONSUME;
+        }
+    *///?}
+
+
+    //? if >1.20.1 {
+    /*public static final com.mojang.serialization.MapCodec<MachineDroneWaypointBlock> CODEC = simpleCodec(MachineDroneWaypointBlock::new);
+
+    @Override
+    protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
+        return CODEC;
     }
+    *///?}
 }

@@ -1,6 +1,7 @@
 package com.hbm_m.inventory.gui;
 
 import com.hbm_m.inventory.menu.MachineChemicalFactoryMenu;
+import com.hbm_m.client.GuiCompat;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.recipe.ChemicalPlantRecipe;
 import com.hbm_m.util.EnergyFormatter;
@@ -69,16 +70,18 @@ public class GUIMachineChemicalFactory extends AbstractContainerScreen<MachineCh
             }
         }
 
-        for (int i = 0; i < 3; i++) {
-            for (int lane = 0; lane < LANE_COUNT; lane++) {
-                int rowY = this.topPos + 10 + lane * 40;
-                menu.getBlockEntity().getInputTanks()[lane * 3 + i].renderTank(guiGraphics, this.leftPos + 62 + i * 5, rowY, 4, 34);
-                menu.getBlockEntity().getOutputTanks()[lane * 3 + i].renderTank(guiGraphics, this.leftPos + 176 + i * 5, rowY, 4, 34);
+        if (menu.getBlockEntity() != null) {
+            for (int i = 0; i < 3; i++) {
+                for (int lane = 0; lane < LANE_COUNT; lane++) {
+                    int rowY = this.topPos + 10 + lane * 40;
+                    menu.getBlockEntity().getInputTanks()[lane * 3 + i].renderTank(guiGraphics, this.leftPos + 62 + i * 5, rowY, 4, 34);
+                    menu.getBlockEntity().getOutputTanks()[lane * 3 + i].renderTank(guiGraphics, this.leftPos + 176 + i * 5, rowY, 4, 34);
+                }
             }
-        }
 
-        menu.getBlockEntity().getWaterTank().renderTank(guiGraphics, this.leftPos + 244, this.topPos + 10, 6, 60);
-        menu.getBlockEntity().getSpentSteamTank().renderTank(guiGraphics, this.leftPos + 250, this.topPos + 10, 6, 60);
+            menu.getBlockEntity().getWaterTank().renderTank(guiGraphics, this.leftPos + 244, this.topPos + 10, 6, 60);
+            menu.getBlockEntity().getSpentSteamTank().renderTank(guiGraphics, this.leftPos + 250, this.topPos + 10, 6, 60);
+        }
 
         com.mojang.blaze3d.systems.RenderSystem.setShaderTexture(0, TEXTURE);
     }
@@ -92,7 +95,7 @@ public class GUIMachineChemicalFactory extends AbstractContainerScreen<MachineCh
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        this.renderBackground(guiGraphics);
+        com.hbm_m.client.GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
         this.renderTooltip(guiGraphics, mouseX, mouseY);
     }
@@ -110,19 +113,22 @@ public class GUIMachineChemicalFactory extends AbstractContainerScreen<MachineCh
                     mouseX, mouseY);
         }
 
-        for (int i = 0; i < 3; i++) {
-            for (int lane = 0; lane < LANE_COUNT; lane++) {
-                int rowY = this.topPos + 10 + lane * 40;
-                menu.getBlockEntity().getInputTanks()[lane * 3 + i].renderTankInfo(guiGraphics, this.font, mouseX, mouseY, this.leftPos + 62 + i * 5, rowY, 4, 34);
-                menu.getBlockEntity().getOutputTanks()[lane * 3 + i].renderTankInfo(guiGraphics, this.font, mouseX, mouseY, this.leftPos + 176 + i * 5, rowY, 4, 34);
+        if (menu.getBlockEntity() != null) {
+            for (int i = 0; i < 3; i++) {
+                for (int lane = 0; lane < LANE_COUNT; lane++) {
+                    int rowY = this.topPos + 10 + lane * 40;
+                    menu.getBlockEntity().getInputTanks()[lane * 3 + i].renderTankInfo(guiGraphics, this.font, mouseX, mouseY, this.leftPos + 62 + i * 5, rowY, 4, 34);
+                    menu.getBlockEntity().getOutputTanks()[lane * 3 + i].renderTankInfo(guiGraphics, this.font, mouseX, mouseY, this.leftPos + 176 + i * 5, rowY, 4, 34);
+                }
             }
+            menu.getBlockEntity().getWaterTank().renderTankInfo(guiGraphics, this.font, mouseX, mouseY, this.leftPos + 244, this.topPos + 10, 6, 60);
+            menu.getBlockEntity().getSpentSteamTank().renderTankInfo(guiGraphics, this.font, mouseX, mouseY, this.leftPos + 250, this.topPos + 10, 6, 60);
         }
-        menu.getBlockEntity().getWaterTank().renderTankInfo(guiGraphics, this.font, mouseX, mouseY, this.leftPos + 244, this.topPos + 10, 6, 60);
-        menu.getBlockEntity().getSpentSteamTank().renderTankInfo(guiGraphics, this.font, mouseX, mouseY, this.leftPos + 250, this.topPos + 10, 6, 60);
     }
 
     @Nullable
     private ChemicalPlantRecipe getLaneRecipe(int lane) {
+        if (menu.getBlockEntity() == null) return null; // тайл может отсутствовать в реплее Flashback
         var lanes = menu.getBlockEntity().getLanes();
         if (lane < 0 || lane >= lanes.length) return null;
         return lanes[lane].peekRecipe();

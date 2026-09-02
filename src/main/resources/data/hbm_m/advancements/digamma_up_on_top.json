@@ -1,0 +1,23 @@
+{
+  "display": {
+    "icon": {
+      "item": "hbm_m:particle_digamma"
+    },
+    "title": {
+      "translate": "advancements.hbm_m.digamma_up_on_top.title"
+    },
+    "description": {
+      "translate": "advancements.hbm_m.digamma_up_on_top.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "granted": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "parent": "hbm_m:digamma_kauai_moho"
+}

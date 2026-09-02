@@ -87,7 +87,7 @@ public class MachineAshpitBlockEntity extends BaseMachineBlockEntity {
                 ashLevel[type.ordinal()] -= type.threshold;
                 return true;
             } else if (current.getCount() < current.getMaxStackSize()
-                    && ItemStack.isSameItemSameTags(current, toAdd)) {
+                    && com.hbm_m.platform.PlatformHooks.isSameItemSameTags(current, toAdd)) {
                 current.grow(1);
                 ashLevel[type.ordinal()] -= type.threshold;
                 return true;
@@ -99,16 +99,16 @@ public class MachineAshpitBlockEntity extends BaseMachineBlockEntity {
     // ── NBT ─────────────────────────────────────────────────────────────────
 
     @Override
-    public void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         for (AshType type : AshType.values()) {
             tag.putInt("ash_" + type.name(), ashLevel[type.ordinal()]);
         }
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         for (AshType type : AshType.values()) {
             ashLevel[type.ordinal()] = tag.getInt("ash_" + type.name());
         }

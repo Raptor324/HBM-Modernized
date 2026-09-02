@@ -9,8 +9,7 @@ import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.inventory.menu.MachineCatalyticReformerMenu;
 import com.hbm_m.item.ModItems;
-import com.hbm_m.recipe.CatalyticReformerRecipes;
-import com.hbm_m.recipe.CatalyticReformerRecipes.Triple;
+import com.hbm_m.recipe.CatalyticReformerRecipe;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -28,8 +27,8 @@ import net.minecraft.world.level.material.Fluid;
  * Katalytischer Reformer: Portierung der Kernlogik aus {@code TileEntityMachineCatalyticReformer}
  * (1.7.10 Original). Wandelt jeden Tick 100mB eines Oel-Fluids (Tank 0) in drei Ausgangsfluide um
  * (Tanks 1-3, darunter immer etwas Wasserstoff als Nebenprodukt - anders als beim Hydrotreater
- * wird hier kein Wasserstoff verbraucht), ueber die feste Rezeptliste
- * {@link CatalyticReformerRecipes} (Direktport von {@code ReformingRecipes}). Erfordert wie im
+ * wird hier kein Wasserstoff verbraucht), ueber die data-driven Rezeptliste
+ * {@link CatalyticReformerRecipe} (Port von {@code ReformingRecipes}). Erfordert wie im
  * Original einen katalytischen Konverter ({@link ModItems#CATALYTIC_CONVERTER}) im Katalysatorslot.
  */
 public class MachineCatalyticReformerBlockEntity extends BaseMachineBlockEntity implements IFluidStandardTransceiverMK2 {
@@ -51,7 +50,8 @@ public class MachineCatalyticReformerBlockEntity extends BaseMachineBlockEntity 
         tanks[0] = new FluidTank(INPUT_CAPACITY_MB) {
             @Override
             public boolean isFluidValid(Fluid fluid) {
-                return CatalyticReformerRecipes.has(fluid);
+                // Data-driven: рецепт ищется в RecipeManager (заменяет CatalyticReformerRecipes.has).
+                return CatalyticReformerRecipe.hasRecipe(level, fluid);
             }
         };
         tanks[1] = new FluidTank(OUTPUT_CAPACITY_MB);
@@ -79,29 +79,29 @@ public class MachineCatalyticReformerBlockEntity extends BaseMachineBlockEntity 
 
     /** Direktport von {@code reform()}. */
     private void reform() {
-        Triple recipe = CatalyticReformerRecipes.get(tanks[0].getTankType());
+        CatalyticReformerRecipe recipe = CatalyticReformerRecipe.getRecipe(level, tanks[0].getTankType());
         if (recipe == null) {
             tanks[1].conform(com.hbm_m.inventory.fluid.ModFluids.NONE.getSource());
             tanks[2].conform(com.hbm_m.inventory.fluid.ModFluids.NONE.getSource());
             tanks[3].conform(com.hbm_m.inventory.fluid.ModFluids.NONE.getSource());
             return;
         }
-        if (tanks[1].isEmpty()) tanks[1].conform(recipe.outA());
-        if (tanks[2].isEmpty()) tanks[2].conform(recipe.outB());
-        if (tanks[3].isEmpty()) tanks[3].conform(recipe.outC());
+        if (tanks[1].isEmpty()) tanks[1].conform(recipe.getOutputA());
+        if (tanks[2].isEmpty()) tanks[2].conform(recipe.getOutputB());
+        if (tanks[3].isEmpty()) tanks[3].conform(recipe.getOutputC());
 
         if (getEnergyStored() < POWER_PER_CYCLE) return;
         if (tanks[0].getFill() < INPUT_PER_CYCLE_MB) return;
         if (!hasCatalyst()) return;
-        if (tanks[1].getFill() + recipe.amountA() > tanks[1].getMaxFill()) return;
-        if (tanks[2].getFill() + recipe.amountB() > tanks[2].getMaxFill()) return;
-        if (tanks[3].getFill() + recipe.amountC() > tanks[3].getMaxFill()) return;
+        if (tanks[1].getFill() + recipe.getOutputAMb() > tanks[1].getMaxFill()) return;
+        if (tanks[2].getFill() + recipe.getOutputBMb() > tanks[2].getMaxFill()) return;
+        if (tanks[3].getFill() + recipe.getOutputCMb() > tanks[3].getMaxFill()) return;
 
         setEnergyStored(getEnergyStored() - POWER_PER_CYCLE);
         tanks[0].drainMb(INPUT_PER_CYCLE_MB);
-        tanks[1].fillMb(recipe.outA(), recipe.amountA());
-        tanks[2].fillMb(recipe.outB(), recipe.amountB());
-        tanks[3].fillMb(recipe.outC(), recipe.amountC());
+        tanks[1].fillMb(recipe.getOutputA(), recipe.getOutputAMb());
+        tanks[2].fillMb(recipe.getOutputB(), recipe.getOutputBMb());
+        tanks[3].fillMb(recipe.getOutputC(), recipe.getOutputCMb());
     }
 
     private boolean hasCatalyst() {
@@ -139,23 +139,23 @@ public class MachineCatalyticReformerBlockEntity extends BaseMachineBlockEntity 
 
     @Override
     public boolean canConnect(Fluid fluid, Direction fromDir) {
-        return fromDir != null && (CatalyticReformerRecipes.has(fluid)
+        return fromDir != null && (CatalyticReformerRecipe.hasRecipe(level, fluid)
                 || tanks[1].getTankType() == fluid || tanks[2].getTankType() == fluid || tanks[3].getTankType() == fluid);
     }
 
     // ==================== NBT ====================
 
     @Override
-    public void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         for (int i = 0; i < tanks.length; i++) {
             tanks[i].writeToNBT(tag, "tank" + i);
         }
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         for (int i = 0; i < tanks.length; i++) {
             tanks[i].readFromNBT(tag, "tank" + i);
         }

@@ -15,6 +15,7 @@ import com.hbm_m.interfaces.IMultiblockController;
 import com.hbm_m.multiblock.MultiblockSideTuples;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
+import dev.architectury.registry.menu.MenuRegistry;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -42,8 +43,9 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
+//? if forge {
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.network.NetworkHooks;
+//?}
 
 public class MachineCatalyticReformerBlock extends BaseEntityBlock implements IMultiblockController {
 
@@ -182,13 +184,8 @@ public class MachineCatalyticReformerBlock extends BaseEntityBlock implements IM
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
         if (!state.is(newState.getBlock()) && !level.isClientSide()) {
             structureHelper.destroyStructure(level, pos, state.getValue(FACING));
-            BlockEntity be = level.getBlockEntity(pos);
-            if (be != null) {
-                be.getCapability(ForgeCapabilities.ITEM_HANDLER).ifPresent(h -> {
-                    for (int i = 0; i < h.getSlots(); i++) {
-                        Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), h.getStackInSlot(i));
-                    }
-                });
+            if (level.getBlockEntity(pos) instanceof com.hbm_m.blockentity.BaseMachineBlockEntity machine) {
+                machine.dropInventoryContents();
             }
         }
         super.onRemove(state, level, pos, newState, isMoving);
@@ -221,10 +218,21 @@ public class MachineCatalyticReformerBlock extends BaseEntityBlock implements IM
         return new MachineCatalyticReformerBlockEntity(pos, state);
     }
 
+    //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        return openMenu(state, level, pos, player, hand, hit);
+    }
+    //?} else {
+    /*@Override
+    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+        return openMenu(state, level, pos, player, InteractionHand.MAIN_HAND, hit);
+    }
+    *///?}
+
+    private InteractionResult openMenu(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         if (!level.isClientSide() && level.getBlockEntity(pos) instanceof MenuProvider menu) {
-            NetworkHooks.openScreen((ServerPlayer) player, menu, pos);
+            MenuRegistry.openExtendedMenu((ServerPlayer) player, menu, buf -> buf.writeBlockPos(pos));
         }
         return InteractionResult.sidedSuccess(level.isClientSide());
     }
@@ -234,4 +242,13 @@ public class MachineCatalyticReformerBlock extends BaseEntityBlock implements IM
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
         return createTickerHelper(type, ModBlockEntities.CATALYTIC_REFORMER_BE.get(), MachineCatalyticReformerBlockEntity::tick);
     }
+
+    //? if >1.20.1 {
+    /*public static final com.mojang.serialization.MapCodec<MachineCatalyticReformerBlock> CODEC = simpleCodec(MachineCatalyticReformerBlock::new);
+
+    @Override
+    protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
+        return CODEC;
+    }
+    *///?}
 }

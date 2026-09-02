@@ -5,7 +5,6 @@ import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.blockentity.BaseMachineBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
-import com.hbm_m.capability.ModCapabilities;
 import com.hbm_m.inventory.menu.MachineLargePylonMenu;
 import com.hbm_m.item.fekal_electric.ItemCreativeBattery;
 
@@ -20,14 +19,7 @@ import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraftforge.common.capabilities.Capability;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.common.util.LazyOptional;
 
-/**
- * Large Pylon BlockEntity (WIP).
- * 3 слота: input, battery, output. Энергия 2M, без танка жидкостей.
- */
 public class MachineLargePylonBlockEntity extends BaseMachineBlockEntity {
 
     private static final int SLOT_INPUT   = 0;
@@ -99,7 +91,7 @@ public class MachineLargePylonBlockEntity extends BaseMachineBlockEntity {
             return;
         }
 
-        stack.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER).ifPresent(provider -> {
+        com.hbm_m.api.energy.ItemEnergyAccess.getHbmProvider(stack).ifPresent(provider -> {
             long needed = getMaxEnergyStored() - getEnergyStored();
             if (needed <= 0) return;
             long extracted = provider.extractEnergy(Math.min(needed, getReceiveSpeed()), false);
@@ -109,8 +101,8 @@ public class MachineLargePylonBlockEntity extends BaseMachineBlockEntity {
             }
         });
 
-        if (!stack.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER).isPresent()) {
-            stack.getCapability(ForgeCapabilities.ENERGY).ifPresent(provider -> {
+        if (!com.hbm_m.api.energy.ItemEnergyAccess.getHbmProvider(stack).isPresent()) {
+            com.hbm_m.api.energy.ItemEnergyAccess.getForgeEnergy(stack).ifPresent(provider -> {
                 long needed = getMaxEnergyStored() - getEnergyStored();
                 if (needed <= 0) return;
                 int extracted = provider.extractEnergy((int) Math.min(needed, getReceiveSpeed()), false);
@@ -158,8 +150,8 @@ public class MachineLargePylonBlockEntity extends BaseMachineBlockEntity {
     @Override
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
         if (slot == SLOT_BATTERY) {
-            return stack.getCapability(ForgeCapabilities.ENERGY).isPresent()
-                || stack.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER).isPresent()
+            return com.hbm_m.api.energy.ItemEnergyAccess.getForgeEnergy(stack).isPresent()
+                || com.hbm_m.api.energy.ItemEnergyAccess.getHbmProvider(stack).isPresent()
                 || stack.getItem() instanceof ItemCreativeBattery;
         }
         if (slot == SLOT_OUTPUT) return false;
@@ -177,23 +169,18 @@ public class MachineLargePylonBlockEntity extends BaseMachineBlockEntity {
     }
 
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.putInt("progress", progress);
         tag.putInt("duration", duration);
         tag.putBoolean("isOn", isOn);
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         progress = tag.getInt("progress");
         duration = tag.contains("duration") ? tag.getInt("duration") : DEFAULT_DURATION;
         isOn = tag.getBoolean("isOn");
-    }
-
-    @Override
-    public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
-        return super.getCapability(cap, side);
     }
 }

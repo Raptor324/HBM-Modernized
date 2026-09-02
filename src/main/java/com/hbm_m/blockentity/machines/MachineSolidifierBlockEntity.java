@@ -12,8 +12,10 @@ import com.hbm_m.inventory.menu.MachineSolidifierMenu;
 import com.hbm_m.item.industrial.ItemMachineUpgrade;
 import com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType;
 import com.hbm_m.item.liquids.FluidIdentifierItem;
-import com.hbm_m.recipe.SolidificationRecipes;
-import com.hbm_m.recipe.SolidificationRecipes.Recipe;
+import com.hbm_m.platform.recipe.RecipeHooks;
+import com.hbm_m.recipe.SolidificationRecipe;
+
+import javax.annotation.Nullable;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -31,8 +33,9 @@ import net.minecraft.world.level.material.Fluids;
 
 /**
  * Solidifier - Port von {@code TileEntityMachineSolidifier} (1.7.10 Original). Reiner Fluid-
- * Empfaenger (kein Versand-Tank), Rezepte aus {@link SolidificationRecipes} (Fluid -> Item, 1:1).
- * Upgrade-Slots (Speed/Power) via {@link UpgradeManager}, analog zu {@code OilDrillBaseBlockEntity}.
+ * Empfaenger (kein Versand-Tank), Rezepte data-driven aus {@link SolidificationRecipe}
+ * (Fluid -> Item, 1:1). Upgrade-Slots (Speed/Power) via {@link UpgradeManager}, analog zu
+ * {@code OilDrillBaseBlockEntity}.
  */
 public class MachineSolidifierBlockEntity extends BaseMachineBlockEntity implements IFluidStandardTransceiverMK2 {
 
@@ -101,14 +104,14 @@ public class MachineSolidifierBlockEntity extends BaseMachineBlockEntity impleme
     private boolean canProcess() {
         if (getEnergyStored() < usage) return false;
 
-        Recipe recipe = SolidificationRecipes.get(tank.getTankType());
+        SolidificationRecipe recipe = findSolidificationRecipe(tank.getTankType());
         if (recipe == null) return false;
-        if (recipe.fillMb() > tank.getFluidAmountMb()) return false;
+        if (recipe.getFillMb() > tank.getFluidAmountMb()) return false;
 
         ItemStack current = inventory.getStackInSlot(SLOT_OUTPUT);
         if (!current.isEmpty()) {
-            if (!ItemStack.isSameItemSameTags(current, recipe.output())) return false;
-            if (current.getCount() + recipe.output().getCount() > current.getMaxStackSize()) return false;
+            if (!com.hbm_m.platform.PlatformHooks.isSameItemSameTags(current, recipe.getOutput())) return false;
+            if (current.getCount() + recipe.getOutput().getCount() > current.getMaxStackSize()) return false;
         }
 
         return true;
@@ -119,19 +122,32 @@ public class MachineSolidifierBlockEntity extends BaseMachineBlockEntity impleme
         progress++;
 
         if (progress >= processTime) {
-            Recipe recipe = SolidificationRecipes.get(tank.getTankType());
+            SolidificationRecipe recipe = findSolidificationRecipe(tank.getTankType());
             if (recipe != null) {
-                tank.drainMb(recipe.fillMb());
+                tank.drainMb(recipe.getFillMb());
 
                 ItemStack current = inventory.getStackInSlot(SLOT_OUTPUT);
                 if (current.isEmpty()) {
-                    inventory.setStackInSlot(SLOT_OUTPUT, recipe.output().copy());
+                    inventory.setStackInSlot(SLOT_OUTPUT, recipe.getOutput());
                 } else {
-                    current.grow(recipe.output().getCount());
+                    current.grow(recipe.getOutput().getCount());
                 }
             }
             progress = 0;
         }
+    }
+
+    /**
+     * Data-driven поиск SolidificationRecipe по жидкости бака
+     * (заменяет статический SolidificationRecipes.get).
+     */
+    @Nullable
+    private SolidificationRecipe findSolidificationRecipe(Fluid fluid) {
+        if (level == null) return null;
+        for (SolidificationRecipe recipe : RecipeHooks.getAllRecipes(level, SolidificationRecipe.Type.INSTANCE)) {
+            if (recipe.matchesFluid(fluid)) return recipe;
+        }
+        return null;
     }
 
     private Map<UpgradeType, Integer> getValidUpgrades() {
@@ -178,8 +194,8 @@ public class MachineSolidifierBlockEntity extends BaseMachineBlockEntity impleme
     // ── NBT ─────────────────────────────────────────────────────────────────
 
     @Override
-    public void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.putInt("progress", progress);
         tag.putInt("usage", usage);
         tag.putInt("process_time", processTime);
@@ -187,8 +203,8 @@ public class MachineSolidifierBlockEntity extends BaseMachineBlockEntity impleme
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         progress = tag.getInt("progress");
         usage = tag.getInt("usage");
         processTime = tag.getInt("process_time");

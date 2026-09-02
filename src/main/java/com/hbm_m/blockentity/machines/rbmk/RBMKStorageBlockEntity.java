@@ -36,14 +36,19 @@ public class RBMKStorageBlockEntity extends RBMKColumnBlockEntity
         baseTick(level, pos, state, be);
         if (level.isClientSide) return;
 
-        // Compact towards slot 0 every 10 ticks
-        if (level.getGameTime() % 10 == 0) {
-            for (int i = 0; i < SLOTS - 1; i++) {
-                if (slots_empty(be.slots[i]) && !slots_empty(be.slots[i + 1])) {
-                    be.slots[i]     = be.slots[i + 1];
-                    be.slots[i + 1] = ItemStack.EMPTY;
-                }
+        // CE's compaction (TileEntityRBMKStorage.update): a single full pass every tick that walks
+        // the slots and slides each occupied one down onto the lowest free index. The port used a
+        // bubble-one-step-every-10-ticks variant instead, so a rack unloaded from the middle took
+        // over a hundred ticks to close the gap that CE closes immediately - long enough for the
+        // crane to read slot 0 as empty and skip the column entirely.
+        int freeSlot = 0;
+        for (int i = 0; i < SLOTS; i++) {
+            if (slots_empty(be.slots[i])) continue;
+            if (slots_empty(be.slots[freeSlot])) {
+                be.slots[freeSlot] = be.slots[i].copy();
+                be.slots[i] = ItemStack.EMPTY;
             }
+            freeSlot++;
         }
     }
 
@@ -55,7 +60,9 @@ public class RBMKStorageBlockEntity extends RBMKColumnBlockEntity
 
     @Override
     public boolean canLoad(ItemStack s) {
-        return !s.isEmpty() && s.getItem() instanceof RBMKRodItem && slots_empty(slots[11]);
+        // CE only checks that the incoming stack exists and slot 11 is free - the storage column is
+        // a generic rack, not a fuel-only one.
+        return !s.isEmpty() && slots_empty(slots[11]);
     }
 
     @Override
@@ -87,15 +94,16 @@ public class RBMKStorageBlockEntity extends RBMKColumnBlockEntity
 
     // ─── NBT ─────────────────────────────────────────────────────────────────
 
+    
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         ListTag list = new ListTag();
         for (int i = 0; i < SLOTS; i++) {
             if (!slots_empty(slots[i])) {
                 CompoundTag s = new CompoundTag();
                 s.putByte("s", (byte) i);
-                s.put("item", safeItemSave(slots[i]));
+                s.put("item", com.hbm_m.platform.PlatformHooks.safeItemSave(slots[i], registries));
                 list.add(s);
             }
         }
@@ -103,15 +111,15 @@ public class RBMKStorageBlockEntity extends RBMKColumnBlockEntity
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         for (int i = 0; i < SLOTS; i++) slots[i] = ItemStack.EMPTY;
         ListTag list = tag.getList("slots", 10);
         for (int i = 0; i < list.size(); i++) {
             CompoundTag s = list.getCompound(i);
             int idx = s.getByte("s") & 0xFF;
             if (idx < SLOTS && s.contains("item"))
-                slots[idx] = ItemStack.of(s.getCompound("item"));
+                slots[idx] = com.hbm_m.platform.PlatformHooks.itemStackOf(s.getCompound("item"), registries);
         }
     }
 }

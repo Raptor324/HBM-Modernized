@@ -1,0 +1,23 @@
+{
+  "display": {
+    "icon": {
+      "item": "hbm_m:struct_torus_core"
+    },
+    "title": {
+      "translate": "advancements.hbm_m.fusion.title"
+    },
+    "description": {
+      "translate": "advancements.hbm_m.fusion.description"
+    },
+    "frame": "challenge",
+    "show_toast": true,
+    "announce_to_chat": true,
+    "hidden": false
+  },
+  "criteria": {
+    "granted": {
+      "trigger": "minecraft:impossible"
+    }
+  },
+  "parent": "hbm_m:bismuth"
+}

@@ -16,7 +16,7 @@ import net.minecraft.world.level.block.state.BlockState;
  * gerendert, analog zur Rotor-Animation die bereits bei {@code MachineSteamEngineBlockEntity}
  * entfiel.
  */
-public class MachineLpw2BlockEntity extends BlockEntity {
+public class MachineLpw2BlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity {
     public MachineLpw2BlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.LPW2_BE.get(), pos, state);
     }

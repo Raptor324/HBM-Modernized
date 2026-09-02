@@ -1,4 +1,3 @@
-//? if forge {
 package com.hbm_m.client.loader;
 
 import java.util.HashMap;
@@ -12,6 +11,7 @@ import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonObject;
 import com.hbm_m.client.model.MachineAssemblerBakedModel;
 import com.hbm_m.main.MainRegistry;
+import com.hbm_m.platform.LoaderHooks;
 import com.mojang.math.Transformation;
 
 import net.minecraft.client.renderer.block.model.ItemOverrides;
@@ -25,16 +25,24 @@ import net.minecraft.client.resources.model.ModelState;
 import net.minecraft.client.resources.model.UnbakedModel;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.GsonHelper;
+
+//? if < 1.21.1 {
 import net.minecraftforge.client.model.geometry.IGeometryBakingContext;
 import net.minecraftforge.client.model.geometry.IGeometryLoader;
 import net.minecraftforge.client.model.geometry.IUnbakedGeometry;
-import net.minecraftforge.client.model.obj.ObjLoader;
 import net.minecraftforge.client.model.obj.ObjModel;
 
 /**
  * Загрузчик модели для MachineAssembler: загружает несколько OBJ-файлов
  * (Body, Slider, Arm, Cog) как отдельные части с индивидуальными текстурами.
  */
+//?} else {
+/*import net.neoforged.neoforge.client.model.geometry.IGeometryBakingContext;
+import net.neoforged.neoforge.client.model.geometry.IGeometryLoader;
+import net.neoforged.neoforge.client.model.geometry.IUnbakedGeometry;
+import net.neoforged.neoforge.client.model.obj.ObjModel;
+*///?}
+
 public class MachineAssemblerModelLoader implements IGeometryLoader<MachineAssemblerModelLoader.MultiObjGeometry> {
 
     @Override
@@ -66,14 +74,22 @@ public class MachineAssemblerModelLoader implements IGeometryLoader<MachineAssem
         }
 
         @Override
-        public void resolveParents(Function<ResourceLocation, UnbakedModel> modelGetter, IGeometryBakingContext context) {
-        }
+        public void resolveParents(Function<ResourceLocation, UnbakedModel> modelGetter, IGeometryBakingContext context) {}
 
+        //? if < 1.21.1 {
         @Override
-        public BakedModel bake(IGeometryBakingContext context, ModelBaker baker,
-                               Function<Material, TextureAtlasSprite> spriteGetter,
-                               ModelState modelState, ItemOverrides overrides,
-                               ResourceLocation modelName) {
+        public BakedModel bake(IGeometryBakingContext context, ModelBaker baker, Function<Material, TextureAtlasSprite> spriteGetter, ModelState modelState, ItemOverrides overrides, ResourceLocation modelLocation) {
+            return doBake(context, baker, spriteGetter, modelState, overrides, modelLocation);
+        }
+        //?} else {
+        /*@Override
+        public BakedModel bake(IGeometryBakingContext context, ModelBaker baker, Function<Material, TextureAtlasSprite> spriteGetter, ModelState modelState, ItemOverrides overrides) {
+            ResourceLocation modelLocation = ResourceLocation.parse(context.getModelName());
+            return doBake(context, baker, spriteGetter, modelState, overrides, modelLocation);
+        }
+        *///?}
+
+        private BakedModel doBake(IGeometryBakingContext context, ModelBaker baker, Function<Material, TextureAtlasSprite> spriteGetter, ModelState modelState, ItemOverrides overrides, ResourceLocation modelName) {
             HashMap<String, BakedModel> bakedParts = new HashMap<>();
             ModelState identityState = new ModelState() {
                 @Override
@@ -87,35 +103,20 @@ public class MachineAssemblerModelLoader implements IGeometryLoader<MachineAssem
                 PartDef def = entry.getValue();
 
                 try {
-                    ObjModel objModel = ObjLoader.INSTANCE.loadModel(
-                            new ObjModel.ModelSettings(def.model(), flipV, false, true, true, null));
-
+                    ObjModel objModel = LoaderHooks.loadObjModel(def.model(), flipV);
                     IGeometryBakingContext partContext = new PartTextureContext(context, def.texture());
-                    BakedModel baked = objModel.bake(partContext, baker, spriteGetter,
-                            identityState, overrides, modelName);
+                    BakedModel baked = LoaderHooks.bakeObjModel(objModel, partContext, baker, spriteGetter, identityState, overrides, modelName);
+                    
                     bakedParts.put(partName, baked);
-
-                    if (baked != null) {
-                        int quadCount = 0;
-                        for (net.minecraft.core.Direction dir : net.minecraft.core.Direction.values()) {
-                            quadCount += baked.getQuads(null, dir, net.minecraft.util.RandomSource.create(42)).size();
-                        }
-                        quadCount += baked.getQuads(null, null, net.minecraft.util.RandomSource.create(42)).size();
-                        MainRegistry.LOGGER.info("MachineAssemblerModelLoader: Baked part '{}' -> {} quads", partName, quadCount);
-                    }
                 } catch (Exception e) {
                     MainRegistry.LOGGER.error("MachineAssemblerModelLoader: Failed to bake part '{}'", partName, e);
                 }
             }
 
-            MainRegistry.LOGGER.info("MachineAssemblerModelLoader: Total baked parts: {}", bakedParts.size());
             return new MachineAssemblerBakedModel(bakedParts, context.getTransforms());
         }
     }
 
-    /**
-     * Контекст запекания, перенаправляющий все запросы текстур на заданную текстуру части.
-     */
     static class PartTextureContext implements IGeometryBakingContext {
         private final IGeometryBakingContext parent;
         private final ResourceLocation overrideTexture;
@@ -125,55 +126,17 @@ public class MachineAssemblerModelLoader implements IGeometryLoader<MachineAssem
             this.overrideTexture = texture;
         }
 
-        @Override
-        public String getModelName() { return parent.getModelName(); }
-
-        @Override
-        public boolean isGui3d() { return parent.isGui3d(); }
-
-        @Override
-        public boolean useBlockLight() { return parent.useBlockLight(); }
-
-        @Override
-        public boolean useAmbientOcclusion() { return parent.useAmbientOcclusion(); }
-
-        @Override
-        public ItemTransforms getTransforms() { return parent.getTransforms(); }
-
-        @Override
-        public Transformation getRootTransform() { return parent.getRootTransform(); }
-
-        @Override
-        public ResourceLocation getRenderTypeHint() { return parent.getRenderTypeHint(); }
-
-        @Override
-        public boolean isComponentVisible(String component, boolean fallback) {
-            return true;
-        }
-
-        @Override
-        public boolean hasMaterial(String name) {
-            return true;
-        }
-
-        @Override
-        public Material getMaterial(String name) {
+        @Override public String getModelName() { return parent.getModelName(); }
+        @Override public boolean isGui3d() { return parent.isGui3d(); }
+        @Override public boolean useBlockLight() { return parent.useBlockLight(); }
+        @Override public boolean useAmbientOcclusion() { return parent.useAmbientOcclusion(); }
+        @Override public ItemTransforms getTransforms() { return parent.getTransforms(); }
+        @Override public Transformation getRootTransform() { return parent.getRootTransform(); }
+        @Override public ResourceLocation getRenderTypeHint() { return parent.getRenderTypeHint(); }
+        @Override public boolean isComponentVisible(String component, boolean fallback) { return true; }
+        @Override public boolean hasMaterial(String name) { return true; }
+        @Override public Material getMaterial(String name) {
             return new Material(TextureAtlas.LOCATION_BLOCKS, overrideTexture);
         }
     }
 }
-//?}
-
-//? if fabric {
-/*package com.hbm_m.client.loader;
-
-/^*
- * Fabric: Forge geometry/OBJ pipeline isn't available.
- * Stub to keep compilation working across loaders.
- ^/
-public class MachineAssemblerModelLoader {
-    public MachineAssemblerModelLoader() {
-        throw new UnsupportedOperationException("MachineAssemblerModelLoader is not implemented on Fabric yet.");
-    }
-}
-*///?}

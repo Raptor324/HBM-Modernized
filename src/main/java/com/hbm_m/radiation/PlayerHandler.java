@@ -1,5 +1,7 @@
 package com.hbm_m.radiation;
 
+import com.hbm_m.advancement.ModAdvancements;
+
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.damagesource.ModDamageSources;
 import com.hbm_m.explosion.command.HbmExplosionCommands;
@@ -56,7 +58,7 @@ public class PlayerHandler {
         PlayerEvent.PLAYER_QUIT.register(PlayerHandler::onPlayerQuit);
         PlayerEvent.PLAYER_RESPAWN.register(PlayerHandler::onPlayerRespawn);
         TickEvent.PLAYER_POST.register(PlayerHandler::onPlayerTick);
-        CommandRegistrationEvent.EVENT.register(PlayerHandler::onRegisterCommands);
+        CommandRegistrationEvent.EVENT.register((dispatcher, buildContext, selection) -> onRegisterCommands(dispatcher, buildContext, selection));
     }
 
     /**
@@ -162,7 +164,11 @@ public class PlayerHandler {
      * Игрок возродился — сбрасываем радиацию
      * (параметр keepInventory: если true — не сбрасываем, чтобы не злоупотребляли)
      */
+    //? if < 1.21.1 {
     private static void onPlayerRespawn(ServerPlayer serverPlayer, boolean conqueredEnd) {
+    //?} else {
+    /*private static void onPlayerRespawn(ServerPlayer serverPlayer, boolean conqueredEnd, net.minecraft.world.entity.Entity.RemovalReason reason) {
+    *///?}
         // Сброс при смерти, но не при телепортации через End
         if (!conqueredEnd) {
             setPlayerRads(serverPlayer, 0F);
@@ -247,7 +253,11 @@ public class PlayerHandler {
     private static float getRadiationFromItemStack(ItemStack stack) {
         if (stack.isEmpty()) return 0.0F;
         float perItemRadiation = HazardSystem.getHazardLevelFromStack(stack, HazardRegistry.RADIATION);
-        return perItemRadiation * stack.getCount();
+        // Induced activation from sitting in a neutron flux counts on top of the item's own
+        // radioactivity (CE: HazardSystem.getRadsFromStack). getNeutronRads already accounts for
+        // the stack size, so it is added outside the multiply.
+        return perItemRadiation * stack.getCount()
+                + com.hbm_m.util.ContaminationUtil.getNeutronRads(stack);
     }
     
     /**
@@ -256,64 +266,10 @@ public class PlayerHandler {
     private static void applyRadiationEffects(Player player) {
         float rads = getPlayerRads(player);
 
-        // Проверяем достижения
-        if (player instanceof ServerPlayer serverPlayer) {
-            var server = serverPlayer.getServer();
-            if (server != null) {
-                ServerAdvancementManager advancementManager = server.getAdvancements();
-
-                // Достижение "Ура, Радиация!" (200 РАД)
-                //? if fabric && < 1.21.1 {
-                /*Advancement rad200Advancement = advancementManager.getAdvancement(new ResourceLocation(RefStrings.MODID, "radiation_200"));
-                *///?} else {
-                Advancement rad200Advancement = advancementManager.getAdvancement(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "radiation_200"));
-                 //?}
-
-                if (rad200Advancement != null) {
-                    AdvancementProgress progress = serverPlayer.getAdvancements().getOrStartProgress(rad200Advancement);
-                    if (!progress.isDone() && rads >= 200.0F) {
-                        if (ModClothConfig.get().enableDebugLogging) {
-                            MainRegistry.LOGGER.debug(
-                                    "SERVER: Checking radiation_200 advancement for player {}. Current rads: {}, isDone: {}",
-                                    serverPlayer.getName().getString(), rads, false);
-                        }
-                        for (String criterion : progress.getRemainingCriteria()) {
-                            serverPlayer.getAdvancements().award(rad200Advancement, criterion);
-                            if (ModClothConfig.get().enableDebugLogging) {
-                                MainRegistry.LOGGER.info(
-                                        "SERVER: Awarded radiation_200 advancement to player {} for criterion {}",
-                                        serverPlayer.getName().getString(), criterion);
-                            }
-                        }
-                    }
-                }
-
-                // Испытание "Ай, Радиация!" (1000 РАД)
-                //? if fabric && < 1.21.1 {
-                /*Advancement rad1000Advancement = advancementManager.getAdvancement(new ResourceLocation(RefStrings.MODID, "radiation_1000"));
-                *///?} else {
-                Advancement rad1000Advancement = advancementManager.getAdvancement(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "radiation_1000"));
-                 //?}
-
-                if (rad1000Advancement != null) {
-                    AdvancementProgress progress = serverPlayer.getAdvancements().getOrStartProgress(rad1000Advancement);
-                    if (!progress.isDone() && rads >= ModClothConfig.get().maxPlayerRad) {
-                        if (ModClothConfig.get().enableDebugLogging) {
-                            MainRegistry.LOGGER.debug(
-                                    "SERVER: Checking radiation_1000 advancement for player {}. Current rads: {}, isDone: {}",
-                                    serverPlayer.getName().getString(), rads, false);
-                        }
-                        for (String criterion : progress.getRemainingCriteria()) {
-                            serverPlayer.getAdvancements().award(rad1000Advancement, criterion);
-                            if (ModClothConfig.get().enableDebugLogging) {
-                                MainRegistry.LOGGER.info(
-                                        "SERVER: Awarded radiation_1000 advancement to player {} for criterion {}",
-                                        serverPlayer.getName().getString(), criterion);
-                            }
-                        }
-                    }
-                }
-            }
+        // Достижения: пороги радиации (оригинал: achRadPoison при 200 RAD,
+        // achRadDeath при летальной дозе - последний выдаётся ниже, при самой смерти).
+        if (rads >= 200.0F) {
+            ModAdvancements.grant(player, ModAdvancements.RAD_POISON);
         }
 
         // Летальный порог (конфиг maxPlayerRad; у мобов в EntityEffectHandler — 1000 RAD как в 1.7.10)
@@ -322,6 +278,7 @@ public class PlayerHandler {
                     "SERVER: Player {} radiation ({}) reached maxPlayerRad ({}). Killing player and resetting radiation.",
                     player.getName().getString(), rads, ModClothConfig.get().maxPlayerRad);
             player.hurt(ModDamageSources.radiation(player.level()), Float.MAX_VALUE);
+            ModAdvancements.grant(player, ModAdvancements.RAD_DEATH);
             setPlayerRads(player, 0F);
             return;
         }

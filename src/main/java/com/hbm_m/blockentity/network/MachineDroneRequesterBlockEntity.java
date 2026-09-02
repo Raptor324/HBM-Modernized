@@ -87,7 +87,7 @@ public class MachineDroneRequesterBlockEntity extends BaseMachineBlockEntity {
             if (stock.isEmpty()) {
                 inventory.setStackInSlot(stockSlot, cargo.copy());
                 cargo = ItemStack.EMPTY;
-            } else if (ItemStack.isSameItemSameTags(stock, cargo)) {
+            } else if (com.hbm_m.platform.PlatformHooks.isSameItemSameTags(stock, cargo)) {
                 int space = stock.getMaxStackSize() - stock.getCount();
                 int toMove = Math.min(space, cargo.getCount());
                 if (toMove > 0) {
@@ -108,14 +108,14 @@ public class MachineDroneRequesterBlockEntity extends BaseMachineBlockEntity {
     // ── NBT ─────────────────────────────────────────────────────────────────
 
     @Override
-    public void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         matcher.writeToNBT(tag);
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         matcher.readFromNBT(tag);
     }
 

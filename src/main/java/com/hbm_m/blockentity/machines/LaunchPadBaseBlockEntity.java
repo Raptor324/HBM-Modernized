@@ -7,7 +7,6 @@ import java.util.Map;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import com.hbm_m.api.energy.EnergyNetworkManager;
 import com.hbm_m.api.fluids.IFluidConnectorMK2;
 import com.hbm_m.api.fluids.IFluidStandardReceiverMK2;
 import com.hbm_m.api.item.IDesignatorItem;
@@ -330,7 +329,8 @@ public abstract class LaunchPadBaseBlockEntity extends BaseMachineBlockEntity
     /** Tall missiles extend above the 1-block pad; default BE AABB would cull the BER. */
     @Override
     public AABB getRenderBoundingBox() {
-        return new AABB(worldPosition).inflate(1.0D, 7.0D, 1.0D);
+        return new AABB(worldPosition.getX() - 1, worldPosition.getY() - 1, worldPosition.getZ() - 1,
+                        worldPosition.getX() + 2, worldPosition.getY() + 8, worldPosition.getZ() + 2);
     }
 
     /**
@@ -373,7 +373,7 @@ public abstract class LaunchPadBaseBlockEntity extends BaseMachineBlockEntity
                 tanks[0].setTankType(ModFluids.KEROSENE_REFORM.getSource());
                 tanks[1].setTankType(ModFluids.OXYGEN.getSource());
             }
-            case SOLID -> { /* предзаправленные — баки не используются */ }
+            case SOLID -> { }
         }
         return tanks[0].getTankType() != prevFuel || tanks[1].getTankType() != prevOxidizer;
     }
@@ -590,7 +590,10 @@ public abstract class LaunchPadBaseBlockEntity extends BaseMachineBlockEntity
                 worldPosition.getZ() + 0.5D,
                 com.hbm_m.sound.ModSounds.MISSILE_TAKEOFF.get(),
                 SoundSource.PLAYERS,
-                2.0F, 1.0F);
+                // volume = радиус рассылки пакета: 16 × volume = 512 бл. = attenuation_distance
+                // в sounds.json. Громкость рассеивания на клиенте считается локально (линейно),
+                // поэтому дальние игроки получают тихий «рохот», а близкие — полную силу.
+                15.0F, 1.0F);
 
         this.energy = Math.max(0, this.energy - 75_000L);
 
@@ -625,10 +628,6 @@ public abstract class LaunchPadBaseBlockEntity extends BaseMachineBlockEntity
                 ? com.hbm_m.api.bomb.IBomb.BombReturnCode.LAUNCHED
                 : com.hbm_m.api.bomb.IBomb.BombReturnCode.ERROR_MISSING_COMPONENT;
     }
-
-    // -----------------------
-    // Редстоун‑логика (упрощённый порт)
-    // -----------------------
 
     /**
      * Агрегирует редстоун с контроллера и всех частей мультиблока (как у дверей).
@@ -672,22 +671,23 @@ public abstract class LaunchPadBaseBlockEntity extends BaseMachineBlockEntity
     // NBT
     // -----------------------
 
+    
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.putInt("launchpad_state", state);
         tag.putInt("launchpad_redstone", redstonePower);
         tag.putInt("launchpad_prev_redstone", prevRedstonePower);
         tag.putInt("launchpad_delay", delay);
         ItemStack missile = inventory.getStackInSlot(SLOT_MISSILE);
-        tag.putInt("missile_preview_id", missile.isEmpty() ? -1 : BuiltInRegistries.ITEM.getId(missile.getItem()));
+        tag.putInt("missile_preview_id", missile.isEmpty() ? -1 : net.minecraft.core.registries.BuiltInRegistries.ITEM.getId(missile.getItem()));
         tanks[0].writeToNBT(tag, "T0");
         tanks[1].writeToNBT(tag, "T1");
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         state = tag.getInt("launchpad_state");
         redstonePower = tag.getInt("launchpad_redstone");
         prevRedstonePower = tag.getInt("launchpad_prev_redstone");
@@ -711,23 +711,10 @@ public abstract class LaunchPadBaseBlockEntity extends BaseMachineBlockEntity
     }
 
     @Override
-    public CompoundTag getUpdateTag() {
-        CompoundTag tag = new CompoundTag();
-        saveAdditional(tag);
-        return tag;
-    }
-
-    @Override
     public ClientboundBlockEntityDataPacket getUpdatePacket() {
         return ClientboundBlockEntityDataPacket.create(this);
     }
 
-    //? if forge {
-    @Override
-    public void handleUpdateTag(CompoundTag tag) {
-        load(tag);
-    }
-    //?}
 
     // -----------------------
     // BaseMachineBlockEntity overrides
@@ -735,7 +722,6 @@ public abstract class LaunchPadBaseBlockEntity extends BaseMachineBlockEntity
 
     @Override
     protected boolean isItemValidForSlot(int slot, net.minecraft.world.item.ItemStack stack) {
-        // Пока никаких особых ограничений, кроме базового количества слотов.
         return slot >= 0 && slot < SLOT_COUNT;
     }
 
@@ -751,6 +737,25 @@ public abstract class LaunchPadBaseBlockEntity extends BaseMachineBlockEntity
         return side != Direction.UP && side != Direction.DOWN;
     }
 
+    // Энергопорты мультиблока: все UNIVERSAL_CONNECTOR-фантомы структуры
+    // (ядро подписывается базовым классом автоматически).
+    @Override
+    protected BlockPos[] getExtraEnergyPorts() {
+        if (level == null || level.isClientSide) return new BlockPos[0];
+        if (!(getBlockState().getBlock() instanceof com.hbm_m.interfaces.IMultiblockController controller)) {
+            return new BlockPos[0];
+        }
+        var helper = controller.getStructureHelper();
+        Direction facing = getBlockState().getValue(net.minecraft.world.level.block.HorizontalDirectionalBlock.FACING);
+        java.util.List<BlockPos> ports = new java.util.ArrayList<>();
+        for (BlockPos localPos : helper.getStructureMap().keySet()) {
+            if (controller.getPartRole(localPos) == com.hbm_m.multiblock.PartRole.UNIVERSAL_CONNECTOR) {
+                ports.add(helper.getRotatedPos(worldPosition, localPos, facing));
+            }
+        }
+        return ports.toArray(new BlockPos[0]);
+    }
+
     public FluidTank[] getTanks() {
         return tanks;
     }
@@ -759,7 +764,6 @@ public abstract class LaunchPadBaseBlockEntity extends BaseMachineBlockEntity
         if (!(level instanceof ServerLevel serverLevel)) {
             return;
         }
-        EnergyNetworkManager energyMgr = EnergyNetworkManager.get(serverLevel);
 
         for (NodeDirPos con : getConPos()) {
             BlockPos pipePos = con.getPos();
@@ -771,10 +775,6 @@ public abstract class LaunchPadBaseBlockEntity extends BaseMachineBlockEntity
             BlockEntity pipeBe = level.getBlockEntity(pipePos);
             if (pipeBe == null) {
                 continue;
-            }
-
-            if (isEnergyBlock(pipeBe) && !energyMgr.hasNode(pipePos)) {
-                energyMgr.addNode(pipePos);
             }
 
             if (pipeBe instanceof IFluidConnectorMK2) {

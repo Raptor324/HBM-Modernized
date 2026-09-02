@@ -75,7 +75,7 @@ public class MachinePUREXBlockEntity extends BaseMachineBlockEntity implements I
     public @org.jetbrains.annotations.NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(
             net.minecraftforge.common.capabilities.Capability<T> cap, @Nullable Direction side) {
         if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER) {
-            return inputTanks[0].getCapability().cast();
+            return inputTanks[0].getForgeFluidCapability().cast();
         }
         return super.getCapability(cap, side);
     }
@@ -123,7 +123,8 @@ public class MachinePUREXBlockEntity extends BaseMachineBlockEntity implements I
 
     @Nullable
     private PurexRecipe findRecipe(Level level) {
-        List<PurexRecipe> recipes = level.getRecipeManager().getAllRecipesFor(PurexRecipe.Type.INSTANCE);
+        // Кросс-версионный доступ: RecipeHooks.getAllRecipes разворачивает RecipeHolder на 1.21.1.
+        List<PurexRecipe> recipes = com.hbm_m.platform.recipe.RecipeHooks.getAllRecipes(level, PurexRecipe.Type.INSTANCE);
         for (PurexRecipe recipe : recipes) {
             if (canProcess(recipe)) return recipe;
         }
@@ -157,7 +158,7 @@ public class MachinePUREXBlockEntity extends BaseMachineBlockEntity implements I
             if (output.isEmpty()) continue;
             ItemStack outSlot = inventory.getStackInSlot(ITEM_OUTPUT_START + i);
             if (!outSlot.isEmpty()) {
-                if (!ItemStack.isSameItemSameTags(outSlot, output)) return false;
+                if (!com.hbm_m.platform.PlatformHooks.isSameItemSameTags(outSlot, output)) return false;
                 if (outSlot.getCount() + output.getCount() > outSlot.getMaxStackSize()) return false;
             }
         }
@@ -236,8 +237,8 @@ public class MachinePUREXBlockEntity extends BaseMachineBlockEntity implements I
     // ==================== NBT ====================
 
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.putInt("progress", progressTicks);
         tag.putInt("duration", currentDuration);
         for (int i = 0; i < inputTanks.length; i++) {
@@ -247,8 +248,8 @@ public class MachinePUREXBlockEntity extends BaseMachineBlockEntity implements I
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         progressTicks = tag.getInt("progress");
         currentDuration = tag.contains("duration") ? Math.max(1, tag.getInt("duration")) : 1;
         for (int i = 0; i < inputTanks.length; i++) {

@@ -47,7 +47,6 @@ public class RBMKRodBlockEntity extends RBMKColumnBlockEntity
     // â"€â"€â"€ Tick â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 
     public static void tick(Level level, BlockPos pos, BlockState state, RBMKRodBlockEntity be) {
-        baseTick(level, pos, state, be);
         if (level.isClientSide) return;
 
         if (!be.fuelSlot.isEmpty() && be.fuelSlot.getItem() instanceof RBMKRodItem rod) {
@@ -59,30 +58,40 @@ public class RBMKRodBlockEntity extends RBMKColumnBlockEntity
                 fluxIn = rod.fluxFromRatio(be.fluxQuantity, be.fluxFastRatio);
             } else {
                 fluxRatioOut = (rod.rType == IRBMKFluxReceiver.NType.SLOW) ? 0 : 1;
-                double fast = be.fluxQuantity * be.fluxFastRatio;
-                double slow = be.fluxQuantity * (1 - be.fluxFastRatio);
-                fluxIn = switch (rod.nType) {
-                    case SLOW -> slow + fast * 0.5;
-                    case FAST -> fast + slow * 0.3;
-                    case ANY  -> be.fluxQuantity;
-                };
+                fluxIn = be.fluxFromType(rod.nType);
             }
 
             double fluxOut = rod.burn(level, be.fuelSlot, fluxIn);
             rod.updateHeat(level, be.fuelSlot, 1.0);
             be.heat += rod.provideHeat(level, be.fuelSlot, be.heat, 1.0);
 
-            if (be.heat > be.maxHeat()) {
-                if (!RBMKDials.getMeltdownsDisabled(level)) be.meltdown(level);
-                be.lastFluxQuantity = be.lastFluxRatio = 0;
-                be.fluxQuantity = be.fluxFastRatio = 0;
-                return;
-            }
-            be.heat = Math.min(be.heat, 10_000);
-
+            // Order matters and is 1:1 with CE's TileEntityRBMKRod.update: an open channel leaks
+            // *this* tick's flux before the column-to-column heat move runs, and the meltdown check
+            // happens only after the heat move - a channel sitting next to cold neighbours can
+            // therefore shed enough heat in the same tick to stay under its limit.
             if (!be.hasLid())
                 ChunkRadiationManager.incrementRad(level, pos.getX(), pos.getY(), pos.getZ(),
                     (float)(be.fluxQuantity * 0.05f));
+
+            baseTick(level, pos, state, be);
+
+            if (be.heat > be.maxHeat()) {
+                if (RBMKDials.getMeltdownsDisabled(level)) {
+                    // Meltdowns off: the channel just vents fire out of the top of the column
+                    // instead of taking the reactor with it.
+                    if (level instanceof net.minecraft.server.level.ServerLevel server) {
+                        server.sendParticles(com.hbm_m.particle.ModParticleTypes.RBMK_FLAME.get(),
+                                pos.getX() + 0.5, pos.getY() + RBMKDials.getColumnHeight(level) + 0.5, pos.getZ() + 0.5,
+                                0, 0.0, 0.2, 0.0, 1);
+                    }
+                } else {
+                    be.meltdown(level);
+                }
+                be.lastFluxQuantity = be.lastFluxRatio = 0;
+                be.fluxQuantity = 0;
+                return;
+            }
+            be.heat = Math.min(be.heat, 10_000);
 
             be.lastFluxQuantity = be.fluxQuantity;
             be.lastFluxRatio    = be.fluxFastRatio;
@@ -93,7 +102,23 @@ public class RBMKRodBlockEntity extends RBMKColumnBlockEntity
             be.lastFluxQuantity = be.lastFluxRatio = 0;
             be.fluxQuantity = be.fluxFastRatio = 0;
             be.hasRod = false;
+            baseTick(level, pos, state, be);
         }
+    }
+
+    /**
+     * SLOW fuel burns slow neutrons at full efficiency and fast ones at half; FAST is the mirror
+     * image at 100%/30%; ANY just takes the lot. CE keeps this as its own method
+     * ({@code fluxFromType}) because the redstone-over-radio readouts query it too.
+     */
+    public double fluxFromType(IRBMKFluxReceiver.NType type) {
+        double fastFlux = fluxQuantity * fluxFastRatio;
+        double slowFlux = fluxQuantity * (1 - fluxFastRatio);
+        return switch (type) {
+            case SLOW -> slowFlux + fastFlux * 0.5;
+            case FAST -> fastFlux + slowFlux * 0.3;
+            case ANY  -> fluxQuantity;
+        };
     }
 
     // â"€â"€â"€ Flux â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
@@ -106,14 +131,38 @@ public class RBMKRodBlockEntity extends RBMKColumnBlockEntity
         fluxFastRatio  = fluxQuantity > 0 ? (fastIn + fastNew) / fluxQuantity : 0;
     }
 
+    /**
+     * Normal channels emit along the four cardinal directions; ReaSim channels
+     * ({@code TileEntityRBMKRodReaSim.spreadFlux}) instead fan out eight streams 45 degrees apart
+     * at 75% flux each, with the whole fan jittered by a random multiple of 9 degrees so the
+     * pattern is not axis-locked. That is the entire behavioural difference between the two rod
+     * types, and without it a ReaSim channel is just an ordinary one.
+     */
     private void spreadFlux(Level level, double flux, double ratio) {
-        if (flux == 0) { NeutronNodeWorld.removeNode(level, getBlockPos()); return; }
+        if (isReaSim() ? flux == 0 : flux <= 0) { NeutronNodeWorld.removeNode(level, getBlockPos()); return; }
         NeutronNodeWorld.StreamWorld sw = NeutronNodeWorld.getOrAddWorld(level);
         RBMKNeutronNode node = sw.getNode(getBlockPos());
         if (node == null) { node = RBMKNeutronHandler.makeNode(sw, this); sw.addNode(node); }
+
+        if (isReaSim()) {
+            double angle = level.random.nextInt(4) * 9.0D;
+            for (int i = 0; i < 8; i++) {
+                double rad = Math.toRadians(angle);
+                sw.addStream(new RBMKNeutronStream(node,
+                        new Vec3(Math.cos(rad), 0, Math.sin(rad)), flux * 0.75, ratio));
+                angle += 45.0D;
+            }
+            return;
+        }
+
         for (Direction dir : FLUX_DIRS)
             sw.addStream(new RBMKNeutronStream(node, new Vec3(dir.getStepX(), 0, dir.getStepZ()), flux, ratio));
     }
+
+    /** Set from the block variant, see {@link com.hbm_m.block.machines.rbmk.RBMKRodBlock}. */
+    public boolean reaSim = false;
+
+    public boolean isReaSim() { return reaSim; }
 
     private void meltdown(Level level) { RBMKColumnBlockEntity.meltdownReactor(level, this); }
 
@@ -124,14 +173,20 @@ public class RBMKRodBlockEntity extends RBMKColumnBlockEntity
         if (isDigammaFuel) RBMKColumnBlockEntity.digamma = true;
         fuelSlot = ItemStack.EMPTY;
 
+        int h = RBMKDials.getColumnHeight(level);
+        reduce = Math.max(1, Math.min(reduce, h));
+        if (level.random.nextInt(3) == 0) reduce++;
+
         if (hadFuel) {
-            // A rod that was actively fueled melts down into corium top-to-bottom rather than
-            // the ordinary rubble/air split used by passive columns - 1:1 with the original's
-            // TileEntityRBMKRod.onMelt.
-            int h = RBMKDials.getColumnHeight(level);
+            // A fuelled channel leaves corium instead of ordinary rubble - but only up to the same
+            // cut-off the passive columns use. The port ignored `reduce` here and filled the whole
+            // column with corium regardless of how deep in the reactor it sat, so every meltdown
+            // produced a solid corium slab rather than CE's crater profile.
             BlockPos base = getBlockPos();
             for (int i = h; i >= 0; i--) {
-                level.setBlock(base.above(i), com.hbm_m.block.ModBlocks.RBMK_CORIUM.get().defaultBlockState(), 3);
+                level.setBlock(base.above(i), i <= h + 1 - reduce
+                        ? com.hbm_m.block.ModBlocks.RBMK_CORIUM.get().defaultBlockState()
+                        : net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
             }
             int count = 1 + level.random.nextInt(h);
             for (int i = 0; i < count; i++) spawnDebris(level, "fuel");
@@ -198,48 +253,27 @@ public class RBMKRodBlockEntity extends RBMKColumnBlockEntity
 
     // â"€â"€â"€ NBT â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 
-    //? if < 1.21.1 {
+    
+    // (консолидировала задвоенные stonecutter-кластеры save/load)
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.putDouble("fluxQuantity", lastFluxQuantity);
         tag.putDouble("fluxMod", lastFluxRatio);
         tag.putBoolean("hasRod", hasRod);
         tag.putBoolean("explodeOnBroken", explodeOnBroken);
-        if (!fuelSlot.isEmpty()) tag.put("fuelSlot", safeItemSave(fuelSlot));
+        if (!fuelSlot.isEmpty()) tag.put("fuelSlot", com.hbm_m.platform.PlatformHooks.safeItemSave(fuelSlot, registries));
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         fluxQuantity    = tag.getDouble("fluxQuantity");
         fluxFastRatio   = tag.getDouble("fluxMod");
         hasRod          = tag.getBoolean("hasRod");
         explodeOnBroken = !tag.contains("explodeOnBroken") || tag.getBoolean("explodeOnBroken");
         if (tag.contains("fuelSlot"))
-            fuelSlot = ItemStack.of(tag.getCompound("fuelSlot"));
+            fuelSlot = com.hbm_m.platform.PlatformHooks.itemStackOf(tag.getCompound("fuelSlot"), registries);
     }
-    //?} else {
-    /*@Override
-    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-        super.saveAdditional(tag, registries);
-        tag.putDouble("fluxQuantity", lastFluxQuantity);
-        tag.putDouble("fluxMod", lastFluxRatio);
-        tag.putBoolean("hasRod", hasRod);
-        tag.putBoolean("explodeOnBroken", explodeOnBroken);
-        if (!fuelSlot.isEmpty()) tag.put("fuelSlot", safeItemSave(fuelSlot, registries));
-    }
-
-    @Override
-    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-        super.loadAdditional(tag, registries);
-        fluxQuantity    = tag.getDouble("fluxQuantity");
-        fluxFastRatio   = tag.getDouble("fluxMod");
-        hasRod          = tag.getBoolean("hasRod");
-        explodeOnBroken = !tag.contains("explodeOnBroken") || tag.getBoolean("explodeOnBroken");
-        if (tag.contains("fuelSlot"))
-            fuelSlot = ItemStack.parseOptional(registries, tag.getCompound("fuelSlot"));
-    }
-    *///?}
 }
 

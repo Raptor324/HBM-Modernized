@@ -1,6 +1,7 @@
 package com.hbm_m.inventory.gui;
 
 import com.hbm_m.blockentity.machines.MachineIndustrialGeneratorBlockEntity;
+import com.hbm_m.client.GuiCompat;
 import com.hbm_m.inventory.menu.MachineIndustrialGeneratorMenu;
 
 import net.minecraft.client.gui.GuiGraphics;
@@ -40,25 +41,27 @@ public class GUIMachineIndustrialGenerator extends AbstractContainerScreen<Machi
             guiGraphics.fill(x + slotX - 1, y + slotY - 1, x + slotX + 17, y + slotY + 17, 0xFF373737);
         }
 
-        if (blockEntity.isActive()) {
-            int h = blockEntity.getBurnTimeScaled(14);
-            guiGraphics.fill(x + 62, y + 55 - h, x + 74, y + 55, 0xFFFF8000);
-        }
+        if (blockEntity != null) { // тайл может отсутствовать в реплее Flashback
+            if (blockEntity.isActive()) {
+                int h = blockEntity.getBurnTimeScaled(14);
+                guiGraphics.fill(x + 62, y + 55 - h, x + 74, y + 55, 0xFFFF8000);
+            }
 
-        int waterH = blockEntity.getWaterTank().getMaxFill() > 0
-                ? blockEntity.getWaterTank().getFill() * 34 / blockEntity.getWaterTank().getMaxFill() : 0;
-        if (waterH > 0) guiGraphics.fill(x + 134, y + 18 + (34 - waterH), x + 146, y + 52, 0xFF3080FF);
+            int waterH = blockEntity.getWaterTank().getMaxFill() > 0
+                    ? blockEntity.getWaterTank().getFill() * 34 / blockEntity.getWaterTank().getMaxFill() : 0;
+            if (waterH > 0) guiGraphics.fill(x + 134, y + 18 + (34 - waterH), x + 146, y + 52, 0xFF3080FF);
 
-        int lubeH = blockEntity.getLubricantTank().getMaxFill() > 0
-                ? blockEntity.getLubricantTank().getFill() * 34 / blockEntity.getLubricantTank().getMaxFill() : 0;
-        if (lubeH > 0) guiGraphics.fill(x + 150, y + 18 + (34 - lubeH), x + 162, y + 52, 0xFFC0A000);
+            int lubeH = blockEntity.getLubricantTank().getMaxFill() > 0
+                    ? blockEntity.getLubricantTank().getFill() * 34 / blockEntity.getLubricantTank().getMaxFill() : 0;
+            if (lubeH > 0) guiGraphics.fill(x + 150, y + 18 + (34 - lubeH), x + 162, y + 52, 0xFFC0A000);
 
-        int fuelH = blockEntity.getFuelTank().getMaxFill() > 0
-                ? blockEntity.getFuelTank().getFill() * 34 / blockEntity.getFuelTank().getMaxFill() : 0;
-        if (fuelH > 0) guiGraphics.fill(x + 118, y + 18 + (34 - fuelH), x + 130, y + 52, 0xFF804000);
+            int fuelH = blockEntity.getFuelTank().getMaxFill() > 0
+                    ? blockEntity.getFuelTank().getFill() * 34 / blockEntity.getFuelTank().getMaxFill() : 0;
+            if (fuelH > 0) guiGraphics.fill(x + 118, y + 18 + (34 - fuelH), x + 130, y + 52, 0xFF804000);
 
-        if (blockEntity.getEnergyStored() > 0) {
-            guiGraphics.fill(x + 17, y + 20, x + 29, y + 70, 0xFFFF3020);
+            if (blockEntity.getEnergyStored() > 0) {
+                guiGraphics.fill(x + 17, y + 20, x + 29, y + 70, 0xFFFF3020);
+            }
         }
     }
 
@@ -70,7 +73,7 @@ public class GUIMachineIndustrialGenerator extends AbstractContainerScreen<Machi
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        renderBackground(guiGraphics);
+        com.hbm_m.client.GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
         renderTooltip(guiGraphics, mouseX, mouseY);
     }

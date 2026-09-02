@@ -6,16 +6,13 @@ import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.machines.anvils.AnvilTier;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.item.tags_and_tiers.ModIngots;
-import com.hbm_m.lib.RefStrings;
 import com.hbm_m.recipe.AnvilRecipe;
 
 import net.minecraft.data.recipes.FinishedRecipe;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.block.Block;
-import dev.architectury.registry.registries.RegistrySupplier;
 import dev.architectury.registry.registries.RegistrySupplier;
 
 public final class AnvilRecipeGenerator {
@@ -297,15 +294,13 @@ public final class AnvilRecipeGenerator {
         builder.save(writer, anvilId(tierFolder, "disassemble", name));
     }
 
-    private static ResourceLocation anvilId(String tierFolder, String category, String name) {
-        //? if fabric && < 1.21.1 {
-        /*return new ResourceLocation(RefStrings.MODID,
-                "anvil/" + tierFolder + "/" + category + "_" + name);
-        *///?} else {
-                return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID,
-                "anvil/" + tierFolder + "/" + category + "_" + name);
-        //?}
-
+    /**
+     * Возвращает путь id для рецепта наковальни. {@link AnvilRecipeBuilder} унаследован
+     * от {@link BaseRecipeBuilder}, поэтому {@code save(writer, String)} сам построит
+     * кросс-версионный {@link net.minecraft.resources.ResourceLocation}.
+     */
+    private static String anvilId(String tierFolder, String category, String name) {
+        return "anvil/" + tierFolder + "/" + category + "_" + name;
     }
 
     private static ItemStack stack(Object obj, int count) {

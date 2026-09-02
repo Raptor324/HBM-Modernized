@@ -20,6 +20,9 @@ import com.hbm_m.item.ModItems;
 import com.hbm_m.recipe.ModRecipes;
 import com.hbm_m.recipe.ShredderRecipe;
 import com.hbm_m.worldgen.BedrockOreDensity;
+import com.hbm_m.platform.PlatformHooks;
+import com.hbm_m.platform.recipe.RecipeHooks;
+import com.hbm_m.platform.recipe.RecipeInputWrapper;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -114,12 +117,8 @@ public class MachineMiningDrillBlockEntity extends BaseMachineBlockEntity {
 
     //? if forge {
     @Override
-    public @org.jetbrains.annotations.NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(
-            net.minecraftforge.common.capabilities.Capability<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
-        if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER) {
-            return tank.getCapability().cast();
-        }
-        return super.getCapability(cap, side);
+    protected void setupFluidCapability() {
+        setFluidHandler(tank);
     }
     //?}
 
@@ -319,9 +318,9 @@ public class MachineMiningDrillBlockEntity extends BaseMachineBlockEntity {
         ItemStack tool = new ItemStack(Items.DIAMOND_PICKAXE);
         boolean silk = enableSilkTouch && drill.silk();
         if (silk) {
-            tool.enchant(Enchantments.SILK_TOUCH, 1);
+            com.hbm_m.platform.ItemHooks.setEnchantmentLevel(tool, level, "silk_touch", 1);
         } else if (drill.fortune() > 0) {
-            tool.enchant(Enchantments.BLOCK_FORTUNE, drill.fortune());
+            com.hbm_m.platform.ItemHooks.setEnchantmentLevel(tool, level, "fortune", drill.fortune());
         }
 
         LootParams.Builder builder = new LootParams.Builder(level)
@@ -367,7 +366,7 @@ public class MachineMiningDrillBlockEntity extends BaseMachineBlockEntity {
             double density = BedrockOreDensity.getDensity(pos.getX(), pos.getZ(), type) * mult;
             nbt.putDouble(type.name().toLowerCase(java.util.Locale.ROOT), density);
         }
-        drop.setTag(nbt);
+        PlatformHooks.setItemTag(drop, nbt);
 
         insertOrDrop(pos, drop);
     }
@@ -377,8 +376,10 @@ public class MachineMiningDrillBlockEntity extends BaseMachineBlockEntity {
         for (ItemStack stack : drops) {
             SimpleContainer container = new SimpleContainer(1);
             container.setItem(0, new ItemStack(stack.getItem(), 1));
-            Optional<ShredderRecipe> recipe = level.getRecipeManager()
-                    .getRecipeFor(ModRecipes.SHREDDER_TYPE.get(), container, level);
+            RecipeInputWrapper wrapper = new RecipeInputWrapper(container);
+            Optional<ShredderRecipe> recipe = RecipeHooks.getAllRecipes(level, ModRecipes.SHREDDER_TYPE.get()).stream()
+                    .filter(r -> r.matchesRecipe(wrapper, level))
+                    .findFirst();
             if (recipe.isPresent()) {
                 ItemStack crushed = recipe.get().getOutput();
                 crushed.setCount(crushed.getCount() * stack.getCount());
@@ -412,7 +413,7 @@ public class MachineMiningDrillBlockEntity extends BaseMachineBlockEntity {
 
         for (int i = OUTPUT_START; i < OUTPUT_START + OUTPUT_COUNT && !toInsert.isEmpty(); i++) {
             ItemStack slotStack = inventory.getStackInSlot(i);
-            if (!slotStack.isEmpty() && ItemStack.isSameItemSameTags(slotStack, toInsert)) {
+            if (!slotStack.isEmpty() && PlatformHooks.isSameItemSameTags(slotStack, toInsert)) {
                 int room = slotStack.getMaxStackSize() - slotStack.getCount();
                 int move = Math.min(room, toInsert.getCount());
                 if (move > 0) {
@@ -470,8 +471,8 @@ public class MachineMiningDrillBlockEntity extends BaseMachineBlockEntity {
     public long getEnergyPerTick() { return ENERGY_PER_TICK; }
 
     @Override
-    public void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.putInt("target_depth", targetDepth);
         tag.putBoolean("enable_drill", enableDrill);
         tag.putBoolean("enable_crusher", enableCrusher);
@@ -483,8 +484,8 @@ public class MachineMiningDrillBlockEntity extends BaseMachineBlockEntity {
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         tank.readFromNBT(tag, "tank");
         targetDepth = tag.getInt("target_depth");
         enableDrill = tag.getBoolean("enable_drill");

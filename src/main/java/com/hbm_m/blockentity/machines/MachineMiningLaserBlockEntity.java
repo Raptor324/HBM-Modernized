@@ -187,10 +187,10 @@ public class MachineMiningLaserBlockEntity extends BaseMachineBlockEntity {
         level.playSound(null, pos, SoundEvents.FIRECHARGE_USE, SoundSource.BLOCKS, 1.0F, 1.4F);
     }
 
-    private void mineSingleBlock(ServerLevel level, BlockPos pos, BlockState state) {
+   private void mineSingleBlock(ServerLevel level, BlockPos pos, BlockState state) {
         ItemStack tool = new ItemStack(net.minecraft.world.item.Items.DIAMOND_PICKAXE);
         if (BASE_FORTUNE > 0) {
-            tool.enchant(net.minecraft.world.item.enchantment.Enchantments.BLOCK_FORTUNE, BASE_FORTUNE);
+            com.hbm_m.platform.ItemHooks.setEnchantmentLevel(tool, level, "minecraft:fortune", BASE_FORTUNE);
         }
 
         LootParams.Builder builder = new LootParams.Builder(level)
@@ -213,7 +213,7 @@ public class MachineMiningLaserBlockEntity extends BaseMachineBlockEntity {
                 pos.getX() - RADIUS, y, pos.getZ() - RADIUS,
                 pos.getX() + RADIUS + 1, y + 1, pos.getZ() + RADIUS + 1);
         for (LivingEntity entity : level.getEntitiesOfClass(LivingEntity.class, area)) {
-            entity.setSecondsOnFire(2);
+            com.hbm_m.platform.PlatformHooks.setSecondsOnFire(entity, 2);
         }
     }
 
@@ -222,7 +222,7 @@ public class MachineMiningLaserBlockEntity extends BaseMachineBlockEntity {
 
         for (int i = OUTPUT_START; i < OUTPUT_START + OUTPUT_COUNT && !toInsert.isEmpty(); i++) {
             ItemStack slotStack = inventory.getStackInSlot(i);
-            if (!slotStack.isEmpty() && ItemStack.isSameItemSameTags(slotStack, toInsert)) {
+            if (!slotStack.isEmpty() && com.hbm_m.platform.PlatformHooks.isSameItemSameTags(slotStack, toInsert)) {
                 int room = slotStack.getMaxStackSize() - slotStack.getCount();
                 int move = Math.min(room, toInsert.getCount());
                 if (move > 0) {
@@ -252,15 +252,15 @@ public class MachineMiningLaserBlockEntity extends BaseMachineBlockEntity {
     public boolean isActive() { return operational; }
 
     @Override
-    public void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.putInt("target_depth", targetDepth);
         tag.putBoolean("operational", operational);
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         targetDepth = tag.getInt("target_depth");
         operational = tag.getBoolean("operational");
     }

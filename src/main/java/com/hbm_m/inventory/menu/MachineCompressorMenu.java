@@ -12,7 +12,9 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 //? if forge {
 import net.minecraftforge.items.SlotItemHandler;
-//?}
+//?} elif neoforge {
+/*import net.neoforged.neoforge.items.SlotItemHandler;
+*///?}
 
 /** Slot-Koordinaten 1:1 aus {@code ContainerCompressor} (1.7.10 Original): Fluid-ID (17,72),
  *  Batterie (152,72). Upgrade-Slots des Originals entfallen (siehe
@@ -30,11 +32,9 @@ public class MachineCompressorMenu extends AbstractContainerMenu {
         super(ModMenuTypes.COMPRESSOR_MENU.get(), id);
         this.blockEntity = be;
 
-        //? if forge {
         var handler = be.getInventory();
         addSlot(new SlotItemHandler(handler, MachineCompressorBlockEntity.SLOT_FLUID_ID, 17, 72));
         addSlot(new SlotItemHandler(handler, MachineCompressorBlockEntity.SLOT_BATTERY, 152, 72));
-        //?}
 
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 9; col++) {

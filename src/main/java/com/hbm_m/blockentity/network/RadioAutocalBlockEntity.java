@@ -43,7 +43,7 @@ import net.minecraft.world.level.block.state.BlockState;
  * STOP                      - turn the terminal off
  * </pre>
  */
-public class RadioAutocalBlockEntity extends BlockEntity implements IRadioTorchConfigurable {
+public class RadioAutocalBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity implements IRadioTorchConfigurable {
 
     private static final int LINES_PER_TICK = 20;
     private static final int MAX_ITERATIONS = 200;
@@ -201,8 +201,7 @@ public class RadioAutocalBlockEntity extends BlockEntity implements IRadioTorchC
     }
 
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         ListTag scriptTag = new ListTag();
         for (String line : script) scriptTag.add(StringTag.valueOf(line));
         tag.put("script", scriptTag);
@@ -214,8 +213,7 @@ public class RadioAutocalBlockEntity extends BlockEntity implements IRadioTorchC
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         script.clear();
         ListTag scriptTag = tag.getList("script", 8);
         for (int i = 0; i < scriptTag.size(); i++) script.add(scriptTag.getString(i));

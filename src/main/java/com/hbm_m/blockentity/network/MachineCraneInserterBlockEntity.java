@@ -127,7 +127,7 @@ public class MachineCraneInserterBlockEntity extends BaseMachineBlockEntity impl
             if (current.isEmpty()) {
                 inventory.setStackInSlot(i, stack);
                 return ItemStack.EMPTY;
-            } else if (ItemStack.isSameItemSameTags(current, stack)) {
+            } else if (com.hbm_m.platform.PlatformHooks.isSameItemSameTags(current, stack)) {
                 int space = current.getMaxStackSize() - current.getCount();
                 if (space > 0) {
                     int toMove = Math.min(space, stack.getCount());
@@ -147,14 +147,14 @@ public class MachineCraneInserterBlockEntity extends BaseMachineBlockEntity impl
     // ── NBT ─────────────────────────────────────────────────────────────────
 
     @Override
-    public void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.putBoolean("destroyer", destroyer);
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         destroyer = tag.getBoolean("destroyer");
     }
 

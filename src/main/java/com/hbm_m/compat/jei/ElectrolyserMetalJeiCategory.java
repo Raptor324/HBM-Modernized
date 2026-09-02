@@ -1,31 +1,28 @@
 package com.hbm_m.compat.jei;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.lib.RefStrings;
-import com.hbm_m.recipe.ElectrolyserRecipes;
-import com.hbm_m.recipe.ElectrolyserRecipes.MetalRecipe;
+import com.hbm_m.recipe.ElectrolyserMetalRecipe;
 
 import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
 import mezz.jei.api.helpers.IGuiHelper;
 import mezz.jei.api.recipe.RecipeIngredientRole;
 import mezz.jei.api.recipe.RecipeType;
 import net.minecraft.network.chat.Component;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 
 /**
- * JEI category for Electrolyser metal-mode recipes - 1 Kristall-Eingang -&gt; 2 Metall-Ausgaenge +
- * Byprodukt-Items (siehe {@link ElectrolyserRecipes}).
+ * JEI category for Electrolyser metal-mode recipes - 1 Kristall-Eingang -> 2 Metall-Ausgaenge +
+ * Byprodukt-Items (siehe {@link ElectrolyserMetalRecipe}).
+ *
+ * <p>Data-driven: рецепты читаются напрямую aus {@code RecipeManager} (JSON {@code hbm_m:electrolyser_metal}),
+ * ранее — статический {@code ElectrolyserRecipes} (metal-mode).</p>
  */
 //? if forge {
-public class ElectrolyserMetalJeiCategory extends JeiGenericRecipeCategory<Map.Entry<Item, MetalRecipe>> {
+public class ElectrolyserMetalJeiCategory extends JeiGenericRecipeCategory<ElectrolyserMetalRecipe> {
 
-    public static final RecipeType<Map.Entry<Item, MetalRecipe>> RECIPE_TYPE =
-            RecipeType.create(RefStrings.MODID, "electrolyser_metal", castEntry());
+    public static final RecipeType<ElectrolyserMetalRecipe> RECIPE_TYPE =
+            RecipeType.create(RefStrings.MODID, "electrolyser_metal", ElectrolyserMetalRecipe.class);
 
     public ElectrolyserMetalJeiCategory(IGuiHelper guiHelper) {
         super(guiHelper, new ItemStack[]{
@@ -33,17 +30,8 @@ public class ElectrolyserMetalJeiCategory extends JeiGenericRecipeCategory<Map.E
         });
     }
 
-    @SuppressWarnings("unchecked")
-    private static Class<Map.Entry<Item, MetalRecipe>> castEntry() {
-        return (Class<Map.Entry<Item, MetalRecipe>>) (Class<?>) Map.Entry.class;
-    }
-
-    public static List<Map.Entry<Item, MetalRecipe>> fromRecipes() {
-        return new ArrayList<>(ElectrolyserRecipes.getAllMetalRecipes().entrySet());
-    }
-
     @Override
-    public RecipeType<Map.Entry<Item, MetalRecipe>> getRecipeType() {
+    public RecipeType<ElectrolyserMetalRecipe> getRecipeType() {
         return RECIPE_TYPE;
     }
 
@@ -53,49 +41,50 @@ public class ElectrolyserMetalJeiCategory extends JeiGenericRecipeCategory<Map.E
     }
 
     @Override
-    protected int getInputCount(Map.Entry<Item, MetalRecipe> recipe) {
+    protected int getInputCount(ElectrolyserMetalRecipe recipe) {
         return 1;
     }
 
     @Override
-    protected int getOutputCount(Map.Entry<Item, MetalRecipe> recipe) {
-        MetalRecipe r = recipe.getValue();
+    protected int getOutputCount(ElectrolyserMetalRecipe recipe) {
         int count = 0;
-        if (!r.outA().isEmpty()) count++;
-        if (!r.outB().isEmpty()) count++;
-        count += r.byproducts().length;
+        if (!recipe.getOutputA().isEmpty()) count++;
+        if (!recipe.getOutputB().isEmpty()) count++;
+        count += recipe.getByproducts().length;
         return count;
     }
 
     @Override
-    protected boolean hasBlueprintTemplate(Map.Entry<Item, MetalRecipe> recipe) {
+    protected boolean hasBlueprintTemplate(ElectrolyserMetalRecipe recipe) {
         return false;
     }
 
     @Override
-    protected void addInputSlots(IRecipeLayoutBuilder builder, Map.Entry<Item, MetalRecipe> recipe, int inputXOffset) {
+    protected void addInputSlots(IRecipeLayoutBuilder builder, ElectrolyserMetalRecipe recipe, int inputXOffset) {
+        // Ingredient-вход (кристалл): показываем первый стек ингредиента как представитель.
+        ItemStack[] matching = recipe.getInput().getItems();
+        ItemStack display = matching != null && matching.length > 0 ? matching[0] : ItemStack.EMPTY;
         addItemSlot(builder, RecipeIngredientRole.INPUT, inputXOffset, 22)
-                .addItemStack(new ItemStack(recipe.getKey()));
+                .addItemStack(display);
     }
 
     @Override
-    protected void addOutputSlots(IRecipeLayoutBuilder builder, Map.Entry<Item, MetalRecipe> recipe, int outputXOffset) {
-        MetalRecipe r = recipe.getValue();
+    protected void addOutputSlots(IRecipeLayoutBuilder builder, ElectrolyserMetalRecipe recipe, int outputXOffset) {
         int outputCount = getOutputCount(recipe);
         int[][] positions = JeiNeiLayout.getGenericOutputSlotPositions(outputCount);
         int slotIndex = 0;
 
-        if (!r.outA().isEmpty()) {
+        if (!recipe.getOutputA().isEmpty()) {
             addItemSlot(builder, RecipeIngredientRole.OUTPUT, positions[slotIndex][0] + outputXOffset, positions[slotIndex][1])
-                    .addItemStack(r.outA());
+                    .addItemStack(recipe.getOutputA());
             slotIndex++;
         }
-        if (!r.outB().isEmpty()) {
+        if (!recipe.getOutputB().isEmpty()) {
             addItemSlot(builder, RecipeIngredientRole.OUTPUT, positions[slotIndex][0] + outputXOffset, positions[slotIndex][1])
-                    .addItemStack(r.outB());
+                    .addItemStack(recipe.getOutputB());
             slotIndex++;
         }
-        for (ItemStack byproduct : r.byproducts()) {
+        for (ItemStack byproduct : recipe.getByproducts()) {
             addItemSlot(builder, RecipeIngredientRole.OUTPUT, positions[slotIndex][0] + outputXOffset, positions[slotIndex][1])
                     .addItemStack(byproduct);
             slotIndex++;
@@ -103,7 +92,7 @@ public class ElectrolyserMetalJeiCategory extends JeiGenericRecipeCategory<Map.E
     }
 
     @Override
-    protected void addBlueprintSlot(IRecipeLayoutBuilder builder, Map.Entry<Item, MetalRecipe> recipe, int machineXOffset) {
+    protected void addBlueprintSlot(IRecipeLayoutBuilder builder, ElectrolyserMetalRecipe recipe, int machineXOffset) {
         // Kein Blueprint-Slot fuer Electrolyser-Metal-Rezepte.
     }
 }

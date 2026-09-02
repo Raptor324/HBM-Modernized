@@ -26,34 +26,28 @@ public class ConverterBlock extends BaseEntityBlock {
         super(properties);
     }
 
-    // --- ВАЖНО: УВЕДОМЛЕНИЕ СЕТИ ПРИ УСТАНОВКЕ ---
     @Override
     public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
-        if (!level.isClientSide) {
-            // Говорим менеджеру: "Тут появился новый узел, подключи его!"
-            EnergyNetworkManager.get((ServerLevel) level).addNode(pos);
-        }
         super.onPlace(state, level, pos, oldState, isMoving);
     }
 
-    // --- ВАЖНО: УВЕДОМЛЕНИЕ СЕТИ ПРИ УДАЛЕНИИ ---
-    @Override
-    public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
-        if (state.getBlock() != newState.getBlock()) {
-            if (!level.isClientSide) {
-                // Говорим менеджеру: "Узел исчез, перестрой сеть!"
-                EnergyNetworkManager.get((ServerLevel) level).removeNode(pos);
-            }
-            super.onRemove(state, level, pos, newState, isMoving);
-        }
-    }
-
-    // --- ВЗАИМОДЕЙСТВИЕ (Твой код с отверткой) ---
+    // --- ВЗАИМОДЕЙСТВИЕ ---
+    //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        return hbmOnUse(state, level, pos, player, hand, hit);
+    }
+    //?} else {
+    /*@Override
+    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+        return hbmOnUse(state, level, pos, player, InteractionHand.MAIN_HAND, hit);
+    }
+    *///?}
+
+    private InteractionResult hbmOnUse(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         ItemStack stack = player.getItemInHand(hand);
 
-        if (stack.getItem() == ModItems.SCREWDRIVER.get()) {
+        if (stack.getItem() == ModItems.SCREWDRIVER.get() || stack.getItem() == ModItems.SCREWDRIVER_DESH.get()) {
             if (!level.isClientSide) {
                 BlockEntity be = level.getBlockEntity(pos);
                 if (be instanceof ConverterBlockEntity converter) {
@@ -72,7 +66,11 @@ public class ConverterBlock extends BaseEntityBlock {
             return InteractionResult.sidedSuccess(level.isClientSide);
         }
 
+        //? if < 1.21.1 {
         return super.use(state, level, pos, player, hand, hit);
+        //?} else {
+        /*return InteractionResult.PASS;
+        *///?}
     }
 
     @Nullable
@@ -92,4 +90,9 @@ public class ConverterBlock extends BaseEntityBlock {
         if (level.isClientSide) return null;
         return createTickerHelper(type, ModBlockEntities.CONVERTER_BE.get(), ConverterBlockEntity::serverTick);
     }
+
+    //? if > 1.20.1 {
+    /*public static final com.mojang.serialization.MapCodec<ConverterBlock> CODEC = simpleCodec(ConverterBlock::new);
+    @Override protected com.mojang.serialization.MapCodec<? extends BaseEntityBlock> codec() { return CODEC; }
+    *///?}
 }

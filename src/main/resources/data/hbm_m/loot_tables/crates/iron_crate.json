@@ -1,0 +1,34 @@
+{
+  "_comment": "POOL_GENERIC — общий лут, часто встречается в ящиках (порт ItemPoolsLegacy.POOL_GENERIC из 1.7.10)",
+  "type": "minecraft:chest",
+  "pools": [
+    {
+      "rolls": { "min": 5, "max": 8 },
+      "entries": [
+        { "type": "item", "name": "minecraft:bread", "weight": 8, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 5 } } ] },
+        { "type": "item", "name": "hbm_m:twinkie", "weight": 6, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 3 } } ] },
+        { "type": "item", "name": "minecraft:iron_ingot", "weight": 10, "functions": [ { "function": "minecraft:set_count", "count": { "min": 2, "max": 6 } } ] },
+        { "type": "item", "name": "hbm_m:steel_ingot", "weight": 7, "functions": [ { "function": "minecraft:set_count", "count": { "min": 2, "max": 5 } } ] },
+        { "type": "item", "name": "hbm_m:beryllium_ingot", "weight": 4, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 2 } } ] },
+        { "type": "item", "name": "hbm_m:titanium_ingot", "weight": 3, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 1 } } ] },
+        { "type": "item", "name": "hbm_m:vacuum_tube", "weight": 5 },
+        { "type": "item", "name": "hbm_m:gun_b92", "weight": 3 },
+        { "type": "item", "name": "hbm_m:ammo_9mm_sp", "weight": 4, "functions": [ { "function": "minecraft:set_count", "count": { "min": 2, "max": 6 } } ] },
+        { "type": "item", "name": "hbm_m:ammo_shell", "weight": 3, "functions": [ { "function": "minecraft:set_count", "count": { "min": 3, "max": 6 } } ] },
+        { "type": "item", "name": "hbm_m:gun_kit_1", "weight": 4, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 3 } } ] },
+        { "type": "item", "name": "hbm_m:cordite", "weight": 5, "functions": [ { "function": "minecraft:set_count", "count": { "min": 4, "max": 6 } } ] },
+        { "type": "item", "name": "hbm_m:scrap", "weight": 10, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 3 } } ] },
+        { "type": "item", "name": "hbm_m:dust", "weight": 9, "functions": [ { "function": "minecraft:set_count", "count": { "min": 2, "max": 4 } } ] },
+        { "type": "item", "name": "hbm_m:bottle_opener", "weight": 2 },
+        { "type": "item", "name": "hbm_m:bottle_nuka", "weight": 4, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 3 } } ] },
+        { "type": "item", "name": "hbm_m:bottle_cherry", "weight": 2 },
+        { "type": "item", "name": "hbm_m:stealth_boy", "weight": 1 },
+        { "type": "item", "name": "hbm_m:cap_nuka", "weight": 7, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 15 } } ] },
+        { "type": "item", "name": "hbm_m:gas_mask_m65", "weight": 2 },
+        { "type": "item", "name": "hbm_m:gas_mask_filter", "weight": 3 },
+        { "type": "item", "name": "hbm_m:blueprint_folder", "weight": 1 },
+        { "type": "item", "name": "hbm_m:coin_token", "weight": 2 }
+      ]
+    }
+  ]
+}

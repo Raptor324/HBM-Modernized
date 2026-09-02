@@ -4,8 +4,8 @@ import com.hbm_m.blockentity.BaseMachineBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.inventory.menu.MachineRadGenMenu;
 import com.hbm_m.interfaces.IEnergyModeHolder;
-import com.hbm_m.recipe.RadGenRecipes;
-import com.hbm_m.recipe.RadGenRecipes.Recipe;
+import com.hbm_m.platform.recipe.RecipeHooks;
+import com.hbm_m.recipe.RadGenRecipe;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -69,11 +69,11 @@ public class MachineRadGenBlockEntity extends BaseMachineBlockEntity implements 
         for (int i = 0; i < QUEUE_COUNT; i++) {
             ItemStack input = inventory.getStackInSlot(SLOT_INPUT_START + i);
             if (processing[i] == null && !input.isEmpty()) {
-                Recipe recipe = RadGenRecipes.get(input.getItem());
-                if (recipe != null && recipe.duration() > 0 && canAcceptOutput(i, recipe)) {
+                RadGenRecipe recipe = findRecipe(input);
+                if (recipe != null && recipe.getDuration() > 0 && canAcceptOutput(i, recipe)) {
                     progress[i] = 0;
-                    maxProgress[i] = recipe.duration();
-                    production[i] = recipe.power();
+                    maxProgress[i] = recipe.getDuration();
+                    production[i] = recipe.getPower();
                     processing[i] = new ItemStack(input.getItem(), 1);
                     input.shrink(1);
                     if (input.isEmpty()) inventory.setStackInSlot(SLOT_INPUT_START + i, ItemStack.EMPTY);
@@ -95,14 +95,16 @@ public class MachineRadGenBlockEntity extends BaseMachineBlockEntity implements 
 
             if (progress[i] >= maxProgress[i]) {
                 progress[i] = 0;
-                Recipe recipe = RadGenRecipes.get(processing[i].getItem());
-                if (recipe != null && recipe.output() != null && !recipe.output().isEmpty()) {
-                    ItemStack out = recipe.output().copy();
-                    ItemStack current = inventory.getStackInSlot(SLOT_OUTPUT_START + i);
-                    if (current.isEmpty()) {
-                        inventory.setStackInSlot(SLOT_OUTPUT_START + i, out);
-                    } else {
-                        current.grow(out.getCount());
+                RadGenRecipe recipe = findRecipe(processing[i]);
+                if (recipe != null) {
+                    ItemStack out = recipe.getOutput();
+                    if (!out.isEmpty()) {
+                        ItemStack current = inventory.getStackInSlot(SLOT_OUTPUT_START + i);
+                        if (current.isEmpty()) {
+                            inventory.setStackInSlot(SLOT_OUTPUT_START + i, out);
+                        } else {
+                            current.grow(out.getCount());
+                        }
                     }
                 }
                 processing[i] = null;
@@ -113,12 +115,24 @@ public class MachineRadGenBlockEntity extends BaseMachineBlockEntity implements 
         sendUpdateToClient();
     }
 
-    private boolean canAcceptOutput(int queue, Recipe recipe) {
-        if (recipe.output() == null || recipe.output().isEmpty()) return true;
+    /** Data-driven поиск RadGenRecipe по входному стаку (заменяет статический RadGenRecipes.get). */
+    @org.jetbrains.annotations.Nullable
+    private RadGenRecipe findRecipe(ItemStack stack) {
+        Level level = getLevel();
+        if (level == null) return null;
+        for (RadGenRecipe recipe : RecipeHooks.getAllRecipes(level, RadGenRecipe.Type.INSTANCE)) {
+            if (recipe.matches(stack)) return recipe;
+        }
+        return null;
+    }
+
+    private boolean canAcceptOutput(int queue, RadGenRecipe recipe) {
+        ItemStack result = recipe.getOutput();
+        if (result.isEmpty()) return true;
         ItemStack current = inventory.getStackInSlot(SLOT_OUTPUT_START + queue);
         if (current.isEmpty()) return true;
-        return ItemStack.isSameItemSameTags(current, recipe.output())
-                && current.getCount() + recipe.output().getCount() <= current.getMaxStackSize();
+        return com.hbm_m.platform.PlatformHooks.isSameItemSameTags(current, result)
+                && current.getCount() + result.getCount() <= current.getMaxStackSize();
     }
 
     // ── Accessors ────────────────────────────────────────────────────────────
@@ -132,8 +146,8 @@ public class MachineRadGenBlockEntity extends BaseMachineBlockEntity implements 
     // ── NBT ─────────────────────────────────────────────────────────────────
 
     @Override
-    public void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.putIntArray("progress", progress);
         tag.putIntArray("max_progress", maxProgress);
         tag.putIntArray("production", production);
@@ -144,7 +158,7 @@ public class MachineRadGenBlockEntity extends BaseMachineBlockEntity implements 
             if (processing[i] != null) {
                 CompoundTag entry = new CompoundTag();
                 entry.putByte("slot", (byte) i);
-                entry.put("stack", processing[i].save(new CompoundTag()));
+                entry.put("stack", com.hbm_m.platform.PlatformHooks.safeItemSave(processing[i], registries));
                 list.add(entry);
             }
         }
@@ -152,8 +166,8 @@ public class MachineRadGenBlockEntity extends BaseMachineBlockEntity implements 
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         int[] p = tag.getIntArray("progress");
         int[] mp = tag.getIntArray("max_progress");
         int[] pr = tag.getIntArray("production");
@@ -170,7 +184,7 @@ public class MachineRadGenBlockEntity extends BaseMachineBlockEntity implements 
             CompoundTag entry = list.getCompound(i);
             int slot = entry.getByte("slot");
             if (slot >= 0 && slot < QUEUE_COUNT) {
-                processing[slot] = ItemStack.of(entry.getCompound("stack"));
+                processing[slot] = com.hbm_m.platform.PlatformHooks.itemStackOf(entry.getCompound("stack"), registries);
             }
         }
     }
@@ -180,7 +194,7 @@ public class MachineRadGenBlockEntity extends BaseMachineBlockEntity implements 
     @Override
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
         if (slot < SLOT_OUTPUT_START) {
-            return RadGenRecipes.get(stack.getItem()) != null;
+            return findRecipe(stack) != null;
         }
         return false;
     }

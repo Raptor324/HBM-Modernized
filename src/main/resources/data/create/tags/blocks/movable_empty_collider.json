@@ -15,6 +15,7 @@
     "hbm_m:silo_hatch",
     "hbm_m:silo_hatch_large",
     "hbm_m:vault_door",
+    "hbm_m:cargo_door",
     "hbm_m:universal_machine_part"
   ]
 }

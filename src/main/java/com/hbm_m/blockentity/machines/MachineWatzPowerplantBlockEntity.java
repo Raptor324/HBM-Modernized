@@ -280,6 +280,10 @@ public class MachineWatzPowerplantBlockEntity extends BaseMachineBlockEntity
             serverLevel.sendParticles(ParticleTypes.LARGE_SMOKE, x, y, z, 40, 1.5D, 1.0D, 1.5D, 0.03D);
             serverLevel.sendParticles(ParticleTypes.EXPLOSION, x, y, z, 4, 0.8D, 0.5D, 0.8D, 0.01D);
             level.explode(null, x, y, z, 3.0F, Level.ExplosionInteraction.BLOCK);
+            // The structural collapse is still simplified (see the class doc), but the meltdown
+            // itself is real, so it credits everyone within 50 blocks as the original does.
+            com.hbm_m.advancement.ModAdvancements.grantNearby(level, x, y, z, 50D,
+                    com.hbm_m.advancement.ModAdvancements.WATZ_BOOM);
         }
     }
 
@@ -356,7 +360,7 @@ public class MachineWatzPowerplantBlockEntity extends BaseMachineBlockEntity
 
     @Override
     public void setAllowedFluidSidesFromMultiblockStructure(Set<Direction> sides) {
-        this.allowedFluidSides = EnumSet.copyOf(sides);
+        this.allowedFluidSides = safeCopyDirectionSet(sides);
         this.fluidSidesFromMultiblockStructure = true;
         setChanged();
         sendUpdateToClient();
@@ -364,10 +368,23 @@ public class MachineWatzPowerplantBlockEntity extends BaseMachineBlockEntity
 
     @Override
     public void setAllowedFluidSides(Set<Direction> sides) {
-        this.allowedFluidSides = EnumSet.copyOf(sides);
+        this.allowedFluidSides = safeCopyDirectionSet(sides);
         this.fluidSidesFromMultiblockStructure = false;
         setChanged();
         sendUpdateToClient();
+    }
+
+    /**
+     * Безопасная defensive-копия Set<Direction> в EnumSet. EnumSet.copyOf(Collection)
+     * бросает IllegalArgumentException на пустой коллекции; здесь всегда возвращаем
+     * валидный EnumSet (пустой ли, нет) и принимаем null как пустое множество.
+     */
+    private static EnumSet<Direction> safeCopyDirectionSet(Set<Direction> sides) {
+        EnumSet<Direction> out = EnumSet.noneOf(Direction.class);
+        if (sides != null && !sides.isEmpty()) {
+            out.addAll(sides);
+        }
+        return out;
     }
 
     @Override
@@ -378,8 +395,8 @@ public class MachineWatzPowerplantBlockEntity extends BaseMachineBlockEntity
     // ── NBT ───────────────────────────────────────────────────────────────
 
     @Override
-    public void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         CompoundTag ct = new CompoundTag(); coolantTank.writeToNBT(ct, "coolant"); tag.put("CoolantTank", ct);
         CompoundTag ht = new CompoundTag(); coolantHotTank.writeToNBT(ht, "coolantHot"); tag.put("CoolantHotTank", ht);
         CompoundTag wt = new CompoundTag(); wasteTank.writeToNBT(wt, "waste"); tag.put("WasteTank", wt);
@@ -391,8 +408,8 @@ public class MachineWatzPowerplantBlockEntity extends BaseMachineBlockEntity
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         if (tag.contains("CoolantTank")) coolantTank.readFromNBT(tag.getCompound("CoolantTank"), "coolant");
         if (tag.contains("CoolantHotTank")) coolantHotTank.readFromNBT(tag.getCompound("CoolantHotTank"), "coolantHot");
         if (tag.contains("WasteTank")) wasteTank.readFromNBT(tag.getCompound("WasteTank"), "waste");

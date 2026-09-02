@@ -1,4 +1,5 @@
 package com.hbm_m.inventory.gui;
+import com.hbm_m.client.GuiCompat;
 
 import com.hbm_m.blockentity.machines.rbmk.RBMKBoilerBlockEntity;
 import com.hbm_m.inventory.menu.RBMKBoilerMenu;
@@ -54,6 +55,8 @@ public class GUIRBMKBoiler extends GuiInfoScreen<RBMKBoilerMenu> {
 
         int x = leftPos, y = topPos;
         g.blit(TEXTURE, x, y, 0, 0, imageWidth, imageHeight);
+        // тайл может отсутствовать в реплее Flashback
+        if (be == null) return;
 
         // Wasser- (feed) Fuellstand: waechst von unten (guiLeft+126, guiTop+82-i, 176, 58-i, 14, i)
         int maxW = be.waterTank.getMaxFill();
@@ -72,15 +75,17 @@ public class GUIRBMKBoiler extends GuiInfoScreen<RBMKBoilerMenu> {
         }
 
         // Dampfsorten-Anzeige je nach Kompressionsstufe (194/208/222/236, 0, 14, 58)
-        int grade = Math.min(Math.max(be.steamGrade, 0), 3);
+        int grade = Math.min(Math.max(be.getSteamGrade(), 0), 3);
         g.blit(TEXTURE, x + TYPE_TEX_X, y + TYPE_TEX_Y, 194 + grade * 14, 0, TYPE_TEX_W, TYPE_TEX_H);
     }
 
     @Override
     public void render(GuiGraphics g, int mx, int my, float partial) {
-        renderBackground(g);
+        GuiCompat.renderBackground(this, g, mx, my, partial);
         super.render(g, mx, my, partial);
 
+        // тайл может отсутствовать в реплее Flashback
+        if (be != null) {
         if (isPointInRect(WATER_X, WATER_Y, WATER_W, WATER_H, mx, my)) {
             g.renderTooltip(font, Component.literal(
                     be.waterTank.getFill() + " / " + be.waterTank.getMaxFill() + " mB Water"), mx, my);
@@ -89,10 +94,11 @@ public class GUIRBMKBoiler extends GuiInfoScreen<RBMKBoilerMenu> {
                     be.steamTank.getFill() + " / " + be.steamTank.getMaxFill() + " mB Steam"), mx, my);
         } else if (isPointInRect(TYPE_X, TYPE_Y, TYPE_W, TYPE_H, mx, my)) {
             g.renderTooltip(font, java.util.List.of(
-                    Component.literal("Type: " + GRADE_NAMES[Math.min(Math.max(be.steamGrade, 0), 3)]),
+                    Component.literal("Type: " + GRADE_NAMES[Math.min(Math.max(be.getSteamGrade(), 0), 3)]),
                     Component.literal(String.format("Heat: %.1f°C", be.heat)),
                     Component.literal("Click to cycle steam grade")
             ), java.util.Optional.empty(), mx, my);
+        }
         }
 
         renderTooltip(g, mx, my);
@@ -106,8 +112,12 @@ public class GUIRBMKBoiler extends GuiInfoScreen<RBMKBoilerMenu> {
 
     @Override
     public boolean mouseClicked(double mx, double my, int button) {
+        // тайл может отсутствовать в реплее Flashback
+        if (be == null) return super.mouseClicked(mx, my, button);
         if (isPointInRect(TYPE_X, TYPE_Y, TYPE_W, TYPE_H, (int) mx, (int) my)) {
-            be.cycleCompressor();
+            // The screen's block entity is the client-side copy; the change has to go to the
+            // server or it is reverted by the next sync.
+            com.hbm_m.network.RBMKBoilerPacket.sendCycleCompressor(be.getBlockPos());
             playClickSound();
             return true;
         }

@@ -1,6 +1,4 @@
 package com.hbm_m.config;
-// Обработчик привязки клавиш для открытия экрана конфигурации мода.
-// Использует AutoConfig для получения экрана настроек и регистрирует сочетание клавиш
 
 import org.lwjgl.glfw.GLFW;
 
@@ -13,33 +11,43 @@ import com.hbm_m.powerarmor.PowerArmorHandlers;
 import com.mojang.blaze3d.platform.InputConstants;
 
 import dev.architectury.event.events.client.ClientTickEvent;
+import com.hbm_m.client.gui.ConfigScreen;
 import dev.architectury.registry.client.keymappings.KeyMappingRegistry;
-import me.shedaniel.autoconfig.AutoConfig;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
-
-import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
-//? if forge || neoforge {
-import net.minecraftforge.client.settings.KeyConflictContext;
-import net.minecraftforge.client.settings.KeyModifier;
-//?}
 
+//? if forge {
+@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+//?} elif fabric {
+/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
+*///?} elif neoforge {
+/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+*///?}
 public class ModConfigKeybindHandler {
     public static final String CATEGORY = "key.categories.hbm_m";
     private static boolean INITIALIZED = false;
 
     public static final KeyMapping OPEN_CONFIG =
-    //? if forge || neoforge {
+    //? if forge {
             new KeyMapping(
                     "key.hbm_m.open_config",
-                    KeyConflictContext.UNIVERSAL,
-                    KeyModifier.ALT,
+                    net.minecraftforge.client.settings.KeyConflictContext.UNIVERSAL,
+                    net.minecraftforge.client.settings.KeyModifier.ALT,
                     InputConstants.Type.KEYSYM,
                     GLFW.GLFW_KEY_0,
                     CATEGORY
             );
-    //?} else {
+    //?} elif neoforge {
+            /*new KeyMapping(
+                    "key.hbm_m.open_config",
+                    net.neoforged.neoforge.client.settings.KeyConflictContext.UNIVERSAL,
+                    net.neoforged.neoforge.client.settings.KeyModifier.ALT,
+                    InputConstants.Type.KEYSYM,
+                    GLFW.GLFW_KEY_0,
+                    CATEGORY
+            );
+    *///?} else {
     /*        new KeyMapping(
                     "key.hbm_m.open_config",
                     InputConstants.Type.KEYSYM,
@@ -50,21 +58,21 @@ public class ModConfigKeybindHandler {
     public static final KeyMapping POWER_ARMOR_DASH = new KeyMapping(
             "key.hbm_m.power_armor_dash",
             InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_V, // V key for dash
+            GLFW.GLFW_KEY_V,
             CATEGORY
     );
 
     public static final KeyMapping POWER_ARMOR_VATS = new KeyMapping(
             "key.hbm_m.power_armor_vats",
             InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_C, // C key for VATS
+            GLFW.GLFW_KEY_C,
             CATEGORY
     );
 
     public static final KeyMapping POWER_ARMOR_THERMAL = new KeyMapping(
             "key.hbm_m.power_armor_thermal",
             InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_X, // X key for thermal vision
+            GLFW.GLFW_KEY_X,
             CATEGORY
     );
 
@@ -95,6 +103,8 @@ public class ModConfigKeybindHandler {
         if (INITIALIZED) return;
         INITIALIZED = true;
 
+        //? if fabric {
+        /*// Fabric: KeyBindingHelper-обвязка Architectury, регистрация в любой момент валидна.
         KeyMappingRegistry.register(OPEN_CONFIG);
         KeyMappingRegistry.register(POWER_ARMOR_DASH);
         KeyMappingRegistry.register(POWER_ARMOR_VATS);
@@ -105,9 +115,27 @@ public class ModConfigKeybindHandler {
         KeyMappingRegistry.register(RBMK_CRANE_LEFT);
         KeyMappingRegistry.register(RBMK_CRANE_RIGHT);
         KeyMappingRegistry.register(RBMK_CRANE_LOAD);
+        *///?}
 
         // Аналог END-фазы ClientTickEvent на Forge: выполняем после стандартного тика клиента.
         ClientTickEvent.CLIENT_POST.register(client -> onClientPostTick());
+    }
+
+    /**
+     * Регистрация биндов на Forge/NeoForge — ТОЛЬКО из RegisterKeyMappingsEvent
+     * (см. ClientSetup.onRegisterKeyMappings). Регистрация из FMLClientSetupEvent
+     * слишком поздна: на Forge 1.20.1 событие уже прошло, а на NeoForge 1.21.1
+     * стреляет раньше client setup. Architectury KeyMappingRegistry в обоих случаях
+     * лишь добавляет бинд в options.keyMappings в обход события — таблица ввода
+     * (KeyMapping.MAP) не пересобирается, нажатия не приходят в consumeClick,
+     * а сам бинд не появляется в настройках управления.
+     */
+    public static void registerAll(java.util.function.Consumer<KeyMapping> registrar) {
+        registrar.accept(OPEN_CONFIG);
+        registrar.accept(POWER_ARMOR_DASH);
+        registrar.accept(POWER_ARMOR_VATS);
+        registrar.accept(POWER_ARMOR_THERMAL);
+        registrar.accept(OPEN_MULTI_DETONATOR);
     }
 
     private static void onClientPostTick() {
@@ -117,12 +145,11 @@ public class ModConfigKeybindHandler {
         // Обработка открытия конфига
         if (OPEN_CONFIG.consumeClick()
         //? if fabric {
-                /*&& Screen.hasAltDown()
+                /*&& net.minecraft.client.gui.screens.Screen.hasAltDown()
         *///?}
         ) {
             if (mc.screen == null) {
-                Screen configScreen = AutoConfig.getConfigScreen(ModClothConfig.class, mc.screen).get();
-                mc.setScreen(configScreen);
+                mc.setScreen(new ConfigScreen());
             }
         }
 
@@ -209,6 +236,3 @@ public class ModConfigKeybindHandler {
         }
     }
 }
-        
-    
-

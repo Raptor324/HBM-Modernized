@@ -43,11 +43,12 @@ public class MachinePUREXMenu extends AbstractContainerMenu {
             public boolean mayPlace(ItemStack stack) {
                 if (ItemEnergyAccess.getHbmProvider(stack).isPresent()) return true;
                 //? if forge {
-                return stack.getCapability(ForgeCapabilities.ENERGY).isPresent();
+                if (stack.getCapability(ForgeCapabilities.ENERGY).isPresent()) return true;
                 //?}
-                //? if fabric {
-                /*return false;
+                //? if neoforge {
+                /*if (stack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM) != null) return true;
                 *///?}
+                return false;
             }
         });
 
@@ -113,10 +114,17 @@ public class MachinePUREXMenu extends AbstractContainerMenu {
                     return ItemStack.EMPTY;
                 }
             } else {
-                boolean isEnergySource = ItemEnergyAccess.getHbmProvider(slotStack).isPresent()
+                boolean isEnergySource = ItemEnergyAccess.getHbmProvider(slotStack).isPresent();
                         //? if forge {
-                        || slotStack.getCapability(ForgeCapabilities.ENERGY).isPresent();
+                        if (!isEnergySource) {
+                            isEnergySource = slotStack.getCapability(ForgeCapabilities.ENERGY).isPresent();
+                        }
                         //?}
+                        //? if neoforge {
+                        /*if (!isEnergySource) {
+                            isEnergySource = slotStack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM) != null;
+                        }
+                        *///?}
                 if (isEnergySource) {
                     if (!this.moveItemStackTo(slotStack, SLOT_BATTERY, SLOT_BATTERY + 1, false)) {
                         return ItemStack.EMPTY;

@@ -10,6 +10,7 @@ import com.hbm_m.blockentity.machines.TurretStats;
 import com.hbm_m.client.render.MeshRenderCache;
 import com.hbm_m.client.render.SingleMeshVboRenderer;
 import com.hbm_m.lib.RefStrings;
+import com.hbm_m.platform.PlatformHooks;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 
@@ -34,7 +35,15 @@ import net.minecraft.util.Mth;
  * liefert in diesem Mod IMMER {@code true}, der Legacy-Pfad ist toter Code und offenbar nicht
  * Embeddium-kompatibel. Barrel-Spin/Recoil ist bewusst NICHT animiert - siehe {@link TurretStats}.
  */
-public class MachineTurretRenderer implements BlockEntityRenderer<TurretBaseBlockEntity> {
+
+//? if forge {
+@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+//?} elif fabric {
+/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
+*///?} elif neoforge {
+/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+*///?}
+public class MachineTurretRenderer implements com.hbm_m.client.render.HbmBerBounds<TurretBaseBlockEntity> {
 
     private static final Map<String, ResourceLocation> MODEL_IDS = new HashMap<>();
 
@@ -51,10 +60,17 @@ public class MachineTurretRenderer implements BlockEntityRenderer<TurretBaseBloc
 
         poseStack.pushPose();
 
-        // Yaw-Gruppe (Carriage/Pivot) - dreht sich um Y, Modell-Konvention: -yaw - 90 (siehe Original RenderTurretX)
+        // The OBJ is modelled around its own origin (Base spans -0.5..+0.5 in X/Z), so the block
+        // model carries a "translation": [0.5, 0, 0.5] to seat it in the block. The moving parts
+        // are separate part models WITHOUT that transform, so the renderer has to supply it here.
+        //
+        // This used to be translate(+0.5) -> rotate -> translate(-0.5), which is a pivot change
+        // with zero net translation: the moving parts stayed half a block off the base plate in
+        // both X and Z, and swung around a point beside their own axis instead of spinning in
+        // place. Translating once and then rotating puts the model axis on the block centre and
+        // turns it about itself.
         poseStack.translate(0.5, 0.0, 0.5);
         poseStack.mulPose(Axis.YP.rotationDegrees(-yaw - 90.0F));
-        poseStack.translate(-0.5, 0.0, -0.5);
         renderPart(stats.yawPartKey, be, poseStack, bufferSource, packedLight);
 
         // Pitch-Gruppe - dreht sich um den konfigurierten Drehpunkt/Achse
@@ -127,7 +143,7 @@ public class MachineTurretRenderer implements BlockEntityRenderer<TurretBaseBloc
         ResourceLocation id = MODEL_IDS.computeIfAbsent(partKey,
                 key -> ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/turret_parts/" + key));
         var modelManager = Minecraft.getInstance().getModelManager();
-        BakedModel model = modelManager.getModel(id);
+        BakedModel model = PlatformHooks.getModel(modelManager, id);
         return (model == null || model == modelManager.getMissingModel()) ? null : model;
     }
 }

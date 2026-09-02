@@ -1,6 +1,7 @@
 package com.hbm_m.inventory.gui;
 
 import com.hbm_m.api.fluids.HbmFluidRegistry;
+import com.hbm_m.client.GuiCompat;
 import com.hbm_m.client.gui.FluidGuiRendering;
 import com.hbm_m.inventory.menu.MachineSolarBoilerMenu;
 import com.hbm_m.lib.RefStrings;
@@ -52,6 +53,8 @@ public class GUIMachineSolarBoiler extends GuiInfoScreen<MachineSolarBoilerMenu>
         guiGraphics.blit(TEXTURE, this.leftPos, this.topPos, 0, 0, this.imageWidth, this.imageHeight);
 
         var be = menu.getBlockEntity();
+        // тайл может отсутствовать в реплее Flashback
+        if (be == null) return;
         renderTank(guiGraphics, WATER_TANK_X, be.getTank(com.hbm_m.blockentity.machines.MachineSolarBoilerBlockEntity.TANK_WATER).getStoredFluid(), menu.getWaterAmount(), menu.getWaterCapacity());
         renderTank(guiGraphics, STEAM_TANK_X, be.getTank(com.hbm_m.blockentity.machines.MachineSolarBoilerBlockEntity.TANK_STEAM).getStoredFluid(), menu.getSteamAmount(), menu.getSteamCapacity());
     }
@@ -91,7 +94,7 @@ public class GUIMachineSolarBoiler extends GuiInfoScreen<MachineSolarBoilerMenu>
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float delta) {
-        renderBackground(guiGraphics);
+        com.hbm_m.client.GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, delta);
         super.render(guiGraphics, mouseX, mouseY, delta);
         renderTooltip(guiGraphics, mouseX, mouseY);
 
@@ -107,11 +110,12 @@ public class GUIMachineSolarBoiler extends GuiInfoScreen<MachineSolarBoilerMenu>
                 Component.translatable("gui.hbm_m.industrial_boiler.steam"),
                 Component.literal(menu.getSteamAmount() + " / " + menu.getSteamCapacity() + " mB"));
 
+        var solarBe = menu.getBlockEntity(); // тайл может отсутствовать в реплее Flashback
         drawCustomInfoStat(guiGraphics, mouseX, mouseY,
                 8, TANK_Y, 16, TANK_HEIGHT,
                 mouseX, mouseY,
                 Component.translatable("gui.hbm_m.solar_boiler.sunlight"),
                 Component.literal(menu.getSolarBrightness() + " / 15"),
-                Component.translatable("gui.hbm_m.solar_boiler.mirrors", menu.getBlockEntity().getActiveMirrorCount()));
+                Component.translatable("gui.hbm_m.solar_boiler.mirrors", solarBe != null ? solarBe.getActiveMirrorCount() : 0));
     }
 }

@@ -12,7 +12,9 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 //? if forge {
 import net.minecraftforge.items.SlotItemHandler;
-//?}
+//?} elif neoforge {
+/*import net.neoforged.neoforge.items.SlotItemHandler;
+*///?}
 
 /** Slot-Koordinaten 1:1 aus {@code ContainerMachineExposureChamber} (1.7.10 Original): Partikel
  *  (8,18), Ingredient (80,36), Output (116,36, extraktionsonly), Batterie (152,54). Behaelter-Item-
@@ -30,7 +32,6 @@ public class MachineExposureChamberMenu extends AbstractContainerMenu {
         super(ModMenuTypes.EXPOSURE_CHAMBER_MENU.get(), id);
         this.blockEntity = be;
 
-        //? if forge {
         var handler = be.getInventory();
         addSlot(new SlotItemHandler(handler, MachineExposureChamberBlockEntity.SLOT_PARTICLE, 8, 18));
         addSlot(new SlotItemHandler(handler, MachineExposureChamberBlockEntity.SLOT_INGREDIENT, 80, 36));
@@ -38,7 +39,6 @@ public class MachineExposureChamberMenu extends AbstractContainerMenu {
             @Override public boolean mayPlace(ItemStack s) { return false; }
         });
         addSlot(new SlotItemHandler(handler, MachineExposureChamberBlockEntity.SLOT_BATTERY, 152, 54));
-        //?}
 
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 9; col++) {

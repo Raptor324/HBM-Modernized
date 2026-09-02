@@ -4,6 +4,7 @@ import com.hbm_m.blockentity.machines.MachineDerrickBlockEntity;
 import com.hbm_m.inventory.ModItemStackHandlerContainer;
 import com.hbm_m.item.industrial.ItemMachineUpgrade;
 import com.hbm_m.lib.RefStrings;
+import com.hbm_m.platform.DummyItemStackHandler;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
@@ -26,7 +27,11 @@ public class MachineDerrickMenu extends AbstractContainerMenu {
         super(ModMenuTypes.DERRICK_MENU.get(), id);
         this.blockEntity = blockEntity;
 
-        var container = new ModItemStackHandlerContainer(blockEntity.getInventory(), blockEntity::setChanged);
+        // На клиенте тайл может отсутствовать (реплей Flashback) — подставляем пустую заглушку,
+        // чтобы конструктор дошёл до конца и пакет открытия меню не уронил клиент
+        var container = new ModItemStackHandlerContainer(
+                blockEntity != null ? blockEntity.getInventory() : new DummyItemStackHandler(8),
+                blockEntity != null ? blockEntity::setChanged : null);
 
         // slot 0: battery
         this.addSlot(new Slot(container, 0, 8, 53));
@@ -67,6 +72,11 @@ public class MachineDerrickMenu extends AbstractContainerMenu {
         BlockEntity blockEntity = inventory.player.level().getBlockEntity(pos);
         if (blockEntity instanceof MachineDerrickBlockEntity derrickBlockEntity) {
             return derrickBlockEntity;
+        }
+        // На клиенте тайл может отсутствовать (реплей Flashback) — не крашим пакет, возвращаем null.
+        // На сервере отсутствие тайла — реальный баг, поэтому там падаем как раньше.
+        if (inventory.player.level().isClientSide) {
+            return null;
         }
         throw new IllegalStateException("No MachineDerrickBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":derrick_menu");
     }

@@ -25,7 +25,7 @@ import net.minecraft.world.level.block.state.BlockState;
  * Screwdriver-Klick rotiert FACING (wie bei allen anderen Foerderband-Bloecken in diesem Port),
  * Sneak-Klick zykelt den Ratio-Wert.
  */
-public class MachineCraneSplitterBlockEntity extends BlockEntity implements IEnterableBlock {
+public class MachineCraneSplitterBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity implements IEnterableBlock {
 
     private int ratio = 1;
     private boolean towardLeft = true;
@@ -71,8 +71,7 @@ public class MachineCraneSplitterBlockEntity extends BlockEntity implements IEnt
     public int getRatio() { return ratio; }
 
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         tag.putInt("ratio", ratio);
         tag.putBoolean("towardLeft", towardLeft);
         tag.putInt("remaining", remaining);
@@ -80,8 +79,7 @@ public class MachineCraneSplitterBlockEntity extends BlockEntity implements IEnt
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         ratio = tag.contains("ratio") ? tag.getInt("ratio") : 1;
         towardLeft = tag.getBoolean("towardLeft");
         remaining = tag.contains("remaining") ? tag.getInt("remaining") : 1;

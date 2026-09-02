@@ -1,7 +1,6 @@
 package com.hbm_m.inventory.menu;
 
 import com.hbm_m.blockentity.machines.rbmk.RBMKOutgasserBlockEntity;
-import com.hbm_m.item.rbmk.RBMKRodItem;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.SimpleContainer;
@@ -12,6 +11,13 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
+/**
+ * 1:1 port of {@code ContainerRBMKOutgasser}: an input slot at (48,53) that only takes items with
+ * an activation recipe, and a take-only output slot at (112,53).
+ *
+ * <p>The previous version had a single slot at (48,45) restricted to fuel rods, matching the
+ * invented "xenon scrubber" behaviour the block entity used to have.</p>
+ */
 public class RBMKOutgasserMenu extends AbstractContainerMenu {
 
     private final RBMKOutgasserBlockEntity blockEntity;
@@ -24,19 +30,29 @@ public class RBMKOutgasserMenu extends AbstractContainerMenu {
         super(ModMenuTypes.RBMK_OUTGASSER_MENU.get(), id);
         this.blockEntity = be;
 
-        SimpleContainer container = new SimpleContainer(1) {
+        SimpleContainer container = new SimpleContainer(2) {
             @Override
             public void setChanged() {
                 super.setChanged();
-                be.rodSlot = getItem(0).copy();
+                be.inputSlot  = getItem(0).copy();
+                be.outputSlot = getItem(1).copy();
                 be.setChanged();
             }
         };
-        container.setItem(0, be.rodSlot.copy());
+        container.setItem(0, be.inputSlot.copy());
+        container.setItem(1, be.outputSlot.copy());
 
-        addSlot(new Slot(container, 0, 48, 45) {
+        addSlot(new Slot(container, RBMKOutgasserBlockEntity.SLOT_INPUT, 48, 53) {
             @Override
-            public boolean mayPlace(ItemStack stack) { return stack.getItem() instanceof RBMKRodItem; }
+            public boolean mayPlace(ItemStack stack) {
+                return be.isItemValidForSlot(RBMKOutgasserBlockEntity.SLOT_INPUT, stack);
+            }
+        });
+
+        // Take-only: the activation product must not be pushed back in by hand or by a hopper.
+        addSlot(new Slot(container, RBMKOutgasserBlockEntity.SLOT_OUTPUT, 112, 53) {
+            @Override
+            public boolean mayPlace(ItemStack stack) { return false; }
         });
 
         for (int row = 0; row < 3; row++)
@@ -50,6 +66,9 @@ public class RBMKOutgasserMenu extends AbstractContainerMenu {
         BlockPos pos = buf.readBlockPos();
         BlockEntity be = inv.player.level().getBlockEntity(pos);
         if (be instanceof RBMKOutgasserBlockEntity o) return o;
+        // На клиенте тайл может отсутствовать (реплей Flashback) — возвращаем null.
+        // На сервере отсутствие тайла — реальный баг, поэтому там падаем как раньше.
+        if (inv.player.level().isClientSide) return null;
         throw new IllegalStateException("No RBMKOutgasserBlockEntity at " + pos);
     }
 
@@ -57,6 +76,10 @@ public class RBMKOutgasserMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
+        // тайл может отсутствовать на клиенте (реплей Flashback)
+        if (blockEntity == null) {
+            return false;
+        }
         return blockEntity.getLevel() == player.level()
             && player.distanceToSqr(blockEntity.getBlockPos().getCenter()) <= 64;
     }
@@ -68,9 +91,10 @@ public class RBMKOutgasserMenu extends AbstractContainerMenu {
         if (slot != null && slot.hasItem()) {
             ItemStack stack = slot.getItem();
             result = stack.copy();
-            if (index == 0) {
-                if (!moveItemStackTo(stack, 1, slots.size(), true)) return ItemStack.EMPTY;
+            if (index < 2) {
+                if (!moveItemStackTo(stack, 2, slots.size(), true)) return ItemStack.EMPTY;
             } else {
+                // Shift-click only ever feeds the input half.
                 if (!moveItemStackTo(stack, 0, 1, false)) return ItemStack.EMPTY;
             }
             if (stack.isEmpty()) slot.set(ItemStack.EMPTY);

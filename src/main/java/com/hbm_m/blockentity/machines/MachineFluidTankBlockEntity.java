@@ -10,6 +10,7 @@ import com.hbm_m.api.fluids.IFluidStandardTransceiverMK2;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.machines.FluidDuctBlock;
 import com.hbm_m.block.machines.MachineFluidTankBlock;
+import com.hbm_m.blockentity.BaseHbmBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.interfaces.IMultiblockSidedIO;
 import com.hbm_m.inventory.fluid.ModFluids;
@@ -25,9 +26,12 @@ import com.hbm_m.item.liquids.InfiniteFluidItem;
 import com.hbm_m.main.MainRegistry;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.platform.ModItemStackHandler;
+import com.hbm_m.platform.PlatformHooks;
+import com.hbm_m.platform.FluidHooks;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.HolderLookup;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
@@ -46,13 +50,12 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.Level.ExplosionInteraction;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.phys.AABB;
 //? if forge {
-import net.minecraftforge.client.model.data.ModelData;
-import net.minecraftforge.client.model.data.ModelProperty;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
@@ -61,20 +64,9 @@ import net.minecraftforge.items.IItemHandler;
 //?}
 
 @SuppressWarnings("UnstableApiUsage")
-public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProvider, IMultiblockSidedIO, IFluidStandardTransceiverMK2
-    //? if fabric {
-    /*, net.fabricmc.fabric.api.rendering.data.v1.RenderAttachmentBlockEntity
-    *///?}
-{
+public class MachineFluidTankBlockEntity extends BaseHbmBlockEntity implements MenuProvider, IMultiblockSidedIO, IFluidStandardTransceiverMK2
 
-    //? if fabric {
-    /*/^*
-     * Единый экземпляр для Fabric Transfer API (регистрация {@link com.hbm_m.main.FabricEntrypoint}).
-     * Логика fill/drain как у Forge {@code NetworkFluidHandlerWrapper}.
-     ^/
-    @SuppressWarnings("UnstableApiUsage")
-    private final TankFabricNetworkStorage tankFabricNetworkStorage = new TankFabricNetworkStorage(this);
-    *///?}
+{
 
     public static final int SLOT_ID_IN = 0;
     public static final int SLOT_ID_OUT = 1;
@@ -93,6 +85,8 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
      */
     private short mode = 1;
     public boolean hasExploded = false;
+    /** Guards against one blast calling into every block of the tank in turn. */
+    public Object lastExplosion = null;
     public boolean onFire = false;
     private byte lastRedstone = 0;
     private int age = 0;
@@ -113,10 +107,6 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
     private java.util.Set<Direction> allowedFluidSides = java.util.EnumSet.noneOf(Direction.class);
     /** Набор из tuple fluidSideMap символа контроллера при постройке мультиблока. */
     private boolean fluidSidesFromMultiblockStructure = false;
-
-    //? if forge {
-    public static final ModelProperty<ResourceLocation> FLUID_TEXTURE_PROPERTY = new ModelProperty<>();
-    //?}
 
     public MachineFluidTankBlockEntity(BlockPos pos, BlockState state) {
         this(ModBlockEntities.FLUID_TANK_BE.get(), pos, state, TANK_CAPACITY);
@@ -176,21 +166,14 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
         //?}
     }
 
-    //? if forge {
     @Override
     public void onLoad() {
         super.onLoad();
-        // На Forge ModelData кешируется отдельно от NBT; при загрузке чанка гарантируем первичную инициализацию.
-        if (level != null && level.isClientSide) {
-            requestModelDataUpdate();
-            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_ALL_IMMEDIATE);
-        }
         // Важно: при загрузке чанка load(NBT) может отработать до установки level у BE,
         // поэтому refreshAdjacentFluidDuctConnections() там иногда пропускается.
         // Дёргаем повторно здесь, чтобы визуальные соединения труб всегда пересчитались после перезахода.
         refreshAdjacentFluidDuctConnections();
     }
-    //?}
 
     // =====================================================================================
     // IFluidStandardTransceiverMK2 — нативное участие в MK2-сети.
@@ -401,34 +384,13 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
         }
     }
 
-    //? if forge {
     @Override
-    public void onDataPacket(net.minecraft.network.Connection net, net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket pkt) {
-        // Важно: super.onDataPacket вызывает load(tag). Нам нужно сравнить старое/новое и
-        // при смене текстуры попросить Forge обновить ModelData и пересобрать меш чанка.
-        final boolean clientForge = level != null && level.isClientSide;
-        final ResourceLocation prevTankTextureForge = clientForge ? getTankTextureLocation() : null;
-
-        super.onDataPacket(net, pkt);
-
-        if (clientForge && prevTankTextureForge != null && !prevTankTextureForge.equals(getTankTextureLocation())) {
-            requestModelDataUpdate();
-            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_CLIENTS | Block.UPDATE_IMMEDIATE);
-        }
-    }
-    //?}
-
-    public void handleUpdateTag(CompoundTag tag) {
-        load(tag);
+    protected void applyClientUpdate(@NotNull CompoundTag tag) {
+        // Применяем NBT (аналог старого handleUpdateTag → load/readNbtData)
+        super.applyClientUpdate(tag);
         if (level != null && level.isClientSide) {
-            //? if forge {
-            requestModelDataUpdate();
-            //?}
-            // На Forge для корректной перерисовки нужен UPDATE_CLIENTS (иначе baked model может не обновиться).
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_CLIENTS | Block.UPDATE_IMMEDIATE);
-            //? if fabric {
-            /*scheduleChunkRebuild();
-            *///?}
+            refreshAdjacentFluidDuctConnections();
         }
     }
 
@@ -494,154 +456,6 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
         }
     }
 
-    //? if fabric {
-    /*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
-    private void scheduleChunkRebuild() {
-        if (level != null && level.isClientSide) {
-            com.hbm_m.client.render.DoorChunkInvalidationHelper.scheduleChunkInvalidation(worldPosition);
-        }
-    }
-
-    /^*
-     * Сторона {@code null}: делегирование с коннекторов мультиблока / внутренний доступ без фильтра по грани.
-     * Для {@code side != null}: если задан tuple fluidSideMap контроллера — только перечисленные грани; иначе пустой разрешённый набор = все грани (совместимость).
-     ^/
-    @SuppressWarnings("UnstableApiUsage")
-    @org.jetbrains.annotations.Nullable
-    public net.fabricmc.fabric.api.transfer.v1.storage.Storage<net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant> getFluidStorage(
-            @org.jetbrains.annotations.Nullable Direction side) {
-        if (side != null) {
-            if (fluidSidesFromMultiblockStructure) {
-                if (!allowedFluidSides.contains(side)) {
-                    return null;
-                }
-            } else if (!allowedFluidSides.isEmpty() && !allowedFluidSides.contains(side)) {
-                return null;
-            }
-        }
-        return tankFabricNetworkStorage;
-    }
-
-    @SuppressWarnings("UnstableApiUsage")
-    private static final class TankFabricNetworkStorage
-            extends net.fabricmc.fabric.api.transfer.v1.transaction.base.SnapshotParticipant<TankFabricNetworkStorage.Snapshot>
-            implements net.fabricmc.fabric.api.transfer.v1.storage.base.SingleSlotStorage<net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant> {
-
-        private static final long DROPLETS_PER_MB = 81L;
-        private final MachineFluidTankBlockEntity entity;
-        /^* Остаток дроплетов (&lt; 81), накапливается между insert до полной мБ — уменьшает потери округления на Fabric. ^/
-        private long insertRemainderDroplets;
-
-        private TankFabricNetworkStorage(MachineFluidTankBlockEntity entity) {
-            this.entity = entity;
-        }
-
-        private FluidTank tank() {
-            return entity.fluidTank;
-        }
-
-        @Override
-        public long insert(net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant resource, long maxAmount,
-                net.fabricmc.fabric.api.transfer.v1.transaction.TransactionContext transaction) {
-            if (entity.hasExploded || entity.mode == 0 || entity.mode == 3) return 0;
-            if (resource.isBlank() || maxAmount <= 0) return 0;
-            if (tank().getPressure() != 0) return 0;
-            if (tank().getFill() <= 0 && !FluidTank.isFluidTypeExplicitlySet(tank().getTankType())) {
-                return 0;
-            }
-
-            long spaceMb = tank().getMaxFill() - tank().getFill();
-            if (spaceMb <= 0) return 0;
-
-            if (tank().getFill() > 0 && !com.hbm_m.api.fluids.VanillaFluidEquivalence.sameSubstance(tank().getTankType(), resource.getFluid())) {
-                return 0;
-            }
-
-            long spaceDroplets = spaceMb * DROPLETS_PER_MB;
-            long rBefore = insertRemainderDroplets;
-            long incoming = maxAmount + rBefore;
-            long takeDroplets = Math.min(incoming, spaceDroplets);
-            long mbAdd = takeDroplets / DROPLETS_PER_MB;
-            long consumedFromOffer = Math.min(maxAmount, Math.max(0L, takeDroplets - rBefore));
-            if (mbAdd <= 0) {
-                updateSnapshots(transaction);
-                insertRemainderDroplets = (incoming - takeDroplets) + (takeDroplets % DROPLETS_PER_MB);
-                entity.setChanged();
-                return consumedFromOffer;
-            }
-
-            updateSnapshots(transaction);
-            insertRemainderDroplets = (incoming - takeDroplets) + (takeDroplets % DROPLETS_PER_MB);
-            if (tank().getTankType() == Fluids.EMPTY || tank().getFill() == 0) {
-                tank().setTankType(resource.getFluid());
-            }
-            tank().fill(tank().getFill() + (int) mbAdd);
-            entity.setChanged();
-            entity.refreshAdjacentFluidDuctConnections();
-            return consumedFromOffer;
-        }
-
-        @Override
-        public long extract(net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant resource, long maxAmount,
-                net.fabricmc.fabric.api.transfer.v1.transaction.TransactionContext transaction) {
-            if (entity.hasExploded || entity.mode == 2 || entity.mode == 3) return 0;
-            if (resource.isBlank() || maxAmount <= 0) return 0;
-            if (tank().getFill() <= 0) return 0;
-            if (!com.hbm_m.api.fluids.VanillaFluidEquivalence.sameSubstance(tank().getTankType(), resource.getFluid())) {
-                return 0;
-            }
-
-            long toDrainMb = Math.min(tank().getFill(), maxAmount / DROPLETS_PER_MB);
-            if (toDrainMb <= 0) return 0;
-
-            updateSnapshots(transaction);
-            tank().fill(tank().getFill() - (int) toDrainMb);
-            entity.setChanged();
-            entity.refreshAdjacentFluidDuctConnections();
-            return toDrainMb * DROPLETS_PER_MB;
-        }
-
-        @Override
-        public boolean isResourceBlank() {
-            return tank().getFill() <= 0 || tank().getTankType() == Fluids.EMPTY;
-        }
-
-        @Override
-        public net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant getResource() {
-            return isResourceBlank()
-                    ? net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant.blank()
-                    : net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant.of(tank().getTankType());
-        }
-
-        @Override
-        public long getAmount() {
-            return (long) tank().getFill() * DROPLETS_PER_MB;
-        }
-
-        @Override
-        public long getCapacity() {
-            return (long) tank().getMaxFill() * DROPLETS_PER_MB;
-        }
-
-        @Override
-        protected Snapshot createSnapshot() {
-            return new Snapshot(tank().getTankType(), tank().getFill(), insertRemainderDroplets);
-        }
-
-        @Override
-        protected void readSnapshot(Snapshot snapshot) {
-            tank().setTankType(snapshot.type);
-            tank().fill(snapshot.amountMb);
-            insertRemainderDroplets = snapshot.insertRemainderDroplets;
-        }
-
-        @Override
-        protected void onFinalCommit() {}
-
-        private record Snapshot(Fluid type, int amountMb, long insertRemainderDroplets) {}
-    }
-    *///?}
-
     public ResourceLocation getTankTextureLocation() {
         Fluid fluid = fluidTank.getTankType();
         if (fluid == null || fluid == Fluids.EMPTY || fluid == ModFluids.NONE.getSource()) {
@@ -668,33 +482,31 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
 
     }
 
-    //? if forge {
-    @Override
-    public @NotNull ModelData getModelData() {
-        return ModelData.builder()
-                .with(FLUID_TEXTURE_PROPERTY, getTankTextureLocation())
-                .build();
-    }
-    //?}
-
-    //? if fabric {
-    /*@Override
-    public @org.jetbrains.annotations.Nullable Object getRenderAttachmentData() {
-        return getTankTextureLocation();
-    }
-    *///?}
-
     public void explode() {
         if (this.hasExploded) return;
         this.hasExploded = true;
         this.onFire = FluidType.forFluid(fluidTank.getTankType()).hasTrait(FT_Flammable.class);
         this.setChanged();
+        syncExplodedState();
     }
+    /**
+     * Pushes {@code hasExploded} into the blockstate so the wrecked model is used. The state is
+     * the single source of truth for rendering; the field stays authoritative for behaviour.
+     */
+    private void syncExplodedState() {
+        if (level == null || level.isClientSide) return;
+        net.minecraft.world.level.block.state.BlockState state = getBlockState();
+        if (!state.hasProperty(com.hbm_m.block.machines.MachineFluidTankBlock.EXPLODED)) return;
+        if (state.getValue(com.hbm_m.block.machines.MachineFluidTankBlock.EXPLODED) == this.hasExploded) return;
+        level.setBlock(worldPosition, state.setValue(com.hbm_m.block.machines.MachineFluidTankBlock.EXPLODED, this.hasExploded), 3);
+    }
+
 
     public void repair() {
         this.hasExploded = false;
         this.onFire = false;
         this.setChanged();
+        syncExplodedState();
     }
 
     // ═══════════════════════════ Material fluid-storage capability (barrel tiers) ════════════════
@@ -748,7 +560,7 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
             AABB fireBox = new AABB(worldPosition).inflate(2.5, 5.0, 2.5);
             List<LivingEntity> affected = level.getEntitiesOfClass(LivingEntity.class, fireBox);
             for (LivingEntity e : affected) {
-                e.setSecondsOnFire(5);
+                PlatformHooks.setSecondsOnFire(e, 5);
             }
             if (level instanceof ServerLevel serverLevel) {
                 serverLevel.sendParticles(ParticleTypes.FLAME, worldPosition.getX() + level.random.nextDouble(), worldPosition.getY() + 0.5 + level.random.nextDouble(), worldPosition.getZ() + level.random.nextDouble(), 3, 0.1, 0.1, 0.1, 0.05);
@@ -790,20 +602,9 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        //? if fabric {
-        /*// На Fabric клиентский пакет синхронизации часто приходит через load(), а не через
-        // onDataPacket (Forge). Без инвалидации чанка Sodium держит старые квады baked-модели.
-        final boolean clientFabric = level != null && level.isClientSide;
-        final ResourceLocation prevTankTexture = clientFabric ? getTankTextureLocation() : null;
-        *///?}
-        //? if forge {
-        final boolean clientForge = level != null && level.isClientSide;
-        final ResourceLocation prevTankTextureForge = clientForge ? getTankTextureLocation() : null;
-        //?}
-
-        super.load(tag);
-        itemHandler.deserializeNBT(tag.getCompound("Inventory"));
+    protected void readNbtData(@NotNull CompoundTag tag, @Nullable HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
+        com.hbm_m.platform.ItemStackSerialization.deserialize(itemHandler, tag.getCompound("Inventory"), registries);
         fluidTank.readFromNBT(tag, "tank");
         // Старые миры могли не иметь этого поля — по умолчанию нужен режим, который умеет и fill и drain.
         mode = tag.contains("mode") ? tag.getShort("mode") : 1;
@@ -828,28 +629,16 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
         if (tag.contains("FluidSidesFromMbStructure")) {
             fluidSidesFromMultiblockStructure = tag.getBoolean("FluidSidesFromMbStructure");
         }
-
-        //? if fabric {
-        /*if (clientFabric && !getTankTextureLocation().equals(prevTankTexture)) {
-            scheduleChunkRebuild();
-        }
-        *///?}
-
-        //? if forge {
-        if (clientForge && prevTankTextureForge != null && !prevTankTextureForge.equals(getTankTextureLocation())) {
-            requestModelDataUpdate();
-            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_CLIENTS | Block.UPDATE_IMMEDIATE);
-        }
-        //?}
+        
         if (level != null) {
             refreshAdjacentFluidDuctConnections();
         }
     }
 
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
-        tag.put("Inventory", itemHandler.serializeNBT());
+    protected void writeNbtData(@NotNull CompoundTag tag, @Nullable HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
+        tag.put("Inventory", com.hbm_m.platform.ItemStackSerialization.serialize(itemHandler, registries));
         fluidTank.writeToNBT(tag, "tank");
         tag.putShort("mode", mode);
         tag.putBoolean("exploded", hasExploded);
@@ -900,7 +689,7 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
 
     @Override
     public void setAllowedFluidSidesFromMultiblockStructure(java.util.Set<Direction> sides) {
-        this.allowedFluidSides = java.util.EnumSet.copyOf(sides);
+        this.allowedFluidSides = safeCopyDirectionSet(sides);
         this.fluidSidesFromMultiblockStructure = true;
         setChanged();
         if (level != null && !level.isClientSide) {
@@ -910,12 +699,25 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
 
     @Override
     public void setAllowedFluidSides(java.util.Set<Direction> sides) {
-        this.allowedFluidSides = java.util.EnumSet.copyOf(sides);
+        this.allowedFluidSides = safeCopyDirectionSet(sides);
         this.fluidSidesFromMultiblockStructure = false;
         setChanged();
         if (level != null && !level.isClientSide) {
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
         }
+    }
+
+    /**
+     * Безопасная defensive-копия Set<Direction> в EnumSet. EnumSet.copyOf(Collection)
+     * бросает IllegalArgumentException на пустой коллекции; здесь всегда возвращаем
+     * валидный EnumSet (пустой ли, нет) и принимаем null как пустое множество.
+     */
+    private static java.util.EnumSet<Direction> safeCopyDirectionSet(java.util.Set<Direction> sides) {
+        java.util.EnumSet<Direction> out = java.util.EnumSet.noneOf(Direction.class);
+        if (sides != null && !sides.isEmpty()) {
+            out.addAll(sides);
+        }
+        return out;
     }
 
     @Override
@@ -943,9 +745,9 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
         return new MachineFluidTankMenu(id, inventory, this, this.data);
     }
 
-    /**
-     * Shift+ПКМ идентификатором по цистерне: задаёт тип бака (включая NONE), сливает содержимое, обновляет фильтр для GUI.
-     */
+
+    // Shift+ПКМ идентификатором по цистерне: задаёт тип бака (включая NONE), сливает содержимое, обновляет фильтр для GUI.
+
     public void setFilterFromIdentifier(ItemStack stack) {
         if (stack.isEmpty()) {
             return;
@@ -985,13 +787,6 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
         return filterFluid;
     }
 
-    @Override
-    public CompoundTag getUpdateTag() {
-        CompoundTag tag = new CompoundTag();
-        saveAdditional(tag);
-        return tag;
-    }
-
     @Nullable
     @Override
     public net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket getUpdatePacket() {
@@ -1005,7 +800,7 @@ public class MachineFluidTankBlockEntity extends BlockEntity implements MenuProv
 
         public NetworkFluidHandlerWrapper(MachineFluidTankBlockEntity entity) {
             this.entity = entity;
-            this.internal = entity.fluidTank.getCapability().orElse(null);
+            this.internal = (IFluidHandler) FluidHooks.getRawFluidHandler(entity.fluidTank.getCapability());
         }
 
         @Override

@@ -1,6 +1,7 @@
 package com.hbm_m.inventory.gui;
 
 import com.hbm_m.blockentity.machines.MachineMiningLaserBlockEntity;
+import com.hbm_m.client.GuiCompat;
 import com.hbm_m.inventory.menu.MachineMiningLaserMenu;
 import com.hbm_m.lib.RefStrings;
 
@@ -36,33 +37,37 @@ public class GUIMachineMiningLaser extends AbstractContainerScreen<MachineMining
         int y = topPos;
         guiGraphics.blit(TEXTURE, x, y, 0, 0, imageWidth, imageHeight);
 
-        int progress = blockEntity.getProgressScaled(24);
-        if (progress > 0) {
-            guiGraphics.fill(x + 76, y + 60, x + 76 + progress, y + 68, 0xFFFF3020);
-        }
+        if (blockEntity != null) { // тайл может отсутствовать в реплее Flashback
+            int progress = blockEntity.getProgressScaled(24);
+            if (progress > 0) {
+                guiGraphics.fill(x + 76, y + 60, x + 76 + progress, y + 68, 0xFFFF3020);
+            }
 
-        if (blockEntity.getEnergyStored() > 0) {
-            long max = blockEntity.getMaxEnergyStored();
-            long ratio = max > 0 ? blockEntity.getEnergyStored() * 40L / max : 0;
-            guiGraphics.fill(x + 12, y + 20 + (int) (40 - ratio), x + 20, y + 60, 0xFF3080FF);
-        }
+            if (blockEntity.getEnergyStored() > 0) {
+                long max = blockEntity.getMaxEnergyStored();
+                long ratio = max > 0 ? blockEntity.getEnergyStored() * 40L / max : 0;
+                guiGraphics.fill(x + 12, y + 20 + (int) (40 - ratio), x + 20, y + 60, 0xFF3080FF);
+            }
 
-        if (blockEntity.isActive()) {
-            guiGraphics.fill(x + 152, y + 20, x + 164, y + 32, 0xFFFF3020);
+            if (blockEntity.isActive()) {
+                guiGraphics.fill(x + 152, y + 20, x + 164, y + 32, 0xFFFF3020);
+            }
         }
     }
 
     @Override
     protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
         guiGraphics.drawString(font, title, imageWidth / 2 - font.width(title) / 2, 6, 0x404040, false);
-        guiGraphics.drawString(font, Component.translatable("gui.hbm_m.mining_laser.depth", blockEntity.getDrillDepth()),
-                12, imageHeight - 118, 0x404040, false);
         guiGraphics.drawString(font, playerInventoryTitle, 8, inventoryLabelY, 4210752, false);
+        if (blockEntity != null) {
+            guiGraphics.drawString(font, Component.translatable("gui.hbm_m.mining_laser.depth", blockEntity.getDrillDepth()),
+                    12, imageHeight - 118, 0x404040, false);
+        }
     }
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        renderBackground(guiGraphics);
+        com.hbm_m.client.GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
         renderTooltip(guiGraphics, mouseX, mouseY);
     }

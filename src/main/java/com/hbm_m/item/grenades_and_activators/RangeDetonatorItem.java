@@ -1,5 +1,6 @@
 package com.hbm_m.item.grenades_and_activators;
 
+import com.hbm_m.item.ITooltipProvider;
 import com.hbm_m.interfaces.IDetonatable;
 import com.hbm_m.sound.ModSounds;
 import net.minecraft.ChatFormatting;
@@ -24,7 +25,7 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 
-public class RangeDetonatorItem extends Item {
+public class RangeDetonatorItem extends Item implements ITooltipProvider {
 
     private static final int MAX_RANGE = 256;
 
@@ -42,7 +43,17 @@ public class RangeDetonatorItem extends Item {
             }
         });
     }
-    //?}
+    //?} elif neoforge {
+    /*@Override
+    public void initializeClient(java.util.function.Consumer<net.neoforged.neoforge.client.extensions.common.IClientItemExtensions> consumer) {
+        consumer.accept(new net.neoforged.neoforge.client.extensions.common.IClientItemExtensions() {
+            @Override
+            public net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer getCustomRenderer() {
+                return com.hbm_m.client.render.item.ItemRenderDetonatorLaser.INSTANCE;
+            }
+        });
+    }
+    *///?}
 
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
@@ -145,9 +156,8 @@ public class RangeDetonatorItem extends Item {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, @Nullable Level level,
+    public void appendHbmTooltip(ItemStack stack, @Nullable Level level,
                                 List<Component> tooltip, TooltipFlag flag) {
-        super.appendHoverText(stack, level, tooltip, flag);
         tooltip.add(Component.translatable("tooltip.hbm_m.range_detonator.desc")
                 .withStyle(ChatFormatting.GRAY));
         tooltip.add(Component.translatable("tooltip.hbm_m.range_detonator.hint")

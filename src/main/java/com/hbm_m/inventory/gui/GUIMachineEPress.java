@@ -1,6 +1,7 @@
 package com.hbm_m.inventory.gui;
 
 import com.hbm_m.inventory.menu.MachineEPressMenu;
+import com.hbm_m.client.GuiCompat;
 import com.hbm_m.lib.RefStrings;
 
 import net.minecraft.client.gui.GuiGraphics;
@@ -59,7 +60,7 @@ public class GUIMachineEPress extends AbstractContainerScreen<MachineEPressMenu>
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float delta) {
-        renderBackground(guiGraphics);
+        com.hbm_m.client.GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, delta);
         super.render(guiGraphics, mouseX, mouseY, delta);
         renderTooltip(guiGraphics, mouseX, mouseY);
 

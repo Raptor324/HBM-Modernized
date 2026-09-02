@@ -1,6 +1,7 @@
 package com.hbm_m.inventory.gui;
 
 import com.hbm_m.blockentity.machines.MachineHydrotreaterBlockEntity;
+import com.hbm_m.client.GuiCompat;
 import com.hbm_m.inventory.menu.MachineHydrotreaterMenu;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.lib.RefStrings;
@@ -43,16 +44,18 @@ public class GUIMachineHydrotreater extends GuiInfoScreen<MachineHydrotreaterMen
         RenderSystem.setShaderColor(1f, 1f, 1f, 1f);
         guiGraphics.blit(TEXTURE, leftPos, topPos, 0, 0, imageWidth, imageHeight);
 
-        long power = be.getEnergyStored();
-        long maxPower = Math.max(1L, be.getMaxEnergyStored());
-        int j = (int) (power * TANK_H / maxPower);
-        if (j > 0) {
-            guiGraphics.blit(TEXTURE, leftPos + ENERGY_X, topPos + TANK_Y + TANK_H - j, 176, TANK_H - j, TANK_W, j);
-        }
+        if (be != null) { // тайл может отсутствовать в реплее Flashback
+            long power = be.getEnergyStored();
+            long maxPower = Math.max(1L, be.getMaxEnergyStored());
+            int j = (int) (power * TANK_H / maxPower);
+            if (j > 0) {
+                guiGraphics.blit(TEXTURE, leftPos + ENERGY_X, topPos + TANK_Y + TANK_H - j, 176, TANK_H - j, TANK_W, j);
+            }
 
-        var tanks = be.getTanks();
-        for (int i = 0; i < TANK_X.length; i++) {
-            tanks[i].renderTank(guiGraphics, leftPos + TANK_X[i], topPos + TANK_Y, TANK_W, TANK_H);
+            var tanks = be.getTanks();
+            for (int i = 0; i < TANK_X.length; i++) {
+                tanks[i].renderTank(guiGraphics, leftPos + TANK_X[i], topPos + TANK_Y, TANK_W, TANK_H);
+            }
         }
     }
 
@@ -64,15 +67,17 @@ public class GUIMachineHydrotreater extends GuiInfoScreen<MachineHydrotreaterMen
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        renderBackground(guiGraphics);
+        com.hbm_m.client.GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
 
-        drawElectricityInfo(guiGraphics, mouseX, mouseY, ENERGY_X, TANK_Y, TANK_W, TANK_H, be.getEnergyStored(), be.getMaxEnergyStored());
+        if (be != null) {
+            drawElectricityInfo(guiGraphics, mouseX, mouseY, ENERGY_X, TANK_Y, TANK_W, TANK_H, be.getEnergyStored(), be.getMaxEnergyStored());
 
-        var tanks = be.getTanks();
-        for (int i = 0; i < TANK_X.length; i++) {
-            if (isPointInRect(TANK_X[i], TANK_Y, TANK_W, TANK_H, mouseX, mouseY)) {
-                tanks[i].renderTankInfo(guiGraphics, font, mouseX, mouseY, leftPos + TANK_X[i], topPos + TANK_Y, TANK_W, TANK_H);
+            var tanks = be.getTanks();
+            for (int i = 0; i < TANK_X.length; i++) {
+                if (isPointInRect(TANK_X[i], TANK_Y, TANK_W, TANK_H, mouseX, mouseY)) {
+                    tanks[i].renderTankInfo(guiGraphics, font, mouseX, mouseY, leftPos + TANK_X[i], topPos + TANK_Y, TANK_W, TANK_H);
+                }
             }
         }
 

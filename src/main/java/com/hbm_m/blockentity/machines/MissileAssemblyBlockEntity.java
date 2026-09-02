@@ -3,6 +3,7 @@ package com.hbm_m.blockentity.machines;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import com.hbm_m.blockentity.BaseHbmBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.inventory.ModItemStackHandlerContainer;
 import com.hbm_m.inventory.menu.MissileAssemblyMenu;
@@ -36,7 +37,7 @@ import net.minecraft.world.level.block.state.BlockState;
  * gegen Thruster-Klasse verglichen. Das Ergebnis ist eines der bereits registrierten
  * {@link MissileItem}-Presets statt einer frei kombinierten NBT-Rakete.
  */
-public class MissileAssemblyBlockEntity extends BlockEntity implements MenuProvider {
+public class MissileAssemblyBlockEntity extends BaseHbmBlockEntity implements MenuProvider {
 
     public static final int SLOT_CHIP = 0;
     public static final int SLOT_WARHEAD = 1;
@@ -176,16 +177,20 @@ public class MissileAssemblyBlockEntity extends BlockEntity implements MenuProvi
         Containers.dropContents(level, worldPosition, c);
     }
 
+    
+    // (устраняет вложенный stonecutter-баг в load())
     @Override
-    protected void saveAdditional(@NotNull CompoundTag tag) {
-        super.saveAdditional(tag);
-        tag.put("inventory", inventory.serializeNBT());
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
+        tag.put("inventory", com.hbm_m.platform.ItemStackSerialization.serialize(inventory, registries));
     }
 
     @Override
-    public void load(@NotNull CompoundTag tag) {
-        super.load(tag);
-        inventory.deserializeNBT(tag.getCompound("inventory"));
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
+        if (tag.contains("inventory")) {
+            com.hbm_m.platform.ItemStackSerialization.deserialize(inventory, tag.getCompound("inventory"), registries);
+        }
     }
 
     @Override

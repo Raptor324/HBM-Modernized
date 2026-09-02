@@ -82,7 +82,7 @@ public class MachineAnnihilatorBlockEntity extends BaseMachineBlockEntity implem
     public @NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(
             net.minecraftforge.common.capabilities.Capability<T> cap, @Nullable Direction side) {
         if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER) {
-            return tank.getCapability().cast();
+            return tank.getForgeFluidCapability().cast();
         }
         return super.getCapability(cap, side);
     }
@@ -176,16 +176,16 @@ public class MachineAnnihilatorBlockEntity extends BaseMachineBlockEntity implem
     // ==================== NBT ====================
 
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.putString("pool_name", poolName);
         tag.putString("monitor_display", monitorDisplay);
         tank.writeToNBT(tag, "tank");
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         poolName = tag.contains("pool_name") ? tag.getString("pool_name") : DEFAULT_POOL;
         monitorDisplay = tag.getString("monitor_display");
         tank.readFromNBT(tag, "tank");

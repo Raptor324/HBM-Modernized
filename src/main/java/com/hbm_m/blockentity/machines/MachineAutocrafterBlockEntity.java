@@ -63,21 +63,25 @@ public class MachineAutocrafterBlockEntity extends BaseMachineBlockEntity {
         if (getEnergyStored() < CONSUMPTION) return;
 
         SimpleCraftingContainer grid = buildGrid();
-        Optional<CraftingRecipe> recipeOpt = level.getRecipeManager()
-                .getRecipeFor(RecipeType.CRAFTING, grid, level);
+        // 1.21.1: getRecipeFor/assemble требуют CraftingInput — хелперы RecipeHooks.
+        Optional<CraftingRecipe> recipeOpt = com.hbm_m.platform.recipe.RecipeHooks.getCraftingRecipeFor(level, grid);
         if (recipeOpt.isEmpty()) return;
 
         CraftingRecipe recipe = recipeOpt.get();
-        ItemStack result = recipe.assemble(grid, level.registryAccess());
+        ItemStack result = com.hbm_m.platform.recipe.RecipeHooks.assembleCrafting(recipe, grid, level);
         if (result.isEmpty()) return;
 
         ItemStack outSlot = inventory.getStackInSlot(SLOT_OUTPUT);
         if (!outSlot.isEmpty()) {
-            if (!ItemStack.isSameItemSameTags(outSlot, result)) return;
+            if (!com.hbm_m.platform.PlatformHooks.isSameItemSameTags(outSlot, result)) return;
             if (outSlot.getCount() + result.getCount() > outSlot.getMaxStackSize()) return;
         }
 
+        //? if < 1.21.1 {
         NonNullList<ItemStack> remaining = recipe.getRemainingItems(grid);
+        //?} else {
+        /*NonNullList<ItemStack> remaining = recipe.getRemainingItems(grid.toCraftingInput());
+        *///?}
         for (int i = 0; i < GRID_SIZE; i++) {
             inventory.getStackInSlot(GRID_START + i).shrink(1);
 

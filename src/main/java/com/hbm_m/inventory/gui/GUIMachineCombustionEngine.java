@@ -1,6 +1,7 @@
 package com.hbm_m.inventory.gui;
 
 import com.hbm_m.blockentity.machines.MachineCombustionEngineBlockEntity;
+import com.hbm_m.client.GuiCompat;
 import com.hbm_m.inventory.menu.MachineCombustionEngineMenu;
 import com.hbm_m.lib.RefStrings;
 
@@ -37,17 +38,19 @@ public class GUIMachineCombustionEngine extends AbstractContainerScreen<MachineC
         int y = topPos;
         guiGraphics.blit(TEXTURE, x, y, 0, 0, imageWidth, imageHeight);
 
-        var tank = blockEntity.getTank();
-        int fuelH = tank.getMaxFill() > 0 ? tank.getFill() * 52 / tank.getMaxFill() : 0;
-        if (fuelH > 0) guiGraphics.fill(x + 35, y + 17 + (52 - fuelH), x + 51, y + 69, 0xFF804000);
+        if (blockEntity != null) { // тайл может отсутствовать в реплее Flashback
+            var tank = blockEntity.getTank();
+            int fuelH = tank.getMaxFill() > 0 ? tank.getFill() * 52 / tank.getMaxFill() : 0;
+            if (fuelH > 0) guiGraphics.fill(x + 35, y + 17 + (52 - fuelH), x + 51, y + 69, 0xFF804000);
 
-        long max = blockEntity.getMaxEnergyStored();
-        long energy = blockEntity.getEnergyStored();
-        int energyH = max > 0 ? (int) (energy * 52L / max) : 0;
-        if (energyH > 0) guiGraphics.fill(x + 143, y + 17 + (52 - energyH), x + 159, y + 69, 0xFFFF3020);
+            long max = blockEntity.getMaxEnergyStored();
+            long energy = blockEntity.getEnergyStored();
+            int energyH = max > 0 ? (int) (energy * 52L / max) : 0;
+            if (energyH > 0) guiGraphics.fill(x + 143, y + 17 + (52 - energyH), x + 159, y + 69, 0xFFFF3020);
 
-        if (blockEntity.isActive()) {
-            guiGraphics.fill(x + 88, y + 13, x + 105, y + 27, 0xFF30FF30);
+            if (blockEntity.isActive()) {
+                guiGraphics.fill(x + 88, y + 13, x + 105, y + 27, 0xFF30FF30);
+            }
         }
     }
 
@@ -59,7 +62,7 @@ public class GUIMachineCombustionEngine extends AbstractContainerScreen<MachineC
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        renderBackground(guiGraphics);
+        com.hbm_m.client.GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
         renderTooltip(guiGraphics, mouseX, mouseY);
     }

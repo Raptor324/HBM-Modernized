@@ -44,40 +44,60 @@ public class ClientRenderHandler {
     private static final Map<BlockPos, Long> knownPhantomBlocks = new HashMap<>();
 
     /** Shared with NukeTorex; must extend RenderType to access protected RenderStateShard members. */
+    // ВАЖНО: у ВСЕХ create(...) ниже sortOnUpload=false — НЕ ВКЛЮЧАТЬ.
+    // Сортировка квадов средствами BufferBuilder (sortOnUpload=true) в этом
+    // модпаке нестабильно падает «Sorting state uninitialized» на наших
+    // батчах (в т.ч. в чисто ванильном BufferSource — 4 краш-репорта
+    // 2026-08-28). Порядок отрисовки вместо этого обеспечивает САМА
+    // ParticleEngineNT: частицы каждого батча сортируются от дальних к
+    // ближним относительно камеры перед записью (renderBatches). Новые
+    // RenderType добавлять только с sortOnUpload=false.
     public static final class CustomRenderTypes extends RenderType {
-        private static final RenderStateShard.TransparencyStateShard SEVEN_SEVEN10 = new RenderStateShard.TransparencyStateShard(
-                "7710",
-                () -> {
-                    RenderSystem.enableBlend();
-                    RenderSystem.blendFuncSeparate(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE_MINUS_SRC_ALPHA, GlStateManager.SourceFactor.ONE, GlStateManager.DestFactor.ZERO);
-                },
-                () -> {
-                    RenderSystem.defaultBlendFunc();
-                    RenderSystem.disableBlend();
-                });
-        private static final RenderStateShard.TransparencyStateShard ADDITIVE_BLEND = new RenderStateShard.TransparencyStateShard(
-                "additive",
-                () -> {
-                    RenderSystem.enableBlend();
-                    RenderSystem.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE);
-                },
-                () -> {
-                    RenderSystem.defaultBlendFunc();
-                    RenderSystem.disableBlend();
-                });
         private static final RenderStateShard.ShaderStateShard BHOLE_TEX_COLOR_SHADER =
                 new RenderStateShard.ShaderStateShard(GameRenderer::getPositionTexColorShader);
-        /** Самосветящиеся облака/вспышки взрыва — без lightmap (как RenderTorex 1.7.10). */
-        private static final RenderStateShard.ShaderStateShard NUKE_TEX_COLOR_SHADER = BHOLE_TEX_COLOR_SHADER;
+        /** Самосветящиеся облака/вспышки взрыва — без lightmap (как RenderTorex 1.7.10).
+         *  Без Iris — кастомный шейдер nuke_cloud (попиксельная окклюзия против LOD).
+         *  Под активным паком Iris — ExtendedShader ключа TEXTURED_COLOR: неизвестные
+         *  Iris'у модовые ShaderInstance маскируются disableDepthColor и рисуются
+         *  «в никуда» (см. FarContentShaders). */
+        private static final RenderStateShard.ShaderStateShard NUKE_TEX_COLOR_SHADER =
+                new RenderStateShard.ShaderStateShard(
+                        com.hbm_m.client.render.shader.FarContentShaders::resolveTexColor);
+
+        private static final RenderStateShard.ShaderStateShard NUKE_ADD_TEX_COLOR_SHADER =
+                new RenderStateShard.ShaderStateShard(
+                        com.hbm_m.client.render.shader.FarContentShaders::resolveAddTexColor);
+
+        /** Флаг «идёт отрисовка дальнего контента в DH FBO» (мост).
+         *  Раньше переключал nukeClouds() на DH-вариант рендертайпа; теперь
+         *  используется только диагностикой (NukeTorex.render). */
+        private static volatile boolean FAR_PASS_ACTIVE = false;
+
+        public static void setFarPassActive(boolean active) {
+            FAR_PASS_ACTIVE = active;
+        }
+
+        public static boolean isFarPassActive() {
+            return FAR_PASS_ACTIVE;
+        }
+
+        /** Селектор рендертайпа для NT-частиц.
+         *  Исторически выбирал между NUKE_CLOUDS и удалённым DH-вариантом
+         *  NUKE_CLOUDS_DH по флагу FAR_PASS_ACTIVE; с перехода на «ПЛАН Б»
+         *  частицы в DH FBO не рисуются, поэтому флаг остаётся только для
+         *  диагностики и селектор всегда возвращает базовый тип. */
+        public static RenderType nukeClouds(ResourceLocation texture) {
+            return NUKE_CLOUDS.apply(texture);
+        }
 
         private CustomRenderTypes(String s, VertexFormat v, VertexFormat.Mode m, int i, boolean b, boolean b2, Runnable r, Runnable r2) { super(s, v, m, i, b, b2, r, r2); }
 
         /** Жёлтая синусоида на лазерном детонаторе — additive + depth test (не HIGHLIGHT_BOX_FILL). */
         public static final RenderType DETONATOR_LASER_GLOW = create("hbm_m_detonator_laser_glow",
-                DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.QUADS, 256, false, true,
+                DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.QUADS, 256, false, false,
                 RenderType.CompositeState.builder()
                         .setShaderState(POSITION_COLOR_SHADER)
-                        .setTransparencyState(ADDITIVE_BLEND)
+                        .setTransparencyState(LIGHTNING_TRANSPARENCY)
                         .setDepthTestState(LEQUAL_DEPTH_TEST)
                         .setCullState(NO_CULL)
                         .setLightmapState(NO_LIGHTMAP)
@@ -86,7 +106,7 @@ public class ClientRenderHandler {
 
         /** Translucent world overlay; TRANSLUCENT_TARGET required for Iris/Embeddium. */
         public static final RenderType HIGHLIGHT_BOX_FILL = create("highlight_box_fill",
-                DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.QUADS, 131072, false, true,
+                DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.QUADS, 131072, false, false,
                 RenderType.CompositeState.builder()
                         .setShaderState(POSITION_COLOR_SHADER)
                         .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
@@ -99,11 +119,11 @@ public class ClientRenderHandler {
 
         /** Nuke cloud particles (NukeTorex) — vertex color × texture, без lightmap. */
         public static final Function<ResourceLocation, RenderType> NUKE_CLOUDS = Util.memoize(
-                texture -> create("nuke_clouds", DefaultVertexFormat.POSITION_TEX_COLOR, VertexFormat.Mode.QUADS, 239120, true, true,
+                texture -> create("nuke_clouds", DefaultVertexFormat.POSITION_TEX_COLOR, VertexFormat.Mode.QUADS, 239120, true, false,
                         RenderType.CompositeState.builder()
                                 .setShaderState(NUKE_TEX_COLOR_SHADER)
                                 .setTextureState(new RenderStateShard.TextureStateShard(texture, false, false))
-                                .setTransparencyState(SEVEN_SEVEN10)
+                                .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
                                 .setCullState(NO_CULL)
                                 .setLightmapState(NO_LIGHTMAP)
                                 .setWriteMaskState(COLOR_WRITE)
@@ -112,11 +132,11 @@ public class ClientRenderHandler {
 
         /** Nuke flash (NukeTorex) - без depth test, чтобы рендерился поверх всего. */
         public static final Function<ResourceLocation, RenderType> NUKE_FLASH = Util.memoize(
-                texture -> create("nuke_flash", DefaultVertexFormat.POSITION_TEX_COLOR, VertexFormat.Mode.QUADS, 545234, true, true,
+                texture -> create("nuke_flash", DefaultVertexFormat.POSITION_TEX_COLOR, VertexFormat.Mode.QUADS, 545234, true, false,
                         RenderType.CompositeState.builder()
-                                .setShaderState(NUKE_TEX_COLOR_SHADER)
-                                .setTextureState(new RenderStateShard.TextureStateShard(texture, false, false))
-                                .setTransparencyState(ADDITIVE_BLEND)
+                                .setShaderState(NUKE_ADD_TEX_COLOR_SHADER)
+                                .setTextureState(new RenderStateShard.TextureStateShard(texture, false, true))
+                                .setTransparencyState(LIGHTNING_TRANSPARENCY)
                                 .setDepthTestState(NO_DEPTH_TEST)
                                 .setCullState(NO_CULL)
                                 .setLightmapState(NO_LIGHTMAP)
@@ -124,12 +144,139 @@ public class ClientRenderHandler {
                                 .setOutputState(TRANSLUCENT_TARGET)
                                 .createCompositeState(false)));
 
+        /**
+         * Блик сопла ракеты, выровненный по entity-рендеру: в entity-пути
+         * flare рисуется LongRangeParticleRenderType с ОБЫЧНЫМ альфа-блендингом
+         * (defaultBlendFunc) и без записи глубины. Аддитив (LIGHTNING) давал
+         * другой вид в виртуальном рендере — «flare вместе с мешем», а не
+         * поверх, как у сущности. Текстура — атлас частиц (спрайты flash/flare).
+         * ОДИН экземпляр: ParticleEngineNT батчит по идентичности RenderType.
+         */
+        private static final RenderType NUKE_GLOW_ADD = create("hbm_m_nuke_glow_add", DefaultVertexFormat.POSITION_TEX_COLOR, VertexFormat.Mode.QUADS, 545234, true, false,
+                RenderType.CompositeState.builder()
+                        .setShaderState(NUKE_ADD_TEX_COLOR_SHADER)
+                        .setTextureState(new RenderStateShard.TextureStateShard(
+                                net.minecraft.client.renderer.texture.TextureAtlas.LOCATION_PARTICLES, false, false))
+                        .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
+                        .setDepthTestState(LEQUAL_DEPTH_TEST)
+                        .setCullState(NO_CULL)
+                        .setLightmapState(NO_LIGHTMAP)
+                        .setWriteMaskState(COLOR_WRITE)
+                        .setOutputState(TRANSLUCENT_TARGET)
+                        .createCompositeState(false));
+
+        public static RenderType nukeGlowAdd() {
+            return NUKE_GLOW_ADD;
+        }
+
+        /**
+         * локаои 1.7.10-рендера костей/пепла (ParticleSkeleton/ParticleAshes).
+         * В 1.7.10: GL_BLEND(770/771) + GL_ALPHA_TEST GREATER 0 + наследуемый depth (LEQUAL + depth write) + cull face.
+         * 1.7.10 использовал OpenGlHelper.setLightmapTextureCoords; в 1.20.1 -> COLOR_TEX_LIGHTMAP shader
+         * который семплирует lightmap по UV2. Ранее использовался PARTICLE_SHADER без привязки lightmap –
+         * все частицы рендерились чёрными.
+         */
+        /**
+         * Скелет-кости: TRIANGLES, формат NEW_ENTITY (с нормалями и overlay UV1).
+         * NEW_ENTITY + RENDERTYPE_ENTITY_TRANSLUCENT_SHADER — это тот же путь, что и у
+         * RenderType.entityTranslucent(): полноценная запись глубины и back-face culling.
+         * Старый POSITION_COLOR_TEX_LIGHTMAP шейдер на TRIANGLES не писал глубину —
+         * отсюда «дырявый череп» и выигрыш пепла в depth-тесте.
+         */
+        public static final Function<ResourceLocation, RenderType> SKELETON_PARTICLES = Util.memoize(
+                texture -> create("skeleton_particles", DefaultVertexFormat.NEW_ENTITY, VertexFormat.Mode.TRIANGLES, 1536, false, false,
+                        RenderType.CompositeState.builder()
+                                .setShaderState(RENDERTYPE_ENTITY_TRANSLUCENT_SHADER)
+                                .setTextureState(new RenderStateShard.TextureStateShard(texture, false, false))
+                                .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
+                                .setCullState(CULL)
+                                .setLightmapState(LIGHTMAP)
+                                .setOverlayState(OVERLAY)
+                                .setDepthTestState(LEQUAL_DEPTH_TEST)
+                                .setWriteMaskState(COLOR_DEPTH_WRITE)
+                                .createCompositeState(false)));
+
+        /**
+         * Пепел (ParticleAshesNT): QUADS, тот же lightmap-шейдер что и у скелета.
+         * Тоже пишет глубину (COLOR_DEPTH_WRITE), как кости — тогда в зонах, где другие
+         * частицы (облака гриба) оставили NO_DEPTH_TEST, пепел, нарисованный последним,
+         * корректно проигрывает depth-тест против глубины костей. Порядок «кости раньше,
+         * пепел позже» гарантирован сортировкой в ParticleEngineNT.
+         */
+        public static final Function<ResourceLocation, RenderType> ASHES_PARTICLES = Util.memoize(
+                texture -> create("ashes_particles", DefaultVertexFormat.POSITION_COLOR_TEX_LIGHTMAP, VertexFormat.Mode.QUADS, 1536, false, false,
+                        RenderType.CompositeState.builder()
+                                .setShaderState(POSITION_COLOR_TEX_LIGHTMAP_SHADER)
+                                .setTextureState(new RenderStateShard.TextureStateShard(texture, false, false))
+                                .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
+                                .setCullState(NO_CULL)
+                                .setLightmapState(LIGHTMAP)
+                                .setDepthTestState(LEQUAL_DEPTH_TEST)
+                                .setWriteMaskState(COLOR_DEPTH_WRITE)
+                                .createCompositeState(false)));
+
+        /** Вуаль камуфляжа (RedCablePaintableRenderer): спрайт из блочного атласа, прозрачный. */
+        public static final RenderType PYLON_OVERLAY = makePylonOverlay();
+
+        private static RenderType makePylonOverlay() {
+            //? if < 1.21.1 {
+            return create("hbm_m_pylon_overlay", DefaultVertexFormat.POSITION_COLOR_TEX, VertexFormat.Mode.QUADS, 4096, false, false,
+                    RenderType.CompositeState.builder()
+                            .setShaderState(POSITION_COLOR_TEX_SHADER)
+                            .setTextureState(new RenderStateShard.TextureStateShard(net.minecraft.world.inventory.InventoryMenu.BLOCK_ATLAS, false, false))
+                            .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
+                            .setCullState(NO_CULL)
+                            .setLightmapState(NO_LIGHTMAP)
+                            .setDepthTestState(LEQUAL_DEPTH_TEST)
+                            .setWriteMaskState(COLOR_WRITE)
+                            .createCompositeState(false));
+            //?} else {
+            /*return create("hbm_m_pylon_overlay", DefaultVertexFormat.POSITION_TEX_COLOR, VertexFormat.Mode.QUADS, 4096, false, false,
+                    RenderType.CompositeState.builder()
+                            .setShaderState(RENDERTYPE_TEXT_BACKGROUND_SHADER)
+                            .setTextureState(new RenderStateShard.TextureStateShard(net.minecraft.world.inventory.InventoryMenu.BLOCK_ATLAS, false, false))
+                            .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
+                            .setCullState(NO_CULL)
+                            .setLightmapState(NO_LIGHTMAP)
+                            .setDepthTestState(LEQUAL_DEPTH_TEST)
+                            .setWriteMaskState(COLOR_WRITE)
+                            .createCompositeState(false));
+            *///?}
+        }
+
+        /** Кабели ЛЭП (RedPylonWireRenderer): текстурированные квады wire.png, UV-тайлинг 1/8 блока. */
+        public static final Function<ResourceLocation, RenderType> PYLON_WIRE = Util.memoize(
+                texture -> {
+                    //? if < 1.21.1 {
+                    return create("hbm_m_pylon_wire", DefaultVertexFormat.POSITION_COLOR_TEX, VertexFormat.Mode.QUADS, 262144, false, false,
+                            RenderType.CompositeState.builder()
+                                    .setShaderState(POSITION_COLOR_TEX_SHADER)
+                                    .setTextureState(new RenderStateShard.TextureStateShard(texture, false, false))
+                                    .setTransparencyState(NO_TRANSPARENCY)
+                                    .setCullState(NO_CULL)
+                                    .setLightmapState(NO_LIGHTMAP)
+                                    .setDepthTestState(LEQUAL_DEPTH_TEST)
+                                    .setWriteMaskState(COLOR_DEPTH_WRITE)
+                                    .createCompositeState(false));
+                    //?} else {
+                    /*return create("hbm_m_pylon_wire", DefaultVertexFormat.POSITION_TEX_COLOR, VertexFormat.Mode.QUADS, 262144, false, false,
+                            RenderType.CompositeState.builder()
+                                    .setShaderState(RENDERTYPE_TEXT_BACKGROUND_SHADER)
+                                    .setTextureState(new RenderStateShard.TextureStateShard(texture, false, false))
+                                    .setTransparencyState(NO_TRANSPARENCY)
+                                    .setCullState(NO_CULL)
+                                    .setLightmapState(NO_LIGHTMAP)
+                                    .setDepthTestState(LEQUAL_DEPTH_TEST)
+                                    .setWriteMaskState(COLOR_DEPTH_WRITE)
+                                    .createCompositeState(false));
+                    *///?}
+                });
+
         /** Fleija cloud — untextured sphere, full-bright color (порт RenderCloudFleija). */
-        public static final RenderType FLEIJA_SPHERE = create("fleija_sphere",
-                DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.TRIANGLES, 262144, false, true,
+        public static final RenderType FLEIJA_SPHERE = create("fleija_sphere",                DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.TRIANGLES, 262144, false, false,
                 RenderType.CompositeState.builder()
                         .setShaderState(POSITION_COLOR_SHADER)
-                        .setTransparencyState(ADDITIVE_BLEND)
+                        .setTransparencyState(LIGHTNING_TRANSPARENCY)
                         .setCullState(NO_CULL)
                         .setLightmapState(NO_LIGHTMAP)
                         .setWriteMaskState(COLOR_WRITE)
@@ -141,7 +288,7 @@ public class ClientRenderHandler {
 
         /** Black hole event horizon — opaque black, writes depth (порт RenderBlackHole sphere). */
         public static final RenderType BHOLE_SPHERE = create("bhole_sphere",
-                DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.TRIANGLES, 262144, false, true,
+                DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.TRIANGLES, 262144, false, false,
                 RenderType.CompositeState.builder()
                         .setShaderState(POSITION_COLOR_SHADER)
                         .setTransparencyState(NO_TRANSPARENCY)
@@ -153,11 +300,11 @@ public class ClientRenderHandler {
 
         /** Accretion disc / swirl — vertex color × texture (1.7.10 glColor × bindTexture). */
         public static final Function<ResourceLocation, RenderType> BHOLE_DISC = Util.memoize(
-                texture -> create("bhole_disc", DefaultVertexFormat.POSITION_TEX_COLOR, VertexFormat.Mode.QUADS, 8192, false, true,
+                texture -> create("bhole_disc", DefaultVertexFormat.POSITION_TEX_COLOR, VertexFormat.Mode.QUADS, 8192, false, false,
                         RenderType.CompositeState.builder()
                                 .setShaderState(BHOLE_TEX_COLOR_SHADER)
                                 .setTextureState(new RenderStateShard.TextureStateShard(texture, false, false))
-                                .setTransparencyState(SEVEN_SEVEN10)
+                                .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
                                 .setDepthTestState(LEQUAL_DEPTH_TEST)
                                 .setCullState(NO_CULL)
                                 .setLightmapState(NO_LIGHTMAP)
@@ -167,11 +314,11 @@ public class ClientRenderHandler {
 
         /** Second pass of disc/swirl — additive white glow (1.7.10 GL_SRC_ALPHA, GL_ONE). */
         public static final Function<ResourceLocation, RenderType> BHOLE_DISC_ADDITIVE = Util.memoize(
-                texture -> create("bhole_disc_add", DefaultVertexFormat.POSITION_TEX_COLOR, VertexFormat.Mode.QUADS, 8192, false, true,
+                texture -> create("bhole_disc_add", DefaultVertexFormat.POSITION_TEX_COLOR, VertexFormat.Mode.QUADS, 8192, false, false,
                         RenderType.CompositeState.builder()
                                 .setShaderState(BHOLE_TEX_COLOR_SHADER)
                                 .setTextureState(new RenderStateShard.TextureStateShard(texture, false, false))
-                                .setTransparencyState(ADDITIVE_BLEND)
+                                .setTransparencyState(LIGHTNING_TRANSPARENCY)
                                 .setDepthTestState(LEQUAL_DEPTH_TEST)
                                 .setCullState(NO_CULL)
                                 .setLightmapState(NO_LIGHTMAP)
@@ -181,10 +328,10 @@ public class ClientRenderHandler {
 
         /** Polar jets — additive, no depth write. */
         public static final RenderType BHOLE_JETS = create("bhole_jets",
-                DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.TRIANGLES, 512, false, true,
+                DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.TRIANGLES, 512, false, false,
                 RenderType.CompositeState.builder()
                         .setShaderState(POSITION_COLOR_SHADER)
-                        .setTransparencyState(ADDITIVE_BLEND)
+                        .setTransparencyState(LIGHTNING_TRANSPARENCY)
                         .setDepthTestState(LEQUAL_DEPTH_TEST)
                         .setCullState(NO_CULL)
                         .setLightmapState(NO_LIGHTMAP)
@@ -194,11 +341,11 @@ public class ClientRenderHandler {
 
         /** Fallout rain (RenderFallout): tex × vertex color, без lightmap. */
         public static final Function<ResourceLocation, RenderType> ENTITY_SMOOTH = Util.memoize(
-                texture -> create("entity_smooth", DefaultVertexFormat.POSITION_TEX_COLOR, VertexFormat.Mode.QUADS, 256, true, true,
+                texture -> create("entity_smooth", DefaultVertexFormat.POSITION_TEX_COLOR, VertexFormat.Mode.QUADS, 256, true, false,
                         RenderType.CompositeState.builder()
                                 .setShaderState(NUKE_TEX_COLOR_SHADER)
                                 .setTextureState(new RenderStateShard.TextureStateShard(texture, false, true))
-                                .setTransparencyState(SEVEN_SEVEN10)
+                                .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
                                 .setCullState(NO_CULL)
                                 .setLightmapState(NO_LIGHTMAP)
                                 .setWriteMaskState(COLOR_DEPTH_WRITE)
@@ -378,8 +525,17 @@ public class ClientRenderHandler {
     private static net.minecraft.client.renderer.MultiBufferSource.BufferSource highlightBufferSource() {
         net.minecraft.client.renderer.MultiBufferSource.BufferSource bs = highlightBufferSource;
         if (bs == null) {
-            bs = net.minecraft.client.renderer.MultiBufferSource.immediate(
+            // PlainBufferSource, а НЕ MultiBufferSource.immediate(): под
+            // ImmediatelyFast фабрика подменяет источник на BatchableBufferSource,
+            // падающий на пустых sortOnUpload-батчах — а HIGHLIGHT_BOX_FILL
+            // сортируемый (см. PlainBufferSource).
+            //? if < 1.21.1 {
+            bs = new com.hbm_m.client.render.PlainBufferSource(
                     new com.mojang.blaze3d.vertex.BufferBuilder(CustomRenderTypes.HIGHLIGHT_BOX_FILL.bufferSize()));
+            //?} else {
+            /*bs = new com.hbm_m.client.render.PlainBufferSource(
+                    new com.mojang.blaze3d.vertex.ByteBufferBuilder(CustomRenderTypes.HIGHLIGHT_BOX_FILL.bufferSize()));
+            *///?}
             highlightBufferSource = bs;
         }
         return bs;
@@ -488,47 +644,83 @@ public class ClientRenderHandler {
             maxX -= (float) cameraPos.x; maxY -= (float) cameraPos.y; maxZ -= (float) cameraPos.z;
         }
         
-        // Низ (Y-)
         if (drawDown) {
+            //? if < 1.21.1 {
             consumer.vertex(matrix, minX, minY, minZ).color(r, g, b, alpha).endVertex();
             consumer.vertex(matrix, maxX, minY, minZ).color(r, g, b, alpha).endVertex();
             consumer.vertex(matrix, maxX, minY, maxZ).color(r, g, b, alpha).endVertex();
             consumer.vertex(matrix, minX, minY, maxZ).color(r, g, b, alpha).endVertex();
+            //?} else {
+            /*consumer.addVertex(matrix, minX, minY, minZ).setColor(r, g, b, alpha);
+            consumer.addVertex(matrix, maxX, minY, minZ).setColor(r, g, b, alpha);
+            consumer.addVertex(matrix, maxX, minY, maxZ).setColor(r, g, b, alpha);
+            consumer.addVertex(matrix, minX, minY, maxZ).setColor(r, g, b, alpha);
+            *///?}
         }
-        // Верх (Y+)
         if (drawUp) {
+            //? if < 1.21.1 {
             consumer.vertex(matrix, minX, maxY, maxZ).color(r, g, b, alpha).endVertex();
             consumer.vertex(matrix, maxX, maxY, maxZ).color(r, g, b, alpha).endVertex();
             consumer.vertex(matrix, maxX, maxY, minZ).color(r, g, b, alpha).endVertex();
             consumer.vertex(matrix, minX, maxY, minZ).color(r, g, b, alpha).endVertex();
+            //?} else {
+            /*consumer.addVertex(matrix, minX, maxY, maxZ).setColor(r, g, b, alpha);
+            consumer.addVertex(matrix, maxX, maxY, maxZ).setColor(r, g, b, alpha);
+            consumer.addVertex(matrix, maxX, maxY, minZ).setColor(r, g, b, alpha);
+            consumer.addVertex(matrix, minX, maxY, minZ).setColor(r, g, b, alpha);
+            *///?}
         }
-        // Север (Z-)
         if (drawNorth) {
+            //? if < 1.21.1 {
             consumer.vertex(matrix, minX, minY, minZ).color(r, g, b, alpha).endVertex();
             consumer.vertex(matrix, minX, maxY, minZ).color(r, g, b, alpha).endVertex();
             consumer.vertex(matrix, maxX, maxY, minZ).color(r, g, b, alpha).endVertex();
             consumer.vertex(matrix, maxX, minY, minZ).color(r, g, b, alpha).endVertex();
+            //?} else {
+            /*consumer.addVertex(matrix, minX, minY, minZ).setColor(r, g, b, alpha);
+            consumer.addVertex(matrix, minX, maxY, minZ).setColor(r, g, b, alpha);
+            consumer.addVertex(matrix, maxX, maxY, minZ).setColor(r, g, b, alpha);
+            consumer.addVertex(matrix, maxX, minY, minZ).setColor(r, g, b, alpha);
+            *///?}
         }
-        // Юг (Z+)
         if (drawSouth) {
+            //? if < 1.21.1 {
             consumer.vertex(matrix, maxX, minY, maxZ).color(r, g, b, alpha).endVertex();
             consumer.vertex(matrix, maxX, maxY, maxZ).color(r, g, b, alpha).endVertex();
             consumer.vertex(matrix, minX, maxY, maxZ).color(r, g, b, alpha).endVertex();
             consumer.vertex(matrix, minX, minY, maxZ).color(r, g, b, alpha).endVertex();
+            //?} else {
+            /*consumer.addVertex(matrix, maxX, minY, maxZ).setColor(r, g, b, alpha);
+            consumer.addVertex(matrix, maxX, maxY, maxZ).setColor(r, g, b, alpha);
+            consumer.addVertex(matrix, minX, maxY, maxZ).setColor(r, g, b, alpha);
+            consumer.addVertex(matrix, minX, minY, maxZ).setColor(r, g, b, alpha);
+            *///?}
         }
-        // Запад (X-)
         if (drawWest) {
+            //? if < 1.21.1 {
             consumer.vertex(matrix, minX, minY, maxZ).color(r, g, b, alpha).endVertex();
             consumer.vertex(matrix, minX, maxY, maxZ).color(r, g, b, alpha).endVertex();
             consumer.vertex(matrix, minX, maxY, minZ).color(r, g, b, alpha).endVertex();
             consumer.vertex(matrix, minX, minY, minZ).color(r, g, b, alpha).endVertex();
+            //?} else {
+            /*consumer.addVertex(matrix, minX, minY, maxZ).setColor(r, g, b, alpha);
+            consumer.addVertex(matrix, minX, maxY, maxZ).setColor(r, g, b, alpha);
+            consumer.addVertex(matrix, minX, maxY, minZ).setColor(r, g, b, alpha);
+            consumer.addVertex(matrix, minX, minY, minZ).setColor(r, g, b, alpha);
+            *///?}
         }
-        // Восток (X+)
         if (drawEast) {
+            //? if < 1.21.1 {
             consumer.vertex(matrix, maxX, minY, minZ).color(r, g, b, alpha).endVertex();
             consumer.vertex(matrix, maxX, maxY, minZ).color(r, g, b, alpha).endVertex();
             consumer.vertex(matrix, maxX, maxY, maxZ).color(r, g, b, alpha).endVertex();
             consumer.vertex(matrix, maxX, minY, maxZ).color(r, g, b, alpha).endVertex();
+            //?} else {
+            /*consumer.addVertex(matrix, maxX, minY, minZ).setColor(r, g, b, alpha);
+            consumer.addVertex(matrix, maxX, maxY, minZ).setColor(r, g, b, alpha);
+            consumer.addVertex(matrix, maxX, maxY, maxZ).setColor(r, g, b, alpha);
+            consumer.addVertex(matrix, maxX, minY, maxZ).setColor(r, g, b, alpha);
+            *///?}
         }
     }
 

@@ -1,5 +1,7 @@
 package com.hbm_m.blockentity.machines;
 
+import com.hbm_m.platform.PlatformHooks;
+
 import java.util.List;
 
 import org.jetbrains.annotations.Nullable;
@@ -9,6 +11,7 @@ import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.inventory.menu.MachineCombinationOvenMenu;
 import com.hbm_m.recipe.CombinationOvenRecipe;
+import com.hbm_m.platform.recipe.RecipeHooks;
 import com.hbm_m.recipe.ModRecipes;
 
 import net.minecraft.core.BlockPos;
@@ -18,7 +21,6 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 
@@ -63,12 +65,8 @@ public class MachineCombinationOvenBlockEntity extends BaseMachineBlockEntity {
 
     //? if forge {
     @Override
-    public @org.jetbrains.annotations.NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(
-            net.minecraftforge.common.capabilities.Capability<T> cap, @Nullable net.minecraft.core.Direction side) {
-        if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER) {
-            return tank.getCapability().cast();
-        }
-        return super.getCapability(cap, side);
+    protected void setupFluidCapability() {
+        setFluidHandler(tank);
     }
     //?}
 
@@ -109,8 +107,7 @@ public class MachineCombinationOvenBlockEntity extends BaseMachineBlockEntity {
         ItemStack input = inventory.getStackInSlot(SLOT_INPUT);
         if (input.isEmpty()) return null;
 
-        RecipeType type = (RecipeType) CombinationOvenRecipe.Type.INSTANCE;
-        List<CombinationOvenRecipe> recipes = level.getRecipeManager().getAllRecipesFor(type);
+        List<CombinationOvenRecipe> recipes = RecipeHooks.getAllRecipes(level, CombinationOvenRecipe.Type.INSTANCE);
         for (CombinationOvenRecipe recipe : recipes) {
             if (recipe.matchesInput(input) && recipe.matchesFluid(tank.getStoredFluid())) {
                 return recipe;
@@ -131,7 +128,7 @@ public class MachineCombinationOvenBlockEntity extends BaseMachineBlockEntity {
         ItemStack outSlot = inventory.getStackInSlot(SLOT_OUTPUT);
         ItemStack out = recipe.getOutput();
         if (!outSlot.isEmpty()) {
-            if (!ItemStack.isSameItemSameTags(outSlot, out)) return false;
+            if (!PlatformHooks.isSameItemSameTags(outSlot, out)) return false;
             if (outSlot.getCount() + out.getCount() > outSlot.getMaxStackSize()) return false;
         }
 
@@ -157,16 +154,16 @@ public class MachineCombinationOvenBlockEntity extends BaseMachineBlockEntity {
     // ==================== NBT ====================
 
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.putInt("progress", progressTicks);
         tag.putInt("duration", currentDuration);
         tank.writeToNBT(tag, "tank");
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         progressTicks = tag.getInt("progress");
         currentDuration = tag.contains("duration") ? Math.max(1, tag.getInt("duration")) : 1;
         tank.readFromNBT(tag, "tank");
@@ -188,7 +185,7 @@ public class MachineCombinationOvenBlockEntity extends BaseMachineBlockEntity {
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
         if (slot == SLOT_INPUT) {
             if (level == null) return true;
-            List<CombinationOvenRecipe> recipes = level.getRecipeManager().getAllRecipesFor(CombinationOvenRecipe.Type.INSTANCE);
+            List<CombinationOvenRecipe> recipes = RecipeHooks.getAllRecipes(level, CombinationOvenRecipe.Type.INSTANCE);
             for (CombinationOvenRecipe recipe : recipes) {
                 if (recipe.matchesInput(stack)) return true;
             }

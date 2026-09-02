@@ -1,5 +1,8 @@
 package com.hbm_m.inventory.gui;
 
+import com.hbm_m.platform.PlatformHooks;
+import com.hbm_m.client.GuiCompat;
+
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -18,6 +21,7 @@ import com.hbm_m.network.ModPacketHandler;
 import com.hbm_m.platform.ModItemStackHandler;
 import com.hbm_m.recipe.AnvilRecipe;
 import com.hbm_m.recipe.AnvilRecipeManager;
+import com.hbm_m.platform.recipe.RecipeHooks;
 import com.mojang.blaze3d.systems.RenderSystem;
 
 import net.minecraft.ChatFormatting;
@@ -79,7 +83,7 @@ public class GUIAnvil extends AbstractContainerScreen<AnvilMenu> {
         searchBox.setTextColorUneditable(0xFFFFFFFF);
         searchBox.setResponder(this::applySearch);
         
-        // Устанавливаем подсказку
+        // РЈСЃС‚Р°РЅР°РІР»РёРІР°РµРј РїРѕРґСЃРєР°Р·РєСѓ
         String hint = Component.translatable("gui.hbm_m.anvil.search_hint").getString();
         if ("gui.hbm_m.anvil.search_hint".equals(hint)) {
             hint = Component.translatable("gui.hbm_m.anvil.search").getString();
@@ -89,7 +93,9 @@ public class GUIAnvil extends AbstractContainerScreen<AnvilMenu> {
         
         this.addRenderableWidget(searchBox);
         
-        cachedServerSelection = menu.blockEntity.getSelectedRecipeId().orElse(null);
+        if (menu.blockEntity != null) { // тайл может отсутствовать в реплее Flashback
+            cachedServerSelection = menu.blockEntity.getSelectedRecipeId().orElse(null);
+        }
         applySearch("");
     }
     
@@ -98,7 +104,7 @@ public class GUIAnvil extends AbstractContainerScreen<AnvilMenu> {
         RegistryAccess access = getRegistryAccess();
         originRecipes.addAll(
             AnvilRecipeManager.getClientRecipes().stream()
-                .filter(recipe -> recipe.canCraftOn(menu.blockEntity.getTier()))
+                .filter(recipe -> menu.blockEntity == null || recipe.canCraftOn(menu.blockEntity.getTier()))
                 .sorted(Comparator.comparing(recipe ->
                     recipe.getResultItem(access).getHoverName().getString().toLowerCase(Locale.ROOT)))
                 .toList()
@@ -125,7 +131,9 @@ public class GUIAnvil extends AbstractContainerScreen<AnvilMenu> {
         }
         
         resetPagination();
-        cachedServerSelection = menu.blockEntity.getSelectedRecipeId().orElse(null);
+        if (menu.blockEntity != null) {
+            cachedServerSelection = menu.blockEntity.getSelectedRecipeId().orElse(null);
+        }
         followSelection = true;
         refreshSelectionFromCache(false);
     }
@@ -197,7 +205,9 @@ public class GUIAnvil extends AbstractContainerScreen<AnvilMenu> {
     protected void containerTick() {
         super.containerTick();
         if (searchBox != null) {
+            //? if < 1.21.1 {
             searchBox.tick();
+            //?}
             if (searchBox.isFocused() && searchBox.getValue().isEmpty()) {
                 searchBox.setSuggestion("");
             } else if (!searchBox.isFocused() && searchBox.getValue().isEmpty()) {
@@ -217,6 +227,7 @@ public class GUIAnvil extends AbstractContainerScreen<AnvilMenu> {
     }
     
     private void syncSelectionFromServer() {
+        if (menu.blockEntity == null) return; // тайл может отсутствовать в реплее Flashback
         ResourceLocation serverSelection = menu.blockEntity.getSelectedRecipeId().orElse(null);
         if (!Objects.equals(serverSelection, cachedServerSelection)) {
             cachedServerSelection = serverSelection;
@@ -279,7 +290,11 @@ public class GUIAnvil extends AbstractContainerScreen<AnvilMenu> {
     
     private int findRecipeIndex(ResourceLocation id) {
         for (int i = 0; i < filteredRecipes.size(); i++) {
+            //? if < 1.21.1 {
             if (filteredRecipes.get(i).getId().equals(id)) {
+            //?} else {
+            /*if (id.equals(RecipeHooks.recipeId(this.minecraft.level.getRecipeManager(), AnvilRecipe.Type.INSTANCE, filteredRecipes.get(i)))) {
+            *///?}
                 return i;
             }
         }
@@ -328,7 +343,7 @@ public class GUIAnvil extends AbstractContainerScreen<AnvilMenu> {
             return true;
         }
         
-        if (isOverCraftButton(mouseX, mouseY) && isCraftButtonEnabled()) {
+        if (isOverCraftButton(mouseX, mouseY) && isCraftButtonEnabled() && menu.blockEntity != null) {
             playClickSound();
             boolean craftAll = hasShiftDown();
             ModPacketHandler.sendToServer(
@@ -408,14 +423,16 @@ public class GUIAnvil extends AbstractContainerScreen<AnvilMenu> {
     }
     
     private void notifyServerAboutSelection(@Nullable AnvilRecipe recipe) {
-        ResourceLocation id = recipe != null ? recipe.getId() : null;
+        ResourceLocation id = recipe != null ? RecipeHooks.recipeId(this.minecraft.level.getRecipeManager(), AnvilRecipe.Type.INSTANCE, recipe) : null;
         cachedServerSelection = id;
+        if (menu.blockEntity == null) return; // тайл может отсутствовать в реплее Flashback
         menu.blockEntity.setSelectedRecipeId(id);
         ModPacketHandler.sendToServer(
             ModPacketHandler.ANVIL_SELECT_RECIPE,
             new AnvilSelectRecipeC2SPacket(menu.blockEntity.getBlockPos(), id));
     }
     
+    //? if < 1.21.1 {
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
         if (isOverRecipeGrid(mouseX, mouseY)) {
@@ -428,6 +445,20 @@ public class GUIAnvil extends AbstractContainerScreen<AnvilMenu> {
         }
         return super.mouseScrolled(mouseX, mouseY, delta);
     }
+    //?} else {
+    /*@Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
+        if (isOverRecipeGrid(mouseX, mouseY)) {
+            if (scrollY > 0) {
+                scrollColumns(-1);
+            } else if (scrollY < 0) {
+                scrollColumns(1);
+            }
+            return true;
+        }
+        return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
+    }
+    *///?}
     
     private boolean isOverRecipeGrid(double mouseX, double mouseY) {
         int guiLeft = (width - imageWidth) / 2;
@@ -494,7 +525,9 @@ public class GUIAnvil extends AbstractContainerScreen<AnvilMenu> {
     
     @Override
     protected void renderLabels(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY) {
-        Component titleText = Component.translatable("container.hbm_m.anvil", menu.blockEntity.getTier().getDisplayName());
+        Component titleText = menu.blockEntity != null
+                ? Component.translatable("container.hbm_m.anvil", menu.blockEntity.getTier().getDisplayName())
+                : Component.translatable("container.hbm_m.anvil"); // тайл может отсутствовать в реплее Flashback
         int titleWidth = this.font.width(titleText);
         int x = 61 - titleWidth / 2;
         int y = 8;
@@ -502,7 +535,7 @@ public class GUIAnvil extends AbstractContainerScreen<AnvilMenu> {
         
         guiGraphics.drawString(this.font, this.playerInventoryTitle, 8, imageHeight - 96 + 2, 0x404040, false);
         
-        // Рисуем текст деталей рецепта (если выбран)
+        // Р РёСЃСѓРµРј С‚РµРєСЃС‚ РґРµС‚Р°Р»РµР№ СЂРµС†РµРїС‚Р° (РµСЃР»Рё РІС‹Р±СЂР°РЅ)
         renderRecipeDetailsText(guiGraphics);
     }
     
@@ -552,16 +585,16 @@ public class GUIAnvil extends AbstractContainerScreen<AnvilMenu> {
             
             AnvilRecipe recipe = filteredRecipes.get(recipeIndex);
             
-            // ИСПРАВЛЕНИЕ: Определяем иконку в зависимости от типа рецепта
+            // РРЎРџР РђР’Р›Р•РќРР•: РћРїСЂРµРґРµР»СЏРµРј РёРєРѕРЅРєСѓ РІ Р·Р°РІРёСЃРёРјРѕСЃС‚Рё РѕС‚ С‚РёРїР° СЂРµС†РµРїС‚Р°
             ItemStack displayStack;
             if (recipe.isRecycling()) {
-                // Для разборки - показываем входной предмет
+                // Р”Р»СЏ СЂР°Р·Р±РѕСЂРєРё - РїРѕРєР°Р·С‹РІР°РµРј РІС…РѕРґРЅРѕР№ РїСЂРµРґРјРµС‚
                 displayStack = recipe.getRecyclingInputStack();
                 if (displayStack.isEmpty()) {
-                    displayStack = recipe.getDisplayStack(); // Фоллбэк
+                    displayStack = recipe.getDisplayStack(); // Р¤РѕР»Р»Р±СЌРє
                 }
             } else {
-                // Для обычных рецептов - стандартная иконка
+                // Р”Р»СЏ РѕР±С‹С‡РЅС‹С… СЂРµС†РµРїС‚РѕРІ - СЃС‚Р°РЅРґР°СЂС‚РЅР°СЏ РёРєРѕРЅРєР°
                 displayStack = recipe.getDisplayStack();
             }
             
@@ -591,24 +624,24 @@ public class GUIAnvil extends AbstractContainerScreen<AnvilMenu> {
     private void renderSidePanel(GuiGraphics guiGraphics, int guiLeft, int guiTop) {
         int slide = Mth.clamp(lastTextWidth - 42, 0, 1000);
         
-        // СНАЧАЛА рисуем дополнительные сегменты (слева направо)
+        // РЎРќРђР§РђР›Рђ СЂРёСЃСѓРµРј РґРѕРїРѕР»РЅРёС‚РµР»СЊРЅС‹Рµ СЃРµРіРјРµРЅС‚С‹ (СЃР»РµРІР° РЅР°РїСЂР°РІРѕ)
         int mul = 1;
         while (slide >= 51 * mul) {
             guiGraphics.blit(TEXTURE, guiLeft + 125 + 51 * mul, guiTop + 17, 125, 17, 54, 108);
             mul++;
         }
         
-        // ПОТОМ рисуем основной сегмент (справа)
+        // РџРћРўРћРњ СЂРёСЃСѓРµРј РѕСЃРЅРѕРІРЅРѕР№ СЃРµРіРјРµРЅС‚ (СЃРїСЂР°РІР°)
         guiGraphics.blit(TEXTURE, guiLeft + 125 + slide, guiTop + 17, 125, 17, 54, 108);
     }
     
     /**
-     * Отрисовка текста деталей рецепта
+     * РћС‚СЂРёСЃРѕРІРєР° С‚РµРєСЃС‚Р° РґРµС‚Р°Р»РµР№ СЂРµС†РµРїС‚Р°
      */
     private void renderRecipeDetailsText(GuiGraphics guiGraphics) {
         List<Component> lines = buildRecipeDetails();
         
-        // Вычисляем ширину текста и обновляем lastTextWidth
+        // Р’С‹С‡РёСЃР»СЏРµРј С€РёСЂРёРЅСѓ С‚РµРєСЃС‚Р° Рё РѕР±РЅРѕРІР»СЏРµРј lastTextWidth
         int longest = 0;
         if (!lines.isEmpty()) {
             for (Component line : lines) {
@@ -620,12 +653,12 @@ public class GUIAnvil extends AbstractContainerScreen<AnvilMenu> {
             lastTextWidth = 0;
         }
         
-        // Если нет текста - выходим
+        // Р•СЃР»Рё РЅРµС‚ С‚РµРєСЃС‚Р° - РІС‹С…РѕРґРёРј
         if (lines.isEmpty()) {
             return;
         }
         
-        // Рисуем текст
+        // Р РёСЃСѓРµРј С‚РµРєСЃС‚
         float scale = 0.5F;
         guiGraphics.pose().pushPose();
         guiGraphics.pose().scale(scale, scale, 1.0F);
@@ -686,7 +719,7 @@ public class GUIAnvil extends AbstractContainerScreen<AnvilMenu> {
     @Override
     public void render(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY, float delta) {
         hoveredRecipeStack = ItemStack.EMPTY;
-        renderBackground(guiGraphics);
+        GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, delta);
         super.render(guiGraphics, mouseX, mouseY, delta);
         this.renderTooltip(guiGraphics, mouseX, mouseY);
         
@@ -728,7 +761,7 @@ public class GUIAnvil extends AbstractContainerScreen<AnvilMenu> {
         Inventory inventory = minecraft.player.getInventory();
         for (int i = 0; i < inventory.getContainerSize(); i++) {
             ItemStack invStack = inventory.getItem(i);
-            if (ItemStack.isSameItemSameTags(invStack, stack)) {
+            if (PlatformHooks.isSameItemSameTags(invStack, stack)) {
                 count += invStack.getCount();
             }
         }
@@ -781,17 +814,17 @@ public class GUIAnvil extends AbstractContainerScreen<AnvilMenu> {
     }
     
     private int getMachineItemCount(ItemStack stack) {
-        if (stack.isEmpty()) {
+        if (stack.isEmpty() || menu.blockEntity == null) {
             return 0;
         }
-        
+
         ModItemStackHandler handler = menu.blockEntity.getItemHandler();
         int count = 0;
         int slotLimit = Math.min(handler.getSlots(), 2);
         
         for (int slot = 0; slot < slotLimit; slot++) {
             ItemStack slotStack = handler.getStackInSlot(slot);
-            if (ItemStack.isSameItemSameTags(slotStack, stack)) {
+            if (PlatformHooks.isSameItemSameTags(slotStack, stack)) {
                 count += slotStack.getCount();
             }
         }

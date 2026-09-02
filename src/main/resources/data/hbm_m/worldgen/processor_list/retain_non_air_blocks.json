@@ -16,6 +16,9 @@
           "Name": "minecraft:structure_void"
         }
       ]
+    },
+    {
+      "processor_type": "hbm_m:connection_fix_processor"
     }
   ]
 }

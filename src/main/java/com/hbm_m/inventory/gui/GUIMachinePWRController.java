@@ -1,6 +1,7 @@
 package com.hbm_m.inventory.gui;
 
 import com.hbm_m.blockentity.machines.PWRControllerBlockEntity;
+import com.hbm_m.client.GuiCompat;
 import com.hbm_m.inventory.menu.PWRControllerMenu;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.network.PWRControlPacket;
@@ -56,6 +57,8 @@ public class GUIMachinePWRController extends GuiInfoScreen<PWRControllerMenu> {
         RenderSystem.setShader(GameRenderer::getPositionTexShader);
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
         guiGraphics.blit(TEXTURE, this.leftPos, this.topPos, 0, 0, this.imageWidth, this.imageHeight);
+        // тайл может отсутствовать в реплее Flashback
+        if (pwr == null) return;
 
         pwr.getCoolantTank().renderTank(guiGraphics, this.leftPos + TANK_COOLANT_X, this.topPos + TANK_Y, TANK_WIDTH, TANK_HEIGHT);
         pwr.getCoolantHotTank().renderTank(guiGraphics, this.leftPos + TANK_HOT_X, this.topPos + TANK_Y, TANK_WIDTH, TANK_HEIGHT);
@@ -80,9 +83,10 @@ public class GUIMachinePWRController extends GuiInfoScreen<PWRControllerMenu> {
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        this.renderBackground(guiGraphics);
+        com.hbm_m.client.GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
-
+        // тайл может отсутствовать в реплее Flashback
+        if (pwr != null) {
         if (isPointInRect(TANK_COOLANT_X, TANK_Y, TANK_WIDTH, TANK_HEIGHT, mouseX, mouseY)) {
             pwr.getCoolantTank().renderTankInfo(guiGraphics, this.font, mouseX, mouseY,
                     this.leftPos + TANK_COOLANT_X, this.topPos + TANK_Y, TANK_WIDTH, TANK_HEIGHT);
@@ -104,11 +108,14 @@ public class GUIMachinePWRController extends GuiInfoScreen<PWRControllerMenu> {
                 Component.literal("Control rods: " + Math.round(pwr.rodLevel) + "% -> " + Math.round(pwr.rodTarget) + "%"),
                 Component.literal(pwr.typeLoaded != null ? ("Loaded: " + pwr.typeLoaded + " x" + pwr.amountLoaded) : "No fuel loaded"));
 
+        }
         this.renderTooltip(guiGraphics, mouseX, mouseY);
     }
 
     @Override
     public boolean mouseClicked(double x, double y, int button) {
+        // тайл может отсутствовать в реплее Flashback
+        if (pwr == null) return super.mouseClicked(x, y, button);
         if (isWithin(ROD_MINUS_X, ROD_BUTTON_Y, ROD_BUTTON_SIZE, ROD_BUTTON_SIZE, x, y)) {
             PWRControlPacket.sendToServer(pwr.getBlockPos(), Math.max(0D, pwr.rodTarget - 5D));
             playClickSound();

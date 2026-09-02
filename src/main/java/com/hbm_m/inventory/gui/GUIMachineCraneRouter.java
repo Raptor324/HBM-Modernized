@@ -1,6 +1,7 @@
 package com.hbm_m.inventory.gui;
 
 import com.hbm_m.blockentity.network.MachineCraneRouterBlockEntity;
+import com.hbm_m.client.GuiCompat;
 import com.hbm_m.inventory.filter.ModulePatternMatcher;
 import com.hbm_m.inventory.menu.MachineCraneRouterMenu;
 import com.hbm_m.lib.RefStrings;
@@ -34,11 +35,13 @@ public class GUIMachineCraneRouter extends GuiInfoScreen<MachineCraneRouterMenu>
         guiGraphics.blit(TEXTURE, this.leftPos, this.topPos, 0, 0, 256, 93);
         guiGraphics.blit(TEXTURE, this.leftPos + 39, this.topPos + 93, 39, 93, 176, 108);
 
-        for (int col = 0; col < 2; col++) {
-            for (int row = 0; row < 3; row++) {
-                int side = col * 3 + row;
-                int mode = router.getMode(side);
-                guiGraphics.blit(TEXTURE, this.leftPos + 7 + col * 222, this.topPos + 16 + row * 26, 238, 93 + mode * 18, 18, 18);
+        if (router != null) { // тайл может отсутствовать в реплее Flashback
+            for (int col = 0; col < 2; col++) {
+                for (int row = 0; row < 3; row++) {
+                    int side = col * 3 + row;
+                    int mode = router.getMode(side);
+                    guiGraphics.blit(TEXTURE, this.leftPos + 7 + col * 222, this.topPos + 16 + row * 26, 238, 93 + mode * 18, 18, 18);
+                }
             }
         }
     }
@@ -52,10 +55,10 @@ public class GUIMachineCraneRouter extends GuiInfoScreen<MachineCraneRouterMenu>
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        this.renderBackground(guiGraphics);
+        com.hbm_m.client.GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
 
-        for (int col = 0; col < 2; col++) {
+        for (int col = 0; col < 2 && router != null; col++) {
             for (int row = 0; row < 3; row++) {
                 int side = col * 3 + row;
                 if (isHovering(7 + col * 222, 16 + row * 26, 18, 18, mouseX, mouseY)) {
@@ -64,7 +67,7 @@ public class GUIMachineCraneRouter extends GuiInfoScreen<MachineCraneRouterMenu>
             }
         }
 
-        for (int i = 0; i < MachineCraneRouterBlockEntity.INVENTORY_SIZE; i++) {
+        for (int i = 0; i < MachineCraneRouterBlockEntity.INVENTORY_SIZE && router != null; i++) {
             Slot slot = this.menu.slots.get(i);
             int side = i / MachineCraneRouterBlockEntity.SLOTS_PER_SIDE;
             int local = i % MachineCraneRouterBlockEntity.SLOTS_PER_SIDE;
@@ -91,6 +94,7 @@ public class GUIMachineCraneRouter extends GuiInfoScreen<MachineCraneRouterMenu>
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if (router == null) return super.mouseClicked(mouseX, mouseY, button); // тайл может отсутствовать в реплее Flashback
         for (int col = 0; col < 2; col++) {
             for (int row = 0; row < 3; row++) {
                 int side = col * 3 + row;

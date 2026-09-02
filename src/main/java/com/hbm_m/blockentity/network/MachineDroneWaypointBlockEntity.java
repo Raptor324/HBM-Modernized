@@ -19,7 +19,7 @@ import net.minecraft.world.phys.AABB;
  * Richtung * {@link #height}) und setzt sie einfach auf {@link #nextTarget} um - keine Fracht-
  * Interaktion, im Gegensatz zu {@link MachineDroneCrateBlockEntity}.
  */
-public class MachineDroneWaypointBlockEntity extends BlockEntity implements IDroneLinkable {
+public class MachineDroneWaypointBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity implements IDroneLinkable {
 
     public static final int MIN_HEIGHT = 1;
     public static final int MAX_HEIGHT = 15;
@@ -77,15 +77,13 @@ public class MachineDroneWaypointBlockEntity extends BlockEntity implements IDro
     // ── NBT ─────────────────────────────────────────────────────────────────
 
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         tag.putInt("height", height);
         if (nextTarget != null) tag.putLong("nextTarget", nextTarget.asLong());
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         height = tag.contains("height") ? tag.getInt("height") : DEFAULT_HEIGHT;
         nextTarget = tag.contains("nextTarget") ? BlockPos.of(tag.getLong("nextTarget")) : null;
     }

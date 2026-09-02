@@ -30,6 +30,9 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 //? if fabric {
 /*import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
+*///?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 *///?}
 
 /**
@@ -43,7 +46,8 @@ import net.fabricmc.api.Environment;
  * <p>РЕГРЕССИЯ-СТОП: present here, not {@code AFTER_LEVEL} / {@code RenderTickEvent.END}
  * (dirty GL texture units → white lightmap).
  */
-//? if forge {
+
+//? if forge || neoforge {
 @OnlyIn(Dist.CLIENT)
 //?}
 //? if fabric {
@@ -89,28 +93,30 @@ public final class InstancedRenderFrame {
         IrisRenderBatch.closePersistentIfActive();
 
         try {
-            if (ClientRenderFlags.useInstancedBatching()) {
-                ModClothConfig cfg = ModClothConfig.get();
-                boolean useMdi = cfg.useMultiDrawIndirect && MdiBatchCoordinator.isMdiAvailable();
+            // Инстансинг включён всегда; forceVanillaImmediatePath проверяется внутри
+            // ClientRenderFlags.useInstancedBatching() самими BER. MDI включается
+            // автоматически (caps + отсутствие shader pack) — см. MdiBatchCoordinator.beginFrame.
+            RenderFrameLight.ensureLightTextureUpdated();
 
-                RenderFrameLight.ensureLightTextureUpdated();
-
-                if (useMdi) {
-                    MdiBatchCoordinator coord = MdiBatchCoordinator.beginFrame(projection);
-                    flushAllInstanced(projection);
-                    if (coord != null) {
-                        coord.endFrame(false);
-                    }
-                } else {
-                    flushAllInstanced(projection);
-                }
-
-                LightSampleCache.onFrameStart();
-                MdiRenderFrameGate.advanceAfterPresent();
+            MdiBatchCoordinator coord = MdiBatchCoordinator.beginFrame(projection);
+            flushAllInstanced(projection);
+            if (coord != null) {
+                coord.endFrame(false);
             }
 
+            MdiRenderFrameGate.advanceAfterPresent();
+
+            // БЕЗ guard'а useInstancedBatching: при выключенном инстансинге
+            // не-instanced путь (SingleMeshVboRenderer.render / renderSingle)
+            // всё равно ходит через LightSampleCache. Без инкремента currentFrame
+            // условие lastFrame == currentFrame остаётся true навсегда — свет машин
+            // замерзает на первом сэмпле, а fast-path слот lastQueriedBE навсегда
+            // удерживает сильную ссылку на последний BlockEntity (пиннит весь Level
+            // после выхода из мира).
+            LightSampleCache.onFrameStart();
+
             // После flush instanced (или при выключенном batching): depth содержит все части BER.
-            // Chemplant/Crystallizer液体 — deferred: рисуется здесь, в AFTER_BLOCK_ENTITIES,
+            // Chemplant/Crystallizer — deferred: рисуется здесь, в AFTER_BLOCK_ENTITIES,
             // после closePersistentIfActive и instanced-flush, внутри IrisPhaseGuard
             // BLOCK_ENTITIES (см. MachineChemicalPlantRenderer.presentDeferredFluids).
             MachineChemicalPlantRenderer.presentDeferredFluids();
@@ -158,14 +164,11 @@ public final class InstancedRenderFrame {
     }
 
     private static void flushAllInstanced(Matrix4f projection) {
-        MachineAdvancedAssemblerRenderer.flushInstancedBatches(projection);
-        MachineHydraulicFrackiningTowerRenderer.flushInstancedBatches(projection);
-        MachineAssemblerRenderer.flushInstancedBatches(projection);
+        // Фабричные станки (machine/) — единый реестр вместо N хардкодов flushInstancedBatches.
+        com.hbm_m.client.render.machine.MachineRenderRegistry.flushAll(projection);
+
+        // Легаси-рендереры, ещё не мигрированные на фабрику.
         DoorRenderer.flushInstancedBatches(projection);
-        MachinePressRenderer.flushInstancedBatches(projection);
-        MachineChemicalPlantRenderer.flushInstancedBatches(projection);
-        MachineCrystallizerRenderer.flushInstancedBatches(projection);
-        MachineRadarRenderer.flushInstancedBatches(projection);
     }
 
     public static void clear() {

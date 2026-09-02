@@ -1,6 +1,7 @@
 package com.hbm_m.inventory.gui;
 
 import com.hbm_m.inventory.menu.MachineStrandCasterMenu;
+import com.hbm_m.client.GuiCompat;
 import com.hbm_m.lib.RefStrings;
 
 import net.minecraft.client.gui.GuiGraphics;
@@ -28,6 +29,8 @@ public class GUIMachineStrandCaster extends AbstractContainerScreen<MachineStran
         int x = leftPos;
         int y = topPos;
         guiGraphics.blit(TEXTURE, x, y, 0, 0, imageWidth, imageHeight);
+        // тайл может отсутствовать в реплее Flashback
+        if (menu.blockEntity == null) return;
 
         int capacity = menu.blockEntity.getCapacity();
         if (capacity > 0) {
@@ -51,7 +54,7 @@ public class GUIMachineStrandCaster extends AbstractContainerScreen<MachineStran
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        renderBackground(guiGraphics);
+        com.hbm_m.client.GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
         renderTooltip(guiGraphics, mouseX, mouseY);
     }

@@ -66,6 +66,11 @@ public abstract class RadioTorchBaseBlock extends BaseEntityBlock {
      * config screens with no container/menu - matching the original's non-container {@code GuiScreen}s
      * - so each subclass handles {@code use()} itself instead of going through a shared MenuProvider.
      */
+    //? if < 1.21.1 {
     @Override
     public abstract InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit);
+    //?} else {
+    /*@Override
+    protected abstract InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit);
+    *///?}
 }

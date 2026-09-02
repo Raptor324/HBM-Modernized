@@ -9,6 +9,7 @@ import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.damagesource.ModDamageSources;
 import com.hbm_m.inventory.menu.TurretMenu;
 import com.hbm_m.item.ModItems;
+import com.hbm_m.platform.PlatformHooks;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -49,7 +50,6 @@ public class TurretBaseBlockEntity extends BaseMachineBlockEntity {
     private static final long CAPACITY = 50_000L;
     private static final long MAX_RECEIVE = 500L;
 
-    private static final float TURN_RATE_DEG_PER_TICK = 4.0F;
     private static final float AIM_TOLERANCE_DEG = 3.0F;
 
     private final TurretStats stats;
@@ -209,17 +209,35 @@ public class TurretBaseBlockEntity extends BaseMachineBlockEntity {
         wasActiveLastTick = true;
     }
 
+    /**
+     * The point the gun actually sits at, and the single origin used for aiming, line of sight and
+     * firing alike - the original's {@code getTurretPos()}.
+     *
+     * <p>These three had drifted apart in this port: aiming measured from the block centre, the
+     * sight check from half a block above it, and shots left from the pivot height. The turret was
+     * therefore aiming at one point, testing visibility from a second and firing from a third,
+     * which is why its tracking never lined up with where the rounds went.</p>
+     */
+    private Vec3 turretOrigin(BlockPos pos) {
+        return Vec3.atCenterOf(pos).add(0.0D, stats.pivotY, 0.0D);
+    }
+
+    /** {@code getEntityPos}: the original aims at the target's centre of mass, not its eyes. */
+    private static Vec3 targetPoint(LivingEntity target) {
+        return new Vec3(target.getX(), target.getY() + target.getBbHeight() * 0.5D, target.getZ());
+    }
+
     private void updateAim(BlockPos pos, LivingEntity target) {
-        Vec3 center = Vec3.atCenterOf(pos);
-        Vec3 to = target.getEyePosition().subtract(center);
+        Vec3 center = turretOrigin(pos);
+        Vec3 to = targetPoint(target).subtract(center);
         double horizontalDist = Math.sqrt(to.x * to.x + to.z * to.z);
 
         desiredYaw = (float) Math.toDegrees(Math.atan2(to.z, to.x)) + (float) stats.yawExtraOffsetDeg;
         desiredPitch = stats == TurretStats.HIMARS ? HIMARS_FIXED_PITCH
                 : (float) Math.toDegrees(Math.atan2(to.y, horizontalDist));
 
-        yaw = turnToward(yaw, desiredYaw, TURN_RATE_DEG_PER_TICK);
-        pitch = turnToward(pitch, desiredPitch, TURN_RATE_DEG_PER_TICK);
+        yaw = turnToward(yaw, desiredYaw, (float) stats.yawSpeed);
+        pitch = turnToward(pitch, desiredPitch, (float) stats.pitchSpeed);
     }
 
     private static float turnToward(float current, float target, float maxDelta) {
@@ -274,8 +292,8 @@ public class TurretBaseBlockEntity extends BaseMachineBlockEntity {
     }
 
     private boolean hasLineOfSight(BlockGetter level, BlockPos pos, LivingEntity target) {
-        Vec3 from = Vec3.atCenterOf(pos).add(0.0D, 0.5D, 0.0D);
-        Vec3 to = target.getEyePosition();
+        Vec3 from = turretOrigin(pos);
+        Vec3 to = targetPoint(target);
         ClipContext ctx = new ClipContext(from, to, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, target);
         BlockHitResult hit = ((Level) level).clip(ctx);
         return hit.getType() == HitResult.Type.MISS;
@@ -306,19 +324,30 @@ public class TurretBaseBlockEntity extends BaseMachineBlockEntity {
             return stack.is(ModItems.AMMO_DGK.get());
         }
         if (stats == TurretStats.RICHARD) {
-            return stack.is(ModItems.ROCKET_TURRET_STANDARD.get());
+            // XFactoryRocket.rocket_ml - the launcher takes the whole five-type family.
+            return stack.is(ModItems.ROCKET_TURRET_STANDARD.get()) || stack.is(ModItems.ROCKET_TURRET_HEAT.get())
+                    || stack.is(ModItems.ROCKET_TURRET_DEMO.get()) || stack.is(ModItems.ROCKET_TURRET_INC.get())
+                    || stack.is(ModItems.ROCKET_TURRET_PHOSPHORUS.get());
         }
         if (stats == TurretStats.HIMARS) {
+            // ItemAmmoHIMARS ships eight variants - six small-calibre plus the two large ones.
             return stack.is(ModItems.ROCKET_HIMARS_STANDARD.get()) || stack.is(ModItems.ROCKET_HIMARS_HE.get())
                     || stack.is(ModItems.ROCKET_HIMARS_LAVA.get()) || stack.is(ModItems.ROCKET_HIMARS_MINI_NUKE.get())
-                    || stack.is(ModItems.ROCKET_HIMARS_WP.get()) || stack.is(ModItems.ROCKET_HIMARS_THERMOBARIC.get());
+                    || stack.is(ModItems.ROCKET_HIMARS_WP.get()) || stack.is(ModItems.ROCKET_HIMARS_THERMOBARIC.get())
+                    || stack.is(ModItems.ROCKET_HIMARS_SINGLE.get()) || stack.is(ModItems.ROCKET_HIMARS_SINGLE_TB.get());
         }
         if (stats == TurretStats.TAUON) {
             return stack.is(ModItems.AMMO_TAU_URANIUM.get());
         }
         if (stats == TurretStats.MAXWELL) {
-            return stack.is(ModItems.UPGRADE_EFFECT_1.get()) || stack.is(ModItems.UPGRADE_EFFECT_2.get()) || stack.is(ModItems.UPGRADE_EFFECT_3.get())
-                    || stack.is(ModItems.UPGRADE_POWER_1.get()) || stack.is(ModItems.UPGRADE_POWER_2.get()) || stack.is(ModItems.UPGRADE_POWER_3.get());
+            // The laser turret eats upgrades as ammunition; the original lists all seventeen
+            // (speed / effect / power / afterburn / overdrive, each 1-3, plus 5G and screm).
+            return stack.is(ModItems.UPGRADE_SPEED_1.get()) || stack.is(ModItems.UPGRADE_SPEED_2.get()) || stack.is(ModItems.UPGRADE_SPEED_3.get())
+                    || stack.is(ModItems.UPGRADE_EFFECT_1.get()) || stack.is(ModItems.UPGRADE_EFFECT_2.get()) || stack.is(ModItems.UPGRADE_EFFECT_3.get())
+                    || stack.is(ModItems.UPGRADE_POWER_1.get()) || stack.is(ModItems.UPGRADE_POWER_2.get()) || stack.is(ModItems.UPGRADE_POWER_3.get())
+                    || stack.is(ModItems.UPGRADE_AFTERBURN_1.get()) || stack.is(ModItems.UPGRADE_AFTERBURN_2.get()) || stack.is(ModItems.UPGRADE_AFTERBURN_3.get())
+                    || stack.is(ModItems.UPGRADE_OVERDRIVE_1.get()) || stack.is(ModItems.UPGRADE_OVERDRIVE_2.get()) || stack.is(ModItems.UPGRADE_OVERDRIVE_3.get())
+                    || stack.is(ModItems.UPGRADE_5G.get()) || stack.is(ModItems.UPGRADE_SCREM.get());
         }
         if (stats == TurretStats.FRITZ) {
             return stack.is(ModItems.AMMO_FLAME_DIESEL.get());
@@ -336,6 +365,10 @@ public class TurretBaseBlockEntity extends BaseMachineBlockEntity {
 
     private static float explosionRadiusFor(Item ammoItem) {
         if (ammoItem == ModItems.ROCKET_HIMARS_MINI_NUKE.get()) return 8.0F;
+        // "single" rockets are the large calibre: the original gives them a 50F/5F blast against
+        // the small ones' 20F/3F.
+        if (ammoItem == ModItems.ROCKET_HIMARS_SINGLE_TB.get()) return 6.5F;
+        if (ammoItem == ModItems.ROCKET_HIMARS_SINGLE.get()) return 5.0F;
         if (ammoItem == ModItems.ROCKET_HIMARS_THERMOBARIC.get() || ammoItem == ModItems.ROCKET_HIMARS_HE.get()) return 4.0F;
         return 2.5F;
     }
@@ -358,7 +391,7 @@ public class TurretBaseBlockEntity extends BaseMachineBlockEntity {
         richardLoaded--;
         setEnergyStored(getEnergyStored() - stats.energyPerShot);
         cooldown = stats.cooldownTicks;
-        Vec3 muzzle = Vec3.atCenterOf(pos).add(0.0D, stats.pivotY, 0.0D);
+        Vec3 muzzle = turretOrigin(pos);
         var rocket = com.hbm_m.entity.projectile.TurretRocketEntity.create(level,
                 muzzle.x, muzzle.y, muzzle.z, target, stats.damage, 2.5F, ModItems.ROCKET_TURRET_STANDARD.get());
         level.addFreshEntity(rocket);
@@ -390,7 +423,7 @@ public class TurretBaseBlockEntity extends BaseMachineBlockEntity {
         cooldown = stats.cooldownTicks;
         himarsCraneProgress = 0.0F;
 
-        Vec3 muzzle = Vec3.atCenterOf(pos).add(0.0D, stats.pivotY, 0.0D);
+        Vec3 muzzle = turretOrigin(pos);
         var rocket = com.hbm_m.entity.projectile.TurretRocketEntity.create(level,
                 muzzle.x, muzzle.y, muzzle.z, target, stats.damage, explosionRadiusFor(ammoItem), ammoItem);
         level.addFreshEntity(rocket);
@@ -474,7 +507,7 @@ public class TurretBaseBlockEntity extends BaseMachineBlockEntity {
         fritzFuelTicks--;
 
         setEnergyStored(getEnergyStored() - Math.max(1L, stats.energyPerShot / 20));
-        target.setSecondsOnFire(3);
+        PlatformHooks.setSecondsOnFire(target, 3);
         target.hurt(level.damageSources().generic(), stats.damage / 10.0F);
 
         if (level.getGameTime() % 5 == 0) {
@@ -501,11 +534,11 @@ public class TurretBaseBlockEntity extends BaseMachineBlockEntity {
         prevBarrelRecoilOffset = barrelRecoilOffset;
         barrelRecoilOffset = -0.4F;
 
-        Vec3 muzzle = Vec3.atCenterOf(pos).add(0.0D, stats.pivotY, 0.0D);
+        Vec3 muzzle = turretOrigin(pos);
         var shell = com.hbm_m.entity.projectile.TurretRocketEntity.create(level,
                 muzzle.x, muzzle.y, muzzle.z, target, stats.damage, explosionRadiusFor(ammoItem), ammoItem);
         level.addFreshEntity(shell);
-        level.playSound(null, pos, SoundEvents.GENERIC_EXPLODE, SoundSource.BLOCKS, 1.0F, 0.7F);
+        com.hbm_m.platform.PlatformHooks.playSound(level, pos, SoundEvents.GENERIC_EXPLODE, SoundSource.BLOCKS, 1.0F, 0.7F);
         setChanged();
     }
 
@@ -587,7 +620,7 @@ public class TurretBaseBlockEntity extends BaseMachineBlockEntity {
         level.playSound(null, pos, SoundEvents.BEACON_ACTIVATE, SoundSource.BLOCKS, 0.6F, 2.0F);
 
         if (level instanceof net.minecraft.server.level.ServerLevel serverLevel) {
-            Vec3 muzzle = Vec3.atCenterOf(pos).add(0.0D, stats.pivotY, 0.0D);
+            Vec3 muzzle = turretOrigin(pos);
             Vec3 to = target.getEyePosition();
             int steps = 12;
             for (int i = 0; i <= steps; i++) {
@@ -615,7 +648,7 @@ public class TurretBaseBlockEntity extends BaseMachineBlockEntity {
 
     /** Feuert ein echtes {@link com.hbm_m.entity.projectile.TurretBulletEntity} statt direktem Treffer-Schaden. */
     private void fireBullet(Level level, BlockPos pos, LivingEntity target, Item ammoItem) {
-        Vec3 muzzle = Vec3.atCenterOf(pos).add(0.0D, stats.pivotY, 0.0D);
+        Vec3 muzzle = turretOrigin(pos);
         Vec3 to = target.getEyePosition().subtract(muzzle).normalize();
 
         if (stats == TurretStats.SENTRY) {
@@ -671,9 +704,10 @@ public class TurretBaseBlockEntity extends BaseMachineBlockEntity {
 
     public int getFireMode() { return fireMode; }
 
+    
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.putInt("cooldown", cooldown);
         tag.putFloat("yaw", yaw);
         tag.putFloat("prev_yaw", prevYaw);
@@ -695,8 +729,8 @@ public class TurretBaseBlockEntity extends BaseMachineBlockEntity {
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         cooldown = tag.getInt("cooldown");
         yaw = tag.getFloat("yaw");
         prevYaw = tag.getFloat("prev_yaw");

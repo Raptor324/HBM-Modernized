@@ -7,29 +7,50 @@
         "particle":"hbm_m:block/doors/sliding_blast_door"
     },
     "transform":{
-        "rotation":[0,90,-90],
-        "translation":[0,4,0],
+        "rotation":[0,0,0],
+        "translation":[0,0,0],
         "scale":1
     },
-    "display":{
-        "gui":{
-            "rotation":[30,315,0],
-            "translation":[0,-2.9,0],
-            "scale":[0.1,0.1,0.1]},
-        "ground":{
-            "rotation":[0,0,0],
-            "translation":[0,3,0],
-            "scale":[0.25,0.25,0.25]
-        },
-        "thirdperson_righthand":{
-            "rotation":[75,45,0],
-            "translation":[0,2.5,0],
-            "scale":[0.2,0.2,0.2]
-        },
-        "firstperson_righthand":{
-            "rotation":[0,135,0],
-            "translation":[2,-1,0],
-            "scale":[0.1,0.1,0.1]
-        }
+    "display": {
+    "thirdperson_righthand": {
+        "rotation": [ 75, 45, 0 ],
+        "translation": [ 0.00, 2.50, 0.00 ],
+        "scale": [ 0.20, 0.20, 0.20 ]
+    },
+    "thirdperson_lefthand": {
+        "rotation": [ 75, 45, 0 ],
+        "translation": [ 0.00, 2.50, 0.00 ],
+        "scale": [ 0.20, 0.20, 0.20 ]
+    },
+    "firstperson_righthand": {
+        "rotation": [ 0, 225, 0 ],
+        "translation": [ 1.00, -0.25, 0.00 ],
+        "scale": [ 0.10, 0.10, 0.10 ]
+    },
+    "firstperson_lefthand": {
+        "rotation": [ 0, 135, 0 ],
+        "translation": [ 2.00, -1.00, 0.00 ],
+        "scale": [ 0.10, 0.10, 0.10 ]
+    },
+    "gui": {
+        "rotation": [ 30, 225, 0 ],
+        "translation": [ -0.50, -2.40, 0.00 ],
+        "scale": [ 0.10, 0.10, 0.10 ]
+    },
+    "head": {
+        "rotation": [ 0, 0, 0 ],
+        "translation": [ 0.00, 0.00, 0.00 ],
+        "scale": [ 1.00, 1.00, 1.00 ]
+    },
+    "fixed": {
+        "rotation": [ 0, 0, 0 ],
+        "translation": [ 0.00, 0.00, 0.00 ],
+        "scale": [ 1.00, 1.00, 1.00 ]
+    },
+    "ground": {
+        "rotation": [ 0, 0, 0 ],
+        "translation": [ 0.00, 3.00, 0.00 ],
+        "scale": [ 0.25, 0.25, 0.25 ]
     }
+}
 }

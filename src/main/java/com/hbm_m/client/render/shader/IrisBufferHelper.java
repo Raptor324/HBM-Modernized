@@ -27,6 +27,28 @@ public final class IrisBufferHelper {
     private static boolean irisChecked;
 
     /**
+     * Кросс-версионная фабрика {@link BufferBuilder}.
+     * <p>
+     * На 1.20.1 конструктор {@code new BufferBuilder(int capacity)}, а {@code begin(mode, format)}
+     * вызывается отдельно. На 1.21.1 конструктор требует {@code (VertexFormat, VertexFormat.Mode, int)}
+     * сразу. Этот метод инкапсулирует различие и возвращает builder, готовый к заполнению.
+     *
+     * @param mode     режим вершин (QUADS, TRIANGLES, …)
+     * @param format   формат вершин (DefaultVertexFormat.BLOCK, …)
+     * @param capacity начальная вместимость в байтах (хинт аллокации)
+     * @return новый BufferBuilder с уже вызванным {@code begin} (формат зафиксирован)
+     */
+    public static BufferBuilder create(VertexFormat.Mode mode, VertexFormat format, int capacity) {
+        //? if < 1.21.1 {
+        BufferBuilder buffer = new BufferBuilder(capacity);
+        buffer.begin(mode, format);
+        return buffer;
+        //?} else {
+        /*return new BufferBuilder(new com.mojang.blaze3d.vertex.ByteBufferBuilder(capacity), mode, format);
+        *///?}
+    }
+
+    /**
      * Класс ExtendingBufferBuilder от Connector/FFAPI (Forgified Fabric API).
      * Connector использует тот же интерфейс что и Iris, но в другом пакете.
      */
@@ -50,7 +72,9 @@ public final class IrisBufferHelper {
         if (tryIrisBeginWithoutExtending(buffer, mode, format)) {
             return;
         }
+        //? if < 1.21.1 {
         buffer.begin(mode, format);
+        //?}
     }
 
     /**
@@ -62,13 +86,17 @@ public final class IrisBufferHelper {
     public static void begin(BufferBuilder buffer, VertexFormat.Mode mode, VertexFormat format) {
         if (format != DefaultVertexFormat.BLOCK && format != DefaultVertexFormat.NEW_ENTITY
                 && format != DefaultVertexFormat.POSITION_COLOR_TEX_LIGHTMAP) {
+            //? if < 1.21.1 {
             buffer.begin(mode, format);
+            //?}
             return;
         }
         if (tryIrisBeginWithoutExtending(buffer, mode, format)) {
             return;
         }
+        //? if < 1.21.1 {
         buffer.begin(mode, format);
+        //?}
     }
 
     private static int getGlMode(VertexFormat.Mode mode) {

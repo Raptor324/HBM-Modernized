@@ -28,6 +28,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
+import com.hbm_m.platform.PlatformHooks;
 
 //? if forge {
 import org.jetbrains.annotations.NotNull;
@@ -209,16 +210,14 @@ public class MachineLargeTurbineBlockEntity extends BaseMachineBlockEntity imple
     // ── NBT ─────────────────────────────────────────────────────────────────
 
     @Override
-    public void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         tag.putBoolean("active", active);
         tanks[0].writeToNBT(tag, "input");
         tanks[1].writeToNBT(tag, "output");
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         active = tag.getBoolean("active");
         tanks[0].readFromNBT(tag, "input");
         tanks[1].readFromNBT(tag, "output");
@@ -234,14 +233,7 @@ public class MachineLargeTurbineBlockEntity extends BaseMachineBlockEntity imple
                  SLOT_INPUT_IO_OUT,
                  SLOT_OUTPUT_IO_OUT -> false;
             case SLOT_INPUT_IO_IN,
-                 SLOT_OUTPUT_IO_IN  -> {
-                //? if forge {
-                yield stack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).isPresent();
-                //?}
-                //? if fabric {
-                /*yield net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage.ITEM.find(stack, null) != null;
-                *///?}
-            }
+                 SLOT_OUTPUT_IO_IN  -> PlatformHooks.isFluidContainer(stack);
             case SLOT_BATTERY -> stack.getItem() instanceof ItemCreativeBattery
                                   || isEnergyProviderItem(stack)
                                   || isEnergyReceiverItem(stack);

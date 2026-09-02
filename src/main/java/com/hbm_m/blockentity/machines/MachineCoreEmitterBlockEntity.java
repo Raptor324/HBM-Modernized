@@ -65,7 +65,7 @@ public class MachineCoreEmitterBlockEntity extends BaseMachineBlockEntity {
     public @org.jetbrains.annotations.NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(
             net.minecraftforge.common.capabilities.Capability<T> cap, @Nullable Direction side) {
         if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER) {
-            return coolantTank.getCapability().cast();
+            return coolantTank.getForgeFluidCapability().cast();
         }
         return super.getCapability(cap, side);
     }
@@ -142,14 +142,14 @@ public class MachineCoreEmitterBlockEntity extends BaseMachineBlockEntity {
     }
 
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         coolantTank.writeToNBT(tag, "coolant");
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         coolantTank.readFromNBT(tag, "coolant");
     }
 

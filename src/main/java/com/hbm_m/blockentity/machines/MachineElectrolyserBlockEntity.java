@@ -8,9 +8,9 @@ import com.hbm_m.blockentity.BaseMachineBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.inventory.menu.MachineElectrolyserMenu;
-import com.hbm_m.recipe.ElectrolyserRecipes;
-import com.hbm_m.recipe.ElectrolyserRecipes.FluidRecipe;
-import com.hbm_m.recipe.ElectrolyserRecipes.MetalRecipe;
+import com.hbm_m.platform.recipe.RecipeHooks;
+import com.hbm_m.recipe.ElectrolyserFluidRecipe;
+import com.hbm_m.recipe.ElectrolyserMetalRecipe;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -24,10 +24,13 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
 
+import dev.architectury.fluid.FluidStack;
+
 /**
  * Electrolyser: Direktport der Kernlogik aus {@code TileEntityElectrolyser} (1.7.10 Original) - ein
- * Zwei-Modus-Geraet (Fluid-Elektrolyse und Kristall/Erz-Elektrolyse). Siehe {@link ElectrolyserRecipes}
- * fuer die dokumentierten Vereinfachungen der Rezepttabellen.
+ * Zwei-Modus-Geraet (Fluid-Elektrolyse und Kristall/Erz-Elektrolyse). Rezepte sind data-driven:
+ * Fluid-Modus ueber {@link ElectrolyserFluidRecipe}, Metall-Modus ueber
+ * {@link ElectrolyserMetalRecipe} (siehe dort fuer die dokumentierten Vereinfachungen).
  * <p>
  * Vereinfachungen ggue. Original: kein Item-Upgrade-System (SPEED/POWER/OVERDRIVE-Slots entfallen,
  * feste Basiswerte fuer Verbrauch/Dauer), Metall-Modus-Output als direkte Items statt Crucible-
@@ -110,50 +113,74 @@ public class MachineElectrolyserBlockEntity extends BaseMachineBlockEntity imple
 
     // ==================== Fluid mode ====================
 
+    /** Data-driven поиск Fluid-рецепта по типу входного бака (заменяет статический map-lookup). */
+    @Nullable
+    private ElectrolyserFluidRecipe findFluidRecipe() {
+        if (level == null) return null;
+        for (ElectrolyserFluidRecipe recipe : RecipeHooks.getAllRecipes(level, ElectrolyserFluidRecipe.Type.INSTANCE)) {
+            if (recipe.matchesFluidType(tanks[0].getTankType())) return recipe;
+        }
+        return null;
+    }
+
     private boolean canProcessFluid() {
         if (energy < USAGE_FLUID) return false;
-        FluidRecipe recipe = ElectrolyserRecipes.getFluidRecipe(tanks[0].getTankType());
+        ElectrolyserFluidRecipe recipe = findFluidRecipe();
         if (recipe == null) return false;
-        if (recipe.amount() > tanks[0].getFill()) return false;
-        if (recipe.fillA() + tanks[1].getFill() > tanks[1].getMaxFill()) return false;
-        if (recipe.fillB() + tanks[2].getFill() > tanks[2].getMaxFill()) return false;
-        return canAcceptByproducts(recipe.byproducts(), SLOT_BYPRODUCT_1);
+        if (recipe.getInputAmount() > tanks[0].getFill()) return false;
+        FluidStack outA = recipe.getOutputA();
+        FluidStack outB = recipe.getOutputB();
+        if (outA != null && (int) outA.getAmount() + tanks[1].getFill() > tanks[1].getMaxFill()) return false;
+        if (outB != null && (int) outB.getAmount() + tanks[2].getFill() > tanks[2].getMaxFill()) return false;
+        return canAcceptByproducts(recipe.getByproducts(), SLOT_BYPRODUCT_1);
     }
 
     private void processFluid() {
-        FluidRecipe recipe = ElectrolyserRecipes.getFluidRecipe(tanks[0].getTankType());
+        ElectrolyserFluidRecipe recipe = findFluidRecipe();
         if (recipe == null) return;
 
-        tanks[0].drainMb(recipe.amount());
-        if (recipe.fillA() > 0) tanks[1].fillMb(recipe.outA(), recipe.fillA());
-        if (recipe.fillB() > 0) tanks[2].fillMb(recipe.outB(), recipe.fillB());
-        depositByproducts(recipe.byproducts(), SLOT_BYPRODUCT_1);
+        tanks[0].drainMb(recipe.getInputAmount());
+        FluidStack outA = recipe.getOutputA();
+        FluidStack outB = recipe.getOutputB();
+        if (outA != null && outA.getAmount() > 0) tanks[1].fillMb(outA.getFluid(), (int) outA.getAmount());
+        if (outB != null && outB.getAmount() > 0) tanks[2].fillMb(outB.getFluid(), (int) outB.getAmount());
+        depositByproducts(recipe.getByproducts(), SLOT_BYPRODUCT_1);
     }
 
     // ==================== Metal mode ====================
+
+    /** Data-driven поиск Metal-рецепта по слоту кристалла (заменяет статический map-lookup). */
+    @Nullable
+    private ElectrolyserMetalRecipe findMetalRecipe(ItemStack crystal) {
+        if (level == null || crystal.isEmpty()) return null;
+        for (ElectrolyserMetalRecipe recipe : RecipeHooks.getAllRecipes(level, ElectrolyserMetalRecipe.Type.INSTANCE)) {
+            if (recipe.matchesInput(crystal)) return recipe;
+        }
+        return null;
+    }
 
     private boolean canProcessMetal() {
         ItemStack crystal = inventory.getStackInSlot(SLOT_CRYSTAL);
         if (crystal.isEmpty()) return false;
         if (energy < USAGE_METAL) return false;
 
-        MetalRecipe recipe = ElectrolyserRecipes.getMetalRecipe(crystal);
+        ElectrolyserMetalRecipe recipe = findMetalRecipe(crystal);
         if (recipe == null) return false;
 
-        if (!canAcceptOutput(SLOT_METAL_OUT_1, recipe.outA())) return false;
-        if (!recipe.outB().isEmpty() && !canAcceptOutput(SLOT_METAL_OUT_2, recipe.outB())) return false;
-        return canAcceptByproducts(recipe.byproducts(), SLOT_METAL_BYPRODUCT_1);
+        if (!canAcceptOutput(SLOT_METAL_OUT_1, recipe.getOutputA())) return false;
+        if (!recipe.getOutputB().isEmpty() && !canAcceptOutput(SLOT_METAL_OUT_2, recipe.getOutputB())) return false;
+        return canAcceptByproducts(recipe.getByproducts(), SLOT_METAL_BYPRODUCT_1);
     }
 
     private void processMetal() {
         ItemStack crystal = inventory.getStackInSlot(SLOT_CRYSTAL);
-        MetalRecipe recipe = ElectrolyserRecipes.getMetalRecipe(crystal);
+        ElectrolyserMetalRecipe recipe = findMetalRecipe(crystal);
         if (recipe == null) return;
 
         inventory.extractItem(SLOT_CRYSTAL, 1, false);
-        depositOutput(SLOT_METAL_OUT_1, recipe.outA());
-        if (!recipe.outB().isEmpty()) depositOutput(SLOT_METAL_OUT_2, recipe.outB());
-        depositByproducts(recipe.byproducts(), SLOT_METAL_BYPRODUCT_1);
+        depositOutput(SLOT_METAL_OUT_1, recipe.getOutputA());
+        if (!recipe.getOutputB().isEmpty()) depositOutput(SLOT_METAL_OUT_2, recipe.getOutputB());
+        depositByproducts(recipe.getByproducts(), SLOT_METAL_BYPRODUCT_1);
     }
 
     // ==================== shared slot helpers ====================
@@ -161,7 +188,7 @@ public class MachineElectrolyserBlockEntity extends BaseMachineBlockEntity imple
     private boolean canAcceptOutput(int slot, ItemStack result) {
         ItemStack current = inventory.getStackInSlot(slot);
         if (current.isEmpty()) return true;
-        if (!ItemStack.isSameItemSameTags(current, result)) return false;
+        if (!com.hbm_m.platform.PlatformHooks.isSameItemSameTags(current, result)) return false;
         return current.getCount() + result.getCount() <= current.getMaxStackSize();
     }
 
@@ -214,16 +241,16 @@ public class MachineElectrolyserBlockEntity extends BaseMachineBlockEntity imple
     // ==================== NBT ====================
 
     @Override
-    public void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.putInt("progressFluid", progressFluid);
         tag.putInt("progressMetal", progressMetal);
         for (int i = 0; i < tanks.length; i++) tanks[i].writeToNBT(tag, "tank" + i);
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         progressFluid = tag.getInt("progressFluid");
         progressMetal = tag.getInt("progressMetal");
         for (int i = 0; i < tanks.length; i++) tanks[i].readFromNBT(tag, "tank" + i);
@@ -246,7 +273,9 @@ public class MachineElectrolyserBlockEntity extends BaseMachineBlockEntity imple
         return switch (slot) {
             case SLOT_BATTERY -> isEnergyProviderItem(stack);
             case SLOT_FLUID_ID -> true;
-            case SLOT_CRYSTAL -> ElectrolyserRecipes.hasMetalRecipe(stack);
+            // До загрузки рецептов (level == null, напр. на клиенте) — разрешаем: сервер всё равно
+            // перепроверит рецепт в tick (замена статического ElectrolyserRecipes.hasMetalRecipe).
+            case SLOT_CRYSTAL -> level == null || findMetalRecipe(stack) != null;
             default -> false;
         };
     }

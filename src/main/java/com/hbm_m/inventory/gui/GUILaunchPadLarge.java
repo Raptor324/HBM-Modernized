@@ -1,4 +1,5 @@
 package com.hbm_m.inventory.gui;
+import com.hbm_m.client.GuiCompat;
 
 import com.hbm_m.blockentity.machines.LaunchPadBaseBlockEntity;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
@@ -91,14 +92,14 @@ public class GUILaunchPadLarge extends GuiInfoScreen<LaunchPadLargeMenu> {
         tanks[0].renderTank(guiGraphics, this.leftPos + TANK_X, this.topPos + TANK_TOP_Y, TANK_W, TANK_H);
         tanks[1].renderTank(guiGraphics, this.leftPos + OXIDIZER_TANK_X, this.topPos + TANK_TOP_Y, TANK_W, TANK_H);
 
-        //? if forge {
+        //? if forge || neoforge {
         renderMissilePreview(guiGraphics, be);
         //?}
 
         renderStatusLabel(guiGraphics, be);
     }
 
-    //? if forge {
+    //? if forge || neoforge {
     private void renderMissilePreview(GuiGraphics guiGraphics, LaunchPadBaseBlockEntity be) {
         ItemStack missileStack = be.getMissilePreviewStack();
         if (missileStack.isEmpty() || !(missileStack.getItem() instanceof MissileItem missileItem)) {
@@ -192,7 +193,7 @@ public class GUILaunchPadLarge extends GuiInfoScreen<LaunchPadLargeMenu> {
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        this.renderBackground(guiGraphics);
+        GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
 
         LaunchPadBaseBlockEntity be = menu.getBlockEntity();

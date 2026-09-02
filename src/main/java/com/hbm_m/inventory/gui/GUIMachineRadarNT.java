@@ -1,4 +1,5 @@
 package com.hbm_m.inventory.gui;
+import com.hbm_m.client.GuiCompat;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -85,6 +86,9 @@ public class GUIMachineRadarNT extends GuiInfoScreen<MachineRadarMenu> {
         renderPowerBar(guiGraphics);
         renderModeButtons(guiGraphics);
 
+        // тайл может отсутствовать в реплее Flashback
+        if (radar == null) return;
+
         // Экран (развёртка/карта/метки) рисуется только при достаточной энергии
         // (порт if(radar.power < radar.consumption) return).
         if (radar.getEnergyStored() < MachineRadarBlockEntity.ENERGY_CONSUMPTION) {
@@ -110,6 +114,8 @@ public class GUIMachineRadarNT extends GuiInfoScreen<MachineRadarMenu> {
 
     /** Бар энергии: i = power*200/maxPower, source (0,234). */
     private void renderPowerBar(GuiGraphics guiGraphics) {
+        // тайл может отсутствовать в реплее Flashback
+        if (radar == null) return;
         int bar = (int) radar.getPowerScaled(200);
         if (bar > 0) {
             guiGraphics.blit(TEXTURE, leftPos + 8, topPos + 221, 0, 234, bar, 16);
@@ -121,6 +127,8 @@ public class GUIMachineRadarNT extends GuiInfoScreen<MachineRadarMenu> {
      * UV каждого индикатора: 238, 4 + index*10.
      */
     private void renderModeButtons(GuiGraphics guiGraphics) {
+        // тайл может отсутствовать в реплее Flashback
+        if (radar == null) return;
         if (radar.scanMissiles != (radar.jammed && noiseRandom.nextBoolean())) {
             guiGraphics.blit(TEXTURE, leftPos + TOGGLE_X, topPos + BTN_MISSILES, 238, 4, 8, 8);
         }
@@ -232,36 +240,42 @@ public class GUIMachineRadarNT extends GuiInfoScreen<MachineRadarMenu> {
         RenderSystem.setShader(GameRenderer::getPositionColorShader);
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
         org.joml.Matrix4f matrix = guiGraphics.pose().last().pose();
-        BufferBuilder buffer = Tesselator.getInstance().getBuilder();
-        buffer.begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
+        BufferBuilder buffer = com.hbm_m.platform.RenderHooks.beginTesselator(Tesselator.getInstance(), VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
 
         // Два треугольника вместо QUAD: так клин не зависит от winding/culling.
-        buffer.vertex(matrix, cx, cy, 0F).color(0, 255, 0, 0).endVertex();
-        buffer.vertex(matrix, cx + (float) tr[0], cy + (float) tr[1], 0F).color(0, 255, 0, 220).endVertex();
-        buffer.vertex(matrix, cx + (float) tl[0], cy + (float) tl[1], 0F).color(0, 255, 0, 0).endVertex();
-        buffer.vertex(matrix, cx, cy, 0F).color(0, 255, 0, 0).endVertex();
-        buffer.vertex(matrix, cx + (float) tl[0], cy + (float) tl[1], 0F).color(0, 255, 0, 0).endVertex();
-        buffer.vertex(matrix, cx + (float) bl[0], cy + (float) bl[1], 0F).color(0, 255, 0, 0).endVertex();
-        BufferUploader.drawWithShader(buffer.end());
+        com.hbm_m.platform.RenderHooks.vertexColor(buffer, matrix, cx, cy, 0F, 0, 255, 0, 0);
+        com.hbm_m.platform.RenderHooks.vertexColor(buffer, matrix, cx + (float) tr[0], cy + (float) tr[1], 0F, 0, 255, 0, 220);
+        com.hbm_m.platform.RenderHooks.vertexColor(buffer, matrix, cx + (float) tl[0], cy + (float) tl[1], 0F, 0, 255, 0, 0);
+        com.hbm_m.platform.RenderHooks.vertexColor(buffer, matrix, cx, cy, 0F, 0, 255, 0, 0);
+        com.hbm_m.platform.RenderHooks.vertexColor(buffer, matrix, cx + (float) tl[0], cy + (float) tl[1], 0F, 0, 255, 0, 0);
+        com.hbm_m.platform.RenderHooks.vertexColor(buffer, matrix, cx + (float) bl[0], cy + (float) bl[1], 0F, 0, 255, 0, 0);
+        com.hbm_m.platform.RenderHooks.drawWithShader(buffer);
 
         // Яркая, четкая линия-указатель на ведущем крае радара
         double[] lineOffset1 = rotate(100, -0.5, rot);
         double[] lineOffset2 = rotate(100, 0.5, rot);
-        buffer.begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
-        buffer.vertex(matrix, cx, cy, 0F).color(0F, 1F, 0F, 1F).endVertex();
-        buffer.vertex(matrix, cx + (float) lineOffset1[0], cy + (float) lineOffset1[1], 0F).color(0F, 1F, 0F, 1F).endVertex();
-        buffer.vertex(matrix, cx + (float) lineOffset2[0], cy + (float) lineOffset2[1], 0F).color(0F, 1F, 0F, 1F).endVertex();
+        buffer = com.hbm_m.platform.RenderHooks.beginTesselator(Tesselator.getInstance(), VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
+        com.hbm_m.platform.RenderHooks.vertexColor(buffer, matrix, cx, cy, 0F, 0, 255, 0, 255);
+        com.hbm_m.platform.RenderHooks.vertexColor(buffer, matrix, cx + (float) lineOffset1[0], cy + (float) lineOffset1[1], 0F, 0, 255, 0, 255);
+        com.hbm_m.platform.RenderHooks.vertexColor(buffer, matrix, cx + (float) lineOffset2[0], cy + (float) lineOffset2[1], 0F, 0, 255, 0, 255);
 
-        BufferUploader.drawWithShader(buffer.end());
+        com.hbm_m.platform.RenderHooks.drawWithShader(buffer);
         RenderSystem.enableCull();
         RenderSystem.disableBlend();
         guiGraphics.pose().popPose();
     }
 
+    /**
+     * Точная реплика {@code Vec3.rotateAroundZ} из 1.7.10 — именно ей оригинальный
+     * GUIMachineRadarNT вращает клин развёртки. Minecraft применяет транспонированную
+     * форму поворота, а не стандартную CCW-матрицу: x' = x·cos + y·sin, y' = y·cos − x·sin.
+     * Прежняя версия использовала CCW-матрицу (x' = x·cos − y·sin, y' = x·sin + y·cos),
+     * из-за чего развёртка крутилась в сторону, противоположную оригиналу.
+     */
     private static double[] rotate(double x, double y, float rad) {
         double cos = Math.cos(rad);
         double sin = Math.sin(rad);
-        return new double[] { x * cos - y * sin, x * sin + y * cos };
+        return new double[] { x * cos + y * sin, y * cos - x * sin };
     }
 
     @Override
@@ -303,9 +317,11 @@ public class GUIMachineRadarNT extends GuiInfoScreen<MachineRadarMenu> {
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
         this.lastMouseX = mouseX;
         this.lastMouseY = mouseY;
-        this.renderBackground(guiGraphics);
+        GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
         this.renderTooltip(guiGraphics, mouseX, mouseY);
+        // тайл может отсутствовать в реплее Flashback
+        if (radar == null) return;
 
         drawElectricityInfo(guiGraphics, mouseX, mouseY,
                 8, 221, 200, 7,
@@ -379,6 +395,8 @@ public class GUIMachineRadarNT extends GuiInfoScreen<MachineRadarMenu> {
         if (findContactAt(mouseX, mouseY) != null) {
             return;
         }
+        // тайл может отсутствовать в реплее Flashback
+        if (radar == null) return;
         int radarWidth = radar.getRange() * 2 + 1;
         int tX = (int) ((mouseX - leftPos - MAP_CENTER_X) * 1.0D / MAP_SIZE * radarWidth
                 + radar.getBlockPos().getX());
@@ -389,6 +407,8 @@ public class GUIMachineRadarNT extends GuiInfoScreen<MachineRadarMenu> {
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        // тайл может отсутствовать в реплее Flashback
+        if (radar == null) return super.mouseClicked(mouseX, mouseY, button);
         if (button == 0) {
             int mx = (int) mouseX;
             int my = (int) mouseY;
@@ -435,6 +455,8 @@ public class GUIMachineRadarNT extends GuiInfoScreen<MachineRadarMenu> {
             return true;
         }
         if (keyCode >= org.lwjgl.glfw.GLFW.GLFW_KEY_1 && keyCode <= org.lwjgl.glfw.GLFW.GLFW_KEY_8) {
+            // тайл может отсутствовать в реплее Flashback
+            if (radar == null) return false;
             int linkSlot = keyCode - org.lwjgl.glfw.GLFW.GLFW_KEY_1; // 0..7
             if (isPointInRect(8, 17, 200, 200, lastMouseX, lastMouseY)) {
                 int[] target = findContactAt(lastMouseX, lastMouseY);
@@ -459,6 +481,8 @@ public class GUIMachineRadarNT extends GuiInfoScreen<MachineRadarMenu> {
 
     @org.jetbrains.annotations.Nullable
     private int[] findContactAt(int mx, int my) {
+        // тайл может отсутствовать в реплее Flashback
+        if (radar == null) return null;
         int radarWidth = radar.getRange() * 2 + 1;
         int radarX = radar.getBlockPos().getX();
         int radarZ = radar.getBlockPos().getZ();

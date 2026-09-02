@@ -43,14 +43,24 @@ import net.minecraftforge.common.capabilities.ForgeCapabilities;
 //?}
 
 
+import net.minecraft.world.level.Explosion;
+
 public class MachineFluidTankBlock extends BaseEntityBlock implements IMultiblockController {
+
+    /**
+     * Whether this machine has been blown up. Drives the model swap to the wrecked variant - the
+     * original renders {@code *_exploded.obj} in its place - and is set from the block entity's
+     * {@code explode()} / {@code repair()}.
+     */
+    public static final net.minecraft.world.level.block.state.properties.BooleanProperty EXPLODED =
+            net.minecraft.world.level.block.state.properties.BooleanProperty.create("exploded");
 
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
     private final MultiblockStructureHelper structureHelper;
 
     public MachineFluidTankBlock(Properties properties) {
         super(properties);
-        this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH));
+        this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH).setValue(EXPLODED, false));
         this.structureHelper = defineStructure();
     }
 
@@ -178,8 +188,19 @@ public class MachineFluidTankBlock extends BaseEntityBlock implements IMultibloc
         return Shapes.block();
     }
 
+    //? if < 1.21.1 {
     @Override
     public InteractionResult use(@NotNull BlockState state, @NotNull Level level, @NotNull BlockPos pos, @NotNull Player player, @NotNull InteractionHand hand, @NotNull BlockHitResult hit) {
+        return openMenu(state, level, pos, player, hand, hit);
+    }
+    //?} else {
+    /*@Override
+    protected InteractionResult useWithoutItem(@NotNull BlockState state, @NotNull Level level, @NotNull BlockPos pos, @NotNull Player player, @NotNull BlockHitResult hit) {
+        return openMenu(state, level, pos, player, InteractionHand.MAIN_HAND, hit);
+    }
+    *///?}
+
+    private InteractionResult openMenu(@NotNull BlockState state, @NotNull Level level, @NotNull BlockPos pos, @NotNull Player player, @NotNull InteractionHand hand, @NotNull BlockHitResult hit) {
         if (level.isClientSide) {
             return InteractionResult.sidedSuccess(true);
         }
@@ -215,6 +236,59 @@ public class MachineFluidTankBlock extends BaseEntityBlock implements IMultibloc
 
     @Override
     protected void createBlockStateDefinition(@NotNull StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(FACING);
+        builder.add(FACING, EXPLODED);
     }
+
+    /**
+     * 1:1 port of {@code MachineFluidTank.onBlockExploded}. A blast anywhere on the structure sets
+     * the tank alight rather than knocking out a single block; a second blast on an already
+     * burning tank finishes it off.
+     *
+     * <p>Doing this with a bomblet zeta is the original's {@code achInferno}, which is the only
+     * way that advancement can be earned.</p>
+     */
+    @Override
+    public void onBlockExploded(BlockState state, Level level, BlockPos pos, Explosion explosion) {
+        BlockEntity be = level.getBlockEntity(pos);
+        if (!(be instanceof com.hbm_m.blockentity.machines.MachineFluidTankBlockEntity core)) {
+            super.onBlockExploded(state, level, pos, explosion);
+            return;
+        }
+
+        // One explosion touches many blocks of the same machine; only the first one counts.
+        if (core.lastExplosion == explosion) return;
+        core.lastExplosion = explosion;
+
+        if (core.hasExploded) {
+            level.removeBlock(pos, false);
+            return;
+        }
+
+        core.explode();
+
+        // The original only counts a tank that was actually holding something flammable -
+        // blowing up a water tank is not an inferno.
+        if (explosion.getDirectSourceEntity() instanceof com.hbm_m.entity.projectile.EntityBombletZeta
+                && core.onFire) {
+            com.hbm_m.advancement.ModAdvancements.grantNearby(level,
+                    pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 100D,
+                    com.hbm_m.advancement.ModAdvancements.INFERNO);
+        }
+    }
+
+    /** {@code canDropFromExplosion}: a bombed tank leaves nothing to pick up. */
+    @Override
+    public boolean dropFromExplosion(Explosion explosion) {
+        return false;
+    }
+
+
+    //? if >1.20.1 {
+    /*public static final com.mojang.serialization.MapCodec<MachineFluidTankBlock> CODEC = simpleCodec(MachineFluidTankBlock::new);
+
+    @Override
+    protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
+        return CODEC;
+    }
+    *///?}
 }

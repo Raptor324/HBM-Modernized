@@ -33,7 +33,15 @@ import java.util.*;
  * and renders its {@code Inner} + {@code Cap} groups per section, creating the
  * characteristic hollow octagonal channel appearance visible from the top.
  */
-public class RBMKColumnRenderer<T extends RBMKColumnBlockEntity> implements BlockEntityRenderer<T> {
+
+//? if forge {
+@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+//?} elif fabric {
+/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
+*///?} elif neoforge {
+/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+*///?}
+public class RBMKColumnRenderer<T extends RBMKColumnBlockEntity> implements com.hbm_m.client.render.HbmBerBounds<T> {
 
     // ─── Caches ──────────────────────────────────────────────────────────────
 
@@ -48,7 +56,7 @@ public class RBMKColumnRenderer<T extends RBMKColumnBlockEntity> implements Bloc
 
     // ─── Sprite helpers ───────────────────────────────────────────────────────
 
-    static TextureAtlasSprite sprite(String ns, String path) {
+    public static TextureAtlasSprite sprite(String ns, String path) {
         return SPRITE_CACHE.computeIfAbsent(ns + ":" + path, k ->
                 Minecraft.getInstance()
                         .getTextureAtlas(InventoryMenu.BLOCK_ATLAS)
@@ -57,7 +65,7 @@ public class RBMKColumnRenderer<T extends RBMKColumnBlockEntity> implements Bloc
 
     // ─── OBJ loading ─────────────────────────────────────────────────────────
 
-    static Map<String, List<float[]>> getObj(String resourcePath) {
+    public static Map<String, List<float[]>> getObj(String resourcePath) {
         return OBJ_CACHE.computeIfAbsent(resourcePath, path -> {
             try {
                 var res = Minecraft.getInstance().getResourceManager()
@@ -156,16 +164,30 @@ public class RBMKColumnRenderer<T extends RBMKColumnBlockEntity> implements Bloc
         if (!isFuel)
             flatTop(vc, m, height, topSprite, packedLight, packedOverlay);
 
+        // Bottom face. The renderer draws the whole column itself (the block model is skipped via
+        // ENTITYBLOCK_ANIMATED), so without this the column is see-through from below - visible as
+        // a hollow shell when standing under a reactor. Every column type uses its plain "_top"
+        // texture down here, never a lid variant, matching the original block models' "down" face.
+        flatBottom(vc, m, 0, sprite(RefStrings.MODID, "block/rbmk/" + prefix + "_top"),
+                packedLight, packedOverlay);
+
         // ── Pipe-corner stub decoration ───────────────────────────────────────
-        // 1:1 port of RenderRBMKControl (original): CONTROL/BOILER/HEATER all share this
-        // renderer and, when they don't currently have a lid rendered on top, show 4 small
-        // pipe-corner stubs instead. Control rods never have a lid at all (see
-        // RBMKControlBlockEntity#hasLid), so they always get the stubs; boiler/heater only get
-        // them when unlidded - matches the original's mutually-exclusive lid-vs-pipe-stub check
-        // (only boiler/heater in the original special-case the lid swap at all).
+        // CE draws four small pipe stubs on top of a CONTROL/BOILER/HEATER column whenever that
+        // column has no lid (RBMKControlBakedModel.buildWorldQuads: lid box, or else addPipes).
+        //
+        // DELIBERATE DEVIATION FROM CE, on request: the stubs are suppressed for the steam boiler
+        // and for control rods, which are the two the player actually sees a lot of - a control rod
+        // never has a lid, so it wore them permanently, and since columns are now placed lidless
+        // the boiler grew them too. The heat exchanger keeps CE's behaviour. Flip the two flags
+        // below to restore full CE parity.
+        final boolean CE_STUBS_ON_CONTROL = false;
+        final boolean CE_STUBS_ON_BOILER  = false;
+
         ColumnType consoleType = be.getConsoleType();
-        boolean showsPipeStub = consoleType == ColumnType.CONTROL
-                || ((consoleType == ColumnType.BOILER || consoleType == ColumnType.HEATER) && !be.hasLid());
+        boolean showsPipeStub =
+                   (CE_STUBS_ON_CONTROL && consoleType == ColumnType.CONTROL)
+                || (CE_STUBS_ON_BOILER  && consoleType == ColumnType.BOILER && !be.hasLid())
+                || (consoleType == ColumnType.HEATER && !be.hasLid());
         if (showsPipeStub) {
             TextureAtlasSprite pipeTop  = sprite(RefStrings.MODID, "block/rbmk/" + prefix + "_pipe_top");
             TextureAtlasSprite pipeSide = sprite(RefStrings.MODID, "block/rbmk/" + prefix + "_pipe_side");
@@ -231,10 +253,10 @@ public class RBMKColumnRenderer<T extends RBMKColumnBlockEntity> implements Bloc
         ps.translate(0.5, 0.75, 0.5);
         Matrix4f m = ps.last().pose();
         for (float j = 0; j <= height; j += 0.25f) {
-            vc.vertex(m, -0.5f, j, -0.5f).color(0.4f, 0.9f, 1.0f, 0.1f).endVertex();
-            vc.vertex(m, -0.5f, j,  0.5f).color(0.4f, 0.9f, 1.0f, 0.1f).endVertex();
-            vc.vertex(m,  0.5f, j,  0.5f).color(0.4f, 0.9f, 1.0f, 0.1f).endVertex();
-            vc.vertex(m,  0.5f, j, -0.5f).color(0.4f, 0.9f, 1.0f, 0.1f).endVertex();
+            com.hbm_m.platform.RenderHooks.vertexColor(vc, m, -0.5f, j, -0.5f, 102, 230, 255, 25);
+            com.hbm_m.platform.RenderHooks.vertexColor(vc, m, -0.5f, j,  0.5f, 102, 230, 255, 25);
+            com.hbm_m.platform.RenderHooks.vertexColor(vc, m,  0.5f, j,  0.5f, 102, 230, 255, 25);
+            com.hbm_m.platform.RenderHooks.vertexColor(vc, m,  0.5f, j, -0.5f, 102, 230, 255, 25);
         }
         ps.popPose();
     }
@@ -264,12 +286,11 @@ public class RBMKColumnRenderer<T extends RBMKColumnBlockEntity> implements Bloc
         TextureAtlasSprite capSprite = sprite(RefStrings.MODID, "block/rbmk/" + capPrefix);
         double level = Mth.lerp(pt, ctrl.lastLevel, ctrl.level);
 
-        // Anchor = `y + offset`, where `offset` is the column's full visual height (see the
-        // original's RenderRBMKControlRod). The formula's math checks out against the source, but
-        // in-game the cap still sat visibly detached above the column even at level=0 (confirmed
-        // by the player, live) - so it's pulled down by 1 full block to sit flush. Whatever's
-        // responsible for that 1-block discrepancy (parent transform, model origin, etc.) is still
-        // unaccounted for; this is a measured correction, not a re-derivation.
+        // Anchor = the bottom of the column's topmost block, then offset upwards by the rod's
+        // insertion level - exactly the original's `glTranslated(0, offset + level, 0)`, where
+        // its `offset` is the index of the top block (RBMKDials column height 3 -> a 4-block
+        // column -> offset 3). Here the column spans y in [0, height) with height =
+        // COLUMN_HEIGHT + 1, so that same anchor is `height - 1`.
         ps.pushPose();
         ps.translate(0.5, height + level - 1.0, 0.5);
         VertexConsumer vc = buf.getBuffer(RenderType.solid());
@@ -288,6 +309,11 @@ public class RBMKColumnRenderer<T extends RBMKColumnBlockEntity> implements Bloc
         quad(vc, m, 1,y0,1, 1,y0,0, 1,y1,0, 1,y1,1,  1, 0, 0, s, light, overlay, 1,1,1); // E
     }
 
+    private static void flatBottom(VertexConsumer vc, Matrix4f m, int y,
+                                    TextureAtlasSprite s, int light, int overlay) {
+        quad(vc, m, 0,y,0, 1,y,0, 1,y,1, 0,y,1,  0, -1, 0, s, light, overlay, 1,1,1);
+    }
+
     private static void flatTop(VertexConsumer vc, Matrix4f m, int y,
                                  TextureAtlasSprite s, int light, int overlay) {
         quad(vc, m, 0,y,0, 0,y,1, 1,y,1, 1,y,0,  0, 1, 0, s, light, overlay, 1,1,1);
@@ -300,20 +326,29 @@ public class RBMKColumnRenderer<T extends RBMKColumnBlockEntity> implements Bloc
                               TextureAtlasSprite s, int light, int overlay,
                               float r, float g, float b) {
         float u0 = s.getU0(), u1 = s.getU1(), v0 = s.getV0(), v1 = s.getV1();
-        vc.vertex(m, x0, y0, z0).color(r,g,b,1f).uv(u0,v1).overlayCoords(overlay).uv2(light).normal(nx,ny,nz).endVertex();
-        vc.vertex(m, x1, y1, z1).color(r,g,b,1f).uv(u1,v1).overlayCoords(overlay).uv2(light).normal(nx,ny,nz).endVertex();
-        vc.vertex(m, x2, y2, z2).color(r,g,b,1f).uv(u1,v0).overlayCoords(overlay).uv2(light).normal(nx,ny,nz).endVertex();
-        vc.vertex(m, x3, y3, z3).color(r,g,b,1f).uv(u0,v0).overlayCoords(overlay).uv2(light).normal(nx,ny,nz).endVertex();
+        int ir = (int) (r * 255), ig = (int) (g * 255), ib = (int) (b * 255);
+        com.hbm_m.platform.RenderHooks.vertexFull(vc, m, x0, y0, z0, ir, ig, ib, 255, u0, v1, overlay, light, nx, ny, nz);
+        com.hbm_m.platform.RenderHooks.vertexFull(vc, m, x1, y1, z1, ir, ig, ib, 255, u1, v1, overlay, light, nx, ny, nz);
+        com.hbm_m.platform.RenderHooks.vertexFull(vc, m, x2, y2, z2, ir, ig, ib, 255, u1, v0, overlay, light, nx, ny, nz);
+        com.hbm_m.platform.RenderHooks.vertexFull(vc, m, x3, y3, z3, ir, ig, ib, 255, u0, v0, overlay, light, nx, ny, nz);
     }
 
     // ─── OBJ geometry rendering ───────────────────────────────────────────────
 
-    static void renderObjGroup(VertexConsumer vc, Matrix4f m,
+    public static void renderObjGroup(VertexConsumer vc, Matrix4f m,
                                         List<float[]> triangles, TextureAtlasSprite sprite,
                                         float r, float g, float b, int light, int overlay) {
+        renderObjGroup(vc, m, triangles, sprite, r, g, b, light, overlay, 1f);
+    }
+
+    /** Alpha overload, for meshes drawn on a translucent layer (e.g. a fade-in overlay pass). */
+    public static void renderObjGroup(VertexConsumer vc, Matrix4f m,
+                                        List<float[]> triangles, TextureAtlasSprite sprite,
+                                        float r, float g, float b, int light, int overlay, float a) {
         if (triangles == null || sprite == null) return;
         float u0 = sprite.getU0(), u1 = sprite.getU1();
         float v0 = sprite.getV0(), v1 = sprite.getV1();
+        int ir = (int) (r * 255), ig = (int) (g * 255), ib = (int) (b * 255);
         for (float[] tri : triangles) {
             for (int pass = 0; pass < 4; pass++) {  // 4th is duplicate of 3rd (degenerate quad)
                 int base = Math.min(pass, 2) * 8;
@@ -322,7 +357,7 @@ public class RBMKColumnRenderer<T extends RBMKColumnBlockEntity> implements Bloc
                 float nx = tri[base+5], ny = tri[base+6], nz = tri[base+7];
                 float au = u0 + u * (u1 - u0);
                 float av = v0 + (1f - v) * (v1 - v0); // V flipped
-                vc.vertex(m, x, y, z).color(r,g,b,1f).uv(au,av).overlayCoords(overlay).uv2(light).normal(nx,ny,nz).endVertex();
+                com.hbm_m.platform.RenderHooks.vertexFull(vc, m, x, y, z, (int)(r * 255f), (int)(g * 255f), (int)(b * 255f), (int)(a * 255f), au, av, overlay, light, nx, ny, nz);
             }
         }
     }

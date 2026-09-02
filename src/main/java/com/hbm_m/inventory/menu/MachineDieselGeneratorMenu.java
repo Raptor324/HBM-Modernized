@@ -42,8 +42,9 @@ public class MachineDieselGeneratorMenu extends AbstractContainerMenu {
                 if (ItemEnergyAccess.getHbmProvider(stack).isPresent()) return true;
                 //? if forge {
                 return stack.getCapability(ForgeCapabilities.ENERGY).isPresent();
-                //?}
-                //? if fabric {
+                //?} elif neoforge {
+                /*return stack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM) != null;
+                *///?} else {
                 /*return false;
                 *///?}
             }
@@ -98,6 +99,16 @@ public class MachineDieselGeneratorMenu extends AbstractContainerMenu {
                     return ItemStack.EMPTY;
                 }
             } else {
+                boolean isEnergySource = ItemEnergyAccess.getHbmProvider(slotStack).isPresent();
+                //? if forge {
+                if (!isEnergySource) {
+                    isEnergySource = slotStack.getCapability(ForgeCapabilities.ENERGY).isPresent();
+                }
+                //?} elif neoforge {
+                /*if (!isEnergySource) {
+                    isEnergySource = slotStack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM) != null;
+                }
+                *///?}
                 if (!this.moveItemStackTo(slotStack, SLOT_BATTERY, SLOT_BATTERY + 1, false)) {
                     return ItemStack.EMPTY;
                 }

@@ -28,6 +28,7 @@ import net.minecraft.world.level.material.Fluids;
  * рецепт подбирается автоматически по содержимому входных слотов/баков линии, как это уже делает
  * {@link MachineModuleAdvancedAssembler} для сборочной машины. Ручной выбор рецепта — nice-to-have,
  * не являющийся частью базовой функциональности машины, поэтому он пропущен в этом порту.</p>
+ * TODO - КАЛ, ПЕРЕДЕЛАТЬ
  */
 public class MachineModuleChemFactoryLane extends MachineModuleBase<ChemicalPlantRecipe> {
 
@@ -90,11 +91,12 @@ public class MachineModuleChemFactoryLane extends MachineModuleBase<ChemicalPlan
             if (stack.isEmpty() || !itemInputs.get(i).ingredient().test(stack)) return false;
         }
 
-        List<ChemicalPlantRecipe.FluidIngredient> fluidInputs = recipe.getFluidInputs();
+        List<FluidStack> fluidInputs = recipe.getFluidInputs();
         if (fluidInputs.size() > inputTanks.length) return false;
         for (int i = 0; i < fluidInputs.size(); i++) {
-            Fluid fluid = BuiltInRegistries.FLUID.get(fluidInputs.get(i).fluidId());
-            if (fluid == null || fluid == Fluids.EMPTY) return false;
+            FluidStack req = fluidInputs.get(i);
+            if (req.isEmpty()) return false;
+            Fluid fluid = req.getFluid();
             FluidTank tank = inputTanks[i];
             if (tank.isEmpty()) {
                 // Без предметного якоря нельзя достоверно опознать рецепт по пустому баку.
@@ -153,15 +155,10 @@ public class MachineModuleChemFactoryLane extends MachineModuleBase<ChemicalPlan
     private void setupTanks(@Nullable ChemicalPlantRecipe recipe) {
         if (recipe == null || recipe == lastTankSetupRecipe) return;
 
-        List<ChemicalPlantRecipe.FluidIngredient> fluidInputs = recipe.getFluidInputs();
+        List<FluidStack> fluidInputs = recipe.getFluidInputs();
         for (int i = 0; i < inputTanks.length; i++) {
-            if (i < fluidInputs.size()) {
-                Fluid fluid = BuiltInRegistries.FLUID.get(fluidInputs.get(i).fluidId());
-                if (fluid != null && fluid != Fluids.EMPTY) {
-                    inputTanks[i].conform(fluid);
-                } else {
-                    inputTanks[i].resetTank();
-                }
+            if (i < fluidInputs.size() && !fluidInputs.get(i).isEmpty()) {
+                inputTanks[i].conform(fluidInputs.get(i).getFluid());
             } else {
                 inputTanks[i].resetTank();
             }
@@ -187,16 +184,15 @@ public class MachineModuleChemFactoryLane extends MachineModuleBase<ChemicalPlan
             if (!req.ingredient().test(slotStack) || slotStack.getCount() < req.count()) return false;
         }
 
-        List<ChemicalPlantRecipe.FluidIngredient> fluidInputs = recipe.getFluidInputs();
+        List<FluidStack> fluidInputs = recipe.getFluidInputs();
         for (int i = 0; i < fluidInputs.size(); i++) {
             if (i >= inputTanks.length) return false;
-            ChemicalPlantRecipe.FluidIngredient req = fluidInputs.get(i);
-            Fluid fluid = BuiltInRegistries.FLUID.get(req.fluidId());
-            if (fluid == null) return false;
+            FluidStack req = fluidInputs.get(i);
+            if (req.isEmpty()) return false;
             FluidTank tank = inputTanks[i];
             if (tank.isEmpty()
-                    || !VanillaFluidEquivalence.sameSubstance(tank.getStoredFluid(), fluid)
-                    || tank.getFluidAmountMb() < req.amount()) {
+                    || !VanillaFluidEquivalence.sameSubstance(tank.getStoredFluid(), req.getFluid())
+                    || tank.getFluidAmountMb() < (int) req.getAmount()) {
                 return false;
             }
         }
@@ -224,9 +220,9 @@ public class MachineModuleChemFactoryLane extends MachineModuleBase<ChemicalPlan
             itemHandler.getStackInSlot(inputSlots[i]).shrink(itemInputs.get(i).count());
         }
 
-        List<ChemicalPlantRecipe.FluidIngredient> fluidInputs = recipe.getFluidInputs();
+        List<FluidStack> fluidInputs = recipe.getFluidInputs();
         for (int i = 0; i < fluidInputs.size(); i++) {
-            inputTanks[i].drainMb(fluidInputs.get(i).amount());
+            inputTanks[i].drainMb((int) fluidInputs.get(i).getAmount());
         }
 
         placeAllItemOutputs(recipe.getItemOutputs(), outputSlots);

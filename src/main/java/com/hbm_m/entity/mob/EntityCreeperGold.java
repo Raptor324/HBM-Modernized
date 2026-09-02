@@ -67,6 +67,7 @@ public class EntityCreeperGold extends Creeper {
         vnt.explode();
     }
 
+    //? if < 1.21.1 {
     @Override
     protected void dropCustomDeathLoot(net.minecraft.world.damagesource.DamageSource source, int looting, boolean recentlyHit) {
         super.dropCustomDeathLoot(source, looting, recentlyHit);
@@ -75,4 +76,15 @@ public class EntityCreeperGold extends Creeper {
             this.spawnAtLocation(new ItemStack(ModItems.CRYSTAL_GOLD.get()));
         }
     }
+    //?} else {
+    /*@Override
+    protected void dropCustomDeathLoot(net.minecraft.server.level.ServerLevel serverLevel, net.minecraft.world.damagesource.DamageSource source, boolean recentlyHit) {
+        super.dropCustomDeathLoot(serverLevel, source, recentlyHit);
+        int looting = 0;
+        int amount = recentlyHit ? 5 + this.random.nextInt(6 + looting * 2) : 3;
+        for (int i = 0; i < amount; ++i) {
+            this.spawnAtLocation(new ItemStack(ModItems.CRYSTAL_GOLD.get()));
+        }
+    }
+    *///?}
 }

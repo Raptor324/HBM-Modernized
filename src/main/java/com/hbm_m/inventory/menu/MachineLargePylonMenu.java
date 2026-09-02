@@ -8,6 +8,7 @@ import com.hbm_m.inventory.ModItemStackHandlerContainer;
 import com.hbm_m.item.fekal_electric.ItemCreativeBattery;
 import com.hbm_m.network.ModPacketHandler;
 import com.hbm_m.network.packet.PacketSyncEnergy;
+import com.hbm_m.platform.DummyItemStackHandler;
 
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
@@ -16,6 +17,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.inventory.ContainerLevelAccess;
+import net.minecraft.world.inventory.SimpleContainerData;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
@@ -45,7 +47,8 @@ public class MachineLargePylonMenu extends AbstractContainerMenu implements ILon
     }
 
     public MachineLargePylonMenu(int id, Inventory inv, MachineLargePylonBlockEntity blockEntity) {
-        this(id, inv, blockEntity, blockEntity.getContainerData());
+        // На клиенте тайл может отсутствовать (реплей Flashback) — подставляем пустые данные
+        this(id, inv, blockEntity, blockEntity != null ? blockEntity.getContainerData() : new SimpleContainerData(2));
     }
 
     public MachineLargePylonMenu(int id, Inventory inv, BlockEntity entity, ContainerData data) {
@@ -58,16 +61,23 @@ public class MachineLargePylonMenu extends AbstractContainerMenu implements ILon
         checkContainerDataCount(data, 2);
         addDataSlots(data);
 
-        this.machineInventory = new ModItemStackHandlerContainer(blockEntity.getInventory(), blockEntity::setChanged);
+        // На клиенте тайл может отсутствовать (реплей Flashback) — подставляем пустую заглушку,
+        // чтобы конструктор дошёл до конца и пакет открытия меню не уронил клиент
+        this.machineInventory = new ModItemStackHandlerContainer(
+                this.blockEntity != null ? this.blockEntity.getInventory() : new DummyItemStackHandler(MACHINE_SLOTS),
+                this.blockEntity != null ? this.blockEntity::setChanged : null);
 
         this.addSlot(new Slot(machineInventory, SLOT_INPUT, 62, 45));
         this.addSlot(new Slot(machineInventory, SLOT_BATTERY, 152, 72) {
             @Override
             public boolean mayPlace(ItemStack stack) {
                 //? if forge {
-                if (stack.getCapability(ForgeCapabilities.ENERGY).isPresent()) return true;
+                if (com.hbm_m.api.energy.ItemEnergyAccess.getForgeEnergy(stack).isPresent()) return true;
                 //?}
-                return stack.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER).isPresent()
+                //? if neoforge {
+                /*if (com.hbm_m.api.energy.ItemEnergyAccess.getForgeEnergy(stack).isPresent()) return true;
+                *///?}
+                return com.hbm_m.api.energy.ItemEnergyAccess.getHbmProvider(stack).isPresent()
                     || stack.getItem() instanceof ItemCreativeBattery;
             }
         });
@@ -92,6 +102,11 @@ public class MachineLargePylonMenu extends AbstractContainerMenu implements ILon
         BlockEntity be = inv.player.level().getBlockEntity(data.readBlockPos());
         if (be instanceof MachineLargePylonBlockEntity pylon) {
             return pylon;
+        }
+        // На клиенте тайл может отсутствовать (реплей Flashback) — не крашим пакет, возвращаем null.
+        // На сервере отсутствие тайла — реальный баг, поэтому там падаем как раньше.
+        if (inv.player.level().isClientSide) {
+            return null;
         }
         throw new IllegalStateException("BlockEntity is not a LargePylon");
     }
@@ -121,12 +136,13 @@ public class MachineLargePylonMenu extends AbstractContainerMenu implements ILon
 
     @Override
     public long getEnergyStatic() {
-        return blockEntity.getEnergyStored();
+        // тайл может отсутствовать на клиенте (реплей Flashback)
+        return blockEntity != null ? blockEntity.getEnergyStored() : 0L;
     }
 
     @Override
     public long getMaxEnergyStatic() {
-        return blockEntity.getMaxEnergyStored();
+        return blockEntity != null ? blockEntity.getMaxEnergyStored() : 0L;
     }
 
     @Override
@@ -172,11 +188,14 @@ public class MachineLargePylonMenu extends AbstractContainerMenu implements ILon
                 return ItemStack.EMPTY;
             }
         } else {
-            boolean isBattery = stack.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER).isPresent()
+            boolean isBattery = com.hbm_m.api.energy.ItemEnergyAccess.getHbmProvider(stack).isPresent()
                 || stack.getItem() instanceof ItemCreativeBattery;
             //? if forge {
-            isBattery = isBattery || stack.getCapability(ForgeCapabilities.ENERGY).isPresent();
+            isBattery = isBattery || com.hbm_m.api.energy.ItemEnergyAccess.getForgeEnergy(stack).isPresent();
             //?}
+            //? if neoforge {
+            /*isBattery = isBattery || com.hbm_m.api.energy.ItemEnergyAccess.getForgeEnergy(stack).isPresent();
+            *///?}
 
             if (isBattery) {
                 if (!moveItemStackTo(stack, SLOT_BATTERY, SLOT_BATTERY + 1, false)) {
@@ -200,6 +219,9 @@ public class MachineLargePylonMenu extends AbstractContainerMenu implements ILon
 
     @Override
     public boolean stillValid(Player player) {
+        if (blockEntity == null) {
+            return false; // тайл может отсутствовать на клиенте (реплей Flashback)
+        }
         return stillValid(ContainerLevelAccess.create(level, blockEntity.getBlockPos()), player, ModBlocks.LARGE_PYLON.get());
     }
 }

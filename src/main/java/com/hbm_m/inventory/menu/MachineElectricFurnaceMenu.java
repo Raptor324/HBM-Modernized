@@ -26,7 +26,8 @@ public class MachineElectricFurnaceMenu extends AbstractContainerMenu {
     private static final int SLOT_BATTERY = MachineElectricFurnaceBlockEntity.SLOT_BATTERY;
     private static final int SLOT_INPUT = MachineElectricFurnaceBlockEntity.SLOT_INPUT;
     private static final int SLOT_OUTPUT = MachineElectricFurnaceBlockEntity.SLOT_OUTPUT;
-    private static final int MACHINE_SLOT_COUNT = 3;
+    private static final int SLOT_UPGRADE = MachineElectricFurnaceBlockEntity.SLOT_UPGRADE;
+    private static final int MACHINE_SLOT_COUNT = 4;
     private static final int PLAYER_INV_START = MACHINE_SLOT_COUNT;
     private static final int PLAYER_INV_END = MACHINE_SLOT_COUNT + 36;
 
@@ -49,6 +50,13 @@ public class MachineElectricFurnaceMenu extends AbstractContainerMenu {
         this.addSlot(new Slot(container, SLOT_BATTERY, 152, 54));
         this.addSlot(new Slot(container, SLOT_INPUT, 20, 35));
         this.addSlot(new OutputSlot(container, SLOT_OUTPUT, 80, 35));
+        // ContainerElectricFurnace: SlotUpgrade at (111, 34).
+        this.addSlot(new Slot(container, SLOT_UPGRADE, 111, 34) {
+            @Override public boolean mayPlace(net.minecraft.world.item.ItemStack stack) {
+                return stack.getItem() instanceof com.hbm_m.item.industrial.ItemMachineUpgrade;
+            }
+            @Override public int getMaxStackSize() { return 1; }
+        });
 
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 9; col++) {

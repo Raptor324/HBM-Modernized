@@ -1,0 +1,36 @@
+{
+  "_comment": "Авторский общий лут — смесь ресурсов, еды, схем и расходников мода для рядовых сундуков в структурах",
+  "type": "minecraft:chest",
+  "pools": [
+    {
+      "rolls": { "min": 6, "max": 10 },
+      "entries": [
+        { "type": "item", "name": "minecraft:iron_ingot", "weight": 12, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 8 } } ] },
+        { "type": "item", "name": "minecraft:gold_ingot", "weight": 6, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 4 } } ] },
+        { "type": "item", "name": "minecraft:redstone", "weight": 10, "functions": [ { "function": "minecraft:set_count", "count": { "min": 2, "max": 10 } } ] },
+        { "type": "item", "name": "minecraft:coal", "weight": 10, "functions": [ { "function": "minecraft:set_count", "count": { "min": 3, "max": 12 } } ] },
+        { "type": "item", "name": "hbm_m:steel_ingot", "weight": 12, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 6 } } ] },
+        { "type": "item", "name": "hbm_m:red_copper_ingot", "weight": 8, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 4 } } ] },
+        { "type": "item", "name": "hbm_m:aluminum_ingot", "weight": 8, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 5 } } ] },
+        { "type": "item", "name": "hbm_m:lead_ingot", "weight": 6, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 4 } } ] },
+        { "type": "item", "name": "hbm_m:copper_powder", "weight": 6, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 4 } } ] },
+        { "type": "item", "name": "hbm_m:vacuum_tube", "weight": 7 },
+        { "type": "item", "name": "hbm_m:wire_fine", "weight": 8, "functions": [ { "function": "minecraft:set_count", "count": { "min": 2, "max": 8 } } ] },
+        { "type": "item", "name": "hbm_m:coil_copper", "weight": 6, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 3 } } ] },
+        { "type": "item", "name": "hbm_m:plate_iron", "weight": 7, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 4 } } ] },
+        { "type": "item", "name": "hbm_m:scrap", "weight": 10, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 4 } } ] },
+        { "type": "item", "name": "hbm_m:dust", "weight": 9, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 4 } } ] },
+        { "type": "item", "name": "hbm_m:twinkie", "weight": 7, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 3 } } ] },
+        { "type": "item", "name": "hbm_m:bottle_nuka", "weight": 6, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 2 } } ] },
+        { "type": "item", "name": "hbm_m:cap_nuka", "weight": 7, "functions": [ { "function": "minecraft:set_count", "count": { "min": 2, "max": 12 } } ] },
+        { "type": "item", "name": "hbm_m:gas_mask_filter", "weight": 5 },
+        { "type": "item", "name": "hbm_m:gun_kit_1", "weight": 4 },
+        { "type": "item", "name": "hbm_m:ammo_9mm_sp", "weight": 6, "functions": [ { "function": "minecraft:set_count", "count": { "min": 4, "max": 16 } } ] },
+        { "type": "item", "name": "hbm_m:cordite", "weight": 5, "functions": [ { "function": "minecraft:set_count", "count": { "min": 2, "max": 6 } } ] },
+        { "type": "item", "name": "hbm_m:blueprint_folder", "weight": 3 },
+        { "type": "item", "name": "hbm_m:coin_token", "weight": 4 },
+        { "type": "item", "name": "minecraft:bread", "weight": 8, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 3 } } ] }
+      ]
+    }
+  ]
+}

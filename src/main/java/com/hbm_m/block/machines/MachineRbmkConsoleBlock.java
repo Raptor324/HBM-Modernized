@@ -34,9 +34,8 @@ import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
-import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
-import net.minecraftforge.network.NetworkHooks;
+import dev.architectury.registry.menu.MenuRegistry;
 
 public class MachineRbmkConsoleBlock extends BaseEntityBlock implements IMultiblockController {
 
@@ -51,9 +50,23 @@ public class MachineRbmkConsoleBlock extends BaseEntityBlock implements IMultibl
     }
 
     private static MultiblockStructureHelper defineStructure() {
-        String[] layer0 = { "C" };
-        String[] layer1 = { "O" };
-        String[] layer2 = { "O" };
+        // 1:1 with RBMKConsole.getDimensions() {3, 0, 0, 0, 2, 2} plus its fillSpace() extension
+        // {0, 0, 0, 1, 2, 2}: the console is a 5-wide, 4-tall panel wall (the row holding the
+        // controller and the screen) with a 5-wide, 1-tall desk row standing one block in FRONT
+        // of it, toward the operator. That matches the body mesh exactly - rbmk_console.obj spans
+        // 2 blocks along the facing axis, 4 up and 5 sideways - which is why the old 1x3 column
+        // definition left the whole console with a single-block hitbox floating inside a mesh
+        // twenty-five times its size.
+        // Rows within a layer run back-to-front: index 0 is the desk row (-Z / operator side at
+        // FACING=NORTH), index 1 the panel wall carrying the controller.
+        String[] layer0 = {
+                "OOOOO",
+                "OOCOO"
+        };
+        String[] layerUpper = {
+                "     ",
+                "OOOOO"
+        };
 
         Map<Character, PartRole> roleMap = Map.of(
                 'O', PartRole.DEFAULT,
@@ -63,7 +76,7 @@ public class MachineRbmkConsoleBlock extends BaseEntityBlock implements IMultibl
         Map<Character, Supplier<BlockState>> symbolMap = Map.of();
 
         return MultiblockStructureHelper.createFromLayersWithRoles(
-                new String[][] { layer0, layer1, layer2 },
+                new String[][] { layer0, layerUpper, layerUpper, layerUpper },
                 symbolMap,
                 () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState(),
                 roleMap,
@@ -119,12 +132,34 @@ public class MachineRbmkConsoleBlock extends BaseEntityBlock implements IMultibl
         super.onRemove(state, level, pos, newState, isMoving);
     }
 
+    //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        return openMenu(state, level, pos, player, hand, hit);
+    }
+    //?} else {
+    /*@Override
+    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+        return openMenu(state, level, pos, player, InteractionHand.MAIN_HAND, hit);
+    }
+    *///?}
+
+    private InteractionResult openMenu(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         if (!level.isClientSide) {
             BlockEntity entity = level.getBlockEntity(pos);
 
             net.minecraft.world.item.ItemStack held = player.getItemInHand(hand);
+
+            // 1:1 with RBMKConsole.onScrew: a screwdriver turns the scanned grid a quarter turn,
+            // so a console standing on any side of the reactor can read it the right way round.
+            if (held.getItem() instanceof com.hbm_m.item.tools_and_armor.ScrewdriverItem
+                    && entity instanceof MachineRbmkConsoleBlockEntity rotatable) {
+                rotatable.rotate();
+                player.displayClientMessage(net.minecraft.network.chat.Component.literal(
+                        "Grid rotation: " + (rotatable.rotation * 90) + "°"), true);
+                return InteractionResult.SUCCESS;
+            }
+
             if (held.getItem() instanceof com.hbm_m.item.rbmk.RBMKToolItem
                     && entity instanceof MachineRbmkConsoleBlockEntity console) {
                 com.hbm_m.item.rbmk.RBMKToolItem.linkConsole(held, level, console, player);
@@ -132,10 +167,10 @@ public class MachineRbmkConsoleBlock extends BaseEntityBlock implements IMultibl
             }
 
             if (entity instanceof MenuProvider menuProvider) {
-                NetworkHooks.openScreen((ServerPlayer) player, menuProvider, pos);
+                MenuRegistry.openExtendedMenu((ServerPlayer) player, menuProvider, buf -> buf.writeBlockPos(pos));
             }
         }
-        return InteractionResult.sidedSuccess(level.isClientSide);
+        return InteractionResult.sidedSuccess(level.isClientSide());
     }
 
     @Override
@@ -164,6 +199,20 @@ public class MachineRbmkConsoleBlock extends BaseEntityBlock implements IMultibl
 
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        return Shapes.block();
+        return structureHelper.generateShapeFromParts(state.getValue(FACING));
     }
+
+    @Override
+    public VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+        return structureHelper.getSpecificPartShape(structureHelper.getControllerOffset(), state.getValue(FACING));
+    }
+
+    //? if >1.20.1 {
+    /*public static final com.mojang.serialization.MapCodec<MachineRbmkConsoleBlock> CODEC = simpleCodec(MachineRbmkConsoleBlock::new);
+
+    @Override
+    protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
+        return CODEC;
+    }
+    *///?}
 }

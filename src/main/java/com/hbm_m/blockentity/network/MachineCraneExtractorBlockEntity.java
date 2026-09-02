@@ -209,7 +209,7 @@ public class MachineCraneExtractorBlockEntity extends BaseMachineBlockEntity imp
             if (current.isEmpty()) {
                 inventory.setStackInSlot(i, stack);
                 return ItemStack.EMPTY;
-            } else if (ItemStack.isSameItemSameTags(current, stack)) {
+            } else if (com.hbm_m.platform.PlatformHooks.isSameItemSameTags(current, stack)) {
                 int space = current.getMaxStackSize() - current.getCount();
                 if (space > 0) {
                     int toMove = Math.min(space, stack.getCount());
@@ -254,16 +254,16 @@ public class MachineCraneExtractorBlockEntity extends BaseMachineBlockEntity imp
     // ── NBT ─────────────────────────────────────────────────────────────────
 
     @Override
-    public void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.putBoolean("isWhitelist", isWhitelist);
         tag.putBoolean("maxEject", maxEject);
         matcher.writeToNBT(tag);
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         isWhitelist = tag.getBoolean("isWhitelist");
         maxEject = tag.getBoolean("maxEject");
         matcher.readFromNBT(tag);

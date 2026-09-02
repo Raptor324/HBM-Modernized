@@ -24,7 +24,7 @@ import org.jetbrains.annotations.Nullable;
  * into the first ICrucibleAcceptor below (basin, channel, crucible, ...).
  * Flow is only accepted if the target below can actually take the material.
  */
-public class MachineFoundryOutletBlockEntity extends BlockEntity implements ICrucibleAcceptor {
+public class MachineFoundryOutletBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity implements ICrucibleAcceptor {
 
     /** Raytrace depth of the original: y-0.125 down to y+0.125-4 → 4 blocks below. */
     private static final int POUR_RANGE = 3;
@@ -101,28 +101,21 @@ public class MachineFoundryOutletBlockEntity extends BlockEntity implements ICru
 
     /* ── NBT / sync ─────────────────────────────────────────────────────── */
 
+    
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         if (filter != null) tag.putString("filter", filter.name);
         tag.putBoolean("invertFilter",   invertFilter);
         tag.putBoolean("invertRedstone", invertRedstone);
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         if (tag.contains("filter")) filter = MaterialType.byName(tag.getString("filter"));
         else filter = null;
         invertFilter   = tag.getBoolean("invertFilter");
         invertRedstone = tag.getBoolean("invertRedstone");
-    }
-
-    @Override
-    public CompoundTag getUpdateTag() { CompoundTag t = super.getUpdateTag(); saveAdditional(t); return t; }
-
-    @Override
-    public Packet<ClientGamePacketListener> getUpdatePacket() {
-        return ClientboundBlockEntityDataPacket.create(this);
     }
 }

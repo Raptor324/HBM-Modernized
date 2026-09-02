@@ -6,8 +6,8 @@ import org.jetbrains.annotations.Nullable;
 import com.hbm_m.blockentity.BaseMachineBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.inventory.menu.MachineExposureChamberMenu;
-import com.hbm_m.recipe.ExposureChamberRecipes;
-import com.hbm_m.recipe.ExposureChamberRecipes.Recipe;
+import com.hbm_m.platform.recipe.RecipeHooks;
+import com.hbm_m.recipe.ExposureChamberRecipe;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -69,7 +69,7 @@ public class MachineExposureChamberBlockEntity extends BaseMachineBlockEntity {
 
         // Load a fresh particle capsule into the internal cache once it's empty.
         if (be.cachedParticle == null && !particleStack.isEmpty() && !ingredientStack.isEmpty() && be.savedParticles <= 0) {
-            Recipe recipe = ExposureChamberRecipes.getRecipe(particleStack, ingredientStack);
+            ExposureChamberRecipe recipe = findRecipe(be, particleStack, ingredientStack);
             if (recipe != null) {
                 be.cachedParticle = particleStack.getItem();
                 be.inventory.extractItem(SLOT_PARTICLE, 1, false);
@@ -79,9 +79,9 @@ public class MachineExposureChamberBlockEntity extends BaseMachineBlockEntity {
 
         // Consume the cached particle against the ingredient slot.
         if (be.cachedParticle != null && be.savedParticles > 0 && be.energy >= CONSUMPTION) {
-            Recipe recipe = ExposureChamberRecipes.getRecipe(new ItemStack(be.cachedParticle), ingredientStack);
+            ExposureChamberRecipe recipe = findRecipe(be, new ItemStack(be.cachedParticle), ingredientStack);
 
-            if (recipe != null && be.canAcceptOutput(recipe.output())) {
+            if (recipe != null && be.canAcceptOutput(recipe.getOutput())) {
                 be.progress++;
                 be.setEnergyStored(be.energy - CONSUMPTION);
                 be.isOn = true;
@@ -90,7 +90,7 @@ public class MachineExposureChamberBlockEntity extends BaseMachineBlockEntity {
                     be.progress = 0;
                     be.savedParticles--;
                     be.inventory.extractItem(SLOT_INGREDIENT, 1, false);
-                    be.produceOutput(recipe.output());
+                    be.produceOutput(recipe.getOutput());
                 }
             } else {
                 be.progress = 0;
@@ -110,8 +110,20 @@ public class MachineExposureChamberBlockEntity extends BaseMachineBlockEntity {
     private boolean canAcceptOutput(ItemStack result) {
         ItemStack current = inventory.getStackInSlot(SLOT_OUTPUT);
         if (current.isEmpty()) return true;
-        if (!ItemStack.isSameItemSameTags(current, result)) return false;
+        if (!com.hbm_m.platform.PlatformHooks.isSameItemSameTags(current, result)) return false;
         return current.getCount() + result.getCount() <= current.getMaxStackSize();
+    }
+
+    /** Data-driven поиск ExposureChamberRecipe по паре (particle, ingredient) — заменяет статический ExposureChamberRecipes.getRecipe. */
+    @Nullable
+    private static ExposureChamberRecipe findRecipe(MachineExposureChamberBlockEntity be,
+                                                    ItemStack particle, ItemStack ingredient) {
+        Level level = be.getLevel();
+        if (level == null) return null;
+        for (ExposureChamberRecipe recipe : RecipeHooks.getAllRecipes(level, ExposureChamberRecipe.Type.INSTANCE)) {
+            if (recipe.matches(particle, ingredient)) return recipe;
+        }
+        return null;
     }
 
     private void produceOutput(ItemStack result) {
@@ -140,8 +152,8 @@ public class MachineExposureChamberBlockEntity extends BaseMachineBlockEntity {
     // ==================== NBT ====================
 
     @Override
-    public void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.putInt("progress", progress);
         tag.putInt("savedParticles", savedParticles);
         if (cachedParticle != null) {
@@ -150,8 +162,8 @@ public class MachineExposureChamberBlockEntity extends BaseMachineBlockEntity {
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         progress = tag.getInt("progress");
         savedParticles = tag.getInt("savedParticles");
         cachedParticle = tag.contains("cachedParticle")

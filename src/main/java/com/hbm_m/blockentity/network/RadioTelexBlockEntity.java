@@ -18,6 +18,8 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
+import java.util.List;
+
 /**
  * Port of {@code TileEntityRadioTelex} (1.7.10 Original) - "Telex Machine" text teleprinter, wired
  * directly into the existing {@link RTTYNetwork} pub/sub bus. Sends its tx buffer one character per
@@ -30,7 +32,7 @@ import net.minecraft.world.level.block.state.BlockState;
  * Pause-Steuerzeichen-Verzoegerung des Originals entfaellt - Zeichen werden gleichmaessig 1/Tick
  * gesendet, End-of-Line/-Transmission-Steuerzeichen bleiben erhalten.
  */
-public class RadioTelexBlockEntity extends BlockEntity implements IRadioTorchConfigurable {
+public class RadioTelexBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity implements IRadioTorchConfigurable {
 
     private static final int LINE_WIDTH = 33;
     private static final int LINE_COUNT = 5;
@@ -134,18 +136,26 @@ public class RadioTelexBlockEntity extends BlockEntity implements IRadioTorchCon
         if (level == null || level.isClientSide) return;
 
         ItemStack paper = new ItemStack(Items.PAPER);
+        //? if < 1.21.1 {
         paper.setHoverName(Component.literal("Message"));
-
         ListTag lore = new ListTag();
         for (String line : rxLines) {
             lore.add(StringTag.valueOf(Component.Serializer.toJson(Component.literal(line != null ? line : ""))));
         }
         CompoundTag display = paper.getOrCreateTagElement("display");
         display.put("Lore", lore);
+        //?} else {
+        /*paper.set(net.minecraft.core.component.DataComponents.CUSTOM_NAME, Component.literal("Message"));
+        List<Component> lore = new java.util.ArrayList<>();
+        for (String line : rxLines) {
+            lore.add(Component.literal(line != null ? line : ""));
+        }
+        paper.set(net.minecraft.core.component.DataComponents.LORE, new net.minecraft.world.item.component.ItemLore(lore));
+        *///?}
 
         ItemEntity item = new ItemEntity(level, worldPosition.getX() + 0.5, worldPosition.getY() + 1.0, worldPosition.getZ() + 0.5, paper);
         level.addFreshEntity(item);
-        level.playSound(null, worldPosition, SoundEvents.ITEM_PICKUP, SoundSource.BLOCKS, 0.5F, 1.5F);
+        com.hbm_m.platform.PlatformHooks.playSound(level, worldPosition, SoundEvents.ITEM_PICKUP, SoundSource.BLOCKS, 0.5F, 1.5F);
     }
 
     @Override
@@ -172,8 +182,7 @@ public class RadioTelexBlockEntity extends BlockEntity implements IRadioTorchCon
     }
 
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         tag.putString("txChannel", txChannel);
         tag.putString("rxChannel", rxChannel);
         tag.putBoolean("isSending", isSending);
@@ -187,8 +196,7 @@ public class RadioTelexBlockEntity extends BlockEntity implements IRadioTorchCon
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         txChannel = tag.getString("txChannel");
         rxChannel = tag.getString("rxChannel");
         isSending = tag.getBoolean("isSending");

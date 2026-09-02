@@ -1,6 +1,9 @@
 package com.hbm_m.item.tools_and_armor;
 
+import com.hbm_m.item.ITooltipProvider;
+import com.hbm_m.platform.ItemHooks;
 import com.hbm_m.client.overlay.OverlayInfoToast;
+import com.hbm_m.platform.PlatformHooks;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.chat.Component;
@@ -15,23 +18,18 @@ import net.minecraft.world.item.AxeItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Tier;
 import net.minecraft.world.item.TooltipFlag;
-import net.minecraft.world.item.enchantment.Enchantment;
-import net.minecraft.world.item.enchantment.EnchantmentHelper;
-import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
-import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 
-public class ModAxeItem extends AxeItem {
+public class ModAxeItem extends AxeItem implements ITooltipProvider {
     private static final String NBT_VEIN_MINER = "VeinMinerEnabled";
     private static final String NBT_SILK_TOUCH = "SilkTouchEnabled";
     private static final String NBT_PRE_SILK = "PreModeSilk";
@@ -48,7 +46,11 @@ public class ModAxeItem extends AxeItem {
 
     public ModAxeItem(Tier tier, float attackDamage, float attackSpeed, Properties properties,
                       int veinMinerLevel, int silkTouchLevel) {
+        //? if < 1.21.1 {
         super(tier, attackDamage, attackSpeed, properties);
+        //?} else {
+        /*super(tier, properties);
+        *///?}
         this.veinMinerLevel = Math.max(0, Math.min(6, veinMinerLevel));
         this.silkTouchLevel = Math.max(0, Math.min(1, silkTouchLevel));
     }
@@ -58,13 +60,9 @@ public class ModAxeItem extends AxeItem {
     }
 
     @Override
-    public void appendHoverText(ItemStack stack, Level level, List<Component> tooltip, TooltipFlag flag) {
-        super.appendHoverText(stack, level, tooltip, flag);
-
-        // Заголовок списка способностей
+    public void appendHbmTooltip(ItemStack stack, Level level, List<Component> tooltip, TooltipFlag flag) {
         tooltip.add(Component.translatable("tooltip.hbm_m.abilities").withStyle(ChatFormatting.BLUE));
 
-        // Vein Miner
         if (veinMinerLevel > 0) {
             boolean isActive = isVeinMinerEnabled(stack);
             ChatFormatting color = isActive ? ChatFormatting.YELLOW : ChatFormatting.GOLD;
@@ -73,7 +71,6 @@ public class ModAxeItem extends AxeItem {
                             .withStyle(color)));
         }
 
-        // Silk Touch
         if (silkTouchLevel > 0) {
             boolean isActive = isSilkTouchEnabled(stack);
             ChatFormatting color = isActive ? ChatFormatting.YELLOW : ChatFormatting.GOLD;
@@ -82,7 +79,6 @@ public class ModAxeItem extends AxeItem {
                             .withStyle(color)));
         }
 
-        // Инструкции по использованию
         tooltip.add(Component.literal(""));
         tooltip.add(Component.translatable("tooltip.hbm_m.right_click").withStyle(ChatFormatting.GRAY));
         tooltip.add(Component.translatable("tooltip.hbm_m.shift_right_click").withStyle(ChatFormatting.GRAY));
@@ -138,9 +134,9 @@ public class ModAxeItem extends AxeItem {
 
     private ModeFeedback disableAllAbilities(ItemStack stack, Player player, boolean apply) {
         if (apply) {
-            stack.getOrCreateTag().putBoolean(NBT_VEIN_MINER, false);
-            stack.getOrCreateTag().putBoolean(NBT_SILK_TOUCH, false);
-            clearModeSilkTouch(stack);
+            PlatformHooks.putBoolean(stack, NBT_VEIN_MINER, false);
+            PlatformHooks.putBoolean(stack, NBT_SILK_TOUCH, false);
+            clearModeSilkTouch(stack, player.level());
             playToggleSound(player, false);
         }
         return new ModeFeedback(
@@ -167,10 +163,10 @@ public class ModAxeItem extends AxeItem {
 
     private ModeFeedback toggleVeinMiner(ItemStack stack, Player player, boolean enable, boolean apply) {
         if (apply) {
-            stack.getOrCreateTag().putBoolean(NBT_VEIN_MINER, enable);
+            PlatformHooks.putBoolean(stack, NBT_VEIN_MINER, enable);
             if (enable) {
-                stack.getOrCreateTag().putBoolean(NBT_SILK_TOUCH, false);
-                clearModeSilkTouch(stack);
+                PlatformHooks.putBoolean(stack, NBT_SILK_TOUCH, false);
+                clearModeSilkTouch(stack, player.level());
             }
             playToggleSound(player, enable);
         }
@@ -186,12 +182,12 @@ public class ModAxeItem extends AxeItem {
 
     private ModeFeedback toggleSilkTouch(ItemStack stack, Player player, boolean enable, boolean apply) {
         if (apply) {
-            stack.getOrCreateTag().putBoolean(NBT_SILK_TOUCH, enable);
+            PlatformHooks.putBoolean(stack, NBT_SILK_TOUCH, enable);
             if (enable) {
-                stack.getOrCreateTag().putBoolean(NBT_VEIN_MINER, false);
-                applyModeSilkTouch(stack);
+                PlatformHooks.putBoolean(stack, NBT_VEIN_MINER, false);
+                applyModeSilkTouch(stack, player.level());
             } else {
-                clearModeSilkTouch(stack);
+                clearModeSilkTouch(stack, player.level());
             }
             playToggleSound(player, enable);
         }
@@ -204,38 +200,32 @@ public class ModAxeItem extends AxeItem {
         );
     }
 
-    private void applyModeSilkTouch(ItemStack stack) {
-        int vanilla = EnchantmentHelper.getItemEnchantmentLevel(Enchantments.SILK_TOUCH, stack);
-        stack.getOrCreateTag().putInt(NBT_PRE_SILK, vanilla);
-        Map<Enchantment, Integer> enchants = new HashMap<>(EnchantmentHelper.getEnchantments(stack));
-        enchants.put(Enchantments.SILK_TOUCH, Math.max(vanilla, 1));
-        EnchantmentHelper.setEnchantments(enchants, stack);
+    private void applyModeSilkTouch(ItemStack stack, Level level) {
+        int vanilla = ItemHooks.getEnchantmentLevel(stack, level, "minecraft:silk_touch");
+        PlatformHooks.putInt(stack, NBT_PRE_SILK, vanilla);
+        ItemHooks.setEnchantmentLevel(stack, level, "minecraft:silk_touch", Math.max(vanilla, 1));
     }
 
-    private void clearModeSilkTouch(ItemStack stack) {
-        if (!stack.hasTag() || !stack.getTag().contains(NBT_PRE_SILK)) {
+    private void clearModeSilkTouch(ItemStack stack, Level level) {
+        if (!PlatformHooks.hasItemTag(stack) || !PlatformHooks.contains(stack, NBT_PRE_SILK)) {
             return;
         }
-        int vanilla = stack.getTag().getInt(NBT_PRE_SILK);
-        Map<Enchantment, Integer> enchants = new HashMap<>(EnchantmentHelper.getEnchantments(stack));
+        int vanilla = PlatformHooks.getInt(stack, NBT_PRE_SILK);
         if (vanilla > 0) {
-            enchants.put(Enchantments.SILK_TOUCH, vanilla);
+            ItemHooks.setEnchantmentLevel(stack, level, "minecraft:silk_touch", vanilla);
         } else {
-            enchants.remove(Enchantments.SILK_TOUCH);
+            ItemHooks.removeEnchantment(stack, level, "minecraft:silk_touch");
         }
-        EnchantmentHelper.setEnchantments(enchants, stack);
-        stack.getTag().remove(NBT_PRE_SILK);
+        PlatformHooks.remove(stack, NBT_PRE_SILK);
     }
 
-    private ItemStack getToolForDrops(ItemStack stack) {
+    private ItemStack getToolForDrops(ItemStack stack, Level level) {
         ItemStack tool = stack.copy();
         if (!isSilkTouchEnabled(stack)) {
             return tool;
         }
-        Map<Enchantment, Integer> enchants = new HashMap<>(EnchantmentHelper.getEnchantments(stack));
-        int silk = EnchantmentHelper.getItemEnchantmentLevel(Enchantments.SILK_TOUCH, stack);
-        enchants.put(Enchantments.SILK_TOUCH, Math.max(silk, 1));
-        EnchantmentHelper.setEnchantments(enchants, tool);
+        int silk = ItemHooks.getEnchantmentLevel(stack, level, "minecraft:silk_touch");
+        ItemHooks.setEnchantmentLevel(tool, level, "minecraft:silk_touch", Math.max(silk, 1));
         return tool;
     }
 
@@ -246,11 +236,11 @@ public class ModAxeItem extends AxeItem {
     }
 
     private boolean isVeinMinerEnabled(ItemStack stack) {
-        return stack.hasTag() && stack.getTag().getBoolean(NBT_VEIN_MINER);
+        return PlatformHooks.hasItemTag(stack) && PlatformHooks.getBoolean(stack, NBT_VEIN_MINER);
     }
 
     private boolean isSilkTouchEnabled(ItemStack stack) {
-        return stack.hasTag() && stack.getTag().getBoolean(NBT_SILK_TOUCH);
+        return PlatformHooks.hasItemTag(stack) && PlatformHooks.getBoolean(stack, NBT_SILK_TOUCH);
     }
 
     private void veinMine(Level level, BlockPos startPos, Block targetBlock, ItemStack stack, LivingEntity entity, int radius) {
@@ -311,15 +301,12 @@ public class ModAxeItem extends AxeItem {
         if (!stack.isCorrectToolForDrops(blockState)) return;
 
         if (level instanceof ServerLevel serverLevel) {
-            Block.dropResources(blockState, level, pos, level.getBlockEntity(pos), entity, getToolForDrops(stack));
+            Block.dropResources(blockState, level, pos, level.getBlockEntity(pos), entity, getToolForDrops(stack, level));
             level.removeBlock(pos, false);
         }
 
-        // Урон инструменту (только если не в креативе)
         if (!(entity instanceof Player player && player.isCreative())) {
-            stack.hurtAndBreak(1, entity, (e) -> {
-                e.broadcastBreakEvent(InteractionHand.MAIN_HAND);
-            });
+            ItemHooks.hurtAndBreak(stack, 1, entity, InteractionHand.MAIN_HAND);
         }
     }
 }

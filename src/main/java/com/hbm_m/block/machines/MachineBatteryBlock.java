@@ -4,10 +4,10 @@ import java.util.List;
 
 import org.jetbrains.annotations.Nullable;
 
-import com.hbm_m.api.energy.EnergyNetworkManager;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.blockentity.machines.MachineBatteryBlockEntity;
 import com.hbm_m.util.EnergyFormatter;
+import com.hbm_m.platform.PlatformHooks;
 
 import dev.architectury.registry.menu.MenuRegistry;
 import net.minecraft.ChatFormatting;
@@ -96,22 +96,33 @@ public class MachineBatteryBlock extends BaseEntityBlock {
         return createTickerHelper(type, ModBlockEntities.MACHINE_BATTERY_BE.get(), MachineBatteryBlockEntity::tick);
     }
 
-    //  Регистрация в энергосети
+    //  Регистрация в энергосети больше не нужна: узлами управляет Nodespace (BaseMachineBlockEntity)
 
 
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
-        if (!state.is(newState.getBlock()) && !level.isClientSide()) {
-            // Оставляем *только* логику удаления из сети
-            EnergyNetworkManager.get((ServerLevel) level).removeNode(pos);
-
-            // ... (и другое, если оно не связано с дропом) ...
-        }
-
         // Вызываем super.onRemove, который сам вызовет loot table
         super.onRemove(state, level, pos, newState, isMoving);
     }
 
+    //? if >= 1.21.1 {
+    /*// На 1.21.1 лут-таблица батареи пустая (copy_nbt удалён из игры), состояние
+    // переносится в дропнутый предмет кодом — по паттерну ящиков (BaseCrateBlock).
+    @Override
+    public BlockState playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
+        if (!level.isClientSide && !player.getAbilities().instabuild) {
+            BlockEntity be = level.getBlockEntity(pos);
+            if (be instanceof MachineBatteryBlockEntity battery) {
+                ItemStack stack = new ItemStack(this);
+                battery.saveToItemStack(stack);
+                popResource(level, pos, stack);
+            }
+        }
+        return super.playerWillDestroy(level, pos, state, player);
+    }
+    *///?}
+
+    //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos,
                                  Player player, InteractionHand hand, BlockHitResult hit) {
@@ -124,6 +135,20 @@ public class MachineBatteryBlock extends BaseEntityBlock {
         }
         return InteractionResult.SUCCESS;
     }
+    //?} else {
+    /*@Override
+    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos,
+                                                Player player, BlockHitResult hit) {
+        if (!level.isClientSide) {
+            BlockEntity entity = level.getBlockEntity(pos);
+            if (entity instanceof MachineBatteryBlockEntity battery) {
+                MenuRegistry.openExtendedMenu((ServerPlayer) player, battery, buf -> buf.writeBlockPos(pos));
+            }
+            return InteractionResult.CONSUME;
+        }
+        return InteractionResult.SUCCESS;
+    }
+    *///?}
 
     @Override
     public void setPlacedBy(Level pLevel, BlockPos pPos, BlockState pState, @Nullable LivingEntity pPlacer, ItemStack pStack) {
@@ -134,16 +159,17 @@ public class MachineBatteryBlock extends BaseEntityBlock {
             if (be instanceof MachineBatteryBlockEntity batteryBE) {
 
                 // Проверяем, есть ли у предмета NBT
-                CompoundTag itemNbt = pStack.getTag();
+                CompoundTag itemNbt = PlatformHooks.getItemTag(pStack);
 
                 // Ищем наш специальный тег "BlockEntityTag", который создал лут-тейбл
                 if (itemNbt != null && itemNbt.contains("BlockEntityTag")) {
 
                     // Загружаем все данные из этого тега в наш BlockEntity
+                    //? if < 1.21.1 {
                     batteryBE.load(itemNbt.getCompound("BlockEntityTag"));
-
-                    // (Метод load() в MachineBatteryBlockEntity
-                    // уже содержит super.load(), так что мы просто передаем ему наши данные)
+                    //?} else {
+                    /*batteryBE.loadWithComponents(itemNbt.getCompound("BlockEntityTag"), pLevel.registryAccess());
+                    *///?}
 
                     batteryBE.setChanged(); // Уведомляем мир об изменениях
                 }
@@ -152,13 +178,19 @@ public class MachineBatteryBlock extends BaseEntityBlock {
     }
     
 
+    //? if < 1.21.1 {
     @Override
     public void appendHoverText(ItemStack pStack, @Nullable BlockGetter pLevel, List<Component> pTooltip, TooltipFlag pFlag) {
         super.appendHoverText(pStack, pLevel, pTooltip, pFlag);
+    //?} else {
+    /*@Override
+    public void appendHoverText(ItemStack pStack, net.minecraft.world.item.Item.TooltipContext pLevel, List<Component> pTooltip, TooltipFlag pFlag) {
+        super.appendHoverText(pStack, pLevel, pTooltip, pFlag);
+    *///?}
 
         // 1. Получаем сохраненную энергию из NBT
         long energy = 0;
-        CompoundTag nbt = pStack.getTag();
+        CompoundTag nbt = PlatformHooks.getItemTag(pStack);
 
         // Мы читаем тот же "BlockEntityTag", который записали в loot table
         if (nbt != null && nbt.contains("BlockEntityTag")) {
@@ -174,4 +206,13 @@ public class MachineBatteryBlock extends BaseEntityBlock {
         pTooltip.add(Component.translatable("tooltip.hbm_m.machine_battery.stored", energyStr, maxEnergyStr)
                 .withStyle(ChatFormatting.YELLOW));
     }
+
+    //? if >= 1.21.1 {
+    /*public static final com.mojang.serialization.MapCodec<MachineBatteryBlock> CODEC = simpleCodec(props -> new MachineBatteryBlock(props, 0L));
+
+    @Override
+    protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
+        return CODEC;
+    }
+    *///?}
 }

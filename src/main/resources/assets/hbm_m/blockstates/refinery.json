@@ -1,18 +1,33 @@
 {
   "variants": {
-    "facing=north": {
+    "exploded=false,facing=north": {
       "model": "hbm_m:block/refinery"
     },
-    "facing=south": {
+    "exploded=false,facing=south": {
       "model": "hbm_m:block/refinery",
       "y": 180
     },
-    "facing=west": {
+    "exploded=false,facing=west": {
       "model": "hbm_m:block/refinery",
       "y": 270
     },
-    "facing=east": {
+    "exploded=false,facing=east": {
       "model": "hbm_m:block/refinery",
+      "y": 90
+    },
+    "exploded=true,facing=north": {
+      "model": "hbm_m:block/refinery_exploded"
+    },
+    "exploded=true,facing=south": {
+      "model": "hbm_m:block/refinery_exploded",
+      "y": 180
+    },
+    "exploded=true,facing=west": {
+      "model": "hbm_m:block/refinery_exploded",
+      "y": 270
+    },
+    "exploded=true,facing=east": {
+      "model": "hbm_m:block/refinery_exploded",
       "y": 90
     }
   }

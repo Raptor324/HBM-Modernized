@@ -1,6 +1,7 @@
 package com.hbm_m.inventory.gui.rbmk;
 
 import com.hbm_m.blockentity.machines.rbmk.RBMKIndicatorBlockEntity;
+import com.hbm_m.client.GuiCompat;
 import com.hbm_m.network.RadioTorchControlPacket;
 
 import net.minecraft.client.gui.GuiGraphics;
@@ -18,6 +19,13 @@ public class GUIRBMKIndicator extends Screen {
     private final BlockPos pos;
     private final RBMKIndicatorBlockEntity be;
 
+    /** Label, tint and on/off toggle - the three fields every original *Unit carries. */
+    private final EditBox[] labelBoxes    = new EditBox[RBMKIndicatorBlockEntity.UNITS];
+    private final EditBox[] colorBoxes    = new EditBox[RBMKIndicatorBlockEntity.UNITS];
+    private final Button[]  activeButtons = new Button[RBMKIndicatorBlockEntity.UNITS];
+    private final boolean[] unitActive    = new boolean[RBMKIndicatorBlockEntity.UNITS];
+    /** CE's per-unit {@code polling} flag - re-read the channel every tick and zero on silence. */
+    private final net.minecraft.client.gui.components.Checkbox[] pollingBoxes = new net.minecraft.client.gui.components.Checkbox[RBMKIndicatorBlockEntity.UNITS];
     private final EditBox[] channelBoxes = new EditBox[RBMKIndicatorBlockEntity.UNITS];
     private final EditBox[] minBoxes     = new EditBox[RBMKIndicatorBlockEntity.UNITS];
     private final EditBox[] maxBoxes     = new EditBox[RBMKIndicatorBlockEntity.UNITS];
@@ -51,11 +59,39 @@ public class GUIRBMKIndicator extends Screen {
             maxBoxes[i] = max;
             addRenderableWidget(max);
 
-            Checkbox invert = new Checkbox(cx + 92, y, 60, 16, Component.literal("inv"), be.invert[i]);
+            Checkbox invert = com.hbm_m.client.GuiCompat.checkbox(cx + 92, y, 60, 16, Component.literal("inv"), be.invert[i]);
             invertBoxes[i] = invert;
             addRenderableWidget(invert);
 
-            y += 20;
+            y += 19;
+
+            final int idx = i;
+            unitActive[i] = be.isUnitActive(i);
+            
+            EditBox lbl = new EditBox(this.font, cx - 100, y, 95, 16, Component.literal("label"));
+            lbl.setMaxLength(24);
+            lbl.setValue(be.getUnitLabel(i));
+            labelBoxes[i] = lbl;
+            addRenderableWidget(lbl);
+            
+            EditBox col = new EditBox(this.font, cx + 5, y, 45, 16, Component.literal("color"));
+            col.setMaxLength(7);
+            col.setValue(String.format("%06X", be.getUnitColor(i) & 0xFFFFFF));
+            colorBoxes[i] = col;
+            addRenderableWidget(col);
+            
+            activeButtons[i] = Button.builder(GUIRBMKGauge.activeLabel(unitActive[i]), b -> {
+                unitActive[idx] = !unitActive[idx];
+                activeButtons[idx].setMessage(GUIRBMKGauge.activeLabel(unitActive[idx]));
+            }).bounds(cx + 78, y, 22, 16).build();
+            addRenderableWidget(activeButtons[i]);
+            //? if < 1.21.1 {
+            pollingBoxes[i] = new net.minecraft.client.gui.components.Checkbox(cx - 100, y, 90, 16, Component.literal("poll"), be.polling[i]);
+            //?} else {
+            /*pollingBoxes[i] = net.minecraft.client.gui.components.Checkbox.builder(Component.literal("poll"), this.font).pos(cx - 100, y).selected(be.polling[i]).build();
+            *///?}
+            addRenderableWidget(pollingBoxes[i]);
+            y += 24;
         }
 
         addRenderableWidget(Button.builder(Component.translatable("gui.hbm_m.save"), b -> save())
@@ -66,9 +102,13 @@ public class GUIRBMKIndicator extends Screen {
         CompoundTag data = new CompoundTag();
         for (int i = 0; i < RBMKIndicatorBlockEntity.UNITS; i++) {
             data.putString("channel" + i, channelBoxes[i].getValue());
+            data.putString("ulabel" + i, labelBoxes[i].getValue());
+            data.putBoolean("active" + i, unitActive[i]);
+            data.putInt("ucolor" + i, GUIRBMKGauge.parseColor(colorBoxes[i].getValue()));
             data.putDouble("min" + i, parse(minBoxes[i].getValue()));
             data.putDouble("max" + i, parse(maxBoxes[i].getValue()));
             data.putBoolean("invert" + i, invertBoxes[i].selected());
+            data.putBoolean("polling" + i, pollingBoxes[i].selected());
         }
         RadioTorchControlPacket.sendToServer(pos, data);
         onClose();
@@ -80,7 +120,7 @@ public class GUIRBMKIndicator extends Screen {
 
     @Override
     public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
-        this.renderBackground(g);
+        com.hbm_m.client.GuiCompat.renderBackground(this, g, mouseX, mouseY, partialTick);
         super.render(g, mouseX, mouseY, partialTick);
         g.drawCenteredString(this.font, this.title, this.width / 2, this.height / 2 - 115, 0xFFFFFF);
     }

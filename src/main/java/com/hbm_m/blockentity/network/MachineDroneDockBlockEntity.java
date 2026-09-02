@@ -79,7 +79,7 @@ public class MachineDroneDockBlockEntity extends BaseMachineBlockEntity {
 
             for (OfferNode offer : offers) {
                 if (!offer.active) continue;
-                boolean matches = offer.offer.stream().anyMatch(stack -> ItemStack.isSameItemSameTags(stack, wanted));
+                boolean matches = offer.offer.stream().anyMatch(stack -> com.hbm_m.platform.PlatformHooks.isSameItemSameTags(stack, wanted));
                 if (!matches) continue;
 
                 if (be.tryEmbark(level, own, firstRequest, offer, wanted, localNodes)) return;

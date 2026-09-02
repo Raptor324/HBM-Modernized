@@ -126,6 +126,7 @@ public class DoorBlock extends BaseEntityBlock implements IMultiblockController 
         return false;
     }
 
+    //? if < 1.21.1 {
     @Override
     public boolean isPathfindable(BlockState state, BlockGetter level, BlockPos pos, PathComputationType type) {
         return switch (type) {
@@ -133,6 +134,15 @@ public class DoorBlock extends BaseEntityBlock implements IMultiblockController 
             default -> false;
         };
     }
+    //?} else {
+    /*@Override
+    protected boolean isPathfindable(BlockState state, PathComputationType type) {
+        return switch (type) {
+            case LAND, AIR -> state.getValue(OPEN);
+            default -> false;
+        };
+    }
+    *///?}
 
     public static int[] getDoorDimensions(String doorDeclId) {
         DoorDecl decl = DoorDeclRegistry.getById(doorDeclId);
@@ -175,8 +185,19 @@ public class DoorBlock extends BaseEntityBlock implements IMultiblockController 
                 (world, pos, blockState, blockEntity) -> DoorBlockEntity.serverTick(world, pos, blockState, (DoorBlockEntity) blockEntity));
     }
 
+    //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        return hbmOnUse(state, level, pos, player, hand, hit);
+    }
+    //?} else {
+    /*@Override
+    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+        return hbmOnUse(state, level, pos, player, InteractionHand.MAIN_HAND, hit);
+    }
+    *///?}
+
+    private InteractionResult hbmOnUse(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         if (hasScrewdriver(player)) {
             return InteractionResult.sidedSuccess(level.isClientSide);
         }
@@ -191,7 +212,9 @@ public class DoorBlock extends BaseEntityBlock implements IMultiblockController 
 
     private static boolean hasScrewdriver(Player player) {
         return player.getItemInHand(InteractionHand.MAIN_HAND).getItem() == ModItems.SCREWDRIVER.get()
-                || player.getItemInHand(InteractionHand.OFF_HAND).getItem() == ModItems.SCREWDRIVER.get();
+                || player.getItemInHand(InteractionHand.OFF_HAND).getItem() == ModItems.SCREWDRIVER.get()
+                || player.getItemInHand(InteractionHand.MAIN_HAND).getItem() == ModItems.SCREWDRIVER_DESH.get()
+                || player.getItemInHand(InteractionHand.OFF_HAND).getItem() == ModItems.SCREWDRIVER_DESH.get();
     }
 
     @Override
@@ -280,6 +303,27 @@ public class DoorBlock extends BaseEntityBlock implements IMultiblockController 
 
     @Override
     public RenderShape getRenderShape(BlockState state) {
+        // По умолчанию RenderShape.MODEL —DoorBakedModel skip-ает world-quads через
+        // shouldSkipWorldRendering, а DoorRenderer рисует анимированную геометрию через
+        // BlockEntityRenderer (VBO/instanced). Это рабочий паттерн, который НЕ ломает
+        // контрапшены Create: при разборке поезда Create возвращает блоки из
+        // contraption.getBlocks() в мир через level.setBlock, и с RenderShape.MODEL
+        // блок появляется в chunk-render сразу, без задержки/дублирования.
+        //
+        // ENTITYBLOCK_ANIMATED отключает chunk-bake полностью, оставляя только BER — это
+        // было нужно для DAE-дверей (getColladaAnimationSource() != null), чей
+        // DaeBakedModel иначе отдаёт в chunk «кривую» статичную геометрию без поворота по
+        // FACING и без анимации (Sliding Blast Door: 2 пайплайна OBJ + DAE).
+        //
+        // НО: ENTITYBLOCK_ANIMATED ломает разборку составных contraption-поездов Create
+        // — реальный блок-дверь (состояние из StructureBlockInfo) перестаёт появляться в
+        // мире синхронно с удалением сущности-конрапшена; остается «двойной рендер»
+        // (сущность + реальная копия), часть склеенных блоков бесследно пропадает.
+        // Поэтому: только DAE-двери используют ENTITYBLOCK_ANIMATED, остальные — MODEL.
+        DoorDecl decl = DoorDeclRegistry.getById(doorDeclId);
+        if (decl != null && decl.getColladaAnimationSource() != null) {
+            return RenderShape.ENTITYBLOCK_ANIMATED;
+        }
         return RenderShape.MODEL;
     }
 
@@ -352,4 +396,13 @@ public class DoorBlock extends BaseEntityBlock implements IMultiblockController 
     public VoxelShape getBlockSupportShape(BlockState pState, BlockGetter pLevel, BlockPos pPos) {
         return Shapes.empty();
     }
+
+    //? if >1.20.1 {
+    /*public static final com.mojang.serialization.MapCodec<DoorBlock> CODEC = simpleCodec(props -> new DoorBlock(props, "large_vehicle_door"));
+
+    @Override
+    protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
+        return CODEC;
+    }
+    *///?}
 }

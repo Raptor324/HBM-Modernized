@@ -12,11 +12,10 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
 /**
- * 1:1-Port von {@code ContainerRBMKHeater} (1.7.10-Original): das Original besass zwar einen
- * einzelnen Item-Slot (Fluid-Identifier zum Umschalten des Kuehlmitteltyps via
- * {@code FluidTank.setType}), doch die modernisierte {@link RBMKHeaterBlockEntity} hat kein
- * Item-Inventar (nur Fluid-Tanks) - dieser Slot entfaellt daher analog zu {@link RBMKBoilerMenu}.
- * Nur die Spieler-Inventar-Slots werden uebernommen (xSize/ySize 176x186, wie im Original).
+ * 1:1-Port von {@code ContainerRBMKHeater}: ein Fluid-Identifier-Slot bei (41,45), der den
+ * Kuehlmitteltyp des Zulauftanks umschaltet ({@code FluidTank.setType}), plus das Spieler-Inventar
+ * (xSize/ySize 176x186, wie im Original). Der Slot fehlte bisher, weil die Block-Entity gar kein
+ * Item-Inventar hatte - damit war der Waermetauscher fest auf ein Kuehlmittel verdrahtet.
  */
 public class RBMKHeaterMenu extends AbstractContainerMenu {
 
@@ -29,6 +28,11 @@ public class RBMKHeaterMenu extends AbstractContainerMenu {
     public RBMKHeaterMenu(int id, Inventory inv, RBMKHeaterBlockEntity be) {
         super(ModMenuTypes.RBMK_HEATER_MENU.get(), id);
         this.blockEntity = be;
+
+        // Kein Forge-SlotItemHandler: der Handler wird als Container gekapselt (kross-plattform).
+        net.minecraft.world.Container heaterContainer =
+                new com.hbm_m.inventory.ModItemStackHandlerContainer(be.inventory, be::setChanged);
+        addSlot(new net.minecraft.world.inventory.Slot(heaterContainer, RBMKHeaterBlockEntity.SLOT_FLUID_ID, 41, 45));
 
         // Original (ContainerRBMKHeater): 8+j*18, 84+i*18+20 / 8+i*18, 142+20 -- image is 176x186,
         // 20px taller than the standard 166px machine GUI.
@@ -43,6 +47,9 @@ public class RBMKHeaterMenu extends AbstractContainerMenu {
         BlockPos pos = buf.readBlockPos();
         BlockEntity be = inv.player.level().getBlockEntity(pos);
         if (be instanceof RBMKHeaterBlockEntity h) return h;
+        // На клиенте тайл может отсутствовать (реплей Flashback) — возвращаем null.
+        // На сервере отсутствие тайла — реальный баг, поэтому там падаем как раньше.
+        if (inv.player.level().isClientSide) return null;
         throw new IllegalStateException("No RBMKHeaterBlockEntity at " + pos);
     }
 
@@ -50,6 +57,10 @@ public class RBMKHeaterMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
+        // тайл может отсутствовать на клиенте (реплей Flashback)
+        if (blockEntity == null) {
+            return false;
+        }
         return blockEntity.getLevel() == player.level()
             && player.distanceToSqr(blockEntity.getBlockPos().getCenter()) <= 64;
     }

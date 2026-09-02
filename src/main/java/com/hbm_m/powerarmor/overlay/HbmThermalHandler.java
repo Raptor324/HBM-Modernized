@@ -131,14 +131,9 @@ public class HbmThermalHandler implements ResourceManagerReloadListener {
             thermalBuffer.setClearColor(0.0F, 0.0F, 0.0F, 0.0F);
             thermalBuffer.clear(Minecraft.ON_OSX);
 
-            // if (mc.getMainRenderTarget().isStencilEnabled() && !thermalBuffer.isStencilEnabled()) {
-            //     thermalBuffer.enableStencil();
-            // }
             try {
                 thermalBuffer.copyDepthFrom(mc.getMainRenderTarget());
             } catch (Throwable depthCopyError) {
-                // Никогда не рисуем "сквозь стены" в FULL_SHADER режиме: если depth не скопирован,
-                // пропускаем thermal entities в этом кадре.
                 MainRegistry.LOGGER.debug("Thermal depth copy failed, skipping thermal entity pass this frame", depthCopyError);
                 hasHotEntitiesThisFrame = false;
                 return;
@@ -153,7 +148,7 @@ public class HbmThermalHandler implements ResourceManagerReloadListener {
             poseStack.pushPose();
             pushedPose = true;
             net.minecraft.client.renderer.MultiBufferSource.BufferSource originalBufferSource =
-                    net.minecraft.client.renderer.MultiBufferSource.immediate(new BufferBuilder(256));
+                    com.hbm_m.platform.RenderHooks.immediateBufferSource(256);
             ShadowIgnoringBufferSource bufferSource = new ShadowIgnoringBufferSource(originalBufferSource);
 
             for (Entity entity : mc.level.entitiesForRendering()) {
@@ -191,8 +186,6 @@ public class HbmThermalHandler implements ResourceManagerReloadListener {
     }
 
     private static void applyPostProcess(float partialTick) {
-        // Если в этом кадре не было ни одной "горячей" сущности, то thermal_buffer пустой
-        // и нет смысла выполнять фуллскрин-постпроцесс.
         if (thermalChain == null || !hasHotEntitiesThisFrame) {
             hasHotEntitiesThisFrame = false;
             return;
@@ -210,7 +203,6 @@ public class HbmThermalHandler implements ResourceManagerReloadListener {
         
         Minecraft.getInstance().getMainRenderTarget().bindWrite(true);
 
-        // Сбрасываем флаг до следующего кадра
         hasHotEntitiesThisFrame = false;
     }
 
@@ -233,8 +225,6 @@ public class HbmThermalHandler implements ResourceManagerReloadListener {
         public com.mojang.blaze3d.vertex.VertexConsumer getBuffer(net.minecraft.client.renderer.RenderType type) {
             String name = type.toString().toLowerCase();
 
-            // Тени/шлейфы/глинт и прочее лишнее нам не нужно в тепловизоре.
-            // Возвращаем noOp, чтобы ItemRenderer не создавал дублирующиеся VertexMultiConsumer'ы
             if (name.contains("shadow") || name.contains("glint") || name.contains("foil")) {
                 return noOp;
             }
@@ -244,6 +234,7 @@ public class HbmThermalHandler implements ResourceManagerReloadListener {
     }
 
     private static class NoOpVertexConsumer implements com.mojang.blaze3d.vertex.VertexConsumer {
+        //? if < 1.21.1 {
         @Override public com.mojang.blaze3d.vertex.VertexConsumer vertex(double x, double y, double z) { return this; }
         @Override public com.mojang.blaze3d.vertex.VertexConsumer color(int r, int g, int b, int a) { return this; }
         @Override public com.mojang.blaze3d.vertex.VertexConsumer uv(float u, float v) { return this; }
@@ -253,10 +244,18 @@ public class HbmThermalHandler implements ResourceManagerReloadListener {
         @Override public void endVertex() {}
         @Override public void defaultColor(int r, int g, int b, int a) {}
         @Override public void unsetDefaultColor() {}
+        //?} else {
+        /*@Override public com.mojang.blaze3d.vertex.VertexConsumer addVertex(float x, float y, float z) { return this; }
+        @Override public com.mojang.blaze3d.vertex.VertexConsumer setColor(int r, int g, int b, int a) { return this; }
+        @Override public com.mojang.blaze3d.vertex.VertexConsumer setUv(float u, float v) { return this; }
+        @Override public com.mojang.blaze3d.vertex.VertexConsumer setUv1(int u, int v) { return this; }
+        @Override public com.mojang.blaze3d.vertex.VertexConsumer setUv2(int u, int v) { return this; }
+        @Override public com.mojang.blaze3d.vertex.VertexConsumer setNormal(float x, float y, float z) { return this; }
+        *///?}
     }
 
     // ======================================================================
-    // Forge hook (optional): keeps old behaviour when Forge events available
+    // Loader hooks: keeps level render pass active on Forge and NeoForge
     // ======================================================================
     //? if forge {
     @net.minecraftforge.fml.common.Mod.EventBusSubscriber(modid = com.hbm_m.lib.RefStrings.MODID, value = net.minecraftforge.api.distmarker.Dist.CLIENT, bus = net.minecraftforge.fml.common.Mod.EventBusSubscriber.Bus.FORGE)
@@ -271,5 +270,19 @@ public class HbmThermalHandler implements ResourceManagerReloadListener {
             }
         }
     }
-    //?}
+    //?} elif neoforge {
+    /*@SuppressWarnings("removal")
+    @net.neoforged.fml.common.EventBusSubscriber(modid = com.hbm_m.lib.RefStrings.MODID, value = net.neoforged.api.distmarker.Dist.CLIENT, bus = net.neoforged.fml.common.EventBusSubscriber.Bus.GAME)
+    public static final class NeoForgeHooks {
+        @net.neoforged.bus.api.SubscribeEvent
+        public static void onRenderLevel(net.neoforged.neoforge.client.event.RenderLevelStageEvent event) {
+            if (!HbmThermalHandler.isThermalShaderModeActive()) return;
+            if (event.getStage() == net.neoforged.neoforge.client.event.RenderLevelStageEvent.Stage.AFTER_ENTITIES) {
+                HbmThermalHandler.onAfterEntities(event.getPoseStack(), event.getPartialTick().getGameTimeDeltaPartialTick(true));
+            } else if (event.getStage() == net.neoforged.neoforge.client.event.RenderLevelStageEvent.Stage.AFTER_LEVEL) {
+                HbmThermalHandler.onAfterLevel(event.getPartialTick().getGameTimeDeltaPartialTick(true));
+            }
+        }
+    }
+    *///?}
 }

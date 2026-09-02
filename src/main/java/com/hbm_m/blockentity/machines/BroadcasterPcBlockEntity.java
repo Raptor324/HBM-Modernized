@@ -22,7 +22,7 @@ import net.minecraft.world.phys.AABB;
  * for as long as the block exists and is loaded, using the same looping-sound infrastructure as
  * the other machines ({@link com.hbm_m.sound.ClientSoundManager}).
  */
-public class BroadcasterPcBlockEntity extends BlockEntity {
+public class BroadcasterPcBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity {
 
     private static final double CONFUSION_RADIUS = 25.0D;
     private static final double DAMAGE_RADIUS = 15.0D;

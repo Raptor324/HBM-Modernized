@@ -8,8 +8,8 @@ import com.hbm_m.blockentity.BaseMachineBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.inventory.menu.MachineRadiolysisMenu;
-import com.hbm_m.recipe.CrackingTowerRecipes.Crack;
-import com.hbm_m.recipe.RadiolysisRecipes;
+import com.hbm_m.recipe.CrackingTowerRecipe;
+import com.hbm_m.recipe.RadiolysisRecipe;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -38,7 +38,8 @@ import net.minecraft.world.level.material.Fluids;
  * verseuchten Lebensmitteln) entfaellt vollstaendig, da dieser Port kein Seuchen-/Contagion-System
  * besitzt. Die eigentliche Fluid-Crack-Logik (100mB Input -&gt; zwei Output-Fluessigkeiten alle
  * {@code CRACK_INTERVAL} Ticks) ist 1:1 aus dem Original uebernommen, inkl. Wiederverwendung der
- * Cracking-Tower-Rezepttabelle wie im Original ({@link RadiolysisRecipes}).
+ * Cracking-Tower-Rezepttabelle wie im Original: eigene {@link RadiolysisRecipe}-Eintraege zuerst,
+ * dann Fallback auf {@link CrackingTowerRecipe}.
  */
 public class MachineRadiolysisBlockEntity extends BaseMachineBlockEntity implements IFluidStandardTransceiverMK2 {
 
@@ -82,8 +83,35 @@ public class MachineRadiolysisBlockEntity extends BaseMachineBlockEntity impleme
         be.sendUpdateToClient();
     }
 
+    /** Результат радиолиза/крекинга: (жидкость A, mB, жидкость B, mB) — общий для обоих рецептов. */
+    private record CrackResult(net.minecraft.world.level.material.Fluid outA, int amountA,
+                               net.minecraft.world.level.material.Fluid outB, int amountB) {}
+
+    /**
+     * Data-driven поиск: сначала собственный RadiolysisRecipe (вода → пероксид+водород),
+     * затем делегирование в CrackingTowerRecipe — как оригинальный RadiolysisRecipes
+     * делегировал в CrackingRecipes.
+     */
+    @org.jetbrains.annotations.Nullable
+    private CrackResult findCrackRecipe() {
+        if (level == null) return null;
+        RadiolysisRecipe own = RadiolysisRecipe.getRecipe(level, tanks[0].getTankType());
+        if (own != null) {
+            return new CrackResult(own.getOutputA(), own.getOutputAMb(),
+                    own.getOutputB() != null ? own.getOutputB() : own.getOutputA(),
+                    own.getOutputBMb());
+        }
+        CrackingTowerRecipe fallback = CrackingTowerRecipe.getRecipe(level, tanks[0].getTankType());
+        if (fallback != null) {
+            return new CrackResult(fallback.getOutputA(), fallback.getOutputAMb(),
+                    fallback.getOutputB() != null ? fallback.getOutputB() : fallback.getOutputA(),
+                    fallback.getOutputBMb());
+        }
+        return null;
+    }
+
     private void crack() {
-        Crack recipe = RadiolysisRecipes.get(tanks[0].getTankType());
+        CrackResult recipe = findCrackRecipe();
         if (recipe == null) return;
 
         int left = recipe.amountA();
@@ -125,16 +153,16 @@ public class MachineRadiolysisBlockEntity extends BaseMachineBlockEntity impleme
     // ==================== NBT ====================
 
     @Override
-    public void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tanks[0].writeToNBT(tag, "tank0");
         tanks[1].writeToNBT(tag, "tank1");
         tanks[2].writeToNBT(tag, "tank2");
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         tanks[0].readFromNBT(tag, "tank0");
         tanks[1].readFromNBT(tag, "tank1");
         tanks[2].readFromNBT(tag, "tank2");

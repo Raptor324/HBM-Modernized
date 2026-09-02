@@ -18,13 +18,14 @@ import org.joml.Matrix4f;
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.util.*;
+import com.hbm_m.platform.RenderHooks;
 
 /**
  * Port von {@code RenderDeliveryDrone} (1.7.10 Original). Rendert das gemeinsame {@code drone.obj}
  * Multi-Part-Modell (Gruppen "Drone"/"Crate"/"Barrel", per {@code o}-Statement getrennt - im
  * Original per einfachem Ein-/Ausblenden der 3 Teile je nach {@code getAppearance()}), mit der
  * Textur abhaengig vom Drohnentyp (normal/express/request). Laed-/Parse-Logik uebernommen vom
- * bereits etablierten {@link SU47TrophyRenderer}-Muster, hier nach Objektname statt Materialname
+ * bereits etablierten Trophaeen-Renderer-Muster, hier nach Objektname statt Materialname
  * gruppiert, da alle drei Teile im Original dasselbe Material nutzen.
  */
 public class DeliveryDroneRenderer extends EntityRenderer<EntityDroneBase> {
@@ -143,9 +144,7 @@ public class DeliveryDroneRenderer extends EntityRenderer<EntityDroneBase> {
                     float x = tri[base], y = tri[base + 1], z = tri[base + 2];
                     float u = tri[base + 3], v = 1f - tri[base + 4];
                     float nx = tri[base + 5], ny = tri[base + 6], nz = tri[base + 7];
-                    vc.vertex(m, x, y, z).color(1f, 1f, 1f, 1f)
-                      .uv(u, v).overlayCoords(net.minecraft.client.renderer.texture.OverlayTexture.NO_OVERLAY).uv2(packedLight)
-                      .normal(nx, ny, nz).endVertex();
+                    RenderHooks.vertexFull(vc, m, x, y, z, 255, 255, 255, 255, u, v, net.minecraft.client.renderer.texture.OverlayTexture.NO_OVERLAY, packedLight, nx, ny, nz);
                 }
             }
         }
