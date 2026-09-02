@@ -283,6 +283,12 @@ public final class ModMaterialItems {
                 if (shape == MaterialShape.POWDER) return loreItalic("asbestos_powder",
                         "\"Sniffffffff- MHHHHHHMHHHHHHHHH\"");
                 break;
+            case CHARRED: if (shape == MaterialShape.CRYSTAL)
+                return lore("crystal_charred", "High quality silicate, slightly burned.");
+                break;
+            case HORN: if (shape == MaterialShape.CRYSTAL)
+                return lore("crystal_horn", "Not an actual horn.");
+                break;
             default:
         }
         return null;

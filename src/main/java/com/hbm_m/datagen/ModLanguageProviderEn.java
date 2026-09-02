@@ -182,6 +182,7 @@ public class ModLanguageProviderEn extends LanguageProvider {
     @Override
     protected void addTranslations() {
         addConfigTranslations();
+        addTranslationsPart2();
 
         // Автоматическая локализация слитков
         for (ModMaterials mat : ModMaterials.values()) {
@@ -1730,7 +1731,18 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("item.hbm_m.crystal_fluorite", "Fluorite Crystal");
         add("item.hbm_m.crystal_gold", "Gold Crystal");
         add("item.hbm_m.crystal_hardened", "Hardened Crystal");
-        add("item.hbm_m.crystal_horn", "Horn Crystal");
+        add("item.hbm_m.crystal_horn", "Crystal Horn");
+        add("item.hbm_m.fuel_tank_large", "Large Fuel Tank");
+        add("item.hbm_m.fuel_tank_medium", "Medium Fuel Tank");
+        add("item.hbm_m.fuel_tank_small", "Small Fuel Tank");
+        add("item.hbm_m.malachite_chunk", "Malachite Chunk");
+        add("item.hbm_m.missile_assembly", "Small Missile Assembly");
+        add("item.hbm_m.neutron_reflector", "Neutron Reflector");
+        add("item.hbm_m.thruster_large", "Large Thruster");
+        add("item.hbm_m.thruster_medium", "Medium Thruster");
+        add("item.hbm_m.thruster_small", "Small Thruster");
+        add("tooltip.hbm_m.crystal_charred.desc1", "High quality silicate, slightly burned.");
+        add("tooltip.hbm_m.crystal_horn.desc1", "Not an actual horn.");
         add("item.hbm_m.crystal_iron", "Iron Crystal");
         add("item.hbm_m.crystal_lapis", "Lapis Lazuli Crystal");
         add("item.hbm_m.crystal_lead", "Lead Crystal");
@@ -2588,6 +2600,9 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("gui.hbm_m.radar.contact.alt", "Alt.: %s");
         add("gui.hbm_m.radar.slots", "Slots");
         add("gui.hbm_m.radar.tooltip.show_map", "Show Map (WIP, can be buggy)");
+    }
+
+    private void addTranslationsPart2() {
         add("gui.hbm_m.radar.tooltip.toggle_gui", "Switch View");
         add("gui.hbm_m.radar.tooltip.clear_map", "Clear Map");
         add("gui.hbm_m.jei.rbmk_disassembly", "RBMK Rod Disassembly");
