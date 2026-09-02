@@ -837,7 +837,9 @@ public class ModBlockStateProvider extends BlockStateProvider {
         customObjBlock(ModBlocks.CRATE_CONSERVE);
         customObjBlock(ModBlocks.FILE_CABINET);
 
-        simpleBlock(ModBlocks.UNIVERSAL_MACHINE_PART.get(), models().getBuilder(ModBlocks.UNIVERSAL_MACHINE_PART.getId().getPath()));
+        // Технический блок без визуала; particle нужен, чтобы партиклы разрушения не были missing tex.
+        simpleBlock(ModBlocks.UNIVERSAL_MACHINE_PART.get(), models().getBuilder(ModBlocks.UNIVERSAL_MACHINE_PART.getId().getPath())
+                .texture("particle", modLoc("block/block_steel_machine")));
         // wire_coated: manual multipart blockstate + OBJ visibility (see assets/hbm_m/blockstates/wire_coated.json)
         // red_* ЛЭП (коннекторы/пилоны): ручные blockstates с OBJ-моделями и поворотами (assets/hbm_m/blockstates).
         // PYLON_DUMMY не датагенится вовсе (invisible).
@@ -1793,12 +1795,14 @@ public class ModBlockStateProvider extends BlockStateProvider {
         ModelFile brickRedNone = models().cubeAll("block/brick_red_none", modLoc("block/brick_base"));
         ResourceLocation bb = modLoc("block/brick_base");
         ResourceLocation red = modLoc("block/brick_red"), redTop = modLoc("block/brick_red_top");
-        ModelFile brickRedDown = models().cube("block/brick_red_down", redTop, bb, bb, bb, bb, bb);
-        ModelFile brickRedUp = models().cube("block/brick_red_up", bb, redTop, bb, bb, bb, bb);
-        ModelFile brickRedNorth = models().cube("block/brick_red_north", bb, bb, red, bb, bb, bb);
-        ModelFile brickRedSouth = models().cube("block/brick_red_south", bb, bb, bb, red, bb, bb);
-        ModelFile brickRedEast = models().cube("block/brick_red_east", bb, bb, bb, bb, red, bb);
-        ModelFile brickRedWest = models().cube("block/brick_red_west", bb, bb, bb, bb, bb, red);
+        // Ванильный шаблон block/cube НЕ определяет "particle" (в отличие от cube_all) —
+        // без явной текстуры партиклы разрушения будут missing tex.
+        ModelFile brickRedDown = models().cube("block/brick_red_down", redTop, bb, bb, bb, bb, bb).texture("particle", redTop);
+        ModelFile brickRedUp = models().cube("block/brick_red_up", bb, redTop, bb, bb, bb, bb).texture("particle", redTop);
+        ModelFile brickRedNorth = models().cube("block/brick_red_north", bb, bb, red, bb, bb, bb).texture("particle", red);
+        ModelFile brickRedSouth = models().cube("block/brick_red_south", bb, bb, bb, red, bb, bb).texture("particle", red);
+        ModelFile brickRedEast = models().cube("block/brick_red_east", bb, bb, bb, bb, red, bb).texture("particle", red);
+        ModelFile brickRedWest = models().cube("block/brick_red_west", bb, bb, bb, bb, bb, red).texture("particle", red);
         VariantBlockStateBuilder brickRedBuilder = getVariantBuilder(ModBlocks.BRICK_RED.get());
         brickRedBuilder.partialState().with(RedBrickBlock.RED_FACE, RedFace.NONE).setModels(ConfiguredModel.builder().modelFile(brickRedNone).build());
         brickRedBuilder.partialState().with(RedBrickBlock.RED_FACE, RedFace.DOWN).setModels(ConfiguredModel.builder().modelFile(brickRedDown).build());
@@ -3016,7 +3020,8 @@ public class ModBlockStateProvider extends BlockStateProvider {
                 .end()
                 .element().from(0.0F, 12.0F, 0.0F).to(16.0F, 16.0F, 16.0F)
                         .allFaces((dir, face) -> face.texture(dir.getAxis() == Direction.Axis.Y ? "#top" : "#side"))
-                .end();
+                .end()
+                .texture("particle", modLoc("block/pedestal_side"));
         simpleBlock(ModBlocks.PEDESTAL.get(), pedestalModel);
         simpleBlockItem(ModBlocks.PEDESTAL.get(), pedestalModel);
         simpleBlockWithItem(ModBlocks.PINK_LOG.get(),
