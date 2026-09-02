@@ -10,6 +10,9 @@ import com.hbm_m.blockentity.crates.IronCrateBlockEntity;
 import com.hbm_m.inventory.menu.DeshCrateMenu;
 import com.hbm_m.inventory.menu.IronCrateMenu;
 import com.hbm_m.item.ModItems;
+import com.hbm_m.item.material.MaterialShape;
+import com.hbm_m.item.material.ModMaterialItems;
+import com.hbm_m.item.material.ModMaterials;
 import com.hbm_m.platform.recipe.RecipeHooks;
 
 import net.minecraft.core.BlockPos;
@@ -174,7 +177,7 @@ public final class StorageCrateVariantGameTest {
         // Iron crate: AAA / B B / BBB — iron plates on top, ingots below.
         NonNullList<ItemStack> ironGrid = NonNullList.withSize(9, ItemStack.EMPTY);
         for (int col = 0; col < 3; col++) {
-            ironGrid.set(col, new ItemStack(ModItems.PLATE_IRON.get()));
+            ironGrid.set(col, ModMaterialItems.stack(ModMaterials.IRON, MaterialShape.PLATE, 1));
             ironGrid.set(6 + col, new ItemStack(Items.IRON_INGOT));
         }
         ironGrid.set(3, new ItemStack(Items.IRON_INGOT));
@@ -188,7 +191,7 @@ public final class StorageCrateVariantGameTest {
         for (int i = 0; i < 9; i++) {
             upgradeGrid.set(i, (i == 4)
                     ? new ItemStack(ModBlocks.CRATE_STEEL.get())
-                    : new ItemStack(ModItems.PLATE_DESH.get()));
+                    : ModMaterialItems.stack(ModMaterials.DESH, MaterialShape.PLATE, 1));
         }
         ItemStack upgraded = craft(helper, upgradeGrid);
         check(upgraded.is(ModItems.CRATE_DESH.get()) && upgraded.getCount() == 1,

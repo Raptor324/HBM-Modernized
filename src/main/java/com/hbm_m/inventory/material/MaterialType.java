@@ -1,6 +1,8 @@
 package com.hbm_m.inventory.material;
 
-import com.hbm_m.item.ModItems;
+import com.hbm_m.item.material.MaterialShape;
+import com.hbm_m.item.material.ModMaterialItems;
+import com.hbm_m.item.material.ModMaterials;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
@@ -10,26 +12,26 @@ import java.util.Map;
 
 public enum MaterialType {
 
-    IRON        (2600, "iron",        0xB7B7B7, () -> ModItems.PLATE_CAST_IRON.get()),
-    GOLD        (7900, "gold",        0xFDD835, () -> ModItems.PLATE_CAST_GOLD.get()),
-    COPPER      (2900, "copper",      0xD97C2E, () -> ModItems.PLATE_CAST_COPPER.get()),
-    TITANIUM    (2200, "titanium",    0x8FA0B5, () -> ModItems.PLATE_CAST_TITANIUM.get()),
-    ALUMINIUM   (1300, "aluminium",   0xC8C8C8, () -> ModItems.PLATE_CAST_ALUMINIUM.get()),
-    TUNGSTEN    (7400, "tungsten",    0x555555, () -> ModItems.PLATE_CAST_TUNGSTEN.get()),
-    ZIRCONIUM   (4000, "zirconium",   0x9FBFBF, () -> ModItems.PLATE_CAST_ZIRCONIUM.get()),
-    OSMIRIDIUM  (7699, "osmiridium",  0x6A6A8F, () -> ModItems.PLATE_CAST_OSMIRIDIUM.get()),
-    STEEL       (30,   "steel",       0x9AA0A6, () -> ModItems.PLATE_CAST_STEEL.get()),
-    ALLOY       (32,   "alloy",       0x7AA0C8, () -> ModItems.PLATE_CAST_ALLOY.get()),
-    DURA_STEEL  (33,   "dura_steel",  0x8A9AB0, () -> ModItems.PLATE_CAST_DURA_STEEL.get()),
-    DESH        (42,   "desh",        0xC08050, () -> ModItems.PLATE_CAST_DESH.get()),
-    STAR_METAL  (35,   "star_metal",  0x88CCFF, () -> ModItems.PLATE_CAST_STAR_METAL.get()),
-    TCALLOY     (36,   "tcalloy",     0x4A7A9B, () -> ModItems.PLATE_CAST_TCALLOY.get()),
-    CDALLOY     (43,   "cdalloy",     0x6A8A7A, () -> ModItems.PLATE_CAST_CDALLOY.get()),
-    CMB         (39,   "cmb",         0x3A3A5A, () -> ModItems.PLATE_CAST_CMB.get()),
-    SCHRABIDIUM (12626,"schrabidium", 0xFFAA00, () -> ModItems.PLATE_CAST_SCHRABIDIUM.get()),
-    BBRONZE     (46,   "bbronze",     0xCD7F32, () -> ModItems.PLATE_CAST_BBRONZE.get()),
-    ABRONZE     (47,   "abronze",     0xB87333, () -> ModItems.PLATE_CAST_ABRONZE.get()),
-    SATURNITE   (34,   "saturnite",   0x7A5A3A, () -> ModItems.PLATE_CAST_SATURNITE.get()),
+    IRON        (2600, "iron",        0xB7B7B7, () -> ModMaterialItems.item(ModMaterials.IRON, MaterialShape.PLATE_CAST)),
+    GOLD        (7900, "gold",        0xFDD835, () -> ModMaterialItems.item(ModMaterials.GOLD, MaterialShape.PLATE_CAST)),
+    COPPER      (2900, "copper",      0xD97C2E, () -> ModMaterialItems.item(ModMaterials.COPPER, MaterialShape.PLATE_CAST)),
+    TITANIUM    (2200, "titanium",    0x8FA0B5, () -> ModMaterialItems.item(ModMaterials.TITANIUM, MaterialShape.PLATE_CAST)),
+    ALUMINIUM   (1300, "aluminium",   0xC8C8C8, () -> ModMaterialItems.item(ModMaterials.ALUMINIUM, MaterialShape.PLATE_CAST)),
+    TUNGSTEN    (7400, "tungsten",    0x555555, () -> ModMaterialItems.item(ModMaterials.TUNGSTEN, MaterialShape.PLATE_CAST)),
+    ZIRCONIUM   (4000, "zirconium",   0x9FBFBF, () -> ModMaterialItems.item(ModMaterials.ZIRCONIUM, MaterialShape.PLATE_CAST)),
+    OSMIRIDIUM  (7699, "osmiridium",  0x6A6A8F, () -> ModMaterialItems.item(ModMaterials.OSMIRIDIUM, MaterialShape.PLATE_CAST)),
+    STEEL       (30,   "steel",       0x9AA0A6, () -> ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE_CAST)),
+    ALLOY       (32,   "alloy",       0x7AA0C8, () -> ModMaterialItems.item(ModMaterials.ALLOY, MaterialShape.PLATE_CAST)),
+    DURA_STEEL  (33,   "dura_steel",  0x8A9AB0, () -> ModMaterialItems.item(ModMaterials.DURA_STEEL, MaterialShape.PLATE_CAST)),
+    DESH        (42,   "desh",        0xC08050, () -> ModMaterialItems.item(ModMaterials.DESH, MaterialShape.PLATE_CAST)),
+    STAR_METAL  (35,   "star_metal",  0x88CCFF, () -> ModMaterialItems.item(ModMaterials.STAR_METAL, MaterialShape.PLATE_CAST)),
+    TCALLOY     (36,   "tcalloy",     0x4A7A9B, () -> ModMaterialItems.item(ModMaterials.TCALLOY, MaterialShape.PLATE_CAST)),
+    CDALLOY     (43,   "cdalloy",     0x6A8A7A, () -> ModMaterialItems.item(ModMaterials.CDALLOY, MaterialShape.PLATE_CAST)),
+    CMB         (39,   "cmb",         0x3A3A5A, () -> ModMaterialItems.item(ModMaterials.CMB, MaterialShape.PLATE_CAST)),
+    SCHRABIDIUM (12626,"schrabidium", 0xFFAA00, () -> ModMaterialItems.item(ModMaterials.SCHRABIDIUM, MaterialShape.PLATE_CAST)),
+    BBRONZE     (46,   "bbronze",     0xCD7F32, () -> ModMaterialItems.item(ModMaterials.BBRONZE, MaterialShape.PLATE_CAST)),
+    ABRONZE     (47,   "abronze",     0xB87333, () -> ModMaterialItems.item(ModMaterials.ABRONZE, MaterialShape.PLATE_CAST)),
+    SATURNITE   (34,   "saturnite",   0x7A5A3A, () -> ModMaterialItems.item(ModMaterials.SATURNITE, MaterialShape.PLATE_CAST)),
     LEAD        (8200, "lead",        0x888888, null),
     BISMUTH     (8300, "bismuth",     0xAA88AA, null),
     BERYLLIUM   (400,  "beryllium",   0xAACC88, null),

@@ -107,9 +107,6 @@ public class EngineHandler {
         com.hbm_m.client.render.shader.ShaderBindResync.invalidateStaticProgramCache();
         com.hbm_m.client.render.shader.ShaderBindResync.enforceGlProgramConsistency();
 
-        com.hbm_m.client.render.FrameStateProbe.snap("eh.in");
-        com.hbm_m.client.render.FrameStateProbe.snap("px.eh_in");
-
         // ЦЕЛЕВОЙ FBO: всегда главный. На Fabulous рендертайпы NT-частиц несут
         // шардинг TRANSLUCENT_TARGET: каждый батч прыгает в translucentTarget и
         // teardown'ом возвращается в MAIN — если мы остались в weatherTarget,
@@ -182,24 +179,40 @@ public class EngineHandler {
                 //    FB пайплайна) и копируем DH-глубину туда СЫРОЙ GL-программой
                 //    (RawDhDepthCopy) — маскирование на неё не действует.
                 boolean irisActive = com.hbm_m.client.render.shader.ShaderCompatibilityDetector.isExternalShaderActive();
-                if (irisActive) {
-                    try {
-                        net.minecraft.client.renderer.ShaderInstance contentShader =
-                                com.hbm_m.client.render.shader.FarContentShaders.resolveTexColor();
-                        if (contentShader != null) {
-                            contentShader.apply(); // биндит целевой FB пайплайна
+                // ГЕЙТ КОПИИ ГЛУБИНЫ (перф, семантика не меняется):
+                //  - без Iris копия нужна ТОЛЬКО дальним мешам ракет — nuke_cloud
+                //    окклюдится в шейдере сэмплированием DH DEPTH32F (Sampler1),
+                //    фуллскрин-проход с gl_FragDepth им не требуется;
+                //  - под Iris setDhShaderFarMode не выставляется: окклюзия ВСЕГО
+                //    дальнего контента — нативным depth-тестом против скопированной
+                //    глубины, поэтому копия нужна при любом дальнем контенте.
+                // hasTrackInBucket даёт только ложноположительные ответы, так что
+                // гейт консервативен: копия никогда не пропускается, когда нужна.
+                boolean farMeshes = com.hbm_m.client.missile.track.MissileTrackWorldRender
+                        .hasTrackInBucket(partialTick, splitSq, true);
+                boolean needDepthCopy = irisActive
+                        ? (hasParticles || farMeshes)
+                        : farMeshes;
+                if (needDepthCopy) {
+                    if (irisActive) {
+                        try {
+                            net.minecraft.client.renderer.ShaderInstance contentShader =
+                                    com.hbm_m.client.render.shader.FarContentShaders.resolveTexColor();
+                            if (contentShader != null) {
+                                contentShader.apply(); // биндит целевой FB пайплайна
+                            }
+                            com.hbm_m.client.render.shader.RawDhDepthCopy.copyIntoBoundFramebuffer(
+                                    com.hbm_m.client.compat.dh.DhClientState.dhNear(),
+                                    com.hbm_m.client.compat.dh.DhClientState.dhFar(),
+                                    com.hbm_m.client.compat.dh.DhOcclusionGpu.getDhActiveDepthTextureId());
+                        } catch (Throwable t) {
+                            com.hbm_m.main.MainRegistry.LOGGER.info("HBM iris depth copy failed: {}", t.toString());
                         }
-                        com.hbm_m.client.render.shader.RawDhDepthCopy.copyIntoBoundFramebuffer(
+                    } else {
+                        com.hbm_m.client.compat.dh.DhDepthCopy.copyToMain(
                                 com.hbm_m.client.compat.dh.DhClientState.dhNear(),
-                                com.hbm_m.client.compat.dh.DhClientState.dhFar(),
-                                com.hbm_m.client.compat.dh.DhOcclusionGpu.getDhActiveDepthTextureId());
-                    } catch (Throwable t) {
-                        com.hbm_m.main.MainRegistry.LOGGER.info("HBM iris depth copy failed: {}", t.toString());
+                                com.hbm_m.client.compat.dh.DhClientState.dhFar());
                     }
-                } else {
-                    com.hbm_m.client.compat.dh.DhDepthCopy.copyToMain(
-                            com.hbm_m.client.compat.dh.DhClientState.dhNear(),
-                            com.hbm_m.client.compat.dh.DhClientState.dhFar());
                 }
 
                 // Дальние меши ракет: расширенная проекция (нет клипа far plane),
@@ -207,11 +220,11 @@ public class EngineHandler {
                 // ВАЖНО: рисуем ДО биндинга DH depth в Sampler1 — стандартные
                 // entity-шейдеры используют слот 1 как overlay-маску, и получили
                 // бы глубину вместо неё (тинт на корпусе ракеты).
-                if (!SKIP_MESH) MissileTrackWorldRender.renderFiltered(partialTick, splitSq, true);
+                MissileTrackWorldRender.renderFiltered(partialTick, splitSq, true);
 
                 setDhShaderFarMode(1.0F,
                         com.hbm_m.client.compat.dh.DhClientState.dhProjection());
-                if (!SKIP_PARTICLES) ParticleEngineNT.INSTANCE.renderFiltered(ParticleEngineNT.buffer(), event.getCamera(), partialTick, event.getPoseStack(), splitSq, true);
+                ParticleEngineNT.INSTANCE.renderFiltered(ParticleEngineNT.buffer(), event.getCamera(), partialTick, event.getPoseStack(), splitSq, true);
                 buffer.endBatch();
                 ParticleEngineNT.buffer().endBatch();
             } finally {
@@ -230,14 +243,14 @@ public class EngineHandler {
             // та, которой террейн писал свой z-buffer (глубина корректна).
             com.hbm_m.client.compat.dh.DhClientCompat.beginCapturedVanillaPass(partialTick);
             setDhShaderFarMode(0.0F, null);
-            if (!SKIP_MESH) MissileTrackWorldRender.renderFiltered(partialTick, splitSq, false);
-            if (!SKIP_PARTICLES) ParticleEngineNT.INSTANCE.renderFiltered(ParticleEngineNT.buffer(), event.getCamera(), partialTick, event.getPoseStack(), splitSq, false);
+            MissileTrackWorldRender.renderFiltered(partialTick, splitSq, false);
+            ParticleEngineNT.INSTANCE.renderFiltered(ParticleEngineNT.buffer(), event.getCamera(), partialTick, event.getPoseStack(), splitSq, false);
             buffer.endBatch();
             ParticleEngineNT.buffer().endBatch();
             com.hbm_m.client.compat.dh.DhClientCompat.endVanillaExtendedPass();
 
             // 3. Вспышка — оверлей поверх всего.
-            if (!SKIP_FLASH) ParticleEngineNT.INSTANCE.renderFlashOnly(ParticleEngineNT.buffer(), event.getCamera(), partialTick, event.getPoseStack());
+            ParticleEngineNT.INSTANCE.renderFlashOnly(ParticleEngineNT.buffer(), event.getCamera(), partialTick, event.getPoseStack());
             buffer.endBatch();
             ParticleEngineNT.buffer().endBatch();
         } else {
@@ -247,22 +260,8 @@ public class EngineHandler {
             // «меши пишут глубину → NT-частицы» внутри одного прохода.
             com.hbm_m.client.compat.dh.DhClientCompat.beginCapturedVanillaPass(partialTick);
             setDhShaderFarMode(0.0F, null);
-            double[] mx = MissileTrackWorldRender.lastDrawnMissilePos();
-            if (mx != null) {
-                com.hbm_m.client.render.FrameStateProbe.snapWorld("mx.pre", mx[0], mx[1], mx[2]);
-            }
-            if (!SKIP_MESH) {
-                MissileTrackWorldRender.renderFiltered(partialTick, Double.NaN, false);
-                String br = com.hbm_m.client.render.SingleMeshVboRenderer.lastTrackMeshBranch.get();
-                // Суффикс ветки в теге даёт независимые рейтлимиты и мгновенную
-                // читаемость: s1.mesh.vbo / s1.mesh.quads:shader-null / s1.mesh.
-                com.hbm_m.client.render.FrameStateProbe.snap("s1.mesh." + (br == null ? "-" : br));
-                com.hbm_m.client.render.FrameStateProbe.snap("px.s1mesh");
-                if (mx != null) {
-                    com.hbm_m.client.render.FrameStateProbe.snapWorld("mx.mesh", mx[0], mx[1], mx[2]);
-                }
-            }
-            if (!SKIP_PARTICLES) ParticleEngineNT.INSTANCE.render(ParticleEngineNT.buffer(), event.getCamera(), partialTick, event.getPoseStack());
+            MissileTrackWorldRender.renderFiltered(partialTick, Double.NaN, false);
+            ParticleEngineNT.INSTANCE.render(ParticleEngineNT.buffer(), event.getCamera(), partialTick, event.getPoseStack());
             buffer.endBatch();
             ParticleEngineNT.buffer().endBatch();
             // ФИКС «чёрного экрана» при совместном рендере меш+частицы:
@@ -274,17 +273,9 @@ public class EngineHandler {
             Minecraft.getInstance().gameRenderer.lightTexture().turnOnLightLayer();
             Minecraft.getInstance().gameRenderer.overlayTexture().setupOverlayColor();
             com.mojang.blaze3d.systems.RenderSystem.activeTexture(org.lwjgl.opengl.GL13.GL_TEXTURE0);
-            com.hbm_m.client.render.FrameStateProbe.snap("s2.part");
-            com.hbm_m.client.render.FrameStateProbe.snap("px.s2part");
-            if (mx != null) {
-                com.hbm_m.client.render.FrameStateProbe.snapWorld("mx.part", mx[0], mx[1], mx[2]);
-            }
-            if (!SKIP_FLASH) ParticleEngineNT.INSTANCE.renderFlashOnly(ParticleEngineNT.buffer(), event.getCamera(), partialTick, event.getPoseStack());
+            ParticleEngineNT.INSTANCE.renderFlashOnly(ParticleEngineNT.buffer(), event.getCamera(), partialTick, event.getPoseStack());
             buffer.endBatch();
             ParticleEngineNT.buffer().endBatch();
-            if (mx != null) {
-                com.hbm_m.client.render.FrameStateProbe.snapWorld("mx.flash", mx[0], mx[1], mx[2]);
-            }
             com.hbm_m.client.compat.dh.DhClientCompat.endVanillaExtendedPass();
         }
 
@@ -304,20 +295,7 @@ public class EngineHandler {
         // презент кадра уйдёт через пустой композит Iris при полностью
         // корректном главном буфере. Сбрасываем маску до конца кадра.
         com.hbm_m.client.render.shader.ShaderBindResync.forceIrisDepthColorEnabled();
-        com.hbm_m.client.render.FrameStateProbe.snap("eh.out");
-        com.hbm_m.client.render.FrameStateProbe.snap("px.ehout");
     }
-
-    // ── ВРЕМЕННЫЕ бисекторы «чёрного экрана» (2026-08) ──────────────────────
-    // Выключают отдельные составляющие AFTER_WEATHER-прохода, чтобы одним
-    // запуском локализовать виновника отравы кадра под Oculus:
-    //   HBM_SKIP_MESH=1      — меши ракет (MissileTrackWorldRender)
-    //   HBM_SKIP_PARTICLES=1 — NT-частицы (шлейф/гриб/пепел)
-    //   HBM_SKIP_FLASH=1     — вспышки (renderFlashOnly)
-    // Ищется и как system property (-Dhbm.skip.mesh), и как env-переменная.
-    private static final boolean SKIP_MESH = false;
-    private static final boolean SKIP_PARTICLES = false;
-    private static final boolean SKIP_FLASH = false;
 
     /**
      * Если GL_CURRENT_PROGRAM разошёлся с идентификатором шейдера — обнулить

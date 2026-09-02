@@ -187,7 +187,6 @@ public class ClientModEvents {
         }
 
         if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_SKY) {
-            com.hbm_m.client.render.FrameStateProbe.snap("px.sky");
             com.hbm_m.client.compat.dh.DhClientState.onAfterSky();
             // Захват чистой ванильной проекции кадра (FOV/zoom/bob) — из неё
             // строится проекция дальнего И ближнего NT-проходов.
@@ -203,8 +202,6 @@ public class ClientModEvents {
         }
 
         if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_ENTITIES) {
-            com.hbm_m.client.render.FrameStateProbe.snap("px.entities");
-
             ModClothConfig cfg = ModClothConfig.get();
             Minecraft mc = Minecraft.getInstance();
             var cameraPos = mc.gameRenderer.getMainCamera().getPosition();
@@ -226,30 +223,18 @@ public class ClientModEvents {
                     mc.renderBuffers().bufferSource(),
                     event.getPoseStack(),
                     cameraPos);
-            com.hbm_m.client.render.FrameStateProbe.snap("px.be");
             InstancedRenderFrame.presentAfterBlockEntities(event.getProjectionMatrix(), cameraPos);
-            com.hbm_m.client.render.FrameStateProbe.snap("px.be2");
             return;
         }
 
         if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_LEVEL) {
-            com.hbm_m.client.render.FrameStateProbe.snap("px.afterlevel");
             com.hbm_m.client.render.shader.ShaderBindResync.forceIrisDepthColorEnabled();
             InstancedRenderFrame.onRenderSliceEnd();
             com.hbm_m.client.compat.dh.DhClientState.onAfterLevel();
         }
     }
 
-    // ── Слепая зона FrameStateProbe: рука и GUI ─────────────────────────────
-    // px.*-зонды останавливаются на AFTER_LEVEL, а «полностью чёрный экран»
-    // (GUI жив, рука пропала) может рисоваться именно после него. Эти снапы
-    // замеряют пиксели на входе в проход руки и в GUI-фазу.
     //? if forge {
-    @SubscribeEvent
-    public static void onRenderHand(net.minecraftforge.client.event.RenderHandEvent event) {
-        com.hbm_m.client.render.FrameStateProbe.snap("px.hand");
-    }
-
     @SubscribeEvent
     public static void onRenderGuiPre(net.minecraftforge.client.event.RenderGuiEvent.Pre event) {
         // Виньетка использует multiply-блендинг (ZERO/ONE_MINUS_SRC_COLOR) и
@@ -257,38 +242,8 @@ public class ClientModEvents {
         // (GlStateManager._blendFuncSeparate но-опится при «совпадении»).
         // Форсируем честный блендинг ДО Gui.render.
         com.hbm_m.client.render.shader.ShaderBindResync.forceHonestBlendState();
-        com.hbm_m.client.render.FrameStateProbe.snap("px.gui.pre");
-        com.hbm_m.client.render.FrameStateProbe.snapGuiEffects();
     }
-
-    // Бисекция GUI-оверлеев: на Pre каждого оверлея читаем центральный пиксель;
-    // при провале яркости логируем id оверлея, зачернившего кадр (см. GuiOverlayBisectProbe).
-    @SubscribeEvent
-    public static void onGuiOverlayPre(net.minecraftforge.client.event.RenderGuiOverlayEvent.Pre event) {
-        com.hbm_m.client.render.GuiOverlayBisectProbe.onOverlayPre(event.getOverlay().id());
-    }
-
-    @SubscribeEvent
-    public static void onRenderGuiPost(net.minecraftforge.client.event.RenderGuiEvent.Post event) {
-        com.hbm_m.client.render.FrameStateProbe.snap("px.gui.post");
-        com.hbm_m.client.render.GuiOverlayBisectProbe.resetFrame();
-    }
-    //?} elif neoforge {
-    /*@SubscribeEvent
-    public static void onRenderHand(net.neoforged.neoforge.client.event.RenderHandEvent event) {
-        com.hbm_m.client.render.FrameStateProbe.snap("px.hand");
-    }
-
-    @SubscribeEvent
-    public static void onRenderGuiPre(net.neoforged.neoforge.client.event.RenderGuiEvent.Pre event) {
-        com.hbm_m.client.render.FrameStateProbe.snap("px.gui.pre");
-    }
-
-    @SubscribeEvent
-    public static void onRenderGuiPost(net.neoforged.neoforge.client.event.RenderGuiEvent.Post event) {
-        com.hbm_m.client.render.FrameStateProbe.snap("px.gui.post");
-    }
-    *///?}
+    //?}
 
     /**
      * Instanced flush — только {@link com.hbm_m.client.render.culling.InstancedRenderFrame#presentAfterBlockEntities}

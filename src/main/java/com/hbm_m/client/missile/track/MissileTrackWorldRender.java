@@ -137,17 +137,47 @@ public final class MissileTrackWorldRender {
         if (drewAny) {
             buffers.endBatch();
         }
-        com.hbm_m.client.render.FrameStateProbe.snap(drewAny ? "twr.drew" : "twr.idle");
         return drewAny;
     }
 
-    /** Мировая позиция последнего отрисованного трек-меша — для fspWorld-пробников. */
-    private static final double[] LAST_MISSILE_POS = new double[3];
-    private static boolean lastMissilePosValid;
-
-    /** Позиция для FrameStateProbe.snapWorld (null, если ещё ничего не рисовалось). */
-    public static double[] lastDrawnMissilePos() {
-        return lastMissilePosValid ? LAST_MISSILE_POS : null;
+    /**
+     * Дешёвая проверка «есть ли в бакете (far/near) хотя бы один трек, который
+     * renderFiltered отрисовал бы», БЕЗ отрисовки и без билдеров. Те же четыре
+     * отсева, что и в renderFiltered (isEnabled, shouldUseTrackWorldRender,
+     * interpolate, дистанционный фильтр), минус renderOne — т.е. возможен
+     * ТОЛЬКО ложноположительный ответ (трек отфильтрован, но renderOne дал бы
+     * null-данные). Для гейтов вида «нужна ли копия DH-глубины» это ровно то,
+     * что нужно: лишняя копия — небольшой перф-штраф, пропущенная — артефакт.
+     */
+    public static boolean hasTrackInBucket(float partialTick, double distFilterSq, boolean far) {
+        if (!MissileTrackClient.isEnabled()) {
+            return false;
+        }
+        Minecraft mc = Minecraft.getInstance();
+        if (mc.level == null) {
+            return false;
+        }
+        Vec3 camera = mc.gameRenderer.getMainCamera().getPosition();
+        for (MissileTrackClient.TrackEntry entry : MissileTrackClient.entries()) {
+            if (!MissileTrackClient.shouldUseTrackWorldRender(entry.entityId)) {
+                continue;
+            }
+            MissileTrackClient.InterpolatedPose pose = entry.interpolate(partialTick);
+            if (pose == null) {
+                continue;
+            }
+            if (!Double.isNaN(distFilterSq)) {
+                double dx = pose.x() - camera.x;
+                double dy = pose.y() - camera.y;
+                double dz = pose.z() - camera.z;
+                boolean near = dx * dx + dy * dy + dz * dz <= distFilterSq;
+                if (near == far) {
+                    continue;
+                }
+            }
+            return true;
+        }
+        return false;
     }
 
     private static double sqr(double v) {
@@ -160,10 +190,6 @@ public final class MissileTrackWorldRender {
         if (data == null) {
             return false;
         }
-        LAST_MISSILE_POS[0] = pose.x();
-        LAST_MISSILE_POS[1] = pose.y();
-        LAST_MISSILE_POS[2] = pose.z();
-        lastMissilePosValid = true;
 
         CameraRelativePose virtual = virtualizeWorld(pose.x(), pose.y(), pose.z(), camera);
         double drawX = camera.x + virtual.relX();

@@ -3,8 +3,9 @@ package com.hbm_m.datagen.recipes.custom;
 import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.item.industrial.ItemBedrockOreGraded.Grade;
-import com.hbm_m.item.tags_and_tiers.ModIngots;
-import com.hbm_m.item.tags_and_tiers.ModPowders;
+import com.hbm_m.item.material.MaterialShape;
+import com.hbm_m.item.material.ModMaterialItems;
+import com.hbm_m.item.material.ModMaterials;
 import com.hbm_m.worldgen.BedrockOreDensity.Type;
 
 import dev.architectury.fluid.FluidStack;
@@ -135,7 +136,7 @@ public final class PyroOvenRecipeGenerator {
         // Syngas + Wolframpulver -> Wolframcarbid + verbrauchter Dampf (Steam:Syngas 1:2, Syngas:LPS 2:1).
         PyroOvenRecipeBuilder.pyroOvenRecipe(
                 fluid(ModFluids.SYNGAS, 2_000),
-                Ingredient.of(ModItems.getPowder(ModIngots.TUNGSTEN).get()), 1,
+                Ingredient.of(ModMaterialItems.item(ModMaterials.TUNGSTEN, MaterialShape.POWDER)), 1,
                 new ItemStack(ModItems.INGOT_TUNGSTEN_CARBIDE.get()),
                 fluid(ModFluids.SPENTSTEAM, 1_000),
                 300
@@ -148,7 +149,7 @@ public final class PyroOvenRecipeGenerator {
                 null, fluid(ModFluids.SYNGAS, 1_000), 100
         ).save(writer, "pyro_oven/coal_all_to_syngas");
         PyroOvenRecipeBuilder.pyroOvenRecipe(
-                null, Ingredient.of(ModItems.getPowders(ModPowders.COAL).get()), 1,
+                null, Ingredient.of(ModMaterialItems.item(ModMaterials.COAL, MaterialShape.POWDER)), 1,
                 null, fluid(ModFluids.SYNGAS, 1_000), 100
         ).save(writer, "pyro_oven/coal_all_powder_to_syngas");
         PyroOvenRecipeBuilder.pyroOvenRecipe(
@@ -168,7 +169,7 @@ public final class PyroOvenRecipeGenerator {
                 null, fluid(ModFluids.HEAVYOIL, 1_000), 100
         ).save(writer, "pyro_oven/heavyoil_from_hydrogen_coal");
         PyroOvenRecipeBuilder.pyroOvenRecipe(
-                fluid(ModFluids.HYDROGEN, 500), Ingredient.of(ModItems.getPowders(ModPowders.COAL).get()), 1,
+                fluid(ModFluids.HYDROGEN, 500), Ingredient.of(ModMaterialItems.item(ModMaterials.COAL, MaterialShape.POWDER)), 1,
                 null, fluid(ModFluids.HEAVYOIL, 1_000), 100
         ).save(writer, "pyro_oven/heavyoil_from_hydrogen_coal_powder");
 
@@ -178,7 +179,7 @@ public final class PyroOvenRecipeGenerator {
                 null, fluid(ModFluids.COALGAS, 1_000), 50
         ).save(writer, "pyro_oven/coalgas_from_coal");
         PyroOvenRecipeBuilder.pyroOvenRecipe(
-                fluid(ModFluids.HEAVYOIL, 500), Ingredient.of(ModItems.getPowders(ModPowders.COAL).get()), 1,
+                fluid(ModFluids.HEAVYOIL, 500), Ingredient.of(ModMaterialItems.item(ModMaterials.COAL, MaterialShape.POWDER)), 1,
                 null, fluid(ModFluids.COALGAS, 1_000), 50
         ).save(writer, "pyro_oven/coalgas_from_coal_powder");
         PyroOvenRecipeBuilder.pyroOvenRecipe(
@@ -195,7 +196,7 @@ public final class PyroOvenRecipeGenerator {
         // Wasserstoff + Graphit aus Erdgas.
         PyroOvenRecipeBuilder.pyroOvenRecipe(
                 fluid(ModFluids.GAS, 12_000), null, 1,
-                new ItemStack(ModItems.getIngot(ModIngots.GRAPHITE).get()),
+                new ItemStack(ModMaterialItems.item(ModMaterials.GRAPHITE, MaterialShape.INGOT)),
                 fluid(ModFluids.HYDROGEN, 8_000), 60
         ).save(writer, "pyro_oven/hydrogen_from_gas");
     }

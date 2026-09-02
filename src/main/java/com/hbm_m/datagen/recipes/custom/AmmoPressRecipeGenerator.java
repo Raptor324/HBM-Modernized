@@ -3,7 +3,9 @@ package com.hbm_m.datagen.recipes.custom;
 import java.util.function.Consumer;
 
 import com.hbm_m.item.ModItems;
-import com.hbm_m.item.tags_and_tiers.ModIngots;
+import com.hbm_m.item.material.MaterialShape;
+import com.hbm_m.item.material.ModMaterialItems;
+import com.hbm_m.item.material.ModMaterials;
 
 import net.minecraft.data.recipes.FinishedRecipe;
 import net.minecraft.world.item.ItemStack;
@@ -37,14 +39,14 @@ public class AmmoPressRecipeGenerator {
 
         // Tauon-Turm-Uran-Munition (EnumAmmo.TAU_URANIUM) - 1:1 aus dem Original.
         AmmoPressRecipeBuilder.ammoPressRecipe(new ItemStack(ModItems.AMMO_TAU_URANIUM.get(), 16))
-                .slot(1, ModItems.PLATE_LEAD.get())
-                .slot(4, ModItems.getIngot(ModIngots.URANIUM238).get())
-                .slot(7, ModItems.PLATE_LEAD.get())
+                .slot(1, ModMaterialItems.item(ModMaterials.LEAD, MaterialShape.PLATE))
+                .slot(4, ModMaterialItems.item(ModMaterials.URANIUM238, MaterialShape.INGOT))
+                .slot(7, ModMaterialItems.item(ModMaterials.LEAD, MaterialShape.PLATE))
                 .save(writer, "ammo_press/tau_uranium");
 
         // Wolfram-Spule (EnumAmmo.COIL_TUNGSTEN) - 1:1 aus dem Original.
         AmmoPressRecipeBuilder.ammoPressRecipe(new ItemStack(ModItems.COIL_TUNGSTEN.get(), 4))
-                .slot(4, ModItems.getIngot(ModIngots.TUNGSTEN).get())
+                .slot(4, ModMaterialItems.item(ModMaterials.TUNGSTEN, MaterialShape.INGOT))
                 .save(writer, "ammo_press/coil_tungsten");
     }
 }

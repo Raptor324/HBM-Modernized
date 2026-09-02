@@ -2,8 +2,9 @@ package com.hbm_m.datagen.recipes.custom;
 //? if forge {
 import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.item.ModItems;
-import com.hbm_m.item.tags_and_tiers.ModIngots;
-import com.hbm_m.item.tags_and_tiers.ModPowders;
+import com.hbm_m.item.material.MaterialShape;
+import com.hbm_m.item.material.ModMaterialItems;
+import com.hbm_m.item.material.ModMaterials;
 
 import dev.architectury.fluid.FluidStack;
 import net.minecraft.data.recipes.FinishedRecipe;
@@ -41,7 +42,7 @@ public final class ElectrolyserFluidRecipeGenerator {
                 fluid(ModFluids.VITRIOL, 1_000),
                 fluid(ModFluids.SULFURIC_ACID, 500),
                 fluid(ModFluids.CHLORINE, 500),
-                new ItemStack(ModItems.getPowders(ModPowders.IRON).get()),
+                new ItemStack(ModMaterialItems.item(ModMaterials.IRON, MaterialShape.POWDER)),
                 new ItemStack(ModItems.NUGGET_MERCURY.get())
         ).save(writer, "electrolyser_fluid/vitriol");
 
@@ -50,9 +51,9 @@ public final class ElectrolyserFluidRecipeGenerator {
                 fluid(ModFluids.REDMUD, 450),
                 fluid(ModFluids.MERCURY, 150),
                 fluid(ModFluids.LYE, 50),
-                new ItemStack(ModItems.getPowder(ModIngots.TITANIUM).get(), 3),
-                new ItemStack(ModItems.getPowders(ModPowders.IRON).get(), 3),
-                new ItemStack(ModItems.getPowder(ModIngots.ALUMINUM).get(), 2)
+                new ItemStack(ModMaterialItems.item(ModMaterials.TITANIUM, MaterialShape.POWDER), 3),
+                new ItemStack(ModMaterialItems.item(ModMaterials.IRON, MaterialShape.POWDER), 3),
+                new ItemStack(ModMaterialItems.item(ModMaterials.ALUMINUM, MaterialShape.POWDER), 2)
         ).save(writer, "electrolyser_fluid/redmud");
 
         // Хлорид калия -> Хлор (без второго выхода; оригинал использовал NONE/0).

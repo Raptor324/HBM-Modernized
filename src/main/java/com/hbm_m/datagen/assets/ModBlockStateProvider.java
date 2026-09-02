@@ -3,17 +3,21 @@ package com.hbm_m.datagen.assets;
 import java.util.Map;
 //? if forge {
 import com.hbm_m.block.ModBlocks;
+import com.hbm_m.block.RedBrickBlock;
+import com.hbm_m.block.RedBrickBlock.RedFace;
 import com.hbm_m.block.decorations.DoorBlock;
 // Провайдер генерации состояний блоков и моделей для блоков мода.
 // Используется в классе DataGenerators для регистрации.
 import com.hbm_m.block.generic.BlockAbsorber;
 import com.hbm_m.block.generic.BlockSellafieldSlaked;
 import com.hbm_m.block.machines.BlastFurnaceBlock;
+import com.hbm_m.block.machines.MachineBlastFurnaceBlock;
 import com.hbm_m.block.machines.MachineAdvancedAssemblerBlock;
 import com.hbm_m.block.machines.MachineAssemblerBlock;
 import com.hbm_m.block.machines.MachineChemicalPlantBlock;
 import com.hbm_m.block.machines.MachineWoodBurnerBlock;
-import com.hbm_m.item.tags_and_tiers.ModIngots;
+import com.hbm_m.item.material.MaterialShape;
+import com.hbm_m.item.material.ModMaterials;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.main.MainRegistry;
 import com.hbm_m.multiblock.PartRole;
@@ -265,7 +269,6 @@ public class ModBlockStateProvider extends BlockStateProvider {
         simpleBlockWithItem(ModBlocks.DUNGEON_SPAWNER.get(), models().cubeAll("dungeon_spawner", modLoc("block/ported/dungeon_spawner")));
         simpleBlockWithItem(ModBlocks.EVENT_TESTER.get(), models().cubeAll("event_tester", modLoc("block/ported/event_tester")));
         simpleBlockWithItem(ModBlocks.FLUID_DUCT_PAINTABLE_BLOCK_EXHAUST.get(), models().cubeAll("fluid_duct_paintable_block_exhaust", modLoc("block/ported/fluid_duct_paintable_block_exhaust")));
-        simpleBlockWithItem(ModBlocks.GEIGER.get(), models().cubeAll("geiger", modLoc("block/ported/geiger")));
         simpleBlockWithItem(ModBlocks.GEYSIR_NETHER.get(), models().cubeAll("geysir_nether", modLoc("block/ported/geysir_nether")));
         simpleBlockWithItem(ModBlocks.ICF_BLOCK.get(), models().cubeAll("icf_block", modLoc("block/ported/icf_block")));
         simpleBlockWithItem(ModBlocks.LAUNCH_TABLE.get(), models().cubeAll("launch_table", modLoc("block/ported/launch_table")));
@@ -720,10 +723,14 @@ public class ModBlockStateProvider extends BlockStateProvider {
         customMachineBlock(ModBlocks.PRESS);
 
         // Машины со свойством LIT (включен/выключен)
-        // Доменная печь: в мире невидима (рендерит BER), blockstate указывает на частицу-модель.
+        // Legacy одноблочная доменная печь: ванильный orientable c текстурами оригинала (difurnace_*).
         registerLitMachineBlock(ModBlocks.BLAST_FURNACE,
             BlastFurnaceBlock.FACING, BlastFurnaceBlock.LIT,
-            "blast_furnace", "blast_furnace");
+            "blast_furnace", "blast_furnace_on");
+        // Мультиблочная доменная печь 3x7x3: цельная OBJ-модель ядра.
+        registerLitMachineBlock(ModBlocks.MACHINE_BLAST_FURNACE,
+            MachineBlastFurnaceBlock.FACING, MachineBlastFurnaceBlock.LIT,
+            "machine_blast_furnace", "machine_blast_furnace");
         registerLitMachineBlock(ModBlocks.WOOD_BURNER,
             MachineWoodBurnerBlock.FACING, MachineWoodBurnerBlock.LIT,
             "wood_burner", "wood_burner");
@@ -1534,9 +1541,10 @@ public class ModBlockStateProvider extends BlockStateProvider {
                 new ModelFile.UncheckedModelFile(modLoc("block/shredder")));
 
         // АВТОМАТИЧЕСКАЯ ГЕНЕРАЦИЯ МОДЕЛЕЙ ДЛЯ БЛОКОВ СЛИТКОВ
-        for (ModIngots ingot : ModIngots.values()) {
-            if (ModBlocks.hasIngotBlock(ingot)) {
-                RegistrySupplier<Block> blockRegistrySupplier = ModBlocks.getIngotBlock(ingot);
+        for (ModMaterials mat : ModMaterials.values()) {
+            if (!mat.has(MaterialShape.BLOCK)) continue;
+            if (ModBlocks.hasIngotBlock(mat)) {
+                RegistrySupplier<Block> blockRegistrySupplier = ModBlocks.getIngotBlock(mat);
                 if (blockRegistrySupplier != null) {
                     resourceBlockWithItem(blockRegistrySupplier);
                 }
@@ -1779,14 +1787,27 @@ public class ModBlockStateProvider extends BlockStateProvider {
                         modLoc("block/brick_jungle_trap")
                 )
         );
-        simpleBlockWithItem(ModBlocks.BRICK_RED.get(),
-                models().cubeBottomTop(
-                        ModBlocks.BRICK_RED.getId().getPath(),
-                        modLoc("block/brick_red"),
-                        modLoc("block/brick_red"),
-                        modLoc("block/brick_red_top")
-                )
-        );
+        // brick_red — порт BlockRedBrick (1.7.10): одна грань (RED_FACE) красная
+        // (вертикальная — brick_red, горизонтальная — brick_red_top), остальные
+        // серые brick_base. NONE — все грани серые (оболочка/meta-комната).
+        ModelFile brickRedNone = models().cubeAll("block/brick_red_none", modLoc("block/brick_base"));
+        ResourceLocation bb = modLoc("block/brick_base");
+        ResourceLocation red = modLoc("block/brick_red"), redTop = modLoc("block/brick_red_top");
+        ModelFile brickRedDown = models().cube("block/brick_red_down", redTop, bb, bb, bb, bb, bb);
+        ModelFile brickRedUp = models().cube("block/brick_red_up", bb, redTop, bb, bb, bb, bb);
+        ModelFile brickRedNorth = models().cube("block/brick_red_north", bb, bb, red, bb, bb, bb);
+        ModelFile brickRedSouth = models().cube("block/brick_red_south", bb, bb, bb, red, bb, bb);
+        ModelFile brickRedEast = models().cube("block/brick_red_east", bb, bb, bb, bb, red, bb);
+        ModelFile brickRedWest = models().cube("block/brick_red_west", bb, bb, bb, bb, bb, red);
+        VariantBlockStateBuilder brickRedBuilder = getVariantBuilder(ModBlocks.BRICK_RED.get());
+        brickRedBuilder.partialState().with(RedBrickBlock.RED_FACE, RedFace.NONE).setModels(ConfiguredModel.builder().modelFile(brickRedNone).build());
+        brickRedBuilder.partialState().with(RedBrickBlock.RED_FACE, RedFace.DOWN).setModels(ConfiguredModel.builder().modelFile(brickRedDown).build());
+        brickRedBuilder.partialState().with(RedBrickBlock.RED_FACE, RedFace.UP).setModels(ConfiguredModel.builder().modelFile(brickRedUp).build());
+        brickRedBuilder.partialState().with(RedBrickBlock.RED_FACE, RedFace.NORTH).setModels(ConfiguredModel.builder().modelFile(brickRedNorth).build());
+        brickRedBuilder.partialState().with(RedBrickBlock.RED_FACE, RedFace.SOUTH).setModels(ConfiguredModel.builder().modelFile(brickRedSouth).build());
+        brickRedBuilder.partialState().with(RedBrickBlock.RED_FACE, RedFace.WEST).setModels(ConfiguredModel.builder().modelFile(brickRedWest).build());
+        brickRedBuilder.partialState().with(RedBrickBlock.RED_FACE, RedFace.EAST).setModels(ConfiguredModel.builder().modelFile(brickRedEast).build());
+        simpleBlockItem(ModBlocks.BRICK_RED.get(), brickRedNone);
         simpleBlock(ModBlocks.BROADCASTER_PC.get(),
                 models().getExistingFile(modLoc("block/machines/broadcaster_pc")));
         simpleBlockItem(ModBlocks.BROADCASTER_PC.get(),
@@ -2981,14 +3002,23 @@ public class ModBlockStateProvider extends BlockStateProvider {
         customBombBlock(ModBlocks.NUKE_CUSTOM);
         customBombBlock(ModBlocks.BOMB_MULTI);
         layerBlockWithItem(ModBlocks.OIL_SPILL, "block/oil_spill");
-        simpleBlockWithItem(ModBlocks.PEDESTAL.get(),
-                models().cubeBottomTop(
-                        ModBlocks.PEDESTAL.getId().getPath(),
-                        modLoc("block/pedestal_side"),
-                        modLoc("block/pedestal_top"),
-                        modLoc("block/pedestal_top")
-                )
-        );
+        // Пьедестал — порт RenderPedestal (1.7.10 ISBRH): нижняя плита (0-4px),
+        // колонна 12x12 (4-12px), верхняя плита (12-16px); между плитами
+        // сквозной вырез, в котором парит предмет.
+        ModelFile pedestalModel = models().getBuilder(ModBlocks.PEDESTAL.getId().getPath())
+                .texture("top", modLoc("block/pedestal_top"))
+                .texture("side", modLoc("block/pedestal_side"))
+                .element().from(0.0F, 0.0F, 0.0F).to(16.0F, 4.0F, 16.0F)
+                        .allFaces((dir, face) -> face.texture(dir.getAxis() == Direction.Axis.Y ? "#top" : "#side"))
+                .end()
+                .element().from(2.0F, 4.0F, 2.0F).to(14.0F, 12.0F, 14.0F)
+                        .allFaces((dir, face) -> face.texture(dir.getAxis() == Direction.Axis.Y ? "#top" : "#side"))
+                .end()
+                .element().from(0.0F, 12.0F, 0.0F).to(16.0F, 16.0F, 16.0F)
+                        .allFaces((dir, face) -> face.texture(dir.getAxis() == Direction.Axis.Y ? "#top" : "#side"))
+                .end();
+        simpleBlock(ModBlocks.PEDESTAL.get(), pedestalModel);
+        simpleBlockItem(ModBlocks.PEDESTAL.get(), pedestalModel);
         simpleBlockWithItem(ModBlocks.PINK_LOG.get(),
                 models().cubeAll(
                         ModBlocks.PINK_LOG.getId().getPath(),

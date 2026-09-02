@@ -45,6 +45,7 @@ import com.hbm_m.block.explosives.SmokeBombBlock;
 import com.hbm_m.block.explosives.WasteChargeBlock;
 import com.hbm_m.block.machines.ArmorTableBlock;
 import com.hbm_m.block.machines.BlastFurnaceBlock;
+import com.hbm_m.block.machines.MachineBlastFurnaceBlock;
 import com.hbm_m.block.machines.BlastFurnaceExtensionBlock;
 import com.hbm_m.block.machines.CargoElevatorBlock;
 import com.hbm_m.block.machines.FluidDuctBlock;
@@ -165,7 +166,8 @@ import com.hbm_m.block.weapons.FallingSellafit;
 import com.hbm_m.item.BlockAbsorberItem;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.item.fekal_electric.MachineBatteryBlockItem;
-import com.hbm_m.item.tags_and_tiers.ModIngots;
+import com.hbm_m.item.material.MaterialShape;
+import com.hbm_m.item.material.ModMaterials;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.platform.PlatformHooks;
 
@@ -234,27 +236,10 @@ public class ModBlocks {
     private static final BlockBehaviour.Properties INGOT_BLOCK_PROPERTIES =
             BlockProps.copy(Blocks.IRON_BLOCK).strength(3.0F, 6.0F).sound(SoundType.METAL).requiresCorrectToolForDrops();
 
-    // 1. СПИСОК РАЗРЕШЕННЫХ БЛОКОВ (Whitelist)
-    // Сюда добавляем только те материалы, которым нужны блоки (9 слитков = 1 блок).
-    // Скопировано и адаптировано из ModItems, убраны лишние материалы типа еды или топлива, если им не нужен блок.
-    // 1. СПИСОК РАЗРЕШЕННЫХ БЛОКОВ (Whitelist)
-    // 1. СПИСОК РАЗРЕШЕННЫХ БЛОКОВ (Whitelist)
-    public static final Set<String> ENABLED_INGOT_BLOCKS = Set.of(
-            "uranium", "plutonium", "thorium", "titanium", "aluminum", "copper",
-            "lead", "tungsten", "steel", "advanced_alloy", "schrabidium", "saturnite",
-            "beryllium", "bismuth", "desh", "cobalt", "lanthanium",
-            "niobium", "zirconium", "actinium", "ferrouranium",
-            "u233", "u235", "u238", "pu238", "pu239", "pu240", "pu241",
-            "ra226", "neptunium",
-            "australium", "dineutronium", "euphemium",
-            "combine_steel", "dura_steel", "starmetal", "red_copper",
-            "plutonium_fuel", "uranium_fuel", "thorium_fuel", "mox_fuel", "schrabidium_fuel",
-            "schraranium", "schrabidate", "solinium",
-            "boron", "tcalloy", "cdalloy", "cadmium"
-    );
+    // Блоки хранения задаются формой BLOCK в реестре ModMaterials (единый источник истины).
 
     // 2. КАРТА БЛОКОВ
-    public static final Map<ModIngots, RegistrySupplier<Block>> INGOT_BLOCKS = new EnumMap<>(ModIngots.class);
+    public static final Map<ModMaterials, RegistrySupplier<Block>> INGOT_BLOCKS = new EnumMap<>(ModMaterials.class);
 
     /**
      * Слитковые блоки с {@code ExtDisplayEffect.RADFOG} в GIT ({@code BlockHazard#setDisplayEffect}, ModBlocks ~1328–1342).
@@ -269,63 +254,58 @@ public class ModBlocks {
             "schrabidium", "schraranium", "schrabidate", "solinium", "schrabidium_fuel");
 
     /** GIT: RADFOG на block_u233, block_u235, block_neptunium, block_plutonium, block_pu*, block_mox_fuel, block_plutonium_fuel. */
-    public static boolean hasRadFogParticles(ModIngots ingot) {
-        return RADFOG_INGOT_BLOCKS.contains(ingot.getName());
+    public static boolean hasRadFogParticles(ModMaterials mat) {
+        return RADFOG_INGOT_BLOCKS.contains(mat.getId());
     }
 
-    public static boolean hasSchrabFogParticles(ModIngots ingot) {
-        return SCHRABFOG_INGOT_BLOCKS.contains(ingot.getName());
+    public static boolean hasSchrabFogParticles(ModMaterials mat) {
+        return SCHRABFOG_INGOT_BLOCKS.contains(mat.getId());
     }
 
     // 3. АВТОМАТИЧЕСКАЯ РЕГИСТРАЦИЯ
     static {
-        for (ModIngots ingot : ModIngots.values()) {
-            String name = ingot.getName();
+        for (ModMaterials mat : ModMaterials.values()) {
+            // Проверяем, задан ли материалу блок хранения формой BLOCK
+            if (!mat.has(MaterialShape.BLOCK)) continue;
 
-            // Проверяем, есть ли этот слиток в "белом списке"
-            if (ENABLED_INGOT_BLOCKS.contains(name)) {
+            String blockName = MaterialShape.BLOCK.itemId(mat);
 
-                String blockName = "block_" + name;
+            // Display particles: RADFOG / SCHRAB (1.7.10 BlockHazard#setDisplayEffect, ModBlocks ~1326-1373).
+            // Все слитковые блоки — это BlockHazard; per-tick эмиттер чанковой радиации (hazard × 0.1/сек)
+            // запускается автоматически через scheduled-tick. Различаются только визуальные частицы.
+            RegistrySupplier<Block> registeredBlock = registerBlock(blockName,
+                    () -> {
+                        BlockHazard block = new BlockHazard(INGOT_BLOCK_PROPERTIES).makeBeaconable();
+                        if (hasRadFogParticles(mat)) {
+                            block.setDisplayEffect(BlockHazard.ExtDisplayEffect.RADFOG);
+                        } else if (hasSchrabFogParticles(mat)) {
+                            block.setDisplayEffect(BlockHazard.ExtDisplayEffect.SCHRAB);
+                        }
+                        return block;
+                    });
 
-                RegistrySupplier<Block> registeredBlock;
-
-                // Display particles: RADFOG / SCHRAB (1.7.10 BlockHazard#setDisplayEffect, ModBlocks ~1326-1373).
-                // Все слитковые блоки — это BlockHazard; per-tick эмиттер чанковой радиации (hazard × 0.1/сек)
-                // запускается автоматически через scheduled-tick. Различаются только визуальные частицы.
-                registeredBlock = registerBlock(blockName,
-                        () -> {
-                            BlockHazard block = new BlockHazard(INGOT_BLOCK_PROPERTIES).makeBeaconable();
-                            if (hasRadFogParticles(ingot)) {
-                                block.setDisplayEffect(BlockHazard.ExtDisplayEffect.RADFOG);
-                            } else if (hasSchrabFogParticles(ingot)) {
-                                block.setDisplayEffect(BlockHazard.ExtDisplayEffect.SCHRAB);
-                            }
-                            return block;
-                        });
-
-                // Сохраняем в карту
-                INGOT_BLOCKS.put(ingot, registeredBlock);
-            }
+            // Сохраняем в карту
+            INGOT_BLOCKS.put(mat, registeredBlock);
         }
     }
 
     // Вспомогательный метод получения блока
-    public static RegistrySupplier<Block> getIngotBlock(ModIngots ingot) {
-        RegistrySupplier<Block> block = INGOT_BLOCKS.get(ingot);
+    public static RegistrySupplier<Block> getIngotBlock(ModMaterials mat) {
+        RegistrySupplier<Block> block = INGOT_BLOCKS.get(mat);
         if (block == null) {
             // Логируем ошибку или возвращаем заглушку, чтобы игра не крашилась при обращении к несуществующему блоку
-            throw new NullPointerException("Block for ingot " + ingot.getName() + " is not registered! Check ENABLED_INGOT_BLOCKS.");
+            throw new NullPointerException("Block for material " + mat.getId() + " is not registered! Нет формы BLOCK в ModMaterials.");
         }
         return block;
     }
 
-    public static boolean hasIngotBlock(ModIngots ingot) {
-        return INGOT_BLOCKS.containsKey(ingot);
+    public static boolean hasIngotBlock(ModMaterials mat) {
+        return INGOT_BLOCKS.containsKey(mat);
     }
 
-    public static final RegistrySupplier<Block> URANIUM_BLOCK = getIngotBlock(ModIngots.URANIUM);
-    public static final RegistrySupplier<Block> PLUTONIUM_BLOCK = getIngotBlock(ModIngots.PLUTONIUM);
-    public static final RegistrySupplier<Block> PLUTONIUM_FUEL_BLOCK = getIngotBlock(ModIngots.PLUTONIUM_FUEL);
+    public static final RegistrySupplier<Block> URANIUM_BLOCK = getIngotBlock(ModMaterials.URANIUM);
+    public static final RegistrySupplier<Block> PLUTONIUM_BLOCK = getIngotBlock(ModMaterials.PLUTONIUM);
+    public static final RegistrySupplier<Block> PLUTONIUM_FUEL_BLOCK = getIngotBlock(ModMaterials.PLUTONIUM_FUEL);
 
     public static final RegistrySupplier<Block> POLONIUM210_BLOCK = registerBlock("polonium210_block",
             () -> new BlockHazard(INGOT_BLOCK_PROPERTIES));
@@ -376,11 +356,19 @@ public class ModBlocks {
                     .sound(SoundType.METAL)
                     .requiresCorrectToolForDrops()));
 
+    /** Legacy одноблочная доменная печь (старые миры, ориг. MachineDifurnace). */
     public static final RegistrySupplier<Block> BLAST_FURNACE = registerBlock("blast_furnace",
             () -> new BlastFurnaceBlock(BlockProps.copy(Blocks.IRON_BLOCK)
                     .strength(4.0f, 4.0f)
                     .sound(SoundType.STONE)
                     .lightLevel(state -> state.getValue(BlastFurnaceBlock.LIT) ? 15 : 0)));
+
+    /** Обновлённая мультиблочная доменная печь 3x7x3 (ориг. MachineBlastFurnace). */
+    public static final RegistrySupplier<Block> MACHINE_BLAST_FURNACE = registerBlock("machine_blast_furnace",
+            () -> new MachineBlastFurnaceBlock(BlockProps.copy(Blocks.IRON_BLOCK)
+                    .strength(4.0f, 4.0f)
+                    .sound(SoundType.STONE)
+                    .lightLevel(state -> state.getValue(MachineBlastFurnaceBlock.LIT) ? 15 : 0)));
 
     public static final RegistrySupplier<Block> BLAST_FURNACE_EXTENSION = registerBlock("blast_furnace_extension",
             () -> new BlastFurnaceExtensionBlock(BlockProps.copy(Blocks.IRON_BLOCK)
@@ -1062,16 +1050,16 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> BLOCK_METEOR_COBBLE = registerBlock("block_meteor_cobble",
             () -> new Block(STRUCTURE_DECOR_STONE));
     // NOTE: "block_red_copper"/"block_starmetal" уже регистрируются автоциклом слитковых блоков
-    // (ENABLED_INGOT_BLOCKS, static {} выше) — здесь только алиасы, иначе дубликат имени
+    // (форма BLOCK в ModMaterials, static {} выше) — здесь только алиасы, иначе дубликат имени
     // не биндится и runData падает ("Registry Object not present").
     public static final RegistrySupplier<Block> BLOCK_COPPER = registerBlock("block_copper",
             () -> new Block(STRUCTURE_DECOR_METAL));
-    public static final RegistrySupplier<Block> BLOCK_RED_COPPER = getIngotBlock(ModIngots.RED_COPPER);
+    public static final RegistrySupplier<Block> BLOCK_RED_COPPER = getIngotBlock(ModMaterials.RED_COPPER);
     public static final RegistrySupplier<Block> BLOCK_SCRAP = registerBlock("block_scrap",
             () -> new Block(STRUCTURE_DECOR_METAL));
     public static final RegistrySupplier<Block> BLOCK_ELECTRICAL_SCRAP = registerBlock("block_electrical_scrap",
             () -> new Block(STRUCTURE_DECOR_METAL));
-    public static final RegistrySupplier<Block> BLOCK_STARMETAL = getIngotBlock(ModIngots.STARMETAL);
+    public static final RegistrySupplier<Block> BLOCK_STARMETAL = getIngotBlock(ModMaterials.STARMETAL);
 
     public static final RegistrySupplier<Block> DECO_TITANIUM = registerBlock("deco_titanium",
             () -> new Block(STRUCTURE_DECOR_METAL));
@@ -2360,7 +2348,7 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> BRICK_JUNGLE_MYSTIC = registerBlock("brick_jungle_mystic", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> BRICK_JUNGLE_OOZE = registerBlock("brick_jungle_ooze", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> BRICK_JUNGLE_TRAP = registerBlock("brick_jungle_trap", () -> new Block(BlockProps.copy(Blocks.STONE)));
-    public static final RegistrySupplier<Block> BRICK_RED = registerBlock("brick_red", () -> new Block(BlockProps.copy(Blocks.STONE)));
+    public static final RegistrySupplier<Block> BRICK_RED = registerBlock("brick_red", () -> new RedBrickBlock(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> BROADCASTER_PC = registerBlock("broadcaster_pc",
             () -> new com.hbm_m.block.machines.BroadcasterPcBlock(BlockProps.copy(Blocks.STONE).noOcclusion()));
     public static final RegistrySupplier<Block> CABLE_DETECTOR = registerBlock("cable_detector", () -> new Block(BlockProps.copy(Blocks.STONE)));
@@ -2665,7 +2653,7 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> OIL_SPILL = registerBlock("oil_spill", () -> new OilSpillBlock(BlockProps.copy(Blocks.STONE).strength(0.1F).sound(SoundType.GRAVEL).noOcclusion()));
     /** Порт {@code BlockPedestal} (1.7.10) — постамент с парящим предметом. */
     public static final RegistrySupplier<Block> PEDESTAL = registerBlock("pedestal",
-            () -> new PedestalBlock(BlockProps.copy(Blocks.STONE).strength(3.0F, 9.0F)));
+            () -> new PedestalBlock(BlockProps.copy(Blocks.STONE).strength(3.0F, 9.0F).noOcclusion()));
     public static final RegistrySupplier<Block> PINK_LOG = registerBlock("pink_log", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> PINK_PLANKS = registerBlock("pink_planks", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> PLANT_FLOWER_CD0 = registerBlock("plant_flower_cd0", () -> new Block(BlockProps.copy(Blocks.STONE)));
@@ -3003,6 +2991,7 @@ public class ModBlocks {
             () -> new com.hbm_m.block.machines.BarrelTankBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion(),
                     com.hbm_m.blockentity.machines.OrbusBlockEntity::new,
                     () -> com.hbm_m.blockentity.ModBlockEntities.ORBUS_BE.get()));
+                    
     public static final RegistrySupplier<Block> ORE_SLOPPER = registerBlock("ore_slopper",
             () -> new MachineOreSlopperBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
 

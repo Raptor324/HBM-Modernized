@@ -8,8 +8,9 @@ import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.generic.BlockAbsorber;
 import com.hbm_m.client.render.missile.MissileFormFactorModels;
 import com.hbm_m.item.ModItems;
-import com.hbm_m.item.tags_and_tiers.ModIngots;
-import com.hbm_m.item.tags_and_tiers.ModPowders;
+import com.hbm_m.item.material.MaterialShape;
+import com.hbm_m.item.material.ModMaterialItems;
+import com.hbm_m.item.material.ModMaterials;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.main.MainRegistry;
 
@@ -83,39 +84,50 @@ public class ModItemModelProvider extends ItemModelProvider {
     protected void registerModels() {
         generateMissileItemModels();
 
-        // ЦИКЛ ДЛЯ СЛИТКОВ
-        for (ModIngots ingot : ModIngots.values()) {
-            RegistrySupplier<Item> ingotObject = ModItems.getIngot(ingot);
+        // Мета-предметы вкладки Parts (PartTabMetaItems): плоская модель на свою текстуру
+        // (или заданную layer0) либо двухслойная база+оверлей (dye/crayon).
+        for (com.hbm_m.item.PartTabMetaItems.Entry e : com.hbm_m.item.PartTabMetaItems.entries()) {
+            RegistrySupplier<Item> sup = com.hbm_m.item.PartTabMetaItems.get(e.id);
+            if (sup == null || !sup.isPresent()) continue;
+            if (e.layer1 != null) {
+                withExistingParent(e.id, "item/generated")
+                        .texture("layer0", modLoc("item/" + (e.layer0 != null ? e.layer0 : e.id)))
+                        .texture("layer1", modLoc("item/" + e.layer1));
+            } else {
+                simpleItemModelByName(e.id, e.layer0 != null ? e.layer0 : e.id);
+            }
+        }
+
+        // ЦИКЛ ДЛЯ СЛИТКОВ (единый реестр материалов)
+        for (ModMaterials mat : ModMaterials.values()) {
+            if (!mat.has(MaterialShape.INGOT)) continue;
+            RegistrySupplier<Item> ingotObject = ModMaterialItems.get(mat, MaterialShape.INGOT);
             if (ingotObject != null && ingotObject.isPresent()) {
                 ingotItem(ingotObject);
             }
         }
 
-        // Wire Dense — 11 specific materials
-        for (String name : new String[]{"iron","aluminium","titanium","lead","copper","steel","gold","advanced_alloy","schrabidium","saturnite","combine_steel"}) {
+        // Wire Dense — specific materials (текстуры wire_dense/<имя>.png)
+        for (String name : new String[]{"iron","aluminium","titanium","lead","copper","steel","gold","advanced_alloy","schrabidium","saturnite","combine_steel",
+                "schrabidate","tungsten","neodymium","niobium","star_metal","bscco","magnetized_tungsten","dnt","red_copper"}) {
             withExistingParent("wire_dense_" + name, "item/generated")
                     .texture("layer0", modLoc("item/wire_dense/wire_dense_" + name));
         }
 
-        // ЦИКЛ ДЛЯ ModPowders
-        for (ModPowders powder : ModPowders.values()) {
-            RegistrySupplier<Item> powderObject = ModItems.getPowders(powder);
-            if (powderObject != null && powderObject.isPresent()) {
-                powdersItem(powderObject);
-            }
-        }
-
-        // ЦИКЛ ДЛЯ ПОРОШКОВ ИЗ СЛИТКОВ
-        for (ModIngots ingot : ModIngots.values()) {
-            RegistrySupplier<Item> powder = ModItems.getPowder(ingot);
-            if (powder != null && powder.isPresent() && powderTextureExists(ingot.getName())) {
-                powdersItem(powder);
-            }
-            ModItems.getTinyPowder(ingot).ifPresent(tiny -> {
-                if (tiny != null && tiny.isPresent() && powderTinyTextureExists(ingot.getName())) {
-                    tinyPowderItem(tiny);
+        // ЦИКЛ ДЛЯ ПОРОШКОВ (базовые и из слитков — единый реестр материалов)
+        for (ModMaterials mat : ModMaterials.values()) {
+            if (mat.has(MaterialShape.POWDER)) {
+                RegistrySupplier<Item> powderObject = ModMaterialItems.get(mat, MaterialShape.POWDER);
+                if (powderObject != null && powderObject.isPresent() && powderTextureExists(mat.getId())) {
+                    powdersItem(powderObject);
                 }
-            });
+            }
+            if (mat.has(MaterialShape.POWDER_TINY)) {
+                RegistrySupplier<Item> tinyObject = ModMaterialItems.get(mat, MaterialShape.POWDER_TINY);
+                if (tinyObject != null && tinyObject.isPresent() && powderTinyTextureExists(mat.getId())) {
+                    tinyPowderItem(tinyObject);
+                }
+            }
         }
 
         // БАЗОВЫЕ ПОРОШКИ (всегда существуют)
@@ -129,8 +141,11 @@ public class ModItemModelProvider extends ItemModelProvider {
         powdersItem(ModItems.POWDER_SAWDUST);
         powdersItem(ModItems.POWDER_YELLOWCAKE);
         powdersItem(ModItems.POWDER_BALEFIRE);
-        powdersItem(ModItems.POWDER_PALEOGENITE);
         powdersItem(ModItems.POWDER_THERMITE);
+        // Энерго-порошок (ориг. powder_power, текстура powder_energy_alt).
+        powderTexture(ModItems.POWDER_POWER, "powder_power");
+        // Фуллерен (ориг. 4376/5) — текстура ash-семейства powder_ash.fullerene.
+        simpleItemModelByName("fullerene", "powders/powder_ash.fullerene");
         powdersItem(ModItems.POWDER_FERTILIZER);
         powdersItem(ModItems.POWDER_FLUX);
         powdersItem(ModItems.POWDER_MAGIC);
@@ -138,7 +153,8 @@ public class ModItemModelProvider extends ItemModelProvider {
         powdersItem(ModItems.POWDER_SPARK_MIX);
         powdersItem(ModItems.POWDER_SEMTEX_MIX);
         powdersItem(ModItems.POWDER_DESH_READY);
-        powdersItem(ModItems.POWDER_COLTAN);
+        // Crushed Coltan (ориг. 4310 powder_coltan_ore) — своя текстура powder_coltan_ore.
+        powderTexture(ModItems.POWDER_COLTAN, "powders/powder_coltan_ore");
 
         // Sentry-Turret Munition (MVP-Platzhalter, nutzt vorhandene Ammo-DGK-Textur)
         powderTexture(ModItems.TURRET_AMMO, "turret_ammo");
@@ -228,6 +244,9 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.SAT_HEAD_RESONATOR);
         withExistingParent(ModItems.INGOT_TUNGSTEN_CARBIDE.getId().getPath(), "item/generated")
                 .texture("layer0", modLoc("item/ingot/ingot_tungsten_carbide"));
+        // High-Speed Steel (= dura steel оригинала): текстура ingot_dura_steel.png / bolt.png оригинала.
+        simpleItem(ModItems.INGOT_HIGHSPEED_STEEL);
+        simpleItem(ModItems.BOLT_HIGHSPEED_STEEL);
 
         // The original is a single damage-variant item with one texture; the port splits it into
         // four items, so they all share that texture rather than inventing three new ones.
@@ -295,7 +314,7 @@ public class ModItemModelProvider extends ItemModelProvider {
 
         // РЕГИСТРАЦИЯ МОДЕЛЕЙ ДЛЯ УНИКАЛЬНЫХ ПРЕДМЕТОВ 
         // Для предметов, зарегистрированных вручную, мы также можем генерировать модели.
-        simpleItem(ModItems.BILLET_PLUTONIUM);
+        simpleItem(ModMaterialItems.get(ModMaterials.PLUTONIUM, MaterialShape.BILLET));
         simpleItem(ModItems.BALL_TNT);
         simpleItem(ModItems.DEFUSER);
         simpleItem(ModItems.AIRSTRIKE_AGENT);
@@ -312,7 +331,13 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.RANGEFINDER);
         simpleItem(ModItems.DESIGNATOR_RANGE);
         simpleItem(ModItems.DESIGNATOR_MANUAL);
-        simpleItem(ModItems.SCRAP);
+        simpleItem(ModMaterialItems.get(ModMaterials.SCRAP, MaterialShape.SCRAP));
+        // Литейные отходы (порт ItemScraps): запечённые текстуры item/scraps_<id>.png
+        for (com.hbm_m.item.material.ModMaterialItems.ScrapEntry scrap : ModMaterialItems.scrapEntries()) {
+            if (ModMaterialItems.scrapItem(scrap.mat()) == null) continue;
+            withExistingParent("scraps_" + scrap.mat().getId(), "item/generated")
+                    .texture("layer0", modLoc("item/scraps_" + scrap.mat().getId()));
+        }
         simpleItem(ModItems.BLACK_HOLE);
         simpleItem(ModItems.PELLET_ANTIMATTER);
         simpleItem(ModItems.FLAME_PONY);
@@ -386,6 +411,7 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.SHELL_ALUMINUM);
         simpleItem(ModItems.SHELL_TITANIUM);
         simpleItem(ModItems.MALACHITE_CHUNK);
+        simpleItem(ModItems.CRYOLITE_CHUNK);
         simpleItem(ModItems.CANNED_ASBESTOS);
         simpleItem(ModItems.CANNED_ASS);
         simpleItem(ModItems.CANNED_BARK);
@@ -573,23 +599,24 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.WATZ_PELLET_LEAD_SHIELD);
         simpleItem(ModItems.WATZ_PELLET_LEAD_SHIELD_DEPLETED);
 
-        simpleItem(ModItems.PLATE_IRON);
-        simpleItem(ModItems.PLATE_STEEL);
-        simpleItem(ModItems.PLATE_GOLD);
-        simpleItem(ModItems.PLATE_GUNMETAL);
-        simpleItem(ModItems.PLATE_TITANIUM);
-        simpleItem(ModItems.PLATE_GUNSTEEL);
+        simpleItem(ModMaterialItems.get(ModMaterials.IRON, MaterialShape.PLATE));
+        simpleItem(ModMaterialItems.get(ModMaterials.STEEL, MaterialShape.PLATE));
+        simpleItem(ModMaterialItems.get(ModMaterials.GOLD, MaterialShape.PLATE));
+        simpleItem(ModMaterialItems.get(ModMaterials.GUNMETAL, MaterialShape.PLATE));
+        simpleItem(ModMaterialItems.get(ModMaterials.TITANIUM, MaterialShape.PLATE));
+        simpleItem(ModMaterialItems.get(ModMaterials.GUNSTEEL, MaterialShape.PLATE));
+        simpleItem(ModMaterialItems.get(ModMaterials.WEAPONSTEEL, MaterialShape.PLATE));
         simpleItem(ModItems.PLATE_KEVLAR);
-        simpleItem(ModItems.PLATE_LEAD);
+        simpleItem(ModMaterialItems.get(ModMaterials.LEAD, MaterialShape.PLATE));
         simpleItem(ModItems.PLATE_MIXED);
         simpleItem(ModItems.PLATE_PAA);
         simpleItem(ModItems.INSULATOR);
-        simpleItem(ModItems.PLATE_SATURNITE);
-        simpleItem(ModItems.PLATE_SCHRABIDIUM);
-        simpleItem(ModItems.PLATE_ADVANCED_ALLOY);
-        simpleItem(ModItems.PLATE_ALUMINUM);
-        simpleItem(ModItems.PLATE_COPPER);
-        simpleItem(ModItems.PLATE_BISMUTH);
+        simpleItem(ModMaterialItems.get(ModMaterials.SATURNITE, MaterialShape.PLATE));
+        simpleItem(ModMaterialItems.get(ModMaterials.SCHRABIDIUM, MaterialShape.PLATE));
+        simpleItem(ModMaterialItems.get(ModMaterials.ADVANCED_ALLOY, MaterialShape.PLATE));
+        simpleItem(ModMaterialItems.get(ModMaterials.ALUMINUM, MaterialShape.PLATE));
+        simpleItem(ModMaterialItems.get(ModMaterials.COPPER, MaterialShape.PLATE));
+        simpleItem(ModMaterialItems.get(ModMaterials.BISMUTH, MaterialShape.PLATE));
         simpleItem(ModItems.PLATE_ARMOR_AJR);
         simpleItem(ModItems.PLATE_ARMOR_DNT);
         simpleItem(ModItems.PLATE_ARMOR_DNT_RUSTED);
@@ -599,14 +626,14 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.PLATE_ARMOR_TITANIUM);
         simpleItem(ModItems.PLATE_CAST);
         simpleItem(ModItems.PLATE_CAST_ALT);
-        simpleItem(ModItems.PLATE_CAST_BISMUTH);
+        simpleItem(ModMaterialItems.get(ModMaterials.BISMUTH, MaterialShape.PLATE_CAST));
         simpleItem(ModItems.PLATE_CAST_DARK);
-        simpleItem(ModItems.PLATE_COMBINE_STEEL);
-        simpleItem(ModItems.PLATE_DURA_STEEL);
+        simpleItem(ModMaterialItems.get(ModMaterials.COMBINE_STEEL, MaterialShape.PLATE));
+        simpleItem(ModMaterialItems.get(ModMaterials.DURA_STEEL, MaterialShape.PLATE));
         simpleItem(ModItems.PLATE_DALEKANIUM);
-        simpleItem(ModItems.PLATE_DESH);
-        simpleItem(ModItems.PLATE_DINEUTRONIUM);
-        simpleItem(ModItems.PLATE_EUPHEMIUM);
+        simpleItem(ModMaterialItems.get(ModMaterials.DESH, MaterialShape.PLATE));
+        simpleItem(ModMaterialItems.get(ModMaterials.DINEUTRONIUM, MaterialShape.PLATE));
+        simpleItem(ModMaterialItems.get(ModMaterials.EUPHEMIUM, MaterialShape.PLATE));
         simpleItem(ModItems.PLATE_FUEL_MOX);
         simpleItem(ModItems.PLATE_FUEL_PU238BE);
         simpleItem(ModItems.PLATE_FUEL_PU239);
@@ -700,19 +727,29 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.STAMP_DESH_357);
 
         simpleItem(ModItems.COIL_TUNGSTEN);
-        simpleItem(ModItems.NUGGET_SILICON);
-        simpleItem(ModItems.NUGGET_TANTALIUM);
-        simpleItem(ModItems.BILLET_SILICON);
-        simpleItem(ModItems.WIRE_RED_COPPER);
-        simpleItem(ModItems.WIRE_COPPER);
-        simpleItem(ModItems.WIRE_TUNGSTEN);
-        simpleItem(ModItems.WIRE_ALUMINIUM);
+        simpleItem(ModMaterialItems.get(ModMaterials.SILICON, MaterialShape.NUGGET));
+        simpleItem(ModMaterialItems.get(ModMaterials.TANTALIUM, MaterialShape.NUGGET));
+        simpleItem(ModMaterialItems.get(ModMaterials.SILICON, MaterialShape.BILLET));
+        simpleItem(ModMaterialItems.get(ModMaterials.RED_COPPER, MaterialShape.WIRE));
+        simpleItem(ModMaterialItems.get(ModMaterials.COPPER, MaterialShape.WIRE));
+        simpleItem(ModMaterialItems.get(ModMaterials.TUNGSTEN, MaterialShape.WIRE));
+        simpleItem(ModMaterialItems.get(ModMaterials.ALUMINIUM, MaterialShape.WIRE));
         simpleItem(ModItems.WIRE_FINE);
-        simpleItem(ModItems.WIRE_SCHRABIDIUM);
-        simpleItem(ModItems.WIRE_ADVANCED_ALLOY);
-        simpleItem(ModItems.WIRE_GOLD);
-        simpleItem(ModItems.WIRE_MAGNETIZED_TUNGSTEN);
-        simpleItem(ModItems.WIRE_CARBON);
+        simpleItem(ModMaterialItems.get(ModMaterials.SCHRABIDIUM, MaterialShape.WIRE));
+        simpleItem(ModMaterialItems.get(ModMaterials.ADVANCED_ALLOY, MaterialShape.WIRE));
+        simpleItem(ModMaterialItems.get(ModMaterials.GOLD, MaterialShape.WIRE));
+        simpleItem(ModMaterialItems.get(ModMaterials.MAGNETIZED_TUNGSTEN, MaterialShape.WIRE));
+        simpleItem(ModMaterialItems.get(ModMaterials.CARBON, MaterialShape.WIRE));
+        // Дозарегистрированные провода (текстуры запечены из wire_fine.png оригинала).
+        simpleItem(ModMaterialItems.get(ModMaterials.LEAD, MaterialShape.WIRE));
+        simpleItem(ModMaterialItems.get(ModMaterials.ZIRCONIUM, MaterialShape.WIRE));
+        // 4545/30 MAT_STEEL: стальной провод (текстура запечена по цветам MAT_STEEL).
+        simpleItem(ModMaterialItems.get(ModMaterials.STEEL, MaterialShape.WIRE));
+        // Провода без собственной текстуры в оригинале — используем общую wire_fine.png.
+        simpleItemModelByName("wire_titanium", "wire_fine");
+        simpleItemModelByName("wire_saturnite", "wire_fine");
+        simpleItemModelByName("wire_combine_steel", "wire_fine");
+        simpleItemModelByName("wire_iron", "wire_fine");
         simpleItem(ModItems.ALUMINUM_RAW);
         simpleItem(ModItems.BERYLLIUM_RAW);
         simpleItem(ModItems.RADIUM_RAW);
@@ -784,7 +821,8 @@ public class ModItemModelProvider extends ItemModelProvider {
         
         // Регистрация моделей предметов для машин с кастомными 3D моделями
         blockItemFromBlockModelMachine(ModBlocks.PRESS);
-        blockItemFromBlockModelMachine(ModBlocks.BLAST_FURNACE);
+        blockItemFromBlockModelMachine(ModBlocks.BLAST_FURNACE); // legacy: parent = block/machines/blast_furnace
+        blockItemFromBlockModelMachine(ModBlocks.MACHINE_BLAST_FURNACE);
         blockItemFromBlockModelMachine(ModBlocks.WOOD_BURNER);
         blockItemFromBlockModelMachine(ModBlocks.CHEMICAL_PLANT);
         blockItemFromBlockModelMachine(ModBlocks.CRUCIBLE);
@@ -805,37 +843,42 @@ public class ModItemModelProvider extends ItemModelProvider {
         blockItemFromBlockModelMachine(ModBlocks.CYCLOTRON);
 
         // ─── Cast / Welded Plates ─────────────────────────────────────────────
-        withExistingParent(ModItems.PLATE_CAST_IRON.getId().getPath(),       "item/generated").texture("layer0", modLoc("block/plate_cast_iron"));
-        withExistingParent(ModItems.PLATE_CAST_STEEL.getId().getPath(),      "item/generated").texture("layer0", modLoc("block/plate_cast_steel"));
-        withExistingParent(ModItems.PLATE_CAST_COPPER.getId().getPath(),     "item/generated").texture("layer0", modLoc("block/plate_cast_copper"));
-        withExistingParent(ModItems.PLATE_CAST_GOLD.getId().getPath(),       "item/generated").texture("layer0", modLoc("block/plate_cast_gold"));
-        withExistingParent(ModItems.PLATE_CAST_TITANIUM.getId().getPath(),   "item/generated").texture("layer0", modLoc("block/plate_cast_titanium"));
-        withExistingParent(ModItems.PLATE_CAST_ALUMINIUM.getId().getPath(),  "item/generated").texture("layer0", modLoc("block/plate_cast_aluminium"));
-        withExistingParent(ModItems.PLATE_CAST_TUNGSTEN.getId().getPath(),   "item/generated").texture("layer0", modLoc("block/plate_cast_tungsten"));
-        withExistingParent(ModItems.PLATE_CAST_ZIRCONIUM.getId().getPath(),  "item/generated").texture("layer0", modLoc("block/plate_cast_zirconium"));
-        withExistingParent(ModItems.PLATE_CAST_OSMIRIDIUM.getId().getPath(), "item/generated").texture("layer0", modLoc("block/plate_cast_osmiridium"));
-        withExistingParent(ModItems.PLATE_CAST_ALLOY.getId().getPath(),      "item/generated").texture("layer0", modLoc("block/plate_cast_alloy"));
-        withExistingParent(ModItems.PLATE_CAST_DURA_STEEL.getId().getPath(), "item/generated").texture("layer0", modLoc("block/plate_cast_dura_steel"));
-        withExistingParent(ModItems.PLATE_CAST_DESH.getId().getPath(),       "item/generated").texture("layer0", modLoc("block/plate_cast_desh"));
-        withExistingParent(ModItems.PLATE_CAST_STAR_METAL.getId().getPath(), "item/generated").texture("layer0", modLoc("block/plate_cast_star_metal"));
-        withExistingParent(ModItems.PLATE_CAST_TCALLOY.getId().getPath(),    "item/generated").texture("layer0", modLoc("block/plate_cast_tcalloy"));
-        withExistingParent(ModItems.PLATE_CAST_CDALLOY.getId().getPath(),    "item/generated").texture("layer0", modLoc("block/plate_cast_cdalloy"));
-        withExistingParent(ModItems.PLATE_CAST_CMB.getId().getPath(),        "item/generated").texture("layer0", modLoc("block/plate_cast_cmb"));
-        withExistingParent(ModItems.PLATE_CAST_SCHRABIDIUM.getId().getPath(),"item/generated").texture("layer0", modLoc("block/plate_cast_schrabidium"));
-        withExistingParent(ModItems.PLATE_CAST_BBRONZE.getId().getPath(),    "item/generated").texture("layer0", modLoc("block/plate_cast_bbronze"));
-        withExistingParent(ModItems.PLATE_CAST_ABRONZE.getId().getPath(),    "item/generated").texture("layer0", modLoc("block/plate_cast_abronze"));
-        withExistingParent(ModItems.PLATE_CAST_SATURNITE.getId().getPath(),  "item/generated").texture("layer0", modLoc("block/plate_cast_saturnite"));
-        withExistingParent(ModItems.PLATE_WELDED_IRON.getId().getPath(),       "item/generated").texture("layer0", modLoc("block/plate_welded_iron"));
-        withExistingParent(ModItems.PLATE_WELDED_STEEL.getId().getPath(),      "item/generated").texture("layer0", modLoc("block/plate_welded_steel"));
-        withExistingParent(ModItems.PLATE_WELDED_COPPER.getId().getPath(),     "item/generated").texture("layer0", modLoc("block/plate_welded_copper"));
-        withExistingParent(ModItems.PLATE_WELDED_TITANIUM.getId().getPath(),   "item/generated").texture("layer0", modLoc("block/plate_welded_titanium"));
-        withExistingParent(ModItems.PLATE_WELDED_ALUMINIUM.getId().getPath(),  "item/generated").texture("layer0", modLoc("block/plate_welded_aluminium"));
-        withExistingParent(ModItems.PLATE_WELDED_TUNGSTEN.getId().getPath(),   "item/generated").texture("layer0", modLoc("block/plate_welded_tungsten"));
-        withExistingParent(ModItems.PLATE_WELDED_ZIRCONIUM.getId().getPath(),  "item/generated").texture("layer0", modLoc("block/plate_welded_zirconium"));
-        withExistingParent(ModItems.PLATE_WELDED_OSMIRIDIUM.getId().getPath(), "item/generated").texture("layer0", modLoc("block/plate_welded_osmiridium"));
-        withExistingParent(ModItems.PLATE_WELDED_TCALLOY.getId().getPath(),    "item/generated").texture("layer0", modLoc("block/plate_welded_tcalloy"));
-        withExistingParent(ModItems.PLATE_WELDED_CDALLOY.getId().getPath(),    "item/generated").texture("layer0", modLoc("block/plate_welded_cdalloy"));
-        withExistingParent(ModItems.PLATE_WELDED_CMB.getId().getPath(),        "item/generated").texture("layer0", modLoc("block/plate_welded_cmb"));
+        withExistingParent(ModMaterialItems.get(ModMaterials.IRON, MaterialShape.PLATE_CAST).getId().getPath(),       "item/generated").texture("layer0", modLoc("block/plate_cast_iron"));
+        withExistingParent(ModMaterialItems.get(ModMaterials.STEEL, MaterialShape.PLATE_CAST).getId().getPath(),      "item/generated").texture("layer0", modLoc("block/plate_cast_steel"));
+        withExistingParent(ModMaterialItems.get(ModMaterials.COPPER, MaterialShape.PLATE_CAST).getId().getPath(),     "item/generated").texture("layer0", modLoc("block/plate_cast_copper"));
+        withExistingParent(ModMaterialItems.get(ModMaterials.GOLD, MaterialShape.PLATE_CAST).getId().getPath(),       "item/generated").texture("layer0", modLoc("block/plate_cast_gold"));
+        withExistingParent(ModMaterialItems.get(ModMaterials.TITANIUM, MaterialShape.PLATE_CAST).getId().getPath(),   "item/generated").texture("layer0", modLoc("block/plate_cast_titanium"));
+        withExistingParent(ModMaterialItems.get(ModMaterials.ALUMINIUM, MaterialShape.PLATE_CAST).getId().getPath(),  "item/generated").texture("layer0", modLoc("block/plate_cast_aluminium"));
+        withExistingParent(ModMaterialItems.get(ModMaterials.TUNGSTEN, MaterialShape.PLATE_CAST).getId().getPath(),   "item/generated").texture("layer0", modLoc("block/plate_cast_tungsten"));
+        withExistingParent(ModMaterialItems.get(ModMaterials.ZIRCONIUM, MaterialShape.PLATE_CAST).getId().getPath(),  "item/generated").texture("layer0", modLoc("block/plate_cast_zirconium"));
+        withExistingParent(ModMaterialItems.get(ModMaterials.OSMIRIDIUM, MaterialShape.PLATE_CAST).getId().getPath(), "item/generated").texture("layer0", modLoc("block/plate_cast_osmiridium"));
+        withExistingParent(ModMaterialItems.get(ModMaterials.ALLOY, MaterialShape.PLATE_CAST).getId().getPath(),      "item/generated").texture("layer0", modLoc("block/plate_cast_alloy"));
+        withExistingParent(ModMaterialItems.get(ModMaterials.DURA_STEEL, MaterialShape.PLATE_CAST).getId().getPath(), "item/generated").texture("layer0", modLoc("block/plate_cast_dura_steel"));
+        withExistingParent(ModMaterialItems.get(ModMaterials.DESH, MaterialShape.PLATE_CAST).getId().getPath(),       "item/generated").texture("layer0", modLoc("block/plate_cast_desh"));
+        withExistingParent(ModMaterialItems.get(ModMaterials.STAR_METAL, MaterialShape.PLATE_CAST).getId().getPath(), "item/generated").texture("layer0", modLoc("block/plate_cast_star_metal"));
+        withExistingParent(ModMaterialItems.get(ModMaterials.TCALLOY, MaterialShape.PLATE_CAST).getId().getPath(),    "item/generated").texture("layer0", modLoc("block/plate_cast_tcalloy"));
+        withExistingParent(ModMaterialItems.get(ModMaterials.CDALLOY, MaterialShape.PLATE_CAST).getId().getPath(),    "item/generated").texture("layer0", modLoc("block/plate_cast_cdalloy"));
+        withExistingParent(ModMaterialItems.get(ModMaterials.CMB, MaterialShape.PLATE_CAST).getId().getPath(),        "item/generated").texture("layer0", modLoc("block/plate_cast_cmb"));
+        withExistingParent(ModMaterialItems.get(ModMaterials.SCHRABIDIUM, MaterialShape.PLATE_CAST).getId().getPath(),"item/generated").texture("layer0", modLoc("block/plate_cast_schrabidium"));
+        withExistingParent(ModMaterialItems.get(ModMaterials.BBRONZE, MaterialShape.PLATE_CAST).getId().getPath(),    "item/generated").texture("layer0", modLoc("block/plate_cast_bbronze"));
+        withExistingParent(ModMaterialItems.get(ModMaterials.ABRONZE, MaterialShape.PLATE_CAST).getId().getPath(),    "item/generated").texture("layer0", modLoc("block/plate_cast_abronze"));
+        withExistingParent(ModMaterialItems.get(ModMaterials.SATURNITE, MaterialShape.PLATE_CAST).getId().getPath(),  "item/generated").texture("layer0", modLoc("block/plate_cast_saturnite"));
+        // Дозарегистрированные материалы PLATE_CAST (текстуры запечены из plate_cast.png оригинала).
+        withExistingParent(ModMaterialItems.get(ModMaterials.SCHRABIDATE, MaterialShape.PLATE_CAST).getId().getPath(),  "item/generated").texture("layer0", modLoc("block/plate_cast_schrabidate"));
+        withExistingParent(ModMaterialItems.get(ModMaterials.LEAD, MaterialShape.PLATE_CAST).getId().getPath(),         "item/generated").texture("layer0", modLoc("block/plate_cast_lead"));
+        withExistingParent(ModMaterialItems.get(ModMaterials.FERROURANIUM, MaterialShape.PLATE_CAST).getId().getPath(), "item/generated").texture("layer0", modLoc("block/plate_cast_ferrouranium"));
+        withExistingParent(ModMaterialItems.get(ModMaterials.WEAPONSTEEL, MaterialShape.PLATE_CAST).getId().getPath(),  "item/generated").texture("layer0", modLoc("block/plate_cast_weaponsteel"));
+        withExistingParent(ModMaterialItems.get(ModMaterials.IRON, MaterialShape.PLATE_WELDED).getId().getPath(),       "item/generated").texture("layer0", modLoc("block/plate_welded_iron"));
+        withExistingParent(ModMaterialItems.get(ModMaterials.STEEL, MaterialShape.PLATE_WELDED).getId().getPath(),      "item/generated").texture("layer0", modLoc("block/plate_welded_steel"));
+        withExistingParent(ModMaterialItems.get(ModMaterials.COPPER, MaterialShape.PLATE_WELDED).getId().getPath(),     "item/generated").texture("layer0", modLoc("block/plate_welded_copper"));
+        withExistingParent(ModMaterialItems.get(ModMaterials.TITANIUM, MaterialShape.PLATE_WELDED).getId().getPath(),   "item/generated").texture("layer0", modLoc("block/plate_welded_titanium"));
+        withExistingParent(ModMaterialItems.get(ModMaterials.ALUMINIUM, MaterialShape.PLATE_WELDED).getId().getPath(),  "item/generated").texture("layer0", modLoc("block/plate_welded_aluminium"));
+        withExistingParent(ModMaterialItems.get(ModMaterials.TUNGSTEN, MaterialShape.PLATE_WELDED).getId().getPath(),   "item/generated").texture("layer0", modLoc("block/plate_welded_tungsten"));
+        withExistingParent(ModMaterialItems.get(ModMaterials.ZIRCONIUM, MaterialShape.PLATE_WELDED).getId().getPath(),  "item/generated").texture("layer0", modLoc("block/plate_welded_zirconium"));
+        withExistingParent(ModMaterialItems.get(ModMaterials.OSMIRIDIUM, MaterialShape.PLATE_WELDED).getId().getPath(), "item/generated").texture("layer0", modLoc("block/plate_welded_osmiridium"));
+        withExistingParent(ModMaterialItems.get(ModMaterials.TCALLOY, MaterialShape.PLATE_WELDED).getId().getPath(),    "item/generated").texture("layer0", modLoc("block/plate_welded_tcalloy"));
+        withExistingParent(ModMaterialItems.get(ModMaterials.CDALLOY, MaterialShape.PLATE_WELDED).getId().getPath(),    "item/generated").texture("layer0", modLoc("block/plate_welded_cdalloy"));
+        withExistingParent(ModMaterialItems.get(ModMaterials.CMB, MaterialShape.PLATE_WELDED).getId().getPath(),        "item/generated").texture("layer0", modLoc("block/plate_welded_cmb"));
         // Cyclotron particle parts
         withExistingParent(ModItems.PART_LITHIUM.getId().getPath(),   "item/generated").texture("layer0", modLoc("item/ingot/part_lithium"));
         withExistingParent(ModItems.PART_BERYLLIUM.getId().getPath(), "item/generated").texture("layer0", modLoc("item/ingot/part_beryllium"));
@@ -1112,40 +1155,40 @@ public class ModItemModelProvider extends ItemModelProvider {
         blockItemFromBlockModel(ModBlocks.STRAWBERRY_BUSH);
 
         java.util.List.of(
-                ModItems.CRYSTAL_ALUMINIUM,
-                ModItems.CRYSTAL_BERYLLIUM,
-                ModItems.CRYSTAL_CHARRED,
-                ModItems.CRYSTAL_CINNEBAR,
-                ModItems.CRYSTAL_COAL,
-                ModItems.CRYSTAL_COBALT,
-                ModItems.CRYSTAL_COPPER,
-                ModItems.CRYSTAL_DIAMOND,
-                ModItems.CRYSTAL_FLUORITE,
-                ModItems.CRYSTAL_GOLD,
-                ModItems.CRYSTAL_HARDENED,
-                ModItems.CRYSTAL_HORN,
-                ModItems.CRYSTAL_IRON,
-                ModItems.CRYSTAL_LAPIS,
-                ModItems.CRYSTAL_LEAD,
-                ModItems.CRYSTAL_LITHIUM,
-                ModItems.CRYSTAL_NITER,
-                ModItems.CRYSTAL_OSMIRIDIUM,
-                ModItems.CRYSTAL_PHOSPHORUS,
-                ModItems.CRYSTAL_PLUTONIUM,
-                ModItems.CRYSTAL_PULSAR,
-                ModItems.CRYSTAL_RARE,
-                ModItems.CRYSTAL_REDSTONE,
-                ModItems.CRYSTAL_SCHRABIDIUM,
-                ModItems.CRYSTAL_SCHRARANIUM,
-                ModItems.CRYSTAL_STARMETAL,
-                ModItems.CRYSTAL_SULFUR,
-                ModItems.CRYSTAL_THORIUM,
-                ModItems.CRYSTAL_TITANIUM,
-                ModItems.CRYSTAL_TRIXITE,
-                ModItems.CRYSTAL_TUNGSTEN,
-                ModItems.CRYSTAL_URANIUM,
-                ModItems.CRYSTAL_VIRUS,
-                ModItems.CRYSTAL_XEN
+                ModMaterialItems.get(ModMaterials.ALUMINIUM, MaterialShape.CRYSTAL),
+                ModMaterialItems.get(ModMaterials.BERYLLIUM, MaterialShape.CRYSTAL),
+                ModMaterialItems.get(ModMaterials.CHARRED, MaterialShape.CRYSTAL),
+                ModMaterialItems.get(ModMaterials.CINNEBAR, MaterialShape.CRYSTAL),
+                ModMaterialItems.get(ModMaterials.COAL, MaterialShape.CRYSTAL),
+                ModMaterialItems.get(ModMaterials.COBALT, MaterialShape.CRYSTAL),
+                ModMaterialItems.get(ModMaterials.COPPER, MaterialShape.CRYSTAL),
+                ModMaterialItems.get(ModMaterials.DIAMOND, MaterialShape.CRYSTAL),
+                ModMaterialItems.get(ModMaterials.FLUORITE, MaterialShape.CRYSTAL),
+                ModMaterialItems.get(ModMaterials.GOLD, MaterialShape.CRYSTAL),
+                ModMaterialItems.get(ModMaterials.HARDENED, MaterialShape.CRYSTAL),
+                ModMaterialItems.get(ModMaterials.HORN, MaterialShape.CRYSTAL),
+                ModMaterialItems.get(ModMaterials.IRON, MaterialShape.CRYSTAL),
+                ModMaterialItems.get(ModMaterials.LAPIS, MaterialShape.CRYSTAL),
+                ModMaterialItems.get(ModMaterials.LEAD, MaterialShape.CRYSTAL),
+                ModMaterialItems.get(ModMaterials.LITHIUM, MaterialShape.CRYSTAL),
+                ModMaterialItems.get(ModMaterials.NITER, MaterialShape.CRYSTAL),
+                ModMaterialItems.get(ModMaterials.OSMIRIDIUM, MaterialShape.CRYSTAL),
+                ModMaterialItems.get(ModMaterials.PHOSPHORUS, MaterialShape.CRYSTAL),
+                ModMaterialItems.get(ModMaterials.PLUTONIUM, MaterialShape.CRYSTAL),
+                ModMaterialItems.get(ModMaterials.PULSAR, MaterialShape.CRYSTAL),
+                ModMaterialItems.get(ModMaterials.RARE, MaterialShape.CRYSTAL),
+                ModMaterialItems.get(ModMaterials.REDSTONE, MaterialShape.CRYSTAL),
+                ModMaterialItems.get(ModMaterials.SCHRABIDIUM, MaterialShape.CRYSTAL),
+                ModMaterialItems.get(ModMaterials.SCHRARANIUM, MaterialShape.CRYSTAL),
+                ModMaterialItems.get(ModMaterials.STARMETAL, MaterialShape.CRYSTAL),
+                ModMaterialItems.get(ModMaterials.SULFUR, MaterialShape.CRYSTAL),
+                ModMaterialItems.get(ModMaterials.THORIUM, MaterialShape.CRYSTAL),
+                ModMaterialItems.get(ModMaterials.TITANIUM, MaterialShape.CRYSTAL),
+                ModMaterialItems.get(ModMaterials.TRIXITE, MaterialShape.CRYSTAL),
+                ModMaterialItems.get(ModMaterials.TUNGSTEN, MaterialShape.CRYSTAL),
+                ModMaterialItems.get(ModMaterials.URANIUM, MaterialShape.CRYSTAL),
+                ModMaterialItems.get(ModMaterials.VIRUS, MaterialShape.CRYSTAL),
+                ModMaterialItems.get(ModMaterials.XEN, MaterialShape.CRYSTAL)
         ).forEach(this::crystalItem);
 
         java.util.List.of(
@@ -1258,58 +1301,58 @@ public class ModItemModelProvider extends ItemModelProvider {
                 ModItems.BEDROCK_ORE_FRAGMENT,
                 ModItems.BETA,
                 ModItems.BIG_SWORD,
-                ModItems.BILLET_ACTINIUM,
-                ModItems.BILLET_AM241,
-                ModItems.BILLET_AM242,
-                ModItems.BILLET_AM_MIX,
-                ModItems.BILLET_AMERICIUM_FUEL,
-                ModItems.BILLET_AU198,
-                ModItems.BILLET_AUSTRALIUM,
-                ModItems.BILLET_AUSTRALIUM_GREATER,
-                ModItems.BILLET_AUSTRALIUM_LESSER,
-                ModItems.BILLET_BALEFIRE_GOLD,
-                ModItems.BILLET_BERYLLIUM,
-                ModItems.BILLET_BISMUTH,
-                ModItems.BILLET_CO60,
-                ModItems.BILLET_COBALT,
-                ModItems.BILLET_FLASHLEAD,
-                ModItems.BILLET_GH336,
-                ModItems.BILLET_HES,
-                ModItems.BILLET_LES,
-                ModItems.BILLET_MOX_FUEL,
-                ModItems.BILLET_NEPTUNIUM,
-                ModItems.BILLET_NEPTUNIUM_FUEL,
-                ModItems.BILLET_NUCLEAR_WASTE,
-                ModItems.BILLET_PB209,
-                ModItems.BILLET_PLUTONIUM_FUEL,
-                ModItems.BILLET_PO210BE,
-                ModItems.BILLET_POLONIUM,
-                ModItems.BILLET_PU238,
-                ModItems.BILLET_PU238BE,
-                ModItems.BILLET_PU239,
-                ModItems.BILLET_PU240,
-                ModItems.BILLET_PU241,
-                ModItems.BILLET_PU_MIX,
-                ModItems.BILLET_RA226,
-                ModItems.BILLET_RA226BE,
-                ModItems.BILLET_SCHRABIDIUM,
-                ModItems.BILLET_SCHRABIDIUM_FUEL,
-                ModItems.BILLET_SOLINIUM,
-                ModItems.BILLET_SR90,
-                ModItems.BILLET_TECHNETIUM,
-                ModItems.BILLET_TH232,
-                ModItems.BILLET_THORIUM_FUEL,
-                ModItems.BILLET_U233,
-                ModItems.BILLET_U235,
-                ModItems.BILLET_U238,
-                ModItems.BILLET_URANIUM,
-                ModItems.BILLET_URANIUM_FUEL,
-                ModItems.BILLET_UZH,
-                ModItems.BILLET_YHARONITE,
-                ModItems.BILLET_ZFB_AM_MIX,
-                ModItems.BILLET_ZFB_BISMUTH,
-                ModItems.BILLET_ZFB_PU241,
-                ModItems.BILLET_ZIRCONIUM,
+                ModMaterialItems.get(ModMaterials.ACTINIUM, MaterialShape.BILLET),
+                ModMaterialItems.get(ModMaterials.AM241, MaterialShape.BILLET),
+                ModMaterialItems.get(ModMaterials.AM242, MaterialShape.BILLET),
+                ModMaterialItems.get(ModMaterials.AM_MIX, MaterialShape.BILLET),
+                ModMaterialItems.get(ModMaterials.AMERICIUM_FUEL, MaterialShape.BILLET),
+                ModMaterialItems.get(ModMaterials.AU198, MaterialShape.BILLET),
+                ModMaterialItems.get(ModMaterials.AUSTRALIUM, MaterialShape.BILLET),
+                ModMaterialItems.get(ModMaterials.AUSTRALIUM_GREATER, MaterialShape.BILLET),
+                ModMaterialItems.get(ModMaterials.AUSTRALIUM_LESSER, MaterialShape.BILLET),
+                ModMaterialItems.get(ModMaterials.BALEFIRE_GOLD, MaterialShape.BILLET),
+                ModMaterialItems.get(ModMaterials.BERYLLIUM, MaterialShape.BILLET),
+                ModMaterialItems.get(ModMaterials.BISMUTH, MaterialShape.BILLET),
+                ModMaterialItems.get(ModMaterials.CO60, MaterialShape.BILLET),
+                ModMaterialItems.get(ModMaterials.COBALT, MaterialShape.BILLET),
+                ModMaterialItems.get(ModMaterials.FLASHLEAD, MaterialShape.BILLET),
+                ModMaterialItems.get(ModMaterials.GH336, MaterialShape.BILLET),
+                ModMaterialItems.get(ModMaterials.HES, MaterialShape.BILLET),
+                ModMaterialItems.get(ModMaterials.LES_FUEL, MaterialShape.BILLET),
+                ModMaterialItems.get(ModMaterials.MOX_FUEL, MaterialShape.BILLET),
+                ModMaterialItems.get(ModMaterials.NEPTUNIUM, MaterialShape.BILLET),
+                ModMaterialItems.get(ModMaterials.NEPTUNIUM_FUEL, MaterialShape.BILLET),
+                ModMaterialItems.get(ModMaterials.NUCLEAR_WASTE, MaterialShape.BILLET),
+                ModMaterialItems.get(ModMaterials.PB209, MaterialShape.BILLET),
+                ModMaterialItems.get(ModMaterials.PLUTONIUM_FUEL, MaterialShape.BILLET),
+                ModMaterialItems.get(ModMaterials.PO210BE, MaterialShape.BILLET),
+                ModMaterialItems.get(ModMaterials.POLONIUM, MaterialShape.BILLET),
+                ModMaterialItems.get(ModMaterials.PLUTONIUM238, MaterialShape.BILLET),
+                ModMaterialItems.get(ModMaterials.PU238BE, MaterialShape.BILLET),
+                ModMaterialItems.get(ModMaterials.PLUTONIUM239, MaterialShape.BILLET),
+                ModMaterialItems.get(ModMaterials.PLUTONIUM240, MaterialShape.BILLET),
+                ModMaterialItems.get(ModMaterials.PLUTONIUM241, MaterialShape.BILLET),
+                ModMaterialItems.get(ModMaterials.PU_MIX, MaterialShape.BILLET),
+                ModMaterialItems.get(ModMaterials.RA226, MaterialShape.BILLET),
+                ModMaterialItems.get(ModMaterials.RA226BE, MaterialShape.BILLET),
+                ModMaterialItems.get(ModMaterials.SCHRABIDIUM, MaterialShape.BILLET),
+                ModMaterialItems.get(ModMaterials.SCHRABIDIUM_FUEL, MaterialShape.BILLET),
+                ModMaterialItems.get(ModMaterials.SOLINIUM, MaterialShape.BILLET),
+                ModMaterialItems.get(ModMaterials.SR90, MaterialShape.BILLET),
+                ModMaterialItems.get(ModMaterials.TECHNETIUM, MaterialShape.BILLET),
+                ModMaterialItems.get(ModMaterials.THORIUM232, MaterialShape.BILLET),
+                ModMaterialItems.get(ModMaterials.THORIUM_FUEL, MaterialShape.BILLET),
+                ModMaterialItems.get(ModMaterials.URANIUM233, MaterialShape.BILLET),
+                ModMaterialItems.get(ModMaterials.URANIUM235, MaterialShape.BILLET),
+                ModMaterialItems.get(ModMaterials.URANIUM238, MaterialShape.BILLET),
+                ModMaterialItems.get(ModMaterials.URANIUM, MaterialShape.BILLET),
+                ModMaterialItems.get(ModMaterials.URANIUM_FUEL, MaterialShape.BILLET),
+                ModMaterialItems.get(ModMaterials.UZH, MaterialShape.BILLET),
+                ModMaterialItems.get(ModMaterials.YHARONITE, MaterialShape.BILLET),
+                ModMaterialItems.get(ModMaterials.ZFB_AM_MIX, MaterialShape.BILLET),
+                ModMaterialItems.get(ModMaterials.ZFB_BISMUTH, MaterialShape.BILLET),
+                ModMaterialItems.get(ModMaterials.ZFB_PU241, MaterialShape.BILLET),
+                ModMaterialItems.get(ModMaterials.ZIRCONIUM, MaterialShape.BILLET),
                 ModItems.BIO_WAFER,
                 ModItems.BIOMASS,
                 ModItems.BIOMASS_COMPRESSED,
@@ -1362,7 +1405,6 @@ public class ModItemModelProvider extends ItemModelProvider {
                 ModItems.BOY_SHIELDING,
                 ModItems.BOY_TARGET,
                 ModItems.BROKEN_ITEM,
-                ModItems.EARLY_EXPLOSIVE_LENSES,
                 ModItems.EXPLOSIVE_LENSES,
                 ModItems.BUCKET_ACID,
                 ModItems.BUCKET_MUD,
@@ -1450,7 +1492,7 @@ public class ModItemModelProvider extends ItemModelProvider {
                 ModItems.COIN_TOKEN,
                 ModItems.COIN_UFO,
                 ModItems.COIN_WORM,
-                ModItems.COMBINE_SCRAP,
+                ModMaterialItems.get(ModMaterials.COMBINE_SCRAP, MaterialShape.SCRAP),
                 ModItems.COMPONENT_EMITTER,
                 ModItems.COMPONENT_LIMITER,
                 ModItems.CONTAINMENT_BOX,
@@ -1487,8 +1529,6 @@ public class ModItemModelProvider extends ItemModelProvider {
                 ModItems.DESIGNATOR_ARTY_RANGE,
                 ModItems.DETONATOR_DE,
                 ModItems.DETONATOR_DEADMAN,
-                ModItems.DETONATOR_LASER,
-                ModItems.DETONATOR_MULTI,
                 ModItems.DEUTERIUM_FILTER,
                 ModItems.DIAMOND_GAVEL,
                 ModItems.DIESELSUIT_BOOTS,
@@ -1699,8 +1739,6 @@ public class ModItemModelProvider extends ItemModelProvider {
                 ModItems.LOOT_10,
                 ModItems.LOOT_15,
                 ModItems.LOOT_MISC,
-                ModItems.MAN_CORE,
-                ModItems.MAN_IGNITER,
                 ModItems.MAN_KIT,
                 ModItems.MARSHMALLOW,
                 ModItems.MASK_OF_INFAMY,
@@ -1753,56 +1791,56 @@ public class ModItemModelProvider extends ItemModelProvider {
                 ModItems.NUCLEAR_WASTE_SHORT_DEPLETED,
                 ModItems.NUCLEAR_WASTE_VITRIFIED,
                 ModItems.NUGGET,
-                ModItems.NUGGET_ACTINIUM,
-                ModItems.NUGGET_AM241,
-                ModItems.NUGGET_AM242,
-                ModItems.NUGGET_AM_MIX,
-                ModItems.NUGGET_AMERICIUM_FUEL,
-                ModItems.NUGGET_ARSENIC,
-                ModItems.NUGGET_AU198,
-                ModItems.NUGGET_AUSTRALIUM,
-                ModItems.NUGGET_AUSTRALIUM_GREATER,
-                ModItems.NUGGET_AUSTRALIUM_LESSER,
-                ModItems.NUGGET_BERYLLIUM,
-                ModItems.NUGGET_BISMUTH,
-                ModItems.NUGGET_CO60,
-                ModItems.NUGGET_COBALT,
-                ModItems.NUGGET_DESH,
-                ModItems.NUGGET_DINEUTRONIUM,
-                ModItems.NUGGET_EUPHEMIUM,
-                ModItems.NUGGET_GH336,
-                ModItems.NUGGET_HES,
-                ModItems.NUGGET_LEAD,
-                ModItems.NUGGET_LES,
+                ModMaterialItems.get(ModMaterials.ACTINIUM, MaterialShape.NUGGET),
+                ModMaterialItems.get(ModMaterials.AM241, MaterialShape.NUGGET),
+                ModMaterialItems.get(ModMaterials.AM242, MaterialShape.NUGGET),
+                ModMaterialItems.get(ModMaterials.AM_MIX, MaterialShape.NUGGET),
+                ModMaterialItems.get(ModMaterials.AMERICIUM_FUEL, MaterialShape.NUGGET),
+                ModMaterialItems.get(ModMaterials.ARSENIC, MaterialShape.NUGGET),
+                ModMaterialItems.get(ModMaterials.AU198, MaterialShape.NUGGET),
+                ModMaterialItems.get(ModMaterials.AUSTRALIUM, MaterialShape.NUGGET),
+                ModMaterialItems.get(ModMaterials.AUSTRALIUM_GREATER, MaterialShape.NUGGET),
+                ModMaterialItems.get(ModMaterials.AUSTRALIUM_LESSER, MaterialShape.NUGGET),
+                ModMaterialItems.get(ModMaterials.BERYLLIUM, MaterialShape.NUGGET),
+                ModMaterialItems.get(ModMaterials.BISMUTH, MaterialShape.NUGGET),
+                ModMaterialItems.get(ModMaterials.CO60, MaterialShape.NUGGET),
+                ModMaterialItems.get(ModMaterials.COBALT, MaterialShape.NUGGET),
+                ModMaterialItems.get(ModMaterials.DESH, MaterialShape.NUGGET),
+                ModMaterialItems.get(ModMaterials.DINEUTRONIUM, MaterialShape.NUGGET),
+                ModMaterialItems.get(ModMaterials.EUPHEMIUM, MaterialShape.NUGGET),
+                ModMaterialItems.get(ModMaterials.GH336, MaterialShape.NUGGET),
+                ModMaterialItems.get(ModMaterials.HES, MaterialShape.NUGGET),
+                ModMaterialItems.get(ModMaterials.LEAD, MaterialShape.NUGGET),
+                ModMaterialItems.get(ModMaterials.LES_FUEL, MaterialShape.NUGGET),
                 ModItems.NUGGET_MERCURY,
-                ModItems.NUGGET_MOX_FUEL,
-                ModItems.NUGGET_NEPTUNIUM,
-                ModItems.NUGGET_NEPTUNIUM_FUEL,
-                ModItems.NUGGET_NIOBIUM,
-                ModItems.NUGGET_OSMIRIDIUM,
-                ModItems.NUGGET_PB209,
-                ModItems.NUGGET_PLUTONIUM,
-                ModItems.NUGGET_PLUTONIUM_FUEL,
-                ModItems.NUGGET_POLONIUM,
-                ModItems.NUGGET_PU238,
-                ModItems.NUGGET_PU239,
-                ModItems.NUGGET_PU240,
-                ModItems.NUGGET_PU241,
-                ModItems.NUGGET_PU_MIX,
-                ModItems.NUGGET_RA226,
-                ModItems.NUGGET_SCHRABIDIUM,
-                ModItems.NUGGET_SCHRABIDIUM_FUEL,
-                ModItems.NUGGET_SOLINIUM,
-                ModItems.NUGGET_SR90,
-                ModItems.NUGGET_TECHNETIUM,
-                ModItems.NUGGET_TH232,
-                ModItems.NUGGET_THORIUM_FUEL,
-                ModItems.NUGGET_U233,
-                ModItems.NUGGET_U235,
-                ModItems.NUGGET_U238,
-                ModItems.NUGGET_URANIUM,
-                ModItems.NUGGET_URANIUM_FUEL,
-                ModItems.NUGGET_ZIRCONIUM,
+                ModMaterialItems.get(ModMaterials.MOX_FUEL, MaterialShape.NUGGET),
+                ModMaterialItems.get(ModMaterials.NEPTUNIUM, MaterialShape.NUGGET),
+                ModMaterialItems.get(ModMaterials.NEPTUNIUM_FUEL, MaterialShape.NUGGET),
+                ModMaterialItems.get(ModMaterials.NIOBIUM, MaterialShape.NUGGET),
+                ModMaterialItems.get(ModMaterials.OSMIRIDIUM, MaterialShape.NUGGET),
+                ModMaterialItems.get(ModMaterials.PB209, MaterialShape.NUGGET),
+                ModMaterialItems.get(ModMaterials.PLUTONIUM, MaterialShape.NUGGET),
+                ModMaterialItems.get(ModMaterials.PLUTONIUM_FUEL, MaterialShape.NUGGET),
+                ModMaterialItems.get(ModMaterials.POLONIUM, MaterialShape.NUGGET),
+                ModMaterialItems.get(ModMaterials.PLUTONIUM238, MaterialShape.NUGGET),
+                ModMaterialItems.get(ModMaterials.PLUTONIUM239, MaterialShape.NUGGET),
+                ModMaterialItems.get(ModMaterials.PLUTONIUM240, MaterialShape.NUGGET),
+                ModMaterialItems.get(ModMaterials.PLUTONIUM241, MaterialShape.NUGGET),
+                ModMaterialItems.get(ModMaterials.PU_MIX, MaterialShape.NUGGET),
+                ModMaterialItems.get(ModMaterials.RA226, MaterialShape.NUGGET),
+                ModMaterialItems.get(ModMaterials.SCHRABIDIUM, MaterialShape.NUGGET),
+                ModMaterialItems.get(ModMaterials.SCHRABIDIUM_FUEL, MaterialShape.NUGGET),
+                ModMaterialItems.get(ModMaterials.SOLINIUM, MaterialShape.NUGGET),
+                ModMaterialItems.get(ModMaterials.SR90, MaterialShape.NUGGET),
+                ModMaterialItems.get(ModMaterials.TECHNETIUM, MaterialShape.NUGGET),
+                ModMaterialItems.get(ModMaterials.THORIUM232, MaterialShape.NUGGET),
+                ModMaterialItems.get(ModMaterials.THORIUM_FUEL, MaterialShape.NUGGET),
+                ModMaterialItems.get(ModMaterials.URANIUM233, MaterialShape.NUGGET),
+                ModMaterialItems.get(ModMaterials.URANIUM235, MaterialShape.NUGGET),
+                ModMaterialItems.get(ModMaterials.URANIUM238, MaterialShape.NUGGET),
+                ModMaterialItems.get(ModMaterials.URANIUM, MaterialShape.NUGGET),
+                ModMaterialItems.get(ModMaterials.URANIUM_FUEL, MaterialShape.NUGGET),
+                ModMaterialItems.get(ModMaterials.ZIRCONIUM, MaterialShape.NUGGET),
                 ModItems.NUKE_ADVANCED_KIT,
                 ModItems.NUKE_COMMERCIALLY_KIT,
                 ModItems.NUKE_ELECTRIC_KIT,
@@ -1893,7 +1931,7 @@ public class ModItemModelProvider extends ItemModelProvider {
                 ModItems.PLAN_C,
                 ModItems.PLASTIC_BAG,
                 ModItems.PLATE_ALUMINIUM,
-                ModItems.PLATE_POLYMER,
+                ModMaterialItems.get(ModMaterials.POLYMER, MaterialShape.PLATE),
                 ModItems.POLAROID,
                 ModItems.POLLUTION_DETECTOR,
                 ModItems.POWER_NET_TOOL,
@@ -1984,9 +2022,9 @@ public class ModItemModelProvider extends ItemModelProvider {
                 ModItems.SCHRABIDIUM_PLATE,
                 ModItems.SCHRABIDIUM_SHOVEL,
                 ModItems.SCHRABIDIUM_SWORD,
-                ModItems.SCRAP_NUCLEAR,
-                ModItems.SCRAP_OIL,
-                ModItems.SCRAP_PLASTIC,
+                ModMaterialItems.get(ModMaterials.SCRAP_NUCLEAR, MaterialShape.SCRAP),
+                ModMaterialItems.get(ModMaterials.SCRAP_OIL, MaterialShape.SCRAP),
+                ModMaterialItems.get(ModMaterials.SCRAP_PLASTIC, MaterialShape.SCRAP),
                 ModItems.SCRAPS,
                 ModItems.SCREWDRIVER_DESH,
                 ModItems.SCRUMPY,
@@ -2111,9 +2149,72 @@ public class ModItemModelProvider extends ItemModelProvider {
                 ModItems.ZIRCONIUM_LEGS
         ).forEach(this::simpleItem);
 
+        // Заглушки хвоста вкладки Parts (id 4502+)
+        java.util.List.of(
+                ModItems.BOLT,
+                ModItems.CASING,
+                ModItems.CHEMICAL_DYE,
+                ModItems.CIRCUIT,
+                ModItems.CRAYON,
+                ModItems.ITEM_EXPENSIVE,
+                ModItems.PART_GENERIC,
+                ModItems.PELLET_BUCKSHOT,
+                ModItems.PELLET_CHARGED,
+                ModItems.PIPE,
+                ModItems.PLANT_ITEM,
+                ModItems.PLATE_WELDED,
+                ModItems.SHELL,
+                ModItems.UPGRADE_MUFFLER,
+                ModItems.UPGRADE_TEMPLATE,
+                ModItems.WASTE_NATURAL_URANIUM,
+                ModItems.WASTE_U233,
+                ModItems.WASTE_U235,
+                ModItems.WIRE_DENSE
+        ).forEach(this::simpleItem);
+
         // Bedrock Ore Progression: Rohprodukt + alle 156 Veredelungsstufen (Grade x Type)
         simpleItem(ModItems.BEDROCK_ORE_BASE);
         ModItems.BEDROCK_ORE_ALL_VARIANTS.forEach(this::simpleItem);
+
+        // Заглушки диапазона вкладки Parts (id 4098–4500, раздел C отчёта parts_tab_report.md):
+        // текстуры лежат в textures/item/<registry>.png (мета-текстуры оригинала с точкой переименованы в snake_case).
+        java.util.List.of(
+                ModItems.INGOT_HES, ModItems.INGOT_LES,
+                ModItems.INGOT_REDSTONE, ModItems.INGOT_BORAX, ModItems.INGOT_SODIUM, ModItems.INGOT_SLAG,
+                ModItems.COAL_COKE, ModItems.LIGNITE_COKE,
+                ModItems.COAL_BRIQUETTE, ModItems.LIGNITE_BRIQUETTE, ModItems.SAWDUST_BRIQUETTE,
+                ModItems.NITER, ModItems.POWDER_COLTAN_PURE, ModItems.POWDER_TEKTITE,
+                ModItems.POWDER_IMPURE_OSMIRIDIUM, ModItems.POWDER_CHLOROPHYTE, ModItems.POWDER_TCALLOY,
+                ModItems.POWDER_POISON, ModItems.MOONSTONE
+        ).forEach(this::simpleItem);
+        // Фрагменты бедрок-руды: в оригинале одна базовая текстура bedrock_ore_fragment.png (скопирована на каждое имя).
+        for (RegistrySupplier<Item> fragment : java.util.List.of(
+                ModItems.BEDROCK_ORE_FRAGMENT_COAL, ModItems.BEDROCK_ORE_FRAGMENT_LIGNITE,
+                ModItems.BEDROCK_ORE_FRAGMENT_IRON, ModItems.BEDROCK_ORE_FRAGMENT_GOLD,
+                ModItems.BEDROCK_ORE_FRAGMENT_REDSTONE, ModItems.BEDROCK_ORE_FRAGMENT_BAUXITE,
+                ModItems.BEDROCK_ORE_FRAGMENT_CRYOLITE, ModItems.BEDROCK_ORE_FRAGMENT_URANIUM,
+                ModItems.BEDROCK_ORE_FRAGMENT_U238, ModItems.BEDROCK_ORE_FRAGMENT_PO210,
+                ModItems.BEDROCK_ORE_FRAGMENT_TC99, ModItems.BEDROCK_ORE_FRAGMENT_TITANIUM,
+                ModItems.BEDROCK_ORE_FRAGMENT_TUNGSTEN, ModItems.BEDROCK_ORE_FRAGMENT_ALUMINIUM,
+                ModItems.BEDROCK_ORE_FRAGMENT_BISMUTH, ModItems.BEDROCK_ORE_FRAGMENT_NEODYMIUM,
+                ModItems.BEDROCK_ORE_FRAGMENT_NIOBIUM, ModItems.BEDROCK_ORE_FRAGMENT_BERYLLIUM,
+                ModItems.BEDROCK_ORE_FRAGMENT_COBALT, ModItems.BEDROCK_ORE_FRAGMENT_BORON,
+                ModItems.BEDROCK_ORE_FRAGMENT_BORAX, ModItems.BEDROCK_ORE_FRAGMENT_ZIRCONIUM,
+                ModItems.BEDROCK_ORE_FRAGMENT_SODIUM, ModItems.BEDROCK_ORE_FRAGMENT_STRONTIUM,
+                ModItems.BEDROCK_ORE_FRAGMENT_LITHIUM, ModItems.BEDROCK_ORE_FRAGMENT_SULFUR,
+                ModItems.BEDROCK_ORE_FRAGMENT_FLUORITE, ModItems.BEDROCK_ORE_FRAGMENT_CHLOROCALCITE,
+                ModItems.BEDROCK_ORE_FRAGMENT_CINNABAR, ModItems.BEDROCK_ORE_FRAGMENT_SILICON,
+                ModItems.BEDROCK_ORE_FRAGMENT_RARE_EARTH,
+                // Дозарегистрированные 13 фрагментов (серый шаблон + ItemColor-тинт в ClientSetup).
+                ModItems.BEDROCK_ORE_FRAGMENT_DIAMOND, ModItems.BEDROCK_ORE_FRAGMENT_THORIUM,
+                ModItems.BEDROCK_ORE_FRAGMENT_RA226, ModItems.BEDROCK_ORE_FRAGMENT_COPPER,
+                ModItems.BEDROCK_ORE_FRAGMENT_LEAD, ModItems.BEDROCK_ORE_FRAGMENT_TANTALIUM,
+                ModItems.BEDROCK_ORE_FRAGMENT_EMERALD, ModItems.BEDROCK_ORE_FRAGMENT_LANTHANIUM,
+                ModItems.BEDROCK_ORE_FRAGMENT_SODALITE, ModItems.BEDROCK_ORE_FRAGMENT_KNO,
+                ModItems.BEDROCK_ORE_FRAGMENT_PHOSPHORUS, ModItems.BEDROCK_ORE_FRAGMENT_MOLYSITE,
+                ModItems.BEDROCK_ORE_FRAGMENT_ASBESTOS)) {
+            simpleItem(fragment);
+        }
     };
 
     /**

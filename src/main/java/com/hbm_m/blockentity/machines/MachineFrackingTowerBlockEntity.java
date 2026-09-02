@@ -402,7 +402,7 @@ public class MachineFrackingTowerBlockEntity extends BaseMachineBlockEntity {
                 for (int z = worldPosition.getZ() - range; z <= worldPosition.getZ() + range; z++) {
                     BlockPos checkPos = new BlockPos(x, y, z);
                     Block block = level.getBlockState(checkPos).getBlock();
-                    String blockName = block.getDescriptionId().toLowerCase();
+                    String blockName = block.getDescriptionId().toLowerCase(java.util.Locale.ROOT);
                     
                     if (blockName.contains("oil") && blockName.contains("ore")) {
                         return checkPos;
