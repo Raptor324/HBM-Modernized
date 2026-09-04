@@ -51,6 +51,8 @@ public final class GameTestRegistration {
         event.register(LegacyWoodBarrierGameTest.class);
         event.register(SteelTrapdoorGameTest.class);
         event.register(EnergyNetworkGameTest.class);
+        event.register(GasGameTest.class);
+        event.register(CableGameTest.class);
     }
     //?} elif neoforge {
     /*@SubscribeEvent
@@ -66,8 +68,10 @@ public final class GameTestRegistration {
         event.register(LegacyWoodBarrierGameTest.class);
         event.register(SteelTrapdoorGameTest.class);
         event.register(EnergyNetworkGameTest.class);
+        event.register(GasGameTest.class);
+        event.register(CableGameTest.class);
     }
-    *///?}
+     *///?}
 }
 
 

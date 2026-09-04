@@ -276,9 +276,19 @@ public class UniversalMachinePartBlockEntity extends BaseHbmBlockEntity implemen
             return;
         }
 
+        // Позиционная дифференциация портов (аналог Delegate* из 1.7.10, напр. DelegateChemicalFactoy):
+        // контроллер может выдать для конкретного коннектора урезанный трансивер
+        // (у Chemical Factory торцы — только контур охлаждения вода/спент-стим).
+        IFluidUserMK2 mk2 = null;
+        if (controller instanceof com.hbm_m.api.fluids.IPositionalFluidTransceiver p) {
+            mk2 = p.getFluidTransceiverFor(worldPosition);
+        } else if (controller instanceof IFluidUserMK2 m) {
+            mk2 = m;
+        }
+
         // 1) Собираем уникальные типы жидкостей, которые контроллер хочет видеть в сетях.
         //    Для MK2-контроллеров — все его баки; для обычных — обходим Forge IFluidHandler.
-        java.util.Set<Fluid> activeTypes = collectControllerFluidTypes(controller);
+        java.util.Set<Fluid> activeTypes = collectControllerFluidTypes(controller, mk2);
 
         if (activeTypes.isEmpty()) {
             destroyAllFluidNodes(serverLevel);
@@ -307,20 +317,20 @@ public class UniversalMachinePartBlockEntity extends BaseHbmBlockEntity implemen
             fluidNodes.put(type, node);
         }
 
-        // 4) Подписать контроллер в каждой сети (per fluid type).
-        boolean ctrlMk2 = controller instanceof IFluidUserMK2;
-        boolean ctrlSender = controller instanceof IFluidStandardSenderMK2;
-        boolean ctrlReceiver = controller instanceof IFluidStandardReceiverMK2;
+        // 4) Подписать контроллер (или его позиционный делегат) в каждой сети (per fluid type).
+        boolean ctrlMk2 = mk2 != null;
+        boolean ctrlSender = mk2 instanceof IFluidStandardSenderMK2;
+        boolean ctrlReceiver = mk2 instanceof IFluidStandardReceiverMK2;
 
         for (Fluid type : activeTypes) {
             var nodeRef = UniNodespace.getNode(serverLevel, worldPosition, FluidNetProvider.forFluid(type));
             if (!(nodeRef instanceof FluidNode fn) || fn.net == null) continue;
 
             if (ctrlMk2) {
-                // Нативный MK2: регистрируем контроллер прямо в сети.
+                // Нативный MK2: регистрируем трансивер прямо в сети.
                 // FluidNet.update() сам разруливает (type, pressure) через get*Tanks().
-                if (controller instanceof IFluidProviderMK2 prov) fn.net.addProvider(prov);
-                if (controller instanceof IFluidReceiverMK2 rec)  fn.net.addReceiver(rec);
+                if (mk2 instanceof IFluidProviderMK2 prov) fn.net.addProvider(prov);
+                if (mk2 instanceof IFluidReceiverMK2 rec)  fn.net.addReceiver(rec);
             } else {
                 // Совместимость: оборачиваем в Forge-адаптер (pressure=0).
                 ForgeFluidHandlerAdapter adapter = new ForgeFluidHandlerAdapter(serverLevel, worldPosition, null, type);
@@ -332,7 +342,7 @@ public class UniversalMachinePartBlockEntity extends BaseHbmBlockEntity implemen
         // 5) Если контроллер MK2 — попросим его trySubscribe/tryProvide ещё и в трубы соседей,
         //    чтобы сети, в которых нет наших виртуальных узлов (например, чужая труба соседнего
         //    мультиблока), увидели контроллер. Это аналог 1.7.10 getConPos()-обхода.
-        if (ctrlMk2) {
+        if (ctrlMk2 && mk2 != null) {
             for (Direction dir : Direction.values()) {
                 if (allowedFluidSides != null && !allowedFluidSides.isEmpty() && !allowedFluidSides.contains(dir)) {
                     continue;
@@ -345,7 +355,7 @@ public class UniversalMachinePartBlockEntity extends BaseHbmBlockEntity implemen
                 if (!(pipeBe instanceof IFluidConnectorMK2)) continue;
 
                 if (ctrlReceiver) {
-                    IFluidStandardReceiverMK2 rec = (IFluidStandardReceiverMK2) controller;
+                    IFluidStandardReceiverMK2 rec = (IFluidStandardReceiverMK2) mk2;
                     for (FluidTank t : rec.getReceivingTanks()) {
                         Fluid type = t.getTankType();
                         if (type == null || type == Fluids.EMPTY) continue;
@@ -354,7 +364,7 @@ public class UniversalMachinePartBlockEntity extends BaseHbmBlockEntity implemen
                     }
                 }
                 if (ctrlSender) {
-                    IFluidStandardSenderMK2 snd = (IFluidStandardSenderMK2) controller;
+                    IFluidStandardSenderMK2 snd = (IFluidStandardSenderMK2) mk2;
                     for (FluidTank t : snd.getSendingTanks()) {
                         if (t.getFill() <= 0) continue;
                         snd.tryProvide(t, serverLevel, pipePos, dir);
@@ -365,18 +375,32 @@ public class UniversalMachinePartBlockEntity extends BaseHbmBlockEntity implemen
     }
 
     /**
-     * Возвращает множество уникальных типов жидкостей, которые контроллер представлен в сети.
-     * Для MK2 — все баки {@code getAllTanks()} с непустым типом; для остальных — пробуем читать
-     * Forge IFluidHandler / Fabric Transfer API (а для цистерны — её настроенный тип, даже если бак пуст).
+     * Возвращает множество уникальных типов жидкостей, которые контроллер представлен в сети
+     * на данном коннекторе. Для MK2 — типы приёма (non-NONE) ∪ типы отдачи (fill>0) позиционного
+     * трансивера: ровно как обход getConPos в 1.7.10 (trySubscribe по inputTanks, tryProvide по
+     * outputTanks). Иначе — пробуем читать Forge IFluidHandler / Fabric Transfer API
+     * (а для цистерны — её настроенный тип, даже если бак пуст).
      */
-    private java.util.Set<Fluid> collectControllerFluidTypes(BlockEntity controller) {
+    private java.util.Set<Fluid> collectControllerFluidTypes(BlockEntity controller, IFluidUserMK2 mk2) {
         java.util.Set<Fluid> result = new java.util.LinkedHashSet<>();
-        if (controller instanceof IFluidUserMK2 mk2) {
-            for (FluidTank tank : mk2.getAllTanks()) {
-                Fluid type = tank.getTankType();
-                if (type != null && type != Fluids.EMPTY
-                        && type != com.hbm_m.inventory.fluid.ModFluids.NONE.getSource()) {
-                    result.add(type);
+        if (mk2 != null) {
+            if (mk2 instanceof IFluidStandardReceiverMK2 rec) {
+                for (FluidTank tank : rec.getReceivingTanks()) {
+                    Fluid type = tank.getTankType();
+                    if (type != null && type != Fluids.EMPTY
+                            && type != com.hbm_m.inventory.fluid.ModFluids.NONE.getSource()) {
+                        result.add(type);
+                    }
+                }
+            }
+            if (mk2 instanceof IFluidStandardSenderMK2 snd) {
+                for (FluidTank tank : snd.getSendingTanks()) {
+                    if (tank.getFill() <= 0) continue;
+                    Fluid type = tank.getTankType();
+                    if (type != null && type != Fluids.EMPTY
+                            && type != com.hbm_m.inventory.fluid.ModFluids.NONE.getSource()) {
+                        result.add(type);
+                    }
                 }
             }
             return result;
@@ -641,6 +665,9 @@ public class UniversalMachinePartBlockEntity extends BaseHbmBlockEntity implemen
             if (!fluidSideOk) {
                 return super.getCapability(cap, side);
             }
+            // Позиционная дифференциация жидкостей (торцы охлаждения Chemical Factory и т.п.)
+            // обеспечивается в MK2-пути (tickFluidConnector). Здесь, в legacy-capability,
+            // коннектор видит глобальный handler контроллера.
             // Всегда делегируем в контроллер как "внутренний" доступ (side == null),
             // чтобы настройки сторон контроллера не блокировали подключение через коннектор.
             return controllerBE.getCapability(cap, null);
@@ -777,6 +804,16 @@ public class UniversalMachinePartBlockEntity extends BaseHbmBlockEntity implemen
         if (allowedFluidSides != null && !allowedFluidSides.isEmpty() && !allowedFluidSides.contains(side)) return null;
 
         BlockEntity ctrl = level.getBlockEntity(controllerPos);
+        // Позиционная дифференциация: коннектор на торце охлаждения Chemical Factory видит
+        // только воду/спент-стим, остальные коннекторы — только рецептурные баки.
+        if (ctrl instanceof com.hbm_m.api.fluids.IPositionalFluidTransceiver p) {
+            //? if neoforge {
+            /*return new com.hbm_m.api.fluids.NeoForgeFluidHandlerMK2(p.getFluidTransceiverFor(worldPosition));
+            *///?}
+            //? if forge {
+            return null; // Forge: жидкостный доступ через MK2-сеть (tickFluidConnector)
+            //?}
+        }
         if (ctrl instanceof BaseHbmBlockEntity hbm) {
             return hbm.getFluidHandler(null);
         }

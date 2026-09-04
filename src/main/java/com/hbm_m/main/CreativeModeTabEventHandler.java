@@ -1576,6 +1576,10 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModBlocks.RED_CABLE_PAINTABLE.get()));
         add.accept(new ItemStack(ModBlocks.RED_CABLE_GAUGE.get()));
         add.accept(new ItemStack(ModBlocks.RED_CABLE_BOX.get()));
+        add.accept(new ItemStack(ModBlocks.RED_CABLE_BOX_1.get()));
+        add.accept(new ItemStack(ModBlocks.RED_CABLE_BOX_2.get()));
+        add.accept(new ItemStack(ModBlocks.RED_CABLE_BOX_3.get()));
+        add.accept(new ItemStack(ModBlocks.RED_CABLE_BOX_4.get()));
         add.accept(new ItemStack(ModBlocks.RED_CONNECTOR.get()));
         add.accept(new ItemStack(ModBlocks.RED_CONNECTOR_SUPER.get()));
         add.accept(new ItemStack(ModBlocks.RED_PYLON.get()));
@@ -2918,6 +2922,10 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModBlocks.RED_CABLE_PAINTABLE.get()));
         add.accept(new ItemStack(ModBlocks.RED_CABLE_GAUGE.get()));
         add.accept(new ItemStack(ModBlocks.RED_CABLE_BOX.get()));
+        add.accept(new ItemStack(ModBlocks.RED_CABLE_BOX_1.get()));
+        add.accept(new ItemStack(ModBlocks.RED_CABLE_BOX_2.get()));
+        add.accept(new ItemStack(ModBlocks.RED_CABLE_BOX_3.get()));
+        add.accept(new ItemStack(ModBlocks.RED_CABLE_BOX_4.get()));
         add.accept(new ItemStack(ModBlocks.RED_CONNECTOR.get()));
         add.accept(new ItemStack(ModBlocks.RED_CONNECTOR_SUPER.get()));
         add.accept(new ItemStack(ModBlocks.RED_PYLON.get()));

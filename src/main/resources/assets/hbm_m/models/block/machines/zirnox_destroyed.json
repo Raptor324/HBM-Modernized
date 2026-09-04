@@ -2,17 +2,12 @@
   "textures": {
     "particle": "hbm_m:block/machine/zirnox_destroyed"
   },
-  "loader": "forge:composite",
-  "children": {
-    "zirnox_model": {
-      "loader": "forge:obj",
-      "model": "hbm_m:models/block/zirnox_destroyed.obj",
-      "flip_v": true,
-      "render_type": "minecraft:solid",
-      "textures": {
-        "default": "hbm_m:block/machine/zirnox_destroyed"
-      }
-    }
+  "loader": "hbm_m:zirnox_destroyed_loader",
+  "model": "hbm_m:models/block/zirnox_destroyed.obj",
+  "flip_v": true,
+  "render_type": "minecraft:solid",
+  "textures": {
+    "default": "hbm_m:block/machine/zirnox_destroyed"
   },
   "transform": {
     "translation": [0.5, 0, -1.5],

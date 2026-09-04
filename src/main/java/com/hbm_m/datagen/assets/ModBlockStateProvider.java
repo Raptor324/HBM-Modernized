@@ -3206,12 +3206,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
                         modLoc("block/rail_wood")
                 )
         );
-                                        simpleBlockWithItem(ModBlocks.RED_CABLE_BOX.get(),
-                models().cubeAll(
-                        ModBlocks.RED_CABLE_BOX.getId().getPath(),
-                        modLoc("block/fluid_duct_box")
-                )
-        );
+                                        // red_cable_box: blockstate/model/item — вручную (hbm_m:box_cable loader), 5 размеров
                                         simpleBlockWithItem(ModBlocks.RED_WIRE_COATED.get(),
                 models().cubeAll(
                         ModBlocks.RED_WIRE_COATED.getId().getPath(),

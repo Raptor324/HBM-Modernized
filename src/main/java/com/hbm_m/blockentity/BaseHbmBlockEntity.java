@@ -105,6 +105,11 @@ public abstract class BaseHbmBlockEntity extends BlockEntity implements com.hbm_
         readNbtData(tag, null);
     }
 
+    /** Как выше, но с реестрами (neoforge 1.21.1 передаёт реальный Provider из пакета). */
+    protected void applyClientUpdate(@NotNull CompoundTag tag, @Nullable HolderLookup.Provider registries) {
+        readNbtData(tag, registries);
+    }
+
     // ═════════════════════════════════════════════════════════════════════════════════════
     //  Stonecutter-гатиннг. В дочерних классах НЕТ переопределения saveAdditional/load.
     //  Вся версионная магия собрана здесь, один раз на весь проект.
@@ -180,7 +185,21 @@ public abstract class BaseHbmBlockEntity extends BlockEntity implements com.hbm_
         CompoundTag tag = PlatformHooks.getItemTag(pkt);
         if (tag != null) applyClientUpdate(tag);
     }
-    //?}
+    //?} else {
+    /*// NeoForge 1.21.1: дефолт IBlockEntityExtension.onDataPacket ПРОПУСКАЕТ ПУСТОЙ тег
+    // (if (!tag.isEmpty())), из-за чего сброс опциональных данных (например, camo=null
+    // у paintable-кабеля) не доезжал до клиента — тег после сброса пустой.
+    // Переопределяем с безусловным применением.
+    @Override
+    public void handleUpdateTag(@NotNull CompoundTag tag, HolderLookup.Provider registries) {
+        applyClientUpdate(tag, registries);
+    }
+
+    @Override
+    public void onDataPacket(@NotNull Connection net, @NotNull ClientboundBlockEntityDataPacket pkt, HolderLookup.Provider registries) {
+        applyClientUpdate(pkt.getTag(), registries);
+    }
+    *///?}
 
     // ═══════════════════════════════════════════════════════════════════════════════════════════
     //  Capability Providers (Автоматизация для NeoForge и платформенных адаптеров)

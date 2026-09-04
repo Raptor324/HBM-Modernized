@@ -63,15 +63,22 @@ public abstract class AbstractObjPartModelLoader<T extends BakedModel> implement
         private final boolean flipV;
         private final AbstractObjPartModelLoader<T> loader;
         
-        // Кэшируем загруженную модель, чтобы не парсить OBJ повторно при множественных bake()
-        private volatile ObjModel cachedObjModel;
-
         public ObjPartGeometry(ResourceLocation modelLocation, Set<String> partNames, boolean flipV,
                                AbstractObjPartModelLoader<T> loader) {
             this.modelLocation = modelLocation;
             this.partNames = partNames;
             this.flipV = flipV;
             this.loader = loader;
+        }
+
+        // Парсинг OBJ дедуплицируется глобально в LoaderHooks (по modelLocation + flipV)
+        private ObjModel getOrLoadObjModel() {
+            try {
+                return LoaderHooks.loadObjModel(modelLocation, flipV);
+            } catch (Exception e) {
+                MainRegistry.LOGGER.error("Failed to load OBJ model: " + modelLocation, e);
+                throw new RuntimeException("Не удалось загрузить OBJ модель: " + modelLocation, e);
+            }
         }
 
         @Override
@@ -98,26 +105,6 @@ public abstract class AbstractObjPartModelLoader<T extends BakedModel> implement
 
             MainRegistry.LOGGER.info("{}: Total baked parts: {}", loader.getClass().getSimpleName(), bakedParts.size());
             return loader.createBakedModel(bakedParts, context.getTransforms(), modelName);
-        }
-
-        private ObjModel getOrLoadObjModel() {
-            ObjModel model = this.cachedObjModel;
-            if (model == null) {
-                synchronized (this) {
-                    model = this.cachedObjModel;
-                    if (model == null) {
-                        try {
-                            model = LoaderHooks.loadObjModel(modelLocation, flipV);
-                            this.cachedObjModel = model;
-                            MainRegistry.LOGGER.info("{}: Successfully loaded OBJ model: {}", loader.getClass().getSimpleName(), modelLocation);
-                        } catch (Exception e) {
-                            MainRegistry.LOGGER.error("Failed to load OBJ model: " + modelLocation, e);
-                            throw new RuntimeException("Не удалось загрузить OBJ модель: " + modelLocation, e);
-                        }
-                    }
-                }
-            }
-            return model;
         }
 
         private HashMap<String, BakedModel> bakeParts(ObjModel model, IGeometryBakingContext context,

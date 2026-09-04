@@ -87,9 +87,10 @@ public class RequestNetworkParticipant {
         HitResult hit1 = level.clip(new ClipContext(vec1, vec2, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, null));
         HitResult hit2 = level.clip(new ClipContext(vec2, vec1, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, null));
         //?} else {
-        /*// 1.21.1: конструктор ClipContext неоднозначен (Entity vs CollisionContext для null) — типизируем null.
-        HitResult hit1 = level.clip(new ClipContext(vec1, vec2, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, (net.minecraft.world.entity.Entity) null));
-        HitResult hit2 = level.clip(new ClipContext(vec2, vec1, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, (net.minecraft.world.entity.Entity) null));
+        /*// 1.21.1: CollisionContext.of(null) кидает NPE — берём перегрузку с CollisionContext.empty().
+        net.minecraft.world.phys.shapes.CollisionContext ctx = net.minecraft.world.phys.shapes.CollisionContext.empty();
+        HitResult hit1 = level.clip(new ClipContext(vec1, vec2, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, ctx));
+        HitResult hit2 = level.clip(new ClipContext(vec2, vec1, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, ctx));
         *///?}
         return hit1.getType() == HitResult.Type.MISS && hit2.getType() == HitResult.Type.MISS;
     }

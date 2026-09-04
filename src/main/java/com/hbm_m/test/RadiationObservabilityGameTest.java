@@ -75,10 +75,24 @@ public final class RadiationObservabilityGameTest {
      */
     private static Player makePlayer(GameTestHelper helper) {
         //? if < 1.21.1 {
-        return helper.makeMockPlayer();
+        // ВАЖНО: ванильный makeMockPlayer() на 1.20.1 возвращает КРЕАТИВНОГО игрока,
+        // а ContaminationUtil.contaminate игнорирует креатив — для тестов загрязнения
+        // нужен survival-игрок (см. GasGameTest.makeSurvivalPlayer).
+        return new Player(helper.getLevel(), BlockPos.ZERO, 0.0F,
+                new com.mojang.authlib.GameProfile(java.util.UUID.randomUUID(), "rad-test-player")) {
+            @Override
+            public boolean isSpectator() {
+                return false;
+            }
+
+            @Override
+            public boolean isCreative() {
+                return false;
+            }
+        };
         //?} else {
         /*return helper.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
-        *///?}
+         *///?}
     }
 
     /**

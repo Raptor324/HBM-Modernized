@@ -620,33 +620,85 @@ public final class EnergyNetworkGameTest {
      */
     @GameTest(template = "empty5x5x5", batch = "energy_flow", timeoutTicks = 300)
     public static void flowChargesAdvancedAssemblerThroughWire(GameTestHelper helper) {
-        placeBattery(helper, new BlockPos(0, 1, 0), 2, 500_000L);
-        placeWire(helper, new BlockPos(0, 1, 1));
-        placeWire(helper, new BlockPos(0, 1, 2));
-
-        // Сборщик ставится контроллером, структура формируется в onPlace
-        BlockPos asmCore = new BlockPos(2, 1, 2);
-        helper.setBlock(asmCore, ModBlocks.ADVANCED_ASSEMBLY_MACHINE.get());
-
-        // Кольцо проводов вокруг всей структуры сборщика на уровне ядра и выше
+        // Сборщик ставится контроллером, структура формируется в onPlace.
+        // Структура 3×3×3 занимает x=1..3, y=1..3, z=1..3. Кольцо проводов —
+        // СНАРУЖИ структуры (периметр x∈{0,4} ∪ z∈{0,4} на y=1..2): провода,
+        // поставленные на фасады структуры, ломают мультиблок (коллапс сносит ядро).
+        helper.setBlock(new BlockPos(2, 1, 2), ModBlocks.ADVANCED_ASSEMBLY_MACHINE.get());
         for (int y = 1; y <= 2; y++) {
-            placeWire(helper, new BlockPos(1, y, 1));
-            placeWire(helper, new BlockPos(1, y, 2));
-            placeWire(helper, new BlockPos(1, y, 3));
-            placeWire(helper, new BlockPos(2, y, 1));
-            placeWire(helper, new BlockPos(2, y, 3));
-            placeWire(helper, new BlockPos(3, y, 1));
-            placeWire(helper, new BlockPos(3, y, 2));
-            placeWire(helper, new BlockPos(3, y, 3));
+            for (int x = 0; x <= 4; x++) {
+                placeWire(helper, new BlockPos(x, y, 0));
+                placeWire(helper, new BlockPos(x, y, 4));
+            }
+            for (int z = 1; z <= 3; z++) {
+                placeWire(helper, new BlockPos(0, y, z));
+                placeWire(helper, new BlockPos(4, y, z));
+            }
         }
-        // связываем внешнее кольцо с линией от батареи
-        placeWire(helper, new BlockPos(1, 1, 0));
+
+        // Батарея ставится ПОСЛЕ кольца: клетка (0,1,0) — часть периметра,
+        // батарея заменяет провод и встаёт в кольцо как источник.
+        placeBattery(helper, new BlockPos(0, 1, 0), 2, 500_000L);
 
         helper.succeedWhen(() -> {
-            BlockEntity be = helper.getLevel().getBlockEntity(helper.absolutePos(asmCore));
-            check(be instanceof IEnergyReceiver, "Assembler core BE exists");
-            long ae = ((IEnergyReceiver) be).getEnergyStored();
-            check(ae > 0, "Advanced assembler charged through wire network (got " + ae + ")");
+            // Ядро ищем сканом по всему шаблону: его позиция зависит от геометрии
+            // структуры и направления фасада, а не от позиции контроллера.
+            BlockEntity core = null;
+            int receivers = 0;
+            for (int x = 0; x <= 4; x++)
+                for (int y = 0; y <= 4; y++)
+                    for (int z = 0; z <= 4; z++) {
+                        BlockEntity be = helper.getLevel().getBlockEntity(helper.absolutePos(new BlockPos(x, y, z)));
+                        if (be instanceof com.hbm_m.blockentity.BaseMachineBlockEntity machine) {
+                            receivers++;
+                            if (core == null) core = be;
+                        }
+                    }
+            check(core != null, "Assembler core BE (BaseMachineBlockEntity) not found in 5x5x5, receivers="
+                    + receivers);
+            long ae = ((IEnergyReceiver) core).getEnergyStored();
+            if (ae <= 0) {
+                int nodesWithNet = 0, providers = 0, receiversInNet = 0;
+                long tracker = -1;
+                for (int x = 0; x <= 4; x++)
+                    for (int y = 0; y <= 4; y++)
+                        for (int z = 0; z <= 4; z++) {
+                            var node = com.hbm_m.api.energy.Nodespace.getNode(
+                                    helper.getLevel(), helper.absolutePos(new BlockPos(x, y, z)));
+                            if (node != null && node.net != null && node.net.isValid()) {
+                                nodesWithNet++;
+                                if (true) { var pn = node.net; // net already typed PowerNet
+
+                                    providers = Math.max(providers, pn.providerEntries.size());
+                                    receiversInNet = Math.max(receiversInNet, pn.receiverEntries.size());
+                                    tracker = pn.energyTracker;
+                                }
+                            }
+                        }
+                java.util.LinkedHashSet<com.hbm_m.api.energy.PowerNet> nets = new java.util.LinkedHashSet<>();
+                for (int x2 = 0; x2 <= 4; x2++)
+                    for (int y2 = 0; y2 <= 4; y2++)
+                        for (int z2 = 0; z2 <= 4; z2++) {
+                            var node = com.hbm_m.api.energy.Nodespace.getNode(
+                                    helper.getLevel(), helper.absolutePos(new BlockPos(x2, y2, z2)));
+                            if (node != null) { var pn2 = node.net; // net already typed PowerNet
+
+                                nets.add(pn2);
+                            }
+                        }
+                StringBuilder members = new StringBuilder();
+                for (com.hbm_m.api.energy.PowerNet pn2 : nets) {
+                    if (members.length() > 0) members.append(';');
+                    members.append("P=").append(pn2.providerEntries.keySet().stream()
+                            .map(o -> o.getClass().getSimpleName()).distinct().toList());
+                    members.append(",R=").append(pn2.receiverEntries.keySet().stream()
+                            .map(o -> o.getClass().getSimpleName()).distinct().toList());
+                }
+                check(false, "Advanced assembler charged through wire network (got " + ae + ", machine BEs="
+                        + receivers + ", nodesWithNet=" + nodesWithNet + ", providers=" + providers
+                        + ", receiversInNet=" + receiversInNet + ", energyTracker=" + tracker
+                        + ", members=" + members + ")");
+            }
         });
     }
 }

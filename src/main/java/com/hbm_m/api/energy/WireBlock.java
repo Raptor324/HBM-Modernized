@@ -153,7 +153,9 @@ public class WireBlock extends BaseEntityBlock {
     }
 
     private boolean canVisuallyConnectTo(LevelAccessor world, BlockPos neighborPos, Direction sideFromNeighbor, BlockState neighborState) {
-        if (neighborState.is(this)) {
+        // В оригинале Library.canConnect соединяет любые кабели (все — TileEntityCableBaseNT),
+        // включая разные размеры box-кабеля (разные блоки в порту).
+        if (neighborState.getBlock() instanceof WireBlock) {
             return true;
         }
 

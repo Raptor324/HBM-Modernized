@@ -1,5 +1,6 @@
 package com.hbm_m.platform;
 
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
 import net.minecraft.client.renderer.block.model.BlockModel;
@@ -31,14 +32,23 @@ import net.neoforged.neoforge.client.model.obj.ObjModel;
 public final class LoaderHooks {
     private LoaderHooks() {}
 
+    private record ObjCacheKey(ResourceLocation modelLocation, boolean flipV) {}
+
+    // Глобальный кеш распарсенных OBJ: один .obj, на который ссылаются несколько геометрий, парсится один раз
+    private static final ConcurrentHashMap<ObjCacheKey, ObjModel> OBJ_CACHE = new ConcurrentHashMap<>();
+
     /**
      * Кросс-версионная загрузка OBJ модели.
      * Исправляет баг 1.20.1 Forge, где flipV ошибочно передавался вместо automaticCulling.
      */
     public static ObjModel loadObjModel(ResourceLocation modelLocation, boolean flipV) {
-        return ObjLoader.INSTANCE.loadModel(
-            new ObjModel.ModelSettings(modelLocation, false, true, flipV, true, null)
-        );
+        return OBJ_CACHE.computeIfAbsent(new ObjCacheKey(modelLocation, flipV), key -> {
+            ObjModel model = ObjLoader.INSTANCE.loadModel(
+                new ObjModel.ModelSettings(modelLocation, false, true, flipV, true, null)
+            );
+            com.hbm_m.main.MainRegistry.LOGGER.debug("LoaderHooks: parsed OBJ model {}", modelLocation);
+            return model;
+        });
     }
 
     /**

@@ -1,12 +1,10 @@
 package com.hbm_m.effect;
 
-import com.hbm_m.effect.render.RadawayEffectRenderer;
+import com.hbm_m.platform.ClientEffectHooks;
 import com.hbm_m.radiation.PlayerHandler;
-import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.screens.inventory.EffectRenderingInventoryScreen;
+
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectCategory;
-import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.player.Player;
 
@@ -16,8 +14,18 @@ import java.util.function.Consumer;
 
 //? if forge {
 import net.minecraftforge.client.extensions.common.IClientMobEffectExtensions;
-//?}
+//?} elif neoforge {
+/*import net.neoforged.neoforge.client.extensions.common.IClientMobEffectExtensions;
+ *///?}
 
+/**
+ * Антирадин (порт {@code com.hbm.potion.HbmPotion.radaway} 1.7.10): каждый тик
+ * снижает накопленную дозу игрока на (amplifier + 1) × 140/120 RAD.
+ *
+ * <p>Вся версия-специфика (сигнатуры тика, клиентские иконки) — тонкие гейты,
+ * логика едина для 1.20.1/1.21.1; иконки HUD/инвентаря рисует
+ * {@link ClientEffectHooks} (на обеих версиях).
+ */
 public class RadawayEffect extends MobEffect {
 
     // Amplifier 0 → ~0.583 rad/tick, Amplifier 1 → ~1.167 rad/tick
@@ -27,22 +35,25 @@ public class RadawayEffect extends MobEffect {
         super(category, color);
     }
 
-    //? if < 1.21.1 {
-    @Override
-    public void applyEffectTick(@NotNull LivingEntity entity, int amplifier) {
+    /** Единая логика тика — единственный источник поведения для обеих версий. */
+    private void applyTick(LivingEntity entity, int amplifier) {
         if (entity instanceof Player player && !entity.level().isClientSide()) {
             PlayerHandler.decrementPlayerRads(player, (amplifier + 1) * RADAWAY_POWER);
         }
+    }
+
+    //? if < 1.21.1 {
+    @Override
+    public void applyEffectTick(@NotNull LivingEntity entity, int amplifier) {
+        applyTick(entity, amplifier);
     }
     //?} else {
     /*@Override
     public boolean applyEffectTick(@NotNull LivingEntity entity, int amplifier) {
-        if (entity instanceof Player player && !entity.level().isClientSide()) {
-            PlayerHandler.decrementPlayerRads(player, (amplifier + 1) * RADAWAY_POWER);
-        }
+        applyTick(entity, amplifier);
         return true;
     }
-    *///?}
+     *///?}
 
     //? if < 1.21.1 {
     @Override
@@ -55,31 +66,12 @@ public class RadawayEffect extends MobEffect {
     public boolean shouldApplyEffectTickThisTick(int duration, int amplifier) {
         return true;
     }
-    *///?}
+     *///?}
 
-    // На Fabric рендеринг делается через Mixin (см. MixinEffectRenderingInventoryScreen,
-    // MixinGui) — они вызывают RadawayEffectRenderer напрямую.
-    //? if forge {
+    // Клиентские иконки (HUD + инвентарь) — реализация в платформенном слое;
+    // работает и на forge, и на neoforge (раньше на 1.21.1 иконок не было).
     @Override
     public void initializeClient(@NotNull Consumer<IClientMobEffectExtensions> consumer) {
-        consumer.accept(new IClientMobEffectExtensions() {
-
-            @Override
-            public boolean renderInventoryIcon(MobEffectInstance instance,
-                                               EffectRenderingInventoryScreen<?> screen,
-                                               GuiGraphics gfx, int x, int y, int blitOffset) {
-                RadawayEffectRenderer.renderInventory(gfx, x, y, blitOffset);
-                return true;
-            }
-
-            @Override
-            public boolean renderGuiIcon(MobEffectInstance instance,
-                    net.minecraft.client.gui.Gui gui,
-                    GuiGraphics gfx, int x, int y, float z, float alpha) {
-                RadawayEffectRenderer.renderHud(gfx, x, y, (int) z, alpha);
-                return true;
-            }
-        });
+        ClientEffectHooks.initializeClient(this, (Consumer<Object>) (Object) consumer);
     }
-    //?}
 }

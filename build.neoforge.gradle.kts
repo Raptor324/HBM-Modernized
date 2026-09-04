@@ -58,10 +58,13 @@ neoForge {
 		// Запуск: ./gradlew :1.21.1-neoforge:runGameTestServer
 		register("gameTestServer") {
 			server()
-			gameDirectory = file("run/")
+			// Выделенный gameDir: мир "Test Level" (flat) пересоздаётся каждый прогон —
+			// идентичные условия арен на forge и neoforge (см. комментарий в build.forge.gradle.kts).
+			gameDirectory = file("runGameTest/")
 			ideName = "NeoForge GameTest (${stonecutter.active?.version})"
 			systemProperty("neoforge.gameTestServer", "true")
 			systemProperty("neoforge.enableGameTest", "true")
+			// TODO(other-agent WIP): doFirst недоступен в runs-DSL — перенести в tasks.named("gameTestServer")
 		}
 	}
 
@@ -326,4 +329,14 @@ tasks.withType<JavaCompile>().configureEach {
 }
 
 stonecutter {
+}
+
+// Мир "Test Level" пересоздаётся каждый прогон gameTestServer — идентичные
+// условия арен на forge и neoforge (fresh flat-мир, открытый скай на y≈-60).
+tasks.matching { it.name == "runGameTestServer" }.configureEach {
+	doFirst {
+		file("runGameTest").mkdirs()
+		delete(file("runGameTest/Test Level"))
+		file("runGameTest/eula.txt").writeText("eula=true")
+	}
 }

@@ -445,6 +445,11 @@ public final class PlatformHooks {
      * Создание ModelResourceLocation. Возвращает Object, чтобы не зависеть от изменения
      * иерархии наследования.
      */
+    //? if forge {
+    @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+    //?} elif neoforge {
+    /*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+     *///?}
     public static Object createModelLocation(ResourceLocation id, String variant) {
         return new net.minecraft.client.resources.model.ModelResourceLocation(id, variant);
     }
@@ -452,6 +457,11 @@ public final class PlatformHooks {
     /**
      * Извлечение ResourceLocation (ID) из ModelResourceLocation.
      */
+    //? if forge {
+    @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+    //?} elif neoforge {
+    /*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+     *///?}
     public static ResourceLocation getModelId(Object modelResourceLocation) {
         //? if < 1.21.1 {
         return (ResourceLocation) modelResourceLocation;
@@ -463,6 +473,11 @@ public final class PlatformHooks {
     /**
      * Регистрация дополнительной standalone-модели.
      */
+    //? if forge {
+    @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+    //?} elif neoforge {
+    /*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+     *///?}
     public static void registerAdditionalModel(Object event, ResourceLocation loc) {
         //? if < 1.21.1 {
         ((net.minecraftforge.client.event.ModelEvent.RegisterAdditional) event).register(loc);
@@ -477,6 +492,11 @@ public final class PlatformHooks {
      * Файл модели при этом ищется в {@code models/item/<path>.json} на обеих версиях:
      * на 1.20.1 через вариант "inventory", на 1.21.1 через standalone-ключ с путём item/<path>.
      */
+    //? if forge {
+    @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+    //?} elif neoforge {
+    /*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+     *///?}
     public static void registerItemModel(Object event, ResourceLocation id) {
         //? if < 1.21.1 {
         ((net.minecraftforge.client.event.ModelEvent.RegisterAdditional) event).register(
@@ -493,6 +513,11 @@ public final class PlatformHooks {
      * Получение запечённой "инвентарной" модели сета, зарегистрированной через
      * {@link #registerItemModel}. Ключ должен совпадать с регистрацией.
      */
+    //? if forge {
+    @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+    //?} elif neoforge {
+    /*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+     *///?}
     public static net.minecraft.client.resources.model.BakedModel getItemModel(
             net.minecraft.client.resources.model.ModelManager manager, ResourceLocation id) {
         //? if < 1.21.1 {
@@ -507,6 +532,11 @@ public final class PlatformHooks {
     /**
      * Регистрация Geometry Loader.
      */
+    //? if forge {
+    @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+    //?} elif neoforge {
+    /*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+     *///?}
     public static void registerGeometryLoader(Object event, String name, Object loader) {
         //? if < 1.21.1 {
         ((net.minecraftforge.client.event.ModelEvent.RegisterGeometryLoaders) event).register(
@@ -523,6 +553,11 @@ public final class PlatformHooks {
      * Используйте это в рендерерах (EntityRenderer/BlockEntityRenderer), чтобы не зависеть
      * от изменения сигнатуры getModel() на 1.21.1.
      */
+    //? if forge {
+    @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+    //?} elif neoforge {
+    /*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+     *///?}
     public static net.minecraft.client.resources.model.BakedModel getModel(
             net.minecraft.client.resources.model.ModelManager manager, ResourceLocation loc) {
         //? if < 1.21.1 {
@@ -811,6 +846,55 @@ public final class PlatformHooks {
         return be.saveWithoutMetadata();
         //?} else {
         /*return be.saveWithoutMetadata(provider);
+        *///?}
+    }
+
+    // =====================================================================================
+    //  MobEffect bridge.
+    //   1.20.1: addEffect/hasEffect/removeEffect принимают MobEffect.
+    //   1.21.1: только Holder<MobEffect>; architectury RegistrySupplier на 1.21.1
+    //           реализует Holder, поэтому кастим сам supplier.
+    // =====================================================================================
+
+    /** {@code living.addEffect(new MobEffectInstance(effect, duration, amplifier))} на обеих версиях. */
+    public static boolean addEffect(net.minecraft.world.entity.LivingEntity living,
+            dev.architectury.registry.registries.RegistrySupplier<net.minecraft.world.effect.MobEffect> effect,
+            int duration, int amplifier) {
+        //? if < 1.21.1 {
+        return living.addEffect(new net.minecraft.world.effect.MobEffectInstance(effect.get(), duration, amplifier));
+        //?} else {
+        /*return living.addEffect(new net.minecraft.world.effect.MobEffectInstance(
+                (net.minecraft.core.Holder<net.minecraft.world.effect.MobEffect>) (Object) effect, duration, amplifier));
+        *///?}
+    }
+
+    /** {@code living.hasEffect(effect)} на обеих версиях. */
+    public static boolean hasEffect(net.minecraft.world.entity.LivingEntity living,
+            dev.architectury.registry.registries.RegistrySupplier<net.minecraft.world.effect.MobEffect> effect) {
+        //? if < 1.21.1 {
+        return living.hasEffect(effect.get());
+        //?} else {
+        /*return living.hasEffect((net.minecraft.core.Holder<net.minecraft.world.effect.MobEffect>) (Object) effect);
+        *///?}
+    }
+
+    /** {@code living.removeEffect(effect)} на обеих версиях. */
+    public static boolean removeEffect(net.minecraft.world.entity.LivingEntity living,
+            dev.architectury.registry.registries.RegistrySupplier<net.minecraft.world.effect.MobEffect> effect) {
+        //? if < 1.21.1 {
+        return living.removeEffect(effect.get());
+        //?} else {
+        /*return living.removeEffect((net.minecraft.core.Holder<net.minecraft.world.effect.MobEffect>) (Object) effect);
+        *///?}
+    }
+
+    /** {@code living.getEffect(effect)} на обеих версиях; null, если эффекта нет. */
+    public static net.minecraft.world.effect.MobEffectInstance getEffect(net.minecraft.world.entity.LivingEntity living,
+            dev.architectury.registry.registries.RegistrySupplier<net.minecraft.world.effect.MobEffect> effect) {
+        //? if < 1.21.1 {
+        return living.getEffect(effect.get());
+        //?} else {
+        /*return living.getEffect((net.minecraft.core.Holder<net.minecraft.world.effect.MobEffect>) (Object) effect);
         *///?}
     }
 }

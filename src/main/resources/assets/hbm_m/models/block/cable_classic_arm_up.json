@@ -19,55 +19,55 @@
       "faces": {
         "north": {
           "uv": [
+            5,
             0,
-            0,
-            16,
-            16
+            10,
+            5
           ],
           "texture": "#surface"
         },
         "south": {
           "uv": [
+            5,
             0,
-            0,
-            16,
-            16
+            10,
+            5
           ],
           "texture": "#surface"
         },
         "east": {
           "uv": [
+            5,
             0,
-            0,
-            16,
-            16
+            10,
+            5
           ],
           "texture": "#surface"
         },
         "west": {
           "uv": [
+            5,
             0,
-            0,
-            16,
-            16
+            10,
+            5
           ],
           "texture": "#surface"
         },
         "up": {
           "uv": [
+            5,
             0,
-            0,
-            16,
-            16
+            10,
+            5
           ],
           "texture": "#surface"
         },
         "down": {
           "uv": [
+            5,
             0,
-            0,
-            16,
-            16
+            10,
+            5
           ],
           "texture": "#surface"
         }

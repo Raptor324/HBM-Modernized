@@ -1026,8 +1026,10 @@ public class ModBlocks {
 
     // ============ ТЕХНИЧЕСКИЕ И ДЕКОРАТИВНЫЕ БЛОКИ ============
 
+    // Обычный блок: BarrelBlock здесь крашится — его newBlockEntity создаёт ванильный
+    // BarrelBlockEntity, который валидирует состояние против Blocks.BARREL.
     public static final RegistrySupplier<Block> DORNIER = registerBlock("dornier",
-            () -> new BarrelBlock(BlockProps.copy(Blocks.STONE).strength(1.5F, 6.0F).noOcclusion()));
+            () -> new Block(BlockProps.copy(Blocks.STONE).strength(1.5F, 6.0F).noOcclusion()));
 
     public static final RegistrySupplier<Block> ORE_OIL = registerBlock("ore_oil",
             () -> new Block(BlockProps.copy(Blocks.STONE).strength(3.0F, 3.0F).noOcclusion()));
@@ -1163,7 +1165,7 @@ public class ModBlocks {
             () -> new SteelWallBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(2.0F, 6.0F).noOcclusion()));
 
     public static final RegistrySupplier<Block> B29 = registerBlock("b29",
-            () -> new BarrelBlock(BlockProps.copy(Blocks.STONE).strength(1.5F, 6.0F).noOcclusion()));
+            () -> new Block(BlockProps.copy(Blocks.STONE).strength(1.5F, 6.0F).noOcclusion()));
 
     public static final RegistrySupplier<Block> MINE_FAT = registerBlock("mine_fat",
             () -> new LandmineBlock(BlockProps.copy(Blocks.STONE).strength(1.0F, 6.0F).noOcclusion(), 2.5D, 1D));
@@ -2376,7 +2378,7 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> CHARGE_DYNAMITE = registerBlock("charge_dynamite", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> CHARGE_MINER = registerBlock("charge_miner", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> CHARGE_SEMTEX = registerBlock("charge_semtex", () -> new Block(BlockProps.copy(Blocks.STONE)));
-    public static final RegistrySupplier<Block> CHLORINE_GAS = registerBlock("chlorine_gas", () -> new Block(BlockProps.copy(Blocks.STONE)));
+    public static final RegistrySupplier<Block> CHLORINE_GAS = registerBlock("chlorine_gas", com.hbm_m.block.gas.BlockGasChlorine::new);
     public static final RegistrySupplier<Block> CLUSTER_ALUMINIUM = registerBlock("cluster_aluminium", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> CLUSTER_COPPER = registerBlock("cluster_copper", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> CLUSTER_DEPTH_IRON = registerBlock("cluster_depth_iron", () -> new Block(BlockProps.copy(Blocks.STONE)));
@@ -2511,13 +2513,13 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> FUSION_HEATER = registerBlock("fusion_heater", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> GAS_ASBESTOS = registerBlock("gas_asbestos", com.hbm_m.block.gas.BlockGasAsbestos::new);
     public static final RegistrySupplier<Block> GAS_COAL = registerBlock("gas_coal", com.hbm_m.block.gas.BlockGasCoal::new);
-    public static final RegistrySupplier<Block> GAS_EXPLOSIVE = registerBlock("gas_explosive", () -> new Block(BlockProps.copy(Blocks.STONE)));
-    public static final RegistrySupplier<Block> GAS_FLAMMABLE = registerBlock("gas_flammable", () -> new Block(BlockProps.copy(Blocks.STONE)));
-    public static final RegistrySupplier<Block> GAS_MELTDOWN = registerBlock("gas_meltdown", () -> new Block(BlockProps.copy(Blocks.STONE)));
-    public static final RegistrySupplier<Block> GAS_MONOXIDE = registerBlock("gas_monoxide", () -> new Block(BlockProps.copy(Blocks.STONE)));
-    public static final RegistrySupplier<Block> GAS_RADON = registerBlock("gas_radon", () -> new Block(BlockProps.copy(Blocks.STONE)));
-    public static final RegistrySupplier<Block> GAS_RADON_DENSE = registerBlock("gas_radon_dense", () -> new Block(BlockProps.copy(Blocks.STONE)));
-    public static final RegistrySupplier<Block> GAS_RADON_TOMB = registerBlock("gas_radon_tomb", () -> new Block(BlockProps.copy(Blocks.STONE)));
+    public static final RegistrySupplier<Block> GAS_EXPLOSIVE = registerBlock("gas_explosive", com.hbm_m.block.gas.BlockGasExplosive::new);
+    public static final RegistrySupplier<Block> GAS_FLAMMABLE = registerBlock("gas_flammable", com.hbm_m.block.gas.BlockGasFlammable::new);
+    public static final RegistrySupplier<Block> GAS_MELTDOWN = registerBlock("gas_meltdown", com.hbm_m.block.gas.BlockGasMeltdown::new);
+    public static final RegistrySupplier<Block> GAS_MONOXIDE = registerBlock("gas_monoxide", com.hbm_m.block.gas.BlockGasMonoxide::new);
+    public static final RegistrySupplier<Block> GAS_RADON = registerBlock("gas_radon", com.hbm_m.block.gas.BlockGasRadon::new);
+    public static final RegistrySupplier<Block> GAS_RADON_DENSE = registerBlock("gas_radon_dense", com.hbm_m.block.gas.BlockGasRadonDense::new);
+    public static final RegistrySupplier<Block> GAS_RADON_TOMB = registerBlock("gas_radon_tomb", com.hbm_m.block.gas.BlockGasRadonTomb::new);
     public static final RegistrySupplier<Block> GLASS_ASH = registerBlock("glass_ash", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> GLASS_BORON = registerBlock("glass_boron", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> GLASS_LEAD = registerBlock("glass_lead", () -> new Block(BlockProps.copy(Blocks.STONE)));
@@ -2701,16 +2703,32 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> RAIL_HIGHSPEED = registerBlock("rail_highspeed", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> RAIL_NARROW = registerBlock("rail_narrow", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> RAIL_WOOD = registerBlock("rail_wood", () -> new Block(BlockProps.copy(Blocks.STONE)));
-    public static final RegistrySupplier<Block> RED_CABLE = registerBlock("red_cable", () -> new Block(BlockProps.copy(Blocks.STONE)));
+    public static final RegistrySupplier<Block> RED_CABLE = registerBlock("red_cable",
+            () -> new com.hbm_m.api.energy.WireBlock(BlockProps.copy(Blocks.IRON_BLOCK).noOcclusion()));
     public static final RegistrySupplier<Block> RED_CABLE_CLASSIC = registerBlock("red_cable_classic", () -> new WireBlock(BlockProps.copy(Blocks.IRON_BLOCK).noOcclusion()));
     /** Порт BlockCablePaintable (1.7.10): цельноблочный кабель-камуфляж. */
     public static final RegistrySupplier<Block> RED_CABLE_PAINTABLE = registerBlock("red_cable_paintable",
             () -> new RedCablePaintableBlock(BlockProps.copy(Blocks.IRON_BLOCK).noOcclusion().strength(5.0F, 10.0F)));
+    /** Скрытые хелпер-блоки рендера paintable (RenderShape.MODEL): базовый красный куб и полупрозрачная вуаль.
+     *  Нужны, потому что renderSingleBlock пропускает состояния INVISIBLE, а сам paintable — INVISIBLE. */
+    public static final RegistrySupplier<Block> RED_CABLE_PAINTABLE_BASE = registerBlockWithoutItem("red_cable_paintable_base",
+            () -> new Block(BlockProps.copy(Blocks.STONE).noLootTable()));
+    public static final RegistrySupplier<Block> RED_CABLE_PAINTABLE_VEIL = registerBlockWithoutItem("red_cable_paintable_veil",
+            () -> new Block(BlockProps.copy(Blocks.STONE).noLootTable()));
     /** Порт BlockCableGauge (1.7.10): цельноблочный кабель с датчиком энергии. */
     public static final RegistrySupplier<Block> RED_CABLE_GAUGE = registerBlock("red_cable_gauge",
             () -> new RedCableGaugeBlock(BlockProps.copy(Blocks.IRON_BLOCK).noOcclusion().strength(5.0F, 10.0F)));
-    /** Reuses the fluid_duct_box texture, matching the original. */
-    public static final RegistrySupplier<Block> RED_CABLE_BOX = registerBlock("red_cable_box", () -> new Block(BlockProps.copy(Blocks.STONE)));
+    /** Порт PowerCableBox (1.7.10, мета 0-4): по конвенции порта — один блок на размер. */
+    public static final RegistrySupplier<Block> RED_CABLE_BOX = registerBlock("red_cable_box",
+            () -> new com.hbm_m.block.network.BoxCableBlock(BlockProps.copy(Blocks.IRON_BLOCK).noOcclusion().strength(3.0F, 6.0F), 0));
+    public static final RegistrySupplier<Block> RED_CABLE_BOX_1 = registerBlock("red_cable_box_1",
+            () -> new com.hbm_m.block.network.BoxCableBlock(BlockProps.copy(Blocks.IRON_BLOCK).noOcclusion().strength(3.0F, 6.0F), 1));
+    public static final RegistrySupplier<Block> RED_CABLE_BOX_2 = registerBlock("red_cable_box_2",
+            () -> new com.hbm_m.block.network.BoxCableBlock(BlockProps.copy(Blocks.IRON_BLOCK).noOcclusion().strength(3.0F, 6.0F), 2));
+    public static final RegistrySupplier<Block> RED_CABLE_BOX_3 = registerBlock("red_cable_box_3",
+            () -> new com.hbm_m.block.network.BoxCableBlock(BlockProps.copy(Blocks.IRON_BLOCK).noOcclusion().strength(3.0F, 6.0F), 3));
+    public static final RegistrySupplier<Block> RED_CABLE_BOX_4 = registerBlock("red_cable_box_4",
+            () -> new com.hbm_m.block.network.BoxCableBlock(BlockProps.copy(Blocks.IRON_BLOCK).noOcclusion().strength(3.0F, 6.0F), 4));
     /** Порты сети длинной ЛЭП (1.7.10: ConnectorRedWire / ConnectorRedWireSuper / PylonRedWire / PylonMedium / PylonLarge / WireCoated). */
     public static final RegistrySupplier<Block> RED_CONNECTOR = registerBlock("red_connector",
             () -> new RedConnectorBlock(BlockProps.copy(Blocks.IRON_BLOCK).noOcclusion().strength(5.0F, 10.0F),

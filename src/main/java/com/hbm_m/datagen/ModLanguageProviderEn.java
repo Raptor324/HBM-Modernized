@@ -765,6 +765,7 @@ public class ModLanguageProviderEn extends LanguageProvider {
 
         add("item.hbm_m.radaway", "Radaway");
         add("effect.hbm_m.radaway", "Radiation cleansing");
+        add("effect.hbm_m.radiation", "Contaminated");
         add("sounds.hbm_m.radaway_use", "Use of radaway");
 
         add(ModItems.TEMPLATE_FOLDER.get(), "Template Folder");
@@ -3494,6 +3495,10 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add(ModBlocks.RAIL_WOOD.get(), "Wooden Tracks");
         add(ModBlocks.RED_CABLE.get(), "Red Copper Cable");
         add(ModBlocks.RED_CABLE_BOX.get(), "Red Cable Junction Box");
+        add(ModBlocks.RED_CABLE_BOX_1.get(), "Red Copper Boxcable");
+        add(ModBlocks.RED_CABLE_BOX_2.get(), "Red Copper Boxcable");
+        add(ModBlocks.RED_CABLE_BOX_3.get(), "Red Copper Boxcable");
+        add(ModBlocks.RED_CABLE_BOX_4.get(), "Red Copper Boxcable");
         add(ModBlocks.RED_CABLE_CLASSIC.get(), "Red Copper Cable (Classic)");
         add(ModBlocks.RED_CABLE_PAINTABLE.get(), "Paintable Cable");
         add(ModBlocks.RED_CABLE_GAUGE.get(), "Power Gauge");

@@ -379,7 +379,7 @@ public abstract class BaseMachineBlockEntity extends BaseHbmBlockEntity implemen
     @Override
     public void onLoad() {
         super.onLoad();
-        itemHandler = LazyOptional.of(() -> inventory);
+        itemHandler = LazyOptional.of(this::getAutomationItemHandler);
         setupFluidCapability();
     }
 
@@ -394,6 +394,17 @@ public abstract class BaseMachineBlockEntity extends BaseHbmBlockEntity implemen
         fluidHandlerOpt.invalidate();
     }
     //?}
+
+    /**
+     * Handler, который видит автоматика (воронки/трубы) через ITEM_HANDLER-капабилити и
+     * полиморфный {@link #getItemHandler}. GUI работает с полным инвентарём через
+     * {@code ModItemStackHandlerContainer} и ограничений не имеет.
+     * Переопределяется машинами с оригинальной slot-логикой автоматизации
+     * (аналог {@code getAccessibleSlotsFromSide}/{@code canExtractItem} 1.7.10).
+     */
+    protected ModItemStackHandler getAutomationItemHandler() {
+        return inventory;
+    }
 
     // ═══════════════════════════ Platform-abstracted energy helpers ════════════════════════════════
 
@@ -595,7 +606,7 @@ public abstract class BaseMachineBlockEntity extends BaseHbmBlockEntity implemen
 
     @Override
     public @Nullable Object getItemHandler(@Nullable net.minecraft.core.Direction side) {
-        return this.inventory;
+        return getAutomationItemHandler();
     }
 
     @Override

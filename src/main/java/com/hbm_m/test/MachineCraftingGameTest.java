@@ -555,8 +555,14 @@ public final class MachineCraftingGameTest {
         List<AssemblerRecipe> recipes = RecipeHooks.getAllRecipes(level, AssemblerRecipe.Type.INSTANCE);
         // A silent succeed with no recipes would mask a completely broken craft.
         check(!recipes.isEmpty(), "No recipes found to execute test — see assemblerRecipes_loaded for diagnostics");
-        // Take the first recipe with minimal requirements.
-        AssemblerRecipe recipe = recipes.get(0);
+        // Рецепт без blueprint-pool (тест не ставит чертёж) и не более 12 РАЗЛИЧНЫХ
+        // ингредиентов — по числу input-слотов модуля. Порядок рецептов не гарантирован.
+        AssemblerRecipe recipe = recipes.stream()
+                .filter(r -> r.getBlueprintPool() == null || r.getBlueprintPool().isEmpty())
+                .filter(r -> !r.getInputDisplaySlots().isEmpty() && r.getInputDisplaySlots().size() <= 12)
+                .findFirst().orElse(null);
+        check(recipe != null,
+                "No assembler recipe without blueprint pool and with <= 12 distinct inputs found");
         int duration = recipe.getDuration();
         long power = recipe.getPowerConsumption();
         long totalEnergy = power * duration;
@@ -564,15 +570,12 @@ public final class MachineCraftingGameTest {
         ModItemStackHandler inv = makeInventory(20);
         MachineModuleAdvancedAssembler mod = makeAssemblerModule(level, inv, totalEnergy * 2, totalEnergy * 2);
 
-        // Fill the input slots with items matching the ingredients.
-        // Ingredients are a NonNullList<Ingredient> (expanded by count).
-        net.minecraft.core.NonNullList<net.minecraft.world.item.crafting.Ingredient> ings =
-                recipe.getIngredients();
+        // Заполняем input-слоты по РАЗЛИЧНЫМ ингредиентам рецепта (displaySlots —
+        // ingredient+count в авторской формулировке), а не по развёрнутому списку:
+        // у крупных рецептов развёрнутый список длиннее числа слотов.
         int inputSlotIdx = 0;
-        for (net.minecraft.world.item.crafting.Ingredient ing : ings) {
-            if (ing.isEmpty()) continue;
-            // Take the first matching stack from the Ingredient.
-            ItemStack[] matchingStacks = ing.getItems();
+        for (com.hbm_m.recipe.AssemblerRecipe.AssemblerInputSlot slot : recipe.getInputDisplaySlots()) {
+            ItemStack[] matchingStacks = slot.ingredient().getItems();
             if (matchingStacks.length == 0 || matchingStacks[0].isEmpty()) continue;
             ItemStack sample = matchingStacks[0].copy();
             sample.setCount(sample.getMaxStackSize()); // with headroom
@@ -591,7 +594,14 @@ public final class MachineCraftingGameTest {
         // After one update with speed=duration the progress must reach maxProgress and the craft must complete.
         ItemStack output = inv.getStackInSlot(16);
         check(!output.isEmpty(),
-                "Assembler module must produce output after full cycle. Output=" + output);
+                "Assembler module must produce output after full cycle. Output=" + output
+                        + "; progress=" + mod.getProgress()
+                        + "; didProcess=" + mod.didProcess
+                        + "; preferred=" + (mod.getPreferredRecipe() != null)
+                        + "; canProcess=" + mod.canProcess(recipe)
+                        + "; duration=" + duration + "; power=" + power
+                        + "; filledSlots=" + inputSlotIdx
+                        + "; totalRecipes=" + recipes.size());
 
         // Extra check: the output must match the recipe result.
         ItemStack expected = recipe.getResultItem(level.registryAccess());

@@ -214,6 +214,9 @@ public abstract class AbstractPartBasedRenderer<T extends BlockEntity, M extends
         //? if neoforge {
         /*// На 1.21.1 у BlockEntity есть ванильный getRenderBoundingBox(), но для HBM-машин
         // используем явные переопределения (мультиблоки с увеличенным AABB), как на Fabric.
+        if (blockEntity instanceof com.hbm_m.api.render.RenderBoundsProvider p) {
+            return p.getRenderBoundingBox();
+        }
         if (blockEntity instanceof com.hbm_m.blockentity.BaseMachineBlockEntity b) {
             return b.getRenderBoundingBox();
         }

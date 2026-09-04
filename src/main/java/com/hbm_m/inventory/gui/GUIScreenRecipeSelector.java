@@ -10,10 +10,12 @@ import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.api.fluids.FluidLocalization;
 import com.hbm_m.blockentity.machines.MachineAdvancedAssemblerBlockEntity;
+import com.hbm_m.blockentity.machines.MachineChemicalFactoryBlockEntity;
 import com.hbm_m.blockentity.machines.MachineChemicalPlantBlockEntity;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.network.ModPacketHandler;
 import com.hbm_m.network.SetAssemblerRecipeC2SPacket;
+import com.hbm_m.network.SetChemFactoryRecipeC2SPacket;
 import com.hbm_m.network.SetChemPlantRecipeC2SPacket;
 import com.hbm_m.recipe.AssemblerRecipe;
 import com.hbm_m.recipe.ChemicalPlantRecipe;
@@ -67,6 +69,10 @@ public class GUIScreenRecipeSelector extends Screen {
     @Nullable
     private MachineChemicalPlantBlockEntity chemicalPlant;
 
+    @Nullable
+    private MachineChemicalFactoryBlockEntity chemicalFactory;
+    private int factoryLane;
+
     private record RecipeEntry(ResourceLocation id, ItemStack icon, @Nullable net.minecraft.world.item.crafting.Recipe<?> recipe) {}
 
     /** Поиск по имени иконки, пути/id рецепта (англ.) — чтобы находить по chem_gasoline и т.п. */
@@ -84,6 +90,12 @@ public class GUIScreenRecipeSelector extends Screen {
         this.machinePos = machinePos;
         this.parentScreen = parentScreen;
         this.selectedRecipe = currentRecipe;
+    }
+
+    /** Вариант для Chemical Factory: селектор привязан к конкретной линии (0..3). */
+    public GUIScreenRecipeSelector(BlockPos machinePos, int factoryLane, ResourceLocation currentRecipe, Screen parentScreen) {
+        this(machinePos, currentRecipe, parentScreen);
+        this.factoryLane = factoryLane;
     }
     
     @Override
@@ -348,6 +360,9 @@ public class GUIScreenRecipeSelector extends Screen {
         } else if (chemicalPlant != null) {
             ModPacketHandler.sendToServer(ModPacketHandler.SET_CHEM_RECIPE,
                 new SetChemPlantRecipeC2SPacket(machinePos, selectedRecipe));
+        } else if (chemicalFactory != null) {
+            ModPacketHandler.sendToServer(ModPacketHandler.SET_CHEM_FACTORY_RECIPE,
+                new SetChemFactoryRecipeC2SPacket(machinePos, factoryLane, selectedRecipe));
         }
         if (this.minecraft != null) {
             this.minecraft.setScreen(this.parentScreen);
@@ -381,7 +396,7 @@ public class GUIScreenRecipeSelector extends Screen {
     public void tick() {
         super.tick();
         
-        // Проверяем изменение папки blueprint на клиенте (и у ассемблера, и у химзавода)
+        // Проверяем изменение папки blueprint на клиенте (и у ассемблера, и у химзавода, и у фабрики)
         if (this.minecraft != null && this.minecraft.level != null) {
             bindMachineContext();
             ItemStack currentFolder = ItemStack.EMPTY;
@@ -389,6 +404,8 @@ public class GUIScreenRecipeSelector extends Screen {
                 currentFolder = assembler.getBlueprintFolder();
             } else if (chemicalPlant != null) {
                 currentFolder = chemicalPlant.getBlueprintFolder();
+            } else if (chemicalFactory != null) {
+                currentFolder = chemicalFactory.getBlueprintFolder(factoryLane);
             }
 
             if (!ItemStack.matches(lastFolderStack, currentFolder)) {
@@ -429,6 +446,13 @@ public class GUIScreenRecipeSelector extends Screen {
                     if (icon.isEmpty()) icon = new ItemStack(com.hbm_m.item.ModItems.TEMPLATE_FOLDER.get());
                     allRecipes.add(new RecipeEntry(RecipeHooks.recipeId(this.minecraft.level.getRecipeManager(), ChemicalPlantRecipe.Type.INSTANCE, recipe), icon, recipe));
                 }
+            } else if (chemicalFactory != null) {
+                List<ChemicalPlantRecipe> available = chemicalFactory.getAvailableRecipes(factoryLane);
+                for (ChemicalPlantRecipe recipe : available) {
+                    ItemStack icon = recipe.getResultItem(this.minecraft.level.registryAccess());
+                    if (icon.isEmpty()) icon = new ItemStack(com.hbm_m.item.ModItems.TEMPLATE_FOLDER.get());
+                    allRecipes.add(new RecipeEntry(RecipeHooks.recipeId(this.minecraft.level.getRecipeManager(), ChemicalPlantRecipe.Type.INSTANCE, recipe), icon, recipe));
+                }
             }
 
             if (this.searchBox != null && !this.searchBox.getValue().isEmpty()) {
@@ -447,12 +471,19 @@ public class GUIScreenRecipeSelector extends Screen {
         if (be instanceof MachineAdvancedAssemblerBlockEntity a) {
             this.assembler = a;
             this.chemicalPlant = null;
+            this.chemicalFactory = null;
         } else if (be instanceof MachineChemicalPlantBlockEntity c) {
             this.assembler = null;
             this.chemicalPlant = c;
+            this.chemicalFactory = null;
+        } else if (be instanceof MachineChemicalFactoryBlockEntity f) {
+            this.assembler = null;
+            this.chemicalPlant = null;
+            this.chemicalFactory = f;
         } else {
             this.assembler = null;
             this.chemicalPlant = null;
+            this.chemicalFactory = null;
         }
     }
 

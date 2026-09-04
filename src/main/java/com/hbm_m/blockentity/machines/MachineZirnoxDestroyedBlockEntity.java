@@ -35,6 +35,18 @@ public class MachineZirnoxDestroyedBlockEntity extends BaseHbmBlockEntity {
         super(ModBlockEntities.ZIRNOX_DESTROYED_BE.get(), pos, state);
     }
 
+    /**
+     * Модель обломков выступает за габариты структуры 5×5×2 (OBJ: x −3.5..3.2,
+     * y 0..3.1, z −2.9..3.2 относительно ядра), поэтому AABB взят с запасом ±4.
+     */
+    //? if forge {
+    @Override
+    //?}
+    public net.minecraft.world.phys.AABB getRenderBoundingBox() {
+        return new AABB(worldPosition.getX() - 4, worldPosition.getY(), worldPosition.getZ() - 4,
+                worldPosition.getX() + 4, worldPosition.getY() + 4, worldPosition.getZ() + 4);
+    }
+
     public static void tick(Level level, BlockPos pos, BlockState state, MachineZirnoxDestroyedBlockEntity blockEntity) {
         if (level.isClientSide) {
             return;

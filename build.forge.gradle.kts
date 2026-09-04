@@ -51,11 +51,16 @@ legacyForge {
 		// GameTest-сервер: headless-прогон всех @GameTest без GUI.
 		register("gameTestServer") {
 			server()
-			gameDirectory = file("run/")
+			// Выделенный gameDir: мир "Test Level" (flat) пересоздаётся каждый прогон,
+			// чтобы условия тестов были идентичны на forge и neoforge и не зависели
+			// от состояния общего run/ (клиент/сервер оставляют там свой мир с рельефом —
+			// в нём арена оказывается под землёй, sky-тесты ломаются).
+			gameDirectory = file("runGameTest/")
 			ideName = "Forge GameTest (${stonecutter.active?.version})"
 			systemProperty("forge.gameTestServer", "true")
 			systemProperty("forge.enableGameTest", "true")
 			jvmArguments.addAll("-Xmx4G", "-Xms2G", "-Dfile.encoding=UTF-8", "-Dconsole.encoding=UTF-8")
+			// TODO(other-agent WIP): doFirst недоступен в runs-DSL — перенести в tasks.named("gameTestServer")
 		}
 
 		register("data") {
@@ -178,5 +183,12 @@ tasks.withType<JavaCompile>().configureEach { options.encoding = "UTF-8" }
 stonecutter {
 }
 
-
-
+// Мир "Test Level" пересоздаётся каждый прогон gameTestServer — идентичные
+// условия арен на forge и neoforge (fresh flat-мир, открытый скай на y≈-60).
+tasks.matching { it.name == "runGameTestServer" }.configureEach {
+	doFirst {
+		file("runGameTest").mkdirs()
+		delete(file("runGameTest/Test Level"))
+		file("runGameTest/eula.txt").writeText("eula=true")
+	}
+}

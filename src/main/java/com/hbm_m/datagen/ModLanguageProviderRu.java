@@ -976,6 +976,7 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("item.hbm_m.radaway", "Антирадин");
         add("item.hbm_m.wood_ash_powder", "Древесный пепел");
         add("effect.hbm_m.radaway", "Очищение от радиации");
+        add("effect.hbm_m.radiation", "Излучение");
 
 
 // ru_ru case
@@ -2736,6 +2737,10 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("block.hbm_m.rail_wood", "Деревянные рельсы");
         add("block.hbm_m.rebar", "Арматура");
         add("block.hbm_m.red_cable_box", "Провод из красной меди (Boxcable)");
+        add("block.hbm_m.red_cable_box_1", "Провод из красной меди (Boxcable)");
+        add("block.hbm_m.red_cable_box_2", "Провод из красной меди (Boxcable)");
+        add("block.hbm_m.red_cable_box_3", "Провод из красной меди (Boxcable)");
+        add("block.hbm_m.red_cable_box_4", "Провод из красной меди (Boxcable)");
         add("block.hbm_m.reinforced_brick", "Усиленный бетон");
         add("block.hbm_m.reinforced_ducrete", "Усиленный дюкрет");
         add("block.hbm_m.reinforced_glass_pane", "Усиленная стеклянная панель");

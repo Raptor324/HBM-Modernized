@@ -28,17 +28,39 @@ public final class MissileTrackContrail {
         spawnSegments(level, toX, toY, toZ, motionNorm, len, exhaust, scale, 0.0D, 0.0D, 0.0D);
     }
 
-    public static void spawnSegments(ClientLevel level,
-                              double anchorX, double anchorY, double anchorZ,
-                              Vec3 motionNorm, double len,
-                              Vec3 exhaustVelocity, float scale,
-                              double offsetX, double offsetY, double offsetZ) {
+        /** Пар привязан к настройке частиц: на «минимум» не спавнится вовсе, на «меньше» — вдвое реже. */
+        public static boolean allowVapor() {
+            return particleStatus() != net.minecraft.client.ParticleStatus.MINIMAL;
+        }
+
+        public static boolean isVaporHalved() {
+            return particleStatus() == net.minecraft.client.ParticleStatus.DECREASED;
+        }
+
+        /** Горячий contrail на «минимум» и «меньше» — вдвое реже. */
+        private static boolean halveContrail() {
+            return particleStatus() != net.minecraft.client.ParticleStatus.ALL;
+        }
+
+        private static net.minecraft.client.ParticleStatus particleStatus() {
+            return net.minecraft.client.Minecraft.getInstance().options.particles().get();
+        }
+
+        public static void spawnSegments(ClientLevel level,
+                                  double anchorX, double anchorY, double anchorZ,
+                                  Vec3 motionNorm, double len,
+                                  Vec3 exhaustVelocity, float scale,
+                                  double offsetX, double offsetY, double offsetZ) {
         int segmentCount = Math.max(1, Math.min((int) len, 10));
+        boolean halve = halveContrail();
 
         if (MissileContrailNT.sprites == null) {
             return; // Провайдеры ещё не зарегистрированы (ранний кадр)
         }
         for (int i = 0; i < segmentCount; i++) {
+            if (halve && (i & 1) == 1) {
+                continue;
+            }
             double j = i - len;
             double px = anchorX - motionNorm.x * j + offsetX;
             double py = anchorY - motionNorm.y * j + offsetY;

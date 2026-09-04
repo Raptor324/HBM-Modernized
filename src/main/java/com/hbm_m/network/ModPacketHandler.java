@@ -55,6 +55,7 @@ public class ModPacketHandler {
     public static final ResourceLocation UPDATE_BATTERY        = id("update_battery");
     public static final ResourceLocation SET_ASSEMBLER_RECIPE  = id("set_assembler_recipe");
     public static final ResourceLocation SET_CHEM_RECIPE       = id("set_chem_recipe");
+    public static final ResourceLocation SET_CHEM_FACTORY_RECIPE = id("set_chem_factory_recipe");
     public static final ResourceLocation TOGGLE_WOOD_BURNER    = id("toggle_wood_burner");
     public static final ResourceLocation BUILD_MISSILE         = id("build_missile");
     public static final ResourceLocation FLUID_TANK_MODE       = id("fluid_tank_mode");
@@ -189,6 +190,10 @@ public class ModPacketHandler {
         registerC2S(SET_CHEM_RECIPE,
                 SetChemPlantRecipeC2SPacket::decode,
                 SetChemPlantRecipeC2SPacket::handle);
+
+        registerC2S(SET_CHEM_FACTORY_RECIPE,
+                com.hbm_m.network.SetChemFactoryRecipeC2SPacket::decode,
+                com.hbm_m.network.SetChemFactoryRecipeC2SPacket::handle);
 
         registerC2S(TOGGLE_WOOD_BURNER,
                 ToggleWoodBurnerPacket::decode,

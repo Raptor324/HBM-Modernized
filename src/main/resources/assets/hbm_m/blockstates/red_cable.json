@@ -1,7 +1,90 @@
 {
-  "variants": {
-    "": {
-      "model": "hbm_m:block/red_cable_cube"
+  "multipart": [
+    {
+      "when": {
+        "center": "junction"
+      },
+      "apply": {
+        "model": "hbm_m:block/red_cable_core"
+      }
+    },
+    {
+      "when": {
+        "center": "straight_x"
+      },
+      "apply": {
+        "model": "hbm_m:block/red_cable_straight_x"
+      }
+    },
+    {
+      "when": {
+        "center": "straight_y"
+      },
+      "apply": {
+        "model": "hbm_m:block/red_cable_straight_y"
+      }
+    },
+    {
+      "when": {
+        "center": "straight_z"
+      },
+      "apply": {
+        "model": "hbm_m:block/red_cable_straight_z"
+      }
+    },
+    {
+      "when": {
+        "north": "true",
+        "center": "!straight_z"
+      },
+      "apply": {
+        "model": "hbm_m:block/red_cable_arm_north"
+      }
+    },
+    {
+      "when": {
+        "south": "true",
+        "center": "!straight_z"
+      },
+      "apply": {
+        "model": "hbm_m:block/red_cable_arm_south"
+      }
+    },
+    {
+      "when": {
+        "east": "true",
+        "center": "!straight_x"
+      },
+      "apply": {
+        "model": "hbm_m:block/red_cable_arm_east"
+      }
+    },
+    {
+      "when": {
+        "west": "true",
+        "center": "!straight_x"
+      },
+      "apply": {
+        "model": "hbm_m:block/red_cable_arm_west"
+      }
+    },
+    {
+      "when": {
+        "up": "true",
+        "center": "!straight_y"
+      },
+      "apply": {
+        "model": "hbm_m:block/red_cable_arm_up"
+      }
+    },
+    {
+      "when": {
+        "down": "true",
+        "center": "!straight_y"
+      },
+      "apply": {
+        "model": "hbm_m:block/red_cable_arm_down"
+      }
     }
-  }
+  ]
 }
