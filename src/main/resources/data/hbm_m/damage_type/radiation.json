@@ -1,0 +1,10 @@
+{
+  "exhaustion": 0.0,
+  "message_id": "radiation",
+  "scaling": "never",
+  "effects": "hurt",
+  "death_message_type": "default",
+  "bypasses_armor": true,
+  "bypasses_enchantments": true,
+  "bypasses_invulnerability": false
+}
