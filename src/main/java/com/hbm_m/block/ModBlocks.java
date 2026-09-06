@@ -540,9 +540,12 @@ public class ModBlocks {
 
     public static final RegistrySupplier<Block> UNIVERSAL_MACHINE_PART = registerBlockWithoutItem("universal_machine_part",
             //? if < 1.21.1 {
-            () -> new UniversalMachinePartBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0f).noOcclusion().isSuffocating((state, world, pos) -> false).noParticlesOnBreak()));
+            // dynamicShape() обязателен: без него ваниль кэширует collision shape при регистрации
+            // (EmptyBlockGetter, без BE) и MTS/др. моды, зовущие 2-арг getCollisionShape,
+            // всегда получают полную коллизию вместо формы из BE контроллера
+            () -> new UniversalMachinePartBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0f).noOcclusion().isSuffocating((state, world, pos) -> false).dynamicShape().noParticlesOnBreak()));
             //?} else {
-            /*() -> new UniversalMachinePartBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0f).noOcclusion().isSuffocating((state, world, pos) -> false)));
+            /*() -> new UniversalMachinePartBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0f).noOcclusion().isSuffocating((state, world, pos) -> false).dynamicShape()));
             *///?}
 
 	public static final RegistrySupplier<Block> FLUID_TANK = registerBlockWithoutItem("fluid_tank",
@@ -652,7 +655,7 @@ public class ModBlocks {
                             .requiresCorrectToolForDrops()
                             .sound(SoundType.METAL)
                             .noOcclusion()
-                            .isViewBlocking((state, level, pos) -> false),
+                            .dynamicShape().isViewBlocking((state, level, pos) -> false),
                     "large_vehicle_door"
             ));
 
@@ -663,7 +666,7 @@ public class ModBlocks {
                             .requiresCorrectToolForDrops()
                             .sound(SoundType.METAL)
                             .noOcclusion()
-                            .isViewBlocking((state, level, pos) -> false),
+                            .dynamicShape().isViewBlocking((state, level, pos) -> false),
                     "round_airlock_door"
             ));
 
@@ -674,7 +677,7 @@ public class ModBlocks {
                             .requiresCorrectToolForDrops()
                             .sound(SoundType.METAL)
                             .noOcclusion()
-                            .isViewBlocking((state, level, pos) -> false)));
+                            .dynamicShape().isViewBlocking((state, level, pos) -> false)));
 
     public static final RegistrySupplier<Block> FIRE_DOOR = registerBlockWithoutItem("fire_door",
             () -> new DoorBlock(
@@ -683,7 +686,7 @@ public class ModBlocks {
                             .requiresCorrectToolForDrops()
                             .sound(SoundType.METAL)
                             .noOcclusion()
-                            .isViewBlocking((state, level, pos) -> false),
+                            .dynamicShape().isViewBlocking((state, level, pos) -> false),
                     "fire_door"
             ));
 
@@ -694,7 +697,7 @@ public class ModBlocks {
                             .requiresCorrectToolForDrops()
                             .sound(SoundType.METAL)
                             .noOcclusion()
-                            .isViewBlocking((state, level, pos) -> false),
+                            .dynamicShape().isViewBlocking((state, level, pos) -> false),
                     "sliding_blast_door"
             ));
 
@@ -705,7 +708,7 @@ public class ModBlocks {
                             .requiresCorrectToolForDrops()
                             .sound(SoundType.METAL)
                             .noOcclusion()
-                            .isViewBlocking((state, level, pos) -> false),
+                            .dynamicShape().isViewBlocking((state, level, pos) -> false),
                     "sliding_seal_door"
             ));
 
@@ -716,7 +719,7 @@ public class ModBlocks {
                             .requiresCorrectToolForDrops()
                             .sound(SoundType.METAL)
                             .noOcclusion()
-                            .isViewBlocking((state, level, pos) -> false),
+                            .dynamicShape().isViewBlocking((state, level, pos) -> false),
                     "secure_access_door"
             ));
 
@@ -727,7 +730,7 @@ public class ModBlocks {
                             .requiresCorrectToolForDrops()
                             .sound(SoundType.METAL)
                             .noOcclusion()
-                            .isViewBlocking((state, level, pos) -> false),
+                            .dynamicShape().isViewBlocking((state, level, pos) -> false),
                     "qe_sliding_door"
             ));
 
@@ -738,7 +741,7 @@ public class ModBlocks {
                             .requiresCorrectToolForDrops()
                             .sound(SoundType.METAL)
                             .noOcclusion()
-                            .isViewBlocking((state, level, pos) -> false),
+                            .dynamicShape().isViewBlocking((state, level, pos) -> false),
                     "qe_containment_door"
             ));
 
@@ -749,7 +752,7 @@ public class ModBlocks {
                             .requiresCorrectToolForDrops()
                             .sound(SoundType.METAL)
                             .noOcclusion()
-                            .isViewBlocking((state, level, pos) -> false),
+                            .dynamicShape().isViewBlocking((state, level, pos) -> false),
                     "water_door"
             ));
 
@@ -760,7 +763,7 @@ public class ModBlocks {
                             .requiresCorrectToolForDrops()
                             .sound(SoundType.METAL)
                             .noOcclusion()
-                            .isViewBlocking((state, level, pos) -> false),
+                            .dynamicShape().isViewBlocking((state, level, pos) -> false),
                     "silo_hatch"
             ));
 
@@ -771,7 +774,7 @@ public class ModBlocks {
                             .requiresCorrectToolForDrops()
                             .sound(SoundType.METAL)
                             .noOcclusion()
-                            .isViewBlocking((state, level, pos) -> false),
+                            .dynamicShape().isViewBlocking((state, level, pos) -> false),
                     "silo_hatch_large"
             ));
 
@@ -782,7 +785,7 @@ public class ModBlocks {
                             .requiresCorrectToolForDrops()
                             .sound(SoundType.METAL)
                             .noOcclusion()
-                            .isViewBlocking((state, level, pos) -> false),
+                            .dynamicShape().isViewBlocking((state, level, pos) -> false),
                     "vault_door"
             ));
 
@@ -793,7 +796,7 @@ public class ModBlocks {
                             .requiresCorrectToolForDrops()
                             .sound(SoundType.METAL)
                             .noOcclusion()
-                            .isViewBlocking((state, level, pos) -> false),
+                            .dynamicShape().isViewBlocking((state, level, pos) -> false),
                     "cargo_door"
             ));
 
