@@ -72,6 +72,9 @@ public final class ExplosionChaos {
     /**
      * Разбрасывает суббоеприпасы по направлению полёта ракеты
      * (аналог {@code ExplosionChaos.cluster} + {@code EntityBulletBaseMK4} в 1.7.10).
+     * <p>
+     * yaw/pitch/yawRand/pitchRand are RADIANS, as in the original: the body below is a line-for-line
+     * copy of the {@code EntityBulletBaseMK4} constructor, which converts them to degrees itself.
      */
     public static void cluster(Level level, double x, double y, double z, int count,
                                float yaw, float pitch, float yawRand, float pitchRand, float speed) {

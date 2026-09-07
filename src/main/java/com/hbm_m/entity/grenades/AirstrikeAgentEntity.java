@@ -50,6 +50,8 @@ public class AirstrikeAgentEntity extends Entity {
     private int chunkRetryTimer = 0;
     private boolean hasFinishedAttack = false;
     private boolean isWaitingForChunk = false;
+    private static final int AMBIENT_SOUND_INTERVAL = 60;
+
     private Vec3 direction = Vec3.ZERO;
 
     private static final Random RANDOM = new Random();
@@ -181,7 +183,9 @@ public class AirstrikeAgentEntity extends Entity {
                 this.yRotO = newYaw;
             }
 
-            playAmbientSound();
+            // Was called every tick: 20 sound packets per second at volume 6. The original gates all
+            // of its bomber sounds on a tick interval (ticksExisted % bombRate).
+            if (this.tickCount % AMBIENT_SOUND_INTERVAL == 0) playAmbientSound();
 
             BlockPos target = getTargetPos();
             Vec3 targetCenter = Vec3.atCenterOf(target);
@@ -305,6 +309,8 @@ public class AirstrikeAgentEntity extends Entity {
         this.isWaitingForChunk = tag.getBoolean("WaitingForChunk");
         this.chunkRetryTimer = tag.getInt("ChunkRetryTimer");
         this.sprayTimer = tag.getInt("SprayTimer");
+        this.hasFinishedAttack = tag.getBoolean("HasFinishedAttack");
+        this.direction = new Vec3(tag.getDouble("DirX"), 0, tag.getDouble("DirZ"));
     }
 
     @Override
@@ -317,6 +323,12 @@ public class AirstrikeAgentEntity extends Entity {
         tag.putBoolean("WaitingForChunk", isWaitingForChunk);
         tag.putInt("ChunkRetryTimer", chunkRetryTimer);
         tag.putInt("SprayTimer", sprayTimer);
+        // Both were missing: without them a reloaded plane that had already passed its target had
+        // direction = ZERO, so the dot product below never went negative, hasFinishedAttack never
+        // flipped, and the plane flew on forever.
+        tag.putBoolean("HasFinishedAttack", hasFinishedAttack);
+        tag.putDouble("DirX", direction.x);
+        tag.putDouble("DirZ", direction.z);
     }
 
     //? if < 1.21.1 {

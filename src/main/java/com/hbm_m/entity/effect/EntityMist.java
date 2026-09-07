@@ -113,9 +113,10 @@ public class EntityMist extends Entity {
             FluidType type = this.getFluidType();
             double intensity = 1.0D - (double) this.tickCount / (double) this.getMaxAge();
 
-            // The box above is already `width` wide, so inflating it by -width/2 per side collapsed
-            // it to a zero-width slab through the centre: only an entity straddling the mist axis
-            // was ever affected.
+            // The original does aabb.offset(-width/2, 0, -width/2) on a corner-anchored box, which
+            // just centres it. The port builds the box centred already and then used inflate instead
+            // of offset, shrinking it by width/2 per side into a zero-width slab: only an entity
+            // straddling the mist axis was ever affected.
             AABB box = this.getBoundingBox();
             List<Entity> affected = this.level().getEntities(this, box);
             for (Entity entity : affected) {

@@ -56,7 +56,9 @@ public class EntityProcessorStandard implements IEntityProcessor {
 
         for (Entity entity : entities) {
 
-            double distanceScaled = entity.distanceToSqr(x, y, z) / size;
+            // 1.7.10 uses entity.getDistance(x, y, z), a linear distance; distanceToSqr is squared,
+            // so the effective radius had shrunk to sqrt(size). Same shape as EntityProcessorCross.
+            double distanceScaled = Math.sqrt(entity.distanceToSqr(x, y, z)) / size;
 
             if (distanceScaled <= 1.0D) {
 
@@ -72,15 +74,17 @@ public class EntityProcessorStandard implements IEntityProcessor {
                     deltaZ /= distance;
 
                     double density = Explosion.getSeenPercent(vec3, entity);
-                    double knockback;
+                    // The original is knockback = (1 - distanceScaled) * density; the falloff term
+                    // was missing, so damage did not drop off with distance at all. The enchantment
+                    // dampener applies on top of that, as in vanilla.
+                    double knockback = (1.0D - distanceScaled) * density;
 
                     if (entity instanceof LivingEntity livingEntity) {
-                        knockback = PlatformHooks.getExplosionKnockbackAfterDampener(livingEntity, density);
-                    } else {
-                        knockback = density;
+                        knockback = PlatformHooks.getExplosionKnockbackAfterDampener(livingEntity, knockback);
                     }
 
                     entity.hurt(setExplosionSource(level, explosion.compat), calculateDamage(distanceScaled, density, knockback, size));
+
 
                     Vec3 velocity = new Vec3(
                             deltaX * knockback,
