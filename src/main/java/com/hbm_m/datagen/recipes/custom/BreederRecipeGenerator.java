@@ -1,7 +1,9 @@
 package com.hbm_m.datagen.recipes.custom;
 //? if forge {
 import com.hbm_m.item.ModItems;
-import com.hbm_m.item.tags_and_tiers.ModIngots;
+import com.hbm_m.item.material.MaterialShape;
+import com.hbm_m.item.material.ModMaterialItems;
+import com.hbm_m.item.material.ModMaterials;
 
 import net.minecraft.data.recipes.FinishedRecipe;
 import net.minecraft.world.item.ItemStack;
@@ -24,18 +26,18 @@ public final class BreederRecipeGenerator {
     private BreederRecipeGenerator() {}
 
     public static void generate(Consumer<FinishedRecipe> writer) {
-        breed(writer, "cobalt_to_co60",            ModIngots.COBALT,       ModIngots.CO60,          100);
-        breed(writer, "radium_to_actinium",        ModIngots.RA226,        ModIngots.ACTINIUM,      300);
-        breed(writer, "thorium232_to_thorium",     ModIngots.THORIUM232,   ModIngots.THORIUM,       500);
-        breed(writer, "uranium235_to_neptunium",   ModIngots.URANIUM235,   ModIngots.NEPTUNIUM,     300);
-        breed(writer, "neptunium_to_plutonium238", ModIngots.NEPTUNIUM,    ModIngots.PLUTONIUM238,  200);
-        breed(writer, "plutonium238_to_239",       ModIngots.PLUTONIUM238, ModIngots.PLUTONIUM239, 1000);
-        breed(writer, "uranium238_to_pu_mix",      ModIngots.URANIUM238,   ModIngots.PU_MIX,        300);
-        breed(writer, "uranium_to_pu_mix",         ModIngots.URANIUM,      ModIngots.PU_MIX,        200);
+        breed(writer, "cobalt_to_co60",            ModMaterials.COBALT,       ModMaterials.CO60,          100);
+        breed(writer, "radium_to_actinium",        ModMaterials.RA226,        ModMaterials.ACTINIUM,      300);
+        breed(writer, "thorium232_to_thorium",     ModMaterials.THORIUM232,   ModMaterials.THORIUM,       500);
+        breed(writer, "uranium235_to_neptunium",   ModMaterials.URANIUM235,   ModMaterials.NEPTUNIUM,     300);
+        breed(writer, "neptunium_to_plutonium238", ModMaterials.NEPTUNIUM,    ModMaterials.PLUTONIUM238,  200);
+        breed(writer, "plutonium238_to_239",       ModMaterials.PLUTONIUM238, ModMaterials.PLUTONIUM239, 1000);
+        breed(writer, "uranium238_to_pu_mix",      ModMaterials.URANIUM238,   ModMaterials.PU_MIX,        300);
+        breed(writer, "uranium_to_pu_mix",         ModMaterials.URANIUM,      ModMaterials.PU_MIX,        200);
 
         // PU_MIX -> NUCLEAR_WASTE (выход — обычный предмет, не слиток).
         BreederRecipeBuilder.breederRecipe(
-                        Ingredient.of(ModItems.getIngot(ModIngots.PU_MIX).get()),
+                        Ingredient.of(ModMaterialItems.item(ModMaterials.PU_MIX, MaterialShape.INGOT)),
                         new ItemStack(ModItems.NUCLEAR_WASTE.get()),
                         200)
                 .save(writer, "breeder/pu_mix_to_nuclear_waste");
@@ -44,10 +46,10 @@ public final class BreederRecipeGenerator {
     // ─── helpers ──────────────────────────────────────────────────────────────────
 
     private static void breed(Consumer<FinishedRecipe> writer, String id,
-                              ModIngots input, ModIngots output, int energyPerTick) {
+                              ModMaterials input, ModMaterials output, int energyPerTick) {
         BreederRecipeBuilder.breederRecipe(
-                        Ingredient.of(ModItems.getIngot(input).get()),
-                        new ItemStack(ModItems.getIngot(output).get()),
+                        Ingredient.of(ModMaterialItems.item(input, MaterialShape.INGOT)),
+                        new ItemStack(ModMaterialItems.item(output, MaterialShape.INGOT)),
                         energyPerTick)
                 .save(writer, "breeder/" + id);
     }

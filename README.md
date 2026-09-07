@@ -6,7 +6,8 @@
 
 **Status:** Pre-Alpha \
 **Minecraft Version:** 1.20.1 \
-**Mod ID:** `hbm_m`
+**Mod ID:** `hbm_m` \
+**License:** GPL-3.0-only (with retained LGPL-3.0 for upstream 1.7.10 material - see [License](#-license))
 
 ***
 
@@ -17,8 +18,6 @@
 # <img src="https://cdn-icons-png.flaticon.com/128/5968/5968756.png" height=28 /> <a href="https://discord.gg/f2BhvzG6CS">Discord</a> | <img src="https://cdn2.steamgriddb.com/icon/46bbc4a56de136ad319e59e37ef55644/32/256x256.png" height=30 /> <a href="https://modrinth.com/mod/hbms-nuclear-tech-modernized">Modrinth</a> | <img src="https://cdn2.steamgriddb.com/logo/946b656620286beea9d58a29d1587d10.png" height=23 /> <a href="https://www.curseforge.com/minecraft/mc-mods/hbms-nuclear-tech-modernized">CurseForge</a> 
 </div>
 
-
-
 > [!WARNING]
 > **This mod is in pre-alpha stage.**
 > **DO NOT use it in your important worlds!**
@@ -27,201 +26,73 @@
 
 ***
 
-## About the Mod
+## About
 
-A modern reimagining of the legendary HBM's Nuclear Tech Mod for Minecraft 1.20.1. Nuclear technologies, radiation, advanced weaponry, and industrial automation with a rewritten codebase and improved architecture.
+HBM-Modernized is a modernized rework of [Hbm's Nuclear Tech Mod](https://github.com/HbmMods/Hbm-s-Nuclear-Tech-GIT) for Minecraft 1.20.1: nuclear technology, radiation, advanced weaponry, and industrial automation, rebuilt on a modern codebase and rendering architecture.
 
-![Mod Preview](https://cdn.modrinth.com/data/cached_images/64f225c1d254b31c0ae52724a5eaec45fe6a2d7c.png)
-
-***
-
-## ⚡ Key Features
-
-**Radiation System** - realistic irradiation mechanics with chunk-based spread, player accumulation, and dangerous effects
-
-**Industrial Automation** - multiblock machines for resource processing and energy production
-
-**Advanced Equipment** - armor and tools with unique perks and modifiers
-
-**Energy System** - generation, storage, and transmission of electricity between machines
-
-**Hazard System** - includes radioactivity, pyrophoricity, explosiveness, and more
+The project is an independent port and is not an official release of HBM/NTM.
 
 ***
 
-## 🏭 Industry and Machines
+## Source And Attribution
 
-### Multiblock Structures
+This project is a modified and modernized work derived from **[Hbm's Nuclear Tech Mod](https://github.com/HbmMods/Hbm-s-Nuclear-Tech-GIT)** for Minecraft 1.7.10. **The Bobcat and the original HBM/NTM contributors retain credit and copyright** in the original code, assets, gameplay design, and documentation.
 
-Craft complex industrial machines consisting of multiple blocks for efficient resource processing.
+All modernization work - the 1.20.1 codebase, build system, rendering architecture, and cross-version platform layer - is authored by the HBM-Modernized team (see [gradle.properties](gradle.properties) for the contributor list).
 
-**Assembly Machines** - two varieties for crafting automation and component production, with an advanced recipe and template system
-
-![Workshop](docs/images/2025-10-14_17.09.12-min.png)
-
-**Press** - creating materials under pressure
-
-![Press](docs/images/2025-10-14_17.18.23-min.png)
-
-**Wood-Burning Generator** - primary energy source in the early game
-
-![Wood-Burning Generator](docs/images/2025-10-14_17.38.08-min.png)
-
-### Energy System
-
-A complete system for generating, storing, and transmitting electricity to power industrial machines.
-
-**Generators** - various methods of obtaining energy from wood to radioactive fuel
-
-**Energy Storage** - accumulators for electricity backup
-
-**Cables** - energy transmission between devices
-
-![Energy System](https://cdn.modrinth.com/data/cached_images/e4928ba19a50edf84fb1e4a78db955827048108a.png)
+Detailed attribution is in [NOTICE.md](NOTICE.md).
 
 ***
 
-## 🛠️ Materials and Resources
+## 📄 License
 
-### Metallurgy
+This project is licensed under **[GPL-3.0-only](LICENSE)**.
 
-Dozens of new ingots and metal blocks for crafting advanced equipment.
+Licensing by scope:
 
-**Radioactive Materials** - uranium, plutonium, polonium, and many others for nuclear technologies
+| Scope | License |
+|---|---|
+| Combined HBM-Modernized source and JAR | GPL-3.0-only |
+| Material derived from HBM/NTM 1.7.10 (code, assets, mechanics, docs) | LGPL-3.0-only - original notice retained ([LICENSE.LESSER](LICENSE.LESSER)) within the GPLv3 combined work |
+| HBM-Modernized's own additions and modifications | GPL-3.0-only |
+| Dependencies (Minecraft, Forge/NeoForge, Architectury, etc.) | Their own upstream licenses |
 
-**Advanced Alloys** - special materials for powerful equipment
+Notes:
 
-**Ores** - new ore types with world generation
-
-![Resources](docs/images/2025-07-21_04.46.43.png)
-
-**Creative Tabs:** Blocks | Consumables | Fuel | Tools | Machines | Ores | Resources | Parts | Templates | Weapons
-
-![Creative Tabs](docs/images/2025-10-14_08.23.08.png)
-
-![Creative Tabs](docs/images/2025-10-14_08.23.24.png)
-
-![Creative Tabs](docs/images/2025-10-14_08.23.36.png)
-
------
+- Applying GPLv3 to the combined work does not erase upstream copyright or the LGPL-3.0 notice on the migrated portions.
+- The `license` field in `mods.toml` states `GPL-3.0-only` - the effective license of the combined distributable mod. It is intentionally not a compound expression (`GPL AND LGPL` would incorrectly claim every part is under both licenses; `GPL OR LGPL` would incorrectly offer an LGPL-only option for our own GPLv3 material).
+- `LICENSE`, `LICENSE.LESSER`, and `NOTICE.md` are shipped inside release JARs under `META-INF/`.
+- Distributing a compiled JAR requires making the complete corresponding source - including build scripts - available by a GPLv3-compliant method. The canonical source repository is this one.
 
 ***
 
-## ⚔️ Equipment and Gear
+## 🏗️ Building
 
-### Armor with Perks
+The project uses a single source set with [stonecutter](https://stonecutter.kikoz.dev/) preprocessing for multi-version support. Active targets: `1.20.1-forge` and `1.21.1-neoforge`.
 
-Advanced armor sets with unique modifiers and abilities.
+```bash
+./gradlew "Set active project to 1.21.1-neoforge"   # switch active stonecutter project
+./gradlew "Reset active project"   # reset active stonecutter project to 1.20.1-forge - by default. Do always before any commit.
+./gradlew :1.20.1-forge:build      # build the JAR
+./gradlew :1.20.1-forge:runClient  # launch a dev client
+./gradlew :1.20.1-forge:runData    # run data generation (translations, blockstates, etc)
+```
 
-**Perk System** - upgrade armor through the modification table to gain special effects
+The same applies to `1.21.1-neoforge`. The Gradle compiler is the only build authority - the preprocessor actively transforms sources per target.
 
-**Radiation Protection** - special sets for working with hazardous materials
-
-![Armor Modification Table](docs/images/2025-10-14_08.31.49.png)
-
-![Armor](docs/images/Screenshot_2025_10_05_05_38_55_75_572064f74bd5f9fa804b05334aa4f912.jpg)
-
-### Tools
-
-Powerful tools with unique resource mining mechanics.
-
-**Vein Miner** - mines entire ore veins at once
-
-**Advanced Tools** - increased efficiency and durability
-
-**Weapons** - swords and axes from various materials, as well as several types of grenades
-
-![Instruments](docs/images/2025-10-14_08.34.19.png)
-
-***
-
-## ☢️ Radiation System
-
-Realistic irradiation mechanics affecting gameplay and the surrounding world.
-
-### Irradiation Mechanics
-
-**Radiation Accumulation** - from the environment and radioactive items in inventory
-
-**Chunk-based Spread** - radiation spreads and slowly dissipates over time
-
-**Irradiation Effects** - blindness, confusion, weakness, hunger, poisoning, and death at critical doses
-
-![Radiation System](docs/images/2025-10-14_18.01.44-min.png)
-
-### World Impact
-
-**Block Mutations** - grass and foliage transform into dead variants at high radiation levels
-
-**Radioactive Blocks** - emit radiation into surrounding chunks
-
-![Block Mutations](docs/images/GIF_20250721_062913_819.gif)
-
-### Measuring Devices
-
-**Geiger Counter** - precise radiation measurement with sound accompaniment and HUD indication
-
-**Dosimeter** - simple device for quick radiation level assessment
-
-### Hazard System
-
-**Explosiveness** - don't throw gunpowder and dynamite into fire, or there might be a boom
-![Explosiveness](docs/images/2025-10-14_18.51.27-min.png)
-
-**Radioactivity** - corresponding items and blocks emit radiation
-
-**Pyrophoricity** - don't handle this without fire protection
-
-***
-
-## 🎮 Game Systems
-
-### Commands
-
-`/hbm_m rad` - manage player radiation level (add/remove/clear)
-
-
-### Settings
-
-Deep integration with Cloth Config API for fine-tuning mod parameters.
-
-![Mod Tweaks](docs/images/2025-07-21_06.38.23.png)
 ***
 
 ## 📦 Installation
 
-**Requirements:**
-
-- Minecraft 1.20.1
-- Forge 1.20.1
-- [Cloth Config API v1.11.136+](https://www.curseforge.com/minecraft/mc-mods/cloth-config/files?version=1.20)
-
-**Steps:**
-
-1. Download the latest version from [Releases](../../releases)
-2. Install Cloth Config API for version 1.20.1
-3. Place both `.jar` files in the `mods` folder
-4. Launch Minecraft with Forge 1.20.1
-
-***
-
-## ⚠️ Known Issues
-
-**Pre-alpha version** - expect bugs, incomplete features, and possible world corruption
-
-**Compatibility** - not tested with most mods, conflicts are possible
-
-**Crafting** - some recipes are missing, survival is temporarily unavailable
-
-Report issues at [Issues](../../issues) with detailed descriptions.
+1. Install **Forge 1.20.1**
+2. Download the latest version from [Releases](../../releases)
+3. Place the `.jar` in your `mods` folder
 
 ***
 
 ## 🤝 Contributing
 
-Pull requests, suggestions, and bug reports are welcome!
-
-Fork the repository and propose improvements.
+Pull requests, suggestions, and bug reports are welcome. Fork the repository and propose improvements, or report issues at [Issues](../../issues) with detailed descriptions.
 
 ***
 
@@ -229,17 +100,6 @@ Fork the repository and propose improvements.
 
 **The Bobcat** - author of the original HBM's Nuclear Tech Mod
 
-**Raptor324** - modernization and rework
+**RaptorDev / Raptor324** and other contributors - modernization and rework
 
-The Forge team and Mojang for development tools
-
-***
-
-## 📝 Note
-
-We are learning as we develop, please be patient!
-Thank you for your interest in the mod and constructive feedback.
-
----
-
-
+The Forge and Mojang teams for development tools

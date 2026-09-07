@@ -93,7 +93,7 @@ public final class DhRenderBridge extends DhApiBeforeApplyShaderRenderEvent {
             if (rp.renderPass == EDhApiRenderPass.TRANSPARENT) return;
 
             if (++frameLogCounter % 600 == 1) {
-                MainRegistry.LOGGER.info("HBM bridge frame #{}: pass={}, proj={}",
+                MainRegistry.LOGGER.debug("HBM bridge frame #{}: pass={}, proj={}",
                         frameLogCounter, rp.renderPass, rp.dhProjectionMatrix != null ? "ok" : "null");
             }
 
@@ -108,7 +108,7 @@ public final class DhRenderBridge extends DhApiBeforeApplyShaderRenderEvent {
             DhClientState.beginDhPass(dhProj, rp.nearClipPlane, rp.farClipPlane, irisLod);
             DhClientState.endDhPass();
             if (++clipDiagCounter % 600 == 1) {
-                MainRegistry.LOGGER.info(
+                MainRegistry.LOGGER.debug(
                         "HBM DH depth clips: rp=(near={}, far={}), irisLodOverride={}, effective=(near={}, far={})",
                         String.format("%.2f", rp.nearClipPlane), String.format("%.2f", rp.farClipPlane),
                         irisLod,

@@ -72,11 +72,7 @@ public class LaunchPadMissileRenderer implements com.hbm_m.client.render.HbmBerB
 
         poseStack.translate(0.0F, 1.0F, 0.0F);
 
-        // ДИАГНОСТИКА тёмного квада на BE-стадии: подтверждить, что пад рисует
-        // меш в этом кадре, и снять пиксели ДО/ПОСЛЕ.
-        com.hbm_m.client.render.FrameStateProbe.snap("px.pad.pre");
         renderData.render(poseStack, packedLight, be.getBlockPos(), buffer, be);
-        com.hbm_m.client.render.FrameStateProbe.snap("px.pad.post");
         poseStack.popPose();
     }
 }

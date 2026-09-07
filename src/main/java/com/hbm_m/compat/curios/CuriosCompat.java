@@ -17,6 +17,21 @@ public final class CuriosCompat {
     private CuriosCompat() {
     }
 
+    /**
+     * Инициализация интеграции. Вызывается из MainRegistry при construction
+     * мода: event-листенеры регистрируются ТОЛЬКО при наличии Curios,
+     * чтобы классы Curios API вообще не загружались без него.
+     */
+    public static void init() {
+        if (isLoaded()) {
+            //? if forge {
+            CuriosForgeEvents.init();
+            //?} else {
+            /*CuriosNeoForgeEvents.init();
+             *///?}
+        }
+    }
+
     public static boolean isLoaded() {
         if (cachedLoaded == null) {
             boolean present = false;

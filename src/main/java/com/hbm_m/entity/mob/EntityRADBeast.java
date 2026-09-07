@@ -5,6 +5,9 @@ import com.hbm_m.api.entity.IRadiationImmune;
 import com.hbm_m.damagesource.ModDamageSources;
 import com.hbm_m.entity.ModEntities;
 import com.hbm_m.item.ModItems;
+import com.hbm_m.item.material.MaterialShape;
+import com.hbm_m.item.material.ModMaterialItems;
+import com.hbm_m.item.material.ModMaterials;
 import com.hbm_m.radiation.ChunkRadiationManager;
 
 import net.minecraft.core.particles.ParticleTypes;
@@ -231,7 +234,7 @@ public class EntityRADBeast extends Monster implements IRadiationImmune {
         if (!recentlyHit) return;
 
         if (looting > 0) {
-            this.spawnAtLocation(new ItemStack(ModItems.NUGGET_POLONIUM.get(), looting));
+            this.spawnAtLocation(ModMaterialItems.stack(ModMaterials.POLONIUM, MaterialShape.NUGGET, looting));
         }
 
         // Wet beasts drop raw waste instead of intact rods, and twice as much of it.

@@ -11,6 +11,9 @@ import com.hbm_m.hazard.HazardRegistry;
 import com.hbm_m.hazard.HazardSystem;
 import com.hbm_m.interfaces.IChunkRadiation;
 import com.hbm_m.item.ModItems;
+import com.hbm_m.item.material.MaterialShape;
+import com.hbm_m.item.material.ModMaterialItems;
+import com.hbm_m.item.material.ModMaterials;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.network.ChunkRadiationDebugBatchPacket;
 import com.hbm_m.network.ModPacketHandler;
@@ -710,7 +713,7 @@ public final class RadiationGameTest {
     @GameTest(template = "empty3x3x3", batch = "radiation", timeoutTicks = 100)
     public static void hazard_crystalUranium(GameTestHelper helper) {
         float level = HazardSystem.getHazardLevelFromStack(
-                new ItemStack(ModItems.CRYSTAL_URANIUM.get()), HazardRegistry.RADIATION);
+                ModMaterialItems.stack(ModMaterials.URANIUM, MaterialShape.CRYSTAL, 1), HazardRegistry.RADIATION);
         checkEq(3.5f, level, "CRYSTAL_URANIUM radiation hazard = 3.5f");
         helper.succeed();
     }
@@ -718,7 +721,7 @@ public final class RadiationGameTest {
     @GameTest(template = "empty3x3x3", batch = "radiation", timeoutTicks = 100)
     public static void hazard_crystalThorium(GameTestHelper helper) {
         float level = HazardSystem.getHazardLevelFromStack(
-                new ItemStack(ModItems.CRYSTAL_THORIUM.get()), HazardRegistry.RADIATION);
+                ModMaterialItems.stack(ModMaterials.THORIUM, MaterialShape.CRYSTAL, 1), HazardRegistry.RADIATION);
         checkEq(1.0f, level, "CRYSTAL_THORIUM radiation hazard = 1.0f");
         helper.succeed();
     }
@@ -747,9 +750,9 @@ public final class RadiationGameTest {
     public static void hazard_cacheConsistency(GameTestHelper helper) {
         // The cache must return the same list for the same Item.
         var list1 = HazardSystem.getHazardsFromStack(
-                new ItemStack(ModItems.CRYSTAL_URANIUM.get()));
+                ModMaterialItems.stack(ModMaterials.URANIUM, MaterialShape.CRYSTAL, 1));
         var list2 = HazardSystem.getHazardsFromStack(
-                new ItemStack(ModItems.CRYSTAL_URANIUM.get()));
+                ModMaterialItems.stack(ModMaterials.URANIUM, MaterialShape.CRYSTAL, 1));
         check(list1 == list2, "HAZARD_CACHE returns the same list (identity)");
         check(!list1.isEmpty(), "CRYSTAL_URANIUM has hazards");
         helper.succeed();
@@ -884,7 +887,7 @@ public final class RadiationGameTest {
         // On a Cow (not a Player, tickCount is not checked) it should work.
         Cow cow = makeCow(helper.getLevel());
         HazardEntry entry = new HazardEntry(HazardRegistry.RADIATION, 10f);
-        entry.applyHazard(new ItemStack(ModItems.CRYSTAL_URANIUM.get()), cow);
+        entry.applyHazard(ModMaterialItems.stack(ModMaterials.URANIUM, MaterialShape.CRYSTAL, 1), cow);
         // onUpdate: level × count / 20F → 3.5 × 1 / 20 = 0.175 → contaminate CREATIVE.
         check(HbmLivingProps.getRadiation(cow) > 0f,
                 "applyHazard RADIATION accumulates radiation on Cow");
@@ -987,7 +990,7 @@ public final class RadiationGameTest {
     public static void hazardTypeRadiation_onUpdateCow(GameTestHelper helper) {
         Cow cow = makeCow(helper.getLevel());
         // CRYSTAL_URANIUM × 1: hazard=3.5, onUpdate → rad = 3.5×1/20 = 0.175.
-        ItemStack stack = new ItemStack(ModItems.CRYSTAL_URANIUM.get(), 1);
+        ItemStack stack = ModMaterialItems.stack(ModMaterials.URANIUM, MaterialShape.CRYSTAL, 1);
         HazardSystem.applyHazards(stack, cow);
         // applyHazards → HazardTypeRadiation.onUpdate → contaminate CREATIVE →
         // radEnv += 0.175, incrementRadiation += 0.175 (radMod=1.0 for Cow).
@@ -1005,7 +1008,7 @@ public final class RadiationGameTest {
     public static void hazardTypeRadiation_stackCount(GameTestHelper helper) {
         Cow cow = makeCow(helper.getLevel());
         // CRYSTAL_URANIUM × 4: hazard=3.5, onUpdate → rad = 3.5×4/20 = 0.7.
-        ItemStack stack = new ItemStack(ModItems.CRYSTAL_URANIUM.get(), 4);
+        ItemStack stack = ModMaterialItems.stack(ModMaterials.URANIUM, MaterialShape.CRYSTAL, 4);
         HazardSystem.applyHazards(stack, cow);
         checkEq(0.7f, HbmLivingProps.getRadiation(cow),
                 "CRYSTAL_URANIUM ×4: rad = 3.5 × 4 / 20 = 0.7");
@@ -1039,7 +1042,7 @@ public final class RadiationGameTest {
     public static void playerHandler_inventoryRadiationItem(GameTestHelper helper) {
         Player player = makePlayer(helper);
         // CRYSTAL_URANIUM × 2: hazard=3.5 × count=2 = 7.0.
-        player.getInventory().add(new ItemStack(ModItems.CRYSTAL_URANIUM.get(), 2));
+        player.getInventory().add(ModMaterialItems.stack(ModMaterials.URANIUM, MaterialShape.CRYSTAL, 2));
         float invRad = PlayerHandler.getInventoryRadiation(player);
         checkEq(7.0f, invRad,
                 "CRYSTAL_URANIUM ×2: inventory radiation = 3.5 × 2 = 7.0");

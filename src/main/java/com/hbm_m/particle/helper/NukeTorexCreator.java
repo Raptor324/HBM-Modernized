@@ -27,7 +27,13 @@ public class NukeTorexCreator implements IParticleCreator {
         tag.putFloat("scale", scale);
         if (type == 0 || type == 1) tag.putInt("cType", type);
         if (level instanceof net.minecraft.server.level.ServerLevel serverLevel) {
-            IParticleCreator.sendPacket(serverLevel, x, y, z, 1000, tag);
+            // Дальняя прорисовка гриба (Distant Horizons и т.п.): радиус 1000 блоков
+            // отсекает игроков, для которых взрыв уже начался — пакет не дойдёт,
+            // и телепорт на место позже гриб не восстановит. Как и серверный
+            // трекинг ракет, вещаем всем игрокам измерения.
+            int range = com.hbm_m.config.ModClothConfig.get().enableMissileNetworkTrack
+                    ? Integer.MAX_VALUE : 1000;
+            IParticleCreator.sendPacket(serverLevel, x, y, z, range, tag);
         }
     }
 

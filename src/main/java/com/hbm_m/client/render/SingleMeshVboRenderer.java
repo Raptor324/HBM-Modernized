@@ -81,42 +81,9 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
     private static final ThreadLocal<Boolean> worldMissileOverlayDraw = ThreadLocal.withInitial(() -> false);
     /** Entity-pass missile mesh: bias depth vs terrain written in the solid pass (horizon z-fighting). */
     private static final ThreadLocal<Boolean> entityMissileDepthBias = ThreadLocal.withInitial(() -> false);
-    /**
-     * Какой веткой последний раз рисовался track-меш (только под флагом
-     * entityMissileDepthBias): "vbo", "quads" (фолбэк putBulkData) или null
-     * (ничего не рисовалось). Читается EngineHandler'ом для диагностики
-     * «чёрного экрана»: расхождение между ожидаемым VBO-путём и фактическим
-     * фолбэком сразу объясняет пропажу блит-биндов из кадра.
-     */
-    public static final ThreadLocal<String> lastTrackMeshBranch = new ThreadLocal<>();
     private static final float ENTITY_MISSILE_DEPTH_FACTOR = -4.0F;
     private static final float ENTITY_MISSILE_DEPTH_UNITS = -4.0F;
 
-
-    /**
-     * Диагностика «меш прилипает к экрану»: раз в секунду логируем итоговую
-     * ModelView и её компоненты. Ожидание: RenderSystem MV = поворот камеры
-     * (верхний левый 3x3 ортонормирован, столбец трансляции ≈ 0), полная
-     * матрица несёт смещение меша относительно камеры.
-     */
-    private static long lastMvmLogMs = 0;
-    private static void logMissileMatrices(Matrix4f fullModelView, String mvSource) {
-        long now = System.currentTimeMillis();
-        if (now - lastMvmLogMs < 1000) return;
-        lastMvmLogMs = now;
-        try {
-            org.joml.Matrix4f rsMv = new org.joml.Matrix4f(com.mojang.blaze3d.systems.RenderSystem.getModelViewMatrix());
-            MainRegistry.LOGGER.info(
-                    "HBM vbo.mvm [iris={} src={}]: rsMV[col0=({},{},{}) col3=({},{},{})] full[m30={} m31={} m32={}]",
-                    com.hbm_m.client.render.shader.ShaderCompatibilityDetector.isExternalShaderActive(),
-                    mvSource,
-                    String.format("%.4f", rsMv.m00()), String.format("%.4f", rsMv.m10()), String.format("%.4f", rsMv.m20()),
-                    String.format("%.4f", rsMv.m03()), String.format("%.4f", rsMv.m13()), String.format("%.4f", rsMv.m23()),
-                    String.format("%.2f", fullModelView.m30()), String.format("%.2f", fullModelView.m31()),
-                    String.format("%.2f", fullModelView.m32()));
-        } catch (Throwable ignored) {
-        }
-    }
 
     public static void setFadeAlpha(float alpha) {
         currentFadeAlpha.set(alpha);
@@ -567,9 +534,6 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
                 return;
             }
         }
-        if (entityMissileDepthBias.get()) {
-            lastTrackMeshBranch.set("none");
-        }
         if (initFailed) return;
         if (!initialized || vaoId <= 0 || vboId <= 0) {
             return;
@@ -582,15 +546,12 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
         ShaderInstance shader = ModShaders.getBlockLitSimpleShader();
         if (shader == null) {
             // Shader not loaded yet (resource reload race) - fall back to putBulkData.
-            if (entityMissileDepthBias.get()) lastTrackMeshBranch.set("quads:shader-null");
             List<BakedQuad> fallbackQuads = getQuadsForIrisPath();
             if (fallbackQuads != null && bufferSource != null) {
                 renderToBufferSource(poseStack, packedLight, fallbackQuads, bufferSource);
             }
             return;
         }
-        if (entityMissileDepthBias.get()) lastTrackMeshBranch.set("vbo");
-
         int previousVao = GL11.glGetInteger(GL30.GL_VERTEX_ARRAY_BINDING);
         int previousArrayBuffer = GL11.glGetInteger(GL15.GL_ARRAY_BUFFER_BINDING);
         boolean previousCullFaceEnabled = GL11.glIsEnabled(GL11.GL_CULL_FACE);
@@ -615,7 +576,6 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
             // ambient корректен, результат идентичен (пуш кладёт ту же матрицу).
             // Станки/двери (флаг false) продолжают читать ambient = R_cam фазы BE.
             org.joml.Matrix4f fullModelView;
-            String mvSource;
             if (entityMissileDepthBias.get()) {
                 org.joml.Matrix4f levelRot =
                         com.hbm_m.platform.RenderHooks.currentLevelRotation();
@@ -625,18 +585,14 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
                     // стопки — в чистой ваниле ambient MV на AFTER_WEATHER
                     // identity, умножение дало бы двойной поворот/мусор).
                     fullModelView = new Matrix4f(poseStack.last().pose());
-                    mvSource = "baked";
                 } else {
                     fullModelView = new org.joml.Matrix4f(RenderSystem.getModelViewMatrix())
                             .mul(poseStack.last().pose());
-                    mvSource = "ambient";
                 }
             } else {
                 fullModelView = new org.joml.Matrix4f(RenderSystem.getModelViewMatrix())
                         .mul(poseStack.last().pose());
-                mvSource = "ambient";
             }
-            logMissileMatrices(fullModelView, mvSource);
             if (shader.MODEL_VIEW_MATRIX != null)
                 shader.MODEL_VIEW_MATRIX.set(fullModelView);
             if (shader.PROJECTION_MATRIX != null)
@@ -724,9 +680,6 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
             // Must come BEFORE apply() - apply() reads samplerMap populated here and
             // does glUseProgram + glUniform1i + glBindTexture in one shot.
             prepareBlockLitSamplers(shader);
-            if (entityMissileDepthBias.get()) {
-                com.hbm_m.client.render.FrameStateProbe.snap("s1.prep");
-            }
             // ЗАЩИТА ОТ DESYNC КЕША ПРОГРАММЫ (Oculus без шейдерпака):
             // VanillaRenderingPipeline.beginLevelRendering() один раз за кадр
             // делает сырой GlStateManager._glUseProgram(0), не сбрасывая статический
@@ -738,9 +691,6 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
             // бинд в apply(). В норме — один glGetInteger, дешевле apply().
             com.hbm_m.client.render.shader.ShaderBindResync.ensureFreshBind(shader);
             shader.apply();
-            if (entityMissileDepthBias.get()) {
-                com.hbm_m.client.render.FrameStateProbe.snap("s1.apply");
-            }
             bindBlockLitSamplerTextures(shader);
 
             float fade = currentFadeAlpha.get();
@@ -766,14 +716,6 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
             beginEntityMissileDepthBias();
             GL11.glDrawElements(GL11.GL_TRIANGLES, indexCount, GL11.GL_UNSIGNED_INT, 0);
             endEntityMissileDepthBias();
-            if (entityMissileDepthBias.get()) {
-                com.hbm_m.client.render.FrameStateProbe.snap("s1.drawn");
-                int glErr = GL11.glGetError();
-                while (glErr != GL11.GL_NO_ERROR) {
-                    MainRegistry.LOGGER.error("HBM VBO draw GL error after track mesh: {}", glErr);
-                    glErr = GL11.glGetError();
-                }
-            }
 
             if (fade < 0.99f) {
                 RenderSystem.disableBlend();

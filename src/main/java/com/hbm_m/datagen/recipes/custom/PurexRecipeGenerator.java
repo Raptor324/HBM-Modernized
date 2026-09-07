@@ -4,6 +4,9 @@ import java.util.function.Consumer;
 
 import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.item.ModItems;
+import com.hbm_m.item.material.MaterialShape;
+import com.hbm_m.item.material.ModMaterialItems;
+import com.hbm_m.item.material.ModMaterials;
 
 import net.minecraft.data.recipes.FinishedRecipe;
 import net.minecraft.world.item.ItemStack;
@@ -32,12 +35,12 @@ public class PurexRecipeGenerator {
 
     public static void generate(Consumer<FinishedRecipe> writer) {
 
-        wasteRecipe(writer, "waste_uranium", ModItems.WASTE_URANIUM.get(), ModItems.NUGGET_URANIUM_FUEL.get());
-        wasteRecipe(writer, "waste_plutonium", ModItems.WASTE_PLUTONIUM.get(), ModItems.NUGGET_PLUTONIUM.get());
-        wasteRecipe(writer, "waste_thorium", ModItems.WASTE_THORIUM.get(), ModItems.NUGGET_THORIUM_FUEL.get());
-        wasteRecipe(writer, "waste_mox", ModItems.WASTE_MOX.get(), ModItems.NUGGET_MOX_FUEL.get());
-        wasteRecipe(writer, "waste_schrabidium", ModItems.WASTE_SCHRABIDIUM.get(), ModItems.NUGGET_SCHRABIDIUM.get());
-        wasteRecipe(writer, "waste_zfb_mox", ModItems.WASTE_ZFB_MOX.get(), ModItems.NUGGET_PU_MIX.get());
+        wasteRecipe(writer, "waste_uranium", ModItems.WASTE_URANIUM.get(), ModMaterialItems.item(ModMaterials.URANIUM_FUEL, MaterialShape.NUGGET));
+        wasteRecipe(writer, "waste_plutonium", ModItems.WASTE_PLUTONIUM.get(), ModMaterialItems.item(ModMaterials.PLUTONIUM, MaterialShape.NUGGET));
+        wasteRecipe(writer, "waste_thorium", ModItems.WASTE_THORIUM.get(), ModMaterialItems.item(ModMaterials.THORIUM_FUEL, MaterialShape.NUGGET));
+        wasteRecipe(writer, "waste_mox", ModItems.WASTE_MOX.get(), ModMaterialItems.item(ModMaterials.MOX_FUEL, MaterialShape.NUGGET));
+        wasteRecipe(writer, "waste_schrabidium", ModItems.WASTE_SCHRABIDIUM.get(), ModMaterialItems.item(ModMaterials.SCHRABIDIUM, MaterialShape.NUGGET));
+        wasteRecipe(writer, "waste_zfb_mox", ModItems.WASTE_ZFB_MOX.get(), ModMaterialItems.item(ModMaterials.PU_MIX, MaterialShape.NUGGET));
     }
 
     /** 1:1 aus dem Original-Muster: 1x Waste-Item + Kerosin + Salpetersaeure -&gt; 1x Nugget + 1x winziger Atommuell. */

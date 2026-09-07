@@ -1,8 +1,6 @@
 package com.hbm_m.api.energy;
 
-import java.lang.ref.WeakReference;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -34,22 +32,20 @@ public final class EnergySubscriptions {
     private static final int DELAY_CONNECT_NET = 10;
     private static final int DELAY_PROVIDE_DIRECT = 1;
 
+    /**
+     * Единая карта backoff-состояний и реестр для централизованного драйвера подписок.
+     * Слабые ключи и значения: выгрузка чанка/GC сами убирают запись — отдельная
+     * периодическая чистка не нужна (раньше тут был второй strong-key HashMap с
+     * full-scan removeIf при каждом update() — главный пожиратель TPS).
+     */
+    private static final Map<BlockEntity, BackoffState> REGISTRY =
+            new MapMaker().concurrencyLevel(1).weakKeys().weakValues().makeMap();
+
     private static final class BackoffState {
         int receiverDelay;
         int providerDelay;
         long lastUpdate = Long.MIN_VALUE;
-        WeakReference<BlockEntity> owner;
     }
-
-    private static final Map<BlockEntity, BackoffState> STATES = new HashMap<>();
-
-    /**
-     * Реестр энергетических BE для централизованного драйвера подписок.
-     * Слабые ключи и значения: выгрузка чанка/GC сами убирают запись,
-     * удаленные BE чистятся проходом в {@link #tickAll(MinecraftServer)}.
-     */
-    private static final Map<BlockEntity, BackoffState> REGISTRY =
-            new MapMaker().concurrencyLevel(1).weakKeys().weakValues().makeMap();
 
     /** Регистрация BE в драйвере (вызывается из setLevel на серверной стороне). */
     public static void register(BlockEntity be) {
@@ -102,20 +98,13 @@ public final class EnergySubscriptions {
     public static void update(BlockEntity be, BlockPos... extraPositions) {
         if (!(be.getLevel() instanceof ServerLevel level) || be.isRemoved()) return;
 
-        BackoffState st = STATES.computeIfAbsent(be, k -> new BackoffState());
+        BackoffState st = REGISTRY.computeIfAbsent(be, k -> new BackoffState());
 
         // Дедупликация: одна машина обновляется не чаще одного раза за игровой тик
         // (собственный тик машины + централизованный драйвер могут вызвать update дважды)
         long now = level.getGameTime();
         if (st.lastUpdate == now) return;
         st.lastUpdate = now;
-
-        // Очистка мертвых записей (защита от утечки)
-        if (STATES.size() > 4096) {
-            STATES.values().removeIf(s -> s.owner == null || s.owner.get() == null || s.owner.get().isRemoved());
-            STATES.remove(be);
-        }
-        st.owner = new WeakReference<>(be);
 
         boolean isReceiver = be instanceof IEnergyReceiver;
         // PowerBuffer — одновременно проводник и накопитель: в небуферных режимах
@@ -179,7 +168,7 @@ public final class EnergySubscriptions {
     }
 
     public static void unsubscribeAll(BlockEntity be, BlockPos... extraPositions) {
-        STATES.remove(be);
+        REGISTRY.remove(be);
         if (!(be.getLevel() instanceof ServerLevel level)) return;
 
         // Junction-нод буферной батареи тоже уничтожается (аналог invalidate в оригинале)

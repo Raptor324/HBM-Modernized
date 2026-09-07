@@ -51,11 +51,7 @@ public enum LargeNukeType {
     public int inventoryY() { return inventoryY; }
 
     public ResourceLocation schematic() {
-        //? if < 1.21.1 {
-        return new ResourceLocation(RefStrings.MODID, schematicPath);
-        //?} else {
-        /*return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, schematicPath);
-         *///?}
+        return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, schematicPath);
     }
 
     public static LargeNukeType byId(String id) {
@@ -87,7 +83,7 @@ public enum LargeNukeType {
     public boolean isReady(ItemStack[] items) {
         return switch (this) {
             case GADGET -> items[0].is(ModItems.GADGET_WIREING.get())
-                    && lenses(items, ModItems.EARLY_EXPLOSIVE_LENSES.get())
+                    && lenses(items, ModItems.FAT_MAN_EXPLOSIVE.get())
                     && items[5].is(ModItems.GADGET_CORE.get());
             case BOY -> items[0].is(ModItems.BOY_SHIELDING.get())
                     && items[1].is(ModItems.BOY_TARGET.get())
@@ -98,7 +94,7 @@ public enum LargeNukeType {
                     && items[1].is(ModItems.EXPLOSIVE_LENSES.get())
                     && items[2].is(ModItems.EXPLOSIVE_LENSES.get())
                     && items[3].is(ModItems.EXPLOSIVE_LENSES.get())
-                    && items[4].is(ModItems.MAN_CORE.get());
+                    && items[4].is(ModItems.FAT_MAN_CORE.get());
         };
     }
 
@@ -131,7 +127,7 @@ public enum LargeNukeType {
         return switch (this) {
             case GADGET -> switch (slot) {
                 case 0 -> stack.is(ModItems.GADGET_WIREING.get());
-                case 1, 2, 3, 4 -> stack.is(ModItems.EARLY_EXPLOSIVE_LENSES.get());
+                case 1, 2, 3, 4 -> stack.is(ModItems.FAT_MAN_EXPLOSIVE.get());
                 case 5 -> stack.is(ModItems.GADGET_CORE.get());
                 default -> false;
             };
@@ -145,7 +141,7 @@ public enum LargeNukeType {
             };
             case MIKE -> switch (slot) {
                 case 0, 1, 2, 3 -> stack.is(ModItems.EXPLOSIVE_LENSES.get());
-                case 4 -> stack.is(ModItems.MAN_CORE.get());
+                case 4 -> stack.is(ModItems.FAT_MAN_CORE.get());
                 case 5 -> stack.is(ModItems.MIKE_CORE.get());
                 case 6 -> stack.is(ModItems.MIKE_DEUT.get());
                 case 7 -> stack.is(ModItems.MIKE_COOLING_UNIT.get());
@@ -153,7 +149,7 @@ public enum LargeNukeType {
             };
             case TSAR -> switch (slot) {
                 case 0, 1, 2, 3 -> stack.is(ModItems.EXPLOSIVE_LENSES.get());
-                case 4 -> stack.is(ModItems.MAN_CORE.get());
+                case 4 -> stack.is(ModItems.FAT_MAN_CORE.get());
                 case 5 -> stack.is(ModItems.TSAR_CORE.get());
                 default -> false;
             };

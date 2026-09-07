@@ -18,11 +18,7 @@ import net.minecraft.world.entity.player.Inventory;
 public class GUINukeN2 extends GuiInfoScreen<NukeN2Menu> {
 
     private static final ResourceLocation TEXTURE =
-            //? if < 1.21.1 {
-            new ResourceLocation(RefStrings.MODID, "textures/gui/weapon/n2_schematic.png");
-            //?} else {
-            /*ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/weapon/n2_schematic.png");
-             *///?}
+            ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/weapon/n2_schematic.png");
 
     private final NukeN2BlockEntity be;
 

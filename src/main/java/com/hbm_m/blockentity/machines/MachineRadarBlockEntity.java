@@ -589,7 +589,7 @@ public class MachineRadarBlockEntity extends BaseMachineBlockEntity {
         if (entity instanceof IRadarDetectable detectable) {
             return detectable.getTargetType() != IRadarDetectable.RadarTargetType.PLAYER;
         }
-        String name = entity.getType().toString().toLowerCase();
+        String name = entity.getType().toString().toLowerCase(java.util.Locale.ROOT);
         return name.contains("missile")
                 || name.contains("rocket")
                 || name.contains("airstrike")
@@ -602,8 +602,8 @@ public class MachineRadarBlockEntity extends BaseMachineBlockEntity {
             return false;
         }
 
-        String typeName = living.getType().toString().toLowerCase();
-        String displayName = living.getName().getString().toLowerCase();
+        String typeName = living.getType().toString().toLowerCase(java.util.Locale.ROOT);
+        String displayName = living.getName().getString().toLowerCase(java.util.Locale.ROOT);
         return typeName.contains("digamma")
                 || typeName.contains("jam")
                 || displayName.contains("digamma")
@@ -619,7 +619,7 @@ public class MachineRadarBlockEntity extends BaseMachineBlockEntity {
         if (entity instanceof MissileBaseEntity) {
             return false;
         }
-        String name = entity.getType().toString().toLowerCase();
+        String name = entity.getType().toString().toLowerCase(java.util.Locale.ROOT);
         return name.contains("shell")
                 || name.contains("artillery")
                 || name.contains("mortar")

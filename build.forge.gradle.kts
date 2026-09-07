@@ -124,9 +124,9 @@ dependencies {
 		isTransitive = false
 	}
 	// Sable (экосистема Create Aeronautics, существует только на 1.21.1+):
-	// compileOnly только для валидации строковых таргетов миксинов на этапе
-	// компиляции. На 1.20.1 классы Sable в рантайме отсутствуют -> миксины
-	// не применяются (no-op, мод не падает).
+	// compileOnly для валидации строковых таргетов миксинов (полностью классы
+	// не резолвятся: jar собран под 1.21.1). На 1.20.1 классы Sable в рантайме
+	// отсутствуют -> миксины не применяются (no-op, мод не падает).
 	compileOnly("maven.modrinth:sable:2.0.5+mc1.21.1")
 	"modCompileOnly"("dev.engine-room.flywheel:flywheel-forge-api-1.20.1:${prop("deps.flywheel")}")
 	// Embeddium падает в data-режиме (Minecraft.getInstance()==null при конструировании),

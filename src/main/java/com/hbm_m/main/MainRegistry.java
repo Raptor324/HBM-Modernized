@@ -44,8 +44,8 @@ public final class MainRegistry {
     public static final String MOD_ID = RefStrings.MODID;
 
     /** Порт {@code MainRegistry.missileTab} / {@code MainRegistry.nukeTab} (1.7.10). */
-    public static final RegistrySupplier<CreativeModeTab> missileTab = ModCreativeTabs.NTM_MISSILES_TAB;
-    public static final RegistrySupplier<CreativeModeTab> nukeTab = ModCreativeTabs.NTM_BOMBS_TAB;
+    public static final RegistrySupplier<CreativeModeTab> missileTab = ModCreativeTabs.NTM_MISSILE_TAB;
+    public static final RegistrySupplier<CreativeModeTab> nukeTab = ModCreativeTabs.NTM_NUKE_TAB;
 
     static {
         // Загрузка JSON-конфига (client.json + server.json) ДО любой инициализации,
@@ -96,6 +96,9 @@ public final class MainRegistry {
         PlayerHandler.register();
         ChunkRadiationManager.init();
         ModEventHandler.register();
+        // Опциональный Curios: слушатели вешаются только при наличии мода,
+        // иначе классы Curios API вообще не загружаются (NoClassDefFoundError).
+        com.hbm_m.compat.curios.CuriosCompat.init();
         PowerArmorHandlers.register();
         LadderClimbHandler.register();
         com.hbm_m.server.missile.MissileTrackBroadcaster.register();

@@ -333,7 +333,6 @@ public class ModFluids {
     public static final FluidEntry DEATH = registerFluid("death", 0x717A88);
     public static final FluidEntry PAIN = registerFluid("pain", 0x938541);
     public static final FluidEntry STELLAR_FLUX = registerFluid("stellar_flux", 0xE300FF);
-    public static final FluidEntry BROMIDE = registerFluid("bromide", 0x808080);
 
     //=====================================================================================//
     // Helper method to get fluid by name

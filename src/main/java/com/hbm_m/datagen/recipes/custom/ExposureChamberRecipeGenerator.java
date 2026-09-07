@@ -1,7 +1,9 @@
 package com.hbm_m.datagen.recipes.custom;
 //? if forge {
 import com.hbm_m.item.ModItems;
-import com.hbm_m.item.tags_and_tiers.ModIngots;
+import com.hbm_m.item.material.MaterialShape;
+import com.hbm_m.item.material.ModMaterialItems;
+import com.hbm_m.item.material.ModMaterials;
 
 import net.minecraft.data.recipes.FinishedRecipe;
 import net.minecraft.world.item.ItemStack;
@@ -24,24 +26,24 @@ public final class ExposureChamberRecipeGenerator {
 
     public static void generate(Consumer<FinishedRecipe> writer) {
         expose(writer, "schraranium", ModItems.PARTICLE_HIGGS.get(),
-                ModIngots.URANIUM, ModIngots.SCHRARANIUM);
+                ModMaterials.URANIUM, ModMaterials.SCHRARANIUM);
         expose(writer, "schrabidium", ModItems.PARTICLE_HIGGS.get(),
-                ModIngots.URANIUM238, ModIngots.SCHRABIDIUM);
+                ModMaterials.URANIUM238, ModMaterials.SCHRABIDIUM);
         expose(writer, "euphemium", ModItems.PARTICLE_DARK.get(),
-                ModIngots.PLUTONIUM, ModIngots.EUPHEMIUM);
+                ModMaterials.PLUTONIUM, ModMaterials.EUPHEMIUM);
         expose(writer, "dineutronium", ModItems.PARTICLE_SPARKTICLE.get(),
-                ModIngots.SCHRABIDIUM, ModIngots.DINEUTRONIUM);
+                ModMaterials.SCHRABIDIUM, ModMaterials.DINEUTRONIUM);
     }
 
     // ─── helpers ──────────────────────────────────────────────────────────────────
 
     private static void expose(Consumer<FinishedRecipe> writer, String id,
                                net.minecraft.world.item.Item particle,
-                               ModIngots ingredient, ModIngots output) {
+                               ModMaterials ingredient, ModMaterials output) {
         ExposureChamberRecipeBuilder.exposureChamberRecipe(
                         new ItemStack(particle),
-                        Ingredient.of(ModItems.getIngot(ingredient).get()),
-                        new ItemStack(ModItems.getIngot(output).get()))
+                        Ingredient.of(ModMaterialItems.item(ingredient, MaterialShape.INGOT)),
+                        new ItemStack(ModMaterialItems.item(output, MaterialShape.INGOT)))
                 .save(writer, "exposure_chamber/" + id);
     }
 }

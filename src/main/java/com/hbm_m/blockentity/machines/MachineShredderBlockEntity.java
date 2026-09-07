@@ -3,6 +3,7 @@ package com.hbm_m.blockentity.machines;
 import com.hbm_m.platform.PlatformHooks;
 
 
+import java.util.Map;
 import java.util.Optional;
 
 import org.jetbrains.annotations.Nullable;
@@ -12,6 +13,9 @@ import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.inventory.menu.MachineShredderMenu;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.item.industrial.ItemBlades;
+import com.hbm_m.item.material.MaterialShape;
+import com.hbm_m.item.material.ModMaterialItems;
+import com.hbm_m.item.material.ModMaterials;
 import com.hbm_m.recipe.ShredderRecipe;
 import com.hbm_m.platform.recipe.RecipeHooks;
 import com.hbm_m.platform.recipe.RecipeInputWrapper;
@@ -372,7 +376,7 @@ public class MachineShredderBlockEntity extends BaseMachineBlockEntity {
 
     private ItemStack getRecipeResult(ItemStack input) {
         if (input.isEmpty() || level == null) {
-            return new ItemStack(ModItems.SCRAP.get(), 1);
+            return new ItemStack(ModMaterialItems.item(ModMaterials.SCRAP, MaterialShape.SCRAP), 1);
         }
 
         SimpleContainer container = new SimpleContainer(1);
@@ -392,7 +396,7 @@ public class MachineShredderBlockEntity extends BaseMachineBlockEntity {
             return copy;
         }
         
-        return new ItemStack(ModItems.SCRAP.get(), 1);
+        return new ItemStack(ModMaterialItems.item(ModMaterials.SCRAP, MaterialShape.SCRAP), 1);
     }
 
 
@@ -471,18 +475,14 @@ public class MachineShredderBlockEntity extends BaseMachineBlockEntity {
         if (item == ModItems.DUST.get() || item == ModItems.DUST_TINY.get()) {
             return true;
         }
-        for (RegistrySupplier<Item> powder : ModItems.POWDERS.values()) {
-            if (powder != null && powder.isPresent() && powder.get() == item) {
+        // Порошки материалов: обычные и мелкие (реестр материалов).
+        for (Map.Entry<ModMaterials, RegistrySupplier<Item>> powder : ModMaterialItems.allOf(MaterialShape.POWDER)) {
+            if (powder.getValue().get() == item) {
                 return true;
             }
         }
-        for (RegistrySupplier<Item> powder : ModItems.INGOT_POWDERS.values()) {
-            if (powder != null && powder.isPresent() && powder.get() == item) {
-                return true;
-            }
-        }
-        for (RegistrySupplier<Item> powder : ModItems.INGOT_POWDERS_TINY.values()) {
-            if (powder != null && powder.isPresent() && powder.get() == item) {
+        for (Map.Entry<ModMaterials, RegistrySupplier<Item>> powder : ModMaterialItems.allOf(MaterialShape.POWDER_TINY)) {
+            if (powder.getValue().get() == item) {
                 return true;
             }
         }

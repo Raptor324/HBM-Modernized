@@ -2,7 +2,9 @@ package com.hbm_m.datagen.recipes.custom;
 //? if forge {
 import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.item.ModItems;
-import com.hbm_m.item.tags_and_tiers.ModIngots;
+import com.hbm_m.item.material.MaterialShape;
+import com.hbm_m.item.material.ModMaterialItems;
+import com.hbm_m.item.material.ModMaterials;
 
 import dev.architectury.fluid.FluidStack;
 import net.minecraft.data.recipes.FinishedRecipe;
@@ -43,10 +45,10 @@ public final class SolidificationRecipeGenerator {
         put(writer, "mercury",     ModFluids.MERCURY,      125, new ItemStack(ModItems.NUGGET_MERCURY.get()));
         put(writer, "biogas",      ModFluids.BIOGAS,       250, new ItemStack(ModItems.BIOMASS_COMPRESSED.get(), 4));
         put(writer, "enderjuice",  ModFluids.ENDERJUICE,   100, new ItemStack(Items.ENDER_PEARL));
-        put(writer, "watz",        ModFluids.WATZ,        1000, new ItemStack(ModItems.getIngot(ModIngots.MUD).get()));
+        put(writer, "watz",        ModFluids.WATZ,        1000, new ItemStack(ModMaterialItems.item(ModMaterials.MUD, MaterialShape.INGOT)));
         put(writer, "redmud",      ModFluids.REDMUD,       450, new ItemStack(Items.IRON_INGOT));
         put(writer, "sodium",      ModFluids.SODIUM,       100, new ItemStack(ModItems.POWDER_SODIUM.get()));
-        put(writer, "lead",        ModFluids.LEAD,         100, new ItemStack(ModItems.getIngot(ModIngots.LEAD).get()));
+        put(writer, "lead",        ModFluids.LEAD,         100, new ItemStack(ModMaterialItems.item(ModMaterials.LEAD, MaterialShape.INGOT)));
         // BALEFIRE 250 mB -> SOLID_FUEL_BF из manual-блока ПЕРЕЗАПИСЫВАЛСЯ в оригинале последним
         // registerSFAuto(BALEFIRE, 24_000_000L) — поэтому эмитим только финальное (auto) значение.
     }

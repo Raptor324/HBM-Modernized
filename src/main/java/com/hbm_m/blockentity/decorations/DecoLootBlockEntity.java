@@ -39,7 +39,7 @@ public class DecoLootBlockEntity extends BaseHbmBlockEntity {
     private static final Object[][] POOL = {
             {Items.BONE, 20}, {Items.STICK, 25}, {Items.STRING, 15},
             {Items.IRON_NUGGET, 20}, {Items.COAL, 15}, {Items.PAPER, 10},
-            {com.hbm_m.item.ModItems.SCRAP.get(), 30},
+            {com.hbm_m.item.material.ModMaterialItems.item(com.hbm_m.item.material.ModMaterials.SCRAP, com.hbm_m.item.material.MaterialShape.SCRAP), 30},
             {com.hbm_m.item.ModItems.CAP_NUKA.get(), 10},
             {com.hbm_m.item.ModItems.CANNED_BEEF.get(), 8},
             {com.hbm_m.item.ModItems.CANNED_LEFTOVERS.get(), 8},

@@ -66,7 +66,14 @@ public final class MachineChemicalPlantRenderer {
         MachineRenderers.machine("chemplant", ModBlockEntities.CHEMICAL_PLANT_BE.get(),
                 MachineChemicalPlantBlockEntity.class)
             .part("Base")
-            .dynamicPart("Frame", MachineChemicalPlantRenderer::frameQuads, be -> "frame")
+            .dynamicPart("Frame", MachineChemicalPlantRenderer::frameQuads,
+                    // Ключ по FRAME-состоянию: константный "frame" кешировал бы пустой
+                    // рендерер по первому состоянию навсегда (см. advassembler).
+                    be -> {
+                        var st = be.getBlockState();
+                        return String.valueOf(st.hasProperty(MachineChemicalPlantBlock.FRAME)
+                                && st.getValue(MachineChemicalPlantBlock.FRAME));
+                    })
             .part("Slider", MachineChemicalPlantRenderer::animateSlider)
             .part("Spinner", MachineChemicalPlantRenderer::animateSpinner)
             .blockTransform(MachineChemicalPlantRenderer::applyBlockTransform)

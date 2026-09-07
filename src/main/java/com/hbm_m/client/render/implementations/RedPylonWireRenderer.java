@@ -27,11 +27,7 @@ public class RedPylonWireRenderer implements BlockEntityRenderer<PylonBaseBlockE
     public static final ResourceLocation WIRE_GREYSCALE_TEX = rl("hbm_m", "textures/models/network/wire_greyscale.png");
 
     private static ResourceLocation rl(String namespace, String path) {
-        //? if < 1.21.1 {
-        return new ResourceLocation(namespace, path);
-        //?} else {
-        /*return ResourceLocation.fromNamespaceAndPath(namespace, path);
-        *///?}
+        return ResourceLocation.fromNamespaceAndPath(namespace, path);
     }
 
     public RedPylonWireRenderer(BlockEntityRendererProvider.Context context) {}

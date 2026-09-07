@@ -24,11 +24,7 @@ public class RedCablePaintableRenderer implements BlockEntityRenderer<RedCablePa
     private static final ResourceLocation OVERLAY_TEX = rl("hbm_m", "block/red_cable_overlay");
 
     private static ResourceLocation rl(String namespace, String path) {
-        //? if < 1.21.1 {
-        return new ResourceLocation(namespace, path);
-        //?} else {
-        /*return ResourceLocation.fromNamespaceAndPath(namespace, path);
-        *///?}
+        return ResourceLocation.fromNamespaceAndPath(namespace, path);
     }
     private static final float EPS = 0.002F;
     private static final float VEIL_ALPHA = 0.35F;

@@ -3,7 +3,9 @@ package com.hbm_m.datagen.recipes.custom;
 import java.util.function.Consumer;
 
 import com.hbm_m.item.ModItems;
-import com.hbm_m.item.tags_and_tiers.ModPowders;
+import com.hbm_m.item.material.MaterialShape;
+import com.hbm_m.item.material.ModMaterialItems;
+import com.hbm_m.item.material.ModMaterials;
 import com.hbm_m.inventory.fluid.ModFluids;
 
 import net.minecraft.data.recipes.FinishedRecipe;
@@ -62,10 +64,10 @@ public final class FusionRecipeGenerator {
         FusionRecipeBuilder.fusionRecipe(DURATION, SOLENOID)
                 .inputEnergy(2_500_000L).outputEnergy(6_250_000L).outputFlux(BREEDER_CAPACITY / 20)
                 .rgb(0.8F, 0.6F, 0.4F)
-                .icon(new ItemStack(ModItems.CHLOROPHYTE_POWDER.get()))
+                .icon(new ItemStack(ModItems.POWDER_CHLOROPHYTE.get()))
                 .addFluidInput(ModFluids.TRITIUM.getSource(), 10)
                 .addFluidInput(ModFluids.CHLORINE.getSource(), 10)
-                .addItemOutput(new ItemStack(ModItems.CHLOROPHYTE_POWDER.get()))
+                .addItemOutput(new ItemStack(ModItems.POWDER_CHLOROPHYTE.get()))
                 .save(writer, "fusion/tcl");
 
         // Mittlerer Brennstoff, aneutronisch. 10MHE/s bis 75MHE/s
@@ -92,9 +94,9 @@ public final class FusionRecipeGenerator {
         FusionRecipeBuilder.fusionRecipe(DURATION, SOLENOID)
                 .inputEnergy(3_750_000L).outputEnergy(10_000_000L).outputFlux(BREEDER_CAPACITY / 10)
                 .rgb(1F, 0.6F, 0.2F)
-                .icon(new ItemStack(ModItems.CHLOROPHYTE_POWDER.get()))
+                .icon(new ItemStack(ModItems.POWDER_CHLOROPHYTE.get()))
                 .addFluidInput(ModFluids.CHLORINE.getSource(), 20)
-                .addItemOutput(new ItemStack(ModItems.CHLOROPHYTE_POWDER.get()))
+                .addItemOutput(new ItemStack(ModItems.POWDER_CHLOROPHYTE.get()))
                 .save(writer, "fusion/cl");
 
         // Hoher Brennstoff, braucht die Chlorphase zum Zuenden. 200MHE/s bis 500MHE/s
@@ -103,7 +105,7 @@ public final class FusionRecipeGenerator {
                 .rgb(0.2F, 0.8F, 0.8F)
                 .icon(ModFluids.DHC.getSource())
                 .addFluidInput(ModFluids.DHC.getSource(), 20)
-                .addItemOutput(new ItemStack(ModItems.CHLOROPHYTE_POWDER.get()))
+                .addItemOutput(new ItemStack(ModItems.POWDER_CHLOROPHYTE.get()))
                 .save(writer, "fusion/dhc");
 
         // Hoher Brennstoff, niedrige Zuendschwelle. 20MHE/s bis 250MHE/s
@@ -122,7 +124,7 @@ public final class FusionRecipeGenerator {
                 .rgb(1F, 0.4F, 0.1F)
                 .icon(ModFluids.STELLAR_FLUX.getSource())
                 .addFluidInput(ModFluids.STELLAR_FLUX.getSource(), 10)
-                .addItemOutput(new ItemStack(ModItems.getPowders(ModPowders.GOLD).get()))
+                .addItemOutput(new ItemStack(ModMaterialItems.item(ModMaterials.GOLD, MaterialShape.POWDER)))
                 .save(writer, "fusion/stellar");
     }
 }

@@ -26,6 +26,8 @@ public final class ClientRenderFlags {
         enableOcclusionCulling = cfg.enableOcclusionCulling;
         maxInstances = cfg.maxInstancedInstancesPerPart;
         forceVanillaImmediate = cfg.forceVanillaImmediatePath;
+        // Один опрос Iris API за кадр — isExternalShaderActive() дальше читает кеш.
+        com.hbm_m.client.render.shader.ShaderCompatibilityDetector.updateState();
     }
 
     /**

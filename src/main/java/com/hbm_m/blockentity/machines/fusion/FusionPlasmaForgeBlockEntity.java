@@ -22,6 +22,9 @@ import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.inventory.menu.MachineFusionPlasmaForgeMenu;
 import com.hbm_m.item.ModItems;
+import com.hbm_m.item.material.MaterialShape;
+import com.hbm_m.item.material.ModMaterialItems;
+import com.hbm_m.item.material.ModMaterials;
 import com.hbm_m.recipe.ModRecipes;
 import com.hbm_m.recipe.PlasmaForgeRecipe;
 import com.hbm_m.recipe.PlasmaForgeRecipe.CountedIngredient;
@@ -111,29 +114,41 @@ public class FusionPlasmaForgeBlockEntity extends BaseMachineBlockEntity
     private static List<Booster> boosters;
 
     /**
-     * 1:1 aus der statischen {@code boosters}-Liste des Originals. Die dort ueber das OreDict
-     * angesprochenen Barren- und Staubformen der Isotope existieren in diesem Port noch nicht -
-     * eingetragen ist alles, was es gibt (Nuggets, Billets, Feinstaub).
+     * 1:1 aus der statischen {@code boosters}-Liste des Originals - seit der Umstellung auf das
+     * einheitliche Materialregister sind alle zwanzig Isotopenformen vorhanden.
      */
     public static List<Booster> getBoosters() {
         if (boosters == null) {
             List<Booster> list = new ArrayList<>();
-            add(list, ModItems.NUGGET_CO60, 20);
-            add(list, ModItems.BILLET_CO60, 120);
-            add(list, ModItems.NUGGET_SR90, 40);
-            add(list, ModItems.BILLET_SR90, 240);
-            add(list, ModItems.NUGGET_AU198, 60);
-            add(list, ModItems.BILLET_AU198, 360);
-            add(list, ModItems.I131_POWDER_TINY, 60);
-            add(list, ModItems.XE135_POWDER_TINY, 60);
-            add(list, ModItems.CS137_POWDER_TINY, 50);
+            add(list, ModMaterials.CO60,  MaterialShape.NUGGET,      20);
+            add(list, ModMaterials.CO60,  MaterialShape.BILLET,     120);
+            add(list, ModMaterials.CO60,  MaterialShape.INGOT,      200);
+            add(list, ModMaterials.CO60,  MaterialShape.POWDER,     200);
+            add(list, ModMaterials.SR90,  MaterialShape.NUGGET,      40);
+            add(list, ModMaterials.SR90,  MaterialShape.POWDER_TINY, 40);
+            add(list, ModMaterials.SR90,  MaterialShape.BILLET,     240);
+            add(list, ModMaterials.SR90,  MaterialShape.INGOT,      400);
+            add(list, ModMaterials.SR90,  MaterialShape.POWDER,     400);
+            add(list, ModMaterials.AU198, MaterialShape.NUGGET,      60);
+            add(list, ModMaterials.AU198, MaterialShape.BILLET,     360);
+            add(list, ModMaterials.AU198, MaterialShape.INGOT,      600);
+            add(list, ModMaterials.AU198, MaterialShape.POWDER,     600);
+            add(list, ModMaterials.I131,  MaterialShape.POWDER_TINY, 60);
+            add(list, ModMaterials.I131,  MaterialShape.POWDER,     600);
+            add(list, ModMaterials.XE135, MaterialShape.POWDER_TINY, 60);
+            add(list, ModMaterials.XE135, MaterialShape.POWDER,     600);
+            add(list, ModMaterials.CS137, MaterialShape.POWDER_TINY, 50);
+            add(list, ModMaterials.CS137, MaterialShape.POWDER,     500);
+            add(list, ModMaterials.AT209, MaterialShape.POWDER,   1_200);
             boosters = List.copyOf(list);
         }
         return boosters;
     }
 
-    private static void add(List<Booster> list, dev.architectury.registry.registries.RegistrySupplier<Item> item, int duration) {
-        if (item != null) list.add(new Booster(item.get(), duration));
+    private static void add(List<Booster> list, ModMaterials mat, MaterialShape shape, int duration) {
+        if (!ModMaterialItems.has(mat, shape)) return;
+        Item item = ModMaterialItems.item(mat, shape);
+        if (item != null) list.add(new Booster(item, duration));
     }
 
     // ═══════════════════════════════ Tick ═══════════════════════════════

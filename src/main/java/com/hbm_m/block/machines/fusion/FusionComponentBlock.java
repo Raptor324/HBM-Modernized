@@ -2,6 +2,9 @@ package com.hbm_m.block.machines.fusion;
 
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.item.ModItems;
+import com.hbm_m.item.material.MaterialShape;
+import com.hbm_m.item.material.ModMaterialItems;
+import com.hbm_m.item.material.ModMaterials;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.sounds.SoundEvents;
@@ -64,7 +67,7 @@ public class FusionComponentBlock extends Block {
     private static boolean consumePlate(Player player) {
         for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
             ItemStack stack = player.getInventory().getItem(i);
-            if (stack.is(ModItems.PLATE_CAST_STEEL.get())) {
+            if (stack.is(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE_CAST))) {
                 stack.shrink(1);
                 return true;
             }

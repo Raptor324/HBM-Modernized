@@ -9,6 +9,7 @@ import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.blockentity.decorations.DecoLootBlockEntity;
 import com.hbm_m.blockentity.decorations.PedestalBlockEntity;
 import com.hbm_m.item.ModItems;
+import com.hbm_m.block.RedBrickBlock;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -107,10 +108,10 @@ public final class RedRoomGenerator {
         Direction inward = outward.getOpposite();
         BlockPos center = keyholePos.relative(inward, W).below(2);
         RandomSource rand = level.random;
-        BlockState brick = ModBlocks.BRICK_RED.get().defaultBlockState();
 
-        // Полная замкнутая оболочка — ближняя стена проходит через скважину
-        buildShell(level, center, brick, outward, false);
+        // Полная замкнутая оболочка — ближняя стена проходит через скважину.
+        // Стены — красная грань внутрь; рёбра и углы — серые.
+        buildShell(level, center, true, outward, false);
 
         // Внутренняя скважина stone_keyhole_meta на случайной стене (в оригинале
         // nextInt(1)==0 — всегда), лицевой гранью внутрь комнаты
@@ -121,11 +122,11 @@ public final class RedRoomGenerator {
             default -> placeInnerKeyhole(level, center.offset(0, 2, -W), Direction.SOUTH);
         }
 
-        // Очистка внутренности — воздух
+        // Очистка внутренности — воздух; пол красный сверху, потолок снизу
         for (int i = -W + 1; i <= W - 1; i++) {
             for (int j = -W + 1; j <= W - 1; j++) {
-                set(level, center.offset(i, 0, j), brick);
-                set(level, center.offset(i, HEIGHT - 1, j), brick);
+                set(level, center.offset(i, 0, j), brick(RedBrickBlock.RedFace.UP));
+                set(level, center.offset(i, HEIGHT - 1, j), brick(RedBrickBlock.RedFace.DOWN));
                 for (int k = 1; k <= HEIGHT - 2; k++) {
                     level.setBlock(center.offset(i, k, j), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
                 }
@@ -226,14 +227,14 @@ public final class RedRoomGenerator {
         Direction inward = outward.getOpposite();
         BlockPos center = keyholePos.relative(inward, W).below(2);
         RandomSource rand = level.random;
-        BlockState brick = ModBlocks.BRICK_RED.get().defaultBlockState();
 
-        buildShell(level, center, brick, outward, true);
+        // Оболочка чёрной комнаты — весь кирпич серый (аналог meta 6)
+        buildShell(level, center, false, outward, true);
 
         for (int i = -W + 1; i <= W - 1; i++) {
             for (int j = -W + 1; j <= W - 1; j++) {
-                set(level, center.offset(i, 0, j), brick);
-                set(level, center.offset(i, HEIGHT - 1, j), brick);
+                set(level, center.offset(i, 0, j), brick(RedBrickBlock.RedFace.NONE));
+                set(level, center.offset(i, HEIGHT - 1, j), brick(RedBrickBlock.RedFace.NONE));
                 for (int k = 1; k <= HEIGHT - 2; k++) {
                     level.setBlock(center.offset(i, k, j), net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
                 }
@@ -254,38 +255,51 @@ public final class RedRoomGenerator {
 
     /**
      * Строит оболочку комнаты: рёбра, углы, стены, пол и потолок.
+     * Рёбра/углы — кирпич без красной грани (полностью серый, аналог meta 6);
+     * при {@code redInterior} стены ставятся с красной гранью ВНУТРЬ комнаты
+     * (аналог meta 2..5 в 1.7.10), иначе тоже полностью серые.
      *
      * @param outward      направление от центра комнаты к скважине (ближняя стена)
      * @param skipNearWall не строить ближнюю стену (чёрная комната — там уже
      *                     стоит стена красной комнаты со встроенной скважиной)
      */
-    private static void buildShell(ServerLevel level, BlockPos center, BlockState brick,
+    private static void buildShell(ServerLevel level, BlockPos center, boolean redInterior,
                                    Direction outward, boolean skipNearWall) {
+        BlockState edge = brick(RedBrickBlock.RedFace.NONE);
+        // Красная грань смотрит внутрь комнаты
+        BlockState wallPosX = brick(redInterior ? RedBrickBlock.RedFace.WEST : RedBrickBlock.RedFace.NONE);
+        BlockState wallNegX = brick(redInterior ? RedBrickBlock.RedFace.EAST : RedBrickBlock.RedFace.NONE);
+        BlockState wallPosZ = brick(redInterior ? RedBrickBlock.RedFace.NORTH : RedBrickBlock.RedFace.NONE);
+        BlockState wallNegZ = brick(redInterior ? RedBrickBlock.RedFace.SOUTH : RedBrickBlock.RedFace.NONE);
         // Рёбра: пол и потолок по периметру
         for (int i = -W; i <= W; i++) {
-            set(level, center.offset(i, 0, W), brick);
-            set(level, center.offset(i, 0, -W), brick);
-            set(level, center.offset(W, 0, i), brick);
-            set(level, center.offset(-W, 0, i), brick);
-            set(level, center.offset(i, HEIGHT - 1, W), brick);
-            set(level, center.offset(i, HEIGHT - 1, -W), brick);
-            set(level, center.offset(W, HEIGHT - 1, i), brick);
-            set(level, center.offset(-W, HEIGHT - 1, i), brick);
+            set(level, center.offset(i, 0, W), edge);
+            set(level, center.offset(i, 0, -W), edge);
+            set(level, center.offset(W, 0, i), edge);
+            set(level, center.offset(-W, 0, i), edge);
+            set(level, center.offset(i, HEIGHT - 1, W), edge);
+            set(level, center.offset(i, HEIGHT - 1, -W), edge);
+            set(level, center.offset(W, HEIGHT - 1, i), edge);
+            set(level, center.offset(-W, HEIGHT - 1, i), edge);
         }
         for (int i = 1; i <= HEIGHT - 2; i++) {
             // Углы
-            set(level, center.offset(W, i, W), brick);
-            set(level, center.offset(W, i, -W), brick);
-            set(level, center.offset(-W, i, W), brick);
-            set(level, center.offset(-W, i, -W), brick);
+            set(level, center.offset(W, i, W), edge);
+            set(level, center.offset(W, i, -W), edge);
+            set(level, center.offset(-W, i, W), edge);
+            set(level, center.offset(-W, i, -W), edge);
             // Стены
             for (int j = -W + 1; j <= W - 1; j++) {
-                if (!(skipNearWall && outward == Direction.WEST)) set(level, center.offset(-W, i, j), brick);
-                if (!(skipNearWall && outward == Direction.EAST)) set(level, center.offset(W, i, j), brick);
-                if (!(skipNearWall && outward == Direction.NORTH)) set(level, center.offset(j, i, -W), brick);
-                if (!(skipNearWall && outward == Direction.SOUTH)) set(level, center.offset(j, i, W), brick);
+                if (!(skipNearWall && outward == Direction.WEST)) set(level, center.offset(-W, i, j), wallNegX);
+                if (!(skipNearWall && outward == Direction.EAST)) set(level, center.offset(W, i, j), wallPosX);
+                if (!(skipNearWall && outward == Direction.NORTH)) set(level, center.offset(j, i, -W), wallNegZ);
+                if (!(skipNearWall && outward == Direction.SOUTH)) set(level, center.offset(j, i, W), wallPosZ);
             }
         }
+    }
+
+    private static BlockState brick(RedBrickBlock.RedFace face) {
+        return ModBlocks.BRICK_RED.get().defaultBlockState().setValue(RedBrickBlock.RED_FACE, face);
     }
 
     /** Дверь красной/чёрной комнаты на месте скважины (порт ItemModDoor.placeDoorBlock). */

@@ -1,0 +1,46 @@
+{
+  "loader": "forge:composite",
+  "ao": false,
+  "textures": {
+    "particle": "hbm_m:block/blast_furnace"
+  },
+  "children": {
+    "machine_blast_furnace_model": {
+      "loader": "forge:obj",
+      "model": "hbm_m:models/block/machines/machine_blast_furnace.obj",
+      "flip_v": true,
+      "shade_quads": true,
+      "emissive_ambient": false,
+      "automatic_culling": false,
+      "ao": false,
+      "textures": {
+        "default": "hbm_m:block/blast_furnace"
+      }
+    }
+  },
+  "transform": {
+    "translation": [0.5, 0.0, 0.5],
+    "rotation": [0, 0, 0],
+    "scale": 1.0
+  },
+  "display": {
+    "gui": {"rotation": [30, 225, 0], 
+    "translation": [-1.414214, -5.031089, -1.75], 
+    "scale": [0.125, 0.125, 0.125]},
+    "ground": {"rotation": [0, 90, 0], 
+    "translation": [0.75, 0.75, -0.75], 
+    "scale": [0.09375, 0.09375, 0.09375]},
+    "fixed": {"rotation": [0, 90, 0], 
+    "translation": [0, -2, 0], 
+    "scale": [0.12, 0.12, 0.12]},
+    "thirdperson_righthand": {
+      "rotation": [0, 0, 0], 
+      "translation": [9, 5, 1], 
+      "scale": [0.125, 0.125, 0.125]
+    },
+    "firstperson_righthand": {
+      "rotation": [0, 90, 0], 
+      "translation": [9, 5, -1], 
+      "scale": [0.125, 0.125, 0.125]}
+  }
+}

@@ -6,7 +6,9 @@ import java.util.Set;
 
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.item.ModItems;
-import com.hbm_m.item.tags_and_tiers.ModIngots;
+import com.hbm_m.item.material.MaterialShape;
+import com.hbm_m.item.material.ModMaterialItems;
+import com.hbm_m.item.material.ModMaterials;
 
 import dev.architectury.registry.registries.RegistrySupplier;
 import net.minecraft.advancements.critereon.EnchantmentPredicate;
@@ -114,17 +116,17 @@ public class ModBlockLootTableProvider extends BlockLootSubProvider {
         dropOreType1(
                 ModBlocks.SCHRABIDIUM_ORE.get(),
                 ModBlocks.SCHRABIDIUM_ORE.get(),
-                ModItems.CRYSTAL_SCHRABIDIUM.get()
+                ModMaterialItems.item(ModMaterials.SCHRABIDIUM, MaterialShape.CRYSTAL)
         );
         dropOreType1(
                 ModBlocks.SCHRABIDIUM_ORE_NETHER.get(),
                 ModBlocks.SCHRABIDIUM_ORE_NETHER.get(),
-                ModItems.CRYSTAL_SCHRABIDIUM.get()
+                ModMaterialItems.item(ModMaterials.SCHRABIDIUM, MaterialShape.CRYSTAL)
         );
         dropOreType1(
                 ModBlocks.SCHRABIDIUM_ORE_GNEISS.get(),
                 ModBlocks.SCHRABIDIUM_ORE_GNEISS.get(),
-                ModItems.CRYSTAL_SCHRABIDIUM.get()
+                ModMaterialItems.item(ModMaterials.SCHRABIDIUM, MaterialShape.CRYSTAL)
         );
         dropOreType1(
                 ModBlocks.COBALT_ORE.get(),
@@ -284,13 +286,13 @@ public class ModBlockLootTableProvider extends BlockLootSubProvider {
         dropOreType2(
                 ModBlocks.ASBESTOS_ORE.get(),
                 ModBlocks.ASBESTOS_ORE.get(),
-                ModItems.getIngot(ModIngots.ASBESTOS).get(),
+                ModMaterialItems.item(ModMaterials.ASBESTOS, MaterialShape.INGOT),
                 1.0f, 3.0f
         );
         dropOreType2(
                 ModBlocks.RESOURCE_ASBESTOS.get(),
                 ModBlocks.RESOURCE_ASBESTOS.get(),
-                ModItems.getIngot(ModIngots.ASBESTOS).get(),
+                ModMaterialItems.item(ModMaterials.ASBESTOS, MaterialShape.INGOT),
                 2.0f, 5.0f
         );
         dropOreType2(
@@ -371,19 +373,19 @@ public class ModBlockLootTableProvider extends BlockLootSubProvider {
         dropOreType1(
                 ModBlocks.GNEISS_ASBESTOS_ORE.get(),
                 ModBlocks.GNEISS_ASBESTOS_ORE.get(),
-                ModItems.getIngot(ModIngots.ASBESTOS).get()
+                ModMaterialItems.item(ModMaterials.ASBESTOS, MaterialShape.INGOT)
         );
         // ore_niter → niter ×2-4 (порт: crystal_niter)
         dropOreType2(
                 ModBlocks.NITER_ORE.get(),
                 ModBlocks.NITER_ORE.get(),
-                ModItems.CRYSTAL_NITER.get(),
+                ModMaterialItems.item(ModMaterials.NITER, MaterialShape.CRYSTAL),
                 2.0f, 4.0f
         );
         dropOreType2(
                 ModBlocks.NITER_ORE_DEEPSLATE.get(),
                 ModBlocks.NITER_ORE_DEEPSLATE.get(),
-                ModItems.CRYSTAL_NITER.get(),
+                ModMaterialItems.item(ModMaterials.NITER, MaterialShape.CRYSTAL),
                 2.0f, 4.0f
         );
     }

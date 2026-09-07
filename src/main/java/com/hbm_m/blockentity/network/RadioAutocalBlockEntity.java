@@ -107,7 +107,7 @@ public class RadioAutocalBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockE
     /** Returns false if execution should pause for the rest of this tick (WAIT). */
     private boolean execute(Level level, String line) {
         String[] tok = line.split("\\s+");
-        String cmd = tok[0].toUpperCase();
+        String cmd = tok[0].toUpperCase(java.util.Locale.ROOT);
 
         switch (cmd) {
             case "LBL" -> { }
@@ -163,7 +163,7 @@ public class RadioAutocalBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockE
         labels.clear();
         for (int i = 0; i < script.size(); i++) {
             String line = script.get(i).trim();
-            if (line.toUpperCase().startsWith("LBL ")) {
+            if (line.toUpperCase(java.util.Locale.ROOT).startsWith("LBL ")) {
                 labels.put(line.substring(4).trim(), i);
             }
         }

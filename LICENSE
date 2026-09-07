@@ -672,3 +672,19 @@ may consider it more useful to permit linking proprietary applications with
 the library.  If this is what you want to do, use the GNU Lesser General
 Public License instead of this License.  But first, please read
 <https://www.gnu.org/licenses/why-not-lgpl.html>.
+
+
+*******************************************************************************
+* Project-specific copyright notice
+*******************************************************************************
+
+HBM-Modernized (HBM's Nuclear Tech Modernized)
+Copyright (C) RaptorDev (Raptor324) and contributors
+
+This program is a derivative work based on Hbm's Nuclear Tech Mod
+(https://github.com/HbmMods/Hbm-s-Nuclear-Tech-GIT), Copyright (C)
+The Bobcat and HBM/NTM contributors, originally licensed under the
+GNU Lesser General Public License version 3 (see LICENSE.LESSER).
+Portions retained from the original work remain under LGPL-3.0-only;
+the combined work as a whole is distributed under GPL-3.0-only.
+See NOTICE.md for details.

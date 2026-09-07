@@ -4,6 +4,9 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.hbm_m.item.ModItems;
+import com.hbm_m.item.material.MaterialShape;
+import com.hbm_m.item.material.ModMaterialItems;
+import com.hbm_m.item.material.ModMaterials;
 import com.hbm_m.platform.PlatformHooks;
 
 import net.minecraft.server.level.ServerLevel;
@@ -48,15 +51,15 @@ public final class CustomNukeExplosion {
             put(map, Items.REDSTONE_BLOCK, Kind.MULT, T_TNT, 1.5F);
             // === Ядерные ===
             put(map, ModItems.GADGET_CORE.get(), Kind.ADD, T_NUKE, 30F);
-            put(map, ModItems.MAN_CORE.get(), Kind.ADD, T_NUKE, 30F);
+            put(map, ModItems.FAT_MAN_CORE.get(), Kind.ADD, T_NUKE, 30F);
             put(map, ModItems.FAT_MAN_CORE.get(), Kind.ADD, T_NUKE, 25F);
             // === Водород ===
             put(map, ModItems.CELL_DEUTERIUM.get(), Kind.ADD, T_HYDRO, 30F);
             // === Шрабидиум ===
-            put(map, ModItems.BILLET_SCHRABIDIUM.get(), Kind.ADD, T_SCHRAB, 15F);
+            put(map, ModMaterialItems.item(ModMaterials.SCHRABIDIUM, MaterialShape.BILLET), Kind.ADD, T_SCHRAB, 15F);
             put(map, ModItems.CELL_SAS3.get(), Kind.ADD, T_SCHRAB, 7.5F);
             // === Эйфемиум ===
-            put(map, ModItems.PLATE_EUPHEMIUM.get(), Kind.ADD, T_EUPH, 25F);
+            put(map, ModMaterialItems.item(ModMaterials.EUPHEMIUM, MaterialShape.PLATE), Kind.ADD, T_EUPH, 25F);
             entries = map;
         }
         return entries;

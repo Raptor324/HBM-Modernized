@@ -625,7 +625,7 @@ public class UniversalMachinePartBlockEntity extends BaseHbmBlockEntity implemen
             if (controllerBE instanceof MachineAssemblerBlockEntity assembler && this.role != PartRole.UNIVERSAL_CONNECTOR) {
                 return assembler.getItemHandlerForPart(this.role).cast();
             }
-            if (controllerBE instanceof BlastFurnaceBlockEntity furnace) {
+            if (controllerBE instanceof MachineBlastFurnaceBlockEntity furnace) {
                 return controllerBE.getCapability(cap, side);
             }
 

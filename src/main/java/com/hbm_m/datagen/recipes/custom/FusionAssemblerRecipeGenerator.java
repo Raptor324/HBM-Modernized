@@ -4,7 +4,9 @@ import java.util.function.Consumer;
 
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.item.ModItems;
-import com.hbm_m.item.tags_and_tiers.ModIngots;
+import com.hbm_m.item.material.MaterialShape;
+import com.hbm_m.item.material.ModMaterialItems;
+import com.hbm_m.item.material.ModMaterials;
 
 import net.minecraft.data.recipes.FinishedRecipe;
 import net.minecraft.world.item.ItemStack;
@@ -33,27 +35,27 @@ public final class FusionAssemblerRecipeGenerator {
     private FusionAssemblerRecipeGenerator() {}
 
     private static Ingredient resistantAlloyWelded() {
-        return Ingredient.of(ModItems.PLATE_WELDED_TCALLOY.get(), ModItems.PLATE_WELDED_CDALLOY.get());
+        return Ingredient.of(ModMaterialItems.item(ModMaterials.TCALLOY, MaterialShape.PLATE_WELDED), ModMaterialItems.item(ModMaterials.CDALLOY, MaterialShape.PLATE_WELDED));
     }
 
     private static Ingredient resistantAlloyCast() {
-        return Ingredient.of(ModItems.PLATE_CAST_TCALLOY.get(), ModItems.PLATE_CAST_CDALLOY.get());
+        return Ingredient.of(ModMaterialItems.item(ModMaterials.TCALLOY, MaterialShape.PLATE_CAST), ModMaterialItems.item(ModMaterials.CDALLOY, MaterialShape.PLATE_CAST));
     }
 
     private static Ingredient resistantAlloyIngot() {
-        return Ingredient.of(ModItems.getIngot(ModIngots.TCALLOY).get(), ModItems.getIngot(ModIngots.CDALLOY).get());
+        return Ingredient.of(ModMaterialItems.item(ModMaterials.TCALLOY, MaterialShape.INGOT), ModMaterialItems.item(ModMaterials.CDALLOY, MaterialShape.INGOT));
     }
 
     private static Ingredient hardPlastic() {
-        return Ingredient.of(ModItems.getIngot(ModIngots.POLYMER_COMPOSITE).get(), ModItems.getIngot(ModIngots.PVC).get());
+        return Ingredient.of(ModMaterialItems.item(ModMaterials.POLYMER_COMPOSITE, MaterialShape.INGOT), ModMaterialItems.item(ModMaterials.PVC, MaterialShape.INGOT));
     }
 
     private static Ingredient plastic() {
-        return Ingredient.of(ModItems.getIngot(ModIngots.POLYMER).get(), ModItems.getIngot(ModIngots.BAKELITE).get());
+        return Ingredient.of(ModMaterialItems.item(ModMaterials.POLYMER, MaterialShape.INGOT), ModMaterialItems.item(ModMaterials.BAKELITE, MaterialShape.INGOT));
     }
 
     private static Ingredient bismoidBronzeCast() {
-        return Ingredient.of(ModItems.PLATE_CAST_BBRONZE.get(), ModItems.PLATE_CAST_ABRONZE.get());
+        return Ingredient.of(ModMaterialItems.item(ModMaterials.BBRONZE, MaterialShape.PLATE_CAST), ModMaterialItems.item(ModMaterials.ABRONZE, MaterialShape.PLATE_CAST));
     }
 
     public static void generate(Consumer<FinishedRecipe> writer) {
@@ -68,7 +70,7 @@ public final class FusionAssemblerRecipeGenerator {
 
         // ass.fusionbscco - das rohe Spulenbauteil (wird spaeter mit dem Brenner verschweisst).
         AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.FUSION_COMPONENT.get(), 2), 100, 100)
-                .addIngredient(ModItems.WIRE_DENSE_BSCCO.get(), 1)
+                .addIngredient(ModMaterialItems.item(ModMaterials.BSCCO, MaterialShape.WIRE_DENSE), 1)
                 .addIngredient(ModItems.PIPE_COPPER.get(), 1)
                 .addIngredient(resistantAlloyIngot(), 1)
                 .addIngredient(plastic(), 4)
@@ -77,9 +79,9 @@ public final class FusionAssemblerRecipeGenerator {
 
         // ass.fusionblanket
         AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.FUSION_COMPONENT_BLANKET.get(), 4), 100, 100)
-                .addIngredient(ModItems.PLATE_WELDED_TUNGSTEN.get(), 1)
-                .addIngredient(ModItems.PLATE_WELDED_STEEL.get(), 2)
-                .addIngredient(ModItems.getIngot(ModIngots.BERYLLIUM).get(), 4)
+                .addIngredient(ModMaterialItems.item(ModMaterials.TUNGSTEN, MaterialShape.PLATE_WELDED), 1)
+                .addIngredient(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE_WELDED), 2)
+                .addIngredient(ModMaterialItems.item(ModMaterials.BERYLLIUM, MaterialShape.INGOT), 4)
                 .withBlueprintPool("tcalloy")
                 .save(writer, "fusionblanket");
 
@@ -94,19 +96,19 @@ public final class FusionAssemblerRecipeGenerator {
 
         // ass.fusionklystron
         AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.KLYSTRON.get(), 1), 300, 100)
-                .addIngredient(ModItems.PLATE_WELDED_TUNGSTEN.get(), 4)
+                .addIngredient(ModMaterialItems.item(ModMaterials.TUNGSTEN, MaterialShape.PLATE_WELDED), 4)
                 .addIngredient(resistantAlloyCast(), 16)
-                .addIngredient(ModItems.PLATE_COPPER.get(), 32)
+                .addIngredient(ModMaterialItems.item(ModMaterials.COPPER, MaterialShape.PLATE), 32)
                 .addIngredient(hardPlastic(), 16)
-                .addIngredient(ModItems.WIRE_DENSE_BSCCO.get(), 8)
+                .addIngredient(ModMaterialItems.item(ModMaterials.BSCCO, MaterialShape.WIRE_DENSE), 8)
                 .addIngredient(ModItems.BISMOID_CIRCUIT.get(), 2)
                 .save(writer, "fusionklystron");
 
         // ass.fusioncollector
         AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.COLLECTOR.get(), 1), 300, 100)
                 .addIngredient(resistantAlloyCast(), 4)
-                .addIngredient(ModItems.PLATE_STEEL.get(), 16)
-                .addIngredient(ModItems.getIngot(ModIngots.GRAPHITE).get(), 16)
+                .addIngredient(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE), 16)
+                .addIngredient(ModMaterialItems.item(ModMaterials.GRAPHITE, MaterialShape.INGOT), 16)
                 .addIngredient(hardPlastic(), 4)
                 .save(writer, "fusioncollector");
 
@@ -114,7 +116,7 @@ public final class FusionAssemblerRecipeGenerator {
         AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.BREEDER_FUSION.get(), 1), 300, 100)
                 .addIngredient(resistantAlloyCast(), 4)
                 .addIngredient(ModItems.PIPE_STEEL.get(), 4)
-                .addIngredient(ModItems.getIngot(ModIngots.BORON).get(), 16)
+                .addIngredient(ModMaterialItems.item(ModMaterials.BORON, MaterialShape.INGOT), 16)
                 .addIngredient(hardPlastic(), 16)
                 .save(writer, "fusionbreeder");
 
@@ -129,9 +131,9 @@ public final class FusionAssemblerRecipeGenerator {
         // ass.fusionmhdt
         AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.MHDT.get(), 1), 1200, 100)
                 .addIngredient(resistantAlloyWelded(), 16)
-                .addIngredient(ModItems.PLATE_WELDED_COPPER.get(), 64)
+                .addIngredient(ModMaterialItems.item(ModMaterials.COPPER, MaterialShape.PLATE_WELDED), 64)
                 .addIngredient(bismoidBronzeCast(), 16)
-                .addIngredient(ModItems.WIRE_DENSE_SCHRABIDATE.get(), 64)
+                .addIngredient(ModMaterialItems.item(ModMaterials.SCHRABIDATE, MaterialShape.WIRE_DENSE), 64)
                 .addIngredient(ModItems.QUANTUM_CIRCUIT.get(), 4)
                 .withBlueprintPool("chlorophyte")
                 .save(writer, "fusionmhdt");
@@ -139,15 +141,15 @@ public final class FusionAssemblerRecipeGenerator {
         // ass.fusioncoupler
         AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.COUPLER.get(), 1), 300, 100)
                 .addIngredient(resistantAlloyWelded(), 4)
-                .addIngredient(ModItems.PLATE_COPPER.get(), 32)
-                .addIngredient(ModItems.WIRE_DENSE_BSCCO.get(), 16)
+                .addIngredient(ModMaterialItems.item(ModMaterials.COPPER, MaterialShape.PLATE), 32)
+                .addIngredient(ModMaterialItems.item(ModMaterials.BSCCO, MaterialShape.WIRE_DENSE), 16)
                 .addIngredient(ModItems.BISMOID_CIRCUIT.get(), 4)
                 .save(writer, "fusioncoupler");
 
         // ass.fusionplasmaforge
         AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.PLASMA_FORGE.get(), 1), 1200, 100)
                 .addIngredient(resistantAlloyWelded(), 8)
-                .addIngredient(ModItems.WIRE_DENSE_BSCCO.get(), 32)
+                .addIngredient(ModMaterialItems.item(ModMaterials.BSCCO, MaterialShape.WIRE_DENSE), 32)
                 .addIngredient(bismoidBronzeCast(), 16)
                 .addIngredient(ModItems.BISMOID_CIRCUIT.get(), 4)
                 .withBlueprintPool("chlorophyte")
