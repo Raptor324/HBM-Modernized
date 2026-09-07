@@ -204,8 +204,11 @@ public class CraterBiomeHelper {
                         null
                 );
 
-                var players = level.getServer().getPlayerList().getPlayers();
-                for (var player : players) {
+                // Only players in this level, as WorldUtil.flushChunk does: this used to send the
+                // packet to every player on the server, so a nuke in the Overworld pushed Overworld
+                // chunk data into the client levels of players standing in other dimensions.
+                for (var player : level.getServer().getPlayerList().getPlayers()) {
+                    if (player.level() != level) continue;
                     player.connection.send(packet);
                 }
             } catch (Exception e) {

@@ -390,6 +390,14 @@ public class ArmorModificationHelper {
         // (по id-префиксу "am_", который PlatformHooks.attributeModifier ставит на 1.21.1),
         // затем добавить свежие от установленных модов.
         ItemAttributeModifiers current = armorStack.getOrDefault(DataComponents.ATTRIBUTE_MODIFIERS, ItemAttributeModifiers.EMPTY);
+        // A plain ArmorItem carries no ATTRIBUTE_MODIFIERS component - its armour and toughness come
+        // from the item defaults, and vanilla only falls back to those while the component's list is
+        // empty. Writing the component below therefore replaced the piece's own armour with just the
+        // mod modifiers, so installing any mod dropped the armour to 0. The 1.20.1 branch above
+        // re-adds the defaults in exactly this case; this one never did.
+        if (current.modifiers().isEmpty()) {
+            current = armorItem.getDefaultAttributeModifiers(armorStack);
+        }
         ItemAttributeModifiers.Builder builder = ItemAttributeModifiers.builder();
         for (ItemAttributeModifiers.Entry entry : current.modifiers()) {
             if (!isHbmModAttribute(entry)) {

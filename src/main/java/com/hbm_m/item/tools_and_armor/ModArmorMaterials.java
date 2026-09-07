@@ -96,6 +96,11 @@ public enum ModArmorMaterials {
 
     private static final int[] BASE_DURABILITY = { 11, 16, 16, 13 };
 
+    /** Version-agnostic form of the 1.20.1-only getDurabilityForType override. */
+    public int durabilityFor(ArmorItem.Type type) {
+        return BASE_DURABILITY[type.ordinal()] * this.durabilityMultiplier;
+    }
+
     ModArmorMaterials(String name, int durabilityMultiplier, int[] protectionAmounts, int enchantmentValue, Object equipSound,
                       float toughness, float knockbackResistance, Supplier<Ingredient> repairIngredient) {
         this.name = name;

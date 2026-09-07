@@ -1406,3 +1406,101 @@ AdAstraNeoForge.<init> → AdAstra.init → StationLoader.init (ad_astra 1.16.24
 компиляция упала. Такие куски выносятся в отдельный `//? if forge {`.
 
 Оба правила добавлены в `CLAUDE.md` (пункты 5 и 6 раздела про Stonecutter).
+
+## T. Инспекция item / armormod / worldgen / world / util / config
+
+### T1. Исправлено
+
+- **Установка мода брони обнуляла саму броню.** `ArmorModificationHelper:392` (ветка 1.21.1)
+  начинала сборку атрибутов с `armorStack.getOrDefault(DataComponents.ATTRIBUTE_MODIFIERS, EMPTY)`,
+  но у обычного `ArmorItem` этого компонента нет — броня и стойкость приходят из дефолтов предмета,
+  а ваниль и NeoForge откатываются к дефолтам **только пока список компонента пуст**. Записав туда
+  одни лишь модификаторы модов, код превращал нагрудник в «+10 сердец и 0 брони». Ветка 1.20.1 того
+  же метода (`:348-358`) дефолты возвращает явно — на 1.21.1 этот шаг просто не портировали.
+- **Вся броня мода была небьющейся.** В 1.21.1 `ArmorItem` больше не берёт прочность из материала
+  (ванильные предметы задают её через `Item.Properties.durability`), а все 43 регистрации шли с
+  голым `new Item.Properties()`; `ModArmorMaterials.getDurabilityForType` остался только в мёртвой
+  ветке 1.20.1. Добавлены `ModArmorMaterials.durabilityFor(Type)` и
+  `ModArmorMaterialsAccess.armorProps(...)` (с обеими ветками), регистрации переписаны.
+- **`ItemAssemblyTemplate` звал клиентский метод с сервера.** `PlatformHooks.clientProvider()`
+  разыменовывает `Minecraft.getInstance()`, а `getRecipeOutput`/`writeRecipeOutput` вызываются из
+  `MachineAssemblerBlockEntity.serverTick` (через `getRecipeFromTemplate`) и из обработчика
+  `GiveTemplateC2SPacket`. Переведено на `bestEffortProvider()`, который для этого и заведён.
+  Тултип `CrateItem` рядом действительно клиентский — оставлен как есть.
+- **`ModAxeItem` терял урон и скорость атаки.** Соседние `ModShovelItem`/`ModPickaxeItem`/
+  `ModSwordItem` передают `properties.attributes(...)`, топор — нет, поэтому параметры конструктора
+  молча выбрасывались.
+- **`ColorUtil`** — таблица ключуется именами из оригинала (`lightblue`, от OreDict `dyeLightBlue`),
+  а поиск шёл по `DyeColor.getName()` → `light_blue`/`light_gray`. Два красителя давали 0.
+  Сверено с оригиналом: таблица верна, ошибка в формате ключа.
+- **`CrateItem.makeGroupingKey`** — `keyTag.remove("Count")` на 1.21.1 no-op: `ItemStack.CODEC`
+  пишет `count`. Одинаковые предметы разного размера стака шли отдельными строками тултипа.
+- **`BedrockOilOreFeature:41`** — `pos.getY() <= getMinBuildHeight()` при `baseY = getMinBuildHeight()`
+  и `dy` с нуля отсекал весь нижний слой октаэдра — самый широкий и единственный с бедроком.
+  Сверено с оригиналом `MapGenBedrockOil` (`y = 0..4` включительно).
+- **`ShockwaveGenerator:118`** — `BlockTags.LEAVES` в общей цепочке `else if` делал ветку зоны 4
+  недостижимой: листва за `ZONE_3` всегда сносилась вместо 40 % снос / 12 % поджог.
+- **`BlastExplosionGenerator.noise`** — `random.setSeed(...)` вызывался на переданном
+  `RandomSource`, а это `level.random`: после каждой воронки C4 RNG всего мира оставался засеян
+  последней ячейкой шума. Вынесено в собственный генератор.
+- **`CraterBiomeHelper:207`** — пакеты перестроенных чанков слались всем игрокам сервера без
+  проверки измерения; рядом `WorldUtil.flushChunk` фильтрует и по измерению, и по дальности.
+- **`StructureConnectionFixProcessor`** — статическая `PENDING` по измерениям не чистилась;
+  добавлены `onLevelUnload`/`onServerStop` рядом с `UniNodespace`, RTTY и `NeutronNodeWorld`.
+
+### T2. Сверено с 1.7.10 — НЕ баги порта
+
+- `ItemDosimeter:278` — `if (x >= 1F && x >= 2F)`: в оригинале ровно то же.
+- `ItemGeigerCounter:361-365` — дважды `list.add(0)`: в оригинале то же.
+- Износ фильтра у маски-аттачмента не сохраняется (`IGasMask.damageFilter` → `ArmorUtil:67`) — тот
+  же потерянный write-back есть в оригинальном `ArmorUtil.damageGasMaskFilter`. **Не путать с T3**,
+  где оригинал write-back делает.
+- `ArmorModificationHelper.pryMods` возвращает десериализованные копии — как `ArmorModHandler.pryMods`.
+- `FalloutConfigJSON.chooseRandomOutcome` (первая запись получает двойной вес) и формула затухания —
+  посимвольно из оригинала.
+- `OilDepositFeature` — `radiusSqr = r*r/2.0` и `dy^2*3` воспроизводят `MapGenBubble`, включая
+  комментарий про деление на 2.
+- `SatelliteManager` — схема ключей `SavedData` совпадает с `SatelliteSavedData`, `setDirty()` на
+  месте.
+
+### T3. Найдено, НЕ исправлено (нужен тест / решение)
+
+- **Фильтр противогаза: потеря и дюп.** `ItemGasMaskFilter:54` ставит фильтр в прирученную **копию**
+  из `pryMods` и не пишет обратно, но `shrink(1)` выполняет — фильтр исчезает. Зеркально
+  `ItemModGasmask:56` вынимает фильтр из копии и кладёт игроку — **дюп на каждый клик**. В оригинале
+  `ItemFilter` вызывает `ArmorModHandler.applyMod`, а `ItemModGasmask` работает с held-стеком, то
+  есть оба случая — отклонения порта. Правка затрагивает контракт `pryMods`/`applyMod`, поэтому
+  нужен отдельный аккуратный проход по всем путям установки/снятия модов.
+- `ItemModGasmask:70-84` — ветка недостижима: `player.getItemInHand(hand)` это тот же стек, что и
+  `stack`, то есть сам `ItemModGasmask`, а проверяется `instanceof ItemGasMaskFilter`.
+- `RBMKColumnBlockItem:20-25` — `initializeClient` только в `//? if forge`, ветки neoforge нет
+  (сравни `MissileItem:76/88`), поэтому у колонн RBMK плоские иконки вместо BEWLR.
+- `FlavouredRecordItem` — на 1.21.1 звук и длительность отбрасываются, а `jukebox_playable`
+  нигде не задан: пластинки не вставляются в проигрыватель.
+- `ModShovelItem` — поле `fortuneLevel` объявлено и присваивается, но нигде не читается.
+- `BlockExplosionDefense:272` — `isSpecialConcreteBlock` (усиленный бетон, 400-600) не вызывается ни
+  из `getBlockDefenseValue`, ни из `getDefenseValueForBlock`, и `CONCRETE_SUPER/REBAR` нет в
+  `isConcreteBlock`: армированный бетон получает 5.4 против 250 у обычного.
+- `ConfigSchema.register()` — 18 живых полей `ModClothConfig` отсутствуют в схеме, а схема
+  единственный путь для сохранения, GUI и синхронизации: `netherAmbientRad`, `basaltDeltasRadMult`
+  и все 15 `rbmkDials.*` нельзя изменить.
+- `NuclearExplosionHelper:75` — серверный конфиг `enableCraterBiomes` на ядерном пути не читается;
+  биомы меняются всегда.
+- `ModConfigKeybindHandler:132-138` — на Forge/NeoForge регистрируются 5 из 10 клавиш, ветка Fabric
+  регистрирует все 10; пять клавиш крана RBMK не попадают в настройки управления.
+- `StructureFoundationProcessor:30` — `processBlock(LevelAccessor, ...)` это перегрузка, а не
+  переопределение (база принимает `LevelReader`), `@Override` отсутствует; процессор инертен и ни
+  в одном `processor_list` не упомянут. Чинить сигнатуру без разбора, куда он должен быть подключён,
+  бессмысленно — плюс `(ServerLevel) level` на строке 38 бросит `ClassCastException` на
+  `WorldGenRegion`.
+- `WasteBlastGenerator:458` — третьим аргументом `calculateSurvivalChance` передаётся манхэттенское
+  расстояние блока вместо `maxRadius` (в мгновенном варианте на `:153` передаётся `radius`).
+- `WasteBlastGenerator:127,416,444` — сортировка по убыванию расстояния ломает модель затенения,
+  рассчитанную «от центра к краям», а `protectedBlocks` пересоздаётся внутри каждого батча.
+- `CraterGenerator:883` — зонные циклы читают `getBlockState` до ~200 блоков без проверки загрузки,
+  тогда как `processDamageChunkBatch` рядом проверяет `level.hasChunk`.
+- `ArmorUtil:28-42` — `checkForHaz2`/`checkForDigamma`/`checkForDigamma2`/`checkForFaraday` всегда
+  `false`, то есть эти типы защиты не работают нигде (по javadoc — намеренно частичный порт).
+- Мёртвый код в сборке: `util/CraterGenerator`, `util/CraterBiomeApplier`, `util/BlockExplosionDefense`
+  (живой путь — `util/explosions/nuclear/*`), `util/explosions/trash_that_i_forgot_to_delete/*`,
+  `worldgen/OilClasterSurroundedFeature` (в `ModWorldGen` есть, configured feature нет).

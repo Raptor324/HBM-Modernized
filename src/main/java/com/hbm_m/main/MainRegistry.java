@@ -137,6 +137,7 @@ public final class MainRegistry {
             com.hbm_m.api.network.UniNodespace.onLevelUnload(level);
             com.hbm_m.blockentity.network.radio.RTTYNetwork.onLevelUnload(level);
             com.hbm_m.handler.rbmk.NeutronNodeWorld.removeWorld(level);
+            com.hbm_m.worldgen.StructureConnectionFixProcessor.onLevelUnload(level);
         });
 
         LifecycleEvent.SERVER_STOPPED.register(server -> {
@@ -144,6 +145,7 @@ public final class MainRegistry {
             com.hbm_m.api.fluids.FluidNetProvider.clearAll();
             com.hbm_m.blockentity.network.radio.RTTYNetwork.onServerStop();
             com.hbm_m.handler.rbmk.NeutronNodeWorld.removeAllWorlds();
+            com.hbm_m.worldgen.StructureConnectionFixProcessor.onServerStop();
         });
     }
 
