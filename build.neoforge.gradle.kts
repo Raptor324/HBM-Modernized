@@ -105,6 +105,12 @@ dependencies {
 	// строковых таргетов миксинов (@Mixin(targets = "...")) на этапе компиляции.
 	// В рантайм не пакуется; в отсутствие Sable миксины просто не применяются.
 	"compileOnly"("maven.modrinth:sable:2.0.5+mc1.21.1")
+	// The modrinth artifact does not expose BoundingBox3ic - it lives in the nested
+	// sable-companion jar-in-jar, which SubLevelAssembleExpansionMixin has to name in its handler
+	// signature. 35 KB, checked in under libs/. compileOnly: nothing is packed into the mod.
+	if (stonecutter.current.version == "1.21.1") {
+		"compileOnly"(rootProject.files("libs/sable-companion-common-1.21.1-1.6.0.jar"))
+	}
 
 	// Рантайм-зависимости для ручного тестирования интеграции с Create
 	// Aeronautics / Sable в runClient (только 1.21.1 - на других версиях

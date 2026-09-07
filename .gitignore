@@ -64,7 +64,7 @@ logs/
 /OLD/
 agent
 ideas
-libs/
+libs/*
 design.md
 # ================= OS Specific =================
 # Системные файлы, которые могут случайно появиться.
@@ -87,7 +87,10 @@ desktop.ini
 HBM-Modernized.code-workspace
 java_pid*
 AGENTS.md
-libs/
+libs/*
+# ...except the 35 KB Sable companion API jar: SubLevelAssembleExpansionMixin names
+# BoundingBox3ic from it, so the build needs it present.
+!libs/sable-companion-common-1.21.1-1.6.0.jar
 .aider*
 # Локальный контекст для Claude Code
 CLAUDE.md
