@@ -104,6 +104,9 @@ public class MachineAutosawBlockEntity extends com.hbm_m.blockentity.BaseHbmBloc
                         if (relAngle > CUT_ANGLE) continue;
 
                         BlockPos target = pos.offset(dx, 1, dz);
+                        // Радиус 9 выходит за границу чанка: без проверки скан подгружал соседей
+                        // из тикового потока.
+                        if (!level.isLoaded(target)) continue;
                         BlockState targetState = level.getBlockState(target);
                         if (targetState.is(BlockTags.LOGS) || targetState.is(BlockTags.LEAVES) || targetState.is(BlockTags.SAPLINGS)) {
                             if (level instanceof ServerLevel serverLevel) {
