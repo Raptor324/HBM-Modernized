@@ -148,6 +148,7 @@ public class MachineCraneRouterBlockEntity extends BaseMachineBlockEntity implem
     public void nextTargetMode(int side) {
         modes[side] = (modes[side] + 1) % 4;
         setChanged();
+        sendUpdateToClient();
     }
 
     public void nextFilterMode(int index) {
@@ -155,6 +156,7 @@ public class MachineCraneRouterBlockEntity extends BaseMachineBlockEntity implem
         int slot = index % SLOTS_PER_SIDE;
         patterns[side].nextMode(slot);
         setChanged();
+        sendUpdateToClient();
     }
 
     public void initPattern(int index, ItemStack stack) {

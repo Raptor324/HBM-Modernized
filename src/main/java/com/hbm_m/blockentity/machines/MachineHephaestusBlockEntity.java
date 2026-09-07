@@ -105,9 +105,9 @@ public class MachineHephaestusBlockEntity extends BaseMachineBlockEntity impleme
     }
 
     private int heatFromBlock(Level level, int x, int y, int z) {
-        // Окно 15x15 гарантированно пересекает границы чанков, а скан идёт каждый тик: без
-        // проверки загрузки getFluidState тянул соседний чанк из тикового потока.
-        // Тот же guard, что в MachineSolarBoilerBlockEntity.
+        // The 15x15 window always crosses chunk borders and the scan runs every tick: unguarded,
+        // getFluidState pulled the neighbouring chunk in from the tick thread. Same guard as in
+        // MachineSolarBoilerBlockEntity.
         BlockPos target = new BlockPos(x, y, z);
         if (!level.isLoaded(target)) return 0;
         return level.getFluidState(target).is(FluidTags.LAVA) ? LAVA_HEAT : 0;

@@ -164,7 +164,7 @@ public class MachineCraneBoxerBlockEntity extends BaseMachineBlockEntity impleme
     // ── Mode toggle ──────────────────────────────────────────────────────────
 
     public byte getMode() { return mode; }
-    public void nextMode() { mode = (byte) ((mode + 1) % 4); setChanged(); }
+    public void nextMode() { mode = (byte) ((mode + 1) % 4); setChanged(); sendUpdateToClient(); }
 
     // ── NBT ─────────────────────────────────────────────────────────────────
 

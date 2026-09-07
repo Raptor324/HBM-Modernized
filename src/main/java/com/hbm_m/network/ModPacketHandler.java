@@ -90,6 +90,7 @@ public class ModPacketHandler {
     public static final ResourceLocation MICROWAVE_SPEED       = id("microwave_speed");
     public static final ResourceLocation ANNIHILATOR_POOL      = id("annihilator_pool");
     public static final ResourceLocation FUNNEL_MODE            = id("funnel_mode");
+    public static final ResourceLocation CRANE_CONTROL          = id("crane_control");
     public static final ResourceLocation RADIO_TORCH_CONTROL    = id("radio_torch_control");
 
 
@@ -312,6 +313,10 @@ public class ModPacketHandler {
                 FunnelModeC2SPacket::decode,
                 FunnelModeC2SPacket::handle);
 
+        registerC2S(CRANE_CONTROL,
+                CraneControlPacket::decode,
+                CraneControlPacket::handle);
+
         registerC2S(RADIO_TORCH_CONTROL,
                 RadioTorchControlPacket::decode,
                 RadioTorchControlPacket::handle);
@@ -382,7 +387,7 @@ public class ModPacketHandler {
         );
     }
 
-    // ══════════════════════════ Валидация C2S ═════════════════════════════════
+    // ══════════════════════════ C2S validation ════════════════════════════════
 
     /**
      * Block entity at a client-supplied {@link net.minecraft.core.BlockPos}, or null. The position

@@ -904,13 +904,17 @@ deep-копии NBT на стержень за тик.
   четырём сторонам, на границе чанка тянет соседа.
 - `MachineAutosawBlockEntity:107` и flood fill в `fell()` — радиус 15 без единой проверки.
 
-### K6. Мелочи
+### K6. Мелочи — ИСПРАВЛЕНО
 
 - `RBMKColumnBlockEntity:232` — глобальный флаг `dropLids = false` без `try/finally`,
   восстановление только линейным путём на `:338`. Исключение в мелтдауне оставит флаг сброшенным
-  до перезапуска процесса — крышки RBMK перестанут дропаться.
-- `blockentity/network/radio/RTTYNetwork.java:28` — из `BROADCAST` записи никогда не удаляются;
-  статический `lastProcessedTick` (`:53`) переживает выгрузку мира.
+  до перезапуска процесса — крышки RBMK перестанут дропаться. **Исправлено** (`try/finally`).
+- `blockentity/network/radio/RTTYNetwork.java` — из `BROADCAST` записи никогда не удалялись,
+  а карты и `lastProcessedTick` статические. В одиночной игре канал из предыдущего мира
+  доживал до следующего, и слушатели (`RadioTorchReceiver`, `RadioTorchController`, `RadioTelex`)
+  сравнивали его `timeStamp` с `gameTime` нового мира и срабатывали на чужой сигнал.
+  **Исправлено:** `onLevelUnload` чистит каналы измерения, `onServerStop` — всё; оба повешены
+  в `MainRegistry` рядом с `UniNodespace`.
 
 **Проверено и чисто:** симметрия NBT по всем 573 файлам; мутации `ItemStack`/DataComponents на
 пути чтения (только два места, оба на пути дропа); `entityInside`/`randomTick` газов и фоллаута
@@ -952,29 +956,51 @@ deep-копии NBT на стержень за тик.
 Дюпа не давало только потому, что `FluidIdentifierItem` имеет `stacksTo(1)`; со стакающимся
 идентификатором это стало бы дюпом класса L1. Исправлено на диапазон `[0, 1)`.
 
-### L4. Найдено, НЕ исправлено
+### L4. Кнопки кранов и null-контракт меню — ИСПРАВЛЕНО
 
-- **Кнопки режима фильтра кранов не шлют пакет.** `gui/GUIMachineCraneExtractor.java:86`, `:92`,
-  `GUIMachineCraneGrabber.java:78`, `GUIMachineCraneBoxer.java:71` зовут `nextMode()` /
-  `toggleMaxEject()` на **клиентском** BE. Ни один из этих экранов не отправляет C2S-пакет, так что
-  режим фильтра и maxEject никогда не доходят до сервера — фильтрация кранов в мультиплеере
-  не работает вовсе.
+- **Кнопки кранов не шли на сервер.** Шесть действий в пяти экранах (`GUIMachineCraneExtractor`,
+  `GUIMachineCraneGrabber`, `GUIMachineCraneBoxer`, `GUIMachineCraneInserter`,
+  `GUIMachineCraneRouter`) звали мутаторы на **клиентском** BE: режим фильтра, whitelist,
+  maxEject, режим упаковщика, destroyer инсертера и режим стороны роутера никогда не доходили
+  до сервера — фильтрация кранов в мультиплеере не работала вовсе.
+  **Исправлено:** добавлен `network/CraneControlPacket` (pos + action + index, индекс валидируется
+  по размеру), зарегистрирован как `CRANE_CONTROL`; экраны шлют пакет, а мутаторы BE после
+  `setChanged()` зовут `sendUpdateToClient()`, иначе клиент не увидел бы результат.
+- **NPE-риски в меню.** `RBMKStorageMenu.getBlockEntity` бросал `IllegalStateException` даже на
+  клиенте, а конструктор разыменовывал `be` без проверок — приведено к контракту соседних
+  RBMK-меню (null на клиенте, исключение на сервере) с guard'ами в конструкторе и `stillValid`.
+  Заодно закрыт NPE в `mayPlace` у `RBMKOutgasserMenu:51` и `RBMKAutoloaderMenu:65`: остальной
+  null-protection там был, а эти две строки его пропустили.
+
+### L5. Найдено, НЕ исправлено (нужен тест / решение)
+
 - **Побочный эффект в `Slot.set` сбрасывает режимы фильтров.** `MachineCraneExtractorMenu:46-49`
   и ещё четыре меню зовут `initPattern`, который безусловно ставит `MODE_EXACT`. При открытии GUI
   `initializeContents` дёргает `set` для каждого слота — все девять фильтров сбрасываются в EXACT
-  на клиенте.
+  на клиенте. Оригинал 1.7.10 вёл себя так же, а после L4 состояние приходит с сервера следующим
+  `sendUpdateToClient`; нужно проверить в игре, виден ли сброс, прежде чем менять контракт слота.
 - **Латентный дюп жидкости.** `inventory/fluid/tank/FluidLoaderFillableItem.java:25` мутирует
   массив из `pryMods` и не пишет обратно (метода записи вообще нет) — при сливе бак наполняется,
   а мод остаётся полным. Сейчас не стреляет: модов брони с баком не существует.
-- **NPE-риски и фиктивные BE.** `RBMKStorageMenu.getBlockEntity` бросает `IllegalStateException`
-  без клиентской ветки; `AnvilMenu:40` при отсутствии BE подменяет его новым на `BlockPos.ZERO`,
-  и `stillValid` проверяет блок в координатах (0,0,0).
+- **Фиктивный BE в `AnvilMenu:40`.** При отсутствии BE подставляется новый на `BlockPos.ZERO`,
+  и `stillValid` проверяет блок в (0,0,0). На сервере путь недостижим (BE приходит из
+  `createMenu`), на клиенте это тот же fallback «реплей Flashback», что и null в других меню.
+  Менять — только вместе с общим решением по этому fallback.
+- **`DamageResistanceHandler.initArmorStats()` не регистрирует DNT.** Зарегистрированы T-51, AJR
+  и Bismuth; для DNT нужны значения из оригинала — это порт контента, не опечатка.
 
 **Проверено и чисто:** все 134 `quickMoveStack` (кроме L1) не теряют и не дублируют предметы;
 размеры инвентарей BE и меню совпадают; `FluidTank` клампит fill и корректно защищает мутации;
 клиентские классы вне `gui/` есть только в `FluidTank`, но все помечены `@OnlyIn(Dist.CLIENT)`.
 
 ## C. Мелочи
+
+- **Нестабильный GameTest `flowSwitchCutsPowerMidRun` — НЕ ИСПРАВЛЕНО.** `EnergyNetworkGameTest:537`
+  падает изредка на самом первом шаге (`thenWaitUntil`: `Power flows through the closed switch
+  (got 0)`) при `timeoutTicks = 400`, то есть энергия не дошла до печи за 400 тиков, хотя обычно
+  доходит за единицы. Повтор того же коммита проходит 287/287. Значит, момент, когда узел печи
+  подхватывается сетью, недетерминирован — вероятный источник: порядок обхода `HashMap` в
+  `UniNodespace`/`FluidNetProvider`. Нужен прогон в цикле, чтобы поймать закономерность.
 
 - **Отладочный вывод в проде — УБРАНО.** `PlatformRecipeSerializer` печатал в `System.err`
   `[HBM DEBUG] decode CALLED/SUCCESS/FAILED` плюс `printStackTrace()` на загрузке каждого рецепта,

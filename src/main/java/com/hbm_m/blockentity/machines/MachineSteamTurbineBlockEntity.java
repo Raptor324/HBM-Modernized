@@ -196,10 +196,10 @@ public class MachineSteamTurbineBlockEntity extends BaseMachineBlockEntity imple
         };
     }
 
-    // ==================== IFluidUserMK2 / MK2-сеть ====================
-    // Привязка обработчика жидкости ниже живёт в //? if forge, а BaseMachineBlockEntity отдаёт
-    // NeoForge-обёртку только тем, кто реализует IFluidUserMK2 — без этого у турбины на NeoForge
-    // не было fluid-капабилити вообще и она не принимала пар из труб.
+    // ==================== IFluidUserMK2 / MK2 network ====================
+    // The fluid handler binding below lives in //? if forge, and BaseMachineBlockEntity only hands
+    // out the NeoForge wrapper to classes implementing IFluidUserMK2 - without this the turbine had
+    // no fluid capability at all on NeoForge and took no steam from pipes.
 
     @Override
     public FluidTank[] getAllTanks() { return tanks; }

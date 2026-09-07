@@ -398,10 +398,10 @@ public final class PowerArmorHandlers {
         PlayerPersistentData.get(player).putBoolean("hbm_hard_landing_occured", true);
     }
 
-    // ============ NeoForge: те же три обработчика ============
-    // На 1.21.1 LivingAttackEvent заменён на LivingIncomingDamageEvent, а LivingHurtEvent —
-    // на LivingDamageEvent.Pre. Без этой ветки вся система DT/DR, отражение стрел и иммунитет
-    // к падению были мертвы: register() вешает только тики, а forge-обработчики не компилируются.
+    // ============ NeoForge: the same three handlers ============
+    // On 1.21.1 LivingAttackEvent became LivingIncomingDamageEvent and LivingHurtEvent became
+    // LivingDamageEvent.Pre. Without this branch the whole DT/DR system, arrow deflection and fall
+    // immunity were dead: register() only hooks the ticks, and the forge handlers do not compile.
     //? if neoforge {
     @net.neoforged.bus.api.SubscribeEvent(priority = net.neoforged.bus.api.EventPriority.HIGHEST)
     public static void onIncomingDamage(net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent event) {

@@ -104,8 +104,8 @@ public class MachineAutosawBlockEntity extends com.hbm_m.blockentity.BaseHbmBloc
                         if (relAngle > CUT_ANGLE) continue;
 
                         BlockPos target = pos.offset(dx, 1, dz);
-                        // Радиус 9 выходит за границу чанка: без проверки скан подгружал соседей
-                        // из тикового потока.
+                        // Radius 9 crosses the chunk border: unguarded, the scan loaded neighbours
+                        // from the tick thread.
                         if (!level.isLoaded(target)) continue;
                         BlockState targetState = level.getBlockState(target);
                         if (targetState.is(BlockTags.LOGS) || targetState.is(BlockTags.LEAVES) || targetState.is(BlockTags.SAPLINGS)) {

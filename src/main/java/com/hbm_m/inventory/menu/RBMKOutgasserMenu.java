@@ -48,7 +48,7 @@ public class RBMKOutgasserMenu extends AbstractContainerMenu {
         addSlot(new Slot(container, RBMKOutgasserBlockEntity.SLOT_INPUT, 48, 53) {
             @Override
             public boolean mayPlace(ItemStack stack) {
-                return be.isItemValidForSlot(RBMKOutgasserBlockEntity.SLOT_INPUT, stack);
+                return be != null && be.isItemValidForSlot(RBMKOutgasserBlockEntity.SLOT_INPUT, stack);
             }
         });
 
@@ -78,9 +78,9 @@ public class RBMKOutgasserMenu extends AbstractContainerMenu {
     public RBMKOutgasserBlockEntity getBlockEntity() { return blockEntity; }
 
     /**
-     * Меню держит собственный снимок слотов, а блок продолжает тикать и менять свои поля.
-     * Без ре-синка клик по любому слоту записывал устаревший снимок обратно: израсходованный
-     * вход возвращался, а готовый выход затирался. Тот же приём, что в {@code RBMKRodMenu}.
+     * The menu holds its own snapshot of the slots while the block keeps ticking and changing its
+     * own fields. Without the re-sync any slot click wrote the stale snapshot back: a consumed
+     * input reappeared and a finished output was overwritten. Same trick as in {@code RBMKRodMenu}.
      */
     @Override
     public void broadcastChanges() {

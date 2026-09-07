@@ -44,8 +44,8 @@ public class PlayerHazardHandler {
             }
         }
 
-        // Левая рука пропускалась: радиоактивный предмет в ней не облучал, хотя гейгер его
-        // считает (PlayerHandler.getInventoryRadiation учитывает getOffhandItem).
+        // The offhand was skipped: a radioactive item held there irradiated nobody, even though the
+        // geiger counts it (PlayerHandler.getInventoryRadiation does include getOffhandItem).
         ItemStack offhand = player.getOffhandItem();
         if (!offhand.isEmpty()) {
             HazardSystem.applyHazards(offhand, player);

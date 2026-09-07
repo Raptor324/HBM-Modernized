@@ -131,8 +131,9 @@ public abstract class OilDrillBaseBlockEntity extends BaseMachineBlockEntity imp
                         break;
                     }
                     for (Direction hDir : Direction.Plane.HORIZONTAL) {
-                        // Сама колонка лежит в чанке бура, а горизонтальные соседи на границе
-                        // уходят в соседний — без проверки скан тянул его из тикового потока.
+                        // The column itself sits in the drill's chunk, but horizontal neighbours on
+                        // the border cross into the next one - the scan pulled it in from the tick
+                        // thread.
                         BlockPos sidePos = colPos.relative(hDir);
                         if (!level.isLoaded(sidePos)) continue;
                         if (level.getBlockState(sidePos).getBlock() == ModBlocks.ORE_OIL.get()) {

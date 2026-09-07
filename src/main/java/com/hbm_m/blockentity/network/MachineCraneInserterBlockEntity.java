@@ -142,7 +142,7 @@ public class MachineCraneInserterBlockEntity extends BaseMachineBlockEntity impl
     // ── Toggle ───────────────────────────────────────────────────────────────
 
     public boolean isDestroyer() { return destroyer; }
-    public void toggleDestroyer() { destroyer = !destroyer; setChanged(); }
+    public void toggleDestroyer() { destroyer = !destroyer; setChanged(); sendUpdateToClient(); }
 
     // ── NBT ─────────────────────────────────────────────────────────────────
 

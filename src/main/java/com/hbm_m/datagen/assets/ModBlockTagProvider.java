@@ -246,19 +246,17 @@ public class ModBlockTagProvider extends BlockTagsProvider {
 
 
         // ============ ТЕГИ СОВМЕСТИМОСТИ С ДРУГИМИ МОДАМИ ============
-        //  Блоки хранения для всех материалов с формой BLOCK. Раньше вручную перечислялись
-        //  только uranium и plutonium, из-за чего рецепты на остальные storage_blocks/^
-        //  матчили пустой тег. URANIUM_BLOCK/PLUTONIUM_BLOCK — те же объекты из INGOT_BLOCKS,
-        //  поэтому цикл их покрывает без дублей.
+        //  Storage blocks for every material with a BLOCK form. Only uranium and plutonium were
+        //  listed by hand, so recipes for the other storage_blocks/^ matched an empty tag.
         //? if fabric && < 1.21.1 {
         /^var storageBlocksTagBuilder = this.tag(BlockTags.create(new ResourceLocation("forge", "storage_blocks")));
         ^///?} else {
                 var storageBlocksTagBuilder = this.tag(BlockTags.create(ResourceLocation.fromNamespaceAndPath("forge", "storage_blocks")));
         //?}
 
-        //  Идём по самому реестру, а не по ModMaterials с ручным фильтром: INGOT_BLOCKS
-        //  заполняется ровно по mat.has(BLOCK), поэтому расхождение с ModItemTagProvider,
-        //  который делает copy тех же тегов, становится невозможным по построению.
+        //  Iterate the registry itself instead of filtering ModMaterials by hand: INGOT_BLOCKS is
+        //  filled exactly on mat.has(BLOCK), so it cannot drift from ModItemTagProvider, which
+        //  copies the same tags.
         for (var entry : ModBlocks.INGOT_BLOCKS.entrySet()) {
             Block storageBlock = entry.getValue().get();
             //? if fabric && < 1.21.1 {

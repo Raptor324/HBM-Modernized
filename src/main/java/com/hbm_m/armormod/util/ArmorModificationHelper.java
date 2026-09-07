@@ -157,9 +157,9 @@ public class ArmorModificationHelper {
         CompoundTag modsTag = armorTag.getCompound(MOD_COMPOUND_KEY);
         modsTag.remove(MOD_SLOT_KEY_PREFIX + slot);
 
-        // getItemTag на 1.21.1 отдаёт КОПИЮ (data.copyTag()), поэтому правку нужно записать
-        // обратно через PlatformHooks — как это делает applyMod. Без записи снятие мода было
-        // тихим no-op: игрок получал и предмет мода, и броню с сохранённым модом.
+        // On 1.21.1 getItemTag returns a COPY (data.copyTag()), so the edit has to be written back
+        // through PlatformHooks the way applyMod does. Without the write, removing a mod was a
+        // silent no-op: the player got both the mod item and the armour with the mod still on it.
         if (modsTag.isEmpty()) {
             PlatformHooks.remove(armor, MOD_COMPOUND_KEY);
         } else {

@@ -242,13 +242,14 @@ public class MachineCraneExtractorBlockEntity extends BaseMachineBlockEntity imp
 
     public ModulePatternMatcher getMatcher() { return matcher; }
     public boolean isWhitelist() { return isWhitelist; }
-    public void toggleWhitelist() { isWhitelist = !isWhitelist; setChanged(); }
+    public void toggleWhitelist() { isWhitelist = !isWhitelist; setChanged(); sendUpdateToClient(); }
     public boolean isMaxEject() { return maxEject; }
-    public void toggleMaxEject() { maxEject = !maxEject; setChanged(); }
+    public void toggleMaxEject() { maxEject = !maxEject; setChanged(); sendUpdateToClient(); }
 
     public void nextMode(int filterSlot) {
         matcher.nextMode(filterSlot);
         setChanged();
+        sendUpdateToClient();
     }
 
     // ── NBT ─────────────────────────────────────────────────────────────────

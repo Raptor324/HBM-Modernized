@@ -28,13 +28,16 @@ public class RBMKStorageMenu extends AbstractContainerMenu {
             @Override
             public void setChanged() {
                 super.setChanged();
+                if (be == null) return;
                 for (int i = 0; i < RBMKStorageBlockEntity.SLOTS; i++)
                     be.slots[i] = getItem(i).copy();
                 be.setChanged();
             }
         };
-        for (int i = 0; i < RBMKStorageBlockEntity.SLOTS; i++)
-            container.setItem(i, be.slots[i].copy());
+        if (be != null) {
+            for (int i = 0; i < RBMKStorageBlockEntity.SLOTS; i++)
+                container.setItem(i, be.slots[i].copy());
+        }
 
         // 12 slots in a 3-row x 4-column grid (1:1 port of ContainerRBMKStorage),
         // matching the vertical-column layout baked into gui_rbmk_storage.png.
@@ -59,14 +62,19 @@ public class RBMKStorageMenu extends AbstractContainerMenu {
         BlockPos pos = buf.readBlockPos();
         BlockEntity be = inv.player.level().getBlockEntity(pos);
         if (be instanceof RBMKStorageBlockEntity s) return s;
+        // The tile can be missing on the client (Flashback replay) - return null there. On the
+        // server a missing tile is a real bug, so it still throws. Same contract as the sibling
+        // RBMK menus.
+        if (inv.player.level().isClientSide) return null;
         throw new IllegalStateException("No RBMKStorageBlockEntity at " + pos);
     }
 
     public RBMKStorageBlockEntity getBlockEntity() { return blockEntity; }
 
     /**
-     * Меню держит снимок слотов, а блок продолжает тикать и менять свои поля. Без ре-синка клик
-     * по слоту записывал устаревший снимок обратно в BE. Тот же приём, что в {@code RBMKRodMenu}.
+     * The menu holds a snapshot of the slots while the block keeps ticking and changing its own
+     * fields. Without the re-sync a slot click wrote the stale snapshot back into the BE. Same
+     * trick as in {@code RBMKRodMenu}.
      */
     @Override
     public void broadcastChanges() {
@@ -83,6 +91,7 @@ public class RBMKStorageMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
+        if (blockEntity == null) return false; // the tile can be missing on the client
         return blockEntity.getLevel() == player.level()
             && player.distanceToSqr(blockEntity.getBlockPos().getCenter()) <= 64;
     }

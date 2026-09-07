@@ -153,8 +153,8 @@ public class ExplosionNukeGeneric {
             return false;
         }
 
-        // 2. Если цель находится в непрогруженном чанке - не вызываем clip (он повесит сервер).
-        // Через Compat, а не level.hasChunk: на клиенте тот безусловно возвращает true.
+        // 2. Never clip into an unloaded chunk - it would load it from the tick thread. Compat and
+        // not level.hasChunk: on the client that one always returns true.
         if (!com.hbm_m.util.Compat.isPositionLoaded(level, (int) a, (int) c)) {
             return true;
         }

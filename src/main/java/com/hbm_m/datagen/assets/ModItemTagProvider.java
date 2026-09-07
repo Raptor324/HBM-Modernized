@@ -64,8 +64,7 @@ public class ModItemTagProvider extends ItemTagsProvider {
             }
         }
 
-        //  АВТОМАТИЧЕСКАЯ ГЕНЕРАЦИЯ ТЕГОВ ДЛЯ САМОРОДКОВ
-        //  Без них рецепты, ссылающиеся на forge:nuggets/<материал>, матчат пустой тег.
+        //  Nugget tags. Without them recipes referencing forge:nuggets/<material> match an empty tag.
         //? if fabric && < 1.21.1 {
         /^TagsProvider.TagAppender<Item> nuggetsTagBuilder = this.tag(ItemTags.create(new ResourceLocation("forge", "nuggets")));
         ^///?} else {

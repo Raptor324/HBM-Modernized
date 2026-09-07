@@ -22,7 +22,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
  */
 public class MachineHeatexMenu extends AbstractContainerMenu {
 
-    /** Слоты 0..26 — основной инвентарь, 27..35 — хотбар; машинных слотов у меню нет. */
+    /** Slots 0..26 are the main inventory, 27..35 the hotbar; this menu has no machine slots. */
     private static final int PLAYER_INVENTORY_SLOTS = 27;
 
     private final MachineHeatexBlockEntity blockEntity;
@@ -83,9 +83,9 @@ public class MachineHeatexMenu extends AbstractContainerMenu {
             ItemStack slotStack = slot.getItem();
             result = slotStack.copy();
 
-            // Диапазон обязан исключать сам слот-источник: у этого меню нет машинных слотов, и
-            // [0, slots.size()) включало его самого. При слиянии moveItemStackTo сравнивает стек
-            // сам с собой, делает setCount(0) и следом setCount(count * 2) — стек удваивался.
+            // The range must exclude the source slot: this menu has no machine slots, so
+            // [0, slots.size()) covered the slot itself. When merging, moveItemStackTo compared
+            // the stack with itself, called setCount(0) then setCount(count * 2) - it doubled.
             if (index < PLAYER_INVENTORY_SLOTS) {
                 if (!this.moveItemStackTo(slotStack, PLAYER_INVENTORY_SLOTS, this.slots.size(), false)) {
                     return ItemStack.EMPTY;
