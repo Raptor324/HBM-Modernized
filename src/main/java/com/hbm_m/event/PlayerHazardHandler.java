@@ -43,5 +43,12 @@ public class PlayerHazardHandler {
                 HazardSystem.applyHazards(stack, player);
             }
         }
+
+        // Левая рука пропускалась: радиоактивный предмет в ней не облучал, хотя гейгер его
+        // считает (PlayerHandler.getInventoryRadiation учитывает getOffhandItem).
+        ItemStack offhand = player.getOffhandItem();
+        if (!offhand.isEmpty()) {
+            HazardSystem.applyHazards(offhand, player);
+        }
     }
 }

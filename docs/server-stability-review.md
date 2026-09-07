@@ -762,7 +762,7 @@ public static void performDash(Player player) {
 
 ## J. Инспекция hazard-системы (найдено, НЕ исправлено)
 
-### J1. Полный обход инвентаря каждый тик без гейта
+### J1. Полный обход инвентаря каждый тик без гейта (offhand — ИСПРАВЛЕН)
 
 `event/PlayerHazardHandler.java:34` — `TickEvent.PLAYER_POST` без интервала: 36 слотов + 4 брони
 на игрока **каждый тик** (сравни `radiation/PlayerHandler.java:193`, где гейт `< 20` есть).
@@ -791,7 +791,7 @@ reacher = player.getInventory().contains(new ItemStack(ModItems.REACHER.get()));
 `event/HazardEventHandler.java:23` — `level.getAllEntities()` без гейта, чтобы найти `ItemEntity`.
 На 4 000 сущностей в трёх измерениях это 240 000 итераций в секунду.
 
-### J4. `RBMKRodItem.readTag` мутирует стек при чтении
+### J4. `RBMKRodItem.readTag` мутировал стек при чтении — ИСПРАВЛЕНО
 
 `item/rbmk/RBMKRodItem.java:285-296` — при отсутствии компонента метод **записывает**
 `CUSTOM_DATA` в стек. Вызывается из чисто читающего пути хазардов
@@ -808,7 +808,7 @@ deep-копии NBT на стержень за тик.
 свой изменяемый `ArrayList`, а `HazardTransformerBase.transformPost` спроектирован дописывать
 в этот список — сейчас трансформеры мертвы, но при их подключении это станет утечкой.
 
-### J6. Гонка на `HashMap` между потоками
+### J6. Гонка на `HashMap` между потоками — ИСПРАВЛЕНО
 
 `radiation/PlayerHandler.java:44` — `playerRads` / `tickCounters` это обычные `HashMap`.
 Пишет серверный поток (до 40 раз за тик на игрока через `ContaminationUtil.contaminate`),

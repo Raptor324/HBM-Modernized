@@ -47,6 +47,9 @@ public class ArmorSidePanelSlot extends Slot {
     }
 
     private void playEquipSound(ArmorItem armorItem) {
+        // Только сервер: playSound здесь широковещательный (без «кроме игрока»), поэтому на
+        // клиенте он играл второй раз поверх серверного.
+        if (player.level().isClientSide()) return;
         com.hbm_m.platform.PlatformHooks.playSound(player.level(), player.getX(), player.getY(), player.getZ(),
                 armorItem.getEquipSound(), SoundSource.PLAYERS, 1.0F, 1.0F);
     }

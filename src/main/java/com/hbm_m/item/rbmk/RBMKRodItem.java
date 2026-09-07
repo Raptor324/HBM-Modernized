@@ -286,12 +286,15 @@ public class RBMKRodItem extends Item implements ITooltipProvider {
         net.minecraft.world.item.component.CustomData data =
             stack.get(net.minecraft.core.component.DataComponents.CUSTOM_DATA);
         if (data != null) return data.copyTag();
+        // Только читаем: раньше здесь стек ЗАПИСЫВАЛСЯ. Метод вызывается с чисто читающих путей
+        // (модификаторы хазардов, тултипы), поэтому сервер писал CUSTOM_DATA в предмет просто
+        // оттого, что тот лежит в инвентаре, а клиент делал то же при отрисовке тултипа — и его
+        // копия расходилась с серверной. Значения по умолчанию возвращаются без сохранения;
+        // saveTag вызывают те, кто действительно меняет состояние.
         CompoundTag tag = new CompoundTag();
         if (stack.getItem() instanceof RBMKRodItem rod) tag.putDouble("yield", rod.yield);
         tag.putDouble("core", 20.0);
         tag.putDouble("hull", 20.0);
-        stack.set(net.minecraft.core.component.DataComponents.CUSTOM_DATA,
-            net.minecraft.world.item.component.CustomData.of(tag));
         return tag;
     }
     private static void saveTag(ItemStack stack, CompoundTag tag) {

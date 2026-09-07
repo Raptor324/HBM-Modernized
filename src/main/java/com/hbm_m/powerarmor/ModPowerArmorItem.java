@@ -374,7 +374,9 @@ public class ModPowerArmorItem extends ModArmorFSBPowered {
         if (currentTick - lastCheckTick > 20) {
             boolean hasDevice = playerHasGeigerDevice(player);
             data.putBoolean(TAG_HAS_GEIGER_DEVICE, hasDevice);
-            data.putInt(TAG_GEIGER_CHECK_TICK, (int) currentTick);
+            // putLong под getLong выше: с putInt после gameTime > Integer.MAX_VALUE каст
+            // уходил в отрицательные значения, и кэш отключался навсегда.
+            data.putLong(TAG_GEIGER_CHECK_TICK, currentTick);
             return hasDevice;
         }
         
