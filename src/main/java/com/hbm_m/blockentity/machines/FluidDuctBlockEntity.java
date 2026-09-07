@@ -166,7 +166,7 @@ public class FluidDuctBlockEntity extends BaseHbmBlockEntity implements IFluidPi
     }
 
     //? if forge || neoforge {
-    /*@Override
+    @Override
     public void onLoad() {
         super.onLoad();
         if (level instanceof ServerLevel serverLevel) {
@@ -190,7 +190,7 @@ public class FluidDuctBlockEntity extends BaseHbmBlockEntity implements IFluidPi
             FluidDuctBlock.refreshAdjacentDucts(level, worldPosition);
         }
     }
-    *///?}
+    //?}
 
     //? if fabric {
     /*@Override
@@ -213,7 +213,7 @@ public class FluidDuctBlockEntity extends BaseHbmBlockEntity implements IFluidPi
     }
 
     //? if forge || neoforge {
-    /*@Override
+    @Override
     public void onChunkUnloaded() {
         if (level instanceof ServerLevel serverLevel && node != null && !node.isExpired()) {
             UniNodespace.destroyNode(serverLevel, node);
@@ -222,7 +222,7 @@ public class FluidDuctBlockEntity extends BaseHbmBlockEntity implements IFluidPi
         adapterCache.clear();
         super.onChunkUnloaded();
     }
-    *///?}
+    //?}
 
     // =====================================================================================
     // Tick — регистрация Forge-машин в сети

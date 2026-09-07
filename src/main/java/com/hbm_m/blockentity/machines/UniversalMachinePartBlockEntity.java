@@ -571,7 +571,7 @@ public class UniversalMachinePartBlockEntity extends BaseHbmBlockEntity implemen
     }
 
     //? if forge || neoforge {
-    /*@Override
+    @Override
     public void onLoad() {
         super.onLoad();
         // При загрузке мира роль восстанавливается из NBT, минуя setPartRole.
@@ -595,9 +595,13 @@ public class UniversalMachinePartBlockEntity extends BaseHbmBlockEntity implemen
         }
         com.hbm_m.api.energy.EnergySubscriptions.unsubscribeAll(this);
     }
+    //?}
 
+    // getCapability/invalidateCaps below are Forge-only: NeoForge 1.21.1 removed
+    // BlockEntity.getCapability entirely. Only the two lifecycle hooks above apply to both.
+    //? if forge {
 
-    @NotNull
+    /*@NotNull
     @Override
     public <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
         var level = this.level;

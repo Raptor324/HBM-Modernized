@@ -115,7 +115,7 @@ public class FluidExhaustBlockEntity extends BaseHbmBlockEntity implements IFlui
     }
 
     //? if forge || neoforge {
-    /*@Override
+    @Override
     public void onChunkUnloaded() {
         if (level instanceof ServerLevel serverLevel) {
             for (int i = 0; i < nodes.length; i++) {
@@ -127,7 +127,7 @@ public class FluidExhaustBlockEntity extends BaseHbmBlockEntity implements IFlui
         }
         super.onChunkUnloaded();
     }
-    *///?}
+    //?}
 
     private void ensureNode(ServerLevel serverLevel, int index, Fluid fluid) {
         if (nodes[index] == null || nodes[index].isExpired()) {
