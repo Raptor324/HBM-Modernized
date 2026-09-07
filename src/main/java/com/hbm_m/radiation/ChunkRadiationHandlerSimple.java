@@ -252,8 +252,9 @@ public class ChunkRadiationHandlerSimple extends ChunkRadiationHandler {
     @Override
     public float getRadiation(Level level, int x, int y, int z) {
         if (level == null || level.isClientSide()) return 0F;
-        // 1.7.10 reads from an in-memory map and never touches the chunk. Our storage lives on the
-        // chunk itself, so consult loaded chunks only — level.getChunk would generate terrain here.
+        // 1.7.10 reads from an in-memory map, so it answers even for unloaded chunks. Our storage
+        // lives on the chunk, so an unloaded one reads as 0 — the trade for not letting a read
+        // generate terrain, which level.getChunk would do here.
         LevelChunk chunk = level.getChunkSource().getChunk(x >> 4, z >> 4, false);
         if (chunk == null) return 0F;
         return Mth.clamp(getChunkRadiationCap(chunk).map(IChunkRadiation::getAmbientRadiation).orElse(0f), 0F, MAX_RAD);

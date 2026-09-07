@@ -189,8 +189,33 @@ Couldn't load tag hbm_m:non_occluding as it is missing following references:
 `wires_fine/lead`, `glass`, `glass_panes`).
 
 Последствие тихое и потому неприятное: рецепт парсится без ошибки, но матчит пустой тег —
-**265 рецептов просто не крафтятся**. Ошибку в лог давал только `non_occluding`, потому что
+рецепт просто не крафтится. Ошибку в лог давал только `non_occluding`, потому что
 тег-файл ссылается на тег жёстко.
+
+**Уточнение по факту (проверено на собранных ресурсах).** Ремап чинит **181 файл из 272**.
+Оставшийся **91 рецепт** ссылается на **72 тега, которых не существует нигде** — ни среди
+сгенерированных модом, ни в `neoforge-21.1.248.jar` (там 245 конвенциональных тегов):
+
+| категория | нет тегов |
+|---|---|
+| `c:nuggets/*` | 29 |
+| `c:storage_blocks/*` | 27 |
+| `c:ingots/*` | 10 |
+| `c:ores/*` | 4 |
+| `c:powders/*` | 2 |
+
+Эти 91 рецепт были нерабочими и **до** ремапа (`forge:nuggets/*` на NeoForge не существует
+подавно), так что регрессии нет — но и «починены все 265» сказать нельзя.
+Причина в датагене: `ModItemTagProvider` эмитит `ingots/*`, `powders/*`, `wires_fine/lead`,
+`storage_blocks/{uranium,plutonium}`, `ores/uranium` — генератора `nuggets/*` и общего
+`storage_blocks/*` там нет вообще, поэтому `runData` это не исправит.
+
+Отдельно: в данных используются оба написания `c:ingots/aluminium` и `c:ingots/aluminum`,
+а определён только `aluminum` (то же для `nuggets/` и `storage_blocks/`).
+
+**Открытая задача.** Либо дописать генерацию недостающих тегов в `ModItemTagProvider`, либо
+положить их статически в `src/main/resources/data/c/tags/item/`. Требует сверки с
+`ModMaterials` / `MaterialShape`, какие предметы в какой тег входят.
 
 **Исправление.** В конвертер добавлен ремап ссылок: `"forge:` → `"c:` и `"#forge:` → `"#c:`
 по всем JSON в `data/`, плюс словарь переименований конвенций (`glass` → `glass_blocks`,
@@ -287,7 +312,7 @@ public static TileEntity getTileStandard(World world, int x, int y, int z) {
 
 ---
 
-## B*. Осталось решить (не регрессии, улучшения против оригинала)
+## B*. Улучшения против оригинала (в 1.7.10 этого не было)
 
 ### B4. C2S-пакеты доверяют произвольному `BlockPos` от клиента
 
@@ -302,11 +327,61 @@ public static TileEntity getTileStandard(World world, int x, int y, int z) {
 `RBMKControlPacket`, `ToggleWoodBurnerPacket`, `UpdateRadarC2SPacket`, `ItemDesignatorPacket`,
 `BuildMissilePacket`, `FluidTankModePacket`, `AnnihilatorPoolC2SPacket`.
 
-Последствия: клиент может заставить сервер грузить/генерировать чанки в произвольной точке мира
-и управлять машинами, к которым у него не открыто меню.
+Последствия: клиент может заставить сервер грузить и генерировать чанки в произвольной точке мира.
 
-**Предложение.** Один общий guard (хелпер в `ModPacketHandler`): `player.level().isLoaded(pos)`,
-`player.distanceToSqr(...) <= 64`, и где уместно — проверка `player.containerMenu`.
+**Исправлено.** В `ModPacketHandler` добавлен guard, применённый к 18 пакетам
+(`ItemDesignatorPacket` не тронут — он берёт block entity из открытого меню, а не из позиции):
+
+```java
+public static boolean isPosUsable(ServerPlayer player, BlockPos pos) {
+    if (pos == null) return false;
+    Level level = player.level();
+    return level.isInWorldBounds(pos) && level.isLoaded(pos);
+}
+```
+
+**Проверки дистанции здесь намеренно нет.** В проекте закладывается совместимость с
+Sable / Create Aeronautics, где блоки живут в contraption sub-level'ах и штатно управляются
+на расстоянии от игрока (в `build.neoforge.gradle.kts` уже есть `compileOnly` на Sable, а в
+`mixins.hbm_m.json` — `SubLevelMoveWindowMixin` / `SubLevelRelinkMixin` /
+`SubLevelAssembleExpansionMixin`). Радиус-guard ломал бы такие симуляции.
+Границы мира и загруженность чанка закрывают собственно серверную проблему —
+генерацию terrain по запросу клиента — и при этом безопасны для sub-level'ов.
+
+Проверка `player.containerMenu` тоже не добавлялась: часть пакетов (RBMK-консоль, радиоторч)
+управляет блоками без открытого меню мода.
+
+**Важная оговорка (по итогам ревью).** Обоснование «без дистанции из-за Sable» **не подтверждается
+для этих 18 пакетов** — ни одна из этих машин в contraption не живёт, а единственный
+contraption-aware C2S (`ServerboundDoorModelPacket`) как раз имеет жёсткий reach 8 блоков и не
+трогался. Поэтому честная формулировка такая:
+
+- `isPosUsable` закрывает **только** подгрузку/генерацию чанков с клиентской координаты;
+- **проверки права доступа он не даёт и не заменяет.** Модифицированный клиент по-прежнему может
+  управлять любой *загруженной* машиной в измерении: выключить чужие турели
+  (`TurretControlPacket`), нажать АЗ-5 на чужом реакторе (`RBMKConsoleControlPacket`),
+  дёрнуть `SoyuzLauncherControlPacket` / `BuildMissilePacket` / `WatzControlPacket`.
+
+Дыра предсуществующая, но новый guard делает обработчики *похожими* на проверенные, чем маскирует
+её — это стоит держать в голове. Канонический фикс — `player.containerMenu instanceof <нужное Menu>`
++ `stillValid`, как уже сделано в `AnvilCraftC2SPacket`. Не сделан здесь потому, что часть пакетов
+управляет блоками без открытого меню и нужен разбор каждого случая.
+
+**Отдельно на заметку по Sable/Aeronautics.** Пять пакетов, у которых проверка дистанции уже стояла
+до ревью, как раз и есть потенциальная проблема для симуляций:
+
+| пакет | лимит |
+|---|---|
+| `RBMKBoilerPacket` | `distanceToSqr > 400` (20 блоков) |
+| `SetAssemblerRecipeC2SPacket` | `> 64` (8 блоков) |
+| `SetChemPlantRecipeC2SPacket` | `> 64` (8 блоков) |
+| `SetChemFactoryRecipeC2SPacket` | `> 64` (8 блоков) |
+| `ServerboundDoorModelPacket` | по дистанции |
+
+Если такая машина окажется на движущемся contraption'е в sub-level, координаты блока и позиция
+игрока считаются в разных системах, и жёсткий радиус отклонит легитимный пакет.
+Эти guard'ы я не трогал — менять их стоит вместе с решением, как мод будет адресовать
+блоки внутри sub-level'ов.
 
 Хорошая новость: **все** обработчики корректно используют `context.queue(...)`, логика не исполняется
 в сетевом потоке — этот класс гонок закрыт.
@@ -345,6 +420,96 @@ public static void performDash(Player player) {
 `performDash` и перепроверяет все условия у себя. Существующий S2C-пакет продолжает
 синхронизировать импульс остальным игрокам — его роль не менялась.
 
+## E. Ревью на деградации (проверка собственных правок)
+
+Правки были отревьюены отдельно. Ниже — то, что нашлось **в моих же фиксах**, и что исправлено.
+
+### Деградации, внесённые правками (исправлены)
+
+1. **Dash стал хуже, чем был.** В `PowerArmorHandlers.performDash` не выставлялся
+   `player.hurtMarked = true`. Движение игрока клиент-авторитетно: без флага `ServerEntity`
+   не шлёт владельцу `ClientboundSetEntityMotionPacket`, и импульс затирается следующим
+   пакетом движения. S2C-пакет не помогает — он явно пропускает локального игрока.
+   Итог: до правки метод выходил на первой строке и не тратил ничего; после — списывал энергию
+   и ставил кулдаун без эффекта. В этом же файле `hurtMarked` стоит в трёх других местах.
+   **Исправлено.**
+
+2. **`Compat` резолвил чанк дважды.** `hasChunk` (с аллокацией `ChunkPos`) + `getBlockEntity`
+   резолвили один и тот же чанк. На пути `empBlast` это ~185k позиций, где чанки почти всегда
+   загружены, то есть guard почти не экономил, а стоимость удваивал. Плюс `ClientLevel.hasChunk`
+   безусловно возвращает `true`, так что на клиенте guard был бы фиктивным.
+   **Исправлено:** один `getChunkNow`, плюс `isOutsideBuildHeight` и тот же
+   `EntityCreationType.IMMEDIATE`, что у `Level#getBlockEntity`.
+
+3. **Фикс GameTest ослаблял тест.** Газ не только рассеивается по броску, но и **уезжает вверх**
+   (`BlockGasMeltdown.getFirstDirection` даёт `UP` в половине случаев, `BlockGasBase.tryMove`
+   переносит блок). Первая версия фикса штамповала новый источник на месте, пока старый жив выше,
+   и тест начинал мерять до трёх источников — порог становился тривиальным.
+   **Исправлено:** пересев только когда пуста вся воздушная колонка (y=1..3).
+
+4. **Неточные комментарии.** Формулировка «matching the original» в `getRadiation` неверна:
+   в 1.7.10 чтение шло из in-memory map и данные не теряло, у нас выгруженный чанк читается как 0 —
+   это осознанный размен, а не соответствие. **Переформулировано.**
+
+### Найдено рядом и исправлено
+
+- **OOM в `RBMKConsoleControlPacket.decode`**: `int len = buf.readInt(); int[] sel = new int[len];`
+  без ограничения, на netty-треде до `context.queue` — крафтовый пакет с `len = Integer.MAX_VALUE`
+  ронял сервер запросом гигабайтного массива. Заклампено по `AREA` (225).
+- **`RBMKBoilerPacket`** брал block entity до проверки дистанции — единственный из семейства
+  без guard. Закрыт.
+- **RBMK-консоль** сканировала сетку 15×15 сырыми `getBlockEntity` по `reactorOrigin`, который
+  задаёт клиент — ровно тот путь генерации чанков, ради которого делался `Compat`.
+  Все 5 мест переведены на `Compat.getTileStandard`.
+- **`MachineAnnihilatorBlockEntity`** писал радиацию мимо менеджера: без гейта конфига, без
+  попадания в active-набор (нет распространения и затухания), без `setUnsaved`.
+  Переведён на `ChunkRadiationManager.incrementRad`.
+- **Теги damage_type** лежали только в gitignored `src/generated`. Фикс из п.1 раздела «Сделано»
+  был половинчатым: типы урона грузились, а `bypasses_armor` / `is_explosion` / `is_projectile` /
+  `is_fall` / `bypasses_invulnerability` — нет, из-за чего 29 типов переставали игнорировать броню
+  (это читает и живой код: `EntityCreeperPhosgene`, `EntityMaskMan`).
+  Пять файлов положены в `src/main/resources/data/minecraft/tags/damage_type/`.
+- `isPosUsable` сведён к единому `Compat.isPositionLoaded`, отказы логируются под
+  `-Dhbm_m.netDebugPackets=true`.
+
+### Проверено и подтверждено корректным
+
+- 56 `damage_type` совпадают с датагеном по именам и семантике (различается только порядок ключей);
+  схема соответствует кодеку 1.21.1, `when_caused_by_living_non_player` — ровно дефолт
+  двухаргументного `new DamageType(msgId, exhaustion)`.
+- Все 55 `minecraft:*` id в тегах биомов сверены с `Biomes` 1.21.1 — расхождений больше нет.
+- Все 18 вставок guard'а стоят в правильном месте и работают с тем же уровнем, из которого потом
+  читается block entity; штатной работы с невыгруженными чанками у этих пакетов нет.
+- Пустой пейлоад dash-пакета безопасен: Architectury кодирует его как length-prefixed `byte[0]`.
+- `MAX_RAD` не может быть 0 или отрицательным — `ConfigSchema` клампит в `[1, 10^7]`.
+- `empBlast` (включая эффективный радиус `r/√2` и асимметрию цикла) совпадает с оригиналом 1:1 —
+  это не баг порта.
+- Быстрый путь в `PlatformRecipeSerializer` срабатывает на 100 % штатных загрузок:
+  `RecipeManager` использует `RegistryOps<JsonElement>`, чей `createMap` делегируется в `JsonOps`
+  и всегда возвращает `JsonObject`. Fallback через `Dynamic.convert` остаётся для `NbtOps`.
+- `Ingredient.EMPTY` матчит только пустой стек, поэтому пропущенный слот ammo press требует
+  пустоты — рецепт лишнего не матчит.
+- 1/350 в `BlockGasMeltdown` — верный порт оригинала, фикс теста ошибку порта не маскирует.
+- Ремап `grass` → `short_grass` уже есть в конвертере (`build.neoforge.gradle.kts:315`),
+  рецепт liquefactor в собранных ресурсах корректен.
+
+### Открытые вопросы (нужно решение)
+
+1. **Рукописные `damage_type` затеняют датаген.** `DuplicatesStrategy.EXCLUDE` берёт файл из
+   `src/main/resources`, поэтому правка `DataGenerators` (например смена `exhaustion`) в сборку
+   не попадёт, а *новый* ключ приедет из датагена — набор станет смесью двух источников.
+   Либо считать `src/main/resources` источником истины и убрать `DAMAGE_TYPE` из датагена,
+   либо наоборот — убрать рукописные файлы и сделать `runData` обязательным шагом CI.
+2. **50 из 56 типов урона без перевода** `death.attack.<id>` (есть только `radiation`,
+   `black_hole`, `asbestos`, `blacklung`, `hardlanding_smash`, `taint`) — игрок увидит сырой ключ.
+3. **Registry-контекст теряется** в `RecipeHooks`: `Ingredient.CODEC.parse(JsonOps.INSTANCE, ...)`
+   вместо переданного `RegistryOps`. Сейчас безвредно, но любой рецепт с `components`,
+   требующими динамического реестра (зачарования, зелья), упадёт с `Not a registry ops`.
+4. **Хрупкость ремапа тегов**: `.replace("\"forge:", "\"c:")` применяется ко всем значениям
+   в `data/`. Сегодня безопасно (проверено), но будущие `"forge:conditions"` / `"type": "forge:not"`
+   от Forge-датагена молча превратятся в `c:`. Стоит ограничить позициями тегов или завести
+   blacklist префиксов.
+
 ## C. Мелочи
 
 - **Отладочный вывод в проде — УБРАНО.** `PlatformRecipeSerializer` печатал в `System.err`
@@ -352,11 +517,25 @@ public static void performDash(Player player) {
   и вёл два `static` счётчика, инкрементируемые без синхронизации (рецепты грузятся в пуле).
   Заменено на `MainRegistry.LOGGER.error("Failed to parse recipe", e)` — причина по-прежнему
   видна со стектрейсом, но через логгер: `RecipeManager` наружу отдаёт только `message`.
-- **Нестабильный GameTest.** `gas_meltdownPumpsChunkRadiationUnderSky` в одном из четырёх прогонов
-  упал (`got 3.217`, ожидалось `> baseline + 10`), в остальных прошёл. Радиация хранится **на чанк**,
-  а арены GameTest расставляются по несколько в одном чанке, поэтому соседние тесты влияют друг на
-  друга через общее значение ambient, плюс `updateSystem` раз в 20 тиков применяет decay ×0.99−0.05.
-  Тест стоит завязать на изолированный чанк либо на дельту, а не на абсолютный порог.
+- **Нестабильный GameTest — ИСПРАВЛЕНО.** `gas_meltdownPumpsChunkRadiationUnderSky` падал примерно
+  в трети прогонов с разбросом значений (`got 0.825`, `got 3.217` при ожидании `> baseline + 10`),
+  причём на неизменном коде: соседние прогоны давали то падение, то `All 287 passed`.
+
+  Причина в самом источнике, а не в радиации. `BlockGasMeltdown.tick`:
+
+  ```java
+  // 1/350 рассеивание
+  if (random.nextInt(350) == 0) {
+      level.removeBlock(pos, false);
+      return;
+  }
+  ```
+
+  За 160 тиков теста вероятность, что газ рассеется раньше времени, около 37 % — накачка
+  прекращается, и тест меряет бросок кубика, а не механику.
+
+  **Исправление.** Тест переведён с `thenExecuteAfter(160, ...)` на `thenExecuteFor(160, ...)`,
+  который каждый тик восстанавливает блок газа, если тот рассеялся. Порог остался строгим.
 - 9 warning'ов компиляции на deprecated NeoForge API, все помечены `for removal`:
   `Item#initializeClient` / `MobEffect#initializeClient` (`MissileItem`, `RangeDetonatorItem`,
   `RadawayEffect`, `TaintEffect`), `EventBusSubscriber.Bus` (`ModEntityEvents`,

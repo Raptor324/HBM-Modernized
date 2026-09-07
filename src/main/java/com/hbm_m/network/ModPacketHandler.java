@@ -382,6 +382,31 @@ public class ModPacketHandler {
         );
     }
 
+    // ══════════════════════════ Валидация C2S ═════════════════════════════════
+
+    /**
+     * Guard for C2S packets carrying a {@link net.minecraft.core.BlockPos}: the position is chosen
+     * by the client, so it can point anywhere. Rejecting out-of-bounds and unloaded positions stops
+     * a packet from pulling in — and generating — chunks on the server thread.
+     *
+     * <p>Deliberately no distance check: contraption sub-levels (Sable / Create Aeronautics) drive
+     * block entities the player is legitimately nowhere near, so a radius would break simulation.
+     */
+    public static boolean isPosUsable(ServerPlayer player, net.minecraft.core.BlockPos pos) {
+        if (pos == null) return false;
+        net.minecraft.world.level.Level level = player.level();
+        // Single source of truth for "is this chunk resident" — same helper the explosion code uses.
+        if (level.isInWorldBounds(pos) && com.hbm_m.util.Compat.isPositionLoaded(level, pos)) {
+            return true;
+        }
+        if (NET_DEBUG_PACKETS) {
+            com.hbm_m.main.MainRegistry.LOGGER.info(
+                    "[NET-DBG] C2S rejected: pos {} unusable for {}",
+                    pos, player.getGameProfile().getName());
+        }
+        return false;
+    }
+
     // ══════════════════════════ Отправка пакетов ══════════════════════════════
 
     /**

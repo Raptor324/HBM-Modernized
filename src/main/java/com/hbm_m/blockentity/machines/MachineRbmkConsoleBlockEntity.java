@@ -172,7 +172,7 @@ public class MachineRbmkConsoleBlockEntity extends com.hbm_m.blockentity.BaseHbm
                 int      ri    = x - GRID_HALF, rj = z - GRID_HALF;
                 BlockPos cPos  = reactorOrigin.offset(rotatedX(ri, rj), 0, rotatedZ(ri, rj));
 
-                if (level.getBlockEntity(cPos) instanceof RBMKColumnBlockEntity col) {
+                if (com.hbm_m.util.Compat.getTileStandard(level, cPos) instanceof RBMKColumnBlockEntity col) {
                     CompoundTag d = col.getNBTForConsole();
                     d.putDouble("heat",      col.heat);
                     d.putDouble("maxHeat",   col.maxHeat());
@@ -276,14 +276,14 @@ public class MachineRbmkConsoleBlockEntity extends com.hbm_m.blockentity.BaseHbm
             case 0 -> { // set control rod level
                 for (int idx : selected) {
                     BlockPos cPos = idxToPos(idx);
-                    if (cPos != null && level.getBlockEntity(cPos) instanceof RBMKControlBlockEntity rod)
+                    if (cPos != null && com.hbm_m.util.Compat.getTileStandard(level, cPos) instanceof RBMKControlBlockEntity rod)
                         rod.setTarget(dVal);
                 }
             }
             case 1 -> { // AZ-5: retract ALL control rods immediately
                 for (int i = 0; i < AREA; i++) {
                     BlockPos cPos = idxToPos(i);
-                    if (cPos != null && level.getBlockEntity(cPos) instanceof RBMKControlBlockEntity rod) {
+                    if (cPos != null && com.hbm_m.util.Compat.getTileStandard(level, cPos) instanceof RBMKControlBlockEntity rod) {
                         rod.setTarget(0);
                         rod.level = 0;
                     }
@@ -292,7 +292,7 @@ public class MachineRbmkConsoleBlockEntity extends com.hbm_m.blockentity.BaseHbm
             case 2 -> { // assign color group
                 for (int idx : selected) {
                     BlockPos cPos = idxToPos(idx);
-                    if (cPos != null && level.getBlockEntity(cPos) instanceof RBMKControlBlockEntity rod) {
+                    if (cPos != null && com.hbm_m.util.Compat.getTileStandard(level, cPos) instanceof RBMKControlBlockEntity rod) {
                         rod.color = (short) iVal;
                         rod.setChanged();
                     }
@@ -319,7 +319,7 @@ public class MachineRbmkConsoleBlockEntity extends com.hbm_m.blockentity.BaseHbm
             case 6 -> { // cycle the steam compressor on every selected boiler channel
                 for (int idx : selected) {
                     BlockPos cPos = idxToPos(idx);
-                    if (cPos != null && level.getBlockEntity(cPos)
+                    if (cPos != null && com.hbm_m.util.Compat.getTileStandard(level, cPos)
                             instanceof com.hbm_m.blockentity.machines.rbmk.RBMKBoilerBlockEntity boiler) {
                         boiler.cycleCompressor();
                     }

@@ -215,7 +215,10 @@ public final class PowerArmorHandlers {
         double dashSpeed = 1.5 + (specs.dashCount * 0.5);
         Vec3 dashVelocity = lookDirection.scale(dashSpeed);
         player.setDeltaMovement(dashVelocity.x, Math.max(dashVelocity.y, 0.2), dashVelocity.z);
-        
+        // Movement is client-authoritative: without hurtMarked the server never sends
+        // ClientboundSetEntityMotionPacket to the owner and the impulse is overwritten.
+        player.hurtMarked = true;
+
         // Установка кулдауна
         tag.putInt(TAG_DASH_COOLDOWN, DASH_COOLDOWN_TICKS);
         

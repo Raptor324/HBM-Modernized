@@ -36,6 +36,7 @@ public class ZirnoxControlPacket implements C2SPacket {
                 return;
             }
 
+            if (!ModPacketHandler.isPosUsable(player, packet.pos)) return;
             var blockEntity = player.level().getBlockEntity(packet.pos);
             if (blockEntity instanceof MachineZirnoxBlockEntity zirnox) {
                 zirnox.handleButtonPress(packet.action);

@@ -5,6 +5,7 @@ import com.hbm_m.blockentity.machines.MachineRbmkConsoleBlockEntity;
 import dev.architectury.networking.NetworkManager.PacketContext;
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.util.Mth;
 import net.minecraft.server.level.ServerPlayer;
 
 /**
@@ -45,7 +46,9 @@ public class RBMKConsoleControlPacket implements C2SPacket {
         int     action  = buf.readByte();
         double  dVal    = buf.readDouble();
         int     iVal    = buf.readInt();
-        int     len     = buf.readInt();
+        // Clamp before allocating: the length is client-chosen and this runs on the netty thread,
+        // so an unbounded readInt() lets a crafted packet request a multi-gigabyte array.
+        int     len     = Mth.clamp(buf.readInt(), 0, MachineRbmkConsoleBlockEntity.AREA);
         int[]   sel     = new int[len];
         for (int i = 0; i < len; i++) sel[i] = buf.readInt();
         return new RBMKConsoleControlPacket(pos, action, dVal, iVal, sel);
@@ -64,6 +67,7 @@ public class RBMKConsoleControlPacket implements C2SPacket {
     public static void handle(RBMKConsoleControlPacket pkt, PacketContext ctx) {
         ctx.queue(() -> {
             if (!(ctx.getPlayer() instanceof ServerPlayer player)) return;
+            if (!ModPacketHandler.isPosUsable(player, pkt.consolePos)) return;
             if (player.level().getBlockEntity(pkt.consolePos) instanceof MachineRbmkConsoleBlockEntity console) {
                 console.handleControl(player.serverLevel(), pkt.action, pkt.doubleVal, pkt.intVal, pkt.selectedIndices);
             }

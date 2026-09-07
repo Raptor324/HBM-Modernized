@@ -977,7 +977,19 @@ public final class GasGameTest {
         helper.setBlock(new BlockPos(2, 1, 2), ModBlocks.GAS_MELTDOWN.get());
         // Система чанк-радиации имеет собственный распад (×0.99 − 0.05 за цикл):
         // при непрерывной накачке +5/тик значение выходит на равновесие ~30 RAD.
-        helper.startSequence().thenExecuteAfter(160, () -> {
+        BlockPos gasPos = new BlockPos(2, 1, 2);
+        helper.startSequence().thenExecuteFor(160, () -> {
+            // The gas both drifts upward (tryMove) and disperses on a roll, so the source leaves
+            // (2,1,2) on most runs and the pump stops early. Re-seed only when the whole air column
+            // is empty — replacing it while the old block still floats above would stack sources
+            // and let the test pass on inflated output.
+            for (int y = 1; y <= 3; y++) {
+                if (helper.getBlockState(new BlockPos(2, y, 2)).is(ModBlocks.GAS_MELTDOWN.get())) {
+                    return;
+                }
+            }
+            helper.setBlock(gasPos, ModBlocks.GAS_MELTDOWN.get());
+        }).thenExecute(() -> {
             float rad = ChunkRadiationManager.getRadiation(level, abs.getX(), abs.getY(), abs.getZ());
             if (level.canSeeSky(abs)) {
                 // Арена под открытым небом — газ качает +5 RAD/тик в чанк.

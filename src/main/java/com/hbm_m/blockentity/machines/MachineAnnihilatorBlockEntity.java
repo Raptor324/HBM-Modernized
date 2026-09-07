@@ -13,7 +13,7 @@ import com.hbm_m.hazard.HazardRegistry;
 import com.hbm_m.hazard.HazardSystem;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.inventory.menu.MachineAnnihilatorMenu;
-import com.hbm_m.radiation.ChunkRadiationAccess;
+import com.hbm_m.radiation.ChunkRadiationManager;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -29,7 +29,6 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.material.Fluid;
 
 /**
@@ -139,9 +138,9 @@ public class MachineAnnihilatorBlockEntity extends BaseMachineBlockEntity implem
         if (hazard <= 0f) return;
 
         float amount = Math.min(1000f, hazard * count);
-        LevelChunk chunk = level.getChunkAt(worldPosition);
-        ChunkRadiationAccess.get(chunk).ifPresent(rad ->
-                rad.setAmbientRadiation(rad.getAmbientRadiation() + amount));
+        // Go through the manager: writing the attachment directly skips the config gate, leaves the
+        // chunk out of the active set (no spread or decay) and never marks it unsaved.
+        ChunkRadiationManager.incrementRad(level, worldPosition.getX(), worldPosition.getY(), worldPosition.getZ(), amount);
     }
 
     private void updateMonitor(ServerLevel level) {

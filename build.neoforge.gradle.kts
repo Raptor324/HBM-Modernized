@@ -293,15 +293,6 @@ tasks.named<ProcessResources>("processResources") {
 			}
 		}
 
-		// Ссылки на теги forge:* внутри рецептов → c:* (неймспейс переименован выше).
-		dataDir.resolve("hbm_m").resolve("recipe").walkTopDown()
-			.filter { it.isFile && it.extension == "json" }.forEach { file ->
-				val text = file.readText()
-				if (text.contains("\"forge:")) {
-					file.writeText(text.replace(Regex("\"(tag)\"\\s*:\\s*\"forge:"), "\"$1\": \"c:"))
-				}
-			}
-
 		// Лут-таблицы батарей используют minecraft:copy_nbt, удалённый в 1.20.5+.
 		// На 1.21.1 состояние батареи переносится кодом
 		// (MachineBatteryBlock#playerWillDestroy → MachineBatteryBlockEntity#saveToItemStack),

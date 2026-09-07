@@ -34,6 +34,7 @@ public class AnnihilatorPoolC2SPacket implements C2SPacket {
         context.queue(() -> {
             if (!(context.getPlayer() instanceof ServerPlayer player)) return;
 
+            if (!ModPacketHandler.isPosUsable(player, msg.pos)) return;
             BlockEntity be = player.serverLevel().getBlockEntity(msg.pos);
             if (be instanceof MachineAnnihilatorBlockEntity annihilator) {
                 annihilator.setPoolName(msg.poolName);

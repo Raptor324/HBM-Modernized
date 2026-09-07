@@ -35,6 +35,7 @@ public class WatzControlPacket implements C2SPacket {
                 return;
             }
 
+            if (!ModPacketHandler.isPosUsable(player, packet.pos)) return;
             var blockEntity = player.level().getBlockEntity(packet.pos);
             if (blockEntity instanceof MachineWatzPowerplantBlockEntity watz) {
                 watz.handleButtonPress(packet.action);

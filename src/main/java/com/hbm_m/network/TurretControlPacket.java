@@ -41,6 +41,7 @@ public class TurretControlPacket implements C2SPacket {
                 return;
             }
 
+            if (!ModPacketHandler.isPosUsable(player, packet.pos)) return;
             var blockEntity = player.level().getBlockEntity(packet.pos);
             if (blockEntity instanceof TurretBaseBlockEntity turret) {
                 turret.handleButtonPress(packet.action);
