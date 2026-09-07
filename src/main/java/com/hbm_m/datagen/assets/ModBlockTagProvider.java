@@ -246,22 +246,30 @@ public class ModBlockTagProvider extends BlockTagsProvider {
 
 
         // ============ ТЕГИ СОВМЕСТИМОСТИ С ДРУГИМИ МОДАМИ ============
+        //  Блоки хранения для всех материалов с формой BLOCK. Раньше вручную перечислялись
+        //  только uranium и plutonium, из-за чего рецепты на остальные storage_blocks/^
+        //  матчили пустой тег. URANIUM_BLOCK/PLUTONIUM_BLOCK — те же объекты из INGOT_BLOCKS,
+        //  поэтому цикл их покрывает без дублей.
         //? if fabric && < 1.21.1 {
-        /^this.tag(BlockTags.create(new ResourceLocation("forge", "storage_blocks/uranium")))
-                .add(ModBlocks.URANIUM_BLOCK.get());
+        /^var storageBlocksTagBuilder = this.tag(BlockTags.create(new ResourceLocation("forge", "storage_blocks")));
         ^///?} else {
-                this.tag(BlockTags.create(ResourceLocation.fromNamespaceAndPath("forge", "storage_blocks/uranium")))
-                .add(ModBlocks.URANIUM_BLOCK.get());
+                var storageBlocksTagBuilder = this.tag(BlockTags.create(ResourceLocation.fromNamespaceAndPath("forge", "storage_blocks")));
         //?}
 
+        for (com.hbm_m.item.material.ModMaterials mat : com.hbm_m.item.material.ModMaterials.values()) {
+            if (!mat.has(com.hbm_m.item.material.MaterialShape.BLOCK)) continue;
+            if (!ModBlocks.hasIngotBlock(mat)) continue;
+            Block storageBlock = ModBlocks.getIngotBlock(mat).get();
+            //? if fabric && < 1.21.1 {
+            /^this.tag(BlockTags.create(new ResourceLocation("forge", "storage_blocks/" + mat.getId())))
+                    .add(storageBlock);
+            ^///?} else {
+                        this.tag(BlockTags.create(ResourceLocation.fromNamespaceAndPath("forge", "storage_blocks/" + mat.getId())))
+                    .add(storageBlock);
+            //?}
 
-        //? if fabric && < 1.21.1 {
-        /^this.tag(BlockTags.create(new ResourceLocation("forge", "storage_blocks/plutonium")))
-                .add(ModBlocks.PLUTONIUM_BLOCK.get());
-        ^///?} else {
-                this.tag(BlockTags.create(ResourceLocation.fromNamespaceAndPath("forge", "storage_blocks/plutonium")))
-                .add(ModBlocks.PLUTONIUM_BLOCK.get());
-        //?}
+            storageBlocksTagBuilder.add(storageBlock);
+        }
 
 
         //? if fabric && < 1.21.1 {

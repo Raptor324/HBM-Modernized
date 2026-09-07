@@ -210,12 +210,40 @@ Couldn't load tag hbm_m:non_occluding as it is missing following references:
 `storage_blocks/{uranium,plutonium}`, `ores/uranium` — генератора `nuggets/*` и общего
 `storage_blocks/*` там нет вообще, поэтому `runData` это не исправит.
 
-Отдельно: в данных используются оба написания `c:ingots/aluminium` и `c:ingots/aluminum`,
-а определён только `aluminum` (то же для `nuggets/` и `storage_blocks/`).
+**Сделано частично: 72 → 47 недостающих тегов, 91 → 66 мёртвых рецептов.**
 
-**Открытая задача.** Либо дописать генерацию недостающих тегов в `ModItemTagProvider`, либо
-положить их статически в `src/main/resources/data/c/tags/item/`. Требует сверки с
-`ModMaterials` / `MaterialShape`, какие предметы в какой тег входят.
+Причина оказалась в датагене: `ModItemTagProvider` перебирал `ModMaterials` и генерировал теги
+для `INGOT`, `POWDER` и `POWDER_TINY`, но для `NUGGET` генерации не было вообще, а
+`storage_blocks/*` перечислялись вручную — только `uranium` и `plutonium`. При этом обе формы
+в `MaterialShape` есть: `NUGGET` у 51 материала, `BLOCK` у 48.
+
+Добавлено:
+
+- генерация `forge:nuggets/<материал>` в `ModItemTagProvider` по образцу ingots — **51 тег**;
+- цикл по всем `storage_blocks/<материал>` в `ModBlockTagProvider` вместо двух ручных записей
+  (`ModBlocks.URANIUM_BLOCK` — тот же объект из `INGOT_BLOCKS`, дублей не возникает) — **48 тегов**;
+- соответствующий `copy` block→item для всех `storage_blocks/*`.
+
+**Что осталось (47 тегов / 66 рецептов) — это уже не генерация, а содержание.**
+Теги не создаются потому, что у материала нет нужной формы либо материала нет вовсе:
+
+| причина | примеры |
+|---|---|
+| материала нет в `ModMaterials` | `nickel`, `mingrade` |
+| материал есть, формы `NUGGET` нет | `copper`, `steel`, `titanium`, `tungsten`, `saturnite`, `cadmium` |
+| материал есть, формы `BLOCK` нет | `arsenic`, `osmiridium`, `technetium` |
+| нет генерации `ores/*` (кроме `uranium`) | `cobalt`, `lithium`, `niter`, `plutonium` |
+| нет формы `POWDER` | `phosphorus`, `sulfur` |
+
+Отдельный случай — **два разных материала с похожими именами**:
+`ALUMINUM("aluminum")` имеет `INGOT`/`BLOCK`/`PLATE`/`POWDER`, а `ALUMINIUM("aluminium")` —
+только `CRYSTAL`/`PLATE_CAST`/`PLATE_WELDED`/`WIRE`/`WIRE_DENSE`. Рецепты ссылаются на оба
+написания (5 файлов на британское, 3 на американское), поэтому `c:ingots/aluminium`,
+`c:nuggets/aluminium` и `c:storage_blocks/aluminium` пустые. Нужно решить, это намеренное
+разделение или рецепты должны ссылаться на `aluminum`.
+
+Закрывать остаток стоит осознанно: либо дописывать формы материалам, либо править рецепты —
+это правки контента, а не инфраструктуры.
 
 **Исправление.** В конвертер добавлен ремап ссылок: `"forge:` → `"c:` и `"#forge:` → `"#c:`
 по всем JSON в `data/`, плюс словарь переименований конвенций (`glass` → `glass_blocks`,
