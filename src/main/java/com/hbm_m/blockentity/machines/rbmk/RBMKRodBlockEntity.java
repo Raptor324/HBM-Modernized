@@ -268,7 +268,13 @@ public class RBMKRodBlockEntity extends RBMKColumnBlockEntity
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.readNbtData(tag, registries);
-        fluxQuantity    = tag.getDouble("fluxQuantity");
+        // The "fluxQuantity" key actually carries the server's lastFluxQuantity (see
+        // writeNbtData). It has to land in BOTH fields: this same method backs the per-tick client
+        // sync, and the renderer's Cherenkov glow tests lastFluxQuantity - which nothing ever
+        // assigned on the client, so it stayed 0 and the blue glow never appeared no matter how
+        // hard the channel was running.
+        fluxQuantity     = tag.getDouble("fluxQuantity");
+        lastFluxQuantity = tag.getDouble("fluxQuantity");
         fluxFastRatio   = tag.getDouble("fluxMod");
         hasRod          = tag.getBoolean("hasRod");
         explodeOnBroken = !tag.contains("explodeOnBroken") || tag.getBoolean("explodeOnBroken");

@@ -137,6 +137,10 @@ public class ModItems {
     public static final RegistrySupplier<Item> WIRE_DENSE_ADVANCED_ALLOY= ITEMS.register("wire_dense_advanced_alloy",() -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> WIRE_DENSE_SCHRABIDIUM   = ITEMS.register("wire_dense_schrabidium",   () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> WIRE_DENSE_SATURNITE     = ITEMS.register("wire_dense_saturnite",     () -> new Item(new Item.Properties()));
+    /** Supraleiterdraht des Fusionsreaktors (Original: {@code BSCCO.wireDense()}). */
+    public static final RegistrySupplier<Item> WIRE_DENSE_BSCCO         = ITEMS.register("wire_dense_bscco",         () -> new Item(new Item.Properties()));
+    /** Original: {@code SBD.wireDense()}. */
+    public static final RegistrySupplier<Item> WIRE_DENSE_SCHRABIDATE   = ITEMS.register("wire_dense_schrabidate",   () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> WIRE_DENSE_COMBINE_STEEL = ITEMS.register("wire_dense_combine_steel", () -> new Item(new Item.Properties()));
 
     // --- Standalone Pulver ohne Ingot-Gegenstueck (aus Original-Rezepten portiert, DEV-Tab bis einsortiert) ---
@@ -406,6 +410,12 @@ public class ModItems {
     public static final RegistrySupplier<Item> METEORITE_SWORD_HARDENED = ITEMS.register("meteorite_sword_hardened",
             () -> new ModSwordItem(ModToolTiers.TITANIUM, 3, -2, new Item.Properties()));
     public static final RegistrySupplier<Item> METEORITE_SWORD_ALLOYED = ITEMS.register("meteorite_sword_alloyed",
+            () -> new ModSwordItem(ModToolTiers.TITANIUM, 3, -2, new Item.Properties()));
+    // Fusions-Brueter-Schritt der Schwertkette (Original: meteorite_sword_irradiated -> _fused,
+    // siehe TileEntityFusionBreeder.processSolid).
+    public static final RegistrySupplier<Item> METEORITE_SWORD_IRRADIATED = ITEMS.register("meteorite_sword_irradiated",
+            () -> new ModSwordItem(ModToolTiers.TITANIUM, 3, -2, new Item.Properties()));
+    public static final RegistrySupplier<Item> METEORITE_SWORD_FUSED = ITEMS.register("meteorite_sword_fused",
             () -> new ModSwordItem(ModToolTiers.TITANIUM, 3, -2, new Item.Properties()));
     public static final RegistrySupplier<Item> TITANIUM_PICKAXE = ITEMS.register("titanium_pickaxe",
             () -> new ModPickaxeItem(ModToolTiers.TITANIUM, 1, 1, new Item.Properties()));
@@ -1646,6 +1656,27 @@ public class ModItems {
 
 	public static final RegistrySupplier<Item> CYCLOTRON = ITEMS.register("cyclotron",
         () -> new MultiblockBlockItem(ModBlocks.CYCLOTRON.get(), new Item.Properties()));
+
+    // ===== Fusionsreaktor: Blockitems der Multiblock-Maschinen =====
+    public static final RegistrySupplier<Item> FUSION_TORUS_ITEM = ITEMS.register("torus",
+            () -> new MultiblockBlockItem(ModBlocks.TORUS.get(), new Item.Properties()));
+    public static final RegistrySupplier<Item> FUSION_KLYSTRON_ITEM = ITEMS.register("klystron",
+            () -> new MultiblockBlockItem(ModBlocks.KLYSTRON.get(), new Item.Properties()));
+    public static final RegistrySupplier<Item> FUSION_KLYSTRON_CREATIVE_ITEM = ITEMS.register("klystron_creative",
+            () -> new MultiblockBlockItem(ModBlocks.KLYSTRON_CREATIVE.get(), new Item.Properties()));
+    public static final RegistrySupplier<Item> FUSION_BREEDER_ITEM = ITEMS.register("breeder_fusion",
+            () -> new MultiblockBlockItem(ModBlocks.BREEDER_FUSION.get(), new Item.Properties()));
+    public static final RegistrySupplier<Item> FUSION_COLLECTOR_ITEM = ITEMS.register("collector",
+            () -> new MultiblockBlockItem(ModBlocks.COLLECTOR.get(), new Item.Properties()));
+    public static final RegistrySupplier<Item> FUSION_COUPLER_ITEM = ITEMS.register("coupler",
+            () -> new MultiblockBlockItem(ModBlocks.COUPLER.get(), new Item.Properties()));
+    public static final RegistrySupplier<Item> FUSION_BOILER_ITEM = ITEMS.register("boiler_fusion",
+            () -> new MultiblockBlockItem(ModBlocks.BOILER_FUSION.get(), new Item.Properties()));
+    public static final RegistrySupplier<Item> FUSION_MHDT_ITEM = ITEMS.register("mhdt",
+            () -> new MultiblockBlockItem(ModBlocks.MHDT.get(), new Item.Properties()));
+    public static final RegistrySupplier<Item> FUSION_PLASMA_FORGE_ITEM = ITEMS.register("plasma_forge",
+            () -> new MultiblockBlockItem(ModBlocks.PLASMA_FORGE.get(), new Item.Properties()));
+
 
     // в”Ђв”Ђв”Ђ Cyclotron particle parts в”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђв”Ђ
     /** Lithium ion вЂ” accelerated in the cyclotron as a low-energy particle. */
@@ -3240,6 +3271,9 @@ public class ModItems {
     public static final RegistrySupplier<Item> FRAGMENT_NEODYMIUM = ITEMS.register("fragment_neodymium", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> FRAGMENT_NIOBIUM = ITEMS.register("fragment_niobium", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> FUSE = ITEMS.register("fuse", () -> new Item(new Item.Properties()));
+    // Fusionsreaktor: Ausgangsprodukte der Torus-Rezepte (Original: ModItems.powder_chlorophyte / pellet_charged).
+    public static final RegistrySupplier<Item> CHLOROPHYTE_POWDER = ITEMS.register("chlorophyte_powder", () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> PELLET_CHARGED = ITEMS.register("pellet_charged", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> FUSION_CORE = ITEMS.register("fusion_core", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> FUSION_CORE_INFINITE = ITEMS.register("fusion_core_infinite", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> FUSION_SHIELD_CHLOROPHYTE = ITEMS.register("fusion_shield_chlorophyte", () -> new Item(new Item.Properties()));

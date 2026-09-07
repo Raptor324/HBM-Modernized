@@ -2086,7 +2086,10 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add(ModBlocks.RBMK_CONTROL_REASIM_AUTO.get(), "РБМК Авто-стержень (ReaSim)");
         add(ModBlocks.RBMK_STEAM_INLET.get(),         "РБМК Вход пара");
         add(ModBlocks.RBMK_STEAM_OUTLET.get(),        "РБМК Выход пара");
-        add(ModBlocks.RBMK_LOADER.get(),              "РБМК Загрузчик (основание)");
+        add(ModBlocks.RBMK_LOADER.get(),              "РБМК Паровой коннектор");
+        add("block.hbm_m.rbmk_loader.desc0", "Позволяет РБМК иметь подключение и воды, и пара снизу");
+        add("block.hbm_m.rbmk_loader.desc1", "Поставьте водяную трубу под колонну РБМК, затем коннектор,");
+        add("block.hbm_m.rbmk_loader.desc2", "затем подключите паропровод к коннектору.");
         add(ModBlocks.RBMK_AUTOLOADER.get(),          "РБМК Автозагрузчик");
         add(ModBlocks.RBMK_CRANE_CONSOLE.get(),       "РБМК Пульт крана");
         add(ModBlocks.RBMK_DEBRIS.get(),              "РБМК Обломки");

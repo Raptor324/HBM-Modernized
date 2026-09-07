@@ -1788,6 +1788,7 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModBlocks.ICF.get()));
         add.accept(new ItemStack(ModBlocks.INTAKE.get()));
         add.accept(new ItemStack(ModBlocks.KLYSTRON.get()));
+        add.accept(new ItemStack(ModBlocks.KLYSTRON_CREATIVE.get()));
         add.accept(new ItemStack(ModBlocks.MHDT.get()));
         add.accept(new ItemStack(ModBlocks.MICROWAVE.get()));
         add.accept(new ItemStack(ModBlocks.MINING_LASER.get()));
@@ -2592,6 +2593,10 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModItems.FRAGMENT_NEODYMIUM.get()));
         add.accept(new ItemStack(ModItems.FRAGMENT_NIOBIUM.get()));
         add.accept(new ItemStack(ModItems.FUSE.get()));
+        add.accept(new ItemStack(ModItems.WIRE_DENSE_BSCCO.get()));
+        add.accept(new ItemStack(ModItems.WIRE_DENSE_SCHRABIDATE.get()));
+        add.accept(new ItemStack(ModItems.CHLOROPHYTE_POWDER.get()));
+        add.accept(new ItemStack(ModItems.PELLET_CHARGED.get()));
         add.accept(new ItemStack(ModItems.FUSION_CORE.get()));
         add.accept(new ItemStack(ModItems.FUSION_CORE_INFINITE.get()));
         add.accept(new ItemStack(ModItems.FUSION_SHIELD_CHLOROPHYTE.get()));

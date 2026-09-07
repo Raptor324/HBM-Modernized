@@ -79,6 +79,17 @@ import com.hbm_m.block.machines.MachineCrackingTowerBlock;
 import com.hbm_m.block.machines.MachineCrucibleBlock;
 import com.hbm_m.block.machines.MachineCrystallizerBlock;
 import com.hbm_m.block.machines.MachineCyclotronBlock;
+import com.hbm_m.block.machines.fusion.MachineFusionTorusBlock;
+import com.hbm_m.block.machines.fusion.MachineFusionKlystronBlock;
+import com.hbm_m.block.machines.fusion.MachineFusionKlystronCreativeBlock;
+import com.hbm_m.block.machines.fusion.MachineFusionBreederBlock;
+import com.hbm_m.block.machines.fusion.MachineFusionCollectorBlock;
+import com.hbm_m.block.machines.fusion.MachineFusionCouplerBlock;
+import com.hbm_m.block.machines.fusion.MachineFusionBoilerBlock;
+import com.hbm_m.block.machines.fusion.MachineFusionMhdtBlock;
+import com.hbm_m.block.machines.fusion.FusionComponentBlock;
+import com.hbm_m.block.machines.fusion.MachineFusionPlasmaForgeBlock;
+import com.hbm_m.block.machines.fusion.StructTorusCoreBlock;
 import com.hbm_m.block.machines.MachineDerrickBlock;
 import com.hbm_m.block.machines.MachineDeuteriumTowerBlock;
 import com.hbm_m.block.machines.MachineFelBlock;
@@ -2221,8 +2232,16 @@ public class ModBlocks {
      *  {@link com.hbm_m.block.machines.rbmk.RBMKColumnFillerBlock}). Not directly placeable;
      *  breaking it cascades into destroying the real column below (same feel/hardness as the
      *  column itself, matched via {@link #rbmkProps()}). */
+    // dynamicShape() is load-bearing, not decoration: RBMKColumnFillerBlock returns a
+    // position-dependent collision box (the topmost filler of a lidded column is 1.25 blocks tall).
+    // Without it Minecraft builds a BlockState shape cache from
+    // getCollisionShape(state, EmptyBlockGetter, BlockPos.ZERO), which resolves to a plain full
+    // block - so hasLargeCollisionShape() reports false, and BlockCollisions then SKIPS this block
+    // whenever it is only reached through the one-block ring around the entity's box. Standing on a
+    // lid put the player exactly in that case: the real 1.25 shape was never queried and they sank
+    // a quarter block into the lid.
     public static final RegistrySupplier<Block> RBMK_COLUMN_FILLER = registerBlockWithoutItem("rbmk_column_filler",
-            () -> new com.hbm_m.block.machines.rbmk.RBMKColumnFillerBlock(rbmkProps().noLootTable()));
+            () -> new com.hbm_m.block.machines.rbmk.RBMKColumnFillerBlock(rbmkProps().noLootTable().dynamicShape()));
 
     // ── Decorative / support blocks used by the original's RBMK recipes ──────
     // com.hbm.blocks.ModBlocks:1436-1437 - plain deco blocks reusing the rbmk column textures.
@@ -2515,7 +2534,9 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> FROZEN_GRASS = registerBlock("frozen_grass", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> FROZEN_LOG = registerBlock("frozen_log", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> FROZEN_PLANKS = registerBlock("frozen_planks", () -> new Block(BlockProps.copy(Blocks.STONE)));
-    public static final RegistrySupplier<Block> FUSION_COMPONENT = registerBlock("fusion_component", () -> new Block(BlockProps.copy(Blocks.STONE)));
+    /** 1:1-Port von {@code BlockFusionComponent} (1.7.10): mit dem Schneidbrenner zur geschweissten Spule. */
+    public static final RegistrySupplier<Block> FUSION_COMPONENT = registerBlock("fusion_component",
+            () -> new FusionComponentBlock(BlockProps.copy(Blocks.STONE).strength(5.0f, 30.0f)));
     public static final RegistrySupplier<Block> FUSION_COMPONENT_BLANKET = registerBlock("fusion_component_blanket", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> FUSION_COMPONENT_BSCCO_WELDED = registerBlock("fusion_component_bscco_welded", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> FUSION_COMPONENT_MOTOR = registerBlock("fusion_component_motor", () -> new Block(BlockProps.copy(Blocks.STONE)));
@@ -2819,7 +2840,9 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> STRUCT_LAUNCHER_CORE_LARGE = registerBlock("struct_launcher_core_large", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> STRUCT_SCAFFOLD = registerBlock("struct_scaffold", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> STRUCT_SOYUZ_CORE = registerBlock("struct_soyuz_core", () -> new Block(BlockProps.copy(Blocks.STONE)));
-    public static final RegistrySupplier<Block> STRUCT_TORUS_CORE = registerBlock("struct_torus_core", () -> new Block(BlockProps.copy(Blocks.STONE)));
+    /** 1:1-Port von {@code BlockFusionTorusStruct} (1.7.10): wird zum Torus, sobald die Form steht. */
+    public static final RegistrySupplier<Block> STRUCT_TORUS_CORE = registerBlock("struct_torus_core",
+            () -> new StructTorusCoreBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0f, 10.0f).lightLevel(state -> 15).noOcclusion()));
     public static final RegistrySupplier<Block> STRUCT_WATZ_CORE = registerBlock("struct_watz_core", () -> new Block(BlockProps.copy(Blocks.STONE)));
     /** Decorative casing end-cap; original toggled bolted/unbolted via screwdriver, ported here as two plain block variants. */
     public static final RegistrySupplier<Block> WATZ_END = registerBlock("watz_end", () -> new Block(BlockProps.copy(Blocks.STONE)));
@@ -2878,11 +2901,13 @@ public class ModBlocks {
 
     public static final RegistrySupplier<Block> PUMP_ELECTRIC = registerBlock("pump_electric",
             () -> new com.hbm_m.block.machines.MachinePumpBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion(), true));
-    public static final RegistrySupplier<Block> BOILER_FUSION = registerBlock("boiler_fusion",
-            () -> new Block(BlockProps.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
+    /** 1:1-Port von {@code MachineFusionBoiler} (1.7.10, dort {@code fusion_boiler}). */
+    public static final RegistrySupplier<Block> BOILER_FUSION = registerBlockWithoutItem("boiler_fusion",
+            () -> new MachineFusionBoilerBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0f, 60.0f).sound(SoundType.METAL).noOcclusion().isSuffocating((state, world, pos) -> false)));
 
-    public static final RegistrySupplier<Block> BREEDER_FUSION = registerBlock("breeder_fusion",
-            () -> new Block(BlockProps.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
+    /** 1:1-Port von {@code MachineFusionBreeder} (1.7.10, dort {@code fusion_breeder}). */
+    public static final RegistrySupplier<Block> BREEDER_FUSION = registerBlockWithoutItem("breeder_fusion",
+            () -> new MachineFusionBreederBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0f, 60.0f).sound(SoundType.METAL).noOcclusion().isSuffocating((state, world, pos) -> false)));
 
     public static final RegistrySupplier<Block> CHIMNEY_BRICK = registerBlock("chimney_brick",
             () -> new com.hbm_m.block.machines.MachineChimneyBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion(), 12));
@@ -2892,8 +2917,9 @@ public class ModBlocks {
 
     public static final RegistrySupplier<Block> COKER = registerBlock("coker",
             () -> new com.hbm_m.block.machines.MachineCokerBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
-    public static final RegistrySupplier<Block> COLLECTOR = registerBlock("collector",
-            () -> new Block(BlockProps.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
+    /** 1:1-Port von {@code MachineFusionCollector} (1.7.10, dort {@code fusion_collector}). */
+    public static final RegistrySupplier<Block> COLLECTOR = registerBlockWithoutItem("collector",
+            () -> new MachineFusionCollectorBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0f, 60.0f).sound(SoundType.METAL).noOcclusion().isSuffocating((state, world, pos) -> false)));
 
     public static final RegistrySupplier<Block> COMBINATION_OVEN = registerBlock("combination_oven",
             () -> new MachineCombinationOvenBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
@@ -2921,8 +2947,9 @@ public class ModBlocks {
 
     public static final RegistrySupplier<Block> CONVEYOR_PRESS = registerBlock("conveyor_press",
             () -> new com.hbm_m.block.machines.MachineConveyorPressBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
-    public static final RegistrySupplier<Block> COUPLER = registerBlock("coupler",
-            () -> new Block(BlockProps.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
+    /** 1:1-Port von {@code MachineFusionCoupler} (1.7.10, dort {@code fusion_coupler}). */
+    public static final RegistrySupplier<Block> COUPLER = registerBlockWithoutItem("coupler",
+            () -> new MachineFusionCouplerBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0f, 60.0f).sound(SoundType.METAL).noOcclusion().isSuffocating((state, world, pos) -> false)));
 
     public static final RegistrySupplier<Block> DETECTOR = registerBlock("detector",
             () -> new Block(BlockProps.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
@@ -2981,11 +3008,17 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> INTAKE = registerBlock("intake",
             () -> new Block(BlockProps.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
 
-    public static final RegistrySupplier<Block> KLYSTRON = registerBlock("klystron",
-            () -> new Block(BlockProps.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
+    /** 1:1-Port von {@code MachineFusionKlystron} (1.7.10, dort {@code fusion_klystron}). */
+    public static final RegistrySupplier<Block> KLYSTRON = registerBlockWithoutItem("klystron",
+            () -> new MachineFusionKlystronBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0f, 60.0f).sound(SoundType.METAL).noOcclusion().isSuffocating((state, world, pos) -> false)));
 
-    public static final RegistrySupplier<Block> MHDT = registerBlock("mhdt",
-            () -> new Block(BlockProps.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
+    /** 1:1-Port von {@code MachineFusionKlystronCreative} (1.7.10, dort {@code fusion_klystron_creative}). */
+    public static final RegistrySupplier<Block> KLYSTRON_CREATIVE = registerBlockWithoutItem("klystron_creative",
+            () -> new MachineFusionKlystronCreativeBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0f, 60.0f).sound(SoundType.METAL).noOcclusion().isSuffocating((state, world, pos) -> false)));
+
+    /** 1:1-Port von {@code MachineFusionMHDT} (1.7.10, dort {@code fusion_mhdt}). */
+    public static final RegistrySupplier<Block> MHDT = registerBlockWithoutItem("mhdt",
+            () -> new MachineFusionMhdtBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0f, 60.0f).sound(SoundType.METAL).noOcclusion().isSuffocating((state, world, pos) -> false)));
 
     public static final RegistrySupplier<Block> MICROWAVE = registerBlock("microwave",
             () -> new com.hbm_m.block.machines.MachineMicrowaveBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
@@ -3006,8 +3039,9 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> ORE_SLOPPER = registerBlock("ore_slopper",
             () -> new MachineOreSlopperBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
 
-    public static final RegistrySupplier<Block> PLASMA_FORGE = registerBlock("plasma_forge",
-            () -> new Block(BlockProps.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
+    /** 1:1-Port von {@code MachineFusionPlasmaForge} (1.7.10, dort {@code fusion_plasma_forge}). */
+    public static final RegistrySupplier<Block> PLASMA_FORGE = registerBlockWithoutItem("plasma_forge",
+            () -> new MachineFusionPlasmaForgeBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0f, 60.0f).sound(SoundType.METAL).noOcclusion().isSuffocating((state, world, pos) -> false)));
 
     public static final RegistrySupplier<Block> PYROOVEN = registerBlock("pyrooven",
             () -> new com.hbm_m.block.machines.MachinePyroOvenBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
@@ -3056,8 +3090,9 @@ public class ModBlocks {
 
     public static final RegistrySupplier<Block> STRAND_CASTER = registerBlock("strand_caster",
             () -> new com.hbm_m.block.machines.MachineStrandCasterBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
-    public static final RegistrySupplier<Block> TORUS = registerBlock("torus",
-            () -> new Block(BlockProps.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
+    /** 1:1-Port von {@code MachineFusionTorus} (1.7.10, dort {@code fusion_torus}). */
+    public static final RegistrySupplier<Block> TORUS = registerBlockWithoutItem("torus",
+            () -> new MachineFusionTorusBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0f, 60.0f).sound(SoundType.METAL).noOcclusion().isSuffocating((state, world, pos) -> false)));
 
     public static final RegistrySupplier<Block> TURBINEGAS = registerBlock("turbinegas",
             () -> new com.hbm_m.block.machines.MachineTurbineGasBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));

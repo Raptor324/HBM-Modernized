@@ -349,24 +349,25 @@ public class RBMKBoilerBlockEntity extends RBMKColumnBlockEntity
         return d;
     }
 
-    
-    //? if < 1.21.1 {
+
+    /**
+     * The two tanks and the vent timer are written through {@code writeNbtData}, NOT through a
+     * {@code saveAdditional} override. {@link com.hbm_m.blockentity.BaseHbmBlockEntity} routes
+     * disk saves through {@code saveAdditional -> writeNbtData} but builds the CLIENT update tag
+     * from {@code writeNbtData} alone, so a subclass that overrides {@code saveAdditional}
+     * persists fine yet sends nothing to the client. That is what left the steam channel's GUI
+     * showing 0 / 10000 mB water no matter how much water the server-side channel actually had:
+     * {@link #readNbtData} looked for a "water" key the update packet never carried, so the
+     * client-side tank stayed at its freshly-constructed zero (and {@link #getSteamGrade}, which
+     * reads the steam tank's type, was stuck on plain steam for the same reason).
+     */
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         waterTank.writeToNBT(tag, "water"); // kept as "water" (not the original's "feed") so existing saves keep their contents
         steamTank.writeToNBT(tag, "steam");
         tag.putInt("ventDelay", ventDelay);
     }
-    //?} else {
-    /*@Override
-    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-        super.saveAdditional(tag, registries);
-        waterTank.writeToNBT(tag, "water"); // kept as "water" (not the original's "feed") so existing saves keep their contents
-        steamTank.writeToNBT(tag, "steam");
-        tag.putInt("ventDelay", ventDelay);
-    }
-    *///?}
 
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {

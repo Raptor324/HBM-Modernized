@@ -2145,7 +2145,10 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.RBMK_CONTROL_REASIM_AUTO.get(), "РБМК Авто-стержень (ReaSim)");
                 add(ModBlocks.RBMK_STEAM_INLET.get(),         "РБМК Вход пара");
                 add(ModBlocks.RBMK_STEAM_OUTLET.get(),        "РБМК Выход пара");
-                add(ModBlocks.RBMK_LOADER.get(),              "РБМК Загрузчик (основание)");
+                add(ModBlocks.RBMK_LOADER.get(),              "РБМК Паровой коннектор");
+        add("block.hbm_m.rbmk_loader.desc0", "Позволяет РБМК иметь подключение и воды, и пара снизу");
+        add("block.hbm_m.rbmk_loader.desc1", "Поставьте водяную трубу под колонну РБМК, затем коннектор,");
+        add("block.hbm_m.rbmk_loader.desc2", "затем подключите паропровод к коннектору.");
                 add(ModBlocks.RBMK_AUTOLOADER.get(),          "РБМК Автозагрузчик");
                 add(ModBlocks.RBMK_CRANE_CONSOLE.get(),       "РБМК Пульт крана");
                 add(ModBlocks.RBMK_DEBRIS.get(),              "РБМК Обломки");
@@ -2778,6 +2781,11 @@ public class ModLanguageProvider extends LanguageProvider {
                 add("item.hbm_m.missile.tier.tier4", "Missile: Tier 4");
                 add("item.hbm_m.missile.desc.notLaunchable", "Cannot be launched from pad");
                 add("item.hbm_m.missile.desc.fuel", "Fuel");
+        add("rbmk.screen.temp", "Temp: %s");
+        add("rbmk.screen.core", "Core: %s");
+        add("rbmk.screen.depletion", "Depl: %s");
+        add("rbmk.screen.xenon", "Xenon: %s");
+        add("rbmk.screen.rod", "Control: %s");
                 add("item.hbm_m.missile.desc.fuelCapacity", "Fuel capacity");
                 add("item.hbm_m.missile.desc.fluidNotRequiredWip", "Pad fluid tanks are temporarily not required for launch (WIP)");
                 add("item.hbm_m.missile.fuel.solid.prefueled", "Solid fuel (pre-fueled)");
@@ -4279,7 +4287,10 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModBlocks.RBMK_CONTROL_REASIM_AUTO.get(), "RBMK Auto Control Rod (ReaSim)");
                 add(ModBlocks.RBMK_STEAM_INLET.get(),         "RBMK Steam Inlet");
                 add(ModBlocks.RBMK_STEAM_OUTLET.get(),        "RBMK Steam Outlet");
-                add(ModBlocks.RBMK_LOADER.get(),              "RBMK Loader Base");
+                add(ModBlocks.RBMK_LOADER.get(),              "RBMK Steam Connector");
+        add("block.hbm_m.rbmk_loader.desc0", "Allows RBMKs to have both water and steam connections at the bottom");
+        add("block.hbm_m.rbmk_loader.desc1", "Place one water pipe below the RBMK column, then the connector,");
+        add("block.hbm_m.rbmk_loader.desc2", "then connect the steam duct to the connector.");
                 add(ModBlocks.RBMK_AUTOLOADER.get(),          "RBMK Autoloader");
                 add(ModBlocks.RBMK_CRANE_CONSOLE.get(),       "RBMK Crane Console");
                 add(ModBlocks.RBMK_DEBRIS.get(),              "RBMK Debris");
@@ -6300,6 +6311,8 @@ public class ModLanguageProvider extends LanguageProvider {
                 add(ModItems.FRAGMENT_NEODYMIUM.get(), "Neodymium Fragment");
                 add(ModItems.FRAGMENT_NIOBIUM.get(), "Niobium Fragment");
                 add(ModItems.FUSE.get(), "Fuse");
+                add(ModItems.CHLOROPHYTE_POWDER.get(), "Chlorophyte Powder");
+                add(ModItems.PELLET_CHARGED.get(), "Charged Pellet");
                 add(ModItems.FUSION_CORE.get(), "Fusion Core");
                 add(ModItems.FUSION_CORE_INFINITE.get(), "Infinite Fusion Core");
                 add(ModItems.FUSION_SHIELD_CHLOROPHYTE.get(), "Chlorophyte-Metallized Fusion Reactor Blanket");

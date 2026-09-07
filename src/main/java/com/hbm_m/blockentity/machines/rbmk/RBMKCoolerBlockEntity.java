@@ -169,23 +169,16 @@ public class RBMKCoolerBlockEntity extends RBMKColumnBlockEntity
         return d;
     }
 
-    //? if < 1.21.1 {
+    // Same fix as the rest of the RBMK block entities: the client update tag is built from
+    // writeNbtData alone, so the tanks were saved to disk but never sent to the client.
+    // readNbtData below was already correct - it just had nothing to read.
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         coldTank.writeToNBT(tag, "t0");
         hotTank.writeToNBT(tag, "t1");
         tag.putInt("lastCooled", lastCooled);
     }
-    //?} else {
-    /*@Override
-    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-        super.saveAdditional(tag, registries);
-        coldTank.writeToNBT(tag, "t0");
-        hotTank.writeToNBT(tag, "t1");
-        tag.putInt("lastCooled", lastCooled);
-    }
-    *///?}
 
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {

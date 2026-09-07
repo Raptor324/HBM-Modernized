@@ -792,7 +792,10 @@
   "block.hbm_m.rbmk_indicator": "RBMK Indicator",
   "block.hbm_m.rbmk_keypad": "RBMK Key Pad",
   "block.hbm_m.rbmk_lever": "RBMK Lever",
-  "block.hbm_m.rbmk_loader": "RBMK Loader Base",
+  "block.hbm_m.rbmk_loader": "RBMK-Dampfanschluss",
+  "block.hbm_m.rbmk_loader.desc0": "Ermöglicht RBMKs Wasser- und Dampfanschluss an der Unterseite",
+  "block.hbm_m.rbmk_loader.desc1": "Ein Wasserrohr unter die RBMK-Säule setzen, dann den Anschluss,",
+  "block.hbm_m.rbmk_loader.desc2": "dann den Dampfkanal an den Anschluss anschließen.",
   "block.hbm_m.rbmk_moderator": "RBMK Moderator",
   "block.hbm_m.rbmk_numitron": "RBMK Numitron",
   "block.hbm_m.rbmk_outgasser": "RBMK Irradiation Channel",
@@ -3889,5 +3892,10 @@
   "trait.explosive": "Flammable / Explosive",
   "trait.hot": "Pyrophoric / Hot",
   "trait.hydro": "Hydroreactive",
-  "trait.radioactive": "Radioactive"
+  "trait.radioactive": "Radioactive",
+  "rbmk.screen.temp": "Temp: %s",
+  "rbmk.screen.core": "Kern: %s",
+  "rbmk.screen.depletion": "Abbrand: %s",
+  "rbmk.screen.xenon": "Xenon: %s",
+  "rbmk.screen.rod": "Regelung: %s"
 }

@@ -6,7 +6,7 @@
 	"children": {
 		"plasma_forge_model": {
 			"loader": "forge:obj",
-			"model": "hbm_m:models/block/machines/plasma_forge.obj",
+			"model": "hbm_m:models/block/machines/plasma_forge_static.obj",
 			"flip_v": true,
 			"render_type": "minecraft:cutout",
 			"textures": {

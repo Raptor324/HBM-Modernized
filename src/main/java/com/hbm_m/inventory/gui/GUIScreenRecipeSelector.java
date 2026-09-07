@@ -11,10 +11,16 @@ import org.jetbrains.annotations.Nullable;
 import com.hbm_m.api.fluids.FluidLocalization;
 import com.hbm_m.blockentity.machines.MachineAdvancedAssemblerBlockEntity;
 import com.hbm_m.blockentity.machines.MachineChemicalPlantBlockEntity;
+import com.hbm_m.blockentity.machines.fusion.FusionTorusBlockEntity;
+import com.hbm_m.blockentity.machines.fusion.FusionPlasmaForgeBlockEntity;
+import com.hbm_m.recipe.PlasmaForgeRecipe;
+import com.hbm_m.recipe.FusionRecipe;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.network.ModPacketHandler;
 import com.hbm_m.network.SetAssemblerRecipeC2SPacket;
 import com.hbm_m.network.SetChemPlantRecipeC2SPacket;
+import com.hbm_m.network.SetFusionRecipeC2SPacket;
+import com.hbm_m.network.SetPlasmaForgeRecipeC2SPacket;
 import com.hbm_m.recipe.AssemblerRecipe;
 import com.hbm_m.recipe.ChemicalPlantRecipe;
 import com.hbm_m.platform.recipe.RecipeHooks;
@@ -66,6 +72,12 @@ public class GUIScreenRecipeSelector extends Screen {
 
     @Nullable
     private MachineChemicalPlantBlockEntity chemicalPlant;
+
+    @Nullable
+    private FusionTorusBlockEntity fusionTorus;
+
+    @Nullable
+    private FusionPlasmaForgeBlockEntity plasmaForge;
 
     private record RecipeEntry(ResourceLocation id, ItemStack icon, @Nullable net.minecraft.world.item.crafting.Recipe<?> recipe) {}
 
@@ -348,6 +360,12 @@ public class GUIScreenRecipeSelector extends Screen {
         } else if (chemicalPlant != null) {
             ModPacketHandler.sendToServer(ModPacketHandler.SET_CHEM_RECIPE,
                 new SetChemPlantRecipeC2SPacket(machinePos, selectedRecipe));
+        } else if (fusionTorus != null) {
+            ModPacketHandler.sendToServer(ModPacketHandler.SET_FUSION_RECIPE,
+                new SetFusionRecipeC2SPacket(machinePos, selectedRecipe));
+        } else if (plasmaForge != null) {
+            ModPacketHandler.sendToServer(ModPacketHandler.SET_PLASMA_FORGE_RECIPE,
+                new SetPlasmaForgeRecipeC2SPacket(machinePos, selectedRecipe));
         }
         if (this.minecraft != null) {
             this.minecraft.setScreen(this.parentScreen);
@@ -429,6 +447,18 @@ public class GUIScreenRecipeSelector extends Screen {
                     if (icon.isEmpty()) icon = new ItemStack(com.hbm_m.item.ModItems.TEMPLATE_FOLDER.get());
                     allRecipes.add(new RecipeEntry(RecipeHooks.recipeId(this.minecraft.level.getRecipeManager(), ChemicalPlantRecipe.Type.INSTANCE, recipe), icon, recipe));
                 }
+            } else if (fusionTorus != null) {
+                for (FusionRecipe recipe : FusionTorusBlockEntity.getAllRecipes(this.minecraft.level)) {
+                    ItemStack icon = recipe.getResultItem(this.minecraft.level.registryAccess());
+                    if (icon.isEmpty()) icon = new ItemStack(com.hbm_m.item.ModItems.TEMPLATE_FOLDER.get());
+                    allRecipes.add(new RecipeEntry(RecipeHooks.recipeId(this.minecraft.level.getRecipeManager(), FusionRecipe.Type.INSTANCE, recipe), icon, recipe));
+                }
+            } else if (plasmaForge != null) {
+                for (PlasmaForgeRecipe recipe : FusionPlasmaForgeBlockEntity.getAllRecipes(this.minecraft.level)) {
+                    ItemStack icon = recipe.getResultItem(this.minecraft.level.registryAccess());
+                    if (icon.isEmpty()) icon = new ItemStack(com.hbm_m.item.ModItems.TEMPLATE_FOLDER.get());
+                    allRecipes.add(new RecipeEntry(RecipeHooks.recipeId(this.minecraft.level.getRecipeManager(), PlasmaForgeRecipe.Type.INSTANCE, recipe), icon, recipe));
+                }
             }
 
             if (this.searchBox != null && !this.searchBox.getValue().isEmpty()) {
@@ -447,12 +477,28 @@ public class GUIScreenRecipeSelector extends Screen {
         if (be instanceof MachineAdvancedAssemblerBlockEntity a) {
             this.assembler = a;
             this.chemicalPlant = null;
+            this.fusionTorus = null;
+            this.plasmaForge = null;
         } else if (be instanceof MachineChemicalPlantBlockEntity c) {
             this.assembler = null;
             this.chemicalPlant = c;
+            this.fusionTorus = null;
+            this.plasmaForge = null;
+        } else if (be instanceof FusionTorusBlockEntity t) {
+            this.assembler = null;
+            this.chemicalPlant = null;
+            this.fusionTorus = t;
+            this.plasmaForge = null;
+        } else if (be instanceof FusionPlasmaForgeBlockEntity f) {
+            this.assembler = null;
+            this.chemicalPlant = null;
+            this.fusionTorus = null;
+            this.plasmaForge = f;
         } else {
             this.assembler = null;
             this.chemicalPlant = null;
+            this.fusionTorus = null;
+            this.plasmaForge = null;
         }
     }
 

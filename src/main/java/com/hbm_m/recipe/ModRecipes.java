@@ -32,6 +32,20 @@ public class ModRecipes {
     public static final RegistrySupplier<RecipeType<ChemicalPlantRecipe>> CHEMICAL_PLANT_TYPE =
             RECIPE_TYPES.register("chemical_plant", () -> ChemicalPlantRecipe.Type.INSTANCE);
 
+    // Fusion - Fusionstorus. ID = "fusion" (siehe FusionRecipe.Type.ID).
+    public static final RegistrySupplier<RecipeSerializer<FusionRecipe>> FUSION_SERIALIZER =
+            SERIALIZERS.register("fusion", () -> FusionRecipe.Serializer.INSTANCE);
+
+    public static final RegistrySupplier<RecipeType<FusionRecipe>> FUSION_TYPE =
+            RECIPE_TYPES.register("fusion", () -> FusionRecipe.Type.INSTANCE);
+
+    // Plasma Forge - Plasmaschmiede. ID = "plasma_forge" (siehe PlasmaForgeRecipe.Type.ID).
+    public static final RegistrySupplier<RecipeSerializer<PlasmaForgeRecipe>> PLASMA_FORGE_SERIALIZER =
+            SERIALIZERS.register("plasma_forge", () -> PlasmaForgeRecipe.Serializer.INSTANCE);
+
+    public static final RegistrySupplier<RecipeType<PlasmaForgeRecipe>> PLASMA_FORGE_TYPE =
+            RECIPE_TYPES.register("plasma_forge", () -> PlasmaForgeRecipe.Type.INSTANCE);
+
     public static final RegistrySupplier<RecipeSerializer<PressRecipe>> PRESS_SERIALIZER =
             SERIALIZERS.register("press", () -> PressRecipe.Serializer.INSTANCE);
 

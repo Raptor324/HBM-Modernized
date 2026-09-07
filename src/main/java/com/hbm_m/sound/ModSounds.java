@@ -103,6 +103,12 @@ public class ModSounds {
     public static final RegistrySupplier<SoundEvent> LARGE_TURBINE = registerSoundEvents("block.large_turbine");
     public static final RegistrySupplier<SoundEvent> CHUNGUS_TURBINE = registerSoundEvents("block.chungus_turbine");
 
+    // Fusionsreaktor (Original: hbm:block.boilerGroan / block.fel / block.fusionReactorSpin)
+    public static final RegistrySupplier<SoundEvent> BOILER_GROAN = registerSoundEvents("block.boiler_groan");
+    public static final RegistrySupplier<SoundEvent> FEL_LOOP = registerSoundEvents("block.fel");
+    public static final RegistrySupplier<SoundEvent> FUSION_REACTOR_LOOP = registerSoundEvents("block.fusion_reactor_spin");
+    public static final RegistrySupplier<SoundEvent> BOLTGUN = registerSoundEvents("item.boltgun");
+
     // RBMK meltdown / boiler venting - the 1.7.10 originals are hbm:block.rbmk_explosion,
     // hbm:block.rbmk_az5_cover and hbm:block.steamEngineOperate.
     public static final RegistrySupplier<SoundEvent> RBMK_EXPLOSION = registerSoundEvents("block.rbmk_explosion");

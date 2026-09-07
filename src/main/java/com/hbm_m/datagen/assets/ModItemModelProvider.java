@@ -58,7 +58,7 @@ public class ModItemModelProvider extends ItemModelProvider {
             java.util.Map.entry("rbmk_control_reasim_auto", "block/rbmk/rbmk_control_auto_side"),
             java.util.Map.entry("rbmk_steam_inlet", "block/rbmk/rbmk_boiler_pipe_side"),
             java.util.Map.entry("rbmk_steam_outlet", "block/rbmk/rbmk_boiler_pipe_side"),
-            java.util.Map.entry("rbmk_loader", "block/rbmk/rbmk_blank_side"),
+            java.util.Map.entry("rbmk_loader", "block/rbmk/standalone_rbmk_loader"),
             java.util.Map.entry("rbmk_autoloader", "block/rbmk/rbmk_blank_side"),
             java.util.Map.entry("rbmk_crane_console", "block/rbmk/rbmk_console"),
             java.util.Map.entry("rbmk_display", "block/rbmk/rbmk_display"),
@@ -92,7 +92,7 @@ public class ModItemModelProvider extends ItemModelProvider {
         }
 
         // Wire Dense — 11 specific materials
-        for (String name : new String[]{"iron","aluminium","titanium","lead","copper","steel","gold","advanced_alloy","schrabidium","saturnite","combine_steel"}) {
+        for (String name : new String[]{"iron","aluminium","titanium","lead","copper","steel","gold","advanced_alloy","schrabidium","saturnite","combine_steel","bscco","schrabidate"}) {
             withExistingParent("wire_dense_" + name, "item/generated")
                     .texture("layer0", modLoc("item/wire_dense/wire_dense_" + name));
         }
@@ -940,6 +940,7 @@ public class ModItemModelProvider extends ItemModelProvider {
         blockItemFromBlockModelMachine(ModBlocks.ICF);
         blockItemFromBlockModelMachine(ModBlocks.INTAKE);
         blockItemFromBlockModelMachine(ModBlocks.KLYSTRON);
+        blockItemFromBlockModelMachine(ModBlocks.KLYSTRON_CREATIVE);
         blockItemFromBlockModelMachine(ModBlocks.MHDT);
         blockItemFromBlockModelMachine(ModBlocks.MICROWAVE);
         blockItemFromBlockModelMachine(ModBlocks.MINING_LASER);
@@ -1572,6 +1573,8 @@ public class ModItemModelProvider extends ItemModelProvider {
                 ModItems.FRAGMENT_NEODYMIUM,
                 ModItems.FRAGMENT_NIOBIUM,
                 ModItems.FUSE,
+                ModItems.CHLOROPHYTE_POWDER,
+                ModItems.PELLET_CHARGED,
                 ModItems.FUSION_CORE,
                 ModItems.FUSION_CORE_INFINITE,
                 ModItems.FUSION_SHIELD_CHLOROPHYTE,

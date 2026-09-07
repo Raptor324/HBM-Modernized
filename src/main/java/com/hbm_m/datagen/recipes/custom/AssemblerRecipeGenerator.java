@@ -36,7 +36,6 @@ public final class AssemblerRecipeGenerator {
         registerGenerators(writer);
         registerAccelerators(writer);
         registerReactors(writer);
-        registerFusionReactor(writer);
         registerUpgrades(writer);
         registerBombParts(writer);
         registerMissileParts(writer);
@@ -832,6 +831,18 @@ public final class AssemblerRecipeGenerator {
                 .addIngredient(ModItems.getIngot(ModIngots.RUBBER).get(), 2)
                 .save(writer, "rbmk");
 
+        // 1:1 with the original's "ass.rbmkautoloader" - the autoloader was the only craftable
+        // RBMK block in this port with no recipe of any kind, so it was creative-only.
+        // Deviation: the original asks for a CAST lead plate; this port has no plate_cast_lead,
+        // only the rolled plate_lead, so that stands in for it.
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModBlocks.RBMK_AUTOLOADER.get(), 1), 100, 100)
+                .addIngredient(ModItems.PLATE_WELDED_STEEL.get(), 4)
+                .addIngredient(ModItems.PLATE_LEAD.get(), 4)
+                .addIngredient(ModItems.getIngot(ModIngots.BORON).get(), 4)
+                .addIngredient(ModItems.MOTOR.get(), 3)
+                .save(writer, "rbmkautoloader");
+
         AssemblerRecipeBuilder.assemblerRecipe(
                         new ItemStack(ModBlocks.PWR_CONTROL.get(), 4), 200, 500)
                 .addIngredient(ModItems.PLATE_CAST_STEEL.get(), 2)
@@ -883,55 +894,9 @@ public final class AssemblerRecipeGenerator {
                 .save(writer, "pwrneutronsource");
     }
 
-    /** Fusion reactor components — port of 1.7.10 fusionblanket/fusionpipes/fusioncollector/fusionbreeder/fusionboiler. */
-    private static void registerFusionReactor(Consumer<FinishedRecipe> writer) {
-        AssemblerRecipeBuilder.assemblerRecipe(
-                        new ItemStack(ModBlocks.FUSION_COMPONENT_BLANKET.get(), 4), 100, 100)
-                .addIngredient(ModItems.PLATE_WELDED_TUNGSTEN.get(), 1)
-                .addIngredient(ModItems.PLATE_WELDED_STEEL.get(), 2)
-                .addIngredient(ModItems.getIngot(ModIngots.BERYLLIUM).get(), 4)
-                .save(writer, "fusionblanket");
-
-        AssemblerRecipeBuilder.assemblerRecipe(
-                        new ItemStack(ModBlocks.FUSION_COMPONENT_MOTOR.get(), 4), 100, 100)
-                .addIngredient(Ingredient.of(
-                        ModItems.getIngot(ModIngots.PVC).get(),
-                        ModItems.getIngot(ModIngots.POLYMER_COMPOSITE).get()), 4)
-                .addIngredient(ModItems.PIPE_COPPER.get(), 2)
-                .addIngredient(ModItems.MOTOR.get(), 2)
-                .addIngredient(ModItems.ANALOG_CIRCUIT.get(), 1)
-                .save(writer, "fusionpipes");
-
-        AssemblerRecipeBuilder.assemblerRecipe(
-                        new ItemStack(ModBlocks.COLLECTOR.get(), 1), 300, 100)
-                .addIngredient(ModItems.PLATE_CAST_ALLOY.get(), 4)
-                .addIngredient(ModItems.PLATE_STEEL.get(), 16)
-                .addIngredient(ModItems.getIngot(ModIngots.GRAPHITE).get(), 16)
-                .addIngredient(Ingredient.of(
-                        ModItems.getIngot(ModIngots.PVC).get(),
-                        ModItems.getIngot(ModIngots.POLYMER_COMPOSITE).get()), 4)
-                .save(writer, "fusioncollector");
-
-        AssemblerRecipeBuilder.assemblerRecipe(
-                        new ItemStack(ModBlocks.BREEDER_FUSION.get(), 1), 300, 100)
-                .addIngredient(ModItems.PLATE_CAST_ALLOY.get(), 4)
-                .addIngredient(ModItems.PIPE_STEEL.get(), 4)
-                .addIngredient(ModItems.getIngot(ModIngots.BORON).get(), 16)
-                .addIngredient(Ingredient.of(
-                        ModItems.getIngot(ModIngots.PVC).get(),
-                        ModItems.getIngot(ModIngots.POLYMER_COMPOSITE).get()), 16)
-                .save(writer, "fusionbreeder");
-
-        AssemblerRecipeBuilder.assemblerRecipe(
-                        new ItemStack(ModBlocks.BOILER_FUSION.get(), 1), 300, 100)
-                .addIngredient(ModItems.PLATE_CAST_ALLOY.get(), 16)
-                .addIngredient(ModItems.SHELL_COPPER.get(), 16)
-                .addIngredient(ModItems.PIPE_STEEL.get(), 8)
-                .addIngredient(Ingredient.of(
-                        ModItems.getIngot(ModIngots.PVC).get(),
-                        ModItems.getIngot(ModIngots.POLYMER_COMPOSITE).get()), 16)
-                .save(writer, "fusionboiler");
-    }
+    // Die Fusionsreaktor-Rezepte stehen jetzt vollstaendig in FusionAssemblerRecipeGenerator:
+    // dort sind alle elf Originalrezepte enthalten (inkl. Klystron, MHDT, Koppler, Plasmaschmiede
+    // und Torus-Kern) und die ANY_RESISTANTALLOY-/Schaltkreis-Zuordnung entspricht dem Original.
 
     /** WATZ reactor rods — port of 1.7.10 ass.watzrod / ass.watzcooler. */
     private static void registerUpgrades(Consumer<FinishedRecipe> writer) {

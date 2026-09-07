@@ -82,33 +82,21 @@ public class RBMKControlManualBlockEntity extends RBMKControlBlockEntity {
 
     // CE persists startingLevel (TileEntityRBMKControlManual.writeToNBT). Without it a reload
     // mid-withdrawal resets the surge reference point and the tip effect silently vanishes.
-    //? if < 1.21.1 {
+    // Persisted through writeNbtData/readNbtData, NOT saveAdditional/load:
+    // BaseHbmBlockEntity builds the CLIENT update tag from writeNbtData alone, so a
+    // subclass overriding saveAdditional saves to disk correctly yet sends the client
+    // nothing - which is why these readouts stayed blank in world.
     @Override
-    protected void saveAdditional(net.minecraft.nbt.CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(net.minecraft.nbt.CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         tag.putDouble("startingLevel", startingLevel);
     }
-    //?} else {
-    /*@Override
-    protected void saveAdditional(net.minecraft.nbt.CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-        super.saveAdditional(tag, registries);
-        tag.putDouble("startingLevel", startingLevel);
-    }
-    *///?}
 
-    //? if < 1.21.1 {
     @Override
-    public void load(net.minecraft.nbt.CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(net.minecraft.nbt.CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         if (tag.contains("startingLevel")) startingLevel = tag.getDouble("startingLevel");
     }
-    //?} else {
-    /*@Override
-    protected void loadAdditional(net.minecraft.nbt.CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-        super.loadAdditional(tag, registries);
-        if (tag.contains("startingLevel")) startingLevel = tag.getDouble("startingLevel");
-    }
-    *///?}
 
     public static void tick(Level level, BlockPos pos, BlockState state, RBMKControlManualBlockEntity be) {
         baseTick(level, pos, state, be);

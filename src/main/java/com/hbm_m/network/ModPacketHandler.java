@@ -55,6 +55,9 @@ public class ModPacketHandler {
     public static final ResourceLocation UPDATE_BATTERY        = id("update_battery");
     public static final ResourceLocation SET_ASSEMBLER_RECIPE  = id("set_assembler_recipe");
     public static final ResourceLocation SET_CHEM_RECIPE       = id("set_chem_recipe");
+    public static final ResourceLocation SET_FUSION_RECIPE     = id("set_fusion_recipe");
+    public static final ResourceLocation SET_PLASMA_FORGE_RECIPE = id("set_plasma_forge_recipe");
+    public static final ResourceLocation SET_KLYSTRON_OUTPUT   = id("set_klystron_output");
     public static final ResourceLocation TOGGLE_WOOD_BURNER    = id("toggle_wood_burner");
     public static final ResourceLocation BUILD_MISSILE         = id("build_missile");
     public static final ResourceLocation FLUID_TANK_MODE       = id("fluid_tank_mode");
@@ -189,6 +192,18 @@ public class ModPacketHandler {
         registerC2S(SET_CHEM_RECIPE,
                 SetChemPlantRecipeC2SPacket::decode,
                 SetChemPlantRecipeC2SPacket::handle);
+
+        registerC2S(SET_FUSION_RECIPE,
+                SetFusionRecipeC2SPacket::decode,
+                SetFusionRecipeC2SPacket::handle);
+
+        registerC2S(SET_PLASMA_FORGE_RECIPE,
+                SetPlasmaForgeRecipeC2SPacket::decode,
+                SetPlasmaForgeRecipeC2SPacket::handle);
+
+        registerC2S(SET_KLYSTRON_OUTPUT,
+                SetKlystronOutputC2SPacket::decode,
+                SetKlystronOutputC2SPacket::handle);
 
         registerC2S(TOGGLE_WOOD_BURNER,
                 ToggleWoodBurnerPacket::decode,

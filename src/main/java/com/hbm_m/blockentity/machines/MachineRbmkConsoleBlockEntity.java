@@ -261,10 +261,17 @@ public class MachineRbmkConsoleBlockEntity extends com.hbm_m.blockentity.BaseHbm
             }
 
             String text = ((int) (value / count * 10)) / 10D + "";
+            // 1:1 with CE's prepareScreenInfo: the readout is stored as "<lang key>=<value>" and
+            // resolved at draw time, so a screen reads "Temp: 123.4°C" rather than a bare
+            // "123.4°C" with no indication of WHICH statistic it shows. The port dropped the
+            // key half entirely, which left all six screens as unlabelled numbers.
             screenText[s] = switch (type) {
-                case COL_TEMP, FUEL_TEMP -> text + "\u00B0C";
-                case FUEL_DEPLETION, FUEL_POISON, ROD_EXTRACTION -> text + "%";
-                default -> text;
+                case COL_TEMP       -> "rbmk.screen.temp="      + text + "°C";
+                case FUEL_TEMP      -> "rbmk.screen.core="      + text + "°C";
+                case FUEL_DEPLETION -> "rbmk.screen.depletion=" + text + "%";
+                case FUEL_POISON    -> "rbmk.screen.xenon="     + text + "%";
+                case ROD_EXTRACTION -> "rbmk.screen.rod="       + text + "%";
+                default             -> text;
             };
         }
     }

@@ -90,6 +90,8 @@ public class HbmJeiPlugin implements IModPlugin {
         registration.addRecipeCategories(new AssemblerJeiCategory(registration.getJeiHelpers().getGuiHelper()));
         registration.addRecipeCategories(new CentrifugeJeiCategory(registration.getJeiHelpers().getGuiHelper()));
         registration.addRecipeCategories(new ChemicalPlantJeiCategory(registration.getJeiHelpers().getGuiHelper()));
+        registration.addRecipeCategories(new FusionJeiCategory(registration.getJeiHelpers().getGuiHelper()));
+        registration.addRecipeCategories(new PlasmaForgeJeiCategory(registration.getJeiHelpers().getGuiHelper()));
         registration.addRecipeCategories(new CyclotronJeiCategory(registration.getJeiHelpers().getGuiHelper()));
         // Crucible casting / alloying categories УДАЛЕНЫ — они были JEI-only зеркалами поверх
         // удалённых статических CrucibleAlloyingRecipes / CrucibleMoldRecipes (MoltenAlloy/MoldCasting
@@ -131,6 +133,8 @@ public class HbmJeiPlugin implements IModPlugin {
         registration.addRecipes(AssemblerJeiCategory.RECIPE_TYPE, RecipeHooks.getAllRecipes(level, AssemblerRecipe.Type.INSTANCE));
         registration.addRecipes(CentrifugeJeiCategory.RECIPE_TYPE, RecipeHooks.getAllRecipes(level, CentrifugeRecipe.Type.INSTANCE));
         registration.addRecipes(ChemicalPlantJeiCategory.RECIPE_TYPE, RecipeHooks.getAllRecipes(level, ChemicalPlantRecipe.Type.INSTANCE));
+        registration.addRecipes(FusionJeiCategory.RECIPE_TYPE, RecipeHooks.getAllRecipes(level, com.hbm_m.recipe.FusionRecipe.Type.INSTANCE));
+        registration.addRecipes(PlasmaForgeJeiCategory.RECIPE_TYPE, RecipeHooks.getAllRecipes(level, com.hbm_m.recipe.PlasmaForgeRecipe.Type.INSTANCE));
         registration.addRecipes(CyclotronJeiCategory.RECIPE_TYPE, RecipeHooks.getAllRecipes(level, CyclotronRecipe.Type.INSTANCE));
         registration.addRecipes(CrucibleSmeltingJeiCategory.RECIPE_TYPE, RecipeHooks.getAllRecipes(level, CrucibleSmeltingRecipe.Type.INSTANCE));
         registration.addRecipes(CrystallizerJeiCategory.RECIPE_TYPE, RecipeHooks.getAllRecipes(level, CrystallizerRecipe.Type.INSTANCE));
@@ -171,6 +175,8 @@ public class HbmJeiPlugin implements IModPlugin {
         registration.addRecipeCatalyst(new ItemStack(ModItems.ADVANCED_ASSEMBLY_MACHINE.get()), AssemblerJeiCategory.RECIPE_TYPE);
         registration.addRecipeCatalyst(new ItemStack(ModBlocks.CENTRIFUGE.get()), CentrifugeJeiCategory.RECIPE_TYPE);
         registration.addRecipeCatalyst(new ItemStack(ModBlocks.CHEMICAL_PLANT.get()), ChemicalPlantJeiCategory.RECIPE_TYPE);
+        registration.addRecipeCatalyst(new ItemStack(ModBlocks.TORUS.get()), FusionJeiCategory.RECIPE_TYPE);
+        registration.addRecipeCatalyst(new ItemStack(ModBlocks.PLASMA_FORGE.get()), PlasmaForgeJeiCategory.RECIPE_TYPE);
         registration.addRecipeCatalyst(new ItemStack(ModBlocks.CHEMICAL_FACTORY.get()), ChemicalPlantJeiCategory.RECIPE_TYPE);
         registration.addRecipeCatalyst(new ItemStack(ModBlocks.CYCLOTRON.get()), CyclotronJeiCategory.RECIPE_TYPE);
         // Каталисты CrucibleCasting/CrucibleAlloying JEI удалены вместе с этими категориями.
@@ -211,6 +217,8 @@ public class HbmJeiPlugin implements IModPlugin {
         registration.addRecipeClickArea(GUIMachineCentrifuge.class, 56, 0, 80, 38, CentrifugeJeiCategory.RECIPE_TYPE);
         // Chemical Plant click area around the progress bar
         registration.addRecipeClickArea(GUIMachineChemicalPlant.class, 62, 126, 70, 16, ChemicalPlantJeiCategory.RECIPE_TYPE);
+        registration.addRecipeClickArea(com.hbm_m.inventory.gui.GUIMachineFusionTorus.class, 98, 81, 70, 6, FusionJeiCategory.RECIPE_TYPE);
+        registration.addRecipeClickArea(com.hbm_m.inventory.gui.GUIMachineFusionPlasmaForge.class, 62, 81, 70, 16, PlasmaForgeJeiCategory.RECIPE_TYPE);
         // Cyclotron click area around the main accelerator progress
         registration.addRecipeClickArea(GUIMachineCyclotron.class, 48, 27, 79, 34, CyclotronJeiCategory.RECIPE_TYPE);
         // Crucible smelting — same click zone on the crucible GUI

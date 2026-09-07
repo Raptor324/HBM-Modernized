@@ -51,6 +51,8 @@ public final class CrucibleSmeltingRecipeGenerator {
         ingot(writer, "star_metal",  MaterialType.STAR_METAL);
         ingot(writer, "tcalloy",     MaterialType.TCALLOY);
         ingot(writer, "cdalloy",     MaterialType.CDALLOY);
+        ingot(writer, "bscco",       MaterialType.BSCCO);
+        ingot(writer, "schrabidate", MaterialType.SCHRABIDATE);
         ingot(writer, "cmb",         MaterialType.CMB);
         ingot(writer, "schrabidium", MaterialType.SCHRABIDIUM);
         ingot(writer, "bbronze",     MaterialType.BBRONZE);

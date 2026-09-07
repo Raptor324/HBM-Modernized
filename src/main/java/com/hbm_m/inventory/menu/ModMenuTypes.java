@@ -298,6 +298,19 @@ public class ModMenuTypes {
     public static final RegistrySupplier<MenuType<MachineHeatexMenu>> HEATEX_MENU =
             MENUS.register("heatex_menu", () -> MenuRegistry.ofExtended(MachineHeatexMenu::new));
 
+    // ===== Fusionsreaktor =====
+    public static final RegistrySupplier<MenuType<MachineFusionTorusMenu>> FUSION_TORUS_MENU =
+            MENUS.register("fusion_torus_menu", () -> MenuRegistry.ofExtended(MachineFusionTorusMenu::new));
+
+    public static final RegistrySupplier<MenuType<MachineFusionKlystronMenu>> FUSION_KLYSTRON_MENU =
+            MENUS.register("fusion_klystron_menu", () -> MenuRegistry.ofExtended(MachineFusionKlystronMenu::new));
+
+    public static final RegistrySupplier<MenuType<MachineFusionBreederMenu>> FUSION_BREEDER_MENU =
+            MENUS.register("fusion_breeder_menu", () -> MenuRegistry.ofExtended(MachineFusionBreederMenu::new));
+
+    public static final RegistrySupplier<MenuType<MachineFusionPlasmaForgeMenu>> FUSION_PLASMA_FORGE_MENU =
+            MENUS.register("fusion_plasma_forge_menu", () -> MenuRegistry.ofExtended(MachineFusionPlasmaForgeMenu::new));
+
     public static final RegistrySupplier<MenuType<MachinePumpjackMenu>> PUMPJACK_MENU =
             MENUS.register("pumpjack_menu", () -> MenuRegistry.ofExtended(MachinePumpjackMenu::new));
 

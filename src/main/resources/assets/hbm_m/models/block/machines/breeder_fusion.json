@@ -6,7 +6,7 @@
 	"children": {
 		"breeder_fusion_model": {
 			"loader": "forge:obj",
-			"model": "hbm_m:models/block/machines/breeder_fusion.obj",
+			"model": "hbm_m:models/block/machines/breeder_fusion_static.obj",
 			"flip_v": true,
 			"render_type": "minecraft:cutout",
 			"textures": {

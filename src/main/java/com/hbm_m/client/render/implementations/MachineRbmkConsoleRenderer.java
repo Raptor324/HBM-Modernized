@@ -252,6 +252,13 @@ public class MachineRbmkConsoleRenderer implements BlockEntityRenderer<MachineRb
             ps.translate(0, -0.75F * (i / 2), 0);
 
             String text = be.screenText != null && be.screenText[i] != null ? be.screenText[i] : "";
+            // CE stores each readout as "<lang key>=<value>" and resolves it at draw time
+            // (RenderRBMKConsole: I18nUtil.resolveKey(parts[0], parts[1])).
+            int sep = text.indexOf('=');
+            if (sep > 0) {
+                text = net.minecraft.network.chat.Component
+                        .translatable(text.substring(0, sep), text.substring(sep + 1)).getString();
+            }
 
             if (!text.isEmpty()) {
                 int width = font.width(text);

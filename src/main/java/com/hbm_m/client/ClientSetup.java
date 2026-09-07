@@ -437,6 +437,10 @@ public class ClientSetup {
         MenuRegistry.registerScreenFactory(ModMenuTypes.CORE_RECEIVER_MENU.get(), com.hbm_m.inventory.gui.GUIMachineCoreReceiver::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.OILBURNER_MENU.get(), com.hbm_m.inventory.gui.GUIMachineOilburner::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.HEATEX_MENU.get(), com.hbm_m.inventory.gui.GUIMachineHeatex::new);
+        MenuRegistry.registerScreenFactory(ModMenuTypes.FUSION_TORUS_MENU.get(), com.hbm_m.inventory.gui.GUIMachineFusionTorus::new);
+        MenuRegistry.registerScreenFactory(ModMenuTypes.FUSION_KLYSTRON_MENU.get(), com.hbm_m.inventory.gui.GUIMachineFusionKlystron::new);
+        MenuRegistry.registerScreenFactory(ModMenuTypes.FUSION_BREEDER_MENU.get(), com.hbm_m.inventory.gui.GUIMachineFusionBreeder::new);
+        MenuRegistry.registerScreenFactory(ModMenuTypes.FUSION_PLASMA_FORGE_MENU.get(), com.hbm_m.inventory.gui.GUIMachineFusionPlasmaForge::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.PUMPJACK_MENU.get(), GUIMachinePumpjack::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.RADAR_MENU.get(), GUIMachineRadarNT::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.RADAR_SLOTS_MENU.get(), GUIMachineRadarNTSlots::new);
@@ -647,6 +651,18 @@ public class ClientSetup {
         BlockEntityRenderers.register(ModBlockEntities.FOUNDRY_BASIN_BE.get(), com.hbm_m.client.render.implementations.FoundryBasinRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.FOUNDRY_CHANNEL_BE.get(), com.hbm_m.client.render.implementations.FoundryChannelRenderer::new);
         // ─── RBMK column renderers ─────
+        // ===== Fusionsreaktor =====
+        BlockEntityRenderers.register(ModBlockEntities.FUSION_TORUS_BE.get(),
+                com.hbm_m.client.render.implementations.FusionTorusRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.FUSION_KLYSTRON_BE.get(),
+                com.hbm_m.client.render.implementations.FusionKlystronRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.FUSION_KLYSTRON_CREATIVE_BE.get(),
+                com.hbm_m.client.render.implementations.FusionKlystronCreativeRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.FUSION_MHDT_BE.get(),
+                com.hbm_m.client.render.implementations.FusionMhdtRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.FUSION_PLASMA_FORGE_BE.get(),
+                com.hbm_m.client.render.implementations.FusionPlasmaForgeRenderer::new);
+
         BlockEntityRenderers.register(ModBlockEntities.RBMK_ROD_BE.get(),          RBMKColumnRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.RBMK_BLANK_BE.get(),        RBMKColumnRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.RBMK_ABSORBER_BE.get(),     RBMKColumnRenderer::new);
@@ -659,7 +675,6 @@ public class ClientSetup {
         BlockEntityRenderers.register(ModBlockEntities.RBMK_STORAGE_BE.get(),      RBMKColumnRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.RBMK_CONTROL_BE.get(),      RBMKColumnRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.RBMK_CONTROL_AUTO_BE.get(), RBMKColumnRenderer::new);
-        BlockEntityRenderers.register(ModBlockEntities.RBMK_LOADER_BE.get(),        RBMKColumnRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.RBMK_AUTOLOADER_BE.get(),    com.hbm_m.client.render.rbmk.RBMKAutoloaderRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.RBMK_CRANE_CONSOLE_BE.get(), com.hbm_m.client.render.rbmk.RBMKCraneConsoleRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.RBMK_PANEL_BE.get(),         RBMKColumnRenderer::new);

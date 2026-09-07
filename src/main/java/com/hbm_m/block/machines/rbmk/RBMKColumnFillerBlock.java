@@ -56,9 +56,10 @@ public class RBMKColumnFillerBlock extends Block {
         return RenderShape.INVISIBLE;
     }
 
+    /** Selection outline follows the collision box, so the lid is click- and highlight-able too. */
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext ctx) {
-        return SHAPE;
+        return getCollisionShape(state, level, pos, ctx);
     }
 
     @Override

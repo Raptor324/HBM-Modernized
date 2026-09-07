@@ -43,6 +43,16 @@ import com.hbm_m.blockentity.machines.MachineCrackingTowerBlockEntity;
 import com.hbm_m.blockentity.machines.MachineCrucibleBlockEntity;
 import com.hbm_m.blockentity.machines.MachineCrystallizerBlockEntity;
 import com.hbm_m.blockentity.machines.MachineCyclotronBlockEntity;
+import com.hbm_m.blockentity.machines.fusion.FusionTorusBlockEntity;
+import com.hbm_m.blockentity.machines.fusion.FusionKlystronBlockEntity;
+import com.hbm_m.blockentity.machines.fusion.FusionKlystronCreativeBlockEntity;
+import com.hbm_m.blockentity.machines.fusion.FusionBreederBlockEntity;
+import com.hbm_m.blockentity.machines.fusion.FusionCollectorBlockEntity;
+import com.hbm_m.blockentity.machines.fusion.FusionCouplerBlockEntity;
+import com.hbm_m.blockentity.machines.fusion.FusionBoilerBlockEntity;
+import com.hbm_m.blockentity.machines.fusion.FusionMhdtBlockEntity;
+import com.hbm_m.blockentity.machines.fusion.FusionPlasmaForgeBlockEntity;
+import com.hbm_m.blockentity.machines.fusion.StructTorusCoreBlockEntity;
 import com.hbm_m.blockentity.machines.MachineDerrickBlockEntity;
 import com.hbm_m.blockentity.machines.MachineDeuteriumTowerBlockEntity;
 import com.hbm_m.blockentity.machines.MachineFelBlockEntity;
@@ -102,7 +112,6 @@ import com.hbm_m.blockentity.machines.rbmk.RBMKIndicatorBlockEntity;
 import com.hbm_m.blockentity.machines.rbmk.RBMKDisplayBlockEntity;
 import com.hbm_m.blockentity.machines.rbmk.RBMKKeyPadBlockEntity;
 import com.hbm_m.blockentity.machines.rbmk.RBMKLeverBlockEntity;
-import com.hbm_m.blockentity.machines.rbmk.RBMKLoaderBlockEntity;
 import com.hbm_m.blockentity.machines.rbmk.RBMKModeratorBlockEntity;
 import com.hbm_m.blockentity.machines.rbmk.RBMKNumitronBlockEntity;
 import com.hbm_m.blockentity.machines.rbmk.RBMKOutgasserBlockEntity;
@@ -157,6 +166,47 @@ public class ModBlockEntities {
     public static final RegistrySupplier<BlockEntityType<MachineTowerSmallBlockEntity>> TOWER_SMALL_BE =
             BLOCK_ENTITIES.register("tower_small_be", () ->
                     BlockEntityType.Builder.of(MachineTowerSmallBlockEntity::new, ModBlocks.TOWER_SMALL.get()).build(null));
+
+    // ===== Fusionsreaktor =====
+    public static final RegistrySupplier<BlockEntityType<FusionTorusBlockEntity>> FUSION_TORUS_BE =
+            BLOCK_ENTITIES.register("fusion_torus_be", () ->
+                    BlockEntityType.Builder.of(FusionTorusBlockEntity::new, ModBlocks.TORUS.get()).build(null));
+
+    public static final RegistrySupplier<BlockEntityType<FusionKlystronBlockEntity>> FUSION_KLYSTRON_BE =
+            BLOCK_ENTITIES.register("fusion_klystron_be", () ->
+                    BlockEntityType.Builder.of(FusionKlystronBlockEntity::new, ModBlocks.KLYSTRON.get()).build(null));
+
+    public static final RegistrySupplier<BlockEntityType<FusionKlystronCreativeBlockEntity>> FUSION_KLYSTRON_CREATIVE_BE =
+            BLOCK_ENTITIES.register("fusion_klystron_creative_be", () ->
+                    BlockEntityType.Builder.of(FusionKlystronCreativeBlockEntity::new, ModBlocks.KLYSTRON_CREATIVE.get()).build(null));
+
+    public static final RegistrySupplier<BlockEntityType<FusionBreederBlockEntity>> FUSION_BREEDER_BE =
+            BLOCK_ENTITIES.register("fusion_breeder_be", () ->
+                    BlockEntityType.Builder.of(FusionBreederBlockEntity::new, ModBlocks.BREEDER_FUSION.get()).build(null));
+
+    public static final RegistrySupplier<BlockEntityType<FusionCollectorBlockEntity>> FUSION_COLLECTOR_BE =
+            BLOCK_ENTITIES.register("fusion_collector_be", () ->
+                    BlockEntityType.Builder.of(FusionCollectorBlockEntity::new, ModBlocks.COLLECTOR.get()).build(null));
+
+    public static final RegistrySupplier<BlockEntityType<FusionCouplerBlockEntity>> FUSION_COUPLER_BE =
+            BLOCK_ENTITIES.register("fusion_coupler_be", () ->
+                    BlockEntityType.Builder.of(FusionCouplerBlockEntity::new, ModBlocks.COUPLER.get()).build(null));
+
+    public static final RegistrySupplier<BlockEntityType<FusionBoilerBlockEntity>> FUSION_BOILER_BE =
+            BLOCK_ENTITIES.register("fusion_boiler_be", () ->
+                    BlockEntityType.Builder.of(FusionBoilerBlockEntity::new, ModBlocks.BOILER_FUSION.get()).build(null));
+
+    public static final RegistrySupplier<BlockEntityType<FusionMhdtBlockEntity>> FUSION_MHDT_BE =
+            BLOCK_ENTITIES.register("fusion_mhdt_be", () ->
+                    BlockEntityType.Builder.of(FusionMhdtBlockEntity::new, ModBlocks.MHDT.get()).build(null));
+
+    public static final RegistrySupplier<BlockEntityType<FusionPlasmaForgeBlockEntity>> FUSION_PLASMA_FORGE_BE =
+            BLOCK_ENTITIES.register("fusion_plasma_forge_be", () ->
+                    BlockEntityType.Builder.of(FusionPlasmaForgeBlockEntity::new, ModBlocks.PLASMA_FORGE.get()).build(null));
+
+    public static final RegistrySupplier<BlockEntityType<StructTorusCoreBlockEntity>> STRUCT_TORUS_CORE_BE =
+            BLOCK_ENTITIES.register("struct_torus_core_be", () ->
+                    BlockEntityType.Builder.of(StructTorusCoreBlockEntity::new, ModBlocks.STRUCT_TORUS_CORE.get()).build(null));
 
     public static final RegistrySupplier<BlockEntityType<MachineCyclotronBlockEntity>> CYCLOTRON_BE =
             BLOCK_ENTITIES.register("cyclotron_be", () ->
@@ -1268,10 +1318,8 @@ public class ModBlockEntities {
                     BlockEntityType.Builder.of(RBMKSteamOutletBlockEntity::new,
                             ModBlocks.RBMK_STEAM_OUTLET.get()).build(null));
 
-    public static final RegistrySupplier<BlockEntityType<RBMKLoaderBlockEntity>> RBMK_LOADER_BE =
-            BLOCK_ENTITIES.register("rbmk_loader_be", () ->
-                    BlockEntityType.Builder.of(RBMKLoaderBlockEntity::new,
-                            ModBlocks.RBMK_LOADER.get()).build(null));
+    // No RBMK_LOADER_BE: the steam connector (rbmk_loader) is a plain block with no block
+    // entity, 1:1 with the original's RBMKLoader. See RBMKLoaderBlock.
 
     public static final RegistrySupplier<BlockEntityType<RBMKAutoloaderBlockEntity>> RBMK_AUTOLOADER_BE =
             BLOCK_ENTITIES.register("rbmk_autoloader_be", () ->

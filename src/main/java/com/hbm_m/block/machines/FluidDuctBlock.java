@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.hbm_m.api.fluids.IFluidConnectorBlock;
 import com.hbm_m.api.fluids.FluidCapabilityAccess;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -246,14 +247,23 @@ public class FluidDuctBlock extends BaseEntityBlock implements ILookOverlay {
             return true;
         }
 
+        Fluid ductFluid = Fluids.EMPTY;
+        BlockEntity myBe = level.getBlockEntity(myPos);
+        if (myBe instanceof FluidDuctBlockEntity myDuct) {
+            Fluid raw = normalizeDuctPaintFluid(myDuct.getFluidType());
+            ductFluid = raw != null ? raw : Fluids.EMPTY;
+        }
+
+        // === Коннектор-блок без тайла (IFluidConnectorBlock) ===
+        // Проверяем ДО ветки "у соседа есть block entity": такие блоки (паровой коннектор РБМК)
+        // тайла не имеют вовсе, поэтому раньше труба к ним не подключалась ни при каких условиях.
+        if (neighborState.getBlock() instanceof IFluidConnectorBlock connector) {
+            if (ductFluid == Fluids.EMPTY) return true;
+            return connector.canConnect(ductFluid, level, neighborPos, direction.getOpposite());
+        }
+
         BlockEntity be = level.getBlockEntity(neighborPos);
         if (be != null) {
-            BlockEntity myBe = level.getBlockEntity(myPos);
-            Fluid ductFluid = Fluids.EMPTY;
-            if (myBe instanceof FluidDuctBlockEntity myDuct) {
-                Fluid raw = normalizeDuctPaintFluid(myDuct.getFluidType());
-                ductFluid = raw != null ? raw : Fluids.EMPTY;
-            }
 
             // === Коннектор мультиблока (UniversalMachinePart) ===
             // Важно: не даём трубе "липнуть" к контроллеру, если подключение разрешено только через части-коннекторы.

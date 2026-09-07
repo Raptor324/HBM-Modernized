@@ -614,12 +614,12 @@ public class ModBlockStateProvider extends BlockStateProvider {
             models().cubeAll(ModBlocks.PUMP_STEAM.getId().getPath(), modLoc("block/machine/pump_steam")));
         horizontalBlock(ModBlocks.PUMP_ELECTRIC.get(),
             models().cubeAll(ModBlocks.PUMP_ELECTRIC.getId().getPath(), modLoc("block/machine/pump_electric")));
-        simpleMachineBlock(ModBlocks.BOILER_FUSION);
-        simpleMachineBlock(ModBlocks.BREEDER_FUSION);
+        customMachineBlock(ModBlocks.BOILER_FUSION);
+        customMachineBlock(ModBlocks.BREEDER_FUSION);
         customMachineBlock(ModBlocks.CHIMNEY_BRICK);
         customMachineBlock(ModBlocks.CHIMNEY_INDUSTRIAL);
         customMachineBlock(ModBlocks.COKER);
-        simpleMachineBlock(ModBlocks.COLLECTOR);
+        customMachineBlock(ModBlocks.COLLECTOR);
         simpleMachineBlock(ModBlocks.COMBINATION_OVEN);
         customMachineBlock(ModBlocks.COMBUSTION_ENGINE);
         horizontalBlock(ModBlocks.COMPRESSOR.get(),
@@ -627,7 +627,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
         customMachineBlock(ModBlocks.CONDENSER_POWERED);
         customMachineBlock(ModBlocks.LPW2);
         customMachineBlock(ModBlocks.CONVEYOR_PRESS);
-        simpleMachineBlock(ModBlocks.COUPLER);
+        customMachineBlock(ModBlocks.COUPLER);
         simpleMachineBlock(ModBlocks.DETECTOR);
         customMachineBlock(ModBlocks.DIESELGEN);
         simpleMachineBlock(ModBlocks.DIPOLE);
@@ -646,8 +646,9 @@ public class ModBlockStateProvider extends BlockStateProvider {
         customMachineBlock(ModBlocks.HEPHAESTUS);
         simpleMachineBlock(ModBlocks.ICF);
         simpleMachineBlock(ModBlocks.INTAKE);
-        simpleMachineBlock(ModBlocks.KLYSTRON);
-        simpleMachineBlock(ModBlocks.MHDT);
+        customMachineBlock(ModBlocks.KLYSTRON);
+        customMachineBlock(ModBlocks.KLYSTRON_CREATIVE);
+        customMachineBlock(ModBlocks.MHDT);
         horizontalBlock(ModBlocks.MICROWAVE.get(),
             models().getExistingFile(modLoc("block/machines/microwave")));
         customMachineBlock(ModBlocks.MINING_LASER);
@@ -656,7 +657,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
         // ORBUS is now a BarrelTankBlock (FACING blockstate) instead of a static "" variant.
         horizontalBlock(ModBlocks.ORBUS.get(), models().getExistingFile(modLoc("block/machines/orbus")));
         simpleMachineBlock(ModBlocks.ORE_SLOPPER);
-        simpleMachineBlock(ModBlocks.PLASMA_FORGE);
+        customMachineBlock(ModBlocks.PLASMA_FORGE);
         customMachineBlock(ModBlocks.PYROOVEN);
         simpleMachineBlock(ModBlocks.QUADRUPOLE);
         simpleMachineBlock(ModBlocks.RADGEN);
@@ -677,7 +678,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
         // Strand Caster: eigenes OBJ-Modell bereits vorhanden (block/machines/strand_caster.json), FACING-Rotation.
         horizontalBlock(ModBlocks.STRAND_CASTER.get(),
             models().getExistingFile(modLoc("block/machines/strand_caster")));
-        simpleMachineBlock(ModBlocks.TORUS);
+        customMachineBlock(ModBlocks.TORUS);
         simpleMachineBlock(ModBlocks.TURBINEGAS);
         simpleMachineBlock(ModBlocks.WATZ_PUMP);
         simpleMachineBlock(ModBlocks.CHUNGUS);
@@ -4088,14 +4089,12 @@ public class ModBlockStateProvider extends BlockStateProvider {
                 .texture("east", modLoc("block/rbmk/rbmk_control_side"))
                 .texture("west", modLoc("block/rbmk/rbmk_control_side"))
                 .texture("particle", modLoc("block/rbmk/rbmk_control_side"));
-        ModelFile mrbmk_rbmk_loader = models().withExistingParent("block/rbmk/rbmk_loader", mcLoc("block/cube"))
-                .texture("down", modLoc("block/rbmk/rbmk_blank_top"))
-                .texture("up", modLoc("block/rbmk/rbmk_blank_top"))
-                .texture("north", modLoc("block/rbmk/rbmk_blank_side"))
-                .texture("south", modLoc("block/rbmk/rbmk_blank_side"))
-                .texture("east", modLoc("block/rbmk/rbmk_blank_side"))
-                .texture("west", modLoc("block/rbmk/rbmk_blank_side"))
-                .texture("particle", modLoc("block/rbmk/rbmk_blank_side"));
+        // The connector ships its own texture (standalone_rbmk_loader, byte-identical to the
+        // original's blocks/rbmk_loader.png) on all six faces, as setBlockTextureName does in the
+        // original - it was wearing the blank column's side/top instead.
+        ModelFile mrbmk_rbmk_loader = models().withExistingParent("block/rbmk/rbmk_loader", mcLoc("block/cube_all"))
+                .texture("all", modLoc("block/rbmk/standalone_rbmk_loader"))
+                .texture("particle", modLoc("block/rbmk/standalone_rbmk_loader"));
         ModelFile mrbmk_rbmk_moderator = models().withExistingParent("block/rbmk/rbmk_moderator", mcLoc("block/cube"))
                 .texture("down", modLoc("block/rbmk/rbmk_moderator_top"))
                 .texture("up", modLoc("block/rbmk/rbmk_moderator_top"))

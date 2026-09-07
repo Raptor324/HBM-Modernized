@@ -249,47 +249,27 @@ public class RBMKOutgasserBlockEntity extends RBMKColumnBlockEntity
 
     // ─── NBT ─────────────────────────────────────────────────────────────────
 
-    //? if < 1.21.1 {
+    // Persisted through writeNbtData/readNbtData, NOT saveAdditional/load:
+    // BaseHbmBlockEntity builds the CLIENT update tag from writeNbtData alone, so a
+    // subclass overriding saveAdditional saves to disk correctly yet sends the client
+    // nothing - which is why these readouts stayed blank in world.
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         if (!inputSlot.isEmpty())  tag.put("inputSlot",  safeItemSave(inputSlot));
         if (!outputSlot.isEmpty()) tag.put("outputSlot", safeItemSave(outputSlot));
         gasTank.writeToNBT(tag, "gas");
         tag.putDouble("progress", progress);
         tag.putDouble("lastUsedFlux", lastUsedFlux);
     }
-    //?} else {
-    /*@Override
-    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-        super.saveAdditional(tag, registries);
-        if (!inputSlot.isEmpty())  tag.put("inputSlot",  safeItemSave(inputSlot));
-        if (!outputSlot.isEmpty()) tag.put("outputSlot", safeItemSave(outputSlot));
-        gasTank.writeToNBT(tag, "gas");
-        tag.putDouble("progress", progress);
-        tag.putDouble("lastUsedFlux", lastUsedFlux);
-    }
-    *///?}
 
-    //? if < 1.21.1 {
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         inputSlot  = tag.contains("inputSlot")  ? ItemStack.of(tag.getCompound("inputSlot"))  : ItemStack.EMPTY;
         outputSlot = tag.contains("outputSlot") ? ItemStack.of(tag.getCompound("outputSlot")) : ItemStack.EMPTY;
         gasTank.readFromNBT(tag, "gas");
         progress = tag.getDouble("progress");
         lastUsedFlux = tag.getDouble("lastUsedFlux");
     }
-    //?} else {
-    /*@Override
-    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-        super.loadAdditional(tag, registries);
-        inputSlot  = tag.contains("inputSlot")  ? com.hbm_m.platform.PlatformHooks.itemStackOf(tag.getCompound("inputSlot"), registries)  : ItemStack.EMPTY;
-        outputSlot = tag.contains("outputSlot") ? com.hbm_m.platform.PlatformHooks.itemStackOf(tag.getCompound("outputSlot"), registries) : ItemStack.EMPTY;
-        gasTank.readFromNBT(tag, "gas");
-        progress = tag.getDouble("progress");
-        lastUsedFlux = tag.getDouble("lastUsedFlux");
-    }
-    *///?}
 }

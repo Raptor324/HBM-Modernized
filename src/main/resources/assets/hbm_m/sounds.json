@@ -306,7 +306,9 @@
   },
   "tool.gasmaskscrew": {
     "category": "player",
-    "sounds": ["hbm_m:tool/gasmaskscrew"]
+    "sounds": [
+      "hbm_m:tool/gasmaskscrew"
+    ]
   },
   "player.cough": {
     "category": "player",
@@ -884,6 +886,32 @@
         "name": "hbm_m:weapon/dFlash",
         "stream": false
       }
+    ]
+  },
+  "block.boiler_groan": {
+    "subtitle": "sounds.hbm_m.subtitle.boiler_groan",
+    "sounds": [
+      "hbm_m:block/boiler_groan1",
+      "hbm_m:block/boiler_groan2",
+      "hbm_m:block/boiler_groan3"
+    ]
+  },
+  "block.fel": {
+    "subtitle": "sounds.hbm_m.subtitle.fel",
+    "sounds": [
+      "hbm_m:block/fel"
+    ]
+  },
+  "block.fusion_reactor_spin": {
+    "subtitle": "sounds.hbm_m.subtitle.fusion_reactor_spin",
+    "sounds": [
+      "hbm_m:block/fusion_reactor_spin"
+    ]
+  },
+  "item.boltgun": {
+    "subtitle": "sounds.hbm_m.subtitle.boltgun",
+    "sounds": [
+      "hbm_m:tool/boltgun"
     ]
   }
 }
