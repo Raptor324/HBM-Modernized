@@ -1208,3 +1208,72 @@ deep-копии NBT на стержень за тик.
   `-thrust.z` там, где нужен `thrust.y` (визуальное, только клиент).
 - **`DroneChunkLoader:26`** отпускает билет только из `EntityDeliveryDrone.remove()`, а путь
   `setRemoved(UNLOADED_TO_CHUNK)` через `remove()` не идёт.
+
+## O. Дочистка по N2/M2 со сверкой с 1.7.10
+
+### O1. Исправлено
+
+- **`NeutronNodeWorld` держал `ServerLevel` до конца процесса.** Порт заменил
+  `HashMap<World, StreamWorld>` оригинала на `WeakHashMap`, но значение достаёт ключ обратно через
+  `StreamWorld.nodeCache` → `RBMKNeutronNode.tile` → `BlockEntity.level`, поэтому запись никогда не
+  собиралась, а `removeAllWorlds()` не вызывался ниоткуда. Возвращён `HashMap` (как в оригинале) плюс
+  явная очистка из `MainRegistry`: `removeWorld` на `SERVER_LEVEL_UNLOAD`, `removeAllWorlds` на
+  `SERVER_STOPPED` — рядом с `UniNodespace` и RTTY.
+- **`RBMKNeutronHandler.irradiateFromFlux(Level, BlockPos)` грузил чанки ради no-op.** `getHits`
+  проходит `columnHeight` блоков через `Level.getBlockState`, то есть синхронно подгружает чанк из
+  тикового потока, а доза после этого всё равно отбрасывается: `ChunkRadiationHandlerSimple.setRadiation`
+  выходит на незагруженном чанке. Добавлен `level.isLoaded(pos)`.
+- **Дрон двигался на обеих сторонах.** В оригинале весь блок наведения лежит в `else`-ветке
+  `if(worldObj.isRemote)`, клиент только интерполирует. В порте `targetX/Y/Z` — обычные поля, они не
+  синхронизируются, а флаг `HAS_TARGET` синхронизируется: клиент видел «цель есть» с целью в (0,0,0)
+  и гнал дрона к началу координат между пакетами позиции. Движение и `loadNeighboringChunks`
+  закрыты `!level().isClientSide`.
+- **`TomBlastEntity` не переопределял `getChunkLoadRadius()`.** Соседи с той же базой и тем же полем
+  `destructionRange` (`EntityNukeExplosionMK3`, `EntitySoliniumExplosion`, `EntityBalefireExplosion`)
+  переопределяют, и javadoc самого класса говорит «Shape mirrors EntityNukeExplosionMK3». Добавлено
+  по их образцу.
+- **`AirNukeBombProjectileEntity.playDetonationSound`** — все три гарда проверяли
+  `EXPLOSION_LARGE_NEAR` вместо собственного звука, из-за чего при его отсутствии список оставался
+  пустым и `nextInt(0)` бросал. Каждая строка проверяет свой звук, добавлен выход на пустом списке.
+- **`EntityMist` сохранял числовой id жидкости.** Для синхронизации это нормально (сессия одна), но
+  не на диске: id зависит от порядка регистрации, и после установки/удаления мода облако становилось
+  другой жидкостью. Пишется ключ реестра, старый числовой ключ читается как fallback.
+- **`MissileABMEntity` сохранял `tracking.getId()`** — посессионный сетевой счётчик. Заменено на UUID
+  через `ServerLevel.getEntity(UUID)`.
+- **Сопла инверсионного следа `MissileTier3`/`MissileTier4`.** Первые два вызова задают явный
+  паттерн (поворот на 90° в плоскости XZ, `y` неизменен), в остальных на месте `y` стоял `-thrust.z`.
+
+### O2. Сверено с 1.7.10 — НЕ баги порта, менять только осознанно
+
+- **`PowerNet`** — `energyUsed` вне цикла по приоритетам: `api/hbm/energymk2/PowerNetMK2.update()`
+  дословно такой же.
+- **`RagingVortexEntity`** — `if(timer <= 20) timer -= 20;` и `sin(timer) * π/20` дословно из
+  `EntityRagingVortex.onUpdate`.
+- **`SwitchBlockEntity` не переопределяет `createNode`** — `TileEntityCableSwitch` тоже не
+  переопределяет, наследует шесть направлений от `TileEntityCableBaseNT`.
+- **`RBMKNeutronHandler:292` проверяет `pos` вместо `posAfter`** — в оригинале ровно так же
+  (`if(NeutronNodeWorld.getNode(worldObj, pos) == null)` при лукапе по `posAfter`).
+- **`EntityCreeperTainted`/`EntityCreeperNuclear` лечатся на обеих сторонах** — в оригинале
+  `onUpdate` тоже без `!worldObj.isRemote`.
+- **`UniNodespace.activeNodeNets` — `HashSet`** — в оригинале тоже `HashSet<NodeNet>`, порядок
+  обхода недетерминирован там же.
+- **`EnergySubscriptions:132`** — `Nodespace.destroyNode` это no-op при отсутствии узла
+  (`UniNodespace.destroyNode` проверяет `node != null`), поэтому батарея в небуферном режиме сеть
+  не сносит; `net.destroy()` срабатывает один раз на реальную смену топологии.
+- **`ExplosionBalefire`** — «нижняя» позиция для огня, похоже, намеренна: колонка стирается сверху
+  вниз, поэтому нижняя стёртая точка и есть дно кратера.
+- **Освобождение чанк-билетов через `remove(RemovalReason)`** — путь выгрузки чанка идёт через
+  `setRemoved`, а не `remove`, но так сделано во всех восьми классах проекта, и активный радиусный
+  билет сам держит чанк сущности загруженным. Менять конвенцию — отдельное решение.
+
+### O3. Осталось в очереди
+
+- Сканы взрывов без проверки загрузки: `ExplosionFleija.breakColumn:97`, `ExplosionSolinium:34`,
+  `ExplosionTom:119-150`, `SpearEntity.descentBlast:115-156`, `EntityNukeExplosionMK5.radiate:233`,
+  `EntityUFO.groundBelow:259`.
+- `RBMKNeutronHandler:223` — второй вызов `getHits`, там результат влияет на затухание потока,
+  поэтому гард меняет поведение: нужно решить, чем считать незагруженную колонку.
+- `EntityWormBase:275/282` — тот же посессионный id, что был в ABM.
+- `SpearEntity:97,101`, `VortexEntity:34` — запись `SynchedEntityData` на клиенте.
+- `EntityProcessorStandard`/`EntityProcessorCross` после правок математики — проверить урон крипёров
+  и боеголовок в игре.

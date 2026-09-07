@@ -312,6 +312,11 @@ public class RBMKNeutronHandler {
         }
 
         public void irradiateFromFlux(Level level, BlockPos pos) {
+            // getHits walks columnHeight blocks through Level.getBlockState, which loads the chunk
+            // from the tick thread. The dose it feeds is dropped anyway when the chunk is not
+            // loaded (ChunkRadiationHandlerSimple.setRadiation returns early), so this is a no-op
+            // that used to cost a synchronous chunk load per stream.
+            if (!level.isLoaded(pos)) return;
             irradiateFromFlux(level, pos, getHits(level, pos));
         }
 

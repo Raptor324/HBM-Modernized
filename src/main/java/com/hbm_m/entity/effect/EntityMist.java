@@ -160,14 +160,26 @@ public class EntityMist extends Entity {
 
     @Override
     protected void readAdditionalSaveData(CompoundTag tag) {
-        this.entityData.set(DATA_FLUID_ID, tag.getInt("fluidId"));
+        // The numeric registry id is fine for the synced accessor - both sides share one session's
+        // registry - but not on disk: it depends on registration order, so adding or removing any
+        // mod that registers fluids turned a saved cloud into a different one. Old saves still
+        // carry the numeric key, so it is read as a fallback.
+        if (tag.contains("fluidPath")) {
+            Fluid fluid = BuiltInRegistries.FLUID.get(net.minecraft.resources.ResourceLocation
+                    .fromNamespaceAndPath(tag.getString("fluidNs"), tag.getString("fluidPath")));
+            this.entityData.set(DATA_FLUID_ID, BuiltInRegistries.FLUID.getId(fluid));
+        } else {
+            this.entityData.set(DATA_FLUID_ID, tag.getInt("fluidId"));
+        }
         this.setArea(tag.getFloat("width"), tag.getFloat("height"));
         this.maxAge = tag.getInt("maxAge");
     }
 
     @Override
     protected void addAdditionalSaveData(CompoundTag tag) {
-        tag.putInt("fluidId", this.entityData.get(DATA_FLUID_ID));
+        var key = BuiltInRegistries.FLUID.getKey(BuiltInRegistries.FLUID.byId(this.entityData.get(DATA_FLUID_ID)));
+        tag.putString("fluidNs", key.getNamespace());
+        tag.putString("fluidPath", key.getPath());
         tag.putFloat("width", this.entityData.get(DATA_WIDTH));
         tag.putFloat("height", this.entityData.get(DATA_HEIGHT));
         tag.putInt("maxAge", this.maxAge);

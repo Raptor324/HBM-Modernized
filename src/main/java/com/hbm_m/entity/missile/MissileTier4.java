@@ -44,9 +44,10 @@ public abstract class MissileTier4 extends MissileBaseEntity {
         thrust = thrust.xRot(-this.getXRot() * ((float) Math.PI / 180.0F));
         thrust = thrust.yRot((this.getYRot() + 90.0F) * ((float) Math.PI / 180.0F));
 
+        // Same as MissileTier3: the opposite nozzle had -thrust.z where thrust.y belongs.
         spawnContrailWithOffset(thrust.x, thrust.y, thrust.z);
         spawnContrailWithOffset(0.0D, 0.0D, 0.0D);
-        spawnContrailWithOffset(-thrust.x, -thrust.z, -thrust.z);
+        spawnContrailWithOffset(-thrust.x, thrust.y, -thrust.z);
     }
 
     protected void startNukeAt(BlockPos pos, int radius, int extraFallout) {

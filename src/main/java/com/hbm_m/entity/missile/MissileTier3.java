@@ -46,10 +46,12 @@ public abstract class MissileTier3 extends MissileBaseEntity {
         thrust = thrust.xRot(-this.getXRot() * ((float) Math.PI / 180.0F));
         thrust = thrust.yRot((this.getYRot() + 90.0F) * ((float) Math.PI / 180.0F));
 
+        // Four nozzles, each a 90-degree step around the thrust axis with y unchanged. The last two
+        // had -thrust.z where thrust.y belongs, which pushed them off the ring.
         spawnContrailWithOffset(thrust.x, thrust.y, thrust.z);
         spawnContrailWithOffset(-thrust.z, thrust.y, thrust.x);
-        spawnContrailWithOffset(-thrust.x, -thrust.z, -thrust.z);
-        spawnContrailWithOffset(thrust.z, -thrust.z, -thrust.x);
+        spawnContrailWithOffset(-thrust.x, thrust.y, -thrust.z);
+        spawnContrailWithOffset(thrust.z, thrust.y, -thrust.x);
     }
 
     public static class MissileBurst extends MissileTier3 {

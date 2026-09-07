@@ -186,9 +186,12 @@ public class AirNukeBombProjectileEntity extends ThrowableItemProjectile {
 
     private void playDetonationSound(ServerLevel level, BlockPos pos) {
         List<SoundEvent> candidates = new ArrayList<>();
-        if (ModSounds.EXPLOSION_LARGE_NEAR.isPresent()) candidates.add(ModSounds.BOMBDET1.get());
-        if (ModSounds.EXPLOSION_LARGE_NEAR.isPresent()) candidates.add(ModSounds.BOMBDET2.get());
-        if (ModSounds.EXPLOSION_LARGE_NEAR.isPresent()) candidates.add(ModSounds.BOMBDET3.get());
+        // Each line guarded its own sound, not EXPLOSION_LARGE_NEAR: with that one absent the list
+        // stayed empty and nextInt(0) below threw.
+        if (ModSounds.BOMBDET1.isPresent()) candidates.add(ModSounds.BOMBDET1.get());
+        if (ModSounds.BOMBDET2.isPresent()) candidates.add(ModSounds.BOMBDET2.get());
+        if (ModSounds.BOMBDET3.isPresent()) candidates.add(ModSounds.BOMBDET3.get());
+        if (candidates.isEmpty()) return;
 
         SoundEvent soundEvent = candidates.get(RANDOM.nextInt(candidates.size()));
         level.playSound(null, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
