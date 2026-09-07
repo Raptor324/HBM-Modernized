@@ -53,6 +53,9 @@ import net.minecraftforge.fml.common.Mod;
  */
 //? if forge {
 /*@Mod.EventBusSubscriber(modid = MainRegistry.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE)*///?}
+//? if neoforge {
+@net.neoforged.fml.common.EventBusSubscriber(modid = MainRegistry.MOD_ID)
+//?}
 public final class PowerArmorHandlers {
 
     private static final String TAG_DASH_COOLDOWN = "hbm_power_armor_dash_cooldown";
@@ -394,6 +397,60 @@ public final class PowerArmorHandlers {
         applyHardLandingAOE(level, player);
         PlayerPersistentData.get(player).putBoolean("hbm_hard_landing_occured", true);
     }
+
+    // ============ NeoForge: те же три обработчика ============
+    // На 1.21.1 LivingAttackEvent заменён на LivingIncomingDamageEvent, а LivingHurtEvent —
+    // на LivingDamageEvent.Pre. Без этой ветки вся система DT/DR, отражение стрел и иммунитет
+    // к падению были мертвы: register() вешает только тики, а forge-обработчики не компилируются.
+    //? if neoforge {
+    @net.neoforged.bus.api.SubscribeEvent(priority = net.neoforged.bus.api.EventPriority.HIGHEST)
+    public static void onIncomingDamage(net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent event) {
+        if (!(event.getEntity() instanceof Player player)) return;
+        if (player.level().isClientSide) return;
+        if (player.getAbilities().instabuild || player.isSpectator()) return;
+
+        if (com.hbm_m.powerarmor.resist.DamageResistanceHandler.shouldDeflectProjectile(player, event.getSource())) {
+            event.setCanceled(true);
+            Entity projectile = event.getSource().getDirectEntity();
+            if (projectile instanceof net.minecraft.world.entity.projectile.Projectile proj) {
+                proj.setDeltaMovement(proj.getDeltaMovement().scale(-0.5));
+                proj.hurtMarked = true;
+            }
+        }
+    }
+
+    @net.neoforged.bus.api.SubscribeEvent(priority = net.neoforged.bus.api.EventPriority.LOWEST)
+    public static void onDamagePre(net.neoforged.neoforge.event.entity.living.LivingDamageEvent.Pre event) {
+        if (!(event.getEntity() instanceof Player player)) return;
+        if (player.level().isClientSide) return;
+        if (player.getAbilities().instabuild || player.isSpectator()) return;
+        if (!ModArmorFSB.hasFSBArmor(player)) return;
+        if (!(player.getItemBySlot(EquipmentSlot.CHEST).getItem() instanceof ModPowerArmorItem)) return;
+
+        float calculated = com.hbm_m.powerarmor.resist.DamageResistanceHandler.calculateDamage(
+                player, event.getSource(), event.getNewDamage(), 0F, 0F);
+        if (calculated < event.getNewDamage()) {
+            event.setNewDamage(calculated);
+        }
+    }
+
+    @net.neoforged.bus.api.SubscribeEvent
+    public static void onLivingFallNeo(net.neoforged.neoforge.event.entity.living.LivingFallEvent event) {
+        if (!(event.getEntity() instanceof Player player)) return;
+        if (player.level().isClientSide) return;
+        if (player.isSpectator()) return;
+        if (player.isFallFlying()) return;
+        if (!ModArmorFSB.hasFSBArmorIgnoreCharge(player)) return;
+
+        ItemStack chestStack = player.getItemBySlot(EquipmentSlot.CHEST);
+        if (!(chestStack.getItem() instanceof ModPowerArmorItem armorItem)) return;
+        if (!armorItem.getSpecs().hasHardLanding) return;
+
+        event.setDistance(0.0F);
+        event.setDamageMultiplier(0.0F);
+        event.setCanceled(true);
+    }
+    //?}
 
     /**
      * Hard Landing: полная защита от урона падения (перк сета с hasHardLanding).

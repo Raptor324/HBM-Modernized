@@ -303,8 +303,17 @@ public class ModArmorFSB extends ArmorItem {
         ItemStack chest = player.getItemBySlot(EquipmentSlot.CHEST);
         if (!(chest.getItem() instanceof ModArmorFSB chestplate)) return;
 
-        if (!chestplate.effects.isEmpty()) {
+        // Метод вызывается на КАЖДУЮ надетую часть, поэтому эффекты вешаем только на проходе
+        // по нагруднику и только на сервере. Иначе addEffect выполнялся 4 раза за тик с обеих
+        // сторон, каждый раз сбрасывая длительность, что заставляло сервер слать
+        // ClientboundUpdateMobEffectPacket на каждый вызов. Проверка длительности — тот же
+        // anti-flicker, что в ModPowerArmorItem.applyPassiveEffects.
+        if (!world.isClientSide && stack == chest && !chestplate.effects.isEmpty()) {
             for (MobEffectInstance effect : chestplate.effects) {
+                MobEffectInstance current = player.getEffect(effect.getEffect());
+                if (current != null && current.getDuration() >= 20 && current.getAmplifier() >= effect.getAmplifier()) {
+                    continue;
+                }
                 player.addEffect(new MobEffectInstance(
                         effect.getEffect(),
                         effect.getDuration(),
@@ -320,7 +329,8 @@ public class ModArmorFSB extends ArmorItem {
         }
     }
 
-    private static boolean stackIsEquippedArmor(Player player, ItemStack stack) {
+    /** Стек действительно надет, а не лежит в инвентаре. Используется и наследником. */
+    protected static boolean stackIsEquippedArmor(Player player, ItemStack stack) {
         for (EquipmentSlot s : ARMOR_SLOTS) {
             if (player.getItemBySlot(s) == stack) {
                 return true;

@@ -157,11 +157,13 @@ public class ArmorModificationHelper {
         CompoundTag modsTag = armorTag.getCompound(MOD_COMPOUND_KEY);
         modsTag.remove(MOD_SLOT_KEY_PREFIX + slot);
 
-        // Если модификаций не осталось, удаляем весь compound
+        // getItemTag на 1.21.1 отдаёт КОПИЮ (data.copyTag()), поэтому правку нужно записать
+        // обратно через PlatformHooks — как это делает applyMod. Без записи снятие мода было
+        // тихим no-op: игрок получал и предмет мода, и броню с сохранённым модом.
         if (modsTag.isEmpty()) {
-            armorTag.remove(MOD_COMPOUND_KEY);
+            PlatformHooks.remove(armor, MOD_COMPOUND_KEY);
         } else {
-            armorTag.put(MOD_COMPOUND_KEY, modsTag);
+            PlatformHooks.put(armor, MOD_COMPOUND_KEY, modsTag);
         }
         onPoweredArmorModsChanged(armor);
     }

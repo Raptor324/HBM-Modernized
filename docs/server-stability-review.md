@@ -666,11 +666,15 @@ public static void performDash(Player player) {
   загружен, так что подгрузки не происходит, но при полном сервере это тысячи лукапов в секунду.
   Дешевле сначала отсеивать по `getBlockState`.
 
-## I. Инспекция powerarmor / armormod (найдено, НЕ исправлено)
+## I. Инспекция powerarmor / armormod
 
-Отсортировано по серьёзности. Ничего из этого пока не трогалось.
+**Статус: I1–I4 исправлены, I5–I7 остаются.**
 
-### I1. Дюп модификаций брони — эксплойт
+### I1. Дюп модификаций брони — ИСПРАВЛЕНО
+
+**Исправление.** Правка записывается обратно через `PlatformHooks.remove` / `put` — тем же путём,
+каким её пишет `applyMod`. Остальные пять мест в файле, читающие `getItemTag`, проверены: они
+только читают.
 
 `armormod/util/ArmorModificationHelper.java:152` — `removeMod` берёт тег через
 `PlatformHooks.getItemTag`, который на 1.21.1 возвращает **копию** (`PlatformHooks.java:33`,
@@ -685,7 +689,15 @@ public static void performDash(Player player) {
 Проверка: надеть мод батареи, запомнить `getMaxCharge`, снять мод, `/data get entity @s Inventory` —
 `hbm_armor_mods.mod_slot_8` на месте.
 
-### I2. Вся система защиты силовой брони мертва на NeoForge
+### I2. Система защиты силовой брони мертва на NeoForge — ИСПРАВЛЕНО
+
+**Исправление.** Добавлена neoforge-ветка обработчиков: `LivingAttackEvent` заменён на
+`LivingIncomingDamageEvent`, `LivingHurtEvent` — на `LivingDamageEvent.Pre`, `LivingFallEvent`
+существует и там. Класс получил `(modid = ...)` (на NeoForge это по умолчанию
+игровая шина). Логика та же: отражение снарядов на HIGHEST, пересчёт DT/DR на LOWEST, обнуление
+падения для сетов с `hasHardLanding`.
+
+**Осталось:** `DamageResistanceHandler.initArmorStats()` по-прежнему не регистрирует DNT.
 
 `powerarmor/PowerArmorHandlers.java:82`, `:126`, `:403` — `onLivingAttack`, `onLivingHurt`
 и `onLivingFall` целиком внутри `//? if forge {`. `register()` (`:68`) вешает только
@@ -699,14 +711,21 @@ public static void performDash(Player player) {
 
 Рядом: `DamageResistanceHandler.initArmorStats()` регистрирует T-51, AJR и Bismuth, но **не DNT**.
 
-### I3. Запасная броня разряжается в рюкзаке, клиент дренит свою копию
+### I3. Запасная броня разряжается в рюкзаке — ИСПРАВЛЕНО
+
+**Исправление.** В `inventoryTick` добавлены обе проверки, которые есть у соседних
+переопределений: `world.isClientSide()` и `stackIsEquippedArmor` (метод стал `protected`).
 
 `powerarmor/ModArmorFSBPowered.java:172-177` — `inventoryTick` не проверяет ни
 `world.isClientSide()`, ни то, что предмет надет (у соседних переопределений обе проверки есть).
 Любая заряженная запасная часть в инвентаре расходует энергию (DNT — 115 EU/тик), пока игрок носит
 любой комплект; клиент параллельно переписывает `CUSTOM_DATA` своей копии каждый тик.
 
-### I4. Пассивные эффекты применяются на обеих сторонах, 4 раза за тик
+### I4. Пассивные эффекты на обеих сторонах, 4 раза за тик — ИСПРАВЛЕНО
+
+**Исправление.** Эффекты вешаются только на серверной стороне и только на проходе по нагруднику
+(`stack == chest`), плюс добавлен anti-flicker по длительности. Глобальный guard тут не годится:
+звук шагов в том же методе намеренно клиентский.
 
 `powerarmor/ModArmorFSB.java:307-308` — `tickFsbArmor` без `isClientSide`-guard, выполняется
 на каждую надетую часть. Каждый `addEffect` сбрасывает длительность, поэтому сервер шлёт

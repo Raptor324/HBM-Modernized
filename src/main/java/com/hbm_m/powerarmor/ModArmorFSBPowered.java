@@ -172,7 +172,11 @@ public class ModArmorFSBPowered extends ModArmorFSB implements ITooltipProvider 
     @Override
     public void inventoryTick(ItemStack stack, Level world, Entity entity, int slotId, boolean selected) {
         super.inventoryTick(stack, world, entity, slotId, selected);
+        if (world.isClientSide()) return;
         if (!(entity instanceof Player player)) return;
+        // Обе проверки есть у соседних переопределений: без них запасные части брони
+        // разряжались прямо в инвентаре, а клиент параллельно дренил собственную копию стека.
+        if (!stackIsEquippedArmor(player, stack)) return;
         tickPoweredDrain(stack, world, player);
     }
     //?}
