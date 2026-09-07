@@ -34,13 +34,16 @@ public class RBMKOutgasserMenu extends AbstractContainerMenu {
             @Override
             public void setChanged() {
                 super.setChanged();
+                if (be == null) return;
                 be.inputSlot  = getItem(0).copy();
                 be.outputSlot = getItem(1).copy();
                 be.setChanged();
             }
         };
-        container.setItem(0, be.inputSlot.copy());
-        container.setItem(1, be.outputSlot.copy());
+        if (be != null) {
+            container.setItem(0, be.inputSlot.copy());
+            container.setItem(1, be.outputSlot.copy());
+        }
 
         addSlot(new Slot(container, RBMKOutgasserBlockEntity.SLOT_INPUT, 48, 53) {
             @Override
@@ -73,6 +76,27 @@ public class RBMKOutgasserMenu extends AbstractContainerMenu {
     }
 
     public RBMKOutgasserBlockEntity getBlockEntity() { return blockEntity; }
+
+    /**
+     * Меню держит собственный снимок слотов, а блок продолжает тикать и менять свои поля.
+     * Без ре-синка клик по любому слоту записывал устаревший снимок обратно: израсходованный
+     * вход возвращался, а готовый выход затирался. Тот же приём, что в {@code RBMKRodMenu}.
+     */
+    @Override
+    public void broadcastChanges() {
+        if (blockEntity != null) {
+            syncSlot(0, blockEntity.inputSlot);
+            syncSlot(1, blockEntity.outputSlot);
+        }
+        super.broadcastChanges();
+    }
+
+    private void syncSlot(int index, ItemStack expected) {
+        Slot slot = this.slots.get(index);
+        if (!ItemStack.matches(slot.getItem(), expected)) {
+            slot.set(expected.copy());
+        }
+    }
 
     @Override
     public boolean stillValid(Player player) {

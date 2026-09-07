@@ -630,6 +630,306 @@ public static void performDash(Player player) {
   дефолтный поставщик) — две лишние аллокации на каждое чтение радиации, то есть на каждую
   сущность каждый тик. Смена на nullable-аксессор меняет публичный API.
 
+## H. Обход остальных пакетов
+
+Проверенные подсистемы, где серьёзных проблем не нашлось, и мелкие наблюдения по ним.
+
+### Чисто
+
+- **Энергосеть** (`UniNodespace`, `PowerNet`, `EnergySubscriptions`): `update()` сети не создаёт
+  и не уничтожает, так что CME в `updateNetworks()` невозможен; `REGISTRY` — Guava
+  `MapMaker().weakKeys().weakValues()` с weakly-consistent итераторами; в `tickAll` уже стоит
+  guard `!be.getLevel().isLoaded(...)` против синхронной загрузки чанков.
+- **RBMK-нейтроны** (`NeutronNodeWorld`): dial-кеш перечитывается на каждый уровень отдельно,
+  `WeakHashMap` по `Level` — утечки нет.
+- **`StructureConnectionFixProcessor`**: drain-паттерн с `isLoaded` и лимитом попыток.
+- **Меню/контейнеры** (139 файлов): `stillValid` реализован в базовых классах, крейты наследуют;
+  `quickMoveStack`, возвращающие `ItemStack.EMPTY`, — намеренные заглушки, а не потеря предметов.
+- **Параллельный взрыв** (`ExplosionNukeRayParallelized`): воркеры читают из `SubChunkSnapshot`,
+  а не из `Level` — доступ к миру из фоновых потоков сделан корректно. Циклы `while (true)` —
+  это CAS-retry (`ConcurrentBitSet`) и цикл, ограниченный `rayCount`.
+- **Широкие сканы сущностей**: `EntityUFO.scanForTargets` (AABB 200×100×200) стоит на
+  `scanCooldown = 50`; сканы `EntityBOTPrimeHead` — разовые, в обработчике смерти.
+- **Worldgen**: фичи используют `setBlock(..., 3)` — тот же флаг, что и ванильный
+  `Feature.setBlock`. `RedRoomGenerator` вызывается разово из `KeyholeBlock` по действию игрока.
+- **Дебаг-пакеты радиации**: радиус 4 чанка, дельта-обновления, очистка кэша по выходу из зоны.
+- **Кэш `MultiblockStructureHelper.RECENT_PLACEMENTS`**: самоочищается по времени при каждой записи.
+
+### Наблюдения (не баги, на будущее)
+
+- `ItemSimpleConsumable.use` не проверяет сторону сам, а полагается на то, что это сделает
+  переданная лямбда. Сейчас все три действия (`RADAWAY`, `usePillHerbal`, `useSiox`) проверяют
+  `isClientSide` внутри, так что двойного применения нет — но контракт держится на дисциплине,
+  а не на классе. Проверку стоит поднять в сам `use`.
+- `LadderClimbHandler.checkTouchingLadder` вызывает `level.getBlockEntity` для каждой позиции
+  внутри хитбокса игрока (~12–18 штук) **каждый тик на каждого игрока**. Чанк там заведомо
+  загружен, так что подгрузки не происходит, но при полном сервере это тысячи лукапов в секунду.
+  Дешевле сначала отсеивать по `getBlockState`.
+
+## I. Инспекция powerarmor / armormod (найдено, НЕ исправлено)
+
+Отсортировано по серьёзности. Ничего из этого пока не трогалось.
+
+### I1. Дюп модификаций брони — эксплойт
+
+`armormod/util/ArmorModificationHelper.java:152` — `removeMod` берёт тег через
+`PlatformHooks.getItemTag`, который на 1.21.1 возвращает **копию** (`PlatformHooks.java:33`,
+`data.copyTag()`), мутирует её и обратно не записывает. Снятие мода — тихий no-op.
+
+Самоисправиться не может: `saveTableToArmor:317` для пустого слота таблицы подставляет
+всё ещё сохранённый мод (`pryMod`).
+
+Итог: игрок вынимает мод из стола — получает **и предмет, и броню, у которой мод остался**
+(NBT, модификаторы атрибутов, множитель ёмкости). Повторяется неограниченно.
+
+Проверка: надеть мод батареи, запомнить `getMaxCharge`, снять мод, `/data get entity @s Inventory` —
+`hbm_armor_mods.mod_slot_8` на месте.
+
+### I2. Вся система защиты силовой брони мертва на NeoForge
+
+`powerarmor/PowerArmorHandlers.java:82`, `:126`, `:403` — `onLivingAttack`, `onLivingHurt`
+и `onLivingFall` целиком внутри `//? if forge {`. `register()` (`:68`) вешает только
+`TickEvent.PLAYER_PRE/POST`. Ничто в проекте не зовёт `DamageResistanceHandler.calculateDamage`
+или `shouldDeflectProjectile`, миксинов на `LivingEntity.hurt` нет.
+
+Следствие на выпускаемой сборке: **нет DT против взрывов, нет DR против огня, нет отражения стрел
+и нет иммунитета к падению**, хотя каждый комплект объявляет `drFall = 1.0`. При этом
+`handleHardLanding` (`:253`) продолжает работать — игрок получает и AOE-удар о землю, и полный
+урон от падения. Тултип рекламирует несуществующие резисты.
+
+Рядом: `DamageResistanceHandler.initArmorStats()` регистрирует T-51, AJR и Bismuth, но **не DNT**.
+
+### I3. Запасная броня разряжается в рюкзаке, клиент дренит свою копию
+
+`powerarmor/ModArmorFSBPowered.java:172-177` — `inventoryTick` не проверяет ни
+`world.isClientSide()`, ни то, что предмет надет (у соседних переопределений обе проверки есть).
+Любая заряженная запасная часть в инвентаре расходует энергию (DNT — 115 EU/тик), пока игрок носит
+любой комплект; клиент параллельно переписывает `CUSTOM_DATA` своей копии каждый тик.
+
+### I4. Пассивные эффекты применяются на обеих сторонах, 4 раза за тик
+
+`powerarmor/ModArmorFSB.java:307-308` — `tickFsbArmor` без `isClientSide`-guard, выполняется
+на каждую надетую часть. Каждый `addEffect` сбрасывает длительность, поэтому сервер шлёт
+`ClientboundUpdateMobEffectPacket`: для DNT-комплекта это **8 пакетов эффектов на игрока в тик**.
+Правильный anti-flicker guard есть в `ModPowerArmorItem.applyPassiveEffects:311`, но
+неохраняемый путь перебивает его.
+
+### I5. Чтение заряда деп-копирует NBT 5–7 раз на предмет за тик
+
+`ModArmorFSBPowered.java:122-124` — `getMaxCharge` → `getBatteryCapacityMultiplier` → `pryMod` →
+`getItemTag` (полная `copyTag()` вместе с сериализованными модами) + `itemStackOf`
+(полный `ItemStack.parseOptional`). `tickPoweredDrain` зовёт эту цепочку несколько раз за тик,
+×4 части, ×каждый игрок. Побочно: NBT заряда меняется каждый тик, поэтому
+`AbstractContainerMenu.broadcastChanges` пересылает все четыре слота брони целиком каждый тик.
+
+### I6. Флаг hard-landing пишется на сервере, читается на клиенте
+
+Пишется `PowerArmorHandlers.java:370`/`:395`, читается `PowerArmorSounds.java:226`, а
+`player.getPersistentData()` между сторонами не синхронизируется. Клиент всегда видит `false`,
+поэтому поверх звука удара о землю играет обычный звук приземления.
+
+### I7. Мелочи
+
+- `armormod/menu/ArmorSidePanelSlot.java:42-52` — звук экипировки играет и на клиенте, и на сервере
+  (broadcast без «кроме игрока»), плюс срабатывает на `initializeContents` при открытии стола:
+  до четырёх звуков просто за открытие GUI.
+- `ModPowerArmorItem.java:377` пишет тик как `putInt`, а читает `getLong` (`:371`); после
+  `gameTime > Integer.MAX_VALUE` кэш гейгера отключится навсегда. Там же
+  `Inventory.contains(getDefaultInstance())` сравнивает компоненты — гейгер с любым NBT не найдётся.
+- `armormod/client/ArmorModificationClientEvents.init()` и `ModTooltipHandler.init()` зовутся только
+  из forge-веток: на NeoForge тултипы модов брони и резистов не отображаются вовсе.
+- Мёртвый код: `ModArmorFSB.steppy/handleJump/handleFall` без вызывающих
+  (в `handleFall:270` есть `entity.hurt` без side-check — безвредно только потому, что мёртв).
+
+## J. Инспекция hazard-системы (найдено, НЕ исправлено)
+
+### J1. Полный обход инвентаря каждый тик без гейта
+
+`event/PlayerHazardHandler.java:34` — `TickEvent.PLAYER_POST` без интервала: 36 слотов + 4 брони
+на игрока **каждый тик** (сравни `radiation/PlayerHandler.java:193`, где гейт `< 20` есть).
+Это 800 вызовов `getHazardsFromStack` в секунду на игрока.
+
+Там же **функциональный баг**: `inventory.offhand` не сканируется вовсе — радиоактивный предмет
+в левой руке не облучает. При этом гейгер его учитывает (`radiation/PlayerHandler.java:250`
+включает `getOffhandItem`), то есть счётчик показывает дозу, которую сервер не применяет.
+
+### J2. Главная горячая точка: O(инвентарь²) + аллокации
+
+`hazard/type/HazardTypeRadiation.java:36`
+
+```java
+reacher = player.getInventory().contains(new ItemStack(ModItems.REACHER.get()));
+```
+
+`Inventory.contains(ItemStack)` обходит все 41 слот, а `new ItemStack(ItemLike)` аллоцирует два
+объекта. И это выполняется **на каждый опасный стек**, внутри цикла из J1, хотя результат для
+всех итераций одинаков — это свойство игрока, вычисляемое заново 40 раз.
+
+При полном инвентаре урана: ~33 000 сравнений и 1 600 мусорных объектов в секунду на игрока.
+
+### J3. Обход всех сущностей измерения каждый тик
+
+`event/HazardEventHandler.java:23` — `level.getAllEntities()` без гейта, чтобы найти `ItemEntity`.
+На 4 000 сущностей в трёх измерениях это 240 000 итераций в секунду.
+
+### J4. `RBMKRodItem.readTag` мутирует стек при чтении
+
+`item/rbmk/RBMKRodItem.java:285-296` — при отсутствии компонента метод **записывает**
+`CUSTOM_DATA` в стек. Вызывается из чисто читающего пути хазардов
+(`HazardModifierRBMKHot`, `HazardModifierRBMKRadiation`). Следствия: сервер пишет NBT в предмет
+просто оттого, что он лежит в инвентаре (лишний слот-синк и пересохранение), а на клиенте то же
+происходит **при отрисовке тултипа** — клиентская копия расходится с серверной. Плюс три полные
+deep-копии NBT на стержень за тик.
+
+### J5. `HAZARD_CACHE` никогда не инвалидируется
+
+`hazard/HazardSystem.java:43` — кэш `Item → List<HazardEntry>` без хука на перезагрузку датапаков,
+хотя правила вешаются на **datapack-driven** теги (`HazardRegistry.java:323`, `forge:ingots/uranium`).
+После `/reload` предмет сохраняет старую опасность до перезапуска сервера. Кэш вдобавок отдаёт
+свой изменяемый `ArrayList`, а `HazardTransformerBase.transformPost` спроектирован дописывать
+в этот список — сейчас трансформеры мертвы, но при их подключении это станет утечкой.
+
+### J6. Гонка на `HashMap` между потоками
+
+`radiation/PlayerHandler.java:44` — `playerRads` / `tickCounters` это обычные `HashMap`.
+Пишет серверный поток (до 40 раз за тик на игрока через `ContaminationUtil.contaminate`),
+а читает **клиентский рендер-поток**: `particle/helper/ParticleEffectClient.java:46`.
+В одиночной игре это классический рецепт зависания в `HashMap.getNode`.
+
+Побочно: на выделенном сервере клиент никогда не заполняет `playerRads` (реальное значение живёт
+в `OverlayGeiger.clientPlayerRadiation`), поэтому аура радиации выше 600 RAD в мультиплеере
+не рендерится вообще.
+
+## K. Инспекция block / blockentity (найдено, НЕ исправлено)
+
+**Общая тема раздела: логика, живущая только в `//? if forge {`.** Тот же класс проблем, что
+с системой защиты брони (раздел I2). На NeoForge эти ветки не выполняются, neoforge-аналога нет.
+
+### K1. Жидкостные клапаны не восстанавливают узел сети после перезагрузки
+
+`blockentity/machines/FluidValveBlockEntity.java:149-155` — `FluidNode` создаётся только в
+`onLoad()` (`//? if forge`) и `setLevel()` (`//? if fabric`, `:157-163`). Клапан к тому же не
+тикает: `FluidValveBlock.java:44-48` возвращает `null` из `getTicker`.
+
+`ensureNode` зовётся лишь из `updateRedstone` (`:88`, причём с ранним выходом `if (newOpen == open) return;`)
+и `setFluidType`. Итог: **после рестарта сервера открытый клапан не создаёт узел, и трубопровод
+остаётся разорванным**, пока кто-нибудь не дёрнет редстоун.
+
+### K2. Семь машин без fluid-капабилити на NeoForge
+
+Привязка обработчика жидкости заключена в `//? if forge {`, а класс не реализует `IFluidUserMK2`,
+поэтому `getFluidHandler` вернёт `null` и `ModCapabilities.java:73-77` зарегистрирует null-провайдер.
+Ни одна из семи не участвует и в MK2-сети:
+
+| машина | строка |
+|---|---|
+| `MachineSteamTurbineBlockEntity` | `:199-203` — **паровая турбина не принимает пар из труб** |
+| `MachineFrackingTowerBlockEntity` | `:520-525` |
+| `MachineCoreInjectorBlockEntity` | `:50-59` |
+| `MachineArcFurnaceBlockEntity` | `:73-79` |
+| `MachineCombinationOvenBlockEntity` | `:66-71` |
+| `MachineMiningDrillBlockEntity` | `:118-123` |
+| `MachineOreSlopperBlockEntity` | `:70-75` |
+
+Работает только ручная заливка канистрами там, где есть слоты.
+
+### K3. `onChunkUnloaded` мёртв — узлы и энергоподписки не освобождаются
+
+`FluidDuctBlockEntity:215-225`, `FluidValveBlockEntity:172-178`, `FluidExhaustBlockEntity:117-130`,
+`UniversalMachinePartBlockEntity:590-597` (там же `EnergySubscriptions.unsubscribeAll`).
+Все — `//? if forge {`. Что метод доступен на NeoForge, видно по соседнему `onLoad` без обёртки
+(`MachineFluidTankBlockEntity:169-176`).
+
+Следствие: при выгрузке чанка узлы остаются в неймспейсе со ссылкой на удалённый BE, подписки
+не снимаются — рост памяти и работа сети «через выгруженные чанки» на долгоживущем сервере.
+
+### K4. Прочее из того же класса
+
+- `UniversalMachinePartBlockEntity.onLoad:573-588` — уведомление соседей при загрузке потеряно,
+  соединения труб вокруг мультиблока не пересчитываются до первого блок-апдейта.
+- `FluidDuctBlockEntity.onLoad:168-193` — пересчёт соединений при загрузке мёртв (узел спасает
+  `tick`, состояние соединений — нет).
+
+### K5. Сканы без проверки загрузки
+
+- `MachineHephaestusBlockEntity:83-88` → `:107-109` — `level.getFluidState` по окну 15×15
+  (`SCAN_RANGE = 7`) **каждый тик**, без `isLoaded`; окно гарантированно пересекает границы чанков.
+  4500 обращений/сек на машину, на краю симуляции — синхронная генерация. Корректный образец
+  рядом: `MachineSolarBoilerBlockEntity:256`.
+- `OilDrillBaseBlockEntity:127-139`, `:146-148` — два прохода по колонне с `getBlockState` по
+  четырём сторонам, на границе чанка тянет соседа.
+- `MachineAutosawBlockEntity:107` и flood fill в `fell()` — радиус 15 без единой проверки.
+
+### K6. Мелочи
+
+- `RBMKColumnBlockEntity:232` — глобальный флаг `dropLids = false` без `try/finally`,
+  восстановление только линейным путём на `:338`. Исключение в мелтдауне оставит флаг сброшенным
+  до перезапуска процесса — крышки RBMK перестанут дропаться.
+- `blockentity/network/radio/RTTYNetwork.java:28` — из `BROADCAST` записи никогда не удаляются;
+  статический `lastProcessedTick` (`:53`) переживает выгрузку мира.
+
+**Проверено и чисто:** симметрия NBT по всем 573 файлам; мутации `ItemStack`/DataComponents на
+пути чтения (только два места, оба на пути дропа); `entityInside`/`randomTick` газов и фоллаута
+корректно закрыты `isClientSide`.
+
+## L. Инспекция inventory
+
+### L1. Дюп ×2 при shift-клике в теплообменнике — ИСПРАВЛЕНО
+
+`inventory/menu/MachineHeatexMenu.java` — меню состоит **только** из 36 слотов инвентаря игрока
+(машинных слотов у теплообменника нет), а `quickMoveStack` звал
+`moveItemStackTo(slotStack, 0, this.slots.size(), true)`, то есть диапазон включал сам слот-источник.
+При слиянии `moveItemStackTo` сравнивает стек сам с собой: `j = count + count`, затем
+`stack.setCount(0)` и `itemstack.setCount(j)` — над одним и тем же объектом. **Стек удваивался
+при каждом shift-клике.**
+
+Исправлено разделением на «основной инвентарь ↔ хотбар», как в ванильных меню.
+
+### L2. Устаревший снимок в трёх RBMK-меню — ИСПРАВЛЕНО
+
+`RBMKOutgasserMenu`, `RBMKStorageMenu`, `RBMKAutoloaderMenu` строят собственный `SimpleContainer`
+один раз в конструкторе и в `setChanged()` пишут снимок целиком обратно в блок. Блок при этом
+продолжает тикать и менять те же поля, а ре-синка не было (он есть только в `RBMKRodMenu:85-94`).
+
+Итог: подержать GUI открытым до конца обработки и кликнуть по любому слоту —
+**израсходованный вход возвращался (дюп), готовый выход затирался (потеря)**.
+
+Исправлено добавлением `broadcastChanges()` с ре-синком по образцу `RBMKRodMenu`; заодно в
+`RBMKOutgasserMenu` добавлены null-проверки `be`, которых там не хватало (`RBMKAutoloaderMenu`
+и `RBMKRodMenu` их имеют).
+
+### L3. Битый shift-click ID-слота в пяти баках — ИСПРАВЛЕНО
+
+`BarrelIronMenu:167`, `BarrelSteelMenu:167`, `Bat9000Menu:168`, `FluidTankMenu:166`,
+`MachineFluidTankMenu:176` целились в `MACHINE_SLOTS + 0 .. +1`, но `MACHINE_SLOTS` равен
+`PLAYER_INVENTORY_START` — то есть в первый слот игрока, а не в ID-слот машины. Соседние ветки
+в тех же методах используют константы блока корректно, так что это опечатка.
+
+Дюпа не давало только потому, что `FluidIdentifierItem` имеет `stacksTo(1)`; со стакающимся
+идентификатором это стало бы дюпом класса L1. Исправлено на диапазон `[0, 1)`.
+
+### L4. Найдено, НЕ исправлено
+
+- **Кнопки режима фильтра кранов не шлют пакет.** `gui/GUIMachineCraneExtractor.java:86`, `:92`,
+  `GUIMachineCraneGrabber.java:78`, `GUIMachineCraneBoxer.java:71` зовут `nextMode()` /
+  `toggleMaxEject()` на **клиентском** BE. Ни один из этих экранов не отправляет C2S-пакет, так что
+  режим фильтра и maxEject никогда не доходят до сервера — фильтрация кранов в мультиплеере
+  не работает вовсе.
+- **Побочный эффект в `Slot.set` сбрасывает режимы фильтров.** `MachineCraneExtractorMenu:46-49`
+  и ещё четыре меню зовут `initPattern`, который безусловно ставит `MODE_EXACT`. При открытии GUI
+  `initializeContents` дёргает `set` для каждого слота — все девять фильтров сбрасываются в EXACT
+  на клиенте.
+- **Латентный дюп жидкости.** `inventory/fluid/tank/FluidLoaderFillableItem.java:25` мутирует
+  массив из `pryMods` и не пишет обратно (метода записи вообще нет) — при сливе бак наполняется,
+  а мод остаётся полным. Сейчас не стреляет: модов брони с баком не существует.
+- **NPE-риски и фиктивные BE.** `RBMKStorageMenu.getBlockEntity` бросает `IllegalStateException`
+  без клиентской ветки; `AnvilMenu:40` при отсутствии BE подменяет его новым на `BlockPos.ZERO`,
+  и `stillValid` проверяет блок в координатах (0,0,0).
+
+**Проверено и чисто:** все 134 `quickMoveStack` (кроме L1) не теряют и не дублируют предметы;
+размеры инвентарей BE и меню совпадают; `FluidTank` клампит fill и корректно защищает мутации;
+клиентские классы вне `gui/` есть только в `FluidTank`, но все помечены `@OnlyIn(Dist.CLIENT)`.
+
 ## C. Мелочи
 
 - **Отладочный вывод в проде — УБРАНО.** `PlatformRecipeSerializer` печатал в `System.err`

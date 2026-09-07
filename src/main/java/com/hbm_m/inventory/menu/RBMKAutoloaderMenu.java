@@ -96,6 +96,23 @@ public class RBMKAutoloaderMenu extends AbstractContainerMenu {
 
     public RBMKAutoloaderBlockEntity getBlockEntity() { return blockEntity; }
 
+    /**
+     * Меню держит снимок слотов, а блок продолжает тикать и менять свои поля. Без ре-синка клик
+     * по слоту записывал устаревший снимок обратно в BE. Тот же приём, что в {@code RBMKRodMenu}.
+     */
+    @Override
+    public void broadcastChanges() {
+        if (blockEntity != null) {
+            for (int i = 0; i < RBMKAutoloaderBlockEntity.SLOTS; i++) {
+                Slot slot = this.slots.get(i);
+                if (!ItemStack.matches(slot.getItem(), blockEntity.slots[i])) {
+                    slot.set(blockEntity.slots[i].copy());
+                }
+            }
+        }
+        super.broadcastChanges();
+    }
+
     @Override
     public boolean stillValid(Player player) {
         // тайл может отсутствовать на клиенте (реплей Flashback)

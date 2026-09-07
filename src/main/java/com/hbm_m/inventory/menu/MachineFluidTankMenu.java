@@ -173,7 +173,9 @@ public class MachineFluidTankMenu extends AbstractContainerMenu {
                 // Move from player inventory to machine slots
                 if (stackInSlot.getItem() instanceof IItemFluidIdentifier) {
                     // Put into the input fluid identifier slot
-                    if (!moveItemStackTo(stackInSlot, MACHINE_SLOTS + 0, MACHINE_SLOTS + 1, false)) {
+                    // Слот ID-in идёт первым в меню, то есть индекс 0. MACHINE_SLOTS равен
+                    // PLAYER_INVENTORY_START, поэтому прежний диапазон целил в инвентарь игрока.
+                    if (!moveItemStackTo(stackInSlot, 0, 1, false)) {
                         return ItemStack.EMPTY;
                     }
                 } else if (FluidItemAccess.hasFluidHandler(stackInSlot)) {
