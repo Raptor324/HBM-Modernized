@@ -1277,3 +1277,44 @@ deep-копии NBT на стержень за тик.
 - `SpearEntity:97,101`, `VortexEntity:34` — запись `SynchedEntityData` на клиенте.
 - `EntityProcessorStandard`/`EntityProcessorCross` после правок математики — проверить урон крипёров
   и боеголовок в игре.
+
+## P. Прогон на реальном сервере (192.168.1.20, 209 модов, NeoForge 21.1.248)
+
+Мод собран (`hbm_m-0.2.2-alpha+1.21.1-neoforge.jar`) и положен в `mods/` тестовой сборки trewa
+рядом с 208 другими модами (Create, Sable, AE2, Ad Astra, Alex's Caves, Iron's Spellbooks,
+Terralith, Quark, KubeJS, Dynamic Trees и т.д.).
+
+**Результат старта: чисто.** `Done (3.594s)`, мод определился и загрузился, `commonSetup finished`,
+миксин `LevelChunkSilentRemovalMixin` применён, биомы `hbm_m:crater/inner_crater/outer_crater`
+зарегистрированы, наши фичи попали в генерацию (46 фич в overworld). Ни одного `ERROR` от `hbm_m`.
+263 ошибки `LootDataType` и 23 `RecipeManager` в логе — чужие (`railways` и другие моды), к нам
+отношения не имеют. Лагов (`Can't keep up`) нет.
+
+### P1. Найдено на сервере и исправлено
+
+- **`HTTPHandler.loadSoyuz`/`loadTips` уходили в сеть без таймаутов.** Оба звали
+  `url.openStream()` напрямую, минуя собственный `readResponse` с
+  `setConnectTimeout`/`setReadTimeout`, поэтому недоступный gist вешал поток проверки версий до
+  таймаута ОС — на сервере это вылезло как `SocketTimeoutException: Read timed out` посреди
+  старта. Плюс `in.close()` стоял только на успешном пути, то есть при исключении соединение
+  утекало. Добавлен `readLines(URL)` с теми же настройками, что у `readResponse`, и
+  try-with-resources.
+- **Списки `capsule`/`tipOfTheDay` стали `volatile` и заменяются целиком.** Их пишет демон-поток
+  `NTM-Version-Checker`, а читать предполагается из игрового; прежний `add()` в общий `ArrayList`
+  ещё и дублировал записи при повторном вызове `loadStats`.
+- **Сообщение об ошибке было ложным** — второй `catch` тоже писал «Version checker failed!», хотя
+  падали загрузчики союза и подсказок.
+- **Убрана отладочная диагностика рецептов.** `ModRecipes.debugRecipeSerializerRegistry()`
+  вызывалась из `commonSetup` на каждом старте, печатала четыре строки `[HBM DEBUG]` в `STDERR` и
+  парсила фиктивный JSON-рецепт. Остаток от диагностики, парная к уже убранной из
+  `PlatformRecipeSerializer`.
+
+### P2. Найдено на сервере, НЕ баг
+
+- **`@Mixin target ... was not found` для шести клиентских миксинов.** Все шесть лежат в секции
+  `client` файла `mixins.hbm_m.json`, конфиг разделён правильно; Mixin на выделенном сервере всё
+  равно проходит по ним и пишет WARN. Некритичный шум, поведение не ломает.
+- **`Reference map 'mixins.hbm_m.refmap.json' could not be read`** — штатно для сборки без
+  обфускации.
+- **`quark:stoneling/toretoise ... added under MONSTER for hbm_m:crater`** — в наших биомах списки
+  спавна пустые (`spawners` во всех трёх json), мобов туда добавляет биом-модификатор Quark.

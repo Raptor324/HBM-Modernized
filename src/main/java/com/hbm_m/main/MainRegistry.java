@@ -164,10 +164,6 @@ public final class MainRegistry {
         com.hbm_m.blockentity.machines.LaunchPadBaseBlockEntity.registerLaunchables();
         com.hbm_m.satellite.Satellite.register();
 
-        // Диагностика загрузки рецептов на 1.21.1 — запускается ПОСЛЕ RegisterEvent.
-        //? if >= 1.21.1 {
-        com.hbm_m.recipe.ModRecipes.debugRecipeSerializerRegistry();
-        //?}
 
         // CentrifugeRecipes.registerRecipes();
         // Рецепты Cyclotron, CrucibleSmelting, MoltenAlloy, ArcWelder и Soldering теперь data-driven (JSON)
