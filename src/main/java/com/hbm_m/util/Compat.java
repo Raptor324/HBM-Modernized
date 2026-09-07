@@ -30,10 +30,6 @@ public final class Compat {
     }
 
     /** Port of {@code Compat.getTileStandard}: grabs a block entity without loading chunks. */
-    public static BlockEntity getTileStandard(Level level, int x, int y, int z) {
-        return getTileStandard(level, new BlockPos(x, y, z));
-    }
-
     public static BlockEntity getTileStandard(Level level, BlockPos pos) {
         if (pos == null || level == null || level.isOutsideBuildHeight(pos)) return null;
         LevelChunk chunk = getLoadedChunk(level, pos.getX(), pos.getZ());
@@ -44,7 +40,12 @@ public final class Compat {
 
     /** Already-resident chunk for a block position, or null. Never triggers loading or generation. */
     public static LevelChunk getLoadedChunk(Level level, int x, int z) {
+        return getLoadedChunkAt(level, x >> 4, z >> 4);
+    }
+
+    /** Same, addressed by chunk coordinates. */
+    public static LevelChunk getLoadedChunkAt(Level level, int chunkX, int chunkZ) {
         if (level == null) return null;
-        return level.getChunkSource().getChunkNow(x >> 4, z >> 4);
+        return level.getChunkSource().getChunkNow(chunkX, chunkZ);
     }
 }

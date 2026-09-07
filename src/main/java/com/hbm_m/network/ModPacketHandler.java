@@ -385,26 +385,26 @@ public class ModPacketHandler {
     // ══════════════════════════ Валидация C2S ═════════════════════════════════
 
     /**
-     * Guard for C2S packets carrying a {@link net.minecraft.core.BlockPos}: the position is chosen
-     * by the client, so it can point anywhere. Rejecting out-of-bounds and unloaded positions stops
-     * a packet from pulling in — and generating — chunks on the server thread.
+     * Block entity at a client-supplied {@link net.minecraft.core.BlockPos}, or null. The position
+     * comes from the packet and can point anywhere, so this never loads or generates a chunk on the
+     * server thread — an unloaded position simply reads as null.
      *
      * <p>Deliberately no distance check: contraption sub-levels (Sable / Create Aeronautics) drive
      * block entities the player is legitimately nowhere near, so a radius would break simulation.
+     * This is not an access check either — it only bounds where a packet can reach.
      */
-    public static boolean isPosUsable(ServerPlayer player, net.minecraft.core.BlockPos pos) {
-        if (pos == null) return false;
-        net.minecraft.world.level.Level level = player.level();
-        // Single source of truth for "is this chunk resident" — same helper the explosion code uses.
-        if (level.isInWorldBounds(pos) && com.hbm_m.util.Compat.isPositionLoaded(level, pos)) {
-            return true;
-        }
-        if (NET_DEBUG_PACKETS) {
+    public static net.minecraft.world.level.block.entity.BlockEntity blockEntityAt(
+            ServerPlayer player, net.minecraft.core.BlockPos pos) {
+        if (pos == null) return null;
+        // Compat resolves the chunk once and returns null unless it is already resident, so the
+        // guard and the lookup are a single step that cannot drift apart.
+        var be = com.hbm_m.util.Compat.getTileStandard(player.level(), pos);
+        if (be == null && NET_DEBUG_PACKETS) {
             com.hbm_m.main.MainRegistry.LOGGER.info(
-                    "[NET-DBG] C2S rejected: pos {} unusable for {}",
+                    "[NET-DBG] C2S rejected: no block entity at {} for {}",
                     pos, player.getGameProfile().getName());
         }
-        return false;
+        return be;
     }
 
     // ══════════════════════════ Отправка пакетов ══════════════════════════════

@@ -39,8 +39,7 @@ public class UpdateBatteryC2SPacket implements C2SPacket {
         context.queue(() -> {
             if (!(context.getPlayer() instanceof ServerPlayer player)) return;
 
-            if (!ModPacketHandler.isPosUsable(player, msg.pos)) return;
-            BlockEntity be = player.level().getBlockEntity(msg.pos);
+            BlockEntity be = ModPacketHandler.blockEntityAt(player, msg.pos);
             if (be instanceof MachineBatteryBlockEntity battery) {
                 battery.handleButtonPress(msg.buttonId);
             } else if (be instanceof BatterySocketBlockEntity socket) {

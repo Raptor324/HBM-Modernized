@@ -37,8 +37,7 @@ public class ToggleWoodBurnerPacket implements C2SPacket {
             if (!(context.getPlayer() instanceof ServerPlayer player)) return;
 
             ServerLevel level = player.serverLevel();
-            if (!ModPacketHandler.isPosUsable(player, msg.pos)) return;
-            BlockEntity be    = level.getBlockEntity(msg.pos);
+            BlockEntity be    = ModPacketHandler.blockEntityAt(player, msg.pos);
 
             if (be instanceof MachineWoodBurnerBlockEntity woodBurner) {
                 boolean currentState = woodBurner.isEnabled();

@@ -581,6 +581,50 @@ public static void performDash(Player player) {
 Отдельно стоит проверить, не дублируется ли синхронизация: у части машин рядом с
 `sendUpdateToClient()` в том же тике стоит ещё и `setChanged()`.
 
+## G. Осталось после симплификации (не сделано осознанно)
+
+Ревью качества показало, что chunk-safe доступ применён **поточечно, а не к механизму**.
+Ниже — места того же класса, оставшиеся нетронутыми; фикс каждого выходит за границы правок,
+но список стоит держать под рукой.
+
+**Прямые близнецы уже исправленного:**
+
+- `RBMKDisplayBlockEntity:106` — тот же скан `GRID×GRID` сырым `getBlockEntity` вокруг позиции
+  из NBT, что и `MachineRbmkConsoleBlockEntity.scanReactor`, который переведён на `Compat`.
+  Две копии одного скана, конвертирована одна.
+- `RBMKNeutronHandler:49` — `blockPosToTE` это единственная точка входа для `:158`, `:198`,
+  `:214`, `:291`. Одна строка закрывает четыре места; поток нейтронов уходит на `fluxRange`,
+  поэтому реактор на границе чанков тянет соседа каждый тик.
+- `EmpPulseEntity:75` — `allocate()` проверяет `hasChunk`, но `shock()` резолвит собранные позиции
+  на более поздних тиках, когда край уже мог выгрузиться. Ровно тот случай, ради которого
+  `Compat` и появился.
+
+**Хуже — принудительная генерация, а не только загрузка:**
+
+- `CraterBiomeApplier:80` и `WorldUtil:91` зовут `level.getChunk(cx, cz)` (load-and-generate)
+  по всему боксу кратера, без guard, только try/catch.
+
+**Позиции из NBT/линкеров без проверки:** `PylonBaseBlockEntity:100`, `MachineRadarBlockEntity:758`,
+`ItemWiring:62`, `RBMKToolItem:74`, `ItemDroneLinker:54`.
+
+**Широкие сканы взрывов** (`ShockwaveGenerator`, `BlastExplosionGenerator`, `CraterGenerator`,
+`BlockProcessorStandard:96` и др.) полагаются на region-тикет `EntityExplosionChunkloading`,
+который ограничен 12 чанками (MK3/Balefire/Solinium) и 31 (MK5) — радиус сверх этого кольца
+уходит за тикет. Для них правильная гранулярность — **один `getChunkNow` на чанк снаружи
+внутреннего цикла**, а не per-position guard.
+
+Отдельно не сделано, потому что это отдельные задачи:
+
+- слияние четырёх проходов `processResources` в один (сейчас каждый JSON в `data/` читается
+  ~2.7 раза, дерево обходится 4 раза: 12.7k чтений на 4757 файлов);
+- вынос повторяющихся stonecutter-веток `new ResourceLocation` / `fromNamespaceAndPath`
+  в один хелпер `rl(ns, path)` — 14 одинаковых блоков в двух провайдерах датагена;
+- `incrementRad` резолвит чанк дважды (`get` + `set`); один резолв требует смены контракта
+  `ChunkRadiationHandler`;
+- `ChunkRadiationAccess.get` возвращает `Optional`, который никогда не пуст (у атрибута есть
+  дефолтный поставщик) — две лишние аллокации на каждое чтение радиации, то есть на каждую
+  сущность каждый тик. Смена на nullable-аксессор меняет публичный API.
+
 ## C. Мелочи
 
 - **Отладочный вывод в проде — УБРАНО.** `PlatformRecipeSerializer` печатал в `System.err`

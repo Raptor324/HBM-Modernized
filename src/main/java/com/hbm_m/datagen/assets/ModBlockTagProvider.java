@@ -256,15 +256,16 @@ public class ModBlockTagProvider extends BlockTagsProvider {
                 var storageBlocksTagBuilder = this.tag(BlockTags.create(ResourceLocation.fromNamespaceAndPath("forge", "storage_blocks")));
         //?}
 
-        for (com.hbm_m.item.material.ModMaterials mat : com.hbm_m.item.material.ModMaterials.values()) {
-            if (!mat.has(com.hbm_m.item.material.MaterialShape.BLOCK)) continue;
-            if (!ModBlocks.hasIngotBlock(mat)) continue;
-            Block storageBlock = ModBlocks.getIngotBlock(mat).get();
+        //  Идём по самому реестру, а не по ModMaterials с ручным фильтром: INGOT_BLOCKS
+        //  заполняется ровно по mat.has(BLOCK), поэтому расхождение с ModItemTagProvider,
+        //  который делает copy тех же тегов, становится невозможным по построению.
+        for (var entry : ModBlocks.INGOT_BLOCKS.entrySet()) {
+            Block storageBlock = entry.getValue().get();
             //? if fabric && < 1.21.1 {
-            /^this.tag(BlockTags.create(new ResourceLocation("forge", "storage_blocks/" + mat.getId())))
+            /^this.tag(BlockTags.create(new ResourceLocation("forge", "storage_blocks/" + entry.getKey().getId())))
                     .add(storageBlock);
             ^///?} else {
-                        this.tag(BlockTags.create(ResourceLocation.fromNamespaceAndPath("forge", "storage_blocks/" + mat.getId())))
+                        this.tag(BlockTags.create(ResourceLocation.fromNamespaceAndPath("forge", "storage_blocks/" + entry.getKey().getId())))
                     .add(storageBlock);
             //?}
 

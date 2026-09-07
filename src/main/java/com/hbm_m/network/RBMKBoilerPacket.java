@@ -41,8 +41,7 @@ public class RBMKBoilerPacket implements C2SPacket {
     public static void handle(RBMKBoilerPacket pkt, PacketContext ctx) {
         ctx.queue(() -> {
             if (!(ctx.getPlayer() instanceof ServerPlayer player)) return;
-            if (!ModPacketHandler.isPosUsable(player, pkt.pos)) return;
-            if (!(player.level().getBlockEntity(pkt.pos) instanceof RBMKBoilerBlockEntity be)) return;
+            if (!(ModPacketHandler.blockEntityAt(player, pkt.pos) instanceof RBMKBoilerBlockEntity be)) return;
             // hasPermission: lengthVector() < 20
             if (player.distanceToSqr(pkt.pos.getX(), pkt.pos.getY(), pkt.pos.getZ()) > 400.0D) return;
 

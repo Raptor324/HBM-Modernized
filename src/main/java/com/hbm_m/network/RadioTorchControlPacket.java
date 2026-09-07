@@ -37,8 +37,7 @@ public class RadioTorchControlPacket implements C2SPacket {
     public static void handle(RadioTorchControlPacket packet, PacketContext context) {
         context.queue(() -> {
             if (!(context.getPlayer() instanceof ServerPlayer player)) return;
-            if (!ModPacketHandler.isPosUsable(player, packet.pos)) return;
-            var be = player.level().getBlockEntity(packet.pos);
+            var be = ModPacketHandler.blockEntityAt(player, packet.pos);
             if (be instanceof IRadioTorchConfigurable torch) {
                 torch.receiveControl(packet.data);
             }

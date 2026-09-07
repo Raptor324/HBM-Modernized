@@ -40,8 +40,7 @@ public class SoyuzLauncherControlPacket implements C2SPacket {
     public static void handle(SoyuzLauncherControlPacket pkt, PacketContext ctx) {
         ctx.queue(() -> {
             if (!(ctx.getPlayer() instanceof ServerPlayer player)) return;
-            if (!ModPacketHandler.isPosUsable(player, pkt.pos)) return;
-            if (player.level().getBlockEntity(pkt.pos) instanceof SoyuzLauncherBlockEntity launcher) {
+            if (ModPacketHandler.blockEntityAt(player, pkt.pos) instanceof SoyuzLauncherBlockEntity launcher) {
                 if (pkt.action == ACTION_SET_MODE) {
                     launcher.setMode(pkt.value);
                 } else if (pkt.action == ACTION_START) {

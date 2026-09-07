@@ -140,7 +140,7 @@ public class ModItemTagProvider extends ItemTagsProvider {
         //  Все storage_blocks/^ сразу — block-теги для них генерирует ModBlockTagProvider.
         //? if fabric && < 1.21.1 {
         /^this.copy(BlockTags.create(new ResourceLocation("forge", "storage_blocks")),
-                ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "storage_blocks")));
+                ItemTags.create(new ResourceLocation("forge", "storage_blocks")));
         ^///?} else {
                 this.copy(BlockTags.create(ResourceLocation.fromNamespaceAndPath("forge", "storage_blocks")),
                 ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "storage_blocks")));
@@ -151,7 +151,7 @@ public class ModItemTagProvider extends ItemTagsProvider {
             String storageName = "storage_blocks/" + mat.getId();
             //? if fabric && < 1.21.1 {
             /^this.copy(BlockTags.create(new ResourceLocation("forge", storageName)),
-                    ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", storageName)));
+                    ItemTags.create(new ResourceLocation("forge", storageName)));
             ^///?} else {
                         this.copy(BlockTags.create(ResourceLocation.fromNamespaceAndPath("forge", storageName)),
                     ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", storageName)));

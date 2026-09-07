@@ -21,6 +21,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.HitResult;
@@ -32,29 +33,27 @@ public class ExplosionNukeGeneric {
     public static void empBlast(Level level, int x, int y, int z, int bombStartStrength) {
         if (level.isClientSide) return;
         int r = bombStartStrength;
-        int r2 = r * r;
-        int r22 = r2 / 2;
-        for (int xx = -r; xx < r; xx++) {
-            int blockX = xx + x;
-            int xx2 = xx * xx;
-            for (int yy = -r; yy < r; yy++) {
-                int blockY = yy + y;
-                int xy2 = xx2 + yy * yy;
-                for (int zz = -r; zz < r; zz++) {
-                    if (xy2 + zz * zz < r22) {
-                        emp(level, blockX, blockY, zz + z);
+        int r22 = r * r / 2;
+        // The original walks every position of the sphere and looks a tile up per position — with
+        // r=50 that is ~1M iterations resolving ~49 chunk columns 185k times over. Only block
+        // entities can be affected, so iterate the chunks' block entities instead, like
+        // EmpPulseEntity.allocate does. Same machines hit, each chunk resolved once, no chunk loads.
+        for (int cx = (x - r) >> 4; cx <= (x + r) >> 4; cx++) {
+            for (int cz = (z - r) >> 4; cz <= (z + r) >> 4; cz++) {
+                LevelChunk chunk = com.hbm_m.util.Compat.getLoadedChunkAt(level, cx, cz);
+                if (chunk == null) continue;
+
+                for (BlockEntity be : new java.util.ArrayList<>(chunk.getBlockEntities().values())) {
+                    if (!(be instanceof IEnergyReceiver receiver)) continue;
+                    BlockPos pos = be.getBlockPos();
+                    int dx = pos.getX() - x;
+                    int dy = pos.getY() - y;
+                    int dz = pos.getZ() - z;
+                    if (dx * dx + dy * dy + dz * dz < r22) {
+                        receiver.setEnergyStored(0);
                     }
                 }
             }
-        }
-    }
-
-    private static void emp(Level level, int x, int y, int z) {
-        // Original uses Compat.getTileStandard here: an EMP sphere sweeps ~180k positions,
-        // so a plain getBlockEntity would pull in unloaded chunks one by one.
-        BlockEntity be = com.hbm_m.util.Compat.getTileStandard(level, x, y, z);
-        if (be instanceof IEnergyReceiver receiver) {
-            receiver.setEnergyStored(0);
         }
     }
 
@@ -154,10 +153,9 @@ public class ExplosionNukeGeneric {
             return false;
         }
 
-        // 2. Если цель находится в непрогруженном чанке - не вызываем clip (он повесит сервер)
-        int targetChunkX = (int) a >> 4;
-        int targetChunkZ = (int) c >> 4;
-        if (!level.hasChunk(targetChunkX, targetChunkZ)) {
+        // 2. Если цель находится в непрогруженном чанке - не вызываем clip (он повесит сервер).
+        // Через Compat, а не level.hasChunk: на клиенте тот безусловно возвращает true.
+        if (!com.hbm_m.util.Compat.isPositionLoaded(level, (int) a, (int) c)) {
             return true;
         }
 
@@ -178,7 +176,7 @@ public class ExplosionNukeGeneric {
                 new Vec3(a, b, c),
                 ClipContext.Block.COLLIDER,
                 ClipContext.Fluid.NONE,
-                net.minecraft.world.phys.shapes.CollisionContext.empty()
+                CollisionContext.empty()
         ));
         //?}
         return hit.getType() != HitResult.Type.MISS;

@@ -215,15 +215,14 @@ tasks.named<ProcessResources>("processResources") {
 		// The block above moves the tag files, but references inside JSON stay "forge:".
 		// Unremapped, recipes match an empty tag and silently stop crafting.
 		// The leading quote in the pattern keeps "neoforge:add_features" intact.
-		val tagRefRenames = mapOf("glass" to "glass_blocks")
+		// glass is the only tag whose name also changed: NeoForge calls it c:glass_blocks.
 		dataDir.walkTopDown().filter { it.isFile && it.extension == "json" }.forEach { file ->
 			val text = file.readText()
-			if (!text.contains("\"forge:") && !text.contains("\"#forge:")) return@forEach
-			var out = text.replace("\"#forge:", "\"#c:").replace("\"forge:", "\"c:")
-			for ((old, new) in tagRefRenames) {
-				out = out.replace("\"c:$old\"", "\"c:$new\"").replace("\"#c:$old\"", "\"#c:$new\"")
-			}
-			file.writeText(out)
+			if (!text.contains("forge:")) return@forEach
+			val out = text.replace("\"#forge:", "\"#c:").replace("\"forge:", "\"c:")
+				.replace("\"c:glass\"", "\"c:glass_blocks\"").replace("\"#c:glass\"", "\"#c:glass_blocks\"")
+			// "neoforge:" also matches the guard above, so only write when something actually changed.
+			if (out != text) file.writeText(out)
 		}
 
 		// Remap silk-touch условия в loot-таблицах: датаген (1.20.1) пишет

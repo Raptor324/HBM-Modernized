@@ -126,7 +126,7 @@ public class AmmoPressRecipe extends PlatformRecipe {
             for (int i = 0; i < AmmoPressRecipe.GRID_SIZE && i < ingredientsArray.size(); i++) {
                 // A null entry is an empty slot of the 3x3 grid; Ingredient.CODEC rejects JsonNull.
                 JsonElement entry = ingredientsArray.get(i);
-                if (entry == null || entry.isJsonNull()) {
+                if (entry.isJsonNull()) {
                     continue;
                 }
                 inputs.set(i, RecipeHooks.ingredientFromJson(entry));

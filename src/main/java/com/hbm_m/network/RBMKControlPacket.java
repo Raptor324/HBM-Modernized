@@ -61,8 +61,7 @@ public class RBMKControlPacket implements C2SPacket {
     public static void handle(RBMKControlPacket pkt, PacketContext ctx) {
         ctx.queue(() -> {
             if (!(ctx.getPlayer() instanceof ServerPlayer player)) return;
-            if (!ModPacketHandler.isPosUsable(player, pkt.pos)) return;
-            if (!(player.level().getBlockEntity(pkt.pos) instanceof RBMKControlBlockEntity be)) return;
+            if (!(ModPacketHandler.blockEntityAt(player, pkt.pos) instanceof RBMKControlBlockEntity be)) return;
 
             switch (pkt.action) {
                 case ACTION_SET_TARGET -> be.setTarget(pkt.doubleVal);
