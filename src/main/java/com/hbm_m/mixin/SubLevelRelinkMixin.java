@@ -54,24 +54,28 @@ public abstract class SubLevelRelinkMixin {
         remap = false,
         require = 0
     )
-    private void hbm_m$relinkPartAfterMove(LevelChunk chunk, BlockPos pos, BlockState state, boolean flag) {
-        chunk.setBlockState(pos, state, flag);
+    // static and returning BlockState: moveBlocks is `public static` and the redirected
+    // LevelChunk.setBlockState returns the previous state, so the old non-static void form could
+    // not apply and parts kept their stale ControllerPos after a move.
+    private static BlockState hbm_m$relinkPartAfterMove(LevelChunk chunk, BlockPos pos, BlockState state, boolean flag) {
+        BlockState previous = chunk.setBlockState(pos, state, flag);
 
         // Нас интересует только запись НАЗНАЧЕНИЯ реального блока (не очистка AIR).
         if (state.isAir()) {
-            return;
+            return previous;
         }
         if (!(chunk.getLevel() instanceof ServerLevel serverLevel)) {
-            return;
+            return previous;
         }
         BlockEntity be = chunk.getBlockEntity(pos);
         if (!(be instanceof IMultiblockPart part)) {
-            return;
+            return previous;
         }
         // Окно сборки открыто (SubLevelMoveWindowMixin), поэтому каскадов не будет:
         // детерминированная проверка либо перепривяжет часть сразу (контроллер уже
         // перенесён), либо ничего не сделает — тогда сработает retry-самолечение.
         MultiblockStructureHelper.relinkOrphanedPartDeterministic(serverLevel, pos, part);
+        return previous;
     }
 }
 //?}

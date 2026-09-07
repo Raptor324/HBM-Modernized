@@ -1504,3 +1504,63 @@ AdAstraNeoForge.<init> → AdAstra.init → StationLoader.init (ad_astra 1.16.24
 - Мёртвый код в сборке: `util/CraterGenerator`, `util/CraterBiomeApplier`, `util/BlockExplosionDefense`
   (живой путь — `util/explosions/nuclear/*`), `util/explosions/trash_that_i_forgot_to_delete/*`,
   `worldgen/OilClasterSurroundedFeature` (в `ModWorldGen` есть, configured feature нет).
+
+## U. Совместимость с Sable: дюп мультиблоков при сборке/разборке
+
+**Репорт:** при сборке/разборке Sable-структур мультиблоки HBM дюпались.
+
+**Причина.** Sable 2.0.5 объявляет обе точки входа статическими:
+
+```
+public static ServerSubLevel assembleBlocks(ServerLevel, BlockPos, Iterable<BlockPos>, BoundingBox3ic)
+public static void          moveBlocks(ServerLevel, AssemblyTransform, Iterable<BlockPos>)
+```
+
+А во всех трёх наших Sable-миксинах обработчики были объявлены **нестатическими**
+(`private void`). Mixin для статического таргета требует статический обработчик, поэтому
+**ни один из них не применялся**. Дополнительно:
+
+- инъекции в `assembleBlocks` использовали `CallbackInfo`, хотя метод возвращает значение —
+  нужен `CallbackInfoReturnable`;
+- `SubLevelAssembleExpansionMixin` не принимал четвёртый параметр `BoundingBox3ic`;
+- `@Redirect` в `SubLevelRelinkMixin` возвращал `void`, тогда как перехватываемый
+  `LevelChunk.setBlockState` возвращает `BlockState`.
+
+Сверено по jar Sable 2.0.5 с тестового сервера (`javap`) и по эталону — мод `waystonessable`
+миксинит тот же метод и объявляет
+`(ServerLevel, BlockPos, Iterable<BlockPos>, BoundingBox3ic, CallbackInfoReturnable<ServerSubLevel>)`.
+
+**Механизм дюпа** описан в javadoc самого `ContraptionAssemblyGuard`: внутри окна удаление наших
+блоков — это перенос, движок уже сохранил state+NBT. Без окна на `onRemove` срабатывают каскад
+`destroyStructure`, дроп станка по лут-таблице и дроп содержимого инвентаря — при том, что Sable
+одновременно воссоздаёт блок на корабле. Окно не открывалось никогда, отсюда и дубликаты.
+`SubLevelRelinkMixin` тоже не работал, поэтому перенесённые части сохраняли устаревший
+`ControllerPos`.
+
+### U1. Исправлено
+
+- Все четыре обработчика окна сделаны статическими; пара на `assembleBlocks` переведена на
+  `CallbackInfoReturnable<?>`.
+- `@Redirect` перепривязки сделан статическим и возвращает предыдущий `BlockState`.
+
+### U2. Осталось: расширение до полного мультиблока на пути сборщика Sable
+
+`SubLevelAssembleExpansionMixin` требует в сигнатуре `BoundingBox3ic`, а Sable не подключён как
+зависимость компиляции — назвать тип в исходнике нечем. Пока расширение не работает: если игрок
+приклеил только контроллер или одну часть, в корабль уедет ровно она, а остальные части останутся
+в мире осиротевшими (каскад теперь подавлен окном, то есть они не разрушатся, а именно останутся).
+Машина не работает ни там, ни там.
+
+Затрагивает **только** путь собственного сборщика Sable. Клеевое выделение
+(`SuperGlueSelectionHelperMixin`) и BFS Create (`ContraptionMixin`) расширение делают; их
+обработчики объявлены корректно (таргеты нестатические).
+
+Варианты:
+1. Подключить Sable как `compileOnly` — сигнатура пишется точно, как у `waystonessable`.
+2. Переписать на `@ModifyVariable(argsOnly = true, index = 2)` по аргументу `Iterable` — только
+   ванильные типы, но `ServerLevel` придётся доставать отдельным способом.
+3. Оставить как есть — см. последствия выше.
+
+**Важно:** до правки U1 третий вариант вёл себя иначе — окно не открывалось, и недозахваченные
+части сносило каскадом (машина ломалась, но копии не оставалось). Теперь каскад подавлен, поэтому
+без U2 части будут именно оставаться в мире.
