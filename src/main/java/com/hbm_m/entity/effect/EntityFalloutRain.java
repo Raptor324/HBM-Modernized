@@ -467,7 +467,10 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
         BlockState fire = Blocks.FIRE.defaultBlockState();
 
         for (int y = topY; y >= minY; y--) {
-            if (depth >= 3) return;
+            // break, not return: tryPlaceFalloutLayer below has to run. depth reaches 3 in any
+            // ordinary column (grass, dirt, stone), so returning here meant the fallout layer was
+            // never placed on normal terrain at all.
+            if (depth >= 3) break;
 
             // Скип целиком воздушных секций: после кратера под поверхностью десятки
             // секций воздуха, поблочный провал до minY был заметной частью тика.

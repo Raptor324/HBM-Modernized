@@ -159,8 +159,11 @@ public class SoyuzEntity extends Entity {
             if (capsule != null) {
                 capsule.setPayload(payload);
                 capsule.setPos(targetX + 0.5, DEPLOY_HEIGHT, targetZ + 0.5);
-                server.getChunkSource().addRegionTicket(net.minecraft.server.level.TicketType.FORCED,
-                        new net.minecraft.world.level.ChunkPos(targetX >> 4, targetZ >> 4), 2, net.minecraft.world.level.ChunkPos.ZERO);
+                net.minecraft.world.level.ChunkPos landing =
+                        new net.minecraft.world.level.ChunkPos(targetX >> 4, targetZ >> 4);
+                server.getChunkSource().addRegionTicket(SoyuzCapsuleEntity.CHUNK_TICKET, landing,
+                        SoyuzCapsuleEntity.CHUNK_TICKET_RADIUS, capsule.getUUID());
+                capsule.setLoadedChunk(landing);
                 server.addFreshEntity(capsule);
             }
         }

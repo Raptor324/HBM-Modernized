@@ -504,14 +504,20 @@ public class NukeMk5ChunkEater implements IExplosionRay {
     private boolean fluidsCleared = false;
     private boolean fluidClearInProgress = false;
     private int fluidClearCursorX;
+    /** Z cursor: the deadline can hit mid-column, and only the X loop header advanced the cursor,
+     *  so a column that did not fit into one budget was rescanned from the start forever - the
+     *  sweep never finished and the eater's chunk tickets were never released. */
+    private int fluidClearCursorZ;
 
     public void clearRemainingFluidsInCrater(int budgetMs) {
         if (fluidsCleared) return;
 
         int maxR = this.length;
+
         if (!fluidClearInProgress) {
             fluidClearInProgress = true;
             fluidClearCursorX = posX - maxR;
+            fluidClearCursorZ = posZ - maxR;
         }
 
         long deadline = System.currentTimeMillis() + budgetMs;
@@ -519,22 +525,22 @@ public class NukeMk5ChunkEater implements IExplosionRay {
         int maxY = level.getMaxBuildHeight();
 
         outer:
-        for (; fluidClearCursorX <= posX + maxR; fluidClearCursorX++) {
-            for (int z = posZ - maxR; z <= posZ + maxR; z++) {
+        for (; fluidClearCursorX <= posX + maxR; fluidClearCursorX++, fluidClearCursorZ = posZ - maxR) {
+            for (; fluidClearCursorZ <= posZ + maxR; fluidClearCursorZ++) {
                 if (System.currentTimeMillis() >= deadline) {
                     break outer;
                 }
 
                 double dx = fluidClearCursorX + 0.5D - posX;
-                double dz = z + 0.5D - posZ;
+                double dz = fluidClearCursorZ + 0.5D - posZ;
                 if (dx * dx + dz * dz > (double) maxR * maxR) {
                     continue;
                 }
 
                 for (int y = minY; y < maxY; y++) {
-                    BlockState state = blockAt(fluidClearCursorX, y, z);
+                    BlockState state = blockAt(fluidClearCursorX, y, fluidClearCursorZ);
                     if (state != null && !state.getFluidState().isEmpty()) {
-                        clearBlock(fluidClearCursorX, y, z);
+                        clearBlock(fluidClearCursorX, y, fluidClearCursorZ);
                     }
                 }
             }
@@ -803,6 +809,7 @@ public class NukeMk5ChunkEater implements IExplosionRay {
         tag.putBoolean("fluidsCleared", fluidsCleared);
         tag.putBoolean("fluidClearInProgress", fluidClearInProgress);
         tag.putInt("fluidClearCursorX", fluidClearCursorX);
+        tag.putInt("fluidClearCursorZ", fluidClearCursorZ);
         ListTag list = new ListTag();
         for (Map.Entry<ChunkPos, TipStore> e : perChunk.entrySet()) {
             CompoundTag entry = new CompoundTag();
@@ -823,6 +830,7 @@ public class NukeMk5ChunkEater implements IExplosionRay {
         fluidsCleared = tag.getBoolean("fluidsCleared");
         fluidClearInProgress = tag.getBoolean("fluidClearInProgress");
         fluidClearCursorX = tag.getInt("fluidClearCursorX");
+        fluidClearCursorZ = tag.getInt("fluidClearCursorZ");
         ListTag list = tag.getList("chunks", Tag.TAG_COMPOUND);
         for (int i = 0; i < list.size(); i++) {
             CompoundTag entry = list.getCompound(i);

@@ -51,7 +51,8 @@ public final class CustomNukeExplosion {
             put(map, Items.REDSTONE_BLOCK, Kind.MULT, T_TNT, 1.5F);
             // === Ядерные ===
             put(map, ModItems.GADGET_CORE.get(), Kind.ADD, T_NUKE, 30F);
-            put(map, ModItems.FAT_MAN_CORE.get(), Kind.ADD, T_NUKE, 30F);
+            // FAT_MAN_CORE was listed twice (30F then 25F); the first entry was dead. Which of the
+            // two the second line was meant to be is unknown, so the effective value is kept.
             put(map, ModItems.FAT_MAN_CORE.get(), Kind.ADD, T_NUKE, 25F);
             // === Водород ===
             put(map, ModItems.CELL_DEUTERIUM.get(), Kind.ADD, T_HYDRO, 30F);
@@ -108,7 +109,7 @@ public final class CustomNukeExplosion {
             /// ЯДЕРНЫЙ ///
         } else if (yields.nuke() > 0) {
             float nuke = Math.min(yields.nuke() + yields.tnt() / 2, MAX_NUKE);
-            NuclearExplosionAPI.startLargeNuke(level, x + 0.5, yPos + 5, z + 0.5, (int) nuke);
+            NuclearExplosionAPI.startLargeNuke(level, x + 0.5, yPos + 0.5, z + 0.5, (int) nuke);
             /// КРУПНЫЙ ТНТ (без радиации) ///
         } else if (yields.tnt() >= 75) {
             NuclearExplosionAPI.startLargeNukeNoRad(level, x + 0.5, yPos + 0.5, z + 0.5,

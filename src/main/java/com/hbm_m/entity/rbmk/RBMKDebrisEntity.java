@@ -91,6 +91,10 @@ public class RBMKDebrisEntity extends Entity {
 
     @Override
     public void tick() {
+        // Entity.tick() is the only thing that advances tickCount, and the despawn check below
+        // reads it. Without this, debris lived forever even with the perma-scrap dial off.
+        baseTick();
+
         if (!hasSizeSet) {
             hasSizeSet = true;
             refreshDimensions();

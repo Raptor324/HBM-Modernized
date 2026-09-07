@@ -113,8 +113,11 @@ public class EntityMist extends Entity {
             FluidType type = this.getFluidType();
             double intensity = 1.0D - (double) this.tickCount / (double) this.getMaxAge();
 
+            // The box above is already `width` wide, so inflating it by -width/2 per side collapsed
+            // it to a zero-width slab through the centre: only an entity straddling the mist axis
+            // was ever affected.
             AABB box = this.getBoundingBox();
-            List<Entity> affected = this.level().getEntities(this, box.inflate(-width / 2.0, 0.0, -width / 2.0));
+            List<Entity> affected = this.level().getEntities(this, box);
             for (Entity entity : affected) {
                 this.affect(entity, type, intensity);
             }

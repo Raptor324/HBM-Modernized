@@ -73,11 +73,16 @@ public class EntityProcessorCross implements IEntityProcessor {
         Vec3[] nodes;
 
         if (this.nodeDist > 0) {
+            // Six directions plus the centre. The loop ran to 7 over from3DDataValue, which wraps
+            // modulo 6, so node 6 was a second DOWN and the centre node was missing entirely - an
+            // entity with clear line of sight to the blast got density 0 when all six offset nodes
+            // sat inside blocks.
             nodes = new Vec3[7];
-            for (int i = 0; i < 7; i++) {
+            for (int i = 0; i < 6; i++) {
                 Direction dir = Direction.from3DDataValue(i);
                 nodes[i] = new Vec3(x + dir.getStepX() * nodeDist, y + dir.getStepY() * nodeDist, z + dir.getStepZ() * nodeDist);
             }
+            nodes[6] = new Vec3(x, y, z);
         } else {
             nodes = new Vec3[1];
             nodes[0] = new Vec3(x, y, z);

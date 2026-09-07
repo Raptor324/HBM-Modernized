@@ -24,11 +24,17 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Random;
 
-import static com.hbm_m.entity.grenades.GrenadeProjectileEntity.GRENADE_TYPE_ID;
 
 
 public class GrenadeIfProjectileEntity extends ThrowableItemProjectile {
 
+    /**
+     * Own accessor. This used to read GrenadeProjectileEntity.GRENADE_TYPE_ID, which is registered
+     * on a different class and so is not defined on this entity at all: the get threw, the catch
+     * swallowed it, and every grenade rendered and behaved as the plain IF variant on the client.
+     */
+    private static final EntityDataAccessor<String> GRENADE_IF_TYPE_ID =
+            SynchedEntityData.defineId(GrenadeIfProjectileEntity.class, EntityDataSerializers.STRING);
     private static final EntityDataAccessor<Boolean> TIMER_ACTIVATED = SynchedEntityData.defineId(GrenadeIfProjectileEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Integer> DETONATION_TIME = SynchedEntityData.defineId(GrenadeIfProjectileEntity.class, EntityDataSerializers.INT);
     private static final int FUSE_SECONDS = 4;
@@ -46,6 +52,7 @@ public class GrenadeIfProjectileEntity extends ThrowableItemProjectile {
     public GrenadeIfProjectileEntity(Level level, LivingEntity thrower, GrenadeIfType type) {
         super(ModEntities.GRENADE_IF_PROJECTILE.get(), thrower, level);
         this.grenadeType = type;
+        this.entityData.set(GRENADE_IF_TYPE_ID, type.name());
     }
 
     //? if < 1.21.1 {
@@ -53,6 +60,7 @@ public class GrenadeIfProjectileEntity extends ThrowableItemProjectile {
     /*@Override
     protected void defineSynchedData() {
         super.defineSynchedData();
+        this.entityData.define(GRENADE_IF_TYPE_ID, GrenadeIfType.GRENADE_IF.name());
         this.entityData.define(TIMER_ACTIVATED, false);
         this.entityData.define(DETONATION_TIME, 0);
     }
@@ -61,6 +69,7 @@ public class GrenadeIfProjectileEntity extends ThrowableItemProjectile {
     protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
 
         super.defineSynchedData(builder);
+        builder.define(GRENADE_IF_TYPE_ID, GrenadeIfType.GRENADE_IF.name());
         builder.define(TIMER_ACTIVATED, false);
         builder.define(DETONATION_TIME, 0);
     
@@ -71,7 +80,7 @@ public class GrenadeIfProjectileEntity extends ThrowableItemProjectile {
     protected Item getDefaultItem() {
         if (grenadeType == null) {
             try {
-                grenadeType = GrenadeIfType.valueOf(this.entityData.get(GRENADE_TYPE_ID));
+                grenadeType = GrenadeIfType.valueOf(this.entityData.get(GRENADE_IF_TYPE_ID));
             } catch (Exception e) {
                 grenadeType = GrenadeIfType.GRENADE_IF;
             }
@@ -203,6 +212,7 @@ public class GrenadeIfProjectileEntity extends ThrowableItemProjectile {
         this.entityData.set(DETONATION_TIME, tag.getInt("DetonationTime"));
         if (tag.contains("GrenadeType")) {
             this.grenadeType = GrenadeIfType.valueOf(tag.getString("GrenadeType"));
+            this.entityData.set(GRENADE_IF_TYPE_ID, this.grenadeType.name());
         }
     }
 }

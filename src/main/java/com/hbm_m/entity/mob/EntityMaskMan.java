@@ -220,7 +220,7 @@ public class EntityMaskMan extends Monster implements IRadiationImmune {
         if (++this.attackCount >= this.attack.amount) {
             this.attackCount = 0;
             // The original advances by a random non-zero step so it never repeats the same phase.
-            int next = this.attack.ordinal() + this.random.nextInt(LaserAttack.values().length - 1);
+            int next = this.attack.ordinal() + 1 + this.random.nextInt(LaserAttack.values().length - 1);
             this.attack = LaserAttack.values()[next % LaserAttack.values().length];
         }
     }

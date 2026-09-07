@@ -1034,3 +1034,156 @@ deep-копии NBT на стержень за тик.
   DEDICATED_SERVER` — штатный шум dev-окружения. `mixins.hbm_m.json` разделён на секции правильно,
   клиентские миксины лежат в `client`. Не баг.
 - `ChunkRadiationAccess` содержит в комментарии китайские иероглифы («AttachmentType取代 capabilities»).
+
+## M. Инспекция api/energy, api/network, handler
+
+### M1. Реестр подписок самоуничтожался при первой же сборке мусора — ИСПРАВЛЕНО
+
+`api/energy/EnergySubscriptions.java:41` — `MapMaker().weakKeys().weakValues()`. `BackoffState`
+нигде, кроме самой карты, сильной ссылкой не держится, поэтому запись слабо достижима **с момента
+создания**, и первый же GC вычищает весь реестр, хотя все ключи-BlockEntity живы. После этого
+`tickAll` не итерирует ничего.
+
+Восстановить запись может только `update()` через `computeIfAbsent`, а его зовут лишь машины, чей
+собственный тикер дергает `ensureNetworkInitialized()`. **Из 115 наследников
+`BaseMachineBlockEntity` таких нет у 71** (`MachineArcFurnace`, `MachineCompressor`,
+`MachineElectrolyser`, `MachinePress`, `MachineTurbofan`, все `MachineCrane*`/`MachineDrone*`,
+`PWRControllerBlockEntity`, `MachineDieselGenerator`, `MachineIndustrialGenerator`, электропечь).
+Такая машина после GC навсегда выпадает из драйвера подписок и перестаёт получать энергию.
+
+Это же объясняет флейк `flowSwitchCutsPowerMidRun` (см. C): печь подписывается только к ~20-му
+тику (первая попытка проваливается — узлы проводов ещё без сети, `receiverDelay = DELAY_NOTHING`),
+и если в это окно попадает young GC, энергия не приходит до конца таймаута. Батарея не страдает,
+потому что переregистрируется каждый тик через собственный `ensureNetworkInitialized()`.
+
+Исправлено удалением `.weakValues()`. Семантика, описанная в комментарии рядом (выгрузка чанка/GC
+сами убирают запись), обеспечивается одним `weakKeys()`.
+
+### M2. Найдено, НЕ исправлено (нужен тест / решение)
+
+- **`PowerNet.java:74,87` — `energyUsed` не сбрасывается между уровнями приоритета.** Объявлен вне
+  цикла по приоритетам, а `toTransfer -= energyUsed` выполняется на каждом уровне, поэтому со
+  второго уровня вычитается накопленная сумма. Питание 1000, спрос 400/300/300 → NORMAL получает 0
+  при 300 свободных. Возможно, это калька с `PowerNetMK2` 1.7.10 — нужна сверка с оригиналом
+  перед правкой, потому что затрагивает распределение мощности во всех сетях.
+- **`NeutronNodeWorld.java:12` — `WeakHashMap<Level, StreamWorld>` не работает.** Значение сильно
+  ссылается на ключ (`StreamWorld.nodeCache` → `RBMKNeutronNode.tile` → `BlockEntity.level`),
+  классический self-reference-leak. `removeAllWorlds()` не вызывается ниоткуда: в `MainRegistry`
+  нет хука на `SERVER_LEVEL_UNLOAD`/`SERVER_STOPPED` для `NeutronNodeWorld`, в отличие от
+  `UniNodespace` и `FluidNetProvider`. Итог: `ServerLevel` со всеми чанками живёт до конца процесса.
+  Правится тем же приёмом, что RTTY (K6), но нужно понять, что делать с `nodeCache`.
+- **`RBMKNeutronHandler.java:305-311` — `getHits` форсирует загрузку чанков каждый тик.**
+  `level.getBlockState` идёт в `getChunk(create = true)`; вызывается из `runStreamInteraction:223,230`
+  именно в ветке, куда попадаем, когда `blockPosToTE` вернул null, то есть когда чанк не загружен.
+  Гард `Compat.getTileStandard` строкой выше обходится.
+- **`RBMKNeutronHandler.java:292` — проверяется `pos` вместо `posAfter`.** Узел для `pos` создаётся
+  в начале того же метода, поэтому условие почти всегда false и ветка мертва.
+- **`SwitchBlockEntity` проводит по всем шести граням.** Не переопределяет `PowerConductor.createNode`,
+  а `UniNodespace.checkConnection` не консультируется с `canConnectEnergy`. Рубильник, стоящий
+  поперёк, сшивает две независимые линии в одну сеть. В оригинале `CableSwitch` переопределяет
+  `createNode` двумя направлениями.
+- **`EnergySubscriptions.java:132` — смена режима буферной батареи сносит всю сеть.** В любом
+  небуферном режиме `update()` каждый тик зовёт `Nodespace.destroyNode`, а `popNode` делает
+  `node.net.destroy()`. Батарея под редстоун-клоком с `modeOnSignal = 0` держит грид в перманентном
+  браунауте.
+- **Недетерминированная итерация `activeNodeNets` (`UniNodespace.java:69`).** `HashSet<NodeNet>` без
+  `hashCode` → порядок по identity hash. Машина между двумя независимыми сетями получает питание
+  от того генератора, чья сеть обошлась первой.
+- **Мелочи:** `PowerNet.java:33-34` ранние `return` до очистки протухших записей (ретенция памяти);
+  `PowerNet.java:102-112` «козёл отпущения» для округления выбирается из `HashMap` (расхождение в
+  единицы); `PowerNet.java:129-139` `sendPowerDiode` без `isBadLink` и без гарда `rec > 0`
+  (NaN при нулевом спросе, вызывается только из GameTest); `HTTPHandler.java:29-30` статические
+  `ArrayList` мутируются из демон-потока без синхронизации (читателей пока нет);
+  `LongEnergyWrapper.java:37` `getLow` возвращает знаковый `int` (недостижимо: максимум 200 млн).
+
+## N. Инспекция entity / explosion
+
+### N1. Исправлено
+
+- **Обломки RBMK не исчезали никогда.** `RBMKDebrisEntity:93` переопределяет `tick()` и не зовёт
+  `super.tick()`/`baseTick()` — единственное место, где растёт `tickCount`, который читает проверка
+  на строке 103. С выключенным дайлом perma-scrap обломки всё равно жили вечно.
+- **Слой фоллаута не клался на нормальный рельеф.** `EntityFalloutRain:470` — `return` вместо
+  `break` внутри цикла по колонке, из-за чего пропускался `tryPlaceFalloutLayer` в конце метода.
+  `depth` доходит до 3 в любой обычной колонке (трава-земля-камень), то есть слой не появлялся
+  практически нигде.
+- **Утечка форс-чанков на каждом грузовом запуске «Союза».** `SoyuzEntity:162` брал
+  `TicketType.FORCED` и не отпускал его никогда: N запусков = N навсегда загруженных регионов 5×5,
+  причём `FORCED`-билеты не видны в `/forceload query`. Билет передан капсуле (собственный
+  `TicketType` с UUID, как в `MissileBaseEntity`) и снимается в `remove()`.
+- **Курсор очистки жидкостей в кратере мог не двигаться.** `NukeMk5ChunkEater:524` — `break outer`
+  минует инкремент `fluidClearCursorX`, а внутренний цикл по z начинался заново. Колонка, не
+  влезающая в `processTimeMs`, пересканировалась вечно: `fluidsCleared` не выставлялся,
+  `releaseAllTickets()` не вызывался. Добавлен курсор по z (с сохранением в NBT).
+- **Граната IF читала `EntityDataAccessor` чужого класса.** `GrenadeIfProjectileEntity` читала
+  `GrenadeProjectileEntity.GRENADE_TYPE_ID`, не определённый на этой сущности; исключение глушил
+  `catch (Exception)`, поэтому тип гранаты никогда не синхронизировался и клиент всегда рисовал
+  обычную IF. Заведён собственный accessor, он же выставляется в конструкторе и при чтении NBT.
+- **Туман наносил урон в нулевом объёме.** `EntityMist:117` — бокс уже шириной `width`, а
+  `inflate(-width/2, 0, -width/2)` сжимал его по width/2 с каждой стороны, схлопывая в плоскость
+  через центр: облако задевало только того, кто стоит ровно на оси.
+- **Несбалансированные push/pop профайлера.** `BlockProcessorStandard:63` — `push` внутри
+  `canDropFromExplosion`, `pop` снаружи; любой блок без дропа от взрыва (ТНТ) выталкивал
+  вышестоящую секцию тика.
+- **`EntityProcessorCross` терял центральный узел видимости.** Массив на 7 элементов заполнялся
+  циклом `i < 7` через `Direction.from3DDataValue`, который заворачивается по модулю 6: узел 6 был
+  вторым DOWN, а центра взрыва не было вовсе. Сущность с прямой видимостью на эпицентр получала
+  density 0, если все шесть смещённых узлов оказывались в блоках. Используется всеми боеголовками.
+- **`BlockMutatorBulkie:24` проверял не тот стейт.** Гард смотрел на поле `blockState` (замену), а
+  не на параметр `state` (заменяемый блок), то есть был инвариантен: листва, стекло и трава во
+  внешней оболочке взрыва тоже превращались в целевой блок.
+- **Первый импульс радиации MK5 не срабатывал.** `EntityNukeExplosionMK5:118` требовал
+  `explosion != null`, а движок создаётся ниже в том же тике — на `tickCount == 1` он ещё null, и
+  самая большая доза рампы пропускалась.
+- **`EntityMaskMan:223`** — `nextInt(len - 1)` даёт шаг 0, из-за чего фаза лазера повторялась в
+  половине случаев, вопреки комментарию строкой выше.
+- **`CustomNukeExplosion`** — `FAT_MAN_CORE` клался в карту дважды (первая запись мертва), и ядерная
+  ветка передавала `yPos + 5` вместо `yPos + 0.5`, как все остальные ветки.
+
+### N2. Найдено, НЕ исправлено (нужен тест / решение)
+
+- **`EntityProcessorStandard:59` сравнивает квадрат расстояния с линейным радиусом.**
+  `entity.distanceToSqr(...) / size` вместо `Math.sqrt(...) / size`, то есть эффективный радиус
+  становится `sqrt(size)`. Плюс `knockback` для не-живых равен `density` без множителя
+  `(1 - distanceScaled)`, поэтому урон вообще не спадает с расстоянием. Живые пользователи:
+  `EntityCreeperGold:67`, `EntityCreeperVolatile:68`. Правка меняет баланс урона крипёров —
+  сверить с оригиналом и проверить в игре.
+- **`ExplosionChaos.cluster:83-93` путает градусы и радианы.** `yawDeg = yawRad * 180/π`, затем
+  `Mth.sin(yawDeg * π/180)` — конверсии взаимно уничтожаются, а вызывающие (`MissileTier1:130`,
+  `MissileTier2:125`, `MissileTier3:135`) передают градусы. Разлёт кассетных суббоеприпасов не
+  связан с курсом ракеты.
+- **`RagingVortexEntity:22-26`** — условие таймера инвертировано (`<= 20` вместо `>= 20`, счётчик
+  уходит в минус без границы) и `π/20` применён к результату `sin`, а не к аргументу.
+- **`ExplosionBalefire:27-41`** — `surface` перезаписывается на каждом не-воздушном блоке при спуске
+  вниз, поэтому огненный след кладётся в самой нижней найденной точке. В 1.20+ рельефе deepslate и
+  гравий не `Blocks.STONE`, так что «след на уровне земли» оказывается глубоко под землёй.
+- **`EntityCreeperNuclear:96-99`** — живая ветка `>= 1.21.1` дропает только ТНТ; мёртвая ветка
+  `< 1.21.1` дропает ещё `COIN_CREEPER` и выдаёт достижение `BOSS_CREEPER`. Оба символа существуют.
+- **Нестабильные идентификаторы в NBT.** `MissileABMEntity:301` сохраняет `tracking.getId()` —
+  посессионный счётчик, при загрузке резолвится в произвольную сущность (та же схема в
+  `EntityWormBase:275/282`, там безопаснее). `EntityMist:166` сохраняет
+  `BuiltInRegistries.FLUID.getId(...)` — числовой id зависит от порядка регистрации, после
+  установки/удаления мода туман становится другой жидкостью.
+- **Самолёты авиаудара.** `AirstrikeEntity:178` (и три его варианта) зовут `playAmbientSound()`
+  каждый тик без интервала — 20 звуковых пакетов в секунду на громкости 6. Плюс `direction` и
+  `hasFinishedAttack` не пишутся в `addAdditionalSaveData`, так что после перезагрузки самолёт с
+  недобомблённым боезапасом летит вечно.
+- **`TomBlastEntity`** не переопределяет `getChunkLoadRadius()` (по умолчанию 3 чанка = 48 блоков),
+  тогда как `EntityNukeExplosionMK3`, `EntityBalefireExplosion` и `EntityNukeExplosionMK5` это
+  делают, а `TomEntity:28` задаёт `DESTRUCTION_RANGE = 600` и `ExplosionTom.breakColumn` работает
+  без проверки загрузки.
+- **Сканы взрывов без проверки загрузки:** `ExplosionFleija.breakColumn:97`, `ExplosionSolinium:34`,
+  `ExplosionTom:119-150`, `ExplosionBalefire:27-41`, `SpearEntity.descentBlast:115-156`,
+  `EntityNukeExplosionMK5.radiate:233`, `EntityUFO.groundBelow:259`. Все — в тиковых циклах, число
+  итераций растёт каждый тик.
+- **`SynchedEntityData` пишется на клиенте:** `EntityCreeperTainted:44`, `EntityCreeperNuclear:79`
+  (`heal` в `tick()`), `SpearEntity:97,101`, `VortexEntity:34`, `RagingVortexEntity:37`.
+  Эффект косметический, но сторона объективно не та.
+- **`EntityDroneBase`** — `targetX/Y/Z` не синхронизированы, а флаг `HAS_TARGET` синхронизирован, и
+  `tick()` двигает дрона на обеих сторонах: клиент гонит его к (0,0,0) между пакетами позиции.
+- **`AirNukeBombProjectileEntity:189-191`** — три гарда проверяют `EXPLOSION_LARGE_NEAR.isPresent()`,
+  добавляя `BOMBDET1/2/3`; при отсутствии звука будет `nextInt(0)`. Метод сейчас не вызывается.
+- **`MissileTier3:51-52` и `MissileTier4:49`** — смещения сопел для инверсионного следа используют
+  `-thrust.z` там, где нужен `thrust.y` (визуальное, только клиент).
+- **`DroneChunkLoader:26`** отпускает билет только из `EntityDeliveryDrone.remove()`, а путь
+  `setRemoved(UNLOADED_TO_CHUNK)` через `remove()` не идёт.

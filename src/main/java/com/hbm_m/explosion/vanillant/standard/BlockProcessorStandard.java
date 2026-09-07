@@ -58,9 +58,13 @@ public class BlockProcessorStandard implements IBlockProcessor {
             Block block = state.getBlock();
 
             if (!state.isAir()) {
+                // push has to sit here, not inside the canDropFromExplosion branch: pop below runs
+                // for every non-air block, so a block that cannot drop (TNT, for one) popped the
+                // enclosing tick section instead.
+                level.getProfiler().push("explosion_blocks");
+
                 if (state.canDropFromExplosion(level, pos, explosion.compat)) {
 
-                    level.getProfiler().push("explosion_blocks");
 
                     if (chance != null) {
                         dropChance = chance.mutateDropChance(explosion, block, pos, dropChance);
