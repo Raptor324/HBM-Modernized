@@ -500,8 +500,11 @@ public static void performDash(Player player) {
    не попадёт, а *новый* ключ приедет из датагена — набор станет смесью двух источников.
    Либо считать `src/main/resources` источником истины и убрать `DAMAGE_TYPE` из датагена,
    либо наоборот — убрать рукописные файлы и сделать `runData` обязательным шагом CI.
-2. **50 из 56 типов урона без перевода** `death.attack.<id>` (есть только `radiation`,
-   `black_hole`, `asbestos`, `blacklung`, `hardlanding_smash`, `taint`) — игрок увидит сырой ключ.
+2. ~~50 из 56 типов урона без перевода `death.attack.<id>`~~ — **сделано.** Добавлены в
+   `ModLanguageProviderEn`; 45 формулировок взяты дословно из `assets/hbm/lang/en_US.lang`
+   оригинала (там ключи в camelCase — `acidPlayer`, `nuclearBlast`, `subAtomic1`, — у нас
+   snake_case по `message_id`). Пять типов, которых в оригинале нет (`blast`, `boltgun`,
+   `enervation`, `nitan`, `vacuum`), дописаны в его стиле. Применяется через `runData`.
 3. **Registry-контекст теряется** в `RecipeHooks`: `Ingredient.CODEC.parse(JsonOps.INSTANCE, ...)`
    вместо переданного `RegistryOps`. Сейчас безвредно, но любой рецепт с `components`,
    требующими динамического реестра (зачарования, зелья), упадёт с `Not a registry ops`.
@@ -509,6 +512,46 @@ public static void performDash(Player player) {
    в `data/`. Сегодня безопасно (проверено), но будущие `"forge:conditions"` / `"type": "forge:not"`
    от Forge-датагена молча превратятся в `c:`. Стоит ограничить позициями тегов или завести
    blacklist префиксов.
+
+## F. Производительность сервера: 18 машин синхронизируются каждый тик
+
+Найдено при глобальном разборе, **не исправлено** — нужно решение, потому что затрагивает
+18 блок-сущностей и видимое поведение GUI.
+
+Эти машины в своём `tick` безусловно вызывают `sendUpdateToClient()`:
+
+`MachineAnnihilator`, `MachineBreeder`, `MachineCatalyticReformer`, `MachineCompressor`,
+`MachineCrackingTower`, `MachineElectricFurnace`, `MachineElectrolyser`, `MachineExposureChamber`,
+`MachineFlareStack`, `MachineFrackingTower`, `MachineFractionTower`, `MachineHydrotreater`,
+`MachineLargePylon`, `MachineLiquefactor`, `MachineMicrowave`, `MachineRadiolysis`,
+`MachineVacuumDistill`, `OilDrillBase`.
+
+Цепочка: `sendUpdateToClient()` → `level.sendBlockUpdated(...)` → `ChunkSource.blockChanged(pos)` →
+в конце тика `ChunkHolder.broadcastChanges` → `broadcastBlockEntityIfNeeded` →
+`blockEntity.getUpdatePacket()` → `ClientboundBlockEntityDataPacket.create(this)` →
+`getUpdateTag(...)` → **полный `writeNbtData`**: весь инвентарь, энергия, все танки.
+
+Два следствия:
+
+1. **CPU тратится даже без игроков рядом.** `broadcastBlockEntity` вызывает `getUpdatePacket()`
+   до того, как проверит список получателей — то есть полный NBT сериализуется 20 раз в секунду
+   на каждую такую машину независимо от того, смотрит ли кто-нибудь.
+2. **Трафик.** У `MachineElectrolyser` это 10 слотов инвентаря и 4 танка; у
+   `MachineCrackingTower` — 5 танков; у `MachineCatalyticReformer` — 4. На базе с десятками
+   машин это десятки полных NBT-снимков в секунду каждому наблюдателю.
+
+**Варианты решения (нужно выбрать):**
+
+1. Слать только при фактическом изменении: держать в `BaseMachineBlockEntity` флаг
+   «состояние поменялось» и дёргать `sendUpdateToClient()` из тика лишь когда он взведён.
+   Самый правильный путь, но требует расставить пометки во всех местах, меняющих состояние.
+2. Дросселировать: не чаще раза в N тиков (например 5). Дёшево и безопасно, но прогресс-бары
+   в GUI станут обновляться реже.
+3. Оставить как есть для машин с маленьким состоянием и починить только тяжёлые
+   (электролизёр, крекинг-башня, реформер, фракционная башня).
+
+Отдельно стоит проверить, не дублируется ли синхронизация: у части машин рядом с
+`sendUpdateToClient()` в том же тике стоит ещё и `setChanged()`.
 
 ## C. Мелочи
 
