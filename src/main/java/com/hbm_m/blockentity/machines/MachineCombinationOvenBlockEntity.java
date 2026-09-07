@@ -40,7 +40,7 @@ import net.minecraft.world.level.block.state.BlockState;
  * Der Fluid-Tank ist generisch (kein fest zugewiesener Fluessigkeitstyp) - welche Fluessigkeit
  * gebraucht wird, entscheidet einzig das jeweils passende Rezept.
  */
-public class MachineCombinationOvenBlockEntity extends BaseMachineBlockEntity {
+public class MachineCombinationOvenBlockEntity extends BaseMachineBlockEntity implements com.hbm_m.api.fluids.IFluidStandardReceiverMK2 {
 
     public static final int SLOT_INPUT = 0;
     public static final int SLOT_OUTPUT = 1;
@@ -62,6 +62,28 @@ public class MachineCombinationOvenBlockEntity extends BaseMachineBlockEntity {
     public MachineCombinationOvenBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.COMBINATION_OVEN_BE.get(), pos, state, SLOT_COUNT, 0L, 0L, 0L);
     }
+
+    // ==================== IFluidUserMK2 / MK2-ÑÐµÑÑ ====================
+    // ÐÑÐ¸Ð²ÑÐ·ÐºÐ° Ð¾Ð±ÑÐ°Ð±Ð¾ÑÑÐ¸ÐºÐ° Ð¶Ð¸Ð´ÐºÐ¾ÑÑÐ¸ Ð½Ð¸Ð¶Ðµ Ð¶Ð¸Ð²ÑÑ Ð² //? if forge, Ð° BaseMachineBlockEntity
+    // Ð¾ÑÐ´Ð°ÑÑ NeoForge-Ð¾Ð±ÑÑÑÐºÑ ÑÐ¾Ð»ÑÐºÐ¾ ÑÐµÐ°Ð»Ð¸Ð·Ð°ÑÐ¸ÑÐ¼ IFluidUserMK2 â Ð±ÐµÐ· ÑÑÐ¾Ð³Ð¾ Ñ Ð¼Ð°ÑÐ¸Ð½Ñ
+    // Ð½Ð° NeoForge Ð½Ðµ Ð±ÑÐ»Ð¾ fluid-ÐºÐ°Ð¿Ð°Ð±Ð¸Ð»Ð¸ÑÐ¸ Ð²Ð¾Ð¾Ð±ÑÐµ, Ð¸ ÑÑÑÐ±Ñ Ðº Ð½ÐµÐ¹ Ð½Ðµ Ð¿Ð¾Ð´ÐºÐ»ÑÑÐ°Ð»Ð¸ÑÑ.
+
+    @Override
+    public FluidTank[] getAllTanks() { return new FluidTank[] { tank }; }
+
+    @Override
+    public FluidTank[] getReceivingTanks() { return new FluidTank[] { tank }; }
+
+    @Override
+    public boolean isLoaded() {
+        return level != null && !isRemoved() && level.isLoaded(worldPosition);
+    }
+
+    @Override
+    public boolean canConnect(net.minecraft.world.level.material.Fluid fluid, net.minecraft.core.Direction fromDir) {
+        return fromDir != null;
+    }
+
 
     //? if forge {
     /*@Override

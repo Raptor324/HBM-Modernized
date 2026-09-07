@@ -114,7 +114,7 @@ public class FluidExhaustBlockEntity extends BaseHbmBlockEntity implements IFlui
         super.setRemoved();
     }
 
-    //? if forge {
+    //? if forge || neoforge {
     /*@Override
     public void onChunkUnloaded() {
         if (level instanceof ServerLevel serverLevel) {

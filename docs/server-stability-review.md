@@ -805,6 +805,31 @@ deep-копии NBT на стержень за тик.
 **Общая тема раздела: логика, живущая только в `//? if forge {`.** Тот же класс проблем, что
 с системой защиты брони (раздел I2). На NeoForge эти ветки не выполняются, neoforge-аналога нет.
 
+**Статус: K1, K2, K3, K4 — ИСПРАВЛЕНЫ.** `onLoad` / `onChunkUnloaded` существуют и на NeoForge
+(`IBlockEntityExtension`), поэтому хватило расширить условие до `//? if forge || neoforge {`
+в `FluidDuctBlockEntity`, `FluidValveBlockEntity`, `FluidExhaustBlockEntity` и
+`UniversalMachinePartBlockEntity`.
+
+Для K2 расширения условия было **недостаточно**: `IFluidHandler` в forge-ветке — это
+`net.minecraftforge.fluids.capability.IFluidHandler`, на NeoForge пакет другой. Правильный путь
+нашёлся в самом базовом классе: `BaseMachineBlockEntity.getFluidHandler` (`:626-638`) отдаёт
+`NeoForgeFluidHandlerMK2`, **если блок реализует `IFluidUserMK2`** — именно так устроены машины,
+у которых жидкости работают. Поэтому все семь подключены к MK2-сети, а не продублированы под
+вторую платформу:
+
+| машина | интерфейс | приём | отдача |
+|---|---|---|---|
+| `MachineSteamTurbine` | Transceiver | пар | отработанный пар |
+| `MachineFrackingTower` | Transceiver | фраксол | нефть, газ |
+| `MachineArcFurnace` | Sender | — | tank1, tank2 |
+| `MachineCoreInjector` | Receiver | дейтерий, тритий | — |
+| `MachineCombinationOven` | Receiver | tank | — |
+| `MachineMiningDrill` | Receiver | кислота | — |
+| `MachineOreSlopper` | Receiver | вода | — |
+
+Роли танков определены по фактическому использованию в коде (`fillMb` — отдача, `drainMb` — приём),
+а не по названиям.
+
 ### K1. Жидкостные клапаны не восстанавливают узел сети после перезагрузки
 
 `blockentity/machines/FluidValveBlockEntity.java:149-155` — `FluidNode` создаётся только в

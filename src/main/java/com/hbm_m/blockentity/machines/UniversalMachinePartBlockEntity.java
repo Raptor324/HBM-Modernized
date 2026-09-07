@@ -570,7 +570,7 @@ public class UniversalMachinePartBlockEntity extends BaseHbmBlockEntity implemen
         return allowedEnergySides.contains(side);
     }
 
-    //? if forge {
+    //? if forge || neoforge {
     /*@Override
     public void onLoad() {
         super.onLoad();

@@ -31,7 +31,7 @@ import net.minecraft.world.level.block.state.BlockState;
  * Fusionsreaktor-Kern portiert wird, kann hier die {@code fireBeam}-Logik analog zu
  * {@link MachineCoreEmitterBlockEntity} ergaenzt werden.
  */
-public class MachineCoreInjectorBlockEntity extends BaseMachineBlockEntity {
+public class MachineCoreInjectorBlockEntity extends BaseMachineBlockEntity implements com.hbm_m.api.fluids.IFluidStandardReceiverMK2 {
 
     public static final int TANK_DEUTERIUM = 0;
     public static final int TANK_TRITIUM = 1;
@@ -46,6 +46,28 @@ public class MachineCoreInjectorBlockEntity extends BaseMachineBlockEntity {
     public MachineCoreInjectorBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.CORE_INJECTOR_BE.get(), pos, state, 4, 2_000_000L, 40_000L);
     }
+
+    // ==================== IFluidUserMK2 / MK2-ÑÐµÑÑ ====================
+    // ÐÑÐ¸Ð²ÑÐ·ÐºÐ° Ð¾Ð±ÑÐ°Ð±Ð¾ÑÑÐ¸ÐºÐ° Ð¶Ð¸Ð´ÐºÐ¾ÑÑÐ¸ Ð½Ð¸Ð¶Ðµ Ð¶Ð¸Ð²ÑÑ Ð² //? if forge, Ð° BaseMachineBlockEntity
+    // Ð¾ÑÐ´Ð°ÑÑ NeoForge-Ð¾Ð±ÑÑÑÐºÑ ÑÐ¾Ð»ÑÐºÐ¾ ÑÐµÐ°Ð»Ð¸Ð·Ð°ÑÐ¸ÑÐ¼ IFluidUserMK2 â Ð±ÐµÐ· ÑÑÐ¾Ð³Ð¾ Ñ Ð¼Ð°ÑÐ¸Ð½Ñ
+    // Ð½Ð° NeoForge Ð½Ðµ Ð±ÑÐ»Ð¾ fluid-ÐºÐ°Ð¿Ð°Ð±Ð¸Ð»Ð¸ÑÐ¸ Ð²Ð¾Ð¾Ð±ÑÐµ, Ð¸ ÑÑÑÐ±Ñ Ðº Ð½ÐµÐ¹ Ð½Ðµ Ð¿Ð¾Ð´ÐºÐ»ÑÑÐ°Ð»Ð¸ÑÑ.
+
+    @Override
+    public FluidTank[] getAllTanks() { return tanks; }
+
+    @Override
+    public FluidTank[] getReceivingTanks() { return tanks; }
+
+    @Override
+    public boolean isLoaded() {
+        return level != null && !isRemoved() && level.isLoaded(worldPosition);
+    }
+
+    @Override
+    public boolean canConnect(net.minecraft.world.level.material.Fluid fluid, net.minecraft.core.Direction fromDir) {
+        return fromDir != null;
+    }
+
 
     //? if forge {
     /*@Override

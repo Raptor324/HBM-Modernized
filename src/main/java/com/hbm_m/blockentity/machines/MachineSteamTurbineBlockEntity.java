@@ -33,7 +33,7 @@ import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 *///?}
 
-public class MachineSteamTurbineBlockEntity extends BaseMachineBlockEntity implements IEnergyModeHolder {
+public class MachineSteamTurbineBlockEntity extends BaseMachineBlockEntity implements IEnergyModeHolder, com.hbm_m.api.fluids.IFluidStandardTransceiverMK2 {
 
     public static final int SLOT_FLUID_ID_IN = 0;
     public static final int SLOT_FLUID_ID_OUT = 1;
@@ -194,6 +194,30 @@ public class MachineSteamTurbineBlockEntity extends BaseMachineBlockEntity imple
             case SLOT_BATTERY -> stack.getItem() instanceof ItemCreativeBattery || isEnergyProviderItem(stack) || isEnergyReceiverItem(stack);
             default -> false;
         };
+    }
+
+    // ==================== IFluidUserMK2 / MK2-сеть ====================
+    // Привязка обработчика жидкости ниже живёт в //? if forge, а BaseMachineBlockEntity отдаёт
+    // NeoForge-обёртку только тем, кто реализует IFluidUserMK2 — без этого у турбины на NeoForge
+    // не было fluid-капабилити вообще и она не принимала пар из труб.
+
+    @Override
+    public FluidTank[] getAllTanks() { return tanks; }
+
+    @Override
+    public FluidTank[] getReceivingTanks() { return new FluidTank[] { tanks[0] }; }
+
+    @Override
+    public FluidTank[] getSendingTanks() { return new FluidTank[] { tanks[1] }; }
+
+    @Override
+    public boolean isLoaded() {
+        return level != null && !isRemoved() && level.isLoaded(worldPosition);
+    }
+
+    @Override
+    public boolean canConnect(Fluid fluid, Direction fromDir) {
+        return fromDir != null;
     }
 
     //? if forge {
