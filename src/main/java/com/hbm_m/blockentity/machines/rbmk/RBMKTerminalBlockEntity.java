@@ -130,7 +130,7 @@ public class RBMKTerminalBlockEntity extends RBMKPanelDeviceBlockEntity {
     }
 
     //? if < 1.21.1 {
-    @Override
+    /*@Override
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
         tag.putString("channel", channel);
@@ -150,8 +150,8 @@ public class RBMKTerminalBlockEntity extends RBMKPanelDeviceBlockEntity {
         for (int i = 0; i < history.length; i++) history[i] = tag.getString("history" + i);
         runningValue = tag.contains("runningValue") ? tag.getString("runningValue") : "0";
     }
-    //?} else {
-    /*@Override
+    *///?} else {
+    @Override
     protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
         tag.putString("channel", channel);
@@ -171,5 +171,5 @@ public class RBMKTerminalBlockEntity extends RBMKPanelDeviceBlockEntity {
         for (int i = 0; i < history.length; i++) history[i] = tag.getString("history" + i);
         runningValue = tag.contains("runningValue") ? tag.getString("runningValue") : "0";
     }
-    *///?}
+    //?}
 }

@@ -1,5 +1,5 @@
 //? if forge {
-package com.hbm_m.client.render.item;
+/*package com.hbm_m.client.render.item;
 
 import com.hbm_m.blockentity.machines.rbmk.RBMKColumnBlockEntity;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -16,7 +16,7 @@ import net.minecraft.world.item.BlockItem;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
+/^*
  * Generic item renderer for every RBMK column block (fuel, moderator, absorber, control rods,
  * panels, the console, ...): instead of relying on a static baked item model - which for these
  * blocks is either a plain untextured cube or (for the console) a Forge-only custom model
@@ -28,7 +28,7 @@ import java.util.concurrent.ConcurrentHashMap;
  * problem. No new rendering code needed - every fix already made to the in-world renderers
  * (lid textures, control rod caps, the real console mesh, Cherenkov glow, ...) applies to the
  * held/inventory/ground icon automatically too.
- */
+ ^/
 public class RBMKColumnItemRenderer extends BlockEntityWithoutLevelRenderer {
 
     public static final RBMKColumnItemRenderer INSTANCE = new RBMKColumnItemRenderer();
@@ -56,4 +56,4 @@ public class RBMKColumnItemRenderer extends BlockEntityWithoutLevelRenderer {
         poseStack.popPose();
     }
 }
-//?}
+*///?}

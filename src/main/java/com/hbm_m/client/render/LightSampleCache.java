@@ -59,12 +59,12 @@ import net.minecraft.world.phys.AABB;
  */
 
 //? if forge {
-@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-//?} elif fabric {
+/*@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+*///?} elif fabric {
 /*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
 *///?} elif neoforge {
-/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-*///?}
+@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+//?}
 public final class LightSampleCache {
 
     private static final Long2ObjectOpenHashMap<Entry> CACHE = new Long2ObjectOpenHashMap<>();
@@ -242,10 +242,10 @@ public final class LightSampleCache {
         AABB bounds;
         try {
             //? if forge {
-            bounds = be.getRenderBoundingBox();
-            //?} else {
-            /*bounds = new AABB(be.getBlockPos());
-            *///?}
+            /*bounds = be.getRenderBoundingBox();
+            *///?} else {
+            bounds = new AABB(be.getBlockPos());
+            //?}
         } catch (Throwable t) {
             bounds = null;
         }

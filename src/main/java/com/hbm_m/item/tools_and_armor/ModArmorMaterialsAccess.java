@@ -15,8 +15,8 @@ import net.minecraft.world.item.ArmorMaterial;
 import net.minecraft.world.item.crafting.Ingredient;
 
 //? if forge {
-import net.minecraft.world.item.ArmorMaterial;
-//?}
+/*import net.minecraft.world.item.ArmorMaterial;
+*///?}
 
 /**
  * Кросс-версионный мост между enum'ом {@link ModArmorMaterials} и ванильным типом материала брони.
@@ -37,10 +37,10 @@ public final class ModArmorMaterialsAccess {
     private ModArmorMaterialsAccess() {}
 
     //? if neoforge {
-    /*/^*
+    /**
      * NeoForge 1.21.1: реестр ArmorMaterial как полноценный vanilla registry entry.
      * Holder'ы регистрируются лениво, синхронно с ModItems (в MainRegistry).
-     ^/
+     */
     public static final dev.architectury.registry.registries.DeferredRegister<ArmorMaterial> ARMOR_MATERIALS =
             dev.architectury.registry.registries.DeferredRegister.create(MainRegistry.MOD_ID, net.minecraft.core.registries.Registries.ARMOR_MATERIAL);
 
@@ -75,9 +75,9 @@ public final class ModArmorMaterialsAccess {
         var layers = java.util.List.of(
                 new ArmorMaterial.Layer(
                         //? if < 1.21.1 {
-                        new ResourceLocation(MainRegistry.MOD_ID, m.name().toLowerCase(java.util.Locale.ROOT))//?} else {
-                        /^ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, m.name().toLowerCase(java.util.Locale.ROOT))
-                        ^///?}
+                        /*new ResourceLocation(MainRegistry.MOD_ID, m.name().toLowerCase(java.util.Locale.ROOT))*///?} else {
+                        ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, m.name().toLowerCase(java.util.Locale.ROOT))
+                        //?}
                         , "", false)
         );
 
@@ -92,20 +92,20 @@ public final class ModArmorMaterialsAccess {
         );
     }
 
-    /^* Возвращает Holder<ArmorMaterial> для NeoForge — он передаётся в ArmorItem. ^/
+    /** Возвращает Holder<ArmorMaterial> для NeoForge — он передаётся в ArmorItem. */
     public static Holder<ArmorMaterial> holder(ModArmorMaterials m) {
         return Holder.direct(HOLDERS.get(m).get());
     }
 
-    /^* Регистрирует ARMOR_MATERIALS через Architectury (NeoForge). ^/
+    /** Регистрирует ARMOR_MATERIALS через Architectury (NeoForge). */
     public static void init() {
         ARMOR_MATERIALS.register();
     }
-    *///?}
+    //?}
 
     //? if forge {
-    public static ModArmorMaterials holder(ModArmorMaterials m) {
+    /*public static ModArmorMaterials holder(ModArmorMaterials m) {
         return m;
     }
-    //?}
+    *///?}
 }

@@ -23,16 +23,16 @@ public class ClusterRocketEntity extends Projectile {
 
     //? if < 1.21.1 {
 
-    @Override
+    /*@Override
     protected void defineSynchedData() {
     }
-    //?} else {
-    /*@Override
+    *///?} else {
+    @Override
     protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
 
     
     }
-    *///?}
+    //?}
 
     @Override
     public void recreateFromPacket(ClientboundAddEntityPacket packet) {
@@ -50,12 +50,12 @@ public class ClusterRocketEntity extends Projectile {
     }
 
     //? if < 1.21.1 {
-    @Override
-    public void lerpTo(double x, double y, double z, float yRot, float xRot, int steps, boolean teleport) {
-    //?} else {
     /*@Override
+    public void lerpTo(double x, double y, double z, float yRot, float xRot, int steps, boolean teleport) {
+    *///?} else {
+    @Override
     public void lerpTo(double x, double y, double z, float yRot, float xRot, int steps) {
-    *///?}
+    //?}
         this.setPos(x, y, z);
         this.setYRot(yRot);
         this.setXRot(xRot);

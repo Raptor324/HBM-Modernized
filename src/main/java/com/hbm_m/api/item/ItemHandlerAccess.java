@@ -36,20 +36,20 @@ public final class ItemHandlerAccess {
      * @return handler или {@code null}, если блок не предоставляет item-capability
      */
     //? if forge {
-    @Nullable
+    /*@Nullable
     public static net.minecraftforge.items.IItemHandler getItemHandler(Level level, BlockPos pos, @Nullable Direction side) {
         BlockEntity be = level.getBlockEntity(pos);
         if (be == null || be.isRemoved()) return null;
         return be.getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER, side).orElse(null);
     }
-    //?}
+    *///?}
     //? if neoforge {
-    /*@Nullable
+    @Nullable
     public static net.neoforged.neoforge.items.IItemHandler getItemHandler(Level level, BlockPos pos, @Nullable Direction side) {
         // На NeoForge запрос идёт через Level, не через BlockEntity.getCapability.
         BlockEntity be = level.getBlockEntity(pos);
         if (be == null || be.isRemoved()) return null;
         return level.getCapability(net.neoforged.neoforge.capabilities.Capabilities.ItemHandler.BLOCK, pos, side);
     }
-    *///?}
+    //?}
 }

@@ -269,16 +269,16 @@ public class MachineFrackingTowerBlock extends BaseEntityBlock implements IMulti
     }
 
     //? if < 1.21.1 {
-    @Override
+    /*@Override
     public InteractionResult use(BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer, InteractionHand pHand, BlockHitResult pHit) {
         return hbmOnUse(pState, pLevel, pPos, pPlayer, pHand, pHit);
     }
-    //?} else {
-    /*@Override
+    *///?} else {
+    @Override
     protected InteractionResult useWithoutItem(BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer, BlockHitResult pHit) {
         return hbmOnUse(pState, pLevel, pPos, pPlayer, InteractionHand.MAIN_HAND, pHit);
     }
-    *///?}
+    //?}
 
     private InteractionResult hbmOnUse(BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer, InteractionHand pHand, BlockHitResult pHit) {
         if (!pLevel.isClientSide()) {
@@ -329,11 +329,11 @@ public class MachineFrackingTowerBlock extends BaseEntityBlock implements IMulti
     }
 
     //? if >1.20.1 {
-    /*public static final com.mojang.serialization.MapCodec<MachineFrackingTowerBlock> CODEC = simpleCodec(MachineFrackingTowerBlock::new);
+    public static final com.mojang.serialization.MapCodec<MachineFrackingTowerBlock> CODEC = simpleCodec(MachineFrackingTowerBlock::new);
 
     @Override
     protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
         return CODEC;
     }
-    *///?}
+    //?}
 }

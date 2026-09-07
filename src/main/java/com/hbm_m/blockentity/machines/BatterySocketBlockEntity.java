@@ -31,11 +31,11 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 
 //? if forge {
-import net.minecraftforge.client.model.data.ModelData;
+/*import net.minecraftforge.client.model.data.ModelData;
 import net.minecraftforge.client.model.data.ModelProperty;
 import com.hbm_m.capability.ModCapabilities;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
-//?}
+*///?}
 
 /**
  * Battery socket: one portable battery slot, modes like machine battery, energy from item capabilities.
@@ -44,8 +44,8 @@ import net.minecraftforge.common.capabilities.ForgeCapabilities;
 public class BatterySocketBlockEntity extends BaseMachineBlockEntity implements IEnergyModeHolder, com.hbm_m.api.energy.PowerBuffer {
 
     //? if forge {
-    public static final ModelProperty<Boolean> HAS_INSERT = new ModelProperty<>();
-    //?}
+    /*public static final ModelProperty<Boolean> HAS_INSERT = new ModelProperty<>();
+    *///?}
 
     private static final int SLOT_BATTERY = 0;
 
@@ -143,13 +143,13 @@ public class BatterySocketBlockEntity extends BaseMachineBlockEntity implements 
     }
 
     //? if forge {
-    @Override
+    /*@Override
     public ModelData getModelData() {
         return ModelData.builder()
                 .with(HAS_INSERT, !inventory.getStackInSlot(0).isEmpty())
                 .build();
     }
-    //?}
+    *///?}
 
     //? if fabric {
     /*@Override
@@ -176,30 +176,30 @@ public class BatterySocketBlockEntity extends BaseMachineBlockEntity implements 
         ItemStack stack = inventory.getStackInSlot(SLOT_BATTERY);
         if (stack.isEmpty()) return Optional.empty();
         //? if forge {
-        return stack.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER).resolve();
-        //?}
+        /*return stack.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER).resolve();
+        *///?}
         //? if fabric {
         /*return Optional.empty();
         *///?}
         //? if neoforge {
-        /*// NeoForge: HBM item-capability через ItemEnergyAccess (использует ModCapabilities.HBM_ITEM_ENERGY_PROVIDER).
+        // NeoForge: HBM item-capability через ItemEnergyAccess (использует ModCapabilities.HBM_ITEM_ENERGY_PROVIDER).
         return com.hbm_m.api.energy.ItemEnergyAccess.getHbmProvider(stack);
-        *///?}
+        //?}
     }
 
     private Optional<IEnergyReceiver> stackReceiver() {
         ItemStack stack = inventory.getStackInSlot(SLOT_BATTERY);
         if (stack.isEmpty()) return Optional.empty();
         //? if forge {
-        return stack.getCapability(ModCapabilities.HBM_ENERGY_RECEIVER).resolve();
-        //?}
+        /*return stack.getCapability(ModCapabilities.HBM_ENERGY_RECEIVER).resolve();
+        *///?}
         //? if fabric {
         /*return Optional.empty();
         *///?}
         //? if neoforge {
-        /*// NeoForge: HBM item-capability через ItemEnergyAccess (использует ModCapabilities.HBM_ITEM_ENERGY_RECEIVER).
+        // NeoForge: HBM item-capability через ItemEnergyAccess (использует ModCapabilities.HBM_ITEM_ENERGY_RECEIVER).
         return com.hbm_m.api.energy.ItemEnergyAccess.getHbmReceiver(stack);
-        *///?}
+        //?}
     }
 
     private long getEnergyStoredFromStack() {

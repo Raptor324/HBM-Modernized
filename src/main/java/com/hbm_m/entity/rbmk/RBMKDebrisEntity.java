@@ -57,16 +57,16 @@ public class RBMKDebrisEntity extends Entity {
     }
 
     //? if < 1.21.1 {
-    @Override
+    /*@Override
     protected void defineSynchedData() {
         entityData.define(TYPE, 0);
     }
-    //?} else {
-    /*@Override
+    *///?} else {
+    @Override
     protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
         builder.define(TYPE, 0);
     }
-    *///?}
+    //?}
 
     public void setDebrisType(DebrisType type) { entityData.set(TYPE, type.ordinal()); }
 

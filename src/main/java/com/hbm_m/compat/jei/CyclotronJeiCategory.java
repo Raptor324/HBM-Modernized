@@ -16,13 +16,13 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 
 //? if forge {
-/**
+/*/^*
  * JEI-категория циклотрона ({@code hbm_m:cyclotron}).
  *
  * <p>Работает напрямую с data-driven {@link CyclotronRecipe} (JSON) — без промежуточной
  * {@code *JeiRecipe}-обёртки. Target/input — {@link CyclotronRecipe#getTarget()} / #{@link CyclotronRecipe#getInput()},
  * выход — {@link CyclotronRecipe#getOutput()}.</p>
- */
+ ^/
 public class CyclotronJeiCategory implements IRecipeCategory<CyclotronRecipe> {
 
     public static final RecipeType<CyclotronRecipe> RECIPE_TYPE =
@@ -30,8 +30,8 @@ public class CyclotronJeiCategory implements IRecipeCategory<CyclotronRecipe> {
 
     private static final ResourceLocation TEXTURE =
             //? if fabric && < 1.21.1 {
-            /*new ResourceLocation(RefStrings.MODID, "textures/jei_gui/gui_jei_cyclotron.png");
-            *///?} else {
+            /^new ResourceLocation(RefStrings.MODID, "textures/jei_gui/gui_jei_cyclotron.png");
+            ^///?} else {
                         ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/jei_gui/gui_jei_cyclotron.png");
             //?}
 
@@ -84,7 +84,7 @@ public class CyclotronJeiCategory implements IRecipeCategory<CyclotronRecipe> {
         }
     }
 }
-//?} else {
-/*public final class CyclotronJeiCategory {
+*///?} else {
+public final class CyclotronJeiCategory {
     private CyclotronJeiCategory() {}
-}*///?}
+}//?}

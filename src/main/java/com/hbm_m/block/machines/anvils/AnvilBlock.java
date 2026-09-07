@@ -110,22 +110,22 @@ public class AnvilBlock extends FallingBlock implements EntityBlock {
     }
 
     //? if < 1.21.1 {
-    @Override
+    /*@Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         if (!level.isClientSide() && level.getBlockEntity(pos) instanceof AnvilBlockEntity be) {
             MenuRegistry.openExtendedMenu((ServerPlayer) player, be, buf -> buf.writeBlockPos(pos));
         }
         return InteractionResult.sidedSuccess(level.isClientSide());
     }
-    //?} else {
-    /*@Override
+    *///?} else {
+    @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
         if (!level.isClientSide() && level.getBlockEntity(pos) instanceof AnvilBlockEntity be) {
             MenuRegistry.openExtendedMenu((ServerPlayer) player, be, buf -> buf.writeBlockPos(pos));
         }
         return InteractionResult.sidedSuccess(level.isClientSide());
     }
-    *///?}
+    //?}
 
     /**
      * Настраивает параметры урона для падающей наковальни.
@@ -173,11 +173,11 @@ public class AnvilBlock extends FallingBlock implements EntityBlock {
     }
 
     //? if >= 1.21.1 {
-    /*public static final com.mojang.serialization.MapCodec<AnvilBlock> CODEC = simpleCodec(props -> new AnvilBlock(props, AnvilTier.STEEL));
+    public static final com.mojang.serialization.MapCodec<AnvilBlock> CODEC = simpleCodec(props -> new AnvilBlock(props, AnvilTier.STEEL));
 
     @Override
     protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.FallingBlock> codec() {
         return CODEC;
     }
-    *///?}
+    //?}
 }

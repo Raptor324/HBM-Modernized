@@ -84,18 +84,18 @@ public class EntityNukeExplosionMK5 extends EntityExplosionChunkloading {
 
     //? if < 1.21.1 {
 
-    @Override
+    /*@Override
     protected void defineSynchedData() {
         // нет синхронизируемых полей
     }
-    //?} else {
-    /*@Override
+    *///?} else {
+    @Override
     protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
 
         // нет синхронизируемых полей
     
     }
-    *///?}
+    //?}
 
     @Override
     public void tick() {

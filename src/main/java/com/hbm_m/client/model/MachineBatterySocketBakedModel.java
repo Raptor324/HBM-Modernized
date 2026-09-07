@@ -22,8 +22,8 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.state.BlockState;
 //? if forge {
-import net.minecraftforge.client.model.data.ModelData;
-//?}
+/*import net.minecraftforge.client.model.data.ModelData;
+*///?}
 
 public class MachineBatterySocketBakedModel extends AbstractMultipartBakedModel implements AbstractMultipartBakedModel.PartNamesProvider {
 
@@ -47,7 +47,7 @@ public class MachineBatterySocketBakedModel extends AbstractMultipartBakedModel 
     }
 
     //? if forge {
-    @Override
+    /*@Override
     public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, RandomSource rand,
             ModelData modelData, @Nullable RenderType renderType) {
         List<BakedQuad> quads = new ArrayList<>();
@@ -71,7 +71,7 @@ public class MachineBatterySocketBakedModel extends AbstractMultipartBakedModel 
 
         return quads;
     }
-    //?}
+    *///?}
 
     //? if fabric {
     /*@Override
@@ -124,10 +124,10 @@ public class MachineBatterySocketBakedModel extends AbstractMultipartBakedModel 
             List<BakedQuad> out = new ArrayList<>();
             TextureAtlasSprite sprite = Minecraft.getInstance().getTextureAtlas(net.minecraft.world.inventory.InventoryMenu.BLOCK_ATLAS).apply(BATTERY_TEX);
             //? if forge {
-            for (BakedQuad q : battery.getQuads(null, side, rand, ModelData.EMPTY, null)) {
+            /*for (BakedQuad q : battery.getQuads(null, side, rand, ModelData.EMPTY, null)) {
                 out.add(retextureQuad(q, sprite));
             }
-            //?}
+            *///?}
             //? if fabric {
             /*for (BakedQuad q : battery.getQuads(null, side, rand)) {
                 out.add(retextureQuad(q, sprite));

@@ -3,6 +3,7 @@ package com.hbm_m.recipe;
 import org.jetbrains.annotations.NotNull;
 
 import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.platform.recipe.PlatformRecipe;
@@ -123,7 +124,12 @@ public class AmmoPressRecipe extends PlatformRecipe {
             JsonArray ingredientsArray = GsonHelper.getAsJsonArray(json, "ingredients");
             NonNullList<Ingredient> inputs = NonNullList.withSize(AmmoPressRecipe.GRID_SIZE, Ingredient.EMPTY);
             for (int i = 0; i < AmmoPressRecipe.GRID_SIZE && i < ingredientsArray.size(); i++) {
-                inputs.set(i, RecipeHooks.ingredientFromJson(ingredientsArray.get(i)));
+                // A null entry is an empty slot of the 3x3 grid; Ingredient.CODEC rejects JsonNull.
+                JsonElement entry = ingredientsArray.get(i);
+                if (entry == null || entry.isJsonNull()) {
+                    continue;
+                }
+                inputs.set(i, RecipeHooks.ingredientFromJson(entry));
             }
 
             ItemStack output = RecipeHooks.itemStackFromJson(GsonHelper.getAsJsonObject(json, "result"));

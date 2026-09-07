@@ -11,10 +11,10 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 //? if forge {
-import net.minecraftforge.items.SlotItemHandler;
-//?} elif neoforge {
-/*import net.neoforged.neoforge.items.SlotItemHandler;
-*///?}
+/*import net.minecraftforge.items.SlotItemHandler;
+*///?} elif neoforge {
+import net.neoforged.neoforge.items.SlotItemHandler;
+//?}
 
 /** Slot-Koordinaten 1:1 aus {@code ContainerMachineExposureChamber} (1.7.10 Original): Partikel
  *  (8,18), Ingredient (80,36), Output (116,36, extraktionsonly), Batterie (152,54). Behaelter-Item-

@@ -24,15 +24,15 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
 
 //? if forge {
-import org.jetbrains.annotations.Nullable;
+/*import org.jetbrains.annotations.Nullable;
 
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.capability.IFluidHandler;
-//?} else {
-/*import org.jetbrains.annotations.Nullable;
-*///?}
+*///?} else {
+import org.jetbrains.annotations.Nullable;
+//?}
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -143,8 +143,8 @@ public class MachineRefineryBlockEntity extends BaseMachineBlockEntity implement
 
 
     //? if forge {
-    private LazyOptional<IFluidHandler> fluidHandler = LazyOptional.empty();
-    //?}
+    /*private LazyOptional<IFluidHandler> fluidHandler = LazyOptional.empty();
+    *///?}
 
     public MachineRefineryBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.REFINERY_BE.get(), pos, state,
@@ -431,7 +431,7 @@ public class MachineRefineryBlockEntity extends BaseMachineBlockEntity implement
     }
 
     //? if < 1.21.1 {
-    @Override
+    /*@Override
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
         tag.putBoolean("hasExploded", hasExploded);
@@ -442,8 +442,8 @@ public class MachineRefineryBlockEntity extends BaseMachineBlockEntity implement
         tag.putInt("sulfurProgress", sulfurProgress);
         tag.putBoolean("isOn", isOn);
     }
-    //?} else {
-    /*@Override
+    *///?} else {
+    @Override
     protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
         tag.putBoolean("hasExploded", hasExploded);
@@ -454,10 +454,10 @@ public class MachineRefineryBlockEntity extends BaseMachineBlockEntity implement
         tag.putInt("sulfurProgress", sulfurProgress);
         tag.putBoolean("isOn", isOn);
     }
-    *///?}
+    //?}
 
     //? if < 1.21.1 {
-    @Override
+    /*@Override
     public void load(CompoundTag tag) {
         super.load(tag);
         hasExploded = tag.getBoolean("hasExploded");
@@ -468,8 +468,8 @@ public class MachineRefineryBlockEntity extends BaseMachineBlockEntity implement
         sulfurProgress = tag.getInt("sulfurProgress");
         isOn = tag.getBoolean("isOn");
     }
-    //?} else {
-    /*@Override
+    *///?} else {
+    @Override
     protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
         hasExploded = tag.getBoolean("hasExploded");
@@ -480,7 +480,7 @@ public class MachineRefineryBlockEntity extends BaseMachineBlockEntity implement
         sulfurProgress = tag.getInt("sulfurProgress");
         isOn = tag.getBoolean("isOn");
     }
-    *///?}
+    //?}
 
     @Override
     public Component getDisplayName() {
@@ -510,11 +510,11 @@ public class MachineRefineryBlockEntity extends BaseMachineBlockEntity implement
     }
 
     //? if forge {
-    @Override
+    /*@Override
     protected void setupFluidCapability() {
         setFluidHandler(new RefineryFluidHandler(this));
     }
-    //?}
+    *///?}
 
     public boolean isOn() {
         return isOn;

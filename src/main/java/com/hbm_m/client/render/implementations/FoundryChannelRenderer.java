@@ -21,12 +21,12 @@ import org.joml.Matrix4f;
  * a center quad plus one quad per connected direction.
  */
 //? if forge {
-@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-//?} elif fabric {
+/*@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+*///?} elif fabric {
 /*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
 *///?} elif neoforge {
-/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-*///?}
+@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+//?}
 public class FoundryChannelRenderer implements com.hbm_m.client.render.HbmBerBounds<MachineFoundryChannelBlockEntity> {
 
     private static final ResourceLocation LAVA_TEXTURE =

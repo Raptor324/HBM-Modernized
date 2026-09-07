@@ -28,11 +28,11 @@ import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.Container;
 //? if >= 1.21.1 {
-/*import net.minecraft.core.Holder;
+import net.minecraft.core.Holder;
 import net.minecraft.core.component.DataComponents;
 import net.minecraft.world.entity.EquipmentSlotGroup;
 import net.minecraft.world.item.component.ItemAttributeModifiers;
-*///?}
+//?}
 
 public class ArmorModificationHelper {
 
@@ -204,8 +204,8 @@ public class ArmorModificationHelper {
             return;
         }
         //? if forge {
-        armorStack.invalidateCaps();
-        //?}
+        /*armorStack.invalidateCaps();
+        *///?}
         long newMaxCapacity = powered.getMaxCharge(armorStack);
         long currentCharge = powered.getCharge(armorStack);
         if (currentCharge > newMaxCapacity) {
@@ -330,7 +330,7 @@ public class ArmorModificationHelper {
         // 1.20.1: атрибуты живут в NBT-теге "AttributeModifiers" прямо на стаке.
         // 1.21.1: атрибуты живут в DataComponents.ATTRIBUTE_MODIFIERS (immutable record).
         //? if < 1.21.1 {
-        PlatformHooks.editItemTag(armorStack, mainTag -> {
+        /*PlatformHooks.editItemTag(armorStack, mainTag -> {
             ListTag preservedModifiers = new ListTag();
 
             // 2a: Сохраняем немаркированные (ванильные) модификаторы.
@@ -382,8 +382,8 @@ public class ArmorModificationHelper {
 
             mainTag.put("AttributeModifiers", preservedModifiers);
         });
-        //?} else {
-        /*// 1.21.1: атрибуты живут в DataComponents.ATTRIBUTE_MODIFIERS (immutable ItemAttributeModifiers).
+        *///?} else {
+        // 1.21.1: атрибуты живут в DataComponents.ATTRIBUTE_MODIFIERS (immutable ItemAttributeModifiers).
         // Стратегия: начать с текущего компонента, удалить все ранее добавленные HBM-мод-модификаторы
         // (по id-префиксу "am_", который PlatformHooks.attributeModifier ставит на 1.21.1),
         // затем добавить свежие от установленных модов.
@@ -412,21 +412,21 @@ public class ArmorModificationHelper {
             }
         }
         armorStack.set(DataComponents.ATTRIBUTE_MODIFIERS, builder.build());
-        *///?}
+        //?}
 
         // ШАГ 3: ОБРЕЗАНИЕ ЗАРЯДА / capability (силовая броня)
         onPoweredArmorModsChanged(armorStack);
     }
 
     //? if >= 1.21.1 {
-    /*/// true если запись атрибута — наш HBM-mod модификатор (id имеет префикс "am_",
+    /// true если запись атрибута — наш HBM-mod модификатор (id имеет префикс "am_",
     /// который PlatformHooks.attributeModifier ставит при конструировании на 1.21.1).
     /// Используется для дедупликации при перезаписи таблицы модов.
     private static boolean isHbmModAttribute(ItemAttributeModifiers.Entry entry) {
         ResourceLocation id = entry.modifier().id();
         return id != null && id.getNamespace().equals(RefStrings.MODID) && id.getPath().startsWith("am_");
     }
-    *///?}
+    //?}
 
     /** Записывает моды из стола в NBT брони (вызывать перед изъятием брони или закрытием GUI). */
     public static void flushTableToArmor(ItemStack armorStack, Container tableInventory, Player player) {

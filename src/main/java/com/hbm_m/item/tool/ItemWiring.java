@@ -89,16 +89,16 @@ public class ItemWiring extends Item {
     }
 
     //? if < 1.21.1 {
-    @Override
+    /*@Override
     public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
         addTooltip(stack, tooltip);
     }
-    //?} else {
-    /*@Override
+    *///?} else {
+    @Override
     public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
         addTooltip(stack, tooltip);
     }
-    *///?}
+    //?}
 
     private void addTooltip(ItemStack stack, List<Component> tooltip) {
         if (hasStart(stack)) {

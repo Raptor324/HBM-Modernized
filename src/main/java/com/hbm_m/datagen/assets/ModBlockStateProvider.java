@@ -2,7 +2,7 @@ package com.hbm_m.datagen.assets;
 
 import java.util.Map;
 //? if forge {
-import com.hbm_m.block.ModBlocks;
+/*import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.RedBrickBlock;
 import com.hbm_m.block.RedBrickBlock.RedFace;
 import com.hbm_m.block.decorations.DoorBlock;
@@ -3752,10 +3752,10 @@ public class ModBlockStateProvider extends BlockStateProvider {
         );
     }
 
-    /**
+    /^*
      * Метод для блоков, у которых текстура имеет префикс "block_".
      * Например, для блока с именем "uranium_block" он будет искать текстуру "block_uranium".
-     */
+     ^/
     private void resourceBlockWithItem(RegistrySupplier<Block> blockObject) {
         // 1. Получаем регистрационное имя (теперь оно уже "block_uranium")
         String registrationName = blockObject.getId().getPath();
@@ -3806,9 +3806,9 @@ public class ModBlockStateProvider extends BlockStateProvider {
         simpleBlockItem(blockObject.get(), models().getExistingFile(modLoc("block/" + textureName)));
     }
 
-    /**
+    /^*
      * Поглотитель радиации — варианты по уровню ({@link BlockAbsorber.EnumAbsorberTier}).
-     */
+     ^/
     private void registerRadAbsorber() {
         Block block = ModBlocks.RAD_ABSORBER.get();
         VariantBlockStateBuilder builder = getVariantBuilder(block);
@@ -3823,9 +3823,9 @@ public class ModBlockStateProvider extends BlockStateProvider {
         }
     }
 
-    /**
+    /^*
      * Старый метод для блоков, у которых имя текстуры СОВПАДАЕТ с именем регистрации.
-     */
+     ^/
     // =====================================================================================
     // МИГРАЦИЯ ручных blockstates/моделей на датаген.
     // Ранее это были рукописные JSON в src/main/resources/assets/hbm_m/blockstates и models/block.
@@ -4244,7 +4244,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
         mig("steam_turbine", mmachines_steam_turbine, "facing=east@90", "facing=north@0", "facing=south@180", "facing=west@270");
     }
 
-    /** Блок по registry-имени (поиск по статическим полям ModBlocks). */
+    /^* Блок по registry-имени (поиск по статическим полям ModBlocks). ^/
     private Block migBlock(String name) {
         for (java.lang.reflect.Field f : ModBlocks.class.getDeclaredFields()) {
             if (java.lang.reflect.Modifier.isStatic(f.getModifiers()) && RegistrySupplier.class.isAssignableFrom(f.getType())) {
@@ -4258,10 +4258,10 @@ public class ModBlockStateProvider extends BlockStateProvider {
         throw new IllegalStateException("MIGRATE: block '" + name + "' not found in ModBlocks");
     }
 
-    /**
+    /^*
      * Воспроизводит ручной blockstate: каждый элемент variants — "ключ@поворотY".
      * Пустой ключ ("" ) — единственный вариант без свойств. Свойства разрешаются по блоку.
-     */
+     ^/
     @SuppressWarnings({"rawtypes", "unchecked"})
     private void mig(String blockName, ModelFile model, String... variants) {
         Block block = migBlock(blockName);
@@ -4329,10 +4329,10 @@ public class ModBlockStateProvider extends BlockStateProvider {
     }
 
 
-    /**
+    /^*
      * Генерирует состояние для блока с кастомной OBJ моделью.
      * ВАЖНО: Сам файл модели (.json) должен быть создан вручную в /resources!
-     */
+     ^/
     private <T extends Block> void customObjBlock(RegistrySupplier<T> blockObject) {
         // Создаём только blockstate, который ссылается на JSON модель
         // JSON модель должна лежать в resources/assets/hbm_m/models/block/<название>.json
@@ -4365,14 +4365,14 @@ public class ModBlockStateProvider extends BlockStateProvider {
         }
     }
 
-    /**
+    /^*
      * A horizontally-placed machine that has a wrecked model for when it has been blown up.
      *
      * <p>Emits the usual four facings twice over, keyed on the block's {@code exploded} property,
      * so the model swaps the moment the block entity flips that flag. The original does the same
      * swap inside its tile-entity renderer; the port has these on plain baked models, so the
      * blockstate is the place for it.</p>
-     */
+     ^/
     private <T extends Block> void explodableMachineBlock(RegistrySupplier<T> blockObject,
                                                           String intactModel, String explodedModel) {
         var intact = models().getExistingFile(modLoc(intactModel));
@@ -4404,14 +4404,14 @@ public class ModBlockStateProvider extends BlockStateProvider {
                 models().getExistingFile(modLoc("block/machines/" + blockObject.getId().getPath())));
     }
 
-    /**
+    /^*
      * Crane-Block mit voller 6-Richtungs-{@link net.minecraft.world.level.block.state.properties.BlockStateProperties#FACING}
      * (wie ein Kolben/Dropper) statt der interaktiven Screwdriver-Ausgabeseite des Originals
      * ({@code BlockCraneBase}). Ausgabeseite ist immer die der Eingabeseite (FACING) gegenueberliegende
      * Seite - deshalb werden nur die "Default"-Icons (in/out/top/side) gebraucht, nicht die ~20
      * Turn-Varianten fuer eine per Screwdriver ueberschriebene Ausgabeseite (siehe Klassenkommentar
      * an {@code MachineCraneInserterBlockEntity} fuer die volle Scope-Begruendung).
-     */
+     ^/
     private <T extends Block> void craneDirectionalBlock(RegistrySupplier<T> blockObject, String texturePrefix) {
         ResourceLocation inTex = modLoc("block/" + texturePrefix + "_in");
         ResourceLocation outTex = modLoc("block/" + texturePrefix + "_out");
@@ -4445,11 +4445,11 @@ public class ModBlockStateProvider extends BlockStateProvider {
         }
     }
 
-    /**
+    /^*
      * Fuer Bloecke mit einer 6-Wege-{@code FACING}-Property, deren Modell aber visuell symmetrisch
      * ist (z.B. ein kleiner zentrierter Marker-Wuerfel wie {@code MachineDroneWaypointBlock}) - jede
      * Facing-Variante zeigt dasselbe unrotierte Modell, spart damit 6 separate Modell-Dateien.
-     */
+     ^/
     private <T extends Block> void directionlessFacingBlock(T block, ModelFile model) {
         VariantBlockStateBuilder builder = getVariantBuilder(block);
         for (Direction facing : Direction.values()) {
@@ -4460,7 +4460,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
         simpleBlockItem(block, model);
     }
 
-    /** Same as {@link #directionlessFacingBlock} but for the vanilla FACING property. */
+    /^* Same as {@link #directionlessFacingBlock} but for the vanilla FACING property. ^/
     private <T extends Block> void plainFacingBlock(T block, ModelFile model) {
         VariantBlockStateBuilder builder = getVariantBuilder(block);
         for (Direction facing : Direction.values()) {
@@ -4485,16 +4485,16 @@ public class ModBlockStateProvider extends BlockStateProvider {
             models().getExistingFile(modLoc("block/bomb/" + blockObject.getId().getPath())));
     }
 
-    /**
+    /^*
      * Advanced Assembly Machine: FACING + FRAME (frame в BlockState для запекания в чанк).
      * Одна модель - getQuads возвращает Base+Frame при frame=true.
-     */
-    /**
+     ^/
+    /^*
      * Chemical plant: без {@code rotationY} в blockstate - поворот задаётся только в
      * {@link com.hbm_m.client.model.MachineChemicalPlantBakedModel} через
      * {@link com.hbm_m.util.MultipartFacingTransforms#legacyBlockEntityBakedRotationY}, в точности как
      * {@code LegacyAnimator.setupBlockTransform} у VBO (иначе vanilla y + getQuads дают двойной поворот).
-     */
+     ^/
     private void registerChemicalPlantBlock(RegistrySupplier<? extends Block> blockObject) {
         VariantBlockStateBuilder builder = getVariantBuilder(blockObject.get());
         ModelFile modelFile = models().getExistingFile(modLoc("block/machines/" + blockObject.getId().getPath()));
@@ -4542,13 +4542,13 @@ public class ModBlockStateProvider extends BlockStateProvider {
         }
     }
 
-    /**
+    /^*
      * Генерирует модель и состояние для горизонтально-ориентированного блока.
      * @param blockObject Блок
      * @param sideTexture Текстура для боковых и задней сторон
      * @param frontTexture Текстура для лицевой стороны (север)
      * @param topTexture Текстура для верха и низа
-     */
+     ^/
     private void orientableBlockWithItem(RegistrySupplier<Block> blockObject, ResourceLocation sideTexture, ResourceLocation frontTexture, ResourceLocation topTexture) {
         // 1. Создаем модель блока с разными текстурами.
         //    Метод orientable использует стандартные имена: side, front, top, bottom.
@@ -4573,7 +4573,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
         ));
     }
 
-    /** Тонкий слой осадков (не snow-layer с LAYERS). */
+    /^* Тонкий слой осадков (не snow-layer с LAYERS). ^/
     private void registerFalloutLayerBlock(RegistrySupplier<Block> block, String baseName) {
         ResourceLocation texture = blockTexture(block.get());
         ModelFile model = models().withExistingParent(baseName, mcLoc("block/snow_height2"))
@@ -4582,7 +4582,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
         simpleBlock(block.get(), model);
     }
 
-    /** Полный блок fallout (1.7.10 block_fallout). */
+    /^* Полный блок fallout (1.7.10 block_fallout). ^/
     private void registerFalloutBlock(RegistrySupplier<Block> block, String baseName, String textureName) {
         simpleBlock(block.get(), models().cubeAll(baseName, modLoc("block/" + textureName)));
     }
@@ -4639,10 +4639,10 @@ public class ModBlockStateProvider extends BlockStateProvider {
         simpleBlockItem(block.get(), models().withExistingParent(baseName + "_inventory", mcLoc("block/snow_height2")).texture("texture", texture).texture("particle", texture));
     }
 
-    /**
+    /^*
      * Регистрирует blockstate для машин со свойством LIT (включен/выключен).
      * Генерирует варианты для каждого направления FACING и состояния LIT.
-     */
+     ^/
     private void registerLitMachineBlock(RegistrySupplier<? extends Block> blockObject, 
                                           DirectionProperty facingProperty,
                                           BooleanProperty litProperty,
@@ -4678,9 +4678,9 @@ public class ModBlockStateProvider extends BlockStateProvider {
         // simpleBlockItem(blockObject.get(), offModelFile);
     }
 
-    /**
+    /^*
      * Возвращает угол поворота Y для направления в градусах.
-     */
+     ^/
     private int getRotationY(Direction facing) {
         return switch (facing) {
             case SOUTH -> 180;
@@ -4744,11 +4744,11 @@ public class ModBlockStateProvider extends BlockStateProvider {
         simpleBlockItem(block, models().cubeAll(blockObject.getId().getPath(), modLoc(overlayTexture)));
     }
 
-    /**
+    /^*
      * One RBMK panel slab: a flat plate {@code height} pixels tall, textured with the panel sheet on
      * the flat faces and the narrow edge strip on the sides. 1:1 with CE's hand-written
      * {@code deco_rbmk_*_slab2/4} models.
-     */
+     ^/
     private void rbmkPanelSlab(net.minecraft.world.level.block.Block block, String name,
                                 String topTex, String sideTex, int height) {
         var model = models().getBuilder(name)
@@ -4774,8 +4774,8 @@ public class ModBlockStateProvider extends BlockStateProvider {
         }
     }
 
-    /** Axis-колонна (балки/трубы структурного декора) + предметная модель. */
-    /** Ванильная лестница (порт BlockNTMLadder): blockstate как у ladder.json, модель-родитель block/ladder. */
+    /^* Axis-колонна (балки/трубы структурного декора) + предметная модель. ^/
+    /^* Ванильная лестница (порт BlockNTMLadder): blockstate как у ladder.json, модель-родитель block/ladder. ^/
     private void ladderBlockWithItem(Block block, String texture) {
         String name = texture.substring("block/".length());
         ModelFile model = models().withExistingParent(name, mcLoc("block/ladder"))
@@ -4785,11 +4785,11 @@ public class ModBlockStateProvider extends BlockStateProvider {
         simpleBlockItem(block, model);
     }
 
-    /**
+    /^*
      * GrateBlock (порт BlockGrate): панель высотой 2px на высоте pos*2px.
      * pos=8 (потолок) визуально h7, pos=9 (под блоком) — h0. Стороны обрезают
      * текстуру по высоте, как ISBRH оригинала.
-     */
+     ^/
     private void grateBlockWithItem(RegistrySupplier<Block> blockObject, String top, String side) {
         Block block = blockObject.get();
         String name = blockObject.getId().getPath();
@@ -4819,11 +4819,11 @@ public class ModBlockStateProvider extends BlockStateProvider {
         simpleBlockItem(block, levels[0]);
     }
 
-    /**
+    /^*
      * AXIS-блок с готовой JSON/OBJ моделью-обёрткой из resources.
      * baseVertical=true — база модели вертикальна (steel_beam: колонна вдоль Y),
      * false — база ориентирована по X (steel_scaffold: панель, нормаль X).
-     */
+     ^/
     private void objAxisBlockWithItem(RegistrySupplier<Block> blockObject, String modelName, boolean baseVertical) {
         Block block = blockObject.get();
         ModelFile model = models().getExistingFile(modLoc(modelName));
@@ -4851,7 +4851,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
         simpleBlockItem(block, model);
     }
 
-    /** OilSpillBlock (порт BlockLayering): слои как у снега, модели поверх vanilla snow_heightN. */
+    /^* OilSpillBlock (порт BlockLayering): слои как у снега, модели поверх vanilla snow_heightN. ^/
     private void layerBlockWithItem(RegistrySupplier<Block> blockObject, String texture) {
         Block block = blockObject.get();
         String name = blockObject.getId().getPath();
@@ -4873,7 +4873,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
         itemModels().withExistingParent(name, mcLoc("item/generated")).texture("layer0", modLoc(texture));
     }
 
-    /** OBJ-блок без ориентации (модель-обёртка в resources, identity transform). */
+    /^* OBJ-блок без ориентации (модель-обёртка в resources, identity transform). ^/
     private void customObjBlockSimple(RegistrySupplier<Block> blockObject) {
         ModelFile model = models().getExistingFile(modLoc("block/" + blockObject.getId().getPath()));
         VariantBlockStateBuilder builder = getVariantBuilder(blockObject.get());
@@ -4884,14 +4884,14 @@ public class ModBlockStateProvider extends BlockStateProvider {
         simpleBlockItem(blockObject.get(), model);
     }
 
-    /** OBJ-блок без свойства facing (обычный Block): один вариант, без поворотов. */
+    /^* OBJ-блок без свойства facing (обычный Block): один вариант, без поворотов. ^/
     private void customObjBlockNoFacing(RegistrySupplier<Block> blockObject) {
         ModelFile model = models().getExistingFile(modLoc("block/" + blockObject.getId().getPath()));
         getVariantBuilder(blockObject.get()).partialState().modelForState().modelFile(model).addModel();
         simpleBlockItem(blockObject.get(), model);
     }
 
-    /** OBJ-блок с нестандартной картой поворотов facing→y (из рендера оригинала). */
+    /^* OBJ-блок с нестандартной картой поворотов facing→y (из рендера оригинала). ^/
     private void customObjBlockRotated(RegistrySupplier<Block> blockObject, Map<Direction, Integer> rotY) {
         ModelFile model = models().getExistingFile(modLoc("block/" + blockObject.getId().getPath()));
         VariantBlockStateBuilder builder = getVariantBuilder(blockObject.get());
@@ -4902,7 +4902,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
         simpleBlockItem(blockObject.get(), model);
     }
 
-    /** Ванильный забор (порт BlockMetalFence): post/side шаблоны с текстурой. */
+    /^* Ванильный забор (порт BlockMetalFence): post/side шаблоны с текстурой. ^/
     private void fenceBlockWithItem(RegistrySupplier<Block> blockObject, String texture) {
         ModelFile post = models().withExistingParent(blockObject.getId().getPath() + "_post", mcLoc("block/fence_post"))
                 .texture("texture", modLoc(texture));
@@ -4939,4 +4939,4 @@ public class ModBlockStateProvider extends BlockStateProvider {
         simpleBlockItem(block, model);
     }
 }
-//?}
+*///?}

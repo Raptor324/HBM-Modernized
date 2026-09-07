@@ -93,14 +93,14 @@ public class ItemBombCaller extends Item {
     }
 
     //? if < 1.21.1 {
-    @Override
+    /*@Override
     public void appendHoverText(@NotNull ItemStack stack, @Nullable Level level,
                                 @NotNull List<Component> tooltip, @NotNull TooltipFlag flag) {
-    //?} else {
-    /*@Override
+    *///?} else {
+    @Override
     public void appendHoverText(@NotNull ItemStack stack, @NotNull Item.TooltipContext context,
                                 @NotNull List<Component> tooltip, @NotNull TooltipFlag flag) {
-    *///?}
+    //?}
         tooltip.add(Component.literal("Type: " + this.strike.label).withStyle(ChatFormatting.GRAY));
     }
 }

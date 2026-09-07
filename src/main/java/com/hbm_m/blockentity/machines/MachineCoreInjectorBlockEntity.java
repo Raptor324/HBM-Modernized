@@ -48,7 +48,7 @@ public class MachineCoreInjectorBlockEntity extends BaseMachineBlockEntity {
     }
 
     //? if forge {
-    @Override
+    /*@Override
     public @org.jetbrains.annotations.NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(
             net.minecraftforge.common.capabilities.Capability<T> cap, @Nullable Direction side) {
         if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER) {
@@ -56,7 +56,7 @@ public class MachineCoreInjectorBlockEntity extends BaseMachineBlockEntity {
         }
         return super.getCapability(cap, side);
     }
-    //?}
+    *///?}
 
     public static void tick(Level level, BlockPos pos, BlockState state, MachineCoreInjectorBlockEntity be) {
         if (level.isClientSide()) {

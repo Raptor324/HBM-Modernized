@@ -18,8 +18,8 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
 //? if forge {
-import net.minecraftforge.event.ForgeEventFactory;
-//?}
+/*import net.minecraftforge.event.ForgeEventFactory;
+*///?}
 
 import java.util.HashMap;
 import java.util.List;
@@ -67,8 +67,8 @@ public class EntityProcessorCross implements IEntityProcessor {
 
         List<Entity> list = level.getEntities(allowSelfDamage ? null : explosion.exploder, new AABB(minX, minY, minZ, maxX, maxY, maxZ));
         //? if forge {
-        ForgeEventFactory.onExplosionDetonate(level, explosion.compat, list, size);
-        //?}
+        /*ForgeEventFactory.onExplosionDetonate(level, explosion.compat, list, size);
+        *///?}
 
         Vec3[] nodes;
 
@@ -87,10 +87,10 @@ public class EntityProcessorCross implements IEntityProcessor {
 
         for (Entity entity : list) {
             //? if < 1.21.1 {
-            boolean ignore = entity.ignoreExplosion();
-            //?} else {
-            /*boolean ignore = entity.ignoreExplosion(explosion.compat);
-            *///?}
+            /*boolean ignore = entity.ignoreExplosion();
+            *///?} else {
+            boolean ignore = entity.ignoreExplosion(explosion.compat);
+            //?}
             if (!ignore) {
 
                 AABB entityBoundingBox = entity.getBoundingBox();

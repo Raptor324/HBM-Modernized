@@ -56,8 +56,8 @@ public abstract class BaseHbmBlockEntity extends BlockEntity implements com.hbm_
      * Мультиблоки переопределяют на AABB всей структуры.
      */
     //? if forge {
-    @Override
-    //?}
+    /*@Override
+    *///?}
     public net.minecraft.world.phys.AABB getRenderBoundingBox() {
         return new net.minecraft.world.phys.AABB(worldPosition).inflate(0.5D);
     }
@@ -116,7 +116,7 @@ public abstract class BaseHbmBlockEntity extends BlockEntity implements com.hbm_
     // ═════════════════════════════════════════════════════════════════════════════════════
 
     //? if < 1.21.1 {
-    @Override
+    /*@Override
     protected void saveAdditional(@NotNull CompoundTag tag) {
         super.saveAdditional(tag);
         writeNbtData(tag, null);
@@ -127,8 +127,8 @@ public abstract class BaseHbmBlockEntity extends BlockEntity implements com.hbm_
         super.load(tag);
         readNbtData(tag, null);
     }
-    //?} else {
-    /*@Override
+    *///?} else {
+    @Override
     protected void saveAdditional(@NotNull CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
         writeNbtData(tag, registries);
@@ -139,27 +139,27 @@ public abstract class BaseHbmBlockEntity extends BlockEntity implements com.hbm_
         super.loadAdditional(tag, registries);
         readNbtData(tag, registries);
     }
-    *///?}
+    //?}
 
     // ═════════════════════════════════════════════════════════════════════════════════════
     //  Синхронизация клиента. Ветвление — единственное место на проекте.
     // ═════════════════════════════════════════════════════════════════════════════════════
 
     //? if < 1.21.1 {
-    @Override
+    /*@Override
     public @NotNull CompoundTag getUpdateTag() {
         CompoundTag tag = super.getUpdateTag();
         writeNbtData(tag, null);
         return tag;
     }
-    //?} elif neoforge {
-    /*@Override
+    *///?} elif neoforge {
+    @Override
     public @NotNull CompoundTag getUpdateTag(net.minecraft.core.HolderLookup.Provider registries) {
         CompoundTag tag = super.getUpdateTag(registries);
         writeNbtData(tag, registries);
         return tag;
     }
-    *///?} else {
+    //?} else {
     /*@Override
     public @NotNull CompoundTag getUpdateTag(HolderLookup.Provider registries) {
         CompoundTag tag = super.getUpdateTag(registries);
@@ -175,7 +175,7 @@ public abstract class BaseHbmBlockEntity extends BlockEntity implements com.hbm_
     }
 
     //? if forge {
-    @Override
+    /*@Override
     public void handleUpdateTag(@NotNull CompoundTag tag) {
         applyClientUpdate(tag);
     }
@@ -185,8 +185,8 @@ public abstract class BaseHbmBlockEntity extends BlockEntity implements com.hbm_
         CompoundTag tag = PlatformHooks.getItemTag(pkt);
         if (tag != null) applyClientUpdate(tag);
     }
-    //?} else {
-    /*// NeoForge 1.21.1: дефолт IBlockEntityExtension.onDataPacket ПРОПУСКАЕТ ПУСТОЙ тег
+    *///?} else {
+    // NeoForge 1.21.1: дефолт IBlockEntityExtension.onDataPacket ПРОПУСКАЕТ ПУСТОЙ тег
     // (if (!tag.isEmpty())), из-за чего сброс опциональных данных (например, camo=null
     // у paintable-кабеля) не доезжал до клиента — тег после сброса пустой.
     // Переопределяем с безусловным применением.
@@ -199,7 +199,7 @@ public abstract class BaseHbmBlockEntity extends BlockEntity implements com.hbm_
     public void onDataPacket(@NotNull Connection net, @NotNull ClientboundBlockEntityDataPacket pkt, HolderLookup.Provider registries) {
         applyClientUpdate(pkt.getTag(), registries);
     }
-    *///?}
+    //?}
 
     // ═══════════════════════════════════════════════════════════════════════════════════════════
     //  Capability Providers (Автоматизация для NeoForge и платформенных адаптеров)
@@ -218,10 +218,10 @@ public abstract class BaseHbmBlockEntity extends BlockEntity implements com.hbm_
     public @Nullable Object getFluidHandler(@Nullable net.minecraft.core.Direction side) {
         if (this instanceof com.hbm_m.api.fluids.IFluidUserMK2 mk2) {
             //? if forge {
-            return null; // На Forge разруливается через getCapability
-            //?} elif neoforge {
-            /*return new com.hbm_m.api.fluids.NeoForgeFluidHandlerMK2(mk2);
-            *///?}
+            /*return null; // На Forge разруливается через getCapability
+            *///?} elif neoforge {
+            return new com.hbm_m.api.fluids.NeoForgeFluidHandlerMK2(mk2);
+            //?}
         }
         return null;
     }

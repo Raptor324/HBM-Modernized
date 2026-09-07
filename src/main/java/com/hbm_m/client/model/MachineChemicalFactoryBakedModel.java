@@ -10,9 +10,9 @@ import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.state.BlockState;
 //? if forge {
-import net.minecraftforge.client.ChunkRenderTypeSet;
+/*import net.minecraftforge.client.ChunkRenderTypeSet;
 import net.minecraftforge.client.model.data.ModelData;
-//?}
+*///?}
 
 /**
  * Chemical Factory — порт 1.7.10 {@code ResourceManager.chemical_factory} (части Base/Frame/Fan1/Fan2).
@@ -62,11 +62,11 @@ public class MachineChemicalFactoryBakedModel extends AbstractMultipartBakedMode
     }
 
     //? if forge {
-    @Override
+    /*@Override
     public ChunkRenderTypeSet getRenderTypes(BlockState state, RandomSource rand, ModelData data) {
         return ChunkRenderTypeSet.of(RenderType.cutout());
     }
-    //?}
+    *///?}
 
     @Override
     protected java.util.List<String> getItemRenderPartNames() {

@@ -20,12 +20,12 @@ import net.minecraft.world.phys.AABB;
 import com.hbm_m.client.render.culling.OcclusionCullingHelper;
 
 //? if forge {
-@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-//?} elif fabric {
+/*@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+*///?} elif fabric {
 /*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
 *///?} elif neoforge {
-/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-*///?}
+@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+//?}
 public abstract class AbstractPartBasedRenderer<T extends BlockEntity, M extends BakedModel>
         implements com.hbm_m.client.render.HbmBerBounds<T> {
 
@@ -199,8 +199,8 @@ public abstract class AbstractPartBasedRenderer<T extends BlockEntity, M extends
      */
     private static AABB frustumCullBounds(BlockEntity blockEntity) {
         //? if forge {
-        return ((net.minecraftforge.common.extensions.IForgeBlockEntity) blockEntity).getRenderBoundingBox();
-        //?}
+        /*return ((net.minecraftforge.common.extensions.IForgeBlockEntity) blockEntity).getRenderBoundingBox();
+        *///?}
         //? if fabric {
         /*if (blockEntity instanceof com.hbm_m.blockentity.BaseMachineBlockEntity b) {
             return b.getRenderBoundingBox();
@@ -212,7 +212,7 @@ public abstract class AbstractPartBasedRenderer<T extends BlockEntity, M extends
         *///?}
 
         //? if neoforge {
-        /*// На 1.21.1 у BlockEntity есть ванильный getRenderBoundingBox(), но для HBM-машин
+        // На 1.21.1 у BlockEntity есть ванильный getRenderBoundingBox(), но для HBM-машин
         // используем явные переопределения (мультиблоки с увеличенным AABB), как на Fabric.
         if (blockEntity instanceof com.hbm_m.api.render.RenderBoundsProvider p) {
             return p.getRenderBoundingBox();
@@ -224,7 +224,7 @@ public abstract class AbstractPartBasedRenderer<T extends BlockEntity, M extends
             return d.getRenderBoundingBox();
         }
         return new AABB(blockEntity.getBlockPos()).inflate(1.0D);
-        *///?}
+        //?}
     }
 
     // -----------------------------------------------------------------------

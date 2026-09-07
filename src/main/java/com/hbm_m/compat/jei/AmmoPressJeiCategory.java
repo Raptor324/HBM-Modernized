@@ -16,7 +16,7 @@ import net.minecraft.world.item.ItemStack;
  * {@link AmmoPressRecipe}/{@code MachineAmmoPressBlockEntity}).
  */
 //? if forge {
-public class AmmoPressJeiCategory extends JeiGenericRecipeCategory<AmmoPressRecipe> {
+/*public class AmmoPressJeiCategory extends JeiGenericRecipeCategory<AmmoPressRecipe> {
 
     public static final RecipeType<AmmoPressRecipe> RECIPE_TYPE =
             RecipeType.create(RefStrings.MODID, "ammo_press", AmmoPressRecipe.class);
@@ -78,7 +78,7 @@ public class AmmoPressJeiCategory extends JeiGenericRecipeCategory<AmmoPressReci
         // Kein Blueprint-Slot fuer Ammo-Press-Rezepte.
     }
 }
-//?} else {
-/*public final class AmmoPressJeiCategory {
+*///?} else {
+public final class AmmoPressJeiCategory {
     private AmmoPressJeiCategory() {}
-}*///?}
+}//?}

@@ -1,6 +1,6 @@
 package com.hbm_m.datagen.recipes.custom;
 //? if forge {
-import javax.annotation.Nullable;
+/*import javax.annotation.Nullable;
 
 import com.google.gson.JsonObject;
 import com.hbm_m.recipe.CokerRecipe;
@@ -10,7 +10,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 
-/**
+/^*
  * Datagen-билдер {@link CokerRecipe} ({@code hbm_m:coker}).
  *
  * <p>Чистый ванильный 1.20.1 код внутри {@code //? if forge} — датаген только для 1.20.1-forge.</p>
@@ -24,7 +24,7 @@ import net.minecraft.world.item.crafting.RecipeSerializer;
  *   "byproduct": { "fluid": "...", "amount": 1100 }   // optional
  * }
  * }</pre>
- */
+ ^/
 public class CokerRecipeBuilder extends BaseRecipeBuilder<CokerRecipeBuilder> {
 
     private final FluidStack input;
@@ -61,4 +61,4 @@ public class CokerRecipeBuilder extends BaseRecipeBuilder<CokerRecipeBuilder> {
         return CokerRecipe.Serializer.INSTANCE;
     }
 }
-//?}
+*///?}

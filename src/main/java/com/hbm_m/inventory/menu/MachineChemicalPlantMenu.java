@@ -59,8 +59,8 @@ public class MachineChemicalPlantMenu extends AbstractContainerMenu {
                 public boolean mayPlace(@NotNull ItemStack stack) {
                     if (ItemEnergyAccess.getHbmProvider(stack).isPresent() || ItemEnergyAccess.getHbmReceiver(stack).isPresent()) return true;
                     //? if neoforge {
-                    /*if (stack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM) != null) return true;
-                    *///?}
+                    if (stack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM) != null) return true;
+                    //?}
                     return false;
                 }
             });
@@ -204,8 +204,8 @@ public class MachineChemicalPlantMenu extends AbstractContainerMenu {
             if (ItemEnergyAccess.getHbmProvider(stack).isPresent()
                     || ItemEnergyAccess.getHbmReceiver(stack).isPresent()
                     //? if neoforge {
-                    /*|| stack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM) != null
-                    *///?}
+                    || stack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM) != null
+                    //?}
             ) {
                 if (!moveItemStackTo(stack, 0, 1, false)) return ItemStack.EMPTY;
             } else if (stack.getItem() instanceof ItemBlueprintFolder) {

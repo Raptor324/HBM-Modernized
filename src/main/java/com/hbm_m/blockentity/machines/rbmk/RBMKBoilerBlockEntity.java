@@ -214,7 +214,7 @@ public class RBMKBoilerBlockEntity extends RBMKColumnBlockEntity
     }
 
     //? if forge {
-    /**
+    /*/^*
      * Without this the channel had two tanks that nothing could reach: no pipe, tank or bucket
      * could put water in and no machine could take steam out, so the column heated up, boiled
      * nothing, and sat there.
@@ -225,7 +225,7 @@ public class RBMKBoilerBlockEntity extends RBMKColumnBlockEntity
      * inspections) gets a combined view that fills the feed and drains the steam, because a
      * side-less handler that exposed only one of the two would make the other unreachable by
      * hand.</p>
-     */
+     ^/
     @Override
     public @org.jetbrains.annotations.NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(
             net.minecraftforge.common.capabilities.Capability<T> cap,
@@ -241,7 +241,7 @@ public class RBMKBoilerBlockEntity extends RBMKColumnBlockEntity
     private final net.minecraftforge.common.util.LazyOptional<net.minecraftforge.fluids.capability.IFluidHandler>
             combinedHandler = net.minecraftforge.common.util.LazyOptional.of(FeedAndSteamHandler::new);
 
-    /** Feed in, steam out - the side-less view of {@link #waterTank} plus {@link #steamTank}. */
+    /^* Feed in, steam out - the side-less view of {@link #waterTank} plus {@link #steamTank}. ^/
     private class FeedAndSteamHandler implements net.minecraftforge.fluids.capability.IFluidHandler {
 
         private net.minecraftforge.fluids.capability.IFluidHandler feed() {
@@ -285,7 +285,7 @@ public class RBMKBoilerBlockEntity extends RBMKColumnBlockEntity
             return steam().drain(maxDrain, action);
         }
     }
-    //?}
+    *///?}
 
     /**
      * {@code cyceCompressor}: each stage swaps the tank to the next steam type and divides the
@@ -351,22 +351,22 @@ public class RBMKBoilerBlockEntity extends RBMKColumnBlockEntity
 
     
     //? if < 1.21.1 {
-    @Override
+    /*@Override
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
         waterTank.writeToNBT(tag, "water"); // kept as "water" (not the original's "feed") so existing saves keep their contents
         steamTank.writeToNBT(tag, "steam");
         tag.putInt("ventDelay", ventDelay);
     }
-    //?} else {
-    /*@Override
+    *///?} else {
+    @Override
     protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
         waterTank.writeToNBT(tag, "water"); // kept as "water" (not the original's "feed") so existing saves keep their contents
         steamTank.writeToNBT(tag, "steam");
         tag.putInt("ventDelay", ventDelay);
     }
-    *///?}
+    //?}
 
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {

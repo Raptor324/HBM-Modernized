@@ -43,12 +43,12 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.phys.AABB;
 
 //? if forge {
-@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-//?} elif fabric {
+/*@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+*///?} elif fabric {
 /*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
 *///?} elif neoforge {
-/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-*///?}
+@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+//?}
 public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
 
     /**
@@ -637,10 +637,10 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
             } else {
                 var cam = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
                 //? if < 1.21.1 {
-                tmpInvViewRot.identity().set(RenderSystem.getInverseViewRotationMatrix());
-                //?} else {
-                /*tmpInvViewRot.identity().rotation(Minecraft.getInstance().gameRenderer.getMainCamera().rotation()).invert();
-                *///?}
+                /*tmpInvViewRot.identity().set(RenderSystem.getInverseViewRotationMatrix());
+                *///?} else {
+                tmpInvViewRot.identity().rotation(Minecraft.getInstance().gameRenderer.getMainCamera().rotation()).invert();
+                //?}
                 tmpLocalPose.set(tmpInvViewRot).mul(poseStack.last().pose());
                 tmpLocalPose.m30(tmpLocalPose.m30() - (float) (blockPos.getX() - cam.x));
                 tmpLocalPose.m31(tmpLocalPose.m31() - (float) (blockPos.getY() - cam.y));
@@ -810,10 +810,10 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
             } else {
                 var cam = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
                 //? if < 1.21.1 {
-                tmpInvViewRot.identity().set(RenderSystem.getInverseViewRotationMatrix());
-                //?} else {
-                /*tmpInvViewRot.identity().rotation(Minecraft.getInstance().gameRenderer.getMainCamera().rotation()).invert();
-                *///?}
+                /*tmpInvViewRot.identity().set(RenderSystem.getInverseViewRotationMatrix());
+                *///?} else {
+                tmpInvViewRot.identity().rotation(Minecraft.getInstance().gameRenderer.getMainCamera().rotation()).invert();
+                //?}
                 tmpLocalPose.set(tmpInvViewRot).mul(poseStack.last().pose());
                 tmpLocalPose.m30(tmpLocalPose.m30() - (float) (anchor.getX() - cam.x));
                 tmpLocalPose.m31(tmpLocalPose.m31() - (float) (anchor.getY() - cam.y));

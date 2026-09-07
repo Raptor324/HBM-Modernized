@@ -42,18 +42,18 @@ public abstract class EntityDroneBase extends Entity {
     }
 
     //? if < 1.21.1 {
-    @Override
+    /*@Override
     protected void defineSynchedData() {
         this.entityData.define(HAS_TARGET, false);
         this.entityData.define(APPEARANCE, APPEARANCE_EMPTY);
     }
-    //?} else {
-    /*@Override
+    *///?} else {
+    @Override
     protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
         builder.define(HAS_TARGET, false);
         builder.define(APPEARANCE, APPEARANCE_EMPTY);
     }
-    *///?}
+    //?}
 
     public void setTarget(double x, double y, double z) {
         this.targetX = x;

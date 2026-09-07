@@ -15,10 +15,10 @@ import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.Direction;
 import net.minecraft.util.Mth;
 //? if forge {
-import net.minecraftforge.client.model.pipeline.QuadBakingVertexConsumer;
-//?} elif neoforge {
-/*import net.neoforged.neoforge.client.model.pipeline.QuadBakingVertexConsumer;
-*///?}
+/*import net.minecraftforge.client.model.pipeline.QuadBakingVertexConsumer;
+*///?} elif neoforge {
+import net.neoforged.neoforge.client.model.pipeline.QuadBakingVertexConsumer;
+//?}
 
 public class ModelHelper {
 
@@ -44,7 +44,7 @@ public class ModelHelper {
         /*throw new UnsupportedOperationException("Procedural quad baking is not implemented on Fabric yet.");
         *///?}
         //? if forge {
-        QuadBakingVertexConsumer.Buffered builder = new QuadBakingVertexConsumer.Buffered();
+        /*QuadBakingVertexConsumer.Buffered builder = new QuadBakingVertexConsumer.Buffered();
         builder.setSprite(sprite);
         builder.setDirection(direction);
         builder.setHasAmbientOcclusion(true);
@@ -81,10 +81,10 @@ public class ModelHelper {
                                     new float[]{x1, y1, z1, u1, v0}, new float[]{x1, y0, z1, u1, v1});
         }
         return builder.getQuad();
-        //?}
+        *///?}
 
         //? if neoforge {
-        /*// NeoForge 1.21.1: QuadBakingVertexConsumer — самостоятельный класс (не Buffered),
+        // NeoForge 1.21.1: QuadBakingVertexConsumer — самостоятельный класс (не Buffered),
         // использует 1.21 VertexConsumer API (addVertex/setUv/setNormal вместо vertex().endVertex()).
         // Логика полностью зеркальна forge-ветке.
         QuadBakingVertexConsumer builder = new QuadBakingVertexConsumer();
@@ -122,11 +122,11 @@ public class ModelHelper {
                                     new float[]{x1, y1, z1, u1, v0}, new float[]{x1, y0, z1, u1, v1});
         }
         return builder.bakeQuad();
-        *///?}
+        //?}
     }
 
     //? if forge {
-    private static void putVertices(QuadBakingVertexConsumer builder, Vector3f normal, boolean rotate, float[] v1, float[] v2, float[] v3, float[] v4) {
+    /*private static void putVertices(QuadBakingVertexConsumer builder, Vector3f normal, boolean rotate, float[] v1, float[] v2, float[] v3, float[] v4) {
         if (!rotate) {
             putVertex(builder, normal, v1[0], v1[1], v1[2], v1[3], v1[4]);
             putVertex(builder, normal, v2[0], v2[1], v2[2], v2[3], v2[4]);
@@ -143,10 +143,10 @@ public class ModelHelper {
     private static void putVertex(QuadBakingVertexConsumer builder, Vector3f normal, float x, float y, float z, float u, float v) {
         builder.vertex(x, y, z).uv(u, v).uv2(0, 0).normal(normal.x(), normal.y(), normal.z()).color(-1).endVertex();
     }
-    //?}
+    *///?}
 
     //? if neoforge {
-    /*private static void putVertices(QuadBakingVertexConsumer builder, Vector3f normal, boolean rotate, float[] v1, float[] v2, float[] v3, float[] v4) {
+    private static void putVertices(QuadBakingVertexConsumer builder, Vector3f normal, boolean rotate, float[] v1, float[] v2, float[] v3, float[] v4) {
         if (!rotate) {
             putVertex(builder, normal, v1[0], v1[1], v1[2], v1[3], v1[4]);
             putVertex(builder, normal, v2[0], v2[1], v2[2], v2[3], v2[4]);
@@ -163,7 +163,7 @@ public class ModelHelper {
     private static void putVertex(QuadBakingVertexConsumer builder, Vector3f normal, float x, float y, float z, float u, float v) {
         builder.addVertex(x, y, z).setColor(-1, -1, -1, -1).setUv(u, v).setUv2(0, 0).setNormal(normal.x(), normal.y(), normal.z());
     }
-    *///?}
+    //?}
 
     /** Position: первые 3 int (x,y,z). Normal: последний int вершины (Embeddium=8 ints/vertex, Vanilla=9). */
     private static final int POSITION_OFFSET = 0;

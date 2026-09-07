@@ -37,8 +37,8 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
 //? if forge {
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
- //?}
+/*import net.minecraftforge.common.capabilities.ForgeCapabilities;
+ *///?}
 
  /**
  * BlockEntity трубы. Хранит тип жидкости и управляет MK2 узлом в UniNodespace.
@@ -166,7 +166,7 @@ public class FluidDuctBlockEntity extends BaseHbmBlockEntity implements IFluidPi
     }
 
     //? if forge {
-    @Override
+    /*@Override
     public void onLoad() {
         super.onLoad();
         if (level instanceof ServerLevel serverLevel) {
@@ -190,7 +190,7 @@ public class FluidDuctBlockEntity extends BaseHbmBlockEntity implements IFluidPi
             FluidDuctBlock.refreshAdjacentDucts(level, worldPosition);
         }
     }
-    //?}
+    *///?}
 
     //? if fabric {
     /*@Override
@@ -213,7 +213,7 @@ public class FluidDuctBlockEntity extends BaseHbmBlockEntity implements IFluidPi
     }
 
     //? if forge {
-    @Override
+    /*@Override
     public void onChunkUnloaded() {
         if (level instanceof ServerLevel serverLevel && node != null && !node.isExpired()) {
             UniNodespace.destroyNode(serverLevel, node);
@@ -222,7 +222,7 @@ public class FluidDuctBlockEntity extends BaseHbmBlockEntity implements IFluidPi
         adapterCache.clear();
         super.onChunkUnloaded();
     }
-    //?}
+    *///?}
 
     // =====================================================================================
     // Tick — регистрация Forge-машин в сети
@@ -294,16 +294,16 @@ public class FluidDuctBlockEntity extends BaseHbmBlockEntity implements IFluidPi
      */
     private static boolean checkNeighborFluidHandler(Level level, BlockEntity neighbor, Direction side) {
         //? if forge {
-        return neighbor.getCapability(ForgeCapabilities.FLUID_HANDLER, side).isPresent();
-         //?}
+        /*return neighbor.getCapability(ForgeCapabilities.FLUID_HANDLER, side).isPresent();
+         *///?}
         //? if fabric {
         /*return FluidStorage.SIDED.find(level, neighbor.getBlockPos(), neighbor.getBlockState(), neighbor, side) != null;
         *///?}
         //? if neoforge {
-        /*// NeoForge 1.21.1: FluidHandler.BLOCK через level.getCapability (BlockEntity.getCapability убран).
+        // NeoForge 1.21.1: FluidHandler.BLOCK через level.getCapability (BlockEntity.getCapability убран).
         return level.getCapability(net.neoforged.neoforge.capabilities.Capabilities.FluidHandler.BLOCK,
                 neighbor.getBlockPos(), neighbor.getBlockState(), neighbor, side) != null;
-        *///?}
+        //?}
     }
 
     // =====================================================================================
@@ -354,8 +354,8 @@ public class FluidDuctBlockEntity extends BaseHbmBlockEntity implements IFluidPi
     private void refreshClientTintMesh() {
         if (level == null || !level.isClientSide) return;
         //? if forge {
-        requestModelDataUpdate();
-         //?}
+        /*requestModelDataUpdate();
+         *///?}
         level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_IMMEDIATE);
         DoorChunkInvalidationHelper.scheduleChunkInvalidation(worldPosition);
     }

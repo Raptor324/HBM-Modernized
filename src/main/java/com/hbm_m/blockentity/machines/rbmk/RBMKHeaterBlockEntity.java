@@ -175,7 +175,7 @@ public class RBMKHeaterBlockEntity extends RBMKColumnBlockEntity
     }
 
     //? if forge {
-    /** Bottom face takes the feed, every other face hands out the heated product. */
+    /*/^* Bottom face takes the feed, every other face hands out the heated product. ^/
     @Override
     public @org.jetbrains.annotations.NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(
             net.minecraftforge.common.capabilities.Capability<T> cap,
@@ -189,7 +189,7 @@ public class RBMKHeaterBlockEntity extends RBMKColumnBlockEntity
         }
         return super.getCapability(cap, side);
     }
-    //?}
+    *///?}
 
     @Override public RBMKType getRBMKType()      { return RBMKType.OTHER; }
     @Override public ColumnType getConsoleType() { return ColumnType.HEATER; }
@@ -214,10 +214,10 @@ public class RBMKHeaterBlockEntity extends RBMKColumnBlockEntity
         inputTank.writeToNBT(tag, "input");
         outputTank.writeToNBT(tag, "output");
         //? if < 1.21.1 {
-        tag.put("inventory", inventory.serializeNBT());
-        //?} else {
-        /*tag.put("inventory", inventory.serializeNBT(registries));
-        *///?}
+        /*tag.put("inventory", inventory.serializeNBT());
+        *///?} else {
+        tag.put("inventory", inventory.serializeNBT(registries));
+        //?}
     }
 
     @Override
@@ -226,9 +226,9 @@ public class RBMKHeaterBlockEntity extends RBMKColumnBlockEntity
         inputTank.readFromNBT(tag, "input");
         outputTank.readFromNBT(tag, "output");
         //? if < 1.21.1 {
-        if (tag.contains("inventory")) inventory.deserializeNBT(tag.getCompound("inventory"));
-        //?} else {
-        /*if (tag.contains("inventory")) inventory.deserializeNBT(registries, tag.getCompound("inventory"));
-        *///?}
+        /*if (tag.contains("inventory")) inventory.deserializeNBT(tag.getCompound("inventory"));
+        *///?} else {
+        if (tag.contains("inventory")) inventory.deserializeNBT(registries, tag.getCompound("inventory"));
+        //?}
     }
 }

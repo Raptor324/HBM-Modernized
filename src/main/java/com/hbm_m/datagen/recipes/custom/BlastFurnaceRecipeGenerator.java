@@ -1,6 +1,6 @@
 package com.hbm_m.datagen.recipes.custom;
 //? if forge {
-import com.hbm_m.item.ModItems;
+/*import com.hbm_m.item.ModItems;
 import com.hbm_m.item.material.MaterialShape;
 import com.hbm_m.item.material.ModMaterialItems;
 import com.hbm_m.item.material.ModMaterials;
@@ -14,13 +14,13 @@ import net.minecraftforge.common.Tags;
 
 import java.util.function.Consumer;
 
-/**
+/^*
  * Handles Blast Furnace recipe generation to keep {@code ModRecipeProvider} focused on orchestration.
  * Recipes based on original HBM BlastFurnaceRecipes.
  *
  * <p>Использует {@code save(writer, "id")} из {@link BaseRecipeBuilder} — Stonecutter-блоки
  * с {@code ResourceLocation} больше не нужны.</p>
- */
+ ^/
 public final class BlastFurnaceRecipeGenerator {
 
     private BlastFurnaceRecipeGenerator() {}
@@ -136,5 +136,5 @@ public final class BlastFurnaceRecipeGenerator {
                 ).save(writer, "blast_furnace/meteorite_sword_alloyed");
     }
 }
-//?}
+*///?}
 

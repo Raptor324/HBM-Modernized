@@ -60,10 +60,10 @@ public class MachineCapacitorBlock extends BaseEntityBlock {
     }
 
     //? if >1.20.1 {
-    /*@Override
+    @Override
     protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
         return simpleCodec(p -> new MachineCapacitorBlock(p, this.capacity));
     }
-    *///?}
+    //?}
 
 }

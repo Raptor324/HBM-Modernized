@@ -31,7 +31,7 @@ public abstract class LoadedMachineBlockEntity extends BaseHbmBlockEntity {
         this.isLoaded = false;
     }
     //? if forge {
-    @Override
+    /*@Override
     public void onChunkUnloaded() {
         super.onChunkUnloaded();
         this.isLoaded = false;
@@ -42,7 +42,7 @@ public abstract class LoadedMachineBlockEntity extends BaseHbmBlockEntity {
         super.onLoad();
         this.isLoaded = true;
     }
-    //?}
+    *///?}
     
     public boolean isMuffled() {
         return muffled;

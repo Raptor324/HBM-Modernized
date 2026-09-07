@@ -1,6 +1,6 @@
 package com.hbm_m.datagen.recipes.custom;
 //? if forge {
-import com.google.gson.JsonArray;
+/*import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.hbm_m.recipe.GasCentrifugeRecipe;
 
@@ -9,7 +9,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 
-/**
+/^*
  * Datagen-билдер {@link GasCentrifugeRecipe} ({@code hbm_m:gas_centrifuge}) — JEI-only.
  *
  * <p>Чистый ванильный 1.20.1 код внутри {@code //? if forge} — датаген только для 1.20.1-forge.</p>
@@ -24,7 +24,7 @@ import net.minecraft.world.item.crafting.RecipeSerializer;
  *   "centrifuge_count": 4
  * }
  * }</pre>
- */
+ ^/
 public class GasCentrifugeRecipeBuilder extends BaseRecipeBuilder<GasCentrifugeRecipeBuilder> {
 
     private final FluidStack input;
@@ -65,4 +65,4 @@ public class GasCentrifugeRecipeBuilder extends BaseRecipeBuilder<GasCentrifugeR
         return GasCentrifugeRecipe.Serializer.INSTANCE;
     }
 }
-//?}
+*///?}

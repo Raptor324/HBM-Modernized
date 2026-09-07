@@ -1,6 +1,6 @@
 package com.hbm_m.datagen.recipes.custom;
 //? if forge {
-import com.hbm_m.item.ModItems;
+/*import com.hbm_m.item.ModItems;
 import com.hbm_m.item.material.MaterialShape;
 import com.hbm_m.item.material.ModMaterialItems;
 import com.hbm_m.item.material.ModMaterials;
@@ -11,7 +11,7 @@ import net.minecraft.world.item.crafting.Ingredient;
 
 import java.util.function.Consumer;
 
-/**
+/^*
  * Генератор JSON-рецептов реактора-размножителя ({@code hbm_m:breeder}).
  *
  * <p>Порт рецептов 1:1 из статического {@code com.hbm_m.recipe.BreederRecipes#registerRecipes()}
@@ -20,7 +20,7 @@ import java.util.function.Consumer;
  * намеренно пропущены — как и в статической версии.</p>
  *
  * <p>Чистый ванильный 1.20.1 код внутри {@code //? if forge} — датаген только для 1.20.1-forge.</p>
- */
+ ^/
 public final class BreederRecipeGenerator {
 
     private BreederRecipeGenerator() {}
@@ -54,4 +54,4 @@ public final class BreederRecipeGenerator {
                 .save(writer, "breeder/" + id);
     }
 }
-//?}
+*///?}

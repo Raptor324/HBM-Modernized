@@ -89,3 +89,5 @@ java_pid*
 AGENTS.md
 libs/
 .aider*
+# Локальный контекст для Claude Code
+CLAUDE.md

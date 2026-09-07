@@ -47,12 +47,12 @@ import net.minecraft.world.level.block.entity.BlockEntity;
  * GL compatibility helpers live in {@link InstancedGlCompat}.
  */
 //? if forge {
-@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-//?} elif fabric {
+/*@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+*///?} elif fabric {
 /*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
 *///?} elif neoforge {
-/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-*///?}
+@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+//?}
 public class InstancedStaticPartRenderer extends AbstractGpuMesh
         implements VanillaInstancedMeshRenderer, IrisCompanionMeshRenderer {
 
@@ -580,10 +580,10 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
         } else {
             var cam = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
             //? if < 1.21.1 {
-            tmpInvViewRot.identity().set(RenderSystem.getInverseViewRotationMatrix());
-            //?} else {
-            /*tmpInvViewRot.identity().rotation(Minecraft.getInstance().gameRenderer.getMainCamera().rotation()).invert();
-            *///?}
+            /*tmpInvViewRot.identity().set(RenderSystem.getInverseViewRotationMatrix());
+            *///?} else {
+            tmpInvViewRot.identity().rotation(Minecraft.getInstance().gameRenderer.getMainCamera().rotation()).invert();
+            //?}
             tmpLocalPose.set(tmpInvViewRot).mul(worldPose);
             tmpLocalPose.m30(tmpLocalPose.m30() - (float) (blockPos.getX() - cam.x));
             tmpLocalPose.m31(tmpLocalPose.m31() - (float) (blockPos.getY() - cam.y));
@@ -603,10 +603,10 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
     }
 
     //? if forge {
-    public void flush(net.minecraftforge.client.event.RenderLevelStageEvent event) {
+    /*public void flush(net.minecraftforge.client.event.RenderLevelStageEvent event) {
         flush(event.getProjectionMatrix());
     }
-    //?}
+    *///?}
     //? if fabric {
     /*public void flush(net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext event) {
         flush(event.projectionMatrix());

@@ -31,14 +31,14 @@ import net.minecraft.world.level.material.Fluids;
 import com.hbm_m.platform.PlatformHooks;
 
 //? if forge {
-import org.jetbrains.annotations.NotNull;
+/*import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.capability.IFluidHandler;
-//?}
+*///?}
 
 /**
  * Large Turbine - Port von {@code TileEntityMachineLargeTurbine} (1.7.10 Original, dort selbst
@@ -78,9 +78,9 @@ public class MachineLargeTurbineBlockEntity extends BaseMachineBlockEntity imple
     private boolean active = false;
 
     //? if forge {
-    private LazyOptional<IFluidHandler> steamInputHandler = LazyOptional.empty();
+    /*private LazyOptional<IFluidHandler> steamInputHandler = LazyOptional.empty();
     private LazyOptional<IFluidHandler> spentOutputHandler = LazyOptional.empty();
-    //?}
+    *///?}
 
     public MachineLargeTurbineBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.LARGE_TURBINE_BE.get(), pos, state, INVENTORY_SIZE, MAX_POWER, 0L, ENERGY_EXTRACT_RATE);
@@ -261,7 +261,7 @@ public class MachineLargeTurbineBlockEntity extends BaseMachineBlockEntity imple
     // ── Forge fluid capabilities ─────────────────────────────────────────────
 
     //? if forge {
-    @Override
+    /*@Override
     protected void setupFluidCapability() {
         steamInputHandler  = LazyOptional.of(() -> new SteamInputHandler(this));
         spentOutputHandler = LazyOptional.of(() -> new SpentOutputHandler(this));
@@ -357,5 +357,5 @@ public class MachineLargeTurbineBlockEntity extends BaseMachineBlockEntity imple
             return drained;
         }
     }
-    //?}
+    *///?}
 }

@@ -212,6 +212,20 @@ tasks.named<ProcessResources>("processResources") {
 			}
 		}
 
+		// The block above moves the tag files, but references inside JSON stay "forge:".
+		// Unremapped, recipes match an empty tag and silently stop crafting.
+		// The leading quote in the pattern keeps "neoforge:add_features" intact.
+		val tagRefRenames = mapOf("glass" to "glass_blocks")
+		dataDir.walkTopDown().filter { it.isFile && it.extension == "json" }.forEach { file ->
+			val text = file.readText()
+			if (!text.contains("\"forge:") && !text.contains("\"#forge:")) return@forEach
+			var out = text.replace("\"#forge:", "\"#c:").replace("\"forge:", "\"c:")
+			for ((old, new) in tagRefRenames) {
+				out = out.replace("\"c:$old\"", "\"c:$new\"").replace("\"#c:$old\"", "\"#c:$new\"")
+			}
+			file.writeText(out)
+		}
+
 		// Remap silk-touch условия в loot-таблицах: датаген (1.20.1) пишет
 		// match_tool-предикат с полем "enchantments" внутри ItemPredicate,
 		// а на 1.21.1 это поле удалено — проверки зачарований переехали в

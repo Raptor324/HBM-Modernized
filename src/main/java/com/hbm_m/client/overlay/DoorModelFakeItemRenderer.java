@@ -16,9 +16,9 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 //? if forge {
-import net.minecraftforge.api.distmarker.Dist;
+/*import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?}
+*///?}
 //? if fabric {
 /*import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;
@@ -33,8 +33,8 @@ import net.fabricmc.api.Environment;
  * ItemRenderer.render() с подменённой моделью.
  */
 //? if forge {
-@OnlyIn(Dist.CLIENT)
-//?}
+/*@OnlyIn(Dist.CLIENT)
+*///?}
 //? if fabric {
 /*@Environment(EnvType.CLIENT)*///?}
 public final class DoorModelFakeItemRenderer {
@@ -98,10 +98,10 @@ public final class DoorModelFakeItemRenderer {
         pose.pushPose();
         pose.translate(8.0f, 8.0f, 150.0f);
         //? if < 1.21.1 {
-        pose.mulPoseMatrix(new org.joml.Matrix4f().scaling(1.0F, -1.0F, 1.0F));
-        //?} else {
-        /*pose.mulPose(new org.joml.Matrix4f().scaling(1.0F, -1.0F, 1.0F));
-        *///?}
+        /*pose.mulPoseMatrix(new org.joml.Matrix4f().scaling(1.0F, -1.0F, 1.0F));
+        *///?} else {
+        pose.mulPose(new org.joml.Matrix4f().scaling(1.0F, -1.0F, 1.0F));
+        //?}
         pose.scale(16.0f, 16.0f, 16.0f);
 
         RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);

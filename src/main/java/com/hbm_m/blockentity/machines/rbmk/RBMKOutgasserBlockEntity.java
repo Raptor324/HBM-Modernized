@@ -211,7 +211,7 @@ public class RBMKOutgasserBlockEntity extends RBMKColumnBlockEntity
     }
 
     //? if forge {
-    @Override
+    /*@Override
     public @org.jetbrains.annotations.NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(
             net.minecraftforge.common.capabilities.Capability<T> cap,
             @org.jetbrains.annotations.Nullable Direction side) {
@@ -220,7 +220,7 @@ public class RBMKOutgasserBlockEntity extends RBMKColumnBlockEntity
         }
         return super.getCapability(cap, side);
     }
-    //?}
+    *///?}
 
     // ─── IRBMKLoadable ───────────────────────────────────────────────────────
 
@@ -250,7 +250,7 @@ public class RBMKOutgasserBlockEntity extends RBMKColumnBlockEntity
     // ─── NBT ─────────────────────────────────────────────────────────────────
 
     //? if < 1.21.1 {
-    @Override
+    /*@Override
     protected void saveAdditional(CompoundTag tag) {
         super.saveAdditional(tag);
         if (!inputSlot.isEmpty())  tag.put("inputSlot",  safeItemSave(inputSlot));
@@ -259,8 +259,8 @@ public class RBMKOutgasserBlockEntity extends RBMKColumnBlockEntity
         tag.putDouble("progress", progress);
         tag.putDouble("lastUsedFlux", lastUsedFlux);
     }
-    //?} else {
-    /*@Override
+    *///?} else {
+    @Override
     protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
         if (!inputSlot.isEmpty())  tag.put("inputSlot",  safeItemSave(inputSlot));
@@ -269,10 +269,10 @@ public class RBMKOutgasserBlockEntity extends RBMKColumnBlockEntity
         tag.putDouble("progress", progress);
         tag.putDouble("lastUsedFlux", lastUsedFlux);
     }
-    *///?}
+    //?}
 
     //? if < 1.21.1 {
-    @Override
+    /*@Override
     public void load(CompoundTag tag) {
         super.load(tag);
         inputSlot  = tag.contains("inputSlot")  ? ItemStack.of(tag.getCompound("inputSlot"))  : ItemStack.EMPTY;
@@ -281,8 +281,8 @@ public class RBMKOutgasserBlockEntity extends RBMKColumnBlockEntity
         progress = tag.getDouble("progress");
         lastUsedFlux = tag.getDouble("lastUsedFlux");
     }
-    //?} else {
-    /*@Override
+    *///?} else {
+    @Override
     protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
         inputSlot  = tag.contains("inputSlot")  ? com.hbm_m.platform.PlatformHooks.itemStackOf(tag.getCompound("inputSlot"), registries)  : ItemStack.EMPTY;
@@ -291,5 +291,5 @@ public class RBMKOutgasserBlockEntity extends RBMKColumnBlockEntity
         progress = tag.getDouble("progress");
         lastUsedFlux = tag.getDouble("lastUsedFlux");
     }
-    *///?}
+    //?}
 }

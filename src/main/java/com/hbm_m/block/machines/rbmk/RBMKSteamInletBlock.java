@@ -30,11 +30,11 @@ public class RBMKSteamInletBlock extends RBMKColumnBlock {
     }
 
     //? if >1.20.1 {
-    /*public static final com.mojang.serialization.MapCodec<RBMKSteamInletBlock> CODEC = simpleCodec(RBMKSteamInletBlock::new);
+    public static final com.mojang.serialization.MapCodec<RBMKSteamInletBlock> CODEC = simpleCodec(RBMKSteamInletBlock::new);
 
     @Override
     protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
         return CODEC;
     }
-    *///?}
+    //?}
 }

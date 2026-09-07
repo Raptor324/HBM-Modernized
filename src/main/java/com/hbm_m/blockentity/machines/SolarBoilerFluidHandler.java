@@ -1,7 +1,7 @@
 package com.hbm_m.blockentity.machines;
 
 //? if forge {
-import org.jetbrains.annotations.NotNull;
+/*import org.jetbrains.annotations.NotNull;
 
 import com.hbm_m.api.fluids.VanillaFluidEquivalence;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
@@ -9,10 +9,10 @@ import com.hbm_m.inventory.fluid.tank.FluidTank;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 
-/**
+/^*
  * Forge fluid capability bridge for the Solar Boiler.
  * Tank 0 = water (input only), tank 1 = steam (output only).
- */
+ ^/
 public class SolarBoilerFluidHandler implements IFluidHandler {
 
     private final MachineSolarBoilerBlockEntity blockEntity;
@@ -91,4 +91,4 @@ public class SolarBoilerFluidHandler implements IFluidHandler {
         return drained > 0 ? new FluidStack(steam.getTankType(), drained) : FluidStack.EMPTY;
     }
 }
-//?}
+*///?}

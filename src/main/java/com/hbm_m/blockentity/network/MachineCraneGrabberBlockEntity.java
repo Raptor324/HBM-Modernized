@@ -29,10 +29,10 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 
 //? if forge {
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
+/*import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.ItemHandlerHelper;
-//?}
+*///?}
 
 /**
  * Crane Grabber - Port von {@code TileEntityCraneGrabber} (1.7.10 Original). Greift periodisch nach
@@ -135,7 +135,7 @@ public class MachineCraneGrabberBlockEntity extends BaseMachineBlockEntity {
         }
 
         //? if forge {
-        BlockEntity dropBe = level.getBlockEntity(dropPos);
+        /*BlockEntity dropBe = level.getBlockEntity(dropPos);
         if (dropBe != null) {
             IItemHandler handler = dropBe.getCapability(ForgeCapabilities.ITEM_HANDLER, dropSide.getOpposite()).orElse(null);
             if (handler != null) {
@@ -146,7 +146,7 @@ public class MachineCraneGrabberBlockEntity extends BaseMachineBlockEntity {
                 return remainder.getCount() < toAdd;
             }
         }
-        //?}
+        *///?}
 
         return false;
     }

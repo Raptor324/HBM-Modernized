@@ -14,9 +14,9 @@ import com.hbm_m.platform.recipe.RecipeHooks;
 import net.fabricmc.api.Environment;
 *///?}
 //? if forge {
-import net.minecraftforge.api.distmarker.Dist;
+/*import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?}
+*///?}
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
@@ -35,8 +35,8 @@ public final class AnvilRecipeManager {
     /*@Environment(EnvType.CLIENT)
     *///?}
     //? if forge {
-    @OnlyIn(Dist.CLIENT)
-    //?}
+    /*@OnlyIn(Dist.CLIENT)
+    *///?}
     public static List<AnvilRecipe> getClientRecipes() {
         Minecraft minecraft = Minecraft.getInstance();
         Level level = minecraft.level;

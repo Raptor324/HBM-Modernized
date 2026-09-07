@@ -28,9 +28,9 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
 //? if forge {
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
+/*import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.items.IItemHandler;
-//?}
+*///?}
 
 /**
  * Crane Extractor - Port von {@code TileEntityCraneExtractor} (1.7.10 Original). Zieht periodisch
@@ -112,7 +112,7 @@ public class MachineCraneExtractorBlockEntity extends BaseMachineBlockEntity imp
         boolean hasSent = false;
 
         //? if forge {
-        IItemHandler source = sourceBe != null
+        /*IItemHandler source = sourceBe != null
                 ? sourceBe.getCapability(ForgeCapabilities.ITEM_HANDLER, pullSide.getOpposite()).orElse(null)
                 : null;
 
@@ -147,7 +147,7 @@ public class MachineCraneExtractorBlockEntity extends BaseMachineBlockEntity imp
                 }
             }
         }
-        //?}
+        *///?}
 
         if (!hasSent && belt != null) {
             for (int slot = BUFFER_START; slot <= BUFFER_END; slot++) {
@@ -189,7 +189,7 @@ public class MachineCraneExtractorBlockEntity extends BaseMachineBlockEntity imp
         }
 
         //? if forge {
-        if (ejectBe != null) {
+        /*if (ejectBe != null) {
             IItemHandler handler = ejectBe.getCapability(ForgeCapabilities.ITEM_HANDLER, ejectSide.getOpposite()).orElse(null);
             if (handler != null) {
                 ItemStack remainder = net.minecraftforge.items.ItemHandlerHelper.insertItem(handler, stack, false);
@@ -197,7 +197,7 @@ public class MachineCraneExtractorBlockEntity extends BaseMachineBlockEntity imp
                 stack = remainder;
             }
         }
-        //?}
+        *///?}
 
         ItemEntity drop = new ItemEntity(level, ejectPos.getX() + 0.5, ejectPos.getY() + 0.5, ejectPos.getZ() + 0.5, stack);
         level.addFreshEntity(drop);

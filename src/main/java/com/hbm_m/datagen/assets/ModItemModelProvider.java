@@ -1,6 +1,6 @@
 package com.hbm_m.datagen.assets;
 //? if forge {
-import java.util.LinkedHashMap;
+/*import java.util.LinkedHashMap;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
@@ -1030,7 +1030,7 @@ public class ModItemModelProvider extends ItemModelProvider {
         blockItemFromBlockModel(ModBlocks.FLUID_PUMP);
         blockItemFromBlockModel(ModBlocks.FLUID_EXHAUST);
 
-        // Ранее: assets/.../models/item/*.json с parent = блок или простая generated/handheld-текстура
+        // Ранее: assets/.../models/item/^.json с parent = блок или простая generated/handheld-текстура
         blockItemFromBlockModelBomb(ModBlocks.AIRBOMB);
         itemModelFromBlockResourcePath("airbomb_a", "block/bomb/airbomb");
         itemModelFromBlockResourcePath("airnukebomb_a", "block/bomb/balebomb_test");
@@ -2217,12 +2217,12 @@ public class ModItemModelProvider extends ItemModelProvider {
         }
     };
 
-    /**
+    /^*
      * Вспомогательный метод для генерации простой модели предмета.
      * Он предполагает, что модель имеет родителя "item/generated" и одну текстуру "layer0".
      * Это стандарт для большинства 2D предметов в Minecraft.
      * @param itemObject RegistrySupplier предмета, для которого генерируется модель.
-     */
+     ^/
 
     private void simpleItem(RegistrySupplier<Item> itemObject) {
         // Получаем имя предмета из его ID (например, "uranium_ingot")
@@ -2238,8 +2238,8 @@ public class ModItemModelProvider extends ItemModelProvider {
         return withExistingParent(item.getId().getPath(),
                 ResourceLocation.tryParse("item/generated")).texture("layer0",
                 //? if fabric && < 1.21.1 {
-                /*new ResourceLocation(MainRegistry.MOD_ID,"item/" + item.getId().getPath()));
-                *///?} else {
+                /^new ResourceLocation(MainRegistry.MOD_ID,"item/" + item.getId().getPath()));
+                ^///?} else {
                                 ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID,"item/" + item.getId().getPath()));
                 //?}
 
@@ -2253,10 +2253,10 @@ public class ModItemModelProvider extends ItemModelProvider {
         return withExistingParent(block.getId().getPath(), modLoc("block/machines/" + machineModelFileName));
     }
 
-    /** Модель предмета с parent = hbm_m:&lt;путь&gt; (без отдельного ModBlocks, если id не совпадает с блоком). */
+    /^* Модель предмета с parent = hbm_m:&lt;путь&gt; (без отдельного ModBlocks, если id не совпадает с блоком). ^/
 
-    /** Item-модель с родителем, который генерируется ModBlockStateProvider в этом же прогоне
-     *  (EFH ещё не видит файл — используем UncheckedModelFile). */
+    /^* Item-модель с родителем, который генерируется ModBlockStateProvider в этом же прогоне
+     *  (EFH ещё не видит файл — используем UncheckedModelFile). ^/
     private ItemModelBuilder withGeneratedBlockParent(String name, String blockModelPath) {
         return getBuilder(name).parent(new ModelFile.UncheckedModelFile(modLoc(blockModelPath)));
     }
@@ -2275,7 +2275,7 @@ public class ModItemModelProvider extends ItemModelProvider {
         withExistingParent(name, "item/generated").texture("layer0", modLoc("item/crystall/" + name));
     }
 
-    /** item/generated, текстура hbm_m:item/&lt;texturePathUnderItem&gt; */
+    /^* item/generated, текстура hbm_m:item/&lt;texturePathUnderItem&gt; ^/
     private void simpleItemModelByName(String modelName, String texturePathUnderItem) {
         withExistingParent(modelName, "item/generated").texture("layer0", modLoc("item/" + texturePathUnderItem));
     }
@@ -2366,15 +2366,15 @@ public class ModItemModelProvider extends ItemModelProvider {
                 String trimPath = "trims/items/" + armorType + "_trim_" + trimMaterial.location().getPath();
                 String currentTrimName = armorItemPath + "_" + trimMaterial.location().getPath() + "_trim";
                 //? if fabric && < 1.21.1 {
-                /*ResourceLocation armorItemResLoc = new ResourceLocation(MOD_ID, armorItemPath);
-                *///?} else {
+                /^ResourceLocation armorItemResLoc = new ResourceLocation(MOD_ID, armorItemPath);
+                ^///?} else {
                                 ResourceLocation armorItemResLoc = ResourceLocation.fromNamespaceAndPath(MOD_ID, armorItemPath);
                 //?}
 
                 ResourceLocation trimResLoc = ResourceLocation.tryParse(trimPath); // minecraft namespace
                 //? if fabric && < 1.21.1 {
-                /*ResourceLocation trimNameResLoc = new ResourceLocation(MOD_ID, currentTrimName);
-                *///?} else {
+                /^ResourceLocation trimNameResLoc = new ResourceLocation(MOD_ID, currentTrimName);
+                ^///?} else {
                                 ResourceLocation trimNameResLoc = ResourceLocation.fromNamespaceAndPath(MOD_ID, currentTrimName);
                 //?}
 
@@ -2393,9 +2393,9 @@ public class ModItemModelProvider extends ItemModelProvider {
                         .predicate(mcLoc("trim_type"), trimValue).end()
                         .texture("layer0",
                                 //? if fabric && < 1.21.1 {
-                                /*new ResourceLocation(MOD_ID,
+                                /^new ResourceLocation(MOD_ID,
                                         "item/" + itemRegistrySupplier.getId().getPath()));
-                                *///?} else {
+                                ^///?} else {
                                                                 ResourceLocation.fromNamespaceAndPath(MOD_ID,
                                         "item/" + itemRegistrySupplier.getId().getPath()));
                                 //?}
@@ -2409,18 +2409,18 @@ public class ModItemModelProvider extends ItemModelProvider {
                 modLoc("block/" + BuiltInRegistries.BLOCK.getKey(block.get()).getPath()));
     }
 
-    /**
+    /^*
      * {@code hbm_m:missile_loader} item model — OBJ under {@code models/missiles/}, texture under {@code models/missile/}.
      * No {@code display} block: transforms come from {@link com.hbm_m.client.render.item.ItemRenderMissileGeneric}.
-     */
+     ^/
     private void missileItemFromObjModel(String itemPath, MissileFormFactorModels hull, ResourceLocation texture) {
         objPartItemModel(itemPath, hull.getObjModel(), texture, hull.getPartNames().toArray(String[]::new));
     }
 
-    /**
+    /^*
      * OBJ item model via {@code hbm_m:missile_loader}; texture under {@code textures/models/missile/} (block atlas).
      * BEWLR applies transforms — no {@code display} block (see missiles / range detonator).
-     */
+     ^/
     private void objPartItemModel(String itemPath, ResourceLocation objModel, ResourceLocation texture, String... parts) {
         getBuilder(itemPath).customLoader((parent, helper) ->
                 new CustomLoaderBuilder<ItemModelBuilder>(
@@ -2451,7 +2451,7 @@ public class ModItemModelProvider extends ItemModelProvider {
         }
     }
 
-    /** Item model overrides by {@code hbm_m:tier} (see {@link com.hbm_m.client.ClientSetup}). */
+    /^* Item model overrides by {@code hbm_m:tier} (see {@link com.hbm_m.client.ClientSetup}). ^/
     private void registerRadAbsorberItemModels() {
         ItemModelBuilder builder = withExistingParent("rad_absorber", modLoc("block/rad_absorber_base"));
         for (BlockAbsorber.EnumAbsorberTier tier : BlockAbsorber.EnumAbsorberTier.values()) {
@@ -2466,12 +2466,12 @@ public class ModItemModelProvider extends ItemModelProvider {
     }
 
 
-    /**
+    /^*
      * RBMK pellet models, reproducing {@code ItemRBMKPellet}'s multi-pass rendering: the base
      * texture plus one of five enrichment overlays, plus the xenon overlay for the poisoned
      * states. The original selected these by item damage; here the {@code hbm_m:pellet_state}
      * item property (bound in ClientSetup) picks the matching override model.
-     */
+     ^/
     private void rbmkPelletModels() {
         ResourceLocation stateProperty = modLoc("pellet_state");
 
@@ -2514,4 +2514,4 @@ public class ModItemModelProvider extends ItemModelProvider {
     }
 
 }
-//?}
+*///?}

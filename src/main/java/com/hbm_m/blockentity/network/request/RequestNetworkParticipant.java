@@ -84,14 +84,14 @@ public class RequestNetworkParticipant {
         if (vec1.distanceTo(vec2) > MAX_RANGE) return false;
 
         //? if < 1.21.1 {
-        HitResult hit1 = level.clip(new ClipContext(vec1, vec2, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, null));
+        /*HitResult hit1 = level.clip(new ClipContext(vec1, vec2, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, null));
         HitResult hit2 = level.clip(new ClipContext(vec2, vec1, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, null));
-        //?} else {
-        /*// 1.21.1: CollisionContext.of(null) кидает NPE — берём перегрузку с CollisionContext.empty().
+        *///?} else {
+        // 1.21.1: CollisionContext.of(null) кидает NPE — берём перегрузку с CollisionContext.empty().
         net.minecraft.world.phys.shapes.CollisionContext ctx = net.minecraft.world.phys.shapes.CollisionContext.empty();
         HitResult hit1 = level.clip(new ClipContext(vec1, vec2, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, ctx));
         HitResult hit2 = level.clip(new ClipContext(vec2, vec1, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, ctx));
-        *///?}
+        //?}
         return hit1.getType() == HitResult.Type.MISS && hit2.getType() == HitResult.Type.MISS;
     }
 }

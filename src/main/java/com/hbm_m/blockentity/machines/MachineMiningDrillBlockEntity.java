@@ -116,11 +116,11 @@ public class MachineMiningDrillBlockEntity extends BaseMachineBlockEntity {
     }
 
     //? if forge {
-    @Override
+    /*@Override
     protected void setupFluidCapability() {
         setFluidHandler(tank);
     }
-    //?}
+    *///?}
 
     public static void tick(Level level, BlockPos pos, BlockState state, MachineMiningDrillBlockEntity be) {
         if (level.isClientSide) {
@@ -530,8 +530,8 @@ public class MachineMiningDrillBlockEntity extends BaseMachineBlockEntity {
      * eigenen Schacht steht).
      */
     //? if forge {
-    @Override
-    //?}
+    /*@Override
+    *///?}
     public AABB getRenderBoundingBox() {
         double depth = targetDepth + 4.0D;
         return super.getRenderBoundingBox().expandTowards(0, -depth, 0);

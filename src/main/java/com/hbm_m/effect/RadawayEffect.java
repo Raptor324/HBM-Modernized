@@ -13,10 +13,10 @@ import org.jetbrains.annotations.NotNull;
 import java.util.function.Consumer;
 
 //? if forge {
-import net.minecraftforge.client.extensions.common.IClientMobEffectExtensions;
-//?} elif neoforge {
-/*import net.neoforged.neoforge.client.extensions.common.IClientMobEffectExtensions;
- *///?}
+/*import net.minecraftforge.client.extensions.common.IClientMobEffectExtensions;
+*///?} elif neoforge {
+import net.neoforged.neoforge.client.extensions.common.IClientMobEffectExtensions;
+ //?}
 
 /**
  * Антирадин (порт {@code com.hbm.potion.HbmPotion.radaway} 1.7.10): каждый тик
@@ -43,30 +43,30 @@ public class RadawayEffect extends MobEffect {
     }
 
     //? if < 1.21.1 {
-    @Override
+    /*@Override
     public void applyEffectTick(@NotNull LivingEntity entity, int amplifier) {
         applyTick(entity, amplifier);
     }
-    //?} else {
-    /*@Override
+    *///?} else {
+    @Override
     public boolean applyEffectTick(@NotNull LivingEntity entity, int amplifier) {
         applyTick(entity, amplifier);
         return true;
     }
-     *///?}
+     //?}
 
     //? if < 1.21.1 {
-    @Override
+    /*@Override
     public boolean isDurationEffectTick(int duration, int amplifier) {
         return true;
     }
-    //?} else {
-    /*// 1.21.1: isDurationEffectTick переименован в shouldApplyEffectTickThisTick.
+    *///?} else {
+    // 1.21.1: isDurationEffectTick переименован в shouldApplyEffectTickThisTick.
     @Override
     public boolean shouldApplyEffectTickThisTick(int duration, int amplifier) {
         return true;
     }
-     *///?}
+     //?}
 
     // Клиентские иконки (HUD + инвентарь) — реализация в платформенном слое;
     // работает и на forge, и на neoforge (раньше на 1.21.1 иконок не было).

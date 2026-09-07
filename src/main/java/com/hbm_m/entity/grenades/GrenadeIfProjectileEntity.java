@@ -50,14 +50,14 @@ public class GrenadeIfProjectileEntity extends ThrowableItemProjectile {
 
     //? if < 1.21.1 {
 
-    @Override
+    /*@Override
     protected void defineSynchedData() {
         super.defineSynchedData();
         this.entityData.define(TIMER_ACTIVATED, false);
         this.entityData.define(DETONATION_TIME, 0);
     }
-    //?} else {
-    /*@Override
+    *///?} else {
+    @Override
     protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
 
         super.defineSynchedData(builder);
@@ -65,7 +65,7 @@ public class GrenadeIfProjectileEntity extends ThrowableItemProjectile {
         builder.define(DETONATION_TIME, 0);
     
     }
-    *///?}
+    //?}
 
     @Override
     protected Item getDefaultItem() {

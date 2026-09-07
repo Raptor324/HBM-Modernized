@@ -1,6 +1,6 @@
 package com.hbm_m.datagen.assets;
 //? if forge {
-import java.util.Set;
+/*import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 import org.jetbrains.annotations.NotNull;
@@ -139,7 +139,7 @@ public class ModBlockTagProvider extends BlockTagsProvider {
         // ============ ТЕГ ДЛЯ OCCLUSION CULLING ============
         // Блоки, через которые можно видеть (не блокируют рендеринг машин)
         //? if fabric && < 1.21.1 {
-        /*this.tag(BlockTags.create(new ResourceLocation(RefStrings.MODID, "non_occluding")))
+        /^this.tag(BlockTags.create(new ResourceLocation(RefStrings.MODID, "non_occluding")))
                 .add(ModBlocks.UNIVERSAL_MACHINE_PART.get())
                 .addTag(Tags.Blocks.GLASS)
                 .addTag(Tags.Blocks.GLASS_PANES)
@@ -179,7 +179,7 @@ public class ModBlockTagProvider extends BlockTagsProvider {
                 .add(Blocks.TRIPWIRE)
                 .add(Blocks.TRIPWIRE_HOOK)
                 .add(Blocks.CAMPFIRE);
-        *///?} else {
+        ^///?} else {
                 this.tag(BlockTags.create(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "non_occluding")))
                 .add(ModBlocks.UNIVERSAL_MACHINE_PART.get())
                 .addTag(Tags.Blocks.GLASS)
@@ -247,27 +247,27 @@ public class ModBlockTagProvider extends BlockTagsProvider {
 
         // ============ ТЕГИ СОВМЕСТИМОСТИ С ДРУГИМИ МОДАМИ ============
         //? if fabric && < 1.21.1 {
-        /*this.tag(BlockTags.create(new ResourceLocation("forge", "storage_blocks/uranium")))
+        /^this.tag(BlockTags.create(new ResourceLocation("forge", "storage_blocks/uranium")))
                 .add(ModBlocks.URANIUM_BLOCK.get());
-        *///?} else {
+        ^///?} else {
                 this.tag(BlockTags.create(ResourceLocation.fromNamespaceAndPath("forge", "storage_blocks/uranium")))
                 .add(ModBlocks.URANIUM_BLOCK.get());
         //?}
 
 
         //? if fabric && < 1.21.1 {
-        /*this.tag(BlockTags.create(new ResourceLocation("forge", "storage_blocks/plutonium")))
+        /^this.tag(BlockTags.create(new ResourceLocation("forge", "storage_blocks/plutonium")))
                 .add(ModBlocks.PLUTONIUM_BLOCK.get());
-        *///?} else {
+        ^///?} else {
                 this.tag(BlockTags.create(ResourceLocation.fromNamespaceAndPath("forge", "storage_blocks/plutonium")))
                 .add(ModBlocks.PLUTONIUM_BLOCK.get());
         //?}
 
 
         //? if fabric && < 1.21.1 {
-        /*this.tag(BlockTags.create(new ResourceLocation("forge", "ores/uranium")))
+        /^this.tag(BlockTags.create(new ResourceLocation("forge", "ores/uranium")))
                 .add(ModBlocks.URANIUM_ORE.get());
-        *///?} else {
+        ^///?} else {
                 this.tag(BlockTags.create(ResourceLocation.fromNamespaceAndPath("forge", "ores/uranium")))
                 .add(ModBlocks.URANIUM_ORE.get());
         //?}
@@ -290,4 +290,4 @@ public class ModBlockTagProvider extends BlockTagsProvider {
 
     }
 }
-//?}
+*///?}

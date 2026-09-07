@@ -53,17 +53,17 @@ public class RBMKRodBlock extends RBMKColumnBlock {
     }
 
     //? if < 1.21.1 {
-    @Override
+    /*@Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos,
                                   Player player, InteractionHand hand, BlockHitResult hit) {
         return hbmOnUse(state, level, pos, player, hand, hit);
     }
-    //?} else {
-    /*@Override
+    *///?} else {
+    @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
         return hbmOnUse(state, level, pos, player, InteractionHand.MAIN_HAND, hit);
     }
-    *///?}
+    //?}
 
     private InteractionResult hbmOnUse(BlockState state, Level level, BlockPos pos,
                                        Player player, InteractionHand hand, BlockHitResult hit) {
@@ -86,10 +86,10 @@ public class RBMKRodBlock extends RBMKColumnBlock {
         }
 
         //? if < 1.21.1 {
-        return super.use(state, level, pos, player, hand, hit);
-        //?} else {
-        /*return InteractionResult.PASS;
-        *///?}
+        /*return super.use(state, level, pos, player, hand, hit);
+        *///?} else {
+        return InteractionResult.PASS;
+        //?}
     }
 
     @Override
@@ -109,11 +109,11 @@ public class RBMKRodBlock extends RBMKColumnBlock {
     }
 
     //? if >1.20.1 {
-    /*public static final com.mojang.serialization.MapCodec<RBMKRodBlock> CODEC = simpleCodec(props -> new RBMKRodBlock(false, props));
+    public static final com.mojang.serialization.MapCodec<RBMKRodBlock> CODEC = simpleCodec(props -> new RBMKRodBlock(false, props));
 
     @Override
     protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
         return CODEC;
     }
-    *///?}
+    //?}
 }

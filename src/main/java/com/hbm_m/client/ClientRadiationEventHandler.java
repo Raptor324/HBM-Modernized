@@ -1,5 +1,5 @@
 //? if forge {
-package com.hbm_m.client;
+/*package com.hbm_m.client;
 
 // Обработчик клиентских событий для очистки данных о радиации при входе в мир или отключении.
 import net.minecraft.client.Minecraft;
@@ -37,4 +37,4 @@ public class ClientRadiationEventHandler {
         }
     }
 }
-//?}
+*///?}

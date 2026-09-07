@@ -25,11 +25,11 @@ public class RedWireCoatedBlock extends BaseEntityBlock {
     }
 
     //? if > 1.20.1 {
-    /*public static final com.mojang.serialization.MapCodec<RedWireCoatedBlock> CODEC =
+    public static final com.mojang.serialization.MapCodec<RedWireCoatedBlock> CODEC =
             simpleCodec(RedWireCoatedBlock::new);
     @Override
     protected com.mojang.serialization.MapCodec<? extends BaseEntityBlock> codec() { return CODEC; }
-    *///?}
+    //?}
 
     @Override
     public RenderShape getRenderShape(BlockState state) {

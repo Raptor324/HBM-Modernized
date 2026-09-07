@@ -1,6 +1,6 @@
 package com.hbm_m.datagen.recipes.custom;
 //? if forge {
-import com.hbm_m.inventory.fluid.ModFluids;
+/*import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.item.industrial.ItemBedrockOreGraded.Grade;
 import com.hbm_m.item.material.MaterialShape;
@@ -20,7 +20,7 @@ import net.minecraft.world.item.crafting.Ingredient;
 import java.util.Locale;
 import java.util.function.Consumer;
 
-/**
+/^*
  * Генератор JSON-рецептов пиро-печи ({@code hbm_m:pyro_oven}).
  *
  * <p>Порт 69 рецептов из удалённого статического {@code PyroOvenRecipes}:</p>
@@ -42,7 +42,7 @@ import java.util.function.Consumer;
  * {@code coalgas_*}/{@code heavyoil_*} — поведение 1:1.</p>
  *
  * <p>Чистый ванильный 1.20.1 код внутри {@code //? if forge} — датаген только для 1.20.1-forge.</p>
- */
+ ^/
 public final class PyroOvenRecipeGenerator {
 
     private static final int SF_DURATION = 60;
@@ -90,7 +90,7 @@ public final class PyroOvenRecipeGenerator {
         sf(writer, "balefire",            ModFluids.BALEFIRE,               46, new ItemStack(ModItems.SOLID_FUEL_BF.get()));
     }
 
-    /** Жидкость (mB) → предмет, длительность 60 — обёртка бывшего registerSFAuto. */
+    /^* Жидкость (mB) → предмет, длительность 60 — обёртка бывшего registerSFAuto. ^/
     private static void sf(Consumer<FinishedRecipe> writer, String id, ModFluids.FluidEntry in, int mB, ItemStack output) {
         PyroOvenRecipeBuilder.pyroOvenRecipe(fluid(in, mB), null, 1, output, null, SF_DURATION)
                 .save(writer, "pyro_oven/sf_" + id);
@@ -108,7 +108,7 @@ public final class PyroOvenRecipeGenerator {
         }
     }
 
-    /** Предмет (1 шт.) → roasted-предмет + 50 mB купороса, длительность 10. */
+    /^* Предмет (1 шт.) → roasted-предмет + 50 mB купороса, длительность 10. ^/
     private static void roast(Consumer<FinishedRecipe> writer, Grade rawGrade, Grade roastedGrade, Type type) {
         ItemStack in = bedrockOre(rawGrade, type);
         ItemStack out = bedrockOre(roastedGrade, type);
@@ -122,7 +122,7 @@ public final class PyroOvenRecipeGenerator {
         ).save(writer, "pyro_oven/roast_" + rawGrade.key + "_" + type.name().toLowerCase(Locale.ROOT));
     }
 
-    /** Registry-Lookup 1:1 wie im Original: {@code bedrock_ore_<grade>_<type>}. */
+    /^* Registry-Lookup 1:1 wie im Original: {@code bedrock_ore_<grade>_<type>}. ^/
     private static ItemStack bedrockOre(Grade grade, Type type) {
         ResourceLocation id = ResourceLocation.fromNamespaceAndPath("hbm_m",
                 "bedrock_ore_" + grade.key + "_" + type.name().toLowerCase(Locale.ROOT));
@@ -142,7 +142,7 @@ public final class PyroOvenRecipeGenerator {
                 300
         ).save(writer, "pyro_oven/tungsten_carbide");
 
-        // Syngas aus Kohle (ohne Fluid-Anforderung - «coal_all_*» sortiert vor coalgas_*/heavyoil_*,
+        // Syngas aus Kohle (ohne Fluid-Anforderung - «coal_all_*» sortiert vor coalgas_^/heavyoil_*,
         // damit die Schatten-Reihenfolge des Originals erhalten bleibt).
         PyroOvenRecipeBuilder.pyroOvenRecipe(
                 null, Ingredient.of(Items.COAL), 1,
@@ -205,4 +205,4 @@ public final class PyroOvenRecipeGenerator {
         return FluidStack.create(entry.getSource(), (long) amountMb);
     }
 }
-//?}
+*///?}

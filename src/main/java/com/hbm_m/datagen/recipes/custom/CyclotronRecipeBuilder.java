@@ -1,6 +1,6 @@
 package com.hbm_m.datagen.recipes.custom;
 //? if forge {
-import com.google.gson.JsonObject;
+/*import com.google.gson.JsonObject;
 import com.hbm_m.recipe.CyclotronRecipe;
 
 import net.minecraft.world.item.Item;
@@ -8,7 +8,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 
-/**
+/^*
  * Datagen-билдер {@link CyclotronRecipe} ({@code hbm_m:cyclotron}).
  *
  * <p>Чистый ванильный 1.20.1 код внутри {@code //? if forge} — датаген компилируется
@@ -25,7 +25,7 @@ import net.minecraft.world.item.crafting.RecipeSerializer;
  *   "amat": 50
  * }
  * }</pre>
- */
+ ^/
 public class CyclotronRecipeBuilder extends BaseRecipeBuilder<CyclotronRecipeBuilder> {
 
     private final Ingredient target;
@@ -45,12 +45,12 @@ public class CyclotronRecipeBuilder extends BaseRecipeBuilder<CyclotronRecipeBui
         return new CyclotronRecipeBuilder(target, input, output, amat);
     }
 
-    /** Item-перегрузка: target/input — одиночные предметы. */
+    /^* Item-перегрузка: target/input — одиночные предметы. ^/
     public static CyclotronRecipeBuilder cyclotronRecipe(Item target, Item input, ItemStack output, int amat) {
         return cyclotronRecipe(Ingredient.of(target), Ingredient.of(input), output, amat);
     }
 
-    /** Item-tag перегрузка для input: target — предмет, input — forge-тег (строка вида {@code "forge:powders/lithium"}). */
+    /^* Item-tag перегрузка для input: target — предмет, input — forge-тег (строка вида {@code "forge:powders/lithium"}). ^/
     public static CyclotronRecipeBuilder cyclotronRecipe(Item target, String inputTagId,
                                                          ItemStack output, int amat) {
         net.minecraft.tags.TagKey<Item> tag = net.minecraft.tags.TagKey.create(
@@ -78,4 +78,4 @@ public class CyclotronRecipeBuilder extends BaseRecipeBuilder<CyclotronRecipeBui
         return CyclotronRecipe.Serializer.INSTANCE;
     }
 }
-//?}
+*///?}

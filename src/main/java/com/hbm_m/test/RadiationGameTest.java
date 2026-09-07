@@ -53,12 +53,12 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 //? if forge {
-import net.minecraftforge.gametest.GameTestHolder;
+/*import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
-//?} elif neoforge {
-/*import net.neoforged.neoforge.gametest.GameTestHolder;
+*///?} elif neoforge {
+import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
- *///?}
+ //?}
 
 /**
  * Extensive cross-platform GameTest suite for the mod's radiation system.
@@ -119,10 +119,10 @@ public final class RadiationGameTest {
      */
     private static Player makePlayer(GameTestHelper helper) {
         //? if < 1.21.1 {
-        return helper.makeMockPlayer();
-        //?} else {
-        /*return helper.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
-        *///?}
+        /*return helper.makeMockPlayer();
+        *///?} else {
+        return helper.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
+        //?}
     }
 
     /**
@@ -1118,15 +1118,15 @@ public final class RadiationGameTest {
     private static Packet<?> buildS2CPacket(GameTestHelper helper, ResourceLocation id,
                                             java.util.function.Consumer<FriendlyByteBuf> writer) {
         //? if < 1.21.1 {
-        FriendlyByteBuf buf = new FriendlyByteBuf(Unpooled.buffer());
+        /*FriendlyByteBuf buf = new FriendlyByteBuf(Unpooled.buffer());
         writer.accept(buf);
         return NetworkManager.toPacket(NetworkManager.Side.S2C, id, buf);
-        //?} else {
-        /*net.minecraft.network.RegistryFriendlyByteBuf buf = new net.minecraft.network.RegistryFriendlyByteBuf(
+        *///?} else {
+        net.minecraft.network.RegistryFriendlyByteBuf buf = new net.minecraft.network.RegistryFriendlyByteBuf(
                 Unpooled.buffer(), helper.getLevel().getServer().registryAccess());
         writer.accept(buf);
         return NetworkManager.toPacket(NetworkManager.Side.S2C, id, buf);
-        *///?}
+        //?}
     }
 
     /** Codec symmetry: write → decode → write must produce identical bytes. */
@@ -1148,11 +1148,11 @@ public final class RadiationGameTest {
         // an undeclared channel is rejected by NeoForge on send (checkPacket),
         // and Architectury takes the type from the same map during conversion.
         //? if >= 1.21.1 {
-        /*for (ResourceLocation id : RADIATION_S2C_CHANNELS) {
+        for (ResourceLocation id : RADIATION_S2C_CHANNELS) {
             check(dev.architectury.impl.NetworkAggregator.S2C_TYPE.containsKey(id),
                     "S2C payload type not registered: " + id);
         }
-        *///?}
+        //?}
         // 2. Outbound conversion for each channel.
         for (ResourceLocation id : RADIATION_S2C_CHANNELS) {
             Packet<?> out = buildS2CPacket(helper, id, buf -> { });

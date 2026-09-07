@@ -78,7 +78,7 @@ public class RadioRecBlock extends BaseEntityBlock {
     }
 
     //? if < 1.21.1 {
-    @Override
+    /*@Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
 
         if (level.isClientSide()) {
@@ -88,8 +88,8 @@ public class RadioRecBlock extends BaseEntityBlock {
         }
         return InteractionResult.SUCCESS;
         }
-    //?} else {
-    /*@Override
+    *///?} else {
+    @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
 
         if (level.isClientSide()) {
@@ -99,15 +99,15 @@ public class RadioRecBlock extends BaseEntityBlock {
         }
         return InteractionResult.SUCCESS;
         }
-    *///?}
+    //?}
 
 
     //? if >1.20.1 {
-    /*public static final com.mojang.serialization.MapCodec<RadioRecBlock> CODEC = simpleCodec(RadioRecBlock::new);
+    public static final com.mojang.serialization.MapCodec<RadioRecBlock> CODEC = simpleCodec(RadioRecBlock::new);
 
     @Override
     protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
         return CODEC;
     }
-    *///?}
+    //?}
 }

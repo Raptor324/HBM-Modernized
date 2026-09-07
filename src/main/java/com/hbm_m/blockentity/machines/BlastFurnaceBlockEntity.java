@@ -44,11 +44,11 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 //? if forge {
-import net.minecraftforge.common.capabilities.Capability;
+/*import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.items.IItemHandler;
-//?}
+*///?}
 
 //? if fabric {
 /*import net.fabricmc.fabric.api.transfer.v1.item.ItemVariant;
@@ -97,9 +97,9 @@ public class BlastFurnaceBlockEntity extends BaseHbmBlockEntity implements MenuP
     }
 
     //? if forge {
-    private final Map<Direction, LazyOptional<IItemHandler>> sidedItemHandlers = new EnumMap<>(Direction.class);
+    /*private final Map<Direction, LazyOptional<IItemHandler>> sidedItemHandlers = new EnumMap<>(Direction.class);
     private LazyOptional<IItemHandler> lazyItemHandler = LazyOptional.empty();
-    //?}
+    *///?}
 
     //? if fabric {
     /*private final Map<Direction, Storage<ItemVariant>> sidedStorages = new EnumMap<>(Direction.class);
@@ -158,7 +158,7 @@ public class BlastFurnaceBlockEntity extends BaseHbmBlockEntity implements MenuP
     }
 
     //? if forge {
-    @Override
+    /*@Override
     public void onLoad() {
         super.onLoad();
         lazyItemHandler = LazyOptional.of(() -> itemHandler);
@@ -184,7 +184,7 @@ public class BlastFurnaceBlockEntity extends BaseHbmBlockEntity implements MenuP
         lazyItemHandler.invalidate();
         sidedItemHandlers.values().forEach(LazyOptional::invalidate);
     }
-    //?}
+    *///?}
 
     //? if fabric {
     /*@Override
@@ -496,7 +496,7 @@ public class BlastFurnaceBlockEntity extends BaseHbmBlockEntity implements MenuP
     }
 
     //? if forge {
-    private class DirectionalItemHandler implements IItemHandler {
+    /*private class DirectionalItemHandler implements IItemHandler {
         private final Direction direction;
 
         private DirectionalItemHandler(Direction direction) { this.direction = direction; }
@@ -525,15 +525,15 @@ public class BlastFurnaceBlockEntity extends BaseHbmBlockEntity implements MenuP
             return itemHandler.isItemValid(slot, stack) && canInsertFromDirection(slot, direction);
         }
     }
-    //?}
+    *///?}
 
     @Override
     public @Nullable Object getItemHandler(@Nullable net.minecraft.core.Direction side) {
         //? if forge {
-        if (side == null) return this.itemHandler;
+        /*if (side == null) return this.itemHandler;
         return this.sidedItemHandlers.getOrDefault(side, this.lazyItemHandler).resolve().orElse(null);
-        //?} else {
-        /*return this.itemHandler;
-        *///?}
+        *///?} else {
+        return this.itemHandler;
+        //?}
     }
 }

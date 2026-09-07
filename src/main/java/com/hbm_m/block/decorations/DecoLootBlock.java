@@ -35,13 +35,13 @@ public class DecoLootBlock extends BaseEntityBlock {
     }
 
     //? if >1.20.1 {
-    /*public static final com.mojang.serialization.MapCodec<DecoLootBlock> CODEC = simpleCodec(DecoLootBlock::new);
+    public static final com.mojang.serialization.MapCodec<DecoLootBlock> CODEC = simpleCodec(DecoLootBlock::new);
 
     @Override
     protected com.mojang.serialization.MapCodec<? extends BaseEntityBlock> codec() {
         return CODEC;
     }
-    *///?}
+    //?}
 
     @Override
     public RenderShape getRenderShape(BlockState state) {
@@ -60,18 +60,18 @@ public class DecoLootBlock extends BaseEntityBlock {
     }
 
     //? if < 1.21.1 {
-    @Override
+    /*@Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player,
             net.minecraft.world.InteractionHand hand, BlockHitResult hit) {
         return takeLoot(state, level, pos, player);
     }
-    //?} else {
-    /*@Override
+    *///?} else {
+    @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player,
             BlockHitResult hit) {
         return takeLoot(state, level, pos, player);
     }
-    *///?}
+    //?}
 
     private static InteractionResult takeLoot(BlockState state, Level level, BlockPos pos, Player player) {
         if (player.isSecondaryUseActive()) return InteractionResult.PASS;

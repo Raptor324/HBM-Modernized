@@ -76,7 +76,7 @@ public class RBMKColumnFillerBlock extends Block {
     }
 
     //? if < 1.21.1 {
-    @Override
+    /*@Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos,
                                   Player player, InteractionHand hand, BlockHitResult hit) {
 
@@ -85,8 +85,8 @@ public class RBMKColumnFillerBlock extends Block {
         BlockState baseState = level.getBlockState(basePos);
         return baseState.use(level, player, hand, new BlockHitResult(hit.getLocation(), hit.getDirection(), basePos, hit.isInside()));
         }
-    //?} else {
-    /*@Override
+    *///?} else {
+    @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
 
         BlockPos basePos = findBase(level, pos);
@@ -94,18 +94,18 @@ public class RBMKColumnFillerBlock extends Block {
         BlockState baseState = level.getBlockState(basePos);
         return baseState.useWithoutItem(level, player, new BlockHitResult(hit.getLocation(), hit.getDirection(), basePos, hit.isInside()));
         }
-    *///?}
+    //?}
 
 
     //? if < 1.21.1 {
-    @Override
+    /*@Override
     public void playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
         super.playerWillDestroy(level, pos, state, player);
     }
-    //?} else {
-    /*@Override
+    *///?} else {
+    @Override
     public BlockState playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
         return super.playerWillDestroy(level, pos, state, player);
     }
-    *///?}
+    //?}
 }

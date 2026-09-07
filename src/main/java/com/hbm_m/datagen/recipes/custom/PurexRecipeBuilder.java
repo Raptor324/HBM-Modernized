@@ -1,6 +1,6 @@
 package com.hbm_m.datagen.recipes.custom;
 //? if forge {
-import java.util.ArrayList;
+/*import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
@@ -24,7 +24,7 @@ import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.level.material.Fluid;
 
-/**
+/^*
  * Datagen builder for {@link PurexRecipe} (PUREX).
  *
  * <p>Формат JSON совпадает с {@link PurexRecipe.Serializer}:\n
@@ -35,7 +35,7 @@ import net.minecraft.world.level.material.Fluid;
  *   <li>{@code fluid_outputs}: массив объектов {@code {fluid, amount}}</li>
  *   <li>{@code duration}, {@code power}, опционально {@code blueprint_pool}</li>
  * </ul>
- */
+ ^/
 public class PurexRecipeBuilder implements RecipeBuilder {
 
     private final int duration;
@@ -140,8 +140,8 @@ public class PurexRecipeBuilder implements RecipeBuilder {
 
     public void save(@NotNull Consumer<FinishedRecipe> writer, @NotNull String path) {
         //? if fabric && < 1.21.1 {
-        /*save(writer, new ResourceLocation("hbm_m", path));
-        *///?} else {
+        /^save(writer, new ResourceLocation("hbm_m", path));
+        ^///?} else {
                 save(writer, ResourceLocation.fromNamespaceAndPath("hbm_m", path));
         //?}
 
@@ -249,4 +249,4 @@ public class PurexRecipeBuilder implements RecipeBuilder {
         }
     }
 }
-//?}
+*///?}

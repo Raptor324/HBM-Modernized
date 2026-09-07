@@ -26,11 +26,11 @@ public class RBMKCoolerBlock extends RBMKColumnBlock {
     }
 
     //? if >1.20.1 {
-    /*public static final com.mojang.serialization.MapCodec<RBMKCoolerBlock> CODEC = simpleCodec(RBMKCoolerBlock::new);
+    public static final com.mojang.serialization.MapCodec<RBMKCoolerBlock> CODEC = simpleCodec(RBMKCoolerBlock::new);
 
     @Override
     protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
         return CODEC;
     }
-    *///?}
+    //?}
 }

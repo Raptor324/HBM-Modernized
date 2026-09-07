@@ -15,10 +15,10 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.state.BlockState;
 //? if forge {
-import net.minecraftforge.client.model.data.ModelData;
-//?} elif neoforge {
-/*import net.neoforged.neoforge.client.model.data.ModelData;
-*///?}
+/*import net.minecraftforge.client.model.data.ModelData;
+*///?} elif neoforge {
+import net.neoforged.neoforge.client.model.data.ModelData;
+//?}
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -81,17 +81,17 @@ public class MissileBakedModel extends AbstractMultipartBakedModel implements Ab
     @Override
     public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, RandomSource rand) {
         //? if forge {
-        return getQuads(state, side, rand, ModelData.EMPTY, null);
-        //?}
+        /*return getQuads(state, side, rand, ModelData.EMPTY, null);
+        *///?}
 
         //? if neoforge {
-        /*/// neoforge 3-arg — ITEM/BER hot path. WORLD (state != null) → List.of() (VBO owns geometry),
+        /// neoforge 3-arg — ITEM/BER hot path. WORLD (state != null) → List.of() (VBO owns geometry),
         /// ITEM → приоритетные части через getItemQuads.
         if (state == null) {
             return getItemQuads(side, rand);
         }
         return List.of();
-        *///?}
+        //?}
 
         //? if fabric {
         /*if (state == null) {

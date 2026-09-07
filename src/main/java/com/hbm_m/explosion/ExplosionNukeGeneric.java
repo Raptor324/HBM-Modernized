@@ -50,7 +50,9 @@ public class ExplosionNukeGeneric {
     }
 
     private static void emp(Level level, int x, int y, int z) {
-        BlockEntity be = level.getBlockEntity(new BlockPos(x, y, z));
+        // Original uses Compat.getTileStandard here: an EMP sphere sweeps ~180k positions,
+        // so a plain getBlockEntity would pull in unloaded chunks one by one.
+        BlockEntity be = com.hbm_m.util.Compat.getTileStandard(level, x, y, z);
         if (be instanceof IEnergyReceiver receiver) {
             receiver.setEnergyStored(0);
         }
@@ -163,22 +165,22 @@ public class ExplosionNukeGeneric {
         // CollisionContext и null там НЕДОПУСТИМ (CollisionContext.of -> NPE в
         // EntityCollisionContext). На 1.20.1 параметр - Entity, null допустим.
         //? if < 1.21.1 {
-        HitResult hit = level.clip(new ClipContext(
+        /*HitResult hit = level.clip(new ClipContext(
                 new Vec3(x, y, z),
                 new Vec3(a, b, c),
                 ClipContext.Block.COLLIDER,
                 ClipContext.Fluid.NONE,
                 (net.minecraft.world.entity.Entity) null
         ));
-        //?} else {
-        /*HitResult hit = level.clip(new ClipContext(
+        *///?} else {
+        HitResult hit = level.clip(new ClipContext(
                 new Vec3(x, y, z),
                 new Vec3(a, b, c),
                 ClipContext.Block.COLLIDER,
                 ClipContext.Fluid.NONE,
                 net.minecraft.world.phys.shapes.CollisionContext.empty()
         ));
-        *///?}
+        //?}
         return hit.getType() != HitResult.Type.MISS;
     }
 }

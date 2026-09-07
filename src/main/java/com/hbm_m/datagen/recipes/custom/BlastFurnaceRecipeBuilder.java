@@ -1,6 +1,6 @@
 package com.hbm_m.datagen.recipes.custom;
 //? if forge {
-import com.google.gson.JsonArray;
+/*import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.hbm_m.recipe.BlastFurnaceRecipe;
 import net.minecraft.world.item.Item;
@@ -30,13 +30,13 @@ public class BlastFurnaceRecipeBuilder extends BaseRecipeBuilder<BlastFurnaceRec
         return blastFurnaceRecipe(output, Ingredient.of(inputA), Ingredient.of(inputB));
     }
 
-    /** Длительность плавки в тиках (при скорости 1.0). */
+    /^* Длительность плавки в тиках (при скорости 1.0). ^/
     public BlastFurnaceRecipeBuilder duration(int ticks) {
         this.duration = ticks;
         return this;
     }
 
-    /** Второй выход (шлак). */
+    /^* Второй выход (шлак). ^/
     public BlastFurnaceRecipeBuilder secondaryOutput(ItemStack stack) {
         this.secondaryOutput = stack;
         return this;
@@ -67,4 +67,4 @@ public class BlastFurnaceRecipeBuilder extends BaseRecipeBuilder<BlastFurnaceRec
         return BlastFurnaceRecipe.Serializer.INSTANCE;
     }
 }
-//?}
+*///?}

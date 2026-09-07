@@ -63,9 +63,9 @@ public class BismuthArmor extends ModPowerArmorItem {
      * (Forge/NeoForge: IForgeItem#getArmorTexture; на Fabric рендер через свои хуки.)
      */
     //? if forge {
-    @Override
+    /*@Override
     public String getArmorTexture(ItemStack stack, Entity entity, EquipmentSlot slot, String type) {
         return "hbm_m:textures/block/armor/bismuth.png";
     }
-    //?}
+    *///?}
 }

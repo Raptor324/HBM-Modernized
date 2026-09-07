@@ -40,7 +40,7 @@ public class MachineDrainBlock extends BaseEntityBlock {
     }
 
     //? if < 1.21.1 {
-    @Override
+    /*@Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
 
         if (level.isClientSide() || !player.isShiftKeyDown()) return InteractionResult.PASS;
@@ -54,8 +54,8 @@ public class MachineDrainBlock extends BaseEntityBlock {
         player.displayClientMessage(Component.literal("Changed type"), true);
         return InteractionResult.CONSUME;
         }
-    //?} else {
-    /*@Override
+    *///?} else {
+    @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
 
         if (level.isClientSide() || !player.isShiftKeyDown()) return InteractionResult.PASS;
@@ -69,15 +69,15 @@ public class MachineDrainBlock extends BaseEntityBlock {
         player.displayClientMessage(Component.literal("Changed type"), true);
         return InteractionResult.CONSUME;
         }
-    *///?}
+    //?}
 
 
     //? if >1.20.1 {
-    /*public static final com.mojang.serialization.MapCodec<MachineDrainBlock> CODEC = simpleCodec(MachineDrainBlock::new);
+    public static final com.mojang.serialization.MapCodec<MachineDrainBlock> CODEC = simpleCodec(MachineDrainBlock::new);
 
     @Override
     protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
         return CODEC;
     }
-    *///?}
+    //?}
 }

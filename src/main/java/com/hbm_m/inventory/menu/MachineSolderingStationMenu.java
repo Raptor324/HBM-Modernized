@@ -11,8 +11,8 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 //? if forge {
-import net.minecraftforge.items.SlotItemHandler;
-//?}
+/*import net.minecraftforge.items.SlotItemHandler;
+*///?}
 
 public class MachineSolderingStationMenu extends AbstractContainerMenu {
 
@@ -30,7 +30,7 @@ public class MachineSolderingStationMenu extends AbstractContainerMenu {
         this.blockEntity = be;
 
         //? if forge {
-        var h = be.getItemHandler();
+        /*var h = be.getItemHandler();
         // ── Machine slots (0-10) ─────────────────────────────────────────────
         // Inputs row 1 — toppings (slots 0-2)
         for (int j = 0; j < 3; j++)
@@ -46,7 +46,7 @@ public class MachineSolderingStationMenu extends AbstractContainerMenu {
         addSlot(new SlotItemHandler(h, 8,  17, 63)); // Fluid-ID
         addSlot(new SlotItemHandler(h, 9,  89, 63)); // Upgrade 1
         addSlot(new SlotItemHandler(h, 10, 107, 63)); // Upgrade 2
-        //?}
+        *///?}
 
         // ── Player inventory (11-37) ─────────────────────────────────────────
         for (int row = 0; row < 3; row++)

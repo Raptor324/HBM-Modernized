@@ -61,16 +61,16 @@ public class SoyuzCapsuleEntity extends Entity {
 
     //? if < 1.21.1 {
 
-    @Override
+    /*@Override
     protected void defineSynchedData() {
     }
-    //?} else {
-    /*@Override
+    *///?} else {
+    @Override
     protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
 
     
     }
-    *///?}
+    //?}
 
     @Override
     protected void readAdditionalSaveData(CompoundTag tag) {

@@ -71,12 +71,12 @@ public class MachineArcFurnaceBlockEntity extends BaseMachineBlockEntity {
     }
 
     //? if forge {
-    @Override
+    /*@Override
     protected void setupFluidCapability() {
         // Экспонируем главный бак (tank1) для внешних насосов/труб через базовый fluidHandlerOpt.
         setFluidHandler(tank1);
     }
-    //?}
+    *///?}
 
     // ==================== TICK ====================
 

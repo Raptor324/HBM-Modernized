@@ -16,7 +16,7 @@ import net.minecraft.world.item.ItemStack;
  * {@link ExposureChamberRecipe}).
  */
 //? if forge {
-public class ExposureChamberJeiCategory extends JeiGenericRecipeCategory<ExposureChamberRecipe> {
+/*public class ExposureChamberJeiCategory extends JeiGenericRecipeCategory<ExposureChamberRecipe> {
 
     public static final RecipeType<ExposureChamberRecipe> RECIPE_TYPE =
             RecipeType.create(RefStrings.MODID, "exposure_chamber", ExposureChamberRecipe.class);
@@ -71,7 +71,7 @@ public class ExposureChamberJeiCategory extends JeiGenericRecipeCategory<Exposur
         // Kein Blueprint-Slot fuer Exposure-Chamber-Rezepte.
     }
 }
-//?} else {
-/*public final class ExposureChamberJeiCategory {
+*///?} else {
+public final class ExposureChamberJeiCategory {
     private ExposureChamberJeiCategory() {}
-}*///?}
+}//?}

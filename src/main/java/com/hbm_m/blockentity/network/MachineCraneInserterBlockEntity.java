@@ -21,10 +21,10 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
 //? if forge {
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
+/*import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.ItemHandlerHelper;
-//?}
+*///?}
 
 /**
  * Crane Inserter - Port von {@code TileEntityCraneInserter} (1.7.10 Original). 21-Slot-Puffer, der
@@ -63,7 +63,7 @@ public class MachineCraneInserterBlockEntity extends BaseMachineBlockEntity impl
         if (target == null) return;
 
         //? if forge {
-        IItemHandler handler = target.getCapability(ForgeCapabilities.ITEM_HANDLER, outputSide.getOpposite()).orElse(null);
+        /*IItemHandler handler = target.getCapability(ForgeCapabilities.ITEM_HANDLER, outputSide.getOpposite()).orElse(null);
         if (handler == null) return;
 
         boolean didSomething = false;
@@ -94,7 +94,7 @@ public class MachineCraneInserterBlockEntity extends BaseMachineBlockEntity impl
                 }
             }
         }
-        //?}
+        *///?}
 
         setChanged();
     }

@@ -31,28 +31,28 @@ public class RadiationEffect extends MobEffect {
     }
 
     //? if < 1.21.1 {
-    @Override
+    /*@Override
     public void applyEffectTick(@NotNull LivingEntity entity, int amplifier) {
         applyTick(entity, amplifier);
     }
-    //?} else {
-    /*@Override
+    *///?} else {
+    @Override
     public boolean applyEffectTick(@NotNull LivingEntity entity, int amplifier) {
         applyTick(entity, amplifier);
         return true;
     }
-     *///?}
+     //?}
 
     //? if < 1.21.1 {
-    @Override
+    /*@Override
     public boolean isDurationEffectTick(int duration, int amplifier) {
         return true;
     }
-    //?} else {
-    /*// 1.21.1: isDurationEffectTick переименован в shouldApplyEffectTickThisTick.
+    *///?} else {
+    // 1.21.1: isDurationEffectTick переименован в shouldApplyEffectTickThisTick.
     @Override
     public boolean shouldApplyEffectTickThisTick(int duration, int amplifier) {
         return true;
     }
-     *///?}
+     //?}
 }

@@ -31,22 +31,22 @@ import org.jetbrains.annotations.Nullable;
 import java.util.List;
 
 //? if forge {
-import net.minecraftforge.api.distmarker.Dist;
+/*import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RenderLevelStageEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
+*///?} elif neoforge {
+import net.neoforged.api.distmarker.Dist;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
-*///?}
+//?}
 
 //? if forge {
-@Mod.EventBusSubscriber(modid = RefStrings.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
-//?} elif neoforge {
-/*@EventBusSubscriber(modid = RefStrings.MODID, bus = EventBusSubscriber.Bus.GAME, value = Dist.CLIENT)
-*///?}
+/*@Mod.EventBusSubscriber(modid = RefStrings.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
+*///?} elif neoforge {
+@EventBusSubscriber(modid = RefStrings.MODID, bus = EventBusSubscriber.Bus.GAME, value = Dist.CLIENT)
+//?}
 @SuppressWarnings({"UnstableApiUsage", "removal"})
 public class ClientModEvents {
 
@@ -64,12 +64,12 @@ public class ClientModEvents {
         // callback (stack, lines, flag), на 1.21.1+ — 4-параметровый с Item.TooltipContext.
         // Тело вынесено в handleItemTooltip, чтобы логика не дублировалась.
         //? if < 1.21.1 {
-        ClientTooltipEvent.ITEM.register((stack, lines, flag) ->
+        /*ClientTooltipEvent.ITEM.register((stack, lines, flag) ->
                 handleItemTooltip(stack, Minecraft.getInstance().level, lines, flag));
-        //?} else {
-        /*ClientTooltipEvent.ITEM.register((stack, lines, context, flag) ->
+        *///?} else {
+        ClientTooltipEvent.ITEM.register((stack, lines, context, flag) ->
                 handleItemTooltip(stack, context.level(), lines, flag));
-        *///?}
+        //?}
 
         ClientTickEvent.CLIENT_POST.register(client -> {
             com.hbm_m.client.overlay.OverlayInfoToast.tick();
@@ -192,11 +192,11 @@ public class ClientModEvents {
             // строится проекция дальнего И ближнего NT-проходов.
             Minecraft mcCapture = Minecraft.getInstance();
             //? if < 1.21.1 {
-            com.hbm_m.client.compat.dh.DhClientCompat.captureVanillaProjection(mcCapture.getFrameTime());
-            //?} else {
-            /*com.hbm_m.client.compat.dh.DhClientCompat.captureVanillaProjection(
+            /*com.hbm_m.client.compat.dh.DhClientCompat.captureVanillaProjection(mcCapture.getFrameTime());
+            *///?} else {
+            com.hbm_m.client.compat.dh.DhClientCompat.captureVanillaProjection(
                     mcCapture.getTimer().getGameTimeDeltaPartialTick(true));
-            *///?}
+            //?}
             MissileTrackClient.beginRenderFrame();
             logShadowBerDiagnostics();
         }
@@ -235,7 +235,7 @@ public class ClientModEvents {
     }
 
     //? if forge {
-    @SubscribeEvent
+    /*@SubscribeEvent
     public static void onRenderGuiPre(net.minecraftforge.client.event.RenderGuiEvent.Pre event) {
         // Виньетка использует multiply-блендинг (ZERO/ONE_MINUS_SRC_COLOR) и
         // молча ломается при расхождении кеша факторов блендинга с физикой
@@ -243,7 +243,7 @@ public class ClientModEvents {
         // Форсируем честный блендинг ДО Gui.render.
         com.hbm_m.client.render.shader.ShaderBindResync.forceHonestBlendState();
     }
-    //?}
+    *///?}
 
     /**
      * Instanced flush — только {@link com.hbm_m.client.render.culling.InstancedRenderFrame#presentAfterBlockEntities}

@@ -7,7 +7,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicReference;
 
 import com.hbm_m.block.ModBlocks;
 // Этот класс реализует простую и эффективную систему симуляции радиации в чанках. Ядро всей радиационной механики мода.
@@ -30,12 +29,11 @@ import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.chunk.LevelChunk;
 //? if forge {
-import net.minecraftforge.event.level.ChunkEvent;
+/*import net.minecraftforge.event.level.ChunkEvent;
 import net.minecraftforge.event.level.LevelEvent;
-//?}
+*///?}
 
 // Моя конфетка, сколько же сил и нервов я на тебя потратил!
 public class ChunkRadiationHandlerSimple extends ChunkRadiationHandler {
@@ -234,49 +232,49 @@ public class ChunkRadiationHandlerSimple extends ChunkRadiationHandler {
     }
 
     //? if forge {
-    @Override
+    /*@Override
     public void receiveChunkUnload(ChunkEvent.Unload event) {
         if (event.getChunk() instanceof LevelChunk chunk && !chunk.getLevel().isClientSide()) {
             Optional.ofNullable(activeChunksByDimension.get(chunk.getLevel().dimension()
             .location())).ifPresent(set -> set.remove(chunk.getPos()));
         }
     }
-    //?} else {
-    /*// ВЫЗЫВАЕТСЯ ИЗ МЕНЕДЖЕРА ДЛЯ NEOFORGE / FABRIC
+    *///?} else {
+    // ВЫЗЫВАЕТСЯ ИЗ МЕНЕДЖЕРА ДЛЯ NEOFORGE / FABRIC
     public void receiveChunkUnload(LevelChunk chunk) {
         if (!chunk.getLevel().isClientSide()) {
             Optional.ofNullable(activeChunksByDimension.get(chunk.getLevel().dimension()
                     .location())).ifPresent(set -> set.remove(chunk.getPos()));
         }
     }
-    *///?}
+    //?}
 
     @Override
     public float getRadiation(Level level, int x, int y, int z) {
         if (level == null || level.isClientSide()) return 0F;
-        ChunkAccess chunkAccess = level.getChunk(x >> 4, z >> 4);
-        if (chunkAccess instanceof LevelChunk chunk) {
-            AtomicReference<Float> radiation = new AtomicReference<>(0f);
-            getChunkRadiationCap(chunk).ifPresent(cap -> radiation.set(cap.getAmbientRadiation()));
-            return radiation.get();
-        }
-        return 0F;
+        // 1.7.10 reads from an in-memory map and never touches the chunk. Our storage lives on the
+        // chunk itself, so consult loaded chunks only — level.getChunk would generate terrain here.
+        LevelChunk chunk = level.getChunkSource().getChunk(x >> 4, z >> 4, false);
+        if (chunk == null) return 0F;
+        return Mth.clamp(getChunkRadiationCap(chunk).map(IChunkRadiation::getAmbientRadiation).orElse(0f), 0F, MAX_RAD);
     }
 
     @Override
     public void setRadiation(Level level, int x, int y, int z, float rad) {
         if (level == null || level.isClientSide()) return;
-        ChunkAccess chunkAccess = level.getChunk(x >> 4, z >> 4);
-        if (chunkAccess instanceof LevelChunk chunk) {
-            getChunkRadiationCap(chunk).ifPresent(cap -> {
-                cap.setAmbientRadiation(rad);
-                chunk.setUnsaved(true);
-                if (rad > 1e-6f) {
-                    activeChunksByDimension.computeIfAbsent(level.dimension()
-                    .location(), k -> ConcurrentHashMap.newKeySet()).add(chunk.getPos());
-                }
-            });
-        }
+        // Port of the original world.blockExists(x, 0, z) guard: writes to an unloaded chunk are
+        // dropped instead of forcing a load. Nuke fallout touches 21 chunks per call.
+        LevelChunk chunk = level.getChunkSource().getChunk(x >> 4, z >> 4, false);
+        if (chunk == null) return;
+        float clamped = Mth.clamp(rad, 0F, MAX_RAD);
+        getChunkRadiationCap(chunk).ifPresent(cap -> {
+            cap.setAmbientRadiation(clamped);
+            chunk.setUnsaved(true);
+            if (clamped > 1e-6f) {
+                activeChunksByDimension.computeIfAbsent(level.dimension()
+                .location(), k -> ConcurrentHashMap.newKeySet()).add(chunk.getPos());
+            }
+        });
     }
 
     @Override
@@ -427,10 +425,10 @@ public class ChunkRadiationHandlerSimple extends ChunkRadiationHandler {
                     if (state.is(Blocks.GRASS_BLOCK)) {
                         level.setBlock(blockPos, ModBlocks.WASTE_GRASS.get().defaultBlockState(), 2);
                     //? if < 1.21.1 {
-                    } else if (state.is(Blocks.GRASS)) {
-                    //?} else {
-                    /*} else if (state.is(Blocks.SHORT_GRASS)) {
-                    *///?}
+                    /*} else if (state.is(Blocks.GRASS)) {
+                    *///?} else {
+                    } else if (state.is(Blocks.SHORT_GRASS)) {
+                    //?}
                         level.setBlock(blockPos, Blocks.AIR.defaultBlockState(), 2);
                     } else if (state.is(BlockTags.LEAVES) && !state.is(ModBlocks.WASTE_LEAVES.get())) {
                         if (level.random.nextInt(7) <= 5) {
@@ -454,7 +452,7 @@ public class ChunkRadiationHandlerSimple extends ChunkRadiationHandler {
     }
 
     //? if forge {
-    @Override
+    /*@Override
     public void receiveWorldLoad(LevelEvent.Load event) {
         if (event.getLevel() instanceof Level level && !level.isClientSide()) {
             activeChunksByDimension.remove(level.dimension().location());
@@ -467,5 +465,5 @@ public class ChunkRadiationHandlerSimple extends ChunkRadiationHandler {
             activeChunksByDimension.remove(level.dimension().location());
         }
     }
-    //?}
+    *///?}
 }

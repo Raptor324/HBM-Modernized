@@ -8,7 +8,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 
 //? if forge {
-import mezz.jei.api.constants.VanillaTypes;
+/*import mezz.jei.api.constants.VanillaTypes;
 import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
 import mezz.jei.api.gui.drawable.IDrawable;
 import mezz.jei.api.helpers.IGuiHelper;
@@ -17,14 +17,14 @@ import mezz.jei.api.recipe.RecipeType;
 import mezz.jei.api.recipe.category.IRecipeCategory;
 import net.minecraft.world.item.crafting.Ingredient;
 
-/**
+/^*
  * JEI-категория паяльной станции ({@code hbm_m:soldering_station}).
  *
  * <p>Работает напрямую с data-driven {@link SolderingRecipe} (JSON) — без промежуточной
  * {@code *JeiRecipe}-обёртки. Toppings/PCB/solder берутся из {@link SolderingRecipe#getToppings()} / 
  * {@link SolderingRecipe#getPcb()} / {@link SolderingRecipe#getSolder()}, выход — из
  * {@link SolderingRecipe#getOutput()}.</p>
- */
+ ^/
 public class SolderingStationJeiCategory implements IRecipeCategory<SolderingRecipe> {
 
     public static final RecipeType<SolderingRecipe> RECIPE_TYPE =
@@ -71,6 +71,6 @@ public class SolderingStationJeiCategory implements IRecipeCategory<SolderingRec
         }
     }
 }
-//?} else {
-/*public final class SolderingStationJeiCategory { private SolderingStationJeiCategory() {} }
-*///?}
+*///?} else {
+public final class SolderingStationJeiCategory { private SolderingStationJeiCategory() {} }
+//?}

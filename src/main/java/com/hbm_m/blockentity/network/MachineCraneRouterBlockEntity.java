@@ -25,10 +25,10 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
 //? if forge {
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
+/*import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.items.IItemHandler;
 import net.minecraftforge.items.ItemHandlerHelper;
-//?}
+*///?}
 
 /**
  * Crane Router - Port von {@code CraneRouter}/{@code TileEntityCraneRouter} (1.7.10 Original).
@@ -125,7 +125,7 @@ public class MachineCraneRouterBlockEntity extends BaseMachineBlockEntity implem
         }
 
         //? if forge {
-        BlockEntity targetBe = level.getBlockEntity(targetPos);
+        /*BlockEntity targetBe = level.getBlockEntity(targetPos);
         if (targetBe != null) {
             IItemHandler handler = targetBe.getCapability(ForgeCapabilities.ITEM_HANDLER, dir.getOpposite()).orElse(null);
             if (handler != null) {
@@ -134,7 +134,7 @@ public class MachineCraneRouterBlockEntity extends BaseMachineBlockEntity implem
                 stack = remainder;
             }
         }
-        //?}
+        *///?}
 
         ItemEntity drop = new ItemEntity(level, targetPos.getX() + 0.5, targetPos.getY() + 0.5, targetPos.getZ() + 0.5, stack);
         level.addFreshEntity(drop);

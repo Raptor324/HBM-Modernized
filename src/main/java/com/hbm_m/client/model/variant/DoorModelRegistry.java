@@ -24,9 +24,9 @@ import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
 /*import net.fabricmc.api.EnvType;
 import net.fabricmc.api.Environment;*///?}
 //? if forge {
-import net.minecraftforge.api.distmarker.Dist;
+/*import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?}
+*///?}
 
 /**
  * Реестр моделей и скинов дверей.
@@ -35,8 +35,8 @@ import net.minecraftforge.api.distmarker.OnlyIn;
  * @author HBM-M Team
  */
 //? if forge {
-@OnlyIn(Dist.CLIENT)
-//?}
+/*@OnlyIn(Dist.CLIENT)
+*///?}
 //? if fabric {
 /*@Environment(EnvType.CLIENT)*///?}
 public class DoorModelRegistry implements ResourceManagerReloadListener {

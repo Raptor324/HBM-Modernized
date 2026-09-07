@@ -8,7 +8,7 @@ import net.minecraft.world.item.crafting.RecipeSerializer;
 import org.jetbrains.annotations.NotNull;
 
 //? if >= 1.21.1 {
-/*import com.mojang.serialization.MapCodec;
+import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.JsonOps;
 import com.mojang.serialization.MapLike;
@@ -16,7 +16,7 @@ import com.mojang.serialization.RecordBuilder;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import java.util.stream.Stream;
-*///?}
+//?}
 
 public abstract class PlatformRecipeSerializer<R extends Recipe<?>> implements RecipeSerializer<R> {
 
@@ -26,7 +26,7 @@ public abstract class PlatformRecipeSerializer<R extends Recipe<?>> implements R
 
     //? if < 1.21.1 {
     
-    @Override
+    /*@Override
     public @NotNull R fromJson(@NotNull ResourceLocation id, @NotNull JsonObject json) {
         return readJson(id, json);
     }
@@ -40,11 +40,8 @@ public abstract class PlatformRecipeSerializer<R extends Recipe<?>> implements R
     public void toNetwork(@NotNull FriendlyByteBuf buf, @NotNull R recipe) {
         writeNetwork(buf, recipe);
     }
-    //?} else {
+    *///?} else {
     
-    /*private static int decodeCallCount = 0;
-    private static int decodeSuccessCount = 0;
-
     private final MapCodec<R> mapCodec = new MapCodec<R>() {
         @Override
         public <T> Stream<T> keys(com.mojang.serialization.DynamicOps<T> ops) {
@@ -53,22 +50,18 @@ public abstract class PlatformRecipeSerializer<R extends Recipe<?>> implements R
 
         @Override
         public <T> DataResult<R> decode(com.mojang.serialization.DynamicOps<T> ops, MapLike<T> input) {
-            decodeCallCount++;
-            if (decodeCallCount <= 5) {
-                System.err.println("[HBM DEBUG] PlatformRecipeSerializer.decode CALLED #" + decodeCallCount + " ops=" + ops.getClass().getSimpleName());
-            }
             try {
-                com.mojang.serialization.Dynamic<T> dynamic = new com.mojang.serialization.Dynamic<>(ops, ops.createMap(input.entries()));
-                com.google.gson.JsonElement json = dynamic.convert(JsonOps.INSTANCE).getValue();
+                T map = ops.createMap(input.entries());
+                // Recipes already load through JsonOps. Converting again walks arrays element by
+                // element and NPEs on JsonNull, which recipes use for empty grid slots.
+                com.google.gson.JsonElement json = map instanceof com.google.gson.JsonElement element
+                        ? element
+                        : new com.mojang.serialization.Dynamic<>(ops, map).convert(JsonOps.INSTANCE).getValue();
                 R recipe = readJson(ResourceLocation.withDefaultNamespace("dummy"), json.getAsJsonObject());
-                decodeSuccessCount++;
-                if (decodeSuccessCount <= 5) {
-                    System.err.println("[HBM DEBUG] PlatformRecipeSerializer.decode SUCCESS #" + decodeSuccessCount + " recipe=" + recipe.getClass().getSimpleName());
-                }
                 return DataResult.success(recipe);
             } catch (Exception e) {
-                System.err.println("[HBM DEBUG] PlatformRecipeSerializer.decode FAILED #" + decodeCallCount + ": " + e.getClass().getSimpleName() + ": " + e.getMessage());
-                e.printStackTrace();
+                // RecipeManager only surfaces the message, so log the cause with its stack trace.
+                com.hbm_m.main.MainRegistry.LOGGER.error("Failed to parse recipe", e);
                 return DataResult.error(() -> "Failed to parse recipe: " + e.getMessage());
             }
         }
@@ -100,5 +93,5 @@ public abstract class PlatformRecipeSerializer<R extends Recipe<?>> implements R
     public StreamCodec<RegistryFriendlyByteBuf, R> streamCodec() {
         return streamCodec;
     }
-    *///?}
+    //?}
 }

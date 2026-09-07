@@ -30,11 +30,11 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.state.BlockState;
 //? if forge {
-import net.minecraftforge.client.ChunkRenderTypeSet;
+/*import net.minecraftforge.client.ChunkRenderTypeSet;
 import net.minecraftforge.client.model.data.ModelData;
-//?} elif neoforge {
-/*import net.neoforged.neoforge.client.model.data.ModelData;
-*///?}
+*///?} elif neoforge {
+import net.neoforged.neoforge.client.model.data.ModelData;
+//?}
 
 public class DoorBakedModel extends AbstractMultipartBakedModel implements AbstractMultipartBakedModel.PartNamesProvider {
     
@@ -141,10 +141,10 @@ public class DoorBakedModel extends AbstractMultipartBakedModel implements Abstr
         if (modelPath == null) return parts;
 
         //? if < 1.21.1 {
-        BakedModel selectionModel = Minecraft.getInstance().getModelManager().getModel(modelPath);
-         //?} else {
-        /*BakedModel selectionModel = Minecraft.getInstance().getModelManager().getModel(ModelResourceLocation.standalone(modelPath));
-        *///?}
+        /*BakedModel selectionModel = Minecraft.getInstance().getModelManager().getModel(modelPath);
+         *///?} else {
+        BakedModel selectionModel = Minecraft.getInstance().getModelManager().getModel(ModelResourceLocation.standalone(modelPath));
+        //?}
 
         if (selectionModel == null || selectionModel == Minecraft.getInstance().getModelManager().getMissingModel()) {
             return parts;
@@ -341,26 +341,26 @@ public class DoorBakedModel extends AbstractMultipartBakedModel implements Abstr
     // В 1.20+ ItemOverrides имеет приватный конструктор, поэтому кастомные overrides недоступны.
 
     //? if forge {
-    @Override
+    /*@Override
     public ChunkRenderTypeSet getRenderTypes(BlockState state, RandomSource rand, ModelData data) {
         // cutoutMipped для прозрачных текстур (стекло, решётки и т.д.)
         return ChunkRenderTypeSet.of(RenderType.cutoutMipped());
     }
-    //?}
+    *///?}
 
     @Override
     public TextureAtlasSprite getParticleIcon() {
         //? if forge {
-        return getParticleIcon(ModelData.EMPTY);
-        //?}
+        /*return getParticleIcon(ModelData.EMPTY);
+        *///?}
 
         //? if fabric {
         /*return super.getParticleIcon();
         *///?}
 
         //? if neoforge {
-        /*return super.getParticleIcon();
-        *///?}
+        return super.getParticleIcon();
+        //?}
     }
     
     @Override

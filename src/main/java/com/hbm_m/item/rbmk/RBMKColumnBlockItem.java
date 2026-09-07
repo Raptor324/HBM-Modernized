@@ -18,7 +18,7 @@ public class RBMKColumnBlockItem extends BlockItem {
     }
 
     //? if forge {
-    @Override
+    /*@Override
     public void initializeClient(Consumer<net.minecraftforge.client.extensions.common.IClientItemExtensions> consumer) {
         consumer.accept(new net.minecraftforge.client.extensions.common.IClientItemExtensions() {
             @Override
@@ -27,5 +27,5 @@ public class RBMKColumnBlockItem extends BlockItem {
             }
         });
     }
-    //?}
+    *///?}
 }

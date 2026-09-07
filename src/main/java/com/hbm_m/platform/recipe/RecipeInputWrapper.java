@@ -3,10 +3,10 @@ package com.hbm_m.platform.recipe;
 import net.minecraft.world.item.ItemStack;
 
 //? if < 1.21.1 {
-import net.minecraft.world.Container;
-//?} else {
-/*import net.minecraft.world.item.crafting.RecipeInput;
-*///?}
+/*import net.minecraft.world.Container;
+*///?} else {
+import net.minecraft.world.item.crafting.RecipeInput;
+//?}
 
 /**
  * Кросс-версионный «снимок» инвентаря для матчинга рецептов.
@@ -20,12 +20,12 @@ import net.minecraft.world.Container;
 public class RecipeInputWrapper {
     //? if < 1.21.1 {
 
-    private final Container container;
+    /*private final Container container;
     public RecipeInputWrapper(Container container) { this.container = container; }
     public ItemStack getItem(int slot) { return container.getItem(slot); }
     public int size() { return container.getContainerSize(); }
-    //?} else {
-    /*private final ItemStack[] items;
+    *///?} else {
+    private final ItemStack[] items;
 
     public RecipeInputWrapper(RecipeInput input) {
         this.items = new ItemStack[input.size()];
@@ -44,5 +44,5 @@ public class RecipeInputWrapper {
 
     public ItemStack getItem(int slot) { return this.items[slot]; }
     public int size() { return this.items.length; }
-    *///?}
+    //?}
 }

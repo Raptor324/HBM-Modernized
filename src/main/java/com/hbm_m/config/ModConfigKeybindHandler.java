@@ -7,7 +7,6 @@ import com.hbm_m.inventory.gui.GUIMultiDetonator;
 import com.hbm_m.item.grenades_and_activators.MultiDetonatorItem;
 import com.hbm_m.powerarmor.ModPowerArmorItem;
 import com.hbm_m.powerarmor.PowerArmorClientState;
-import com.hbm_m.powerarmor.PowerArmorHandlers;
 import com.mojang.blaze3d.platform.InputConstants;
 
 import dev.architectury.event.events.client.ClientTickEvent;
@@ -18,19 +17,19 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 
 //? if forge {
-@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-//?} elif fabric {
+/*@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+*///?} elif fabric {
 /*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
 *///?} elif neoforge {
-/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-*///?}
+@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+//?}
 public class ModConfigKeybindHandler {
     public static final String CATEGORY = "key.categories.hbm_m";
     private static boolean INITIALIZED = false;
 
     public static final KeyMapping OPEN_CONFIG =
     //? if forge {
-            new KeyMapping(
+            /*new KeyMapping(
                     "key.hbm_m.open_config",
                     net.minecraftforge.client.settings.KeyConflictContext.UNIVERSAL,
                     net.minecraftforge.client.settings.KeyModifier.ALT,
@@ -38,8 +37,8 @@ public class ModConfigKeybindHandler {
                     GLFW.GLFW_KEY_0,
                     CATEGORY
             );
-    //?} elif neoforge {
-            /*new KeyMapping(
+    *///?} elif neoforge {
+            new KeyMapping(
                     "key.hbm_m.open_config",
                     net.neoforged.neoforge.client.settings.KeyConflictContext.UNIVERSAL,
                     net.neoforged.neoforge.client.settings.KeyModifier.ALT,
@@ -47,7 +46,7 @@ public class ModConfigKeybindHandler {
                     GLFW.GLFW_KEY_0,
                     CATEGORY
             );
-    *///?} else {
+    //?} else {
     /*        new KeyMapping(
                     "key.hbm_m.open_config",
                     InputConstants.Type.KEYSYM,
@@ -160,8 +159,8 @@ public class ModConfigKeybindHandler {
                 if (chestplate.getItem() instanceof ModPowerArmorItem armorItem) {
                     var specs = armorItem.getSpecs();
                     if (specs.dashCount > 0) {
-                        // TODO: Отправить пакет на сервер для выполнения dash
-                        PowerArmorHandlers.performDash(mc.player);
+                        // performDash is server-only; the client just asks for it.
+                        com.hbm_m.network.packets.PowerArmorDashC2SPacket.sendToServer();
                         OverlayInfoToast.show(Component.translatable("hud.hbm_m.dash.perform"), 60, OverlayInfoToast.ID_DASH, 0x00FF00);
                     }
                 }

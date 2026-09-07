@@ -1,6 +1,6 @@
 package com.hbm_m.datagen.recipes.custom;
 //? if forge {
-import javax.annotation.Nullable;
+/*import javax.annotation.Nullable;
 
 import com.google.gson.JsonObject;
 import com.hbm_m.recipe.CrystallizerRecipe;
@@ -11,7 +11,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 
-/**
+/^*
  * Datagen-билдер {@link CrystallizerRecipe} ({@code hbm_m:crystallizer}).
  *
  * <p>Чистый ванильный 1.20.1 код внутри {@code //? if forge} — датаген компилируется
@@ -30,7 +30,7 @@ import net.minecraft.world.item.crafting.RecipeSerializer;
  *   "productivity": 0.05
  * }
  * }</pre>
- */
+ ^/
 public class CrystallizerRecipeBuilder extends BaseRecipeBuilder<CrystallizerRecipeBuilder> {
 
     private final Ingredient input;
@@ -57,14 +57,14 @@ public class CrystallizerRecipeBuilder extends BaseRecipeBuilder<CrystallizerRec
         return new CrystallizerRecipeBuilder(input, inputCount, acid, output, duration, productivity);
     }
 
-    /** Item-перегрузка: {@code input} одиночным предметом. */
+    /^* Item-перегрузка: {@code input} одиночным предметом. ^/
     public static CrystallizerRecipeBuilder crystallizerRecipe(Item input, int inputCount,
                                                                @Nullable FluidStack acid,
                                                                ItemStack output, int duration, float productivity) {
         return crystallizerRecipe(Ingredient.of(input), inputCount, acid, output, duration, productivity);
     }
 
-    /** Item-tag перегрузка: {@code input} через forge-тег (строка вида {@code "forge:ores/iron"}). */
+    /^* Item-tag перегрузка: {@code input} через forge-тег (строка вида {@code "forge:ores/iron"}). ^/
     public static CrystallizerRecipeBuilder crystallizerRecipe(String tagId, int inputCount,
                                                                @Nullable FluidStack acid,
                                                                ItemStack output, int duration, float productivity) {
@@ -100,4 +100,4 @@ public class CrystallizerRecipeBuilder extends BaseRecipeBuilder<CrystallizerRec
         return CrystallizerRecipe.Serializer.INSTANCE;
     }
 }
-//?}
+*///?}

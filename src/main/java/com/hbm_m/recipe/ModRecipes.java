@@ -307,7 +307,7 @@ public class ModRecipes {
      * т.е. ПОСЛЕ RegisterEvent, когда Deferred-записи уже разрешены в реестрах.
      */
     //? if >= 1.21.1 {
-    /*public static void debugRecipeSerializerRegistry() {
+    public static void debugRecipeSerializerRegistry() {
         try {
             var reg = net.minecraft.core.registries.BuiltInRegistries.RECIPE_SERIALIZER;
             System.err.println("[HBM DEBUG] commonSetup: ASSEMBLER_SERIALIZER present=" + ASSEMBLER_SERIALIZER.isPresent()
@@ -352,5 +352,5 @@ public class ModRecipes {
             t.printStackTrace();
         }
     }
-    *///?}
+    //?}
 }

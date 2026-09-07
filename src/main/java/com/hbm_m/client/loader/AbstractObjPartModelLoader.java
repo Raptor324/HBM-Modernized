@@ -25,16 +25,16 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.GsonHelper;
 
 //? if < 1.21.1 {
-import net.minecraftforge.client.model.geometry.IGeometryBakingContext;
+/*import net.minecraftforge.client.model.geometry.IGeometryBakingContext;
 import net.minecraftforge.client.model.geometry.IGeometryLoader;
 import net.minecraftforge.client.model.geometry.IUnbakedGeometry;
 import net.minecraftforge.client.model.obj.ObjModel;
-//?} else {
-/*import net.neoforged.neoforge.client.model.geometry.IGeometryBakingContext;
+*///?} else {
+import net.neoforged.neoforge.client.model.geometry.IGeometryBakingContext;
 import net.neoforged.neoforge.client.model.geometry.IGeometryLoader;
 import net.neoforged.neoforge.client.model.geometry.IUnbakedGeometry;
 import net.neoforged.neoforge.client.model.obj.ObjModel;
-*///?}
+//?}
 
 public abstract class AbstractObjPartModelLoader<T extends BakedModel> implements IGeometryLoader<AbstractObjPartModelLoader.ObjPartGeometry<T>> {
 
@@ -86,17 +86,17 @@ public abstract class AbstractObjPartModelLoader<T extends BakedModel> implement
         }
 
         //? if < 1.21.1 {
-        @Override
+        /*@Override
         public BakedModel bake(IGeometryBakingContext context, ModelBaker baker, Function<Material, TextureAtlasSprite> spriteGetter, ModelState modelState, ItemOverrides overrides, ResourceLocation modelName) {
             return doBake(context, baker, spriteGetter, modelState, overrides, modelName);
         }
-        //?} else {
-        /*@Override
+        *///?} else {
+        @Override
         public BakedModel bake(IGeometryBakingContext context, ModelBaker baker, Function<Material, TextureAtlasSprite> spriteGetter, ModelState modelState, ItemOverrides overrides) {
             ResourceLocation modelName = ResourceLocation.parse(context.getModelName());
             return doBake(context, baker, spriteGetter, modelState, overrides, modelName);
         }
-        *///?}
+        //?}
 
         private BakedModel doBake(IGeometryBakingContext context, ModelBaker baker, Function<Material, TextureAtlasSprite> spriteGetter, ModelState modelState, ItemOverrides overrides, ResourceLocation modelName) {
             ObjModel model = getOrLoadObjModel();

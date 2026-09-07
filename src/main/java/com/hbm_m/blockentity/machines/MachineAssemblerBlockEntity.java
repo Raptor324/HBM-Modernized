@@ -44,15 +44,15 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
 //? if forge {
-import net.minecraftforge.api.distmarker.Dist;
+/*import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.items.IItemHandler;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
+*///?} elif neoforge {
+import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
-*///?}
+//?}
 
 //? if fabric {
 /*import net.fabricmc.api.EnvType;
@@ -90,9 +90,9 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
 
     // Proxy handlers РґР»СЏ multiblock parts
     //? if forge {
-    private LazyOptional<IItemHandler> lazyInputProxy = LazyOptional.empty();
+    /*private LazyOptional<IItemHandler> lazyInputProxy = LazyOptional.empty();
     private LazyOptional<IItemHandler> lazyOutputProxy = LazyOptional.empty();
-    //?}
+    *///?}
 
     //? if fabric {
     /*@Nullable private Storage<ItemVariant> inputProxy;
@@ -175,7 +175,7 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
     // ==================== MULTIBLOCK PART SUPPORT ====================
 
     //? if forge {
-    public LazyOptional<IItemHandler> getItemHandlerForPart(PartRole role) {
+    /*public LazyOptional<IItemHandler> getItemHandlerForPart(PartRole role) {
         if (role == PartRole.ITEM_INPUT) {
             if (!lazyInputProxy.isPresent()) {
                 lazyInputProxy = LazyOptional.of(this::createInputProxy);
@@ -266,7 +266,7 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
             }
         };
     }
-    //?}
+    *///?}
 
     //? if fabric {
     /*public Storage<ItemVariant> getItemStorageForPart(PartRole role) {
@@ -391,7 +391,7 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
         }
 
         //? if forge {
-        // РћР±С‹С‡РЅР°СЏ Р±Р°С‚Р°СЂРµСЏ С‡РµСЂРµР· HBM capability
+        /*// РћР±С‹С‡РЅР°СЏ Р±Р°С‚Р°СЂРµСЏ С‡РµСЂРµР· HBM capability
         energySourceStack.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER).ifPresent(itemEnergy -> {
             long energyNeeded = this.getMaxEnergyStored() - this.getEnergyStored();
             if (energyNeeded <= 0) return;
@@ -423,7 +423,7 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
                 }
             });
         }
-        //?}
+        *///?}
 
         //? if fabric {
         /*var itemEnergy = EnergyStorage.ITEM.find(energySourceStack, null);
@@ -581,7 +581,7 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
                 if (missing <= 0) continue;
 
                 //? if forge {
-                IItemHandler cap = neighbor.getCapability(ForgeCapabilities.ITEM_HANDLER, dirToNeighbor).orElse(null);
+                /*IItemHandler cap = neighbor.getCapability(ForgeCapabilities.ITEM_HANDLER, dirToNeighbor).orElse(null);
                 if (cap == null) continue;
 
                 for (int slot = 0; slot < cap.getSlots() && missing > 0; slot++) {
@@ -606,7 +606,7 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
                         }
                     }
                 }
-                //?}
+                *///?}
 
                 //? if fabric {
                 /*Storage<ItemVariant> cap = ItemStorage.SIDED.find(level, neighborPosGlobal, dirToNeighbor);
@@ -685,7 +685,7 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
             Direction side1 = outDir.getOpposite();
             Direction side2 = facingDir;
             //? if forge {
-            IItemHandler cap = neighbor.getCapability(ForgeCapabilities.ITEM_HANDLER, side1)
+            /*IItemHandler cap = neighbor.getCapability(ForgeCapabilities.ITEM_HANDLER, side1)
                     .orElse(neighbor.getCapability(ForgeCapabilities.ITEM_HANDLER, side2)
                             .orElse(null));
 
@@ -702,7 +702,7 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
             }
 
             out = inventory.getStackInSlot(OUTPUT_SLOT);
-            //?}
+            *///?}
 
             //? if fabric {
             /*Storage<ItemVariant> cap = ItemStorage.SIDED.find(level, neighborPos, side1);
@@ -748,7 +748,7 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
 
 
     //? if forge {
-    @Override
+    /*@Override
     public <T> LazyOptional<T> getCapability(@NotNull net.minecraftforge.common.capabilities.Capability<T> cap, @Nullable Direction side) {
         if (cap == ForgeCapabilities.ITEM_HANDLER) {
             return itemHandler.cast();
@@ -762,7 +762,7 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
         lazyInputProxy.invalidate();
         lazyOutputProxy.invalidate();
     }
-    //?}
+    *///?}
 
     // ==================== CLIENT ====================
 
@@ -848,9 +848,9 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
         super.setRemoved();
         // Подписки энергосети снимаются в BaseMachineBlockEntity.setRemoved
         //? if forge {
-        if (this.level != null && this.level.isClientSide) {
+        /*if (this.level != null && this.level.isClientSide) {
             ClientSoundBootstrap.updateSound(this, false, null);
         }
-        //?}
+        *///?}
     }
 }

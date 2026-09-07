@@ -1,6 +1,6 @@
 package com.hbm_m.datagen.recipes.custom;
 //? if forge {
-import com.hbm_m.block.ModBlocks;
+/*import com.hbm_m.block.ModBlocks;
 import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.item.material.MaterialShape;
@@ -14,7 +14,7 @@ import net.minecraft.world.item.Items;
 
 import java.util.function.Consumer;
 
-/**
+/^*
  * Генератор JSON-рецептов рудного окислителя ({@code hbm_m:crystallizer}).
  *
  * <p>Порт раскомментированных рецептов из удалённого статического {@code CrystallizerRecipes.registerDefaults()}.
@@ -33,7 +33,7 @@ import java.util.function.Consumer;
  *   <li>{@code peroxide=PEROXIDE@500}, {@code sulfur=SULFURIC_ACID@500}.</li>
  *   <li>{@code productivity=0.05} для всех рудных, 0.25 — для ROTTEN_FLESH→LEATHER.</li>
  * </ul>
- */
+ ^/
 public final class CrystallizerRecipeGenerator {
 
     // Длительности (прямые порты констант из CrystallizerRecipes).
@@ -109,19 +109,19 @@ public final class CrystallizerRecipeGenerator {
                 .save(writer, "crystallizer/black_dye_to_slime");
     }
 
-    /** Руда по forge-тегу с перекисью 500 mB, baseTime, productivity 0.05 (базовый случай). */
+    /^* Руда по forge-тегу с перекисью 500 mB, baseTime, productivity 0.05 (базовый случай). ^/
     private static void ore(Consumer<FinishedRecipe> writer, String name, String tagId,
                             net.minecraft.world.item.Item output) {
         ore(writer, name, tagId, new ItemStack(output), PEROXIDE);
     }
 
-    /** Руда по forge-тегу с заданной кислотой, baseTime, productivity 0.05. */
+    /^* Руда по forge-тегу с заданной кислотой, baseTime, productivity 0.05. ^/
     private static void ore(Consumer<FinishedRecipe> writer, String name, String tagId,
                             net.minecraft.world.item.Item output, FluidStack acid) {
         ore(writer, name, tagId, new ItemStack(output), acid);
     }
 
-    /** Руда по forge-тегу с заданной кислотой, baseTime, productivity 0.05 (ItemStack-перегрузка). */
+    /^* Руда по forge-тегу с заданной кислотой, baseTime, productivity 0.05 (ItemStack-перегрузка). ^/
     private static void ore(Consumer<FinishedRecipe> writer, String name, String tagId,
                             ItemStack output, FluidStack acid) {
         CrystallizerRecipeBuilder.crystallizerRecipe(
@@ -133,4 +133,4 @@ public final class CrystallizerRecipeGenerator {
         return FluidStack.create(entry.getSource(), (long) amountMb);
     }
 }
-//?}
+*///?}

@@ -40,7 +40,7 @@ public class RadioboxBlock extends BaseEntityBlock {
     }
 
     //? if < 1.21.1 {
-    @Override
+    /*@Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
 
         if (level.isClientSide()) return InteractionResult.SUCCESS;
@@ -58,8 +58,8 @@ public class RadioboxBlock extends BaseEntityBlock {
         player.displayClientMessage(Component.literal(be.isOn() ? "On" : "Off"), true);
         return InteractionResult.CONSUME;
         }
-    //?} else {
-    /*@Override
+    *///?} else {
+    @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
 
         if (level.isClientSide()) return InteractionResult.SUCCESS;
@@ -77,15 +77,15 @@ public class RadioboxBlock extends BaseEntityBlock {
         player.displayClientMessage(Component.literal(be.isOn() ? "On" : "Off"), true);
         return InteractionResult.CONSUME;
         }
-    *///?}
+    //?}
 
 
     //? if >1.20.1 {
-    /*public static final com.mojang.serialization.MapCodec<RadioboxBlock> CODEC = simpleCodec(RadioboxBlock::new);
+    public static final com.mojang.serialization.MapCodec<RadioboxBlock> CODEC = simpleCodec(RadioboxBlock::new);
 
     @Override
     protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
         return CODEC;
     }
-    *///?}
+    //?}
 }

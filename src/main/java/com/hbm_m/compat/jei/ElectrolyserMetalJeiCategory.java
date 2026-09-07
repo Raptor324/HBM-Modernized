@@ -19,7 +19,7 @@ import net.minecraft.world.item.ItemStack;
  * ранее — статический {@code ElectrolyserRecipes} (metal-mode).</p>
  */
 //? if forge {
-public class ElectrolyserMetalJeiCategory extends JeiGenericRecipeCategory<ElectrolyserMetalRecipe> {
+/*public class ElectrolyserMetalJeiCategory extends JeiGenericRecipeCategory<ElectrolyserMetalRecipe> {
 
     public static final RecipeType<ElectrolyserMetalRecipe> RECIPE_TYPE =
             RecipeType.create(RefStrings.MODID, "electrolyser_metal", ElectrolyserMetalRecipe.class);
@@ -96,7 +96,7 @@ public class ElectrolyserMetalJeiCategory extends JeiGenericRecipeCategory<Elect
         // Kein Blueprint-Slot fuer Electrolyser-Metal-Rezepte.
     }
 }
-//?} else {
-/*public final class ElectrolyserMetalJeiCategory {
+*///?} else {
+public final class ElectrolyserMetalJeiCategory {
     private ElectrolyserMetalJeiCategory() {}
-}*///?}
+}//?}

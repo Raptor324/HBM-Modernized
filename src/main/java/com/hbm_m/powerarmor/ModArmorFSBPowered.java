@@ -22,9 +22,9 @@ import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
 import com.hbm_m.platform.PlatformHooks;
 //? if forge {
-import com.hbm_m.api.energy.EnergyCapabilityProvider;
+/*import com.hbm_m.api.energy.EnergyCapabilityProvider;
 import net.minecraftforge.common.capabilities.ICapabilityProvider;
-//?}
+*///?}
 
 // Full Set Bonus Powered armor - combines FSB functionality with battery system
 public class ModArmorFSBPowered extends ModArmorFSB implements ITooltipProvider {
@@ -163,19 +163,19 @@ public class ModArmorFSBPowered extends ModArmorFSB implements ITooltipProvider 
      * Passive energy drain per tick when wearing full FSB armor set.
      */
     //? if forge {
-    @Override
+    /*@Override
     public void onArmorTick(ItemStack stack, Level world, Player player) {
         super.onArmorTick(stack, world, player);
         tickPoweredDrain(stack, world, player);
     }
-    //?} else {
-    /*@Override
+    *///?} else {
+    @Override
     public void inventoryTick(ItemStack stack, Level world, Entity entity, int slotId, boolean selected) {
         super.inventoryTick(stack, world, entity, slotId, selected);
         if (!(entity instanceof Player player)) return;
         tickPoweredDrain(stack, world, player);
     }
-    *///?}
+    //?}
 
     private void tickPoweredDrain(ItemStack stack, Level world, Player player) {
         if (this.drain > 0 && ModArmorFSB.hasFSBArmor(player)
@@ -188,10 +188,10 @@ public class ModArmorFSBPowered extends ModArmorFSB implements ITooltipProvider 
 
             if (maxCharge > 0 && (Math.abs(newCharge - prevCharge) > maxCharge * 0.05 || newCharge == 0)) {
                 //? if < 1.21.1 {
-                syncEnergyToClient(player, stack, world, net.minecraft.world.entity.Mob.getEquipmentSlotForItem(stack));
-                //?} else {
-                /*syncEnergyToClient(player, stack, world, player.getEquipmentSlotForItem(stack));
-                *///?}
+                /*syncEnergyToClient(player, stack, world, net.minecraft.world.entity.Mob.getEquipmentSlotForItem(stack));
+                *///?} else {
+                syncEnergyToClient(player, stack, world, player.getEquipmentSlotForItem(stack));
+                //?}
             }
         }
     }
@@ -214,30 +214,30 @@ public class ModArmorFSBPowered extends ModArmorFSB implements ITooltipProvider 
     }
 
     //? if forge {
-    @Nullable
+    /*@Nullable
     @Override
     public ICapabilityProvider initCapabilities(ItemStack stack, @Nullable CompoundTag nbt) {
         long modifiedCapacity = getMaxCharge(stack);
         return new EnergyCapabilityProvider(stack, modifiedCapacity, chargeRate, modifiedCapacity);
     }
-    //?}
+    *///?}
 
     // Взаимная блокировка с маской в слоте лица Curios: шлем силовой брони нельзя
     // надеть, пока там стоит противогаз (и наоборот — см. GasMaskCurio/ArmorGasMaskItem).
     //? if < 1.21.1 {
-    @Override
+    /*@Override
     public boolean canEquip(ItemStack stack, EquipmentSlot slot, Entity entity) {
         return super.canEquip(stack, slot, entity)
                 && (slot != EquipmentSlot.HEAD
                     || !(entity instanceof LivingEntity living)
                     || com.hbm_m.compat.curios.CuriosCompat.getFaceMask(living).isEmpty());
     }
-    //?} else {
-    /*@Override
+    *///?} else {
+    @Override
     public boolean canEquip(ItemStack stack, EquipmentSlot slot, LivingEntity entity) {
         return super.canEquip(stack, slot, entity)
                 && (slot != EquipmentSlot.HEAD
                     || com.hbm_m.compat.curios.CuriosCompat.getFaceMask(entity).isEmpty());
     }
-     *///?}
+     //?}
 }

@@ -47,10 +47,10 @@ public class ModAxeItem extends AxeItem implements ITooltipProvider {
     public ModAxeItem(Tier tier, float attackDamage, float attackSpeed, Properties properties,
                       int veinMinerLevel, int silkTouchLevel) {
         //? if < 1.21.1 {
-        super(tier, attackDamage, attackSpeed, properties);
-        //?} else {
-        /*super(tier, properties);
-        *///?}
+        /*super(tier, attackDamage, attackSpeed, properties);
+        *///?} else {
+        super(tier, properties);
+        //?}
         this.veinMinerLevel = Math.max(0, Math.min(6, veinMinerLevel));
         this.silkTouchLevel = Math.max(0, Math.min(1, silkTouchLevel));
     }

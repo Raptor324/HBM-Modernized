@@ -56,16 +56,16 @@ public class MovingConveyorItemEntity extends Entity implements ItemSupplier {
     }
 
     //? if < 1.21.1 {
-    @Override
+    /*@Override
     protected void defineSynchedData() {
         this.entityData.define(ITEM, ItemStack.EMPTY);
     }
-    //?} else {
-    /*@Override
+    *///?} else {
+    @Override
     protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
         builder.define(ITEM, ItemStack.EMPTY);
     }
-    *///?}
+    //?}
 
     @Override
     public ItemStack getItem() {

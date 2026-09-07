@@ -1,6 +1,6 @@
 package com.hbm_m.datagen.recipes.custom;
 //? if forge {
-import com.hbm_m.inventory.fluid.ModFluids;
+/*import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.item.material.MaterialShape;
 import com.hbm_m.item.material.ModMaterialItems;
@@ -13,7 +13,7 @@ import net.minecraft.world.item.Items;
 
 import java.util.function.Consumer;
 
-/**
+/^*
  * Генератор JSON-рецептов солидификатора ({@code hbm_m:solidification}).
  *
  * <p>Порт рецептов из удалённого статического {@code SolidificationRecipes} (static-блок;
@@ -28,7 +28,7 @@ import java.util.function.Consumer;
  * {@code SOLID_FUEL_BF}). Семантика «нет flammable-trait → нет рецепта» сохраняется тем, что
  * не-воспламеняющиеся жидкости здесь просто не портированы. Чистый ванильный 1.20.1 код внутри
  * {@code //? if forge} — датаген только для 1.20.1-forge.</p>
- */
+ ^/
 public final class SolidificationRecipeGenerator {
 
     private SolidificationRecipeGenerator() {}
@@ -38,7 +38,7 @@ public final class SolidificationRecipeGenerator {
         registerSolidFuelAuto(writer);
     }
 
-    /** 9 явных рецептов исходного static-блока. */
+    /^* 9 явных рецептов исходного static-блока. ^/
     private static void registerManual(Consumer<FinishedRecipe> writer) {
         put(writer, "water",       ModFluids.WATER,       1000, new ItemStack(Items.ICE));
         put(writer, "lava",        ModFluids.LAVA,        1000, new ItemStack(Items.OBSIDIAN));
@@ -53,7 +53,7 @@ public final class SolidificationRecipeGenerator {
         // registerSFAuto(BALEFIRE, 24_000_000L) — поэтому эмитим только финальное (auto) значение.
     }
 
-    /** 27 auto-рецептов: литеральные значения формулы SF-auto (см. javadoc класса). */
+    /^* 27 auto-рецептов: литеральные значения формулы SF-auto (см. javadoc класса). ^/
     private static void registerSolidFuelAuto(Consumer<FinishedRecipe> writer) {
         ItemStack solidFuel = new ItemStack(ModItems.SOLID_FUEL.get());
         ItemStack solidFuelBf = new ItemStack(ModItems.SOLID_FUEL_BF.get());
@@ -120,4 +120,4 @@ public final class SolidificationRecipeGenerator {
                 .save(writer, "solidification/" + id);
     }
 }
-//?}
+*///?}

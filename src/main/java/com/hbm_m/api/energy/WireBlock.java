@@ -36,9 +36,9 @@ import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import com.hbm_m.capability.ModCapabilities;
 //? if forge {
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
+/*import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
-//?}
+*///?}
 
 
 public class WireBlock extends BaseEntityBlock {
@@ -174,19 +174,19 @@ public class WireBlock extends BaseEntityBlock {
         }
 
         //? if forge {
-        if (be.getCapability(ModCapabilities.HBM_ENERGY_CONNECTOR, sideFromNeighbor).isPresent()) return true;
+        /*if (be.getCapability(ModCapabilities.HBM_ENERGY_CONNECTOR, sideFromNeighbor).isPresent()) return true;
         if (be.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER, sideFromNeighbor).isPresent()) return true;
         if (be.getCapability(ModCapabilities.HBM_ENERGY_RECEIVER, sideFromNeighbor).isPresent()) return true;
         return be.getCapability(ForgeCapabilities.ENERGY, sideFromNeighbor).isPresent();
-        //?} else {
-        /*if (world instanceof net.minecraft.world.level.Level level) {
+        *///?} else {
+        if (world instanceof net.minecraft.world.level.Level level) {
             if (level.getCapability(ModCapabilities.HBM_ENERGY_CONNECTOR, neighborPos, neighborState, be, sideFromNeighbor) != null) return true;
             if (level.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER, neighborPos, neighborState, be, sideFromNeighbor) != null) return true;
             if (level.getCapability(ModCapabilities.HBM_ENERGY_RECEIVER, neighborPos, neighborState, be, sideFromNeighbor) != null) return true;
             return level.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.BLOCK, neighborPos, neighborState, be, sideFromNeighbor) != null;
         }
         return false;
-        *///?}
+        //?}
     }
 
     public static BooleanProperty getProperty(Direction direction) {
@@ -234,7 +234,7 @@ public class WireBlock extends BaseEntityBlock {
     }
 
     //? if > 1.20.1 {
-    /*public static final com.mojang.serialization.MapCodec<WireBlock> CODEC = simpleCodec(WireBlock::new);
+    public static final com.mojang.serialization.MapCodec<WireBlock> CODEC = simpleCodec(WireBlock::new);
     @Override protected com.mojang.serialization.MapCodec<? extends BaseEntityBlock> codec() { return CODEC; }
-    *///?}
+    //?}
 }

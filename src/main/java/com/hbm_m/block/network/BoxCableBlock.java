@@ -34,11 +34,11 @@ public class BoxCableBlock extends WireBlock {
     }
 
     //? if > 1.20.1 {
-    /*@Override
+    @Override
     protected com.mojang.serialization.MapCodec<? extends WireBlock> codec() {
         return simpleCodec(props -> new BoxCableBlock(props, this.size));
     }
-    *///?}
+    //?}
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {

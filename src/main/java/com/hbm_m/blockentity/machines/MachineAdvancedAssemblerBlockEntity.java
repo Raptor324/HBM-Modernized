@@ -42,18 +42,18 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 //? if forge {
-import net.minecraftforge.api.distmarker.Dist;
+/*import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fml.DistExecutor;
-//?}
-//? if neoforge {
-/*import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 *///?}
+//? if neoforge {
+import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+//?}
 
 //? if fabric {
 /*import net.fabricmc.api.EnvType;
@@ -196,9 +196,9 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
     @Override
     protected void setupFluidCapability() {
         //? if forge {
-        // Экспонируем входной бак (inputTank) через базовый fluidHandlerOpt.
+        /*// Экспонируем входной бак (inputTank) через базовый fluidHandlerOpt.
         setFluidHandler(inputTank);
-        //?}
+        *///?}
     }
 
     // Ограничиваем валидность слотов
@@ -435,7 +435,7 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
         }
 
         //? if forge {
-        energySourceStack.getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.ENERGY).ifPresent(itemEnergy -> {
+        /*energySourceStack.getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.ENERGY).ifPresent(itemEnergy -> {
             long energyNeeded = this.getMaxEnergyStored() - this.getEnergyStored();
             if (energyNeeded <= 0) return;
 
@@ -447,7 +447,7 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
                 setChanged();
             }
         });
-        //?}
+        *///?}
 
         //? if fabric {
         /*var itemEnergy = EnergyStorage.ITEM.find(energySourceStack, null);
@@ -469,7 +469,7 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
         *///?}
 
         //? if neoforge {
-        /*var itemEnergy = energySourceStack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM);
+        var itemEnergy = energySourceStack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM);
         if (itemEnergy == null) return;
 
         long energyNeeded = this.getMaxEnergyStored() - this.getEnergyStored();
@@ -483,7 +483,7 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
             this.setEnergyStored(this.getEnergyStored() + extracted);
             setChanged();
         }
-        *///?}
+        //?}
     }
 
     // Рецепты и ghost-предметы
@@ -696,7 +696,7 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
 
     // Capability: используем базовые item/energy/fluids, плюс локальные хэндлеры флюидов
     //? if forge {
-    @Override
+    /*@Override
     public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
         if (cap == ForgeCapabilities.ITEM_HANDLER) {
             return itemHandler.cast();
@@ -726,7 +726,7 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
         // FLUID_HANDLER для разрешённых сторон отдаёт базовый fluidHandlerOpt (см. setupFluidCapability).
         return super.getCapability(cap, side);
     }
-    //?}
+    *///?}
 
     //? if fabric {
     /*@Nullable
@@ -790,21 +790,21 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
     }
 
     //? if forge {
-    @Override
+    /*@Override
     public void onLoad() {
         super.onLoad();
         if (level != null && !level.isClientSide && assemblerModule == null) {
             this.assemblerModule = new MachineModuleAdvancedAssembler(0, this, this.inventory, this.level);
         }
     }
-    //?}
+    *///?}
 
     //? if forge {
-    @Override
+    /*@Override
     public void invalidateCaps() {
         super.invalidateCaps();
     }
-    //?}
+    *///?}
 
     @Override
     public void setRemoved() {

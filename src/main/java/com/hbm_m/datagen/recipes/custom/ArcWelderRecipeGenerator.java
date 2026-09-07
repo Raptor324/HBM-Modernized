@@ -1,6 +1,6 @@
 package com.hbm_m.datagen.recipes.custom;
 //? if forge {
-import com.hbm_m.block.ModBlocks;
+/*import com.hbm_m.block.ModBlocks;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.item.material.MaterialShape;
 import com.hbm_m.item.material.ModMaterialItems;
@@ -12,7 +12,7 @@ import net.minecraft.world.item.crafting.Ingredient;
 
 import java.util.function.Consumer;
 
-/**
+/^*
  * Генератор JSON-рецептов дуговой сварки ({@code hbm_m:arc_welder}).
  *
  * <p>Порт раскомментированных рецептов из {@code com.hbm.inventory.recipes.ArcWelderRecipes#registerDefaults()}
@@ -20,7 +20,7 @@ import java.util.function.Consumer;
  * в мод) намеренно пропущены — раскомментировать и поправить ссылки, когда соответствующий предмет появится.</p>
  *
  * <p>Чистый ванильный 1.20.1 код внутри {@code //? if forge} — датаген только для 1.20.1-forge.</p>
- */
+ ^/
 public final class ArcWelderRecipeGenerator {
 
     private ArcWelderRecipeGenerator() {}
@@ -43,10 +43,10 @@ public final class ArcWelderRecipeGenerator {
         return Ingredient.of(key);
     }
 
-    /**
+    /^*
      * Обёртка для компактной записи рецепта: пары {@code (Ingredient, count)}.
      * Buildер принимает два параллельных массива — собираем их здесь.
-     */
+     ^/
     private static void emit(Consumer<FinishedRecipe> writer, String id, ItemStack output,
                               int duration, long consumption, Pair... inputs) {
         Ingredient[] ins = new Ingredient[inputs.length];
@@ -275,4 +275,4 @@ public final class ArcWelderRecipeGenerator {
         emit(writer, "plate_welded_" + id, new ItemStack(out), duration, consumption, p(input));
     }
 }
-//?}
+*///?}
