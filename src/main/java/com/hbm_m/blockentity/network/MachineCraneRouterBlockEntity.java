@@ -24,11 +24,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
-//? if forge {
-/*import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.items.IItemHandler;
-import net.minecraftforge.items.ItemHandlerHelper;
-*///?}
+import com.hbm_m.api.item.ItemHandlerAccess;
 
 /**
  * Crane Router - Port von {@code CraneRouter}/{@code TileEntityCraneRouter} (1.7.10 Original).
@@ -124,17 +120,11 @@ public class MachineCraneRouterBlockEntity extends BaseMachineBlockEntity implem
             return;
         }
 
-        //? if forge {
-        /*BlockEntity targetBe = level.getBlockEntity(targetPos);
-        if (targetBe != null) {
-            IItemHandler handler = targetBe.getCapability(ForgeCapabilities.ITEM_HANDLER, dir.getOpposite()).orElse(null);
-            if (handler != null) {
-                ItemStack remainder = ItemHandlerHelper.insertItem(handler, stack, false);
-                if (remainder.isEmpty()) return;
-                stack = remainder;
-            }
-        }
-        *///?}
+        // Was forge-only with no NeoForge counterpart: on 1.21.1 the router dropped everything on
+        // the floor instead of pushing it into the inventory on that side.
+        ItemStack remainder = ItemHandlerAccess.insert(level, targetPos, dir.getOpposite(), stack, false);
+        if (remainder.isEmpty()) return;
+        stack = remainder;
 
         ItemEntity drop = new ItemEntity(level, targetPos.getX() + 0.5, targetPos.getY() + 0.5, targetPos.getZ() + 0.5, stack);
         level.addFreshEntity(drop);

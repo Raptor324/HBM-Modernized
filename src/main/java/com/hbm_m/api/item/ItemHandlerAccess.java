@@ -52,4 +52,22 @@ public final class ItemHandlerAccess {
         return level.getCapability(net.neoforged.neoforge.capabilities.Capabilities.ItemHandler.BLOCK, pos, side);
     }
     //?}
+
+    /**
+     * Вставить стек в item-handler блока, вернув непоместившийся остаток.
+     *
+     * <p>Cross-platform without a Stonecutter branch: {@code var} infers the platform's own
+     * {@code IItemHandler} type, and {@code getSlots}/{@code insertItem} are named the same on
+     * Forge and NeoForge. Only an explicit type declaration would need branching.</p>
+     */
+    public static net.minecraft.world.item.ItemStack insert(Level level, BlockPos pos, @Nullable Direction side,
+                                                            net.minecraft.world.item.ItemStack stack, boolean simulate) {
+        var handler = getItemHandler(level, pos, side);
+        if (handler == null) return stack;
+        net.minecraft.world.item.ItemStack remainder = stack;
+        for (int slot = 0; slot < handler.getSlots() && !remainder.isEmpty(); slot++) {
+            remainder = handler.insertItem(slot, remainder, simulate);
+        }
+        return remainder;
+    }
 }

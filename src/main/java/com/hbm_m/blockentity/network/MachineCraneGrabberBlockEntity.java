@@ -24,15 +24,10 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 
-//? if forge {
-/*import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.items.IItemHandler;
-import net.minecraftforge.items.ItemHandlerHelper;
-*///?}
+import com.hbm_m.api.item.ItemHandlerAccess;
 
 /**
  * Crane Grabber - Port von {@code TileEntityCraneGrabber} (1.7.10 Original). Greift periodisch nach
@@ -134,19 +129,15 @@ public class MachineCraneGrabberBlockEntity extends BaseMachineBlockEntity {
             return true;
         }
 
-        //? if forge {
-        /*BlockEntity dropBe = level.getBlockEntity(dropPos);
-        if (dropBe != null) {
-            IItemHandler handler = dropBe.getCapability(ForgeCapabilities.ITEM_HANDLER, dropSide.getOpposite()).orElse(null);
-            if (handler != null) {
-                int toAdd = Math.min(stack.getCount(), amount);
-                ItemStack toInsert = stack.copy();
-                toInsert.setCount(toAdd);
-                ItemStack remainder = ItemHandlerHelper.insertItem(handler, toInsert, false);
-                return remainder.getCount() < toAdd;
-            }
+        // Was forge-only with no NeoForge counterpart: on 1.21.1 the grabber could only hand items
+        // to a conveyor belt and never to the inventory it points at.
+        if (ItemHandlerAccess.getItemHandler(level, dropPos, dropSide.getOpposite()) != null) {
+            int toAdd = Math.min(stack.getCount(), amount);
+            ItemStack toInsert = stack.copy();
+            toInsert.setCount(toAdd);
+            ItemStack remainder = ItemHandlerAccess.insert(level, dropPos, dropSide.getOpposite(), toInsert, false);
+            return remainder.getCount() < toAdd;
         }
-        *///?}
 
         return false;
     }

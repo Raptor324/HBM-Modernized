@@ -17,10 +17,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
-//? if forge {
-/*import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.items.IItemHandler;
-*///?}
+import com.hbm_m.api.item.ItemHandlerAccess;
 
 /**
  * Port of {@code TileEntityRadioTorchCounter} (1.7.10 Original) - 3 independent filter-pattern
@@ -50,8 +47,9 @@ public class RadioTorchCounterBlockEntity extends BaseMachineBlockEntity impleme
         BlockEntity sourceBe = level.getBlockEntity(sourcePos);
         if (sourceBe == null) return;
 
-        //? if forge {
-        /*IItemHandler handler = sourceBe.getCapability(ForgeCapabilities.ITEM_HANDLER, facing).orElse(null);
+        // Was a forge-only Stonecutter branch with no NeoForge counterpart: on 1.21.1 the counter
+        // torch never read the inventory it points at and so never broadcast anything.
+        var handler = ItemHandlerAccess.getItemHandler(level, sourcePos, facing);
         if (handler == null) return;
 
         for (int i = 0; i < SLOT_COUNT; i++) {
@@ -70,7 +68,6 @@ public class RadioTorchCounterBlockEntity extends BaseMachineBlockEntity impleme
             }
             be.lastCount[i] = count;
         }
-        *///?}
     }
 
     public ModulePatternMatcher getMatcher() { return matcher; }

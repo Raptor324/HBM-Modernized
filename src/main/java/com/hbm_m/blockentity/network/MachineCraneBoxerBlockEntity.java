@@ -13,7 +13,6 @@ import com.hbm_m.entity.conveyor.MovingConveyorPackageEntity;
 import com.hbm_m.inventory.menu.MachineCraneBoxerMenu;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.item.ItemEntity;
@@ -55,21 +54,34 @@ public class MachineCraneBoxerBlockEntity extends BaseMachineBlockEntity impleme
     private void serverTick(Level level, BlockPos pos, BlockState state) {
         boolean redstone = level.hasNeighborSignal(pos);
 
-        if (mode == MODE_REDSTONE) {
-            if (redstone && !lastRedstone) {
-                packAll(level, pos, state);
+        // The original gates the whole packing on a conveyor belt sitting in front and only clears
+        // the slots once it has one. Collecting first and dropping the box on the floor when there
+        // is no belt made a boxer facing a wall spit its buffer out every other tick.
+        if (outputBelt(level, pos, state) != null) {
+            if (mode == MODE_REDSTONE) {
+                if (redstone && !lastRedstone) {
+                    packAll(level, pos, state);
+                }
+            } else if (level.getGameTime() % 2 == 0) {
+                int packSize = switch (mode) {
+                    case MODE_8 -> 8;
+                    case MODE_16 -> 16;
+                    default -> 4;
+                };
+                packFullStacks(level, pos, state, packSize);
             }
-        } else if (level.getGameTime() % 2 == 0) {
-            int packSize = switch (mode) {
-                case MODE_8 -> 8;
-                case MODE_16 -> 16;
-                default -> 4;
-            };
-            packFullStacks(level, pos, state, packSize);
         }
 
-        lastRedstone = redstone;
-        setChanged();
+        if (lastRedstone != redstone) {
+            lastRedstone = redstone;
+            setChanged();
+        }
+    }
+
+    /** Conveyor belt the packed box is handed to, or null when the output side has none. */
+    private IConveyorBelt outputBelt(Level level, BlockPos pos, BlockState state) {
+        BlockPos outPos = pos.relative(state.getValue(MachineCraneBoxerBlock.FACING));
+        return level.getBlockState(outPos).getBlock() instanceof IConveyorBelt belt ? belt : null;
     }
 
     private void packAll(Level level, BlockPos pos, BlockState state) {
@@ -106,22 +118,16 @@ public class MachineCraneBoxerBlockEntity extends BaseMachineBlockEntity impleme
     }
 
     private void sendPackage(Level level, BlockPos pos, BlockState state, ItemStack[] box) {
-        Direction facing = state.getValue(MachineCraneBoxerBlock.FACING);
-        BlockPos outPos = pos.relative(facing);
-        var outBlock = level.getBlockState(outPos).getBlock();
-
-        if (outBlock instanceof IConveyorBelt belt) {
-            var snap = belt.snapNewItem(level, outPos, new net.minecraft.world.phys.Vec3(
-                    outPos.getX() + 0.5, outPos.getY() + 0.5, outPos.getZ() + 0.5));
-            MovingConveyorPackageEntity moving = MovingConveyorPackageEntity.create(level, snap.x, snap.y, snap.z, box);
-            level.addFreshEntity(moving);
+        BlockPos outPos = pos.relative(state.getValue(MachineCraneBoxerBlock.FACING));
+        IConveyorBelt belt = outputBelt(level, pos, state);
+        if (belt == null) {
+            // serverTick already checked, so this only guards a direct call.
             return;
         }
-
-        for (ItemStack stack : box) {
-            ItemEntity drop = new ItemEntity(level, outPos.getX() + 0.5, outPos.getY() + 0.5, outPos.getZ() + 0.5, stack);
-            level.addFreshEntity(drop);
-        }
+        var snap = belt.snapNewItem(level, outPos, new net.minecraft.world.phys.Vec3(
+                outPos.getX() + 0.5, outPos.getY() + 0.5, outPos.getZ() + 0.5));
+        level.addFreshEntity(MovingConveyorPackageEntity.create(level, snap.x, snap.y, snap.z, box));
+        setChanged();
     }
 
     // ── IEnterableBlock (item input from any side) ──────────────────────────

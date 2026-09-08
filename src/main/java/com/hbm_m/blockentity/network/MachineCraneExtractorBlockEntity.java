@@ -27,10 +27,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
-//? if forge {
-/*import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.items.IItemHandler;
-*///?}
+import com.hbm_m.api.item.ItemHandlerAccess;
 
 /**
  * Crane Extractor - Port von {@code TileEntityCraneExtractor} (1.7.10 Original). Zieht periodisch
@@ -105,16 +102,15 @@ public class MachineCraneExtractorBlockEntity extends BaseMachineBlockEntity imp
         BlockPos sourcePos = pos.relative(pullSide);
         BlockPos ejectPos = pos.relative(ejectSide);
 
-        BlockEntity sourceBe = level.getBlockEntity(sourcePos);
         var ejectBlock = level.getBlockState(ejectPos).getBlock();
         IConveyorBelt belt = ejectBlock instanceof IConveyorBelt ib ? ib : null;
 
         boolean hasSent = false;
 
-        //? if forge {
-        /*IItemHandler source = sourceBe != null
-                ? sourceBe.getCapability(ForgeCapabilities.ITEM_HANDLER, pullSide.getOpposite()).orElse(null)
-                : null;
+        // This whole pull loop sat in a forge-only Stonecutter branch with no NeoForge
+        // counterpart, so on 1.21.1 the extractor never took anything out of the block it points
+        // at - the machine did nothing at all beyond emptying its own buffer.
+        var source = ItemHandlerAccess.getItemHandler(level, sourcePos, pullSide.getOpposite());
 
         if (source != null) {
             for (int slot = 0; slot < source.getSlots() && !hasSent; slot++) {
@@ -147,7 +143,6 @@ public class MachineCraneExtractorBlockEntity extends BaseMachineBlockEntity imp
                 }
             }
         }
-        *///?}
 
         if (!hasSent && belt != null) {
             for (int slot = BUFFER_START; slot <= BUFFER_END; slot++) {
@@ -172,7 +167,6 @@ public class MachineCraneExtractorBlockEntity extends BaseMachineBlockEntity imp
     }
 
     private void sendItem(Level level, BlockPos ejectPos, Direction ejectSide, ItemStack stack) {
-        BlockEntity ejectBe = level.getBlockEntity(ejectPos);
         var ejectBlock = level.getBlockState(ejectPos).getBlock();
 
         if (ejectBlock instanceof IConveyorBelt belt) {
@@ -188,16 +182,9 @@ public class MachineCraneExtractorBlockEntity extends BaseMachineBlockEntity imp
             return;
         }
 
-        //? if forge {
-        /*if (ejectBe != null) {
-            IItemHandler handler = ejectBe.getCapability(ForgeCapabilities.ITEM_HANDLER, ejectSide.getOpposite()).orElse(null);
-            if (handler != null) {
-                ItemStack remainder = net.minecraftforge.items.ItemHandlerHelper.insertItem(handler, stack, false);
-                if (remainder.isEmpty()) return;
-                stack = remainder;
-            }
-        }
-        *///?}
+        ItemStack remainder = ItemHandlerAccess.insert(level, ejectPos, ejectSide.getOpposite(), stack, false);
+        if (remainder.isEmpty()) return;
+        stack = remainder;
 
         ItemEntity drop = new ItemEntity(level, ejectPos.getX() + 0.5, ejectPos.getY() + 0.5, ejectPos.getZ() + 0.5, stack);
         level.addFreshEntity(drop);
