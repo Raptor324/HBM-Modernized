@@ -2539,3 +2539,38 @@ if (mask.getBlacklist().contains(clazz)) return false;
 
 Попутно: `dropInventoryContents` писал в лог на INFO при подавлении высыпания — понижено до `debug`
 и переведено на английский, как остальные диагностические строки из раздела Y2.
+
+## AP. Сохранение NBT и выдача результата крафта
+
+### AP1. Три машины теряли инвентарь и энергию при перезагрузке — ИСПРАВЛЕНО
+
+`MachineIndustrialGeneratorBlockEntity`, `MachineLargeTurbineBlockEntity` и
+`PWRControllerBlockEntity` переопределяют `writeNbtData`/`readNbtData` **без вызова `super`**.
+Инвентарь, `energy`, `capacity`, `lastEnergy` и `energyDelta` пишет именно
+`BaseMachineBlockEntity`, поэтому у этих трёх они не сохранялись вовсе: после перезахода машина
+возвращалась пустой и разряженной.
+
+Скан по всем BE нашёл 31 такой пропуск `super`, но остальные 28 наследуют `BaseHbmBlockEntity`,
+где `writeNbtData` — пустая заглушка (в javadoc прямо сказано «переопределяется дочерними
+классами»), так что там пропуск безвреден. Затронуты были ровно три класса на
+`BaseMachineBlockEntity`.
+
+### AP2. Продвинутый сборщик съедал ингредиенты и не выдавал результат — ИСПРАВЛЕНО
+
+`MachineModuleAdvancedAssembler.processCraft` сначала списывает ингредиенты, а затем пишет
+результат через `itemHandler.insertItem(outputSlots[0], result, false)` **без учёта остатка**.
+
+`ItemStackHandler.insertItem` проверяет `isItemValid`, а `BaseMachineBlockEntity` заворачивает эту
+проверку в `isItemValidForSlot`, который у продвинутого сборщика для выходных слотов возвращает
+**`false`** (чтобы воронки не пихали туда предметы). То есть вставка отвергалась целиком, остаток
+игнорировался — ингредиенты исчезали, результат не появлялся.
+
+Внутренняя запись обязана обходить фильтр слота, как это делает `MachineModuleBase.OutputPlacement`
+(через `setStackInSlot`). Приведено к тому же виду; `canProcess` при этом уже проверяет, что
+результат помещается.
+
+Проверено, что случай единственный: два других модуля (`MachineModuleChemplant`,
+`MachineModuleChemFactoryLane`) выдают результат через `placeAllItemOutputs`, а у
+`MachineOreSlopperBlockEntity` выходные слоты принимают ровно свой предмет, так что `insertItem`
+там проходит. В `MachineAssemblerBlockEntity:601` остаток тоже безопасен — вставка предварительно
+симулируется, и наружу извлекается ровно столько, сколько поместилось.

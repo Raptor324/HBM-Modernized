@@ -160,6 +160,9 @@ public class MachineIndustrialGeneratorBlockEntity extends BaseMachineBlockEntit
 
     @Override
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        // BaseMachineBlockEntity stores the inventory and the energy here; without the super call
+        // both were dropped on every save, so the machine came back empty and discharged.
+        super.writeNbtData(tag, registries);
         tag.putInt("burn_time", burnTime);
         tag.putInt("max_burn_time", maxBurnTime);
         waterTank.writeToNBT(tag, "tank_water");
@@ -169,6 +172,7 @@ public class MachineIndustrialGeneratorBlockEntity extends BaseMachineBlockEntit
 
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         burnTime = tag.getInt("burn_time");
         maxBurnTime = tag.contains("max_burn_time") ? Math.max(1, tag.getInt("max_burn_time")) : 1;
         waterTank.readFromNBT(tag, "tank_water");
