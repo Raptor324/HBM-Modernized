@@ -167,8 +167,17 @@ public final class HbmLivingProps {
         return livingTag(entity).getFloat(NBT_DIGAMMA);
     }
 
+    /** Максимум дигаммы, как в оригинале ({@code incrementDigamma} зажимает в [0, 10]). */
+    public static final float maxDigamma = 10F;
+
     public static void incrementDigamma(LivingEntity entity, float amount) {
-        float total = getDigamma(entity) + amount;
+        if (entity.level().isClientSide) {
+            return;
+        }
+
+        // The original clamps to [0, 10]; without it digamma grew without bound, and the readouts
+        // derived from it (1000/digamma in the tooltip, digamma/20 per tick) went with it.
+        float total = Math.max(0F, Math.min(maxDigamma, getDigamma(entity) + amount));
         livingTag(entity).putFloat(NBT_DIGAMMA, total);
 
         // The original checks these three thresholds every time a player's digamma changes.
