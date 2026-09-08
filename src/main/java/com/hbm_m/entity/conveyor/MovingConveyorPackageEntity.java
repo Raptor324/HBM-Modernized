@@ -102,9 +102,12 @@ public class MovingConveyorPackageEntity extends Entity implements ItemSupplier 
 
     @Override
     public boolean hurt(DamageSource source, float amount) {
-        if (!this.level().isClientSide && !this.isRemoved()) {
-            dropAll();
+        // Same as MovingConveyorItemEntity: only a player knocks a package off the belt.
+        if (this.level().isClientSide || this.isRemoved()
+                || !(source.getEntity() instanceof net.minecraft.world.entity.player.Player)) {
+            return false;
         }
+        dropAll();
         return true;
     }
 
