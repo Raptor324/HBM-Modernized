@@ -559,7 +559,8 @@ public class ModItems {
                     1,
                     ModSounds.MUSIC_DISC_BUNKER.get(),
                     new Item.Properties().stacksTo(1).rarity(Rarity.RARE),
-                    20 * 120
+                    120,
+                    "bunker"
             ));
 
     public static final RegistrySupplier<Item> MUSIC_DISC_GLASS = ITEMS.register("music_disc_glass",
@@ -567,7 +568,8 @@ public class ModItems {
                     2,
                     ModSounds.MUSIC_DISC_GLASS.get(),
                     new Item.Properties().stacksTo(1).rarity(Rarity.RARE),
-                    62
+                    62,
+                    "glass"
             ));
 
     /**
@@ -578,7 +580,7 @@ public class ModItems {
             () -> new FlavouredRecordItem(
                     3,
                     ModSounds.MUSIC_DISC_CH.get(),
-                    new Item.Properties().stacksTo(1).rarity(Rarity.RARE),
+                    PlatformHooks.jukeboxProperties(new Item.Properties().stacksTo(1).rarity(Rarity.RARE), "ch"),
                     20 * 85,
                     "item.hbm_m.music_disc_ch.flavour"
             ));

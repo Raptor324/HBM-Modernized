@@ -1472,8 +1472,7 @@ HTTPS-запросах, а сервер стартует с первой поп�
   `stack`, то есть сам `ItemModGasmask`, а проверяется `instanceof ItemGasMaskFilter`.
 - `RBMKColumnBlockItem:20-25` — `initializeClient` только в `//? if forge`, ветки neoforge нет
   (сравни `MissileItem:76/88`), поэтому у колонн RBMK плоские иконки вместо BEWLR.
-- `FlavouredRecordItem` — на 1.21.1 звук и длительность отбрасываются, а `jukebox_playable`
-  нигде не задан: пластинки не вставляются в проигрыватель.
+- ~~`FlavouredRecordItem`~~ — исправлено, см. AQ5.
 - `ModShovelItem` — поле `fortuneLevel` объявлено, клампится и нигде не читается, при этом сплавовая
   лопата зарегистрирована с `fortuneLevel = 2`. У кирки тот же параметр даёт переключаемый режим
   удачи (тултип, toggle, apply/clear через `setEnchantmentLevel`); у лопаты нет ничего. Это не
@@ -2620,3 +2619,24 @@ fabric-ветка через `KeyMappingRegistry` регистрирует вс�
 места вызова. Флаг команды по-прежнему может **выключить** смену биомов, но включить её вопреки
 серверной настройке уже не может, как и в оригинале, где `WorldConfig.enableCraterBiomes`
 проверяется внутри самой генерации.
+
+### AQ5. Ни одну музыкальную пластинку нельзя было проиграть — ИСПРАВЛЕНО
+
+На 1.21.1 ванильный `RecordItem` убран: воспроизведение задаётся компонентом `jukebox_playable`,
+который ссылается на запись `JukeboxSong` в датапаке. `PlatformHooks.createRecordItem` на этой
+версии возвращал `new Item(properties)` — без компонента, а записей `jukebox_song` в моде не было
+вовсе. Все три пластинки (`bunker`, `glass`, `ch`) в проигрыватель не вставлялись, хотя тег
+`minecraft:music_discs` для них генерируется.
+
+Сделано:
+- `data/hbm_m/jukebox_song/{bunker,glass,ch}.json` с `sound_event`, `description` (существующие
+  ключи `item.hbm_m.music_disc_*.desc`), `length_in_seconds` и `comparator_output` 1/2/3 — теми же
+  значениями, что были у регистраций;
+- `PlatformHooks.jukeboxProperties(properties, songId)` вешает компонент на 1.21.1 и ничего не
+  делает на 1.20.1; `createRecordItem` принимает `songId` и идёт через него, `MUSIC_DISC_CH`
+  (у неё свой класс ради строки флейвора) оборачивает `Properties` тем же хелпером.
+
+Попутно найдена и исправлена ошибка единиц: `MUSIC_DISC_BUNKER` передавала в параметр
+`lengthInSeconds` значение `20 * 120`, а ветка 1.20.1 умножает его на 20 ещё раз — то есть на Forge
+пластинка считалась сорокаминутной вместо двухминутной. Теперь везде секунды, как и называется
+параметр.

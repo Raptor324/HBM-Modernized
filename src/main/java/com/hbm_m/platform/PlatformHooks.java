@@ -175,11 +175,30 @@ public final class PlatformHooks {
     /**
      * Кросс-версионная фабрика музыкальных пластинок.
      */
-    public static net.minecraft.world.item.Item createRecordItem(int comparatorValue, Object sound, net.minecraft.world.item.Item.Properties properties, int lengthInSeconds) {
+    /**
+     * A jukebox-playable music disc.
+     *
+     * <p>1.21.1 removed {@code RecordItem}: playback is driven by the {@code jukebox_playable}
+     * component pointing at a {@code JukeboxSong} datapack entry. The port kept returning a plain
+     * {@code Item} without that component, so none of the discs could be put in a jukebox.
+     * {@code songId} names the entry under {@code data/hbm_m/jukebox_song/}.</p>
+     */
+    public static net.minecraft.world.item.Item createRecordItem(int comparatorValue, Object sound, net.minecraft.world.item.Item.Properties properties, int lengthInSeconds, String songId) {
         //? if < 1.21.1 {
         /*return new net.minecraft.world.item.RecordItem(comparatorValue, (net.minecraft.sounds.SoundEvent) sound, properties, lengthInSeconds * 20);
         *///?} else {
-        return new net.minecraft.world.item.Item(properties);
+        return new net.minecraft.world.item.Item(jukeboxProperties(properties, songId));
+        //?}
+    }
+
+    /** Adds the jukebox_playable component on 1.21.1; a no-op on older versions. */
+    public static net.minecraft.world.item.Item.Properties jukeboxProperties(net.minecraft.world.item.Item.Properties properties, String songId) {
+        //? if < 1.21.1 {
+        /*return properties;
+        *///?} else {
+        return properties.jukeboxPlayable(net.minecraft.resources.ResourceKey.create(
+                net.minecraft.core.registries.Registries.JUKEBOX_SONG,
+                net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(com.hbm_m.lib.RefStrings.MODID, songId)));
         //?}
     }
 
