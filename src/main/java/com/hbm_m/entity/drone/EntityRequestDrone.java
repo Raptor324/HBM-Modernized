@@ -153,9 +153,13 @@ public class EntityRequestDrone extends EntityDroneBase {
 
     @Override
     public boolean hurt(net.minecraft.world.damagesource.DamageSource source, float amount) {
-        if (!level().isClientSide && !this.isRemoved()) {
-            selfDestructAndReturnDrone();
+        // Same as EntityDeliveryDrone: the original only self-destructs on a player hit, never on
+        // environmental damage, so a drone no longer drops its cargo to fire or a stray arrow.
+        if (level().isClientSide || this.isRemoved()
+                || !(source.getEntity() instanceof net.minecraft.world.entity.player.Player)) {
+            return false;
         }
+        selfDestructAndReturnDrone();
         return true;
     }
 

@@ -127,9 +127,13 @@ public class EntityDeliveryDrone extends EntityDroneBase {
 
     @Override
     public boolean hurt(net.minecraft.world.damagesource.DamageSource source, float amount) {
-        if (!level().isClientSide && !this.isRemoved()) {
-            hitByEntity(source.getEntity());
+        // The original's EntityDroneBase.hitByEntity only reacts when the attacker is a player, and
+        // it never overrides attackEntityFrom - so fire, lava, mobs and explosions leave a drone
+        // alone. Reacting to every source made a drone dump its cargo to a stray arrow on the way.
+        if (level().isClientSide || this.isRemoved() || !(source.getEntity() instanceof Player)) {
+            return false;
         }
+        hitByEntity(source.getEntity());
         return true;
     }
 
