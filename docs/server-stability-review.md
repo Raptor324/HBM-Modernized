@@ -1474,11 +1474,13 @@ HTTPS-запросах, а сервер стартует с первой поп�
   (сравни `MissileItem:76/88`), поэтому у колонн RBMK плоские иконки вместо BEWLR.
 - `FlavouredRecordItem` — на 1.21.1 звук и длительность отбрасываются, а `jukebox_playable`
   нигде не задан: пластинки не вставляются в проигрыватель.
-- `ModShovelItem` — поле `fortuneLevel` объявлено и присваивается, но нигде не читается.
+- `ModShovelItem` — поле `fortuneLevel` объявлено, клампится и нигде не читается, при этом сплавовая
+  лопата зарегистрирована с `fortuneLevel = 2`. У кирки тот же параметр даёт переключаемый режим
+  удачи (тултип, toggle, apply/clear через `setEnchantmentLevel`); у лопаты нет ничего. Это не
+  однострочная правка, а перенос механики режима, поэтому в очередь.
 - ~~`BlockExplosionDefense:272`~~ — исправлено, см. AQ1.
 - ~~`ConfigSchema.register()`~~ — исправлено, см. AQ3.
-- `NuclearExplosionHelper:75` — серверный конфиг `enableCraterBiomes` на ядерном пути не читается;
-  биомы меняются всегда.
+- ~~`NuclearExplosionHelper:75`~~ — исправлено, см. AQ4.
 - ~~`ModConfigKeybindHandler`~~ — исправлено, см. AQ2.
 - `StructureFoundationProcessor:30` — `processBlock(LevelAccessor, ...)` это перегрузка, а не
   переопределение (база принимает `LevelReader`), `@Override` отсутствует; процессор инертен и ни
@@ -2606,3 +2608,15 @@ fabric-ветка через `KeyMappingRegistry` регистрирует вс�
 
 Все 18 зарегистрированы; границы взяты из `RBMKDials`, который клампит те же диапазоны. После
 правки диф «поля `ModClothConfig` против ключей схемы» пуст.
+
+### AQ4. Конфиг биомов кратера не действовал на ядерном пути — ИСПРАВЛЕНО
+
+`enableCraterBiomes` проверялся только в `EntityFalloutRain`. Ядерный путь
+(`NuclearExplosionHelper`, `NuclearScenarioLaunchers`, `NuclearExplosionAPI`) смотрел исключительно
+на флаг команды `opt.biomes()`, а обычный подрыв идёт с `ExplosionCommandOptions.DEFAULT`, где этот
+флаг `true`. То есть настройка сервера не работала вовсе: биомы переписывались всегда.
+
+Проверка добавлена в сам аксессор `ExplosionCommandOptions.biomes()` — одна точка на все четыре
+места вызова. Флаг команды по-прежнему может **выключить** смену биомов, но включить её вопреки
+серверной настройке уже не может, как и в оригинале, где `WorldConfig.enableCraterBiomes`
+проверяется внутри самой генерации.
