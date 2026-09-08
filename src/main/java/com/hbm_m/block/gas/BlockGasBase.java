@@ -185,9 +185,9 @@ public abstract class BlockGasBase extends Block {
     protected abstract void affect(LivingEntity living);
 
     protected static void damageWornFilter(LivingEntity living) {
-        ItemStack mask = GasMaskUtil.resolveWornMask(living);
-        if (!mask.isEmpty() && mask.getItem() instanceof IGasMask) {
-            IGasMask.damageFilter(mask, 1);
+        GasMaskUtil.WornMask worn = GasMaskUtil.resolveWornMaskRef(living);
+        if (worn.mask().getItem() instanceof IGasMask && IGasMask.damageFilter(worn.mask(), 1)) {
+            worn.commit();
         }
     }
 }

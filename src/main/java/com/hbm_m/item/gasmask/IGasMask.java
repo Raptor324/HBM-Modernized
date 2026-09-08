@@ -47,11 +47,24 @@ public interface IGasMask {
         return getFilterItem(id) != null;
     }
 
-    /** Установить фильтр (id предмета); повреждение сбрасывается. */
+    /** Установить новый фильтр (id предмета); повреждение сбрасывается. */
     static void installFilter(ItemStack mask, Item filter) {
         PlatformHooks.editItemTag(mask, tag -> {
             tag.putString(FILTER_KEY, BuiltInRegistries.ITEM.getKey(filter).toString());
             tag.putInt(FILTER_DMG_KEY, 0);
+        });
+    }
+
+    /**
+     * Install a filter stack, keeping the wear it already carries. Upstream stores the filter
+     * ItemStack itself, so screwing a half-spent filter back in must not refill it.
+     */
+    static void installFilter(ItemStack mask, ItemStack filter) {
+        Item item = filter.getItem();
+        int damage = Math.max(0, filter.getDamageValue());
+        PlatformHooks.editItemTag(mask, tag -> {
+            tag.putString(FILTER_KEY, BuiltInRegistries.ITEM.getKey(item).toString());
+            tag.putInt(FILTER_DMG_KEY, damage);
         });
     }
 
@@ -62,9 +75,15 @@ public interface IGasMask {
         });
     }
 
-    static void damageFilter(ItemStack mask, int amount) {
+    /**
+     * @return true if the mask's NBT actually changed, so an attached mask is only written back
+     *         into its helmet when there was something to persist. A maskless or filterless tick
+     *         must not rewrite the helmet component - gas ticks this every tick the player stands
+     *         in the cloud.
+     */
+    static boolean damageFilter(ItemStack mask, int amount) {
         if (amount <= 0 || !hasFilter(mask)) {
-            return;
+            return false;
         }
         int dmg = getFilterDamage(mask) + amount;
         Item filter = getFilterItem(getFilterId(mask));
@@ -76,6 +95,7 @@ public interface IGasMask {
             int fd = dmg;
             PlatformHooks.editItemTag(mask, tag -> tag.putInt(FILTER_DMG_KEY, fd));
         }
+        return true;
     }
 
     static Item getFilterItem(String id) {

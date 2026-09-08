@@ -1405,8 +1405,8 @@ public class MultiblockStructureHelper {
         // клеток, сдвигает структуру и плодит контроллеры-дубликаты («зомби-станки»).
         // После закрытия окна осиротевшие части перепривяжутся через relink.
         if (ContraptionAssemblyGuard.isMoving()) {
-            MainRegistry.LOGGER.info(
-                "[HBM] placeStructure подавлен (окно сборки контрапшена), контроллер {}",
+            MainRegistry.LOGGER.debug(
+                "[HBM] placeStructure suppressed (contraption move window), controller {}",
                 controllerPos.toShortString());
             return;
         }
@@ -1586,8 +1586,8 @@ public class MultiblockStructureHelper {
         // Перенос блоков движком сборки (Create/Sable): разрушать структуру нельзя -
         // движок уже сохранил state+NBT и вернёт её на месте. Разрушение здесь = дюп.
         if (ContraptionAssemblyGuard.isMoving()) {
-            MainRegistry.LOGGER.info(
-                "[HBM] destroyStructure подавлен (окно сборки контрапшена), контроллер {}",
+            MainRegistry.LOGGER.debug(
+                "[HBM] destroyStructure suppressed (contraption move window), controller {}",
                 controllerPos.toShortString());
             return;
         }

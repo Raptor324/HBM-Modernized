@@ -175,7 +175,7 @@ public class EntityCreeperNuclear extends Creeper {
             return;
         }
         CompoundTag data = new CompoundTag();
-        data.putString("type", "nuke");
+        data.putString("type", "muke");
         data.putDouble("posX", x);
         data.putDouble("posY", y);
         data.putDouble("posZ", z);

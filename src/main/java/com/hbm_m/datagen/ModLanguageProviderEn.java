@@ -370,6 +370,30 @@ public class ModLanguageProviderEn extends LanguageProvider {
 
         add(ModBlocks.NUKE_FAT_MAN.get(), "Fat Man");
         add(ModItems.NUKE_PROTOTYPE.get(), "Prototype");
+        // GUI titles that had no entry at all: the screens showed the raw key.
+        add("container.frackingTower", "Fracking Tower");
+        add("container.hbm_m.ashpit", "Ashpit");
+        add("container.hbm_m.coker", "Coker");
+        add("container.hbm_m.condenser_powered", "Powered Condenser");
+        add("container.hbm_m.conveyor_press", "Conveyor Press");
+        add("container.hbm_m.electric_furnace", "Electric Furnace");
+        add("container.hbm_m.furnace_brick", "Brick Furnace");
+        add("container.hbm_m.machine_large_turbine", "Industrial Steam Turbine");
+        add("container.hbm_m.machine_satlinker", "Satellite ID Manager");
+        add("container.hbm_m.missile_assembly", "Missile Assembly Station");
+        add("container.hbm_m.mixer", "Industrial Mixer");
+        add("container.hbm_m.pyrooven", "Pyrolysis Oven");
+        add("container.hbm_m.radgen", "Radiation-Powered Engine");
+        add("container.hbm_m.reactor_research", "Research Reactor");
+        add("container.hbm_m.refinery", "Oil Refinery");
+        add("container.hbm_m.solidifier", "Solidifier");
+        add("container.hbm_m.soyuz_launcher", "Soyuz Launch Platform");
+        add("container.hbm_m.turbinegas", "Gas Turbine");
+        add("gui.hbm_m.assembler_recipe_selector", "Recipe Selector");
+        add("gui.hbm_m.fluid_identifier", "Fluid Identifier");
+        add("jei.hbm_m.crucible_smelting", "Crucible Smelting");
+        // Present in the Russian provider but missing here.
+        add("tooltip.hbm_m.requires", "Requires");
         add("container.hbm_m.nuke_prototype", "Prototype");
         add(ModItems.IGNITER.get(), "Igniter");
         add(ModItems.CELL_SAS3.get(), "SA-S3 Fuel Cell");

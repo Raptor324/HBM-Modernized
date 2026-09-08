@@ -75,11 +75,15 @@ public class ExplosionClientCreator implements IParticleCreator {
 			double oX = rand.nextGaussian() * debrisHorizontalDeviation;
 			double oY = debrisVerticalOffset;
 			double oZ = rand.nextGaussian() * debrisHorizontalDeviation;
-			double angle = -Math.toRadians(45 + rand.nextFloat() * 25);
+			// The original builds the motion as Vec3(velocity,0,0).rotateAroundZ(-pitch), and that
+			// method computes y' = y*cos - x*sin, so a negative angle gives y' = +v*sin(pitch):
+			// debris arcs UPWARDS. Feeding the negative angle straight into sin() flipped it and
+			// shot every spark into the ground.
+			double pitch = Math.toRadians(45 + rand.nextFloat() * 25);
 			double yaw = rand.nextDouble() * Math.PI * 2;
-			double vx = debrisVelocity * Math.cos(angle) * Math.cos(yaw);
-			double vy = debrisVelocity * Math.sin(angle);
-			double vz = debrisVelocity * Math.cos(angle) * Math.sin(yaw);
+			double vx = debrisVelocity * Math.cos(pitch) * Math.cos(yaw);
+			double vy = debrisVelocity * Math.sin(pitch);
+			double vz = debrisVelocity * Math.cos(pitch) * Math.sin(yaw);
 			level.addParticle(sparkType, x + oX, y + oY, z + oZ, vx, vy, vz);
 		}
 	}
