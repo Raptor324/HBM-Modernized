@@ -830,7 +830,9 @@ public class NukeMk5ChunkEater implements IExplosionRay {
         fluidsCleared = tag.getBoolean("fluidsCleared");
         fluidClearInProgress = tag.getBoolean("fluidClearInProgress");
         fluidClearCursorX = tag.getInt("fluidClearCursorX");
-        fluidClearCursorZ = tag.getInt("fluidClearCursorZ");
+        // Saves written before the Z cursor existed have no key: getInt would give 0 and restart the
+        // current column from z = 0 instead of its start.
+        fluidClearCursorZ = tag.contains("fluidClearCursorZ") ? tag.getInt("fluidClearCursorZ") : posZ - length;
         ListTag list = tag.getList("chunks", Tag.TAG_COMPOUND);
         for (int i = 0; i < list.size(); i++) {
             CompoundTag entry = list.getCompound(i);

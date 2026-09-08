@@ -53,6 +53,10 @@ public class GrenadeIfProjectileEntity extends ThrowableItemProjectile {
         super(ModEntities.GRENADE_IF_PROJECTILE.get(), thrower, level);
         this.grenadeType = type;
         this.entityData.set(GRENADE_IF_TYPE_ID, type.name());
+        // ThrowableItemProjectile syncs its rendered item through DATA_ITEM_STACK, seeded from
+        // getDefaultItem() during defineSynchedData - i.e. before this constructor body runs and
+        // before grenadeType is set. Without this the client always rendered the plain IF grenade.
+        this.setItem(new net.minecraft.world.item.ItemStack(type.getItem()));
     }
 
     //? if < 1.21.1 {
@@ -75,17 +79,22 @@ public class GrenadeIfProjectileEntity extends ThrowableItemProjectile {
     
     }
     //?}
-
     @Override
     protected Item getDefaultItem() {
-        if (grenadeType == null) {
-            try {
-                grenadeType = GrenadeIfType.valueOf(this.entityData.get(GRENADE_IF_TYPE_ID));
-            } catch (Exception e) {
-                grenadeType = GrenadeIfType.GRENADE_IF;
-            }
+        if (grenadeType != null) {
+            return grenadeType.getItem();
         }
-        return grenadeType != null ? grenadeType.getItem() : Items.SNOWBALL;
+        // Called from super.defineSynchedData(), i.e. while entityData is still null and the
+        // accessor is not defined yet. Caching the fallback there would pin the type forever.
+        if (this.entityData == null) {
+            return GrenadeIfType.GRENADE_IF.getItem();
+        }
+        try {
+            grenadeType = GrenadeIfType.valueOf(this.entityData.get(GRENADE_IF_TYPE_ID));
+        } catch (Exception e) {
+            return GrenadeIfType.GRENADE_IF.getItem();
+        }
+        return grenadeType.getItem();
     }
 
     @Override

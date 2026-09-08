@@ -133,8 +133,10 @@ public class CrateItem extends BlockItem implements ITooltipProvider {
         // Tooltip-path — клиентский; провайдер из клиентского Level (1.21.1 требует Provider для save).
         CompoundTag keyTag = PlatformHooks.safeItemSave(stack.copy(), PlatformHooks.clientProvider());
         //?}
-        // 1.21.1 ItemStack.CODEC writes the stack size as lowercase "count"; removing "Count" was a
-        // no-op, so equal items in different stack sizes were listed as separate tooltip rows.
+        // This line is outside the version branches, and the two branches spell the key
+        // differently: 1.20.1 ItemStack.save writes "Count", 1.21.1 ItemStack.CODEC writes "count".
+        // Clearing only one left equal items in different stack sizes as separate tooltip rows.
+        keyTag.remove("Count");
         keyTag.remove("count");
         return keyTag.toString();
     }

@@ -74,25 +74,23 @@ public class EntityProcessorStandard implements IEntityProcessor {
                     deltaZ /= distance;
 
                     double density = Explosion.getSeenPercent(vec3, entity);
-                    // The original is knockback = (1 - distanceScaled) * density; the falloff term
-                    // was missing, so damage did not drop off with distance at all. The enchantment
-                    // dampener applies on top of that, as in vanilla.
+                    // Two separate values, as in the original and in EntityProcessorCross:100+.
+                    // knockback carries the distance falloff and feeds calculateDamage; the
+                    // enchantment dampener applies only to the velocity. Folding the dampener into
+                    // knockback before calculateDamage made blast protection cut damage a second
+                    // time, and quadratically, since the formula squares it.
                     double knockback = (1.0D - distanceScaled) * density;
-
-                    if (entity instanceof LivingEntity livingEntity) {
-                        knockback = PlatformHooks.getExplosionKnockbackAfterDampener(livingEntity, knockback);
-                    }
+                    double enchKnockback = entity instanceof LivingEntity livingEntity
+                            ? PlatformHooks.getExplosionKnockbackAfterDampener(livingEntity, knockback)
+                            : knockback;
 
                     entity.hurt(setExplosionSource(level, explosion.compat), calculateDamage(distanceScaled, density, knockback, size));
 
-
                     Vec3 velocity = new Vec3(
-                            deltaX * knockback,
-                            deltaY * knockback,
-                            deltaZ * knockback
+                            deltaX * enchKnockback,
+                            deltaY * enchKnockback,
+                            deltaZ * enchKnockback
                     );
-
-                    entity.setDeltaMovement(entity.getDeltaMovement().add(velocity));
 
                     if (entity instanceof Player player) {
                         if (!player.isSpectator() && !player.getAbilities().flying) {

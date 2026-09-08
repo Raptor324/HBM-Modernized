@@ -182,8 +182,9 @@ public class AirstrikeAgentEntity extends Entity {
                 this.setYRot(newYaw);
                 this.yRotO = newYaw;
             }
-
-            // Was called every tick: 20 sound packets per second at volume 6. The original gates all
+            // Was called every tick: 20 sound packets per second at volume 6. The original has no
+            // ambient engine loop at all - it only plays sounds at bomb-drop time - so the interval
+            // below is a tuning choice, not upstream parity. Adjust to the sample length in game.
             // of its bomber sounds on a tick interval (ticksExisted % bombRate).
             if (this.tickCount % AMBIENT_SOUND_INTERVAL == 0) playAmbientSound();
 

@@ -109,7 +109,9 @@ public final class CustomNukeExplosion {
             /// ЯДЕРНЫЙ ///
         } else if (yields.nuke() > 0) {
             float nuke = Math.min(yields.nuke() + yields.tnt() / 2, MAX_NUKE);
-            NuclearExplosionAPI.startLargeNuke(level, x + 0.5, yPos + 0.5, z + 0.5, (int) nuke);
+            // yPos + 5, not + 0.5: NukeCustom spawns the nuclear branch as an airburst, only the
+            // hydrogen and TNT branches detonate at + 0.5. Verified against the original.
+            NuclearExplosionAPI.startLargeNuke(level, x + 0.5, yPos + 5, z + 0.5, (int) nuke);
             /// КРУПНЫЙ ТНТ (без радиации) ///
         } else if (yields.tnt() >= 75) {
             NuclearExplosionAPI.startLargeNukeNoRad(level, x + 0.5, yPos + 0.5, z + 0.5,
