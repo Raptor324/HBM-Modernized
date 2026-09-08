@@ -121,7 +121,14 @@ public class MachineCraneBoxerBlockEntity extends BaseMachineBlockEntity impleme
         BlockPos outPos = pos.relative(state.getValue(MachineCraneBoxerBlock.FACING));
         IConveyorBelt belt = outputBelt(level, pos, state);
         if (belt == null) {
-            // serverTick already checked, so this only guards a direct call.
+            // serverTick checks for the belt before clearing the slots, so this is unreachable from
+            // there. Guard a direct call anyway - and drop rather than void, because the caller has
+            // already emptied the buffer by the time we get here.
+            for (ItemStack stack : box) {
+                if (!stack.isEmpty()) {
+                    level.addFreshEntity(new ItemEntity(level, outPos.getX() + 0.5, outPos.getY() + 0.5, outPos.getZ() + 0.5, stack));
+                }
+            }
             return;
         }
         var snap = belt.snapNewItem(level, outPos, new net.minecraft.world.phys.Vec3(

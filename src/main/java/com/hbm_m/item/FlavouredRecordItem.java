@@ -58,8 +58,8 @@ public class FlavouredRecordItem extends Item {
     *///?} else {
     @Override
     public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> list, TooltipFlag flag) {
-        // RecordItem is gone; reproduce its ".desc" line from the item's own description id.
-        list.add(Component.translatable(this.getDescriptionId() + ".desc").withStyle(ChatFormatting.GRAY));
+        // No ".desc" line here: on 1.21.1 the jukebox_playable component makes vanilla draw the
+        // JukeboxSong description itself, so adding it again showed the title twice.
     //?}
         // Line 2: the disc's own flavour text.
         list.add(Component.translatable(flavourKey).withStyle(ChatFormatting.DARK_GRAY, ChatFormatting.ITALIC));
