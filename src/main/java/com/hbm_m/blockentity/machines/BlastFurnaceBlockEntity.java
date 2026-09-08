@@ -527,13 +527,56 @@ public class BlastFurnaceBlockEntity extends BaseHbmBlockEntity implements MenuP
     }
     *///?}
 
+    //? if neoforge {
+    /**
+     * NeoForge had no sided handler at all: {@link #getItemHandler} handed out the raw one, so the
+     * insert/extract restrictions that Forge and Fabric both enforce simply did not exist here -
+     * a hopper could pull unsmelted input or push into the output slot. Mirrors the Forge
+     * DirectionalItemHandler above.
+     */
+    private final class DirectionalItemHandler implements net.neoforged.neoforge.items.IItemHandler {
+        private final net.minecraft.core.Direction direction;
+
+        private DirectionalItemHandler(net.minecraft.core.Direction direction) { this.direction = direction; }
+
+        @Override public int getSlots() { return itemHandler.getSlots(); }
+
+        @Override public ItemStack getStackInSlot(int slot) { return itemHandler.getStackInSlot(slot); }
+
+        @Override
+        public ItemStack insertItem(int slot, ItemStack stack, boolean simulate) {
+            if (!canInsertFromDirection(slot, direction) || !itemHandler.isItemValid(slot, stack)) return stack;
+            return itemHandler.insertItem(slot, stack, simulate);
+        }
+
+        @Override
+        public ItemStack extractItem(int slot, int amount, boolean simulate) {
+            if (!canExtractFromDirection(slot)) return ItemStack.EMPTY;
+            return itemHandler.extractItem(slot, amount, simulate);
+        }
+
+        @Override public int getSlotLimit(int slot) { return itemHandler.getSlotLimit(slot); }
+
+        @Override
+        public boolean isItemValid(int slot, ItemStack stack) {
+            return itemHandler.isItemValid(slot, stack) && canInsertFromDirection(slot, direction);
+        }
+    }
+
+    private final java.util.EnumMap<net.minecraft.core.Direction, DirectionalItemHandler> neoSidedHandlers =
+            new java.util.EnumMap<>(net.minecraft.core.Direction.class);
+    //?}
+
     @Override
     public @Nullable Object getItemHandler(@Nullable net.minecraft.core.Direction side) {
         //? if forge {
         /*if (side == null) return this.itemHandler;
         return this.sidedItemHandlers.getOrDefault(side, this.lazyItemHandler).resolve().orElse(null);
-        *///?} else {
-        return this.itemHandler;
-        //?}
+        *///?} elif neoforge {
+        if (side == null) return this.itemHandler;
+        return neoSidedHandlers.computeIfAbsent(side, DirectionalItemHandler::new);
+        //?} else {
+        /*return this.itemHandler;
+        *///?}
     }
 }

@@ -2081,3 +2081,34 @@ neoforge-ветки, то есть на 1.21.1 была закомментиро
   wildcard, случайный выбор из подходящих, сброс на пол при отсутствии направления) совпадает с
   `CraneRouter.getOutputDir` дословно. `Direction.values()[side]` даёт тот же порядок, что и
   `ForgeDirection.getOrientation(side)` (DOWN, UP, NORTH, SOUTH, WEST, EAST).
+
+### AB4. Доменная печь: посторонняя автоматизация на NeoForge не ограничена — ИСПРАВЛЕНО
+
+`BlastFurnaceBlockEntity.getItemHandler(side)` на NeoForge возвращал сырой `itemHandler`, игнорируя
+сторону. Ограничения `canInsertFromDirection`/`canExtractFromDirection` при этом есть **и на Forge**
+(`DirectionalItemHandler`), **и на Fabric** (`FilteringStorage` в `buildStorageForSide`) — не было
+только на целевой платформе. Воронка под печью могла вытаскивать несплавленное сырьё из входных
+слотов, а воронка сбоку — класть что угодно в выходной.
+
+Добавлена neoforge-ветка `DirectionalItemHandler` (зеркало forge-версии) с кэшом по сторонам в
+`EnumMap`. Ветка `//?} else {` заодно разделена на `elif neoforge` и `else`, иначе fabric-сборка
+ссылалась бы на несуществующий там класс.
+
+Проверено, что это единственный такой случай: `DirectionalItemHandler`/`canInsertFromDirection`
+встречаются только в этом файле, у остальных машин посторонний доступ разруливает
+`BaseMachineBlockEntity`.
+
+### AB5. Скан forge-only блоков без neoforge-ветки
+
+Прогнан скрипт по всему `src/main`: блоки `//? if forge {` в файлах, где слово `neoforge` не
+встречается вообще, с фильтром «есть цикл или больше 12 строк». Из ~30 попаданий все, кроме
+исправленных выше, легитимны:
+
+- целиком forge-only файлы (`*FluidHandler.java`, `ChunkRadiationProvider`, `*Forge.java`) — на
+  NeoForge их роль выполняет другой механизм;
+- переопределения `getCapability` — на NeoForge всё регистрируется централизованно в
+  `ModCapabilities.register`, включая обёртку энергии `ConverterBlockEntity`.
+
+Отдельно: класс `ArmorModificationServerEvents` целиком forge-only (подрезает здоровье игрока после
+смены брони). На NeoForge его нет, но и не нужно — ваниль сама зажимает здоровье в
+`LivingEntity.onAttributeUpdated` при падении `MAX_HEALTH`. То есть класс избыточен и на Forge.
