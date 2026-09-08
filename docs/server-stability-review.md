@@ -2356,3 +2356,23 @@ BE, и только у этих двух BE есть собственный `get
 То есть включение процессора — это не точечная правка, а перенос заливки фундамента в место, где
 запись блоков легальна (например в `StructurePiece.postProcess` или отложенной задачей после
 генерации). Требует проверки в мире, поэтому вынесено сюда, а не сделано вслепую.
+
+## AJ. Сверка списка инициализации с оригиналом
+
+Список вызовов `X.register()/init()` из `MainRegistry` порта сопоставлен с оригинальным. Так была
+найдена дыра с `ArmorUtil.register()` (раздел AF4). Остальные расхождения разобраны:
+
+- **`HazardRegistry.registerTrafos()`** в порту не вызывается — и **правильно**. Оригинал
+  регистрирует три трансформера опасности; в порту все три класса существуют, но
+  `HazardTransformerRadiationContainer` и `HazardTransformerRadiationME` — пустые заглушки с
+  javadoc «wired when storage items / ME compat is ported», а `HazardTransformerRadiationNBT` читает
+  ключ `hfrHazRadiation`, который **никто в порту не пишет**. Регистрировать нечего; когда появятся
+  хранилища и AE2-совместимость, понадобится и список `trafos` в `HazardSystem`, и учёт того, что
+  `HAZARD_CACHE` кэширует по `Item`, а трансформеры зависят от конкретного стека.
+- `BedrockOre.init()` — в порту не нужен: `BedrockOreDensity` работает от enum и шума, без реестра.
+- `DamageResistanceHandler.init()` → `initArmorStats()`, переименовано.
+- `HbmPotion.init()` → `ModEffects.init()`, `Fluids.init()`/`FluidContainerRegistry.register()` →
+  `ModFluidTraitsBootstrap.registerAll()`, `OreDictManager.*` → теги.
+- `CellularDungeonFactory`, `BobmazonOfferFactory`, `LemegetonRecipes`, `MagicRecipes`,
+  `LogicBlock*`, `MicroBlocksCompatHandler`, `CommandWikiRender` — контент/совместимость, которых в
+  порту нет вовсе.
