@@ -30,11 +30,15 @@ public class VortexEntity extends BlackHoleEntity {
 
     @Override
     public void tick() {
-        float next = this.getSize() - this.getShrinkRate();
-        this.setSize(next);
-        if (next <= 0) {
-            this.discard();
-            return;
+        // SynchedEntityData is server-authoritative: shrinking it on the client produced a value the
+        // next sync overwrote, and discarding there removed the vortex locally until then.
+        if (!this.level().isClientSide) {
+            float next = this.getSize() - this.getShrinkRate();
+            this.setSize(next);
+            if (next <= 0) {
+                this.discard();
+                return;
+            }
         }
         super.tick();
     }

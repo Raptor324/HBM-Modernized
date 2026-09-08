@@ -90,17 +90,19 @@ public class SpearEntity extends Entity {
                 }
                 spawnSmoke(server, groundHeight(server, this.getX(), this.getZ()) + 2, 5);
             }
-
             // Three blocks of clear air underneath means it is still airborne, not resting on a
             // one-block overhang - the original resets the counter in exactly that case.
-            if (this.level().getBlockState(BlockPos.containing(this.getX(), this.getY() - 3, this.getZ())).isAir()) {
+            // SynchedEntityData is server-authoritative: writing it on the client only produced a
+            // value the next sync overwrote.
+            if (!this.level().isClientSide
+                    && this.level().getBlockState(BlockPos.containing(this.getX(), this.getY() - 3, this.getZ())).isAir()) {
                 this.entityData.set(TICKS_IN_GROUND, 0);
             }
-        } else {
+        } else if (this.level() instanceof ServerLevel server) {
             int ticks = getTicksInGround() + 1;
             this.entityData.set(TICKS_IN_GROUND, ticks);
 
-            if (this.level() instanceof ServerLevel server && ticks > DISCHARGE_TICKS) {
+            if (ticks > DISCHARGE_TICKS) {
                 discharge(server);
             }
         }
