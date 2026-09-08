@@ -1476,9 +1476,7 @@ HTTPS-запросах, а сервер стартует с первой поп�
   нигде не задан: пластинки не вставляются в проигрыватель.
 - `ModShovelItem` — поле `fortuneLevel` объявлено и присваивается, но нигде не читается.
 - ~~`BlockExplosionDefense:272`~~ — исправлено, см. AQ1.
-- `ConfigSchema.register()` — 18 живых полей `ModClothConfig` отсутствуют в схеме, а схема
-  единственный путь для сохранения, GUI и синхронизации: `netherAmbientRad`, `basaltDeltasRadMult`
-  и все 15 `rbmkDials.*` нельзя изменить.
+- ~~`ConfigSchema.register()`~~ — исправлено, см. AQ3.
 - `NuclearExplosionHelper:75` — серверный конфиг `enableCraterBiomes` на ядерном пути не читается;
   биомы меняются всегда.
 - ~~`ModConfigKeybindHandler`~~ — исправлено, см. AQ2.
@@ -1676,9 +1674,7 @@ PMTU-кеш при этом пуст (`ip route get` не содержит за�
   `ItemModGasmask:56` вынимает фильтр из копии и кладёт игроку — по фильтру за клик. В оригинале
   оба пути пишут обратно через `applyMod`, то есть это отклонения порта. Чинить целым проходом по
   контракту `pryMods`/`applyMod`, а не точечно.
-- **18 полей конфига вне `ConfigSchema`** (T3), включая все 15 `rbmkDials.*`, `netherAmbientRad`
-  и `basaltDeltasRadMult`. Схема — единственный путь для сохранения, GUI и синхронизации, поэтому
-  их нельзя ни изменить, ни сохранить.
+- ~~18 полей конфига вне `ConfigSchema`~~ — исправлено, см. AQ3.
 - **Армированный бетон защищает в 46 раз хуже обычного** (T3). `isSpecialConcreteBlock` не
   вызывается ни из `getBlockDefenseValue`, ни из `getDefenseValueForBlock`; `CONCRETE_SUPER/REBAR`
   нет и в `isConcreteBlock`.
@@ -2592,3 +2588,21 @@ if (mask.getBlacklist().contains(clazz)) return false;
 fabric-ветка через `KeyMappingRegistry` регистрирует все 10. Пять клавиш управления краном РБМК
 (вверх/вниз/влево/вправо/загрузка) не появлялись в настройках управления, и `consumeClick` по ним
 не срабатывал. Добавлены.
+
+### AQ3. Восемнадцать полей конфига не существовали для файла — ИСПРАВЛЕНО
+
+Диагноз подтверждён и уточнён. `HbmConfigStore` пишет JSON как
+`ConfigSchema.snapshotForJson(cfg, side)` и читает через `ConfigSchema.applyAll` — то есть схема не
+просто описывает GUI, она **единственный** мост между объектом конфига и файлом. Поле, не
+зарегистрированное в схеме, в файл не попадает и из файла не читается: оно навсегда остаётся на
+значении, зашитом в `ModClothConfig`.
+
+Пострадали 18 полей, из них 15 — весь набор дайлов РБМК (`passiveCooling`, `passiveCoolingInner`,
+`columnHeatFlow`, `fuelDiffusionMod`, `heatProvision`, `boilerHeatConsumption`, `controlSpeedMod`,
+`reactivityMod`, `outgasserMod`, `surgeMod`, `reasimBoilerSpeed`, `moderatorEfficiency`,
+`absorberEfficiency`, `reflectorEfficiency`, `absorberHeatConversion`). То есть реактор нельзя было
+настроить вообще никак — ни через GUI, ни правкой файла. Плюс `netherAmbientRad`,
+`basaltDeltasRadMult` и клиентский `enableDhRenderBridge`.
+
+Все 18 зарегистрированы; границы взяты из `RBMKDials`, который клампит те же диапазоны. После
+правки диф «поля `ModClothConfig` против ключей схемы» пуст.

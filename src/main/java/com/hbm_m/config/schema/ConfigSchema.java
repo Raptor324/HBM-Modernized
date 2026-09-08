@@ -168,6 +168,30 @@ public final class ConfigSchema {
         // ── CLIENT: отладка (читается только клиентом) ──────────────
         reg(ConfigField.floatNum("debugRenderTextSize", ConfigSide.CLIENT, ApplyMode.LIVE, "debug", 0.05F, 5F));
         reg(ConfigField.integer("debugRenderDistance", ConfigSide.CLIENT, ApplyMode.LIVE, "debug", 1, 20));
+
+        // These were missing from the schema entirely. HbmConfigStore writes and reads the JSON
+        // through ConfigSchema.snapshotForJson / applyAll, so an unregistered field never reaches
+        // the file at all: the fifteen RBMK dials were permanently pinned to their defaults and the
+        // reactor could not be tuned. Bounds follow RBMKDials, which clamps the same ranges.
+        reg(ConfigField.doubleNested("rbmkDials.passiveCooling", ConfigSide.SERVER, ApplyMode.LIVE, "rbmk", "rbmkDials", 0D, 1_000D));
+        reg(ConfigField.doubleNested("rbmkDials.passiveCoolingInner", ConfigSide.SERVER, ApplyMode.LIVE, "rbmk", "rbmkDials", 0D, 1_000D));
+        reg(ConfigField.doubleNested("rbmkDials.columnHeatFlow", ConfigSide.SERVER, ApplyMode.LIVE, "rbmk", "rbmkDials", 0D, 1D));
+        reg(ConfigField.doubleNested("rbmkDials.fuelDiffusionMod", ConfigSide.SERVER, ApplyMode.LIVE, "rbmk", "rbmkDials", 0D, 100D));
+        reg(ConfigField.doubleNested("rbmkDials.heatProvision", ConfigSide.SERVER, ApplyMode.LIVE, "rbmk", "rbmkDials", 0D, 100D));
+        reg(ConfigField.doubleNested("rbmkDials.boilerHeatConsumption", ConfigSide.SERVER, ApplyMode.LIVE, "rbmk", "rbmkDials", 0D, 100D));
+        reg(ConfigField.doubleNested("rbmkDials.controlSpeedMod", ConfigSide.SERVER, ApplyMode.LIVE, "rbmk", "rbmkDials", 0D, 100D));
+        reg(ConfigField.doubleNested("rbmkDials.reactivityMod", ConfigSide.SERVER, ApplyMode.LIVE, "rbmk", "rbmkDials", 0D, 100D));
+        reg(ConfigField.doubleNested("rbmkDials.outgasserMod", ConfigSide.SERVER, ApplyMode.LIVE, "rbmk", "rbmkDials", 0D, 100D));
+        reg(ConfigField.doubleNested("rbmkDials.surgeMod", ConfigSide.SERVER, ApplyMode.LIVE, "rbmk", "rbmkDials", 0D, 100D));
+        reg(ConfigField.doubleNested("rbmkDials.reasimBoilerSpeed", ConfigSide.SERVER, ApplyMode.LIVE, "rbmk", "rbmkDials", 0D, 1D));
+        reg(ConfigField.doubleNested("rbmkDials.moderatorEfficiency", ConfigSide.SERVER, ApplyMode.LIVE, "rbmk", "rbmkDials", 0D, 1D));
+        reg(ConfigField.doubleNested("rbmkDials.absorberEfficiency", ConfigSide.SERVER, ApplyMode.LIVE, "rbmk", "rbmkDials", 0D, 1D));
+        reg(ConfigField.doubleNested("rbmkDials.reflectorEfficiency", ConfigSide.SERVER, ApplyMode.LIVE, "rbmk", "rbmkDials", 0D, 1D));
+        reg(ConfigField.doubleNested("rbmkDials.absorberHeatConversion", ConfigSide.SERVER, ApplyMode.LIVE, "rbmk", "rbmkDials", 0D, 1D));
+
+        reg(ConfigField.floatNum("netherAmbientRad", ConfigSide.SERVER, ApplyMode.LIVE, "world_effects", 0F, 1_000F));
+        reg(ConfigField.floatNum("basaltDeltasRadMult", ConfigSide.SERVER, ApplyMode.LIVE, "world_effects", 0F, 1_000F));
+        reg(ConfigField.bool("enableDhRenderBridge", ConfigSide.CLIENT, ApplyMode.REQUIRES_RESTART, "debug"));
     }
 
     private static void reg(ConfigField f) {
