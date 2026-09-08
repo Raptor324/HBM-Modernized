@@ -121,8 +121,8 @@ public abstract class BaseMachineBlockEntity extends BaseHbmBlockEntity implemen
         // Во время переноса блоков движком сборки (Create/Sable) содержимое уезжает
         // в NBT-снимок контрапшена; высыпание на пол здесь = дюп предметов.
         if (com.hbm_m.multiblock.ContraptionAssemblyGuard.isMoving()) {
-            com.hbm_m.main.MainRegistry.LOGGER.info(
-                "[HBM] высыпание инвентаря подавлено (окно сборки контрапшена), BE {}",
+            com.hbm_m.main.MainRegistry.LOGGER.debug(
+                "[HBM] inventory drop suppressed (contraption move window), BE {}",
                 getClass().getSimpleName());
             return;
         }

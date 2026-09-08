@@ -107,6 +107,7 @@ public class MachineRadarBlock extends BaseEntityBlock implements IMultiblockCon
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
         if (!state.is(newState.getBlock())) {
+            com.hbm_m.block.MachineDrops.dropInventory(level, pos);
             BlockEntity be = level.getBlockEntity(pos);
             if (be instanceof MachineRadarBlockEntity radar) {
                 com.hbm_m.platform.ModItemStackHandler inv = radar.getInventory();

@@ -266,6 +266,7 @@ public class MachineCrucibleBlock extends BaseEntityBlock implements IMultiblock
     public void onRemove(BlockState state, Level level, BlockPos pos,
                          BlockState newState, boolean isMoving) {
         if (!state.is(newState.getBlock())) {
+            com.hbm_m.block.MachineDrops.dropInventory(level, pos);
             if (!level.isClientSide()) {
                 structureHelper.destroyStructure(level, pos, state.getValue(FACING));
                 BlockEntity be = level.getBlockEntity(pos);

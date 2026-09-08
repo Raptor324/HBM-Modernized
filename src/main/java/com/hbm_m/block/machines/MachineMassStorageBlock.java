@@ -73,4 +73,13 @@ public class MachineMassStorageBlock extends BaseEntityBlock {
         return CODEC;
     }
     //?}
+
+    @Override
+    protected void onRemove(net.minecraft.world.level.block.state.BlockState state, net.minecraft.world.level.Level level,
+                            net.minecraft.core.BlockPos pos, net.minecraft.world.level.block.state.BlockState newState, boolean isMoving) {
+        if (!state.is(newState.getBlock())) {
+            com.hbm_m.block.MachineDrops.dropInventory(level, pos);
+        }
+        super.onRemove(state, level, pos, newState, isMoving);
+    }
 }

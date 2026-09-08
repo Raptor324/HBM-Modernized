@@ -262,6 +262,7 @@ public class MachineFrackingTowerBlock extends BaseEntityBlock implements IMulti
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
         if (!state.is(newState.getBlock()) && !level.isClientSide()) {
+            com.hbm_m.block.MachineDrops.dropInventory(level, pos);
             Direction facing = state.getValue(FACING);
             getStructureHelper().destroyStructure(level, pos, facing);
         }
