@@ -1475,16 +1475,13 @@ HTTPS-запросах, а сервер стартует с первой поп�
 - `FlavouredRecordItem` — на 1.21.1 звук и длительность отбрасываются, а `jukebox_playable`
   нигде не задан: пластинки не вставляются в проигрыватель.
 - `ModShovelItem` — поле `fortuneLevel` объявлено и присваивается, но нигде не читается.
-- `BlockExplosionDefense:272` — `isSpecialConcreteBlock` (усиленный бетон, 400-600) не вызывается ни
-  из `getBlockDefenseValue`, ни из `getDefenseValueForBlock`, и `CONCRETE_SUPER/REBAR` нет в
-  `isConcreteBlock`: армированный бетон получает 5.4 против 250 у обычного.
+- ~~`BlockExplosionDefense:272`~~ — исправлено, см. AQ1.
 - `ConfigSchema.register()` — 18 живых полей `ModClothConfig` отсутствуют в схеме, а схема
   единственный путь для сохранения, GUI и синхронизации: `netherAmbientRad`, `basaltDeltasRadMult`
   и все 15 `rbmkDials.*` нельзя изменить.
 - `NuclearExplosionHelper:75` — серверный конфиг `enableCraterBiomes` на ядерном пути не читается;
   биомы меняются всегда.
-- `ModConfigKeybindHandler:132-138` — на Forge/NeoForge регистрируются 5 из 10 клавиш, ветка Fabric
-  регистрирует все 10; пять клавиш крана RBMK не попадают в настройки управления.
+- ~~`ModConfigKeybindHandler`~~ — исправлено, см. AQ2.
 - `StructureFoundationProcessor:30` — `processBlock(LevelAccessor, ...)` это перегрузка, а не
   переопределение (база принимает `LevelReader`), `@Override` отсутствует; процессор инертен и ни
   в одном `processor_list` не упомянут. Чинить сигнатуру без разбора, куда он должен быть подключён,
@@ -2574,3 +2571,24 @@ if (mask.getBlacklist().contains(clazz)) return false;
 `MachineOreSlopperBlockEntity` выходные слоты принимают ровно свой предмет, так что `insertItem`
 там проходит. В `MachineAssemblerBlockEntity:601` остаток тоже безопасен — вставка предварительно
 симулируется, и наружу извлекается ровно столько, сколько поместилось.
+
+## AQ. Два явных пункта из очереди закрыты
+
+### AQ1. Армированный бетон не держал взрыв — ИСПРАВЛЕНО
+
+`BlockExplosionDefense.isSpecialConcreteBlock` перечисляет восемь блоков усиленного бетона
+(`CONCRETE_SUPER`, четыре маркированных варианта, `CONCRETE_SUPER_BROKEN`, `CONCRETE_REBAR`,
+`CONCRETE_REBAR_ALT`) и по javadoc должен давать им защиту 400 — но метод не вызывался **ниоткуда**:
+ни из `getBlockDefenseValue`, ни из `getDefenseValueForBlock`, ни из `isModularBlock`. Списки
+`isConcreteBlock` и `isSpecialConcreteBlock` не пересекаются, так что армированный бетон уходил в
+общую ветку и получал ванильную взрывоустойчивость вместо 400 — то есть держал ядерный взрыв
+заметно хуже обычного бетона (250).
+
+Проверка добавлена во все три места. Порядок не важен: множества блоков не пересекаются.
+
+### AQ2. Пять клавиш крана РБМК не регистрировались — ИСПРАВЛЕНО
+
+`ModConfigKeybindHandler.registerAll` (путь Forge/NeoForge) регистрировал 5 биндов из 10, тогда как
+fabric-ветка через `KeyMappingRegistry` регистрирует все 10. Пять клавиш управления краном РБМК
+(вверх/вниз/влево/вправо/загрузка) не появлялись в настройках управления, и `consumeClick` по ним
+не срабатывал. Добавлены.

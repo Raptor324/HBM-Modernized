@@ -135,6 +135,13 @@ public class ModConfigKeybindHandler {
         registrar.accept(POWER_ARMOR_VATS);
         registrar.accept(POWER_ARMOR_THERMAL);
         registrar.accept(OPEN_MULTI_DETONATOR);
+        // The five RBMK crane binds were missing here while the Fabric path registers all ten:
+        // they never reached the controls screen and consumeClick never fired for them.
+        registrar.accept(RBMK_CRANE_UP);
+        registrar.accept(RBMK_CRANE_DOWN);
+        registrar.accept(RBMK_CRANE_LEFT);
+        registrar.accept(RBMK_CRANE_RIGHT);
+        registrar.accept(RBMK_CRANE_LOAD);
     }
 
     private static void onClientPostTick() {
