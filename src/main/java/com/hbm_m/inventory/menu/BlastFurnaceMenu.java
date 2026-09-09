@@ -136,6 +136,9 @@ public class BlastFurnaceMenu extends AbstractContainerMenu {
     private static final int VANILLA_FIRST_SLOT_INDEX = 0;
     private static final int TE_INVENTORY_FIRST_SLOT_INDEX = VANILLA_FIRST_SLOT_INDEX + VANILLA_SLOT_COUNT;
     private static final int TE_INVENTORY_SLOT_COUNT = 4;
+    /** Fuel and the two inputs. The output is last and must stay out of the insert range: vanilla
+     * moveItemStackTo does not consult mayPlace when it merges onto an existing stack. */
+    private static final int TE_INSERTABLE_SLOT_COUNT = 3;
 
     public int getMachineSlotOffset() {
         return TE_INVENTORY_FIRST_SLOT_INDEX;
@@ -152,7 +155,7 @@ public class BlastFurnaceMenu extends AbstractContainerMenu {
         if (index < VANILLA_FIRST_SLOT_INDEX + VANILLA_SLOT_COUNT) {
             // This is a vanilla container slot so merge the stack into the tile inventory
             if (!moveItemStackTo(sourceStack, TE_INVENTORY_FIRST_SLOT_INDEX, TE_INVENTORY_FIRST_SLOT_INDEX
-                    + TE_INVENTORY_SLOT_COUNT, false)) {
+                    + TE_INSERTABLE_SLOT_COUNT, false)) {
                 return ItemStack.EMPTY;
             }
         } else if (index < TE_INVENTORY_FIRST_SLOT_INDEX + TE_INVENTORY_SLOT_COUNT) {

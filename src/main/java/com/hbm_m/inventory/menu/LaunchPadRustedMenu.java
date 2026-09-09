@@ -120,6 +120,15 @@ public class LaunchPadRustedMenu extends AbstractContainerMenu {
         ) <= 64.0D;
     }
 
+    /** Tries each machine slot that actually accepts the stack, in order. */
+    private boolean moveIntoMachineSlots(net.minecraft.world.item.ItemStack stack) {
+        for (int i = 0; i < MACHINE_SLOTS; i++) {
+            if (!this.slots.get(i).mayPlace(stack)) continue;
+            if (this.moveItemStackTo(stack, i, i + 1, false)) return true;
+        }
+        return false;
+    }
+
     @Override
     public net.minecraft.world.item.ItemStack quickMoveStack(Player player, int index) {
         net.minecraft.world.item.ItemStack originalStack = net.minecraft.world.item.ItemStack.EMPTY;
@@ -133,7 +142,9 @@ public class LaunchPadRustedMenu extends AbstractContainerMenu {
                     return net.minecraft.world.item.ItemStack.EMPTY;
                 }
             } else {
-                if (!this.moveItemStackTo(stack, 0, MACHINE_SLOTS, false)) {
+                // Per-slot with mayPlace: vanilla moveItemStackTo skips mayPlace when it merges onto
+                // an existing stack, so a whole-range move could land in a take-only output.
+                if (!moveIntoMachineSlots(stack)) {
                     return net.minecraft.world.item.ItemStack.EMPTY;
                 }
             }

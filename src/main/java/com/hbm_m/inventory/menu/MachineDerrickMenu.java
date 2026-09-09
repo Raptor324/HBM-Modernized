@@ -116,8 +116,10 @@ public class MachineDerrickMenu extends AbstractContainerMenu {
                     return ItemStack.EMPTY;
                 }
             } else {
+                // Slots 2 and 4 are take-only outputs and must stay out of the insert ranges: vanilla
+                // moveItemStackTo skips mayPlace when it merges onto an existing stack.
                 if (!this.moveItemStackTo(stack, 0, 2, false)) {
-                    if (!this.moveItemStackTo(stack, 3, 5, false)) {
+                    if (!this.moveItemStackTo(stack, 3, 4, false)) {
                         return ItemStack.EMPTY;
                     }
                 }
