@@ -34,6 +34,10 @@ public class NukeFstbmbControlPacket implements C2SPacket {
     public static void handle(NukeFstbmbControlPacket pkt, PacketContext ctx) {
         ctx.queue(() -> {
             if (!(ctx.getPlayer() instanceof ServerPlayer player)) return;
+            // GUI button, so the player is standing at the bomb: keep the same reach check
+            // RBMKBoilerPacket uses. blockEntityAt itself is deliberately distance-free for
+            // contraption sub-levels.
+            if (player.distanceToSqr(pkt.pos.getX() + 0.5, pkt.pos.getY() + 0.5, pkt.pos.getZ() + 0.5) > 400) return;
             if (ModPacketHandler.blockEntityAt(player, pkt.pos) instanceof NukeFstbmbBlockEntity bomb) {
                 bomb.startCountdown();
             }

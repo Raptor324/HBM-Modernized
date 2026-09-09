@@ -58,11 +58,15 @@ public abstract class LevelChunkSilentRemovalMixin {
     private void hbm_m$silentRemovalDuringContraptionMove(BlockState receiver, Level level, BlockPos pos,
                                                           BlockState otherState, boolean isMoving) {
         if (ContraptionAssemblyGuard.isMoving()) {
+            // IMultiblockPart is implemented by the part's BlockEntity, not by its Block, so the old
+            // test against the Block never matched and only the controller half of this guard worked.
             Block receiverBlock = receiver.getBlock();
-            boolean receiverOurs = receiverBlock instanceof IMultiblockPart || receiverBlock instanceof IMultiblockController;
+            boolean receiverOurs = receiverBlock instanceof IMultiblockController
+                    || receiverBlock instanceof com.hbm_m.block.UniversalMachinePartBlock;
             if (!receiverOurs && receiver.isAir()) {
                 Block otherBlock = otherState.getBlock();
-                receiverOurs = otherBlock instanceof IMultiblockPart || otherBlock instanceof IMultiblockController;
+                receiverOurs = otherBlock instanceof IMultiblockController
+                        || otherBlock instanceof com.hbm_m.block.UniversalMachinePartBlock;
             }
             if (receiverOurs) {
                 com.hbm_m.main.MainRegistry.LOGGER.info(

@@ -45,7 +45,8 @@ public class MultiDetonatorItem extends Item implements ITooltipProvider {
     private static final String NBT_POINT_NAME = "Name";
     private static final String NBT_POINT_HAS_TARGET = "HasTarget";
 
-    private static final int MAX_POINTS = 4;
+    /** Bound shared with the point-sync packet, which writes this list from the client. */
+    public static final int MAX_POINTS = 4;
     private static final int MAX_NAME_LENGTH = 16;
 
     // Класс для хранения данных точки

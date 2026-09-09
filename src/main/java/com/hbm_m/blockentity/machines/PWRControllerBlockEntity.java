@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.api.fluids.IFluidStandardTransceiverMK2;
@@ -262,7 +263,11 @@ public class PWRControllerBlockEntity extends BaseMachineBlockEntity
         }
 
         setChanged();
-        sendUpdateToClient();
+        // A PWR may be up to 4096 blocks, and the update tag carries the whole structure: syncing it
+        // every tick to every viewer was a lot of traffic for values that move slowly.
+        if (level != null && level.getGameTime() % 5 == 0) {
+            sendUpdateToClient();
+        }
     }
 
     private void loadFuel() {
@@ -455,8 +460,11 @@ public class PWRControllerBlockEntity extends BaseMachineBlockEntity
     @Override
     public String runRORFunction(String name, String[] params) {
         if ((PREFIX_FUNCTION + "setrods").equals(name) && params.length > 0) {
+            // provideRORValue reports 100 - rodLevel, and upstream setrods inverts to match
+            // (rodTarget = 100 - percent). Without it, reading "rods" and writing it straight back -
+            // the usual "hold the current setting" loop - flipped the rods to the opposite end.
             int percent = IRORInteractive.parseInt(params[0], 0, 100);
-            setRodTarget(percent);
+            setRodTarget(100 - percent);
             return null;
         }
         if ((PREFIX_FUNCTION + "jettison").equals(name)) {
@@ -523,6 +531,31 @@ public class PWRControllerBlockEntity extends BaseMachineBlockEntity
         for (int i = 0; i < rods.size(); i++) {
             com.hbm_m.platform.PlatformHooks.writeBlockPos(tag, "rodPos" + i, rods.get(i));
         }
+    }
+
+    // The port and rod position lists are server-only bookkeeping, rebuilt by the structure scan.
+    // They have no business in the chunk packet, where they were the bulk of the payload.
+    //? if < 1.21.1 {
+    /*@Override
+    public @NotNull CompoundTag getUpdateTag() {
+        return stripStructureLists(super.getUpdateTag());
+    }
+    *///?} else {
+    @Override
+    public @NotNull CompoundTag getUpdateTag(net.minecraft.core.HolderLookup.Provider registries) {
+        return stripStructureLists(super.getUpdateTag(registries));
+    }
+    //?}
+
+    private static CompoundTag stripStructureLists(CompoundTag tag) {
+        int portCount = tag.getInt("portCount");
+        for (int i = 0; i < portCount; i++) tag.remove("port" + i);
+        tag.remove("portCount");
+
+        int rodPosCount = tag.getInt("rodPosCount");
+        for (int i = 0; i < rodPosCount; i++) tag.remove("rodPos" + i);
+        tag.remove("rodPosCount");
+        return tag;
     }
 
     @Override
