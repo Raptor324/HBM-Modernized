@@ -1625,8 +1625,16 @@ public class MultiblockStructureHelper {
                         // Footprints can overlap - the placement path above self-destructs a
                         // controller on exactly that condition - so a part that belongs to another
                         // controller must not be deleted along with ours, or that machine is orphaned.
+                        //
+                        // Only a LIVE foreign controller protects the part. A stale pointer must not:
+                        // after a Sable/Create move a part still names its pre-move controller until
+                        // relink runs, and skipping those left phantom casings behind when the
+                        // machine was broken before that happened.
                         BlockPos owner = part.getControllerPos();
-                        if (owner != null && !owner.equals(controllerPos)) continue;
+                        if (owner != null && !owner.equals(controllerPos)
+                                && level.getBlockState(owner).getBlock() instanceof IMultiblockController) {
+                            continue;
+                        }
 
                         PartRole role = part.getPartRole();
                         if (role.canReceiveEnergy() || role.canSendEnergy()) {

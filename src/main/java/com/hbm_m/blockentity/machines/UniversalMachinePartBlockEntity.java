@@ -234,6 +234,19 @@ public class UniversalMachinePartBlockEntity extends BaseHbmBlockEntity implemen
                 } else {
                     // Попытки исчерпаны: контроллера действительно нет рядом.
                     be.pendingRelinkCheck = false;
+                    be.relinkAttempts = 0;
+
+                    // A phantom part with no machine is litter: it renders as nothing, drops
+                    // nothing and breaks in one hit. Sable/Create moves used to take the
+                    // controller and leave whole footprints of these behind, so clean them up
+                    // instead of leaving them in the world for good. The move window is checked
+                    // because during it the controller is legitimately absent for a few ticks.
+                    if (!com.hbm_m.multiblock.ContraptionAssemblyGuard.isMoving()) {
+                        com.hbm_m.main.MainRegistry.LOGGER.debug(
+                                "[HBM] Осиротевшая часть мультиблока удалена: {}", pos.toShortString());
+                        level.removeBlock(pos, false);
+                        return;
+                    }
                 }
             }
         }
