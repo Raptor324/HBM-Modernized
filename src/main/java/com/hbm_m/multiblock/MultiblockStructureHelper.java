@@ -1439,6 +1439,15 @@ public class MultiblockStructureHelper {
                 continue;
             }
             
+            // checkPlacement only guards the item path, so a controller placed by /setblock, a
+            // datapack or another mod overwrites whatever stands in the footprint. Dropping it
+            // first at least keeps chests and their contents out of the void.
+            BlockState occupied = level.getBlockState(worldPos);
+            if (!occupied.isAir() && !occupied.canBeReplaced()
+                    && level instanceof net.minecraft.server.level.ServerLevel placeLevel) {
+                Block.dropResources(occupied, placeLevel, worldPos, level.getBlockEntity(worldPos));
+            }
+
             BlockState partState = phantomBlockState.get().setValue(HorizontalDirectionalBlock.FACING, facing);
             level.setBlock(worldPos, partState, 2);
             allPlacedPositions.add(worldPos);

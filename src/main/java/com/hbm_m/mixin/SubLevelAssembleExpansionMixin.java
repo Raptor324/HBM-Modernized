@@ -66,9 +66,16 @@ public abstract class SubLevelAssembleExpansionMixin {
             return;
         }
         // Набор — мировые позиции (ObjectOpenHashSet из SimAssemblyContraption).
-        Set<BlockPos> expanded = MultiblockExpander.expandToFullMultiblock(level, set);
-        if (expanded.size() > set.size()) {
-            set.addAll(expanded);
+        // The set belongs to the caller: if it ever hands us an immutable one, addAll throws and
+        // would abort the assembly. Expansion is an enhancement, never a reason to fail the move.
+        try {
+            Set<BlockPos> expanded = MultiblockExpander.expandToFullMultiblock(level, set);
+            if (expanded.size() > set.size()) {
+                set.addAll(expanded);
+            }
+        } catch (Throwable t) {
+            com.hbm_m.main.MainRegistry.LOGGER.warn(
+                    "[HBM] Не удалось расширить набор сборки до полного мультиблока", t);
         }
     }
 }
