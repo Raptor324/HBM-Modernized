@@ -35,7 +35,7 @@ public class RBMKSteamInletBlockEntity extends BlockEntity
         // face. Without this it could only ever be filled by a block physically shoved against it -
         // a pipe run leading to it did nothing.
         for (Direction dir : Direction.values()) {
-            be.trySubscribe(be.waterTank.getTankType(), level, pos.relative(dir), dir);
+            be.trySubscribe(be.waterTank, level, pos.relative(dir), dir);
         }
 
         // 1:1 with CE: the whole transfer only runs while the ReaSim boiler dial is on

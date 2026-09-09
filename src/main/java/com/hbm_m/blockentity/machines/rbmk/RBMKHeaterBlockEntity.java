@@ -121,7 +121,7 @@ public class RBMKHeaterBlockEntity extends RBMKColumnBlockEntity
      */
     private void exchangeFluids(Level level) {
         BlockPos pos = getBlockPos();
-        trySubscribe(inputTank.getTankType(), level, pos.below(), Direction.DOWN);
+        trySubscribe(inputTank, level, pos.below(), Direction.DOWN);
 
         if (outputTank.getFill() <= 0) return;
         for (com.mojang.datafixers.util.Pair<BlockPos, Direction> target : getOutputPos(level)) {

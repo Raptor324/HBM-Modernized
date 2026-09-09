@@ -65,9 +65,9 @@ public class MachineThresherBlockEntity extends com.hbm_m.blockentity.BaseHbmBlo
             } else {
                 be.isOn = false;
             }
-            be.trySubscribe(be.tank.getTankType(), level, pos.relative(rot), rot);
-            be.trySubscribe(be.tank.getTankType(), level, pos.relative(rot.getOpposite()), rot.getOpposite());
-            be.trySubscribe(be.tank.getTankType(), level, pos.below(), Direction.DOWN);
+            be.trySubscribe(be.tank, level, pos.relative(rot), rot);
+            be.trySubscribe(be.tank, level, pos.relative(rot.getOpposite()), rot.getOpposite());
+            be.trySubscribe(be.tank, level, pos.below(), Direction.DOWN);
         }
 
         if (!be.isOn) return;

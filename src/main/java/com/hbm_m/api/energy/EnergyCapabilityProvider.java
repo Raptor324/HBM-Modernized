@@ -41,7 +41,7 @@ import org.jetbrains.annotations.Nullable;
             return storage.cast();
         }
         if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.ENERGY) {
-            return storage.lazyMap(s -> new LongEnergyWrapper(s, LongEnergyWrapper.BitMode.LOW)).cast();
+            return storage.lazyMap(s -> new LongEnergyWrapper(s)).cast();
         }
 
         return LazyOptional.empty();

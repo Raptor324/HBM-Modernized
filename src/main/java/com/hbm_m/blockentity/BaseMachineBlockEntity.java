@@ -395,6 +395,17 @@ public abstract class BaseMachineBlockEntity extends BaseHbmBlockEntity implemen
     }
     *///?}
 
+    // NeoForge has no getCapability/invalidateCaps on BlockEntity, so the Forge onLoad above is
+    // commented out here - and with it the only call to setupFluidCapability(), which left every
+    // custom fluid handler (chem plant, turbine, ZIRNOX, arc furnace...) unregistered.
+    //? if neoforge {
+    @Override
+    public void onLoad() {
+        super.onLoad();
+        setupFluidCapability();
+    }
+    //?}
+
     /**
      * Handler, который видит автоматика (воронки/трубы) через ITEM_HANDLER-капабилити и
      * полиморфный {@link #getItemHandler}. GUI работает с полным инвентарём через
@@ -613,10 +624,7 @@ public abstract class BaseMachineBlockEntity extends BaseHbmBlockEntity implemen
     public @Nullable Object getEnergyStorage(@Nullable net.minecraft.core.Direction side) {
         if (!canConnectEnergy(side)) return null;
         //? if neoforge {
-        return new com.hbm_m.api.energy.LongEnergyWrapper(this,
-                side == Direction.DOWN
-                        ? com.hbm_m.api.energy.LongEnergyWrapper.BitMode.HIGH
-                        : com.hbm_m.api.energy.LongEnergyWrapper.BitMode.LOW);
+        return new com.hbm_m.api.energy.LongEnergyWrapper(this);
         //?} else {
         /*return null;
         *///?}

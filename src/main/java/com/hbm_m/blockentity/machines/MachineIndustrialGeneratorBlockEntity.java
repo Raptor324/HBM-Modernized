@@ -81,9 +81,9 @@ public class MachineIndustrialGeneratorBlockEntity extends BaseMachineBlockEntit
 
         if (level.getGameTime() % 20 == 0) {
             for (Direction dir : Direction.values()) {
-                trySubscribe(waterTank.getTankType(), level, pos.relative(dir), dir);
-                trySubscribe(lubricantTank.getTankType(), level, pos.relative(dir), dir);
-                trySubscribe(fuelTank.getTankType(), level, pos.relative(dir), dir);
+                trySubscribe(waterTank, level, pos.relative(dir), dir);
+                trySubscribe(lubricantTank, level, pos.relative(dir), dir);
+                trySubscribe(fuelTank, level, pos.relative(dir), dir);
             }
         }
 

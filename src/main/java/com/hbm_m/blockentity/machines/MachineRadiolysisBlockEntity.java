@@ -67,9 +67,14 @@ public class MachineRadiolysisBlockEntity extends BaseMachineBlockEntity impleme
 
         be.chargeFromBatterySlot(SLOT_BATTERY);
 
+        // Upstream: tanks[0].setType(10, 11, slots). Without it the input tank never gets a type,
+        // so trySubscribe asks the network for Fluids.EMPTY and the machine is never fed.
+        ItemStack[] slots = be.inventorySlotArray();
+        if (be.tanks[0].setType(SLOT_FLUID_ID, slots)) be.applySlotsArray(slots);
+
         if (level.getGameTime() % 10 == 0) {
             for (Direction dir : Direction.values()) {
-                be.trySubscribe(be.tanks[0].getTankType(), level, pos.relative(dir), dir);
+                be.trySubscribe(be.tanks[0], level, pos.relative(dir), dir);
                 if (be.tanks[1].getFill() > 0) be.tryProvide(be.tanks[1], level, pos.relative(dir), dir);
                 if (be.tanks[2].getFill() > 0) be.tryProvide(be.tanks[2], level, pos.relative(dir), dir);
             }
@@ -123,6 +128,19 @@ public class MachineRadiolysisBlockEntity extends BaseMachineBlockEntity impleme
             if (right > 0) tanks[2].fillMb(recipe.outB(), right);
             energy = Math.max(0, energy - CONSUMPTION_PER_CRACK);
         }
+    }
+
+    private ItemStack[] inventorySlotArray() {
+        ItemStack[] arr = new ItemStack[SLOT_COUNT];
+        for (int i = 0; i < SLOT_COUNT; i++) arr[i] = inventory.getStackInSlot(i);
+        return arr;
+    }
+
+    private void applySlotsArray(ItemStack[] arr) {
+        for (int i = 0; i < SLOT_COUNT; i++) {
+            inventory.setStackInSlot(i, arr[i] == null ? ItemStack.EMPTY : arr[i]);
+        }
+        setChanged();
     }
 
     private boolean hasSpace(int left, int right) {

@@ -122,6 +122,17 @@ public class RedConnectorBlock extends BaseEntityBlock {
         return RenderShape.MODEL;
     }
 
+    // Breaking a connector used to leave its wire partners still pointing at it (RedPylonCoreBlock
+    // does this for pylons); the peer node kept the dead link and power flowed through nothing.
+    @Override
+    public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
+        if (!level.isClientSide && newState.getBlock() != this
+                && level.getBlockEntity(pos) instanceof PylonBaseBlockEntity pylon) {
+            pylon.disconnectAll();
+        }
+        super.onRemove(state, level, pos, newState, isMoving);
+    }
+
     @Nullable
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {

@@ -93,7 +93,7 @@ public class MachineHeatexBlockEntity extends BaseMachineBlockEntity implements 
     private void serverTick(ServerLevel level, BlockPos pos) {
         if (level.getGameTime() % 20 == 0) {
             for (Direction dir : Direction.values()) {
-                trySubscribe(hotTank.getTankType(), level, pos.relative(dir), dir);
+                trySubscribe(hotTank, level, pos.relative(dir), dir);
                 tryProvide(coldTank, level, pos.relative(dir), dir);
             }
         }

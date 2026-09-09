@@ -201,7 +201,7 @@ public class PWRControllerBlockEntity extends BaseMachineBlockEntity
                 for (Direction dir : Direction.values()) {
                     BlockPos neighbor = portPos.relative(dir);
                     if (coolantHotTank.getFill() > 0) tryProvide(coolantHotTank, level, neighbor, dir);
-                    trySubscribe(coolantTank.getTankType(), level, neighbor, dir);
+                    trySubscribe(coolantTank, level, neighbor, dir);
                 }
             }
         }

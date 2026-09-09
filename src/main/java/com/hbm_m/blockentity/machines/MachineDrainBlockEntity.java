@@ -77,7 +77,7 @@ public class MachineDrainBlockEntity extends BaseMachineBlockEntity implements I
         if (level.getGameTime() % 20 == 0) {
             for (Direction dir : Direction.values()) {
                 if (dir == Direction.UP || dir == Direction.DOWN) continue;
-                trySubscribe(tank.getTankType(), level, pos.relative(dir), dir);
+                trySubscribe(tank, level, pos.relative(dir), dir);
             }
         }
 

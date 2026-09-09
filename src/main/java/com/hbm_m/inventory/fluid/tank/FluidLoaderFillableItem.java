@@ -58,6 +58,10 @@ public class FluidLoaderFillableItem implements FluidTank.LoadingHandler {
                 }
             }
 
+            // pryMods hands out stacks decoded from NBT, so a mutated mod has to be written back or
+            // the transfer only happens on the copy: draining duplicated the fluid, filling voided it.
+            if (ok) ArmorModificationHelper.applyMod(armorStack, mods[i]);
+
             any |= ok;
             if (tank.getFill() == (draining ? tank.getMaxFill() : 0)) break;
         }

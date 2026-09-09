@@ -61,9 +61,12 @@ public class MachineCompressorBlockEntity extends BaseMachineBlockEntity impleme
 
         be.chargeFromBatterySlot(SLOT_BATTERY);
 
+        ItemStack[] slots = be.inventorySlotArray();
+        if (be.tanks[0].setType(SLOT_FLUID_ID, slots)) be.applySlotsArray(slots);
+
         if (level.getGameTime() % 20 == 0) {
             for (Direction dir : Direction.values()) {
-                be.trySubscribe(be.tanks[0].getTankType(), level, pos.relative(dir), dir);
+                be.trySubscribe(be.tanks[0], level, pos.relative(dir), dir);
                 be.tryProvide(be.tanks[1], level, pos.relative(dir), dir);
             }
         }
@@ -93,14 +96,17 @@ public class MachineCompressorBlockEntity extends BaseMachineBlockEntity impleme
 
     private void setupOutputTank() {
         CompressorRecipe recipe = CompressorRecipe.getRecipe(getLevel(), tanks[0].getTankType(), tanks[0].getPressure());
+        if (tanks[1].getFill() > 0) return;
+
+        // Upstream setupTanks: without a recipe the compressor only raises the pressure of the same
+        // substance, so the output tank has to conform to the input type. An untyped tank swallows
+        // fillMb silently, which voided the drained input.
         if (recipe == null) {
-            if (tanks[1].getFill() <= 0) {
-                tanks[1].withPressure(tanks[0].getPressure() + 1);
-            }
+            tanks[1].withPressure(tanks[0].getPressure() + 1);
+            tanks[1].setTankType(tanks[0].getTankType());
         } else {
-            if (tanks[1].getFill() <= 0) {
-                tanks[1].withPressure(recipe.getOutputPressure());
-            }
+            tanks[1].withPressure(recipe.getOutputPressure());
+            tanks[1].setTankType(recipe.getOutputFluid());
         }
     }
 
@@ -160,6 +166,19 @@ public class MachineCompressorBlockEntity extends BaseMachineBlockEntity impleme
         progress = tag.getInt("progress");
         tanks[0].readFromNBT(tag, "tank0");
         tanks[1].readFromNBT(tag, "tank1");
+    }
+
+    private ItemStack[] inventorySlotArray() {
+        ItemStack[] arr = new ItemStack[SLOT_COUNT];
+        for (int i = 0; i < SLOT_COUNT; i++) arr[i] = inventory.getStackInSlot(i);
+        return arr;
+    }
+
+    private void applySlotsArray(ItemStack[] arr) {
+        for (int i = 0; i < SLOT_COUNT; i++) {
+            inventory.setStackInSlot(i, arr[i] == null ? ItemStack.EMPTY : arr[i]);
+        }
+        setChanged();
     }
 
     public int getProgressScaled(int scale) {

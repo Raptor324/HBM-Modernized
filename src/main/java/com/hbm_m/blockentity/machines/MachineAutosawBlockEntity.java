@@ -67,7 +67,7 @@ public class MachineAutosawBlockEntity extends com.hbm_m.blockentity.BaseHbmBloc
                 be.isOn = false;
             }
             for (Direction dir : Direction.values()) {
-                if (dir != Direction.UP) be.trySubscribe(be.tank.getTankType(), level, pos.relative(dir), dir);
+                if (dir != Direction.UP) be.trySubscribe(be.tank, level, pos.relative(dir), dir);
             }
         }
 

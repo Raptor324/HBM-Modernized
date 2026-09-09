@@ -1686,6 +1686,9 @@ PMTU-кеш при этом пуст (`ip route get` не содержит за�
   перенесён с кирки, у сплавной лопаты он был заявлен и недоступен.
 - `ArmorUtil` — `checkForHaz2/Digamma/Digamma2/Faraday` всегда `false`, эти типы защиты не работают
   нигде (T3, по javadoc — намеренно частичный порт).
+- Скорости приёма/выдачи батарей плоские (100 Г/т) вместо `maxPower/200` и `maxPower/600`
+  оригинала — тултип показывает формулу оригинала, батарея её не применяет (AY8).
+- `FluidPumpBlockEntity` не зовёт `setChanged()` после сетевых переносов (AX9).
 
 ### Приоритет 3 — производительность и живучесть на сервере
 
@@ -2811,3 +2814,200 @@ else { irradiateFromFlux(pos, 0); }
 Это **осознанное отклонение, а не ошибка**: физически радиация вдоль луча правдоподобнее, чем
 куча у самой колонны. Но распределение фона вокруг любого РБМК отличается от оригинала, поэтому
 пункт не «чинится» вслепую — решение по геймплею и проверка в мире. Оставлено как есть.
+
+## AX. Жидкостная подсистема: сверка с оригиналом
+
+Прошёл `api/fluids/**`, баки, загрузчики контейнеров и жидкостные машины (НПЗ, крекинг,
+фракционирование, компрессор, электролизёр, радиолиз, насосы, бойлеры, буровые) против 1.7.10.
+
+### AX1. Дюп жидкости на стыке с чужими модами — ИСПРАВЛЕНО
+
+`ForgeFluidHandlerAdapter.useUpFluid` имел ветки `//? if forge` и `//? if fabric` и **не имел
+neoforge-ветки** — на 1.21.1 метод был пустым. Все соседние методы того же класса
+(`getFluidAvailable`, `getDemand`, `transferFluid`) neoforge-ветку имеют, то есть это пропуск,
+а не решение.
+
+Адаптер создаётся `FluidDuctBlockEntity.tick` для любого соседа-не-MK2, который отдаёт
+`Capabilities.FluidHandler.BLOCK` — то есть для бака любого чужого мода рядом с трубой HBM.
+`FluidNet.transferFluid` заполняет приёмники, а потом зовёт `provider.useUpFluid(...)`, который
+ничего не делал: **источник не опустошался, жидкость размножалась каждый тик**. Контракт
+`useUpFluid` в оригинале — `FluidNetMK2:114-137` (`scapegoat.useUpFluid(type, p, toUse)`).
+
+Добавлена neoforge-ветка, зеркальная forge: `drain(SIMULATE)` → проверка вещества → `drain(EXECUTE)`.
+
+### AX2. Фрекинговая башня уничтожала налитую канистру — ИСПРАВЛЕНО
+
+`processContainerPair` сливал бак **до** того, как проверял, куда положить наполненный контейнер.
+`FluidHooks.insertFluidIntoItem` работает с `stack.copy()`, поэтому наполненная канистра существует
+только как `result.remainder()`; если выходной слот занят несовместимым предметом, ветки «положить»
+не было — и `remainder` терялся вместе с уже слитой жидкостью. Пустая канистра при этом не тратилась,
+так что цикл повторялся, пока бак на 128 000 мБ не опустеет.
+
+Порядок исправлен на «проверить размещение → слить → потратить входную канистру» (тот же приём, что
+в `FluidLoaderStandard:76-95`).
+
+### AX3. Паровой насос не сохранял бак воды — ИСПРАВЛЕНО
+
+`MachinePumpSteamBlockEntity.writeNbtData/readNbtData` не звали `super`, а именно `PumpBlockEntity`
+хранит бак воды на 100 000 мБ, `isOn` и `onGround`. Соседний `MachinePumpElectricBlockEntity` зовёт.
+Добавлены `super`-вызовы.
+
+### AX4. Машины с нетипизированным входным баком не подключались к трубе — ИСПРАВЛЕНО
+
+`trySubscribe(tank.getTankType(), ...)` при `Fluids.EMPTY` не находит узел: `canConnect` трубы
+сравнивает вещества, а узла с ключом EMPTY не существует. При этом сам приём жидкости
+нетипизированным баком разрешён (`IFluidStandardReceiverMK2.receiverTankMatches:28-30`), то есть
+машину можно было накормить только **вплотную стоящим** отправителем, но не через трубу.
+
+Бак без типа при старте — у 17 машин: фракционная колонна, каталитический реформер, гидроочистка,
+вакуумная перегонка, компрессор, радиолиз, коксовая печь, пиролизная печь, большая турбина,
+солидификатор, аннигилятор, молотилка, ротационная печь, факел, дымоход, автопила, PUREX.
+
+Добавлена перегрузка `IFluidReceiverMK2.trySubscribe(FluidTank, ...)`: если у бака нет типа и он
+пуст — тип берётся у самой трубы (`IFluidPipeMK2.getFluidType`) и проверяется через
+`tank.isFluidValid`. Для типизированного бака поведение прежнее. Все 48 вызовов переведены на неё.
+
+### AX5. Слот идентификатора жидкости ничего не делал у трёх машин — ИСПРАВЛЕНО
+
+`MachineCompressorBlockEntity`, `MachineElectrolyserBlockEntity`, `MachineRadiolysisBlockEntity`
+объявляли `SLOT_FLUID_ID`, принимали в него предмет и **никогда** не звали `FluidTank.setType`.
+В оригинале это `tanks[0].setType(0, slots)` / `setType(3, 4, slots)` / `setType(10, 11, slots)`.
+Вместе с AX4 это значило, что входной бак вообще нечем было типизировать.
+
+Вызовы добавлены по образцу `MachineCokerBlockEntity:72` (`inventorySlotArray`/`applySlotsArray`).
+Электролизёру вдобавок задан дефолтный тип входного бака `Fluids.WATER`, как в оригинале
+(`TileEntityElectrolyser:88`).
+
+### AX6. Компрессор без рецепта уничтожал 1000 мБ за цикл — ИСПРАВЛЕНО
+
+`process(recipe == null)` сливал 1000 мБ из `tanks[0]` и лил `tanks[1].fillMb(tanks[1].getTankType(),
+1000)`, а тип выходного бака никогда не задавался — `fillMb` с `Fluids.EMPTY` возвращает 0.
+`setupOutputTank` правил только давление. В оригинале (`TileEntityMachineCompressorBase:167-175`)
+`setupTanks` копирует и тип: без рецепта — тип входа, с рецептом — тип выхода рецепта. Сделано так же.
+
+### AX7. Заливка модификаций брони писала в копию — ИСПРАВЛЕНО
+
+`FluidLoaderFillableItem.fillOrEmptyArmor` мутировал массив из `pryMods` (стеки, декодированные из
+NBT) и не писал его обратно: слив дал бы дюп, залив — потерю. Сегодня недостижимо (на NeoForge
+`Capabilities.FluidHandler.ITEM` есть только у бочек, которые в броню не ставятся), но дефект тот же
+класса, что и Y1. Добавлен `applyMod` после успешной операции.
+
+### AX8. Проверено и чисто
+
+`FluidNet`/`FluidNetProvider`/`FluidNode` (включая сохранённую особенность оригинала
+`totalAvailable -= received[p]`), ядро `FluidTank`, `FluidLoaderStandard`, `FluidBarrelItem`,
+`MachineFluidTankBlockEntity`, узлы труб и вентилей, NBT всех 82 держателей баков (кроме AX3).
+
+### AX9. В очередь (нужна проверка в мире)
+
+- `UniversalMachinePartBlockEntity.collectControllerFluidTypes` и `FluidDuctBlock.canConnectTo` имеют
+  ветки forge/fabric без neoforge — но затронуты только контроллеры мультиблока, которые не
+  `IFluidUserMK2` и не цистерна; такой в сборке не найден.
+- `FluidPumpBlockEntity` не зовёт `setChanged()` после сетевых переносов (буфер 100 мБ).
+- Расхождения баланса: таблица фракций НПЗ, порог взрыва бойлера, отсутствующий `changeTankSize`,
+  горизонтальный скан бура.
+
+## AY. Энергетическая подсистема: сверка с оригиналом
+
+Прошёл `api/energy/**`, `UniNodespace`, кабели/трансформаторы/батареи/пилоны, генераторы и
+энергоприём машин.
+
+### AY1. Нижняя грань любой машины меняла 1 FE на 4 294 967 296 HE — ИСПРАВЛЕНО
+
+`BaseMachineBlockEntity.getEnergyStorage(side)` отдавал `LongEnergyWrapper` в режиме `BitMode.HIGH`
+для `Direction.DOWN` и `LOW` для остальных пяти сторон. В HIGH-режиме враппер работал со **старшими
+32 битами** long: `receiveEnergy(N)` списывал у источника N FE и записывал `N << 32` HE, `extract`
+симметрично уничтожал `N * 2^32` HE в обмен на N FE (и мимо лимита `maxExtract` машины, через
+`setEnergyStored`).
+
+Практически: любой FE-кабель под батареей (`machine_battery_schrabidium` 25 Г,
+`machine_battery_dineutronium` 1 Т, `machine_fensu` `Long.MAX_VALUE`) — это бесконечная энергия
+за один тик. Идея «упаковать long в две int-грани» задокументирована в `PackedEnergyCapabilityProvider`
+как фича, но обмен между модами с двумя разными курсами на разных гранях одного блока защитить
+нечем: в оригинале никакого масштабирования нет, `IEnergyReceiverMK2.transferPower` — это просто
+`setPower(power + getPower())`.
+
+Режим HIGH удалён целиком (и на Forge-ветке тоже, `PackedEnergyCapabilityProvider` теперь отдаёт
+один и тот же враппер на все стороны). Заодно `getEnergyStored`/`getMaxEnergyStored` больше не
+режут значение по младшим битам, а насыщаются на `Integer.MAX_VALUE` — до этого FEnSU показывал
+чужим модам `-1`, а любая машина выше 2^31 HE — отрицательный заряд.
+
+### AY2. Силовую броню нельзя было зарядить на NeoForge — ИСПРАВЛЕНО
+
+Единственная регистрация энергокапабилити брони — `ModArmorFSBPowered.initCapabilities` — лежит в
+`//? if forge`. NeoForge-замена `ModCapabilities.registerBatteryItemCaps` перебирает `ModItems.ITEMS`
+и делает `continue` на всём, что не `ModBatteryItem`, а броня (`T51Armor`, `AJRArmor`, `AJROArmor`,
+`DNTArmor`, `BismuthArmor` → `ModPowerArmorItem` → `ModArmorFSBPowered`) им не является.
+
+Следствие: зарядный слот дровяной печи явно пускает силовую броню
+(`MachineWoodBurnerMenu:71`), но `chargeItemInSlot` получал `null` на обеих капабилити и выходил —
+броня лежала в слоте вечно. `isEnergyReceiverItem` тоже возвращал false, поэтому батарейные блоки
+броню не принимали вовсе. Единственным способом зарядки оставался ПКМ по `HevBatteryBlock`.
+Ветка `ItemEnergyStorage.isPoweredArmor()`, написанная ровно под этот случай, была недостижима.
+
+Регистрация брони добавлена в `registerBatteryItemCaps` (провайдер, приёмник и FE-обёртка).
+
+### AY3. Проводники не уничтожали свой узел при сносе — ИСПРАВЛЕНО
+
+`PylonBaseBlockEntity` (все пилоны и оба коннектора), `RedCableGaugeBlockEntity` и
+`RedCablePaintableBlockEntity` создают узел в тике и **не удаляли его никогда**. `WireBlockEntity`
+и `SwitchBlockEntity` делают это в `setRemoved()`, то есть это пропуск. В оригинале узел рвётся в
+`TileEntityCableBaseNT.invalidate()`, общем предке всех трёх.
+
+`UniNodespace.updateNodespace` пересчитывает узел только при `!hasValidNet() || recentlyChanged`, а
+сборщик убирает лишь `expired`-ссылки, причём `expired` ставит только `popNode`. Поэтому сеть
+оставалась склеенной через снесённый блок, а поставленный на то же место проводник молча наследовал
+призрачный узел.
+
+Добавлен `setRemoved()` с `Nodespace.destroyNode` во все три (он же срабатывает при выгрузке чанка).
+Отдельно `RedConnectorBlock` не имел `onRemove` — у пилонов он есть (`RedPylonCoreBlock:117`) и зовёт
+`disconnectAll()`, чтобы порвать связи на **обоих** концах провода; коннектору такой же добавлен.
+
+### AY4. FEnSU дюпился при сносе — ИСПРАВЛЕНО
+
+`build.neoforge.gradle.kts` удаляет лут-таблицы батарей (на 1.21.1 состояние переносит код через
+`playerWillDestroy`), но фильтрует по `name.startsWith("machine_battery")`. `machine_fensu`
+зарегистрирован тем же `registerBattery`, но называется иначе — его таблица уезжала в сборку и
+срабатывала **вдобавок** к `playerWillDestroy`. То есть FEnSU при сносе давал две штуки, вместе с
+запасённой энергией. Фильтр расширен.
+
+### AY5. Тултип заряда батареи всегда показывал ноль — ИСПРАВЛЕНО
+
+BE пишет `energy` (long, с маленькой буквы), а `MachineBatteryBlock.appendHoverText` читал `Energy` —
+ключ из старой `copy_nbt`-таблицы, которого в NBT нет. `MachineBatteryBlockItem` читал `Energy`, а
+в запасном варианте `getInt("energy")` — то есть обрезал long до 32 бит. Оба читателя переведены на
+`energy` как long с сохранением `Energy` для старых сохранений.
+
+### AY6. `setupFluidCapability()` не вызывался на NeoForge — закрыто (латентная дыра)
+
+Единственный вызов стоял в `onLoad()`, а `onLoad` целиком лежит в `//? if forge` (на NeoForge у
+`BlockEntity` нет `getCapability`/`invalidateCaps`, и весь блок был закомментирован вместе с
+безобидным `onLoad`). То есть `fluidHandlerNeo` всегда оставался `null`.
+
+**Проверил каждое из 23 переопределений** — на активной neoforge-ветке живых тел нет ни одного:
+у 19 машин весь метод внутри `//? if forge`, а у четырёх «живых» (`MachineAdvancedAssembler`,
+`MachineSteamCondenser`, `MachineGasCentrifuge`, база) тело либо пустое, либо целиком в
+forge-ветке. Значит **сегодня это ничего не ломает**: все эти обработчики (`CombinedChemPlantFluidHandler`,
+`UnifiedFluidHandler`, `RefineryFluidHandler`, …) — Forge-only, на `LazyOptional`, и на NeoForge
+жидкость и так идёт через `NeoForgeFluidHandlerMK2` из `BaseHbmBlockEntity`.
+
+Тем не менее вызов восстановлен (`//? if neoforge` вариант `onLoad`): иначе следующая машина,
+которая позовёт `setFluidHandler` из neoforge-кода, молча останется без капабилити — ровно та
+ловушка, что уже описана в комментарии `MachineCoreInjectorBlockEntity:59-62`.
+
+### AY7. Проверено и чисто
+
+`PowerNet` (точный порт `PowerNetMK2.update`, включая накопление `toTransfer` между приоритетами и
+цикл добора остатков), `UniNodespace`/`NodeNet`/`GenNode`, `trySubscribe`/`tryProvide`,
+`EnergySubscriptions` (константы отката 20/10/1 = `EnumTransferAction`), энергогейт
+`MachineModuleBase`, все генераторы (создание/уничтожение энергии не найдено), `ConverterBlockEntity`
+(1:1 HE↔FE с лимитом), узлы `WireBlockEntity`/`SwitchBlockEntity`.
+
+### AY8. В очередь (решение по балансу)
+
+Скорости батарей: порт держит плоские `TRANSFER_RATE = 100 Г/т` в обе стороны на всех тирах, тогда
+как оригинал даёт `maxPower/200` на приём и `maxPower/600` на выдачу
+(`TileEntityMachineBattery:259-268`). Тултип предмета показывает **оригинальные** числа
+(`MachineBatteryBlockItem:34-35`), а `MachineCapacitorBlockEntity:329-330` формулу оригинала уже
+реализует — то есть в коде она есть, батарея её просто не использует. Батарея сейчас не ограничивает
+сеть вовсе; правка меняет баланс, поэтому нужна отдельная команда.

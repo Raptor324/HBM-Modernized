@@ -316,19 +316,28 @@ public class MachineFrackingTowerBlockEntity extends BaseMachineBlockEntity impl
 
         int drainable = sourceTank.getFluidAmountMb();
         var result = com.hbm_m.platform.FluidHooks.insertFluidIntoItem(inputStack, sourceTank.getStoredFluid(), drainable, false);
-        if (result.amountInserted() > 0) {
-            sourceTank.drainMb(result.amountInserted());
-            ItemStack outStack = inventory.getStackInSlot(outputSlot);
-            if (outStack.isEmpty()) {
-                inventory.setStackInSlot(outputSlot, result.remainder());
-                inputStack.shrink(1);
-            } else if (com.hbm_m.platform.FluidHooks.areItemsStackable(outStack, result.remainder())
-                    && outStack.getCount() + result.remainder().getCount() <= outStack.getMaxStackSize()) {
-                outStack.grow(result.remainder().getCount());
-                inputStack.shrink(1);
-            }
-            setChanged();
+        if (result.amountInserted() <= 0) return;
+
+        // insertFluidIntoItem fills a copy, so the filled container exists only as the remainder:
+        // draining before knowing it can be placed voided both the fluid and the container.
+        ItemStack outStack = inventory.getStackInSlot(outputSlot);
+        boolean placed;
+        if (outStack.isEmpty()) {
+            inventory.setStackInSlot(outputSlot, result.remainder());
+            placed = true;
+        } else if (com.hbm_m.platform.FluidHooks.areItemsStackable(outStack, result.remainder())
+                && outStack.getCount() + result.remainder().getCount() <= outStack.getMaxStackSize()) {
+            outStack.grow(result.remainder().getCount());
+            placed = true;
+        } else {
+            placed = false;
         }
+
+        if (!placed) return;
+
+        sourceTank.drainMb(result.amountInserted());
+        inputStack.shrink(1);
+        setChanged();
     }
 
     /**

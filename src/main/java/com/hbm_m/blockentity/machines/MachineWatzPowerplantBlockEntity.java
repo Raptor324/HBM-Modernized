@@ -166,7 +166,7 @@ public class MachineWatzPowerplantBlockEntity extends BaseMachineBlockEntity
 
             if (coolantHotTank.getFill() > 0) tryProvide(coolantHotTank, level, pipePos, dir);
             if (wasteTank.getFill() > 0) tryProvide(wasteTank, level, pipePos, dir);
-            if (coolantTank.getFill() < coolantTank.getMaxFill()) trySubscribe(coolantTank.getTankType(), level, pipePos, dir);
+            if (coolantTank.getFill() < coolantTank.getMaxFill()) trySubscribe(coolantTank, level, pipePos, dir);
         }
 
         checkWasteOverflow(level);

@@ -117,7 +117,7 @@ public class MachineLargeTurbineBlockEntity extends BaseMachineBlockEntity imple
             if (tanks[1].getFill() > 0) {
                 tryProvide(tanks[1], level, neighborPos, dir);
             }
-            trySubscribe(tanks[0].getTankType(), level, neighborPos, dir);
+            trySubscribe(tanks[0], level, neighborPos, dir);
         }
 
         // 1:1 aus dem Original: der Energiepuffer verliert jeden Tick 5%, bevor neue Energie erzeugt wird.

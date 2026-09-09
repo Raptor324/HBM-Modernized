@@ -92,7 +92,7 @@ public class MachinePUREXBlockEntity extends BaseMachineBlockEntity implements I
         if (level.getGameTime() % 20 == 0) {
             for (Direction dir : Direction.values()) {
                 for (FluidTank tank : inputTanks) {
-                    trySubscribe(tank.getTankType(), level, pos.relative(dir), dir);
+                    trySubscribe(tank, level, pos.relative(dir), dir);
                 }
                 tryProvide(outputTank, level, pos.relative(dir), dir);
             }

@@ -83,7 +83,7 @@ public class MachineBoilerBlockEntity extends BaseMachineBlockEntity implements 
     private void serverTick(ServerLevel level, BlockPos pos) {
         if (level.getGameTime() % 20 == 0) {
             for (Direction dir : Direction.values()) {
-                trySubscribe(waterTank.getTankType(), level, pos.relative(dir), dir);
+                trySubscribe(waterTank, level, pos.relative(dir), dir);
                 tryProvide(steamTank, level, pos.relative(dir), dir);
             }
         }

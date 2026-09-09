@@ -178,6 +178,16 @@ public class ForgeFluidHandlerAdapter implements IFluidStandardTransceiverMK2 {
             tx.commit();
         }
         *///?}
+
+        //? if neoforge {
+        IFluidHandler handler = getNeoForgeHandler();
+        if (handler == null) return;
+        FluidStack simulated = handler.drain(clampInt(amount), IFluidHandler.FluidAction.SIMULATE);
+        if (simulated.isEmpty() || !VanillaFluidEquivalence.sameSubstance(simulated.getFluid(), fluid)) {
+            return;
+        }
+        handler.drain(Math.min(simulated.getAmount(), clampInt(amount)), IFluidHandler.FluidAction.EXECUTE);
+        //?}
     }
 
     @Override

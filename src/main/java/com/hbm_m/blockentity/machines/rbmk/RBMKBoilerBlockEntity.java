@@ -178,7 +178,7 @@ public class RBMKBoilerBlockEntity extends RBMKColumnBlockEntity
      */
     private void exchangeFluids(Level level) {
         BlockPos pos = getBlockPos();
-        trySubscribe(waterTank.getTankType(), level, pos.below(), Direction.DOWN);
+        trySubscribe(waterTank, level, pos.below(), Direction.DOWN);
 
         if (steamTank.getFill() <= 0) return;
         for (com.mojang.datafixers.util.Pair<BlockPos, Direction> target : getOutputPos(level)) {

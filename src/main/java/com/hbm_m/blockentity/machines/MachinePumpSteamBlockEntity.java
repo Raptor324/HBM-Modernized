@@ -24,7 +24,7 @@ public class MachinePumpSteamBlockEntity extends PumpBlockEntity {
     protected void serverTick(ServerLevel level, BlockPos pos) {
         for (Direction dir : Direction.Plane.HORIZONTAL) {
             BlockPos conPos = pos.relative(dir, 2);
-            trySubscribe(steam.getTankType(), level, conPos, dir);
+            trySubscribe(steam, level, conPos, dir);
             if (lps.getFill() > 0) {
                 tryProvide(lps, level, conPos, dir);
             }
@@ -53,12 +53,14 @@ public class MachinePumpSteamBlockEntity extends PumpBlockEntity {
 
     @Override
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         steam.writeToNBT(tag, "tank_steam");
         lps.writeToNBT(tag, "tank_lps");
     }
 
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         steam.readFromNBT(tag, "tank_steam");
         lps.readFromNBT(tag, "tank_lps");
     }

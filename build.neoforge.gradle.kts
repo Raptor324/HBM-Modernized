@@ -304,7 +304,9 @@ tasks.named<ProcessResources>("processResources") {
 		// поэтому таблицы просто исключаем из сборки.
 		listOf("loot_table", "loot_tables").forEach { dirName ->
 			File(File(dataDir, "hbm_m"), dirName).walkTopDown()
-				.filter { it.isFile && it.name.startsWith("machine_battery") }
+				// machine_fensu is a MachineBatteryBlock too - its name just does not start with
+				// machine_battery, so it kept its loot table and dropped a second copy of itself.
+				.filter { it.isFile && (it.name.startsWith("machine_battery") || it.name == "machine_fensu.json") }
 				.forEach { it.delete() }
 		}
 

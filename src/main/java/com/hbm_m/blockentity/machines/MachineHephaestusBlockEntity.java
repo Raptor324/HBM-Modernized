@@ -71,7 +71,7 @@ public class MachineHephaestusBlockEntity extends BaseMachineBlockEntity impleme
                 BlockEntity neighborBe = level.getBlockEntity(neighborPos);
                 if (!(neighborBe instanceof IFluidConnectorMK2)) continue;
                 if (!FluidTank.isFluidTypeExplicitlySet(inputTank.getTankType())) continue;
-                trySubscribe(inputTank.getTankType(), level, neighborPos, dir);
+                trySubscribe(inputTank, level, neighborPos, dir);
             }
         }
 
