@@ -69,7 +69,7 @@ public abstract class LevelChunkSilentRemovalMixin {
                         || otherBlock instanceof com.hbm_m.block.UniversalMachinePartBlock;
             }
             if (receiverOurs) {
-                com.hbm_m.main.MainRegistry.LOGGER.info(
+                com.hbm_m.main.MainRegistry.LOGGER.debug(
                     "[HBM] onRemove подавлен при переносе, блок {} @ {}", receiverBlock, pos.toShortString());
                 return; // Перенос блока движком сборки — разрушение подавляем.
             }

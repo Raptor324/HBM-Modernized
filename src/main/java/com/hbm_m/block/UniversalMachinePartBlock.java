@@ -425,7 +425,7 @@ public class UniversalMachinePartBlock extends BaseEntityBlock implements IDeton
             // Каскад destroyStructure + destroyBlock(controllerPos) здесь = дюп станка:
             // движок уже сохранил state+NBT и вернёт структуру на месте разборки.
             if (!pLevel.isClientSide() && com.hbm_m.multiblock.ContraptionAssemblyGuard.isMoving()) {
-                com.hbm_m.main.MainRegistry.LOGGER.info(
+                com.hbm_m.main.MainRegistry.LOGGER.debug(
                     "[HBM] каскад разрушения части подавлен (окно сборки контрапшена), часть {}",
                     pPos.toShortString());
                 super.onRemove(pState, pLevel, pPos, pNewState, pIsMoving);

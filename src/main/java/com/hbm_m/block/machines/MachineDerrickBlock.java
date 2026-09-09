@@ -132,6 +132,11 @@ public class MachineDerrickBlock extends BaseEntityBlock implements IMultiblockC
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
         if (!state.is(newState.getBlock()) && !level.isClientSide()) {
+            // The drill keeps a battery and upgrades: destroying the structure without dropping
+            // them deleted the contents.
+            if (level.getBlockEntity(pos) instanceof MachineDerrickBlockEntity drill) {
+                drill.dropInventoryContents();
+            }
             structureHelper.destroyStructure(level, pos, state.getValue(FACING));
         }
         super.onRemove(state, level, pos, newState, isMoving);

@@ -15,7 +15,6 @@ import com.hbm_m.multiblock.PartRole;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.Containers;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.MenuProvider;
@@ -38,9 +37,6 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraft.world.phys.shapes.Shapes;
-//? if forge {
-/*import net.minecraftforge.common.capabilities.ForgeCapabilities;
-*///?}
 import dev.architectury.registry.menu.MenuRegistry;
 
 /**
@@ -186,20 +182,15 @@ public class MachineWatzPowerplantBlock extends BaseEntityBlock implements IMult
 
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
-        if (state.getBlock() != newState.getBlock()) {
-            BlockEntity be = level.getBlockEntity(pos);
-            //? if forge {
-            /*if (be != null) be.getCapability(ForgeCapabilities.ITEM_HANDLER).ifPresent(h -> {
-                for (int i = 0; i < h.getSlots(); i++)
-                    Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), h.getStackInSlot(i));
-            });
-            *///?} elif neoforge {
-            var h = level.getCapability(net.neoforged.neoforge.capabilities.Capabilities.ItemHandler.BLOCK, pos, state, be, null);
-            if (h != null) {
-                for (int i = 0; i < h.getSlots(); i++)
-                    Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), h.getStackInSlot(i));
+        if (!state.is(newState.getBlock())) {
+            if (level.getBlockEntity(pos) instanceof MachineWatzPowerplantBlockEntity watz) {
+                watz.dropInventoryContents();
             }
-            //?}
+            if (!level.isClientSide()) {
+                // onPlace builds a 5x3x5 structure that nothing ever took down: breaking the
+                // controller left 74 phantom parts standing.
+                structureHelper.destroyStructure(level, pos, state.getValue(FACING));
+            }
         }
         super.onRemove(state, level, pos, newState, isMoving);
     }

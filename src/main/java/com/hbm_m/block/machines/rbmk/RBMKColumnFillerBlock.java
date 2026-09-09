@@ -97,15 +97,46 @@ public class RBMKColumnFillerBlock extends Block {
     //?}
 
 
+    // The class contract is that breaking a filler breaks the column, but this only ever called
+    // super: the filler has no loot table, so mining one left a permanent hole in the reactor.
+    private static void breakColumn(Level level, BlockPos pos, boolean drop) {
+        if (level.isClientSide || com.hbm_m.multiblock.ContraptionAssemblyGuard.isMoving()) return;
+        // Not findBase: that one keeps scanning past the gap left by the column being removed and
+        // would reach a second reactor stacked underneath.
+        int max = com.hbm_m.handler.rbmk.RBMKDials.getColumnHeight(null) + 1;
+        BlockPos.MutableBlockPos cursor = pos.mutable();
+        for (int i = 0; i < max; i++) {
+            cursor.move(net.minecraft.core.Direction.DOWN);
+            Block below = level.getBlockState(cursor).getBlock();
+            if (below instanceof RBMKColumnBlock) {
+                level.destroyBlock(cursor.immutable(), drop);
+                return;
+            }
+            if (!(below instanceof RBMKColumnFillerBlock)) return;
+        }
+    }
+
     //? if < 1.21.1 {
     /*@Override
     public void playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
+        breakColumn(level, pos, !player.getAbilities().instabuild);
         super.playerWillDestroy(level, pos, state, player);
     }
     *///?} else {
     @Override
     public BlockState playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
+        breakColumn(level, pos, !player.getAbilities().instabuild);
         return super.playerWillDestroy(level, pos, state, player);
     }
     //?}
+
+    @Override
+    public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
+        // Explosions and other non-player removals take the column with them, without a drop -
+        // upstream BlockDummyable.breakBlock does the same.
+        if (!state.is(newState.getBlock())) {
+            breakColumn(level, pos, false);
+        }
+        super.onRemove(state, level, pos, newState, isMoving);
+    }
 }

@@ -146,7 +146,9 @@ public abstract class RBMKColumnBlock extends BaseEntityBlock {
             if (be instanceof RBMKColumnBlockEntity col) {
                 onColumnRemoved(col, level, pos);
             }
-            if (!level.isClientSide) {
+            // Only setPlacedBy ever creates fillers, and no assembly engine calls it - deleting
+            // them during a move left the moved column without collision for good.
+            if (!level.isClientSide && !com.hbm_m.multiblock.ContraptionAssemblyGuard.isMoving()) {
                 int height = RBMKDials.getColumnHeight(level);
                 for (int i = 1; i <= height; i++) {
                     BlockPos fillerPos = pos.above(i);

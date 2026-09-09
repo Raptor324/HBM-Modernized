@@ -91,7 +91,9 @@ public abstract class RedPylonCoreBlock extends BaseEntityBlock {
     @Override
     public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
         super.onPlace(state, level, pos, oldState, isMoving);
-        if (level.isClientSide || oldState.getBlock() == this) return;
+        // Contraption re-placement writes the core first: stamping dummies here would bury the
+        // blocks the engine still has to put back.
+        if (level.isClientSide || oldState.getBlock() == this || com.hbm_m.multiblock.ContraptionAssemblyGuard.isMoving()) return;
         fillDummies(level, pos);
     }
 
@@ -116,7 +118,9 @@ public abstract class RedPylonCoreBlock extends BaseEntityBlock {
 
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
-        if (!level.isClientSide && newState.getBlock() != this) {
+        // The dummies travel with the engine like any other block: wiping them here would
+        // take them out of the contraption.
+        if (!level.isClientSide && newState.getBlock() != this && !com.hbm_m.multiblock.ContraptionAssemblyGuard.isMoving()) {
             clearDummies(level, pos);
             if (level.getBlockEntity(pos) instanceof PylonBaseBlockEntity pylon) {
                 pylon.disconnectAll();

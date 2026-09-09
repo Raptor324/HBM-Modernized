@@ -47,7 +47,9 @@ public class BlastFurnaceExtensionBlock extends Block {
     @SuppressWarnings("deprecation")
     public void neighborChanged(BlockState state, Level level, BlockPos pos, Block neighborBlock, BlockPos neighborPos, boolean movedByPiston) {
         super.neighborChanged(state, level, pos, neighborBlock, neighborPos, movedByPiston);
-        if (!level.isClientSide() && !state.canSurvive(level, pos)) {
+        // Create puts the halves back one at a time: the first one must not break itself while
+        // the other is still on its way.
+        if (!level.isClientSide() && !com.hbm_m.multiblock.ContraptionAssemblyGuard.isMoving() && !state.canSurvive(level, pos)) {
             level.destroyBlock(pos, true);
         }
     }
