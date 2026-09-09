@@ -21,7 +21,7 @@ public class GUIMachineWasteDrum extends AbstractContainerScreen<MachineWasteDru
     public GUIMachineWasteDrum(MachineWasteDrumMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
         this.imageWidth = 176;
-        this.imageHeight = 185;
+        this.imageHeight = 189;
         this.inventoryLabelY = this.imageHeight - 96 + 2;
     }
 

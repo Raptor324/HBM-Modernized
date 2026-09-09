@@ -37,7 +37,8 @@ public class BlastFurnaceExtensionBlock extends Block {
     @SuppressWarnings("deprecation")
     public BlockState updateShape(BlockState state, Direction direction, BlockState neighborState,
                                   LevelAccessor level, BlockPos pos, BlockPos neighborPos) {
-        if (direction == Direction.DOWN && !state.canSurvive(level, pos)) {
+        if (direction == Direction.DOWN && !com.hbm_m.multiblock.ContraptionAssemblyGuard.isMoving()
+                && !state.canSurvive(level, pos)) {
             return Blocks.AIR.defaultBlockState();
         }
         return super.updateShape(state, direction, neighborState, level, pos, neighborPos);

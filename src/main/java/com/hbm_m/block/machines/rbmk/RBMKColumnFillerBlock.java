@@ -103,7 +103,7 @@ public class RBMKColumnFillerBlock extends Block {
         if (level.isClientSide || com.hbm_m.multiblock.ContraptionAssemblyGuard.isMoving()) return;
         // Not findBase: that one keeps scanning past the gap left by the column being removed and
         // would reach a second reactor stacked underneath.
-        int max = com.hbm_m.handler.rbmk.RBMKDials.getColumnHeight(null) + 1;
+        int max = com.hbm_m.handler.rbmk.RBMKDials.getColumnHeight(level) + 1;
         BlockPos.MutableBlockPos cursor = pos.mutable();
         for (int i = 0; i < max; i++) {
             cursor.move(net.minecraft.core.Direction.DOWN);
@@ -134,7 +134,7 @@ public class RBMKColumnFillerBlock extends Block {
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
         // Explosions and other non-player removals take the column with them, without a drop -
         // upstream BlockDummyable.breakBlock does the same.
-        if (!state.is(newState.getBlock())) {
+        if (!state.is(newState.getBlock()) && newState.isAir()) {
             breakColumn(level, pos, false);
         }
         super.onRemove(state, level, pos, newState, isMoving);

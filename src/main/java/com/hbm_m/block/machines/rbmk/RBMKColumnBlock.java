@@ -140,6 +140,29 @@ public abstract class RBMKColumnBlock extends BaseEntityBlock {
     // ─── Break ────────────────────────────────────────────────────────────────
 
     @Override
+    public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
+        super.onPlace(state, level, pos, oldState, isMoving);
+        // An assembly engine writes the column straight into the chunk, so setPlacedBy never
+        // runs and the fillers are missing. Fill the gaps once the move window has closed.
+        if (!level.isClientSide && !state.is(oldState.getBlock())) {
+            level.scheduleTick(pos, this, 2);
+        }
+    }
+
+    @Override
+    public void tick(BlockState state, net.minecraft.server.level.ServerLevel level, BlockPos pos,
+                        net.minecraft.util.RandomSource random) {
+        int height = RBMKDials.getColumnHeight(level);
+        BlockState filler = ModBlocks.RBMK_COLUMN_FILLER.get().defaultBlockState();
+        for (int i = 1; i <= height; i++) {
+            BlockPos above = pos.above(i);
+            if (level.getBlockState(above).canBeReplaced()) {
+                level.setBlock(above, filler, 3);
+            }
+        }
+    }
+
+    @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
         if (!state.is(newState.getBlock())) {
             BlockEntity be = level.getBlockEntity(pos);
@@ -162,7 +185,8 @@ public abstract class RBMKColumnBlock extends BaseEntityBlock {
     }
 
     protected void onColumnRemoved(RBMKColumnBlockEntity col, Level level, BlockPos pos) {
-        if (!level.isClientSide && dropLids && col.hasLid() && col.isLidRemovable()) {
+        if (!level.isClientSide && dropLids && col.hasLid() && col.isLidRemovable()
+                && !com.hbm_m.multiblock.ContraptionAssemblyGuard.isMoving()) {
             dropLid(col, level, pos);
         }
     }

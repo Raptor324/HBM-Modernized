@@ -438,7 +438,11 @@ public class UniversalMachinePartBlock extends BaseEntityBlock implements IDeton
                 // pre-move controller until relink runs, and that position is usually air there.
                 // Breaking such a part used to do nothing at all - one casing broke and the rest of
                 // the machine stayed as phantoms - so re-resolve the controller before giving up.
+                // Not during a cascade: destroyStructure clears the controller first, so every
+                // part would land here and pay a radius search for a controller that is gone.
                 if (!pLevel.isClientSide()
+                        && !MultiblockStructureHelper.isDestroying()
+                        && !MultiblockStructureHelper.isRepairing()
                         && (controllerPos == null
                             || !(pLevel.getBlockState(controllerPos).getBlock() instanceof IMultiblockController))) {
                     MultiblockStructureHelper.relinkOrphanedPartDeterministic(pLevel, pPos, partBe);

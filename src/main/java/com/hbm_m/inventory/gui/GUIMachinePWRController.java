@@ -38,8 +38,8 @@ public class GUIMachinePWRController extends GuiInfoScreen<PWRControllerMenu> {
     private static final int HEAT_BAR_HEIGHT = 14;
 
     private static final int ROD_MINUS_X = 116;
-    private static final int ROD_PLUS_X = 140;
-    private static final int ROD_BUTTON_Y = 64;
+    private static final int ROD_PLUS_X = 152;
+    private static final int ROD_BUTTON_Y = 59;
     private static final int ROD_BUTTON_SIZE = 18;
 
     private final PWRControllerBlockEntity pwr;
