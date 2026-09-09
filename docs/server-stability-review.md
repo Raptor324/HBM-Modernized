@@ -3023,3 +3023,204 @@ Done (3.282s)! For help, type "help"
 Ноль строк `hbm_m` с ERROR/Exception, ноль сбоев применения миксинов. Дополнительно:
 `:1.20.1-forge:compileJava` после круга переключения версий — чисто (12 warning'ов, все про
 unchecked-операции), `runGameTestServer` — `All 287 required tests passed`.
+
+## BA. Оружие, бомбы и ракеты: сверка с оригиналом
+
+### BA1. Детонаторы не подрывали девять из одиннадцати бомб — ИСПРАВЛЕНО
+
+Порт разделил единый контракт оригинала `IBomb` на два: заряды реализуют `IDetonatable`, бомбы —
+`IBomb`. Все четыре точки подрыва (`DetonatorItem`, `MultiDetonatorItem`, `RangeDetonatorItem`,
+`DetonateAllPacket`) проверяли **только** `IDetonatable`, который есть лишь у Fat Man, «Прототипа»
+и двух пусковых площадок. `LargeNukeBlock` (Gadget/Little Boy/Ivy Mike/Царь), `NukeCustomBlock`,
+`NukeFleijaBlock`, `NukeSoliniumBlock`, `NukeN2Block`, `NukeFstbmbBlock`, `BombMultiBlock` и
+`LandmineBlock` подрывались только редстоуном. Оригинал:
+`if(world.getBlock(x,y,z) instanceof IBomb) ((IBomb)…).explode(...)` (`ItemDetonator:75-78`).
+
+Добавлен `com.hbm_m.api.bomb.BombDetonation`: `isTriggerable` + `trigger` (сначала `IDetonatable`,
+затем `IBomb.explode(...).wasSuccessful()`). Все четыре точки переведены на него. Цепную детонацию
+зарядов **намеренно не расширял** до `IBomb` — в оригинале радиусной цепочки нет вовсе, и C4 не
+должен поджигать соседнюю ядерную бомбу.
+
+### BA2. Цепная детонация подрывала уже снесённые блоки — ИСПРАВЛЕНО (краш)
+
+Девять мест (`C4Block`, `DetMinerBlock`, `ExplosiveChargeBlock`, `SmokeBombBlock`,
+`WasteChargeBlock`, `AirBombProjectileEntity`, `AirNukeBombProjectileEntity`,
+`NuclearScenarioLaunchers`, `NuclearExplosionHelper`) планировали `onDetonate` через `TickTask`
+с задержкой по расстоянию и **захватывали устаревший `BlockState`**, не перепроверяя блок. Каждый
+заряд планирует каждого соседа, поэтому один и тот же заряд подрывался несколько раз, а для
+авиабомбы это краш: `AirBombBlock.onDetonate` читает `getBlockState(pos).getValue(FACING)` — на
+втором вызове там воздух, `IllegalArgumentException` в `MinecraftServer.pollTask`.
+
+Все девять переведены на `BombDetonation.triggerDetonatableLater(level, pos, expectedBlock, …)`,
+который перечитывает состояние и молча выходит, если блок сменился.
+
+### BA3. Детонирующий майнер дюпал добычу — ИСПРАВЛЕНО
+
+`DetMinerBlock.onDetonate` сносил радиус **до** того, как убирал сам майнер. Каждый
+`setBlockAndUpdate` шлёт neighbour-update на позицию майнера, тот всё ещё стоял и всё ещё видел
+редстоун-сигнал → `neighborChanged` заходил в `onDetonate` повторно и собирал дропы оставшихся
+блоков ещё раз. Порядок исправлен на оригинальный: сначала убрать майнер, потом сносить радиус.
+
+### BA4. Бомба возвращала свою начинку при подрыве — ИСПРАВЛЕНО
+
+`NukeBaseBlock.explode` (и то же в `LargeNukeBlock`, `NukeCustomBlock`, `NukeFatManBlock`,
+`NukePrototypeBlock`) звал `Containers.dropContents` **перед** `clearContent()`, то есть подрыв
+выкидывал ядро, взрывчатку и топливо обратно игроку. Оригинал (`NukeGadget:179-182`) очищает слоты
+и убирает блок, ничего не роняя. `NukeFleijaBlock`/`NukeFstbmbBlock` приходили к тому же через
+`setBlock(AIR)` без очистки — там теперь `clearContent()` перед сносом.
+
+### BA5. Самолёты авиаудара не исчезали никогда — ИСПРАВЛЕНО
+
+Ветка `else if (bombsDropped >= TOTAL_BOMBS)` не была защищена `!hasFinishedAttack`, поэтому после
+сброса боезапаса она срабатывала каждый тик и обнуляла `despawnTimer`; счётчик никогда не доходил
+до `DESPAWN_DELAY`. Самолёт летел по прямой вечно, каждые ~3 с играл звук бомбардировщика и
+сохранялся в регион-файл. Правка в трёх классах (`AirstrikeEntity`, `AirstrikeHeavyEntity`,
+`AirstrikeNukeEntity`).
+
+### BA6. Два самолёта создавались с чужим `EntityType` — ИСПРАВЛЕНО
+
+`AirstrikeHeavyEntity` и `AirstrikeAgentEntity` звали `super(ModEntities.AIRSTRIKE_ENTITY.get(), …)`.
+Типа `airstrikeheavy` не существовало вовсе, а зарегистрированный `AIRSTRIKE_AGENT_ENTITY` не
+использовался. После перезахода в мир тяжёлый бомбардировщик пересоздавался фабрикой обычного
+(4 авиабомбы → 10 случайных гранат), а распылитель Agent Orange начинал сбрасывать бомбы.
+
+Добавлен `AIRSTRIKE_HEAVY_ENTITY`, оба класса переведены на свои типы, `AirstrikeEntityRenderer`
+сделан generic по сущности (он использует только `getYRot`) и зарегистрирован для обоих — раньше
+у распылителя стоял `EmptyEntityRenderer`.
+
+### BA7. Кнопка «Start» балефайр-бомбы работала только на клиенте — ИСПРАВЛЕНО
+
+`GUINukeFstbmb` звал `be.startCountdown()` прямо из лямбды кнопки: на сервере `started` оставался
+`false`, `serverTick` выходил сразу, бомба не взрывалась никогда. Добавлен C2S
+`NukeFstbmbControlPacket` (по образцу `SoyuzLauncherControlPacket`) плюс синхронизация таймера на
+клиент раз в секунду — иначе в GUI не было бы и отсчёта.
+
+### BA8. «Союз» стартовал с пустым баком окислителя — ИСПРАВЛЕНО
+
+`canLaunch()` проверял только `hasFuel()` (керосин), а `liftOff()` безусловно списывал
+`tanks[1].drainMb(fuelReq)`. Метод `hasOxy()` существовал и питал только лампочку в GUI.
+В оригинале `canLaunch` требует `hasAllFuel() = hasJetFuel() && hasOxidizer()`.
+
+### BA9. Снаряды турелей рисовались чужой иконкой — ИСПРАВЛЕНО
+
+`TurretBulletEntity`/`TurretRocketEntity` ставили `ICON_ITEM_ID` в `create()`, но
+`ThrowableItemProjectile` заполняет синхронизированный стек из `getDefaultItem()` ещё в
+конструкторе — то есть до присвоения. Добавлен `setItem(...)`, как в `GrenadeIfProjectileEntity`.
+
+### BA10. Мелочи — ИСПРАВЛЕНО
+
+- `launchToEntity` не присваивал `tracking` перехватчику ABM — ракета игнорировала цель, выбранную
+  оператором радара, и через 40 тиков сама захватывала ближайшую (оригинал присваивает).
+
+- `DudFugasBlock`/`DudNukeBlock`: `appendHoverText` объявлен со старой сигнатурой `BlockGetter` без
+  `@Override` — на 1.21.1 не переопределял ничего, подсказки не выводились. Обе версии разведены
+  директивами, как у `GigaDetBlock`.
+- `TurretBaseBlockEntity.fritzFuelTicks` не сохранялся в NBT — огнемётная турель после перезагрузки
+  тратила лишнюю канистру.
+
+### BA11. Проверено, отклонения нет
+
+`LandMineBlockEntity.waitingForPlayer` нигде не выставляется в `true` — **но и в оригинале тоже**
+(`TileEntityLandmine` только читает поле; его выставляет генерация структур через NBT самой мины).
+Не дефект порта.
+
+### BA12. В очередь
+
+- Ржавая пусковая шахта нефункциональна: слот 0 объявлен только на выход (`mayPlace == false`),
+  а база читает ракету именно из него; механики `launch code`/`launch key` нет вовсе, оба предмета
+  не упоминаются в игровом коде. Это отсутствующая фича, а не точечная ошибка.
+- Топливная система пусковой площадки закомментирована (`hasFuel()` возвращает true по одной
+  энергии, списание топлива отключено), при этом шкала GUI считает по бакам и показывает «пусто».
+  Нужно решение: доделать или убрать шкалу.
+- `BuildMissilePacket` не проверяет доступ к станции сборки (общая проблема с `blockEntityAt`).
+- `AirBombProjectileEntity.dealExplosionDamage` — пустая заглушка (сущности в радиусе 28 не
+  получают урона); у ядерного аналога цикл урона есть.
+- `TomBlastEntity` потерял защиту `!flag` вокруг урона и грома.
+
+## BB. Генерация мира и фоллаут: сверка с оригиналом
+
+### BB1. Вся коренная руда в мире была первого тира — ИСПРАВЛЕНО
+
+`BedrockOreDensity.valueNoise` — одна октава, значение в `[-1, 1]`. Формула оригинала
+`|level * type| * 0.05` при этом не могла превысить **0.05**, поэтому `getTier` всегда возвращал 1,
+`getBoreFluid` — `EMPTY`, а все ветки выше 0.05 (тиры 2-4, вода/серная кислота/растворитель,
+1000/2000 мБ) были недостижимы. Последствия: буровая установка никогда не требовала жидкости —
+три её тира были мёртвым контентом; сканер плотности везде печатал «Very Poor»; шлам-машина
+накапливала по ≤0.05 за руду вместо ~1.0, то есть на один предмет уходило под сотню руд.
+
+В оригинале это `NoiseGeneratorPerlin(seed, 4)`, где `func_151601_a` складывает 4 октавы как
+`d2 += noise(x*d3, z*d3) / d3; d3 /= 2` — амплитуды 1/2/4/8 при падающей частоте, диапазон ≈ ±15.
+
+Добавлен такой же октавный сумматор. Проверил распределение на 78 548 точках сетки 40000×40000:
+средняя плотность 0.52, тир 1 — 74.4 %, тир 2 — 12.4 %, тир 3 — 11.5 %, тир 4 — 1.7 %, зажатие
+в потолок 2.0 — 9 точек из 78 548.
+
+### BB2. Одиннадцать элементов пулов метеоритного данжа указывали в никуда — ИСПРАВЛЕНО
+
+`meteor_10room.json` (8 из 8), `meteor_default.json` (2 записи весом 3 и 4) и `meteor_roomback.json`
+(1 из 1) ссылались на `hbm_m:meteor/room-*`, тогда как файлы лежат в
+`data/hbm_m/structures/meteor/room10/`. `StructureTemplateManager.getOrCreate` на отсутствующий id
+возвращает **пустой** шаблон без ошибки в логе, поэтому данж молча генерировался с пустотами на
+месте комнат. Пути исправлены на `hbm_m:meteor/room10/room-*`.
+
+### BB3. Урановые слитки не фонили — ИСПРАВЛЕНО
+
+`HazardRegistry` спрашивает теги `forge:ingots/uranium` и `forge:ingots/sodium`, но
+`build.neoforge.gradle.kts` переносит сгенерированные `data/forge/tags/**` в `data/c/tags/**`
+(на 1.21 конвенциональные теги живут в `c:`), а `forge:`-тегов на NeoForge не существует вовсе.
+`registerItems()` при этом не имеет ветки `case URANIUM`, а `frame()` пропускает `INGOT`, так что
+обычный урановый слиток не давал **никакой** радиации. Введена константа `CONVENTIONAL_NS`
+(`c` на 1.21+, `forge` ниже), оба тега берут её.
+
+### BB4. `biomes:false` у команды взрыва не действовал — ИСПРАВЛЕНО
+
+`EntityNukeExplosionMK5.applyCraterBiomes` записывался (из `NuclearExplosionAPI`) и сохранялся в
+NBT, но **не читался нигде**: биомы меняет `EntityFalloutRain`, который смотрел только на конфиг
+`enableCraterBiomes`. Флаг проброшен в `EntityFalloutRain` (с NBT и дефолтом `true` для старых
+сущностей) и учитывается во всех точках смены биома.
+
+### BB5. Правила фоллаута сравнивали `BlockState` по ссылке — ИСПРАВЛЕНО
+
+`FalloutEntry.eval` проверял `state != matchesBlockState`, а все 20 правил записаны через
+`X.defaultBlockState()`. Для блоков со свойствами это никогда не совпадает: у выросшего гриба все
+шесть граней `true` только в дефолтном состоянии, у травы — `snowy`, у снега — `layers`. То есть
+огромные грибы, заснеженная трава и снег толще одного слоя фоллаутом не затрагивались. Оригинал
+сравнивал по **блоку** (`matchesMeta = -1` — «любое состояние»); сделано так же.
+
+### BB6. Тултип сырой коренной руды всегда показывал нули — ИСПРАВЛЕНО
+
+`ItemBedrockOreBase.appendHbmTooltip` не смотрел на стек и печатал `typeLine(type, 0)` шесть раз,
+хотя буровая пишет в NBT реальные плотности по шести ключам (их же читает шлам-машина). Оригинал
+берёт значения из стека. Тултип теперь читает NBT, для стека без тега остаётся 0.
+
+### BB7. Диапазон высоты морской мины был пустым — ИСПРАВЛЕНО
+
+`navalmine.json`: `min_inclusive = {absolute: 3}`, `max_inclusive = {above_bottom: 64}`, что в
+Оверворлде разрешается в `y = 0`, то есть min > max. `UniformHeight.sample` в таком случае пишет
+в лог `Empty height range` и возвращает min. Заменено на `constant: 3` — поведение в мире то же,
+предупреждение уходит. Настоящий разброс глубины — вопрос геймплея, в очереди.
+
+### BB8. Проверено, отклонения нет
+
+Привязка биом-модификаторов и фич (58 placed features, все ссылки резолвятся), remap
+`forge:add_features → neoforge:add_features`, JSON биомов кратера, целостность 54 структур и их
+наборов, `StructureLootProcessor` (20 лут-таблиц), `ContaminationUtil.contaminate`,
+`HbmLivingProps`, `EntityEffectHandler`, NBT и тикеты `EntityFalloutRain`.
+Отдельно: перекос весов в `chooseRandomOutcome` (`r -= w; if (r <= 0)`) унаследован из оригинала
+дословно — не отклонение порта.
+
+### BB9. В очередь
+
+- `StructureFoundationProcessor.processBlock` объявлен с `LevelAccessor` — это перегрузка, а не
+  переопределение (`StructureProcessor` принимает `LevelReader`), плюс сам процессор не включён ни
+  в один `processor_list` (в `foundation_processor.json` только loot и connection_fix). Починка не
+  точечная: на 1.21 процессоры структур read-only, и заливку фундамента надо делать иначе.
+- `hbm_m:oilclaster_surrounded` — зарегистрированная фича, на которую нет ни одного
+  `configured_feature`, а её `place()` вообще ничего не ставит (тело закомментировано).
+- Подсказка о взрывоустойчивости блоков живёт только в `//? if forge` (`ItemTooltipEvent`) —
+  на NeoForge аналога нет, переводы осиротели.
+- `sand_oil_deposit` с радиусом до 48 блоков выходит за `blockStateWriteRadius(1)` шага FEATURES —
+  залежь молча обрезается; нужен пересмотр радиуса или переход на другой шаг.
+- Девять `structure_set` имеют `salt` больше `Integer.MAX_VALUE` (обрезается при декоде).
+- Мёртвые дубликаты `util/CraterGenerator`, `util/CraterBiomeApplier`, `util/BlockExplosionDefense`
+  (~816 строк) — живые копии лежат в `util/explosions/nuclear/`.

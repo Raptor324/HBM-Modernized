@@ -40,6 +40,9 @@ public class TurretBulletEntity extends ThrowableItemProjectile {
         bullet.setDeltaMovement(dx, dy, dz);
         bullet.damage = damage;
         bullet.entityData.set(ICON_ITEM_ID, net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(iconItem).toString());
+        // DATA_ITEM_STACK is filled from getDefaultItem() inside the super constructor, i.e. before
+        // ICON_ITEM_ID exists - without this every bullet rendered as the default turret ammo.
+        bullet.setItem(new net.minecraft.world.item.ItemStack(iconItem));
         bullet.setNoGravity(true);
         return bullet;
     }

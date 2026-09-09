@@ -511,6 +511,11 @@ public abstract class LaunchPadBaseBlockEntity extends BaseMachineBlockEntity
         }
         Entity missile = instantiateMissile((int) Math.floor(entity.getX()), (int) Math.floor(entity.getZ()));
         if (missile != null) {
+            // Upstream hands the interceptor its target here; without it the ABM ignored the target
+            // the radar operator picked and grabbed the nearest one on its own 40 ticks later.
+            if (missile instanceof com.hbm_m.entity.missile.MissileABMEntity abm) {
+                abm.tracking = entity;
+            }
             finalizeLaunch(missile);
             return true;
         }

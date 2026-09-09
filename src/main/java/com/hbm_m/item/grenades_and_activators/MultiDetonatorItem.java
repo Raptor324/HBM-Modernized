@@ -4,7 +4,6 @@ import com.hbm_m.item.ITooltipProvider;
 import net.minecraft.world.item.TooltipFlag;
 import java.util.List;
 
-import com.hbm_m.interfaces.IDetonatable;
 import com.hbm_m.sound.ModSounds;
 import com.hbm_m.platform.PlatformHooks;
 import net.minecraft.ChatFormatting;
@@ -259,11 +258,9 @@ public class MultiDetonatorItem extends Item implements ITooltipProvider {
             BlockState state = level.getBlockState(targetPos);
             Block block = state.getBlock();
 
-            if (block instanceof IDetonatable) {
-                IDetonatable detonatable = (IDetonatable) block;
-
+            if (com.hbm_m.api.bomb.BombDetonation.isTriggerable(state)) {
                 try {
-                    boolean success = detonatable.onDetonate(level, targetPos, state, player);
+                    boolean success = com.hbm_m.api.bomb.BombDetonation.trigger(level, targetPos, state, player);
 
                     if (success) {
                         player.displayClientMessage(

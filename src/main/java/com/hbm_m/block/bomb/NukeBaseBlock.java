@@ -115,14 +115,12 @@ public abstract class NukeBaseBlock extends Block implements EntityBlock, IBomb 
         if (be == null) return BombReturnCode.UNDEFINED;
         if (be instanceof NukeBaseBlockEntity nuke) {
             if (nuke.isReady()) {
-                Containers.dropContents(level, pos, nuke);
                 nuke.clearContent();
                 level.setBlock(pos, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
                 explode(level, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5);
                 return BombReturnCode.DETONATED;
             }
             if (nuke.isFilled()) {
-                Containers.dropContents(level, pos, nuke);
                 nuke.clearContent();
                 level.setBlock(pos, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
                 explodeNotFull(level, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5);

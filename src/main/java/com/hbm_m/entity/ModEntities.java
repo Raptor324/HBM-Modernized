@@ -86,6 +86,14 @@ public class ModEntities {
                             .sized(2.0F, 1.0F)
                             .build("airstrikenuke"));
 
+    // Both heavy and agent used to be constructed with AIRSTRIKE_ENTITY: after a reload the game
+    // rebuilt them through that type's factory, so a heavy bomber came back as a plain one.
+    public static final RegistrySupplier<EntityType<AirstrikeHeavyEntity>> AIRSTRIKE_HEAVY_ENTITY =
+            ENTITY_TYPES.register("airstrikeheavy",
+                    () -> EntityType.Builder.<AirstrikeHeavyEntity>of(AirstrikeHeavyEntity::new, MobCategory.MISC)
+                            .sized(2.0F, 1.0F)
+                            .build("airstrikeheavy"));
+
     public static final RegistrySupplier<EntityType<AirstrikeAgentEntity>> AIRSTRIKE_AGENT_ENTITY =
             ENTITY_TYPES.register("airstrikeagent",
                     () -> EntityType.Builder.<AirstrikeAgentEntity>of(AirstrikeAgentEntity::new, MobCategory.MISC)

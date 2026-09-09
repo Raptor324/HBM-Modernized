@@ -1,6 +1,5 @@
 package com.hbm_m.network;
 
-import com.hbm_m.interfaces.IDetonatable;
 import com.hbm_m.item.grenades_and_activators.MultiDetonatorItem;
 import com.hbm_m.item.grenades_and_activators.MultiDetonatorItem.PointData;
 import com.hbm_m.network.C2SPacket;
@@ -95,7 +94,7 @@ public class DetonateAllPacket implements C2SPacket {
             BlockState state = level.getBlockState(targetPos);
             Block      block = state.getBlock();
 
-            if (!(block instanceof IDetonatable detonatable)) {
+            if (!com.hbm_m.api.bomb.BombDetonation.isTriggerable(state)) {
                 player.displayClientMessage(
                         Component.literal(pointData.name + " Блок несовместим")
                                 .withStyle(ChatFormatting.RED), false);
@@ -103,7 +102,7 @@ public class DetonateAllPacket implements C2SPacket {
             }
 
             try {
-                boolean success = detonatable.onDetonate(level, targetPos, state, player);
+                boolean success = com.hbm_m.api.bomb.BombDetonation.trigger(level, targetPos, state, player);
                 if (success) {
                     player.displayClientMessage(
                             Component.literal(pointData.name + " Успешно активировано")

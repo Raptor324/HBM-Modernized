@@ -5,7 +5,6 @@ import java.util.List;
 
 import org.jetbrains.annotations.Nullable;
 
-import com.hbm_m.interfaces.IDetonatable;
 import com.hbm_m.sound.ModSounds;
 import com.hbm_m.platform.PlatformHooks;
 
@@ -180,9 +179,8 @@ public class DetonatorItem extends Item implements ITooltipProvider {
                 Block block = state.getBlock();
 
                 // Проверяем, поддерживает ли блок детонацию
-                if (block instanceof IDetonatable) {
-                    IDetonatable detonatable = (IDetonatable) block;
-                    boolean success = detonatable.onDetonate(level, targetPos, state, player);
+                if (com.hbm_m.api.bomb.BombDetonation.isTriggerable(state)) {
+                    boolean success = com.hbm_m.api.bomb.BombDetonation.trigger(level, targetPos, state, player);
 
                     if (success) {
                         player.displayClientMessage(

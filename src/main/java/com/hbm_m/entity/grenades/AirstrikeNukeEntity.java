@@ -195,7 +195,7 @@ public class AirstrikeNukeEntity extends Entity {
                     dropAirBomb(target);  // 🆕 НОВЫЙ метод для авиабомб
                     bombTimer = 0;
                 }
-            } else if (bombsDropped >= TOTAL_BOMBS) {
+            } else if (!hasFinishedAttack && bombsDropped >= TOTAL_BOMBS) {
                 // 🆕 Завершаем атаку после 3 бомб
                 hasFinishedAttack = true;
                 despawnTimer = 0;

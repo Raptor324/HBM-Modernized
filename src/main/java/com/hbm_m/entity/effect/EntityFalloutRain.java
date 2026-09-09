@@ -128,7 +128,7 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
                     gatherChunks();
                 }
 
-                if (ModClothConfig.get().enableCraterBiomes) {
+                if (craterBiomesAllowed()) {
                     biomeCache.put(ModBiomes.INNER_CRATER_KEY, getCachedHolder(ModBiomes.INNER_CRATER_KEY));
                     biomeCache.put(ModBiomes.CRATER_KEY, getCachedHolder(ModBiomes.CRATER_KEY));
                     biomeCache.put(ModBiomes.OUTER_CRATER_KEY, getCachedHolder(ModBiomes.OUTER_CRATER_KEY));
@@ -215,7 +215,7 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
         double ez = getZ();
         double scaleSq = (double) getScale() * getScale();
         double percentPerBlock = 100.0 / getScale();
-        boolean biomesEnabled = ModClothConfig.get().enableCraterBiomes;
+        boolean biomesEnabled = craterBiomesAllowed();
 
         // 1. Быстрая замена биомов по сетке 4x4 (кварты ваниллы), один проход по секциям чанка
         if (biomesEnabled) {
@@ -378,6 +378,14 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
                 }
             }
         }
+    }
+
+    /** Per-explosion switch: the /hbm_m explosion command's biomes:false was stored on the
+     * explosion entity and never read, so the crater biomes appeared regardless. */
+    public boolean applyCraterBiomes = true;
+
+    private boolean craterBiomesAllowed() {
+        return applyCraterBiomes && ModClothConfig.get().enableCraterBiomes;
     }
 
     public static ResourceKey<Biome> getBiomeChange(double dist, int scale, ResourceKey<Biome> original) {
@@ -578,6 +586,7 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
     @Override
     protected void readAdditionalSaveData(CompoundTag tag) {
         setScale(tag.getInt("Scale"));
+        applyCraterBiomes = !tag.contains("ApplyCraterBiomes") || tag.getBoolean("ApplyCraterBiomes");
         readChunksFromIntArray(chunksToProcess, tag.getIntArray("Chunks"));
         readChunksFromIntArray(outerChunksToProcess, tag.getIntArray("OuterChunks"));
     }
@@ -591,6 +600,7 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
     @Override
     protected void addAdditionalSaveData(CompoundTag tag) {
         tag.putInt("Scale", getScale());
+        tag.putBoolean("ApplyCraterBiomes", applyCraterBiomes);
         tag.putIntArray("Chunks", writeChunksToIntArray(chunksToProcess));
         tag.putIntArray("OuterChunks", writeChunksToIntArray(outerChunksToProcess));
     }

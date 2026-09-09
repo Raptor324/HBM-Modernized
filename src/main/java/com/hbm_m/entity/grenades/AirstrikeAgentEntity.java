@@ -73,7 +73,7 @@ public class AirstrikeAgentEntity extends Entity {
     }
 
     public AirstrikeAgentEntity(Level level, LivingEntity owner, BlockPos targetPos) {
-        super(ModEntities.AIRSTRIKE_ENTITY.get(), level); // ← Используй СУЩЕСТВУЮЩИЙ тип!
+        super(ModEntities.AIRSTRIKE_AGENT_ENTITY.get(), level);
         this.noPhysics = true;
 
         this.entityData.set(TARGET_POS, targetPos);

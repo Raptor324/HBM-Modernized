@@ -1035,8 +1035,9 @@ public class ClientSetup {
         event.registerEntityRenderer(ModEntities.AIRNUKEBOMB_PROJECTILE.get(), AirNukeBombProjectileEntityRenderer::new);
         event.registerEntityRenderer(ModEntities.AIRBOMB_PROJECTILE.get(), AirBombProjectileEntityRenderer::new);
         event.registerEntityRenderer(ModEntities.AIRSTRIKE_NUKE_ENTITY.get(), AirstrikeNukeEntityRenderer::new);
-        event.registerEntityRenderer(ModEntities.AIRSTRIKE_ENTITY.get(), AirstrikeEntityRenderer::new);
-        event.registerEntityRenderer(ModEntities.AIRSTRIKE_AGENT_ENTITY.get(), ctx -> new EmptyEntityRenderer<>(ctx));
+        event.registerEntityRenderer(ModEntities.AIRSTRIKE_ENTITY.get(), ctx -> new AirstrikeEntityRenderer<>(ctx));
+        event.registerEntityRenderer(ModEntities.AIRSTRIKE_HEAVY_ENTITY.get(), ctx -> new AirstrikeEntityRenderer<>(ctx));
+        event.registerEntityRenderer(ModEntities.AIRSTRIKE_AGENT_ENTITY.get(), ctx -> new AirstrikeEntityRenderer<>(ctx));
         event.registerEntityRenderer(ModEntities.NUKE_FALLOUT_RAIN.get(), RenderFallout::new);
         event.registerEntityRenderer(ModEntities.NUKE_MK3.get(), ctx -> new EmptyEntityRenderer<>(ctx));
         event.registerEntityRenderer(ModEntities.SOLINIUM_EXPLOSION.get(), ctx -> new EmptyEntityRenderer<>(ctx));

@@ -1,7 +1,6 @@
 package com.hbm_m.item.grenades_and_activators;
 
 import com.hbm_m.item.ITooltipProvider;
-import com.hbm_m.interfaces.IDetonatable;
 import com.hbm_m.sound.ModSounds;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
@@ -85,8 +84,8 @@ public class RangeDetonatorItem extends Item implements ITooltipProvider {
                 Block block = state.getBlock();
 
                 // Проверяем, поддерживает ли блок детонацию
-                if (block instanceof IDetonatable detonatable) {
-                    boolean success = detonatable.onDetonate(level, targetPos, state, player);
+                if (com.hbm_m.api.bomb.BombDetonation.isTriggerable(state)) {
+                    boolean success = com.hbm_m.api.bomb.BombDetonation.trigger(level, targetPos, state, player);
 
                     if (success) {
                         player.displayClientMessage(

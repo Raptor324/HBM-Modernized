@@ -726,12 +726,14 @@ public class TurretBaseBlockEntity extends BaseMachineBlockEntity {
         tag.putInt("richard_reload_cooldown", richardReloadCooldown);
         tag.putFloat("himars_crane_progress", himarsCraneProgress);
         tag.putInt("fire_mode", fireMode);
+        tag.putInt("fritz_fuel_ticks", fritzFuelTicks);
     }
 
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.readNbtData(tag, registries);
         cooldown = tag.getInt("cooldown");
+        fritzFuelTicks = tag.getInt("fritz_fuel_ticks");
         yaw = tag.getFloat("yaw");
         prevYaw = tag.getFloat("prev_yaw");
         pitch = tag.getFloat("pitch");

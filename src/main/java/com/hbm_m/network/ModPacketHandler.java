@@ -79,6 +79,7 @@ public class ModPacketHandler {
     public static final ResourceLocation RBMK_BOILER_CONTROL         = id("rbmk_boiler_control");
     public static final ResourceLocation RBMK_CRANE_CONTROL          = id("rbmk_crane_control");
     public static final ResourceLocation SOYUZ_LAUNCHER_CONTROL      = id("soyuz_launcher_control");
+    public static final ResourceLocation NUKE_FSTBMB_CONTROL         = id("nuke_fstbmb_control");
     public static final ResourceLocation SOLDERING_STATION_CONTROL   = id("soldering_station_control");
     public static final ResourceLocation ORPHANED_PHANTOMS     = id("orphaned_phantoms");
     public static final ResourceLocation SPAWN_PARTICLE        = id("spawn_particle");
@@ -284,6 +285,10 @@ public class ModPacketHandler {
         registerC2S(SOYUZ_LAUNCHER_CONTROL,
                 SoyuzLauncherControlPacket::decode,
                 SoyuzLauncherControlPacket::handle);
+
+        registerC2S(NUKE_FSTBMB_CONTROL,
+                NukeFstbmbControlPacket::decode,
+                NukeFstbmbControlPacket::handle);
 
         registerC2S(SOLDERING_STATION_CONTROL,
                 SolderingStationControlPacket::decode,

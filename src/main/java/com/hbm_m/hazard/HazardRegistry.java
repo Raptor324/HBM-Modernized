@@ -47,18 +47,27 @@ public class HazardRegistry {
     public static final HazardTypeBase HYDROACTIVE = new HazardTypeHydroactive();
     public static final HazardTypeBase EXPLOSIVE = new HazardTypeExplosive();
 
+    // Conventional tags live in the "c" namespace on 1.21+; build.neoforge.gradle.kts moves the
+    // generated forge: tag files there, so a runtime lookup on "forge" matched nothing.
+    public static final String CONVENTIONAL_NS =
+            //? if >= 1.21.1 {
+            "c";
+            //?} else {
+            /*"forge";
+            *///?}
+
     public static final TagKey<Item> URANIUM_INGOTS = TagKey.create(Registries.ITEM,
             //? if fabric && < 1.21.1 {
-            /*new ResourceLocation("forge", "ingots/uranium"));
+            /*new ResourceLocation(CONVENTIONAL_NS, "ingots/uranium"));
             *///?} else {
-                        ResourceLocation.fromNamespaceAndPath("forge", "ingots/uranium"));
+                        ResourceLocation.fromNamespaceAndPath(CONVENTIONAL_NS, "ingots/uranium"));
             //?}
 
     public static final TagKey<Item> ALKALI_METALS = TagKey.create(Registries.ITEM,
             //? if fabric && < 1.21.1 {
-            /*new ResourceLocation("forge", "ingots/sodium"));
+            /*new ResourceLocation(CONVENTIONAL_NS, "ingots/sodium"));
             *///?} else {
-                        ResourceLocation.fromNamespaceAndPath("forge", "ingots/sodium"));
+                        ResourceLocation.fromNamespaceAndPath(CONVENTIONAL_NS, "ingots/sodium"));
             //?}
 
     public static void registerItems() {

@@ -65,7 +65,7 @@ public class AirstrikeHeavyEntity extends Entity {
     }
 
     public AirstrikeHeavyEntity(Level level, LivingEntity owner, BlockPos targetPos) {
-        super(ModEntities.AIRSTRIKE_ENTITY.get(), level);
+        super(ModEntities.AIRSTRIKE_HEAVY_ENTITY.get(), level);
         this.noPhysics = true;
 
         this.entityData.set(TARGET_POS, targetPos);
@@ -195,7 +195,7 @@ public class AirstrikeHeavyEntity extends Entity {
                     dropAirBomb(target);  // 🆕 НОВЫЙ метод для авиабомб
                     bombTimer = 0;
                 }
-            } else if (bombsDropped >= TOTAL_BOMBS) {
+            } else if (!hasFinishedAttack && bombsDropped >= TOTAL_BOMBS) {
                 // 🆕 Завершаем атаку после 3 бомб
                 hasFinishedAttack = true;
                 despawnTimer = 0;

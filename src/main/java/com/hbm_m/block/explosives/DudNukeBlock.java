@@ -46,8 +46,12 @@ public class DudNukeBlock extends Block implements IDetonatable {
         this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH));
     }
 
+    // On 1.21.1 the hook takes Item.TooltipContext; the old BlockGetter signature overrode
+    // nothing and the tooltip never appeared (see GigaDetBlock for the correct pair).
+    //? if < 1.21.1 {
+    /*@Override
     public void appendHoverText(ItemStack stack,
-                                @Nullable BlockGetter level,
+                                @Nullable net.minecraft.world.level.BlockGetter level,
                                 List<Component> tooltip,
                                 TooltipFlag flag) {
         tooltip.add(Component.translatable("tooltip.hbm_m.dudnuke.line1")
@@ -59,6 +63,22 @@ public class DudNukeBlock extends Block implements IDetonatable {
         tooltip.add(Component.translatable("tooltip.hbm_m.dudnuke.line6")
                 .withStyle(ChatFormatting.GRAY));
     }
+    *///?} else {
+    @Override
+    public void appendHoverText(ItemStack stack,
+                                net.minecraft.world.item.Item.TooltipContext level,
+                                List<Component> tooltip,
+                                TooltipFlag flag) {
+        tooltip.add(Component.translatable("tooltip.hbm_m.dudnuke.line1")
+                .withStyle(ChatFormatting.DARK_RED));
+        tooltip.add(Component.translatable("tooltip.hbm_m.dudnuke.line4")
+                .withStyle(ChatFormatting.GRAY));
+        tooltip.add(Component.translatable("tooltip.hbm_m.dudnuke.line5")
+                .withStyle(ChatFormatting.GRAY));
+        tooltip.add(Component.translatable("tooltip.hbm_m.dudnuke.line6")
+                .withStyle(ChatFormatting.GRAY));
+    }
+    //?}
 
     public PushReaction getPistonPushReaction(BlockState state) {
         return PushReaction.BLOCK;

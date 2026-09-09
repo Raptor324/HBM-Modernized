@@ -444,10 +444,9 @@ public final class NuclearScenarioLaunchers {
                         BlockPos checkPos = pos.offset(ox, oy, oz);
                         BlockState checkState = serverLevel.getBlockState(checkPos);
                         Block block = checkState.getBlock();
-                        if (block instanceof IDetonatable detonatable) {
-                            int delay = (int) (dist * 1.5);
-                            serverLevel.getServer().tell(new TickTask(delay, () ->
-                                    detonatable.onDetonate(serverLevel, checkPos, checkState, player)));
+                        if (block instanceof IDetonatable) {
+                            com.hbm_m.api.bomb.BombDetonation.triggerDetonatableLater(
+                                    serverLevel, checkPos, block, player, (int) (dist * 1.5));
                         }
                     }
                 }

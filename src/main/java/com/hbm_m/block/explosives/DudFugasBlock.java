@@ -45,6 +45,10 @@ public class DudFugasBlock extends Block implements IDetonatable {
         super(props);
         this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH));
     }
+    // On 1.21.1 the hook takes Item.TooltipContext; the old BlockGetter signature overrode
+    // nothing and the tooltip never appeared (see GigaDetBlock for the correct pair).
+    //? if < 1.21.1 {
+    /*@Override
     public void appendHoverText(ItemStack stack,
                                 @Nullable net.minecraft.world.level.BlockGetter level,
                                 List<Component> tooltip,
@@ -54,6 +58,18 @@ public class DudFugasBlock extends Block implements IDetonatable {
         tooltip.add(Component.translatable("tooltip.hbm_m.dudfugas.line6")
                 .withStyle(ChatFormatting.GRAY));
     }
+    *///?} else {
+    @Override
+    public void appendHoverText(ItemStack stack,
+                                net.minecraft.world.item.Item.TooltipContext level,
+                                List<Component> tooltip,
+                                TooltipFlag flag) {
+        tooltip.add(Component.translatable("tooltip.hbm_m.dudfugas.line1")
+                .withStyle(ChatFormatting.DARK_RED));
+        tooltip.add(Component.translatable("tooltip.hbm_m.dudfugas.line6")
+                .withStyle(ChatFormatting.GRAY));
+    }
+    //?}
     // Не ломается поршнями
     public PushReaction getPistonPushReaction(BlockState state) {
         return PushReaction.BLOCK;
