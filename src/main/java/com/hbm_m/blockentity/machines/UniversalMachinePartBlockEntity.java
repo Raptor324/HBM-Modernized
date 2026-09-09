@@ -244,7 +244,8 @@ public class UniversalMachinePartBlockEntity extends BaseHbmBlockEntity implemen
                     if (!com.hbm_m.multiblock.ContraptionAssemblyGuard.isMoving()) {
                         com.hbm_m.main.MainRegistry.LOGGER.debug(
                                 "[HBM] Осиротевшая часть мультиблока удалена: {}", pos.toShortString());
-                        level.removeBlock(pos, false);
+                        com.hbm_m.multiblock.MultiblockStructureHelper.runOrphanCleanup(
+                                () -> level.removeBlock(pos, false));
                         return;
                     }
                 }

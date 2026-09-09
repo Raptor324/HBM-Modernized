@@ -48,8 +48,10 @@ public class RBMKColumnFillerBlock extends Block {
      * already gone and reaches a second reactor stacked underneath.
      */
     private static BlockPos findBase(BlockGetter level, BlockPos pos, boolean contiguousOnly) {
+        // The break path scans one deeper: it starts from a filler and has to reach the column
+        // through the whole stack, while the interaction paths start one segment lower.
         int maxHeight = com.hbm_m.handler.rbmk.RBMKDials.getColumnHeight(
-                level instanceof net.minecraft.world.level.Level lvl ? lvl : null) + 1;
+                level instanceof net.minecraft.world.level.Level lvl ? lvl : null) + (contiguousOnly ? 1 : 0);
         BlockPos.MutableBlockPos cursor = pos.mutable();
         for (int i = 0; i < maxHeight; i++) {
             cursor.move(net.minecraft.core.Direction.DOWN);

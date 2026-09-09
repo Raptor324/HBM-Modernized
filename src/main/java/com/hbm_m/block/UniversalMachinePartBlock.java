@@ -445,7 +445,8 @@ public class UniversalMachinePartBlock extends BaseEntityBlock implements IDeton
                         && !MultiblockStructureHelper.isRepairing()
                         && (controllerPos == null
                             || !(pLevel.getBlockState(controllerPos).getBlock() instanceof IMultiblockController))) {
-                    MultiblockStructureHelper.relinkOrphanedPartDeterministic(pLevel, pPos, partBe, false);
+                    MultiblockStructureHelper.relinkOrphanedPartDeterministic(pLevel, pPos, partBe,
+                            !MultiblockStructureHelper.isOrphanCleanup(), pState);
                     controllerPos = partBe.getControllerPos();
                 }
 

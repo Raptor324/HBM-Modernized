@@ -47,6 +47,13 @@ public class MultiblockStructureHelper {
     private static final ThreadLocal<Boolean> IS_REPAIRING = ThreadLocal.withInitial(() -> false);
 
     /**
+     * Set while a part deletes itself after failing to find its controller. The part's own
+     * onRemove then skips the radius search: that lookup has just failed sixty times, and paying
+     * a 49-block cube per phantom is what makes a whole abandoned footprint expensive.
+     */
+    private static final ThreadLocal<Boolean> IS_ORPHAN_CLEANUP = ThreadLocal.withInitial(() -> false);
+
+    /**
      * Радиус fallback-поиска контроллера для осиротевшей части (только когда у части
      * НЕТ {@code localOffsetFromController} — legacy NBT). Должен покрывать большие
      * структуры (двери 20x20): половина диагонали такой двери ~14 блоков, берём с запасом.
@@ -60,6 +67,21 @@ public class MultiblockStructureHelper {
     }
     public static boolean isRepairing() {
         return IS_REPAIRING.get();
+    }
+
+    /** @see #IS_ORPHAN_CLEANUP */
+    public static boolean isOrphanCleanup() {
+        return IS_ORPHAN_CLEANUP.get();
+    }
+
+    /** Runs the orphan's own removal with {@link #IS_ORPHAN_CLEANUP} raised. */
+    public static void runOrphanCleanup(Runnable removal) {
+        IS_ORPHAN_CLEANUP.set(true);
+        try {
+            removal.run();
+        } finally {
+            IS_ORPHAN_CLEANUP.set(false);
+        }
     }
 
     /**
@@ -905,12 +927,23 @@ public class MultiblockStructureHelper {
     }
 
     /**
-     * The radius fallback is a 49-block cube of lookups. Callers on a block-removal path pass
-     * false: there is nothing left to retry with once the block is gone, and a cascade would pay
-     * that scan once per part.
+     * The radius fallback is a 49-block cube of lookups. The orphan sweep passes false: that
+     * lookup has just failed sixty times for this part, and a whole abandoned footprint would pay
+     * the scan once per phantom.
      */
     public static void relinkOrphanedPartDeterministic(Level level, BlockPos partPos, IMultiblockPart part,
                                                        boolean allowRadiusFallback) {
+        relinkOrphanedPartDeterministic(level, partPos, part, allowRadiusFallback, null);
+    }
+
+    /**
+     * @param knownPartState the part's own state when the caller already holds it. onRemove runs
+     *        after the chunk section was overwritten, so reading the world there returns air and
+     *        the facing would silently default to NORTH - which resolves the controller correctly
+     *        for exactly one of the four rotations.
+     */
+    public static void relinkOrphanedPartDeterministic(Level level, BlockPos partPos, IMultiblockPart part,
+                                                       boolean allowRadiusFallback, BlockState knownPartState) {
         if (level.isClientSide) return;
         if (!(part instanceof BlockEntity be)) {
             if (allowRadiusFallback) relinkOrphanedPart(level, partPos);
@@ -930,7 +963,7 @@ public class MultiblockStructureHelper {
         //    при relink, но для только-что-загруженной части из contraption — это
         //    текущий FACING фантомного блока, который Create тоже поворачивал
         //    тем же Y-поворотом, что и позицию).
-        BlockState partState = level.getBlockState(partPosImmutable);
+        BlockState partState = knownPartState != null ? knownPartState : level.getBlockState(partPosImmutable);
         Direction facing = Direction.NORTH;
         if (partState.hasProperty(HorizontalDirectionalBlock.FACING)) {
             facing = partState.getValue(HorizontalDirectionalBlock.FACING);
