@@ -108,6 +108,10 @@ public final class MainRegistry {
         LifecycleEvent.SETUP.register(MainRegistry::commonSetup);
 
         TickEvent.SERVER_POST.register(server -> {
+            // The move window lives for exactly one tick: pop() from the mixins can be skipped
+            // when another mod cancels the engine method at HEAD.
+            com.hbm_m.multiblock.ContraptionAssemblyGuard.endServerTick();
+
             // 1. Защита от фейковых/недогруженных серверов (Flashback)
             if (server == null) {
                 return; 

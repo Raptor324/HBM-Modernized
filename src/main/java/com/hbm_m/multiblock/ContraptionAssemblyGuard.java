@@ -27,6 +27,8 @@ package com.hbm_m.multiblock;
  * <p>ThreadLocal, т.к. вся сборка выполняется синхронно на server thread.
  * Страховка от утечки глубины (исключение внутри чужого метода между push/pop):
  * окно автоматически истекает через 30 секунд реального времени.
+ * A leaked window is also force-closed at the end of the server tick (see #endServerTick):
+ * a foreign mixin can cancel the engine method at HEAD, and then our pop never runs.
  */
 public final class ContraptionAssemblyGuard {
 
@@ -53,6 +55,28 @@ public final class ContraptionAssemblyGuard {
                 "[HBM] contraption move window opened (thread {})", Thread.currentThread().getName());
         }
         DEPTH.set(d + 1);
+    }
+
+    /**
+     * Force the window shut at the end of a server tick.
+     *
+     * <p>The RETURN half of a push/pop pair is not reliable: another mod's mixin can cancel the
+     * engine method at HEAD (this modpack has four mods injecting into SubLevelAssemblyHelper), and
+     * then our pop is never reached. Measured in game: seven windows opened over a session, none
+     * closed - every window stayed open for the whole 30 s failsafe, and breaking or placing an HBM
+     * machine in that time did nothing (a part broke without its structure, a placed machine built
+     * no structure at all).
+     *
+     * <p>Every engine block move runs synchronously inside one server tick, so a window that
+     * outlives its tick is by definition a leak - closing it here bounds the damage to that tick.
+     */
+    public static void endServerTick() {
+        int d = DEPTH.get();
+        if (d > 0) {
+            DEPTH.set(0);
+            com.hbm_m.main.MainRegistry.LOGGER.debug(
+                "[HBM] contraption move window leaked (depth {}), forced shut at tick end", d);
+        }
     }
 
     /** Закрыть окно (вызывается из mixin'ов на RETURN методов движков сборки). */

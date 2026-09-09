@@ -469,7 +469,10 @@ public class UniversalMachinePartBlock extends BaseEntityBlock implements IDeton
             BlockPos controllerPos = partBe.getControllerPos();
             if (controllerPos != null) {
                 BlockState controllerState = level.getBlockState(controllerPos);
-                if (controllerState.getBlock() instanceof IMultiblockController) {
+                // A controller that refuses to collapse on part removal (a destroyed ZIRNOX ruin) must
+                // not be destroyed here either - onRemove honours the flag, this path ignored it.
+                if (controllerState.getBlock() instanceof IMultiblockController controller
+                        && controller.shouldDestroyOnPartRemoved()) {
                     boolean dropController = !player.getAbilities().instabuild;
                     level.destroyBlock(controllerPos, dropController);
                 }
@@ -496,7 +499,10 @@ public class UniversalMachinePartBlock extends BaseEntityBlock implements IDeton
             BlockPos controllerPos = partBe.getControllerPos();
             if (controllerPos != null) {
                 BlockState controllerState = level.getBlockState(controllerPos);
-                if (controllerState.getBlock() instanceof IMultiblockController) {
+                // A controller that refuses to collapse on part removal (a destroyed ZIRNOX ruin) must
+                // not be destroyed here either - onRemove honours the flag, this path ignored it.
+                if (controllerState.getBlock() instanceof IMultiblockController controller
+                        && controller.shouldDestroyOnPartRemoved()) {
                     boolean dropController = !player.getAbilities().instabuild;
                     level.destroyBlock(controllerPos, dropController);
                 }
