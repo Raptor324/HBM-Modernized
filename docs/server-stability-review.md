@@ -2127,10 +2127,12 @@ AB1) — хелпер, написанный ради пяти сломанных
 отладочные помощники и API ещё не портированных систем (`ConfettiUtil.pulverize/cremate`,
 `ContaminationUtil.neutronActivateInventory`, `SellafitSolidificationTracker.*`).
 
-**В очередь:** `RBMKDials.getReaSimRange` не читается нигде. Сам разброс потока ReaSim-канала
-портирован верно (8 потоков через 45°, 0.75 потока, случайный доворот кратно 9° — совпадает с
-`TileEntityRBMKRodReaSim.spreadFlux` дословно), так что дайл относится к какой-то другой части
-ReaSim, которую порт не покрывает. Нужна сверка, к какой именно.
+**Закрыто (сверка с оригиналом).** `RBMKDials.getReaSimRange` не читается нигде — но и в оригинале
+тоже: `NeutronHandler:41-42` присваивает `columnHeight = getColumnHeight+1` и `fluxRange =
+getFluxRange`, а `getReaSimRange` не вызывает никто, несмотря на javadoc «how far the flux of a
+ReaSim fuel rod reaches». Порт повторяет оригинал один в один (`NeutronNodeWorld:81-82`), сам
+разброс ReaSim-канала тоже дословный (8 потоков через 45°, 0.75 потока, доворот кратно 9°).
+Отклонения порта нет, дайл мёртв у обоих.
 
 ### AC3. Скан асимметрии платформенных веток
 
