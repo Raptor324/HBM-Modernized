@@ -129,8 +129,6 @@ public abstract class RedPylonCoreBlock extends BaseEntityBlock {
 
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
-        // The dummies travel with the engine like any other block: wiping them here would
-        // take them out of the contraption.
         if (!level.isClientSide && newState.getBlock() != this) {
             // The dummies travel with the engine like any other block, so wiping them inside a
             // move window would take them out of the contraption. The wire bookkeeping still has

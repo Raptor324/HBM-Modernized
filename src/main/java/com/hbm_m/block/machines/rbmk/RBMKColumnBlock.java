@@ -130,11 +130,7 @@ public abstract class RBMKColumnBlock extends BaseEntityBlock {
     public void setPlacedBy(Level level, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack stack) {
         super.setPlacedBy(level, pos, state, placer, stack);
         if (level.isClientSide) return;
-        int height = RBMKDials.getColumnHeight(level);
-        BlockState filler = ModBlocks.RBMK_COLUMN_FILLER.get().defaultBlockState();
-        for (int i = 1; i <= height; i++) {
-            level.setBlock(pos.above(i), filler, 3);
-        }
+        fillFillers(level, pos);
     }
 
     // ─── Break ────────────────────────────────────────────────────────────────
@@ -144,14 +140,21 @@ public abstract class RBMKColumnBlock extends BaseEntityBlock {
         super.onPlace(state, level, pos, oldState, isMoving);
         // An assembly engine writes the column straight into the chunk, so setPlacedBy never
         // runs and the fillers are missing. Fill the gaps once the move window has closed.
-        if (!level.isClientSide && !state.is(oldState.getBlock())) {
+        if (!level.isClientSide && !state.is(oldState.getBlock())
+                && com.hbm_m.multiblock.ContraptionAssemblyGuard.isMoving()) {
             level.scheduleTick(pos, this, 2);
         }
     }
 
     @Override
     public void tick(BlockState state, net.minecraft.server.level.ServerLevel level, BlockPos pos,
-                        net.minecraft.util.RandomSource random) {
+                     net.minecraft.util.RandomSource random) {
+        // Deferred from onPlace: the engine has put its own blocks back by now.
+        fillFillers(level, pos);
+    }
+
+    /** Fills the column's collision segments, skipping anything already occupied. */
+    private static void fillFillers(Level level, BlockPos pos) {
         int height = RBMKDials.getColumnHeight(level);
         BlockState filler = ModBlocks.RBMK_COLUMN_FILLER.get().defaultBlockState();
         for (int i = 1; i <= height; i++) {

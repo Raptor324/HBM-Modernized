@@ -36,17 +36,26 @@ public class RBMKColumnFillerBlock extends Block {
         super(props);
     }
 
-    /** Scans downward for the real column block this filler belongs to. */
     private static BlockPos findBase(BlockGetter level, BlockPos pos) {
-        BlockPos cursor = pos;
-        // getColumnHeight() ignores its parameter (a static dial constant); null is safe here and
-        // avoids needing a real Level in contexts where only a BlockGetter is available.
-        int maxHeight = com.hbm_m.handler.rbmk.RBMKDials.getColumnHeight(null);
+        return findBase(level, pos, false);
+    }
+
+    /**
+     * Scans downward for the real column block this filler belongs to.
+     *
+     * <p>contiguousOnly stops at the first block that is neither a filler nor the column. The
+     * break path needs that: without it the scan walks through the gap left by a column that is
+     * already gone and reaches a second reactor stacked underneath.
+     */
+    private static BlockPos findBase(BlockGetter level, BlockPos pos, boolean contiguousOnly) {
+        int maxHeight = com.hbm_m.handler.rbmk.RBMKDials.getColumnHeight(
+                level instanceof net.minecraft.world.level.Level lvl ? lvl : null) + 1;
+        BlockPos.MutableBlockPos cursor = pos.mutable();
         for (int i = 0; i < maxHeight; i++) {
-            cursor = cursor.below();
-            if (level.getBlockState(cursor).getBlock() instanceof RBMKColumnBlock) {
-                return cursor;
-            }
+            cursor.move(net.minecraft.core.Direction.DOWN);
+            Block below = level.getBlockState(cursor).getBlock();
+            if (below instanceof RBMKColumnBlock) return cursor.immutable();
+            if (contiguousOnly && !(below instanceof RBMKColumnFillerBlock)) return null;
         }
         return null;
     }
@@ -101,18 +110,9 @@ public class RBMKColumnFillerBlock extends Block {
     // super: the filler has no loot table, so mining one left a permanent hole in the reactor.
     private static void breakColumn(Level level, BlockPos pos, boolean drop) {
         if (level.isClientSide || com.hbm_m.multiblock.ContraptionAssemblyGuard.isMoving()) return;
-        // Not findBase: that one keeps scanning past the gap left by the column being removed and
-        // would reach a second reactor stacked underneath.
-        int max = com.hbm_m.handler.rbmk.RBMKDials.getColumnHeight(level) + 1;
-        BlockPos.MutableBlockPos cursor = pos.mutable();
-        for (int i = 0; i < max; i++) {
-            cursor.move(net.minecraft.core.Direction.DOWN);
-            Block below = level.getBlockState(cursor).getBlock();
-            if (below instanceof RBMKColumnBlock) {
-                level.destroyBlock(cursor.immutable(), drop);
-                return;
-            }
-            if (!(below instanceof RBMKColumnFillerBlock)) return;
+        BlockPos base = findBase(level, pos, true);
+        if (base != null) {
+            level.destroyBlock(base, drop);
         }
     }
 

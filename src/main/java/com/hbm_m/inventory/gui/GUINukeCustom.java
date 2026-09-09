@@ -18,7 +18,7 @@ import net.minecraft.world.entity.player.Inventory;
 public class GUINukeCustom extends GuiInfoScreen<NukeCustomMenu> {
 
     private static final net.minecraft.resources.ResourceLocation TEXTURE =
-            net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("hbm_m", "textures/gui/weapon/gun_bomb_schematic.png");
+            net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(com.hbm_m.lib.RefStrings.MODID, "textures/gui/weapon/gun_bomb_schematic.png");
 
     private final NukeCustomBlockEntity be;
 

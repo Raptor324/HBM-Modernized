@@ -183,10 +183,8 @@ public class MachineWatzPowerplantBlock extends BaseEntityBlock implements IMult
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
         if (!state.is(newState.getBlock())) {
-            if (level.getBlockEntity(pos) instanceof MachineWatzPowerplantBlockEntity watz) {
-                watz.dropInventoryContents();
-            }
             if (!level.isClientSide()) {
+                com.hbm_m.block.MachineDrops.dropInventory(level, pos);
                 // onPlace builds a 5x3x5 structure that nothing ever took down: breaking the
                 // controller left 74 phantom parts standing.
                 structureHelper.destroyStructure(level, pos, state.getValue(FACING));

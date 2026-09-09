@@ -117,7 +117,7 @@ public abstract class BaseMachineBlockEntity extends BaseHbmBlockEntity implemen
      * Используй это вместо Forge-only доступа через ITEM_HANDLER capability.
      */
     public void dropInventoryContents() {
-        if (level == null) return;
+        if (level == null || level.isClientSide()) return;
         // Во время переноса блоков движком сборки (Create/Sable) содержимое уезжает
         // в NBT-снимок контрапшена; высыпание на пол здесь = дюп предметов.
         if (com.hbm_m.multiblock.ContraptionAssemblyGuard.isMoving()) {

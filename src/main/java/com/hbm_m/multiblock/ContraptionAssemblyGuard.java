@@ -25,20 +25,14 @@ package com.hbm_m.multiblock;
  * </ul>
  *
  * <p>ThreadLocal, т.к. вся сборка выполняется синхронно на server thread.
- * Страховка от утечки глубины (исключение внутри чужого метода между push/pop):
- * окно автоматически истекает через 30 секунд реального времени.
- * A leaked window is also force-closed at the end of the server tick (see #endServerTick):
+ * A leaked window is force-closed at the end of the server tick (see #endServerTick):
  * a foreign mixin can cancel the engine method at HEAD, and then our pop never runs.
  */
 public final class ContraptionAssemblyGuard {
 
     private ContraptionAssemblyGuard() {}
 
-    /** Страховочное время жизни окна: 30 с. Достаточно даже для гигантских сборок. */
-    private static final long WINDOW_TIMEOUT_NANOS = 30_000_000_000L;
-
     private static final ThreadLocal<Integer> DEPTH = ThreadLocal.withInitial(() -> 0);
-    private static final ThreadLocal<Long> DEADLINE_NANOS = ThreadLocal.withInitial(() -> 0L);
 
     /**
      * Открыть окно (вызывается из mixin'ов на HEAD методов движков сборки).
@@ -50,7 +44,6 @@ public final class ContraptionAssemblyGuard {
     public static void push() {
         int d = DEPTH.get();
         if (d == 0) {
-            DEADLINE_NANOS.set(System.nanoTime() + WINDOW_TIMEOUT_NANOS);
             com.hbm_m.main.MainRegistry.LOGGER.debug(
                 "[HBM] contraption move window opened (thread {})", Thread.currentThread().getName());
         }
@@ -91,17 +84,8 @@ public final class ContraptionAssemblyGuard {
 
     /**
      * @return true, пока идёт перенос блоков движком сборки/разборки.
-     * Просроченное окно (страховочный таймаут) считается закрытым.
      */
     public static boolean isMoving() {
-        int d = DEPTH.get();
-        if (d <= 0) return false;
-        if (System.nanoTime() > DEADLINE_NANOS.get()) {
-            // Утечка (исключение между push/pop) — сбрасываем, чтобы не
-            // заблокировать обычное разрушение машин навсегда.
-            DEPTH.set(0);
-            return false;
-        }
-        return true;
+        return DEPTH.get() > 0;
     }
 }

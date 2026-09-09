@@ -445,7 +445,7 @@ public class UniversalMachinePartBlock extends BaseEntityBlock implements IDeton
                         && !MultiblockStructureHelper.isRepairing()
                         && (controllerPos == null
                             || !(pLevel.getBlockState(controllerPos).getBlock() instanceof IMultiblockController))) {
-                    MultiblockStructureHelper.relinkOrphanedPartDeterministic(pLevel, pPos, partBe);
+                    MultiblockStructureHelper.relinkOrphanedPartDeterministic(pLevel, pPos, partBe, false);
                     controllerPos = partBe.getControllerPos();
                 }
 
@@ -466,22 +466,27 @@ public class UniversalMachinePartBlock extends BaseEntityBlock implements IDeton
         super.onRemove(pState, pLevel, pPos, pNewState, pIsMoving);
     }
 
+    /**
+     * Harvesting any casing takes the machine down with it, exactly like the original's
+     * BlockDummyable. Shared by both platform branches of playerWillDestroy.
+     */
+    private static void destroyControllerOnHarvest(Level level, BlockPos pos, Player player) {
+        if (level.isClientSide() || !(level.getBlockEntity(pos) instanceof IMultiblockPart partBe)) return;
+        BlockPos controllerPos = partBe.getControllerPos();
+        if (controllerPos == null) return;
+        BlockState controllerState = level.getBlockState(controllerPos);
+        // A controller that refuses to collapse on part removal (a destroyed ZIRNOX ruin) must
+        // not be destroyed here either - onRemove honours the flag, this path ignored it.
+        if (controllerState.getBlock() instanceof IMultiblockController controller
+                && controller.shouldDestroyOnPartRemoved()) {
+            level.destroyBlock(controllerPos, !player.getAbilities().instabuild);
+        }
+    }
+
     //? if < 1.21.1 {
     /*@Override
     public void playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
-        if (!level.isClientSide() && level.getBlockEntity(pos) instanceof IMultiblockPart partBe) {
-            BlockPos controllerPos = partBe.getControllerPos();
-            if (controllerPos != null) {
-                BlockState controllerState = level.getBlockState(controllerPos);
-                // A controller that refuses to collapse on part removal (a destroyed ZIRNOX ruin) must
-                // not be destroyed here either - onRemove honours the flag, this path ignored it.
-                if (controllerState.getBlock() instanceof IMultiblockController controller
-                        && controller.shouldDestroyOnPartRemoved()) {
-                    boolean dropController = !player.getAbilities().instabuild;
-                    level.destroyBlock(controllerPos, dropController);
-                }
-            }
-        }
+        destroyControllerOnHarvest(level, pos, player);
         super.playerWillDestroy(level, pos, state, player);
     }
 
@@ -499,19 +504,7 @@ public class UniversalMachinePartBlock extends BaseEntityBlock implements IDeton
     *///?} else {
     @Override
     public BlockState playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
-        if (!level.isClientSide() && level.getBlockEntity(pos) instanceof IMultiblockPart partBe) {
-            BlockPos controllerPos = partBe.getControllerPos();
-            if (controllerPos != null) {
-                BlockState controllerState = level.getBlockState(controllerPos);
-                // A controller that refuses to collapse on part removal (a destroyed ZIRNOX ruin) must
-                // not be destroyed here either - onRemove honours the flag, this path ignored it.
-                if (controllerState.getBlock() instanceof IMultiblockController controller
-                        && controller.shouldDestroyOnPartRemoved()) {
-                    boolean dropController = !player.getAbilities().instabuild;
-                    level.destroyBlock(controllerPos, dropController);
-                }
-            }
-        }
+        destroyControllerOnHarvest(level, pos, player);
         return super.playerWillDestroy(level, pos, state, player);
     }
 

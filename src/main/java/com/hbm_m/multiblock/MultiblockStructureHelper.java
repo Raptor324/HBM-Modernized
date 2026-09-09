@@ -901,16 +901,25 @@ public class MultiblockStructureHelper {
      * @param part сама часть (для чтения localOffsetFromController)
      */
     public static void relinkOrphanedPartDeterministic(Level level, BlockPos partPos, IMultiblockPart part) {
+        relinkOrphanedPartDeterministic(level, partPos, part, true);
+    }
+
+    /**
+     * The radius fallback is a 49-block cube of lookups. Callers on a block-removal path pass
+     * false: there is nothing left to retry with once the block is gone, and a cascade would pay
+     * that scan once per part.
+     */
+    public static void relinkOrphanedPartDeterministic(Level level, BlockPos partPos, IMultiblockPart part,
+                                                       boolean allowRadiusFallback) {
         if (level.isClientSide) return;
         if (!(part instanceof BlockEntity be)) {
-            // На всякий случай: если кто-то передал не-BE, fallback к радиус-поиску.
-            relinkOrphanedPart(level, partPos);
+            if (allowRadiusFallback) relinkOrphanedPart(level, partPos);
             return;
         }
         BlockPos localOffset = part.getLocalOffsetFromController();
         if (localOffset == null) {
             // Старый NBT (без localOffset) — fallback к радиус-поиску.
-            relinkOrphanedPart(level, partPos);
+            if (allowRadiusFallback) relinkOrphanedPart(level, partPos);
             return;
         }
 
@@ -935,12 +944,12 @@ public class MultiblockStructureHelper {
         BlockState ctrlState = level.getBlockState(expectedController);
         if (!(ctrlState.getBlock() instanceof IMultiblockController controller)) {
             // Контрапшен с pitch/roll (Aeronautics) — fallback к радиус-поиску.
-            relinkOrphanedPart(level, partPos);
+            if (allowRadiusFallback) relinkOrphanedPart(level, partPos);
             return;
         }
         MultiblockStructureHelper helper = controller.getStructureHelper();
         if (helper == null) {
-            relinkOrphanedPart(level, partPos);
+            if (allowRadiusFallback) relinkOrphanedPart(level, partPos);
             return;
         }
 
@@ -951,7 +960,7 @@ public class MultiblockStructureHelper {
         BlockPos backLocal = rotateBack(worldOffset, facing);
         BlockPos gridPos = backLocal.offset(helper.getControllerOffset());
         if (!helper.getPartOffsets().contains(gridPos)) {
-            relinkOrphanedPart(level, partPos);
+            if (allowRadiusFallback) relinkOrphanedPart(level, partPos);
             return;
         }
 
@@ -1617,74 +1626,54 @@ public class MultiblockStructureHelper {
         }
         IS_DESTROYING.set(true);
         try {
+            // Two things have to go: every part on a position this structure owns, and every part
+            // that names this controller but drifted off its expected position during a Create or
+            // Sable move. Both live inside the structure's own bounding box, so one walk does it.
+            java.util.Set<BlockPos> ownPositions = new java.util.HashSet<>();
+            int minX = 0, minY = 0, minZ = 0, maxX = 0, maxY = 0, maxZ = 0;
+            boolean first = true;
             for (BlockPos gridPos : structureMap.keySet()) {
                 BlockPos worldPos = getRotatedPos(controllerPos, gridPos, facing);
-                if (level.getBlockState(worldPos).getBlock() instanceof UniversalMachinePartBlock) {
-                    BlockEntity be = level.getBlockEntity(worldPos);
-                    if (be instanceof IMultiblockPart part) {
-                        // Footprints can overlap - the placement path above self-destructs a
-                        // controller on exactly that condition - so a part that belongs to another
-                        // controller must not be deleted along with ours, or that machine is orphaned.
-                        //
-                        // Only a LIVE foreign controller protects the part. A stale pointer must not:
-                        // after a Sable/Create move a part still names its pre-move controller until
-                        // relink runs, and skipping those left phantom casings behind when the
-                        // machine was broken before that happened.
-                        BlockPos owner = part.getControllerPos();
-                        if (owner != null && !owner.equals(controllerPos)
-                                && level.getBlockState(owner).getBlock() instanceof IMultiblockController) {
-                            continue;
-                        }
-
-                        PartRole role = part.getPartRole();
-                        if (role.canReceiveEnergy() || role.canSendEnergy()) {
-                            com.hbm_m.api.energy.EnergySubscriptions.unsubscribeAll(be);
-                        }
-                    }
-                    level.setBlock(worldPos, Blocks.AIR.defaultBlockState(), 3);
+                ownPositions.add(worldPos);
+                if (first) {
+                    minX = maxX = worldPos.getX();
+                    minY = maxY = worldPos.getY();
+                    minZ = maxZ = worldPos.getZ();
+                    first = false;
+                    continue;
                 }
+                minX = Math.min(minX, worldPos.getX()); maxX = Math.max(maxX, worldPos.getX());
+                minY = Math.min(minY, worldPos.getY()); maxY = Math.max(maxY, worldPos.getY());
+                minZ = Math.min(minZ, worldPos.getZ()); maxZ = Math.max(maxZ, worldPos.getZ());
             }
+            if (first) return;
 
-            sweepPartsPointingAt(level, controllerPos, facing);
+            for (BlockPos pos : BlockPos.betweenClosed(minX, minY, minZ, maxX, maxY, maxZ)) {
+                if (!(level.getBlockState(pos).getBlock() instanceof UniversalMachinePartBlock)) continue;
+                BlockEntity be = level.getBlockEntity(pos);
+                BlockPos owner = be instanceof IMultiblockPart part ? part.getControllerPos() : null;
+
+                if (!controllerPos.equals(owner)) {
+                    if (!ownPositions.contains(pos)) continue;
+                    // Footprints can overlap, so a part that still belongs to a LIVE foreign
+                    // controller stays. A stale pointer does not protect it: after a move a part
+                    // names its pre-move controller until relink runs, and skipping those left
+                    // phantom casings behind.
+                    if (owner != null
+                            && level.getBlockState(owner).getBlock() instanceof IMultiblockController) {
+                        continue;
+                    }
+                }
+
+                if (be instanceof IMultiblockPart part) {
+                    PartRole role = part.getPartRole();
+                    if (role.canReceiveEnergy() || role.canSendEnergy()) {
+                        com.hbm_m.api.energy.EnergySubscriptions.unsubscribeAll(be);
+                    }
+                }
+                level.setBlock(pos.immutable(), Blocks.AIR.defaultBlockState(), 3);
+            }
         } finally { IS_DESTROYING.set(false); }
-    }
-
-    /**
-     * Вторая волна: части, которые ссылаются на этот контроллер, но лежат не на ожидаемой позиции.
-     *
-     * The position pass above assumes the parts sit exactly where getRotatedPos puts them. After a
-     * Sable/Create move that is not guaranteed, and a part that ends up one block off used to stay
-     * behind as an invisible phantom. The box is the structure's own bounding box, so this is a few
-     * hundred lookups at most, and only parts naming this very controller are removed.
-     */
-    private void sweepPartsPointingAt(Level level, BlockPos controllerPos, Direction facing) {
-        BlockPos min = null;
-        BlockPos max = null;
-        for (BlockPos gridPos : structureMap.keySet()) {
-            BlockPos worldPos = getRotatedPos(controllerPos, gridPos, facing);
-            if (min == null) {
-                min = worldPos;
-                max = worldPos;
-                continue;
-            }
-            min = new BlockPos(Math.min(min.getX(), worldPos.getX()), Math.min(min.getY(), worldPos.getY()),
-                    Math.min(min.getZ(), worldPos.getZ()));
-            max = new BlockPos(Math.max(max.getX(), worldPos.getX()), Math.max(max.getY(), worldPos.getY()),
-                    Math.max(max.getZ(), worldPos.getZ()));
-        }
-        if (min == null) return;
-
-        for (BlockPos pos : BlockPos.betweenClosed(min, max)) {
-            if (!(level.getBlockState(pos).getBlock() instanceof UniversalMachinePartBlock)) continue;
-            if (!(level.getBlockEntity(pos) instanceof IMultiblockPart part)) continue;
-            if (!controllerPos.equals(part.getControllerPos())) continue;
-
-            PartRole role = part.getPartRole();
-            if (role.canReceiveEnergy() || role.canSendEnergy()) {
-                com.hbm_m.api.energy.EnergySubscriptions.unsubscribeAll((BlockEntity) part);
-            }
-            level.setBlock(pos.immutable(), Blocks.AIR.defaultBlockState(), 3);
-        }
     }
 
     public Map<BlockPos, Supplier<BlockState>> getStructureMap() {
