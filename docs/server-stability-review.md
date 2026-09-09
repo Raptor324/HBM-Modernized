@@ -3224,3 +3224,13 @@ NBT, но **не читался нигде**: биомы меняет `EntityFal
 - Девять `structure_set` имеют `salt` больше `Integer.MAX_VALUE` (обрезается при декоде).
 - Мёртвые дубликаты `util/CraterGenerator`, `util/CraterBiomeApplier`, `util/BlockExplosionDefense`
   (~816 строк) — живые копии лежат в `util/explosions/nuclear/`.
+
+## BC. Проверка на боевом сервере после правок BA/BB
+
+```
+Done (3.304s)! For help, type "help"
+```
+
+Ноль строк `hbm_m` с ERROR/Exception, ноль сбоев миксинов, ноль предупреждений `Empty height range`
+(правка BB7 подтверждена в рантайме). До этого: `:1.20.1-forge:compileJava` после круга переключения
+версий — чисто (12 warning'ов, deprecated/unchecked), `runGameTestServer` — 287/287.
