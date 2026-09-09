@@ -25,7 +25,7 @@ public class GUIMachineDifurnaceRtg extends AbstractContainerScreen<MachineDifur
         super(menu, playerInventory, title);
         this.difurnace = menu.getBlockEntity();
         this.imageWidth = 176;
-        this.imageHeight = 184;
+        this.imageHeight = 166;
         this.inventoryLabelY = this.imageHeight - 96 + 2;
     }
 

@@ -28,7 +28,7 @@ public class GUINukeFstbmb extends GuiInfoScreen<NukeFstbmbMenu> {
         super(menu, playerInventory, title);
         this.be = menu.be;
         this.imageWidth = 176;
-        this.imageHeight = 166;
+        this.imageHeight = 222;
     }
 
     @Override

@@ -49,11 +49,11 @@ public class NukeCustomMenu extends AbstractContainerMenu {
 
         for (int y = 0; y < 3; y++) {
             for (int x = 0; x < 9; x++) {
-                addSlot(new Slot(inventory, x + y * 9 + 9, 8 + x * 18, 86 + y * 18));
+                addSlot(new Slot(inventory, x + y * 9 + 9, 8 + x * 18, 140 + y * 18));
             }
         }
         for (int x = 0; x < 9; x++) {
-            addSlot(new Slot(inventory, x, 8 + x * 18, 144));
+            addSlot(new Slot(inventory, x, 8 + x * 18, 198));
         }
     }
 

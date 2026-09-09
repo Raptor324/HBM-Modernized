@@ -30,7 +30,7 @@ public class GUIMachineRefinery extends GuiInfoScreen<MachineRefineryMenu> {
         super(menu, playerInventory, title);
         this.refinery = menu.getBlockEntity();
         this.imageWidth = 210;
-        this.imageHeight = 231;
+        this.imageHeight = 232;
     }
 
     @Override

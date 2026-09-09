@@ -26,20 +26,20 @@ public class GUIMachinePWRController extends GuiInfoScreen<PWRControllerMenu> {
     private static final ResourceLocation TEXTURE =
             ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/reactors/gui_pwr.png");
 
-    private static final int TANK_COOLANT_X = 132;
-    private static final int TANK_HOT_X = 152;
-    private static final int TANK_Y = 8;
+    private static final int TANK_COOLANT_X = 8;
+    private static final int TANK_HOT_X = 26;
+    private static final int TANK_Y = 5;
     private static final int TANK_WIDTH = 16;
-    private static final int TANK_HEIGHT = 108;
+    private static final int TANK_HEIGHT = 52;
 
-    private static final int HEAT_BAR_X = 8;
-    private static final int HEAT_BAR_Y = 8;
-    private static final int HEAT_BAR_WIDTH = 108;
-    private static final int HEAT_BAR_HEIGHT = 12;
+    private static final int HEAT_BAR_X = 54;
+    private static final int HEAT_BAR_Y = 33;
+    private static final int HEAT_BAR_WIDTH = 34;
+    private static final int HEAT_BAR_HEIGHT = 14;
 
-    private static final int ROD_MINUS_X = 8;
-    private static final int ROD_PLUS_X = 96;
-    private static final int ROD_BUTTON_Y = 40;
+    private static final int ROD_MINUS_X = 116;
+    private static final int ROD_PLUS_X = 140;
+    private static final int ROD_BUTTON_Y = 64;
     private static final int ROD_BUTTON_SIZE = 18;
 
     private final PWRControllerBlockEntity pwr;
@@ -47,9 +47,9 @@ public class GUIMachinePWRController extends GuiInfoScreen<PWRControllerMenu> {
     public GUIMachinePWRController(PWRControllerMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
         this.pwr = menu.getBlockEntity();
-        this.imageWidth = 226;
-        this.imageHeight = 230;
-        this.inventoryLabelY = 137;
+        this.imageWidth = 176;
+        this.imageHeight = 188;
+        this.inventoryLabelY = this.imageHeight - 96 + 2;
     }
 
     @Override

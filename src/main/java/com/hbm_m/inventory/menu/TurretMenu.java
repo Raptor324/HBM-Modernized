@@ -186,14 +186,14 @@ public class TurretMenu extends AbstractContainerMenu implements ILongEnergyMenu
     private void addPlayerInventory(Inventory i) {
         for (int y = 0; y < 3; ++y) {
             for (int x = 0; x < 9; ++x) {
-                this.addSlot(new Slot(i, x + y * 9 + 9, 8 + x * 18, 122 + y * 18));
+                this.addSlot(new Slot(i, x + y * 9 + 9, 8 + x * 18, 140 + y * 18));
             }
         }
     }
 
     private void addPlayerHotbar(Inventory i) {
         for (int x = 0; x < 9; ++x) {
-            this.addSlot(new Slot(i, x, 8 + x * 18, 180));
+            this.addSlot(new Slot(i, x, 8 + x * 18, 198));
         }
     }
 }

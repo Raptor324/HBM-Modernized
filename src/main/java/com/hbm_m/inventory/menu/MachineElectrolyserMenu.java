@@ -46,11 +46,11 @@ public class MachineElectrolyserMenu extends AbstractContainerMenu {
 
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 9; col++) {
-                addSlot(new Slot(inv, col + row * 9 + 9, 8 + col * 18, 104 + row * 18));
+                addSlot(new Slot(inv, col + row * 9 + 9, 8 + col * 18, 165 + row * 18));
             }
         }
         for (int col = 0; col < 9; col++) {
-            addSlot(new Slot(inv, col, 8 + col * 18, 162));
+            addSlot(new Slot(inv, col, 8 + col * 18, 223));
         }
     }
 

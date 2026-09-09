@@ -48,7 +48,7 @@ public class GUITurret extends AbstractContainerScreen<TurretMenu> {
         super.init();
         this.titleLabelX = 8;
         this.titleLabelY = 6;
-        this.inventoryLabelY = this.imageHeight - 96;
+        this.inventoryLabelY = this.imageHeight - 96 + 2;
     }
 
     @Override
