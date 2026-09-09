@@ -3567,3 +3567,15 @@ neoforge-ветки (использовался forge-класс `SlotItemHandle
   без дропа** — `checkPlacement` есть только на пути предмета.
 - **`UniversalMachinePartBlock.getOcclusionShape` на NeoForge всегда `Shapes.empty()`**, ветка
   1.20.1 учитывает `isFullBlockInGrid` — недокументированное расхождение.
+
+## BJ. Проверка на боевом сервере после правок BG/BH/BI
+
+```
+Done (3.195s)! For help, type "help"
+```
+
+Ноль строк `hbm_m` с ERROR/Exception, ноль сбоев миксинов, ноль ошибок разбора рецептов (после
+удаления трёх дублей ассемблера и перегенерации датагена — 10 967 файлов).
+
+Перед этим: `:1.20.1-forge:compileJava` после круга переключения версий — чисто (12 warning'ов),
+`runGameTestServer` — `All 287 required tests passed`.
