@@ -826,7 +826,22 @@ public class MultiblockStructureHelper {
         BlockPos bestGridPos = null;
         int candidateCount = 0;
 
+        // Level.getBlockState loads the chunk it lands in, and this scan is 49^3 positions retried
+        // per orphaned part. Resolve the loaded columns once and skip the rest, the way
+        // attemptAutoRepair already guards its own writes.
+        int minChunkX = min.getX() >> 4;
+        int maxChunkX = max.getX() >> 4;
+        int minChunkZ = min.getZ() >> 4;
+        int maxChunkZ = max.getZ() >> 4;
+        boolean[][] loadedColumns = new boolean[maxChunkX - minChunkX + 1][maxChunkZ - minChunkZ + 1];
+        for (int cx = minChunkX; cx <= maxChunkX; cx++) {
+            for (int cz = minChunkZ; cz <= maxChunkZ; cz++) {
+                loadedColumns[cx - minChunkX][cz - minChunkZ] = level.hasChunk(cx, cz);
+            }
+        }
+
         for (BlockPos candidate : BlockPos.betweenClosed(min, max)) {
+            if (!loadedColumns[(candidate.getX() >> 4) - minChunkX][(candidate.getZ() >> 4) - minChunkZ]) continue;
             BlockState candState = level.getBlockState(candidate);
             if (!(candState.getBlock() instanceof IMultiblockController controller)) continue;
             if (!candState.hasProperty(HorizontalDirectionalBlock.FACING)) continue;

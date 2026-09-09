@@ -71,9 +71,16 @@ public abstract class SubLevelRelinkMixin {
         if (!(be instanceof IMultiblockPart part)) {
             return previous;
         }
-        // Окно сборки открыто (SubLevelMoveWindowMixin), поэтому каскадов не будет:
-        // детерминированная проверка либо перепривяжет часть сразу (контроллер уже
-        // перенесён), либо ничего не сделает — тогда сработает retry-самолечение.
+        // setBlockState creates the block entity, but its NBT is loaded a few instructions later, so
+        // at this point the offset is still null and relinkOrphanedPartDeterministic would fall back
+        // to a 49^3 radius scan per moved part - whose result the NBT load then overwrites anyway.
+        // The part's own retry (UniversalMachinePartBlockEntity.pendingRelinkCheck) does it properly
+        // after the load; the call here only helps if the offset is somehow already present.
+        if (part.getLocalOffsetFromController() == null) {
+            return previous;
+        }
+
+        // Окно сборки открыто (SubLevelMoveWindowMixin), поэтому каскадов не будет.
         MultiblockStructureHelper.relinkOrphanedPartDeterministic(serverLevel, pos, part);
         return previous;
     }

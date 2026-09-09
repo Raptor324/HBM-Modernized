@@ -687,6 +687,21 @@ public class UniversalMachinePartBlockEntity extends BaseHbmBlockEntity implemen
     }
     *///?}
 
+    private static int sideMask(java.util.Set<Direction> sides) {
+        int mask = 0;
+        for (Direction dir : sides) mask |= (1 << dir.get3DDataValue());
+        return mask;
+    }
+
+    private static void readSideMask(CompoundTag tag, String key, java.util.Set<Direction> target) {
+        target.clear();
+        if (!tag.contains(key)) return;
+        int mask = tag.getInt(key);
+        for (Direction dir : Direction.values()) {
+            if ((mask & (1 << dir.get3DDataValue())) != 0) target.add(dir);
+        }
+    }
+
     @Override
     protected void writeNbtData(@NotNull CompoundTag pTag, @Nullable HolderLookup.Provider registries) {
         super.writeNbtData(pTag, registries);
@@ -703,21 +718,12 @@ public class UniversalMachinePartBlockEntity extends BaseHbmBlockEntity implemen
             pTag.putLong("LocalOffset", this.localOffsetFromController.asLong());
         }
 
-        if (!allowedClimbSides.isEmpty()) {
-            int mask = 0;
-            for (Direction dir : allowedClimbSides) mask |= (1 << dir.get3DDataValue());
-            pTag.putInt("ClimbSides", mask);
-        }
-        if (!allowedEnergySides.isEmpty()) {
-            int mask = 0;
-            for (Direction dir : allowedEnergySides) mask |= (1 << dir.get3DDataValue());
-            pTag.putInt("EnergySides", mask);
-        }
-        if (!allowedFluidSides.isEmpty()) {
-            int mask = 0;
-            for (Direction dir : allowedFluidSides) mask |= (1 << dir.get3DDataValue());
-            pTag.putInt("FluidSides", mask);
-        }
+        // Written unconditionally: an empty set used to write nothing, and the reader only
+        // overwrites when the key is present, so loading onto a live instance (the client update
+        // tag, or loadCustomOnly during controller migration) kept the previous sides forever.
+        pTag.putInt("ClimbSides", sideMask(allowedClimbSides));
+        pTag.putInt("EnergySides", sideMask(allowedEnergySides));
+        pTag.putInt("FluidSides", sideMask(allowedFluidSides));
     }
 
     @Override
@@ -725,6 +731,8 @@ public class UniversalMachinePartBlockEntity extends BaseHbmBlockEntity implemen
         super.readNbtData(pTag, registries);
         if (pTag.contains("ControllerPos")) {
             this.controllerPos = com.hbm_m.platform.PlatformHooks.readBlockPos(pTag, "ControllerPos");
+        } else {
+            this.controllerPos = null;
         }
         // Восстанавливаем локальный оффсет от контроллера (вращение-инвариантный).
         // Create/Sable disassembly сохраняет этот тег как есть (он не зависит от worldPos),
@@ -744,27 +752,9 @@ public class UniversalMachinePartBlockEntity extends BaseHbmBlockEntity implemen
                 this.role = PartRole.DEFAULT;
             }
         }
-        if (pTag.contains("ClimbSides")) {
-            int mask = pTag.getInt("ClimbSides");
-            allowedClimbSides.clear();
-            for (Direction dir : Direction.values()) {
-                if ((mask & (1 << dir.get3DDataValue())) != 0) allowedClimbSides.add(dir);
-            }
-        }
-        if (pTag.contains("EnergySides")) {
-            int mask = pTag.getInt("EnergySides");
-            allowedEnergySides.clear();
-            for (Direction dir : Direction.values()) {
-                if ((mask & (1 << dir.get3DDataValue())) != 0) allowedEnergySides.add(dir);
-            }
-        }
-        if (pTag.contains("FluidSides")) {
-            int mask = pTag.getInt("FluidSides");
-            allowedFluidSides.clear();
-            for (Direction dir : Direction.values()) {
-                if ((mask & (1 << dir.get3DDataValue())) != 0) allowedFluidSides.add(dir);
-            }
-        }
+        readSideMask(pTag, "ClimbSides", allowedClimbSides);
+        readSideMask(pTag, "EnergySides", allowedEnergySides);
+        readSideMask(pTag, "FluidSides", allowedFluidSides);
     }
 
     @Override
