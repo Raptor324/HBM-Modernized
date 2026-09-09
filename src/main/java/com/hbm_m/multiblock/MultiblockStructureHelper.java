@@ -1598,6 +1598,12 @@ public class MultiblockStructureHelper {
                 if (level.getBlockState(worldPos).getBlock() instanceof UniversalMachinePartBlock) {
                     BlockEntity be = level.getBlockEntity(worldPos);
                     if (be instanceof IMultiblockPart part) {
+                        // Footprints can overlap - the placement path above self-destructs a
+                        // controller on exactly that condition - so a part that belongs to another
+                        // controller must not be deleted along with ours, or that machine is orphaned.
+                        BlockPos owner = part.getControllerPos();
+                        if (owner != null && !owner.equals(controllerPos)) continue;
+
                         PartRole role = part.getPartRole();
                         if (role.canReceiveEnergy() || role.canSendEnergy()) {
                             com.hbm_m.api.energy.EnergySubscriptions.unsubscribeAll(be);

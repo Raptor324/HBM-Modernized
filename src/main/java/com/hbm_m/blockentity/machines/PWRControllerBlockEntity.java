@@ -402,6 +402,9 @@ public class PWRControllerBlockEntity extends BaseMachineBlockEntity
     }
 
     public void setRodTarget(double target) {
+        // Math.min/max let NaN through, and a NaN target makes every later comparison false, which
+        // freezes the rods at their current position. The value arrives on a client packet.
+        if (Double.isNaN(target)) return;
         rodTarget = Math.max(0D, Math.min(100D, target));
         setChanged();
         sendUpdateToClient();

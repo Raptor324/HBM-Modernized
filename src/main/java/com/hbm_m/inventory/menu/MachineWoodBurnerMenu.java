@@ -33,11 +33,15 @@ public class MachineWoodBurnerMenu extends AbstractContainerMenu implements ILon
     private long clientEnergy;
     private long clientMaxEnergy;
 
-    private static final int PLAYER_INV_START = 0;
-    private static final int PLAYER_INV_END = 36;
-    private static final int FUEL_SLOT = 36;
-    private static final int ASH_SLOT = 37;
-    private static final int CHARGE_SLOT = 38;
+    // The three machine slots are added first, then the player inventory: the constants used to be
+    // numbered for the opposite order, so FUEL_SLOT was really hotbar slot 6 and shift-clicking fuel
+    // moved it around the player's own inventory.
+    private static final int FUEL_SLOT = 0;
+    private static final int ASH_SLOT = 1;
+    private static final int CHARGE_SLOT = 2;
+    private static final int PLAYER_INV_START = 3;
+    private static final int PLAYER_INV_END = 39;
+    private static final int HOTBAR_START = 30;
 
     // Клиентский конструктор
     public MachineWoodBurnerMenu(int id, Inventory inv, FriendlyByteBuf extraData) {
@@ -197,10 +201,11 @@ public class MachineWoodBurnerMenu extends AbstractContainerMenu implements ILon
                         return itemstack;
                     }
                 }
-                if (pIndex < 27) {
-                    if (!this.moveItemStackTo(slotStack, 27, 36, false)) return ItemStack.EMPTY;
+                // Inventory <-> hotbar, in this menu's own numbering.
+                if (pIndex < HOTBAR_START) {
+                    if (!this.moveItemStackTo(slotStack, HOTBAR_START, PLAYER_INV_END, false)) return ItemStack.EMPTY;
                 } else {
-                    if (!this.moveItemStackTo(slotStack, 0, 27, false)) return ItemStack.EMPTY;
+                    if (!this.moveItemStackTo(slotStack, PLAYER_INV_START, HOTBAR_START, false)) return ItemStack.EMPTY;
                 }
             }
 

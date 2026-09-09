@@ -325,9 +325,26 @@ public class UniversalMachinePartBlock extends BaseEntityBlock implements IDeton
         return isFullBlockInGrid(level, pos) ? Shapes.block() : Shapes.empty();
     }
     *///?} else {
+    // Same logic as the 1.20.1 branch above: returning Shapes.empty() unconditionally made
+    // isFullBlockInGrid dead code here and stopped solid multiblock parts from occluding the faces
+    // of their neighbours. The divergence was undocumented, unlike every other split in this file.
     @Override
     protected VoxelShape getOcclusionShape(BlockState state, BlockGetter level, BlockPos pos) {
-        return Shapes.empty();
+        if (level instanceof Level lvl && com.hbm_m.compat.ContraptionDoorState.isContraptionWorld(lvl)) {
+            return Shapes.empty();
+        }
+
+        if (level.getBlockEntity(pos) instanceof IMultiblockPart part) {
+            BlockPos ctrlPos = part.getControllerPos();
+            if (ctrlPos != null) {
+                Block ctrlBlock = level.getBlockState(ctrlPos).getBlock();
+                if (ctrlBlock instanceof DoorBlock || ctrlBlock instanceof TransitionSealBlock) {
+                    return Shapes.empty();
+                }
+            }
+        }
+
+        return isFullBlockInGrid(level, pos) ? Shapes.block() : Shapes.empty();
     }
     //?}
 
