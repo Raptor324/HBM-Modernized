@@ -301,6 +301,7 @@ public class ClientSetup {
         *///?} elif neoforge {
         NeoForge.EVENT_BUS.addListener(ClientSetup::onClientDisconnect);
         NeoForge.EVENT_BUS.addListener(ClientSetup::registerDebugClientCommands);
+        NeoForge.EVENT_BUS.addListener(com.hbm_m.util.explosions.nuclear.BlockExplosionDefense::onItemTooltipNeo);
         //?}
 
         event.enqueueWork(ClientSetup::registerRadAbsorberItemProperties);

@@ -39,7 +39,6 @@ public class AirBombProjectileEntity extends ThrowableItemProjectile {
     //  Параметры взрыва
     private static final float EXPLOSION_POWER = 12.0f;
     private static final float EXPLOSION_POWER2 = 20.0f;
-    private static final float DAMAGE_RADIUS = 28.0f;
     private static final int DETONATION_RADIUS = 10;
     private static final Random RANDOM = new Random();
 
@@ -151,7 +150,6 @@ public class AirBombProjectileEntity extends ThrowableItemProjectile {
 
             //  Все кастомные эффекты
             triggerNearbyDetonations(serverLevel, pos, null);
-            dealExplosionDamage(serverLevel, x, y, z);
             scheduleExplosionEffects(serverLevel, x, y, z);
             playDetonationSound(serverLevel, pos);
 
@@ -166,17 +164,6 @@ public class AirBombProjectileEntity extends ThrowableItemProjectile {
                 ));
             }
         }
-    }
-
-    private void dealExplosionDamage(ServerLevel serverLevel, double x, double y, double z) {
-        List<LivingEntity> entitiesNearby = serverLevel.getEntitiesOfClass(
-                LivingEntity.class,
-                new net.minecraft.world.phys.AABB(
-                        x - DAMAGE_RADIUS, y - DAMAGE_RADIUS, z - DAMAGE_RADIUS,
-                        x + DAMAGE_RADIUS, y + DAMAGE_RADIUS, z + DAMAGE_RADIUS
-                )
-        );
-        // здесь можно добавить урон по [translate:entitiesNearby]
     }
 
     /**
