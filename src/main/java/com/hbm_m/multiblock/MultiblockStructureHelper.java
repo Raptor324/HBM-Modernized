@@ -1644,7 +1644,47 @@ public class MultiblockStructureHelper {
                     level.setBlock(worldPos, Blocks.AIR.defaultBlockState(), 3);
                 }
             }
+
+            sweepPartsPointingAt(level, controllerPos, facing);
         } finally { IS_DESTROYING.set(false); }
+    }
+
+    /**
+     * Вторая волна: части, которые ссылаются на этот контроллер, но лежат не на ожидаемой позиции.
+     *
+     * The position pass above assumes the parts sit exactly where getRotatedPos puts them. After a
+     * Sable/Create move that is not guaranteed, and a part that ends up one block off used to stay
+     * behind as an invisible phantom. The box is the structure's own bounding box, so this is a few
+     * hundred lookups at most, and only parts naming this very controller are removed.
+     */
+    private void sweepPartsPointingAt(Level level, BlockPos controllerPos, Direction facing) {
+        BlockPos min = null;
+        BlockPos max = null;
+        for (BlockPos gridPos : structureMap.keySet()) {
+            BlockPos worldPos = getRotatedPos(controllerPos, gridPos, facing);
+            if (min == null) {
+                min = worldPos;
+                max = worldPos;
+                continue;
+            }
+            min = new BlockPos(Math.min(min.getX(), worldPos.getX()), Math.min(min.getY(), worldPos.getY()),
+                    Math.min(min.getZ(), worldPos.getZ()));
+            max = new BlockPos(Math.max(max.getX(), worldPos.getX()), Math.max(max.getY(), worldPos.getY()),
+                    Math.max(max.getZ(), worldPos.getZ()));
+        }
+        if (min == null) return;
+
+        for (BlockPos pos : BlockPos.betweenClosed(min, max)) {
+            if (!(level.getBlockState(pos).getBlock() instanceof UniversalMachinePartBlock)) continue;
+            if (!(level.getBlockEntity(pos) instanceof IMultiblockPart part)) continue;
+            if (!controllerPos.equals(part.getControllerPos())) continue;
+
+            PartRole role = part.getPartRole();
+            if (role.canReceiveEnergy() || role.canSendEnergy()) {
+                com.hbm_m.api.energy.EnergySubscriptions.unsubscribeAll((BlockEntity) part);
+            }
+            level.setBlock(pos.immutable(), Blocks.AIR.defaultBlockState(), 3);
+        }
     }
 
     public Map<BlockPos, Supplier<BlockState>> getStructureMap() {

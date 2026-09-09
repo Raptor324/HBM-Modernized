@@ -433,6 +433,18 @@ public class UniversalMachinePartBlock extends BaseEntityBlock implements IDeton
             }
             if (pLevel.getBlockEntity(pPos) instanceof IMultiblockPart partBe) {
                 BlockPos controllerPos = partBe.getControllerPos();
+
+                // A part carried into a Sable sub-level (or back out of one) still names its
+                // pre-move controller until relink runs, and that position is usually air there.
+                // Breaking such a part used to do nothing at all - one casing broke and the rest of
+                // the machine stayed as phantoms - so re-resolve the controller before giving up.
+                if (!pLevel.isClientSide()
+                        && (controllerPos == null
+                            || !(pLevel.getBlockState(controllerPos).getBlock() instanceof IMultiblockController))) {
+                    MultiblockStructureHelper.relinkOrphanedPartDeterministic(pLevel, pPos, partBe);
+                    controllerPos = partBe.getControllerPos();
+                }
+
                 if (controllerPos != null && !pLevel.isClientSide()) {
                     BlockState controllerState = pLevel.getBlockState(controllerPos);
                     if (controllerState.getBlock() instanceof IMultiblockController controller) {
