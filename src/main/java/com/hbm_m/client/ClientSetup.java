@@ -35,7 +35,6 @@ import com.hbm_m.client.loader.MachineRadarModelLoader;
 import com.hbm_m.client.loader.MachineZirnoxDestroyedModelLoader;
 import com.hbm_m.client.loader.MachineZirnoxModelLoader;
 import com.hbm_m.client.loader.MissileModelLoader;
-import com.hbm_m.client.render.missile.MissileRenderHelper;
 import com.hbm_m.client.loader.PressModelLoader;
 import com.hbm_m.client.loader.TemplateModelLoader;
 // import com.hbm_m.client.loader.TestModelLoader;
@@ -902,10 +901,12 @@ public class ClientSetup {
         PlatformHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/vault_door_skin_106"));
         PlatformHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/vault_door_skin_111"));
 
+        // The missile models are generated as models/item/missile_*.json. registerAdditionalModel
+        // asks for models/<path>.json instead, so every missile logged "Unable to load model" on
+        // every resource reload; registerItemModel is the one that adds the item/ prefix.
         for (MissileItemModelDefinitions.Definition definition : MissileItemModelDefinitions.all()) {
-            ResourceLocation meshId = MissileRenderHelper.meshModelId(
+            PlatformHooks.registerItemModel(event,
                     ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, definition.itemPath()));
-            PlatformHooks.registerAdditionalModel(event, meshId);
         }
 
         MainRegistry.LOGGER.debug("Registered door and missile variant models for loading");

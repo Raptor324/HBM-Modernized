@@ -38,7 +38,7 @@ public class GUITurret extends AbstractContainerScreen<TurretMenu> {
         super(pMenu, pPlayerInventory, pTitle);
         // тайл может отсутствовать в реплее Flashback
         this.texture = pMenu.blockEntity != null ? pMenu.blockEntity.getGuiTexture()
-                : ResourceLocation.fromNamespaceAndPath("hbm_m", "textures/gui/gui_turret.png");
+                : ResourceLocation.fromNamespaceAndPath("hbm_m", "textures/gui/weapon/gui_turret_base.png");
         this.imageWidth = 176;
         this.imageHeight = 222;
     }

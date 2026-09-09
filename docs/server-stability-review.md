@@ -3825,3 +3825,140 @@ Done (3.300s)! For help, type "help"
    `MachineFluidTankBlock` объявляют `dropFromExplosion → false` и превращают взрыв в руины, но это
    обходится, если взрыв задел клетку обшивки, а не ядро. Результат зависит от того, куда попало
    первым; как должно быть — вопрос к владельцу.
+
+## BN. Ревизия текстур и моделей (порт недостающего из 1.7.10)
+
+Метод: клиентский лог локальной сборки (`Unable to load model`, `missing model for variant`,
+`Failed to load model`) + скрипт по всем 6188 моделям с проверкой существования каждой текстуры +
+сверка имён с оригиналом. Ключ к сопоставлению имён — `setTextureName` / `setBlockTextureName`
+в апстримных `com/hbm/items/ModItems.java` и `com/hbm/blocks/ModBlocks.java`: имя текстуры в 1.7.10
+часто не совпадает с именем предмета (`igniter` → `trigger.png`, `broadcaster` → `broadcaster_pc.png`,
+`steel_scaffold` → `deco_steel_orig.png`), а у мета-предметов имена идут через точку
+(`rod_quad.lead.png`).
+
+### BN1. Модели, которые не грузились вообще
+
+- `block/steel_beam` — в OBJ первой строкой `usemtl Material.001` без `mtllib`; NeoForge падает
+  с `NoSuchElementException: The material was not found in the library`. У пяти других таких же OBJ
+  строка `mtllib hbm_base.mtl` есть (файл ровно для этого и заведён) — добавлена и сюда.
+- `block/bomb/nuke_fleija` — модель ссылалась на `nuke_fleija.obj`, файл называется `fleija.obj`.
+- `block/test/geo_dead` — загрузчик `hbm_m:test` закомментирован в `ClientSetup`, `scene.obj` нет.
+  Диагностический блок владельца, не трогал.
+
+### BN2. Блоки без blockstate (в игре — «сломанная модель»)
+
+`barbed_wire`, `_fire`, `_poison`, `_wither`, `_rad` — ручные OBJ-модели и текстуры были, blockstate
+не генерировался ни для одного: добавлены через `customObjBlock`.
+`b29`, `dornier` — blockstate был написан под свойство `facing`, которого у этих блоков нет
+(обычный `Block`), поэтому не подходил ни один вариант: заменено на пустой ключ варианта.
+`red_pylon_large` — в вариантах стояли `"y": 45` и `"y": -45`; Minecraft принимает только
+0/90/180/270, из-за чего вариант не пёкся. Приведено к схеме средних пилонов.
+`pylon_dummy`, `rbmk_column_filler` — невидимые служебные блоки без blockstate: добавлены
+пустые модели (только `particle`) и blockstate, чтобы не сыпать ошибками при каждой перезагрузке
+ресурсов.
+`broadcaster`, `geiger`, `ore_oil_empty`, `nuke_prototype` — см. BN3.
+
+### BN3. Портировано из 1.7.10 (не было ни текстуры, ни модели)
+
+| наш id | источник в оригинале |
+|---|---|
+| `igniter` | `items/trigger.png` |
+| `cell_sas3` | `items/cell_sas3.png` |
+| `rod_quad_lead/np237/uranium` | `items/rod_quad.{lead,np237,uranium}.png` |
+| `blueprint_folder` | `items/blueprint_folder.png` (использовал чужую `template_folder`) |
+| `geiger` | `blocks/geiger.png` |
+| `ore_oil_empty` | `blocks/ore_oil_empty.png` |
+| `broadcaster` | `blocks/broadcaster_pc.png` |
+| `electric_furnace` | `blocks/machine_electric_furnace_{top,bottom,side,front_off,front_on}.png` |
+| `furnace_brick` | `blocks/machine_furnace_brick_{top,bottom,side,front_off,front_on}.png` |
+| `fluid_valve` | `blocks/fluid_valve_off.png` (была ванильная `minecraft:block/iron_block`) |
+| `models/misc/poster.png`, `poster_cat.png` | те же пути в оригинале (на них ссылается код брони) |
+| `models/weapons/fatman_submunition.png` | тот же путь (ссылается `ClusterSubmunitionMesh`) |
+
+В датагене для электропечи и кирпичной печи прямым текстом стояла заглушка: «своего набора
+текстур нет, временно переиспользуем модель железной печи». Теперь у обеих свои модели
+(`orientable_with_bottom`) с отдельным фронтом для включённого состояния.
+`nuke_prototype`: модель, OBJ и текстура уже лежали в репозитории — не было только blockstate
+и модели предмета.
+
+### BN4. Текстуры лежали в репозитории, но не были подключены
+
+- `rbmk_loader` / `rbmk_autoloader` рендерились как пустая колонна РБМК, хотя
+  `standalone_rbmk_{loader,autoloader}.png` (байт-в-байт апстримные `rbmk_loader.png` /
+  `rbmk_autoloader.png`) лежат рядом. Переведены на `cube_all` с этими текстурами.
+- `steel_scaffold` использовал `struct_scaffold` — это текстура **другого** блока оригинала
+  (ракетные леса). По `setBlockTextureName` положено `deco_steel_orig`, он у нас есть.
+- `fluid_pump` был ванильным железным блоком; в оригинале это `block_steel`, который у нас есть.
+- `zirnox_deb_blank` и `zirnox_deb_shrapnel` красились текстурой разрушенного ZIRNOX. По коду
+  апстримного `RenderZirnoxDebris`: BLANK/SHRAPNEL/EXCHANGER → `zirnox.png`, CONCRETE →
+  `zirnox_destroyed.png`, ELEMENT → `zirnox_deb_element.png`. Исправлены две.
+- `models/block/machines/difurnace_extension.json` в OBJ-ребёнке указывал текстуру
+  `block/machines/difurnace_extension` — каталога `textures/block/machines/` не существует
+  (файл лежит в `textures/block/`). Расширение доменной печи и его предмет рендерились
+  чёрно-фиолетовой шашкой.
+
+### BN5. Неправильно скопированные текстуры
+
+Сверка байтов с оригиналом вскрыла серию промахов копирования у труб: боковые текстуры
+`deco_pipe_marked`, `deco_pipe_red`, `deco_pipe_rusted`, `deco_pipe_framed_red`,
+`deco_pipe_framed_rusted` были копией простой `pipe_side.png` — то есть ржавые, красные и
+размеченные трубы отличались от обычной только торцами. Перекопированы из оригинала.
+`watz_pellet_schrabidium_oxide` и его `_depleted` были копией обычной гранулы вместо
+`watz_pellet_schrabidium.png`.
+
+Проверены и признаны верными (совпадают с оригиналом, не баг): 15 одинаковых `pwr_fuel_*_hot`
+(в оригинале одна общая `pwr_fuel_hot.png`), одинаковые иконки авиаудара (`bomb_caller.png`),
+изотопы `scraps_*`, три `stamp_iron_*` без альфа-канала и `ingot_nikonium` 200×200 — все такие же
+в 1.7.10.
+
+### BN6. Анимации
+
+В оригинале 83 файла `.mcmeta`, у нас было 18. Перенесено 35 недостающих (для тех текстур, что
+у нас есть): конвейеры в `block/machine/`, дроновые ящики, `fire_digamma`, `press_preheater`,
+вулканы, `rtty_*`, `brick_jungle_*`, `static_sandwich`, `chainsaw`, `particle_lutece` и другие —
+все они были вертикальными лентами кадров без метаданных и рендерились сплющенными в один спрайт.
+Оставшиеся 34 `.mcmeta` оригинала относятся к текстурам, которых у нас пока нет (жидкости
+`acid/corium/mud/rad_lava/toxic/volcanic_lava`, `vine_phosphor*`, электроинструменты).
+
+### BN7. Мусор в ассетах (удалено)
+
+`textures/item$n.png` (неразвёрнутая переменная из батч-скрипта, дубль `item/bolt.png`),
+`textures/paintings/` целиком (1.5 МБ — дубль каталога `painting/`, игра такой каталог не читает),
+`gui/machine/gui_radar-.png` (308 КБ, ни одной ссылки), `jei_gui/gui_nei_cyclotron.png` (дубль
+`gui_jei_cyclotron.png`), `particle/rad_fogd.png`, `models/block/bomb/gui_prototype.png` (png внутри
+каталога моделей, дубль `gui/weapon/gui_prototype.png`). `entity_obj/bombletZetaTexture.png` —
+единственное имя с заглавными буквами на 5375 файлов (на 1.21 такой `ResourceLocation` невалиден) —
+переименован в `bomblet_zeta.png`.
+
+### BN8. Прочее
+
+- 28 предупреждений «Unable to load model» на каждую ракету: `ClientSetup` регистрировал модели
+  через `registerAdditionalModel` (ищет `models/<имя>.json`), а генерируются они как
+  `models/item/missile_*.json`. Переведено на `registerItemModel`.
+- `reinforced_glass_pane` — `paneBlock` не проставляет `render_type`, панель пеклась в SOLID-слой
+  с непрозрачными рёбрами. Переведено на `paneBlockWithRenderType(..., cutout)`.
+- `GUITurret` при отсутствии тайла (реплей Flashback) грузил несуществующую
+  `gui/gui_turret.png` — заменено на существующую `gui/weapon/gui_turret_base.png`.
+
+### BN9. Осталось решить владельцу
+
+1. **`crane_boxer` / `crane_grabber` / `crane_unboxer`** рисуются общими текстурами
+   `crane_{in,out,top,side}`, хотя их собственные наборы (14/13/13 файлов) лежат в репозитории.
+   Это не переименование: в оригинале это конвейероподобные блоки, у которых грань выбирается
+   по направлению и повороту ленты (`*_side_up_turn_left` и т.п.). Нужен порт логики выбора грани,
+   а не правка датагена.
+2. **`music_disc_bunker`** использует ванильную иконку `minecraft:item/music_disc_13`; в оригинале
+   такой пластинки нет (есть `record_lc/ss/vc/glass`), так что своя иконка — вопрос дизайна.
+3. **`block_fallout`** рисуется нашей `nuclear_fallout`, в оригинале — `ash.png`. Возможно,
+   замена намеренная.
+4. **`fluid_exhaust`** остался ванильным железным блоком: в оригинале блока с таким именем нет.
+5. **`textures/gui/gauges/`** (8 файлов, включая `button_big.png` 4848×48 — похоже на опечатку
+   в размере) и `jei_gui/gui_jei_arc_welder.png` 704×664 ни на что не ссылаются.
+6. **Атлас блоков**: `assets/hbm_m/atlases/blocks.json` тянет `textures/block/**` рекурсивно,
+   включая скины OBJ-моделей машин, дверей и турелей — 4788 спрайтов на 20.5 Мп, из них 455
+   с шириной не степень двойки (ваниль режет им мипмапы). Стоит сузить источники до тех подкаталогов,
+   что реально нужны в атласе.
+7. Осиротевшие ручные модели приведены в порядок: `block/concrete_hazzard` (опечатка, блок
+   называется `concrete_hazard`) удалена, а `deco_pipe_rim`, `deco_pipe_rim_marked` и
+   `deco_pipe_rim_rusted` переведены на существующие текстуры труб. В игре они всё равно не видны:
+   blockstate этих блоков указывает на модели `deco_pipe_framed*`.

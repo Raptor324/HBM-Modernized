@@ -327,6 +327,12 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.FAT_MAN_EXPLOSIVE);
         simpleItem(ModItems.FAT_MAN_IGNITER);
         simpleItem(ModItems.FAT_MAN_CORE);
+        // Ported from the 1.7.10 assets: these had no texture, so no model was generated.
+        simpleItem(ModItems.IGNITER);
+        simpleItem(ModItems.CELL_SAS3);
+        simpleItem(ModItems.ROD_QUAD_LEAD);
+        simpleItem(ModItems.ROD_QUAD_NP237);
+        simpleItem(ModItems.ROD_QUAD_URANIUM);
         simpleItem(ModItems.DESIGNATOR);
         simpleItem(ModItems.RANGEFINDER);
         simpleItem(ModItems.DESIGNATOR_RANGE);
@@ -913,6 +919,7 @@ public class ModItemModelProvider extends ItemModelProvider {
         blockItemFromBlockModelBomb(ModBlocks.NUKE_MIKE);
         blockItemFromBlockModelBomb(ModBlocks.NUKE_TSAR);
         blockItemFromBlockModelBomb(ModBlocks.NUKE_FLEIJA);
+        blockItemFromBlockModelBomb(ModBlocks.NUKE_PROTOTYPE);
         blockItemFromBlockModelBomb(ModBlocks.NUKE_N2);
         blockItemFromBlockModelBomb(ModBlocks.NUKE_SOLINIUM);
         blockItemFromBlockModelBomb(ModBlocks.NUKE_FSTBMB);
@@ -977,6 +984,8 @@ public class ModItemModelProvider extends ItemModelProvider {
         blockItemFromBlockModelMachine(ModBlocks.FIREBOX);
         blockItemFromBlockModelMachine(ModBlocks.FRACTION_SPACER);
         blockItemFromBlockModelMachine(ModBlocks.FURNACE_IRON);
+        blockItemFromBlockModelMachine(ModBlocks.ELECTRIC_FURNACE);
+        blockItemFromBlockModelMachine(ModBlocks.FURNACE_BRICK);
         blockItemFromBlockModelMachine(ModBlocks.FURNACE_STEEL);
         blockItemFromBlockModelMachine(ModBlocks.HEATEX);
         blockItemFromBlockModelMachine(ModBlocks.HEPHAESTUS);
@@ -1151,7 +1160,7 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItemModelByName("iron_plate", "iron_plate");
         simpleItemModelByName("titanium_stamp_plate", "titanium_stamp_plate");
         withExistingParent(ModItems.BLUEPRINT_FOLDER.getId().getPath(), "item/generated")
-                .texture("layer0", modLoc("item/template_folder"));
+                .texture("layer0", modLoc("item/blueprint_folder"));
         blockItemFromBlockModel(ModBlocks.STRAWBERRY_BUSH);
 
         java.util.List.of(
