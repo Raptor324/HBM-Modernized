@@ -72,7 +72,10 @@ public class MachineAmmoPressBlockEntity extends BaseMachineBlockEntity {
         }
 
         for (int i = 0; i < GRID_SIZE; i++) {
-            inventory.getStackInSlot(i).shrink(1);
+            // An empty cell hands back the shared ItemStack.EMPTY singleton, whose count would be
+            // driven negative by shrink; the recipes leave six to eight cells empty.
+            ItemStack cell = inventory.getStackInSlot(i);
+            if (!cell.isEmpty()) cell.shrink(1);
         }
         if (outSlot.isEmpty()) {
             inventory.setStackInSlot(SLOT_OUTPUT, output);

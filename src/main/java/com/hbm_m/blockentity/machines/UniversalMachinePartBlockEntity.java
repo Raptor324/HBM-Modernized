@@ -792,7 +792,7 @@ public class UniversalMachinePartBlockEntity extends BaseHbmBlockEntity implemen
             //? if forge {
             /*return ((MachineAssemblerBlockEntity) ctrl).getItemHandlerForPart(this.role).resolve().orElse(null);
             *///?} elif neoforge {
-            return ((MachineAssemblerBlockEntity) ctrl).getItemHandler(side);
+            return ((MachineAssemblerBlockEntity) ctrl).getItemHandlerForPart(this.role);
              //?}
         }
         if (ctrl instanceof BaseHbmBlockEntity hbm) {

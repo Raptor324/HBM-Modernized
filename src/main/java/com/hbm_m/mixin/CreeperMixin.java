@@ -21,7 +21,12 @@ public class CreeperMixin {
 
     @Inject(method = "explodeCreeper", at = @At("HEAD"), cancellable = true)
     private void hbm_m$explodeCreeper(CallbackInfo ci) {
-        if ((Object) this instanceof EntityCreeperTainted tainted) {
+        // EntityCreeperNuclear.nuclearExplode was written for this dispatch and never reached it, so a
+        // nuclear creeper detonated as an ordinary one.
+        if ((Object) this instanceof EntityCreeperNuclear nuclear) {
+            nuclear.nuclearExplode();
+            ci.cancel();
+        } else if ((Object) this instanceof EntityCreeperTainted tainted) {
             tainted.taintedExplode();
             ci.cancel();
         } else if ((Object) this instanceof EntityCreeperVolatile volatileCreeper) {

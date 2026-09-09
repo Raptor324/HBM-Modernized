@@ -268,6 +268,32 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
     }
     *///?}
 
+    // NeoForge counterpart of the Forge proxies above. Without it UniversalMachinePartBlockEntity
+    // handed out the assembler's raw inventory, so a pipe on an ITEM_INPUT port could pull the
+    // template, the battery and the finished product, and one on ITEM_OUTPUT could push into the
+    // input slots.
+    //? if neoforge {
+    public net.neoforged.neoforge.items.IItemHandler getItemHandlerForPart(PartRole role) {
+        if (role == PartRole.ITEM_INPUT) {
+            return new net.neoforged.neoforge.items.wrapper.RangedWrapper(inventory, INPUT_SLOT_START, INPUT_SLOT_END + 1) {
+                @Override
+                public @NotNull ItemStack extractItem(int slot, int amount, boolean simulate) {
+                    return ItemStack.EMPTY;
+                }
+            };
+        }
+        if (role == PartRole.ITEM_OUTPUT) {
+            return new net.neoforged.neoforge.items.wrapper.RangedWrapper(inventory, OUTPUT_SLOT, OUTPUT_SLOT + 1) {
+                @Override
+                public @NotNull ItemStack insertItem(int slot, @NotNull ItemStack stack, boolean simulate) {
+                    return stack;
+                }
+            };
+        }
+        return null;
+    }
+    //?}
+
     //? if fabric {
     /*public Storage<ItemVariant> getItemStorageForPart(PartRole role) {
         if (role == PartRole.ITEM_INPUT) {
@@ -390,59 +416,10 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
             return;
         }
 
-        //? if forge {
-        /*// РћР±С‹С‡РЅР°СЏ Р±Р°С‚Р°СЂРµСЏ С‡РµСЂРµР· HBM capability
-        energySourceStack.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER).ifPresent(itemEnergy -> {
-            long energyNeeded = this.getMaxEnergyStored() - this.getEnergyStored();
-            if (energyNeeded <= 0) return;
-
-            long maxCanReceive = this.getReceiveSpeed();
-            long energyToTransfer = Math.min(energyNeeded, maxCanReceive);
-
-            if (energyToTransfer > 0) {
-                long extracted = itemEnergy.extractEnergy(energyToTransfer, false);
-                if (extracted > 0) {
-                    this.setEnergyStored(this.getEnergyStored() + extracted);
-                    setChanged();
-                }
-            }
-        });
-
-        // Fallback РЅР° Forge Energy РґР»СЏ СЃРѕРІРјРµСЃС‚РёРјРѕСЃС‚Рё
-        if (!energySourceStack.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER).isPresent()) {
-            energySourceStack.getCapability(ForgeCapabilities.ENERGY).ifPresent(itemEnergy -> {
-                long energyNeeded = this.getMaxEnergyStored() - this.getEnergyStored();
-                if (energyNeeded <= 0) return;
-
-                int maxTransfer = (int) Math.min(Integer.MAX_VALUE, Math.min(energyNeeded, this.getReceiveSpeed()));
-                int extracted = itemEnergy.extractEnergy(maxTransfer, false);
-
-                if (extracted > 0) {
-                    this.setEnergyStored(this.getEnergyStored() + extracted);
-                    setChanged();
-                }
-            });
-        }
-        *///?}
-
-        //? if fabric {
-        /*var itemEnergy = EnergyStorage.ITEM.find(energySourceStack, null);
-        if (itemEnergy == null) return;
-
-        long energyNeeded = this.getMaxEnergyStored() - this.getEnergyStored();
-        if (energyNeeded <= 0) return;
-
-        long maxTransfer = Math.min(energyNeeded, this.getReceiveSpeed());
-        if (maxTransfer <= 0) return;
-
-        try (Transaction tx = Transaction.openOuter()) {
-            long extracted = itemEnergy.extract(maxTransfer, tx);
-            if (extracted > 0) {
-                setEnergyStored(getEnergyStored() + extracted);
-                tx.commit();
-            }
-        }
-        *///?}
+        // The two platform blocks that used to live here had no neoforge branch, so a normal battery
+        // in the slot transferred nothing. BaseMachineBlockEntity already does this for every other
+        // machine and covers both the HBM capability and vanilla FE.
+        chargeFromBatterySlot(ENERGY_SLOT);
     }
 
 
@@ -580,8 +557,11 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
                 int missing = need - present;
                 if (missing <= 0) continue;
 
-                //? if forge {
-                /*IItemHandler cap = neighbor.getCapability(ForgeCapabilities.ITEM_HANDLER, dirToNeighbor).orElse(null);
+                // Shared by Forge and NeoForge: var infers each platform's own IItemHandler, and the
+                // method names match. The block used to be forge-only, so on NeoForge the assembler
+                // never pulled anything from an adjacent inventory.
+                //? if forge || neoforge {
+                var cap = com.hbm_m.api.item.ItemHandlerAccess.getItemHandler(level, neighborPosGlobal, dirToNeighbor);
                 if (cap == null) continue;
 
                 for (int slot = 0; slot < cap.getSlots() && missing > 0; slot++) {
@@ -606,7 +586,7 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
                         }
                     }
                 }
-                *///?}
+                //?}
 
                 //? if fabric {
                 /*Storage<ItemVariant> cap = ItemStorage.SIDED.find(level, neighborPosGlobal, dirToNeighbor);
@@ -684,11 +664,11 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
 
             Direction side1 = outDir.getOpposite();
             Direction side2 = facingDir;
-            //? if forge {
-            /*IItemHandler cap = neighbor.getCapability(ForgeCapabilities.ITEM_HANDLER, side1)
-                    .orElse(neighbor.getCapability(ForgeCapabilities.ITEM_HANDLER, side2)
-                            .orElse(null));
-
+            // Shared by Forge and NeoForge, see pullIngredientsForOneCraft: this was forge-only, so
+            // on NeoForge the output slot filled up and the machine stalled until emptied by hand.
+            //? if forge || neoforge {
+            var cap = com.hbm_m.api.item.ItemHandlerAccess.getItemHandler(level, neighborPos, side1);
+            if (cap == null) cap = com.hbm_m.api.item.ItemHandlerAccess.getItemHandler(level, neighborPos, side2);
             if (cap == null) continue;
 
             ItemStack toInsert = out.copy();
@@ -702,7 +682,7 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
             }
 
             out = inventory.getStackInSlot(OUTPUT_SLOT);
-            *///?}
+            //?}
 
             //? if fabric {
             /*Storage<ItemVariant> cap = ItemStorage.SIDED.find(level, neighborPos, side1);

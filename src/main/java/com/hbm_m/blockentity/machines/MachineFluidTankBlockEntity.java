@@ -586,6 +586,13 @@ public class MachineFluidTankBlockEntity extends BaseHbmBlockEntity implements M
     public short getMode() { return mode; }
     public FluidTank getFluidTank() { return fluidTank; }
     public com.hbm_m.platform.ModItemStackHandler getItemHandler() { return itemHandler; }
+
+    // The ITEM_HANDLER capability was exposed only from the Forge getCapability above, so on NeoForge
+    // the tank's fluid-identifier and canister slots were invisible to hoppers and pipes.
+    @Override
+    public @Nullable Object getItemHandler(@Nullable Direction side) {
+        return itemHandler;
+    }
     
     private ItemStack[] getSlotsArray() {
         ItemStack[] arr = new ItemStack[6];

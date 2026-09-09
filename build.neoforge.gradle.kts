@@ -186,7 +186,9 @@ tasks.named<ProcessResources>("processResources") {
 				val target = File(nsDir, "neoforge/biome_modifier")
 				moveInto(bm, target)
 				target.walkTopDown().filter { it.isFile && it.extension == "json" }.forEach { f ->
-					f.writeText(f.readText().replace("\"forge:add_features\"", "\"neoforge:add_features\""))
+					f.writeText(f.readText()
+							.replace("\"forge:add_features\"", "\"neoforge:add_features\"")
+							.replace("\"forge:add_spawns\"", "\"neoforge:add_spawns\""))
 				}
 			}
 		}
