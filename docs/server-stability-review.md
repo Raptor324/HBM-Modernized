@@ -3386,3 +3386,21 @@ forge-ветки `getCapability`. Добавлены полиморфные `get
   эквивалентно, для `ICustomIngredient` — нет.
 - Тигель не сбрасывает прогресс при подмене входа; `ItemCastMold.MoldType.getCostMb` возвращает 0
   для дефолтной ветки (сегодня недостижимо, все 252 рецепта используют формы с ненулевой ценой).
+
+## BF. Проверка на боевом сервере после правок BD/BE
+
+```
+Done (3.347s)! For help, type "help"
+```
+
+Ноль строк `hbm_m` с ERROR/Exception, ноль сбоев миксинов. В собранном jar лежит
+`data/hbm_m/neoforge/biome_modifier/add_spawns.json` с типом `neoforge:add_spawns` — ремап
+из `forge:add_spawns` отработал, датапак принят без ошибок.
+
+Перед этим: `:1.20.1-forge:compileJava` после круга переключения версий — чисто (12 warning'ов),
+`runGameTestServer` — `All 287 required tests passed`.
+
+Отдельно: первая версия правки ящиков роняла тест `nonPlayerDestructionDoesNotDropPortableCrate`.
+Тест кодирует осознанное правило порта «сам ящик при неигровом разрушении не дропается» (защита от
+дюпа), поэтому подход изменён на дроп содержимого россыпью — как `BlockStorageCrate.breakBlock`
+в оригинале. Тест снова зелёный.
