@@ -100,23 +100,24 @@
 ## 4. Остальные дыры: логика молча пропадает на одной платформе
 
 Найдено разбором одноветочных цепочек. Отсортировано по последствиям.
+**✔ — закрыто в `9285ebc57`.**
 
 | # | Место | Что пропадает | Платформа |
 |---|---|---|---|
-| 1 | `client/model/MachineBatterySocketBakedModel.java:49,126` | веток NeoForge нет вовсе: не работает поворот по FACING и учёт `HAS_INSERT`, вставленная батарейка не рисуется совсем | NeoForge |
-| 2 | 6 моделей: `DoorBakedModel:343`, `MachineAssemblerBakedModel:183`, `MachineChemicalFactoryBakedModel:64`, `MachineChemicalPlantBakedModel:74`, `MachineFluidTankBakedModel:77`, `MachineRadarBakedModel:96` | `getRenderTypes` только на Forge → слой падает в `solid`, прозрачные участки рисуются непрозрачно. Рядом `BoxCableBakedModel:394` уже стоит с `forge \|\| neoforge` | NeoForge |
-| 3 | `HeatingOvenBakedModel:103`, `MachineCoolingTowerBakedModel:44` | на NeoForge `getQuads` отдаёт все части модели, которые BER рисует ещё раз → двойной рендер и другая геометрия печи | NeoForge |
-| 4 | `MachineFluidTankBlockEntity:675`, `MachineChemicalPlantBlockEntity:600`, `UniversalMachinePartBlockEntity:616` | теряется **сторонность** fluid-капабилити (режим сохраняется): `BaseHbmBlockEntity.getFluidHandler(side)` игнорирует `side`, трубы цепляются с любой стороны | NeoForge |
+| 1 ✔ | `client/model/MachineBatterySocketBakedModel.java:49,126` | веток NeoForge нет вовсе: не работает поворот по FACING и учёт `HAS_INSERT`, вставленная батарейка не рисуется совсем | NeoForge |
+| 2 ✔ | 6 моделей: `DoorBakedModel:343`, `MachineAssemblerBakedModel:183`, `MachineChemicalFactoryBakedModel:64`, `MachineChemicalPlantBakedModel:74`, `MachineFluidTankBakedModel:77`, `MachineRadarBakedModel:96` | `getRenderTypes` только на Forge → слой падает в `solid`, прозрачные участки рисуются непрозрачно. Рядом `BoxCableBakedModel:394` уже стоит с `forge \|\| neoforge` | NeoForge |
+| 3 ✔ | `HeatingOvenBakedModel:103`, `MachineCoolingTowerBakedModel:44` | на NeoForge `getQuads` отдаёт все части модели, которые BER рисует ещё раз → двойной рендер и другая геометрия печи | NeoForge |
+| 4 ✔ | `MachineFluidTankBlockEntity:675`, `MachineChemicalPlantBlockEntity:600`, `UniversalMachinePartBlockEntity:616` | теряется **сторонность** fluid-капабилити (режим сохраняется): `BaseHbmBlockEntity.getFluidHandler(side)` игнорирует `side`, трубы цепляются с любой стороны | NeoForge |
 | 5 | `powerarmor/overlay/VATSRenderHandler.java` (весь класс), `powerarmor/ModEventHandlerClient.java` (936 строк) | VATS включается и даёт тост, но подсветки нет; нет оверлея ядерной вспышки (`NukeTorex:494` зовёт её только в forge-ветке), `onRenderItemInFrame`, хуков `ScreenEvent`. HUD-оверлеи не отсюда — они продублированы корректно | NeoForge |
-| 6 | `MachineChemicalPlantMenu:61,206`, `MachineChemicalFactoryMenu:66,183`, `MachineAdvancedAssemblerMenu:64` | обратная дыра: проверка «слот принимает FE-батарейку» написана только под `neoforge` → на Forge эти меню отвергают FE-батарейки | Forge |
-| 7 | `UniversalMachinePartBlockEntity:430` | сбор списка типов жидкостей контроллера есть в `forge` и `fabric`, ветки `neoforge` нет → список пуст | NeoForge |
-| 8 | `block/machines/FluidDuctBlock.java:308` | последний fallback `canConnectVisually` только на Forge → на NeoForge проверяется соседний блок вместо контроллера | NeoForge |
-| 9 | `armormod/event/ArmorModificationServerEvents.java` | нет ветки neoforge → не обрезается здоровье после снятия брони с модификатором здоровья | NeoForge |
-| 10 | `EntityProcessorCross:69`, `EntityProcessorStandard:52` | не вызывается событие детонации взрыва → чужие моды (защита территорий) не могут отфильтровать задетые сущности | NeoForge |
-| 11 | `LaunchPadMissileRenderer:45` | гейт `forge` на сборку `IrisRenderBatch`, хотя сам батч объявлен `forge \|\| neoforge`, а четыре соседних рендерера зовут его без гейта → ракета на площадке рисуется мимо батча Iris | NeoForge |
+| 6 ✔ | `MachineChemicalPlantMenu:61,206`, `MachineChemicalFactoryMenu:66,183`, `MachineAdvancedAssemblerMenu:64` | обратная дыра: проверка «слот принимает FE-батарейку» написана только под `neoforge` → на Forge эти меню отвергают FE-батарейки | Forge |
+| 7 ✔ | `UniversalMachinePartBlockEntity:430` | сбор списка типов жидкостей контроллера есть в `forge` и `fabric`, ветки `neoforge` нет → список пуст | NeoForge |
+| 8 ✔ | `block/machines/FluidDuctBlock.java:308` | последний fallback `canConnectVisually` только на Forge → на NeoForge проверяется соседний блок вместо контроллера | NeoForge |
+| 9 ✔ | `armormod/event/ArmorModificationServerEvents.java` | нет ветки neoforge → не обрезается здоровье после снятия брони с модификатором здоровья | NeoForge |
+| 10 ✔ | `EntityProcessorCross:69`, `EntityProcessorStandard:52` | не вызывается событие детонации взрыва → чужие моды (защита территорий) не могут отфильтровать задетые сущности | NeoForge |
+| 11 ✔ | `LaunchPadMissileRenderer:45` | гейт `forge` на сборку `IrisRenderBatch`, хотя сам батч объявлен `forge \|\| neoforge`, а четыре соседних рендерера зовут его без гейта → ракета на площадке рисуется мимо батча Iris | NeoForge |
 | 12 | `MachinePressBlockEntity:123` | forge-ветка явно отказывает прессу в энергокапабилити; на NeoForge `ModCapabilities` вешает их по `instanceof`, отказ получается частичным | NeoForge |
-| 13 | `client/ClientRadiationEventHandler.java` | очистка клиентского кэша радиации на `LoggingIn` (выход покрыт кроссплатформенно) → кэш может пережить смену измерения | NeoForge |
-| 14 | `LoadedMachineBlockEntity:33` | `onLoad`/`onChunkUnloaded` только на Forge → флаг `isLoaded` не сбрасывается. Смягчено: почти все наследники переопределяют `isLoaded()` через `level.isLoaded(...)` | NeoForge |
+| 13 ✔ | `client/ClientRadiationEventHandler.java` | очистка клиентского кэша радиации на `LoggingIn` (выход покрыт кроссплатформенно) → кэш может пережить смену измерения | NeoForge |
+| 14 ✔ | `LoadedMachineBlockEntity:33` | `onLoad`/`onChunkUnloaded` только на Forge → флаг `isLoaded` не сбрасывается. Смягчено: почти все наследники переопределяют `isLoaded()` через `level.isLoaded(...)` | NeoForge |
 | 15 | `powerarmor/ModArmorFSB.java:134` | `getArmorTexture` только на Forge; наследники `ModPowerArmorItem` закрыты `createNeoForgeClientExtensions()`, а сам `ModArmorFSB` — нет. **Требует визуальной проверки** | NeoForge |
 | 16 | `client/render/RayVisualizationRenderer.java` | отладочная визуализация лучей кратера. Влияет только на отладку | NeoForge |
 
