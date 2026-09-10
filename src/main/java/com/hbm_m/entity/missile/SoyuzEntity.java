@@ -175,16 +175,18 @@ public class SoyuzEntity extends Entity {
 
     /*@Override
     protected void defineSynchedData() {
-        // No synced fields needed - mode/skin only matter server-side and for our own render pose.
-    }
+
+var defs = com.hbm_m.platform.EntityDataHooks.sink(this.entityData);
     *///?} else {
     @Override
     protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
 
+var defs = com.hbm_m.platform.EntityDataHooks.sink(builder);
+    //?}
+
         // No synced fields needed - mode/skin only matter server-side and for our own render pose.
     
     }
-    //?}
 
     @Override
     protected void readAdditionalSaveData(CompoundTag tag) {

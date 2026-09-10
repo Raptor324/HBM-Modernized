@@ -140,5 +140,23 @@ public class ClientParticleHandler {
         event.registerSpriteSet(
                 ModParticleTypes.RAD_FOG_PARTICLE.get(),
                 RadFogParticle.Provider::new);
+
+        // RBMK and digamma providers used to live in a forge-only block in ClientSetup, so on
+        // NeoForge these four types had no factory at all.
+        event.registerSpriteSet(
+                ModParticleTypes.RBMK_FLAME.get(),
+                com.hbm_m.particle.custom.RBMKFlameParticle.Provider::new);
+
+        event.registerSpriteSet(
+                ModParticleTypes.RBMK_STEAM.get(),
+                com.hbm_m.particle.custom.RBMKSteamParticle.Provider::new);
+
+        event.registerSpriteSet(
+                ModParticleTypes.RBMK_MUSH.get(),
+                com.hbm_m.particle.custom.RBMKMushParticle.Provider::new);
+
+        event.registerSpriteSet(
+                ModParticleTypes.DIGAMMA_SMOKE.get(),
+                com.hbm_m.particle.custom.DigammaSmokeParticle.Provider::new);
     }
 }

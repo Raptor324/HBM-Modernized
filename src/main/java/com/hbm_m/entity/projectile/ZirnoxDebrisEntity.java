@@ -47,16 +47,18 @@ public class ZirnoxDebrisEntity extends Entity {
 
     /*@Override
     protected void defineSynchedData() {
-        entityData.define(TYPE, 0);
-    }
+
+var defs = com.hbm_m.platform.EntityDataHooks.sink(this.entityData);
     *///?} else {
     @Override
     protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
 
-        builder.define(TYPE, 0);
+var defs = com.hbm_m.platform.EntityDataHooks.sink(builder);
+    //?}
+
+        defs.define(TYPE, 0);
     
     }
-    //?}
 
     public void setDebrisType(DebrisType type) {
         entityData.set(TYPE, type.ordinal());

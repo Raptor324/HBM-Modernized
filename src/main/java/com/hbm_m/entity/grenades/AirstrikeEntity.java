@@ -134,18 +134,19 @@ public class AirstrikeEntity extends Entity {
 
     /*@Override
     protected void defineSynchedData() {
-        this.entityData.define(TARGET_POS, BlockPos.ZERO);
-        this.entityData.define(OWNER_UUID_ACCESSOR, "");
-    }
+
+var defs = com.hbm_m.platform.EntityDataHooks.sink(this.entityData);
     *///?} else {
     @Override
     protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
 
-        builder.define(TARGET_POS, BlockPos.ZERO);
-        builder.define(OWNER_UUID_ACCESSOR, "");
+var defs = com.hbm_m.platform.EntityDataHooks.sink(builder);
+    //?}
+
+        defs.define(TARGET_POS, BlockPos.ZERO);
+        defs.define(OWNER_UUID_ACCESSOR, "");
     
     }
-    //?}
 
     @Override
     public void tick() {

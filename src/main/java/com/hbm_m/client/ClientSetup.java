@@ -1,9 +1,6 @@
 package com.hbm_m.client;
 
 import com.hbm_m.particle.custom.MissileContrailParticle;
-import com.hbm_m.particle.custom.RadFogParticle;
-import com.hbm_m.particle.custom.SchrabfogParticle;
-import com.hbm_m.particle.custom.TownauraParticle;
 import com.hbm_m.particle.ModParticleTypes;
 import java.io.IOException;
 import java.util.HashSet;
@@ -197,8 +194,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 
 //? if forge {
-/*import net.minecraftforge.client.event.RegisterParticleProvidersEvent;
-import net.minecraftforge.api.distmarker.Dist;
+/*import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.ChunkRenderTypeSet;
 import net.minecraftforge.client.event.EntityRenderersEvent;
 import net.minecraftforge.client.event.ModelEvent;
@@ -267,6 +263,11 @@ public class ClientSetup {
         PowerArmorHardLandingCameraShakeClient.initClient();
         PowerArmorSounds.register();
         PowerArmorStepSoundHandler.initClient();
+
+        // Both used to self-register from a forge-only FMLClientSetupEvent subscriber, so on NeoForge
+        // the armour-mod tooltips never appeared.
+        com.hbm_m.armormod.client.ModTooltipHandler.init();
+        com.hbm_m.armormod.client.ArmorModificationClientEvents.init();
 
         // MOTD при входе в мир — решение принимает клиент (client.json -> enableMOTD).
         com.hbm_m.client.ClientMotdHandler.register();
@@ -1134,19 +1135,6 @@ public class ClientSetup {
 
     //? if forge {
     /*@SubscribeEvent
-    public static void onRegisterParticleProviders(RegisterParticleProvidersEvent event) {
-        // Связываем наш ТИП частицы с ее ФАБРИКОЙ.
-        event.registerSpriteSet(ModParticleTypes.TOWNAURA.get(), TownauraParticle.Provider::new);
-        event.registerSpriteSet(ModParticleTypes.SCHRABFOG.get(), SchrabfogParticle.Provider::new);
-        event.registerSpriteSet(ModParticleTypes.RAD_FOG_PARTICLE.get(), RadFogParticle.Provider::new);
-        event.registerSpriteSet(ModParticleTypes.RBMK_FLAME.get(), com.hbm_m.particle.custom.RBMKFlameParticle.Provider::new);
-        event.registerSpriteSet(ModParticleTypes.RBMK_STEAM.get(), com.hbm_m.particle.custom.RBMKSteamParticle.Provider::new);
-        event.registerSpriteSet(ModParticleTypes.RBMK_MUSH.get(), com.hbm_m.particle.custom.RBMKMushParticle.Provider::new);
-        event.registerSpriteSet(ModParticleTypes.DIGAMMA_SMOKE.get(), com.hbm_m.particle.custom.DigammaSmokeParticle.Provider::new);
-        MainRegistry.LOGGER.info("Registered custom particle providers.");
-    }
-
-    @SubscribeEvent
     public static void onRegisterGuiOverlays(net.minecraftforge.client.event.RegisterGuiOverlaysEvent event) {
         MainRegistry.LOGGER.info("Registering GUI overlays...");
         event.registerAbove(net.minecraftforge.client.gui.overlay.VanillaGuiOverlay.HOTBAR.id(), "geiger_counter_hud", OverlayGeiger.GEIGER_HUD_OVERLAY);

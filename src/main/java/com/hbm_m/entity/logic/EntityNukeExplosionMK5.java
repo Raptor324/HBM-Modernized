@@ -86,16 +86,18 @@ public class EntityNukeExplosionMK5 extends EntityExplosionChunkloading {
 
     /*@Override
     protected void defineSynchedData() {
-        // нет синхронизируемых полей
-    }
+
+var defs = com.hbm_m.platform.EntityDataHooks.sink(this.entityData);
     *///?} else {
     @Override
     protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
 
+var defs = com.hbm_m.platform.EntityDataHooks.sink(builder);
+    //?}
+
         // нет синхронизируемых полей
     
     }
-    //?}
 
     @Override
     public void tick() {

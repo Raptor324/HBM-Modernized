@@ -53,23 +53,18 @@ public class DudFugasBlock extends Block implements IDetonatable {
                                 @Nullable net.minecraft.world.level.BlockGetter level,
                                 List<Component> tooltip,
                                 TooltipFlag flag) {
-        tooltip.add(Component.translatable("tooltip.hbm_m.dudfugas.line1")
-                .withStyle(ChatFormatting.DARK_RED));
-        tooltip.add(Component.translatable("tooltip.hbm_m.dudfugas.line6")
-                .withStyle(ChatFormatting.GRAY));
-    }
     *///?} else {
     @Override
     public void appendHoverText(ItemStack stack,
                                 net.minecraft.world.item.Item.TooltipContext level,
                                 List<Component> tooltip,
                                 TooltipFlag flag) {
+    //?}
         tooltip.add(Component.translatable("tooltip.hbm_m.dudfugas.line1")
                 .withStyle(ChatFormatting.DARK_RED));
         tooltip.add(Component.translatable("tooltip.hbm_m.dudfugas.line6")
                 .withStyle(ChatFormatting.GRAY));
     }
-    //?}
     // Не ломается поршнями
     public PushReaction getPistonPushReaction(BlockState state) {
         return PushReaction.BLOCK;

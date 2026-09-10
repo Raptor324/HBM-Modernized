@@ -48,17 +48,19 @@ public class VortexEntity extends BlackHoleEntity {
     /*@Override
     protected void defineSynchedData() {
         super.defineSynchedData();
-        this.entityData.define(SHRINK_RATE, 0.0025F);
-    }
+
+var defs = com.hbm_m.platform.EntityDataHooks.sink(this.entityData);
     *///?} else {
     @Override
     protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
-
         super.defineSynchedData(builder);
-        builder.define(SHRINK_RATE, 0.0025F);
+
+var defs = com.hbm_m.platform.EntityDataHooks.sink(builder);
+    //?}
+
+        defs.define(SHRINK_RATE, 0.0025F);
     
     }
-    //?}
 
     @Override
     protected void readAdditionalSaveData(CompoundTag tag) {

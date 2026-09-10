@@ -73,10 +73,9 @@ public class RBMKNumitronBlockEntity extends RBMKPanelDeviceBlockEntity {
         syncToClient();
     }
 
-    //? if < 1.21.1 {
-    /*@Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    @Override
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         for (int i = 0; i < UNITS; i++) {
             tag.putString("channel" + i, channel[i]);
             tag.putDouble("value" + i, value[i]);
@@ -88,8 +87,8 @@ public class RBMKNumitronBlockEntity extends RBMKPanelDeviceBlockEntity {
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         for (int i = 0; i < UNITS; i++) {
             channel[i] = tag.contains("channel" + i) ? tag.getString("channel" + i) : "";
             value[i]   = tag.getDouble("value" + i);
@@ -99,31 +98,4 @@ public class RBMKNumitronBlockEntity extends RBMKPanelDeviceBlockEntity {
             polling[i] = tag.getBoolean("polling" + i);
         }
     }
-    *///?} else {
-    @Override
-    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-        super.saveAdditional(tag, registries);
-        for (int i = 0; i < UNITS; i++) {
-            tag.putString("channel" + i, channel[i]);
-            tag.putDouble("value" + i, value[i]);
-            tag.putBoolean("zeroes" + i, leadingZeroes[i]);
-            tag.putBoolean("short" + i, shortenNumber[i]);
-            tag.putLong("digits" + i, activeDigits[i]);
-            tag.putBoolean("polling" + i, polling[i]);
-        }
-    }
-
-    @Override
-    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-        super.loadAdditional(tag, registries);
-        for (int i = 0; i < UNITS; i++) {
-            channel[i] = tag.contains("channel" + i) ? tag.getString("channel" + i) : "";
-            value[i]   = tag.getDouble("value" + i);
-            leadingZeroes[i] = !tag.contains("zeroes" + i) || tag.getBoolean("zeroes" + i);
-            shortenNumber[i] = !tag.contains("short" + i)  || tag.getBoolean("short" + i);
-            activeDigits[i]  = tag.contains("digits" + i) ? tag.getLong("digits" + i) : 0b01111111L;
-            polling[i] = tag.getBoolean("polling" + i);
-        }
-    }
-    //?}
 }

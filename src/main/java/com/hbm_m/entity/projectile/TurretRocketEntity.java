@@ -62,17 +62,19 @@ public class TurretRocketEntity extends ThrowableItemProjectile {
     /*@Override
     protected void defineSynchedData() {
         super.defineSynchedData();
-        this.entityData.define(ICON_ITEM_ID, "");
-    }
+
+var defs = com.hbm_m.platform.EntityDataHooks.sink(this.entityData);
     *///?} else {
     @Override
     protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
-
         super.defineSynchedData(builder);
-        builder.define(ICON_ITEM_ID, "");
+
+var defs = com.hbm_m.platform.EntityDataHooks.sink(builder);
+    //?}
+
+        defs.define(ICON_ITEM_ID, "");
     
     }
-    //?}
 
     @Override
     protected Item getDefaultItem() {

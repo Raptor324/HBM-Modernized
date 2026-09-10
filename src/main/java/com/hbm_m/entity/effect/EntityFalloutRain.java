@@ -572,16 +572,18 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
 
     /*@Override
     protected void defineSynchedData() {
-        this.entityData.define(SCALE, 1);
-    }
+
+var defs = com.hbm_m.platform.EntityDataHooks.sink(this.entityData);
     *///?} else {
     @Override
     protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
 
-        builder.define(SCALE, 1);
+var defs = com.hbm_m.platform.EntityDataHooks.sink(builder);
+    //?}
+
+        defs.define(SCALE, 1);
     
     }
-    //?}
 
     @Override
     protected void readAdditionalSaveData(CompoundTag tag) {

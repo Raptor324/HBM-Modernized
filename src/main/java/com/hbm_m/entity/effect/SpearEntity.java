@@ -51,14 +51,14 @@ public class SpearEntity extends Entity {
     //? if < 1.21.1 {
     /*@Override
     protected void defineSynchedData() {
-        this.entityData.define(TICKS_IN_GROUND, 0);
-    }
+        var defs = com.hbm_m.platform.EntityDataHooks.sink(this.entityData);
     *///?} else {
     @Override
     protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
-        builder.define(TICKS_IN_GROUND, 0);
-    }
+        var defs = com.hbm_m.platform.EntityDataHooks.sink(builder);
     //?}
+        defs.define(TICKS_IN_GROUND, 0);
+    }
 
     public int getTicksInGround() {
         return this.entityData.get(TICKS_IN_GROUND);

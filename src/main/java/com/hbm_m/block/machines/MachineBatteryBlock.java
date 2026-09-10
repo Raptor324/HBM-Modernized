@@ -181,12 +181,11 @@ public class MachineBatteryBlock extends BaseEntityBlock {
     //? if < 1.21.1 {
     /*@Override
     public void appendHoverText(ItemStack pStack, @Nullable BlockGetter pLevel, List<Component> pTooltip, TooltipFlag pFlag) {
-        super.appendHoverText(pStack, pLevel, pTooltip, pFlag);
     *///?} else {
     @Override
     public void appendHoverText(ItemStack pStack, net.minecraft.world.item.Item.TooltipContext pLevel, List<Component> pTooltip, TooltipFlag pFlag) {
-        super.appendHoverText(pStack, pLevel, pTooltip, pFlag);
     //?}
+        super.appendHoverText(pStack, pLevel, pTooltip, pFlag);
 
         // 1. Получаем сохраненную энергию из NBT
         long energy = 0;
