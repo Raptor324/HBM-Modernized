@@ -76,11 +76,13 @@
 - **Регистр:** `inventory/fluid/ModFluids` — 164 жидкости, у каждой цвет и опционально газовая форма.
 - **Бак:** `inventory/fluid/tank/FluidTank` — тип, объём, **давление** (`getPressure`), плюс загрузчики
   (`FluidLoaderStandard`, `FluidLoaderFillableItem`, `FluidLoaderInfinite`) для слотов канистр.
-- **Трейты жидкости** (`inventory/fluid/trait/`, 14 штук): горючесть (`FT_Flammable`),
+- **Трейты жидкости** (`inventory/fluid/trait/`, 11 штук плюс база `FluidTrait`/`FluidTraitSimple`
+  и енум `PollutionType`): горючесть (`FT_Flammable`),
   сгораемость в топливе (`FT_Combustible`), охлаждение (`FT_Coolable`), нагрев (`FT_Heatable`),
   коррозия (`FT_Corrosive`), яд и токсин, феромоны, загрязнение (`FT_Polluting` + `PollutionType`),
   замедлитель PWR, радиоактивный выхлоп. Трейты определяют, что жидкость делает в машине и в мире.
-  Раздаются они в одном месте — `api/fluids/bootstrap/ModFluidTraitsBootstrap` (все 164 жидкости).
+  Раздаются они в одном месте — `api/fluids/bootstrap/ModFluidTraitsBootstrap`: 41 назначение
+  на 33 жидкости, у остальных трейтов нет.
 - **Сеть:** `FluidNetProvider` создаёт по сети **на каждый тип жидкости**; `FluidNet` раздаёт объём
   по уровням давления и приоритетам подключения (`ConnectionPriority`), с добором остатка
   до 100 итераций.
@@ -98,9 +100,13 @@
 
 **Где:** `interfaces/IHeatSource` — три метода (`getHeatStored`, `getMaxHeatStored`, `useUpHeat`).
 
-Отдельной сети нет: потребитель сам ищет источник у соседнего блока. Участников десять — топка,
-нагревательная печь, нагреватель, теплообменник, кокер, сталелитейная печь, Гефест, лесопилка,
-Стирлинг, нефтяная горелка.
+Отдельной сети нет: потребитель сам ищет источник у соседнего блока.
+
+- **Источники** (реализуют интерфейс), 4: топка, электронагреватель, теплообменник, нефтяная горелка.
+- **Потребители** (ищут источник рядом), 6: паровой котёл, кокер, сталелитейная печь, Гефест,
+  лесопилка, Стирлинг.
+
+Нагревательная печь в этой шине не участвует — она отдаёт энергию, а не тепло.
 
 ---
 
@@ -128,11 +134,12 @@
 
 `HazardSystem` — таблица «предмет → список эффектов», по одному `HazardEntry` на тип:
 
-- **9 типов** (`hazard/type/`): радиация, асбест, угольная пыль, дигамма, ожог, гидроактивность,
-  ослепление, взрывоопасность, база.
-- **5 модификаторов** (`hazard/modifier/`): радиация топлива, горячий РБМК-стержень,
-  радиация РБМК-стержня, радиация РТГ.
-- **4 трансформера** (`hazard/transformer/`): пересчёт радиации для контейнеров, ME-хранилищ и NBT.
+- **8 типов** (`hazard/type/` плюс база `HazardTypeBase`): радиация, асбест, угольная пыль,
+  дигамма, ожог, гидроактивность, ослепление, взрывоопасность.
+- **4 модификатора** (`hazard/modifier/` плюс база `HazardModifier`): радиация топлива,
+  горячий РБМК-стержень, радиация РБМК-стержня, радиация РТГ.
+- **3 трансформера** (`hazard/transformer/` плюс база `HazardTransformerBase`): пересчёт радиации
+  для контейнеров, ME-хранилищ и NBT.
 
 Регистрация — `HazardRegistry.registerItems()` из `MainRegistry`. Тултипы опасности рисует
 `HazardTooltipHandler`, применение к игроку — `PlayerHazardHandler`.
@@ -141,7 +148,7 @@
 
 ## 6. Газы
 
-**Где:** `block/gas/` — 11 блоков-газов (хлор, угольная пыль, асбест, монооксид, радон обычный,
+**Где:** `block/gas/` — 10 блоков-газов плюс база `BlockGasBase` (хлор, угольная пыль, асбест, монооксид, радон обычный,
 плотный и «гробничный», взрывоопасный, горючий, meltdown).
 
 Общая база `BlockGasBase`: газ живёт как блок, растекается по `tick`/`randomTick` в направлении,
@@ -156,7 +163,7 @@
 
 1. **Модульный «ванильный» взрыв** — `explosion/vanillant/ExplosionVNT`: сборка из стратегий
    (`IBlockAllocator`, `IBlockProcessor`, `IEntityProcessor`, `IExplosionSFX` + мутаторы блоков,
-   дропа и радиуса). Готовые реализации — в `vanillant/standard/`.
+   дропа и радиуса). Готовые реализации — в `explosion/vanillant/standard/`.
 2. **Ядерный взрыв** — `explosion/NuclearExplosionAPI` + `NuclearExplosionConfig` + сущность
    `EntityNukeExplosionMK5`, поедание чанков `NukeMk5ChunkEater`, лучевая модель
    `ExplosionNukeRayParallelized`. Гриб рисуется отдельно на клиенте.
@@ -297,13 +304,13 @@
 
 Самая объёмная часть после блок-энтити (279 файлов).
 
-- **Рендер машин:** `client/render/implementations/` (49), `render/machine/`, `render/rbmk/`,
+- **Рендер машин:** `client/render/implementations/` (49), `client/render/machine/`, `client/render/rbmk/`,
   запечённые модели `client/model/` (33) поверх `AbstractMultipartBakedModel` — модель собирается
   из именованных частей OBJ.
 - **Загрузчики моделей:** `client/loader/` (33) — OBJ, DAE и специальные загрузчики машин.
-- **Батчинг и производительность:** `render/MdiBatchCoordinator`, `SingleMeshVboRenderer`,
-  `InstancedStaticPartRenderer`, `render/culling/` — своя система инстансинга и отсечения.
-- **Шейдеры:** `render/shader/` (14) — совместимость с Iris/Oculus, `IrisRenderBatch`,
+- **Батчинг и производительность:** `client/render/MdiBatchCoordinator`, `SingleMeshVboRenderer`,
+  `InstancedStaticPartRenderer`, `client/render/culling/` — своя система инстансинга и отсечения.
+- **Шейдеры:** `client/render/shader/` (14) — совместимость с Iris/Oculus, `IrisRenderBatch`,
   детектор внешнего шейдера, модификации шейдеров.
 - **Частицы:** `particle/` (62 файла) — своя система `nt` с собственным движком (`ParticleEngineNT`),
   взрывные кольца, гриб (`NukeTorex`), дым, туман.
