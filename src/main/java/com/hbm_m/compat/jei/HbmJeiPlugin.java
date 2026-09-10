@@ -111,6 +111,12 @@ public class HbmJeiPlugin implements IModPlugin {
         registration.addRecipeCategories(new ElectrolyserMetalJeiCategory(registration.getJeiHelpers().getGuiHelper()));
         registration.addRecipeCategories(new CrackingTowerJeiCategory(registration.getJeiHelpers().getGuiHelper()));
         registration.addRecipeCategories(new RadiolysisJeiCategory(registration.getJeiHelpers().getGuiHelper()));
+
+        // Машины, у которых категории не было вовсе (см. JeiExtraCategories).
+        for (mezz.jei.api.recipe.category.IRecipeCategory<?> extra
+                : JeiExtraCategories.create(registration.getJeiHelpers().getGuiHelper())) {
+            registration.addRecipeCategories(extra);
+        }
     }
 
     @Override
@@ -156,10 +162,13 @@ public class HbmJeiPlugin implements IModPlugin {
         registration.addRecipes(RBMKDisassemblyJeiCategory.RECIPE_TYPE, RBMKDisassemblyJeiRecipe.all());
         registration.addRecipes(RBMKWasteDecayJeiCategory.RECIPE_TYPE, RBMKWasteDecayJeiCategory.all());
         registration.addRecipes(RBMKOutgasserJeiCategory.RECIPE_TYPE, RBMKOutgasserJeiCategory.all());
+
+        JeiExtraCategories.registerRecipes(registration, level);
     }
 
     @Override
     public void registerRecipeCatalysts(@Nonnull IRecipeCatalystRegistration registration) {
+        JeiExtraCategories.registerCatalysts(registration);
         for (var anvil : ModBlocks.getAnvilBlocks()) {
             registration.addRecipeCatalyst(new ItemStack(anvil.get()), AnvilJeiCategory.RECIPE_TYPE);
         }
