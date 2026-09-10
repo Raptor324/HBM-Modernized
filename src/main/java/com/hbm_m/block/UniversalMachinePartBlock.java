@@ -468,6 +468,33 @@ public class UniversalMachinePartBlock extends BaseEntityBlock implements IDeton
     }
 
     /**
+     * Hands a blast on a casing to the machine that owns it.
+     *
+     * <p>Upstream a machine is a single block with dummy metas, so an explosion on any of its
+     * cells runs the machine's own handler - a refinery catches fire and drops nothing
+     * (MachineRefinery.onBlockExploded, dropFromExplosion = false). Here the casings are a
+     * separate block, so a blast that happened to hit one instead of the core bypassed all of
+     * that and the cascade dropped the machine as a normal item.
+     */
+    @Override
+    public void onBlockExploded(BlockState state, Level level, BlockPos pos,
+                                net.minecraft.world.level.Explosion explosion) {
+        if (!level.isClientSide() && level.getBlockEntity(pos) instanceof IMultiblockPart part) {
+            BlockPos controllerPos = part.getControllerPos();
+            if (controllerPos != null && !controllerPos.equals(pos)) {
+                BlockState controllerState = level.getBlockState(controllerPos);
+                if (controllerState.getBlock() instanceof IMultiblockController) {
+                    // The controller takes itself down and cascades the rest of the structure,
+                    // this casing included.
+                    controllerState.getBlock().onBlockExploded(controllerState, level, controllerPos, explosion);
+                    return;
+                }
+            }
+        }
+        super.onBlockExploded(state, level, pos, explosion);
+    }
+
+    /**
      * Harvesting any casing takes the machine down with it, exactly like the original's
      * BlockDummyable. Shared by both platform branches of playerWillDestroy.
      */
