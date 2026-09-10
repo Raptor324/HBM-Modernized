@@ -1,6 +1,7 @@
 # Аудит версионных ветвлений: что не по конвенции хуков
 
 Ветка `funni-stuff`, снимок от 2026-09-10, активная версия `1.21.1-neoforge`.
+Цифры в разделе 1 сняты **до** удаления Fabric — 257 из 2092 цепочек были фабричными и уже удалены.
 
 Конвенция владельца: **все версионные различия живут в классах-хуках**
 (`platform/PlatformHooks`, `FluidHooks`, `ItemHooks`, `RenderHooks`, `LoaderHooks`,
@@ -60,7 +61,8 @@
 всегда отклонение.
 
 **Правило 4. Ветка на платформу, которой в сборке нет, — мёртвый код.**
-`settings.gradle.kts` объявляет только `1.21.1-neoforge` и `1.20.1-forge`; fabric закомментирован.
+`settings.gradle.kts` объявляет только `1.21.1-neoforge` и `1.20.1-forge`. Поддержка Fabric
+прекращена, его код удалён целиком — константы `fabric` больше не существует.
 
 ---
 
@@ -160,7 +162,7 @@
 | 3 | `api/fluids/ForgeFluidHandlerMK2` — зеркало уже существующего `NeoForgeFluidHandlerMK2` | ~30 | 18 | на NeoForge всё покрыто одним классом на 126 строк, на Forge каждая машина пишет свой. Снимает целиком 6 файлов-обёрток (`RefineryFluidHandler` 100 строк, `FrackingTowerFluidHandler` 146 и др.). При выносе не потерять пофасадные фильтры (дыра 4) |
 | 4 | `api/energy/ItemEnergyAccess`: `isEnergyItem`, `canExtractEnergy`, `canReceiveEnergy`, `pushEnergyToNeighbor` | 20 | 14 | то же, что пункт 1 раздела 5, но там, где готового метода не хватает |
 | 5 | `LoaderHooks.registerServerTick` / `registerEquipmentChange` / `registerClientSetup` | 16 | 12 | обвязка шин событий. Эталон — `ArmorModTickHandler.init()`. Закрывает дыру 9 |
-| 6 | `platform/JeiHooks.addFluidIngredient` | 11 | 9 | `ForgeTypes.FLUID_STACK` против `NeoForgeTypes.FLUID_STACK`. **Но см. раздел 8** — JEI на NeoForge выключен целиком, так что сейчас это мёртвый груз |
+| 6 | ~~`platform/JeiHooks.addFluidIngredient`~~ — сделано как `compat/jei/JeiFluidSlots` | 11 | 9 | закрыто вместе с включением JEI на NeoForge |
 | 7 | `PlatformHooks.forEachBlock` / `itemById` / `createTier` | 9 | 6 | реестры и `Tier` |
 | 8 | `RenderHooks.vertexFormat(LinkedHashMap<…>)` | 6 | 3 | `ImmutableMap` в конструкторе против `Builder` |
 | 9 | `RenderHooks.partialTick(boolean)` / `updateLightTexture()` | 5 | 5 | `getFrameTime()` против `DeltaTracker` |
@@ -190,7 +192,8 @@
 
 ## 8. Решения владельца
 
-**Р1. Судьба fabric-кода.** Fabric не собирается ни в одной из объявленных версий, но кода много:
+**Р1. Судьба fabric-кода — закрыто.** Поддержка Fabric прекращена, весь код удалён
+(21 файл целиком, ветки в 275 файлах, записи в сборке): минус 5125 строк. Ниже — что было.
 
 | что | блоков | файлов | строк |
 |---|---:|---:|---|
@@ -210,11 +213,9 @@
 
 Вопрос: fabric возвращается или его чистить? Без ответа трогать нельзя — это ~6000 строк.
 
-**Р2. JEI на NeoForge.** `compat/jei/HbmJeiPlugin.java:60` — весь класс в `//? if forge`, на 1.21.1
-остаётся приватный конструктор-заглушка. Шесть категорий (`AmmoPress`, `ArcWelder`, `Centrifuge`,
-`ElectrolyserMetal`, `ExposureChamber`, `SolderingStation`) выродились в заглушки, а одиннадцать
-несут живые neoforge-ветки, которые никогда не исполняются. Либо порт плагина на NeoForge, либо
-вычистить неисполняемые ветки. Пока это ~28 блоков мёртвого груза на активной цели.
+**Р2. JEI на NeoForge — закрыто.** Плагин и 16 категорий-заглушек расширены до
+`forge || neoforge`, различие лоадеров осталось одно (тип жидкостного ингредиента) и живёт
+в `compat/jei/JeiTypes`. Заодно добавлены 15 категорий, которых не было вовсе, — 486 рецептов.
 
 **Р3. `isLadder` у обшивки мультиблока.** `UniversalMachinePartBlock:297` определяет `isLadder`
 только для `< 1.21.1`, хотя `IBlockExtension#isLadder` в NeoForge 1.21.1 есть. Лазание, скорее всего,
