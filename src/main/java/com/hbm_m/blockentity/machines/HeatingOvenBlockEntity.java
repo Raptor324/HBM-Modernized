@@ -124,6 +124,7 @@ public class HeatingOvenBlockEntity extends BaseMachineBlockEntity {
                 int fuelValue = AbstractFurnaceBlockEntity.getFuel().getOrDefault(fuelStack.getItem(), 0);
                 if (fuelValue > 0) {
                     blockEntity.burnTime = fuelValue;
+                    MachineAshpitBlockEntity.feedFromBurner(level, pos, fuelStack, fuelValue);
                     fuelStack.shrink(1);
                     blockEntity.isOn = true;
                     blockEntity.setChanged();

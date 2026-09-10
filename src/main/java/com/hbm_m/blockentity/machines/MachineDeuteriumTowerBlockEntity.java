@@ -30,7 +30,8 @@ import net.minecraft.world.level.block.state.BlockState;
  * Geruest - Original ist ein {@code BlockDummyable} mit Verbindungspunkten, hier als Einzelblock
  * mit Tank-Kapazitaeten der Turm-Variante nachgebaut (Funktion identisch, ohne die reine Deko-Hoehe).
  */
-public class MachineDeuteriumTowerBlockEntity extends BaseMachineBlockEntity {
+public class MachineDeuteriumTowerBlockEntity extends BaseMachineBlockEntity
+        implements com.hbm_m.api.fluids.IFluidStandardReceiverMK2 {
 
     public static final int TANK_WATER = 0;
     public static final int TANK_HEAVY_WATER = 1;
@@ -49,19 +50,15 @@ public class MachineDeuteriumTowerBlockEntity extends BaseMachineBlockEntity {
         super(ModBlockEntities.DEUTERIUM_TOWER_BE.get(), pos, state, 0, 100_000L, 10_000L);
     }
 
-    //? if forge {
-    /*@Override
-    public @org.jetbrains.annotations.NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(
-            net.minecraftforge.common.capabilities.Capability<T> cap, @Nullable net.minecraft.core.Direction side) {
-        if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER) {
-            return tanks[TANK_WATER].getForgeFluidCapability().cast();
-        }
-        return super.getCapability(cap, side);
-    }
-    *///?}
-
     public static void tick(Level level, BlockPos pos, BlockState state, MachineDeuteriumTowerBlockEntity be) {
         if (level.isClientSide()) return;
+
+        // A receiver only joins a duct network by subscribing to the pipes next to it.
+        if (level.getGameTime() % 20 == 0) {
+            for (net.minecraft.core.Direction dir : net.minecraft.core.Direction.values()) {
+                be.trySubscribe(be.tanks[TANK_WATER], level, pos.relative(dir), dir);
+            }
+        }
 
         FluidTank water = be.tanks[TANK_WATER];
         FluidTank heavyWater = be.tanks[TANK_HEAVY_WATER];
@@ -90,6 +87,23 @@ public class MachineDeuteriumTowerBlockEntity extends BaseMachineBlockEntity {
 
     public FluidTank getTank(int index) {
         return tanks[index];
+    }
+
+    // The tank used to be reachable only through a forge-gated getCapability override, so on
+    // NeoForge no pipe could ever fill it. The mod's own MK2 interface works on both.
+    @Override
+    public com.hbm_m.inventory.fluid.tank.FluidTank[] getAllTanks() {
+        return new com.hbm_m.inventory.fluid.tank.FluidTank[] { tanks[TANK_WATER], tanks[TANK_HEAVY_WATER] };
+    }
+
+    @Override
+    public com.hbm_m.inventory.fluid.tank.FluidTank[] getReceivingTanks() {
+        return new com.hbm_m.inventory.fluid.tank.FluidTank[] { tanks[TANK_WATER] };
+    }
+
+    @Override
+    public boolean isLoaded() {
+        return level != null && !isRemoved() && level.isLoaded(worldPosition);
     }
 
     @Override

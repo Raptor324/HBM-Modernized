@@ -303,6 +303,20 @@ public class HazardRegistry {
         HazardSystem.register(ModItems.PLATE_FUEL_PU238BE.get(), new HazardData(
                 new HazardEntry(RADIATION, 15f)));
 
+        // waste_plate_* (GIT HazardRegistry.registerOtherWaste / registerRadSourceWaste, wst * ingot).
+        // The items were registered without any hazard at all, so spent fuel plates were safe to
+        // carry. Only the fresh variant exists in this port, so only the meta-0 value applies:
+        // base * 0.075 for the waste plates, the plain base for the two rad-source ones.
+        wastePlateHazard(ModItems.WASTE_PLATE_U233.get(), 13f);
+        wastePlateHazard(ModItems.WASTE_PLATE_U235.get(), 10f);
+        wastePlateHazard(ModItems.WASTE_PLATE_MOX.get(), 16f);
+        wastePlateHazard(ModItems.WASTE_PLATE_PU239.get(), 13.5f);
+        wastePlateHazard(ModItems.WASTE_PLATE_SA326.get(), 10f);
+        HazardSystem.register(ModItems.WASTE_PLATE_RA226BE.get(), new HazardData(
+                new HazardEntry(RADIATION, 75f * 3f * 0.1f * 3f)));
+        HazardSystem.register(ModItems.WASTE_PLATE_PU238BE.get(), new HazardData(
+                new HazardEntry(RADIATION, 10f * 3f * 0.1f)));
+
         // crystals (GIT HazardRegistry)
         HazardSystem.register(ModMaterialItems.item(ModMaterials.URANIUM, MaterialShape.CRYSTAL), new HazardData(
                 new HazardEntry(RADIATION, 3.5f)));
@@ -365,6 +379,12 @@ public class HazardRegistry {
      * охлаждающееся (meta 1, предмет из PartTabMetaItems) = base + HOT 5,
      * где base = wst(15) * billet(0.5) * mult.
      */
+    /** GIT registerOtherWaste for a plate: wst * ingot * mult, meta 0 carries 7.5% of it. */
+    private static void wastePlateHazard(Item plate, float mult) {
+        if (plate == null) return;
+        HazardSystem.register(plate, new HazardData(new HazardEntry(RADIATION, 15f * mult * 0.075f)));
+    }
+
     private static void registerOtherWastePair(Item fresh, String coolingId, float mult) {
         float base = 15f * 0.5f * mult;
         if (fresh != null) {

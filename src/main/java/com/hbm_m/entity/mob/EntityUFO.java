@@ -51,9 +51,7 @@ import java.util.List;
  * is on takes 1000 damage, catches fire and is irradiated.</p>
  *
  * <p><b>Substitutions:</b> the projectiles are {@link TurretBulletEntity} rather than the
- * unported {@code EntityBulletBaseNT}, so the rockets fly straight instead of homing. The death
- * blast is a vanilla explosion where the original also calls {@code ExplosionNukeSmall}, which
- * this port does not have.</p>
+ * unported {@code EntityBulletBaseNT}, so the rockets fly straight instead of homing.</p>
  */
 public class EntityUFO extends Mob implements Enemy, IRadiationImmune {
 
@@ -383,9 +381,10 @@ public class EntityUFO extends Mob implements Enemy, IRadiationImmune {
         }
 
         if (this.deathTime == 19 && !this.level().isClientSide) {
-            // The original follows this with ExplosionNukeSmall.PARAMS_MEDIUM, which is not ported.
             this.level().explode(this, this.getX(), this.getY(), this.getZ(),
                     10F, Level.ExplosionInteraction.MOB);
+            com.hbm_m.explosion.ExplosionNukeSmall.explode(this.level(), this.getX(), this.getY(), this.getZ(),
+                    com.hbm_m.explosion.ExplosionNukeSmall.PARAMS_MEDIUM);
 
             ModAdvancements.grantNearby(this, 200D, ModAdvancements.BOSS_UFO);
             for (Player player : this.level().getEntitiesOfClass(Player.class,

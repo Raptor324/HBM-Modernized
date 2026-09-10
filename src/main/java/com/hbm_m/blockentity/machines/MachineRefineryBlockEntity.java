@@ -370,7 +370,6 @@ public class MachineRefineryBlockEntity extends BaseMachineBlockEntity implement
 
         if (VanillaFluidEquivalence.sameSubstance(input, ModFluids.HOTCRACKOIL.getSource())
             || VanillaFluidEquivalence.sameSubstance(input, ModFluids.CRACKOIL.getSource())) {
-            // Original byproduct is oil_tar (CRACK), but oil_tar system is not ported yet.
             return new RefineryRecipe(
                 new Fluid[] {
                     ModFluids.NAPHTHA_CRACK.getSource(),
@@ -379,13 +378,12 @@ public class MachineRefineryBlockEntity extends BaseMachineBlockEntity implement
                     ModFluids.UNSATURATEDS.getSource()
                 },
                 new int[] {CRACK_FRAC_NAPH, CRACK_FRAC_LIGHT, CRACK_FRAC_AROMA, CRACK_FRAC_UNSAT},
-                ItemStack.EMPTY
+                new ItemStack(ModItems.OIL_TAR_CRACK.get())
             );
         }
 
         if (VanillaFluidEquivalence.sameSubstance(input, ModFluids.HOTOIL_DS.getSource())
             || VanillaFluidEquivalence.sameSubstance(input, ModFluids.OIL_DS.getSource())) {
-            // Original byproduct is oil_tar (PARAFFIN), but oil_tar system is not ported yet.
             return new RefineryRecipe(
                 new Fluid[] {
                     ModFluids.HEAVYOIL.getSource(),
@@ -394,13 +392,12 @@ public class MachineRefineryBlockEntity extends BaseMachineBlockEntity implement
                     ModFluids.UNSATURATEDS.getSource()
                 },
                 new int[] {OILDS_FRAC_HEAVY, OILDS_FRAC_NAPH, OILDS_FRAC_LIGHT, OILDS_FRAC_UNSAT},
-                ItemStack.EMPTY
+                new ItemStack(ModItems.OIL_TAR_PARAFFIN.get())
             );
         }
 
         if (VanillaFluidEquivalence.sameSubstance(input, ModFluids.HOTCRACKOIL_DS.getSource())
             || VanillaFluidEquivalence.sameSubstance(input, ModFluids.CRACKOIL_DS.getSource())) {
-            // Original byproduct is oil_tar (PARAFFIN), but oil_tar system is not ported yet.
             return new RefineryRecipe(
                 new Fluid[] {
                     ModFluids.NAPHTHA_DS.getSource(),
@@ -409,7 +406,7 @@ public class MachineRefineryBlockEntity extends BaseMachineBlockEntity implement
                     ModFluids.UNSATURATEDS.getSource()
                 },
                 new int[] {CRACKDS_FRAC_NAPH, CRACKDS_FRAC_LIGHT, CRACKDS_FRAC_AROMA, CRACKDS_FRAC_UNSAT},
-                ItemStack.EMPTY
+                new ItemStack(ModItems.OIL_TAR_PARAFFIN.get())
             );
         }
 

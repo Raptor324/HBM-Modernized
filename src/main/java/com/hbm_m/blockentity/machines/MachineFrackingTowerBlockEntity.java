@@ -86,6 +86,7 @@ public class MachineFrackingTowerBlockEntity extends BaseMachineBlockEntity impl
     protected int speedUpgradeLevel = 0;
     protected int powerUpgradeLevel = 0;
     protected int afterburnerUpgradeLevel = 0;
+    protected int overdriveUpgradeLevel = 0;
 
     private final com.hbm_m.inventory.UpgradeManager upgradeManager = new com.hbm_m.inventory.UpgradeManager();
 
@@ -222,7 +223,7 @@ public class MachineFrackingTowerBlockEntity extends BaseMachineBlockEntity impl
         if (powerUpgradeLevel > 0) {
             baseDelay = (int) (baseDelay * (1.0 + powerUpgradeLevel * 0.10));
         }
-        return Math.max(1, baseDelay);
+        return Math.max(1, baseDelay / (overdriveUpgradeLevel + 1));
     }
 
     public long getConsumption() {
@@ -234,7 +235,7 @@ public class MachineFrackingTowerBlockEntity extends BaseMachineBlockEntity impl
         if (powerUpgradeLevel > 0) {
             baseConsumption = (long) (baseConsumption * (1.0 - powerUpgradeLevel * 0.25));
         }
-        return baseConsumption;
+        return baseConsumption * (overdriveUpgradeLevel + 1);
     }
 
     //=====================================================================================//
@@ -247,6 +248,7 @@ public class MachineFrackingTowerBlockEntity extends BaseMachineBlockEntity impl
         entity.ensureNetworkInitialized();
         entity.chargeFromBatterySlot(SLOT_BATTERY);
         entity.updateUpgrades();
+        entity.burnAfterburnerGas();
         entity.processFluidContainers();
         
         // Проверка условий для работы
@@ -291,8 +293,8 @@ public class MachineFrackingTowerBlockEntity extends BaseMachineBlockEntity impl
         upgradeManager.checkSlots(inventory, SLOT_UPGRADE_1, SLOT_UPGRADE_3, VALID_UPGRADES_FRACK);
         speedUpgradeLevel = upgradeManager.getLevel(com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType.SPEED);
         powerUpgradeLevel = upgradeManager.getLevel(com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType.POWER);
-        afterburnerUpgradeLevel = upgradeManager.getLevel(com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType.AFTERBURN)
-                + upgradeManager.getLevel(com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType.OVERDRIVE);
+        afterburnerUpgradeLevel = upgradeManager.getLevel(com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType.AFTERBURN);
+        overdriveUpgradeLevel = upgradeManager.getLevel(com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType.OVERDRIVE);
     }
 
     /**
@@ -392,8 +394,6 @@ public class MachineFrackingTowerBlockEntity extends BaseMachineBlockEntity impl
         if (oil > 0) oilTank.fillMb(ModFluids.CRUDE_OIL.getSource(), oil);
         if (gas > 0) gasTank.fillMb(ModFluids.GAS.getSource(),       gas);
 
-        if (afterburnerUpgradeLevel > 0) applyAfterburnerEffect(orePos);
-
         indicator = 0;
     }
 
@@ -474,13 +474,12 @@ public class MachineFrackingTowerBlockEntity extends BaseMachineBlockEntity impl
         }
     }
 
-    /**
-     * Применение эффекта Afterburner апгрейда.
-     */
-    protected void applyAfterburnerEffect(BlockPos pos) {
-        // Дополнительный урон и бонусы от afterburner
-        // Уровень эффекта: level * 10 урона, level * 50% шанс
-        // TODO: Реализовать эффекты урона и частиц
+    /** GIT TileEntityOilDrillBase: the afterburner burns associated gas every tick, not on extraction. */
+    protected void burnAfterburnerGas() {
+        int toBurn = Math.min(gasTank.getFluidAmountMb(), afterburnerUpgradeLevel * 10);
+        if (toBurn <= 0) return;
+        gasTank.drainMb(toBurn);
+        energy = Math.min(energy + toBurn * 5L, getMaxEnergyStored());
     }
 
     //=====================================================================================//
@@ -507,6 +506,7 @@ public class MachineFrackingTowerBlockEntity extends BaseMachineBlockEntity impl
         tag.putInt("speedUpgrade", speedUpgradeLevel);
         tag.putInt("powerUpgrade", powerUpgradeLevel);
         tag.putInt("afterburnerUpgrade", afterburnerUpgradeLevel);
+        tag.putInt("overdriveUpgrade", overdriveUpgradeLevel);
     }
 
     @Override
@@ -520,6 +520,7 @@ public class MachineFrackingTowerBlockEntity extends BaseMachineBlockEntity impl
         speedUpgradeLevel = tag.getInt("speedUpgrade");
         powerUpgradeLevel = tag.getInt("powerUpgrade");
         afterburnerUpgradeLevel = tag.getInt("afterburnerUpgrade");
+        overdriveUpgradeLevel = tag.getInt("overdriveUpgrade");
     }
 
     //=====================================================================================//
