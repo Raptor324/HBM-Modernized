@@ -27,8 +27,9 @@ public class GUIMachineAutocrafter extends AbstractContainerScreen<MachineAutocr
     public GUIMachineAutocrafter(MachineAutocrafterMenu menu, Inventory inventory, Component title) {
         super(menu, inventory, title);
         this.blockEntity = menu.getBlockEntity();
+        // Original: 176x240 - zwei Gitter uebereinander brauchen die Hoehe.
         this.imageWidth = 176;
-        this.imageHeight = 200;
+        this.imageHeight = 240;
         this.inventoryLabelY = imageHeight - 96 + 2;
     }
 

@@ -6,6 +6,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.annihilator.AnnihilatorPoolManager;
+import com.hbm_m.inventory.fluid.trait.FT_Polluting;
+import com.hbm_m.inventory.fluid.trait.FluidTrait.FluidReleaseType;
 import com.hbm_m.api.fluids.IFluidStandardReceiverMK2;
 import com.hbm_m.blockentity.BaseMachineBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
@@ -48,7 +50,8 @@ import net.minecraft.world.level.material.Fluid;
  * Original experimentell/deaktiviert war. Die eigentliche Kernmechanik (Zaehlung, Pools, Monitor,
  * Strahlung) ist vollstaendig 1:1 uebernommen.
  * <p>
- * Ebenfalls nicht uebernommen: aktive Pollution-Effekte beim Vernichten von Fluiden ({@code
+ * Die Verschmutzung beim Vernichten von Fluiden ist portiert (BURN mit der doppelten Menge).
+ * Ebenfalls nicht uebernommen: ({@code
  * FT_Polluting.pollute(...)} im Original) - {@link com.hbm_m.inventory.fluid.trait.FT_Polluting}
  * ist in diesem Port rein deklarative Tooltip-Metadata ohne Wirkmethode (siehe gleiche Entscheidung
  * bei {@link MachineFlareStackBlockEntity}).
@@ -129,6 +132,9 @@ public class MachineAnnihilatorBlockEntity extends BaseMachineBlockEntity implem
         Fluid fluid = tank.getTankType();
         ResourceLocation id = BuiltInRegistries.FLUID.getKey(fluid);
         AnnihilatorPoolManager.get(level).add(poolName, "fluid:" + id, fill);
+
+        // Original: FT_Polluting.pollute(..., BURN, tank.getFill() * 2).
+        FT_Polluting.pollute(level, worldPosition, fluid, FluidReleaseType.BURN, fill * 2F);
 
         tank.drainMb(fill);
     }

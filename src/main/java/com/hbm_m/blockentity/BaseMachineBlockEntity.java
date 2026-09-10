@@ -460,23 +460,39 @@ public abstract class BaseMachineBlockEntity extends BaseHbmBlockEntity implemen
         long toTransfer = Math.min(this.energy, this.maxExtract > 0 ? this.maxExtract : this.maxReceive);
         if (toTransfer <= 0) return;
 
+        chargeStack(itemToCharge, toTransfer);
+    }
+
+    /**
+     * Laedt einen einzelnen Gegenstand und zieht das Aufgenommene vom eigenen Puffer ab.
+     * Herausgezogen aus {@link #chargeItemInSlot(int)}, damit auch Maschinen ohne Inventar laden
+     * koennen (etwa das Ladegeraet, das die Ausruestung umstehender Spieler bedient).
+     *
+     * @return die tatsaechlich uebertragene Energie
+     */
+    protected long chargeStack(ItemStack itemToCharge, long toTransfer) {
+        if (itemToCharge == null || itemToCharge.isEmpty() || toTransfer <= 0) return 0L;
+
+        long[] moved = new long[1];
+
         //? if forge {
         var hbmCap = itemToCharge.getCapability(ModCapabilities.HBM_ENERGY_RECEIVER);
         if (hbmCap.isPresent()) {
             hbmCap.ifPresent(target -> {
                 if (!target.canReceive()) return;
                 long accepted = target.receiveEnergy(toTransfer, false);
-                if (accepted > 0) setEnergyStored(energy - accepted);
+                if (accepted > 0) { setEnergyStored(energy - accepted); moved[0] = accepted; }
             });
-            return;
+            return moved[0];
         }
         itemToCharge.getCapability(ForgeCapabilities.ENERGY).ifPresent(target -> {
             if (!target.canReceive()) return;
             int maxTransfer = (int) Math.min(toTransfer, Integer.MAX_VALUE);
             if (maxTransfer <= 0) return;
             int accepted = target.receiveEnergy(maxTransfer, false);
-            if (accepted > 0) setEnergyStored(energy - accepted);
+            if (accepted > 0) { setEnergyStored(energy - accepted); moved[0] = accepted; }
         });
+        return moved[0];
         //?}
 
         //? if neoforge {
@@ -484,17 +500,18 @@ public abstract class BaseMachineBlockEntity extends BaseHbmBlockEntity implemen
         var hbm = ItemEnergyAccess.getHbmReceiver(itemToCharge);
         if (hbm.isPresent()) {
             var target = hbm.get();
-            if (!target.canReceive()) return;
+            if (!target.canReceive()) return 0L;
             long accepted = target.receiveEnergy(toTransfer, false);
             if (accepted > 0) setEnergyStored(energy - accepted);
-            return;
+            return accepted;
         }
         IEnergyStorage target = itemToCharge.getCapability(Capabilities.EnergyStorage.ITEM);
-        if (target == null || !target.canReceive()) return;
+        if (target == null || !target.canReceive()) return 0L;
         int maxTransfer = (int) Math.min(toTransfer, Integer.MAX_VALUE);
-        if (maxTransfer <= 0) return;
+        if (maxTransfer <= 0) return 0L;
         int accepted = target.receiveEnergy(maxTransfer, false);
         if (accepted > 0) setEnergyStored(energy - accepted);
+        return accepted;
         *///?}
     }
 

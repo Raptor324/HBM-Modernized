@@ -20,13 +20,23 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import org.jetbrains.annotations.Nullable;
 
-/** Port of {@code MachineDrain} (1.7.10 Original). */
-public class MachineDrainBlock extends BaseEntityBlock {
+/**
+ * 1:1-Port von {@code MachineDrain} (1.7.10): der Ablauf.
+ *
+ * <p>Er belegt wie im Original drei Felder in einer Reihe ({@code getDimensions {0,0,2,0,0,0}}) -
+ * der Kern vorn, zwei Dummyzellen dahinter.</p>
+ */
+public class MachineDrainBlock extends com.hbm_m.block.machines.DummyableMachineBlock {
 
     public MachineDrainBlock(Properties properties) { super(properties); }
 
     @Override
-    public RenderShape getRenderShape(BlockState state) { return RenderShape.MODEL; }
+    protected com.hbm_m.multiblock.MultiblockStructureHelper defineStructure() {
+        return com.hbm_m.multiblock.DummyableStructureBuilder.create()
+                .box(0, 0, 2, 0, 0, 0)
+                .placementOffset(0)
+                .build(() -> com.hbm_m.block.ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState());
+    }
 
     @Nullable @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {

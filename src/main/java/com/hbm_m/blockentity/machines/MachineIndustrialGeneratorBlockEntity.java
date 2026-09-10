@@ -31,9 +31,17 @@ import net.minecraft.world.level.material.Fluid;
  * {@code output = baseRate * genMult}, {@code genMult = 0.5 + (Wasser vorhanden ? 0.5 : 0) +
  * (Schmiermittel vorhanden ? 0.25 : 0)}.
  * <p>
- * SCOPE-Entscheidung: Die 10 RTG-Slots des Originals (passive Zusatz-Heizleistung) werden NICHT
- * uebernommen - dieser Port hat keine RTG-Pellet-Items mit eindeutiger Heizwert-Zuordnung, und die
- * RTG-Beitrag war im Original ohnehin nur ein kleiner Bonus, kein Kernbestandteil.
+ * <p><b>Achtung, Sonderfall:</b> im Original ist die gesamte Logik dieser Maschine
+ * <b>auskommentiert</b> ({@code TileEntityMachineIGenerator.updateEntity}, Zeilen 87 bis 210) - sie
+ * tut dort schlicht nichts. Es gibt also keine laufende Vorlage, gegen die sich hier 1:1 pruefen
+ * liesse; was hier steht, ist eine funktionierende Fassung nach den Werten, die im Original
+ * auskommentiert danebenstehen.</p>
+ *
+ * <p>Vom auskommentierten Vorbild fehlen hier: das Drehzahlmodell ({@code spin}), die zehn
+ * RTG-Steckplaetze mit dem Faktor {@code rtgHeatMult = 0.15}, und die Brennwert-Aufschlaege je
+ * Brennstoffsorte ({@code coal *1.1}, {@code solid_fuel_presto *1.1} und so fort). Wer das
+ * nachziehen will, findet die Zahlen dort - ein Verhalten des Originals bildet man damit aber
+ * nicht nach, weil es keines gibt.
  */
 public class MachineIndustrialGeneratorBlockEntity extends BaseMachineBlockEntity implements IFluidStandardReceiverMK2 {
 

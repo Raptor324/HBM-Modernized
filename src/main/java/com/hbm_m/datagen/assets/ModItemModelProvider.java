@@ -84,6 +84,12 @@ public class ModItemModelProvider extends ItemModelProvider {
     protected void registerModels() {
         generateMissileItemModels();
 
+        // ICF-Pellet: zwei Lagen wie im Original (requiresMultipleRenderPasses) - unten der
+        // eingefaerbte Huellring icf_pellet_bg, darueber die unveraenderte Pelletgrafik.
+        withExistingParent("icf_pellet", "item/generated")
+                .texture("layer0", modLoc("item/icf_pellet_bg"))
+                .texture("layer1", modLoc("item/icf_pellet"));
+
         // Мета-предметы вкладки Parts (PartTabMetaItems): плоская модель на свою текстуру
         // (или заданную layer0) либо двухслойная база+оверлей (dye/crayon).
         for (com.hbm_m.item.PartTabMetaItems.Entry e : com.hbm_m.item.PartTabMetaItems.entries()) {
@@ -832,8 +838,14 @@ public class ModItemModelProvider extends ItemModelProvider {
         blockItemFromBlockModelMachine(ModBlocks.GAS_CENTRIFUGE);
         // Газовые блоки: blockstate = invisible_gas, поэтому item-модель делаем прямо
         // из block-текстуры (в 1.7.10 предмет был в machineTab и рендерился текстурой газа).
-        withExistingParent(ModBlocks.GAS_ASBESTOS.getId().getPath(), "item/generated").texture("layer0", modLoc("block/gas_asbestos"));
-        withExistingParent(ModBlocks.GAS_COAL.getId().getPath(), "item/generated").texture("layer0", modLoc("block/gas_coal"));
+        // Die Gasbloecke selbst sind unsichtbar, ihr Item braucht darum ein eigenes flaches Modell.
+        for (var gas : java.util.List.of(
+                ModBlocks.GAS_ASBESTOS, ModBlocks.GAS_COAL, ModBlocks.GAS_EXPLOSIVE,
+                ModBlocks.GAS_FLAMMABLE, ModBlocks.GAS_MELTDOWN, ModBlocks.GAS_MONOXIDE,
+                ModBlocks.GAS_RADON, ModBlocks.GAS_RADON_DENSE, ModBlocks.GAS_RADON_TOMB)) {
+            String name = gas.getId().getPath();
+            withExistingParent(name, "item/generated").texture("layer0", modLoc("block/" + name));
+        }
         blockItemFromBlockModelMachine(ModBlocks.CRYSTALLIZER, "crystallizer_item");
         blockItemFromBlockModelMachine(ModBlocks.BREEDER);
         blockItemFromBlockModelMachine(ModBlocks.LARGE_PYLON);
@@ -1684,7 +1696,6 @@ public class ModItemModelProvider extends ItemModelProvider {
                 ModItems.HULL_BIG_TITANIUM,
                 ModItems.HULL_SMALL_ALUMINIUM,
                 ModItems.HULL_SMALL_STEEL,
-                ModItems.ICF_PELLET,
                 ModItems.ICF_PELLET_DEPLETED,
                 ModItems.ICF_PELLET_EMPTY,
                 ModItems.INDUSTRIAL_MAGNET,
@@ -1919,6 +1930,11 @@ public class ModItemModelProvider extends ItemModelProvider {
                 ModItems.PILL_HERBAL,
                 ModItems.PILL_IODINE,
                 ModItems.PILL_RED,
+                ModItems.RADX,
+                ModItems.PA_COIL_GOLD,
+                ModItems.PA_COIL_NIOBIUM,
+                ModItems.PA_COIL_BSCCO,
+                ModItems.PA_COIL_CHLOROPHYTE,
                 ModItems.PIN,
                 ModItems.PIPES_STEEL,
                 ModItems.PIPETTE,
@@ -2167,6 +2183,15 @@ public class ModItemModelProvider extends ItemModelProvider {
                 ModItems.SHELL,
                 ModItems.UPGRADE_MUFFLER,
                 ModItems.UPGRADE_TEMPLATE,
+                ModItems.PILE_ROD_RA226BE,
+                ModItems.PILE_ROD_PO210BE,
+                ModItems.PILE_ROD_ZR,
+                ModItems.PILE_ROD_NU,
+                ModItems.PILE_ROD_MK2_PU239,
+                ModItems.PILE_ROD_RGP,
+                ModItems.PILE_ROD_WASTE,
+                ModItems.UPGRADE_RADIUS,
+                ModItems.UPGRADE_HEALTH,
                 ModItems.WASTE_NATURAL_URANIUM,
                 ModItems.WASTE_U233,
                 ModItems.WASTE_U235,

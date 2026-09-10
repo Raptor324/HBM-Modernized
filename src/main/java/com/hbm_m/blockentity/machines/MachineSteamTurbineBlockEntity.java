@@ -8,6 +8,9 @@ import com.hbm_m.blockentity.BaseMachineBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
+import com.hbm_m.inventory.fluid.FluidType;
+import com.hbm_m.inventory.fluid.trait.FT_Coolable;
+import com.hbm_m.inventory.fluid.trait.FT_Coolable.CoolingType;
 import com.hbm_m.inventory.menu.MachineSteamTurbineMenu;
 import com.hbm_m.interfaces.IEnergyModeHolder;
 import com.hbm_m.interfaces.IItemFluidIdentifier;
@@ -46,10 +49,6 @@ public class MachineSteamTurbineBlockEntity extends BaseMachineBlockEntity imple
 
     private static final int STEAM_CONSUMPTION_RATE = 8;
     private static final int TANK_CAPACITY = 24_000;
-    private static final long ENERGY_PER_MB_STEAM = 80L;
-    private static final long ENERGY_PER_MB_HOTSTEAM = 160L;
-    private static final long ENERGY_PER_MB_SUPERHOTSTEAM = 320L;
-    private static final long ENERGY_PER_MB_ULTRAHOTSTEAM = 640L;
 
     private final FluidTank[] tanks = new FluidTank[] {
             new FluidTank(TANK_CAPACITY),
@@ -86,43 +85,55 @@ public class MachineSteamTurbineBlockEntity extends BaseMachineBlockEntity imple
         }
     }
 
-    private boolean processSteam() {
-        Fluid input = tanks[0].getTankType();
-        long energyPerMb = getEnergyPerMb(input);
-
-        if (energyPerMb <= 0 || tanks[0].getFill() <= 0) {
-            if (tanks[0].getFill() > 0) {
-                tanks[1].setTankType(ModFluids.NONE.getSource());
-            } else if (tanks[1].getFill() <= 0) {
-                tanks[1].setTankType(ModFluids.SPENTSTEAM.getSource());
-            }
-            return false;
-        }
-
-        if (tanks[1].getFill() > 0 && !VanillaFluidEquivalence.sameSubstance(tanks[1].getTankType(), ModFluids.SPENTSTEAM.getSource())) {
-            return false;
-        }
-
-        int maxByInput = Math.min(STEAM_CONSUMPTION_RATE, tanks[0].getFill());
-        int maxByOutput = tanks[1].getMaxFill() - tanks[1].getFill();
-        long energySpace = getMaxEnergyStored() - getEnergyStored();
-        int maxByEnergy = (int) Math.min(Integer.MAX_VALUE, energySpace / energyPerMb);
-
-        int ops = Math.min(maxByInput, Math.min(maxByOutput, maxByEnergy));
-        if (ops <= 0) return false;
-
-        tanks[0].drainMb(ops);
-        tanks[1].fillMb(ModFluids.SPENTSTEAM.getSource(), ops);
-        setEnergyStored(getEnergyStored() + ops * energyPerMb);
-        return true;
+    /**
+     * 1:1 aus {@code TileEntityMachineTurbine}: Umsatzverhaeltnis, Ausgabefluid und Energie kommen
+     * aus der {@link FT_Coolable}-Eigenschaft des Dampfes. Der Ausgang ist damit die
+     * naechstniedrigere Dampfstufe ({@code coolsTo}), nicht pauschal Altdampf - erst so laesst sich
+     * eine Turbinenkaskade bauen. Auch die Verhaeltnisse kommen von dort: Dampf setzt 100 mB zu
+     * 1 mB Altdampf um, die heissen Stufen 1 zu 10.
+     */
+    /**
+     * Annahmepruefung des Fluid-Handlers. Sie muss dieselbe Bedingung stellen wie die
+     * Verarbeitung, seit diese ueber {@link FT_Coolable} laeuft - sonst nimmt die Turbine Dampf an,
+     * den sie anschliessend nicht verwerten kann.
+     */
+    private boolean acceptsAsSteam(Fluid fluid) {
+        FT_Coolable trait = FluidType.getTrait(fluid, FT_Coolable.class);
+        return trait != null
+                && trait.amountReq > 0
+                && trait.amountProduced > 0
+                && trait.getEfficiency(CoolingType.TURBINE) > 0;
     }
 
-    private long getEnergyPerMb(Fluid steam) {
-        if (VanillaFluidEquivalence.sameSubstance(steam, ModFluids.STEAM.getSource())) return ENERGY_PER_MB_STEAM;
-        if (VanillaFluidEquivalence.sameSubstance(steam, ModFluids.HOTSTEAM.getSource())) return ENERGY_PER_MB_HOTSTEAM;
-        if (VanillaFluidEquivalence.sameSubstance(steam, ModFluids.SUPERHOTSTEAM.getSource())) return ENERGY_PER_MB_SUPERHOTSTEAM;
-        if (VanillaFluidEquivalence.sameSubstance(steam, ModFluids.ULTRAHOTSTEAM.getSource())) return ENERGY_PER_MB_ULTRAHOTSTEAM;
-        return 0L;
+    private boolean processSteam() {
+        FT_Coolable trait = FluidType.getTrait(tanks[0].getStoredFluid(), FT_Coolable.class);
+
+        if (trait == null || trait.amountReq <= 0 || trait.amountProduced <= 0) {
+            tanks[1].setTankType(ModFluids.NONE.getSource());
+            return false;
+        }
+
+        double eff = trait.getEfficiency(CoolingType.TURBINE);
+        if (eff <= 0) {
+            tanks[1].setTankType(ModFluids.NONE.getSource());
+            return false;
+        }
+
+        tanks[1].setTankType(trait.coolsTo);
+
+        int inputOps  = tanks[0].getFill() / trait.amountReq;
+        int outputOps = (tanks[1].getMaxFill() - tanks[1].getFill()) / trait.amountProduced;
+        // Original: cap = maxSteamPerTick / amountReq - die Drossel je Tick.
+        int cap       = STEAM_CONSUMPTION_RATE / trait.amountReq;
+        int ops       = Math.min(inputOps, Math.min(outputOps, cap));
+        if (ops <= 0) return false;
+
+        tanks[0].drainMb(ops * trait.amountReq);
+        tanks[1].fillMb(trait.coolsTo, ops * trait.amountProduced);
+
+        long output = (long) (ops * trait.heatEnergy * eff);
+        setEnergyStored(Math.min(getMaxEnergyStored(), getEnergyStored() + output));
+        return true;
     }
 
     public FluidTank[] getTanks() {
@@ -232,12 +243,12 @@ public class MachineSteamTurbineBlockEntity extends BaseMachineBlockEntity imple
 
         @Override
         public boolean isFluidValid(int tank, @NotNull net.minecraftforge.fluids.FluidStack stack) {
-            return tank == 0 && be.getEnergyPerMb(stack.getFluid()) > 0;
+            return tank == 0 && be.acceptsAsSteam(stack.getFluid());
         }
 
         @Override
         public int fill(net.minecraftforge.fluids.FluidStack resource, FluidAction action) {
-            if (resource.isEmpty() || be.getEnergyPerMb(resource.getFluid()) <= 0) return 0;
+            if (resource.isEmpty() || !be.acceptsAsSteam(resource.getFluid())) return 0;
             int space = be.tanks[0].getMaxFill() - be.tanks[0].getFill();
             int toFill = Math.min(space, resource.getAmount());
             if (toFill <= 0) return 0;

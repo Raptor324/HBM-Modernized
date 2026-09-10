@@ -13,12 +13,17 @@ import net.minecraft.world.level.block.state.BlockState;
  * {@code send <value>} broadcasts once, {@code start <value>} begins continuously re-broadcasting
  * that value every tick, {@code stop} ends it.
  * <p>
- * SCOPE-Vereinfachung: the original's OpenComputers "OC mode", Redstone-over-Radio
- * {@code IRORInteractive} hook, and the {@code selfdestruct} easter-egg command are not ported -
- * OC has no equivalent integration anywhere else in this mod, RoR devices aren't ported, and
- * selfdestruct is a pure joke command with no functional purpose.
+ * <p>Ueber Redstone-over-Radio laesst sich der Bildschirm auch von aussen beschreiben:
+ * {@code clear} leert ihn, {@code write} schiebt eine Zeile oben hinein, {@code set&lt;Zeile&gt;}
+ * ueberschreibt eine bestimmte der siebzehn Zeilen, und {@code submit} fuehrt einen Befehl aus, als
+ * haette ihn jemand eingetippt. Damit wird das Terminal zur Anzeigetafel einer Anlage, die sich
+ * selbst beschriftet.</p>
+ *
+ * <p><b>Nicht portiert:</b> der OpenComputers-Modus ({@code ocMode}) - fuer OpenComputers gibt es
+ * in diesem Port an keiner Stelle eine Anbindung.</p>
  */
-public class RBMKTerminalBlockEntity extends RBMKPanelDeviceBlockEntity {
+public class RBMKTerminalBlockEntity extends RBMKPanelDeviceBlockEntity
+        implements com.hbm_m.api.redstoneoverradio.IRORInteractive {
 
     public String channel = "";
     public boolean running = false;
@@ -53,6 +58,55 @@ public class RBMKTerminalBlockEntity extends RBMKPanelDeviceBlockEntity {
         if (running && !channel.isEmpty()) {
             RTTYNetwork.broadcast(level, channel, runningValue);
         }
+    }
+
+    // ── Redstone-over-Radio ──
+
+    /** 1:1 aus {@code TileEntityRBMKTerminal.getFunctionInfo}. */
+    @Override
+    public String[] getFunctionInfo() {
+        return new String[] {
+                PREFIX_FUNCTION + "clear",
+                PREFIX_FUNCTION + "write" + NAME_SEPARATOR + "text",
+                PREFIX_FUNCTION + "set<line#>" + NAME_SEPARATOR + "text",
+                PREFIX_FUNCTION + "submit" + NAME_SEPARATOR + "command"
+        };
+    }
+
+    @Override
+    public String runRORFunction(String name, String[] params) {
+
+        if ((PREFIX_FUNCTION + "clear").equals(name)) {
+            java.util.Arrays.fill(history, "");
+            setChanged();
+            syncToClient();
+            return null;
+        }
+
+        String allParams = String.join(" ", params);
+
+        if ((PREFIX_FUNCTION + "write").equals(name)) {
+            pushHistory(allParams);
+            setChanged();
+            syncToClient();
+            return null;
+        }
+
+        if (name.startsWith(PREFIX_FUNCTION + "set")) {
+            int line = com.hbm_m.api.redstoneoverradio.IRORInteractive.parseInt(
+                    name.substring(PREFIX_FUNCTION.length() + 3), 1, history.length) - 1;
+            history[line] = allParams;
+            setChanged();
+            syncToClient();
+            return null;
+        }
+
+        if ((PREFIX_FUNCTION + "submit").equals(name) && getLevel() != null) {
+            eval(getLevel(), allParams);
+            return null;
+        }
+
+        return null;
     }
 
     /** Evaluates a single command line, returning a response string for the GUI's scrollback. */

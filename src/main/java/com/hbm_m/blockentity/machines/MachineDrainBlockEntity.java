@@ -27,12 +27,16 @@ import net.minecraft.world.level.block.state.BlockState;
  * continuously disposes of whatever fluid is piped into it (used to dump excess/waste fluid
  * instead of storing it). Antimatter still triggers a real explosion, matching the original.
  * <p>
- * SCOPE-Vereinfachung: Das Original "verschuettet" die Haelfte des Tankinhalts pro Tick als
- * sichtbare Verschmutzungspartikel/-fluid (Oelpfuetzen via {@code FT_Polluting}) - dieses
- * Partikel-/Verschuettungssystem existiert in diesem Port nicht in der gleichen Form. Hier wird die
- * Fluessigkeit ohne sichtbaren Nebeneffekt entsorgt; der Kernmechanismus (Netzwerk-Fluid-Senke,
- * Amat-Explosion) bleibt erhalten. Multiblock (Original: {@code BlockDummyable}) zu Einzelblock
- * vereinfacht.
+ * <p><b>Entsorgen hat Folgen.</b> Was hier hineingeht, verschwindet nicht einfach: die Haelfte
+ * des Tankinhalts geht jeden Tick als Verschmutzung in die Umgebung
+ * ({@link com.hbm_m.inventory.fluid.trait.FT_Polluting}). Bei zaehen, brennbaren Fluessigkeiten -
+ * also Oel - bildet sich ausserdem hin und wieder eine <b>Pfuetze</b> ein Stueck vor dem Ablauf.
+ * Wer sein Altoel hier loswird, versaut sich die Gegend.</p>
+ *
+ * <p>Antimaterie ist die Ausnahme: die sprengt den Ablauf, statt sich entsorgen zu lassen.</p>
+ *
+ * <p>Er belegt wie im Original drei Felder in einer Reihe
+ * ({@code getDimensions {0,0,2,0,0,0}}).</p>
  */
 public class MachineDrainBlockEntity extends BaseMachineBlockEntity implements IFluidStandardReceiverMK2 {
 
@@ -89,11 +93,60 @@ public class MachineDrainBlockEntity extends BaseMachineBlockEntity implements I
                 return;
             }
 
-            int toDispose = Math.max(tank.getFluidAmountMb() / 2, 1);
-            tank.drainMb(toDispose);
+            // 1:1: die Haelfte je Tick, mindestens ein Millibucket.
+            int toSpill = Math.max(tank.getFluidAmountMb() / 2, 1);
+            tank.drainMb(toSpill);
+
+            com.hbm_m.inventory.fluid.trait.FT_Polluting.pollute(level, pos, tank.getStoredFluid(),
+                    com.hbm_m.inventory.fluid.trait.FluidTrait.FluidReleaseType.SPILL, toSpill);
+
+            spillPuddle(level, pos, toSpill);
         }
 
         setChanged();
+    }
+
+    /**
+     * 1:1-Port des Pfuetzenteils: bei groesseren Mengen zaeher, brennbarer Fluessigkeit sucht ein
+     * Strahl schraeg nach unten einen Boden und legt dort eine Oelpfuetze an.
+     *
+     * <p>Das trifft nur Oel und Verwandtes - Wasser hinterlaesst nichts.</p>
+     */
+    private void spillPuddle(ServerLevel level, BlockPos pos, int toSpill) {
+        if (toSpill < 100 || level.getRandom().nextInt(20) != 0) return;
+
+        var fluid = tank.getStoredFluid();
+        if (FluidType.getTrait(fluid, com.hbm_m.inventory.fluid.trait.FluidTraitSimple.FT_Liquid.class) == null) return;
+        if (FluidType.getTrait(fluid, com.hbm_m.inventory.fluid.trait.FluidTraitSimple.FT_Viscous.class) == null) return;
+        if (FluidType.getTrait(fluid, com.hbm_m.inventory.fluid.trait.FT_Flammable.class) == null) return;
+
+        Direction facing = getBlockState().hasProperty(
+                net.minecraft.world.level.block.state.properties.BlockStateProperties.HORIZONTAL_FACING)
+                ? getBlockState().getValue(
+                        net.minecraft.world.level.block.state.properties.BlockStateProperties.HORIZONTAL_FACING)
+                : Direction.NORTH;
+
+        // Original: der Strahl startet drei Felder hinter dem Ablauf und geht 25 nach unten.
+        net.minecraft.world.phys.Vec3 start = new net.minecraft.world.phys.Vec3(
+                pos.getX() + 0.5 - facing.getStepX() * 3,
+                pos.getY() + 0.5,
+                pos.getZ() + 0.5 - facing.getStepZ() * 3);
+        net.minecraft.world.phys.Vec3 end = start.add(
+                level.getRandom().nextGaussian() * 5, -25, level.getRandom().nextGaussian() * 5);
+
+        var hit = level.clip(new net.minecraft.world.level.ClipContext(start, end,
+                net.minecraft.world.level.ClipContext.Block.COLLIDER,
+                net.minecraft.world.level.ClipContext.Fluid.NONE, null));
+
+        // Nur auf einer Oberseite bildet sich eine Pfuetze.
+        if (hit.getType() != net.minecraft.world.phys.HitResult.Type.BLOCK) return;
+        if (hit.getDirection() != Direction.UP) return;
+
+        BlockPos above = hit.getBlockPos().above();
+        var state = level.getBlockState(above);
+        if (!state.getFluidState().isEmpty() || !state.canBeReplaced()) return;
+
+        level.setBlockAndUpdate(above, com.hbm_m.block.ModBlocks.OIL_SPILL.get().defaultBlockState());
     }
 
     public void retype(net.minecraft.world.level.material.Fluid fluid) {

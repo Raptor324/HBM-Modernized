@@ -28,28 +28,40 @@ import net.minecraft.world.level.material.Fluids;
  * Radiolysis Collector: Direktport der Fluid-Crack-Kernmechanik aus
  * {@code TileEntityMachineRadiolysis} (1.7.10 Original).
  * <p>
- * Grosse Vereinfachung (nicht die uebliche Upgrade-Slot-Kuerzung, sondern ein echter fehlender
- * Unterbau dieses Ports): das Original erzeugt Energie/"Hitze" ausschliesslich passiv aus 10
- * RTG-Pellet-Slots ({@code ItemRTGPellet}/{@code RTGUtil}) - dieser Port hat kein RTG-Pellet-
- * Item-System und keine {@code RTGUtil}-Klasse. Ersetzt durch eine normale Batterie-Slot-
- * Energieversorgung (gleiches Verfahren wie bei anderen Maschinen diese Session), die Crack-Rate
- * ist an eine feste Tick-Konstante gebunden statt an die Original-Hitze-Formel. Der "Sterilize
- * Contagion"-Nebenmechanismus (heat&gt;=200, entfernt ein {@code ntmContagion}-NBT-Tag von
- * verseuchten Lebensmitteln) entfaellt vollstaendig, da dieser Port kein Seuchen-/Contagion-System
- * besitzt. Die eigentliche Fluid-Crack-Logik (100mB Input -&gt; zwei Output-Fluessigkeiten alle
+ * <p><b>Er hat keinen Stromanschluss.</b> Seine ganze Leistung kommt aus zehn
+ * {@link com.hbm_m.item.machine.ItemRTGPellet RTG-Pellets}: ihre Waerme wird zu Energie
+ * ({@code heat * 10} je Tick) <b>und</b> bestimmt, wie schnell gecrackt wird. Erst ab Hitze 100
+ * laeuft ueberhaupt etwas, und je heisser, desto kuerzer der Abstand - von dreissig Ticks
+ * herunter auf fuenf. Wer schnell cracken will, muss also teure Pellets verheizen.</p>
+ *
+ * <p><b>Nicht portiert:</b> das Entseuchen ({@code sterilize}, ab Hitze 200) - dieser Port hat
+ * kein Seuchensystem, an dem es etwas zu entfernen gaebe. Die eigentliche Fluid-Crack-Logik (100mB Input -&gt; zwei Output-Fluessigkeiten alle
  * {@code CRACK_INTERVAL} Ticks) ist 1:1 aus dem Original uebernommen, inkl. Wiederverwendung der
  * Cracking-Tower-Rezepttabelle wie im Original: eigene {@link RadiolysisRecipe}-Eintraege zuerst,
  * dann Fallback auf {@link CrackingTowerRecipe}.
  */
 public class MachineRadiolysisBlockEntity extends BaseMachineBlockEntity implements IFluidStandardTransceiverMK2 {
 
-    public static final int SLOT_FLUID_ID = 0;
-    public static final int SLOT_BATTERY = 1;
-    private static final int SLOT_COUNT = 2;
+    /** Original: {@code slot_rtg = {0..9}} - die zehn Pelletplaetze. */
+    public static final int[] SLOTS_RTG = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
+    /** Original: Platz 10 und 11 sind Ein- und Ausgabe der Fluidkennung. */
+    public static final int SLOT_FLUID_ID = 10;
+    public static final int SLOT_FLUID_ID_OUT = 11;
+    /** Original: Platz 12 und 13 bestrahlen Gegenstaende - hier ohne Wirkung, siehe Javadoc. */
+    public static final int SLOT_IRRADIATE_IN = 12;
+    public static final int SLOT_IRRADIATE_OUT = 13;
+    /** Original: {@code chargeItemsFromTE(slots, 14, ...)} - hier wird eine Batterie geladen. */
+    public static final int SLOT_BATTERY = 14;
+    private static final int SLOT_COUNT = 15;
 
     private static final long MAX_POWER = 1_000_000L;
-    private static final long CONSUMPTION_PER_CRACK = 1_000L;
-    private static final int CRACK_INTERVAL = 20;
+    /** Original: {@code power += heat * 10}. */
+    private static final int ENERGY_PER_HEAT = 10;
+    /** Original: erst ab dieser Hitze wird ueberhaupt gecrackt. */
+    private static final int CRACK_HEAT_MIN = 100;
+
+    /** Original: {@code heat} - die Summe der Pelletwaerme. */
+    private int heat = 0;
 
     private final FluidTank[] tanks = new FluidTank[3];
 
@@ -62,10 +74,19 @@ public class MachineRadiolysisBlockEntity extends BaseMachineBlockEntity impleme
 
     public FluidTank[] getTanks() { return tanks; }
 
+    /** Die aufsummierte Pelletwaerme - die Oberflaeche zeigt sie an. */
+    public int getHeat() { return heat; }
+
     public static void tick(Level level, BlockPos pos, BlockState state, MachineRadiolysisBlockEntity be) {
         if (level.isClientSide()) return;
 
-        be.chargeFromBatterySlot(SLOT_BATTERY);
+        // 1:1: die Pellets liefern Waerme und altern dabei; daraus entsteht die Energie.
+        be.heat = com.hbm_m.item.machine.ItemRTGPellet.updateRTGs(be.inventory, SLOTS_RTG);
+        be.setEnergyStored(Math.min(be.getMaxEnergyStored(),
+                be.getEnergyStored() + (long) be.heat * ENERGY_PER_HEAT));
+
+        // Original: chargeItemsFromTE - der Platz gibt Energie ab, statt welche zu holen.
+        be.chargeItemInSlot(SLOT_BATTERY);
 
         if (level.getGameTime() % 10 == 0) {
             for (Direction dir : Direction.values()) {
@@ -75,8 +96,10 @@ public class MachineRadiolysisBlockEntity extends BaseMachineBlockEntity impleme
             }
         }
 
-        if (level.getGameTime() % CRACK_INTERVAL == 0 && be.energy >= CONSUMPTION_PER_CRACK) {
-            be.crack();
+        // 1:1: {@code crackTime = max(-0.1 * (heat - 100) + 30, 5)} - je heisser, desto oefter.
+        if (be.heat > CRACK_HEAT_MIN) {
+            int crackTime = (int) Math.max(-0.1D * (be.heat - CRACK_HEAT_MIN) + 30D, 5D);
+            if (level.getGameTime() % crackTime == 0) be.crack();
         }
 
         be.setChanged();
@@ -121,7 +144,6 @@ public class MachineRadiolysisBlockEntity extends BaseMachineBlockEntity impleme
             tanks[0].drainMb(100);
             if (left > 0) tanks[1].fillMb(recipe.outA(), left);
             if (right > 0) tanks[2].fillMb(recipe.outB(), right);
-            energy = Math.max(0, energy - CONSUMPTION_PER_CRACK);
         }
     }
 
@@ -182,9 +204,15 @@ public class MachineRadiolysisBlockEntity extends BaseMachineBlockEntity impleme
 
     @Override
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
+        if (slot >= SLOTS_RTG[0] && slot <= SLOTS_RTG[SLOTS_RTG.length - 1]) {
+            return stack.getItem() instanceof com.hbm_m.item.machine.ItemRTGPellet;
+        }
         return switch (slot) {
             case SLOT_FLUID_ID -> true;
-            case SLOT_BATTERY -> isEnergyProviderItem(stack);
+            // Original: der Ausgabeplatz nimmt nichts an, er gibt nur heraus.
+            case SLOT_FLUID_ID_OUT, SLOT_IRRADIATE_OUT -> false;
+            case SLOT_IRRADIATE_IN -> true;
+            case SLOT_BATTERY -> isEnergyReceiverItem(stack);
             default -> false;
         };
     }

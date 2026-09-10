@@ -28,29 +28,97 @@ import net.minecraft.world.level.block.state.BlockState;
  * Rezeptsystem dieses Ports (kein eigenes Rezeptformat), analog zum Original, das {@code
  * CraftingManager.getRecipeList()} durchsucht.
  * <p>
- * SCOPE-Entscheidung: Das Original trennt einen separaten "Vorlage"-Filter-Raster (Slots 0-8,
- * mit pro-Slot umschaltbarem Filter-Modus exact/wildcard/Ore-Dictionary-Tag/Bedrock-Grade via
- * {@code ModulePatternMatcher}) vom eigentlichen Fertigungs-Raster (Slots 10-18) UND erlaubt
- * Rezept-Durchblaettern per Rechtsklick, wenn mehrere registrierte Rezepte auf dieselbe Vorlage
- * passen. Diese Vorlage-/Filter-/Auswahl-Ebene wird NICHT uebernommen - stattdessen ist das 3x3-
- * Gitter direkt das Fertigungs-Raster (wie ein staendig laufender Crafting-Tisch): das jeweils
- * ERSTE passende Rezept wird sofort gefertigt. Das ist eine deutliche UX-Vereinfachung, deckt aber
- * die eigentliche Kernmechanik ("beliebiges Vanilla-3x3-Rezept automatisch fertigen, mit Strom
- * statt Handarbeit") vollstaendig ab.
+ * <p><b>Zwei Gitter, nicht eines.</b> Oben liegt die <b>Vorlage</b> (Plaetze 0-8): dort legt man
+ * ein Muster hinein, das nicht verbraucht wird. Unten das <b>Arbeitsgitter</b> (10-18), in das
+ * Rohre und Trichter die tatsaechlichen Zutaten schieben. Das ist der Unterschied zu einem
+ * Werktisch: die Maschine weiss, was sie bauen soll, auch wenn gerade nichts da ist.</p>
+ *
+ * <p>Jeder Vorlagenplatz hat einen eigenen <b>Filtermodus</b> - genau, mit Platzhalter oder ueber
+ * eine Materialgruppe ({@link com.hbm_m.inventory.filter.ModulePatternMatcher}). Ein Rechtsklick
+ * auf den Platz schaltet ihn weiter. Damit laesst sich zum Beispiel "irgendein Brett" statt
+ * "genau Eichenbrett" fordern.</p>
+ *
+ * <p>Passen mehrere Rezepte auf dieselbe Vorlage, blaettert ein Rechtsklick auf das Vorschaufeld
+ * (Platz 9) durch sie hindurch.</p>
  */
 public class MachineAutocrafterBlockEntity extends BaseMachineBlockEntity {
 
-    private static final int GRID_START = 0;
-    private static final int GRID_SIZE = 9;
-    public static final int SLOT_OUTPUT = 9;
-    public static final int SLOT_BATTERY = 10;
-    private static final int SLOT_COUNT = 11;
+    /** Original: Plaetze 0-8 sind die Vorlage - sie werden nie verbraucht. */
+    public static final int TEMPLATE_START = 0;
+    public static final int GRID_SIZE = 9;
+    /** Original: Platz 9 zeigt, was aus der Vorlage entstehen wuerde. */
+    public static final int SLOT_TEMPLATE_RESULT = 9;
+    /** Original: Plaetze 10-18 sind das Arbeitsgitter. */
+    public static final int RECIPE_START = 10;
+    /** Original: Platz 19 ist die Ausgabe. */
+    public static final int SLOT_OUTPUT = 19;
+    /** Original: Platz 20 ist die Batterie. */
+    public static final int SLOT_BATTERY = 20;
+    private static final int SLOT_COUNT = 21;
 
     private static final long MAX_POWER = 10_000L;
     private static final long CONSUMPTION = 100L;
 
+    /** Original: {@code matcher = new ModulePatternMatcher(9)}. */
+    private final com.hbm_m.inventory.filter.ModulePatternMatcher matcher =
+            new com.hbm_m.inventory.filter.ModulePatternMatcher(GRID_SIZE);
+
+    /** Alle Rezepte, die auf die aktuelle Vorlage passen - im Original {@code recipes}. */
+    private java.util.List<CraftingRecipe> recipes = new java.util.ArrayList<>();
+    /** Welches davon gebaut wird - im Original {@code recipeIndex}. */
+    private int recipeIndex = 0;
+
     public MachineAutocrafterBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.AUTOCRAFTER_BE.get(), pos, state, SLOT_COUNT, MAX_POWER, MAX_POWER);
+    }
+
+    public com.hbm_m.inventory.filter.ModulePatternMatcher getMatcher() { return matcher; }
+    public int getRecipeIndex() { return recipeIndex; }
+    public int getRecipeCount() { return recipes.size(); }
+
+    /** 1:1-Port von {@code nextMode}: ein Rechtsklick schaltet den Filter dieses Platzes weiter. */
+    public void nextMode(int index) {
+        if (index < 0 || index >= GRID_SIZE) return;
+        matcher.nextMode(index);
+        setChanged();
+        sendUpdateToClient();
+    }
+
+    /** 1:1-Port von {@code nextTemplate}: das naechste passende Rezept. */
+    public void nextTemplate() {
+        if (level == null || level.isClientSide()) return;
+
+        recipeIndex++;
+        if (recipeIndex >= recipes.size()) recipeIndex = 0;
+
+        updateTemplateResult();
+        setChanged();
+        sendUpdateToClient();
+    }
+
+    /**
+     * 1:1-Port von {@code updateTemplateGrid}: nach jeder Aenderung an der Vorlage wird neu
+     * gesucht, welche Rezepte darauf passen.
+     */
+    public void updateTemplateGrid() {
+        if (level == null || level.isClientSide()) return;
+
+        recipes = com.hbm_m.platform.recipe.RecipeHooks.getAllCraftingRecipesFor(level, buildGrid(TEMPLATE_START));
+        recipeIndex = 0;
+        updateTemplateResult();
+    }
+
+    private void updateTemplateResult() {
+        if (level == null) return;
+
+        if (recipes.isEmpty()) {
+            inventory.setStackInSlot(SLOT_TEMPLATE_RESULT, ItemStack.EMPTY);
+            return;
+        }
+
+        CraftingRecipe recipe = recipes.get(Math.min(recipeIndex, recipes.size() - 1));
+        inventory.setStackInSlot(SLOT_TEMPLATE_RESULT,
+                com.hbm_m.platform.recipe.RecipeHooks.assembleCrafting(recipe, buildGrid(TEMPLATE_START), level));
     }
 
     public static void tick(Level level, BlockPos pos, BlockState state, MachineAutocrafterBlockEntity be) {
@@ -61,13 +129,14 @@ public class MachineAutocrafterBlockEntity extends BaseMachineBlockEntity {
     private void serverTick(Level level) {
         chargeFromBatterySlot(SLOT_BATTERY);
         if (getEnergyStored() < CONSUMPTION) return;
+        if (recipes.isEmpty()) return;
 
-        SimpleCraftingContainer grid = buildGrid();
-        // 1.21.1: getRecipeFor/assemble требуют CraftingInput — хелперы RecipeHooks.
-        Optional<CraftingRecipe> recipeOpt = com.hbm_m.platform.recipe.RecipeHooks.getCraftingRecipeFor(level, grid);
-        if (recipeOpt.isEmpty()) return;
+        // 1:1: gebaut wird ausschliesslich das gewaehlte Rezept - nicht irgendeines, das passt.
+        CraftingRecipe recipe = recipes.get(Math.min(recipeIndex, recipes.size() - 1));
+        SimpleCraftingContainer grid = buildGrid(RECIPE_START);
 
-        CraftingRecipe recipe = recipeOpt.get();
+        if (!com.hbm_m.platform.recipe.RecipeHooks.craftingMatches(recipe, grid, level)) return;
+
         ItemStack result = com.hbm_m.platform.recipe.RecipeHooks.assembleCrafting(recipe, grid, level);
         if (result.isEmpty()) return;
 
@@ -83,13 +152,13 @@ public class MachineAutocrafterBlockEntity extends BaseMachineBlockEntity {
         /*NonNullList<ItemStack> remaining = recipe.getRemainingItems(grid.toCraftingInput());
         *///?}
         for (int i = 0; i < GRID_SIZE; i++) {
-            inventory.getStackInSlot(GRID_START + i).shrink(1);
+            inventory.getStackInSlot(RECIPE_START + i).shrink(1);
 
             ItemStack leftover = remaining.get(i);
             if (!leftover.isEmpty()) {
-                ItemStack slotStack = inventory.getStackInSlot(GRID_START + i);
+                ItemStack slotStack = inventory.getStackInSlot(RECIPE_START + i);
                 if (slotStack.isEmpty()) {
-                    inventory.setStackInSlot(GRID_START + i, leftover);
+                    inventory.setStackInSlot(RECIPE_START + i, leftover);
                 } else if (level != null) {
                     net.minecraft.world.level.block.Block.popResource(level, worldPosition, leftover);
                 }
@@ -107,10 +176,11 @@ public class MachineAutocrafterBlockEntity extends BaseMachineBlockEntity {
         sendUpdateToClient();
     }
 
-    private SimpleCraftingContainer buildGrid() {
+    /** Das 3x3-Gitter ab einem Startplatz - einmal fuer die Vorlage, einmal fuer die Arbeit. */
+    private SimpleCraftingContainer buildGrid(int start) {
         NonNullList<ItemStack> items = NonNullList.withSize(GRID_SIZE, ItemStack.EMPTY);
         for (int i = 0; i < GRID_SIZE; i++) {
-            items.set(i, inventory.getStackInSlot(GRID_START + i));
+            items.set(i, inventory.getStackInSlot(start + i));
         }
         return new SimpleCraftingContainer(items, 3, 3);
     }
@@ -125,11 +195,51 @@ public class MachineAutocrafterBlockEntity extends BaseMachineBlockEntity {
         return getDefaultName();
     }
 
+    /**
+     * 1:1-Port von {@code isItemValidForSlot}: eingelegt wird ausschliesslich ins Arbeitsgitter,
+     * und nur, was der Filter des daruemberliegenden Vorlagenplatzes zulaesst.
+     */
     @Override
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
         if (slot == SLOT_BATTERY) return isEnergyProviderItem(stack);
-        if (slot == SLOT_OUTPUT) return false;
-        return slot >= GRID_START && slot < GRID_START + GRID_SIZE;
+
+        // Original: nur die neun Arbeitsplaetze nehmen etwas an.
+        if (slot < RECIPE_START || slot >= RECIPE_START + GRID_SIZE) return false;
+
+        int filterIndex = slot - RECIPE_START;
+        ItemStack filter = inventory.getStackInSlot(TEMPLATE_START + filterIndex);
+
+        // Ohne Vorlage an dieser Stelle geht nichts hinein.
+        if (filter.isEmpty()) return false;
+
+        // Original: hoechstens vier Stueck je Platz - der Autocrafter ist kein Lager.
+        if (stack.getCount() > 4) return false;
+        ItemStack present = inventory.getStackInSlot(slot);
+        if (!present.isEmpty() && present.getCount() + stack.getCount() > 4) return false;
+
+        return matcher.isValidForFilter(filter, filterIndex, stack);
+    }
+
+    /** Die Vorlage aendert sich nur ueber die Oberflaeche - danach muss neu gesucht werden. */
+    @Override
+    public void setChanged() {
+        super.setChanged();
+    }
+
+    @Override
+    protected void writeNbtData(net.minecraft.nbt.CompoundTag tag,
+                                net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
+        matcher.writeToNBT(tag);
+        tag.putInt("recipeIndex", recipeIndex);
+    }
+
+    @Override
+    protected void readNbtData(net.minecraft.nbt.CompoundTag tag,
+                               net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
+        matcher.readFromNBT(tag);
+        recipeIndex = tag.getInt("recipeIndex");
     }
 
     @Nullable

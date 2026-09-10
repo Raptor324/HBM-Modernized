@@ -54,7 +54,7 @@ public class MachineBreederMenu extends AbstractContainerMenu implements ILongEn
         this.data = data;
         this.player = inv.player;
 
-        checkContainerDataCount(data, 2);
+        checkContainerDataCount(data, 3);
         addDataSlots(data);
 
         this.machineInventory = new ModItemStackHandlerContainer(blockEntity.getInventory(), blockEntity::setChanged);
@@ -95,6 +95,11 @@ public class MachineBreederMenu extends AbstractContainerMenu implements ILongEn
 
     public int getMaxProgress() {
         return data.get(1);
+    }
+
+    /** Neutronenfluss der angrenzenden Forschungsreaktoren (ContainerData-Index 2). */
+    public int getFlux() {
+        return data.get(2);
     }
 
     public int getProgressScaled(int scale) {

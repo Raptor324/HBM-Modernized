@@ -1650,7 +1650,16 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModBlocks.CM_FLUX.get()));
         add.accept(new ItemStack(ModBlocks.CM_HEAT.get()));
         add.accept(new ItemStack(ModBlocks.PILE_BRICK.get()));
-        add.accept(new ItemStack(ModBlocks.PILE_BLOCK.get()));
+        add.accept(new ItemStack(ModBlocks.PILE_LOADER.get()));
+        add.accept(new ItemStack(ModBlocks.PILE_VENT.get()));
+        add.accept(new ItemStack(ModBlocks.PILE_CONTROL.get()));
+        add.accept(new ItemStack(ModItems.PILE_ROD_RA226BE.get()));
+        add.accept(new ItemStack(ModItems.PILE_ROD_PO210BE.get()));
+        add.accept(new ItemStack(ModItems.PILE_ROD_ZR.get()));
+        add.accept(new ItemStack(ModItems.PILE_ROD_NU.get()));
+        add.accept(new ItemStack(ModItems.PILE_ROD_MK2_PU239.get()));
+        add.accept(new ItemStack(ModItems.PILE_ROD_RGP.get()));
+        add.accept(new ItemStack(ModItems.PILE_ROD_WASTE.get()));
         add.accept(new ItemStack(ModBlocks.PWR_FUEL.get()));
         add.accept(new ItemStack(ModBlocks.PWR_CONTROL.get()));
         add.accept(new ItemStack(ModBlocks.PWR_CHANNEL.get()));
@@ -1668,15 +1677,24 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModBlocks.ICF.get()));
         add.accept(new ItemStack(ModBlocks.ICF_COMPONENT.get()));
         add.accept(new ItemStack(ModBlocks.ICF_CONTROLLER.get()));
+        add.accept(new ItemStack(ModBlocks.ICF_LASER_CASING.get()));
+        add.accept(new ItemStack(ModBlocks.ICF_LASER_PORT.get()));
+        add.accept(new ItemStack(ModBlocks.ICF_LASER_CELL.get()));
+        add.accept(new ItemStack(ModBlocks.ICF_LASER_EMITTER.get()));
+        add.accept(new ItemStack(ModBlocks.ICF_LASER_CAPACITOR.get()));
+        add.accept(new ItemStack(ModBlocks.ICF_LASER_TURBOCHARGER.get()));
         add.accept(new ItemStack(ModBlocks.WATZ_ELEMENT.get()));
         add.accept(new ItemStack(ModBlocks.WATZ_COOLER.get()));
         add.accept(new ItemStack(ModBlocks.WATZ_END.get()));
         add.accept(new ItemStack(ModBlocks.WATZ_PUMP.get()));
         add.accept(new ItemStack(ModBlocks.MACHINE_CONVERTER_HE_RF.get()));
         add.accept(new ItemStack(ModBlocks.MACHINE_CONVERTER_RF_HE.get()));
-        add.accept(new ItemStack(ModBlocks.DFC_EMITTER.get()));
-        add.accept(new ItemStack(ModBlocks.DFC_INJECTOR.get()));
-        add.accept(new ItemStack(ModBlocks.DFC_RECEIVER.get()));
+        // Achtung: DFC_EMITTER/INJECTOR/RECEIVER sind reine Platzhalterbloecke ohne Logik. Die
+        // arbeitenden Maschinen heissen im Port CORE_EMITTER/INJECTOR/RECEIVER und lagen bisher
+        // nicht im Reiter - der Spieler bekam also die toten Attrappen.
+        add.accept(new ItemStack(ModItems.CORE_EMITTER.get()));
+        add.accept(new ItemStack(ModItems.CORE_INJECTOR.get()));
+        add.accept(new ItemStack(ModItems.CORE_RECEIVER.get()));
         add.accept(new ItemStack(ModBlocks.DFC_STABILIZER.get()));
         add.accept(new ItemStack(ModBlocks.DFC_CORE.get()));
         add.accept(new ItemStack(ModBlocks.SEAL_FRAME.get()));
@@ -1734,6 +1752,9 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModItems.CRATE_DESH.get()));
         add.accept(new ItemStack(ModItems.CRATE_TUNGSTEN.get()));
         add.accept(new ItemStack(ModBlocks.SAFE.get()));
+        add.accept(new ItemStack(ModBlocks.MASS_STORAGE_WOOD.get()));
+        add.accept(new ItemStack(ModBlocks.MASS_STORAGE_IRON.get()));
+        add.accept(new ItemStack(ModBlocks.MASS_STORAGE_DESH.get()));
         add.accept(new ItemStack(ModBlocks.MASS_STORAGE.get()));
         add.accept(new ItemStack(ModItems.PUMPJACK.get()));
         add.accept(new ItemStack(ModBlocks.CHIMNEY_BRICK.get()));
@@ -1810,6 +1831,14 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModBlocks.VENT_PINK_CLOUD.get()));
         add.accept(new ItemStack(ModBlocks.VENT_CHLORINE_SEAL.get()));
         add.accept(new ItemStack(ModBlocks.CHLORINE_GAS.get()));
+        add.accept(new ItemStack(ModBlocks.MACHINE_RTG.get()));
+        add.accept(new ItemStack(ModBlocks.MACHINE_BIGASSTANK.get()));
+        add.accept(new ItemStack(ModBlocks.CHARGER.get()));
+        add.accept(new ItemStack(ModBlocks.YELLOW_BARREL.get()));
+        add.accept(new ItemStack(ModBlocks.PA_SOURCE.get()));
+        add.accept(new ItemStack(ModBlocks.PA_DETECTOR.get()));
+        add.accept(new ItemStack(ModBlocks.TESLA.get()));
+        add.accept(new ItemStack(ModBlocks.MACHINE_CONTROLLER.get()));
         add.accept(new ItemStack(ModBlocks.GAS_RADON.get()));
         add.accept(new ItemStack(ModBlocks.GAS_RADON_DENSE.get()));
         add.accept(new ItemStack(ModBlocks.GAS_RADON_TOMB.get()));
@@ -1944,6 +1973,8 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModBlocks.SAT_DOCK.get()));
         add.accept(new ItemStack(ModBlocks.SOYUZ_CAPSULE.get()));
         add.accept(new ItemStack(ModBlocks.MACHINE_FORCEFIELD.get()));
+        add.accept(new ItemStack(ModItems.UPGRADE_RADIUS.get()));
+        add.accept(new ItemStack(ModItems.UPGRADE_HEALTH.get()));
         add.accept(new ItemStack(ModItems.RANGEFINDER.get()));
         add.accept(new ItemStack(ModItems.DESIGNATOR.get()));
         add.accept(new ItemStack(ModItems.DESIGNATOR_RANGE.get()));
@@ -2055,6 +2086,7 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModItems.PILL_IODINE.get()));
         add.accept(new ItemStack(ModItems.PLAN_C.get()));
         add.accept(new ItemStack(ModItems.PILL_RED.get()));
+        add.accept(new ItemStack(ModItems.RADX.get()));
         add.accept(new ItemStack(ModItems.STEALTH_BOY.get()));
         add.accept(new ItemStack(ModItems.JETPACK_TANK.get()));
         add.accept(new ItemStack(ModItems.GUN_KIT_1.get()));

@@ -9,9 +9,9 @@ import net.minecraft.world.level.block.state.BlockState;
  * Port of {@code TileEntityRadioTorchReceiver} (1.7.10 Original). Listens on {@link #channel} and
  * outputs the received value as a redstone signal via {@link #lastState}.
  * <p>
- * SCOPE-Vereinfachung: Das Original hat einen Sonder-Payload {@code "selfdestruct"}, der eine
- * Explosion ausloest (Anti-Griefing-Gag). Nicht portiert - kein tragendes Feature, birgt nur
- * Risiko fuer unbeabsichtigte Explosionen bei einer wortwoertlichen Portierung.
+ * <p><b>Ein Wort sprengt ihn.</b> Kommt auf dem Kanal die Nachricht {@code selfdestruct} an,
+ * fliegt der Empfaenger in die Luft. Das ist im Original Absicht: wer den Funkkanal einer fremden
+ * Anlage kennt, kann sie damit ausschalten - also waehlt man seine Kanaele mit Bedacht.</p>
  */
 public class RadioTorchReceiverBlockEntity extends RadioTorchBaseBlockEntity {
 
@@ -30,6 +30,16 @@ public class RadioTorchReceiverBlockEntity extends RadioTorchBaseBlockEntity {
 
         String msg = String.valueOf(chan.signal);
         be.lastUpdate = level.getGameTime();
+
+        // 1:1-Port: der Sonderbefehl sprengt den Empfaenger. Wer den Kanal kennt, kann eine
+        // fremde Anlage damit lahmlegen - genau das ist im Original der Reiz daran.
+        if ("selfdestruct".equals(msg)) {
+            level.destroyBlock(pos, false);
+            level.explode(null, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
+                    5.0F, Level.ExplosionInteraction.BLOCK);
+            return;
+        }
+
         int nextState = 0;
 
         if (be.customMap) {

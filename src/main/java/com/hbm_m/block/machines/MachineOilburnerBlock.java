@@ -23,13 +23,33 @@ import net.minecraft.world.phys.BlockHitResult;
 import org.jetbrains.annotations.Nullable;
 import dev.architectury.registry.menu.MenuRegistry;
 
-/** Port of {@code HeaterOilburner} (1.7.10 Original). Also used for {@code oilburner_hp}. */
-public class MachineOilburnerBlock extends BaseEntityBlock {
+import com.hbm_m.block.ModBlocks;
+import com.hbm_m.multiblock.DummyableStructureBuilder;
+import com.hbm_m.multiblock.MultiblockStructureHelper;
+
+/**
+ * 1:1-Port von {@code HeaterOilburner} (1.7.10), auch fuer {@code oilburner_hp}: der Oelbrenner.
+ *
+ * <p>Zwei Felder hoch und drei mal drei breit ({@code getDimensions {1,0,1,1,1,1}}). Angeschlossen
+ * wird an den vier Seiten und oben - fuenf Zellen, an denen Rohre andocken koennen.</p>
+ */
+public class MachineOilburnerBlock extends DummyableMachineBlock {
 
     public MachineOilburnerBlock(Properties properties) { super(properties); }
 
     @Override
-    public RenderShape getRenderShape(BlockState state) { return RenderShape.MODEL; }
+    protected MultiblockStructureHelper defineStructure() {
+        // Original: getDimensions {1,0,1,1,1,1}, getOffset 1, fuenf Zusatzzellen (vier Seiten + oben).
+        return DummyableStructureBuilder.create()
+                .box(1, 0, 1, 1, 1, 1)
+                .extra(1, 0, 0)
+                .extra(-1, 0, 0)
+                .extra(0, 0, 1)
+                .extra(0, 0, -1)
+                .extra(0, 1, 0)
+                .placementOffset(1)
+                .build(() -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState());
+    }
 
     @Nullable @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {

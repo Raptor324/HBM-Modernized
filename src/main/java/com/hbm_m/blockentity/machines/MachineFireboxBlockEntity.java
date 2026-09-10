@@ -20,11 +20,13 @@ import net.minecraft.world.level.block.state.BlockState;
  * Port of {@code TileEntityHeaterFirebox} (1.7.10 Original) - solid-fuel heat generator, 2 fuel
  * input slots.
  * <p>
- * SCOPE-Vereinfachung: Das Original benutzt eine eigene {@code ModuleBurnTime}-Tabelle mit
- * Brennzeit-/Waerme-Multiplikatoren je Brennstoffart und wirft Asche in einen darunterliegenden
- * Ashpit. Hier: Brenndauer per vanilla {@link AbstractFurnaceBlockEntity#getFuel()} (wie bereits
- * beim {@code MachineWoodBurnerBlockEntity} dieses Ports), fester Waerme-Ertrag pro Tick waehrend
- * des Brennens - kein Ashpit-Ausstoss.
+ * <p><b>Der Brennstoff macht den Unterschied.</b> Wie im Original ({@code ModuleBurnTime}) haelt
+ * Braunkohle, Kohle und Koks ein Viertel laenger und heizt doppelt so stark; Festbrennstoff
+ * anderthalbmal so lang bei dreifacher Hitze; Raketentreibstoff dasselbe bei fuenffacher.
+ * Hoellenfeuer brennt nur halb so lang - heizt dafuer <b>fuenfzehnfach</b>.</p>
+ *
+ * <p>Steht eine {@link MachineAshpitBlockEntity Aschegrube} direkt darunter, faellt die Asche
+ * hinein - Holz, Kohle oder Sonstiges, je nach dem, was verbrannt wurde.
  */
 public class MachineFireboxBlockEntity extends BaseMachineBlockEntity implements IHeatSource {
 
@@ -35,6 +37,8 @@ public class MachineFireboxBlockEntity extends BaseMachineBlockEntity implements
     private int burnTime = 0;
     private int maxBurnTime = 0;
     private int heat = 0;
+    /** Hitze je Tick fuer den gerade brennenden Stoff - siehe {@link #burnMods}. */
+    private int heatPerTick = BURN_HEAT_PER_TICK;
 
     public MachineFireboxBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.FIREBOX_BE.get(), pos, state, INVENTORY_SIZE, 0L, 0L, 0L);
@@ -49,7 +53,7 @@ public class MachineFireboxBlockEntity extends BaseMachineBlockEntity implements
 
         if (be.burnTime > 0) {
             be.burnTime--;
-            be.heat = Math.min(MAX_HEAT, be.heat + BURN_HEAT_PER_TICK);
+            be.heat = Math.min(MAX_HEAT, be.heat + be.heatPerTick);
         } else {
             be.heat = Math.max(be.heat - Math.max(be.heat / 1000, 1), 0);
         }
@@ -57,16 +61,58 @@ public class MachineFireboxBlockEntity extends BaseMachineBlockEntity implements
         be.setChanged();
     }
 
+    /**
+     * 1:1-Port von {@code ModuleBurnTime}: je Brennstoffsorte ein Zeit- und ein Hitzefaktor.
+     *
+     * @return {@code {Zeitfaktor, Hitzefaktor}}
+     */
+    private static double[] burnMods(ItemStack stack) {
+        String id = net.minecraft.core.registries.BuiltInRegistries.ITEM
+                .getKey(stack.getItem()).getPath();
+
+        if (id.contains("balefire"))  return new double[] { 0.5D, 15D };
+        if (id.contains("rocket_fuel") || id.contains("solid_fuel_presto")) return new double[] { 1.5D, 5D };
+        if (id.contains("solid_fuel")) return new double[] { 1.5D, 3D };
+        if (id.contains("coke") || id.contains("coal") || id.contains("lignite")) {
+            return new double[] { 1.25D, 2D };
+        }
+        return new double[] { 1D, 1D };
+    }
+
+    /** 1:1-Port von {@code getAshFromFuel}: welche Asche dieser Brennstoff hinterlaesst. */
+    private static MachineAshpitBlockEntity.AshType ashFromFuel(ItemStack stack) {
+        String id = net.minecraft.core.registries.BuiltInRegistries.ITEM
+                .getKey(stack.getItem()).getPath();
+
+        if (id.contains("coke") || id.contains("coal") || id.contains("lignite")) {
+            return MachineAshpitBlockEntity.AshType.COAL;
+        }
+        if (id.contains("log") || id.contains("wood") || id.contains("plank") || id.contains("sapling")) {
+            return MachineAshpitBlockEntity.AshType.WOOD;
+        }
+        return MachineAshpitBlockEntity.AshType.MISC;
+    }
+
     private void startBurning() {
         for (int slot = 0; slot < INVENTORY_SIZE; slot++) {
             ItemStack fuelStack = this.inventory.getStackInSlot(slot);
             if (fuelStack.isEmpty()) continue;
 
-            int burnTicks = AbstractFurnaceBlockEntity.getFuel().getOrDefault(fuelStack.getItem(), 0);
-            if (burnTicks <= 0) continue;
+            int baseTime = AbstractFurnaceBlockEntity.getFuel().getOrDefault(fuelStack.getItem(), 0);
+            if (baseTime <= 0) continue;
+
+            double[] mods = burnMods(fuelStack);
+            int burnTicks = (int) (baseTime * mods[0]);
+            this.heatPerTick = (int) (BURN_HEAT_PER_TICK * mods[1]);
 
             this.maxBurnTime = burnTicks;
             this.burnTime = burnTicks;
+
+            // Original: die Asche faellt in die Grube direkt darunter.
+            if (level != null
+                    && level.getBlockEntity(worldPosition.below()) instanceof MachineAshpitBlockEntity ashpit) {
+                ashpit.addAsh(ashFromFuel(fuelStack), baseTime);
+            }
 
             if (fuelStack.getItem() == Items.LAVA_BUCKET) {
                 this.inventory.setStackInSlot(slot, new ItemStack(Items.BUCKET));

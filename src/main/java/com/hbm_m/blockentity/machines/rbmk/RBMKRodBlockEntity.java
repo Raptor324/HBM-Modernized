@@ -50,6 +50,10 @@ public class RBMKRodBlockEntity extends RBMKColumnBlockEntity
         if (level.isClientSide) return;
 
         if (!be.fuelSlot.isEmpty() && be.fuelSlot.getItem() instanceof RBMKRodItem rod) {
+            if (be.fluxQuantity > 0 && level.getGameTime() % 200 == 0) {
+                com.hbm_m.satellite.RayScanEvents.reportEvent(level, pos, com.hbm_m.satellite.RayScanEvents.INFO_NUCLEAR, 300);
+            }
+
             be.rodColor = rod.colorTint;
 
             double fluxRatioOut, fluxIn;

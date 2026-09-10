@@ -16,6 +16,7 @@ import com.hbm_m.datagen.recipes.custom.AssemblerRecipeGenerator;
 import com.hbm_m.datagen.recipes.custom.BlastFurnaceRecipeGenerator;
 import com.hbm_m.datagen.recipes.custom.BreederRecipeGenerator;
 import com.hbm_m.datagen.recipes.custom.CatalyticReformerRecipeGenerator;
+import com.hbm_m.datagen.recipes.custom.ParticleAcceleratorRecipeGenerator;
 import com.hbm_m.datagen.recipes.custom.CentrifugeRecipeGenerator;
 import com.hbm_m.datagen.recipes.custom.ChemicalPlantRecipeGenerator;
 import com.hbm_m.datagen.recipes.custom.CokerRecipeGenerator;
@@ -103,6 +104,7 @@ public class ModRecipeProvider extends RecipeProvider {
         FractionTowerRecipeGenerator.generate(pWriter);
         HydrotreaterRecipeGenerator.generate(pWriter);
         CatalyticReformerRecipeGenerator.generate(pWriter);
+        ParticleAcceleratorRecipeGenerator.generate(pWriter);
         LiquefactorRecipeGenerator.generate(pWriter);
         PyroOvenRecipeGenerator.generate(pWriter);
         RadiolysisRecipeGenerator.generate(pWriter);

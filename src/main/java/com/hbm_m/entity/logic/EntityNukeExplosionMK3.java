@@ -63,6 +63,9 @@ public class EntityNukeExplosionMK3 extends EntityExplosionChunkloading {
             this.expl = new ExplosionFleija(
                     (int) getX(), (int) getY(), (int) getZ(),
                     level(), this.destructionRange, this.coefficient, this.coefficient2);
+            com.hbm_m.satellite.DetectorEvents.reportEvent(level(), com.hbm_m.satellite.DetectorEvents.DURATION_HIGH,
+                    com.hbm_m.satellite.DetectorEvents.BurstIntensity.HIGH, getX(), getZ());
+
             this.did = true;
         }
 

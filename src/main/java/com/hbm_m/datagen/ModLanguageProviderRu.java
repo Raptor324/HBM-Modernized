@@ -1946,6 +1946,8 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add(ModItems.SHELL.get(), "Оболочка");
         add(ModItems.UPGRADE_MUFFLER.get(), "Улучшение «Глушитель»");
         add(ModItems.UPGRADE_TEMPLATE.get(), "Шаблон улучшения механизма");
+        add(ModItems.UPGRADE_RADIUS.get(), "Улучшение радиуса силового поля");
+        add(ModItems.UPGRADE_HEALTH.get(), "Улучшение прочности силового поля");
         add(ModItems.WASTE_NATURAL_URANIUM.get(), "Обеднённое топливо из природного урана");
         add(ModItems.WASTE_U233.get(), "Обеднённое топливо из урана-233");
         add(ModItems.WASTE_U235.get(), "Обеднённое топливо из урана-235");

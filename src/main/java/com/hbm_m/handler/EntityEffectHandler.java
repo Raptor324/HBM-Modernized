@@ -1,5 +1,8 @@
 package com.hbm_m.handler;
 
+import com.hbm_m.effect.ModEffects;
+import com.hbm_m.handler.pollution.PollutionHandler;
+import com.hbm_m.inventory.fluid.trait.PollutionType;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.damagesource.ModDamageSources;
 import com.hbm_m.entity.ModEntities;
@@ -62,6 +65,48 @@ public final class EntityEffectHandler {
         handleRadiationFX(entity);
 
         handleLungDisease(entity);
+
+        handlePollution(entity);
+    }
+
+    /**
+     * 1:1-Port von {@code EntityEffectHandler.handlePollution} (1.7.10): Gift und Schwermetall
+     * aus der Verschmutzungszelle auf Kopfhoehe wirken alle drei Sekunden auf die Kreatur.
+     */
+    private static void handlePollution(LivingEntity entity) {
+        if (!ModClothConfig.get().enablePollution) return;
+        if (entity.tickCount % 60 != 0) return;
+
+        int x = (int) Math.floor(entity.getX());
+        int y = (int) Math.floor(entity.getY() + entity.getEyeHeight());
+        int z = (int) Math.floor(entity.getZ());
+
+        if (ModClothConfig.get().enablePoison
+                && !ArmorRegistry.hasProtection(entity, 3, HazardClass.GAS_BLISTERING)) {
+
+            float poison = PollutionHandler.getPollution(entity.level(), x, y, z, PollutionType.POISON);
+
+            if (poison > 10) {
+                if (poison < 25) {
+                    entity.addEffect(new MobEffectInstance(MobEffects.POISON, 100, 0));
+                } else if (poison < 50) {
+                    entity.addEffect(new MobEffectInstance(MobEffects.POISON, 100, 1));
+                } else {
+                    entity.addEffect(new MobEffectInstance(MobEffects.WITHER, 100, 2));
+                }
+            }
+        }
+
+        if (ModClothConfig.get().enableLeadPoisoning
+                && !ArmorRegistry.hasProtection(entity, 3, HazardClass.PARTICLE_FINE)) {
+
+            float metal = PollutionHandler.getPollution(entity.level(), x, y, z, PollutionType.HEAVYMETAL);
+
+            // Original: die beiden oberen Stufen setzen beide Staerke 2 - so uebernommen.
+            if (metal > 25) {
+                entity.addEffect(new MobEffectInstance(ModEffects.LEAD.get(), 100, metal < 50 ? 0 : 2));
+            }
+        }
     }
 
     /**
@@ -78,7 +123,8 @@ public final class EntityEffectHandler {
         Level level = entity.level();
         int blackLung = HbmLivingProps.getBlackLung(entity);
         int asbestos = HbmLivingProps.getAsbestos(entity);
-        if (blackLung <= 0 && asbestos <= 0) {
+        // Kein Fruehausstieg bei Spielern: die koennen allein vom Russ in der Luft husten.
+        if (blackLung <= 0 && asbestos <= 0 && !(entity instanceof Player)) {
             return;
         }
 
@@ -107,8 +153,19 @@ public final class EntityEffectHandler {
             entity.addEffect(new MobEffectInstance(MobEffects.CONFUSION, 100, 0));
         }
 
+        // Original: Russ aus der Verschmutzungszelle zaehlt beim Husten mit - aber nur bei Spielern
+        // und nur ohne Grobstaubschutz.
+        float soot = 0F;
+        if (entity instanceof Player
+                && !ArmorRegistry.hasProtection(entity, 3, HazardClass.PARTICLE_COARSE)) {
+            soot = PollutionHandler.getPollution(level,
+                    (int) Math.floor(entity.getX()),
+                    (int) Math.floor(entity.getY() + entity.getEyeHeight()),
+                    (int) Math.floor(entity.getZ()), PollutionType.SOOT);
+        }
+
         // Кашель: от раза в 50 секунд до каждой секунды по мере тяжести; начинается на 25% накопления.
-        boolean coughs = blFrac > 0.25F || asbFrac > 0.25F;
+        boolean coughs = blFrac > 0.25F || asbFrac > 0.25F || soot > 30;
         int freq = Math.max((int) (1000F - 950F * total), 20);
         if (coughs && level.getGameTime() % freq == entity.getId() % freq) {            boolean coughsCoal = blFrac > 0.5F;
             boolean coughsBlood = asbFrac > 0.75F || blFrac > 0.75F;

@@ -31,10 +31,11 @@ import net.minecraft.world.level.block.state.BlockState;
  * data, e.g. hot reactor coolant &rarr; coolant) and, as a byproduct, generates heat exposed via
  * {@link IHeatSource}.
  * <p>
- * SCOPE-Vereinfachung: Das Original ist ein {@code BlockDummyable}-Multiblock mit 4 diagonalen
- * Rohranschluss-Zellen und einem Item-Slot zur Neuzuweisung des heissen Fluid-Typs. Hier:
- * einzelnes Block, Tanks fest auf {@code coolant_hot}/{@code coolant} typisiert, Anschluss ueber
- * die MK2-Rohrnetzwerk-API (wie beim Basic Boiler) statt eigener diagonaler Proxy-Zellen.
+ * <p>Er belegt wie im Original drei mal drei Felder ({@code getDimensions {0,0,1,1,1,1}}), und
+ * die vier <b>Ecken</b> sind die Anschlusszellen - dort setzt man die Rohre an, nicht gerade.</p>
+ *
+ * <p><b>Offen:</b> der Platz zum Umtypisieren des heissen Fluids; die Tanks stehen fest auf
+ * {@code coolant_hot} und {@code coolant}.
  */
 public class MachineHeatexBlockEntity extends BaseMachineBlockEntity implements IFluidStandardTransceiverMK2, IHeatSource {
 

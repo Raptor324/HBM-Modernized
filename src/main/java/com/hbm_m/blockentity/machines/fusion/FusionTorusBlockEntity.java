@@ -15,6 +15,8 @@ import com.hbm_m.api.network.GenNode;
 import com.hbm_m.api.network.NodeDirPos;
 import com.hbm_m.api.network.NodeNet;
 import com.hbm_m.api.network.UniNodespace;
+import com.hbm_m.api.redstoneoverradio.IRORInteractive;
+import com.hbm_m.api.redstoneoverradio.IRORValueProvider;
 import com.hbm_m.blockentity.BaseMachineBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.inventory.menu.MachineFusionTorusMenu;
@@ -56,7 +58,7 @@ import net.minecraft.world.phys.AABB;
  * nicht gibt. Mit ausgeschalteter Config verhaelt sich das Original identisch.</p>
  */
 public class FusionTorusBlockEntity extends BaseMachineBlockEntity
-        implements IFluidStandardTransceiverMK2, NodeNet.ILoadedEntry {
+        implements IFluidStandardTransceiverMK2, NodeNet.ILoadedEntry, IRORValueProvider, IRORInteractive {
 
     public static final int SLOT_BATTERY = 0;
     public static final int SLOT_BLUEPRINT = 1;
@@ -241,6 +243,10 @@ public class FusionTorusBlockEntity extends BaseMachineBlockEntity
             r = recipe.getR();
             g = recipe.getG();
             b = recipe.getB();
+
+            if (level != null && level.getGameTime() % 20 == 15) {
+                com.hbm_m.satellite.RayScanEvents.reportEvent(level, worldPosition, com.hbm_m.satellite.RayScanEvents.INFO_PARTICLE, 200);
+            }
         }
 
         double outputIntensity = getOutputIntensity(receiverCount);
@@ -580,6 +586,45 @@ public class FusionTorusBlockEntity extends BaseMachineBlockEntity
     @Override
     public AbstractContainerMenu createMenu(int id, Inventory inventory, Player player) {
         return MachineFusionTorusMenu.create(id, inventory, this);
+    }
+
+
+    // ═════════════════════════ Redstone over Radio ═════════════════════════
+
+    /** 1:1 aus {@code TileEntityFusionTorus.getFunctionInfo}. */
+    public static final String[] ROR = new String[] {
+        PREFIX_VALUE + "plasma",
+        PREFIX_VALUE + "consumption",
+        PREFIX_VALUE + "progress",
+        PREFIX_VALUE + "recipe",
+        PREFIX_VALUE + "active",
+        PREFIX_VALUE + "temp",
+        PREFIX_FUNCTION + "setrecipe" + NAME_SEPARATOR + "name",
+    };
+
+    @Override
+    public String[] getFunctionInfo() {
+        return ROR;
+    }
+
+    @Override
+    public String provideRORValue(String name) {
+        if ((PREFIX_VALUE + "plasma").equals(name))      return "" + this.plasmaEnergy;
+        if ((PREFIX_VALUE + "consumption").equals(name)) return "" + (int) (this.fuelConsumption * 100);
+        if ((PREFIX_VALUE + "progress").equals(name))    return "" + (int) Math.round(this.progress * 100);
+        if ((PREFIX_VALUE + "recipe").equals(name))      return selectedRecipeId != null ? selectedRecipeId.toString() : "null";
+        if ((PREFIX_VALUE + "active").equals(name))      return "" + (this.didProcess ? 1 : 0);
+        if ((PREFIX_VALUE + "temp").equals(name))        return "" + (int) this.temperature;
+        return null;
+    }
+
+    @Override
+    public String runRORFunction(String name, String[] params) {
+        if ((PREFIX_FUNCTION + "setrecipe").equals(name) && params.length == 1) {
+            setSelectedRecipeId(ResourceLocation.tryParse(params[0]));
+            sendUpdateToClient();
+        }
+        return null;
     }
 
     private AABB renderBounds = null;

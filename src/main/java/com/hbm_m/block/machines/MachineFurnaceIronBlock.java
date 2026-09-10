@@ -40,16 +40,27 @@ import dev.architectury.registry.menu.MenuRegistry;
  * {@code TileEntityFurnaceIron}) als einzelner Block, siehe
  * {@link MachineFurnaceIronBlockEntity} fuer Details zur Vereinfachung ggue. dem Multiblock-Original.
  */
-public class MachineFurnaceIronBlock extends BaseEntityBlock {
+public class MachineFurnaceIronBlock extends com.hbm_m.block.machines.DummyableMachineBlock {
     public static final BooleanProperty LIT = BlockStateProperties.LIT;
-    public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
     public static final VoxelShape SHAPE = Block.box(0, 0, 0, 16, 16, 16);
 
     public MachineFurnaceIronBlock(BlockBehaviour.Properties properties) {
         super(properties);
-        this.registerDefaultState(this.stateDefinition.any()
-                .setValue(LIT, false)
-                .setValue(FACING, Direction.NORTH));
+    }
+
+    @Override
+    protected BlockState withDefaults(BlockState state) {
+        return state.setValue(LIT, false);
+    }
+
+    @Override
+    protected com.hbm_m.multiblock.MultiblockStructureHelper defineStructure() {
+        // Original: FurnaceIron - getDimensions {1,0,1,0,1,0}, getOffset 0, keine Zusatzzellen.
+        // Das ergibt den 2x2x2-Wuerfel des Originals.
+        return com.hbm_m.multiblock.DummyableStructureBuilder.create()
+                .box(1, 0, 1, 0, 1, 0)
+                .placementOffset(0)
+                .build(() -> com.hbm_m.block.ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState());
     }
 
     @Override
@@ -85,11 +96,6 @@ public class MachineFurnaceIronBlock extends BaseEntityBlock {
         return RenderShape.MODEL;
     }
 
-    @Override
-    public VoxelShape getOcclusionShape(BlockState state, BlockGetter level, BlockPos pos) {
-        return Shapes.block();
-    }
-
     @Nullable
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
@@ -98,12 +104,11 @@ public class MachineFurnaceIronBlock extends BaseEntityBlock {
 
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean moving) {
-        if (state.getBlock() != newState.getBlock()) {
-            BlockEntity be = level.getBlockEntity(pos);
-            if (be instanceof MachineFurnaceIronBlockEntity furnace) {
-                furnace.drops();
-            }
+        if (state.getBlock() != newState.getBlock()
+                && level.getBlockEntity(pos) instanceof MachineFurnaceIronBlockEntity furnace) {
+            furnace.drops();
         }
+        // Die Basis loest hier die uebrige Struktur auf.
         super.onRemove(state, level, pos, newState, moving);
     }
 

@@ -12,9 +12,11 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 
 /**
- * Verwendet die portierte Original-Panel-Textur (nur der statische 176x222-Rahmen, keine
- * geratenen Icon-Koordinaten daraus) - Fortschritt/Energie/Tiefe als eigene Fuellrechteck-
- * Overlays, analog zu {@code GUIMachineCompressor}.
+ * Verwendet die portierte Original-Panel-Textur samt ihrer Overlays: Energiesaeule links,
+ * Bohrfortschritt in der Mitte, und der <b>An/Aus-Knopf</b> daneben.
+ *
+ * <p>Ueber dem Knopf steht die Kantenlaenge des Schachts, damit man beim Einbauen von
+ * Reichweiten-Modulen sofort sieht, wie breit der Laser gleich graebt.</p>
  */
 public class GUIMachineMiningLaser extends AbstractContainerScreen<MachineMiningLaserMenu> {
 
@@ -38,20 +40,19 @@ public class GUIMachineMiningLaser extends AbstractContainerScreen<MachineMining
         guiGraphics.blit(TEXTURE, x, y, 0, 0, imageWidth, imageHeight);
 
         if (blockEntity != null) { // тайл может отсутствовать в реплее Flashback
-            int progress = blockEntity.getProgressScaled(24);
-            if (progress > 0) {
-                guiGraphics.fill(x + 76, y + 60, x + 76 + progress, y + 68, 0xFFFF3020);
+            // Original: der gedrueckte Knopf aus (200,0).
+            if (blockEntity.isOn()) {
+                guiGraphics.blit(TEXTURE, x + 61, y + 17, 200, 0, 18, 18);
             }
 
-            if (blockEntity.getEnergyStored() > 0) {
-                long max = blockEntity.getMaxEnergyStored();
-                long ratio = max > 0 ? blockEntity.getEnergyStored() * 40L / max : 0;
-                guiGraphics.fill(x + 12, y + 20 + (int) (40 - ratio), x + 20, y + 60, 0xFF3080FF);
-            }
+            // Original: die Energiesaeule aus (176, 88-i), von unten wachsend.
+            long max = blockEntity.getMaxEnergyStored();
+            int e = max > 0 ? (int) (blockEntity.getEnergyStored() * 88L / max) : 0;
+            if (e > 0) guiGraphics.blit(TEXTURE, x + 8, y + 106 - e, 176, 88 - e, 16, e);
 
-            if (blockEntity.isActive()) {
-                guiGraphics.fill(x + 152, y + 20, x + 164, y + 32, 0xFFFF3020);
-            }
+            // Original: der Bohrfortschritt aus (192,0).
+            int progress = blockEntity.getProgressScaled(34);
+            if (progress > 0) guiGraphics.blit(TEXTURE, x + 66, y + 36, 192, 0, 8, progress);
         }
     }
 
@@ -60,9 +61,24 @@ public class GUIMachineMiningLaser extends AbstractContainerScreen<MachineMining
         guiGraphics.drawString(font, title, imageWidth / 2 - font.width(title) / 2, 6, 0x404040, false);
         guiGraphics.drawString(font, playerInventoryTitle, 8, inventoryLabelY, 4210752, false);
         if (blockEntity != null) {
-            guiGraphics.drawString(font, Component.translatable("gui.hbm_m.mining_laser.depth", blockEntity.getDrillDepth()),
-                    12, imageHeight - 118, 0x404040, false);
+            // Original: die Kantenlaenge des Schachts, mittig ueber dem Knopf.
+            String width = String.valueOf(blockEntity.getWidth());
+            guiGraphics.drawString(font, width, 43 - font.width(width) / 2, 26, 0xFFFFFF, false);
         }
+    }
+
+    @Override
+    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        // Original-Trefferflaeche: (61,17), 18 x 18.
+        if (blockEntity != null && isHovering(61, 17, 18, 18, mouseX, mouseY)) {
+            com.hbm_m.network.MiningLaserToggleC2SPacket.send(blockEntity.getBlockPos());
+            if (minecraft != null) {
+                minecraft.getSoundManager().play(net.minecraft.client.resources.sounds.SimpleSoundInstance.forUI(
+                        net.minecraft.sounds.SoundEvents.UI_BUTTON_CLICK, 1.0F));
+            }
+            return true;
+        }
+        return super.mouseClicked(mouseX, mouseY, button);
     }
 
     @Override

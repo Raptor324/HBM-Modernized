@@ -19,8 +19,8 @@ import net.minecraft.world.level.block.state.BlockState;
  * and forwards each received message as a remote function call ({@code commandName!p1:p2:...}) into
  * the backing block (must implement {@link IRORInteractive}).
  * <p>
- * SCOPE-Vereinfachung: Der {@code "selfdestruct"}-Sonderfall entfaellt, siehe
- * {@link RadioTorchReceiverBlockEntity}.
+ * <p>Wie beim Empfaenger sprengt die Nachricht {@code selfdestruct} das Geraet - siehe
+ * {@link RadioTorchReceiverBlockEntity}.</p>
  */
 public class RadioTorchControllerBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity implements IRadioTorchConfigurable {
 
@@ -45,6 +45,16 @@ public class RadioTorchControllerBlockEntity extends com.hbm_m.blockentity.BaseH
         if (chan == null) return;
 
         String rec = String.valueOf(chan.signal);
+
+        // 1:1-Port: der Sonderbefehl sprengt den Empfaenger. Wer den Kanal kennt, kann eine
+        // fremde Anlage damit lahmlegen - genau das ist im Original der Reiz daran.
+        if ("selfdestruct".equals(rec)) {
+            level.destroyBlock(pos, false);
+            level.explode(null, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
+                    5.0F, Level.ExplosionInteraction.BLOCK);
+            return;
+        }
+
         if ((be.polling && chan.timeStamp >= level.getGameTime() - 1) || !rec.equals(be.prev)) {
             try {
                 if (!rec.isEmpty()) ror.runRORFunction(IRORInteractive.PREFIX_FUNCTION + IRORInteractive.getCommand(rec), IRORInteractive.getParams(rec));

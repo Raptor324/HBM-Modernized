@@ -10,6 +10,7 @@ import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.inventory.menu.MachineDroneCrateMenu;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
@@ -27,13 +28,13 @@ import net.minecraft.world.phys.AABB;
  * laedt/entlaedt sie komplett in einem Rutsch - kein Filter/Whitelist, reiner Bulk-Transfer, exakt
  * wie im Original.
  * <p>
- * SCOPE-Vereinfachung: Das Original integriert den Fluid-Modus zusaetzlich in das MK2-Rohrnetzwerk
- * ({@code IFluidStandardTransceiver}) fuer automatisches Befuellen/Entleeren durch Nachbarrohre.
- * Hier: reiner manueller Tank (befuellbar wie andere einfache Tanks per Fluid-Identifier-Item),
- * ohne Netzwerk-Anbindung - der Kernmechanismus (Drohnen laden/entladen) ist vollstaendig erhalten,
- * nur die Pipe-Netzwerk-Automatik entfaellt angesichts des Aufwands fuer die volle MK2-Integration.
+ * <p>Im Fluessigkeitsbetrieb haengt die Kiste wie im Original am <b>Rohrnetz</b>: im Sendebetrieb
+ * zieht sie sich voll, im Empfangsbetrieb schiebt sie ab, was die Drohnen abgeladen haben. Erst
+ * damit laesst sich eine Drohnenstrecke ohne Handarbeit betreiben - man haengt sie an beiden Enden
+ * an Rohre und laesst laufen.</p>
  */
-public class MachineDroneCrateBlockEntity extends BaseMachineBlockEntity implements IDroneLinkable {
+public class MachineDroneCrateBlockEntity extends BaseMachineBlockEntity
+        implements IDroneLinkable, com.hbm_m.api.fluids.IFluidStandardTransceiverMK2 {
 
     public static final int INVENTORY_SIZE = 18;
     public static final int SLOT_FLUID_ID = 18;
@@ -54,8 +55,43 @@ public class MachineDroneCrateBlockEntity extends BaseMachineBlockEntity impleme
         }
     }
 
+    @Override
+    public boolean isLoaded() {
+        return level != null && !isRemoved() && level.isLoaded(worldPosition);
+    }
+
+    /** Nur im Fluessigkeitsbetrieb haengt die Kiste am Rohrnetz - als Kiste hat sie nichts zu melden. */
+    @Override
+    public FluidTank[] getAllTanks() {
+        return itemType ? new FluidTank[0] : new FluidTank[] { fluidTank };
+    }
+
+    /** Im Sendebetrieb zieht sie sich voll: dann nimmt sie an. */
+    @Override
+    public FluidTank[] getReceivingTanks() {
+        return !itemType && sendingMode ? new FluidTank[] { fluidTank } : new FluidTank[0];
+    }
+
+    /** Im Empfangsbetrieb gibt sie ab, was die Drohnen gebracht haben. */
+    @Override
+    public FluidTank[] getSendingTanks() {
+        return !itemType && !sendingMode ? new FluidTank[] { fluidTank } : new FluidTank[0];
+    }
+
     private void serverTick(Level level, BlockPos pos) {
         applyFluidIdentifier();
+
+        // 1:1: die Rohranbindung laeuft nur im Fluessigkeitsbetrieb.
+        if (!itemType && level.getGameTime() % 20 == 0) {
+            for (Direction dir : Direction.values()) {
+                if (sendingMode) {
+                    trySubscribe(fluidTank.getTankType(), level, pos.relative(dir), dir);
+                } else if (fluidTank.getFill() > 0) {
+                    tryProvide(fluidTank, level, pos.relative(dir), dir);
+                }
+            }
+        }
+
         BlockPos point = getDronePoint();
         AABB box = new AABB(point).inflate(0.4);
         List<EntityDeliveryDrone> drones = level.getEntitiesOfClass(EntityDeliveryDrone.class, box);

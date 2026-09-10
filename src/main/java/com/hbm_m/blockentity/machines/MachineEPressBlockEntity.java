@@ -38,12 +38,13 @@ import net.minecraft.world.phys.AABB;
  * (1:1 aus dem Original: {@code power >= 100} pro Schritt statt Brennstoff-Pauschale pro fertiger
  * Operation).
  * <p>
- * SCOPE-Entscheidung: Der Upgrade-Slot (SPEED-Upgrades Stufe 1-3) des Originals entfaellt
- * (konsistent mit der durchgaengigen Upgrade-System-Streichung in diesem Port, siehe
- * {@code MachineMiningDrillBlockEntity}) - {@link #EXTEND_SPEED}/{@link #RETRACT_SPEED} sind die
- * Original-Werte bei Upgrade-Stufe 0 (bereits mit dem Original-Multiplikator {@code 1+level/4}
- * vorverrechnet). Ebenso nicht uebernommen: die animierte Kopf-3D-Bewegung (Original-Renderer) -
- * das statische, kombinierte {@code epress.json}-Modell wird ohne Animation dargestellt.
+ * <p><b>Aufwertungen</b> wie im Original, Platz 4, nur Tempo bis Stufe 3: der Stempel faehrt je
+ * Stufe schneller ({@code Grundwert * (1 + speed/4)} mit {@code speed = 1 + Stufe}) und die Pause
+ * zwischen zwei Huben wird kuerzer ({@code 5 - speed + 1}). Drei Stufen halbieren die Zeit je Hub
+ * ungefaehr.</p>
+ *
+ * <p><b>Offen:</b> die Kopfanimation des Original-Renderers - das kombinierte
+ * {@code epress.json}-Modell steht still.
  */
 public class MachineEPressBlockEntity extends BaseMachineBlockEntity {
 
@@ -56,17 +57,18 @@ public class MachineEPressBlockEntity extends BaseMachineBlockEntity {
     private static final int SLOT_MATERIAL = 2;
     private static final int SLOT_OUTPUT = 3;
 
+    /** Original: {@code getValidUpgrades} kennt hier ausschliesslich Tempo bis Stufe 3. */
     private static final java.util.Map<UpgradeType, Integer> VALID_UPGRADES = java.util.Map.of(
-            UpgradeType.SPEED, 3,
-            UpgradeType.POWER, 3);
+            UpgradeType.SPEED, 3);
 
     private final com.hbm_m.inventory.UpgradeManager upgradeManager = new com.hbm_m.inventory.UpgradeManager();
 
     private static final long MAX_POWER = 50_000L;
     private static final long POWER_PER_TICK = 100L;
     private static final int MAX_PRESS = 200;
-    private static final int EXTEND_SPEED = 56;
-    private static final int RETRACT_SPEED = 25;
+    /** Original: {@code stampSpeed = isRetracting ? 20 : 45}, danach mal {@code 1 + speed/4}. */
+    private static final int EXTEND_SPEED = 45;
+    private static final int RETRACT_SPEED = 20;
 
     private int press = 0;
     private boolean isRetracting = false;
@@ -118,12 +120,14 @@ public class MachineEPressBlockEntity extends BaseMachineBlockEntity {
         chargeFromBatterySlot(SLOT_BATTERY);
         upgradeManager.checkSlots(inventory, SLOT_UPGRADE, SLOT_UPGRADE, VALID_UPGRADES);
 
-        // Speed makes the ram travel further per tick and draw proportionally more; power
-        // upgrades take a quarter off the draw per level - same curve the chemical factory uses.
+        // 1:1: speed = 1 + Stufe, der Hub wird mit (1 + speed/4) gestreckt.
         int speedLevel = Math.min(upgradeManager.getLevel(UpgradeType.SPEED), 3);
-        int powerLevel = Math.min(upgradeManager.getLevel(UpgradeType.POWER), 3);
-        int speedMult = 1 + speedLevel;
-        long drawPerTick = Math.max(1L, (long) (POWER_PER_TICK * speedMult * (1.0 - 0.25 * powerLevel)));
+        int speed = 1 + speedLevel;
+        double stampMult = 1D + speed / 4D;
+        int pause = 5 - speed + 1;
+
+        // Der Verbrauch waechst mit dem Tempo - das Original zieht ihn ausserhalb dieser Schleife.
+        long drawPerTick = Math.max(1L, (long) (POWER_PER_TICK * stampMult));
 
         boolean canProcess = canProcess();
 
@@ -132,19 +136,19 @@ public class MachineEPressBlockEntity extends BaseMachineBlockEntity {
                 setEnergyStored(getEnergyStored() - drawPerTick);
 
                 if (isRetracting) {
-                    press -= RETRACT_SPEED * speedMult;
+                    press -= (int) (RETRACT_SPEED * stampMult);
                     if (press <= 0) {
                         press = 0;
                         isRetracting = false;
-                        delay = 5;
+                        delay = pause;
                     }
                 } else {
-                    press += EXTEND_SPEED * speedMult;
+                    press += (int) (EXTEND_SPEED * stampMult);
                     if (press >= MAX_PRESS) {
                         press = MAX_PRESS;
                         craftItem();
                         isRetracting = true;
-                        delay = 5;
+                        delay = pause;
                     }
                 }
                 needsSync = true;

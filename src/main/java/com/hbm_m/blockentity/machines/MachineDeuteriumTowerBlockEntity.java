@@ -25,10 +25,11 @@ import net.minecraft.world.level.block.state.BlockState;
  * Tankgroessen 1:1 aus dem Original (Tower-Variante, nicht die kleinere Extractor-Basis):
  * Wasser 50000mB, Schwerwasser 5000mB.
  * <p>
- * Bewusst NICHT uebernommen: die 1.7.10-Fluid-Pipe-Autoconnect-Logik (dieser Port nutzt Capability-
- * basierte Fluid-Handler statt manueller Nachbarblock-Subscription) und kein eigenes Multiblock-
- * Geruest - Original ist ein {@code BlockDummyable} mit Verbindungspunkten, hier als Einzelblock
- * mit Tank-Kapazitaeten der Turm-Variante nachgebaut (Funktion identisch, ohne die reine Deko-Hoehe).
+ * <p>Er steht wie im Original als voller Turm da - zwei mal zwei Felder, zehn hoch, mit
+ * Anschlusszellen an den Sockelecken (siehe {@code MachineDeuteriumTowerBlock}).</p>
+ *
+ * <p><b>Anmerkung:</b> die Rohranbindung laeuft ueber die Fluid-Schnittstelle von 1.20 statt der
+ * manuellen Nachbarabfrage des Originals - dasselbe Ergebnis, anderer Weg.
  */
 public class MachineDeuteriumTowerBlockEntity extends BaseMachineBlockEntity {
 

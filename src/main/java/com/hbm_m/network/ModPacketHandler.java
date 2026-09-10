@@ -44,6 +44,7 @@ public class ModPacketHandler {
     public static final ResourceLocation CHUNK_RAD_DEBUG_BATCH = id("chunk_rad_debug_batch");
     public static final ResourceLocation HIGHLIGHT_BLOCKS      = id("highlight_blocks");
     public static final ResourceLocation SYNC_ENERGY           = id("sync_energy");
+    public static final ResourceLocation SET_REACTOR_CONTROL   = id("set_reactor_control");
     public static final ResourceLocation AUX_PARTICLE          = id("aux_particle");
     public static final ResourceLocation PWR_PRINTER_SCAN      = id("pwr_printer_scan");
     public static final ResourceLocation VANILLA_EXPLOSION     = id("vanilla_explosion");
@@ -59,6 +60,16 @@ public class ModPacketHandler {
     public static final ResourceLocation SET_PLASMA_FORGE_RECIPE = id("set_plasma_forge_recipe");
     public static final ResourceLocation SET_KLYSTRON_OUTPUT   = id("set_klystron_output");
     public static final ResourceLocation TOGGLE_WOOD_BURNER    = id("toggle_wood_burner");
+    public static final ResourceLocation TOGGLE_FORCE_FIELD    = id("toggle_force_field");
+    public static final ResourceLocation PNEUMO_TUBE_CONTROL   = id("pneumo_tube_control");
+    public static final ResourceLocation PNEUMO_STORAGE_CONTROL = id("pneumo_storage_control");
+    public static final ResourceLocation DFC_STABILIZER_WATTS  = id("dfc_stabilizer_watts");
+    public static final ResourceLocation CORE_EMITTER_CONTROL  = id("core_emitter_control");
+    public static final ResourceLocation COMBUSTION_ENGINE_CONTROL = id("combustion_engine_control");
+    public static final ResourceLocation DIESEL_GENERATOR_TOGGLE = id("diesel_generator_toggle");
+    public static final ResourceLocation MINING_LASER_TOGGLE = id("mining_laser_toggle");
+    public static final ResourceLocation AMMO_PRESS_SELECT = id("ammo_press_select");
+    public static final ResourceLocation PNEUMO_ACCESS_STATE   = id("pneumo_access_state");
     public static final ResourceLocation BUILD_MISSILE         = id("build_missile");
     public static final ResourceLocation FLUID_TANK_MODE       = id("fluid_tank_mode");
     public static final ResourceLocation DETONATE_ALL          = id("detonate_all");
@@ -205,9 +216,53 @@ public class ModPacketHandler {
                 SetKlystronOutputC2SPacket::decode,
                 SetKlystronOutputC2SPacket::handle);
 
+        registerC2S(SET_REACTOR_CONTROL,
+                SetReactorControlC2SPacket::decode,
+                SetReactorControlC2SPacket::handle);
+
         registerC2S(TOGGLE_WOOD_BURNER,
                 ToggleWoodBurnerPacket::decode,
                 ToggleWoodBurnerPacket::handle);
+
+        registerC2S(TOGGLE_FORCE_FIELD,
+                ToggleForceFieldC2SPacket::decode,
+                ToggleForceFieldC2SPacket::handle);
+
+        registerC2S(PNEUMO_TUBE_CONTROL,
+                PneumoTubeControlC2SPacket::decode,
+                PneumoTubeControlC2SPacket::handle);
+
+        registerC2S(PNEUMO_STORAGE_CONTROL,
+                PneumoStorageControlC2SPacket::decode,
+                PneumoStorageControlC2SPacket::handle);
+
+        registerC2S(DFC_STABILIZER_WATTS,
+                DFCStabilizerWattsC2SPacket::decode,
+                DFCStabilizerWattsC2SPacket::handle);
+
+        registerC2S(CORE_EMITTER_CONTROL,
+                CoreEmitterControlC2SPacket::decode,
+                CoreEmitterControlC2SPacket::handle);
+
+        registerC2S(COMBUSTION_ENGINE_CONTROL,
+                CombustionEngineControlC2SPacket::decode,
+                CombustionEngineControlC2SPacket::handle);
+
+        registerC2S(DIESEL_GENERATOR_TOGGLE,
+                DieselGeneratorToggleC2SPacket::decode,
+                DieselGeneratorToggleC2SPacket::handle);
+
+        registerC2S(MINING_LASER_TOGGLE,
+                MiningLaserToggleC2SPacket::decode,
+                MiningLaserToggleC2SPacket::handle);
+
+        registerC2S(AMMO_PRESS_SELECT,
+                AmmoPressSelectC2SPacket::decode,
+                AmmoPressSelectC2SPacket::handle);
+
+        registerC2S(PNEUMO_ACCESS_STATE,
+                PneumoAccessStateC2SPacket::decode,
+                PneumoAccessStateC2SPacket::handle);
 
         registerC2S(BUILD_MISSILE,
                 BuildMissilePacket::decode,

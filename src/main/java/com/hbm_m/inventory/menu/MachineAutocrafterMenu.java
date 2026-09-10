@@ -37,20 +37,35 @@ public class MachineAutocrafterMenu extends AbstractContainerMenu {
 
         var container = new ModItemStackHandlerContainer(blockEntity.getInventory(), blockEntity::setChanged);
 
+        // 1:1 aus {@code ContainerAutocrafter}: oben die Vorlage bei (44, 22).
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 3; col++) {
-                this.addSlot(new Slot(container, row * 3 + col, 30 + col * 18, 17 + row * 18));
+                this.addSlot(new PatternSlot(container,
+                        MachineAutocrafterBlockEntity.TEMPLATE_START + row * 3 + col,
+                        44 + col * 18, 22 + row * 18));
             }
         }
 
-        this.addSlot(new Slot(container, SLOT_OUTPUT, 116, 35) {
+        // Die Vorschau der Vorlage bei (116, 40) - sie zeigt nur, was entstehen wuerde.
+        this.addSlot(new PatternSlot(container, MachineAutocrafterBlockEntity.SLOT_TEMPLATE_RESULT, 116, 40));
+
+        // Darunter das Arbeitsgitter bei (44, 86).
+        for (int row = 0; row < 3; row++) {
+            for (int col = 0; col < 3; col++) {
+                this.addSlot(new Slot(container,
+                        MachineAutocrafterBlockEntity.RECIPE_START + row * 3 + col,
+                        44 + col * 18, 86 + row * 18));
+            }
+        }
+
+        this.addSlot(new Slot(container, SLOT_OUTPUT, 116, 104) {
             @Override
             public boolean mayPlace(ItemStack stack) {
                 return false; // Nur Entnahme - wird von der Maschine befuellt.
             }
         });
 
-        this.addSlot(new Slot(container, SLOT_BATTERY, 17, 71) {
+        this.addSlot(new Slot(container, SLOT_BATTERY, 17, 99) {
             @Override
             public boolean mayPlace(ItemStack stack) {
                 return isEnergyItem(stack);
@@ -58,7 +73,7 @@ public class MachineAutocrafterMenu extends AbstractContainerMenu {
         });
 
         int playerInvX = 8;
-        int playerInvY = 108;
+        int playerInvY = 158;
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 9; col++) {
                 this.addSlot(new Slot(inventory, col + row * 9 + 9, playerInvX + col * 18, playerInvY + row * 18));
@@ -67,6 +82,75 @@ public class MachineAutocrafterMenu extends AbstractContainerMenu {
         int hotbarY = playerInvY + 58;
         for (int col = 0; col < 9; col++) {
             this.addSlot(new Slot(inventory, col, playerInvX + col * 18, hotbarY));
+        }
+    }
+
+    /**
+     * 1:1-Port von {@code slotClick}: die zehn oberen Plaetze verhalten sich anders als gewoehnliche.
+     *
+     * <p>Ein Rechtsklick auf einen belegten Vorlagenplatz schaltet dessen Filter weiter; ein
+     * Rechtsklick auf die Vorschau blaettert zum naechsten passenden Rezept. Alles andere legt
+     * eine <b>Kopie</b> des Gehaltenen in den Platz, ohne dem Spieler etwas wegzunehmen - so
+     * definiert man eine Vorlage, ohne Material zu opfern.</p>
+     */
+    @Override
+    public void clicked(int index, int button, net.minecraft.world.inventory.ClickType clickType, Player player) {
+        int templateEnd = MachineAutocrafterBlockEntity.TEMPLATE_START + MachineAutocrafterBlockEntity.GRID_SIZE;
+
+        if (index < 0 || index > MachineAutocrafterBlockEntity.SLOT_TEMPLATE_RESULT) {
+            super.clicked(index, button, clickType, player);
+            return;
+        }
+
+        Slot slot = getSlot(index);
+
+        // Die Vorschau selbst nimmt nichts an - ein Rechtsklick blaettert nur weiter.
+        if (index == MachineAutocrafterBlockEntity.SLOT_TEMPLATE_RESULT) {
+            if (button == 1 && clickType == net.minecraft.world.inventory.ClickType.PICKUP && slot.hasItem()) {
+                blockEntity.nextTemplate();
+            }
+            return;
+        }
+
+        if (index >= templateEnd) {
+            super.clicked(index, button, clickType, player);
+            return;
+        }
+
+        if (button == 1 && clickType == net.minecraft.world.inventory.ClickType.PICKUP && slot.hasItem()) {
+            blockEntity.nextMode(index - MachineAutocrafterBlockEntity.TEMPLATE_START);
+            return;
+        }
+
+        // Kopie des Gehaltenen als Vorlage - der Spieler behaelt seinen Stapel.
+        ItemStack held = getCarried();
+        ItemStack pattern = held.isEmpty() ? ItemStack.EMPTY : held.copyWithCount(1);
+        slot.set(pattern);
+
+        int filterIndex = index - MachineAutocrafterBlockEntity.TEMPLATE_START;
+        blockEntity.getMatcher().initPattern(filterIndex, pattern);
+        blockEntity.updateTemplateGrid();
+    }
+
+    /**
+     * 1:1-Port von {@code SlotPattern}: ein Vorlagenplatz haelt eine Kopie dessen, was gefordert
+     * ist. Er nimmt sie beim Hineinlegen entgegen, ohne den Stapel des Spielers zu verbrauchen,
+     * und gibt beim Herausnehmen nichts heraus.
+     */
+    private static class PatternSlot extends Slot {
+
+        PatternSlot(net.minecraft.world.Container container, int index, int x, int y) {
+            super(container, index, x, y);
+        }
+
+        @Override
+        public boolean mayPickup(Player player) {
+            return false;
+        }
+
+        @Override
+        public int getMaxStackSize() {
+            return 1;
         }
     }
 

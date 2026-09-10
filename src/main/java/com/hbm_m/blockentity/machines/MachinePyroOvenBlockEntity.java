@@ -6,6 +6,8 @@ import com.hbm_m.api.fluids.IFluidConnectorMK2;
 import com.hbm_m.api.fluids.IFluidStandardTransceiverMK2;
 import com.hbm_m.blockentity.BaseMachineBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
+import com.hbm_m.handler.pollution.PollutionHandler;
+import com.hbm_m.inventory.fluid.trait.PollutionType;
 import com.hbm_m.inventory.UpgradeManager;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.inventory.menu.MachinePyroOvenMenu;
@@ -36,10 +38,12 @@ import net.minecraft.world.level.material.Fluids;
  * 1:1 wie im Original). Upgrade-Slots
  * (Speed/Power/Overdrive) via {@link UpgradeManager}, analog zu {@code OilDrillBaseBlockEntity}.
  * <p>
- * SCOPE-Entscheidung: Pollution (SOOT beim Laufen, {@code TileEntityMachinePolluting}) entfaellt
+ * Pollution ist portiert (SOOT_PER_SECOND beim Laufen ueber die Rauchtanks der Basisklasse).
+ * Nicht portiert ist dagegen
  * ersatzlos - fehlende Infrastruktur, wie bei allen anderen Maschinen dieser Session dokumentiert.
  */
-public class MachinePyroOvenBlockEntity extends BaseMachineBlockEntity implements IFluidStandardTransceiverMK2 {
+public class MachinePyroOvenBlockEntity extends com.hbm_m.blockentity.MachinePollutingBlockEntity
+        implements IFluidStandardTransceiverMK2 {
 
     public static final int SLOT_BATTERY  = 0;
     public static final int SLOT_ITEM_IN  = 1;
@@ -65,13 +69,53 @@ public class MachinePyroOvenBlockEntity extends BaseMachineBlockEntity implement
     private boolean isProgressing;
 
     public MachinePyroOvenBlockEntity(BlockPos pos, BlockState state) {
-        super(ModBlockEntities.PYROOVEN_BE.get(), pos, state, INVENTORY_SIZE, MAX_POWER, MAX_POWER, 0L);
+        // Original: super(6, 50) - sechs Slots, 50 mB Rauchpuffer je Sorte.
+        super(ModBlockEntities.PYROOVEN_BE.get(), pos, state, INVENTORY_SIZE, MAX_POWER, MAX_POWER, 0L, 50);
+        // Original: der Pyroofen setzt beim Ueberlauf statt des Zischens seine Abblas-Animation.
+        smokeTanks.onOverflow(() -> this.isVenting = true);
     }
 
     public static void tick(Level level, BlockPos pos, BlockState state, MachinePyroOvenBlockEntity be) {
         if (!level.isClientSide) {
             be.serverTick(level, pos);
         }
+    }
+
+    /** Original: {@code isVenting} - laufen die Rauchtanks ueber, blaest der Ofen ab. */
+    private boolean isVenting = false;
+
+    public boolean isVenting() { return isVenting; }
+
+    /**
+     * 1:1-Port des Abblaszweigs: der Ueberschuss geht ueber den Schornstein, drei Bloecke ueber
+     * dem Sockel und quer zur Blickrichtung versetzt.
+     */
+    private void spawnVentPlume(Level level, BlockPos pos) {
+        if (!isVenting || level.getGameTime() % 2 != 0) return;
+        if (!(level instanceof net.minecraft.server.level.ServerLevel serverLevel)) return;
+
+        // Original: rot = dir.getRotation(UP) - die Achse quer zur Blickrichtung.
+        net.minecraft.core.Direction rot = getFacing().getCounterClockWise();
+
+        net.minecraft.nbt.CompoundTag fx = new net.minecraft.nbt.CompoundTag();
+        fx.putString("type", "tower");
+        fx.putFloat("lift", 10F);
+        fx.putFloat("base", 0.25F);
+        fx.putFloat("max", 2.5F);
+        fx.putInt("life", 100 + level.getRandom().nextInt(20));
+        fx.putInt("color", 0x202020);
+
+        com.hbm_m.particle.helper.IParticleCreator.sendPacket(serverLevel,
+                pos.getX() + 0.5 - rot.getStepX(), pos.getY() + 3, pos.getZ() + 0.5 - rot.getStepZ(),
+                250, fx);
+    }
+
+    /** Die Blickrichtung des Blocks - im Original die Metadatenzahl. */
+    private net.minecraft.core.Direction getFacing() {
+        BlockState state = getBlockState();
+        return state.hasProperty(com.hbm_m.block.machines.MachinePyroOvenBlock.FACING)
+                ? state.getValue(com.hbm_m.block.machines.MachinePyroOvenBlock.FACING)
+                : net.minecraft.core.Direction.NORTH;
     }
 
     private void serverTick(Level level, BlockPos pos) {
@@ -93,6 +137,7 @@ public class MachinePyroOvenBlockEntity extends BaseMachineBlockEntity implement
                 BlockEntity neighborBe = level.getBlockEntity(neighborPos);
                 if (!(neighborBe instanceof IFluidConnectorMK2)) continue;
                 trySubscribe(tank0.getTankType(), level, neighborPos, dir);
+                sendSmoke(level, neighborPos, dir);
                 if (tank1.getFill() > 0) {
                     tryProvide(tank1, level, neighborPos, dir);
                 }
@@ -105,11 +150,17 @@ public class MachinePyroOvenBlockEntity extends BaseMachineBlockEntity implement
         overdriveLevel = upgradeManager.getLevel(UpgradeType.OVERDRIVE);
 
         isProgressing = false;
+        // Original: isVenting wird jeden Tick zurueckgesetzt und von pollute() neu gesetzt.
+        isVenting = false;
 
         PyroOvenRecipe recipe = canProcess();
         if (recipe != null) {
             int overdriveSpeed = speedLevel + overdriveLevel * 2;
             progress += 1F / Math.max((recipe.getDuration() - speedLevel * (recipe.getDuration() / 4)) / (overdriveLevel * 2 + 1), 1);
+
+            // Original: SOOT_PER_SECOND, solange der Ofen laeuft - in die Rauchtanks, nicht
+            // direkt in die Welt.
+            pollute(PollutionType.SOOT, PollutionHandler.SOOT_PER_SECOND);
             isProgressing = true;
             setEnergyStored(Math.max(0L, getEnergyStored() - getConsumption(overdriveSpeed, powerSavingLevel)));
 
@@ -121,6 +172,8 @@ public class MachinePyroOvenBlockEntity extends BaseMachineBlockEntity implement
         } else {
             progress = 0F;
         }
+
+        spawnVentPlume(level, pos);
 
         setChanged();
         sendUpdateToClient();
@@ -214,7 +267,9 @@ public class MachinePyroOvenBlockEntity extends BaseMachineBlockEntity implement
 
     // ── IFluidStandardTransceiverMK2 ─────────────────────────────────────────
 
-    @Override public FluidTank[] getAllTanks()      { return new FluidTank[]{ tank0, tank1 }; }
+    @Override public FluidTank[] getAllTanks()      {
+        return new FluidTank[]{ tank0, tank1, smoke, smokeLeaded, smokePoison };
+    }
     @Override public FluidTank[] getReceivingTanks() { return new FluidTank[]{ tank0 }; }
     @Override public FluidTank[] getSendingTanks() {
         return tank1.getFill() > 0 ? new FluidTank[]{ tank1 } : FluidTank.EMPTY_ARRAY;

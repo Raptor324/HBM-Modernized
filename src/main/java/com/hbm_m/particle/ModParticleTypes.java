@@ -31,6 +31,10 @@ public class ModParticleTypes {
     public static final RegistrySupplier<SimpleParticleType> SMOKE_COLUMN = PARTICLES.register("smoke_column",
             () -> createParticle(false));
 
+    /** Original: {@code "hadron"} - der Ring ueber einem Teilchenaufprall. */
+    public static final RegistrySupplier<SimpleParticleType> HADRON = PARTICLES.register("hadron",
+            () -> createParticle(true));
+
     /** RBMK meltdown effects, 1:1 with the original's "rbmkflame" / "rbmksteam" / "rbmkmush". */
     public static final RegistrySupplier<SimpleParticleType> RBMK_FLAME = PARTICLES.register("rbmk_flame",
             () -> createParticle(true));

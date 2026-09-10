@@ -4,6 +4,8 @@ import com.hbm_m.api.fluids.FluidItemAccess;
 import com.hbm_m.api.fluids.IFluidStandardTransceiverMK2;
 import com.hbm_m.api.fluids.VanillaFluidEquivalence;
 import com.hbm_m.blockentity.BaseMachineBlockEntity;
+import com.hbm_m.handler.pollution.PollutionHandler;
+import com.hbm_m.inventory.fluid.trait.PollutionType;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
@@ -276,6 +278,12 @@ public class MachineRefineryBlockEntity extends BaseMachineBlockEntity implement
         }
 
         isOn = true;
+
+        // Original: SOOT_PER_SECOND * 70 im Sekundentakt - die dreckigste Maschine des Mods.
+        if (level.getGameTime() % 20 == 0) {
+            PollutionHandler.incrementPollution(level, worldPosition, PollutionType.SOOT,
+                    PollutionHandler.SOOT_PER_SECOND * 70);
+        }
         getTank(TANK_INPUT).setFill(getTank(TANK_INPUT).getFill() - INPUT_CONSUMPTION_MB);
 
         for (int i = 0; i < 4; i++) {

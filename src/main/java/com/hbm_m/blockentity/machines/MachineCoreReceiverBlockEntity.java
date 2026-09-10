@@ -18,40 +18,46 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 
 /**
- * Port von {@code TileEntityCoreReceiver} (1.7.10). Original: nimmt per {@code ILaserable.addEnergy}
- * einen Laserstrahl (vom Core Emitter) entgegen, wandelt ihn in HE-Netzwerk-Energie um
- * ({@code power = joules * 5000}) und speist sie ins Energienetz ein; verbraucht dabei Cryogel aus
- * einem internen Tank. Nur Strahlen von "vorne" (der der FACING-Seite gegenueberliegenden Richtung)
- * werden akzeptiert - Original sprengt den Block bei Treffern von der falschen Seite.
- * <p>
- * Vereinfachungen (Funktion vor Politur):
- * <ul>
- *   <li>der 5000x-HE/SPK-Umrechnungsfaktor des Originals stammt aus dessen zweigeteilter
- *       Energie-Oekonomie (schwache "SPK"-Laserenergie vs. starke "HE"-Maschinenenergie) und hat in
- *       diesem Port mit einer einzigen einheitlichen Energiewaehrung keine Entsprechung - die
- *       empfangene Energie wird stattdessen 1:1 (abzueglich des bereits im Emitter angewandten
- *       5%-Leitungsverlusts) in den eigenen Energiespeicher uebernommen.</li>
- *   <li>keine Explosion bei Treffern von der falschen Seite (Original: Anti-Cheese-Mechanik) - die
- *       Energie wird hier einfach nicht angenommen, der Emitter-Strahl behandelt den Receiver dann
- *       wie ein gewoehnliches Hindernis.</li>
- *   <li>kein Ueberhitzungs-Failstate (Original: Block wird bei leerem Tank zu Lava) - fehlt Kuehlmittel,
- *       wird die Energie trotzdem angenommen (das Kuehlmittel dient hier nur der Bilanz/Fuellstandsanzeige,
- *       keine Weltmanipulation als Bestrafung).</li>
- * </ul>
+ * 1:1-Port von {@code TileEntityCoreReceiver} (1.7.10): das Gegenstueck zum Strahler.
+ *
+ * <p>Er nimmt den Laserstrahl entgegen und rechnet ihn in Netzenergie um - <b>und zwar mit dem
+ * Faktor {@value #HE_PER_SPK}</b>. Das ist der eigentliche Sinn der ganzen Anlage: der Strahler
+ * setzt fuenftausend Energieeinheiten in ein Spk um, der Kern vervielfacht das, und hier wird
+ * wieder Netzenergie daraus. Ohne diesen Faktor waere ein Fusionsreaktor ein Verlustgeschaeft.</p>
+ *
+ * <p><b>Nur von vorn.</b> Trifft ihn ein Strahl von der falschen Seite, fliegt er in die Luft -
+ * das Original nennt das ausdruecklich so, und es verhindert, dass sich ein Empfaenger seitlich
+ * an eine bestehende Strecke haengen laesst.</p>
+ *
+ * <p>Wie der Strahler braucht auch er Cryogel: 20 mB je Tick, solange etwas ankommt. Geht der Tank
+ * leer, wird der Block zu fliessender Lava.</p>
  */
 public class MachineCoreReceiverBlockEntity extends BaseMachineBlockEntity implements ILaserable {
 
-    private static final long ENERGY_EXTRACT_PER_TICK = 40_000L;
-    private static final int COOLANT_PER_HIT_MB = 20;
-    private static final int COOLANT_CAPACITY_MB = 64_000;
+    /** Original: {@code power = joules * 5000}. */
+    public static final long HE_PER_SPK = 5000L;
+    /** Original: {@code tank.setFill(tank.getFill() - 20)}. */
+    public static final int COOLANT_PER_TICK_MB = 20;
+    public static final int COOLANT_CAPACITY_MB = 64_000;
+
+    /**
+     * Das Original hat hier keinen Deckel - {@code getMaxPower()} gibt schlicht die eben erzeugte
+     * Menge zurueck, der Empfaenger ist ein reiner Durchlauf. Dieser Port braucht eine feste
+     * Obergrenze fuer den Speicher; sie ist so hoch gewaehlt, dass sie im Spiel nicht greift.
+     */
+    public static final long MAX_POWER = 1_000_000_000_000L;
 
     private final FluidTank coolantTank = new FluidTank(ModFluids.CRYOGEL.getSource(), COOLANT_CAPACITY_MB);
 
+    /** Original: {@code joules} - was in diesem Tick angekommen ist. */
+    private long joules;
+
     public MachineCoreReceiverBlockEntity(BlockPos pos, BlockState state) {
-        super(ModBlockEntities.CORE_RECEIVER_BE.get(), pos, state, 4, 2_000_000L, 0L, ENERGY_EXTRACT_PER_TICK);
+        super(ModBlockEntities.CORE_RECEIVER_BE.get(), pos, state, 4, MAX_POWER, 0L, MAX_POWER);
     }
 
     //? if forge {
@@ -65,52 +71,65 @@ public class MachineCoreReceiverBlockEntity extends BaseMachineBlockEntity imple
     }
     //?}
 
+    public FluidTank getCoolantTank() { return coolantTank; }
+    public long getJoules()           { return joules; }
+
+    /** 1:1-Port von {@code updateEntity}. */
     public static void tick(Level level, BlockPos pos, BlockState state, MachineCoreReceiverBlockEntity be) {
-        if (level.isClientSide()) {
-            return;
-        }
+        if (level.isClientSide()) return;
+
         be.ensureNetworkInitialized();
-        // Die eigentliche Energieuebernahme passiert in addLaserEnergy(...), aufgerufen vom
-        // Core Emitter waehrend dessen Tick. Hier wird nur die Netzwerkanbindung sichergestellt -
-        // extractEnergy() (geerbt von BaseMachineBlockEntity) uebernimmt die Ausspeisung ins Netz.
+
+        // Original: power = joules * 5000, jeden Tick neu gesetzt statt aufaddiert.
+        be.setEnergyStored(Math.min(MAX_POWER, be.joules * HE_PER_SPK));
+
+        if (be.joules > 0) {
+            if (be.coolantTank.getFill() >= COOLANT_PER_TICK_MB) {
+                be.coolantTank.setFill(be.coolantTank.getFill() - COOLANT_PER_TICK_MB);
+            } else {
+                level.setBlockAndUpdate(pos, Blocks.LAVA.defaultBlockState());
+                return;
+            }
+        }
+
+        be.joules = 0;
+        be.setChanged();
+        be.sendUpdateToClient();
     }
 
+    /**
+     * 1:1-Port von {@code addEnergy}: nur Strahlen von vorn werden angenommen. Alles andere
+     * sprengt den Empfaenger.
+     */
     @Override
     public boolean addLaserEnergy(Level level, BlockPos pos, long energy, Direction beamDirection) {
-        if (energy <= 0 || !pos.equals(this.getBlockPos())) {
-            return false;
-        }
 
-        // Original: "only accept lasers from the front" - der Strahl muss auf die FACING-Seite
-        // des Receivers treffen, d.h. er bewegt sich in die der FACING-Richtung entgegengesetzte Richtung.
         Direction facing = getBlockState().getValue(MachineCoreReceiverBlock.FACING);
-        if (beamDirection != facing) {
-            return false;
+
+        if (beamDirection.getOpposite() == facing) {
+            joules += energy;
+            setChanged();
+            return true;
         }
 
-        setEnergyStored(getEnergyStored() + energy);
-        if (coolantTank.getFluidAmountMb() >= COOLANT_PER_HIT_MB) {
-            coolantTank.drainMb(COOLANT_PER_HIT_MB);
-        }
-        setChanged();
-        sendUpdateToClient();
-        return true;
-    }
-
-    public FluidTank getCoolantTank() {
-        return coolantTank;
+        level.destroyBlock(pos, false);
+        level.explode(null, pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D, 2.5F,
+                Level.ExplosionInteraction.BLOCK);
+        return false;
     }
 
     @Override
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.writeNbtData(tag, registries);
         coolantTank.writeToNBT(tag, "coolant");
+        tag.putLong("joules", joules);
     }
 
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.readNbtData(tag, registries);
         coolantTank.readFromNBT(tag, "coolant");
+        joules = tag.getLong("joules");
     }
 
     @Override

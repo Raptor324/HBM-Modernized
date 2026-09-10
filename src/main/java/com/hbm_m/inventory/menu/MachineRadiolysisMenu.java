@@ -32,7 +32,18 @@ public class MachineRadiolysisMenu extends AbstractContainerMenu {
 
         //? if forge {
         var handler = be.getInventory();
+
+        // 1:1 aus {@code ContainerRadiolysis}: zwei Spalten zu fuenf Pelletplaetzen rechts aussen.
+        for (int i = 0; i < 2; i++) {
+            for (int j = 0; j < 5; j++) {
+                addSlot(new SlotItemHandler(handler, j + i * 5, 188 + i * 18, 8 + j * 18));
+            }
+        }
+
         addSlot(new SlotItemHandler(handler, MachineRadiolysisBlockEntity.SLOT_FLUID_ID, 34, 17));
+        addSlot(new TakeOnlySlot(handler, MachineRadiolysisBlockEntity.SLOT_FLUID_ID_OUT, 34, 53));
+        addSlot(new SlotItemHandler(handler, MachineRadiolysisBlockEntity.SLOT_IRRADIATE_IN, 148, 17));
+        addSlot(new TakeOnlySlot(handler, MachineRadiolysisBlockEntity.SLOT_IRRADIATE_OUT, 148, 53));
         addSlot(new SlotItemHandler(handler, MachineRadiolysisBlockEntity.SLOT_BATTERY, 8, 53));
         //?}
 
@@ -45,6 +56,20 @@ public class MachineRadiolysisMenu extends AbstractContainerMenu {
             addSlot(new Slot(inv, col, 8 + col * 18, 142));
         }
     }
+
+    /** Original: {@code SlotTakeOnly} - herausnehmen ja, hineinlegen nein. */
+    //? if forge {
+    private static class TakeOnlySlot extends SlotItemHandler {
+        TakeOnlySlot(net.minecraftforge.items.IItemHandler handler, int index, int x, int y) {
+            super(handler, index, x, y);
+        }
+
+        @Override
+        public boolean mayPlace(net.minecraft.world.item.ItemStack stack) {
+            return false;
+        }
+    }
+    //?}
 
     public static MachineRadiolysisMenu create(int id, Inventory inv, MachineRadiolysisBlockEntity be) {
         return new MachineRadiolysisMenu(id, inv, be);

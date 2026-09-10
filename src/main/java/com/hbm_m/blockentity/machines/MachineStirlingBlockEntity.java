@@ -34,11 +34,13 @@ import net.minecraft.world.level.block.state.BlockState;
  * schaltet sich ab ({@code hasCog=false}), bis sie mit einem {@code ModItems.GEAR_LARGE} per
  * Rechtsklick repariert wird. Die kreative Variante hat keine Obergrenze/Explosion.
  * <p>
- * SCOPE-Entscheidung: Das Original wirft bei der Explosion ein fliegendes {@code EntityCog}-Entity
- * aus (rein optisch) - dieser Port verzichtet auf ein eigenes Entity dafuer, die Explosion und die
- * Abschaltung/Reparatur-Mechanik selbst sind vollstaendig uebernommen. Ebenso hatte das Original
- * pro Variante ein anderes Zahnrad-Metadaten-Item als Reparatur-Voraussetzung - da dieser Port nur
- * ein generisches {@code gear_large}-Item kennt, repariert dieses alle 3 Varianten.
+ * <p><b>Geht er durch, fliegt das Zahnrad heraus</b>
+ * ({@link com.hbm_m.entity.projectile.CogEntity}) - und das ist kein Effekt: es toetet, was es
+ * trifft, sprengt beim Aufprall und laesst sich danach wieder aufsammeln und einbauen. Je heisser
+ * der Motor beim Platzen war, desto weiter fliegt es.</p>
+ *
+ * <p><b>Anmerkung:</b> das Original verlangt je Bauart ein eigenes Zahnrad (Metadatenvarianten);
+ * dieser Port kennt nur das eine {@code gear_large}, das damit alle drei repariert.
  */
 public class MachineStirlingBlockEntity extends BaseMachineBlockEntity {
 
@@ -130,8 +132,24 @@ public class MachineStirlingBlockEntity extends BaseMachineBlockEntity {
     }
 
     private void explode(ServerLevel level, BlockPos pos) {
-        level.explode(null, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
+        level.explode(null, pos.getX() + 0.5, pos.getY() + 1, pos.getZ() + 0.5,
                 5.0F, Level.ExplosionInteraction.BLOCK);
+
+        // 1:1: das Zahnrad fliegt seitlich heraus - je heisser, desto hoeher.
+        net.minecraft.core.Direction facing =
+                getBlockState().hasProperty(com.hbm_m.block.machines.MachineStirlingBlock.FACING)
+                        ? getBlockState().getValue(com.hbm_m.block.machines.MachineStirlingBlock.FACING)
+                        : net.minecraft.core.Direction.NORTH;
+        net.minecraft.core.Direction sideways = facing.getCounterClockWise();
+
+        com.hbm_m.entity.projectile.CogEntity cog = com.hbm_m.entity.projectile.CogEntity.create(level,
+                pos.getX() + 0.5 + facing.getStepX(), pos.getY() + 1, pos.getZ() + 0.5 + facing.getStepZ(),
+                facing);
+        cog.setDeltaMovement(sideways.getStepX(),
+                1D + (heat - maxHeat) * 0.0001D,
+                sideways.getStepZ());
+        level.addFreshEntity(cog);
+
         hasCog = false;
         heat = 0;
         overspeedTicks = 0;

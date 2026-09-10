@@ -193,6 +193,10 @@ public class EntityNukeExplosionMK5 extends EntityExplosionChunkloading {
      * и конфиг фактически не работал — здесь подключён по назначению.
      */
     private void createExplosionEngine() {
+        // Original: eine ausgewachsene Zuendung ist eine volle Minute lang aus dem Orbit zu sehen.
+        com.hbm_m.satellite.DetectorEvents.reportEvent(level(), com.hbm_m.satellite.DetectorEvents.DURATION_HIGH,
+                com.hbm_m.satellite.DetectorEvents.BurstIntensity.HIGH, getX(), getZ());
+
         int algorithm = ModClothConfig.get().explosionAlgorithm;
         if ((algorithm == 1 || algorithm == 2) && level() instanceof ServerLevel server) {
             explosion = new com.hbm_m.explosion.ExplosionNukeRayParallelized(

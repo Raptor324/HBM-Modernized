@@ -13,6 +13,8 @@ import org.jetbrains.annotations.Nullable;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.machines.BlastFurnaceBlock;
 import com.hbm_m.blockentity.BaseHbmBlockEntity;
+import com.hbm_m.handler.pollution.PollutionHandler;
+import com.hbm_m.inventory.fluid.trait.PollutionType;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.inventory.menu.BlastFurnaceMenu;
 import com.hbm_m.item.ModItems;
@@ -286,6 +288,12 @@ public class BlastFurnaceBlockEntity extends BaseHbmBlockEntity implements MenuP
         if (canProcess) {
             fuel = Math.max(0, fuel - 1);
             progress += getProgressPerTick();
+
+            // Original (TileEntityFurnaceSteel): SOOT_PER_SECOND * 2 im Sekundentakt.
+            if (level.getGameTime() % 20 == 0) {
+                PollutionHandler.incrementPollution(level, worldPosition, PollutionType.SOOT,
+                        PollutionHandler.SOOT_PER_SECOND * 2);
+            }
             if (progress >= PROCESS_TIME) {
                 craftItem();
                 progress -= PROCESS_TIME;

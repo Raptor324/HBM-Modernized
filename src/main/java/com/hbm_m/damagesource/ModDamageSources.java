@@ -54,10 +54,16 @@ public final class ModDamageSources {
     public static DamageSource building(Level level) { return create(level, ModDamageTypes.BUILDING); }
     public static DamageSource cloud(Level level) { return create(level, ModDamageTypes.CLOUD); }
     public static DamageSource electricity(Level level) { return create(level, ModDamageTypes.ELECTRICITY); }
+    /** Original: {@code ModDamageSource.amsCore} - der Strahl des Dunklen Fusionsreaktors. */
+    public static DamageSource amsCore(Level level) { return create(level, ModDamageTypes.AMS_CORE); }
     public static DamageSource exhaust(Level level) { return create(level, ModDamageTypes.EXHAUST); }
     public static DamageSource spikes(Level level) { return create(level, ModDamageTypes.SPIKES); }
     public static DamageSource boltgun(Entity attacker) { return create(attacker, attacker, ModDamageTypes.BOLTGUN); }
+    public static DamageSource lead(Level level) { return create(level, ModDamageTypes.LEAD); }
+    public static DamageSource bang(Level level) { return create(level, ModDamageTypes.BANG); }
     public static DamageSource monoxide(Level level) { return create(level, ModDamageTypes.MONOXIDE); }
+    /** Original: {@code ModDamageSource.turbofan} heisst dort selbst "blender" - Turbofan und Mixer teilen sich die Quelle. */
+    public static DamageSource blender(Level level) { return create(level, ModDamageTypes.BLENDER); }
     public static DamageSource asbestos(Level level) { return create(level, ModDamageTypes.ASBESTOS); }
     public static DamageSource blacklung(Level level) { return create(level, ModDamageTypes.BLACKLUNG); }
     public static DamageSource vacuum(Level level) { return create(level, ModDamageTypes.VACUUM); }

@@ -631,6 +631,27 @@ public class ModEntities {
                             .updateInterval(3)
                             .build("zirnox_debris"));
 
+    /** 1:1-Port von {@code EntityCog}: das Zahnrad aus einem geplatzten Stirlingmotor. */
+    public static final RegistrySupplier<EntityType<com.hbm_m.entity.projectile.CogEntity>> COG =
+            ENTITY_TYPES.register("cog",
+                    () -> EntityType.Builder.<com.hbm_m.entity.projectile.CogEntity>of(
+                                    com.hbm_m.entity.projectile.CogEntity::new, MobCategory.MISC)
+                            // Original: setSize(1F, 1F).
+                            .sized(1F, 1F)
+                            .clientTrackingRange(10)
+                            .updateInterval(3)
+                            .build("cog"));
+
+    public static final RegistrySupplier<EntityType<com.hbm_m.entity.projectile.PileDebrisEntity>> PILE_DEBRIS =
+            ENTITY_TYPES.register("pile_debris",
+                    () -> EntityType.Builder.<com.hbm_m.entity.projectile.PileDebrisEntity>of(
+                                    com.hbm_m.entity.projectile.PileDebrisEntity::new, MobCategory.MISC)
+                            // Original: die Trefferbreite 0.35F aus dem Aufruf in handleMeltdown.
+                            .sized(0.35F, 0.35F)
+                            .clientTrackingRange(10)
+                            .updateInterval(3)
+                            .build("pile_debris"));
+
     public static void init() {
         ENTITY_TYPES.register();
         //? if fabric {

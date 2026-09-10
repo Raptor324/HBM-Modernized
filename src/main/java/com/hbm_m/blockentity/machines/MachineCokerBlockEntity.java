@@ -3,6 +3,8 @@ package com.hbm_m.blockentity.machines;
 import com.hbm_m.api.fluids.IFluidConnectorMK2;
 import com.hbm_m.api.fluids.IFluidStandardTransceiverMK2;
 import com.hbm_m.blockentity.BaseMachineBlockEntity;
+import com.hbm_m.handler.pollution.PollutionHandler;
+import com.hbm_m.inventory.fluid.trait.PollutionType;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.interfaces.IHeatSource;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
@@ -65,6 +67,26 @@ public class MachineCokerBlockEntity extends BaseMachineBlockEntity implements I
         }
     }
 
+    /**
+     * 1:1-Port des Rauchzweigs: solange gekokt wird, steigt alle zwei Ticks eine dunkle Schwade
+     * aus dem Kopf des Turms - zweiundzwanzig Bloecke ueber dem Sockel, wo der Kamin sitzt.
+     */
+    private void spawnPlume(Level level, BlockPos pos) {
+        if (!wasOn || level.getGameTime() % 2 != 0) return;
+        if (!(level instanceof net.minecraft.server.level.ServerLevel serverLevel)) return;
+
+        net.minecraft.nbt.CompoundTag fx = new net.minecraft.nbt.CompoundTag();
+        fx.putString("type", "tower");
+        fx.putFloat("lift", 10F);
+        fx.putFloat("base", 0.75F);
+        fx.putFloat("max", 3F);
+        fx.putInt("life", 200 + level.getRandom().nextInt(50));
+        fx.putInt("color", 0x404040);
+
+        com.hbm_m.particle.helper.IParticleCreator.sendPacket(serverLevel,
+                pos.getX() + 0.5, pos.getY() + 22, pos.getZ() + 0.5, 250, fx);
+    }
+
     private void serverTick(Level level, BlockPos pos) {
         pullOrDecayHeat(level, pos);
 
@@ -87,6 +109,12 @@ public class MachineCokerBlockEntity extends BaseMachineBlockEntity implements I
             if (burn > 0) {
                 wasOn = true;
                 progress += burn;
+
+                // Original: SOOT_PER_SECOND * 5 alle fuenf Ticks, solange die Maschine lief.
+                if (level.getGameTime() % 5 == 0) {
+                    PollutionHandler.incrementPollution(level, worldPosition, PollutionType.SOOT,
+                            PollutionHandler.SOOT_PER_SECOND * 5);
+                }
                 heat -= burn;
 
                 if (progress >= PROCESS_TIME) {
@@ -120,6 +148,8 @@ public class MachineCokerBlockEntity extends BaseMachineBlockEntity implements I
                 tryProvide(tank1, level, neighborPos, dir);
             }
         }
+
+        spawnPlume(level, pos);
 
         setChanged();
         sendUpdateToClient();

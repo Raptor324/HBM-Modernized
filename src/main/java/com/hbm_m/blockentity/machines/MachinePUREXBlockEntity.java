@@ -34,9 +34,8 @@ import net.minecraft.world.level.material.Fluid;
  * <p>
  * SCOPE-Entscheidungen:
  * <ul>
- *   <li>Kein echtes 5x2x5-Multiblock mit Eck-Dummy-Bloecken (Original: {@code BlockDummyable}) -
- *   wie bei anderen "grosses Modell, im Kern automatisiert"-Maschinen dieser Session vereinfacht
- *   auf einen Einzelblock (siehe {@code MachineAmmoPressBlockEntity}).</li>
+ *   <li>Sie belegt wie im Original fuenf mal fuenf Felder und fuenf in der Hoehe
+ *   ({@code getDimensions {4,0,2,2,2,2}}); der ganze Sockelrand ist Anschlussflaeche.</li>
  *   <li>Kein Blueprint-Slot/Rezeptauswahl-GUI (Original waehlt manuell aus einer Liste passender
  *   Rezepte). Stattdessen automatische Erkennung: jeden Tick wird das erste {@link PurexRecipe}
  *   gesucht, dessen Item-/Fluid-Eingaenge mit dem aktuellen Slot-/Tank-Inhalt uebereinstimmen -

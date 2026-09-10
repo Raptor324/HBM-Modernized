@@ -5,6 +5,7 @@ import org.jetbrains.annotations.Nullable;
 import com.hbm_m.api.fluids.IFluidStandardReceiverMK2;
 import com.hbm_m.blockentity.BaseMachineBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
+import com.hbm_m.inventory.fluid.trait.FluidTrait.FluidReleaseType;
 import com.hbm_m.inventory.fluid.FluidType;
 import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
@@ -37,26 +38,35 @@ import net.minecraft.world.level.material.Fluid;
  *   <li>Kein Bucket-/Kanister-Item-Slot-Paar fuer die Betankung (Original: Slot 0 Container-Input,
  *   Slot 1 leerer-Container-Output) - wie bei allen anderen Fluid-Maschinen dieser Session wird
  *   der Tank stattdessen direkt ueber das MK2-Fluid-Netz befuellt ({@link IFluidStandardReceiverMK2}).</li>
- *   <li>Kein manueller An/Aus-GUI-Knopf (Original: {@code NBTControlPacket}-gesteuerter Toggle) -
- *   nur Redstone-Sperre (analog {@code MachineMiningLaserBlockEntity}).</li>
- *   <li>{@code TileEntityMachinePolluting} (Rauch-Tanks/Weltverschmutzungs-Raster) entfaellt - dieser
- *   Port hat kein PollutionHandler-Aequivalent (durchgaengig etablierte Luecke, siehe z.B.
- *   {@code MachineElectricFurnaceBlockEntity}).</li>
+ *   <li>Der <b>An/Aus-Knopf</b> in der Oberflaeche ist wie im Original vorhanden: der Generator
+ *   laeuft erst, wenn man ihn anwirft, und laesst sich damit auch ohne Redstone stilllegen.</li>
+ *   <li>Abgas wie im Original: die Maschine erbt von
+ *   {@link com.hbm_m.blockentity.MachinePollutingBlockEntity}, fuellt ihre drei Rauchtanks und
+ *   schiebt sie ins Rohrnetz. Nur der Ueberlauf landet unmittelbar im Verschmutzungsraster.</li>
  * </ul>
  */
-public class MachineDieselGeneratorBlockEntity extends BaseMachineBlockEntity implements IFluidStandardReceiverMK2 {
+public class MachineDieselGeneratorBlockEntity extends com.hbm_m.blockentity.MachinePollutingBlockEntity
+        implements IFluidStandardReceiverMK2 {
 
     public static final int SLOT_BATTERY = 0;
     private static final int SLOT_COUNT = 1;
 
     private static final int TANK_CAPACITY_MB = 16_000;
+    /** Original: {@code super(4, 100)} in {@code TileEntityMachineDiesel}. */
+    private static final int SMOKE_BUFFER_MB = 100;
     private static final long MAX_POWER = 50_000L;
     private static final int BURN_MB_PER_TICK = 1;
 
     private final FluidTank tank = new FluidTank(ModFluids.DIESEL.getSource(), TANK_CAPACITY_MB);
 
+    /** Original: {@code isOn} - der Knopf in der Oberflaeche. */
+    private boolean isOn = false;
+    /** Original: {@code wasOn} - ob im letzten Tick wirklich verbrannt wurde (Laufanzeige und Ton). */
+    private boolean wasOn = false;
+
     public MachineDieselGeneratorBlockEntity(BlockPos pos, BlockState state) {
-        super(ModBlockEntities.DIESEL_GENERATOR_BE.get(), pos, state, SLOT_COUNT, MAX_POWER, 0L, MAX_POWER);
+        // Original: super(4, 100) - vier Slots, 100 mB Rauchpuffer je Sorte.
+        super(ModBlockEntities.DIESEL_GENERATOR_BE.get(), pos, state, SLOT_COUNT, MAX_POWER, 0L, MAX_POWER, SMOKE_BUFFER_MB);
     }
 
     //? if forge {
@@ -81,12 +91,17 @@ public class MachineDieselGeneratorBlockEntity extends BaseMachineBlockEntity im
         if (level.getGameTime() % 20 == 0) {
             for (Direction dir : Direction.values()) {
                 trySubscribe(tank.getTankType(), level, pos.relative(dir), dir);
+                // Original: sendSmoke in derselben Schleife - das Abgas geht ins Rohrnetz,
+                // idealerweise zu einem Schornstein.
+                sendSmoke(level, pos.relative(dir), dir);
             }
         }
 
         boolean dirty = false;
+        boolean burned = false;
 
-        if (!level.hasNeighborSignal(pos)) {
+        // 1:1: ohne Zuendung passiert nichts, egal wieviel Diesel im Tank steht.
+        if (isOn && !level.hasNeighborSignal(pos)) {
             Fluid fuel = tank.getStoredFluid();
             FT_Combustible combustible = FluidType.getTrait(fuel, FT_Combustible.class);
             double efficiency = fuelEfficiency(combustible);
@@ -96,9 +111,21 @@ public class MachineDieselGeneratorBlockEntity extends BaseMachineBlockEntity im
                 long output = (long) (burnValue * BURN_MB_PER_TICK * efficiency);
 
                 tank.drainMb(BURN_MB_PER_TICK);
+
+                // Original: alle fuenf Ticks BURN mit Faktor 5 - der Rauch geht in die Rauchtanks,
+                // erst deren Ueberlauf verschmutzt die Welt.
+                if (level.getGameTime() % 5 == 0) {
+                    pollute(tank.getTankType(), FluidReleaseType.BURN, 5F);
+                }
                 setEnergyStored(Math.min(getMaxEnergyStored(), getEnergyStored() + output));
+                burned = true;
                 dirty = true;
             }
+        }
+
+        if (burned != wasOn) {
+            wasOn = burned;
+            dirty = true;
         }
 
         if (dirty) {
@@ -121,7 +148,9 @@ public class MachineDieselGeneratorBlockEntity extends BaseMachineBlockEntity im
     // ==================== IFluidUserMK2 / MK2-Netz ====================
 
     @Override
-    public FluidTank[] getAllTanks() { return new FluidTank[] { tank }; }
+    public FluidTank[] getAllTanks() {
+        return new FluidTank[] { tank, smoke, smokeLeaded, smokePoison };
+    }
 
     @Override
     public FluidTank[] getReceivingTanks() { return new FluidTank[] { tank }; }
@@ -142,12 +171,16 @@ public class MachineDieselGeneratorBlockEntity extends BaseMachineBlockEntity im
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.writeNbtData(tag, registries);
         tank.writeToNBT(tag, "tank");
+        tag.putBoolean("isOn", isOn);
+        tag.putBoolean("wasOn", wasOn);
     }
 
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.readNbtData(tag, registries);
         tank.readFromNBT(tag, "tank");
+        isOn = tag.getBoolean("isOn");
+        wasOn = tag.getBoolean("wasOn");
     }
 
     // ==================== GETTERS / MENU ====================
@@ -175,6 +208,22 @@ public class MachineDieselGeneratorBlockEntity extends BaseMachineBlockEntity im
 
     public FluidTank getTank() {
         return tank;
+    }
+
+    public boolean isOn() {
+        return isOn;
+    }
+
+    /** Original: {@code wasOn} - laeuft der Motor gerade wirklich? */
+    public boolean wasOn() {
+        return wasOn;
+    }
+
+    /** Original: {@code receiveControl} mit dem Schluessel {@code turnOn}. */
+    public void toggleIgnition() {
+        isOn = !isOn;
+        setChanged();
+        sendUpdateToClient();
     }
 
     public boolean isActive() {

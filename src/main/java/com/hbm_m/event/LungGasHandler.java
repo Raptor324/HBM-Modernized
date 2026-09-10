@@ -1,6 +1,14 @@
 package com.hbm_m.event;
 
 import com.hbm_m.block.ModBlocks;
+import com.hbm_m.config.ModClothConfig;
+import com.hbm_m.effect.ModEffects;
+import com.hbm_m.handler.ArmorRegistry;
+import com.hbm_m.handler.HazardClass;
+import com.hbm_m.handler.pollution.PollutionHandler;
+import com.hbm_m.inventory.fluid.trait.PollutionType;
+
+import net.minecraft.world.effect.MobEffectInstance;
 
 import dev.architectury.event.events.common.BlockEvent;
 
@@ -42,7 +50,26 @@ public final class LungGasHandler {
             placeGasAround(serverLevel, pos, ModBlocks.GAS_ASBESTOS.get(), 5);
         }
 
+        applyLeadFromBlocks(serverLevel, pos, player);
+
         return dev.architectury.event.EventResult.pass();
+    }
+
+    /**
+     * 1:1-Port des Bleiteils aus {@code ModEventHandler.onBlockBreak} (1.7.10): wer ohne
+     * Feinstaubschutz in einer schwermetallbelasteten Zelle graebt, wirbelt Blei auf.
+     */
+    private static void applyLeadFromBlocks(ServerLevel level, BlockPos pos, ServerPlayer player) {
+        if (player == null) return;
+        if (!ModClothConfig.get().enablePollution || !ModClothConfig.get().enableLeadFromBlocks) return;
+        if (ArmorRegistry.hasProtection(player, 3, HazardClass.PARTICLE_FINE)) return;
+
+        float metal = PollutionHandler.getPollution(level, pos, PollutionType.HEAVYMETAL);
+
+        if (metal < 5) return;
+
+        int amplifier = metal < 10 ? 0 : (metal < 25 ? 1 : 2);
+        player.addEffect(new MobEffectInstance(ModEffects.LEAD.get(), 100, amplifier));
     }
 
     private static boolean isCoalBlock(BlockState state) {

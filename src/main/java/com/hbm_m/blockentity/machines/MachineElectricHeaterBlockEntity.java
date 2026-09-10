@@ -18,10 +18,10 @@ import net.minecraft.world.level.block.state.BlockState;
  * Port of {@code TileEntityHeaterElectric} (1.7.10 Original) - HE-powered heat generator, output
  * scales with a screwdriver-adjustable 0..10 "setting".
  * <p>
- * SCOPE-Vereinfachung: Das Original ist ein 2-hohes {@code BlockDummyable}-Multiblock und zieht
- * zusaetzlich passiv Waerme vom Block direkt darunter (Boost-Funktion). Hier: einzelnes Block,
- * reiner HE-zu-Waerme-Wandler ohne Heat-Pull-von-unten - der Kernmechanismus (Setting steuert
- * Verbrauch/Ertrag, {@link IHeatSource} zum Weiterreichen der Waerme) bleibt vollstaendig erhalten.
+ * <p>Er belegt wie im Original zwei Felder in der Tiefe und drei in der Breite
+ * ({@code getDimensions {0,0,1,2,1,1}}, Setzversatz 2).</p>
+ *
+ * <p><b>Offen:</b> die Zusatzwaerme, die das Original passiv vom Block direkt darunter zieht.
  */
 public class MachineElectricHeaterBlockEntity extends BaseMachineBlockEntity implements IHeatSource {
 

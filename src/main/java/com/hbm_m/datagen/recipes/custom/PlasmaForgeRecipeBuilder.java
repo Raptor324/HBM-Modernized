@@ -38,6 +38,9 @@ public class PlasmaForgeRecipeBuilder extends BaseRecipeBuilder<PlasmaForgeRecip
     @Nullable
     private String blueprintPool;
 
+    @Nullable
+    private String autoSwitchGroup;
+
     private PlasmaForgeRecipeBuilder(ItemStack output, int duration, long power) {
         this.output = output;
         this.duration = duration;
@@ -68,6 +71,12 @@ public class PlasmaForgeRecipeBuilder extends BaseRecipeBuilder<PlasmaForgeRecip
         return this;
     }
 
+    /** Original: {@code setGroup("autoswitch.weldPlates", this)}. */
+    public PlasmaForgeRecipeBuilder autoSwitchGroup(String group) {
+        this.autoSwitchGroup = group;
+        return this;
+    }
+
     public PlasmaForgeRecipeBuilder blueprintPool(String pool) {
         this.blueprintPool = pool;
         return this;
@@ -84,6 +93,7 @@ public class PlasmaForgeRecipeBuilder extends BaseRecipeBuilder<PlasmaForgeRecip
         json.addProperty("power", power);
         json.addProperty("ignition_temp", ignitionTemp);
         if (blueprintPool != null) json.addProperty("blueprint_pool", blueprintPool);
+        if (autoSwitchGroup != null) json.addProperty("group", autoSwitchGroup);
 
         JsonArray itemInputsJson = new JsonArray();
         for (CountedIngredient ci : itemInputs) {

@@ -7,6 +7,8 @@ import java.util.List;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.blockentity.BaseMachineBlockEntity;
+import com.hbm_m.handler.pollution.PollutionHandler;
+import com.hbm_m.inventory.fluid.trait.PollutionType;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.inventory.menu.MachineArcFurnaceMenu;
@@ -93,6 +95,11 @@ public class MachineArcFurnaceBlockEntity extends BaseMachineBlockEntity {
         if (recipe != null && canProcess(recipe)) {
             currentDuration = recipe.getDuration();
             progressTicks++;
+
+            // Original: einmalig 10 Russ, wenn ein Durchgang fertig wird.
+            if (progressTicks >= getMaxProgress()) {
+                PollutionHandler.incrementPollution(level, worldPosition, PollutionType.SOOT, 10F);
+            }
             dirty = true;
             if (progressTicks >= currentDuration) {
                 progressTicks = 0;

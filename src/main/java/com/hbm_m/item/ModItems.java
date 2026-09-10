@@ -88,6 +88,7 @@ import com.hbm_m.item.tools_and_armor.ModSwordItem;
 import com.hbm_m.item.tools_and_armor.ModToolTiers;
 import com.hbm_m.item.tools_and_armor.ScrewdriverItem;
 import com.hbm_m.multiblock.DoorBlockItem;
+import com.hbm_m.item.machine.ItemRTGPellet;
 import com.hbm_m.multiblock.MultiblockBlockItem;
 import com.hbm_m.powerarmor.AJRArmor;
 import com.hbm_m.powerarmor.AJROArmor;
@@ -784,6 +785,15 @@ public class ModItems {
     // Maxwell accepts the full upgrade range in the original (TileEntityTurretMaxwell's
     // getAmmoTypesForDisplay lists seventeen); these last two were never registered here, so the
     // turret was missing two of its ammo types outright. Textures were already in the repo.
+    // Kraftfeldaufwertungen. Original: eigene Eintraege mit Stapelgroesse 16, keine Stufen -
+    // die Wirkung haengt allein daran, wie viele im Slot liegen.
+    public static final RegistrySupplier<Item> UPGRADE_RADIUS = ITEMS.register("upgrade_radius",
+            () -> new ItemMachineUpgrade(new Item.Properties(),
+                    ItemMachineUpgrade.UpgradeType.RADIUS, 1, 16));
+    public static final RegistrySupplier<Item> UPGRADE_HEALTH = ITEMS.register("upgrade_health",
+            () -> new ItemMachineUpgrade(new Item.Properties(),
+                    ItemMachineUpgrade.UpgradeType.HEALTH, 1, 16));
+
     public static final RegistrySupplier<Item> UPGRADE_5G = ITEMS.register("upgrade_5g",
             () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> UPGRADE_SCREM = ITEMS.register("upgrade_screm",
@@ -2291,27 +2301,59 @@ public class ModItems {
     public static final RegistrySupplier<Item> AMMO_SHELL_APFSDS_T = ITEMS.register("ammo_shell_apfsds_t", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> AMMO_SHELL_EXPLOSIVE = ITEMS.register("ammo_shell_explosive", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> AMMO_SHELL_W9 = ITEMS.register("ammo_shell_w9", () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> AMS_CATALYST_ALUMINIUM = ITEMS.register("ams_catalyst_aluminium", () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> AMS_CATALYST_BERYLLIUM = ITEMS.register("ams_catalyst_beryllium", () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> AMS_CATALYST_ALUMINIUM = ITEMS.register("ams_catalyst_aluminium",
+            () -> new com.hbm_m.item.machine.ItemAMSCatalyst(new Item.Properties(),
+                    0xCCCCCC, 1_000_000L, 1.15F, 0.85F, 1.15F));
+    public static final RegistrySupplier<Item> AMS_CATALYST_BERYLLIUM = ITEMS.register("ams_catalyst_beryllium",
+            () -> new com.hbm_m.item.machine.ItemAMSCatalyst(new Item.Properties(),
+                    0x97978B, 0L, 1.25F, 0.95F, 1.05F));
     public static final RegistrySupplier<Item> AMS_CATALYST_BLANK = ITEMS.register("ams_catalyst_blank", () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> AMS_CATALYST_CAESIUM = ITEMS.register("ams_catalyst_caesium", () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> AMS_CATALYST_CERIUM = ITEMS.register("ams_catalyst_cerium", () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> AMS_CATALYST_COBALT = ITEMS.register("ams_catalyst_cobalt", () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> AMS_CATALYST_COPPER = ITEMS.register("ams_catalyst_copper", () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> AMS_CATALYST_DINEUTRONIUM = ITEMS.register("ams_catalyst_dineutronium", () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> AMS_CATALYST_EUPHEMIUM = ITEMS.register("ams_catalyst_euphemium", () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> AMS_CATALYST_IRON = ITEMS.register("ams_catalyst_iron", () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> AMS_CATALYST_LITHIUM = ITEMS.register("ams_catalyst_lithium", () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> AMS_CATALYST_NIOBIUM = ITEMS.register("ams_catalyst_niobium", () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> AMS_CATALYST_SCHRABIDIUM = ITEMS.register("ams_catalyst_schrabidium", () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> AMS_CATALYST_STRONTIUM = ITEMS.register("ams_catalyst_strontium", () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> AMS_CATALYST_THORIUM = ITEMS.register("ams_catalyst_thorium", () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> AMS_CATALYST_TUNGSTEN = ITEMS.register("ams_catalyst_tungsten", () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> AMS_CATALYST_CAESIUM = ITEMS.register("ams_catalyst_caesium",
+            () -> new com.hbm_m.item.machine.ItemAMSCatalyst(new Item.Properties(),
+                    0x6400FF, 2_500_000L, 1.00F, 0.85F, 1.15F));
+    public static final RegistrySupplier<Item> AMS_CATALYST_CERIUM = ITEMS.register("ams_catalyst_cerium",
+            () -> new com.hbm_m.item.machine.ItemAMSCatalyst(new Item.Properties(),
+                    0x1D3FFF, 1_000_000L, 1.15F, 1.15F, 0.85F));
+    public static final RegistrySupplier<Item> AMS_CATALYST_COBALT = ITEMS.register("ams_catalyst_cobalt",
+            () -> new com.hbm_m.item.machine.ItemAMSCatalyst(new Item.Properties(),
+                    0x789BBE, 0L, 1.25F, 1.05F, 0.95F));
+    public static final RegistrySupplier<Item> AMS_CATALYST_COPPER = ITEMS.register("ams_catalyst_copper",
+            () -> new com.hbm_m.item.machine.ItemAMSCatalyst(new Item.Properties(),
+                    0xAADE29, 0L, 1.25F, 1.00F, 1.00F));
+    public static final RegistrySupplier<Item> AMS_CATALYST_DINEUTRONIUM = ITEMS.register("ams_catalyst_dineutronium",
+            () -> new com.hbm_m.item.machine.ItemAMSCatalyst(new Item.Properties(),
+                    0x334077, 2_500_000L, 1.00F, 1.15F, 0.85F));
+    public static final RegistrySupplier<Item> AMS_CATALYST_EUPHEMIUM = ITEMS.register("ams_catalyst_euphemium",
+            () -> new com.hbm_m.item.machine.ItemAMSCatalyst(new Item.Properties(),
+                    0xFF9CD2, 2_500_000L, 1.00F, 1.00F, 1.00F));
+    public static final RegistrySupplier<Item> AMS_CATALYST_IRON = ITEMS.register("ams_catalyst_iron",
+            () -> new com.hbm_m.item.machine.ItemAMSCatalyst(new Item.Properties(),
+                    0xFF7E22, 1_000_000L, 1.15F, 0.95F, 1.05F));
+    public static final RegistrySupplier<Item> AMS_CATALYST_LITHIUM = ITEMS.register("ams_catalyst_lithium",
+            () -> new com.hbm_m.item.machine.ItemAMSCatalyst(new Item.Properties(),
+                    0xFF2727, 0L, 1.25F, 0.85F, 1.15F));
+    public static final RegistrySupplier<Item> AMS_CATALYST_NIOBIUM = ITEMS.register("ams_catalyst_niobium",
+            () -> new com.hbm_m.item.machine.ItemAMSCatalyst(new Item.Properties(),
+                    0x3BF1B6, 1_000_000L, 1.15F, 1.05F, 0.95F));
+    public static final RegistrySupplier<Item> AMS_CATALYST_SCHRABIDIUM = ITEMS.register("ams_catalyst_schrabidium",
+            () -> new com.hbm_m.item.machine.ItemAMSCatalyst(new Item.Properties(),
+                    0x32FFFF, 2_500_000L, 1.00F, 1.05F, 0.95F));
+    public static final RegistrySupplier<Item> AMS_CATALYST_STRONTIUM = ITEMS.register("ams_catalyst_strontium",
+            () -> new com.hbm_m.item.machine.ItemAMSCatalyst(new Item.Properties(),
+                    0xDD0D35, 1_000_000L, 1.15F, 1.00F, 1.00F));
+    public static final RegistrySupplier<Item> AMS_CATALYST_THORIUM = ITEMS.register("ams_catalyst_thorium",
+            () -> new com.hbm_m.item.machine.ItemAMSCatalyst(new Item.Properties(),
+                    0x653B22, 2_500_000L, 1.00F, 0.95F, 1.05F));
+    public static final RegistrySupplier<Item> AMS_CATALYST_TUNGSTEN = ITEMS.register("ams_catalyst_tungsten",
+            () -> new com.hbm_m.item.machine.ItemAMSCatalyst(new Item.Properties(),
+                    0xF5FF48, 0L, 1.25F, 1.15F, 0.85F));
     public static final RegistrySupplier<Item> AMS_CORE_EYEOFHARMONY = ITEMS.register("ams_core_eyeofharmony", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> AMS_CORE_SING = ITEMS.register("ams_core_sing", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> AMS_CORE_THINGY = ITEMS.register("ams_core_thingy", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> AMS_CORE_WORMHOLE = ITEMS.register("ams_core_wormhole", () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> AMS_LENS = ITEMS.register("ams_lens", () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> AMS_LENS = ITEMS.register("ams_lens",
+            () -> new com.hbm_m.item.machine.ItemAMSLens(new Item.Properties(),
+                    com.hbm_m.item.machine.ItemAMSLens.DEFAULT_MAX_DAMAGE));
     public static final RegistrySupplier<Item> ANALYSIS_TOOL = ITEMS.register("analysis_tool", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> ANALYZER = ITEMS.register("analyzer", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> ANCHOR_REMOTE = ITEMS.register("anchor_remote", () -> new Item(new Item.Properties()));
@@ -2911,7 +2953,8 @@ public class ModItems {
     public static final RegistrySupplier<Item> HULL_BIG_TITANIUM = ITEMS.register("hull_big_titanium", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> HULL_SMALL_ALUMINIUM = ITEMS.register("hull_small_aluminium", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> HULL_SMALL_STEEL = ITEMS.register("hull_small_steel", () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> ICF_PELLET = ITEMS.register("icf_pellet", () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> ICF_PELLET = ITEMS.register("icf_pellet",
+            () -> new com.hbm_m.item.machine.ItemICFPellet(new Item.Properties()));
     public static final RegistrySupplier<Item> ICF_PELLET_DEPLETED = ITEMS.register("icf_pellet_depleted", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> ICF_PELLET_EMPTY = ITEMS.register("icf_pellet_empty", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> INDUSTRIAL_MAGNET = ITEMS.register("industrial_magnet", () -> new Item(new Item.Properties()));
@@ -3078,18 +3121,84 @@ public class ModItems {
     public static final RegistrySupplier<Item> PEDESTAL_STEEL = ITEMS.register("pedestal_steel", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> PELLET_CLUSTER = ITEMS.register("pellet_cluster", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> PELLET_GAS = ITEMS.register("pellet_gas", () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> PELLET_RTG = ITEMS.register("pellet_rtg", () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> PELLET_RTG_ACTINIUM = ITEMS.register("pellet_rtg_actinium", () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> PELLET_RTG_AMERICIUM = ITEMS.register("pellet_rtg_americium", () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> PELLET_RTG_BERKELIUM = ITEMS.register("pellet_rtg_berkelium", () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> PELLET_RTG_COBALT = ITEMS.register("pellet_rtg_cobalt", () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> PELLET_RTG_GOLD = ITEMS.register("pellet_rtg_gold", () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> PELLET_RTG_LEAD = ITEMS.register("pellet_rtg_lead", () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> PELLET_RTG_POLONIUM = ITEMS.register("pellet_rtg_polonium", () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> PELLET_RTG_RADIUM = ITEMS.register("pellet_rtg_radium", () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> PELLET_RTG_STRONTIUM = ITEMS.register("pellet_rtg_strontium", () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> PELLET_RTG_WEAK = ITEMS.register("pellet_rtg_weak", () -> new Item(new Item.Properties()));
+    // ── RTG-Pellets ──
+    // 1:1 aus {@code ModItems} (1.7.10): Heizleistung, Halbwertszeit und Zerfallsprodukt je Pellet.
+    // Die Lebensdauer ist ueberall die Halbwertszeit mal anderthalb, so wie dort.
+
+    /** Die ausgebrannten Pellets - im Original sechs Metadaten eines Gegenstands. */
+    public static final RegistrySupplier<Item> PELLET_RTG_DEPLETED_BISMUTH = ITEMS.register("pellet_rtg_depleted_bismuth",
+            () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> PELLET_RTG_DEPLETED_MERCURY = ITEMS.register("pellet_rtg_depleted_mercury",
+            () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> PELLET_RTG_DEPLETED_NEPTUNIUM = ITEMS.register("pellet_rtg_depleted_neptunium",
+            () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> PELLET_RTG_DEPLETED_LEAD = ITEMS.register("pellet_rtg_depleted_lead",
+            () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> PELLET_RTG_DEPLETED_ZIRCONIUM = ITEMS.register("pellet_rtg_depleted_zirconium",
+            () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> PELLET_RTG_DEPLETED_NICKEL = ITEMS.register("pellet_rtg_depleted_nickel",
+            () -> new Item(new Item.Properties()));
+
+    public static final RegistrySupplier<Item> PELLET_RTG = ITEMS.register("pellet_rtg",
+            () -> new ItemRTGPellet(10, ItemRTGPellet.lifespan15(87.7F, ItemRTGPellet.HalfLifeType.MEDIUM),
+                    () -> PELLET_RTG_DEPLETED_LEAD.get(), new Item.Properties()));
+    public static final RegistrySupplier<Item> PELLET_RTG_ACTINIUM = ITEMS.register("pellet_rtg_actinium",
+            () -> new ItemRTGPellet(20, ItemRTGPellet.lifespan15(21.8F, ItemRTGPellet.HalfLifeType.MEDIUM),
+                    () -> PELLET_RTG_DEPLETED_LEAD.get(), new Item.Properties()));
+    public static final RegistrySupplier<Item> PELLET_RTG_AMERICIUM = ITEMS.register("pellet_rtg_americium",
+            () -> new ItemRTGPellet(20, ItemRTGPellet.lifespan15(4.7F, ItemRTGPellet.HalfLifeType.LONG),
+                    () -> PELLET_RTG_DEPLETED_NEPTUNIUM.get(), new Item.Properties()));
+    /** Im Original nicht vorhanden - dieser Port hat die Textur, aber keine Werte dafuer. */
+    public static final RegistrySupplier<Item> PELLET_RTG_BERKELIUM = ITEMS.register("pellet_rtg_berkelium",
+            () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> PELLET_RTG_COBALT = ITEMS.register("pellet_rtg_cobalt",
+            () -> new ItemRTGPellet(15, ItemRTGPellet.lifespan15(5.3F, ItemRTGPellet.HalfLifeType.MEDIUM),
+                    () -> PELLET_RTG_DEPLETED_NICKEL.get(), new Item.Properties()));
+    /** Original: {@code rtgDecay() ? 200 : 100} - der Zerfall ist hier an, also 200. */
+    public static final RegistrySupplier<Item> PELLET_RTG_GOLD = ITEMS.register("pellet_rtg_gold",
+            () -> new ItemRTGPellet(200, ItemRTGPellet.lifespan15(2.7F, ItemRTGPellet.HalfLifeType.SHORT),
+                    () -> PELLET_RTG_DEPLETED_MERCURY.get(), new Item.Properties()));
+    /** Original: {@code rtgDecay() ? 600 : 200} - der Zerfall ist hier an, also 600. */
+    public static final RegistrySupplier<Item> PELLET_RTG_LEAD = ITEMS.register("pellet_rtg_lead",
+            () -> new ItemRTGPellet(600, ItemRTGPellet.lifespan15(0.3F, ItemRTGPellet.HalfLifeType.SHORT),
+                    () -> PELLET_RTG_DEPLETED_BISMUTH.get(), new Item.Properties()));
+    public static final RegistrySupplier<Item> PELLET_RTG_POLONIUM = ITEMS.register("pellet_rtg_polonium",
+            () -> new ItemRTGPellet(50, ItemRTGPellet.lifespan15(138.0F, ItemRTGPellet.HalfLifeType.SHORT),
+                    () -> PELLET_RTG_DEPLETED_LEAD.get(), new Item.Properties()));
+    public static final RegistrySupplier<Item> PELLET_RTG_RADIUM = ITEMS.register("pellet_rtg_radium",
+            () -> new ItemRTGPellet(3, ItemRTGPellet.lifespan15(16.0F, ItemRTGPellet.HalfLifeType.LONG),
+                    () -> PELLET_RTG_DEPLETED_LEAD.get(), new Item.Properties()));
+    public static final RegistrySupplier<Item> PELLET_RTG_STRONTIUM = ITEMS.register("pellet_rtg_strontium",
+            () -> new ItemRTGPellet(15, ItemRTGPellet.lifespan15(29.0F, ItemRTGPellet.HalfLifeType.MEDIUM),
+                    () -> PELLET_RTG_DEPLETED_ZIRCONIUM.get(), new Item.Properties()));
+    public static final RegistrySupplier<Item> PELLET_RTG_WEAK = ITEMS.register("pellet_rtg_weak",
+            () -> new ItemRTGPellet(5, ItemRTGPellet.lifespan15(1.0F, ItemRTGPellet.HalfLifeType.LONG),
+                    () -> PELLET_RTG_DEPLETED_LEAD.get(), new Item.Properties()));
     public static final RegistrySupplier<Item> PHOTO_PANEL = ITEMS.register("photo_panel", () -> new Item(new Item.Properties()));
+    // Brennstaebe des Uranmeilers (MK2). Sie stehen neben den alten Staeben oben, weil das
+    // Original beide Familien fuehrt - die alten gehoeren zum abgekuendigten Graphitmeiler.
+    public static final RegistrySupplier<Item> PILE_ROD_RA226BE = ITEMS.register("pile_rod_mk2_ra226be",
+            () -> new com.hbm_m.item.machine.ItemPileRodMK2(new Item.Properties(),
+                    com.hbm_m.item.machine.ItemPileRodMK2.EnumPileRod.RA226BE));
+    public static final RegistrySupplier<Item> PILE_ROD_PO210BE = ITEMS.register("pile_rod_mk2_po210be",
+            () -> new com.hbm_m.item.machine.ItemPileRodMK2(new Item.Properties(),
+                    com.hbm_m.item.machine.ItemPileRodMK2.EnumPileRod.PO210BE));
+    public static final RegistrySupplier<Item> PILE_ROD_ZR = ITEMS.register("pile_rod_mk2_zr",
+            () -> new com.hbm_m.item.machine.ItemPileRodMK2(new Item.Properties(),
+                    com.hbm_m.item.machine.ItemPileRodMK2.EnumPileRod.ZR));
+    public static final RegistrySupplier<Item> PILE_ROD_NU = ITEMS.register("pile_rod_mk2_nu",
+            () -> new com.hbm_m.item.machine.ItemPileRodMK2(new Item.Properties(),
+                    com.hbm_m.item.machine.ItemPileRodMK2.EnumPileRod.NU));
+    public static final RegistrySupplier<Item> PILE_ROD_MK2_PU239 = ITEMS.register("pile_rod_mk2_pu239",
+            () -> new com.hbm_m.item.machine.ItemPileRodMK2(new Item.Properties(),
+                    com.hbm_m.item.machine.ItemPileRodMK2.EnumPileRod.PU239));
+    public static final RegistrySupplier<Item> PILE_ROD_RGP = ITEMS.register("pile_rod_mk2_rgp",
+            () -> new com.hbm_m.item.machine.ItemPileRodMK2(new Item.Properties(),
+                    com.hbm_m.item.machine.ItemPileRodMK2.EnumPileRod.RGP));
+    public static final RegistrySupplier<Item> PILE_ROD_WASTE = ITEMS.register("pile_rod_mk2_waste",
+            () -> new com.hbm_m.item.machine.ItemPileRodMK2(new Item.Properties(),
+                    com.hbm_m.item.machine.ItemPileRodMK2.EnumPileRod.WASTE));
+
     public static final RegistrySupplier<Item> PILE_ROD_BORON = ITEMS.register("pile_rod_boron", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> PILE_ROD_DETECTOR = ITEMS.register("pile_rod_detector", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> PILE_ROD_LITHIUM = ITEMS.register("pile_rod_lithium", () -> new Item(new Item.Properties()));
@@ -3098,8 +3207,10 @@ public class ModItems {
     public static final RegistrySupplier<Item> PILE_ROD_SOURCE = ITEMS.register("pile_rod_source", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> PILE_ROD_URANIUM = ITEMS.register("pile_rod_uranium", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> PILL_HERBAL = ITEMS.register("pill_herbal", () -> new ItemSimpleConsumable(new Item.Properties(), ModConsumables::usePillHerbal));
-    public static final RegistrySupplier<Item> PILL_IODINE = ITEMS.register("pill_iodine", () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> PILL_RED = ITEMS.register("pill_red", () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> PILL_IODINE = ITEMS.register("pill_iodine", () -> new ItemSimpleConsumable(new Item.Properties(), ModConsumables::usePillIodine));
+    public static final RegistrySupplier<Item> PILL_RED = ITEMS.register("pill_red", () -> new ItemSimpleConsumable(new Item.Properties(), ModConsumables::usePillRed));
+    /** Original: {@code ModItems.radx} - die Textur lag im Port schon vor, das Item fehlte. */
+    public static final RegistrySupplier<Item> RADX = ITEMS.register("radx", () -> new ItemSimpleConsumable(new Item.Properties(), ModConsumables::useRadX));
     public static final RegistrySupplier<Item> PIN = ITEMS.register("pin", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> PIPES_STEEL = ITEMS.register("pipes_steel", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> PIPETTE = ITEMS.register("pipette", () -> new Item(new Item.Properties()));
@@ -3420,7 +3531,23 @@ public class ModItems {
             () -> new com.hbm_m.item.rbmk.RBMKToolItem(new Item.Properties().stacksTo(1)));
     public static final RegistrySupplier<Item> REACHER = ITEMS.register("reacher", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> REACTOR_CORE = ITEMS.register("reactor_core", () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> REACTOR_SENSOR = ITEMS.register("reactor_sensor", () -> new Item(new Item.Properties()));
+    // ── Spulen des Teilchenbeschleunigers (Original: ItemPACoil mit vier Metadaten) ──
+    public static final RegistrySupplier<Item> PA_COIL_GOLD = ITEMS.register("pa_coil_gold",
+            () -> new com.hbm_m.item.machine.ItemPACoil(new Item.Properties(),
+                    com.hbm_m.item.machine.ItemPACoil.CoilType.GOLD));
+    public static final RegistrySupplier<Item> PA_COIL_NIOBIUM = ITEMS.register("pa_coil_niobium",
+            () -> new com.hbm_m.item.machine.ItemPACoil(new Item.Properties(),
+                    com.hbm_m.item.machine.ItemPACoil.CoilType.NIOBIUM));
+    public static final RegistrySupplier<Item> PA_COIL_BSCCO = ITEMS.register("pa_coil_bscco",
+            () -> new com.hbm_m.item.machine.ItemPACoil(new Item.Properties(),
+                    com.hbm_m.item.machine.ItemPACoil.CoilType.BSCCO));
+    public static final RegistrySupplier<Item> PA_COIL_CHLOROPHYTE = ITEMS.register("pa_coil_chlorophyte",
+            () -> new com.hbm_m.item.machine.ItemPACoil(new Item.Properties(),
+                    com.hbm_m.item.machine.ItemPACoil.CoilType.CHLOROPHYTE));
+
+    /** Original: {@code ItemReactorSensor} - bindet per Rechtsklick einen Forschungsreaktor. */
+    public static final RegistrySupplier<Item> REACTOR_SENSOR = ITEMS.register("reactor_sensor",
+            () -> new com.hbm_m.item.machine.ItemReactorSensor(new Item.Properties()));
     public static final RegistrySupplier<Item> REBAR_PLACER = ITEMS.register("rebar_placer", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> REDSTONE_SWORD = ITEMS.register("redstone_sword", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> RING_PULL = ITEMS.register("ring_pull", () -> new Item(new Item.Properties()));
@@ -3662,7 +3789,7 @@ public class ModItems {
     public static final RegistrySupplier<Item> WRENCH = ITEMS.register("wrench", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> WRENCH_ARCHINEER = ITEMS.register("wrench_archineer", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> WRENCH_FLIPPED = ITEMS.register("wrench_flipped", () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> XANAX = ITEMS.register("xanax", () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> XANAX = ITEMS.register("xanax", () -> new ItemSimpleConsumable(new Item.Properties(), ModConsumables::useXanax));
     public static final RegistrySupplier<Item> ZIRCONIUM_LEGS = ITEMS.register("zirconium_legs", () -> new Item(new Item.Properties()));
 
     // ==================== Заглушки диапазона вкладки Parts (id 4098–4500, раздел C отчёта) ====================

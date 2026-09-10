@@ -20,10 +20,14 @@ import net.minecraft.world.level.block.state.BlockState;
  * {@code maxPower/200} receive vs {@code maxPower/600} provide ratio) and sits at LOW network
  * priority, i.e. a "last resort" sink/source. Only connects on the face it was placed against.
  * <p>
- * SCOPE-Vereinfachung: Die {@code capacitor_bus}-Verlaengerungskette (ein Kondensator "leiht" die
- * Anschlussseite eines in gerader Linie anschliessenden {@code capacitor_bus}-Blocks) entfaellt -
- * der Kondensator verbindet sich direkt ueber seine eigene Facing-Seite. Redstone-Over-Radio und
- * OpenComputers-Anbindung ebenso nicht portiert (siehe Klassenkommentar-Konvention dieses Ports).
+ * <p><b>Die Sammelschiene.</b> Wie im Original laesst sich der Ausgang verlaengern: hinter dem
+ * Kondensator duerfen beliebig viele {@code capacitor_bus}-Bloecke in gerader Linie stehen, und
+ * abgegeben wird am Ende dieser Kette. Alle Schienen muessen in dieselbe Richtung zeigen - knickt
+ * die Reihe, gilt die ganze Kette als ungueltig und der Kondensator gibt nichts ab. So laesst sich
+ * eine Batteriebank hinter einer Wand verstecken und trotzdem sauber anzapfen.</p>
+ *
+ * <p><b>Nicht portiert:</b> Redstone-over-Radio und OpenComputers - beides hat hier keine
+ * Entsprechung.
  */
 public class MachineCapacitorBlockEntity extends BaseMachineBlockEntity {
 
@@ -44,6 +48,40 @@ public class MachineCapacitorBlockEntity extends BaseMachineBlockEntity {
     @Override
     public boolean canConnectEnergy(Direction side) {
         return getBlockState().getValue(MachineCapacitorBlock.FACING) == side;
+    }
+
+    /**
+     * 1:1-Port der Schienenschleife aus {@code TileEntityCapacitor.updateEntity}: von der
+     * Rueckseite aus wird der Kette gefolgt, solange dort Schienen mit gleicher Ausrichtung
+     * stehen. Das Ende ist die Stelle, an der abgegeben wird.
+     */
+    @Override
+    protected BlockPos[] getExtraEnergyPorts() {
+        if (level == null) return new BlockPos[0];
+
+        Direction facing = getBlockState().getValue(MachineCapacitorBlock.FACING);
+        BlockPos pos = worldPosition.relative(facing.getOpposite());
+
+        Direction last = null;
+        // Ohne Deckel: eine sehr lange Kette ist zulaessig, eine endlose nicht.
+        for (int step = 0; step < 64; step++) {
+            BlockState state = level.getBlockState(pos);
+            if (state.getBlock() != com.hbm_m.block.ModBlocks.CAPACITOR_BUS.get()) break;
+            if (!state.hasProperty(MachineCapacitorBlock.FACING)) break;
+
+            Direction current = state.getValue(MachineCapacitorBlock.FACING);
+            if (last == null) last = current;
+
+            // Original: knickt die Reihe, faellt die ganze Kette weg.
+            if (last != current) return new BlockPos[0];
+
+            pos = pos.relative(current);
+        }
+
+        // Keine Schiene gefunden - der Kondensator gibt an seiner eigenen Seite ab.
+        if (last == null) return new BlockPos[0];
+
+        return new BlockPos[] { pos };
     }
 
     @Override

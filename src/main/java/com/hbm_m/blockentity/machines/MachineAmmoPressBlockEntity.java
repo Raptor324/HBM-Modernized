@@ -30,13 +30,14 @@ import net.minecraft.world.level.block.state.BlockState;
  * {@link AmmoPressRecipe} entsprechen, wird sofort (und wiederholt, solange Material reicht)
  * gefertigt - siehe {@link AmmoPressRecipe} fuer die Rezept-Form.
  * <p>
- * SCOPE-Entscheidung: Das Original laesst den Spieler im GUI aus einer durchsuchbaren Liste ALLER
- * bekannten Rezepte eine "Ziel"-Auswahl treffen (rein kosmetisch/Hinweis-Zweck - das eigentliche
- * Craften matcht ohnehin unabhaengig davon, welches Rezept exakt passt); diese Rezeptauswahl-Liste
- * wurde nicht uebernommen, das Craften funktioniert automatisch bei Slot-Uebereinstimmung (wie bei
- * jeder anderen automatischen Rezept-Maschine in diesem Port). Ebenso nicht uebernommen: die
- * animierte Press-Kolben-3D-Bewegung (Original-Renderer) - {@link #animTicks} haelt nur einen
- * kurzen Fortschritts-Flash-Zustand fuers GUI.
+ * <p>Wie im Original waehlt man in der Oberflaeche aus einer durchsuchbaren Liste <b>ein</b>
+ * Zielrezept aus, und nur dieses wird gefertigt. Das ist keine Zierde: erst die Auswahl sagt der
+ * Presse, welche der vielen Patronen sie aus aehnlichen Zutaten machen soll, und sie schraenkt
+ * gleichzeitig ein, was ueberhaupt in die neun Eingabefelder passt. Ohne Auswahl steht sie
+ * still.</p>
+ *
+ * <p>Nicht uebernommen: die animierte Press-Kolben-3D-Bewegung (Original-Renderer) -
+ * {@link #animTicks} haelt nur einen kurzen Fortschritts-Flash-Zustand fuers GUI.</p>
  */
 public class MachineAmmoPressBlockEntity extends BaseMachineBlockEntity {
 
@@ -47,6 +48,31 @@ public class MachineAmmoPressBlockEntity extends BaseMachineBlockEntity {
     private static final int ANIM_DURATION = 20;
 
     private int animTicks = 0;
+
+    /**
+     * Original: {@code selectedRecipe} - dort ein Index in die globale Rezeptliste. Hier die
+     * Rezept-Kennung, damit Client und Server auch dann dasselbe meinen, wenn die Datenpakete in
+     * unterschiedlicher Reihenfolge geladen wurden.
+     */
+    @Nullable
+    private net.minecraft.resources.ResourceLocation selectedRecipe = null;
+
+    /**
+     * Alle Rezepte in einer stabilen Reihenfolge - nach Kennung sortiert, damit die Liste in der
+     * Oberflaeche bei jedem Oeffnen gleich aussieht.
+     */
+    public static java.util.List<java.util.Map.Entry<net.minecraft.resources.ResourceLocation, AmmoPressRecipe>>
+            sortedRecipes(Level level) {
+        var byId = com.hbm_m.platform.recipe.RecipeHooks.getAllRecipesById(level, AmmoPressRecipe.Type.INSTANCE);
+        return byId.entrySet().stream()
+                .sorted(java.util.Map.Entry.comparingByKey(
+                        java.util.Comparator.comparing(net.minecraft.resources.ResourceLocation::toString)))
+                .toList();
+    }
+
+    public static java.util.Map<net.minecraft.resources.ResourceLocation, AmmoPressRecipe> recipesById(Level level) {
+        return com.hbm_m.platform.recipe.RecipeHooks.getAllRecipesById(level, AmmoPressRecipe.Type.INSTANCE);
+    }
 
     public MachineAmmoPressBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.AMMO_PRESS_BE.get(), pos, state, SLOT_COUNT, 0L, 0L, 0L);
@@ -61,8 +87,10 @@ public class MachineAmmoPressBlockEntity extends BaseMachineBlockEntity {
     }
 
     private void serverTick(Level level) {
-        AmmoPressRecipe recipe = findRecipe(level);
+        // 1:1: ohne gewaehltes Zielrezept passiert nichts.
+        AmmoPressRecipe recipe = getSelectedRecipe(level);
         if (recipe == null) return;
+        if (!matchesInputs(recipe)) return;
 
         ItemStack output = recipe.getOutput();
         ItemStack outSlot = inventory.getStackInSlot(SLOT_OUTPUT);
@@ -87,23 +115,34 @@ public class MachineAmmoPressBlockEntity extends BaseMachineBlockEntity {
         sendUpdateToClient();
     }
 
+    /** Das gewaehlte Rezept, oder {@code null} wenn keins gewaehlt ist oder es nicht mehr existiert. */
     @Nullable
-    private AmmoPressRecipe findRecipe(Level level) {
-        NonNullList<ItemStack> grid = NonNullList.withSize(GRID_SIZE, ItemStack.EMPTY);
-        boolean anyItem = false;
-        for (int i = 0; i < GRID_SIZE; i++) {
-            ItemStack stack = inventory.getStackInSlot(i);
-            grid.set(i, stack);
-            if (!stack.isEmpty()) anyItem = true;
-        }
-        if (!anyItem) return null;
+    public AmmoPressRecipe getSelectedRecipe(Level level) {
+        if (selectedRecipe == null) return null;
+        return recipesById(level).get(selectedRecipe);
+    }
 
-        // Кросс-версионный доступ: RecipeHooks.getAllRecipes разворачивает RecipeHolder на 1.21.1.
-        List<AmmoPressRecipe> recipes = com.hbm_m.platform.recipe.RecipeHooks.getAllRecipes(level, AmmoPressRecipe.Type.INSTANCE);
-        for (AmmoPressRecipe recipe : recipes) {
-            if (recipe.matchesGrid(grid)) return recipe;
+    /** 1:1 aus {@code hasIngredients}: die neun Felder muessen dem Rezept exakt entsprechen. */
+    private boolean matchesInputs(AmmoPressRecipe recipe) {
+        NonNullList<ItemStack> grid = NonNullList.withSize(GRID_SIZE, ItemStack.EMPTY);
+        for (int i = 0; i < GRID_SIZE; i++) {
+            grid.set(i, inventory.getStackInSlot(i));
         }
-        return null;
+        return recipe.matchesGrid(grid);
+    }
+
+    @Nullable
+    public net.minecraft.resources.ResourceLocation getSelectedRecipeId() {
+        return selectedRecipe;
+    }
+
+    /**
+     * Original: {@code receiveControl} - dieselbe Auswahl noch einmal anzuklicken hebt sie auf.
+     */
+    public void selectRecipe(@Nullable net.minecraft.resources.ResourceLocation id) {
+        selectedRecipe = java.util.Objects.equals(selectedRecipe, id) ? null : id;
+        setChanged();
+        sendUpdateToClient();
     }
 
     public int getAnimTicks() {
@@ -118,12 +157,16 @@ public class MachineAmmoPressBlockEntity extends BaseMachineBlockEntity {
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.writeNbtData(tag, registries);
         tag.putInt("anim_ticks", animTicks);
+        if (selectedRecipe != null) tag.putString("recipe", selectedRecipe.toString());
     }
 
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.readNbtData(tag, registries);
         animTicks = tag.getInt("anim_ticks");
+        selectedRecipe = tag.contains("recipe")
+                ? net.minecraft.resources.ResourceLocation.tryParse(tag.getString("recipe"))
+                : null;
     }
 
     @Override
@@ -136,9 +179,23 @@ public class MachineAmmoPressBlockEntity extends BaseMachineBlockEntity {
         return getDefaultName();
     }
 
+    /**
+     * 1:1 aus dem Original: in die Eingabefelder passt nur, was das gewaehlte Rezept dort auch
+     * braucht - so laesst sich die Presse automatisieren, ohne dass falsche Zutaten haengenbleiben.
+     */
     @Override
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
-        return slot != SLOT_OUTPUT;
+        if (slot == SLOT_OUTPUT) return false;
+        if (level == null) return true;
+
+        AmmoPressRecipe recipe = getSelectedRecipe(level);
+        if (recipe == null) return false;
+
+        var inputs = recipe.getInputs();
+        if (slot >= inputs.size()) return false;
+
+        var ingredient = inputs.get(slot);
+        return !ingredient.isEmpty() && ingredient.test(stack);
     }
 
     @Nullable

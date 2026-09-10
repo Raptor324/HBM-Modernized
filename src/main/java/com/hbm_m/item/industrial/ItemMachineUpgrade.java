@@ -29,7 +29,11 @@ public class ItemMachineUpgrade extends Item implements ITooltipProvider {
         AFTERBURN,
         OVERDRIVE,
         STACK,
-        EJECTOR;
+        EJECTOR,
+        /** Kraftfeld: Radius +16, Verbrauch +500 je Stueck im Stapel. */
+        RADIUS,
+        /** Kraftfeld: Schild +50, Verbrauch +250 je Stueck im Stapel. */
+        HEALTH;
 
         public String getTranslationKeySuffix() {
             return name().toLowerCase(java.util.Locale.ROOT);
@@ -49,6 +53,16 @@ public class ItemMachineUpgrade extends Item implements ITooltipProvider {
         this(properties, type, 0);
     }
 
+    /**
+     * Fuer Aufwertungen, die sich stapeln duerfen. Im Original sind das nur die beiden des
+     * Kraftfelds, deren Wirkung sich nach der Stapelgroesse richtet statt nach einer Stufe.
+     */
+    public ItemMachineUpgrade(Properties properties, UpgradeType type, int tier, int maxStackSize) {
+        super(properties.stacksTo(maxStackSize));
+        this.type = type;
+        this.tier = tier;
+    }
+
     public UpgradeType getUpgradeType() {
         return type;
     }
@@ -59,6 +73,18 @@ public class ItemMachineUpgrade extends Item implements ITooltipProvider {
 
     @Override
     public void appendHbmTooltip(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
+        // Die beiden Kraftfeldaufwertungen haben im Original einen eigenen Hinweistext.
+        if (type == UpgradeType.RADIUS || type == UpgradeType.HEALTH) {
+            String key = type.getTranslationKeySuffix();
+            tooltip.add(Component.translatable("tooltip.hbm_m.upgrade." + key + ".title")
+                    .withStyle(ChatFormatting.RED));
+            tooltip.add(Component.translatable("tooltip.hbm_m.upgrade." + key + ".desc")
+                    .withStyle(ChatFormatting.GRAY));
+            tooltip.add(Component.translatable("tooltip.hbm_m.upgrade.stacks", 16)
+                    .withStyle(ChatFormatting.DARK_GRAY));
+            return;
+        }
+
         tooltip.add(Component.translatable("tooltip.hbm_m.upgrade.type." + type.getTranslationKeySuffix())
                 .withStyle(ChatFormatting.GRAY));
         if (tier > 0) {

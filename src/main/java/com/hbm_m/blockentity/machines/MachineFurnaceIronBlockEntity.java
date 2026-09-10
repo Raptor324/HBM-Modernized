@@ -33,11 +33,11 @@ import net.minecraft.world.level.block.state.BlockState;
 /**
  * Iron Furnace: Direktport der Kernlogik aus {@code TileEntityFurnaceIron} (1.7.10 Original).
  * <p>
- * Vereinfachung: das Original ist ein 2x2x2 Multiblock (BlockDummyable) mit optionalem Upgrade-Slot.
- * Dieser Port folgt der in diesem Repo etablierten Konvention (siehe z.B. MachineHydrotreaterBlock)
- * fuer einfache Maschinen: ein einzelner Block/BlockEntity ohne Dummy-Teile. Der Upgrade-Slot entfaellt,
- * da dieser Port noch kein Item-Upgrade-System besitzt (kein ItemMachineUpgrade/UpgradeManager
- * gefunden) - stattdessen feste processingTime = 160 Ticks wie im Original ohne Upgrade.
+ * <p>Er belegt wie im Original einen <b>2x2x2-Wuerfel</b> ({@code getDimensions {1,0,1,0,1,0}}) -
+ * der Kern unten vorn, sieben Dummyzellen drumherum.</p>
+ *
+ * <p><b>Offen:</b> der Aufwertungsplatz des Originals. Die feste Verarbeitungszeit von 160 Ticks
+ * entspricht dem Original ohne Aufwertung.
  * <p>
  * 100% Vanilla-Schmelzrezepte (wie im Original), zwei parallele Brennstoff-Slots wie im Original
  * (slot 1 + slot 2), Brenndauer via {@link AbstractFurnaceBlockEntity#getFuel()}.

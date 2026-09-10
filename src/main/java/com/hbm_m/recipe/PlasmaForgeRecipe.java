@@ -46,6 +46,8 @@ public class PlasmaForgeRecipe extends PlatformRecipe {
     private final long ignitionTemp;
     @Nullable
     private final String blueprintPool;
+    /** Original: {@code setGroup(...)} - Rezepte einer Gruppe schalten automatisch um. */
+    private final String autoSwitchGroup;
 
     public PlasmaForgeRecipe(ResourceLocation id,
                              List<CountedIngredient> itemInputs,
@@ -54,7 +56,8 @@ public class PlasmaForgeRecipe extends PlatformRecipe {
                              int duration,
                              long power,
                              long ignitionTemp,
-                             @Nullable String blueprintPool) {
+                             @Nullable String blueprintPool,
+                             @Nullable String autoSwitchGroup) {
         super(id);
         this.itemInputs = itemInputs != null ? itemInputs : List.of();
         this.fluidInputs = fluidInputs != null ? fluidInputs : List.of();
@@ -63,6 +66,7 @@ public class PlasmaForgeRecipe extends PlatformRecipe {
         this.power = power;
         this.ignitionTemp = ignitionTemp;
         this.blueprintPool = blueprintPool;
+        this.autoSwitchGroup = autoSwitchGroup != null ? autoSwitchGroup : "";
     }
 
     public List<CountedIngredient> getItemInputs() { return itemInputs; }
@@ -75,6 +79,15 @@ public class PlasmaForgeRecipe extends PlatformRecipe {
 
     @Nullable
     public String getBlueprintPool() { return blueprintPool; }
+
+    /**
+     * 1:1 zu {@code GenericRecipe.autoSwitchGroup}: die Maschine wechselt selbsttaetig zu dem
+     * Rezept derselben Gruppe, dessen erste Zutat im Eingabeslot liegt.
+     */
+    @Override
+    public String getGroup() {
+        return autoSwitchGroup;
+    }
 
     public boolean requiresBlueprint() {
         return blueprintPool != null && !blueprintPool.isEmpty();
@@ -134,6 +147,7 @@ public class PlasmaForgeRecipe extends PlatformRecipe {
             long power = GsonHelper.getAsLong(json, "power", 0L);
             long ignition = GsonHelper.getAsLong(json, "ignition_temp", 0L);
             String pool = GsonHelper.getAsString(json, "blueprint_pool", null);
+            String group = GsonHelper.getAsString(json, "group", "");
 
             List<CountedIngredient> itemInputs = new ArrayList<>();
             if (json.has("item_inputs")) {
@@ -168,7 +182,7 @@ public class PlasmaForgeRecipe extends PlatformRecipe {
                     ? RecipeHooks.itemStackFromJson(GsonHelper.getAsJsonObject(json, "result"))
                     : ItemStack.EMPTY;
 
-            return new PlasmaForgeRecipe(recipeId, itemInputs, fluidInputs, output, duration, power, ignition, pool);
+            return new PlasmaForgeRecipe(recipeId, itemInputs, fluidInputs, output, duration, power, ignition, pool, group);
         }
 
         @Override
@@ -177,6 +191,7 @@ public class PlasmaForgeRecipe extends PlatformRecipe {
             long power = buf.readLong();
             long ignition = buf.readLong();
             String pool = buf.readBoolean() ? buf.readUtf() : null;
+            String group = buf.readUtf();
 
             int itemInCount = buf.readVarInt();
             List<CountedIngredient> itemInputs = new ArrayList<>(itemInCount);
@@ -192,7 +207,7 @@ public class PlasmaForgeRecipe extends PlatformRecipe {
 
             ItemStack output = RecipeHooks.readItem(buf);
 
-            return new PlasmaForgeRecipe(recipeId, itemInputs, fluidInputs, output, duration, power, ignition, pool);
+            return new PlasmaForgeRecipe(recipeId, itemInputs, fluidInputs, output, duration, power, ignition, pool, group);
         }
 
         @Override
@@ -207,6 +222,8 @@ public class PlasmaForgeRecipe extends PlatformRecipe {
             } else {
                 buf.writeBoolean(false);
             }
+
+            buf.writeUtf(recipe.autoSwitchGroup);
 
             buf.writeVarInt(recipe.itemInputs.size());
             for (CountedIngredient ci : recipe.itemInputs) {

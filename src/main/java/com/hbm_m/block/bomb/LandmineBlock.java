@@ -214,6 +214,9 @@ public class LandmineBlock extends Block implements EntityBlock, IBomb {
                         ModPacketHandler.AUX_PARTICLE, new AuxParticlePacket(data, x, y, z));
             }
 
+            com.hbm_m.satellite.DetectorEvents.reportEvent(level, com.hbm_m.satellite.DetectorEvents.DURATION_LOW,
+                    com.hbm_m.satellite.DetectorEvents.BurstIntensity.LOW, x, z);
+
             ModSounds.MUKE_EXPLOSION.ifPresent(sound -> level.playSound(
                     null, x, y, z, sound, SoundSource.BLOCKS, 25.0F, 0.9F));
         } else if (this == ModBlocks.NAVAL_MINE.get()) {

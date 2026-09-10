@@ -505,6 +505,103 @@ public final class AssemblerRecipeGenerator {
                 .addIngredient(ModItems.MOTOR.get(), 2)
                 .addIngredient(ModItems.ANALOG_CIRCUIT.get(), 2)
                 .save(writer, "breeder");
+
+        // Original: ass.rtg - 3x rtg_unit, 4x Stahlplatte, 16x feiner Kupferdraht, 4x Kunststoff.
+        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.MACHINE_RTG.get(), 1), 200, 100)
+                .addIngredient(ModItems.RTG_UNIT.get(), 3)
+                .addIngredient(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE), 4)
+                .addIngredient(ModMaterialItems.item(ModMaterials.RED_COPPER, MaterialShape.WIRE), 16)
+                .addIngredient(ModMaterialItems.item(ModMaterials.BAKELITE, MaterialShape.INGOT), 4)
+                .save(writer, "machine_rtg");
+
+        // Das Original hat fuer das Steuerpult weder Bauplan noch Kreativreiter-Eintrag
+        // (setCreativeTab(null)); hier ein Rezept auf dem Niveau der uebrigen Reaktorbauteile,
+        // damit der Block ueberhaupt erreichbar ist.
+        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.MACHINE_CONTROLLER.get(), 1), 200, 100)
+                .addIngredient(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE), 4)
+                .addIngredient(ModItems.ANALOG_CIRCUIT.get(), 2)
+                .addIngredient(ModItems.REACTOR_SENSOR.get(), 1)
+                .addIngredient(ModMaterialItems.item(ModMaterials.RED_COPPER, MaterialShape.WIRE), 6)
+                .save(writer, "machine_controller");
+
+        // Grosstank - auf dem Niveau der uebrigen Lagerbauten dieses Ports.
+        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.MACHINE_BIGASSTANK.get(), 1), 400, 100)
+                .addIngredient(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE_CAST), 16)
+                .addIngredient(ModItems.PIPE_STEEL.get(), 8)
+                .addIngredient(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE), 8)
+                .save(writer, "machine_bigasstank");
+
+        // Teslaspule - das Original hat dafuer kein Assemblerrezept, hier auf Niveau der Abwehrbauten.
+        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.TESLA.get(), 1), 200, 100)
+                .addIngredient(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE), 6)
+                .addIngredient(ModMaterialItems.item(ModMaterials.RED_COPPER, MaterialShape.WIRE), 24)
+                .addIngredient(ModItems.ANALOG_CIRCUIT.get(), 2)
+                .save(writer, "tesla");
+
+        // Ladeplatte - im Original nur ueber den Kreativreiter, hier ein passendes Rezept.
+        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.CHARGER.get(), 1), 150, 100)
+                .addIngredient(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE), 4)
+                .addIngredient(ModMaterialItems.item(ModMaterials.RED_COPPER, MaterialShape.WIRE), 8)
+                .addIngredient(ModItems.ANALOG_CIRCUIT.get(), 1)
+                .save(writer, "charger");
+
+        registerParticleAccelerator(writer);
+    }
+
+    /** Bauteile und Spulen des Teilchenbeschleunigers. Das Original hat dafuer keine Rezepte. */
+    private static void registerParticleAccelerator(java.util.function.Consumer<FinishedRecipe> writer) {
+
+        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.BEAMLINE.get(), 1), 100, 100)
+                .addIngredient(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE), 4)
+                .addIngredient(ModItems.PIPE_STEEL.get(), 2)
+                .save(writer, "pa_beamline");
+
+        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.QUADRUPOLE.get(), 1), 300, 100)
+                .addIngredient(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE_CAST), 4)
+                .addIngredient(ModItems.PIPE_STEEL.get(), 4)
+                .addIngredient(ModItems.ANALOG_CIRCUIT.get(), 2)
+                .save(writer, "pa_quadrupole");
+
+        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.DIPOLE.get(), 1), 300, 100)
+                .addIngredient(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE_CAST), 4)
+                .addIngredient(ModItems.PIPE_STEEL.get(), 4)
+                .addIngredient(ModItems.ANALOG_CIRCUIT.get(), 3)
+                .save(writer, "pa_dipole");
+
+        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.RFC.get(), 1), 400, 100)
+                .addIngredient(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE_CAST), 8)
+                .addIngredient(ModMaterialItems.item(ModMaterials.RED_COPPER, MaterialShape.WIRE), 24)
+                .addIngredient(ModItems.ANALOG_CIRCUIT.get(), 4)
+                .save(writer, "pa_rfc");
+
+        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.PA_SOURCE.get(), 1), 500, 100)
+                .addIngredient(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE_CAST), 8)
+                .addIngredient(ModItems.PIPE_STEEL.get(), 6)
+                .addIngredient(ModItems.QUANTUM_CIRCUIT.get(), 1)
+                .save(writer, "pa_source");
+
+        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.PA_DETECTOR.get(), 1), 500, 100)
+                .addIngredient(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE_CAST), 8)
+                .addIngredient(ModItems.ANALOG_CIRCUIT.get(), 4)
+                .addIngredient(ModItems.QUANTUM_CIRCUIT.get(), 1)
+                .save(writer, "pa_detector");
+
+        // Spulen: die Materialstufe bestimmt, wie schnell der Strahl werden darf.
+        // Gold gibt es als einfachen Draht, die hoeheren Stufen nur als dichten - was zur
+        // Wertigkeit passt.
+        coil(writer, ModItems.PA_COIL_GOLD.get(), ModMaterials.GOLD, MaterialShape.WIRE);
+        coil(writer, ModItems.PA_COIL_NIOBIUM.get(), ModMaterials.NIOBIUM, MaterialShape.WIRE_DENSE);
+        coil(writer, ModItems.PA_COIL_BSCCO.get(), ModMaterials.BSCCO, MaterialShape.WIRE_DENSE);
+    }
+
+    private static void coil(java.util.function.Consumer<FinishedRecipe> writer,
+                             net.minecraft.world.item.Item result, ModMaterials material,
+                             MaterialShape wireShape) {
+        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(result, 1), 200, 100)
+                .addIngredient(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE), 2)
+                .addIngredient(ModMaterialItems.item(material, wireShape),
+                        wireShape == MaterialShape.WIRE ? 16 : 8)
+                .save(writer, "pa_coil_" + material.name().toLowerCase(java.util.Locale.ROOT));
     }
 
     /** Cloth / small parts — port of 1.7.10 ass.platemixed, ass.hazcloth, ass.firecloth, ass.filtercoal. */
@@ -2137,6 +2234,54 @@ public final class AssemblerRecipeGenerator {
                 .addIngredient(Items.IRON_NUGGET, 16)
                 .addIngredient(ModItems.BALL_TNT.get(), 2)
                 .save(writer, "missile_doomsday_rusted");
+
+        // Kraftfeldgenerator. 1:1 aus {@code ass.forcefield} (1.7.10).
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModBlocks.MACHINE_FORCEFIELD.get(), 1), 600, 100)
+                .addIngredient(ModMaterialItems.item(ModMaterials.DURA_STEEL, MaterialShape.PLATE), 8)
+                .addIngredient(ModMaterialItems.item(ModMaterials.DESH, MaterialShape.PLATE), 4)
+                .addIngredient(ModItems.COIL_GOLD_TORUS.get(), 6)
+                .addIngredient(ModItems.COIL_MAGNETIZED_TUNGSTEN.get(), 12)
+                .addIngredient(ModItems.MOTOR.get(), 1)
+                .addIngredient(ModItems.UPGRADE_RADIUS.get(), 1)
+                .addIngredient(ModItems.UPGRADE_HEALTH.get(), 1)
+                .addIngredient(ModItems.ADVANCED_CIRCUIT.get(), 4)
+                .addIngredient(ModBlocks.MACHINE_TRANSFORMER.get().asItem(), 1)
+                .save(writer, "machine_forcefield");
+
+        registerPile(writer);
+    }
+
+    /**
+     * Uranmeiler. 1:1 aus {@code ass.pileblock} und der Gruppe {@code autoswitch.pilerod} (1.7.10).
+     *
+     * <p><b>Abweichung:</b> das Original nimmt fuer die beiden Quellstaebe die Barren
+     * {@code billet_ra226be} und {@code billet_po210be}; die gibt es in diesem Port nicht, darum
+     * stehen dort die gleichwertigen RBMK-Pellets derselben Isotope.</p>
+     */
+    private static void registerPile(java.util.function.Consumer<FinishedRecipe> writer) {
+
+        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.PILE_BRICK.get(), 1), 20, 250)
+                .addIngredient(net.minecraft.world.item.Items.OAK_PLANKS, 1)
+                .addIngredient(ModMaterialItems.item(ModMaterials.GRAPHITE, MaterialShape.INGOT), 4)
+                .addIngredient(ModItems.BOLT_STEEL.get(), 2)
+                .save(writer, "pile_brick");
+
+        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModItems.PILE_ROD_RA226BE.get(), 1), 40, 200)
+                .addIngredient(ModItems.RBMK_PELLET_RA226BE.get(), 3)
+                .save(writer, "pile_rod_mk2_ra226be");
+
+        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModItems.PILE_ROD_PO210BE.get(), 1), 40, 200)
+                .addIngredient(ModItems.RBMK_PELLET_PO210BE.get(), 3)
+                .save(writer, "pile_rod_mk2_po210be");
+
+        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModItems.PILE_ROD_ZR.get(), 3), 40, 200)
+                .addIngredient(ModMaterialItems.item(ModMaterials.ZIRCONIUM, MaterialShape.BILLET), 1)
+                .save(writer, "pile_rod_mk2_zr");
+
+        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModItems.PILE_ROD_NU.get(), 1), 40, 200)
+                .addIngredient(ModMaterialItems.item(ModMaterials.URANIUM, MaterialShape.BILLET), 3)
+                .save(writer, "pile_rod_mk2_nu");
     }
 }
 //?}

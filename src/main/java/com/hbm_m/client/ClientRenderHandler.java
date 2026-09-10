@@ -203,6 +203,23 @@ public class ClientRenderHandler {
          * корректно проигрывает depth-тест против глубины костей. Порядок «кости раньше,
          * пепел позже» гарантирован сортировкой в ParticleEngineNT.
          */
+        /**
+         * Dampfschwaden ({@link com.hbm_m.particle.nt.ParticleCoolingTowerNT}): wie der Pepel, nur
+         * ohne Tiefenschreiben - weiche, sich ueberlagernde Wolken duerfen sich nicht gegenseitig
+         * wegschneiden.
+         */
+        public static final Function<ResourceLocation, RenderType> TOWER_PARTICLES = Util.memoize(
+                texture -> create("tower_particles", DefaultVertexFormat.POSITION_COLOR_TEX_LIGHTMAP, VertexFormat.Mode.QUADS, 1536, false, false,
+                        RenderType.CompositeState.builder()
+                                .setShaderState(POSITION_COLOR_TEX_LIGHTMAP_SHADER)
+                                .setTextureState(new RenderStateShard.TextureStateShard(texture, false, false))
+                                .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
+                                .setCullState(NO_CULL)
+                                .setLightmapState(LIGHTMAP)
+                                .setDepthTestState(LEQUAL_DEPTH_TEST)
+                                .setWriteMaskState(COLOR_WRITE)
+                                .createCompositeState(false)));
+
         public static final Function<ResourceLocation, RenderType> ASHES_PARTICLES = Util.memoize(
                 texture -> create("ashes_particles", DefaultVertexFormat.POSITION_COLOR_TEX_LIGHTMAP, VertexFormat.Mode.QUADS, 1536, false, false,
                         RenderType.CompositeState.builder()

@@ -56,6 +56,10 @@ public class GUIMachineBreeder extends GuiInfoScreen<MachineBreederMenu> {
         String name = this.title.getString();
         guiGraphics.drawString(this.font, name, this.imageWidth / 2 - this.font.width(name) / 2, 6, 0x404040, false);
         guiGraphics.drawString(this.font, this.playerInventoryTitle, 8, this.imageHeight - 96 + 2, 0x404040, false);
+
+        // Original: der anliegende Fluss steht gruen mittig ueber der Anzeige.
+        String flux = String.valueOf(menu.getFlux());
+        guiGraphics.drawString(this.font, flux, 88 - this.font.width(flux) / 2, 21, 0x08FF00, false);
     }
 
     @Override
@@ -69,8 +73,14 @@ public class GUIMachineBreeder extends GuiInfoScreen<MachineBreederMenu> {
     protected void renderTooltip(GuiGraphics guiGraphics, int mouseX, int mouseY) {
         super.renderTooltip(guiGraphics, mouseX, mouseY);
 
-        drawElectricityInfo(guiGraphics, mouseX, mouseY,
-                FLUX_X, FLUX_Y, FLUX_WIDTH, FLUX_HEIGHT,
-                menu.getEnergyLong(), menu.getMaxEnergyLong());
+        // Original: ein Hinweisfeld statt einer Energieanzeige - der Brutreaktor braucht keinen Strom.
+        if (mouseX >= this.leftPos + FLUX_X && mouseX < this.leftPos + FLUX_X + FLUX_WIDTH
+                && mouseY >= this.topPos + FLUX_Y && mouseY < this.topPos + FLUX_Y + FLUX_HEIGHT) {
+            guiGraphics.renderComponentTooltip(this.font,
+                    java.util.List.of(
+                            net.minecraft.network.chat.Component.translatable("gui.hbm_m.breeder.flux", menu.getFlux()),
+                            net.minecraft.network.chat.Component.translatable("gui.hbm_m.breeder.hint")),
+                    mouseX, mouseY);
+        }
     }
 }

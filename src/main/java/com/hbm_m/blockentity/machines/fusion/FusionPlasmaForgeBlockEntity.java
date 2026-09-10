@@ -16,6 +16,7 @@ import com.hbm_m.api.network.GenNode;
 import com.hbm_m.api.network.NodeDirPos;
 import com.hbm_m.api.network.NodeNet;
 import com.hbm_m.api.network.UniNodespace;
+import com.hbm_m.api.redstoneoverradio.IRORValueProvider;
 import com.hbm_m.block.machines.fusion.FusionMultiblockBlock;
 import com.hbm_m.blockentity.BaseMachineBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
@@ -25,7 +26,9 @@ import com.hbm_m.item.ModItems;
 import com.hbm_m.item.material.MaterialShape;
 import com.hbm_m.item.material.ModMaterialItems;
 import com.hbm_m.item.material.ModMaterials;
+import com.hbm_m.platform.recipe.RecipeHooks;
 import com.hbm_m.recipe.ModRecipes;
+import com.hbm_m.recipe.index.ModRecipeIndex;
 import com.hbm_m.recipe.PlasmaForgeRecipe;
 import com.hbm_m.recipe.PlasmaForgeRecipe.CountedIngredient;
 
@@ -56,7 +59,7 @@ import net.minecraft.world.phys.AABB;
  * Boostervorrat laeuft.</p>
  */
 public class FusionPlasmaForgeBlockEntity extends BaseMachineBlockEntity
-        implements IFusionPowerReceiver, IFluidStandardReceiverMK2, NodeNet.ILoadedEntry {
+        implements IFusionPowerReceiver, IFluidStandardReceiverMK2, NodeNet.ILoadedEntry, IRORValueProvider {
 
     public static final int SLOT_BATTERY = 0;
     public static final int SLOT_BLUEPRINT = 1;
@@ -350,9 +353,41 @@ public class FusionPlasmaForgeBlockEntity extends BaseMachineBlockEntity
 
     private boolean canProcess(@Nullable PlasmaForgeRecipe recipe) {
         if (recipe == null) return false;
+        if (autoSwitch(recipe)) return false; // Umschaltung kostet diesen Tick, wie im Original
         if (getEnergyStored() < recipe.getPower()) return false;
         if (!hasInput(recipe)) return false;
         return canFitOutput(recipe);
+    }
+
+    /**
+     * 1:1-Port des Autoswitch-Blocks aus {@code ModuleMachineBase.canProcess}: liegt im ersten
+     * Eingabeslot ein Gegenstand, der zu einem <em>anderen</em> Rezept derselben Gruppe passt,
+     * schaltet die Maschine selbsttaetig dorthin um (so wechseln die Schweissplatten-Rezepte
+     * automatisch mit dem eingelegten Gussblech).
+     *
+     * @return true, wenn umgeschaltet wurde - der laufende Tick wird dann verworfen.
+     */
+    private boolean autoSwitch(PlasmaForgeRecipe recipe) {
+        String group = recipe.getGroup();
+        if (group == null || group.isEmpty() || level == null) return false;
+
+        ItemStack first = getInventory().getStackInSlot(SLOT_INPUT_FIRST);
+        if (first.isEmpty()) return false;
+
+        List<PlasmaForgeRecipe> candidates = ModRecipeIndex.of(level.getRecipeManager())
+                .getAutoSwitchGroup(ModRecipes.PLASMA_FORGE_TYPE.get(), group);
+
+        for (PlasmaForgeRecipe next : candidates) {
+            if (next == recipe) continue;
+            List<CountedIngredient> inputs = next.getItemInputs();
+            if (inputs.isEmpty()) continue;
+            if (inputs.get(0).ingredient().test(first)) {
+                setSelectedRecipeId(RecipeHooks.recipeId(level.getRecipeManager(),
+                        PlasmaForgeRecipe.Type.INSTANCE, next));
+                return true;
+            }
+        }
+        return false;
     }
 
     private void moduleUpdate(@Nullable PlasmaForgeRecipe recipe, double speed, boolean ignition) {
@@ -513,6 +548,33 @@ public class FusionPlasmaForgeBlockEntity extends BaseMachineBlockEntity
     @Override
     public AbstractContainerMenu createMenu(int id, Inventory inventory, Player player) {
         return MachineFusionPlasmaForgeMenu.create(id, inventory, this);
+    }
+
+
+    // ═════════════════════════ Redstone over Radio ═════════════════════════
+
+    /** 1:1 aus {@code TileEntityFusionPlasmaForge.getFunctionInfo}. */
+    public static final String[] ROR = new String[] {
+        PREFIX_VALUE + "progress",
+        PREFIX_VALUE + "recipe",
+        PREFIX_VALUE + "active",
+        PREFIX_VALUE + "booster",
+        PREFIX_VALUE + "plasma",
+    };
+
+    @Override
+    public String[] getFunctionInfo() {
+        return ROR;
+    }
+
+    @Override
+    public String provideRORValue(String name) {
+        if ((PREFIX_VALUE + "progress").equals(name)) return "" + (int) Math.round(this.progress * 100);
+        if ((PREFIX_VALUE + "recipe").equals(name))   return selectedRecipeId != null ? selectedRecipeId.toString() : "null";
+        if ((PREFIX_VALUE + "active").equals(name))   return "" + (this.didProcess ? 1 : 0);
+        if ((PREFIX_VALUE + "booster").equals(name))  return "" + this.booster;
+        if ((PREFIX_VALUE + "plasma").equals(name))   return "" + this.plasmaEnergySync;
+        return null;
     }
 
     private AABB renderBounds = null;

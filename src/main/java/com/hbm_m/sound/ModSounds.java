@@ -33,6 +33,11 @@ public class ModSounds {
     public static final RegistrySupplier<SoundEvent> BOMBER2 = registerSoundEvents("bomber2");
     public static final RegistrySupplier<SoundEvent> BOMBER1 = registerSoundEvents("bomber1");
     public static final RegistrySupplier<SoundEvent> CLICK = registerSoundEvents("click");
+
+    /** Original: {@code hbm:weapon.reload.tubeFwoomp} - der Stoss des Druckluftrohrs. */
+    public static final RegistrySupplier<SoundEvent> TUBE_FWOOMP = registerSoundEvents("weapon.reload.tube_fwoomp");
+    /** Original: {@code hbm:weapon.sparkShoot} - der Aufprall am Kraftfeld, drei Aufnahmen. */
+    public static final RegistrySupplier<SoundEvent> SPARK_SHOOT = registerSoundEvents("weapon.spark_shoot");
     public static final RegistrySupplier<SoundEvent> CRATE_OPEN = registerSoundEvents("crateopen");
     public static final RegistrySupplier<SoundEvent> CRATE_CLOSE = registerSoundEvents("crateclose");
     public static final RegistrySupplier<SoundEvent> EXPLOSION_LARGE_NEAR = registerSoundEvents("explosionlargenear");

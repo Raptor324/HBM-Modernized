@@ -95,6 +95,8 @@ public final class MainRegistry {
         BombDefuser.init();
         PlayerHandler.register();
         ChunkRadiationManager.init();
+        com.hbm_m.handler.pollution.PollutionEvents.init();
+        com.hbm_m.satellite.RayScanEvents.init();
         ModEventHandler.register();
         // Опциональный Curios: слушатели вешаются только при наличии мода,
         // иначе классы Curios API вообще не загружаются (NoClassDefFoundError).

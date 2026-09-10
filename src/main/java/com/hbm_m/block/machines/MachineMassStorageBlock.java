@@ -22,7 +22,39 @@ import org.jetbrains.annotations.Nullable;
 /** Port of {@code BlockMassStorage} (1.7.10 Original). */
 public class MachineMassStorageBlock extends BaseEntityBlock {
 
-    public MachineMassStorageBlock(Properties properties) { super(properties); }
+    /**
+     * 1:1-Port der vier Metadatenstufen aus {@code BlockMassStorage}: von der Holzkiste mit
+     * hundert Plaetzen bis zum Stahlspeicher mit einer Million. Die Zahl ist der ganze
+     * Unterschied - alles andere verhaelt sich gleich.
+     */
+    public enum Tier {
+        WOOD(100L, "wood"),
+        IRON(10_000L, "iron"),
+        DESH(100_000L, "desh"),
+        STEEL(1_000_000L, null);
+
+        public final long capacity;
+        /** Der Texturzusatz des Originals; {@code null} ist die Grundtextur. */
+        public final String suffix;
+
+        Tier(long capacity, String suffix) {
+            this.capacity = capacity;
+            this.suffix = suffix;
+        }
+    }
+
+    private final Tier tier;
+
+    public Tier getTier() { return tier; }
+
+    public MachineMassStorageBlock(Properties properties) {
+        this(properties, Tier.STEEL);
+    }
+
+    public MachineMassStorageBlock(Properties properties, Tier tier) {
+        super(properties);
+        this.tier = tier;
+    }
 
     @Override
     public RenderShape getRenderShape(BlockState state) { return RenderShape.MODEL; }

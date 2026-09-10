@@ -74,6 +74,10 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
         registerRbmkFuelRecipes(writer);
         registerRbmkBlockRecipes(writer);
         registerBookOfWagons(writer);
+        registerPileRecipes(writer);
+        registerMassStorageRecipes(writer);
+        registerPneumaticRecipes(writer);
+        registerWasteCompression(writer);
     }
 
     /**
@@ -90,6 +94,113 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
      * страниц ({@code page_of_}, предмет не портирован) недоступен — иначе книга была бы
      * получаема только через лут Красной комнаты.
      */
+    /**
+     * 1:1-Port der drei {@code pile_device}-Rezepte aus {@code CraftingManager} (1.7.10). Dort ist
+     * es ein Block mit drei Metadaten, hier sind es drei Bloecke - die Muster bleiben gleich.
+     */
+    private void registerPileRecipes(Consumer<FinishedRecipe> writer) {
+
+        // Ladevorrichtung: " A " / "CBS"
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.PILE_LOADER.get())
+                .pattern(" A ")
+                .pattern("CBS")
+                .define('A', ModMaterialItems.item(ModMaterials.ALUMINUM, MaterialShape.PLATE))
+                .define('C', ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE_CAST))
+                .define('B', ModMaterialItems.item(ModMaterials.BORON, MaterialShape.INGOT))
+                .define('S', ModItems.SHELL_STEEL.get())
+                .unlockedBy(getHasName(ModItems.SHELL_STEEL.get()), has(ModItems.SHELL_STEEL.get()))
+                .save(writer, recipeId("crafting/pile_loader"));
+
+        // Geblaese: " M " / "ACA" / " S "
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.PILE_VENT.get())
+                .pattern(" M ")
+                .pattern("ACA")
+                .pattern(" S ")
+                .define('M', ModItems.MOTOR.get())
+                .define('A', ModMaterialItems.item(ModMaterials.ALUMINUM, MaterialShape.PLATE))
+                .define('C', ModItems.SHELL_COPPER.get())
+                .define('S', ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE_CAST))
+                .unlockedBy(getHasName(ModItems.MOTOR.get()), has(ModItems.MOTOR.get()))
+                .save(writer, recipeId("crafting/pile_vent"));
+
+        // Steuerstabantrieb: " B " / "SBS" / "SBS"
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.PILE_CONTROL.get())
+                .pattern(" B ")
+                .pattern("SBS")
+                .pattern("SBS")
+                .define('B', ModMaterialItems.item(ModMaterials.BORON, MaterialShape.INGOT))
+                .define('S', ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE))
+                .unlockedBy(getHasName(ModMaterialItems.item(ModMaterials.BORON, MaterialShape.INGOT)),
+                        has(ModMaterialItems.item(ModMaterials.BORON, MaterialShape.INGOT)))
+                .save(writer, recipeId("crafting/pile_control"));
+    }
+
+    /** 1:1-Port der beiden Rohrrezepte aus {@code CraftingManager} (1.7.10). */
+    /** 1:1-Port der vier Massenspeicher-Rezepte aus {@code CraftingManager} (1.7.10). */
+    private void registerMassStorageRecipes(Consumer<FinishedRecipe> writer) {
+
+        // Holz: "PPP" / "PIP" / "PPP" - Bretter um eine Eisenplatte. Fasst hundert Stueck.
+        ShapedRecipeBuilder.shaped(RecipeCategory.DECORATIONS, ModBlocks.MASS_STORAGE_WOOD.get())
+                .pattern("PPP")
+                .pattern("PIP")
+                .pattern("PPP")
+                .define('P', net.minecraft.tags.ItemTags.PLANKS)
+                .define('I', ModMaterialItems.item(ModMaterials.IRON, MaterialShape.PLATE))
+                .unlockedBy(getHasName(ModMaterialItems.item(ModMaterials.IRON, MaterialShape.PLATE)),
+                        has(ModMaterialItems.item(ModMaterials.IRON, MaterialShape.PLATE)))
+                .save(writer, recipeId("crafting/mass_storage_wood"));
+
+        // Eisen: " L " / "ICI" / " I " - Titan um eine Stahlkiste, oben eine Vakuumroehre.
+        ShapedRecipeBuilder.shaped(RecipeCategory.DECORATIONS, ModBlocks.MASS_STORAGE_IRON.get())
+                .pattern(" L ")
+                .pattern("ICI")
+                .pattern(" I ")
+                .define('I', ModMaterialItems.item(ModMaterials.TITANIUM, MaterialShape.INGOT))
+                .define('C', ModItems.CRATE_STEEL.get())
+                .define('L', ModItems.VACUUM_TUBE.get())
+                .unlockedBy(getHasName(ModItems.CRATE_STEEL.get()), has(ModItems.CRATE_STEEL.get()))
+                .save(writer, recipeId("crafting/mass_storage_iron"));
+
+        // Die beiden Aufwertungen laufen ueber MassStorageUpgradeRecipe, damit der Inhalt der
+        // alten Kiste mitgeht - ein gewoehnliches Rezept wuerde ihn verschlucken.
+        net.minecraft.data.recipes.SpecialRecipeBuilder
+                .special((net.minecraft.world.item.crafting.SimpleCraftingRecipeSerializer<?>)
+                        com.hbm_m.recipe.ModRecipes.MASS_STORAGE_UPGRADE.get())
+                .save(writer, recipeId("crafting/mass_storage_upgrade").toString());
+    }
+
+    private void registerPneumaticRecipes(Consumer<FinishedRecipe> writer) {
+
+        // "CRC" mit gegossener Kupferplatte - acht Rohre
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.PNEUMATIC_TUBE.get(), 8)
+                .pattern("CRC")
+                .define('C', ModMaterialItems.item(ModMaterials.COPPER, MaterialShape.PLATE_CAST))
+                .define('R', ModMaterialItems.item(ModMaterials.RUBBER, MaterialShape.INGOT))
+                .unlockedBy(getHasName(ModMaterialItems.item(ModMaterials.RUBBER, MaterialShape.INGOT)),
+                        has(ModMaterialItems.item(ModMaterials.RUBBER, MaterialShape.INGOT)))
+                .save(writer, recipeId("crafting/pneumatic_tube"));
+
+        // dasselbe mit geschweisster Platte - vierundzwanzig Rohre
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.PNEUMATIC_TUBE.get(), 24)
+                .pattern("CRC")
+                .define('C', ModMaterialItems.item(ModMaterials.COPPER, MaterialShape.PLATE_WELDED))
+                .define('R', ModMaterialItems.item(ModMaterials.RUBBER, MaterialShape.INGOT))
+                .unlockedBy(getHasName(ModMaterialItems.item(ModMaterials.COPPER, MaterialShape.PLATE_WELDED)),
+                        has(ModMaterialItems.item(ModMaterials.COPPER, MaterialShape.PLATE_WELDED)))
+                .save(writer, recipeId("crafting/pneumatic_tube_welded"));
+
+        // 1:1 aus dem Original: vier bemalbare Rohre aus vier gewoehnlichen und vier Stahlplatten.
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.PNEUMATIC_TUBE_PAINTABLE.get(), 4)
+                .pattern("SAS")
+                .pattern("A A")
+                .pattern("SAS")
+                .define('S', ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE_CAST))
+                .define('A', ModBlocks.PNEUMATIC_TUBE.get())
+                .unlockedBy(getHasName(ModBlocks.PNEUMATIC_TUBE.get().asItem()),
+                        has(ModBlocks.PNEUMATIC_TUBE.get()))
+                .save(writer, recipeId("crafting/pneumatic_tube_paintable"));
+    }
+
     private void registerBookOfWagons(Consumer<FinishedRecipe> writer) {
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.BOOK_OF_.get())
                 .pattern("BGB")
@@ -2316,6 +2427,41 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                     ModMaterialItems.item(mat, MaterialShape.BILLET),
                     ModMaterialItems.item(mat, MaterialShape.NUGGET),
                     mat.getId());
+        }
+    }
+
+    /**
+     * 1:1-Port von {@code MineralRecipes.add1To9PairSameMeta} fuer den Atommuell: neun kleine
+     * Brocken werden zu einem vollen Stueck und umgekehrt - <b>je Abfallklasse getrennt</b>, sonst
+     * liesse sich Thorium-Muell in Schrabidium-Muell umetikettieren.
+     */
+    private void registerWasteCompression(Consumer<FinishedRecipe> writer) {
+        wastePairs(writer, "nuclear_waste_long", "nw_long", "nw_long_tiny");
+        wastePairs(writer, "nuclear_waste_long_depleted", "nw_long_dep", "nw_long_dep_tiny");
+        wastePairs(writer, "nuclear_waste_short", "nw_short", "nw_short_tiny");
+        wastePairs(writer, "nuclear_waste_short_depleted", "nw_short_dep", "nw_short_dep_tiny");
+    }
+
+    private void wastePairs(Consumer<FinishedRecipe> writer, String name, String full, String tiny) {
+        var fullItems = com.hbm_m.item.PartTabMetaItems.group(full);
+        var tinyItems = com.hbm_m.item.PartTabMetaItems.group(tiny);
+
+        for (int i = 0; i < fullItems.size() && i < tinyItems.size(); i++) {
+            Item whole = fullItems.get(i);
+            Item bit = tinyItems.get(i);
+
+            ShapedRecipeBuilder.shaped(RecipeCategory.MISC, whole)
+                    .pattern("###")
+                    .pattern("###")
+                    .pattern("###")
+                    .define('#', bit)
+                    .unlockedBy(getHasName(bit), has(bit))
+                    .save(writer, recipeId("crafting/" + name + "_" + i + "_compress"));
+
+            ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, bit, 9)
+                    .requires(whole)
+                    .unlockedBy(getHasName(whole), has(whole))
+                    .save(writer, recipeId("crafting/" + name + "_" + i + "_decompress"));
         }
     }
 

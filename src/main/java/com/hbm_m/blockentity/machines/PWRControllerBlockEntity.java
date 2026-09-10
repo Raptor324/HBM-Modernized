@@ -241,6 +241,10 @@ public class PWRControllerBlockEntity extends BaseMachineBlockEntity
                 amountLoaded--;
             }
 
+            if (level != null && level.getGameTime() % 100 == 0) {
+                com.hbm_m.satellite.RayScanEvents.reportEvent(level, worldPosition, com.hbm_m.satellite.RayScanEvents.INFO_NUCLEAR, 200);
+            }
+
             if (amountLoaded <= 0) typeLoaded = null;
             if (amountLoaded > rodCount) amountLoaded = rodCount;
         }

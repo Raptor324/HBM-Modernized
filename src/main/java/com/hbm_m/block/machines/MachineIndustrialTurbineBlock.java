@@ -145,6 +145,43 @@ public class MachineIndustrialTurbineBlock extends BaseEntityBlock implements IM
         return createTickerHelper(type, ModBlockEntities.INDUSTRIAL_TURBINE_BE.get(), MachineIndustrialTurbineBlockEntity::tick);
     }
 
+    //? if < 1.21.1 {
+    @Override
+    public net.minecraft.world.InteractionResult use(BlockState state, Level level, BlockPos pos,
+            net.minecraft.world.entity.player.Player player, net.minecraft.world.InteractionHand hand,
+            net.minecraft.world.phys.BlockHitResult hit) {
+        return pullLever(level, pos, player);
+    }
+    //?} else {
+    /*@Override
+    protected net.minecraft.world.InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos,
+            net.minecraft.world.entity.player.Player player, net.minecraft.world.phys.BlockHitResult hit) {
+        return pullLever(level, pos, player);
+    }
+    *///?}
+
+    /** 1:1-Port von {@code onBlockActivated}: der Hebel schaltet die Dampfstufe. */
+    private net.minecraft.world.InteractionResult pullLever(Level level, BlockPos pos,
+            net.minecraft.world.entity.player.Player player) {
+
+        if (!level.isClientSide()
+                && level.getBlockEntity(pos) instanceof MachineIndustrialTurbineBlockEntity turbine) {
+
+            if (turbine.pullLever()) {
+                level.playSound(null, pos, net.minecraft.sounds.SoundEvents.LEVER_CLICK,
+                        net.minecraft.sounds.SoundSource.BLOCKS, 1.5F, 1.0F);
+                player.displayClientMessage(net.minecraft.network.chat.Component.translatable(
+                        "chat.hbm_m.chungus.stage",
+                        turbine.getSteamTank().getStoredFluid().getFluidType().getDescription()), true);
+            } else {
+                player.displayClientMessage(net.minecraft.network.chat.Component
+                        .translatable("chat.hbm_m.chungus.busy")
+                        .withStyle(net.minecraft.ChatFormatting.RED), true);
+            }
+        }
+        return net.minecraft.world.InteractionResult.sidedSuccess(level.isClientSide());
+    }
+
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
         return structureHelper.generateShapeFromParts(state.getValue(FACING));

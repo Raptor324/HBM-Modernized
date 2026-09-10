@@ -142,6 +142,10 @@ public class MachineZirnoxBlockEntity extends BaseMachineBlockEntity implements 
             } else {
                 heat = Math.max(0L, heat - 10L);
             }
+
+            if (level != null && level.getGameTime() % 100 == 0) {
+                com.hbm_m.satellite.RayScanEvents.reportEvent(level, worldPosition, com.hbm_m.satellite.RayScanEvents.INFO_NUCLEAR, 200);
+            }
         }
 
         // Push steam out / pull water in via pipes

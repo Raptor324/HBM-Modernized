@@ -7,6 +7,9 @@ import com.hbm_m.api.fluids.IFluidStandardReceiverMK2;
 import com.hbm_m.block.machines.MachineRotaryFurnaceBlock;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
+import com.hbm_m.api.fluids.IFluidStandardSenderMK2;
+import com.hbm_m.handler.pollution.PollutionHandler;
+import com.hbm_m.inventory.fluid.trait.PollutionType;
 import com.hbm_m.inventory.menu.MachineRotaryFurnaceMenu;
 import com.hbm_m.platform.ModItemStackHandler;
 import com.hbm_m.platform.recipe.RecipeHooks;
@@ -40,13 +43,15 @@ import net.minecraft.world.level.material.Fluids;
  * Vereinfachungen ggue. Original (gleiche Konvention wie andere einfache Maschinen diese Session,
  * siehe {@link MachineFurnaceIronBlockEntity}): einzelner Block statt 5x5 Multiblock, kein
  * Item-Upgrade-System (burnModule-Boni entfallen), kein Dampf-Erzeugungs-/Rueckgewinnungs-Kreislauf
- * und keine Pollution - stattdessen ein einzelner Input-FluidTank fuer die von manchen Rezepten
+ * Pollution ist portiert (SOOT_PER_SECOND / 10 beim Mahlen ueber eigene Rauchtanks, siehe
+ * {@link com.hbm_m.blockentity.SmokeTankSet}) - dazu ein einzelner Input-FluidTank fuer die von manchen Rezepten
  * benoetigte Fluessigkeit. Das Original giesst den Output als fluessiges Metall auf den Boden
  * ({@code CrucibleUtil.pourSingleStack}); da dieser Port keine solche Mechanik besitzt, wird der
  * Output stattdessen als echter Ingot-ItemStack in einen Output-Slot gelegt (gleiche Vereinfachung
  * wie bei anderen Maschinen diese Session).
  */
-public class MachineRotaryFurnaceBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity implements MenuProvider, IFluidStandardReceiverMK2 {
+public class MachineRotaryFurnaceBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity
+        implements MenuProvider, IFluidStandardReceiverMK2, IFluidStandardSenderMK2 {
 
     public static final int SLOT_IN1 = 0, SLOT_IN2 = 1, SLOT_IN3 = 2;
     public static final int SLOT_FUEL = 3;
@@ -77,6 +82,17 @@ public class MachineRotaryFurnaceBlockEntity extends com.hbm_m.blockentity.BaseH
     private int litTime = 0;
     private int litDuration = 0;
     private float progress = 0f;
+
+    /**
+     * Original: {@code TileEntityMachineRotaryFurnace extends TileEntityMachinePolluting} mit
+     * {@code super(5, 50)}. Diese Klasse haengt an {@code BaseHbmBlockEntity} und bringt Inventar
+     * und Menue selbst mit, darum die Rauchtanks als Feld statt ueber die Basisklasse.
+     */
+    private final com.hbm_m.blockentity.SmokeTankSet smokeTanks =
+            new com.hbm_m.blockentity.SmokeTankSet(50).onOverflow(() -> this.isVenting = true);
+
+    /** Original: der Drehofen setzt beim Ueberlauf statt des Zischens seine Abblas-Animation. */
+    private boolean isVenting = false;
 
     private static final int DATA_LIT_TIME = 0;
     private static final int DATA_LIT_DURATION = 1;
@@ -120,6 +136,7 @@ public class MachineRotaryFurnaceBlockEntity extends com.hbm_m.blockentity.BaseH
         if (level.getGameTime() % 10 == 0) {
             for (Direction dir : Direction.values()) {
                 be.trySubscribe(be.tank.getTankType(), level, pos.relative(dir), dir);
+                be.sendSmoke(level, pos.relative(dir), dir);
             }
         }
 
@@ -136,6 +153,10 @@ public class MachineRotaryFurnaceBlockEntity extends com.hbm_m.blockentity.BaseH
 
             if (recipe != null && be.canAcceptResult(recipe.getOutput())) {
                 be.progress += 1f / recipe.getDuration();
+
+                // Original: SOOT_PER_SECOND / 10, solange gemahlen wird.
+                be.smokeTanks.pollute(level, pos, PollutionType.SOOT,
+                        PollutionHandler.SOOT_PER_SECOND / 10F);
                 if (be.progress >= 1f) {
                     be.progress -= 1f;
                     be.craftItem(recipe);
@@ -146,6 +167,10 @@ public class MachineRotaryFurnaceBlockEntity extends com.hbm_m.blockentity.BaseH
         } else if (be.progress != 0) {
             be.progress = 0;
         }
+
+        be.spawnVentPlume(level, pos);
+        // Original: isVenting wird am Ende des Serverticks zurueckgesetzt.
+        be.isVenting = false;
 
         if (wasLit != be.isLit()) {
             level.setBlock(pos, state.setValue(MachineRotaryFurnaceBlock.LIT, be.isLit()), 3);
@@ -241,7 +266,52 @@ public class MachineRotaryFurnaceBlockEntity extends com.hbm_m.blockentity.BaseH
     // ==================== IFluidUserMK2 / MK2-Netz ====================
 
     @Override
-    public FluidTank[] getAllTanks() { return new FluidTank[] { tank }; }
+    public FluidTank[] getAllTanks() {
+        FluidTank[] smoke = smokeTanks.tanks();
+        return new FluidTank[] { tank, smoke[0], smoke[1], smoke[2] };
+    }
+
+    @Override
+    public FluidTank[] getSendingTanks() { return smokeTanks.tanks(); }
+
+    /** Original: {@code sendSmoke} - bietet jeden gefuellten Rauchtank in eine Richtung an. */
+    private void sendSmoke(Level level, BlockPos pipePos, Direction dirFromMeToPipe) {
+        for (FluidTank smokeTank : smokeTanks.tanks()) {
+            if (smokeTank.getFill() > 0) {
+                tryProvide(smokeTank, level, pipePos, dirFromMeToPipe);
+            }
+        }
+    }
+
+    public boolean isVenting() { return isVenting; }
+
+    /**
+     * 1:1-Port des Abblaszweigs: laeuft ein Rauchtank ueber, blaest der Ofen den Ueberschuss ab -
+     * fuenf Bloecke ueber dem Sockel, quer zur Blickrichtung versetzt.
+     */
+    private void spawnVentPlume(Level level, BlockPos pos) {
+        if (!isVenting || level.getGameTime() % 2 != 0) return;
+        if (!(level instanceof net.minecraft.server.level.ServerLevel serverLevel)) return;
+
+        // Original: rot = dir.getRotation(UP) - die Achse quer zur Blickrichtung.
+        BlockState state = getBlockState();
+        Direction facing = state.hasProperty(com.hbm_m.block.machines.MachineRotaryFurnaceBlock.FACING)
+                ? state.getValue(com.hbm_m.block.machines.MachineRotaryFurnaceBlock.FACING)
+                : Direction.NORTH;
+        Direction rot = facing.getCounterClockWise();
+
+        net.minecraft.nbt.CompoundTag fx = new net.minecraft.nbt.CompoundTag();
+        fx.putString("type", "tower");
+        fx.putFloat("lift", 10F);
+        fx.putFloat("base", 0.25F);
+        fx.putFloat("max", 2.5F);
+        fx.putInt("life", 100 + level.getRandom().nextInt(20));
+        fx.putInt("color", 0x202020);
+
+        com.hbm_m.particle.helper.IParticleCreator.sendPacket(serverLevel,
+                pos.getX() + 0.5 + rot.getStepX(), pos.getY() + 5, pos.getZ() + 0.5 + rot.getStepZ(),
+                250, fx);
+    }
 
     @Override
     public FluidTank[] getReceivingTanks() { return new FluidTank[] { tank }; }
@@ -265,12 +335,14 @@ public class MachineRotaryFurnaceBlockEntity extends com.hbm_m.blockentity.BaseH
         tag.putInt("litTime", litTime);
         tag.putInt("litDuration", litDuration);
         tag.putFloat("progress", progress);
+        smokeTanks.writeToNBT(tag);
         tank.writeToNBT(tag, "tank");
     }
 
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.readNbtData(tag, registries);
+        smokeTanks.readFromNBT(tag);
         com.hbm_m.platform.ItemStackSerialization.deserialize(inventory, tag.getCompound("inventory"), registries);
         litTime = tag.getInt("litTime");
         litDuration = tag.getInt("litDuration");

@@ -47,11 +47,19 @@ import net.minecraft.world.item.Item;
  * Parametrized by a BlockEntity factory + type supplier so each capacity variant (iron/steel)
  * can share this single Block class.
  */
-public class BarrelTankBlock extends BaseEntityBlock {
+public class BarrelTankBlock extends BaseEntityBlock implements com.hbm_m.interfaces.IMultiblockController {
 
     public static final DirectionProperty FACING = DirectionProperty.create("facing", Direction.Plane.HORIZONTAL);
 
     private static final VoxelShape SHAPE = Shapes.box(0, 0, 0, 1, 1, 1);
+
+    /**
+     * Die meisten Faesser sind Einzelbloecke; der Orbus ist im Original ein Multiblock. Steht hier
+     * eine Struktur, verhaelt sich der Block wie ein {@link DummyableMachineBlock} - sonst bleibt
+     * alles wie bisher.
+     */
+    @Nullable
+    private final com.hbm_m.multiblock.MultiblockStructureHelper structureHelper;
 
     private final BiFunction<BlockPos, BlockState, ? extends MachineFluidTankBlockEntity> beFactory;
     private final Supplier<BlockEntityType<? extends MachineFluidTankBlockEntity>> beTypeSupplier;
@@ -77,11 +85,56 @@ public class BarrelTankBlock extends BaseEntityBlock {
                            BiFunction<BlockPos, BlockState, ? extends MachineFluidTankBlockEntity> beFactory,
                            Supplier<BlockEntityType<? extends MachineFluidTankBlockEntity>> beTypeSupplier,
                            @Nullable TooltipInfo tooltipInfo) {
+        this(properties, beFactory, beTypeSupplier, tooltipInfo, null);
+    }
+
+    public BarrelTankBlock(Properties properties,
+                           BiFunction<BlockPos, BlockState, ? extends MachineFluidTankBlockEntity> beFactory,
+                           Supplier<BlockEntityType<? extends MachineFluidTankBlockEntity>> beTypeSupplier,
+                           @Nullable TooltipInfo tooltipInfo,
+                           @Nullable Supplier<com.hbm_m.multiblock.MultiblockStructureHelper> structure) {
         super(properties);
         this.beFactory = beFactory;
         this.beTypeSupplier = beTypeSupplier;
         this.tooltipInfo = tooltipInfo;
+        this.structureHelper = structure == null ? null : structure.get();
         this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH));
+    }
+
+    // ── Mehrblock, sofern eine Struktur mitgegeben wurde ──
+
+    @Override
+    public com.hbm_m.multiblock.MultiblockStructureHelper getStructureHelper() {
+        return this.structureHelper;
+    }
+
+    @Override
+    public com.hbm_m.multiblock.PartRole getPartRole(BlockPos localOffset) {
+        return structureHelper != null
+                ? structureHelper.resolvePartRole(localOffset, this)
+                : com.hbm_m.multiblock.PartRole.DEFAULT;
+    }
+
+    @Override
+    public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
+        super.onPlace(state, level, pos, oldState, isMoving);
+        if (structureHelper != null && !state.is(oldState.getBlock()) && !level.isClientSide()) {
+            placeMultiblockStructure(level, pos, state);
+        }
+    }
+
+    @Override
+    public boolean canSurvive(BlockState state, net.minecraft.world.level.LevelReader level, BlockPos pos) {
+        if (!super.canSurvive(state, level, pos)) return false;
+        return structureHelper == null || canSurviveMultiblockPlacement(state, level, pos);
+    }
+
+    @Override
+    public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
+        if (structureHelper != null && !state.is(newState.getBlock()) && !level.isClientSide()) {
+            structureHelper.destroyStructure(level, pos, state.getValue(FACING));
+        }
+        super.onRemove(state, level, pos, newState, isMoving);
     }
 
     //? if < 1.21.1 {
@@ -121,12 +174,16 @@ public class BarrelTankBlock extends BaseEntityBlock {
 
     @Override
     public VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext ctx) {
-        return SHAPE;
+        return structureHelper != null
+                ? structureHelper.getSpecificPartShape(structureHelper.getControllerOffset(), state.getValue(FACING))
+                : SHAPE;
     }
 
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext ctx) {
-        return SHAPE;
+        return structureHelper != null
+                ? structureHelper.generateShapeFromParts(state.getValue(FACING))
+                : SHAPE;
     }
 
     @Override

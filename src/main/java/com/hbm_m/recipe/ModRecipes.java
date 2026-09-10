@@ -20,6 +20,17 @@ public class ModRecipes {
 
 
 
+    /** Die inhaltserhaltende Aufwertung des Massenspeichers - siehe {@link MassStorageUpgradeRecipe}. */
+    public static final dev.architectury.registry.registries.RegistrySupplier<RecipeSerializer<?>> MASS_STORAGE_UPGRADE =
+            SERIALIZERS.register("mass_storage_upgrade",
+                    () -> new net.minecraft.world.item.crafting.SimpleCraftingRecipeSerializer<>(
+                            //? if < 1.21.1 {
+                            MassStorageUpgradeRecipe::new
+                            //?} else {
+                            /*MassStorageUpgradeRecipe::new
+                            *///?}
+                    ));
+
     public static final RegistrySupplier<RecipeSerializer<AssemblerRecipe>> ASSEMBLER_SERIALIZER =
             SERIALIZERS.register("assembler", () -> AssemblerRecipe.Serializer.INSTANCE);
 
@@ -246,6 +257,13 @@ public class ModRecipes {
 
     public static final RegistrySupplier<RecipeType<CatalyticReformerRecipe>> CATALYTIC_REFORMER_TYPE =
             RECIPE_TYPES.register("catalytic_reformer", () -> CatalyticReformerRecipe.Type.INSTANCE);
+
+    // Teilchenbeschleuniger - ersetzt die Statik ParticleAcceleratorRecipes durch JSON-Rezepte.
+    public static final RegistrySupplier<RecipeSerializer<ParticleAcceleratorRecipe>> PARTICLE_ACCELERATOR_SERIALIZER =
+            SERIALIZERS.register("particle_accelerator", () -> ParticleAcceleratorRecipe.Serializer.INSTANCE);
+
+    public static final RegistrySupplier<RecipeType<ParticleAcceleratorRecipe>> PARTICLE_ACCELERATOR_TYPE =
+            RECIPE_TYPES.register("particle_accelerator", () -> ParticleAcceleratorRecipe.Type.INSTANCE);
 
     // Liquefactor — ликвейфактор. ID = "liquefactor" (см. LiquefactorRecipe.Type.ID).
     // Замена статике LiquefactorRecipes — теперь data-driven (JSON).

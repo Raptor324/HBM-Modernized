@@ -130,6 +130,10 @@ public class ClientParticleHandler {
                 SmokeColumnParticle.Provider::new);
 
         event.registerSpriteSet(
+                ModParticleTypes.HADRON.get(),
+                com.hbm_m.particle.custom.HadronParticle.Provider::new);
+
+        event.registerSpriteSet(
                 ModParticleTypes.TOWNAURA.get(),
                 TownauraParticle.Provider::new);
 

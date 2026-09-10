@@ -56,10 +56,34 @@ public class ConnectedDecoBlockBakedModel extends BakedModelWrapper<BakedModel> 
     private TextureAtlasSprite ctSprite;
     private final TextureAtlasSprite fallbackSprite;
 
+    /**
+     * Manche Bloecke tragen je Seite ein anderes Texturpaar - der Uranmeiler etwa oben den Deckel
+     * und an den Seiten die Ziegelwand. Ist das gesetzt, geht es dem einen Paar oben vor.
+     */
+    @Nullable
+    private final java.util.function.Function<Direction, ResourceLocation[]> perSide;
+    /** Welche Nachbarn als "dasselbe" gelten - vorbelegt mit der Regel der Deko-Bloecke. */
+    private final java.util.function.BiPredicate<Block, Block> connects;
+
+    private final Map<ResourceLocation, TextureAtlasSprite> spriteCache = new java.util.HashMap<>();
+
     public ConnectedDecoBlockBakedModel(BakedModel original, ResourceLocation fullTex, ResourceLocation ctTex) {
+        this(original, fullTex, ctTex, null, ConnectedDecoBlockBakedModel::decoCtConnects);
+    }
+
+    /**
+     * @param perSide  je Seite ein Paar aus Grundtextur und Verbundtextur, oder {@code null} fuer
+     *                 ueberall dasselbe Paar
+     * @param connects wann zwei Bloecke als zusammengehoerig gelten
+     */
+    public ConnectedDecoBlockBakedModel(BakedModel original, ResourceLocation fullTex, ResourceLocation ctTex,
+                                        @Nullable java.util.function.Function<Direction, ResourceLocation[]> perSide,
+                                        java.util.function.BiPredicate<Block, Block> connects) {
         super(original);
         this.fullTex = fullTex;
         this.ctTex = ctTex;
+        this.perSide = perSide;
+        this.connects = connects;
         TextureAtlasSprite particle = null;
         try {
             particle = original.getParticleIcon(ModelData.EMPTY);
@@ -151,13 +175,13 @@ public class ConnectedDecoBlockBakedModel extends BakedModelWrapper<BakedModel> 
         // В оригинале RenderBlocksCT.drawFace() делит грань на 4 под-грани через средние точки,
         // а затем drawSubFace() пишет вершины в ROTATIONAL порядке (FTR, FTL, FBL, FBR) с UV:
         // (maxU,minV), (minU,minV), (minU,maxV), (maxU,maxV).
-        BakedQuad qTl = buildSubQuad(corners, SubFace.TL, face, spriteFor(itl), uvFor(itl));
+        BakedQuad qTl = buildSubQuad(corners, SubFace.TL, face, spriteFor(face, itl), uvFor(itl));
         if (qTl != null) out.add(qTl);
-        BakedQuad qTr = buildSubQuad(corners, SubFace.TR, face, spriteFor(itr), uvFor(itr));
+        BakedQuad qTr = buildSubQuad(corners, SubFace.TR, face, spriteFor(face, itr), uvFor(itr));
         if (qTr != null) out.add(qTr);
-        BakedQuad qBl = buildSubQuad(corners, SubFace.BL, face, spriteFor(ibl), uvFor(ibl));
+        BakedQuad qBl = buildSubQuad(corners, SubFace.BL, face, spriteFor(face, ibl), uvFor(ibl));
         if (qBl != null) out.add(qBl);
-        BakedQuad qBr = buildSubQuad(corners, SubFace.BR, face, spriteFor(ibr), uvFor(ibr));
+        BakedQuad qBr = buildSubQuad(corners, SubFace.BR, face, spriteFor(face, ibr), uvFor(ibr));
         if (qBr != null) out.add(qBr);
 
         return out;
@@ -264,10 +288,31 @@ public class ConnectedDecoBlockBakedModel extends BakedModelWrapper<BakedModel> 
         data[i + 7] = nx | (ny << 8) | (nz << 16);
     }
 
-    private TextureAtlasSprite spriteFor(int type) {
+    private TextureAtlasSprite spriteFor(Direction face, int type) {
+        if (perSide != null) {
+            ResourceLocation[] pair = perSide.apply(face);
+            if (pair != null && pair.length == 2) {
+                TextureAtlasSprite s = lookup(pair[type < 4 ? 0 : 1]);
+                if (s != null) return s;
+            }
+        }
+
         TextureAtlasSprite s = type < 4 ? fullSprite : ctSprite;
         if (s != null) return s;
         return fallbackSprite != null ? fallbackSprite : originalModel.getParticleIcon(ModelData.EMPTY);
+    }
+
+    @Nullable
+    private TextureAtlasSprite lookup(@Nullable ResourceLocation tex) {
+        if (tex == null) return null;
+        return spriteCache.computeIfAbsent(tex, key -> {
+            Minecraft mc = Minecraft.getInstance();
+            if (mc == null || mc.getModelManager() == null) return null;
+            TextureAtlasSprite sprite = mc.getModelManager()
+                    .getAtlas(TextureAtlas.LOCATION_BLOCKS).getSprite(key);
+            return sprite == null || sprite.contents().name().equals(MissingTextureAtlasSprite.getLocation())
+                    ? null : sprite;
+        });
     }
 
     private boolean ensureSpritesReady() {
@@ -333,14 +378,20 @@ public class ConnectedDecoBlockBakedModel extends BakedModelWrapper<BakedModel> 
         return b == ModBlocks.DECO_STEEL.get() || b == ModBlocks.DECO_RUSTY_STEEL.get();
     }
 
-    private static boolean[] collectConnections(BlockAndTintGetter level, BlockPos pos, Direction face, BlockState centerState) {
+    private boolean[] collectConnections(BlockAndTintGetter level, BlockPos pos, Direction face, BlockState centerState) {
+        return collectConnections(level, pos, face, centerState, connects);
+    }
+
+    private static boolean[] collectConnections(BlockAndTintGetter level, BlockPos pos, Direction face,
+                                                BlockState centerState,
+                                                java.util.function.BiPredicate<Block, Block> rule) {
         int[][] offsets = FaceOffsets.get(face);
         boolean[] cons = new boolean[8];
         Block centerBlock = centerState.getBlock();
         for (int i = 0; i < 8; i++) {
             int[] o = offsets[i];
             BlockState neighbor = level.getBlockState(pos.offset(o[0], o[1], o[2]));
-            cons[i] = neighbor != null && decoCtConnects(centerBlock, neighbor.getBlock());
+            cons[i] = neighbor != null && rule.test(centerBlock, neighbor.getBlock());
         }
         return cons;
     }

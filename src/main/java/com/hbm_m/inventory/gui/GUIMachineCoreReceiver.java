@@ -14,16 +14,14 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 
 /**
- * Port von {@code GUICoreReceiver} (1.7.10 Original). Verwendet die bereits portierte Textur
- * {@code textures/gui/dfc/gui_receiver.png} (176x166, wie im Original).
- * <p>
- * Vereinfachung ggue. Original: das Original zeigte "Input: X Spk" (pro-Tick Laserenergie) und
- * "Output: X*5000 HE" - dieses zweigeteilte SPK/HE-System existiert im modernisierten Energienetz
- * nicht mehr (siehe {@link MachineCoreReceiverBlockEntity}). Stattdessen wird der aktuelle
- * Energiespeicherstand (Energy: X / Y) sowie der Cryogel-Kuehlmittelstand angezeigt. Der Tankfuellstand
- * wird - da die Originaltextur keine eigenen UV-Koordinaten fuer eine gefuellte Tankgrafik bereitstellt -
- * als einfaches farbiges Rechteck ueber der Tankaussparung gezeichnet (an derselben Position wie im
- * Original: links 8, oben 69, 16 breit, 52 hoch).
+ * 1:1-Port von {@code GUICoreReceiver} (1.7.10), 176x166.
+ *
+ * <p>Links der Cryogeltank bei (8, 17), daneben die beiden Zahlen, auf die es ankommt: was in
+ * diesem Tick als Strahl ankam, und was der Empfaenger daraus macht - das Fuenftausendfache. An
+ * diesen zwei Zeilen liest man ab, ob sich eine Anlage rechnet.</p>
+ *
+ * <p>Der Tankfuellstand wird als farbiges Rechteck gezeichnet, weil die Originaltextur dafuer
+ * keine eigenen Bildkoordinaten mitbringt.
  */
 public class GUIMachineCoreReceiver extends GuiInfoScreen<MachineCoreReceiverMenu> {
 
@@ -70,16 +68,15 @@ public class GUIMachineCoreReceiver extends GuiInfoScreen<MachineCoreReceiverMen
         Component name = this.title;
         guiGraphics.drawString(this.font, name, this.imageWidth / 2 - this.font.width(name) / 2, 6, 4210752, false);
 
-        guiGraphics.drawString(this.font, "Energy:", 40, 25, 0xFF7F7F, false);
         if (receiver != null) {
+            // 1:1 aus dem Original: Eingang in Spk, Ausgang im Fuenftausendfachen als HE.
+            guiGraphics.drawString(this.font, "Input:", 40, 25, 0xFF7F7F, false);
             guiGraphics.drawString(this.font,
-                    EnergyFormatter.format(receiver.getEnergyStored()) + " / " + EnergyFormatter.format(receiver.getMaxEnergyStored()),
-                    40, 35, 0xFF7F7F, false);
-
-            guiGraphics.drawString(this.font, "Coolant:", 40, 47, 0xFF7F7F, false);
+                    EnergyFormatter.format(receiver.getJoules()) + "Spk", 50, 35, 0xFF7F7F, false);
+            guiGraphics.drawString(this.font, "Output:", 40, 45, 0xFF7F7F, false);
             guiGraphics.drawString(this.font,
-                    receiver.getCoolantTank().getFill() + " / " + receiver.getCoolantTank().getMaxFill() + "mB",
-                    40, 57, 0xFF7F7F, false);
+                    EnergyFormatter.format(receiver.getJoules() * MachineCoreReceiverBlockEntity.HE_PER_SPK) + "HE",
+                    50, 55, 0xFF7F7F, false);
         }
 
         guiGraphics.drawString(this.font, this.playerInventoryTitle, 8, this.inventoryLabelY, 4210752, false);

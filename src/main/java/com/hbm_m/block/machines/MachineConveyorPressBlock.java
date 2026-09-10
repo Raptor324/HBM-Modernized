@@ -39,8 +39,78 @@ import net.minecraft.world.phys.shapes.VoxelShape;
  * Stempel installiert ihn, Rechtsklick mit Schraubenzieher entfernt ihn wieder (1:1 aus dem
  * Original {@code onBlockActivated}/{@code onScrew}).
  */
-public class MachineConveyorPressBlock extends BaseEntityBlock {
-    public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
+public class MachineConveyorPressBlock extends com.hbm_m.block.machines.DummyableMachineBlock
+        implements com.hbm_m.block.network.IConveyorBelt {
+
+    /**
+     * 1:1-Port von {@code MachineConveyorPress} (1.7.10): drei Felder hoch
+     * ({@code getDimensions {2,0,0,0,0,0}}), und die <b>Oberseite ist selbst ein Foerderband</b>.
+     *
+     * <p>Das ist der Sinn der Maschine: Gegenstaende laufen oben durch und werden im Vorbeigehen
+     * gepresst - man haengt sie mitten in eine Bandstrecke, statt sie zu befuellen.</p>
+     */
+    @Override
+    protected com.hbm_m.multiblock.MultiblockStructureHelper defineStructure() {
+        return com.hbm_m.multiblock.DummyableStructureBuilder.create()
+                .box(2, 0, 0, 0, 0, 0)
+                .placementOffset(0)
+                .build(() -> com.hbm_m.block.ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState());
+    }
+
+    // ── Foerderband auf der Oberseite ──
+
+    /** 1:1: ein Gegenstand bleibt nur oben auf der Presse liegen, nicht daneben. */
+    @Override
+    public boolean canItemStay(Level level, BlockPos pos, net.minecraft.world.phys.Vec3 itemPos) {
+        return level.getBlockState(pos.below()).getBlock() == this
+                || level.getBlockEntity(pos.below()) instanceof MachineConveyorPressBlockEntity;
+    }
+
+    @Override
+    public net.minecraft.world.phys.Vec3 getTravelLocation(Level level, BlockPos pos,
+            net.minecraft.world.phys.Vec3 itemPos, double speed) {
+
+        Direction dir = travelDirection(level, pos);
+        net.minecraft.world.phys.Vec3 snap = getClosestSnappingPosition(level, pos, itemPos);
+        net.minecraft.world.phys.Vec3 dest = new net.minecraft.world.phys.Vec3(
+                snap.x - dir.getStepX() * speed, snap.y - dir.getStepY() * speed, snap.z - dir.getStepZ() * speed);
+
+        net.minecraft.world.phys.Vec3 motion = dest.subtract(itemPos);
+        double len = motion.length();
+        if (len < 1.0E-6D) return itemPos;
+
+        return itemPos.add(motion.scale(speed / len));
+    }
+
+    @Override
+    public net.minecraft.world.phys.Vec3 getClosestSnappingPosition(Level level, BlockPos pos,
+            net.minecraft.world.phys.Vec3 itemPos) {
+
+        Direction dir = travelDirection(level, pos);
+
+        double clampedX = Math.max(pos.getX(), Math.min(pos.getX() + 1, itemPos.x));
+        double clampedZ = Math.max(pos.getZ(), Math.min(pos.getZ() + 1, itemPos.z));
+
+        double posX = pos.getX() + 0.5;
+        double posZ = pos.getZ() + 0.5;
+
+        if (dir.getStepX() != 0) posX = clampedX;
+        if (dir.getStepZ() != 0) posZ = clampedZ;
+
+        return new net.minecraft.world.phys.Vec3(posX, pos.getY() + 0.25D, posZ);
+    }
+
+    /** Die Laufrichtung steht am Kern - die Dummyzellen daruber tragen keine eigene. */
+    private Direction travelDirection(Level level, BlockPos pos) {
+        net.minecraft.world.level.block.state.BlockState own = level.getBlockState(pos);
+        if (own.hasProperty(FACING)) return own.getValue(FACING);
+
+        for (int down = 1; down <= 2; down++) {
+            net.minecraft.world.level.block.state.BlockState below = level.getBlockState(pos.below(down));
+            if (below.getBlock() == this && below.hasProperty(FACING)) return below.getValue(FACING);
+        }
+        return Direction.NORTH;
+    }
     public static final VoxelShape SHAPE = Block.box(0, 0, 0, 16, 16, 16);
 
     public MachineConveyorPressBlock(BlockBehaviour.Properties properties) {

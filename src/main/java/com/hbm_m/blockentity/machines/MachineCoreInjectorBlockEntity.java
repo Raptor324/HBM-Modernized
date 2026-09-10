@@ -24,12 +24,10 @@ import net.minecraft.world.level.block.state.BlockState;
  * und Tritium (Tank 1, 128000mB) bereit und feuert sie per Laser-Beam als Fusionsreaktor-Zuendung
  * in einen {@code TileEntityCore} (Fusionsreaktor-Kern).
  * <p>
- * Vereinfachung (Funktion vor Politur, siehe Aufgabenstellung): dieser Port hat noch KEINEN
- * Fusionsreaktor-Kern implementiert (kein {@code TileEntityCore}-Aequivalent existiert) - der
- * Injector fungiert daher als reiner Deuterium-/Tritium-Pufferspeicher (befuellbar per Pumpe/Rohr
- * ueber {@link CoreInjectorFluidHandler}), ohne den Laser-Zuend-Trigger des Originals. Sobald ein
- * Fusionsreaktor-Kern portiert wird, kann hier die {@code fireBeam}-Logik analog zu
- * {@link MachineCoreEmitterBlockEntity} ergaenzt werden.
+ * <b>Nachgeruestet:</b> der Kern existiert inzwischen
+ * ({@link com.hbm_m.blockentity.machines.dfc.DFCCoreBlockEntity}), darum speist der Injektor
+ * wieder wie im Original ein - siehe {@link #injectIntoCore}. Befuellen laesst er sich weiter per
+ * Pumpe oder Rohr ueber {@link CoreInjectorFluidHandler}.
  */
 public class MachineCoreInjectorBlockEntity extends BaseMachineBlockEntity {
 
@@ -58,11 +56,73 @@ public class MachineCoreInjectorBlockEntity extends BaseMachineBlockEntity {
     }
     //?}
 
+    /** Original: {@code range = 15}. */
+    public static final int RANGE = 15;
+
+    /** Wie weit der Strahl zuletzt kam - nur zur Anzeige. */
+    private int beam;
+
+    public int getBeam() {
+        return beam;
+    }
+
     public static void tick(Level level, BlockPos pos, BlockState state, MachineCoreInjectorBlockEntity be) {
         if (level.isClientSide()) {
             return;
         }
         be.ensureNetworkInitialized();
+        be.injectIntoCore(level, pos, state);
+    }
+
+    /**
+     * 1:1-Port der Einspeiseschleife aus {@code TileEntityCoreInjector.updateEntity}: der Injektor
+     * sucht in seiner Blickrichtung den ersten Kern und schiebt seinen Brennstoff hinueber.
+     *
+     * <p>Je Tank gilt: passt der Brennstoff zu dem, was im Kern schon steht, wird aufgefuellt. Ist
+     * der Kerntank dagegen <b>leer</b>, uebernimmt er kurzerhand die Sorte des Injektors - so
+     * bestimmt man ueber den Injektor, womit der Kern faehrt.</p>
+     */
+    private void injectIntoCore(Level level, BlockPos pos, BlockState state) {
+        beam = 0;
+
+        net.minecraft.core.Direction dir = state.hasProperty(
+                net.minecraft.world.level.block.state.properties.BlockStateProperties.FACING)
+                ? state.getValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.FACING)
+                : net.minecraft.core.Direction.NORTH;
+
+        for (int i = 1; i <= RANGE; i++) {
+            BlockPos at = pos.relative(dir, i);
+            net.minecraft.world.level.block.entity.BlockEntity te = level.getBlockEntity(at);
+
+            if (te instanceof com.hbm_m.blockentity.machines.dfc.DFCCoreBlockEntity core) {
+                FluidTank[] coreTanks = core.getTanks();
+
+                for (int t = 0; t < 2 && t < coreTanks.length; t++) {
+                    FluidTank own = tanks[t];
+                    FluidTank target = coreTanks[t];
+
+                    if (target.getTankType() != own.getTankType()) {
+                        // Nur ein leerer Kerntank laesst sich umwidmen.
+                        if (target.getFill() != 0) continue;
+                        target.setTankType(own.getTankType());
+                    }
+
+                    int moved = Math.min(own.getFill(), target.getMaxFill() - target.getFill());
+                    if (moved <= 0) continue;
+
+                    own.setFill(own.getFill() - moved);
+                    target.setFill(target.getFill() + moved);
+                    core.setChanged();
+                }
+
+                beam = i;
+                setChanged();
+                return;
+            }
+
+            // Original: ein fester Block haelt den Strahl auf.
+            if (!level.getBlockState(at).isAir()) return;
+        }
     }
 
     @Nullable

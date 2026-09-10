@@ -361,6 +361,10 @@ public class ClientSetup {
     private static void registerRenderLayers() {
         net.minecraft.client.renderer.ItemBlockRenderTypes.setRenderLayer(
                 ModBlocks.TRANSITION_SEAL.get(), RenderType.cutout());
+        // Original: BlockGasClorine.getRenderBlockPass() == 1 - Chlorgas ist der einzige Gasblock,
+        // der ueberhaupt gerendert wird, und zwar durchscheinend.
+        net.minecraft.client.renderer.ItemBlockRenderTypes.setRenderLayer(
+                ModBlocks.CHLORINE_GAS.get(), RenderType.translucent());
     }
 
     private static void registerRadAbsorberItemProperties() {
@@ -373,6 +377,24 @@ public class ClientSetup {
 
     private static void registerScreens() {
         MenuRegistry.registerScreenFactory(ModMenuTypes.CRYSTALLIZER_MENU.get(), com.hbm_m.inventory.gui.GUIMachineCrystallizer::new);
+        MenuRegistry.registerScreenFactory(ModMenuTypes.RTG_MENU.get(), com.hbm_m.inventory.gui.GUIMachineRTG::new);
+        MenuRegistry.registerScreenFactory(ModMenuTypes.FORCE_FIELD_MENU.get(), com.hbm_m.inventory.gui.GUIForceField::new);
+        MenuRegistry.registerScreenFactory(ModMenuTypes.PNEUMO_TUBE_MENU.get(), com.hbm_m.inventory.gui.GUIPneumoTube::new);
+        MenuRegistry.registerScreenFactory(ModMenuTypes.PNEUMO_STORAGE_ACCESS_MENU.get(), com.hbm_m.inventory.gui.GUIPneumoStorageAccess::new);
+        MenuRegistry.registerScreenFactory(ModMenuTypes.PNEUMO_STORAGE_CLUTTER_MENU.get(), com.hbm_m.inventory.gui.GUIPneumoStorageClutter::new);
+        MenuRegistry.registerScreenFactory(ModMenuTypes.PNEUMO_STORAGE_MONO_MENU.get(), com.hbm_m.inventory.gui.GUIPneumoStorageMono::new);
+        MenuRegistry.registerScreenFactory(ModMenuTypes.PNEUMO_STORAGE_IMPORTER_MENU.get(), com.hbm_m.inventory.gui.GUIPneumoStorageImporter::new);
+        MenuRegistry.registerScreenFactory(ModMenuTypes.PNEUMO_STORAGE_EXPORTER_MENU.get(), com.hbm_m.inventory.gui.GUIPneumoStorageExporter::new);
+        MenuRegistry.registerScreenFactory(ModMenuTypes.DFC_CORE_MENU.get(), com.hbm_m.inventory.gui.GUIDFCCore::new);
+        MenuRegistry.registerScreenFactory(ModMenuTypes.DFC_STABILIZER_MENU.get(), com.hbm_m.inventory.gui.GUIDFCStabilizer::new);
+        MenuRegistry.registerScreenFactory(ModMenuTypes.MACHINE_ICF_MENU.get(), com.hbm_m.inventory.gui.GUIMachineICF::new);
+        MenuRegistry.registerScreenFactory(ModMenuTypes.MACHINE_ICF_PRESS_MENU.get(), com.hbm_m.inventory.gui.GUIMachineICFPress::new);
+        MenuRegistry.registerScreenFactory(ModMenuTypes.PA_SOURCE_MENU.get(), com.hbm_m.inventory.gui.GUIPASource::new);
+        MenuRegistry.registerScreenFactory(ModMenuTypes.PA_DETECTOR_MENU.get(), com.hbm_m.inventory.gui.GUIPADetector::new);
+        MenuRegistry.registerScreenFactory(ModMenuTypes.PA_QUADRUPOLE_MENU.get(), com.hbm_m.inventory.gui.GUIPAQuadrupole::new);
+        MenuRegistry.registerScreenFactory(ModMenuTypes.PA_DIPOLE_MENU.get(), com.hbm_m.inventory.gui.GUIPADipole::new);
+        MenuRegistry.registerScreenFactory(ModMenuTypes.PA_RFC_MENU.get(), com.hbm_m.inventory.gui.GUIPARFC::new);
+        MenuRegistry.registerScreenFactory(ModMenuTypes.REACTOR_CONTROL_MENU.get(), com.hbm_m.inventory.gui.GUIReactorControl::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.BREEDER_MENU.get(), GUIMachineBreeder::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.LARGE_PYLON_MENU.get(), GUIMachineLargePylon::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.CYCLOTRON_MENU.get(), GUIMachineCyclotron::new);
@@ -579,11 +601,17 @@ public class ClientSetup {
         ModEntities.DIGAMMA_QUASAR.ifPresent(entityType -> EntityRenderers.register(entityType, RenderQuasar::new));
         ModEntities.DIGAMMA_SPEAR.ifPresent(entityType -> EntityRenderers.register(entityType, com.hbm_m.client.render.effect.SpearRenderer::new));
         ModEntities.RUBBLE.ifPresent(entityType -> EntityRenderers.register(entityType, RubbleEntityRenderer::new));
+        ModEntities.PILE_DEBRIS.ifPresent(entityType -> EntityRenderers.register(entityType, com.hbm_m.client.render.effect.PileDebrisRenderer::new));
+        ModEntities.COG.ifPresent(entityType -> EntityRenderers.register(entityType, com.hbm_m.client.render.effect.CogRenderer::new));
 
         // Сеть длинной ЛЭП: один рендерер кабелей для всех пилонов/коннекторов.
         {
             net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider<com.hbm_m.blockentity.network.PylonBaseBlockEntity> wireRenderer =
                     com.hbm_m.client.render.implementations.RedPylonWireRenderer::new;
+            BlockEntityRenderers.register(ModBlockEntities.FORCE_FIELD_BE.get(),
+                    com.hbm_m.client.render.implementations.ForceFieldRenderer::new);
+            BlockEntityRenderers.register(ModBlockEntities.PNEUMO_TUBE_PAINTABLE_BE.get(),
+                    com.hbm_m.client.render.implementations.PneumoTubePaintableRenderer::new);
             BlockEntityRenderers.register(ModBlockEntities.RED_CONNECTOR_BE.get(), wireRenderer);
             BlockEntityRenderers.register(ModBlockEntities.RED_CONNECTOR_SUPER_BE.get(), wireRenderer);
             BlockEntityRenderers.register(ModBlockEntities.RED_PYLON_BE.get(), wireRenderer);
@@ -786,6 +814,8 @@ public class ClientSetup {
         }
 
         wrapConnectedDecoCtTerrainModels(models);
+        wrapPileCtTerrainModels(models);
+        wrapIcfCtTerrainModels(models);
 
         //? if forge {
         @SuppressWarnings("unchecked")
@@ -817,6 +847,79 @@ public class ClientSetup {
             ResourceLocation full = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/" + e.textureBase);
             ResourceLocation ct = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/" + e.textureBase + "_ct");
             models.put(loc, new ConnectedDecoBlockBakedModel(baked, full, ct));
+        }
+    }
+
+    private static ResourceLocation ctTex(String name) {
+        return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/ported/" + name);
+    }
+
+    /**
+     * 1:1-Port von {@code BlockPile.getFragments}: Deckel und Boden tragen ein anderes Texturpaar
+     * als die Seiten, und Ein-, Auslass, Steuerung und Kern noch einmal ein eigenes. Verbunden wird
+     * mit jedem anderen Meilerblock, gleich welcher Sorte.
+     */
+    private static void wrapPileCtTerrainModels(java.util.Map models) {
+        var block = ModBlocks.PILE_BLOCK.get();
+        java.util.function.BiPredicate<net.minecraft.world.level.block.Block,
+                net.minecraft.world.level.block.Block> connects = (a, b) -> b == block;
+
+        ResourceLocation sideFull = ctTex("pile_block");
+        ResourceLocation topFull = ctTex("pile_block_top");
+
+        for (net.minecraft.world.level.block.state.BlockState state : block.getStateDefinition().getPossibleStates()) {
+            var type = state.getValue(com.hbm_m.block.machines.pile.PileBlock.TYPE);
+
+            // Oben und unten: die Steuerung hat einen eigenen Deckel, alle anderen den gewoehnlichen.
+            ResourceLocation topCt = ctTex(type == com.hbm_m.block.machines.pile.PileBlockType.CONTROL
+                    ? "pile_block_control_top_ct" : "pile_block_top_ct");
+
+            // An den Seiten: Einlass, Auslass, Kern - sonst die glatte Ziegelwand.
+            ResourceLocation[] side = switch (type) {
+                case FUEL_IN, AIR_IN -> new ResourceLocation[] { sideFull, ctTex("pile_block_input_ct") };
+                case FUEL_OUT, AIR_OUT -> new ResourceLocation[] { sideFull, ctTex("pile_block_output_ct") };
+                // Original: der Kern nimmt hier ausdruecklich die Deckeltextur als Grundlage.
+                case CORE -> new ResourceLocation[] { topFull, ctTex("pile_block_core_ct") };
+                default -> new ResourceLocation[] { sideFull, ctTex("pile_block_ct") };
+            };
+            ResourceLocation[] top = { topFull, topCt };
+
+            java.util.function.Function<net.minecraft.core.Direction, ResourceLocation[]> perSide =
+                    dir -> dir.getAxis().isVertical() ? top : side;
+
+            Object loc = PlatformHooks.createModelLocation(ModBlocks.PILE_BLOCK.getId(),
+                    "type=" + type.getSerializedName());
+            BakedModel baked = (BakedModel) models.get(loc);
+            if (baked == null || baked instanceof ConnectedDecoBlockBakedModel) continue;
+
+            models.put(loc, new ConnectedDecoBlockBakedModel(baked, side[0], side[1], perSide, connects));
+        }
+    }
+
+    /**
+     * 1:1-Port von {@code BlockICF.getFragments}: die Aussenhaut und die Anschlussstellen tragen
+     * jeweils ein eigenes Paar, und beide verbinden sich auch mit dem Steuerblock.
+     */
+    private static void wrapIcfCtTerrainModels(java.util.Map models) {
+        var block = ModBlocks.ICF_BLOCK.get();
+        var controller = ModBlocks.ICF_CONTROLLER.get();
+        java.util.function.BiPredicate<net.minecraft.world.level.block.Block,
+                net.minecraft.world.level.block.Block> connects = (a, b) -> b == block || b == controller;
+
+        for (net.minecraft.world.level.block.state.BlockState state : block.getStateDefinition().getPossibleStates()) {
+            boolean port = state.getValue(com.hbm_m.block.machines.icf.ICFPhantomBlock.PORT);
+
+            ResourceLocation full = port
+                    ? ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/icf_block_port")
+                    : ctTex("icf_block");
+            ResourceLocation ct = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID,
+                    port ? "block/icf_block_port_ct" : "block/icf_block_ct");
+
+            Object loc = PlatformHooks.createModelLocation(ModBlocks.ICF_BLOCK.getId(), "port=" + port);
+            BakedModel baked = (BakedModel) models.get(loc);
+            if (baked == null || baked instanceof ConnectedDecoBlockBakedModel) continue;
+
+            models.put(loc, new ConnectedDecoBlockBakedModel(baked, full, ct, null, connects));
         }
     }
 
@@ -986,6 +1089,13 @@ public class ClientSetup {
             if (tintIndex == 0) return opaqueTint(0xFFFFFF);
             return opaqueTint(com.hbm_m.item.liquids.FluidDuctItem.getTintColor(stack));
         }, ModItems.FLUID_DUCT.get(), ModItems.FLUID_DUCT_COLORED.get(), ModItems.FLUID_DUCT_SILVER.get());
+        // ICF-Pellet: untere Lage (icf_pellet_bg) in der Mischfarbe beider Brennstoffe, obere
+        // Lage unveraendert - 1:1 aus getColorFromItemStack/getIconFromDamageForRenderPass.
+        event.register((stack, tintIndex) -> {
+            if (tintIndex != 0) return opaqueTint(0xFFFFFF);
+            return opaqueTint(com.hbm_m.item.machine.ItemICFPellet.getMixedColor(stack));
+        }, ModItems.ICF_PELLET.get());
+
         // Mineral Pipes - tint layer0 with the pipe's mineral color
         event.register((stack, tintIndex) -> {
             if (stack.getItem() instanceof com.hbm_m.item.MineralPipeItem pipe) {
@@ -1135,6 +1245,7 @@ public class ClientSetup {
         event.registerSpriteSet(ModParticleTypes.TOWNAURA.get(), TownauraParticle.Provider::new);
         event.registerSpriteSet(ModParticleTypes.SCHRABFOG.get(), SchrabfogParticle.Provider::new);
         event.registerSpriteSet(ModParticleTypes.RAD_FOG_PARTICLE.get(), RadFogParticle.Provider::new);
+        event.registerSpriteSet(ModParticleTypes.HADRON.get(), com.hbm_m.particle.custom.HadronParticle.Provider::new);
         event.registerSpriteSet(ModParticleTypes.RBMK_FLAME.get(), com.hbm_m.particle.custom.RBMKFlameParticle.Provider::new);
         event.registerSpriteSet(ModParticleTypes.RBMK_STEAM.get(), com.hbm_m.particle.custom.RBMKSteamParticle.Provider::new);
         event.registerSpriteSet(ModParticleTypes.RBMK_MUSH.get(), com.hbm_m.particle.custom.RBMKMushParticle.Provider::new);
