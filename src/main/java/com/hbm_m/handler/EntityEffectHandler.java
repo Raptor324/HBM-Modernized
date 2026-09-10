@@ -166,7 +166,14 @@ public final class EntityEffectHandler {
 
         // Кашель: от раза в 50 секунд до каждой секунды по мере тяжести; начинается на 25% накопления.
         boolean coughs = blFrac > 0.25F || asbFrac > 0.25F || soot > 30;
-        int freq = Math.max((int) (1000F - 950F * total), 20);
+
+        // Original rechnet die Haeufigkeit ein zweites Mal aus, diesmal MIT dem Russ: wer in einer
+        // verrauchten Fabrikhalle steht, hustet oefter, auch wenn seine Lunge noch sauber ist.
+        // Fuer Schwaeche und Uebelkeit oben zaehlt dagegen nur die Krankheit selbst.
+        float sootDelta = 1F - Math.min(soot / 100F, 1F);
+        float coughTotal = 1F - (1F - blFrac) * (1F - asbFrac) * sootDelta;
+
+        int freq = Math.max((int) (1000F - 950F * coughTotal), 20);
         if (coughs && level.getGameTime() % freq == entity.getId() % freq) {            boolean coughsCoal = blFrac > 0.5F;
             boolean coughsBlood = asbFrac > 0.75F || blFrac > 0.75F;
 
