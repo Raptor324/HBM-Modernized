@@ -34,13 +34,8 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
 public class GUIScreenRecipeSelector extends Screen {
-    //? if fabric && < 1.21.1 {
-    /*private static final ResourceLocation TEXTURE = new ResourceLocation(
-            RefStrings.MODID, "textures/gui/processing/gui_recipe_selector.png");
-    *///?} else {
         private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(
             RefStrings.MODID, "textures/gui/processing/gui_recipe_selector.png");
-    //?}
 
     
     public static final String NULL_SELECTION = "null";

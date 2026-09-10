@@ -19,9 +19,6 @@ import net.minecraft.world.inventory.SimpleContainerData;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
-//? if fabric {
-/*import team.reborn.energy.api.EnergyStorage;
-*///?}
 
 /**
  * Menu для Chemical Factory — порт 1.7.10 {@code ContainerMachineChemicalFactory}.

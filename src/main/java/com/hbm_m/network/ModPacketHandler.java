@@ -330,11 +330,7 @@ public class ModPacketHandler {
     // ══════════════════════ Вспомогательные методы ════════════════════════════
 
     private static ResourceLocation id(String path) {
-        //? if fabric && < 1.21.1 {
-        /*return new ResourceLocation(RefStrings.MODID, path);
-        *///?} else {
         return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, path);
-        //?}
     }
 
     /**

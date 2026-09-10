@@ -132,12 +132,6 @@ public final class MachineCrystallizerRenderer {
             quads.addAll(model.getQuads(null, dir, RANDOM, ModelData.EMPTY, renderType));
         }
         *///?}
-        //? if fabric {
-        /*quads.addAll(model.getQuads(null, null, RANDOM));
-        for (Direction dir : Direction.values()) {
-            quads.addAll(model.getQuads(null, dir, RANDOM));
-        }
-        *///?}
         return quads;
     }
 

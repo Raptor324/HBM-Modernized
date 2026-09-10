@@ -118,9 +118,7 @@ public final class RenderHooks {
      */
     public static void putBulkData(VertexConsumer consumer, PoseStack.Pose matrix, BakedQuad quad,
                                    float r, float g, float b, float a, int packedLight, int packedOverlay, boolean readExistingColor) {
-        //? if < 1.21.1 && fabric {
-        /*consumer.putBulkData(matrix, quad, r, g, b, packedLight, packedOverlay);
-        *///?} elif < 1.21.1 && forge {
+        //? if < 1.21.1 && forge {
         /*consumer.putBulkData(matrix, quad, r, g, b, a, packedLight, packedOverlay, readExistingColor);
         *///?} else {
         // 1.21.1 (vanilla/neoforge/fabric): 8-arg сигнатура (с alpha, без readExistingColor).

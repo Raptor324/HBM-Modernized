@@ -91,15 +91,6 @@ public class FluidExhaustBlockEntity extends BaseHbmBlockEntity implements IFlui
     }
     *///?}
 
-    //? if fabric {
-    /*@Override
-    public void setLevel(Level level) {
-        super.setLevel(level);
-        if (level instanceof ServerLevel serverLevel) {
-            initNodes(serverLevel);
-        }
-    }
-    *///?}
 
     @Override
     public void setRemoved() {

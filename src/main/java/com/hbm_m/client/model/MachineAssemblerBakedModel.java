@@ -79,12 +79,6 @@ public class MachineAssemblerBakedModel extends AbstractMultipartBakedModel impl
         return List.of();
         //?}
 
-        //? if fabric {
-        /*if (state == null) {
-            return getItemQuads(side, rand);
-        }
-        return List.of();
-        *///?}
     }
 
     //? if neoforge {
@@ -142,34 +136,6 @@ public class MachineAssemblerBakedModel extends AbstractMultipartBakedModel impl
     }
     *///?}
 
-    //? if fabric {
-    /*private List<BakedQuad> getItemQuads(@Nullable Direction side, RandomSource rand) {
-        if (!itemQuadsCached) {
-            buildItemQuads(rand);
-            itemQuadsCached = true;
-        }
-        if (side != null) {
-            return cachedItemQuads.stream()
-                .filter(quad -> quad.getDirection() == side)
-                .toList();
-        }
-        return cachedItemQuads;
-    }
-
-    private void buildItemQuads(RandomSource rand) {
-        List<BakedQuad> allQuads = new ArrayList<>();
-        for (String partName : getItemRenderPartNames()) {
-            BakedModel part = parts.get(partName);
-            if (part != null) {
-                for (Direction dir : Direction.values()) {
-                    allQuads.addAll(part.getQuads(null, dir, rand));
-                }
-                allQuads.addAll(part.getQuads(null, null, rand));
-            }
-        }
-        this.cachedItemQuads = allQuads;
-    }
-    *///?}
 
     @Override
     protected List<String> getItemRenderPartNames() {
@@ -193,9 +159,6 @@ public class MachineAssemblerBakedModel extends AbstractMultipartBakedModel impl
         /*return getParticleIcon(ModelData.EMPTY);
         *///?}
 
-        //? if fabric {
-        /*return super.getParticleIcon();
-        *///?}
 
         //? if neoforge {
         return super.getParticleIcon();

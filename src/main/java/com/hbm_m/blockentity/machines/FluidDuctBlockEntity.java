@@ -20,9 +20,6 @@ import com.hbm_m.blockentity.BaseHbmBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.client.render.DoorChunkInvalidationHelper;
 
-//? if fabric {
-/*import net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage;
-*///?}
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.core.HolderLookup;
@@ -192,15 +189,6 @@ public class FluidDuctBlockEntity extends BaseHbmBlockEntity implements IFluidPi
     }
     //?}
 
-    //? if fabric {
-    /*@Override
-    public void setLevel(Level level) {
-        super.setLevel(level);
-        if (level instanceof ServerLevel serverLevel) {
-            ensureNode(serverLevel);
-        }
-    }
-    *///?}
 
     @Override
     public void setRemoved() {
@@ -296,9 +284,6 @@ public class FluidDuctBlockEntity extends BaseHbmBlockEntity implements IFluidPi
         //? if forge {
         /*return neighbor.getCapability(ForgeCapabilities.FLUID_HANDLER, side).isPresent();
          *///?}
-        //? if fabric {
-        /*return FluidStorage.SIDED.find(level, neighbor.getBlockPos(), neighbor.getBlockState(), neighbor, side) != null;
-        *///?}
         //? if neoforge {
         // NeoForge 1.21.1: FluidHandler.BLOCK через level.getCapability (BlockEntity.getCapability убран).
         return level.getCapability(net.neoforged.neoforge.capabilities.Capabilities.FluidHandler.BLOCK,

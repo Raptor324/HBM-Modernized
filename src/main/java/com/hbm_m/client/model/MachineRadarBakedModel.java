@@ -122,19 +122,6 @@ public class MachineRadarBakedModel extends AbstractMultipartBakedModel implemen
         return staticPart.getQuads(state, side, rand);
         //?}
 
-        //? if fabric {
-        /*if (state == null) {
-            return getItemQuads(side, rand);
-        }
-        if (ShaderCompatibilityDetector.useVboGeometry()) {
-            return List.of();
-        }
-        BakedModel staticPart = parts.get(getStaticPartName());
-        if (staticPart == null) {
-            return List.of();
-        }
-        return staticPart.getQuads(state, side, rand);
-        *///?}
     }
 
     //? if neoforge {

@@ -5,9 +5,6 @@ package com.hbm_m.sound;
 /*import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 *///?}
-//? if fabric {
-/*import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;*///?}
 
 // Звук, воспроизводимый Ассемблером во время работы.
 // Использует AbstractTickableSoundInstance для управления воспроизведением и остановкой звука.
@@ -19,8 +16,6 @@ import net.minecraft.sounds.SoundSource;
 //? if forge {
 /*@OnlyIn(Dist.CLIENT)
 *///?}
-//? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
 public class AssemblerSoundInstance extends AbstractTickableSoundInstance {
 
     public AssemblerSoundInstance(BlockPos pos) {

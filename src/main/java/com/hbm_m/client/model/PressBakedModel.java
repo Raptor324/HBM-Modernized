@@ -88,30 +88,6 @@ public class PressBakedModel extends AbstractMultipartBakedModel implements Abst
         return Collections.emptyList();
         //?}
 
-        //? if fabric {
-        /*// ITEM RENDER
-        if (state == null) {
-            return getItemQuads(side, rand);
-        }
-
-        // WORLD RENDER: Base baked into chunk mesh
-        BakedModel basePart = parts.get(BASE);
-        if (basePart != null) {
-            List<BakedQuad> partQuads = new ArrayList<>();
-            for (Direction d : Direction.values()) {
-                partQuads.addAll(basePart.getQuads(state, d, rand));
-            }
-            partQuads.addAll(basePart.getQuads(state, null, rand));
-            if (!partQuads.isEmpty()) {
-                List<BakedQuad> translated = ModelHelper.translateQuads(partQuads, 0.5f, 0f, 0.5f);
-                if (side != null) {
-                    return translated.stream().filter(q -> q.getDirection() == side).toList();
-                }
-                return translated;
-            }
-        }
-        return Collections.emptyList();
-        *///?}
     }
 
     //? if neoforge {
@@ -189,36 +165,6 @@ public class PressBakedModel extends AbstractMultipartBakedModel implements Abst
     }
     *///?}
 
-    //? if fabric {
-    /*private List<BakedQuad> getItemQuads(@Nullable Direction side, RandomSource rand) {
-        if (!itemQuadsCached) {
-            cachedItemQuads = buildItemQuads(rand);
-            itemQuadsCached = true;
-        }
-
-        if (side != null) {
-            return cachedItemQuads.stream()
-                .filter(quad -> quad.getDirection() == side)
-                .toList();
-        }
-
-        return cachedItemQuads;
-    }
-
-    private List<BakedQuad> buildItemQuads(RandomSource rand) {
-        List<BakedQuad> quads = new ArrayList<>();
-        for (String partName : getItemRenderPartNames()) {
-            BakedModel part = parts.get(partName);
-            if (part == null) continue;
-
-            for (Direction dir : Direction.values()) {
-                quads.addAll(part.getQuads(null, dir, rand));
-            }
-            quads.addAll(part.getQuads(null, null, rand));
-        }
-        return quads;
-    }
-    *///?}
 
     @Override
     protected List<String> getItemRenderPartNames() {
@@ -241,9 +187,6 @@ public class PressBakedModel extends AbstractMultipartBakedModel implements Abst
         /*return getParticleIcon(ModelData.EMPTY);
         *///?}
 
-        //? if fabric {
-        /*return super.getParticleIcon();
-        *///?}
 
         //? if neoforge {
         return super.getParticleIcon();

@@ -29,14 +29,6 @@ import com.hbm_m.interfaces.ILookOverlay;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.item.liquids.FluidDuctItem;
 
-//? if fabric {
-/*import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
-import net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage;
-import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant;
-import net.fabricmc.fabric.api.transfer.v1.storage.Storage;
-import net.fabricmc.fabric.api.transfer.v1.transaction.Transaction;
-*///?}
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
@@ -232,7 +224,6 @@ public class FluidDuctBlock extends BaseEntityBlock implements ILookOverlay {
         refreshAdjacentDucts(level, pos);
     }
 
-    @SuppressWarnings("UnstableApiUsage") // Fabric Transfer API в ветке //? if fabric
     private boolean canConnectTo(LevelAccessor level, BlockPos myPos, BlockPos neighborPos, Direction direction) {
         BlockState neighborState = level.getBlockState(neighborPos);
         Block selfBlock = level.getBlockState(myPos).getBlock();
@@ -315,26 +306,6 @@ public class FluidDuctBlock extends BaseEntityBlock implements ILookOverlay {
                 return canFill > 0;
                 *///?}
 
-                //? if fabric {
-                /*// Паритет с Forge: capability FLUID_HANDLER с side=null на контроллере.
-                // SIDED.find(..., null) → getFluidStorage(null) у BlockEntity (см. FabricEntrypoint).
-                if (!(level instanceof Level lvl)) {
-                    return false;
-                }
-                BlockPos ctrlPos = part.getControllerPos();
-                BlockState ctrlState = level.getBlockState(ctrlPos);
-                Storage<FluidVariant> storage = FluidStorage.SIDED.find(lvl, ctrlPos, ctrlState, ctrl, null);
-                if (storage == null) {
-                    return false;
-                }
-                if (ductFluid == Fluids.EMPTY) {
-                    return true;
-                }
-                try (Transaction tx = Transaction.openOuter()) {
-                    long inserted = storage.insert(FluidVariant.of(ductFluid), 81L, tx);
-                    return inserted > 0;
-                }
-                *///?}
             }
 
             // Контроллер цистерны: прямое подключение запрещено правилами мультиблока.
@@ -623,8 +594,6 @@ public class FluidDuctBlock extends BaseEntityBlock implements ILookOverlay {
 //? if forge || neoforge {
 @OnlyIn(Dist.CLIENT)
 //?}
-//? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
     public void printHook(net.minecraft.client.gui.GuiGraphics guiGraphics, Level level, BlockPos pos) {
         BlockEntity be = level.getBlockEntity(pos);
         if (!(be instanceof FluidDuctBlockEntity ductBe)) {

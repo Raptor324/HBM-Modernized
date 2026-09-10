@@ -266,9 +266,6 @@ public class MachineTurbineBlockEntity extends BaseMachineBlockEntity implements
                 //? if forge {
                 /*yield stack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).isPresent();
                 *///?}
-                //? if fabric {
-                /*yield net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage.ITEM.find(stack, null) != null;
-                *///?}
                 //? if neoforge {
                 yield stack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.FluidHandler.ITEM) != null;
                 //?}

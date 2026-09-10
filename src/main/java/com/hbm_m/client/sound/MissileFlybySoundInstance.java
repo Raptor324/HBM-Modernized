@@ -4,10 +4,6 @@ package com.hbm_m.client.sound;
 /*import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 *///?}
-//? if fabric {
-/*import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
-*///?}
 
 import com.hbm_m.sound.ModSounds;
 
@@ -42,9 +38,6 @@ import org.jetbrains.annotations.Nullable;
  */
 //? if forge {
 /*@OnlyIn(Dist.CLIENT)
-*///?}
-//? if fabric {
-/*@Environment(EnvType.CLIENT)
 *///?}
 public class MissileFlybySoundInstance extends AbstractTickableSoundInstance {
 

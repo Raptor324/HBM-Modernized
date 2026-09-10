@@ -72,11 +72,7 @@ import javax.annotation.Nonnull;
 public class HbmJeiPlugin implements IModPlugin {
 
     private static final ResourceLocation PLUGIN_UID =
-            //? if fabric && < 1.21.1 {
-            /^new ResourceLocation(RefStrings.MODID, "jei_plugin");
-            ^///?} else {
                         ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "jei_plugin");
-            //?}
 
 
     @Override

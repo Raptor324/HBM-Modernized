@@ -29,11 +29,7 @@ public class CyclotronJeiCategory implements IRecipeCategory<CyclotronRecipe> {
             RecipeType.create(RefStrings.MODID, "cyclotron", CyclotronRecipe.class);
 
     private static final ResourceLocation TEXTURE =
-            //? if fabric && < 1.21.1 {
-            /^new ResourceLocation(RefStrings.MODID, "textures/jei_gui/gui_jei_cyclotron.png");
-            ^///?} else {
                         ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/jei_gui/gui_jei_cyclotron.png");
-            //?}
 
 
     private final IDrawable background;

@@ -12,18 +12,12 @@ import net.minecraft.world.entity.Entity;
  */
 //? if forge {
 /*@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-*///?} elif fabric {
-/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
 *///?} elif neoforge {
 @net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
 //?}
 public class EmptyEntityRenderer<T extends Entity> extends EntityRenderer<T> {
 
-    //? if fabric && < 1.21.1 {
-    /*private static final ResourceLocation DUMMY = new ResourceLocation("minecraft", "textures/block/stone.png");
-    *///?} else {
         private static final ResourceLocation DUMMY = ResourceLocation.fromNamespaceAndPath("minecraft", "textures/block/stone.png");
-    //?}
 
 
     public EmptyEntityRenderer(EntityRendererProvider.Context context) {

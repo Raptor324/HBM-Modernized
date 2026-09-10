@@ -57,18 +57,10 @@ public class HazardRegistry {
             *///?}
 
     public static final TagKey<Item> URANIUM_INGOTS = TagKey.create(Registries.ITEM,
-            //? if fabric && < 1.21.1 {
-            /*new ResourceLocation(CONVENTIONAL_NS, "ingots/uranium"));
-            *///?} else {
                         ResourceLocation.fromNamespaceAndPath(CONVENTIONAL_NS, "ingots/uranium"));
-            //?}
 
     public static final TagKey<Item> ALKALI_METALS = TagKey.create(Registries.ITEM,
-            //? if fabric && < 1.21.1 {
-            /*new ResourceLocation(CONVENTIONAL_NS, "ingots/sodium"));
-            *///?} else {
                         ResourceLocation.fromNamespaceAndPath(CONVENTIONAL_NS, "ingots/sodium"));
-            //?}
 
     public static void registerItems() {
         for (ModMaterials ingot : ModMaterials.values()) {

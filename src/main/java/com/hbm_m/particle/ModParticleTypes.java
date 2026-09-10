@@ -15,11 +15,7 @@ public class ModParticleTypes {
 
     // Вспомогательный кроссплатформенный метод для создания SimpleParticleType
     private static SimpleParticleType createParticle(boolean alwaysShow) {
-        //? if fabric {
-        /*return net.fabricmc.fabric.api.particle.v1.FabricParticleTypes.simple(alwaysShow);
-        *///?} else {
         return new SimpleParticleType(alwaysShow);
-         //?}
     }
 
     /** Town aura (радиоблоки, обеззараживатель). Порт {@code townaura} / {@code EntityAuraFX} (1.7.10). */

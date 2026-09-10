@@ -18,9 +18,6 @@ import net.minecraft.world.level.block.entity.AbstractFurnaceBlockEntity;
 /*import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.energy.IEnergyStorage;
 *///?}
-//? if fabric {
-/*import team.reborn.energy.api.EnergyStorage;
-*///?}
 
 @SuppressWarnings("UnstableApiUsage")
 public class MachineWoodBurnerMenu extends AbstractContainerMenu implements ILongEnergyMenu {

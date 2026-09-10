@@ -19,13 +19,6 @@ public final class FluidCapabilityAccess {
         /*result = be.getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER, sideFromPos).isPresent();
         *///?}
 
-        //? if fabric {
-        /*// Тот же overload, что и в FluidDuctBlockEntity / ForgeFluidHandlerAdapter: иначе 3-arg find даёт иной результат и труба «липнет» к контроллеру.
-        if (level instanceof net.minecraft.world.level.Level lvl) {
-            BlockState state = level.getBlockState(pos);
-            result = net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage.SIDED.find(lvl, pos, state, be, sideFromPos) != null;
-        }
-        *///?}
 
         //? if neoforge {
         // NeoForge: BlockCapability запрашивается через Level (LevelAccessor его не предоставляет).

@@ -17,11 +17,7 @@ import net.minecraft.world.entity.player.Inventory;
  */
 public class GUIHeatingOven extends GuiInfoScreen<HeatingOvenMenu> {
     private static final ResourceLocation GUI_TEXTURE =
-            //? if fabric && < 1.21.1 {
-            /*new ResourceLocation(MainRegistry.MOD_ID, "textures/gui/machine/gui_heating_oven.png");
-            *///?} else {
                         ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "textures/gui/machine/gui_heating_oven.png");
-            //?}
 
     private static final int BURN_BAR_X = 81;
     private static final int BURN_BAR_Y = 28;

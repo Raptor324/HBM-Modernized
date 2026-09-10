@@ -73,30 +73,6 @@ public class MachineBatterySocketBakedModel extends AbstractMultipartBakedModel 
     }
     *///?}
 
-    //? if fabric {
-    /*@Override
-    public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, RandomSource rand) {
-        List<BakedQuad> quads = new ArrayList<>();
-        int rotationY = getRotationYForFacing(state);
-        Direction querySide = getUnrotatedSide(side, rotationY);
-
-        BakedModel socket = getPart("Socket");
-        if (socket != null) {
-            List<BakedQuad> socketQuads = socket.getQuads(state, querySide, rand);
-            quads.addAll(rotationY != 0 ? ModelHelper.transformQuadsByFacing(socketQuads, rotationY) : socketQuads);
-        }
-
-        boolean showBattery = Boolean.TRUE.equals(FabricRenderDataBridge.get());
-        if (showBattery) {
-            BakedModel battery = getPart("Battery");
-            if (battery != null) {
-                List<BakedQuad> batteryQuads = getRetexturedBatteryQuads(battery, querySide, rand);
-                quads.addAll(rotationY != 0 ? ModelHelper.transformQuadsByFacing(batteryQuads, rotationY) : batteryQuads);
-            }
-        }
-        return quads;
-    }
-    *///?}
 
     private static int getRotationYForFacing(@Nullable BlockState state) {
         if (state == null || !state.hasProperty(MachineBatterySocketBlock.FACING)) return 0;
@@ -125,11 +101,6 @@ public class MachineBatterySocketBakedModel extends AbstractMultipartBakedModel 
             TextureAtlasSprite sprite = Minecraft.getInstance().getTextureAtlas(net.minecraft.world.inventory.InventoryMenu.BLOCK_ATLAS).apply(BATTERY_TEX);
             //? if forge {
             /*for (BakedQuad q : battery.getQuads(null, side, rand, ModelData.EMPTY, null)) {
-                out.add(retextureQuad(q, sprite));
-            }
-            *///?}
-            //? if fabric {
-            /*for (BakedQuad q : battery.getQuads(null, side, rand)) {
                 out.add(retextureQuad(q, sprite));
             }
             *///?}

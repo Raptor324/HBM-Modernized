@@ -463,22 +463,14 @@ public class MachineFluidTankBlockEntity extends BaseHbmBlockEntity implements M
         }
     
         if (fluid == null || fluid == Fluids.EMPTY || fluid == ModFluids.NONE.getSource()) {
-            //? if fabric && < 1.21.1 {
-            /*return new ResourceLocation(MainRegistry.MOD_ID, "block/tank/tank_none");
-            *///?} else {
                         return ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "block/tank/tank_none");
-            //?}
 
         }
     
         ResourceLocation typeId = BuiltInRegistries.FLUID.getKey(fluid);
         String fluidName = typeId != null ? typeId.getPath() : "none";
         
-        //? if fabric && < 1.21.1 {
-        /*return new ResourceLocation(MainRegistry.MOD_ID, "block/tank/tank_" + fluidName);
-        *///?} else {
                 return ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "block/tank/tank_" + fluidName);
-        //?}
 
     }
 

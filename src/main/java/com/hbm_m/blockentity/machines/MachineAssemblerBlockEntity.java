@@ -54,17 +54,6 @@ import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 //?}
 
-//? if fabric {
-/*import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
-import net.fabricmc.fabric.api.transfer.v1.item.ItemStorage;
-import net.fabricmc.fabric.api.transfer.v1.item.ItemVariant;
-import net.fabricmc.fabric.api.transfer.v1.storage.Storage;
-import net.fabricmc.fabric.api.transfer.v1.storage.base.CombinedStorage;
-import net.fabricmc.fabric.api.transfer.v1.storage.base.SingleSlotStorage;
-import net.fabricmc.fabric.api.transfer.v1.transaction.Transaction;
-import team.reborn.energy.api.EnergyStorage;
-*///?}
 
 /**
  * РЎР±РѕСЂРѕС‡РЅР°СЏ РјР°С€РёРЅР° (Assembler) - РјСѓР»СЊС‚РёР±Р»РѕС‡РЅР°СЏ СЃС‚СЂСѓРєС‚СѓСЂР° РґР»СЏ Р°РІС‚РѕРјР°С‚РёР·РёСЂРѕРІР°РЅРЅРѕРіРѕ РєСЂР°С„С‚Р°.
@@ -94,10 +83,6 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
     private LazyOptional<IItemHandler> lazyOutputProxy = LazyOptional.empty();
     *///?}
 
-    //? if fabric {
-    /*@Nullable private Storage<ItemVariant> inputProxy;
-    @Nullable private Storage<ItemVariant> outputProxy;
-    *///?}
 
     // РћС‚СЃР»РµР¶РёРІР°РЅРёРµ РёСЃС‚РѕС‡РЅРёРєРѕРІ РїСЂРµРґРјРµС‚РѕРІ
     private final Set<BlockPos> lastPullSources = new HashSet<>();
@@ -294,31 +279,6 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
     }
     //?}
 
-    //? if fabric {
-    /*public Storage<ItemVariant> getItemStorageForPart(PartRole role) {
-        if (role == PartRole.ITEM_INPUT) {
-            if (inputProxy == null) inputProxy = createInputProxyStorage();
-            return inputProxy;
-        }
-        if (role == PartRole.ITEM_OUTPUT) {
-            if (outputProxy == null) outputProxy = createOutputProxyStorage();
-            return outputProxy;
-        }
-        return Storage.empty();
-    }
-
-    private Storage<ItemVariant> createInputProxyStorage() {
-        java.util.List<SingleSlotStorage<ItemVariant>> slots = new java.util.ArrayList<>();
-        for (int i = INPUT_SLOT_START; i <= INPUT_SLOT_END; i++) {
-            slots.add(inventory.getSlotStorage(i));
-        }
-        return new CombinedStorage<>(slots);
-    }
-
-    private Storage<ItemVariant> createOutputProxyStorage() {
-        return inventory.getSlotStorage(OUTPUT_SLOT);
-    }
-    *///?}
 
     // ==================== TICK LOGIC ====================
 
@@ -588,44 +548,6 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
                 }
                 //?}
 
-                //? if fabric {
-                /*Storage<ItemVariant> cap = ItemStorage.SIDED.find(level, neighborPosGlobal, dirToNeighbor);
-                if (cap == null) continue;
-
-                // Р’С‹С‚Р°СЃРєРёРІР°РµРј РїРѕ РѕРґРЅРѕРјСѓ РґРѕ missing (Transfer API РѕРїРµСЂРёСЂСѓРµС‚ ItemVariant/count)
-                // Рё РїС‹С‚Р°РµРјСЃСЏ РІСЃС‚Р°РІРёС‚СЊ РІ РЅР°С€Рё РІС…РѕРґРЅС‹Рµ СЃР»РѕС‚С‹.
-                for (int attempt = 0; attempt < missing; attempt++) {
-                    boolean movedOne = false;
-                    try (Transaction tx = Transaction.openOuter()) {
-                        for (var view : cap) {
-                            ItemVariant v = view.getResource();
-                            if (v.isBlank()) continue;
-                            ItemStack one = v.toStack(1);
-                            if (!ingredient.test(one)) continue;
-
-                            long extracted = view.extract(v, 1, tx);
-                            if (extracted != 1) continue;
-
-                            // Р’СЃС‚Р°РІР»СЏРµРј 1 РїСЂРµРґРјРµС‚ РІРѕ РІС…РѕРґРЅС‹Рµ СЃР»РѕС‚С‹ (С‡РµСЂРµР· ModItemStackHandler insertItem)
-                            ItemStack toInsert = one;
-                            for (int dest = INPUT_SLOT_START; dest <= INPUT_SLOT_END && !toInsert.isEmpty(); dest++) {
-                                toInsert = inventory.insertItem(dest, toInsert, false);
-                            }
-                            if (toInsert.isEmpty()) {
-                                tx.commit();
-                                movedOne = true;
-                                break;
-                            } else {
-                                // РѕС‚РєР°С‚РёРј (РЅРµ РєРѕРјРјРёС‚РёРј)
-                                break;
-                            }
-                        }
-                    }
-                    if (!movedOne) break;
-                    lastPullSources.add(neighborPosGlobal);
-                    setChanged();
-                }
-                *///?}
             }
         }
     }
@@ -684,25 +606,6 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
             out = inventory.getStackInSlot(OUTPUT_SLOT);
             //?}
 
-            //? if fabric {
-            /*Storage<ItemVariant> cap = ItemStorage.SIDED.find(level, neighborPos, side1);
-            if (cap == null) cap = ItemStorage.SIDED.find(level, neighborPos, side2);
-            if (cap == null) continue;
-
-            ItemStack stack = inventory.getStackInSlot(OUTPUT_SLOT);
-            if (stack.isEmpty()) continue;
-
-            ItemVariant variant = ItemVariant.of(stack);
-            long amount = stack.getCount();
-            try (Transaction tx = Transaction.openOuter()) {
-                long inserted = cap.insert(variant, amount, tx);
-                if (inserted > 0) {
-                    stack.shrink((int) inserted);
-                    tx.commit();
-                }
-            }
-            out = inventory.getStackInSlot(OUTPUT_SLOT);
-            *///?}
         }
     }
 

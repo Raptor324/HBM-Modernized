@@ -486,14 +486,6 @@ public class MachineFrackingTowerBlockEntity extends BaseMachineBlockEntity impl
     // NBT СЕРИАЛИЗАЦИЯ
     //=====================================================================================//
 
-    //? if fabric {
-    /*@Nullable
-    public Storage<FluidVariant> getFluidStorage(@Nullable Direction side) {
-        if (side == Direction.DOWN) return fracksolTank.getStorage();
-        if (side == Direction.UP)   return oilTank.getStorage();
-        return gasTank.getStorage();
-    }
-    *///?}
 
     @Override
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {

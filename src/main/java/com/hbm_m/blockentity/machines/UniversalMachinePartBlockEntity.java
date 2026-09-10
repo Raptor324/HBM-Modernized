@@ -436,24 +436,6 @@ public class UniversalMachinePartBlockEntity extends BaseHbmBlockEntity implemen
             }
         }
         *///?}
-        //? if fabric {
-        /*if (controller.getLevel() instanceof ServerLevel sl) {
-            BlockPos bp = controller.getBlockPos();
-            BlockState st = sl.getBlockState(bp);
-            Storage<FluidVariant> storage = FluidStorage.SIDED.find(sl, bp, st, controller, null);
-            if (storage != null) {
-                for (StorageView<FluidVariant> view : storage) {
-                    if (!view.isResourceBlank() && view.getAmount() > 0) {
-                        Fluid f = view.getResource().getFluid();
-                        if (f != null && f != Fluids.EMPTY
-                                && f != com.hbm_m.inventory.fluid.ModFluids.NONE.getSource()) {
-                            result.add(f);
-                        }
-                    }
-                }
-            }
-        }
-        *///?}
         return result;
     }
 

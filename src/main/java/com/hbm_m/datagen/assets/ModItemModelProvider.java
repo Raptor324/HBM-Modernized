@@ -2246,11 +2246,7 @@ public class ModItemModelProvider extends ItemModelProvider {
     private ItemModelBuilder simpleBlockItem(RegistrySupplier<Block> item) {
         return withExistingParent(item.getId().getPath(),
                 ResourceLocation.tryParse("item/generated")).texture("layer0",
-                //? if fabric && < 1.21.1 {
-                /^new ResourceLocation(MainRegistry.MOD_ID,"item/" + item.getId().getPath()));
-                ^///?} else {
                                 ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID,"item/" + item.getId().getPath()));
-                //?}
 
     }
 
@@ -2374,18 +2370,10 @@ public class ModItemModelProvider extends ItemModelProvider {
                 String armorItemPath = "item/" + armorItem;
                 String trimPath = "trims/items/" + armorType + "_trim_" + trimMaterial.location().getPath();
                 String currentTrimName = armorItemPath + "_" + trimMaterial.location().getPath() + "_trim";
-                //? if fabric && < 1.21.1 {
-                /^ResourceLocation armorItemResLoc = new ResourceLocation(MOD_ID, armorItemPath);
-                ^///?} else {
                                 ResourceLocation armorItemResLoc = ResourceLocation.fromNamespaceAndPath(MOD_ID, armorItemPath);
-                //?}
 
                 ResourceLocation trimResLoc = ResourceLocation.tryParse(trimPath); // minecraft namespace
-                //? if fabric && < 1.21.1 {
-                /^ResourceLocation trimNameResLoc = new ResourceLocation(MOD_ID, currentTrimName);
-                ^///?} else {
                                 ResourceLocation trimNameResLoc = ResourceLocation.fromNamespaceAndPath(MOD_ID, currentTrimName);
-                //?}
 
 
                 existingFileHelper.trackGenerated(trimResLoc, PackType.CLIENT_RESOURCES, ".png", "textures");
@@ -2401,13 +2389,8 @@ public class ModItemModelProvider extends ItemModelProvider {
                         .model(new ModelFile.UncheckedModelFile(trimNameResLoc))
                         .predicate(mcLoc("trim_type"), trimValue).end()
                         .texture("layer0",
-                                //? if fabric && < 1.21.1 {
-                                /^new ResourceLocation(MOD_ID,
-                                        "item/" + itemRegistrySupplier.getId().getPath()));
-                                ^///?} else {
                                                                 ResourceLocation.fromNamespaceAndPath(MOD_ID,
                                         "item/" + itemRegistrySupplier.getId().getPath()));
-                                //?}
 
             });
         }

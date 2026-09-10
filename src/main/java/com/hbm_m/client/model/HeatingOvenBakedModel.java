@@ -74,30 +74,6 @@ public class HeatingOvenBakedModel extends AbstractMultipartBakedModel implement
         return super.getQuads(state, side, rand);
         //?}
 
-        //? if fabric {
-        /*// ITEM RENDER (Inventory/Hand)
-        if (state == null) {
-            return getItemQuads(side, rand);
-        }
-
-        // WORLD RENDER: Main is baked into chunk
-        BakedModel mainPart = parts.get(MAIN);
-        if (mainPart != null) {
-            List<BakedQuad> partQuads = new ArrayList<>();
-            for (Direction d : Direction.values()) {
-                partQuads.addAll(mainPart.getQuads(state, d, rand));
-            }
-            partQuads.addAll(mainPart.getQuads(state, null, rand));
-            if (!partQuads.isEmpty()) {
-                List<BakedQuad> translated = ModelHelper.translateQuads(partQuads, 0.5f, 0f, 0.5f);
-                if (side != null) {
-                    return translated.stream().filter(q -> q.getDirection() == side).toList();
-                }
-                return translated;
-            }
-        }
-        return Collections.emptyList();
-        *///?}
     }
 
     //? if forge {
@@ -170,45 +146,6 @@ public class HeatingOvenBakedModel extends AbstractMultipartBakedModel implement
     }
     *///?}
 
-    //? if fabric {
-    /*private List<BakedQuad> getItemQuads(@Nullable Direction side, RandomSource rand) {
-        if (!itemQuadsCached) {
-            cachedItemQuads = buildItemQuads(rand);
-            itemQuadsCached = true;
-        }
-
-        if (side != null) {
-            return cachedItemQuads.stream()
-                .filter(quad -> quad.getDirection() == side)
-                .toList();
-        }
-        return cachedItemQuads;
-    }
-
-    private List<BakedQuad> buildItemQuads(RandomSource rand) {
-        List<BakedQuad> quads = new ArrayList<>();
-
-        // Render Main and Door for item display
-        BakedModel mainPart = parts.get(MAIN);
-        BakedModel doorPart = parts.get(DOOR);
-
-        if (mainPart != null) {
-            for (Direction d : Direction.values()) {
-                quads.addAll(mainPart.getQuads(null, d, rand));
-            }
-            quads.addAll(mainPart.getQuads(null, null, rand));
-        }
-
-        if (doorPart != null) {
-            for (Direction d : Direction.values()) {
-                quads.addAll(doorPart.getQuads(null, d, rand));
-            }
-            quads.addAll(doorPart.getQuads(null, null, rand));
-        }
-
-        return quads;
-    }
-    *///?}
 
     @Override
     public boolean useAmbientOcclusion() {

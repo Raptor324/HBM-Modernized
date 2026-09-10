@@ -1277,9 +1277,6 @@ public class MachineRadarBlockEntity extends BaseMachineBlockEntity {
         //? if forge {
         /*return com.hbm_m.api.energy.ItemEnergyAccess.getForgeEnergy(stack).isPresent();
         *///?}
-        //? if fabric {
-        /*return teamreborn.energy.api.EnergyStorage.ITEM.find(stack, null) != null;
-        *///?}
         //? if neoforge {
         return stack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM) != null;
         //?}

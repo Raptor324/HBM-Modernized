@@ -28,34 +28,22 @@ public class ModBiomes {
     public static final ResourceKey<Biome> INNER_CRATER_KEY =
             ResourceKey.create(
                     Registries.BIOME,
-                    //? if fabric && < 1.21.1 {
-                    /*new ResourceLocation(MainRegistry.MOD_ID, "inner_crater")
-                    *///?} else {
 
                     ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "inner_crater")
-                    //?}
                     );
 
     public static final ResourceKey<Biome> CRATER_KEY =
             ResourceKey.create(
                     Registries.BIOME,
-                    //? if fabric && < 1.21.1 {
-                    /*new ResourceLocation(MainRegistry.MOD_ID, "crater")
-                    *///?} else {
 
                     ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "crater")
-                    //?}
                     );
 
     public static final ResourceKey<Biome> OUTER_CRATER_KEY =
             ResourceKey.create(
                     Registries.BIOME,
-                    //? if fabric && < 1.21.1 {
-                    /*new ResourceLocation(MainRegistry.MOD_ID, "outer_crater")
-                    *///?} else {
 
                     ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "outer_crater")
-                    //?}
                     );
 
     //? if forge {

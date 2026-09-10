@@ -29,15 +29,6 @@ import net.minecraftforge.fluids.capability.IFluidHandler.FluidAction;
 import net.minecraftforge.items.IItemHandler;
 *///?}
 
-//? if fabric {
-/*import net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage;
-import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant;
-import net.fabricmc.fabric.api.transfer.v1.item.ItemStorage;
-import net.fabricmc.fabric.api.transfer.v1.item.ItemVariant;
-import net.fabricmc.fabric.api.transfer.v1.storage.Storage;
-import net.fabricmc.fabric.api.transfer.v1.storage.StorageView;
-import net.fabricmc.fabric.api.transfer.v1.transaction.Transaction;
-*///?}
 
 import org.jetbrains.annotations.Nullable;
 
@@ -136,14 +127,6 @@ public class ForgeFluidHandlerAdapter implements IFluidStandardTransceiverMK2 {
         return simulated.isEmpty() ? 0 : simulated.getAmount();
         *///?}
 
-        //? if fabric {
-        /*Storage<FluidVariant> storage = getFabricStorage();
-        if (storage == null || !storage.supportsExtraction()) return 0;
-        try (Transaction tx = Transaction.openOuter()) {
-            return storage.extract(FluidVariant.of(fluid), Long.MAX_VALUE, tx);
-            // не коммитим — это симуляция
-        }
-        *///?}
 
         //? if neoforge {
         IFluidHandler handler = getNeoForgeHandler();
@@ -170,14 +153,6 @@ public class ForgeFluidHandlerAdapter implements IFluidStandardTransceiverMK2 {
         handler.drain(Math.min(simulated.getAmount(), clampInt(amount)), FluidAction.EXECUTE);
         *///?}
 
-        //? if fabric {
-        /*Storage<FluidVariant> storage = getFabricStorage();
-        if (storage == null) return;
-        try (Transaction tx = Transaction.openOuter()) {
-            storage.extract(FluidVariant.of(fluid), amount, tx);
-            tx.commit();
-        }
-        *///?}
 
         //? if neoforge {
         IFluidHandler handler = getNeoForgeHandler();
@@ -213,14 +188,6 @@ public class ForgeFluidHandlerAdapter implements IFluidStandardTransceiverMK2 {
         return handler.fill(new FluidStack(resolveForgeFillFluid(handler, fluid), Integer.MAX_VALUE), FluidAction.SIMULATE);
         *///?}
 
-        //? if fabric {
-        /*Storage<FluidVariant> storage = getFabricStorage();
-        if (storage == null || !storage.supportsInsertion()) return 0;
-        try (Transaction tx = Transaction.openOuter()) {
-            return storage.insert(FluidVariant.of(fluid), Long.MAX_VALUE, tx);
-            // не коммитим — это симуляция
-        }
-        *///?}
 
         //? if neoforge {
         IFluidHandler handler = getNeoForgeHandler();
@@ -254,15 +221,6 @@ public class ForgeFluidHandlerAdapter implements IFluidStandardTransceiverMK2 {
         return amount - filled;
         *///?}
 
-        //? if fabric {
-        /*Storage<FluidVariant> storage = getFabricStorage();
-        if (storage == null) return amount;
-        try (Transaction tx = Transaction.openOuter()) {
-            long filled = storage.insert(FluidVariant.of(fluid), amount, tx);
-            if (filled > 0) tx.commit();
-            return amount - filled;
-        }
-        *///?}
 
         //? if neoforge {
         IFluidHandler handler = getNeoForgeHandler();
@@ -323,38 +281,6 @@ public class ForgeFluidHandlerAdapter implements IFluidStandardTransceiverMK2 {
     }
     *///?}
 
-    //? if fabric {
-    /*@SuppressWarnings("UnstableApiUsage")
-    @Nullable
-    private Storage<FluidVariant> getFabricStorage() {
-        BlockEntity be = level.getBlockEntity(machinePos);
-        if (be == null || be.isRemoved()) return null;
-        BlockState st = level.getBlockState(machinePos);
-        return FluidStorage.SIDED.find(level, machinePos, st, be, sideOfMachineFacingDuct);
-    }
-
-    /^* Паритет с Forge {@code hasInfiniteBarrel}: скан инвентаря контроллера на бочку {@link com.hbm_m.item.liquids.InfiniteFluidItem#isInstantNetwork()}. ^/
-    @SuppressWarnings("UnstableApiUsage")
-    private boolean hasInfiniteBarrel(boolean wantSource) {
-        BlockEntity be = level.getBlockEntity(machinePos);
-        if (be == null || be.isRemoved()) return false;
-        BlockState st = level.getBlockState(machinePos);
-        Storage<ItemVariant> inv = ItemStorage.SIDED.find(level, machinePos, st, be, null);
-        if (inv == null) return false;
-        for (StorageView<ItemVariant> view : inv) {
-            if (view.isResourceBlank()) continue;
-            int n = (int) Math.min(view.getAmount(), view.getResource().toStack(1).getMaxStackSize());
-            if (n <= 0) continue;
-            ItemStack stack = view.getResource().toStack(n);
-            if (stack.isEmpty()) continue;
-            if (stack.getItem() instanceof com.hbm_m.item.liquids.InfiniteFluidItem inf) {
-                if (!inf.isInstantNetwork()) continue;
-                return true;
-            }
-        }
-        return false;
-    }
-    *///?}
 
     //? if neoforge {
     /** Паритет с Forge {@code hasInfiniteBarrel}: скан инвентаря контроллера на бочку {@link com.hbm_m.item.liquids.InfiniteFluidItem#isInstantNetwork()}. */

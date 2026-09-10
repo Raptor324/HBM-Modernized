@@ -354,9 +354,6 @@ public class DoorBakedModel extends AbstractMultipartBakedModel implements Abstr
         /*return getParticleIcon(ModelData.EMPTY);
         *///?}
 
-        //? if fabric {
-        /*return super.getParticleIcon();
-        *///?}
 
         //? if neoforge {
         return super.getParticleIcon();

@@ -106,9 +106,6 @@ public class MachineBatteryBlockEntity extends BaseMachineBlockEntity implements
                 || stack.getCapability(com.hbm_m.capability.ModCapabilities.HBM_ENERGY_PROVIDER).isPresent()
                 || stack.getCapability(com.hbm_m.capability.ModCapabilities.HBM_ENERGY_RECEIVER).isPresent();
         *///?}
-        //? if fabric {
-        /*return team.reborn.energy.api.EnergyStorage.ITEM.find(stack, null) != null;
-        *///?}
         //? if neoforge {
         // NeoForge: FE через Capabilities.EnergyStorage.ITEM + HBM через ItemEnergyAccess.
         return stack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM) != null
