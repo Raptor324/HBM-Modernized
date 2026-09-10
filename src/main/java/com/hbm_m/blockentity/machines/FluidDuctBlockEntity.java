@@ -40,11 +40,10 @@ import net.minecraft.world.level.material.Fluids;
  /**
  * BlockEntity трубы. Хранит тип жидкости и управляет MK2 узлом в UniNodespace.
  * <p>
- * Визуал оверлея (neo / colored / silver): в Forge OBJ MTL задаётся {@code forge_TintIndex 1} для слоя
- * «skin»; на Fabric {@link com.hbm_m.client.model.loading.MtlData} читает это поле, JSON {@code mtl_override}
- * подставляет MTL для bake (base / overlay), а блоки труб зарегистрированы в {@code BlockRenderLayerMap}
- * как {@code cutout} в {@link com.hbm_m.client.ClientSetup}, чтобы оверлей с альфой и tint из
- * {@code ColorProviderRegistry.BLOCK} отображался как на Forge (multipart solid + cutout).
+ * Визуал оверлея (neo / colored / silver): в OBJ MTL слой «skin» помечен {@code forge_TintIndex 1},
+ * JSON {@code mtl_override} подставляет MTL для bake (base / overlay), а блоки труб зарегистрированы
+ * как {@code cutout} в {@link com.hbm_m.client.ClientSetup}, чтобы оверлей с альфой отображался
+ * поверх основы.
  *
  * Логика передачи жидкостей:
  *  - Узел (FluidNode) создаётся при загрузке блока/смене типа и разрушается при выгрузке.
