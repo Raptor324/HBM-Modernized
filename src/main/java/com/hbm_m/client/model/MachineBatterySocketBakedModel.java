@@ -23,7 +23,9 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.state.BlockState;
 //? if forge {
 /*import net.minecraftforge.client.model.data.ModelData;
-*///?}
+*///?} elif neoforge {
+import net.neoforged.neoforge.client.model.data.ModelData;
+//?}
 
 public class MachineBatterySocketBakedModel extends AbstractMultipartBakedModel implements AbstractMultipartBakedModel.PartNamesProvider {
 
@@ -46,10 +48,17 @@ public class MachineBatterySocketBakedModel extends AbstractMultipartBakedModel 
         return false;
     }
 
+    // На NeoForge подклассы переопределяют getQuadsForModelDataNeo; forge-only override означал,
+    // что база рисовала обе части всегда и без поворота по FACING.
     //? if forge {
     /*@Override
     public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, RandomSource rand,
             ModelData modelData, @Nullable RenderType renderType) {
+    *///?} elif neoforge {
+    @Override
+    protected List<BakedQuad> getQuadsForModelDataNeo(@Nullable BlockState state, @Nullable Direction side,
+            RandomSource rand, ModelData modelData, @Nullable RenderType renderType) {
+    //?}
         List<BakedQuad> quads = new ArrayList<>();
         int rotationY = getRotationYForFacing(state);
         Direction querySide = getUnrotatedSide(side, rotationY);
@@ -71,7 +80,6 @@ public class MachineBatterySocketBakedModel extends AbstractMultipartBakedModel 
 
         return quads;
     }
-    *///?}
 
 
     private static int getRotationYForFacing(@Nullable BlockState state) {
@@ -99,11 +107,11 @@ public class MachineBatterySocketBakedModel extends AbstractMultipartBakedModel 
         return batteryQuadCache.computeIfAbsent(key, k -> {
             List<BakedQuad> out = new ArrayList<>();
             TextureAtlasSprite sprite = Minecraft.getInstance().getTextureAtlas(net.minecraft.world.inventory.InventoryMenu.BLOCK_ATLAS).apply(BATTERY_TEX);
-            //? if forge {
-            /*for (BakedQuad q : battery.getQuads(null, side, rand, ModelData.EMPTY, null)) {
+            //? if forge || neoforge {
+            for (BakedQuad q : battery.getQuads(null, side, rand, ModelData.EMPTY, null)) {
                 out.add(retextureQuad(q, sprite));
             }
-            *///?}
+            //?}
             return out;
         });
     }

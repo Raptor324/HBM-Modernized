@@ -337,9 +337,9 @@ public class FluidDuctBlockEntity extends BaseHbmBlockEntity implements IFluidPi
      */
     private void refreshClientTintMesh() {
         if (level == null || !level.isClientSide) return;
-        //? if forge {
-        /*requestModelDataUpdate();
-         *///?}
+        //? if forge || neoforge {
+        requestModelDataUpdate();
+        //?}
         level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_IMMEDIATE);
         DoorChunkInvalidationHelper.scheduleChunkInvalidation(worldPosition);
     }

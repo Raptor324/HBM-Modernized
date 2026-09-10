@@ -17,7 +17,10 @@ import net.minecraft.world.level.block.state.BlockState;
 //? if forge {
 /*import net.minecraftforge.client.ChunkRenderTypeSet;
 import net.minecraftforge.client.model.data.ModelData;
-*///?}
+*///?} elif neoforge {
+import net.neoforged.neoforge.client.ChunkRenderTypeSet;
+import net.neoforged.neoforge.client.model.data.ModelData;
+//?}
 
 /**
  * World render: пустой chunk mesh — вся геометрия в BER/VBO.
@@ -71,12 +74,13 @@ public class MachineChemicalPlantBakedModel extends AbstractMultipartBakedModel 
         return true;
     }
 
-    //? if forge {
-    /*@Override
+    // Без ветки neoforge слой падал в solid, и прозрачные участки рисовались непрозрачными.
+    //? if forge || neoforge {
+    @Override
     public ChunkRenderTypeSet getRenderTypes(BlockState state, RandomSource rand, ModelData data) {
         return ChunkRenderTypeSet.of(RenderType.cutout());
     }
-    *///?}
+    //?}
 
     @Override
     public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, RandomSource rand) {

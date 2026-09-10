@@ -597,6 +597,12 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity
         }
     }
 
+    /** Только горизонтальные грани отдают жидкость — как в forge-фильтре getCapability. */
+    @Override
+    protected boolean isFluidSideAllowed(@Nullable net.minecraft.core.Direction side) {
+        return side == null || side.getAxis().isHorizontal();
+    }
+
     //? if forge {
     /*private static final LazyOptional<?> EMPTY_CAP = LazyOptional.empty();
 

@@ -427,15 +427,21 @@ public class UniversalMachinePartBlockEntity extends BaseHbmBlockEntity implemen
             }
             return result;
         }
-        //? if forge {
-        /*IFluidHandler handler = controller.getCapability(ForgeCapabilities.FLUID_HANDLER, null).resolve().orElse(null);
-        if (handler != null) {
-            for (int i = 0; i < handler.getTanks(); i++) {
-                FluidStack fs = handler.getFluidInTank(i);
-                if (fs != null && !fs.isEmpty()) result.add(fs.getFluid());
+        // Последний шанс — баки самого контроллера. Раньше здесь читался forge-only
+        // IFluidHandler, поэтому на 1.21.1 список оставался пустым.
+        if (controller instanceof IFluidUserMK2 user) {
+            FluidTank[] tanks = user.getAllTanks();
+            if (tanks != null) {
+                for (FluidTank t : tanks) {
+                    if (t == null || t.getFill() <= 0) continue;
+                    Fluid type = t.getTankType();
+                    if (type != null && type != Fluids.EMPTY
+                            && type != com.hbm_m.inventory.fluid.ModFluids.NONE.getSource()) {
+                        result.add(type);
+                    }
+                }
             }
         }
-        *///?}
         return result;
     }
 

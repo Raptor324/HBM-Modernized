@@ -293,19 +293,11 @@ public class FluidDuctBlock extends BaseEntityBlock implements ILookOverlay {
                     return false;
                 }
 
-                // Остальные контроллеры:
-                // - если труба не окрашена (EMPTY) — показываем соединение просто по наличию fluid handler
-                // - если окрашена — fallback через Forge fill(SIMULATE).
-                //? if forge {
-                /*var cap = ctrl.getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER, null);
-                if (!cap.isPresent()) return false;
-                if (ductFluid == Fluids.EMPTY) return true;
-                var handler = cap.resolve().orElse(null);
-                if (handler == null) return false;
-                int canFill = handler.fill(new net.minecraftforge.fluids.FluidStack(ductFluid, 1), net.minecraftforge.fluids.capability.IFluidHandler.FluidAction.SIMULATE);
-                return canFill > 0;
-                *///?}
-
+                // Остальные контроллеры (не MK2): судим по наличию жидкостного хендлера у самого
+                // контроллера. Раньше здесь стоял forge-only fill(SIMULATE), и на NeoForge управление
+                // проваливалось вниз, где проверяется уже соседний блок, а не контроллер.
+                return com.hbm_m.api.fluids.FluidCapabilityAccess.hasFluidHandler(
+                        level, part.getControllerPos(), direction.getOpposite());
             }
 
             // Контроллер цистерны: прямое подключение запрещено правилами мультиблока.

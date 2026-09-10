@@ -35,7 +35,10 @@ import net.minecraft.world.phys.AABB;
 import net.minecraftforge.client.model.data.ModelProperty;
 import com.hbm_m.capability.ModCapabilities;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
-*///?}
+*///?} elif neoforge {
+import net.neoforged.neoforge.client.model.data.ModelData;
+import net.neoforged.neoforge.client.model.data.ModelProperty;
+//?}
 
 /**
  * Battery socket: one portable battery slot, modes like machine battery, energy from item capabilities.
@@ -43,9 +46,11 @@ import net.minecraftforge.common.capabilities.ForgeCapabilities;
 @SuppressWarnings("UnstableApiUsage")
 public class BatterySocketBlockEntity extends BaseMachineBlockEntity implements IEnergyModeHolder, com.hbm_m.api.energy.PowerBuffer {
 
-    //? if forge {
-    /*public static final ModelProperty<Boolean> HAS_INSERT = new ModelProperty<>();
-    *///?}
+    // Свойство и getModelData были forge-only, из-за чего на NeoForge модель не знала,
+    // вставлена ли батарейка.
+    //? if forge || neoforge {
+    public static final ModelProperty<Boolean> HAS_INSERT = new ModelProperty<>();
+    //?}
 
     private static final int SLOT_BATTERY = 0;
 
@@ -142,14 +147,14 @@ public class BatterySocketBlockEntity extends BaseMachineBlockEntity implements 
         return slot == SLOT_BATTERY;
     }
 
-    //? if forge {
-    /*@Override
+    //? if forge || neoforge {
+    @Override
     public ModelData getModelData() {
         return ModelData.builder()
                 .with(HAS_INSERT, !inventory.getStackInSlot(0).isEmpty())
                 .build();
     }
-    *///?}
+    //?}
 
 
     public long getEnergyDelta() {
@@ -337,6 +342,14 @@ public class BatterySocketBlockEntity extends BaseMachineBlockEntity implements 
         }
         energyDelta = tag.getLong("energyDelta");
         lastEnergySample = tag.getLong("lastEnergySample");
+
+        // Модель показывает вставленную батарейку через ModelData — её кэш надо сбросить,
+        // иначе перестройка чанка возьмёт старое значение HAS_INSERT.
+        if (level != null && level.isClientSide) {
+            //? if forge || neoforge {
+            requestModelDataUpdate();
+            //?}
+        }
     }
 
     @Override

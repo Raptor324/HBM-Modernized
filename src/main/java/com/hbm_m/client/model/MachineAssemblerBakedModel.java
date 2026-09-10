@@ -17,7 +17,10 @@ import net.minecraft.world.level.block.state.BlockState;
 //? if forge {
 /*import net.minecraftforge.client.ChunkRenderTypeSet;
 import net.minecraftforge.client.model.data.ModelData;
-*///?}
+*///?} elif neoforge {
+import net.neoforged.neoforge.client.ChunkRenderTypeSet;
+import net.neoforged.neoforge.client.model.data.ModelData;
+//?}
 
 public class MachineAssemblerBakedModel extends AbstractMultipartBakedModel implements AbstractMultipartBakedModel.PartNamesProvider {
 
@@ -146,12 +149,13 @@ public class MachineAssemblerBakedModel extends AbstractMultipartBakedModel impl
         return result;
     }
 
-    //? if forge {
-    /*@Override
+    // Без ветки neoforge слой падал в solid, и прозрачные участки рисовались непрозрачными.
+    //? if forge || neoforge {
+    @Override
     public ChunkRenderTypeSet getRenderTypes(BlockState state, RandomSource rand, ModelData data) {
         return ChunkRenderTypeSet.of(RenderType.cutoutMipped());
     }
-    *///?}
+    //?}
 
     @Override
     public TextureAtlasSprite getParticleIcon() {

@@ -33,6 +33,7 @@ import net.minecraft.world.level.block.state.BlockState;
 /*import net.minecraftforge.client.ChunkRenderTypeSet;
 import net.minecraftforge.client.model.data.ModelData;
 *///?} elif neoforge {
+import net.neoforged.neoforge.client.ChunkRenderTypeSet;
 import net.neoforged.neoforge.client.model.data.ModelData;
 //?}
 
@@ -340,13 +341,14 @@ public class DoorBakedModel extends AbstractMultipartBakedModel implements Abstr
 
     // В 1.20+ ItemOverrides имеет приватный конструктор, поэтому кастомные overrides недоступны.
 
-    //? if forge {
-    /*@Override
+    // Без ветки neoforge слой падал в solid, и прозрачные участки рисовались непрозрачными.
+    //? if forge || neoforge {
+    @Override
     public ChunkRenderTypeSet getRenderTypes(BlockState state, RandomSource rand, ModelData data) {
         // cutoutMipped для прозрачных текстур (стекло, решётки и т.д.)
         return ChunkRenderTypeSet.of(RenderType.cutoutMipped());
     }
-    *///?}
+    //?}
 
     @Override
     public TextureAtlasSprite getParticleIcon() {

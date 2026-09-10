@@ -17,10 +17,6 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
-//? if forge {
-/*import net.minecraftforge.event.ForgeEventFactory;
-*///?}
-
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
@@ -66,9 +62,7 @@ public class EntityProcessorCross implements IEntityProcessor {
         double maxZ = z + (double) size + 1.0D;
 
         List<Entity> list = level.getEntities(allowSelfDamage ? null : explosion.exploder, new AABB(minX, minY, minZ, maxX, maxY, maxZ));
-        //? if forge {
-        /*ForgeEventFactory.onExplosionDetonate(level, explosion.compat, list, size);
-        *///?}
+        com.hbm_m.platform.PlatformHooks.fireExplosionDetonate(level, explosion.compat, list, size);
 
         Vec3[] nodes;
 

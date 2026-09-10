@@ -12,7 +12,10 @@ import net.minecraft.world.level.block.state.BlockState;
 //? if forge {
 /*import net.minecraftforge.client.ChunkRenderTypeSet;
 import net.minecraftforge.client.model.data.ModelData;
-*///?}
+*///?} elif neoforge {
+import net.neoforged.neoforge.client.ChunkRenderTypeSet;
+import net.neoforged.neoforge.client.model.data.ModelData;
+//?}
 
 /**
  * Chemical Factory — порт 1.7.10 {@code ResourceManager.chemical_factory} (части Base/Frame/Fan1/Fan2).
@@ -61,12 +64,13 @@ public class MachineChemicalFactoryBakedModel extends AbstractMultipartBakedMode
         return state != null;
     }
 
-    //? if forge {
-    /*@Override
+    // Без ветки neoforge слой падал в solid, и прозрачные участки рисовались непрозрачными.
+    //? if forge || neoforge {
+    @Override
     public ChunkRenderTypeSet getRenderTypes(BlockState state, RandomSource rand, ModelData data) {
         return ChunkRenderTypeSet.of(RenderType.cutout());
     }
-    *///?}
+    //?}
 
     @Override
     protected java.util.List<String> getItemRenderPartNames() {

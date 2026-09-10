@@ -687,6 +687,13 @@ public class MachineFluidTankBlockEntity extends BaseHbmBlockEntity implements M
     *///?}
 
     @Override
+    protected boolean isFluidSideAllowed(@Nullable Direction side) {
+        if (side == null) return true;
+        if (fluidSidesFromMultiblockStructure) return allowedFluidSides.contains(side);
+        return allowedFluidSides.isEmpty() || allowedFluidSides.contains(side);
+    }
+
+    @Override
     public void setAllowedFluidSidesFromMultiblockStructure(java.util.Set<Direction> sides) {
         this.allowedFluidSides = safeCopyDirectionSet(sides);
         this.fluidSidesFromMultiblockStructure = true;

@@ -57,11 +57,7 @@ public class MachineAdvancedAssemblerMenu extends AbstractContainerMenu implemen
 
         this.addSlot(new Slot(container, 0, 152, 81) { // Energy
             @Override public boolean mayPlace(ItemStack stack) {
-                if (ItemEnergyAccess.getHbmProvider(stack).isPresent() || ItemEnergyAccess.getHbmReceiver(stack).isPresent()) return true;
-                //? if neoforge {
-                if (stack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM) != null) return true;
-                //?}
-                return false;
+                return ItemEnergyAccess.isEnergyItem(stack);
             }
         });
         this.addSlot(new Slot(container, 1, 35, 126)); // Blueprint

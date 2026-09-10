@@ -277,6 +277,13 @@ public class ClientSetup {
             ClientRadiationData.clearAll();
         });
 
+        // Кэш радиации нельзя тащить в новый мир или измерение. Раньше вход чистился
+        // forge-only обработчиком, и на NeoForge кэш переживал смену мира.
+        dev.architectury.event.events.client.ClientPlayerEvent.CLIENT_PLAYER_JOIN.register(
+                player -> ClientRadiationData.clearAll());
+        dev.architectury.event.events.client.ClientPlayerEvent.CLIENT_PLAYER_RESPAWN.register(
+                (oldPlayer, newPlayer) -> ClientRadiationData.clearAll());
+
         // Экраны меню: на Forge регистрируются напрямую, на NeoForge 1.21.1+ — через RegisterMenuScreensEvent ниже.
         //? if forge {
         /*registerScreens();
