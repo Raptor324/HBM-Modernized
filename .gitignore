@@ -94,3 +94,22 @@ libs/*
 .aider*
 # Локальный контекст для Claude Code
 CLAUDE.md
+
+# Датаген пишет в assets только blockstates, models и lang. Первые два игнорируются выше,
+# lang отслеживается намеренно (его забирают переводчики), а всё остальное, что провайдеры
+# сгенерируют в будущем, в репозиторий попадать не должно.
+src/generated/resources/assets/*
+!src/generated/resources/assets/hbm_m/
+src/generated/resources/assets/hbm_m/*
+!src/generated/resources/assets/hbm_m/lang/
+
+# Черновики и следы инструментов: nul появляется от перенаправления вывода в git bash,
+# остальное — резервные копии редакторов и хвосты неудачных патчей.
+nul
+NUL
+*.bak
+*.orig
+*.rej
+*.tmp
+scratch/
+notes/
