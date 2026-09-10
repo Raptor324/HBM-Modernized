@@ -31,8 +31,8 @@ import net.minecraft.world.item.ItemStack;
  * <p>Data-driven: рецепты читаются напрямую aus {@code RecipeManager} (JSON {@code hbm_m:electrolyser_fluid}),
  * ранее — статический {@code ElectrolyserRecipes} (fluid-mode).</p>
  */
-//? if forge {
-/*public class ElectrolyserFluidJeiCategory extends JeiGenericRecipeCategory<ElectrolyserFluidRecipe> {
+//? if forge || neoforge {
+public class ElectrolyserFluidJeiCategory extends JeiGenericRecipeCategory<ElectrolyserFluidRecipe> {
 
     public static final RecipeType<ElectrolyserFluidRecipe> RECIPE_TYPE =
             RecipeType.create(RefStrings.MODID, "electrolyser_fluid", ElectrolyserFluidRecipe.class);
@@ -107,9 +107,9 @@ import net.minecraft.world.item.ItemStack;
         addItemSlot(builder, role, x, y)
                 .setFluidRenderer(FLUID_RENDERER_CAPACITY, false, 16, 16)
                 //? if forge {
-                /^.setCustomRenderer(ForgeTypes.FLUID_STACK, new HbmFluidJeiRenderer(16, 16))
+                /*.setCustomRenderer(ForgeTypes.FLUID_STACK, new HbmFluidJeiRenderer(16, 16))
                 .addIngredient(ForgeTypes.FLUID_STACK, FluidStackHooksForge.toForge(fluid));
-                ^///?} elif neoforge {
+                *///?} elif neoforge {
                 .setCustomRenderer(NeoForgeTypes.FLUID_STACK, new HbmFluidJeiRenderer(16, 16))
                 .addIngredient(NeoForgeTypes.FLUID_STACK, new net.neoforged.neoforge.fluids.FluidStack(fluid.getFluid(), (int) fluid.getAmount()));
                 //?}
@@ -120,7 +120,4 @@ import net.minecraft.world.item.ItemStack;
         // Kein Blueprint-Slot fuer Electrolyser-Fluid-Rezepte.
     }
 }
-*///?} else {
-public final class ElectrolyserFluidJeiCategory {
-    private ElectrolyserFluidJeiCategory() {}
-}//?}
+//?}

@@ -13,8 +13,8 @@ import mezz.jei.api.recipe.RecipeType;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 
-//? if forge {
-/*public class CentrifugeJeiCategory extends JeiUniversalRecipeCategory<CentrifugeRecipe> {
+//? if forge || neoforge {
+public class CentrifugeJeiCategory extends JeiUniversalRecipeCategory<CentrifugeRecipe> {
 
     public static final RecipeType<CentrifugeRecipe> RECIPE_TYPE =
             RecipeType.create(RefStrings.MODID, "centrifuge", CentrifugeRecipe.class);
@@ -62,7 +62,4 @@ import net.minecraft.world.item.ItemStack;
     }
 
 }
-*///?} else {
-public final class CentrifugeJeiCategory {
-    private CentrifugeJeiCategory() {}
-}//?}
+//?}

@@ -15,8 +15,8 @@ import net.minecraft.world.item.ItemStack;
  * JEI category for Exposure Chamber recipes - Partikel + Zutat -&gt; Ausgabe (siehe
  * {@link ExposureChamberRecipe}).
  */
-//? if forge {
-/*public class ExposureChamberJeiCategory extends JeiGenericRecipeCategory<ExposureChamberRecipe> {
+//? if forge || neoforge {
+public class ExposureChamberJeiCategory extends JeiGenericRecipeCategory<ExposureChamberRecipe> {
 
     public static final RecipeType<ExposureChamberRecipe> RECIPE_TYPE =
             RecipeType.create(RefStrings.MODID, "exposure_chamber", ExposureChamberRecipe.class);
@@ -71,7 +71,4 @@ import net.minecraft.world.item.ItemStack;
         // Kein Blueprint-Slot fuer Exposure-Chamber-Rezepte.
     }
 }
-*///?} else {
-public final class ExposureChamberJeiCategory {
-    private ExposureChamberJeiCategory() {}
-}//?}
+//?}

@@ -18,8 +18,8 @@ import net.minecraft.world.item.ItemStack;
  * <p>Data-driven: рецепты читаются напрямую aus {@code RecipeManager} (JSON {@code hbm_m:electrolyser_metal}),
  * ранее — статический {@code ElectrolyserRecipes} (metal-mode).</p>
  */
-//? if forge {
-/*public class ElectrolyserMetalJeiCategory extends JeiGenericRecipeCategory<ElectrolyserMetalRecipe> {
+//? if forge || neoforge {
+public class ElectrolyserMetalJeiCategory extends JeiGenericRecipeCategory<ElectrolyserMetalRecipe> {
 
     public static final RecipeType<ElectrolyserMetalRecipe> RECIPE_TYPE =
             RecipeType.create(RefStrings.MODID, "electrolyser_metal", ElectrolyserMetalRecipe.class);
@@ -96,7 +96,4 @@ import net.minecraft.world.item.ItemStack;
         // Kein Blueprint-Slot fuer Electrolyser-Metal-Rezepte.
     }
 }
-*///?} else {
-public final class ElectrolyserMetalJeiCategory {
-    private ElectrolyserMetalJeiCategory() {}
-}//?}
+//?}

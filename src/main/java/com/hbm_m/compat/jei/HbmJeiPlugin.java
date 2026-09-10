@@ -57,8 +57,8 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 
-//? if forge {
-/*import mezz.jei.api.IModPlugin;
+//? if forge || neoforge {
+import mezz.jei.api.IModPlugin;
 import mezz.jei.api.JeiPlugin;
 import mezz.jei.api.registration.IGuiHandlerRegistration;
 import mezz.jei.api.registration.IRecipeCatalystRegistration;
@@ -287,7 +287,4 @@ public class HbmJeiPlugin implements IModPlugin {
         );
     }
 }
-*///?} else {
-public final class HbmJeiPlugin {
-    private HbmJeiPlugin() {}
-}//?}
+//?}

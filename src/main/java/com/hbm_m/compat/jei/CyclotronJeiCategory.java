@@ -15,14 +15,14 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 
-//? if forge {
-/*/^*
+//? if forge || neoforge {
+/**
  * JEI-категория циклотрона ({@code hbm_m:cyclotron}).
  *
  * <p>Работает напрямую с data-driven {@link CyclotronRecipe} (JSON) — без промежуточной
  * {@code *JeiRecipe}-обёртки. Target/input — {@link CyclotronRecipe#getTarget()} / #{@link CyclotronRecipe#getInput()},
  * выход — {@link CyclotronRecipe#getOutput()}.</p>
- ^/
+ */
 public class CyclotronJeiCategory implements IRecipeCategory<CyclotronRecipe> {
 
     public static final RecipeType<CyclotronRecipe> RECIPE_TYPE =
@@ -80,7 +80,4 @@ public class CyclotronJeiCategory implements IRecipeCategory<CyclotronRecipe> {
         }
     }
 }
-*///?} else {
-public final class CyclotronJeiCategory {
-    private CyclotronJeiCategory() {}
-}//?}
+//?}
