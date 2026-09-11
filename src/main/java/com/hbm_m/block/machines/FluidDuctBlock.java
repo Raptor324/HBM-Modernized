@@ -111,6 +111,23 @@ public class FluidDuctBlock extends BaseEntityBlock implements ILookOverlay {
             Direction.UP, Block.box(4, 12, 4, 12, 16, 12),
             Direction.DOWN, Block.box(4, 0, 4, 12, 4, 12));
 
+    /** Кэш форм по битмаске 6 соединений: getShape вызывается в горячем пути коллизий/рейкаста. */
+    private static final VoxelShape[] SHAPES_BY_MASK = new VoxelShape[64];
+
+    private static VoxelShape shapeForMask(int mask) {
+        VoxelShape shape = SHAPES_BY_MASK[mask];
+        if (shape == null) {
+            shape = CORE;
+            for (Direction dir : Direction.values()) {
+                if ((mask & (1 << dir.ordinal())) != 0) {
+                    shape = Shapes.or(shape, ARM_SHAPES.get(dir));
+                }
+            }
+            SHAPES_BY_MASK[mask] = shape;
+        }
+        return shape;
+    }
+
     private static final int IDENTIFIER_NETWORK_LIMIT = 512;
 
     /** ResourceLocation "none" mod fluid → cleared duct ({@link Fluids#EMPTY}). */
@@ -145,13 +162,13 @@ public class FluidDuctBlock extends BaseEntityBlock implements ILookOverlay {
     @Override
     public VoxelShape getShape(@NotNull BlockState state, @NotNull BlockGetter level, @NotNull BlockPos pos,
             @NotNull CollisionContext context) {
-        VoxelShape shape = CORE;
+        int mask = 0;
         for (Direction dir : Direction.values()) {
             if (state.getValue(PROPERTY_BY_DIRECTION.get(dir))) {
-                shape = Shapes.or(shape, ARM_SHAPES.get(dir));
+                mask |= 1 << dir.ordinal();
             }
         }
-        return shape;
+        return shapeForMask(mask);
     }
 
     /** Full connection + render shape for a duct at {@code pos} (block there must be this block type). */
