@@ -121,7 +121,7 @@ public class AnvilMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(@NotNull Player player) {
-        return stillValid(access, player, blockEntity.getBlockState().getBlock());
+        return MenuReach.stillValid(player, blockEntity, blockEntity.getBlockState().getBlock());
     }
 
     @Override

@@ -141,8 +141,7 @@ public class MachinePressMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        return stillValid(ContainerLevelAccess.create(level, blockEntity.getBlockPos()),
-                player, ModBlocks.PRESS.get());
+        return MenuReach.stillValid(player, blockEntity, ModBlocks.PRESS.get());
     }
 
     private void addPlayerInventory(Inventory playerInventory) {

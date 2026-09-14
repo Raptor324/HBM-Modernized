@@ -87,7 +87,7 @@ public class MachineAutocrafterMenu extends AbstractContainerMenu {
         if (blockEntity instanceof MachineAutocrafterBlockEntity autocrafter) {
             return autocrafter;
         }
-        throw new IllegalStateException("No MachineAutocrafterBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":autocrafter_menu");
+        throw new MenuBlockEntityMissingException("No MachineAutocrafterBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":autocrafter_menu");
     }
 
     public MachineAutocrafterBlockEntity getBlockEntity() {
@@ -96,11 +96,7 @@ public class MachineAutocrafterMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        if (blockEntity == null || blockEntity.getLevel() != player.level()) {
-            return false;
-        }
-        BlockPos pos = blockEntity.getBlockPos();
-        return player.distanceToSqr(pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D) <= 64.0D;
+        return MenuReach.stillValid(player, blockEntity);
     }
 
     @Override

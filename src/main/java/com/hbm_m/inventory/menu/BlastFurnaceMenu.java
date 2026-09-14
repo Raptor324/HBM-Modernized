@@ -38,7 +38,7 @@ public class BlastFurnaceMenu extends AbstractContainerMenu {
     public BlastFurnaceMenu(int containerId, Inventory inv, BlockEntity entity, ContainerData data) {
         super(ModMenuTypes.BLAST_FURNACE_MENU.get(), containerId);
         if (entity == null || !(entity instanceof BlastFurnaceBlockEntity)) {
-            throw new IllegalStateException("Expected BlastFurnaceBlockEntity at position, got: " + entity);
+            throw new MenuBlockEntityMissingException("Expected BlastFurnaceBlockEntity at position, got: " + entity);
         }
         blockEntity = (BlastFurnaceBlockEntity) entity;
         checkContainerDataCount(data, 7);
@@ -180,8 +180,7 @@ public class BlastFurnaceMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        return stillValid(ContainerLevelAccess.create(level, blockEntity.getBlockPos()),
-                player, ModBlocks.BLAST_FURNACE.get());
+        return MenuReach.stillValid(player, blockEntity, ModBlocks.BLAST_FURNACE.get());
     }
 
     private void addPlayerInventory(Inventory playerInventory) {

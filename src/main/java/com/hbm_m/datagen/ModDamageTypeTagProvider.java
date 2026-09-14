@@ -81,6 +81,36 @@ public class ModDamageTypeTagProvider extends DamageTypeTagsProvider {
                 ModDamageTypes.RUBBLE
         );
 
+        // 1.21.1 LivingEntity.hurt() knocks back even without an attacker (random direction), so
+        // every attacker-less tick damage (radiation, taint, gas clouds, ...) needs opting out.
+        // DamageTypeTags.NO_KNOCKBACK only exists from 1.20.5; datagen runs on 1.20.1, so name it
+        // directly - the generated JSON is converted for 1.21.1 in processResources.
+        tag(net.minecraft.tags.TagKey.create(net.minecraft.core.registries.Registries.DAMAGE_TYPE,
+                new net.minecraft.resources.ResourceLocation("minecraft", "no_knockback"))).add(
+                ModDamageTypes.RADIATION,
+                ModDamageTypes.TAINT,
+                ModDamageTypes.CLOUD,
+                ModDamageTypes.MUD_POISONING,
+                ModDamageTypes.ACID,
+                ModDamageTypes.LEAD,
+                ModDamageTypes.ENERVATION,
+                ModDamageTypes.ELECTRICITY,
+                ModDamageTypes.EXHAUST,
+                ModDamageTypes.LUNAR,
+                ModDamageTypes.MONOXIDE,
+                ModDamageTypes.ASBESTOS,
+                ModDamageTypes.BLACKLUNG,
+                ModDamageTypes.VACUUM,
+                ModDamageTypes.OVERDOSE,
+                ModDamageTypes.MICROWAVE,
+                ModDamageTypes.NITAN,
+                ModDamageTypes.BROADCAST,
+                ModDamageTypes.DIGAMMA,
+                ModDamageTypes.EUTHANIZED_SELF,
+                ModDamageTypes.EUTHANIZED_SELF_2,
+                ModDamageTypes.BOIL
+        );
+
         // Тег: Урон, который обходит неуязвимость (например, в креативе или после получения урона)
         tag(DamageTypeTags.BYPASSES_INVULNERABILITY).add(
                 ModDamageTypes.CHEATER,

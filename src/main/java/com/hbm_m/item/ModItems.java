@@ -101,7 +101,6 @@ import dev.architectury.registry.registries.RegistrySupplier;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
-import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.AxeItem;
 import net.minecraft.world.item.BlockItem;
@@ -797,11 +796,7 @@ public class ModItems {
                     // 1. РќР°РєР»Р°РґС‹РІР°РµРј СЌС„С„РµРєС‚ РђРЅС‚РёСЂР°РґРёРЅР°.
                     //    Р”Р»РёС‚РµР»СЊРЅРѕСЃС‚СЊ: 200 С‚РёРєРѕРІ (10 СЃРµРєСѓРЅРґ)
                     //    РЈСЂРѕРІРµРЅСЊ: I (amplifier = 0)
-                    //? if < 1.21.1 {
-                    /*player.addEffect(new MobEffectInstance(ModEffects.RADAWAY.get(), 120, 0));
-                    *///?} else {
-                    player.addEffect(new MobEffectInstance((net.minecraft.core.Holder<net.minecraft.world.effect.MobEffect>)(Object)ModEffects.RADAWAY, 120, 0));
-                    //?}
+                    com.hbm_m.platform.PlatformHooks.addEffect(player, ModEffects.RADAWAY, 120, 0);
 
                     // 2. РџСЂРѕРёРіСЂС‹РІР°РµРј Р·РІСѓРє
                     player.level().playSound(null, player.getX(), player.getY(), player.getZ(), ModSounds.RADAWAY_USE.get(), player.getSoundSource(), 1.0F, 1.0F);

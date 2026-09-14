@@ -101,7 +101,7 @@ public class MachineZirnoxMenu extends AbstractContainerMenu {
         if (inventory.player.level().isClientSide) {
             return null;
         }
-        throw new IllegalStateException("No MachineZirnoxBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":zirnox_menu");
+        throw new MenuBlockEntityMissingException("No MachineZirnoxBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":zirnox_menu");
     }
 
     public MachineZirnoxBlockEntity getBlockEntity() {
@@ -110,11 +110,7 @@ public class MachineZirnoxMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        if (blockEntity == null || blockEntity.getLevel() != player.level()) {
-            return false;
-        }
-        BlockPos pos = blockEntity.getBlockPos();
-        return player.distanceToSqr(pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D) <= 64.0D;
+        return MenuReach.stillValid(player, blockEntity);
     }
 
     // Menu indices, not handler indices: the slots are added in the order CO2 in, CO2 out, water in,

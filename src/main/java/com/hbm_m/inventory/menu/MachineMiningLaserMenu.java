@@ -82,7 +82,7 @@ public class MachineMiningLaserMenu extends AbstractContainerMenu {
         if (blockEntity instanceof MachineMiningLaserBlockEntity miningLaser) {
             return miningLaser;
         }
-        throw new IllegalStateException("No MachineMiningLaserBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":mining_laser_menu");
+        throw new MenuBlockEntityMissingException("No MachineMiningLaserBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":mining_laser_menu");
     }
 
     public MachineMiningLaserBlockEntity getBlockEntity() {
@@ -91,11 +91,7 @@ public class MachineMiningLaserMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        if (blockEntity == null || blockEntity.getLevel() != player.level()) {
-            return false;
-        }
-        BlockPos pos = blockEntity.getBlockPos();
-        return player.distanceToSqr(pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D) <= 64.0D;
+        return MenuReach.stillValid(player, blockEntity);
     }
 
     @Override

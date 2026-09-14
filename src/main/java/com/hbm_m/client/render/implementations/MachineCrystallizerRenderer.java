@@ -64,7 +64,7 @@ public final class MachineCrystallizerRenderer {
     public static void register() {
         MachineRenderers.machine("crystallizer", ModBlockEntities.CRYSTALLIZER.get(),
                 MachineCrystallizerBlockEntity.class)
-            .dynamicPart("Spinner", be -> spinnerQuads(), be -> "spinner")
+            .dynamicPart("Spinner", MachineCrystallizerRenderer::animateSpinner, be -> spinnerQuads(), be -> "spinner")
             .blockTransform(MachineCrystallizerRenderer::applyBlockTransform)
             .hook(MachineCrystallizerRenderer::scheduleFluid)
             .register();
@@ -126,12 +126,13 @@ public final class MachineCrystallizerRenderer {
 
     private static List<BakedQuad> collectModelQuads(BakedModel model, @Nullable RenderType renderType) {
         List<BakedQuad> quads = new ArrayList<>();
-        //? if forge {
-        /*quads.addAll(model.getQuads(null, null, RANDOM, ModelData.EMPTY, renderType));
+        // Was forge-only: on NeoForge the spinner and fluid quads were never collected.
+        //? if forge || neoforge {
+        quads.addAll(model.getQuads(null, null, RANDOM, ModelData.EMPTY, renderType));
         for (Direction dir : Direction.values()) {
             quads.addAll(model.getQuads(null, dir, RANDOM, ModelData.EMPTY, renderType));
         }
-        *///?}
+        //?}
         return quads;
     }
 
@@ -190,8 +191,7 @@ public final class MachineCrystallizerRenderer {
         MultiBufferSource.BufferSource buffers = mc.renderBuffers().bufferSource();
         PoseStack poseStack = new PoseStack();
 
-        //? if forge {
-        /*try (var ignored = IrisPhaseGuard.pushBlockEntities()) {
+        try (var ignored = IrisPhaseGuard.pushBlockEntities()) {
             for (DeferredCrystallizerFluid entry : DEFERRED_FLUIDS) {
                 poseStack.pushPose();
                 poseStack.last().pose().set(entry.pose);
@@ -202,7 +202,6 @@ public final class MachineCrystallizerRenderer {
             }
             buffers.endBatch();
         }
-        *///?}
         DEFERRED_FLUIDS.clear();
     }
 

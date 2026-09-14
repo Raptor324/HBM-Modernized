@@ -96,7 +96,7 @@ public class LaunchPadRustedMenu extends AbstractContainerMenu {
         if (inv.player.level().isClientSide) {
             return null;
         }
-        throw new IllegalStateException("No LaunchPadRustedBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":launch_pad_rusted_menu");
+        throw new MenuBlockEntityMissingException("No LaunchPadRustedBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":launch_pad_rusted_menu");
     }
 
     private static MenuType<?> getMenuType() {
@@ -109,15 +109,7 @@ public class LaunchPadRustedMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        if (blockEntity == null || blockEntity.getLevel() != player.level()) {
-            return false;
-        }
-        BlockPos pos = blockEntity.getBlockPos();
-        return player.distanceToSqr(
-                pos.getX() + 0.5D,
-                pos.getY() + 0.5D,
-                pos.getZ() + 0.5D
-        ) <= 64.0D;
+        return MenuReach.stillValid(player, blockEntity);
     }
 
     /** Tries each machine slot that actually accepts the stack, in order. */

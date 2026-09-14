@@ -35,7 +35,7 @@ public class MachineBlastFurnaceMenu extends AbstractContainerMenu {
     public MachineBlastFurnaceMenu(int containerId, Inventory inv, BlockEntity entity, ContainerData data) {
         super(ModMenuTypes.MACHINE_BLAST_FURNACE_MENU.get(), containerId);
         if (!(entity instanceof MachineBlastFurnaceBlockEntity be)) {
-            throw new IllegalStateException("Expected MachineBlastFurnaceBlockEntity at position, got: " + entity);
+            throw new MenuBlockEntityMissingException("Expected MachineBlastFurnaceBlockEntity at position, got: " + entity);
         }
         blockEntity = be;
         checkContainerDataCount(data, 6);
@@ -150,8 +150,7 @@ public class MachineBlastFurnaceMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        return stillValid(ContainerLevelAccess.create(level, blockEntity.getBlockPos()),
-                player, ModBlocks.MACHINE_BLAST_FURNACE.get());
+        return MenuReach.stillValid(player, blockEntity, ModBlocks.MACHINE_BLAST_FURNACE.get());
     }
 
     private void addPlayerInventory(Inventory playerInventory) {

@@ -6,12 +6,14 @@ import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.inventory.fluid.trait.FT_Corrosive;
 import com.hbm_m.inventory.fluid.trait.FT_Poison;
 import com.hbm_m.inventory.fluid.trait.FT_VentRadiation;
+import com.hbm_m.particle.ModParticleTypes;
 
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
@@ -122,6 +124,27 @@ var defs = com.hbm_m.platform.EntityDataHooks.sink(builder);
             for (Entity entity : affected) {
                 this.affect(entity, type, intensity);
             }
+        } else {
+            spawnCloudParticles(width, height);
+        }
+    }
+
+    /** 1.7.10 client branch: two tinted "tower" puffs per tick anywhere inside the cloud volume. */
+    private void spawnCloudParticles(float width, float height) {
+        if (width <= 0.0F || height <= 0.0F) {
+            return;
+        }
+        // Colour rides in the speed triple (see MistParticle); no client class is touched here.
+        int color = this.getFluidType().getColor();
+        double r = ((color >> 16) & 0xFF) / 255.0D;
+        double g = ((color >> 8) & 0xFF) / 255.0D;
+        double b = (color & 0xFF) / 255.0D;
+        RandomSource rand = this.level().random;
+        for (int i = 0; i < 2; i++) {
+            double px = this.getX() + (rand.nextDouble() - 0.5D) * width;
+            double py = this.getY() + rand.nextDouble() * height;
+            double pz = this.getZ() + (rand.nextDouble() - 0.5D) * width;
+            this.level().addParticle(ModParticleTypes.MIST.get(), px, py, pz, r, g, b);
         }
     }
 

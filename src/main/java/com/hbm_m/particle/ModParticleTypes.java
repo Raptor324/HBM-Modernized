@@ -45,6 +45,10 @@ public class ModParticleTypes {
     public static final RegistrySupplier<SimpleParticleType> RAD_FOG_PARTICLE = PARTICLES.register("rad_fog",
             () -> createParticle(true));
 
+    /** Tinted puffs of an {@code EntityMist} gas cloud; colour travels in the speed arguments. */
+    public static final RegistrySupplier<SimpleParticleType> MIST = PARTICLES.register("mist",
+            () -> createParticle(true));
+
     // Контрейл баллистической ракеты (огненный выхлоп)
     public static final RegistrySupplier<SimpleParticleType> MISSILE_CONTRAIL = PARTICLES.register("missile_contrail",
             () -> createParticle(true));

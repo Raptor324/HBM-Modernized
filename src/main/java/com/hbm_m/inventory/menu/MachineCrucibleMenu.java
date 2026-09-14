@@ -121,7 +121,7 @@ public class MachineCrucibleMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        return stillValid(access, player, ModBlocks.CRUCIBLE.get());
+        return MenuReach.stillValid(player, blockEntity, ModBlocks.CRUCIBLE.get());
     }
 
     public int getProgress() {

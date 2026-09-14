@@ -57,7 +57,7 @@ public class MachineOilburnerMenu extends AbstractContainerMenu {
         if (blockEntity instanceof MachineOilburnerBlockEntity oilburnerBlockEntity) {
             return oilburnerBlockEntity;
         }
-        throw new IllegalStateException("No MachineOilburnerBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":oilburner_menu");
+        throw new MenuBlockEntityMissingException("No MachineOilburnerBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":oilburner_menu");
     }
 
     public MachineOilburnerBlockEntity getBlockEntity() {
@@ -66,11 +66,7 @@ public class MachineOilburnerMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        if (blockEntity == null || blockEntity.getLevel() != player.level()) {
-            return false;
-        }
-        BlockPos pos = blockEntity.getBlockPos();
-        return player.distanceToSqr(pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D) <= 64.0D;
+        return MenuReach.stillValid(player, blockEntity);
     }
 
     // No machine slots exist (see class javadoc), so there is nothing to shift-click into/out of.

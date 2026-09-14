@@ -1541,7 +1541,7 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModItems.FEL.get()));
         add.accept(new ItemStack(ModItems.SILEX.get()));
         add.accept(new ItemStack(ModBlocks.ROTARY_FURNACE.get()));
-        add.accept(new ItemStack(ModBlocks.MACHINE_CRYSTALLIZER.get()));
+        add.accept(new ItemStack(ModItems.CRYSTALLIZER.get()));
         add.accept(new ItemStack(ModBlocks.MACHINE_REACTOR.get()));
         add.accept(new ItemStack(ModBlocks.FURNACE_BRICK.get()));
         add.accept(new ItemStack(ModBlocks.INDUSTRIAL_GENERATOR.get()));
@@ -2848,7 +2848,7 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModBlocks.MACHINE_CONTROLLER.get()));
         add.accept(new ItemStack(ModBlocks.MACHINE_CONVERTER_HE_RF.get()));
         add.accept(new ItemStack(ModBlocks.MACHINE_CONVERTER_RF_HE.get()));
-        add.accept(new ItemStack(ModBlocks.MACHINE_CRYSTALLIZER.get()));
+        add.accept(new ItemStack(ModItems.CRYSTALLIZER.get()));
         add.accept(new ItemStack(ModBlocks.MACHINE_DETECTOR.get()));
         add.accept(new ItemStack(ModBlocks.MACHINE_EPRESS.get()));
         add.accept(new ItemStack(ModBlocks.MACHINE_FENSU.get()));

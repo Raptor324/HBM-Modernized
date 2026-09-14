@@ -56,15 +56,14 @@ public class MachineMicrowaveMenu extends AbstractContainerMenu {
         BlockPos pos = buf.readBlockPos();
         BlockEntity be = inv.player.level().getBlockEntity(pos);
         if (be instanceof MachineMicrowaveBlockEntity m) return m;
-        throw new IllegalStateException("No MachineMicrowaveBlockEntity at " + pos);
+        throw new MenuBlockEntityMissingException("No MachineMicrowaveBlockEntity at " + pos);
     }
 
     public MachineMicrowaveBlockEntity getBlockEntity() { return blockEntity; }
 
     @Override
     public boolean stillValid(Player player) {
-        return blockEntity.getLevel() == player.level()
-            && player.distanceToSqr(blockEntity.getBlockPos().getCenter()) <= 64;
+        return MenuReach.stillValid(player, blockEntity);
     }
 
     @Override

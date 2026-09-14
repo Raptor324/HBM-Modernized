@@ -65,18 +65,25 @@ public final class MultiblockPlacementHighlight {
         float r = canPlace ? 0.0F : pulse;
         float g = canPlace ? pulse : 0.0F;
 
-        AABB frame = helper.generateShapeFromParts(facing).bounds()
-                .move(corePos)
-                .inflate(0.002D);
+        AABB frame = helper.generateShapeFromParts(facing).bounds().inflate(0.002D);
 
         // Контракт ванильного renderHitOutline (одинаков в 1.20.1 и 1.21.1):
         // вершины передаются как мир - камера. PoseStack события пустой,
         // камера живёт в model-view матрице (только поворот).
         Vec3 cam = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
-        frame = frame.move(-cam.x, -cam.y, -cam.z);
+        poseStack.pushPose();
+        // On a Sable ship the hit position is in the plot grid: the frame stays relative to the
+        // core and the ship's render pose (composed in double) carries it into the world.
+        org.joml.Matrix4f shipLocal = com.hbm_m.compat.sable.SableClientCompat.localToView(corePos, cam);
+        if (shipLocal != null) {
+            com.hbm_m.platform.RenderHooks.mulPoseMatrix(poseStack, shipLocal);
+        } else {
+            frame = frame.move(corePos.getX() - cam.x, corePos.getY() - cam.y, corePos.getZ() - cam.z);
+        }
 
         VertexConsumer consumer = Minecraft.getInstance().renderBuffers().bufferSource().getBuffer(RenderType.lines());
         LevelRenderer.renderLineBox(poseStack, consumer, frame, r, g, 0.0F, 1.0F);
         Minecraft.getInstance().renderBuffers().bufferSource().endBatch(RenderType.lines());
+        poseStack.popPose();
     }
 }

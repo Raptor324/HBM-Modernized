@@ -55,15 +55,14 @@ public class MachineCompressorMenu extends AbstractContainerMenu {
         BlockPos pos = buf.readBlockPos();
         BlockEntity be = inv.player.level().getBlockEntity(pos);
         if (be instanceof MachineCompressorBlockEntity c) return c;
-        throw new IllegalStateException("No MachineCompressorBlockEntity at " + pos);
+        throw new MenuBlockEntityMissingException("No MachineCompressorBlockEntity at " + pos);
     }
 
     public MachineCompressorBlockEntity getBlockEntity() { return blockEntity; }
 
     @Override
     public boolean stillValid(Player player) {
-        return blockEntity.getLevel() == player.level()
-            && player.distanceToSqr(blockEntity.getBlockPos().getCenter()) <= 64;
+        return MenuReach.stillValid(player, blockEntity);
     }
 
     @Override

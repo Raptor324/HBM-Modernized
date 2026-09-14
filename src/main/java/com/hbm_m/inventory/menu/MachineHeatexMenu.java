@@ -56,7 +56,7 @@ public class MachineHeatexMenu extends AbstractContainerMenu {
         if (blockEntity instanceof MachineHeatexBlockEntity heatexBlockEntity) {
             return heatexBlockEntity;
         }
-        throw new IllegalStateException("No MachineHeatexBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":heatex_menu");
+        throw new MenuBlockEntityMissingException("No MachineHeatexBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":heatex_menu");
     }
 
     public MachineHeatexBlockEntity getBlockEntity() {
@@ -65,11 +65,7 @@ public class MachineHeatexMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        if (blockEntity == null || blockEntity.getLevel() != player.level()) {
-            return false;
-        }
-        BlockPos pos = blockEntity.getBlockPos();
-        return player.distanceToSqr(pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D) <= 64.0D;
+        return MenuReach.stillValid(player, blockEntity);
     }
 
     @Override

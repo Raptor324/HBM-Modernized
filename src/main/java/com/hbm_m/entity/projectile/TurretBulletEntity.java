@@ -68,6 +68,9 @@ var defs = com.hbm_m.platform.EntityDataHooks.sink(builder);
 
     @Override
     protected Item getDefaultItem() {
+        // 1.21.1 calls this from defineSynchedData(Builder), i.e. from the super constructor
+        // before entityData is assigned; the icon is set explicitly in create() anyway.
+        if (this.entityData == null) return ModItems.TURRET_AMMO.get();
         String id = this.entityData.get(ICON_ITEM_ID);
         if (id.isEmpty()) return ModItems.TURRET_AMMO.get();
         Item item = net.minecraft.core.registries.BuiltInRegistries.ITEM.get(

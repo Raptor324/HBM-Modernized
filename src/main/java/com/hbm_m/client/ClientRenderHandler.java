@@ -588,9 +588,8 @@ public class ClientRenderHandler {
                 boolean drawWest = !highlightedBlocks.containsKey(pos.west());
                 boolean drawEast = !highlightedBlocks.containsKey(pos.east());
 
-                AABB boundingBox = new AABB(pos).inflate(0.002D);
-                renderFilledBox(effectiveMatrix, fillConsumer, boundingBox, cameraPos, redColor, alpha,
-                        drawDown, drawUp, drawNorth, drawSouth, drawWest, drawEast, false);
+                renderHighlightBox(effectiveMatrix, fillConsumer, pos, cameraPos, redColor, alpha,
+                        drawDown, drawUp, drawNorth, drawSouth, drawWest, drawEast);
                 return false;
             });
         }
@@ -614,9 +613,8 @@ public class ClientRenderHandler {
                     boolean drawWest = !orphanedPhantomBlocks.containsKey(pos.west());
                     boolean drawEast = !orphanedPhantomBlocks.containsKey(pos.east());
 
-                    AABB boundingBox = new AABB(pos).inflate(0.002D);
-                    renderFilledBox(effectiveMatrix, fillConsumer, boundingBox, cameraPos, purpleColor, purpleAlpha,
-                            drawDown, drawUp, drawNorth, drawSouth, drawWest, drawEast, false);
+                    renderHighlightBox(effectiveMatrix, fillConsumer, pos, cameraPos, purpleColor, purpleAlpha,
+                            drawDown, drawUp, drawNorth, drawSouth, drawWest, drawEast);
                     return false;
                 });
             }
@@ -624,6 +622,24 @@ public class ClientRenderHandler {
 
         buf.endBatch(CustomRenderTypes.HIGHLIGHT_BOX_FILL);
         poseStack.popPose();
+    }
+
+    /**
+     * One highlighted block. On a Sable ship the position is in the plot grid (~2e7): the box is
+     * drawn at the origin and the ship pose, composed in double, carries it to the camera - the
+     * float cast inside renderFilledBox would otherwise be off by whole blocks.
+     */
+    private static void renderHighlightBox(Matrix4f cameraRelative, VertexConsumer consumer, BlockPos pos, Vec3 cameraPos,
+                                           Color color, float alpha, boolean drawDown, boolean drawUp,
+                                           boolean drawNorth, boolean drawSouth, boolean drawWest, boolean drawEast) {
+        Matrix4f shipLocal = com.hbm_m.compat.sable.SableClientCompat.localToView(pos, cameraPos);
+        if (shipLocal != null) {
+            renderFilledBox(shipLocal, consumer, new AABB(BlockPos.ZERO).inflate(0.002D), cameraPos, color, alpha,
+                    drawDown, drawUp, drawNorth, drawSouth, drawWest, drawEast, false);
+        } else {
+            renderFilledBox(cameraRelative, consumer, new AABB(pos).inflate(0.002D), cameraPos, color, alpha,
+                    drawDown, drawUp, drawNorth, drawSouth, drawWest, drawEast, false);
+        }
     }
 
     // Рендерим только те грани куба, которые не примыкают к другим подсвеченным блокам.

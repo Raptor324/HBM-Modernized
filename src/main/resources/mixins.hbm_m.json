@@ -4,6 +4,7 @@
   "package": "com.hbm_m.mixin",
   "compatibilityLevel": "JAVA_17",
   "refmap": "mixins.hbm_m.refmap.json",
+  "plugin": "com.hbm_m.mixin.HbmMixinConfigPlugin",
   "mixins": [
     "SlotMixin",
     "PlayerStepSoundMixin",
@@ -27,7 +28,10 @@
     "ModelBlockRendererMixin",
     "LivingEntityRendererInvoker",
     "client.MixinItemRendererTemplatePreview",
-    "client.MixinAbstractClientPlayerSkin"
+    "client.MixinAbstractClientPlayerSkin",
+    "client.ClientPayloadHandlerInvoker",
+    "client.MixinClientPayloadHandlerMissingTile",
+    "client.SuperGlueSelectionOutlineMixin"
   ],
   "injectors": {
     "defaultRequire": 1

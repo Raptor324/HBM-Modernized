@@ -8,7 +8,6 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
-import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -54,13 +53,12 @@ public class MachineStrandCasterMenu extends AbstractContainerMenu {
         if (blockEntity instanceof MachineStrandCasterBlockEntity be) {
             return be;
         }
-        throw new IllegalStateException("No MachineStrandCasterBlockEntity found at " + pos);
+        throw new MenuBlockEntityMissingException("No MachineStrandCasterBlockEntity found at " + pos);
     }
 
     @Override
     public boolean stillValid(Player player) {
-        return stillValid(ContainerLevelAccess.create(blockEntity.getLevel(), blockEntity.getBlockPos()),
-                player, ModBlocks.STRAND_CASTER.get());
+        return MenuReach.stillValid(player, blockEntity, ModBlocks.STRAND_CASTER.get());
     }
 
     @Override

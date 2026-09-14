@@ -483,10 +483,13 @@ public class ModPacketHandler {
                                          ResourceLocation id, S2CPacket packet) {
         if (level == null) return;
 
+        // Sable ships keep their blocks in far-away plot chunks of the same level; measure from
+        // where the ship actually is. The payload itself must be projected by the sender.
+        Vec3 worldPos = com.hbm_m.compat.sable.SableCompat.toWorld(level, pos);
         double rangeSq = range * range;
         for (ServerPlayer player : level.getServer().getPlayerList().getPlayers()) {
             if (player.level() != level) continue;
-            if (player.position().distanceToSqr(pos) > rangeSq) continue;
+            if (player.position().distanceToSqr(worldPos) > rangeSq) continue;
             sendToPlayer(player, id, packet);
         }
     }

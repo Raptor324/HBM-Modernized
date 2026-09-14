@@ -59,7 +59,7 @@ public class MachineLargeTurbineMenu extends AbstractContainerMenu {
         if (blockEntity instanceof MachineLargeTurbineBlockEntity turbineBlockEntity) {
             return turbineBlockEntity;
         }
-        throw new IllegalStateException("No MachineLargeTurbineBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":large_turbine_menu");
+        throw new MenuBlockEntityMissingException("No MachineLargeTurbineBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":large_turbine_menu");
     }
 
     public MachineLargeTurbineBlockEntity getBlockEntity() {
@@ -68,11 +68,7 @@ public class MachineLargeTurbineMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        if (blockEntity == null || blockEntity.getLevel() != player.level()) {
-            return false;
-        }
-        BlockPos pos = blockEntity.getBlockPos();
-        return player.distanceToSqr(pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D) <= 64.0D;
+        return MenuReach.stillValid(player, blockEntity);
     }
 
     @Override

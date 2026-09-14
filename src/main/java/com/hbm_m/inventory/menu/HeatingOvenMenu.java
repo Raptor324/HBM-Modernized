@@ -44,7 +44,7 @@ public class HeatingOvenMenu extends AbstractContainerMenu {
     public HeatingOvenMenu(int containerId, Inventory inv, BlockEntity entity, ContainerData data) {
         super(ModMenuTypes.HEATING_OVEN_MENU.get(), containerId);
         if (entity == null || !(entity instanceof HeatingOvenBlockEntity)) {
-            throw new IllegalStateException("Expected HeatingOvenBlockEntity at position, got: " + entity);
+            throw new MenuBlockEntityMissingException("Expected HeatingOvenBlockEntity at position, got: " + entity);
         }
         blockEntity = (HeatingOvenBlockEntity) entity;
         checkContainerDataCount(data, 5);
@@ -123,7 +123,7 @@ public class HeatingOvenMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        return stillValid(ContainerLevelAccess.create(level, blockEntity.getBlockPos()), player, ModBlocks.HEATING_OVEN.get());
+        return MenuReach.stillValid(player, blockEntity, ModBlocks.HEATING_OVEN.get());
     }
 
     private void addPlayerInventory(Inventory playerInventory) {

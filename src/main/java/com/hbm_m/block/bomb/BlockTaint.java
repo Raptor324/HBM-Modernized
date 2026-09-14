@@ -124,11 +124,10 @@ public class BlockTaint extends Block {
         Vec3 motion = entity.getDeltaMovement();
         entity.setDeltaMovement(motion.x * 0.6, motion.y, motion.z * 0.6);
 
-        if (entity instanceof LivingEntity living) {
+        // Server only: a client-side addEffect() lands under a second map key next to the
+        // server-synced instance, so the HUD showed the effect twice.
+        if (!level.isClientSide && entity instanceof LivingEntity living) {
             if (level.random.nextInt(50) == 0) {
-                // Holder.direct makes an unregistered holder: MobEffectInstance.save() then throws
-                // "Unregistered holder" and the whole entity save (autosave, logout, chunk unload)
-                // dies with it. PlatformHooks casts the RegistrySupplier, which is a real Reference.
                 com.hbm_m.platform.PlatformHooks.addEffect(living, ModEffects.TAINT, 15 * 20, effectLevel);
             }
         }

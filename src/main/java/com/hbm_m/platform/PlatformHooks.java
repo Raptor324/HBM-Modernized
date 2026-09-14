@@ -234,7 +234,14 @@ public final class PlatformHooks {
         //? if < 1.21.1 {
         /*return stack.save(tag);
         *///?} else {
-        return (CompoundTag) stack.save(provider, tag);
+        // ItemStack.save(provider, prefix) encodes through NbtOps, which MERGES into a NEW compound
+        // and leaves the prefix untouched. Callers that build the tag in place (armour mods, bomb
+        // and Soyuz inventories) were storing empty compounds. Keep the 1.20.1 contract: fill `tag`.
+        CompoundTag saved = (CompoundTag) stack.save(provider, tag);
+        if (saved != tag) {
+            tag.merge(saved);
+        }
+        return tag;
         //?}
     }
 
@@ -871,9 +878,19 @@ public final class PlatformHooks {
     // =====================================================================================
     //  MobEffect bridge.
     //   1.20.1: addEffect/hasEffect/removeEffect принимают MobEffect.
-    //   1.21.1: только Holder<MobEffect>; architectury RegistrySupplier на 1.21.1
-    //           реализует Holder, поэтому кастим сам supplier.
+    //   1.21.1: только Holder<MobEffect>. Architectury RegistrySupplier implements Holder but is
+    //           not a Holder.Reference: MobEffect.CODEC rejects it on save ("Unregistered holder",
+    //           crashing every entity save), and its equals() never matches the registry Reference,
+    //           so hasEffect/removeEffect miss effects that were loaded from NBT or synced from
+    //           the server. Always resolve the real Reference through the registry.
     // =====================================================================================
+
+    //? if >= 1.21.1 {
+    private static net.minecraft.core.Holder<net.minecraft.world.effect.MobEffect> effectHolder(
+            dev.architectury.registry.registries.RegistrySupplier<net.minecraft.world.effect.MobEffect> effect) {
+        return net.minecraft.core.registries.BuiltInRegistries.MOB_EFFECT.wrapAsHolder(effect.get());
+    }
+    //?}
 
     /** {@code living.addEffect(new MobEffectInstance(effect, duration, amplifier))} на обеих версиях. */
     public static boolean addEffect(net.minecraft.world.entity.LivingEntity living,
@@ -882,8 +899,7 @@ public final class PlatformHooks {
         //? if < 1.21.1 {
         /*return living.addEffect(new net.minecraft.world.effect.MobEffectInstance(effect.get(), duration, amplifier));
         *///?} else {
-        return living.addEffect(new net.minecraft.world.effect.MobEffectInstance(
-                (net.minecraft.core.Holder<net.minecraft.world.effect.MobEffect>) (Object) effect, duration, amplifier));
+        return living.addEffect(new net.minecraft.world.effect.MobEffectInstance(effectHolder(effect), duration, amplifier));
         //?}
     }
 
@@ -893,7 +909,7 @@ public final class PlatformHooks {
         //? if < 1.21.1 {
         /*return living.hasEffect(effect.get());
         *///?} else {
-        return living.hasEffect((net.minecraft.core.Holder<net.minecraft.world.effect.MobEffect>) (Object) effect);
+        return living.hasEffect(effectHolder(effect));
         //?}
     }
 
@@ -903,7 +919,7 @@ public final class PlatformHooks {
         //? if < 1.21.1 {
         /*return living.removeEffect(effect.get());
         *///?} else {
-        return living.removeEffect((net.minecraft.core.Holder<net.minecraft.world.effect.MobEffect>) (Object) effect);
+        return living.removeEffect(effectHolder(effect));
         //?}
     }
 
@@ -913,7 +929,22 @@ public final class PlatformHooks {
         //? if < 1.21.1 {
         /*return living.getEffect(effect.get());
         *///?} else {
-        return living.getEffect((net.minecraft.core.Holder<net.minecraft.world.effect.MobEffect>) (Object) effect);
+        return living.getEffect(effectHolder(effect));
+        //?}
+    }
+
+    /**
+     * {@code Player.canInteractWithBlock(pos, slop)} (1.21.1); the same eye-to-AABB test against
+     * the Forge reach attribute on 1.20.1. Kept as the vanilla call on 1.21.1 on purpose: Sable
+     * hooks it for blocks on ships, a hand-rolled distance would ignore the ship's pose.
+     */
+    public static boolean canInteractWithBlock(net.minecraft.world.entity.player.Player player,
+                                               net.minecraft.core.BlockPos pos, double slop) {
+        //? if < 1.21.1 {
+        /*double reach = player.getBlockReach() + slop;
+        return new net.minecraft.world.phys.AABB(pos).distanceToSqr(player.getEyePosition()) < reach * reach;
+        *///?} else {
+        return player.canInteractWithBlock(pos, slop);
         //?}
     }
 

@@ -19,6 +19,37 @@ public final class RenderHooks {
     /**
      * Начинает построение буфера.
      */
+    /**
+     * Scale for camera-facing text after {@code mulPose(cameraOrientation())}, as vanilla name tags
+     * do it. 1.21 flipped the camera rotation convention: the X sign changed from -1 to +1, and with
+     * the old sign the mirrored quad is back-face culled by RenderType.text* (CULL by default).
+     */
+    public static void scaleBillboardText(PoseStack poseStack, float scale) {
+        //? if < 1.21.1 {
+        /*poseStack.scale(-scale, -scale, scale);
+        *///?} else {
+        poseStack.scale(scale, -scale, scale);
+        //?}
+    }
+
+    /** {@code PoseStack.mulPoseMatrix} (1.20.1) / {@code mulPose(Matrix4f)} (1.21.1). */
+    public static void mulPoseMatrix(PoseStack poseStack, Matrix4f matrix) {
+        //? if < 1.21.1 {
+        /*poseStack.mulPoseMatrix(matrix);
+        *///?} else {
+        poseStack.mulPose(matrix);
+        //?}
+    }
+
+    /** F3 overlay state: {@code Options.renderDebug} on 1.20.1, {@code DebugScreenOverlay} on 1.21.1. */
+    public static boolean isDebugOverlayShown(net.minecraft.client.Minecraft mc) {
+        //? if < 1.21.1 {
+        /*return mc.options.renderDebug;
+        *///?} else {
+        return mc.getDebugOverlay().showDebugScreen();
+        //?}
+    }
+
     public static BufferBuilder beginTesselator(Tesselator tesselator, VertexFormat.Mode mode, VertexFormat format) {
         //? if < 1.21.1 {
         /*BufferBuilder builder = tesselator.getBuilder();

@@ -223,7 +223,7 @@ public class MachineWoodBurnerMenu extends AbstractContainerMenu implements ILon
 
     @Override
     public boolean stillValid(Player pPlayer) {
-        return stillValid(ContainerLevelAccess.create(blockEntity.getLevel(), blockEntity.getBlockPos()), pPlayer, ModBlocks.WOOD_BURNER.get());
+        return MenuReach.stillValid(pPlayer, blockEntity, ModBlocks.WOOD_BURNER.get());
     }
 
     private void addPlayerInventory(Inventory i) { for(int y=0; y<3; ++y) for(int x=0; x<9; ++x) this.addSlot(new Slot(i, x+y*9+9, 8+x*18, 104+y*18)); }

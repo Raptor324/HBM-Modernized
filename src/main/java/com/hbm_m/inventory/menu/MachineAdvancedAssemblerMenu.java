@@ -16,7 +16,6 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerData;
-import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.inventory.SimpleContainerData;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
@@ -90,7 +89,7 @@ public class MachineAdvancedAssemblerMenu extends AbstractContainerMenu implemen
         if (playerInventory.player.level().isClientSide) {
             return null;
         }
-        throw new IllegalStateException("BlockEntity не найден или имеет неверный тип!");
+        throw new MenuBlockEntityMissingException("BlockEntity не найден или имеет неверный тип!");
     }
 
     @Override
@@ -176,8 +175,7 @@ public class MachineAdvancedAssemblerMenu extends AbstractContainerMenu implemen
         if (blockEntity == null) {
             return false; // тайл может отсутствовать на клиенте (реплей Flashback)
         }
-        return stillValid(ContainerLevelAccess.create(level, blockEntity.getBlockPos()),
-                pPlayer, ModBlocks.ADVANCED_ASSEMBLY_MACHINE.get());
+        return MenuReach.stillValid(pPlayer, blockEntity, ModBlocks.ADVANCED_ASSEMBLY_MACHINE.get());
     }
 
     // Логика Shift-клика (без изменений)

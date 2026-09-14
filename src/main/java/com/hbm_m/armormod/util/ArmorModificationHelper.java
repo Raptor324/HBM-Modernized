@@ -130,12 +130,12 @@ public class ArmorModificationHelper {
         CompoundTag modsTag = PlatformHooks.getCompound(armor, MOD_COMPOUND_KEY);
 
         // Сохраняем ItemStack модификации в NBT
-        CompoundTag modTag = new CompoundTag();
-        PlatformHooks.saveItemStack(mod, modTag, PlatformHooks.bestEffortProvider());
+        CompoundTag modTag = PlatformHooks.saveItemStack(mod, new CompoundTag(), PlatformHooks.bestEffortProvider());
 
         int slot = modItem.type;
         modsTag.put(MOD_SLOT_KEY_PREFIX + slot, modTag);
         PlatformHooks.put(armor, MOD_COMPOUND_KEY, modsTag);
+        rebuildAttributeModifiers(armor);
         onPoweredArmorModsChanged(armor);
     }
 
@@ -165,6 +165,7 @@ public class ArmorModificationHelper {
         } else {
             PlatformHooks.put(armor, MOD_COMPOUND_KEY, modsTag);
         }
+        rebuildAttributeModifiers(armor);
         onPoweredArmorModsChanged(armor);
     }
 
@@ -328,7 +329,22 @@ public class ArmorModificationHelper {
             }
         });
 
-        // ШАГ 2: ПЕРЕСБОРКА АТРИБУТОВ.
+        // ШАГ 2: ПЕРЕСБОРКА АТРИБУТОВ по только что записанному NBT.
+        rebuildAttributeModifiers(armorStack);
+
+        // ШАГ 3: ОБРЕЗАНИЕ ЗАРЯДА / capability (силовая броня)
+        onPoweredArmorModsChanged(armorStack);
+    }
+
+    /**
+     * Rebuilds the armour's attribute modifiers from the mods stored in its NBT. Called on every
+     * apply/remove so the effect is there no matter how the armour leaves the table (cursor pickup,
+     * shift-click or closing the GUI) - before, only closing the GUI rebuilt them.
+     */
+    public static void rebuildAttributeModifiers(ItemStack armorStack) {
+        if (!(armorStack.getItem() instanceof ArmorItem armorItem)) {
+            return;
+        }
         // 1.20.1: атрибуты живут в NBT-теге "AttributeModifiers" прямо на стаке.
         // 1.21.1: атрибуты живут в DataComponents.ATTRIBUTE_MODIFIERS (immutable record).
         //? if < 1.21.1 {
@@ -359,11 +375,7 @@ public class ArmorModificationHelper {
             }
 
             // 2b: Добавляем атрибуты от наших модов с маркером.
-            for (int i = 0; i < 9; i++) {
-                ItemStack modStack = tableInventory.getItem(i);
-                if (modStack.isEmpty()) {
-                    modStack = pryMod(armorStack, i);
-                }
+            for (ItemStack modStack : pryMods(armorStack)) {
                 if (modStack.getItem() instanceof ItemArmorMod mod) {
                     if (isApplicable(armorStack, modStack)) {
                         Multimap<Attribute, AttributeModifier> modModifiers = mod.getModifiers(armorStack);
@@ -405,11 +417,7 @@ public class ArmorModificationHelper {
             }
         }
         EquipmentSlotGroup slotGroup = EquipmentSlotGroup.bySlot(armorItem.getEquipmentSlot());
-        for (int i = 0; i < 9; i++) {
-            ItemStack modStack = tableInventory.getItem(i);
-            if (modStack.isEmpty()) {
-                modStack = pryMod(armorStack, i);
-            }
+        for (ItemStack modStack : pryMods(armorStack)) {
             if (modStack.getItem() instanceof ItemArmorMod mod) {
                 if (isApplicable(armorStack, modStack)) {
                     Multimap<Holder<Attribute>, AttributeModifier> modModifiers = mod.getModifiers(armorStack);
@@ -424,8 +432,6 @@ public class ArmorModificationHelper {
         armorStack.set(DataComponents.ATTRIBUTE_MODIFIERS, builder.build());
         //?}
 
-        // ШАГ 3: ОБРЕЗАНИЕ ЗАРЯДА / capability (силовая броня)
-        onPoweredArmorModsChanged(armorStack);
     }
 
     //? if >= 1.21.1 {

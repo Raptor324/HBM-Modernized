@@ -1,6 +1,7 @@
 package com.hbm_m.client;
 
 import com.hbm_m.config.ModClothConfig;
+import com.hbm_m.platform.RenderHooks;
 // Этот класс отвечает за отрисовку радиации в чанках в режиме отладки. 
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -34,14 +35,7 @@ public class ChunkRadiationDebugRenderer {
         // Объявляем переменную dimension и получаем ее из текущего уровня.
         final ResourceLocation dimension = level.dimension().location();
 
-        // 1.21.1: поле Options.renderDebug удалено — F3-овэрлей больше не имеет публичного флага.
-        // Дебаг-визуализация радиации — отладочный инструмент; на 1.21.1 всегда возвращаем (визуализация выключена).
-        // TODO(fidelity-port): найти 1.21.1-аналог renderDebug, если потребуется рабочий дебаг-рендер.
-        //? if < 1.21.1 {
-        /*if (!ModClothConfig.get().enableDebugRender || !mc.options.renderDebug) return;
-        *///?} else {
-        if (!ModClothConfig.get().enableDebugRender) return;
-        //?}
+        if (!ModClothConfig.get().enableDebugRender || !RenderHooks.isDebugOverlayShown(mc)) return;
 
         // Если радиация отключена в конфиге, не рендерим ничего.
         // ClientRadiationData может содержать устаревшие значения с прошлого сеанса,
@@ -93,7 +87,7 @@ public class ChunkRadiationDebugRenderer {
                     poseStack.pushPose();
                     poseStack.translate(x - camPos.x, y - camPos.y, z - camPos.z);
                     poseStack.mulPose(mc.getEntityRenderDispatcher().cameraOrientation());
-                    poseStack.scale(-scale, -scale, scale);
+                    RenderHooks.scaleBillboardText(poseStack, scale);
 
                     font.drawInBatch(text, -font.width(text) / 2f, 0, 0xFFFFFF, false, poseStack.last().pose(), buffer, Font.DisplayMode.SEE_THROUGH, 0, 15728880);
                     

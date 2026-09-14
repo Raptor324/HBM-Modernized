@@ -66,15 +66,14 @@ public class MachineSolderingStationMenu extends AbstractContainerMenu {
         BlockPos pos = buf.readBlockPos();
         BlockEntity be = inv.player.level().getBlockEntity(pos);
         if (be instanceof MachineSolderingStationBlockEntity s) return s;
-        throw new IllegalStateException("No MachineSolderingStationBlockEntity at " + pos);
+        throw new MenuBlockEntityMissingException("No MachineSolderingStationBlockEntity at " + pos);
     }
 
     public MachineSolderingStationBlockEntity getBlockEntity() { return blockEntity; }
 
     @Override
     public boolean stillValid(Player player) {
-        return blockEntity.getLevel() == player.level()
-            && player.distanceToSqr(blockEntity.getBlockPos().getCenter()) <= 64;
+        return MenuReach.stillValid(player, blockEntity);
     }
 
     // ── Shift-click routing ──────────────────────────────────────────────────

@@ -49,7 +49,7 @@ public class MachineFelMenu extends AbstractContainerMenu {
         if (inventory.player.level().isClientSide) {
             return null;
         }
-        throw new IllegalStateException("No MachineFelBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":fel_menu");
+        throw new MenuBlockEntityMissingException("No MachineFelBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":fel_menu");
     }
 
     public MachineFelBlockEntity getBlockEntity() {
@@ -58,11 +58,7 @@ public class MachineFelMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        if (blockEntity == null || blockEntity.getLevel() != player.level()) {
-            return false;
-        }
-        BlockPos pos = blockEntity.getBlockPos();
-        return player.distanceToSqr(pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D) <= 64.0D;
+        return MenuReach.stillValid(player, blockEntity);
     }
 
     @Override

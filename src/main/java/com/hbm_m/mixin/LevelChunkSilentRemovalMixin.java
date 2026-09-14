@@ -70,6 +70,13 @@ public abstract class LevelChunkSilentRemovalMixin {
             if (receiverOurs) {
                 com.hbm_m.main.MainRegistry.LOGGER.debug(
                     "[HBM] onRemove подавлен при переносе, блок {} @ {}", receiverBlock, pos.toShortString());
+                // Only the multiblock cascade is skipped. Block.onRemove is also the one place that drops
+                // the block entity out of the chunk; without this the BE stayed under the air block
+                // ("invalid for ticking" every tick, "Failed to create block entity ... got air" on the
+                // next chunk load). Sable has already serialized it for the sub-level by now.
+                if (receiver.hasBlockEntity() && !receiver.is(otherState.getBlock())) {
+                    level.removeBlockEntity(pos);
+                }
                 return; // Перенос блока движком сборки — разрушение подавляем.
             }
         }

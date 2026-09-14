@@ -57,7 +57,7 @@ public class MachineLiquefactorMenu extends AbstractContainerMenu {
         if (blockEntity instanceof MachineLiquefactorBlockEntity be) {
             return be;
         }
-        throw new IllegalStateException("No MachineLiquefactorBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":liquefactor_menu");
+        throw new MenuBlockEntityMissingException("No MachineLiquefactorBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":liquefactor_menu");
     }
 
     public MachineLiquefactorBlockEntity getBlockEntity() {
@@ -66,11 +66,7 @@ public class MachineLiquefactorMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        if (blockEntity == null || blockEntity.getLevel() != player.level()) {
-            return false;
-        }
-        BlockPos pos = blockEntity.getBlockPos();
-        return player.distanceToSqr(pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D) <= 64.0D;
+        return MenuReach.stillValid(player, blockEntity);
     }
 
     @Override

@@ -188,7 +188,7 @@ public class MachineFrackingTowerMenu extends AbstractContainerMenu {
     @Override
     public boolean stillValid(Player player) {
         if (blockEntity == null) return true; // Для клиента
-        return stillValid(this.access, player, blockEntity.getBlockState().getBlock());
+        return MenuReach.stillValid(player, blockEntity, blockEntity.getBlockState().getBlock());
     }
 
     //=====================================================================================//

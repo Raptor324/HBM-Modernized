@@ -72,7 +72,7 @@ public class RBMKOutgasserMenu extends AbstractContainerMenu {
         // На клиенте тайл может отсутствовать (реплей Flashback) — возвращаем null.
         // На сервере отсутствие тайла — реальный баг, поэтому там падаем как раньше.
         if (inv.player.level().isClientSide) return null;
-        throw new IllegalStateException("No RBMKOutgasserBlockEntity at " + pos);
+        throw new MenuBlockEntityMissingException("No RBMKOutgasserBlockEntity at " + pos);
     }
 
     public RBMKOutgasserBlockEntity getBlockEntity() { return blockEntity; }
@@ -104,8 +104,7 @@ public class RBMKOutgasserMenu extends AbstractContainerMenu {
         if (blockEntity == null) {
             return false;
         }
-        return blockEntity.getLevel() == player.level()
-            && player.distanceToSqr(blockEntity.getBlockPos().getCenter()) <= 64;
+        return MenuReach.stillValid(player, blockEntity);
     }
 
     @Override

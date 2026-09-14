@@ -66,7 +66,7 @@ public class RBMKStorageMenu extends AbstractContainerMenu {
         // server a missing tile is a real bug, so it still throws. Same contract as the sibling
         // RBMK menus.
         if (inv.player.level().isClientSide) return null;
-        throw new IllegalStateException("No RBMKStorageBlockEntity at " + pos);
+        throw new MenuBlockEntityMissingException("No RBMKStorageBlockEntity at " + pos);
     }
 
     public RBMKStorageBlockEntity getBlockEntity() { return blockEntity; }
@@ -92,8 +92,7 @@ public class RBMKStorageMenu extends AbstractContainerMenu {
     @Override
     public boolean stillValid(Player player) {
         if (blockEntity == null) return false; // the tile can be missing on the client
-        return blockEntity.getLevel() == player.level()
-            && player.distanceToSqr(blockEntity.getBlockPos().getCenter()) <= 64;
+        return MenuReach.stillValid(player, blockEntity);
     }
 
     @Override

@@ -68,7 +68,7 @@ public class MachineArcWelderMenu extends AbstractContainerMenu {
         // На клиенте тайл может отсутствовать (реплей Flashback) — не крашим пакет, возвращаем null.
         // На сервере отсутствие тайла — реальный баг, поэтому там падаем как раньше.
         if (inv.player.level().isClientSide) return null;
-        throw new IllegalStateException("No MachineArcWelderBlockEntity at " + pos);
+        throw new MenuBlockEntityMissingException("No MachineArcWelderBlockEntity at " + pos);
     }
 
     public MachineArcWelderBlockEntity getBlockEntity() { return blockEntity; }
@@ -78,8 +78,7 @@ public class MachineArcWelderMenu extends AbstractContainerMenu {
         if (blockEntity == null) {
             return false; // тайл может отсутствовать на клиенте (реплей Flashback)
         }
-        return blockEntity.getLevel() == player.level()
-            && player.distanceToSqr(blockEntity.getBlockPos().getCenter()) <= 64;
+        return MenuReach.stillValid(player, blockEntity);
     }
 
     // ── Shift-click routing ──────────────────────────────────────────────────

@@ -28,7 +28,6 @@ import net.minecraft.network.protocol.Packet;
 import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -857,17 +856,13 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
 
     private void syncToClient() {
         if (level != null && !level.isClientSide && level instanceof ServerLevel serverLevel) {
-            // sendBlockUpdated() убрано: вызывало 3 события на клиенте за один sync -
-            // ClientboundBlockUpdatePacket + broadcastBlockEntityData + явный пакет ниже.
-            // Изменения BlockState (OPEN, DOOR_MOVING) отправляются через level.setBlock() в setState().
-            // Изменения остальных данных (ModelData, скины) - через явный BE-пакет.
             setChanged();
-            var packet = ClientboundBlockEntityDataPacket.create(this);
-            for (ServerPlayer player : serverLevel.players()) {
-                if (player.distanceToSqr(worldPosition.getX() + 0.5, worldPosition.getY() + 0.5, worldPosition.getZ() + 0.5) < 64 * 64) {
-                    player.connection.send(packet);
-                }
-            }
+            // Broadcast through chunk tracking (ChunkHolder.broadcastChanges sends the block update
+            // and the BE data packet to every player watching the chunk). The previous hand-rolled
+            // "players within 64 blocks of worldPosition" loop never matched anyone for a door on a
+            // Sable ship - its position is in the plot grid - so open/close never reached clients:
+            // no animation, no sound, an open door drawn closed.
+            serverLevel.getChunkSource().blockChanged(worldPosition);
         }
     }
     //? if forge {
