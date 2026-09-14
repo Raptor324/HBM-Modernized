@@ -34,8 +34,8 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.phys.Vec3;
 
 //? if forge {
-/*import net.minecraftforge.client.model.data.ModelData;
-*///?}
+import net.minecraftforge.client.model.data.ModelData;
+//?}
 
 /**
  * Абстрактный базовый класс для рендеринга OBJ-брони.
@@ -201,10 +201,10 @@ public abstract class AbstractObjArmorLayer<T extends LivingEntity, M extends Hu
             RandomSource rand
     ) {
         //? if forge {
-        /*return model.getQuads(null, dir, rand, ModelData.EMPTY, null);
-        *///?} else {
-        return model.getQuads(null, dir, rand);
-        //?}
+        return model.getQuads(null, dir, rand, ModelData.EMPTY, null);
+        //?} else {
+        /*return model.getQuads(null, dir, rand);
+        *///?}
     }
 
     private static void putQuadManual(VertexConsumer builder, PoseStack.Pose pose, net.minecraft.client.renderer.block.model.BakedQuad quad, int light) {
@@ -256,21 +256,21 @@ public abstract class AbstractObjArmorLayer<T extends LivingEntity, M extends Hu
             }
 
             //? if < 1.21.1 {
-            /*builder.vertex(posMatrix, x, y, z)
+            builder.vertex(posMatrix, x, y, z)
                    .color(r, g, b, a)
                    .uv(u, v)
                    .overlayCoords(overlay)
                    .uv2(light)
                    .normal(normalMatrix, nx, ny, nz)
                    .endVertex();
-            *///?} else {
-            builder.addVertex(posMatrix, x, y, z)
+            //?} else {
+            /*builder.addVertex(posMatrix, x, y, z)
                    .setColor(r, g, b, a)
                    .setUv(u, v)
                    .setOverlay(overlay)
                    .setLight(light)
                    .setNormal(pose, nx, ny, nz);
-            //?}
+            *///?}
         }
     }
 

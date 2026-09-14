@@ -15,9 +15,9 @@ import com.hbm_m.main.MainRegistry;
 import net.minecraft.client.renderer.ShaderInstance;
 import dev.architectury.platform.Platform;
 //? if forge {
-/*import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-*///?}
+//?}
 
 
 /**
@@ -36,8 +36,8 @@ import net.minecraftforge.api.distmarker.OnlyIn;
  * the vanilla simple block_lit shader so the renderer still produces output.
  */
 //? if forge {
-/*@OnlyIn(Dist.CLIENT)
-*///?}
+@OnlyIn(Dist.CLIENT)
+//?}
 public final class IrisExtendedShaderAccess {
 
     private IrisExtendedShaderAccess() {}

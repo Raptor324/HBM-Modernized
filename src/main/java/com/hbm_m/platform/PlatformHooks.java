@@ -27,11 +27,11 @@ public final class PlatformHooks {
      */
     public static CompoundTag getItemTag(ItemStack stack) {
         //? if < 1.21.1 {
-        /*return stack.getTag();
-        *///?} else {
-        net.minecraft.world.item.component.CustomData data = stack.get(net.minecraft.core.component.DataComponents.CUSTOM_DATA);
+        return stack.getTag();
+        //?} else {
+        /*net.minecraft.world.item.component.CustomData data = stack.get(net.minecraft.core.component.DataComponents.CUSTOM_DATA);
         return data == null ? null : data.copyTag();
-        //?}
+        *///?}
     }
 
     /**
@@ -47,10 +47,10 @@ public final class PlatformHooks {
 
     public static boolean hasItemTag(ItemStack stack) {
         //? if < 1.21.1 {
-        /*return stack.hasTag();
-        *///?} else {
-        return stack.has(net.minecraft.core.component.DataComponents.CUSTOM_DATA);
-        //?}
+        return stack.hasTag();
+        //?} else {
+        /*return stack.has(net.minecraft.core.component.DataComponents.CUSTOM_DATA);
+        *///?}
     }
 
     /**
@@ -66,16 +66,16 @@ public final class PlatformHooks {
      */
     public static void editItemTag(ItemStack stack, Consumer<CompoundTag> editor) {
         //? if < 1.21.1 {
-        /*editor.accept(stack.getOrCreateTag());
-        *///?} else {
-        net.minecraft.world.item.component.CustomData data = stack.getOrDefault(
+        editor.accept(stack.getOrCreateTag());
+        //?} else {
+        /*net.minecraft.world.item.component.CustomData data = stack.getOrDefault(
                 net.minecraft.core.component.DataComponents.CUSTOM_DATA,
                 net.minecraft.world.item.component.CustomData.EMPTY);
         net.minecraft.nbt.CompoundTag tag = data.copyTag();
         editor.accept(tag);
         stack.set(net.minecraft.core.component.DataComponents.CUSTOM_DATA,
                 net.minecraft.world.item.component.CustomData.of(tag));
-        //?}
+        *///?}
     }
 
     /**
@@ -84,15 +84,15 @@ public final class PlatformHooks {
      */
     public static void setItemTag(ItemStack stack, CompoundTag tag) {
         //? if < 1.21.1 {
-        /*stack.setTag(tag);
-        *///?} else {
-        if (tag == null || tag.isEmpty()) {
+        stack.setTag(tag);
+        //?} else {
+        /*if (tag == null || tag.isEmpty()) {
             stack.remove(net.minecraft.core.component.DataComponents.CUSTOM_DATA);
         } else {
             stack.set(net.minecraft.core.component.DataComponents.CUSTOM_DATA,
                     net.minecraft.world.item.component.CustomData.of(tag));
         }
-        //?}
+        *///?}
     }
 
     // =====================================================================================
@@ -109,10 +109,10 @@ public final class PlatformHooks {
      */
     public static net.minecraft.core.BlockPos readBlockPos(net.minecraft.nbt.CompoundTag tag, String key) {
         //? if < 1.21.1 {
-        /*return net.minecraft.nbt.NbtUtils.readBlockPos(tag.getCompound(key));
-        *///?} else {
-        return net.minecraft.nbt.NbtUtils.readBlockPos(tag, key).orElse(net.minecraft.core.BlockPos.ZERO);
-        //?}
+        return net.minecraft.nbt.NbtUtils.readBlockPos(tag.getCompound(key));
+        //?} else {
+        /*return net.minecraft.nbt.NbtUtils.readBlockPos(tag, key).orElse(net.minecraft.core.BlockPos.ZERO);
+        *///?}
     }
 
     /**
@@ -128,18 +128,18 @@ public final class PlatformHooks {
     public static boolean isEdible(ItemStack stack) {
         if (stack.isEmpty()) return false;
         //? if < 1.21.1 {
-        /*return stack.getItem().isEdible();
-        *///?} else {
-        return stack.has(net.minecraft.core.component.DataComponents.FOOD);
-        //?}
+        return stack.getItem().isEdible();
+        //?} else {
+        /*return stack.has(net.minecraft.core.component.DataComponents.FOOD);
+        *///?}
     }
 
     public static boolean isEdible(net.minecraft.world.item.Item item) {
         //? if < 1.21.1 {
-        /*return item.isEdible();
-        *///?} else {
-        return item.components().has(net.minecraft.core.component.DataComponents.FOOD);
-        //?}
+        return item.isEdible();
+        //?} else {
+        /*return item.components().has(net.minecraft.core.component.DataComponents.FOOD);
+        *///?}
     }
 
     /**
@@ -185,29 +185,29 @@ public final class PlatformHooks {
      */
     public static net.minecraft.world.item.Item createRecordItem(int comparatorValue, Object sound, net.minecraft.world.item.Item.Properties properties, int lengthInSeconds, String songId) {
         //? if < 1.21.1 {
-        /*return new net.minecraft.world.item.RecordItem(comparatorValue, (net.minecraft.sounds.SoundEvent) sound, properties, lengthInSeconds * 20);
-        *///?} else {
-        return new net.minecraft.world.item.Item(jukeboxProperties(properties, songId));
-        //?}
+        return new net.minecraft.world.item.RecordItem(comparatorValue, (net.minecraft.sounds.SoundEvent) sound, properties, lengthInSeconds * 20);
+        //?} else {
+        /*return new net.minecraft.world.item.Item(jukeboxProperties(properties, songId));
+        *///?}
     }
 
     /** Adds the jukebox_playable component on 1.21.1; a no-op on older versions. */
     public static net.minecraft.world.item.Item.Properties jukeboxProperties(net.minecraft.world.item.Item.Properties properties, String songId) {
         //? if < 1.21.1 {
-        /*return properties;
-        *///?} else {
-        return properties.jukeboxPlayable(net.minecraft.resources.ResourceKey.create(
+        return properties;
+        //?} else {
+        /*return properties.jukeboxPlayable(net.minecraft.resources.ResourceKey.create(
                 net.minecraft.core.registries.Registries.JUKEBOX_SONG,
                 net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(com.hbm_m.lib.RefStrings.MODID, songId)));
-        //?}
+        *///?}
     }
 
     public static boolean isSameItemSameTags(ItemStack a, ItemStack b) {
         //? if < 1.21.1 {
-        /*return ItemStack.isSameItemSameTags(a, b);
-        *///?} else {
-        return ItemStack.isSameItemSameComponents(a, b);
-        //?}
+        return ItemStack.isSameItemSameTags(a, b);
+        //?} else {
+        /*return ItemStack.isSameItemSameComponents(a, b);
+        *///?}
     
     }
     /**
@@ -218,10 +218,10 @@ public final class PlatformHooks {
      */
     public static ItemStack itemStackOf(CompoundTag tag, net.minecraft.core.HolderLookup.Provider provider) {
         //? if < 1.21.1 {
-        /*return ItemStack.of(tag);
-        *///?} else {
-        return ItemStack.parseOptional(provider, tag);
-        //?}
+        return ItemStack.of(tag);
+        //?} else {
+        /*return ItemStack.parseOptional(provider, tag);
+        *///?}
     }
     /**
      * Сохранение ItemStack в NBT-тег. Заменяет {@code stack.save(tag)} на 1.20.1.
@@ -232,9 +232,9 @@ public final class PlatformHooks {
 
     public static CompoundTag saveItemStack(ItemStack stack, CompoundTag tag, net.minecraft.core.HolderLookup.Provider provider) {
         //? if < 1.21.1 {
-        /*return stack.save(tag);
-        *///?} else {
-        // ItemStack.save(provider, prefix) encodes through NbtOps, which MERGES into a NEW compound
+        return stack.save(tag);
+        //?} else {
+        /*// ItemStack.save(provider, prefix) encodes through NbtOps, which MERGES into a NEW compound
         // and leaves the prefix untouched. Callers that build the tag in place (armour mods, bomb
         // and Soyuz inventories) were storing empty compounds. Keep the 1.20.1 contract: fill `tag`.
         CompoundTag saved = (CompoundTag) stack.save(provider, tag);
@@ -242,7 +242,7 @@ public final class PlatformHooks {
             tag.merge(saved);
         }
         return tag;
-        //?}
+        *///?}
     }
 
     /**
@@ -262,18 +262,18 @@ public final class PlatformHooks {
     // =====================================================================================
 
     //? if >= 1.21.1 {
-    //? if forge {
-    /*@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-    *///?} elif neoforge {
-    @net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-    //?}
+    /*//? if forge {
+    @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+    //?} elif neoforge {
+    /^@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+    ^///?}
     public static net.minecraft.core.HolderLookup.Provider clientProvider() {
         var mc = net.minecraft.client.Minecraft.getInstance();
         if (mc.level != null) return mc.level.registryAccess();
         if (mc.getConnection() != null) return mc.getConnection().registryAccess();
         return null;
     }
-    //?}
+    *///?}
 
     /**
      * Провайдер реестров «из любой доступной стороны»: клиентский Level на клиенте,
@@ -282,14 +282,14 @@ public final class PlatformHooks {
      */
     public static net.minecraft.core.HolderLookup.Provider bestEffortProvider() {
         //? if < 1.21.1 {
-        /*return null;
-        *///?} else {
-        if (net.neoforged.fml.loading.FMLEnvironment.dist.isClient()) {
+        return null;
+        //?} else {
+        /*if (net.neoforged.fml.loading.FMLEnvironment.dist.isClient()) {
             return clientProvider();
         }
         var server = net.neoforged.neoforge.server.ServerLifecycleHooks.getCurrentServer();
         return server != null ? server.registryAccess() : null;
-        //?}
+        *///?}
     }
 
     // =====================================================================================
@@ -387,13 +387,13 @@ public final class PlatformHooks {
      */
     public static Level tooltipLevel(Object levelOrContext) {
         //? if < 1.21.1 {
-        /*return (Level) levelOrContext;
-        *///?} else {
-        if (levelOrContext instanceof net.minecraft.world.item.Item.TooltipContext ctx) {
+        return (Level) levelOrContext;
+        //?} else {
+        /*if (levelOrContext instanceof net.minecraft.world.item.Item.TooltipContext ctx) {
             return ctx.level();
         }
         return null;
-        //?}
+        *///?}
     }
 
     // =====================================================================================
@@ -429,15 +429,15 @@ public final class PlatformHooks {
     public static AttributeModifier attributeModifier(
             java.util.UUID uuid, String name, double value, AttributeModifier.Operation operation) {
         //? if < 1.21.1 {
-        /*return new AttributeModifier(uuid, name, value, operation);
-        *///?} else {
-        // 1.21.1: UUID-конструктор удалён. Привязка модификатора к слоту брони теперь по
+        return new AttributeModifier(uuid, name, value, operation);
+        //?} else {
+        /*// 1.21.1: UUID-конструктор удалён. Привязка модификатора к слоту брони теперь по
         // ResourceLocation (производное от UUID, чтобы остаться уникальным и стабильным).
         return new AttributeModifier(
                 ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, 
                         "am_" + uuid.toString().replace('-', '_')),
                 value, operation);
-        //?}
+        *///?}
     }
 
     /**
@@ -450,13 +450,13 @@ public final class PlatformHooks {
     public static AttributeModifier attributeModifier(
             String name, double value, AttributeModifier.Operation operation) {
         //? if < 1.21.1 {
-        /*return new AttributeModifier(name, value, operation);
-        *///?} else {
-        return new AttributeModifier(
+        return new AttributeModifier(name, value, operation);
+        //?} else {
+        /*return new AttributeModifier(
                 ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, 
                         name.toLowerCase(java.util.Locale.ROOT).replace(' ', '_').replace(':', '.')),
                 value, operation);
-        //?}
+        *///?}
     }
 
     // =====================================================================================
@@ -472,10 +472,10 @@ public final class PlatformHooks {
      * иерархии наследования.
      */
     //? if forge {
-    /*@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-    *///?} elif neoforge {
-    @net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-     //?}
+    @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+    //?} elif neoforge {
+    /*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+     *///?}
     public static Object createModelLocation(ResourceLocation id, String variant) {
         return new net.minecraft.client.resources.model.ModelResourceLocation(id, variant);
     }
@@ -484,33 +484,33 @@ public final class PlatformHooks {
      * Извлечение ResourceLocation (ID) из ModelResourceLocation.
      */
     //? if forge {
-    /*@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-    *///?} elif neoforge {
-    @net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-     //?}
+    @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+    //?} elif neoforge {
+    /*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+     *///?}
     public static ResourceLocation getModelId(Object modelResourceLocation) {
         //? if < 1.21.1 {
-        /*return (ResourceLocation) modelResourceLocation;
-        *///?} else {
-        return ((net.minecraft.client.resources.model.ModelResourceLocation) modelResourceLocation).id();
-        //?}
+        return (ResourceLocation) modelResourceLocation;
+        //?} else {
+        /*return ((net.minecraft.client.resources.model.ModelResourceLocation) modelResourceLocation).id();
+        *///?}
     }
 
     /**
      * Регистрация дополнительной standalone-модели.
      */
     //? if forge {
-    /*@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-    *///?} elif neoforge {
-    @net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-     //?}
+    @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+    //?} elif neoforge {
+    /*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+     *///?}
     public static void registerAdditionalModel(Object event, ResourceLocation loc) {
         //? if < 1.21.1 {
-        /*((net.minecraftforge.client.event.ModelEvent.RegisterAdditional) event).register(loc);
-        *///?} else {
-        ((net.neoforged.neoforge.client.event.ModelEvent.RegisterAdditional) event).register(
+        ((net.minecraftforge.client.event.ModelEvent.RegisterAdditional) event).register(loc);
+        //?} else {
+        /*((net.neoforged.neoforge.client.event.ModelEvent.RegisterAdditional) event).register(
                 new net.minecraft.client.resources.model.ModelResourceLocation(loc, "standalone"));
-        //?}
+        *///?}
     }
 
     /**
@@ -519,20 +519,20 @@ public final class PlatformHooks {
      * на 1.20.1 через вариант "inventory", на 1.21.1 через standalone-ключ с путём item/<path>.
      */
     //? if forge {
-    /*@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-    *///?} elif neoforge {
-    @net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-     //?}
+    @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+    //?} elif neoforge {
+    /*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+     *///?}
     public static void registerItemModel(Object event, ResourceLocation id) {
         //? if < 1.21.1 {
-        /*((net.minecraftforge.client.event.ModelEvent.RegisterAdditional) event).register(
+        ((net.minecraftforge.client.event.ModelEvent.RegisterAdditional) event).register(
                 new net.minecraft.client.resources.model.ModelResourceLocation(id, "inventory"));
-        *///?} else {
-        ((net.neoforged.neoforge.client.event.ModelEvent.RegisterAdditional) event).register(
+        //?} else {
+        /*((net.neoforged.neoforge.client.event.ModelEvent.RegisterAdditional) event).register(
                 new net.minecraft.client.resources.model.ModelResourceLocation(
                         ResourceLocation.fromNamespaceAndPath(id.getNamespace(), "item/" + id.getPath()),
                         "standalone"));
-        //?}
+        *///?}
     }
 
     /**
@@ -540,38 +540,38 @@ public final class PlatformHooks {
      * {@link #registerItemModel}. Ключ должен совпадать с регистрацией.
      */
     //? if forge {
-    /*@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-    *///?} elif neoforge {
-    @net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-     //?}
+    @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+    //?} elif neoforge {
+    /*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+     *///?}
     public static net.minecraft.client.resources.model.BakedModel getItemModel(
             net.minecraft.client.resources.model.ModelManager manager, ResourceLocation id) {
         //? if < 1.21.1 {
-        /*return manager.getModel(new net.minecraft.client.resources.model.ModelResourceLocation(id, "inventory"));
-        *///?} else {
-        return manager.getModel(new net.minecraft.client.resources.model.ModelResourceLocation(
+        return manager.getModel(new net.minecraft.client.resources.model.ModelResourceLocation(id, "inventory"));
+        //?} else {
+        /*return manager.getModel(new net.minecraft.client.resources.model.ModelResourceLocation(
                 ResourceLocation.fromNamespaceAndPath(id.getNamespace(), "item/" + id.getPath()),
                 "standalone"));
-        //?}
+        *///?}
     }
 
     /**
      * Регистрация Geometry Loader.
      */
     //? if forge {
-    /*@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-    *///?} elif neoforge {
-    @net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-     //?}
+    @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+    //?} elif neoforge {
+    /*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+     *///?}
     public static void registerGeometryLoader(Object event, String name, Object loader) {
         //? if < 1.21.1 {
-        /*((net.minecraftforge.client.event.ModelEvent.RegisterGeometryLoaders) event).register(
+        ((net.minecraftforge.client.event.ModelEvent.RegisterGeometryLoaders) event).register(
                 name, (net.minecraftforge.client.model.geometry.IGeometryLoader<?>) loader);
-        *///?} else {
-        ((net.neoforged.neoforge.client.event.ModelEvent.RegisterGeometryLoaders) event).register(
+        //?} else {
+        /*((net.neoforged.neoforge.client.event.ModelEvent.RegisterGeometryLoaders) event).register(
                 ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, name),
                 (net.neoforged.neoforge.client.model.geometry.IGeometryLoader<?>) loader);
-        //?}
+        *///?}
     }
 
     /**
@@ -580,17 +580,17 @@ public final class PlatformHooks {
      * от изменения сигнатуры getModel() на 1.21.1.
      */
     //? if forge {
-    /*@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-    *///?} elif neoforge {
-    @net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-     //?}
+    @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+    //?} elif neoforge {
+    /*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+     *///?}
     public static net.minecraft.client.resources.model.BakedModel getModel(
             net.minecraft.client.resources.model.ModelManager manager, ResourceLocation loc) {
         //? if < 1.21.1 {
-        /*return manager.getModel(loc);
-        *///?} else {
-        return manager.getModel(new net.minecraft.client.resources.model.ModelResourceLocation(loc, "standalone"));
-        //?}
+        return manager.getModel(loc);
+        //?} else {
+        /*return manager.getModel(new net.minecraft.client.resources.model.ModelResourceLocation(loc, "standalone"));
+        *///?}
     }
     // =====================================================================================
     //  VertexFormatElement Bridge
@@ -607,10 +607,10 @@ public final class PlatformHooks {
             int index, com.mojang.blaze3d.vertex.VertexFormatElement.Type type,
             com.mojang.blaze3d.vertex.VertexFormatElement.Usage usage, int count) {
         //? if < 1.21.1 {
-        /*return new com.mojang.blaze3d.vertex.VertexFormatElement(index, type, usage, count);
-        *///?} else {
-        return new com.mojang.blaze3d.vertex.VertexFormatElement(0, index, type, usage, count);
-        //?}
+        return new com.mojang.blaze3d.vertex.VertexFormatElement(index, type, usage, count);
+        //?} else {
+        /*return new com.mojang.blaze3d.vertex.VertexFormatElement(0, index, type, usage, count);
+        *///?}
     }
 
     // =====================================================================================
@@ -627,10 +627,10 @@ public final class PlatformHooks {
     public static net.minecraft.world.food.FoodProperties.Builder foodBuilder(int nutrition, float saturation) {
         net.minecraft.world.food.FoodProperties.Builder builder = new net.minecraft.world.food.FoodProperties.Builder().nutrition(nutrition);
         //? if < 1.21.1 {
-        /*return builder.saturationMod(saturation);
-        *///?} else {
-        return builder.saturationModifier(saturation);
-        //?}
+        return builder.saturationMod(saturation);
+        //?} else {
+        /*return builder.saturationModifier(saturation);
+        *///?}
     }
 
     /**
@@ -650,10 +650,10 @@ public final class PlatformHooks {
             net.minecraft.world.food.FoodProperties.Builder builder,
             Object effect, int duration, int amplifier, float probability) {
         //? if < 1.21.1 {
-        /*return builder.effect(() -> new net.minecraft.world.effect.MobEffectInstance((net.minecraft.world.effect.MobEffect) effect, duration, amplifier), probability);
-        *///?} else {
-        return builder.effect(new net.minecraft.world.effect.MobEffectInstance((net.minecraft.core.Holder<net.minecraft.world.effect.MobEffect>) effect, duration, amplifier), probability);
-        //?}
+        return builder.effect(() -> new net.minecraft.world.effect.MobEffectInstance((net.minecraft.world.effect.MobEffect) effect, duration, amplifier), probability);
+        //?} else {
+        /*return builder.effect(new net.minecraft.world.effect.MobEffectInstance((net.minecraft.core.Holder<net.minecraft.world.effect.MobEffect>) effect, duration, amplifier), probability);
+        *///?}
     }
 
     /** 
@@ -661,10 +661,10 @@ public final class PlatformHooks {
      */
     public static net.minecraft.world.food.FoodProperties.Builder setMeat(net.minecraft.world.food.FoodProperties.Builder builder) {
         //? if < 1.21.1 {
-        /*return builder.meat();
-        *///?} else {
-        return builder;
-        //?}
+        return builder.meat();
+        //?} else {
+        /*return builder;
+        *///?}
     }
 
     // =====================================================================================
@@ -676,10 +676,10 @@ public final class PlatformHooks {
      */
     public static net.minecraft.world.level.block.DoorBlock createDoorBlock(net.minecraft.world.level.block.state.BlockBehaviour.Properties props, net.minecraft.world.level.block.state.properties.BlockSetType type) {
         //? if < 1.21.1 {
-        /*return new net.minecraft.world.level.block.DoorBlock(props, type);
-        *///?} else {
-        return new net.minecraft.world.level.block.DoorBlock(type, props);
-        //?}
+        return new net.minecraft.world.level.block.DoorBlock(props, type);
+        //?} else {
+        /*return new net.minecraft.world.level.block.DoorBlock(type, props);
+        *///?}
     }
 
     /**
@@ -687,10 +687,10 @@ public final class PlatformHooks {
      */
     public static net.minecraft.world.level.block.DropExperienceBlock createDropExperienceBlock(net.minecraft.world.level.block.state.BlockBehaviour.Properties props) {
         //? if < 1.21.1 {
-        /*return new net.minecraft.world.level.block.DropExperienceBlock(props);
-        *///?} else {
-        return new net.minecraft.world.level.block.DropExperienceBlock(net.minecraft.util.valueproviders.ConstantInt.of(0), props);
-        //?}
+        return new net.minecraft.world.level.block.DropExperienceBlock(props);
+        //?} else {
+        /*return new net.minecraft.world.level.block.DropExperienceBlock(net.minecraft.util.valueproviders.ConstantInt.of(0), props);
+        *///?}
     }
 
     /**
@@ -698,10 +698,10 @@ public final class PlatformHooks {
      */
     public static net.minecraft.world.level.block.FlowerBlock createFlowerBlock(Object effect, int durationTicks, net.minecraft.world.level.block.state.BlockBehaviour.Properties props) {
         //? if < 1.21.1 {
-        /*return new net.minecraft.world.level.block.FlowerBlock((net.minecraft.world.effect.MobEffect) effect, durationTicks, props);
-        *///?} else {
-        return new net.minecraft.world.level.block.FlowerBlock((net.minecraft.core.Holder<net.minecraft.world.effect.MobEffect>) effect, (float) durationTicks, props);
-        //?}
+        return new net.minecraft.world.level.block.FlowerBlock((net.minecraft.world.effect.MobEffect) effect, durationTicks, props);
+        //?} else {
+        /*return new net.minecraft.world.level.block.FlowerBlock((net.minecraft.core.Holder<net.minecraft.world.effect.MobEffect>) effect, (float) durationTicks, props);
+        *///?}
     }
     // =====================================================================================
     //  Advancement & Entity Hooks
@@ -716,7 +716,7 @@ public final class PlatformHooks {
         if (server == null) return;
         var advancementManager = server.getAdvancements();
         //? if < 1.21.1 {
-        /*net.minecraft.advancements.Advancement adv = advancementManager.getAdvancement(id);
+        net.minecraft.advancements.Advancement adv = advancementManager.getAdvancement(id);
         if (adv != null) {
             net.minecraft.advancements.AdvancementProgress progress = player.getAdvancements().getOrStartProgress(adv);
             if (!progress.isDone()) {
@@ -725,8 +725,8 @@ public final class PlatformHooks {
                 }
             }
         }
-        *///?} else {
-        net.minecraft.advancements.AdvancementHolder holder = advancementManager.get(id);
+        //?} else {
+        /*net.minecraft.advancements.AdvancementHolder holder = advancementManager.get(id);
         if (holder != null) {
             net.minecraft.advancements.AdvancementProgress progress = player.getAdvancements().getOrStartProgress(holder);
             if (!progress.isDone()) {
@@ -735,7 +735,7 @@ public final class PlatformHooks {
                 }
             }
         }
-        //?}
+        *///?}
     }
 
     /**
@@ -743,10 +743,10 @@ public final class PlatformHooks {
      */
     public static void setSecondsOnFire(net.minecraft.world.entity.Entity entity, int seconds) {
         //? if < 1.21.1 {
-        /*entity.setSecondsOnFire(seconds);
-        *///?} else {
-        entity.igniteForSeconds((float) seconds);
-        //?}
+        entity.setSecondsOnFire(seconds);
+        //?} else {
+        /*entity.igniteForSeconds((float) seconds);
+        *///?}
     }
 
     /**
@@ -755,10 +755,10 @@ public final class PlatformHooks {
     public static boolean isFluidContainer(ItemStack stack) {
         if (stack.isEmpty()) return false;
         //? if forge {
-        /*return stack.getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER_ITEM).isPresent();
-        *///?} elif neoforge {
-        return stack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.FluidHandler.ITEM) != null;
-        //?}
+        return stack.getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER_ITEM).isPresent();
+        //?} elif neoforge {
+        /*return stack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.FluidHandler.ITEM) != null;
+        *///?}
     }
 
     // =====================================================================================
@@ -770,10 +770,10 @@ public final class PlatformHooks {
      */
     public static void loadBlockEntityTag(net.minecraft.world.level.block.entity.BlockEntity be, CompoundTag tag, net.minecraft.core.HolderLookup.Provider provider) {
         //? if < 1.21.1 {
-        /*be.load(tag);
-        *///?} else {
-        be.loadCustomOnly(tag, provider);
-        //?}
+        be.load(tag);
+        //?} else {
+        /*be.loadCustomOnly(tag, provider);
+        *///?}
     }
 
     /**
@@ -782,10 +782,10 @@ public final class PlatformHooks {
     public static net.minecraft.network.chat.Component parseComponentJson(String json, net.minecraft.core.HolderLookup.Provider provider) {
         if (json == null || json.isEmpty()) return null;
         //? if < 1.21.1 {
-        /*return net.minecraft.network.chat.Component.Serializer.fromJson(com.google.gson.JsonParser.parseString(json));
-        *///?} else {
-        return net.minecraft.network.chat.Component.Serializer.fromJson(json, provider);
-        //?}
+        return net.minecraft.network.chat.Component.Serializer.fromJson(com.google.gson.JsonParser.parseString(json));
+        //?} else {
+        /*return net.minecraft.network.chat.Component.Serializer.fromJson(json, provider);
+        *///?}
     }
 
     /**
@@ -794,10 +794,10 @@ public final class PlatformHooks {
     public static String componentToJson(net.minecraft.network.chat.Component component, net.minecraft.core.HolderLookup.Provider provider) {
         if (component == null) return null;
         //? if < 1.21.1 {
-        /*return net.minecraft.network.chat.Component.Serializer.toJson(component);
-        *///?} else {
-        return net.minecraft.network.chat.Component.Serializer.toJson(component, provider);
-        //?}
+        return net.minecraft.network.chat.Component.Serializer.toJson(component);
+        //?} else {
+        /*return net.minecraft.network.chat.Component.Serializer.toJson(component, provider);
+        *///?}
     }
 
     /**
@@ -806,11 +806,11 @@ public final class PlatformHooks {
      */
     public static double getExplosionKnockbackAfterDampener(net.minecraft.world.entity.LivingEntity entity, double knockback) {
         //? if < 1.21.1 {
-        /*return net.minecraft.world.item.enchantment.ProtectionEnchantment.getExplosionKnockbackAfterDampener(entity, knockback);
-        *///?} else {
-        double res = entity.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.EXPLOSION_KNOCKBACK_RESISTANCE);
+        return net.minecraft.world.item.enchantment.ProtectionEnchantment.getExplosionKnockbackAfterDampener(entity, knockback);
+        //?} else {
+        /*double res = entity.getAttributeValue(net.minecraft.world.entity.ai.attributes.Attributes.EXPLOSION_KNOCKBACK_RESISTANCE);
         return knockback * (1.0 - res);
-        //?}
+        *///?}
     }
 
     // =====================================================================================
@@ -822,13 +822,13 @@ public final class PlatformHooks {
     // =====================================================================================
     public static double getMyRidingOffset(net.minecraft.world.entity.Entity entity) {
         //? if < 1.21.1 {
-        /*return entity.getMyRidingOffset();
-        *///?} else {
-        // 1.21.1: Entity.getPassengersRidingOffset() и getMyRidingOffset() удалены —
+        return entity.getMyRidingOffset();
+        //?} else {
+        /*// 1.21.1: Entity.getPassengersRidingOffset() и getMyRidingOffset() удалены —
         // смещение пассажира теперь через EntityAttachments (getAttachments()).
         // Возвращаем 0.0D как stub (оригинальное поведение по умолчанию для большинства сущностей).
         return 0.0D;
-        //?}
+        *///?}
     }
 
     // =====================================================================================
@@ -842,10 +842,10 @@ public final class PlatformHooks {
      */
     public static boolean isGrassBlock(net.minecraft.world.level.block.state.BlockState state) {
         //? if < 1.21.1 {
-        /*return state.is(net.minecraft.world.level.block.Blocks.GRASS);
-        *///?} else {
-        return state.is(net.minecraft.world.level.block.Blocks.SHORT_GRASS);
-        //?}
+        return state.is(net.minecraft.world.level.block.Blocks.GRASS);
+        //?} else {
+        /*return state.is(net.minecraft.world.level.block.Blocks.SHORT_GRASS);
+        *///?}
     }
 
     // =====================================================================================
@@ -856,10 +856,10 @@ public final class PlatformHooks {
     // =====================================================================================
     public static net.minecraft.world.level.block.Block createGlassBlock(net.minecraft.world.level.block.state.BlockBehaviour.Properties props) {
         //? if < 1.21.1 {
-        /*return new net.minecraft.world.level.block.GlassBlock(props);
-        *///?} else {
-        return new net.minecraft.world.level.block.Block(props);
-        //?}
+        return new net.minecraft.world.level.block.GlassBlock(props);
+        //?} else {
+        /*return new net.minecraft.world.level.block.Block(props);
+        *///?}
     }
 
     /**
@@ -869,10 +869,10 @@ public final class PlatformHooks {
      */
     public static CompoundTag saveBlockEntityWithoutMetadata(net.minecraft.world.level.block.entity.BlockEntity be, net.minecraft.core.HolderLookup.Provider provider) {
         //? if < 1.21.1 {
-        /*return be.saveWithoutMetadata();
-        *///?} else {
-        return be.saveWithoutMetadata(provider);
-        //?}
+        return be.saveWithoutMetadata();
+        //?} else {
+        /*return be.saveWithoutMetadata(provider);
+        *///?}
     }
 
     // =====================================================================================
@@ -886,51 +886,51 @@ public final class PlatformHooks {
     // =====================================================================================
 
     //? if >= 1.21.1 {
-    private static net.minecraft.core.Holder<net.minecraft.world.effect.MobEffect> effectHolder(
+    /*private static net.minecraft.core.Holder<net.minecraft.world.effect.MobEffect> effectHolder(
             dev.architectury.registry.registries.RegistrySupplier<net.minecraft.world.effect.MobEffect> effect) {
         return net.minecraft.core.registries.BuiltInRegistries.MOB_EFFECT.wrapAsHolder(effect.get());
     }
-    //?}
+    *///?}
 
     /** {@code living.addEffect(new MobEffectInstance(effect, duration, amplifier))} на обеих версиях. */
     public static boolean addEffect(net.minecraft.world.entity.LivingEntity living,
             dev.architectury.registry.registries.RegistrySupplier<net.minecraft.world.effect.MobEffect> effect,
             int duration, int amplifier) {
         //? if < 1.21.1 {
-        /*return living.addEffect(new net.minecraft.world.effect.MobEffectInstance(effect.get(), duration, amplifier));
-        *///?} else {
-        return living.addEffect(new net.minecraft.world.effect.MobEffectInstance(effectHolder(effect), duration, amplifier));
-        //?}
+        return living.addEffect(new net.minecraft.world.effect.MobEffectInstance(effect.get(), duration, amplifier));
+        //?} else {
+        /*return living.addEffect(new net.minecraft.world.effect.MobEffectInstance(effectHolder(effect), duration, amplifier));
+        *///?}
     }
 
     /** {@code living.hasEffect(effect)} на обеих версиях. */
     public static boolean hasEffect(net.minecraft.world.entity.LivingEntity living,
             dev.architectury.registry.registries.RegistrySupplier<net.minecraft.world.effect.MobEffect> effect) {
         //? if < 1.21.1 {
-        /*return living.hasEffect(effect.get());
-        *///?} else {
-        return living.hasEffect(effectHolder(effect));
-        //?}
+        return living.hasEffect(effect.get());
+        //?} else {
+        /*return living.hasEffect(effectHolder(effect));
+        *///?}
     }
 
     /** {@code living.removeEffect(effect)} на обеих версиях. */
     public static boolean removeEffect(net.minecraft.world.entity.LivingEntity living,
             dev.architectury.registry.registries.RegistrySupplier<net.minecraft.world.effect.MobEffect> effect) {
         //? if < 1.21.1 {
-        /*return living.removeEffect(effect.get());
-        *///?} else {
-        return living.removeEffect(effectHolder(effect));
-        //?}
+        return living.removeEffect(effect.get());
+        //?} else {
+        /*return living.removeEffect(effectHolder(effect));
+        *///?}
     }
 
     /** {@code living.getEffect(effect)} на обеих версиях; null, если эффекта нет. */
     public static net.minecraft.world.effect.MobEffectInstance getEffect(net.minecraft.world.entity.LivingEntity living,
             dev.architectury.registry.registries.RegistrySupplier<net.minecraft.world.effect.MobEffect> effect) {
         //? if < 1.21.1 {
-        /*return living.getEffect(effect.get());
-        *///?} else {
-        return living.getEffect(effectHolder(effect));
-        //?}
+        return living.getEffect(effect.get());
+        //?} else {
+        /*return living.getEffect(effectHolder(effect));
+        *///?}
     }
 
     /**
@@ -941,11 +941,11 @@ public final class PlatformHooks {
     public static boolean canInteractWithBlock(net.minecraft.world.entity.player.Player player,
                                                net.minecraft.core.BlockPos pos, double slop) {
         //? if < 1.21.1 {
-        /*double reach = player.getBlockReach() + slop;
+        double reach = player.getBlockReach() + slop;
         return new net.minecraft.world.phys.AABB(pos).distanceToSqr(player.getEyePosition()) < reach * reach;
-        *///?} else {
-        return player.canInteractWithBlock(pos, slop);
-        //?}
+        //?} else {
+        /*return player.canInteractWithBlock(pos, slop);
+        *///?}
     }
 
     /**
@@ -956,9 +956,9 @@ public final class PlatformHooks {
             net.minecraft.world.level.Explosion explosion,
             java.util.List<net.minecraft.world.entity.Entity> entities, double size) {
         //? if forge {
-        /*net.minecraftforge.event.ForgeEventFactory.onExplosionDetonate(level, explosion, entities, size);
-        *///?} elif neoforge {
-        net.neoforged.neoforge.event.EventHooks.onExplosionDetonate(level, explosion, entities, size);
-        //?}
+        net.minecraftforge.event.ForgeEventFactory.onExplosionDetonate(level, explosion, entities, size);
+        //?} elif neoforge {
+        /*net.neoforged.neoforge.event.EventHooks.onExplosionDetonate(level, explosion, entities, size);
+        *///?}
     }
 }

@@ -251,22 +251,22 @@ public class UniversalMachinePartBlock extends BaseEntityBlock implements IDeton
     }
 
     //? if < 1.21.1 {
-    /*@Override
+    @Override
     public boolean isPathfindable(BlockState state, BlockGetter level, BlockPos pos, PathComputationType type) {
         return switch (type) {
             case LAND, AIR -> state.getValue(PASSABLE);
             default -> false;
         };
     }
-    *///?} else {
-    @Override
+    //?} else {
+    /*@Override
     protected boolean isPathfindable(BlockState state, PathComputationType type) {
         return switch (type) {
             case LAND, AIR -> state.getValue(PASSABLE);
             default -> false;
         };
     }
-    //?}
+    *///?}
 
     @Override
     public void neighborChanged(BlockState pState, Level pLevel, BlockPos pPos, Block pBlock, BlockPos pFromPos, boolean pIsMoving) {
@@ -295,7 +295,7 @@ public class UniversalMachinePartBlock extends BaseEntityBlock implements IDeton
     }
 
     //? if < 1.21.1 {
-    /*public boolean isLadder(BlockState pState, LevelReader pLevel, BlockPos pPos, LivingEntity pEntity) {
+    public boolean isLadder(BlockState pState, LevelReader pLevel, BlockPos pPos, LivingEntity pEntity) {
         if (pLevel instanceof Level level && level.getBlockEntity(pPos) instanceof IMultiblockPart part) {
             PartRole role = part.getPartRole();
             
@@ -324,8 +324,8 @@ public class UniversalMachinePartBlock extends BaseEntityBlock implements IDeton
         
         return isFullBlockInGrid(level, pos) ? Shapes.block() : Shapes.empty();
     }
-    *///?} else {
-    // Same logic as the 1.20.1 branch above: returning Shapes.empty() unconditionally made
+    //?} else {
+    /*// Same logic as the 1.20.1 branch above: returning Shapes.empty() unconditionally made
     // isFullBlockInGrid dead code here and stopped solid multiblock parts from occluding the faces
     // of their neighbours. The divergence was undocumented, unlike every other split in this file.
     @Override
@@ -346,7 +346,7 @@ public class UniversalMachinePartBlock extends BaseEntityBlock implements IDeton
 
         return isFullBlockInGrid(level, pos) ? Shapes.block() : Shapes.empty();
     }
-    //?}
+    *///?}
 
     private boolean isFullBlockInGrid(BlockGetter level, BlockPos pos) {
         if (level.getBlockEntity(pos) instanceof IMultiblockPart part) {
@@ -369,16 +369,16 @@ public class UniversalMachinePartBlock extends BaseEntityBlock implements IDeton
     }
 
     //? if < 1.21.1 {
-    /*@Override
+    @Override
     public InteractionResult use(BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer, InteractionHand pHand, BlockHitResult pHit) {
         return hbmOnUse(pState, pLevel, pPos, pPlayer, pHand, pHit);
     }
-    *///?} else {
-    @Override
+    //?} else {
+    /*@Override
     protected InteractionResult useWithoutItem(BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer, BlockHitResult pHit) {
         return hbmOnUse(pState, pLevel, pPos, pPlayer, InteractionHand.MAIN_HAND, pHit);
     }
-    //?}
+    *///?}
 
     private InteractionResult hbmOnUse(BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer, InteractionHand pHand, BlockHitResult pHit) {
         if (pLevel.getBlockEntity(pPos) instanceof IMultiblockPart part) {
@@ -397,10 +397,10 @@ public class UniversalMachinePartBlock extends BaseEntityBlock implements IDeton
                     return InteractionResult.sidedSuccess(pLevel.isClientSide());
                 }
                 //? if < 1.21.1 {
-                /*return controllerState.use(pLevel, pPlayer, pHand, pHit.withPosition(controllerPos));
-                *///?} else {
-                return controllerState.useWithoutItem(pLevel, pPlayer, pHit.withPosition(controllerPos));
-                //?}
+                return controllerState.use(pLevel, pPlayer, pHand, pHit.withPosition(controllerPos));
+                //?} else {
+                /*return controllerState.useWithoutItem(pLevel, pPlayer, pHit.withPosition(controllerPos));
+                *///?}
             } else {
                 if (!pLevel.isClientSide()) {
                     pLevel.setBlock(pPos, Blocks.AIR.defaultBlockState(), 3);
@@ -512,7 +512,7 @@ public class UniversalMachinePartBlock extends BaseEntityBlock implements IDeton
     }
 
     //? if < 1.21.1 {
-    /*@Override
+    @Override
     public void playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
         destroyControllerOnHarvest(level, pos, player);
         super.playerWillDestroy(level, pos, state, player);
@@ -529,8 +529,8 @@ public class UniversalMachinePartBlock extends BaseEntityBlock implements IDeton
         }
         return ItemStack.EMPTY;
     }
-    *///?} else {
-    @Override
+    //?} else {
+    /*@Override
     public BlockState playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
         destroyControllerOnHarvest(level, pos, player);
         return super.playerWillDestroy(level, pos, state, player);
@@ -547,7 +547,7 @@ public class UniversalMachinePartBlock extends BaseEntityBlock implements IDeton
         }
         return ItemStack.EMPTY;
     }
-    //?}
+    *///?}
 
     @Override
     public float getDestroyProgress(BlockState pState, Player pPlayer, BlockGetter pLevel, BlockPos pPos) {
@@ -649,7 +649,7 @@ public class UniversalMachinePartBlock extends BaseEntityBlock implements IDeton
     }
 
     //? if > 1.20.1 {
-    public static final com.mojang.serialization.MapCodec<UniversalMachinePartBlock> CODEC = simpleCodec(UniversalMachinePartBlock::new);
+    /*public static final com.mojang.serialization.MapCodec<UniversalMachinePartBlock> CODEC = simpleCodec(UniversalMachinePartBlock::new);
     @Override protected com.mojang.serialization.MapCodec<? extends BaseEntityBlock> codec() { return CODEC; }
-    //?}
+    *///?}
 }

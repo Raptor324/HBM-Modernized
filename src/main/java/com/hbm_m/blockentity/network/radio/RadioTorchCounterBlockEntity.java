@@ -92,7 +92,7 @@ public class RadioTorchCounterBlockEntity extends BaseMachineBlockEntity impleme
     }
 
     //? if < 1.21.1 {
-    /*@Override
+    @Override
     public void saveAdditional(CompoundTag tag) {
         tag.putBoolean("polling", polling);
         for (int i = 0; i < SLOT_COUNT; i++) {
@@ -101,8 +101,8 @@ public class RadioTorchCounterBlockEntity extends BaseMachineBlockEntity impleme
         }
         matcher.writeToNBT(tag);
     }
-    *///?} else {
-    @Override
+    //?} else {
+    /*@Override
     public void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
     tag.putBoolean("polling", polling);
     for (int i = 0; i < SLOT_COUNT; i++) {
@@ -111,7 +111,7 @@ public class RadioTorchCounterBlockEntity extends BaseMachineBlockEntity impleme
     }
     matcher.writeToNBT(tag);
     }
-    //?}
+    *///?}
 
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {

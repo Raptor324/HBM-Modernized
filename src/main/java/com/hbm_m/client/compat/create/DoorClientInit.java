@@ -9,12 +9,12 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
 
 //? if forge {
-/*import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-*///?} elif neoforge {
-import net.neoforged.api.distmarker.Dist;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
-//?}
+*///?}
 
 /**
  * Клиентская инициализация render-состояния двери на контрапшене.

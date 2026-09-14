@@ -1,6 +1,6 @@
 package com.hbm_m.datagen.recipes.custom;
 //? if forge {
-/*import com.google.gson.JsonObject;
+import com.google.gson.JsonObject;
 import com.hbm_m.inventory.material.MaterialType;
 import com.hbm_m.recipe.CrucibleSmeltingRecipe;
 
@@ -9,7 +9,7 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 
-/^*
+/**
  * Datagen-билдер {@link CrucibleSmeltingRecipe} ({@code hbm_m:crucible_smelting}).
  *
  * <p>Чистый ванильный 1.20.1 код внутри {@code //? if forge} — датаген компилируется
@@ -27,7 +27,7 @@ import net.minecraft.world.item.crafting.RecipeSerializer;
  *   "amount": 144           // mB; default MaterialStack.MB_PER_INGOT
  * }
  * }</pre>
- ^/
+ */
 public class CrucibleSmeltingRecipeBuilder extends BaseRecipeBuilder<CrucibleSmeltingRecipeBuilder> {
 
     private final Ingredient input;
@@ -44,12 +44,12 @@ public class CrucibleSmeltingRecipeBuilder extends BaseRecipeBuilder<CrucibleSme
         return new CrucibleSmeltingRecipeBuilder(input, material, amountMb);
     }
 
-    /^* Item-перегрузка: {@code input} — одиночный предмет. ^/
+    /** Item-перегрузка: {@code input} — одиночный предмет. */
     public static CrucibleSmeltingRecipeBuilder crucibleSmelting(Item input, MaterialType material, int amountMb) {
         return crucibleSmelting(Ingredient.of(input), material, amountMb);
     }
 
-    /^* Item-tag перегрузка: {@code input} — forge-тег (строка вида {@code "forge:ingots/iron"}). ^/
+    /** Item-tag перегрузка: {@code input} — forge-тег (строка вида {@code "forge:ingots/iron"}). */
     public static CrucibleSmeltingRecipeBuilder crucibleSmelting(String tagId, MaterialType material, int amountMb) {
         net.minecraft.tags.TagKey<Item> tag = net.minecraft.tags.TagKey.create(
                 net.minecraft.core.registries.Registries.ITEM,
@@ -75,4 +75,4 @@ public class CrucibleSmeltingRecipeBuilder extends BaseRecipeBuilder<CrucibleSme
         return CrucibleSmeltingRecipe.Serializer.INSTANCE;
     }
 }
-*///?}
+//?}

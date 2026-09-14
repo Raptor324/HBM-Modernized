@@ -56,22 +56,22 @@ public class PylonDummyBlock extends Block implements EntityBlock {
     // Upstream BlockDummyable.onBlockHarvested drops the machine whenever a non-creative player
     // breaks any dummy block; breakCore's hardcoded drop=false lost the pylon entirely.
     //? if < 1.21.1 {
-    /*@Override
+    @Override
     public void playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
         if (!level.isClientSide && !com.hbm_m.multiblock.ContraptionAssemblyGuard.isMoving()) {
             breakCore(level, pos, !player.getAbilities().instabuild);
         }
         super.playerWillDestroy(level, pos, state, player);
     }
-    *///?} else {
-    @Override
+    //?} else {
+    /*@Override
     public BlockState playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
         if (!level.isClientSide && !com.hbm_m.multiblock.ContraptionAssemblyGuard.isMoving()) {
             breakCore(level, pos, !player.getAbilities().instabuild);
         }
         return super.playerWillDestroy(level, pos, state, player);
     }
-    //?}
+    *///?}
 
     /** При разрушении части — рушим ядро (оно в свою очередь убирает остальные части). */
     private static void breakCore(Level level, BlockPos pos, boolean drop) {

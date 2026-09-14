@@ -14,10 +14,10 @@ import net.minecraft.core.Direction;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.state.BlockState;
 //? if forge {
-/*import net.minecraftforge.client.model.data.ModelData;
-*///?} elif neoforge {
-import net.neoforged.neoforge.client.model.data.ModelData;
-//?}
+import net.minecraftforge.client.model.data.ModelData;
+//?} elif neoforge {
+/*import net.neoforged.neoforge.client.model.data.ModelData;
+*///?}
 
 public class MachineCoolingTowerBakedModel extends AbstractMultipartBakedModel {
 
@@ -46,14 +46,14 @@ public class MachineCoolingTowerBakedModel extends AbstractMultipartBakedModel {
     // На NeoForge подклассы переопределяют getQuadsForModelDataNeo; forge-only override означал,
     // что база отдавала все части, а BER рисовал их ещё раз.
     //? if forge {
-    /*@Override
+    @Override
     public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side,
                                      RandomSource rand, ModelData modelData, @Nullable RenderType renderType) {
-    *///?} elif neoforge {
-    @Override
+    //?} elif neoforge {
+    /*@Override
     protected List<BakedQuad> getQuadsForModelDataNeo(@Nullable BlockState state, @Nullable Direction side,
                                      RandomSource rand, ModelData modelData, @Nullable RenderType renderType) {
-    //?}
+    *///?}
         if (shouldSkipWorldRendering(state)) {
             return List.of();
         }

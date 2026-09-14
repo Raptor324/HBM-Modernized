@@ -166,17 +166,17 @@ public class RedPylonWireRenderer implements com.hbm_m.client.render.HbmBerBound
                              double u0, double v0, double u1, double v1, double u2, double v2, double u3, double v3,
                              double jX, double jZ, float r, float g, float b) {
         //? if < 1.21.1 {
-        /*com.mojang.blaze3d.vertex.VertexConsumer c = consumer;
+        com.mojang.blaze3d.vertex.VertexConsumer c = consumer;
         c.vertex(x0, y0, z0).color(r, g, b, 1F).uv((float) u0, (float) v0).endVertex();
         c.vertex(x1, y1, z1).color(r, g, b, 1F).uv((float) u1, (float) v1).endVertex();
         c.vertex(x2, y2, z2).color(r, g, b, 1F).uv((float) u2, (float) v2).endVertex();
         c.vertex(x3, y3, z3).color(r, g, b, 1F).uv((float) u3, (float) v3).endVertex();
-        *///?} else {
-        consumer.addVertex((float) x0, (float) y0, (float) z0).setColor(r, g, b, 1F).setUv((float) u0, (float) v0);
+        //?} else {
+        /*consumer.addVertex((float) x0, (float) y0, (float) z0).setColor(r, g, b, 1F).setUv((float) u0, (float) v0);
         consumer.addVertex((float) x1, (float) y1, (float) z1).setColor(r, g, b, 1F).setUv((float) u1, (float) v1);
         consumer.addVertex((float) x2, (float) y2, (float) z2).setColor(r, g, b, 1F).setUv((float) u2, (float) v2);
         consumer.addVertex((float) x3, (float) y3, (float) z3).setColor(r, g, b, 1F).setUv((float) u3, (float) v3);
-        //?}
+        *///?}
     }
 
     @Override

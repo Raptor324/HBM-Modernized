@@ -1,5 +1,5 @@
 //? if forge {
-/*package com.hbm_m.capability;
+package com.hbm_m.capability;
 
 // Утилитарный класс для работы с capability в Minecraft Forge.
 // Позволяет безопасно получать Capability<T> по классу T.
@@ -12,4 +12,4 @@ public class CapabilityUtils {
         return CapabilityManager.get(new CapabilityToken<T>() {});
     }
 }
-*///?}
+//?}

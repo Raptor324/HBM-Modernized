@@ -36,10 +36,10 @@ import net.minecraft.world.phys.BlockHitResult;
 public class RedCablePaintableBlock extends BaseEntityBlock {
 
     //? if > 1.20.1 {
-    public static final com.mojang.serialization.MapCodec<RedCablePaintableBlock> CODEC = simpleCodec(RedCablePaintableBlock::new);
+    /*public static final com.mojang.serialization.MapCodec<RedCablePaintableBlock> CODEC = simpleCodec(RedCablePaintableBlock::new);
     @Override
     protected com.mojang.serialization.MapCodec<? extends BaseEntityBlock> codec() { return CODEC; }
-    //?}
+    *///?}
 
     public RedCablePaintableBlock(Properties properties) {
         super(properties);
@@ -67,16 +67,16 @@ public class RedCablePaintableBlock extends BaseEntityBlock {
     }
 
     //? if < 1.21.1 {
-    /*@Override
+    @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         return interact(state, level, pos, player, hand);
     }
-    *///?} else {
-    @Override
+    //?} else {
+    /*@Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
         return interact(state, level, pos, player, player.getUsedItemHand());
     }
-    //?}
+    *///?}
 
     private InteractionResult interact(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand) {
         if (level.getBlockEntity(pos) instanceof RedCablePaintableBlockEntity paintable) {
@@ -111,12 +111,12 @@ public class RedCablePaintableBlock extends BaseEntityBlock {
     }
 
     //? if < 1.21.1 {
-    /*@Override
-    public void appendHoverText(ItemStack stack, @Nullable BlockGetter level, List<Component> tooltip, TooltipFlag flag) {
-    *///?} else {
     @Override
+    public void appendHoverText(ItemStack stack, @Nullable BlockGetter level, List<Component> tooltip, TooltipFlag flag) {
+    //?} else {
+    /*@Override
     public void appendHoverText(ItemStack stack, net.minecraft.world.item.Item.TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
-    //?}
+    *///?}
         addTooltip(tooltip);
     }
 }

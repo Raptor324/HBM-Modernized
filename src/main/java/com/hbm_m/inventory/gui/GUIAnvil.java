@@ -201,8 +201,8 @@ public class GUIAnvil extends AbstractContainerScreen<AnvilMenu> {
         super.containerTick();
         if (searchBox != null) {
             //? if < 1.21.1 {
-            /*searchBox.tick();
-            *///?}
+            searchBox.tick();
+            //?}
             if (searchBox.isFocused() && searchBox.getValue().isEmpty()) {
                 searchBox.setSuggestion("");
             } else if (!searchBox.isFocused() && searchBox.getValue().isEmpty()) {
@@ -286,10 +286,10 @@ public class GUIAnvil extends AbstractContainerScreen<AnvilMenu> {
     private int findRecipeIndex(ResourceLocation id) {
         for (int i = 0; i < filteredRecipes.size(); i++) {
             //? if < 1.21.1 {
-            /*if (filteredRecipes.get(i).getId().equals(id)) {
-            *///?} else {
-            if (id.equals(RecipeHooks.recipeId(this.minecraft.level.getRecipeManager(), AnvilRecipe.Type.INSTANCE, filteredRecipes.get(i)))) {
-            //?}
+            if (filteredRecipes.get(i).getId().equals(id)) {
+            //?} else {
+            /*if (id.equals(RecipeHooks.recipeId(this.minecraft.level.getRecipeManager(), AnvilRecipe.Type.INSTANCE, filteredRecipes.get(i)))) {
+            *///?}
                 return i;
             }
         }
@@ -428,7 +428,7 @@ public class GUIAnvil extends AbstractContainerScreen<AnvilMenu> {
     }
     
     //? if < 1.21.1 {
-    /*@Override
+    @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
         if (isOverRecipeGrid(mouseX, mouseY)) {
             if (delta > 0) {
@@ -440,8 +440,8 @@ public class GUIAnvil extends AbstractContainerScreen<AnvilMenu> {
         }
         return super.mouseScrolled(mouseX, mouseY, delta);
     }
-    *///?} else {
-    @Override
+    //?} else {
+    /*@Override
     public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double scrollY) {
         if (isOverRecipeGrid(mouseX, mouseY)) {
             if (scrollY > 0) {
@@ -453,7 +453,7 @@ public class GUIAnvil extends AbstractContainerScreen<AnvilMenu> {
         }
         return super.mouseScrolled(mouseX, mouseY, scrollX, scrollY);
     }
-    //?}
+    *///?}
     
     private boolean isOverRecipeGrid(double mouseX, double mouseY) {
         int guiLeft = (width - imageWidth) / 2;

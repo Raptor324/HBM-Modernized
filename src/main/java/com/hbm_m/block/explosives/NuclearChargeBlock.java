@@ -30,12 +30,12 @@ public class NuclearChargeBlock extends Block implements IDetonatable {
     }
 
     //? if < 1.21.1 {
-    /*@Override
-    public void appendHoverText(ItemStack stack, @Nullable net.minecraft.world.level.BlockGetter level, List<Component> tooltip, TooltipFlag flag) {
-    *///?} else {
     @Override
+    public void appendHoverText(ItemStack stack, @Nullable net.minecraft.world.level.BlockGetter level, List<Component> tooltip, TooltipFlag flag) {
+    //?} else {
+    /*@Override
     public void appendHoverText(ItemStack stack, net.minecraft.world.item.Item.TooltipContext level, List<Component> tooltip, TooltipFlag flag) {
-    //?}
+    *///?}
         tooltip.add(Component.translatable("tooltip.hbm_m.nuclear_charge.line1").withStyle(ChatFormatting.DARK_RED));
         tooltip.add(Component.translatable("tooltip.hbm_m.nuclear_charge.line2").withStyle(ChatFormatting.RED));
     }

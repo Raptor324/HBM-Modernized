@@ -27,14 +27,14 @@ import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
 
 //? if forge {
-/*import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.capability.IFluidHandler;
-*///?}
+//?}
 
 public class MachineTurbineBlockEntity extends BaseMachineBlockEntity implements IFluidStandardTransceiverMK2, IEnergyModeHolder {
 
@@ -68,8 +68,8 @@ public class MachineTurbineBlockEntity extends BaseMachineBlockEntity implements
     private boolean active = false;
 
     //? if forge {
-    /*private LazyOptional<IFluidHandler> spentOutputHandler = LazyOptional.empty();
-    *///?}
+    private LazyOptional<IFluidHandler> spentOutputHandler = LazyOptional.empty();
+    //?}
 
     private static final long ENERGY_EXTRACT_RATE = 50_000L;
 
@@ -264,11 +264,11 @@ public class MachineTurbineBlockEntity extends BaseMachineBlockEntity implements
             case SLOT_INPUT_IO_IN,
                  SLOT_OUTPUT_IO_IN  -> {
                 //? if forge {
-                /*yield stack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).isPresent();
-                *///?}
-                //? if neoforge {
-                yield stack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.FluidHandler.ITEM) != null;
+                yield stack.getCapability(ForgeCapabilities.FLUID_HANDLER_ITEM).isPresent();
                 //?}
+                //? if neoforge {
+                /*yield stack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.FluidHandler.ITEM) != null;
+                *///?}
             }
             case SLOT_BATTERY -> stack.getItem() instanceof ItemCreativeBattery
                                   || isEnergyProviderItem(stack)
@@ -297,7 +297,7 @@ public class MachineTurbineBlockEntity extends BaseMachineBlockEntity implements
     // ── Forge fluid capabilities ─────────────────────────────────────────────
 
     //? if forge {
-    /*@Override
+    @Override
     protected void setupFluidCapability() {
         // Steam input — обработчик по умолчанию — через базовый fluidHandlerOpt.
         setFluidHandler(new SteamInputHandler(this));
@@ -393,5 +393,5 @@ public class MachineTurbineBlockEntity extends BaseMachineBlockEntity implements
             return drained;
         }
     }
-    *///?}
+    //?}
 }

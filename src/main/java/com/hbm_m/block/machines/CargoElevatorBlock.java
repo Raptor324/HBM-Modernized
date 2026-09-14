@@ -109,7 +109,7 @@ public class CargoElevatorBlock extends BaseEntityBlock {
     }
 
     //? if < 1.21.1 {
-    /*@Override
+    @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player,
                                   InteractionHand hand, BlockHitResult hit) {
 
@@ -142,8 +142,8 @@ public class CargoElevatorBlock extends BaseEntityBlock {
         core.toggleElevator();
         return InteractionResult.SUCCESS;
         }
-    *///?} else {
-    @Override
+    //?} else {
+    /*@Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
 
         if (level.isClientSide) {
@@ -175,7 +175,7 @@ public class CargoElevatorBlock extends BaseEntityBlock {
         core.toggleElevator();
         return InteractionResult.SUCCESS;
         }
-    //?}
+    *///?}
 
 
     /** Guards the cascade against re-entering itself through the removals it performs. */
@@ -217,18 +217,18 @@ public class CargoElevatorBlock extends BaseEntityBlock {
     }
 
     //? if < 1.21.1 {
-    /*@Override
+    @Override
     public void playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
         destroyShaft(level, pos, !player.getAbilities().instabuild);
         super.playerWillDestroy(level, pos, state, player);
     }
-    *///?} else {
-    @Override
+    //?} else {
+    /*@Override
     public BlockState playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
         destroyShaft(level, pos, !player.getAbilities().instabuild);
         return super.playerWillDestroy(level, pos, state, player);
     }
-    //?}
+    *///?}
 
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
@@ -352,11 +352,11 @@ public class CargoElevatorBlock extends BaseEntityBlock {
     }
 
     //? if >1.20.1 {
-    public static final com.mojang.serialization.MapCodec<CargoElevatorBlock> CODEC = simpleCodec(CargoElevatorBlock::new);
+    /*public static final com.mojang.serialization.MapCodec<CargoElevatorBlock> CODEC = simpleCodec(CargoElevatorBlock::new);
 
     @Override
     protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
         return CODEC;
     }
-    //?}
+    *///?}
 }

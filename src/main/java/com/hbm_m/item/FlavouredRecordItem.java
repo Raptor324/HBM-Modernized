@@ -10,8 +10,8 @@ import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 //? if < 1.21.1 {
-/*import net.minecraft.world.item.RecordItem;
-*///?}
+import net.minecraft.world.item.RecordItem;
+//?}
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
 
@@ -29,38 +29,38 @@ import net.minecraft.world.level.Level;
  * jukebox_playable component instead of the constructor.</p>
  */
 //? if < 1.21.1 {
-/*public class FlavouredRecordItem extends RecordItem {
-*///?} else {
-public class FlavouredRecordItem extends Item {
-//?}
+public class FlavouredRecordItem extends RecordItem {
+//?} else {
+/*public class FlavouredRecordItem extends Item {
+*///?}
 
     private final String flavourKey;
 
     //? if < 1.21.1 {
-    /*public FlavouredRecordItem(int comparatorValue, SoundEvent sound, Properties properties,
+    public FlavouredRecordItem(int comparatorValue, SoundEvent sound, Properties properties,
                                int lengthInTicks, String flavourKey) {
         super(comparatorValue, sound, properties, lengthInTicks);
         this.flavourKey = flavourKey;
     }
-    *///?} else {
-    public FlavouredRecordItem(int comparatorValue, SoundEvent sound, Properties properties,
+    //?} else {
+    /*public FlavouredRecordItem(int comparatorValue, SoundEvent sound, Properties properties,
                                int lengthInTicks, String flavourKey) {
         super(properties);
         this.flavourKey = flavourKey;
     }
-    //?}
+    *///?}
 
     //? if < 1.21.1 {
-    /*// @Override omitted intentionally - Stonecutter removes this block for >= 1.21.1
+    // @Override omitted intentionally - Stonecutter removes this block for >= 1.21.1
     public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> list, TooltipFlag flag) {
         // Line 1: what vanilla RecordItem draws - the ".desc" key, grey.
         list.add(this.getDisplayName().withStyle(ChatFormatting.GRAY));
-    *///?} else {
-    @Override
+    //?} else {
+    /*@Override
     public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> list, TooltipFlag flag) {
         // No ".desc" line here: on 1.21.1 the jukebox_playable component makes vanilla draw the
         // JukeboxSong description itself, so adding it again showed the title twice.
-    //?}
+    *///?}
         // Line 2: the disc's own flavour text.
         list.add(Component.translatable(flavourKey).withStyle(ChatFormatting.DARK_GRAY, ChatFormatting.ITALIC));
     }

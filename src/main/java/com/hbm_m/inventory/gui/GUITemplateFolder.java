@@ -248,7 +248,7 @@ public class GUITemplateFolder extends Screen {
     }
 
     //? if < 1.21.1 {
-    /*@Override
+    @Override
     public boolean mouseScrolled(double pMouseX, double pMouseY, double pDelta) {
         if (pDelta > 0 && currentPage > 0) {
             changePage(-1);
@@ -257,8 +257,8 @@ public class GUITemplateFolder extends Screen {
         }
         return true;
     }
-    *///?} else {
-    // 1.21.1: mouseScrolled получил 4-й параметр (horizontal scroll) — передаём 0.0.
+    //?} else {
+    /*// 1.21.1: mouseScrolled получил 4-й параметр (horizontal scroll) — передаём 0.0.
     @Override
     public boolean mouseScrolled(double pMouseX, double pMouseY, double scrollX, double scrollY) {
         double pDelta = scrollY;
@@ -269,7 +269,7 @@ public class GUITemplateFolder extends Screen {
         }
         return true;
     }
-    //?}
+    *///?}
 
     private int getPageCount() {
         return Math.max(1, (int) Math.ceil(filteredRecipes.size() / 35.0));

@@ -14,10 +14,10 @@ import net.minecraft.world.item.ItemStack;
  * Client renderer for crate tooltip rows (item icon + name).
  */
 //? if forge {
-/*import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 @OnlyIn(Dist.CLIENT)
-*///?}
+//?}
 
 public class CrateContentsTooltipComponentRenderer implements ClientTooltipComponent {
     private static final int ROW_HEIGHT = 18;

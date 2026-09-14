@@ -58,7 +58,7 @@ public final class MainRegistry {
         LOGGER.info("Initializing {}", RefStrings.NAME);
 
         //? if neoforge {
-        // NeoForge 1.21+: регистрация сетевых пейлоадов обязана произойти ДО фазы
+        /*// NeoForge 1.21+: регистрация сетевых пейлоадов обязана произойти ДО фазы
         // NetworkRegistry.setup() → RegisterPayloadHandlersEvent, которая выполняется
         // ПОСЛЕ конструкторов модов, но ДО FMLCommonSetupEvent/FMLClientSetupEvent.
         // Architectury добавляет слушатель RegisterPayloadHandlersEvent в момент вызова
@@ -66,7 +66,7 @@ public final class MainRegistry {
         // не срабатывает → S2C-пакеты (радиация, гейгер, дебаг-рендер) не доходят до клиента.
         ModPacketHandler.register();
         ModPacketHandler.registerClientReceivers();
-        //?}
+        *///?}
 
         // Registries (common)
         // Must run before any world loads: the RBMK dials are world game rules in the original.
@@ -79,8 +79,8 @@ public final class MainRegistry {
         ModSounds.init();
         ModItems.init();
         //? if neoforge {
-        com.hbm_m.item.tools_and_armor.ModArmorMaterialsAccess.init();
-        //?}
+        /*com.hbm_m.item.tools_and_armor.ModArmorMaterialsAccess.init();
+        *///?}
         ModMenuTypes.init();
         ModCreativeTabs.init();
         ModParticleTypes.init();

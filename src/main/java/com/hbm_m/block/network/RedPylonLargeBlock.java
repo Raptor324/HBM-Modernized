@@ -21,11 +21,11 @@ public class RedPylonLargeBlock extends RedPylonCoreBlock {
     }
 
     //? if > 1.20.1 {
-    public static final com.mojang.serialization.MapCodec<RedPylonLargeBlock> CODEC =
+    /*public static final com.mojang.serialization.MapCodec<RedPylonLargeBlock> CODEC =
             simpleCodec(RedPylonLargeBlock::new);
     @Override
     protected com.mojang.serialization.MapCodec<? extends BaseEntityBlock> codec() { return CODEC; }
-    //?}
+    *///?}
 
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext context) {

@@ -6,17 +6,17 @@ import com.hbm_m.recipe.ElectrolyserFluidRecipe;
 
 import dev.architectury.fluid.FluidStack;
 //? if forge {
-/*//? if forge {
-/^import mezz.jei.api.forge.ForgeTypes;
-^///?} elif neoforge {
-import mezz.jei.api.neoforge.NeoForgeTypes;
-//?}
 //? if forge {
-/^import dev.architectury.hooks.fluid.forge.FluidStackHooksForge;
-^///?}
-*///?} elif neoforge {
-import mezz.jei.api.neoforge.NeoForgeTypes;
+import mezz.jei.api.forge.ForgeTypes;
+//?} elif neoforge {
+/*import mezz.jei.api.neoforge.NeoForgeTypes;
+*///?}
+//? if forge {
+import dev.architectury.hooks.fluid.forge.FluidStackHooksForge;
 //?}
+//?} elif neoforge {
+/*import mezz.jei.api.neoforge.NeoForgeTypes;
+*///?}
 import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
 import mezz.jei.api.helpers.IGuiHelper;
 import mezz.jei.api.recipe.RecipeIngredientRole;
@@ -107,12 +107,12 @@ public class ElectrolyserFluidJeiCategory extends JeiGenericRecipeCategory<Elect
         addItemSlot(builder, role, x, y)
                 .setFluidRenderer(FLUID_RENDERER_CAPACITY, false, 16, 16)
                 //? if forge {
-                /*.setCustomRenderer(ForgeTypes.FLUID_STACK, new HbmFluidJeiRenderer(16, 16))
+                .setCustomRenderer(ForgeTypes.FLUID_STACK, new HbmFluidJeiRenderer(16, 16))
                 .addIngredient(ForgeTypes.FLUID_STACK, FluidStackHooksForge.toForge(fluid));
-                *///?} elif neoforge {
-                .setCustomRenderer(NeoForgeTypes.FLUID_STACK, new HbmFluidJeiRenderer(16, 16))
+                //?} elif neoforge {
+                /*.setCustomRenderer(NeoForgeTypes.FLUID_STACK, new HbmFluidJeiRenderer(16, 16))
                 .addIngredient(NeoForgeTypes.FLUID_STACK, new net.neoforged.neoforge.fluids.FluidStack(fluid.getFluid(), (int) fluid.getAmount()));
-                //?}
+                *///?}
     }
 
     @Override

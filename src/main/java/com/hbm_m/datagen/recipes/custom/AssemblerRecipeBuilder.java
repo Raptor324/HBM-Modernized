@@ -1,6 +1,6 @@
 package com.hbm_m.datagen.recipes.custom;
 //? if forge {
-/*import java.util.ArrayList;
+import java.util.ArrayList;
 import java.util.List;
 
 import org.jetbrains.annotations.Nullable;
@@ -86,4 +86,4 @@ public class AssemblerRecipeBuilder extends BaseRecipeBuilder<AssemblerRecipeBui
         return AssemblerRecipe.Serializer.INSTANCE;
     }
 }
-*///?}
+//?}

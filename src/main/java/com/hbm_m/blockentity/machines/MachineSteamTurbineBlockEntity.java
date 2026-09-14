@@ -27,11 +27,11 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
 
 //? if forge {
-/*import net.minecraftforge.common.capabilities.Capability;
+import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.capability.IFluidHandler;
-*///?}
+//?}
 
 public class MachineSteamTurbineBlockEntity extends BaseMachineBlockEntity implements IEnergyModeHolder, com.hbm_m.api.fluids.IFluidStandardTransceiverMK2 {
 
@@ -221,7 +221,7 @@ public class MachineSteamTurbineBlockEntity extends BaseMachineBlockEntity imple
     }
 
     //? if forge {
-    /*@Override
+    @Override
     protected void setupFluidCapability() {
         setFluidHandler(new UnifiedFluidHandler(this));
     }
@@ -296,5 +296,5 @@ public class MachineSteamTurbineBlockEntity extends BaseMachineBlockEntity imple
             return drained;
         }
     }
-    *///?}
+    //?}
 }

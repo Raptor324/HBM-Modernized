@@ -39,15 +39,15 @@ public class RBMKDisplayBlock extends RBMKMiniPanelBlock {
     }
 
     //? if < 1.21.1 {
-    /*@Override
+    @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos,
                                   Player player, InteractionHand hand, BlockHitResult hit) {
         return handleUse(level, pos, player, hand)
                 ? InteractionResult.sidedSuccess(level.isClientSide)
                 : InteractionResult.PASS;
     }
-    *///?} else {
-    // 1.21 hat use() durch useItemOn() mit eigenem Ergebnistyp ersetzt.
+    //?} else {
+    /*// 1.21 hat use() durch useItemOn() mit eigenem Ergebnistyp ersetzt.
     @Override
     protected net.minecraft.world.ItemInteractionResult useItemOn(ItemStack stack, BlockState state, Level level,
                                                                  BlockPos pos, Player player, InteractionHand hand,
@@ -56,7 +56,7 @@ public class RBMKDisplayBlock extends RBMKMiniPanelBlock {
                 ? net.minecraft.world.ItemInteractionResult.sidedSuccess(level.isClientSide)
                 : net.minecraft.world.ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
     }
-    //?}
+    *///?}
 
     /** Gemeinsame Interaktionslogik beider Versionen; true = behandelt. */
     private boolean handleUse(Level level, BlockPos pos, Player player, InteractionHand hand) {
@@ -78,11 +78,11 @@ public class RBMKDisplayBlock extends RBMKMiniPanelBlock {
     }
 
     //? if >1.20.1 {
-    public static final com.mojang.serialization.MapCodec<RBMKDisplayBlock> CODEC = simpleCodec(RBMKDisplayBlock::new);
+    /*public static final com.mojang.serialization.MapCodec<RBMKDisplayBlock> CODEC = simpleCodec(RBMKDisplayBlock::new);
 
     @Override
     protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
         return CODEC;
     }
-    //?}
+    *///?}
 }

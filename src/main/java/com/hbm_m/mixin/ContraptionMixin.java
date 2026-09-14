@@ -121,10 +121,10 @@ public abstract class ContraptionMixin {
                 net.minecraft.nbt.CompoundTag nbt = null;
                 if (blockEntity != null) {
                     //? if < 1.21 {
-                    /*nbt = blockEntity.saveWithoutMetadata();
-                    *///?} else {
-                    nbt = blockEntity.saveWithoutMetadata(world.registryAccess());
-                     //?}
+                    nbt = blockEntity.saveWithoutMetadata();
+                    //?} else {
+                    /*nbt = blockEntity.saveWithoutMetadata(world.registryAccess());
+                     *///?}
                 }
                 StructureBlockInfo info = new StructureBlockInfo(localPart, blockState, nbt);
                 this.blocks.put(localPart, info);

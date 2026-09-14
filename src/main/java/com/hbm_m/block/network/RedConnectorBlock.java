@@ -46,8 +46,8 @@ public class RedConnectorBlock extends BaseEntityBlock {
     private final Supplier<? extends BlockEntityType<? extends PylonBaseBlockEntity>> type;
     private final int maxRange;
     //? if > 1.20.1 {
-    private final com.mojang.serialization.MapCodec<RedConnectorBlock> codec;
-    //?}
+    /*private final com.mojang.serialization.MapCodec<RedConnectorBlock> codec;
+    *///?}
 
     public RedConnectorBlock(Properties properties, Supplier<? extends BlockEntityType<? extends PylonBaseBlockEntity>> type, int maxRange) {
         super(properties);
@@ -55,8 +55,8 @@ public class RedConnectorBlock extends BaseEntityBlock {
         this.maxRange = maxRange;
         this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.DOWN));
         //? if > 1.20.1 {
-        this.codec = simpleCodec(p -> new RedConnectorBlock(p, type, maxRange));
-        //?}
+        /*this.codec = simpleCodec(p -> new RedConnectorBlock(p, type, maxRange));
+        *///?}
     }
 
     @Override
@@ -65,9 +65,9 @@ public class RedConnectorBlock extends BaseEntityBlock {
     }
 
     //? if > 1.20.1 {
-    @Override
+    /*@Override
     protected com.mojang.serialization.MapCodec<? extends BaseEntityBlock> codec() { return codec; }
-    //?}
+    *///?}
 
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext context) {
@@ -157,12 +157,12 @@ public class RedConnectorBlock extends BaseEntityBlock {
     }
 
     //? if < 1.21.1 {
-    /*@Override
-    public void appendHoverText(ItemStack stack, @Nullable BlockGetter level, List<Component> tooltip, TooltipFlag flag) {
-    *///?} else {
     @Override
+    public void appendHoverText(ItemStack stack, @Nullable BlockGetter level, List<Component> tooltip, TooltipFlag flag) {
+    //?} else {
+    /*@Override
     public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
-    //?}
+    *///?}
         addTooltip(tooltip);
     }
 }

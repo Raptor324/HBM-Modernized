@@ -127,7 +127,7 @@ public abstract class RBMKControlBlockEntity extends RBMKColumnBlockEntity imple
     }
 
     //? if forge {
-    /*@Override
+    @Override
     public @org.jetbrains.annotations.NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(
             @org.jetbrains.annotations.NotNull net.minecraftforge.common.capabilities.Capability<T> cap,
             @org.jetbrains.annotations.Nullable Direction side) {
@@ -139,7 +139,7 @@ public abstract class RBMKControlBlockEntity extends RBMKColumnBlockEntity imple
         }
         return super.getCapability(cap, side);
     }
-    *///?}
+    //?}
 
     @Override
     public void setRemoved() {

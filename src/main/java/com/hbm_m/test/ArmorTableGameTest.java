@@ -15,12 +15,12 @@ import net.minecraft.world.inventory.ClickType;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 //? if forge {
-/*import net.minecraftforge.gametest.GameTestHolder;
+import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
-*///?} elif neoforge {
-import net.neoforged.neoforge.gametest.GameTestHolder;
+//?} elif neoforge {
+/*import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
- //?}
+ *///?}
 
 /**
  * Armor modification table driven through real container clicks
@@ -40,22 +40,22 @@ public final class ArmorTableGameTest {
 
     private static Player mockPlayer(GameTestHelper helper) {
         //? if < 1.21.1 {
-        /*return helper.makeMockPlayer();
-        *///?} else {
-        return helper.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
-        //?}
+        return helper.makeMockPlayer();
+        //?} else {
+        /*return helper.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
+        *///?}
     }
 
     private static boolean hasMaxHealthModifier(ItemStack armor) {
         //? if < 1.21.1 {
-        /*return armor.getAttributeModifiers(net.minecraft.world.entity.EquipmentSlot.CHEST).containsKey(Attributes.MAX_HEALTH);
-        *///?} else {
-        boolean[] found = {false};
+        return armor.getAttributeModifiers(net.minecraft.world.entity.EquipmentSlot.CHEST).containsKey(Attributes.MAX_HEALTH);
+        //?} else {
+        /*boolean[] found = {false};
         armor.forEachModifier(net.minecraft.world.entity.EquipmentSlot.CHEST, (attr, mod) -> {
             if (attr.equals(Attributes.MAX_HEALTH)) found[0] = true;
         });
         return found[0];
-        //?}
+        *///?}
     }
 
     private static ArmorTableMenu openTable(GameTestHelper helper, Player player) {

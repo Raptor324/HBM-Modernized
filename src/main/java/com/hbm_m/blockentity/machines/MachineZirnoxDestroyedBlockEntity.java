@@ -40,8 +40,8 @@ public class MachineZirnoxDestroyedBlockEntity extends BaseHbmBlockEntity {
      * y 0..3.1, z −2.9..3.2 относительно ядра), поэтому AABB взят с запасом ±4.
      */
     //? if forge {
-    /*@Override
-    *///?}
+    @Override
+    //?}
     public net.minecraft.world.phys.AABB getRenderBoundingBox() {
         return new AABB(worldPosition.getX() - 4, worldPosition.getY(), worldPosition.getZ() - 4,
                 worldPosition.getX() + 4, worldPosition.getY() + 4, worldPosition.getZ() + 4);

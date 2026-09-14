@@ -1,6 +1,6 @@
 package com.hbm_m.datagen.recipes.custom;
 //? if forge {
-/*import com.hbm_m.inventory.fluid.ModFluids;
+import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.item.material.MaterialShape;
 import com.hbm_m.item.material.ModMaterialItems;
@@ -13,7 +13,7 @@ import net.minecraft.world.item.Items;
 
 import java.util.function.Consumer;
 
-/^*
+/**
  * Генератор JSON-рецептов кокера ({@code hbm_m:coker}).
  *
  * <p>Порт 32 рецептов из удалённого статического {@code CokerRecipes}. Auto-рецепты
@@ -27,7 +27,7 @@ import java.util.function.Consumer;
  * CALCIUM_SOLUTION-рецепт отсутствует и в оригинале порта (нет порошка кальция) — документированная лакуна.</p>
  *
  * <p>Чистый ванильный 1.20.1 код внутри {@code //? if forge} — датаген только для 1.20.1-forge.</p>
- ^/
+ */
 public final class CokerRecipeGenerator {
 
     private CokerRecipeGenerator() {}
@@ -115,7 +115,7 @@ public final class CokerRecipeGenerator {
         ).save(writer, "coker/vitriol");
     }
 
-    /^* Обёртка auto/SFauto-рецепта: вход (mB) → предмет + побочная жидкость (mB). ^/
+    /** Обёртка auto/SFauto-рецепта: вход (mB) → предмет + побочная жидкость (mB). */
     private static void auto(Consumer<FinishedRecipe> writer, String id, ModFluids.FluidEntry in,
                               int inMb, ModFluids.FluidEntry byproduct, int byMb, ItemStack output) {
         CokerRecipeBuilder.cokerRecipe(fluid(in, inMb), output, fluid(byproduct, byMb))
@@ -126,4 +126,4 @@ public final class CokerRecipeGenerator {
         return FluidStack.create(entry.getSource(), (long) amountMb);
     }
 }
-*///?}
+//?}

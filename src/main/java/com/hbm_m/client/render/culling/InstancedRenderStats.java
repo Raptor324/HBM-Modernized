@@ -5,13 +5,13 @@ import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.main.MainRegistry;
 
 //? if forge {
-/*import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-*///?}
-//? if neoforge {
-import net.neoforged.api.distmarker.Dist;
-import net.neoforged.api.distmarker.OnlyIn;
 //?}
+//? if neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /**
  * Lightweight per-frame counters for instanced / MDI diagnostics (Cloth: enableDebugLogging or mdiDebugLogDispatch).

@@ -15,12 +15,12 @@ import net.minecraft.core.Direction;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.state.BlockState;
 //? if forge {
-/*import net.minecraftforge.client.ChunkRenderTypeSet;
+import net.minecraftforge.client.ChunkRenderTypeSet;
 import net.minecraftforge.client.model.data.ModelData;
-*///?} elif neoforge {
-import net.neoforged.neoforge.client.ChunkRenderTypeSet;
+//?} elif neoforge {
+/*import net.neoforged.neoforge.client.ChunkRenderTypeSet;
 import net.neoforged.neoforge.client.model.data.ModelData;
-//?}
+*///?}
 
 /**
  * Multipart baked model для CargoElevator.
@@ -73,14 +73,14 @@ public class CargoElevatorBakedModel extends AbstractMultipartBakedModel impleme
     }
 
     //? if forge {
-    /*@Override
+    @Override
     public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, RandomSource rand) {
         return getQuads(state, side, rand, ModelData.EMPTY, null);
     }
-    *///?}
+    //?}
 
     //? if neoforge {
-    /// На neoforge 3-arg — это ITEM/BER hot path. WORLD (state != null) → пусто (VBO owns geometry),
+    /*/// На neoforge 3-arg — это ITEM/BER hot path. WORLD (state != null) → пусто (VBO owns geometry),
     /// ITEM → приоритетные части через base-class helper.
     @Override
     public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, RandomSource rand) {
@@ -89,7 +89,7 @@ public class CargoElevatorBakedModel extends AbstractMultipartBakedModel impleme
         }
         return List.of();
     }
-    //?}
+    *///?}
 
     //? if forge || neoforge {
     @Override
@@ -98,10 +98,10 @@ public class CargoElevatorBakedModel extends AbstractMultipartBakedModel impleme
                                      @Nullable RenderType renderType) {
         if (state == null) {
             //? if forge {
-            /*return getItemQuads(side, rand, modelData, renderType);
-            *///?} elif neoforge {
-            return buildItemQuadsFromRenderParts(side, rand);
-            //?}
+            return getItemQuads(side, rand, modelData, renderType);
+            //?} elif neoforge {
+            /*return buildItemQuadsFromRenderParts(side, rand);
+            *///?}
         }
         // WORLD: геометрия полностью в BER/VBO
         return List.of();
@@ -114,7 +114,7 @@ public class CargoElevatorBakedModel extends AbstractMultipartBakedModel impleme
     //?}
 
     //? if forge {
-    /*private List<BakedQuad> getItemQuads(@Nullable Direction side, RandomSource rand,
+    private List<BakedQuad> getItemQuads(@Nullable Direction side, RandomSource rand,
                                            ModelData modelData, @Nullable RenderType renderType) {
         if (!itemQuadsCached) {
             buildItemQuads(rand, modelData, renderType);
@@ -141,7 +141,7 @@ public class CargoElevatorBakedModel extends AbstractMultipartBakedModel impleme
         }
         this.cachedItemQuads = allQuads;
     }
-    *///?}
+    //?}
 
 
     @Override
@@ -156,11 +156,11 @@ public class CargoElevatorBakedModel extends AbstractMultipartBakedModel impleme
     @Override
     public TextureAtlasSprite getParticleIcon() {
         //? if forge {
-        /*return getParticleIcon(ModelData.EMPTY);
-        *///?}
-        //? if neoforge {
-        return super.getParticleIcon();
+        return getParticleIcon(ModelData.EMPTY);
         //?}
+        //? if neoforge {
+        /*return super.getParticleIcon();
+        *///?}
     }
 
     @Override

@@ -46,12 +46,12 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 //? if forge {
-/*import net.minecraftforge.common.capabilities.Capability;
+import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
-*///?}
+//?}
 
 /**
  * Доменная печь (обновлённая версия из оригинала).
@@ -190,7 +190,7 @@ public class MachineBlastFurnaceBlockEntity extends BaseHbmBlockEntity implement
     }
 
     //? if forge {
-    /*private LazyOptional<IFluidHandler> lazyFluidHandler = LazyOptional.empty();
+    private LazyOptional<IFluidHandler> lazyFluidHandler = LazyOptional.empty();
 
     @Override
     public void onLoad() {
@@ -212,7 +212,7 @@ public class MachineBlastFurnaceBlockEntity extends BaseHbmBlockEntity implement
         lazyFluidHandler.invalidate();
     }
 
-    /^* Заполнение - только дутьё, слив - только дымовые газы (как в оригинале). ^/
+    /** Заполнение - только дутьё, слив - только дымовые газы (как в оригинале). */
     private class CombinedFluidHandler implements IFluidHandler {
         @Override public int getTanks() { return 2; }
         @Override public FluidStack getFluidInTank(int tank) {
@@ -238,15 +238,15 @@ public class MachineBlastFurnaceBlockEntity extends BaseHbmBlockEntity implement
             return new FluidStack(ModFluids.FLUE.getSource(), drained);
         }
     }
-    *///?}
+    //?}
 
     @Override
     public @Nullable Object getFluidHandler(@Nullable Direction side) {
         //? if forge {
-        /*return lazyFluidHandler.resolve().orElse(null);
-        *///?} else {
-        return new com.hbm_m.api.fluids.NeoForgeFluidHandlerMK2(this);
-         //?}
+        return lazyFluidHandler.resolve().orElse(null);
+        //?} else {
+        /*return new com.hbm_m.api.fluids.NeoForgeFluidHandlerMK2(this);
+         *///?}
     }
 
     // ==================== IFluidUserMK2 ====================

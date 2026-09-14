@@ -424,10 +424,10 @@ public abstract class MachineModuleBase<T extends Recipe<?>> {
             if (incoming == null || incoming.isEmpty()) return true;
             if (slotStack == null || slotStack.isEmpty()) return true;
             //? if < 1.21.1 {
-            /*if (!PlatformHooks.isSameItemSameTags(slotStack, incoming)) return false;
-            *///?} else {
-            if (!ItemStack.isSameItemSameComponents(slotStack, incoming)) return false;
-            //?}
+            if (!PlatformHooks.isSameItemSameTags(slotStack, incoming)) return false;
+            //?} else {
+            /*if (!ItemStack.isSameItemSameComponents(slotStack, incoming)) return false;
+            *///?}
             return (long) slotStack.getCount() + incoming.getCount() <= slotStack.getMaxStackSize();
         }
 

@@ -37,16 +37,16 @@ public final class EntityDataHooks {
     }
 
     //? if < 1.21.1 {
-    /*public static Sink sink(SynchedEntityData data) {
+    public static Sink sink(SynchedEntityData data) {
         return new Sink() {
             @Override public <T> void define(EntityDataAccessor<T> key, T value) { data.define(key, value); }
         };
     }
-    *///?} else {
-    public static Sink sink(SynchedEntityData.Builder builder) {
+    //?} else {
+    /*public static Sink sink(SynchedEntityData.Builder builder) {
         return new Sink() {
             @Override public <T> void define(EntityDataAccessor<T> key, T value) { builder.define(key, value); }
         };
     }
-    //?}
+    *///?}
 }

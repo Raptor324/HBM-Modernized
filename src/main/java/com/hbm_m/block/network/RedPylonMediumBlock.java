@@ -22,17 +22,17 @@ public class RedPylonMediumBlock extends RedPylonCoreBlock {
         super(properties);
         this.transformer = transformer;
         //? if > 1.20.1 {
-        this.codec = makeCodec(p -> new RedPylonMediumBlock(p, transformer));
-        //?}
+        /*this.codec = makeCodec(p -> new RedPylonMediumBlock(p, transformer));
+        *///?}
     }
 
     //? if > 1.20.1 {
-    private final com.mojang.serialization.MapCodec<RedPylonMediumBlock> codec;
-    //?}
+    /*private final com.mojang.serialization.MapCodec<RedPylonMediumBlock> codec;
+    *///?}
     //? if > 1.20.1 {
-    @Override
+    /*@Override
     protected com.mojang.serialization.MapCodec<? extends BaseEntityBlock> codec() { return codec; }
-    //?}
+    *///?}
 
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext context) {

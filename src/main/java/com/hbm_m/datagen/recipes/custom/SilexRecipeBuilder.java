@@ -1,6 +1,6 @@
 package com.hbm_m.datagen.recipes.custom;
 //? if forge {
-/*import com.google.gson.JsonArray;
+import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.hbm_m.recipe.SilexRecipe;
 
@@ -9,7 +9,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 
-/^*
+/**
  * Datagen-билдер {@link SilexRecipe} ({@code hbm_m:silex}).
  *
  * <p>Чистый ванильный 1.20.1 код внутри {@code //? if forge} — датаген только для 1.20.1-forge.</p>
@@ -27,7 +27,7 @@ import net.minecraft.world.item.crafting.RecipeSerializer;
  *   ]
  * }
  * }</pre>
- ^/
+ */
 public class SilexRecipeBuilder extends BaseRecipeBuilder<SilexRecipeBuilder> {
 
     private final Ingredient input;
@@ -79,4 +79,4 @@ public class SilexRecipeBuilder extends BaseRecipeBuilder<SilexRecipeBuilder> {
         return SilexRecipe.Serializer.INSTANCE;
     }
 }
-*///?}
+//?}

@@ -177,14 +177,14 @@ public class RBMKAutoloaderBlockEntity extends RBMKColumnBlockEntity implements 
      * (which only ever grows upward) culls it away as soon as the block itself leaves the frustum.
      */
     //? if forge {
-    /*@Override
+    @Override
     @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
     public net.minecraft.world.phys.AABB getRenderBoundingBox() {
         BlockPos p = getBlockPos();
         return new net.minecraft.world.phys.AABB(p.getX(), p.getY() - 5, p.getZ(),
                                                  p.getX() + 1, p.getY() + 2, p.getZ() + 1);
     }
-    *///?}
+    //?}
 
     @Override public Component getDisplayName() { return Component.translatable("block.hbm_m.rbmk_autoloader"); }
     @Override public AbstractContainerMenu createMenu(int id, Inventory inv, Player player) { return new RBMKAutoloaderMenu(id, inv, this); }

@@ -27,11 +27,11 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
 //? if forge {
-/*import net.minecraftforge.common.capabilities.Capability;
+import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.capability.IFluidHandler;
-*///?}
+//?}
 
 /**
  * Industrial Mixer BlockEntity.
@@ -328,16 +328,16 @@ public class MachineMixerBlockEntity extends BaseMachineBlockEntity implements I
     }
 
     //? if forge {
-    /*@Override
+    @Override
     protected void setupFluidCapability() {
         setFluidHandler(new MixerFluidHandler(this));
     }
 
-    /^*
+    /**
      * Combined Forge fluid handler exposing the two input tanks (fillable) and the output tank
      * (drainable) through a single capability, mirroring {@code MachineRefineryBlockEntity}'s
      * approach for chemical plant pipes.
-     ^/
+     */
     private static class MixerFluidHandler implements IFluidHandler {
         private final MachineMixerBlockEntity be;
 
@@ -414,5 +414,5 @@ public class MachineMixerBlockEntity extends BaseMachineBlockEntity implements I
             return new net.minecraftforge.fluids.FluidStack(normalized, toDrain);
         }
     }
-    *///?}
+    //?}
 }

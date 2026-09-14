@@ -27,16 +27,16 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.GsonHelper;
 
 //? if < 1.21.1 {
-/*import net.minecraftforge.client.model.geometry.IGeometryBakingContext;
+import net.minecraftforge.client.model.geometry.IGeometryBakingContext;
 import net.minecraftforge.client.model.geometry.IGeometryLoader;
 import net.minecraftforge.client.model.geometry.IUnbakedGeometry;
 import net.minecraftforge.client.model.obj.ObjModel;
-*///?} else {
-import net.neoforged.neoforge.client.model.geometry.IGeometryBakingContext;
+//?} else {
+/*import net.neoforged.neoforge.client.model.geometry.IGeometryBakingContext;
 import net.neoforged.neoforge.client.model.geometry.IGeometryLoader;
 import net.neoforged.neoforge.client.model.geometry.IUnbakedGeometry;
 import net.neoforged.neoforge.client.model.obj.ObjModel;
-//?}
+*///?}
 
 public class PressModelLoader implements IGeometryLoader<PressModelLoader.PressGeometry> {
 
@@ -90,17 +90,17 @@ public class PressModelLoader implements IGeometryLoader<PressModelLoader.PressG
         public void resolveParents(Function<ResourceLocation, UnbakedModel> modelGetter, IGeometryBakingContext context) { }
 
         //? if < 1.21.1 {
-        /*@Override
+        @Override
         public BakedModel bake(IGeometryBakingContext context, ModelBaker baker, Function<Material, TextureAtlasSprite> spriteGetter, ModelState modelState, ItemOverrides overrides, ResourceLocation modelLocation) {
             return doBake(context, baker, spriteGetter, modelState, overrides, modelLocation);
         }
-        *///?} else {
-        @Override
+        //?} else {
+        /*@Override
         public BakedModel bake(IGeometryBakingContext context, ModelBaker baker, Function<Material, TextureAtlasSprite> spriteGetter, ModelState modelState, ItemOverrides overrides) {
             ResourceLocation modelLocation = ResourceLocation.parse(context.getModelName());
             return doBake(context, baker, spriteGetter, modelState, overrides, modelLocation);
         }
-        //?}
+        *///?}
 
         private BakedModel doBake(IGeometryBakingContext context, ModelBaker baker, Function<Material, TextureAtlasSprite> spriteGetter, ModelState modelState, ItemOverrides overrides, ResourceLocation modelLocation) {
             Map<String, BakedModel> bakedParts = new HashMap<>();

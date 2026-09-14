@@ -4,8 +4,8 @@ import com.hbm_m.block.ModBlocks;
 import com.hbm_m.main.MainRegistry;
 import com.mojang.serialization.Codec;
 //? if >= 1.21.1 {
-import com.mojang.serialization.MapCodec;
-//?}
+/*import com.mojang.serialization.MapCodec;
+*///?}
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.resources.ResourceLocation;
@@ -35,10 +35,10 @@ import org.jetbrains.annotations.Nullable;
 public class StructureLootProcessor extends StructureProcessor {
 
     //? if < 1.21.1 {
-    /*public static final Codec<StructureLootProcessor> CODEC = Codec.unit(StructureLootProcessor::new);
-    *///?} else {
-    public static final MapCodec<StructureLootProcessor> CODEC = MapCodec.unit(StructureLootProcessor::new);
-    //?}
+    public static final Codec<StructureLootProcessor> CODEC = Codec.unit(StructureLootProcessor::new);
+    //?} else {
+    /*public static final MapCodec<StructureLootProcessor> CODEC = MapCodec.unit(StructureLootProcessor::new);
+    *///?}
 
     /** Тематические авторские таблицы для ванильных сундуков. */
     private static final ResourceLocation[] CHEST_TABLES = new ResourceLocation[] {

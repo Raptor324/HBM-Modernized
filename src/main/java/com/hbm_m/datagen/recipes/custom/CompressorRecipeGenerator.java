@@ -1,13 +1,13 @@
 package com.hbm_m.datagen.recipes.custom;
 //? if forge {
-/*import com.hbm_m.inventory.fluid.ModFluids;
+import com.hbm_m.inventory.fluid.ModFluids;
 
 import dev.architectury.fluid.FluidStack;
 import net.minecraft.data.recipes.FinishedRecipe;
 
 import java.util.function.Consumer;
 
-/^*
+/**
  * Генератор JSON-рецептов компрессора ({@code hbm_m:compressor}).
  *
  * <p>Порт 5 спец-рецептов из удалённого статического {@code CompressorRecipes} (static-блок,
@@ -16,7 +16,7 @@ import java.util.function.Consumer;
  * Генерический «+1 к давлению»-fallback машины остаётся захардкоженным в BE и здесь не
  * описывается. Чистый ванильный 1.20.1 код внутри {@code //? if forge} — датаген только для
  * 1.20.1-forge.</p>
- ^/
+ */
 public final class CompressorRecipeGenerator {
 
     private CompressorRecipeGenerator() {}
@@ -67,4 +67,4 @@ public final class CompressorRecipeGenerator {
         return FluidStack.create(entry.getSource(), (long) amountMb);
     }
 }
-*///?}
+//?}

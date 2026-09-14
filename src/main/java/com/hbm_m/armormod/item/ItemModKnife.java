@@ -69,13 +69,13 @@ public class ItemModKnife extends ItemArmorMod {
         // points lower - so the loss accumulates across the whole modifier rather than stacking
         // separate ones.
         //? if < 1.21.1 {
-        /*AttributeModifier existing = maxHealth.getModifier(TRIGAMMA_UUID);
+        AttributeModifier existing = maxHealth.getModifier(TRIGAMMA_UUID);
         double previous = existing != null ? existing.getAmount() : 0D;
         if (existing != null) maxHealth.removeModifier(TRIGAMMA_UUID);
         maxHealth.addPermanentModifier(com.hbm_m.platform.PlatformHooks.attributeModifier(
                 TRIGAMMA_UUID, "digamma", previous - 2D, AttributeModifier.Operation.ADDITION));
-        *///?} else {
-        // 1.21 identifiziert Modifikatoren per ResourceLocation; dieselbe Ableitung aus der UUID
+        //?} else {
+        /*// 1.21 identifiziert Modifikatoren per ResourceLocation; dieselbe Ableitung aus der UUID
         // wie in PlatformHooks.attributeModifier, damit der Schluessel stabil bleibt.
         net.minecraft.resources.ResourceLocation trigammaId =
                 net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(
@@ -85,7 +85,7 @@ public class ItemModKnife extends ItemArmorMod {
         if (existing != null) maxHealth.removeModifier(trigammaId);
         maxHealth.addPermanentModifier(com.hbm_m.platform.PlatformHooks.attributeModifier(
                 TRIGAMMA_UUID, "digamma", previous - 2D, AttributeModifier.Operation.ADD_VALUE));
-        //?}
+        *///?}
 
         // Clamp so the wearer cannot be knifed into negative health.
         if (entity.getHealth() > entity.getMaxHealth()) entity.setHealth(entity.getMaxHealth());

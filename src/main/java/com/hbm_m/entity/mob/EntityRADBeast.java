@@ -83,16 +83,16 @@ public class EntityRADBeast extends Monster implements IRadiationImmune {
     }
 
     //? if < 1.21.1 {
-    /*@Override
+    @Override
     protected void defineSynchedData() {
         super.defineSynchedData();
         var defs = com.hbm_m.platform.EntityDataHooks.sink(this.entityData);
-    *///?} else {
-    @Override
+    //?} else {
+    /*@Override
     protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
         super.defineSynchedData(builder);
         var defs = com.hbm_m.platform.EntityDataHooks.sink(builder);
-    //?}
+    *///?}
         defs.define(VICTIM_ID, 0);
     }
 
@@ -222,15 +222,15 @@ public class EntityRADBeast extends Monster implements IRadiationImmune {
 
     @Override
     //? if < 1.21.1 {
-    /*protected void dropCustomDeathLoot(@NotNull DamageSource source, int looting, boolean recentlyHit) {
+    protected void dropCustomDeathLoot(@NotNull DamageSource source, int looting, boolean recentlyHit) {
         super.dropCustomDeathLoot(source, looting, recentlyHit);
-    *///?} else {
-    protected void dropCustomDeathLoot(net.minecraft.server.level.ServerLevel level, @NotNull DamageSource source, boolean recentlyHit) {
+    //?} else {
+    /*protected void dropCustomDeathLoot(net.minecraft.server.level.ServerLevel level, @NotNull DamageSource source, boolean recentlyHit) {
         super.dropCustomDeathLoot(level, source, recentlyHit);
         // 1.21 reicht die Pluenderung-Stufe hier nicht mehr durch (sie steckt im LootContext),
         // daher entfaellt der lootingskalierte Polonium-Nugget-Drop auf dieser Version.
         int looting = 0;
-    //?}
+    *///?}
         if (!recentlyHit) return;
 
         if (looting > 0) {

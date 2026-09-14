@@ -86,10 +86,10 @@ public final class PartTabMetaItems {
         // ItemCrayon оригинала: ItemFood(3, false) + setAlwaysEdible.
         return props -> new Item(props.food(
                 //? if < 1.21.1 {
-                /*PlatformHooks.foodBuilder(3, 0.6F).alwaysEat().build()
-                *///?} else {
-                PlatformHooks.foodBuilder(3, 0.6F).alwaysEdible().build()
-                //?}
+                PlatformHooks.foodBuilder(3, 0.6F).alwaysEat().build()
+                //?} else {
+                /*PlatformHooks.foodBuilder(3, 0.6F).alwaysEdible().build()
+                *///?}
         ));
     }
 

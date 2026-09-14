@@ -31,14 +31,14 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 
 //? if forge {
-/*import net.minecraftforge.client.model.data.ModelData;
+import net.minecraftforge.client.model.data.ModelData;
 import net.minecraftforge.client.model.data.ModelProperty;
 import com.hbm_m.capability.ModCapabilities;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
-*///?} elif neoforge {
-import net.neoforged.neoforge.client.model.data.ModelData;
+//?} elif neoforge {
+/*import net.neoforged.neoforge.client.model.data.ModelData;
 import net.neoforged.neoforge.client.model.data.ModelProperty;
-//?}
+*///?}
 
 /**
  * Battery socket: one portable battery slot, modes like machine battery, energy from item capabilities.
@@ -175,24 +175,24 @@ public class BatterySocketBlockEntity extends BaseMachineBlockEntity implements 
         ItemStack stack = inventory.getStackInSlot(SLOT_BATTERY);
         if (stack.isEmpty()) return Optional.empty();
         //? if forge {
-        /*return stack.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER).resolve();
-        *///?}
-        //? if neoforge {
-        // NeoForge: HBM item-capability через ItemEnergyAccess (использует ModCapabilities.HBM_ITEM_ENERGY_PROVIDER).
-        return com.hbm_m.api.energy.ItemEnergyAccess.getHbmProvider(stack);
+        return stack.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER).resolve();
         //?}
+        //? if neoforge {
+        /*// NeoForge: HBM item-capability через ItemEnergyAccess (использует ModCapabilities.HBM_ITEM_ENERGY_PROVIDER).
+        return com.hbm_m.api.energy.ItemEnergyAccess.getHbmProvider(stack);
+        *///?}
     }
 
     private Optional<IEnergyReceiver> stackReceiver() {
         ItemStack stack = inventory.getStackInSlot(SLOT_BATTERY);
         if (stack.isEmpty()) return Optional.empty();
         //? if forge {
-        /*return stack.getCapability(ModCapabilities.HBM_ENERGY_RECEIVER).resolve();
-        *///?}
-        //? if neoforge {
-        // NeoForge: HBM item-capability через ItemEnergyAccess (использует ModCapabilities.HBM_ITEM_ENERGY_RECEIVER).
-        return com.hbm_m.api.energy.ItemEnergyAccess.getHbmReceiver(stack);
+        return stack.getCapability(ModCapabilities.HBM_ENERGY_RECEIVER).resolve();
         //?}
+        //? if neoforge {
+        /*// NeoForge: HBM item-capability через ItemEnergyAccess (использует ModCapabilities.HBM_ITEM_ENERGY_RECEIVER).
+        return com.hbm_m.api.energy.ItemEnergyAccess.getHbmReceiver(stack);
+        *///?}
     }
 
     private long getEnergyStoredFromStack() {

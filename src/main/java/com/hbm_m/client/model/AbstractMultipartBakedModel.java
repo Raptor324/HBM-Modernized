@@ -13,10 +13,10 @@ import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.state.BlockState;
 //? if forge {
-/*import net.minecraftforge.client.model.data.ModelData;
-*///?} elif neoforge {
-import net.neoforged.neoforge.client.model.data.ModelData;
-//?}
+import net.minecraftforge.client.model.data.ModelData;
+//?} elif neoforge {
+/*import net.neoforged.neoforge.client.model.data.ModelData;
+*///?}
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -91,7 +91,7 @@ public abstract class AbstractMultipartBakedModel implements BakedModel {
     }
 
     //? if forge {
-    /*@Override
+    @Override
     public TextureAtlasSprite getParticleIcon(ModelData data) {
         if (cachedParticleIcon == null) {
             // Используем getPartNamesInternal() для получения приоритетного порядка
@@ -176,20 +176,20 @@ public abstract class AbstractMultipartBakedModel implements BakedModel {
     }
 
 
-    /^*
+    /**
      * Vanilla BakedModel legacy methods (still required by the interface).
      * Delegate to Forge's extended overloads.
-     ^/
+     */
     @Override
     @Deprecated
     public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, RandomSource rand) {
         return getQuads(state, side, rand, ModelData.EMPTY, null);
     }
 
-    *///?}
+    //?}
 
     //? if neoforge {
-    // NeoForge 1.21.1: ванильный BakedModel.getQuads(BlockState, Direction, RandomSource)
+    /*// NeoForge 1.21.1: ванильный BakedModel.getQuads(BlockState, Direction, RandomSource)
     // остаётся абстрактным методом интерфейса; расширение с ModelData/RenderType — NeoForge-specific.
     @Override
     public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, RandomSource rand) {
@@ -205,10 +205,10 @@ public abstract class AbstractMultipartBakedModel implements BakedModel {
         return getQuadsForModelDataNeo(state, side, rand, modelData, renderType);
     }
 
-    /**
+    /^*
      * NeoForge-копия {@code getQuadsForModelData} (forge-ветка): дефолтная реализация
      * собирает квады из всех частей без ModelData-логики; подклассы могут переопределять.
-     */
+     ^/
     protected List<BakedQuad> getQuadsForModelDataNeo(
         @Nullable BlockState state,
         @Nullable Direction side,
@@ -243,7 +243,7 @@ public abstract class AbstractMultipartBakedModel implements BakedModel {
         }
         return quads;
     }
-    //?}
+    *///?}
 
     /**
      * NeoForge 1.21.1 ITEM-render helper: строит квады только из приоритетных
@@ -252,7 +252,7 @@ public abstract class AbstractMultipartBakedModel implements BakedModel {
      * Возвращает {@code List.of()} если частей нет.
      */
     //? if neoforge {
-    protected List<BakedQuad> buildItemQuadsFromRenderParts(@Nullable Direction side, RandomSource rand) {
+    /*protected List<BakedQuad> buildItemQuadsFromRenderParts(@Nullable Direction side, RandomSource rand) {
         List<BakedQuad> allQuads = new ArrayList<>();
         for (String partName : getItemRenderPartNames()) {
             BakedModel part = parts.get(partName);
@@ -267,7 +267,7 @@ public abstract class AbstractMultipartBakedModel implements BakedModel {
         }
         return allQuads.isEmpty() ? List.of() : allQuads;
     }
-    //?}
+    *///?}
 
     protected abstract boolean shouldSkipWorldRendering(@Nullable BlockState state);
 
@@ -340,7 +340,7 @@ public abstract class AbstractMultipartBakedModel implements BakedModel {
      */
 
     //? if forge {
-    /*@Override
+    @Override
     public BakedModel applyTransform(ItemDisplayContext transformType, PoseStack poseStack,
                                      boolean applyLeftHandTransform) {
         if (isCustomRenderer()) {
@@ -349,7 +349,7 @@ public abstract class AbstractMultipartBakedModel implements BakedModel {
         getTransforms().getTransform(transformType).apply(applyLeftHandTransform, poseStack);
         return this;
     }
-    *///?}
+    //?}
 
     public void clearCaches() {
         cachedParticleIcon = null;

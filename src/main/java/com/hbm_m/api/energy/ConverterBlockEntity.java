@@ -13,14 +13,14 @@ import com.hbm_m.blockentity.BaseHbmBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
 
 //? if forge {
-/*import net.minecraftforge.common.capabilities.Capability;
+import net.minecraftforge.common.capabilities.Capability;
 import com.hbm_m.capability.ModCapabilities;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.energy.IEnergyStorage;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-*///?}
+//?}
 
 public class ConverterBlockEntity extends BaseHbmBlockEntity implements IEnergyReceiver, IEnergyProvider {
 
@@ -33,7 +33,7 @@ public class ConverterBlockEntity extends BaseHbmBlockEntity implements IEnergyR
     private int ioMode = 0;
 
     //? if forge {
-    /*private final HbmForgeWrapper forgeWrapper = new HbmForgeWrapper(this);
+    private final HbmForgeWrapper forgeWrapper = new HbmForgeWrapper(this);
     private LazyOptional<IEnergyStorage> forgeCap = LazyOptional.of(() -> forgeWrapper);
     private final LazyOptional<IEnergyProvider> hbmProviderCap = LazyOptional.of(() -> this);
     private final LazyOptional<IEnergyReceiver> hbmReceiverCap = LazyOptional.of(() -> this);
@@ -64,7 +64,7 @@ public class ConverterBlockEntity extends BaseHbmBlockEntity implements IEnergyR
         if (cap == ModCapabilities.HBM_ENERGY_CONNECTOR) return hbmProviderCap.cast();
         return super.getCapability(cap, side);
     }
-    *///?}
+    //?}
 
     private Integer lockedMode = null;
 
@@ -111,7 +111,7 @@ public class ConverterBlockEntity extends BaseHbmBlockEntity implements IEnergyR
             BlockEntity neighbor = level.getBlockEntity(pos.relative(dir));
             if (neighbor != null) {
                 //? if forge {
-                /*neighbor.getCapability(ForgeCapabilities.ENERGY, dir.getOpposite()).ifPresent(storage -> {
+                neighbor.getCapability(ForgeCapabilities.ENERGY, dir.getOpposite()).ifPresent(storage -> {
                     if (storage.canReceive()) {
                         long canExtract = Math.min(be.energy, be.currentLimit);
                         int toPush = (int) Math.min(canExtract, Integer.MAX_VALUE);
@@ -122,8 +122,8 @@ public class ConverterBlockEntity extends BaseHbmBlockEntity implements IEnergyR
                         }
                     }
                 });
-                *///?} else {
-                net.neoforged.neoforge.energy.IEnergyStorage storage = level.getCapability(
+                //?} else {
+                /*net.neoforged.neoforge.energy.IEnergyStorage storage = level.getCapability(
                         net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.BLOCK,
                         pos.relative(dir), dir.getOpposite());
                 if (storage != null && storage.canReceive()) {
@@ -135,7 +135,7 @@ public class ConverterBlockEntity extends BaseHbmBlockEntity implements IEnergyR
                         be.setChanged();
                     }
                 }
-                //?}
+                *///?}
             }
         }
     }

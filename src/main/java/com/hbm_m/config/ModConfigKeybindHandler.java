@@ -17,17 +17,17 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.network.chat.Component;
 
 //? if forge {
-/*@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-*///?} elif neoforge {
-@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-//?}
+@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+//?} elif neoforge {
+/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+*///?}
 public class ModConfigKeybindHandler {
     public static final String CATEGORY = "key.categories.hbm_m";
     private static boolean INITIALIZED = false;
 
     public static final KeyMapping OPEN_CONFIG =
     //? if forge {
-            /*new KeyMapping(
+            new KeyMapping(
                     "key.hbm_m.open_config",
                     net.minecraftforge.client.settings.KeyConflictContext.UNIVERSAL,
                     net.minecraftforge.client.settings.KeyModifier.ALT,
@@ -35,8 +35,8 @@ public class ModConfigKeybindHandler {
                     GLFW.GLFW_KEY_0,
                     CATEGORY
             );
-    *///?} elif neoforge {
-            new KeyMapping(
+    //?} elif neoforge {
+            /*new KeyMapping(
                     "key.hbm_m.open_config",
                     net.neoforged.neoforge.client.settings.KeyConflictContext.UNIVERSAL,
                     net.neoforged.neoforge.client.settings.KeyModifier.ALT,
@@ -44,7 +44,7 @@ public class ModConfigKeybindHandler {
                     GLFW.GLFW_KEY_0,
                     CATEGORY
             );
-    //?} else {
+    *///?} else {
     /*        new KeyMapping(
                     "key.hbm_m.open_config",
                     InputConstants.Type.KEYSYM,

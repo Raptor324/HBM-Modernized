@@ -24,14 +24,14 @@ public class RagMaskItem extends ArmorItem {
     }
 
     //? if < 1.21.1 {
-    /*@Override
+    @Override
     public String getArmorTexture(ItemStack stack, Entity entity, EquipmentSlot slot, String type) {
         return armorTexture;
     }
-    *///?} else {
-    @Override
+    //?} else {
+    /*@Override
     public net.minecraft.resources.ResourceLocation getArmorTexture(ItemStack stack, Entity entity,
             EquipmentSlot slot, net.minecraft.world.item.ArmorMaterial.Layer layer, boolean innerModel) {
         return net.minecraft.resources.ResourceLocation.parse(armorTexture);
-    }//?}
+    }*///?}
 }

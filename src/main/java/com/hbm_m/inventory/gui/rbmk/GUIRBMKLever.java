@@ -74,12 +74,12 @@ public class GUIRBMKLever extends Screen {
             y += 19;
 
             //? if < 1.21.1 {
-            /*pollingBoxes[i] = new net.minecraft.client.gui.components.Checkbox(
+            pollingBoxes[i] = new net.minecraft.client.gui.components.Checkbox(
                     cx - 110, y, 90, 16, Component.literal("repeat"), be.polling[i]);
-            *///?} else {
-            pollingBoxes[i] = net.minecraft.client.gui.components.Checkbox.builder(
+            //?} else {
+            /*pollingBoxes[i] = net.minecraft.client.gui.components.Checkbox.builder(
                     Component.literal("repeat"), this.font).pos(cx - 110, y).selected(be.polling[i]).build();
-            //?}
+            *///?}
             addRenderableWidget(pollingBoxes[i]);
             y += 24;
         }

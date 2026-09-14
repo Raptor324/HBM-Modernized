@@ -102,16 +102,16 @@ public class MachineBatteryBlockEntity extends BaseMachineBlockEntity implements
         if (stack.isEmpty()) return false;
         if (stack.getItem() instanceof ItemCreativeBattery) return true;
         //? if forge {
-        /*return stack.getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.ENERGY).isPresent()
+        return stack.getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.ENERGY).isPresent()
                 || stack.getCapability(com.hbm_m.capability.ModCapabilities.HBM_ENERGY_PROVIDER).isPresent()
                 || stack.getCapability(com.hbm_m.capability.ModCapabilities.HBM_ENERGY_RECEIVER).isPresent();
-        *///?}
+        //?}
         //? if neoforge {
-        // NeoForge: FE через Capabilities.EnergyStorage.ITEM + HBM через ItemEnergyAccess.
+        /*// NeoForge: FE через Capabilities.EnergyStorage.ITEM + HBM через ItemEnergyAccess.
         return stack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM) != null
                 || com.hbm_m.api.energy.ItemEnergyAccess.getHbmProvider(stack).isPresent()
                 || com.hbm_m.api.energy.ItemEnergyAccess.getHbmReceiver(stack).isPresent();
-        //?}
+        *///?}
     }
 
     @Override
@@ -230,7 +230,7 @@ public class MachineBatteryBlockEntity extends BaseMachineBlockEntity implements
      * CUSTOM_DATA → {"BlockEntityTag": {...}}.
      */
     //? if >= 1.21.1 {
-    public void saveToItemStack(net.minecraft.world.item.ItemStack stack) {
+    /*public void saveToItemStack(net.minecraft.world.item.ItemStack stack) {
         net.minecraft.core.HolderLookup.Provider registries = this.level.registryAccess();
         CompoundTag beTag = this.saveWithoutMetadata(registries);
         if (!beTag.isEmpty()) {
@@ -240,5 +240,5 @@ public class MachineBatteryBlockEntity extends BaseMachineBlockEntity implements
                     net.minecraft.world.item.component.CustomData.of(root));
         }
     }
-    //?}
+    *///?}
 }

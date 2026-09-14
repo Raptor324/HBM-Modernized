@@ -15,12 +15,12 @@ import net.minecraft.core.Direction;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.state.BlockState;
 //? if forge {
-/*import net.minecraftforge.client.ChunkRenderTypeSet;
+import net.minecraftforge.client.ChunkRenderTypeSet;
 import net.minecraftforge.client.model.data.ModelData;
-*///?} elif neoforge {
-import net.neoforged.neoforge.client.ChunkRenderTypeSet;
+//?} elif neoforge {
+/*import net.neoforged.neoforge.client.ChunkRenderTypeSet;
 import net.neoforged.neoforge.client.model.data.ModelData;
-//?}
+*///?}
 
 /**
  * World render: пустой chunk mesh — вся геометрия (Frame + Tank с текстурой жидкости)
@@ -88,22 +88,22 @@ public class MachineFluidTankBakedModel extends AbstractMultipartBakedModel impl
     @Override
     public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, RandomSource rand) {
         //? if forge {
-        /*return getQuads(state, side, rand, ModelData.EMPTY, null);
-        *///?}
+        return getQuads(state, side, rand, ModelData.EMPTY, null);
+        //?}
 
         //? if neoforge {
-        // 1.21.1 neoforge: чанк-бэкер вызывает 5-arg overload (см. ниже). 3-arg — item/BER hot path.
+        /*// 1.21.1 neoforge: чанк-бэкер вызывает 5-arg overload (см. ниже). 3-arg — item/BER hot path.
         // WORLD: геометрия полностью в BER/VBO (как на forge). ITEM: приоритетные части (как на forge).
         if (state == null) {
             return buildItemQuadsFromRenderParts(side, rand);
         }
         return List.of();
-        //?}
+        *///?}
 
     }
 
     //? if neoforge {
-    // NeoForge 1.21.1: 5-arg overload — вызывается чанк-бэкером. Зеркалируем forge-логику:
+    /*// NeoForge 1.21.1: 5-arg overload — вызывается чанк-бэкером. Зеркалируем forge-логику:
     // WORLD (state != null) — List.of() (геометрия в BER/VBO), ITEM (state == null) — приоритетные части.
     @Override
     public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side,
@@ -114,10 +114,10 @@ public class MachineFluidTankBakedModel extends AbstractMultipartBakedModel impl
         }
         return List.of();
     }
-    //?}
+    *///?}
 
     //? if forge {
-    /*@Override
+    @Override
     public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side,
                                      RandomSource rand, ModelData modelData,
                                      @Nullable net.minecraft.client.renderer.RenderType renderType) {
@@ -155,7 +155,7 @@ public class MachineFluidTankBakedModel extends AbstractMultipartBakedModel impl
         }
         this.cachedItemQuads = allQuads;
     }
-    *///?}
+    //?}
 
     @Override
     protected List<String> getItemRenderPartNames() {
@@ -169,12 +169,12 @@ public class MachineFluidTankBakedModel extends AbstractMultipartBakedModel impl
     @Override
     public TextureAtlasSprite getParticleIcon() {
         //? if forge {
-        /*return getParticleIcon(ModelData.EMPTY);
-        *///?}
+        return getParticleIcon(ModelData.EMPTY);
+        //?}
 
         //? if neoforge {
-        return super.getParticleIcon();
-        //?}
+        /*return super.getParticleIcon();
+        *///?}
     }
 
     @Override

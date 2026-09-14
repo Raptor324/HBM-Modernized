@@ -47,10 +47,10 @@ import net.minecraft.world.level.block.entity.BlockEntity;
  * GL compatibility helpers live in {@link InstancedGlCompat}.
  */
 //? if forge {
-/*@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-*///?} elif neoforge {
-@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-//?}
+@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+//?} elif neoforge {
+/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+*///?}
 public class InstancedStaticPartRenderer extends AbstractGpuMesh
         implements VanillaInstancedMeshRenderer, IrisCompanionMeshRenderer {
 
@@ -578,10 +578,10 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
         } else {
             var cam = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
             //? if < 1.21.1 {
-            /*tmpInvViewRot.identity().set(RenderSystem.getInverseViewRotationMatrix());
-            *///?} else {
-            tmpInvViewRot.identity().rotation(Minecraft.getInstance().gameRenderer.getMainCamera().rotation()).invert();
-            //?}
+            tmpInvViewRot.identity().set(RenderSystem.getInverseViewRotationMatrix());
+            //?} else {
+            /*tmpInvViewRot.identity().rotation(Minecraft.getInstance().gameRenderer.getMainCamera().rotation()).invert();
+            *///?}
             tmpLocalPose.set(tmpInvViewRot).mul(worldPose);
             tmpLocalPose.m30(tmpLocalPose.m30() - (float) (blockPos.getX() - cam.x));
             tmpLocalPose.m31(tmpLocalPose.m31() - (float) (blockPos.getY() - cam.y));
@@ -601,10 +601,10 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
     }
 
     //? if forge {
-    /*public void flush(net.minecraftforge.client.event.RenderLevelStageEvent event) {
+    public void flush(net.minecraftforge.client.event.RenderLevelStageEvent event) {
         flush(event.getProjectionMatrix());
     }
-    *///?}
+    //?}
 
     /**
      * Обязательный re-bind atlas + lightmap после {@link ShaderInstance#apply()} и перед glDraw*.

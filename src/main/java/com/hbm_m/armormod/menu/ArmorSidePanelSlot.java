@@ -60,10 +60,10 @@ public class ArmorSidePanelSlot extends Slot {
             return false;
         }
         //? if < 1.21.1 {
-        /*return Mob.getEquipmentSlotForItem(stack) == this.slotType;
-        *///?} else {
-        return this.player.getEquipmentSlotForItem(stack) == this.slotType;
-        //?}
+        return Mob.getEquipmentSlotForItem(stack) == this.slotType;
+        //?} else {
+        /*return this.player.getEquipmentSlotForItem(stack) == this.slotType;
+        *///?}
     }
 
     @Override

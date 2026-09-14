@@ -1,6 +1,6 @@
 package com.hbm_m.datagen.recipes.custom;
 //? if forge {
-/*import com.hbm_m.item.ModItems;
+import com.hbm_m.item.ModItems;
 import com.hbm_m.item.material.MaterialShape;
 import com.hbm_m.item.material.ModMaterialItems;
 import com.hbm_m.item.material.ModMaterials;
@@ -12,13 +12,13 @@ import net.minecraft.world.item.crafting.Ingredient;
 
 import java.util.function.Consumer;
 
-/^*
+/**
  * Генератор JSON-рецептов электролизёра, Metal-режим ({@code hbm_m:electrolyser_metal}).
  *
  * <p>Порт 18 кристалл/руда-рецептов из удалённого статического {@code ElectrolyserRecipes}
  * (Metal-часть). Длительность у всех рецептов — 600 тиков, 1:1 из оригинала.
  * Чистый ванильный 1.20.1 код внутри {@code //? if forge} — датаген только для 1.20.1-forge.</p>
- ^/
+ */
 public final class ElectrolyserMetalRecipeGenerator {
 
     private static final int DURATION = 600;
@@ -99,4 +99,4 @@ public final class ElectrolyserMetalRecipeGenerator {
         return new ItemStack(item, count);
     }
 }
-*///?}
+//?}

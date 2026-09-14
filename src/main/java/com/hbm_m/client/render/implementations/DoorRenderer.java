@@ -52,12 +52,12 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.phys.AABB;
 
 //? if forge {
-/*import net.minecraftforge.client.model.data.ModelData;
+import net.minecraftforge.client.model.data.ModelData;
 @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-*///?} elif neoforge {
-import net.neoforged.neoforge.client.model.data.ModelData;
+//?} elif neoforge {
+/*import net.neoforged.neoforge.client.model.data.ModelData;
 @net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-//?}
+*///?}
 public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, BakedModel> {
 
     private static final ConcurrentHashMap<String, InstancedStaticPartRenderer> instancedFrameCache = new ConcurrentHashMap<>();
@@ -302,10 +302,10 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Bak
         for (DaeNode node : nodes) {
             poseStack.pushPose();
             //? if < 1.21.1 {
-            /*poseStack.mulPoseMatrix(node.localMatrix(time, clip));
-             *///?} else {
-            poseStack.last().pose().mul(node.localMatrix(time, clip));
-            //?}
+            poseStack.mulPoseMatrix(node.localMatrix(time, clip));
+             //?} else {
+            /*poseStack.last().pose().mul(node.localMatrix(time, clip));
+            *///?}
             if (node.mesh != null) {
                 SingleMeshVboRenderer renderer = getDaeRendererForNode(node, selection, doorDecl);
                 if (renderer != null) {

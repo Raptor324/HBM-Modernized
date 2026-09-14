@@ -45,12 +45,12 @@ public class ParticleEngineNT {
             // (наши nuke_clouds/nuke_flash при пустом фильтре). PlainBufferSource —
             // честный ванильный BufferSource, созданный мимо фабрики.
             //? if < 1.21.1 {
-            /*ownBuffer = new com.hbm_m.client.render.PlainBufferSource(
-                    new com.mojang.blaze3d.vertex.BufferBuilder(256));
-            *///?} else {
             ownBuffer = new com.hbm_m.client.render.PlainBufferSource(
+                    new com.mojang.blaze3d.vertex.BufferBuilder(256));
+            //?} else {
+            /*ownBuffer = new com.hbm_m.client.render.PlainBufferSource(
                     new com.mojang.blaze3d.vertex.ByteBufferBuilder(256));
-            //?}
+            *///?}
         }
         return ownBuffer;
     }

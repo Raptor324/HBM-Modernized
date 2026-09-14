@@ -19,12 +19,12 @@ import net.minecraft.world.phys.AABB;
 public interface HbmBerBounds<T extends BlockEntity> extends BlockEntityRenderer<T> {
 
     //? if >= 1.21.1 {
-    @Override
+    /*@Override
     default AABB getRenderBoundingBox(T be) {
         if (be instanceof RenderBoundsProvider provider) {
             return provider.getRenderBoundingBox();
         }
         return new AABB(be.getBlockPos());
     }
-    //?}
+    *///?}
 }

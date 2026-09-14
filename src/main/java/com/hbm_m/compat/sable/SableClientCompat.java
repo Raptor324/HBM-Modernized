@@ -40,16 +40,16 @@ public final class SableClientCompat {
         @Nullable
         static Matrix4d matrix(BlockPos pos) {
             //? if >= 1.21.1 {
-            try {
+            /*try {
                 var sub = dev.ryanhcode.sable.companion.SableCompanion.INSTANCE.getContainingClient(pos);
                 if (sub == null) return null;
                 return sub.renderPose().bakeIntoMatrix(new Matrix4d());
             } catch (Throwable t) {
                 return null;
             }
-            //?} else {
-            /*return null;
-            *///?}
+            *///?} else {
+            return null;
+            //?}
         }
     }
 }

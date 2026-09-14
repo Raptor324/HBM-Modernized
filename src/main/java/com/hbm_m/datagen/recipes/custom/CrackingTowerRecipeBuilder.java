@@ -1,6 +1,6 @@
 package com.hbm_m.datagen.recipes.custom;
 //? if forge {
-/*import javax.annotation.Nullable;
+import javax.annotation.Nullable;
 
 import com.google.gson.JsonObject;
 import com.hbm_m.recipe.CrackingTowerRecipe;
@@ -9,7 +9,7 @@ import dev.architectury.fluid.FluidStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 
-/^*
+/**
  * Datagen-билдер {@link CrackingTowerRecipe} ({@code hbm_m:cracking_tower}).
  *
  * <p>Чистый ванильный 1.20.1 код внутри {@code //? if forge} — датаген только для 1.20.1-forge.
@@ -27,7 +27,7 @@ import net.minecraft.world.item.crafting.RecipeSerializer;
  *
  * <p>Предметного выхода нет — {@link #getResult()} возвращает {@link Items#AIR}
  * (ванильный {@code RecipeBuilder} требует реализацию).</p>
- ^/
+ */
 public class CrackingTowerRecipeBuilder extends BaseRecipeBuilder<CrackingTowerRecipeBuilder> {
 
     private final FluidStack input;
@@ -65,4 +65,4 @@ public class CrackingTowerRecipeBuilder extends BaseRecipeBuilder<CrackingTowerR
         return CrackingTowerRecipe.Serializer.INSTANCE;
     }
 }
-*///?}
+//?}

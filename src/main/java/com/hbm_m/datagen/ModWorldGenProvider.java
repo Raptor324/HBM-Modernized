@@ -1,7 +1,7 @@
 package com.hbm_m.datagen;
 //? if forge {
 
-/*import java.util.ArrayList;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -53,7 +53,7 @@ import net.minecraftforge.common.world.BiomeModifier;
 import net.minecraftforge.common.world.ForgeBiomeModifiers;
 import net.minecraftforge.registries.ForgeRegistries;
 
-/^*
+/**
  * Датаген всех configured/placed feature и biome-модификаторов мода — полная замена
  * рукописным JSON в {@code data/hbm_m/worldgen} и {@code data/hbm_m/forge/biome_modifier}.
  *
@@ -61,7 +61,7 @@ import net.minecraftforge.registries.ForgeRegistries;
  * 1.18+ (камень до ~y0, глыбовый сланец ниже): низкоплавковые руды ушли в глубокий сланец,
  * поверхностные (лигнит, известняк) подняты выше; Незер не изменился (там те же 0..127).
  * Числа жил/размеры взяты из {@code HbmWorldGen} + {@code WorldConfig} оригинала.
- ^/
+ */
 public final class ModWorldGenProvider {
 
     private ModWorldGenProvider() {}
@@ -428,4 +428,4 @@ public final class ModWorldGenProvider {
                         new SimpleBlockConfiguration(BlockStateProvider.simple(block.defaultBlockState()))))));
     }
 }
-*///?}
+//?}

@@ -540,13 +540,13 @@ public class ModBlocks {
 
     public static final RegistrySupplier<Block> UNIVERSAL_MACHINE_PART = registerBlockWithoutItem("universal_machine_part",
             //? if < 1.21.1 {
-            /*// dynamicShape() обязателен: без него ваниль кэширует collision shape при регистрации
+            // dynamicShape() обязателен: без него ваниль кэширует collision shape при регистрации
             // (EmptyBlockGetter, без BE) и MTS/др. моды, зовущие 2-арг getCollisionShape,
             // всегда получают полную коллизию вместо формы из BE контроллера
             () -> new UniversalMachinePartBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0f).noOcclusion().isSuffocating((state, world, pos) -> false).dynamicShape().noParticlesOnBreak()));
-            *///?} else {
-            () -> new UniversalMachinePartBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0f).noOcclusion().isSuffocating((state, world, pos) -> false).dynamicShape()));
-            //?}
+            //?} else {
+            /*() -> new UniversalMachinePartBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0f).noOcclusion().isSuffocating((state, world, pos) -> false).dynamicShape()));
+            *///?}
 
 	public static final RegistrySupplier<Block> FLUID_TANK = registerBlockWithoutItem("fluid_tank",
             () -> new MachineFluidTankBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(4.0f).requiresCorrectToolForDrops().noOcclusion().isSuffocating((state, world, pos) -> false)));

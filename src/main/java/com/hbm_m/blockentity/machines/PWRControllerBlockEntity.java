@@ -539,16 +539,16 @@ public class PWRControllerBlockEntity extends BaseMachineBlockEntity
     // The port and rod position lists are server-only bookkeeping, rebuilt by the structure scan.
     // They have no business in the chunk packet, where they were the bulk of the payload.
     //? if < 1.21.1 {
-    /*@Override
+    @Override
     public @NotNull CompoundTag getUpdateTag() {
         return stripStructureLists(super.getUpdateTag());
     }
-    *///?} else {
-    @Override
+    //?} else {
+    /*@Override
     public @NotNull CompoundTag getUpdateTag(net.minecraft.core.HolderLookup.Provider registries) {
         return stripStructureLists(super.getUpdateTag(registries));
     }
-    //?}
+    *///?}
 
     private static CompoundTag stripStructureLists(CompoundTag tag) {
         int portCount = tag.getInt("portCount");

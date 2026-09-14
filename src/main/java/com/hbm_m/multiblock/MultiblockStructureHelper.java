@@ -764,11 +764,11 @@ public class MultiblockStructureHelper {
                 
                 if (oldBE != null) {
                     //? if < 1.21.1 {
-                    /*nbt = oldBE.saveWithFullMetadata();
-                    *///?} else {
-                    // 1.21.1: saveWithFullMetadata требует HolderLookup.Provider.
+                    nbt = oldBE.saveWithFullMetadata();
+                    //?} else {
+                    /*// 1.21.1: saveWithFullMetadata требует HolderLookup.Provider.
                     nbt = oldBE.saveWithFullMetadata(level.registryAccess());
-                    //?}
+                    *///?}
                     level.removeBlockEntity(currentCtrlPos);
                 }
                 
@@ -782,11 +782,11 @@ public class MultiblockStructureHelper {
                     BlockEntity newBE = level.getBlockEntity(newCtrlPos);
                     if (newBE != null) {
                         //? if < 1.21.1 {
-                        /*newBE.load(nbt);
-                        *///?} else {
-                        // 1.21.1: BlockEntity.load(CompoundTag) удалён — loadCustomOnly с Provider.
+                        newBE.load(nbt);
+                        //?} else {
+                        /*// 1.21.1: BlockEntity.load(CompoundTag) удалён — loadCustomOnly с Provider.
                         newBE.loadCustomOnly(nbt, level.registryAccess());
-                        //?}
+                        *///?}
                     }
                 }
                 level.updateNeighborsAt(currentCtrlPos, state.getBlock());

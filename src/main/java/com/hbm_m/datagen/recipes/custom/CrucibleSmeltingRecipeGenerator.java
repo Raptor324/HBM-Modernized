@@ -1,6 +1,6 @@
 package com.hbm_m.datagen.recipes.custom;
 //? if forge {
-/*import com.hbm_m.inventory.material.MaterialStack;
+import com.hbm_m.inventory.material.MaterialStack;
 import com.hbm_m.inventory.material.MaterialType;
 
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -14,7 +14,7 @@ import net.minecraft.world.item.crafting.Ingredient;
 
 import java.util.function.Consumer;
 
-/^*
+/**
  * Генератор JSON-рецептов тигель-плавки ({@code hbm_m:crucible_smelting}).
  *
  * <p>Порт {@code CrucibleSmeltingRecipes.registerDefaults()} (删除анного статического реестра):
@@ -26,7 +26,7 @@ import java.util.function.Consumer;
  * удваивают объём (как в оригинале: {@code MB_PER_INGOT * 2}); алмазные/сырьевые предметы
  * (уголь, уголль, редстоун, nugget'ы) дают {@code MB_PER_NUGGET}; блоки-руды дают
  * {@code MB_PER_INGOT * 2}.</p>
- ^/
+ */
 public final class CrucibleSmeltingRecipeGenerator {
 
     private CrucibleSmeltingRecipeGenerator() {}
@@ -88,27 +88,27 @@ public final class CrucibleSmeltingRecipeGenerator {
         blockOre(writer, "stone_resource_malachite", MaterialType.COPPER);
     }
 
-    /^* Слиток по forge-тегу {@code forge:ingots/<name>} → {@code MB_PER_INGOT} материала. ^/
+    /** Слиток по forge-тегу {@code forge:ingots/<name>} → {@code MB_PER_INGOT} материала. */
     private static void ingot(Consumer<FinishedRecipe> writer, String name, MaterialType mat) {
         CrucibleSmeltingRecipeBuilder.crucibleSmelting(
                         "forge:ingots/" + name, mat, MaterialStack.MB_PER_INGOT)
                 .save(writer, "crucible_smelting/ingot_" + name);
     }
 
-    /^* Руда по forge-тегу {@code forge:ores/<name>} → {@code MB_PER_INGOT * 2} материала. ^/
+    /** Руда по forge-тегу {@code forge:ores/<name>} → {@code MB_PER_INGOT * 2} материала. */
     private static void ore(Consumer<FinishedRecipe> writer, String name, MaterialType mat) {
         CrucibleSmeltingRecipeBuilder.crucibleSmelting(
                         "forge:ores/" + name, mat, MaterialStack.MB_PER_INGOT * 2)
                 .save(writer, "crucible_smelting/ore_" + name);
     }
 
-    /^* Ванильный предмет → {@code MB_PER_NUGGET} материала (сырьевые/алмазные входы). ^/
+    /** Ванильный предмет → {@code MB_PER_NUGGET} материала (сырьевые/алмазные входы). */
     private static void nuggetItem(Consumer<FinishedRecipe> writer, String id, Item item, MaterialType mat) {
         CrucibleSmeltingRecipeBuilder.crucibleSmelting(item, mat, MaterialStack.MB_PER_NUGGET)
                 .save(writer, "crucible_smelting/" + id);
     }
 
-    /^* Предмет мода по id строки ({@code hbm_m:<path>}) → {@code MB_PER_NUGGET} материала. ^/
+    /** Предмет мода по id строки ({@code hbm_m:<path>}) → {@code MB_PER_NUGGET} материала. */
     private static void nuggetModItem(Consumer<FinishedRecipe> writer, String path, String itemId, MaterialType mat) {
         ResourceLocation id = ResourceLocation.fromNamespaceAndPath("hbm_m", itemId);
         if (!BuiltInRegistries.ITEM.containsKey(id)) return;  // предмет может отсутствовать
@@ -117,7 +117,7 @@ public final class CrucibleSmeltingRecipeGenerator {
                 .save(writer, "crucible_smelting/" + path);
     }
 
-    /^* Блок-руда мода по id строки ({@code hbm_m:<path>}) → {@code MB_PER_INGOT * 2} материала. ^/
+    /** Блок-руда мода по id строки ({@code hbm_m:<path>}) → {@code MB_PER_INGOT * 2} материала. */
     private static void blockOre(Consumer<FinishedRecipe> writer, String path, MaterialType mat) {
         ResourceLocation id = ResourceLocation.fromNamespaceAndPath("hbm_m", path);
         if (!BuiltInRegistries.ITEM.containsKey(id)) return;  // блок может отсутствовать
@@ -126,16 +126,16 @@ public final class CrucibleSmeltingRecipeGenerator {
                 .save(writer, "crucible_smelting/" + path);
     }
 
-    /^* Утилита: forge {@link TagKey} предмета по строке вида {@code "forge:ingots/iron"}. ^/
+    /** Утилита: forge {@link TagKey} предмета по строке вида {@code "forge:ingots/iron"}. */
     @SuppressWarnings("unused")
     private static TagKey<Item> forgeTag(String id) {
         return TagKey.create(Registries.ITEM, ResourceLocation.parse(id));
     }
 
-    /^* Утилита: {@link Ingredient} по forge-тегу (для случаев, где нужен сам Ingredient). ^/
+    /** Утилита: {@link Ingredient} по forge-тегу (для случаев, где нужен сам Ingredient). */
     @SuppressWarnings("unused")
     private static Ingredient forgeIngredient(String id) {
         return Ingredient.of(forgeTag(id));
     }
 }
-*///?}
+//?}

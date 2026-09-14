@@ -254,10 +254,10 @@ public class ModItems {
             () -> new ModShovelItem(ModToolTiers.STARMETAL, 0, 0, new Item.Properties()));
     public static final RegistrySupplier<Item> STARMETAL_HOE = ITEMS.register("starmetal_hoe",
             //? if < 1.21.1 {
-            /*() -> new HoeItem(ModToolTiers.STARMETAL, 0, 0f, new Item.Properties()));
-            *///?} else {
-            () -> new HoeItem(ModToolTiers.STARMETAL, new Item.Properties()));
-            //?}
+            () -> new HoeItem(ModToolTiers.STARMETAL, 0, 0f, new Item.Properties()));
+            //?} else {
+            /*() -> new HoeItem(ModToolTiers.STARMETAL, new Item.Properties()));
+            *///?}
 
     public static final RegistrySupplier<Item> ALLOY_SWORD = ITEMS.register("alloy_sword",
         () -> new ModSwordItem(ModToolTiers.ALLOY, 5, 2, new Item.Properties()));
@@ -273,10 +273,10 @@ public class ModItems {
 
     public static final RegistrySupplier<Item> ALLOY_HOE = ITEMS.register("alloy_hoe",
             //? if < 1.21.1 {
-            /*() -> new HoeItem(ModToolTiers.ALLOY, 0, 0f, new Item.Properties()));
-            *///?} else {
-            () -> new HoeItem(ModToolTiers.ALLOY, new Item.Properties()));
-            //?}
+            () -> new HoeItem(ModToolTiers.ALLOY, 0, 0f, new Item.Properties()));
+            //?} else {
+            /*() -> new HoeItem(ModToolTiers.ALLOY, new Item.Properties()));
+            *///?}
 
     public static final RegistrySupplier<Item> STEEL_SWORD = ITEMS.register("steel_sword",
             () -> new ModSwordItem(ModToolTiers.STEEL, 4, 2, new Item.Properties()));
@@ -288,10 +288,10 @@ public class ModItems {
             () -> new ModShovelItem(ModToolTiers.STEEL, 0, 0, new Item.Properties()));
     public static final RegistrySupplier<Item> STEEL_HOE = ITEMS.register("steel_hoe",
             //? if < 1.21.1 {
-            /*() -> new HoeItem(ModToolTiers.STEEL, 0, 0, new Item.Properties()));
-            *///?} else {
-            () -> new HoeItem(ModToolTiers.STEEL, new Item.Properties()));
-            //?}
+            () -> new HoeItem(ModToolTiers.STEEL, 0, 0, new Item.Properties()));
+            //?} else {
+            /*() -> new HoeItem(ModToolTiers.STEEL, new Item.Properties()));
+            *///?}
 
     public static final RegistrySupplier<Item> TITANIUM_SWORD = ITEMS.register("titanium_sword",
             () -> new ModSwordItem(ModToolTiers.TITANIUM, 2, 3, new Item.Properties()));
@@ -318,10 +318,10 @@ public class ModItems {
             () -> new ModShovelItem(ModToolTiers.TITANIUM, 0, 0, new Item.Properties()));
     public static final RegistrySupplier<Item> TITANIUM_HOE = ITEMS.register("titanium_hoe",
             //? if < 1.21.1 {
-            /*() -> new HoeItem(ModToolTiers.TITANIUM, 0, 0, new Item.Properties()));
-            *///?} else {
-            () -> new HoeItem(ModToolTiers.TITANIUM, new Item.Properties()));
-            //?}
+            () -> new HoeItem(ModToolTiers.TITANIUM, 0, 0, new Item.Properties()));
+            //?} else {
+            /*() -> new HoeItem(ModToolTiers.TITANIUM, new Item.Properties()));
+            *///?}
 
 
     public static final RegistrySupplier<Item> GRENADE = ITEMS.register("grenade",

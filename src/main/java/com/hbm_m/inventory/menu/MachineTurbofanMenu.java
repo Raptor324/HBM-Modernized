@@ -15,8 +15,8 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 //? if forge {
-/*import net.minecraftforge.common.capabilities.ForgeCapabilities;
-*///?}
+import net.minecraftforge.common.capabilities.ForgeCapabilities;
+//?}
 
 /**
  * 1:1-Port der Slot-Koordinaten aus {@code ContainerMachineTurbofan} (1.7.10-Original), abzueglich
@@ -94,11 +94,11 @@ public class MachineTurbofanMenu extends AbstractContainerMenu {
     private static boolean isEnergySource(ItemStack stack) {
         if (ItemEnergyAccess.getHbmProvider(stack).isPresent()) return true;
         //? if forge {
-        /*if (stack.getCapability(ForgeCapabilities.ENERGY).isPresent()) return true;
-        *///?}
-        //? if neoforge {
-        if (stack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM) != null) return true;
+        if (stack.getCapability(ForgeCapabilities.ENERGY).isPresent()) return true;
         //?}
+        //? if neoforge {
+        /*if (stack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM) != null) return true;
+        *///?}
         return false;
     }
 

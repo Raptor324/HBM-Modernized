@@ -32,9 +32,9 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.LevelChunk;
 //? if forge {
-/*import net.minecraftforge.event.level.ChunkEvent;
+import net.minecraftforge.event.level.ChunkEvent;
 import net.minecraftforge.event.level.LevelEvent;
-*///?}
+//?}
 
 // Моя конфетка, сколько же сил и нервов я на тебя потратил!
 public class ChunkRadiationHandlerSimple extends ChunkRadiationHandler {
@@ -233,22 +233,22 @@ public class ChunkRadiationHandlerSimple extends ChunkRadiationHandler {
     }
 
     //? if forge {
-    /*@Override
+    @Override
     public void receiveChunkUnload(ChunkEvent.Unload event) {
         if (event.getChunk() instanceof LevelChunk chunk && !chunk.getLevel().isClientSide()) {
             Optional.ofNullable(activeChunksByDimension.get(chunk.getLevel().dimension()
             .location())).ifPresent(set -> set.remove(chunk.getPos()));
         }
     }
-    *///?} else {
-    // ВЫЗЫВАЕТСЯ ИЗ МЕНЕДЖЕРА ДЛЯ NEOFORGE / FABRIC
+    //?} else {
+    /*// ВЫЗЫВАЕТСЯ ИЗ МЕНЕДЖЕРА ДЛЯ NEOFORGE / FABRIC
     public void receiveChunkUnload(LevelChunk chunk) {
         if (!chunk.getLevel().isClientSide()) {
             Optional.ofNullable(activeChunksByDimension.get(chunk.getLevel().dimension()
                     .location())).ifPresent(set -> set.remove(chunk.getPos()));
         }
     }
-    //?}
+    *///?}
 
     @Override
     public float getRadiation(Level level, int x, int y, int z) {
@@ -424,10 +424,10 @@ public class ChunkRadiationHandlerSimple extends ChunkRadiationHandler {
                     if (state.is(Blocks.GRASS_BLOCK)) {
                         level.setBlock(blockPos, ModBlocks.WASTE_GRASS.get().defaultBlockState(), 2);
                     //? if < 1.21.1 {
-                    /*} else if (state.is(Blocks.GRASS)) {
-                    *///?} else {
-                    } else if (state.is(Blocks.SHORT_GRASS)) {
-                    //?}
+                    } else if (state.is(Blocks.GRASS)) {
+                    //?} else {
+                    /*} else if (state.is(Blocks.SHORT_GRASS)) {
+                    *///?}
                         level.setBlock(blockPos, Blocks.AIR.defaultBlockState(), 2);
                     } else if (state.is(BlockTags.LEAVES) && !state.is(ModBlocks.WASTE_LEAVES.get())) {
                         if (level.random.nextInt(7) <= 5) {
@@ -451,7 +451,7 @@ public class ChunkRadiationHandlerSimple extends ChunkRadiationHandler {
     }
 
     //? if forge {
-    /*@Override
+    @Override
     public void receiveWorldLoad(LevelEvent.Load event) {
         if (event.getLevel() instanceof Level level && !level.isClientSide()) {
             activeChunksByDimension.remove(level.dimension().location());
@@ -464,5 +464,5 @@ public class ChunkRadiationHandlerSimple extends ChunkRadiationHandler {
             activeChunksByDimension.remove(level.dimension().location());
         }
     }
-    *///?}
+    //?}
 }

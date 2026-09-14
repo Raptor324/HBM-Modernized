@@ -13,10 +13,10 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
 
 //? if forge {
-/*import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.gui.overlay.IGuiOverlay;
-*///?}
+//?}
 
 /**
  * Полноэкранный оверлей противогаза: при ношении маски экран затягивает «дымкой»,
@@ -24,17 +24,17 @@ import net.minecraftforge.client.gui.overlay.IGuiOverlay;
  * Порт {@code ArmorGasMask.renderHelmetOverlay} (1.7.10).
  */
 //? if forge {
-/*@OnlyIn(Dist.CLIENT)
-*///?}
+@OnlyIn(Dist.CLIENT)
+//?}
 public class OverlayGasMask {
 
     private static final String BASE_GASMASK = "textures/misc/overlay_gasmask.png";
     private static final String BASE_GOGGLES = "textures/misc/overlay_goggles.png";
 
     //? if forge {
-    /*public static final IGuiOverlay OVERLAY = (gui, gfx, partialTick, screenWidth, screenHeight) ->
+    public static final IGuiOverlay OVERLAY = (gui, gfx, partialTick, screenWidth, screenHeight) ->
             render(gfx);
-    *///?}
+    //?}
 
     public static void render(GuiGraphics gfx) {
         Minecraft mc = Minecraft.getInstance();

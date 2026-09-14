@@ -25,16 +25,16 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 //? if forge {
-/*import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.capability.IFluidHandler;
-*///?} elif neoforge {
-import net.neoforged.api.distmarker.Dist;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
-//?}
+*///?}
 
 /**
  * Industrial Turbine BlockEntity - converts steam to energy (HE).
@@ -75,8 +75,8 @@ public class MachineIndustrialTurbineBlockEntity extends BaseMachineBlockEntity
     private final FluidTank spentSteamTank;
 
     //? if forge {
-    /*private LazyOptional<IFluidHandler> lazySpentHandler;
-    *///?}
+    private LazyOptional<IFluidHandler> lazySpentHandler;
+    //?}
 
 
     private boolean isActive = false;
@@ -94,8 +94,8 @@ public class MachineIndustrialTurbineBlockEntity extends BaseMachineBlockEntity
         this.spentSteamTank = new FluidTank(ModFluids.SPENTSTEAM.getSource(), SPENT_STEAM_CAPACITY);
 
         //? if forge {
-        /*this.lazySpentHandler = LazyOptional.empty();
-        *///?}
+        this.lazySpentHandler = LazyOptional.empty();
+        //?}
     }
 
     public static void tick(Level level, BlockPos pos, BlockState state, MachineIndustrialTurbineBlockEntity be) {
@@ -302,7 +302,7 @@ public class MachineIndustrialTurbineBlockEntity extends BaseMachineBlockEntity
     // --- Capabilities ---
 
     //? if forge {
-    /*@Override
+    @Override
     public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
         // UP = spent output; остальные стороны (steam input) отдаёт базовый fluidHandlerOpt.
         if (cap == ForgeCapabilities.FLUID_HANDLER && side == Direction.UP) {
@@ -427,7 +427,7 @@ public class MachineIndustrialTurbineBlockEntity extends BaseMachineBlockEntity
             return drained;
         }
     }
-    *///?}
+    //?}
 
 
     public net.minecraft.world.phys.AABB getRenderBoundingBox() {

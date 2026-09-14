@@ -95,10 +95,10 @@ public class EntityRequestDrone extends EntityDroneBase {
         Vec3 from = position();
         Vec3 to = from.subtract(0, 4, 0);
         //? if < 1.21.1 {
-        /*BlockHitResult hit = level().clip(new ClipContext(from, to, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, null));
-        *///?} else {
-        BlockHitResult hit = level().clip(new ClipContext(from, to, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, (net.minecraft.world.entity.Entity) null));
-        //?}
+        BlockHitResult hit = level().clip(new ClipContext(from, to, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, null));
+        //?} else {
+        /*BlockHitResult hit = level().clip(new ClipContext(from, to, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, (net.minecraft.world.entity.Entity) null));
+        *///?}
         if (hit.getType() != HitResult.Type.BLOCK) return null;
         return level().getBlockEntity(hit.getBlockPos());
     }
@@ -168,10 +168,10 @@ public class EntityRequestDrone extends EntityDroneBase {
         super.readAdditionalSaveData(tag);
         
         //? if < 1.21.1 {
-        /*heldItem = tag.contains("held") ? com.hbm_m.platform.PlatformHooks.itemStackOf(tag.getCompound("held"), com.hbm_m.platform.PlatformHooks.bestEffortProvider()) : ItemStack.EMPTY;
-        *///?} else {
-        heldItem = tag.contains("held") ? com.hbm_m.platform.PlatformHooks.itemStackOf(tag.getCompound("held"), this.registryAccess()) : ItemStack.EMPTY;
-        //?}
+        heldItem = tag.contains("held") ? com.hbm_m.platform.PlatformHooks.itemStackOf(tag.getCompound("held"), com.hbm_m.platform.PlatformHooks.bestEffortProvider()) : ItemStack.EMPTY;
+        //?} else {
+        /*heldItem = tag.contains("held") ? com.hbm_m.platform.PlatformHooks.itemStackOf(tag.getCompound("held"), this.registryAccess()) : ItemStack.EMPTY;
+        *///?}
         
         nextActionTimer = 5;
 
@@ -187,10 +187,10 @@ public class EntityRequestDrone extends EntityDroneBase {
                 case "unload" -> program.add(ProgramStep.UNLOAD);
                 case "dock" -> program.add(ProgramStep.DOCK);
                 //? if < 1.21.1 {
-                /*case "pattern" -> program.add(com.hbm_m.platform.PlatformHooks.itemStackOf(entry.getCompound("stack"), com.hbm_m.platform.PlatformHooks.bestEffortProvider()));
-                *///?} else {
-                case "pattern" -> program.add(com.hbm_m.platform.PlatformHooks.itemStackOf(entry.getCompound("stack"), this.registryAccess()));
-                //?}
+                case "pattern" -> program.add(com.hbm_m.platform.PlatformHooks.itemStackOf(entry.getCompound("stack"), com.hbm_m.platform.PlatformHooks.bestEffortProvider()));
+                //?} else {
+                /*case "pattern" -> program.add(com.hbm_m.platform.PlatformHooks.itemStackOf(entry.getCompound("stack"), this.registryAccess()));
+                *///?}
                 default -> {}
             }
         }
@@ -201,10 +201,10 @@ public class EntityRequestDrone extends EntityDroneBase {
         super.addAdditionalSaveData(tag);
         
         //? if < 1.21.1 {
-        /*if (!heldItem.isEmpty()) tag.put("held", com.hbm_m.platform.PlatformHooks.safeItemSave(heldItem, com.hbm_m.platform.PlatformHooks.bestEffortProvider()));
-        *///?} else {
-        if (!heldItem.isEmpty()) tag.put("held", com.hbm_m.platform.PlatformHooks.safeItemSave(heldItem, this.registryAccess()));
-        //?}
+        if (!heldItem.isEmpty()) tag.put("held", com.hbm_m.platform.PlatformHooks.safeItemSave(heldItem, com.hbm_m.platform.PlatformHooks.bestEffortProvider()));
+        //?} else {
+        /*if (!heldItem.isEmpty()) tag.put("held", com.hbm_m.platform.PlatformHooks.safeItemSave(heldItem, this.registryAccess()));
+        *///?}
 
         ListTag list = new ListTag();
         for (Object step : program) {
@@ -219,10 +219,10 @@ public class EntityRequestDrone extends EntityDroneBase {
             } else if (step instanceof ItemStack pattern) {
                 entry.putString("type", "pattern");
                 //? if < 1.21.1 {
-                /*entry.put("stack", com.hbm_m.platform.PlatformHooks.safeItemSave(pattern, com.hbm_m.platform.PlatformHooks.bestEffortProvider()));
-                *///?} else {
-                entry.put("stack", com.hbm_m.platform.PlatformHooks.safeItemSave(pattern, this.registryAccess()));
-                //?}
+                entry.put("stack", com.hbm_m.platform.PlatformHooks.safeItemSave(pattern, com.hbm_m.platform.PlatformHooks.bestEffortProvider()));
+                //?} else {
+                /*entry.put("stack", com.hbm_m.platform.PlatformHooks.safeItemSave(pattern, this.registryAccess()));
+                *///?}
             }
             list.add(entry);
         }

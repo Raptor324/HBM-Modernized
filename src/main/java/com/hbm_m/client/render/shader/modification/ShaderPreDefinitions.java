@@ -15,9 +15,9 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceProvider;
 //? if forge {
-/*import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-*///?}
+//?}
 
 /**
  * Wraps a {@link ResourceProvider} so that resources matching a target {@link ResourceLocation}
@@ -29,8 +29,8 @@ import net.minecraftforge.api.distmarker.OnlyIn;
  * without {@code #define USE_INSTANCING}).
  */
 //? if forge {
-/*@OnlyIn(Dist.CLIENT)
-*///?}
+@OnlyIn(Dist.CLIENT)
+//?}
 public final class ShaderPreDefinitions {
 
     private ShaderPreDefinitions() {}

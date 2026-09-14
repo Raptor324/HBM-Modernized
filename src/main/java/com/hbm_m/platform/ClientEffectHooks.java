@@ -34,22 +34,22 @@ public final class ClientEffectHooks {
      */
     public static void initializeClient(MobEffect effect, Consumer<Object> consumer) {
         //? if forge {
-        /*if (effect instanceof RadawayEffect) {
+        if (effect instanceof RadawayEffect) {
             consumer.accept(radawayExtensionsForge());
         } else if (effect instanceof TaintEffect) {
             consumer.accept(taintExtensionsForge());
         }
-        *///?} elif neoforge {
-        if (effect instanceof RadawayEffect) {
+        //?} elif neoforge {
+        /*if (effect instanceof RadawayEffect) {
             consumer.accept(radawayExtensionsNeo());
         } else if (effect instanceof TaintEffect) {
             consumer.accept(taintExtensionsNeo());
         }
-        //?}
+        *///?}
     }
 
     //? if forge {
-    /*private static net.minecraftforge.client.extensions.common.IClientMobEffectExtensions radawayExtensionsForge() {
+    private static net.minecraftforge.client.extensions.common.IClientMobEffectExtensions radawayExtensionsForge() {
         return new net.minecraftforge.client.extensions.common.IClientMobEffectExtensions() {
             @Override
             public boolean renderInventoryIcon(MobEffectInstance instance,
@@ -84,8 +84,8 @@ public final class ClientEffectHooks {
             }
         };
     }
-    *///?} elif neoforge {
-    private static net.neoforged.neoforge.client.extensions.common.IClientMobEffectExtensions radawayExtensionsNeo() {
+    //?} elif neoforge {
+    /*private static net.neoforged.neoforge.client.extensions.common.IClientMobEffectExtensions radawayExtensionsNeo() {
         return new net.neoforged.neoforge.client.extensions.common.IClientMobEffectExtensions() {
             @Override
             public boolean renderInventoryIcon(MobEffectInstance instance,
@@ -120,5 +120,5 @@ public final class ClientEffectHooks {
             }
         };
     }
-     //?}
+     *///?}
 }

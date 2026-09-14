@@ -1,13 +1,13 @@
 package com.hbm_m.datagen.recipes.custom;
 //? if forge {
-/*import com.google.gson.JsonObject;
+import com.google.gson.JsonObject;
 import com.hbm_m.recipe.FractionTowerRecipe;
 
 import dev.architectury.fluid.FluidStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 
-/^*
+/**
  * Datagen-билдер {@link FractionTowerRecipe} ({@code hbm_m:fraction_tower}).
  *
  * <p>Чистый ванильный 1.20.1 код внутри {@code //? if forge} — датаген только для 1.20.1-forge.
@@ -25,7 +25,7 @@ import net.minecraft.world.item.crafting.RecipeSerializer;
  *
  * <p>Предметного выхода нет — {@link #getResult()} возвращает {@link Items#AIR}
  * (ванильный {@code RecipeBuilder} требует реализацию).</p>
- ^/
+ */
 public class FractionTowerRecipeBuilder extends BaseRecipeBuilder<FractionTowerRecipeBuilder> {
 
     private final FluidStack input;
@@ -59,4 +59,4 @@ public class FractionTowerRecipeBuilder extends BaseRecipeBuilder<FractionTowerR
         return FractionTowerRecipe.Serializer.INSTANCE;
     }
 }
-*///?}
+//?}

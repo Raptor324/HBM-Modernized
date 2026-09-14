@@ -1,6 +1,6 @@
 package com.hbm_m.datagen.recipes.custom;
 //? if forge {
-/*import com.hbm_m.inventory.fluid.ModFluids;
+import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.item.material.MaterialShape;
 import com.hbm_m.item.material.ModMaterialItems;
@@ -13,7 +13,7 @@ import net.minecraft.world.level.material.Fluid;
 
 import java.util.function.Consumer;
 
-/^*
+/**
  * Генератор JSON-рецептов газовой центрифуги ({@code hbm_m:gas_centrifuge}) — JEI-only.
  *
  * <p>Порт четырёх canonical-cascade рецептов из {@code GasCentrifugeJeiCategory.getDefaultRecipes()}
@@ -22,7 +22,7 @@ import java.util.function.Consumer;
  * эти рецепты используются только для статичного JEI-показа.</p>
  *
  * <p>Чистый ванильный 1.20.1 код внутри {@code //? if forge} — датаген только для 1.20.1-forge.</p>
- ^/
+ */
 public final class GasCentrifugeRecipeGenerator {
 
     private GasCentrifugeRecipeGenerator() {}
@@ -75,4 +75,4 @@ public final class GasCentrifugeRecipeGenerator {
         return FluidStack.create(fluid, mb);
     }
 }
-*///?}
+//?}

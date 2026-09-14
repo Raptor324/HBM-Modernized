@@ -1,5 +1,5 @@
 //? if forge {
-/*package com.hbm_m.client.compat.itemtransformhelper;
+package com.hbm_m.client.compat.itemtransformhelper;
 
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.main.MainRegistry;
@@ -17,13 +17,13 @@ import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 
-/^*
+/**
  * Item Transform Helper wraps every {@link BakedModel} in a thin delegate that does not forward
  * Forge extensions ({@code getQuads(..., ModelData, RenderType)}, etc.), which makes HBM OBJ /
  * multipart models invisible. This class re-wraps {@code hbm_m} {@code isCustomRenderer} models
  * after baking (always, not only when ITH is loaded) so BEWLR display transforms behave the same
  * with or without the helper mod.
- ^/
+ */
 public final class ItemTransformHelperCompat {
 
     private static final String MOD_ID = "itemtransformhelper";
@@ -45,9 +45,9 @@ public final class ItemTransformHelperCompat {
         return ModList.get().isLoaded(MOD_ID);
     }
 
-    /^*
+    /**
      * Run on {@link net.minecraftforge.client.event.ModelEvent.BakingCompleted} (LOWEST), after ITH.
-     ^/
+     */
     public static void installDisplayTransformGuards(Map<ResourceLocation, BakedModel> models) {
         Map<ResourceLocation, BakedModel> replacements = new HashMap<>();
         for (Map.Entry<ResourceLocation, BakedModel> entry : models.entrySet()) {
@@ -75,9 +75,9 @@ public final class ItemTransformHelperCompat {
         }
     }
 
-    /^*
+    /**
      * Peel ITH / prior HBM display wrappers down to the real baked model.
-     ^/
+     */
     @Nullable
     public static BakedModel unwrapToDelegate(@Nullable BakedModel model) {
         if (model == null) {
@@ -122,9 +122,9 @@ public final class ItemTransformHelperCompat {
         return current;
     }
 
-    /^*
+    /**
      * {@code display} for BEWLR: live ITH edits from the registry wrapper, otherwise JSON on the mesh delegate.
-     ^/
+     */
     public static ItemTransforms resolveDisplayTransforms(@Nullable BakedModel displayModel, BakedModel meshDelegate) {
         if (displayModel != null) {
             ItemTransforms live = resolveLiveTransforms(displayModel);
@@ -160,9 +160,9 @@ public final class ItemTransformHelperCompat {
         return null;
     }
 
-    /^*
+    /**
      * Peel one Item Transform Helper wrapper layer, if present.
-     ^/
+     */
     @Nullable
     public static BakedModel peelIthWrapper(@Nullable BakedModel model) {
         if (model == null || !isLoaded()) {
@@ -186,9 +186,9 @@ public final class ItemTransformHelperCompat {
         return model;
     }
 
-    /^*
+    /**
      * Walk known wrapper layers until a {@link com.hbm_m.client.model.MissileBakedModel} is found.
-     ^/
+     */
     @Nullable
     public static com.hbm_m.client.model.MissileBakedModel unwrapMissileDelegate(@Nullable BakedModel model) {
         if (model == null) {
@@ -285,11 +285,11 @@ public final class ItemTransformHelperCompat {
         return updateLinkModelField != null && updateLinkTransformsField != null;
     }
 
-    /^*
+    /**
      * Forge {@link BakedModelWrapper} / {@code IForgeBakedModel#applyTransform} applies
      * {@link #getTransforms()} to the {@link PoseStack}. HBM BEWLR items ({@code isCustomRenderer})
      * apply the same transforms again in {@code renderByItem} — delegate a no-op to the inner model.
-     ^/
+     */
     static final class HbmItemDisplayWrapper extends BakedModelWrapper<BakedModel> {
 
         HbmItemDisplayWrapper(BakedModel delegate) {
@@ -324,4 +324,4 @@ public final class ItemTransformHelperCompat {
         }
     }
 }
-*///?}
+//?}

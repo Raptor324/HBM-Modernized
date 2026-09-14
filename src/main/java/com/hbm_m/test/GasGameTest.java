@@ -49,12 +49,12 @@ import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.PushReaction;
 //? if forge {
-/*import net.minecraftforge.gametest.GameTestHolder;
+import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
-*///?} elif neoforge {
-import net.neoforged.neoforge.gametest.GameTestHolder;
+//?} elif neoforge {
+/*import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
- //?}
+ *///?}
 
 /**
  * Кроссплатформенный набор GameTest-ов для системы газов ({@code com.hbm_m.block.gas}).
@@ -172,7 +172,7 @@ public final class GasGameTest {
      */
     private static Player makeSurvivalPlayer(GameTestHelper helper) {
         //? if < 1.21.1 {
-        /*return new Player(helper.getLevel(), BlockPos.ZERO, 0.0F,
+        return new Player(helper.getLevel(), BlockPos.ZERO, 0.0F,
                 new com.mojang.authlib.GameProfile(UUID.randomUUID(), "gas-test-player")) {
             @Override
             public boolean isSpectator() {
@@ -184,9 +184,9 @@ public final class GasGameTest {
                 return false;
             }
         };
-        *///?} else {
-        return helper.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
-         //?}
+        //?} else {
+        /*return helper.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
+         *///?}
     }
 
     /** Надевает противогаз с установленным фильтром. */

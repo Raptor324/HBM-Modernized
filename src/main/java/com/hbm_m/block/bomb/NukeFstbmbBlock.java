@@ -64,7 +64,7 @@ public class NukeFstbmbBlock extends NukeBaseBlock implements IBomb {
     }
 
     //? if > 1.20.1 {
-    public static final com.mojang.serialization.MapCodec<NukeFstbmbBlock> CODEC = simpleCodec(NukeFstbmbBlock::new);
+    /*public static final com.mojang.serialization.MapCodec<NukeFstbmbBlock> CODEC = simpleCodec(NukeFstbmbBlock::new);
     @Override protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.Block> codec() { return CODEC; }
-     //?}
+     *///?}
 }

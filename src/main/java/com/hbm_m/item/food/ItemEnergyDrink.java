@@ -21,10 +21,10 @@ public class ItemEnergyDrink extends Item {
 
     private static FoodProperties.Builder makeAlwaysEat(FoodProperties.Builder builder) {
         //? if < 1.21.1 {
-        /*return builder.alwaysEat();
-        *///?} else {
-        return builder.alwaysEdible();
-        //?}
+        return builder.alwaysEat();
+        //?} else {
+        /*return builder.alwaysEdible();
+        *///?}
     }
 
     public static final FoodProperties CAN_BEPIS = com.hbm_m.platform.PlatformHooks.addFoodEffect(

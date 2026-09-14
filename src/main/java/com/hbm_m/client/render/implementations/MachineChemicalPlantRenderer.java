@@ -350,10 +350,10 @@ public final class MachineChemicalPlantRenderer {
         float r = visual.r(), g = visual.g(), b = visual.b(), a = 0.5f;
         for (BakedQuad quad : quads) {
             //? if forge {
-            /*vc.putBulkData(pose, quad, r, g, b, a, packedLight, packedOverlay, false);
-            *///?} else {
-            vc.putBulkData(pose, quad, r, g, b, a, packedLight, packedOverlay);
-            //?}
+            vc.putBulkData(pose, quad, r, g, b, a, packedLight, packedOverlay, false);
+            //?} else {
+            /*vc.putBulkData(pose, quad, r, g, b, a, packedLight, packedOverlay);
+            *///?}
         }
     }
 
@@ -375,11 +375,11 @@ public final class MachineChemicalPlantRenderer {
     /** Кросс-версионный ModelData.EMPTY (forge/neoforge имена совпадают, импорт — нет). */
     private static final class ModelDataHolder {
         //? if forge {
-        /*static final net.minecraftforge.client.model.data.ModelData DATA =
+        static final net.minecraftforge.client.model.data.ModelData DATA =
                 net.minecraftforge.client.model.data.ModelData.EMPTY;
-        *///?} elif neoforge {
-        static final net.neoforged.neoforge.client.model.data.ModelData DATA =
+        //?} elif neoforge {
+        /*static final net.neoforged.neoforge.client.model.data.ModelData DATA =
                 net.neoforged.neoforge.client.model.data.ModelData.EMPTY;
-        //?}
+        *///?}
     }
 }

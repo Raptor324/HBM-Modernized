@@ -127,12 +127,12 @@ public class FluidTank implements Cloneable {
     public Object getCapability() { return backend.getCapability(); }
 
     //? if forge {
-    /*/^* Типизированный forge-доступ к капабилити бака (LazyOptional&lt;IFluidHandler&gt;) для BE.getCapability. ^/
+    /** Типизированный forge-доступ к капабилити бака (LazyOptional&lt;IFluidHandler&gt;) для BE.getCapability. */
     @SuppressWarnings("unchecked")
     public net.minecraftforge.common.util.LazyOptional<net.minecraftforge.fluids.capability.IFluidHandler> getForgeFluidCapability() {
         return (net.minecraftforge.common.util.LazyOptional<net.minecraftforge.fluids.capability.IFluidHandler>) getCapability();
     }
-    *///?}
+    //?}
 
     public void assignTypeAndZeroFluid(Fluid newType) {
         if (!isEmpty()) drainMb(getFluidAmountMb());
@@ -341,19 +341,19 @@ public class FluidTank implements Cloneable {
     }
 
     //? if forge {
-    /*@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-    *///?} elif neoforge {
-    @net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-    //?}
+    @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+    //?} elif neoforge {
+    /*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+    *///?}
     public void renderTank(net.minecraft.client.gui.GuiGraphics guiGraphics, int x, int y, int width, int height) {
         renderTank(guiGraphics, x, y, width, height, 0);
     }
 
     //? if forge {
-    /*@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-    *///?} elif neoforge {
-    @net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-    //?}
+    @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+    //?} elif neoforge {
+    /*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+    *///?}
     public void renderTank(net.minecraft.client.gui.GuiGraphics guiGraphics, int x, int y, int width, int height, int orientation) {
         Fluid drawType = getConfiguredFluid();
         int fluidAmt = getFluidAmountMb();
@@ -392,10 +392,10 @@ public class FluidTank implements Cloneable {
     }
 
     //? if forge {
-    /*@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-    *///?} elif neoforge {
-    @net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-    //?}
+    @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+    //?} elif neoforge {
+    /*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+    *///?}
     public void renderTankInfo(net.minecraft.client.gui.GuiGraphics guiGraphics, net.minecraft.client.gui.Font font, int mouseX, int mouseY, int x, int y, int width, int height) {
         if (!(mouseX >= x && mouseX < x + width && mouseY >= y && mouseY < y + height)) return;
 

@@ -86,10 +86,10 @@ public class EntityProcessorCross implements IEntityProcessor {
 
         for (Entity entity : list) {
             //? if < 1.21.1 {
-            /*boolean ignore = entity.ignoreExplosion();
-            *///?} else {
-            boolean ignore = entity.ignoreExplosion(explosion.compat);
-            //?}
+            boolean ignore = entity.ignoreExplosion();
+            //?} else {
+            /*boolean ignore = entity.ignoreExplosion(explosion.compat);
+            *///?}
             if (!ignore) {
 
                 AABB entityBoundingBox = entity.getBoundingBox();

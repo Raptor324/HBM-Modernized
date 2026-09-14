@@ -1,7 +1,7 @@
 package com.hbm_m.api.fluids;
 
 //? if neoforge {
-import com.hbm_m.inventory.fluid.tank.FluidTank;
+/*import com.hbm_m.inventory.fluid.tank.FluidTank;
 import net.minecraft.world.level.material.Fluid;
 import net.neoforged.neoforge.fluids.FluidStack;
 import net.neoforged.neoforge.fluids.capability.IFluidHandler;
@@ -127,4 +127,4 @@ public final class NeoForgeFluidHandlerMK2 implements IFluidHandler {
                 : FluidStack.EMPTY;
     }
 }
-//?}
+*///?}

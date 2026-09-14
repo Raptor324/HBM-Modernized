@@ -2,8 +2,8 @@ package com.hbm_m.block.machines;
 
 import java.util.Map;
 //? if forge {
-/*import net.minecraftforge.common.capabilities.ForgeCapabilities;
-*///?}
+import net.minecraftforge.common.capabilities.ForgeCapabilities;
+//?}
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Supplier;
 
@@ -216,16 +216,16 @@ public class MachineAssemblerBlock extends BaseEntityBlock implements IMultibloc
     }
 
     //? if < 1.21.1 {
-    /*@Override
+    @Override
     public InteractionResult use(@NotNull BlockState state, @NotNull Level level, @NotNull BlockPos pos, @NotNull Player player, @NotNull InteractionHand hand, @NotNull BlockHitResult hit) {
         return openMenu(state, level, pos, player, hand, hit);
     }
-    *///?} else {
-    @Override
+    //?} else {
+    /*@Override
     protected InteractionResult useWithoutItem(@NotNull BlockState state, @NotNull Level level, @NotNull BlockPos pos, @NotNull Player player, @NotNull BlockHitResult hit) {
         return openMenu(state, level, pos, player, InteractionHand.MAIN_HAND, hit);
     }
-    //?}
+    *///?}
 
     private InteractionResult openMenu(@NotNull BlockState state, @NotNull Level level, @NotNull BlockPos pos, @NotNull Player player, @NotNull InteractionHand hand, @NotNull BlockHitResult hit) {
         if (!level.isClientSide) {
@@ -275,11 +275,11 @@ public class MachineAssemblerBlock extends BaseEntityBlock implements IMultibloc
     }
 
     //? if >1.20.1 {
-    public static final com.mojang.serialization.MapCodec<MachineAssemblerBlock> CODEC = simpleCodec(MachineAssemblerBlock::new);
+    /*public static final com.mojang.serialization.MapCodec<MachineAssemblerBlock> CODEC = simpleCodec(MachineAssemblerBlock::new);
 
     @Override
     protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
         return CODEC;
     }
-    //?}
+    *///?}
 }

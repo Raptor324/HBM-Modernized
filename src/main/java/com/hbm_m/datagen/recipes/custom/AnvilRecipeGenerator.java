@@ -1,6 +1,6 @@
 package com.hbm_m.datagen.recipes.custom;
 //? if forge {
-/*import java.util.function.Consumer;
+import java.util.function.Consumer;
 
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.block.machines.anvils.AnvilTier;
@@ -241,7 +241,7 @@ public final class AnvilRecipeGenerator {
 
     }
 
-    /^*
+    /**
      * Регистрирует рецепт объединения (Combine Recipe).
      *
      * @param writer      Потребитель рецептов
@@ -251,7 +251,7 @@ public final class AnvilRecipeGenerator {
      * @param inputB      Второй входной слот
      * @param output      Результат
      * @param tier        Минимальный тир наковальни
-     ^/
+     */
     private static void registerCombineRecipe(Consumer<FinishedRecipe> writer, String tierFolder, String name,
                                                 ItemStack inputA, ItemStack inputB, ItemStack output,
                                                 AnvilTier tier) {
@@ -259,9 +259,9 @@ public final class AnvilRecipeGenerator {
         registerCombineRecipe(writer, tierFolder, name, inputA, inputB, output, tier, builder -> {});
     }
 
-    /^*
+    /**
      * Регистрирует рецепт объединения с дополнительными настройками (например, сохранение предметов).
-     ^/
+     */
     private static void registerCombineRecipe(Consumer<FinishedRecipe> writer, String tierFolder, String name,
                                                 ItemStack inputA, ItemStack inputB, ItemStack output,
                                                 AnvilTier tier, Consumer<AnvilRecipeBuilder> settings) {
@@ -296,11 +296,11 @@ public final class AnvilRecipeGenerator {
         builder.save(writer, anvilId(tierFolder, "disassemble", name));
     }
 
-    /^*
+    /**
      * Возвращает путь id для рецепта наковальни. {@link AnvilRecipeBuilder} унаследован
      * от {@link BaseRecipeBuilder}, поэтому {@code save(writer, String)} сам построит
      * кросс-версионный {@link net.minecraft.resources.ResourceLocation}.
-     ^/
+     */
     private static String anvilId(String tierFolder, String category, String name) {
         return "anvil/" + tierFolder + "/" + category + "_" + name;
     }
@@ -332,4 +332,4 @@ public final class AnvilRecipeGenerator {
         return stack(obj, 1);
     }
 }
-*///?}
+//?}

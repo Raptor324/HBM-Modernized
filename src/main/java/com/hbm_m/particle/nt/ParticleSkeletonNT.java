@@ -268,15 +268,15 @@ public class ParticleSkeletonNT extends ParticleNT {
 
         // Format = NEW_ENTITY: position, color, UV0 (texture), overlay UV1, UV2 (lightmap), normal
         //? if < 1.21.1 {
-        /*consumer.vertex(pX + x3, pY + y3, pZ + z3)
+        consumer.vertex(pX + x3, pY + y3, pZ + z3)
                 .color(r, g, b, a)
                 .uv(uv.u(), 1.0F - uv.v())
                 .overlayCoords(net.minecraft.client.renderer.texture.OverlayTexture.NO_OVERLAY)
                 .uv2(light)
                 .normal(nrm[0], nrm[1], nrm[2])
                 .endVertex();
-        *///?} else {
-        // 1.21.1: vertex->addVertex, color->setColor, uv->setUv, overlayCoords->setOverlay,
+        //?} else {
+        /*// 1.21.1: vertex->addVertex, color->setColor, uv->setUv, overlayCoords->setOverlay,
         // uv2->setLight, normal->setNormal, endVertex удалён.
         consumer.addVertex(pX + x3, pY + y3, pZ + z3)
                 .setColor(r, g, b, a)
@@ -284,7 +284,7 @@ public class ParticleSkeletonNT extends ParticleNT {
                 .setOverlay(net.minecraft.client.renderer.texture.OverlayTexture.NO_OVERLAY)
                 .setLight(light)
                 .setNormal(nrm[0], nrm[1], nrm[2]);
-        //?}
+        *///?}
     }
 
     @Override

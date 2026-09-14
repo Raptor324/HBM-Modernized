@@ -168,10 +168,10 @@ public class PlayerHandler {
      * (параметр keepInventory: если true — не сбрасываем, чтобы не злоупотребляли)
      */
     //? if < 1.21.1 {
-    /*private static void onPlayerRespawn(ServerPlayer serverPlayer, boolean conqueredEnd) {
-    *///?} else {
-    private static void onPlayerRespawn(ServerPlayer serverPlayer, boolean conqueredEnd, net.minecraft.world.entity.Entity.RemovalReason reason) {
-    //?}
+    private static void onPlayerRespawn(ServerPlayer serverPlayer, boolean conqueredEnd) {
+    //?} else {
+    /*private static void onPlayerRespawn(ServerPlayer serverPlayer, boolean conqueredEnd, net.minecraft.world.entity.Entity.RemovalReason reason) {
+    *///?}
         // Сброс при смерти, но не при телепортации через End
         if (!conqueredEnd) {
             setPlayerRads(serverPlayer, 0F);

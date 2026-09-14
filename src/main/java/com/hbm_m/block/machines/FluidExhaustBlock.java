@@ -42,11 +42,11 @@ public class FluidExhaustBlock extends BaseEntityBlock {
     }
 
     //? if >1.20.1 {
-    public static final com.mojang.serialization.MapCodec<FluidExhaustBlock> CODEC = simpleCodec(FluidExhaustBlock::new);
+    /*public static final com.mojang.serialization.MapCodec<FluidExhaustBlock> CODEC = simpleCodec(FluidExhaustBlock::new);
 
     @Override
     protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
         return CODEC;
     }
-    //?}
+    *///?}
 }

@@ -1,13 +1,13 @@
 package com.hbm_m.datagen.recipes.custom;
 //? if forge {
-/*import com.hbm_m.inventory.material.MaterialStack;
+import com.hbm_m.inventory.material.MaterialStack;
 import com.hbm_m.inventory.material.MaterialType;
 
 import net.minecraft.data.recipes.FinishedRecipe;
 
 import java.util.function.Consumer;
 
-/^*
+/**
  * Генератор {@code hbm_m:molten_alloy} (data-driven JSON).
  *
  * <p>Порт 6 рецептов сплавления из удалённого {@code MoltenAlloyRecipes.registerDefaults()}:
@@ -15,7 +15,7 @@ import java.util.function.Consumer;
  * Материалы разрешаются статически (compile-time known enum), без поиска по реестру —
  * мод-предметы для сплавления не нужны (molten-only materials: carbon, arsenic,
  * technetium, redstone — числовые {@link MaterialType} constants).</p>
- ^/
+ */
 public final class MoltenAlloyRecipeGenerator {
 
     public static void generate(Consumer<FinishedRecipe> writer) {
@@ -66,4 +66,4 @@ public final class MoltenAlloyRecipeGenerator {
                 .save(writer, "molten_alloy/" + name);
     }
 }
-*///?}
+//?}

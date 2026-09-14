@@ -42,7 +42,7 @@ public class AdditiveParticleRenderType implements ParticleRenderType {
     }
 
     //? if < 1.21.1 {
-    /*@Override
+    @Override
     public void begin(BufferBuilder buffer, TextureManager textureManager) {
         savedFogStart = RenderSystem.getShaderFogStart();
         savedFogEnd = RenderSystem.getShaderFogEnd();
@@ -61,8 +61,8 @@ public class AdditiveParticleRenderType implements ParticleRenderType {
 
         IrisBufferHelper.beginWithoutExtending(buffer, VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
     }
-    *///?} else {
-    // 1.21: begin() bekommt den Tesselator und liefert den BufferBuilder zurueck;
+    //?} else {
+    /*// 1.21: begin() bekommt den Tesselator und liefert den BufferBuilder zurueck;
     // einen end()-Hook gibt es nicht mehr - der Zustand wird vom Partikel-Pass zurueckgesetzt.
     @Override
     public BufferBuilder begin(com.mojang.blaze3d.vertex.Tesselator tesselator, TextureManager textureManager) {
@@ -80,7 +80,7 @@ public class AdditiveParticleRenderType implements ParticleRenderType {
 
         return tesselator.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX_COLOR);
     }
-    //?}
+    *///?}
 
     private static void disableParticleFog() {
         RenderSystem.setShaderFogStart(NO_FOG_START);
@@ -101,7 +101,7 @@ public class AdditiveParticleRenderType implements ParticleRenderType {
     }
 
     //? if < 1.21.1 {
-    /*@Override
+    @Override
     public void end(Tesselator tesselator) {
         tesselator.end();
         RenderSystem.enableCull();
@@ -112,5 +112,5 @@ public class AdditiveParticleRenderType implements ParticleRenderType {
         RenderSystem.setShaderFogStart(savedFogStart);
         RenderSystem.setShaderFogEnd(savedFogEnd);
     }
-    *///?}
+    //?}
 }

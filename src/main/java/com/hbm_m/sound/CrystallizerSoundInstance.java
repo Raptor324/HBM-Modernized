@@ -6,13 +6,13 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.sounds.SoundSource;
 
 //? if forge {
-/*import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-*///?}
+//?}
 
 //? if forge {
-/*@OnlyIn(Dist.CLIENT)
-*///?}
+@OnlyIn(Dist.CLIENT)
+//?}
 public class CrystallizerSoundInstance extends AbstractTickableSoundInstance {
 
     public CrystallizerSoundInstance(BlockPos pos) {

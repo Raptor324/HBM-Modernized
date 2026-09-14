@@ -21,41 +21,23 @@ import com.hbm_m.lib.RefStrings;
  */
 
 //? if forge {
-/*import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.event.RegisterGameTestsEvent;
 
 @Mod.EventBusSubscriber(modid = RefStrings.MODID, bus = Mod.EventBusSubscriber.Bus.MOD)
-*///?} elif neoforge {
-import net.neoforged.bus.api.SubscribeEvent;
+//?} elif neoforge {
+/*import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.event.RegisterGameTestsEvent;
 
 @EventBusSubscriber(modid = RefStrings.MODID)
-//?}
+*///?}
 public final class GameTestRegistration {
 
     private GameTestRegistration() {}
 
     //? if forge {
-    /*@SubscribeEvent
-    public static void onRegisterGameTests(RegisterGameTestsEvent event) {
-        event.register(PlatformHooksGameTest.class);
-        event.register(CrossLoaderParityGameTest.class);
-        event.register(RadiationGameTest.class);
-        event.register(MachineCraftingGameTest.class);
-        event.register(RadiationObservabilityGameTest.class);
-        event.register(SteelCrateGameTest.class);
-        event.register(StorageCrateVariantGameTest.class);
-        event.register(SandbagGameTest.class);
-        event.register(LegacyWoodBarrierGameTest.class);
-        event.register(SteelTrapdoorGameTest.class);
-        event.register(EnergyNetworkGameTest.class);
-        event.register(GasGameTest.class);
-        event.register(CableGameTest.class);
-        event.register(ArmorTableGameTest.class);
-    }
-    *///?} elif neoforge {
     @SubscribeEvent
     public static void onRegisterGameTests(RegisterGameTestsEvent event) {
         event.register(PlatformHooksGameTest.class);
@@ -73,7 +55,25 @@ public final class GameTestRegistration {
         event.register(CableGameTest.class);
         event.register(ArmorTableGameTest.class);
     }
-     //?}
+    //?} elif neoforge {
+    /*@SubscribeEvent
+    public static void onRegisterGameTests(RegisterGameTestsEvent event) {
+        event.register(PlatformHooksGameTest.class);
+        event.register(CrossLoaderParityGameTest.class);
+        event.register(RadiationGameTest.class);
+        event.register(MachineCraftingGameTest.class);
+        event.register(RadiationObservabilityGameTest.class);
+        event.register(SteelCrateGameTest.class);
+        event.register(StorageCrateVariantGameTest.class);
+        event.register(SandbagGameTest.class);
+        event.register(LegacyWoodBarrierGameTest.class);
+        event.register(SteelTrapdoorGameTest.class);
+        event.register(EnergyNetworkGameTest.class);
+        event.register(GasGameTest.class);
+        event.register(CableGameTest.class);
+        event.register(ArmorTableGameTest.class);
+    }
+     *///?}
 }
 
 

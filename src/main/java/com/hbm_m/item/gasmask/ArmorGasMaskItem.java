@@ -63,17 +63,17 @@ public class ArmorGasMaskItem extends ArmorItem implements IGasMask, ITooltipPro
     // Взаимная блокировка: нельзя надеть противогаз на голову,
     // пока маска уже стоит в слоте лица Curios (и наоборот — см. GasMaskCurio).
     //? if < 1.21.1 {
-    /*@Override
+    @Override
     public boolean canEquip(ItemStack stack, EquipmentSlot slot, net.minecraft.world.entity.Entity entity) {
         return super.canEquip(stack, slot, entity)
                 && (slot != EquipmentSlot.HEAD || !(entity instanceof LivingEntity living) || CuriosCompat.getFaceMask(living).isEmpty());
     }
-    *///?} else {
-    @Override
+    //?} else {
+    /*@Override
     public boolean canEquip(ItemStack stack, EquipmentSlot slot, LivingEntity entity) {
         return super.canEquip(stack, slot, entity) && (slot != EquipmentSlot.HEAD || CuriosCompat.getFaceMask(entity).isEmpty());
     }
-     //?}
+     *///?}
 
     @Override
     public EnumSet<HazardClass> getBlacklist() {

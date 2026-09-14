@@ -14,10 +14,10 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 
 //? if forge {
-/*@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-*///?} elif neoforge {
-@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-//?}
+@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+//?} elif neoforge {
+/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+*///?}
 /**
  * Категория «предметы и жидкости на вход, предметы и жидкости на выход» на общем NEI-фоне.
  * Конкретная машина задаётся типом рецепта, заголовком, иконкой и {@link JeiMachineView}.

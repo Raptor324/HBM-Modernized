@@ -57,10 +57,10 @@ public abstract class SubLevelAssembleExpansionMixin {
             // absent), so the parameter type is irrelevant - but naming the class broke compileJava
             // on 1.20.1, and with it the whole datagen run.
             //? if >= 1.21.1 {
-            dev.ryanhcode.sable.companion.math.BoundingBox3ic bounds,
-            //?} else {
-            /*Object bounds,
-            *///?}
+            /*dev.ryanhcode.sable.companion.math.BoundingBox3ic bounds,
+            *///?} else {
+            Object bounds,
+            //?}
             CallbackInfoReturnable<?> cir) {
         if (!(blocks instanceof Set<BlockPos> set) || set.isEmpty()) {
             return;

@@ -18,12 +18,12 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.resources.ResourceLocation;
 //? if forge {
-/*import net.minecraftforge.gametest.GameTestHolder;
+import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
-*///?} elif neoforge {
-import net.neoforged.neoforge.gametest.GameTestHolder;
+//?} elif neoforge {
+/*import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
- //?}
+ *///?}
 
 /**
  * Full functional GameTest suite for {@link PlatformHooks}.
@@ -400,20 +400,20 @@ public final class PlatformHooksGameTest {
     // Version-compatible access to ADDITION (1.20.1) / ADD_VALUE (1.21.1).
     private static AttributeModifier.Operation additionOperation() {
         //? if < 1.21.1 {
-        /*return AttributeModifier.Operation.ADDITION;
-        *///?} else {
-        return AttributeModifier.Operation.ADD_VALUE;
-        //?}
+        return AttributeModifier.Operation.ADDITION;
+        //?} else {
+        /*return AttributeModifier.Operation.ADD_VALUE;
+        *///?}
     }
 
     // Version-compatible getter for the AttributeModifier amount.
     //  1.20.1: getAmount(); 1.21.1: amount().
     private static double amountOf(AttributeModifier mod) {
         //? if < 1.21.1 {
-        /*return mod.getAmount();
-        *///?} else {
-        return mod.amount();
-        //?}
+        return mod.getAmount();
+        //?} else {
+        /*return mod.amount();
+        *///?}
     }
 
     // ════════════════════════════════════════════════════════════════════════
@@ -434,11 +434,11 @@ public final class PlatformHooksGameTest {
         //         (FoodConstants.saturationByModifier), and saturation() returns
         //         the formula result = 8 * 0.8 * 2.0 = 12.8f.
         //? if < 1.21.1 {
-        /*check(Math.abs(saturationOf(food) - 0.8f) < 0.001f, "saturation must match (1.20.1 = modifier)");
-        *///?} else {
-        float expected = 8 * 0.8f * 2.0f; // FoodConstants.saturationByModifier(8, 0.8f)
+        check(Math.abs(saturationOf(food) - 0.8f) < 0.001f, "saturation must match (1.20.1 = modifier)");
+        //?} else {
+        /*float expected = 8 * 0.8f * 2.0f; // FoodConstants.saturationByModifier(8, 0.8f)
         check(Math.abs(saturationOf(food) - expected) < 0.01f, "saturation must match (1.21.1 = nutrition*modifier*2)");
-        //?}
+        *///?}
         helper.succeed();
     }
 
@@ -464,19 +464,19 @@ public final class PlatformHooksGameTest {
     // nutrition getter wrapped per version: 1.20.1 getNutrition() / 1.21.1 nutrition().
     private static int nutritionOf(FoodProperties food) {
         //? if < 1.21.1 {
-        /*return food.getNutrition();
-        *///?} else {
-        return food.nutrition();
-        //?}
+        return food.getNutrition();
+        //?} else {
+        /*return food.nutrition();
+        *///?}
     }
 
     // saturation getter wrapped per version: 1.20.1 getSaturationModifier() / 1.21.1 saturation().
     private static float saturationOf(FoodProperties food) {
         //? if < 1.21.1 {
-        /*return food.getSaturationModifier();
-        *///?} else {
-        return food.saturation();
-        //?}
+        return food.getSaturationModifier();
+        //?} else {
+        /*return food.saturation();
+        *///?}
     }
 
     // ════════════════════════════════════════════════════════════════════════
@@ -625,10 +625,10 @@ public final class PlatformHooksGameTest {
         BlockPos rel = new BlockPos(1, 1, 1);
         // Rename Blocks.GRASS → Blocks.SHORT_GRASS in 1.21.1.
         //? if < 1.21.1 {
-        /*helper.setBlock(rel, net.minecraft.world.level.block.Blocks.GRASS);
-        *///?} else {
-        helper.setBlock(rel, net.minecraft.world.level.block.Blocks.SHORT_GRASS);
-        //?}
+        helper.setBlock(rel, net.minecraft.world.level.block.Blocks.GRASS);
+        //?} else {
+        /*helper.setBlock(rel, net.minecraft.world.level.block.Blocks.SHORT_GRASS);
+        *///?}
         var state = helper.getLevel().getBlockState(helper.absolutePos(rel));
         check(PlatformHooks.isGrassBlock(state), "grass block must be recognized");
         helper.succeed();
@@ -670,9 +670,9 @@ public final class PlatformHooksGameTest {
         // 1.21.1: TooltipContext — we cannot construct it here without client code, so
         // this scenario is active only below 1.21.1.
         //? if < 1.21.1 {
-        /*net.minecraft.world.level.Level level = helper.getLevel();
+        net.minecraft.world.level.Level level = helper.getLevel();
         check(PlatformHooks.tooltipLevel(level) == level, "tooltipLevel(level) must return same Level");
-        *///?}
+        //?}
         helper.succeed();
     }
 
@@ -694,14 +694,14 @@ public final class PlatformHooksGameTest {
         // On 1.20.1-forge a freshly created chest BE may return null from getUpdateTag()
         // (observed in @GameTest runtime). Key contract: the method does not crash.
         //? if < 1.21.1 {
-        /*if (tag != null) {
+        if (tag != null) {
             check(tag.contains("id"), "packet tag if non-null must contain BlockEntity id (1.20.1)");
         }
-        *///?} else {
-        // 1.21.1: "id" is NOT in the tag — it is in packet.getType(). Verify the tag is obtained.
+        //?} else {
+        /*// 1.21.1: "id" is NOT in the tag — it is in packet.getType(). Verify the tag is obtained.
         check(tag != null && (!tag.isEmpty() || packet.getType() != null),
                 "either tag has data or packet carries type (1.21.1)");
-        //?}
+        *///?}
         helper.succeed();
     }
 
@@ -716,12 +716,12 @@ public final class PlatformHooksGameTest {
         //         at runtime → the cast fails. We check instanceof so nothing crashes.
         // 1.21.1: makeMockPlayer(GameType) returns a Player, not a ServerPlayer → test gated.
         //? if < 1.21.1 {
-        /*var mock = helper.makeMockPlayer();
+        var mock = helper.makeMockPlayer();
         if (mock instanceof ServerPlayer sp) {
             PlatformHooks.awardAdvancementIfEligible(
                     sp, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "nonexistent_advancement"), false);
         }
-        *///?}
+        //?}
         helper.succeed();
     }
 
@@ -733,9 +733,9 @@ public final class PlatformHooksGameTest {
     // ════════════════════════════════════════════════════════════════════════
     private static net.minecraft.world.entity.player.Player makePlayer(GameTestHelper helper) {
         //? if < 1.21.1 {
-        /*return helper.makeMockPlayer();
-        *///?} else {
-        return helper.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
-        //?}
+        return helper.makeMockPlayer();
+        //?} else {
+        /*return helper.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
+        *///?}
     }
 }

@@ -30,12 +30,12 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.state.BlockState;
 //? if forge {
-/*import net.minecraftforge.client.ChunkRenderTypeSet;
+import net.minecraftforge.client.ChunkRenderTypeSet;
 import net.minecraftforge.client.model.data.ModelData;
-*///?} elif neoforge {
-import net.neoforged.neoforge.client.ChunkRenderTypeSet;
+//?} elif neoforge {
+/*import net.neoforged.neoforge.client.ChunkRenderTypeSet;
 import net.neoforged.neoforge.client.model.data.ModelData;
-//?}
+*///?}
 
 public class DoorBakedModel extends AbstractMultipartBakedModel implements AbstractMultipartBakedModel.PartNamesProvider {
     
@@ -142,10 +142,10 @@ public class DoorBakedModel extends AbstractMultipartBakedModel implements Abstr
         if (modelPath == null) return parts;
 
         //? if < 1.21.1 {
-        /*BakedModel selectionModel = Minecraft.getInstance().getModelManager().getModel(modelPath);
-         *///?} else {
-        BakedModel selectionModel = Minecraft.getInstance().getModelManager().getModel(ModelResourceLocation.standalone(modelPath));
-        //?}
+        BakedModel selectionModel = Minecraft.getInstance().getModelManager().getModel(modelPath);
+         //?} else {
+        /*BakedModel selectionModel = Minecraft.getInstance().getModelManager().getModel(ModelResourceLocation.standalone(modelPath));
+        *///?}
 
         if (selectionModel == null || selectionModel == Minecraft.getInstance().getModelManager().getMissingModel()) {
             return parts;
@@ -353,13 +353,13 @@ public class DoorBakedModel extends AbstractMultipartBakedModel implements Abstr
     @Override
     public TextureAtlasSprite getParticleIcon() {
         //? if forge {
-        /*return getParticleIcon(ModelData.EMPTY);
-        *///?}
+        return getParticleIcon(ModelData.EMPTY);
+        //?}
 
 
         //? if neoforge {
-        return super.getParticleIcon();
-        //?}
+        /*return super.getParticleIcon();
+        *///?}
     }
     
     @Override

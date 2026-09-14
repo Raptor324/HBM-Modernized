@@ -1,7 +1,7 @@
 package com.hbm_m.datagen;
 //? if forge {
 
-/*import java.util.Arrays;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -3735,4 +3735,4 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("tooltip.hbm_m.waste_cooling.desc", "Охладите в бочке с отработанным топливом");
     }
 }
-*///?}
+//?}

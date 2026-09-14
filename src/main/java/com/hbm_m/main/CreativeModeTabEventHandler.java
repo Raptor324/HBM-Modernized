@@ -26,10 +26,10 @@ import com.hbm_m.platform.PlatformHooks;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.world.item.*;
 //? if forge {
-/*import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
-*///?} elif neoforge {
-import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
-//?}
+import net.minecraftforge.event.BuildCreativeModeTabContentsEvent;
+//?} elif neoforge {
+/*import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
+*///?}
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.world.level.ItemLike;
 

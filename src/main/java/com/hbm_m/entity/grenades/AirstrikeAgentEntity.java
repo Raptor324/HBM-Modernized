@@ -138,16 +138,16 @@ public class AirstrikeAgentEntity extends Entity {
 
     //? if < 1.21.1 {
 
-    /*@Override
+    @Override
     protected void defineSynchedData() {
 
 var defs = com.hbm_m.platform.EntityDataHooks.sink(this.entityData);
-    *///?} else {
-    @Override
+    //?} else {
+    /*@Override
     protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
 
 var defs = com.hbm_m.platform.EntityDataHooks.sink(builder);
-    //?}
+    *///?}
 
         defs.define(TARGET_POS, BlockPos.ZERO);
         defs.define(OWNER_UUID_ACCESSOR, "");
@@ -334,18 +334,18 @@ var defs = com.hbm_m.platform.EntityDataHooks.sink(builder);
     }
 
     //? if < 1.21.1 {
-    /*@NotNull
+    @NotNull
     @Override
     public Packet<ClientGamePacketListener> getAddEntityPacket() {
         return new net.minecraft.network.protocol.game.ClientboundAddEntityPacket(this);
     }
-    *///?} else {
-    @NotNull
+    //?} else {
+    /*@NotNull
     @Override
     public Packet<ClientGamePacketListener> getAddEntityPacket(net.minecraft.server.level.ServerEntity serverEntity) {
         return new net.minecraft.network.protocol.game.ClientboundAddEntityPacket(this, serverEntity);
     }
-    //?}
+    *///?}
 
     @Override public boolean isPickable() { return false; }
     @Override public boolean isPushable() { return false; }

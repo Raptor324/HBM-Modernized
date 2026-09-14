@@ -27,12 +27,12 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.phys.AABB;
 //? if forge {
-/*import net.minecraftforge.gametest.GameTestHolder;
+import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
-*///?} elif neoforge {
-import net.neoforged.neoforge.gametest.GameTestHolder;
+//?} elif neoforge {
+/*import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
- //?}
+ *///?}
 
 /**
  * GameTests for the storage crate variants (Iron/Desh/Steel).
@@ -58,10 +58,10 @@ public final class StorageCrateVariantGameTest {
     /** Version-compatible mock player. */
     private static Player makePlayer(GameTestHelper helper) {
         //? if < 1.21.1 {
-        /*return helper.makeMockPlayer();
-        *///?} else {
-        return helper.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
-        //?}
+        return helper.makeMockPlayer();
+        //?} else {
+        /*return helper.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
+        *///?}
     }
 
     private static ItemStack craft(GameTestHelper helper, NonNullList<ItemStack> grid) {

@@ -6,17 +6,17 @@ import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.NotNull;
 
 //? if < 1.21.1 {
-/*import net.minecraft.world.Container;
+import net.minecraft.world.Container;
 import net.minecraft.core.RegistryAccess;
-*///?} else {
-import net.minecraft.world.item.crafting.RecipeInput;
+//?} else {
+/*import net.minecraft.world.item.crafting.RecipeInput;
 import net.minecraft.core.HolderLookup;
-//?}
+*///?}
 
 public abstract class PlatformRecipe implements net.minecraft.world.item.crafting.Recipe<
         //? if < 1.21.1 {
-        /*Container*///?} else {
-        RecipeInput//?}
+        Container//?} else {
+        /*RecipeInput*///?}
         > {
 
     protected final ResourceLocation id;
@@ -31,7 +31,7 @@ public abstract class PlatformRecipe implements net.minecraft.world.item.craftin
 
     //? if < 1.21.1 {
     
-    /*@Override
+    @Override
     public boolean matches(@NotNull Container container, @NotNull Level level) {
         return matchesRecipe(new RecipeInputWrapper(container), level);
     }
@@ -50,8 +50,8 @@ public abstract class PlatformRecipe implements net.minecraft.world.item.craftin
     public @NotNull ResourceLocation getId() {
         return id;
     }
-    *///?} else {
-    @Override
+    //?} else {
+    /*@Override
     public boolean matches(@NotNull RecipeInput input, @NotNull Level level) {
         return matchesRecipe(new RecipeInputWrapper(input), level);
     }
@@ -65,7 +65,7 @@ public abstract class PlatformRecipe implements net.minecraft.world.item.craftin
     public @NotNull ItemStack getResultItem(@NotNull HolderLookup.Provider provider) {
         return getResultItemSafe();
     }
-    //?}
+    *///?}
 
     @Override
     public boolean canCraftInDimensions(int width, int height) {

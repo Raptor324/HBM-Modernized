@@ -86,11 +86,11 @@ public class MachineCombinationOvenBlockEntity extends BaseMachineBlockEntity im
 
 
     //? if forge {
-    /*@Override
+    @Override
     protected void setupFluidCapability() {
         setFluidHandler(tank);
     }
-    *///?}
+    //?}
 
     // ==================== TICK ====================
 

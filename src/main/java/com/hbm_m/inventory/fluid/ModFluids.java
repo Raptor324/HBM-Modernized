@@ -17,10 +17,10 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.level.material.Fluid;
 
 //? if forge {
-/*import net.minecraftforge.eventbus.api.IEventBus;
+import net.minecraftforge.eventbus.api.IEventBus;
 import net.minecraftforge.fluids.FluidType;
 import net.minecraft.core.registries.BuiltInRegistries;
-*///?}
+//?}
 
 public class ModFluids {
 
@@ -338,16 +338,16 @@ public class ModFluids {
      * На Forge — передаётся mod event bus; на Fabric — просто вызывается register().
      */
     //? if forge {
-    /*public static void register(IEventBus eventBus) {
+    public static void register(IEventBus eventBus) {
         FLUIDS.register();
     }
-    *///?}
+    //?}
 
     // На Fabric и NeoForge параметр mod-bus не нужен: Architectury DeferredRegister
     // сам резолвит шину по mod id. Подключается из FabricEntrypoint / NeoForgeEntrypoint.
     //? if neoforge {
-    public static void register() {
+    /*public static void register() {
         FLUIDS.register();
     }
-    //?}
+    *///?}
 }

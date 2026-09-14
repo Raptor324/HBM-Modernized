@@ -19,10 +19,10 @@ import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.ShaderInstance;
 import net.minecraft.client.renderer.texture.TextureAtlas;
 //? if forge {
-/*import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 @OnlyIn(Dist.CLIENT)
-*///?}
+//?}
 public final class IrisRenderBatch implements AutoCloseable {
 
     private static final IrisRenderBatch INSTANCE = new IrisRenderBatch();

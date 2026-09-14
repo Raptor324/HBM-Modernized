@@ -21,9 +21,9 @@ import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.ResourceManagerReloadListener;
 //? if forge {
-/*import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-*///?}
+//?}
 
 /**
  * Реестр моделей и скинов дверей.
@@ -32,8 +32,8 @@ import net.minecraftforge.api.distmarker.OnlyIn;
  * @author HBM-M Team
  */
 //? if forge {
-/*@OnlyIn(Dist.CLIENT)
-*///?}
+@OnlyIn(Dist.CLIENT)
+//?}
 public class DoorModelRegistry implements ResourceManagerReloadListener {
     
     private static final DoorModelRegistry INSTANCE = new DoorModelRegistry();

@@ -1,7 +1,7 @@
 package com.hbm_m.datagen;
 //? if forge {
 
-/*import java.util.Arrays;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -28,7 +28,7 @@ public class ModLanguageProviderEn extends LanguageProvider {
         super(output, RefStrings.MODID, "en_us");
     }
 
-    /^* Выделено из addTranslations: метод упирался в лимит 64КБ байткода. ^/
+    /** Выделено из addTranslations: метод упирался в лимит 64КБ байткода. */
     private void addPlateTranslations() {
         // Дозарегистрированные провода (ориг. wire_fine, 4545/30 MAT_STEEL)
         add(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.WIRE), "Steel Wire");
@@ -76,7 +76,7 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add(ModMaterialItems.item(ModMaterials.CMB, MaterialShape.PLATE_WELDED), "Welded Combine Steel Plate");
     }
 
-    /^* Выделено из addTranslations: метод упирался в лимит 64КБ байткода. ^/
+    /** Выделено из addTranslations: метод упирался в лимит 64КБ байткода. */
     private void addWarheadTranslations() {
         add(ModItems.WARHEAD_BUSTER_LARGE.get(), "Large Bunker Buster Warhead");
         add(ModItems.WARHEAD_BUSTER_MEDIUM.get(), "Medium Bunker Buster Warhead");
@@ -5092,4 +5092,4 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("tooltip.hbm_m.waste_cooling.desc", "Cool in a Spent Fuel Pool Drum");
     }
 }
-*///?}
+//?}

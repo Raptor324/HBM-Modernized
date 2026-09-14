@@ -16,12 +16,12 @@ import net.minecraft.core.Direction;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.state.BlockState;
 //? if forge {
-/*import net.minecraftforge.client.ChunkRenderTypeSet;
+import net.minecraftforge.client.ChunkRenderTypeSet;
 import net.minecraftforge.client.model.data.ModelData;
-*///?} elif neoforge {
-import net.neoforged.neoforge.client.ChunkRenderTypeSet;
+//?} elif neoforge {
+/*import net.neoforged.neoforge.client.ChunkRenderTypeSet;
 import net.neoforged.neoforge.client.model.data.ModelData;
-//?}
+*///?}
 
 /**
  * Малый радар: {@code Base} + {@code Dish}; большой — {@code Radar} + {@code Dish}.
@@ -107,11 +107,11 @@ public class MachineRadarBakedModel extends AbstractMultipartBakedModel implemen
     @Override
     public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, RandomSource rand) {
         //? if forge {
-        /*return getQuads(state, side, rand, ModelData.EMPTY, null);
-        *///?}
+        return getQuads(state, side, rand, ModelData.EMPTY, null);
+        //?}
 
         //? if neoforge {
-        // 1.21.1 neoforge: чанк-бэкер вызывает 5-arg overload (см. ниже). 3-arg — item/BER hot path.
+        /*// 1.21.1 neoforge: чанк-бэкер вызывает 5-arg overload (см. ниже). 3-arg — item/BER hot path.
         // Зеркалируем forge-логику: ITEM — приоритетные части, WORLD — staticPart или List.of() (VBO).
         if (state == null) {
             return buildItemQuadsFromRenderParts(side, rand);
@@ -124,12 +124,12 @@ public class MachineRadarBakedModel extends AbstractMultipartBakedModel implemen
             return List.of();
         }
         return staticPart.getQuads(state, side, rand);
-        //?}
+        *///?}
 
     }
 
     //? if neoforge {
-    // NeoForge 1.21.1: 5-arg overload — вызывается чанк-бэкером. Зеркалируем forge-логику:
+    /*// NeoForge 1.21.1: 5-arg overload — вызывается чанк-бэкером. Зеркалируем forge-логику:
     // ITEM (state == null) — приоритетные части. WORLD — staticPart или List.of() если useVboGeometry.
     @Override
     public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side,
@@ -147,10 +147,10 @@ public class MachineRadarBakedModel extends AbstractMultipartBakedModel implemen
         }
         return staticPart.getQuads(state, side, rand, modelData, renderType);
     }
-    //?}
+    *///?}
 
     //? if forge {
-    /*@Override
+    @Override
     public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side,
                                     RandomSource rand, ModelData modelData,
                                     @Nullable net.minecraft.client.renderer.RenderType renderType) {
@@ -196,7 +196,7 @@ public class MachineRadarBakedModel extends AbstractMultipartBakedModel implemen
         }
         this.cachedItemQuads = allQuads;
     }
-    *///?}
+    //?}
 
     @Override
     protected List<String> getItemRenderPartNames() {

@@ -1,13 +1,13 @@
 package com.hbm_m.datagen.recipes.custom;
 //? if forge {
-/*import com.hbm_m.inventory.fluid.ModFluids;
+import com.hbm_m.inventory.fluid.ModFluids;
 
 import dev.architectury.fluid.FluidStack;
 import net.minecraft.data.recipes.FinishedRecipe;
 
 import java.util.function.Consumer;
 
-/^*
+/**
  * Генератор JSON-рецептов радиолиза ({@code hbm_m:radiolysis}).
  *
  * <p>Порт единственного собственного рецепта из удалённого статического {@code RadiolysisRecipes}
@@ -15,7 +15,7 @@ import java.util.function.Consumer;
  * ({@code MachineRadiolysisBlockEntity} падает в {@code CrackingTowerRecipe}), здесь переносится
  * только «собственная» запись. Чистый ванильный 1.20.1 код внутри {@code //? if forge} —
  * датаген только для 1.20.1-forge.</p>
- ^/
+ */
 public final class RadiolysisRecipeGenerator {
 
     private RadiolysisRecipeGenerator() {}
@@ -32,4 +32,4 @@ public final class RadiolysisRecipeGenerator {
         return FluidStack.create(entry.getSource(), (long) amountMb);
     }
 }
-*///?}
+//?}

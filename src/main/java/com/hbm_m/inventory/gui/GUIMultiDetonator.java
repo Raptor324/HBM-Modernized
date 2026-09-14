@@ -249,8 +249,8 @@ public class GUIMultiDetonator extends Screen {
         for (EditBox input : nameInputs) {
             // EditBox.tick() удалён на 1.21.1 (мигание курсора теперь handled-by-render).
             //? if < 1.21.1 {
-            /*input.tick();
-            *///?}
+            input.tick();
+            //?}
         }
     }
 

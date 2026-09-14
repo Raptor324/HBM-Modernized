@@ -9,8 +9,8 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 //? if forge {
-/*import net.minecraftforge.client.gui.overlay.IGuiOverlay;
-*///?}
+import net.minecraftforge.client.gui.overlay.IGuiOverlay;
+//?}
 
 import java.awt.Color;
 import java.util.ArrayList;
@@ -81,9 +81,9 @@ public class OverlayRadiationVisuals {
     }
 
     //? if forge {
-    /*public static final IGuiOverlay RADIATION_PIXELS_OVERLAY = (gui, guiGraphics, partialTick, width, height) ->
+    public static final IGuiOverlay RADIATION_PIXELS_OVERLAY = (gui, guiGraphics, partialTick, width, height) ->
             render(guiGraphics, partialTick, width, height);
-    *///?}
+    //?}
 
     /**
      * Вспомогательный метод, чтобы не дублировать код создания пикселя.

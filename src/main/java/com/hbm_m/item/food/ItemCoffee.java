@@ -26,12 +26,12 @@ public class ItemCoffee extends Item {
 
     /** Nutrition is zero on both: the original heals directly rather than feeding. */
     //? if < 1.21.1 {
-    /*public static final FoodProperties COFFEE = com.hbm_m.platform.PlatformHooks.foodBuilder(0, 0F)
-            .alwaysEat().build();
-    *///?} else {
     public static final FoodProperties COFFEE = com.hbm_m.platform.PlatformHooks.foodBuilder(0, 0F)
+            .alwaysEat().build();
+    //?} else {
+    /*public static final FoodProperties COFFEE = com.hbm_m.platform.PlatformHooks.foodBuilder(0, 0F)
             .alwaysEdible().build();
-    //?}
+    *///?}
 
     private final boolean radium;
 

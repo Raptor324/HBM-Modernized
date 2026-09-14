@@ -1,6 +1,6 @@
 package com.hbm_m.datagen.recipes.custom;
 //? if forge {
-/*import javax.annotation.Nullable;
+import javax.annotation.Nullable;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
@@ -11,7 +11,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 
-/^*
+/**
  * Datagen-билдер {@link ElectrolyserMetalRecipe} ({@code hbm_m:electrolyser_metal}).
  *
  * <p>Чистый ванильный 1.20.1 код внутри {@code //? if forge} — датаген только для 1.20.1-forge.</p>
@@ -27,7 +27,7 @@ import net.minecraft.world.item.crafting.RecipeSerializer;
  *   "duration": 600
  * }
  * }</pre>
- ^/
+ */
 public class ElectrolyserMetalRecipeBuilder extends BaseRecipeBuilder<ElectrolyserMetalRecipeBuilder> {
 
     private final Ingredient input;
@@ -80,4 +80,4 @@ public class ElectrolyserMetalRecipeBuilder extends BaseRecipeBuilder<Electrolys
         return ElectrolyserMetalRecipe.Serializer.INSTANCE;
     }
 }
-*///?}
+//?}

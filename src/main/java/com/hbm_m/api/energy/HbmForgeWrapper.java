@@ -1,5 +1,5 @@
 //? if forge {
-/*package com.hbm_m.api.energy;
+package com.hbm_m.api.energy;
 
 import net.minecraftforge.energy.IEnergyStorage;
 
@@ -46,9 +46,9 @@ public class HbmForgeWrapper implements IEnergyStorage {
     @Override
     public boolean canReceive() { return true; }
 }
-*///?}
+//?}
 //? if neoforge {
-package com.hbm_m.api.energy;
+/*package com.hbm_m.api.energy;
 
 import net.neoforged.neoforge.energy.IEnergyStorage;
 
@@ -95,4 +95,4 @@ public class HbmForgeWrapper implements IEnergyStorage {
     @Override
     public boolean canReceive() { return true; }
 }
-//?}
+*///?}

@@ -77,15 +77,15 @@ public class CrateItem extends BlockItem implements ITooltipProvider {
         // so the whole contents tooltip was dead.
         CompoundTag beTag = null;
         //? if < 1.21.1 {
-        /*if (PlatformHooks.hasItemTag(stack)) {
+        if (PlatformHooks.hasItemTag(stack)) {
             CompoundTag tag = PlatformHooks.getItemTag(stack);
             if (tag != null && tag.contains("BlockEntityTag")) beTag = tag.getCompound("BlockEntityTag");
         }
-        *///?} else {
-        net.minecraft.world.item.component.CustomData data =
+        //?} else {
+        /*net.minecraft.world.item.component.CustomData data =
                 stack.get(net.minecraft.core.component.DataComponents.BLOCK_ENTITY_DATA);
         if (data != null) beTag = data.copyTag();
-        //?}
+        *///?}
         if (beTag == null || !beTag.contains("inventory")) return null;
 
         CompoundTag inventoryTag = beTag.getCompound("inventory");
@@ -94,12 +94,12 @@ public class CrateItem extends BlockItem implements ITooltipProvider {
             protected void onContentsChanged(int slot) {}
         };
         //? if < 1.21.1 {
-        /*handler.deserializeNBT(inventoryTag);
-        *///?} else {
-        // Tooltip-path — клиентский; провайдер из клиентского Level.
+        handler.deserializeNBT(inventoryTag);
+        //?} else {
+        /*// Tooltip-path — клиентский; провайдер из клиентского Level.
         // ItemStackHandler.deserializeNBT в 1.21.1 требует HolderLookup.Provider.
         handler.deserializeNBT(PlatformHooks.clientProvider(), inventoryTag);
-        //?}
+        *///?}
 
         Map<String, GroupData> groups = new LinkedHashMap<>();
         int occupiedSlots = 0;
@@ -137,11 +137,11 @@ public class CrateItem extends BlockItem implements ITooltipProvider {
 
     private static String makeGroupingKey(ItemStack stack) {
         //? if < 1.21.1 {
-        /*CompoundTag keyTag = stack.copy().save(new CompoundTag());
-        *///?} else {
-        // Tooltip-path — клиентский; провайдер из клиентского Level (1.21.1 требует Provider для save).
+        CompoundTag keyTag = stack.copy().save(new CompoundTag());
+        //?} else {
+        /*// Tooltip-path — клиентский; провайдер из клиентского Level (1.21.1 требует Provider для save).
         CompoundTag keyTag = PlatformHooks.safeItemSave(stack.copy(), PlatformHooks.clientProvider());
-        //?}
+        *///?}
         // This line is outside the version branches, and the two branches spell the key
         // differently: 1.20.1 ItemStack.save writes "Count", 1.21.1 ItemStack.CODEC writes "count".
         // Clearing only one left equal items in different stack sizes as separate tooltip rows.

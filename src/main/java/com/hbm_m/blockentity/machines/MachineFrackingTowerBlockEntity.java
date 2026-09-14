@@ -25,12 +25,12 @@ import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
 //? if forge {
-/*import net.minecraftforge.common.capabilities.Capability;
+import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 
-*///?}
+//?}
 
 /**
  * BlockEntity для Fracking Tower (Гидроразрывная вышка).
@@ -545,11 +545,11 @@ public class MachineFrackingTowerBlockEntity extends BaseMachineBlockEntity impl
 
 
     //? if forge {
-    /*@Override
+    @Override
     protected void setupFluidCapability() {
         setFluidHandler(new FrackingTowerFluidHandler(this));
     }
-    *///?}
+    //?}
 
     //=====================================================================================//
     // РЕНДЕРИНГ

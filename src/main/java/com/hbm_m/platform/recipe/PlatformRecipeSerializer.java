@@ -8,7 +8,7 @@ import net.minecraft.world.item.crafting.RecipeSerializer;
 import org.jetbrains.annotations.NotNull;
 
 //? if >= 1.21.1 {
-import com.mojang.serialization.MapCodec;
+/*import com.mojang.serialization.MapCodec;
 import com.mojang.serialization.DataResult;
 import com.mojang.serialization.JsonOps;
 import com.mojang.serialization.MapLike;
@@ -16,7 +16,7 @@ import com.mojang.serialization.RecordBuilder;
 import net.minecraft.network.RegistryFriendlyByteBuf;
 import net.minecraft.network.codec.StreamCodec;
 import java.util.stream.Stream;
-//?}
+*///?}
 
 public abstract class PlatformRecipeSerializer<R extends Recipe<?>> implements RecipeSerializer<R> {
 
@@ -26,7 +26,7 @@ public abstract class PlatformRecipeSerializer<R extends Recipe<?>> implements R
 
     //? if < 1.21.1 {
     
-    /*@Override
+    @Override
     public @NotNull R fromJson(@NotNull ResourceLocation id, @NotNull JsonObject json) {
         return readJson(id, json);
     }
@@ -40,9 +40,9 @@ public abstract class PlatformRecipeSerializer<R extends Recipe<?>> implements R
     public void toNetwork(@NotNull FriendlyByteBuf buf, @NotNull R recipe) {
         writeNetwork(buf, recipe);
     }
-    *///?} else {
+    //?} else {
     
-    /** RecipeManager assigns the real id, so the codec only ever needs this placeholder. */
+    /*/^* RecipeManager assigns the real id, so the codec only ever needs this placeholder. ^/
     private static final ResourceLocation DUMMY_ID = ResourceLocation.withDefaultNamespace("dummy");
 
     private final MapCodec<R> mapCodec = new MapCodec<R>() {
@@ -95,5 +95,5 @@ public abstract class PlatformRecipeSerializer<R extends Recipe<?>> implements R
     public StreamCodec<RegistryFriendlyByteBuf, R> streamCodec() {
         return streamCodec;
     }
-    //?}
+    *///?}
 }

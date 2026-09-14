@@ -45,16 +45,16 @@ public class ZirnoxDebrisEntity extends Entity {
 
     //? if < 1.21.1 {
 
-    /*@Override
+    @Override
     protected void defineSynchedData() {
 
 var defs = com.hbm_m.platform.EntityDataHooks.sink(this.entityData);
-    *///?} else {
-    @Override
+    //?} else {
+    /*@Override
     protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
 
 var defs = com.hbm_m.platform.EntityDataHooks.sink(builder);
-    //?}
+    *///?}
 
         defs.define(TYPE, 0);
     
