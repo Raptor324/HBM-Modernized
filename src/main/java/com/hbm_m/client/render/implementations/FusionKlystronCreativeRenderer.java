@@ -19,7 +19,7 @@ import net.minecraft.util.Mth;
  * 1:1-Port von {@code RenderFusionKlystronCreative} (1.7.10) - wie das normale Klystron,
  * nur mit der Kreativ-Textur.
  */
-public class FusionKlystronCreativeRenderer implements BlockEntityRenderer<FusionKlystronCreativeBlockEntity> {
+public class FusionKlystronCreativeRenderer implements com.hbm_m.client.render.HbmBerBounds<FusionKlystronCreativeBlockEntity> {
 
     private static final String OBJ = "models/block/machines/klystron.obj";
 

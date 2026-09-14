@@ -953,6 +953,36 @@ public final class PlatformHooks {
     }
 
     /**
+     * Block-collider ray context without an entity. 1.20.1's constructor takes a nullable Entity;
+     * 1.21.1 overloads it with CollisionContext, which makes a plain {@code null} ambiguous.
+     */
+    public static net.minecraft.world.level.ClipContext clipContext(net.minecraft.world.phys.Vec3 from, net.minecraft.world.phys.Vec3 to,
+                                                                    net.minecraft.world.level.ClipContext.Fluid fluid) {
+        //? if < 1.21.1 {
+        /*return new net.minecraft.world.level.ClipContext(from, to, net.minecraft.world.level.ClipContext.Block.COLLIDER, fluid, (net.minecraft.world.entity.Entity) null);
+        *///?} else {
+        return new net.minecraft.world.level.ClipContext(from, to, net.minecraft.world.level.ClipContext.Block.COLLIDER, fluid,
+                net.minecraft.world.phys.shapes.CollisionContext.empty());
+        //?}
+    }
+
+    /**
+     * {@code DimensionDataStorage.computeIfAbsent} on both versions: 1.20.1 takes loader/creator,
+     * 1.21.1 a {@code SavedData.Factory} whose loader also receives the registries (ignored here).
+     */
+    public static <T extends net.minecraft.world.level.saveddata.SavedData> T getOrCreateSavedData(
+            net.minecraft.server.level.ServerLevel level, String name,
+            java.util.function.Function<CompoundTag, T> loader, java.util.function.Supplier<T> creator) {
+        //? if < 1.21.1 {
+        /*return level.getDataStorage().computeIfAbsent(loader::apply, creator::get, name);
+        *///?} else {
+        return level.getDataStorage().computeIfAbsent(
+                new net.minecraft.world.level.saveddata.SavedData.Factory<>(creator, (nbt, provider) -> loader.apply(nbt), null),
+                name);
+        //?}
+    }
+
+    /**
      * {@code Player.canInteractWithBlock(pos, slop)} (1.21.1); the same eye-to-AABB test against
      * the Forge reach attribute on 1.20.1. Kept as the vanilla call on 1.21.1 on purpose: Sable
      * hooks it for blocks on ships, a hand-rolled distance would ignore the ship's pose.

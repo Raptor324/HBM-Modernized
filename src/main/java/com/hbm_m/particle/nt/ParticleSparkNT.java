@@ -147,11 +147,7 @@ public class ParticleSparkNT extends ParticleNT {
     }
 
     private static void vert(VertexConsumer vc, float x, float y, float z, float u, float v, int light) {
-        //? if < 1.21.1 {
-        /*vc.vertex(x, y, z).color(255, 255, 255, 255).uv(u, v).uv2(light).endVertex();
-        *///?} else {
-        vc.addVertex(x, y, z).setColor(255, 255, 255, 255).setUv(u, v).setLight(light);
-        //?}
+        com.hbm_m.platform.RenderHooks.vertexTexColorLight(vc, x, y, z, u, v, 255, 255, 255, 255, light);
     }
 
     @Override

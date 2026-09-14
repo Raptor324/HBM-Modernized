@@ -61,17 +61,16 @@ public class CogEntity extends Entity {
     }
 
     //? if < 1.21.1 {
-
     /*@Override
     protected void defineSynchedData() {
-        entityData.define(ORIENTATION, 0);
-    }
+        var defs = com.hbm_m.platform.EntityDataHooks.sink(this.entityData);
     *///?} else {
     @Override
     protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
-        builder.define(ORIENTATION, 0);
-    }
+        var defs = com.hbm_m.platform.EntityDataHooks.sink(builder);
     //?}
+        defs.define(ORIENTATION, 0);
+    }
 
     public int getOrientation() { return entityData.get(ORIENTATION); }
 
@@ -90,11 +89,7 @@ public class CogEntity extends Entity {
         for (LivingEntity victim : level().getEntitiesOfClass(LivingEntity.class,
                 getBoundingBox().expandTowards(motion).inflate(0.5D), LivingEntity::isAlive)) {
 
-            //? if < 1.21.1 {
-            /*victim.hurt(com.hbm_m.damagesource.ModDamageSources.rubble(level()), 1000F);
-            *///?} else {
             victim.hurt(com.hbm_m.damagesource.ModDamageSources.rubble(level()), 1000F);
-            //?}
         }
 
         BlockHitResult hit = level().clip(new ClipContext(

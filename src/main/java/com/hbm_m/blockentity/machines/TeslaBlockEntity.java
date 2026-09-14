@@ -126,9 +126,8 @@ public class TeslaBlockEntity extends BaseMachineBlockEntity {
     /** Original: {@code Library.isObstructed} - Sichtlinie zwischen Spule und Ziel. */
     private static boolean isObstructed(Level level, double x, double y, double z,
                                         double tx, double ty, double tz) {
-        BlockHitResult hit = level.clip(new ClipContext(
-                new Vec3(x, y, z), new Vec3(tx, ty, tz),
-                ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, net.minecraft.world.phys.shapes.CollisionContext.empty()));
+        BlockHitResult hit = level.clip(com.hbm_m.platform.PlatformHooks.clipContext(
+                new Vec3(x, y, z), new Vec3(tx, ty, tz), ClipContext.Fluid.NONE));
         return hit.getType() != HitResult.Type.MISS;
     }
 

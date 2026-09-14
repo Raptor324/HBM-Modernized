@@ -134,9 +134,7 @@ public class MachineDrainBlockEntity extends BaseMachineBlockEntity implements I
         net.minecraft.world.phys.Vec3 end = start.add(
                 level.getRandom().nextGaussian() * 5, -25, level.getRandom().nextGaussian() * 5);
 
-        var hit = level.clip(new net.minecraft.world.level.ClipContext(start, end,
-                net.minecraft.world.level.ClipContext.Block.COLLIDER,
-                net.minecraft.world.level.ClipContext.Fluid.NONE, net.minecraft.world.phys.shapes.CollisionContext.empty()));
+        var hit = level.clip(com.hbm_m.platform.PlatformHooks.clipContext(start, end, net.minecraft.world.level.ClipContext.Fluid.NONE));
 
         // Nur auf einer Oberseite bildet sich eine Pfuetze.
         if (hit.getType() != net.minecraft.world.phys.HitResult.Type.BLOCK) return;

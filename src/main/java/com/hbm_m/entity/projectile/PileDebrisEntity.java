@@ -101,11 +101,7 @@ public class PileDebrisEntity extends Entity {
         setPos(end.x, end.y, end.z);
 
         if (struck != null) {
-            //? if < 1.21.1 {
-            /*struck.hurt(damageSources().explosion(this, null), DAMAGE);
-            *///?} else {
             struck.hurt(damageSources().explosion(this, null), DAMAGE);
-            //?}
             impact();
             return;
         }

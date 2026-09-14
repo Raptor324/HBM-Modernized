@@ -34,7 +34,7 @@ import net.minecraft.world.level.block.state.BlockState;
  * Hier wird stattdessen der UV-Versatz beim Aufbau der Geometrie addiert - das Ergebnis ist
  * dasselbe Wandern der Textur, ohne dass eine Texturmatrix gebraucht wird.</p>
  */
-public class FusionTorusRenderer implements BlockEntityRenderer<FusionTorusBlockEntity> {
+public class FusionTorusRenderer implements com.hbm_m.client.render.HbmBerBounds<FusionTorusBlockEntity> {
 
     private static final String OBJ = "models/block/machines/torus.obj";
 

@@ -221,13 +221,8 @@ public class MachineCoreEmitterBlockEntity extends BaseMachineBlockEntity
         List<Entity> list = level.getEntitiesOfClass(Entity.class, new AABB(blx, bly, blz, bux, buy, buz));
 
         for (Entity e : list) {
-            //? if < 1.21.1 {
-            /*e.hurt(com.hbm_m.damagesource.ModDamageSources.amsCore(level), 50F);
-            e.setSecondsOnFire(10);
-            *///?} else {
             e.hurt(com.hbm_m.damagesource.ModDamageSources.amsCore(level), 50F);
-            e.setRemainingFireTicks(10 * 20);
-            //?}
+            com.hbm_m.platform.PlatformHooks.setSecondsOnFire(e, 10);
         }
     }
 

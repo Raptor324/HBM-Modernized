@@ -30,7 +30,7 @@ import java.util.Map;
  * <p>Der Kopf dreht sich nur, solange das Feld laeuft - im Original haengt die Drehung an derselben
  * Bedingung wie die Kugel und ist damit die Anzeige, ob die Anlage arbeitet.</p>
  */
-public class ForceFieldRenderer implements BlockEntityRenderer<ForceFieldBlockEntity> {
+public class ForceFieldRenderer implements com.hbm_m.client.render.HbmBerBounds<ForceFieldBlockEntity> {
 
     private static final String MODEL_BASE = "models/forcefield/forcefield_base.obj";
     private static final String MODEL_TOP = "models/forcefield/forcefield_top.obj";
@@ -135,13 +135,8 @@ public class ForceFieldRenderer implements BlockEntityRenderer<ForceFieldBlockEn
         float ny = len > 1.0E-6D ? (float) (dir.y / len) : 1F;
         float nz = len > 1.0E-6D ? (float) (dir.z / len) : 0F;
 
-        //? if < 1.21.1 {
-        /*vc.vertex(m, (float) a.x, (float) a.y, (float) a.z).color(r, g, bl, 1F).normal(nx, ny, nz).endVertex();
-        vc.vertex(m, (float) b.x, (float) b.y, (float) b.z).color(r, g, bl, 1F).normal(nx, ny, nz).endVertex();
-        *///?} else {
-        vc.addVertex(m, (float) a.x, (float) a.y, (float) a.z).setColor(r, g, bl, 1F).setNormal(nx, ny, nz);
-        vc.addVertex(m, (float) b.x, (float) b.y, (float) b.z).setColor(r, g, bl, 1F).setNormal(nx, ny, nz);
-        //?}
+        com.hbm_m.platform.RenderHooks.vertexColorNormal(vc, m, (float) a.x, (float) a.y, (float) a.z, r, g, bl, 1F, nx, ny, nz);
+        com.hbm_m.platform.RenderHooks.vertexColorNormal(vc, m, (float) b.x, (float) b.y, (float) b.z, r, g, bl, 1F, nx, ny, nz);
     }
 
     private static Vec3 rotateX(Vec3 v, float a) {

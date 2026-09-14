@@ -136,18 +136,8 @@ public class ParticleCoolingTowerNT extends ParticleNT {
             float oy = left.y * corner[0] * s + up.y * corner[1] * s;
             float oz = left.z * corner[0] * s + up.z * corner[1] * s;
 
-            //? if < 1.21.1 {
-            /*consumer.vertex(pX + ox, pY + oy, pZ + oz)
-                    .color(cr, cg, cb, ca)
-                    .uv(corner[0] * 0.5F + 0.5F, corner[1] * 0.5F + 0.5F)
-                    .uv2(light)
-                    .endVertex();
-            *///?} else {
-            consumer.addVertex(pX + ox, pY + oy, pZ + oz)
-                    .setColor(cr, cg, cb, ca)
-                    .setUv(corner[0] * 0.5F + 0.5F, corner[1] * 0.5F + 0.5F)
-                    .setLight(light);
-            //?}
+            com.hbm_m.platform.RenderHooks.vertexTexColorLight(consumer, pX + ox, pY + oy, pZ + oz,
+                    corner[0] * 0.5F + 0.5F, corner[1] * 0.5F + 0.5F, cr, cg, cb, ca, light);
         }
     }
 

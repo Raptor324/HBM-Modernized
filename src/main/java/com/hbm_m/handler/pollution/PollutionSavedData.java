@@ -30,22 +30,8 @@ public class PollutionSavedData extends SavedData {
     public final Map<ChunkPos, PollutionData> pollution = new HashMap<>();
 
     public static PollutionSavedData get(ServerLevel level) {
-        //? if < 1.21.1 {
-        /*return level.getDataStorage().computeIfAbsent(
-                PollutionSavedData::load,
-                PollutionSavedData::new,
-                DATA_NAME
-        );
-        *///?} else {
-        return level.getDataStorage().computeIfAbsent(
-                new net.minecraft.world.level.saveddata.SavedData.Factory<>(
-                        PollutionSavedData::new,
-                        (nbt, provider) -> load(nbt),
-                        null
-                ),
-                DATA_NAME
-        );
-        //?}
+        return com.hbm_m.platform.PlatformHooks.getOrCreateSavedData(level, DATA_NAME,
+                PollutionSavedData::load, PollutionSavedData::new);
     }
 
     private static PollutionSavedData load(CompoundTag nbt) {

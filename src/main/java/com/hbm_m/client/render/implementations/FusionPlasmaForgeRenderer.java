@@ -31,7 +31,7 @@ import net.minecraft.world.item.ItemStack;
  * <p>Ebenfalls enthalten: das Plasmabecken ({@code renderPlasma}), der schwebende Gegenstand des
  * laufenden Rezepts ({@code renderItem}) und die Plasmasaeule darueber ({@code renderBeam}).</p>
  */
-public class FusionPlasmaForgeRenderer implements BlockEntityRenderer<FusionPlasmaForgeBlockEntity> {
+public class FusionPlasmaForgeRenderer implements com.hbm_m.client.render.HbmBerBounds<FusionPlasmaForgeBlockEntity> {
 
     private static final String OBJ = "models/block/machines/plasma_forge.obj";
     private static final String TORUS_OBJ = "models/block/machines/torus.obj";

@@ -142,6 +142,36 @@ public final class RenderHooks {
         //?}
     }
 
+    /** Position + colour + normal (lines / untextured quads). */
+    public static void vertexColorNormal(VertexConsumer consumer, Matrix4f matrix, float x, float y, float z,
+                                         float r, float g, float b, float a, float nx, float ny, float nz) {
+        //? if < 1.21.1 {
+        /*consumer.vertex(matrix, x, y, z).color(r, g, b, a).normal(nx, ny, nz).endVertex();
+        *///?} else {
+        consumer.addVertex(matrix, x, y, z).setColor(r, g, b, a).setNormal(nx, ny, nz);
+        //?}
+    }
+
+    /** Position + colour + UV + lightmap, camera-space (no matrix) - NT particle quads. */
+    public static void vertexTexColorLight(VertexConsumer consumer, float x, float y, float z,
+                                           float u, float v, int r, int g, int b, int a, int packedLight) {
+        //? if < 1.21.1 {
+        /*consumer.vertex(x, y, z).color(r, g, b, a).uv(u, v).uv2(packedLight).endVertex();
+        *///?} else {
+        consumer.addVertex(x, y, z).setColor(r, g, b, a).setUv(u, v).setLight(packedLight);
+        //?}
+    }
+
+    /** Position (pose) + colour + UV. */
+    public static void vertexTexColor(VertexConsumer consumer, PoseStack.Pose pose, float x, float y, float z,
+                                      float u, float v, float r, float g, float b, float a) {
+        //? if < 1.21.1 {
+        /*consumer.vertex(pose.pose(), x, y, z).color(r, g, b, a).uv(u, v).endVertex();
+        *///?} else {
+        consumer.addVertex(pose, x, y, z).setColor(r, g, b, a).setUv(u, v);
+        //?}
+    }
+
     /** Like {@link #vertexFull} but the normal is transformed by the pose (normal matrix). */
     public static void vertexFull(VertexConsumer consumer, PoseStack.Pose pose, float x, float y, float z,
                                   int r, int g, int b, int a,
