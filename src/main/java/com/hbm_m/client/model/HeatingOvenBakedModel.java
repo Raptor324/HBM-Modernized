@@ -34,6 +34,13 @@ public class HeatingOvenBakedModel extends AbstractMultipartBakedModel implement
     private List<BakedQuad> cachedItemQuads;
     private boolean itemQuadsCached = false;
 
+    /**
+     * Мир-квады Main-части, предвычисленные per-state (индексы 0=null, 1..6=Direction).
+     * Без кэша каждый вызов getQuads пересобирал список и копировал все вершинные массивы
+     * в translateQuads — на каждое перестроение чанк-меша ×7 граней.
+     */
+    private final Map<BlockState, List<BakedQuad>[]> worldQuadCache = new java.util.concurrent.ConcurrentHashMap<>();
+
     public HeatingOvenBakedModel(Map<String, BakedModel> parts, ItemTransforms transforms) {
         super(parts, transforms);
         this.partNames = parts.keySet().toArray(new String[0]);
@@ -98,21 +105,76 @@ public class HeatingOvenBakedModel extends AbstractMultipartBakedModel implement
 
         // WORLD RENDER: Main is baked into chunk (Embeddium/Sodium compatible)
         BakedModel mainPart = parts.get(MAIN);
-        if (mainPart != null) {
+        if (mainPart == null) {
+            return Collections.emptyList();
+        }
+        // ConcurrentHashMap (chunk builders call this concurrently) rejects a null key.
+        if (state != null && renderType == null && modelData == ModelData.EMPTY) {
+            return cachedWorldQuads(state, rand, mainPart, side);
+        }
+        return buildWorldQuads(state, rand, mainPart, side, modelData, renderType);
+    }
+
+    private List<BakedQuad> cachedWorldQuads(@Nullable BlockState state, RandomSource rand,
+                                             BakedModel mainPart, @Nullable Direction side) {
+        List<BakedQuad>[] perSide = worldQuadCache.get(state);
+        if (perSide == null) {
             List<BakedQuad> partQuads = new ArrayList<>();
             for (Direction d : Direction.values()) {
-                partQuads.addAll(mainPart.getQuads(state, d, rand, modelData, renderType));
+                partQuads.addAll(mainPart.getQuads(state, d, rand, ModelData.EMPTY, null));
             }
-            partQuads.addAll(mainPart.getQuads(state, null, rand, modelData, renderType));
-            if (!partQuads.isEmpty()) {
-                List<BakedQuad> translated = ModelHelper.translateQuads(partQuads, 0.5f, 0f, 0.5f);
-                if (side != null) {
-                    return translated.stream().filter(q -> q.getDirection() == side).toList();
+            partQuads.addAll(mainPart.getQuads(state, null, rand, ModelData.EMPTY, null));
+            if (partQuads.isEmpty()) {
+                return Collections.emptyList();
+            }
+            List<BakedQuad> translated = ModelHelper.translateQuads(partQuads, 0.5f, 0f, 0.5f);
+            //noinspection unchecked
+            perSide = (List<BakedQuad>[]) new List<?>[7];
+            for (int i = 0; i < 7; i++) {
+                Direction s = i == 0 ? null : Direction.values()[i - 1];
+                List<BakedQuad> filtered = new ArrayList<>();
+                for (BakedQuad q : translated) {
+                    if (q.getDirection() == s) {
+                        filtered.add(q);
+                    }
                 }
-                return translated;
+                perSide[i] = List.copyOf(filtered);
             }
+            worldQuadCache.put(state, perSide);
         }
-        return Collections.emptyList();
+        return perSide[side == null ? 0 : side.ordinal() + 1];
+    }
+
+    private List<BakedQuad> buildWorldQuads(@Nullable BlockState state, RandomSource rand, BakedModel mainPart,
+                                            @Nullable Direction side, ModelData modelData,
+                                            @Nullable net.minecraft.client.renderer.RenderType renderType) {
+        List<BakedQuad> partQuads = new ArrayList<>();
+        for (Direction d : Direction.values()) {
+            partQuads.addAll(mainPart.getQuads(state, d, rand, modelData, renderType));
+        }
+        partQuads.addAll(mainPart.getQuads(state, null, rand, modelData, renderType));
+        if (partQuads.isEmpty()) {
+            return Collections.emptyList();
+        }
+        List<BakedQuad> translated = ModelHelper.translateQuads(partQuads, 0.5f, 0f, 0.5f);
+        if (side != null) {
+            List<BakedQuad> filtered = new ArrayList<>();
+            for (BakedQuad q : translated) {
+                if (q.getDirection() == side) {
+                    filtered.add(q);
+                }
+            }
+            return List.copyOf(filtered);
+        }
+        return translated;
+    }
+
+    @Override
+    public void clearCaches() {
+        super.clearCaches();
+        this.itemQuadsCached = false;
+        this.cachedItemQuads = null;
+        this.worldQuadCache.clear();
     }
 
     private List<BakedQuad> getItemQuads(@Nullable Direction side, RandomSource rand,
