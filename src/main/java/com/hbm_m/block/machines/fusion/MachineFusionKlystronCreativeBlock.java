@@ -46,11 +46,11 @@ public class MachineFusionKlystronCreativeBlock extends FusionMultiblockBlock {
     }
 
     //? if >1.20.1 {
-    /*public static final com.mojang.serialization.MapCodec<MachineFusionKlystronCreativeBlock> CODEC = simpleCodec(MachineFusionKlystronCreativeBlock::new);
+    public static final com.mojang.serialization.MapCodec<MachineFusionKlystronCreativeBlock> CODEC = simpleCodec(MachineFusionKlystronCreativeBlock::new);
 
     @Override
     protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
         return CODEC;
     }
-    *///?}
+    //?}
 }

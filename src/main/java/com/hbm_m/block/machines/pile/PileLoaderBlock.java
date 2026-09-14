@@ -58,4 +58,13 @@ public class PileLoaderBlock extends PileDeviceBlock {
         }
         return InteractionResult.CONSUME;
     }
+
+    //? if >1.20.1 {
+    public static final com.mojang.serialization.MapCodec<PileLoaderBlock> CODEC = simpleCodec(PileLoaderBlock::new);
+
+    @Override
+    protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
+        return CODEC;
+    }
+    //?}
 }

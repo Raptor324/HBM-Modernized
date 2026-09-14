@@ -24,13 +24,13 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluids;
 //? if forge {
-import net.minecraftforge.common.capabilities.Capability;
+/*import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.FluidStack;
 import net.minecraftforge.fluids.capability.IFluidHandler;
 import net.minecraftforge.fluids.capability.IFluidHandler.FluidAction;
-//?}
+*///?}
 
 public class MachineSteamCondenserBlockEntity extends BaseMachineBlockEntity implements IFluidStandardTransceiverMK2 {
 
@@ -53,8 +53,8 @@ public class MachineSteamCondenserBlockEntity extends BaseMachineBlockEntity imp
     @Override
     protected void setupFluidCapability() {
         //? if forge {
-        setFluidHandler(new UnifiedFluidHandler(this));
-        //?}
+        /*setFluidHandler(new UnifiedFluidHandler(this));
+        *///?}
     }
 
     @Override
@@ -172,7 +172,7 @@ public class MachineSteamCondenserBlockEntity extends BaseMachineBlockEntity imp
     }
 
     //? if forge {
-    private static class UnifiedFluidHandler implements IFluidHandler {
+    /*private static class UnifiedFluidHandler implements IFluidHandler {
         private final MachineSteamCondenserBlockEntity be;
 
         UnifiedFluidHandler(MachineSteamCondenserBlockEntity be) {
@@ -265,5 +265,5 @@ public class MachineSteamCondenserBlockEntity extends BaseMachineBlockEntity imp
             return result;
         }
     }
-    //?}
+    *///?}
 }

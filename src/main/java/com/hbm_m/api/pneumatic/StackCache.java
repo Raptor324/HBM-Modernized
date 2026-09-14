@@ -170,7 +170,7 @@ public class StackCache {
      */
     public static long getStackIdentity(@Nullable ItemStack stack) {
         if (stack == null || stack.isEmpty()) return getNullIdentity();
-        return getStackIdentity(stack.getItem(), stack.getTag());
+        return getStackIdentity(stack.getItem(), com.hbm_m.platform.PlatformHooks.getItemTag(stack));
     }
 
     public static long getStackIdentity(@Nullable Item item, @Nullable CompoundTag nbt) {

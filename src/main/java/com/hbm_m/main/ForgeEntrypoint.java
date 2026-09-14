@@ -1,5 +1,5 @@
 //? if forge {
-package com.hbm_m.main;
+/*package com.hbm_m.main;
 
 import com.hbm_m.capability.ModCapabilities;
 import com.hbm_m.event.BombDefuser;
@@ -38,4 +38,4 @@ public final class ForgeEntrypoint {
         MinecraftForge.EVENT_BUS.register(new ForgeMainEvents());
     }
 }
-//?}
+*///?}

@@ -18,74 +18,74 @@ import java.util.Map;
 import java.util.Optional;
 
 //? if >= 1.21.1 {
-/*import net.minecraft.world.item.crafting.RecipeHolder;
-*///?}
+import net.minecraft.world.item.crafting.RecipeHolder;
+//?}
 
 public class RecipeHooks {
     public static ItemStack readItem(FriendlyByteBuf buf) {
         //? if < 1.21.1 {
-        return buf.readItem();
-        //?} else {
-        /*return ItemStack.OPTIONAL_STREAM_CODEC.decode((net.minecraft.network.RegistryFriendlyByteBuf) buf);
-        *///?}
+        /*return buf.readItem();
+        *///?} else {
+        return ItemStack.OPTIONAL_STREAM_CODEC.decode((net.minecraft.network.RegistryFriendlyByteBuf) buf);
+        //?}
     }
     
     public static void writeItem(FriendlyByteBuf buf, ItemStack stack) {
         //? if < 1.21.1 {
-        buf.writeItem(stack);
-        //?} else {
-        /*ItemStack.OPTIONAL_STREAM_CODEC.encode((net.minecraft.network.RegistryFriendlyByteBuf) buf, stack);
-        *///?}
+        /*buf.writeItem(stack);
+        *///?} else {
+        ItemStack.OPTIONAL_STREAM_CODEC.encode((net.minecraft.network.RegistryFriendlyByteBuf) buf, stack);
+        //?}
     }
 
     public static Ingredient readIngredient(FriendlyByteBuf buf) {
         //? if < 1.21.1 {
-        return Ingredient.fromNetwork(buf);
-        //?} else {
-        /*return Ingredient.CONTENTS_STREAM_CODEC.decode((net.minecraft.network.RegistryFriendlyByteBuf) buf);
-        *///?}
+        /*return Ingredient.fromNetwork(buf);
+        *///?} else {
+        return Ingredient.CONTENTS_STREAM_CODEC.decode((net.minecraft.network.RegistryFriendlyByteBuf) buf);
+        //?}
     }
 
     public static void writeIngredient(FriendlyByteBuf buf, Ingredient ingredient) {
         //? if < 1.21.1 {
-        ingredient.toNetwork(buf);
-        //?} else {
-        /*Ingredient.CONTENTS_STREAM_CODEC.encode((net.minecraft.network.RegistryFriendlyByteBuf) buf, ingredient);
-        *///?}
+        /*ingredient.toNetwork(buf);
+        *///?} else {
+        Ingredient.CONTENTS_STREAM_CODEC.encode((net.minecraft.network.RegistryFriendlyByteBuf) buf, ingredient);
+        //?}
     }
 
     public static Ingredient ingredientFromJson(JsonElement json) {
         //? if < 1.21.1 {
-        return Ingredient.fromJson(json);
-        //?} else {
-        /*// На 1.21.1 Ingredient.CODEC ожидает тот же формат, что и 1.20.1: "item" / "tag".
+        /*return Ingredient.fromJson(json);
+        *///?} else {
+        // На 1.21.1 Ingredient.CODEC ожидает тот же формат, что и 1.20.1: "item" / "tag".
         // Никакой нормализации не требуется — передаём JSON как есть.
         return Ingredient.CODEC.parse(com.mojang.serialization.JsonOps.INSTANCE, json).getOrThrow();
-        *///?}
+        //?}
     }
 
     public static JsonElement ingredientToJson(Ingredient ingredient) {
         //? if < 1.21.1 {
-        return ingredient.toJson();
-        //?} else {
-        /*return Ingredient.CODEC.encodeStart(com.mojang.serialization.JsonOps.INSTANCE, ingredient).getOrThrow();
-        *///?}
+        /*return ingredient.toJson();
+        *///?} else {
+        return Ingredient.CODEC.encodeStart(com.mojang.serialization.JsonOps.INSTANCE, ingredient).getOrThrow();
+        //?}
     }
 
     public static ItemStack itemStackFromJson(JsonObject json) {
         //? if < 1.21.1 {
-        return net.minecraft.world.item.crafting.ShapedRecipe.itemStackFromJson(json);
-        //?} else {
-        /*// На 1.21.1 ItemStack.CODEC ожидает "id" вместо "item" (Data Components).
+        /*return net.minecraft.world.item.crafting.ShapedRecipe.itemStackFromJson(json);
+        *///?} else {
+        // На 1.21.1 ItemStack.CODEC ожидает "id" вместо "item" (Data Components).
         // JSON-рецепты мода в формате 1.20.1 — нормализуем legacy-ключи перед парсингом.
         return ItemStack.CODEC.parse(com.mojang.serialization.JsonOps.INSTANCE, normalizeLegacyItemStackJson(json)).getOrThrow();
-        *///?}
+        //?}
     }
 
     //? if >= 1.21.1 {
     
 
-    /*// =====================================================================================
+    // =====================================================================================
     //  Legacy JSON normalization (1.21.1 only).
     //
     //  Datagen генерирует рецепты в формате 1.20.1: {"item": "...", "count": N}.
@@ -102,7 +102,7 @@ public class RecipeHooks {
         }
         return copy;
     }
-    *///?}
+    //?}
 
     // =====================================================================================
     //  FluidStack (Architectury) — кросс-лоадерная сериализация жидкостных стаков.
@@ -172,12 +172,12 @@ public class RecipeHooks {
     @SuppressWarnings({"unchecked", "rawtypes"})
     public static <R extends Recipe<?>> List<R> getAllRecipes(RecipeManager manager, RecipeType<R> type) {
         //? if < 1.21.1 {
-        return (List<R>) manager.getAllRecipesFor((RecipeType) type);
-        //?} else {
-        /*return ((List<RecipeHolder<R>>) (Object) manager.getAllRecipesFor((RecipeType) type)).stream()
+        /*return (List<R>) manager.getAllRecipesFor((RecipeType) type);
+        *///?} else {
+        return ((List<RecipeHolder<R>>) (Object) manager.getAllRecipesFor((RecipeType) type)).stream()
                 .map(RecipeHolder::value)
                 .toList();
-        *///?}
+        //?}
     }
 
     /** Удобная обёртка: {@code getAllRecipes(level.getRecipeManager(), type)}. */
@@ -193,16 +193,16 @@ public class RecipeHooks {
     public static <R extends Recipe<?>> Map<ResourceLocation, R> getAllRecipesById(RecipeManager manager, RecipeType<R> type) {
         Map<ResourceLocation, R> map = new LinkedHashMap<>();
         //? if < 1.21.1 {
-        List<R> recipes = (List<R>) manager.getAllRecipesFor((RecipeType) type);
+        /*List<R> recipes = (List<R>) manager.getAllRecipesFor((RecipeType) type);
         for (R r : recipes) {
             map.put(r.getId(), r);
         }
-        //?} else {
-        /*List<RecipeHolder<R>> holders = (List<RecipeHolder<R>>) (Object) manager.getAllRecipesFor((RecipeType) type);
+        *///?} else {
+        List<RecipeHolder<R>> holders = (List<RecipeHolder<R>>) (Object) manager.getAllRecipesFor((RecipeType) type);
         for (RecipeHolder<R> holder : holders) {
             map.put(holder.id(), holder.value());
         }
-        *///?}
+        //?}
         return map;
     }
 
@@ -219,12 +219,12 @@ public class RecipeHooks {
     @SuppressWarnings("unchecked")
     public static <R extends Recipe<?>> Optional<R> getRecipeFor(Level level, RecipeType<R> type, ItemStack input) {
         //? if < 1.21.1 {
-        return (Optional<R>) (Object) level.getRecipeManager().getRecipeFor((RecipeType) type, new net.minecraft.world.SimpleContainer(input), level);
-        //?} else {
-        /*return ((Optional<net.minecraft.world.item.crafting.RecipeHolder<R>>) (Object)
+        /*return (Optional<R>) (Object) level.getRecipeManager().getRecipeFor((RecipeType) type, new net.minecraft.world.SimpleContainer(input), level);
+        *///?} else {
+        return ((Optional<net.minecraft.world.item.crafting.RecipeHolder<R>>) (Object)
                 level.getRecipeManager().getRecipeFor((RecipeType) type, new net.minecraft.world.item.crafting.SingleRecipeInput(input), level))
                 .map(net.minecraft.world.item.crafting.RecipeHolder::value);
-        *///?}
+        //?}
     }
 
     /**
@@ -233,10 +233,10 @@ public class RecipeHooks {
     @SuppressWarnings("unchecked")
     public static Optional<Recipe<?>> getRecipeByKey(RecipeManager manager, ResourceLocation id) {
         //? if < 1.21.1 {
-        return (Optional<Recipe<?>>) (Object) manager.byKey(id);
-        //?} else {
-        /*return ((Optional<RecipeHolder<?>>) (Object) manager.byKey(id)).map(RecipeHolder::value);
-        *///?}
+        /*return (Optional<Recipe<?>>) (Object) manager.byKey(id);
+        *///?} else {
+        return ((Optional<RecipeHolder<?>>) (Object) manager.byKey(id)).map(RecipeHolder::value);
+        //?}
     }
 
     /**
@@ -248,13 +248,13 @@ public class RecipeHooks {
     public static Optional<net.minecraft.world.item.crafting.CraftingRecipe> getCraftingRecipeFor(
             Level level, com.hbm_m.util.SimpleCraftingContainer grid) {
         //? if < 1.21.1 {
-        return (Optional<net.minecraft.world.item.crafting.CraftingRecipe>) (Object)
+        /*return (Optional<net.minecraft.world.item.crafting.CraftingRecipe>) (Object)
                 level.getRecipeManager().getRecipeFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING, grid, level);
-        //?} else {
-        /*return ((Optional<net.minecraft.world.item.crafting.RecipeHolder<net.minecraft.world.item.crafting.CraftingRecipe>>) (Object)
+        *///?} else {
+        return ((Optional<net.minecraft.world.item.crafting.RecipeHolder<net.minecraft.world.item.crafting.CraftingRecipe>>) (Object)
                 level.getRecipeManager().getRecipeFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING, grid.toCraftingInput(), level))
                 .map(net.minecraft.world.item.crafting.RecipeHolder::value);
-        *///?}
+        //?}
     }
 
     /**
@@ -268,16 +268,16 @@ public class RecipeHooks {
         java.util.List<net.minecraft.world.item.crafting.CraftingRecipe> out = new java.util.ArrayList<>();
 
         //? if < 1.21.1 {
-        for (net.minecraft.world.item.crafting.CraftingRecipe recipe :
+        /*for (net.minecraft.world.item.crafting.CraftingRecipe recipe :
                 level.getRecipeManager().getAllRecipesFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING)) {
             if (recipe.matches(grid, level)) out.add(recipe);
         }
-        //?} else {
-        /*var input = grid.toCraftingInput();
+        *///?} else {
+        var input = grid.toCraftingInput();
         for (var holder : level.getRecipeManager().getAllRecipesFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING)) {
             if (holder.value().matches(input, level)) out.add(holder.value());
         }
-        *///?}
+        //?}
 
         return out;
     }
@@ -286,20 +286,20 @@ public class RecipeHooks {
     public static boolean craftingMatches(net.minecraft.world.item.crafting.CraftingRecipe recipe,
                                           com.hbm_m.util.SimpleCraftingContainer grid, Level level) {
         //? if < 1.21.1 {
-        return recipe.matches(grid, level);
-        //?} else {
-        /*return recipe.matches(grid.toCraftingInput(), level);
-        *///?}
+        /*return recipe.matches(grid, level);
+        *///?} else {
+        return recipe.matches(grid.toCraftingInput(), level);
+        //?}
     }
 
     /** {@code CraftingRecipe.assemble} с кросс-версионным входом (Container vs CraftingInput). */
     public static ItemStack assembleCrafting(net.minecraft.world.item.crafting.CraftingRecipe recipe,
                                              com.hbm_m.util.SimpleCraftingContainer grid, Level level) {
         //? if < 1.21.1 {
-        return recipe.assemble(grid, level.registryAccess());
-        //?} else {
-        /*return recipe.assemble(grid.toCraftingInput(), level.registryAccess());
-        *///?}
+        /*return recipe.assemble(grid, level.registryAccess());
+        *///?} else {
+        return recipe.assemble(grid.toCraftingInput(), level.registryAccess());
+        //?}
     }
 
     /**
@@ -313,12 +313,12 @@ public class RecipeHooks {
     public static <R extends Recipe<?>> ResourceLocation recipeId(RecipeManager manager, RecipeType<R> type, R recipe) {
         if (recipe == null) return null;
         //? if < 1.21.1 {
-        return recipe.getId();
-        //?} else {
-        /*for (Map.Entry<ResourceLocation, R> e : getAllRecipesById(manager, type).entrySet()) {
+        /*return recipe.getId();
+        *///?} else {
+        for (Map.Entry<ResourceLocation, R> e : getAllRecipesById(manager, type).entrySet()) {
             if (e.getValue() == recipe) return e.getKey();
         }
         return null;
-        *///?}
+        //?}
     }
 }

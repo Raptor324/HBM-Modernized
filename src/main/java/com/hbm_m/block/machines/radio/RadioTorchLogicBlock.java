@@ -46,7 +46,7 @@ public class RadioTorchLogicBlock extends RadioTorchBaseBlock {
     }
 
     //? if < 1.21.1 {
-    @Override
+    /*@Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         if (level.isClientSide()) {
             dev.architectury.utils.EnvExecutor.runInEnv(dev.architectury.utils.Env.CLIENT, () -> () ->
@@ -54,8 +54,8 @@ public class RadioTorchLogicBlock extends RadioTorchBaseBlock {
         }
         return InteractionResult.sidedSuccess(level.isClientSide());
     }
-    //?} else {
-    /*@Override
+    *///?} else {
+    @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
         if (level.isClientSide()) {
             dev.architectury.utils.EnvExecutor.runInEnv(dev.architectury.utils.Env.CLIENT, () -> () ->
@@ -63,14 +63,14 @@ public class RadioTorchLogicBlock extends RadioTorchBaseBlock {
         }
         return InteractionResult.sidedSuccess(level.isClientSide());
     }
-    *///?}
+    //?}
 
     //? if >1.20.1 {
-    /*public static final com.mojang.serialization.MapCodec<RadioTorchLogicBlock> CODEC = simpleCodec(RadioTorchLogicBlock::new);
+    public static final com.mojang.serialization.MapCodec<RadioTorchLogicBlock> CODEC = simpleCodec(RadioTorchLogicBlock::new);
 
     @Override
     protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
         return CODEC;
     }
-    *///?}
+    //?}
 }

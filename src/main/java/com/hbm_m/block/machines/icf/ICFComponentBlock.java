@@ -122,16 +122,17 @@ public class ICFComponentBlock extends Block {
     }
 
     //? if < 1.21.1 {
-    @Override
+    /*@Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player,
                                  InteractionHand hand, BlockHitResult hit) {
         return convert(level, pos, player, hand);
     }
-    //?} else {
-    /*@Override
-    protected InteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos,
-                                          Player player, InteractionHand hand, BlockHitResult hit) {
-        return convert(level, pos, player, hand);
+    *///?} else {
+    // 1.21.1: useItemOn returns ItemInteractionResult; useWithoutItem keeps the InteractionResult
+    // contract and is reached for any held item once useItemOn passes (same as DoorBlock).
+    @Override
+    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+        return convert(level, pos, player, InteractionHand.MAIN_HAND);
     }
-    *///?}
+    //?}
 }

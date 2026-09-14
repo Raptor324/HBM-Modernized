@@ -54,14 +54,14 @@ public class ModPickaxeItem extends PickaxeItem implements ITooltipProvider {
     private final int fortuneLevel;
 
     //? if < 1.21.1 {
-    public ModPickaxeItem(Tier tier, int attackDamage, float attackSpeed, Properties properties,
-                          int veinMinerLevel, int aoeLevel, int silkTouchLevel, int fortuneLevel) {
-        super(tier, attackDamage, attackSpeed, properties);
-    //?} else {
     /*public ModPickaxeItem(Tier tier, int attackDamage, float attackSpeed, Properties properties,
                           int veinMinerLevel, int aoeLevel, int silkTouchLevel, int fortuneLevel) {
+        super(tier, attackDamage, attackSpeed, properties);
+    *///?} else {
+    public ModPickaxeItem(Tier tier, int attackDamage, float attackSpeed, Properties properties,
+                          int veinMinerLevel, int aoeLevel, int silkTouchLevel, int fortuneLevel) {
         super(tier, properties.attributes(PickaxeItem.createAttributes(tier, (float) attackDamage, attackSpeed)));
-    *///?}
+    //?}
         this.veinMinerLevel = Math.max(0, Math.min(6, veinMinerLevel));
         this.aoeLevel = Math.max(0, Math.min(3, aoeLevel));
         this.silkTouchLevel = Math.max(0, Math.min(1, silkTouchLevel));

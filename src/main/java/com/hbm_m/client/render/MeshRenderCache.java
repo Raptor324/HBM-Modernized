@@ -21,10 +21,10 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.resources.model.BakedModel;
 
 //? if forge {
-@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-//?} elif neoforge {
-/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-*///?}
+/*@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+*///?} elif neoforge {
+@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+//?}
 public class MeshRenderCache {
 
     private static final int MAX_CACHE_SIZE = 256;
@@ -175,18 +175,18 @@ public class MeshRenderCache {
         }
 
         //? if < 1.21.1 {
-        BufferBuilder.RenderedBuffer renderedBuffer = builder.end();
+        /*BufferBuilder.RenderedBuffer renderedBuffer = builder.end();
         VertexBuffer vbo = new VertexBuffer(VertexBuffer.Usage.STATIC);
         vbo.bind();
         vbo.upload(renderedBuffer);
         VertexBuffer.unbind();
-        //?} else {
-        /*com.mojang.blaze3d.vertex.MeshData renderedBuffer = builder.buildOrThrow();
+        *///?} else {
+        com.mojang.blaze3d.vertex.MeshData renderedBuffer = builder.buildOrThrow();
         VertexBuffer vbo = new VertexBuffer(VertexBuffer.Usage.STATIC);
         vbo.bind();
         vbo.upload(renderedBuffer);
         VertexBuffer.unbind();
-        *///?}
+        //?}
 
         return vbo;
     }

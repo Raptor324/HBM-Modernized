@@ -46,13 +46,13 @@ import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.phys.AABB;
 //? if forge {
-import net.minecraftforge.common.capabilities.Capability;
+/*import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.FluidActionResult;
 import net.minecraftforge.fluids.FluidUtil;
 import net.minecraftforge.fluids.capability.IFluidHandler;
-//?}
+*///?}
 
 /**
  * Chemical Plant BlockEntity - порт с 1.7.10.
@@ -141,8 +141,8 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity
     }
 
     //? if forge {
-    @Override
-            //?}
+    /*@Override
+            *///?}
     public AABB getRenderBoundingBox() {
         BlockState state = getBlockState();
         BlockPos p1 = worldPosition.offset(-1, 0, -1);
@@ -375,8 +375,8 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity
     }
 
     //? if forge {
-    @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-            //?}
+    /*@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+            *///?}
     private void clientTick() {
         ClientSoundBootstrap.updateSound(this, this.isChemplantEffectsActive(), () -> newChemicalPlantSoundInstance());
     }
@@ -604,7 +604,7 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity
     }
 
     //? if forge {
-    private static final LazyOptional<?> EMPTY_CAP = LazyOptional.empty();
+    /*private static final LazyOptional<?> EMPTY_CAP = LazyOptional.empty();
 
     @Override
     protected void setupFluidCapability() {
@@ -707,7 +707,7 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity
         }
     }
 
-    //?}
+    *///?}
 
     // Энергопорты мультиблока: позиции фантомов структуры, ранее регистрировавшиеся блоком.
     // Ядро (worldPosition) подписывается в BaseMachineBlockEntity.ensureNetworkInitialized().

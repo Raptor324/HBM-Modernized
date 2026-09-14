@@ -42,7 +42,7 @@ public class FusionKlystronCreativeBlockEntity extends FusionSyncedBlockEntity {
     /** Original: {@code FusionRecipes.maxInput} - hoechste Zuendschwelle aller Rezepte. */
     public static long getMaxInput(Level level) {
         long max = 0;
-        for (FusionRecipe recipe : level.getRecipeManager().getAllRecipesFor(ModRecipes.FUSION_TYPE.get())) {
+        for (FusionRecipe recipe : com.hbm_m.platform.recipe.RecipeHooks.getAllRecipes(level, ModRecipes.FUSION_TYPE.get())) {
             if (recipe.getIgnitionTemp() > max) max = recipe.getIgnitionTemp();
         }
         return max;
@@ -102,8 +102,8 @@ public class FusionKlystronCreativeBlockEntity extends FusionSyncedBlockEntity {
     private AABB renderBounds = null;
 
     //? if forge {
-    @Override
-    //?}
+    /*@Override
+    *///?}
     public AABB getRenderBoundingBox() {
         if (renderBounds == null) {
             renderBounds = new AABB(

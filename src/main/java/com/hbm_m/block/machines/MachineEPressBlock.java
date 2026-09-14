@@ -104,7 +104,7 @@ public class MachineEPressBlock extends BaseEntityBlock implements IMultiblockCo
     }
 
     //? if < 1.21.1 {
-    @Override
+    /*@Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
 
         if (!level.isClientSide()) {
@@ -117,8 +117,8 @@ public class MachineEPressBlock extends BaseEntityBlock implements IMultiblockCo
         }
         return InteractionResult.sidedSuccess(level.isClientSide());
         }
-    //?} else {
-    /*@Override
+    *///?} else {
+    @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
 
         if (!level.isClientSide()) {
@@ -131,7 +131,7 @@ public class MachineEPressBlock extends BaseEntityBlock implements IMultiblockCo
         }
         return InteractionResult.sidedSuccess(level.isClientSide());
         }
-    *///?}
+    //?}
 
 
     @Nullable
@@ -172,11 +172,11 @@ public class MachineEPressBlock extends BaseEntityBlock implements IMultiblockCo
     }
 
     //? if >1.20.1 {
-    /*public static final com.mojang.serialization.MapCodec<MachineEPressBlock> CODEC = simpleCodec(MachineEPressBlock::new);
+    public static final com.mojang.serialization.MapCodec<MachineEPressBlock> CODEC = simpleCodec(MachineEPressBlock::new);
 
     @Override
     protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
         return CODEC;
     }
-    *///?}
+    //?}
 }

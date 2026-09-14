@@ -39,11 +39,11 @@ import org.jetbrains.annotations.Nullable;
 public class PneumoTubePaintableBlock extends PneumoTubeBlock {
 
     //? if > 1.20.1 {
-    /*public static final com.mojang.serialization.MapCodec<PneumoTubePaintableBlock> CODEC =
+    public static final com.mojang.serialization.MapCodec<PneumoTubePaintableBlock> CODEC =
             simpleCodec(PneumoTubePaintableBlock::new);
     @Override
     protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() { return CODEC; }
-    *///?}
+    //?}
 
     public PneumoTubePaintableBlock(Properties properties) {
         super(properties);
@@ -127,7 +127,7 @@ public class PneumoTubePaintableBlock extends PneumoTubeBlock {
     }
 
     //? if < 1.21.1 {
-    @Override
+    /*@Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player,
                                  InteractionHand hand, BlockHitResult hit) {
         InteractionResult painted = paintOrPass(state, level, pos, player, hand);
@@ -135,8 +135,8 @@ public class PneumoTubePaintableBlock extends PneumoTubeBlock {
 
         return super.use(state, level, pos, player, hand, hit);
     }
-    //?} else {
-    /*@Override
+    *///?} else {
+    @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player,
                                                BlockHitResult hit) {
         InteractionResult painted = paintOrPass(state, level, pos, player, InteractionHand.MAIN_HAND);
@@ -144,5 +144,5 @@ public class PneumoTubePaintableBlock extends PneumoTubeBlock {
 
         return super.useWithoutItem(state, level, pos, player, hit);
     }
-    *///?}
+    //?}
 }

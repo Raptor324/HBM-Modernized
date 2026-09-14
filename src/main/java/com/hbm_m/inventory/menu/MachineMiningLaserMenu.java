@@ -14,8 +14,8 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 //? if forge {
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-//?}
+/*import net.minecraftforge.common.capabilities.ForgeCapabilities;
+*///?}
 
 public class MachineMiningLaserMenu extends AbstractContainerMenu {
 
@@ -72,10 +72,10 @@ public class MachineMiningLaserMenu extends AbstractContainerMenu {
             public boolean mayPlace(ItemStack stack) {
                 if (ItemEnergyAccess.getHbmProvider(stack).isPresent()) return true;
                 //? if forge {
-                return stack.getCapability(ForgeCapabilities.ENERGY).isPresent();
-                //?} elif neoforge {
-                /*return stack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM) != null;
-                *///?} else {
+                /*return stack.getCapability(ForgeCapabilities.ENERGY).isPresent();
+                *///?} elif neoforge {
+                return stack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM) != null;
+                //?} else {
                 /*return false;
                 *///?}
             }

@@ -371,8 +371,8 @@ public class MachineMiningLaserBlockEntity extends BaseMachineBlockEntity {
     }
 
     //? if forge {
-    @Override
-    //?}
+    /*@Override
+    *///?}
     public AABB getRenderBoundingBox() {
         double depth = targetDepth + 4.0D;
         return super.getRenderBoundingBox().inflate(curRadius, 0, curRadius).expandTowards(0, -depth, 0);

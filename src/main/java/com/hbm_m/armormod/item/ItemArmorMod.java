@@ -41,8 +41,8 @@ public abstract class ItemArmorMod extends Item implements ITooltipProvider {
     @Nullable
     public Multimap<
             //? if < 1.21.1 {
-            Attribute//?} else {
-            /*net.minecraft.core.Holder<Attribute>*///?}
+            /*Attribute*///?} else {
+            net.minecraft.core.Holder<Attribute>//?}
             , AttributeModifier> getModifiers(ItemStack armor) {
         return null;
     }

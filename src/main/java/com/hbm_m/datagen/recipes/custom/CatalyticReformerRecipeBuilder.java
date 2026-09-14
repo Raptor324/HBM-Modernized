@@ -1,13 +1,13 @@
 package com.hbm_m.datagen.recipes.custom;
 //? if forge {
-import com.google.gson.JsonObject;
+/*import com.google.gson.JsonObject;
 import com.hbm_m.recipe.CatalyticReformerRecipe;
 
 import dev.architectury.fluid.FluidStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 
-/**
+/^*
  * Datagen-билдер {@link CatalyticReformerRecipe} ({@code hbm_m:catalytic_reformer}).
  *
  * <p>Чистый ванильный 1.20.1 код внутри {@code //? if forge} — датаген только для 1.20.1-forge.
@@ -26,7 +26,7 @@ import net.minecraft.world.item.crafting.RecipeSerializer;
  *
  * <p>Предметного выхода нет — {@link #getResult()} возвращает {@link Items#AIR}
  * (ванильный {@code RecipeBuilder} требует реализацию).</p>
- */
+ ^/
 public class CatalyticReformerRecipeBuilder extends BaseRecipeBuilder<CatalyticReformerRecipeBuilder> {
 
     private final FluidStack input;
@@ -67,4 +67,4 @@ public class CatalyticReformerRecipeBuilder extends BaseRecipeBuilder<CatalyticR
         return CatalyticReformerRecipe.Serializer.INSTANCE;
     }
 }
-//?}
+*///?}

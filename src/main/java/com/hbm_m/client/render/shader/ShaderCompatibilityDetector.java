@@ -12,12 +12,12 @@ import dev.architectury.platform.Platform;
 import net.minecraft.client.Minecraft;
 
 //? if forge {
-import net.minecraftforge.api.distmarker.Dist;
+/*import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?} else if neoforge {
-/*import net.neoforged.api.distmarker.Dist;
+*///?} else if neoforge {
+import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
-*///?}
+//?}
 
 /**
  * Кросс-лоадерный детектор состояния шейдеров Iris/Oculus.

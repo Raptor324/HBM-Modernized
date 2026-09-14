@@ -1,6 +1,6 @@
 package com.hbm_m.datagen.recipes.custom;
 //? if forge {
-import java.util.function.Consumer;
+/*import java.util.function.Consumer;
 
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.datagen.recipes.ModRecipeProvider;
@@ -18,9 +18,9 @@ import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraftforge.common.Tags;
 
-/**
+/^*
  * Groups all assembler recipes so they can be maintained separately from {@link ModRecipeProvider}.
- */
+ ^/
 public final class AssemblerRecipeGenerator {
 
     private AssemblerRecipeGenerator() {
@@ -52,12 +52,12 @@ public final class AssemblerRecipeGenerator {
         // See AssemblerRecipeGenerator gap-analysis notes for the full skipped list.
     }
 
-    /**
+    /^*
      * MVP-Turret-Varianten (Original: Assembly-Machine-Rezepte in AssemblyMachineRecipes.java,
      * ass.turretX). Exakte Original-Zutaten nicht 1:1 uebernommen (das Original nutzt materialspezifische
      * Formen wie GUNMETAL.mechanism(), die es in diesem Port nicht gibt) - stattdessen plausible,
      * nach Tier skalierte Annaeherung mit vorhandenen Items.
-     */
+     ^/
     private static void registerTurrets(Consumer<FinishedRecipe> writer) {
         AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.TURRET_CHEKHOV.get()), 200, 100)
                 .addIngredient(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE), 4)
@@ -150,7 +150,7 @@ public final class AssemblerRecipeGenerator {
                 .save(writer, "turret_himars");
     }
 
-    /**
+    /^*
      * Gap-fill: machines that were fully implemented (block/blockentity/menu/GUI) but had no way to be
      * crafted in survival. Ported from 1.7.10 AssemblyMachineRecipes.java where a matching ass.* entry
      * exists; ANY_RESISTANTALLOY is substituted with ADVANCED_ALLOY (no oredict tag-aggregate equivalent
@@ -163,7 +163,7 @@ public final class AssemblerRecipeGenerator {
      * (not Fusion Breeder) had no craftable recipe anywhere in the original (loot/starter-kit only) — its
      * recipe below is invented, scaled to the same tier as the other reactor multiblock parts in
      * registerReactors().
-     */
+     ^/
     private static void registerGapMachines(Consumer<FinishedRecipe> writer) {
         // Arc Furnace — port of 1.7.10 ass.arcfurnace.
         AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.ARC_FURNACE.get(), 1), 200, 100)
@@ -533,7 +533,7 @@ public final class AssemblerRecipeGenerator {
         registerParticleAccelerator(writer);
     }
 
-    /** Bauteile und Spulen des Teilchenbeschleunigers. Das Original hat dafuer keine Rezepte. */
+    /^* Bauteile und Spulen des Teilchenbeschleunigers. Das Original hat dafuer keine Rezepte. ^/
     private static void registerParticleAccelerator(java.util.function.Consumer<FinishedRecipe> writer) {
 
         AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.BEAMLINE.get(), 1), 100, 100)
@@ -589,7 +589,7 @@ public final class AssemblerRecipeGenerator {
                 .save(writer, "pa_coil_" + material.name().toLowerCase(java.util.Locale.ROOT));
     }
 
-    /** Cloth / small parts — port of 1.7.10 ass.platemixed, ass.hazcloth, ass.firecloth, ass.filtercoal. */
+    /^* Cloth / small parts — port of 1.7.10 ass.platemixed, ass.hazcloth, ass.firecloth, ass.filtercoal. ^/
     private static void registerMachineParts(Consumer<FinishedRecipe> writer) {
         AssemblerRecipeBuilder.assemblerRecipe(
                         new ItemStack(ModItems.PLATE_MIXED.get(), 4), 50, 100)
@@ -664,7 +664,7 @@ public final class AssemblerRecipeGenerator {
                 .save(writer, "cmbbrick");
     }
 
-    /** Standalone machines — port of 1.7.10 pumpjack/flarestack/crackingtower/coker/compressor/silex/drillbits/slopper/mininglaser/strandcaster. */
+    /^* Standalone machines — port of 1.7.10 pumpjack/flarestack/crackingtower/coker/compressor/silex/drillbits/slopper/mininglaser/strandcaster. ^/
     private static void registerMachines(Consumer<FinishedRecipe> writer) {
         AssemblerRecipeBuilder.assemblerRecipe(
                         new ItemStack(ModBlocks.PUMPJACK.get(), 1), 400, 100)
@@ -772,7 +772,7 @@ public final class AssemblerRecipeGenerator {
                 .save(writer, "strandcaster");
     }
 
-    /** Generators / pistons — port of 1.7.10 dieselgen, pistonset(steel/desh/starmetal), hephaestus. */
+    /^* Generators / pistons — port of 1.7.10 dieselgen, pistonset(steel/desh/starmetal), hephaestus. ^/
     private static void registerGenerators(Consumer<FinishedRecipe> writer) {
         AssemblerRecipeBuilder.assemblerRecipe(
                         new ItemStack(ModBlocks.DIESELGEN.get(), 1), 200, 100)
@@ -828,7 +828,7 @@ public final class AssemblerRecipeGenerator {
                 .save(writer, "capacitortantalum");
     }
 
-    /** Particle accelerator components — port of 1.7.10 beamline/rfc/quadrupole/dipole/source/detector/exposurechamber. */
+    /^* Particle accelerator components — port of 1.7.10 beamline/rfc/quadrupole/dipole/source/detector/exposurechamber. ^/
     private static void registerAccelerators(Consumer<FinishedRecipe> writer) {
         AssemblerRecipeBuilder.assemblerRecipe(
                         new ItemStack(ModBlocks.BEAMLINE.get(), 1), 200, 100)
@@ -905,7 +905,7 @@ public final class AssemblerRecipeGenerator {
                 .save(writer, "exposurechamber");
     }
 
-    /** RBMK / PWR reactor components — port of 1.7.10 ass.rbmk and the pwr* family. */
+    /^* RBMK / PWR reactor components — port of 1.7.10 ass.rbmk and the pwr* family. ^/
     private static void registerReactors(Consumer<FinishedRecipe> writer) {
         AssemblerRecipeBuilder.assemblerRecipe(
                         new ItemStack(ModBlocks.RBMK_BLANK.get(), 1), 100, 100)
@@ -982,7 +982,7 @@ public final class AssemblerRecipeGenerator {
     // dort sind alle elf Originalrezepte enthalten (inkl. Klystron, MHDT, Koppler, Plasmaschmiede
     // und Torus-Kern) und die ANY_RESISTANTALLOY-/Schaltkreis-Zuordnung entspricht dem Original.
 
-    /** WATZ reactor rods — port of 1.7.10 ass.watzrod / ass.watzcooler. */
+    /^* WATZ reactor rods — port of 1.7.10 ass.watzrod / ass.watzcooler. ^/
     private static void registerUpgrades(Consumer<FinishedRecipe> writer) {
         AssemblerRecipeBuilder.assemblerRecipe(
                         new ItemStack(ModBlocks.WATZ_ELEMENT.get(), 3), 200, 100)
@@ -1047,7 +1047,7 @@ public final class AssemblerRecipeGenerator {
                 .save(writer, "overdrive3");
     }
 
-    /** Nuclear bomb components — port of 1.7.10 wiring/core1/boyshield/boytarget/boybullet/manigniter/mancore/mikecore/mikedeut/mikecooler/fleijacore/soliniumcore. */
+    /^* Nuclear bomb components — port of 1.7.10 wiring/core1/boyshield/boytarget/boybullet/manigniter/mancore/mikecore/mikedeut/mikecooler/fleijacore/soliniumcore. ^/
     private static void registerBombParts(Consumer<FinishedRecipe> writer) {
         AssemblerRecipeBuilder.assemblerRecipe(
                         new ItemStack(ModItems.GADGET_WIREING.get(), 1), 200, 100)
@@ -1123,7 +1123,7 @@ public final class AssemblerRecipeGenerator {
                 .save(writer, "soliniumcore");
     }
 
-    /** Missile warheads/thrusters — port of 1.7.10 warheadhe1/warheadcl1-3/thrusternerva. */
+    /^* Missile warheads/thrusters — port of 1.7.10 warheadhe1/warheadcl1-3/thrusternerva. ^/
     private static void registerMissileParts(Consumer<FinishedRecipe> writer) {
         AssemblerRecipeBuilder.assemblerRecipe(
                         new ItemStack(ModItems.WARHEAD_GENERIC_SMALL.get(), 1), 100, 100)
@@ -1159,9 +1159,9 @@ public final class AssemblerRecipeGenerator {
                 .save(writer, "thrusternerva");
     }
 
-    /** Chemical artillery shells — port of 1.7.10 shellchlorine/shellphosgene/shellmustard.
+    /^* Chemical artillery shells — port of 1.7.10 shellchlorine/shellphosgene/shellmustard.
      * NOTE: original recipes also consumed 4000mB of the respective gas fluid; the assembler recipe
-     * system in this port has no fluid-input support, so the fluid cost is omitted here. */
+     * system in this port has no fluid-input support, so the fluid cost is omitted here. ^/
     private static void registerAmmo(Consumer<FinishedRecipe> writer) {
         AssemblerRecipeBuilder.assemblerRecipe(
                         new ItemStack(ModItems.AMMO_ARTY_CHLORINE.get(), 1), 100, 1_000)
@@ -1182,7 +1182,7 @@ public final class AssemblerRecipeGenerator {
                 .save(writer, "shellmustard");
     }
 
-    /** Space program — port of 1.7.10 soyuzcore/satellitemapper/satellitescanner/satelliteradar/satelliteresonator. */
+    /^* Space program — port of 1.7.10 soyuzcore/satellitemapper/satellitescanner/satelliteradar/satelliteresonator. ^/
     private static void registerSpace(Consumer<FinishedRecipe> writer) {
         AssemblerRecipeBuilder.assemblerRecipe(
                         new ItemStack(ModBlocks.STRUCT_SOYUZ_CORE.get(), 1), 1200, 100)
@@ -2231,13 +2231,13 @@ public final class AssemblerRecipeGenerator {
         registerPile(writer);
     }
 
-    /**
+    /^*
      * Uranmeiler. 1:1 aus {@code ass.pileblock} und der Gruppe {@code autoswitch.pilerod} (1.7.10).
      *
      * <p><b>Abweichung:</b> das Original nimmt fuer die beiden Quellstaebe die Barren
      * {@code billet_ra226be} und {@code billet_po210be}; die gibt es in diesem Port nicht, darum
      * stehen dort die gleichwertigen RBMK-Pellets derselben Isotope.</p>
-     */
+     ^/
     private static void registerPile(java.util.function.Consumer<FinishedRecipe> writer) {
 
         AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.PILE_BRICK.get(), 1), 20, 250)
@@ -2263,4 +2263,4 @@ public final class AssemblerRecipeGenerator {
                 .save(writer, "pile_rod_mk2_nu");
     }
 }
-//?}
+*///?}

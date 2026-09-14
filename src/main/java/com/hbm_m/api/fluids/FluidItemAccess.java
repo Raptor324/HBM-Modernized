@@ -27,10 +27,10 @@ public final class FluidItemAccess {
     public static boolean hasFluidHandler(ItemStack stack) {
         if (stack.isEmpty()) return false;
         //? if forge {
-        return stack.getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER_ITEM).isPresent();
-        //?} else if neoforge {
-        /*return stack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.FluidHandler.ITEM) != null;
-        *///?} else {
+        /*return stack.getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER_ITEM).isPresent();
+        *///?} else if neoforge {
+        return stack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.FluidHandler.ITEM) != null;
+        //?} else {
         /*return false;
         *///?}
     }
@@ -44,15 +44,15 @@ public final class FluidItemAccess {
      * {@code .ifPresent(...)} работает одинаково.
      */
     //? if forge {
-    public static Optional<net.minecraftforge.fluids.capability.IFluidHandlerItem> getFluidHandler(ItemStack stack) {
+    /*public static Optional<net.minecraftforge.fluids.capability.IFluidHandlerItem> getFluidHandler(ItemStack stack) {
         if (stack.isEmpty()) return Optional.empty();
         return stack.getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER_ITEM).resolve();
     }
-    //?}
+    *///?}
     //? if neoforge {
-    /*public static Optional<net.neoforged.neoforge.fluids.capability.IFluidHandlerItem> getFluidHandler(ItemStack stack) {
+    public static Optional<net.neoforged.neoforge.fluids.capability.IFluidHandlerItem> getFluidHandler(ItemStack stack) {
         if (stack.isEmpty()) return Optional.empty();
         return Optional.ofNullable(stack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.FluidHandler.ITEM));
     }
-    *///?}
+    //?}
 }

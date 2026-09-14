@@ -1,6 +1,6 @@
 package com.hbm_m.datagen.recipes.custom;
 //? if forge {
-import com.hbm_m.inventory.fluid.ModFluids;
+/*import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.item.material.MaterialShape;
 import com.hbm_m.item.material.ModMaterialItems;
@@ -14,14 +14,14 @@ import net.minecraft.world.item.crafting.Ingredient;
 
 import java.util.function.Consumer;
 
-/**
+/^*
  * Генератор JSON-рецептов паяльной станции ({@code hbm_m:soldering_station}).
  *
  * <p>Порт рецептов из {@code com.hbm.inventory.recipes.SolderingRecipes#registerDefaults()}
  * (legacy 1.7.10 defaults). TODO-рецепты (предметы, ещё не портированные) намеренно пропущены.</p>
  *
  * <p>Чистый ванильный 1.20.1 код внутри {@code //? if forge} — датаген только для 1.20.1-forge.</p>
- */
+ ^/
 public final class SolderingRecipeGenerator {
 
     private SolderingRecipeGenerator() {}
@@ -171,4 +171,4 @@ public final class SolderingRecipeGenerator {
                 new Pair[]{});
     }
 }
-//?}
+*///?}

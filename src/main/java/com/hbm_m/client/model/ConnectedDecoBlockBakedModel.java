@@ -27,18 +27,18 @@ import net.minecraft.world.level.BlockAndTintGetter;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 //? if forge {
-import net.minecraftforge.client.ChunkRenderTypeSet;
+/*import net.minecraftforge.client.ChunkRenderTypeSet;
 import net.minecraftforge.client.model.BakedModelWrapper;
 import net.minecraftforge.client.model.data.ModelData;
 import net.minecraftforge.client.model.data.ModelData.Builder;
 import net.minecraftforge.client.model.data.ModelProperty;
-//?} else if neoforge {
-/*import net.neoforged.neoforge.client.ChunkRenderTypeSet;
+*///?} else if neoforge {
+import net.neoforged.neoforge.client.ChunkRenderTypeSet;
 import net.neoforged.neoforge.client.model.BakedModelWrapper;
 import net.neoforged.neoforge.client.model.data.ModelData;
 import net.neoforged.neoforge.client.model.data.ModelData.Builder;
 import net.neoforged.neoforge.client.model.data.ModelProperty;
-*///?}
+//?}
 
 /**
  * Connected-textures модель (как CT в 1.7.10): для каждой грани выбираются 4 фрагмента (TL/TR/BL/BR)

@@ -16,18 +16,18 @@ public final class FluidCapabilityAccess {
         boolean result = false;
 
         //? if forge {
-        result = be.getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER, sideFromPos).isPresent();
-        //?}
+        /*result = be.getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER, sideFromPos).isPresent();
+        *///?}
 
 
         //? if neoforge {
-        /*// NeoForge: BlockCapability запрашивается через Level (LevelAccessor его не предоставляет).
+        // NeoForge: BlockCapability запрашивается через Level (LevelAccessor его не предоставляет).
         if (level instanceof net.minecraft.world.level.Level lvl) {
             result = lvl.getCapability(
                     net.neoforged.neoforge.capabilities.Capabilities.FluidHandler.BLOCK,
                     pos, sideFromPos) != null;
         }
-        *///?}
+        //?}
 
         return result;
     }

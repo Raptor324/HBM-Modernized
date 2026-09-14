@@ -1,7 +1,7 @@
 package com.hbm_m.mixin.client;
 
 //? if neoforge {
-/*import com.hbm_m.inventory.menu.MenuBlockEntityMissingException;
+import com.hbm_m.inventory.menu.MenuBlockEntityMissingException;
 import com.hbm_m.main.MainRegistry;
 
 import net.minecraft.network.RegistryFriendlyByteBuf;
@@ -12,12 +12,12 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Redirect;
 
-/^*
+/**
  * A menu constructor that throws makes NeoForge disconnect the client
  * ("Failed to open a screen with advanced data"). With a replay mod (Flashback) the block entity
  * behind a menu can legitimately be absent, so that one failure is downgraded to a warning.
  * Any other exception still disconnects as before.
- ^/
+ */
 @Mixin(targets = "net.neoforged.neoforge.network.handlers.ClientPayloadHandler")
 public class MixinClientPayloadHandlerMissingTile {
 
@@ -39,10 +39,10 @@ public class MixinClientPayloadHandlerMissingTile {
         }
     }
 }
-*///?} else {
-// NeoForge-only; the Mixin annotation processor rejects unknown string targets, so the stub
+//?} else {
+/*// NeoForge-only; the Mixin annotation processor rejects unknown string targets, so the stub
 // points at a class that exists everywhere and contributes nothing.
 @org.spongepowered.asm.mixin.Mixin(net.minecraft.world.inventory.AbstractContainerMenu.class)
 public class MixinClientPayloadHandlerMissingTile {
 }
-//?}
+*///?}

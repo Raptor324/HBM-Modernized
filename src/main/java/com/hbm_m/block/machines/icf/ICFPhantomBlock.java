@@ -66,10 +66,17 @@ public class ICFPhantomBlock extends BaseEntityBlock {
     }
 
     /** Original: {@code getItemDropped} gibt null - der Platzhalter selbst faellt nie. */
-    @Override
+    //? if < 1.21.1 {
+    /*@Override
     public ItemStack getCloneItemStack(BlockGetter level, BlockPos pos, BlockState state) {
         return ItemStack.EMPTY;
     }
+    *///?} else {
+    @Override
+    public ItemStack getCloneItemStack(net.minecraft.world.level.LevelReader level, BlockPos pos, BlockState state) {
+        return ItemStack.EMPTY;
+    }
+    //?}
 
     /**
      * 1:1-Port von {@code breakBlock}: das gemerkte Bauteil kommt zurueck und der Laser gilt als
@@ -105,4 +112,13 @@ public class ICFPhantomBlock extends BaseEntityBlock {
         }
         super.onRemove(state, level, pos, newState, isMoving);
     }
+
+    //? if >1.20.1 {
+    public static final com.mojang.serialization.MapCodec<ICFPhantomBlock> CODEC = simpleCodec(ICFPhantomBlock::new);
+
+    @Override
+    protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
+        return CODEC;
+    }
+    //?}
 }

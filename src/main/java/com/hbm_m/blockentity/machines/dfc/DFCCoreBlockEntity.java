@@ -206,7 +206,7 @@ public class DFCCoreBlockEntity extends BaseMachineBlockEntity implements IFluid
                 level, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, size);
         level.addFreshEntity(ex);
 
-        level.playSound(null, pos, net.minecraft.sounds.SoundEvents.GENERIC_EXPLODE,
+        com.hbm_m.platform.PlatformHooks.playSound(level, pos, net.minecraft.sounds.SoundEvents.GENERIC_EXPLODE,
                 net.minecraft.sounds.SoundSource.BLOCKS, 100000.0F, 1.0F);
 
         // Original: EntityCloudFleijaRainbow mit dem Radius als Groesse.
@@ -248,7 +248,7 @@ public class DFCCoreBlockEntity extends BaseMachineBlockEntity implements IFluid
         for (Entity e : level.getEntitiesOfClass(Entity.class, outer)) {
             // Original prueft hier auf Hazmat und freie Sicht; beides bleibt hier weg.
             e.hurt(level.damageSources().onFire(), 1000F);
-            e.setSecondsOnFire(3);
+            com.hbm_m.platform.PlatformHooks.setSecondsOnFire(e, 3);
         }
 
         AABB inner = new AABB(pos).inflate(scale);

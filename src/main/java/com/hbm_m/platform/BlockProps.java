@@ -26,10 +26,10 @@ public final class BlockProps {
      */
     public static BlockBehaviour.Properties copy(Block block) {
         //? if forge {
-        return BlockBehaviour.Properties.copy(block);
-        //?}
-        //? if neoforge {
-        /*return BlockBehaviour.Properties.ofFullCopy(block);
+        /*return BlockBehaviour.Properties.copy(block);
         *///?}
+        //? if neoforge {
+        return BlockBehaviour.Properties.ofFullCopy(block);
+        //?}
     }
 }

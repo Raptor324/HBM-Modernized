@@ -70,7 +70,7 @@ public class MachineDieselGeneratorBlockEntity extends com.hbm_m.blockentity.Mac
     }
 
     //? if forge {
-    @Override
+    /*@Override
     public @org.jetbrains.annotations.NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(
             net.minecraftforge.common.capabilities.Capability<T> cap, @Nullable Direction side) {
         if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER) {
@@ -78,7 +78,7 @@ public class MachineDieselGeneratorBlockEntity extends com.hbm_m.blockentity.Mac
         }
         return super.getCapability(cap, side);
     }
-    //?}
+    *///?}
 
     public static void tick(Level level, BlockPos pos, BlockState state, MachineDieselGeneratorBlockEntity be) {
         if (level.isClientSide()) return;

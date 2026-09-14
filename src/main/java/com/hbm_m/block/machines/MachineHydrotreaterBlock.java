@@ -32,8 +32,8 @@ import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
 //? if forge {
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-//?}
+/*import net.minecraftforge.common.capabilities.ForgeCapabilities;
+*///?}
 
 import com.hbm_m.blockentity.BaseMachineBlockEntity;
 
@@ -56,15 +56,15 @@ public class MachineHydrotreaterBlock extends BaseEntityBlock implements IMultib
     }
     @Nullable @Override public BlockEntity newBlockEntity(BlockPos p, BlockState s) { return new MachineHydrotreaterBlockEntity(p, s); }
     //? if < 1.21.1 {
-    @Override public InteractionResult use(BlockState s, Level l, BlockPos p, Player pl, InteractionHand h, BlockHitResult r) {
+    /*@Override public InteractionResult use(BlockState s, Level l, BlockPos p, Player pl, InteractionHand h, BlockHitResult r) {
         return openMenu(s, l, p, pl, h, r);
     }
-    //?} else {
-    /*@Override
+    *///?} else {
+    @Override
     protected InteractionResult useWithoutItem(BlockState s, Level l, BlockPos p, Player pl, BlockHitResult r) {
         return openMenu(s, l, p, pl, InteractionHand.MAIN_HAND, r);
     }
-    *///?}
+    //?}
 
     private InteractionResult openMenu(BlockState s, Level l, BlockPos p, Player pl, InteractionHand h, BlockHitResult r) {
         if (!l.isClientSide() && l.getBlockEntity(p) instanceof MenuProvider mp) MenuRegistry.openExtendedMenu((ServerPlayer) pl, mp, buf -> buf.writeBlockPos(p));
@@ -85,11 +85,11 @@ public class MachineHydrotreaterBlock extends BaseEntityBlock implements IMultib
     }
 
     //? if >1.20.1 {
-    /*public static final com.mojang.serialization.MapCodec<MachineHydrotreaterBlock> CODEC = simpleCodec(MachineHydrotreaterBlock::new);
+    public static final com.mojang.serialization.MapCodec<MachineHydrotreaterBlock> CODEC = simpleCodec(MachineHydrotreaterBlock::new);
 
     @Override
     protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
         return CODEC;
     }
-    *///?}
+    //?}
 }

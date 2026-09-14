@@ -12,16 +12,16 @@ import com.hbm_m.sound.ModSounds;
 import com.hbm_m.blockentity.BaseMachineBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
 //? if forge {
-import com.hbm_m.capability.ModCapabilities;
+/*import com.hbm_m.capability.ModCapabilities;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
+*///?} elif neoforge {
+import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
-*///?}
+//?}
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -121,7 +121,7 @@ public class MachinePressBlockEntity extends BaseMachineBlockEntity {
     }
 
     //? if forge {
-    @Override
+    /*@Override
     public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
         // Пресс НЕ является частью энергетической сети и не должен цепляться проводами/заряжаться.
         if (cap == ModCapabilities.HBM_ENERGY_PROVIDER
@@ -132,7 +132,7 @@ public class MachinePressBlockEntity extends BaseMachineBlockEntity {
         }
         return super.getCapability(cap, side);
     }
-    //?}
+    *///?}
 
 
     

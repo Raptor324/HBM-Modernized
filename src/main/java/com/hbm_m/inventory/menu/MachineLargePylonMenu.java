@@ -22,8 +22,8 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 //? if forge {
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-//?}
+/*import net.minecraftforge.common.capabilities.ForgeCapabilities;
+*///?}
 
 public class MachineLargePylonMenu extends AbstractContainerMenu implements ILongEnergyMenu {
 
@@ -71,11 +71,11 @@ public class MachineLargePylonMenu extends AbstractContainerMenu implements ILon
             @Override
             public boolean mayPlace(ItemStack stack) {
                 //? if forge {
-                if (com.hbm_m.api.energy.ItemEnergyAccess.getForgeEnergy(stack).isPresent()) return true;
-                //?}
-                //? if neoforge {
                 /*if (com.hbm_m.api.energy.ItemEnergyAccess.getForgeEnergy(stack).isPresent()) return true;
                 *///?}
+                //? if neoforge {
+                if (com.hbm_m.api.energy.ItemEnergyAccess.getForgeEnergy(stack).isPresent()) return true;
+                //?}
                 return com.hbm_m.api.energy.ItemEnergyAccess.getHbmProvider(stack).isPresent()
                     || stack.getItem() instanceof ItemCreativeBattery;
             }
@@ -190,11 +190,11 @@ public class MachineLargePylonMenu extends AbstractContainerMenu implements ILon
             boolean isBattery = com.hbm_m.api.energy.ItemEnergyAccess.getHbmProvider(stack).isPresent()
                 || stack.getItem() instanceof ItemCreativeBattery;
             //? if forge {
-            isBattery = isBattery || com.hbm_m.api.energy.ItemEnergyAccess.getForgeEnergy(stack).isPresent();
-            //?}
-            //? if neoforge {
             /*isBattery = isBattery || com.hbm_m.api.energy.ItemEnergyAccess.getForgeEnergy(stack).isPresent();
             *///?}
+            //? if neoforge {
+            isBattery = isBattery || com.hbm_m.api.energy.ItemEnergyAccess.getForgeEnergy(stack).isPresent();
+            //?}
 
             if (isBattery) {
                 if (!moveItemStackTo(stack, SLOT_BATTERY, SLOT_BATTERY + 1, false)) {

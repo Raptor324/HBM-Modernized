@@ -39,11 +39,11 @@ import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
 
 //? if forge {
-import net.minecraftforge.common.capabilities.Capability;
+/*import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.capability.IFluidHandler;
-//?}
+*///?}
 
 /**
  * Watz Powerplant reactor core. Ported from {@code com.hbm.tileentity.machine.TileEntityWatz}
@@ -122,8 +122,8 @@ public class MachineWatzPowerplantBlockEntity extends BaseMachineBlockEntity
     private boolean fluidSidesFromMultiblockStructure = false;
 
     //? if forge {
-    private final LazyOptional<IFluidHandler> lazyFluidHandler;
-    //?}
+    /*private final LazyOptional<IFluidHandler> lazyFluidHandler;
+    *///?}
 
     public MachineWatzPowerplantBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.WATZ_POWERPLANT_BE.get(), pos, state, PELLET_SLOTS, 0L, 0L);
@@ -131,8 +131,8 @@ public class MachineWatzPowerplantBlockEntity extends BaseMachineBlockEntity
         this.coolantHotTank = new FluidTank(ModFluids.COOLANT_HOT.getSource(), COOLANT_HOT_MAX);
         this.wasteTank = new FluidTank(ModFluids.WATZ.getSource(), WASTE_MAX);
         //? if forge {
-        this.lazyFluidHandler = LazyOptional.of(() -> new UnifiedFluidHandler(this));
-        //?}
+        /*this.lazyFluidHandler = LazyOptional.of(() -> new UnifiedFluidHandler(this));
+        *///?}
     }
 
     public static void tick(Level level, BlockPos pos, BlockState state, MachineWatzPowerplantBlockEntity be) {
@@ -484,7 +484,7 @@ public class MachineWatzPowerplantBlockEntity extends BaseMachineBlockEntity
     }
 
     //? if forge {
-    @Override
+    /*@Override
     public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
         if (cap == ForgeCapabilities.FLUID_HANDLER) {
             if (side != null) {
@@ -576,5 +576,5 @@ public class MachineWatzPowerplantBlockEntity extends BaseMachineBlockEntity
             return null;
         }
     }
-    //?}
+    *///?}
 }

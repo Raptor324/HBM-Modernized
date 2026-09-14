@@ -87,10 +87,10 @@ public class RBMKSteamInletBlockEntity extends com.hbm_m.blockentity.BaseHbmBloc
     }
 
     //? if forge {
-    /**
+    /*/^*
      * Without this the tank existed but nothing could ever reach it - pipes and tanks had no
      * handler to talk to, so the channel simply refused every connection.
-     */
+     ^/
     @Override
     public @org.jetbrains.annotations.NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(
             net.minecraftforge.common.capabilities.Capability<T> cap, @org.jetbrains.annotations.Nullable Direction side) {
@@ -99,7 +99,7 @@ public class RBMKSteamInletBlockEntity extends com.hbm_m.blockentity.BaseHbmBloc
         }
         return super.getCapability(cap, side);
     }
-    //?}
+    *///?}
 
     // ─── NBT / Sync ──────────────────────────────────────────────────────────
 

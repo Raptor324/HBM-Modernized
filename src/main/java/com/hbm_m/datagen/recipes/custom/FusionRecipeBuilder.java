@@ -1,6 +1,6 @@
 package com.hbm_m.datagen.recipes.custom;
 //? if forge {
-import java.util.ArrayList;
+/*import java.util.ArrayList;
 import java.util.List;
 
 import org.jetbrains.annotations.Nullable;
@@ -18,12 +18,12 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.level.material.Fluid;
 
-/**
+/^*
  * Datagen-Builder fuer {@link FusionRecipe} ({@code hbm_m:fusion}).
  *
  * <p>1:1-Abbild des 1.7.10-Builders {@code new FusionRecipe(name).setInputEnergy(..).setOutputEnergy(..)
  * .setOutputFlux(..).setRGB(..).setPower(..).setDuration(..).inputFluids(..).outputFluids(..)/outputItems(..)}.</p>
- */
+ ^/
 public class FusionRecipeBuilder extends BaseRecipeBuilder<FusionRecipeBuilder> {
 
     private record FluidAmount(Fluid fluid, int amount) {}
@@ -53,30 +53,30 @@ public class FusionRecipeBuilder extends BaseRecipeBuilder<FusionRecipeBuilder> 
         this.power = power;
     }
 
-    /** Original: {@code .setPower(solenoid).setDuration(100)}. */
+    /^* Original: {@code .setPower(solenoid).setDuration(100)}. ^/
     public static FusionRecipeBuilder fusionRecipe(int duration, long power) {
         return new FusionRecipeBuilder(duration, power);
     }
 
-    /** Original: {@code setInputEnergy} - minimale Klystron-Energie zum Zuenden. */
+    /^* Original: {@code setInputEnergy} - minimale Klystron-Energie zum Zuenden. ^/
     public FusionRecipeBuilder inputEnergy(long ignitionTemp) {
         this.ignitionTemp = ignitionTemp;
         return this;
     }
 
-    /** Original: {@code setOutputEnergy} - Plasmaleistung bei Vollast. */
+    /^* Original: {@code setOutputEnergy} - Plasmaleistung bei Vollast. ^/
     public FusionRecipeBuilder outputEnergy(long outputTemp) {
         this.outputTemp = outputTemp;
         return this;
     }
 
-    /** Original: {@code setOutputFlux} - Neutronenfluss bei Vollast. */
+    /^* Original: {@code setOutputFlux} - Neutronenfluss bei Vollast. ^/
     public FusionRecipeBuilder outputFlux(double outputFlux) {
         this.outputFlux = outputFlux;
         return this;
     }
 
-    /** Original: {@code setRGB} - Plasmafarbe. */
+    /^* Original: {@code setRGB} - Plasmafarbe. ^/
     public FusionRecipeBuilder rgb(float r, float g, float b) {
         this.r = r;
         this.g = g;
@@ -168,4 +168,4 @@ public class FusionRecipeBuilder extends BaseRecipeBuilder<FusionRecipeBuilder> 
         return FusionRecipe.Serializer.INSTANCE;
     }
 }
-//?}
+*///?}

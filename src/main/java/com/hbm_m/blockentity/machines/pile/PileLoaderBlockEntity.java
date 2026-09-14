@@ -223,10 +223,10 @@ public class PileLoaderBlockEntity extends LoadedMachineBlockEntity
         tag.putInt("chanNum", chanNum);
 
         if (!stack.isEmpty()) {
-            tag.put("stack", stack.save(new CompoundTag()));
+            tag.put("stack", com.hbm_m.platform.PlatformHooks.saveItemStack(stack, new CompoundTag(), registries));
         }
         if (!channelStack.isEmpty()) {
-            tag.put("chanStack", channelStack.save(new CompoundTag()));
+            tag.put("chanStack", com.hbm_m.platform.PlatformHooks.saveItemStack(channelStack, new CompoundTag(), registries));
         }
         tag.putDouble("chanDepletion", channelDepletion);
         tag.putDouble("chanTemp", channelTemp);
@@ -241,8 +241,8 @@ public class PileLoaderBlockEntity extends LoadedMachineBlockEntity
         wasRedstone = tag.getBoolean("wasRedstone");
         chanNum = tag.getInt("chanNum");
 
-        stack = tag.contains("stack") ? ItemStack.of(tag.getCompound("stack")) : ItemStack.EMPTY;
-        channelStack = tag.contains("chanStack") ? ItemStack.of(tag.getCompound("chanStack")) : ItemStack.EMPTY;
+        stack = tag.contains("stack") ? com.hbm_m.platform.PlatformHooks.itemStackOf(tag.getCompound("stack"), registries) : ItemStack.EMPTY;
+        channelStack = tag.contains("chanStack") ? com.hbm_m.platform.PlatformHooks.itemStackOf(tag.getCompound("chanStack"), registries) : ItemStack.EMPTY;
         channelDepletion = tag.getDouble("chanDepletion");
         channelTemp = tag.getDouble("chanTemp");
     }

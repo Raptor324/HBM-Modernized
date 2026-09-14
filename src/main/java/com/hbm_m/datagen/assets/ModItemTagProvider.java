@@ -1,6 +1,6 @@
 package com.hbm_m.datagen.assets;
 //? if forge {
-import java.util.concurrent.CompletableFuture;
+/*import java.util.concurrent.CompletableFuture;
 
 import com.hbm_m.item.tags_and_tiers.ModTags;
 import net.minecraft.world.item.Items;
@@ -104,7 +104,7 @@ public class ModItemTagProvider extends ItemTagsProvider {
 
 
         // АВТОМАТИЧЕСКОЕ КОПИРОВАНИЕ ТЕГОВ ИЗ БЛОКОВ
-        //  Все storage_blocks/* сразу — block-теги для них генерирует ModBlockTagProvider.
+        //  Все storage_blocks/^ сразу — block-теги для них генерирует ModBlockTagProvider.
                 this.copy(BlockTags.create(ResourceLocation.fromNamespaceAndPath("forge", "storage_blocks")),
                 ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "storage_blocks")));
 
@@ -401,4 +401,4 @@ public class ModItemTagProvider extends ItemTagsProvider {
         }
     }
 }
-//?}
+*///?}

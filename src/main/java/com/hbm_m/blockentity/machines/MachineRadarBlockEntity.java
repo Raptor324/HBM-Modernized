@@ -40,8 +40,8 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 //? if forge {
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-//?}
+/*import net.minecraftforge.common.capabilities.ForgeCapabilities;
+*///?}
 
 public class MachineRadarBlockEntity extends BaseMachineBlockEntity {
 
@@ -437,7 +437,7 @@ public class MachineRadarBlockEntity extends BaseMachineBlockEntity {
         final long pullLimit = needed;
 
         //? if forge {
-        source.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER, side).ifPresent(provider -> {
+        /*source.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER, side).ifPresent(provider -> {
             if (!provider.canExtract()) {
                 return;
             }
@@ -469,7 +469,7 @@ public class MachineRadarBlockEntity extends BaseMachineBlockEntity {
                 receiveEnergy(extracted, false);
             }
         });
-        //?}
+        *///?}
     }
 
     private void performRadarScan() {
@@ -1055,7 +1055,7 @@ public class MachineRadarBlockEntity extends BaseMachineBlockEntity {
      * Карта — несколько последовательных инкрементальных слайсов по 100 байт.
      */
     //? if < 1.21.1 {
-    @Override
+    /*@Override
     public CompoundTag getUpdateTag() {
         CompoundTag tag = new CompoundTag();
         tag.putLong("energy", getEnergyStored());
@@ -1111,8 +1111,8 @@ public class MachineRadarBlockEntity extends BaseMachineBlockEntity {
         }
         return tag;
     }
-    //?} else {
-    /*@Override
+    *///?} else {
+    @Override
     public CompoundTag getUpdateTag(net.minecraft.core.HolderLookup.Provider registries) {
 
         CompoundTag tag = new CompoundTag();
@@ -1170,10 +1170,10 @@ public class MachineRadarBlockEntity extends BaseMachineBlockEntity {
         return tag;
     
     }
-    *///?}
+    //?}
 
     //? if < 1.21.1 {
-    @Override
+    /*@Override
     public void handleUpdateTag(CompoundTag tag) {
         if (tag.contains("energy")) {
             setEnergyStored(tag.getLong("energy"));
@@ -1241,7 +1241,7 @@ public class MachineRadarBlockEntity extends BaseMachineBlockEntity {
             handleUpdateTag(PlatformHooks.getItemTag(pkt));
         }
     }
-    //?}
+    *///?}
     // На 1.21.1 neoforge handleUpdateTag(CompoundTag)/onDataPacket(Connection,pkt) удалены —
     // клиентский sync идёт через getUpdateTag -> loadWithComponents -> loadAdditional (см. выше).
 
@@ -1281,11 +1281,11 @@ public class MachineRadarBlockEntity extends BaseMachineBlockEntity {
             return true;
         }
         //? if forge {
-        return com.hbm_m.api.energy.ItemEnergyAccess.getForgeEnergy(stack).isPresent();
-        //?}
-        //? if neoforge {
-        /*return stack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM) != null;
+        /*return com.hbm_m.api.energy.ItemEnergyAccess.getForgeEnergy(stack).isPresent();
         *///?}
+        //? if neoforge {
+        return stack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM) != null;
+        //?}
     }
 
     @Override

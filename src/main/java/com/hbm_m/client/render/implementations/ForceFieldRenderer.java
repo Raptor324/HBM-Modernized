@@ -136,12 +136,12 @@ public class ForceFieldRenderer implements BlockEntityRenderer<ForceFieldBlockEn
         float nz = len > 1.0E-6D ? (float) (dir.z / len) : 0F;
 
         //? if < 1.21.1 {
-        vc.vertex(m, (float) a.x, (float) a.y, (float) a.z).color(r, g, bl, 1F).normal(nx, ny, nz).endVertex();
+        /*vc.vertex(m, (float) a.x, (float) a.y, (float) a.z).color(r, g, bl, 1F).normal(nx, ny, nz).endVertex();
         vc.vertex(m, (float) b.x, (float) b.y, (float) b.z).color(r, g, bl, 1F).normal(nx, ny, nz).endVertex();
-        //?} else {
-        /*vc.addVertex(m, (float) a.x, (float) a.y, (float) a.z).setColor(r, g, bl, 1F).setNormal(nx, ny, nz);
+        *///?} else {
+        vc.addVertex(m, (float) a.x, (float) a.y, (float) a.z).setColor(r, g, bl, 1F).setNormal(nx, ny, nz);
         vc.addVertex(m, (float) b.x, (float) b.y, (float) b.z).setColor(r, g, bl, 1F).setNormal(nx, ny, nz);
-        *///?}
+        //?}
     }
 
     private static Vec3 rotateX(Vec3 v, float a) {

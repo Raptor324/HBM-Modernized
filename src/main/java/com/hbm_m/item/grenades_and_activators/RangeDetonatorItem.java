@@ -33,7 +33,7 @@ public class RangeDetonatorItem extends Item implements ITooltipProvider {
     }
 
     //? if forge {
-    @Override
+    /*@Override
     public void initializeClient(java.util.function.Consumer<net.minecraftforge.client.extensions.common.IClientItemExtensions> consumer) {
         consumer.accept(new net.minecraftforge.client.extensions.common.IClientItemExtensions() {
             @Override
@@ -42,8 +42,8 @@ public class RangeDetonatorItem extends Item implements ITooltipProvider {
             }
         });
     }
-    //?} elif neoforge {
-    /*@Override
+    *///?} elif neoforge {
+    @Override
     public void initializeClient(java.util.function.Consumer<net.neoforged.neoforge.client.extensions.common.IClientItemExtensions> consumer) {
         consumer.accept(new net.neoforged.neoforge.client.extensions.common.IClientItemExtensions() {
             @Override
@@ -52,7 +52,7 @@ public class RangeDetonatorItem extends Item implements ITooltipProvider {
             }
         });
     }
-    *///?}
+    //?}
 
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {

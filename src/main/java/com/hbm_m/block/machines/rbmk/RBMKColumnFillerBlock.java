@@ -88,7 +88,7 @@ public class RBMKColumnFillerBlock extends Block {
     }
 
     //? if < 1.21.1 {
-    @Override
+    /*@Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos,
                                   Player player, InteractionHand hand, BlockHitResult hit) {
 
@@ -97,8 +97,8 @@ public class RBMKColumnFillerBlock extends Block {
         BlockState baseState = level.getBlockState(basePos);
         return baseState.use(level, player, hand, new BlockHitResult(hit.getLocation(), hit.getDirection(), basePos, hit.isInside()));
         }
-    //?} else {
-    /*@Override
+    *///?} else {
+    @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
 
         BlockPos basePos = findBase(level, pos);
@@ -106,7 +106,7 @@ public class RBMKColumnFillerBlock extends Block {
         BlockState baseState = level.getBlockState(basePos);
         return baseState.useWithoutItem(level, player, new BlockHitResult(hit.getLocation(), hit.getDirection(), basePos, hit.isInside()));
         }
-    *///?}
+    //?}
 
 
     // The class contract is that breaking a filler breaks the column, but this only ever called
@@ -120,18 +120,18 @@ public class RBMKColumnFillerBlock extends Block {
     }
 
     //? if < 1.21.1 {
-    @Override
+    /*@Override
     public void playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
         breakColumn(level, pos, !player.getAbilities().instabuild);
         super.playerWillDestroy(level, pos, state, player);
     }
-    //?} else {
-    /*@Override
+    *///?} else {
+    @Override
     public BlockState playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
         breakColumn(level, pos, !player.getAbilities().instabuild);
         return super.playerWillDestroy(level, pos, state, player);
     }
-    *///?}
+    //?}
 
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {

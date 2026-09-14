@@ -20,11 +20,11 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 //? if forge {
-import net.minecraftforge.common.capabilities.Capability;
+/*import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.items.IItemHandler;
-//?}
+*///?}
 
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -44,8 +44,8 @@ public class MachineCrucibleBlockEntity extends BaseHbmBlockEntity {
         @Override protected void onContentsChanged(int slot) { setChanged(); }
     };
     //? if forge {
-    private final LazyOptional<IItemHandler> itemHandlerOpt = LazyOptional.of(() -> itemHandler);
-    //?}
+    /*private final LazyOptional<IItemHandler> itemHandlerOpt = LazyOptional.of(() -> itemHandler);
+    *///?}
 
     public  int   heat        = 0;
     private int   maxHeat     = MAX_HEAT;
@@ -81,8 +81,8 @@ public class MachineCrucibleBlockEntity extends BaseHbmBlockEntity {
     }
 
     //? if forge {
-    public IItemHandler          getItemHandler()        { return itemHandler; }
-    //?}
+    /*public IItemHandler          getItemHandler()        { return itemHandler; }
+    *///?}
     public ModItemStackHandler   getModItemStackHandler() { return itemHandler; }
     public ContainerData         getData()               { return data; }
     public float                 getFillLevel()          { return fillLevel; }
@@ -286,8 +286,8 @@ public class MachineCrucibleBlockEntity extends BaseHbmBlockEntity {
 
     /** The crucible model spans 3×3 blocks — keep the molten surface visible (Forge render culling). */
     //? if forge {
-    @Override
-    //?}
+    /*@Override
+    *///?}
     public net.minecraft.world.phys.AABB getRenderBoundingBox() {
         return new net.minecraft.world.phys.AABB(
                 worldPosition.getX() - 1, worldPosition.getY(),     worldPosition.getZ() - 1,
@@ -306,25 +306,25 @@ public class MachineCrucibleBlockEntity extends BaseHbmBlockEntity {
         BlockEntity te = level.getBlockEntity(src);
         if (te == null) return 0L;
         //? if forge {
-        return te.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER, Direction.UP)
+        /*return te.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER, Direction.UP)
                 .map(p -> pullEnergy(p, be))
                 .orElse(0L);
-        //?} elif neoforge {
-        /*// NeoForge: BlockEntity.getCapability удалён — запрос через level.getCapability(cap, pos, state, be, side).
+        *///?} elif neoforge {
+        // NeoForge: BlockEntity.getCapability удалён — запрос через level.getCapability(cap, pos, state, be, side).
         IEnergyProvider p = level.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER, src, level.getBlockState(src), te, Direction.UP);
         return p != null ? pullEnergy(p, be) : 0L;
-        *///?}
+        //?}
     }
 
     //? if forge {
-    @Override
+    /*@Override
     public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
         if (cap == ForgeCapabilities.ITEM_HANDLER) return itemHandlerOpt.cast();
         return super.getCapability(cap, side);
     }
 
     @Override public void invalidateCaps() { super.invalidateCaps(); itemHandlerOpt.invalidate(); }
-    //?}
+    *///?}
 
     
     @Override

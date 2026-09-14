@@ -165,8 +165,8 @@ public class FusionBoilerBlockEntity extends FusionSyncedBlockEntity implements 
     private AABB renderBounds = null;
 
     //? if forge {
-    @Override
-    //?}
+    /*@Override
+    *///?}
     public AABB getRenderBoundingBox() {
         if (renderBounds == null) {
             renderBounds = new AABB(

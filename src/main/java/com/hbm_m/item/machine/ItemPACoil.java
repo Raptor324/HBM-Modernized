@@ -21,7 +21,7 @@ import org.jetbrains.annotations.Nullable;
  * unterhalb von {@code quadMin}/{@code diMin} arbeitet das Bauteil zwar, braucht aber die zehnfache
  * Energie; oberhalb von {@code quadMax}/{@code diMax} verliert der Strahl die Spur.</p>
  */
-public class ItemPACoil extends Item {
+public class ItemPACoil extends Item implements com.hbm_m.item.ITooltipProvider {
 
     /** 1:1 aus {@code ItemPACoil.EnumCoilType}. */
     public enum CoilType {
@@ -65,8 +65,9 @@ public class ItemPACoil extends Item {
         return stack != null && stack.getItem() instanceof ItemPACoil coil ? coil.getCoilType() : null;
     }
 
+    // Tooltip through ITooltipProvider: appendHoverText's signature differs between 1.20.1 and 1.21.1.
     @Override
-    public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
+    public void appendHbmTooltip(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
         tooltip.add(Component.translatable("item.hbm_m.pa_coil.quad", type.quadMin, type.quadMax)
                 .withStyle(ChatFormatting.GRAY));
         tooltip.add(Component.translatable("item.hbm_m.pa_coil.dipole", type.diMin, type.diMax)

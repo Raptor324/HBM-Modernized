@@ -13,10 +13,10 @@ import net.minecraft.core.Direction;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.state.BlockState;
 //? if forge {
-import net.minecraftforge.client.model.data.ModelData;
-//?} elif neoforge {
-/*import net.neoforged.neoforge.client.model.data.ModelData;
-*///?}
+/*import net.minecraftforge.client.model.data.ModelData;
+*///?} elif neoforge {
+import net.neoforged.neoforge.client.model.data.ModelData;
+//?}
 
 public class MachineHydraulicFrackiningTowerBakedModel extends AbstractMultipartBakedModel {
 

@@ -104,7 +104,7 @@ public final class EntityEffectHandler {
 
             // Original: die beiden oberen Stufen setzen beide Staerke 2 - so uebernommen.
             if (metal > 25) {
-                entity.addEffect(new MobEffectInstance(ModEffects.LEAD.get(), 100, metal < 50 ? 0 : 2));
+                com.hbm_m.platform.PlatformHooks.addEffect(entity, ModEffects.LEAD, 100, metal < 50 ? 0 : 2);
             }
         }
     }

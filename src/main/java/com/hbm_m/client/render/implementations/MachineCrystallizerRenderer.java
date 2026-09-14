@@ -41,14 +41,14 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 
 //? if forge {
-import net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions;
+/*import net.minecraftforge.client.extensions.common.IClientFluidTypeExtensions;
 import net.minecraftforge.client.model.data.ModelData;
 import net.minecraftforge.fluids.FluidStack;
-//?} elif neoforge {
-/*import net.neoforged.neoforge.client.extensions.common.IClientFluidTypeExtensions;
+*///?} elif neoforge {
+import net.neoforged.neoforge.client.extensions.common.IClientFluidTypeExtensions;
 import net.neoforged.neoforge.client.model.data.ModelData;
 import net.neoforged.neoforge.fluids.FluidStack;
-*///?}
+//?}
 
 /**
  * Кристаллизатор на фабрике {@link MachineRenderers}: корпус живёт в чанк-меше,
@@ -246,32 +246,32 @@ public final class MachineCrystallizerRenderer {
         }
 
         //? if forge {
-        IClientFluidTypeExtensions ext = IClientFluidTypeExtensions.of(fluid);
-        FluidStack stack = new FluidStack(fluid, be.getTank().getFluidAmountMb());
-        ResourceLocation stillTexture = ext.getStillTexture(stack);
-        if (stillTexture == null) return null;
-        return Minecraft.getInstance().getTextureAtlas(InventoryMenu.BLOCK_ATLAS).apply(stillTexture);
-        //?}
-        //? if neoforge {
         /*IClientFluidTypeExtensions ext = IClientFluidTypeExtensions.of(fluid);
         FluidStack stack = new FluidStack(fluid, be.getTank().getFluidAmountMb());
         ResourceLocation stillTexture = ext.getStillTexture(stack);
         if (stillTexture == null) return null;
         return Minecraft.getInstance().getTextureAtlas(InventoryMenu.BLOCK_ATLAS).apply(stillTexture);
         *///?}
+        //? if neoforge {
+        IClientFluidTypeExtensions ext = IClientFluidTypeExtensions.of(fluid);
+        FluidStack stack = new FluidStack(fluid, be.getTank().getFluidAmountMb());
+        ResourceLocation stillTexture = ext.getStillTexture(stack);
+        if (stillTexture == null) return null;
+        return Minecraft.getInstance().getTextureAtlas(InventoryMenu.BLOCK_ATLAS).apply(stillTexture);
+        //?}
     }
 
     private static int getFluidTint(MachineCrystallizerBlockEntity be, Fluid fluid) {
         //? if forge {
-        IClientFluidTypeExtensions ext = IClientFluidTypeExtensions.of(fluid);
-        FluidStack stack = new FluidStack(fluid, be.getTank().getFluidAmountMb());
-        return ext.getTintColor(stack);
-        //?}
-        //? if neoforge {
         /*IClientFluidTypeExtensions ext = IClientFluidTypeExtensions.of(fluid);
         FluidStack stack = new FluidStack(fluid, be.getTank().getFluidAmountMb());
         return ext.getTintColor(stack);
         *///?}
+        //? if neoforge {
+        IClientFluidTypeExtensions ext = IClientFluidTypeExtensions.of(fluid);
+        FluidStack stack = new FluidStack(fluid, be.getTank().getFluidAmountMb());
+        return ext.getTintColor(stack);
+        //?}
     }
 
     private static List<BakedQuad> remapQuadsSprite(List<BakedQuad> source, TextureAtlasSprite newSprite) {

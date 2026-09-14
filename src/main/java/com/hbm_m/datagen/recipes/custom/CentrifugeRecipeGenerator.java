@@ -1,6 +1,6 @@
 package com.hbm_m.datagen.recipes.custom;
 //? if forge {
-import com.hbm_m.block.ModBlocks;
+/*import com.hbm_m.block.ModBlocks;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.item.material.MaterialShape;
 import com.hbm_m.item.material.ModMaterialItems;
@@ -238,4 +238,4 @@ public final class CentrifugeRecipeGenerator {
         return (supplier != null && supplier.isPresent()) ? new ItemStack(supplier.get(), count) : ItemStack.EMPTY;
     }
 }
-//?}
+*///?}

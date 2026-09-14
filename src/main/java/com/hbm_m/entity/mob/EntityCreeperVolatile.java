@@ -71,18 +71,18 @@ public class EntityCreeperVolatile extends Creeper {
     }
 
     //? if < 1.21.1 {
-    @Override
+    /*@Override
     protected void dropCustomDeathLoot(net.minecraft.world.damagesource.DamageSource source, int looting, boolean recentlyHit) {
         super.dropCustomDeathLoot(source, looting, recentlyHit);
         this.spawnAtLocation(new ItemStack(ModItems.SULFUR.get(), 2 + this.random.nextInt(3)));
         // stick_tnt — после порта предмета в ModItems
     }
-    //?} else {
-    /*@Override
+    *///?} else {
+    @Override
     protected void dropCustomDeathLoot(net.minecraft.server.level.ServerLevel serverLevel, net.minecraft.world.damagesource.DamageSource source, boolean recentlyHit) {
         super.dropCustomDeathLoot(serverLevel, source, recentlyHit);
         this.spawnAtLocation(new ItemStack(ModItems.SULFUR.get(), 2 + this.random.nextInt(3)));
         // stick_tnt — после порта предмета в ModItems
     }
-    *///?}
+    //?}
 }

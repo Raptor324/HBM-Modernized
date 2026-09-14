@@ -1,5 +1,5 @@
 //? if forge {
-package com.hbm_m.compat.curios;
+/*package com.hbm_m.compat.curios;
 
 import com.hbm_m.main.MainRegistry;
 import com.hbm_m.item.gasmask.IGasMask;
@@ -10,7 +10,7 @@ import net.minecraftforge.event.AttachCapabilitiesEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import top.theillusivec4.curios.api.CuriosApi;
 
-/**
+/^*
  * [Forge 1.20.1] Навешивает ICurio-обёртку на наши противогазы,
  * чтобы их можно было носить в слоте лица Curios.
  *
@@ -18,10 +18,10 @@ import top.theillusivec4.curios.api.CuriosApi;
  * Class.forName на construction мода, и класс грузится (вместе с ICurio)
  * даже без установленного Curios → NoClassDefFoundError. Регистрируем
  * вручную из {@link CuriosCompat#init()} только при наличии Curios.
- */
+ ^/
 public final class CuriosForgeEvents {
 
-    /** Вызывать только после проверки CuriosCompat.isLoaded(). */
+    /^* Вызывать только после проверки CuriosCompat.isLoaded(). ^/
     public static void init() {
         net.minecraftforge.common.MinecraftForge.EVENT_BUS.register(CuriosForgeEvents.class);
     }
@@ -44,4 +44,4 @@ public final class CuriosForgeEvents {
     private CuriosForgeEvents() {
     }
 }
-//?}
+*///?}

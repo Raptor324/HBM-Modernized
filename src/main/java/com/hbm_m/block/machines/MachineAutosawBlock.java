@@ -90,11 +90,11 @@ public class MachineAutosawBlock extends BaseEntityBlock {
     }
 
     //? if >1.20.1 {
-    /*public static final com.mojang.serialization.MapCodec<MachineAutosawBlock> CODEC = simpleCodec(MachineAutosawBlock::new);
+    public static final com.mojang.serialization.MapCodec<MachineAutosawBlock> CODEC = simpleCodec(MachineAutosawBlock::new);
 
     @Override
     protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
         return CODEC;
     }
-    *///?}
+    //?}
 }

@@ -3,8 +3,8 @@ package com.hbm_m.platform;
 import net.minecraft.world.item.ItemStack;
 
 //? if forge {
-import net.minecraftforge.items.IItemHandlerModifiable;
-//?}
+/*import net.minecraftforge.items.IItemHandlerModifiable;
+*///?}
 
 /**
  * Forge-side adapter for {@link ModItemStackHandler}.
@@ -13,7 +13,7 @@ import net.minecraftforge.items.IItemHandlerModifiable;
  * (e.g. {@code SlotItemHandler}) require {@code IItemHandler}.
  */
 //? if forge {
-public final class ForgeItemHandlerAdapter implements IItemHandlerModifiable {
+/*public final class ForgeItemHandlerAdapter implements IItemHandlerModifiable {
 
     private final ModItemStackHandler delegate;
 
@@ -56,5 +56,5 @@ public final class ForgeItemHandlerAdapter implements IItemHandlerModifiable {
         delegate.setStackInSlot(slot, stack);
     }
 }
-//?}
+*///?}
 

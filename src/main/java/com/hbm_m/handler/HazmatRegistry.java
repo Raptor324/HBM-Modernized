@@ -60,7 +60,7 @@ public final class HazmatRegistry {
         }
 
         // Original: if(player.isPotionActive(HbmPotion.radx)) res += 0.2F;
-        if (player.hasEffect(com.hbm_m.effect.ModEffects.RADX.get())) {
+        if (com.hbm_m.platform.PlatformHooks.hasEffect(player, com.hbm_m.effect.ModEffects.RADX)) {
             res += com.hbm_m.effect.RadXEffect.RESISTANCE_BONUS;
         }
 

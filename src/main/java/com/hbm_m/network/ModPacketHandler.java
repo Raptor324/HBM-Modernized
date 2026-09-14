@@ -413,7 +413,7 @@ public class ModPacketHandler {
             Function<FriendlyByteBuf, T> decoder,
             java.util.function.BiConsumer<T, PacketContext> handler) {
         //? if >= 1.21.1 {
-        /*// NeoForge 1.21+: пейлоад участвует в negotiation, поэтому должен быть
+        // NeoForge 1.21+: пейлоад участвует в negotiation, поэтому должен быть
         // зарегистрирован на ОБОИХ сторонах. На клиенте — с приёмником, на выделенном
         // сервере — только объявление типа (иначе checkPacket уронит отправку S2C).
         if (dev.architectury.platform.Platform.getEnvironment() == Env.CLIENT) {
@@ -425,16 +425,16 @@ public class ModPacketHandler {
         } else {
             NetworkManager.registerS2CPayloadType(id);
         }
-        *///?}
+        //?}
         //? if < 1.21.1 {
-        if (dev.architectury.platform.Platform.getEnvironment() == Env.CLIENT) {
+        /*if (dev.architectury.platform.Platform.getEnvironment() == Env.CLIENT) {
             NetworkManager.registerReceiver(
                     NetworkManager.Side.S2C,
                     id,
                     (buf, context) -> handler.accept(decoder.apply(buf), context)
             );
         }
-        //?}
+        *///?}
 
     }
 
@@ -499,12 +499,12 @@ public class ModPacketHandler {
             return;
         }
         //? if < 1.21.1 {
-        FriendlyByteBuf buf = new FriendlyByteBuf(io.netty.buffer.Unpooled.buffer());
+        /*FriendlyByteBuf buf = new FriendlyByteBuf(io.netty.buffer.Unpooled.buffer());
         packet.write(buf);
-        //?} else {
-        /*net.minecraft.network.RegistryFriendlyByteBuf buf = new net.minecraft.network.RegistryFriendlyByteBuf(io.netty.buffer.Unpooled.buffer(), player.server.registryAccess());
+        *///?} else {
+        net.minecraft.network.RegistryFriendlyByteBuf buf = new net.minecraft.network.RegistryFriendlyByteBuf(io.netty.buffer.Unpooled.buffer(), player.server.registryAccess());
         packet.write(buf);
-        *///?}
+        //?}
         
         if (NET_DEBUG_PACKETS) {
             com.hbm_m.main.MainRegistry.LOGGER.info(
@@ -568,7 +568,7 @@ public class ModPacketHandler {
     }
 
 	//? if >= 1.21.1 {
-    /*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+    @net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
     private static net.minecraft.core.RegistryAccess getClientRegistryAccess() {
         if (net.minecraft.client.Minecraft.getInstance().level != null) {
             return net.minecraft.client.Minecraft.getInstance().level.registryAccess();
@@ -578,7 +578,7 @@ public class ModPacketHandler {
         }
         return net.minecraft.core.RegistryAccess.EMPTY;
     }
-    *///?}
+    //?}
 
     /**
      * Отправить пакет на сервер (C2S).
@@ -586,12 +586,12 @@ public class ModPacketHandler {
      */
     public static void sendToServer(ResourceLocation id, C2SPacket packet) {
         //? if < 1.21.1 {
-        FriendlyByteBuf buf = new FriendlyByteBuf(io.netty.buffer.Unpooled.buffer());
+        /*FriendlyByteBuf buf = new FriendlyByteBuf(io.netty.buffer.Unpooled.buffer());
         packet.write(buf);
-        //?} else {
-        /*net.minecraft.network.RegistryFriendlyByteBuf buf = new net.minecraft.network.RegistryFriendlyByteBuf(io.netty.buffer.Unpooled.buffer(), getClientRegistryAccess());
+        *///?} else {
+        net.minecraft.network.RegistryFriendlyByteBuf buf = new net.minecraft.network.RegistryFriendlyByteBuf(io.netty.buffer.Unpooled.buffer(), getClientRegistryAccess());
         packet.write(buf);
-        *///?}
+        //?}
         
         if (NET_DEBUG_PACKETS) {
             com.hbm_m.main.MainRegistry.LOGGER.info(

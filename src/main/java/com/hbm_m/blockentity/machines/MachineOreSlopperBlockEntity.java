@@ -90,11 +90,11 @@ public class MachineOreSlopperBlockEntity extends BaseMachineBlockEntity impleme
 
 
     //? if forge {
-    @Override
+    /*@Override
     protected void setupFluidCapability() {
         setFluidHandler(tank);
     }
-    //?}
+    *///?}
 
     // ==================== OUTPUT ITEM MAPPING ====================
 

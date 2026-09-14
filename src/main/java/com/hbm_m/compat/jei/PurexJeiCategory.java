@@ -13,17 +13,17 @@ import com.hbm_m.recipe.PurexRecipe.FluidIngredient;
 
 import dev.architectury.fluid.FluidStack;
 //? if forge {
-//? if forge {
-import mezz.jei.api.forge.ForgeTypes;
-//?} elif neoforge {
-/*import mezz.jei.api.neoforge.NeoForgeTypes;
-*///?}
-//? if forge {
-import dev.architectury.hooks.fluid.forge.FluidStackHooksForge;
+/*//? if forge {
+/^import mezz.jei.api.forge.ForgeTypes;
+^///?} elif neoforge {
+import mezz.jei.api.neoforge.NeoForgeTypes;
 //?}
-//?} elif neoforge {
-/*import mezz.jei.api.neoforge.NeoForgeTypes;
-*///?}
+//? if forge {
+/^import dev.architectury.hooks.fluid.forge.FluidStackHooksForge;
+^///?}
+*///?} elif neoforge {
+import mezz.jei.api.neoforge.NeoForgeTypes;
+//?}
 import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
 import mezz.jei.api.gui.builder.IRecipeSlotBuilder;
 import mezz.jei.api.helpers.IGuiHelper;
@@ -126,12 +126,12 @@ public class PurexJeiCategory extends JeiGenericRecipeCategory<PurexRecipe> {
                     positions[slotIndex][0] + inputXOffset, positions[slotIndex][1])
                     .setFluidRenderer(FLUID_RENDERER_CAPACITY, false, 16, 16)
                     //? if forge {
-                    .setCustomRenderer(ForgeTypes.FLUID_STACK, new HbmFluidJeiRenderer(16, 16))
+                    /*.setCustomRenderer(ForgeTypes.FLUID_STACK, new HbmFluidJeiRenderer(16, 16))
                     .addIngredient(ForgeTypes.FLUID_STACK, FluidStackHooksForge.toForge(fluid));
-                    //?} elif neoforge {
-                    /*.setCustomRenderer(NeoForgeTypes.FLUID_STACK, new HbmFluidJeiRenderer(16, 16))
+                    *///?} elif neoforge {
+                    .setCustomRenderer(NeoForgeTypes.FLUID_STACK, new HbmFluidJeiRenderer(16, 16))
                     .addIngredient(NeoForgeTypes.FLUID_STACK, new net.neoforged.neoforge.fluids.FluidStack(fluid.getFluid(), (int) fluid.getAmount()));
-                    *///?}
+                    //?}
             slotIndex++;
         }
     }
@@ -160,12 +160,12 @@ public class PurexJeiCategory extends JeiGenericRecipeCategory<PurexRecipe> {
                     positions[slotIndex][0] + outputXOffset, positions[slotIndex][1])
                     .setFluidRenderer(FLUID_RENDERER_CAPACITY, false, 16, 16)
                     //? if forge {
-                    .setCustomRenderer(ForgeTypes.FLUID_STACK, new HbmFluidJeiRenderer(16, 16))
+                    /*.setCustomRenderer(ForgeTypes.FLUID_STACK, new HbmFluidJeiRenderer(16, 16))
                     .addIngredient(ForgeTypes.FLUID_STACK, FluidStackHooksForge.toForge(fluid));
-                    //?} elif neoforge {
-                    /*.setCustomRenderer(NeoForgeTypes.FLUID_STACK, new HbmFluidJeiRenderer(16, 16))
+                    *///?} elif neoforge {
+                    .setCustomRenderer(NeoForgeTypes.FLUID_STACK, new HbmFluidJeiRenderer(16, 16))
                     .addIngredient(NeoForgeTypes.FLUID_STACK, new net.neoforged.neoforge.fluids.FluidStack(fluid.getFluid(), (int) fluid.getAmount()));
-                    *///?}
+                    //?}
             slotIndex++;
         }
     }

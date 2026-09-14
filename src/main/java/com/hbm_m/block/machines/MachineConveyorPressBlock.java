@@ -172,7 +172,7 @@ public class MachineConveyorPressBlock extends com.hbm_m.block.machines.Dummyabl
     }
 
     //? if < 1.21.1 {
-    @Override
+    /*@Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
 
         if (level.isClientSide()) return InteractionResult.SUCCESS;
@@ -196,8 +196,8 @@ public class MachineConveyorPressBlock extends com.hbm_m.block.machines.Dummyabl
 
         return InteractionResult.PASS;
         }
-    //?} else {
-    /*@Override
+    *///?} else {
+    @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
 
         if (level.isClientSide()) return InteractionResult.SUCCESS;
@@ -221,7 +221,7 @@ public class MachineConveyorPressBlock extends com.hbm_m.block.machines.Dummyabl
 
         return InteractionResult.PASS;
         }
-    *///?}
+    //?}
 
 
     @Nullable
@@ -231,11 +231,11 @@ public class MachineConveyorPressBlock extends com.hbm_m.block.machines.Dummyabl
     }
 
     //? if >1.20.1 {
-    /*public static final com.mojang.serialization.MapCodec<MachineConveyorPressBlock> CODEC = simpleCodec(MachineConveyorPressBlock::new);
+    public static final com.mojang.serialization.MapCodec<MachineConveyorPressBlock> CODEC = simpleCodec(MachineConveyorPressBlock::new);
 
     @Override
     protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
         return CODEC;
     }
-    *///?}
+    //?}
 }

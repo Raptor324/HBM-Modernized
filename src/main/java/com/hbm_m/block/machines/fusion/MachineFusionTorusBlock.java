@@ -144,11 +144,11 @@ public class MachineFusionTorusBlock extends FusionMultiblockBlock {
     }
 
     //? if >1.20.1 {
-    /*public static final com.mojang.serialization.MapCodec<MachineFusionTorusBlock> CODEC = simpleCodec(MachineFusionTorusBlock::new);
+    public static final com.mojang.serialization.MapCodec<MachineFusionTorusBlock> CODEC = simpleCodec(MachineFusionTorusBlock::new);
 
     @Override
     protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
         return CODEC;
     }
-    *///?}
+    //?}
 }

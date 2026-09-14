@@ -44,7 +44,7 @@ public final class ModConsumables {
             player.addEffect(new MobEffectInstance(MobEffects.POISON, 100, 2));
 
             // Original: eigene Uebelkeit von 10 Minuten, die die kurze von oben ueberschreibt.
-            player.addEffect(new MobEffectInstance(ModEffects.POTION_SICKNESS.get(), 10 * 60 * 20, 0));
+            com.hbm_m.platform.PlatformHooks.addEffect(player, ModEffects.POTION_SICKNESS, 10 * 60 * 20, 0);
 
             player.level().playSound(null, player.getX(), player.getY(), player.getZ(),
                     ModSounds.RADAWAY_USE.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
@@ -69,7 +69,7 @@ public final class ModConsumables {
         player.removeEffect(MobEffects.POISON);
         player.removeEffect(MobEffects.WEAKNESS);
         player.removeEffect(MobEffects.WITHER);
-        player.removeEffect(ModEffects.RADIATION.get());
+        com.hbm_m.platform.PlatformHooks.removeEffect(player, ModEffects.RADIATION);
 
         stack.shrink(1);
     }
@@ -79,7 +79,7 @@ public final class ModConsumables {
         if (player.level().isClientSide()) return;
 
         applyPotionSickness(player, 5);
-        player.addEffect(new MobEffectInstance(ModEffects.DEATH.get(), 60 * 60 * 20, 0));
+        com.hbm_m.platform.PlatformHooks.addEffect(player, ModEffects.DEATH, 60 * 60 * 20, 0);
         stack.shrink(1);
     }
 
@@ -88,7 +88,7 @@ public final class ModConsumables {
         if (player.level().isClientSide()) return;
 
         applyPotionSickness(player, 5);
-        player.addEffect(new MobEffectInstance(ModEffects.RADX.get(), 3 * 60 * 20, 0));
+        com.hbm_m.platform.PlatformHooks.addEffect(player, ModEffects.RADX, 3 * 60 * 20, 0);
         stack.shrink(1);
     }
 
@@ -107,11 +107,11 @@ public final class ModConsumables {
      * Sperre, die eine sofortige zweite Einnahme wirkungslos macht.
      */
     public static void applyPotionSickness(Player player, int seconds) {
-        player.addEffect(new MobEffectInstance(ModEffects.POTION_SICKNESS.get(), seconds * 20, 0));
+        com.hbm_m.platform.PlatformHooks.addEffect(player, ModEffects.POTION_SICKNESS, seconds * 20, 0);
     }
 
     /** Original: {@code VersatileConfig.isPotionSick}. */
     public static boolean isPotionSick(Player player) {
-        return player.hasEffect(ModEffects.POTION_SICKNESS.get());
+        return com.hbm_m.platform.PlatformHooks.hasEffect(player, ModEffects.POTION_SICKNESS);
     }
 }

@@ -100,8 +100,8 @@ public class TransitionSealBlockEntity extends BaseHbmBlockEntity {
     }
 
     //? if forge {
-    @Override
-    //?}
+    /*@Override
+    *///?}
     public AABB getRenderBoundingBox() {
         // AABB(BlockPos, BlockPos) не существует — собираем через double-конструктор (версионно-инвариантно).
         BlockPos top = worldPosition.offset(0, 24, 0);

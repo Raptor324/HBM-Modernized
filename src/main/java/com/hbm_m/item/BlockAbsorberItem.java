@@ -33,12 +33,12 @@ public class BlockAbsorberItem extends BlockItem {
         // BlockStateTag на 1.20.1 — NBT-подтег (getTagElement); на 1.21.1 — тот же ключ
         // "BlockStateTag" внутри CUSTOM_DATA, куда его кладёт PlatformHooks.put (forTier).
         //? if < 1.21.1 {
-        CompoundTag blockStateTag = stack.getTagElement("BlockStateTag");
-        //?} else {
-        /*CompoundTag custom = PlatformHooks.getItemTag(stack);
+        /*CompoundTag blockStateTag = stack.getTagElement("BlockStateTag");
+        *///?} else {
+        CompoundTag custom = PlatformHooks.getItemTag(stack);
         CompoundTag blockStateTag = custom != null && custom.contains("BlockStateTag")
                 ? custom.getCompound("BlockStateTag") : null;
-        *///?}
+        //?}
         if (blockStateTag != null && blockStateTag.contains("tier")) {
             String name = blockStateTag.getString("tier");
             for (EnumAbsorberTier tier : EnumAbsorberTier.values()) {

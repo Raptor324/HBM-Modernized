@@ -1,6 +1,6 @@
 package com.hbm_m.datagen.recipes;
 //? if forge {
-import java.util.LinkedHashMap;
+/*import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.Consumer;
 
@@ -80,24 +80,24 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
         registerWasteCompression(writer);
     }
 
-    /**
+    /^*
      * RBMK fuel chain, 1:1 with the original's {@code crafting/RodRecipes.java:89-121}:
      * an empty zirconium casing plus eight billets of the matching material assemble
      * shapelessly into the loaded rod. The original has no billet-to-pellet step - pellets
      * only ever come *out* of a rod via the disassembly recipe, ported from
      * {@code crafting/handlers/RBMKFuelCraftingHandler.java}.
-     */
-    /**
+     ^/
+    /^*
      * Книга Вагонов ({@code book_of_}): «золотой» рецепт из оригинала (B = осколок яйца
      * белфайра, G = золотой слиток, A = книга). В 1.7.10 он регистрировался только при
      * включённом LBSM-конфиге; здесь он безусловный, поскольку шуточный рецепт из 8
      * страниц ({@code page_of_}, предмет не портирован) недоступен — иначе книга была бы
      * получаема только через лут Красной комнаты.
-     */
-    /**
+     ^/
+    /^*
      * 1:1-Port der drei {@code pile_device}-Rezepte aus {@code CraftingManager} (1.7.10). Dort ist
      * es ein Block mit drei Metadaten, hier sind es drei Bloecke - die Muster bleiben gleich.
-     */
+     ^/
     private void registerPileRecipes(Consumer<FinishedRecipe> writer) {
 
         // Ladevorrichtung: " A " / "CBS"
@@ -135,8 +135,8 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .save(writer, recipeId("crafting/pile_control"));
     }
 
-    /** 1:1-Port der beiden Rohrrezepte aus {@code CraftingManager} (1.7.10). */
-    /** 1:1-Port der vier Massenspeicher-Rezepte aus {@code CraftingManager} (1.7.10). */
+    /^* 1:1-Port der beiden Rohrrezepte aus {@code CraftingManager} (1.7.10). ^/
+    /^* 1:1-Port der vier Massenspeicher-Rezepte aus {@code CraftingManager} (1.7.10). ^/
     private void registerMassStorageRecipes(Consumer<FinishedRecipe> writer) {
 
         // Holz: "PPP" / "PIP" / "PPP" - Bretter um eine Eisenplatte. Fasst hundert Stueck.
@@ -271,7 +271,7 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .save(writer, recipeId("crafting/rbmk_fuel_disassembly").toString());
     }
 
-    /** RodRecipes.java:246 - empty casing + 8 billets, shapeless. */
+    /^* RodRecipes.java:246 - empty casing + 8 billets, shapeless. ^/
     private void rbmkRod(Consumer<FinishedRecipe> writer, RegistrySupplier<Item> rod, RegistrySupplier<Item> billet) {
         ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, rod.get())
                 .requires(ModItems.RBMK_FUEL_EMPTY.get())
@@ -280,10 +280,10 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .save(writer, recipeId("crafting/" + rod.getId().getPath()));
     }
 
-    /**
+    /^*
      * Every RBMK block/panel/lid/tool recipe, 1:1 with the original's
      * {@code main/CraftingManager.java:751-793 and 987-993} plus {@code crafting/ToolRecipes.java:133}.
-     */
+     ^/
     private void registerRbmkBlockRecipes(Consumer<FinishedRecipe> writer) {
         Ingredient steelPlate  = Ingredient.of(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE));
         Ingredient graphiteIng = Ingredient.of(ModMaterialItems.item(ModMaterials.GRAPHITE, MaterialShape.INGOT));
@@ -580,7 +580,7 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .save(writer, recipeId("crafting/rbmk_tool"));
     }
 
-    /** The shared radio-torch + circuit + blank-panel column used by most RBMK panel devices. */
+    /^* The shared radio-torch + circuit + blank-panel column used by most RBMK panel devices. ^/
     private void rbmkPanel(Consumer<FinishedRecipe> writer,
             RegistrySupplier<net.minecraft.world.level.block.Block> panel,
             RegistrySupplier<net.minecraft.world.level.block.Block> torch,
@@ -2409,10 +2409,10 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
     }
 
 
-    /**
+    /^*
      * Billet <-> nugget compression (6 nuggets -> 1 billet, 1 billet -> 6 nuggets).
      * Port of the 1.7.10 MineralRecipes.java addBillet(billet, nugget) family.
-     */
+     ^/
     private void registerBilletNuggetPairs(Consumer<FinishedRecipe> writer) {
         // Цикл по реестру материалов: для каждого материала, у которого есть и биллет,
         // и наггет — 6 наггетов -> 1 биллет и 1 биллет -> 6 наггетов.
@@ -2426,11 +2426,11 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
         }
     }
 
-    /**
+    /^*
      * 1:1-Port von {@code MineralRecipes.add1To9PairSameMeta} fuer den Atommuell: neun kleine
      * Brocken werden zu einem vollen Stueck und umgekehrt - <b>je Abfallklasse getrennt</b>, sonst
      * liesse sich Thorium-Muell in Schrabidium-Muell umetikettieren.
-     */
+     ^/
     private void registerWasteCompression(Consumer<FinishedRecipe> writer) {
         wastePairs(writer, "nuclear_waste_long", "nw_long", "nw_long_tiny");
         wastePairs(writer, "nuclear_waste_long_depleted", "nw_long_dep", "nw_long_dep_tiny");
@@ -2475,4 +2475,4 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .save(writer, recipeId("crafting/nugget_" + name + "_decompress"));
     }
 }
-//?}
+*///?}

@@ -113,10 +113,10 @@ public class MachineModuleAdvancedAssembler extends MachineModuleBase<AssemblerR
         if (outputSlot.isEmpty()) return true;
 
         //? if < 1.21.1 {
-        if (!PlatformHooks.isSameItemSameTags(outputSlot, result)) return false;
-        //?} else {
-        /*if (!ItemStack.isSameItemSameComponents(outputSlot, result)) return false;
-        *///?}
+        /*if (!PlatformHooks.isSameItemSameTags(outputSlot, result)) return false;
+        *///?} else {
+        if (!ItemStack.isSameItemSameComponents(outputSlot, result)) return false;
+        //?}
 
         return outputSlot.getCount() + result.getCount() <= outputSlot.getMaxStackSize();
     }

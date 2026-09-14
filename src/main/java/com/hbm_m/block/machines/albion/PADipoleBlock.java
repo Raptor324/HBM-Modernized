@@ -60,11 +60,11 @@ public class PADipoleBlock extends PAMultiblockBlock {
     }
 
     //? if >1.20.1 {
-    /*public static final com.mojang.serialization.MapCodec<PADipoleBlock> CODEC = simpleCodec(PADipoleBlock::new);
+    public static final com.mojang.serialization.MapCodec<PADipoleBlock> CODEC = simpleCodec(PADipoleBlock::new);
 
     @Override
     protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
         return CODEC;
     }
-    *///?}
+    //?}
 }

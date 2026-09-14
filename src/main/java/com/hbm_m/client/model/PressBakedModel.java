@@ -8,8 +8,8 @@ import net.minecraft.core.Direction;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.state.BlockState;
 //? if forge {
-import net.minecraftforge.client.model.data.ModelData;
-//?}
+/*import net.minecraftforge.client.model.data.ModelData;
+*///?}
 import org.jetbrains.annotations.Nullable;
 import org.joml.Vector3f;
 
@@ -61,11 +61,11 @@ public class PressBakedModel extends AbstractMultipartBakedModel implements Abst
     @Override
     public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, RandomSource rand) {
         //? if forge {
-        return getQuads(state, side, rand, ModelData.EMPTY, null);
-        //?}
+        /*return getQuads(state, side, rand, ModelData.EMPTY, null);
+        *///?}
 
         //? if neoforge {
-        /*// 1.21.1 neoforge: чанк-бэкер вызывает 5-arg overload (см. ниже). 3-arg — item/BER hot path.
+        // 1.21.1 neoforge: чанк-бэкер вызывает 5-arg overload (см. ниже). 3-arg — item/BER hot path.
         // Зеркалируем forge-логику: ITEM — приоритетные части (Base+Head), WORLD — только Base (translate+filter).
         if (state == null) {
             return buildItemQuadsFromRenderParts(side, rand);
@@ -86,12 +86,12 @@ public class PressBakedModel extends AbstractMultipartBakedModel implements Abst
             }
         }
         return Collections.emptyList();
-        *///?}
+        //?}
 
     }
 
     //? if neoforge {
-    /*// NeoForge 1.21.1: 5-arg overload — вызывается чанк-бэкером. Зеркалируем forge-логику:
+    // NeoForge 1.21.1: 5-arg overload — вызывается чанк-бэкером. Зеркалируем forge-логику:
     // ITEM (state == null) — приоритетные части (Base+Head). WORLD — только Base (translate + filter по side); Head — BER.
     @Override
     public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side,
@@ -117,10 +117,10 @@ public class PressBakedModel extends AbstractMultipartBakedModel implements Abst
         }
         return Collections.emptyList();
     }
-    *///?}
+    //?}
 
     //? if forge {
-    @Override
+    /*@Override
     public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side,
                                     RandomSource rand, ModelData modelData,
                                     @Nullable net.minecraft.client.renderer.RenderType renderType) {
@@ -163,7 +163,7 @@ public class PressBakedModel extends AbstractMultipartBakedModel implements Abst
         }
         return quads;
     }
-    //?}
+    *///?}
 
 
     @Override
@@ -184,13 +184,13 @@ public class PressBakedModel extends AbstractMultipartBakedModel implements Abst
     @Override
     public TextureAtlasSprite getParticleIcon() {
         //? if forge {
-        return getParticleIcon(ModelData.EMPTY);
-        //?}
+        /*return getParticleIcon(ModelData.EMPTY);
+        *///?}
 
 
         //? if neoforge {
-        /*return super.getParticleIcon();
-        *///?}
+        return super.getParticleIcon();
+        //?}
     }
 
     @Override

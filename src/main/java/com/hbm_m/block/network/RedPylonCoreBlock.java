@@ -48,10 +48,10 @@ public abstract class RedPylonCoreBlock extends BaseEntityBlock {
 
     /** Хелпер codec() для 1.21.1: лямбда захватывает параметры подкласса (флаг трансформера и т.п.). */
     //? if > 1.20.1 {
-    /*protected <T extends RedPylonCoreBlock> com.mojang.serialization.MapCodec<T> makeCodec(Function<Properties, T> factory) {
+    protected <T extends RedPylonCoreBlock> com.mojang.serialization.MapCodec<T> makeCodec(Function<Properties, T> factory) {
         return simpleCodec(factory::apply);
     }
-    *///?}
+    //?}
 
     public static final DirectionProperty FACING = DirectionProperty.create("facing",
             Direction.NORTH, Direction.SOUTH, Direction.EAST, Direction.WEST);
@@ -161,16 +161,16 @@ public abstract class RedPylonCoreBlock extends BaseEntityBlock {
     // ══════════════════════ Окраска красителем ══════════════════════
 
     //? if < 1.21.1 {
-    @Override
+    /*@Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         return interact(state, level, pos, player, hand);
     }
-    //?} else {
-    /*@Override
+    *///?} else {
+    @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
         return interact(state, level, pos, player, InteractionHand.MAIN_HAND);
     }
-    *///?}
+    //?}
 
     private InteractionResult interact(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand) {
         if (level.isClientSide) {
@@ -193,12 +193,12 @@ public abstract class RedPylonCoreBlock extends BaseEntityBlock {
     }
 
     //? if < 1.21.1 {
-    @Override
-    public void appendHoverText(ItemStack stack, @Nullable BlockGetter level, List<Component> tooltip, TooltipFlag flag) {
-    //?} else {
     /*@Override
+    public void appendHoverText(ItemStack stack, @Nullable BlockGetter level, List<Component> tooltip, TooltipFlag flag) {
+    *///?} else {
+    @Override
     public void appendHoverText(ItemStack stack, net.minecraft.world.item.Item.TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
-    *///?}
+    //?}
         addTooltip(tooltip);
     }
 }

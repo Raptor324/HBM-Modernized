@@ -226,18 +226,18 @@ public class GUIMachineAmmoPress extends AbstractContainerScreen<MachineAmmoPres
     }
 
     //? if < 1.21.1 {
-    @Override
+    /*@Override
     public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
         if (scrollList(delta)) return true;
         return super.mouseScrolled(mouseX, mouseY, delta);
     }
-    //?} else {
-    /*@Override
+    *///?} else {
+    @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double deltaX, double deltaY) {
         if (scrollList(deltaY)) return true;
         return super.mouseScrolled(mouseX, mouseY, deltaX, deltaY);
     }
-    *///?}
+    //?}
 
     private boolean scrollList(double delta) {
         if (delta > 0 && index > 0)        { index--; return true; }

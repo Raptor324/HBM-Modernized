@@ -50,15 +50,14 @@ public final class GuiGaugeNeedle {
         RenderSystem.setShader(GameRenderer::getPositionColorShader);
 
         Tesselator tesselator = Tesselator.getInstance();
-        BufferBuilder buffer = tesselator.getBuilder();
-        buffer.begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
+        BufferBuilder buffer = com.hbm_m.platform.RenderHooks.beginTesselator(tesselator, VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_COLOR);
 
         double mult = 1.5D;
         addTriangle(buffer, matrix, x, y, tipX * mult, tipY * mult, leftX * mult, leftY * mult,
                 rightX * mult, rightY * mult, colorOuter);
         addTriangle(buffer, matrix, x, y, tipX, tipY, leftX, leftY, rightX, rightY, color);
 
-        tesselator.end();
+        com.hbm_m.platform.RenderHooks.drawWithShader(buffer);
 
         RenderSystem.disableBlend();
     }
@@ -66,12 +65,12 @@ public final class GuiGaugeNeedle {
     private static void addTriangle(BufferBuilder buffer, Matrix4f matrix, int x, int y,
                                     double tipX, double tipY, double leftX, double leftY,
                                     double rightX, double rightY, int color) {
-        float r = ((color >> 16) & 0xFF) / 255F;
-        float g = ((color >> 8) & 0xFF) / 255F;
-        float b = (color & 0xFF) / 255F;
+        int r = (color >> 16) & 0xFF;
+        int g = (color >> 8) & 0xFF;
+        int b = color & 0xFF;
 
-        buffer.vertex(matrix, (float) (x + tipX), (float) (y + tipY), 0F).color(r, g, b, 1F).endVertex();
-        buffer.vertex(matrix, (float) (x + leftX), (float) (y + leftY), 0F).color(r, g, b, 1F).endVertex();
-        buffer.vertex(matrix, (float) (x + rightX), (float) (y + rightY), 0F).color(r, g, b, 1F).endVertex();
+        com.hbm_m.platform.RenderHooks.vertexColor(buffer, matrix, (float) (x + tipX), (float) (y + tipY), 0F, r, g, b, 255);
+        com.hbm_m.platform.RenderHooks.vertexColor(buffer, matrix, (float) (x + leftX), (float) (y + leftY), 0F, r, g, b, 255);
+        com.hbm_m.platform.RenderHooks.vertexColor(buffer, matrix, (float) (x + rightX), (float) (y + rightY), 0F, r, g, b, 255);
     }
 }

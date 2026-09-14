@@ -49,7 +49,7 @@ public class MachineDrainBlockEntity extends BaseMachineBlockEntity implements I
     }
 
     //? if forge {
-    @Override
+    /*@Override
     public @org.jetbrains.annotations.NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(
             net.minecraftforge.common.capabilities.Capability<T> cap, @Nullable Direction side) {
         if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER) {
@@ -57,7 +57,7 @@ public class MachineDrainBlockEntity extends BaseMachineBlockEntity implements I
         }
         return super.getCapability(cap, side);
     }
-    //?}
+    *///?}
 
     @Override
     public FluidTank[] getAllTanks() { return new FluidTank[] { tank }; }
@@ -136,7 +136,7 @@ public class MachineDrainBlockEntity extends BaseMachineBlockEntity implements I
 
         var hit = level.clip(new net.minecraft.world.level.ClipContext(start, end,
                 net.minecraft.world.level.ClipContext.Block.COLLIDER,
-                net.minecraft.world.level.ClipContext.Fluid.NONE, null));
+                net.minecraft.world.level.ClipContext.Fluid.NONE, net.minecraft.world.phys.shapes.CollisionContext.empty()));
 
         // Nur auf einer Oberseite bildet sich eine Pfuetze.
         if (hit.getType() != net.minecraft.world.phys.HitResult.Type.BLOCK) return;

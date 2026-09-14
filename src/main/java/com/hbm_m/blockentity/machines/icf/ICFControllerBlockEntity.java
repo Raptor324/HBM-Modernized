@@ -221,7 +221,7 @@ public class ICFControllerBlockEntity extends BaseMachineBlockEntity {
         for (Entity e : level.getEntitiesOfClass(Entity.class, beam)) {
             // Original: {@code DamageSource.inFire}, 50 Schaden und fuenf Sekunden Feuer.
             e.hurt(level.damageSources().inFire(), 50F);
-            e.setSecondsOnFire(5);
+            com.hbm_m.platform.PlatformHooks.setSecondsOnFire(e, 5);
         }
 
         be.setEnergyStored(0L);

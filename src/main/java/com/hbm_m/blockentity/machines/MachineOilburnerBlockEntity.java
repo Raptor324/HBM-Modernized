@@ -62,7 +62,7 @@ public class MachineOilburnerBlockEntity extends BaseMachineBlockEntity implemen
     }
 
     //? if forge {
-    @Override
+    /*@Override
     public @org.jetbrains.annotations.NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(
             net.minecraftforge.common.capabilities.Capability<T> cap, @Nullable Direction side) {
         if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER) {
@@ -70,7 +70,7 @@ public class MachineOilburnerBlockEntity extends BaseMachineBlockEntity implemen
         }
         return super.getCapability(cap, side);
     }
-    //?}
+    *///?}
 
     @Override
     public FluidTank[] getReceivingTanks() {

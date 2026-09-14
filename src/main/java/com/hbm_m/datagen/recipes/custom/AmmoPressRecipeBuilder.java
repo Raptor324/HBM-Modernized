@@ -1,6 +1,6 @@
 package com.hbm_m.datagen.recipes.custom;
 //? if forge {
-import java.util.Objects;
+/*import java.util.Objects;
 import java.util.function.Consumer;
 
 import org.jetbrains.annotations.NotNull;
@@ -22,10 +22,10 @@ import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.level.ItemLike;
 
-/**
+/^*
  * Builder for {@link AmmoPressRecipe} data generation - 9 feste, positionsgleiche 3x3-Slots
  * (Index 0-8, GUI-Reihenfolge zeilenweise) statt vanilla Pattern-Key-Syntax.
- */
+ ^/
 public class AmmoPressRecipeBuilder implements RecipeBuilder {
 
     private final ItemStack output;
@@ -78,10 +78,10 @@ public class AmmoPressRecipeBuilder implements RecipeBuilder {
         pFinishedRecipeConsumer.accept(new Result(pRecipeId, this));
     }
 
-    /**
+    /^*
      * Overrides the vanilla {@code RecipeBuilder.save(Consumer, String)} default, which resolves a
      * bare path string to the {@code minecraft} namespace (via {@code new ResourceLocation(path)}).
-     */
+     ^/
     @Override
     public void save(@NotNull Consumer<FinishedRecipe> pFinishedRecipeConsumer, @NotNull String pPath) {
         save(pFinishedRecipeConsumer, ResourceLocation.fromNamespaceAndPath("hbm_m", pPath));
@@ -139,4 +139,4 @@ public class AmmoPressRecipeBuilder implements RecipeBuilder {
         }
     }
 }
-//?}
+*///?}

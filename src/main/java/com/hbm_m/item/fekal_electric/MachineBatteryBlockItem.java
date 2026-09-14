@@ -39,12 +39,12 @@ public class MachineBatteryBlockItem extends BlockItem implements ITooltipProvid
             // BlockEntityTag на 1.20.1 — NBT-подтег (getTagElement); на 1.21.1 — тот же ключ
             // "BlockEntityTag" внутри CUSTOM_DATA (BlockItem пишет туда BE-данные при placement-копии).
             //? if < 1.21.1 {
-            CompoundTag blockEntityTag = pStack.getTagElement("BlockEntityTag");
-            //?} else {
-            /*CompoundTag custom = PlatformHooks.getItemTag(pStack);
+            /*CompoundTag blockEntityTag = pStack.getTagElement("BlockEntityTag");
+            *///?} else {
+            CompoundTag custom = PlatformHooks.getItemTag(pStack);
             CompoundTag blockEntityTag = custom != null && custom.contains("BlockEntityTag")
                     ? custom.getCompound("BlockEntityTag") : null;
-            *///?}
+            //?}
             // The block entity writes "energy" as a long; getInt truncated anything above 2^31 to a
             // wrong (often negative) number. "Energy" is the legacy copy_nbt spelling.
             if (blockEntityTag != null) {

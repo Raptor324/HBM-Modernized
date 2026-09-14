@@ -45,12 +45,12 @@ public class ItemAMSLens extends Item implements ITooltipProvider {
     }
 
     public static long getLensDamage(ItemStack stack) {
-        CompoundTag tag = stack.getTag();
+        CompoundTag tag = com.hbm_m.platform.PlatformHooks.getItemTag(stack);
         return tag == null ? 0L : tag.getLong(KEY_DAMAGE);
     }
 
     public static void setLensDamage(ItemStack stack, long damage) {
-        stack.getOrCreateTag().putLong(KEY_DAMAGE, damage);
+        com.hbm_m.platform.PlatformHooks.putLong(stack, KEY_DAMAGE, damage);
     }
 
     /** Die Belastungsgrenze dieses Stapels, oder 0 wenn es gar keine Linse ist. */

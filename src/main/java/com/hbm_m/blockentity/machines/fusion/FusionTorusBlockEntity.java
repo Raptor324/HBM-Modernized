@@ -415,7 +415,7 @@ public class FusionTorusBlockEntity extends BaseMachineBlockEntity
     @Nullable
     public FusionRecipe getRecipe(Level level) {
         if (selectedRecipeId == null) return null;
-        return level.getRecipeManager().byKey(selectedRecipeId)
+        return com.hbm_m.platform.recipe.RecipeHooks.getRecipeByKey(level.getRecipeManager(), selectedRecipeId)
                 .filter(r -> r instanceof FusionRecipe)
                 .map(r -> (FusionRecipe) r)
                 .orElse(null);
@@ -630,8 +630,8 @@ public class FusionTorusBlockEntity extends BaseMachineBlockEntity
     private AABB renderBounds = null;
 
     //? if forge {
-    @Override
-    //?}
+    /*@Override
+    *///?}
     public AABB getRenderBoundingBox() {
         if (renderBounds == null) {
             renderBounds = new AABB(
@@ -643,6 +643,6 @@ public class FusionTorusBlockEntity extends BaseMachineBlockEntity
 
     /** Nur fuer die Rezeptauswahl im GUI: alle registrierten Fusionsrezepte. */
     public static List<FusionRecipe> getAllRecipes(Level level) {
-        return level.getRecipeManager().getAllRecipesFor(ModRecipes.FUSION_TYPE.get());
+        return com.hbm_m.platform.recipe.RecipeHooks.getAllRecipes(level, ModRecipes.FUSION_TYPE.get());
     }
 }

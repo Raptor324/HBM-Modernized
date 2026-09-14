@@ -1,6 +1,6 @@
 package com.hbm_m.datagen.assets;
 //? if forge {
-import java.util.Set;
+/*import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 
 import org.jetbrains.annotations.NotNull;
@@ -204,7 +204,7 @@ public class ModBlockTagProvider extends BlockTagsProvider {
 
         // ============ ТЕГИ СОВМЕСТИМОСТИ С ДРУГИМИ МОДАМИ ============
         //  Storage blocks for every material with a BLOCK form. Only uranium and plutonium were
-        //  listed by hand, so recipes for the other storage_blocks/* matched an empty tag.
+        //  listed by hand, so recipes for the other storage_blocks/^ matched an empty tag.
                 var storageBlocksTagBuilder = this.tag(BlockTags.create(ResourceLocation.fromNamespaceAndPath("forge", "storage_blocks")));
 
         //  Iterate the registry itself instead of filtering ModMaterials by hand: INGOT_BLOCKS is
@@ -240,4 +240,4 @@ public class ModBlockTagProvider extends BlockTagsProvider {
 
     }
 }
-//?}
+*///?}

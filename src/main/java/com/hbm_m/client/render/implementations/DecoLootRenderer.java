@@ -12,10 +12,10 @@ import com.hbm_m.blockentity.decorations.DecoLootBlockEntity;
 import com.hbm_m.client.render.HbmBerBounds;
 
 //? if forge {
-@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-//?} elif neoforge {
-/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-*///?}
+/*@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+*///?} elif neoforge {
+@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+//?}
 /**
  * Рендер «груды лута» (порт 1.7.10 RenderLoot, упрощённый без спец-моделей
  * мини-нюка/дробовика/брони): каждый предмет лежит плашмя на земле в своей

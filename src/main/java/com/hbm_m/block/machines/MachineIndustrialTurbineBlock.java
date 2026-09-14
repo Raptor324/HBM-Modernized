@@ -146,19 +146,19 @@ public class MachineIndustrialTurbineBlock extends BaseEntityBlock implements IM
     }
 
     //? if < 1.21.1 {
-    @Override
+    /*@Override
     public net.minecraft.world.InteractionResult use(BlockState state, Level level, BlockPos pos,
             net.minecraft.world.entity.player.Player player, net.minecraft.world.InteractionHand hand,
             net.minecraft.world.phys.BlockHitResult hit) {
         return pullLever(level, pos, player);
     }
-    //?} else {
-    /*@Override
+    *///?} else {
+    @Override
     protected net.minecraft.world.InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos,
             net.minecraft.world.entity.player.Player player, net.minecraft.world.phys.BlockHitResult hit) {
         return pullLever(level, pos, player);
     }
-    *///?}
+    //?}
 
     /** 1:1-Port von {@code onBlockActivated}: der Hebel schaltet die Dampfstufe. */
     private net.minecraft.world.InteractionResult pullLever(Level level, BlockPos pos,
@@ -213,11 +213,11 @@ public class MachineIndustrialTurbineBlock extends BaseEntityBlock implements IM
     }
 
     //? if >1.20.1 {
-    /*public static final com.mojang.serialization.MapCodec<MachineIndustrialTurbineBlock> CODEC = simpleCodec(MachineIndustrialTurbineBlock::new);
+    public static final com.mojang.serialization.MapCodec<MachineIndustrialTurbineBlock> CODEC = simpleCodec(MachineIndustrialTurbineBlock::new);
 
     @Override
     protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
         return CODEC;
     }
-    *///?}
+    //?}
 }

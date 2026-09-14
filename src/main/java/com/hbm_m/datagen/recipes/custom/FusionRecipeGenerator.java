@@ -1,6 +1,6 @@
 package com.hbm_m.datagen.recipes.custom;
 //? if forge {
-import java.util.function.Consumer;
+/*import java.util.function.Consumer;
 
 import com.hbm_m.item.ModItems;
 import com.hbm_m.item.material.MaterialShape;
@@ -11,23 +11,23 @@ import com.hbm_m.inventory.fluid.ModFluids;
 import net.minecraft.data.recipes.FinishedRecipe;
 import net.minecraft.world.item.ItemStack;
 
-/**
+/^*
  * 1:1-Port von {@code com.hbm.inventory.recipes.FusionRecipes#registerDefaults()} (1.7.10).
  *
  * <p>Alle zehn Fusionsrezepte inklusive Zuendschwelle, Plasmaleistung, Neutronenfluss und
  * Plasmafarbe. Der Neutronenfluss ist im Original als Bruchteil der Brueter-Kapazitaet
  * ({@code TileEntityFusionBreeder.capacity = 10_000}) angegeben - das ist hier ueber
  * {@link #BREEDER_CAPACITY} 1:1 nachgebildet.</p>
- */
+ ^/
 public final class FusionRecipeGenerator {
 
     private FusionRecipeGenerator() {}
 
-    /** Original: {@code TileEntityFusionBreeder.capacity}. */
+    /^* Original: {@code TileEntityFusionBreeder.capacity}. ^/
     private static final double BREEDER_CAPACITY = 10_000D;
-    /** Original: lokale Variable {@code solenoid} in {@code registerDefaults()}. */
+    /^* Original: lokale Variable {@code solenoid} in {@code registerDefaults()}. ^/
     private static final long SOLENOID = 25_000L;
-    /** Original: {@code .setDuration(100)} bei allen Rezepten. */
+    /^* Original: {@code .setDuration(100)} bei allen Rezepten. ^/
     private static final int DURATION = 100;
 
     public static void generate(Consumer<FinishedRecipe> writer) {
@@ -128,4 +128,4 @@ public final class FusionRecipeGenerator {
                 .save(writer, "fusion/stellar");
     }
 }
-//?}
+*///?}

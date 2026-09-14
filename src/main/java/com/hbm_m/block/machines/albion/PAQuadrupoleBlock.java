@@ -54,11 +54,11 @@ public class PAQuadrupoleBlock extends PAMultiblockBlock {
     }
 
     //? if >1.20.1 {
-    /*public static final com.mojang.serialization.MapCodec<PAQuadrupoleBlock> CODEC = simpleCodec(PAQuadrupoleBlock::new);
+    public static final com.mojang.serialization.MapCodec<PAQuadrupoleBlock> CODEC = simpleCodec(PAQuadrupoleBlock::new);
 
     @Override
     protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
         return CODEC;
     }
-    *///?}
+    //?}
 }

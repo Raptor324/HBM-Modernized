@@ -461,9 +461,9 @@ public class PileCoreBlockEntity extends LoadedMachineBlockEntity {
         tag.putByte("vc", (byte) ventilationChannels.size());
         tag.putByte("cc", (byte) controlChannels.size());
 
-        for (int i = 0; i < fuelChannels.size(); i++)         fuelChannels.get(i).save(tag, "f" + i);
-        for (int i = 0; i < ventilationChannels.size(); i++)  ventilationChannels.get(i).save(tag, "v" + i);
-        for (int i = 0; i < controlChannels.size(); i++)      controlChannels.get(i).save(tag, "c" + i);
+        for (int i = 0; i < fuelChannels.size(); i++)         fuelChannels.get(i).save(tag, "f" + i, registries);
+        for (int i = 0; i < ventilationChannels.size(); i++)  ventilationChannels.get(i).save(tag, "v" + i, registries);
+        for (int i = 0; i < controlChannels.size(); i++)      controlChannels.get(i).save(tag, "c" + i, registries);
     }
 
     @Override
@@ -491,9 +491,9 @@ public class PileCoreBlockEntity extends LoadedMachineBlockEntity {
         int ventCount = tag.getByte("vc") & 0xFF;
         int contCount = tag.getByte("cc") & 0xFF;
 
-        for (int i = 0; i < fuelCount; i++) fuelChannels.add(PileChannel.load(tag, "f" + i, this));
-        for (int i = 0; i < ventCount; i++) ventilationChannels.add(PileChannel.load(tag, "v" + i, this));
-        for (int i = 0; i < contCount; i++) controlChannels.add(PileChannel.load(tag, "c" + i, this));
+        for (int i = 0; i < fuelCount; i++) fuelChannels.add(PileChannel.load(tag, "f" + i, this, registries));
+        for (int i = 0; i < ventCount; i++) ventilationChannels.add(PileChannel.load(tag, "v" + i, this, registries));
+        for (int i = 0; i < contCount; i++) controlChannels.add(PileChannel.load(tag, "c" + i, this, registries));
 
         recalculateSegments();
     }

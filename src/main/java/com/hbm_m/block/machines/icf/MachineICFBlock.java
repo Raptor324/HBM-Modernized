@@ -67,4 +67,13 @@ public class MachineICFBlock extends FusionMultiblockBlock {
         return createTickerHelper(type, ModBlockEntities.MACHINE_ICF_BE.get(),
                 (lvl, pos, st, be) -> MachineICFBlockEntity.tick(lvl, pos, st, (MachineICFBlockEntity) be));
     }
+
+    //? if >1.20.1 {
+    public static final com.mojang.serialization.MapCodec<MachineICFBlock> CODEC = simpleCodec(MachineICFBlock::new);
+
+    @Override
+    protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
+        return CODEC;
+    }
+    //?}
 }

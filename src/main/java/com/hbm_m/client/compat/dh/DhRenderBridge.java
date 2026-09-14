@@ -26,10 +26,10 @@ import com.seibel.distanthorizons.api.methods.events.sharedParameterObjects.DhAp
  * поэтому compileOnly-зависимость безопасна в рантайме без DH.
  */
 //? if forge {
-@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-//?} elif neoforge {
-/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
- *///?}
+/*@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+*///?} elif neoforge {
+@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+ //?}
 public final class DhRenderBridge extends DhApiBeforeApplyShaderRenderEvent {
 
     private static volatile boolean registered = false;

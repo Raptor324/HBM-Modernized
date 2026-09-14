@@ -138,14 +138,14 @@ public class BarrelTankBlock extends BaseEntityBlock implements com.hbm_m.interf
     }
 
     //? if < 1.21.1 {
-    @Override
+    /*@Override
     public void appendHoverText(@NotNull ItemStack stack, @Nullable BlockGetter level, @NotNull List<Component> tooltip, @NotNull TooltipFlag flag) {
         super.appendHoverText(stack, level, tooltip, flag);
-    //?} else {
-    /*@Override
+    *///?} else {
+    @Override
     public void appendHoverText(@NotNull ItemStack stack, @NotNull Item.TooltipContext ctx, @NotNull List<Component> tooltip, @NotNull TooltipFlag flag) {
         super.appendHoverText(stack, ctx, tooltip, flag);
-    *///?}
+    //?}
         if (tooltipInfo == null) return;
 
         tooltip.add(Component.translatable("tooltip.hbm_m.barrel.capacity", tooltipInfo.capacityMb())
@@ -192,16 +192,16 @@ public class BarrelTankBlock extends BaseEntityBlock implements com.hbm_m.interf
     }
 
     //? if < 1.21.1 {
-    @Override
+    /*@Override
     public InteractionResult use(@NotNull BlockState state, @NotNull Level level, @NotNull BlockPos pos, @NotNull Player player, @NotNull InteractionHand hand, @NotNull BlockHitResult hit) {
         return hbmOnUse(state, level, pos, player, hand, hit);
     }
-    //?} else {
-    /*@Override
+    *///?} else {
+    @Override
     protected InteractionResult useWithoutItem(@NotNull BlockState state, @NotNull Level level, @NotNull BlockPos pos, @NotNull Player player, @NotNull BlockHitResult hit) {
         return hbmOnUse(state, level, pos, player, InteractionHand.MAIN_HAND, hit);
     }
-    *///?}
+    //?}
 
     private InteractionResult hbmOnUse(@NotNull BlockState state, @NotNull Level level, @NotNull BlockPos pos, @NotNull Player player, @NotNull InteractionHand hand, @NotNull BlockHitResult hit) {
         if (level.isClientSide) {
@@ -230,11 +230,11 @@ public class BarrelTankBlock extends BaseEntityBlock implements com.hbm_m.interf
     }
 
     //? if >1.20.1 {
-    /*public static final com.mojang.serialization.MapCodec<BarrelTankBlock> CODEC = simpleCodec(props -> new BarrelTankBlock(props, com.hbm_m.blockentity.machines.BarrelIronBlockEntity::new, () -> com.hbm_m.blockentity.ModBlockEntities.BARREL_IRON_BE.get()));
+    public static final com.mojang.serialization.MapCodec<BarrelTankBlock> CODEC = simpleCodec(props -> new BarrelTankBlock(props, com.hbm_m.blockentity.machines.BarrelIronBlockEntity::new, () -> com.hbm_m.blockentity.ModBlockEntities.BARREL_IRON_BE.get()));
 
     @Override
     protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
         return CODEC;
     }
-    *///?}
+    //?}
 }

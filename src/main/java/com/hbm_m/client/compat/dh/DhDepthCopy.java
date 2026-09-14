@@ -74,22 +74,22 @@ public final class DhDepthCopy {
 
         try {
             //? if < 1.21.1 {
-            BufferBuilder bb = Tesselator.getInstance().getBuilder();
+            /*BufferBuilder bb = Tesselator.getInstance().getBuilder();
             bb.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION);
             bb.vertex(-1.0F, -1.0F, 0.0F).endVertex();
             bb.vertex(1.0F, -1.0F, 0.0F).endVertex();
             bb.vertex(1.0F, 1.0F, 0.0F).endVertex();
             bb.vertex(-1.0F, 1.0F, 0.0F).endVertex();
             Tesselator.getInstance().end();
-            //?} else {
-            /*BufferBuilder bb = Tesselator.getInstance().begin(
+            *///?} else {
+            BufferBuilder bb = Tesselator.getInstance().begin(
                     VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION);
             bb.addVertex(-1.0F, -1.0F, 0.0F);
             bb.addVertex(1.0F, -1.0F, 0.0F);
             bb.addVertex(1.0F, 1.0F, 0.0F);
             bb.addVertex(-1.0F, 1.0F, 0.0F);
             BufferUploader.drawWithShader(bb.build());
-            *///?}
+            //?}
         } finally {
             GlStateManager._colorMask(true, true, true, true);
             RenderSystem.depthFunc(org.lwjgl.opengl.GL43.GL_LEQUAL);

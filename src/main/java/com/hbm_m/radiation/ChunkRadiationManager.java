@@ -12,16 +12,16 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.chunk.LevelChunk;
 
 //? if forge {
-import net.minecraftforge.event.level.ChunkEvent;
+/*import net.minecraftforge.event.level.ChunkEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
-//?}
+*///?}
 
 //? if neoforge {
-/*import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.event.level.ChunkEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
-*///?}
+//?}
 
 
 /**
@@ -29,11 +29,11 @@ import net.neoforged.fml.common.EventBusSubscriber;
  * Использует Architectury API для логики тиков/миров и загрузчики для событий чанков.
  */
 //? if forge {
-@Mod.EventBusSubscriber(modid = MainRegistry.MOD_ID)
-//?}
-//? if neoforge {
-/*@EventBusSubscriber(modid = MainRegistry.MOD_ID)
+/*@Mod.EventBusSubscriber(modid = MainRegistry.MOD_ID)
 *///?}
+//? if neoforge {
+@EventBusSubscriber(modid = MainRegistry.MOD_ID)
+//?}
 public class ChunkRadiationManager {
 
     public static final ChunkRadiationManager INSTANCE = new ChunkRadiationManager();
@@ -118,12 +118,12 @@ public class ChunkRadiationManager {
     public static void onChunkUnload(ChunkEvent.Unload event) {
         if (ModClothConfig.get().enableChunkRads && !event.getLevel().isClientSide() && event.getChunk() instanceof LevelChunk chunk) {
             //? if forge {
-            getProxy().receiveChunkUnload(event);
-            //?} else {
-            /*if (getProxy() instanceof ChunkRadiationHandlerSimple handler) {
+            /*getProxy().receiveChunkUnload(event);
+            *///?} else {
+            if (getProxy() instanceof ChunkRadiationHandlerSimple handler) {
                 handler.receiveChunkUnload(chunk);
             }
-            *///?}
+            //?}
         }
     }
     //?}

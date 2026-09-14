@@ -8,10 +8,10 @@ import net.minecraft.core.Direction;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.state.BlockState;
 //? if forge {
-import net.minecraftforge.client.model.data.ModelData;
-//?} elif neoforge {
-/*import net.neoforged.neoforge.client.model.data.ModelData;
-*///?}
+/*import net.minecraftforge.client.model.data.ModelData;
+*///?} elif neoforge {
+import net.neoforged.neoforge.client.model.data.ModelData;
+//?}
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
@@ -76,28 +76,28 @@ public class HeatingOvenBakedModel extends AbstractMultipartBakedModel implement
     @Override
     public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, RandomSource rand) {
         //? if forge {
-        return getQuads(state, side, rand, ModelData.EMPTY, null);
-        //?}
+        /*return getQuads(state, side, rand, ModelData.EMPTY, null);
+        *///?}
 
         //? if neoforge {
-        /*return super.getQuads(state, side, rand);
-        *///?}
+        return super.getQuads(state, side, rand);
+        //?}
 
     }
 
     // На NeoForge подклассы переопределяют getQuadsForModelDataNeo; forge-only override означал,
     // что база отдавала все части без сдвига, а BER рисовал дверь и нутро ещё раз.
     //? if forge {
-    @Override
+    /*@Override
     public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side,
                                     RandomSource rand, ModelData modelData,
                                     @Nullable net.minecraft.client.renderer.RenderType renderType) {
-    //?} elif neoforge {
-    /*@Override
+    *///?} elif neoforge {
+    @Override
     protected List<BakedQuad> getQuadsForModelDataNeo(@Nullable BlockState state, @Nullable Direction side,
                                     RandomSource rand, ModelData modelData,
                                     @Nullable net.minecraft.client.renderer.RenderType renderType) {
-    *///?}
+    //?}
         // ITEM RENDER (Inventory/Hand)
         if (state == null) {
             return getItemQuads(side, rand, modelData, renderType);

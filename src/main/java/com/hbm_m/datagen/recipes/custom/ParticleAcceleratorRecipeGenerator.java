@@ -1,6 +1,6 @@
 package com.hbm_m.datagen.recipes.custom;
 //? if forge {
-import java.util.function.Consumer;
+/*import java.util.function.Consumer;
 
 import com.hbm_m.item.ModItems;
 
@@ -10,13 +10,13 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.level.ItemLike;
 
-/**
+/^*
  * Port von {@code ParticleAcceleratorRecipes.register()} (1.7.10).
  *
  * <p>Elf der zwoelf Rezepte des Originals. Das fehlende ({@code item_expensive} Golddust plus
  * Schrabidium-Barren zu entartetem Material) haengt am {@code item_expensive}-System, das dieser
  * Port nicht hat.</p>
- */
+ ^/
 public final class ParticleAcceleratorRecipeGenerator {
 
     private ParticleAcceleratorRecipeGenerator() {}
@@ -55,4 +55,4 @@ public final class ParticleAcceleratorRecipeGenerator {
                 .save(writer, "particle_accelerator/" + name);
     }
 }
-//?}
+*///?}

@@ -110,7 +110,10 @@ public class ICFStructBlockEntity extends BlockEntity {
         return level.getBlockState(at).is(block);
     }
 
-    @Override
+    // 1.21.1 moved render bounds to the renderer; the mod's RenderBoundsProvider still reads this.
+    //? if forge {
+    /*@Override
+    *///?}
     public AABB getRenderBoundingBox() {
         return new AABB(worldPosition).inflate(HALF_LENGTH + 1);
     }

@@ -25,7 +25,7 @@ import org.jetbrains.annotations.Nullable;
  * ({@code x}/{@code y}/{@code z}). Das Reaktorsteuerpult liest sie aus - siehe
  * {@code TileEntityReactorControl.establishLink()}.
  */
-public class ItemReactorSensor extends Item {
+public class ItemReactorSensor extends Item implements com.hbm_m.item.ITooltipProvider {
 
     public static final String NBT_X = "x";
     public static final String NBT_Y = "y";
@@ -46,10 +46,11 @@ public class ItemReactorSensor extends Item {
         }
 
         if (!level.isClientSide()) {
-            CompoundTag tag = context.getItemInHand().getOrCreateTag();
-            tag.putInt(NBT_X, core.getX());
-            tag.putInt(NBT_Y, core.getY());
-            tag.putInt(NBT_Z, core.getZ());
+            com.hbm_m.platform.PlatformHooks.editItemTag(context.getItemInHand(), tag -> {
+                tag.putInt(NBT_X, core.getX());
+                tag.putInt(NBT_Y, core.getY());
+                tag.putInt(NBT_Z, core.getZ());
+            });
         }
 
         return InteractionResult.sidedSuccess(level.isClientSide());
@@ -81,13 +82,14 @@ public class ItemReactorSensor extends Item {
     /** Gebundene Position, oder {@code null}, wenn der Fuehler noch nicht gesetzt wurde. */
     @Nullable
     public static BlockPos getBoundPos(ItemStack stack) {
-        CompoundTag tag = stack.getTag();
+        CompoundTag tag = com.hbm_m.platform.PlatformHooks.getItemTag(stack);
         if (tag == null || !tag.contains(NBT_X)) return null;
         return new BlockPos(tag.getInt(NBT_X), tag.getInt(NBT_Y), tag.getInt(NBT_Z));
     }
 
+    // Tooltip through ITooltipProvider: appendHoverText's signature differs between 1.20.1 and 1.21.1.
     @Override
-    public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
+    public void appendHbmTooltip(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
         BlockPos bound = getBoundPos(stack);
 
         if (bound == null) {

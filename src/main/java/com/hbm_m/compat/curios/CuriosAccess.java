@@ -19,16 +19,16 @@ final class CuriosAccess {
 
     static ItemStack getFaceMask(LivingEntity entity) {
         //? if < 1.21.1 {
-        return CuriosApi.getCuriosInventory(entity).resolve()
+        /*return CuriosApi.getCuriosInventory(entity).resolve()
                 .flatMap(handler -> handler.getStacksHandler("mask"))
                 .map(CuriosAccess::firstStack)
                 .orElse(ItemStack.EMPTY);
-        //?} else {
-        /*return CuriosApi.getCuriosInventory(entity)
+        *///?} else {
+        return CuriosApi.getCuriosInventory(entity)
                 .flatMap(handler -> handler.getStacksHandler("mask"))
                 .map(CuriosAccess::firstStack)
                 .orElse(ItemStack.EMPTY);
-         *///?}
+         //?}
     }
 
     private static ItemStack firstStack(top.theillusivec4.curios.api.type.inventory.ICurioStacksHandler handler) {

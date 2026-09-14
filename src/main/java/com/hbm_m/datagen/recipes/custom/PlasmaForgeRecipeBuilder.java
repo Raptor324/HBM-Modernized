@@ -1,6 +1,6 @@
 package com.hbm_m.datagen.recipes.custom;
 //? if forge {
-import java.util.ArrayList;
+/*import java.util.ArrayList;
 import java.util.List;
 
 import org.jetbrains.annotations.Nullable;
@@ -17,11 +17,11 @@ import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.level.material.Fluid;
 
-/**
+/^*
  * Datagen-Builder fuer {@link PlasmaForgeRecipe} ({@code hbm_m:plasma_forge}).
  * Entspricht dem 1.7.10-Aufruf
  * {@code new PlasmaForgeRecipe(name).setInputEnergy(..).setup(duration, power).outputItems(..).inputItems(..)}.
- */
+ ^/
 public class PlasmaForgeRecipeBuilder extends BaseRecipeBuilder<PlasmaForgeRecipeBuilder> {
 
     private record CountedIngredient(Ingredient ingredient, int count) {}
@@ -51,7 +51,7 @@ public class PlasmaForgeRecipeBuilder extends BaseRecipeBuilder<PlasmaForgeRecip
         return new PlasmaForgeRecipeBuilder(output, duration, power);
     }
 
-    /** Original: {@code setInputEnergy} - minimale Plasmaleistung des Torus. */
+    /^* Original: {@code setInputEnergy} - minimale Plasmaleistung des Torus. ^/
     public PlasmaForgeRecipeBuilder inputEnergy(long ignitionTemp) {
         this.ignitionTemp = ignitionTemp;
         return this;
@@ -71,7 +71,7 @@ public class PlasmaForgeRecipeBuilder extends BaseRecipeBuilder<PlasmaForgeRecip
         return this;
     }
 
-    /** Original: {@code setGroup("autoswitch.weldPlates", this)}. */
+    /^* Original: {@code setGroup("autoswitch.weldPlates", this)}. ^/
     public PlasmaForgeRecipeBuilder autoSwitchGroup(String group) {
         this.autoSwitchGroup = group;
         return this;
@@ -116,4 +116,4 @@ public class PlasmaForgeRecipeBuilder extends BaseRecipeBuilder<PlasmaForgeRecip
         return PlasmaForgeRecipe.Serializer.INSTANCE;
     }
 }
-//?}
+*///?}

@@ -55,11 +55,11 @@ public class MachineFusionBreederBlock extends FusionMultiblockBlock {
     }
 
     //? if >1.20.1 {
-    /*public static final com.mojang.serialization.MapCodec<MachineFusionBreederBlock> CODEC = simpleCodec(MachineFusionBreederBlock::new);
+    public static final com.mojang.serialization.MapCodec<MachineFusionBreederBlock> CODEC = simpleCodec(MachineFusionBreederBlock::new);
 
     @Override
     protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
         return CODEC;
     }
-    *///?}
+    //?}
 }

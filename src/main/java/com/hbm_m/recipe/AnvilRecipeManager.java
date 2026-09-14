@@ -10,9 +10,9 @@ import java.util.stream.Collectors;
 import com.hbm_m.block.machines.anvils.AnvilTier;
 import com.hbm_m.platform.recipe.RecipeHooks;
 //? if forge {
-import net.minecraftforge.api.distmarker.Dist;
+/*import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?}
+*///?}
 import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
@@ -28,8 +28,8 @@ public final class AnvilRecipeManager {
     }
 
     //? if forge {
-    @OnlyIn(Dist.CLIENT)
-    //?}
+    /*@OnlyIn(Dist.CLIENT)
+    *///?}
     public static List<AnvilRecipe> getClientRecipes() {
         Minecraft minecraft = Minecraft.getInstance();
         Level level = minecraft.level;

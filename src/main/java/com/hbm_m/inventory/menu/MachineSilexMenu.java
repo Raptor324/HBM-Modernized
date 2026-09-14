@@ -10,10 +10,10 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
 //? if forge {
-import net.minecraftforge.items.SlotItemHandler;
-//?} elif neoforge {
-/*import net.neoforged.neoforge.items.SlotItemHandler;
-*///?}
+/*import net.minecraftforge.items.SlotItemHandler;
+*///?} elif neoforge {
+import net.neoforged.neoforge.items.SlotItemHandler;
+//?}
 import net.minecraft.world.level.block.entity.BlockEntity;
 
 public class MachineSilexMenu extends AbstractContainerMenu {

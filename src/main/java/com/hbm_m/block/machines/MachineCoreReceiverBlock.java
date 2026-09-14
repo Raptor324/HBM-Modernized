@@ -32,8 +32,8 @@ import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
 //? if forge {
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-//?}
+/*import net.minecraftforge.common.capabilities.ForgeCapabilities;
+*///?}
 import dev.architectury.registry.menu.MenuRegistry;
 
 public class MachineCoreReceiverBlock extends BaseEntityBlock implements IMultiblockController {
@@ -80,16 +80,16 @@ public class MachineCoreReceiverBlock extends BaseEntityBlock implements IMultib
     }
 
     //? if < 1.21.1 {
-    @Override
+    /*@Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         return openMenu(state, level, pos, player, hand, hit);
     }
-    //?} else {
-    /*@Override
+    *///?} else {
+    @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
         return openMenu(state, level, pos, player, InteractionHand.MAIN_HAND, hit);
     }
-    *///?}
+    //?}
 
     private InteractionResult openMenu(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         if (!level.isClientSide() && level.getBlockEntity(pos) instanceof MenuProvider p) {
@@ -115,11 +115,11 @@ public class MachineCoreReceiverBlock extends BaseEntityBlock implements IMultib
     }
 
     //? if >1.20.1 {
-    /*public static final com.mojang.serialization.MapCodec<MachineCoreReceiverBlock> CODEC = simpleCodec(MachineCoreReceiverBlock::new);
+    public static final com.mojang.serialization.MapCodec<MachineCoreReceiverBlock> CODEC = simpleCodec(MachineCoreReceiverBlock::new);
 
     @Override
     protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
         return CODEC;
     }
-    *///?}
+    //?}
 }

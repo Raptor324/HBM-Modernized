@@ -211,10 +211,10 @@ public class FusionPlasmaForgeRenderer implements BlockEntityRenderer<FusionPlas
                                  float x2, float y2, float z2, float u2, float v2,
                                  float x3, float y3, float z3, float u3, float v3) {
         float base = 1F;
-        vc.vertex(m, x0, y0, z0).color(1F, 1F, 1F, y0 <= base ? 1F : 0F).uv(u0, v0).endVertex();
-        vc.vertex(m, x1, y1, z1).color(1F, 1F, 1F, y1 <= base ? 1F : 0F).uv(u1, v1).endVertex();
-        vc.vertex(m, x2, y2, z2).color(1F, 1F, 1F, y2 <= base ? 1F : 0F).uv(u2, v2).endVertex();
-        vc.vertex(m, x3, y3, z3).color(1F, 1F, 1F, y3 <= base ? 1F : 0F).uv(u3, v3).endVertex();
+        com.hbm_m.platform.RenderHooks.vertexTexColor(vc, m, x0, y0, z0, u0, v0, 255, 255, 255, y0 <= base ? 255 : 0);
+        com.hbm_m.platform.RenderHooks.vertexTexColor(vc, m, x1, y1, z1, u1, v1, 255, 255, 255, y1 <= base ? 255 : 0);
+        com.hbm_m.platform.RenderHooks.vertexTexColor(vc, m, x2, y2, z2, u2, v2, 255, 255, 255, y2 <= base ? 255 : 0);
+        com.hbm_m.platform.RenderHooks.vertexTexColor(vc, m, x3, y3, z3, u3, v3, 255, 255, 255, y3 <= base ? 255 : 0);
     }
 
     private void renderStrikerArm(FusionPlasmaForgeBlockEntity be, VertexConsumer vc, PoseStack pose,
@@ -324,10 +324,11 @@ public class FusionPlasmaForgeRenderer implements BlockEntityRenderer<FusionPlas
     private static void quad(VertexConsumer vc, org.joml.Matrix4f m, float r, float g, float b,
                              double x0, double y0, double z0, double x1, double y1, double z1,
                              double x2, double y2, double z2, double x3, double y3, double z3) {
-        vc.vertex(m, (float) x0, (float) y0, (float) z0).color(r, g, b, 1F).endVertex();
-        vc.vertex(m, (float) x1, (float) y1, (float) z1).color(r, g, b, 1F).endVertex();
-        vc.vertex(m, (float) x2, (float) y2, (float) z2).color(r, g, b, 0F).endVertex();
-        vc.vertex(m, (float) x3, (float) y3, (float) z3).color(r, g, b, 0F).endVertex();
+        int ir = (int) (r * 255F), ig = (int) (g * 255F), ib = (int) (b * 255F);
+        com.hbm_m.platform.RenderHooks.vertexColor(vc, m, (float) x0, (float) y0, (float) z0, ir, ig, ib, 255);
+        com.hbm_m.platform.RenderHooks.vertexColor(vc, m, (float) x1, (float) y1, (float) z1, ir, ig, ib, 255);
+        com.hbm_m.platform.RenderHooks.vertexColor(vc, m, (float) x2, (float) y2, (float) z2, ir, ig, ib, 0);
+        com.hbm_m.platform.RenderHooks.vertexColor(vc, m, (float) x3, (float) y3, (float) z3, ir, ig, ib, 0);
     }
 
     private static void draw(VertexConsumer vc, PoseStack pose, Map<String, List<float[]>> obj,

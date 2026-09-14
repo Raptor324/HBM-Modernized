@@ -101,12 +101,12 @@ public class ItemPileRodMK2 extends Item implements ITooltipProvider {
     // ── Abbrand ─────────────────────────────────────────────────────────────
 
     public static double getDepletion(ItemStack stack) {
-        CompoundTag tag = stack.getTag();
+        CompoundTag tag = com.hbm_m.platform.PlatformHooks.getItemTag(stack);
         return tag == null ? 0D : tag.getDouble(KEY_NBT_DEPLETION);
     }
 
     public static void setDepletion(ItemStack stack, double depletion) {
-        stack.getOrCreateTag().putDouble(KEY_NBT_DEPLETION, depletion);
+        com.hbm_m.platform.PlatformHooks.editItemTag(stack, t -> t.putDouble(KEY_NBT_DEPLETION, depletion));
     }
 
     /** Original: {@code getDepletionPercent}. Gibt 0 zurueck, wenn der Stab nicht abbrennt. */

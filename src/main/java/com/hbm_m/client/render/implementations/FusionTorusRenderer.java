@@ -154,7 +154,6 @@ public class FusionTorusRenderer implements BlockEntityRenderer<FusionTorusBlock
     static void drawScrolledGroup(VertexConsumer vc, PoseStack pose, List<float[]> triangles,
                                      double du, double dv, float r, float g, float b, float a, int light) {
         var matrix = pose.last().pose();
-        var normal = pose.last().normal();
 
         float cr = Mth.clamp(r, 0F, 1F);
         float cg = Mth.clamp(g, 0F, 1F);
@@ -166,13 +165,11 @@ public class FusionTorusRenderer implements BlockEntityRenderer<FusionTorusBlock
                 int base = i * 8;
                 float u = (float) (tri[base + 3] + du);
                 float v = (float) (tri[base + 4] + dv);
-                vc.vertex(matrix, tri[base], tri[base + 1], tri[base + 2])
-                        .color(cr, cg, cb, ca)
-                        .uv(u, 1F - v)
-                        .overlayCoords(net.minecraft.client.renderer.texture.OverlayTexture.NO_OVERLAY)
-                        .uv2(light)
-                        .normal(normal, tri[base + 5], tri[base + 6], tri[base + 7])
-                        .endVertex();
+                com.hbm_m.platform.RenderHooks.vertexFull(vc, pose.last(), tri[base], tri[base + 1], tri[base + 2],
+                        (int) (cr * 255F), (int) (cg * 255F), (int) (cb * 255F), (int) (ca * 255F),
+                        u, 1F - v,
+                        net.minecraft.client.renderer.texture.OverlayTexture.NO_OVERLAY, light,
+                        tri[base + 5], tri[base + 6], tri[base + 7]);
             }
         }
     }

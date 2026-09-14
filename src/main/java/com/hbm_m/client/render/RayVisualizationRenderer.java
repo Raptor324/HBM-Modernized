@@ -1,5 +1,5 @@
 //? if forge {
-package com.hbm_m.client.render;
+/*package com.hbm_m.client.render;
 
 import com.hbm_m.util.explosions.nuclear.CraterGenerator;
 import com.mojang.blaze3d.vertex.PoseStack;
@@ -81,5 +81,5 @@ public class RayVisualizationRenderer {
         bufferSource.endBatch(RenderType.debugLineStrip(2.0));
     }
 }
-//?}
+*///?}
 

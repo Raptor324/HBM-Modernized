@@ -207,8 +207,8 @@ public class FusionMhdtBlockEntity extends FusionSyncedBlockEntity
     private AABB renderBounds = null;
 
     //? if forge {
-    @Override
-    //?}
+    /*@Override
+    *///?}
     public AABB getRenderBoundingBox() {
         if (renderBounds == null) {
             renderBounds = new AABB(

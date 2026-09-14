@@ -1,6 +1,6 @@
 package com.hbm_m.datagen.recipes.custom;
 //? if forge {
-import com.google.gson.JsonObject;
+/*import com.google.gson.JsonObject;
 import com.hbm_m.recipe.LiquefactorRecipe;
 
 import dev.architectury.fluid.FluidStack;
@@ -10,7 +10,7 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 
-/**
+/^*
  * Datagen-билдер {@link LiquefactorRecipe} ({@code hbm_m:liquefactor}).
  *
  * <p>Чистый ванильный 1.20.1 код внутри {@code //? if forge} — датаген только для 1.20.1-forge.</p>
@@ -27,7 +27,7 @@ import net.minecraft.world.item.crafting.RecipeSerializer;
  * <p>Выход — жидкость, поэтому {@link #getResult()} возвращает {@link Items#AIR}
  * (ванильный {@code RecipeBuilder} требует реализацию, но для чисто жидкостных рецептов
  * результат не используется — та же конвенция, что у {@code MixerRecipeBuilder}).</p>
- */
+ ^/
 public class LiquefactorRecipeBuilder extends BaseRecipeBuilder<LiquefactorRecipeBuilder> {
 
     private final Ingredient input;
@@ -62,4 +62,4 @@ public class LiquefactorRecipeBuilder extends BaseRecipeBuilder<LiquefactorRecip
         return LiquefactorRecipe.Serializer.INSTANCE;
     }
 }
-//?}
+*///?}

@@ -222,14 +222,12 @@ public class MachineCoreEmitterBlockEntity extends BaseMachineBlockEntity
 
         for (Entity e : list) {
             //? if < 1.21.1 {
-            e.hurt(com.hbm_m.damagesource.ModDamageSources.amsCore(level), 50F);
+            /*e.hurt(com.hbm_m.damagesource.ModDamageSources.amsCore(level), 50F);
             e.setSecondsOnFire(10);
-            //?} else {
-            /*if (level instanceof net.minecraft.server.level.ServerLevel serverLevel) {
-                e.hurt(serverLevel, com.hbm_m.damagesource.ModDamageSources.amsCore(level), 50F);
-            }
+            *///?} else {
+            e.hurt(com.hbm_m.damagesource.ModDamageSources.amsCore(level), 50F);
             e.setRemainingFireTicks(10 * 20);
-            *///?}
+            //?}
         }
     }
 

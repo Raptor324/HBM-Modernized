@@ -106,10 +106,10 @@ public class HTTPHandler {
 
 	private static String modrinthLoader() {
 		//? if neoforge {
-		/*return "neoforge";
-		*///?} else if forge {
-		return "forge";
-		//?} else {
+		return "neoforge";
+		//?} else if forge {
+		/*return "forge";
+		*///?} else {
 		/*return "fabric";
 		*///?}
 	}

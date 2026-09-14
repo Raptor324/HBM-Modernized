@@ -50,10 +50,10 @@ import net.minecraft.client.renderer.texture.OverlayTexture;
  */
 
 //? if forge {
-@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-//?} elif neoforge {
-/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-*///?}
+/*@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+*///?} elif neoforge {
+@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+//?}
 public final class IrisCompanionMesh implements IrisCompanionMeshResource {
 
     /**
@@ -334,20 +334,20 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
             }
 
             //? if < 1.21.1 {
-            BufferBuilder.RenderedBuffer rendered = builder.end();
+            /*BufferBuilder.RenderedBuffer rendered = builder.end();
             BufferBuilder.DrawState drawState = rendered.drawState();
             VertexFormat actualFormat = drawState.format();
             this.actualFormat = actualFormat;
             ByteBuffer vertexBytes = rendered.vertexBuffer();
             this.vertexCount = drawState.vertexCount();
-            //?} else {
-            /*var rendered = builder.buildOrThrow();
+            *///?} else {
+            var rendered = builder.buildOrThrow();
             var drawState = rendered.drawState();
             VertexFormat actualFormat = drawState.format();
             this.actualFormat = actualFormat;
             ByteBuffer vertexBytes = rendered.vertexBuffer();
             this.vertexCount = drawState.vertexCount();
-            *///?}
+            //?}
 
             // Record byte offset of every named element in the format so
             // prepareForShader() can hand the linker-resolved locations a
@@ -361,7 +361,7 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
             elementByName.clear();
             
             //? if < 1.21.1 {
-            var elements = RenderHooks.getElements(actualFormat);
+            /*var elements = RenderHooks.getElements(actualFormat);
             var names = actualFormat.getElementAttributeNames();
             int runningOffset = 0;
             for (int i = 0; i < elements.size(); i++) {
@@ -371,8 +371,8 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
                 elementByName.put(name, el);
                 runningOffset += RenderHooks.getByteSize(el);
             }
-            //?} else {
-            /*var elements = RenderHooks.getElements(actualFormat);
+            *///?} else {
+            var elements = RenderHooks.getElements(actualFormat);
             int runningOffset = 0;
             for (int i = 0; i < elements.size(); i++) {
                 VertexFormatElement el = elements.get(i);
@@ -384,7 +384,7 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
                 elementByName.put(name, el);
                 runningOffset += RenderHooks.getByteSize(el);
             }
-            *///?}
+            //?}
 
             this.vaoId = GL30.glGenVertexArrays();
             this.vboId = GL15.glGenBuffers();
@@ -426,11 +426,11 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
             for (int location = 0; location < elementCount; location++) {
                 VertexFormatElement element = RenderHooks.getElements(actualFormat).get(location);
                 //? if < 1.21.1 {
-                if (RenderHooks.getUsage(element) == VertexFormatElement.Usage.PADDING) {
+                /*if (RenderHooks.getUsage(element) == VertexFormatElement.Usage.PADDING) {
                     offset += RenderHooks.getByteSize(element);
                     continue;
                 }
-                //?}
+                *///?}
                 if (location > 5) {
                     offset += RenderHooks.getByteSize(element);
                     continue;
@@ -490,10 +490,10 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
             primeIrisExtendedVertexAttributes(stride);
 
             //? if < 1.21.1 {
-            rendered.release();
-            //?} else {
-            /*rendered.close();
-            *///?}
+            /*rendered.release();
+            *///?} else {
+            rendered.close();
+            //?}
             
             built = true;
             MainRegistry.LOGGER.debug(

@@ -1,6 +1,6 @@
 package com.hbm_m.datagen.recipes.custom;
 //? if forge {
-import com.google.gson.JsonObject;
+/*import com.google.gson.JsonObject;
 import com.hbm_m.recipe.ParticleAcceleratorRecipe;
 
 import net.minecraft.world.item.ItemStack;
@@ -8,7 +8,7 @@ import net.minecraft.world.item.Items;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 
-/** Datagen-Builder fuer {@link ParticleAcceleratorRecipe} ({@code hbm_m:particle_accelerator}). */
+/^* Datagen-Builder fuer {@link ParticleAcceleratorRecipe} ({@code hbm_m:particle_accelerator}). ^/
 public class ParticleAcceleratorRecipeBuilder extends BaseRecipeBuilder<ParticleAcceleratorRecipeBuilder> {
 
     private final Ingredient inputA;
@@ -29,7 +29,7 @@ public class ParticleAcceleratorRecipeBuilder extends BaseRecipeBuilder<Particle
         return new ParticleAcceleratorRecipeBuilder(inputA, inputB, momentum, outputA);
     }
 
-    /** Zweites Produkt - im Original haben nur zwei Rezepte eines. */
+    /^* Zweites Produkt - im Original haben nur zwei Rezepte eines. ^/
     public ParticleAcceleratorRecipeBuilder secondResult(ItemStack outputB) {
         this.outputB = outputB;
         return this;
@@ -56,4 +56,4 @@ public class ParticleAcceleratorRecipeBuilder extends BaseRecipeBuilder<Particle
         return ParticleAcceleratorRecipe.Serializer.INSTANCE;
     }
 }
-//?}
+*///?}

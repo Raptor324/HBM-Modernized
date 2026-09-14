@@ -62,16 +62,16 @@ public class CogEntity extends Entity {
 
     //? if < 1.21.1 {
 
-    @Override
+    /*@Override
     protected void defineSynchedData() {
         entityData.define(ORIENTATION, 0);
     }
-    //?} else {
-    /*@Override
+    *///?} else {
+    @Override
     protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
         builder.define(ORIENTATION, 0);
     }
-    *///?}
+    //?}
 
     public int getOrientation() { return entityData.get(ORIENTATION); }
 
@@ -91,12 +91,10 @@ public class CogEntity extends Entity {
                 getBoundingBox().expandTowards(motion).inflate(0.5D), LivingEntity::isAlive)) {
 
             //? if < 1.21.1 {
+            /*victim.hurt(com.hbm_m.damagesource.ModDamageSources.rubble(level()), 1000F);
+            *///?} else {
             victim.hurt(com.hbm_m.damagesource.ModDamageSources.rubble(level()), 1000F);
-            //?} else {
-            /*if (level() instanceof net.minecraft.server.level.ServerLevel serverLevel) {
-                victim.hurt(serverLevel, com.hbm_m.damagesource.ModDamageSources.rubble(level()), 1000F);
-            }
-            *///?}
+            //?}
         }
 
         BlockHitResult hit = level().clip(new ClipContext(

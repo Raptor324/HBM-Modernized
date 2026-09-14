@@ -69,7 +69,7 @@ public final class LungGasHandler {
         if (metal < 5) return;
 
         int amplifier = metal < 10 ? 0 : (metal < 25 ? 1 : 2);
-        player.addEffect(new MobEffectInstance(ModEffects.LEAD.get(), 100, amplifier));
+        com.hbm_m.platform.PlatformHooks.addEffect(player, ModEffects.LEAD, 100, amplifier);
     }
 
     private static boolean isCoalBlock(BlockState state) {

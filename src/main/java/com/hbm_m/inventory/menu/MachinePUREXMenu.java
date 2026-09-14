@@ -14,8 +14,8 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 //? if forge {
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-//?}
+/*import net.minecraftforge.common.capabilities.ForgeCapabilities;
+*///?}
 
 public class MachinePUREXMenu extends AbstractContainerMenu {
 
@@ -43,11 +43,11 @@ public class MachinePUREXMenu extends AbstractContainerMenu {
             public boolean mayPlace(ItemStack stack) {
                 if (ItemEnergyAccess.getHbmProvider(stack).isPresent()) return true;
                 //? if forge {
-                if (stack.getCapability(ForgeCapabilities.ENERGY).isPresent()) return true;
-                //?}
-                //? if neoforge {
-                /*if (stack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM) != null) return true;
+                /*if (stack.getCapability(ForgeCapabilities.ENERGY).isPresent()) return true;
                 *///?}
+                //? if neoforge {
+                if (stack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM) != null) return true;
+                //?}
                 return false;
             }
         });
@@ -112,15 +112,15 @@ public class MachinePUREXMenu extends AbstractContainerMenu {
             } else {
                 boolean isEnergySource = ItemEnergyAccess.getHbmProvider(slotStack).isPresent();
                         //? if forge {
-                        if (!isEnergySource) {
+                        /*if (!isEnergySource) {
                             isEnergySource = slotStack.getCapability(ForgeCapabilities.ENERGY).isPresent();
                         }
-                        //?}
+                        *///?}
                         //? if neoforge {
-                        /*if (!isEnergySource) {
+                        if (!isEnergySource) {
                             isEnergySource = slotStack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM) != null;
                         }
-                        *///?}
+                        //?}
                 if (isEnergySource) {
                     if (!this.moveItemStackTo(slotStack, SLOT_BATTERY, SLOT_BATTERY + 1, false)) {
                         return ItemStack.EMPTY;

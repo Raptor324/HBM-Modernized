@@ -31,13 +31,13 @@ public class PollutionSavedData extends SavedData {
 
     public static PollutionSavedData get(ServerLevel level) {
         //? if < 1.21.1 {
-        return level.getDataStorage().computeIfAbsent(
+        /*return level.getDataStorage().computeIfAbsent(
                 PollutionSavedData::load,
                 PollutionSavedData::new,
                 DATA_NAME
         );
-        //?} else {
-        /*return level.getDataStorage().computeIfAbsent(
+        *///?} else {
+        return level.getDataStorage().computeIfAbsent(
                 new net.minecraft.world.level.saveddata.SavedData.Factory<>(
                         PollutionSavedData::new,
                         (nbt, provider) -> load(nbt),
@@ -45,7 +45,7 @@ public class PollutionSavedData extends SavedData {
                 ),
                 DATA_NAME
         );
-        *///?}
+        //?}
     }
 
     private static PollutionSavedData load(CompoundTag nbt) {
@@ -62,12 +62,12 @@ public class PollutionSavedData extends SavedData {
     }
 
     //? if < 1.21.1 {
-    @Override
-    public CompoundTag save(CompoundTag nbt) {
-    //?} else {
     /*@Override
+    public CompoundTag save(CompoundTag nbt) {
+    *///?} else {
+    @Override
     public CompoundTag save(CompoundTag nbt, net.minecraft.core.HolderLookup.Provider provider) {
-    *///?}
+    //?}
         ListTag list = new ListTag();
 
         for (Map.Entry<ChunkPos, PollutionData> entry : pollution.entrySet()) {

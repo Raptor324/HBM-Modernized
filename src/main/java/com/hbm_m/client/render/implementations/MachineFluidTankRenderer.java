@@ -33,10 +33,10 @@ import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
 
 //? if forge {
-import net.minecraftforge.client.model.data.ModelData;
-//?} elif neoforge {
-/*import net.neoforged.neoforge.client.model.data.ModelData;
-*///?}
+/*import net.minecraftforge.client.model.data.ModelData;
+*///?} elif neoforge {
+import net.neoforged.neoforge.client.model.data.ModelData;
+//?}
 
 /**
  * Fluid Tank / BAT9000 на фабрике {@link MachineRenderers}: Frame — статика;
@@ -134,10 +134,10 @@ public final class MachineFluidTankRenderer {
     /** Кросс-версионный ModelData.EMPTY. */
     private static final class ModelDataHolder {
         //? if forge {
-        static final ModelData DATA = ModelData.EMPTY;
-        //?} elif neoforge {
         /*static final ModelData DATA = ModelData.EMPTY;
-        *///?}
+        *///?} elif neoforge {
+        static final ModelData DATA = ModelData.EMPTY;
+        //?}
     }
 
     /** Перенос UV квада со старого спрайта на новый (формат BLOCK: 8 int на вершину). */

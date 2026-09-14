@@ -101,16 +101,16 @@ public abstract class FusionMultiblockBlock extends BaseEntityBlock implements I
     }
 
     //? if < 1.21.1 {
-    @Override
+    /*@Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         return openMenu(level, pos, player);
     }
-    //?} else {
-    /*@Override
+    *///?} else {
+    @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
         return openMenu(level, pos, player);
     }
-    *///?}
+    //?}
 
     private InteractionResult openMenu(Level level, BlockPos pos, Player player) {
         if (!hasMenu()) return InteractionResult.PASS;

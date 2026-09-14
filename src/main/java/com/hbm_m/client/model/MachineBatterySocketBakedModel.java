@@ -22,10 +22,10 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.state.BlockState;
 //? if forge {
-import net.minecraftforge.client.model.data.ModelData;
-//?} elif neoforge {
-/*import net.neoforged.neoforge.client.model.data.ModelData;
-*///?}
+/*import net.minecraftforge.client.model.data.ModelData;
+*///?} elif neoforge {
+import net.neoforged.neoforge.client.model.data.ModelData;
+//?}
 
 public class MachineBatterySocketBakedModel extends AbstractMultipartBakedModel implements AbstractMultipartBakedModel.PartNamesProvider {
 
@@ -51,14 +51,14 @@ public class MachineBatterySocketBakedModel extends AbstractMultipartBakedModel 
     // На NeoForge подклассы переопределяют getQuadsForModelDataNeo; forge-only override означал,
     // что база рисовала обе части всегда и без поворота по FACING.
     //? if forge {
-    @Override
+    /*@Override
     public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, RandomSource rand,
             ModelData modelData, @Nullable RenderType renderType) {
-    //?} elif neoforge {
-    /*@Override
+    *///?} elif neoforge {
+    @Override
     protected List<BakedQuad> getQuadsForModelDataNeo(@Nullable BlockState state, @Nullable Direction side,
             RandomSource rand, ModelData modelData, @Nullable RenderType renderType) {
-    *///?}
+    //?}
         List<BakedQuad> quads = new ArrayList<>();
         int rotationY = getRotationYForFacing(state);
         Direction querySide = getUnrotatedSide(side, rotationY);

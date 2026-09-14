@@ -14,10 +14,10 @@ import net.minecraft.util.profiling.ProfilerFiller;
  * Срабатывает при F3+T, смене шейдерпака или загрузке мира
  */
 //? if forge {
-import net.minecraftforge.api.distmarker.Dist;
+/*import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 @OnlyIn(Dist.CLIENT)
-//?}
+*///?}
 public class ShaderReloadListener extends SimplePreparableReloadListener<Void> {
     
     /**

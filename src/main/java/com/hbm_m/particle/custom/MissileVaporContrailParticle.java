@@ -26,10 +26,10 @@ import java.util.Random;
  * Stays in the air much longer than {@link MissileContrailParticle}, spreads and fades slowly.
  */
 //? if forge {
-@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-//?} elif neoforge {
-/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-*///?}
+/*@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+*///?} elif neoforge {
+@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+//?}
 public class MissileVaporContrailParticle extends TextureSheetParticle {
 
     public static float currentSpawnScale = 1.0F;
@@ -130,11 +130,11 @@ public class MissileVaporContrailParticle extends TextureSheetParticle {
     }
 
     //? if < 1.21.1 {
-    @Override
+    /*@Override
     public boolean shouldCull() {
         return false;
     }
-    //?}
+    *///?}
 
     @Override
     public int getLightColor(float partialTick) {

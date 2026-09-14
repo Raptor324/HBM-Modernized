@@ -24,12 +24,12 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 //? if forge {
-import net.minecraftforge.gametest.GameTestHolder;
+/*import net.minecraftforge.gametest.GameTestHolder;
 import net.minecraftforge.gametest.PrefixGameTestTemplate;
-//?} elif neoforge {
-/*import net.neoforged.neoforge.gametest.GameTestHolder;
+*///?} elif neoforge {
+import net.neoforged.neoforge.gametest.GameTestHolder;
 import net.neoforged.neoforge.gametest.PrefixGameTestTemplate;
- *///?}
+ //?}
 
 /**
  * Radiation observability via instruments: the Geiger counter (item and block) and the dosimeter.
@@ -75,7 +75,7 @@ public final class RadiationObservabilityGameTest {
      */
     private static Player makePlayer(GameTestHelper helper) {
         //? if < 1.21.1 {
-        // ВАЖНО: ванильный makeMockPlayer() на 1.20.1 возвращает КРЕАТИВНОГО игрока,
+        /*// ВАЖНО: ванильный makeMockPlayer() на 1.20.1 возвращает КРЕАТИВНОГО игрока,
         // а ContaminationUtil.contaminate игнорирует креатив — для тестов загрязнения
         // нужен survival-игрок (см. GasGameTest.makeSurvivalPlayer).
         return new Player(helper.getLevel(), BlockPos.ZERO, 0.0F,
@@ -90,9 +90,9 @@ public final class RadiationObservabilityGameTest {
                 return false;
             }
         };
-        //?} else {
-        /*return helper.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
-         *///?}
+        *///?} else {
+        return helper.makeMockPlayer(net.minecraft.world.level.GameType.SURVIVAL);
+         //?}
     }
 
     /**

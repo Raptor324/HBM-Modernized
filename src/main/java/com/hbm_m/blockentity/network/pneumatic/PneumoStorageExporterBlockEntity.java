@@ -157,7 +157,7 @@ public class PneumoStorageExporterBlockEntity extends PneumaticMachineBlockEntit
             int existingSize = 0;
 
             if (!existing.isEmpty()) {
-                if (ItemStack.isSameItemSameTags(existing, filter)) {
+                if (com.hbm_m.platform.PlatformHooks.isSameItemSameTags(existing, filter)) {
                     existingSize = existing.getCount();
                 } else {
                     slotDelay[i] = SLOT_DELAY;
@@ -209,7 +209,7 @@ public class PneumoStorageExporterBlockEntity extends PneumaticMachineBlockEntit
         int existingSize = 0;
 
         if (!existing.isEmpty()) {
-            if (!ItemStack.isSameItemSameTags(existing, filter)) return false;
+            if (!com.hbm_m.platform.PlatformHooks.isSameItemSameTags(existing, filter)) return false;
             existingSize = existing.getCount();
         }
 

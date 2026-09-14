@@ -7,13 +7,13 @@ import net.minecraft.world.item.ItemStack;
 import java.util.Optional;
 
 //? if forge {
-import com.hbm_m.capability.ModCapabilities;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-//?}
-//? if neoforge {
 /*import com.hbm_m.capability.ModCapabilities;
-import net.neoforged.neoforge.capabilities.Capabilities;
+import net.minecraftforge.common.capabilities.ForgeCapabilities;
 *///?}
+//? if neoforge {
+import com.hbm_m.capability.ModCapabilities;
+import net.neoforged.neoforge.capabilities.Capabilities;
+//?}
 
 public final class ItemEnergyAccess {
 
@@ -36,10 +36,10 @@ public final class ItemEnergyAccess {
     public static boolean hasLoaderEnergy(ItemStack stack) {
         if (stack.isEmpty()) return false;
         //? if forge {
-        return stack.getCapability(ForgeCapabilities.ENERGY).isPresent();
-        //?} elif neoforge {
-        /*return stack.getCapability(Capabilities.EnergyStorage.ITEM) != null;
-        *///?}
+        /*return stack.getCapability(ForgeCapabilities.ENERGY).isPresent();
+        *///?} elif neoforge {
+        return stack.getCapability(Capabilities.EnergyStorage.ITEM) != null;
+        //?}
     }
 
     public static Optional<IEnergyProvider> getHbmProvider(ItemStack stack) {
@@ -48,11 +48,11 @@ public final class ItemEnergyAccess {
         }
 
         //? if forge {
-        return stack.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER).resolve();
-        //?} else {
-        /*IEnergyProvider p = stack.getCapability(ModCapabilities.HBM_ITEM_ENERGY_PROVIDER);
+        /*return stack.getCapability(ModCapabilities.HBM_ENERGY_PROVIDER).resolve();
+        *///?} else {
+        IEnergyProvider p = stack.getCapability(ModCapabilities.HBM_ITEM_ENERGY_PROVIDER);
         return Optional.ofNullable(p);
-        *///?}
+        //?}
     }
 
     public static Optional<IEnergyReceiver> getHbmReceiver(ItemStack stack) {
@@ -61,15 +61,15 @@ public final class ItemEnergyAccess {
         }
 
         //? if forge {
-        return stack.getCapability(ModCapabilities.HBM_ENERGY_RECEIVER).resolve();
-        //?} else {
-        /*IEnergyReceiver r = stack.getCapability(ModCapabilities.HBM_ITEM_ENERGY_RECEIVER);
+        /*return stack.getCapability(ModCapabilities.HBM_ENERGY_RECEIVER).resolve();
+        *///?} else {
+        IEnergyReceiver r = stack.getCapability(ModCapabilities.HBM_ITEM_ENERGY_RECEIVER);
         return Optional.ofNullable(r);
-        *///?}
+        //?}
     }
 
     //? if forge {
-    public static boolean canForgeExtract(ItemStack stack) {
+    /*public static boolean canForgeExtract(ItemStack stack) {
         return stack.getCapability(ForgeCapabilities.ENERGY).map(net.minecraftforge.energy.IEnergyStorage::canExtract).orElse(false);
     }
 
@@ -77,9 +77,9 @@ public final class ItemEnergyAccess {
         if (stack.isEmpty()) return java.util.Optional.empty();
         return stack.getCapability(ForgeCapabilities.ENERGY).resolve();
     }
-    //?}
+    *///?}
     //? if neoforge {
-    /*public static boolean canForgeExtract(ItemStack stack) {
+    public static boolean canForgeExtract(ItemStack stack) {
         net.neoforged.neoforge.energy.IEnergyStorage cap = stack.getCapability(Capabilities.EnergyStorage.ITEM);
         return cap != null && cap.canExtract();
     }
@@ -88,5 +88,5 @@ public final class ItemEnergyAccess {
         if (stack.isEmpty()) return java.util.Optional.empty();
         return java.util.Optional.ofNullable(stack.getCapability(Capabilities.EnergyStorage.ITEM));
     }
-    *///?}
+    //?}
 }

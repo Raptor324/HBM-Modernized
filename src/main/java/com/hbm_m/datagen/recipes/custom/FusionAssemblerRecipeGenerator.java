@@ -1,6 +1,6 @@
 package com.hbm_m.datagen.recipes.custom;
 //? if forge {
-import java.util.function.Consumer;
+/*import java.util.function.Consumer;
 
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.item.ModItems;
@@ -12,7 +12,7 @@ import net.minecraft.data.recipes.FinishedRecipe;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
 
-/**
+/^*
  * 1:1-Port des Abschnitts "fusion reactor" aus {@code AssemblyMachineRecipes.registerDefaults()}
  * (1.7.10).
  *
@@ -29,7 +29,7 @@ import net.minecraft.world.item.crafting.Ingredient;
  * <p>Die {@code inputItemsEx}-Varianten des Originals (Alternativrezepte mit
  * {@code item_expensive}-Baugruppen) sind nicht enthalten - dieses "teure Bauteil"-System gibt es
  * im Port noch nicht.</p>
- */
+ ^/
 public final class FusionAssemblerRecipeGenerator {
 
     private FusionAssemblerRecipeGenerator() {}
@@ -156,4 +156,4 @@ public final class FusionAssemblerRecipeGenerator {
                 .save(writer, "fusionplasmaforge");
     }
 }
-//?}
+*///?}

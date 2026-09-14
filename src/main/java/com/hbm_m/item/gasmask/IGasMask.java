@@ -102,11 +102,11 @@ public interface IGasMask {
         try {
             ResourceLocation rl = ResourceLocation.parse(id);
             //? if < 1.21.1 {
-            Item item = BuiltInRegistries.ITEM.get(rl);
+            /*Item item = BuiltInRegistries.ITEM.get(rl);
             return item == null || item == net.minecraft.world.item.Items.AIR ? null : item;
-            //?} else {
-            /*return BuiltInRegistries.ITEM.getOptional(rl).orElse(null);
-             *///?}
+            *///?} else {
+            return BuiltInRegistries.ITEM.getOptional(rl).orElse(null);
+             //?}
         } catch (Exception e) {
             return null;
         }

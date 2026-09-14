@@ -1,5 +1,5 @@
 //? if neoforge {
-/*package com.hbm_m.client;
+package com.hbm_m.client;
 
 import com.hbm_m.multiblock.MultiblockBlockItem;
 
@@ -10,11 +10,11 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.neoforge.client.event.RenderHighlightEvent;
 
-/^*
+/**
  * NeoForge-only подписчик: при удержании предмета мультиблока отменяет ванильный
  * контур цели и рисует рамку футпринта (порт drawPlacementHighlight из 1.7.10).
  * Зеркалирует MultiblockPlacementHighlightForge.
- ^/
+ */
 @EventBusSubscriber(value = Dist.CLIENT)
 public final class MultiblockPlacementHighlightNeoForge {
     private MultiblockPlacementHighlightNeoForge() {}
@@ -31,4 +31,4 @@ public final class MultiblockPlacementHighlightNeoForge {
         MultiblockPlacementHighlight.render(mc.level, mc.player, item, target, event.getPoseStack());
     }
 }
-*///?}
+//?}

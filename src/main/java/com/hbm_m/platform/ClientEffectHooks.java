@@ -34,21 +34,43 @@ public final class ClientEffectHooks {
      */
     public static void initializeClient(MobEffect effect, Consumer<Object> consumer) {
         //? if forge {
-        if (effect instanceof RadawayEffect) {
+        /*if (effect instanceof RadawayEffect) {
             consumer.accept(radawayExtensionsForge());
         } else if (effect instanceof TaintEffect) {
             consumer.accept(taintExtensionsForge());
+        } else if (effect instanceof com.hbm_m.effect.HbmEffect sheet) {
+            consumer.accept(sheetExtensionsForge(sheet));
         }
-        //?} elif neoforge {
-        /*if (effect instanceof RadawayEffect) {
+        *///?} elif neoforge {
+        if (effect instanceof RadawayEffect) {
             consumer.accept(radawayExtensionsNeo());
         } else if (effect instanceof TaintEffect) {
             consumer.accept(taintExtensionsNeo());
+        } else if (effect instanceof com.hbm_m.effect.HbmEffect sheet) {
+            consumer.accept(sheetExtensionsNeo(sheet));
         }
-        *///?}
+        //?}
     }
 
     //? if forge {
+    /*private static net.minecraftforge.client.extensions.common.IClientMobEffectExtensions sheetExtensionsForge(com.hbm_m.effect.HbmEffect effect) {
+        return new net.minecraftforge.client.extensions.common.IClientMobEffectExtensions() {
+            @Override
+            public boolean renderInventoryIcon(MobEffectInstance instance,
+                    EffectRenderingInventoryScreen<?> screen, GuiGraphics gfx, int x, int y, int blitOffset) {
+                com.hbm_m.effect.render.PotionSheetRenderer.renderInventory(gfx, effect.getIconU(), effect.getIconV(), x, y, blitOffset);
+                return true;
+            }
+
+            @Override
+            public boolean renderGuiIcon(MobEffectInstance instance, net.minecraft.client.gui.Gui gui,
+                    GuiGraphics gfx, int x, int y, float z, float alpha) {
+                com.hbm_m.effect.render.PotionSheetRenderer.renderHud(gfx, effect.getIconU(), effect.getIconV(), x, y, (int) z, alpha);
+                return true;
+            }
+        };
+    }
+
     private static net.minecraftforge.client.extensions.common.IClientMobEffectExtensions radawayExtensionsForge() {
         return new net.minecraftforge.client.extensions.common.IClientMobEffectExtensions() {
             @Override
@@ -84,8 +106,27 @@ public final class ClientEffectHooks {
             }
         };
     }
-    //?} elif neoforge {
-    /*private static net.neoforged.neoforge.client.extensions.common.IClientMobEffectExtensions radawayExtensionsNeo() {
+    *///?} elif neoforge {
+    /** Icons from the 1.7.10 potions.png sheet (HbmEffect ports) - the same on both loaders. */
+    private static net.neoforged.neoforge.client.extensions.common.IClientMobEffectExtensions sheetExtensionsNeo(com.hbm_m.effect.HbmEffect effect) {
+        return new net.neoforged.neoforge.client.extensions.common.IClientMobEffectExtensions() {
+            @Override
+            public boolean renderInventoryIcon(MobEffectInstance instance,
+                    EffectRenderingInventoryScreen<?> screen, GuiGraphics gfx, int x, int y, int blitOffset) {
+                com.hbm_m.effect.render.PotionSheetRenderer.renderInventory(gfx, effect.getIconU(), effect.getIconV(), x, y, blitOffset);
+                return true;
+            }
+
+            @Override
+            public boolean renderGuiIcon(MobEffectInstance instance, net.minecraft.client.gui.Gui gui,
+                    GuiGraphics gfx, int x, int y, float z, float alpha) {
+                com.hbm_m.effect.render.PotionSheetRenderer.renderHud(gfx, effect.getIconU(), effect.getIconV(), x, y, (int) z, alpha);
+                return true;
+            }
+        };
+    }
+
+    private static net.neoforged.neoforge.client.extensions.common.IClientMobEffectExtensions radawayExtensionsNeo() {
         return new net.neoforged.neoforge.client.extensions.common.IClientMobEffectExtensions() {
             @Override
             public boolean renderInventoryIcon(MobEffectInstance instance,
@@ -120,5 +161,5 @@ public final class ClientEffectHooks {
             }
         };
     }
-     *///?}
+     //?}
 }

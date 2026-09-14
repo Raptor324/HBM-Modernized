@@ -1,6 +1,6 @@
 package com.hbm_m.datagen.recipes.custom;
 //? if forge {
-import javax.annotation.Nullable;
+/*import javax.annotation.Nullable;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
@@ -11,7 +11,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeSerializer;
 
-/**
+/^*
  * Datagen-билдер {@link ElectrolyserFluidRecipe} ({@code hbm_m:electrolyser_fluid}).
  *
  * <p>Чистый ванильный 1.20.1 код внутри {@code //? if forge} — датаген только для 1.20.1-forge.</p>
@@ -26,7 +26,7 @@ import net.minecraft.world.item.crafting.RecipeSerializer;
  *   "byproducts": [ { "item": "...", "count": 1 } ]  // optional
  * }
  * }</pre>
- */
+ ^/
 public class ElectrolyserFluidRecipeBuilder extends BaseRecipeBuilder<ElectrolyserFluidRecipeBuilder> {
 
     private final FluidStack input;
@@ -82,4 +82,4 @@ public class ElectrolyserFluidRecipeBuilder extends BaseRecipeBuilder<Electrolys
         return ElectrolyserFluidRecipe.Serializer.INSTANCE;
     }
 }
-//?}
+*///?}

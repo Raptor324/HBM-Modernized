@@ -6,11 +6,11 @@ import com.hbm_m.interfaces.IEnergyProvider;
 import com.hbm_m.interfaces.IEnergyReceiver;
 
 //? if forge {
-import net.minecraftforge.energy.IEnergyStorage;
-//?}
-//? if neoforge {
-/*import net.neoforged.neoforge.energy.IEnergyStorage;
+/*import net.minecraftforge.energy.IEnergyStorage;
 *///?}
+//? if neoforge {
+import net.neoforged.neoforge.energy.IEnergyStorage;
+//?}
 
 /**
  * Мост между HBM Energy (long) и Forge/NeoForge Energy (int): один к одному, с насыщением

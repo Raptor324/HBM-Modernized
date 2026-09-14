@@ -8,9 +8,9 @@ import java.util.regex.Pattern;
 
 import com.hbm_m.main.MainRegistry;
 //? if forge {
-import net.minecraftforge.api.distmarker.Dist;
+/*import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?}
+*///?}
 
 /**
  * Lightweight GLSL source modifier inspired by Veil's ShaderModification system,
@@ -28,8 +28,8 @@ import net.minecraftforge.api.distmarker.OnlyIn;
  * future Iris {@code TransformPatcher} integration (Variant B).
  */
 //? if forge {
-@OnlyIn(Dist.CLIENT)
-//?}
+/*@OnlyIn(Dist.CLIENT)
+*///?}
 public final class ShaderModification {
 
     /**

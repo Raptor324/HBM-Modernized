@@ -263,7 +263,7 @@ public class RBMKRodItem extends Item implements ITooltipProvider {
     // ─── NBT helpers ─────────────────────────────────────────────────────────
 
     //? if < 1.21.1 {
-    private static CompoundTag getOrCreateTag(ItemStack stack) {
+    /*private static CompoundTag getOrCreateTag(ItemStack stack) {
         if (!PlatformHooks.hasItemTag(stack)) {
             CompoundTag tag = new CompoundTag();
             if (stack.getItem() instanceof RBMKRodItem rod) tag.putDouble("yield", rod.yield);
@@ -281,8 +281,8 @@ public class RBMKRodItem extends Item implements ITooltipProvider {
     public static void   setCoreHeat(ItemStack s, double v){ getOrCreateTag(s).putDouble("core", v); }
     public static double getHullHeat(ItemStack s)        { return getOrCreateTag(s).getDouble("hull"); }
     public static void   setHullHeat(ItemStack s, double v){ getOrCreateTag(s).putDouble("hull", v); }
-    //?} else {
-    /*private static CompoundTag readTag(ItemStack stack) {
+    *///?} else {
+    private static CompoundTag readTag(ItemStack stack) {
         net.minecraft.world.item.component.CustomData data =
             stack.get(net.minecraft.core.component.DataComponents.CUSTOM_DATA);
         if (data != null) return data.copyTag();
@@ -309,7 +309,7 @@ public class RBMKRodItem extends Item implements ITooltipProvider {
     public static void   setCoreHeat(ItemStack s, double v){ CompoundTag t = readTag(s); t.putDouble("core", v); saveTag(s, t); }
     public static double getHullHeat(ItemStack s)        { return readTag(s).getDouble("hull"); }
     public static void   setHullHeat(ItemStack s, double v){ CompoundTag t = readTag(s); t.putDouble("hull", v); saveTag(s, t); }
-    *///?}
+    //?}
 
     public static double getPoisonLevel(ItemStack stack) { return getPoison(stack) / 100.0; }
 

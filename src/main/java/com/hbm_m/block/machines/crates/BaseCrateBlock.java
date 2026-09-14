@@ -40,16 +40,16 @@ public abstract class BaseCrateBlock extends BaseEntityBlock {
     }
 
     //? if < 1.21.1 {
-    @Override
+    /*@Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         return openCrateMenu(state, level, pos, player);
     }
-    //?} else {
-    /*@Override
+    *///?} else {
+    @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
         return openCrateMenu(state, level, pos, player);
     }
-    *///?}
+    //?}
 
     private InteractionResult openCrateMenu(BlockState state, Level level, BlockPos pos, Player player) {
         if (!level.isClientSide() && level.getBlockEntity(pos) instanceof BaseCrateBlockEntity crateEntity) {
@@ -65,7 +65,7 @@ public abstract class BaseCrateBlock extends BaseEntityBlock {
     public void setPlacedBy(Level level, BlockPos pos, BlockState state,
                             @Nullable LivingEntity placer, ItemStack stack) {
         //? if < 1.21.1 {
-        if (PlatformHooks.hasItemTag(stack)) {
+        /*if (PlatformHooks.hasItemTag(stack)) {
             BlockEntity blockEntity = level.getBlockEntity(pos);
             if (blockEntity instanceof BaseCrateBlockEntity crateEntity) {
                 CompoundTag tag = PlatformHooks.getItemTag(stack);
@@ -74,8 +74,8 @@ public abstract class BaseCrateBlock extends BaseEntityBlock {
                 }
             }
         }
-        //?} else {
-        /*// 1.21.1: {@link #saveToItem} кладёт содержимое в DataComponents.BLOCK_ENTITY_DATA
+        *///?} else {
+        // 1.21.1: {@link #saveToItem} кладёт содержимое в DataComponents.BLOCK_ENTITY_DATA
         // (без обёртки BlockEntityTag), поэтому читаем компонент напрямую.
         BlockEntity blockEntity = level.getBlockEntity(pos);
         if (blockEntity instanceof BaseCrateBlockEntity crateEntity) {
@@ -88,7 +88,7 @@ public abstract class BaseCrateBlock extends BaseEntityBlock {
                 }
             }
         }
-        *///?}
+        //?}
     }
 
     @Override
@@ -114,18 +114,18 @@ public abstract class BaseCrateBlock extends BaseEntityBlock {
     }
 
     //? if < 1.21.1 {
-    @Override
+    /*@Override
     public void playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
         handlePlayerWillDestroy(level, pos, state, player);
         super.playerWillDestroy(level, pos, state, player);
     }
-    //?} else {
-    /*@Override
+    *///?} else {
+    @Override
     public BlockState playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
         handlePlayerWillDestroy(level, pos, state, player);
         return super.playerWillDestroy(level, pos, state, player);
     }
-    *///?}
+    //?}
 
     private void handlePlayerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
         if (level.isClientSide || !(level.getBlockEntity(pos) instanceof BaseCrateBlockEntity crateEntity)) {

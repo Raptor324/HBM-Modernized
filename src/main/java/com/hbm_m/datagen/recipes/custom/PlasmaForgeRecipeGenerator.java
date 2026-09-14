@@ -1,6 +1,6 @@
 package com.hbm_m.datagen.recipes.custom;
 //? if forge {
-import java.util.function.Consumer;
+/*import java.util.function.Consumer;
 
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.inventory.fluid.ModFluids;
@@ -14,7 +14,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.level.material.Fluid;
 
-/**
+/^*
  * Port der Plasmaschmiede-Rezepte aus {@code PlasmaForgeRecipes.registerDefaults()} (1.7.10).
  *
  * <p>Enthalten sind das Fusionsgefaess, die beiden Exotenplatten und die komplette
@@ -26,12 +26,12 @@ import net.minecraft.world.level.material.Fluid;
  *
  * <p><b>Noch nicht portierbar:</b> {@code plsm.hde} (kein HDE-Bauteil) sowie Schrabidiumhammer und
  * Fensu-San (Yharonit, UFO-Muenze, Elektronium, Batteriepakete fehlen).</p>
- */
+ ^/
 public final class PlasmaForgeRecipeGenerator {
 
     private PlasmaForgeRecipeGenerator() {}
 
-    /** Original: {@code String autoPlate = "autoswitch.weldPlates"}. */
+    /^* Original: {@code String autoPlate = "autoswitch.weldPlates"}. ^/
     private static final String AUTO_PLATE = "autoswitch.weldPlates";
 
     public static void generate(Consumer<FinishedRecipe> writer) {
@@ -44,7 +44,7 @@ public final class PlasmaForgeRecipeGenerator {
 
     // ════════════════ Dunkler Fusionskern ════════════════
 
-    /**
+    /^*
      * Die DFC-Rezepte aus {@code PlasmaForgeRecipes} (1.7.10). Alle brauchen 50 Millionen
      * Einspeisung und Sternenfluss; der Kern selbst ist mit 12.000 Ticks und 100 Millionen das
      * mit Abstand teuerste Rezept der ganzen Maschine.
@@ -54,7 +54,7 @@ public final class PlasmaForgeRecipeGenerator {
      * an ihrer Stelle steht ein Quantenschaltkreis mehr. Die Emitter-, Empfaenger- und
      * Injektorrezepte liefern die <b>arbeitenden</b> Bloecke ({@code core_*}), nicht die
      * gleichnamigen Platzhalter.
-     */
+     ^/
     private static void darkFusionCore(java.util.function.Consumer<FinishedRecipe> writer) {
 
         // plsm.dfccore
@@ -112,7 +112,7 @@ public final class PlasmaForgeRecipeGenerator {
 
     // ═══════════════════════ ICF ═══════════════════════
 
-    /**
+    /^*
      * Die ICF-Rezepte aus {@code PlasmaForgeRecipes.registerDefaults()} (1.7.10). Alle laufen mit
      * 800 Ticks, 10.000.000 Energie und einer Million Einspeisung - nur der Reaktorkern braucht
      * 3.000 Ticks.
@@ -125,7 +125,7 @@ public final class PlasmaForgeRecipeGenerator {
      *   <li>Dineutronium-Dichtdraht → Dineutronium-Platte</li>
      *   <li>Alliance-Stahl-Gussblech bzw. -Schweissblech → Alliance-Stahlplatte</li>
      * </ul>
-     */
+     ^/
     private static void icf(Consumer<FinishedRecipe> writer) {
 
         // plsm.icfcell
@@ -282,7 +282,7 @@ public final class PlasmaForgeRecipeGenerator {
         weld(writer, "osmiridium", ModMaterials.OSMIRIDIUM, 3_000, 50_000_000L, ModFluids.REFORMGAS.getSource(), 16_000);
     }
 
-    /** Zwei Gussbleche werden zu einem Schweissblech - im Original alle in derselben Autoswitch-Gruppe. */
+    /^* Zwei Gussbleche werden zu einem Schweissblech - im Original alle in derselben Autoswitch-Gruppe. ^/
     private static void weld(Consumer<FinishedRecipe> writer, String name, ModMaterials mat,
                              int duration, long power, Fluid fluid, int fluidAmount) {
 
@@ -321,4 +321,4 @@ public final class PlasmaForgeRecipeGenerator {
         builder.save(writer, "plasma_forge/fusion_vessel");
     }
 }
-//?}
+*///?}

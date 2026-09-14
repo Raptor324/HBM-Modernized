@@ -68,7 +68,7 @@ public class MachineCoreInjectorBlockEntity extends BaseMachineBlockEntity imple
 
 
     //? if forge {
-    @Override
+    /*@Override
     public @org.jetbrains.annotations.NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(
             net.minecraftforge.common.capabilities.Capability<T> cap, @Nullable Direction side) {
         if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER) {
@@ -76,7 +76,7 @@ public class MachineCoreInjectorBlockEntity extends BaseMachineBlockEntity imple
         }
         return super.getCapability(cap, side);
     }
-    //?}
+    *///?}
 
     /** Original: {@code range = 15}. */
     public static final int RANGE = 15;

@@ -10,12 +10,12 @@ import net.minecraft.sounds.SoundSource;
  * Lebenszyklus wird extern ueber ClientSoundManager/ClientSoundBootstrap verwaltet.
  */
 //? if forge {
-import net.minecraftforge.api.distmarker.Dist;
+/*import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?}
+*///?}
 //? if forge {
-@OnlyIn(Dist.CLIENT)
-//?}
+/*@OnlyIn(Dist.CLIENT)
+*///?}
 public class BroadcastSoundInstance extends AbstractTickableSoundInstance {
 
     public BroadcastSoundInstance(BlockPos pos) {

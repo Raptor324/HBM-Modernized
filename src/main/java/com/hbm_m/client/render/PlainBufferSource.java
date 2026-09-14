@@ -33,7 +33,7 @@ import net.minecraft.client.renderer.RenderType;
 public class PlainBufferSource extends MultiBufferSource.BufferSource {
 
     //? if < 1.21.1 {
-    /** Тип, чей begin() сейчас открыт на shared-билдере; null — ничего. */
+    /*/^* Тип, чей begin() сейчас открыт на shared-билдере; null — ничего. ^/
     private RenderType buildingType;
 
     public PlainBufferSource(com.mojang.blaze3d.vertex.BufferBuilder sharedBuffer) {
@@ -84,8 +84,8 @@ public class PlainBufferSource extends MultiBufferSource.BufferSource {
             type.end(this.builder, com.mojang.blaze3d.systems.RenderSystem.getVertexSorting());
         }
     }
-    //?} else {
-    /*// 1.21.1: ванильный BufferSource уже хранит отдельный BufferBuilder на
+    *///?} else {
+    // 1.21.1: ванильный BufferSource уже хранит отдельный BufferBuilder на
     // тип (startedBuilders) и сортирует MeshData.sortQuads — уязвимой
     // разделяемой машины 1.20.1 там нет; достаточно честного наследника.
     // ВАЖНО: fixedBuffers НЕ может быть Collections.emptySortedMap() — под
@@ -96,5 +96,5 @@ public class PlainBufferSource extends MultiBufferSource.BufferSource {
     public PlainBufferSource(com.mojang.blaze3d.vertex.ByteBufferBuilder sharedBuffer) {
         super(sharedBuffer, it.unimi.dsi.fastutil.objects.Object2ObjectSortedMaps.emptyMap());
     }
-    *///?}
+    //?}
 }

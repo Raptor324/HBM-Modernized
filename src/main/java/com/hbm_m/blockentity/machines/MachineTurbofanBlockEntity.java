@@ -202,7 +202,7 @@ public class MachineTurbofanBlockEntity extends com.hbm_m.blockentity.MachinePol
         // Abgasstrahl hinter der Maschine.
         for (Entity e : level.getEntitiesOfClass(Entity.class, zone(pos, dir, rot, -3.5D, -19.5D))) {
             if (afterburner > 0) {
-                e.setSecondsOnFire(5);
+                com.hbm_m.platform.PlatformHooks.setSecondsOnFire(e, 5);
                 e.hurt(level.damageSources().onFire(), 5F);
             }
             push(e, dir);

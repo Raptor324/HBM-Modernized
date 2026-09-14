@@ -1,6 +1,6 @@
 package com.hbm_m.datagen.recipes.custom;
 //? if forge {
-import com.hbm_m.item.ModItems;
+/*import com.hbm_m.item.ModItems;
 import com.hbm_m.item.material.MaterialShape;
 import com.hbm_m.item.material.ModMaterialItems;
 import com.hbm_m.item.material.ModMaterials;
@@ -12,7 +12,7 @@ import net.minecraft.world.item.crafting.Ingredient;
 
 import java.util.function.Consumer;
 
-/**
+/^*
  * Генератор JSON-рецептов радиационного генератора ({@code hbm_m:radgen}).
  *
  * <p>Порт рецептов 1:1 из статического {@code com.hbm_m.recipe.RadGenRecipes} (Java-порт 1.7.10
@@ -20,7 +20,7 @@ import java.util.function.Consumer;
  * секунд×20 тик, что и в оригинале.</p>
  *
  * <p>Чистый ванильный 1.20.1 код внутри {@code //? if forge} — датаген только для 1.20.1-forge.</p>
- */
+ ^/
 public final class RadGenRecipeGenerator {
 
     private RadGenRecipeGenerator() {}
@@ -42,10 +42,10 @@ public final class RadGenRecipeGenerator {
 
     // ─── helpers ──────────────────────────────────────────────────────────────────
 
-    /**
+    /^*
      * Ein Rezept je Abfallklasse einer Gruppe. Frische und abgereicherte Gruppe stehen in
      * derselben Reihenfolge, Listenplatz {@code i} gehoert also zusammen.
-     */
+     ^/
     private static void wasteGroup(Consumer<FinishedRecipe> writer, String idPrefix,
                                    String fresh, String spent, int power, int duration) {
 
@@ -64,4 +64,4 @@ public final class RadGenRecipeGenerator {
                 .save(writer, "radgen/" + id);
     }
 }
-//?}
+*///?}

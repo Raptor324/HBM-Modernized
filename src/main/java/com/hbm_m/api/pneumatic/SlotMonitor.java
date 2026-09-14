@@ -50,7 +50,7 @@ public class SlotMonitor {
     public ItemStack toZeroStack() {
         if (item == null) return null;
         ItemStack stack = new ItemStack(item, 0);
-        if (nbt != null) stack.setTag(nbt.copy());
+        if (nbt != null) com.hbm_m.platform.PlatformHooks.setItemTag(stack, nbt.copy());
         return stack;
     }
 
@@ -100,7 +100,7 @@ public class SlotMonitor {
         } else if (item != stack.getItem()) {
             hasTypeChanged = true;
         } else {
-            CompoundTag tag = stack.getTag();
+            CompoundTag tag = com.hbm_m.platform.PlatformHooks.getItemTag(stack);
             hasTypeChanged = (nbt == null) != (tag == null) || (nbt != null && !nbt.equals(tag));
         }
 
@@ -121,7 +121,8 @@ public class SlotMonitor {
             } else {
                 item = stack.getItem();
                 stacksize = amount;
-                nbt = stack.getTag() != null ? stack.getTag().copy() : null;
+                nbt = com.hbm_m.platform.PlatformHooks.getItemTag(stack); // already a copy on 1.21.1, copied below for 1.20.1
+                if (nbt != null) nbt = nbt.copy();
             }
 
             // ... und sich neu eintragen.

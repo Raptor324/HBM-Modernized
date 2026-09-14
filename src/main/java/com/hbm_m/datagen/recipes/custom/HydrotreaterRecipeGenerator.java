@@ -1,20 +1,20 @@
 package com.hbm_m.datagen.recipes.custom;
 //? if forge {
-import com.hbm_m.inventory.fluid.ModFluids;
+/*import com.hbm_m.inventory.fluid.ModFluids;
 
 import dev.architectury.fluid.FluidStack;
 import net.minecraft.data.recipes.FinishedRecipe;
 
 import java.util.function.Consumer;
 
-/**
+/^*
  * Генератор JSON-рецептов гидроочистки ({@code hbm_m:hydrotreater}).
  *
  * <p>Порт 6 рецептов из удалённого статического {@code HydrotreaterRecipes} (static-блок,
  * Direktport 1.7.10 {@code HydrotreatingRecipes}). Жидкостные стаки создаются через
  * {@link FluidStack#create} из {@link ModFluids} (mB). Чистый ванильный 1.20.1 код внутри
  * {@code //? if forge} — датаген только для 1.20.1-forge.</p>
- */
+ ^/
 public final class HydrotreaterRecipeGenerator {
 
     private HydrotreaterRecipeGenerator() {}
@@ -67,4 +67,4 @@ public final class HydrotreaterRecipeGenerator {
         return FluidStack.create(entry.getSource(), (long) amountMb);
     }
 }
-//?}
+*///?}

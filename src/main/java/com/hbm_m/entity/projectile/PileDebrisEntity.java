@@ -63,12 +63,12 @@ public class PileDebrisEntity extends Entity {
 
     //? if < 1.21.1 {
 
-    @Override
-    protected void defineSynchedData() { }
-    //?} else {
     /*@Override
+    protected void defineSynchedData() { }
+    *///?} else {
+    @Override
     protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) { }
-    *///?}
+    //?}
 
     @Override
     public void tick() {
@@ -102,11 +102,10 @@ public class PileDebrisEntity extends Entity {
 
         if (struck != null) {
             //? if < 1.21.1 {
+            /*struck.hurt(damageSources().explosion(this, null), DAMAGE);
+            *///?} else {
             struck.hurt(damageSources().explosion(this, null), DAMAGE);
-            //?} else {
-            /*struck.hurt((net.minecraft.server.level.ServerLevel) level(),
-                    damageSources().explosion(this, null), DAMAGE);
-            *///?}
+            //?}
             impact();
             return;
         }

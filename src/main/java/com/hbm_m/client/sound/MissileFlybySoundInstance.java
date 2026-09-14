@@ -1,9 +1,9 @@
 package com.hbm_m.client.sound;
 
 //? if forge {
-import net.minecraftforge.api.distmarker.Dist;
+/*import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?}
+*///?}
 
 import com.hbm_m.sound.ModSounds;
 
@@ -37,8 +37,8 @@ import org.jetbrains.annotations.Nullable;
  * скорость ракеты независимо от загрузки ванильной сущности (сетевой трек).
  */
 //? if forge {
-@OnlyIn(Dist.CLIENT)
-//?}
+/*@OnlyIn(Dist.CLIENT)
+*///?}
 public class MissileFlybySoundInstance extends AbstractTickableSoundInstance {
 
     /** Скорость звука в воздухе: 343 м/с, один тик = 1/20 с → блоков(метров) за тик. */

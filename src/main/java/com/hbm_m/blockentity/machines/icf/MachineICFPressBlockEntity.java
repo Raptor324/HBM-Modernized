@@ -127,7 +127,7 @@ public class MachineICFPressBlockEntity extends BaseMachineBlockEntity implement
             if (outSlot.isEmpty()) {
                 getInventory().setStackInSlot(SLOT_MUON_EMPTY, container.copy());
                 canStore = true;
-            } else if (ItemStack.isSameItemSameTags(outSlot, container)
+            } else if (com.hbm_m.platform.PlatformHooks.isSameItemSameTags(outSlot, container)
                     && outSlot.getCount() < outSlot.getMaxStackSize()) {
                 outSlot.grow(1);
                 canStore = true;

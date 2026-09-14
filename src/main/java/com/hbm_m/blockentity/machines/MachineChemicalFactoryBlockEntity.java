@@ -264,8 +264,8 @@ public class MachineChemicalFactoryBlockEntity extends BaseMachineBlockEntity
     }
 
     //? if forge {
-    @Override
-    //?}
+    /*@Override
+    *///?}
     public AABB getRenderBoundingBox() {
         // Машина 5×3×5 + опциональная труба над ядром: дефолтный 1-блочный AABB
         // ошибочно культил бы рендер, когда ядро за кадром (оригинал: x-2..x+3, y..y+3).
@@ -476,8 +476,8 @@ public class MachineChemicalFactoryBlockEntity extends BaseMachineBlockEntity
     private static final String CHEMICAL_PLANT_SOUND_INSTANCE = "com.hbm_m.sound.ChemicalPlantSoundInstance";
 
     //? if forge {
-    @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-    //?}
+    /*@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+    *///?}
     private void clientTick() {
         com.hbm_m.sound.ClientSoundBootstrap.updateSound(this, isChemFactoryEffectsActive(), this::newChemFactorySoundInstance);
     }

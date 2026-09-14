@@ -4,17 +4,17 @@ import java.util.List;
 
 import dev.architectury.fluid.FluidStack;
 //? if forge {
-import mezz.jei.api.forge.ForgeTypes;
+/*import mezz.jei.api.forge.ForgeTypes;
 import dev.architectury.hooks.fluid.forge.FluidStackHooksForge;
-//?} elif neoforge {
-/*import mezz.jei.api.neoforge.NeoForgeTypes;
-*///?}
+*///?} elif neoforge {
+import mezz.jei.api.neoforge.NeoForgeTypes;
+//?}
 import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
 import mezz.jei.api.helpers.IGuiHelper;
 import mezz.jei.api.recipe.RecipeIngredientRole;
 import net.minecraft.world.item.ItemStack;
 
-//? if forge {
+//? if forge || neoforge {
 /**
  * Gemeinsame Grundlage aller JEI-Kategorien, die ueberwiegend mit Fluessigkeiten arbeiten -
  * Reformer, Verkoker, Fraktionierturm, Hydrotreater, Vakuumdestillation, Bruetreaktor,
@@ -117,12 +117,12 @@ public abstract class JeiFluidRecipeCategory<R> extends JeiGenericRecipeCategory
         addItemSlot(builder, role, x, y)
                 .setFluidRenderer(FLUID_RENDERER_CAPACITY, false, 16, 16)
                 //? if forge {
-                .setCustomRenderer(ForgeTypes.FLUID_STACK, new HbmFluidJeiRenderer(16, 16))
+                /*.setCustomRenderer(ForgeTypes.FLUID_STACK, new HbmFluidJeiRenderer(16, 16))
                 .addIngredient(ForgeTypes.FLUID_STACK, FluidStackHooksForge.toForge(fluid));
-                //?} elif neoforge {
-                /*.setCustomRenderer(NeoForgeTypes.FLUID_STACK, new HbmFluidJeiRenderer(16, 16))
+                *///?} elif neoforge {
+                .setCustomRenderer(NeoForgeTypes.FLUID_STACK, new HbmFluidJeiRenderer(16, 16))
                 .addIngredient(NeoForgeTypes.FLUID_STACK, new net.neoforged.neoforge.fluids.FluidStack(fluid.getFluid(), (int) fluid.getAmount()));
-                *///?}
+                //?}
     }
 
     @Override

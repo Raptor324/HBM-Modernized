@@ -285,16 +285,16 @@ public class MachineRbmkConsoleRenderer implements BlockEntityRenderer<MachineRb
         float u = (sprite.getU0() + sprite.getU1()) * 0.5f;
         float v = (sprite.getV0() + sprite.getV1()) * 0.5f;
         //? if < 1.21.1 {
-        vc.vertex(m, x0, y0, z0).color(r, g, b, 1f).uv(u, v).overlayCoords(overlay).uv2(light).normal(nx, ny, nz).endVertex();
+        /*vc.vertex(m, x0, y0, z0).color(r, g, b, 1f).uv(u, v).overlayCoords(overlay).uv2(light).normal(nx, ny, nz).endVertex();
         vc.vertex(m, x1, y1, z1).color(r, g, b, 1f).uv(u, v).overlayCoords(overlay).uv2(light).normal(nx, ny, nz).endVertex();
         vc.vertex(m, x2, y2, z2).color(r, g, b, 1f).uv(u, v).overlayCoords(overlay).uv2(light).normal(nx, ny, nz).endVertex();
         vc.vertex(m, x3, y3, z3).color(r, g, b, 1f).uv(u, v).overlayCoords(overlay).uv2(light).normal(nx, ny, nz).endVertex();
-        //?} else {
-        /*vc.addVertex(m, x0, y0, z0).setColor(r, g, b, 1f).setUv(u, v).setOverlay(overlay).setLight(light).setNormal(nx, ny, nz);
+        *///?} else {
+        vc.addVertex(m, x0, y0, z0).setColor(r, g, b, 1f).setUv(u, v).setOverlay(overlay).setLight(light).setNormal(nx, ny, nz);
         vc.addVertex(m, x1, y1, z1).setColor(r, g, b, 1f).setUv(u, v).setOverlay(overlay).setLight(light).setNormal(nx, ny, nz);
         vc.addVertex(m, x2, y2, z2).setColor(r, g, b, 1f).setUv(u, v).setOverlay(overlay).setLight(light).setNormal(nx, ny, nz);
         vc.addVertex(m, x3, y3, z3).setColor(r, g, b, 1f).setUv(u, v).setOverlay(overlay).setLight(light).setNormal(nx, ny, nz);
-        *///?}
+        //?}
     }
 
     @Override public boolean shouldRenderOffScreen(MachineRbmkConsoleBlockEntity be) { return true; }

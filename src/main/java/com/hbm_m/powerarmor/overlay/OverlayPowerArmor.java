@@ -7,9 +7,9 @@ import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.item.ItemStack;
 //? if forge {
-import net.minecraftforge.client.gui.overlay.ForgeGui;
+/*import net.minecraftforge.client.gui.overlay.ForgeGui;
 import net.minecraftforge.client.gui.overlay.IGuiOverlay;
-//?}
+*///?}
 import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
@@ -109,7 +109,7 @@ public class OverlayPowerArmor {
     }
 
     //? if forge {
-    public static void onRenderOverlay(ForgeGui gui, GuiGraphics guiGraphics, float partialTick, int screenWidth, int screenHeight) {
+    /*public static void onRenderOverlay(ForgeGui gui, GuiGraphics guiGraphics, float partialTick, int screenWidth, int screenHeight) {
         render(guiGraphics, partialTick, screenWidth, screenHeight);
         // В выживании увеличиваем leftHeight, чтобы СЛЕДУЮЩИЕ элементы (например, воздух)
         // рисовались над нашими полосками.
@@ -128,5 +128,5 @@ public class OverlayPowerArmor {
     }
 
     public static final IGuiOverlay POWER_ARMOR_OVERLAY = OverlayPowerArmor::onRenderOverlay;
-    //?}
+    *///?}
 }

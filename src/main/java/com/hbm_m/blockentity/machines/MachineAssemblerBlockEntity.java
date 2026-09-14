@@ -44,15 +44,15 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
 //? if forge {
-import net.minecraftforge.api.distmarker.Dist;
+/*import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.items.IItemHandler;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
+*///?} elif neoforge {
+import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
-*///?}
+//?}
 
 
 /**
@@ -79,9 +79,9 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
 
     // Proxy handlers РґР»СЏ multiblock parts
     //? if forge {
-    private LazyOptional<IItemHandler> lazyInputProxy = LazyOptional.empty();
+    /*private LazyOptional<IItemHandler> lazyInputProxy = LazyOptional.empty();
     private LazyOptional<IItemHandler> lazyOutputProxy = LazyOptional.empty();
-    //?}
+    *///?}
 
 
     // РћС‚СЃР»РµР¶РёРІР°РЅРёРµ РёСЃС‚РѕС‡РЅРёРєРѕРІ РїСЂРµРґРјРµС‚РѕРІ
@@ -160,7 +160,7 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
     // ==================== MULTIBLOCK PART SUPPORT ====================
 
     //? if forge {
-    public LazyOptional<IItemHandler> getItemHandlerForPart(PartRole role) {
+    /*public LazyOptional<IItemHandler> getItemHandlerForPart(PartRole role) {
         if (role == PartRole.ITEM_INPUT) {
             if (!lazyInputProxy.isPresent()) {
                 lazyInputProxy = LazyOptional.of(this::createInputProxy);
@@ -251,14 +251,14 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
             }
         };
     }
-    //?}
+    *///?}
 
     // NeoForge counterpart of the Forge proxies above. Without it UniversalMachinePartBlockEntity
     // handed out the assembler's raw inventory, so a pipe on an ITEM_INPUT port could pull the
     // template, the battery and the finished product, and one on ITEM_OUTPUT could push into the
     // input slots.
     //? if neoforge {
-    /*public net.neoforged.neoforge.items.IItemHandler getItemHandlerForPart(PartRole role) {
+    public net.neoforged.neoforge.items.IItemHandler getItemHandlerForPart(PartRole role) {
         if (role == PartRole.ITEM_INPUT) {
             return new net.neoforged.neoforge.items.wrapper.RangedWrapper(inventory, INPUT_SLOT_START, INPUT_SLOT_END + 1) {
                 @Override
@@ -277,7 +277,7 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
         }
         return null;
     }
-    *///?}
+    //?}
 
 
     // ==================== TICK LOGIC ====================
@@ -631,7 +631,7 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
 
 
     //? if forge {
-    @Override
+    /*@Override
     public <T> LazyOptional<T> getCapability(@NotNull net.minecraftforge.common.capabilities.Capability<T> cap, @Nullable Direction side) {
         if (cap == ForgeCapabilities.ITEM_HANDLER) {
             return itemHandler.cast();
@@ -645,7 +645,7 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
         lazyInputProxy.invalidate();
         lazyOutputProxy.invalidate();
     }
-    //?}
+    *///?}
 
     // ==================== CLIENT ====================
 
@@ -731,9 +731,9 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
         super.setRemoved();
         // Подписки энергосети снимаются в BaseMachineBlockEntity.setRemoved
         //? if forge {
-        if (this.level != null && this.level.isClientSide) {
+        /*if (this.level != null && this.level.isClientSide) {
             ClientSoundBootstrap.updateSound(this, false, null);
         }
-        //?}
+        *///?}
     }
 }

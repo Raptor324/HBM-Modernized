@@ -211,7 +211,7 @@ public class RBMKOutgasserBlockEntity extends RBMKColumnBlockEntity
     }
 
     //? if forge {
-    @Override
+    /*@Override
     public @org.jetbrains.annotations.NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(
             net.minecraftforge.common.capabilities.Capability<T> cap,
             @org.jetbrains.annotations.Nullable Direction side) {
@@ -220,7 +220,7 @@ public class RBMKOutgasserBlockEntity extends RBMKColumnBlockEntity
         }
         return super.getCapability(cap, side);
     }
-    //?}
+    *///?}
 
     // ─── IRBMKLoadable ───────────────────────────────────────────────────────
 

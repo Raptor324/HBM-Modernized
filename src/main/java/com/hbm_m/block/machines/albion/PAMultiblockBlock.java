@@ -110,16 +110,16 @@ public abstract class PAMultiblockBlock extends BaseEntityBlock implements IMult
     }
 
     //? if < 1.21.1 {
-    @Override
+    /*@Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         return interact(state, level, pos, player, hand);
     }
-    //?} else {
-    /*@Override
+    *///?} else {
+    @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
         return interact(state, level, pos, player, InteractionHand.MAIN_HAND);
     }
-    *///?}
+    //?}
 
     /** Unterklassen haengen sich hier ein - das Strahlrohr etwa fuer den Schraubendreher. */
     protected InteractionResult interact(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand) {

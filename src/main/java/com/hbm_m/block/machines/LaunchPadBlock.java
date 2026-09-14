@@ -149,16 +149,16 @@ public class LaunchPadBlock extends BaseEntityBlock implements IMultiblockContro
     }
 
     //? if < 1.21.1 {
-    @Override
+    /*@Override
     public InteractionResult use(BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer, InteractionHand pHand, BlockHitResult pHit) {
         return openMenu(pState, pLevel, pPos, pPlayer, pHand, pHit);
     }
-    //?} else {
-    /*@Override
+    *///?} else {
+    @Override
     protected InteractionResult useWithoutItem(BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer, BlockHitResult pHit) {
         return openMenu(pState, pLevel, pPos, pPlayer, InteractionHand.MAIN_HAND, pHit);
     }
-    *///?}
+    //?}
 
     private InteractionResult openMenu(BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer, InteractionHand pHand, BlockHitResult pHit) {
         if (!pLevel.isClientSide()) {
@@ -271,11 +271,11 @@ public class LaunchPadBlock extends BaseEntityBlock implements IMultiblockContro
     }
 
     //? if >1.20.1 {
-    /*public static final com.mojang.serialization.MapCodec<LaunchPadBlock> CODEC = simpleCodec(LaunchPadBlock::new);
+    public static final com.mojang.serialization.MapCodec<LaunchPadBlock> CODEC = simpleCodec(LaunchPadBlock::new);
 
     @Override
     protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
         return CODEC;
     }
-    *///?}
+    //?}
 }

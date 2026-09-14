@@ -36,18 +36,18 @@ public class DetMinerBlock extends Block implements IDetonatable {
         super(properties);
     }
     //? if < 1.21.1 {
-    @Override
+    /*@Override
     public void appendHoverText(ItemStack stack,
                                 @Nullable net.minecraft.world.level.BlockGetter level,
                                 List<Component> tooltip,
                                 TooltipFlag flag) {
-    //?} else {
-    /*@Override
+    *///?} else {
+    @Override
     public void appendHoverText(ItemStack stack,
                                 net.minecraft.world.item.Item.TooltipContext level,
                                 List<Component> tooltip,
                                 TooltipFlag flag) {
-    *///?}
+    //?}
         tooltip.add(Component.translatable("tooltip.hbm_m.detminer.line1")
                 .withStyle(ChatFormatting.YELLOW));
         tooltip.add(Component.translatable("tooltip.hbm_m.detminer.line4")

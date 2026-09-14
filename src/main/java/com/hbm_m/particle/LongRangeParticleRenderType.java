@@ -35,7 +35,7 @@ public class LongRangeParticleRenderType implements ParticleRenderType {
     }
 
     //? if < 1.21.1 {
-    @Override
+    /*@Override
     public void begin(BufferBuilder buffer, TextureManager textureManager) {
         savedFogStart = RenderSystem.getShaderFogStart();
         savedFogEnd = RenderSystem.getShaderFogEnd();
@@ -87,8 +87,8 @@ public class LongRangeParticleRenderType implements ParticleRenderType {
         RenderSystem.setShaderFogStart(savedFogStart);
         RenderSystem.setShaderFogEnd(savedFogEnd);
     }
-    //?} else {
-    /*@Override
+    *///?} else {
+    @Override
     public BufferBuilder begin(Tesselator tesselator, TextureManager textureManager) {
         savedFogStart = RenderSystem.getShaderFogStart();
         savedFogEnd = RenderSystem.getShaderFogEnd();
@@ -105,7 +105,7 @@ public class LongRangeParticleRenderType implements ParticleRenderType {
 
         return tesselator.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.PARTICLE);
     }
-    *///?}
+    //?}
 
     private static void disableParticleFog() {
         RenderSystem.setShaderFogStart(NO_FOG_START);

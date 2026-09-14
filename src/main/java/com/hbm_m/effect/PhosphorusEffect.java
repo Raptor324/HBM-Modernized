@@ -22,6 +22,6 @@ public class PhosphorusEffect extends HbmEffect {
 
     @Override
     protected void tick(@NotNull LivingEntity entity, int amplifier) {
-        entity.setSecondsOnFire(1);
+        com.hbm_m.platform.PlatformHooks.setSecondsOnFire(entity, 1);
     }
 }

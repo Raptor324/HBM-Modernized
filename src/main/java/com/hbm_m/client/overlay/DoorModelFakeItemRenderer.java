@@ -16,9 +16,9 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 //? if forge {
-import net.minecraftforge.api.distmarker.Dist;
+/*import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?}
+*///?}
 
 /**
  * Рендерит 3D модель двери с выбранным скином в GUI.
@@ -29,8 +29,8 @@ import net.minecraftforge.api.distmarker.OnlyIn;
  * ItemRenderer.render() с подменённой моделью.
  */
 //? if forge {
-@OnlyIn(Dist.CLIENT)
-//?}
+/*@OnlyIn(Dist.CLIENT)
+*///?}
 public final class DoorModelFakeItemRenderer {
 
     private static final float ICON_SCALE = 0.9f;
@@ -92,10 +92,10 @@ public final class DoorModelFakeItemRenderer {
         pose.pushPose();
         pose.translate(8.0f, 8.0f, 150.0f);
         //? if < 1.21.1 {
-        pose.mulPoseMatrix(new org.joml.Matrix4f().scaling(1.0F, -1.0F, 1.0F));
-        //?} else {
-        /*pose.mulPose(new org.joml.Matrix4f().scaling(1.0F, -1.0F, 1.0F));
-        *///?}
+        /*pose.mulPoseMatrix(new org.joml.Matrix4f().scaling(1.0F, -1.0F, 1.0F));
+        *///?} else {
+        pose.mulPose(new org.joml.Matrix4f().scaling(1.0F, -1.0F, 1.0F));
+        //?}
         pose.scale(16.0f, 16.0f, 16.0f);
 
         RenderSystem.setShaderColor(1.0f, 1.0f, 1.0f, 1.0f);

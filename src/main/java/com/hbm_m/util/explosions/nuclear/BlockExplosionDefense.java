@@ -172,7 +172,7 @@ public class BlockExplosionDefense {
     }
 
     //? if forge {
-    @net.minecraftforge.fml.common.Mod.EventBusSubscriber(
+    /*@net.minecraftforge.fml.common.Mod.EventBusSubscriber(
             modid = "hbm_m",
             bus = net.minecraftforge.fml.common.Mod.EventBusSubscriber.Bus.FORGE,
             value = net.minecraftforge.api.distmarker.Dist.CLIENT
@@ -206,12 +206,12 @@ public class BlockExplosionDefense {
             }
         }
     }
-    //?}
+    *///?}
 
     // NeoForge counterpart of ForgeClientHooks above: without it no blast-resistance line ever
     // appeared on 1.21.1 and both translations were orphaned. Registered from ClientSetup.
     //? if neoforge {
-    /*public static void onItemTooltipNeo(net.neoforged.neoforge.event.entity.player.ItemTooltipEvent event) {
+    public static void onItemTooltipNeo(net.neoforged.neoforge.event.entity.player.ItemTooltipEvent event) {
         if (!(event.getItemStack().getItem() instanceof net.minecraft.world.item.BlockItem blockItem)) return;
 
         Block block = blockItem.getBlock();
@@ -224,7 +224,7 @@ public class BlockExplosionDefense {
             event.getToolTip().add(Component.translatable("tooltip.hbm_m.explosion_defense.value", String.format("%.0f", defenseValue)));
         }
     }
-    *///?}
+    //?}
 
     /**
      *  Проверка: это ли один из наших модульных блоков

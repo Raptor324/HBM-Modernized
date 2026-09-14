@@ -68,8 +68,8 @@ public class StructTorusCoreBlockEntity extends BlockEntity {
     private AABB renderBounds = null;
 
     //? if forge {
-    @Override
-    //?}
+    /*@Override
+    *///?}
     public AABB getRenderBoundingBox() {
         if (renderBounds == null) {
             renderBounds = new AABB(

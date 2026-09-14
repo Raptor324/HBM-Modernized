@@ -2,20 +2,16 @@ package com.hbm_m.effect;
 
 import java.util.function.Consumer;
 
-import com.hbm_m.effect.render.PotionSheetRenderer;
 
-import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.screens.inventory.EffectRenderingInventoryScreen;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectCategory;
-import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.LivingEntity;
 
 import org.jetbrains.annotations.NotNull;
 
 //? if forge {
-import net.minecraftforge.client.extensions.common.IClientMobEffectExtensions;
-//?}
+/*import net.minecraftforge.client.extensions.common.IClientMobEffectExtensions;
+*///?}
 
 /**
  * Gemeinsame Basis der aus {@code HbmPotion} portierten Effekte: Farbe, Kategorie und das Symbol
@@ -27,13 +23,19 @@ import net.minecraftforge.client.extensions.common.IClientMobEffectExtensions;
  */
 public abstract class HbmEffect extends MobEffect {
 
+    /** Same numbers as PotionSheetRenderer.ICON_SIZE / SHEET_ORIGIN_V (potions.png, mod rows from 198). */
+    private static final int SHEET_ICON_SIZE = 18;
+    private static final int SHEET_ORIGIN_V = 198;
+
     private final int iconU;
     private final int iconV;
 
     protected HbmEffect(MobEffectCategory category, int color, int iconX, int iconY) {
         super(category, color);
-        this.iconU = PotionSheetRenderer.u(iconX);
-        this.iconV = PotionSheetRenderer.v(iconY);
+        // Sheet geometry inlined: PotionSheetRenderer is a client class (GuiGraphics) and this
+        // constructor runs on the dedicated server too.
+        this.iconU = iconX * SHEET_ICON_SIZE;
+        this.iconV = SHEET_ORIGIN_V + iconY * SHEET_ICON_SIZE;
     }
 
     /**
@@ -50,7 +52,7 @@ public abstract class HbmEffect extends MobEffect {
     // Die beiden Haken heissen ab 1.21.1 anders und geben dort ein boolean zurueck; die eigentliche
     // Logik steht deshalb in tick(...) bzw. isReady(...) und wird hier nur durchgereicht.
     //? if < 1.21.1 {
-    @Override
+    /*@Override
     public void applyEffectTick(@NotNull LivingEntity entity, int amplifier) {
         if (entity.level().isClientSide()) return;
         tick(entity, amplifier);
@@ -60,8 +62,8 @@ public abstract class HbmEffect extends MobEffect {
     public boolean isDurationEffectTick(int duration, int amplifier) {
         return isReady(duration, amplifier);
     }
-    //?} else {
-    /*@Override
+    *///?} else {
+    @Override
     public boolean applyEffectTick(@NotNull LivingEntity entity, int amplifier) {
         if (entity.level().isClientSide()) return true;
         tick(entity, amplifier);
@@ -72,29 +74,21 @@ public abstract class HbmEffect extends MobEffect {
     public boolean shouldApplyEffectTickThisTick(int duration, int amplifier) {
         return isReady(duration, amplifier);
     }
-    *///?}
+    //?}
 
+    public int getIconU() { return iconU; }
+    public int getIconV() { return iconV; }
+
+    // Icon rendering lives in ClientEffectHooks (both loaders); the sheet coordinates come from here.
     //? if forge {
-    @Override
+    /*@Override
     public void initializeClient(@NotNull Consumer<IClientMobEffectExtensions> consumer) {
-        consumer.accept(new IClientMobEffectExtensions() {
-
-            @Override
-            public boolean renderInventoryIcon(MobEffectInstance instance,
-                                               EffectRenderingInventoryScreen<?> screen,
-                                               GuiGraphics gfx, int x, int y, int blitOffset) {
-                PotionSheetRenderer.renderInventory(gfx, iconU, iconV, x, y, blitOffset);
-                return true;
-            }
-
-            @Override
-            public boolean renderGuiIcon(MobEffectInstance instance,
-                                         net.minecraft.client.gui.Gui gui,
-                                         GuiGraphics gfx, int x, int y, float z, float alpha) {
-                PotionSheetRenderer.renderHud(gfx, iconU, iconV, x, y, (int) z, alpha);
-                return true;
-            }
-        });
+        com.hbm_m.platform.ClientEffectHooks.initializeClient(this, (Consumer<Object>) (Object) consumer);
+    }
+    *///?} elif neoforge {
+    @Override
+    public void initializeClient(@NotNull Consumer<net.neoforged.neoforge.client.extensions.common.IClientMobEffectExtensions> consumer) {
+        com.hbm_m.platform.ClientEffectHooks.initializeClient(this, (Consumer<Object>) (Object) consumer);
     }
     //?}
 }

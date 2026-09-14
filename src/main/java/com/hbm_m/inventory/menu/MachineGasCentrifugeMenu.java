@@ -22,8 +22,8 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 //? if forge {
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-//?}
+/*import net.minecraftforge.common.capabilities.ForgeCapabilities;
+*///?}
 
 public class MachineGasCentrifugeMenu extends AbstractContainerMenu implements ILongEnergyMenu {
 
@@ -87,12 +87,12 @@ public class MachineGasCentrifugeMenu extends AbstractContainerMenu implements I
                         .orElse(false);
                 if (hbm) return true;
                 //? if forge {
-                return com.hbm_m.api.energy.ItemEnergyAccess.getForgeEnergy(stack)
+                /*return com.hbm_m.api.energy.ItemEnergyAccess.getForgeEnergy(stack)
                         .map(storage -> storage.canExtract())
                         .orElse(false);
-                //?} elif neoforge {
-                /*return stack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM) != null;
-                *///?} else {
+                *///?} elif neoforge {
+                return stack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM) != null;
+                //?} else {
                 /*return false;
                 *///?}
             }
@@ -241,12 +241,12 @@ public class MachineGasCentrifugeMenu extends AbstractContainerMenu implements I
                     .map(provider -> provider.canExtract())
                     .orElse(false);
             //? if forge {
-            isBattery = isBattery || com.hbm_m.api.energy.ItemEnergyAccess.getForgeEnergy(slotStack)
+            /*isBattery = isBattery || com.hbm_m.api.energy.ItemEnergyAccess.getForgeEnergy(slotStack)
                     .map(storage -> storage.canExtract())
                     .orElse(false);
-            //?} elif neoforge {
-            /*isBattery = isBattery || slotStack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM) != null;
-            *///?}
+            *///?} elif neoforge {
+            isBattery = isBattery || slotStack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM) != null;
+            //?}
 
             if (isBattery) {
                 if (!this.moveItemStackTo(slotStack, BATTERY_SLOT, BATTERY_SLOT + 1, false)) {

@@ -41,14 +41,14 @@ public final class SableCompat {
     private static final class Impl {
         static Vec3 toWorld(Level level, Vec3 pos) {
             //? if >= 1.21.1 {
-            /*try {
+            try {
                 return dev.ryanhcode.sable.companion.SableCompanion.INSTANCE.projectOutOfSubLevel(level, pos);
             } catch (Throwable t) {
                 return pos;
             }
-            *///?} else {
-            return pos;
-            //?}
+            //?} else {
+            /*return pos;
+            *///?}
         }
     }
 }

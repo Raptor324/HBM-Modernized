@@ -78,11 +78,11 @@ public class MachineFusionBoilerBlock extends FusionMultiblockBlock implements c
     }
 
     //? if >1.20.1 {
-    /*public static final com.mojang.serialization.MapCodec<MachineFusionBoilerBlock> CODEC = simpleCodec(MachineFusionBoilerBlock::new);
+    public static final com.mojang.serialization.MapCodec<MachineFusionBoilerBlock> CODEC = simpleCodec(MachineFusionBoilerBlock::new);
 
     @Override
     protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
         return CODEC;
     }
-    *///?}
+    //?}
 }

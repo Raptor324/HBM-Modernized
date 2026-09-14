@@ -14,7 +14,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
 
-//? if forge {
+//? if forge || neoforge {
 /**
  * JEI-Kategorie der Verfestigung (siehe {@link SolidificationRecipe}).
  *

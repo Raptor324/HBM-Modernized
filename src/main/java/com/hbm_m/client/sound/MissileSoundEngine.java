@@ -1,9 +1,9 @@
 package com.hbm_m.client.sound;
 
 //? if forge {
-import net.minecraftforge.api.distmarker.Dist;
+/*import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?}
+*///?}
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -33,8 +33,8 @@ import org.jetbrains.annotations.Nullable;
  * стабильный шаг физики при любом FPS.
  */
 //? if forge {
-@OnlyIn(Dist.CLIENT)
-//?}
+/*@OnlyIn(Dist.CLIENT)
+*///?}
 public final class MissileSoundEngine {
 
     /** Создаём канал только когда игрок в зоне слышимости (с запасом за пределы rolloff). */

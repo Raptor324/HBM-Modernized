@@ -26,15 +26,15 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
 
 //? if forge {
-import org.jetbrains.annotations.Nullable;
+/*import org.jetbrains.annotations.Nullable;
 
 import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.capability.IFluidHandler;
-//?} else {
-/*import org.jetbrains.annotations.Nullable;
-*///?}
+*///?} else {
+import org.jetbrains.annotations.Nullable;
+//?}
 import org.jetbrains.annotations.NotNull;
 
 /**
@@ -145,8 +145,8 @@ public class MachineRefineryBlockEntity extends BaseMachineBlockEntity implement
 
 
     //? if forge {
-    private LazyOptional<IFluidHandler> fluidHandler = LazyOptional.empty();
-    //?}
+    /*private LazyOptional<IFluidHandler> fluidHandler = LazyOptional.empty();
+    *///?}
 
     public MachineRefineryBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.REFINERY_BE.get(), pos, state,
@@ -491,11 +491,11 @@ public class MachineRefineryBlockEntity extends BaseMachineBlockEntity implement
     }
 
     //? if forge {
-    @Override
+    /*@Override
     protected void setupFluidCapability() {
         setFluidHandler(new RefineryFluidHandler(this));
     }
-    //?}
+    *///?}
 
     public boolean isOn() {
         return isOn;

@@ -141,7 +141,7 @@ public class RBMKCoolerBlockEntity extends RBMKColumnBlockEntity
     }
 
     //? if forge {
-    /** Bottom face takes cold coolant, every other face hands out the warm coolant. */
+    /*/^* Bottom face takes cold coolant, every other face hands out the warm coolant. ^/
     @Override
     public @org.jetbrains.annotations.NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(
             net.minecraftforge.common.capabilities.Capability<T> cap,
@@ -152,7 +152,7 @@ public class RBMKCoolerBlockEntity extends RBMKColumnBlockEntity
         }
         return super.getCapability(cap, side);
     }
-    //?}
+    *///?}
 
     @Override public RBMKType getRBMKType()      { return RBMKType.OTHER; }
     @Override public ColumnType getConsoleType() { return ColumnType.COOLER; }

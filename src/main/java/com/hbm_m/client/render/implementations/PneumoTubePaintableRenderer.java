@@ -110,9 +110,9 @@ public class PneumoTubePaintableRenderer implements BlockEntityRenderer<PneumoTu
         float vv = sprite.getV(v);
 
         //? if < 1.21.1 {
-        vc.vertex(pose.pose(), x, y, z).color(1F, 1F, 1F, alpha).uv(uu, vv).endVertex();
-        //?} else {
-        /*vc.addVertex(pose, x, y, z).setColor(1F, 1F, 1F, alpha).setUv(uu, vv);
-        *///?}
+        /*vc.vertex(pose.pose(), x, y, z).color(1F, 1F, 1F, alpha).uv(uu, vv).endVertex();
+        *///?} else {
+        vc.addVertex(pose, x, y, z).setColor(1F, 1F, 1F, alpha).setUv(uu, vv);
+        //?}
     }
 }

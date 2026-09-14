@@ -8,9 +8,9 @@ import com.hbm_m.config.ModClothConfig;
 import com.mojang.blaze3d.systems.RenderSystem;
 
 //? if forge {
-import net.minecraftforge.api.distmarker.Dist;
+/*import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?}
+*///?}
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
@@ -18,11 +18,11 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 //? if forge {
-import net.minecraftforge.client.gui.overlay.IGuiOverlay;
-//?}
+/*import net.minecraftforge.client.gui.overlay.IGuiOverlay;
+*///?}
 //? if forge {
-@OnlyIn(Dist.CLIENT)
-//?}
+/*@OnlyIn(Dist.CLIENT)
+*///?}
 public class OverlayInfoToast {
 
     private static final List<Entry> ENTRIES = new ArrayList<>();
@@ -162,7 +162,7 @@ public class OverlayInfoToast {
     }
 
     //? if forge {
-    public static final IGuiOverlay OVERLAY = (gui, gfx, partialTick, screenWidth, screenHeight) ->
+    /*public static final IGuiOverlay OVERLAY = (gui, gfx, partialTick, screenWidth, screenHeight) ->
             render(gfx, partialTick, screenWidth, screenHeight);
-    //?}
+    *///?}
 }

@@ -103,11 +103,11 @@ public class MachineFusionMhdtBlock extends FusionMultiblockBlock implements com
     }
 
     //? if >1.20.1 {
-    /*public static final com.mojang.serialization.MapCodec<MachineFusionMhdtBlock> CODEC = simpleCodec(MachineFusionMhdtBlock::new);
+    public static final com.mojang.serialization.MapCodec<MachineFusionMhdtBlock> CODEC = simpleCodec(MachineFusionMhdtBlock::new);
 
     @Override
     protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
         return CODEC;
     }
-    *///?}
+    //?}
 }

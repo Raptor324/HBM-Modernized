@@ -86,10 +86,10 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
     /** Called from DoorAnimationDelayHelper when delay expires. Client-only. */
 
     //? if forge {
-    @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-    //?} elif neoforge {
-    /*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-    *///?}
+    /*@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+    *///?} elif neoforge {
+    @net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+    //?}
     public void clearAnimationDelayClient() {
         this.cachedModelData = null;
         // requestModelDataUpdate() is Forge-only (model data system). On Fabric it's a no-op.
@@ -594,10 +594,10 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
 
     // ==================== Client Sound Handling ====================
     //? if forge {
-    @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-    //?} elif neoforge {
-    /*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-    *///?}
+    /*@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+    *///?} elif neoforge {
+    @net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+    //?}
     private void handleNewState(byte oldState, byte newState) {
         if (oldState == newState) return;
         if (!isController()) return;
@@ -622,10 +622,10 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
         }
     }
     //? if forge {
-    @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-    //?} elif neoforge {
-    /*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-    *///?}
+    /*@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+    *///?} elif neoforge {
+    @net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+    //?}
     private void handleSoundTransition(SoundEvent startSound, SoundEvent loopSound, SoundEvent loopSound2) {
         // 1. Разовый звук старта
         if (startSound != null) {
@@ -643,10 +643,10 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
         }
     }
     //? if forge {
-    @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-    //?} elif neoforge {
-    /*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-    *///?}
+    /*@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+    *///?} elif neoforge {
+    @net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+    //?}
     private void handleSoundEnd(SoundEvent endSound) {
         // Останавливаем ОБА цикла
         ClientSoundBootstrap.stopSpecificSound(level, worldPosition, "loop1");
@@ -659,10 +659,10 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
     }
 
     //? if forge {
-    @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-    //?} elif neoforge {
-    /*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-    *///?}
+    /*@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+    *///?} elif neoforge {
+    @net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+    //?}
     private Object createLoopingSoundReflect(SoundEvent sound) {
         try {
             return Class.forName(DOOR_LOOP_SOUND_FACTORY)
@@ -775,10 +775,10 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
      */
 
     //? if forge {
-    @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-    //?} elif neoforge {
-    /*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-    *///?}
+    /*@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+    *///?} elif neoforge {
+    @net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+    //?}
     public void initModelSelection(boolean applyConfigDefault) {
         if (!applyConfigDefault) {
             return; // Значение из NBT - не перезаписывать
@@ -798,16 +798,16 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
 
     // getUpdateTag: удалён — BaseHbmBlockEntity уже делает super + writeNbtData.
     //? if forge {
-    @Override
-    //?}
+    /*@Override
+    *///?}
 
     public void handleUpdateTag(CompoundTag tag) {
         //? if < 1.21.1 {
-        load(tag);
-        //?} else {
-        /*// 1.21.1: BlockEntity.load(CompoundTag) удалён — loadCustomOnly с registries из level.
+        /*load(tag);
+        *///?} else {
+        // 1.21.1: BlockEntity.load(CompoundTag) удалён — loadCustomOnly с registries из level.
         PlatformHooks.loadBlockEntityTag(this, tag, this.level != null ? this.level.registryAccess() : RegistryAccess.EMPTY);
-        *///?}
+        //?}
     }
 
 
@@ -816,8 +816,8 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
     }
 
     //? if forge {
-    @Override
-    //?}
+    /*@Override
+    *///?}
     public void onDataPacket(net.minecraft.network.Connection net, ClientboundBlockEntityDataPacket pkt) {
         CompoundTag tag = PlatformHooks.getItemTag(pkt);
         if (tag != null) {
@@ -826,11 +826,11 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
             DoorModelSelection prevSelection = this.modelSelection;
 
             //? if < 1.21.1 {
-            load(tag);
-            //?} else {
-            /*// 1.21.1: BlockEntity.load(CompoundTag) удалён — loadCustomOnly с registries из level.
+            /*load(tag);
+            *///?} else {
+            // 1.21.1: BlockEntity.load(CompoundTag) удалён — loadCustomOnly с registries из level.
             PlatformHooks.loadBlockEntityTag(this, tag, this.level != null ? this.level.registryAccess() : RegistryAccess.EMPTY);
-            *///?}
+            //?}
 
             if (level != null && level.isClientSide) {
                 // Инвалидируем чанк только при реальном изменении видимого состояния:
@@ -866,8 +866,8 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
         }
     }
     //? if forge {
-    @Override
-    //?}
+    /*@Override
+    *///?}
     public AABB getRenderBoundingBox() {
         double radius = 8.0; // Fallback
         if (level != null && level.isClientSide) {

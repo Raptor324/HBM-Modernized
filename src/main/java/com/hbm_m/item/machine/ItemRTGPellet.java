@@ -2,6 +2,7 @@ package com.hbm_m.item.machine;
 
 import com.hbm_m.item.ModItems;
 
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.Item;
@@ -98,18 +99,19 @@ public class ItemRTGPellet extends Item {
     public long getLifespan(ItemStack stack) {
         if (!(stack.getItem() instanceof ItemRTGPellet)) return 0L;
 
-        if (stack.hasTag() && stack.getTag().contains(KEY_DEPLETION)) {
-            return stack.getTag().getLong(KEY_DEPLETION);
+        CompoundTag tag = com.hbm_m.platform.PlatformHooks.getItemTag(stack);
+        if (tag != null && tag.contains(KEY_DEPLETION)) {
+            return tag.getLong(KEY_DEPLETION);
         }
 
-        stack.getOrCreateTag().putLong(KEY_DEPLETION, getMaxLifespan());
+        com.hbm_m.platform.PlatformHooks.putLong(stack, KEY_DEPLETION, getMaxLifespan());
         return getMaxLifespan();
     }
 
     /** Original: {@code decay} - ein Tick weniger. */
     public void decay(ItemStack stack) {
         if (!doesDecay()) return;
-        stack.getOrCreateTag().putLong(KEY_DEPLETION, getLifespan(stack) - 1L);
+        com.hbm_m.platform.PlatformHooks.putLong(stack, KEY_DEPLETION, getLifespan(stack) - 1L);
     }
 
     /** Original: {@code getScaledPower} - die Heizleistung sinkt mit der Restlaufzeit. */
@@ -171,16 +173,16 @@ public class ItemRTGPellet extends Item {
     // ── Kurzinfo ────────────────────────────────────────────────────────────
 
     //? if < 1.21.1 {
-    @Override
+    /*@Override
     public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
         addInfo(stack, tooltip);
     }
-    //?} else {
-    /*@Override
+    *///?} else {
+    @Override
     public void appendHoverText(ItemStack stack, Item.TooltipContext context, List<Component> tooltip, TooltipFlag flag) {
         addInfo(stack, tooltip);
     }
-    *///?}
+    //?}
 
     private void addInfo(ItemStack stack, List<Component> tooltip) {
         tooltip.add(Component.translatable("desc.item.rtgHeat", getPower(this, stack))

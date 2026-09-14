@@ -25,10 +25,10 @@ public class ModRecipes {
             SERIALIZERS.register("mass_storage_upgrade",
                     () -> new net.minecraft.world.item.crafting.SimpleCraftingRecipeSerializer<>(
                             //? if < 1.21.1 {
-                            MassStorageUpgradeRecipe::new
-                            //?} else {
                             /*MassStorageUpgradeRecipe::new
-                            *///?}
+                            *///?} else {
+                            MassStorageUpgradeRecipe::new
+                            //?}
                     ));
 
     public static final RegistrySupplier<RecipeSerializer<AssemblerRecipe>> ASSEMBLER_SERIALIZER =

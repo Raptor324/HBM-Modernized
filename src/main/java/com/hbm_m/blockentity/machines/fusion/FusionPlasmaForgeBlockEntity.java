@@ -293,7 +293,7 @@ public class FusionPlasmaForgeBlockEntity extends BaseMachineBlockEntity
     @Nullable
     public PlasmaForgeRecipe getRecipe(Level level) {
         if (selectedRecipeId == null) return null;
-        return level.getRecipeManager().byKey(selectedRecipeId)
+        return com.hbm_m.platform.recipe.RecipeHooks.getRecipeByKey(level.getRecipeManager(), selectedRecipeId)
                 .filter(r -> r instanceof PlasmaForgeRecipe)
                 .map(r -> (PlasmaForgeRecipe) r)
                 .orElse(null);
@@ -311,7 +311,7 @@ public class FusionPlasmaForgeBlockEntity extends BaseMachineBlockEntity
     }
 
     public static List<PlasmaForgeRecipe> getAllRecipes(Level level) {
-        return level.getRecipeManager().getAllRecipesFor(ModRecipes.PLASMA_FORGE_TYPE.get());
+        return com.hbm_m.platform.recipe.RecipeHooks.getAllRecipes(level, ModRecipes.PLASMA_FORGE_TYPE.get());
     }
 
     /** Original: {@code ModuleMachinePlasma.setupTanks} - Tankgroesse folgt dem Rezept. */
@@ -580,8 +580,8 @@ public class FusionPlasmaForgeBlockEntity extends BaseMachineBlockEntity
     private AABB renderBounds = null;
 
     //? if forge {
-    @Override
-    //?}
+    /*@Override
+    *///?}
     public AABB getRenderBoundingBox() {
         if (renderBounds == null) {
             renderBounds = new AABB(

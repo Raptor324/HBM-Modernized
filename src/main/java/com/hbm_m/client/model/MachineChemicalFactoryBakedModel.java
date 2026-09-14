@@ -10,12 +10,12 @@ import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.state.BlockState;
 //? if forge {
-import net.minecraftforge.client.ChunkRenderTypeSet;
+/*import net.minecraftforge.client.ChunkRenderTypeSet;
 import net.minecraftforge.client.model.data.ModelData;
-//?} elif neoforge {
-/*import net.neoforged.neoforge.client.ChunkRenderTypeSet;
+*///?} elif neoforge {
+import net.neoforged.neoforge.client.ChunkRenderTypeSet;
 import net.neoforged.neoforge.client.model.data.ModelData;
-*///?}
+//?}
 
 /**
  * Chemical Factory — порт 1.7.10 {@code ResourceManager.chemical_factory} (части Base/Frame/Fan1/Fan2).

@@ -45,11 +45,11 @@ public class RBMKControlManualBlock extends RBMKColumnBlock {
     }
 
     //? if >1.20.1 {
-    /*public static final com.mojang.serialization.MapCodec<RBMKControlManualBlock> CODEC = simpleCodec(props -> new RBMKControlManualBlock(false, props));
+    public static final com.mojang.serialization.MapCodec<RBMKControlManualBlock> CODEC = simpleCodec(props -> new RBMKControlManualBlock(false, props));
 
     @Override
     protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
         return CODEC;
     }
-    *///?}
+    //?}
 }

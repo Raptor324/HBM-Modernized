@@ -194,7 +194,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 
 //? if forge {
-import net.minecraftforge.api.distmarker.Dist;
+/*import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.ChunkRenderTypeSet;
 import net.minecraftforge.client.event.EntityRenderersEvent;
 import net.minecraftforge.client.event.ModelEvent;
@@ -210,8 +210,8 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import com.hbm_m.client.render.missile.MissileItemModelDefinitions;
-//?} elif neoforge {
-/*import net.neoforged.api.distmarker.Dist;
+*///?} elif neoforge {
+import net.neoforged.api.distmarker.Dist;
 import net.neoforged.neoforge.client.ChunkRenderTypeSet;
 import net.neoforged.neoforge.client.event.EntityRenderersEvent;
 import net.neoforged.neoforge.client.event.ModelEvent;
@@ -227,13 +227,13 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
 import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
 import com.hbm_m.client.render.missile.MissileItemModelDefinitions;
-*///?}
+//?}
 
 //? if forge {
-@Mod.EventBusSubscriber(modid = RefStrings.MODID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
-//?} elif neoforge {
-/*@EventBusSubscriber(modid = RefStrings.MODID, bus = EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
-*///?}
+/*@Mod.EventBusSubscriber(modid = RefStrings.MODID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
+*///?} elif neoforge {
+@EventBusSubscriber(modid = RefStrings.MODID, bus = EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
+//?}
 @SuppressWarnings({"UnstableApiUsage", "removal"})
 public class ClientSetup {
 
@@ -286,8 +286,8 @@ public class ClientSetup {
 
         // Экраны меню: на Forge регистрируются напрямую, на NeoForge 1.21.1+ — через RegisterMenuScreensEvent ниже.
         //? if forge {
-        registerScreens();
-        //?}
+        /*registerScreens();
+        *///?}
 
         // Рендереры (entity + block entity).
         registerRenderersCommon();
@@ -303,13 +303,13 @@ public class ClientSetup {
 
         // Регистрация тик/рендер-хендлеров на game event bus (Forge/NeoForge).
         //? if forge {
-        MinecraftForge.EVENT_BUS.addListener(ClientSetup::onClientDisconnect);
+        /*MinecraftForge.EVENT_BUS.addListener(ClientSetup::onClientDisconnect);
         MinecraftForge.EVENT_BUS.addListener(ClientSetup::registerDebugClientCommands);
-        //?} elif neoforge {
-        /*NeoForge.EVENT_BUS.addListener(ClientSetup::onClientDisconnect);
+        *///?} elif neoforge {
+        NeoForge.EVENT_BUS.addListener(ClientSetup::onClientDisconnect);
         NeoForge.EVENT_BUS.addListener(ClientSetup::registerDebugClientCommands);
         NeoForge.EVENT_BUS.addListener(com.hbm_m.util.explosions.nuclear.BlockExplosionDefense::onItemTooltipNeo);
-        *///?}
+        //?}
 
         event.enqueueWork(ClientSetup::registerRadAbsorberItemProperties);
         event.enqueueWork(ClientSetup::registerRbmkPelletItemProperties);
@@ -329,19 +329,19 @@ public class ClientSetup {
     }
 
     //? if forge {
-    @net.minecraftforge.eventbus.api.SubscribeEvent
+    /*@net.minecraftforge.eventbus.api.SubscribeEvent
     public static void onRegisterKeyMappings(net.minecraftforge.client.event.RegisterKeyMappingsEvent event) {
         ModConfigKeybindHandler.registerAll(event::register);
     }
-    //?} elif neoforge {
-    /*@SubscribeEvent
+    *///?} elif neoforge {
+    @SubscribeEvent
     public static void onRegisterKeyMappings(net.neoforged.neoforge.client.event.RegisterKeyMappingsEvent event) {
         ModConfigKeybindHandler.registerAll(event::register);
     }
-    *///?}
+    //?}
 
     //? if neoforge {
-    /*@SubscribeEvent
+    @SubscribeEvent
     public static void onRegisterMenuScreens(net.neoforged.neoforge.client.event.RegisterMenuScreensEvent event) {
         MainRegistry.LOGGER.info("RegisterMenuScreensEvent fired. Registering HBM screens.");
         registerScreens();
@@ -357,7 +357,7 @@ public class ClientSetup {
                 ModItems.DNT_HELMET.get(), ModItems.DNT_CHESTPLATE.get(), ModItems.DNT_LEGGINGS.get(), ModItems.DNT_BOOTS.get(),
                 ModItems.BISMUTH_HELMET.get(), ModItems.BISMUTH_CHESTPLATE.get(), ModItems.BISMUTH_LEGGINGS.get(), ModItems.BISMUTH_BOOTS.get());
     }
-    *///?}
+    //?}
 
     private static void registerDebugClientCommands(RegisterClientCommandsEvent event) {
         event.getDispatcher().register(
@@ -793,12 +793,12 @@ public class ClientSetup {
     }
 
     //? if forge {
-    @SubscribeEvent(priority = EventPriority.LOWEST)
+    /*@SubscribeEvent(priority = EventPriority.LOWEST)
     public static void onBakingCompletedDisplayGuards(ModelEvent.BakingCompleted event) {
         com.hbm_m.client.compat.itemtransformhelper.ItemTransformHelperCompat.installDisplayTransformGuards(
                 event.getModelBakery().getBakedTopLevelModels());
     }
-    //?}
+    *///?}
     
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void onModelBakeUnwrapContinuity(ModelEvent.ModifyBakingResult event) {
@@ -836,10 +836,10 @@ public class ClientSetup {
         wrapIcfCtTerrainModels(models);
 
         //? if forge {
-        @SuppressWarnings("unchecked")
+        /*@SuppressWarnings("unchecked")
         Map<ResourceLocation, BakedModel> typedModels = (Map<ResourceLocation, BakedModel>) models;
         com.hbm_m.client.compat.itemtransformhelper.ItemTransformHelperCompat.installDisplayTransformGuards(typedModels);
-        //?}
+        *///?}
     }
 
     private static void wrapConnectedDecoCtTerrainModels(java.util.Map models) {
@@ -1062,9 +1062,9 @@ public class ClientSetup {
         // PlatformHooks.registerGeometryLoader(event, "test", new TestModelLoader());
 
         //? if neoforge {
-        /*event.register(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("forge", "composite"), net.neoforged.neoforge.client.model.CompositeModel.Loader.INSTANCE);
+        event.register(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("forge", "composite"), net.neoforged.neoforge.client.model.CompositeModel.Loader.INSTANCE);
         event.register(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("forge", "obj"), net.neoforged.neoforge.client.model.obj.ObjLoader.INSTANCE);
-        *///?}
+        //?}
         
         PlatformHooks.registerGeometryLoader(event, "cooling_tower_loader", new MachineCoolingTowerModelLoader());
         PlatformHooks.registerGeometryLoader(event, "radar_loader", new MachineRadarModelLoader());
@@ -1257,16 +1257,16 @@ public class ClientSetup {
 
     public static void onClientDisconnect(
             //? if forge {
-            net.minecraftforge.client.event.ClientPlayerNetworkEvent.LoggingOut event
-            //?} elif neoforge {
-            /*net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent.LoggingOut event
-            *///?}
+            /*net.minecraftforge.client.event.ClientPlayerNetworkEvent.LoggingOut event
+            *///?} elif neoforge {
+            net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent.LoggingOut event
+            //?}
     ) {
         clearClientCachesDeferred();
     }
 
     //? if forge {
-    @SubscribeEvent
+    /*@SubscribeEvent
     public static void onRegisterGuiOverlays(net.minecraftforge.client.event.RegisterGuiOverlaysEvent event) {
         MainRegistry.LOGGER.info("Registering GUI overlays...");
         event.registerAbove(net.minecraftforge.client.gui.overlay.VanillaGuiOverlay.HOTBAR.id(), "geiger_counter_hud", OverlayGeiger.GEIGER_HUD_OVERLAY);
@@ -1276,8 +1276,8 @@ public class ClientSetup {
         event.registerAboveAll("gas_mask_overlay", com.hbm_m.client.overlay.OverlayGasMask.OVERLAY);
         MainRegistry.LOGGER.info("GUI overlays registered.");
     }
-    //?} elif neoforge {
-    /*@SubscribeEvent
+    *///?} elif neoforge {
+    @SubscribeEvent
     public static void onRegisterGuiOverlays(net.neoforged.neoforge.client.event.RegisterGuiLayersEvent event) {
         MainRegistry.LOGGER.info("Registering GUI overlays...");
         
@@ -1322,7 +1322,7 @@ public class ClientSetup {
         
         MainRegistry.LOGGER.info("GUI overlays registered.");
     }
-    *///?}
+    //?}
     
     @SubscribeEvent
     public static void registerTooltipFactories(RegisterClientTooltipComponentFactoriesEvent event) {
@@ -1332,31 +1332,31 @@ public class ClientSetup {
     @SubscribeEvent
     public static void onRegisterShaders(
             //? if forge {
-            net.minecraftforge.client.event.RegisterShadersEvent event
-            //?} elif neoforge {
-            /*net.neoforged.neoforge.client.event.RegisterShadersEvent event
-            *///?}
+            /*net.minecraftforge.client.event.RegisterShadersEvent event
+            *///?} elif neoforge {
+            net.neoforged.neoforge.client.event.RegisterShadersEvent event
+            //?}
     ) throws IOException {
         MainRegistry.LOGGER.info("Registering optimized shaders...");
 
         //? if < 1.21.1 {
-        VertexFormat blockLitSimpleFormat = new VertexFormat(
+        /*VertexFormat blockLitSimpleFormat = new VertexFormat(
             ImmutableMap.<String, VertexFormatElement>builder()
                 .put("Position", DefaultVertexFormat.ELEMENT_POSITION)
                 .put("Normal",   DefaultVertexFormat.ELEMENT_NORMAL)
                 .put("UV0",      DefaultVertexFormat.ELEMENT_UV0)
                 .build()
         );
-        //?} else {
-        /*VertexFormat blockLitSimpleFormat = VertexFormat.builder()
+        *///?} else {
+        VertexFormat blockLitSimpleFormat = VertexFormat.builder()
                 .add("Position", com.mojang.blaze3d.vertex.VertexFormatElement.POSITION)
                 .add("Normal",   com.mojang.blaze3d.vertex.VertexFormatElement.NORMAL)
                 .add("UV0",      com.mojang.blaze3d.vertex.VertexFormatElement.UV0)
                 .build();
-        *///?}
+        //?}
 
         //? if < 1.21.1 {
-        VertexFormat blockLitInstancedFormat = new VertexFormat(
+        /*VertexFormat blockLitInstancedFormat = new VertexFormat(
             ImmutableMap.<String, VertexFormatElement>builder()
                 .put("Position", DefaultVertexFormat.ELEMENT_POSITION)
                 .put("Normal",   DefaultVertexFormat.ELEMENT_NORMAL)
@@ -1372,8 +1372,8 @@ public class ClientSetup {
                 .put("InstLightC67", PlatformHooks.createVertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
                 .build()
         );
-        //?} else {
-        /*VertexFormat blockLitInstancedFormat = VertexFormat.builder()
+        *///?} else {
+        VertexFormat blockLitInstancedFormat = VertexFormat.builder()
                 .add("Position", com.mojang.blaze3d.vertex.VertexFormatElement.POSITION)
                 .add("Normal",   com.mojang.blaze3d.vertex.VertexFormatElement.NORMAL)
                 .add("UV0",      com.mojang.blaze3d.vertex.VertexFormatElement.UV0)
@@ -1387,7 +1387,7 @@ public class ClientSetup {
                 .add("InstLightC45", PlatformHooks.createVertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
                 .add("InstLightC67", PlatformHooks.createVertexFormatElement(0, VertexFormatElement.Type.FLOAT, VertexFormatElement.Usage.GENERIC, 4))
                 .build();
-        *///?}
+        //?}
 
         ResourceLocation realVsh = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "shaders/core/block_lit.vsh");
         ResourceLocation virtualInstancedVsh = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "shaders/core/block_lit_instanced.vsh");
@@ -1422,20 +1422,20 @@ public class ClientSetup {
         MainRegistry.LOGGER.info("Successfully registered block_lit_instanced shader");
 
         //? if < 1.21.1 {
-        VertexFormat nukeCloudFormat = new VertexFormat(
+        /*VertexFormat nukeCloudFormat = new VertexFormat(
             ImmutableMap.<String, VertexFormatElement>builder()
                 .put("Position", DefaultVertexFormat.ELEMENT_POSITION)
                 .put("UV0",      DefaultVertexFormat.ELEMENT_UV0)
                 .put("Color",    DefaultVertexFormat.ELEMENT_COLOR)
                 .build()
         );
-        //?} else {
-        /*VertexFormat nukeCloudFormat = VertexFormat.builder()
+        *///?} else {
+        VertexFormat nukeCloudFormat = VertexFormat.builder()
                 .add("Position", com.mojang.blaze3d.vertex.VertexFormatElement.POSITION)
                 .add("UV0",      com.mojang.blaze3d.vertex.VertexFormatElement.UV0)
                 .add("Color",    com.mojang.blaze3d.vertex.VertexFormatElement.COLOR)
                 .build();
-        *///?}
+        //?}
 
         event.registerShader(
             new ShaderInstance(

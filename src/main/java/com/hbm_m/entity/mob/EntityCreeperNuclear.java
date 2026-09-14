@@ -80,7 +80,7 @@ public class EntityCreeperNuclear extends Creeper {
     }
 
     //? if < 1.21.1 {
-    @Override
+    /*@Override
     protected void dropCustomDeathLoot(DamageSource source, int looting, boolean recentlyHit) {
         this.spawnAtLocation(new ItemStack(Blocks.TNT));
         this.spawnAtLocation(new ItemStack(com.hbm_m.item.ModItems.COIN_CREEPER.get()));
@@ -90,8 +90,8 @@ public class EntityCreeperNuclear extends Creeper {
                 com.hbm_m.advancement.ModAdvancements.BOSS_CREEPER);
         // TODO: NUKE_STANDARD ammo drop still needs the ammo system.
     }
-    //?} else {
-    /*@Override
+    *///?} else {
+    @Override
     protected void dropCustomDeathLoot(net.minecraft.server.level.ServerLevel serverLevel, DamageSource source, boolean recentlyHit) {
         this.spawnAtLocation(new ItemStack(Blocks.TNT));
         this.spawnAtLocation(new ItemStack(com.hbm_m.item.ModItems.COIN_CREEPER.get()));
@@ -101,7 +101,7 @@ public class EntityCreeperNuclear extends Creeper {
                 com.hbm_m.advancement.ModAdvancements.BOSS_CREEPER);
         // TODO: NUKE_STANDARD ammo drop still needs the ammo system.
     }
-    *///?}
+    //?}
 
     /** Взрыв (оригинал {@code func_146077_cc} / ExplosionNukeSmall). Вызывается из {@link com.hbm_m.mixin.CreeperMixin}. */
     public void nuclearExplode() {

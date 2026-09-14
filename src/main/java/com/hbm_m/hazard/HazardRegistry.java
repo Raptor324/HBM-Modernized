@@ -51,10 +51,10 @@ public class HazardRegistry {
     // generated forge: tag files there, so a runtime lookup on "forge" matched nothing.
     public static final String CONVENTIONAL_NS =
             //? if >= 1.21.1 {
-            /*"c";
-            *///?} else {
-            "forge";
-            //?}
+            "c";
+            //?} else {
+            /*"forge";
+            *///?}
 
     public static final TagKey<Item> URANIUM_INGOTS = TagKey.create(Registries.ITEM,
                         ResourceLocation.fromNamespaceAndPath(CONVENTIONAL_NS, "ingots/uranium"));

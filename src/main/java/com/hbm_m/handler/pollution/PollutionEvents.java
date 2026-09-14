@@ -89,17 +89,17 @@ public final class PollutionEvents {
 
         // Original: Operation 1 = MULTIPLY_BASE, Werte 1.0 (doppeltes Leben) und 1.5.
         AttributeInstance health = living.getAttribute(Attributes.MAX_HEALTH);
-        if (health != null && health.getModifier(MAX_HEALTH_ID) == null) {
-            health.addPermanentModifier(new AttributeModifier(
+        if (health != null && !com.hbm_m.platform.PlatformHooks.hasAttributeModifier(health, MAX_HEALTH_ID)) {
+            health.addPermanentModifier(com.hbm_m.platform.PlatformHooks.attributeModifier(
                     MAX_HEALTH_ID, "Soot Anger Health Increase", 1D,
-                    AttributeModifier.Operation.MULTIPLY_BASE));
+                    com.hbm_m.platform.PlatformHooks.multiplyBase()));
         }
 
         AttributeInstance damage = living.getAttribute(Attributes.ATTACK_DAMAGE);
-        if (damage != null && damage.getModifier(ATTACK_DAMAGE_ID) == null) {
-            damage.addPermanentModifier(new AttributeModifier(
+        if (damage != null && !com.hbm_m.platform.PlatformHooks.hasAttributeModifier(damage, ATTACK_DAMAGE_ID)) {
+            damage.addPermanentModifier(com.hbm_m.platform.PlatformHooks.attributeModifier(
                     ATTACK_DAMAGE_ID, "Soot Anger Damage Increase", 1.5D,
-                    AttributeModifier.Operation.MULTIPLY_BASE));
+                    com.hbm_m.platform.PlatformHooks.multiplyBase()));
         }
 
         living.heal(living.getMaxHealth());

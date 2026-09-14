@@ -24,10 +24,10 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
 
 //? if forge {
-@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-//?} elif neoforge {
-/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-*///?}
+/*@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
+*///?} elif neoforge {
+@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+//?}
 public class BatterySocketCreativeRenderer implements com.hbm_m.client.render.HbmBerBounds<BatterySocketBlockEntity> {
 
     private static final ResourceLocation MOD_SKIN =
@@ -67,12 +67,12 @@ public class BatterySocketCreativeRenderer implements com.hbm_m.client.render.Hb
         this.playerModel.young = false;
         this.playerModel.setAllVisible(true);
         //? if < 1.21.1 {
-        this.playerModel.renderToBuffer(poseStack, vc, light, OverlayTexture.NO_OVERLAY, 1f, 1f, 1f, 1f);
-        //?} else {
-        /*// 1.21.1: Model.renderToBuffer(PoseStack,VertexConsumer,int,int) — ARGB-floats удалены (цвет через контекст).
+        /*this.playerModel.renderToBuffer(poseStack, vc, light, OverlayTexture.NO_OVERLAY, 1f, 1f, 1f, 1f);
+        *///?} else {
+        // 1.21.1: Model.renderToBuffer(PoseStack,VertexConsumer,int,int) — ARGB-floats удалены (цвет через контекст).
         // TODO(fidelity-port): если потребуется тонировка модели — задавать цвет через VertexConsumer.
         this.playerModel.renderToBuffer(poseStack, vc, light, OverlayTexture.NO_OVERLAY);
-        *///?}
+        //?}
 
         renderJaggedBolts(level, poseStack, buffer, pos);
 

@@ -102,4 +102,13 @@ public class ChargerBlock extends BaseEntityBlock {
         return createTickerHelper(type, ModBlockEntities.CHARGER_BE.get(),
                 (lvl, pos, st, be) -> ChargerBlockEntity.tick(lvl, pos, st, (ChargerBlockEntity) be));
     }
+
+    //? if >1.20.1 {
+    public static final com.mojang.serialization.MapCodec<ChargerBlock> CODEC = simpleCodec(ChargerBlock::new);
+
+    @Override
+    protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
+        return CODEC;
+    }
+    //?}
 }

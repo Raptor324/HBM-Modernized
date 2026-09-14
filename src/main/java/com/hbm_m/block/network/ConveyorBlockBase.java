@@ -128,14 +128,14 @@ public class ConveyorBlockBase extends Block implements IConveyorBelt {
     // ==================== screwdriver reconfiguration ====================
 
     //? if < 1.21.1 {
-    @Override
+    /*@Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, net.minecraft.world.phys.BlockHitResult hit) {
         ItemStack held = player.getItemInHand(hand);
-    //?} else {
-    /*@Override
+    *///?} else {
+    @Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, net.minecraft.world.phys.BlockHitResult hit) {
         ItemStack held = player.getItemInHand(InteractionHand.MAIN_HAND);
-    *///?}
+    //?}
         if (held.getItem() != ModItems.SCREWDRIVER.get()) return InteractionResult.PASS;
 
         if (level.isClientSide) return InteractionResult.SUCCESS;

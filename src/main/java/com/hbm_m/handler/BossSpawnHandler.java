@@ -170,18 +170,18 @@ public class BossSpawnHandler {
         mob.moveTo(x, y, z, level.random.nextFloat() * 360.0F, 0.0F);
 
         //? if forge {
-        var result = net.minecraftforge.event.ForgeEventFactory.checkSpawnPosition(mob, level,
+        /*var result = net.minecraftforge.event.ForgeEventFactory.checkSpawnPosition(mob, level,
                 MobSpawnType.EVENT);
         if (!result) return false;
 
         mob.finalizeSpawn(level, level.getCurrentDifficultyAt(BlockPos.containing(x, y, z)),
                 MobSpawnType.EVENT, null, null);
-        //?} else {
-        /*// Kein plattformneutrales Gegenstueck zu checkSpawnPosition; hier nur finalisieren.
+        *///?} else {
+        // Kein plattformneutrales Gegenstueck zu checkSpawnPosition; hier nur finalisieren.
         // finalizeSpawn verlor auf 1.21 den abschliessenden CompoundTag-Parameter.
         mob.finalizeSpawn(level, level.getCurrentDifficultyAt(BlockPos.containing(x, y, z)),
                 MobSpawnType.EVENT, null);
-        *///?}
+        //?}
         level.addFreshEntity(mob);
         return true;
     }

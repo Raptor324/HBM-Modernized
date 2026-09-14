@@ -34,14 +34,14 @@ import net.minecraft.world.level.block.Block;
 public class MassStorageUpgradeRecipe extends CustomRecipe {
 
     //? if < 1.21.1 {
-    public MassStorageUpgradeRecipe(net.minecraft.resources.ResourceLocation id, CraftingBookCategory category) {
+    /*public MassStorageUpgradeRecipe(net.minecraft.resources.ResourceLocation id, CraftingBookCategory category) {
         super(id, category);
     }
-    //?} else {
-    /*public MassStorageUpgradeRecipe(CraftingBookCategory category) {
+    *///?} else {
+    public MassStorageUpgradeRecipe(CraftingBookCategory category) {
         super(category);
     }
-    *///?}
+    //?}
 
     /** Eine Aufwertungsstufe: von welcher Kiste, mit welchem Barren und welcher Schaltung, wohin. */
     private record Step(Block from, java.util.function.Supplier<net.minecraft.world.item.Item> plate,
@@ -92,7 +92,7 @@ public class MassStorageUpgradeRecipe extends CustomRecipe {
     }
 
     //? if < 1.21.1 {
-    @Override
+    /*@Override
     public boolean matches(CraftingContainer container, Level level) {
         return match(container) != null;
     }
@@ -119,6 +119,60 @@ public class MassStorageUpgradeRecipe extends CustomRecipe {
     public NonNullList<ItemStack> getRemainingItems(CraftingContainer container) {
         // Die alte Kiste wird verbraucht - sie steckt jetzt im Ergebnis.
         return NonNullList.withSize(container.getContainerSize(), ItemStack.EMPTY);
+    }
+    *///?} else {
+    // 1.21.1: crafting recipes receive a CraftingInput (width()/height()/size()) instead of the container.
+    private static Step match(net.minecraft.world.item.crafting.CraftingInput input) {
+        if (input.width() < 3 || input.height() < 3) return null;
+        for (Step step : steps()) {
+            if (fits(input, step)) return step;
+        }
+        return null;
+    }
+
+    private static boolean fits(net.minecraft.world.item.crafting.CraftingInput input, Step step) {
+        ItemStack plate = new ItemStack(step.plate().get());
+        for (int y = 0; y < input.height(); y++) {
+            for (int x = 0; x < input.width(); x++) {
+                ItemStack stack = input.getItem(x + y * input.width());
+                boolean ok;
+                if (y == 0 && x == 1)      ok = stack.is(step.circuit().get());
+                else if (y == 1 && x == 0) ok = stack.is(plate.getItem());
+                else if (y == 1 && x == 1) ok = Block.byItem(stack.getItem()) == step.from();
+                else if (y == 1 && x == 2) ok = stack.is(plate.getItem());
+                else if (y == 2 && x == 1) ok = stack.is(plate.getItem());
+                else                       ok = stack.isEmpty();
+                if (!ok) return false;
+            }
+        }
+        return true;
+    }
+
+    @Override
+    public boolean matches(net.minecraft.world.item.crafting.CraftingInput input, Level level) {
+        return match(input) != null;
+    }
+
+    @Override
+    public ItemStack assemble(net.minecraft.world.item.crafting.CraftingInput input,
+                              net.minecraft.core.HolderLookup.Provider registries) {
+        Step step = match(input);
+        if (step == null) return ItemStack.EMPTY;
+
+        ItemStack out = new ItemStack(step.to());
+        for (int i = 0; i < input.size(); i++) {
+            ItemStack stack = input.getItem(i);
+            if (Block.byItem(stack.getItem()) != step.from()) continue;
+            net.minecraft.nbt.CompoundTag tag = com.hbm_m.platform.PlatformHooks.getItemTag(stack);
+            if (tag != null) com.hbm_m.platform.PlatformHooks.setItemTag(out, tag.copy());
+            break;
+        }
+        return out;
+    }
+
+    @Override
+    public NonNullList<ItemStack> getRemainingItems(net.minecraft.world.item.crafting.CraftingInput input) {
+        return NonNullList.withSize(input.size(), ItemStack.EMPTY);
     }
     //?}
 

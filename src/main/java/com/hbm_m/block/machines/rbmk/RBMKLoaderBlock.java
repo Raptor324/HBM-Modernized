@@ -57,16 +57,16 @@ public class RBMKLoaderBlock extends Block implements IFluidConnectorBlock {
     }
 
     //? if < 1.21.1 {
-    @Override
+    /*@Override
     public void appendHoverText(ItemStack stack, @Nullable BlockGetter level, List<Component> tooltip, TooltipFlag flag) {
         addDesc(tooltip);
     }
-    //?} else {
-    /*@Override
+    *///?} else {
+    @Override
     public void appendHoverText(ItemStack stack, net.minecraft.world.item.Item.TooltipContext level, List<Component> tooltip, TooltipFlag flag) {
         addDesc(tooltip);
     }
-    *///?}
+    //?}
 
     /** The original's {@code tile.rbmk_loader.desc}, split into its three "$"-separated lines. */
     private static void addDesc(List<Component> tooltip) {

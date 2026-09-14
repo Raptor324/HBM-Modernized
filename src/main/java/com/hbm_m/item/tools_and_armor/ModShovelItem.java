@@ -45,14 +45,14 @@ public class ModShovelItem extends ShovelItem implements ITooltipProvider {
 
 
     //? if < 1.21.1 {
-    public ModShovelItem(Tier tier, int attackDamage, float attackSpeed, Properties properties,
-                         int veinMinerLevel, int silkTouchLevel, int fortuneLevel) {
-        super(tier, attackDamage, attackSpeed, properties);
-    //?} else {
     /*public ModShovelItem(Tier tier, int attackDamage, float attackSpeed, Properties properties,
                          int veinMinerLevel, int silkTouchLevel, int fortuneLevel) {
+        super(tier, attackDamage, attackSpeed, properties);
+    *///?} else {
+    public ModShovelItem(Tier tier, int attackDamage, float attackSpeed, Properties properties,
+                         int veinMinerLevel, int silkTouchLevel, int fortuneLevel) {
         super(tier, properties.attributes(ShovelItem.createAttributes(tier, (float) attackDamage, attackSpeed)));
-    *///?}
+    //?}
         this.veinMinerLevel = Math.max(0, Math.min(6, veinMinerLevel));
         this.silkTouchLevel = Math.max(0, Math.min(1, silkTouchLevel));
         this.fortuneLevel = Math.max(0, Math.min(5, fortuneLevel));

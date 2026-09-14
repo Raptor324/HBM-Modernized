@@ -172,12 +172,12 @@ public abstract class PneumaticStorageBlockEntity extends BaseMachineBlockEntity
     }
 
     //? if forge {
-    @Override
+    /*@Override
     public void onChunkUnloaded() {
         super.onChunkUnloaded();
         detach();
     }
-    //?}
+    *///?}
 
     @Override
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
