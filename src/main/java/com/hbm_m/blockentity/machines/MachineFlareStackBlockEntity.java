@@ -6,6 +6,8 @@ import com.hbm_m.api.fluids.IFluidStandardReceiverMK2;
 import com.hbm_m.blockentity.BaseMachineBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.inventory.fluid.FluidType;
+import com.hbm_m.inventory.fluid.trait.FT_Polluting;
+import com.hbm_m.inventory.fluid.trait.FluidTrait.FluidReleaseType;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.inventory.fluid.trait.FT_Flammable;
 import com.hbm_m.inventory.fluid.trait.FluidTraitSimple.FT_Gaseous;
@@ -31,7 +33,9 @@ import net.minecraft.world.level.material.Fluid;
  * Vereinfachung ggue. Original (siehe Aufgabenstellung): keine GUI-Ventil-/Zuend-Schalter ({@code isOn}/
  * {@code doesBurn}, im Original per Redstone-Control-Paket umschaltbar) - stattdessen automatisch: brennbare
  * Fluids (per {@link FT_Flammable}-Trait, siehe {@code FluidType}) werden immer verbrannt, alles andere wird
- * immer entlueftet. Keine Entity-Schadens-/Partikel-/Pollution-Effekte (Original: {@code FT_Polluting.pollute},
+ * immer entlueftet. Die Verschmutzung ist portiert ({@code FT_Polluting.pollute}, BURN beim
+ * Abfackeln und SPILL beim Ablassen, je mit dem Fuenffachen der Menge); es fehlen weiterhin
+ * Entity-Schaden und Partikel (Original: {@code FT_Polluting.pollute},
  * Flammen-AoE-Schaden) - reine Fluid->Energie-Umwandlung. Der {@link FT_Gaseous}-Trait wird nur fuer den
  * Verbrennungs-Energie-Malus (5 statt 10, siehe Original {@code penalty}) beruecksichtigt, nicht fuer die Vent-Menge.
  */
@@ -75,6 +79,9 @@ public class MachineFlareStackBlockEntity extends BaseMachineBlockEntity impleme
                 be.tank.drainMb(eject);
                 fluidUsed = eject;
 
+                // Original (TileEntityMachineGasFlare): BURN mit dem Fuenffachen der Menge.
+                FT_Polluting.pollute(level, pos, be.tank.getTankType(), FluidReleaseType.BURN, eject * 5F);
+
                 FT_Flammable trait = FluidType.getTrait(be.tank.getTankType(), FT_Flammable.class);
                 if (trait != null) {
                     boolean gaseous = FluidType.hasTrait(be.tank.getTankType(), FT_Gaseous.class);
@@ -86,6 +93,9 @@ public class MachineFlareStackBlockEntity extends BaseMachineBlockEntity impleme
                 int eject = Math.min(MAX_VENT_MB, be.tank.getFill());
                 be.tank.drainMb(eject);
                 fluidUsed = eject;
+
+                // Original: wird nicht gebrannt, gilt das Ablassen als SPILL - ebenfalls mal fuenf.
+                FT_Polluting.pollute(level, pos, be.tank.getTankType(), FluidReleaseType.SPILL, eject * 5F);
             }
         }
 

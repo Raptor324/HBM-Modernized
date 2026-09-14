@@ -32,6 +32,11 @@ public enum MaterialType {
     BBRONZE     (46,   "bbronze",     0xCD7F32, () -> ModMaterialItems.item(ModMaterials.BBRONZE, MaterialShape.PLATE_CAST)),
     ABRONZE     (47,   "abronze",     0xB87333, () -> ModMaterialItems.item(ModMaterials.ABRONZE, MaterialShape.PLATE_CAST)),
     SATURNITE   (34,   "saturnite",   0x7A5A3A, () -> ModMaterialItems.item(ModMaterials.SATURNITE, MaterialShape.PLATE_CAST)),
+
+    /** Supraleiter fuer den Fusionsreaktor. Original: {@code Mats.MAT_BSCCO}, id {@code _AS + 18}. */
+    BSCCO       (48,   "bscco",       0x767BF1, null),
+    /** Original: {@code Mats.MAT_SCHRABIDATE}. */
+    SCHRABIDATE (12600,"schrabidate", 0x77C0D7, null),
     LEAD        (8200, "lead",        0x888888, null),
     BISMUTH     (8300, "bismuth",     0xAA88AA, null),
     BERYLLIUM   (400,  "beryllium",   0xAACC88, null),

@@ -20,13 +20,31 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import org.jetbrains.annotations.Nullable;
 
-/** Port of {@code HeaterElectric} (1.7.10 Original). */
-public class MachineElectricHeaterBlock extends BaseEntityBlock {
+import com.hbm_m.block.ModBlocks;
+import com.hbm_m.multiblock.DummyableStructureBuilder;
+import com.hbm_m.multiblock.MultiblockStructureHelper;
+
+/**
+ * 1:1-Port von {@code HeaterElectric} (1.7.10): der elektrische Waermeerzeuger.
+ *
+ * <p>Er ist wie im Original <b>zwei Felder tief und drei breit</b>
+ * ({@code getDimensions {0,0,1,2,1,1}}, Setzversatz 2) - die vordere Zelle ist zugleich der
+ * Anschluss, an dem das Kabel andockt.</p>
+ */
+public class MachineElectricHeaterBlock extends DummyableMachineBlock {
 
     public MachineElectricHeaterBlock(Properties properties) { super(properties); }
 
     @Override
-    public RenderShape getRenderShape(BlockState state) { return RenderShape.MODEL; }
+    protected MultiblockStructureHelper defineStructure() {
+        // Original: getDimensions {0,0,1,2,1,1}, getOffset 2, makeExtra auf der Fassade
+        // (= Kern minus zwei in Blickrichtung).
+        return DummyableStructureBuilder.create()
+                .box(0, 0, 1, 2, 1, 1)
+                .extra(-2, 0, 0)
+                .placementOffset(2)
+                .build(() -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState());
+    }
 
     @Nullable @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {

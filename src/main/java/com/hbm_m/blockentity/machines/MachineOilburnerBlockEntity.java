@@ -32,10 +32,12 @@ import net.minecraft.world.level.block.state.BlockState;
  * doubled burn rate, chosen by block identity (same convention as {@code MachineStirlingBlockEntity}'s
  * normal/steel/creative split).
  * <p>
- * SCOPE-Vereinfachung: Das Original ist ein {@code BlockDummyable}-Multiblock mit 3 Item-Slots
- * (Fluessig-Container rein/raus + Fluid-ID-Neuzuweisung). Hier: einzelnes Block, kein Inventar -
- * Befuellen/Entleeren laeuft direkt ueber die Forge-Fluid-Capability (Eimer-Rechtsklick, Rohr-
- * Anschluss), der Tank ist fest auf Heizoel typisiert statt per Item umschaltbar.
+ * <p>Er belegt wie im Original zwei Felder in der Hoehe und drei mal drei in der Flaeche
+ * ({@code getDimensions {1,0,1,1,1,1}}); angeschlossen wird an den vier Seiten und oben.</p>
+ *
+ * <p><b>Offen:</b> die drei Gegenstandsplaetze des Originals (Behaelter rein und raus, dazu das
+ * Umtypisieren des Brennstoffs). Befuellt wird hier ueber die Fluid-Schnittstelle, der Tank steht
+ * fest auf Heizoel.
  */
 public class MachineOilburnerBlockEntity extends BaseMachineBlockEntity implements IFluidStandardReceiverMK2, IHeatSource {
 

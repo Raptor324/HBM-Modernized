@@ -30,7 +30,8 @@ public final class ArmorUtil {
     }
 
     public static boolean checkForDigamma(Player player) {
-        return false;
+        // Original prueft zusaetzlich FaU- und DNS-Ruestung; die gibt es im Port noch nicht.
+        return player.hasEffect(com.hbm_m.effect.ModEffects.STABILITY.get());
     }
 
     public static boolean checkForDigamma2(Player player) {

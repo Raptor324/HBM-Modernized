@@ -257,6 +257,41 @@ public class RecipeHooks {
         *///?}
     }
 
+    /**
+     * Alle Werkbankrezepte, die auf dieses Gitter passen - nicht nur das erste. Der Autocrafter
+     * braucht die ganze Liste, um mit dem Rechtsklick durchblaettern zu koennen.
+     */
+    @SuppressWarnings("unchecked")
+    public static java.util.List<net.minecraft.world.item.crafting.CraftingRecipe> getAllCraftingRecipesFor(
+            Level level, com.hbm_m.util.SimpleCraftingContainer grid) {
+
+        java.util.List<net.minecraft.world.item.crafting.CraftingRecipe> out = new java.util.ArrayList<>();
+
+        //? if < 1.21.1 {
+        for (net.minecraft.world.item.crafting.CraftingRecipe recipe :
+                level.getRecipeManager().getAllRecipesFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING)) {
+            if (recipe.matches(grid, level)) out.add(recipe);
+        }
+        //?} else {
+        /*var input = grid.toCraftingInput();
+        for (var holder : level.getRecipeManager().getAllRecipesFor(net.minecraft.world.item.crafting.RecipeType.CRAFTING)) {
+            if (holder.value().matches(input, level)) out.add(holder.value());
+        }
+        *///?}
+
+        return out;
+    }
+
+    /** {@code CraftingRecipe.matches} mit versionsuebergreifender Eingabe. */
+    public static boolean craftingMatches(net.minecraft.world.item.crafting.CraftingRecipe recipe,
+                                          com.hbm_m.util.SimpleCraftingContainer grid, Level level) {
+        //? if < 1.21.1 {
+        return recipe.matches(grid, level);
+        //?} else {
+        /*return recipe.matches(grid.toCraftingInput(), level);
+        *///?}
+    }
+
     /** {@code CraftingRecipe.assemble} с кросс-версионным входом (Container vs CraftingInput). */
     public static ItemStack assembleCrafting(net.minecraft.world.item.crafting.CraftingRecipe recipe,
                                              com.hbm_m.util.SimpleCraftingContainer grid, Level level) {

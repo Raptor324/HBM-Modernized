@@ -6,7 +6,7 @@
 	"children": {
 		"mhdt_model": {
 			"loader": "forge:obj",
-			"model": "hbm_m:models/block/machines/mhdt.obj",
+			"model": "hbm_m:models/block/machines/mhdt_static.obj",
 			"flip_v": true,
 			"render_type": "minecraft:cutout",
 			"textures": {

@@ -12,10 +12,13 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 
 /**
- * Verwendet die portierte Original-Panel-Textur (nur der statische Rahmen, keine geratenen Icon-
- * Koordinaten daraus) - Tank-/Energieanzeigen als eigene Fuellrechteck-Overlays. Zuend-Knopf und
- * Drossel-Schieberegler des Originals entfallen (siehe Klassenkommentar in
- * {@link MachineCombustionEngineBlockEntity}).
+ * Verwendet die portierte Original-Panel-Textur - Tank-/Energieanzeigen als eigene
+ * Fuellrechteck-Overlays.
+ *
+ * <p>Die beiden Bedienelemente sind 1:1 uebernommen: der <b>Zuendknopf</b> oben und der
+ * <b>Drosselregler</b> darunter, der sich von null bis dreissig ziehen laesst. Die Drossel
+ * bestimmt direkt den Durchsatz - man stellt den Motor auf den Verbrauch ein, den man wirklich
+ * abnimmt, statt ihn volllaufen und abschalten zu lassen.</p>
  */
 public class GUIMachineCombustionEngine extends AbstractContainerScreen<MachineCombustionEngineMenu> {
 
@@ -23,6 +26,12 @@ public class GUIMachineCombustionEngine extends AbstractContainerScreen<MachineC
             ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/generators/gui_combustion.png");
 
     private final MachineCombustionEngineBlockEntity blockEntity;
+
+    /**
+     * Waehrend des Ziehens zeigt der Schieber sofort die neue Stellung, ohne auf die Antwort des
+     * Servers zu warten - sonst haengt er sichtbar hinterher.
+     */
+    private int dragThrottle = -1;
 
     public GUIMachineCombustionEngine(MachineCombustionEngineMenu menu, Inventory inventory, Component title) {
         super(menu, inventory, title);
@@ -48,9 +57,74 @@ public class GUIMachineCombustionEngine extends AbstractContainerScreen<MachineC
             int energyH = max > 0 ? (int) (energy * 52L / max) : 0;
             if (energyH > 0) guiGraphics.fill(x + 143, y + 17 + (52 - energyH), x + 159, y + 69, 0xFFFF3020);
 
-            if (blockEntity.isActive()) {
-                guiGraphics.fill(x + 88, y + 13, x + 105, y + 27, 0xFF30FF30);
+            // Original: der gedrueckte Zuendknopf wird aus (192,0) ueberblendet.
+            if (blockEntity.isOn()) {
+                guiGraphics.blit(TEXTURE, x + 79, y + 13, 192, 0, 35, 15);
             }
+
+            // Original: der Schieber sitzt bei 79 + setting * 32 / 30.
+            int knob = 79 + (throttle() * 32 / MachineCombustionEngineBlockEntity.MAX_THROTTLE);
+            guiGraphics.blit(TEXTURE, x + knob, y + 38, 192, 15, 4, 8);
+        }
+    }
+
+    private int throttle() {
+        if (dragThrottle >= 0) return dragThrottle;
+        return blockEntity != null ? blockEntity.getSetting() : 0;
+    }
+
+    /** Original: {@code setting = (x - guiLeft - 81) * 30 / 32}, geklemmt auf null bis dreissig. */
+    private int throttleAt(double mouseX) {
+        int raw = (int) ((mouseX - leftPos - 81) * MachineCombustionEngineBlockEntity.MAX_THROTTLE / 32);
+        return Math.max(0, Math.min(MachineCombustionEngineBlockEntity.MAX_THROTTLE, raw));
+    }
+
+    @Override
+    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        if (blockEntity != null) {
+            // Original-Trefferflaeche des Zuendknopfs: (89,13), 16 x 14.
+            if (isHovering(89, 13, 16, 14, mouseX, mouseY)) {
+                com.hbm_m.network.CombustionEngineControlC2SPacket.sendToggle(blockEntity.getBlockPos());
+                playClick();
+                return true;
+            }
+
+            // Original-Trefferflaeche des Reglers: (79,38), 36 x 8.
+            if (isHovering(79, 38, 36, 8, mouseX, mouseY)) {
+                dragThrottle = throttleAt(mouseX);
+                com.hbm_m.network.CombustionEngineControlC2SPacket.sendThrottle(
+                        blockEntity.getBlockPos(), dragThrottle);
+                playClick();
+                return true;
+            }
+        }
+        return super.mouseClicked(mouseX, mouseY, button);
+    }
+
+    @Override
+    public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
+        if (dragThrottle >= 0 && blockEntity != null) {
+            int next = throttleAt(mouseX);
+            if (next != dragThrottle) {
+                dragThrottle = next;
+                com.hbm_m.network.CombustionEngineControlC2SPacket.sendThrottle(
+                        blockEntity.getBlockPos(), next);
+            }
+            return true;
+        }
+        return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
+    }
+
+    @Override
+    public boolean mouseReleased(double mouseX, double mouseY, int button) {
+        dragThrottle = -1;
+        return super.mouseReleased(mouseX, mouseY, button);
+    }
+
+    private void playClick() {
+        if (minecraft != null) {
+            minecraft.getSoundManager().play(net.minecraft.client.resources.sounds.SimpleSoundInstance.forUI(
+                    net.minecraft.sounds.SoundEvents.UI_BUTTON_CLICK, 1.0F));
         }
     }
 

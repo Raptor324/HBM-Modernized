@@ -34,11 +34,13 @@ public class MachineAmmoPressMenu extends AbstractContainerMenu {
 
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 3; col++) {
-                this.addSlot(new Slot(container, row * 3 + col, 34 + col * 18, 18 + row * 18));
+                // 1:1 aus {@code ContainerMachineAmmoPress}: das Eingaberaster sitzt rechts.
+                // Was hier hineinpasst, entscheidet das gewaehlte Rezept (siehe BlockEntity).
+                this.addSlot(new Slot(container, row * 3 + col, 116 + col * 18, 18 + row * 18));
             }
         }
 
-        this.addSlot(new Slot(container, SLOT_OUTPUT, 134, 36) {
+        this.addSlot(new Slot(container, SLOT_OUTPUT, 134, 72) {
             @Override
             public boolean mayPlace(ItemStack stack) {
                 return false; // Nur Entnahme - wird von der Maschine befuellt.
@@ -46,7 +48,7 @@ public class MachineAmmoPressMenu extends AbstractContainerMenu {
         });
 
         int playerInvX = 8;
-        int playerInvY = 104;
+        int playerInvY = 118;
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 9; col++) {
                 this.addSlot(new Slot(inventory, col + row * 9 + 9, playerInvX + col * 18, playerInvY + row * 18));

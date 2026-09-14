@@ -20,13 +20,33 @@ import net.minecraft.world.phys.BlockHitResult;
 import org.jetbrains.annotations.Nullable;
 import dev.architectury.registry.menu.MenuRegistry;
 
-/** Port of {@code HeaterHeatex} (1.7.10 Original). */
-public class MachineHeatexBlock extends BaseEntityBlock {
+import com.hbm_m.block.ModBlocks;
+import com.hbm_m.multiblock.DummyableStructureBuilder;
+import com.hbm_m.multiblock.MultiblockStructureHelper;
+
+/**
+ * 1:1-Port von {@code HeaterHeatex} (1.7.10): der Waermetauscher.
+ *
+ * <p>Ein Feld hoch, drei mal drei breit ({@code getDimensions {0,0,1,1,1,1}}) - und die vier
+ * <b>Ecken</b> sind die Anschlusszellen. Das ist der Grund, warum man die Rohre bei diesem Geraet
+ * diagonal ansetzt und nicht gerade.</p>
+ */
+public class MachineHeatexBlock extends DummyableMachineBlock {
 
     public MachineHeatexBlock(Properties properties) { super(properties); }
 
     @Override
-    public RenderShape getRenderShape(BlockState state) { return RenderShape.MODEL; }
+    protected MultiblockStructureHelper defineStructure() {
+        // Original: getDimensions {0,0,1,1,1,1}, getOffset 1, vier diagonale Zusatzzellen.
+        return DummyableStructureBuilder.create()
+                .box(0, 0, 1, 1, 1, 1)
+                .extra(1, 0, 1)
+                .extra(1, 0, -1)
+                .extra(-1, 0, 1)
+                .extra(-1, 0, -1)
+                .placementOffset(1)
+                .build(() -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState());
+    }
 
     @Nullable @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {

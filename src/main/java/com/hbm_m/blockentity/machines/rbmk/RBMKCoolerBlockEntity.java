@@ -169,6 +169,9 @@ public class RBMKCoolerBlockEntity extends RBMKColumnBlockEntity
         return d;
     }
 
+    // Same fix as the rest of the RBMK block entities: the client update tag is built from
+    // writeNbtData alone, so the tanks were saved to disk but never sent to the client.
+    // readNbtData below was already correct - it just had nothing to read.
     @Override
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.writeNbtData(tag, registries);

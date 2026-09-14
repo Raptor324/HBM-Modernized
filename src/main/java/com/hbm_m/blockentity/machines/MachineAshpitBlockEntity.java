@@ -23,8 +23,10 @@ import net.minecraft.world.level.block.state.BlockState;
  * Sobald ein Schwellwert erreicht ist, wird ein Aschepulver-Item in einen freien/passenden der 5
  * Ausgabeslots gelegt (1:1 aus {@code processAsh}).
  * <p>
- * Gespeist wird er wie im Original von der Feuerung direkt darueber: Firebox und Heizofen rufen
- * beim Anzuenden {@link #feedFromBurner} auf und legen die rohe Brennzeit des Brennstoffs ab.
+ * <p>Gefuettert wird sie von der {@link MachineFireboxBlockEntity Feuerbuechse} direkt darueber -
+ * je nach Brennstoff faellt Holz-, Kohle- oder sonstige Asche an. Weitere Feuerungen des Originals
+ * (Holzbrenner, Ziegelofen, Schornstein) koennen sich ueber {@link #addAsh(AshType, int)}
+ * anhaengen, sobald sie so weit sind.
  */
 public class MachineAshpitBlockEntity extends BaseMachineBlockEntity {
 

@@ -38,7 +38,8 @@ public class MachineTurbofanMenu extends AbstractContainerMenu {
     private static final int SLOT_EMPTY_CONTAINER = MachineTurbofanBlockEntity.SLOT_EMPTY_CONTAINER;
     private static final int SLOT_BATTERY = MachineTurbofanBlockEntity.SLOT_BATTERY;
     private static final int SLOT_FLUID_IDENTIFIER = MachineTurbofanBlockEntity.SLOT_FLUID_IDENTIFIER;
-    private static final int MACHINE_SLOT_COUNT = 4;
+    private static final int SLOT_UPGRADE = MachineTurbofanBlockEntity.SLOT_UPGRADE;
+    private static final int MACHINE_SLOT_COUNT = 5;
     private static final int PLAYER_INV_START = MACHINE_SLOT_COUNT;
     private static final int PLAYER_INV_END = MACHINE_SLOT_COUNT + 36;
 
@@ -61,6 +62,8 @@ public class MachineTurbofanMenu extends AbstractContainerMenu {
         });
         this.addSlot(new Slot(container, SLOT_BATTERY, 143, 71));
         this.addSlot(new Slot(container, SLOT_FLUID_IDENTIFIER, 44, 71));
+        // Original (ContainerMachineTurbofan): Aufwertungsslot bei 98, 71.
+        this.addSlot(new Slot(container, SLOT_UPGRADE, 98, 71));
 
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 9; col++) {

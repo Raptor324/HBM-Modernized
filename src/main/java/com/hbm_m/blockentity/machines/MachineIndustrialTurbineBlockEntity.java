@@ -10,6 +10,9 @@ import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.interfaces.IEnergyModeHolder;
 import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
+import com.hbm_m.inventory.fluid.FluidType;
+import com.hbm_m.inventory.fluid.trait.FT_Coolable;
+import com.hbm_m.inventory.fluid.trait.FT_Coolable.CoolingType;
 import com.hbm_m.sound.ClientSoundBootstrap;
 import com.hbm_m.sound.ModSounds;
 
@@ -41,10 +44,21 @@ import net.neoforged.api.distmarker.OnlyIn;
  * Kein Inventar/GUI - Dampf kommt ausschließlich über Rohre an den UNIVERSAL_CONNECTOR-
  * Phantomblöcken der Multiblock-Struktur an (gleiches Prinzip wie bei Chungus).
  *
- * Stats:
- * - Steam tank: 64,000 mB (input)
- * - Spent steam tank: 64,000 mB (output)
- * - Energy output: up to 500 HE/t depending on steam type
+ * Dampfumsatz, Ausgabefluid und Energie kommen wie im Original ({@code TileEntityTurbineBase})
+ * aus der {@code FT_Coolable}-Eigenschaft des jeweiligen Dampfes. Der Ausgang ist damit die
+ * naechstniedrigere Stufe, nicht pauschal Altdampf - erst so laesst sich eine Kaskade bauen:
+ * Ultraheissdampf zu Superheissdampf zu Heissdampf zu Dampf zu Altdampf. Auch die Verhaeltnisse
+ * kommen von dort (Dampf setzt 100 mB zu 1 mB Altdampf um, die heissen Stufen 1 zu 10).
+ * <p>
+ * Verbrauch je Tick: 20% des Tankinhalts ({@code consumptionPercent}), Wirkungsgrad 1,0.
+ * <p>
+ * <p><b>Der Hebel</b> schaltet wie im Original die Dampfstufe durch - und weil diese Turbine
+ * {@code doesResizeCompressor() == true} hat, <b>schrumpfen die Tanks dabei auf ein Zehntel</b>.
+ * Das ist kein Nebeneffekt, sondern der Sinn der Sache: heisserer Dampf traegt pro Millibucket
+ * viel mehr Energie, also braucht man weniger Volumen. Beim Zuruecksetzen auf gewoehnlichen Dampf
+ * gehen die Tanks um das Tausendfache wieder auf.</p>
+ *
+ * <p>Umstellen geht nur im Stillstand.</p>
  */
 @SuppressWarnings("UnstableApiUsage")
 public class MachineIndustrialTurbineBlockEntity extends BaseMachineBlockEntity
@@ -58,10 +72,8 @@ public class MachineIndustrialTurbineBlockEntity extends BaseMachineBlockEntity
 
     // Conversion constants
     private static final double CONSUMPTION_PERCENT = 0.2D; // Anteil des Tankinhalts, der pro Tick verbraucht wird
-    private static final long ENERGY_PER_MB_STEAM = 100;    // HE per mB of steam (regular)
-    private static final long ENERGY_PER_MB_HOT = 200;      // HE per mB of hot steam
-    private static final long ENERGY_PER_MB_SUPERHOT = 400;  // HE per mB of super hot steam
-    private static final long ENERGY_PER_MB_ULTRAHOT = 800;  // HE per mB of ultra hot steam
+    /** Original: {@code TileEntityMachineIndustrialTurbine.efficiency = 1D}. */
+    private static final double EFFICIENCY = 1.0D;
 
     // Flywheel (Spin-up/Spin-down-Trägheit der Turbine). Werte sind an ENERGY_CAPACITY angepasst
     // und ggf. beim Playtesting nachzujustieren.
@@ -130,22 +142,83 @@ public class MachineIndustrialTurbineBlockEntity extends BaseMachineBlockEntity
         }
     }
 
+    /**
+     * 1:1-Port von {@code onLeverPull} mit {@code doesResizeCompressor() == true}: die naechste
+     * Dampfstufe, und die Tanks wandern in der Groesse mit.
+     *
+     * @return false, wenn gerade gearbeitet wird
+     */
+    public boolean pullLever() {
+        if (operational) return false;
+
+        var in = steamTank.getTankType();
+
+        if (in == ModFluids.STEAM.getSource()) {
+            steamTank.setTankType(ModFluids.HOTSTEAM.getSource());
+            spentSteamTank.setTankType(ModFluids.STEAM.getSource());
+            shrinkTanks();
+        } else if (in == ModFluids.HOTSTEAM.getSource()) {
+            steamTank.setTankType(ModFluids.SUPERHOTSTEAM.getSource());
+            spentSteamTank.setTankType(ModFluids.HOTSTEAM.getSource());
+            shrinkTanks();
+        } else if (in == ModFluids.SUPERHOTSTEAM.getSource()) {
+            steamTank.setTankType(ModFluids.ULTRAHOTSTEAM.getSource());
+            spentSteamTank.setTankType(ModFluids.SUPERHOTSTEAM.getSource());
+            shrinkTanks();
+        } else if (in == ModFluids.ULTRAHOTSTEAM.getSource()) {
+            steamTank.setTankType(ModFluids.STEAM.getSource());
+            spentSteamTank.setTankType(ModFluids.SPENTSTEAM.getSource());
+            // Original: mal 1000 - zurueck auf die volle Groesse.
+            steamTank.changeTankSize(steamTank.getMaxFill() * 1000);
+            spentSteamTank.changeTankSize(spentSteamTank.getMaxFill() * 1000);
+        } else {
+            steamTank.setTankType(ModFluids.STEAM.getSource());
+            spentSteamTank.setTankType(ModFluids.SPENTSTEAM.getSource());
+        }
+
+        setChanged();
+        sendUpdateToClient();
+        return true;
+    }
+
+    /** Original: {@code changeTankSize(getMaxFill() / 10)} bei jeder Stufe nach oben. */
+    private void shrinkTanks() {
+        steamTank.changeTankSize(Math.max(1, steamTank.getMaxFill() / 10));
+        spentSteamTank.changeTankSize(Math.max(1, spentSteamTank.getMaxFill() / 10));
+    }
+
+    /** Original: {@code operational} - kein Schalter, sondern ob gerade Dampf umgesetzt wird. */
+    private boolean operational = false;
+
+    public boolean isOperational() { return operational; }
+
     private void processTurbine() {
+        operational = false;
         // 1. Dampf verbrauchen (20% des aktuellen Tankinhalts/Tick) und Energie-Potential in das Flywheel laden.
-        if (steamTank.getFill() > 0 && steamTank.getTankType() != null) {
-            long energyPerMb = getEnergyPerMb();
-            if (energyPerMb > 0) {
-                int steamAvailable = steamTank.getFill();
-                int steamToConsume = Math.min((int) Math.ceil(steamAvailable * CONSUMPTION_PERCENT), steamAvailable);
+        //
+        // 1:1 aus TileEntityTurbineBase: Umsatzverhaeltnis, Ausgabefluid und Energie kommen aus der
+        // FT_Coolable-Eigenschaft des Dampfes. Der Ausgang ist damit die naechstniedrigere
+        // Dampfstufe (coolsTo), nicht pauschal Altdampf - erst so laesst sich eine Turbinenkaskade
+        // bauen (Ultraheissdampf -> Superheissdampf -> Heissdampf -> Dampf -> Altdampf).
+        FT_Coolable trait = FluidType.getTrait(steamTank.getStoredFluid(), FT_Coolable.class);
 
-                int spentSpace = spentSteamTank.getMaxFill() - spentSteamTank.getFill();
-                steamToConsume = Math.min(steamToConsume, spentSpace);
+        if (trait != null && trait.amountReq > 0 && trait.amountProduced > 0) {
+            double eff = trait.getEfficiency(CoolingType.TURBINE) * EFFICIENCY;
 
-                if (steamToConsume > 0) {
-                    steamTank.drainMb(steamToConsume);
-                    spentSteamTank.fillMb(ModFluids.SPENTSTEAM.getSource(), steamToConsume);
+            if (eff > 0) {
+                spentSteamTank.setTankType(trait.coolsTo);
 
-                    maxPower = steamToConsume * energyPerMb;
+                int available = steamTank.getFill();
+                int inputOps = (int) (Math.min(Math.ceil(available * CONSUMPTION_PERCENT), available) / trait.amountReq);
+                int outputOps = (spentSteamTank.getMaxFill() - spentSteamTank.getFill()) / trait.amountProduced;
+                int ops = Math.min(inputOps, outputOps);
+
+                if (ops > 0) {
+                    operational = true;
+                    steamTank.drainMb(ops * trait.amountReq);
+                    spentSteamTank.fillMb(trait.coolsTo, ops * trait.amountProduced);
+
+                    maxPower = (long) (ops * trait.heatEnergy * eff);
                     flywheelEnergy += maxPower;
                 }
             }
@@ -169,16 +242,17 @@ public class MachineIndustrialTurbineBlockEntity extends BaseMachineBlockEntity
         isActive = generating || flywheelEnergy > 0;
     }
 
-    private long getEnergyPerMb() {
-        return getEnergyPerMb(steamTank.getTankType());
-    }
-
-    private long getEnergyPerMb(net.minecraft.world.level.material.Fluid fluid) {
-        if (fluid == ModFluids.ULTRAHOTSTEAM.getSource()) return ENERGY_PER_MB_ULTRAHOT;
-        if (fluid == ModFluids.SUPERHOTSTEAM.getSource()) return ENERGY_PER_MB_SUPERHOT;
-        if (fluid == ModFluids.HOTSTEAM.getSource()) return ENERGY_PER_MB_HOT;
-        if (fluid == ModFluids.STEAM.getSource()) return ENERGY_PER_MB_STEAM;
-        return 0;
+    /**
+     * Annahmepruefung des Fluid-Handlers. Sie muss dieselbe Bedingung stellen wie die
+     * Verarbeitung, seit diese ueber {@link FT_Coolable} laeuft - sonst nimmt die Turbine Dampf an,
+     * den sie anschliessend nicht verwerten kann.
+     */
+    private boolean acceptsAsSteam(net.minecraft.world.level.material.Fluid fluid) {
+        FT_Coolable trait = FluidType.getTrait(fluid, FT_Coolable.class);
+        return trait != null
+                && trait.amountReq > 0
+                && trait.amountProduced > 0
+                && trait.getEfficiency(CoolingType.TURBINE) > 0;
     }
 
     public void drops() {
@@ -346,12 +420,12 @@ public class MachineIndustrialTurbineBlockEntity extends BaseMachineBlockEntity
 
         @Override
         public boolean isFluidValid(int tank, @NotNull net.minecraftforge.fluids.FluidStack stack) {
-            return be.getEnergyPerMb(stack.getFluid()) > 0;
+            return be.acceptsAsSteam(stack.getFluid());
         }
 
         @Override
         public int fill(net.minecraftforge.fluids.FluidStack resource, FluidAction action) {
-            if (resource.isEmpty() || be.getEnergyPerMb(resource.getFluid()) <= 0) return 0;
+            if (resource.isEmpty() || !be.acceptsAsSteam(resource.getFluid())) return 0;
             if (be.steamTank.getFill() > 0 && be.steamTank.getTankType() != resource.getFluid()) return 0;
             int space = be.steamTank.getMaxFill() - be.steamTank.getFill();
             int toFill = Math.min(space, resource.getAmount());

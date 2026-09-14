@@ -64,6 +64,7 @@ public class MachineReactorResearchBlockEntity extends BaseMachineBlockEntity {
     private double targetLevel;
     private final int[] slotFlux = new int[INVENTORY_SIZE];
     private int totalFlux;
+
     private boolean exploded;
 
     public MachineReactorResearchBlockEntity(BlockPos pos, BlockState state) {
@@ -110,9 +111,21 @@ public class MachineReactorResearchBlockEntity extends BaseMachineBlockEntity {
         sendUpdateToClient();
     }
 
-    /** Redstone-Sperre statt manuellem Schieberegler (siehe Klassenkommentar). */
+    /**
+     * Redstone-Sperre statt manuellem Schieberegler (siehe Klassenkommentar) - sofern nicht ein
+     * Steuerpult ({@code MachineReactorControlBlockEntity}) die Stellung vorgibt.
+     *
+     * <p>Das Pult schreibt seinen Wert jeden Tick neu; bleibt es laenger als
+     * {@link #EXTERNAL_TARGET_TIMEOUT} Ticks stumm (abgebaut, Chunk entladen), faellt die Steuerung
+     * auf Redstone zurueck.</p>
+     */
     private void rodControl(Level level, BlockPos pos) {
-        targetLevel = level.hasNeighborSignal(pos) ? 0D : 1.0D;
+        if (externalTarget != null && level.getGameTime() - externalTargetSetAt <= EXTERNAL_TARGET_TIMEOUT) {
+            targetLevel = externalTarget;
+        } else {
+            externalTarget = null;
+            targetLevel = level.hasNeighborSignal(pos) ? 0D : 1.0D;
+        }
 
         if (this.level < targetLevel) {
             this.level = Math.min(this.level + SPEED, targetLevel);
@@ -205,6 +218,29 @@ public class MachineReactorResearchBlockEntity extends BaseMachineBlockEntity {
     public double getRodLevel()   { return level; }
     public double getTargetLevel() { return targetLevel; }
     public int getTotalFlux()     { return totalFlux; }
+
+    // ── Vorgabe durch ein Steuerpult ────────────────────────────────────────
+
+    /** Wie lange eine Vorgabe ohne Auffrischung gilt, in Ticks. */
+    private static final long EXTERNAL_TARGET_TIMEOUT = 40L;
+
+    private Double externalTarget = null;
+    private long externalTargetSetAt = Long.MIN_VALUE;
+
+    /**
+     * Original: {@code TileEntityReactorControl} ruft {@code reactor.setTarget(level)}.
+     * Der Wert wird auf 0..1 geklemmt und muss regelmaessig erneuert werden.
+     */
+    public void setTarget(double target) {
+        this.externalTarget = Math.max(0D, Math.min(1D, target));
+        // Achtung: das Feld 'level' ist hier die Stabstellung, die Welt kommt ueber getLevel().
+        this.externalTargetSetAt = getLevel() != null ? getLevel().getGameTime() : 0L;
+    }
+
+    /** True, solange ein Steuerpult die Stellung vorgibt. */
+    public boolean hasExternalTarget() {
+        return externalTarget != null;
+    }
 
     // ── NBT ─────────────────────────────────────────────────────────────────
 

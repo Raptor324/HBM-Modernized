@@ -21,10 +21,11 @@ public class MachineMiningLaserMenu extends AbstractContainerMenu {
 
     private final MachineMiningLaserBlockEntity blockEntity;
 
-    private static final int OUTPUT_START = 0;
-    private static final int OUTPUT_COUNT = 9;
+    private static final int OUTPUT_START = MachineMiningLaserBlockEntity.OUTPUT_START;
+    private static final int OUTPUT_COUNT = MachineMiningLaserBlockEntity.OUTPUT_COUNT;
+    private static final int UPGRADE_START = MachineMiningLaserBlockEntity.UPGRADE_START;
     private static final int SLOT_BATTERY = MachineMiningLaserBlockEntity.SLOT_BATTERY;
-    private static final int MACHINE_SLOT_COUNT = 10;
+    private static final int MACHINE_SLOT_COUNT = OUTPUT_START + OUTPUT_COUNT;
     private static final int PLAYER_INV_START = MACHINE_SLOT_COUNT;
     private static final int PLAYER_INV_END = MACHINE_SLOT_COUNT + 36;
 
@@ -38,9 +39,26 @@ public class MachineMiningLaserMenu extends AbstractContainerMenu {
 
         var container = new ModItemStackHandlerContainer(blockEntity.getInventory(), blockEntity::setChanged);
 
+        // 1:1 aus {@code ContainerMiningLaser}: acht Upgrades rechts oben, 7x3 Ausgabe darunter.
+        for (int row = 0; row < 2; row++) {
+            for (int col = 0; col < 4; col++) {
+                this.addSlot(new Slot(container, UPGRADE_START + row * 4 + col, 98 + col * 18, 18 + row * 18) {
+                    @Override
+                    public boolean mayPlace(ItemStack stack) {
+                        return stack.getItem() instanceof com.hbm_m.item.industrial.ItemMachineUpgrade;
+                    }
+
+                    @Override
+                    public int getMaxStackSize() {
+                        return 1;
+                    }
+                });
+            }
+        }
+
         for (int row = 0; row < 3; row++) {
-            for (int col = 0; col < 3; col++) {
-                this.addSlot(new Slot(container, OUTPUT_START + row * 3 + col, 98 + col * 18, 18 + row * 18) {
+            for (int col = 0; col < 7; col++) {
+                this.addSlot(new Slot(container, OUTPUT_START + row * 7 + col, 44 + col * 18, 72 + row * 18) {
                     @Override
                     public boolean mayPlace(ItemStack stack) {
                         return false; // Nur Entnahme - wird von der Maschine befuellt.
@@ -49,7 +67,7 @@ public class MachineMiningLaserMenu extends AbstractContainerMenu {
             }
         }
 
-        this.addSlot(new Slot(container, SLOT_BATTERY, 26, 36) {
+        this.addSlot(new Slot(container, SLOT_BATTERY, 8, 108) {
             @Override
             public boolean mayPlace(ItemStack stack) {
                 if (ItemEnergyAccess.getHbmProvider(stack).isPresent()) return true;
@@ -64,7 +82,7 @@ public class MachineMiningLaserMenu extends AbstractContainerMenu {
         });
 
         int playerInvX = 8;
-        int playerInvY = 104;
+        int playerInvY = 140;
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 9; col++) {
                 this.addSlot(new Slot(inventory, col + row * 9 + 9, playerInvX + col * 18, playerInvY + row * 18));

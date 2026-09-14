@@ -219,6 +219,12 @@ public class MachineRadarBlockEntity extends BaseMachineBlockEntity {
             if (level.getGameTime() % RADAR_SCAN_INTERVAL == 0) {
                 performRadarScan();
             }
+
+            if (level.getGameTime() % 20 == 0) {
+                com.hbm_m.satellite.RayScanEvents.reportEvent(level, worldPosition, com.hbm_m.satellite.RayScanEvents.INFO_RADAR, 200);
+                com.hbm_m.satellite.DetectorEvents.reportEvent(level, com.hbm_m.satellite.DetectorEvents.DURATION_MEDIUM,
+                        com.hbm_m.satellite.DetectorEvents.BurstIntensity.MEDIUM, worldPosition.getX(), worldPosition.getZ());
+            }
             setEnergyStored(Math.max(0L, getEnergyStored() - ENERGY_DRAIN_PER_TICK));
             active = getEnergyStored() > 0;
         } else {

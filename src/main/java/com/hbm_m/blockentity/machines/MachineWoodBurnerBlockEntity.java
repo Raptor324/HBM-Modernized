@@ -2,6 +2,8 @@ package com.hbm_m.blockentity.machines;
 
 import com.hbm_m.block.machines.MachineWoodBurnerBlock;
 import com.hbm_m.blockentity.BaseMachineBlockEntity;
+import com.hbm_m.handler.pollution.PollutionHandler;
+import com.hbm_m.inventory.fluid.trait.PollutionType;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.inventory.menu.MachineWoodBurnerMenu;
 import com.hbm_m.item.ModItems;
@@ -92,6 +94,12 @@ public class MachineWoodBurnerBlockEntity extends BaseMachineBlockEntity {
         // Процесс горения
         if (be.isBurning() && be.enabled) {
             be.burnTime--;
+
+            // Original: SOOT_PER_SECOND im Sekundentakt, solange Holz brennt.
+            if (level.getGameTime() % 20 == 0) {
+                PollutionHandler.incrementPollution(level, pos, PollutionType.SOOT,
+                        PollutionHandler.SOOT_PER_SECOND);
+            }
 
             // Просто генерируем энергию. Сеть сама её заберёт.
             be.setEnergyStored(Math.min(be.getMaxEnergyStored(), be.getEnergyStored() + GENERATION_RATE));

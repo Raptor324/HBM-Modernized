@@ -1969,6 +1969,8 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add(ModItems.SHELL.get(), "Оболочка");
         add(ModItems.UPGRADE_MUFFLER.get(), "Улучшение «Глушитель»");
         add(ModItems.UPGRADE_TEMPLATE.get(), "Шаблон улучшения механизма");
+        add(ModItems.UPGRADE_RADIUS.get(), "Улучшение радиуса силового поля");
+        add(ModItems.UPGRADE_HEALTH.get(), "Улучшение прочности силового поля");
         add(ModItems.WASTE_NATURAL_URANIUM.get(), "Обеднённое топливо из природного урана");
         add(ModItems.WASTE_U233.get(), "Обеднённое топливо из урана-233");
         add(ModItems.WASTE_U235.get(), "Обеднённое топливо из урана-235");
@@ -2971,7 +2973,10 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add(ModBlocks.RBMK_CONTROL_REASIM_AUTO.get(), "РБМК Авто-стержень (ReaSim)");
         add(ModBlocks.RBMK_STEAM_INLET.get(),         "РБМК Вход пара");
         add(ModBlocks.RBMK_STEAM_OUTLET.get(),        "РБМК Выход пара");
-        add(ModBlocks.RBMK_LOADER.get(),              "РБМК Загрузчик (основание)");
+        add(ModBlocks.RBMK_LOADER.get(),              "РБМК Паровой коннектор");
+        add("block.hbm_m.rbmk_loader.desc0", "Позволяет РБМК иметь подключение и воды, и пара снизу");
+        add("block.hbm_m.rbmk_loader.desc1", "Поставьте водяную трубу под колонну РБМК, затем коннектор,");
+        add("block.hbm_m.rbmk_loader.desc2", "затем подключите паропровод к коннектору.");
         add(ModBlocks.RBMK_AUTOLOADER.get(),          "РБМК Автозагрузчик");
         add(ModBlocks.RBMK_CRANE_CONSOLE.get(),       "РБМК Пульт крана");
         add(ModBlocks.RBMK_DEBRIS.get(),              "РБМК Обломки");

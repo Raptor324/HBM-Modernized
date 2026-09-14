@@ -20,10 +20,11 @@ import net.minecraft.world.level.block.state.BlockState;
  * counter), slot 1 = filter (defines/locks the accepted item, can't change once stockpile &gt; 0),
  * slot 2 = output buffer (auto-refilled from the counter).
  * <p>
- * SCOPE-Vereinfachung: Das Original hat 4 Groessen-Stufen (Holz/Eisen/Stahl/Desh, je per Metadaten-
- * Subitem, 100 bis 1.000.000 Kapazitaet) - hier nur eine Stufe (100.000), da im modernisierten
- * Ressourcenbaum nur ein Texturset vorhanden ist. AE2-ME-Anbindung (getTotalStockpile/erhoehen/
- * verringern) und Redstone-Lock-Pin-System entfallen (keine Entsprechung in diesem Port).
+ * <p>Es gibt ihn wie im Original in <b>vier Groessen</b>: Holz fasst hundert, Eisen zehntausend,
+ * Desh hunderttausend und Stahl eine Million. Das ist der einzige Unterschied zwischen ihnen.</p>
+ *
+ * <p><b>Nicht portiert:</b> die AE2-Anbindung und das Redstone-Sperrsystem - beides hat in diesem
+ * Port keine Entsprechung.
  */
 public class MachineMassStorageBlockEntity extends BaseMachineBlockEntity {
 
@@ -32,7 +33,8 @@ public class MachineMassStorageBlockEntity extends BaseMachineBlockEntity {
     public static final int SLOT_OUTPUT = 2;
     public static final int INVENTORY_SIZE = 3;
 
-    private static final long CAPACITY = 100_000L;
+    /** Voreinstellung, falls der Blockzustand keine Stufe hergibt. */
+    private static final long DEFAULT_CAPACITY = 1_000_000L;
 
     private long stockpile = 0L;
 
@@ -48,8 +50,9 @@ public class MachineMassStorageBlockEntity extends BaseMachineBlockEntity {
         Item type = filter.getItem();
 
         ItemStack input = be.inventory.getStackInSlot(SLOT_INPUT);
-        if (!input.isEmpty() && input.getItem() == type && be.stockpile < CAPACITY) {
-            long room = CAPACITY - be.stockpile;
+        long capacity = be.getCapacity();
+        if (!input.isEmpty() && input.getItem() == type && be.stockpile < capacity) {
+            long room = capacity - be.stockpile;
             int toConsume = (int) Math.min(input.getCount(), room);
             if (toConsume > 0) {
                 input.shrink(toConsume);
@@ -76,7 +79,11 @@ public class MachineMassStorageBlockEntity extends BaseMachineBlockEntity {
     }
 
     public long getStockpile() { return stockpile; }
-    public long getCapacity() { return CAPACITY; }
+    /** Die Groesse dieser Kiste - sie steht am Block, nicht am Blockentity. */
+    public long getCapacity() {
+        return getBlockState().getBlock() instanceof com.hbm_m.block.machines.MachineMassStorageBlock storage
+                ? storage.getTier().capacity : DEFAULT_CAPACITY;
+    }
 
     @Override
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {

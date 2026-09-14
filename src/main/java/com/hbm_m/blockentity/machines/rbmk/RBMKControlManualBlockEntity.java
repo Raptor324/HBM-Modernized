@@ -82,6 +82,10 @@ public class RBMKControlManualBlockEntity extends RBMKControlBlockEntity {
 
     // CE persists startingLevel (TileEntityRBMKControlManual.writeToNBT). Without it a reload
     // mid-withdrawal resets the surge reference point and the tip effect silently vanishes.
+    // Persisted through writeNbtData/readNbtData, NOT saveAdditional/load:
+    // BaseHbmBlockEntity builds the CLIENT update tag from writeNbtData alone, so a
+    // subclass overriding saveAdditional saves to disk correctly yet sends the client
+    // nothing - which is why these readouts stayed blank in world.
     @Override
     protected void writeNbtData(net.minecraft.nbt.CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.writeNbtData(tag, registries);

@@ -18,7 +18,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 public class MachineRadiolysisMenu extends AbstractContainerMenu {
 
     private final MachineRadiolysisBlockEntity blockEntity;
-    private static final int MACHINE_SLOTS = 2;
+    private static final int MACHINE_SLOTS = 15;
 
     public MachineRadiolysisMenu(int id, Inventory inv, FriendlyByteBuf buf) {
         this(id, inv, getBlockEntity(inv, buf));
@@ -28,12 +28,22 @@ public class MachineRadiolysisMenu extends AbstractContainerMenu {
         super(ModMenuTypes.RADIOLYSIS_MENU.get(), id);
         this.blockEntity = be;
 
-        // Both machine slots used to be inside a forge-only block: on NeoForge the menu was 36 player
-        // slots, while quickMoveStack still moved to indices 0-1 - i.e. into the player's own
-        // inventory. ModItemStackHandlerContainer is the platform-neutral adapter used elsewhere.
+        // Platform-neutral adapter (SlotItemHandler is forge-only): on NeoForge the machine slots
+        // used to be missing entirely and quickMoveStack shuffled the player's own inventory.
         ModItemStackHandlerContainer machineContainer =
                 new ModItemStackHandlerContainer(be.getInventory(), be::setChanged);
+
+        // 1:1 aus {@code ContainerRadiolysis}: zwei Spalten zu fuenf Pelletplaetzen rechts aussen.
+        for (int i = 0; i < 2; i++) {
+            for (int j = 0; j < 5; j++) {
+                addSlot(new Slot(machineContainer, j + i * 5, 188 + i * 18, 8 + j * 18));
+            }
+        }
+
         addSlot(new Slot(machineContainer, MachineRadiolysisBlockEntity.SLOT_FLUID_ID, 34, 17));
+        addSlot(new TakeOnlySlot(machineContainer, MachineRadiolysisBlockEntity.SLOT_FLUID_ID_OUT, 34, 53));
+        addSlot(new Slot(machineContainer, MachineRadiolysisBlockEntity.SLOT_IRRADIATE_IN, 148, 17));
+        addSlot(new TakeOnlySlot(machineContainer, MachineRadiolysisBlockEntity.SLOT_IRRADIATE_OUT, 148, 53));
         addSlot(new Slot(machineContainer, MachineRadiolysisBlockEntity.SLOT_BATTERY, 8, 53));
 
         for (int row = 0; row < 3; row++) {
@@ -43,6 +53,18 @@ public class MachineRadiolysisMenu extends AbstractContainerMenu {
         }
         for (int col = 0; col < 9; col++) {
             addSlot(new Slot(inv, col, 8 + col * 18, 142));
+        }
+    }
+
+    /** Original: {@code SlotTakeOnly} - herausnehmen ja, hineinlegen nein. */
+    private static class TakeOnlySlot extends Slot {
+        TakeOnlySlot(net.minecraft.world.Container container, int index, int x, int y) {
+            super(container, index, x, y);
+        }
+
+        @Override
+        public boolean mayPlace(ItemStack stack) {
+            return false;
         }
     }
 

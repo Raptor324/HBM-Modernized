@@ -35,11 +35,11 @@ import net.minecraft.world.level.material.Fluid;
  * <p>
  * SCOPE-Entscheidungen:
  * <ul>
- *   <li>Kein Zuend-Knopf + Drossel-Schieberegler (Original: separater GUI-Ignition-Toggle UND ein
- *   0-30-Drag-Regler fuer die Brenngeschwindigkeit) - stattdessen wie beim Diesel Generator nur
- *   Redstone-Sperre, und immer volle Drosselstellung wenn aktiv (konsistent mit anderen Maschinen
- *   dieser Session, die manuelle GUI-Regler zugunsten von Automatikbetrieb gestrichen haben, z.B.
- *   Compressor).</li>
+ *   <li><b>Zuendung und Drossel</b> wie im Original: der Motor laeuft erst, wenn er gezuendet
+ *   ist, und die Drossel (0 bis 30) bestimmt, wieviel er verbrennt - {@code setting * 2}
+ *   Zehntel-Millibucket je Tick. Das ist der eigentliche Regler der Maschine: halbe Drossel heisst
+ *   halber Verbrauch und halbe Leistung, nicht schlechterer Wirkungsgrad. Wer nur soviel Strom
+ *   braucht wie er abnimmt, dreht herunter statt den Motor takten zu lassen.</li>
  *   <li>Multiblock ueber dieses Repo-eigene {@link com.hbm_m.multiblock.MultiblockStructureHelper}-
  *   Framework statt des veralteten 1.7.10 {@code BlockDummyable}/Proxy-Block-Systems - vereinfacht-
  *   aber-proportionales Footprint (siehe {@code MachineCombustionEngineBlock}).</li>
@@ -49,11 +49,27 @@ import net.minecraft.world.level.material.Fluid;
  *   akustisch, keine mechanische Auswirkung).</li>
  * </ul>
  */
-public class MachineCombustionEngineBlockEntity extends BaseMachineBlockEntity implements IFluidStandardReceiverMK2 {
+public class MachineCombustionEngineBlockEntity extends BaseMachineBlockEntity
+        implements IFluidStandardReceiverMK2,
+                   com.hbm_m.api.redstoneoverradio.IRORValueProvider,
+                   com.hbm_m.api.redstoneoverradio.IRORInteractive {
 
     public static final int SLOT_BATTERY = 0;
     public static final int SLOT_PISTON = 1;
     private static final int SLOT_COUNT = 2;
+
+    /** Original: {@code setting} - die Drosselstellung, null bis dreissig. */
+    public static final int MAX_THROTTLE = 30;
+
+    /** Original: {@code isOn} - der Zuendschalter. */
+    private boolean isOn = false;
+    private int setting = 0;
+
+    /**
+     * Original rechnet in Zehntel-Millibucket ({@code fill = tank.getFill() * 10 + tenth}), damit
+     * kleine Drosselstellungen nicht auf null abrunden.
+     */
+    private int tenth = 0;
 
     private static final int TANK_CAPACITY_MB = 24_000;
     private static final long MAX_POWER = 2_500_000L;
@@ -92,16 +108,24 @@ public class MachineCombustionEngineBlockEntity extends BaseMachineBlockEntity i
 
         boolean dirty = false;
 
-        if (!level.hasNeighborSignal(pos)) {
+        // 1:1: gezuendet, Drossel offen, Kolbensatz drin und Brennstoff da - sonst passiert nichts.
+        if (isOn && setting > 0 && !level.hasNeighborSignal(pos)) {
             double eff = pistonEfficiency(inventory.getStackInSlot(SLOT_PISTON).getItem());
             Fluid fuel = tank.getStoredFluid();
             FT_Combustible combustible = FluidType.getTrait(fuel, FT_Combustible.class);
 
-            if (eff > 0 && combustible != null && tank.getFluidAmountMb() >= 1 && getEnergyStored() < getMaxEnergyStored()) {
-                int toBurn = Math.min(BURN_MB_PER_TICK, tank.getFluidAmountMb());
+            // Original: in Zehnteln rechnen, damit kleine Drosselstellungen nicht wegfallen.
+            int fill = tank.getFluidAmountMb() * 10 + tenth;
+
+            if (eff > 0 && combustible != null && fill > 0 && getEnergyStored() < getMaxEnergyStored()) {
+                // Original: {@code speed = setting * 2}.
+                int toBurn = Math.min(fill, setting * 2);
                 long output = (long) (toBurn * (combustible.getCombustionEnergy() / 10_000D) * eff);
 
-                tank.drainMb(toBurn);
+                fill -= toBurn;
+                tank.setFill(fill / 10);
+                tenth = fill % 10;
+
                 setEnergyStored(Math.min(getMaxEnergyStored(), getEnergyStored() + output));
                 dirty = true;
             }
@@ -111,6 +135,74 @@ public class MachineCombustionEngineBlockEntity extends BaseMachineBlockEntity i
             setChanged();
             sendUpdateToClient();
         }
+    }
+
+    // ── Redstone-over-Radio ──
+
+    /** 1:1 aus {@code TileEntityMachineCombustionEngine}. */
+    @Override
+    public String[] getFunctionInfo() {
+        return new String[] {
+                PREFIX_VALUE + "state",
+                PREFIX_VALUE + "throttle",
+                PREFIX_VALUE + "power",
+                PREFIX_VALUE + "fuel",
+                PREFIX_VALUE + "efficiency",
+                PREFIX_FUNCTION + "setstate" + NAME_SEPARATOR + "state",
+                PREFIX_FUNCTION + "setthrottle" + NAME_SEPARATOR + "throttle"
+        };
+    }
+
+    @Override
+    public String provideRORValue(String name) {
+        if ((PREFIX_VALUE + "state").equals(name))      return "" + (isOn ? 1 : 0);
+        if ((PREFIX_VALUE + "throttle").equals(name))   return "" + setting;
+        if ((PREFIX_VALUE + "power").equals(name))      return "" + getEnergyStored();
+        if ((PREFIX_VALUE + "fuel").equals(name))       return "" + tank.getFill();
+
+        if ((PREFIX_VALUE + "efficiency").equals(name)) {
+            // Original meldet den Wirkungsgrad in Prozent, oder null ohne passenden Kolbensatz.
+            double eff = pistonEfficiency(inventory.getStackInSlot(SLOT_PISTON).getItem());
+            if (eff > 0 && FluidType.getTrait(tank.getStoredFluid(), FT_Combustible.class) != null) {
+                return "" + (int) Math.round(eff * 100);
+            }
+            return "0";
+        }
+        return null;
+    }
+
+    @Override
+    public String runRORFunction(String name, String[] params) {
+
+        if ((PREFIX_FUNCTION + "setstate").equals(name) && params.length > 0) {
+            isOn = com.hbm_m.api.redstoneoverradio.IRORInteractive.parseInt(params[0], 0, 1) == 1;
+            setChanged();
+            return null;
+        }
+
+        if ((PREFIX_FUNCTION + "setthrottle").equals(name) && params.length > 0) {
+            setting = com.hbm_m.api.redstoneoverradio.IRORInteractive.parseInt(params[0], 0, MAX_THROTTLE);
+            setChanged();
+        }
+
+        return null;
+    }
+
+    public boolean isOn()      { return isOn; }
+    public int getSetting()    { return setting; }
+
+    /** Original: {@code receiveControl} mit dem Schluessel {@code turnOn}. */
+    public void toggleIgnition() {
+        isOn = !isOn;
+        setChanged();
+        sendUpdateToClient();
+    }
+
+    /** Original: {@code receiveControl} mit dem Schluessel {@code setting}, null bis dreissig. */
+    public void setThrottle(int throttle) {
+        setting = Math.max(0, Math.min(MAX_THROTTLE, throttle));
+        setChanged();
+        sendUpdateToClient();
     }
 
     /** 1:1 aus der Original-Effizienz-Matrix, nur die Diesel/HIGH-Spalte (Tank ist fest auf Diesel verriegelt). */
@@ -146,12 +238,18 @@ public class MachineCombustionEngineBlockEntity extends BaseMachineBlockEntity i
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.writeNbtData(tag, registries);
         tank.writeToNBT(tag, "tank");
+        tag.putBoolean("isOn", isOn);
+        tag.putInt("setting", setting);
+        tag.putInt("tenth", tenth);
     }
 
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.readNbtData(tag, registries);
         tank.readFromNBT(tag, "tank");
+        isOn = tag.getBoolean("isOn");
+        setting = tag.getInt("setting");
+        tenth = tag.getInt("tenth");
     }
 
     // ==================== GETTERS / MENU ====================

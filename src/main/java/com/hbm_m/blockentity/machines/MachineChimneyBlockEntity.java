@@ -4,7 +4,10 @@ import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.api.fluids.IFluidStandardReceiverMK2;
 import com.hbm_m.blockentity.BaseMachineBlockEntity;
+import com.hbm_m.block.ModBlocks;
 import com.hbm_m.blockentity.ModBlockEntities;
+import com.hbm_m.handler.pollution.PollutionHandler;
+import com.hbm_m.inventory.fluid.trait.PollutionType;
 import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
 
@@ -30,12 +33,12 @@ import net.minecraft.world.level.material.Fluid;
  * wandelt es ueber {@code PollutionHandler.incrementPollution} in ein Welt-Verschmutzungsraster um,
  * plus optionales Russ-/Asche-Abwerfen in einen darunterliegenden Ashpit.
  * <p>
- * SCOPE-Entscheidung: Dieser Port hat kein Welt-Verschmutzungsraster ({@code PollutionHandler})
- * und keinen Ashpit-Block (beides durchgaengig etablierte Luecken dieser Session, siehe z.B.
- * Diesel Generator/Combustion Engine). Der Schornstein zieht das Rauch-Fluid dennoch korrekt aus
- * dem MK2-Netz und "entlueftet" es (reine Senke, keine Verschmutzungs-Nebenwirkung) - damit bleibt
- * die Rauch-Pipeline fuer die bereits vorhandenen Rauch-emittierenden Maschinen funktional
- * konsumierbar, auch wenn die eigentliche Verschmutzungs-Simulation fehlt.
+ * Das Verschmutzungsraster gibt es inzwischen ({@link com.hbm_m.handler.pollution.PollutionHandler}),
+ * der Schornstein traegt also wieder ein: SMOKE wird zu Russ, SMOKE_LEADED zu Schwermetall,
+ * SMOKE_POISON zu Gift, jeweils {@code Menge / 100} mal dem Faktor der Bauart.
+ * <p>
+ * Weiterhin offen: der Ashpit-Block und damit {@code cpaturesAsh()}/{@code cpaturesSoot()} des
+ * Originals - der Industrieschornstein faengt dort zusaetzlich Russ als Gegenstand ab.
  */
 public class MachineChimneyBlockEntity extends BaseMachineBlockEntity implements IFluidStandardReceiverMK2 {
 
@@ -67,10 +70,41 @@ public class MachineChimneyBlockEntity extends BaseMachineBlockEntity implements
             }
         }
 
-        if (be.tank.getFluidAmountMb() > 0) {
-            be.tank.drainMb(be.tank.getFluidAmountMb());
+        int amount = be.tank.getFluidAmountMb();
+        if (amount > 0) {
+            be.pollute(level, pos, be.tank.getTankType(), amount);
+            be.tank.drainMb(amount);
             be.setChanged();
         }
+    }
+
+    /**
+     * Original: {@code TileEntityChimneyBase.transferFluid} - der Rauch geht nicht verloren,
+     * sondern landet als Verschmutzung im Raster.
+     */
+    private void pollute(Level level, BlockPos pos, Fluid fluid, int amountMb) {
+        PollutionType type;
+
+        if (fluid == ModFluids.SMOKE.getSource()) {
+            type = PollutionType.SOOT;
+        } else if (fluid == ModFluids.SMOKE_LEADED.getSource()) {
+            type = PollutionType.HEAVYMETAL;
+        } else if (fluid == ModFluids.SMOKE_POISON.getSource()) {
+            type = PollutionType.POISON;
+        } else {
+            return;
+        }
+
+        PollutionHandler.incrementPollution(level, pos, type,
+                (float) (amountMb * getPollutionMod() / 100F));
+    }
+
+    /**
+     * Original: {@code getPollutionMod} - der gemauerte Schornstein laesst ein Viertel durch,
+     * der industrielle nur ein Zehntel. (Der Rampant-Modus des Originals ist nicht portiert.)
+     */
+    private double getPollutionMod() {
+        return getBlockState().is(ModBlocks.CHIMNEY_INDUSTRIAL.get()) ? 0.1D : 0.25D;
     }
 
     // ==================== IFluidUserMK2 / MK2-Netz ====================

@@ -53,7 +53,25 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
-public class UniversalMachinePartBlock extends BaseEntityBlock implements IDetonatable {
+public class UniversalMachinePartBlock extends BaseEntityBlock
+        implements IDetonatable, com.hbm_m.interfaces.ILookOverlay {
+
+    /**
+     * Fadenkreuz-Anzeige: Der Spieler schaut fast immer auf eine Dummy-Zelle, nicht auf das Kern-
+     * Blockmodell. Deshalb wird die Anzeige an den Controller weitergereicht, wenn der eine hat -
+     * das Original macht dasselbe ueber {@code BlockDummyable.findCore}.
+     */
+    @Override
+    public void printHook(net.minecraft.client.gui.GuiGraphics guiGraphics, Level level, BlockPos pos) {
+        BlockEntity be = level.getBlockEntity(pos);
+        if (!(be instanceof IMultiblockPart part)) return;
+        BlockPos controllerPos = part.getControllerPos();
+        if (controllerPos == null) return;
+        if (level.getBlockState(controllerPos).getBlock() instanceof com.hbm_m.interfaces.ILookOverlay overlay) {
+            overlay.printHook(guiGraphics, level, controllerPos);
+        }
+    }
+
 
     @Override
     public boolean onDetonate(Level level, BlockPos partPos, BlockState partState, Player player) {

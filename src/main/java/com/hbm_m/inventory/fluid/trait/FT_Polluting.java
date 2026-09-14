@@ -8,7 +8,14 @@ import java.util.Map.Entry;
 import com.google.gson.JsonObject;
 import com.google.gson.stream.JsonWriter;
 
+import com.hbm_m.handler.pollution.PollutionHandler;
+import com.hbm_m.inventory.fluid.FluidType;
+import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.util.EnergyFormatter;
+
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.material.Fluid;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
@@ -26,6 +33,45 @@ public class FT_Polluting extends FluidTrait {
     public FT_Polluting burn(PollutionType type, float amount) {
         burnMap.put(type, amount);
         return this;
+    }
+
+    /**
+     * 1:1-Port von {@code FT_Polluting.onFluidRelease}: verschuettetes Fluid traegt aus
+     * {@link #releaseMap} ein, verbranntes aus {@link #burnMap}.
+     *
+     * <p><b>Hinweis:</b> Im Port ruft noch niemand diesen Haken - das Leck-/Bruch-Rohrwerk der
+     * Fluidtanks fehlt. Die Maschinen, die es schon gibt, nutzen stattdessen
+     * {@link #pollute(Level, BlockPos, Fluid, FluidReleaseType, float)} direkt.</p>
+     */
+    @Override
+    public void onFluidRelease(Level level, BlockPos pos, FluidTank tank, int overflowAmount, FluidReleaseType type) {
+        if (type == FluidReleaseType.SPILL) {
+            for (Entry<PollutionType, Float> entry : releaseMap.entrySet()) {
+                PollutionHandler.incrementPollution(level, pos, entry.getKey(), entry.getValue());
+            }
+        }
+        if (type == FluidReleaseType.BURN) {
+            for (Entry<PollutionType, Float> entry : burnMap.entrySet()) {
+                PollutionHandler.incrementPollution(level, pos, entry.getKey(), entry.getValue());
+            }
+        }
+    }
+
+    /**
+     * 1:1-Port des statischen {@code FT_Polluting.pollute}: traegt die Werte des Fluids
+     * mal der freigesetzten Menge in Millibuckets ein.
+     */
+    public static void pollute(Level level, BlockPos pos, Fluid fluid, FluidReleaseType release, float mB) {
+        if (release == FluidReleaseType.VOID) return;
+
+        FT_Polluting trait = FluidType.getTrait(fluid, FT_Polluting.class);
+        if (trait == null) return;
+
+        HashMap<PollutionType, Float> map = release == FluidReleaseType.BURN ? trait.burnMap : trait.releaseMap;
+
+        for (Entry<PollutionType, Float> entry : map.entrySet()) {
+            PollutionHandler.incrementPollution(level, pos, entry.getKey(), entry.getValue() * mB);
+        }
     }
 
     @Override

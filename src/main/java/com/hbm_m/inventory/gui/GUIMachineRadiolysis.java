@@ -23,9 +23,11 @@ public class GUIMachineRadiolysis extends AbstractContainerScreen<MachineRadioly
     public GUIMachineRadiolysis(MachineRadiolysisMenu menu, Inventory inventory, Component title) {
         super(menu, inventory, title);
         this.blockEntity = menu.getBlockEntity();
-        this.imageWidth = 176;
-        this.imageHeight = 186;
+        // Original: 230x166 - die Oberflaeche ist breiter, weil rechts die Pelletplaetze sitzen.
+        this.imageWidth = 230;
+        this.imageHeight = 166;
         this.inventoryLabelY = imageHeight - 96 + 2;
+        this.titleLabelX = 88;
     }
 
     @Override
@@ -37,18 +39,16 @@ public class GUIMachineRadiolysis extends AbstractContainerScreen<MachineRadioly
         if (blockEntity == null) return;
 
         var tanks = blockEntity.getTanks();
-        int inW = tanks[0].getMaxFill() > 0 ? tanks[0].getFill() * 16 / tanks[0].getMaxFill() : 0;
-        if (inW > 0) guiGraphics.fill(x + 34, y + 18 + (16 - inW), x + 50, y + 34, 0xFF3080FF);
 
-        int out1H = tanks[1].getMaxFill() > 0 ? tanks[1].getFill() * 34 / tanks[1].getMaxFill() : 0;
-        if (out1H > 0) guiGraphics.fill(x + 60, y + 18 + (34 - out1H), x + 76, y + 52, 0xFF30FF80);
+        // 1:1: der Energiebalken sitzt bei (8, 17), 16 breit, 34 hoch - von unten gefuellt.
+        int i = blockEntity.getMaxEnergyStored() > 0
+                ? (int) (blockEntity.getEnergyStored() * 34L / blockEntity.getMaxEnergyStored()) : 0;
+        if (i > 0) guiGraphics.blit(TEXTURE, x + 8, y + 51 - i, 240, 34 - i, 16, i);
 
-        int out2H = tanks[2].getMaxFill() > 0 ? tanks[2].getFill() * 34 / tanks[2].getMaxFill() : 0;
-        if (out2H > 0) guiGraphics.fill(x + 90, y + 18 + (34 - out2H), x + 106, y + 52, 0xFFFFA030);
-
-        if (blockEntity.getEnergyStored() > 0) {
-            guiGraphics.fill(x + 130, y + 18, x + 142, y + 50, 0xFF3080FF);
-        }
+        // Original: der Eingangstank schmal bei (61, 17), die beiden Ausgaben bei (87, 17/53).
+        tanks[0].renderTank(guiGraphics, x + 61, y + 17, 8, 52);
+        tanks[1].renderTank(guiGraphics, x + 87, y + 17, 12, 16);
+        tanks[2].renderTank(guiGraphics, x + 87, y + 53, 12, 16);
     }
 
     @Override

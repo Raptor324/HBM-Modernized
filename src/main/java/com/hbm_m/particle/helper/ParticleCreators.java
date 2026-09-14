@@ -15,6 +15,9 @@ public final class ParticleCreators {
         CREATORS.put("skeleton", new SkeletonCreator());
         CREATORS.put("ashes", new AshesCreator());
         CREATORS.put("explosionLarge", new ExplosionClientCreator());
+        CREATORS.put("tower", new CoolingTowerCreator());
+        CREATORS.put("hadron", new HadronCreator());
+        CREATORS.put("tau", new TauCreator());
     }
 
     public static Map<String, IParticleCreator> particleCreators() {

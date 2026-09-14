@@ -12,9 +12,11 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 
 /**
- * Verwendet die portierte Original-Panel-Textur (nur der statische Rahmen, keine geratenen Icon-
- * Koordinaten daraus) - Tank-/Energieanzeigen als eigene Fuellrechteck-Overlays. Der An/Aus-Knopf
- * des Originals entfaellt (siehe Klassenkommentar in {@link MachineDieselGeneratorBlockEntity}).
+ * Verwendet die portierte Original-Panel-Textur - Tank-/Energieanzeigen als eigene
+ * Fuellrechteck-Overlays.
+ *
+ * <p>Der <b>An/Aus-Knopf</b> sitzt wie im Original unter der Laufanzeige: der obere Kreis meldet,
+ * dass der Motor wirklich brennt, der Knopf darunter schaltet ihn.</p>
  */
 public class GUIMachineDieselGenerator extends AbstractContainerScreen<MachineDieselGeneratorMenu> {
 
@@ -47,10 +49,24 @@ public class GUIMachineDieselGenerator extends AbstractContainerScreen<MachineDi
             int energyH = max > 0 ? (int) (energy * 52L / max) : 0;
             if (energyH > 0) guiGraphics.fill(x + 141, y + 69 + (52 - energyH), x + 157, y + 121, 0xFFFF3020);
 
-            if (blockEntity.isActive()) {
-                guiGraphics.fill(x + 89, y + 42, x + 97, y + 50, 0xFF30FF30);
-            }
+            // Original: die Laufanzeige aus (192,0) und der gedrueckte Knopf aus (192,16).
+            if (blockEntity.wasOn()) guiGraphics.blit(TEXTURE, x + 89, y + 42, 192, 0, 16, 16);
+            if (blockEntity.isOn())  guiGraphics.blit(TEXTURE, x + 79, y + 61, 192, 16, 35, 14);
         }
+    }
+
+    @Override
+    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        // Original-Trefferflaeche: (89,61), 16 x 14.
+        if (blockEntity != null && isHovering(89, 61, 16, 14, mouseX, mouseY)) {
+            com.hbm_m.network.DieselGeneratorToggleC2SPacket.send(blockEntity.getBlockPos());
+            if (minecraft != null) {
+                minecraft.getSoundManager().play(net.minecraft.client.resources.sounds.SimpleSoundInstance.forUI(
+                        net.minecraft.sounds.SoundEvents.UI_BUTTON_CLICK, 1.0F));
+            }
+            return true;
+        }
+        return super.mouseClicked(mouseX, mouseY, button);
     }
 
     @Override

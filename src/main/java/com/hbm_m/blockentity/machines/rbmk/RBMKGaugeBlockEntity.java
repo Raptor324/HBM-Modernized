@@ -81,6 +81,10 @@ public class RBMKGaugeBlockEntity extends RBMKPanelDeviceBlockEntity {
         syncToClient();
     }
 
+    // Persisted through writeNbtData/readNbtData, NOT saveAdditional/load:
+    // BaseHbmBlockEntity builds the CLIENT update tag from writeNbtData alone, so a
+    // subclass overriding saveAdditional saves to disk correctly yet sends the client
+    // nothing - which is why these readouts stayed blank in world.
     @Override
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.writeNbtData(tag, registries);
