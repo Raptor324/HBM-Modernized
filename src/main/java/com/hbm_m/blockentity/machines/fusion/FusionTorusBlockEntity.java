@@ -287,6 +287,11 @@ public class FusionTorusBlockEntity extends BaseMachineBlockEntity
             this.magnet -= 360F;
             this.prevMagnet -= 360F;
         }
+
+        // Original: looped "fusionReactorLoop" 2.5 above the core within 50 blocks, pitch = magnetSpeed / 30.
+        com.hbm_m.sound.ClientSoundBootstrap.updateMachineLoop(this, this.magnetSpeed > 0F,
+                com.hbm_m.sound.ModSounds.FUSION_REACTOR_LOOP.get(), 2.5D, 50D,
+                be -> ((FusionTorusBlockEntity) be).magnetSpeed / 30F);
     }
 
     // ═════════════════════════════ Rezeptmodul ═════════════════════════════

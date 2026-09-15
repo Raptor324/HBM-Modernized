@@ -50,7 +50,7 @@ public class TeslaBlockEntity extends BaseMachineBlockEntity {
     /** Original: {@code range = 10}. */
     private static final double RANGE = 10.0D;
     /** Original: {@code offset = 1.75} - die Entladung geht von der Spulenspitze aus. */
-    private static final double ORIGIN_OFFSET_Y = 1.75D;
+    public static final double ORIGIN_OFFSET_Y = 1.75D;
 
     /** Positionen der zuletzt getroffenen Ziele - fuer die Blitzdarstellung. */
     private final List<Vec3> targets = new ArrayList<>();
@@ -68,9 +68,10 @@ public class TeslaBlockEntity extends BaseMachineBlockEntity {
         if (be.getEnergyStored() >= POWER_PER_ZAP) {
             be.setEnergyStored(be.getEnergyStored() - POWER_PER_ZAP);
 
-            be.targets.addAll(zap(level,
-                    pos.getX() + 0.5D, pos.getY() + ORIGIN_OFFSET_Y, pos.getZ() + 0.5D,
-                    RANGE, null));
+            // World-space origin: on a Sable ship the block position is in the plot grid.
+            Vec3 origin = com.hbm_m.compat.sable.SableCompat.toWorld(level,
+                    pos.getX() + 0.5D, pos.getY() + ORIGIN_OFFSET_Y, pos.getZ() + 0.5D);
+            be.targets.addAll(zap(level, origin.x, origin.y, origin.z, RANGE, null));
         }
 
         be.setChanged();
@@ -129,6 +130,32 @@ public class TeslaBlockEntity extends BaseMachineBlockEntity {
         BlockHitResult hit = level.clip(com.hbm_m.platform.PlatformHooks.clipContext(
                 new Vec3(x, y, z), new Vec3(tx, ty, tz), ClipContext.Fluid.NONE));
         return hit.getType() != HitResult.Type.MISS;
+    }
+
+    // The arcs are drawn by TeslaRenderer; 1.7.10 syncs the end points the same way. Stored
+    // relative to the coil origin so the renderer stays in block space.
+    @Override
+    protected void writeNbtData(net.minecraft.nbt.CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
+        Vec3 origin = level == null ? Vec3.ZERO : com.hbm_m.compat.sable.SableCompat.toWorld(level,
+                worldPosition.getX() + 0.5D, worldPosition.getY() + ORIGIN_OFFSET_Y, worldPosition.getZ() + 0.5D);
+        tag.putInt("arcCount", targets.size());
+        for (int i = 0; i < targets.size(); i++) {
+            Vec3 t = targets.get(i).subtract(origin);
+            tag.putDouble("aX" + i, t.x);
+            tag.putDouble("aY" + i, t.y);
+            tag.putDouble("aZ" + i, t.z);
+        }
+    }
+
+    @Override
+    protected void readNbtData(net.minecraft.nbt.CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
+        targets.clear();
+        int arcs = tag.getInt("arcCount");
+        for (int i = 0; i < arcs; i++) {
+            targets.add(new Vec3(tag.getDouble("aX" + i), tag.getDouble("aY" + i), tag.getDouble("aZ" + i)));
+        }
     }
 
     public List<Vec3> getTargets() {

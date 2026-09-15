@@ -259,6 +259,8 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("item.hbm_m.meteorite_sword_seared", "Закалённый метеоритовый меч");
         add("item.hbm_m.meteorite_sword_hardened", "Упрочнённый метеоритовый меч");
         add("item.hbm_m.meteorite_sword_alloyed", "Легированный метеоритовый меч");
+        add("item.hbm_m.meteorite_sword_irradiated", "Метеоритовый меч (Облучённый)");
+        add("item.hbm_m.meteorite_sword_fused", "Метеоритовый меч (Сплавленный)");
 
         add("item.hbm_m.steel_sword", "Стальной меч");
         add("item.hbm_m.steel_pickaxe", "Стальная кирка");

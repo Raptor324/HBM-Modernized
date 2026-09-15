@@ -27,6 +27,18 @@ public class ParticleEngineNT {
     private final List<ParticleNT> newParticles = new ArrayList<>();
 
     public void add(ParticleNT effect) {
+        // This engine draws in world space and knows nothing of Sable ships: a particle born at a
+        // ship machine's block position sits in the plot grid, millions of blocks away. The vanilla
+        // engine gets the same treatment from Sable itself (ParticleExtension.initialKickOut).
+        if (com.hbm_m.compat.sable.SableCompat.isLoaded()) {
+            net.minecraft.world.phys.Vec3 world = com.hbm_m.compat.sable.SableCompat.toWorld(effect.level, effect.x, effect.y, effect.z);
+            if (world.x != effect.x || world.y != effect.y || world.z != effect.z) {
+                effect.setPos(world.x, world.y, world.z);
+                effect.xo = world.x;
+                effect.yo = world.y;
+                effect.zo = world.z;
+            }
+        }
         this.newParticles.add(effect);
     }
 

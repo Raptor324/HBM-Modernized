@@ -457,6 +457,8 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("item.hbm_m.meteorite_sword_seared", "Seared Meteorite Sword");
         add("item.hbm_m.meteorite_sword_hardened", "Hardened Meteorite Sword");
         add("item.hbm_m.meteorite_sword_alloyed", "Alloyed Meteorite Sword");
+        add("item.hbm_m.meteorite_sword_irradiated", "Meteorite Sword (Irradiated)");
+        add("item.hbm_m.meteorite_sword_fused", "Meteorite Sword (Fused)");
 
         add("item.hbm_m.steel_sword", "Steel Sword");
         add("item.hbm_m.steel_pickaxe", "Steel Pickaxe");
@@ -4908,6 +4910,12 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add(ModItems.PELLET_RTG_RADIUM.get(), "Radium-226 RTG Pellet");
         add(ModItems.PELLET_RTG_STRONTIUM.get(), "Strontium-90 RTG Pellet");
         add(ModItems.PELLET_RTG_WEAK.get(), "Weak Uranium RTG Pellet");
+        add(ModItems.PELLET_RTG_DEPLETED_BISMUTH.get(), "Decayed Bismuth RTG Pellet");
+        add(ModItems.PELLET_RTG_DEPLETED_LEAD.get(), "Decayed Lead RTG Pellet");
+        add(ModItems.PELLET_RTG_DEPLETED_MERCURY.get(), "Decayed Mercury RTG Pellet");
+        add(ModItems.PELLET_RTG_DEPLETED_NEPTUNIUM.get(), "Decayed Neptunium RTG Pellet");
+        add(ModItems.PELLET_RTG_DEPLETED_NICKEL.get(), "Decayed Nickel RTG Pellet");
+        add(ModItems.PELLET_RTG_DEPLETED_ZIRCONIUM.get(), "Decayed Zirconium RTG Pellet");
         add(ModItems.PHOTO_PANEL.get(), "Photovoltaic Panel");
         add(ModItems.PILE_ROD_BORON.get(), "Chicago Pile Control Rod");
         add(ModItems.PILE_ROD_DETECTOR.get(), "Chicago Pile Control & Detector Rod");

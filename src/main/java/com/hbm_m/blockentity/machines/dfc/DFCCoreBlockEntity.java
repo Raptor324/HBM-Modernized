@@ -244,17 +244,29 @@ public class DFCCoreBlockEntity extends BaseMachineBlockEntity implements IFluid
         double range = meltdownTick ? 50D : 10D;
         double scale = meltdownTick ? 5D : 3D;
 
+        // Entities are in world space; on a Sable ship the block itself is not.
+        net.minecraft.world.phys.Vec3 centre = com.hbm_m.compat.sable.SableCompat.blockCenterInWorld(level, pos);
         AABB outer = new AABB(pos).inflate(range);
         for (Entity e : level.getEntitiesOfClass(Entity.class, outer)) {
-            // Original prueft hier auf Hazmat und freie Sicht; beides bleibt hier weg.
-            e.hurt(level.damageSources().onFire(), 1000F);
+            // Original: hazmat suits shield players, and the burn needs a clear line from 6 above the core.
+            if (e instanceof Player player && com.hbm_m.util.ArmorUtil.checkForHazmat(player)) continue;
+            if (isObstructed(level, centre.x, centre.y + 6D, centre.z, e.getX(), e.getEyeY(), e.getZ())) continue;
+            e.hurt(com.hbm_m.damagesource.ModDamageSources.ams(level), 1000F);
             com.hbm_m.platform.PlatformHooks.setSecondsOnFire(e, 3);
         }
 
         AABB inner = new AABB(pos).inflate(scale);
         for (Entity e : level.getEntitiesOfClass(Entity.class, inner)) {
-            e.hurt(level.damageSources().genericKill(), 10000F);
+            if (e instanceof Player player && com.hbm_m.util.ArmorUtil.checkForHaz2(player)) continue;
+            e.hurt(com.hbm_m.damagesource.ModDamageSources.amsCore(level), 10000F);
         }
+    }
+
+    /** Original: {@code Library.isObstructed}. */
+    private static boolean isObstructed(Level level, double x, double y, double z, double tx, double ty, double tz) {
+        return level.clip(com.hbm_m.platform.PlatformHooks.clipContext(
+                new net.minecraft.world.phys.Vec3(x, y, z), new net.minecraft.world.phys.Vec3(tx, ty, tz),
+                net.minecraft.world.level.ClipContext.Fluid.NONE)).getType() != net.minecraft.world.phys.HitResult.Type.MISS;
     }
 
     // ── Verbrennung ─────────────────────────────────────────────────────────
@@ -362,6 +374,8 @@ public class DFCCoreBlockEntity extends BaseMachineBlockEntity implements IFluid
         tanks[1].writeToNBT(tag, "fuel2");
         tag.putInt("field", field);
         tag.putInt("color", color);
+        tag.putInt("heat", heat);
+        tag.putBoolean("meltdown", meltdownTick);
     }
 
     @Override
@@ -371,7 +385,11 @@ public class DFCCoreBlockEntity extends BaseMachineBlockEntity implements IFluid
         tanks[1].readFromNBT(tag, "fuel2");
         field = tag.getInt("field");
         color = tag.getInt("color");
+        heat = tag.getInt("heat");
+        meltdownTick = tag.getBoolean("meltdown");
     }
+
+    public boolean isMeltdownTick() { return meltdownTick; }
 
     @Override
     protected Component getDefaultName() {

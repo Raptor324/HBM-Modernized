@@ -331,7 +331,7 @@ public class PneumoTubeBlockEntity extends BaseMachineBlockEntity
 
     @Override
     protected Component getDefaultName() {
-        return Component.translatable("block.hbm_m.pneumo_tube");
+        return Component.translatable("block.hbm_m.pneumatic_tube");
     }
 
     @Override

@@ -179,9 +179,11 @@ public class ForceFieldBlockEntity extends BaseMachineBlockEntity {
         outside.clear();
         inside.clear();
 
-        double cx = pos.getX() + 0.5D;
-        double cy = pos.getY() + 0.5D;
-        double cz = pos.getZ() + 0.5D;
+        // Entities live in world space even when this block sits on a Sable ship (plot grid).
+        Vec3 centre = com.hbm_m.compat.sable.SableCompat.blockCenterInWorld(level, pos);
+        double cx = centre.x;
+        double cy = centre.y;
+        double cz = centre.z;
 
         // Original: der Suchbereich reicht 25 Bloecke ueber den Radius hinaus.
         AABB box = new AABB(cx - (rad + 25), cy - (rad + 25), cz - (rad + 25),

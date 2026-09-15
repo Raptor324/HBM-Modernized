@@ -55,6 +55,7 @@ public final class ModDamageSources {
     public static DamageSource cloud(Level level) { return create(level, ModDamageTypes.CLOUD); }
     public static DamageSource electricity(Level level) { return create(level, ModDamageTypes.ELECTRICITY); }
     /** Original: {@code ModDamageSource.amsCore} - der Strahl des Dunklen Fusionsreaktors. */
+    public static DamageSource ams(Level level) { return create(level, ModDamageTypes.AMS); }
     public static DamageSource amsCore(Level level) { return create(level, ModDamageTypes.AMS_CORE); }
     public static DamageSource exhaust(Level level) { return create(level, ModDamageTypes.EXHAUST); }
     public static DamageSource spikes(Level level) { return create(level, ModDamageTypes.SPIKES); }

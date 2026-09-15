@@ -80,6 +80,37 @@ public final class ClientSoundBootstrap {
         }
     }
 
+    /**
+     * Speed-driven loop ({@code AudioWrapper} in the original): pitch and volume follow
+     * {@code speed} (0..1) every tick, {@code <= 0} ends it. The instance comes from
+     * {@code client.sound.MachineLoopSoundFactory} by reflection.
+     */
+    public static void updateMachineLoop(BlockEntity be, boolean shouldBePlaying, SoundEvent sound, double yOffset,
+                                         double maxDistance, java.util.function.ToDoubleFunction<BlockEntity> speed) {
+        if (be == null || be.getLevel() == null || !be.getLevel().isClientSide()) {
+            return;
+        }
+        try {
+            Class<?> factory = Class.forName("com.hbm_m.client.sound.MachineLoopSoundFactory");
+            // Out of range the instance would stop itself on its first tick and be recreated here
+            // on the next one; the original does not even start it then.
+            boolean playing = shouldBePlaying && (boolean) factory
+                    .getMethod("inRange", BlockEntity.class, double.class, double.class)
+                    .invoke(null, be, yOffset, maxDistance);
+            updateSound(be, playing, () -> {
+                try {
+                    return factory.getMethod("create", BlockEntity.class, SoundEvent.class, double.class, double.class,
+                                    java.util.function.ToDoubleFunction.class)
+                            .invoke(null, be, sound, yOffset, maxDistance, speed);
+                } catch (ReflectiveOperationException e) {
+                    throw new RuntimeException(e);
+                }
+            });
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     public static void updateSound(BlockEntity be, boolean shouldBePlaying, Supplier<?> soundSupplier) {
         if (be == null || be.getLevel() == null || !be.getLevel().isClientSide()) {
             return;
