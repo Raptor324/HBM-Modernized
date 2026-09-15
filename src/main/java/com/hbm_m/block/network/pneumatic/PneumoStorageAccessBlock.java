@@ -16,8 +16,24 @@ import org.jetbrains.annotations.Nullable;
  */
 public class PneumoStorageAccessBlock extends PneumaticStorageBlockBase {
 
+    /** Original: piston-style orientation, the front texture on the side facing the player. */
+    public static final net.minecraft.world.level.block.state.properties.DirectionProperty FACING =
+            net.minecraft.world.level.block.state.properties.BlockStateProperties.FACING;
+
     public PneumoStorageAccessBlock(Properties properties) {
         super(properties);
+        registerDefaultState(this.stateDefinition.any().setValue(FACING, net.minecraft.core.Direction.NORTH));
+    }
+
+    @Override
+    protected void createBlockStateDefinition(net.minecraft.world.level.block.state.StateDefinition.Builder<net.minecraft.world.level.block.Block, BlockState> builder) {
+        builder.add(FACING);
+    }
+
+    @Nullable
+    @Override
+    public BlockState getStateForPlacement(net.minecraft.world.item.context.BlockPlaceContext ctx) {
+        return defaultBlockState().setValue(FACING, ctx.getNearestLookingDirection().getOpposite());
     }
 
     @Nullable

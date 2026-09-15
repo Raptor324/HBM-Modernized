@@ -692,6 +692,22 @@ public class ClientSetup {
         BlockEntityRenderers.register(ModBlockEntities.FUSION_PLASMA_FORGE_BE.get(),
                 com.hbm_m.client.render.implementations.FusionPlasmaForgeRenderer::new);
 
+        // Moving parts of the 1.7.10 OBJ machines whose bodies sit in the block models.
+        BlockEntityRenderers.register(ModBlockEntities.CHARGER_BE.get(),
+                com.hbm_m.client.render.implementations.ChargerRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.MACHINE_RTG_BE.get(),
+                com.hbm_m.client.render.implementations.RtgRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.TESLA_BE.get(),
+                com.hbm_m.client.render.implementations.TeslaRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.DFC_CORE_BE.get(),
+                com.hbm_m.client.render.implementations.DfcCoreRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.PILE_VENT_BE.get(),
+                com.hbm_m.client.render.implementations.PileDeviceRenderers.Vent::new);
+        BlockEntityRenderers.register(ModBlockEntities.PILE_LOADER_BE.get(),
+                com.hbm_m.client.render.implementations.PileDeviceRenderers.Loader::new);
+        BlockEntityRenderers.register(ModBlockEntities.PILE_CONTROL_BE.get(),
+                com.hbm_m.client.render.implementations.PileDeviceRenderers.Control::new);
+
         BlockEntityRenderers.register(ModBlockEntities.RBMK_ROD_BE.get(),          RBMKColumnRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.RBMK_BLANK_BE.get(),        RBMKColumnRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.RBMK_ABSORBER_BE.get(),     RBMKColumnRenderer::new);

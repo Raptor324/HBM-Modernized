@@ -142,7 +142,14 @@ public class ChargerBlockEntity extends BaseMachineBlockEntity {
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.readNbtData(tag, registries);
+        // Client side: keep the previous value so the renderer can interpolate between packets.
+        lastUsingTicks = usingTicks;
         usingTicks = tag.getInt("usingTicks");
+    }
+
+    /** 0..1 - how far the arms have moved out (1.7.10: {@code usingTicks / delay}). */
+    public float getArmProgress(float partialTick) {
+        return (lastUsingTicks + (usingTicks - lastUsingTicks) * partialTick) / (float) DELAY;
     }
 
     @Override

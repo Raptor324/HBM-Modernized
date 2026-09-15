@@ -1049,7 +1049,7 @@ public class ModItemModelProvider extends ItemModelProvider {
         blockItemFromBlockModelBomb(ModBlocks.DUD_SALTED);
 
         blockItemFromBlockModel(ModBlocks.FLUID_VALVE);
-        blockItemFromBlockModel(ModBlocks.FLUID_PUMP);
+        blockItemFromBlockModelMachine(ModBlocks.FLUID_PUMP);
         blockItemFromBlockModel(ModBlocks.FLUID_EXHAUST);
 
         // Ранее: assets/.../models/item/^.json с parent = блок или простая generated/handheld-текстура
@@ -1928,6 +1928,12 @@ public class ModItemModelProvider extends ItemModelProvider {
                 ModItems.PELLET_RTG_RADIUM,
                 ModItems.PELLET_RTG_STRONTIUM,
                 ModItems.PELLET_RTG_WEAK,
+                ModItems.PELLET_RTG_DEPLETED_BISMUTH,
+                ModItems.PELLET_RTG_DEPLETED_LEAD,
+                ModItems.PELLET_RTG_DEPLETED_MERCURY,
+                ModItems.PELLET_RTG_DEPLETED_NEPTUNIUM,
+                ModItems.PELLET_RTG_DEPLETED_NICKEL,
+                ModItems.PELLET_RTG_DEPLETED_ZIRCONIUM,
                 ModItems.PHOTO_PANEL,
                 ModItems.PILE_ROD_BORON,
                 ModItems.PILE_ROD_DETECTOR,
