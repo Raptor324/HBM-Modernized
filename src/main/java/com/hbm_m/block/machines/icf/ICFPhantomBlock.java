@@ -88,7 +88,10 @@ public class ICFPhantomBlock extends BaseEntityBlock {
      */
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
+        // Create/Sable are carrying the laser away with its NBT; restoring the part here would
+        // leave a second copy of it at the old spot.
         if (state.getBlock() != newState.getBlock() && !level.isClientSide()
+                && !com.hbm_m.multiblock.ContraptionAssemblyGuard.isMoving()
                 && level.getBlockEntity(pos) instanceof ICFPhantomBlockEntity phantom
                 && phantom.getPart() != null) {
 

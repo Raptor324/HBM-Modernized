@@ -25,7 +25,7 @@ import org.jetbrains.annotations.Nullable;
  * <p>Ein Platzhalter mit der Rolle {@link ICFLaserPart#PORT} ist zugleich der Energieeingang: er
  * reicht Leistung, Stand und Aufnahme unveraendert an das Steuerpult durch.</p>
  */
-public class ICFPhantomBlockEntity extends LoadedMachineBlockEntity {
+public class ICFPhantomBlockEntity extends LoadedMachineBlockEntity implements com.hbm_m.interfaces.IRelocatable {
 
     @Nullable
     private ICFLaserPart part;
@@ -46,6 +46,12 @@ public class ICFPhantomBlockEntity extends LoadedMachineBlockEntity {
     }
 
     @Nullable public ICFLaserPart getPart() { return part; }
+
+    @Override
+    public void relocate(java.util.function.UnaryOperator<BlockPos> transform) {
+        if (corePos != null) corePos = transform.apply(corePos).immutable();
+        cachedCore = null;
+    }
     @Nullable public BlockPos getCorePos()  { return corePos; }
 
     public boolean isPort() {

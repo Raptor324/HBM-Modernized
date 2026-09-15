@@ -90,7 +90,10 @@ public class PileBlock extends BaseEntityBlock {
             return;
         }
 
-        if (!PileCoreBlockEntity.meltingDown && !level.isClientSide()) {
+        // Create/Sable are moving the pile with its NBT: tearing it down here would leave a copy
+        // of it in graphite bricks at the old spot.
+        if (!PileCoreBlockEntity.meltingDown && !level.isClientSide()
+                && !com.hbm_m.multiblock.ContraptionAssemblyGuard.isMoving()) {
             BlockEntity tile = level.getBlockEntity(pos);
 
             if (tile instanceof PileCoreBlockEntity core) {

@@ -36,8 +36,9 @@ public interface IMultiblockPart {
      * где обязан стоять её контроллер:
      * {@code controllerPos = partWorldPos - rotate(localOffsetFromController, partFacing)}.
      *
-     * <p>Это работает потому, что Create's {@code StructureTransform} вращает и позиции,
-     * и blockstate (включая FACING) одним и тем же поворотом R вокруг оси Y, а Y-осевые
+     * <p>Это работает потому, что Create ({@code StructureTransform}) и Sable вращают и позиции,
+     * и blockstate одним и тем же поворотом R вокруг оси Y — FACING наших блоков при этом поворачивает
+     * {@code BlockFacingRotationMixin}, сами они {@code Block.rotate} не переопределяют, а Y-осевые
      * повороты коммутативны: {@code R(rotate(v, F)) = rotate(v, R(F)) = rotate(v, newFacing)}.
      * Значит формула остаётся верной после любого Y-осевого поворота контрапшена.
      *

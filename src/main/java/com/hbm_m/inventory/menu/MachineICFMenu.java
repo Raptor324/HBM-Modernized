@@ -104,8 +104,7 @@ public class MachineICFMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        if (blockEntity == null || blockEntity.getLevel() != player.level()) return false;
-        BlockPos pos = blockEntity.getBlockPos();
-        return player.distanceToSqr(pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D) <= 256.0D;
+        // Reach to any block of the structure - the reactor is far larger than a 16-block radius.
+        return MenuReach.stillValid(player, blockEntity);
     }
 }

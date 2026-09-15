@@ -20,7 +20,7 @@ import org.jetbrains.annotations.Nullable;
  * zurueck, sobald dieser verschwunden ist - so zerfaellt der ganze Meiler von selbst, wenn man ihm
  * den Kern herausschlaegt.</p>
  */
-public class PileBaseBlockEntity extends LoadedMachineBlockEntity {
+public class PileBaseBlockEntity extends LoadedMachineBlockEntity implements com.hbm_m.interfaces.IRelocatable {
 
     /** Original: {@code coreY = -999} als "noch kein Kern gesetzt". */
     private static final int NO_CORE = -999;
@@ -46,6 +46,12 @@ public class PileBaseBlockEntity extends LoadedMachineBlockEntity {
 
     public @Nullable BlockPos getCorePos() {
         return corePos;
+    }
+
+    @Override
+    public void relocate(java.util.function.UnaryOperator<BlockPos> transform) {
+        if (corePos != null) corePos = transform.apply(corePos).immutable();
+        cachedCore = null;
     }
 
     public static void tick(Level level, BlockPos pos, BlockState state, PileBaseBlockEntity be) {

@@ -47,7 +47,7 @@ import net.minecraft.world.phys.AABB;
  * als zusaetzliche Netzanschluesse der Maschine meldet - im Original macht das jeder
  * Anschlussblock fuer sich.</p>
  */
-public class ICFControllerBlockEntity extends BaseMachineBlockEntity {
+public class ICFControllerBlockEntity extends BaseMachineBlockEntity implements com.hbm_m.interfaces.IRelocatable {
 
     /** Original: {@code capacitorPower = 2_500_000}. */
     public static final int CAPACITOR_POWER = 2_500_000;
@@ -79,6 +79,12 @@ public class ICFControllerBlockEntity extends BaseMachineBlockEntity {
 
     public void setAssembled(boolean assembled) {
         this.assembled = assembled;
+        setChanged();
+    }
+
+    @Override
+    public void relocate(java.util.function.UnaryOperator<BlockPos> transform) {
+        ports.replaceAll(port -> transform.apply(port).immutable());
         setChanged();
     }
 

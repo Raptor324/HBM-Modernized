@@ -14,9 +14,11 @@
     "SuperGlueSelectionHelperMixin",
     "ContraptionMixin",
     "LevelChunkSilentRemovalMixin",
+    "BlockFacingRotationMixin",
     "ContraptionWindowMixin",
     "SubLevelMoveWindowMixin",
     "SubLevelRelinkMixin",
+    "SubLevelRelocateMixin",
     "SubLevelAssembleExpansionMixin",
     "HoneyGlueSelectionExpansionMixin"
   ],

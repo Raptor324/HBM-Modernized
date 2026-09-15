@@ -50,7 +50,8 @@ import net.minecraftforge.fluids.capability.IFluidHandler;
 
 
 @SuppressWarnings("UnstableApiUsage")
-public class UniversalMachinePartBlockEntity extends BaseHbmBlockEntity implements IMultiblockPart, IEnergyConnector, IFluidConnectorMK2 {
+public class UniversalMachinePartBlockEntity extends BaseHbmBlockEntity implements IMultiblockPart, IEnergyConnector, IFluidConnectorMK2,
+        com.hbm_m.interfaces.IRelocatable {
 
     // Виртуальные узлы жидкостной сети на позиции коннектора, по одному на тип жидкости контроллера.
     // Используется для "коннектор-к-коннектору" без труб: переносы делает FluidNet,
@@ -77,8 +78,9 @@ public class UniversalMachinePartBlockEntity extends BaseHbmBlockEntity implemen
      * }</pre>
      * где {@code partFacing} — это FACING фантомного блока (он же FACING структуры).
      *
-     * <p>Это работает потому, что Create's {@code StructureTransform} вращает и позиции,
-     * и blockstate (включая FACING) одним и тем же Y-осевым поворотом R, а Y-осевые
+     * <p>Это работает потому, что Create ({@code StructureTransform}) и Sable вращают и позиции,
+     * и blockstate одним и тем же Y-осевым поворотом R — FACING наших блоков при этом поворачивает
+     * {@code BlockFacingRotationMixin}, сами они {@code Block.rotate} не переопределяют, а Y-осевые
      * повороты коммутативны: {@code R(rotate(v, F)) = rotate(v, R(F))}.
      *
      * <p>Для контрапшенов с наклоном/креном (Aeronautics pitch/roll) формула может
@@ -726,6 +728,14 @@ public class UniversalMachinePartBlockEntity extends BaseHbmBlockEntity implemen
         pTag.putInt("ClimbSides", sideMask(allowedClimbSides));
         pTag.putInt("EnergySides", sideMask(allowedEnergySides));
         pTag.putInt("FluidSides", sideMask(allowedFluidSides));
+    }
+
+    /** Sable hands over its exact block transform; the retry relink below then finds nothing to do. */
+    @Override
+    public void relocate(java.util.function.UnaryOperator<BlockPos> transform) {
+        if (this.controllerPos != null) {
+            this.controllerPos = transform.apply(this.controllerPos).immutable();
+        }
     }
 
     @Override
