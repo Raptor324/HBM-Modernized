@@ -205,6 +205,113 @@ public final class RenderHooks {
     }
 
     /**
+     * Кросс-версионный пустой ModelData (для 5-аргументного getQuads).
+     * Заменяет пер-файловые заглушки вида {@code static final ModelData DATA = ModelData.EMPTY}.
+     */
+    public static Object emptyModelData() {
+        //? if forge {
+        return net.minecraftforge.client.model.data.ModelData.EMPTY;
+        //?} elif neoforge {
+        /*return net.neoforged.neoforge.client.model.data.ModelData.EMPTY;
+        *///?} else {
+        /*return null;
+        *///?}
+    }
+
+    /**
+     * Кросс-версионный 5-аргументный вызов {@code model.getQuads} с пустым ModelData.
+     * Тела forge/neoforge идентичны (отличается только пакет ModelData) — гейт живёт здесь.
+     *
+     * @param renderType фильтр render type (null — без фильтра)
+     */
+    public static java.util.List<BakedQuad> getModelQuads(net.minecraft.client.resources.model.BakedModel model,
+                                                          net.minecraft.world.level.block.state.BlockState state,
+                                                          net.minecraft.core.Direction side,
+                                                          net.minecraft.util.RandomSource rand,
+                                                          @org.jetbrains.annotations.Nullable
+                                                          net.minecraft.client.renderer.RenderType renderType) {
+        //? if forge {
+        return model.getQuads(state, side, rand,
+                net.minecraftforge.client.model.data.ModelData.EMPTY, renderType);
+        //?} elif neoforge {
+        /*return model.getQuads(state, side, rand,
+                net.neoforged.neoforge.client.model.data.ModelData.EMPTY, renderType);
+        *///?} else {
+        /*return model.getQuads(state, side, rand);
+        *///?}
+    }
+
+    /**
+     * Умножает верхнюю матрицу PoseStack на заданную (кросс-версионно):
+     * 1.20.1 — {@code poseStack.mulPoseMatrix(mat)}; 1.21.1 —
+     * {@code poseStack.last().pose().mul(mat)}.
+     */
+    public static void mulPoseMatrix(PoseStack poseStack, Matrix4f mat) {
+        //? if < 1.21.1 {
+        poseStack.mulPoseMatrix(mat);
+        //?} else {
+        /*poseStack.last().pose().mul(mat);
+        *///?}
+    }
+
+    /**
+     * Рендер ванильной {@code Model} в буфер (кросс-версионно):
+     * 1.20.1 требует ARGB-float цвета, в 1.21.1 сигнатура без цвета.
+     */
+    public static void renderModelToBuffer(net.minecraft.client.model.Model model, PoseStack poseStack,
+                                           VertexConsumer consumer, int packedLight, int packedOverlay) {
+        //? if < 1.21.1 {
+        model.renderToBuffer(poseStack, consumer, packedLight, packedOverlay, 1f, 1f, 1f, 1f);
+        //?} else {
+        /*// 1.21.1: цвет задаётся через VertexConsumer/контекст, не аргументами.
+        model.renderToBuffer(poseStack, consumer, packedLight, packedOverlay);
+        *///?}
+    }
+
+    // =====================================================================================
+    //  Vertex-запись: варианты без полной цепочки (замена дублированных гейтов vertex/endVertex)
+    // =====================================================================================
+
+    /**
+     * Вершина: позиция (с матрицей) + цвет + UV + свет блока (без нормали/оверлея).
+     * Формат жидкости/расплава (FOUNDRY и т.п.).
+     */
+    public static void vertexColorUvLight(VertexConsumer consumer, Matrix4f matrix, float x, float y, float z,
+                                          int r, int g, int b, int a, float u, float v, int light) {
+        //? if < 1.21.1 {
+        consumer.vertex(matrix, x, y, z).color(r, g, b, a).uv(u, v).uv2(light).endVertex();
+        //?} else {
+        /*consumer.addVertex(matrix, x, y, z).setColor(r, g, b, a).setUv(u, v).setLight(light);
+        *///?}
+    }
+
+    /**
+     * Вершина: позиция (с матрицей) + цвет + UV + свет + нормаль (без оверлея).
+     */
+    public static void vertexColorUvLightNormal(VertexConsumer consumer, Matrix4f matrix, float x, float y, float z,
+                                                int r, int g, int b, int a, float u, float v, int light,
+                                                float nx, float ny, float nz) {
+        //? if < 1.21.1 {
+        consumer.vertex(matrix, x, y, z).color(r, g, b, a).uv(u, v).uv2(light).normal(nx, ny, nz).endVertex();
+        //?} else {
+        /*consumer.addVertex(matrix, x, y, z).setColor(r, g, b, a).setUv(u, v).setLight(light).setNormal(nx, ny, nz);
+        *///?}
+    }
+
+    /**
+     * Вершина: позиция (без матрицы) + цвет + UV. Для статичных квадов в экранных
+     * координатах (провода ЛЭП и т.п.).
+     */
+    public static void vertexColorUv(VertexConsumer consumer, float x, float y, float z,
+                                     int r, int g, int b, int a, float u, float v) {
+        //? if < 1.21.1 {
+        consumer.vertex(x, y, z).color(r, g, b, a).uv(u, v).endVertex();
+        //?} else {
+        /*consumer.addVertex(x, y, z).setColor(r, g, b, a).setUv(u, v);
+        *///?}
+    }
+
+    /**
      * Кросс-версионная вершина для частиц (PARTICLE format).
      */
     public static void particleVertex(VertexConsumer consumer, float x, float y, float z, float u, float v, int r, int g, int b, int a, int packedLight) {
@@ -281,6 +388,17 @@ public final class RenderHooks {
         /*org.joml.Matrix4fStack stack = com.mojang.blaze3d.systems.RenderSystem.getModelViewStack();
         stack.popMatrix();
         com.mojang.blaze3d.systems.RenderSystem.applyModelViewMatrix();
+        *///?}
+    }
+
+    /**
+     * Возвращает частичный тик текущего кадра рендера (0.0 .. 1.0).
+     */
+    public static float getPartialTick() {
+        //? if < 1.21.1 {
+        return net.minecraft.client.Minecraft.getInstance().getFrameTime();
+        //?} else {
+        /*return net.minecraft.client.Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(true);
         *///?}
     }
 }

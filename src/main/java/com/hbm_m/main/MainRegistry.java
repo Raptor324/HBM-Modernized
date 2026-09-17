@@ -48,6 +48,9 @@ public final class MainRegistry {
     public static final RegistrySupplier<CreativeModeTab> nukeTab = ModCreativeTabs.NTM_NUKE_TAB;
 
     static {
+        // Форс UTF-8 в log4j-аппендерах ДО основного потока логов (иначе debug.log
+        // пишется в Cp1251 — кириллица и даты «13 сент» выглядят ломано в UTF-8).
+        LogCharsetPatcher.apply();
         // Загрузка JSON-конфига (client.json + server.json) ДО любой инициализации,
         // чтобы классы, захватывающие значения в static final (ChunkRadiationHandlerSimple.MAX_RAD),
         // видели загруженные значения. Замена AutoConfig.register(...).

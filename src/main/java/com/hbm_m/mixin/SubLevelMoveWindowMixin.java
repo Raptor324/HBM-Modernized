@@ -32,7 +32,7 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 public abstract class SubLevelMoveWindowMixin {
 
     static {
-        com.hbm_m.main.MainRegistry.LOGGER.info("[HBM][Mixin] SubLevelMoveWindowMixin применён к SubLevelAssemblyHelper");
+        com.hbm_m.main.MainRegistry.LOGGER.info("[HBM][Mixin] SubLevelMoveWindowMixin applied to SubLevelAssemblyHelper");
     }
 
     @Inject(method = "moveBlocks", at = @At("HEAD"), remap = false)

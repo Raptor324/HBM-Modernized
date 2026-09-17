@@ -89,3 +89,4 @@ java_pid*
 AGENTS.md
 libs/
 .aider*
+.agents/

@@ -77,6 +77,11 @@ public final class GuiCompat {
      * сквозь которую просвечивает «каша» из блюренного мира. Блюр остаётся под всем
      * меню, поверх — только чистый тёмный градиент.
      */
+    /** Есть ли перевод у ключа (для фоллбеков заголовков рецептов). */
+    public static boolean hasTranslation(String key) {
+        return net.minecraft.locale.Language.getInstance().has(key);
+    }
+
     public static void renderFlatBlurredBackground(Screen screen, GuiGraphics guiGraphics, float partialTick) {
         //? if < 1.21.1 {
         screen.renderBackground(guiGraphics);

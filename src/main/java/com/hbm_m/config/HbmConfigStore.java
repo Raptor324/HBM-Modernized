@@ -83,7 +83,7 @@ public final class HbmConfigStore {
                 ConfigSchema.applyAll(cfg, side, map);
             }
         } catch (Exception e) {
-            LOGGER.error("[hbm_m] Не удалось прочитать конфиг {}: {}", file, e.toString());
+            LOGGER.error("[hbm_m] Failed to read config {}: {}", file, e.toString());
         }
     }
 
@@ -106,7 +106,7 @@ public final class HbmConfigStore {
                 GSON.toJson(withComment, w);
             }
         } catch (IOException e) {
-            LOGGER.error("[hbm_m] Не удалось записать конфиг {}: {}", file, e.toString());
+            LOGGER.error("[hbm_m] Failed to write config {}: {}", file, e.toString());
         }
     }
 }

@@ -50,11 +50,11 @@ public final class CreateDoorRegistrar {
             } catch (IllegalArgumentException duplicate) {
                 // Уже зарегистрировано (напр. двойной проход) — пропускаем.
             } catch (Throwable t) {
-                MainRegistry.LOGGER.warn("[HBM/Create] Не удалось зарегистрировать door-behaviour для {}: {}", key, t.toString());
+                MainRegistry.LOGGER.warn("[HBM/Create] Failed to register door-behaviour for {}: {}", key, t.toString());
             }
         }
         if (count > 0) {
-            MainRegistry.LOGGER.info("[HBM/Create] Зарегистрированы door-поведения для {} дверей.", count);
+            MainRegistry.LOGGER.info("[HBM/Create] Registered door behaviours for {} doors.", count);
         }
 
         // Interaction для блоков-частей двери (UniversalMachinePartBlock), чтобы ПКМ по
@@ -67,7 +67,7 @@ public final class CreateDoorRegistrar {
             } catch (IllegalArgumentException duplicate) {
                 // уже зарегистрировано
             } catch (Throwable t) {
-                MainRegistry.LOGGER.warn("[HBM/Create] Не удалось зарегистрировать part-interaction: {}", t.toString());
+                MainRegistry.LOGGER.warn("[HBM/Create] Failed to register part-interaction: {}", t.toString());
             }
         }
     }

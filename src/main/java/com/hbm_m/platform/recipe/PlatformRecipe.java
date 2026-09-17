@@ -25,6 +25,14 @@ public abstract class PlatformRecipe implements net.minecraft.world.item.craftin
         this.id = id;
     }
 
+    /**
+     * Кросс-версионный доступ к id рецепта: в 1.21.1 ванильный {@code Recipe#getId()}
+     * удалён (id живёт в RecipeHolder), поэтому общий код зовёт этот метод.
+     */
+    public ResourceLocation getRecipeId() {
+        return id;
+    }
+
     public abstract boolean matchesRecipe(RecipeInputWrapper input, Level level);
     public abstract ItemStack assembleSafe();
     public abstract ItemStack getResultItemSafe();

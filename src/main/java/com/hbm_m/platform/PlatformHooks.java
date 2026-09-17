@@ -724,6 +724,23 @@ public final class PlatformHooks {
     }
 
     /**
+     * Время горения предмета как печного топлива (тики), 0 = не топливо.
+     * Учитывает ванильную карту топлива и переопределение {@code getBurnTime} на предмете.
+     */
+    public static int getFuelBurnTime(ItemStack stack) {
+        if (stack.isEmpty()) return 0;
+        //? if forge {
+        return Math.max(0, net.minecraftforge.common.ForgeHooks.getBurnTime(stack, net.minecraft.world.item.crafting.RecipeType.SMELTING));
+        //?} elif neoforge {
+        /*int t = stack.getItem().getBurnTime(stack, net.minecraft.world.item.crafting.RecipeType.SMELTING);
+        if (t < 0) {
+            t = net.minecraft.world.level.block.entity.AbstractFurnaceBlockEntity.getFuel().getOrDefault(stack.getItem(), 0);
+        }
+        return Math.max(0, t);
+        *///?}
+    }
+
+    /**
      * Кросс-платформенная проверка, является ли предмет контейнером жидкости.
      */
     public static boolean isFluidContainer(ItemStack stack) {
@@ -896,5 +913,51 @@ public final class PlatformHooks {
         //?} else {
         /*return living.getEffect((net.minecraft.core.Holder<net.minecraft.world.effect.MobEffect>) (Object) effect);
         *///?}
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    // Chunk loading & ticket management
+    // ════════════════════════════════════════════════════════════════
+
+    private static final net.minecraft.server.level.TicketType<net.minecraft.core.BlockPos> TEMPORARY_CHUNK_TICKET =
+            net.minecraft.server.level.TicketType.create("hbm_m_temporary", java.util.Comparator.comparingLong(net.minecraft.core.BlockPos::asLong), 100);
+
+    /**
+     * Ensures the chunk containing the specified block position is loaded on the server.
+     * Uses a temporary ticket (lifespan of 100 ticks / 5 seconds) to prevent premature unloading,
+     * avoiding persistent ticket leaks.
+     *
+     * @param level Level to load in
+     * @param pos Target block position
+     * @return true if the chunk is loaded and accessible; false otherwise
+     */
+    public static boolean loadChunkTemporary(Level level, net.minecraft.core.BlockPos pos) {
+        if (!level.isInWorldBounds(pos)) {
+            return false;
+        }
+        if (level instanceof net.minecraft.server.level.ServerLevel serverLevel) {
+            net.minecraft.world.level.ChunkPos chunkPos = new net.minecraft.world.level.ChunkPos(pos);
+            serverLevel.getChunkSource().addRegionTicket(TEMPORARY_CHUNK_TICKET, chunkPos, 2, pos.immutable());
+            return serverLevel.getChunk(chunkPos.x, chunkPos.z) != null;
+        }
+        return level.hasChunk(pos.getX() >> 4, pos.getZ() >> 4);
+    }
+
+    /**
+     * Adds a chunk loading region ticket via the server chunk cache.
+     */
+    public static <T> void addChunkTicket(Level level, net.minecraft.server.level.TicketType<T> type, net.minecraft.world.level.ChunkPos pos, int radius, T value) {
+        if (level instanceof net.minecraft.server.level.ServerLevel serverLevel) {
+            serverLevel.getChunkSource().addRegionTicket(type, pos, radius, value);
+        }
+    }
+
+    /**
+     * Removes a chunk loading region ticket via the server chunk cache.
+     */
+    public static <T> void removeChunkTicket(Level level, net.minecraft.server.level.TicketType<T> type, net.minecraft.world.level.ChunkPos pos, int radius, T value) {
+        if (level instanceof net.minecraft.server.level.ServerLevel serverLevel) {
+            serverLevel.getChunkSource().removeRegionTicket(type, pos, radius, value);
+        }
     }
 }

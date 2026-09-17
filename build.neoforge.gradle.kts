@@ -36,17 +36,47 @@ neoForge {
 		minecraftVersion = mc
 	}
 
+	// ── UTF-8 для дев-логов ─────────────────────────────────────────────
+	// Сгенерированный MDG log4j2-конфиг не задаёт charset в PatternLayout —
+	// файловые логи пишутся в платформенной Cp1251. Патчим конфиг idempotent-
+	// но перед каждым запуском (файл общий для любого способа запуска).
+	fun patchDevLogCharset() {
+		val f = file("build/moddev/clientLog4j2.xml")
+		if (!f.exists()) return
+		var text = f.readText()
+		val cleaned = text.replace("charset=\"UTF-8\" charset=\"UTF-8\"", "charset=\"UTF-8\"")
+		if (cleaned != text) {
+			f.writeText(cleaned)
+			text = cleaned
+		}
+		if (text.contains("charset=\"UTF-8\"")) return
+		val patched = Regex("<PatternLayout(?![^>]*\\bcharset=)").replace(text, "<PatternLayout charset=\"UTF-8\"")
+		if (patched != text) {
+			f.writeText(patched)
+			println("patchDevLogCharset: charset=UTF-8 added to ${f}")
+		}
+	}
+	tasks.matching { it.name in setOf("runClient", "runServer", "runGameTestServer") }.configureEach {
+		doFirst { patchDevLogCharset() }
+	}
+
 	runs {
 		register("client") {
 			client()
 			gameDirectory = file("run/")
 			ideName = "NeoForge Client (${stonecutter.active?.version})"
 			programArgument("--username=Dev")
+			// UTF-8 для логов + ASCII-локаль (иначе log4j пишет даты «сен.» в
+			// платформенной Cp1251 — debug.log открывается как ломаный UTF-8).
+			jvmArguments.addAll("-Xmx4G", "-Xms2G", "-Dfile.encoding=UTF-8", "-Dconsole.encoding=UTF-8",
+				"-Duser.language=en", "-Duser.country=US")
 		}
 		register("server") {
 			server()
 			gameDirectory = file("run/")
 			ideName = "NeoForge Server (${stonecutter.active?.version})"
+			jvmArguments.addAll("-Xmx4G", "-Xms2G", "-Dfile.encoding=UTF-8",
+				"-Duser.language=en", "-Duser.country=US")
 		}
 		// GameTest-сервер: headless-прогон всех @GameTest без GUI.
 		// NeoForge 1.21.1 НЕ поддерживает аргумент CLI --gametest (это Forge-only).
@@ -64,6 +94,8 @@ neoForge {
 			ideName = "NeoForge GameTest (${stonecutter.active?.version})"
 			systemProperty("neoforge.gameTestServer", "true")
 			systemProperty("neoforge.enableGameTest", "true")
+			jvmArguments.addAll("-Xmx4G", "-Xms2G", "-Dfile.encoding=UTF-8",
+				"-Duser.language=en", "-Duser.country=US")
 			// TODO(other-agent WIP): doFirst недоступен в runs-DSL — перенести в tasks.named("gameTestServer")
 		}
 	}
@@ -110,9 +142,9 @@ dependencies {
 	// Aeronautics / Sable в runClient (только 1.21.1 - на других версиях
 	// этих модов нет). Create 6.x тащит Flywheel/Ponder внутри себя (jarJar).
 	if (stonecutter.current.version == "1.21.1") {
-		// "runtimeOnly"("maven.modrinth:create:6.0.10+mc1.21.1")
-		// "runtimeOnly"("maven.modrinth:sable:2.0.5+mc1.21.1")
-		// "runtimeOnly"("maven.modrinth:create-aeronautics:1.3.1+mc1.21.1") // bundled: simulated + offroad внутри
+		"runtimeOnly"("maven.modrinth:create:6.0.10+mc1.21.1")
+		"runtimeOnly"("maven.modrinth:sable:2.0.5+mc1.21.1")
+		"runtimeOnly"("maven.modrinth:create-aeronautics:1.3.1+mc1.21.1") // bundled: simulated + offroad внутри
 	}
 	// В NeoForge артефакт называется flywheel-neoforge-api
 	"compileOnly"("dev.engine-room.flywheel:flywheel-neoforge-api-$mcVer:${prop("deps.flywheel")}")
@@ -180,7 +212,9 @@ tasks.named<ProcessResources>("processResources") {
 				val target = File(nsDir, "neoforge/biome_modifier")
 				moveInto(bm, target)
 				target.walkTopDown().filter { it.isFile && it.extension == "json" }.forEach { f ->
-					f.writeText(f.readText().replace("\"forge:add_features\"", "\"neoforge:add_features\""))
+					f.writeText(f.readText()
+						.replace("\"forge:add_features\"", "\"neoforge:add_features\"")
+						.replace("\"forge:add_spawns\"", "\"neoforge:add_spawns\""))
 				}
 			}
 		}

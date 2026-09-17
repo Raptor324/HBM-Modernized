@@ -45,7 +45,7 @@ import org.spongepowered.asm.mixin.injection.Redirect;
 public abstract class LevelChunkSilentRemovalMixin {
 
     static {
-        com.hbm_m.main.MainRegistry.LOGGER.info("[HBM][Mixin] LevelChunkSilentRemovalMixin применён к LevelChunk");
+        com.hbm_m.main.MainRegistry.LOGGER.info("[HBM][Mixin] LevelChunkSilentRemovalMixin applied to LevelChunk");
     }
 
     @Redirect(
