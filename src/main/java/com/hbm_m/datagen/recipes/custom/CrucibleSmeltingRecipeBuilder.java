@@ -33,15 +33,30 @@ public class CrucibleSmeltingRecipeBuilder extends BaseRecipeBuilder<CrucibleSme
     private final Ingredient input;
     private final MaterialType material;
     private final int amountMb;
+    /** Мульти-выход (руды с побочными продуктами, порт MatDistribution); null = одиночный выход. */
+    private final java.util.List<com.hbm_m.inventory.material.MaterialStack> multiOutputs;
 
     private CrucibleSmeltingRecipeBuilder(Ingredient input, MaterialType material, int amountMb) {
         this.input = input;
         this.material = material;
         this.amountMb = amountMb;
+        this.multiOutputs = null;
+    }
+
+    private CrucibleSmeltingRecipeBuilder(Ingredient input, java.util.List<com.hbm_m.inventory.material.MaterialStack> outputs) {
+        this.input = input;
+        this.material = outputs.isEmpty() ? MaterialType.IRON : outputs.get(0).type;
+        this.amountMb = outputs.isEmpty() ? 1 : outputs.get(0).amount;
+        this.multiOutputs = java.util.List.copyOf(outputs);
     }
 
     public static CrucibleSmeltingRecipeBuilder crucibleSmelting(Ingredient input, MaterialType material, int amountMb) {
         return new CrucibleSmeltingRecipeBuilder(input, material, amountMb);
+    }
+
+    /** Мульти-выход: руда, дающая несколько материалов (оригинал registerOre/registerEntry). */
+    public static CrucibleSmeltingRecipeBuilder crucibleSmelting(Ingredient input, java.util.List<com.hbm_m.inventory.material.MaterialStack> outputs) {
+        return new CrucibleSmeltingRecipeBuilder(input, outputs);
     }
 
     /** Item-перегрузка: {@code input} — одиночный предмет. */
@@ -65,6 +80,18 @@ public class CrucibleSmeltingRecipeBuilder extends BaseRecipeBuilder<CrucibleSme
     @Override
     protected void serializeRecipeData(JsonObject json) {
         json.add("ingredient", this.input.toJson());
+        if (this.multiOutputs != null) {
+            // Формат мульти-выхода: "output": [[mat, mb], ...]
+            var out = new com.google.gson.JsonArray();
+            for (var ms : this.multiOutputs) {
+                var entry = new com.google.gson.JsonArray();
+                entry.add(ms.type != null ? ms.type.name : "iron");
+                entry.add(ms.amount);
+                out.add(entry);
+            }
+            json.add("output", out);
+            return;
+        }
         // MaterialType идентифицируется строкой name (см. CrucibleSmeltingRecipe.Serializer.readJson — MaterialType.byName).
         json.addProperty("material", this.material != null ? this.material.name : "iron");
         json.addProperty("amount", this.amountMb);

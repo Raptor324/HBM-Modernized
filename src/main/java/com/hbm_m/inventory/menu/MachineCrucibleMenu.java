@@ -1,6 +1,5 @@
 package com.hbm_m.inventory.menu;
 
-import com.hbm_m.block.ModBlocks;
 import com.hbm_m.blockentity.machines.MachineCrucibleBlockEntity;
 import com.hbm_m.inventory.ModItemStackHandlerContainer;
 
@@ -16,27 +15,34 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
+/**
+ * Порт {@code ContainerCrucible} (1.7.10): сетка 3×3 плавильного буфера на
+ * (107,18) с шагом 18, инвентарь игрока (8,132)/хотбар (8,190). Drag-split
+ * отключён (mode 2 игнорируется, чтобы не раскидывать предметы по слотам
+ * с лимитом 1). Шкалы прогресса/тепла — через ContainerData; списки расплава
+ * GUI читает напрямую из BlockEntity (full-NBT sync).
+ */
 public class MachineCrucibleMenu extends AbstractContainerMenu {
 
-    /** Machine input slots 0..8 (3×3 grid). */
-    public static final int MACHINE_SLOTS = 9;
+    /** Слоты плавильного буфера 0..8 (в оригинале TE-слоты 1..9). */
+    public static final int MACHINE_SLOTS = MachineCrucibleBlockEntity.SMELT_SLOTS;
     private static final int PLAYER_INV_START = MACHINE_SLOTS;
     private static final int PLAYER_INV_END   = PLAYER_INV_START + 27;
-    private static final int HOTBAR_START = PLAYER_INV_END;
-    private static final int HOTBAR_END   = HOTBAR_START + 9;
+    private static final int HOTBAR_END       = PLAYER_INV_END + 9;
 
-    private static final int DATA_SLOTS = 6;
-    public static final int IDX_PROGRESS      = 0;
-    public static final int IDX_PROCESS_TIME  = 1;
-    public static final int IDX_HEAT          = 2;
-    public static final int IDX_MAX_HEAT      = 3;
-    public static final int IDX_LIQUID        = 4;
-    public static final int IDX_LIQUID_CAP    = 5;
+    public static final int IDX_PROGRESS       = 0;
+    public static final int IDX_PROCESS_TIME   = 1;
+    public static final int IDX_HEAT           = 2;
+    public static final int IDX_MAX_HEAT       = 3;
+    public static final int IDX_RECIPE_AMOUNT  = 4;
+    public static final int IDX_RECIPE_CAP     = 5;
+    public static final int IDX_WASTE_AMOUNT   = 6;
+    public static final int IDX_WASTE_CAP      = 7;
+    private static final int DATA_SLOTS = 8;
 
     public final MachineCrucibleBlockEntity blockEntity;
     private final ContainerLevelAccess access;
     private final ContainerData data;
-    private final ModItemStackHandlerContainer machineInventory;
 
     public MachineCrucibleMenu(int containerId, Inventory playerInventory, FriendlyByteBuf extraData) {
         this(containerId, playerInventory,
@@ -59,8 +65,14 @@ public class MachineCrucibleMenu extends AbstractContainerMenu {
             this.machineInventory = new ModItemStackHandlerContainer(blockEntity.getModItemStackHandler(), blockEntity::setChanged);
             for (int row = 0; row < 3; row++) {
                 for (int col = 0; col < 3; col++) {
+                    // Оригинал ContainerCrucible: слоты плавильного буфера принимают только 1 предмет.
                     this.addSlot(new Slot(machineInventory, col + row * 3,
-                            107 + col * 18, 18 + row * 18));
+                            107 + col * 18, 18 + row * 18) {
+                        @Override
+                        public int getMaxStackSize() {
+                            return 1;
+                        }
+                    });
                 }
             }
         } else {
@@ -78,6 +90,9 @@ public class MachineCrucibleMenu extends AbstractContainerMenu {
         }
     }
 
+    private final @org.jetbrains.annotations.Nullable ModItemStackHandlerContainer machineInventory;
+
+    /** Порт slotClick(mode 2) — drag-split запрещён. */
     @Override
     public void clicked(int slotId, int dragType, ClickType clickType, Player player) {
         if (clickType == ClickType.SWAP) return;
@@ -117,49 +132,33 @@ public class MachineCrucibleMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        return stillValid(access, player, ModBlocks.CRUCIBLE.get());
+        return blockEntity != null
+                && blockEntity.getLevel() == player.level()
+                && player.distanceToSqr(
+                        blockEntity.getBlockPos().getX() + 0.5D,
+                        blockEntity.getBlockPos().getY() + 0.5D,
+                        blockEntity.getBlockPos().getZ() + 0.5D) <= 64.0D
+                || stillValid(access, player, com.hbm_m.block.ModBlocks.CRUCIBLE.get());
     }
 
-    public int getProgress() {
-        return data.get(IDX_PROGRESS);
-    }
+    // ── Данные шкал ──────────────────────────────────────────────────────
 
-    /** Максимальное время процесса (TU), для шкалы прогресса. */
-    public int getProcessTime() {
-        return data.get(IDX_PROCESS_TIME);
-    }
+    public int getProgress()    { return data.get(IDX_PROGRESS); }
+    public int getProcessTime() { return data.get(IDX_PROCESS_TIME); }
+    public int getHeat()        { return data.get(IDX_HEAT); }
+    public int getMaxHeat()     { return data.get(IDX_MAX_HEAT); }
+    public int getRecipeAmount() { return data.get(IDX_RECIPE_AMOUNT); }
+    public int getRecipeCap()    { return data.get(IDX_RECIPE_CAP); }
+    public int getWasteAmount()  { return data.get(IDX_WASTE_AMOUNT); }
+    public int getWasteCap()     { return data.get(IDX_WASTE_CAP); }
 
-    public int getHeat() {
-        return data.get(IDX_HEAT);
-    }
-
-    public int getMaxHeat() {
-        return data.get(IDX_MAX_HEAT);
-    }
-
-    public int getLiquidStored() {
-        return data.get(IDX_LIQUID);
-    }
-
-    public int getLiquidCap() {
-        return data.get(IDX_LIQUID_CAP);
-    }
-
-    /** Ширина полоски прогресса (0..33 px). */
     public int getScaledProgress() {
         int max = getProcessTime();
         return max == 0 ? 0 : getProgress() * 33 / max;
     }
 
-    /** Ширина полоски нагрева (0..33 px). */
     public int getScaledHeat() {
         int max = getMaxHeat();
         return max == 0 ? 0 : getHeat() * 33 / max;
-    }
-
-    /** Высота индикатора жидкости (0..101 px). */
-    public int getScaledLiquidHeight() {
-        int cap = getLiquidCap();
-        return cap == 0 ? 0 : getLiquidStored() * 101 / cap;
     }
 }

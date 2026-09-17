@@ -20,6 +20,9 @@ import net.minecraft.world.item.crafting.RecipeSerializer;
 import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.Level;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Datapack-facing тигель-плавильный рецепт ({@code hbm_m:crucible_smelting}).
  *
@@ -52,29 +55,50 @@ import net.minecraft.world.level.Level;
 public class CrucibleSmeltingRecipe extends PlatformRecipe {
 
     private final Ingredient input;
-    private final MaterialType material;
-    private final int amountMb;
+    /** Выходы плавки; обычно один, у руд с побочными продуктами — несколько (порт MatDistribution). */
+    private final List<MaterialStack> outputs;
 
     public CrucibleSmeltingRecipe(ResourceLocation id, Ingredient input, MaterialType material, int amountMb) {
+        this(id, input, List.of(new MaterialStack(material, Math.max(1, amountMb))));
+    }
+
+    public CrucibleSmeltingRecipe(ResourceLocation id, Ingredient input, List<MaterialStack> outputs) {
         super(id);
         this.input = input;
-        this.material = material;
-        this.amountMb = Math.max(1, amountMb);
+        this.outputs = outputs.isEmpty() ? List.of(new MaterialStack(MaterialType.IRON, 1)) : List.copyOf(outputs);
     }
 
     public Ingredient getInput() { return input; }
-    public MaterialType getMaterial() { return material; }
-    public int getAmountMb() { return amountMb; }
-    public String getMaterialName() { return material != null ? material.name : "iron"; }
+    public List<MaterialStack> getOutputs() { return outputs; }
+
+    /** Первый выход (удобство для JEI/старого кода). */
+    public MaterialType getMaterial() { return outputs.get(0).type; }
+    public int getAmountMb() { return outputs.get(0).amount; }
+    public String getMaterialName() { return outputs.get(0).type != null ? outputs.get(0).type.name : "iron"; }
 
     /** Проверяет совпадение входа (тигель сам управляет how much to consume). */
     public boolean matchesInput(ItemStack stack) {
         return stack != null && !stack.isEmpty() && input.test(stack);
     }
 
-    /** Превращает рецепт в {@link MaterialStack} (mB × stack-size, как в оригинале: smelt scales w/ count). */
+    /** Превращает первый выход в {@link MaterialStack} (mB × stack-size, как в оригинале: smelt scales w/ count). */
     public MaterialStack toMaterialStack(int stackCount) {
-        return new MaterialStack(material, amountMb * Math.max(1, stackCount));
+        return firstWithCount(stackCount);
+    }
+
+    /** Все выходы × stack-count (орудные побочные продукты — порт List&lt;MaterialStack&gt; оригинала). */
+    public List<MaterialStack> toMaterialStacks(int stackCount) {
+        List<MaterialStack> out = new ArrayList<>(outputs.size());
+        for (MaterialStack ms : outputs) out.add(firstWithCount(ms, stackCount));
+        return out;
+    }
+
+    private MaterialStack firstWithCount(int stackCount) {
+        return new MaterialStack(outputs.get(0).type, outputs.get(0).amount * Math.max(1, stackCount));
+    }
+
+    private static MaterialStack firstWithCount(MaterialStack base, int stackCount) {
+        return new MaterialStack(base.type, base.amount * Math.max(1, stackCount));
     }
 
     @Override
@@ -114,7 +138,21 @@ public class CrucibleSmeltingRecipe extends PlatformRecipe {
         @Override
         public CrucibleSmeltingRecipe readJson(ResourceLocation recipeId, JsonObject json) {
             Ingredient input = RecipeHooks.ingredientFromJson(json.get("ingredient"));
-            // MaterialType идентифицируется строкой name (MaterialType.name), без namespace.
+            // Формат 1: "output": [[mat, mb], ...] — руды с побочными продуктами (порт MatDistribution).
+            if (json.has("output")) {
+                List<MaterialStack> outputs = new ArrayList<>();
+                for (var entry : GsonHelper.getAsJsonArray(json, "output")) {
+                    var arr = entry.getAsJsonArray();
+                    MaterialType mat = MaterialType.byName(arr.get(0).getAsString());
+                    if (mat == null) {
+                        throw new IllegalStateException("Unknown material '" + arr.get(0).getAsString()
+                                + "' in crucible_smelting recipe " + recipeId);
+                    }
+                    outputs.add(new MaterialStack(mat, arr.get(1).getAsInt()));
+                }
+                return new CrucibleSmeltingRecipe(recipeId, input, outputs);
+            }
+            // Формат 2 (legacy/простой): "material" + "amount".
             String matName = GsonHelper.getAsString(json, "material");
             MaterialType mat = MaterialType.byName(matName);
             if (mat == null) {
@@ -128,18 +166,25 @@ public class CrucibleSmeltingRecipe extends PlatformRecipe {
         @Override
         public CrucibleSmeltingRecipe readNetwork(ResourceLocation recipeId, FriendlyByteBuf buf) {
             Ingredient input = RecipeHooks.readIngredient(buf);
-            String matName = buf.readUtf();
-            MaterialType mat = MaterialType.byName(matName);
-            int amount = buf.readVarInt();
-            return new CrucibleSmeltingRecipe(recipeId, input, mat != null ? mat : MaterialType.IRON, amount);
+            int count = buf.readVarInt();
+            List<MaterialStack> outputs = new ArrayList<>(count);
+            for (int i = 0; i < count; i++) {
+                MaterialType mat = MaterialType.byName(buf.readUtf());
+                int amount = buf.readVarInt();
+                outputs.add(new MaterialStack(mat != null ? mat : MaterialType.IRON, amount));
+            }
+            return new CrucibleSmeltingRecipe(recipeId, input, outputs);
         }
 
         @Override
         public void writeNetwork(FriendlyByteBuf buf, CrucibleSmeltingRecipe recipe) {
             RecipeHooks.writeIngredient(buf, recipe.input);
             // MaterialType.name — строковый ключ, без namespace; сериализуем как UTF.
-            buf.writeUtf(recipe.material != null ? recipe.material.name : "iron");
-            buf.writeVarInt(recipe.amountMb);
+            buf.writeVarInt(recipe.outputs.size());
+            for (MaterialStack ms : recipe.outputs) {
+                buf.writeUtf(ms.type != null ? ms.type.name : "iron");
+                buf.writeVarInt(ms.amount);
+            }
         }
     }
 }

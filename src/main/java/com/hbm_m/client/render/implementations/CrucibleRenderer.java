@@ -1,108 +1,106 @@
 package com.hbm_m.client.render.implementations;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import com.hbm_m.blockentity.machines.MachineCrucibleBlockEntity;
-import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
-import com.hbm_m.lib.RefStrings;
+import com.hbm_m.client.model.ConfiguredMultipartBakedModel;
+import com.hbm_m.client.render.machine.MachineRenderers;
 import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexConsumer;
 
-import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
-import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
-import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.client.Minecraft;
+import net.minecraft.client.renderer.block.model.BakedQuad;
+import net.minecraft.client.renderer.texture.TextureAtlasSprite;
+import net.minecraft.client.resources.model.BakedModel;
+import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.inventory.InventoryMenu;
 
-import org.joml.Matrix4f;
+import com.hbm_m.platform.RenderHooks;
 
 /**
- * Renderer for the Crucible BlockEntity.
- *
- * Renders a flat "molten metal" surface quad inside the crucible bowl whose
- * height depends on {@link MachineCrucibleBlockEntity#getFillLevel()}.
- *
- * Legacy equivalent: RenderCrucible (1.7.10 TileEntitySpecialRenderer)
- *
- * Coordinate frame matches the bowl geometry defined in MachineCrucibleBlock:
- *   - bowl base at y = 4/16 = 0.25
- *   - inner X/Z range: 2/16 .. 14/16  (2 px walls on every side)
- *   - lava surface Y  = BOWL_BASE + fillLevel * (1.0 - BOWL_BASE)
- *
- * Once MaterialStack / Mats is ported:
- *   1. Set fillLevel on the BlockEntity from the actual stack data.
- *   2. Set fillColor from the dominant material's moltenColor.
- *   3. The quad will automatically pick up both values.
+ * Тигель на фабрике {@link MachineRenderers} — порт {@code RenderCrucible} (1.7.10):
+ * корпус (Main) запечён в chunk-mesh; поверхность расплава — динамическая часть
+ * из OBJ-части "Lava", поднятой на уровень заполнения
+ * ({@code 0.5 + fill * 0.875} в оригинале) и перетекстурированной лавой
+ * ({@code minecraft:block/lava_still} из блочного атласа вместо отдельной
+ * {@code lava.png} оригинала). VBO кешируется по квантованному уровню.
  */
+public final class CrucibleRenderer {
 
-//? if forge {
-@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-//?} elif fabric {
-/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
-*///?} elif neoforge {
-/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-*///?}
-public class CrucibleRenderer implements com.hbm_m.client.render.HbmBerBounds<MachineCrucibleBlockEntity> {
+    private static final RandomSource RANDOM = RandomSource.create(42);
+    private static final ResourceLocation LAVA_SPRITE =
+            ResourceLocation.withDefaultNamespace("block/lava_still");
 
-    /** lava surface texture — re-uses the existing block/fluids/lava.png */
-    private static final ResourceLocation LAVA_TEXTURE =
-            ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/block/fluids/lava.png");
+    private CrucibleRenderer() {}
 
-    /** The crucible OBJ model spans 3×3 blocks around the block position; its
-     *  interior (the baked "Lava" plane) covers x/z -0.5 .. 1.5 with the melt
-     *  base at y = 0.5. Original surface height: y + 0.5 + fill * 0.875. */
-    private static final float BOWL_BASE = 0.51f; // slightly above the baked plane to avoid z-fighting
-
-    private static final float INNER = -0.48f;
-    private static final float INNER_MAX = 1.48f;
-
-    public CrucibleRenderer(BlockEntityRendererProvider.Context context) { }
-
-    @Override
-    public void render(MachineCrucibleBlockEntity blockEntity,
-                       float partialTick,
-                       PoseStack poseStack,
-                       MultiBufferSource bufferSource,
-                       int packedLight,
-                       int packedOverlay) {
-
-        float fill = blockEntity.getFillLevel();
-        if (fill <= 0f) return; // nothing to render yet (MaterialStack not ported)
-
-        float surfaceY = BOWL_BASE + fill * 0.875f;
-
-        // Decompose ARGB color
-        int argb  = blockEntity.getFillColor();
-        float a   = ((argb >> 24) & 0xFF) / 255f;
-        float r   = ((argb >> 16) & 0xFF) / 255f;
-        float g   = ((argb >>  8) & 0xFF) / 255f;
-        float b   =  (argb        & 0xFF) / 255f;
-
-        // Use translucent render type with the lava texture; fullbright (legacy parity)
-        VertexConsumer vc = bufferSource.getBuffer(RenderType.entityTranslucent(LAVA_TEXTURE));
-        Matrix4f m = poseStack.last().pose();
-
-        // Full-bright packed light (legacy used OpenGlHelper.setLightmapTextureCoords(... 240F, 240F))
-        int fullbright = 0xF000F0;
-
-        // Flat quad: top face (normal Y+), counter-clockwise from south-west
-        // (INNER, surfaceY, INNER) → (INNER, surfaceY, INNER_MAX)
-        // → (INNER_MAX, surfaceY, INNER_MAX) → (INNER_MAX, surfaceY, INNER)
-        //? if < 1.21.1 {
-        vc.vertex(m, INNER,     surfaceY, INNER    ).color(r, g, b, a).uv(0, 0).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(fullbright).normal(0, 1, 0).endVertex();
-        vc.vertex(m, INNER,     surfaceY, INNER_MAX).color(r, g, b, a).uv(0, 1).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(fullbright).normal(0, 1, 0).endVertex();
-        vc.vertex(m, INNER_MAX, surfaceY, INNER_MAX).color(r, g, b, a).uv(1, 1).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(fullbright).normal(0, 1, 0).endVertex();
-        vc.vertex(m, INNER_MAX, surfaceY, INNER    ).color(r, g, b, a).uv(1, 0).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(fullbright).normal(0, 1, 0).endVertex();
-        //?} else {
-        /*vc.addVertex(m, INNER,     surfaceY, INNER    ).setColor(r, g, b, a).setUv(0, 0).setOverlay(OverlayTexture.NO_OVERLAY).setLight(fullbright).setNormal(0, 1, 0);
-        vc.addVertex(m, INNER,     surfaceY, INNER_MAX).setColor(r, g, b, a).setUv(0, 1).setOverlay(OverlayTexture.NO_OVERLAY).setLight(fullbright).setNormal(0, 1, 0);
-        vc.addVertex(m, INNER_MAX, surfaceY, INNER_MAX).setColor(r, g, b, a).setUv(1, 1).setOverlay(OverlayTexture.NO_OVERLAY).setLight(fullbright).setNormal(0, 1, 0);
-        vc.addVertex(m, INNER_MAX, surfaceY, INNER    ).setColor(r, g, b, a).setUv(1, 0).setOverlay(OverlayTexture.NO_OVERLAY).setLight(fullbright).setNormal(0, 1, 0);
-        *///?}
+    public static void register() {
+        MachineRenderers.machine("crucible", com.hbm_m.blockentity.ModBlockEntities.CRUCIBLE_BE.get(),
+                MachineCrucibleBlockEntity.class)
+            .part("Main") // empty_world_quads: корпус рисует BER
+            .lightOverride("Melt", be -> be.getFillLevel() > 0 ? net.minecraft.client.renderer.LightTexture.pack(15, 15) : -1)
+            .dynamicPart("Melt", CrucibleRenderer::meltQuads,
+                    be -> String.valueOf((int) (be.getFillLevel() * 64)))
+            .register();
     }
 
-    @Override
-    public boolean shouldRenderOffScreen(MachineCrucibleBlockEntity blockEntity) {
-        return ShaderCompatibilityDetector.shouldRenderBlockEntityOffScreen();
+    /** Квады поверхности расплава: Lava-часть, поднята на уровень, с лавовым спрайтом. */
+    private static List<BakedQuad> meltQuads(MachineCrucibleBlockEntity be) {
+        if (be.getFillLevel() <= 0f) return List.of();
+        BakedModel raw = Minecraft.getInstance().getBlockRenderer().getBlockModel(be.getBlockState());
+        if (!(raw instanceof ConfiguredMultipartBakedModel model)) return List.of();
+
+        BakedModel lavaPart = model.getPart("Lava");
+        if (lavaPart == null) return List.of();
+
+        List<BakedQuad> quads = new ArrayList<>();
+        for (Direction dir : Direction.values()) {
+            quads.addAll(RenderHooks.getModelQuads(lavaPart, null, dir, RANDOM, null));
+        }
+        quads.addAll(RenderHooks.getModelQuads(lavaPart, null, null, RANDOM, null));
+        if (quads.isEmpty()) return List.of();
+
+        TextureAtlasSprite lava = Minecraft.getInstance()
+                .getTextureAtlas(InventoryMenu.BLOCK_ATLAS).apply(LAVA_SPRITE);
+
+        List<BakedQuad> result = new ArrayList<>(quads.size());
+        float lift = be.getFillLevel() * 0.875F;
+        for (BakedQuad quad : quads) {
+            BakedQuad retex = retextureAndFixUV(quad, lava);
+            result.addAll(com.hbm_m.client.model.ModelHelper.translateQuads(List.of(retex), 0f, lift, 0f));
+        }
+        return result;
+    }
+
+    /** Перенос UV квада со старого спрайта на лавовый (формат BLOCK: 8 int на вершину). */
+    private static BakedQuad retextureAndFixUV(BakedQuad original, TextureAtlasSprite newSprite) {
+        var oldSprite = original.getSprite();
+        if (oldSprite == null) return original;
+
+        float oldUDiff = oldSprite.getU1() - oldSprite.getU0();
+        float oldVDiff = oldSprite.getV1() - oldSprite.getV0();
+        float newUDiff = newSprite.getU1() - newSprite.getU0();
+        float newVDiff = newSprite.getV1() - newSprite.getV0();
+        if (oldUDiff == 0 || oldVDiff == 0 || newUDiff == 0 || newVDiff == 0) return original;
+
+        int[] oldData = original.getVertices();
+        int[] newData = new int[oldData.length];
+        System.arraycopy(oldData, 0, newData, 0, oldData.length);
+
+        int vertexSize = oldData.length / 4;
+        for (int i = 0; i < 4; i++) {
+            int offset = i * vertexSize;
+            float oldU = Float.intBitsToFloat(oldData[offset + 4]);
+            float oldV = Float.intBitsToFloat(oldData[offset + 5]);
+
+            float normU = (oldU - oldSprite.getU0()) / oldUDiff;
+            float normV = (oldV - oldSprite.getV0()) / oldVDiff;
+
+            newData[offset + 4] = Float.floatToRawIntBits(newSprite.getU0() + normU * newUDiff);
+            newData[offset + 5] = Float.floatToRawIntBits(newSprite.getV0() + normV * newVDiff);
+        }
+
+        return new BakedQuad(newData, original.getTintIndex(), original.getDirection(), newSprite, false);
     }
 }
-

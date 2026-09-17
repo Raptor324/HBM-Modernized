@@ -20,17 +20,15 @@ import org.joml.Matrix4f;
  * Renders the molten metal flowing through a foundry channel:
  * a center quad plus one quad per connected direction.
  */
-//? if forge {
+//? if < 1.21.1 {
 @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-//?} elif fabric {
-/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
-*///?} elif neoforge {
+//?} else {
 /*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
 *///?}
 public class FoundryChannelRenderer implements com.hbm_m.client.render.HbmBerBounds<MachineFoundryChannelBlockEntity> {
 
     private static final ResourceLocation LAVA_TEXTURE =
-            ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/block/fluids/lava.png");
+            ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/block/fluids/lava_gray.png");
 
     // inner trough: x/z 6..10 px, floor top at 2 px, walls up to 8 px
     private static final float IN_MIN = 6f / 16f;
@@ -49,7 +47,12 @@ public class FoundryChannelRenderer implements com.hbm_m.client.render.HbmBerBou
         float fill = Math.min(1f, (float) be.amount / MachineFoundryChannelBlockEntity.CAPACITY);
         float surfaceY = FLOOR + fill * (MAX_LEVEL - FLOOR);
 
-        int color = 0xFF000000 | be.type.color;
+        // Оригинал: new Color(moltenColor).brighter() — осветление х1.43 с клампом.
+        int raw = be.type.color;
+        int br = Math.min(255, (int) (raw >> 16 & 0xFF) * 100 / 70);
+        int bg = Math.min(255, (int) (raw >> 8 & 0xFF) * 100 / 70);
+        int bb = Math.min(255, (int) (raw & 0xFF) * 100 / 70);
+        int color = 0xFF000000 | (br << 16) | (bg << 8) | bb;
         float a = ((color >> 24) & 0xFF) / 255f;
         float r = ((color >> 16) & 0xFF) / 255f;
         float g = ((color >>  8) & 0xFF) / 255f;

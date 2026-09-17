@@ -71,21 +71,39 @@ public final class MoldCastingRecipeGenerator {
     // ══════════════════════════════════════════════════════════════════
     private static Output resolveOutput(ItemCastMold.MoldType mold, MaterialType mat) {
         return switch (mold) {
-            case PLATE       -> itemOrEmpty(byId("plate_", mat, 1));
-            case PLATES      -> itemOrEmpty(byId("plate_", mat, 9));
-            case PLATE_CAST  -> itemOrEmpty(castPlate(mat, 1));
-            case PLATES_CAST -> itemOrEmpty(castPlate(mat, 3));
-            case INGOT       -> tagOutput("forge:ingots/"         + tagName(mat), 1);
-            case INGOTS      -> tagOutput("forge:ingots/"         + tagName(mat), 9);
-            case NUGGET      -> tagOutput("forge:nuggets/"        + tagName(mat), 1);
-            case BLOCK       -> tagOutput("forge:storage_blocks/" + tagName(mat), 1);
-            case WIRE        -> itemOrEmpty(byId("wire_", mat, 8));
-            case WIRE_DENSE  -> itemOrEmpty(byId("wire_dense_", mat, 1));
-            case WIRES_DENSE -> itemOrEmpty(byId("wire_dense_", mat, 9));
-            case SHELL       -> itemOrEmpty(byId("shell_", mat, 1));
-            case PIPE        -> itemOrEmpty(byId("pipe_", mat, 1));
-            case BILLET      -> itemOrEmpty(byId("billet_", mat, 1));
-            default          -> Output.EMPTY;
+            case PLATE          -> itemOrEmpty(byId("plate_", mat, 1));
+            case PLATES         -> itemOrEmpty(byId("plate_", mat, 9));
+            case PLATE_CAST     -> itemOrEmpty(castPlate(mat, 1));
+            case PLATES_CAST    -> itemOrEmpty(castPlate(mat, 3));
+            case INGOT          -> tagOutput("forge:ingots/"         + tagName(mat), 1);
+            case INGOTS         -> tagOutput("forge:ingots/"         + tagName(mat), 9);
+            case NUGGET         -> tagOutput("forge:nuggets/"        + tagName(mat), 1);
+            case BLOCK          -> tagOutput("forge:storage_blocks/" + tagName(mat), 1);
+            case WIRE           -> itemOrEmpty(byId("wire_", mat, 8));
+            case WIRE_DENSE     -> itemOrEmpty(byId("wire_dense_", mat, 1));
+            case WIRES_DENSE    -> itemOrEmpty(byId("wire_dense_", mat, 9));
+            case SHELL          -> itemOrEmpty(byId("shell_", mat, 1));
+            case PIPE           -> itemOrEmpty(byId("pipe_", mat, 1));
+            case PIPES          -> {
+                ItemStack pipes = byId("pipes_", mat, 1);
+                yield !pipes.isEmpty() ? itemOrEmpty(pipes) : itemOrEmpty(byId("pipe_", mat, 3));
+            }
+            case BILLET         -> itemOrEmpty(byId("billet_", mat, 1));
+            case BLADE          -> itemOrEmpty(byId("blade_", mat, 1));
+            case BLADES         -> itemOrEmpty(byId("blades_", mat, 1));
+            case STAMP          -> itemOrEmpty(byPattern("stamp_%s_flat", mat, 1));
+            case BARREL_LIGHT   -> itemOrEmpty(byId("part_barrel_light_", mat, 1));
+            case BARREL_HEAVY   -> itemOrEmpty(byId("part_barrel_heavy_", mat, 1));
+            case RECEIVER_LIGHT -> itemOrEmpty(byId("part_receiver_light_", mat, 1));
+            case RECEIVER_HEAVY -> itemOrEmpty(byId("part_receiver_heavy_", mat, 1));
+            case MECHANISM      -> itemOrEmpty(byId("part_mechanism_", mat, 1));
+            case STOCK          -> itemOrEmpty(byId("part_stock_", mat, 1));
+            case GRIP           -> itemOrEmpty(byId("part_grip_", mat, 1));
+            case GEM            -> {
+                ItemStack gemItem = byId("gem_", mat, 1);
+                yield !gemItem.isEmpty() ? itemOrEmpty(gemItem) : tagOutput("forge:gems/" + tagName(mat), 1);
+            }
+            default             -> Output.EMPTY;
         };
     }
 
@@ -123,13 +141,24 @@ public final class MoldCastingRecipeGenerator {
         return ItemStack.EMPTY;
     }
 
+    private static ItemStack byPattern(String format, MaterialType mat, int count) {
+        for (String candidate : nameCandidates(mat)) {
+            ResourceLocation id = ResourceLocation.fromNamespaceAndPath("hbm_m", String.format(Locale.ROOT, format, candidate));
+            if (BuiltInRegistries.ITEM.containsKey(id)) {
+                return new ItemStack(BuiltInRegistries.ITEM.get(id), count);
+            }
+        }
+        return ItemStack.EMPTY;
+    }
+
     /** Alternate spellings/names used across this mod's item ids for the same material. */
     private static List<String> nameCandidates(MaterialType mat) {
-        List<String> out = new ArrayList<>(3);
+        List<String> out = new ArrayList<>(4);
         out.add(mat.name);
         if (mat.name.equals("aluminium")) out.add("aluminum");
         if (mat.name.equals("cmb"))       out.add("combine_steel");
         if (mat.name.equals("alloy"))     out.add("advanced_alloy");
+        if (mat.name.equals("ferro"))     out.add("ferrouranium");
         return out;
     }
 }

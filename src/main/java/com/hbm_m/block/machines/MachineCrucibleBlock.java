@@ -1,5 +1,6 @@
 package com.hbm_m.block.machines;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Supplier;
 
@@ -12,8 +13,10 @@ import com.hbm_m.interfaces.IMultiblockController;
 import com.hbm_m.inventory.menu.MachineCrucibleMenu;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
-import dev.architectury.registry.menu.MenuRegistry;
+import com.hbm_m.util.CrucibleUtil;
+import com.hbm_m.inventory.material.MaterialStack;
 
+import dev.architectury.registry.menu.MenuRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
@@ -22,10 +25,10 @@ import net.minecraft.world.Containers;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.SimpleMenuProvider;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.inventory.ContainerData;
-import net.minecraft.world.inventory.SimpleContainerData;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.ShovelItem;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
@@ -45,67 +48,95 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
-//? if forge {
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-//?} else if neoforge {
-/*import net.neoforged.neoforge.capabilities.Capabilities;
-*///?}
 
 /**
- * Crucible machine block — GIT MachineCrucible multiblock (3×3 ring) with bowl collision on controller.
+ * Crucible — порт {@code MachineCrucible} (1.7.10, BlockDummyable
+ * {@code {1,0,1,1,1,1}}): мультиблок 3×3×2 — нижний слой с ядром в центре,
+ * верхний слой открытой чаши (в центре пусто, чтобы предметы падали внутрь).
+ *
+ * <p>Коллизия 1:1 из оригинального списка {@code bounding}: плита-дно 3×3
+ * (0..0.5 блока) и бортик 0.25 блока толщиной на кольце ±1..±1.25 от центра,
+ * высотой 0.5..1.5. Лопата высыпает расплав в шлак, клик открывает GUI.
  */
 public class MachineCrucibleBlock extends BaseEntityBlock implements IMultiblockController {
 
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
 
-    private static final VoxelShape BOWL_SHAPE = Shapes.or(
-            Block.box(0, 0, 0, 16, 4, 16),
-            Block.box(0, 4, 0, 16, 16, 2),
-            Block.box(0, 4, 14, 16, 16, 16),
-            Block.box(0, 4, 0, 2, 16, 16),
-            Block.box(14, 4, 0, 16, 16, 16)
-    );
+    /**
+     * Оригинальные {@code bounding}-боксы в 1/16 блока (формат x0,y0,z0,x1,y1,z1):
+     * дно 3×3 × 4 стенки-бортика. Координаты относительно min-угла КОНТРОЛЬНОЙ
+     * клетки — сетка размещения 3×3×2 покрывает -16..32 px (центр структуры =
+     * +8px, центр контролльной клетки), бортики стоят на center±16..20.
+     */
+    private static final double[][] BOUNDING = {
+            { -16, 0, -16, 32, 8, 32 },       // дно 3x3
+            { -12, 8, -12, -8, 24, 28 },      // западный бортик
+            { 24, 8, -12, 28, 24, 28 },       // восточный бортик
+            { -12, 8, -12, 28, 24, -8 },      // северный бортик
+            { -12, 8, 24, 28, 24, 28 },       // южный бортик
+    };
 
     private final MultiblockStructureHelper structureHelper;
 
     public MachineCrucibleBlock(Properties properties) {
         super(properties);
         this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH));
-        this.structureHelper = defineStructureNew();
+        this.structureHelper = defineStructure();
     }
 
-    private static MultiblockStructureHelper defineStructureNew() {
-        // GIT MachineCrucible: 3×3×1 hollow ring (walls) around center controller
-        String[] layer0 = {
-            "OOO",
-            "OCO",
-            "OOO"
-        };
+    /**
+     * 3×3×2 с пер-позиционными формами, вычисленными пересечением оригинальных
+     * bounding-боксов с каждой клеткой мультиблока.
+     */
+    private static MultiblockStructureHelper defineStructure() {
+        Supplier<BlockState> phantom = () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState();
 
-        Map<Character, PartRole> roleMap = Map.of(
-            'C', PartRole.CONTROLLER,
-            'O', PartRole.DEFAULT
-        );
+        Map<BlockPos, Supplier<BlockState>> structureMap = new HashMap<>();
+        Map<BlockPos, Character> positionSymbols = new HashMap<>();
+        Map<BlockPos, VoxelShape> partShapes = new HashMap<>();
+        Map<BlockPos, VoxelShape> collisionShapes = new HashMap<>();
+        Map<Character, PartRole> roleMap = Map.of('C', PartRole.CONTROLLER, 'O', PartRole.DEFAULT);
 
-        Map<Character, Supplier<BlockState>> symbolMap = Map.of();
+        BlockPos controllerOffset = BlockPos.ZERO;
+        positionSymbols.put(controllerOffset, 'C');
 
-        Map<Character, VoxelShape> shapeMap = Map.of(
-            'C', BOWL_SHAPE,
-            'O', Block.box(0, 8, 0, 16, 16, 16)
-        );
-        Map<Character, VoxelShape> collisionMap = Map.of(
-            'C', BOWL_SHAPE,
-            'O', Block.box(0, 8, 0, 16, 16, 16)
-        );
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dz = -1; dz <= 1; dz++) {
+                for (int dy = 0; dy <= 1; dy++) {
+                    BlockPos pos = new BlockPos(dx, dy, dz);
+                    if (pos.equals(controllerOffset)) continue;
+                    structureMap.put(pos, phantom);
+                    positionSymbols.put(pos, 'O');
+                }
+            }
+        }
 
-        return MultiblockStructureHelper.createFromLayersWithRoles(
-            new String[][] { layer0 },
-            symbolMap,
-            () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState(),
-            roleMap,
-            shapeMap,
-            collisionMap
-        );
+        // Пересечение bounding-боксов с каждой клеткой (в локальных координатах клетки)
+        for (int dx = -1; dx <= 1; dx++) {
+            for (int dz = -1; dz <= 1; dz++) {
+                for (int dy = 0; dy <= 1; dy++) {
+                    VoxelShape shape = Shapes.empty();
+                    double cellMinX = dx * 16.0, cellMinY = dy * 16.0, cellMinZ = dz * 16.0;
+                    for (double[] b : BOUNDING) {
+                        double x0 = Math.max(b[0], cellMinX) - cellMinX;
+                        double y0 = Math.max(b[1], cellMinY) - cellMinY;
+                        double z0 = Math.max(b[2], cellMinZ) - cellMinZ;
+                        double x1 = Math.min(b[3], cellMinX + 16) - cellMinX;
+                        double y1 = Math.min(b[4], cellMinY + 16) - cellMinY;
+                        double z1 = Math.min(b[5], cellMinZ + 16) - cellMinZ;
+                        if (x1 > x0 && y1 > y0 && z1 > z0) {
+                            shape = Shapes.or(shape, Block.box(x0, y0, z0, x1, y1, z1));
+                        }
+                    }
+                    BlockPos pos = new BlockPos(dx, dy, dz);
+                    partShapes.put(pos, shape);
+                    collisionShapes.put(pos, shape);
+                }
+            }
+        }
+
+        return new MultiblockStructureHelper(
+                structureMap, phantom, roleMap, positionSymbols, partShapes, collisionShapes, controllerOffset);
     }
 
     @Override
@@ -128,19 +159,18 @@ public class MachineCrucibleBlock extends BaseEntityBlock implements IMultiblock
     @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
         if (level.isClientSide()) {
-            return null;
+            return createTickerHelper(type, ModBlockEntities.CRUCIBLE_BE.get(),
+                    (lvl, pos, st, be) -> MachineCrucibleBlockEntity.clientTick(lvl, pos, st, (MachineCrucibleBlockEntity) be));
         }
-        return createTickerHelper(type, ModBlockEntities.CRUCIBLE_BE.get(), MachineCrucibleBlockEntity::serverTick);
+        return createTickerHelper(type, ModBlockEntities.CRUCIBLE_BE.get(),
+                (lvl, pos, st, be) -> MachineCrucibleBlockEntity.serverTick(lvl, pos, st, (MachineCrucibleBlockEntity) be));
     }
 
     @Override
     public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
         super.onPlace(state, level, pos, oldState, isMoving);
         if (!state.is(oldState.getBlock()) && !level.isClientSide()) {
-            BlockPos core = placeMultiblockStructure(level, pos, state);
-            if (core == null) {
-                return;
-            }
+            placeMultiblockStructure(level, pos, state);
         }
     }
 
@@ -198,64 +228,37 @@ public class MachineCrucibleBlock extends BaseEntityBlock implements IMultiblock
     }
     *///?}
 
+    /**
+     * Порт onBlockActivated: лопата высыпает содержимое (recipeStack + wasteStack)
+     * в шлак-предметы игроку, обычный клик открывает GUI.
+     */
     private InteractionResult hbmOnUse(BlockState state, Level level, BlockPos pos,
                                        Player player, InteractionHand hand, BlockHitResult hit) {
-
         if (level.isClientSide()) {
             return InteractionResult.SUCCESS;
         }
 
+        BlockEntity be = level.getBlockEntity(pos);
+        if (!(be instanceof MachineCrucibleBlockEntity crucible)) {
+            return InteractionResult.PASS;
+        }
+
         ItemStack held = player.getItemInHand(hand);
-        if (!held.isEmpty() && held.getItem() instanceof net.minecraft.world.item.ShovelItem) {
-            BlockEntity be = level.getBlockEntity(pos);
-            if (be != null) {
-                //? if forge {
-                be.getCapability(ForgeCapabilities.ITEM_HANDLER).ifPresent(handler -> {
-                    for (int i = 0; i < handler.getSlots(); i++) {
-                        ItemStack extracted = handler.extractItem(i, Integer.MAX_VALUE, false);
-                        if (extracted.isEmpty()) continue;
-                        if (!player.getInventory().add(extracted.copy())) {
-                            Containers.dropItemStack(level, hit.getLocation().x, hit.getLocation().y, hit.getLocation().z, extracted);
-                        }
-                    }
-                });
-                //?} else if neoforge {
-                /*var handler = level.getCapability(Capabilities.ItemHandler.BLOCK, pos, state, be, null);
-                if (handler != null) {
-                    for (int i = 0; i < handler.getSlots(); i++) {
-                        ItemStack extracted = handler.extractItem(i, Integer.MAX_VALUE, false);
-                        if (extracted.isEmpty()) continue;
-                        if (!player.getInventory().add(extracted.copy())) {
-                            Containers.dropItemStack(level, hit.getLocation().x, hit.getLocation().y, hit.getLocation().z, extracted);
-                        }
-                    }
-                }
-                *///?}
-                player.inventoryMenu.broadcastChanges();
-            }
+        if (!held.isEmpty() && held.getItem() instanceof ShovelItem) {
+            crucible.dumpToPlayer(player, hit.getLocation());
             return InteractionResult.CONSUME;
         }
 
         if (player instanceof ServerPlayer serverPlayer) {
-            BlockEntity be = level.getBlockEntity(pos);
-            ContainerData data = (be instanceof MachineCrucibleBlockEntity cbe)
-                ? cbe.getData()
-                : new SimpleContainerData(4);
             MenuRegistry.openExtendedMenu(serverPlayer,
                     new SimpleMenuProvider(
                             (containerId, playerInventory, p) -> new MachineCrucibleMenu(
-                                    containerId,
-                                    playerInventory,
-                                    be,
-                                    data
-                            ),
-                            Component.translatable("container.hbm_m.crucible")
-                    ),
+                                    containerId, playerInventory, crucible, crucible.getData()),
+                            Component.translatable("container.hbm_m.crucible")),
                     buf -> buf.writeBlockPos(pos));
         }
         return InteractionResult.CONSUME;
     }
-
 
     @Override
     public boolean canSurvive(BlockState state, net.minecraft.world.level.LevelReader level, BlockPos pos) {
@@ -269,27 +272,15 @@ public class MachineCrucibleBlock extends BaseEntityBlock implements IMultiblock
             if (!level.isClientSide()) {
                 structureHelper.destroyStructure(level, pos, state.getValue(FACING));
                 BlockEntity be = level.getBlockEntity(pos);
-                if (be != null) {
-                    //? if forge {
-                    be.getCapability(ForgeCapabilities.ITEM_HANDLER).ifPresent(handler -> {
-                        for (int i = 0; i < handler.getSlots(); i++) {
-                            ItemStack extracted = handler.extractItem(i, Integer.MAX_VALUE, false);
-                            if (!extracted.isEmpty()) {
-                                Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), extracted);
-                            }
-                        }
-                    });
-                    //?} else if neoforge {
-                    /*var handler = level.getCapability(Capabilities.ItemHandler.BLOCK, pos, state, be, null);
-                    if (handler != null) {
-                        for (int i = 0; i < handler.getSlots(); i++) {
-                            ItemStack extracted = handler.extractItem(i, Integer.MAX_VALUE, false);
-                            if (!extracted.isEmpty()) {
-                                Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), extracted);
-                            }
+                if (be instanceof MachineCrucibleBlockEntity crucible) {
+                    // Порт breakBlock: содержимое высыпается шлаком на землю
+                    for (MaterialStack stack : crucible.getAllStacks()) {
+                        ItemStack scrap = CrucibleUtil.createScrap(stack);
+                        if (!scrap.isEmpty()) {
+                            Containers.dropItemStack(level, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, scrap);
                         }
                     }
-                    *///?}
+                    crucible.clearStacks();
                 }
             }
         }

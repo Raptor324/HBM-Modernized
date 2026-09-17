@@ -11,6 +11,13 @@ import org.jetbrains.annotations.Nullable;
 import com.hbm_m.api.fluids.FluidLocalization;
 import com.hbm_m.blockentity.machines.MachineAdvancedAssemblerBlockEntity;
 import com.hbm_m.blockentity.machines.MachineChemicalFactoryBlockEntity;
+import com.hbm_m.blockentity.machines.MachineCrucibleBlockEntity;
+import com.hbm_m.inventory.material.MaterialStack;
+import com.hbm_m.item.material.MaterialShape;
+import com.hbm_m.item.material.ModMaterialItems;
+import com.hbm_m.item.material.ModMaterials;
+import com.hbm_m.network.SetCrucibleRecipeC2SPacket;
+import com.hbm_m.recipe.MoltenAlloyRecipe;
 import com.hbm_m.blockentity.machines.MachineChemicalPlantBlockEntity;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.network.ModPacketHandler;
@@ -30,6 +37,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
@@ -72,6 +80,9 @@ public class GUIScreenRecipeSelector extends Screen {
     @Nullable
     private MachineChemicalFactoryBlockEntity chemicalFactory;
     private int factoryLane;
+
+    @Nullable
+    private MachineCrucibleBlockEntity crucible;
 
     private record RecipeEntry(ResourceLocation id, ItemStack icon, @Nullable net.minecraft.world.item.crafting.Recipe<?> recipe) {}
 
@@ -216,7 +227,7 @@ public class GUIScreenRecipeSelector extends Screen {
             if (isHovering(mouseX, mouseY, ix, iy, 18, 18)) {
                 RecipeEntry entry = filteredRecipes.get(i);
                 List<Component> tooltip = new ArrayList<>();
-                tooltip.add(entry.icon.getHoverName());
+                tooltip.add(recipeHeader(entry));
 
                 appendRecipeTooltipLines(entry.recipe, tooltip);
                 
@@ -231,7 +242,7 @@ public class GUIScreenRecipeSelector extends Screen {
             RecipeEntry entry = filteredRecipes.stream().filter(e -> e.id.equals(this.selectedRecipe)).findFirst().orElse(null);
             if (entry != null) {
                 List<Component> tooltip = new ArrayList<>();
-                tooltip.add(entry.icon.getHoverName());
+                tooltip.add(recipeHeader(entry));
                 appendRecipeTooltipLines(entry.recipe, tooltip);
                 guiGraphics.renderTooltip(this.font, tooltip, java.util.Optional.empty(), mouseX, mouseY);
             }
@@ -363,6 +374,10 @@ public class GUIScreenRecipeSelector extends Screen {
         } else if (chemicalFactory != null) {
             ModPacketHandler.sendToServer(ModPacketHandler.SET_CHEM_FACTORY_RECIPE,
                 new SetChemFactoryRecipeC2SPacket(machinePos, factoryLane, selectedRecipe));
+        } else if (crucible != null) {
+            // Порт receiveControl: "null" или строка-id рецепта
+            SetCrucibleRecipeC2SPacket.sendToServer(machinePos,
+                selectedRecipe == null ? "null" : selectedRecipe.toString());
         }
         if (this.minecraft != null) {
             this.minecraft.setScreen(this.parentScreen);
@@ -453,6 +468,13 @@ public class GUIScreenRecipeSelector extends Screen {
                     if (icon.isEmpty()) icon = new ItemStack(com.hbm_m.item.ModItems.TEMPLATE_FOLDER.get());
                     allRecipes.add(new RecipeEntry(RecipeHooks.recipeId(this.minecraft.level.getRecipeManager(), ChemicalPlantRecipe.Type.INSTANCE, recipe), icon, recipe));
                 }
+            } else if (crucible != null) {
+                // Рецепты сплавов тигля: иконка = предмет первого выхода (как getIcon() в оригинале)
+                for (MoltenAlloyRecipe recipe : RecipeHooks.getAllRecipes(this.minecraft.level, MoltenAlloyRecipe.Type.INSTANCE)) {
+                    ItemStack icon = crucibleRecipeIcon(recipe);
+                    ResourceLocation id = RecipeHooks.recipeId(this.minecraft.level.getRecipeManager(), MoltenAlloyRecipe.Type.INSTANCE, recipe);
+                    allRecipes.add(new RecipeEntry(id, icon, recipe));
+                }
             }
 
             if (this.searchBox != null && !this.searchBox.getValue().isEmpty()) {
@@ -472,24 +494,124 @@ public class GUIScreenRecipeSelector extends Screen {
             this.assembler = a;
             this.chemicalPlant = null;
             this.chemicalFactory = null;
+            this.crucible = null;
         } else if (be instanceof MachineChemicalPlantBlockEntity c) {
             this.assembler = null;
             this.chemicalPlant = c;
             this.chemicalFactory = null;
+            this.crucible = null;
         } else if (be instanceof MachineChemicalFactoryBlockEntity f) {
             this.assembler = null;
             this.chemicalPlant = null;
             this.chemicalFactory = f;
+            this.crucible = null;
+        } else if (be instanceof MachineCrucibleBlockEntity c) {
+            this.assembler = null;
+            this.chemicalPlant = null;
+            this.chemicalFactory = null;
+            this.crucible = c;
         } else {
             this.assembler = null;
             this.chemicalPlant = null;
             this.chemicalFactory = null;
+            this.crucible = null;
+        }
+    }
+
+    /** Иконка рецепта сплава — предмет первого выхода (отливка или слиток), либо папка шаблонов. */
+    public static ItemStack crucibleRecipeIcon(MoltenAlloyRecipe recipe) {
+        ResourceLocation id = recipe.getRecipeId();
+        if (id != null) {
+            String path = id.getPath();
+            if (path.endsWith("hematite")) return new ItemStack(com.hbm_m.block.ModBlocks.RESOURCE_HEMATITE.get());
+            if (path.endsWith("malachite")) return new ItemStack(com.hbm_m.block.ModBlocks.RESOURCE_MALACHITE.get());
+        }
+
+        for (MaterialStack out : recipe.getOutputs()) {
+            if (out.type == com.hbm_m.inventory.material.MaterialType.SLAG) continue;
+            ModMaterials mat = ModMaterials.byId(out.type.name);
+            if (mat != null) {
+                Item ingot = ModMaterialItems.item(mat, MaterialShape.INGOT);
+                if (ingot != null) return new ItemStack(ingot);
+                if (mat == ModMaterials.IRON) return new ItemStack(net.minecraft.world.item.Items.IRON_INGOT);
+                if (mat == ModMaterials.GOLD) return new ItemStack(net.minecraft.world.item.Items.GOLD_INGOT);
+                if (mat == ModMaterials.COPPER) return new ItemStack(net.minecraft.world.item.Items.COPPER_INGOT);
+            }
+            ItemStack plate = out.type.getCastPlate(1);
+            if (plate != null && !plate.isEmpty()) return plate;
+        }
+        return new ItemStack(com.hbm_m.item.ModItems.TEMPLATE_FOLDER.get());
+    }
+
+    /** Человекочитаемое имя рецепта — по иконке (порт getIcon().getDisplayName). */
+    public static Component recipeName(MoltenAlloyRecipe recipe) {
+        return crucibleRecipeIcon(recipe).getHoverName();
+    }
+
+    /** Порт GenericRecipe.print: строки входов/выходов для тултипа. */
+    public static void recipePrint(MoltenAlloyRecipe recipe, List<Component> tooltip) {
+        appendCrucibleTooltip(recipe, tooltip);
+    }
+
+    /** Локализованное имя материала — предмет-слиток, иначе ключ material.hbm_m.* (все значения реестра). */
+    public static Component materialNameOf(MaterialStack stack) {
+        ModMaterials mat = ModMaterials.byId(stack.type.name);
+        if (mat != null) {
+            Item item = ModMaterialItems.item(mat, MaterialShape.INGOT);
+            if (item == null) item = ModMaterialItems.item(mat, MaterialShape.POWDER);
+            if (item != null) return item.getName(ItemStack.EMPTY);
+        }
+        return Component.translatable("material.hbm_m." + stack.type.name);
+    }
+
+    /** Заголовок тултипа: локализованное имя рецепта (оригинал "crucible.<name>"), фоллбек — иконка. */
+    private static Component recipeHeader(RecipeEntry entry) {
+        if (entry.id != null && entry.id.getPath().startsWith("molten_alloy/")) {
+            String key = "crucible." + entry.id.getPath().substring("molten_alloy/".length());
+            if (com.hbm_m.client.GuiCompat.hasTranslation(key)) {
+                return Component.translatable(key).withStyle(ChatFormatting.YELLOW);
+            }
+        }
+        return entry.icon.getHoverName();
+    }
+
+    /** Порт CrucibleRecipe.print: header (shift → internal), duration, входы/выходы (shift → mB). */
+    private static void appendCrucibleTooltip(MoltenAlloyRecipe recipe, List<Component> tooltip) {
+        boolean shift = net.minecraft.client.gui.screens.Screen.hasShiftDown();
+        if (shift) {
+            tooltip.add(Component.literal("Internal: " + recipe.getRecipeId().getPath())
+                    .withStyle(ChatFormatting.DARK_GRAY));
+        }
+        tooltip.add(Component.translatable("gui.recipe.duration").append(": ")
+                .append(Component.literal(String.format(Locale.ROOT, "%.2fs", recipe.getFrequency() / 20.0)))
+                .withStyle(ChatFormatting.RED));
+
+        tooltip.add(Component.translatable("gui.recipe.input").withStyle(ChatFormatting.BOLD));
+        for (MaterialStack in : recipe.getInputs()) {
+            int quanta = (int) Math.round((double) in.amount * com.hbm_m.item.material.ScrapItem.QUANTA_PER_INGOT
+                    / MaterialStack.MB_PER_INGOT);
+            tooltip.add(materialNameOf(in).copy().withStyle(ChatFormatting.GRAY)
+                    .append(Component.literal(": ").withStyle(ChatFormatting.GRAY))
+                    .append(com.hbm_m.item.material.ScrapItem.formatAmount(quanta, shift)));
+        }
+        tooltip.add(Component.translatable("gui.recipe.output").withStyle(ChatFormatting.BOLD));
+        for (MaterialStack out : recipe.getOutputs()) {
+            int quanta = (int) Math.round((double) out.amount * com.hbm_m.item.material.ScrapItem.QUANTA_PER_INGOT
+                    / MaterialStack.MB_PER_INGOT);
+            tooltip.add(materialNameOf(out).copy().withStyle(ChatFormatting.GRAY)
+                    .append(Component.literal(": ").withStyle(ChatFormatting.GRAY))
+                    .append(com.hbm_m.item.material.ScrapItem.formatAmount(quanta, shift)));
         }
     }
 
     private static void appendRecipeTooltipLines(@Nullable net.minecraft.world.item.crafting.Recipe<?> recipe, List<Component> tooltip) {
         if (recipe == null) return;
 
+        if (recipe instanceof MoltenAlloyRecipe moltenAlloy) {
+            tooltip.add(Component.empty());
+            appendCrucibleTooltip(moltenAlloy, tooltip);
+            return;
+        }
         if (recipe instanceof AssemblerRecipe assemblerRecipe) {
             String pool = assemblerRecipe.getBlueprintPool();
             if (pool != null && !pool.isEmpty()) {

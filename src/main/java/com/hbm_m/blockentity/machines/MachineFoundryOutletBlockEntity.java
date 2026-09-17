@@ -24,7 +24,7 @@ import org.jetbrains.annotations.Nullable;
  * into the first ICrucibleAcceptor below (basin, channel, crucible, ...).
  * Flow is only accepted if the target below can actually take the material.
  */
-public class MachineFoundryOutletBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity implements ICrucibleAcceptor {
+public class MachineFoundryOutletBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity implements ICrucibleAcceptor, com.hbm_m.interfaces.ICopiable {
 
     /** Raytrace depth of the original: y-0.125 down to y+0.125-4 → 4 blocks below. */
     private static final int POUR_RANGE = 3;
@@ -96,7 +96,30 @@ public class MachineFoundryOutletBlockEntity extends com.hbm_m.blockentity.BaseH
         BlockEntity be = level.getBlockEntity(target);
         if (!(be instanceof ICrucibleAcceptor acc)) return stack;
 
-        return acc.pour(level, target, Direction.UP, stack);
+        MaterialStack leftover = acc.pour(level, target, Direction.UP, stack);
+
+        // Оригинал TileEntityFoundryOutlet.flow: при состоявшемся розливе — aux-частица
+        // "foundry" (поток расплава от носика до цели).
+        if ((leftover == null || leftover.amount != stack.amount)
+                && level instanceof net.minecraft.server.level.ServerLevel serverLevel) {
+            Direction dir = side.getOpposite();
+            float len = Math.max(1F, worldPosition.getY() - (float) (Math.ceil(target.getY() + 1) - 0.875));
+
+            CompoundTag data = new CompoundTag();
+            data.putString("type", "foundry");
+            data.putInt("color", stack.type.color);
+            data.putByte("dir", (byte) dir.get3DDataValue());
+            data.putFloat("off", 0.375F);
+            data.putFloat("base", 0F);
+            data.putFloat("len", len);
+            com.hbm_m.particle.helper.IParticleCreator.sendPacket(serverLevel,
+                    worldPosition.getX() + 0.5 - dir.getStepX() * 0.125,
+                    worldPosition.getY() + 0.125,
+                    worldPosition.getZ() + 0.5 - dir.getStepZ() * 0.125,
+                    50, data);
+        }
+
+        return leftover;
     }
 
     /* ── NBT / sync ─────────────────────────────────────────────────────── */
@@ -117,5 +140,41 @@ public class MachineFoundryOutletBlockEntity extends com.hbm_m.blockentity.BaseH
         else filter = null;
         invertFilter   = tag.getBoolean("invertFilter");
         invertRedstone = tag.getBoolean("invertRedstone");
+    }
+
+    /* ── Устройство настройки: фильтр материала + инверсии (оригинал) ───── */
+
+    @Override
+    public CompoundTag getSettings(Level level, BlockPos pos) {
+        CompoundTag nbt = new CompoundTag();
+        nbt.putBoolean("invert", invertRedstone);
+        nbt.putBoolean("invertFilter", invertFilter);
+        if (filter != null) {
+            nbt.putIntArray("matFilter", new int[]{ filter.id });
+        }
+        return nbt;
+    }
+
+    @Override
+    public void pasteSettings(CompoundTag nbt, int index, Level level, net.minecraft.world.entity.player.Player player, BlockPos pos) {
+        if (nbt.contains("invert"))        invertRedstone = nbt.getBoolean("invert");
+        if (nbt.contains("invertFilter"))  invertFilter   = nbt.getBoolean("invertFilter");
+        if (nbt.contains("matFilter")) {
+            int[] ids = nbt.getIntArray("matFilter");
+            if (ids.length > 0 && index < ids.length) {
+                MaterialType mat = MaterialType.byId(ids[index]);
+                if (mat != null) filter = mat;
+            }
+        }
+        setChanged();
+    }
+
+    @Override
+    public String[] infoForDisplay(Level level, BlockPos pos) {
+        java.util.ArrayList<String> info = new java.util.ArrayList<>();
+        info.add("copytool.invertRedstone");
+        info.add("copytool.invertFilter");
+        if (filter != null) info.add("material.hbm_m." + filter.name);
+        return info.toArray(new String[0]);
     }
 }

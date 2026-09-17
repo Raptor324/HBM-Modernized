@@ -1,12 +1,19 @@
 package com.hbm_m.block.machines;
 
 import com.google.common.collect.ImmutableMap;
-import com.hbm_m.block.ModBlocks;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.blockentity.machines.MachineFoundryChannelBlockEntity;
+import com.hbm_m.inventory.material.MaterialStack;
+import com.hbm_m.util.CrucibleUtil;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.world.InteractionHand;
+import net.minecraft.world.InteractionResult;
+import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.ShovelItem;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
@@ -21,6 +28,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 import net.minecraft.world.level.block.state.properties.BooleanProperty;
+import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
@@ -79,18 +87,30 @@ public class MachineFoundryChannelBlock extends BaseEntityBlock {
 
     private BlockState connectionState(LevelAccessor level, BlockPos pos) {
         return defaultBlockState()
-                .setValue(NORTH, canConnect(level, pos.relative(Direction.NORTH)))
-                .setValue(EAST,  canConnect(level, pos.relative(Direction.EAST)))
-                .setValue(SOUTH, canConnect(level, pos.relative(Direction.SOUTH)))
-                .setValue(WEST,  canConnect(level, pos.relative(Direction.WEST)));
+                .setValue(NORTH, canConnect(level, pos, Direction.NORTH))
+                .setValue(EAST,  canConnect(level, pos, Direction.EAST))
+                .setValue(SOUTH, canConnect(level, pos, Direction.SOUTH))
+                .setValue(WEST,  canConnect(level, pos, Direction.WEST));
     }
 
-    private boolean canConnect(LevelAccessor level, BlockPos nb) {
-        Block b = level.getBlockState(nb).getBlock();
+    /**
+     * 1:1 порт FoundryChannel.canConnectTo: канал соединяется только с foundry_channel,
+     * foundry_mold и foundry_outlet/foundry_slagtap. В оригинале условие для
+     * outlet/slagtap — {@code meta == dir.ordinal()}, где dir — направление от канала
+     * к соседу; в порту FACING аутлета играет роль этого meta, поэтому FACING == dir.
+     * Бассейн (basin) и тигель в наборе НЕ числятся (оригинальное поведение).
+     */
+    private boolean canConnect(LevelAccessor level, BlockPos pos, Direction dir) {
+        if (dir.getAxis().isVertical()) return false;
+        BlockPos nb = pos.relative(dir);
+        BlockState nbState = level.getBlockState(nb);
+        Block b = nbState.getBlock();
+        if (b instanceof MachineFoundryOutletBlock) { // включает foundry_slagtap
+            return nbState.hasProperty(MachineFoundryOutletBlock.FACING)
+                    && nbState.getValue(MachineFoundryOutletBlock.FACING) == dir;
+        }
         return b instanceof MachineFoundryChannelBlock
-                || b instanceof MachineFoundryOutletBlock
-                || b == ModBlocks.FOUNDRY_BASIN.get()
-                || b == ModBlocks.CRUCIBLE.get();
+                || b instanceof MachineFoundryMoldBlock;
     }
 
     private VoxelShape buildShape(BlockState s) {
@@ -103,6 +123,62 @@ public class MachineFoundryChannelBlock extends BaseEntityBlock {
     @Nullable @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
         return new MachineFoundryChannelBlockEntity(pos, state);
+    }
+
+    //? if < 1.21.1 {
+    @Override
+    public InteractionResult use(BlockState state, Level level, BlockPos pos,
+                                  Player player, InteractionHand hand, BlockHitResult hit) {
+        return handleUse(state, level, pos, player, hand);
+    }
+    //?} else {
+    /*@Override
+    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+        return handleUse(state, level, pos, player, InteractionHand.MAIN_HAND);
+    }
+    *///?}
+
+    /**
+     * Оригинал FoundryChannel.onBlockActivated: только совок — вычерпать расплав
+     * в шлак-предметы; прочие клики игнорируются. Оверлея у канала в оригинале нет.
+     */
+    private InteractionResult handleUse(BlockState state, Level level, BlockPos pos,
+                                        Player player, InteractionHand hand) {
+        if (level.isClientSide) return InteractionResult.SUCCESS;
+        BlockEntity be = level.getBlockEntity(pos);
+        if (!(be instanceof MachineFoundryChannelBlockEntity channel)) return InteractionResult.PASS;
+
+        ItemStack held = player.getItemInHand(hand);
+        if (!(held.getItem() instanceof ShovelItem)) return InteractionResult.PASS;
+
+        if (channel.amount > 0 && channel.type != null) {
+            ItemStack scrap = CrucibleUtil.createScrap(new MaterialStack(channel.type, channel.amount));
+            if (!scrap.isEmpty()) {
+                if (!player.addItem(scrap)) {
+                    level.addFreshEntity(new ItemEntity(level,
+                            pos.getX() + 0.5, pos.getY() + 0.5F, pos.getZ() + 0.5, scrap));
+                }
+            }
+            channel.amount = 0;
+            channel.type = null;
+            channel.setChanged();
+            level.sendBlockUpdated(pos, state, state, 3);
+        }
+        return InteractionResult.SUCCESS;
+    }
+
+    /** Оригинал FoundryChannel.breakBlock: шлак остатка расплава. */
+    @Override
+    public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean moving) {
+        if (!state.is(newState.getBlock()) && level.getBlockEntity(pos) instanceof MachineFoundryChannelBlockEntity channel
+                && channel.amount > 0 && channel.type != null) {
+            ItemStack scrap = CrucibleUtil.createScrap(new MaterialStack(channel.type, channel.amount));
+            if (!scrap.isEmpty()) {
+                level.addFreshEntity(new ItemEntity(level,
+                        pos.getX() + 0.5, pos.getY() + 0.5F, pos.getZ() + 0.5, scrap));
+            }
+        }
+        super.onRemove(state, level, pos, newState, moving);
     }
 
     @Nullable @Override

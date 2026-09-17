@@ -27,7 +27,7 @@ import org.jetbrains.annotations.Nullable;
  *   sideways flow from channels
  * - casts once the basin is completely full, after a cool-off period
  */
-public class MachineFoundryBasinBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity implements ICrucibleAcceptor {
+public class MachineFoundryBasinBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity implements ICrucibleAcceptor, com.hbm_m.interfaces.ICopiable {
 
     /** Original: cooloff starts at 100 and resets to 200 after each cast. */
     public static final int COOLOFF_TIME = 200;
@@ -56,11 +56,22 @@ public class MachineFoundryBasinBlockEntity extends com.hbm_m.blockentity.BaseHb
     public ItemStack getMoldSlot()   { return moldSlot; }
     public ItemStack getOutputSlot() { return outputSlot; }
 
+    /** 1 = большая форма (basin), 0 = малая (mold block) — порт TileEntityFoundryCastingBase.getMoldSize. */
+    public int getMoldSize() { return 1; }
+
     public boolean insertMold(ItemStack stack) {
         if (!moldSlot.isEmpty()) return false;
-        if (!(stack.getItem() instanceof ItemCastMold)) return false;
+        if (!(stack.getItem() instanceof ItemCastMold mold)) return false;
+        // оригинал: mold.size == cast.getMoldSize()
+        if (mold.getMoldType().getSize() != getMoldSize()) return false;
         moldSlot = stack.copy();
         moldSlot.setCount(1);
+        // оригинал: world.playSoundEffect(..., "hbm:item.upgradePlug", 1.0F, 1.0F)
+        if (level != null && !level.isClientSide) {
+            com.hbm_m.platform.PlatformHooks.playSound(level, worldPosition,
+                    com.hbm_m.sound.ModSounds.UPGRADE_PLUG.get(),
+                    net.minecraft.sounds.SoundSource.PLAYERS, 1.0F, 1.0F);
+        }
         setChanged();
         syncToClient();
         return true;
@@ -84,9 +95,13 @@ public class MachineFoundryBasinBlockEntity extends com.hbm_m.blockentity.BaseHb
         return s;
     }
 
+    /** Оригинал: слот 0 проверяется на размер формы — при несоответствии считается, что формы нет. */
     public @Nullable ItemCastMold getInstalledMold() {
         if (moldSlot.isEmpty()) return null;
-        return moldSlot.getItem() instanceof ItemCastMold mold ? mold : null;
+        if (moldSlot.getItem() instanceof ItemCastMold mold) {
+            if (mold.getMoldType().getSize() == getMoldSize()) return mold;
+        }
+        return null;
     }
 
     /** Original: capacity is dictated by the installed mold, 0 without mold. */
@@ -201,6 +216,13 @@ public class MachineFoundryBasinBlockEntity extends com.hbm_m.blockentity.BaseHb
     public float getFillLevel() { return fillLevel; }
     public int   getFillColor() { return fillColor; }
 
+    /** Диапазон высоты поверхности расплава (оригинал IRenderFoundry: 0.125 + amount*range/capacity). */
+    public float getSurfaceRange() { return 0.75f; }
+    /** Высота, на которой лежит отлитый предмет (оригинал outHeight). */
+    public float getOutputHeight() { return 0.875f; }
+    /** Высота установленной формы (оригинал moldHeight). */
+    public float getMoldHeight() { return 0.13f; }
+
     private void syncToClient() {
         if (level != null && !level.isClientSide) {
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
@@ -209,7 +231,7 @@ public class MachineFoundryBasinBlockEntity extends com.hbm_m.blockentity.BaseHb
 
     /* ── NBT / sync ─────────────────────────────────────────────────────── */
 
-    
+
     @Override
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.writeNbtData(tag, registries);
@@ -234,4 +256,18 @@ public class MachineFoundryBasinBlockEntity extends com.hbm_m.blockentity.BaseHb
         fillLevel = tag.getFloat("fillLevel");
         fillColor = tag.getInt("fillColor");
     }
+
+    /* ── Устройство настройки (ItemSettingsTool) ────────────────────────── */
+
+    // Оригинал TileEntityFoundryBase: копирует текущий металл как matFilter,
+    // вставка пустая (литьё выбирает материал само).
+    @Override
+    public CompoundTag getSettings(Level level, BlockPos pos) {
+        CompoundTag nbt = new CompoundTag();
+        if (type != null) nbt.putIntArray("matFilter", new int[]{ type.id });
+        return nbt;
+    }
+
+    @Override
+    public void pasteSettings(CompoundTag nbt, int index, Level level, net.minecraft.world.entity.player.Player player, BlockPos pos) { }
 }
