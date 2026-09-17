@@ -14,6 +14,7 @@ public class ModSounds {
             DeferredRegister.create(RefStrings.MODID, Registries.SOUND_EVENT);
     
     // Регистрируем звуки счетчика Гейгера
+    public static final RegistrySupplier<SoundEvent> ELECTRIC_HUM = registerSoundEvents("block.electric_hum");
     public static final RegistrySupplier<SoundEvent> GEIGER_1 = registerSoundEvents("item.geiger1");
     public static final RegistrySupplier<SoundEvent> GEIGER_2 = registerSoundEvents("item.geiger2");
     public static final RegistrySupplier<SoundEvent> GEIGER_3 = registerSoundEvents("item.geiger3");
@@ -25,6 +26,9 @@ public class ModSounds {
     public static final RegistrySupplier<SoundEvent> SOYUZ_READY = registerSoundEvents("soyuz.ready");
     public static final RegistrySupplier<SoundEvent> SOYUZ_TAKEOFF = registerSoundEvents("soyuz.takeoff");
     public static final RegistrySupplier<SoundEvent> SOYUZ_CHIME = registerSoundEvents("soyuz.chime");
+
+    /** Оригинал hbm:weapon.flamethrowerShoot — факел газовой факела (1:1, файл переименован в lowercase). */
+    public static final RegistrySupplier<SoundEvent> WEAPON_FLAMETHROWER_SHOOT = registerSoundEvents("weapon.flamethrower_shoot");
 
     public static final RegistrySupplier<SoundEvent> BOMBDET3 = registerSoundEvents("bombdet3");
     public static final RegistrySupplier<SoundEvent> BOMBDET2 = registerSoundEvents("bombdet2");

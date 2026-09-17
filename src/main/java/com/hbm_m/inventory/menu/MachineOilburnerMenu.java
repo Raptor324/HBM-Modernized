@@ -1,6 +1,7 @@
 package com.hbm_m.inventory.menu;
 
 import com.hbm_m.blockentity.machines.MachineOilburnerBlockEntity;
+import com.hbm_m.inventory.ModItemStackHandlerContainer;
 import com.hbm_m.lib.RefStrings;
 
 import net.minecraft.core.BlockPos;
@@ -13,17 +14,17 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
 /**
- * Port of {@code ContainerOilburner} (1.7.10 Original).
- * <p>
- * SCOPE-Vereinfachung: Das Original hatte 3 Item-Slots (Fluessig-Container rein/raus bei
- * (26,17)/(26,53) + Fluid-ID-Neuzuweisung bei (44,71)). {@link MachineOilburnerBlockEntity}
- * hat - wie im Original-Kommentar dort beschrieben - KEIN Inventar (0 Slots, siehe
- * {@code BaseMachineBlockEntity}-Konstruktoraufruf mit {@code inventorySize = 0}); Befuellen
- * laeuft ausschliesslich ueber die Fluid-Capability (Eimer/Rohr). Daher enthaelt dieses Menu
- * nur die Spielerinventar-Slots, keine Machine-Slots - analog zu {@link MachineFlareStackMenu},
- * dessen BlockEntity ebenfalls kein Inventar hat.
+ * Порт {@code ContainerOilburner} (1.7.10 Original): 3 слота машины —
+ * In (26,17), Out = SlotTakeOnly (26,53), Fluid-ID (44,71); инвентарь игрока
+ * (8,121) / хотбар (8,179); shift-клик стака игрока → слот 2, если это
+ * fluid identifier, иначе слот 0.
  */
 public class MachineOilburnerMenu extends AbstractContainerMenu {
+
+    public static final int SLOT_IN = MachineOilburnerBlockEntity.SLOT_IN;
+    public static final int SLOT_OUT = MachineOilburnerBlockEntity.SLOT_OUT;
+    public static final int SLOT_FLUID_ID = MachineOilburnerBlockEntity.SLOT_FLUID_ID;
+    public static final int MACHINE_SLOT_COUNT = MachineOilburnerBlockEntity.INVENTORY_SIZE;
 
     private final MachineOilburnerBlockEntity blockEntity;
 
@@ -34,6 +35,15 @@ public class MachineOilburnerMenu extends AbstractContainerMenu {
     public MachineOilburnerMenu(int id, Inventory inventory, MachineOilburnerBlockEntity blockEntity) {
         super(ModMenuTypes.OILBURNER_MENU.get(), id);
         this.blockEntity = blockEntity;
+
+        var container = new ModItemStackHandlerContainer(blockEntity.getInventory(), blockEntity::setChanged);
+
+        //In
+        this.addSlot(new Slot(container, SLOT_IN, 26, 17));
+        //Out — SlotTakeOnly: класть нельзя, забирать можно
+        this.addSlot(new SlotTakeOnly(container, SLOT_OUT, 26, 53));
+        //Fluid ID
+        this.addSlot(new Slot(container, SLOT_FLUID_ID, 44, 71));
 
         // Player inventory, ported 1:1 from ContainerOilburner (offset = 37).
         for (int row = 0; row < 3; row++) {
@@ -73,9 +83,58 @@ public class MachineOilburnerMenu extends AbstractContainerMenu {
         return player.distanceToSqr(pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D) <= 64.0D;
     }
 
-    // No machine slots exist (see class javadoc), so there is nothing to shift-click into/out of.
+    /**
+     * Порт {@code ContainerOilburner.transferStackInSlot}: слоты машины → инвентарь
+     * игрока; стаки игрока → слот 2 (Fluid-ID), если предмет — fluid identifier,
+     * иначе слот 0 (In).
+     */
     @Override
     public ItemStack quickMoveStack(Player player, int index) {
-        return ItemStack.EMPTY;
+        ItemStack result = ItemStack.EMPTY;
+        Slot slot = this.slots.get(index);
+
+        if (slot != null && slot.hasItem()) {
+            ItemStack slotStack = slot.getItem();
+            result = slotStack.copy();
+
+            if (index < MACHINE_SLOT_COUNT) {
+                if (!this.moveItemStackTo(slotStack, MACHINE_SLOT_COUNT, this.slots.size(), true)) {
+                    return ItemStack.EMPTY;
+                }
+            } else {
+                if (slotStack.getItem() instanceof com.hbm_m.interfaces.IItemFluidIdentifier) {
+                    if (!this.moveItemStackTo(slotStack, SLOT_FLUID_ID, SLOT_FLUID_ID + 1, false)) {
+                        return ItemStack.EMPTY;
+                    }
+                } else {
+                    if (!this.moveItemStackTo(slotStack, SLOT_IN, SLOT_IN + 1, false)) {
+                        return ItemStack.EMPTY;
+                    }
+                }
+            }
+
+            if (slotStack.isEmpty()) {
+                slot.set(ItemStack.EMPTY);
+            } else {
+                slot.setChanged();
+            }
+            if (slotStack.getCount() == result.getCount()) {
+                return ItemStack.EMPTY;
+            }
+            slot.onTake(player, slotStack);
+        }
+        return result;
+    }
+
+    /** Порт {@code SlotTakeOnly}: mayPlace = false, извлечение разрешено. */
+    private static class SlotTakeOnly extends Slot {
+        public SlotTakeOnly(net.minecraft.world.Container container, int index, int x, int y) {
+            super(container, index, x, y);
+        }
+
+        @Override
+        public boolean mayPlace(ItemStack stack) {
+            return false;
+        }
     }
 }

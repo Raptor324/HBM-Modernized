@@ -1,227 +1,92 @@
 package com.hbm_m.blockentity.machines;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
-import com.hbm_m.blockentity.BaseMachineBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
-import com.hbm_m.inventory.menu.HeatingOvenMenu;
+import com.hbm_m.interfaces.IHeatSource;
+import com.hbm_m.module.ModuleBurnTime;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
-import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.util.Mth;
-import net.minecraft.world.entity.player.Inventory;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.inventory.AbstractContainerMenu;
-import net.minecraft.world.inventory.ContainerData;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.entity.AbstractFurnaceBlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.phys.AABB;
 
 /**
- * Heating Oven block entity - a pure combustion/heat source with an animated door.
- * Burns fuel to generate TU. Based on original 1.7.10 TileEntityHeaterOven.
+ * Порт {@code TileEntityHeaterOven} (1.7.10) — «Heating Oven», продвинутый аналог
+ * гритбокса: горит в 5 раз горячее (baseHeat 500), но топливо сгорает в 8 раз
+ * быстрее (timeMult 0.125), теплоёмкость 500k TU. Медный контакт снизу позволяет
+ * ставить печи в стек — тепло снизу принимается с КПД 50% ({@code heatEff}).
  */
-public class HeatingOvenBlockEntity extends BaseMachineBlockEntity {
+public class HeatingOvenBlockEntity extends FireboxBaseBlockEntity {
 
-    // Slots
-    private static final int SLOT_COUNT = 1;
-    private static final int FUEL_SLOT = 0;
+    private static final int BASE_HEAT = 500;
+    private static final double TIME_MULT = 0.125D;
+    private static final int MAX_HEAT_ENERGY = 500_000;
+    private static final double HEAT_PULL_EFF = 0.5D;
 
-    // Constants
-    private static final int MAX_BURN_TIME = 400;
-    private static final long ENERGY_CAPACITY = 20_000L;
-    private static final long TU_GENERATION_PER_TICK = 500L;
-
-    // State variables
-    private int burnTime = 0;
-    private boolean isOn = false;
-
-    // Door animation (0-135 degrees equivalent, stored as 0-135 ticks)
-    private float doorAngle = 0;
-    private float prevDoorAngle = 0;
-    private boolean doorOpen = false;
-
-    // Client-side state
-    private boolean wasOn = false;
-
-    protected final ContainerData data = new ContainerData() {
-        @Override
-        public int get(int index) {
-            return switch (index) {
-                case 0 -> burnTime;
-                case 1 -> MAX_BURN_TIME;
-                case 2 -> isOn ? 1 : 0;
-                case 3 -> doorOpen ? 1 : 0;
-                case 4 -> (int) doorAngle;
-                default -> 0;
-            };
-        }
-
-        @Override
-        public void set(int index, int value) {
-            switch (index) {
-                case 0 -> burnTime = value;
-                case 2 -> isOn = value != 0;
-                case 3 -> doorOpen = value != 0;
-                case 4 -> doorAngle = value;
-            }
-        }
-
-        @Override
-        public int getCount() {
-            return 5;
-        }
-    };
+    /** Порт burnModule из TileEntityHeaterOven (та же таблица, что у гритбокса). */
+    public static final ModuleBurnTime BURN_MODULE = new ModuleBurnTime()
+            .setLigniteTimeMod(1.25).setCoalTimeMod(1.25).setCokeTimeMod(1.25)
+            .setSolidTimeMod(1.5).setRocketTimeMod(1.5).setBalefireTimeMod(0.5)
+            .setLigniteHeatMod(2).setCoalHeatMod(2).setCokeHeatMod(2)
+            .setSolidHeatMod(3).setRocketHeatMod(5).setBalefireHeatMod(15);
 
     public HeatingOvenBlockEntity(BlockPos pos, BlockState state) {
-        super(ModBlockEntities.HEATING_OVEN_BE.get(), pos, state, SLOT_COUNT,
-                ENERGY_CAPACITY, 0L, TU_GENERATION_PER_TICK);
+        super(ModBlockEntities.HEATING_OVEN_BE.get(), pos, state);
+    }
+
+    @Override
+    public ModuleBurnTime getModule() {
+        return BURN_MODULE;
+    }
+
+    @Override
+    public int getBaseHeat() {
+        return BASE_HEAT;
+    }
+
+    @Override
+    public double getTimeMult() {
+        return TIME_MULT;
+    }
+
+    @Override
+    public int getMaxHeat() {
+        return MAX_HEAT_ENERGY;
+    }
+
+    /** Тикер сервера: сначала затяжка тепла снизу, затем базовая логика гритбокса. */
+    public static void serverTick(net.minecraft.world.level.Level level, BlockPos pos, BlockState state, HeatingOvenBlockEntity be) {
+        be.tryPullHeatFromBelow();
+        FireboxBaseBlockEntity.serverTick(level, pos, state, be);
+    }
+
+    /** Тикер клиента: только анимация дверцы/частицы. */
+    public static void clientTick(net.minecraft.world.level.Level level, BlockPos pos, BlockState state, HeatingOvenBlockEntity be) {
+        FireboxBaseBlockEntity.clientTick(level, pos, state, be);
+    }
+
+    /** Порт tryPullHeat — вызывается из блочного тикера перед serverTick базы. */
+    public void tryPullHeatFromBelow() {
+        if (level == null || level.isClientSide()) return;
+        BlockEntity below = level.getBlockEntity(worldPosition.below());
+        if (below instanceof IHeatSource source) {
+            int toPull = Math.max(Math.min(source.getHeatStored(), this.getMaxHeat() - this.heatEnergy), 0);
+            this.heatEnergy += (int) (toPull * HEAT_PULL_EFF);
+            source.useUpHeat(toPull);
+        }
     }
 
     @Override
     protected Component getDefaultName() {
         return Component.translatable("container.hbm_m.heating_oven");
     }
-    
+
     @Override
     public Component getDisplayName() {
         return getDefaultName();
     }
 
     @Override
-    protected boolean isItemValidForSlot(int slot, ItemStack stack) {
-        if (slot == FUEL_SLOT) {
-            return AbstractFurnaceBlockEntity.getFuel().getOrDefault(stack.getItem(), 0) > 0;
-        }
-        return false;
-    }
-
-    @Override
-    public @Nullable AbstractContainerMenu createMenu(int containerId, @NotNull Inventory playerInventory, @NotNull Player player) {
-        return new HeatingOvenMenu(containerId, playerInventory, this, this.data);
-    }
-
-    public static void serverTick(Level level, BlockPos pos, BlockState state, HeatingOvenBlockEntity blockEntity) {
-        blockEntity.ensureNetworkInitialized();
-        boolean wasOnBefore = blockEntity.isOn;
-
-        // Update door animation
-        blockEntity.updateDoorAnimation();
-
-        // Process fuel and cooking
-        if (blockEntity.burnTime > 0) {
-            blockEntity.burnTime--;
-            blockEntity.isOn = true;
-        } else {
-            // Try to consume fuel
-            ItemStack fuelStack = blockEntity.inventory.getStackInSlot(FUEL_SLOT);
-            if (!fuelStack.isEmpty()) {
-                int fuelValue = AbstractFurnaceBlockEntity.getFuel().getOrDefault(fuelStack.getItem(), 0);
-                if (fuelValue > 0) {
-                    blockEntity.burnTime = fuelValue;
-                    fuelStack.shrink(1);
-                    blockEntity.isOn = true;
-                    blockEntity.setChanged();
-                }
-            } else {
-                blockEntity.isOn = false;
-            }
-        }
-
-        // Generate TU whenever the oven is burning fuel.
-        if (blockEntity.isOn) {
-            blockEntity.setEnergyStored(Math.min(blockEntity.getMaxEnergyStored(),
-                    blockEntity.getEnergyStored() + TU_GENERATION_PER_TICK));
-        }
-
-        // Sync to client if burning state changed
-        if (wasOnBefore != blockEntity.isOn) {
-            blockEntity.sendUpdateToClient();
-        }
-    }
-
-    private void updateDoorAnimation() {
-        prevDoorAngle = doorAngle;
-
-        if (doorOpen) {
-            if (doorAngle < 135) {
-                doorAngle = Math.min(135, doorAngle + 10);
-            }
-        } else {
-            if (doorAngle > 0) {
-                doorAngle = Math.max(0, doorAngle - 10);
-            }
-        }
-    }
-
-    public void toggleDoor() {
-        doorOpen = !doorOpen;
-        setChanged();
-        sendUpdateToClient();
-    }
-
-    @Override
-    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-        super.writeNbtData(tag, registries);
-        tag.putInt("burnTime", burnTime);
-        tag.putBoolean("isOn", isOn);
-        tag.putFloat("doorAngle", doorAngle);
-        tag.putBoolean("doorOpen", doorOpen);
-    }
-
-    @Override
-    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-        super.readNbtData(tag, registries);
-        burnTime = tag.getInt("burnTime");
-        isOn = tag.getBoolean("isOn");
-        doorAngle = tag.getFloat("doorAngle");
-        prevDoorAngle = doorAngle;
-        doorOpen = tag.getBoolean("doorOpen");
-        wasOn = isOn;
-    }
-
-    @Override
-    public AABB getRenderBoundingBox() {
-        BlockState state = getBlockState();
-        if (!(state.getBlock() instanceof com.hbm_m.block.machines.HeatingOvenBlock block)) {
-            return new AABB(
-                worldPosition.getX() - 1, worldPosition.getY(), worldPosition.getZ() - 1,
-                worldPosition.getX() + 2, worldPosition.getY() + 2, worldPosition.getZ() + 2
-            );
-        }
-        Direction facing = state.getValue(com.hbm_m.block.machines.HeatingOvenBlock.FACING);
-        return block.getStructureHelper().getRenderBoundingBox(worldPosition, facing, 0.0);
-    }
-
-    // Client-side getters for renderer
-    public float getDoorAngle() {
-        return doorAngle;
-    }
-
-    public float getPrevDoorAngle() {
-        return prevDoorAngle;
-    }
-
-    public float getInterpolatedDoorAngle(float partialTick) {
-        return Mth.lerp(partialTick, prevDoorAngle, doorAngle);
-    }
-
-    public boolean isOvenOn() {
-        return wasOn;
-    }
-
-    public boolean isDoorOpen() {
-        return doorOpen;
-    }
-
-    // Energy methods - heating oven doesn't use energy
-    @Override
-    public boolean canConnectEnergy(Direction side) {
-        return true;
+    public com.hbm_m.inventory.menu.HeatingOvenMenu createMenu(int id, net.minecraft.world.entity.player.Inventory inventory, net.minecraft.world.entity.player.Player player) {
+        return new com.hbm_m.inventory.menu.HeatingOvenMenu(id, inventory, this);
     }
 }

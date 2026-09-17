@@ -2,6 +2,7 @@ package com.hbm_m.inventory.menu;
 
 import com.hbm_m.blockentity.machines.MachineHeatexBlockEntity;
 import com.hbm_m.lib.RefStrings;
+import com.hbm_m.platform.ModItemStackHandler;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
@@ -12,15 +13,18 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
+import org.jetbrains.annotations.NotNull;
+
 /**
- * Port of {@code ContainerHeaterHeatex} (1.7.10 Original).
- * <p>
- * SCOPE-Vereinfachung: Das Original besitzt einen Item-Slot (Index 0, bei 80/72) zur Neuzuweisung des
- * heissen Fluid-Typs per Item ({@code IFluidCopiable}). {@link MachineHeatexBlockEntity} wurde ohne
- * Item-Inventar portiert (0 Slots, Tanks sind fest auf coolant_hot/coolant typisiert) - daher enthaelt
- * dieses Menu nur die Spielerinventar-Slots, 1:1 in den Original-Koordinaten uebernommen.
+ * Port of {@code ContainerHeaterHeatex} (1.7.10 Original):
+ * 1 machine slot at (80, 72) + player inventory (8, 122) / hotbar (8, 180).
+ * Shift-click: machine slot -> player inventory, player inventory -> machine slot (original transferStackInSlot).
  */
 public class MachineHeatexMenu extends AbstractContainerMenu {
+
+    private static final int MACHINE_SLOTS = 1;
+    private static final int SLOT_HEATEX_X = 80;
+    private static final int SLOT_HEATEX_Y = 72;
 
     private final MachineHeatexBlockEntity blockEntity;
 
@@ -31,6 +35,15 @@ public class MachineHeatexMenu extends AbstractContainerMenu {
     public MachineHeatexMenu(int id, Inventory inventory, MachineHeatexBlockEntity blockEntity) {
         super(ModMenuTypes.HEATEX_MENU.get(), id);
         this.blockEntity = blockEntity;
+
+        // На клиенте тайл может отсутствовать (реплей Flashback) — подставляем заглушку
+        ModItemStackHandler handler = this.blockEntity != null
+                ? this.blockEntity.getInventory()
+                : new com.hbm_m.platform.DummyItemStackHandler(MACHINE_SLOTS);
+        HandlerContainer machineInventory = new HandlerContainer(handler);
+
+        // Оригинал: new Slot(tedf, 0, 80, 72)
+        this.addSlot(new Slot(machineInventory, 0, SLOT_HEATEX_X, SLOT_HEATEX_Y));
 
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 9; col++) {
@@ -71,8 +84,7 @@ public class MachineHeatexMenu extends AbstractContainerMenu {
 
     @Override
     public ItemStack quickMoveStack(Player player, int index) {
-        // Keine Maschinen-Slots vorhanden (siehe Klassenkommentar) - Shift-Klick verhaelt sich wie im
-        // Original fuer alle Nicht-Slot-0-Faelle: nur innerhalb des Spielerinventars zusammenfuehren.
+        // Оригинал transferStackInSlot: индекс 0 -> игрок, иначе -> слот 0
         ItemStack result = ItemStack.EMPTY;
         Slot slot = this.slots.get(index);
 
@@ -80,8 +92,14 @@ public class MachineHeatexMenu extends AbstractContainerMenu {
             ItemStack slotStack = slot.getItem();
             result = slotStack.copy();
 
-            if (!this.moveItemStackTo(slotStack, 0, this.slots.size(), true)) {
-                return ItemStack.EMPTY;
+            if (index == 0) {
+                if (!this.moveItemStackTo(slotStack, 1, this.slots.size(), true)) {
+                    return ItemStack.EMPTY;
+                }
+            } else {
+                if (!this.moveItemStackTo(slotStack, 0, 1, false)) {
+                    return ItemStack.EMPTY;
+                }
             }
 
             if (slotStack.isEmpty()) {
@@ -95,5 +113,70 @@ public class MachineHeatexMenu extends AbstractContainerMenu {
             slot.onTake(player, slotStack);
         }
         return result;
+    }
+
+    /**
+     * Ванильный Container-адаптер поверх {@link ModItemStackHandler}.
+     * Нужен, чтобы меню не зависело от Forge `IItemHandler`/`SlotItemHandler`.
+     */
+    private static final class HandlerContainer implements net.minecraft.world.Container {
+        private final ModItemStackHandler handler;
+
+        private HandlerContainer(ModItemStackHandler handler) {
+            this.handler = handler;
+        }
+
+        @Override
+        public int getContainerSize() {
+            return handler.getSlots();
+        }
+
+        @Override
+        public boolean isEmpty() {
+            for (int i = 0; i < handler.getSlots(); i++) {
+                if (!handler.getStackInSlot(i).isEmpty()) return false;
+            }
+            return true;
+        }
+
+        @Override
+        public @NotNull ItemStack getItem(int slot) {
+            return handler.getStackInSlot(slot);
+        }
+
+        @Override
+        public @NotNull ItemStack removeItem(int slot, int amount) {
+            return handler.extractItem(slot, amount, false);
+        }
+
+        @Override
+        public @NotNull ItemStack removeItemNoUpdate(int slot) {
+            ItemStack cur = handler.getStackInSlot(slot);
+            if (cur.isEmpty()) return ItemStack.EMPTY;
+            handler.setStackInSlot(slot, ItemStack.EMPTY);
+            return cur;
+        }
+
+        @Override
+        public void setItem(int slot, @NotNull ItemStack stack) {
+            handler.setStackInSlot(slot, stack);
+        }
+
+        @Override
+        public void setChanged() {
+            // изменения трекаются в ModItemStackHandler.onContentsChanged()
+        }
+
+        @Override
+        public boolean stillValid(@NotNull Player player) {
+            return true;
+        }
+
+        @Override
+        public void clearContent() {
+            for (int i = 0; i < handler.getSlots(); i++) {
+                handler.setStackInSlot(i, ItemStack.EMPTY);
+            }
+        }
     }
 }

@@ -150,7 +150,8 @@ public class MachineWoodBurnerBlock extends BaseEntityBlock implements IMultiblo
     @Nullable
     @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
-        return createTickerHelper(type, ModBlockEntities.WOOD_BURNER_BE.get(), MachineWoodBurnerBlockEntity::tick);
+        return createTickerHelper(type, ModBlockEntities.WOOD_BURNER_BE.get(),
+                level.isClientSide ? MachineWoodBurnerBlockEntity::clientTick : MachineWoodBurnerBlockEntity::serverTick);
     }
 
     // --- IMultiblockController implementation ---

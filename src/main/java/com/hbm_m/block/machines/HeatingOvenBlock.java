@@ -138,7 +138,8 @@ public class HeatingOvenBlock extends BaseEntityBlock implements IMultiblockCont
     @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
         if (level.isClientSide()) {
-            return null;
+            return createTickerHelper(type, ModBlockEntities.HEATING_OVEN_BE.get(),
+                HeatingOvenBlockEntity::clientTick);
         }
         return createTickerHelper(type, ModBlockEntities.HEATING_OVEN_BE.get(),
             HeatingOvenBlockEntity::serverTick);
@@ -171,13 +172,7 @@ public class HeatingOvenBlock extends BaseEntityBlock implements IMultiblockCont
 
         BlockEntity blockEntity = level.getBlockEntity(pos);
         if (blockEntity instanceof HeatingOvenBlockEntity oven) {
-            // Shift+click to toggle door
-            if (player.isShiftKeyDown()) {
-                oven.toggleDoor();
-                return InteractionResult.CONSUME;
-            }
-
-            // Normal click to open GUI
+            // Дверца открывается сама, пока GUI открыт (playersUsing), как в оригинале
             MenuRegistry.openExtendedMenu((ServerPlayer) player, oven, buf -> buf.writeBlockPos(pos));
             return InteractionResult.CONSUME;
         }
