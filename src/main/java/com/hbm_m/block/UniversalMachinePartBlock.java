@@ -67,6 +67,9 @@ public class UniversalMachinePartBlock extends BaseEntityBlock implements IDeton
         if (controllerBlock instanceof IDetonatable detonatable) {
             return detonatable.onDetonate(level, controllerPos, controllerState, player);
         }
+        if (controllerBlock instanceof com.hbm_m.api.bomb.IBomb bomb) {
+            return bomb.explode(level, controllerPos).wasSuccessful();
+        }
         return false;
     }
 

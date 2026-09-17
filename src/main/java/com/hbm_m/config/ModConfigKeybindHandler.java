@@ -97,7 +97,16 @@ public class ModConfigKeybindHandler {
     public static final KeyMapping RBMK_CRANE_LOAD = new KeyMapping(
             "key.hbm_m.rbmk_crane_load", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_RIGHT_SHIFT, CATEGORY);
 
+    // Устройство настройки (ItemSettingsTool, 1:1 с EnumKeybind.TOOL_ALT / TOOL_CTRL оригинала):
+    // ALT листает индекс вставки, CTRL включает массовую вставку в трубы. Состояние репортится
+    // серверу по фронту (CopyToolKeyPacket), см. onClientPostTick.
+    public static final KeyMapping COPY_TOOL_ALT = new KeyMapping(
+            "key.hbm_m.copy_tool_alt", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_LEFT_ALT, CATEGORY);
+    public static final KeyMapping COPY_TOOL_CTRL = new KeyMapping(
+            "key.hbm_m.copy_tool_ctrl", InputConstants.Type.KEYSYM, GLFW.GLFW_KEY_LEFT_CONTROL, CATEGORY);
+
     private static boolean lastCraneUp, lastCraneDown, lastCraneLeft, lastCraneRight, lastCraneLoad;
+    private static boolean lastToolAlt, lastToolCtrl;
 
     public static void init() {
         if (INITIALIZED) return;
@@ -136,6 +145,8 @@ public class ModConfigKeybindHandler {
         registrar.accept(POWER_ARMOR_VATS);
         registrar.accept(POWER_ARMOR_THERMAL);
         registrar.accept(OPEN_MULTI_DETONATOR);
+        registrar.accept(COPY_TOOL_ALT);
+        registrar.accept(COPY_TOOL_CTRL);
     }
 
     private static void onClientPostTick() {
@@ -233,6 +244,14 @@ public class ModConfigKeybindHandler {
                 || right != lastCraneRight || load != lastCraneLoad)) {
             lastCraneUp = up; lastCraneDown = down; lastCraneLeft = left; lastCraneRight = right; lastCraneLoad = load;
             com.hbm_m.network.RBMKCraneControlPacket.send(up, down, left, right, load);
+        }
+
+        // Устройство настройки: репорт ALT/CTRL по фронту (аналог KeybindPacket оригинала).
+        boolean toolAlt = COPY_TOOL_ALT.isDown();
+        boolean toolCtrl = COPY_TOOL_CTRL.isDown();
+        if (mc.player != null && (toolAlt != lastToolAlt || toolCtrl != lastToolCtrl)) {
+            lastToolAlt = toolAlt; lastToolCtrl = toolCtrl;
+            com.hbm_m.network.CopyToolKeyPacket.send(toolAlt, toolCtrl);
         }
     }
 }

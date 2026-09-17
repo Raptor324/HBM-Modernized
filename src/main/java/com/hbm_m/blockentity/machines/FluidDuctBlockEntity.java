@@ -58,7 +58,7 @@ import net.minecraftforge.common.capabilities.ForgeCapabilities;
  */
 
 @SuppressWarnings("UnstableApiUsage")
-public class FluidDuctBlockEntity extends BaseHbmBlockEntity implements IFluidPipeMK2 {
+public class FluidDuctBlockEntity extends BaseHbmBlockEntity implements IFluidPipeMK2, com.hbm_m.interfaces.ICopiable {
 
     private static final String NBT_FLUID_TYPE = "FluidType";
 
@@ -358,5 +358,47 @@ public class FluidDuctBlockEntity extends BaseHbmBlockEntity implements IFluidPi
          //?}
         level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_IMMEDIATE);
         DoorChunkInvalidationHelper.scheduleChunkInvalidation(worldPosition);
+    }
+
+    // =====================================================================================
+    // Устройство настройки: тип жидкости + Ctrl-массовая вставка по сети труб (оригинал
+    // TileEntityPipeBaseNT: TOOL_CTRL → changeTypeRecursively, индекс >= длины → очистка).
+    // =====================================================================================
+
+    @Override
+    public CompoundTag getSettings(Level level, BlockPos pos) {
+        CompoundTag nbt = new CompoundTag();
+        if (fluidType != Fluids.EMPTY) {
+            net.minecraft.nbt.ListTag list = new net.minecraft.nbt.ListTag();
+            list.add(net.minecraft.nbt.StringTag.valueOf(BuiltInRegistries.FLUID.getKey(fluidType).toString()));
+            nbt.put("fluids", list);
+        }
+        return nbt;
+    }
+
+    @Override
+    public void pasteSettings(CompoundTag nbt, int index, Level level, net.minecraft.world.entity.player.Player player, BlockPos pos) {
+        net.minecraft.nbt.ListTag list = nbt.getList("fluids", net.minecraft.nbt.Tag.TAG_STRING);
+        if (list.isEmpty()) return;
+
+        // Оригинал: индекс за пределами списка = тип NONE (очистка трубы).
+        Fluid fluid = Fluids.EMPTY;
+        if (index < list.size()) {
+            fluid = com.hbm_m.interfaces.IFluidCopiable.fluidFromString(list.getString(index));
+        }
+
+        if (player != null && com.hbm_m.network.CopyToolKeyState.get(player.getUUID()).ctrl) {
+            com.hbm_m.block.machines.FluidDuctBlock.paintConnectedDuctNetwork(level, pos, fluid);
+        } else {
+            setFluidType(fluid);
+        }
+    }
+
+    @Override
+    public String[] infoForDisplay(Level level, BlockPos pos) {
+        if (fluidType == Fluids.EMPTY) return new String[0];
+        return new String[] {
+                com.hbm_m.inventory.fluid.FluidType.forFluid(fluidType).getUnlocalizedName()
+        };
     }
 }

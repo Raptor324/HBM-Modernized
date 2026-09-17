@@ -3,19 +3,24 @@ package com.hbm_m.inventory.menu;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.blockentity.machines.MachinePressBlockEntity;
 import com.hbm_m.inventory.ModItemStackHandlerContainer;
-import com.hbm_m.item.industrial.ItemStamp;
-import com.hbm_m.item.ModItems;
-import com.hbm_m.main.MainRegistry;
+import com.hbm_m.platform.PlatformHooks;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.*;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.entity.AbstractFurnaceBlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
 public class MachinePressMenu extends AbstractContainerMenu {
+
+    // Machine slot indices inside this menu (player inventory is added first)
+    public static final int FUEL_SLOT_IDX = 36;
+    public static final int STAMP_SLOT_IDX = 37;
+    public static final int MATERIAL_SLOT_IDX = 38;
+    public static final int OUTPUT_SLOT_IDX = 39;
+    public static final int STORAGE_FIRST_IDX = 40;
+    public static final int STORAGE_SLOT_COUNT = 9;
 
     public final MachinePressBlockEntity blockEntity;
     private final Level level;
@@ -27,7 +32,7 @@ public class MachinePressMenu extends AbstractContainerMenu {
 
     public MachinePressMenu(int containerId, Inventory inv, BlockEntity entity, ContainerData data) {
         super(ModMenuTypes.PRESS_MENU.get(), containerId);
-        checkContainerSize(inv, 4);
+        checkContainerSize(inv, MachinePressBlockEntity.SLOT_COUNT);
         blockEntity = ((MachinePressBlockEntity) entity);
         this.level = inv.player.level();
         this.data = data;
@@ -37,10 +42,15 @@ public class MachinePressMenu extends AbstractContainerMenu {
 
         var handler = this.blockEntity.getInventory();
         var container = new ModItemStackHandlerContainer(handler, this.blockEntity::setChanged);
-        this.addSlot(new FuelSlot(container, 0, 26, 53));
-        this.addSlot(new StampSlot(container, 1, 80, 17));
-        this.addSlot(new MaterialSlot(container, 2, 80, 53));
-        this.addSlot(new OutputSlot(container, 3, 140, 35));
+        // Раскладка слотов как в 1.7.10 ContainerMachinePress
+        this.addSlot(new Slot(container, 0, 26, 53));  // Coal
+        this.addSlot(new Slot(container, 1, 80, 17));  // Stamp
+        this.addSlot(new Slot(container, 2, 80, 53));  // Input
+        this.addSlot(new OutputSlot(container, 3, 140, 35)); // Output
+        // Extra Storage
+        for (int i = 0; i < STORAGE_SLOT_COUNT; i++) {
+            this.addSlot(new Slot(container, 4 + i, 8 + i * 18, 84));
+        }
 
         addDataSlots(data);
     }
@@ -102,7 +112,7 @@ public class MachinePressMenu extends AbstractContainerMenu {
     private static final int VANILLA_SLOT_COUNT = HOTBAR_SLOT_COUNT + PLAYER_INVENTORY_SLOT_COUNT;
     private static final int VANILLA_FIRST_SLOT_INDEX = 0;
     private static final int TE_INVENTORY_FIRST_SLOT_INDEX = VANILLA_FIRST_SLOT_INDEX + VANILLA_SLOT_COUNT;
-    private static final int TE_INVENTORY_SLOT_COUNT = 4;
+    private static final int TE_INVENTORY_SLOT_COUNT = 4 + STORAGE_SLOT_COUNT;
 
     @Override
     public ItemStack quickMoveStack(Player playerIn, int index) {
@@ -112,18 +122,29 @@ public class MachinePressMenu extends AbstractContainerMenu {
         ItemStack sourceStack = sourceSlot.getItem();
         ItemStack copyOfSourceStack = sourceStack.copy();
 
-        if (index < VANILLA_FIRST_SLOT_INDEX + VANILLA_SLOT_COUNT) {
-            if (!moveItemStackTo(sourceStack, TE_INVENTORY_FIRST_SLOT_INDEX, TE_INVENTORY_FIRST_SLOT_INDEX
-                    + TE_INVENTORY_SLOT_COUNT, false)) {
-                return ItemStack.EMPTY;
-            }
-        } else if (index < TE_INVENTORY_FIRST_SLOT_INDEX + TE_INVENTORY_SLOT_COUNT) {
-            if (!moveItemStackTo(sourceStack, VANILLA_FIRST_SLOT_INDEX, VANILLA_FIRST_SLOT_INDEX + VANILLA_SLOT_COUNT, false)) {
+        if (index >= TE_INVENTORY_FIRST_SLOT_INDEX) {
+            // Машина -> игрок
+            if (!moveItemStackTo(sourceStack, VANILLA_FIRST_SLOT_INDEX, VANILLA_FIRST_SLOT_INDEX + VANILLA_SLOT_COUNT, true)) {
                 return ItemStack.EMPTY;
             }
         } else {
-            MainRegistry.LOGGER.debug("Invalid slotIndex:" + index);
-            return ItemStack.EMPTY;
+            // Игрок -> машина; маршрутизация как в 1.7.10 transferStackInSlot
+            if (PlatformHooks.getFuelBurnTime(sourceStack) > 0) {
+                if (!moveItemStackTo(sourceStack, FUEL_SLOT_IDX, FUEL_SLOT_IDX + 1, false)
+                        && !moveItemStackTo(sourceStack, STORAGE_FIRST_IDX, STORAGE_FIRST_IDX + STORAGE_SLOT_COUNT, false)) {
+                    return ItemStack.EMPTY;
+                }
+            } else if (sourceStack.getItem() instanceof com.hbm_m.item.industrial.ItemStamp) {
+                if (!moveItemStackTo(sourceStack, STAMP_SLOT_IDX, STAMP_SLOT_IDX + 1, false)
+                        && !moveItemStackTo(sourceStack, STORAGE_FIRST_IDX, STORAGE_FIRST_IDX + STORAGE_SLOT_COUNT, false)) {
+                    return ItemStack.EMPTY;
+                }
+            } else {
+                if (!moveItemStackTo(sourceStack, MATERIAL_SLOT_IDX, MATERIAL_SLOT_IDX + 1, false)
+                        && !moveItemStackTo(sourceStack, STORAGE_FIRST_IDX, STORAGE_FIRST_IDX + STORAGE_SLOT_COUNT, false)) {
+                    return ItemStack.EMPTY;
+                }
+            }
         }
 
         if (sourceStack.getCount() == 0) {
@@ -143,64 +164,21 @@ public class MachinePressMenu extends AbstractContainerMenu {
     }
 
     private void addPlayerInventory(Inventory playerInventory) {
-        for (int i = 0; i < 3; ++i) {
-            for (int l = 0; l < 9; ++l) {
-                this.addSlot(new Slot(playerInventory, l + i * 9 + 9, 8 + l * 18, 84 + i * 18));
+        // Инвентарь игрока как в оригинале: y = 132
+        for (int i = 0; i < PLAYER_INVENTORY_ROW_COUNT; ++i) {
+            for (int l = 0; l < PLAYER_INVENTORY_COLUMN_COUNT; ++l) {
+                this.addSlot(new Slot(playerInventory, l + i * 9 + 9, 8 + l * 18, 132 + i * 18));
             }
         }
     }
 
     private void addPlayerHotbar(Inventory playerInventory) {
-        for (int i = 0; i < 9; ++i) {
-            this.addSlot(new Slot(playerInventory, i, 8 + i * 18, 142));
+        for (int i = 0; i < HOTBAR_SLOT_COUNT; ++i) {
+            this.addSlot(new Slot(playerInventory, i, 8 + i * 18, 190));
         }
     }
 
-    // Слоты с ограничениями
-    private static class FuelSlot extends Slot {
-        public FuelSlot(net.minecraft.world.Container itemHandler, int index, int xPosition, int yPosition) {
-            super(itemHandler, index, xPosition, yPosition);
-        }
-
-        @Override
-        public boolean mayPlace(ItemStack stack) {
-            net.minecraft.world.item.Item item = stack.getItem();
-            // Разрешаем кастомное топливо
-            if (item == ModItems.LIGNITE.get()) return true;
-
-            // Ванильная таблица топлива (кросс-лоадер)
-            return AbstractFurnaceBlockEntity.getFuel().getOrDefault(item, 0) > 0;
-        }
-    }
-
-    private static class StampSlot extends Slot {
-        public StampSlot(net.minecraft.world.Container itemHandler, int index, int xPosition, int yPosition) {
-            super(itemHandler, index, xPosition, yPosition);
-        }
-
-        @Override
-        public boolean mayPlace(ItemStack stack) {
-            // Проверяем, является ли предмет штампом через класс
-            if (stack.getItem() instanceof ItemStamp) {
-                return true;
-            }
-            // Оставляем старую проверку для совместимости
-            return stack.getItem().toString().contains("stamp");
-        }
-    }
-
-    private static class MaterialSlot extends Slot {
-        public MaterialSlot(net.minecraft.world.Container itemHandler, int index, int xPosition, int yPosition) {
-            super(itemHandler, index, xPosition, yPosition);
-        }
-
-        @Override
-        public boolean mayPlace(ItemStack stack) {
-            String itemName = stack.getItem().toString();
-            return itemName.contains("ingot") || itemName.contains("metal");
-        }
-    }
-
+    /** Выходной слот — предметы класть нельзя (аналог SlotCraftingOutput). */
     private static class OutputSlot extends Slot {
         public OutputSlot(net.minecraft.world.Container itemHandler, int index, int xPosition, int yPosition) {
             super(itemHandler, index, xPosition, yPosition);

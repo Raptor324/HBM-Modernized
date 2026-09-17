@@ -21,7 +21,7 @@ import net.minecraft.world.level.block.state.BlockState;
  * Порт TileEntityCablePaintable (1.7.10): цельноблочный кабель-камуфляж.
  * ПКМ блоком перекрашивается под этот блок; рендер — RedCablePaintableRenderer.
  */
-public class RedCablePaintableBlockEntity extends BaseHbmBlockEntity implements PowerConductor {
+public class RedCablePaintableBlockEntity extends BaseHbmBlockEntity implements PowerConductor, com.hbm_m.interfaces.ICopiable {
 
     @Nullable
     private BlockState camo;
@@ -79,5 +79,29 @@ public class RedCablePaintableBlockEntity extends BaseHbmBlockEntity implements 
                 camo = NbtUtils.readBlockState(access.lookupOrThrow(net.minecraft.core.registries.Registries.BLOCK), stateTag);
             }
         }
+    }
+
+    /* ── Устройство настройки: копия/вставка камуфляжа (аналог paintblock/paintmeta) ── */
+
+    @Override
+    public CompoundTag getSettings(Level level, BlockPos pos) {
+        CompoundTag nbt = new CompoundTag();
+        if (camo != null) {
+            CompoundTag camoTag = new CompoundTag();
+            camoTag.put("state", NbtUtils.writeBlockState(camo));
+            nbt.put("camo", camoTag);
+        }
+        return nbt;
+    }
+
+    @Override
+    public void pasteSettings(CompoundTag nbt, int index, Level level, net.minecraft.world.entity.player.Player player, BlockPos pos) {
+        if (!nbt.contains("camo")) return;
+        HolderLookup.Provider access = level != null ? level.registryAccess()
+                : (this.level != null ? this.level.registryAccess() : null);
+        if (access == null) return;
+        CompoundTag stateTag = nbt.getCompound("camo").getCompound("state");
+        BlockState state = NbtUtils.readBlockState(access.lookupOrThrow(net.minecraft.core.registries.Registries.BLOCK), stateTag);
+        setCamo(state);
     }
 }

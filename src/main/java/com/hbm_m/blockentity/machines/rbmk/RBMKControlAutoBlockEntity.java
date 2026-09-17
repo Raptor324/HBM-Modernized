@@ -17,7 +17,7 @@ import net.minecraft.util.Mth;
  * 1:1 port of TileEntityRBMKControlAuto.
  * Automatically adjusts targetLevel based on column heat using LINEAR / QUAD_UP / QUAD_DOWN functions.
  */
-public class RBMKControlAutoBlockEntity extends RBMKControlBlockEntity {
+public class RBMKControlAutoBlockEntity extends RBMKControlBlockEntity implements com.hbm_m.interfaces.ICopiable {
 
     public boolean moderated  = false;
 
@@ -115,4 +115,27 @@ public class RBMKControlAutoBlockEntity extends RBMKControlBlockEntity {
     }
 
     public enum RBMKFunction { LINEAR, QUAD_UP, QUAD_DOWN }
+
+    /* ── Устройство настройки: пороги и функция (оригинал) ──────────────── */
+
+    @Override
+    public CompoundTag getSettings(Level level, BlockPos pos) {
+        CompoundTag data = new CompoundTag();
+        data.putDouble("levelLower", levelLower);
+        data.putDouble("levelUpper", levelUpper);
+        data.putDouble("heatLower",  heatLower);
+        data.putDouble("heatUpper",  heatUpper);
+        data.putInt("function",      function.ordinal());
+        return data;
+    }
+
+    @Override
+    public void pasteSettings(CompoundTag nbt, int index, Level level, net.minecraft.world.entity.player.Player player, BlockPos pos) {
+        if (nbt.contains("levelLower")) levelLower = nbt.getDouble("levelLower");
+        if (nbt.contains("levelUpper")) levelUpper = nbt.getDouble("levelUpper");
+        if (nbt.contains("heatLower"))  heatLower  = nbt.getDouble("heatLower");
+        if (nbt.contains("heatUpper"))  heatUpper  = nbt.getDouble("heatUpper");
+        if (nbt.contains("function"))   function = RBMKFunction.values()[Mth.clamp(nbt.getInt("function"), 0, RBMKFunction.values().length - 1)];
+        setChanged();
+    }
 }

@@ -31,11 +31,11 @@ public class MachineCentrifugeBlockEntity extends BaseMachineBlockEntity {
     private static final int OUTPUT_SLOTS = 4;
     private static final int TOTAL_SLOTS = OUTPUT_SLOT_START + OUTPUT_SLOTS;
 
-    public static final long MAX_POWER = 50_000L;
-    private static final long MAX_RECEIVE = 1_000L;
-    private static final long ENERGY_PER_TICK = 25L;
+    public static final long MAX_POWER = 100_000L;
+    private static final long MAX_RECEIVE = 10_000L;
+    private static final long ENERGY_PER_TICK = 200L;
 
-    private static final int MAX_PROGRESS = 145;
+    private static final int MAX_PROGRESS = 200;
 
     private int progress = 0;
 

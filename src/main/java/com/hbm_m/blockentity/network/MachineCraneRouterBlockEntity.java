@@ -39,7 +39,7 @@ import net.minecraftforge.items.ItemHandlerHelper;
  * gibt es keine Treffer, greifen WILDCARD-Seiten als Fallback; ansonsten faellt das Item einfach
  * an Ort und Stelle herunter - 1:1 aus dem Original ({@code CraneRouter.getOutputDir}).
  */
-public class MachineCraneRouterBlockEntity extends BaseMachineBlockEntity implements IEnterableBlock {
+public class MachineCraneRouterBlockEntity extends BaseMachineBlockEntity implements IEnterableBlock, com.hbm_m.interfaces.IControlReceiverFilter {
 
     public static final int SLOTS_PER_SIDE = 5;
     public static final int SIDE_COUNT = 6;
@@ -184,6 +184,37 @@ public class MachineCraneRouterBlockEntity extends BaseMachineBlockEntity implem
         }
         int[] loaded = tag.getIntArray("modes");
         if (loaded.length == SIDE_COUNT) System.arraycopy(loaded, 0, modes, 0, SIDE_COUNT);
+    }
+
+    // ── Устройство настройки: фильтры сторон + режимы (оригинал CraneRouter) ──
+
+    @Override
+    public int[] getFilterSlots() {
+        return new int[] { 0, INVENTORY_SIZE };
+    }
+
+    @Override
+    public void nextMode(int i) {
+        nextFilterMode(i);
+    }
+
+    @Override
+    public CompoundTag getSettings(Level level, BlockPos pos) {
+        CompoundTag nbt = com.hbm_m.interfaces.IControlReceiverFilter.super.getSettings(level, pos);
+        nbt.putIntArray("modes", modes);
+        return nbt;
+    }
+
+    @Override
+    public void pasteSettings(CompoundTag nbt, int index, Level level, net.minecraft.world.entity.player.Player player, BlockPos pos) {
+        // Слоты фильтра + nextMode — из default IControlReceiverFilter.
+        com.hbm_m.interfaces.IControlReceiverFilter.super.pasteSettings(nbt, index, level, player, pos);
+        int[] loaded = nbt.getIntArray("modes");
+        if (loaded.length == SIDE_COUNT) {
+            System.arraycopy(loaded, 0, modes, 0, SIDE_COUNT);
+            setChanged();
+            sendUpdateToClient();
+        }
     }
 
     // ── Slot validation / Menu ─────────────────────────────────────────────

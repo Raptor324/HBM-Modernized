@@ -20,7 +20,7 @@ import net.minecraft.world.level.block.state.BlockState;
 /**
  * Autoloader: stores fuel rods and automatically loads/unloads adjacent loadable RBMK columns.
  */
-public class RBMKAutoloaderBlockEntity extends RBMKColumnBlockEntity implements MenuProvider {
+public class RBMKAutoloaderBlockEntity extends RBMKColumnBlockEntity implements MenuProvider, com.hbm_m.interfaces.ICopiable {
 
     /**
      * 1:1 with {@code TileEntityRBMKAutoloader}: eighteen slots, split in two halves. Slots 0-8
@@ -259,5 +259,22 @@ public class RBMKAutoloaderBlockEntity extends RBMKColumnBlockEntity implements 
         }
     }
     *///?}
+
+    /* ── Устройство настройки: порог обогащения цикла (оригинал, clamp 5..95) ── */
+
+    @Override
+    public net.minecraft.nbt.CompoundTag getSettings(Level level, BlockPos pos) {
+        net.minecraft.nbt.CompoundTag data = new net.minecraft.nbt.CompoundTag();
+        data.putInt("cycle", cycle);
+        return data;
+    }
+
+    @Override
+    public void pasteSettings(net.minecraft.nbt.CompoundTag nbt, int index, Level level, net.minecraft.world.entity.player.Player player, BlockPos pos) {
+        if (nbt.contains("cycle")) {
+            this.cycle = net.minecraft.util.Mth.clamp(nbt.getInt("cycle"), 5, 95);
+        }
+        setChanged();
+    }
 }
 

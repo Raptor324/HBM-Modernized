@@ -57,6 +57,9 @@ public class ModPacketHandler {
     public static final ResourceLocation SET_CHEM_RECIPE       = id("set_chem_recipe");
     public static final ResourceLocation SET_CHEM_FACTORY_RECIPE = id("set_chem_factory_recipe");
     public static final ResourceLocation TOGGLE_WOOD_BURNER    = id("toggle_wood_burner");
+    public static final ResourceLocation SET_CRUCIBLE_RECIPE   = id("set_crucible_recipe");
+    public static final ResourceLocation HEATEX_CONTROL        = id("heatex_control");
+    public static final ResourceLocation OILBURNER_TOGGLE      = id("oilburner_toggle");
     public static final ResourceLocation BUILD_MISSILE         = id("build_missile");
     public static final ResourceLocation FLUID_TANK_MODE       = id("fluid_tank_mode");
     public static final ResourceLocation DETONATE_ALL          = id("detonate_all");
@@ -77,6 +80,8 @@ public class ModPacketHandler {
     public static final ResourceLocation RBMK_CONTROL_CONTROL        = id("rbmk_control_control");
     public static final ResourceLocation RBMK_BOILER_CONTROL         = id("rbmk_boiler_control");
     public static final ResourceLocation RBMK_CRANE_CONTROL          = id("rbmk_crane_control");
+    public static final ResourceLocation COPY_TOOL_KEY               = id("copy_tool_key");
+    public static final ResourceLocation MACHINE_CONTROL             = id("machine_control");
     public static final ResourceLocation SOYUZ_LAUNCHER_CONTROL      = id("soyuz_launcher_control");
     public static final ResourceLocation SOLDERING_STATION_CONTROL   = id("soldering_station_control");
     public static final ResourceLocation ORPHANED_PHANTOMS     = id("orphaned_phantoms");
@@ -199,6 +204,18 @@ public class ModPacketHandler {
                 ToggleWoodBurnerPacket::decode,
                 ToggleWoodBurnerPacket::handle);
 
+        registerC2S(SET_CRUCIBLE_RECIPE,
+                com.hbm_m.network.SetCrucibleRecipeC2SPacket::decode,
+                com.hbm_m.network.SetCrucibleRecipeC2SPacket::handle);
+
+        registerC2S(HEATEX_CONTROL,
+                com.hbm_m.network.SetHeatexControlC2SPacket::decode,
+                com.hbm_m.network.SetHeatexControlC2SPacket::handle);
+
+        registerC2S(OILBURNER_TOGGLE,
+                com.hbm_m.network.ToggleOilburnerC2SPacket::decode,
+                com.hbm_m.network.ToggleOilburnerC2SPacket::handle);
+
         registerC2S(BUILD_MISSILE,
                 BuildMissilePacket::decode,
                 BuildMissilePacket::handle);
@@ -266,6 +283,14 @@ public class ModPacketHandler {
         registerC2S(RBMK_CRANE_CONTROL,
                 RBMKCraneControlPacket::decode,
                 RBMKCraneControlPacket::handle);
+
+        registerC2S(COPY_TOOL_KEY,
+                CopyToolKeyPacket::decode,
+                CopyToolKeyPacket::handle);
+
+        registerC2S(MACHINE_CONTROL,
+                MachineControlC2SPacket::decode,
+                MachineControlC2SPacket::handle);
 
         registerC2S(RBMK_CONTROL_CONTROL,
                 RBMKControlPacket::decode,

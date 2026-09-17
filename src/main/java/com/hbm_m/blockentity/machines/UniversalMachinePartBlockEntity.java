@@ -50,7 +50,7 @@ import net.minecraftforge.fluids.capability.IFluidHandler;
 
 
 @SuppressWarnings("UnstableApiUsage")
-public class UniversalMachinePartBlockEntity extends BaseHbmBlockEntity implements IMultiblockPart, IEnergyConnector, IFluidConnectorMK2 {
+public class UniversalMachinePartBlockEntity extends BaseHbmBlockEntity implements IMultiblockPart, IEnergyConnector, IFluidConnectorMK2, com.hbm_m.api.block.ICrucibleAcceptor {
 
     // Виртуальные узлы жидкостной сети на позиции коннектора, по одному на тип жидкости контроллера.
     // Используется для "коннектор-к-коннектору" без труб: переносы делает FluidNet,
@@ -473,6 +473,41 @@ public class UniversalMachinePartBlockEntity extends BaseHbmBlockEntity implemen
     @Override
     public BlockPos getControllerPos() {
         return this.controllerPos;
+    }
+
+    // ───────────────────────── ICrucibleAcceptor (прокси налива) ─────────────────────────
+    // Порт TileEntityProxyCombo.moltenMetal: фантомная часть мультиблока пробрасывает
+    // налив расплава в контроллер, если тот принимает ({@code ICrucibleAcceptor}).
+
+    private @Nullable com.hbm_m.api.block.ICrucibleAcceptor castingController() {
+        BlockPos ctrl = getControllerPos();
+        if (ctrl == null || level == null) return null;
+        BlockEntity be = level.getBlockEntity(ctrl);
+        return be instanceof com.hbm_m.api.block.ICrucibleAcceptor acc ? acc : null;
+    }
+
+    @Override
+    public boolean canAcceptPartialPour(net.minecraft.world.level.Level level, BlockPos pos, net.minecraft.core.Direction side, com.hbm_m.inventory.material.MaterialStack stack) {
+        com.hbm_m.api.block.ICrucibleAcceptor acc = castingController();
+        return acc != null && acc.canAcceptPartialPour(level, pos, side, stack);
+    }
+
+    @Override
+    public @Nullable com.hbm_m.inventory.material.MaterialStack pour(net.minecraft.world.level.Level level, BlockPos pos, net.minecraft.core.Direction side, com.hbm_m.inventory.material.MaterialStack stack) {
+        com.hbm_m.api.block.ICrucibleAcceptor acc = castingController();
+        return acc == null ? stack : acc.pour(level, pos, side, stack);
+    }
+
+    @Override
+    public boolean canAcceptPartialFlow(net.minecraft.world.level.Level level, BlockPos pos, net.minecraft.core.Direction side, com.hbm_m.inventory.material.MaterialStack stack) {
+        com.hbm_m.api.block.ICrucibleAcceptor acc = castingController();
+        return acc != null && acc.canAcceptPartialFlow(level, pos, side, stack);
+    }
+
+    @Override
+    public @Nullable com.hbm_m.inventory.material.MaterialStack flow(net.minecraft.world.level.Level level, BlockPos pos, net.minecraft.core.Direction side, com.hbm_m.inventory.material.MaterialStack stack) {
+        com.hbm_m.api.block.ICrucibleAcceptor acc = castingController();
+        return acc == null ? stack : acc.flow(level, pos, side, stack);
     }
 
     @Override

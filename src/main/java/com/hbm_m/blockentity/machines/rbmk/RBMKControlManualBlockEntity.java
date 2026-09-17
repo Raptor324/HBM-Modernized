@@ -7,7 +7,7 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 
-public class RBMKControlManualBlockEntity extends RBMKControlBlockEntity {
+public class RBMKControlManualBlockEntity extends RBMKControlBlockEntity implements com.hbm_m.interfaces.ICopiable {
 
     public boolean moderated = false;
 
@@ -117,6 +117,25 @@ public class RBMKControlManualBlockEntity extends RBMKControlBlockEntity {
             be.lastLevel = be.level;
             be.moveLevelToTarget(level);
         }
+    }
+
+    /* ── Устройство настройки: цвет группы стержней (оригинал) ──────────── */
+
+    @Override
+    public net.minecraft.nbt.CompoundTag getSettings(Level level, BlockPos pos) {
+        net.minecraft.nbt.CompoundTag data = new net.minecraft.nbt.CompoundTag();
+        if (color >= 0) data.putInt("color", color);
+        return data;
+    }
+
+    @Override
+    public void pasteSettings(net.minecraft.nbt.CompoundTag nbt, int index, Level level, net.minecraft.world.entity.player.Player player, BlockPos pos) {
+        if (nbt.contains("color")) {
+            color = (short) net.minecraft.util.Mth.clamp(nbt.getInt("color"), 0, 4);
+        } else {
+            color = -1;
+        }
+        setChanged();
     }
 }
 

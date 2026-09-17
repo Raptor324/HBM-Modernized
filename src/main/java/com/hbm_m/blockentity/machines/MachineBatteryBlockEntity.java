@@ -25,7 +25,7 @@ import org.jetbrains.annotations.Nullable;
  * Режимы: 0 = BOTH, 1 = INPUT, 2 = OUTPUT, 3 = DISABLED
  */
 @SuppressWarnings("UnstableApiUsage")
-public class MachineBatteryBlockEntity extends BaseMachineBlockEntity implements IEnergyModeHolder, com.hbm_m.api.energy.PowerBuffer {
+public class MachineBatteryBlockEntity extends BaseMachineBlockEntity implements IEnergyModeHolder, com.hbm_m.api.energy.PowerBuffer, com.hbm_m.interfaces.ICopiable {
 
     private static final int SLOT_CHARGE = 0;
     private static final int SLOT_DISCHARGE = 1;
@@ -223,6 +223,28 @@ public class MachineBatteryBlockEntity extends BaseMachineBlockEntity implements
         }
         this.lastEnergySample = tag.getLong("lastEnergySample");
         this.averagedEnergyDelta = tag.getLong("averagedEnergyDelta");
+    }
+
+    /* ── Устройство настройки: режимы ячеек + приоритет (аналог redLow/redHigh/priority) ── */
+
+    @Override
+    public CompoundTag getSettings(Level level, BlockPos pos) {
+        CompoundTag nbt = new CompoundTag();
+        nbt.putInt("modeOnNoSignal", modeOnNoSignal);
+        nbt.putInt("modeOnSignal", modeOnSignal);
+        nbt.putInt("priority", priority.ordinal());
+        return nbt;
+    }
+
+    @Override
+    public void pasteSettings(CompoundTag nbt, int index, Level level, Player player, BlockPos pos) {
+        if (nbt.contains("modeOnNoSignal")) this.data.set(0, nbt.getInt("modeOnNoSignal"));
+        if (nbt.contains("modeOnSignal"))   this.data.set(1, nbt.getInt("modeOnSignal"));
+        if (nbt.contains("priority"))       this.data.set(2, nbt.getInt("priority"));
+        setChanged();
+        if (level != null && !level.isClientSide) {
+            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
+        }
     }
 
     /**

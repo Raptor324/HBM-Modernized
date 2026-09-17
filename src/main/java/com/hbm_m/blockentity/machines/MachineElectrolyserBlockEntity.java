@@ -37,7 +37,7 @@ import dev.architectury.fluid.FluidStack;
  * Molten-Pour, kein separates GUI-Umschalt-Paket (beide Modi in einem Menu vereint statt zwei
  * getrennten Containern wie im Original {@code ContainerElectrolyserFluid}/{@code ...Metal}).
  */
-public class MachineElectrolyserBlockEntity extends BaseMachineBlockEntity implements IFluidStandardTransceiverMK2 {
+public class MachineElectrolyserBlockEntity extends BaseMachineBlockEntity implements IFluidStandardTransceiverMK2, com.hbm_m.interfaces.IFluidCopiable {
 
     public static final int SLOT_BATTERY = 0;
     public static final int SLOT_FLUID_ID = 1;

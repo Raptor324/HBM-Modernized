@@ -27,8 +27,8 @@ public class GUIMachineCentrifuge extends GuiInfoScreen<MachineCentrifugeMenu> {
 
     public GUIMachineCentrifuge(MachineCentrifugeMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
-        this.imageWidth = 176;
-        this.imageHeight = 185;
+        this.imageWidth = 182;
+        this.imageHeight = 189;
         this.inventoryLabelY = this.imageHeight - 94;
     }
 
@@ -46,36 +46,24 @@ public class GUIMachineCentrifuge extends GuiInfoScreen<MachineCentrifugeMenu> {
 
         guiGraphics.blit(TEXTURE, this.leftPos, this.topPos, 0, 0, this.imageWidth, this.imageHeight);
 
-        // The supplied gui_centrifuge.png does not contain separate widget sprites in the usual
-        // "x >= 176" area, so we render dynamic bars as colored fills over the background.
-
-        // Energy bar (legacy coords)
         long power = menu.getEnergyLong();
         long maxPower = menu.getMaxEnergyLong();
         if (power > 0 && maxPower > 0) {
-            int barHeight = 34;
-            int filled = (int) (power * barHeight / maxPower);
-            if (filled > 0) {
-                int x0 = this.leftPos + 9;
-                int y0 = this.topPos + 13 + (barHeight - filled);
-                guiGraphics.fill(x0, y0, x0 + 16, y0 + filled, 0xFF3FCFE0);
+            int i1 = (int) (power * 37 / maxPower);
+            if (i1 > 0) {
+                guiGraphics.blit(TEXTURE, this.leftPos + 8, this.topPos + 55 - i1, 182, 37 - i1, 16, i1);
             }
         }
 
-        // Progress bars (legacy logic: total scaled to 145, split into 4 columns of 36px)
         if (menu.isProcessing()) {
             int p = menu.getScaledProgress(145);
-            int baseY = this.topPos + 50;
             for (int i = 0; i < 4; i++) {
                 int h = Math.min(p, 36);
                 if (h > 0) {
-                    int x0 = this.leftPos + 65 + i * 20;
-                    guiGraphics.fill(x0, baseY - h, x0 + 12, baseY, 0xFFFFE066);
+                    guiGraphics.blit(TEXTURE, this.leftPos + 72 + i * 20, this.topPos + 57 - h, 182, 73 - h, 12, h);
                 }
                 p -= h;
-                if (p <= 0) {
-                    break;
-                }
+                if (p <= 0) break;
             }
         }
     }

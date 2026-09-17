@@ -26,7 +26,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.world.Containers;
@@ -35,23 +34,22 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerData;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.entity.AbstractFurnaceBlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import com.hbm_m.platform.recipe.RecipeHooks;
 import com.hbm_m.platform.recipe.RecipeInputWrapper;
 
 public class MachinePressBlockEntity extends BaseMachineBlockEntity {
-    
-    // Слоты
-    private static final int SLOT_COUNT = 4;
+
+    // Слоты — как в 1.7.10: 4 рабочих + 9 слотов дополнительного хранилища
+    public static final int SLOT_COUNT = 13;
     private static final int FUEL_SLOT = 0;
     private static final int STAMP_SLOT = 1;
     private static final int MATERIAL_SLOT = 2;
     private static final int OUTPUT_SLOT = 3;
+    private static final int STORAGE_FIRST_SLOT = 4;
     
     // Константы как в 1.7.10
     private static final int MAX_SPEED = 400;
@@ -148,13 +146,14 @@ public class MachinePressBlockEntity extends BaseMachineBlockEntity {
     
     @Override
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
-        return switch (slot) {
-            case FUEL_SLOT -> getBurnTime(stack.getItem()) > 0;
-            case STAMP_SLOT -> true; // Проверка на stamp type может быть добавлена
-            case MATERIAL_SLOT -> true;
-            case OUTPUT_SLOT -> false; // Выходной слот только для результатов
-            default -> false;
-        };
+        // Оригинал isItemValidForSlot: штампы — только слот 1, топливо — только слот 0, остальное — слот 2
+        if (stack.getItem() instanceof com.hbm_m.item.industrial.ItemStamp)
+            return slot == STAMP_SLOT;
+
+        if (com.hbm_m.platform.PlatformHooks.getFuelBurnTime(stack) > 0 && slot == FUEL_SLOT)
+            return true;
+
+        return slot == MATERIAL_SLOT;
     }
     
     @Nullable
@@ -186,19 +185,30 @@ public class MachinePressBlockEntity extends BaseMachineBlockEntity {
         int previousSpeed = this.speed;
         boolean previousRetracting = this.isRetracting;
 
-        // Добавление топлива (как у генератора)
+        // Добавление топлива (как у генератора); контейнер предмета возвращается (ведро и т.п.)
         ItemStack fuelStack = inventory.getStackInSlot(FUEL_SLOT);
         if (!fuelStack.isEmpty() && burnTime < FUEL_PER_OPERATION) {
-            int fuelValue = getBurnTime(fuelStack.getItem());
+            int fuelValue = com.hbm_m.platform.PlatformHooks.getFuelBurnTime(fuelStack);
             if (fuelValue > 0) {
-                burnTime += fuelValue * 20; // Конвертируем секунды в тики
-                fuelStack.shrink(1);
+                burnTime += fuelValue;
+                if (fuelStack.getCount() == 1 && fuelStack.hasCraftingRemainingItem()) {
+                    inventory.setStackInSlot(FUEL_SLOT, fuelStack.getCraftingRemainingItem().copy());
+                } else {
+                    fuelStack.shrink(1);
+                }
                 needsSync = true;
             }
         }
 
         boolean canProcess = canProcess();
-        boolean preheated = level.getBlockState(worldPosition.below()).is(com.hbm_m.block.ModBlocks.PRESS_PREHEATER.get());
+        // Оригинал: внешний нагреватель учитывается с любой из 6 сторон
+        boolean preheated = false;
+        for (Direction dir : Direction.values()) {
+            if (level.getBlockState(worldPosition.relative(dir)).is(com.hbm_m.block.ModBlocks.PRESS_PREHEATER.get())) {
+                preheated = true;
+                break;
+            }
+        }
 
         // Логика ускорения/замедления (как в 1.7.10)
         if ((canProcess || isRetracting) && burnTime >= FUEL_PER_OPERATION) {
@@ -223,7 +233,6 @@ public class MachinePressBlockEntity extends BaseMachineBlockEntity {
             if (isRetracting) {
                 press -= stampSpeed;
                 if (press <= 0) {
-                    press = 0;
                     isRetracting = false;
                     delay = 5;
                 }
@@ -320,14 +329,10 @@ public class MachinePressBlockEntity extends BaseMachineBlockEntity {
         // Проверяем, что штамп не бесконечный (Desh штампы)
         if (stamp.isDamageableItem()) {
             stamp.setDamageValue(stamp.getDamageValue() + 1);
-            
+
             // Если штамп сломался - удаляем его
             if (stamp.getDamageValue() >= stamp.getMaxDamage()) {
                 inventory.setStackInSlot(STAMP_SLOT, ItemStack.EMPTY);
-                
-                // Звук ломающегося предмета
-                level.playSound(null, worldPosition, SoundEvents.ITEM_BREAK,
-                    SoundSource.BLOCKS, 1.5f, 0.8f);
             }
         }
         
@@ -369,13 +374,35 @@ public class MachinePressBlockEntity extends BaseMachineBlockEntity {
         return Optional.empty();
     }
     
-    // ==================== UTILITY ====================
-    
-    public int getBurnTime(Item item) {
-        int vanillaBurnTimeTicks = AbstractFurnaceBlockEntity.getFuel().getOrDefault(item, 0);
-        if (vanillaBurnTimeTicks <= 0) return 0;
-        return vanillaBurnTimeTicks / 20;
+    // ─────────────────────────── Автоматизация ───────────────────────────
+
+    /** Оригинал getAccessibleSlotsFromSide {0,1,2,3}: вставка в топливо/штамп/материал, извлечение только из выхода.
+     *  Слоты хранилища (4-12) автоматике недоступны. */
+    private com.hbm_m.platform.ModItemStackHandler automationHandler;
+
+    @Override
+    protected com.hbm_m.platform.ModItemStackHandler getAutomationItemHandler() {
+        if (automationHandler == null) {
+            automationHandler = new com.hbm_m.platform.ModItemStackHandler(SLOT_COUNT) {
+                @Override public int getSlots() { return SLOT_COUNT; }
+                @Override public ItemStack getStackInSlot(int slot) { return inventory.getStackInSlot(slot); }
+                @Override public void setStackInSlot(int slot, ItemStack stack) { inventory.setStackInSlot(slot, stack); }
+                @Override public ItemStack insertItem(int slot, ItemStack stack, boolean simulate) {
+                    if (slot != FUEL_SLOT && slot != STAMP_SLOT && slot != MATERIAL_SLOT) return stack;
+                    return inventory.insertItem(slot, stack, simulate);
+                }
+                @Override public ItemStack extractItem(int slot, int amount, boolean simulate) {
+                    if (slot != OUTPUT_SLOT) return ItemStack.EMPTY;
+                    return inventory.extractItem(slot, amount, simulate);
+                }
+                @Override public int getSlotLimit(int slot) { return inventory.getSlotLimit(slot); }
+                @Override public boolean isItemValid(int slot, ItemStack stack) { return inventory.isItemValid(slot, stack); }
+            };
+        }
+        return automationHandler;
     }
+
+    // ==================== UTILITY ====================
     
     public int getHeatState() {
         return heatState;

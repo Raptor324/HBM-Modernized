@@ -33,7 +33,7 @@ import net.minecraft.world.level.material.Fluid;
  * einer Ziel-Kompressionsstufe 0-3 im GUI - hier komprimiert die Maschine immer stur schrittweise
  * vom aktuellen Eingangsdruck aus, ohne Sprung-Auswahl).
  */
-public class MachineCompressorBlockEntity extends BaseMachineBlockEntity implements IFluidStandardTransceiverMK2 {
+public class MachineCompressorBlockEntity extends BaseMachineBlockEntity implements IFluidStandardTransceiverMK2, com.hbm_m.interfaces.IFluidCopiable {
 
     public static final int SLOT_FLUID_ID = 0;
     public static final int SLOT_BATTERY = 1;
@@ -191,5 +191,25 @@ public class MachineCompressorBlockEntity extends BaseMachineBlockEntity impleme
     @Override
     public AbstractContainerMenu createMenu(int id, Inventory inv, Player player) {
         return MachineCompressorMenu.create(id, inv, this);
+    }
+
+    // ==================== Устройство настройки (оригинал) ====================
+
+    /** Оригинал: вставка давления "compression" во входной бак; жидкости — через default IFluidCopiable. */
+    @Override
+    public void pasteSettings(CompoundTag nbt, int index, Level level, Player player, BlockPos pos) {
+        com.hbm_m.interfaces.IFluidCopiable.super.pasteSettings(nbt, index, level, player, pos);
+        if (nbt.contains("compression")) {
+            tanks[0].withPressure(nbt.getInt("compression"));
+        }
+        setChanged();
+        sendUpdateToClient();
+    }
+
+    @Override
+    public CompoundTag getSettings(Level level, BlockPos pos) {
+        CompoundTag nbt = com.hbm_m.interfaces.IFluidCopiable.super.getSettings(level, pos);
+        nbt.putInt("compression", tanks[0].getPressure());
+        return nbt;
     }
 }
