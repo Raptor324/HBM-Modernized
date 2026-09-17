@@ -635,7 +635,8 @@ public class ModBlockStateProvider extends BlockStateProvider {
         customMachineBlock(ModBlocks.DIESELGEN);
         simpleMachineBlock(ModBlocks.DIPOLE);
         simpleMachineBlock(ModBlocks.DRONE);
-        simpleMachineBlock(ModBlocks.ELECTRIC_HEATER);
+        horizontalBlock(ModBlocks.ELECTRIC_HEATER.get(),
+            models().getExistingFile(modLoc("block/machines/electric_heater")));
         horizontalBlock(ModBlocks.ELECTROLYSER.get(),
             models().getExistingFile(modLoc("block/machines/electrolyser")));
         customMachineBlock(ModBlocks.EPRESS);
@@ -643,9 +644,11 @@ public class ModBlockStateProvider extends BlockStateProvider {
             models().getExistingFile(modLoc("block/machines/exposure_chamber")));
         simpleMachineBlock(ModBlocks.FENSU);
         // FENSU2 (machine_battery_redd) is a MachineBatteryBlock (FACING-Blockstate) - see orientableBlockWithItem below.
-        simpleMachineBlock(ModBlocks.FIREBOX);
+        horizontalBlock(ModBlocks.FIREBOX.get(),
+            models().getExistingFile(modLoc("block/machines/firebox")));
         simpleMachineBlock(ModBlocks.FRACTION_SPACER);
-        simpleMachineBlock(ModBlocks.HEATEX);
+        horizontalBlock(ModBlocks.HEATEX.get(),
+            models().getExistingFile(modLoc("block/machines/heatex")));
         customMachineBlock(ModBlocks.HEPHAESTUS);
         simpleMachineBlock(ModBlocks.ICF);
         simpleMachineBlock(ModBlocks.INTAKE);
@@ -654,8 +657,10 @@ public class ModBlockStateProvider extends BlockStateProvider {
         horizontalBlock(ModBlocks.MICROWAVE.get(),
             models().getExistingFile(modLoc("block/machines/microwave")));
         customMachineBlock(ModBlocks.MINING_LASER);
-        simpleMachineBlock(ModBlocks.OILBURNER);
-        simpleMachineBlock(ModBlocks.OILBURNER_HP);
+        horizontalBlock(ModBlocks.OILBURNER.get(),
+            models().getExistingFile(modLoc("block/machines/oilburner")));
+        horizontalBlock(ModBlocks.OILBURNER_HP.get(),
+            models().getExistingFile(modLoc("block/machines/oilburner_hp")));
         // ORBUS is now a BarrelTankBlock (FACING blockstate) instead of a static "" variant.
         horizontalBlock(ModBlocks.ORBUS.get(), models().getExistingFile(modLoc("block/machines/orbus")));
         simpleMachineBlock(ModBlocks.ORE_SLOPPER);
@@ -1128,6 +1133,9 @@ public class ModBlockStateProvider extends BlockStateProvider {
         // BLOCK_RED_COPPER / BLOCK_STARMETAL — алиасы слитковых блоков (auto-loop ниже), тут не конфигурируем.
         blockWithItem(ModBlocks.BLOCK_SCRAP);
         blockWithItem(ModBlocks.BLOCK_ELECTRICAL_SCRAP);
+        blockWithItem(ModBlocks.BLOCK_COAL_COKE);
+        blockWithItem(ModBlocks.BLOCK_LIGNITE_COKE);
+        blockWithItem(ModBlocks.BLOCK_PETROLEUM_COKE);
         blockWithItem(ModBlocks.DECO_TITANIUM);
         blockWithItem(ModBlocks.WOOD_STRUCTURE);
         blockWithItem(ModBlocks.POLE_TOP);
@@ -2347,24 +2355,12 @@ public class ModBlockStateProvider extends BlockStateProvider {
                         modLoc("block/slag_dynamic")
                 )
         );
-        simpleBlockWithItem(ModBlocks.FOUNDRY_MOLD.get(),
-                models().cubeBottomTop(
-                        ModBlocks.FOUNDRY_MOLD.getId().getPath(),
-                        modLoc("block/foundry_mold_side"),
-                        modLoc("block/foundry_mold_bottom"),
-                        modLoc("block/foundry_mold_top")
-                )
-        );
+        // foundry_mold / foundry_tank: полые "чашка"-модели 1:1 с оригиналом
+        // (hand-written в assets/hbm_m/models/block/machines/, cutout) — как foundry_basin.
+        simpleMachineBlock(ModBlocks.FOUNDRY_MOLD);
         // foundry_slagtap uses a hand-written static blockstate+model (directional spout shape,
         // matching foundry_outlet's precedent - see assets/hbm_m/blockstates/foundry_slagtap.json).
-        simpleBlockWithItem(ModBlocks.FOUNDRY_TANK.get(),
-                models().cubeBottomTop(
-                        ModBlocks.FOUNDRY_TANK.getId().getPath(),
-                        modLoc("block/foundry_tank_side"),
-                        modLoc("block/foundry_tank_bottom"),
-                        modLoc("block/foundry_tank_top")
-                )
-        );
+        simpleMachineBlock(ModBlocks.FOUNDRY_TANK);
         simpleBlockWithItem(ModBlocks.FROZEN_DIRT.get(),
                 models().cubeAll(
                         ModBlocks.FROZEN_DIRT.getId().getPath(),
@@ -4491,7 +4487,7 @@ public class ModBlockStateProvider extends BlockStateProvider {
      */
     /**
      * Chemical plant: без {@code rotationY} в blockstate - поворот задаётся только в
-     * {@link com.hbm_m.client.model.MachineChemicalPlantBakedModel} через
+     * {@link com.hbm_m.client.model.ConfiguredMultipartBakedModel} через
      * {@link com.hbm_m.util.MultipartFacingTransforms#legacyBlockEntityBakedRotationY}, в точности как
      * {@code LegacyAnimator.setupBlockTransform} у VBO (иначе vanilla y + getQuads дают двойной поворот).
      */

@@ -126,11 +126,7 @@ public class BlockTaint extends Block {
 
         if (entity instanceof LivingEntity living) {
             if (level.random.nextInt(50) == 0) {
-                //? if < 1.21.1 {
-                living.addEffect(new MobEffectInstance(ModEffects.TAINT.get(), 15 * 20, effectLevel));
-                //?} else {
-                /*living.addEffect(new MobEffectInstance(net.minecraft.core.Holder.direct(ModEffects.TAINT.get()), 15 * 20, effectLevel));
-                *///?}
+                com.hbm_m.platform.PlatformHooks.addEffect(living, ModEffects.TAINT, 15 * 20, effectLevel);
             }
         }
 

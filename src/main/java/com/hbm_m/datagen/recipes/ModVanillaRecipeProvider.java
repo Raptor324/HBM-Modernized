@@ -1196,6 +1196,17 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .unlockedBy(getHasName(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.INGOT)), has(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.INGOT)))
                 .save(writer, recipeId("crafting/screwdriver"));
 
+        // Оригинал ToolRecipes: " P ", "PCP", "III" - P = железная пластина, C = аналоговая схема, I = полимерная пластина.
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.SETTINGS_TOOL.get())
+                .pattern(" P ")
+                .pattern("PCP")
+                .pattern("III")
+                .define('P', ModMaterialItems.item(ModMaterials.IRON, MaterialShape.PLATE))
+                .define('C', ModItems.ANALOG_CIRCUIT.get())
+                .define('I', ModMaterialItems.item(ModMaterials.POLYMER, MaterialShape.PLATE))
+                .unlockedBy(getHasName(ModItems.ANALOG_CIRCUIT.get()), has(ModItems.ANALOG_CIRCUIT.get()))
+                .save(writer, recipeId("crafting/settings_tool"));
+
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.STEAM_CONDENSER.get())
                 .pattern("ABA")
                 .pattern("BCB")
@@ -1624,6 +1635,18 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .define('$', Items.FURNACE)
                 .unlockedBy(getHasName(Items.PISTON), has(Items.PISTON))
                 .save(writer, recipeId("crafting/press"));
+
+        // Ориг. CraftingManager: CCC/SLS/TST — медные плиты, камень, ведро лавы, вольфрамовые слитки
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.PRESS_PREHEATER.get())
+                .pattern("CCC")
+                .pattern("SLS")
+                .pattern("TST")
+                .define('C', ModMaterialItems.item(ModMaterials.COPPER, MaterialShape.PLATE))
+                .define('S', Items.STONE)
+                .define('L', Items.LAVA_BUCKET)
+                .define('T', ModMaterialItems.item(ModMaterials.TUNGSTEN, MaterialShape.INGOT))
+                .unlockedBy(getHasName(ModMaterialItems.item(ModMaterials.COPPER, MaterialShape.PLATE)), has(ModMaterialItems.item(ModMaterials.COPPER, MaterialShape.PLATE)))
+                .save(writer, recipeId("crafting/press_preheater"));
 
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.BLAST_FURNACE_EXTENSION.get())
                 .pattern(" $ ")

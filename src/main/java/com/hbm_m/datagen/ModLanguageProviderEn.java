@@ -909,9 +909,21 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("tooltip.hbm_m.multi_detonator.not_set", "   Not set");
         add("tooltip.hbm_m.multi_detonator.key_r", "R - open menu");
         add("tooltip.hbm_m.multi_detonator.shift_rmb", "Shift+RMB - save to active point");
+        add("tooltip.hbm_m.multi_detonator.shift_air_clear", "Shift+RMB in air - clear positions");
         add("tooltip.hbm_m.multi_detonator.rmb_activate", "RMB - activate active point");
 
 // MULTI DETONATOR MESSAGES
+        add("bomb.detonated", "Detonated successfully!");
+        add("bomb.incompatible", "Device can not be triggered!");
+        add("bomb.launched", "Launched successfully!");
+        add("bomb.missingComponent", "Component missing!");
+        add("bomb.nobomb", "Linked position incompatible or unloaded!");
+        add("bomb.triggered", "Triggered successfully!");
+
+        add("desc.misc.posSet", "Position set!");
+        add("desc.misc.noPos", "No position set!");
+        add("desc.misc.locationsCleared", "Locations cleared!");
+
         add("message.hbm_m.multi_detonator.position_saved", "Position '%s' saved: %d, %d, %d");
         add("message.hbm_m.multi_detonator.no_coordinates", "No coordinates set!");
         add("message.hbm_m.multi_detonator.point_not_set", "Point %d not set!");
@@ -919,6 +931,12 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("message.hbm_m.multi_detonator.activated", "%s activated!");
         add("message.hbm_m.multi_detonator.activation_error", "Activation error!");
         add("message.hbm_m.multi_detonator.incompatible_block", "Block incompatible!");
+        add("message.hbm_m.multi_detonator.not_found", "Multi-Detonator not found!");
+        add("message.hbm_m.multi_detonator.batch_success", "%s: Detonated successfully");
+        add("message.hbm_m.multi_detonator.batch_failed", "%s: Activation failed");
+        add("message.hbm_m.multi_detonator.batch_incompatible", "%s: Incompatible block");
+        add("message.hbm_m.multi_detonator.batch_error", "%s: Error during activation");
+        add("message.hbm_m.multi_detonator.batch_summary", "Triggered %d/%d!");
 
         add("message.hbm_m.detonator.saved", "Position saved: %d, %d, %d");
         add("message.hbm_m.detonator.pos_not_compatible", "Position incompatible or not loaded");
@@ -1153,6 +1171,9 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add(ModBlocks.BLOCK_METEOR_COBBLE.get(), "Meteor Cobblestone");
         add(ModBlocks.BLOCK_SCRAP.get(), "Scrap Block");
         add(ModBlocks.BLOCK_ELECTRICAL_SCRAP.get(), "Electrical Scrap");
+        add(ModBlocks.BLOCK_COAL_COKE.get(), "Block of Coal Coke");
+        add(ModBlocks.BLOCK_LIGNITE_COKE.get(), "Block of Lignite Coke");
+        add(ModBlocks.BLOCK_PETROLEUM_COKE.get(), "Block of Petroleum Coke");
         add(ModBlocks.DECO_TITANIUM.get(), "Titanium Decoration");
         add(ModBlocks.WOOD_STRUCTURE.get(), "Structural Wood");
         add(ModBlocks.STEEL_BEAM.get(), "Steel Beam");
@@ -1479,6 +1500,7 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add(ModItems.INGOT_SLAG.get(), "Slag Ingot");
         add(ModItems.COAL_COKE.get(), "Coal Coke");
         add(ModItems.LIGNITE_COKE.get(), "Lignite Coke");
+        add(ModItems.COAL_ETERNAL.get(), "Eternal Coal");
         add(ModItems.COAL_BRIQUETTE.get(), "Coal Briquette");
         add(ModItems.LIGNITE_BRIQUETTE.get(), "Lignite Briquette");
         add(ModItems.SAWDUST_BRIQUETTE.get(), "Sawdust Briquette");
@@ -1838,6 +1860,84 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("key.hbm_m.rbmk_crane_left", "RBMK Crane: Left");
         add("key.hbm_m.rbmk_crane_right", "RBMK Crane: Right");
         add("key.hbm_m.rbmk_crane_load", "RBMK Crane: Load/Unload");
+        add("key.hbm_m.copy_tool_alt", "Settings Tool: Switch Paste");
+        add("key.hbm_m.copy_tool_ctrl", "Settings Tool: Paste to Pipes");
+
+        // SETTINGS TOOL (ItemSettingsTool)
+        add("tooltip.hbm_m.settings_tool.1", "Can copy the settings (filters, fluid ID, etc) of machines");
+        add("tooltip.hbm_m.settings_tool.2", "Shift right-click to copy, right click to paste");
+        add("tooltip.hbm_m.settings_tool.3", "Ctrl click on pipes to paste settings to multiple pipes");
+        add("tooltip.hbm_m.settings_tool.none", " None ");
+        add("chat.hbm_m.settings_tool.copied", "Copied settings of %s");
+        add("chat.hbm_m.settings_tool.copy_failed", "Copy failed, machine has no settings tool support: %s");
+        add("copytool.filter", "Filter");
+        add("copytool.invertRedstone", "Redstone Inverted");
+        add("copytool.invertFilter", "Filter Inverted");
+        add("copytool.speed", "Speed");
+
+        // GAS FLARE / COMBUSTION ENGINE GUI (1:1 с flare.valve/flare.ignition оригинала)
+        add("gui.hbm_m.flare.valve", "Flow Valve");
+        add("gui.hbm_m.flare.ignition", "Ignition");
+        add("gui.hbm_m.engine.ignition", "Ignition");
+        // CRUCIBLE ALLOY RECIPES (заголовки тултипов селектора; 1:1 из оригинала)
+        add("crucible.steel", "Steel Production");
+        add("crucible.hematite", "Iron Production from Hematite");
+        add("crucible.malachite", "Copper Production from Malachite");
+        add("crucible.redcopper", "Red Copper Production");
+        add("crucible.hss", "High-Speed Steel Production");
+        add("crucible.ferro", "Ferrouranium Production");
+        add("crucible.tcalloy", "Technetium Steel Production");
+        add("crucible.cdalloy", "Cadmium Steel Production");
+        add("crucible.bbronze", "Bismuth Bronze Production");
+        add("crucible.abronze", "Arsenic Bronze Production");
+        add("crucible.cmb", "CMB Steel Production");
+        add("crucible.magtung", "Magnetized Tungsten Production");
+        add("crucible.bscco", "BSCCO Production");
+
+
+        // FOUNDRY MATERIALS (информер Устройства настройки; имена 1:1 из hbmmat.* оригинала)
+        add("material.hbm_m.iron", "Iron");
+        add("material.hbm_m.gold", "Gold");
+        add("material.hbm_m.copper", "Copper");
+        add("material.hbm_m.titanium", "Titanium");
+        add("material.hbm_m.aluminium", "Aluminium");
+        add("material.hbm_m.tungsten", "Tungsten");
+        add("material.hbm_m.zirconium", "Zirconium");
+        add("material.hbm_m.osmiridium", "Osmiridium");
+        add("material.hbm_m.lead", "Lead");
+        add("material.hbm_m.bismuth", "Bismuth");
+        add("material.hbm_m.beryllium", "Beryllium");
+        add("material.hbm_m.cobalt", "Cobalt");
+        add("material.hbm_m.nickel", "Nickel");
+        add("material.hbm_m.arsenic", "Arsenic");
+        add("material.hbm_m.strontium", "Strontium");
+        add("material.hbm_m.calcium", "Calcium");
+        add("material.hbm_m.cadmium", "Cadmium");
+        add("material.hbm_m.technetium", "Technetium");
+        add("material.hbm_m.u238", "Uranium-238");
+        add("material.hbm_m.schrabidium", "Schrabidium");
+        add("material.hbm_m.steel", "Steel");
+        add("material.hbm_m.mingrade", "Minecraft Grade Copper");
+        add("material.hbm_m.dura_steel", "High-Speed Steel");
+        add("material.hbm_m.saturnite", "Saturnite");
+        add("material.hbm_m.star_metal", "Star Metal");
+        add("material.hbm_m.tcalloy", "Technetium Steel");
+        add("material.hbm_m.ferro", "Ferrouranium");
+        add("material.hbm_m.magtung", "Magnetized Tungsten");
+        add("material.hbm_m.cmb", "Combine Steel");
+        add("material.hbm_m.cdalloy", "Cadmium Steel");
+        add("material.hbm_m.bbronze", "Bismuth Bronze");
+        add("material.hbm_m.abronze", "Arsenic Bronze");
+        add("material.hbm_m.bscco", "BSCCO");
+        add("material.hbm_m.slag", "Slag");
+        add("material.hbm_m.alloy", "Advanced Alloy");
+        add("material.hbm_m.desh", "Desh");
+        add("material.hbm_m.flux", "Flux");
+        add("material.hbm_m.hematite", "Hematite");
+        add("material.hbm_m.malachite", "Malachite");
+        add("material.hbm_m.carbon", "Carbon");
+        add("material.hbm_m.mud", "Mud");
+        add("material.hbm_m.redstone", "Redstone");
 
         // ARMOR BATTERIES
         add("item.hbm_m.armor_battery", "Armor Battery");
@@ -1870,7 +1970,10 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("gui.hbm_m.anvil.outputs", "Outputs:");
         add("gui.hbm_m.anvil.search", "Search");
         add("gui.hbm_m.anvil.search_hint", "Search...");
-        add("gui.hbm_m.anvil.tier", "Required Tier: %s");
+        add("gui.hbm_m.anvil.filter.all", "All recipes");
+        add("gui.hbm_m.anvil.filter.construction", "Construction");
+        add("gui.hbm_m.anvil.filter.recycling", "Recycling");
+        add("gui.hbm_m.anvil.filter.smithing", "Smithing");
         add("tier.hbm_m.anvil.iron", "Iron");
         add("tier.hbm_m.anvil.steel", "Steel");
         add("tier.hbm_m.anvil.oil", "Oil");
@@ -1882,7 +1985,6 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("tier.hbm_m.anvil.murky", "Murky");
 
         // BLOCKS
-        add("block.hbm_m.anvil_block", "Industrial Anvil");
         add("block.hbm_m.anvil_iron", "Iron Anvil");
         add("block.hbm_m.anvil_lead", "Lead Anvil");
         add("block.hbm_m.anvil_steel", "Steel Anvil");
@@ -2968,6 +3070,8 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("text.autoconfig.hbm_m.option.modelStaticRenderDistance", "Distance for .obj model static parts rendering");
         add("text.autoconfig.hbm_m.option.enableOcclusionCulling", "Enable model occlusion culling");
         add("text.autoconfig.hbm_m.option.forceVanillaImmediatePath", "Force vanilla immediate path (fallback)");
+        add("text.autoconfig.hbm_m.option.mdiCleanFrameReuse", "MDI clean-frame reuse");
+        add("text.autoconfig.hbm_m.option.mdiCleanFrameReuse.@Tooltip", "Reuse the MDI instance snapshot when no instance data changed this frame (zero uploads for static scenes). Disable only for debugging.");
 
         add("text.autoconfig.hbm_m.option.vatsRenderDistanceChunks", "VATS render distance (chunks)");
 
@@ -5012,6 +5116,28 @@ public class ModLanguageProviderEn extends LanguageProvider {
             }
         }
         add("tooltip.hbm_m.waste_cooling.desc", "Cool in a Spent Fuel Pool Drum");
+
+        // ── Crucible / heaters (port 2026-09) ──
+        add("gui.hbm_m.crucible.empty", "Empty");
+        add("gui.hbm_m.crucible.recipe", "Alloy Recipe");
+        add("gui.hbm_m.crucible.recipe.none", "No recipe (all goes to waste)");
+        add("gui.hbm_m.crucible.recipe.set", "Select Recipe");
+        add("gui.hbm_m.crucible.recipe.hint", "Click: next recipe / Shift+Click: reset");
+        add("gui.hbm_m.electric_heater.setting", "Power setting: %s");
+        add("gui.hbm_m.oilburner.setting", "Burn rate: %s");
+        add("fuel.hbm_m.log", "Logs: burn time x%s, heat x%s");
+        add("fuel.hbm_m.wood", "Wood: burn time x%s, heat x%s");
+        add("fuel.hbm_m.coal", "Coal: burn time x%s, heat x%s");
+        add("fuel.hbm_m.lignite", "Lignite: burn time x%s, heat x%s");
+        add("fuel.hbm_m.coke", "Coke: burn time x%s, heat x%s");
+        add("fuel.hbm_m.solid_fuel", "Solid fuel: burn time x%s, heat x%s");
+        add("fuel.hbm_m.rocket_fuel", "Rocket fuel: burn time x%s, heat x%s");
+        add("fuel.hbm_m.balefire", "Balefire: burn time x%s, heat x%s");
+
+        // ── Foundry casting (port 2026-09) ──
+        add("foundry.hbm_m.noCast", "No Mold");
+        add("foundry.hbm_m.mold_small", "Foundry Mold");
+        add("foundry.hbm_m.mold_large", "Foundry Basin");
     }
 }
 //?}

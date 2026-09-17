@@ -735,9 +735,21 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("tooltip.hbm_m.multi_detonator.not_set", "   Не установлена");
         add("tooltip.hbm_m.multi_detonator.key_r", "R - открыть меню");
         add("tooltip.hbm_m.multi_detonator.shift_rmb", "Shift+ПКМ - сохранить в активную точку");
+        add("tooltip.hbm_m.multi_detonator.shift_air_clear", "Shift+ПКМ в воздухе - очистить позиции");
         add("tooltip.hbm_m.multi_detonator.rmb_activate", "ПКМ - активировать активную точку");
 
 // MULTI DETONATOR MESSAGES
+        add("bomb.detonated", "Успешно взорвано!");
+        add("bomb.incompatible", "Устройство не может быть активировано!");
+        add("bomb.launched", "Успешно запущено!");
+        add("bomb.missingComponent", "Отсутствует компонент!");
+        add("bomb.nobomb", "Позиция не совместима или не прогружена!");
+        add("bomb.triggered", "Успешно активировано!");
+
+        add("desc.misc.posSet", "Позиция установлена!");
+        add("desc.misc.noPos", "Позиция не установлена!");
+        add("desc.misc.locationsCleared", "Позиции очищены!");
+
         add("message.hbm_m.multi_detonator.position_saved", "Позиция '%s' сохранена: %d, %d, %d");
         add("message.hbm_m.multi_detonator.no_coordinates", "Нет заданных координат!");
         add("message.hbm_m.multi_detonator.point_not_set", "Точка %d не установлена!");
@@ -745,6 +757,12 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("message.hbm_m.multi_detonator.activated", "%s активирован!");
         add("message.hbm_m.multi_detonator.activation_error", "Ошибка при активации!");
         add("message.hbm_m.multi_detonator.incompatible_block", "Блок несовместим!");
+        add("message.hbm_m.multi_detonator.not_found", "Мульти-детонатор не найден!");
+        add("message.hbm_m.multi_detonator.batch_success", "%s: Успешно активировано");
+        add("message.hbm_m.multi_detonator.batch_failed", "%s: Активация не удалась");
+        add("message.hbm_m.multi_detonator.batch_incompatible", "%s: Блок несовместим");
+        add("message.hbm_m.multi_detonator.batch_error", "%s: Ошибка при активации");
+        add("message.hbm_m.multi_detonator.batch_summary", "Активировано %d/%d!");
 
 // ДЕТЕКТОР НЕФТИ (тултип)
         add("tooltip.hbm_m.oil_detector.scans_chunks", "Сканирует чанки в поисках");
@@ -1158,6 +1176,9 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add(ModBlocks.BLOCK_METEOR_COBBLE.get(), "Метеоритный булыжник");
         add(ModBlocks.BLOCK_SCRAP.get(), "Блок металлолома");
         add(ModBlocks.BLOCK_ELECTRICAL_SCRAP.get(), "Электрический лом");
+        add(ModBlocks.BLOCK_COAL_COKE.get(), "Блок угольного кокса");
+        add(ModBlocks.BLOCK_LIGNITE_COKE.get(), "Блок бурого кокса");
+        add(ModBlocks.BLOCK_PETROLEUM_COKE.get(), "Блок нефтяного кокса");
         add(ModBlocks.DECO_TITANIUM.get(), "Титановая отделка");
         add(ModBlocks.WOOD_STRUCTURE.get(), "Строительное дерево");
         add(ModBlocks.STEEL_BEAM.get(), "Стальная балка");
@@ -1324,6 +1345,7 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add(ModItems.INGOT_SLAG.get(), "Слиток (Шлак)");
         add(ModItems.COAL_COKE.get(), "Угольный кокс");
         add(ModItems.LIGNITE_COKE.get(), "Бурый кокс");
+        add(ModItems.COAL_ETERNAL.get(), "Вечный уголь");
         add(ModItems.COAL_BRIQUETTE.get(), "Брикет угля");
         add(ModItems.LIGNITE_BRIQUETTE.get(), "Брикет бурого угля");
         add(ModItems.SAWDUST_BRIQUETTE.get(), "Брикет древесных опилок");
@@ -1798,7 +1820,10 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("gui.hbm_m.anvil.outputs", "Выходы:");
         add("gui.hbm_m.anvil.search", "Поиск");
         add("gui.hbm_m.anvil.search_hint", "Поиск...");
-        add("gui.hbm_m.anvil.tier", "Требуемый уровень: %s");
+        add("gui.hbm_m.anvil.filter.all", "Все рецепты");
+        add("gui.hbm_m.anvil.filter.construction", "Строительство");
+        add("gui.hbm_m.anvil.filter.recycling", "Разборка");
+        add("gui.hbm_m.anvil.filter.smithing", "Ковка");
         add("tier.hbm_m.anvil.iron", "Железо");
         add("tier.hbm_m.anvil.steel", "Сталь");
         add("tier.hbm_m.anvil.oil", "Нефтяной");
@@ -1816,7 +1841,6 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add(ModBlocks.RESOURCE_LIMESTONE.get(), "Известняк");
         add(ModBlocks.RESOURCE_MALACHITE.get(), "Малахит");
         add(ModBlocks.RESOURCE_SULFUR.get(), "Серный кластер");
-        add("block.hbm_m.anvil_block", "Индустриальная наковальня");
         add("block.hbm_m.anvil_iron", "Железная наковальня");
         add("block.hbm_m.anvil_lead", "Свинцовая наковальня");
         add("block.hbm_m.anvil_steel", "Стальная наковальня");
@@ -2838,6 +2862,84 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("key.hbm_m.rbmk_crane_left", "РБМК Кран: влево");
         add("key.hbm_m.rbmk_crane_right", "РБМК Кран: вправо");
         add("key.hbm_m.rbmk_crane_load", "РБМК Кран: загрузка");
+        add("key.hbm_m.copy_tool_alt", "Устройство настройки: Переключить вставку");
+        add("key.hbm_m.copy_tool_ctrl", "Устройство настройки: Применить к трубам");
+
+        // УСТРОЙСТВО НАСТРОЙКИ (ItemSettingsTool)
+        add("tooltip.hbm_m.settings_tool.1", "Копирует настройки (фильтры, тип жидкости и т.д.) машин");
+        add("tooltip.hbm_m.settings_tool.2", "Shift+ПКМ — копировать, ПКМ — вставить");
+        add("tooltip.hbm_m.settings_tool.3", "Ctrl+ПКМ по трубам — вставить настройки в несколько труб");
+        add("tooltip.hbm_m.settings_tool.none", " Пусто ");
+        add("chat.hbm_m.settings_tool.copied", "Настройки скопированы: %s");
+        add("chat.hbm_m.settings_tool.copy_failed", "Ошибка копирования, машина не поддерживает устройство настройки: %s");
+        add("copytool.filter", "Фильтр");
+        add("copytool.invertRedstone", "Инвертированный редстоун");
+        add("copytool.invertFilter", "Инвертированный фильтр");
+        add("copytool.speed", "Скорость");
+
+        // ГАЗОВЫЙ ФАКЕЛ / ДВИГАТЕЛЬ ВНУТРЕННЕГО СГОРАНИЯ GUI (1:1 с оригинала)
+        add("gui.hbm_m.flare.valve", "Пропускной клапан");
+        add("gui.hbm_m.flare.ignition", "Сжигание");
+        add("gui.hbm_m.engine.ignition", "Зажигание");
+        // РЕЦЕПТЫ СПЛАВОВ ТИГЛЯ (заголовки тултипов селектора; 1:1 из оригинала)
+        add("crucible.steel", "Производство стали");
+        add("crucible.hematite", "Переплавка гематита в железо");
+        add("crucible.malachite", "Переплавка малахита в медь");
+        add("crucible.redcopper", "Производство красной меди");
+        add("crucible.hss", "Производство быстрорежущей стали");
+        add("crucible.ferro", "Производство ферроуранового сплава");
+        add("crucible.tcalloy", "Производство технециевой стали");
+        add("crucible.cdalloy", "Производство кадмиевой стали");
+        add("crucible.bbronze", "Производство висмутовой бронзы");
+        add("crucible.abronze", "Производство мышьяковой бронзы");
+        add("crucible.cmb", "Производство стали Альянса");
+        add("crucible.magtung", "Производство намагниченного вольфрама");
+        add("crucible.bscco", "Производство BSCCO");
+
+
+        // МАТЕРИАЛЫ ЛИТЕЙКИ (информер Устройства настройки; имена 1:1 из hbmmat.* оригинала)
+        add("material.hbm_m.iron", "Железо");
+        add("material.hbm_m.gold", "Золото");
+        add("material.hbm_m.copper", "Медь");
+        add("material.hbm_m.titanium", "Титан");
+        add("material.hbm_m.aluminium", "Алюминий");
+        add("material.hbm_m.tungsten", "Вольфрам");
+        add("material.hbm_m.zirconium", "Цирконий");
+        add("material.hbm_m.osmiridium", "Осмиридий");
+        add("material.hbm_m.lead", "Свинец");
+        add("material.hbm_m.bismuth", "Висмут");
+        add("material.hbm_m.beryllium", "Бериллий");
+        add("material.hbm_m.cobalt", "Кобальт");
+        add("material.hbm_m.nickel", "Никель");
+        add("material.hbm_m.arsenic", "Мышьяк");
+        add("material.hbm_m.strontium", "Стронций");
+        add("material.hbm_m.calcium", "Кальций");
+        add("material.hbm_m.cadmium", "Кадмий");
+        add("material.hbm_m.technetium", "Технеций");
+        add("material.hbm_m.u238", "Уран-238");
+        add("material.hbm_m.schrabidium", "Шрабидий");
+        add("material.hbm_m.steel", "Сталь");
+        add("material.hbm_m.mingrade", "Красная медь");
+        add("material.hbm_m.dura_steel", "Быстрорежущая сталь");
+        add("material.hbm_m.saturnite", "Сатурнит");
+        add("material.hbm_m.star_metal", "Звёздный металл");
+        add("material.hbm_m.tcalloy", "Технециевая сталь");
+        add("material.hbm_m.ferro", "Ферроуран");
+        add("material.hbm_m.magtung", "Намагниченный вольфрам");
+        add("material.hbm_m.cmb", "Сталь Альянса");
+        add("material.hbm_m.cdalloy", "Кадмиевая сталь");
+        add("material.hbm_m.bbronze", "Висмутовая бронза");
+        add("material.hbm_m.abronze", "Мышьяковая бронза");
+        add("material.hbm_m.bscco", "BSCCO");
+        add("material.hbm_m.slag", "Шлак");
+        add("material.hbm_m.alloy", "Продвинутый сплав");
+        add("material.hbm_m.desh", "Деш");
+        add("material.hbm_m.flux", "Флюс");
+        add("material.hbm_m.hematite", "Гематит");
+        add("material.hbm_m.malachite", "Малахит");
+        add("material.hbm_m.carbon", "Углерод");
+        add("material.hbm_m.mud", "Грязь");
+        add("material.hbm_m.redstone", "Редстоун");
 
         add("hud.hbm_m.vats.on", "HUD: ON");
         add("hud.hbm_m.vats.off", "HUD: OFF");
@@ -3516,6 +3618,8 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("text.autoconfig.hbm_m.option.modelStaticRenderDistance", "Дистанция для рендеринга статических частей .obj моделей");
         add("text.autoconfig.hbm_m.option.enableOcclusionCulling", "Включить куллинг моделей");
         add("text.autoconfig.hbm_m.option.forceVanillaImmediatePath", "Ванильный immediate-путь (резерв)");
+        add("text.autoconfig.hbm_m.option.mdiCleanFrameReuse", "MDI: переиспользование чистого кадра");
+        add("text.autoconfig.hbm_m.option.mdiCleanFrameReuse.@Tooltip", "Переиспользовать MDI-снапшот инстансов, если данные не менялись с прошлого кадра (ноль аплоадов для статичной сцены). Отключать только для отладки.");
 
         add("text.autoconfig.hbm_m.option.vatsRenderDistanceChunks", "Дальность прорисовки VATS");
 
@@ -3711,6 +3815,28 @@ public class ModLanguageProviderRu extends LanguageProvider {
             }
         }
         add("tooltip.hbm_m.waste_cooling.desc", "Охладите в бочке с отработанным топливом");
+
+        // ── Тигель / нагреватели (порт 2026-09) ──
+        add("gui.hbm_m.crucible.empty", "Пусто");
+        add("gui.hbm_m.crucible.recipe", "Рецепт сплава");
+        add("gui.hbm_m.crucible.recipe.none", "Рецепт не выбран (всё в шлак)");
+        add("gui.hbm_m.crucible.recipe.set", "Выбрать рецепт");
+        add("gui.hbm_m.crucible.recipe.hint", "ЛКМ: следующий рецепт / Shift+ЛКМ: сброс");
+        add("gui.hbm_m.electric_heater.setting", "Мощность: %s");
+        add("gui.hbm_m.oilburner.setting", "Расход: %s");
+        add("fuel.hbm_m.log", "Брёвна: время горения x%s, тепло x%s");
+        add("fuel.hbm_m.wood", "Дерево: время горения x%s, тепло x%s");
+        add("fuel.hbm_m.coal", "Уголь: время горения x%s, тепло x%s");
+        add("fuel.hbm_m.lignite", "Лигнит: время горения x%s, тепло x%s");
+        add("fuel.hbm_m.coke", "Кокс: время горения x%s, тепло x%s");
+        add("fuel.hbm_m.solid_fuel", "Твёрдое топливо: время горения x%s, тепло x%s");
+        add("fuel.hbm_m.rocket_fuel", "Ракетное топливо: время горения x%s, тепло x%s");
+        add("fuel.hbm_m.balefire", "Бэйлфаер: время горения x%s, тепло x%s");
+
+        // ── Литейка (порт 2026-09) ──
+        add("foundry.hbm_m.noCast", "Нет изложницы");
+        add("foundry.hbm_m.mold_small", "Литейная форма");
+        add("foundry.hbm_m.mold_large", "Литейный бассейн");
     }
 }
 //?}

@@ -828,6 +828,8 @@ public class ModItemModelProvider extends ItemModelProvider {
         blockItemFromBlockModelMachine(ModBlocks.CRUCIBLE);
         blockItemFromBlockModelMachine(ModBlocks.FOUNDRY_BASIN);
         blockItemFromBlockModelMachine(ModBlocks.FOUNDRY_CHANNEL, "foundry_channel_inventory");
+        blockItemFromBlockModelMachine(ModBlocks.FOUNDRY_MOLD);
+        blockItemFromBlockModelMachine(ModBlocks.FOUNDRY_TANK);
         blockItemFromBlockModelMachine(ModBlocks.CENTRIFUGE);
         blockItemFromBlockModelMachine(ModBlocks.GAS_CENTRIFUGE);
         // Газовые блоки: blockstate = invisible_gas, поэтому item-модель делаем прямо
@@ -1134,6 +1136,7 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.OIL_TAR_PARAFFIN);
         simpleItem(ModItems.FLUORITE);
         simpleItem(ModItems.LIGNITE);
+        simpleItem(ModItems.COAL_ETERNAL);
         simpleItem(ModItems.CINNABAR);
         simpleItem(ModItems.FIREBRICK);
         simpleItem(ModItems.FIRECLAY_BALL);

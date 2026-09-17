@@ -34,7 +34,8 @@ public final class PressRecipeGenerator {
     private static void generateFlat(Consumer<FinishedRecipe> writer) {
         // Ported from 1.7.10 PressRecipes.java (StampType.FLAT).
         // Only recipes whose input AND output items both exist in this port were ported;
-        // see task summary for the recipes that were skipped (dusts, briquettes, pages, etc. don't exist here).
+        // remaining skips: meteorite sword chain (no "reforged" stage here), C9/C50 casings
+        // (no casing variants), printing plates 1-8 (no page items).
 
         PressRecipeBuilder.pressRecipe(new ItemStack(ModItems.BIOMASS_COMPRESSED.get()))
                 .stamp(ModTags.Items.STAMPS_FLAT)
@@ -45,6 +46,59 @@ public final class PressRecipeGenerator {
                 .stamp(ModTags.Items.STAMPS_FLAT)
                 .material(net.minecraft.world.level.block.Blocks.JUNGLE_LOG)
                 .save(writer, "ball_resin");
+
+        // Пыли -> самоцветы (ориг.: netherquartz/lapis/diamond/emerald dust)
+        PressRecipeBuilder.pressRecipe(new ItemStack(Items.QUARTZ))
+                .stamp(ModTags.Items.STAMPS_FLAT)
+                .material(ModMaterialItems.item(ModMaterials.QUARTZ, MaterialShape.POWDER))
+                .save(writer, "quartz");
+
+        PressRecipeBuilder.pressRecipe(new ItemStack(Items.LAPIS_LAZULI))
+                .stamp(ModTags.Items.STAMPS_FLAT)
+                .material(ModMaterialItems.item(ModMaterials.LAPIS, MaterialShape.POWDER))
+                .save(writer, "lapis");
+
+        PressRecipeBuilder.pressRecipe(new ItemStack(Items.DIAMOND))
+                .stamp(ModTags.Items.STAMPS_FLAT)
+                .material(ModMaterialItems.item(ModMaterials.DIAMOND, MaterialShape.POWDER))
+                .save(writer, "diamond");
+
+        PressRecipeBuilder.pressRecipe(new ItemStack(Items.EMERALD))
+                .stamp(ModTags.Items.STAMPS_FLAT)
+                .material(ModMaterialItems.item(ModMaterials.EMERALD, MaterialShape.POWDER))
+                .save(writer, "emerald");
+
+        // Брикеты (ориг.: coal/lignite dust, sawdust)
+        PressRecipeBuilder.pressRecipe(new ItemStack(ModItems.COAL_BRIQUETTE.get()))
+                .stamp(ModTags.Items.STAMPS_FLAT)
+                .material(ModMaterialItems.item(ModMaterials.COAL, MaterialShape.POWDER))
+                .save(writer, "coal_briquette");
+
+        PressRecipeBuilder.pressRecipe(new ItemStack(ModItems.LIGNITE_BRIQUETTE.get()))
+                .stamp(ModTags.Items.STAMPS_FLAT)
+                .material(ModItems.LIGNITE_POWDER.get())
+                .save(writer, "lignite_briquette");
+
+        PressRecipeBuilder.pressRecipe(new ItemStack(ModItems.SAWDUST_BRIQUETTE.get()))
+                .stamp(ModTags.Items.STAMPS_FLAT)
+                .material(ModItems.POWDER_SAWDUST.get())
+                .save(writer, "sawdust_briquette");
+
+        // Кокс -> графитовый слиток (ориг.: ANY_COKE.gem -> ingot_graphite)
+        PressRecipeBuilder.pressRecipe(ModMaterialItems.stack(ModMaterials.GRAPHITE, MaterialShape.INGOT, 1))
+                .stamp(ModTags.Items.STAMPS_FLAT)
+                .material(ModItems.COAL_COKE.get())
+                .save(writer, "graphite_coal_coke");
+
+        PressRecipeBuilder.pressRecipe(ModMaterialItems.stack(ModMaterials.GRAPHITE, MaterialShape.INGOT, 1))
+                .stamp(ModTags.Items.STAMPS_FLAT)
+                .material(ModItems.LIGNITE_COKE.get())
+                .save(writer, "graphite_lignite_coke");
+
+        PressRecipeBuilder.pressRecipe(ModMaterialItems.stack(ModMaterials.GRAPHITE, MaterialShape.INGOT, 1))
+                .stamp(ModTags.Items.STAMPS_FLAT)
+                .material(ModItems.COKE_PETROLEUM.get())
+                .save(writer, "graphite_petroleum_coke");
     }
 
     private static void generatePlates(Consumer<FinishedRecipe> writer) {
@@ -169,6 +223,16 @@ public final class PressRecipeGenerator {
                 .stamp(ModTags.Items.STAMPS_WIRE)
                 .material(ModMaterialItems.item(ModMaterials.TUNGSTEN, MaterialShape.INGOT))
                 .save(writer, "wire_tungsten");
+
+        PressRecipeBuilder.pressRecipe(ModMaterialItems.stack(ModMaterials.STEEL, MaterialShape.WIRE, 8))
+                .stamp(ModTags.Items.STAMPS_WIRE)
+                .material(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.INGOT))
+                .save(writer, "wire_steel");
+
+        PressRecipeBuilder.pressRecipe(ModMaterialItems.stack(ModMaterials.ZIRCONIUM, MaterialShape.WIRE, 8))
+                .stamp(ModTags.Items.STAMPS_WIRE)
+                .material(ModMaterialItems.item(ModMaterials.ZIRCONIUM, MaterialShape.INGOT))
+                .save(writer, "wire_zirconium");
 
         PressRecipeBuilder.pressRecipe(new ItemStack(ModItems.SILICON_CIRCUIT.get()))
                 .stamp(ModTags.Items.STAMPS_CIRCUIT)
