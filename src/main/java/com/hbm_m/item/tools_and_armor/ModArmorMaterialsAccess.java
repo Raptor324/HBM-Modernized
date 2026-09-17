@@ -94,7 +94,7 @@ public final class ModArmorMaterialsAccess {
 
     /^* Возвращает Holder<ArmorMaterial> для NeoForge — он передаётся в ArmorItem. ^/
     public static Holder<ArmorMaterial> holder(ModArmorMaterials m) {
-        return Holder.direct(HOLDERS.get(m).get());
+        return (Holder<ArmorMaterial>) (Object) HOLDERS.get(m);
     }
 
     /^* Регистрирует ARMOR_MATERIALS через Architectury (NeoForge). ^/

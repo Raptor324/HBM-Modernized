@@ -1,15 +1,28 @@
 package com.hbm_m.item.industrial;
 
+import java.util.List;
+
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.RecipeType;
 import org.jetbrains.annotations.Nullable;
 
-public class FuelItem extends Item {
-    private int burnTime = 0;
+import com.hbm_m.item.LoreTooltipItem;
+
+/** Предмет-топливо: тики горения задаются при регистрации (значения оригинального
+ *  FuelHandler 1.7.10). Работает и как печное топливо, и в машинах (пресс и т.п.),
+ *  т.к. читается через IForgeItem/IItemExtension#getBurnTime. */
+public class FuelItem extends LoreTooltipItem {
+    private final int burnTime;
 
     public FuelItem(Properties pProperties, int burnTime) {
-        super(pProperties);
+        this(null, pProperties, burnTime);
+    }
+
+    /** Топливо с lore-тултипом (как оригинальные desc-строки). */
+    public FuelItem(@Nullable List<Component> lore, Properties pProperties, int burnTime) {
+        super(lore == null ? List.of() : lore, pProperties);
         this.burnTime = burnTime;
     }
 

@@ -28,8 +28,19 @@ public class ScrapItem extends Item implements ITooltipProvider {
     public static final int QUANTA_PER_INGOT = QUANTA_PER_NUGGET * 9;
     public static final int QUANTA_PER_BLOCK = QUANTA_PER_INGOT * 9;
 
-    public ScrapItem(Properties properties) {
+    private final ModMaterials material;
+
+    public ScrapItem(ModMaterials material, Properties properties) {
         super(properties);
+        this.material = material;
+    }
+
+    public ScrapItem(Properties properties) {
+        this(null, properties);
+    }
+
+    public @org.jetbrains.annotations.Nullable ModMaterials getMaterial() {
+        return material;
     }
 
     /** Количество в квантах: тег {@code amount} либо 1 слиток по умолчанию. */

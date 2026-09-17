@@ -159,6 +159,42 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(item));
     }
 
+    private static void addCastMolds(Consumer<ItemStack> add) {
+        add.accept(new ItemStack(ModItems.MOLD_BASE.get()));
+        add.accept(new ItemStack(ModItems.MOLD_STEEL_BASE.get()));
+        add.accept(new ItemStack(ModItems.MOLD_NUGGET.get()));
+        add.accept(new ItemStack(ModItems.MOLD_BILLET.get()));
+        add.accept(new ItemStack(ModItems.MOLD_INGOT.get()));
+        add.accept(new ItemStack(ModItems.MOLD_INGOTS.get()));
+        add.accept(new ItemStack(ModItems.MOLD_PLATE.get()));
+        add.accept(new ItemStack(ModItems.MOLD_PLATES.get()));
+        add.accept(new ItemStack(ModItems.MOLD_PLATE_CAST.get()));
+        add.accept(new ItemStack(ModItems.MOLD_PLATES_CAST.get()));
+        add.accept(new ItemStack(ModItems.MOLD_WIRE.get()));
+        add.accept(new ItemStack(ModItems.MOLD_WIRE_DENSE.get()));
+        add.accept(new ItemStack(ModItems.MOLD_WIRES_DENSE.get()));
+        add.accept(new ItemStack(ModItems.MOLD_PIPE.get()));
+        add.accept(new ItemStack(ModItems.MOLD_PIPES.get()));
+        add.accept(new ItemStack(ModItems.MOLD_BLOCK.get()));
+        add.accept(new ItemStack(ModItems.MOLD_BLADE.get()));
+        add.accept(new ItemStack(ModItems.MOLD_BLADES.get()));
+        add.accept(new ItemStack(ModItems.MOLD_STAMP.get()));
+        add.accept(new ItemStack(ModItems.MOLD_SHELL.get()));
+        add.accept(new ItemStack(ModItems.MOLD_GEM.get()));
+        add.accept(new ItemStack(ModItems.MOLD_BARREL_LIGHT.get()));
+        add.accept(new ItemStack(ModItems.MOLD_BARREL_HEAVY.get()));
+        add.accept(new ItemStack(ModItems.MOLD_RECEIVER_LIGHT.get()));
+        add.accept(new ItemStack(ModItems.MOLD_RECEIVER_HEAVY.get()));
+        add.accept(new ItemStack(ModItems.MOLD_MECHANISM.get()));
+        add.accept(new ItemStack(ModItems.MOLD_STOCK.get()));
+        add.accept(new ItemStack(ModItems.MOLD_GRIP.get()));
+        add.accept(new ItemStack(ModItems.MOLD_C357.get()));
+        add.accept(new ItemStack(ModItems.MOLD_CBUCKSHOT.get()));
+        add.accept(new ItemStack(ModItems.MOLD_HULL_SMALL.get()));
+        add.accept(new ItemStack(ModItems.MOLD_HULL_BIG.get()));
+        add.accept(new ItemStack(ModItems.MOLD_MOGUS.get()));
+    }
+
     // ==================== Вкладки мода (порядок оригинала 1.7.10) ====================
 
         /** populatePartsTab: порядок из оригинального 1.7.10 (ModBlocks/ModItems, вкладка parts); отсутствующие в порте предметы пропущены. */
@@ -1085,7 +1121,7 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModItems.BLADES_STEEL.get()));
         add.accept(new ItemStack(ModItems.BLADES_TITANIUM.get()));
         add.accept(new ItemStack(ModItems.BLADES_DESH.get()));
-        add.accept(new ItemStack(ModItems.MOLD_BASE.get()));
+        addCastMolds(add);
         add.accept(new ItemStack(ModItems.PART_LITHIUM.get()));
         add.accept(new ItemStack(ModItems.PART_BERYLLIUM.get()));
         add.accept(new ItemStack(ModItems.PART_CARBON.get()));
@@ -1316,6 +1352,10 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModBlocks.BLOCK_CORIUM_COBBLE.get()));
         add.accept(new ItemStack(ModBlocks.BLOCK_SCRAP.get()));
         add.accept(new ItemStack(ModBlocks.BLOCK_ELECTRICAL_SCRAP.get()));
+        // Блоки кокса (ориг. blockTab; coal_eternal в креатив не входит — как в 1.7.10)
+        add.accept(new ItemStack(ModBlocks.BLOCK_COAL_COKE.get()));
+        add.accept(new ItemStack(ModBlocks.BLOCK_LIGNITE_COKE.get()));
+        add.accept(new ItemStack(ModBlocks.BLOCK_PETROLEUM_COKE.get()));
         add.accept(new ItemStack(ModBlocks.BLOCK_SCHRABIDIUM_CLUSTER.get()));
         add.accept(new ItemStack(ModBlocks.BLOCK_EUPHEMIUM_CLUSTER.get()));
         add.accept(new ItemStack(ModBlocks.BLOCK_MAGNETIZED_TUNGSTEN.get()));
@@ -1524,12 +1564,14 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModBlocks.SAWMILL.get()));
         add.accept(new ItemStack(ModBlocks.STRAND_CASTER.get()));
         add.accept(new ItemStack(ModBlocks.CRUCIBLE.get()));
+        add.accept(new ItemStack(ModItems.HEATING_OVEN.get()));
         add.accept(new ItemStack(ModBlocks.MACHINE_BOILER.get()));
         add.accept(new ItemStack(ModItems.INDUSTRIAL_BOILER.get()));
         add.accept(new ItemStack(ModBlocks.FOUNDRY_MOLD.get()));
         add.accept(new ItemStack(ModBlocks.FOUNDRY_BASIN.get()));
         add.accept(new ItemStack(ModBlocks.FOUNDRY_CHANNEL.get()));
         add.accept(new ItemStack(ModBlocks.FOUNDRY_TANK.get()));
+        addCastMolds(add);
         add.accept(new ItemStack(ModBlocks.FOUNDRY_OUTLET.get()));
         add.accept(new ItemStack(ModBlocks.FOUNDRY_SLAGTAP.get()));
         add.accept(new ItemStack(ModBlocks.MACHINE_DIFURNACE_RTG.get()));

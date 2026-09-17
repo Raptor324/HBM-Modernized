@@ -64,6 +64,10 @@ public final class ItemEnergyAccess {
         return stack.getCapability(ForgeCapabilities.ENERGY).map(net.minecraftforge.energy.IEnergyStorage::canExtract).orElse(false);
     }
 
+    public static boolean canForgeReceive(ItemStack stack) {
+        return stack.getCapability(ForgeCapabilities.ENERGY).map(net.minecraftforge.energy.IEnergyStorage::canReceive).orElse(false);
+    }
+
     public static java.util.Optional<net.minecraftforge.energy.IEnergyStorage> getForgeEnergy(ItemStack stack) {
         if (stack.isEmpty()) return java.util.Optional.empty();
         return stack.getCapability(ForgeCapabilities.ENERGY).resolve();
@@ -73,6 +77,11 @@ public final class ItemEnergyAccess {
     /*public static boolean canForgeExtract(ItemStack stack) {
         net.neoforged.neoforge.energy.IEnergyStorage cap = stack.getCapability(Capabilities.EnergyStorage.ITEM);
         return cap != null && cap.canExtract();
+    }
+
+    public static boolean canForgeReceive(ItemStack stack) {
+        net.neoforged.neoforge.energy.IEnergyStorage cap = stack.getCapability(Capabilities.EnergyStorage.ITEM);
+        return cap != null && cap.canReceive();
     }
 
     public static java.util.Optional<net.neoforged.neoforge.energy.IEnergyStorage> getForgeEnergy(ItemStack stack) {
