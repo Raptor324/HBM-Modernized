@@ -1,12 +1,14 @@
 #version 330 core
+#define USE_INSTANCING
+#define USE_VERTEX_BONE_ID
 
 layout(location = 0) in vec3 Position;
 layout(location = 1) in vec3 Normal;
 layout(location = 2) in vec2 UV0;
 
 #ifdef USE_INSTANCING
-// int bone_id: резерв под merged mesh / документация иерархии (см. OLD/render.md).
-// Полный pose части задаётся в InstPos/InstRot (CPU), UBO/SSBO в VS не используем — совместимость с Oculus/Iris.
+// int bone_id: СЂРµР·РµСЂРІ РїРѕРґ merged mesh / РґРѕРєСѓРјРµРЅС‚Р°С†РёСЏ РёРµСЂР°СЂС…РёРё (СЃРј. OLD/render.md).
+// РџРѕР»РЅС‹Р№ pose С‡Р°СЃС‚Рё Р·Р°РґР°С‘С‚СЃСЏ РІ InstPos/InstRot (CPU), UBO/SSBO РІ VS РЅРµ РёСЃРїРѕР»СЊР·СѓРµРј вЂ” СЃРѕРІРјРµСЃС‚РёРјРѕСЃС‚СЊ СЃ Oculus/Iris.
 #ifdef USE_VERTEX_BONE_ID
 layout(location = 3) in int BoneId;
 layout(location = 4) in vec3 InstPos;
@@ -50,7 +52,7 @@ out vec2 texCoord;
 out vec2 lightmapUV;
 out float vertexDistance;
 out vec3 fragNormal;
-// Мировая нормаль (поворот инстанса/модели без view-матрицы) для направленного затенения.
+// РњРёСЂРѕРІР°СЏ РЅРѕСЂРјР°Р»СЊ (РїРѕРІРѕСЂРѕС‚ РёРЅСЃС‚Р°РЅСЃР°/РјРѕРґРµР»Рё Р±РµР· view-РјР°С‚СЂРёС†С‹) РґР»СЏ РЅР°РїСЂР°РІР»РµРЅРЅРѕРіРѕ Р·Р°С‚РµРЅРµРЅРёСЏ.
 out vec3 worldNormal;
 // Per-vertex fade: InstBboxSize.w when instancing (batched flush reads stale uniform otherwise).
 out float vFadeAlpha;
@@ -112,10 +114,10 @@ void main() {
     mat4 rotMatrix = quatToMat4(InstRot);
     mat4 translation = mat4(1.0);
     translation[3] = vec4(InstPos, 1.0);
-    // InstPos/InstRot — МИРОВЫЕ координаты (FrameViewState): движение камеры не
-    // меняет записи (span-дифф даёт нулевой аплоад статичной сцены). Камера
-    // (R_cam·T(-cam)) приходит через ModelViewMat → viewPos остаётся view-space,
-    // туман/глубина не меняются.
+    // InstPos/InstRot вЂ” РњРР РћР’Р«Р• РєРѕРѕСЂРґРёРЅР°С‚С‹ (FrameViewState): РґРІРёР¶РµРЅРёРµ РєР°РјРµСЂС‹ РЅРµ
+    // РјРµРЅСЏРµС‚ Р·Р°РїРёСЃРё (span-РґРёС„С„ РґР°С‘С‚ РЅСѓР»РµРІРѕР№ Р°РїР»РѕР°Рґ СЃС‚Р°С‚РёС‡РЅРѕР№ СЃС†РµРЅС‹). РљР°РјРµСЂР°
+    // (R_camВ·T(-cam)) РїСЂРёС…РѕРґРёС‚ С‡РµСЂРµР· ModelViewMat в†’ viewPos РѕСЃС‚Р°С‘С‚СЃСЏ view-space,
+    // С‚СѓРјР°РЅ/РіР»СѓР±РёРЅР° РЅРµ РјРµРЅСЏСЋС‚СЃСЏ.
     mat4 instBase = translation * rotMatrix;
     modelView = ModelViewMat * instBase;
     worldRot = rotMatrix;
@@ -126,8 +128,8 @@ void main() {
     lc45 = InstLightC45;
     lc67 = InstLightC67;
 
-    // Мировая нормаль части (без view-ротации) — для затенения; fragNormal
-    // сохраняет прежнюю семантику (ротация инстанса, без камеры).
+    // РњРёСЂРѕРІР°СЏ РЅРѕСЂРјР°Р»СЊ С‡Р°СЃС‚Рё (Р±РµР· view-СЂРѕС‚Р°С†РёРё) вЂ” РґР»СЏ Р·Р°С‚РµРЅРµРЅРёСЏ; fragNormal
+    // СЃРѕС…СЂР°РЅСЏРµС‚ РїСЂРµР¶РЅСЋСЋ СЃРµРјР°РЅС‚РёРєСѓ (СЂРѕС‚Р°С†РёСЏ РёРЅСЃС‚Р°РЅСЃР°, Р±РµР· РєР°РјРµСЂС‹).
     fragNormal = mat3(instBase) * Normal;
 #else
     modelView = ModelViewMat;
@@ -141,8 +143,8 @@ void main() {
     fragNormal = mat3(modelView) * Normal;
 #endif
 
-    // Мировая нормаль: только поворот инстанса (или identity для не-instanced пути),
-    // без view-матрицы — затенение не зависит от поворота камеры.
+    // РњРёСЂРѕРІР°СЏ РЅРѕСЂРјР°Р»СЊ: С‚РѕР»СЊРєРѕ РїРѕРІРѕСЂРѕС‚ РёРЅСЃС‚Р°РЅСЃР° (РёР»Рё identity РґР»СЏ РЅРµ-instanced РїСѓС‚Рё),
+    // Р±РµР· view-РјР°С‚СЂРёС†С‹ вЂ” Р·Р°С‚РµРЅРµРЅРёРµ РЅРµ Р·Р°РІРёСЃРёС‚ РѕС‚ РїРѕРІРѕСЂРѕС‚Р° РєР°РјРµСЂС‹.
     worldNormal = mat3(worldRot) * Normal;
 
     // Safeguard: when bboxSize has a zero axis the division below would NaN the
@@ -157,7 +159,7 @@ void main() {
     gl_Position = ProjMat * viewPos;
 
     texCoord = UV0;
-    // Center within the 16×16 lightmap cell like vanilla block UV2 → texcoord.
+    // Center within the 16Г—16 lightmap cell like vanilla block UV2 в†’ texcoord.
     lightmapUV = (uvLm + vec2(8.0)) / 256.0;
     vertexDistance = length(viewPos.xyz);
 

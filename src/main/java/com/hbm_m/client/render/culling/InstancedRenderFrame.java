@@ -4,8 +4,11 @@ import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 
 import com.hbm_m.client.render.ClientRenderFlags;
+import com.hbm_m.client.render.FrameViewState;
 import com.hbm_m.client.render.LightSampleCache;
 import com.hbm_m.client.render.MdiBatchCoordinator;
+import com.hbm_m.client.render.NucleusDebug;
+import com.hbm_m.client.render.PersistentUploadStaging;
 import com.hbm_m.client.render.RenderFrameLight;
 import com.hbm_m.client.render.implementations.DoorRenderer;
 import com.hbm_m.client.render.implementations.MachineAdvancedAssemblerRenderer;
@@ -64,6 +67,12 @@ public final class InstancedRenderFrame {
         }
         RenderFrameLight.onFrameStart();
         ClientRenderFlags.onFrameStart();
+        // Shadow-фаза уже отработала: незафлашенный глобальный shadow-батч =
+        // миксин не сработал → авто-откат на немедленный shadow-путь.
+        com.hbm_m.client.render.IrisShadowBatchCollector.onMainPassFrameStart();
+        com.hbm_m.client.render.shader.IrisInstancedShaders.onFrameStart();
+        // Per-frame счётчики секции F3 ([Nucleus]); оверлей рисуется позже в этом же кадре.
+        NucleusDebug.onFrameStart();
         // Detect Iris pipeline rebuilds before BER so cached ExtendedShader /
         // sampler bindings are not reused with destroyed GlResources.
         IrisExtendedShaderAccess.tickPass();
@@ -104,6 +113,19 @@ public final class InstancedRenderFrame {
                 coord.endFrame(false);
             }
 
+            // Фаза 2: затухающие инстансы прямых путей (GPU-bones chain-части
+            // сборочных машин, DoorRenderer, MDI-fallback) — строго ПОСЛЕ
+            // MDI-мульти-драва, чтобы полупрозрачная геометрия не писала глубину
+            // раньше непрозрачных машин (depth-reject «дыра с чанком»).
+            flushAllInstancedFading(projection);
+
+            // Все span-аплоады кадра ушли в staging-кольцо — ставим фенс,
+            // ограждающий переиспользование диапазона следующим кадром.
+            PersistentUploadStaging staging = PersistentUploadStaging.getOrCreate();
+            if (staging != null) {
+                staging.endFrame();
+            }
+
             MdiRenderFrameGate.advanceAfterPresent();
 
             // БЕЗ guard'а useInstancedBatching: при выключенном инстансинге
@@ -123,6 +145,15 @@ public final class InstancedRenderFrame {
             MachineCrystallizerRenderer.presentDeferredFluids();
         } catch (Throwable t) {
             MainRegistry.LOGGER.error("[HBM-M] instanced present failed", t);
+            // Страховки после исключения: фенс на уже ушедшие в staging копии
+            // (иначе следующий кадр может перезаписать незавершённый диапазон) и
+            // сброс камера-кеша (serial не вырос — без сброса следующий кадр
+            // переиспользовал бы протухшую view-матрицу).
+            PersistentUploadStaging staging = PersistentUploadStaging.getOrCreate();
+            if (staging != null) {
+                staging.endFrame();
+            }
+            FrameViewState.invalidate();
             MdiBatchCoordinator.discardActiveSessionNoDispatch();
             MachineChemicalPlantRenderer.clearDeferredFluids();
             MachineCrystallizerRenderer.clearDeferredFluids();
@@ -171,9 +202,19 @@ public final class InstancedRenderFrame {
         DoorRenderer.flushInstancedBatches(projection);
     }
 
+    /**
+     * Фаза 2 флаша: затухающие инстансы прямых (не-MDI) путей. Инвариант кадра:
+     * «opaque всех путей → fading MDI (внутри мульти-драва) → fading прямых путей».
+     */
+    private static void flushAllInstancedFading(Matrix4f projection) {
+        com.hbm_m.client.render.machine.MachineRenderRegistry.flushAllFading(projection);
+        DoorRenderer.flushFadingBatches(projection);
+    }
+
     public static void clear() {
         MdiRenderFrameGate.reset();
         InstancedRenderStats.clear();
+        NucleusDebug.onFrameStart();
         MdiBatchCoordinator.cancelScheduledDraw();
         MdiBatchCoordinator.discardActiveSessionNoDispatch();
         MdiBatchCoordinator.clearCachedRedraw();

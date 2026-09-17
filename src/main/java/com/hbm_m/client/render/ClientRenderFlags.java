@@ -17,6 +17,7 @@ public final class ClientRenderFlags {
     /** Same default as {@link ModClothConfig#maxInstancedInstancesPerPart} until {@link #onFrameStart()}. */
     private static int maxInstances = 4096;
     private static boolean forceVanillaImmediate;
+    private static boolean mdiCleanFrameReuse = true;
 
     private ClientRenderFlags() {}
 
@@ -26,6 +27,7 @@ public final class ClientRenderFlags {
         enableOcclusionCulling = cfg.enableOcclusionCulling;
         maxInstances = cfg.maxInstancedInstancesPerPart;
         forceVanillaImmediate = cfg.forceVanillaImmediatePath;
+        mdiCleanFrameReuse = cfg.mdiCleanFrameReuse;
         // Один опрос Iris API за кадр — isExternalShaderActive() дальше читает кеш.
         com.hbm_m.client.render.shader.ShaderCompatibilityDetector.updateState();
     }
@@ -48,6 +50,33 @@ public final class ClientRenderFlags {
 
     public static boolean enableOcclusionCulling() {
         return enableOcclusionCulling;
+    }
+
+    /**
+     * MDI clean-frame reuse (submitClean/retained draw list). Kill-switch
+     * {@link ModClothConfig#mdiCleanFrameReuse}; default on.
+     */
+    public static boolean mdiCleanFrameReuse() {
+        return mdiCleanFrameReuse;
+    }
+
+    /**
+     * Истинный {@code glDrawElementsInstanced} под Iris/Oculus через наш
+     * ExtendedShader. ВКЛЮЧАЕТСЯ автоматически, когда у активного пака
+     * распознана схема gbuffer, для которой есть энкодер
+     * ({@link com.hbm_m.client.render.shader.IrisInstancedEncoders} — детект
+     * по исходнику gbuffer-программы пака, без имён паков; схема "packed" —
+     * gbuffer пакуется парами unorm8: albedo/normal/light).
+     * <p>
+     * Без распознанной схемы режим уводит main-проход на companion
+     * per-instance через pack-программу BLOCK_ENTITY, shadow-батч — на
+     * pack-программу SHADOW_*: корректно под любым паком. Однотаргетный
+     * «ванильный» FSH под deferred-паком даёт чёрные машины (композит
+     * декодирует мусор), поэтому вслепую инстансинг не включается.
+     */
+    public static boolean irisTrueInstancing() {
+        return com.hbm_m.client.render.shader.ShaderCompatibilityDetector.isExternalShaderActive()
+                && com.hbm_m.client.render.shader.IrisInstancedEncoders.hasEncoder();
     }
 
     /**

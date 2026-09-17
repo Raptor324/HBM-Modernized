@@ -13,10 +13,11 @@ import net.minecraft.world.phys.Vec3;
  * all BER renderers. Centralizes the distance check and fade factor math
  * so every renderer behaves identically.
  *
- * <p>The fade zone spans the last 16 blocks (1 chunk) before the cutoff
- * distance. Within this zone, {@link #computeFade} returns a value in
- * {@code (0, 1]} that renderers multiply into their alpha / color to
- * smoothly dissolve the part instead of popping it out abruptly.
+ * <p>The fade zone spans the tail of the cutoff distance — a fraction of it
+ * ({@link #FADE_ZONE_FRACTION}), not a fixed block count. Within this zone,
+ * {@link #computeFade} returns a value in {@code (0, 1]} that renderers
+ * multiply into their alpha / color to smoothly dissolve the part instead of
+ * popping it out abruptly.
  */
 
 //? if forge {
@@ -30,7 +31,22 @@ public final class RenderDistanceHelper {
 
     private RenderDistanceHelper() {}
 
-    private static final double FADE_ZONE_BLOCKS = 16.0;
+    /**
+     * Ширина зоны fade: доля от дистанции отсечки, зажатая сверху разумным
+     * максимумом. Фиксированные 16 блоков читались как мгновенное исчезновение:
+     * на скорости полёта станок пролетает их за доли секунды, а кольцо фейда
+     * стоит на месте — сквозь него «пролетают» ряды ферм, и выглядит это как
+     * поп-отсечка. Пропорция даёт длинное видимое растворение на любой
+     * дистанции (128 блоков → ~38 блоков зоны, 256 → 64).
+     */
+    private static final double FADE_ZONE_FRACTION = 0.3;
+    private static final double FADE_ZONE_MIN_BLOCKS = 16.0;
+    private static final double FADE_ZONE_MAX_BLOCKS = 64.0;
+
+    private static double fadeZoneBlocks(double maxBlocks) {
+        double zone = maxBlocks * FADE_ZONE_FRACTION;
+        return Math.max(FADE_ZONE_MIN_BLOCKS, Math.min(zone, FADE_ZONE_MAX_BLOCKS));
+    }
 
     /**
      * Within this many blocks of {@link #getStaticDistanceBlocks()}, 8-corner spatial
@@ -123,12 +139,13 @@ public final class RenderDistanceHelper {
         double maxSq = maxBlocks * maxBlocks;
         if (distSq > maxSq) return -1f;
 
-        double fadeStartBlocks = Math.max(0, maxBlocks - FADE_ZONE_BLOCKS);
+        double zone = fadeZoneBlocks(maxBlocks);
+        double fadeStartBlocks = Math.max(0, maxBlocks - zone);
         double fadeStartSq = fadeStartBlocks * fadeStartBlocks;
         if (distSq <= fadeStartSq) return 1.0f;
 
         double dist = Math.sqrt(distSq);
-        float t = (float) ((maxBlocks - dist) / FADE_ZONE_BLOCKS);
+        float t = (float) ((maxBlocks - dist) / zone);
         return Math.max(0f, Math.min(1f, t));
     }
 

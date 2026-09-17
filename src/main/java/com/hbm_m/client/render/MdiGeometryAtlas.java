@@ -103,6 +103,11 @@ public final class MdiGeometryAtlas {
     private int instanceVboId = 0;
     private int indirectBufId = 0;
 
+    // CPU-копия содержимого instance VBO для span-диффа (GpuSpanUploader):
+    // статичная сцена с мировыми координатами записей даёт ноль аплоадов.
+    private FloatBuffer instanceShadow = null;
+    private boolean instanceShadowValid = false;
+
     // Allocated byte capacities and current high-water marks.
     private long vertexCapBytes = 0;
     private long vertexUsedBytes = 0;
@@ -119,6 +124,11 @@ public final class MdiGeometryAtlas {
     private final Map<InstancedStaticPartRenderer, GeoRecord> geometryByRenderer = new LinkedHashMap<>();
 
     private MdiGeometryAtlas() { /* lazy init below */ }
+
+    /** Текущий инстанс без ленивого создания (для диагностики; null = атлас ещё не создан). */
+    public static MdiGeometryAtlas peekOrNull() {
+        return INSTANCE;
+    }
 
     public static MdiGeometryAtlas getOrCreate() {
         MdiGeometryAtlas inst = INSTANCE;
@@ -173,6 +183,14 @@ public final class MdiGeometryAtlas {
         vertexUsedBytes = 0L;
         indexUsedBytes = 0L;
 
+        // Shadow освобождаем ДО early-return по !ready: она могла быть создана
+        // в неудавшемся initialise() (ready=false) — иначе утечка.
+        if (instanceShadow != null) {
+            MemoryUtil.memFree(instanceShadow);
+            instanceShadow = null;
+        }
+        instanceShadowValid = false;
+
         if (!ready) {
             return;
         }
@@ -220,6 +238,8 @@ public final class MdiGeometryAtlas {
             vertexCapBytes = 256L * 1024L;
             indexCapBytes = 64L * 1024L;
             instanceCapInstances = 4096L; // grow on demand
+            instanceShadow = MemoryUtil.memAllocFloat((int) (instanceCapInstances * INSTANCE_FLOATS));
+            instanceShadowValid = false;
 
             GL30.glBindVertexArray(vaoId);
 
@@ -312,6 +332,17 @@ public final class MdiGeometryAtlas {
 
     public int getInstanceFloatsPerInstance() { return INSTANCE_FLOATS; }
     public int getInstanceFadeFloatOffset() { return INSTANCE_FADE_FLOAT_OFFSET; }
+
+    /**
+     * Оценка VRAM атласа: использованные вершины/индексы + ёмкость instance VBO
+     * и indirect-буфера. Для секции F3 ({@code NucleusDebug}).
+     */
+    public synchronized long estimateVramBytes() {
+        if (!ready) return 0L;
+        return vertexUsedBytes + indexUsedBytes
+                + instanceCapInstances * INSTANCE_FLOATS * 4L
+                + indirectCmdCapBytes;
+    }
 
     /** Только для диагностики MDI: число зарегистрированных частей в атласе. */
     public synchronized int getRegisteredGeometryCount() {
@@ -546,6 +577,12 @@ public final class MdiGeometryAtlas {
             GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, instanceVboId);
             GL15.glBufferData(GL15.GL_ARRAY_BUFFER, newCap * INSTANCE_FLOATS * 4L, GL15.GL_STREAM_DRAW);
             instanceCapInstances = newCap;
+            // Ёмкость выросла: старая shadow больше не покрывает буфер — сброс.
+            if (instanceShadow != null) {
+                MemoryUtil.memFree(instanceShadow);
+            }
+            instanceShadow = MemoryUtil.memAllocFloat((int) (instanceCapInstances * INSTANCE_FLOATS));
+            instanceShadowValid = false;
             return true;
         } catch (Throwable t) {
             MainRegistry.LOGGER.error("[HBM-M MDI] Instance VBO grow failed", t);
@@ -555,15 +592,30 @@ public final class MdiGeometryAtlas {
         }
     }
 
-    /** Orphan the instance VBO at the start of a frame (driver-friendly streaming). */
-    public void orphanInstanceBuffer(int instances) {
-        GLCapabilitiesGuard guard = GLCapabilitiesGuard.snapshot();
-        try {
-            GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, instanceVboId);
-            GL15.glBufferData(GL15.GL_ARRAY_BUFFER, instanceCapInstances * INSTANCE_FLOATS * 4L, GL15.GL_STREAM_DRAW);
-        } finally {
-            guard.restore();
+    /**
+     * Span-аплоад окна инстанс-данных в атлас по смещению {@code destFloatOffset}:
+     * дифф против {@link #instanceShadow}, грузятся только изменившиеся диапазоны.
+     * Orphan убран — скипнутые span-ы обязаны сохранять старое содержимое VBO.
+     * Валидность shadow сбрасывается ростом ёмкости; после полного кадра аплоадов
+     * координатор вызывает {@link #markInstanceShadowValid()}.
+     */
+    public void uploadInstanceWindowSpanned(int destFloatOffset, FloatBuffer src,
+                                            int srcFloatOffset, int floatCount) {
+        if (!ready || floatCount <= 0) return;
+        if (instanceShadowValid) {
+            GpuSpanUploader.diffUpload(instanceShadow, src, srcFloatOffset, destFloatOffset, floatCount, instanceVboId);
+        } else {
+            GpuSpanUploader.fullUpload(instanceShadow, destFloatOffset, src, srcFloatOffset, floatCount, instanceVboId);
         }
+    }
+
+    /** Вызывается координатором после успешного аплоада всех окон кадра. */
+    public void markInstanceShadowValid() {
+        instanceShadowValid = true;
+    }
+
+    public boolean isInstanceShadowValid() {
+        return instanceShadowValid;
     }
 
     /**
@@ -581,21 +633,6 @@ public final class MdiGeometryAtlas {
             GL15.glBindBuffer(GL40.GL_DRAW_INDIRECT_BUFFER, indirectBufId);
             GL15.glBufferData(GL40.GL_DRAW_INDIRECT_BUFFER, newCap, GL15.GL_STREAM_DRAW);
             indirectCmdCapBytes = newCap;
-        } finally {
-            guard.restore();
-        }
-    }
-
-    /** Upload one window of instance floats at the given instance-float offset. */
-    public void uploadInstanceWindow(int floatOffset, FloatBuffer src, int floatCount) {
-        GLCapabilitiesGuard guard = GLCapabilitiesGuard.snapshot();
-        try {
-            GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, instanceVboId);
-            // FloatBuffer overload of glBufferSubData reads from absolute position
-            // 0..remaining(); we want only the first `floatCount` floats.
-            FloatBuffer slice = src.duplicate();
-            slice.limit(slice.position() + floatCount);
-            GL15.glBufferSubData(GL15.GL_ARRAY_BUFFER, (long) floatOffset * 4L, slice);
         } finally {
             guard.restore();
         }
