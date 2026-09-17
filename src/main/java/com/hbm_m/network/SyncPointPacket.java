@@ -22,11 +22,18 @@ public class SyncPointPacket implements C2SPacket {
 
     public SyncPointPacket(int pointIndex, String pointName, int x, int y, int z, boolean hasTarget) {
         this.pointIndex = pointIndex;
+        if (pointName != null && pointName.length() > 16) {
+            pointName = pointName.substring(0, 16);
+        }
         this.pointName  = (pointName == null) ? "" : pointName;
         this.x          = x;
         this.y          = y;
         this.z          = z;
         this.hasTarget  = hasTarget;
+    }
+
+    public SyncPointPacket(int pointIndex, String pointName) {
+        this(pointIndex, pointName, 0, 0, 0, false);
     }
 
     // ── Serialization ─────────────────────────────────────────────────────────
@@ -57,7 +64,7 @@ public class SyncPointPacket implements C2SPacket {
     public static void handle(SyncPointPacket msg, PacketContext context) {
         context.queue(() -> {
             if (!(context.getPlayer() instanceof ServerPlayer player)) return;
-            if (msg.pointIndex < 0) return;
+            if (msg.pointIndex < 0 || msg.pointIndex >= 4) return;
 
             ItemStack mainItem = player.getMainHandItem();
             ItemStack offItem  = player.getOffhandItem();
@@ -68,41 +75,19 @@ public class SyncPointPacket implements C2SPacket {
 
             if (detonatorStack.isEmpty()) return;
 
-            PlatformHooks.editItemTag(detonatorStack, nbt -> {
-                ListTag pointsList;
-                if (!nbt.contains("Points", Tag.TAG_LIST)) {
-                    pointsList = new ListTag();
-                    nbt.put("Points", pointsList);
-                } else {
-                    pointsList = nbt.getList("Points", Tag.TAG_COMPOUND);
-                }
-
-                while (pointsList.size() <= msg.pointIndex) {
-                    CompoundTag emptyTag = new CompoundTag();
-                    emptyTag.putInt("X", 0);
-                    emptyTag.putInt("Y", 0);
-                    emptyTag.putInt("Z", 0);
-                    emptyTag.putString("Name", "");
-                    emptyTag.putBoolean("HasTarget", false);
-                    pointsList.add(emptyTag);
-                }
-
-                CompoundTag pointTag = pointsList.getCompound(msg.pointIndex);
-                pointTag.putInt("X", msg.x);
-                pointTag.putInt("Y", msg.y);
-                pointTag.putInt("Z", msg.z);
-                pointTag.putString("Name", msg.pointName);
-                pointTag.putBoolean("HasTarget", msg.hasTarget);
-
-                pointsList.set(msg.pointIndex, pointTag);
-                nbt.put("Points", pointsList);
-            });
+            MultiDetonatorItem detonatorItem = (MultiDetonatorItem) detonatorStack.getItem();
+            detonatorItem.setPointName(detonatorStack, msg.pointIndex, msg.pointName);
 
             player.containerMenu.broadcastChanges();
         });
     }
 
     // ── Send helper ───────────────────────────────────────────────────────────
+
+    public static void sendToServer(int pointIndex, String pointName) {
+        ModPacketHandler.sendToServer(ModPacketHandler.SYNC_POINT,
+                new SyncPointPacket(pointIndex, pointName));
+    }
 
     public static void sendToServer(int pointIndex, String pointName, int x, int y, int z, boolean hasTarget) {
         ModPacketHandler.sendToServer(ModPacketHandler.SYNC_POINT,

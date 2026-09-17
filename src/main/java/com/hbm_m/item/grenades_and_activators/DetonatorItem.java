@@ -1,19 +1,22 @@
 package com.hbm_m.item.grenades_and_activators;
 
-import com.hbm_m.item.ITooltipProvider;
 import java.util.List;
 
 import org.jetbrains.annotations.Nullable;
 
+import com.hbm_m.api.bomb.IBomb;
+import com.hbm_m.api.bomb.IBomb.BombReturnCode;
+import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.interfaces.IDetonatable;
-import com.hbm_m.sound.ModSounds;
+import com.hbm_m.item.ITooltipProvider;
+import com.hbm_m.main.MainRegistry;
 import com.hbm_m.platform.PlatformHooks;
+import com.hbm_m.sound.ModSounds;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.InteractionResultHolder;
@@ -28,40 +31,92 @@ import net.minecraft.world.level.block.state.BlockState;
 
 public class DetonatorItem extends Item implements ITooltipProvider {
 
-    private static final String NBT_POS_X = "DetPosX";
-    private static final String NBT_POS_Y = "DetPosY";
-    private static final String NBT_POS_Z = "DetPosZ";
-    private static final String NBT_HAS_TARGET = "HasTarget";
+    public static final String NBT_POS_X = "DetPosX";
+    public static final String NBT_POS_Y = "DetPosY";
+    public static final String NBT_POS_Z = "DetPosZ";
+    public static final String NBT_HAS_TARGET = "HasTarget";
 
     public DetonatorItem(Properties properties) {
         super(properties.stacksTo(1));
     }
 
+    /**
+     * Trigger detonation on a target block. Loads the target chunk safely on the server
+     * using temporary chunk loading via PlatformHooks.
+     * Supports both IBomb and IDetonatable blocks.
+     */
+    public static BombReturnCode triggerDetonation(Level level, BlockPos pos, @Nullable Player player) {
+        if (!PlatformHooks.loadChunkTemporary(level, pos)) {
+            return BombReturnCode.ERROR_NO_BOMB;
+        }
+        BlockState state = level.getBlockState(pos);
+        Block block = state.getBlock();
+        if (level.getBlockEntity(pos) instanceof com.hbm_m.interfaces.IMultiblockPart part) {
+            BlockPos controllerPos = part.getControllerPos();
+            if (controllerPos != null) {
+                pos = controllerPos;
+                if (!PlatformHooks.loadChunkTemporary(level, pos)) {
+                    return BombReturnCode.ERROR_NO_BOMB;
+                }
+                state = level.getBlockState(pos);
+                block = state.getBlock();
+            }
+        }
+        if (block instanceof IBomb bomb) {
+            return bomb.explode(level, pos);
+        } else if (block instanceof IDetonatable detonatable) {
+            boolean success = detonatable.onDetonate(level, pos, state, player);
+            return success ? BombReturnCode.TRIGGERED : BombReturnCode.ERROR_INCOMPATIBLE;
+        }
+        return BombReturnCode.ERROR_NO_BOMB;
+    }
+
+    /**
+     * Format a message with 1.7.10 style prefix [Detonator] (DARK_AQUA).
+     */
+    public static Component formatDetonatorMessage(Item item, Component message) {
+        return Component.literal("[").withStyle(ChatFormatting.DARK_AQUA)
+                .append(Component.translatable(item.getDescriptionId()).withStyle(ChatFormatting.DARK_AQUA))
+                .append(Component.literal("] ").withStyle(ChatFormatting.DARK_AQUA))
+                .append(message);
+    }
+
+    /**
+     * Reads saved position supporting both 1.7.10 tags (x, y, z) and HBM-Modernized tags.
+     */
+    @Nullable
+    public static BlockPos getSavedPosition(ItemStack stack) {
+        if (!PlatformHooks.hasItemTag(stack)) {
+            return null;
+        }
+        CompoundTag nbt = PlatformHooks.getItemTag(stack);
+        if (nbt == null) {
+            return null;
+        }
+        if (nbt.contains(NBT_HAS_TARGET) && !nbt.getBoolean(NBT_HAS_TARGET)) {
+            return null;
+        }
+        if (nbt.contains("x") && nbt.contains("y") && nbt.contains("z")) {
+            return new BlockPos(nbt.getInt("x"), nbt.getInt("y"), nbt.getInt("z"));
+        }
+        if (nbt.contains(NBT_POS_X) && nbt.contains(NBT_POS_Y) && nbt.contains(NBT_POS_Z)) {
+            return new BlockPos(nbt.getInt(NBT_POS_X), nbt.getInt(NBT_POS_Y), nbt.getInt(NBT_POS_Z));
+        }
+        return null;
+    }
 
     @Override
     public void appendHbmTooltip(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
+        BlockPos targetPos = getSavedPosition(stack);
+        if (targetPos != null) {
+            tooltip.add(Component.translatable("tooltip.hbm_m.detonator.target")
+                    .append(Component.literal(targetPos.getX() + ", " + targetPos.getY() + ", " + targetPos.getZ()))
+                    .withStyle(ChatFormatting.GREEN, ChatFormatting.BOLD));
 
-        if (PlatformHooks.hasItemTag(stack)) {
-            CompoundTag nbt = PlatformHooks.getItemTag(stack);
-            if (nbt != null && nbt.contains("HasTarget") && nbt.getBoolean("HasTarget")) {
-                int x = nbt.getInt("DetPosX");
-                int y = nbt.getInt("DetPosY");
-                int z = nbt.getInt("DetPosZ");
-
-                tooltip.add(Component.translatable("tooltip.hbm_m.detonator.target")
-                        .append(Component.literal(x + ", " + y + ", " + z))
-                        .withStyle(ChatFormatting.GREEN, ChatFormatting.BOLD));
-
-                tooltip.add(Component.translatable("tooltip.hbm_m.detonator.right_click")
-                        .withStyle(ChatFormatting.GRAY));
-                tooltip.add(Component.translatable("tooltip.hbm_m.detonator.shift_right_click")
-                        .withStyle(ChatFormatting.GRAY));
-            } else {
-                tooltip.add(Component.translatable("tooltip.hbm_m.detonator.no_target")
-                        .withStyle(ChatFormatting.RED));
-                tooltip.add(Component.translatable("tooltip.hbm_m.detonator.shift_right_click")
-                        .withStyle(ChatFormatting.GRAY));
-            }
+            tooltip.add(Component.translatable("tooltip.hbm_m.detonator.right_click")
+                    .withStyle(ChatFormatting.GRAY));
+            tooltip.add(Component.translatable("tooltip.hbm_m.detonator.shift_right_click")
+                    .withStyle(ChatFormatting.GRAY));
         } else {
             tooltip.add(Component.translatable("tooltip.hbm_m.detonator.no_target")
                     .withStyle(ChatFormatting.RED));
@@ -85,12 +140,14 @@ public class DetonatorItem extends Item implements ITooltipProvider {
             return InteractionResult.PASS;
         }
 
-        // Если игрок присел - сохраняем позицию
+        // Shift right-click saves position
         if (player.isCrouching()) {
-            // На 1.21.1 getItemTag() возвращает КОПИЮ (DataComponents.CUSTOM_DATA),
-            // а setItemTag с пустым тегом удаляет компонент — поэтому мутации должны
-            // идти через editItemTag (read-modify-write), иначе NPE/потеря данных.
             PlatformHooks.editItemTag(stack, nbt -> {
+                // 1.7.10 tag format
+                nbt.putInt("x", pos.getX());
+                nbt.putInt("y", pos.getY());
+                nbt.putInt("z", pos.getZ());
+                // Backwards compatibility for existing Modernized saves
                 nbt.putInt(NBT_POS_X, pos.getX());
                 nbt.putInt(NBT_POS_Y, pos.getY());
                 nbt.putInt(NBT_POS_Z, pos.getZ());
@@ -98,19 +155,14 @@ public class DetonatorItem extends Item implements ITooltipProvider {
             });
 
             if (!level.isClientSide) {
-                player.displayClientMessage(
+                player.sendSystemMessage(formatDetonatorMessage(this,
+                        Component.translatable("desc.misc.posSet").withStyle(ChatFormatting.GREEN)));
 
-                        Component.translatable("message.hbm_m.detonator.saved", pos.getX(), pos.getY(), pos.getZ())
-                                .withStyle(ChatFormatting.GREEN),
-                        true
-                );
-                if (ModSounds.TOOL_TECH_BOOP.isPresent()) {
-                    SoundEvent soundEvent = ModSounds.TOOL_TECH_BOOP.get();
-                    level.playSound(null, player.getX(), player.getY(), player.getZ(), soundEvent, player.getSoundSource(), 1.0F, 1.0F);
-                }
+                ModSounds.TOOL_TECH_BOOP.ifPresent(sound ->
+                        level.playSound(null, player.getX(), player.getY(), player.getZ(), sound, player.getSoundSource(), 2.0F, 1.0F));
             }
 
-            return InteractionResult.SUCCESS;
+            return InteractionResult.sidedSuccess(level.isClientSide);
         }
 
         return InteractionResult.PASS;
@@ -120,115 +172,41 @@ public class DetonatorItem extends Item implements ITooltipProvider {
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
 
-        // Если игрок НЕ присел - активируем сохраненную позицию
-        if (!player.isCrouching()) {
-            if (!PlatformHooks.hasItemTag(stack)) {
-                if (!level.isClientSide) {
-                    player.displayClientMessage(
-                            Component.translatable("message.hbm_m.detonator.no_saved_position")
-                                    .withStyle(ChatFormatting.RED),
-                            true
-                    );
-                    if (ModSounds.TOOL_TECH_BLEEP.isPresent()) {
-                        SoundEvent soundEvent = ModSounds.TOOL_TECH_BLEEP.get();
-                        level.playSound(null, player.getX(), player.getY(), player.getZ(), soundEvent, player.getSoundSource(), 1.0F, 1.0F);
-                    }
-                }
-                return InteractionResultHolder.fail(stack);
-            }
-
-            CompoundTag nbt = PlatformHooks.getItemTag(stack);
-
-            if (!nbt.contains(NBT_HAS_TARGET) || !nbt.getBoolean(NBT_HAS_TARGET)) {
-                if (!level.isClientSide) {
-                    player.displayClientMessage(
-                            Component.translatable("message.hbm_m.detonator.no_saved_position")
-                                    .withStyle(ChatFormatting.RED),
-                            true
-                    );
-                    if (ModSounds.TOOL_TECH_BLEEP.isPresent()) {
-                        SoundEvent soundEvent = ModSounds.TOOL_TECH_BLEEP.get();
-                        level.playSound(null, player.getX(), player.getY(), player.getZ(), soundEvent, player.getSoundSource(), 1.0F, 1.0F);
-                    }
-
-                }
-                return InteractionResultHolder.fail(stack);
-            }
-
-            int x = nbt.getInt(NBT_POS_X);
-            int y = nbt.getInt(NBT_POS_Y);
-            int z = nbt.getInt(NBT_POS_Z);
-            BlockPos targetPos = new BlockPos(x, y, z);
-
+        BlockPos targetPos = getSavedPosition(stack);
+        if (targetPos == null) {
             if (!level.isClientSide) {
-                // Проверяем, загружен ли чанк
-                if (!level.isLoaded(targetPos)) {
-                    player.displayClientMessage(
-                            Component.translatable("message.hbm_m.detonator.pos_not_compatible")
-                                    .withStyle(ChatFormatting.RED),
-                            true
-                    );
-
-                    if (ModSounds.TOOL_TECH_BLEEP.isPresent()) {
-                        SoundEvent soundEvent = ModSounds.TOOL_TECH_BLEEP.get();
-                        level.playSound(null, player.getX(), player.getY(), player.getZ(), soundEvent, player.getSoundSource(), 1.0F, 1.0F);
-                    }
-                    return InteractionResultHolder.fail(stack);
-                }
-
-                BlockState state = level.getBlockState(targetPos);
-                Block block = state.getBlock();
-
-                // Проверяем, поддерживает ли блок детонацию
-                if (block instanceof IDetonatable) {
-                    IDetonatable detonatable = (IDetonatable) block;
-                    boolean success = detonatable.onDetonate(level, targetPos, state, player);
-
-                    if (success) {
-                        player.displayClientMessage(
-                                Component.translatable("message.hbm_m.detonator.activated")
-                                        .withStyle(ChatFormatting.GREEN),
-                                true
-                        );
-                        if (ModSounds.TOOL_TECH_BLEEP.isPresent()) {
-                            SoundEvent soundEvent = ModSounds.TOOL_TECH_BLEEP.get();
-                            level.playSound(null, player.getX(), player.getY(), player.getZ(), soundEvent, player.getSoundSource(), 1.0F, 1.0F);
-                        }
-
-                        return InteractionResultHolder.success(stack);
-                    } else {
-                        player.displayClientMessage(
-                                Component.translatable("message.hbm_m.detonator.pos_not_compatible")
-                                        .withStyle(ChatFormatting.RED),
-                                true
-                        );
-                        if (ModSounds.TOOL_TECH_BLEEP.isPresent()) {
-                            SoundEvent soundEvent = ModSounds.TOOL_TECH_BLEEP.get();
-                            level.playSound(null, player.getX(), player.getY(), player.getZ(), soundEvent, player.getSoundSource(), 1.0F, 1.0F);
-                        }
-
-                        return InteractionResultHolder.fail(stack);
-                    }
-
-
-                } else {
-                    player.displayClientMessage(
-                            Component.translatable("message.hbm_m.detonator.pos_not_compatible")
-                                    .withStyle(ChatFormatting.RED),
-                            true
-                    );
-                    if (ModSounds.TOOL_TECH_BLEEP.isPresent()) {
-                        SoundEvent soundEvent = ModSounds.TOOL_TECH_BLEEP.get();
-                        level.playSound(null, player.getX(), player.getY(), player.getZ(), soundEvent, player.getSoundSource(), 1.0F, 1.0F);
-                    }
-
-                    return InteractionResultHolder.fail(stack);
-                }
+                player.sendSystemMessage(formatDetonatorMessage(this,
+                        Component.translatable("desc.misc.noPos").withStyle(ChatFormatting.RED)));
             }
-
-            return InteractionResultHolder.success(stack);
+            return InteractionResultHolder.fail(stack);
         }
 
-        return InteractionResultHolder.pass(stack);
+        if (!level.isClientSide) {
+            BombReturnCode ret = triggerDetonation(level, targetPos, player);
+
+            if (ret != BombReturnCode.ERROR_NO_BOMB && ret != BombReturnCode.UNDEFINED) {
+                ModSounds.TOOL_TECH_BLEEP.ifPresent(sound ->
+                        level.playSound(null, player.getX(), player.getY(), player.getZ(), sound, player.getSoundSource(), 1.0F, 1.0F));
+
+                if (ModClothConfig.get().enableExtendedLogging) {
+                    MainRegistry.LOGGER.info("[DET] Tried to detonate block at {} / {} / {} by {}!",
+                            targetPos.getX(), targetPos.getY(), targetPos.getZ(), player.getName().getString());
+                }
+
+                player.sendSystemMessage(formatDetonatorMessage(this,
+                        Component.translatable(ret.getUnlocalizedMessage())
+                                .withStyle(ret.wasSuccessful() ? ChatFormatting.YELLOW : ChatFormatting.RED)));
+
+                return InteractionResultHolder.success(stack);
+            } else {
+                player.sendSystemMessage(formatDetonatorMessage(this,
+                        Component.translatable(BombReturnCode.ERROR_NO_BOMB.getUnlocalizedMessage())
+                                .withStyle(ChatFormatting.RED)));
+
+                return InteractionResultHolder.fail(stack);
+            }
+        }
+
+        return InteractionResultHolder.success(stack);
     }
 }

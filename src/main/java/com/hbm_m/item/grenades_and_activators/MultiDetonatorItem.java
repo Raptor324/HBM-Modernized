@@ -4,7 +4,10 @@ import com.hbm_m.item.ITooltipProvider;
 import net.minecraft.world.item.TooltipFlag;
 import java.util.List;
 
+import com.hbm_m.api.bomb.IBomb.BombReturnCode;
+import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.interfaces.IDetonatable;
+import com.hbm_m.main.MainRegistry;
 import com.hbm_m.sound.ModSounds;
 import com.hbm_m.platform.PlatformHooks;
 import net.minecraft.ChatFormatting;
@@ -102,6 +105,7 @@ public class MultiDetonatorItem extends Item implements ITooltipProvider {
         // Инструкции внизу
         tooltip.add(Component.translatable("tooltip.hbm_m.multi_detonator.key_r").withStyle(ChatFormatting.GRAY));
         tooltip.add(Component.translatable("tooltip.hbm_m.multi_detonator.shift_rmb").withStyle(ChatFormatting.GRAY));
+        tooltip.add(Component.translatable("tooltip.hbm_m.multi_detonator.shift_air_clear").withStyle(ChatFormatting.GRAY));
         tooltip.add(Component.translatable("tooltip.hbm_m.multi_detonator.rmb_activate").withStyle(ChatFormatting.GRAY));
     }
 
@@ -127,6 +131,7 @@ public class MultiDetonatorItem extends Item implements ITooltipProvider {
             final String[] finalNameHolder = new String[1];
 
             PlatformHooks.editItemTag(stack, nbt -> {
+                migrateLegacyPointsIfNeeded(nbt);
                 int activePoint = nbt.getInt(NBT_ACTIVE_POINT);
                 if (activePoint < 0 || activePoint >= MAX_POINTS) {
                     activePoint = 0;
@@ -166,142 +171,98 @@ public class MultiDetonatorItem extends Item implements ITooltipProvider {
 
             if (!level.isClientSide) {
                 String finalName = finalNameHolder[0];
-                player.displayClientMessage(
+                player.sendSystemMessage(DetonatorItem.formatDetonatorMessage(this,
                         Component.translatable("message.hbm_m.multi_detonator.position_saved", finalName, pos.getX(), pos.getY(), pos.getZ())
-                                .withStyle(ChatFormatting.GREEN),
-                        true
-                );
+                                .withStyle(ChatFormatting.GREEN)));
 
                 if (ModSounds.TOOL_TECH_BOOP.isPresent()) {
                     SoundEvent soundEvent = ModSounds.TOOL_TECH_BOOP.get();
                     level.playSound(null, player.getX(), player.getY(), player.getZ(),
-                            soundEvent, player.getSoundSource(), 1.0F, 1.0F);
+                            soundEvent, player.getSoundSource(), 2.0F, 1.0F);
                 }
             }
 
-            return InteractionResult.SUCCESS;
+            return InteractionResult.sidedSuccess(level.isClientSide);
         }
 
         return InteractionResult.PASS;
     }
 
     /**
-     * use: активация текущей выбранной точки при ПКМ в воздухе (без Shift)
-     * GUI открывается при нажатии клавиши R
+     * use: активация текущей выбранной точки при ПКМ в воздухе (без Shift).
+     * При Shift+ПКМ в воздухе — очистка всех позиций (1.7.10 паритет).
+     * GUI открывается при нажатии клавиши R.
      */
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
 
         if (player.isCrouching()) {
-            // При приседании на use - ничего не делаем (это обрабатывается useOn)
-            return InteractionResultHolder.pass(stack);
+            boolean hadPositions = hasAnyLocationSet(stack);
+            if (!hadPositions) {
+                if (!level.isClientSide) {
+                    player.sendSystemMessage(DetonatorItem.formatDetonatorMessage(this,
+                            Component.translatable("desc.misc.noPos").withStyle(ChatFormatting.RED)));
+                }
+                return InteractionResultHolder.fail(stack);
+            }
+
+            clearAllLocations(stack);
+
+            if (!level.isClientSide) {
+                player.sendSystemMessage(DetonatorItem.formatDetonatorMessage(this,
+                        Component.translatable("desc.misc.locationsCleared").withStyle(ChatFormatting.RED)));
+
+                if (ModSounds.TOOL_TECH_BOOP.isPresent()) {
+                    SoundEvent soundEvent = ModSounds.TOOL_TECH_BOOP.get();
+                    level.playSound(null, player.getX(), player.getY(), player.getZ(),
+                            soundEvent, player.getSoundSource(), 2.0F, 1.0F);
+                }
+            }
+
+            return InteractionResultHolder.sidedSuccess(stack, level.isClientSide);
+        }
+
+        // Проверяем наличие цели для активной точки (и на клиенте, и на сервере)
+        int activePoint = getActivePoint(stack);
+        PointData pointData = getPointData(stack, activePoint);
+
+        if (pointData == null || !pointData.hasTarget) {
+            if (!level.isClientSide) {
+                player.sendSystemMessage(DetonatorItem.formatDetonatorMessage(this,
+                        Component.translatable("desc.misc.noPos")
+                                .withStyle(ChatFormatting.RED)));
+            }
+            return InteractionResultHolder.fail(stack);
         }
 
         // На сервере: активируем текущую выбранную точку при ПКМ в воздухе
         if (!level.isClientSide) {
-            if (!PlatformHooks.hasItemTag(stack)) {
-                player.displayClientMessage(
-                        Component.translatable("message.hbm_m.multi_detonator.no_coordinates")
-                                .withStyle(ChatFormatting.RED),
-                        true
-                );
-
-                if (ModSounds.TOOL_TECH_BOOP.isPresent()) {
-                    SoundEvent soundEvent = ModSounds.TOOL_TECH_BOOP.get();
-                    level.playSound(null, player.getX(), player.getY(), player.getZ(), soundEvent, player.getSoundSource(), 1.0F, 1.0F);
-                }
-
-                return InteractionResultHolder.fail(stack);
-            }
-
-            CompoundTag nbt = PlatformHooks.getItemTag(stack);
-            int activePoint = nbt.getInt(NBT_ACTIVE_POINT);
-
-            if (activePoint >= MAX_POINTS) {
-                activePoint = 0;
-            }
-
-            PointData pointData = getPointData(stack, activePoint);
-
-            if (pointData == null || !pointData.hasTarget) {
-                player.displayClientMessage(
-                        Component.translatable("message.hbm_m.multi_detonator.point_not_set", activePoint + 1)
-                                .withStyle(ChatFormatting.RED),
-                        true
-                );
-
-                if (ModSounds.TOOL_TECH_BOOP.isPresent()) {
-                    SoundEvent soundEvent = ModSounds.TOOL_TECH_BOOP.get();
-                    level.playSound(null, player.getX(), player.getY(), player.getZ(), soundEvent, player.getSoundSource(), 1.0F, 1.0F);
-                }
-
-                return InteractionResultHolder.fail(stack);
-            }
-
             BlockPos targetPos = new BlockPos(pointData.x, pointData.y, pointData.z);
+            BombReturnCode ret = DetonatorItem.triggerDetonation(level, targetPos, player);
 
-            if (!level.isLoaded(targetPos)) {
-                player.displayClientMessage(
-                        Component.translatable("message.hbm_m.multi_detonator.chunk_not_loaded")
-                                .withStyle(ChatFormatting.RED),
-                        true
-                );
-
-                if (ModSounds.TOOL_TECH_BOOP.isPresent()) {
-                    SoundEvent soundEvent = ModSounds.TOOL_TECH_BOOP.get();
+            if (ret != BombReturnCode.ERROR_NO_BOMB && ret != BombReturnCode.UNDEFINED) {
+                if (ModSounds.TOOL_TECH_BLEEP.isPresent()) {
+                    SoundEvent soundEvent = ModSounds.TOOL_TECH_BLEEP.get();
                     level.playSound(null, player.getX(), player.getY(), player.getZ(), soundEvent, player.getSoundSource(), 1.0F, 1.0F);
                 }
+
+                if (ModClothConfig.get().enableExtendedLogging) {
+                    MainRegistry.LOGGER.info("[DET] Tried to detonate block at {} / {} / {} by {}!",
+                            targetPos.getX(), targetPos.getY(), targetPos.getZ(), player.getName().getString());
+                }
+
+                player.sendSystemMessage(DetonatorItem.formatDetonatorMessage(this,
+                        Component.translatable(ret.getUnlocalizedMessage())
+                                .withStyle(ret.wasSuccessful() ? ChatFormatting.YELLOW : ChatFormatting.RED)));
+
+                return InteractionResultHolder.success(stack);
+            } else {
+                player.sendSystemMessage(DetonatorItem.formatDetonatorMessage(this,
+                        Component.translatable(BombReturnCode.ERROR_NO_BOMB.getUnlocalizedMessage())
+                                .withStyle(ChatFormatting.RED)));
 
                 return InteractionResultHolder.fail(stack);
-            }
-
-            BlockState state = level.getBlockState(targetPos);
-            Block block = state.getBlock();
-
-            if (block instanceof IDetonatable) {
-                IDetonatable detonatable = (IDetonatable) block;
-
-                try {
-                    boolean success = detonatable.onDetonate(level, targetPos, state, player);
-
-                    if (success) {
-                        player.displayClientMessage(
-                                Component.translatable("message.hbm_m.multi_detonator.activated", pointData.name)
-                                        .withStyle(ChatFormatting.GREEN),
-                                true
-                        );
-
-                        if (ModSounds.TOOL_TECH_BLEEP.isPresent()) {
-                            SoundEvent soundEvent = ModSounds.TOOL_TECH_BLEEP.get();
-                            level.playSound(null, player.getX(), player.getY(), player.getZ(), soundEvent, player.getSoundSource(), 1.0F, 1.0F);
-                        }
-                    }
-                } catch (Exception e) {
-                    player.displayClientMessage(
-                            Component.translatable("message.hbm_m.multi_detonator.activation_error")
-                                    .withStyle(ChatFormatting.RED),
-                            true
-                    );
-
-                    if (ModSounds.TOOL_TECH_BOOP.isPresent()) {
-                        SoundEvent soundEvent = ModSounds.TOOL_TECH_BOOP.get();
-                        level.playSound(null, player.getX(), player.getY(), player.getZ(), soundEvent, player.getSoundSource(), 1.0F, 1.0F);
-                    }
-
-                    e.printStackTrace();
-                }
-            } else {
-                player.displayClientMessage(
-                        Component.translatable("message.hbm_m.multi_detonator.incompatible_block")
-                                .withStyle(ChatFormatting.RED),
-                        true
-                );
-
-                if (ModSounds.TOOL_TECH_BOOP.isPresent()) {
-                    SoundEvent soundEvent = ModSounds.TOOL_TECH_BOOP.get();
-                    level.playSound(null, player.getX(), player.getY(), player.getZ(), soundEvent, player.getSoundSource(), 1.0F, 1.0F);
-                }
             }
         }
 
@@ -321,6 +282,14 @@ public class MultiDetonatorItem extends Item implements ITooltipProvider {
         CompoundTag nbt = PlatformHooks.getItemTag(stack);
 
         if (!nbt.contains(NBT_POINTS_TAG, Tag.TAG_LIST)) {
+            if (nbt.contains("xValues", Tag.TAG_INT_ARRAY) && nbt.contains("yValues", Tag.TAG_INT_ARRAY) && nbt.contains("zValues", Tag.TAG_INT_ARRAY)) {
+                int[] xs = nbt.getIntArray("xValues");
+                int[] ys = nbt.getIntArray("yValues");
+                int[] zs = nbt.getIntArray("zValues");
+                if (pointIndex < xs.length && pointIndex < ys.length && pointIndex < zs.length) {
+                    return new PointData(xs[pointIndex], ys[pointIndex], zs[pointIndex], "Point " + (pointIndex + 1), true);
+                }
+            }
             return null;
         }
 
@@ -385,6 +354,7 @@ public class MultiDetonatorItem extends Item implements ITooltipProvider {
         // editItemTag (read-modify-write) — единственный корректный способ мутации
         // NBT предмета на 1.21.1, где getItemTag() возвращает копию.
         PlatformHooks.editItemTag(stack, nbt -> {
+            migrateLegacyPointsIfNeeded(nbt);
             // Инициализируем список точек
             if (!nbt.contains(NBT_POINTS_TAG, Tag.TAG_LIST)) {
                 nbt.put(NBT_POINTS_TAG, new ListTag());
@@ -419,6 +389,7 @@ public class MultiDetonatorItem extends Item implements ITooltipProvider {
         }
         // Мутация копииgetItemTag на 1.21.1 не сохранялась бы — обернули в editItemTag.
         PlatformHooks.editItemTag(stack, nbt -> {
+            migrateLegacyPointsIfNeeded(nbt);
             if (!nbt.contains(NBT_POINTS_TAG, Tag.TAG_LIST)) {
                 return;
             }
@@ -450,6 +421,88 @@ public class MultiDetonatorItem extends Item implements ITooltipProvider {
      */
     public int getMaxPoints() {
         return MAX_POINTS;
+    }
+
+    /**
+     * Проверяет, установлена ли хотя бы одна позиция в мульти-детонаторе.
+     */
+    public boolean hasAnyLocationSet(ItemStack stack) {
+        if (!PlatformHooks.hasItemTag(stack)) {
+            return false;
+        }
+        CompoundTag nbt = PlatformHooks.getItemTag(stack);
+        if (nbt == null) {
+            return false;
+        }
+        if (nbt.contains(NBT_POINTS_TAG, Tag.TAG_LIST)) {
+            ListTag pointsList = nbt.getList(NBT_POINTS_TAG, Tag.TAG_COMPOUND);
+            for (int i = 0; i < pointsList.size(); i++) {
+                if (pointsList.getCompound(i).getBoolean(NBT_POINT_HAS_TARGET)) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        if (nbt.contains("xValues", Tag.TAG_INT_ARRAY)) {
+            int[] xs = nbt.getIntArray("xValues");
+            return xs.length > 0;
+        }
+        return false;
+    }
+
+    /**
+     * Очищает все сохраненные позиции (сохраняя имена точек).
+     */
+    public void clearAllLocations(ItemStack stack) {
+        PlatformHooks.editItemTag(stack, nbt -> {
+            nbt.putIntArray("xValues", new int[0]);
+            nbt.putIntArray("yValues", new int[0]);
+            nbt.putIntArray("zValues", new int[0]);
+            if (nbt.contains(NBT_POINTS_TAG, Tag.TAG_LIST)) {
+                ListTag pointsList = nbt.getList(NBT_POINTS_TAG, Tag.TAG_COMPOUND);
+                for (int i = 0; i < pointsList.size(); i++) {
+                    CompoundTag pointTag = pointsList.getCompound(i);
+                    String savedName = pointTag.getString(NBT_POINT_NAME);
+                    CompoundTag clearedTag = new CompoundTag();
+                    clearedTag.putInt(NBT_POINT_X, 0);
+                    clearedTag.putInt(NBT_POINT_Y, 0);
+                    clearedTag.putInt(NBT_POINT_Z, 0);
+                    clearedTag.putBoolean(NBT_POINT_HAS_TARGET, false);
+                    clearedTag.putString(NBT_POINT_NAME, savedName);
+                    pointsList.set(i, clearedTag);
+                }
+                nbt.put(NBT_POINTS_TAG, pointsList);
+            }
+        });
+    }
+
+    /**
+     * Миграция старых int-массивов 1.7.10 (xValues, yValues, zValues) в NBT_POINTS_TAG.
+     */
+    public static void migrateLegacyPointsIfNeeded(CompoundTag nbt) {
+        if (!nbt.contains(NBT_POINTS_TAG, Tag.TAG_LIST)
+                && nbt.contains("xValues", Tag.TAG_INT_ARRAY)
+                && nbt.contains("yValues", Tag.TAG_INT_ARRAY)
+                && nbt.contains("zValues", Tag.TAG_INT_ARRAY)) {
+            int[] xs = nbt.getIntArray("xValues");
+            int[] ys = nbt.getIntArray("yValues");
+            int[] zs = nbt.getIntArray("zValues");
+            int count = Math.min(MAX_POINTS, Math.min(xs.length, Math.min(ys.length, zs.length)));
+            ListTag pointsList = new ListTag();
+            for (int i = 0; i < count; i++) {
+                CompoundTag pointTag = new CompoundTag();
+                pointTag.putInt(NBT_POINT_X, xs[i]);
+                pointTag.putInt(NBT_POINT_Y, ys[i]);
+                pointTag.putInt(NBT_POINT_Z, zs[i]);
+                pointTag.putString(NBT_POINT_NAME, "Point " + (i + 1));
+                pointTag.putBoolean(NBT_POINT_HAS_TARGET, true);
+                pointsList.add(pointTag);
+            }
+            nbt.put(NBT_POINTS_TAG, pointsList);
+            nbt.remove("xValues");
+            nbt.remove("yValues");
+            nbt.remove("zValues");
+        }
     }
 
     /**

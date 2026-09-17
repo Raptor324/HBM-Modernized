@@ -1,7 +1,10 @@
 package com.hbm_m.item.grenades_and_activators;
 
 import com.hbm_m.item.ITooltipProvider;
+import com.hbm_m.api.bomb.IBomb.BombReturnCode;
+import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.interfaces.IDetonatable;
+import com.hbm_m.main.MainRegistry;
 import com.hbm_m.sound.ModSounds;
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
@@ -27,7 +30,7 @@ import java.util.List;
 
 public class RangeDetonatorItem extends Item implements ITooltipProvider {
 
-    private static final int MAX_RANGE = 256;
+    private static final int MAX_RANGE = 500;
 
     public RangeDetonatorItem(Properties properties) {
         super(properties.stacksTo(1));
@@ -58,9 +61,9 @@ public class RangeDetonatorItem extends Item implements ITooltipProvider {
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
-        BlockHitResult hitResult = (BlockHitResult) player.pick(MAX_RANGE, 1.0F, false);
-        Vec3 target = hitResult.getType() == HitResult.Type.BLOCK
-                ? Vec3.atCenterOf(hitResult.getBlockPos())
+        HitResult hitResult = player.pick(MAX_RANGE, 1.0F, false);
+        Vec3 target = (hitResult.getType() == HitResult.Type.BLOCK && hitResult instanceof BlockHitResult bHit)
+                ? Vec3.atCenterOf(bHit.getBlockPos())
                 : hitResult.getLocation();
 
         if (level.isClientSide) {
@@ -68,67 +71,53 @@ public class RangeDetonatorItem extends Item implements ITooltipProvider {
             return InteractionResultHolder.sidedSuccess(stack, true);
         }
 
-        if (hitResult.getType() == HitResult.Type.BLOCK) {
-                BlockPos targetPos = hitResult.getBlockPos();
+        if (hitResult.getType() == HitResult.Type.BLOCK && hitResult instanceof BlockHitResult blockHit) {
+            BlockPos targetPos = blockHit.getBlockPos();
+            BombReturnCode ret = DetonatorItem.triggerDetonation(level, targetPos, player);
 
-                // Проверяем, загружен ли чанк
-                if (!level.isLoaded(targetPos)) {
-                    player.displayClientMessage(
-                            Component.translatable("message.hbm_m.range_detonator.pos_not_loaded")
-                                    .withStyle(ChatFormatting.RED),
-                            true
-                    );
-                    return InteractionResultHolder.fail(stack);
+            if (ret != BombReturnCode.ERROR_NO_BOMB && ret != BombReturnCode.UNDEFINED) {
+                if (ModSounds.TOOL_TECH_BLEEP.isPresent()) {
+                    SoundEvent soundEvent = ModSounds.TOOL_TECH_BLEEP.get();
+                    level.playSound(null, player.getX(), player.getY(), player.getZ(),
+                            soundEvent, player.getSoundSource(), 1.0F, 1.0F);
                 }
 
-                BlockState state = level.getBlockState(targetPos);
-                Block block = state.getBlock();
-
-                // Проверяем, поддерживает ли блок детонацию
-                if (block instanceof IDetonatable detonatable) {
-                    boolean success = detonatable.onDetonate(level, targetPos, state, player);
-
-                    if (success) {
-                        player.displayClientMessage(
-                                Component.translatable("message.hbm_m.range_detonator.activated")
-                                        .withStyle(ChatFormatting.GREEN),
-                                true
-                        );
-                        if (ModSounds.TOOL_TECH_BLEEP.isPresent()) {
-                            SoundEvent soundEvent = ModSounds.TOOL_TECH_BLEEP.get();
-                            level.playSound(null, player.getX(), player.getY(), player.getZ(),
-                                    soundEvent, player.getSoundSource(), 1.0F, 1.0F);
-                        }
-                        return InteractionResultHolder.success(stack);
-                    } else {
-                        player.displayClientMessage(
-                                Component.translatable("message.hbm_m.range_detonator.pos_not_loaded")
-                                        .withStyle(ChatFormatting.RED),
-                                true
-                        );
-                        if (ModSounds.TOOL_TECH_BOOP.isPresent()) {
-                            SoundEvent soundEvent = ModSounds.TOOL_TECH_BOOP.get();
-                            level.playSound(null, player.getX(), player.getY(), player.getZ(),
-                                    soundEvent, player.getSoundSource(), 1.0F, 1.0F);
-                        }
-                        return InteractionResultHolder.fail(stack);
-                    }
-                } else {
-                    player.displayClientMessage(
-                            Component.translatable("message.hbm_m.range_detonator.pos_not_loaded")
-                                    .withStyle(ChatFormatting.RED),
-                            true
-                    );
-                    if (ModSounds.TOOL_TECH_BOOP.isPresent()) {
-                        SoundEvent soundEvent = ModSounds.TOOL_TECH_BOOP.get();
-                        level.playSound(null, player.getX(), player.getY(), player.getZ(),
-                                soundEvent, player.getSoundSource(), 1.0F, 1.0F);
-                    }
-                    return InteractionResultHolder.fail(stack);
+                if (ModClothConfig.get().enableExtendedLogging) {
+                    MainRegistry.LOGGER.info("[DET] Tried to detonate block at {} / {} / {} by {}!",
+                            targetPos.getX(), targetPos.getY(), targetPos.getZ(), player.getName().getString());
                 }
+
+                player.sendSystemMessage(DetonatorItem.formatDetonatorMessage(this,
+                        Component.translatable(ret.getUnlocalizedMessage())
+                                .withStyle(ret.wasSuccessful() ? ChatFormatting.YELLOW : ChatFormatting.RED)));
+
+                return InteractionResultHolder.success(stack);
+            } else {
+                if (ModSounds.TOOL_TECH_BOOP.isPresent()) {
+                    SoundEvent soundEvent = ModSounds.TOOL_TECH_BOOP.get();
+                    level.playSound(null, player.getX(), player.getY(), player.getZ(),
+                            soundEvent, player.getSoundSource(), 1.0F, 1.0F);
+                }
+
+                player.sendSystemMessage(DetonatorItem.formatDetonatorMessage(this,
+                        Component.translatable(BombReturnCode.ERROR_NO_BOMB.getUnlocalizedMessage())
+                                .withStyle(ChatFormatting.RED)));
+
+                return InteractionResultHolder.fail(stack);
+            }
+        } else {
+            if (ModSounds.TOOL_TECH_BOOP.isPresent()) {
+                SoundEvent soundEvent = ModSounds.TOOL_TECH_BOOP.get();
+                level.playSound(null, player.getX(), player.getY(), player.getZ(),
+                        soundEvent, player.getSoundSource(), 1.0F, 1.0F);
+            }
+
+            player.sendSystemMessage(DetonatorItem.formatDetonatorMessage(this,
+                    Component.translatable(BombReturnCode.ERROR_NO_BOMB.getUnlocalizedMessage())
+                            .withStyle(ChatFormatting.RED)));
+
+            return InteractionResultHolder.fail(stack);
         }
-
-        return InteractionResultHolder.pass(stack);
     }
 
     /** Луч redstone dust — 1.7.10 {@code ItemLaserDetonator} / {@code reddust}, только на клиенте. */
