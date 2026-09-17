@@ -73,6 +73,8 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
     private int eboId = -1;
     private int indexCount = 0;
     private int vertexCount = 0;
+    /** Базовые индексы меша (CPU-копия EBO) — для GPU-bake расширения по инстансам. */
+    private int[] baseIndices;
     /**
      * GL attribute location of the per-vertex lightmap (UV2) within this VAO.
      * Set during {@link #ensureBuilt()}; -1 when the format does not contain a
@@ -485,6 +487,7 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
             GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, eboId);
             GL15.glBufferData(GL15.GL_ELEMENT_ARRAY_BUFFER, indices, GL15.GL_STATIC_DRAW);
             this.indexCount = indices.length;
+            this.baseIndices = indices;
 
             // Bake Iris extended attribs into the VAO while it is still bound.
             // Doing this at draw time races Embeddium/Iris rebinding VAO 0 and
@@ -1311,8 +1314,13 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
      */
     private boolean ensureCompanionVaoBound() {
         if (!built || vaoId <= 0) return false;
+        // Безусловный бинд без glGetInteger-верификации: glGet* в горячем цикле
+        // форсирует CPU-GPU синк (~1.5% кадра на ферме). Корректность не страдает —
+        // бинд вызывается всегда (драйвер сам но-опит совпадающий VAO), а
+        // "Embeddium мог перебиндить raw-вызовом" страхуется тем, что мы всё
+        // равно шлём бинд, а не полагаемся на кеш.
         GlStateManager._glBindVertexArray(vaoId);
-        return GL11.glGetInteger(GL30.GL_VERTEX_ARRAY_BINDING) == vaoId;
+        return true;
     }
 
     private void bindIrisAttribute(int programId, String attributeName, int stride) {
@@ -1384,6 +1392,66 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
 
     public int getIndexCount() {
         return indexCount;
+    }
+
+    // ── GPU-bake доступ (NucleusGpuBaker) ──────────────────────────────
+
+    /** VBO меша в BLOCK-формате — биндится как SSBO-вход compute-бейкера. */
+    int getMeshVboId() {
+        return vboId;
+    }
+
+    /** EBO меша — переиспользуется как источник индексов бейкера. */
+    int getMeshEboId() {
+        return eboId;
+    }
+
+    int getMeshVertexCount() {
+        return vertexCount;
+    }
+
+    int getMeshStrideBytes() {
+        return actualFormat != null ? RenderHooks.getVertexSize(actualFormat) : 0;
+    }
+
+    /** Формат меша (для зеркалирования атрибутов в bake-VAO). */
+    VertexFormat getMeshFormat() {
+        return actualFormat;
+    }
+
+    /** Байтовый офсет именованного атрибута (iris_Entity/mc_midTexCoord/at_tangent) или -1. */
+    int getMeshAttribByteOffset(String name) {
+        Integer o = elementOffsets.get(name);
+        return o != null ? o : -1;
+    }
+
+    /** Элемент формата именованного атрибута (тип/компоненты для bake-VAO) или null. */
+    VertexFormatElement getMeshAttribElement(String name) {
+        return elementByName.get(name);
+    }
+
+    /** Индексы меша (базовые, без инстанс-офсетов) для CPU-расширения EBO. */
+    int[] getMeshIndices() {
+        return baseIndices;
+    }
+
+    /** Офсеты (байты) компонентов BLOCK-формата для compute-шейдера. */
+    int getMeshOffset(String usageName, int uvIndex) {
+        if (actualFormat == null) return -1;
+        int offset = 0;
+        for (VertexFormatElement el : RenderHooks.getElements(actualFormat)) {
+            var usage = RenderHooks.getUsage(el);
+            boolean match = switch (usageName) {
+                case "position" -> usage == VertexFormatElement.Usage.POSITION;
+                case "color" -> usage == VertexFormatElement.Usage.COLOR;
+                case "normal" -> usage == VertexFormatElement.Usage.NORMAL;
+                case "uv" -> usage == VertexFormatElement.Usage.UV && RenderHooks.getIndex(el) == uvIndex;
+                default -> false;
+            };
+            if (match) return offset;
+            offset += RenderHooks.getByteSize(el);
+        }
+        return -1;
     }
 
     /**

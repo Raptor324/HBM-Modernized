@@ -211,13 +211,13 @@ public final class IrisRenderBatch implements AutoCloseable {
         if (shader == null) {
             return null;
         }
+        INSTANCE.isShadowPass = shadowPass;
         try {
             INSTANCE.setupOuter(shader, projectionMatrix);
             // Main pass — персистентный (одно apply на кадр, закрытие в
             // presentAfterBlockEntities / AFTER_LEVEL / при смене фазы).
             // Shadow pass — только на время BER (закрывается close()).
             INSTANCE.isPersistent = !shadowPass;
-            INSTANCE.isShadowPass = shadowPass;
             ACTIVE = INSTANCE;
             return shadowPass ? INSTANCE : NOOP_NESTED;
         } catch (Throwable t) {
@@ -366,6 +366,11 @@ public final class IrisRenderBatch implements AutoCloseable {
         lastBoundVao = -1;
         lastBlockU = Integer.MIN_VALUE;
         lastSkyV = Integer.MIN_VALUE;
+
+        // Снапшот gbuffer/shadow-FB для инстансного Iris-пути: pack-apply выше
+        // забиндил правильный FB — это единственный гарантированный момент
+        // (см. IrisInstancedShaders.captureLiveFramebuffer).
+        IrisInstancedShaders.captureLiveFramebuffer(isShadowPass);
     }
 
     /**
@@ -399,18 +404,18 @@ public final class IrisRenderBatch implements AutoCloseable {
     }
 
     /**
-     * Detaches the companion VAO after a draw so intermediate vanilla/Iris work
-     * (outline, chunk uploads) does not inherit our vertex layout. Restores the
-     * VAO captured in {@link #setupOuter()} (including {@code 0} = unbind).
-     * Do not substitute an empty dummy VAO here — that leaves {@code drawElements}
-     * with no valid vertex state and can crash the GL driver.
+     * Отвязывает companion VAO перед чужой (ванильной/bufferSource) отрисовкой.
+     * Реально детачит и persistent-батчи: между нашими дроуками может вклиниться
+     * ванильная немедленная работа (текст, bufferSource.endBatch отдельных BER) —
+     * она не должна наследовать наш vertex layout. Следующий drawCompanion
+     * переставит VAO через кеш lastBoundVao (сброшен здесь).
      */
-    private void releaseCompanionVaoAfterDraw(IrisCompanionMesh companion) {
-        if (companion != null) {
-            companion.restoreConstantLightmap();
+    public static void detachCompanionVaoForVanillaWork() {
+        IrisRenderBatch b = ACTIVE;
+        if (b != null && b.isOuter) {
+            GlVaoSafety.bindVertexArray(b.previousVao);
+            b.lastBoundVao = -1;
         }
-        GlVaoSafety.bindVertexArray(previousVao);
-        lastBoundVao = -1;
     }
 
     /**
@@ -479,6 +484,8 @@ public final class IrisRenderBatch implements AutoCloseable {
         modelView.get(mvFloats);
 
         bindCompanionVao(companion, targetVao);
+        // Дешёвый no-op в constant-режиме (early-return по флагу), но обязателен
+        // при переходе per-vertex → constant на том же батче (главный проход).
         companion.restoreConstantLightmap();
 
         float[] mvSrc = mvFloats;
@@ -535,7 +542,17 @@ public final class IrisRenderBatch implements AutoCloseable {
 
         companion.bindVaoIfNeeded();
         GL11.glDrawElements(GL11.GL_TRIANGLES, targetIndexCount, GL11.GL_UNSIGNED_INT, 0);
-        releaseCompanionVaoAfterDraw(companion);
+        // VAO/lightmap-стейт в персистент-батче НЕ сбрасываем на каждый дроук:
+        // релиз здесь заставлял следующий drawCompanionWithPerVertexLight
+        // полностью пересоздавать per-vertex lightmap-биндинг (ping-pong
+        // activate/restore ~10% кадра). Стейт отдаётся в tryRestoreState()
+        // при close() и на явных vanilla-границах
+        // (detachCompanionVaoForVanillaWork / runVanillaOverlay).
+        // Non-persistent (shadow) батч живёт строго внутри одного BER: между частями
+        // одной машины ванильная работа не вклинивается, а close()/tryRestoreState()
+        // восстановит VAO. Пинг-понг VAO на каждую часть (release + rebind + glGetInteger
+        // в ensureCompanionVaoBound) сбрасывал кеш lastBoundVao → glVertexAttribI2i
+        // звался на КАЖДУЮ часть, хотя все части машины делят один свет.
     }
 
     /**
@@ -669,7 +686,8 @@ public final class IrisRenderBatch implements AutoCloseable {
         lastSkyV = Integer.MIN_VALUE;
 
         GL11.glDrawElements(GL11.GL_TRIANGLES, targetIndexCount, GL11.GL_UNSIGNED_INT, 0);
-        releaseCompanionVaoAfterDraw(companion);
+        // Без per-draw релиза (см. комментарий в drawCompanion): VAO и per-vertex
+        // lightmap остаются активными до close()/явной vanilla-границы.
     }
 
     /**
