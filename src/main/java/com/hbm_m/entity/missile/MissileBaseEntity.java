@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.UUID;
 
 import com.hbm_m.explosion.MissileWarheadEffects;
+import com.hbm_m.platform.PlatformHooks;
 import com.mojang.logging.LogUtils;
 import org.slf4j.Logger;
 
@@ -571,19 +572,17 @@ public abstract class MissileBaseEntity extends Projectile implements IRadarDete
             return;
         }
         if (this.loadedChunk != null) {
-            server.getChunkSource().removeRegionTicket(CHUNK_TICKET, this.loadedChunk, CHUNK_TICKET_RADIUS, this.getUUID());
+            PlatformHooks.removeChunkTicket(this.level(), CHUNK_TICKET, this.loadedChunk, CHUNK_TICKET_RADIUS, this.getUUID());
         }
         this.loadedChunk = newPos;
-        server.getChunkSource().addRegionTicket(CHUNK_TICKET, this.loadedChunk, CHUNK_TICKET_RADIUS, this.getUUID());
+        PlatformHooks.addChunkTicket(this.level(), CHUNK_TICKET, this.loadedChunk, CHUNK_TICKET_RADIUS, this.getUUID());
     }
 
     protected void releaseChunkTicket() {
         if (this.loadedChunk == null) {
             return;
         }
-        if (this.level() instanceof ServerLevel server) {
-            server.getChunkSource().removeRegionTicket(CHUNK_TICKET, this.loadedChunk, CHUNK_TICKET_RADIUS, this.getUUID());
-        }
+        PlatformHooks.removeChunkTicket(this.level(), CHUNK_TICKET, this.loadedChunk, CHUNK_TICKET_RADIUS, this.getUUID());
         this.loadedChunk = null;
     }
 
@@ -610,14 +609,14 @@ public abstract class MissileBaseEntity extends Projectile implements IRadarDete
             // как он получит тикет/контрейл, иначе в воздухе появится вторая (и третья) ракета
             // и второй контакт на радаре.
             if (com.hbm_m.server.missile.MissileTrackBroadcaster.isDuplicateSpawn(server, this)) {
-                LOGGER.warn("Discarding duplicate missile {} (uuid={}) — a live missile with the same UUID already exists",
+                LOGGER.warn("Discarding duplicate missile {} (uuid={}) - a live missile with the same UUID already exists",
                         this.getId(), this.getUUID());
                 this.discard();
                 return;
             }
             if (this.loadedChunk == null) {
                 this.loadedChunk = new ChunkPos(this.blockPosition());
-                server.getChunkSource().addRegionTicket(CHUNK_TICKET, this.loadedChunk, CHUNK_TICKET_RADIUS, this.getUUID());
+                PlatformHooks.addChunkTicket(this.level(), CHUNK_TICKET, this.loadedChunk, CHUNK_TICKET_RADIUS, this.getUUID());
             }
             com.hbm_m.server.missile.MissileTrackBroadcaster.onMissileSpawned(this);
         }

@@ -14,7 +14,7 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Vector3f;
 
-public class MukeCloudParticle extends ParticleNT implements FarCapableParticle {
+public class MukeCloudParticle extends ParticleNT implements FarCapableParticle, ReplaceOnRespawn {
 
     private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(
             RefStrings.MODID, "textures/particle/explosion.png");

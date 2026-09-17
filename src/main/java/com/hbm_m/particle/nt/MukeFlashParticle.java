@@ -17,7 +17,7 @@ import net.minecraft.util.RandomSource;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Vector3f;
 
-public class MukeFlashParticle extends ParticleNT {
+public class MukeFlashParticle extends ParticleNT implements ReplaceOnRespawn {
 
     private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(
             RefStrings.MODID, "textures/particle/flare.png");

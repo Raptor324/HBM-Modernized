@@ -5,6 +5,7 @@ import com.hbm_m.client.missile.track.MissileTrackWorldRender;
 import com.hbm_m.particle.nt.ParticleEngineNT;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.MultiBufferSource;
 import com.mojang.blaze3d.systems.RenderSystem;
 
@@ -351,28 +352,47 @@ public class EngineHandler {
         }
     }
 
+    /**
+     * Общий тик NT-частиц (forge- и neoforge-ветки onClientTick).
+     *
+     * 1) Откат назад: клиентский gameTime УМЕНЬШИЛСЯ (реплеер вроде Flashback
+     *    отмотал таймлайн) — движок вычисляет границу отката и удаляет только
+     *    частицы «из будущего» (шлейф ракеты после точки перемотки), история
+     *    до точки остаётся. См. ParticleEngineNT.onWorldGameTime.
+     * 2) worldRunsNormally=false (1.21.1 /tick freeze — см. ветку neoforge):
+     *    частицы замораживаются вместе с миром, как ванильные.
+     */
+    private static void doParticleTick(boolean worldRunsNormally) {
+        // Ленивая привязка DH-моста (DI-реестр DH может очиститься при его
+        // инициализации). Класс DhRenderBridge наследует DH-класс — грузить
+        // его можно только при наличии DH (guard строго до упоминания).
+        if (com.hbm_m.compat.dh.DhCompat.isModPresent()) {
+            com.hbm_m.client.compat.dh.DhRenderBridge.tryRegister();
+        }
+        if (!worldRunsNormally) return;
+        ParticleEngineNT engine = ParticleEngineNT.INSTANCE;
+        ClientLevel level = Minecraft.getInstance().level;
+        if (level != null) {
+            engine.onWorldGameTime(level.getGameTime());
+        }
+        engine.tick();
+    }
+
     //? if forge {
     @SubscribeEvent
     public static void onClientTick(TickEvent.ClientTickEvent event) {
         if (event.phase == TickEvent.Phase.START && !Minecraft.getInstance().isPaused()) {
-            // Ленивая привязка DH-моста (DI-реестр DH может очиститься при его
-            // инициализации). Класс DhRenderBridge наследует DH-класс — грузить
-            // его можно только при наличии DH (guard строго до упоминания).
-            if (com.hbm_m.compat.dh.DhCompat.isModPresent()) {
-                com.hbm_m.client.compat.dh.DhRenderBridge.tryRegister();
-            }
-            ParticleEngineNT.INSTANCE.tick();
+            // 1.20.1: /tick freeze нет — мир всегда «тикает» на клиенте.
+            doParticleTick(true);
         }
     }
     //?} elif neoforge {
     /*@SubscribeEvent
     public static void onClientTick(ClientTickEvent.Pre event) {
         if (!Minecraft.getInstance().isPaused()) {
-            // Ленивая привязка DH-моста (см. forge-ветку).
-            if (com.hbm_m.compat.dh.DhCompat.isModPresent()) {
-                com.hbm_m.client.compat.dh.DhRenderBridge.tryRegister();
-            }
-            ParticleEngineNT.INSTANCE.tick();
+            ClientLevel lvl = Minecraft.getInstance().level;
+            boolean runs = lvl == null || lvl.tickRateManager().runsNormally();
+            doParticleTick(runs);
         }
     }
     *///?}

@@ -30,7 +30,7 @@ import java.util.*;
  * Модель: {@code assets/hbm_m/models/effect/skeleton.obj}, части "Skull", "Torso", "Limb", "SkullVillager".
  * Текстура: {@code assets/hbm_m/textures/particle/skeleton.png} / {@code skoilet.png}.
  */
-public class ParticleSkeletonNT extends ParticleNT {
+public class ParticleSkeletonNT extends ParticleNT implements ReplaceOnRespawn {
 
     private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(
             RefStrings.MODID, "textures/particle/skeleton.png");

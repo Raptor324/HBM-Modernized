@@ -33,7 +33,7 @@ import net.minecraft.world.phys.Vec3;
 /**
  * Toroidal convection mushroom cloud effect
  */
-public class NukeTorex extends ParticleNT implements FarCapableParticle {
+public class NukeTorex extends ParticleNT implements FarCapableParticle, ReplaceOnRespawn {
 
     protected int type = 0;
     protected float scale = 1;

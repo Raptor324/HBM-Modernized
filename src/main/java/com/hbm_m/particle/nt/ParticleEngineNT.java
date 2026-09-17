@@ -26,7 +26,76 @@ public class ParticleEngineNT {
     // Очередь для новых частиц. Спасает от ConcurrentModificationException, если частица спавнит другую частицу внутри tick().
     private final List<ParticleNT> newParticles = new ArrayList<>();
 
+    // ═══ Откат таймлайна (реплееры вроде Flashback) ═══
+    // Собственный счётчик тиков движка: клиентский gameTime зернистый
+    // (ClientboundSetTimePacket раз в 20 тиков), им нельзя резать шлейф.
+    private long tickCounter = 0;
+    /**
+     * Активная граница отката: частицы с spawnTick > cutoff — «будущее»,
+     * их удаляем. MAX = нормальный режим. Новые частицы в режиме отката
+     * получают spawnTick = cutoff, чтобы шлейф у отмотанной ракеты
+     * продолжал строиться и не удалял сам себя.
+     */
+    private long purgeCutoff = Long.MAX_VALUE;
+    private long lastWorldGameTime = Long.MIN_VALUE;
+    /** История «тик движка → gameTime» для точного поиска границы отката (~2.7 ч при 20 tps). */
+    private static final int GAME_TIME_HISTORY = 200_000;
+    private final long[] gameTimeHistory = new long[GAME_TIME_HISTORY];
+
+    /**
+     * Раз в клиентский тик ПЕРЕД tick(): записывает мировое время в историю
+     * и при уменьшении (реплеер отмотал таймлайн назад) вычисляет границу
+     * отката и удаляет частицы «из будущего».
+     */
+    public void onWorldGameTime(long gameTime) {
+        this.gameTimeHistory[(int) (this.tickCounter % GAME_TIME_HISTORY)] = gameTime;
+        if (gameTime < this.lastWorldGameTime) {
+            this.purgeCutoff = findRewindCutoff(gameTime);
+            purgeFutureParticles();
+        }
+        this.lastWorldGameTime = gameTime;
+    }
+
+    /** Новейший тик движка, на котором мировое время было <= gameTime. */
+    private long findRewindCutoff(long gameTime) {
+        long oldest = Math.max(0, this.tickCounter - GAME_TIME_HISTORY + 1);
+        for (long e = this.tickCounter; e >= oldest; e--) {
+            if (this.gameTimeHistory[(int) (e % GAME_TIME_HISTORY)] <= gameTime) {
+                return e;
+            }
+        }
+        return oldest;
+    }
+
+    private void purgeFutureParticles() {
+        for (List<ParticleNT> list : this.particlesByType.values()) {
+            list.removeIf(p -> p != null && p.spawnTick > this.purgeCutoff);
+        }
+        this.newParticles.removeIf(p -> p != null && p.spawnTick > this.purgeCutoff);
+    }
+
     public void add(ParticleNT effect) {
+        // В нормальном режиме = текущий тик; в режиме отката новые частицы
+        // (шлейф у отмотанной ракеты) штампуются границей и выживают.
+        effect.spawnTick = Math.min(this.tickCounter, this.purgeCutoff);
+        // Повторная доставка пакета (реплеер перематывает таймлайн и отыгрывает
+        // пакеты заново; дубликат от сервера) не должна наслаивать второй гриб:
+        // помеченные ReplaceOnRespawn эффекты заменяют старый экземпляр своего
+        // класса поблизости вместо наложения.
+        if (effect instanceof ReplaceOnRespawn) {
+            double rr = 32 * 32;
+            for (List<ParticleNT> list : this.particlesByType.values()) {
+                for (int i = list.size() - 1; i >= 0; i--) {
+                    ParticleNT p = list.get(i);
+                    if (p == null || p.getClass() != effect.getClass()) continue;
+                    double dx = p.x - effect.x, dy = p.y - effect.y, dz = p.z - effect.z;
+                    if (dx * dx + dy * dy + dz * dz <= rr) {
+                        p.remove();
+                        list.remove(i);
+                    }
+                }
+            }
+        }
         this.newParticles.add(effect);
     }
 
@@ -103,6 +172,8 @@ public class ParticleEngineNT {
         this.renderOrderNormal.clear();
         this.renderOrderAshes.clear();
         this.newParticles.clear();
+        this.purgeCutoff = Long.MAX_VALUE;
+        this.lastWorldGameTime = Long.MIN_VALUE;
     }
 
     public void render(MultiBufferSource.BufferSource buffer, Camera camera, float partialTick, PoseStack levelPoseStack) {
@@ -247,6 +318,10 @@ public class ParticleEngineNT {
     }
 
     public void tick() {
+        this.tickCounter++;
+        // Догнали таймлайн после отката — выходим из «режима прошлого».
+        if (this.tickCounter >= this.purgeCutoff) this.purgeCutoff = Long.MAX_VALUE;
+
         // 1. Распределяем новые частицы в правильные батчи (один раз за всю их жизнь)
         if (!this.newParticles.isEmpty()) {
             for (int i = 0, size = this.newParticles.size(); i < size; i++) {

@@ -27,7 +27,7 @@ import net.minecraft.world.phys.Vec3;
  * Портировано из explosiveideas (NukeExplosionEmitterParticle), без вспышки и тряски камеры.
  * Все эффекты затухают со временем; рендер только на клиенте.
  */
-public class NukeExplosionRings extends ParticleNT implements FarCapableParticle {
+public class NukeExplosionRings extends ParticleNT implements FarCapableParticle, ReplaceOnRespawn {
 
     //? if fabric && < 1.21.1 {
     /*private static final ResourceLocation TEXTURE_FLARE = new ResourceLocation(RefStrings.MODID, "textures/particle/nuke_explosion_flare.png");
