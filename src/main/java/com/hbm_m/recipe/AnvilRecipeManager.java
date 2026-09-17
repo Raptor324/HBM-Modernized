@@ -3,9 +3,7 @@ package com.hbm_m.recipe;
 
 import java.util.Collections;
 import java.util.List;
-import java.util.Locale;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import com.hbm_m.block.machines.anvils.AnvilTier;
 import com.hbm_m.platform.recipe.RecipeHooks;
@@ -41,22 +39,6 @@ public final class AnvilRecipeManager {
         Minecraft minecraft = Minecraft.getInstance();
         Level level = minecraft.level;
         return level != null ? getAllRecipes(level) : Collections.emptyList();
-    }
-
-    public static List<AnvilRecipe> searchRecipes(Level level, String query) {
-        List<AnvilRecipe> recipes = getAllRecipes(level);
-        if (query == null || query.trim().isEmpty()) {
-            return recipes;
-        }
-
-        String lowerQuery = query.toLowerCase(Locale.ROOT);
-        return recipes.stream()
-                .filter(recipe -> {
-                    ItemStack output = recipe.getResultItemSafe();
-                    String itemName = output.getHoverName().getString().toLowerCase(Locale.ROOT);
-                    return itemName.contains(lowerQuery);
-                })
-                .collect(Collectors.toList());
     }
 
     public static Optional<AnvilRecipe> findRecipe(Level level, ItemStack slotA, ItemStack slotB, AnvilTier tier) {

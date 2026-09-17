@@ -8,6 +8,7 @@ import com.hbm_m.block.machines.anvils.AnvilBlock;
 import com.hbm_m.block.machines.anvils.AnvilTier;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.recipe.AnvilRecipe;
+import com.hbm_m.recipe.AnvilRecipe.AnvilIngredient;
 import com.hbm_m.recipe.AnvilRecipe.OverlayType;
 import com.hbm_m.recipe.AnvilRecipe.ResultEntry;
 
@@ -127,10 +128,10 @@ public class AnvilJeiCategory implements IRecipeCategory<AnvilRecipe> {
         switch (overlay) {
             case SMITHING -> {
                 if (!recipe.getInputA().isEmpty()) {
-                    inputs.add(recipe.getInputA());
+                    inputs.add(recipe.getInputA().display());
                 }
                 if (!recipe.getInputB().isEmpty()) {
-                    inputs.add(recipe.getInputB());
+                    inputs.add(recipe.getInputB().display());
                 }
             }
             case RECYCLING -> {
@@ -139,16 +140,26 @@ public class AnvilJeiCategory implements IRecipeCategory<AnvilRecipe> {
                     inputs.add(recyclingInput);
                 }
             }
-            case CONSTRUCTION -> inputs.addAll(recipe.getInventoryInputs());
+            case CONSTRUCTION -> {
+                for (AnvilIngredient required : recipe.getInventoryInputs()) {
+                    if (!required.isEmpty()) {
+                        inputs.add(required.display());
+                    }
+                }
+            }
             default -> {
                 if (!recipe.getInventoryInputs().isEmpty()) {
-                    inputs.addAll(recipe.getInventoryInputs());
+                    for (AnvilIngredient required : recipe.getInventoryInputs()) {
+                        if (!required.isEmpty()) {
+                            inputs.add(required.display());
+                        }
+                    }
                 } else {
                     if (!recipe.getInputA().isEmpty()) {
-                        inputs.add(recipe.getInputA());
+                        inputs.add(recipe.getInputA().display());
                     }
                     if (!recipe.getInputB().isEmpty()) {
-                        inputs.add(recipe.getInputB());
+                        inputs.add(recipe.getInputB().display());
                     }
                 }
             }

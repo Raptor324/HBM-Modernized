@@ -127,6 +127,23 @@ public class AnvilBlock extends FallingBlock implements EntityBlock {
     }
     *///?}
 
+    // Оригинал NTMAnvil.addInformation: золотой «Tier N Anvil»
+    //? if < 1.21.1 {
+    @Override
+    public void appendHoverText(net.minecraft.world.item.ItemStack stack, @org.jetbrains.annotations.Nullable net.minecraft.world.level.BlockGetter level,
+                                java.util.List<net.minecraft.network.chat.Component> tooltip, net.minecraft.world.item.TooltipFlag flag) {
+        tooltip.add(net.minecraft.network.chat.Component.literal("Tier " + tier.getLegacyId() + " Anvil")
+                .withStyle(net.minecraft.ChatFormatting.GOLD));
+    }
+    //?} else {
+    /*@Override
+    public void appendHoverText(net.minecraft.world.item.ItemStack stack, net.minecraft.world.item.Item.TooltipContext level,
+                                java.util.List<net.minecraft.network.chat.Component> tooltip, net.minecraft.world.item.TooltipFlag flag) {
+        tooltip.add(net.minecraft.network.chat.Component.literal("Tier " + tier.getLegacyId() + " Anvil")
+                .withStyle(net.minecraft.ChatFormatting.GOLD));
+    }
+    *///?}
+
     /**
      * Настраивает параметры урона для падающей наковальни.
      * Вызывается при создании FallingBlockEntity.

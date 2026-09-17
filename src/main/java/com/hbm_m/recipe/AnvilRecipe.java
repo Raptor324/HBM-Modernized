@@ -28,11 +28,14 @@ import net.minecraft.world.level.Level;
 
 public class AnvilRecipe extends PlatformRecipe {
 
-    private final ItemStack inputA;
-    private final ItemStack inputB;
+    /** Recipes without an explicit order sort last (original 1.7.10 uses registration order). */
+    public static final int NO_ORDER = Integer.MAX_VALUE;
+
+    private final AnvilIngredient inputA;
+    private final AnvilIngredient inputB;
     private final boolean consumeA;
     private final boolean consumeB;
-    private final List<ItemStack> inventoryInputs;
+    private final List<AnvilIngredient> inventoryInputs;
     private final List<ResultEntry> outputs;
     private final ItemStack displayStack;
     private final AnvilTier requiredTier;
@@ -41,14 +44,17 @@ public class AnvilRecipe extends PlatformRecipe {
     @Nullable
     private final String blueprintPool;
     private final OverlayType overlay;
+    private final boolean shapeless;
+    private final int order;
 
-    public AnvilRecipe(ResourceLocation id, ItemStack inputA, ItemStack inputB,
-                       List<ItemStack> inventoryInputs, List<ResultEntry> outputs,
+    public AnvilRecipe(ResourceLocation id, AnvilIngredient inputA, AnvilIngredient inputB,
+                       List<AnvilIngredient> inventoryInputs, List<ResultEntry> outputs,
                        AnvilTier requiredTier, @Nullable AnvilTier upperTier,
-                       @Nullable String blueprintPool, OverlayType overlay, boolean consumeA, boolean consumeB) {
+                       @Nullable String blueprintPool, OverlayType overlay,
+                       boolean consumeA, boolean consumeB, boolean shapeless, int order) {
         super(id);
-        this.inputA = inputA == null ? ItemStack.EMPTY : inputA;
-        this.inputB = inputB == null ? ItemStack.EMPTY : inputB;
+        this.inputA = inputA == null ? AnvilIngredient.EMPTY : inputA;
+        this.inputB = inputB == null ? AnvilIngredient.EMPTY : inputB;
         this.consumeA = consumeA;
         this.consumeB = consumeB;
         this.inventoryInputs = Collections.unmodifiableList(new ArrayList<>(inventoryInputs));
@@ -61,6 +67,8 @@ public class AnvilRecipe extends PlatformRecipe {
         this.upperTier = upperTier;
         this.blueprintPool = blueprintPool;
         this.overlay = overlay;
+        this.shapeless = shapeless;
+        this.order = order;
     }
 
     @Override
@@ -73,18 +81,19 @@ public class AnvilRecipe extends PlatformRecipe {
         return matches(container.getItem(0), container.getItem(1));
     }
 
+    /**
+     * Smithing-матчинг двух слотов. Порядок слотов имеет значение (как в 1.7.10),
+     * зеркальный вариант принимается только для shapeless-рецептов.
+     */
     public boolean matches(ItemStack slotA, ItemStack slotB) {
         if (!usesMachineInputs()) {
             return false;
         }
-        return matchesExact(slotA, slotB) || matchesExact(slotB, slotA);
+        return matchesExact(slotA, slotB) || (shapeless && matchesExact(slotB, slotA));
     }
 
     private boolean matchesExact(ItemStack slotA, ItemStack slotB) {
-        return PlatformHooks.isSameItemSameTags(slotA, inputA) &&
-               PlatformHooks.isSameItemSameTags(slotB, inputB) &&
-               slotA.getCount() >= inputA.getCount() &&
-               slotB.getCount() >= inputB.getCount();
+        return inputA.matches(slotA) && inputB.matches(slotB);
     }
 
     public boolean canCraftOn(AnvilTier tier) {
@@ -119,17 +128,13 @@ public class AnvilRecipe extends PlatformRecipe {
         return Type.INSTANCE;
     }
 
-    public ItemStack getInputA() { return inputA; }
-    public ItemStack getInputB() { return inputB; }
+    public AnvilIngredient getInputA() { return inputA; }
+    public AnvilIngredient getInputB() { return inputB; }
 
     public boolean consumesA() { return consumeA; }
     public boolean consumesB() { return consumeB; }
 
-    public List<ItemStack> getRequiredItems() {
-        return inventoryInputs;
-    }
-
-    public List<ItemStack> getInventoryInputs() {
+    public List<AnvilIngredient> getInventoryInputs() {
         return inventoryInputs;
     }
 
@@ -148,6 +153,14 @@ public class AnvilRecipe extends PlatformRecipe {
 
     public boolean requiresBlueprint() {
         return blueprintPool != null && !blueprintPool.isEmpty();
+    }
+
+    public boolean isShapeless() {
+        return shapeless;
+    }
+
+    public int getOrder() {
+        return order;
     }
 
     public OverlayType getOverlay() {
@@ -173,16 +186,18 @@ public class AnvilRecipe extends PlatformRecipe {
         }
 
         // Приоритет: inventoryInputs > inputA > inputB
-        if (!inventoryInputs.isEmpty()) {
-            return inventoryInputs.get(0).copy();
+        for (AnvilIngredient required : inventoryInputs) {
+            if (!required.isEmpty()) {
+                return required.display();
+            }
         }
 
         if (!inputA.isEmpty()) {
-            return inputA.copy();
+            return inputA.display();
         }
 
         if (!inputB.isEmpty()) {
-            return inputB.copy();
+            return inputB.display();
         }
 
         return ItemStack.EMPTY;
@@ -190,11 +205,9 @@ public class AnvilRecipe extends PlatformRecipe {
 
     private ItemStack computeDisplayStack() {
         if (overlay == OverlayType.RECYCLING) {
-            if (!inventoryInputs.isEmpty()) {
-                return inventoryInputs.get(0).copy();
-            }
-            if (!inputA.isEmpty()) {
-                return inputA.copy();
+            ItemStack recycling = getRecyclingInputStack();
+            if (!recycling.isEmpty()) {
+                return recycling;
             }
         }
         if (!outputs.isEmpty()) {
@@ -204,6 +217,90 @@ public class AnvilRecipe extends PlatformRecipe {
     }
 
     public record ResultEntry(ItemStack stack, float chance) { }
+
+    /**
+     * Ингредиент наковальни — аналог оригинального AStack 1.7.10:
+     * список допустимых предметов (аналог ore dict) + требуемое количество.
+     */
+    public record AnvilIngredient(List<ItemStack> variants, int count) {
+
+        public static final AnvilIngredient EMPTY = new AnvilIngredient(List.of(), 0);
+
+        /** Один допустимый предмет (все варианты). Количество берётся из первого стека. */
+        public static AnvilIngredient of(ItemStack first, ItemStack... more) {
+            List<ItemStack> variants = new ArrayList<>();
+            int count = 0;
+            if (!first.isEmpty()) {
+                count = Math.max(1, first.getCount());
+                variants.add(single(first));
+            }
+            for (ItemStack extra : more) {
+                if (!extra.isEmpty()) {
+                    variants.add(single(extra));
+                }
+            }
+            if (variants.isEmpty()) {
+                return EMPTY;
+            }
+            return new AnvilIngredient(List.copyOf(variants), count);
+        }
+
+        public static AnvilIngredient ofCount(ItemStack stack, int count) {
+            if (stack.isEmpty()) {
+                return EMPTY;
+            }
+            return new AnvilIngredient(List.of(single(stack)), Math.max(1, count));
+        }
+
+        private static ItemStack single(ItemStack stack) {
+            ItemStack copy = stack.copy();
+            copy.setCount(1);
+            return copy;
+        }
+
+        public boolean isEmpty() {
+            return variants.isEmpty() || count <= 0;
+        }
+
+        public boolean matches(ItemStack actual) {
+            if (isEmpty() || actual.isEmpty()) {
+                return isEmpty() && actual.isEmpty();
+            }
+            for (ItemStack variant : variants) {
+                if (PlatformHooks.hasItemTag(variant)) {
+                    if (PlatformHooks.isSameItemSameTags(actual, variant)) {
+                        return true;
+                    }
+                } else if (actual.is(variant.getItem())) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        /** Репрезентативный стак для отображения (первый вариант, с количеством). */
+        public ItemStack display() {
+            if (variants.isEmpty()) {
+                return ItemStack.EMPTY;
+            }
+            ItemStack copy = variants.get(0).copy();
+            copy.setCount(count);
+            return copy;
+        }
+
+        /** Все допустимые имена — для поиска (как список oredict-вариантов в 1.7.10). */
+        public List<String> displayNames() {
+            List<String> names = new ArrayList<>();
+            for (ItemStack variant : variants) {
+                try {
+                    names.add(variant.getHoverName().getString().toLowerCase(Locale.ROOT));
+                } catch (Exception ex) {
+                    names.add("error");
+                }
+            }
+            return names;
+        }
+    }
 
     public static class Type implements RecipeType<AnvilRecipe> {
         public static final Type INSTANCE = new Type();
@@ -215,24 +312,24 @@ public class AnvilRecipe extends PlatformRecipe {
 
         @Override
         public AnvilRecipe readJson(ResourceLocation id, JsonObject json) {
-            ItemStack inputA = json.has("input_a")
-                    ? itemStackFromJson(GsonHelper.getAsJsonObject(json, "input_a"))
-                    : ItemStack.EMPTY;
-            ItemStack inputB = json.has("input_b")
-                    ? itemStackFromJson(GsonHelper.getAsJsonObject(json, "input_b"))
-                    : ItemStack.EMPTY;
+            AnvilIngredient inputA = json.has("input_a")
+                    ? ingredientFromJson(GsonHelper.getAsJsonObject(json, "input_a"))
+                    : AnvilIngredient.EMPTY;
+            AnvilIngredient inputB = json.has("input_b")
+                    ? ingredientFromJson(GsonHelper.getAsJsonObject(json, "input_b"))
+                    : AnvilIngredient.EMPTY;
 
             boolean consumeA = GsonHelper.getAsBoolean(json, "consume_a", true);
             boolean consumeB = GsonHelper.getAsBoolean(json, "consume_b", true);
 
-            List<ItemStack> inventoryInputs = new ArrayList<>();
+            List<AnvilIngredient> inventoryInputs = new ArrayList<>();
             if (json.has("required_items")) {
                 JsonArray reqArray = GsonHelper.getAsJsonArray(json, "required_items");
-                reqArray.forEach(element -> inventoryInputs.add(itemStackFromJson(element.getAsJsonObject())));
+                reqArray.forEach(element -> inventoryInputs.add(ingredientFromJson(element.getAsJsonObject())));
             }
             if (json.has("inventory_inputs")) {
                 JsonArray reqArray = GsonHelper.getAsJsonArray(json, "inventory_inputs");
-                reqArray.forEach(element -> inventoryInputs.add(itemStackFromJson(element.getAsJsonObject())));
+                reqArray.forEach(element -> inventoryInputs.add(ingredientFromJson(element.getAsJsonObject())));
             }
 
             List<ResultEntry> outputs = new ArrayList<>();
@@ -253,22 +350,25 @@ public class AnvilRecipe extends PlatformRecipe {
             }
             String blueprintPool = GsonHelper.getAsString(json, "blueprint_pool", null);
             OverlayType overlay = OverlayType.byName(GsonHelper.getAsString(json, "overlay", "none"));
+            boolean shapeless = GsonHelper.getAsBoolean(json, "shapeless", false);
+            int order = GsonHelper.getAsInt(json, "order", NO_ORDER);
 
-            return new AnvilRecipe(id, inputA, inputB, inventoryInputs, outputs, tier, upper, blueprintPool, overlay, consumeA, consumeB);
+            return new AnvilRecipe(id, inputA, inputB, inventoryInputs, outputs, tier, upper,
+                    blueprintPool, overlay, consumeA, consumeB, shapeless, order);
         }
 
         @Override
         public AnvilRecipe readNetwork(ResourceLocation id, FriendlyByteBuf buffer) {
-            ItemStack inputA = RecipeHooks.readItem(buffer);
-            ItemStack inputB = RecipeHooks.readItem(buffer);
+            AnvilIngredient inputA = readIngredient(buffer);
+            AnvilIngredient inputB = readIngredient(buffer);
 
             boolean consumeA = buffer.readBoolean();
             boolean consumeB = buffer.readBoolean();
 
             int size = buffer.readInt();
-            List<ItemStack> inventoryInputs = new ArrayList<>();
+            List<AnvilIngredient> inventoryInputs = new ArrayList<>();
             for (int i = 0; i < size; i++) {
-                inventoryInputs.add(RecipeHooks.readItem(buffer));
+                inventoryInputs.add(readIngredient(buffer));
             }
 
             int outputsSize = buffer.readInt();
@@ -287,21 +387,24 @@ public class AnvilRecipe extends PlatformRecipe {
             }
             String blueprintPool = buffer.readBoolean() ? buffer.readUtf() : null;
             OverlayType overlay = OverlayType.values()[buffer.readVarInt()];
+            boolean shapeless = buffer.readBoolean();
+            int order = buffer.readInt();
 
-            return new AnvilRecipe(id, inputA, inputB, inventoryInputs, outputs, tier, upper, blueprintPool, overlay, consumeA, consumeB);
+            return new AnvilRecipe(id, inputA, inputB, inventoryInputs, outputs, tier, upper,
+                    blueprintPool, overlay, consumeA, consumeB, shapeless, order);
         }
 
         @Override
         public void writeNetwork(FriendlyByteBuf buffer, AnvilRecipe recipe) {
-            RecipeHooks.writeItem(buffer, recipe.inputA);
-            RecipeHooks.writeItem(buffer, recipe.inputB);
+            writeIngredient(buffer, recipe.inputA);
+            writeIngredient(buffer, recipe.inputB);
 
             buffer.writeBoolean(recipe.consumeA);
             buffer.writeBoolean(recipe.consumeB);
 
             buffer.writeInt(recipe.inventoryInputs.size());
-            for (ItemStack item : recipe.inventoryInputs) {
-                RecipeHooks.writeItem(buffer, item);
+            for (AnvilIngredient item : recipe.inventoryInputs) {
+                writeIngredient(buffer, item);
             }
 
             buffer.writeInt(recipe.outputs.size());
@@ -319,6 +422,44 @@ public class AnvilRecipe extends PlatformRecipe {
                 buffer.writeBoolean(false);
             }
             buffer.writeVarInt(recipe.overlay.ordinal());
+            buffer.writeBoolean(recipe.shapeless);
+            buffer.writeInt(recipe.order);
+        }
+
+        private static AnvilIngredient readIngredient(FriendlyByteBuf buffer) {
+            int count = buffer.readVarInt();
+            int variantCount = buffer.readVarInt();
+            List<ItemStack> variants = new ArrayList<>(variantCount);
+            for (int i = 0; i < variantCount; i++) {
+                variants.add(RecipeHooks.readItem(buffer));
+            }
+            return new AnvilIngredient(List.copyOf(variants), count);
+        }
+
+        private static void writeIngredient(FriendlyByteBuf buffer, AnvilIngredient ingredient) {
+            buffer.writeVarInt(ingredient.count());
+            buffer.writeVarInt(ingredient.variants().size());
+            for (ItemStack variant : ingredient.variants()) {
+                RecipeHooks.writeItem(buffer, variant);
+            }
+        }
+
+        private static AnvilIngredient ingredientFromJson(JsonObject object) {
+            int count = GsonHelper.getAsInt(object, "count", 1);
+            List<ItemStack> variants = new ArrayList<>();
+            if (object.has("anyOf")) {
+                JsonArray array = GsonHelper.getAsJsonArray(object, "anyOf");
+                array.forEach(element -> variants.add(normalize(itemStackFromJson(element.getAsJsonObject()))));
+            } else {
+                variants.add(normalize(itemStackFromJson(object)));
+            }
+            return new AnvilIngredient(List.copyOf(variants), Mth.clamp(count, 0, Integer.MAX_VALUE));
+        }
+
+        private static ItemStack normalize(ItemStack stack) {
+            ItemStack copy = stack.copy();
+            copy.setCount(1);
+            return copy;
         }
 
         private static ItemStack itemStackFromJson(JsonObject object) {
