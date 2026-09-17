@@ -138,12 +138,11 @@ public class RBMKColumnRenderer<T extends RBMKColumnBlockEntity> implements com.
         // and "_glass" (glass lid) - but the renderer only ever loaded the plain one, so every
         // column looked the same regardless of whether it actually had a lid on. Matches the
         // reference screenshots' distinct capped/vented tops per lid state.
-        // Must gate on hasLid() (overridden to always be false for control rods, which never
-        // have a real lid - the rod cap stands in for it) rather than the raw getLidState()
-        // field, which still defaults to 1 ("has a concrete lid") even for types that can never
-        // actually have one: reading it directly sent every control rod, moderated or not,
-        // looking for a "..._cover_top" texture that doesn't exist for that type, rendering as
-        // the classic missing-texture magenta/black checkerboard on the whole top face.
+        // Must gate on hasLid() && !hasOwnLid() rather than the raw getLidState() field, which
+        // still defaults to 1 ("has a concrete lid") even for types that can never actually have
+        // one: reading it directly sent every control rod, moderated or not, looking for a
+        // "..._cover_top" texture that doesn't exist for that type, rendering as the classic
+        // missing-texture magenta/black checkerboard on the whole top face.
         // The column body always wears its plain "_top". A lid is NOT a texture swap on that face -
         // it is a real 0.25-block plate drawn on top of the column further down (see the lid box
         // below), which is what the "_cover_side"/"_glass_side" textures are for: they are the
@@ -207,7 +206,11 @@ public class RBMKColumnRenderer<T extends RBMKColumnBlockEntity> implements com.
         // with its underside on the column's top face, its top ends up at height + 0.25 - exactly
         // level with the top of a control rod cap at level 0, which is how the two read as one
         // continuous reactor floor.
-        if (be.hasLid()) {
+        // hasOwnLid() types (control rods, panel devices) are logically lidded - hasLid() is true
+        // for them so they do not leak neutron flux - but they ship no "_cover_*"/"_glass_*"
+        // textures, so the generic plate must not be drawn on them. Their own cap mesh stands in
+        // for it. Matches RBMKBase.getIcon's "if(!hasOwnLid())" guard in the original.
+        if (be.hasLid() && !be.hasOwnLid()) {
             TextureAtlasSprite lidTop  = sprite(RefStrings.MODID, "block/rbmk/" + prefix + lidSuffix + "_top");
             TextureAtlasSprite lidSide = sprite(RefStrings.MODID, "block/rbmk/" + prefix + lidSuffix + "_side");
             // A glass lid has to go on RenderType.cutout(): its textures are mostly hole (191 of 256

@@ -48,7 +48,9 @@ public class FusionMhdtRenderer implements BlockEntityRenderer<FusionMhdtBlockEn
 
         pose.pushPose();
         pose.translate(0.5D, 0D, 0.5D);
-        FusionTorusRenderer.applyFacing(be.getBlockState(), pose);
+        // 90 degrees to match transform.rotation in models/block/machines/mhdt.json - the mesh
+        // is built along X, the machine's structure runs along Z. See that model file.
+        FusionTorusRenderer.applyFacing(be.getBlockState(), pose, 90F);
 
         float rot = Mth.lerp(partialTick, be.prevRotor, be.rotor) % 15F;
         pose.translate(0D, 1.5D, 0D);

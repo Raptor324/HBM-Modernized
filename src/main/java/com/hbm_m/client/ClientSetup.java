@@ -665,6 +665,10 @@ public class ClientSetup {
         // ===== Fusionsreaktor =====
         BlockEntityRenderers.register(ModBlockEntities.FUSION_TORUS_BE.get(),
                 com.hbm_m.client.render.implementations.FusionTorusRenderer::new);
+        // Bauplan des Torus: zeichnet das 15x15x5-Muster als durchscheinende Miniwuerfel um den
+        // Kern, damit man den Reaktor ueberhaupt von Hand bauen kann (RenderFusionTorusMultiblock).
+        BlockEntityRenderers.register(ModBlockEntities.STRUCT_TORUS_CORE_BE.get(),
+                com.hbm_m.client.render.implementations.StructTorusCoreRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.FUSION_KLYSTRON_BE.get(),
                 com.hbm_m.client.render.implementations.FusionKlystronRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.FUSION_KLYSTRON_CREATIVE_BE.get(),

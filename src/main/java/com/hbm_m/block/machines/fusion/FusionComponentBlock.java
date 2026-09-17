@@ -28,7 +28,36 @@ import net.minecraft.world.phys.BlockHitResult;
  * Die Umwandlungstabelle steht 1:1 in {@code BlockToolConversion.registerRecipes()}:
  * {@code ToolType.TORCH + fusion_component:0 + STEEL.plateCast() -> fusion_component:1}.</p>
  */
-public class FusionComponentBlock extends Block {
+public class FusionComponentBlock extends Block implements com.hbm_m.interfaces.ILookOverlay {
+
+    /**
+     * 1:1-Port von {@code BlockToolConversion.printHook}: solange der Spieler den Brenner in der
+     * Hand haelt, steht am Fadenkreuz, was die Umwandlung kostet. Ohne diese Anzeige gibt es
+     * im Spiel keinen Hinweis darauf, dass die rohe Spule ueberhaupt verschweisst werden muss -
+     * und der Toruskern nimmt nur die verschweisste Variante an.
+     */
+    @Override
+    public void printHook(net.minecraft.client.gui.GuiGraphics guiGraphics, Level level, BlockPos pos) {
+        Player player = net.minecraft.client.Minecraft.getInstance().player;
+        if (player == null) return;
+        if (!isTorch(player.getMainHandItem()) && !isTorch(player.getOffhandItem())) return;
+
+        ItemStack plate = ModMaterialItems.stack(ModMaterials.STEEL, MaterialShape.PLATE_CAST, 1);
+
+        java.util.List<net.minecraft.network.chat.Component> text = new java.util.ArrayList<>();
+        text.add(net.minecraft.network.chat.Component.literal("Requires:")
+                .withStyle(net.minecraft.ChatFormatting.GOLD));
+        text.add(net.minecraft.network.chat.Component.literal("- ")
+                .withStyle(net.minecraft.ChatFormatting.BLUE)
+                .append(new ItemStack(ModItems.BLOWTORCH.get()).getHoverName()));
+        text.add(net.minecraft.network.chat.Component.literal("- ")
+                .append(plate.getHoverName())
+                .append(net.minecraft.network.chat.Component.literal(" x1")));
+
+        com.hbm_m.interfaces.ILookOverlay.printGeneric(guiGraphics,
+                net.minecraft.network.chat.Component.translatable(getDescriptionId()),
+                0xffff00, 0x404000, text);
+    }
 
     public FusionComponentBlock(Properties properties) {
         super(properties);

@@ -17,6 +17,14 @@ import net.minecraft.world.level.block.state.BlockState;
 
 /**
  * 1:1-Port von {@code MachineFusionBoiler} (1.7.10) - macht aus Plasmaleistung ueberhitzten Dampf.
+ *
+ * <p><b>Modellausrichtung:</b> {@code boiler_fusion.obj} ist mit seiner Laengsachse auf X gebaut
+ * (X von -4.5 bis 4.5, Z nur von -2 bis 2). Die Struktur unten liegt aber genau andersherum:
+ * {@code getDimensions {3,0,4,4,1,1}} heisst N/S = 4+4+1 = 9 Zellen entlang Z und W/E = 1+1+1 = 3
+ * Zellen entlang X. Das Modell lag also quer ueber der eigenen Hitbox und den eigenen Dummyzellen.
+ * Korrigiert wird das in {@code models/block/machines/boiler_fusion.json} ueber
+ * {@code transform.rotation = [0, 90, 0]} - im Blockmodell und nicht hier, weil der Boiler keinen
+ * BlockEntityRenderer hat, der mitgedreht werden muesste.</p>
  */
 public class MachineFusionBoilerBlock extends FusionMultiblockBlock implements com.hbm_m.interfaces.ILookOverlay {
 

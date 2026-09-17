@@ -6,8 +6,10 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.LevelReader;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.state.BlockState;
@@ -98,14 +100,61 @@ public class RBMKColumnFillerBlock extends Block {
     *///?}
 
 
+    /**
+     * Breaking any part of the column breaks the whole column, exactly as {@code BlockDummyable}
+     * does in the original by routing every dummy block's break back to the core. Without this the
+     * filler was the only thing that broke: mining the top of a column punched a hole in its
+     * hitbox and left the base - and the full-height visual - standing, and the column could only
+     * ever be removed by digging out its bottom block.
+     * <p>
+     * Destroying the base runs {@link RBMKColumnBlock#onRemove}, which drops the lid, handles the
+     * column's own teardown and clears every remaining filler above it (this one included).
+     */
+    private static void destroyWholeColumn(Level level, BlockPos pos, Player player) {
+        if (level.isClientSide) return;
+        BlockPos basePos = findBase(level, pos);
+        if (basePos == null) return;
+        level.destroyBlock(basePos, !player.isCreative(), player);
+    }
+
+    /** Pick-block on the filler hands over the column item, not nothing. */
+    //? if < 1.21.1 {
+    @Override
+    public ItemStack getCloneItemStack(BlockGetter level, BlockPos pos, BlockState state) {
+        BlockPos basePos = findBase(level, pos);
+        if (basePos == null) return ItemStack.EMPTY;
+        BlockState baseState = level.getBlockState(basePos);
+        return baseState.getBlock().getCloneItemStack(level, basePos, baseState);
+    }
+    //?} else {
+    /*@Override
+    public ItemStack getCloneItemStack(LevelReader level, BlockPos pos, BlockState state, boolean includeData) {
+        BlockPos basePos = findBase(level, pos);
+        if (basePos == null) return ItemStack.EMPTY;
+        BlockState baseState = level.getBlockState(basePos);
+        return baseState.getBlock().getCloneItemStack(level, basePos, baseState, includeData);
+    }
+    *///?}
+
+    /** Mining time follows the real column, so the filler cannot be dug faster than the block it stands for. */
+    @Override
+    public float getDestroyProgress(BlockState state, Player player, BlockGetter level, BlockPos pos) {
+        BlockPos basePos = findBase(level, pos);
+        if (basePos == null) return super.getDestroyProgress(state, player, level, pos);
+        BlockState baseState = level.getBlockState(basePos);
+        return baseState.getDestroyProgress(player, level, basePos);
+    }
+
     //? if < 1.21.1 {
     @Override
     public void playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
+        destroyWholeColumn(level, pos, player);
         super.playerWillDestroy(level, pos, state, player);
     }
     //?} else {
     /*@Override
     public BlockState playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
+        destroyWholeColumn(level, pos, player);
         return super.playerWillDestroy(level, pos, state, player);
     }
     *///?}

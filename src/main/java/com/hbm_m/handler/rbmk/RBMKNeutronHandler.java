@@ -304,9 +304,28 @@ public class RBMKNeutronHandler {
             int hits = 0;
             for (int h = 0; h < columnHeight; h++) {
                 BlockPos p = pos.above(h);
-                if (level.getBlockState(p).isSolidRender(level, p)) hits++;
+                if (isNeutronOpaque(level, p)) hits++;
             }
             return hits;
+        }
+
+        /**
+         * The original probes {@code Block.isOpaqueCube()}, and {@code RBMKBase} overrides that to
+         * {@code true} - an RBMK column is full shielding, so a stream whose tail lands inside the
+         * reactor slab is absorbed completely instead of irradiating it.
+         * <p>
+         * {@code isSolidRender} is NOT the equivalent here: every column carries
+         * {@code noOcclusion()} because its body is drawn by the BESR rather than a block model, so
+         * asking the render layer reported "not opaque" for the entire reactor. Every tail leak
+         * therefore paid out at full strength right in the middle of the machine, which is why a
+         * reactor that was lidded everywhere still contaminated its surroundings. Columns and their
+         * invisible fillers are counted explicitly; everything else keeps the render-side test.
+         */
+        private static boolean isNeutronOpaque(Level level, BlockPos pos) {
+            net.minecraft.world.level.block.Block block = level.getBlockState(pos).getBlock();
+            if (block instanceof com.hbm_m.block.machines.rbmk.RBMKColumnBlock) return true;
+            if (block instanceof com.hbm_m.block.machines.rbmk.RBMKColumnFillerBlock) return true;
+            return level.getBlockState(pos).isSolidRender(level, pos);
         }
 
         public void irradiateFromFlux(Level level, BlockPos pos) {

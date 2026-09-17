@@ -467,9 +467,28 @@ public abstract class RBMKColumnBlockEntity extends BaseHbmBlockEntity {
         };
     }
 
-    public boolean hasLid()         { return lidState != 0; }
+    /**
+     * 1:1 with {@code TileEntityRBMKBase.hasLid()}: a column whose lid cannot be removed is
+     * <em>permanently sealed</em>, not permanently open. The original short-circuits on
+     * {@code if(!isLidRemovable()) return true;} before ever looking at the lid metadata, which is
+     * what makes control rods and panel devices count as capped.
+     * <p>
+     * This is not cosmetic. {@code RBMKNeutronHandler} leaks the stream's remaining flux into
+     * {@code ChunkRadiationManager} for every node whose {@code hasLid} is false, so a control rod
+     * reporting "no lid" irradiated its surroundings on every single neutron pass - a reactor with
+     * lids on all of its fuel channels still cooked everything around it through its control rods.
+     */
+    public boolean hasLid()         { return !isLidRemovable() || lidState != 0; }
     public int    getLidState()     { return lidState; }
     public boolean isLidRemovable() { return true; }
+
+    /**
+     * 1:1 with {@code RBMKBase.hasOwnLid()}: these column types bring their own cap geometry and
+     * have no {@code _cover_*}/{@code _glass_*} textures at all, so the renderer must not draw the
+     * generic lid plate on them. Purely visual - {@link #hasLid()} is the logical state and stays
+     * true for them.
+     */
+    public boolean hasOwnLid()      { return false; }
 
     public void setLidState(int state) {
         lidState = state;

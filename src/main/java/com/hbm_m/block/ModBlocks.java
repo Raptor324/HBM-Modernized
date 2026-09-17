@@ -2549,12 +2549,28 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> FROZEN_PLANKS = registerBlock("frozen_planks", () -> new Block(BlockProps.copy(Blocks.STONE)));
     /** 1:1-Port von {@code BlockFusionComponent} (1.7.10): mit dem Schneidbrenner zur geschweissten Spule. */
     public static final RegistrySupplier<Block> FUSION_COMPONENT = registerBlock("fusion_component",
-            () -> new FusionComponentBlock(BlockProps.copy(Blocks.STONE).strength(5.0f, 30.0f)));
-    public static final RegistrySupplier<Block> FUSION_COMPONENT_BLANKET = registerBlock("fusion_component_blanket", () -> new Block(BlockProps.copy(Blocks.STONE)));
-    public static final RegistrySupplier<Block> FUSION_COMPONENT_BSCCO_WELDED = registerBlock("fusion_component_bscco_welded", () -> new Block(BlockProps.copy(Blocks.STONE)));
-    public static final RegistrySupplier<Block> FUSION_COMPONENT_MOTOR = registerBlock("fusion_component_motor", () -> new Block(BlockProps.copy(Blocks.STONE)));
-    public static final RegistrySupplier<Block> FUSION_HATCH = registerBlock("fusion_hatch", () -> new Block(BlockProps.copy(Blocks.STONE)));
-    public static final RegistrySupplier<Block> FUSION_HEATER = registerBlock("fusion_heater", () -> new Block(BlockProps.copy(Blocks.STONE)));
+            () -> new FusionComponentBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0f, 30.0f)));
+    // Im Original sind das die Metadaten 1-3 desselben Blocks wie FUSION_COMPONENT und teilen sich
+    // daher zwangslaeufig dessen Werte: Material.iron, setHardness(5.0F), setResistance(30.0F).
+    // Als Platzhalter standen sie auf copy(Blocks.STONE) - also Sprengfestigkeit 6 statt 30 an einem
+    // Fusionsreaktor, und Steinabbau statt Metall.
+    public static final RegistrySupplier<Block> FUSION_COMPONENT_BLANKET = registerBlock("fusion_component_blanket",
+            () -> new Block(BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0f, 30.0f)));
+    public static final RegistrySupplier<Block> FUSION_COMPONENT_BSCCO_WELDED = registerBlock("fusion_component_bscco_welded",
+            () -> new Block(BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0f, 30.0f)));
+    public static final RegistrySupplier<Block> FUSION_COMPONENT_MOTOR = registerBlock("fusion_component_motor",
+            () -> new Block(BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0f, 30.0f)));
+    /** 1:1-Port von {@code FusionHatch} (1.7.10): Material.iron, Haerte 5, Widerstand 10, mit Blickrichtung. */
+    public static final RegistrySupplier<Block> FUSION_HATCH = registerBlock("fusion_hatch",
+            () -> new com.hbm_m.block.machines.fusion.FusionHatchBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0f, 10.0f)));
+    /**
+     * Original: {@code new BlockPillar(Material.iron, ":fusion_heater_top")}, Haerte 5, Widerstand 10.
+     * Ein Pillar richtet seine Achse nach der Seite aus, auf die man ihn setzt - im Port lag der
+     * Deckel bisher fest auf oben/unten, weil es ein gewoehnlicher Wuerfel war.
+     */
+    public static final RegistrySupplier<Block> FUSION_HEATER = registerBlock("fusion_heater",
+            () -> new net.minecraft.world.level.block.RotatedPillarBlock(
+                    BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0f, 10.0f)));
     public static final RegistrySupplier<Block> GAS_ASBESTOS = registerBlock("gas_asbestos", com.hbm_m.block.gas.BlockGasAsbestos::new);
     public static final RegistrySupplier<Block> GAS_COAL = registerBlock("gas_coal", com.hbm_m.block.gas.BlockGasCoal::new);
     public static final RegistrySupplier<Block> GAS_EXPLOSIVE = registerBlock("gas_explosive", com.hbm_m.block.gas.BlockGasExplosive::new);
@@ -3522,8 +3538,17 @@ public class ModBlocks {
             }
             // Multiblocks: ihr Gegenstand muss vor dem Setzen pruefen, ob die ganze Struktur Platz
             // hat, und danach die Dummyzellen fuellen.
+            //
+            // FusionMultiblockBlock gehoerte hier von Anfang an dazu, stand aber nicht in der Liste
+            // und bekam deshalb ein blankes BlockItem. Folge: MultiblockBlockItem.shiftContextToCore
+            // lief nie, also landete der Kern genau auf dem angeklickten Block statt - wie
+            // BlockDummyable.getOffset() im Original - um den Platzierungsoffset nach hinten
+            // versetzt. Die Maschine wuchs damit immer um mehrere Bloecke verschoben aus dem
+            // Klickpunkt heraus, und checkPlacement lief ebenfalls nie: die Struktur hat alles
+            // ueberschrieben, was im Weg stand, statt die Platzierung abzulehnen.
             if (b instanceof com.hbm_m.block.machines.albion.PAMultiblockBlock
-                    || b instanceof com.hbm_m.block.machines.DummyableMachineBlock) {
+                    || b instanceof com.hbm_m.block.machines.DummyableMachineBlock
+                    || b instanceof com.hbm_m.block.machines.fusion.FusionMultiblockBlock) {
                 return new com.hbm_m.multiblock.MultiblockBlockItem(b, new Item.Properties());
             }
             // Der Orbus ist ein Fass mit Struktur - die uebrigen Faesser sind Einzelbloecke.

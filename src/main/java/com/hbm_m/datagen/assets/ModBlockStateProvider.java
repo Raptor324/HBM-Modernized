@@ -2435,20 +2435,23 @@ public class ModBlockStateProvider extends BlockStateProvider {
                         modLoc("block/fusion_component_motor")
                 )
         );
-        simpleBlockWithItem(ModBlocks.FUSION_HATCH.get(),
-                models().cubeAll(
-                        ModBlocks.FUSION_HATCH.getId().getPath(),
-                        modLoc("block/fusion_hatch")
-                )
-        );
-        simpleBlockWithItem(ModBlocks.FUSION_HEATER.get(),
-                models().cubeBottomTop(
-                        ModBlocks.FUSION_HEATER.getId().getPath(),
-                        modLoc("block/fusion_heater_side"),
-                        modLoc("block/fusion_heater_side"),
-                        modLoc("block/fusion_heater_top")
-                )
-        );
+        // 1:1 aus FusionHatch.getIcon: oben/unten Wolframblock, die Vorderseite (= FACING) traegt
+        // die Lukentextur, alle uebrigen Seiten die Heizerwand. Vorher lag die Lukentextur auf allen
+        // sechs Flaechen, weil der Block noch ein richtungsloser Platzhalter war.
+        ModelFile fusionHatchModel = models().orientable(
+                ModBlocks.FUSION_HATCH.getId().getPath(),
+                modLoc("block/fusion_heater_side"),
+                modLoc("block/fusion_hatch"),
+                modLoc("block/block_tungsten"));
+        horizontalBlock(ModBlocks.FUSION_HATCH.get(), fusionHatchModel);
+        simpleBlockItem(ModBlocks.FUSION_HATCH.get(), fusionHatchModel);
+        // Original ist ein BlockPillar: Deckeltextur an beiden Enden der Achse, Seitentextur rundum,
+        // Achse nach der angeklickten Flaeche. Vorher ein fester Wuerfel ohne Achse.
+        axisBlock((net.minecraft.world.level.block.RotatedPillarBlock) ModBlocks.FUSION_HEATER.get(),
+                modLoc("block/fusion_heater_side"),
+                modLoc("block/fusion_heater_top"));
+        simpleBlockItem(ModBlocks.FUSION_HEATER.get(),
+                models().getExistingFile(modLoc("block/" + ModBlocks.FUSION_HEATER.getId().getPath())));
         // Газовые блоки невидимы (см. com.hbm_m.block.gas.BlockGasBase): пустая модель + дымовые частицы.
         // Die Gasbloecke sind im Original unsichtbar (BlockGasBase.getRenderType() == -1):
         // leeres Modell, das Item-Modell traegt die Textur. Einzige Ausnahme ist Chlorgas.

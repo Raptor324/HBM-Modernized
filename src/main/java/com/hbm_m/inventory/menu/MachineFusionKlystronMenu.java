@@ -86,6 +86,8 @@ public class MachineFusionKlystronMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        return stillValid(ContainerLevelAccess.create(level, blockEntity.getBlockPos()), player, ModBlocks.KLYSTRON.get());
+        // Not vanilla's stillValid: that one measures to the controller cell in the middle of
+        // the structure, which this machine is far too wide for - see MultiblockMenuReach.
+        return MultiblockMenuReach.stillValid(level, blockEntity.getBlockPos(), ModBlocks.KLYSTRON.get(), player);
     }
 }

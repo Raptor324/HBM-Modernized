@@ -60,7 +60,7 @@ public abstract class RBMKControlBlockEntity extends RBMKColumnBlockEntity imple
     // animated rod cap itself is their "lid". Without this override, RBMKColumnRenderer's lid-
     // aware top-texture selection (added for the other column types) would try to load those
     // missing textures for every control rod and render a missing-texture checkerboard.
-    @Override public boolean   hasLid()          { return false; }
+    @Override public boolean   hasOwnLid()       { return true; }
     @Override public boolean   isLidRemovable()  { return false; }
     @Override public RBMKType  getRBMKType()      { return RBMKType.CONTROL_ROD; }
     @Override public ColumnType getConsoleType()  { return ColumnType.CONTROL; }

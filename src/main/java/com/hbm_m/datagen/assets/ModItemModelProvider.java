@@ -47,35 +47,6 @@ public class ModItemModelProvider extends ItemModelProvider {
         trimMaterials.put(TrimMaterials.AMETHYST, 1.0F);
     }
 
-    // Плоские иконки RBMK-блоков (по ручным эталонам): имя блока -> текстура layer0
-    private static final java.util.Map<String, String> RBMK_FLAT_ITEM_TEXTURES = java.util.Map.ofEntries(
-            java.util.Map.entry("rbmk_control_blue", "block/rbmk/rbmk_control_blue"),
-            java.util.Map.entry("rbmk_control_green", "block/rbmk/rbmk_control_green"),
-            java.util.Map.entry("rbmk_control_yellow", "block/rbmk/rbmk_control_yellow"),
-            java.util.Map.entry("rbmk_control_purple", "block/rbmk/rbmk_control_purple"),
-            java.util.Map.entry("rbmk_control_mod", "block/rbmk/rbmk_control_mod_side"),
-            java.util.Map.entry("rbmk_control_mod_auto", "block/rbmk/rbmk_control_auto_side"),
-            java.util.Map.entry("rbmk_control_reasim", "block/rbmk/rbmk_control_side"),
-            java.util.Map.entry("rbmk_control_reasim_auto", "block/rbmk/rbmk_control_auto_side"),
-            java.util.Map.entry("rbmk_steam_inlet", "block/rbmk/rbmk_boiler_pipe_side"),
-            java.util.Map.entry("rbmk_steam_outlet", "block/rbmk/rbmk_boiler_pipe_side"),
-            java.util.Map.entry("rbmk_loader", "block/rbmk/standalone_rbmk_loader"),
-            java.util.Map.entry("rbmk_autoloader", "block/rbmk/rbmk_blank_side"),
-            java.util.Map.entry("rbmk_crane_console", "block/rbmk/rbmk_console"),
-            java.util.Map.entry("rbmk_display", "block/rbmk/rbmk_display"),
-            java.util.Map.entry("rbmk_gauge", "block/rbmk/rbmk_element_side"),
-            java.util.Map.entry("rbmk_indicator", "block/rbmk/rbmk_element_side"),
-            java.util.Map.entry("rbmk_lever", "block/rbmk/rbmk_control_side"),
-            java.util.Map.entry("rbmk_numitron", "block/rbmk/rbmk_element_side"),
-            java.util.Map.entry("rbmk_graph", "block/rbmk/rbmk_element_side"),
-            java.util.Map.entry("rbmk_terminal", "block/rbmk/rbmk_element_side"),
-            java.util.Map.entry("rbmk_keypad", "block/rbmk/rbmk_control_side"),
-            java.util.Map.entry("rbmk_debris", "block/rbmk/rbmk_debris"),
-            java.util.Map.entry("rbmk_debris_burning", "block/rbmk/rbmk_debris_burning"),
-            java.util.Map.entry("rbmk_debris_digamma", "block/rbmk/rbmk_debris_digamma"),
-            java.util.Map.entry("rbmk_debris_radiating", "block/rbmk/rbmk_debris_radiating")
-    );
-
     public ModItemModelProvider(PackOutput output, ExistingFileHelper existingFileHelper) {
         super(output, RefStrings.MODID, existingFileHelper);
     }
@@ -680,11 +651,17 @@ public class ModItemModelProvider extends ItemModelProvider {
             ModBlocks.RBMK_DEBRIS_DIGAMMA, ModBlocks.RBMK_DEBRIS_RADIATING
         );
         for (var rb : rbmkBlocks) {
-            // Fidelity: у части блоков ручные item-модели были плоскими (item/generated + layer0),
-            // у остальных — ссылка на блочную модель block/rbmk/<name>
-            String flat = RBMK_FLAT_ITEM_TEXTURES.get(rb.getId().getPath());
-            if (flat != null) {
-                withExistingParent(rb.getId().getPath(), "item/generated").texture("layer0", modLoc(flat));
+            // A real column is four blocks tall and is drawn entirely by RBMKColumnRenderer, not by
+            // a block model - so pointing the item at block/rbmk/<name> only ever yields a single
+            // 1x1 cube wearing the column's side texture. RBMKColumnBlockItem already carries the
+            // BEWLR hook (RBMKColumnItemRenderer) that runs the in-world renderer for the icon, but
+            // Forge only consults it when the baked model reports isCustomRenderer() - which is
+            // true solely for models parented to builtin/entity. Anything else (item/generated or
+            // a block model) silently bypasses the hook, which is why these stayed flat cubes.
+            // Everything else in this list (the connector, the steam ports, the debris) really is a
+            // plain one-block block and keeps its block model.
+            if (rb.get() instanceof com.hbm_m.block.machines.rbmk.RBMKColumnBlock) {
+                builtinEntityItem(rb.getId().getPath());
             } else {
                 withGeneratedBlockParent(rb.getId().getPath(), "block/rbmk/" + rb.getId().getPath());
             }
@@ -2285,6 +2262,37 @@ public class ModItemModelProvider extends ItemModelProvider {
      *  (EFH ещё не видит файл — используем UncheckedModelFile). */
     private ItemModelBuilder withGeneratedBlockParent(String name, String blockModelPath) {
         return getBuilder(name).parent(new ModelFile.UncheckedModelFile(modLoc(blockModelPath)));
+    }
+
+    /**
+     * Item model whose geometry comes from a {@code BlockEntityWithoutLevelRenderer} instead of a
+     * baked model. {@code builtin/entity} is what makes {@code BakedModel.isCustomRenderer()} true,
+     * which is the only thing Forge checks before calling
+     * {@code IClientItemExtensions.getCustomRenderer()} - without it the BEWLR is never asked.
+     * <p>
+     * {@code builtin/entity} carries no display transforms of its own (and has no parent to inherit
+     * them from), so the full set has to be written out here; the values are vanilla's
+     * {@code minecraft:block/block}, the same ones a chest or shulker box uses.
+     */
+    private ItemModelBuilder builtinEntityItem(String name) {
+        return getBuilder(name)
+                .parent(new ModelFile.UncheckedModelFile("minecraft:builtin/entity"))
+                .transforms()
+                    .transform(net.minecraft.world.item.ItemDisplayContext.GUI)
+                        .rotation(30, 225, 0).translation(0, 0, 0).scale(0.625f).end()
+                    .transform(net.minecraft.world.item.ItemDisplayContext.GROUND)
+                        .rotation(0, 0, 0).translation(0, 3, 0).scale(0.25f).end()
+                    .transform(net.minecraft.world.item.ItemDisplayContext.FIXED)
+                        .rotation(0, 0, 0).translation(0, 0, 0).scale(0.5f).end()
+                    .transform(net.minecraft.world.item.ItemDisplayContext.THIRD_PERSON_RIGHT_HAND)
+                        .rotation(75, 45, 0).translation(0, 2.5f, 0).scale(0.375f).end()
+                    .transform(net.minecraft.world.item.ItemDisplayContext.THIRD_PERSON_LEFT_HAND)
+                        .rotation(75, 45, 0).translation(0, 2.5f, 0).scale(0.375f).end()
+                    .transform(net.minecraft.world.item.ItemDisplayContext.FIRST_PERSON_RIGHT_HAND)
+                        .rotation(0, 45, 0).translation(0, 0, 0).scale(0.4f).end()
+                    .transform(net.minecraft.world.item.ItemDisplayContext.FIRST_PERSON_LEFT_HAND)
+                        .rotation(0, 225, 0).translation(0, 0, 0).scale(0.4f).end()
+                .end();
     }
 
     private void itemModelFromBlockResourcePath(String itemModelName, String pathUnderModWithoutNamespace) {

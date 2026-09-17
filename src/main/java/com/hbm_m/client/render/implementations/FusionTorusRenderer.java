@@ -183,14 +183,29 @@ public class FusionTorusRenderer implements BlockEntityRenderer<FusionTorusBlock
 
     /** Blockstate-Drehung, identisch zu den uebrigen Maschinen-Renderern dieses Ports. */
     static void applyFacing(BlockState state, PoseStack pose) {
-        if (!state.hasProperty(HorizontalDirectionalBlock.FACING)) return;
+        applyFacing(state, pose, 0F);
+    }
+
+    /**
+     * @param baseYaw constant rotation applied on top of the facing, in the same sense as the block
+     *                model's {@code transform.rotation} Y angle. Needed for the machines whose OBJ
+     *                is authored with its long axis on X while {@code getDimensions} puts the
+     *                machine's long axis on Z - there the static model in the blockstate JSON
+     *                carries {@code rotation: [0, 90, 0]}, and the moving parts drawn here have to
+     *                carry exactly the same 90 degrees or the two halves come apart.
+     */
+    static void applyFacing(BlockState state, PoseStack pose, float baseYaw) {
+        if (!state.hasProperty(HorizontalDirectionalBlock.FACING)) {
+            if (baseYaw != 0F) pose.mulPose(Axis.YP.rotationDegrees(baseYaw));
+            return;
+        }
         Direction facing = state.getValue(HorizontalDirectionalBlock.FACING);
         float rot = switch (facing) {
             case SOUTH -> 180F;
             case EAST -> 270F;
             case WEST -> 90F;
             default -> 0F;
-        };
+        } + baseYaw;
         if (rot != 0F) pose.mulPose(Axis.YP.rotationDegrees(rot));
     }
 }

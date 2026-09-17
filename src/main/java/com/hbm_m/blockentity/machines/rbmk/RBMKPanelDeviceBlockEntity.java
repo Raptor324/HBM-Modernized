@@ -102,7 +102,7 @@ public abstract class RBMKPanelDeviceBlockEntity extends RBMKColumnBlockEntity i
 
     protected abstract void onPanelTick(Level level, BlockPos pos);
 
-    @Override public boolean hasLid()           { return false; }
+    @Override public boolean hasOwnLid()        { return true; }
     @Override public boolean isLidRemovable()   { return false; }
     @Override public RBMKType getRBMKType()     { return RBMKType.OTHER; }
     @Override public ColumnType getConsoleType(){ return ColumnType.BLANK; }
