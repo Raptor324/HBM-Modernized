@@ -8,7 +8,7 @@ import com.hbm_m.block.machines.MachineAdvancedAssemblerBlock;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.blockentity.machines.MachineAdvancedAssemblerBlockEntity;
 import com.hbm_m.client.machine.AdvancedAssemblerClientTicker;
-import com.hbm_m.client.model.MachineAdvancedAssemblerBakedModel;
+import com.hbm_m.client.model.ConfiguredMultipartBakedModel;
 import com.hbm_m.client.render.AbstractPartBasedRenderer;
 import com.hbm_m.client.render.MeshRenderCache;
 import com.hbm_m.client.render.machine.MachineRenderApi;
@@ -50,12 +50,15 @@ public final class MachineAdvancedAssemblerRenderer {
     public static void register() {
         MachineRenderers.machine("advassembler", ModBlockEntities.ADVANCED_ASSEMBLY_MACHINE_BE.get(),
                 MachineAdvancedAssemblerBlockEntity.class)
-            .part("Base", MachineAdvancedAssemblerRenderer::applyBakeOffset)
-            .dynamicPart("Frame", MachineAdvancedAssemblerRenderer::applyBakeOffset,
-                    MachineAdvancedAssemblerRenderer::frameQuads,
+            // Base/Frame — статика с легаси-офсетом запечки: гаснут по статической
+            // дистанции, анимационная отсечка их не трогает (иначе на 0 в
+            // modelUpdateDistance машина исчезает целиком).
+            .staticPart("Base", MachineAdvancedAssemblerRenderer::applyBakeOffset)
+            .dynamicPart("Frame", MachineAdvancedAssemblerRenderer::frameQuads,
                     // Ключ обязан различать FRAME=false/true: константный ключ кешировал бы
                     // рендерер по ПЕРВОМУ встреченному состоянию (обычно пустому) навсегда.
-                    be -> frameCacheKey(be))
+                    be -> frameCacheKey(be),
+                    MachineAdvancedAssemblerRenderer::applyBakeOffset)
             .part("Ring", MachineAdvancedAssemblerRenderer::animateRing)
             .part("ArmLower1", (be, pt, t, pose) -> applyArm(be, pt, pose, 0, 0, false))
             .part("ArmUpper1", (be, pt, t, pose) -> applyArm(be, pt, pose, 0, 1, false))
@@ -107,7 +110,7 @@ public final class MachineAdvancedAssemblerRenderer {
         }
         BakedModel raw = Minecraft.getInstance().getBlockRenderer().getBlockModel(state);
         if (!(AbstractPartBasedRenderer.unwrapFabricForwardingModels(raw)
-                instanceof MachineAdvancedAssemblerBakedModel model)) {
+                instanceof ConfiguredMultipartBakedModel model)) {
             return List.of();
         }
         BakedModel part = model.getPart("Frame");

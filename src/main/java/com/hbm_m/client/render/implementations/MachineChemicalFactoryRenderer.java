@@ -58,6 +58,7 @@ public final class MachineChemicalFactoryRenderer {
                     // рендерер по первому встреченному состоянию навсегда (см. advassembler/chemplant).
                     MachineChemicalFactoryRenderer::frameCacheKey)
             .blockTransform(MachineChemicalFactoryRenderer::applyBlockTransform)
+            .chunkRenderTypes(net.minecraft.client.renderer.RenderType.cutout())
             .register();
     }
 

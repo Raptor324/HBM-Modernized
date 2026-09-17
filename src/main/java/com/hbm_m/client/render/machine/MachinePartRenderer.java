@@ -150,6 +150,7 @@ final class MachinePartRenderer {
     void renderQuadsFallback(PoseStack poseStack, int packedLight, BlockEntity blockEntity,
                              @Nullable MultiBufferSource bufferSource) {
         if (quads == null || quads.isEmpty() || bufferSource == null) return;
+        com.hbm_m.client.render.NucleusDebug.recordDraw(1, 1, "Immediate (fallback)");
         float fade = SingleMeshVboRenderer.getFadeAlpha();
         VertexConsumer consumer = bufferSource.getBuffer(fade < 0.99f ? RenderType.translucent() : RenderType.solid());
         PoseStack.Pose pose = poseStack.last();
@@ -163,6 +164,21 @@ final class MachinePartRenderer {
         if (instanced != null) {
             instanced.flush(projection);
         }
+    }
+
+    /**
+     * Фаза 2 (после MDI): затухающие инстансы прямого пути.
+     * Для MDI-совместимых рендереров — no-op (их fading нарисовал координатор).
+     */
+    void flushFading(Matrix4f projection) {
+        if (instanced != null) {
+            instanced.flushFading(projection);
+        }
+    }
+
+    /** Ключ глобальной сортировки fading-окон (см. InstancedStaticPartRenderer.fadingSortKeyDistSq). */
+    float fadingSortKeyDistSq() {
+        return (instanced != null) ? instanced.fadingSortKeyDistSq() : -1f;
     }
 
     void clear() {

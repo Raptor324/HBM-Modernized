@@ -11,7 +11,7 @@ import com.hbm_m.api.fluids.HbmFluidRegistry;
 import com.hbm_m.block.machines.MachineChemicalPlantBlock;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.blockentity.machines.MachineChemicalPlantBlockEntity;
-import com.hbm_m.client.model.MachineChemicalPlantBakedModel;
+import com.hbm_m.client.model.ConfiguredMultipartBakedModel;
 import com.hbm_m.client.model.ModelHelper;
 import com.hbm_m.client.render.LegacyAnimator;
 import com.hbm_m.client.render.MeshRenderCache;
@@ -78,14 +78,15 @@ public final class MachineChemicalPlantRenderer {
             .part("Spinner", MachineChemicalPlantRenderer::animateSpinner)
             .blockTransform(MachineChemicalPlantRenderer::applyBlockTransform)
             .hook(MachineChemicalPlantRenderer::scheduleFluid)
+            .chunkRenderTypes(net.minecraft.client.renderer.RenderType.cutout())
             .register();
     }
 
     private MachineChemicalPlantRenderer() {}
 
-    private static @Nullable MachineChemicalPlantBakedModel plantModel(MachineChemicalPlantBlockEntity be) {
+    private static @Nullable ConfiguredMultipartBakedModel plantModel(MachineChemicalPlantBlockEntity be) {
         BakedModel raw = Minecraft.getInstance().getBlockRenderer().getBlockModel(be.getBlockState());
-        return raw instanceof MachineChemicalPlantBakedModel m ? m : null;
+        return raw instanceof ConfiguredMultipartBakedModel m ? m : null;
     }
 
     /** Кастомный блочный трансформ химзавода (+ baked-space сдвиг -0.5/-0.5 для всех частей). */
@@ -115,7 +116,7 @@ public final class MachineChemicalPlantRenderer {
     }
 
     private static @Nullable BakedModel plantPart(MachineChemicalPlantBlockEntity be, String partName) {
-        MachineChemicalPlantBakedModel model = plantModel(be);
+        ConfiguredMultipartBakedModel model = plantModel(be);
         return model == null ? null : model.getPart(partName);
     }
 
@@ -152,7 +153,7 @@ public final class MachineChemicalPlantRenderer {
     public record FluidVisual(FluidStack textureFluid, float r, float g, float b) {}
 
     private record DeferredChemplantFluid(
-            MachineChemicalPlantBakedModel model,
+            ConfiguredMultipartBakedModel model,
             BlockState state,
             Matrix4f pose,
             float anim,
@@ -173,7 +174,7 @@ public final class MachineChemicalPlantRenderer {
                                       PoseStack poseStack, MultiBufferSource bufferSource,
                                       int packedLight, int packedOverlay, MachineRenderApi api) {
         if (ShaderCompatibilityDetector.isRenderingShadowPass()) return;
-        MachineChemicalPlantBakedModel model = plantModel(be);
+        ConfiguredMultipartBakedModel model = plantModel(be);
         if (model == null) return;
         FluidVisual visual = getRecipeVisual(be);
         if (visual == null) return;
@@ -326,7 +327,7 @@ public final class MachineChemicalPlantRenderer {
         DEFERRED_FLUIDS.clear();
     }
 
-    private static void drawChemplantFluidBaked(MachineChemicalPlantBakedModel model, BlockState state, float anim,
+    private static void drawChemplantFluidBaked(ConfiguredMultipartBakedModel model, BlockState state, float anim,
                                                 PoseStack poseStack, MultiBufferSource bufferSource,
                                                 int packedLight, int packedOverlay, FluidVisual visual) {
         RenderSystem.setShaderTexture(0, TextureAtlas.LOCATION_BLOCKS);
@@ -349,11 +350,7 @@ public final class MachineChemicalPlantRenderer {
         PoseStack.Pose pose = poseStack.last();
         float r = visual.r(), g = visual.g(), b = visual.b(), a = 0.5f;
         for (BakedQuad quad : quads) {
-            //? if forge {
-            vc.putBulkData(pose, quad, r, g, b, a, packedLight, packedOverlay, false);
-            //?} else {
-            /*vc.putBulkData(pose, quad, r, g, b, a, packedLight, packedOverlay);
-            *///?}
+            RenderHooks.putBulkData(vc, pose, quad, r, g, b, a, packedLight, packedOverlay, false);
         }
     }
 
@@ -362,9 +359,9 @@ public final class MachineChemicalPlantRenderer {
         for (RenderType layer : new RenderType[]{null, RenderType.cutout(), RenderType.solid(), RenderType.translucent()}) {
             List<BakedQuad> quads = new ArrayList<>();
             for (Direction dir : Direction.values()) {
-                quads.addAll(fluidPart.getQuads(state, dir, rand, ModelDataHolder.DATA, layer));
+                quads.addAll(RenderHooks.getModelQuads(fluidPart, state, dir, rand, layer));
             }
-            quads.addAll(fluidPart.getQuads(state, null, rand, ModelDataHolder.DATA, layer));
+            quads.addAll(RenderHooks.getModelQuads(fluidPart, state, null, rand, layer));
             if (!quads.isEmpty()) {
                 return quads;
             }
@@ -372,14 +369,4 @@ public final class MachineChemicalPlantRenderer {
         return List.of();
     }
 
-    /** Кросс-версионный ModelData.EMPTY (forge/neoforge имена совпадают, импорт — нет). */
-    private static final class ModelDataHolder {
-        //? if forge {
-        static final net.minecraftforge.client.model.data.ModelData DATA =
-                net.minecraftforge.client.model.data.ModelData.EMPTY;
-        //?} elif neoforge {
-        /*static final net.neoforged.neoforge.client.model.data.ModelData DATA =
-                net.neoforged.neoforge.client.model.data.ModelData.EMPTY;
-        *///?}
-    }
 }

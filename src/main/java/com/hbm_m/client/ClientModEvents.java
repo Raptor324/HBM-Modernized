@@ -21,6 +21,7 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.item.ArmorItem;
 import net.minecraft.world.item.ItemStack;
@@ -119,6 +120,13 @@ public class ClientModEvents {
     private static void handleItemTooltip(ItemStack stack, @Nullable Level level, List<Component> lines, TooltipFlag flag) {
         if (stack.isEmpty()) return;
 
+        // Completion status
+        com.hbm_m.util.CompletionStatus status = com.hbm_m.util.CompletionTracker.getStatus(
+                BuiltInRegistries.ITEM.getKey(stack.getItem()));
+        if (status != null) {
+            lines.add(status.getTooltip());
+        }
+
         // Версионно-независимые предметные тултипы.
         if (stack.getItem() instanceof ITooltipProvider provider) {
             provider.appendHbmTooltip(stack, level, lines, flag);
@@ -209,6 +217,13 @@ public class ClientModEvents {
             InstancedRenderFrame.onBeforeBlockEntities(
                     event.getProjectionMatrix(), cameraPos, frustum);
 
+            // Байпас диспетчера: машины Nucleus рисуются плоским обходом ЗДЕСЬ
+            // (до обхода BE), диспетчер их потом только отменяет. poseStack
+            // события = базис диспетчера (R_cam без трансляции, 1.20.1).
+            com.hbm_m.client.render.NucleusDispatcherBypass.collectMain(
+                    event.getPoseStack(), mc.renderBuffers().bufferSource(),
+                    com.hbm_m.platform.RenderHooks.getPartialTick());
+
             // РЕГРЕССИЯ-СТОП (двойная отрисовка): меши ракет рисуются ТОЛЬКО
             // в EngineHandler на AFTER_WEATHER (renderFiltered) — единый
             // painter-порядок far->near с NT-частицами для обоих случаев
@@ -243,7 +258,25 @@ public class ClientModEvents {
         // Форсируем честный блендинг ДО Gui.render.
         com.hbm_m.client.render.shader.ShaderBindResync.forceHonestBlendState();
     }
-    //?}
+
+    /** Секция движка рендера Nucleus на F3-экране (левая панель). */
+    @SubscribeEvent
+    public static void onNucleusDebugText(net.minecraftforge.client.event.CustomizeGuiOverlayEvent.DebugText event) {
+        // 1.20.1 Forge диспатчит DebugText даже при закрытом F3 (и в чате) —
+        // без гейта секция [Nucleus] висит на HUD постоянно.
+        if (!net.minecraft.client.Minecraft.getInstance().options.renderDebug) {
+            return;
+        }
+        com.hbm_m.client.render.NucleusDebug.appendDebugLines(event.getLeft());
+    }
+    //?} elif neoforge {
+    /*@SubscribeEvent
+    public static void onNucleusDebugText(net.neoforged.neoforge.client.event.CustomizeGuiOverlayEvent.DebugText event) {
+        // 1.21.1: Options.renderDebug удалён; событие приходит только при открытом
+        // дебаг-экране — дополнительный гейт не нужен.
+        com.hbm_m.client.render.NucleusDebug.appendDebugLines(event.getLeft());
+    }
+    *///?}
 
     /**
      * Instanced flush — только {@link com.hbm_m.client.render.culling.InstancedRenderFrame#presentAfterBlockEntities}
@@ -266,8 +299,8 @@ public class ClientModEvents {
             com.hbm_m.main.MainRegistry.LOGGER.info(
                     "[HBM] Iris shadow pass: {} block-entity renderer invocations last frame{}",
                     count,
-                    zero ? " — BERs are NOT called in the shadow pass (empty shadow BE list / terrain-mod interop), shadows impossible"
-                         : " — shadow draw path active");
+                    zero ? " - BERs are NOT called in the shadow pass (empty shadow BE list / terrain-mod interop), shadows impossible"
+                         : " - shadow draw path active");
             lastLoggedShadowBerCount = count;
         }
     }

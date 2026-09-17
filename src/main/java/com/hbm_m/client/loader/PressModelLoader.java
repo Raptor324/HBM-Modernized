@@ -1,62 +1,47 @@
 package com.hbm_m.client.loader;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
-import java.util.function.Function;
 
-import org.jetbrains.annotations.NotNull;
 import org.joml.Vector3f;
 
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonObject;
-import com.google.gson.JsonParseException;
 import com.hbm_m.client.model.PressBakedModel;
-import com.hbm_m.main.MainRegistry;
-import com.hbm_m.platform.LoaderHooks;
-import com.mojang.math.Transformation;
 
-import net.minecraft.client.renderer.block.model.ItemOverrides;
-import net.minecraft.client.renderer.block.model.ItemTransforms;
-import net.minecraft.client.renderer.texture.TextureAtlasSprite;
-import net.minecraft.client.resources.model.BakedModel;
-import net.minecraft.client.resources.model.Material;
-import net.minecraft.client.resources.model.ModelBaker;
-import net.minecraft.client.resources.model.ModelState;
-import net.minecraft.client.resources.model.UnbakedModel;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.GsonHelper;
 
-//? if < 1.21.1 {
-import net.minecraftforge.client.model.geometry.IGeometryBakingContext;
-import net.minecraftforge.client.model.geometry.IGeometryLoader;
-import net.minecraftforge.client.model.geometry.IUnbakedGeometry;
-import net.minecraftforge.client.model.obj.ObjModel;
-//?} else {
-/*import net.neoforged.neoforge.client.model.geometry.IGeometryBakingContext;
-import net.neoforged.neoforge.client.model.geometry.IGeometryLoader;
-import net.neoforged.neoforge.client.model.geometry.IUnbakedGeometry;
-import net.neoforged.neoforge.client.model.obj.ObjModel;
-*///?}
-
-public class PressModelLoader implements IGeometryLoader<PressModelLoader.PressGeometry> {
+/**
+ * Лоадер пресса: две части (Base/Head) из отдельных OBJ + параметры анимации
+ * головы ({@code head_transform}). Части описываются картой
+ * {@code "base_model"}/{@code "head_model"}; текстуры частей разрешаются
+ * контекстом (MTL/«textures» JSON), как и у остальных машин.
+ */
+public class PressModelLoader extends MachinePartsModelLoader<PressBakedModel> {
 
     @Override
-    public PressGeometry read(JsonObject jsonObject, JsonDeserializationContext deserializationContext) throws JsonParseException {
-        ResourceLocation baseModel = ResourceLocation.tryParse(GsonHelper.getAsString(jsonObject, "base_model"));
-        ResourceLocation headModel = ResourceLocation.tryParse(GsonHelper.getAsString(jsonObject, "head_model"));
-        boolean flipV = GsonHelper.getAsBoolean(jsonObject, "flip_v", true);
+    public ObjPartGeometry<PressBakedModel> read(JsonObject json, JsonDeserializationContext ctx) {
+        Map<String, PartDef> defs = new LinkedHashMap<>();
+        defs.put("Base", new PartDef(
+                ResourceLocation.tryParse(GsonHelper.getAsString(json, "base_model")), null));
+        defs.put("Head", new PartDef(
+                ResourceLocation.tryParse(GsonHelper.getAsString(json, "head_model")), null));
 
         Vector3f headTranslation = new Vector3f(0.0F, 0.0F, 0.0F);
         float headTravel = 0.8F;
-        if (jsonObject.has("head_transform")) {
-            JsonObject headTransform = GsonHelper.getAsJsonObject(jsonObject, "head_transform");
+        if (json.has("head_transform")) {
+            JsonObject headTransform = GsonHelper.getAsJsonObject(json, "head_transform");
             headTranslation = parseTranslation(headTransform);
             if (headTransform.has("travel")) {
                 headTravel = headTransform.get("travel").getAsFloat();
             }
         }
+        final Vector3f headRestOffset = headTranslation;
+        final float travel = headTravel;
 
-        return new PressGeometry(baseModel, headModel, flipV, headTranslation, headTravel);
+        return new MultiObjGeometry<>(defs, GsonHelper.getAsBoolean(json, "flip_v", true),
+                (parts, transforms, loc) -> new PressBakedModel(parts, transforms, headRestOffset, travel));
     }
 
     private static Vector3f parseTranslation(JsonObject headTransform) {
@@ -68,68 +53,5 @@ public class PressModelLoader implements IGeometryLoader<PressModelLoader.PressG
         float y = array.size() > 1 ? array.get(1).getAsFloat() : 0.0F;
         float z = array.size() > 2 ? array.get(2).getAsFloat() : 0.0F;
         return new Vector3f(x, y, z);
-    }
-
-    public static class PressGeometry implements IUnbakedGeometry<PressGeometry> {
-        private final ResourceLocation baseModelLocation;
-        private final ResourceLocation headModelLocation;
-        private final boolean flipV;
-        private final Vector3f headRestOffset;
-        private final float headTravel;
-
-        public PressGeometry(ResourceLocation baseModelLocation, ResourceLocation headModelLocation,
-                             boolean flipV, Vector3f headRestOffset, float headTravel) {
-            this.baseModelLocation = baseModelLocation;
-            this.headModelLocation = headModelLocation;
-            this.flipV = flipV;
-            this.headRestOffset = headRestOffset;
-            this.headTravel = headTravel;
-        }
-
-        @Override
-        public void resolveParents(Function<ResourceLocation, UnbakedModel> modelGetter, IGeometryBakingContext context) { }
-
-        //? if < 1.21.1 {
-        @Override
-        public BakedModel bake(IGeometryBakingContext context, ModelBaker baker, Function<Material, TextureAtlasSprite> spriteGetter, ModelState modelState, ItemOverrides overrides, ResourceLocation modelLocation) {
-            return doBake(context, baker, spriteGetter, modelState, overrides, modelLocation);
-        }
-        //?} else {
-        /*@Override
-        public BakedModel bake(IGeometryBakingContext context, ModelBaker baker, Function<Material, TextureAtlasSprite> spriteGetter, ModelState modelState, ItemOverrides overrides) {
-            ResourceLocation modelLocation = ResourceLocation.parse(context.getModelName());
-            return doBake(context, baker, spriteGetter, modelState, overrides, modelLocation);
-        }
-        *///?}
-
-        private BakedModel doBake(IGeometryBakingContext context, ModelBaker baker, Function<Material, TextureAtlasSprite> spriteGetter, ModelState modelState, ItemOverrides overrides, ResourceLocation modelLocation) {
-            Map<String, BakedModel> bakedParts = new HashMap<>();
-            bakedParts.put("Base", bakeObjPart(baseModelLocation, context, baker, spriteGetter, overrides, modelLocation));
-            bakedParts.put("Head", bakeObjPart(headModelLocation, context, baker, spriteGetter, overrides, modelLocation));
-
-            ItemTransforms transforms = context.getTransforms();
-            return new PressBakedModel(bakedParts, transforms, headRestOffset, headTravel);
-        }
-
-        private BakedModel bakeObjPart(ResourceLocation modelLocation, IGeometryBakingContext context,
-                                       ModelBaker baker, Function<Material, TextureAtlasSprite> spriteGetter,
-                                       ItemOverrides overrides, ResourceLocation rootModel) {
-            try {
-                ObjModel model = LoaderHooks.loadObjModel(modelLocation, flipV);
-                return LoaderHooks.bakeObjModel(model, context, baker, spriteGetter, identityState(), overrides, rootModel);
-            } catch (Exception e) {
-                MainRegistry.LOGGER.error("Failed to bake OBJ part for {}", modelLocation, e);
-                throw new RuntimeException("Failed to bake press model part: " + modelLocation, e);
-            }
-        }
-
-        private ModelState identityState() {
-            return new ModelState() {
-                @Override
-                public @NotNull Transformation getRotation() {
-                    return Transformation.identity();
-                }
-            };
-        }
     }
 }

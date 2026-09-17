@@ -3,6 +3,7 @@ package com.hbm_m.client.render.implementations;
 import java.util.Random;
 
 import com.hbm_m.blockentity.machines.BatterySocketBlockEntity;
+import com.hbm_m.platform.RenderHooks;
 import com.hbm_m.client.render.RenderDistanceHelper;
 import com.hbm_m.item.fekal_electric.ItemCreativeBattery;
 import com.hbm_m.lib.RefStrings;
@@ -23,28 +24,18 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.Level;
 
-//? if forge {
+//? if < 1.21.1 {
 @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-//?} elif fabric {
-/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
-*///?} elif neoforge {
+//?} else {
 /*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
 *///?}
 public class BatterySocketCreativeRenderer implements com.hbm_m.client.render.HbmBerBounds<BatterySocketBlockEntity> {
 
     private static final ResourceLocation MOD_SKIN =
-            //? if fabric && < 1.21.1 {
-            /*new ResourceLocation(RefStrings.MODID, "textures/entity/battery_socket/creative_avatar.png");
-            *///?} else {
-                ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/entity/battery_socket/creative_avatar.png");
-            //?}
+            ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/entity/battery_socket/creative_avatar.png");
 
     private static final ResourceLocation STEVE =
-            //? if fabric && < 1.21.1 {
-            /*new ResourceLocation(ResourceLocation.DEFAULT_NAMESPACE, "textures/entity/player/wide/steve.png");
-             *///?} else {
-                ResourceLocation.withDefaultNamespace("textures/entity/player/wide/steve.png");
-            //?}
+            ResourceLocation.withDefaultNamespace("textures/entity/player/wide/steve.png");
 
     private final PlayerModel<?> playerModel;
 
@@ -76,13 +67,7 @@ public class BatterySocketCreativeRenderer implements com.hbm_m.client.render.Hb
         VertexConsumer vc = buffer.getBuffer(RenderType.entityCutoutNoCull(skin));
         this.playerModel.young = false;
         this.playerModel.setAllVisible(true);
-        //? if < 1.21.1 {
-        this.playerModel.renderToBuffer(poseStack, vc, light, OverlayTexture.NO_OVERLAY, 1f, 1f, 1f, 1f);
-        //?} else {
-        /*// 1.21.1: Model.renderToBuffer(PoseStack,VertexConsumer,int,int) — ARGB-floats удалены (цвет через контекст).
-        // TODO(fidelity-port): если потребуется тонировка модели — задавать цвет через VertexConsumer.
-        this.playerModel.renderToBuffer(poseStack, vc, light, OverlayTexture.NO_OVERLAY);
-        *///?}
+        RenderHooks.renderModelToBuffer(this.playerModel, poseStack, vc, light, OverlayTexture.NO_OVERLAY);
 
         renderJaggedBolts(level, poseStack, buffer, pos);
 

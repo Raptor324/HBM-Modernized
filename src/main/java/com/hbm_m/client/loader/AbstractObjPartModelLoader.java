@@ -59,10 +59,11 @@ public abstract class AbstractObjPartModelLoader<T extends BakedModel> implement
 
     public static class ObjPartGeometry<T extends BakedModel> implements IUnbakedGeometry<ObjPartGeometry<T>> {
         private final ResourceLocation modelLocation;
+        /** Пустой set = АВТОрежим: запечь все корневые группы OBJ (обнаруживаются при запекании). */
         private final Set<String> partNames;
         private final boolean flipV;
         private final AbstractObjPartModelLoader<T> loader;
-        
+
         public ObjPartGeometry(ResourceLocation modelLocation, Set<String> partNames, boolean flipV,
                                AbstractObjPartModelLoader<T> loader) {
             this.modelLocation = modelLocation;
@@ -100,23 +101,49 @@ public abstract class AbstractObjPartModelLoader<T extends BakedModel> implement
 
         private BakedModel doBake(IGeometryBakingContext context, ModelBaker baker, Function<Material, TextureAtlasSprite> spriteGetter, ModelState modelState, ItemOverrides overrides, ResourceLocation modelName) {
             ObjModel model = getOrLoadObjModel();
-            HashMap<String, BakedModel> bakedParts = bakeParts(model, context, baker, spriteGetter, overrides, modelName);
-            ensureBasePart(model, bakedParts, context, baker, spriteGetter, overrides, modelName);
+
+            // АВТОрежим: пустой список частей = взять все корневые группы OBJ.
+            boolean auto = partNames.isEmpty();
+            Set<String> names = auto ? model.getRootComponentNames() : partNames;
+            if (auto && names.isEmpty()) {
+                MainRegistry.LOGGER.error("{}: OBJ {} has no root components!", loader.getClass().getSimpleName(), modelLocation);
+            }
+
+            HashMap<String, BakedModel> bakedParts = bakeParts(model, names, context, baker, spriteGetter, overrides, modelName);
+            if (!auto) {
+                ensureBasePart(model, bakedParts, context, baker, spriteGetter, overrides, modelName);
+            }
 
             MainRegistry.LOGGER.info("{}: Total baked parts: {}", loader.getClass().getSimpleName(), bakedParts.size());
+            // Диагностика невидимых мешей: сколько квадов запеклось в каждой части.
+            var rand = net.minecraft.util.RandomSource.create();
+            for (var entry : bakedParts.entrySet()) {
+                int quads = 0;
+                for (net.minecraft.core.Direction d : net.minecraft.core.Direction.values()) {
+                    quads += entry.getValue().getQuads(null, d, rand).size();
+                }
+                quads += entry.getValue().getQuads(null, null, rand).size();
+                if (quads == 0) {
+                    MainRegistry.LOGGER.warn("{}: Part '{}' of {} baked with 0 quads! Root OBJ components: {}",
+                            loader.getClass().getSimpleName(), entry.getKey(), modelName, model.getRootComponentNames());
+                } else {
+                    MainRegistry.LOGGER.debug("{}: Part '{}' of {} baked with {} quads",
+                            loader.getClass().getSimpleName(), entry.getKey(), modelName, quads);
+                }
+            }
             return loader.createBakedModel(bakedParts, context.getTransforms(), modelName);
         }
 
-        private HashMap<String, BakedModel> bakeParts(ObjModel model, IGeometryBakingContext context,
+        private HashMap<String, BakedModel> bakeParts(ObjModel model, Set<String> names, IGeometryBakingContext context,
                                                       ModelBaker baker, Function<Material, TextureAtlasSprite> spriteGetter,
                                                       ItemOverrides overrides, ResourceLocation modelName) {
             ConcurrentHashMap<String, BakedModel> bakedParts = new ConcurrentHashMap<>();
             ModelState identityState = createIdentityState();
 
-            MainRegistry.LOGGER.info("{}: Baking {} parts in parallel: {}", loader.getClass().getSimpleName(), partNames.size(), partNames);
+            MainRegistry.LOGGER.info("{}: Baking {} parts in parallel: {}", loader.getClass().getSimpleName(), names.size(), names);
 
             // Параллельное запекание геометрии всех составных частей модели
-            partNames.parallelStream().forEach(partName -> {
+            names.parallelStream().forEach(partName -> {
                 SinglePartBakingContext partContext = new SinglePartBakingContext(context, partName, loader);
                 BakedModel bakedPart = LoaderHooks.bakeObjModel(model, partContext, baker, spriteGetter, identityState, overrides, modelName);
                 if (bakedPart != null) {

@@ -23,18 +23,12 @@ import com.hbm_m.client.loader.BoxCableModelLoader;
 import com.hbm_m.client.loader.CargoElevatorModelLoader;
 import com.hbm_m.client.loader.DoorModelLoader;
 import com.hbm_m.client.loader.DaeModelLoader;
-import com.hbm_m.client.loader.HeatingOvenModelLoader;
-import com.hbm_m.client.loader.MachineAdvancedAssemblerModelLoader;
-import com.hbm_m.client.loader.MachineAssemblerModelLoader;
+import com.hbm_m.client.loader.MachinePartsModelLoader;
+import com.hbm_m.client.model.ConfiguredMultipartBakedModel;
+import com.hbm_m.client.render.machine.MachineRenderRegistry;
 import com.hbm_m.client.loader.MachineBatterySocketModelLoader;
-import com.hbm_m.client.loader.MachineChemicalPlantModelLoader;
-import com.hbm_m.client.loader.MachineChemicalFactoryModelLoader;
-import com.hbm_m.client.loader.MachineFluidTankModelLoader;
-import com.hbm_m.client.loader.MachineHydraulicFrackiningTowerModelLoader;
-import com.hbm_m.client.loader.MachineRadarModelLoader;
-import com.hbm_m.client.loader.MachineZirnoxDestroyedModelLoader;
-import com.hbm_m.client.loader.MachineZirnoxModelLoader;
 import com.hbm_m.client.loader.MissileModelLoader;
+import com.hbm_m.client.loader.MachineRadarModelLoader;
 import com.hbm_m.client.render.missile.MissileRenderHelper;
 import com.hbm_m.client.loader.PressModelLoader;
 import com.hbm_m.client.loader.TemplateModelLoader;
@@ -62,7 +56,7 @@ import com.hbm_m.client.render.implementations.BatterySocketCreativeRenderer;
 import com.hbm_m.client.render.implementations.DoorRenderer;
 import com.hbm_m.client.render.implementations.TransitionSealRenderer;
 import com.hbm_m.client.render.implementations.GasCentrifugeRenderer;
-import com.hbm_m.client.render.implementations.HeatingOvenRenderer;
+import com.hbm_m.client.render.implementations.HeaterRenderers;
 import com.hbm_m.client.render.implementations.MachineFluidTankRenderer;
 import com.hbm_m.client.render.implementations.IndustrialTurbineRenderer;
 import com.hbm_m.client.render.implementations.LaunchPadMissileRenderer;
@@ -72,7 +66,6 @@ import com.hbm_m.client.render.implementations.MachineChemicalPlantRenderer;
 import com.hbm_m.client.render.implementations.MachineChemicalFactoryRenderer;
 import com.hbm_m.client.render.implementations.MachineZirnoxDestroyedRenderer;
 import com.hbm_m.client.render.implementations.MachineZirnoxRenderer;
-import com.hbm_m.client.loader.MachineCoolingTowerModelLoader;
 import com.hbm_m.client.render.implementations.CrucibleRenderer;
 import com.hbm_m.client.render.implementations.MachineCoolingTowerRenderer;
 import com.hbm_m.client.render.implementations.MachineMiningDrillRenderer;
@@ -610,7 +603,7 @@ public class ClientSetup {
         MachineHydraulicFrackiningTowerRenderer.register();
         SoyuzLauncherRenderer.register();
         SoyuzRocketRenderer.register();
-        BlockEntityRenderers.register(ModBlockEntities.HEATING_OVEN_BE.get(), HeatingOvenRenderer::new);
+        HeaterRenderers.register();
         // BlockEntityRenderers.register(ModBlockEntities.TEST_BE.get(), TestBlockRenderer::new);
         MachineCrystallizerRenderer.register();
         BlockEntityRenderers.register(ModBlockEntities.INDUSTRIAL_TURBINE_BE.get(), IndustrialTurbineRenderer::new);
@@ -636,9 +629,12 @@ public class ClientSetup {
         BlockEntityRenderers.register(ModBlockEntities.TURRET_HIMARS_BE.get(), com.hbm_m.client.render.implementations.MachineTurretRenderer::new);
         MachineRadarRenderer.register();
         BlockEntityRenderers.register(ModBlockEntities.RADAR_SCREEN_BE.get(), com.hbm_m.client.render.implementations.MachineRadarScreenRenderer::new);
-        BlockEntityRenderers.register(ModBlockEntities.CRUCIBLE_BE.get(), CrucibleRenderer::new);
+        CrucibleRenderer.register();
+        com.hbm_m.client.render.implementations.StrandCasterRenderer.register();
         BlockEntityRenderers.register(ModBlockEntities.FOUNDRY_BASIN_BE.get(), com.hbm_m.client.render.implementations.FoundryBasinRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.FOUNDRY_MOLD_BE.get(), com.hbm_m.client.render.implementations.FoundryBasinRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.FOUNDRY_CHANNEL_BE.get(), com.hbm_m.client.render.implementations.FoundryChannelRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.FOUNDRY_TANK_BE.get(), com.hbm_m.client.render.implementations.FoundryTankRenderer::new);
         // ─── RBMK column renderers ─────
         BlockEntityRenderers.register(ModBlockEntities.RBMK_ROD_BE.get(),          RBMKColumnRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.RBMK_BLANK_BE.get(),        RBMKColumnRenderer::new);
@@ -789,6 +785,16 @@ public class ClientSetup {
         //?}
     }
 
+    /**
+     * Связывание спек станков с запечёнными multipart-моделями: berWorld /
+     * item-части / render types вливаются в ConfiguredMultipartBakedModel.
+     * LOWEST + последним: работаем по ФИНАЛЬным инстансам моделей в карте.
+     */
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    public static void onModelBakeBindMachineModels(ModelEvent.ModifyBakingResult event) {
+        MachineRenderRegistry.bindBakedModels(event.getModels());
+    }
+
     private static void wrapConnectedDecoCtTerrainModels(java.util.Map models) {
         record CtEntry(RegistrySupplier<Block> block, String textureBase) {}
 
@@ -914,14 +920,7 @@ public class ClientSetup {
     public static void onModelRegister(ModelEvent.RegisterGeometryLoaders event) {
         MainRegistry.LOGGER.info("DoorDeclRegistry initialized with {} doors", DoorDeclRegistry.getAll().size());
 
-        PlatformHooks.registerGeometryLoader(event, "advanced_assembly_machine_loader", new MachineAdvancedAssemblerModelLoader());
-        PlatformHooks.registerGeometryLoader(event, "chemical_plant_loader", new MachineChemicalPlantModelLoader());
-        PlatformHooks.registerGeometryLoader(event, "chemical_factory_loader", new MachineChemicalFactoryModelLoader());
-        PlatformHooks.registerGeometryLoader(event, "zirnox_loader", new MachineZirnoxModelLoader());
-        PlatformHooks.registerGeometryLoader(event, "zirnox_destroyed_loader", new MachineZirnoxDestroyedModelLoader());
-        PlatformHooks.registerGeometryLoader(event, "machine_assembler_loader", new MachineAssemblerModelLoader());
-        PlatformHooks.registerGeometryLoader(event, "hydraulic_frackining_tower_loader", new MachineHydraulicFrackiningTowerModelLoader());
-        PlatformHooks.registerGeometryLoader(event, "fluid_tank_loader", new MachineFluidTankModelLoader());
+        // Станки используют единый machine_parts_loader; конфиг — в JSON модели.
         PlatformHooks.registerGeometryLoader(event, "battery_socket_loader", new MachineBatterySocketModelLoader());
         PlatformHooks.registerGeometryLoader(event, "door", new DoorModelLoader());
         PlatformHooks.registerGeometryLoader(event, "cargo_elevator", new CargoElevatorModelLoader());
@@ -930,7 +929,7 @@ public class ClientSetup {
         PlatformHooks.registerGeometryLoader(event, "box_cable", new BoxCableModelLoader());
         PlatformHooks.registerGeometryLoader(event, "press_loader", new PressModelLoader());
         PlatformHooks.registerGeometryLoader(event, "missile_loader", new MissileModelLoader());
-        PlatformHooks.registerGeometryLoader(event, "heating_oven_loader", new HeatingOvenModelLoader());
+        PlatformHooks.registerGeometryLoader(event, "machine_parts_loader", new MachinePartsModelLoader<ConfiguredMultipartBakedModel>());
         // PlatformHooks.registerGeometryLoader(event, "test", new TestModelLoader());
 
         //? if neoforge {
@@ -938,7 +937,6 @@ public class ClientSetup {
         event.register(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("forge", "obj"), net.neoforged.neoforge.client.model.obj.ObjLoader.INSTANCE);
         *///?}
         
-        PlatformHooks.registerGeometryLoader(event, "cooling_tower_loader", new MachineCoolingTowerModelLoader());
         PlatformHooks.registerGeometryLoader(event, "radar_loader", new MachineRadarModelLoader());
         PlatformHooks.registerGeometryLoader(event, "soyuz_launcher_loader", new com.hbm_m.client.loader.SoyuzLauncherModelLoader());
         PlatformHooks.registerGeometryLoader(event, "soyuz_rocket_loader", new com.hbm_m.client.loader.SoyuzRocketModelLoader());

@@ -23,11 +23,9 @@ import net.minecraft.resources.ResourceLocation;
  * {@code deco_soyuz_rocket} block / the launcher's mounted-rocket preview).
  */
 
-//? if forge {
+//? if < 1.21.1 {
 @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-//?} elif fabric {
-/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
-*///?} elif neoforge {
+//?} else {
 /*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
 *///?}
 public class SoyuzEntityRenderer extends EntityRenderer<SoyuzEntity> {

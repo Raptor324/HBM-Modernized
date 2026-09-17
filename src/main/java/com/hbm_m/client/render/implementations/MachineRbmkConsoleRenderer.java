@@ -1,6 +1,7 @@
 package com.hbm_m.client.render.implementations;
 
 import com.hbm_m.block.machines.MachineRbmkConsoleBlock;
+import com.hbm_m.platform.RenderHooks;
 import com.hbm_m.blockentity.machines.MachineRbmkConsoleBlockEntity;
 import com.hbm_m.blockentity.machines.MachineRbmkConsoleBlockEntity.RBMKColumnData;
 import com.hbm_m.lib.RefStrings;
@@ -277,17 +278,15 @@ public class MachineRbmkConsoleRenderer implements BlockEntityRenderer<MachineRb
                               TextureAtlasSprite sprite, float r, float g, float b, int light, int overlay) {
         float u = (sprite.getU0() + sprite.getU1()) * 0.5f;
         float v = (sprite.getV0() + sprite.getV1()) * 0.5f;
-        //? if < 1.21.1 {
-        vc.vertex(m, x0, y0, z0).color(r, g, b, 1f).uv(u, v).overlayCoords(overlay).uv2(light).normal(nx, ny, nz).endVertex();
-        vc.vertex(m, x1, y1, z1).color(r, g, b, 1f).uv(u, v).overlayCoords(overlay).uv2(light).normal(nx, ny, nz).endVertex();
-        vc.vertex(m, x2, y2, z2).color(r, g, b, 1f).uv(u, v).overlayCoords(overlay).uv2(light).normal(nx, ny, nz).endVertex();
-        vc.vertex(m, x3, y3, z3).color(r, g, b, 1f).uv(u, v).overlayCoords(overlay).uv2(light).normal(nx, ny, nz).endVertex();
-        //?} else {
-        /*vc.addVertex(m, x0, y0, z0).setColor(r, g, b, 1f).setUv(u, v).setOverlay(overlay).setLight(light).setNormal(nx, ny, nz);
-        vc.addVertex(m, x1, y1, z1).setColor(r, g, b, 1f).setUv(u, v).setOverlay(overlay).setLight(light).setNormal(nx, ny, nz);
-        vc.addVertex(m, x2, y2, z2).setColor(r, g, b, 1f).setUv(u, v).setOverlay(overlay).setLight(light).setNormal(nx, ny, nz);
-        vc.addVertex(m, x3, y3, z3).setColor(r, g, b, 1f).setUv(u, v).setOverlay(overlay).setLight(light).setNormal(nx, ny, nz);
-        *///?}
+        RenderHooks.vertexFull(vc, m, x0, y0, z0, color(r), color(g), color(b), 0xFF, u, v, overlay, light, nx, ny, nz);
+        RenderHooks.vertexFull(vc, m, x1, y1, z1, color(r), color(g), color(b), 0xFF, u, v, overlay, light, nx, ny, nz);
+        RenderHooks.vertexFull(vc, m, x2, y2, z2, color(r), color(g), color(b), 0xFF, u, v, overlay, light, nx, ny, nz);
+        RenderHooks.vertexFull(vc, m, x3, y3, z3, color(r), color(g), color(b), 0xFF, u, v, overlay, light, nx, ny, nz);
+    }
+
+    /** float 0..1 -> byte для int-цвета хуков. */
+    private static int color(float c) {
+        return (int) (c * 255.0f + 0.5f);
     }
 
     @Override public boolean shouldRenderOffScreen(MachineRbmkConsoleBlockEntity be) { return true; }

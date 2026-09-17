@@ -32,6 +32,7 @@ import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.main.MainRegistry;
 import com.hbm_m.platform.PlatformHooks;
+import com.hbm_m.platform.RenderHooks;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
@@ -51,14 +52,10 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.phys.AABB;
 
-//? if forge {
-import net.minecraftforge.client.model.data.ModelData;
+//? if < 1.21.1 {
 @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-//?} elif fabric {
-/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
-*///?} elif neoforge {
-/*import net.neoforged.neoforge.client.model.data.ModelData;
-@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
+//?} else {
+/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
 *///?}
 public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, BakedModel> {
 
@@ -135,9 +132,9 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Bak
         int count = 0;
         var rand = RandomSource.create(42);
         for (Direction d : Direction.values()) {
-            count += partModel.getQuads(null, d, rand, ModelData.EMPTY, RenderType.solid()).size();
+            count += RenderHooks.getPartQuads(partModel, null, d, rand).size();
         }
-        count += partModel.getQuads(null, null, rand, ModelData.EMPTY, RenderType.solid()).size();
+        count += RenderHooks.getPartQuads(partModel, null, null, rand).size();
         if (count == 0) {
             PARTS_WITHOUT_GEOMETRY.add(cacheKey);
             return false;
@@ -303,11 +300,7 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Bak
                                 DoorModelSelection selection, DoorDecl doorDecl) {
         for (DaeNode node : nodes) {
             poseStack.pushPose();
-            //? if < 1.21.1 {
-            poseStack.mulPoseMatrix(node.localMatrix(time, clip));
-             //?} else {
-            /*poseStack.last().pose().mul(node.localMatrix(time, clip));
-            *///?}
+            RenderHooks.mulPoseMatrix(poseStack, node.localMatrix(time, clip));
             if (node.mesh != null) {
                 SingleMeshVboRenderer renderer = getDaeRendererForNode(node, selection, doorDecl);
                 if (renderer != null) {
@@ -369,13 +362,8 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Bak
         // node.texture: в .dae часто стоит битая ссылка <init_from>door0.png</init_from>
         // (Blender-экспорт), которая ведёт на несуществующий ресурс и даёт missing tex.
         String basePath = doorDecl.getBlockId().getPath();
-        //? if fabric && < 1.21.1 {
-        /*return new ResourceLocation(RefStrings.MODID,
-                "block/doors/" + basePath + (selection.isLegacy() ? "_old" : ""));
-        *///?} else {
         return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID,
                 "block/doors/" + basePath + (selection.isLegacy() ? "_old" : ""));
-        //?}
     }
 
     // ================= OBJ RENDER PIPELINE =================
@@ -575,6 +563,20 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Bak
         for (String key : partKeys) {
             InstancedStaticPartRenderer renderer = instancedPartCache.get(key);
             if (renderer != null) renderer.flush(projectionMatrix);
+        }
+    }
+
+    /**
+     * Фаза 2 (после MDI-диспетча): затухающие инстансы прямых путей дверей.
+     * Двери гаснут целиком (створки+рама — одна статика), поэтому их fading
+     * тоже обязан идти после непрозрачных MDI-машин позади них.
+     */
+    public static void flushFadingBatches(Matrix4f projectionMatrix) {
+        for (InstancedStaticPartRenderer renderer : instancedFrameCache.values()) {
+            if (renderer != null) renderer.flushFading(projectionMatrix);
+        }
+        for (InstancedStaticPartRenderer renderer : instancedPartCache.values()) {
+            if (renderer != null) renderer.flushFading(projectionMatrix);
         }
     }
 

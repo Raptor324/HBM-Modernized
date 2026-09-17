@@ -55,7 +55,7 @@ public abstract class AbstractPartBasedRenderer<T extends BlockEntity, M extends
      * need a stable copy go through {@link #getCurrentModelViewMatrix()} which
      * does the defensive copy on demand.
      */
-    private final Matrix4f currentModelViewMatrix = new Matrix4f();
+    protected final Matrix4f currentModelViewMatrix = new Matrix4f();
     
     /** Defensive copy - callers may not mutate the renderer's snapshot field. */
     public Matrix4f getCurrentModelViewMatrix() {
@@ -155,15 +155,22 @@ public abstract class AbstractPartBasedRenderer<T extends BlockEntity, M extends
     }
 
     protected final float applyCullingAndStaticFade(T blockEntity, AABB bounds) {
-        if (!passesOcclusionCulling(blockEntity, bounds)) return -1f;
+        if (!passesOcclusionCulling(blockEntity, bounds)) {
+            NucleusDebug.recordMachineCulled();
+            return -1f;
+        }
         float staticFade = RenderDistanceHelper.computeStaticFade(blockEntity);
-        if (staticFade < 0) return -1f;
+        if (staticFade < 0) {
+            NucleusDebug.recordMachineCulled();
+            return -1f;
+        }
         SingleMeshVboRenderer.setFadeAlpha(staticFade);
+        NucleusDebug.recordMachineRendered();
         return staticFade;
     }
 
     /** Диагностика shadow pass: вызовы BER с прошлого сброса. См. render(). */
-    private static int SHADOW_BER_INVOCATIONS = 0;
+    protected static int SHADOW_BER_INVOCATIONS = 0;
 
     /** Читает и обнуляет счётчик вызовов BER в shadow pass (раз в кадр из AFTER_SKY). */
     public static int drainShadowBerInvocations() {
@@ -259,7 +266,7 @@ public abstract class AbstractPartBasedRenderer<T extends BlockEntity, M extends
             } catch (ClassNotFoundException ignored) {
                 // FRAPI недоступен в окружении
             } catch (Exception e) {
-                MainRegistry.LOGGER.warn("[HBM] Не удалось получить поле ForwardingBakedModel.wrapped: {}", e.toString());
+                MainRegistry.LOGGER.warn("[HBM] Failed to get field ForwardingBakedModel.wrapped: {}", e.toString());
             }
         }
 
@@ -282,7 +289,7 @@ public abstract class AbstractPartBasedRenderer<T extends BlockEntity, M extends
                 BakedModel inner = (BakedModel) fabricWrappedField.get(model);
                 if (inner == null || inner == model) break;
                 if (depth == 1) {
-                    MainRegistry.LOGGER.debug("[HBM] Разворачиваем {} → {}",
+                    MainRegistry.LOGGER.debug("[HBM] Unwrapping {} -> {}",
                             model.getClass().getSimpleName(), inner.getClass().getSimpleName());
                 }
                 model = inner;

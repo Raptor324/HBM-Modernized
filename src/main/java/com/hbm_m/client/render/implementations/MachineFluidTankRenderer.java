@@ -6,7 +6,8 @@ import java.util.List;
 import com.hbm_m.block.machines.MachineFluidTankBlock;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.blockentity.machines.MachineFluidTankBlockEntity;
-import com.hbm_m.client.model.MachineFluidTankBakedModel;
+import com.hbm_m.client.model.ConfiguredMultipartBakedModel;
+import com.hbm_m.platform.RenderHooks;
 import com.hbm_m.client.render.LegacyAnimator;
 import com.hbm_m.client.render.machine.MachineRenderApi;
 import com.hbm_m.client.render.machine.MachineRenderers;
@@ -32,18 +33,13 @@ import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
 
-//? if forge {
-import net.minecraftforge.client.model.data.ModelData;
-//?} elif neoforge {
-/*import net.neoforged.neoforge.client.model.data.ModelData;
-*///?}
 
 /**
  * Fluid Tank / BAT9000 на фабрике {@link MachineRenderers}: Frame — статика;
  * Tank — динамическая часть с ретекстурой под жидкость (VBO кешируется по
  * текстуре в MeshRenderCache: один VBO на уникальную жидкость); NFPA-алмазы —
  * immediate-хук. Вся геометрия в BER/VBO, chunk mesh пуст
- * ({@code MachineFluidTankBakedModel} world quads пусты).
+ * ({@code ConfiguredMultipartBakedModel} world quads пусты).
  */
 public final class MachineFluidTankRenderer {
 
@@ -66,6 +62,8 @@ public final class MachineFluidTankRenderer {
             .blockTransform(MachineFluidTankRenderer::applyBlockTransform)
             .hook(MachineFluidTankRenderer::renderDiamonds)
             .facing(MachineFluidTankRenderer::facing)
+            .chunkRenderTypes(net.minecraft.client.renderer.RenderType.cutoutMipped())
+            .itemParts("Frame", "Tank")
             .register();
     }
 
@@ -86,7 +84,7 @@ public final class MachineFluidTankRenderer {
 
     private static List<BakedQuad> tankQuads(MachineFluidTankBlockEntity be) {
         BakedModel raw = Minecraft.getInstance().getBlockRenderer().getBlockModel(be.getBlockState());
-        if (!(raw instanceof MachineFluidTankBakedModel model)) return List.of();
+        if (!(raw instanceof ConfiguredMultipartBakedModel model)) return List.of();
         BakedModel tankPart = model.getPart("Tank");
         if (tankPart == null) return List.of();
 
@@ -125,20 +123,12 @@ public final class MachineFluidTankRenderer {
     private static List<BakedQuad> collectAllQuads(BakedModel part) {
         List<BakedQuad> quads = new ArrayList<>();
         for (Direction dir : Direction.values()) {
-            quads.addAll(part.getQuads(null, dir, RANDOM, ModelDataHolder.DATA, null));
+            quads.addAll(RenderHooks.getModelQuads(part, null, dir, RANDOM, null));
         }
-        quads.addAll(part.getQuads(null, null, RANDOM, ModelDataHolder.DATA, null));
+        quads.addAll(RenderHooks.getModelQuads(part, null, null, RANDOM, null));
         return quads;
     }
 
-    /** Кросс-версионный ModelData.EMPTY. */
-    private static final class ModelDataHolder {
-        //? if forge {
-        static final ModelData DATA = ModelData.EMPTY;
-        //?} elif neoforge {
-        /*static final ModelData DATA = ModelData.EMPTY;
-        *///?}
-    }
 
     /** Перенос UV квада со старого спрайта на новый (формат BLOCK: 8 int на вершину). */
     private static BakedQuad retextureAndFixUV(BakedQuad original, TextureAtlasSprite newSprite) {

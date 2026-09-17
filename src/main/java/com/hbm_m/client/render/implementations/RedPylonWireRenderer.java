@@ -1,6 +1,7 @@
 package com.hbm_m.client.render.implementations;
 
 import com.hbm_m.block.network.RedPylonMediumBlock;
+import com.hbm_m.platform.RenderHooks;
 import com.hbm_m.blockentity.network.PylonBaseBlockEntity;
 import com.hbm_m.client.ClientRenderHandler;
 
@@ -165,18 +166,16 @@ public class RedPylonWireRenderer implements BlockEntityRenderer<PylonBaseBlockE
                              double x3, double y3, double z3,
                              double u0, double v0, double u1, double v1, double u2, double v2, double u3, double v3,
                              double jX, double jZ, float r, float g, float b) {
-        //? if < 1.21.1 {
-        com.mojang.blaze3d.vertex.VertexConsumer c = consumer;
-        c.vertex(x0, y0, z0).color(r, g, b, 1F).uv((float) u0, (float) v0).endVertex();
-        c.vertex(x1, y1, z1).color(r, g, b, 1F).uv((float) u1, (float) v1).endVertex();
-        c.vertex(x2, y2, z2).color(r, g, b, 1F).uv((float) u2, (float) v2).endVertex();
-        c.vertex(x3, y3, z3).color(r, g, b, 1F).uv((float) u3, (float) v3).endVertex();
-        //?} else {
-        /*consumer.addVertex((float) x0, (float) y0, (float) z0).setColor(r, g, b, 1F).setUv((float) u0, (float) v0);
-        consumer.addVertex((float) x1, (float) y1, (float) z1).setColor(r, g, b, 1F).setUv((float) u1, (float) v1);
-        consumer.addVertex((float) x2, (float) y2, (float) z2).setColor(r, g, b, 1F).setUv((float) u2, (float) v2);
-        consumer.addVertex((float) x3, (float) y3, (float) z3).setColor(r, g, b, 1F).setUv((float) u3, (float) v3);
-        *///?}
+        RenderHooks.vertexColorUv(consumer, (float) x0, (float) y0, (float) z0, color(r), color(g), color(b), 0xFF, (float) u0, (float) v0);
+        RenderHooks.vertexColorUv(consumer, (float) x1, (float) y1, (float) z1, color(r), color(g), color(b), 0xFF, (float) u1, (float) v1);
+        RenderHooks.vertexColorUv(consumer, (float) x2, (float) y2, (float) z2, color(r), color(g), color(b), 0xFF, (float) u2, (float) v2);
+        RenderHooks.vertexColorUv(consumer, (float) x3, (float) y3, (float) z3, color(r), color(g), color(b), 0xFF, (float) u3, (float) v3);
+    }
+
+
+    /** double 0..1 -> byte для int-цвета хуков. */
+    private static int color(double c) {
+        return (int) (c * 255.0 + 0.5);
     }
 
     @Override

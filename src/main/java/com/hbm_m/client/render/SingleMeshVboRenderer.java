@@ -73,47 +73,44 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
      * renderer itself does NOT auto-reset between part renders.
      * See {@code MachinePressRenderer} for the save/restore pattern.
      */
-    private static final ThreadLocal<Float> currentFadeAlpha = ThreadLocal.withInitial(() -> 1.0f);
-    /**
-     * Network-tracked ballistic missiles: draw without depth (terrain occludes at horizon)
-     * and with shader fog pushed to effectively disabled.
-     */
-    private static final ThreadLocal<Boolean> worldMissileOverlayDraw = ThreadLocal.withInitial(() -> false);
-    /** Entity-pass missile mesh: bias depth vs terrain written in the solid pass (horizon z-fighting). */
-    private static final ThreadLocal<Boolean> entityMissileDepthBias = ThreadLocal.withInitial(() -> false);
+    // Fade/missile-флаги — рендер строго в Render Thread, ThreadLocal давал
+    // ThreadLocalMap.getEntryAfterMiss в горячем цикле (~0.4% кадра).
+    private static float currentFadeAlpha = 1.0f;
+    private static boolean worldMissileOverlayDraw = false;
+    private static boolean entityMissileDepthBias = false;
     private static final float ENTITY_MISSILE_DEPTH_FACTOR = -4.0F;
     private static final float ENTITY_MISSILE_DEPTH_UNITS = -4.0F;
 
 
     public static void setFadeAlpha(float alpha) {
-        currentFadeAlpha.set(alpha);
+        currentFadeAlpha = alpha;
     }
 
     public static float getFadeAlpha() {
-        return currentFadeAlpha.get();
+        return currentFadeAlpha;
     }
 
     public static void setWorldMissileOverlayDraw(boolean enabled) {
-        worldMissileOverlayDraw.set(enabled);
+        worldMissileOverlayDraw = enabled;
     }
 
     public static boolean isWorldMissileOverlayDraw() {
-        return worldMissileOverlayDraw.get();
+        return worldMissileOverlayDraw;
     }
 
     public static void setEntityMissileDepthBias(boolean enabled) {
-        entityMissileDepthBias.set(enabled);
+        entityMissileDepthBias = enabled;
     }
 
     private static void beginEntityMissileDepthBias() {
-        if (entityMissileDepthBias.get()) {
+        if (entityMissileDepthBias) {
             RenderSystem.enablePolygonOffset();
             RenderSystem.polygonOffset(ENTITY_MISSILE_DEPTH_FACTOR, ENTITY_MISSILE_DEPTH_UNITS);
         }
     }
 
     private static void endEntityMissileDepthBias() {
-        if (entityMissileDepthBias.get()) {
+        if (entityMissileDepthBias) {
             RenderSystem.disablePolygonOffset();
         }
     }
@@ -259,6 +256,44 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
      * Fills {@code samplerMap} so {@link ShaderInstance#apply()} binds atlas → unit 0 and
      * lightmap → unit 1. Mirrors {@code LevelRenderer} / {@code VertexBuffer._drawWithShader}.
      */
+    /**
+     * Iris-вариант {@link #prepareBlockLitSamplers} для нашего ExtendedShader
+     * (hbm_m:iris/block_lit_instanced_iris): сэмплеры в JSON названы с префиксом
+     * {@code iris_} (ExtendedShader.getUniform() резолвит "iris_" + name), поэтому
+     * {@code setSampler("Sampler0")} промахнулся бы мимо карты — чёрный вывод.
+     * GL-порядок активации юнитов — как в primeBlockLitSamplerMap.
+     */
+    public static void primeIrisInstancedSamplerMap(ShaderInstance shader, Minecraft mc) {
+        var textureManager = mc.getTextureManager();
+
+        RenderSystem.setShaderTexture(0, TextureAtlas.LOCATION_BLOCKS);
+        RenderSystem.activeTexture(GL13.GL_TEXTURE0);
+        textureManager.bindForSetup(TextureAtlas.LOCATION_BLOCKS);
+
+        RenderSystem.activeTexture(GL13.GL_TEXTURE1);
+        mc.gameRenderer.lightTexture().turnOnLightLayer();
+
+        RenderSystem.activeTexture(GL13.GL_TEXTURE0);
+        textureManager.bindForSetup(TextureAtlas.LOCATION_BLOCKS);
+
+        AbstractTexture atlasTex = textureManager.getTexture(TextureAtlas.LOCATION_BLOCKS);
+        int lightmapGlId = resolveLightmapGlId(mc);
+        if (atlasTex != null) {
+            shader.setSampler("iris_Sampler0", atlasTex);
+        }
+        if (lightmapGlId > 0) {
+            shader.setSampler("iris_Sampler2", lightmapGlId);
+        }
+        // Юниформ-инты юнитов (вызов ДОЛЖЕН идти после glUseProgram нашей программы).
+        // ВНИМАНИЕ: getUniform на ExtendedShader САМ префиксует "iris_" — передаём
+        // БАЗОВЫЕ имена, иначе ищем "iris_iris_Sampler2" и инт-юниформ не загружается
+        // (GLSL-дефолт 0 = атлас на юните 0 вместо светомапы = чёрные машины).
+        com.mojang.blaze3d.shaders.Uniform s0 = shader.getUniform("Sampler0");
+        if (s0 != null) { s0.set(0); s0.upload(); }
+        com.mojang.blaze3d.shaders.Uniform s2 = shader.getUniform("Sampler2");
+        if (s2 != null) { s2.set(1); s2.upload(); }
+    }
+
     private static void primeBlockLitSamplerMap(ShaderInstance shader, Minecraft mc) {
         var textureManager = mc.getTextureManager();
 
@@ -479,7 +514,7 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
 
     private void renderToBufferSource(PoseStack poseStack, int packedLight, List<BakedQuad> quads, MultiBufferSource bufferSource) {
         if (quads == null || quads.isEmpty() || bufferSource == null) return;
-        float fade = currentFadeAlpha.get();
+        float fade = currentFadeAlpha;
         var consumer = bufferSource.getBuffer(fade < 0.99f ? RenderType.translucent() : RenderType.cutout());
         var pose = poseStack.last();
         for (BakedQuad quad : quads) {
@@ -576,7 +611,7 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
             // ambient корректен, результат идентичен (пуш кладёт ту же матрицу).
             // Станки/двери (флаг false) продолжают читать ambient = R_cam фазы BE.
             org.joml.Matrix4f fullModelView;
-            if (entityMissileDepthBias.get()) {
+            if (entityMissileDepthBias) {
                 org.joml.Matrix4f levelRot =
                         com.hbm_m.platform.RenderHooks.currentLevelRotation();
                 if (levelRot != null) {
@@ -663,7 +698,7 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
             if (cachedLightC45 != null) cachedLightC45.set(tmpCornerUV[8], tmpCornerUV[9], tmpCornerUV[10], tmpCornerUV[11]);
             if (cachedLightC67 != null) cachedLightC67.set(tmpCornerUV[12], tmpCornerUV[13], tmpCornerUV[14], tmpCornerUV[15]);
 
-            if (worldMissileOverlayDraw.get() || entityMissileDepthBias.get()) {
+            if (worldMissileOverlayDraw || entityMissileDepthBias) {
                 if (cachedFogStartU != null) cachedFogStartU.set(1.0E8F);
                 if (cachedFogEndU != null) cachedFogEndU.set(1.0E8F);
             } else {
@@ -675,7 +710,7 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
                 cachedFogColorU.set(fogColor[0], fogColor[1], fogColor[2], fogColor[3]);
             }
 
-            if (cachedFadeAlphaU != null) cachedFadeAlphaU.set(currentFadeAlpha.get());
+            if (cachedFadeAlphaU != null) cachedFadeAlphaU.set(currentFadeAlpha);
 
             // Must come BEFORE apply() - apply() reads samplerMap populated here and
             // does glUseProgram + glUniform1i + glBindTexture in one shot.
@@ -693,8 +728,8 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
             shader.apply();
             bindBlockLitSamplerTextures(shader);
 
-            float fade = currentFadeAlpha.get();
-            boolean overlay = worldMissileOverlayDraw.get();
+            float fade = currentFadeAlpha;
+            boolean overlay = worldMissileOverlayDraw;
             if (overlay) {
                 RenderSystem.disableDepthTest();
                 // Управляемый вызов: сырой GL11.glDepthMask обходил кеш
@@ -710,6 +745,11 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
             if (fade < 0.99f) {
                 RenderSystem.enableBlend();
                 RenderSystem.defaultBlendFunc();
+                // Полупрозрачная immediate-часть не пишет глубину: этот дров уходит
+                // из BER-фазы, ДО instanced/MDI-флаша непрозрачных баз, и с записью
+                // глубины depth-reject'ил бы их (вместо базы просвечивал чанк).
+                // previousDepthMask восстанавливается в finally.
+                RenderSystem.depthMask(false);
             }
 
             GlVaoSafety.bindVertexArray(vaoId);
@@ -874,7 +914,7 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
                 // VBO-пути выше (ветка "baked"). Для BER/станков (вне track-
                 // контекста) композит ambient × pose остаётся корректным: там
                 // ambient = R_cam фазы BE.
-                if (entityMissileDepthBias.get()
+                if (entityMissileDepthBias
                         && com.hbm_m.platform.RenderHooks.currentLevelRotation() != null) {
                     shader.MODEL_VIEW_MATRIX.set(new Matrix4f(poseStack.last().pose()));
                 } else {
@@ -886,7 +926,7 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
             var brightnessUniform = shader.getUniform("Brightness");
             if (brightnessUniform != null) brightnessUniform.set(calculateBrightness(packedLight));
 
-            if (worldMissileOverlayDraw.get()) {
+            if (worldMissileOverlayDraw) {
                 var fogStart = shader.getUniform("FogStart");
                 if (fogStart != null) fogStart.set(1.0E8F);
                 var fogEnd = shader.getUniform("FogEnd");
@@ -914,7 +954,7 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
                 return false;
             }
 
-            boolean overlay = worldMissileOverlayDraw.get();
+            boolean overlay = worldMissileOverlayDraw;
             if (overlay) {
                 RenderSystem.disableDepthTest();
                 // Управляемый вызов вместо сырого GL11.glDepthMask (см. vanilla-путь).

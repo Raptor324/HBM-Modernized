@@ -1,10 +1,6 @@
 {
-  "loader": "hbm_m:test",
-  "model": "hbm_m:models/block/test/scene.obj",
-  "parts": ["default"],
-  "flip_v": true,
+  "parent": "minecraft:block/cube_all",
   "textures": {
-    "default": "hbm_m:block/machine/rbmk_console",
-    "particle": "hbm_m:block/machine/rbmk_console"
+    "all": "hbm_m:block/machine/rbmk_console"
   }
 }
