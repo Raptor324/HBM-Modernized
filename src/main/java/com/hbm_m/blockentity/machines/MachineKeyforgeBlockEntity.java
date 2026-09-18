@@ -51,7 +51,9 @@ public class MachineKeyforgeBlockEntity extends BaseMachineBlockEntity {
 
     @Override
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
-        return ItemKeyPin.isTransferable(stack);
+        // Паритет 1.7.10 (TileEntityMachineKeyForge.isItemValidForSlot = false):
+        // автоматизация (воронки) не вставляет предметы — только вручную через GUI.
+        return false;
     }
 
     @Override

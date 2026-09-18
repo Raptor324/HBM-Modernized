@@ -144,7 +144,7 @@ public class MachineStrandCasterBlockEntity extends BaseHbmBlockEntity implement
 
     // ═══════════════════════════════ Логика ═══════════════════════════════
 
-    private @Nullable ItemCastMold getInstalledMold() {
+    public @Nullable ItemCastMold getInstalledMold() {
         ItemStack stack = inventory.getStackInSlot(SLOT_MOLD);
         return stack.getItem() instanceof ItemCastMold mold ? mold : null;
     }
@@ -290,21 +290,22 @@ public class MachineStrandCasterBlockEntity extends BaseHbmBlockEntity implement
 
     /**
      * Порт getFluidConPos: 4 порта вдоль стола — 2 у башни (влево-назад и вправо-назад)
-     * и 2 у конца стола (на 5 назад).
+     * и 2 у конца стола (на 5 назад). rot = dir.getClockWise() — порт ForgeDirection
+     * dir.getRotation(UP) (NORTH→EAST).
      */
     private List<FluidPort> getFluidConPositions(BlockPos corePos) {
         Direction dir = getFacing();
-        Direction rot = dir.getCounterClockWise();
+        Direction rot = dir.getClockWise();
         List<FluidPort> ports = new ArrayList<>(4);
 
-        // Port 1: rot * 2 - dir, facing rot
-        ports.add(new FluidPort(corePos.offset(rot.getStepX() * 2 - dir.getStepX(), 0, rot.getStepZ() * 2 - dir.getStepZ()), rot));
-        // Port 2: -rot - dir, facing rot.getOpposite()
-        ports.add(new FluidPort(corePos.offset(-rot.getStepX() - dir.getStepX(), 0, -rot.getStepZ() - dir.getStepZ()), rot.getOpposite()));
-        // Port 3: rot * 2 - dir * 5, facing rot
-        ports.add(new FluidPort(corePos.offset(rot.getStepX() * 2 - dir.getStepX() * 5, 0, rot.getStepZ() * 2 - dir.getStepZ() * 5), rot));
-        // Port 4: -rot - dir * 5, facing rot.getOpposite()
-        ports.add(new FluidPort(corePos.offset(-rot.getStepX() - dir.getStepX() * 5, 0, -rot.getStepZ() - dir.getStepZ() * 5), rot.getOpposite()));
+        // Port 1: rot - dir, facing rot
+        ports.add(new FluidPort(corePos.offset(rot.getStepX() - dir.getStepX(), 0, rot.getStepZ() - dir.getStepZ()), rot));
+        // Port 2: -dir, facing rot.getOpposite()
+        ports.add(new FluidPort(corePos.offset(-dir.getStepX(), 0, -dir.getStepZ()), rot.getOpposite()));
+        // Port 3: rot - dir * 5, facing rot
+        ports.add(new FluidPort(corePos.offset(rot.getStepX() - dir.getStepX() * 5, 0, rot.getStepZ() - dir.getStepZ() * 5), rot));
+        // Port 4: -dir * 5, facing rot.getOpposite()
+        ports.add(new FluidPort(corePos.offset(-dir.getStepX() * 5, 0, -dir.getStepZ() * 5), rot.getOpposite()));
 
         return ports;
     }
@@ -343,7 +344,7 @@ public class MachineStrandCasterBlockEntity extends BaseHbmBlockEntity implement
     /** Проверка: позиция налива — одна из 4 клеток верха башни (порт getMetalPourPos). */
     private boolean isTowerTopPourPos(BlockPos pourPos) {
         Direction dir = getFacing();
-        Direction rot = dir.getCounterClockWise();
+        Direction rot = dir.getClockWise();
         BlockPos rel = pourPos.subtract(worldPosition);
         if (rel.getY() != 2) return false;
 

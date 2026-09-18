@@ -1496,8 +1496,8 @@ public class ModItems {
 	public static final RegistrySupplier<Item> CHEMICAL_PLANT = ITEMS.register("chemical_plant",
         () -> new MultiblockBlockItem(ModBlocks.CHEMICAL_PLANT.get(), new Item.Properties()));
 
-	public static final RegistrySupplier<Item> GAS_CENTRIFUGE = ITEMS.register("gas_centrifuge",
-        () -> new MultiblockBlockItem(ModBlocks.GAS_CENTRIFUGE.get(), new Item.Properties()));
+	public static final RegistrySupplier<Item> MACHINE_GASCENT = ITEMS.register("machine_gascent",
+        () -> new MultiblockBlockItem(ModBlocks.MACHINE_GASCENT.get(), new Item.Properties()));
 
 	public static final RegistrySupplier<Item> CRYSTALLIZER = ITEMS.register("crystallizer",
         () -> new MultiblockBlockItem(ModBlocks.CRYSTALLIZER.get(), new Item.Properties()));
@@ -1508,8 +1508,8 @@ public class ModItems {
 	public static final RegistrySupplier<Item> LARGE_PYLON = ITEMS.register("large_pylon",
         () -> new MultiblockBlockItem(ModBlocks.LARGE_PYLON.get(), new Item.Properties()));
 
-	public static final RegistrySupplier<Item> CENTRIFUGE = ITEMS.register("centrifuge",
-        () -> new MultiblockBlockItem(ModBlocks.CENTRIFUGE.get(), new Item.Properties()));
+	public static final RegistrySupplier<Item> MACHINE_CENTRIFUGE = ITEMS.register("machine_centrifuge",
+        () -> new MultiblockBlockItem(ModBlocks.MACHINE_CENTRIFUGE.get(), new Item.Properties()));
 
 	public static final RegistrySupplier<Item> FLUID_TANK = ITEMS.register("fluid_tank",
         () -> new MultiblockBlockItem(ModBlocks.FLUID_TANK.get(), new Item.Properties()));
@@ -1628,7 +1628,7 @@ public class ModItems {
         () -> new MissileItem(MissileItem.MissileFormFactor.MICRO, MissileItem.MissileTier.TIER0,
                 MissileItem.MissileFuel.SOLID));
 
-    public static final RegistrySupplier<Item> MISSILE_ABM = ITEMS.register("missile_abm",
+    public static final RegistrySupplier<Item> MISSILE_ANTI_BALLISTIC = ITEMS.register("missile_anti_ballistic",
                 () -> new MissileItem(MissileItem.MissileFormFactor.ABM, MissileItem.MissileTier.TIER1,
                                 MissileItem.MissileFuel.SOLID));
 
@@ -2944,7 +2944,7 @@ public class ModItems {
     public static final RegistrySupplier<Item> JOURNAL_BJ = ITEMS.register("journal_bj", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> JOURNAL_PIP = ITEMS.register("journal_pip", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> JOURNAL_SILVER = ITEMS.register("journal_silver", () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> KEY = ITEMS.register("key", () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> KEY = ITEMS.register("key", () -> new com.hbm_m.item.ItemKey(new Item.Properties().stacksTo(1)));
     public static final RegistrySupplier<Item> KEY_RED = ITEMS.register("key_red", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> KEY_RED_CRACKED = ITEMS.register("key_red_cracked", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> LASER_CRYSTAL_BISMUTH = ITEMS.register("laser_crystal_bismuth", () -> new Item(new Item.Properties()));
@@ -2991,7 +2991,6 @@ public class ModItems {
     public static final RegistrySupplier<Item> MIKE_DEUT = ITEMS.register("mike_deut", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> MIKE_KIT = ITEMS.register("mike_kit", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> MIRROR_TOOL = ITEMS.register("mirror_tool", () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> MISSILE_ANTI_BALLISTIC = ITEMS.register("missile_anti_ballistic", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> MISSILE_CARRIER = ITEMS.register("missile_carrier", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> MISSILE_CUSTOM = ITEMS.register("missile_custom", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> MISSILE_ENDO = ITEMS.register("missile_endo", () -> new Item(new Item.Properties()));
@@ -3041,7 +3040,8 @@ public class ModItems {
     public static final RegistrySupplier<Item> OVERFUSE = ITEMS.register("overfuse", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> PAA_LEGS = ITEMS.register("paa_legs", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> PAA_PLATE = ITEMS.register("paa_plate", () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> PADLOCK = ITEMS.register("padlock", () -> new Item(new Item.Properties()));
+    /** Порт padlock (1.7.10 ItemLock, lockMod 0.1): навешивается на ILockable, код вырезается на кейфордже. */
+    public static final RegistrySupplier<Item> PADLOCK = ITEMS.register("padlock", () -> new com.hbm_m.item.ItemLock(new Item.Properties().stacksTo(1), 0.1D));
     public static final RegistrySupplier<Item> PADLOCK_REINFORCED = ITEMS.register("padlock_reinforced", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> PADLOCK_RUSTY = ITEMS.register("padlock_rusty", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> PADLOCK_UNBREAKABLE = ITEMS.register("padlock_unbreakable", () -> new Item(new Item.Properties()));
@@ -3639,6 +3639,21 @@ public class ModItems {
     public static final RegistrySupplier<Item> WASTE_URANIUM = ITEMS.register("waste_uranium", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> WASTE_ZFB_MOX = ITEMS.register("waste_zfb_mox", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> KEY_PIN = ITEMS.register("key_pin", () -> new com.hbm_m.item.ItemKeyPin(new Item.Properties().stacksTo(1)));
+
+    // ==================== Замки-ключкарты (порт TileEntityLockableBase / ItemLock) ====================
+
+    /** Порт key_fake (1.7.10): поддельный ключ, нельзя копировать/перекодировать (canTransfer=false). */
+    public static final RegistrySupplier<Item> KEY_FAKE = ITEMS.register("key_fake",
+            () -> new com.hbm_m.item.ItemKey(new Item.Properties().stacksTo(1)) {
+                @Override
+                public boolean canTransfer() {
+                    return false;
+                }
+            });
+
+    /** Порт key_kit (1.7.10 ItemCounterfeitKeys): набор имитации ключей, выдаёт 2 key_fake с кодом замка. */
+    public static final RegistrySupplier<Item> KEY_KIT = ITEMS.register("key_kit",
+            () -> new com.hbm_m.item.ItemCounterfeitKeys(new Item.Properties().stacksTo(1)));
     public static final RegistrySupplier<Item> WATCH = ITEMS.register("watch", () -> new Item(new Item.Properties()));
 
     // Siren cassettes - simplified from the original's single ItemCassette + metadata TrackType enum

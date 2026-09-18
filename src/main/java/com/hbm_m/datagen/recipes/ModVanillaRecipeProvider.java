@@ -74,6 +74,109 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
         registerRbmkFuelRecipes(writer);
         registerRbmkBlockRecipes(writer);
         registerBookOfWagons(writer);
+        registerLockRecipes(writer);
+    }
+
+    /**
+     * Рецепты замков-ключкарт, 1:1 с {@code CraftingManager} 1.7.10 (строки 549-556):
+     * key, key_kit, key_red, pin, padlock_rusty, padlock, padlock_reinforced.
+     * padlock_unbreakable не портирован — материала BIGMT в порте нет.
+     * Отвёртка в key_kit возвращается через getCraftingRemainingItem (как ведро в торте).
+     */
+    private void registerLockRecipes(Consumer<FinishedRecipe> writer) {
+        // "  B", " B ", "P  " — P = steel plate, B = steel bolt → key
+        Item steelPlate = ModItems.STEEL_PLATE.get();
+        Item steelBolt = ModItems.BOLT_STEEL.get();
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.KEY.get())
+                .define('P', steelPlate)
+                .define('B', steelBolt)
+                .pattern("  B")
+                .pattern(" B ")
+                .pattern("P  ")
+                .unlockedBy("has_steel_plate", has(steelPlate))
+                .save(writer, recipeId("crafting/key"));
+
+        // "PKP", "DTD", "PKP" — P = gold plate, K = key, D = desh powder,
+        // T = screwdriver (оригинал: oredict KEY_TOOL_SCREWDRIVER — обе отвёртки) → key_kit
+        dev.architectury.registry.registries.RegistrySupplier<Item> goldPlate = ModMaterialItems.get(ModMaterials.GOLD, MaterialShape.PLATE);
+        dev.architectury.registry.registries.RegistrySupplier<Item> deshPowder = ModMaterialItems.get(ModMaterials.DESH, MaterialShape.POWDER);
+        if (goldPlate != null && goldPlate.isPresent() && deshPowder != null && deshPowder.isPresent()) {
+            ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.KEY_KIT.get())
+                    .define('P', goldPlate.get())
+                    .define('K', ModItems.KEY.get())
+                    .define('D', deshPowder.get())
+                    .define('T', Ingredient.of(ModItems.SCREWDRIVER.get(), ModItems.SCREWDRIVER_DESH.get()))
+                    .pattern("PKP")
+                    .pattern("DTD")
+                    .pattern("PKP")
+                    .unlockedBy("has_key", has(ModItems.KEY.get()))
+                    .save(writer, recipeId("crafting/key_kit"));
+        }
+
+        // "RCA", "CIC", "KCR" — R = red dye (ориг. oredict dyeRed), C = star wire dense,
+        // A = alexandrite, I = chainsteel ingot, K = key → key_red
+        dev.architectury.registry.registries.RegistrySupplier<Item> starWireDense = ModMaterialItems.get(ModMaterials.STAR_METAL, MaterialShape.WIRE_DENSE);
+        dev.architectury.registry.registries.RegistrySupplier<Item> chainsteelIngot = ModMaterialItems.get(ModMaterials.CHAINSSTEEL, MaterialShape.INGOT);
+        if (starWireDense != null && starWireDense.isPresent() && chainsteelIngot != null && chainsteelIngot.isPresent()) {
+            ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.KEY_RED.get())
+                    .define('R', Items.RED_DYE)
+                    .define('C', starWireDense.get())
+                    .define('A', ModItems.GEM_ALEXANDRITE.get())
+                    .define('I', chainsteelIngot.get())
+                    .define('K', ModItems.KEY.get())
+                    .pattern("RCA")
+                    .pattern("CIC")
+                    .pattern("KCR")
+                    .unlockedBy("has_alexandrite", has(ModItems.GEM_ALEXANDRITE.get()))
+                    .save(writer, recipeId("crafting/key_red"));
+        }
+
+        // "W ", " W", " W" — W = copper wire → pin (отмычка)
+        dev.architectury.registry.registries.RegistrySupplier<Item> copperWire = ModMaterialItems.get(ModMaterials.COPPER, MaterialShape.WIRE);
+        if (copperWire != null && copperWire.isPresent()) {
+            ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.PIN.get())
+                    .define('W', copperWire.get())
+                    .pattern("W ")
+                    .pattern(" W")
+                    .pattern(" W")
+                    .unlockedBy("has_copper_wire", has(copperWire.get()))
+                    .save(writer, recipeId("crafting/pin"));
+        }
+
+        // "I", "B", "I" — I = iron ingot, B = steel bolt → padlock_rusty
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.PADLOCK_RUSTY.get())
+                .define('I', Items.IRON_INGOT)
+                .define('B', steelBolt)
+                .pattern("I")
+                .pattern("B")
+                .pattern("I")
+                .unlockedBy("has_iron_ingot", has(Items.IRON_INGOT))
+                .save(writer, recipeId("crafting/padlock_rusty"));
+
+        // " P ", "PBP", "PPP" — P = steel plate, B = steel bolt → padlock
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.PADLOCK.get())
+                .define('P', steelPlate)
+                .define('B', steelBolt)
+                .pattern(" P ")
+                .pattern("PBP")
+                .pattern("PPP")
+                .unlockedBy("has_steel_bolt", has(steelBolt))
+                .save(writer, recipeId("crafting/padlock"));
+
+        // " P ", "PBP", "PDP" — P = dura steel plate, D = desh plate, B = HSS bolt → padlock_reinforced
+        dev.architectury.registry.registries.RegistrySupplier<Item> duraPlate = ModMaterialItems.get(ModMaterials.DURA_STEEL, MaterialShape.PLATE);
+        dev.architectury.registry.registries.RegistrySupplier<Item> deshPlate = ModMaterialItems.get(ModMaterials.DESH, MaterialShape.PLATE);
+        if (duraPlate != null && duraPlate.isPresent() && deshPlate != null && deshPlate.isPresent()) {
+            ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.PADLOCK_REINFORCED.get())
+                    .define('P', duraPlate.get())
+                    .define('D', deshPlate.get())
+                    .define('B', ModItems.BOLT_HIGHSPEED_STEEL.get())
+                    .pattern(" P ")
+                    .pattern("PBP")
+                    .pattern("PDP")
+                    .unlockedBy("has_dura_plate", has(duraPlate.get()))
+                    .save(writer, recipeId("crafting/padlock_reinforced"));
+        }
     }
 
     /**

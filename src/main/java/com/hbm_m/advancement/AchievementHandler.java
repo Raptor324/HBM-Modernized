@@ -53,8 +53,8 @@ public class AchievementHandler {
         item(ModMaterialItems.get(ModMaterials.POLYMER, MaterialShape.PLATE), ModAdvancements.POLYMER);
         item(ModMaterialItems.get(ModMaterials.DESH, MaterialShape.NUGGET),  ModAdvancements.DESH);
         item(ModItems.GEM_TANTALIUM,           ModAdvancements.TANTALUM);
-        block(ModBlocks.MACHINE_GASCENT,       ModAdvancements.GAS_CENT);
-        block(ModBlocks.MACHINE_CENTRIFUGE,    ModAdvancements.CENTRIFUGE);
+        item(ModItems.MACHINE_GASCENT,          ModAdvancements.GAS_CENT);
+        item(ModItems.MACHINE_CENTRIFUGE,       ModAdvancements.CENTRIFUGE);
         item(ModMaterialItems.get(ModMaterials.SCHRABIDIUM, MaterialShape.NUGGET), ModAdvancements.SCHRAB);
         block(ModBlocks.MACHINE_CRYSTALLIZER,  ModAdvancements.ACIDIZER);
         block(ModBlocks.SILEX,                 ModAdvancements.SILEX);

@@ -87,7 +87,7 @@ import com.hbm_m.block.machines.MachineFlareStackBlock;
 import com.hbm_m.block.machines.MachineFluidTankBlock;
 import com.hbm_m.block.machines.MachineFrackingTowerBlock;
 import com.hbm_m.block.machines.MachineFractionTowerBlock;
-import com.hbm_m.block.machines.MachineGasCentrifugeBlock;
+import com.hbm_m.block.machines.MachineGasCentBlock;
 import com.hbm_m.block.machines.MachineHydrotreaterBlock;
 import com.hbm_m.block.machines.MachineIndustrialBoilerBlock;
 import com.hbm_m.block.machines.MachineIndustrialTurbineBlock;
@@ -183,14 +183,16 @@ import dev.architectury.registry.registries.DeferredRegister;
 import net.minecraft.core.registries.Registries;
 import dev.architectury.registry.registries.RegistrySupplier;
 
+import static com.hbm_m.util.CompletionStatus.*;
+
 public class ModBlocks {
     public static final DeferredRegister<Block> BLOCKS =
             DeferredRegister.create(RefStrings.MODID, Registries.BLOCK);
 
-    public static final RegistrySupplier<Block> GEIGER_COUNTER_BLOCK = registerBlock("geiger_counter_block",
+    public static final RegistrySupplier<Block> GEIGER_COUNTER_BLOCK = registerBlock("geiger_counter_block", COMPLETE,
             () -> new GeigerCounterBlock(BlockProps.copy(Blocks.IRON_BLOCK).noOcclusion()));
 
-    public static final RegistrySupplier<Block> DECON = registerBlock("decon",
+    public static final RegistrySupplier<Block> DECON = registerBlock("decon", COMPLETE,
             () -> new BlockDecon(BlockProps.copy(Blocks.IRON_BLOCK)
                     .strength(5.0F, 10.0F)
                     .requiresCorrectToolForDrops()));
@@ -203,6 +205,7 @@ public class ModBlocks {
 
     private static final BlockBehaviour.Properties TABLE_PROPERTIES =
             BlockBehaviour.Properties.of().mapColor(MapColor.METAL).strength(5.0F, 6.0F).sound(SoundType.METAL).requiresCorrectToolForDrops();
+
     private static final BlockBehaviour.Properties ANVIL_PROPERTIES =
             BlockProps.copy(Blocks.ANVIL).sound(SoundType.ANVIL).noOcclusion();
 
@@ -530,10 +533,10 @@ public class ModBlocks {
             () -> new com.hbm_m.block.machines.MachineFoundryOutletBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(3.0f, 3.0f).sound(SoundType.NETHER_BRICKS).noOcclusion().isSuffocating((state, world, pos) -> false)));
 
     // ─── Trophies ─────────────────────────────────────────────────────────────
-    public static final RegistrySupplier<Block> GAS_CENTRIFUGE = registerBlockWithoutItem("gas_centrifuge",
-            () -> new MachineGasCentrifugeBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion().isSuffocating((state, world, pos) -> false)));
+    public static final RegistrySupplier<Block> MACHINE_GASCENT = registerBlockWithoutItem("machine_gascent",
+            () -> new MachineGasCentBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion().isSuffocating((state, world, pos) -> false)));
 
-    public static final RegistrySupplier<Block> CENTRIFUGE = registerBlockWithoutItem("centrifuge",
+    public static final RegistrySupplier<Block> MACHINE_CENTRIFUGE = registerBlockWithoutItem("machine_centrifuge",
             () -> new MachineCentrifugeBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).isSuffocating((state, world, pos) -> false)));
 
     public static final RegistrySupplier<Block> STEAM_CONDENSER = registerBlock("steam_condenser",
@@ -649,7 +652,7 @@ public class ModBlocks {
 
     //---------------------------<ДВЕРИ>-------------------------------------
 
-    public static final RegistrySupplier<DoorBlock> LARGE_VEHICLE_DOOR = registerBlockWithoutItem("large_vehicle_door",
+    public static final RegistrySupplier<DoorBlock> LARGE_VEHICLE_DOOR = registerBlockWithoutItem("large_vehicle_door", COMPLETE,
             () -> new DoorBlock(
                     BlockBehaviour.Properties.of()
                             .strength(10.0F, 1000.0F)
@@ -660,7 +663,7 @@ public class ModBlocks {
                     "large_vehicle_door"
             ));
 
-    public static final RegistrySupplier<DoorBlock> ROUND_AIRLOCK_DOOR = registerBlockWithoutItem("round_airlock_door",
+    public static final RegistrySupplier<DoorBlock> ROUND_AIRLOCK_DOOR = registerBlockWithoutItem("round_airlock_door", COMPLETE,
             () -> new DoorBlock(
                     BlockBehaviour.Properties.of()
                             .strength(10.0F, 1000.0F)
@@ -671,7 +674,7 @@ public class ModBlocks {
                     "round_airlock_door"
             ));
 
-    public static final RegistrySupplier<Block> TRANSITION_SEAL = registerBlockWithoutItem("transition_seal",
+    public static final RegistrySupplier<Block> TRANSITION_SEAL = registerBlockWithoutItem("transition_seal", COMPLETE,
             () -> new TransitionSealBlock(
                     BlockBehaviour.Properties.of()
                             .strength(10.0F, 1000.0F)
@@ -680,7 +683,7 @@ public class ModBlocks {
                             .noOcclusion()
                             .dynamicShape().isViewBlocking((state, level, pos) -> false)));
 
-    public static final RegistrySupplier<Block> FIRE_DOOR = registerBlockWithoutItem("fire_door",
+    public static final RegistrySupplier<Block> FIRE_DOOR = registerBlockWithoutItem("fire_door", COMPLETE,
             () -> new DoorBlock(
                     BlockBehaviour.Properties.of()
                             .strength(10.0F, 1000.0F)
@@ -691,7 +694,7 @@ public class ModBlocks {
                     "fire_door"
             ));
 
-    public static final RegistrySupplier<Block> SLIDE_DOOR = registerBlockWithoutItem("sliding_blast_door",
+    public static final RegistrySupplier<Block> SLIDE_DOOR = registerBlockWithoutItem("sliding_blast_door", COMPLETE,
             () -> new DoorBlock(
                     BlockBehaviour.Properties.of()
                             .strength(10.0F, 1000.0F)
@@ -702,7 +705,7 @@ public class ModBlocks {
                     "sliding_blast_door"
             ));
 
-    public static final RegistrySupplier<Block> SLIDING_SEAL_DOOR = registerBlockWithoutItem("sliding_seal_door",
+    public static final RegistrySupplier<Block> SLIDING_SEAL_DOOR = registerBlockWithoutItem("sliding_seal_door", COMPLETE,
             () -> new DoorBlock(
                     BlockBehaviour.Properties.of()
                             .strength(10.0F, 1000.0F)
@@ -713,7 +716,7 @@ public class ModBlocks {
                     "sliding_seal_door"
             ));
 
-    public static final RegistrySupplier<Block> SECURE_ACCESS_DOOR = registerBlockWithoutItem("secure_access_door",
+    public static final RegistrySupplier<Block> SECURE_ACCESS_DOOR = registerBlockWithoutItem("secure_access_door", COMPLETE,
             () -> new DoorBlock(
                     BlockBehaviour.Properties.of()
                             .strength(10.0F, 1000.0F)
@@ -724,7 +727,7 @@ public class ModBlocks {
                     "secure_access_door"
             ));
 
-    public static final RegistrySupplier<Block> QE_SLIDING = registerBlockWithoutItem("qe_sliding_door",
+    public static final RegistrySupplier<Block> QE_SLIDING = registerBlockWithoutItem("qe_sliding_door", COMPLETE,
             () -> new DoorBlock(
                     BlockBehaviour.Properties.of()
                             .strength(10.0F, 1000.0F)
@@ -735,7 +738,7 @@ public class ModBlocks {
                     "qe_sliding_door"
             ));
 
-    public static final RegistrySupplier<Block> QE_CONTAINMENT = registerBlockWithoutItem("qe_containment_door",
+    public static final RegistrySupplier<Block> QE_CONTAINMENT = registerBlockWithoutItem("qe_containment_door", COMPLETE,
             () -> new DoorBlock(
                     BlockBehaviour.Properties.of()
                             .strength(10.0F, 1000.0F)
@@ -746,7 +749,7 @@ public class ModBlocks {
                     "qe_containment_door"
             ));
 
-    public static final RegistrySupplier<Block> WATER_DOOR = registerBlockWithoutItem("water_door",
+    public static final RegistrySupplier<Block> WATER_DOOR = registerBlockWithoutItem("water_door", COMPLETE,
             () -> new DoorBlock(
                     BlockBehaviour.Properties.of()
                             .strength(10.0F, 1000.0F)
@@ -757,7 +760,7 @@ public class ModBlocks {
                     "water_door"
             ));
 
-    public static final RegistrySupplier<Block> SILO_HATCH = registerBlockWithoutItem("silo_hatch",
+    public static final RegistrySupplier<Block> SILO_HATCH = registerBlockWithoutItem("silo_hatch", COMPLETE,
             () -> new DoorBlock(
                     BlockBehaviour.Properties.of()
                             .strength(10.0F, 1000.0F)
@@ -768,7 +771,7 @@ public class ModBlocks {
                     "silo_hatch"
             ));
 
-    public static final RegistrySupplier<Block> SILO_HATCH_LARGE = registerBlockWithoutItem("silo_hatch_large",
+    public static final RegistrySupplier<Block> SILO_HATCH_LARGE = registerBlockWithoutItem("silo_hatch_large", COMPLETE,
             () -> new DoorBlock(
                     BlockBehaviour.Properties.of()
                             .strength(10.0F, 1000.0F)
@@ -779,7 +782,7 @@ public class ModBlocks {
                     "silo_hatch_large"
             ));
 
-    public static final RegistrySupplier<DoorBlock> VAULT_DOOR = registerBlockWithoutItem("vault_door",
+    public static final RegistrySupplier<DoorBlock> VAULT_DOOR = registerBlockWithoutItem("vault_door", COMPLETE,
             () -> new DoorBlock(
                     BlockBehaviour.Properties.of()
                             .strength(10.0F, 1000.0F)
@@ -790,7 +793,7 @@ public class ModBlocks {
                     "vault_door"
             ));
 
-    public static final RegistrySupplier<Block> CARGO_DOOR = registerBlockWithoutItem("cargo_door",
+    public static final RegistrySupplier<Block> CARGO_DOOR = registerBlockWithoutItem("cargo_door", COMPLETE,
             () -> new DoorBlock(
                     BlockBehaviour.Properties.of()
                             .strength(10.0F, 1000.0F)
@@ -2582,7 +2585,6 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> LIGHTSTONE_UNREFINED = registerBlock("lightstone_unrefined", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> MACHINE_AUTOCRAFTER = registerBlock("machine_autocrafter", () -> new com.hbm_m.block.machines.MachineAutocrafterBlock(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> MACHINE_BOILER = registerBlock("machine_boiler", () -> new Block(BlockProps.copy(Blocks.STONE)));
-    public static final RegistrySupplier<Block> MACHINE_CENTRIFUGE = registerBlock("machine_centrifuge", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> MACHINE_CHUNGUS = registerBlockWithoutItem("machine_chungus",
             () -> new com.hbm_m.block.machines.MachineChungusBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion().isSuffocating((state, world, pos) -> false)));
     public static final RegistrySupplier<Block> MACHINE_CONTROLLER = registerBlock("machine_controller", () -> new Block(BlockProps.copy(Blocks.STONE)));
@@ -2597,7 +2599,6 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> MACHINE_FLUIDTANK = registerBlock("machine_fluidtank", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> MACHINE_FORCEFIELD = registerBlock("machine_forcefield", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> MACHINE_FUNNEL = registerBlock("machine_funnel", () -> new com.hbm_m.block.machines.MachineFunnelBlock(BlockProps.copy(Blocks.STONE)));
-    public static final RegistrySupplier<Block> MACHINE_GASCENT = registerBlock("machine_gascent", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> MACHINE_ICF_PRESS = registerBlock("machine_icf_press", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> MACHINE_KEYFORGE = registerBlock("machine_keyforge",
             () -> new com.hbm_m.block.machines.MachineKeyforgeBlock(BlockProps.copy(Blocks.STONE).noOcclusion()));
@@ -3294,6 +3295,7 @@ public class ModBlocks {
             () -> new SlabBlock(BlockProps.copy(Blocks.STONE).strength(5.0f, 4.0f).requiresCorrectToolForDrops()));
     public static final RegistrySupplier<Block> BRICK_COMPOUND_SLAB = registerBlock("brick_compound_slab",
             () -> new SlabBlock(BlockProps.copy(Blocks.STONE).strength(5.0f, 4.0f).requiresCorrectToolForDrops()));
+
     private static <T extends Block> RegistrySupplier<T> registerBlock(String name, Supplier<T> block) {
         RegistrySupplier<T> toReturn = BLOCKS.register(name, block);
         registerBlockItem(name, toReturn);

@@ -28,7 +28,7 @@ import net.minecraft.world.phys.Vec3;
  * В отличие от {@link MissileBaseEntity}, ABM не использует баллистику к targetX/targetZ —
  * он управляется собственным наведением в {@link #serverTickLogic()}.
  */
-public class MissileABMEntity extends MissileBaseEntity {
+public class MissileAntiBallisticEntity extends MissileBaseEntity {
 
     /** Радиус поиска цели (1.7.10: dist = 1_000 в targetMissile). */
     private static final double TARGET_SEARCH_RADIUS = 1_000.0D;
@@ -60,13 +60,13 @@ public class MissileABMEntity extends MissileBaseEntity {
     /** Счётчик тиков до активации наведения. */
     protected int activationTimer = 0;
 
-    public MissileABMEntity(EntityType<? extends MissileABMEntity> type, Level level) {
+    public MissileAntiBallisticEntity(EntityType<? extends MissileAntiBallisticEntity> type, Level level) {
         super(type, level);
         this.setDeltaMovement(this.getDeltaMovement().x, BASE_SPEED, this.getDeltaMovement().z);
     }
 
-    public MissileABMEntity(Level level) {
-        this(ModEntities.MISSILE_ABM.get(), level);
+    public MissileAntiBallisticEntity(Level level) {
+        this(ModEntities.MISSILE_ANTI_BALLISTIC.get(), level);
     }
 
     @Override
@@ -138,7 +138,7 @@ public class MissileABMEntity extends MissileBaseEntity {
             if (!e.canBeDetectedByRadar()) {
                 continue;
             }
-            if (e instanceof MissileABMEntity) {
+            if (e instanceof MissileAntiBallisticEntity) {
                 continue;
             }
 

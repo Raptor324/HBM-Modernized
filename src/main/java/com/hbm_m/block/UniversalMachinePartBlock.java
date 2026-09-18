@@ -367,6 +367,10 @@ public class UniversalMachinePartBlock extends BaseEntityBlock implements IDeton
     *///?}
 
     private InteractionResult hbmOnUse(BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer, InteractionHand pHand, BlockHitResult pHit) {
+        // Паритет 1.7.10: shift-клик не переключает дверь; PASS отдаёт ход useOn предметов
+        if (pPlayer.isShiftKeyDown()) {
+            return InteractionResult.PASS;
+        }
         if (pLevel.getBlockEntity(pPos) instanceof IMultiblockPart part) {
             BlockPos controllerPos = part.getControllerPos();
             if (controllerPos == null) {
@@ -379,7 +383,9 @@ public class UniversalMachinePartBlock extends BaseEntityBlock implements IDeton
             BlockState controllerState = pLevel.getBlockState(controllerPos);
             if (controllerState.getBlock() instanceof IMultiblockController) {
                 BlockEntity ctrlBe = pLevel.getBlockEntity(controllerPos);
-                if (ctrlBe instanceof DoorBlockEntity && hasScrewdriver(pPlayer)) {
+                // Отвёртка зарезервирована под GUI скинов, но на запертой двери клик уходит
+                // в tryToggle → canAccess → tryPick (взлом), как в 1.7.10
+                if (ctrlBe instanceof DoorBlockEntity door && !door.isLocked() && hasScrewdriver(pPlayer)) {
                     return InteractionResult.sidedSuccess(pLevel.isClientSide());
                 }
                 //? if < 1.21.1 {

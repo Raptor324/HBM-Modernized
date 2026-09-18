@@ -9,48 +9,120 @@
     "particle": "hbm_m:block/crucible/foundry_channel_side"
   },
   "elements": [
-    {
-      "from": [5, 0, 5],
-      "to": [11, 2, 11],
+    { "name": "center_top",
+      "from": [6, 0, 6], "to": [10, 2, 10],
+      "faces": { "up": { "texture": "#bottom" } }
+    },
+    { "name": "center_bottom",
+      "from": [5, 0, 5], "to": [11, 2, 11],
+      "faces": { "down": { "texture": "#bottom" } }
+    },
+
+    { "name": "arm_posX_slab",
+      "from": [10, 0, 5], "to": [16, 2, 11],
       "faces": {
-        "down": { "texture": "#bottom", "cullface": "down" },
-        "up": { "texture": "#bottom" }
+        "up": { "texture": "#bottom" },
+        "down": { "texture": "#bottom" },
+        "east": { "texture": "#side" }
       }
     },
-    {
-      "from": [10, 0, 5],
-      "to": [11, 8, 11],
+    { "name": "arm_posX_wall_north",
+      "from": [10, 0, 5], "to": [16, 8, 6],
       "faces": {
-        "up": { "texture": "#top", "cullface": "up" },
-        "west": { "texture": "#inner" },
-        "east": { "texture": "#side", "cullface": "east" }
+        "up": { "texture": "#top" },
+        "north": { "texture": "#side" },
+        "south": { "texture": "#inner" },
+        "east": { "texture": "#side" }
       }
     },
-    {
-      "from": [5, 0, 10],
-      "to": [11, 8, 11],
+    { "name": "arm_posX_wall_south",
+      "from": [10, 0, 10], "to": [16, 8, 11],
       "faces": {
-        "up": { "texture": "#top", "cullface": "up" },
+        "up": { "texture": "#top" },
         "north": { "texture": "#inner" },
-        "south": { "texture": "#side", "cullface": "south" }
+        "south": { "texture": "#side" },
+        "east": { "texture": "#side" }
       }
     },
-    {
-      "from": [5, 0, 5],
-      "to": [6, 8, 11],
+
+    { "name": "arm_negX_slab",
+      "from": [0, 0, 5], "to": [6, 2, 11],
       "faces": {
-        "up": { "texture": "#top", "cullface": "up" },
-        "west": { "texture": "#side", "cullface": "west" },
-        "east": { "texture": "#inner" }
+        "up": { "texture": "#bottom" },
+        "down": { "texture": "#bottom" },
+        "west": { "texture": "#side" }
       }
     },
-    {
-      "from": [5, 0, 5],
-      "to": [11, 8, 6],
+    { "name": "arm_negX_wall_north",
+      "from": [0, 0, 5], "to": [6, 8, 6],
       "faces": {
-        "up": { "texture": "#top", "cullface": "up" },
-        "north": { "texture": "#side", "cullface": "north" },
-        "south": { "texture": "#inner" }
+        "up": { "texture": "#top" },
+        "north": { "texture": "#side" },
+        "south": { "texture": "#inner" },
+        "west": { "texture": "#side" }
+      }
+    },
+    { "name": "arm_negX_wall_south",
+      "from": [0, 0, 10], "to": [6, 8, 11],
+      "faces": {
+        "up": { "texture": "#top" },
+        "north": { "texture": "#inner" },
+        "south": { "texture": "#side" },
+        "west": { "texture": "#side" }
+      }
+    },
+
+    { "name": "arm_posZ_slab",
+      "from": [5, 0, 10], "to": [11, 2, 16],
+      "faces": {
+        "up": { "texture": "#bottom" },
+        "down": { "texture": "#bottom" },
+        "south": { "texture": "#side" }
+      }
+    },
+    { "name": "arm_posZ_wall_west",
+      "from": [5, 0, 10], "to": [6, 8, 16],
+      "faces": {
+        "up": { "texture": "#top" },
+        "west": { "texture": "#side" },
+        "east": { "texture": "#inner" },
+        "south": { "texture": "#side" }
+      }
+    },
+    { "name": "arm_posZ_wall_east",
+      "from": [10, 0, 10], "to": [11, 8, 16],
+      "faces": {
+        "up": { "texture": "#top" },
+        "west": { "texture": "#inner" },
+        "east": { "texture": "#side" },
+        "south": { "texture": "#side" }
+      }
+    },
+
+    { "name": "arm_negZ_slab",
+      "from": [5, 0, 0], "to": [11, 2, 6],
+      "faces": {
+        "up": { "texture": "#bottom" },
+        "down": { "texture": "#bottom" },
+        "north": { "texture": "#side" }
+      }
+    },
+    { "name": "arm_negZ_wall_west",
+      "from": [5, 0, 0], "to": [6, 8, 6],
+      "faces": {
+        "up": { "texture": "#top" },
+        "west": { "texture": "#side" },
+        "east": { "texture": "#inner" },
+        "north": { "texture": "#side" }
+      }
+    },
+    { "name": "arm_negZ_wall_east",
+      "from": [10, 0, 0], "to": [11, 8, 6],
+      "faces": {
+        "up": { "texture": "#top" },
+        "west": { "texture": "#inner" },
+        "east": { "texture": "#side" },
+        "north": { "texture": "#side" }
       }
     }
   ]

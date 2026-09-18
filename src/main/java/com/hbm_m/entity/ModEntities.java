@@ -12,7 +12,7 @@ import com.hbm_m.entity.mob.EntityCreeperPhosgene;
 import com.hbm_m.entity.mob.EntityCreeperTainted;
 import com.hbm_m.entity.mob.EntityCreeperVolatile;
 import com.hbm_m.entity.mob.NoloEntity;
-import com.hbm_m.entity.missile.MissileABMEntity;
+import com.hbm_m.entity.missile.MissileAntiBallisticEntity;
 import com.hbm_m.entity.missile.MissileBaseEntity;
 import com.hbm_m.entity.missile.MissileTestEntity;
 import com.hbm_m.entity.missile.MissileShuttleEntity;
@@ -166,13 +166,13 @@ public class ModEntities {
                             .updateInterval(3)
                             .build("missile_test"));
 
-    public static final RegistrySupplier<EntityType<MissileABMEntity>> MISSILE_ABM =
-            ENTITY_TYPES.register("missile_abm",
-                    () -> EntityType.Builder.<MissileABMEntity>of(MissileABMEntity::new, MobCategory.MISC)
+    public static final RegistrySupplier<EntityType<MissileAntiBallisticEntity>> MISSILE_ANTI_BALLISTIC =
+            ENTITY_TYPES.register("missile_anti_ballistic",
+                    () -> EntityType.Builder.<MissileAntiBallisticEntity>of(MissileAntiBallisticEntity::new, MobCategory.MISC)
                             .sized(0.5F, 0.5F)
                             .clientTrackingRange(256)
                             .updateInterval(3)
-                            .build("missile_abm"));
+                            .build("missile_anti_ballistic"));
 
     // Soyuz Launcher: flight entity + cargo-mode descent capsule (see SoyuzLauncherBlockEntity)
     public static final RegistrySupplier<EntityType<com.hbm_m.entity.missile.SoyuzEntity>> SOYUZ =

@@ -59,6 +59,11 @@ public class CrucibleSmeltingRecipeBuilder extends BaseRecipeBuilder<CrucibleSme
         return new CrucibleSmeltingRecipeBuilder(input, outputs);
     }
 
+    /** Мульти-выход, Item-перегрузка (ванильные рельсы и пр.). */
+    public static CrucibleSmeltingRecipeBuilder crucibleSmelting(Item input, java.util.List<com.hbm_m.inventory.material.MaterialStack> outputs) {
+        return crucibleSmelting(Ingredient.of(input), outputs);
+    }
+
     /** Item-перегрузка: {@code input} — одиночный предмет. */
     public static CrucibleSmeltingRecipeBuilder crucibleSmelting(Item input, MaterialType material, int amountMb) {
         return crucibleSmelting(Ingredient.of(input), material, amountMb);

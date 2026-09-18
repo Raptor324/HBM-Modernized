@@ -1217,7 +1217,7 @@ public final class AssemblerRecipeGenerator {
                 .save(writer, "chemical_plant");
 
         AssemblerRecipeBuilder.assemblerRecipe(
-                        new ItemStack(ModItems.CENTRIFUGE.get(), 1), 40, 125)
+                        new ItemStack(ModItems.MACHINE_CENTRIFUGE.get(), 1), 40, 125)
                 .addIngredient(ModItems.CENTRIFUGE_ELEMENT.get(), 1)
                 .addIngredient(Ingredient.of(
                         ModMaterialItems.item(ModMaterials.POLYMER, MaterialShape.INGOT),
@@ -1225,16 +1225,16 @@ public final class AssemblerRecipeGenerator {
                 .addIngredient(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE), 8)
                 .addIngredient(ModMaterialItems.item(ModMaterials.COPPER, MaterialShape.PLATE), 4)
                 .addIngredient(ModItems.ANALOG_CIRCUIT.get(), 1)
-                .save(writer, "centrifuge");
+                .save(writer, "machine_centrifuge");
 
         AssemblerRecipeBuilder.assemblerRecipe(
-                        new ItemStack(ModItems.GAS_CENTRIFUGE.get(), 1), 80, 150)
+                        new ItemStack(ModItems.MACHINE_GASCENT.get(), 1), 80, 150)
                 .addIngredient(ModItems.CENTRIFUGE_ELEMENT.get(), 4)
                 .addIngredient(ModMaterialItems.item(ModMaterials.POLYMER, MaterialShape.INGOT), 8)
                 .addIngredient(ModMaterialItems.item(ModMaterials.DESH, MaterialShape.INGOT), 2)
                 .addIngredient(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE), 8)
                 .addIngredient(ModItems.ADVANCED_CIRCUIT.get(), 1)
-                .save(writer, "gas_centrifuge");
+                .save(writer, "machine_gascent");
 
         AssemblerRecipeBuilder.assemblerRecipe(
                         new ItemStack(ModItems.FLUID_TANK.get(), 1), 40, 100)
@@ -1961,12 +1961,12 @@ public final class AssemblerRecipeGenerator {
                 .save(writer, "missile_test");
 
         AssemblerRecipeBuilder.assemblerRecipe(
-                        new ItemStack(ModItems.MISSILE_ABM.get(), 1), 60, 100)
+                        new ItemStack(ModItems.MISSILE_ANTI_BALLISTIC.get(), 1), 60, 100)
                 .addIngredient(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE), 3)
                 .addIngredient(Items.IRON_INGOT, 4)
                 .addIngredient(Items.REDSTONE, 4)
                 .addIngredient(Items.GUNPOWDER, 2)
-                .save(writer, "missile_abm");
+                .save(writer, "missile_anti_ballistic");
 
         AssemblerRecipeBuilder.assemblerRecipe(
                         new ItemStack(ModItems.MISSILE_MICRO.get(), 1), 60, 100)

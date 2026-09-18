@@ -3,6 +3,7 @@
   "sources": [
 
     { "type": "single", "resource": "block/machine/lava_gray" },
+    { "type": "single", "resource": "block/machine/lava" },
     { "type": "directory", "source": "block", "prefix": "block/" },
     { "type": "directory", "source": "gui/fluids", "prefix": "gui/fluids/" },
     { "type": "directory", "source": "fluid_barrel", "prefix": "fluid_barrel/" },

@@ -20,7 +20,7 @@ public class CentrifugeJeiCategory extends JeiUniversalRecipeCategory<Centrifuge
             RecipeType.create(RefStrings.MODID, "centrifuge", CentrifugeRecipe.class);
 
     public CentrifugeJeiCategory(IGuiHelper guiHelper) {
-        super(guiHelper, new ItemStack[]{new ItemStack(ModBlocks.CENTRIFUGE.get())});
+        super(guiHelper, new ItemStack[]{new ItemStack(ModBlocks.MACHINE_CENTRIFUGE.get())});
     }
 
     @Override

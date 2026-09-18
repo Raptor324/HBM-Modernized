@@ -57,7 +57,7 @@ public class MachineCentrifugeMenu extends AbstractContainerMenu implements ILon
     }
 
     public MachineCentrifugeMenu(int containerId, Inventory playerInventory, MachineCentrifugeBlockEntity blockEntity, ContainerData data) {
-        super(ModMenuTypes.CENTRIFUGE_MENU.get(), containerId);
+        super(ModMenuTypes.MACHINE_CENTRIFUGE_MENU.get(), containerId);
 
         checkContainerDataCount(data, 2);
 
@@ -237,7 +237,7 @@ public class MachineCentrifugeMenu extends AbstractContainerMenu implements ILon
         if (blockEntity == null) {
             return false; // тайл может отсутствовать на клиенте (реплей Flashback)
         }
-        return stillValid(ContainerLevelAccess.create(level, blockEntity.getBlockPos()), player, ModBlocks.CENTRIFUGE.get());
+        return stillValid(ContainerLevelAccess.create(level, blockEntity.getBlockPos()), player, ModBlocks.MACHINE_CENTRIFUGE.get());
     }
 
     /** Vanilla-адаптер для {@link ModItemStackHandler}, чтобы использовать обычные {@link Slot}. */

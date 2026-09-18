@@ -4,7 +4,7 @@ import com.hbm_m.client.GuiCompat;
 import com.hbm_m.api.fluids.HbmFluidRegistry;
 import com.hbm_m.client.gui.FluidGuiRendering;
 import com.hbm_m.inventory.fluid.ModFluids;
-import com.hbm_m.inventory.menu.MachineGasCentrifugeMenu;
+import com.hbm_m.inventory.menu.MachineGasCentMenu;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.recipe.PseudoFluidTank;
 import com.mojang.blaze3d.systems.RenderSystem;
@@ -23,12 +23,12 @@ import net.minecraft.world.level.material.Fluids;
  * slot coordinates, sourcing the energy-bar and progress-arrow sprites from the actual texture
  * instead of drawing placeholder colored fills.
  */
-public class GUIMachineGasCentrifuge extends GuiInfoScreen<MachineGasCentrifugeMenu> {
+public class GUIMachineGasCent extends GuiInfoScreen<MachineGasCentMenu> {
 
     private static final ResourceLocation TEXTURE =
             ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/processing/gui_centrifuge_gas.png");
 
-    public GUIMachineGasCentrifuge(MachineGasCentrifugeMenu menu, Inventory playerInventory, Component title) {
+    public GUIMachineGasCent(MachineGasCentMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
         this.imageWidth = 206;
         this.imageHeight = 204;

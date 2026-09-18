@@ -411,12 +411,19 @@ public final class MachineBer<T extends BlockEntity> extends AbstractPartBasedRe
                     SingleMeshVboRenderer.setFadeAlpha(part.animated() ? fade : staticFade);
                     // Форсированный свет части (порт fullbright: InnerBurning печей, lightmap 240/240)
                     int partLight = packedLight;
+                    float[] partSharedLight = sharedLight;
                     if (part.lightOverride() != null) {
                         Integer forced = part.lightOverride().apply(blockEntity);
-                        if (forced != null && forced >= 0) partLight = forced;
+                        if (forced != null && forced >= 0) {
+                            partLight = forced;
+                            // Общий 8-corner сэмпл машины затирал бы форсированный
+                            // свет (расплав тигля темнел ночью) — на fullbright-частях
+                            // его не передаём.
+                            partSharedLight = null;
+                        }
                     }
                     renderer.enqueue(poseStack, blockPose, basePoseStack, partLight, blockPos,
-                            blockEntity, bufferSource, sharedLight);
+                            blockEntity, bufferSource, partSharedLight);
                 }
             } catch (Throwable t) {
                 com.hbm_m.main.MainRegistry.LOGGER.error("[MachineRenderers:{}] part '{}' render failed",

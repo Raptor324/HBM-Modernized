@@ -689,7 +689,8 @@ public class ModBlockStateProvider extends BlockStateProvider {
         simpleMachineBlock(ModBlocks.TURBINEGAS);
         simpleMachineBlock(ModBlocks.WATZ_PUMP);
         simpleMachineBlock(ModBlocks.CHUNGUS);
-        customMachineBlock(ModBlocks.CENTRIFUGE);
+        customMachineBlock(ModBlocks.MACHINE_CENTRIFUGE);
+        customMachineBlock(ModBlocks.MACHINE_GASCENT);
         customMachineBlock(ModBlocks.BREEDER);
         customMachineBlock(ModBlocks.LARGE_PYLON);
         customMachineBlock(ModBlocks.LAUNCH_PAD);
@@ -2724,12 +2725,6 @@ public class ModBlockStateProvider extends BlockStateProvider {
                         modLoc("block/machine_boiler_base")
                 )
         );
-        simpleBlockWithItem(ModBlocks.MACHINE_CENTRIFUGE.get(),
-                models().cubeAll(
-                        ModBlocks.MACHINE_CENTRIFUGE.getId().getPath(),
-                        modLoc("block/machine_centrifuge")
-                )
-        );
         simpleBlockWithItem(ModBlocks.MACHINE_CONTROLLER.get(),
                 models().cubeBottomTop(
                         ModBlocks.MACHINE_CONTROLLER.getId().getPath(),
@@ -2799,12 +2794,6 @@ public class ModBlockStateProvider extends BlockStateProvider {
                 models().cubeAll(
                         ModBlocks.INDUSTRIAL_GENERATOR.getId().getPath(),
                         modLoc("block/block_steel_machine")
-                )
-        );
-        simpleBlockWithItem(ModBlocks.MACHINE_GASCENT.get(),
-                models().cubeAll(
-                        ModBlocks.MACHINE_GASCENT.getId().getPath(),
-                        modLoc("block/machine_gascent")
                 )
         );
         simpleBlockWithItem(ModBlocks.MACHINE_ICF_PRESS.get(),

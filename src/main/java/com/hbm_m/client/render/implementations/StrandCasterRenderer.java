@@ -87,6 +87,9 @@ public final class StrandCasterRenderer {
      */
     private static void applyBlockTransform(MachineStrandCasterBlockEntity be,
                                             com.hbm_m.client.render.LegacyAnimator animator) {
+        // Порт glTranslated(x + 0.5, y, z + 0.5): базис BER — угол блока, в 1.7.10
+        // TESR начинался с центрирования — без него модель уезжает на полблока по диагонали.
+        animator.translate(0.5f, 0f, 0.5f);
         animator.rotate(MultipartFacingTransforms.legacyFacingRotationYDegrees(facing(be)), 0, 1, 0);
         animator.translate(0.5f, 0f, 0.5f);
         animator.rotate(180f, 0f, 1f, 0f);
@@ -101,11 +104,18 @@ public final class StrandCasterRenderer {
         return true;
     }
 
+    /** Порт условия рендера: металл виден только при amount > 0 и вставленной изложнице. */
+    private static boolean hasMoltenMetal(MachineStrandCasterBlockEntity be) {
+        return be.amount != 0 && be.getInstalledMold() != null;
+    }
+
     /**
      * Квады части "plate", отфильтрованные по клип-плоскости {0,0,-1,0.5}:
      * квад рисуется, только если хотя бы одна вершина имеет натуральный z <= 0.51.
      */
     private static List<BakedQuad> plateQuads(MachineStrandCasterBlockEntity be) {
+        if (!hasMoltenMetal(be)) return List.of();
+
         List<BakedQuad> all = collectPartQuads(be, "plate");
         if (all.isEmpty()) return List.of();
 
@@ -138,7 +148,7 @@ public final class StrandCasterRenderer {
      * в вершины (RGBA, alpha 255). Шаблон формата — первый квад части "plate".
      */
     private static List<BakedQuad> surfaceQuads(MachineStrandCasterBlockEntity be) {
-        if (be.amount == 0 || be.type == null) return List.of();
+        if (!hasMoltenMetal(be) || be.type == null) return List.of();
 
         List<BakedQuad> templateQuads = collectPartQuads(be, "plate");
         if (templateQuads.isEmpty()) {

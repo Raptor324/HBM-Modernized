@@ -51,6 +51,11 @@ public abstract class BaseCrateBlock extends BaseEntityBlock {
 
     private InteractionResult openCrateMenu(BlockState state, Level level, BlockPos pos, Player player) {
         if (!level.isClientSide() && level.getBlockEntity(pos) instanceof BaseCrateBlockEntity crateEntity) {
+            // Порт TileEntityCrateBase: запертый ящик не открывается без доступа
+            // (canAccess пробует ключ/взлом; при провале GUI не открывается)
+            if (crateEntity.isLocked() && !crateEntity.canAccess(player)) {
+                return InteractionResult.sidedSuccess(level.isClientSide());
+            }
             // Генерируем лут из таблицы структуры (если назначена) при первом открытии.
             crateEntity.unpackLootTable(player);
             playOpenSound(level, pos);

@@ -1578,8 +1578,8 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModBlocks.BLAST_FURNACE.get()));
         add.accept(new ItemStack(ModBlocks.BLAST_FURNACE_EXTENSION.get()));
         add.accept(new ItemStack(ModBlocks.MACHINE_BLAST_FURNACE.get()));
-        add.accept(new ItemStack(ModBlocks.MACHINE_CENTRIFUGE.get()));
-        add.accept(new ItemStack(ModBlocks.MACHINE_GASCENT.get()));
+        add.accept(new ItemStack(ModItems.MACHINE_CENTRIFUGE.get()));
+        add.accept(new ItemStack(ModItems.MACHINE_GASCENT.get()));
         add.accept(new ItemStack(ModItems.FEL.get()));
         add.accept(new ItemStack(ModItems.SILEX.get()));
         add.accept(new ItemStack(ModBlocks.ROTARY_FURNACE.get()));
@@ -2188,6 +2188,8 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModItems.SETTINGS_TOOL.get()));
         add.accept(new ItemStack(ModItems.RTTY_PAGER.get()));
         add.accept(new ItemStack(ModItems.KEY.get()));
+        add.accept(new ItemStack(ModItems.KEY_KIT.get()));
+        add.accept(new ItemStack(ModItems.KEY_FAKE.get()));
         add.accept(new ItemStack(ModItems.PIN.get()));
         add.accept(new ItemStack(ModItems.PADLOCK_RUSTY.get()));
         add.accept(new ItemStack(ModItems.PADLOCK.get()));
@@ -2885,7 +2887,6 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModBlocks.LIGHTSTONE_UNREFINED.get()));
         add.accept(new ItemStack(ModBlocks.MACHINE_AUTOCRAFTER.get()));
         add.accept(new ItemStack(ModBlocks.MACHINE_BOILER.get()));
-        add.accept(new ItemStack(ModBlocks.MACHINE_CENTRIFUGE.get()));
         add.accept(new ItemStack(ModBlocks.MACHINE_CHUNGUS.get()));
         add.accept(new ItemStack(ModBlocks.MACHINE_CONTROLLER.get()));
         add.accept(new ItemStack(ModBlocks.MACHINE_CONVERTER_HE_RF.get()));
@@ -2897,7 +2898,6 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModBlocks.MACHINE_FLUIDTANK.get()));
         add.accept(new ItemStack(ModBlocks.MACHINE_FORCEFIELD.get()));
         add.accept(new ItemStack(ModBlocks.MACHINE_FUNNEL.get()));
-        add.accept(new ItemStack(ModBlocks.MACHINE_GASCENT.get()));
         add.accept(new ItemStack(ModBlocks.MACHINE_ICF_PRESS.get()));
         add.accept(new ItemStack(ModBlocks.MACHINE_KEYFORGE.get()));
         add.accept(new ItemStack(ModBlocks.MACHINE_LARGE_TURBINE.get()));
@@ -3614,7 +3614,6 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModItems.MIKE_DEUT.get()));
         add.accept(new ItemStack(ModItems.MIKE_KIT.get()));
         add.accept(new ItemStack(ModItems.MIRROR_TOOL.get()));
-        add.accept(new ItemStack(ModItems.MISSILE_ANTI_BALLISTIC.get()));
         add.accept(new ItemStack(ModItems.MISSILE_CARRIER.get()));
         add.accept(new ItemStack(ModItems.MISSILE_CUSTOM.get()));
         add.accept(new ItemStack(ModItems.MISSILE_ENDO.get()));

@@ -902,5 +902,29 @@
         "stream": false
       }
     ]
+  },
+  "block.lock_open": {
+    "category": "block",
+    "sounds": [
+      "hbm_m:block/lock_open"
+    ]
+  },
+  "block.lock_hang": {
+    "category": "block",
+    "sounds": [
+      "hbm_m:block/lock_hang"
+    ]
+  },
+  "item.pin_unlock": {
+    "category": "player",
+    "sounds": [
+      "hbm_m:tool/pin_unlock"
+    ]
+  },
+  "item.pin_break": {
+    "category": "player",
+    "sounds": [
+      "hbm_m:tool/pin_break"
+    ]
   }
 }

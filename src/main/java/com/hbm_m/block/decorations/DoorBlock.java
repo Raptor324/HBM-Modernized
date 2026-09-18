@@ -178,10 +178,14 @@ public class DoorBlock extends BaseEntityBlock implements IMultiblockController 
     @Nullable
     @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
+        // Клиентский тикер двигает openTicks синхронно с сервером (тиковая
+        // анимация с интерполяцией по partialTick, как в 1.7.10) — иначе
+        // створка дёргает на стыках синк-пакетов.
         if (level.isClientSide) {
-            return null;
+            return createTickerHelper(type, ModBlockEntities.DOOR_ENTITY.get(),
+                    (world, pos, blockState, blockEntity) -> DoorBlockEntity.clientTick(world, pos, blockState, (DoorBlockEntity) blockEntity));
         }
-        return createTickerHelper(type, ModBlockEntities.DOOR_ENTITY.get(), 
+        return createTickerHelper(type, ModBlockEntities.DOOR_ENTITY.get(),
                 (world, pos, blockState, blockEntity) -> DoorBlockEntity.serverTick(world, pos, blockState, (DoorBlockEntity) blockEntity));
     }
 
@@ -198,14 +202,22 @@ public class DoorBlock extends BaseEntityBlock implements IMultiblockController 
     *///?}
 
     private InteractionResult hbmOnUse(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
-        if (hasScrewdriver(player)) {
+        BlockEntity be = level.getBlockEntity(pos);
+        DoorBlockEntity doorBE = be instanceof DoorBlockEntity d ? d.getController() : null;
+
+        // Паритет 1.7.10 (BlockDoorGeneric.onBlockActivated: "return !playerIn.isSneaking()"):
+        // shift-клик НЕ переключает дверь. PASS отдаёт ход useOn предметов —
+        // отвёртка откроет GUI скинов, key_kit/padlock — свою логику.
+        if (player.isShiftKeyDown()) {
+            return InteractionResult.PASS;
+        }
+        // Отвёртка зарезервирована под GUI скинов, НО на запертой двери оригинал пропускал
+        // клик в tryToggle → canAccess → tryPick (взлом отвёрткой в руке + отмычка в инвентаре)
+        if (hasScrewdriver(player) && !(doorBE != null && doorBE.isLocked())) {
             return InteractionResult.sidedSuccess(level.isClientSide);
         }
-        if (!level.isClientSide) {
-            BlockEntity be = level.getBlockEntity(pos);
-            if (be instanceof DoorBlockEntity doorBE) {
-                doorBE.toggle();
-            }
+        if (!level.isClientSide && doorBE != null) {
+            doorBE.tryToggle(player); // Порт TileEntityDoorGeneric.tryToggle: замок + canAccess + взлом
         }
         return InteractionResult.sidedSuccess(level.isClientSide);
     }

@@ -830,8 +830,8 @@ public class ModItemModelProvider extends ItemModelProvider {
         blockItemFromBlockModelMachine(ModBlocks.FOUNDRY_CHANNEL, "foundry_channel_inventory");
         blockItemFromBlockModelMachine(ModBlocks.FOUNDRY_MOLD);
         blockItemFromBlockModelMachine(ModBlocks.FOUNDRY_TANK);
-        blockItemFromBlockModelMachine(ModBlocks.CENTRIFUGE);
-        blockItemFromBlockModelMachine(ModBlocks.GAS_CENTRIFUGE);
+        blockItemFromBlockModelMachine(ModBlocks.MACHINE_CENTRIFUGE);
+        blockItemFromBlockModelMachine(ModBlocks.MACHINE_GASCENT);
         // Газовые блоки: blockstate = invisible_gas, поэтому item-модель делаем прямо
         // из block-текстуры (в 1.7.10 предмет был в machineTab и рендерился текстурой газа).
         withExistingParent(ModBlocks.GAS_ASBESTOS.getId().getPath(), "item/generated").texture("layer0", modLoc("block/gas_asbestos"));
@@ -1720,6 +1720,8 @@ public class ModItemModelProvider extends ItemModelProvider {
                 ModItems.JOURNAL_PIP,
                 ModItems.JOURNAL_SILVER,
                 ModItems.KEY,
+                ModItems.KEY_FAKE,
+                ModItems.KEY_KIT,
                 ModItems.KEY_RED,
                 ModItems.KEY_RED_CRACKED,
                 ModItems.LASER_CRYSTAL_BISMUTH,
@@ -1765,7 +1767,6 @@ public class ModItemModelProvider extends ItemModelProvider {
                 ModItems.MIKE_DEUT,
                 ModItems.MIKE_KIT,
                 ModItems.MIRROR_TOOL,
-                ModItems.MISSILE_ANTI_BALLISTIC,
                 ModItems.MISSILE_CARRIER,
                 ModItems.MISSILE_CUSTOM,
                 ModItems.MISSILE_ENDO,

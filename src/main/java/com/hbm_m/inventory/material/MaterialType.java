@@ -67,7 +67,17 @@ public enum MaterialType {
     MUD         (44,   "mud",         0x96783B, SmeltingBehavior.ADDITIVE, null),
 
     // ── Прочие расплавы ──
-    REDSTONE    (1,    "redstone",    0xFF1000, SmeltingBehavior.SMELTABLE, null);
+    REDSTONE    (1,    "redstone",    0xFF1000, SmeltingBehavior.SMELTABLE, null),
+
+    // ── Ванильные/прочие расплавы оригинала (MatDistribution) ──
+    // Оригинальные id: MAT_STONE=_VS+0, MAT_OBSIDIAN=_VS+2, MAT_SODIUM=1100,
+    // MAT_GUNMETAL=_AS+19, MAT_WEAPONSTEEL=_AS+20. Форм для литья нет — расплав
+    // годится только для сплавления (порт makeSmeltable без setAutogen).
+    STONE       (0,    "stone",       0x4D2F23, SmeltingBehavior.SMELTABLE, null),
+    OBSIDIAN    (2,    "obsidian",    0x3D234D, SmeltingBehavior.SMELTABLE, null),
+    SODIUM      (1100, "sodium",      0x7E9493, SmeltingBehavior.SMELTABLE, null),
+    GUNMETAL    (49,   "gunmetal",    0xF9C62C, SmeltingBehavior.SMELTABLE, null),
+    WEAPONSTEEL (50,   "weaponsteel", 0x808080, SmeltingBehavior.SMELTABLE, null);
 
     /** Порт {@code NTMMaterial.SmeltingBehavior}. */
     public enum SmeltingBehavior {

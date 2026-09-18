@@ -540,12 +540,16 @@ public abstract class DoorDecl {
 
         @Override
         public DoorModelSelection getDefaultModelSelection() {
-            return DoorModelSelection.modern(DoorSkin.DEFAULT);
+            // Скин по умолчанию - "clear" (в локализации "Standard"):
+            // именно на его модели (large_vehicle_door_clean.obj) построены
+            // чёрный/синий/красный скины. DoorSkin.of(id) обогащается из
+            // DoorModelRegistry (large_vehicle_door_config.json).
+            return DoorModelSelection.modern("clear");
         }
 
-        @Override 
-        public int getOpenTime() { 
-            return 60; 
+        @Override
+        public int getOpenTime() {
+            return 60;
         }
 
         @Override

@@ -281,7 +281,7 @@ public class ModLanguageProviderRu extends LanguageProvider {
 
         // ПРОТОТИП РАКЕТЫ
         add("item.hbm_m.missile_test", "Тестовая баллистическая ракета");
-        add("item.hbm_m.missile_abm", "Противобаллистическая ракета");
+        add("item.hbm_m.missile_anti_ballistic", "Противобаллистическая ракета");
         add("item.hbm_m.missile_micro", "Микроядерная ракета");
         add("item.hbm_m.missile_schrabidium", "Ракета со шрабидием");
         add("item.hbm_m.missile_bhole", "Ракета с чёрной дырой");
@@ -719,6 +719,7 @@ public class ModLanguageProviderRu extends LanguageProvider {
 
         add("message.hbm_m.airstrike.not_loaded", "Целевой чанк не загружен!");
         add("message.hbm_m.airstrike.called", "Авиаудар вызван на координатах: %d, %d, %d");
+        add("message.hbm_m.door_locked", "Дверь заперта");
         add("message.hbm_m.airstrike.no_target", "Нет целевого блока в видимости!");
         // DEPTH ORES SCANNER (сообщения)
         add("message.hbm_m.depth_ores_scanner.invalid_height", "Сканер работает только на высоте -30 или ниже!");
@@ -1358,6 +1359,9 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add(ModItems.POWDER_TCALLOY.get(), "Порошок технециевой стали");
         add(ModItems.POWDER_POISON.get(), "Ядовитый порошок");
         add(ModItems.MOONSTONE.get(), "Лунный камень");
+        // Замки-ключкарты (имена 1:1 из ru_RU.lang оригинала)
+        add(ModItems.KEY_FAKE.get(), "Поддельный ключ");
+        add(ModItems.KEY_KIT.get(), "Набор имитации ключей");
         add(ModItems.LITHIUM.get(), "Куб лития");
         add(ModItems.BEDROCK_ORE_BASE.get(), "Необработанная бедроковая руда");
         add(ModItems.BEDROCK_ORE_FRAGMENT_COAL.get(), "Фрагмент бедрок-руды (Уголь)");
@@ -2446,7 +2450,7 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("block.hbm_m.electric_furnace", "Электропечь");
         add("block.hbm_m.emp", "ЭМИ-устройство");
         add("block.hbm_m.furnace_brick", "Кирпичная печь");
-        add("block.hbm_m.gas_centrifuge", "Газовая центрифуга");
+        add(ModBlocks.MACHINE_GASCENT.get(), "Газовая центрифуга");
         add("block.hbm_m.machine_blast_furnace", "Доменная печь");
         add("block.hbm_m.oil_pipe", "Нефтепровод");
         add("block.hbm_m.ore_bedrock_mineral", "Коренное месторождение минералов");
@@ -2653,7 +2657,6 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("block.hbm_m.launch_table", "Большая пусковая площадка");
         add("block.hbm_m.logic_block", "Блок действия подземелья");
         add("block.hbm_m.machine_boiler", "Бойлер");
-        add("block.hbm_m.machine_centrifuge", "Центрифуга");
         add("block.hbm_m.machine_controller", "Блок удалённого доступа к реактору");
         add("block.hbm_m.machine_converter_he_rf", "Конвертер энергии HE в RF");
         add("block.hbm_m.machine_converter_rf_he", "Конвертер энергии RF в HE");
@@ -2663,7 +2666,6 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("block.hbm_m.machine_epress", "Электрический пресс");
         add("block.hbm_m.machine_fluidtank", "Цистерна");
         add("block.hbm_m.machine_forcefield", "Излучатель силового поля");
-        add("block.hbm_m.machine_gascent", "Газовая центрифуга");
         add("block.hbm_m.machine_icf_press", "Топливный пресс ICF");
         add("block.hbm_m.machine_keyforge", "Стол мастера по замкам");
         add("block.hbm_m.machine_microwave", "Микроволновка");
@@ -3079,7 +3081,7 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add(ModBlocks.FEL.get(), "FEL (WIP)");
         add(ModBlocks.SILEX.get(), "Silex (WIP)");
         add(ModBlocks.CHEMICAL_PLANT.get(), "Химическая установка");
-        add(ModBlocks.CENTRIFUGE.get(), "Центрифуга (WIP)");
+        add(ModBlocks.MACHINE_CENTRIFUGE.get(), "Центрифуга");
         add(ModBlocks.INDUSTRIAL_TURBINE.get(), "Промышленная турбина");
         add(ModBlocks.TURBINE.get(), "Турбина (WIP)");
         add(ModBlocks.SUBSTATION.get(), "Подстанция (WIP)");
@@ -3357,13 +3359,24 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("door.skin.hbm_m.sliding_blast_door.default", "Стандартная");
         add("door.skin.hbm_m.sliding_blast_door.variant1", "Вариант 1");
         add("door.skin.hbm_m.sliding_blast_door.variant2", "Вариант 2");
+        add("door.skin.hbm_m.sliding_blast_door.industrial", "Индустриальная");
         add("door.skin.hbm_m.sliding_seal_door.default", "Новая");
+        add("door.skin.hbm_m.sliding_seal_door.clean", "Чистая");
+        add("door.skin.hbm_m.sliding_seal_door.trefoil", "Радиация");
+        add("door.skin.hbm_m.sliding_seal_door.skull", "Череп");
         add("door.skin.hbm_m.large_vehicle_door.default", "Чистая");
         add("door.skin.hbm_m.large_vehicle_door.rad", "Радиация");
         add("door.skin.hbm_m.large_vehicle_door.clear", "Стандартная");
+        add("door.skin.hbm_m.large_vehicle_door.black", "Чёрная");
+        add("door.skin.hbm_m.large_vehicle_door.blue", "Синяя");
+        add("door.skin.hbm_m.large_vehicle_door.red", "Красная");
         add("door.skin.hbm_m.water_door.default", "Новая");
         add("door.skin.hbm_m.water_door.clean", "Чистая");
         add("door.skin.hbm_m.qe_sliding_door.default", "Новая");
+        add("door.skin.hbm_m.qe_sliding_door.black", "Чёрная");
+        add("door.skin.hbm_m.qe_sliding_door.grid", "Решётчатая");
+        add("door.skin.hbm_m.qe_sliding_door.plate", "Пластинчатая");
+        add("door.skin.hbm_m.qe_sliding_door.white", "Белая");
         add("door.skin.hbm_m.qe_containment_door.default", "Новая");
         add("door.skin.hbm_m.qe_containment_door.trefoil", "Радиация");
         add("door.skin.hbm_m.qe_containment_door.trefoil_yellow", "Радиация 2");

@@ -1,6 +1,6 @@
 package com.hbm_m.client.render.implementations;
 
-import com.hbm_m.blockentity.machines.MachineGasCentrifugeBlockEntity;
+import com.hbm_m.blockentity.machines.MachineGasCentBlockEntity;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 
@@ -13,13 +13,13 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 //?} else {
 /*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
 *///?}
-public class GasCentrifugeRenderer implements com.hbm_m.client.render.HbmBerBounds<MachineGasCentrifugeBlockEntity> {
+public class MachineGasCentRenderer implements com.hbm_m.client.render.HbmBerBounds<MachineGasCentBlockEntity> {
 
-    public GasCentrifugeRenderer(BlockEntityRendererProvider.Context context) {
+    public MachineGasCentRenderer(BlockEntityRendererProvider.Context context) {
     }
 
     @Override
-    public void render(MachineGasCentrifugeBlockEntity blockEntity, float partialTick, PoseStack poseStack, MultiBufferSource buffer, int packedLight, int packedOverlay) {
+    public void render(MachineGasCentBlockEntity blockEntity, float partialTick, PoseStack poseStack, MultiBufferSource buffer, int packedLight, int packedOverlay) {
         poseStack.pushPose();
         poseStack.translate(0.5, 0.75, 0.5);
         poseStack.mulPose(Axis.YP.rotation(blockEntity.getAnim(partialTick)));

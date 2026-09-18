@@ -24,14 +24,13 @@ import com.hbm_m.platform.RenderHooks;
  * корпус (Main) запечён в chunk-mesh; поверхность расплава — динамическая часть
  * из OBJ-части "Lava", поднятой на уровень заполнения
  * ({@code 0.5 + fill * 0.875} в оригинале) и перетекстурированной лавой
- * ({@code minecraft:block/lava_still} из блочного атласа вместо отдельной
- * {@code lava.png} оригинала). VBO кешируется по квантованному уровню.
+ * ({@code hbm_m:block/machine/lava} — копия {@code lava.png} оригинала). VBO кешируется по квантованному уровню.
  */
 public final class CrucibleRenderer {
 
     private static final RandomSource RANDOM = RandomSource.create(42);
     private static final ResourceLocation LAVA_SPRITE =
-            ResourceLocation.withDefaultNamespace("block/lava_still");
+            ResourceLocation.fromNamespaceAndPath(com.hbm_m.lib.RefStrings.MODID, "block/machine/lava");
 
     private CrucibleRenderer() {}
 

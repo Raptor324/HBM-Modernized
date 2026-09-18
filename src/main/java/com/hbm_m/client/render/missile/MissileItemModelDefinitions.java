@@ -33,7 +33,7 @@ public final class MissileItemModelDefinitions {
     public static List<Definition> all() {
         return List.of(
                 def(ModItems.MISSILE_TEST, MissileFormFactorModels.MICRO, MissileTextures.MISSILE_MICRO),
-                def(ModItems.MISSILE_ABM, MissileFormFactorModels.ABM, MissileTextures.MISSILE_ABM),
+                def(ModItems.MISSILE_ANTI_BALLISTIC, MissileFormFactorModels.ABM, MissileTextures.MISSILE_ABM),
                 def(ModItems.MISSILE_MICRO, MissileFormFactorModels.MICRO, MissileTextures.MISSILE_MICRO),
                 def(ModItems.MISSILE_SCHRABIDIUM, MissileFormFactorModels.MICRO, MissileTextures.MISSILE_MICRO_SCHRAB),
                 def(ModItems.MISSILE_BHOLE, MissileFormFactorModels.MICRO, MissileTextures.MISSILE_MICRO_BHOLE),

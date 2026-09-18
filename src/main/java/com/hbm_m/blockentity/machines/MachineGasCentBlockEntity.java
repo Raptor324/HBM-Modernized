@@ -10,10 +10,10 @@ import org.jetbrains.annotations.Nullable;
 import com.hbm_m.api.fluids.IFluidStandardReceiverMK2;
 import com.hbm_m.blockentity.BaseMachineBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
-import com.hbm_m.block.machines.MachineGasCentrifugeBlock;
+import com.hbm_m.block.machines.MachineGasCentBlock;
 import com.hbm_m.inventory.UpgradeManager;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
-import com.hbm_m.inventory.menu.MachineGasCentrifugeMenu;
+import com.hbm_m.inventory.menu.MachineGasCentMenu;
 import com.hbm_m.item.industrial.ItemMachineUpgrade;
 import com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType;
 import com.hbm_m.item.liquids.FluidIdentifierItem;
@@ -47,7 +47,7 @@ import net.minecraft.world.level.material.Fluid;
  * energy) and periodically handed off to an adjacent Gas Centrifuge for the next enrichment stage,
  * with tangible item byproducts produced at each cycle and at the final stage.
  */
-public class MachineGasCentrifugeBlockEntity extends BaseMachineBlockEntity implements IFluidStandardReceiverMK2 {
+public class MachineGasCentBlockEntity extends BaseMachineBlockEntity implements IFluidStandardReceiverMK2 {
 
     private static final int SLOT_COUNT = 7;
     private static final int SLOT_OUTPUT_0 = 0;
@@ -98,8 +98,8 @@ public class MachineGasCentrifugeBlockEntity extends BaseMachineBlockEntity impl
         }
     };
 
-    public MachineGasCentrifugeBlockEntity(BlockPos pos, BlockState state) {
-        super(ModBlockEntities.GAS_CENTRIFUGE_BE.get(), pos, state, SLOT_COUNT, MAX_POWER, MAX_POWER);
+    public MachineGasCentBlockEntity(BlockPos pos, BlockState state) {
+        super(ModBlockEntities.MACHINE_GASCENT_BE.get(), pos, state, SLOT_COUNT, MAX_POWER, MAX_POWER);
         this.tank = new FluidTank(2000) {
             @Override
             public boolean isFluidValid(Fluid fluid) {
@@ -110,7 +110,7 @@ public class MachineGasCentrifugeBlockEntity extends BaseMachineBlockEntity impl
         this.outputTank = new PseudoFluidTank(PseudoFluidType.NONE, 8000);
     }
 
-    public static void tick(Level level, BlockPos pos, BlockState state, MachineGasCentrifugeBlockEntity entity) {
+    public static void tick(Level level, BlockPos pos, BlockState state, MachineGasCentBlockEntity entity) {
         entity.prevAnim = entity.anim;
 
         if (level.isClientSide) {
@@ -165,9 +165,9 @@ public class MachineGasCentrifugeBlockEntity extends BaseMachineBlockEntity impl
 
         if (level.getGameTime() % 10L == 0L) {
             BlockState blockState = entity.getBlockState();
-            if (blockState.hasProperty(MachineGasCentrifugeBlock.FACING)) {
-                Direction facing = blockState.getValue(MachineGasCentrifugeBlock.FACING);
-                MachineGasCentrifugeBlockEntity neighbor = entity.findNeighborCentrifuge(level, pos, facing);
+            if (blockState.hasProperty(MachineGasCentBlock.FACING)) {
+                Direction facing = blockState.getValue(MachineGasCentBlock.FACING);
+                MachineGasCentBlockEntity neighbor = entity.findNeighborCentrifuge(level, pos, facing);
                 boolean transferred = neighbor != null && entity.attemptTransferTo(neighbor);
 
                 if (!transferred && entity.outputTank.getTankType() == PseudoFluidType.LEUF6) {
@@ -290,7 +290,7 @@ public class MachineGasCentrifugeBlockEntity extends BaseMachineBlockEntity impl
     }
 
     /** Hands this centrifuge's outputTank pseudo-fluid to the next centrifuge in the cascade. */
-    private boolean attemptTransferTo(MachineGasCentrifugeBlockEntity neighbor) {
+    private boolean attemptTransferTo(MachineGasCentBlockEntity neighbor) {
         if (neighbor.tank.getTankType() != this.tank.getTankType()) return false;
 
         PseudoFluidType outType = this.outputTank.getTankType();
@@ -312,10 +312,10 @@ public class MachineGasCentrifugeBlockEntity extends BaseMachineBlockEntity impl
     }
 
     @Nullable
-    private MachineGasCentrifugeBlockEntity findNeighborCentrifuge(Level level, BlockPos controllerPos, Direction facing) {
+    private MachineGasCentBlockEntity findNeighborCentrifuge(Level level, BlockPos controllerPos, Direction facing) {
         for (int offset = 1; offset <= CASCADE_SEARCH_RANGE; offset++) {
             BlockEntity be = level.getBlockEntity(controllerPos.relative(facing.getOpposite(), offset));
-            if (be instanceof MachineGasCentrifugeBlockEntity other && other != this) {
+            if (be instanceof MachineGasCentBlockEntity other && other != this) {
                 return other;
             }
         }
@@ -380,7 +380,7 @@ public class MachineGasCentrifugeBlockEntity extends BaseMachineBlockEntity impl
     @Nullable
     @Override
     public AbstractContainerMenu createMenu(int containerId, Inventory playerInventory, Player player) {
-        return new MachineGasCentrifugeMenu(containerId, playerInventory, this, data);
+        return new MachineGasCentMenu(containerId, playerInventory, this, data);
     }
 
     public ContainerData getContainerData() {
@@ -447,7 +447,7 @@ public class MachineGasCentrifugeBlockEntity extends BaseMachineBlockEntity impl
     @Override
     protected BlockPos[] getExtraEnergyPorts() {
         if (level == null || level.isClientSide) return new BlockPos[0];
-        if (!(getBlockState().getBlock() instanceof com.hbm_m.block.machines.MachineGasCentrifugeBlock block)) return new BlockPos[0];
+        if (!(getBlockState().getBlock() instanceof MachineGasCentBlock block)) return new BlockPos[0];
 
         var helper = block.getStructureHelper();
         Direction facing = getBlockState().getValue(net.minecraft.world.level.block.HorizontalDirectionalBlock.FACING);

@@ -173,6 +173,13 @@ public final class LightSampleCache {
      */
     public static void getOrSample(@Nullable BlockEntity be, int packedLightFallback,
                                    float[] outUV, int outBase) {
+        // Форсированный fullbright (part.lightOverride): мировой семпл игнорируем,
+        // иначе светящиеся части (расплав тигля, InnerBurning) темнеют ночью.
+        if (packedLightFallback == net.minecraft.client.renderer.LightTexture.FULL_BRIGHT) {
+            outUV[outBase]     = (float) (packedLightFallback & 0xFFFF);
+            outUV[outBase + 1] = (float) ((packedLightFallback >>> 16) & 0xFFFF);
+            return;
+        }
         if (be == null) {
             outUV[outBase]     = (float) (packedLightFallback & 0xFFFF);
             outUV[outBase + 1] = (float) ((packedLightFallback >>> 16) & 0xFFFF);
@@ -427,6 +434,13 @@ public final class LightSampleCache {
     public static void getOrSample8(@Nullable BlockEntity be, long partIdentityHash,
                                     float[] objBbox, BlockPos blockPos, Matrix4f localPose,
                                     int packedLightFallback, float[] out16) {
+
+        // Форсированный fullbright (part.lightOverride): без 8-corner семпла,
+        // иначе светящиеся части (расплав тигля, InnerBurning) темнеют ночью.
+        if (packedLightFallback == net.minecraft.client.renderer.LightTexture.FULL_BRIGHT) {
+            fillFallback8(packedLightFallback, out16);
+            return;
+        }
 
         if (com.hbm_m.client.render.SingleMeshVboRenderer.isWorldMissileOverlayDraw()) {
             fillFallback8(packedLightFallback, out16);

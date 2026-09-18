@@ -44,7 +44,7 @@ public class GasCentrifugeJeiCategory extends JeiGenericRecipeCategory<GasCentri
     private static final int FLUID_RENDERER_CAPACITY = 2000;
 
     public GasCentrifugeJeiCategory(IGuiHelper guiHelper) {
-        super(guiHelper, new ItemStack[]{ new ItemStack(ModBlocks.GAS_CENTRIFUGE.get()) });
+        super(guiHelper, new ItemStack[]{ new ItemStack(ModBlocks.MACHINE_GASCENT.get()) });
     }
 
     @Override

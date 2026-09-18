@@ -107,7 +107,7 @@ public abstract class LaunchPadBaseBlockEntity extends BaseMachineBlockEntity
         MISSILES.clear();
 
         MISSILES.put(ModItems.MISSILE_TEST.get(), ModEntities.MISSILE_TEST.get());
-        MISSILES.put(ModItems.MISSILE_ABM.get(), ModEntities.MISSILE_ABM.get());
+        MISSILES.put(ModItems.MISSILE_ANTI_BALLISTIC.get(), ModEntities.MISSILE_ANTI_BALLISTIC.get());
 
         // Tier 0
         MISSILES.put(ModItems.MISSILE_MICRO.get(), ModEntities.MISSILE_MICRO.get());
@@ -535,7 +535,7 @@ public abstract class LaunchPadBaseBlockEntity extends BaseMachineBlockEntity
     public boolean needsDesignator(Item item) {
         // ABM запускается без дизайнатора (порт TileEntityLaunchPadBase.needsDesignator:
         // return item != ModItems.missile_anti_ballistic).
-        return item != com.hbm_m.item.ModItems.MISSILE_ABM.get();
+        return item != com.hbm_m.item.ModItems.MISSILE_ANTI_BALLISTIC.get();
     }
 
     /**

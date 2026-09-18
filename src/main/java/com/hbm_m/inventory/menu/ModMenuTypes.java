@@ -107,14 +107,14 @@ public class ModMenuTypes {
     public static final RegistrySupplier<MenuType<com.hbm_m.inventory.menu.MachinePUREXMenu>> PUREX_MENU =
             MENUS.register("purex_menu", () -> MenuRegistry.ofExtended(com.hbm_m.inventory.menu.MachinePUREXMenu::new));
 
-    public static final RegistrySupplier<MenuType<MachineCentrifugeMenu>> CENTRIFUGE_MENU =
-            MENUS.register("centrifuge_menu", () -> MenuRegistry.ofExtended(MachineCentrifugeMenu::new));
+    public static final RegistrySupplier<MenuType<MachineCentrifugeMenu>> MACHINE_CENTRIFUGE_MENU =
+            MENUS.register("machine_centrifuge_menu", () -> MenuRegistry.ofExtended(MachineCentrifugeMenu::new));
 
     public static final RegistrySupplier<MenuType<MachineCrucibleMenu>> CRUCIBLE_MENU =
             MENUS.register("crucible_menu", () -> MenuRegistry.ofExtended(MachineCrucibleMenu::new));
 
-    public static final RegistrySupplier<MenuType<MachineGasCentrifugeMenu>> GAS_CENTRIFUGE_MENU =
-            MENUS.register("gas_centrifuge_menu", () -> MenuRegistry.ofExtended(MachineGasCentrifugeMenu::new));
+    public static final RegistrySupplier<MenuType<MachineGasCentMenu>> MACHINE_GASCENT_MENU =
+            MENUS.register("machine_gascent_menu", () -> MenuRegistry.ofExtended(MachineGasCentMenu::new));
 
     public static final RegistrySupplier<MenuType<MachineIndustrialBoilerMenu>> INDUSTRIAL_BOILER_MENU =
             MENUS.register("industrial_boiler_menu", () -> MenuRegistry.ofExtended(MachineIndustrialBoilerMenu::new));

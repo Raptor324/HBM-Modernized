@@ -1,7 +1,7 @@
 package com.hbm_m.inventory.menu;
 
 import com.hbm_m.block.ModBlocks;
-import com.hbm_m.blockentity.machines.MachineGasCentrifugeBlockEntity;
+import com.hbm_m.blockentity.machines.MachineGasCentBlockEntity;
 import com.hbm_m.interfaces.ILongEnergyMenu;
 import com.hbm_m.inventory.ModItemStackHandlerContainer;
 import com.hbm_m.item.industrial.ItemMachineUpgrade;
@@ -26,9 +26,9 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 //?}
 
-public class MachineGasCentrifugeMenu extends AbstractContainerMenu implements ILongEnergyMenu {
+public class MachineGasCentMenu extends AbstractContainerMenu implements ILongEnergyMenu {
 
-    private final MachineGasCentrifugeBlockEntity blockEntity;
+    private final MachineGasCentBlockEntity blockEntity;
     private final Level level;
     private final ContainerData data;
     private final Player player;
@@ -44,12 +44,12 @@ public class MachineGasCentrifugeMenu extends AbstractContainerMenu implements I
     private static final int UPGRADE_SLOT = 6;
     private static final int MACHINE_SLOTS = 7;
 
-    public MachineGasCentrifugeMenu(int containerId, Inventory playerInventory, FriendlyByteBuf extraData) {
+    public MachineGasCentMenu(int containerId, Inventory playerInventory, FriendlyByteBuf extraData) {
         this(containerId, playerInventory, getBlockEntity(playerInventory, extraData), new SimpleContainerData(2));
     }
 
-    public MachineGasCentrifugeMenu(int containerId, Inventory playerInventory, MachineGasCentrifugeBlockEntity blockEntity, ContainerData data) {
-        super(ModMenuTypes.GAS_CENTRIFUGE_MENU.get(), containerId);
+    public MachineGasCentMenu(int containerId, Inventory playerInventory, MachineGasCentBlockEntity blockEntity, ContainerData data) {
+        super(ModMenuTypes.MACHINE_GASCENT_MENU.get(), containerId);
 
         checkContainerDataCount(data, 2);
 
@@ -134,9 +134,9 @@ public class MachineGasCentrifugeMenu extends AbstractContainerMenu implements I
         }
     }
 
-    private static MachineGasCentrifugeBlockEntity getBlockEntity(Inventory playerInventory, FriendlyByteBuf extraData) {
+    private static MachineGasCentBlockEntity getBlockEntity(Inventory playerInventory, FriendlyByteBuf extraData) {
         BlockEntity blockEntity = playerInventory.player.level().getBlockEntity(extraData.readBlockPos());
-        if (blockEntity instanceof MachineGasCentrifugeBlockEntity gasCentrifuge) {
+        if (blockEntity instanceof MachineGasCentBlockEntity gasCentrifuge) {
             return gasCentrifuge;
         }
         // На клиенте тайл может отсутствовать (реплей Flashback) — не крашим пакет, возвращаем null.
@@ -165,7 +165,7 @@ public class MachineGasCentrifugeMenu extends AbstractContainerMenu implements I
         return maxProgress == 0 ? 0 : progress * scale / maxProgress;
     }
 
-    public MachineGasCentrifugeBlockEntity getBlockEntity() {
+    public MachineGasCentBlockEntity getBlockEntity() {
         return blockEntity;
     }
 
@@ -281,6 +281,6 @@ public class MachineGasCentrifugeMenu extends AbstractContainerMenu implements I
         if (blockEntity == null) {
             return false; // тайл может отсутствовать на клиенте (реплей Flashback)
         }
-        return stillValid(ContainerLevelAccess.create(level, blockEntity.getBlockPos()), player, ModBlocks.GAS_CENTRIFUGE.get());
+        return stillValid(ContainerLevelAccess.create(level, blockEntity.getBlockPos()), player, ModBlocks.MACHINE_GASCENT.get());
     }
 }

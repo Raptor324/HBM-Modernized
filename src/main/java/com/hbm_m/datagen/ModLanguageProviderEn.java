@@ -310,7 +310,7 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("damage.other", "Other");
         // Missile prototype + shared missile strings
         add("item.hbm_m.missile_test", "Test Ballistic Missile");
-        add("item.hbm_m.missile_abm", "Anti Ballistic Missile");
+        add("item.hbm_m.missile_anti_ballistic", "Anti-Ballistic Missile");
         add("item.hbm_m.missile_micro", "Micro-Nuclear Missile");
         add("item.hbm_m.missile_schrabidium", "Schrabidium Missile");
         add("item.hbm_m.missile_bhole", "Black Hole Missile");
@@ -883,6 +883,7 @@ public class ModLanguageProviderEn extends LanguageProvider {
 
         add("message.hbm_m.airstrike.not_loaded", "Target chunk not loaded!");
         add("message.hbm_m.airstrike.called", "Airstrike called at coordinates: %d, %d, %d");
+        add("message.hbm_m.door_locked", "Door Locked");
         add("message.hbm_m.airstrike.no_target", "No target block in sight!");
 // DEPTH ORES SCANNER (сообщения)
         add("message.hbm_m.depth_ores_scanner.invalid_height", "Scanner works only at height -30 or below!");
@@ -2069,7 +2070,7 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("block.hbm_m.fan", "Industrial Fan");
         add("block.hbm_m.fluid_duct_paintable_block_exhaust", "Fluid Duct Paintable Block Exhaust");
         add("block.hbm_m.furnace_brick", "Brick Furnace");
-        add("block.hbm_m.gas_centrifuge", "Gas Centrifuge");
+        add(ModBlocks.MACHINE_GASCENT.get(), "Gas Centrifuge");
         add("block.hbm_m.geiger", "Geiger");
         add("block.hbm_m.geysir_nether", "Geysir Nether");
         add("block.hbm_m.icf_block", "Icf Block");
@@ -2176,7 +2177,7 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add(ModBlocks.SOLDERING_STATION.get(), "Soldering Station (WIP)");
         add(ModBlocks.MIXER.get(), "Industrial Mixer (WIP)");
         add(ModBlocks.CHEMICAL_PLANT.get(), "Chemical Plant");
-        add(ModBlocks.CENTRIFUGE.get(), "Centrifuge");
+        add(ModBlocks.MACHINE_CENTRIFUGE.get(), "Centrifuge");
         add(ModBlocks.FLUID_TANK.get(), "Tank");
         add(ModBlocks.BAT9000.get(), "Big-Ass Tank 9000");
         add(ModBlocks.DERRICK.get(), "Derrick (WIP)");
@@ -2768,13 +2769,24 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("door.skin.hbm_m.sliding_blast_door.default", "Standard");
         add("door.skin.hbm_m.sliding_blast_door.variant1", "Variant 1");
         add("door.skin.hbm_m.sliding_blast_door.variant2", "Variant 2");
+        add("door.skin.hbm_m.sliding_blast_door.industrial", "Industrial");
         add("door.skin.hbm_m.sliding_seal_door.default", "Standard");
+        add("door.skin.hbm_m.sliding_seal_door.clean", "Clean");
+        add("door.skin.hbm_m.sliding_seal_door.trefoil", "Radiation");
+        add("door.skin.hbm_m.sliding_seal_door.skull", "Skull");
         add("door.skin.hbm_m.large_vehicle_door.default", "Clean");
         add("door.skin.hbm_m.large_vehicle_door.rad", "Radiation");
         add("door.skin.hbm_m.large_vehicle_door.clear", "Standard");
+        add("door.skin.hbm_m.large_vehicle_door.black", "Black");
+        add("door.skin.hbm_m.large_vehicle_door.blue", "Blue");
+        add("door.skin.hbm_m.large_vehicle_door.red", "Red");
         add("door.skin.hbm_m.water_door.default", "Standard");
         add("door.skin.hbm_m.water_door.clean", "Clean");
         add("door.skin.hbm_m.qe_sliding_door.default", "Standard");
+        add("door.skin.hbm_m.qe_sliding_door.black", "Black");
+        add("door.skin.hbm_m.qe_sliding_door.grid", "Grid");
+        add("door.skin.hbm_m.qe_sliding_door.plate", "Plate");
+        add("door.skin.hbm_m.qe_sliding_door.white", "White");
         add("door.skin.hbm_m.qe_containment_door.default", "Standard");
         add("door.skin.hbm_m.qe_containment_door.trefoil", "Radiation");
         add("door.skin.hbm_m.qe_containment_door.trefoil_yellow", "Radiation 2");
@@ -3507,7 +3519,6 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add(ModBlocks.MACHINE_AUTOCRAFTER.get(), "Automatic Crafting Table");
         add("container.hbm_m.autocrafter", "Automatic Crafting Table");
         add(ModBlocks.MACHINE_BOILER.get(), "Boiler");
-        add(ModBlocks.MACHINE_CENTRIFUGE.get(), "Centrifuge");
         add(ModBlocks.MACHINE_CHUNGUS.get(), "Leviathan Steam Turbine");
         add(ModBlocks.MACHINE_CONTROLLER.get(), "Reactor Remote Control Block");
         add(ModBlocks.MACHINE_CONVERTER_HE_RF.get(), "HE to RF Converter");
@@ -3523,7 +3534,6 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("container.hbm_m.funnel", "Combinator Funnel");
         add(ModBlocks.PUREX.get(), "PUREX");
         add("container.hbm_m.purex", "PUREX");
-        add(ModBlocks.MACHINE_GASCENT.get(), "Gas Centrifuge");
         add(ModBlocks.MACHINE_ICF_PRESS.get(), "ICF Fuel Pellet Maker");
         add(ModBlocks.MACHINE_KEYFORGE.get(), "Locksmith Table");
         add("container.hbm_m.machine_keyforge", "Locksmith Table");
@@ -4585,6 +4595,8 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add(ModItems.JOURNAL_PIP.get(), "Survivalist's Journal");
         add(ModItems.JOURNAL_SILVER.get(), "Contractor's Notes");
         add(ModItems.KEY.get(), "Key");
+        add(ModItems.KEY_FAKE.get(), "Counterfeit Key");
+        add(ModItems.KEY_KIT.get(), "Key Imitation Kit");
         add(ModItems.KEY_RED.get(), "Red Key");
         add(ModItems.KEY_RED_CRACKED.get(), "Cracked Key");
         add(ModItems.LASER_CRYSTAL_BISMUTH.get(), "BiSmUTh Laser Crystal");
@@ -4630,7 +4642,6 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add(ModItems.MIKE_DEUT.get(), "Deuterium Tank");
         add(ModItems.MIKE_KIT.get(), "Ivy Mike Kit");
         add(ModItems.MIRROR_TOOL.get(), "Mirror Adjustment Tool");
-        add(ModItems.MISSILE_ANTI_BALLISTIC.get(), "Anti-Ballistic Missile");
         add(ModItems.MISSILE_CARRIER.get(), "HTR-01 Carrier Rocket");
         add(ModItems.MISSILE_CUSTOM.get(), "Custom Missile");
         add(ModItems.MISSILE_ENDO.get(), "Endothermic Missile");

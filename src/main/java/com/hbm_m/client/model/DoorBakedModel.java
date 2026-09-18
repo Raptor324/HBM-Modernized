@@ -7,6 +7,8 @@ import java.util.Map;
 
 import com.hbm_m.client.model.variant.DoorModelProperties;
 import com.hbm_m.client.model.variant.DoorModelRegistry;
+import com.hbm_m.client.model.variant.DoorModelType;
+import com.hbm_m.client.model.variant.DoorSkin;
 import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.client.renderer.RenderType;
 import org.jetbrains.annotations.Nullable;
@@ -47,6 +49,8 @@ public class DoorBakedModel extends AbstractMultipartBakedModel implements Abstr
     // Кэш квадов для item рендера
     private List<BakedQuad> cachedItemQuads;
     private boolean itemQuadsCached = false;
+    // Индекс скина, для которого собран кэш (автопрокрутка скинов раз в секунду)
+    private int cachedItemSkinIndex = -1;
     
     public DoorBakedModel(Map<String, BakedModel> parts, ItemTransforms transforms, ResourceLocation doorId) {
         super(parts, transforms);
@@ -91,10 +95,12 @@ public class DoorBakedModel extends AbstractMultipartBakedModel implements Abstr
     }
     
     private List<BakedQuad> getItemQuads(@Nullable Direction side, RandomSource rand,
-                                          ModelData modelData, 
+                                          ModelData modelData,
                                           @Nullable net.minecraft.client.renderer.RenderType renderType) {
-        if (!itemQuadsCached) {
-            buildItemQuads(rand, modelData, renderType);
+        int skinIndex = getCyclingSkinIndex();
+        if (!itemQuadsCached || cachedItemSkinIndex != skinIndex) {
+            buildItemQuads(rand, modelData, renderType, skinIndex);
+            cachedItemSkinIndex = skinIndex;
             itemQuadsCached = true;
         }
         
@@ -107,13 +113,34 @@ public class DoorBakedModel extends AbstractMultipartBakedModel implements Abstr
         return cachedItemQuads;
     }
     
-    private void buildItemQuads(RandomSource rand, ModelData modelData, 
-                                 @Nullable net.minecraft.client.renderer.RenderType renderType) {
+    private void buildItemQuads(RandomSource rand, ModelData modelData,
+                                 @Nullable net.minecraft.client.renderer.RenderType renderType, int skinIndex) {
         List<BakedQuad> allQuads = new ArrayList<>();
+
+        // DAE-скины (и любые не-DoorBakedModel варианты): их квадов нет в parts.
+        // Берём запечённую модель из реестра напрямую — как это делает
+        // DoorModelFakeItemRenderer в GUI выбора скина.
+        BakedModel direct = resolveDirectItemModel(skinIndex);
+        if (direct != null) {
+            for (Direction dir : Direction.values()) {
+                allQuads.addAll(direct.getQuads(null, dir, rand, modelData, renderType));
+            }
+            allQuads.addAll(direct.getQuads(null, null, rand, modelData, renderType));
+            // Квады из getQuads НЕ несут display-трансформ. Обычный item-пайплайн
+            // применит трансформ САМОЙ двери (this), а в GUI выбора скина эталонный
+            // вид даёт трансформ DAE-модели скина. Подменяем один на другой:
+            // DoorGUI · T(-0.5) · B = SkinGUI · T(-0.5)
+            // => B = T(0.5) · DoorGUI⁻¹ · SkinGUI · T(-0.5)
+            java.util.List<BakedQuad> transformed = applyGuiTransform(allQuads, direct);
+            this.cachedItemQuads = transformed;
+            return;
+        }
+
+        Map<String, BakedModel> partsToUse = getPartsForSkinIndex(skinIndex);
         List<String> itemRenderParts = getItemRenderPartNames();
-        
+
         for (String partName : itemRenderParts) {
-            BakedModel part = parts.get(partName);
+            BakedModel part = partsToUse.get(partName);
             if (part != null) {
                 for (Direction dir : Direction.values()) {
                     allQuads.addAll(part.getQuads(null, dir, rand, modelData, renderType));
@@ -121,8 +148,138 @@ public class DoorBakedModel extends AbstractMultipartBakedModel implements Abstr
                 allQuads.addAll(part.getQuads(null, null, rand, modelData, renderType));
             }
         }
-        
+
         this.cachedItemQuads = allQuads;
+    }
+
+    /**
+     * Для варианта (0=LEGACY, 1..N=скины) возвращает запечённую модель напрямую,
+     * если она НЕ DoorBakedModel (DAE и т.п.) — у таких вариантов нет частей.
+     * DoorBakedModel-варианты рендерятся обычным путём через getPartsForSkinIndex.
+     */
+    @Nullable
+    private BakedModel resolveDirectItemModel(int skinIndex) {
+        String doorType = extractDoorTypeFromPath(doorId.getPath());
+        DoorModelRegistry registry = DoorModelRegistry.getInstance();
+        if (!registry.isRegistered(doorType)) return null;
+
+        DoorModelSelection selection;
+        if (skinIndex == 0) {
+            selection = DoorModelSelection.legacy();
+        } else {
+            List<DoorSkin> skins = registry.getSkins(doorType);
+            int skinIdx = skinIndex - 1;
+            if (skinIdx >= skins.size()) return null;
+            selection = new DoorModelSelection(DoorModelType.MODERN, skins.get(skinIdx));
+        }
+
+        ResourceLocation modelPath = registry.getModelPath(doorType, selection);
+        if (modelPath == null) return null;
+
+        //? if < 1.21.1 {
+        BakedModel model = Minecraft.getInstance().getModelManager().getModel(modelPath);
+        //?} else {
+        /*BakedModel model = Minecraft.getInstance().getModelManager().getModel(ModelResourceLocation.standalone(modelPath));
+        *///?}
+        if (model == null || model == Minecraft.getInstance().getModelManager().getMissingModel()) return null;
+        return (model instanceof DoorBakedModel) ? null : model;
+    }
+
+    /**
+     * Подмена display-трансформа: квады DAE-скина будут отрендерены item-пайплайном
+     * с трансформом этой двери ({@code DoorGUI}), а эталонный вид (GUI выбора скина,
+     * {@link com.hbm_m.client.overlay.DoorModelFakeItemRenderer}) даёт трансформ
+     * самой скиновой модели ({@code SkinGUI}). Запекаем разницу в квады:
+     * <pre>DoorGUI · T(-0.5) · B = SkinGUI · T(-0.5)  =>  B = T(0.5) · DoorGUI⁻¹ · SkinGUI · T(-0.5)</pre>
+     * Порядок операций внутри ItemTransform — 1:1 как в ItemTransform.apply(false, pose):
+     * translate(/16) → rotationXYZ → scale.
+     */
+    private java.util.List<BakedQuad> applyGuiTransform(java.util.List<BakedQuad> quads, BakedModel direct) {
+        net.minecraft.client.renderer.block.model.ItemTransform doorGui =
+                this.getTransforms().getTransform(net.minecraft.world.item.ItemDisplayContext.GUI);
+        net.minecraft.client.renderer.block.model.ItemTransform skinGui =
+                direct.getTransforms().getTransform(net.minecraft.world.item.ItemDisplayContext.GUI);
+        boolean doorIdentity = doorGui == null || doorGui == net.minecraft.client.renderer.block.model.ItemTransform.NO_TRANSFORM;
+        boolean skinIdentity = skinGui == null || skinGui == net.minecraft.client.renderer.block.model.ItemTransform.NO_TRANSFORM;
+        if (doorIdentity && skinIdentity) return quads;
+
+        org.joml.Matrix4f m = new org.joml.Matrix4f().translation(0.5f, 0.5f, 0.5f);
+        if (!doorIdentity) {
+            m.mul(itemTransformMatrix(doorGui).invert());
+        }
+        if (!skinIdentity) {
+            m.mul(itemTransformMatrix(skinGui));
+        }
+        m.translate(-0.5f, -0.5f, -0.5f);
+        return ModelHelper.transformQuadsByMatrix(quads, m);
+    }
+
+    /** Матрица ItemTransform — повтор ItemTransform.apply(false, pose). */
+    private static org.joml.Matrix4f itemTransformMatrix(net.minecraft.client.renderer.block.model.ItemTransform t) {
+        org.joml.Matrix4f m = new org.joml.Matrix4f();
+        m.translate(t.translation.x / 16f, t.translation.y / 16f, t.translation.z / 16f);
+        m.rotateXYZ((float) Math.toRadians(t.rotation.x),
+                    (float) Math.toRadians(t.rotation.y),
+                    (float) Math.toRadians(t.rotation.z));
+        m.scale(t.scale.x, t.scale.y, t.scale.z);
+        return m;
+    }
+
+    /**
+     * Автопрокрутка вариантов в item-рендере — по мотивам 1.7.10 DoorDecl.getCyclingSkins():
+     * индекс = (мс % (кол-во вариантов * 1000)) / 1000, каждый вариант держится одну секунду, по кругу.
+     * Индекс 0 - LEGACY модель, далее default и скины MODERN.
+     */
+    private int getCyclingSkinIndex() {
+        String doorType = extractDoorTypeFromPath(doorId.getPath());
+        int count = DoorModelRegistry.getInstance().getSkins(doorType).size() + 1; // +1 за LEGACY
+        if (count <= 1) return 0;
+        return (int) ((System.currentTimeMillis() % (count * 1000L)) / 1000L);
+    }
+
+    /**
+     * Части модели для варианта с указанным индексом: 0 - LEGACY, 1..N - default и скины MODERN.
+     */
+    private Map<String, BakedModel> getPartsForSkinIndex(int index) {
+        String doorType = extractDoorTypeFromPath(doorId.getPath());
+        DoorModelRegistry registry = DoorModelRegistry.getInstance();
+        if (!registry.isRegistered(doorType)) return parts;
+
+        if (index == 0) {
+            ResourceLocation legacyPath = registry.getModelPath(doorType, DoorModelSelection.legacy());
+            if (legacyPath == null) return parts;
+            //? if < 1.21.1 {
+            BakedModel legacyModel = Minecraft.getInstance().getModelManager().getModel(legacyPath);
+             //?} else {
+            /*BakedModel legacyModel = Minecraft.getInstance().getModelManager().getModel(ModelResourceLocation.standalone(legacyPath));
+            *///?}
+            if (legacyModel instanceof DoorBakedModel doorModel) {
+                return doorModel.getParts();
+            }
+            return parts;
+        }
+
+        List<DoorSkin> skins = registry.getSkins(doorType);
+        int skinIndex = index - 1;
+        if (skinIndex >= skins.size()) return parts;
+
+        ResourceLocation modelPath = registry.getModelPath(doorType,
+                new DoorModelSelection(DoorModelType.MODERN, skins.get(skinIndex)));
+        if (modelPath == null) return parts;
+
+        //? if < 1.21.1 {
+        BakedModel selectionModel = Minecraft.getInstance().getModelManager().getModel(modelPath);
+         //?} else {
+        /*BakedModel selectionModel = Minecraft.getInstance().getModelManager().getModel(ModelResourceLocation.standalone(modelPath));
+        *///?}
+
+        if (selectionModel == null || selectionModel == Minecraft.getInstance().getModelManager().getMissingModel()) {
+            return parts;
+        }
+        if (selectionModel instanceof DoorBakedModel doorModel) {
+            return doorModel.getParts();
+        }
+        return parts;
     }
     
     /*

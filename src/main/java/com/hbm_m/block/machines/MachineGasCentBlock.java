@@ -7,7 +7,7 @@ import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.blockentity.ModBlockEntities;
-import com.hbm_m.blockentity.machines.MachineGasCentrifugeBlockEntity;
+import com.hbm_m.blockentity.machines.MachineGasCentBlockEntity;
 import com.hbm_m.interfaces.IMultiblockController;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
 import com.hbm_m.multiblock.PartRole;
@@ -38,12 +38,12 @@ import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import dev.architectury.registry.menu.MenuRegistry;
 
-public class MachineGasCentrifugeBlock extends BaseEntityBlock implements IMultiblockController {
+public class MachineGasCentBlock extends BaseEntityBlock implements IMultiblockController {
 
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
     private final MultiblockStructureHelper structureHelper;
 
-    public MachineGasCentrifugeBlock(Properties properties) {
+    public MachineGasCentBlock(Properties properties) {
         super(properties);
         this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH));
         this.structureHelper = defineStructure();
@@ -96,7 +96,7 @@ public class MachineGasCentrifugeBlock extends BaseEntityBlock implements IMulti
                 Direction facing = state.getValue(FACING);
 
                 BlockEntity be = level.getBlockEntity(pos);
-                if (be instanceof MachineGasCentrifugeBlockEntity gasCentrifuge) {
+                if (be instanceof MachineGasCentBlockEntity gasCentrifuge) {
                     gasCentrifuge.drops();
                 }
                 
@@ -181,17 +181,17 @@ public class MachineGasCentrifugeBlock extends BaseEntityBlock implements IMulti
     @Nullable
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
-        return new MachineGasCentrifugeBlockEntity(pos, state);
+        return new MachineGasCentBlockEntity(pos, state);
     }
 
     @Nullable
     @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
-        return createTickerHelper(type, ModBlockEntities.GAS_CENTRIFUGE_BE.get(), MachineGasCentrifugeBlockEntity::tick);
+        return createTickerHelper(type, ModBlockEntities.MACHINE_GASCENT_BE.get(), MachineGasCentBlockEntity::tick);
     }
 
     //? if >1.20.1 {
-    /*public static final com.mojang.serialization.MapCodec<MachineGasCentrifugeBlock> CODEC = simpleCodec(MachineGasCentrifugeBlock::new);
+    /*public static final com.mojang.serialization.MapCodec<MachineGasCentBlock> CODEC = simpleCodec(MachineGasCentBlock::new);
 
     @Override
     protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {

@@ -37,7 +37,7 @@ import net.minecraft.world.phys.AABB;
 // Forge-only model-data / distmarker imports intentionally removed for Fabric compilation.
 
 
-public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity implements IMultiblockPart
+public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity implements IMultiblockPart, com.hbm_m.interfaces.ILockable
     //? if fabric {
     /*, net.fabricmc.fabric.api.rendering.data.v1.RenderAttachmentBlockEntity
     *///?}
@@ -47,9 +47,19 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
     // 0=закрыта, 1=открыта, 2=закрывается, 3=открывается
     public byte state = 0;
     private int openTicks = 0;
+    /** Значение openTicks на предыдущем тике — для интерполяции по partialTick (порт 1.7.10 prevOpenTicks). */
+    private int prevOpenTicks = 0;
     public long animStartTime = 0;
     private boolean locked = false;
     private boolean lastRedstoneState = false;
+
+    // ==================== Замок (порт TileEntityLockableBase) ====================
+    /** Пин-код замка. 0 = не установлен; замок с кодом 0 повесить нельзя. */
+    private int lock = 0;
+    /** Базовый шанс взлома отмычкой (0.1 = 10%). */
+    private double lockMod = 0.1D;
+    /** Можно ли сделать поддельный ключ (key_kit). */
+    private boolean cheesable = true;
 
     /**
      * Текущий выбор модели и скина
@@ -316,21 +326,23 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
     private void updateRedstoneState(boolean powered) {
         if (powered == this.lastRedstoneState) return;
         this.lastRedstoneState = powered;
-    
+
+        // Порт TileEntityDoorGeneric.updateEntity: запертая дверь игнорирует редстоун
+        // (оригинал звал tryToggle(-1), который отказывал при isLocked)
+        if (isLocked()) {
+            setChanged();
+            return;
+        }
+
         if (powered) {
-            // Если дверь закрыта или в процессе закрытия - открываем
-            if (state == 0 || state == 2) {
+            // Паритет 1.7.10: авто-открытие только из полностью закрытого состояния
+            if (state == 0) {
                 open();
             }
         } else {
-            // Сигнал пропал
-            if (state == 1) { // Полностью открыта
+            // Сигнал пропал: авто-закрытие только из полностью открытого состояния
+            if (state == 1) {
                 close();
-            } else if (state == 3) { // В процессе открытия
-                int openTime = getDoorDecl().getOpenTime();
-                if (openTime <= 25) { // Только для быстрых дверей
-                    close();
-                }
             }
         }
         setChanged();
@@ -346,18 +358,13 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
     public float getOpenProgress(float partialTick) {
         int openTime = getServerOpenTime();
         if (openTime <= 0) return state == 1 || state == 3 ? 1f : 0f;
-        
-        long currentTime = System.currentTimeMillis();
-        long elapsedTime = currentTime - animStartTime;
-        int totalTimeMs = openTime * 50; 
 
-        return switch (state) {
-            case 0 -> 0f;
-            case 1 -> 1f;
-            case 2 -> Math.max(0f, 1f - ((float) elapsedTime / totalTimeMs));
-            case 3 -> Math.min(1f, (float) elapsedTime / totalTimeMs);
-            default -> 0f;
-        };
+        // Тиковая анимация с интерполяцией по partialTick (как в 1.7.10):
+        // openTicks двигается клиентским тикером синхронно с серверным, без wall-clock.
+        // openTicks ВСЕГДА = текущая позиция створки (0=закрыто, openTime=открыто)
+        // для обоих направлений, поэтому формула единая.
+        float ticks = prevOpenTicks + (openTicks - prevOpenTicks) * partialTick;
+        return Math.max(0f, Math.min(1f, ticks / openTime));
     }
 
     /**
@@ -395,16 +402,49 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
     }
 
     public void toggle() {
+        tryToggle(null);
+    }
 
+    /**
+     * Порт {@code TileEntityDoorGeneric.tryToggle(EntityPlayer)}: запертая дверь не
+     * отвечает на редстоун/взрыв (player == null) и на руку без доступа; закрытая
+     * запитанная дверь не открывается рукой (как железная в ваниле).
+     */
+    public boolean tryToggle(@Nullable net.minecraft.world.entity.player.Player player) {
+        if (isLocked() && player == null) return false;
         if (state == 2 || state == 3) {
-            return; // Дверь в процессе движения - игнорируем клик
+            return false; // Дверь в процессе движения - переключение невозможно
         }
-        
-        // Переключаем только если дверь полностью открыта или закрыта
+        if (state == 0 && lastRedstoneState) {
+            return false; // Запитанная закрытая дверь вручную не открывается
+        }
+
         if (state == 0) {
-            open();
+            if (level != null && !level.isClientSide) {
+                if (canAccess(player)) {
+                    open();
+                } else {
+                    notifyLocked(player);
+                }
+            }
+            return true;
         } else if (state == 1) {
-            close();
+            if (level != null && !level.isClientSide) {
+                if (canAccess(player)) {
+                    close();
+                } else {
+                    notifyLocked(player);
+                }
+            }
+            return true;
+        }
+        return false;
+    }
+
+    /** Поп-ап над хотбаром при отказе доступа (ключ не подошёл, взлом не удался). */
+    private void notifyLocked(@Nullable net.minecraft.world.entity.player.Player player) {
+        if (player != null) {
+            player.displayClientMessage(net.minecraft.network.chat.Component.translatable("message.hbm_m.door_locked"), true);
         }
     }
 
@@ -429,6 +469,7 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
         } else if (newState == 2) {
             this.openTicks = getServerOpenTime(); // Используем серверный метод
         }
+        this.prevOpenTicks = this.openTicks;
         // Обновляем BlockState с DOOR_MOVING и OPEN при изменении состояния
         if (level != null && !level.isClientSide) {
             boolean isMoving = newState == 2 || newState == 3;
@@ -469,12 +510,71 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
         syncToClient();
     }
 
+    // ==================== ILockable (порт TileEntityLockableBase) ====================
+
+    @Override
+    public int getPins() {
+        return lock;
+    }
+
+    @Override
+    public void setPins(int pins) {
+        this.lock = pins;
+        setChanged();
+    }
+
+    @Override
+    public void lock() {
+        if (lock == 0) {
+            com.hbm_m.main.MainRegistry.LOGGER.error("Attempted to lock a door with no pins set at {}", worldPosition);
+        }
+        setLocked(true);
+    }
+
+    @Override
+    public void unlock() {
+        setLocked(false);
+    }
+
+    @Override
+    public double getLockMod() {
+        return lockMod;
+    }
+
+    @Override
+    public void setLockMod(double mod) {
+        this.lockMod = mod;
+        setChanged();
+    }
+
+    @Override
+    public boolean isCheesable() {
+        return cheesable;
+    }
+
+    @Override
+    public void setCheesable(boolean cheesable) {
+        this.cheesable = cheesable;
+        setChanged();
+    }
+
+    @Override
+    public BlockPos getLockPos() {
+        return worldPosition;
+    }
+
+    @Override
+    public Level getLockLevel() {
+        return level;
+    }
+
     // ==================== Server Tick ====================
 
     public static void serverTick(Level level, BlockPos pos, BlockState state, DoorBlockEntity be) {
         int openTime = be.getServerOpenTime();
         boolean shouldSync = false;
-    
+        be.prevOpenTicks = be.openTicks;
+
         if (be.state == 3) { // Opening
             be.openTicks++;
             if (be.openTicks >= openTime) {
@@ -510,6 +610,24 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
     
         if (shouldSync) {
             be.syncToClient();
+        }
+    }
+
+    /**
+     * Клиентский тикер: двигает openTicks синхронно с сервером (порт механики
+     * 1.7.10, где TE тикал на обеих сторонах). Без синков и block updates.
+     * В терминальных состояниях (0/1) "добегает" до концевого положения, чтобы
+     * финальный sync-пакет (приходящий на 1-2 тика раньше локального счётчика)
+     * не телепортировал створку в конец анимации.
+     */
+    public static void clientTick(Level level, BlockPos pos, BlockState state, DoorBlockEntity be) {
+        be.prevOpenTicks = be.openTicks;
+        int openTime = be.getServerOpenTime();
+        if (openTime <= 0) return;
+
+        switch (be.state) {
+            case 3, 1 -> { if (be.openTicks < openTime) be.openTicks++; } // открытие/добегание до открытой
+            case 2, 0 -> { if (be.openTicks > 0) be.openTicks--; }        // закрытие/добегание до закрытой
         }
     }
 
@@ -716,6 +834,11 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
         tag.putLong("animStartTime", animStartTime);
         tag.putString("doorDeclId", doorDeclId);
         tag.putBoolean("locked", locked);
+        // Замок (ключи как в оригинальном TileEntityLockableBase: lock/cheesable/lockMod;
+        // isLocked уже хранится в "locked" — оставляем старый ключ для совместимости сейвов)
+        tag.putInt("lock", lock);
+        tag.putDouble("lockMod", lockMod);
+        tag.putBoolean("cheesable", cheesable);
         tag.putBoolean("redstoneState", lastRedstoneState);
         modelSelection.save(tag);
         if (controllerPos != null) {
@@ -738,6 +861,9 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
         this.openTicks = tag.getInt("openTicks");
         this.animStartTime = tag.getLong("animStartTime");
         this.locked = tag.getBoolean("locked");
+        this.lock = tag.getInt("lock");
+        this.lockMod = tag.contains("lockMod") ? tag.getDouble("lockMod") : 0.1D;
+        this.cheesable = !tag.contains("cheesable") || tag.getBoolean("cheesable");
         this.lastRedstoneState = tag.getBoolean("redstoneState");
 
         boolean hadModelSelectionInNbt = tag.contains("modelType");
@@ -778,10 +904,10 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
         if (level != null && level.isClientSide) {
             initModelSelection(!hadModelSelectionInNbt);
             handleNewState(oldState, this.state);
-            // ИСПРАВЛЕНИЕ МОРГАНИЯ: при получении state 2/3 (движение) используем клиентское время.
-            // Серверный animStartTime приводит к рассинхрону часов и скачкам прогресса анимации.
+            // Тиковая анимация: при получении движущегося состояния начинаем
+            // интерполяцию с текущего openTicks (без скачка от устаревшего prev).
             if (this.state == 2 || this.state == 3) {
-                this.animStartTime = System.currentTimeMillis();
+                this.prevOpenTicks = this.openTicks;
             }
             // Задержка: при переходе из moving (2/3) в static (0/1) - анимированная часть остаётся ещё 500ms
             if ((oldState == 2 || oldState == 3) && (this.state == 0 || this.state == 1)) {

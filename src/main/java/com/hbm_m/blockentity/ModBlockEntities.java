@@ -55,7 +55,7 @@ import com.hbm_m.blockentity.machines.MachineElectricFurnaceBlockEntity;
 import com.hbm_m.blockentity.machines.MachineFurnaceBrickBlockEntity;
 import com.hbm_m.blockentity.machines.MachineFurnaceIronBlockEntity;
 import com.hbm_m.blockentity.machines.MachineFurnaceSteelBlockEntity;
-import com.hbm_m.blockentity.machines.MachineGasCentrifugeBlockEntity;
+import com.hbm_m.blockentity.machines.MachineGasCentBlockEntity;
 import com.hbm_m.blockentity.machines.MachineHydrotreaterBlockEntity;
 import com.hbm_m.blockentity.machines.MachineIndustrialBoilerBlockEntity;
 import com.hbm_m.blockentity.machines.MachineIndustrialTurbineBlockEntity;
@@ -690,10 +690,10 @@ public class ModBlockEntities {
                     BlockEntityType.Builder.of(com.hbm_m.blockentity.machines.MachineStirlingBlockEntity::new,
                             ModBlocks.STIRLING.get(), ModBlocks.STIRLING_STEEL.get(), ModBlocks.STIRLING_CREATIVE.get()).build(null));
 
-    public static final RegistrySupplier<BlockEntityType<MachineCentrifugeBlockEntity>> CENTRIFUGE_BE =
-            BLOCK_ENTITIES.register("centrifuge_be", () ->
+    public static final RegistrySupplier<BlockEntityType<MachineCentrifugeBlockEntity>> MACHINE_CENTRIFUGE_BE =
+            BLOCK_ENTITIES.register("machine_centrifuge_be", () ->
                     BlockEntityType.Builder.of(MachineCentrifugeBlockEntity::new,
-                            ModBlocks.CENTRIFUGE.get()).build(null));
+                            ModBlocks.MACHINE_CENTRIFUGE.get()).build(null));
 
     public static final RegistrySupplier<BlockEntityType<UniversalMachinePartBlockEntity>> UNIVERSAL_MACHINE_PART_BE =
         BLOCK_ENTITIES.register("universal_machine_part_be", () ->
@@ -863,10 +863,10 @@ public class ModBlockEntities {
                             BlockEntityType.Builder.of(MachineChemicalPlantBlockEntity::new,
                                     ModBlocks.CHEMICAL_PLANT.get()).build(null));
 
-    public static final RegistrySupplier<BlockEntityType<MachineGasCentrifugeBlockEntity>> GAS_CENTRIFUGE_BE =
-            BLOCK_ENTITIES.register("gas_centrifuge_be", () ->
-                    BlockEntityType.Builder.of(MachineGasCentrifugeBlockEntity::new,
-                            ModBlocks.GAS_CENTRIFUGE.get()).build(null));
+    public static final RegistrySupplier<BlockEntityType<MachineGasCentBlockEntity>> MACHINE_GASCENT_BE =
+            BLOCK_ENTITIES.register("machine_gascent_be", () ->
+                    BlockEntityType.Builder.of(MachineGasCentBlockEntity::new,
+                            ModBlocks.MACHINE_GASCENT.get()).build(null));
 
     public static final RegistrySupplier<BlockEntityType<MachineCrucibleBlockEntity>> CRUCIBLE_BE =
             BLOCK_ENTITIES.register("crucible_be", () ->

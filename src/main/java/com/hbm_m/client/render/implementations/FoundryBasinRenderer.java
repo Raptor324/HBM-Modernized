@@ -12,19 +12,11 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderStateShard;
 import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
-import net.minecraft.client.renderer.texture.OverlayTexture;
-import net.minecraft.client.renderer.texture.TextureAtlasSprite;
-import net.minecraft.client.resources.model.BakedModel;
-import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.util.RandomSource;
-import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.item.BlockItem;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.block.state.BlockState;
 
 import org.joml.Matrix4f;
 
@@ -36,7 +28,8 @@ import org.joml.Matrix4f;
  *    металла; поверхность двусторонняя (оригинал glDisable(GL_CULL_FACE));
  *  - установленная форма (слот 0) — плоским предметом на moldHeight (0.13);
  *  - отлитый предмет (слот 1) — плоским предметом на outHeight, а блочные отливки —
- *    полупрозрачным (alpha 0.3) верхним квадом с текстурой блока.
+ *    настоящей запечённой блочной моделью (ItemRenderer, как в инвентаре), вписанной
+ *    в каверну чаши.
  * Геометрия высот 1:1 через {@link MachineFoundryBasinBlockEntity} (basin 0.75/0.875,
  * mold 0.25/0.25).
  */
@@ -57,12 +50,7 @@ public class FoundryBasinRenderer implements com.hbm_m.client.render.HbmBerBound
     private static final RenderType METAL_RT = MetalRenderTypes.METAL;
     /** Аддитивный проход свечения: белый, alpha 0.3, SRC_ALPHA/ONE, без записи глубины. */
     private static final RenderType GLOW_RT = MetalRenderTypes.GLOW;
-    /** Отлитый блок: СПЛОШНОЙ квад из блочного атласа (оригинал: blend выключен → alpha 0.3 игнорировался). */
-    private static final RenderType BLOCK_GHOST_RT = RenderType.entityCutout(InventoryMenu.BLOCK_ATLAS);
-
     public FoundryBasinRenderer(BlockEntityRendererProvider.Context context) { }
-
-    private static final RandomSource RANDOM = RandomSource.create();
 
     @Override
     public void render(MachineFoundryBasinBlockEntity be, float partialTick, PoseStack poseStack,
@@ -77,8 +65,8 @@ public class FoundryBasinRenderer implements com.hbm_m.client.render.HbmBerBound
         // ── Отлитый предмет ──
         ItemStack out = be.getOutputSlot();
         if (!out.isEmpty()) {
-            if (out.getItem() instanceof BlockItem blockItem) {
-                drawGhostBlockTop(bufferSource, poseStack, blockItem, be.getOutputHeight(), packedLight);
+            if (out.getItem() instanceof BlockItem) {
+                drawSolidBlock(be, bufferSource, poseStack, out, packedLight, packedOverlay);
             } else {
                 drawFlatItem(be, bufferSource, poseStack, out, be.getOutputHeight(), packedLight, packedOverlay);
             }
@@ -142,27 +130,27 @@ public class FoundryBasinRenderer implements com.hbm_m.client.render.HbmBerBound
         poseStack.popPose();
     }
 
-    /** Оригинал drawBlock: верхний квад блока на высоте отливки с обычным освещением мира (не fullbright). */
-    private static void drawGhostBlockTop(MultiBufferSource bufferSource, PoseStack poseStack,
-                                          BlockItem blockItem, float height, int packedLight) {
-        BlockState state = blockItem.getBlock().defaultBlockState();
-        BakedModel model = Minecraft.getInstance().getBlockRenderer()
-                .getBlockModelShaper().getBlockModel(state);
-        // Спрайт верхней грани (оригинал b.getIcon(1, meta)); фоллбек — particle icon.
-        TextureAtlasSprite sprite = model.getParticleIcon();
-        for (BakedQuad quad : model.getQuads(state, Direction.UP, RANDOM)) {
-            sprite = quad.getSprite();
-            break;
-        }
+    /**
+     * Отлитый БЛОК: рендерим настоящую запечённую модель блока (как в инвентаре),
+     * через ItemRenderer — тот же путь, что и для слитка (drawFlatItem).
+     * Оригинал (drawBlock): след 0.125..0.875 (scale 0.75), верх блока на outHeight
+     * (0.875). ItemRenderer.renderStatic сам центрирует модель внутренним
+     * translate(-0.5), поэтому дополнительная компенсация не нужна — двойной
+     * сдвиг уводил блок на полклетки вбок и топил его.
+     */
+    private static final float BLOCK_SCALE = 0.75F;
 
-        VertexConsumer vc = bufferSource.getBuffer(BLOCK_GHOST_RT);
-        Matrix4f m = poseStack.last().pose();
-
-        // NEW_ENTITY требует нормаль на вершину (иначе IllegalStateException — краш 1.21.1).
-        RenderHooks.vertexFull(vc, m, INNER,     height, INNER,     0xFF, 0xFF, 0xFF, 0xFF, sprite.getU(0f), sprite.getV(1f), OverlayTexture.NO_OVERLAY, packedLight, 0, 1, 0);
-        RenderHooks.vertexFull(vc, m, INNER,     height, INNER_MAX, 0xFF, 0xFF, 0xFF, 0xFF, sprite.getU(0f), sprite.getV(0f), OverlayTexture.NO_OVERLAY, packedLight, 0, 1, 0);
-        RenderHooks.vertexFull(vc, m, INNER_MAX, height, INNER_MAX, 0xFF, 0xFF, 0xFF, 0xFF, sprite.getU(1f), sprite.getV(0f), OverlayTexture.NO_OVERLAY, packedLight, 0, 1, 0);
-        RenderHooks.vertexFull(vc, m, INNER_MAX, height, INNER,     0xFF, 0xFF, 0xFF, 0xFF, sprite.getU(1f), sprite.getV(1f), OverlayTexture.NO_OVERLAY, packedLight, 0, 1, 0);
+    private static void drawSolidBlock(MachineFoundryBasinBlockEntity be, MultiBufferSource bufferSource,
+                                       PoseStack poseStack, ItemStack stack,
+                                       int packedLight, int packedOverlay) {
+        float baseY = be.getOutputHeight() - BLOCK_SCALE + 0.001f;
+        poseStack.pushPose();
+        poseStack.translate(0.5D, baseY, 0.5D);
+        poseStack.scale(BLOCK_SCALE, BLOCK_SCALE, BLOCK_SCALE);
+        Minecraft.getInstance().getItemRenderer().renderStatic(
+                stack, net.minecraft.world.item.ItemDisplayContext.NONE,
+                packedLight, packedOverlay, poseStack, bufferSource, be.getLevel(), 0);
+        poseStack.popPose();
     }
 
     @Override
