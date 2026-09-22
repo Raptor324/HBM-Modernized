@@ -24,7 +24,7 @@ public class GUIMachineCompressor extends AbstractContainerScreen<MachineCompres
         super(menu, inventory, title);
         this.blockEntity = menu.getBlockEntity();
         this.imageWidth = 176;
-        this.imageHeight = 176;
+        this.imageHeight = 204;
         this.inventoryLabelY = imageHeight - 96 + 2;
     }
 

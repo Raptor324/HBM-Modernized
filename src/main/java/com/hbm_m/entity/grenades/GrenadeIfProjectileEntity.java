@@ -24,11 +24,17 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Random;
 
-import static com.hbm_m.entity.grenades.GrenadeProjectileEntity.GRENADE_TYPE_ID;
 
 
 public class GrenadeIfProjectileEntity extends ThrowableItemProjectile {
 
+    /**
+     * Own accessor. This used to read GrenadeProjectileEntity.GRENADE_TYPE_ID, which is registered
+     * on a different class and so is not defined on this entity at all: the get threw, the catch
+     * swallowed it, and every grenade rendered and behaved as the plain IF variant on the client.
+     */
+    private static final EntityDataAccessor<String> GRENADE_IF_TYPE_ID =
+            SynchedEntityData.defineId(GrenadeIfProjectileEntity.class, EntityDataSerializers.STRING);
     private static final EntityDataAccessor<Boolean> TIMER_ACTIVATED = SynchedEntityData.defineId(GrenadeIfProjectileEntity.class, EntityDataSerializers.BOOLEAN);
     private static final EntityDataAccessor<Integer> DETONATION_TIME = SynchedEntityData.defineId(GrenadeIfProjectileEntity.class, EntityDataSerializers.INT);
     private static final int FUSE_SECONDS = 4;
@@ -46,6 +52,11 @@ public class GrenadeIfProjectileEntity extends ThrowableItemProjectile {
     public GrenadeIfProjectileEntity(Level level, LivingEntity thrower, GrenadeIfType type) {
         super(ModEntities.GRENADE_IF_PROJECTILE.get(), thrower, level);
         this.grenadeType = type;
+        this.entityData.set(GRENADE_IF_TYPE_ID, type.name());
+        // ThrowableItemProjectile syncs its rendered item through DATA_ITEM_STACK, seeded from
+        // getDefaultItem() during defineSynchedData - i.e. before this constructor body runs and
+        // before grenadeType is set. Without this the client always rendered the plain IF grenade.
+        this.setItem(new net.minecraft.world.item.ItemStack(type.getItem()));
     }
 
     //? if < 1.21.1 {
@@ -53,30 +64,37 @@ public class GrenadeIfProjectileEntity extends ThrowableItemProjectile {
     @Override
     protected void defineSynchedData() {
         super.defineSynchedData();
-        this.entityData.define(TIMER_ACTIVATED, false);
-        this.entityData.define(DETONATION_TIME, 0);
-    }
+
+var defs = com.hbm_m.platform.EntityDataHooks.sink(this.entityData);
     //?} else {
     /*@Override
     protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
-
         super.defineSynchedData(builder);
-        builder.define(TIMER_ACTIVATED, false);
-        builder.define(DETONATION_TIME, 0);
-    
-    }
+
+var defs = com.hbm_m.platform.EntityDataHooks.sink(builder);
     *///?}
 
+        defs.define(GRENADE_IF_TYPE_ID, GrenadeIfType.GRENADE_IF.name());
+        defs.define(TIMER_ACTIVATED, false);
+        defs.define(DETONATION_TIME, 0);
+    
+    }
     @Override
     protected Item getDefaultItem() {
-        if (grenadeType == null) {
-            try {
-                grenadeType = GrenadeIfType.valueOf(this.entityData.get(GRENADE_TYPE_ID));
-            } catch (Exception e) {
-                grenadeType = GrenadeIfType.GRENADE_IF;
-            }
+        if (grenadeType != null) {
+            return grenadeType.getItem();
         }
-        return grenadeType != null ? grenadeType.getItem() : Items.SNOWBALL;
+        // Called from super.defineSynchedData(), i.e. while entityData is still null and the
+        // accessor is not defined yet. Caching the fallback there would pin the type forever.
+        if (this.entityData == null) {
+            return GrenadeIfType.GRENADE_IF.getItem();
+        }
+        try {
+            grenadeType = GrenadeIfType.valueOf(this.entityData.get(GRENADE_IF_TYPE_ID));
+        } catch (Exception e) {
+            return GrenadeIfType.GRENADE_IF.getItem();
+        }
+        return grenadeType.getItem();
     }
 
     @Override
@@ -203,6 +221,7 @@ public class GrenadeIfProjectileEntity extends ThrowableItemProjectile {
         this.entityData.set(DETONATION_TIME, tag.getInt("DetonationTime"));
         if (tag.contains("GrenadeType")) {
             this.grenadeType = GrenadeIfType.valueOf(tag.getString("GrenadeType"));
+            this.entityData.set(GRENADE_IF_TYPE_ID, this.grenadeType.name());
         }
     }
 }

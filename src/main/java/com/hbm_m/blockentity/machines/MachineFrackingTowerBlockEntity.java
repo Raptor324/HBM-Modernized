@@ -43,7 +43,7 @@ import net.minecraftforge.fluids.capability.IFluidHandler;
  * - Поддержка апгрейдов скорости и энергии
  */
 @SuppressWarnings("UnstableApiUsage")
-public class MachineFrackingTowerBlockEntity extends BaseMachineBlockEntity {
+public class MachineFrackingTowerBlockEntity extends BaseMachineBlockEntity implements com.hbm_m.api.fluids.IFluidStandardTransceiverMK2 {
     
     // Энергия
     protected static long maxPower = 5_000_000L;
@@ -86,6 +86,7 @@ public class MachineFrackingTowerBlockEntity extends BaseMachineBlockEntity {
     protected int speedUpgradeLevel = 0;
     protected int powerUpgradeLevel = 0;
     protected int afterburnerUpgradeLevel = 0;
+    protected int overdriveUpgradeLevel = 0;
 
     private final com.hbm_m.inventory.UpgradeManager upgradeManager = new com.hbm_m.inventory.UpgradeManager();
 
@@ -222,7 +223,7 @@ public class MachineFrackingTowerBlockEntity extends BaseMachineBlockEntity {
         if (powerUpgradeLevel > 0) {
             baseDelay = (int) (baseDelay * (1.0 + powerUpgradeLevel * 0.10));
         }
-        return Math.max(1, baseDelay);
+        return Math.max(1, baseDelay / (overdriveUpgradeLevel + 1));
     }
 
     public long getConsumption() {
@@ -234,7 +235,7 @@ public class MachineFrackingTowerBlockEntity extends BaseMachineBlockEntity {
         if (powerUpgradeLevel > 0) {
             baseConsumption = (long) (baseConsumption * (1.0 - powerUpgradeLevel * 0.25));
         }
-        return baseConsumption;
+        return baseConsumption * (overdriveUpgradeLevel + 1);
     }
 
     //=====================================================================================//
@@ -247,6 +248,7 @@ public class MachineFrackingTowerBlockEntity extends BaseMachineBlockEntity {
         entity.ensureNetworkInitialized();
         entity.chargeFromBatterySlot(SLOT_BATTERY);
         entity.updateUpgrades();
+        entity.burnAfterburnerGas();
         entity.processFluidContainers();
         
         // Проверка условий для работы
@@ -291,8 +293,8 @@ public class MachineFrackingTowerBlockEntity extends BaseMachineBlockEntity {
         upgradeManager.checkSlots(inventory, SLOT_UPGRADE_1, SLOT_UPGRADE_3, VALID_UPGRADES_FRACK);
         speedUpgradeLevel = upgradeManager.getLevel(com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType.SPEED);
         powerUpgradeLevel = upgradeManager.getLevel(com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType.POWER);
-        afterburnerUpgradeLevel = upgradeManager.getLevel(com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType.AFTERBURN)
-                + upgradeManager.getLevel(com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType.OVERDRIVE);
+        afterburnerUpgradeLevel = upgradeManager.getLevel(com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType.AFTERBURN);
+        overdriveUpgradeLevel = upgradeManager.getLevel(com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType.OVERDRIVE);
     }
 
     /**
@@ -316,19 +318,28 @@ public class MachineFrackingTowerBlockEntity extends BaseMachineBlockEntity {
 
         int drainable = sourceTank.getFluidAmountMb();
         var result = com.hbm_m.platform.FluidHooks.insertFluidIntoItem(inputStack, sourceTank.getStoredFluid(), drainable, false);
-        if (result.amountInserted() > 0) {
-            sourceTank.drainMb(result.amountInserted());
-            ItemStack outStack = inventory.getStackInSlot(outputSlot);
-            if (outStack.isEmpty()) {
-                inventory.setStackInSlot(outputSlot, result.remainder());
-                inputStack.shrink(1);
-            } else if (com.hbm_m.platform.FluidHooks.areItemsStackable(outStack, result.remainder())
-                    && outStack.getCount() + result.remainder().getCount() <= outStack.getMaxStackSize()) {
-                outStack.grow(result.remainder().getCount());
-                inputStack.shrink(1);
-            }
-            setChanged();
+        if (result.amountInserted() <= 0) return;
+
+        // insertFluidIntoItem fills a copy, so the filled container exists only as the remainder:
+        // draining before knowing it can be placed voided both the fluid and the container.
+        ItemStack outStack = inventory.getStackInSlot(outputSlot);
+        boolean placed;
+        if (outStack.isEmpty()) {
+            inventory.setStackInSlot(outputSlot, result.remainder());
+            placed = true;
+        } else if (com.hbm_m.platform.FluidHooks.areItemsStackable(outStack, result.remainder())
+                && outStack.getCount() + result.remainder().getCount() <= outStack.getMaxStackSize()) {
+            outStack.grow(result.remainder().getCount());
+            placed = true;
+        } else {
+            placed = false;
         }
+
+        if (!placed) return;
+
+        sourceTank.drainMb(result.amountInserted());
+        inputStack.shrink(1);
+        setChanged();
     }
 
     /**
@@ -382,8 +393,6 @@ public class MachineFrackingTowerBlockEntity extends BaseMachineBlockEntity {
 
         if (oil > 0) oilTank.fillMb(ModFluids.CRUDE_OIL.getSource(), oil);
         if (gas > 0) gasTank.fillMb(ModFluids.GAS.getSource(),       gas);
-
-        if (afterburnerUpgradeLevel > 0) applyAfterburnerEffect(orePos);
 
         indicator = 0;
     }
@@ -465,27 +474,18 @@ public class MachineFrackingTowerBlockEntity extends BaseMachineBlockEntity {
         }
     }
 
-    /**
-     * Применение эффекта Afterburner апгрейда.
-     */
-    protected void applyAfterburnerEffect(BlockPos pos) {
-        // Дополнительный урон и бонусы от afterburner
-        // Уровень эффекта: level * 10 урона, level * 50% шанс
-        // TODO: Реализовать эффекты урона и частиц
+    /** GIT TileEntityOilDrillBase: the afterburner burns associated gas every tick, not on extraction. */
+    protected void burnAfterburnerGas() {
+        int toBurn = Math.min(gasTank.getFluidAmountMb(), afterburnerUpgradeLevel * 10);
+        if (toBurn <= 0) return;
+        gasTank.drainMb(toBurn);
+        energy = Math.min(energy + toBurn * 5L, getMaxEnergyStored());
     }
 
     //=====================================================================================//
     // NBT СЕРИАЛИЗАЦИЯ
     //=====================================================================================//
 
-    //? if fabric {
-    /*@Nullable
-    public Storage<FluidVariant> getFluidStorage(@Nullable Direction side) {
-        if (side == Direction.DOWN) return fracksolTank.getStorage();
-        if (side == Direction.UP)   return oilTank.getStorage();
-        return gasTank.getStorage();
-    }
-    *///?}
 
     @Override
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
@@ -498,6 +498,7 @@ public class MachineFrackingTowerBlockEntity extends BaseMachineBlockEntity {
         tag.putInt("speedUpgrade", speedUpgradeLevel);
         tag.putInt("powerUpgrade", powerUpgradeLevel);
         tag.putInt("afterburnerUpgrade", afterburnerUpgradeLevel);
+        tag.putInt("overdriveUpgrade", overdriveUpgradeLevel);
     }
 
     @Override
@@ -511,11 +512,37 @@ public class MachineFrackingTowerBlockEntity extends BaseMachineBlockEntity {
         speedUpgradeLevel = tag.getInt("speedUpgrade");
         powerUpgradeLevel = tag.getInt("powerUpgrade");
         afterburnerUpgradeLevel = tag.getInt("afterburnerUpgrade");
+        overdriveUpgradeLevel = tag.getInt("overdriveUpgrade");
     }
 
     //=====================================================================================//
     // CAPABILITIES
     //=====================================================================================//
+
+    // ==================== IFluidUserMK2 / MK2-ÑÐµÑÑ ====================
+    // ÐÑÐ¸Ð²ÑÐ·ÐºÐ° Ð¾Ð±ÑÐ°Ð±Ð¾ÑÑÐ¸ÐºÐ° Ð¶Ð¸Ð´ÐºÐ¾ÑÑÐ¸ Ð½Ð¸Ð¶Ðµ Ð¶Ð¸Ð²ÑÑ Ð² //? if forge, Ð° BaseMachineBlockEntity
+    // Ð¾ÑÐ´Ð°ÑÑ NeoForge-Ð¾Ð±ÑÑÑÐºÑ ÑÐ¾Ð»ÑÐºÐ¾ ÑÐµÐ°Ð»Ð¸Ð·Ð°ÑÐ¸ÑÐ¼ IFluidUserMK2 â Ð±ÐµÐ· ÑÑÐ¾Ð³Ð¾ Ñ Ð¼Ð°ÑÐ¸Ð½Ñ
+    // Ð½Ð° NeoForge Ð½Ðµ Ð±ÑÐ»Ð¾ fluid-ÐºÐ°Ð¿Ð°Ð±Ð¸Ð»Ð¸ÑÐ¸ Ð²Ð¾Ð¾Ð±ÑÐµ, Ð¸ ÑÑÑÐ±Ñ Ðº Ð½ÐµÐ¹ Ð½Ðµ Ð¿Ð¾Ð´ÐºÐ»ÑÑÐ°Ð»Ð¸ÑÑ.
+
+    @Override
+    public FluidTank[] getAllTanks() { return new FluidTank[] { oilTank, gasTank, fracksolTank }; }
+
+    @Override
+    public FluidTank[] getReceivingTanks() { return new FluidTank[] { fracksolTank }; }
+
+    @Override
+    public FluidTank[] getSendingTanks() { return new FluidTank[] { oilTank, gasTank }; }
+
+    @Override
+    public boolean isLoaded() {
+        return level != null && !isRemoved() && level.isLoaded(worldPosition);
+    }
+
+    @Override
+    public boolean canConnect(net.minecraft.world.level.material.Fluid fluid, net.minecraft.core.Direction fromDir) {
+        return fromDir != null;
+    }
+
 
     //? if forge {
     @Override

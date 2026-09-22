@@ -15,6 +15,11 @@ import net.minecraft.world.item.ItemStack;
 //? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
+//? if forge {
 import net.minecraftforge.client.gui.overlay.IGuiOverlay;
 //?}
 
@@ -23,9 +28,7 @@ import net.minecraftforge.client.gui.overlay.IGuiOverlay;
  * которая густеет по мере выработки фильтра (6 стадий).
  * Порт {@code ArmorGasMask.renderHelmetOverlay} (1.7.10).
  */
-//? if forge {
 @OnlyIn(Dist.CLIENT)
-//?}
 public class OverlayGasMask {
 
     private static final String BASE_GASMASK = "textures/misc/overlay_gasmask.png";
@@ -59,7 +62,10 @@ public class OverlayGasMask {
         if (!IGasMask.hasFilter(maskStack)) {
             path = gasmaskBase ? BASE_GASMASK : BASE_GOGGLES;
         } else {
-            int max = maskStack.getItem() instanceof ItemGasMaskFilter f ? f.maxFilterDamage : ItemGasMaskFilter.DEFAULT_MAX_DAMAGE;
+            // The mask is never an ItemGasMaskFilter - the capacity has to come from the filter
+            // actually screwed into it, the way both tooltip paths resolve it.
+            net.minecraft.world.item.Item filterItem = IGasMask.getFilterItem(IGasMask.getFilterId(maskStack));
+            int max = filterItem instanceof ItemGasMaskFilter f ? f.maxFilterDamage : ItemGasMaskFilter.DEFAULT_MAX_DAMAGE;
             int dmg = IGasMask.getFilterDamage(maskStack);
             int stage = Math.min((int) (dmg / (float) max * 6F), 5);
             path = String.format(mask.variant.overlayPattern, stage);

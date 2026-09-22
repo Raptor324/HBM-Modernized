@@ -137,7 +137,20 @@ public class MachineModuleAdvancedAssembler extends MachineModuleBase<AssemblerR
 
         ItemStack result = recipe.getResultItem(level.registryAccess()).copy();
 
-        itemHandler.insertItem(outputSlots[0], result, false);
+        // insertItem goes through isItemValid, and the assembler's isItemValidForSlot returns false
+        // for output slots (so hoppers cannot push into them). That refused every craft result and
+        // dropped it on the floor of the JVM while the ingredients had already been consumed.
+        // Internal writes have to bypass the filter, exactly as MachineModuleBase.OutputPlacement
+        // does. canProcess has already checked that the result fits.
+        int out = outputSlots[0];
+        ItemStack current = itemHandler.getStackInSlot(out);
+        if (current.isEmpty()) {
+            itemHandler.setStackInSlot(out, result);
+        } else {
+            ItemStack merged = current.copy();
+            merged.grow(result.getCount());
+            itemHandler.setStackInSlot(out, merged);
+        }
     }
 
     @Override

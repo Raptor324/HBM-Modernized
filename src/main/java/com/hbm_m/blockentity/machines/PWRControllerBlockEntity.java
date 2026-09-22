@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.api.fluids.IFluidStandardTransceiverMK2;
@@ -201,7 +202,7 @@ public class PWRControllerBlockEntity extends BaseMachineBlockEntity
                 for (Direction dir : Direction.values()) {
                     BlockPos neighbor = portPos.relative(dir);
                     if (coolantHotTank.getFill() > 0) tryProvide(coolantHotTank, level, neighbor, dir);
-                    trySubscribe(coolantTank.getTankType(), level, neighbor, dir);
+                    trySubscribe(coolantTank, level, neighbor, dir);
                 }
             }
         }
@@ -241,6 +242,10 @@ public class PWRControllerBlockEntity extends BaseMachineBlockEntity
                 amountLoaded--;
             }
 
+            if (level != null && level.getGameTime() % 100 == 0) {
+                com.hbm_m.satellite.RayScanEvents.reportEvent(level, worldPosition, com.hbm_m.satellite.RayScanEvents.INFO_NUCLEAR, 200);
+            }
+
             if (amountLoaded <= 0) typeLoaded = null;
             if (amountLoaded > rodCount) amountLoaded = rodCount;
         }
@@ -262,7 +267,11 @@ public class PWRControllerBlockEntity extends BaseMachineBlockEntity
         }
 
         setChanged();
-        sendUpdateToClient();
+        // A PWR may be up to 4096 blocks, and the update tag carries the whole structure: syncing it
+        // every tick to every viewer was a lot of traffic for values that move slowly.
+        if (level != null && level.getGameTime() % 5 == 0) {
+            sendUpdateToClient();
+        }
     }
 
     private void loadFuel() {
@@ -397,6 +406,9 @@ public class PWRControllerBlockEntity extends BaseMachineBlockEntity
     }
 
     public void setRodTarget(double target) {
+        // Math.min/max let NaN through, and a NaN target makes every later comparison false, which
+        // freezes the rods at their current position. The value arrives on a client packet.
+        if (Double.isNaN(target)) return;
         rodTarget = Math.max(0D, Math.min(100D, target));
         setChanged();
         sendUpdateToClient();
@@ -455,8 +467,11 @@ public class PWRControllerBlockEntity extends BaseMachineBlockEntity
     @Override
     public String runRORFunction(String name, String[] params) {
         if ((PREFIX_FUNCTION + "setrods").equals(name) && params.length > 0) {
+            // provideRORValue reports 100 - rodLevel, and upstream setrods inverts to match
+            // (rodTarget = 100 - percent). Without it, reading "rods" and writing it straight back -
+            // the usual "hold the current setting" loop - flipped the rods to the opposite end.
             int percent = IRORInteractive.parseInt(params[0], 0, 100);
-            setRodTarget(percent);
+            setRodTarget(100 - percent);
             return null;
         }
         if ((PREFIX_FUNCTION + "jettison").equals(name)) {
@@ -490,6 +505,9 @@ public class PWRControllerBlockEntity extends BaseMachineBlockEntity
 
     @Override
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        // BaseMachineBlockEntity stores the inventory and the energy here; without the super call
+        // both were dropped on every save, so the machine came back empty and discharged.
+        super.writeNbtData(tag, registries);
         coolantTank.writeToNBT(tag, "tank_coolant");
         coolantHotTank.writeToNBT(tag, "tank_coolant_hot");
         tag.putBoolean("assembled", assembled);
@@ -522,8 +540,34 @@ public class PWRControllerBlockEntity extends BaseMachineBlockEntity
         }
     }
 
+    // The port and rod position lists are server-only bookkeeping, rebuilt by the structure scan.
+    // They have no business in the chunk packet, where they were the bulk of the payload.
+    //? if < 1.21.1 {
+    @Override
+    public @NotNull CompoundTag getUpdateTag() {
+        return stripStructureLists(super.getUpdateTag());
+    }
+    //?} else {
+    /*@Override
+    public @NotNull CompoundTag getUpdateTag(net.minecraft.core.HolderLookup.Provider registries) {
+        return stripStructureLists(super.getUpdateTag(registries));
+    }
+    *///?}
+
+    private static CompoundTag stripStructureLists(CompoundTag tag) {
+        int portCount = tag.getInt("portCount");
+        for (int i = 0; i < portCount; i++) tag.remove("port" + i);
+        tag.remove("portCount");
+
+        int rodPosCount = tag.getInt("rodPosCount");
+        for (int i = 0; i < rodPosCount; i++) tag.remove("rodPos" + i);
+        tag.remove("rodPosCount");
+        return tag;
+    }
+
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         coolantTank.readFromNBT(tag, "tank_coolant");
         coolantHotTank.readFromNBT(tag, "tank_coolant_hot");
         assembled = tag.getBoolean("assembled");

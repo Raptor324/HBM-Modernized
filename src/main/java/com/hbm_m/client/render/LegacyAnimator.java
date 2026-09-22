@@ -1,5 +1,13 @@
 package com.hbm_m.client.render;
 
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
+
 import org.joml.Matrix4f;
 
 import com.hbm_m.interfaces.IDoorAnimator;
@@ -9,13 +17,7 @@ import com.mojang.math.Axis;
 
 import net.minecraft.core.Direction;
 
-//? if forge {
-@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-//?} elif fabric {
-/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
-*///?} elif neoforge {
-/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-*///?}
+@OnlyIn(Dist.CLIENT)
 /**
  * Transform-фасад (портирован из 1.7.10): обёртка над PoseStack для
  * канонических блочных трансформов и дверных оффсетов ({@link IDoorAnimator}).

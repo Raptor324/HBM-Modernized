@@ -254,7 +254,10 @@ public final class FalloutConfigJSON {
 
         public boolean eval(Level level, BlockPos pos, BlockState state, double dist, BlockWriter writer) {
             if (dist > maxDist || dist < minDist) return false;
-            if (matchesBlockState != null && state != matchesBlockState) return false;
+            // Upstream matched by block with meta -1 ("any state"), and every rule here is authored
+            // with defaultBlockState(). Reference equality silently skipped snowy grass, snow layers
+            // above one and every naturally generated mushroom block (their face properties differ).
+            if (matchesBlockState != null && !state.is(matchesBlockState.getBlock())) return false;
             if (matchesTag != null && !state.is(matchesTag)) return false;
             if (matchesOpaque && !state.isSolidRender(level, pos)) return false;
             if (dist > maxDist * falloffStart

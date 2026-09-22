@@ -96,7 +96,7 @@ public class LaunchPadRustedMenu extends AbstractContainerMenu {
         if (inv.player.level().isClientSide) {
             return null;
         }
-        throw new IllegalStateException("No LaunchPadRustedBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":launch_pad_rusted_menu");
+        throw new MenuBlockEntityMissingException("No LaunchPadRustedBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":launch_pad_rusted_menu");
     }
 
     private static MenuType<?> getMenuType() {
@@ -109,15 +109,16 @@ public class LaunchPadRustedMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        if (blockEntity == null || blockEntity.getLevel() != player.level()) {
-            return false;
+        return MenuReach.stillValid(player, blockEntity);
+    }
+
+    /** Tries each machine slot that actually accepts the stack, in order. */
+    private boolean moveIntoMachineSlots(net.minecraft.world.item.ItemStack stack) {
+        for (int i = 0; i < MACHINE_SLOTS; i++) {
+            if (!this.slots.get(i).mayPlace(stack)) continue;
+            if (this.moveItemStackTo(stack, i, i + 1, false)) return true;
         }
-        BlockPos pos = blockEntity.getBlockPos();
-        return player.distanceToSqr(
-                pos.getX() + 0.5D,
-                pos.getY() + 0.5D,
-                pos.getZ() + 0.5D
-        ) <= 64.0D;
+        return false;
     }
 
     @Override
@@ -133,7 +134,9 @@ public class LaunchPadRustedMenu extends AbstractContainerMenu {
                     return net.minecraft.world.item.ItemStack.EMPTY;
                 }
             } else {
-                if (!this.moveItemStackTo(stack, 0, MACHINE_SLOTS, false)) {
+                // Per-slot with mayPlace: vanilla moveItemStackTo skips mayPlace when it merges onto
+                // an existing stack, so a whole-range move could land in a take-only output.
+                if (!moveIntoMachineSlots(stack)) {
                     return net.minecraft.world.item.ItemStack.EMPTY;
                 }
             }

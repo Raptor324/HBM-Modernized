@@ -4,5 +4,7 @@ package com.hbm_m.inventory.fluid.trait;
 public enum PollutionType {
     SOOT,
     POISON,
-    HEAVYMETAL
+    HEAVYMETAL,
+    /** Im Original vorhanden, aber von keiner Fluid-Eigenschaft genutzt - nur vom Fallout-Raster. */
+    FALLOUT
 }

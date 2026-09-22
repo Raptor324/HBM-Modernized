@@ -340,18 +340,13 @@ public final class PlatformHooksGameTest {
         ItemStack stack = new ItemStack(Items.GOLD_INGOT, 4);
         CompoundTag target = new CompoundTag();
         CompoundTag returned = PlatformHooks.saveItemStack(stack, target, provider);
-        // 1.20.1: stack.save(tag) returns THE SAME target instance.
-        // 1.21.1: stack.save(provider, tag) may return a different CompoundTag, but
-        // the data ends up in target (or in returned). We verify content rather than
-        // reference identity — reliable across versions.
-        check(returned != null, "saveItemStack must return non-null tag");
-        CompoundTag effective = returned != target ? returned : target;
-        check(!effective.isEmpty(), "saved tag must be populated");
-        check(effective.contains("id")
-                        || effective.contains("Count")
-                        || effective.contains("count"),
-                "saved tag must contain item fields (id/count)");
-        check(effective.contains("id"), "saved tag must contain item id");
+        // Contract on both versions: the PROVIDED tag is filled in place and returned. On 1.21.1
+        // ItemStack.save(provider, prefix) alone returns a new compound and leaves the prefix empty;
+        // four call sites relied on the in-place fill and stored empty tags because of it.
+        check(returned == target, "saveItemStack must return the provided tag");
+        check(!target.isEmpty(), "provided tag must be populated in place");
+        check(target.contains("id"), "saved tag must contain item id");
+        check(target.contains("Count") || target.contains("count"), "saved tag must contain the count");
         helper.succeed();
     }
 

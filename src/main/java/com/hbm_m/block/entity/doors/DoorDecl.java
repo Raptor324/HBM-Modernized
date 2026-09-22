@@ -236,11 +236,30 @@ public abstract class DoorDecl {
             if (Float.isNaN(threshold)) return progress > 0.0f;
             // Оригинал: колонка активна, пока threshold <= time (симметрично для
             // открытия и закрытия — закрывающийся цикл идёт по j в обратную сторону
-            // с теми же порогами)
-            if (threshold <= time) return true;
+            // с теми же порогами). Строгая сравнение: порог 0 при time = 0 (дверь ещё
+            // в начале фазы ретракции, напр. окно ремапа WATER_DOOR 35..40/60) НЕ
+            // должен ретрактнуться — иначе дверь становится проходимой сразу по клику.
+            if (threshold < time) return true;
         }
         return false;
     }
+
+    /**
+     * Двери без «частичной» коллизии (створка уезжает целиком): проходимость
+     * переключается ТОЛЬКО по окончании анимации — открывается дверь становится
+     * проходимой в конце открытия, закрывается остаётся проходимой до конца
+     * закрытия. Не по клику.
+     */
+    public boolean flipsPassabilityAtAnimationEnd() { return false; }
+
+    /**
+     * Переопределение прогресса коллизии с учётом направления движения — для дверей
+     * с особым таймингом проходимости (VAULT_DOOR). Базовое поведение — обычный прогресс.
+     *
+     * @param state 0=закрыта, 1=открыта, 2=закрывается, 3=открывается
+     * @param progress обычный прогресс openTicks/openTime (0..1)
+     */
+    public float getCollisionProgress(byte state, float progress) { return progress; }
 
     /**
      * Порог ретракции колонки {@code j} диапазона {@code rangeIdx} (0..1; NaN = колонка
@@ -644,11 +663,7 @@ public abstract class DoorDecl {
 
         @Override
         public ResourceLocation getBlockId() {
-            //? if fabric && < 1.21.1 {
-            /*return new ResourceLocation(RefStrings.MODID, "large_vehicle_door");
-            *///?} else {
                         return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "large_vehicle_door");
-            //?}
 
         }
 
@@ -748,11 +763,7 @@ public abstract class DoorDecl {
         }
         @Override
         public ResourceLocation getBlockId() {
-            //? if fabric && < 1.21.1 {
-            /*return new ResourceLocation(RefStrings.MODID, "round_airlock_door");
-            *///?} else {
                         return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "round_airlock_door");
-            //?}
 
         }
 
@@ -851,11 +862,7 @@ public abstract class DoorDecl {
 
         @Override
         public ResourceLocation getBlockId() {
-            //? if fabric && < 1.21.1 {
-            /*return new ResourceLocation(RefStrings.MODID, "fire_door");
-            *///?} else {
                         return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "fire_door");
-            //?}
 
         }
 
@@ -924,20 +931,12 @@ public abstract class DoorDecl {
 
         @Override
         public ResourceLocation getBlockId() {
-            //? if fabric && < 1.21.1 {
-            /*return new ResourceLocation(RefStrings.MODID, "sliding_blast_door");
-            *///?} else {
             return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "sliding_blast_door");
-            //?}
         }
 
         @Override
         public ResourceLocation getColladaAnimationSource() {
-            //? if fabric && < 1.21.1 {
-            /*return new ResourceLocation(RefStrings.MODID, "models/block/doors/sliding_blast_door");
-            *///?} else {
             return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/block/doors/sliding_blast_door");
-            //?}
         }
 
         @Override
@@ -1075,11 +1074,7 @@ public abstract class DoorDecl {
         }
         @Override
         public ResourceLocation getBlockId() {
-            //? if fabric && < 1.21.1 {
-            /*return new ResourceLocation(RefStrings.MODID, "sliding_seal_door");
-            *///?} else {
                         return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "sliding_seal_door");
-            //?}
 
         }
 
@@ -1109,8 +1104,11 @@ public abstract class DoorDecl {
         }
 
         // Створка целиком уезжает в карман: коллизия пуста в открытом виде,
-        // рамка выделения статична (чтобы наводиться и закрывать)
+        // рамка выделения статична (чтобы наводиться и закрывать).
+        // Проходимость — по окончании анимации, не по клику.
         @Override public boolean hasStaticSelectionShape() { return true; }
+
+        @Override public boolean flipsPassabilityAtAnimationEnd() { return true; }
 
         @Override public int[][] getDoorOpenRanges() {
             return new int[][] { { 0, 0, 0, 1, 2, 2 } };
@@ -1135,9 +1133,12 @@ public abstract class DoorDecl {
             builder.addSymbol('G', Block.box(8, 0, 0, 16, 16, 16), PartRole.DEFAULT);   // правый вертикальный полублок
             builder.addSymbol('T', Block.box(0, 6, 0, 16, 16, 16), PartRole.DEFAULT); // полублок в верхнем положении
             builder.addSymbol('M', Block.box(0, 0, 6, 16, 16, 10), PartRole.DEFAULT); // тонкая стена
+            // Верхний ряд в ЗАКРЫТОМ виде: не цельный блок, а форма открытого положения
+            // (выступ y6..16) + тонкая панель по середине — по толщине рядов ниже
+            builder.addSymbol('V', Shapes.or(Block.box(0, 6, 0, 16, 16, 16), Block.box(0, 0, 6, 16, 16, 10)), PartRole.DEFAULT);
             // Схема ЗАКРЫТОЙ двери (Вид спереди, Y сверху вниз)
             String[] closed = {
-                "XXXXX",
+                "VVVVV",
                 "MMMMM",
                 "MMMMM",
                 "MMMMM",
@@ -1159,11 +1160,7 @@ public abstract class DoorDecl {
 
         @Override
         public ResourceLocation getBlockId() {
-            //? if fabric && < 1.21.1 {
-            /*return new ResourceLocation(RefStrings.MODID, "secure_access_door");
-            *///?} else {
                         return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "secure_access_door");
-            //?}
 
         }
 
@@ -1241,11 +1238,7 @@ public abstract class DoorDecl {
 
         @Override
         public ResourceLocation getBlockId() {
-            //? if fabric && < 1.21.1 {
-            /*return new ResourceLocation(RefStrings.MODID, "qe_sliding_door");
-            *///?} else {
                         return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "qe_sliding_door");
-            //?}
 
         }
 
@@ -1274,8 +1267,11 @@ public abstract class DoorDecl {
         // диапазоны с tangent=±1 дают NaN-порог (квирк оригинала) = мгновенная
         // ретракция колонки при начале движения и мгновенное заполнение при закрытии
         // Створки целиком уезжают в карманы: коллизия пуста в открытом виде,
-        // рамка выделения статична (чтобы наводиться и закрывать)
+        // рамка выделения статична (чтобы наводиться и закрывать).
+        // Проходимость — по окончании анимации, не по клику.
         @Override public boolean hasStaticSelectionShape() { return true; }
+
+        @Override public boolean flipsPassabilityAtAnimationEnd() { return true; }
 
         @Override public int[][] getDoorOpenRanges() {
             return new int[][] { { 0, 0, 0, 1, 2, 2 }, { 1, 0, 0, 1, 2, 2 } };
@@ -1325,11 +1321,7 @@ public abstract class DoorDecl {
 
         @Override
         public ResourceLocation getBlockId() {
-            //? if fabric && < 1.21.1 {
-            /*return new ResourceLocation(RefStrings.MODID, "qe_containment_door");
-            *///?} else {
                         return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "qe_containment_door");
-            //?}
 
         }
 
@@ -1411,12 +1403,19 @@ public abstract class DoorDecl {
             // Регистрируем символы с нашей тонкой формой
             builder.addSymbol('#', thinDoorShape, PartRole.DEFAULT);
             builder.addSymbol('C', thinDoorShape, PartRole.CONTROLLER);
-            builder.addSymbol('H', Block.box(0, 0, 6, 8, 16, 10), PartRole.DEFAULT);    // левый вертикальный полублок
-            builder.addSymbol('G', Block.box(11, 0, 6, 16, 16, 10), PartRole.DEFAULT);   // правый вертикальный полублок
+            builder.addSymbol('H', Block.box(0, 0, 6, 5, 16, 10), PartRole.DEFAULT);    // левый вертикальный полустолбик (5px, как правый)
+            builder.addSymbol('G', Block.box(11, 0, 6, 16, 16, 10), PartRole.DEFAULT);   // правый вертикальный полустолбик
             // Угловые «ступеньки»: тонкая плита на всю ширину + полустолбик к стене
-            builder.addSymbol('S', Shapes.or(Block.box(0, 0, 6, 8, 16, 10), Block.box(0, 0, 6, 16, 1, 10)), PartRole.DEFAULT);
+            builder.addSymbol('S', Shapes.or(Block.box(0, 0, 6, 5, 16, 10), Block.box(0, 0, 6, 16, 1, 10)), PartRole.DEFAULT);
             builder.addSymbol('R', Shapes.or(Block.box(11, 0, 6, 16, 16, 10), Block.box(0, 0, 6, 16, 1, 10)), PartRole.DEFAULT);
-            builder.addSymbol('T', Block.box(0, 13, 0, 16, 16, 16), PartRole.DEFAULT); // полублок в верхнем положении
+            // Тонкий пол центральной нижней клетки — той же толщины, что ступеньки S/R
+            builder.addSymbol('F', Block.box(0, 0, 6, 16, 1, 10), PartRole.DEFAULT);
+            // Потолочная плита по толщине двери + угловые комбинации столбик∨плита
+            // (U/W — как у round_airlock/fire_door): без них в открытом виде остаются
+            // дыры в углах проёма между стойками H/G и потолочной плитой
+            builder.addSymbol('T', Block.box(0, 13, 6, 16, 16, 10), PartRole.DEFAULT); // плита в верхнем положении
+            builder.addSymbol('U', Shapes.or(Block.box(0, 0, 6, 5, 16, 10), Block.box(0, 13, 6, 16, 16, 10)), PartRole.DEFAULT);
+            builder.addSymbol('W', Shapes.or(Block.box(11, 0, 6, 16, 16, 10), Block.box(0, 13, 6, 16, 16, 10)), PartRole.DEFAULT);
 
             // Схема 2x2
             // C - контроллер (0, 0, 0)
@@ -1426,12 +1425,12 @@ public abstract class DoorDecl {
                 "#C#"
             };
 
-            // В открытом состоянии используем пробелы. 
+            // В открытом состоянии используем пробелы.
             // В нашей системе Builder.parse пробел по умолчанию означает Shapes.empty()
             String[] open = {
-                "TTT",
+                "UTW",
                 "H G",
-                "S R"
+                "SFR"
             };
 
             // Регистрируем структуру
@@ -1440,11 +1439,7 @@ public abstract class DoorDecl {
 
         @Override
         public ResourceLocation getBlockId() {
-            //? if fabric && < 1.21.1 {
-            /*return new ResourceLocation(RefStrings.MODID, "water_door");
-            *///?} else {
                         return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "water_door");
-            //?}
 
         }
 
@@ -1624,11 +1619,7 @@ public abstract class DoorDecl {
             defineStructure(builder.parseHorizontal(closed, open, 'C'));
         }
 
-        //? if fabric && < 1.21.1 {
-        /*@Override public ResourceLocation getBlockId() { return new ResourceLocation(RefStrings.MODID, "silo_hatch");
-        *///?} else {
                 @Override public ResourceLocation getBlockId() { return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "silo_hatch");
-        //?}
  }
         @Override public String[] getPartNames() { return new String[] { "frame", "door" }; }
         @Override public int getOpenTime() { return 60; }
@@ -1707,11 +1698,7 @@ public abstract class DoorDecl {
             defineStructure(builder.parseHorizontal(closed, open, 'C'));
         }
 
-        //? if fabric && < 1.21.1 {
-        /*@Override public ResourceLocation getBlockId() { return new ResourceLocation(RefStrings.MODID, "silo_hatch_large");
-        *///?} else {
                 @Override public ResourceLocation getBlockId() { return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "silo_hatch_large");
-        //?}
  }
         @Override public String[] getPartNames() { return new String[] { "frame", "door" }; }
         @Override public int getOpenTime() { return 60; }
@@ -1759,7 +1746,9 @@ public abstract class DoorDecl {
             // Повторяет оригинальный getBlockBound из 1.7.10:
             // закрытая дверь — тонкая створка 0.375..0.625 по Z (т.е. 6/16..10/16)
             VoxelShape thin = Block.box(0, 0, 6, 16, 16, 10);
+            VoxelShape floor = Block.box(0, 0, 0, 16, 3, 16);
             builder.addSymbol('#', thin, PartRole.DEFAULT);
+            builder.addSymbol('_', floor, PartRole.DEFAULT);
             builder.addSymbol('C', thin, PartRole.CONTROLLER);
 
             // Вид спереди (Y сверху вниз): 3 блока в ширину (X), 3 в высоту (Y).
@@ -1775,17 +1764,13 @@ public abstract class DoorDecl {
             String[] open = {
                 "###",
                 "   ",
-                "   "
+                "___"
             };
 
             defineStructure(builder.parseVertical(closed, open, 'C'));
         }
 
-        //? if fabric && < 1.21.1 {
-        /*@Override public ResourceLocation getBlockId() { return new ResourceLocation(RefStrings.MODID, "cargo_door");
-        *///?} else {
                 @Override public ResourceLocation getBlockId() { return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "cargo_door");
-        //?}
  }
 
         @Override public String[] getPartNames() { return new String[] { "Frame", "DoorTop", "DoorBot" }; }
@@ -1808,7 +1793,7 @@ public abstract class DoorDecl {
         }
 
         // BusAnimation оригинала: BOT поднимается на 2 блока за timeToOpen*2 тиков
-        // (полный проезд한다 за открытие), TOP поднимается на 1 блок с задержкой.
+        // (полный проезд за открытие), TOP поднимается на 1 блок с задержкой.
         // В Modernized трансляции задаётся через нормированный прогресс [0..1].
         @Override
         public void getTranslation(String partName, float openTicks, boolean child, float[] trans) {
@@ -1869,11 +1854,7 @@ public abstract class DoorDecl {
 
         @Override
         public ResourceLocation getBlockId() {
-            //? if fabric && < 1.21.1 {
-            /*return new ResourceLocation(RefStrings.MODID, "vault_door");
-            *///?} else {
                         return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "vault_door");
-            //?}
 
         }
 
@@ -1996,11 +1977,21 @@ public abstract class DoorDecl {
             return new double[][] { { 0, -1, 0, 3.0001 } };
         }
 
-        @Override 
-        public int[][] getDoorOpenRanges() {
-            return new int[][] { { -1, 1, 0, 3, 3, 2 } };
+        // Динамической поколоночной коллизии нет: проходимость управляется
+        // getCollisionProgress ниже (30 тиков = 1.5 с из openTime 120).
+
+        // Открытие: створка непроходима первые 30 тиков, потом проходима.
+        // Закрытие: остаётся проходимой, пока до конца закрытия не останется
+        // 30 тиков — дверь «переходит в закрытое состояние» за 1.5 с до конца.
+        @Override
+        public float getCollisionProgress(byte state, float progress) {
+            return switch (state) {
+                case 3 -> progress < 30.0f / 120.0f ? 0.0f : 1.0f;
+                case 2 -> progress > 30.0f / 120.0f ? 1.0f : 0.0f;
+                default -> progress >= 1.0f ? 1.0f : 0.0f;
+            };
         }
-        
+
         // Отключаем стандартный спам звуков
         @Override public SoundEvent getOpenSoundStart() { return null; }
         @Override public SoundEvent getOpenSoundEnd() { return null; }

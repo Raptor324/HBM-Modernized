@@ -1,6 +1,8 @@
 package com.hbm_m.api.fluids;
 
 import com.hbm_m.api.network.UniNodespace;
+import com.hbm_m.inventory.fluid.ModFluids;
+import com.hbm_m.inventory.fluid.tank.FluidTank;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -8,6 +10,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.material.Fluid;
+import net.minecraft.world.level.material.Fluids;
 
 /**
  * Получатель жидкости в MK2 сети.
@@ -69,5 +72,25 @@ public interface IFluidReceiverMK2 extends IFluidUserMK2 {
         if (node != null && node.net != null) {
             node.net.addReceiver(this);
         }
+    }
+
+    /**
+     * То же, но тип берётся из бака, а если бак ещё не типизирован — из самой трубы.
+     *
+     * An empty untyped tank accepts anything (see receiverTankMatches), but subscribing on
+     * Fluids.EMPTY never resolves a node, so a machine whose input type is only decided by what
+     * arrives could never join a duct network at all - only a directly adjacent sender reached it.
+     */
+    default void trySubscribe(FluidTank tank, Level level, BlockPos pipePos, Direction dirFromMeToPipe) {
+        Fluid type = tank.getTankType();
+
+        if (type == Fluids.EMPTY || type == ModFluids.NONE.getSource()) {
+            if (!tank.isEmpty()) return;
+            if (!(level.getBlockEntity(pipePos) instanceof IFluidPipeMK2 pipe)) return;
+            type = pipe.getFluidType();
+            if (type == Fluids.EMPTY || type == ModFluids.NONE.getSource() || !tank.isFluidValid(type)) return;
+        }
+
+        trySubscribe(type, level, pipePos, dirFromMeToPipe);
     }
 }

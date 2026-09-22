@@ -71,6 +71,19 @@ public class MachineCombustionEngineBlockEntity extends BaseMachineBlockEntity i
         super(ModBlockEntities.COMBUSTION_ENGINE_BE.get(), pos, state, INVENTORY_SIZE, MAX_POWER, 0L, MAX_POWER);
     }
 
+    /** Сеттеры для {@code CombustionEngineControlC2SPacket} (гейт-совместимая альтернатива слайдеру GUI). */
+    public void setThrottle(int throttle) {
+        this.setting = net.minecraft.util.Mth.clamp(throttle, 0, 30);
+        setChanged();
+        sendUpdateToClient();
+    }
+
+    public void toggleIgnition() {
+        this.isOn = !this.isOn;
+        setChanged();
+        sendUpdateToClient();
+    }
+
     //? if forge {
     @Override
     public @org.jetbrains.annotations.NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(

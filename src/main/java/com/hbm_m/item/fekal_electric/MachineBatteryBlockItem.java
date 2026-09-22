@@ -45,14 +45,14 @@ public class MachineBatteryBlockItem extends BlockItem implements ITooltipProvid
             CompoundTag blockEntityTag = custom != null && custom.contains("BlockEntityTag")
                     ? custom.getCompound("BlockEntityTag") : null;
             *///?}
-            // Важно: в MachineBatteryBlockEntity мы сохраняем как "Energy" (с большой буквы), проверь это!
-            // В старом коде было "Energy", здесь "energy". Лучше проверять оба варианта или привести к одному.
+            // The block entity writes "energy" as a long; getInt truncated anything above 2^31 to a
+            // wrong (often negative) number. "Energy" is the legacy copy_nbt spelling.
             if (blockEntityTag != null) {
                 long energy = 0;
-                if (blockEntityTag.contains("Energy")) {
+                if (blockEntityTag.contains("energy")) {
+                    energy = blockEntityTag.getLong("energy");
+                } else if (blockEntityTag.contains("Energy")) {
                     energy = blockEntityTag.getLong("Energy");
-                } else if (blockEntityTag.contains("energy")) {
-                    energy = blockEntityTag.getInt("energy"); // Поддержка старых сохранений
                 }
 
                 if (energy > 0) {

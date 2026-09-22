@@ -41,13 +41,16 @@ import java.util.UUID;
 public class PlayerHandler {
     
     // Хранит текущий уровень радиации для каждого игрока
-    private static final HashMap<UUID, Float> playerRads = new HashMap<>();
+    // ConcurrentHashMap: written by the server thread, read by the client render thread
+    // (ParticleEffectClient through HbmLivingProps.getRadiation). In singleplayer that is one
+    // process, and a plain HashMap can spin forever inside getNode when a read races a put.
+    private static final java.util.Map<UUID, Float> playerRads = new java.util.concurrent.ConcurrentHashMap<>();
     
     // Ключ для хранения радиации в данных игрока
     private static final String NBT_KEY_PLAYER_RADIATION = "hbm_m_player_radiation";
 
     // Счетчик тиков для периодического обновления (per-player через UUID)
-    private static final HashMap<UUID, Integer> tickCounters = new HashMap<>();
+    private static final java.util.Map<UUID, Integer> tickCounters = new java.util.concurrent.ConcurrentHashMap<>();
 
     /**
      * Регистрация всех обработчиков событий.

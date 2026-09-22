@@ -1,7 +1,6 @@
 package com.hbm_m.mixin;
 
 import com.hbm_m.interfaces.IMultiblockController;
-import com.hbm_m.interfaces.IMultiblockPart;
 import com.hbm_m.multiblock.ContraptionAssemblyGuard;
 
 import net.minecraft.core.BlockPos;
@@ -57,15 +56,26 @@ public abstract class LevelChunkSilentRemovalMixin {
     private void hbm_m$silentRemovalDuringContraptionMove(BlockState receiver, Level level, BlockPos pos,
                                                           BlockState otherState, boolean isMoving) {
         if (ContraptionAssemblyGuard.isMoving()) {
+            // IMultiblockPart is implemented by the part's BlockEntity, not by its Block, so the old
+            // test against the Block never matched and only the controller half of this guard worked.
             Block receiverBlock = receiver.getBlock();
-            boolean receiverOurs = receiverBlock instanceof IMultiblockPart || receiverBlock instanceof IMultiblockController;
+            boolean receiverOurs = receiverBlock instanceof IMultiblockController
+                    || receiverBlock instanceof com.hbm_m.block.UniversalMachinePartBlock;
             if (!receiverOurs && receiver.isAir()) {
                 Block otherBlock = otherState.getBlock();
-                receiverOurs = otherBlock instanceof IMultiblockPart || otherBlock instanceof IMultiblockController;
+                receiverOurs = otherBlock instanceof IMultiblockController
+                        || otherBlock instanceof com.hbm_m.block.UniversalMachinePartBlock;
             }
             if (receiverOurs) {
-                com.hbm_m.main.MainRegistry.LOGGER.info(
+                com.hbm_m.main.MainRegistry.LOGGER.debug(
                     "[HBM] onRemove подавлен при переносе, блок {} @ {}", receiverBlock, pos.toShortString());
+                // Only the multiblock cascade is skipped. Block.onRemove is also the one place that drops
+                // the block entity out of the chunk; without this the BE stayed under the air block
+                // ("invalid for ticking" every tick, "Failed to create block entity ... got air" on the
+                // next chunk load). Sable has already serialized it for the sub-level by now.
+                if (receiver.hasBlockEntity() && !receiver.is(otherState.getBlock())) {
+                    level.removeBlockEntity(pos);
+                }
                 return; // Перенос блока движком сборки — разрушение подавляем.
             }
         }

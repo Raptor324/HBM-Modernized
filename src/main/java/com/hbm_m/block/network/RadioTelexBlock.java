@@ -8,8 +8,11 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.BaseEntityBlock;
-import net.minecraft.world.level.block.RenderShape;
+import com.hbm_m.block.ModBlocks;
+import com.hbm_m.block.machines.DummyableMachineBlock;
+import com.hbm_m.multiblock.DummyableStructureBuilder;
+import com.hbm_m.multiblock.MultiblockStructureHelper;
+
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -17,13 +20,27 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import org.jetbrains.annotations.Nullable;
 
-/** Port of {@code RadioTelex} (1.7.10 Original). */
-public class RadioTelexBlock extends BaseEntityBlock {
+/**
+ * 1:1-Port von {@code RadioTelex} (1.7.10): der Fernschreiber am Funknetz.
+ *
+ * <p>Er belegt wie im Original zwei Felder nebeneinander ({@code getDimensions {0,0,0,0,1,0}}) -
+ * der Kern und eine Dummyzelle nach Westen.</p>
+ *
+ * <p><b>Nicht portiert:</b> die OpenComputers-Komponente ({@code ntm_telex}) - dafuer gibt es in
+ * diesem Port an keiner Stelle eine Anbindung.</p>
+ */
+public class RadioTelexBlock extends DummyableMachineBlock {
 
     public RadioTelexBlock(Properties properties) { super(properties); }
 
     @Override
-    public RenderShape getRenderShape(BlockState state) { return RenderShape.MODEL; }
+    protected MultiblockStructureHelper defineStructure() {
+        // Original: getDimensions {0,0,0,0,1,0}, getOffset 0, keine Zusatzzellen.
+        return DummyableStructureBuilder.create()
+                .box(0, 0, 0, 0, 1, 0)
+                .placementOffset(0)
+                .build(() -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState());
+    }
 
     @Nullable @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {

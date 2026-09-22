@@ -174,9 +174,7 @@ public class MachineShredderBlockEntity extends BaseMachineBlockEntity {
             blockEntity.serverTick(level, pos);
         }
     }
-//? if forge || neoforge {
 @OnlyIn(Dist.CLIENT)
-//?}
     private void clientTick() {
         ClientSoundBootstrap.updateSound(this, getIsActive(), () -> newShredderSoundInstance());
     }

@@ -171,10 +171,9 @@ public class NuclearExplosionHelper {
                         BlockState checkState = serverLevel.getBlockState(checkPos);
                         Block block = checkState.getBlock();
 
-                        if (block instanceof IDetonatable detonatable) {
-                            int delay = (int) (dist * 2.0);
-                            serverLevel.getServer().tell(new TickTask(delay, () ->
-                                    detonatable.onDetonate(serverLevel, checkPos, checkState, null)));
+                        if (block instanceof IDetonatable) {
+                            com.hbm_m.api.bomb.BombDetonation.triggerDetonatableLater(
+                                    serverLevel, checkPos, block, null, (int) (dist * 2));
                         }
                     }
                 }

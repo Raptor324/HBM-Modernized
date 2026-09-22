@@ -7,6 +7,8 @@ import java.util.List;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.blockentity.BaseMachineBlockEntity;
+import com.hbm_m.handler.pollution.PollutionHandler;
+import com.hbm_m.inventory.fluid.trait.PollutionType;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.inventory.menu.MachineArcFurnaceMenu;
@@ -39,7 +41,7 @@ import net.minecraft.world.phys.AABB;
  * generischen Vanilla-Rezeptsystem ({@link ArcFurnaceRecipe} / {@link ModRecipes#ARC_FURNACE_TYPE});
  * es sind bewusst KEINE Rezepte im Java-Code hartkodiert.
  */
-public class MachineArcFurnaceBlockEntity extends BaseMachineBlockEntity {
+public class MachineArcFurnaceBlockEntity extends BaseMachineBlockEntity implements com.hbm_m.api.fluids.IFluidStandardSenderMK2 {
 
     public static final int SLOT_INPUT = 0;
     public static final int SLOT_OUTPUT = 1;
@@ -70,6 +72,28 @@ public class MachineArcFurnaceBlockEntity extends BaseMachineBlockEntity {
         super(ModBlockEntities.ARC_FURNACE_BE.get(), pos, state, SLOT_COUNT, 0L, 0L, 0L);
     }
 
+    // ==================== IFluidUserMK2 / MK2-ÑÐµÑÑ ====================
+    // ÐÑÐ¸Ð²ÑÐ·ÐºÐ° Ð¾Ð±ÑÐ°Ð±Ð¾ÑÑÐ¸ÐºÐ° Ð¶Ð¸Ð´ÐºÐ¾ÑÑÐ¸ Ð½Ð¸Ð¶Ðµ Ð¶Ð¸Ð²ÑÑ Ð² //? if forge, Ð° BaseMachineBlockEntity
+    // Ð¾ÑÐ´Ð°ÑÑ NeoForge-Ð¾Ð±ÑÑÑÐºÑ ÑÐ¾Ð»ÑÐºÐ¾ ÑÐµÐ°Ð»Ð¸Ð·Ð°ÑÐ¸ÑÐ¼ IFluidUserMK2 â Ð±ÐµÐ· ÑÑÐ¾Ð³Ð¾ Ñ Ð¼Ð°ÑÐ¸Ð½Ñ
+    // Ð½Ð° NeoForge Ð½Ðµ Ð±ÑÐ»Ð¾ fluid-ÐºÐ°Ð¿Ð°Ð±Ð¸Ð»Ð¸ÑÐ¸ Ð²Ð¾Ð¾Ð±ÑÐµ, Ð¸ ÑÑÑÐ±Ñ Ðº Ð½ÐµÐ¹ Ð½Ðµ Ð¿Ð¾Ð´ÐºÐ»ÑÑÐ°Ð»Ð¸ÑÑ.
+
+    @Override
+    public FluidTank[] getAllTanks() { return new FluidTank[] { tank1, tank2 }; }
+
+    @Override
+    public FluidTank[] getSendingTanks() { return new FluidTank[] { tank1, tank2 }; }
+
+    @Override
+    public boolean isLoaded() {
+        return level != null && !isRemoved() && level.isLoaded(worldPosition);
+    }
+
+    @Override
+    public boolean canConnect(net.minecraft.world.level.material.Fluid fluid, net.minecraft.core.Direction fromDir) {
+        return fromDir != null;
+    }
+
+
     //? if forge {
     @Override
     protected void setupFluidCapability() {
@@ -93,6 +117,11 @@ public class MachineArcFurnaceBlockEntity extends BaseMachineBlockEntity {
         if (recipe != null && canProcess(recipe)) {
             currentDuration = recipe.getDuration();
             progressTicks++;
+
+            // Original: einmalig 10 Russ, wenn ein Durchgang fertig wird.
+            if (progressTicks >= getMaxProgress()) {
+                PollutionHandler.incrementPollution(level, worldPosition, PollutionType.SOOT, 10F);
+            }
             dirty = true;
             if (progressTicks >= currentDuration) {
                 progressTicks = 0;

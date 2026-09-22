@@ -23,8 +23,8 @@ public class GUIMachineElectrolyser extends AbstractContainerScreen<MachineElect
     public GUIMachineElectrolyser(MachineElectrolyserMenu menu, Inventory inventory, Component title) {
         super(menu, inventory, title);
         this.blockEntity = menu.getBlockEntity();
-        this.imageWidth = 176;
-        this.imageHeight = 176;
+        this.imageWidth = 210;
+        this.imageHeight = 247;
         this.inventoryLabelY = imageHeight - 96 + 2;
     }
 

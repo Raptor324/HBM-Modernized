@@ -57,7 +57,7 @@ public class MachineCatalyticReformerMenu extends AbstractContainerMenu {
         if (blockEntity instanceof MachineCatalyticReformerBlockEntity be) {
             return be;
         }
-        throw new IllegalStateException("No MachineCatalyticReformerBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":catalytic_reformer_menu");
+        throw new MenuBlockEntityMissingException("No MachineCatalyticReformerBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":catalytic_reformer_menu");
     }
 
     public MachineCatalyticReformerBlockEntity getBlockEntity() {
@@ -66,11 +66,7 @@ public class MachineCatalyticReformerMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        if (blockEntity == null || blockEntity.getLevel() != player.level()) {
-            return false;
-        }
-        BlockPos pos = blockEntity.getBlockPos();
-        return player.distanceToSqr(pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D) <= 64.0D;
+        return MenuReach.stillValid(player, blockEntity);
     }
 
     @Override

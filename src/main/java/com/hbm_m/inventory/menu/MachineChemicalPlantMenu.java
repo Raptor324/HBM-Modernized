@@ -17,14 +17,10 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerData;
-import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.inventory.SimpleContainerData;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
-//? if fabric {
-/*import team.reborn.energy.api.EnergyStorage;
-*///?}
 
 /**
  * Menu для Chemical Plant — порт с 1.7.10.
@@ -57,11 +53,7 @@ public class MachineChemicalPlantMenu extends AbstractContainerMenu {
             addSlot(new Slot(container, 0, 152, 81) {
                 @Override
                 public boolean mayPlace(@NotNull ItemStack stack) {
-                    if (ItemEnergyAccess.getHbmProvider(stack).isPresent() || ItemEnergyAccess.getHbmReceiver(stack).isPresent()) return true;
-                    //? if neoforge {
-                    /*if (stack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM) != null) return true;
-                    *///?}
-                    return false;
+                    return ItemEnergyAccess.isEnergyItem(stack);
                 }
             });
             addSlot(new Slot(container, 1, 35, 126));  // ??? (оставляем без ограничений как было)
@@ -201,12 +193,7 @@ public class MachineChemicalPlantMenu extends AbstractContainerMenu {
                 return ItemStack.EMPTY;
             }
         } else {
-            if (ItemEnergyAccess.getHbmProvider(stack).isPresent()
-                    || ItemEnergyAccess.getHbmReceiver(stack).isPresent()
-                    //? if neoforge {
-                    /*|| stack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM) != null
-                    *///?}
-            ) {
+            if (ItemEnergyAccess.isEnergyItem(stack)) {
                 if (!moveItemStackTo(stack, 0, 1, false)) return ItemStack.EMPTY;
             } else if (stack.getItem() instanceof ItemBlueprintFolder) {
                 if (!moveItemStackTo(stack, 1, 2, false)) return ItemStack.EMPTY;
@@ -232,7 +219,6 @@ public class MachineChemicalPlantMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(@NotNull Player player) {
-        return stillValid(ContainerLevelAccess.create(blockEntity.getLevel(), blockEntity.getBlockPos()),
-                player, ModBlocks.CHEMICAL_PLANT.get());
+        return MenuReach.stillValid(player, blockEntity, ModBlocks.CHEMICAL_PLANT.get());
     }
 }

@@ -1,5 +1,13 @@
 package com.hbm_m.client.render;
 
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
+
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.util.ArrayList;
@@ -28,13 +36,7 @@ import net.minecraftforge.client.model.data.ModelData;
  * и построение {@link com.hbm_m.client.render.SingleMeshVboRenderer.VboData} из тех же квадов.
  */
 
-//? if forge {
-@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-//?} elif fabric {
-/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
-*///?} elif neoforge {
-/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-*///?}
+@OnlyIn(Dist.CLIENT)
 public record PartGeometry(List<BakedQuad> solidQuads) {
 
     public static final long BAKE_SEED = 42L;
@@ -81,9 +83,6 @@ public record PartGeometry(List<BakedQuad> solidQuads) {
         //? if forge || neoforge {
         quads.addAll(modelPart.getQuads(null, null, random, ModelData.EMPTY, RenderType.solid()));
         //?}
-        //? if fabric {
-        /*quads.addAll(modelPart.getQuads(null, null, random));
-        *///?}
 
         for (Direction direction : Direction.values()) {
             random.setSeed(BAKE_SEED);

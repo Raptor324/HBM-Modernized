@@ -37,7 +37,7 @@ public class GUIMachineRadarNTSlots extends GuiInfoScreen<MachineRadarSlotsMenu>
         super(menu, playerInventory, title);
         this.radar = menu.getBlockEntity();
         this.imageWidth = 176;
-        this.imageHeight = 184;
+        this.imageHeight = 185;
     }
 
     @Override

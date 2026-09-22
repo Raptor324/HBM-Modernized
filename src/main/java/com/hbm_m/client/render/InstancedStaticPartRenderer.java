@@ -1,5 +1,13 @@
 package com.hbm_m.client.render;
 
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
+
 
 import java.lang.ref.Cleaner;
 import java.nio.Buffer;
@@ -45,13 +53,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
  * and {@link IrisInstancedBatchRenderer} (Iris/Oculus path).
  * GL compatibility helpers live in {@link InstancedGlCompat}.
  */
-//? if forge {
-@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-//?} elif fabric {
-/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
-*///?} elif neoforge {
-/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-*///?}
+@OnlyIn(Dist.CLIENT)
 public class InstancedStaticPartRenderer extends AbstractGpuMesh
         implements VanillaInstancedMeshRenderer, IrisCompanionMeshRenderer {
 
@@ -871,11 +873,6 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
         flush(event.getProjectionMatrix());
     }
     //?}
-    //? if fabric {
-    /*public void flush(net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext event) {
-        flush(event.projectionMatrix());
-    }
-    *///?}
 
     /**
      * Обязательный re-bind atlas + lightmap после {@link ShaderInstance#apply()} и перед glDraw*.

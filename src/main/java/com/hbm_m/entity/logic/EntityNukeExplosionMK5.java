@@ -86,16 +86,18 @@ public class EntityNukeExplosionMK5 extends EntityExplosionChunkloading {
 
     @Override
     protected void defineSynchedData() {
-        // нет синхронизируемых полей
-    }
+
+var defs = com.hbm_m.platform.EntityDataHooks.sink(this.entityData);
     //?} else {
     /*@Override
     protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
 
+var defs = com.hbm_m.platform.EntityDataHooks.sink(builder);
+    *///?}
+
         // нет синхронизируемых полей
     
     }
-    *///?}
 
     @Override
     public void tick() {
@@ -115,7 +117,10 @@ public class EntityNukeExplosionMK5 extends EntityExplosionChunkloading {
         }
 
         // радиация в первые тики после начала взрыва
-        if (!level().isClientSide && applyInstantPlayerRads && explosion != null && this.tickCount < 10 && strength >= 75) {
+        // No explosion != null guard: the ray engine is created further down in this same tick, so on
+        // tick 1 it was still null and the largest dose of the ramp was silently skipped. radiate()
+        // does not touch the engine.
+        if (!level().isClientSide && applyInstantPlayerRads && this.tickCount < 10 && strength >= 75) {
             float baseRads = 2_500_000F / (this.tickCount * 5 + 1);
             radiate(baseRads, this.length * 2);
         }
@@ -193,6 +198,10 @@ public class EntityNukeExplosionMK5 extends EntityExplosionChunkloading {
      * и конфиг фактически не работал — здесь подключён по назначению.
      */
     private void createExplosionEngine() {
+        // Original: eine ausgewachsene Zuendung ist eine volle Minute lang aus dem Orbit zu sehen.
+        com.hbm_m.satellite.DetectorEvents.reportEvent(level(), com.hbm_m.satellite.DetectorEvents.DURATION_HIGH,
+                com.hbm_m.satellite.DetectorEvents.BurstIntensity.HIGH, getX(), getZ());
+
         int algorithm = ModClothConfig.get().explosionAlgorithm;
         if ((algorithm == 1 || algorithm == 2) && level() instanceof ServerLevel server) {
             explosion = new com.hbm_m.explosion.ExplosionNukeRayParallelized(
@@ -261,6 +270,7 @@ public class EntityNukeExplosionMK5 extends EntityExplosionChunkloading {
         com.hbm_m.entity.effect.EntityFalloutRain fallout = new com.hbm_m.entity.effect.EntityFalloutRain(ModEntities.NUKE_FALLOUT_RAIN.get(), level());
         fallout.setPos(getX(), getY(), getZ());
         fallout.setScale(scale);
+        fallout.applyCraterBiomes = this.applyCraterBiomes;
         WorldUtil.loadAndSpawnEntityInWorld(fallout);
     }
 
@@ -280,7 +290,7 @@ public class EntityNukeExplosionMK5 extends EntityExplosionChunkloading {
         this.destroyTerrain = tag.getBoolean("destroyTerrain");
         this.applyEntityDamage = tag.getBoolean("applyEntityDamage");
         this.applyInstantPlayerRads = tag.getBoolean("applyInstantPlayerRads");
-        this.applyCraterBiomes = tag.getBoolean("applyCraterBiomes");
+        this.applyCraterBiomes = !tag.contains("applyCraterBiomes") || tag.getBoolean("applyCraterBiomes");
         this.fallout = tag.getBoolean("fallout");
         this.falloutAdd = tag.getInt("falloutAdd");
         // Снапшот состояния ChunkEater (алгоритм 0) — взрыв продолжится с места остановки.

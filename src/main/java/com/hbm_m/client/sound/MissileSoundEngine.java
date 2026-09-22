@@ -3,10 +3,9 @@ package com.hbm_m.client.sound;
 //? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?}
-//? if fabric {
-/*import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 *///?}
 
 import java.util.HashMap;
@@ -36,12 +35,7 @@ import org.jetbrains.annotations.Nullable;
  * Все вычисления — в логическом тике ({@code ClientTickEvent.CLIENT_POST}), а не в кадре:
  * стабильный шаг физики при любом FPS.
  */
-//? if forge {
 @OnlyIn(Dist.CLIENT)
-//?}
-//? if fabric {
-/*@Environment(EnvType.CLIENT)
-*///?}
 public final class MissileSoundEngine {
 
     /** Создаём канал только когда игрок в зоне слышимости (с запасом за пределы rolloff). */

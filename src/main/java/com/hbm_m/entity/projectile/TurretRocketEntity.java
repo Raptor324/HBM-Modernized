@@ -50,6 +50,9 @@ public class TurretRocketEntity extends ThrowableItemProjectile {
         rocket.damage = damage;
         rocket.explosionRadius = explosionRadius;
         rocket.entityData.set(ICON_ITEM_ID, net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(iconItem).toString());
+        // Same as TurretBulletEntity: the synched stack is built from getDefaultItem() in the super
+        // constructor, before ICON_ITEM_ID is set.
+        rocket.setItem(new net.minecraft.world.item.ItemStack(iconItem));
         rocket.setNoGravity(true);
         return rocket;
     }
@@ -59,17 +62,19 @@ public class TurretRocketEntity extends ThrowableItemProjectile {
     @Override
     protected void defineSynchedData() {
         super.defineSynchedData();
-        this.entityData.define(ICON_ITEM_ID, "");
-    }
+
+var defs = com.hbm_m.platform.EntityDataHooks.sink(this.entityData);
     //?} else {
     /*@Override
     protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
-
         super.defineSynchedData(builder);
-        builder.define(ICON_ITEM_ID, "");
+
+var defs = com.hbm_m.platform.EntityDataHooks.sink(builder);
+    *///?}
+
+        defs.define(ICON_ITEM_ID, "");
     
     }
-    *///?}
 
     @Override
     protected Item getDefaultItem() {

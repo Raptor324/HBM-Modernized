@@ -67,8 +67,13 @@ public class AnvilBlockEntity extends BaseHbmBlockEntity implements MenuProvider
     // (устраняет вложенный stonecutter-баг в load())
     @Override
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-        // Просто сохраняем весь инвентарь как есть, включая слот 2
+        // Slot 2 holds an unpaid preview of the recipe result: updateCrafting() writes it without
+        // consuming anything, and only AnvilMenu pays for it when a player takes it. Persisting or
+        // dropping it handed out free items, so it is left out of the tag and recomputed on load.
+        ItemStack preview = itemHandler.getStackInSlot(2);
+        itemHandler.setStackInSlot(2, ItemStack.EMPTY);
         tag.put("inventory", com.hbm_m.platform.ItemStackSerialization.serialize(itemHandler, registries));
+        itemHandler.setStackInSlot(2, preview);
 
         if (selectedRecipeId != null) {
             tag.putString("SelectedRecipe", selectedRecipeId.toString());
@@ -86,8 +91,9 @@ public class AnvilBlockEntity extends BaseHbmBlockEntity implements MenuProvider
     }
 
     public void drops() {
-        SimpleContainer inventory = new SimpleContainer(itemHandler.getSlots());
-        for (int i = 0; i < itemHandler.getSlots(); i++) {
+        // Slot 2 is the unpaid preview (see writeNbtData): dropping it duplicated the result.
+        SimpleContainer inventory = new SimpleContainer(2);
+        for (int i = 0; i < 2; i++) {
             inventory.setItem(i, itemHandler.getStackInSlot(i));
         }
         Containers.dropContents(this.level, this.worldPosition, inventory);

@@ -84,7 +84,7 @@ public class MachineRefineryMenu extends AbstractContainerMenu {
         if (inventory.player.level().isClientSide) {
             return null;
         }
-        throw new IllegalStateException("No MachineRefineryBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":refinery_menu");
+        throw new MenuBlockEntityMissingException("No MachineRefineryBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":refinery_menu");
     }
 
     public MachineRefineryBlockEntity getBlockEntity() {
@@ -93,11 +93,7 @@ public class MachineRefineryMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(@NotNull Player player) {
-        if (blockEntity == null || blockEntity.getLevel() != player.level()) {
-            return false;
-        }
-        BlockPos pos = blockEntity.getBlockPos();
-        return player.distanceToSqr(pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D) <= 64.0D;
+        return MenuReach.stillValid(player, blockEntity);
     }
 
     @Override

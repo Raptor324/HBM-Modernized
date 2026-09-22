@@ -138,48 +138,6 @@ public class ModBlockTagProvider extends BlockTagsProvider {
 
         // ============ ТЕГ ДЛЯ OCCLUSION CULLING ============
         // Блоки, через которые можно видеть (не блокируют рендеринг машин)
-        //? if fabric && < 1.21.1 {
-        /*this.tag(BlockTags.create(new ResourceLocation(RefStrings.MODID, "non_occluding")))
-                .add(ModBlocks.UNIVERSAL_MACHINE_PART.get())
-                .addTag(Tags.Blocks.GLASS)
-                .addTag(Tags.Blocks.GLASS_PANES)
-                .addTag(BlockTags.FENCES)
-                .addTag(BlockTags.FENCE_GATES)
-                .addTag(BlockTags.WALLS)
-                .addTag(BlockTags.DOORS)
-                .addTag(BlockTags.TRAPDOORS)
-                .addTag(BlockTags.BUTTONS)
-                .addTag(BlockTags.PRESSURE_PLATES)
-                .addTag(BlockTags.RAILS)
-                .addTag(BlockTags.STAIRS)
-                .addTag(BlockTags.SLABS)
-                .addTag(BlockTags.CORAL_PLANTS)
-                .addTag(BlockTags.LEAVES)
-                .addTag(BlockTags.SAPLINGS)
-                .addTag(BlockTags.FLOWERS)
-                .addTag(BlockTags.SIGNS)
-                .addTag(BlockTags.BANNERS)
-                .addTag(BlockTags.CANDLES)
-                .addTag(BlockTags.CLIMBABLE)
-                .add(Blocks.IRON_BARS)
-                .add(Blocks.CHAIN)
-                .add(Blocks.LANTERN)
-                .add(Blocks.SOUL_LANTERN)
-                .add(Blocks.TORCH)
-                .add(Blocks.SOUL_TORCH)
-                .add(Blocks.REDSTONE_TORCH)
-                .add(Blocks.BREWING_STAND)
-                .add(Blocks.ENCHANTING_TABLE)
-                .add(Blocks.END_ROD)
-                .add(Blocks.LIGHTNING_ROD)
-                .add(Blocks.HOPPER)
-                .add(Blocks.COBWEB)
-                .add(Blocks.SCAFFOLDING)
-                .add(Blocks.LEVER)
-                .add(Blocks.TRIPWIRE)
-                .add(Blocks.TRIPWIRE_HOOK)
-                .add(Blocks.CAMPFIRE);
-        *///?} else {
                 this.tag(BlockTags.create(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "non_occluding")))
                 .add(ModBlocks.UNIVERSAL_MACHINE_PART.get())
                 .addTag(Tags.Blocks.GLASS)
@@ -242,50 +200,32 @@ public class ModBlockTagProvider extends BlockTagsProvider {
                 .add(Blocks.RED_STAINED_GLASS_PANE)
                 .add(Blocks.BLACK_STAINED_GLASS_PANE)
                 .add(ModBlocks.REINFORCED_GLASS_PANE.get());
-        //?}
 
 
         // ============ ТЕГИ СОВМЕСТИМОСТИ С ДРУГИМИ МОДАМИ ============
-        //? if fabric && < 1.21.1 {
-        /*this.tag(BlockTags.create(new ResourceLocation("forge", "storage_blocks/uranium")))
-                .add(ModBlocks.URANIUM_BLOCK.get());
-        *///?} else {
-                this.tag(BlockTags.create(ResourceLocation.fromNamespaceAndPath("forge", "storage_blocks/uranium")))
-                .add(ModBlocks.URANIUM_BLOCK.get());
-        //?}
+        //  Storage blocks for every material with a BLOCK form. Only uranium and plutonium were
+        //  listed by hand, so recipes for the other storage_blocks/* matched an empty tag.
+                var storageBlocksTagBuilder = this.tag(BlockTags.create(ResourceLocation.fromNamespaceAndPath("forge", "storage_blocks")));
+
+        //  Iterate the registry itself instead of filtering ModMaterials by hand: INGOT_BLOCKS is
+        //  filled exactly on mat.has(BLOCK), so it cannot drift from ModItemTagProvider, which
+        //  copies the same tags.
+        for (var entry : ModBlocks.INGOT_BLOCKS.entrySet()) {
+            Block storageBlock = entry.getValue().get();
+                        this.tag(BlockTags.create(ResourceLocation.fromNamespaceAndPath("forge", "storage_blocks/" + entry.getKey().getId())))
+                    .add(storageBlock);
+
+            storageBlocksTagBuilder.add(storageBlock);
+        }
 
 
-        //? if fabric && < 1.21.1 {
-        /*this.tag(BlockTags.create(new ResourceLocation("forge", "storage_blocks/plutonium")))
-                .add(ModBlocks.PLUTONIUM_BLOCK.get());
-        *///?} else {
-                this.tag(BlockTags.create(ResourceLocation.fromNamespaceAndPath("forge", "storage_blocks/plutonium")))
-                .add(ModBlocks.PLUTONIUM_BLOCK.get());
-        //?}
-
-
-        //? if fabric && < 1.21.1 {
-        /*this.tag(BlockTags.create(new ResourceLocation("forge", "ores/uranium")))
-                .add(ModBlocks.URANIUM_ORE.get());
-        *///?} else {
                 this.tag(BlockTags.create(ResourceLocation.fromNamespaceAndPath("forge", "ores/uranium")))
                 .add(ModBlocks.URANIUM_ORE.get());
-        //?}
 
         // Все блоки хранения материалов → forge:storage_blocks/<имя MaterialType>
         // (или ModMaterials.getId(), если материал не плавится). Тег потребляется
         // mold_casting/block_*.json (выход блочной формы) — раньше был только для
         // uranium/plutonium, из-за чего ни один модовый блок не отливался.
-        //? if fabric && < 1.21.1 {
-        /*for (com.hbm_m.item.material.ModMaterials mat : com.hbm_m.item.material.ModMaterials.values()) {
-            if (!mat.has(com.hbm_m.item.material.MaterialShape.BLOCK)) continue;
-            if (!ModBlocks.hasIngotBlock(mat)) continue;
-            com.hbm_m.inventory.material.MaterialType mt = com.hbm_m.inventory.material.MaterialType.of(mat);
-            String tagName = mt != null ? mt.name : mat.getId();
-            this.tag(BlockTags.create(new ResourceLocation("forge", "storage_blocks/" + tagName)))
-                    .add(ModBlocks.getIngotBlock(mat).get());
-        }
-        *///?} else {
         for (com.hbm_m.item.material.ModMaterials mat : com.hbm_m.item.material.ModMaterials.values()) {
             if (!mat.has(com.hbm_m.item.material.MaterialShape.BLOCK)) continue;
             if (!ModBlocks.hasIngotBlock(mat)) continue;
@@ -294,7 +234,6 @@ public class ModBlockTagProvider extends BlockTagsProvider {
             this.tag(BlockTags.create(ResourceLocation.fromNamespaceAndPath("forge", "storage_blocks/" + tagName)))
                     .add(ModBlocks.getIngotBlock(mat).get());
         }
-        //?}
 
         // ============ CONNECTED TEXTURES (CT) ============
         // Только сталь ↔ ржавая сталь как «одна семья»; остальные деко-CT — только с тем же блоком (см. ConnectedDecoBlockBakedModel).

@@ -20,11 +20,7 @@ import net.minecraft.world.entity.player.Inventory;
 public class GUIMachineArcFurnace extends GuiInfoScreen<MachineArcFurnaceMenu> {
 
     private static final ResourceLocation TEXTURE =
-            //? if fabric && < 1.21.1 {
-            /*new ResourceLocation(RefStrings.MODID, "textures/gui/processing/gui_arc_furnace.png");
-            *///?} else {
                         ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/processing/gui_arc_furnace.png");
-            //?}
 
     // Zwei generische Fluid-Ausgabetanks, nebeneinander rechts im Panel (eigenes Layout).
     private static final int TANK1_X = 116;

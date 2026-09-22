@@ -82,31 +82,6 @@ public class ClientModEvents {
                 ParticleEffectClient.tickRadiationAura(client.player);
             }
         });
-
-        //? if fabric {
-        /*WorldRenderEvents.AFTER_ENTITIES.register(context -> {
-            ModClothConfig cfg = ModClothConfig.get();
-            if (!cfg.enableOcclusionCulling) {
-                OcclusionCullingHelper.captureBlockEntityPassFrustum(null);
-            } else {
-                OcclusionCullingHelper.captureBlockEntityPassFrustum(context.frustum());
-            }
-        });
-
-        // РЕГРЕССИЯ-СТОП: instanced flush ТОЛЬКО здесь. END — не рисовать batch (грязные texture units).
-        WorldRenderEvents.AFTER_BLOCK_ENTITIES.register(context -> {
-            var cameraPos = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
-            InstancedRenderFrame.presentAfterBlockEntities(context.projectionMatrix(), cameraPos);
-        });
-
-        WorldRenderEvents.END.register(context -> {
-            InstancedRenderFrame.flushDeferredPresent();
-        });
-
-        WorldRenderEvents.LAST.register(context -> {
-            com.hbm_m.client.render.shader.IrisRenderBatch.closePersistentIfActive();
-        });
-        *///?}
     }
 
     /**

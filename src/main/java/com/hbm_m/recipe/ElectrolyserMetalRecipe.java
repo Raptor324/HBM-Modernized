@@ -104,11 +104,7 @@ public class ElectrolyserMetalRecipe extends PlatformRecipe {
 
     public static class Serializer extends PlatformRecipeSerializer<ElectrolyserMetalRecipe> {
         public static final Serializer INSTANCE = new Serializer();
-        //? if fabric && < 1.21.1 {
-        /*public static final ResourceLocation ID = new ResourceLocation(RefStrings.MODID, "electrolyser_metal");
-        *///?} else {
         public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "electrolyser_metal");
-        //?}
 
         @Override
         public ElectrolyserMetalRecipe readJson(ResourceLocation recipeId, JsonObject json) {

@@ -44,6 +44,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -426,9 +427,9 @@ public abstract class LaunchPadBaseBlockEntity extends BaseMachineBlockEntity
         if (missile.fuel == MissileItem.MissileFuel.SOLID) {
             return true;
         }
-        // WIP: проверка заполнения баков временно отключена — для пуска достаточно ракеты, энергии и цели.
-        // return tanks[0].getFill() >= missile.fuelCap && tanks[1].getFill() >= missile.fuelCap;
-        return true;
+        // GIT TileEntityLaunchPadBase.hasFuel: both tanks must hold the missile's fuelCap.
+        // Solid fuel has a cap of 0, so it passes without any liquid at all.
+        return tanks[0].getFill() >= missile.fuelCap && tanks[1].getFill() >= missile.fuelCap;
     }
 
     public boolean isMissileValid() {
@@ -511,6 +512,11 @@ public abstract class LaunchPadBaseBlockEntity extends BaseMachineBlockEntity
         }
         Entity missile = instantiateMissile((int) Math.floor(entity.getX()), (int) Math.floor(entity.getZ()));
         if (missile != null) {
+            // Upstream hands the interceptor its target here; without it the ABM ignored the target
+            // the radar operator picked and grabbed the nearest one on its own 40 ticks later.
+            if (missile instanceof com.hbm_m.entity.missile.MissileAntiBallisticEntity abm) {
+                abm.tracking = entity;
+            }
             finalizeLaunch(missile);
             return true;
         }
@@ -556,17 +562,23 @@ public abstract class LaunchPadBaseBlockEntity extends BaseMachineBlockEntity
         }
 
         MissileBaseEntity missile = type.create(level);
-        missile.initLaunch(
-                worldPosition.getX() + 0.5D,
-                worldPosition.getY() + getLaunchOffset(),
-                worldPosition.getZ() + 0.5D,
-                targetX, targetZ
-        );
+        // On a Sable ship worldPosition is in the plot grid: initLaunch measured the distance to the
+        // target from there, got an astronomical length, accelXZ ~ 0 and the missile went straight up.
+        Vec3 launch = launchPosInWorld();
+        missile.initLaunch(launch.x, launch.y, launch.z, targetX, targetZ);
         BlockState padState = level.getBlockState(worldPosition);
         if (padState.hasProperty(HorizontalDirectionalBlock.FACING)) {
             missile.setLaunchFacing(padState.getValue(HorizontalDirectionalBlock.FACING));
         }
         return missile;
+    }
+
+    /** Launch point (pad centre + launch offset) in world space, see {@link com.hbm_m.compat.sable.SableCompat}. */
+    private Vec3 launchPosInWorld() {
+        return com.hbm_m.compat.sable.SableCompat.toWorld(level,
+                worldPosition.getX() + 0.5D,
+                worldPosition.getY() + getLaunchOffset(),
+                worldPosition.getZ() + 0.5D);
     }
 
     /**
@@ -578,16 +590,14 @@ public abstract class LaunchPadBaseBlockEntity extends BaseMachineBlockEntity
         }
 
         level.addFreshEntity(missile);
+        Vec3 launch = launchPosInWorld();
         if (level instanceof ServerLevel server) {
-            MissileWarheadEffects.spawnLaunchSmoke(server,
-                    worldPosition.getX() + 0.5D,
-                    worldPosition.getY() + getLaunchOffset(),
-                    worldPosition.getZ() + 0.5D);
+            MissileWarheadEffects.spawnLaunchSmoke(server, launch.x, launch.y, launch.z);
         }
         level.playSound(null,
-                worldPosition.getX() + 0.5D,
-                worldPosition.getY(),
-                worldPosition.getZ() + 0.5D,
+                launch.x,
+                launch.y - getLaunchOffset(),
+                launch.z,
                 com.hbm_m.sound.ModSounds.MISSILE_TAKEOFF.get(),
                 SoundSource.PLAYERS,
                 // volume = радиус рассылки пакета: 16 × volume = 512 бл. = attenuation_distance
@@ -598,14 +608,11 @@ public abstract class LaunchPadBaseBlockEntity extends BaseMachineBlockEntity
         this.energy = Math.max(0, this.energy - 75_000L);
 
         ItemStack stack = inventory.getStackInSlot(SLOT_MISSILE);
-        // WIP: расход топлива из баков временно отключён.
-        /*
         if (stack.getItem() instanceof MissileItem missileItem
                 && missileItem.fuel != MissileItem.MissileFuel.SOLID) {
             tanks[0].setFill(tanks[0].getFill() - missileItem.fuelCap);
             tanks[1].setFill(tanks[1].getFill() - missileItem.fuelCap);
         }
-        */
         stack.shrink(1);
         // Кулдаун до следующего пуска
         this.delay = 100;

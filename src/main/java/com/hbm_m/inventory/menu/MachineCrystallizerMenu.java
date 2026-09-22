@@ -14,7 +14,6 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerData;
-import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.inventory.SimpleContainerData;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
@@ -158,7 +157,7 @@ public class MachineCrystallizerMenu extends AbstractContainerMenu implements IL
         if (inv.player.level().isClientSide) {
             return null;
         }
-        throw new IllegalStateException("BlockEntity is not a Crystallizer");
+        throw new MenuBlockEntityMissingException("BlockEntity is not a Crystallizer");
     }
 
     public MachineCrystallizerBlockEntity getBlockEntity() {
@@ -309,7 +308,7 @@ public class MachineCrystallizerMenu extends AbstractContainerMenu implements IL
         if (blockEntity == null) {
             return false; // тайл может отсутствовать на клиенте (реплей Flashback)
         }
-        return stillValid(ContainerLevelAccess.create(level, blockEntity.getBlockPos()), player, ModBlocks.CRYSTALLIZER.get());
+        return MenuReach.stillValid(player, blockEntity, ModBlocks.CRYSTALLIZER.get());
     }
 
     /** Vanilla-адаптер для {@link ModItemStackHandler}, чтобы использовать обычные {@link Slot}. */

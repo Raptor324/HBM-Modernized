@@ -44,6 +44,7 @@ public abstract class MissileTier4 extends MissileBaseEntity {
         thrust = thrust.xRot(-this.getXRot() * ((float) Math.PI / 180.0F));
         thrust = thrust.yRot((this.getYRot() + 90.0F) * ((float) Math.PI / 180.0F));
 
+        // -thrust.z in the y slot is what the original ships; kept for parity.
         spawnContrailWithOffset(thrust.x, thrust.y, thrust.z);
         spawnContrailWithOffset(0.0D, 0.0D, 0.0D);
         spawnContrailWithOffset(-thrust.x, -thrust.z, -thrust.z);

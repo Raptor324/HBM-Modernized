@@ -30,7 +30,8 @@ public final class ArmorUtil {
     }
 
     public static boolean checkForDigamma(Player player) {
-        return false;
+        // Original prueft zusaetzlich FaU- und DNS-Ruestung; die gibt es im Port noch nicht.
+        return com.hbm_m.platform.PlatformHooks.hasEffect(player, com.hbm_m.effect.ModEffects.STABILITY);
     }
 
     public static boolean checkForDigamma2(Player player) {
@@ -59,14 +60,16 @@ public final class ArmorUtil {
     /**
      * Износ фильтра на надетой маске (или на маске, прицепленной к шлему).
      * Порт {@link com.hbm.util.ArmorUtil#damageGasMaskFilter} (1.7.10).
+     * The original loses the wear of an attached mask - it writes it into the copy decoded from
+     * the helmet's NBT - so the result is written back here.
      */
     public static void damageGasMaskFilter(LivingEntity entity, int damage) {
         if (damage <= 0) {
             return;
         }
-        ItemStack mask = GasMaskUtil.resolveWornMask(entity);
-        if (!mask.isEmpty() && mask.getItem() instanceof IGasMask) {
-            IGasMask.damageFilter(mask, damage);
+        GasMaskUtil.WornMask worn = GasMaskUtil.resolveWornMaskRef(entity);
+        if (worn.mask().getItem() instanceof IGasMask && IGasMask.damageFilter(worn.mask(), damage)) {
+            worn.commit();
         }
     }
 

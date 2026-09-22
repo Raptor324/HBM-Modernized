@@ -4,12 +4,14 @@ import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.blockentity.crates.BaseCrateBlockEntity;
 import com.hbm_m.sound.ModSounds;
+import com.hbm_m.platform.ModItemStackHandler;
 import com.hbm_m.platform.PlatformHooks;
 
 import dev.architectury.registry.menu.MenuRegistry;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.Containers;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.LivingEntity;
@@ -97,6 +99,22 @@ public abstract class BaseCrateBlock extends BaseEntityBlock {
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos,
                          BlockState newState, boolean isMoving) {
+        // The loot table is deliberately empty (the crate item carries its contents), and only the
+        // player-mining path packed it, so TNT, a nuke, a creeper or a quarry deleted up to 104
+        // stacks. Upstream BlockStorageCrate.breakBlock drops every slot loose in that case; the
+        // crate item itself must not drop here (see the anti-duplication game test), and
+        // handlePlayerWillDestroy clears the block entity so the two paths cannot both fire.
+        if (!state.is(newState.getBlock()) && !level.isClientSide
+                && level.getBlockEntity(pos) instanceof BaseCrateBlockEntity crate) {
+            ModItemStackHandler handler = crate.getItemHandler();
+            for (int slot = 0; slot < handler.getSlots(); slot++) {
+                ItemStack stack = handler.getStackInSlot(slot);
+                if (!stack.isEmpty()) {
+                    Containers.dropItemStack(level, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, stack);
+                }
+            }
+            crate.clearContents();
+        }
         super.onRemove(state, level, pos, newState, isMoving);
     }
 
@@ -115,20 +133,21 @@ public abstract class BaseCrateBlock extends BaseEntityBlock {
     *///?}
 
     private void handlePlayerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
-        if (player.getAbilities().instabuild) {
+        if (level.isClientSide || !(level.getBlockEntity(pos) instanceof BaseCrateBlockEntity crateEntity)) {
             return;
         }
 
-        BlockEntity blockEntity = level.getBlockEntity(pos);
-        if (blockEntity instanceof BaseCrateBlockEntity crateEntity) {
-            if (!level.isClientSide) {
-                ItemStack stack = new ItemStack(this);
-                if (!crateEntity.isEmpty()) {
-                    crateEntity.saveToItem(stack);
-                }
-                popResource(level, pos, stack);
+        if (!player.getAbilities().instabuild) {
+            ItemStack stack = new ItemStack(this);
+            if (!crateEntity.isEmpty()) {
+                crateEntity.saveToItem(stack);
             }
+            popResource(level, pos, stack);
         }
+
+        // onRemove now packs the crate for every other kind of destruction, so clear it here to keep
+        // the player path from producing a second one (and to keep creative breaking silent).
+        crateEntity.clearContents();
     }
 
     private void playOpenSound(Level level, BlockPos pos) {

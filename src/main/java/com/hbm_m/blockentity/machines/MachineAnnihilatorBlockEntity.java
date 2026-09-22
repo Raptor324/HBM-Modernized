@@ -6,6 +6,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.annihilator.AnnihilatorPoolManager;
+import com.hbm_m.inventory.fluid.trait.FT_Polluting;
+import com.hbm_m.inventory.fluid.trait.FluidTrait.FluidReleaseType;
 import com.hbm_m.api.fluids.IFluidStandardReceiverMK2;
 import com.hbm_m.blockentity.BaseMachineBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
@@ -13,7 +15,7 @@ import com.hbm_m.hazard.HazardRegistry;
 import com.hbm_m.hazard.HazardSystem;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.inventory.menu.MachineAnnihilatorMenu;
-import com.hbm_m.radiation.ChunkRadiationAccess;
+import com.hbm_m.radiation.ChunkRadiationManager;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -29,7 +31,6 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.material.Fluid;
 
 /**
@@ -48,7 +49,8 @@ import net.minecraft.world.level.material.Fluid;
  * Original experimentell/deaktiviert war. Die eigentliche Kernmechanik (Zaehlung, Pools, Monitor,
  * Strahlung) ist vollstaendig 1:1 uebernommen.
  * <p>
- * Ebenfalls nicht uebernommen: aktive Pollution-Effekte beim Vernichten von Fluiden ({@code
+ * Die Verschmutzung beim Vernichten von Fluiden ist portiert (BURN mit der doppelten Menge).
+ * Ebenfalls nicht uebernommen: ({@code
  * FT_Polluting.pollute(...)} im Original) - {@link com.hbm_m.inventory.fluid.trait.FT_Polluting}
  * ist in diesem Port rein deklarative Tooltip-Metadata ohne Wirkmethode (siehe gleiche Entscheidung
  * bei {@link MachineFlareStackBlockEntity}).
@@ -95,7 +97,7 @@ public class MachineAnnihilatorBlockEntity extends BaseMachineBlockEntity implem
 
         if (level.getGameTime() % 20 == 0) {
             for (Direction dir : Direction.values()) {
-                be.trySubscribe(be.tank.getTankType(), level, pos.relative(dir), dir);
+                be.trySubscribe(be.tank, level, pos.relative(dir), dir);
             }
         }
 
@@ -130,6 +132,9 @@ public class MachineAnnihilatorBlockEntity extends BaseMachineBlockEntity implem
         ResourceLocation id = BuiltInRegistries.FLUID.getKey(fluid);
         AnnihilatorPoolManager.get(level).add(poolName, "fluid:" + id, fill);
 
+        // Original: FT_Polluting.pollute(..., BURN, tank.getFill() * 2).
+        FT_Polluting.pollute(level, worldPosition, fluid, FluidReleaseType.BURN, fill * 2F);
+
         tank.drainMb(fill);
     }
 
@@ -139,9 +144,9 @@ public class MachineAnnihilatorBlockEntity extends BaseMachineBlockEntity implem
         if (hazard <= 0f) return;
 
         float amount = Math.min(1000f, hazard * count);
-        LevelChunk chunk = level.getChunkAt(worldPosition);
-        ChunkRadiationAccess.get(chunk).ifPresent(rad ->
-                rad.setAmbientRadiation(rad.getAmbientRadiation() + amount));
+        // Go through the manager: writing the attachment directly skips the config gate, leaves the
+        // chunk out of the active set (no spread or decay) and never marks it unsaved.
+        ChunkRadiationManager.incrementRad(level, worldPosition.getX(), worldPosition.getY(), worldPosition.getZ(), amount);
     }
 
     private void updateMonitor(ServerLevel level) {

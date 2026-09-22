@@ -15,11 +15,7 @@ public class ModParticleTypes {
 
     // Вспомогательный кроссплатформенный метод для создания SimpleParticleType
     private static SimpleParticleType createParticle(boolean alwaysShow) {
-        //? if fabric {
-        /*return net.fabricmc.fabric.api.particle.v1.FabricParticleTypes.simple(alwaysShow);
-        *///?} else {
         return new SimpleParticleType(alwaysShow);
-         //?}
     }
 
     /** Town aura (радиоблоки, обеззараживатель). Порт {@code townaura} / {@code EntityAuraFX} (1.7.10). */
@@ -30,6 +26,10 @@ public class ModParticleTypes {
             () -> createParticle(true));
     public static final RegistrySupplier<SimpleParticleType> SMOKE_COLUMN = PARTICLES.register("smoke_column",
             () -> createParticle(false));
+
+    /** Original: {@code "hadron"} - der Ring ueber einem Teilchenaufprall. */
+    public static final RegistrySupplier<SimpleParticleType> HADRON = PARTICLES.register("hadron",
+            () -> createParticle(true));
 
     /** RBMK meltdown effects, 1:1 with the original's "rbmkflame" / "rbmksteam" / "rbmkmush". */
     public static final RegistrySupplier<SimpleParticleType> RBMK_FLAME = PARTICLES.register("rbmk_flame",
@@ -47,6 +47,10 @@ public class ModParticleTypes {
             () -> createParticle(false));
 
     public static final RegistrySupplier<SimpleParticleType> RAD_FOG_PARTICLE = PARTICLES.register("rad_fog",
+            () -> createParticle(true));
+
+    /** Tinted puffs of an {@code EntityMist} gas cloud; colour travels in the speed arguments. */
+    public static final RegistrySupplier<SimpleParticleType> MIST = PARTICLES.register("mist",
             () -> createParticle(true));
 
     // Контрейл баллистической ракеты (огненный выхлоп)

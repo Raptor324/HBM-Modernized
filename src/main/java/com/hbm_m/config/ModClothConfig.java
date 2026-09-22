@@ -60,6 +60,22 @@ public class ModClothConfig {
     public boolean enableRadiation = true;
     public boolean enableChunkRads = true;
 
+    // ════════════════════════════════════════════════════════════════
+    // Verschmutzung (1.7.10 RadiationConfig / MobConfig)
+    // ════════════════════════════════════════════════════════════════
+    /** Original: RadiationConfig.enablePollution - schaltet das gesamte Verschmutzungsraster. */
+    public boolean enablePollution = true;
+    /** Original: MobConfig.pollutionMult - Faktor auf jeden Eintrag ins Raster. */
+    public double pollutionMult = 1.0D;
+    /** Original: RadiationConfig.buffMobThreshold - ab so viel Russ spawnen verstaerkte Monster. */
+    public float buffMobThreshold = 50F;
+    /** Original: RadiationConfig.enablePoison - Giftwirkung auf Kreaturen in der Zelle. */
+    public boolean enablePoison = true;
+    /** Original: RadiationConfig.enableLeadPoisoning - Bleivergiftung durch Schwermetall in der Luft. */
+    public boolean enableLeadPoisoning = true;
+    /** Original: RadiationConfig.enableLeadFromBlocks - Bleivergiftung beim Abbauen in belasteten Zellen. */
+    public boolean enableLeadFromBlocks = true;
+
     /** MOTD при входе в мир и уведомление о новой версии на Modrinth (ориг. GeneralConfig.enableMOTD). */
     public boolean enableMOTD = true;
 

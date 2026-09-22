@@ -1,5 +1,13 @@
 package com.hbm_m.blockentity.machines;
 
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
+
 import java.util.List;
 
 import org.jetbrains.annotations.NotNull;
@@ -374,9 +382,7 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity
         return lowest <= highest ? new int[]{ lowest, highest } : IFluidUserMK2.DEFAULT_PRESSURE_RANGE;
     }
 
-    //? if forge {
-    @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-            //?}
+    @OnlyIn(Dist.CLIENT)
     private void clientTick() {
         ClientSoundBootstrap.updateSound(this, this.isChemplantEffectsActive(), () -> newChemicalPlantSoundInstance());
     }
@@ -595,6 +601,12 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity
         if (level != null && level.isClientSide) {
             ClientSoundBootstrap.updateSound(this, false, null);
         }
+    }
+
+    /** Только горизонтальные грани отдают жидкость — как в forge-фильтре getCapability. */
+    @Override
+    protected boolean isFluidSideAllowed(@Nullable net.minecraft.core.Direction side) {
+        return side == null || side.getAxis().isHorizontal();
     }
 
     //? if forge {

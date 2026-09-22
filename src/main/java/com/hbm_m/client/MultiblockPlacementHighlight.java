@@ -65,18 +65,30 @@ public final class MultiblockPlacementHighlight {
         float r = canPlace ? 0.0F : pulse;
         float g = canPlace ? pulse : 0.0F;
 
-        AABB frame = helper.generateShapeFromParts(facing).bounds()
-                .move(corePos)
-                .inflate(0.002D);
+        AABB frame = helper.generateShapeFromParts(facing).bounds().inflate(0.002D);
 
         // Контракт ванильного renderHitOutline (одинаков в 1.20.1 и 1.21.1):
         // вершины передаются как мир - камера. PoseStack события пустой,
         // камера живёт в model-view матрице (только поворот).
         Vec3 cam = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
-        frame = frame.move(-cam.x, -cam.y, -cam.z);
+        poseStack.pushPose();
+        // On a Sable ship the outline event fires INSIDE the ship render pose that Sable's
+        // LevelRenderer mixin pushes before ClientHooks.onDrawHighlight. Applying our own
+        // ship transform here would rotate the frame twice, so instead we draw core-relative
+        // offsets in the ship's plot grid, camera-relative (same convention as the vanilla
+        // outline, whose camera Sable swaps to the sublevel one). Off a ship the stack is
+        // empty and vertices are passed as world - camera.
+        Vec3 plotCam = com.hbm_m.compat.sable.SableClientCompat.plotCamera(facadePos, cam);
+        if (plotCam != null) {
+            poseStack.translate((float) (corePos.getX() - plotCam.x), (float) (corePos.getY() - plotCam.y),
+                    (float) (corePos.getZ() - plotCam.z));
+        } else {
+            frame = frame.move(corePos.getX() - cam.x, corePos.getY() - cam.y, corePos.getZ() - cam.z);
+        }
 
         VertexConsumer consumer = Minecraft.getInstance().renderBuffers().bufferSource().getBuffer(RenderType.lines());
         LevelRenderer.renderLineBox(poseStack, consumer, frame, r, g, 0.0F, 1.0F);
         Minecraft.getInstance().renderBuffers().bufferSource().endBatch(RenderType.lines());
+        poseStack.popPose();
     }
 }

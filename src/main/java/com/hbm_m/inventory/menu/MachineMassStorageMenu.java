@@ -57,7 +57,7 @@ public class MachineMassStorageMenu extends AbstractContainerMenu {
         if (blockEntity instanceof MachineMassStorageBlockEntity massStorageBlockEntity) {
             return massStorageBlockEntity;
         }
-        throw new IllegalStateException("No MachineMassStorageBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":mass_storage_menu");
+        throw new MenuBlockEntityMissingException("No MachineMassStorageBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":mass_storage_menu");
     }
 
     public MachineMassStorageBlockEntity getBlockEntity() {
@@ -66,11 +66,7 @@ public class MachineMassStorageMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        if (blockEntity == null || blockEntity.getLevel() != player.level()) {
-            return false;
-        }
-        BlockPos pos = blockEntity.getBlockPos();
-        return player.distanceToSqr(pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D) <= 64.0D;
+        return MenuReach.stillValid(player, blockEntity);
     }
 
     @Override

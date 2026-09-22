@@ -78,4 +78,14 @@ public class RedCableGaugeBlockEntity extends BaseHbmBlockEntity implements Powe
         deltaTick = Math.max(tag.getLong("deltaTick"), 0);
         deltaLastSecond = Math.max(tag.getLong("deltaLastSecond"), 0);
     }
+
+    // Without this the node outlives the block: the grid stays merged through a position that
+    // no longer conducts, and a conductor placed there later inherits the ghost node.
+    @Override
+    public void setRemoved() {
+        super.setRemoved();
+        if (level instanceof ServerLevel serverLevel) {
+            Nodespace.destroyNode(serverLevel, getBlockPos());
+        }
+    }
 }

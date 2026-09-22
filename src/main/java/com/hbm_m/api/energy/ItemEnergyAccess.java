@@ -21,16 +21,25 @@ public final class ItemEnergyAccess {
 
     public static boolean isEnergySource(ItemStack stack) {
         if (stack.isEmpty()) return false;
-        if (getHbmProvider(stack).isPresent()) return true;
+        return getHbmProvider(stack).isPresent() || hasLoaderEnergy(stack);
+    }
 
+    /** Слот питания принимает и отдающие, и заряжаемые батарейки, и чужие FE-предметы. */
+    public static boolean isEnergyItem(ItemStack stack) {
+        if (stack.isEmpty()) return false;
+        return getHbmProvider(stack).isPresent()
+                || getHbmReceiver(stack).isPresent()
+                || hasLoaderEnergy(stack);
+    }
+
+    /** Энергокапабилити самого лоадера (Forge FE / NeoForge FE). */
+    public static boolean hasLoaderEnergy(ItemStack stack) {
+        if (stack.isEmpty()) return false;
         //? if forge {
-        if (stack.getCapability(ForgeCapabilities.ENERGY).isPresent()) return true;
-        //?}
-        //? if neoforge {
-        /*if (stack.getCapability(Capabilities.EnergyStorage.ITEM) != null) return true;
+        return stack.getCapability(ForgeCapabilities.ENERGY).isPresent();
+        //?} elif neoforge {
+        /*return stack.getCapability(Capabilities.EnergyStorage.ITEM) != null;
         *///?}
-
-        return false;
     }
 
     public static Optional<IEnergyProvider> getHbmProvider(ItemStack stack) {

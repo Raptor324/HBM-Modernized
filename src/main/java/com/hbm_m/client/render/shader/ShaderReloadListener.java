@@ -18,10 +18,6 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 @OnlyIn(Dist.CLIENT)
 //?}
-//? if fabric {
-/*import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
-@Environment(EnvType.CLIENT)*///?}
 public class ShaderReloadListener extends SimplePreparableReloadListener<Void> {
     
     /**

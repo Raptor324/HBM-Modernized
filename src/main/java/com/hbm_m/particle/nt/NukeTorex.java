@@ -63,17 +63,9 @@ public class NukeTorex extends ParticleNT implements FarCapableParticle, Replace
     private static final int SORT_INTERVAL = 3;
     private int sortCounter = 0;
 
-    //? if fabric && < 1.21.1 {
-    /*private static final ResourceLocation CLOUDLET = new ResourceLocation(RefStrings.MODID, "textures/particle/particle_base.png");
-    *///?} else {
         private static final ResourceLocation CLOUDLET = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/particle/particle_base.png");
-    //?}
 
-    //? if fabric && < 1.21.1 {
-    /*private static final ResourceLocation FLASH = new ResourceLocation(RefStrings.MODID, "textures/particle/flare.png");
-    *///?} else {
         private static final ResourceLocation FLASH = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/particle/flare.png");
-    //?}
 
 
     public NukeTorex(ClientLevel level, double x, double y, double z) {

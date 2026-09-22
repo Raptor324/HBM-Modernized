@@ -181,20 +181,22 @@ public class MachineBatteryBlock extends BaseEntityBlock {
     //? if < 1.21.1 {
     @Override
     public void appendHoverText(ItemStack pStack, @Nullable BlockGetter pLevel, List<Component> pTooltip, TooltipFlag pFlag) {
-        super.appendHoverText(pStack, pLevel, pTooltip, pFlag);
     //?} else {
     /*@Override
     public void appendHoverText(ItemStack pStack, net.minecraft.world.item.Item.TooltipContext pLevel, List<Component> pTooltip, TooltipFlag pFlag) {
-        super.appendHoverText(pStack, pLevel, pTooltip, pFlag);
     *///?}
+        super.appendHoverText(pStack, pLevel, pTooltip, pFlag);
 
         // 1. Получаем сохраненную энергию из NBT
         long energy = 0;
         CompoundTag nbt = PlatformHooks.getItemTag(pStack);
 
-        // Мы читаем тот же "BlockEntityTag", который записали в loot table
+        // Мы читаем тот же "BlockEntityTag", который записали в loot table.
+        // The block entity writes "energy" (lower case, long); "Energy" only ever existed in the
+        // old copy_nbt loot table, so reading it alone always showed 0.
         if (nbt != null && nbt.contains("BlockEntityTag")) {
-            energy = nbt.getCompound("BlockEntityTag").getLong("Energy");
+            CompoundTag beTag = nbt.getCompound("BlockEntityTag");
+            energy = beTag.contains("energy") ? beTag.getLong("energy") : beTag.getLong("Energy");
         }
 
         // 2. Форматируем

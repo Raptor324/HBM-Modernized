@@ -117,7 +117,7 @@ public class MachineLargeTurbineBlockEntity extends BaseMachineBlockEntity imple
             if (tanks[1].getFill() > 0) {
                 tryProvide(tanks[1], level, neighborPos, dir);
             }
-            trySubscribe(tanks[0].getTankType(), level, neighborPos, dir);
+            trySubscribe(tanks[0], level, neighborPos, dir);
         }
 
         // 1:1 aus dem Original: der Energiepuffer verliert jeden Tick 5%, bevor neue Energie erzeugt wird.
@@ -211,6 +211,9 @@ public class MachineLargeTurbineBlockEntity extends BaseMachineBlockEntity imple
 
     @Override
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        // BaseMachineBlockEntity stores the inventory and the energy here; without the super call
+        // both were dropped on every save, so the machine came back empty and discharged.
+        super.writeNbtData(tag, registries);
         tag.putBoolean("active", active);
         tanks[0].writeToNBT(tag, "input");
         tanks[1].writeToNBT(tag, "output");
@@ -218,6 +221,7 @@ public class MachineLargeTurbineBlockEntity extends BaseMachineBlockEntity imple
 
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         active = tag.getBoolean("active");
         tanks[0].readFromNBT(tag, "input");
         tanks[1].readFromNBT(tag, "output");

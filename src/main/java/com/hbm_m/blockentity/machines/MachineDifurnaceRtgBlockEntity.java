@@ -5,7 +5,7 @@ import java.util.Optional;
 import com.hbm_m.blockentity.BaseMachineBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.recipe.BlastFurnaceRecipe;
-import com.hbm_m.util.RtgPelletHeat;
+import com.hbm_m.item.machine.ItemRTGPellet;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
@@ -22,7 +22,7 @@ import net.minecraft.world.level.block.state.BlockState;
  * Port of {@code TileEntityDiFurnaceRTG} (1.7.10 Original) - the RTG-heated variant of the
  * Blast/DiFurnace: same 2-ingredient recipe lookup as {@link BlastFurnaceBlockEntity} (reused
  * directly via {@link BlastFurnaceRecipe}), but heated by RTG pellets (6 slots) instead of solid
- * fuel items, using the same heat table as the removed RTG block entity via {@link RtgPelletHeat}.
+ * fuel items; Waerme, Zerfall und Lebensdauer kommen aus {@link ItemRTGPellet}.
  */
 public class MachineDifurnaceRtgBlockEntity extends BaseMachineBlockEntity {
 
@@ -42,16 +42,15 @@ public class MachineDifurnaceRtgBlockEntity extends BaseMachineBlockEntity {
         super(ModBlockEntities.MACHINE_DIFURNACE_RTG_BE.get(), pos, state, INVENTORY_SIZE, 0L, 0L, 0L);
     }
 
+    /** Original: {@code rtgIn} - die Steckplaetze, in denen die Pellets sitzen. */
+    private static final int[] PELLET_SLOTS =
+            java.util.stream.IntStream.range(PELLET_SLOT_START, PELLET_SLOT_START + PELLET_SLOT_COUNT).toArray();
+
     public static void tick(Level level, BlockPos pos, BlockState state, MachineDifurnaceRtgBlockEntity be) {
         if (level.isClientSide) return;
 
-        int heat = 0;
-        for (int i = 0; i < PELLET_SLOT_COUNT; i++) {
-            ItemStack stack = be.inventory.getStackInSlot(PELLET_SLOT_START + i);
-            if (stack.isEmpty()) continue;
-            heat += RtgPelletHeat.getHeat(stack.getItem());
-        }
-        heat = Math.min(heat, HEAT_MAX);
+        // 1:1: RTGUtil.updateRTGs(slots, rtgIn) - Waerme summieren und die Pellets altern lassen.
+        int heat = Math.min(ItemRTGPellet.updateRTGs(be.inventory, PELLET_SLOTS), HEAT_MAX);
 
         if (heat > 0 && be.canProcess(level)) {
             be.progress += heat;
@@ -109,7 +108,7 @@ public class MachineDifurnaceRtgBlockEntity extends BaseMachineBlockEntity {
     @Override
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
         if (slot == SLOT_OUTPUT) return false;
-        if (slot >= PELLET_SLOT_START) return RtgPelletHeat.getHeat(stack.getItem()) > 0;
+        if (slot >= PELLET_SLOT_START) return stack.getItem() instanceof ItemRTGPellet;
         return true;
     }
 

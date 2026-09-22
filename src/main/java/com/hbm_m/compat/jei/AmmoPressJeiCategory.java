@@ -15,7 +15,7 @@ import net.minecraft.world.item.ItemStack;
  * JEI category for Ammo Press recipes - 9 positionsfeste 3x3-Slots -&gt; 1 Ausgabe (siehe
  * {@link AmmoPressRecipe}/{@code MachineAmmoPressBlockEntity}).
  */
-//? if forge {
+//? if forge || neoforge {
 public class AmmoPressJeiCategory extends JeiGenericRecipeCategory<AmmoPressRecipe> {
 
     public static final RecipeType<AmmoPressRecipe> RECIPE_TYPE =
@@ -78,7 +78,4 @@ public class AmmoPressJeiCategory extends JeiGenericRecipeCategory<AmmoPressReci
         // Kein Blueprint-Slot fuer Ammo-Press-Rezepte.
     }
 }
-//?} else {
-/*public final class AmmoPressJeiCategory {
-    private AmmoPressJeiCategory() {}
-}*///?}
+//?}

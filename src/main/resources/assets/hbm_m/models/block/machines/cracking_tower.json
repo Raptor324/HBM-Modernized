@@ -1,48 +1,168 @@
 {
-  "textures": {
-    "particle": "hbm_m:block/machine/cracking_tower"
-  },
-  "loader": "forge:composite",
-  "children": {
-    "cracking_tower_model": {
-      "loader": "forge:obj",
-      "model": "hbm_m:models/block/machines/cracking_tower.obj",
-      "flip_v": true,
-      "render_type": "minecraft:solid",
-      "textures": {
-        "default": "hbm_m:block/machine/cracking_tower"
-      }
-    }
-  },
-  "transform": {
-    "translation": [0.5, 0, 0.5],
-    "rotation": [0, 0, 0],
-    "scale": 1.0
-  },
-  "display": {
-    "gui": {
-      "rotation": [30, 225, 0],
-      "translation": [0, -3.75, 0],
-      "scale": [0.1, 0.1, 0.1]
-    },
-    "fixed": {
-      "rotation": [0, 180, 0],
-      "translation": [0, 0, 0],
-      "scale": [0.16, 0.16, 0.16]
-    },
-    "ground": {
-      "translation": [0, 3, 0],
-      "scale": [0.1, 0.1, 0.1]
-    },
-    "thirdperson_righthand": {
-      "rotation": [75, 45, 0],
-      "translation": [0, 2.5, 0],
-      "scale": [0.11, 0.11, 0.11]
-    },
-    "firstperson_righthand": {
-      "rotation": [0, 45, 0],
-      "translation": [0.75, 1, 0],
-      "scale": [0.11, 0.11, 0.11]
-    }
-  }
+	"textures": {
+		"particle": "hbm_m:block/machine/cracking_tower"
+	},
+	"loader": "forge:composite",
+	"children": {
+		"cracking_tower_model": {
+			"loader": "forge:obj",
+			"model": "hbm_m:models/block/machines/cracking_tower.obj",
+			"flip_v": true,
+			"render_type": "minecraft:solid",
+			"textures": {
+				"default": "hbm_m:block/machine/cracking_tower"
+			}
+		}
+	},
+	"transform": {
+		"translation": [
+			0.5,
+			0,
+			0.5
+		],
+		"rotation": [
+			0,
+			0,
+			0
+		],
+		"scale": 1.0
+	},
+	"display": {
+		"thirdperson_righthand": {
+			"rotation": [
+				75,
+				45,
+				0
+			],
+			"translation": [
+				0.136,
+				1.642,
+				-2.677
+			],
+			"scale": [
+				0.024,
+				0.024,
+				0.024
+			]
+		},
+		"thirdperson_lefthand": {
+			"rotation": [
+				75,
+				45,
+				0
+			],
+			"translation": [
+				0.136,
+				1.642,
+				-2.677
+			],
+			"scale": [
+				0.024,
+				0.024,
+				0.024
+			]
+		},
+		"firstperson_righthand": {
+			"rotation": [
+				0,
+				45,
+				0
+			],
+			"translation": [
+				0.145,
+				-2.995,
+				0.145
+			],
+			"scale": [
+				0.0256,
+				0.0256,
+				0.0256
+			]
+		},
+		"firstperson_lefthand": {
+			"rotation": [
+				0,
+				225,
+				0
+			],
+			"translation": [
+				-0.145,
+				-2.995,
+				-0.145
+			],
+			"scale": [
+				0.0256,
+				0.0256,
+				0.0256
+			]
+		},
+		"gui": {
+			"rotation": [
+				30,
+				225,
+				0
+			],
+			"translation": [
+				-0.226,
+				-3.94,
+				-2.536
+			],
+			"scale": [
+				0.04,
+				0.04,
+				0.04
+			]
+		},
+		"ground": {
+			"rotation": [
+				0,
+				0,
+				0
+			],
+			"translation": [
+				0.0,
+				1.128,
+				0.128
+			],
+			"scale": [
+				0.016,
+				0.016,
+				0.016
+			]
+		},
+		"fixed": {
+			"rotation": [
+				0,
+				180,
+				0
+			],
+			"translation": [
+				0.0,
+				-3.744,
+				-0.256
+			],
+			"scale": [
+				0.032,
+				0.032,
+				0.032
+			]
+		},
+		"head": {
+			"rotation": [
+				0,
+				0,
+				0
+			],
+			"translation": [
+				0,
+				0,
+				0
+			],
+			"scale": [
+				1,
+				1,
+				1
+			]
+		}
+	}
 }

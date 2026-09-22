@@ -792,7 +792,10 @@
   "block.hbm_m.rbmk_indicator": "Indicador RBMK",
   "block.hbm_m.rbmk_keypad": "RBMK teclado",
   "block.hbm_m.rbmk_lever": "Alavanca RBMK",
-  "block.hbm_m.rbmk_loader": "Base do Carregador RBMK",
+  "block.hbm_m.rbmk_loader": "RBMK Steam Connector",
+  "block.hbm_m.rbmk_loader.desc0": "Allows RBMKs to have both water and steam connections at the bottom",
+  "block.hbm_m.rbmk_loader.desc1": "Place one water pipe below the RBMK column, then the connector,",
+  "block.hbm_m.rbmk_loader.desc2": "then connect the steam duct to the connector.",
   "block.hbm_m.rbmk_moderator": "Moderador RBMK",
   "block.hbm_m.rbmk_numitron": "RBMK Numitron",
   "block.hbm_m.rbmk_outgasser": "Canal de Irradiação RBMK",
@@ -3889,5 +3892,10 @@
   "trait.explosive": "Flammable / Explosive",
   "trait.hot": "Pyrophoric / Hot",
   "trait.hydro": "Hydroreactive",
-  "trait.radioactive": "Radioactive"
+  "trait.radioactive": "Radioactive",
+  "rbmk.screen.temp": "Temp: %s",
+  "rbmk.screen.core": "Core: %s",
+  "rbmk.screen.depletion": "Depl: %s",
+  "rbmk.screen.xenon": "Xenon: %s",
+  "rbmk.screen.rod": "Control: %s"
 }

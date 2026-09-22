@@ -248,6 +248,7 @@ public abstract class BaseHbmBlockEntity extends BlockEntity implements com.hbm_
      * Возвращает IFluidHandler (NeoForge / Forge) для указанной стороны
      */
     public @Nullable Object getFluidHandler(@Nullable net.minecraft.core.Direction side) {
+        if (!isFluidSideAllowed(side)) return null;
         if (this instanceof com.hbm_m.api.fluids.IFluidUserMK2 mk2) {
             //? if forge {
             return null; // На Forge разруливается через getCapability
@@ -256,6 +257,15 @@ public abstract class BaseHbmBlockEntity extends BlockEntity implements com.hbm_
             *///?}
         }
         return null;
+    }
+
+    /**
+     * Пускает ли машина жидкость через эту грань. {@code side == null} — несторонний запрос.
+     * На Forge то же самое делал сторонний фильтр в {@code getCapability}; на NeoForge капабилити
+     * вешается через ModCapabilities и сторону не проверяет, поэтому фильтр живёт здесь.
+     */
+    protected boolean isFluidSideAllowed(@Nullable net.minecraft.core.Direction side) {
+        return true;
     }
 
     /**

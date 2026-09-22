@@ -91,7 +91,10 @@ public abstract class ContraptionMixin {
                         controllersToExpand.add(controllerPos);
                     }
                 }
-            } else if (be instanceof IMultiblockController) {
+            } else if (world.getBlockState(worldPos).getBlock() instanceof IMultiblockController) {
+                // The controller interface is on the Block, not the BlockEntity - the old check on
+                // the block entity was always false, so a controller grabbed on its own never
+                // pulled its parts along.
                 controllersToExpand.add(worldPos);
             }
         }

@@ -935,17 +935,9 @@ public class ModEventHandlerClient {
     // TODO: Добавить методы для визуальных эффектов
     // TODO: Добавить методы для обработки ввода
     // Текстуры для предметов в рамках
-    //? if fabric && < 1.21.1 {
-    /*private static final ResourceLocation POSTER = new ResourceLocation(RefStrings.MODID, "textures/models/misc/poster.png");
-    *///?} else {
         private static final ResourceLocation POSTER = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/misc/poster.png");
-    //?}
 
-    //? if fabric && < 1.21.1 {
-    /*private static final ResourceLocation POSTER_CAT = new ResourceLocation(RefStrings.MODID, "textures/models/misc/poster_cat.png");
-    *///?} else {
         private static final ResourceLocation POSTER_CAT = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/misc/poster_cat.png");
-    //?}
 
 
     // ===== TODO ЗАГЛУШКИ ДЛЯ НЕРЕАЛИЗОВАННЫХ ФУНКЦИЙ =====

@@ -6,7 +6,7 @@
 	"children": {
 		"klystron_model": {
 			"loader": "forge:obj",
-			"model": "hbm_m:models/block/machines/klystron.obj",
+			"model": "hbm_m:models/block/machines/klystron_static.obj",
 			"flip_v": true,
 			"render_type": "minecraft:cutout",
 			"textures": {
@@ -16,7 +16,7 @@
 	},
 	"transform": {
 		"translation": [
-			0.5,
+			-0.5,
 			0,
 			0.5
 		],
@@ -35,14 +35,14 @@
 				0
 			],
 			"translation": [
-				0.0,
-				2.5,
-				0.0
+				0.265,
+				2.392,
+				-1.427
 			],
 			"scale": [
-				0.11,
-				0.11,
-				0.11
+				0.0469,
+				0.0469,
+				0.0469
 			]
 		},
 		"thirdperson_lefthand": {
@@ -52,14 +52,14 @@
 				0
 			],
 			"translation": [
-				0.0,
-				2.5,
-				0.0
+				0.265,
+				2.392,
+				-1.427
 			],
 			"scale": [
-				0.11,
-				0.11,
-				0.11
+				0.0469,
+				0.0469,
+				0.0469
 			]
 		},
 		"firstperson_righthand": {
@@ -69,31 +69,31 @@
 				0
 			],
 			"translation": [
-				0.75,
-				1.25,
-				0.0
+				0.283,
+				-1.5,
+				-0.283
 			],
 			"scale": [
-				0.11,
-				0.11,
-				0.11
+				0.05,
+				0.05,
+				0.05
 			]
 		},
 		"firstperson_lefthand": {
 			"rotation": [
 				0,
-				45,
+				225,
 				0
 			],
 			"translation": [
-				0.0,
-				0.0,
-				0.0
+				-0.283,
+				-1.5,
+				0.283
 			],
 			"scale": [
-				0.11,
-				0.11,
-				0.11
+				0.05,
+				0.05,
+				0.05
 			]
 		},
 		"gui": {
@@ -103,48 +103,14 @@
 				0
 			],
 			"translation": [
-				0.0,
-				-4.75,
-				0.0
+				-0.442,
+				-2.251,
+				-0.789
 			],
 			"scale": [
-				0.12,
-				0.12,
-				0.12
-			]
-		},
-		"head": {
-			"rotation": [
-				0,
-				0,
-				0
-			],
-			"translation": [
-				0.0,
-				0.0,
-				0.0
-			],
-			"scale": [
-				1.0,
-				1.0,
-				1.0
-			]
-		},
-		"fixed": {
-			"rotation": [
-				0,
-				180,
-				0
-			],
-			"translation": [
-				0.0,
-				0.0,
-				0.0
-			],
-			"scale": [
-				0.15,
-				0.15,
-				0.15
+				0.0781,
+				0.0781,
+				0.0781
 			]
 		},
 		"ground": {
@@ -154,14 +120,48 @@
 				0
 			],
 			"translation": [
-				0.0,
-				3.0,
+				0.25,
+				2.062,
 				0.0
 			],
 			"scale": [
-				0.1,
-				0.1,
-				0.1
+				0.0312,
+				0.0312,
+				0.0312
+			]
+		},
+		"fixed": {
+			"rotation": [
+				0,
+				180,
+				0
+			],
+			"translation": [
+				-0.5,
+				-1.875,
+				-0.0
+			],
+			"scale": [
+				0.0625,
+				0.0625,
+				0.0625
+			]
+		},
+		"head": {
+			"rotation": [
+				0,
+				0,
+				0
+			],
+			"translation": [
+				0,
+				0,
+				0
+			],
+			"scale": [
+				1,
+				1,
+				1
 			]
 		}
 	}

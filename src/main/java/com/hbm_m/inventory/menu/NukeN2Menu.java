@@ -31,7 +31,7 @@ public class NukeN2Menu extends AbstractContainerMenu {
         // На клиенте тайл может отсутствовать (реплей Flashback) — возвращаем null.
         // На сервере отсутствие тайла — реальный баг, поэтому там падаем как раньше.
         if (playerInv.player.level().isClientSide) return null;
-        throw new IllegalStateException("BlockEntity is not a NukeN2BlockEntity");
+        throw new MenuBlockEntityMissingException("BlockEntity is not a NukeN2BlockEntity");
     }
 
     public NukeN2Menu(int id, Inventory inventory, NukeN2BlockEntity blockEntity) {

@@ -56,7 +56,7 @@ public final class MachineCrystallizerRenderer {
     public static void register() {
         MachineRenderers.machine("crystallizer", ModBlockEntities.CRYSTALLIZER.get(),
                 MachineCrystallizerBlockEntity.class)
-            .dynamicPart("Spinner", be -> spinnerQuads(), be -> "spinner")
+            .dynamicPart("Spinner", MachineCrystallizerRenderer::animateSpinner, be -> spinnerQuads(), be -> "spinner")
             .blockTransform(MachineCrystallizerRenderer::applyBlockTransform)
             .hook(MachineCrystallizerRenderer::scheduleFluid)
             .register();

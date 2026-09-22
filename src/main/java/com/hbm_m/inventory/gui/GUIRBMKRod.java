@@ -18,11 +18,7 @@ import net.minecraft.world.item.ItemStack;
 public class GUIRBMKRod extends GuiInfoScreen<RBMKRodMenu> {
 
     private static final ResourceLocation TEXTURE =
-            //? if fabric && < 1.21.1 {
-            /*new ResourceLocation(RefStrings.MODID, "textures/gui/reactors/gui_rbmk_element.png");
-            *///?} else {
                         ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/reactors/gui_rbmk_element.png");
-            //?}
 
     private final RBMKRodBlockEntity be;
 

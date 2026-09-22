@@ -53,8 +53,7 @@ import com.hbm_m.client.render.implementations.AirNukeBombProjectileEntityRender
 import com.hbm_m.client.render.implementations.AirstrikeEntityRenderer;
 import com.hbm_m.client.render.implementations.AirstrikeNukeEntityRenderer;
 import com.hbm_m.client.render.implementations.BatterySocketCreativeRenderer;
-import com.hbm_m.client.render.implementations.DoorRenderer;
-import com.hbm_m.client.render.implementations.TransitionSealRenderer;
+import com.hbm_m.client.render.implementations.MachineDoorRenderer;
 import com.hbm_m.client.render.implementations.MachineGasCentRenderer;
 import com.hbm_m.client.render.implementations.HeaterRenderers;
 import com.hbm_m.client.render.implementations.MachineFluidTankRenderer;
@@ -351,7 +350,7 @@ public class ClientSetup {
                 .executes(context -> {
                     if (Minecraft.getInstance().player != null) {
                         Minecraft.getInstance().player.displayClientMessage(
-                            Component.literal(TransitionSealRenderer.getDebugInfo()), false);
+                            Component.literal(MachineDoorRenderer.getSealDebugInfo()), false);
                     }
                     return 1;
                 })
@@ -592,8 +591,7 @@ public class ClientSetup {
         MachineAdvancedAssemblerRenderer.register();
         BlockEntityRenderers.register(ModBlockEntities.CARGO_ELEVATOR_BE.get(), com.hbm_m.client.render.implementations.CargoElevatorRenderer::new);
         MachineAssemblerRenderer.register();
-        BlockEntityRenderers.register(ModBlockEntities.DOOR_ENTITY.get(), DoorRenderer::new);
-        BlockEntityRenderers.register(ModBlockEntities.TRANSITION_SEAL_BE.get(), TransitionSealRenderer::new);
+        MachineDoorRenderer.register();
         BlockEntityRenderers.register(ModBlockEntities.PEDESTAL_BE.get(), com.hbm_m.client.render.implementations.PedestalRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.DECO_LOOT_BE.get(), com.hbm_m.client.render.implementations.DecoLootRenderer::new);
         MachinePressRenderer.register();
@@ -650,7 +648,6 @@ public class ClientSetup {
         BlockEntityRenderers.register(ModBlockEntities.RBMK_STORAGE_BE.get(),      RBMKColumnRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.RBMK_CONTROL_BE.get(),      RBMKColumnRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.RBMK_CONTROL_AUTO_BE.get(), RBMKColumnRenderer::new);
-        BlockEntityRenderers.register(ModBlockEntities.RBMK_LOADER_BE.get(),        RBMKColumnRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.RBMK_AUTOLOADER_BE.get(),    com.hbm_m.client.render.rbmk.RBMKAutoloaderRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.RBMK_CRANE_CONSOLE_BE.get(), com.hbm_m.client.render.rbmk.RBMKCraneConsoleRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.RBMK_PANEL_BE.get(),         RBMKColumnRenderer::new);

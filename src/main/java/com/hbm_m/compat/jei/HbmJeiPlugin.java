@@ -57,7 +57,7 @@ import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 
-//? if forge {
+//? if forge || neoforge {
 import mezz.jei.api.IModPlugin;
 import mezz.jei.api.JeiPlugin;
 import mezz.jei.api.registration.IGuiHandlerRegistration;
@@ -72,11 +72,7 @@ import javax.annotation.Nonnull;
 public class HbmJeiPlugin implements IModPlugin {
 
     private static final ResourceLocation PLUGIN_UID =
-            //? if fabric && < 1.21.1 {
-            /*new ResourceLocation(RefStrings.MODID, "jei_plugin");
-            *///?} else {
                         ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "jei_plugin");
-            //?}
 
 
     @Override
@@ -90,7 +86,22 @@ public class HbmJeiPlugin implements IModPlugin {
         registration.addRecipeCategories(new AssemblerJeiCategory(registration.getJeiHelpers().getGuiHelper()));
         registration.addRecipeCategories(new CentrifugeJeiCategory(registration.getJeiHelpers().getGuiHelper()));
         registration.addRecipeCategories(new ChemicalPlantJeiCategory(registration.getJeiHelpers().getGuiHelper()));
+        registration.addRecipeCategories(new FusionJeiCategory(registration.getJeiHelpers().getGuiHelper()));
+        registration.addRecipeCategories(new PlasmaForgeJeiCategory(registration.getJeiHelpers().getGuiHelper()));
         registration.addRecipeCategories(new CyclotronJeiCategory(registration.getJeiHelpers().getGuiHelper()));
+        registration.addRecipeCategories(new ParticleAcceleratorJeiCategory(registration.getJeiHelpers().getGuiHelper()));
+        registration.addRecipeCategories(new CatalyticReformerJeiCategory(registration.getJeiHelpers().getGuiHelper()));
+        registration.addRecipeCategories(new FractionTowerJeiCategory(registration.getJeiHelpers().getGuiHelper()));
+        registration.addRecipeCategories(new HydrotreaterJeiCategory(registration.getJeiHelpers().getGuiHelper()));
+        registration.addRecipeCategories(new VacuumDistillJeiCategory(registration.getJeiHelpers().getGuiHelper()));
+        registration.addRecipeCategories(new CokerJeiCategory(registration.getJeiHelpers().getGuiHelper()));
+        registration.addRecipeCategories(new BreederJeiCategory(registration.getJeiHelpers().getGuiHelper()));
+        registration.addRecipeCategories(new LiquefactorJeiCategory(registration.getJeiHelpers().getGuiHelper()));
+        registration.addRecipeCategories(new SolidificationJeiCategory(registration.getJeiHelpers().getGuiHelper()));
+        registration.addRecipeCategories(new PyroOvenJeiCategory(registration.getJeiHelpers().getGuiHelper()));
+        registration.addRecipeCategories(new SilexJeiCategory(registration.getJeiHelpers().getGuiHelper()));
+        registration.addRecipeCategories(new MoldCastingJeiCategory(registration.getJeiHelpers().getGuiHelper()));
+        registration.addRecipeCategories(new MoltenAlloyJeiCategory(registration.getJeiHelpers().getGuiHelper()));
         // Crucible casting / alloying categories УДАЛЕНЫ — они были JEI-only зеркалами поверх
         // удалённых статических CrucibleAlloyingRecipes / CrucibleMoldRecipes (MoltenAlloy/MoldCasting
         // остаются in-memory, но их предметные JEI-зеркала не имеют data-driven источника правды).
@@ -115,6 +126,12 @@ public class HbmJeiPlugin implements IModPlugin {
         registration.addRecipeCategories(new ElectrolyserMetalJeiCategory(registration.getJeiHelpers().getGuiHelper()));
         registration.addRecipeCategories(new CrackingTowerJeiCategory(registration.getJeiHelpers().getGuiHelper()));
         registration.addRecipeCategories(new RadiolysisJeiCategory(registration.getJeiHelpers().getGuiHelper()));
+
+        // Машины, у которых категории не было вовсе (см. JeiExtraCategories).
+        for (mezz.jei.api.recipe.category.IRecipeCategory<?> extra
+                : JeiExtraCategories.create(registration.getJeiHelpers().getGuiHelper())) {
+            registration.addRecipeCategories(extra);
+        }
     }
 
     @Override
@@ -131,7 +148,35 @@ public class HbmJeiPlugin implements IModPlugin {
         registration.addRecipes(AssemblerJeiCategory.RECIPE_TYPE, RecipeHooks.getAllRecipes(level, AssemblerRecipe.Type.INSTANCE));
         registration.addRecipes(CentrifugeJeiCategory.RECIPE_TYPE, RecipeHooks.getAllRecipes(level, CentrifugeRecipe.Type.INSTANCE));
         registration.addRecipes(ChemicalPlantJeiCategory.RECIPE_TYPE, RecipeHooks.getAllRecipes(level, ChemicalPlantRecipe.Type.INSTANCE));
+        registration.addRecipes(FusionJeiCategory.RECIPE_TYPE, RecipeHooks.getAllRecipes(level, com.hbm_m.recipe.FusionRecipe.Type.INSTANCE));
+        registration.addRecipes(PlasmaForgeJeiCategory.RECIPE_TYPE, RecipeHooks.getAllRecipes(level, com.hbm_m.recipe.PlasmaForgeRecipe.Type.INSTANCE));
         registration.addRecipes(CyclotronJeiCategory.RECIPE_TYPE, RecipeHooks.getAllRecipes(level, CyclotronRecipe.Type.INSTANCE));
+        registration.addRecipes(ParticleAcceleratorJeiCategory.RECIPE_TYPE,
+                RecipeHooks.getAllRecipes(level, com.hbm_m.recipe.ParticleAcceleratorRecipe.Type.INSTANCE));
+        registration.addRecipes(CatalyticReformerJeiCategory.RECIPE_TYPE,
+                RecipeHooks.getAllRecipes(level, com.hbm_m.recipe.CatalyticReformerRecipe.Type.INSTANCE));
+        registration.addRecipes(FractionTowerJeiCategory.RECIPE_TYPE,
+                RecipeHooks.getAllRecipes(level, com.hbm_m.recipe.FractionTowerRecipe.Type.INSTANCE));
+        registration.addRecipes(HydrotreaterJeiCategory.RECIPE_TYPE,
+                RecipeHooks.getAllRecipes(level, com.hbm_m.recipe.HydrotreaterRecipe.Type.INSTANCE));
+        registration.addRecipes(VacuumDistillJeiCategory.RECIPE_TYPE,
+                RecipeHooks.getAllRecipes(level, com.hbm_m.recipe.VacuumDistillRecipe.Type.INSTANCE));
+        registration.addRecipes(CokerJeiCategory.RECIPE_TYPE,
+                RecipeHooks.getAllRecipes(level, com.hbm_m.recipe.CokerRecipe.Type.INSTANCE));
+        registration.addRecipes(BreederJeiCategory.RECIPE_TYPE,
+                RecipeHooks.getAllRecipes(level, com.hbm_m.recipe.BreederRecipe.Type.INSTANCE));
+        registration.addRecipes(LiquefactorJeiCategory.RECIPE_TYPE,
+                RecipeHooks.getAllRecipes(level, com.hbm_m.recipe.LiquefactorRecipe.Type.INSTANCE));
+        registration.addRecipes(SolidificationJeiCategory.RECIPE_TYPE,
+                RecipeHooks.getAllRecipes(level, com.hbm_m.recipe.SolidificationRecipe.Type.INSTANCE));
+        registration.addRecipes(PyroOvenJeiCategory.RECIPE_TYPE,
+                RecipeHooks.getAllRecipes(level, com.hbm_m.recipe.PyroOvenRecipe.Type.INSTANCE));
+        registration.addRecipes(SilexJeiCategory.RECIPE_TYPE,
+                RecipeHooks.getAllRecipes(level, com.hbm_m.recipe.SilexRecipe.Type.INSTANCE));
+        registration.addRecipes(MoldCastingJeiCategory.RECIPE_TYPE,
+                RecipeHooks.getAllRecipes(level, com.hbm_m.recipe.MoldCastingRecipe.Type.INSTANCE));
+        registration.addRecipes(MoltenAlloyJeiCategory.RECIPE_TYPE,
+                RecipeHooks.getAllRecipes(level, com.hbm_m.recipe.MoltenAlloyRecipe.Type.INSTANCE));
         registration.addRecipes(CrucibleSmeltingJeiCategory.RECIPE_TYPE, RecipeHooks.getAllRecipes(level, CrucibleSmeltingRecipe.Type.INSTANCE));
         registration.addRecipes(CrystallizerJeiCategory.RECIPE_TYPE, RecipeHooks.getAllRecipes(level, CrystallizerRecipe.Type.INSTANCE));
         registration.addRecipes(PressJeiCategory.RECIPE_TYPE, RecipeHooks.getAllRecipes(level, PressRecipe.Type.INSTANCE));
@@ -160,10 +205,13 @@ public class HbmJeiPlugin implements IModPlugin {
         registration.addRecipes(RBMKDisassemblyJeiCategory.RECIPE_TYPE, RBMKDisassemblyJeiRecipe.all());
         registration.addRecipes(RBMKWasteDecayJeiCategory.RECIPE_TYPE, RBMKWasteDecayJeiCategory.all());
         registration.addRecipes(RBMKOutgasserJeiCategory.RECIPE_TYPE, RBMKOutgasserJeiCategory.all());
+
+        JeiExtraCategories.registerRecipes(registration, level);
     }
 
     @Override
     public void registerRecipeCatalysts(@Nonnull IRecipeCatalystRegistration registration) {
+        JeiExtraCategories.registerCatalysts(registration);
         for (var anvil : ModBlocks.getAnvilBlocks()) {
             registration.addRecipeCatalyst(new ItemStack(anvil.get()), AnvilJeiCategory.RECIPE_TYPE);
         }
@@ -171,8 +219,30 @@ public class HbmJeiPlugin implements IModPlugin {
         registration.addRecipeCatalyst(new ItemStack(ModItems.ADVANCED_ASSEMBLY_MACHINE.get()), AssemblerJeiCategory.RECIPE_TYPE);
         registration.addRecipeCatalyst(new ItemStack(ModBlocks.MACHINE_CENTRIFUGE.get()), CentrifugeJeiCategory.RECIPE_TYPE);
         registration.addRecipeCatalyst(new ItemStack(ModBlocks.CHEMICAL_PLANT.get()), ChemicalPlantJeiCategory.RECIPE_TYPE);
+        registration.addRecipeCatalyst(new ItemStack(ModBlocks.TORUS.get()), FusionJeiCategory.RECIPE_TYPE);
+        registration.addRecipeCatalyst(new ItemStack(ModBlocks.PLASMA_FORGE.get()), PlasmaForgeJeiCategory.RECIPE_TYPE);
         registration.addRecipeCatalyst(new ItemStack(ModBlocks.CHEMICAL_FACTORY.get()), ChemicalPlantJeiCategory.RECIPE_TYPE);
         registration.addRecipeCatalyst(new ItemStack(ModBlocks.CYCLOTRON.get()), CyclotronJeiCategory.RECIPE_TYPE);
+
+        // Teilchenbeschleuniger: die Quelle nimmt die Ausgangsstoffe, der Detektor liefert das
+        // Ergebnis - beide sollen im Rezeptbrowser als Maschine gelten.
+        registration.addRecipeCatalyst(new ItemStack(ModBlocks.PA_SOURCE.get()), ParticleAcceleratorJeiCategory.RECIPE_TYPE);
+        registration.addRecipeCatalyst(new ItemStack(ModBlocks.PA_DETECTOR.get()), ParticleAcceleratorJeiCategory.RECIPE_TYPE);
+
+        // Die Erdoelverarbeitung war bislang komplett unsichtbar im Rezeptbrowser.
+        registration.addRecipeCatalyst(new ItemStack(ModItems.CATALYTIC_REFORMER.get()), CatalyticReformerJeiCategory.RECIPE_TYPE);
+        registration.addRecipeCatalyst(new ItemStack(ModItems.FRACTION_TOWER.get()), FractionTowerJeiCategory.RECIPE_TYPE);
+        registration.addRecipeCatalyst(new ItemStack(ModItems.HYDROTREATER.get()), HydrotreaterJeiCategory.RECIPE_TYPE);
+        registration.addRecipeCatalyst(new ItemStack(ModItems.VACUUM_DISTILL.get()), VacuumDistillJeiCategory.RECIPE_TYPE);
+        registration.addRecipeCatalyst(new ItemStack(ModBlocks.COKER.get()), CokerJeiCategory.RECIPE_TYPE);
+        registration.addRecipeCatalyst(new ItemStack(ModItems.BREEDER.get()), BreederJeiCategory.RECIPE_TYPE);
+        registration.addRecipeCatalyst(new ItemStack(ModItems.LIQUEFACTOR.get()), LiquefactorJeiCategory.RECIPE_TYPE);
+        registration.addRecipeCatalyst(new ItemStack(ModBlocks.SOLIDIFIER.get()), SolidificationJeiCategory.RECIPE_TYPE);
+        registration.addRecipeCatalyst(new ItemStack(ModBlocks.PYROOVEN.get()), PyroOvenJeiCategory.RECIPE_TYPE);
+        registration.addRecipeCatalyst(new ItemStack(ModItems.SILEX.get()), SilexJeiCategory.RECIPE_TYPE);
+        registration.addRecipeCatalyst(new ItemStack(ModBlocks.FOUNDRY_MOLD.get()), MoldCastingJeiCategory.RECIPE_TYPE);
+        registration.addRecipeCatalyst(new ItemStack(ModBlocks.FOUNDRY_TANK.get()), MoltenAlloyJeiCategory.RECIPE_TYPE);
+
         // Каталисты CrucibleCasting/CrucibleAlloying JEI удалены вместе с этими категориями.
         registration.addRecipeCatalyst(new ItemStack(ModBlocks.CRUCIBLE.get()), CrucibleSmeltingJeiCategory.RECIPE_TYPE);
         registration.addRecipeCatalyst(new ItemStack(ModBlocks.ARC_WELDER.get()), ArcWelderJeiCategory.RECIPE_TYPE);
@@ -212,6 +282,8 @@ public class HbmJeiPlugin implements IModPlugin {
         registration.addRecipeClickArea(GUIMachineCentrifuge.class, 56, 0, 80, 38, CentrifugeJeiCategory.RECIPE_TYPE);
         // Chemical Plant click area around the progress bar
         registration.addRecipeClickArea(GUIMachineChemicalPlant.class, 62, 126, 70, 16, ChemicalPlantJeiCategory.RECIPE_TYPE);
+        registration.addRecipeClickArea(com.hbm_m.inventory.gui.GUIMachineFusionTorus.class, 98, 81, 70, 6, FusionJeiCategory.RECIPE_TYPE);
+        registration.addRecipeClickArea(com.hbm_m.inventory.gui.GUIMachineFusionPlasmaForge.class, 62, 81, 70, 16, PlasmaForgeJeiCategory.RECIPE_TYPE);
         // Cyclotron click area around the main accelerator progress
         registration.addRecipeClickArea(GUIMachineCyclotron.class, 48, 27, 79, 34, CyclotronJeiCategory.RECIPE_TYPE);
         // Crucible smelting — same click zone on the crucible GUI
@@ -291,7 +363,4 @@ public class HbmJeiPlugin implements IModPlugin {
         );
     }
 }
-//?} else {
-/*public final class HbmJeiPlugin {
-    private HbmJeiPlugin() {}
-}*///?}
+//?}

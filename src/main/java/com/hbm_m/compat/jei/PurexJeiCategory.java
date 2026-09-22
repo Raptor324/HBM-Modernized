@@ -39,7 +39,7 @@ import net.minecraft.world.level.material.Fluids;
 /**
  * JEI port of {@code PurexRecipeHandler} (extends {@code NEIGenericRecipeHandler}).
  */
-//? if forge {
+//? if forge || neoforge {
 public class PurexJeiCategory extends JeiGenericRecipeCategory<PurexRecipe> {
 
     public static final RecipeType<PurexRecipe> RECIPE_TYPE =
@@ -235,7 +235,4 @@ public class PurexJeiCategory extends JeiGenericRecipeCategory<PurexRecipe> {
         return FluidStack.create(fluid, fluidInput.amount());
     }
 }
-//?} else {
-/*public final class PurexJeiCategory {
-    private PurexJeiCategory() {}
-}*///?}
+//?}

@@ -63,7 +63,7 @@ public class MachineFractionTowerBlockEntity extends BaseMachineBlockEntity impl
 
         for (Direction dir : Direction.values()) {
             BlockPos neighborPos = pos.relative(dir);
-            be.trySubscribe(be.tanks[0].getTankType(), level, neighborPos, dir);
+            be.trySubscribe(be.tanks[0], level, neighborPos, dir);
             be.tryProvide(be.tanks[1], level, neighborPos, dir);
             be.tryProvide(be.tanks[2], level, neighborPos, dir);
         }

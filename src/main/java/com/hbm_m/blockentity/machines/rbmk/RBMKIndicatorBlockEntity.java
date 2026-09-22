@@ -93,10 +93,13 @@ public class RBMKIndicatorBlockEntity extends RBMKPanelDeviceBlockEntity {
         syncToClient();
     }
 
-    //? if < 1.21.1 {
+    // Persisted through writeNbtData/readNbtData, NOT saveAdditional/load:
+    // BaseHbmBlockEntity builds the CLIENT update tag from writeNbtData alone, so a
+    // subclass overriding saveAdditional saves to disk correctly yet sends the client
+    // nothing - which is why these readouts stayed blank in world.
     @Override
-    protected void saveAdditional(CompoundTag tag) {
-        super.saveAdditional(tag);
+    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
         for (int i = 0; i < UNITS; i++) {
             tag.putString("channel" + i, channel[i]);
             tag.putDouble("min" + i, min[i]);
@@ -107,8 +110,8 @@ public class RBMKIndicatorBlockEntity extends RBMKPanelDeviceBlockEntity {
     }
 
     @Override
-    public void load(CompoundTag tag) {
-        super.load(tag);
+    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
         for (int i = 0; i < UNITS; i++) {
             channel[i] = tag.contains("channel" + i) ? tag.getString("channel" + i) : "";
             min[i]     = tag.getDouble("min" + i);
@@ -117,29 +120,4 @@ public class RBMKIndicatorBlockEntity extends RBMKPanelDeviceBlockEntity {
             polling[i] = tag.getBoolean("polling" + i);
         }
     }
-    //?} else {
-    /*@Override
-    protected void saveAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-        super.saveAdditional(tag, registries);
-        for (int i = 0; i < UNITS; i++) {
-            tag.putString("channel" + i, channel[i]);
-            tag.putDouble("min" + i, min[i]);
-            tag.putDouble("max" + i, max[i]);
-            tag.putBoolean("invert" + i, invert[i]);
-            tag.putBoolean("polling" + i, polling[i]);
-        }
-    }
-
-    @Override
-    protected void loadAdditional(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-        super.loadAdditional(tag, registries);
-        for (int i = 0; i < UNITS; i++) {
-            channel[i] = tag.contains("channel" + i) ? tag.getString("channel" + i) : "";
-            min[i]     = tag.getDouble("min" + i);
-            max[i]     = tag.contains("max" + i) ? tag.getDouble("max" + i) : 1.0;
-            invert[i]  = tag.getBoolean("invert" + i);
-            polling[i] = tag.getBoolean("polling" + i);
-        }
-    }
-    *///?}
 }

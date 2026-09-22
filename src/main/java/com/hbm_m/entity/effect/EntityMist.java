@@ -6,12 +6,14 @@ import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.inventory.fluid.trait.FT_Corrosive;
 import com.hbm_m.inventory.fluid.trait.FT_Poison;
 import com.hbm_m.inventory.fluid.trait.FT_VentRadiation;
+import com.hbm_m.particle.ModParticleTypes;
 
 import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
@@ -48,20 +50,20 @@ public class EntityMist extends Entity {
 
     @Override
     protected void defineSynchedData() {
-        this.entityData.define(DATA_FLUID_ID, BuiltInRegistries.FLUID.getId(ModFluids.NONE.getSource()));
-        this.entityData.define(DATA_WIDTH, 0.0F);
-        this.entityData.define(DATA_HEIGHT, 0.0F);
-    }
+
+var defs = com.hbm_m.platform.EntityDataHooks.sink(this.entityData);
     //?} else {
     /*@Override
     protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
 
-        builder.define(DATA_FLUID_ID, BuiltInRegistries.FLUID.getId(ModFluids.NONE.getSource()));
-        builder.define(DATA_WIDTH, 0.0F);
-        builder.define(DATA_HEIGHT, 0.0F);
+var defs = com.hbm_m.platform.EntityDataHooks.sink(builder);
+    *///?}
+
+        defs.define(DATA_FLUID_ID, BuiltInRegistries.FLUID.getId(ModFluids.NONE.getSource()));
+        defs.define(DATA_WIDTH, 0.0F);
+        defs.define(DATA_HEIGHT, 0.0F);
     
     }
-    *///?}
 
     public EntityMist setFluidType(FluidType fluidType) {
         Fluid fluid = fluidType.getFluid();
@@ -113,11 +115,36 @@ public class EntityMist extends Entity {
             FluidType type = this.getFluidType();
             double intensity = 1.0D - (double) this.tickCount / (double) this.getMaxAge();
 
+            // The original does aabb.offset(-width/2, 0, -width/2) on a corner-anchored box, which
+            // just centres it. The port builds the box centred already and then used inflate instead
+            // of offset, shrinking it by width/2 per side into a zero-width slab: only an entity
+            // straddling the mist axis was ever affected.
             AABB box = this.getBoundingBox();
-            List<Entity> affected = this.level().getEntities(this, box.inflate(-width / 2.0, 0.0, -width / 2.0));
+            List<Entity> affected = this.level().getEntities(this, box);
             for (Entity entity : affected) {
                 this.affect(entity, type, intensity);
             }
+        } else {
+            spawnCloudParticles(width, height);
+        }
+    }
+
+    /** 1.7.10 client branch: two tinted "tower" puffs per tick anywhere inside the cloud volume. */
+    private void spawnCloudParticles(float width, float height) {
+        if (width <= 0.0F || height <= 0.0F) {
+            return;
+        }
+        // Colour rides in the speed triple (see MistParticle); no client class is touched here.
+        int color = this.getFluidType().getColor();
+        double r = ((color >> 16) & 0xFF) / 255.0D;
+        double g = ((color >> 8) & 0xFF) / 255.0D;
+        double b = (color & 0xFF) / 255.0D;
+        RandomSource rand = this.level().random;
+        for (int i = 0; i < 2; i++) {
+            double px = this.getX() + (rand.nextDouble() - 0.5D) * width;
+            double py = this.getY() + rand.nextDouble() * height;
+            double pz = this.getZ() + (rand.nextDouble() - 0.5D) * width;
+            this.level().addParticle(ModParticleTypes.MIST.get(), px, py, pz, r, g, b);
         }
     }
 
@@ -156,14 +183,26 @@ public class EntityMist extends Entity {
 
     @Override
     protected void readAdditionalSaveData(CompoundTag tag) {
-        this.entityData.set(DATA_FLUID_ID, tag.getInt("fluidId"));
+        // The numeric registry id is fine for the synced accessor - both sides share one session's
+        // registry - but not on disk: it depends on registration order, so adding or removing any
+        // mod that registers fluids turned a saved cloud into a different one. Old saves still
+        // carry the numeric key, so it is read as a fallback.
+        if (tag.contains("fluidPath")) {
+            Fluid fluid = BuiltInRegistries.FLUID.get(net.minecraft.resources.ResourceLocation
+                    .fromNamespaceAndPath(tag.getString("fluidNs"), tag.getString("fluidPath")));
+            this.entityData.set(DATA_FLUID_ID, BuiltInRegistries.FLUID.getId(fluid));
+        } else {
+            this.entityData.set(DATA_FLUID_ID, tag.getInt("fluidId"));
+        }
         this.setArea(tag.getFloat("width"), tag.getFloat("height"));
         this.maxAge = tag.getInt("maxAge");
     }
 
     @Override
     protected void addAdditionalSaveData(CompoundTag tag) {
-        tag.putInt("fluidId", this.entityData.get(DATA_FLUID_ID));
+        var key = BuiltInRegistries.FLUID.getKey(BuiltInRegistries.FLUID.byId(this.entityData.get(DATA_FLUID_ID)));
+        tag.putString("fluidNs", key.getNamespace());
+        tag.putString("fluidPath", key.getPath());
         tag.putFloat("width", this.entityData.get(DATA_WIDTH));
         tag.putFloat("height", this.entityData.get(DATA_HEIGHT));
         tag.putInt("maxAge", this.maxAge);

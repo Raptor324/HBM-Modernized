@@ -36,10 +36,9 @@ import net.minecraft.world.level.block.state.BlockState;
 /**
  * Brick Furnace: Direktport der Kernlogik aus {@code TileEntityFurnaceBrick} (1.7.10 Original).
  * <p>
- * Vereinfachung: Das Aschen-Byprodukt-System des Originals (Slot 3, {@code powder_ash} mit
- * Holz-/Kohle-/Sonstiges-Schadenswerten via {@code EnumAshType}) wird NICHT portiert - es
- * basiert auf einem 1.7.10-Item/Klassifikationssystem, das in diesem Port keine Entsprechung
- * hat (kein {@code powder_ash}, kein {@code EnumAshType}). Slot 3 entfaellt daher ersatzlos.
+ * Das Aschen-Byprodukt des Originals (Slot 3) ist mit portiert: die Brennzeit des verbrauchten
+ * Brennstoffs zaehlt auf den Zaehler seiner Aschesorte, bei 2000 faellt ein Aschepulver in Slot 3.
+ * Sortierung und Schwellwerte kommen aus {@link MachineAshpitBlockEntity}.
  * <p>
  * 100% Vanilla-Schmelzrezepte, Vanilla-Brennstoff-Erkennung wie bei {@code MachineFurnaceIron}.
  * Einzigartig an dieser Maschine: eine vom Eingangs-Item abhaengige Geschwindigkeitsmultiplikator
@@ -50,9 +49,12 @@ public class MachineFurnaceBrickBlockEntity extends com.hbm_m.blockentity.BaseHb
     public static final int SLOT_INPUT = 0;
     public static final int SLOT_FUEL = 1;
     public static final int SLOT_OUTPUT = 2;
-    private static final int SLOT_COUNT = 3;
+    public static final int SLOT_ASH = 3;
+    private static final int SLOT_COUNT = 4;
 
     private static final int PROCESSING_THRESHOLD = 200;
+
+    private final int[] ashLevel = new int[MachineAshpitBlockEntity.AshType.values().length];
 
     private final ModItemStackHandler inventory = new ModItemStackHandler(SLOT_COUNT) {
         @Override
@@ -67,7 +69,7 @@ public class MachineFurnaceBrickBlockEntity extends com.hbm_m.blockentity.BaseHb
         public boolean isItemValid(int slot, @NotNull ItemStack stack) {
             return switch (slot) {
                 case SLOT_FUEL -> isFuel(stack);
-                case SLOT_OUTPUT -> false;
+                case SLOT_OUTPUT, SLOT_ASH -> false;
                 default -> true;
             };
         }
@@ -182,6 +184,7 @@ public class MachineFurnaceBrickBlockEntity extends com.hbm_m.blockentity.BaseHb
 
         litDuration = burnTicks;
         litTime = burnTicks;
+        accumulateAsh(fuelStack, burnTicks);
 
         var remainderItem = fuelStack.getItem().getCraftingRemainingItem();
         fuelStack.shrink(1);
@@ -189,6 +192,25 @@ public class MachineFurnaceBrickBlockEntity extends com.hbm_m.blockentity.BaseHb
             inventory.setStackInSlot(SLOT_FUEL, new ItemStack(remainderItem));
         }
         return true;
+    }
+
+    /** GIT TileEntityFurnaceBrick: the burnt fuel's burn time feeds its ash counter, 2000 makes one powder. */
+    private void accumulateAsh(ItemStack fuelStack, int burnTicks) {
+        MachineAshpitBlockEntity.AshType type = MachineAshpitBlockEntity.ashFromFuel(fuelStack);
+        ashLevel[type.ordinal()] += burnTicks;
+        if (ashLevel[type.ordinal()] < type.threshold) return;
+
+        ItemStack current = inventory.getStackInSlot(SLOT_ASH);
+        ItemStack powder = new ItemStack(type.item.get(), 1);
+        if (current.isEmpty()) {
+            inventory.setStackInSlot(SLOT_ASH, powder);
+        } else if (current.getCount() < current.getMaxStackSize()
+                && com.hbm_m.platform.PlatformHooks.isSameItemSameTags(current, powder)) {
+            current.grow(1);
+        } else {
+            return;
+        }
+        ashLevel[type.ordinal()] -= type.threshold;
     }
 
     private boolean canSmelt(Level level) {
@@ -256,6 +278,9 @@ public class MachineFurnaceBrickBlockEntity extends com.hbm_m.blockentity.BaseHb
         tag.putInt("litTime", litTime);
         tag.putInt("litDuration", litDuration);
         tag.putInt("progress", progress);
+        for (MachineAshpitBlockEntity.AshType type : MachineAshpitBlockEntity.AshType.values()) {
+            tag.putInt("ash_" + type.name(), ashLevel[type.ordinal()]);
+        }
     }
 
     @Override
@@ -265,6 +290,9 @@ public class MachineFurnaceBrickBlockEntity extends com.hbm_m.blockentity.BaseHb
         litTime = tag.getInt("litTime");
         litDuration = tag.getInt("litDuration");
         progress = tag.getInt("progress");
+        for (MachineAshpitBlockEntity.AshType type : MachineAshpitBlockEntity.AshType.values()) {
+            ashLevel[type.ordinal()] = tag.getInt("ash_" + type.name());
+        }
     }
 
     // ==================== GUI ====================

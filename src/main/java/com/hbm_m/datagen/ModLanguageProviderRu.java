@@ -259,6 +259,8 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("item.hbm_m.meteorite_sword_seared", "Закалённый метеоритовый меч");
         add("item.hbm_m.meteorite_sword_hardened", "Упрочнённый метеоритовый меч");
         add("item.hbm_m.meteorite_sword_alloyed", "Легированный метеоритовый меч");
+        add("item.hbm_m.meteorite_sword_irradiated", "Метеоритовый меч (Облучённый)");
+        add("item.hbm_m.meteorite_sword_fused", "Метеоритовый меч (Сплавленный)");
 
         add("item.hbm_m.steel_sword", "Стальной меч");
         add("item.hbm_m.steel_pickaxe", "Стальная кирка");
@@ -346,6 +348,28 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("gui.hbm_m.energy", "Энергия: %s/%s HE");
         add("gui.hbm_m.burn_time", "Время горения: %s%%");
         add("container.hbm_m.gas_centrifuge", "Газовая центрифуга");
+        // GUI titles that had no entry at all: the screens showed the raw key.
+        add("container.frackingTower", "Фрекинговая вышка");
+        add("container.hbm_m.ashpit", "Зольник");
+        add("container.hbm_m.coker", "Коксователь");
+        add("container.hbm_m.condenser_powered", "Электрический конденсатор");
+        add("container.hbm_m.conveyor_press", "Конвейерный пресс");
+        add("container.hbm_m.electric_furnace", "Электропечь");
+        add("container.hbm_m.furnace_brick", "Кирпичная печь");
+        add("container.hbm_m.machine_large_turbine", "Промышленная паровая турбина");
+        add("container.hbm_m.machine_satlinker", "Менеджер ID спутников");
+        add("container.hbm_m.missile_assembly", "Ракетосборочная станция");
+        add("container.hbm_m.mixer", "Промышленный миксер");
+        add("container.hbm_m.pyrooven", "Пиролизная печь");
+        add("container.hbm_m.radgen", "Радиационный двигатель");
+        add("container.hbm_m.reactor_research", "Исследовательский реактор");
+        add("container.hbm_m.refinery", "Нефтеперерабатывающий завод");
+        add("container.hbm_m.solidifier", "Затвердитель");
+        add("container.hbm_m.soyuz_launcher", "Стартовая платформа \"Союза\"");
+        add("container.hbm_m.turbinegas", "Газовая турбина");
+        add("gui.hbm_m.assembler_recipe_selector", "Выбор рецепта");
+        add("gui.hbm_m.fluid_identifier", "Идентификатор жидкости");
+        add("jei.hbm_m.crucible_smelting", "Плавка в тигле");
         add("container.hbm_m.book", "Книга Вагонов");
         add("container.hbm_m.book.extended_crafting", "Расширенный крафт на 4 слота");
         add("container.hbm_m.book.standard_inventory", "Обычный инвентарь");
@@ -1975,6 +1999,8 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add(ModItems.SHELL.get(), "Оболочка");
         add(ModItems.UPGRADE_MUFFLER.get(), "Улучшение «Глушитель»");
         add(ModItems.UPGRADE_TEMPLATE.get(), "Шаблон улучшения механизма");
+        add(ModItems.UPGRADE_RADIUS.get(), "Улучшение радиуса силового поля");
+        add(ModItems.UPGRADE_HEALTH.get(), "Улучшение прочности силового поля");
         add(ModItems.WASTE_NATURAL_URANIUM.get(), "Обеднённое топливо из природного урана");
         add(ModItems.WASTE_U233.get(), "Обеднённое топливо из урана-233");
         add(ModItems.WASTE_U235.get(), "Обеднённое топливо из урана-235");
@@ -3054,7 +3080,10 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add(ModBlocks.RBMK_CONTROL_REASIM_AUTO.get(), "РБМК Авто-стержень (ReaSim)");
         add(ModBlocks.RBMK_STEAM_INLET.get(),         "РБМК Вход пара");
         add(ModBlocks.RBMK_STEAM_OUTLET.get(),        "РБМК Выход пара");
-        add(ModBlocks.RBMK_LOADER.get(),              "РБМК Загрузчик (основание)");
+        add(ModBlocks.RBMK_LOADER.get(),              "РБМК Паровой коннектор");
+        add("block.hbm_m.rbmk_loader.desc0", "Позволяет РБМК иметь подключение и воды, и пара снизу");
+        add("block.hbm_m.rbmk_loader.desc1", "Поставьте водяную трубу под колонну РБМК, затем коннектор,");
+        add("block.hbm_m.rbmk_loader.desc2", "затем подключите паропровод к коннектору.");
         add(ModBlocks.RBMK_AUTOLOADER.get(),          "РБМК Автозагрузчик");
         add(ModBlocks.RBMK_CRANE_CONSOLE.get(),       "РБМК Пульт крана");
         add(ModBlocks.RBMK_DEBRIS.get(),              "РБМК Обломки");

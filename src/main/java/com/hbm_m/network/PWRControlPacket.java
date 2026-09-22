@@ -33,7 +33,7 @@ public class PWRControlPacket implements C2SPacket {
             if (!(context.getPlayer() instanceof ServerPlayer player)) {
                 return;
             }
-            var blockEntity = player.level().getBlockEntity(packet.pos);
+            var blockEntity = ModPacketHandler.blockEntityAt(player, packet.pos);
             if (blockEntity instanceof PWRControllerBlockEntity pwr) {
                 pwr.setRodTarget(packet.rodTarget);
             }

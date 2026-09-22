@@ -1,7 +1,9 @@
 {
-    "_comment": "Placeholder model: no dedicated electric_furnace texture/model was ported yet, reusing the existing furnace_iron cube texture as a stand-in so the block is functional. Replace with a real model/texture later.",
-    "parent": "minecraft:block/cube_all",
-    "textures": {
-        "all": "hbm_m:block/machine/furnace_iron"
-    }
+  "parent": "minecraft:block/orientable_with_bottom",
+  "textures": {
+    "top": "hbm_m:block/machine/electric_furnace_top",
+    "bottom": "hbm_m:block/machine/electric_furnace_bottom",
+    "side": "hbm_m:block/machine/electric_furnace_side",
+    "front": "hbm_m:block/machine/electric_furnace_front_off"
+  }
 }

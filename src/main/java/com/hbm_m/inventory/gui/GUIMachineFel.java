@@ -23,7 +23,7 @@ public class GUIMachineFel extends GuiInfoScreen<MachineFelMenu> {
         super(menu, playerInventory, title);
         this.fel = menu.getBlockEntity();
         this.imageWidth = 176;
-        this.imageHeight = 204;
+        this.imageHeight = 165;
     }
 
     @Override

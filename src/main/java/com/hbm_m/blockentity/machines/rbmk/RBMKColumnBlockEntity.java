@@ -230,6 +230,9 @@ public abstract class RBMKColumnBlockEntity extends BaseHbmBlockEntity {
         // it every column that still had a lid dropped it as an item *and* launched it as debris,
         // so a meltdown quietly duplicated the entire reactor's lids across the crater floor.
         com.hbm_m.block.machines.rbmk.RBMKColumnBlock.dropLids = false;
+        // try/finally: without it an exception inside the meltdown left the global flag cleared for
+        // the rest of the process, and RBMK lids stopped dropping when dismantled.
+        try {
         overpressureNets.clear();
 
         BlockPos originPos = origin.getBlockPos();
@@ -335,8 +338,10 @@ public abstract class RBMKColumnBlockEntity extends BaseHbmBlockEntity {
             }
         }
 
-        com.hbm_m.block.machines.rbmk.RBMKColumnBlock.dropLids = true;
-        digamma = false;
+        } finally {
+            com.hbm_m.block.machines.rbmk.RBMKColumnBlock.dropLids = true;
+            digamma = false;
+        }
     }
 
     /**

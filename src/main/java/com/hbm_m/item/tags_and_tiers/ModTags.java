@@ -11,11 +11,7 @@ import net.minecraft.world.level.block.Block;
 public class ModTags {
 
     private static ResourceLocation modIdPath(String name) {
-        //? if fabric && < 1.21.1 {
-        /*return new ResourceLocation(MainRegistry.MOD_ID, name);
-        *///?} else {
         return ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, name);
-        //?}
     }
 
     public static class Blocks {

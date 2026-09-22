@@ -13,7 +13,6 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerData;
-import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
@@ -54,7 +53,7 @@ public class MachineBreederMenu extends AbstractContainerMenu implements ILongEn
         this.data = data;
         this.player = inv.player;
 
-        checkContainerDataCount(data, 2);
+        checkContainerDataCount(data, 3);
         addDataSlots(data);
 
         this.machineInventory = new ModItemStackHandlerContainer(blockEntity.getInventory(), blockEntity::setChanged);
@@ -82,7 +81,7 @@ public class MachineBreederMenu extends AbstractContainerMenu implements ILongEn
         if (be instanceof MachineBreederBlockEntity breeder) {
             return breeder;
         }
-        throw new IllegalStateException("BlockEntity is not a Breeder");
+        throw new MenuBlockEntityMissingException("BlockEntity is not a Breeder");
     }
 
     public MachineBreederBlockEntity getBlockEntity() {
@@ -95,6 +94,11 @@ public class MachineBreederMenu extends AbstractContainerMenu implements ILongEn
 
     public int getMaxProgress() {
         return data.get(1);
+    }
+
+    /** Neutronenfluss der angrenzenden Forschungsreaktoren (ContainerData-Index 2). */
+    public int getFlux() {
+        return data.get(2);
     }
 
     public int getProgressScaled(int scale) {
@@ -180,6 +184,6 @@ public class MachineBreederMenu extends AbstractContainerMenu implements ILongEn
 
     @Override
     public boolean stillValid(Player player) {
-        return stillValid(ContainerLevelAccess.create(level, blockEntity.getBlockPos()), player, ModBlocks.BREEDER.get());
+        return MenuReach.stillValid(player, blockEntity, ModBlocks.BREEDER.get());
     }
 }

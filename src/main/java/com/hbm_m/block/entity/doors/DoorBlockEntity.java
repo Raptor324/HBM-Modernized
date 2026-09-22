@@ -1,5 +1,13 @@
 package com.hbm_m.block.entity.doors;
 
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
+
 
 import org.jetbrains.annotations.Nullable;
 
@@ -40,10 +48,7 @@ import net.minecraft.world.phys.AABB;
 // Forge-only model-data / distmarker imports intentionally removed for Fabric compilation.
 
 
-public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity implements IMultiblockPart, com.hbm_m.interfaces.ILockable
-    //? if fabric {
-    /*, net.fabricmc.fabric.api.rendering.data.v1.RenderAttachmentBlockEntity
-    *///?}
+public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity implements IMultiblockPart, com.hbm_m.interfaces.ILockable, com.hbm_m.interfaces.IRelocatable
 {
     private static final String DOOR_LOOP_SOUND_FACTORY = "com.hbm_m.client.sound.DoorLoopSoundFactory";
 
@@ -94,6 +99,16 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
     private BlockPos controllerPos = null;
     private PartRole partRole = PartRole.DEFAULT;
 
+    // ==================== Самолечение после Sable/Create переноса ====================
+    // Sable moveBlocks переписывает в NBT только x/y/z; relocate() ремапит controllerPos
+    // сразу после загрузки, но если он всё же протух (старый сейв, сработавший не тот
+    // путь разбора) — serverTick повторяет релинк. Транзиентные, в NBT не пишутся.
+    private boolean pendingRelinkCheck = false;
+    private int relinkAttempts = 0;
+    private int relinkCooldownTicks = 0;
+    private static final int DOOR_RELINK_RETRY_INTERVAL_TICKS = 20;
+    private static final int DOOR_RELINK_MAX_ATTEMPTS = 120; // ~2 минуты, как у UniversalMachinePartBlockEntity
+
     private java.util.Set<Direction> allowedClimbSides = java.util.EnumSet.noneOf(Direction.class);
     // См. комментарий у cachedModelData: @OnlyIn(Dist.CLIENT) на ПОЛЕ ломает загрузку
     // BlockEntity на dedicated-сервере (NoSuchFieldError после RuntimeDistCleaner) и
@@ -102,13 +117,7 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
 
     /** Called from DoorAnimationDelayHelper when delay expires. Client-only. */
 
-    //? if forge {
-    @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-    //?} elif fabric {
-    /*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
-    *///?} elif neoforge {
-    /*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-    *///?}
+    @OnlyIn(Dist.CLIENT)
     public void clearAnimationDelayClient() {
         this.cachedModelData = null;
         // requestModelDataUpdate() is Forge-only (model data system). On Fabric it's a no-op.
@@ -132,18 +141,6 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
         return modelSelection;
     }
 
-    //? if fabric {
-    /*@Override
-    public @org.jetbrains.annotations.Nullable Object getRenderAttachmentData() {
-        boolean isMoving = state == 2 || state == 3;
-        boolean isOpen = state == 1;
-        boolean isOverlap = !isMoving && cachedModelData != null;
-        return new DoorRenderData(modelSelection, isMoving, isOpen, isOverlap);
-    }
-
-    public record DoorRenderData(DoorModelSelection selection, boolean moving, boolean open, boolean overlap) {}
-    *///?}
-    
     /**
      * Установить выбор модели
      */
@@ -571,9 +568,28 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
         return level;
     }
 
+    /**
+     * Sable отдаёт свой точный transform блока при переносе (сборка/разборка корабля).
+     * Ремапим controllerPos сразу после загрузки NBT — до первого тика, иначе дверь
+     * на платформе «не открывается» (getController() == null) и рвёт структуру.
+     */
+    @Override
+    public void relocate(java.util.function.UnaryOperator<BlockPos> transform) {
+        if (this.controllerPos != null) {
+            this.controllerPos = transform.apply(this.controllerPos).immutable();
+        }
+    }
+
+    /** Проверка живости ссылки на контроллер (для самолечения после переноса). */
+    private boolean controllerLinkStale(Level level) {
+        if (this.controllerPos == null) return false; // контроллер сам по себе
+        return !(level.getBlockEntity(this.controllerPos) instanceof DoorBlockEntity);
+    }
+
     // ==================== Server Tick ====================
 
     public static void serverTick(Level level, BlockPos pos, BlockState state, DoorBlockEntity be) {
+        be.tickRelinkSelfHeal(level, pos);
         int openTime = be.getServerOpenTime();
         boolean shouldSync = false;
         be.prevOpenTicks = be.openTicks;
@@ -613,6 +629,44 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
     
         if (shouldSync) {
             be.syncToClient();
+        }
+    }
+
+    /**
+     * Самолечение осиротевшей части двери после Sable/Create разбора: повторяем
+     * релинк каждые {@link #DOOR_RELINK_RETRY_INTERVAL_TICKS} тиков, пока контроллер
+     * не появится на своём месте (порядок переноса блоков не гарантирован). В отличие
+     * от UniversalMachinePartBlockEntity НЕ удаляем дверь при исчерпании попыток —
+     * ложное срабатывание снесло бы постройку игрока; часть остаётся просто отвязанной.
+     */
+    private void tickRelinkSelfHeal(Level level, BlockPos pos) {
+        if (!pendingRelinkCheck) return;
+        // Во время окна сборки контроллер легитимно отсутствует — попытку не тратим.
+        if (com.hbm_m.multiblock.ContraptionAssemblyGuard.isMoving()) return;
+
+        if (relinkCooldownTicks > 0) {
+            relinkCooldownTicks--;
+            return;
+        }
+
+        if (!controllerLinkStale(level)) {
+            pendingRelinkCheck = false;
+            relinkAttempts = 0;
+            return;
+        }
+
+        if (relinkAttempts < DOOR_RELINK_MAX_ATTEMPTS) {
+            relinkAttempts++;
+            relinkCooldownTicks = DOOR_RELINK_RETRY_INTERVAL_TICKS;
+            MultiblockStructureHelper.relinkOrphanedPart(level, pos);
+            // Здоровая ссылка после релинка — сбрасываем сразу, не ждём следующего ретрая.
+            if (!controllerLinkStale(level)) {
+                pendingRelinkCheck = false;
+                relinkAttempts = 0;
+            }
+        } else {
+            pendingRelinkCheck = false;
+            relinkAttempts = 0;
         }
     }
 
@@ -677,7 +731,15 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
     public float getCollisionProgress() {
         int openTime = getServerOpenTime();
         if (openTime <= 0) return state == 0 ? 0.0f : 1.0f;
-        return Math.max(0.0f, Math.min(1.0f, openTicks / (float) openTime));
+        float progress = Math.max(0.0f, Math.min(1.0f, openTicks / (float) openTime));
+        DoorDecl decl = getDoorDecl();
+        if (decl == null) return progress;
+        // Двери без «частичной» коллизии: проходимость переключается по окончании
+        // анимации (открытия ИЛИ закрытия), а не по клику.
+        if (decl.flipsPassabilityAtAnimationEnd()) {
+            return (state == 1 || state == 2) ? 1.0f : 0.0f;
+        }
+        return decl.getCollisionProgress(state, progress);
     }
 
     /**
@@ -825,13 +887,7 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
     // }
 
     // ==================== Client Sound Handling ====================
-    //? if forge {
-    @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-    //?} elif fabric {
-    /*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
-    *///?} elif neoforge {
-    /*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-    *///?}
+    @OnlyIn(Dist.CLIENT)
     private void handleNewState(byte oldState, byte newState) {
         if (oldState == newState) return;
         if (!isController()) return;
@@ -855,13 +911,7 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
             ClientSoundBootstrap.stopSound(level, worldPosition);
         }
     }
-    //? if forge {
-    @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-    //?} elif fabric {
-    /*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
-    *///?} elif neoforge {
-    /*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-    *///?}
+    @OnlyIn(Dist.CLIENT)
     private void handleSoundTransition(SoundEvent startSound, SoundEvent loopSound, SoundEvent loopSound2) {
         // 1. Разовый звук старта
         if (startSound != null) {
@@ -878,13 +928,7 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
             ClientSoundBootstrap.updateDoorSoundRaw(level, worldPosition, "loop2", true, () -> createLoopingSoundReflect(loopSound2));
         }
     }
-    //? if forge {
-    @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-    //?} elif fabric {
-    /*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
-    *///?} elif neoforge {
-    /*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-    *///?}
+    @OnlyIn(Dist.CLIENT)
     private void handleSoundEnd(SoundEvent endSound) {
         // Останавливаем ОБА цикла
         ClientSoundBootstrap.stopSpecificSound(level, worldPosition, "loop1");
@@ -896,13 +940,7 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
         }
     }
 
-    //? if forge {
-    @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-    //?} elif fabric {
-    /*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
-    *///?} elif neoforge {
-    /*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-    *///?}
+    @OnlyIn(Dist.CLIENT)
     private Object createLoopingSoundReflect(SoundEvent sound) {
         try {
             return Class.forName(DOOR_LOOP_SOUND_FACTORY)
@@ -975,6 +1013,9 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
         if (tag.contains("controllerPos")) {
             this.controllerPos = BlockPos.of(tag.getLong("controllerPos"));
         }
+        // BE восстановлен из NBT (загрузка мира или перенос Sable/Create) — на первом
+        // серверном тике проверяем живость ссылки на контроллер (см. tickRelinkSelfHeal).
+        this.pendingRelinkCheck = true;
 
         if (tag.contains("doorDeclId")) {
             this.doorDeclId = tag.getString("doorDeclId");
@@ -1022,13 +1063,7 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
      * (в т.ч. явный выбор LEGACY, который равен DoorModelSelection.DEFAULT).
      */
 
-    //? if forge {
-    @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-    //?} elif fabric {
-    /*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
-    *///?} elif neoforge {
-    /*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-    *///?}
+    @OnlyIn(Dist.CLIENT)
     public void initModelSelection(boolean applyConfigDefault) {
         if (!applyConfigDefault) {
             return; // Значение из NBT - не перезаписывать
@@ -1112,8 +1147,13 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
             // Изменения остальных данных (ModelData, скины) - через явный BE-пакет.
             setChanged();
             var packet = ClientboundBlockEntityDataPacket.create(this);
+            // На Sable-платформе BE живёт в plot-grid (миллионы блоков от игрока) —
+            // проверку дистанции делаем по спроецированной в мир позиции, иначе
+            // пакет не получает никто и анимация на корабле не идёт.
+            net.minecraft.world.phys.Vec3 center = com.hbm_m.compat.sable.SableCompat
+                    .blockCenterInWorld(serverLevel, worldPosition);
             for (ServerPlayer player : serverLevel.players()) {
-                if (player.distanceToSqr(worldPosition.getX() + 0.5, worldPosition.getY() + 0.5, worldPosition.getZ() + 0.5) < 64 * 64) {
+                if (player.distanceToSqr(center.x, center.y, center.z) < 64 * 64) {
                     player.connection.send(packet);
                 }
             }

@@ -1,5 +1,13 @@
 package com.hbm_m.client.render.cache;
 
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
+
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -25,13 +33,7 @@ import com.mojang.blaze3d.systems.RenderSystem;
  * {@link RenderSystem#recordRenderCall}, если вызвана из другого потока) —
  * GL-объекты нельзя удалять вне контекста.
  */
-//? if forge {
-@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-//?} elif fabric {
-/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
-*///?} elif neoforge {
-/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-*///?}
+@OnlyIn(Dist.CLIENT)
 public final class RenderCacheManager {
 
     public enum Reason {
@@ -88,7 +90,7 @@ public final class RenderCacheManager {
             // Кеши конкретных рендереров (инстансеры, DAE, дверные скины и т.д.);
             // фабричные станки чистятся через MachineRenderRegistry.clearAll().
             com.hbm_m.client.render.machine.MachineRenderRegistry.clearAll();
-            com.hbm_m.client.render.implementations.DoorRenderer.clearAllCaches();
+            com.hbm_m.client.render.implementations.MachineDoorRenderer.clearDaeCaches();
 
             // Зарегистрированные инвалидаторы (фабричные спеки, спецэффекты)
             for (InvalidationHook hook : HOOKS) {

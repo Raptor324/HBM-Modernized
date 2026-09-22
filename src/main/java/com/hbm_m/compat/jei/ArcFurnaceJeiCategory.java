@@ -29,7 +29,7 @@ import net.minecraft.world.item.ItemStack;
  * JEI category for Arc Furnace recipes - 1 Item-Eingang -&gt; optionaler Item-Ausgang + bis zu 2
  * Fluid-Ausgaenge (siehe {@link ArcFurnaceRecipe}).
  */
-//? if forge {
+//? if forge || neoforge {
 public class ArcFurnaceJeiCategory extends JeiGenericRecipeCategory<ArcFurnaceRecipe> {
 
     public static final RecipeType<ArcFurnaceRecipe> RECIPE_TYPE =
@@ -122,7 +122,4 @@ public class ArcFurnaceJeiCategory extends JeiGenericRecipeCategory<ArcFurnaceRe
         JeiNeiRendering.drawGenericRecipeExtras(graphics, recipe.getDuration(), 0);
     }
 }
-//?} else {
-/*public final class ArcFurnaceJeiCategory {
-    private ArcFurnaceJeiCategory() {}
-}*///?}
+//?}

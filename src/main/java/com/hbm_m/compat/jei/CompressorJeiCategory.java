@@ -31,7 +31,7 @@ import net.minecraft.world.item.ItemStack;
  * <p>Data-driven: рецепты читаются напрямую из {@code RecipeManager} (JSON {@code hbm_m:compressor}),
  * ранее — статический {@code CompressorRecipes}.</p>
  */
-//? if forge {
+//? if forge || neoforge {
 public class CompressorJeiCategory extends JeiGenericRecipeCategory<CompressorRecipe> {
 
     public static final RecipeType<CompressorRecipe> RECIPE_TYPE =
@@ -99,7 +99,4 @@ public class CompressorJeiCategory extends JeiGenericRecipeCategory<CompressorRe
         // Kein Blueprint-Slot fuer Compressor-Rezepte.
     }
 }
-//?} else {
-/*public final class CompressorJeiCategory {
-    private CompressorJeiCategory() {}
-}*///?}
+//?}

@@ -26,8 +26,11 @@ public class HTTPHandler {
 	public static final String SUPPORT_PAGE_URL =
 			"https://github.com/Raptor324/HBM-Modernized/blob/main/SUPPORT.md";
 
-	public static List<String> capsule = new ArrayList<>();
-	public static List<String> tipOfTheDay = new ArrayList<>();
+	// volatile + replaced wholesale: written by the NTM-Version-Checker daemon thread and read
+	// from the game thread. Appending into a shared ArrayList also duplicated entries whenever
+	// loadStats ran more than once.
+	public static volatile List<String> capsule = new ArrayList<>();
+	public static volatile List<String> tipOfTheDay = new ArrayList<>();
 
 	public static VersionUpdate modrinthUpdate;
 	public static VersionUpdate curseforgeUpdate;
@@ -44,7 +47,7 @@ public class HTTPHandler {
 				loadSoyuz();
 				loadTips();
 			} catch (IOException e) {
-				MainRegistry.LOGGER.warn("Version checker failed!", e);
+				MainRegistry.LOGGER.warn("Failed to load the soyuz/tip-of-the-day lists", e);
 			}
 		}, "NTM-Version-Checker");
 
@@ -197,27 +200,44 @@ public class HTTPHandler {
 	}
 
 	private static void loadSoyuz() throws IOException {
-
 		URL github = URI.create("https://gist.githubusercontent.com/HbmMods/a1cad71d00b6915945a43961d0037a43/raw/soyuz_holo").toURL();
-		BufferedReader in = new BufferedReader(new InputStreamReader(github.openStream(), StandardCharsets.UTF_8));
-
-		String line;
-		while ((line = in.readLine()) != null) {
-			capsule.add(line);
-		}
-		in.close();
+		capsule = readLines(github);
 	}
 
 	private static void loadTips() throws IOException {
-
 		URL github = URI.create("https://gist.githubusercontent.com/HbmMods/a03c66ba160184e12f43de826b30c096/raw/tip_of_the_day").toURL();
-		BufferedReader in = new BufferedReader(new InputStreamReader(github.openStream(), StandardCharsets.UTF_8));
+		tipOfTheDay = readLines(github);
+	}
 
-		String line;
-		while ((line = in.readLine()) != null) {
-			tipOfTheDay.add(line);
+	/**
+	 * Both loaders used to call url.openStream() directly: no timeouts, so a slow or unreachable
+	 * gist hung the checker thread until the OS gave up (seen on a dedicated server as a
+	 * SocketTimeoutException in the middle of startup), and the reader was closed only on the happy
+	 * path. Same connection settings as readResponse, but keeping the lines apart.
+	 */
+	private static List<String> readLines(URL url) throws IOException {
+		HttpURLConnection connection = (HttpURLConnection) url.openConnection();
+		connection.setRequestProperty("User-Agent", "HBM-Modernized/" + Platform.getMod(RefStrings.MODID).getVersion());
+		connection.setConnectTimeout(10_000);
+		connection.setReadTimeout(10_000);
+
+		try {
+			int code = connection.getResponseCode();
+			if (code < 200 || code >= 300) {
+				throw new IOException("HTTP " + code + " from " + url);
+			}
+			try (BufferedReader in = new BufferedReader(
+					new InputStreamReader(connection.getInputStream(), StandardCharsets.UTF_8))) {
+				List<String> lines = new ArrayList<>();
+				String line;
+				while ((line = in.readLine()) != null) {
+					lines.add(line);
+				}
+				return lines;
+			}
+		} finally {
+			connection.disconnect();
 		}
-		in.close();
 	}
 
 	public static final class VersionUpdate {

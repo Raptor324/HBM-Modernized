@@ -17,9 +17,6 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 //?} else if neoforge {
 /*import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
-*///?} else if fabric {
-/*import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
 *///?}
 
 /**
@@ -34,11 +31,7 @@ import net.fabricmc.api.Environment;
  * поэтому тело класса 100% общее — гейтится только клиентская аннотация
  * ({@code @OnlyIn} на forge/neoforge, {@code @Environment} на fabric).</p>
  */
-//? if forge || neoforge {
 @OnlyIn(Dist.CLIENT)
-//?} else if fabric {
-/*@Environment(EnvType.CLIENT)
-*///?}
 public class ShaderCompatibilityDetector {
 
     private ShaderCompatibilityDetector() {}

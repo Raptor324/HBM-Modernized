@@ -12,10 +12,6 @@ import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
 
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
-//? if fabric {
-/*import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
-*///?}
 //? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
@@ -34,11 +30,7 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-//? if forge || neoforge {
 @OnlyIn(Dist.CLIENT)
-//?}
-//? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
 public final class OcclusionCullingHelper {
 
     /**

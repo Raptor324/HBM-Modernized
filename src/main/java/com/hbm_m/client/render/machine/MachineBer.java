@@ -1,5 +1,13 @@
 package com.hbm_m.client.render.machine;
 
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -28,13 +36,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
  * пайплайн (куллинг/fade/Iris-батч/деградация путей), специфична для машины
  * только спека: части + аниматоры + хуки.
  */
-//? if forge {
-@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-//?} elif fabric {
-/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
-*///?} elif neoforge {
-/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-*///?}
+@OnlyIn(Dist.CLIENT)
 public final class MachineBer<T extends BlockEntity> extends AbstractPartBasedRenderer<T, BakedModel> {
 
     private final MachineSpec<T> spec;

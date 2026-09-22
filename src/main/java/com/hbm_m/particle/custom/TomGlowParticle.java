@@ -1,5 +1,13 @@
 package com.hbm_m.particle.custom;
 
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
+
 import org.joml.Quaternionf;
 import org.joml.Vector3f;
 
@@ -24,13 +32,7 @@ import net.minecraft.world.phys.Vec3;
  * camera-facing billboard technique as {@link MissileNozzleFlareParticle}, tinted blue-white
  * to match the legacy {@code tom_flame.png} glow instead of an engine's yellow-orange flare.
  */
-//? if forge {
-@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-//?} elif fabric {
-/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
-*///?} elif neoforge {
-/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-*///?}
+@OnlyIn(Dist.CLIENT)
 public class TomGlowParticle extends TextureSheetParticle {
 
     private final float flickerPhase;

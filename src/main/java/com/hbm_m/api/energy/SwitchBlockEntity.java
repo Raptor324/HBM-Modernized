@@ -79,6 +79,11 @@ public class SwitchBlockEntity extends BlockEntity implements PowerConductor {
         hbmConnector.invalidate();
     }
 
+    //?}
+
+    // NeoForge has onChunkUnloaded too (IBlockEntityExtension); keeping it in the forge-only
+    // block left the node in Nodespace after an unload on 1.21.1.
+    //? if forge || neoforge {
     @Override
     public void onChunkUnloaded() {
         super.onChunkUnloaded();

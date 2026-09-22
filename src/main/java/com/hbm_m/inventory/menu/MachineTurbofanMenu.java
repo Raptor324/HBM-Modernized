@@ -38,7 +38,8 @@ public class MachineTurbofanMenu extends AbstractContainerMenu {
     private static final int SLOT_EMPTY_CONTAINER = MachineTurbofanBlockEntity.SLOT_EMPTY_CONTAINER;
     private static final int SLOT_BATTERY = MachineTurbofanBlockEntity.SLOT_BATTERY;
     private static final int SLOT_FLUID_IDENTIFIER = MachineTurbofanBlockEntity.SLOT_FLUID_IDENTIFIER;
-    private static final int MACHINE_SLOT_COUNT = 4;
+    private static final int SLOT_UPGRADE = MachineTurbofanBlockEntity.SLOT_UPGRADE;
+    private static final int MACHINE_SLOT_COUNT = 5;
     private static final int PLAYER_INV_START = MACHINE_SLOT_COUNT;
     private static final int PLAYER_INV_END = MACHINE_SLOT_COUNT + 36;
 
@@ -61,6 +62,8 @@ public class MachineTurbofanMenu extends AbstractContainerMenu {
         });
         this.addSlot(new Slot(container, SLOT_BATTERY, 143, 71));
         this.addSlot(new Slot(container, SLOT_FLUID_IDENTIFIER, 44, 71));
+        // Original (ContainerMachineTurbofan): Aufwertungsslot bei 98, 71.
+        this.addSlot(new Slot(container, SLOT_UPGRADE, 98, 71));
 
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 9; col++) {
@@ -79,7 +82,7 @@ public class MachineTurbofanMenu extends AbstractContainerMenu {
         if (blockEntity instanceof MachineTurbofanBlockEntity turbofan) {
             return turbofan;
         }
-        throw new IllegalStateException("No MachineTurbofanBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":turbofan_menu");
+        throw new MenuBlockEntityMissingException("No MachineTurbofanBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":turbofan_menu");
     }
 
     public MachineTurbofanBlockEntity getBlockEntity() {
@@ -88,11 +91,7 @@ public class MachineTurbofanMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        if (blockEntity == null || blockEntity.getLevel() != player.level()) {
-            return false;
-        }
-        BlockPos pos = blockEntity.getBlockPos();
-        return player.distanceToSqr(pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D) <= 64.0D;
+        return MenuReach.stillValid(player, blockEntity);
     }
 
     private static boolean isEnergySource(ItemStack stack) {

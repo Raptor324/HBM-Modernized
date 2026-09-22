@@ -23,7 +23,7 @@ public class GUIMachineSilex extends GuiInfoScreen<MachineSilexMenu> {
         super(menu, playerInventory, title);
         this.silex = menu.getBlockEntity();
         this.imageWidth = 176;
-        this.imageHeight = 204;
+        this.imageHeight = 222;
     }
 
     @Override

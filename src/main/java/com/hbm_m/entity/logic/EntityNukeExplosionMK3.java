@@ -40,14 +40,17 @@ public class EntityNukeExplosionMK3 extends EntityExplosionChunkloading {
 
     @Override
     protected void defineSynchedData() {
-    }
+
+var defs = com.hbm_m.platform.EntityDataHooks.sink(this.entityData);
     //?} else {
     /*@Override
     protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
 
+var defs = com.hbm_m.platform.EntityDataHooks.sink(builder);
+    *///?}
+
     
     }
-    *///?}
 
     @Override
     public void tick() {
@@ -63,6 +66,9 @@ public class EntityNukeExplosionMK3 extends EntityExplosionChunkloading {
             this.expl = new ExplosionFleija(
                     (int) getX(), (int) getY(), (int) getZ(),
                     level(), this.destructionRange, this.coefficient, this.coefficient2);
+            com.hbm_m.satellite.DetectorEvents.reportEvent(level(), com.hbm_m.satellite.DetectorEvents.DURATION_HIGH,
+                    com.hbm_m.satellite.DetectorEvents.BurstIntensity.HIGH, getX(), getZ());
+
             this.did = true;
         }
 

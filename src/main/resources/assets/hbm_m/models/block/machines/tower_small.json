@@ -1,48 +1,168 @@
 {
-  "textures": {
-    "particle": "hbm_m:block/machine/tower_small"
-  },
-  "loader": "forge:composite",
-  "children": {
-    "tower_small_model": {
-      "loader": "forge:obj",
-      "model": "hbm_m:models/block/machines/tower_small.obj",
-      "flip_v": true,
-      "render_type": "minecraft:solid",
-      "textures": {
-        "default": "hbm_m:block/machine/tower_small"
-      }
-    }
-  },
-  "transform": {
-    "translation": [0.5, 0, 0.5],
-    "rotation": [0, 0, 0],
-    "scale": 1.0
-  },
-  "display": {
-    "gui": {
-      "rotation": [30, 225, 0],
-      "translation": [0, -5, 0],
-      "scale": [0.05, 0.05, 0.05]
-    },
-    "fixed": {
-      "rotation": [0, 180, 0],
-      "translation": [0, 0, 0],
-      "scale": [0.3, 0.3, 0.3]
-    },
-    "ground": {
-      "translation": [0, 3, 0],
-      "scale": [0.12, 0.12, 0.12]
-    },
-    "thirdperson_righthand": {
-      "rotation": [75, 45, 0],
-      "translation": [0, 2.5, 0],
-      "scale": [0.14, 0.14, 0.14]
-    },
-    "firstperson_righthand": {
-      "rotation": [0, 45, 0],
-      "translation": [0, 0, 0],
-      "scale": [0.06, 0.06, 0.06]
-    }
-  }
+	"textures": {
+		"particle": "hbm_m:block/machine/tower_small"
+	},
+	"loader": "forge:composite",
+	"children": {
+		"tower_small_model": {
+			"loader": "forge:obj",
+			"model": "hbm_m:models/block/machines/tower_small.obj",
+			"flip_v": true,
+			"render_type": "minecraft:solid",
+			"textures": {
+				"default": "hbm_m:block/machine/tower_small"
+			}
+		}
+	},
+	"transform": {
+		"translation": [
+			0.5,
+			0,
+			0.5
+		],
+		"rotation": [
+			0,
+			0,
+			0
+		],
+		"scale": 1.0
+	},
+	"display": {
+		"thirdperson_righthand": {
+			"rotation": [
+				75,
+				45,
+				0
+			],
+			"translation": [
+				0.0,
+				1.763,
+				-2.749
+			],
+			"scale": [
+				0.0192,
+				0.0192,
+				0.0192
+			]
+		},
+		"thirdperson_lefthand": {
+			"rotation": [
+				75,
+				45,
+				0
+			],
+			"translation": [
+				0.0,
+				1.763,
+				-2.749
+			],
+			"scale": [
+				0.0192,
+				0.0192,
+				0.0192
+			]
+		},
+		"firstperson_righthand": {
+			"rotation": [
+				0,
+				45,
+				0
+			],
+			"translation": [
+				0.0,
+				-3.036,
+				0.0
+			],
+			"scale": [
+				0.0205,
+				0.0205,
+				0.0205
+			]
+		},
+		"firstperson_lefthand": {
+			"rotation": [
+				0,
+				225,
+				0
+			],
+			"translation": [
+				0.0,
+				-3.036,
+				0.0
+			],
+			"scale": [
+				0.0205,
+				0.0205,
+				0.0205
+			]
+		},
+		"gui": {
+			"rotation": [
+				30,
+				225,
+				0
+			],
+			"translation": [
+				0.0,
+				-4.108,
+				-2.372
+			],
+			"scale": [
+				0.0321,
+				0.0321,
+				0.0321
+			]
+		},
+		"ground": {
+			"rotation": [
+				0,
+				0,
+				0
+			],
+			"translation": [
+				0.0,
+				1.103,
+				0.0
+			],
+			"scale": [
+				0.0128,
+				0.0128,
+				0.0128
+			]
+		},
+		"fixed": {
+			"rotation": [
+				0,
+				180,
+				0
+			],
+			"translation": [
+				0.0,
+				-3.795,
+				0.0
+			],
+			"scale": [
+				0.0256,
+				0.0256,
+				0.0256
+			]
+		},
+		"head": {
+			"rotation": [
+				0,
+				0,
+				0
+			],
+			"translation": [
+				0,
+				0,
+				0
+			],
+			"scale": [
+				1,
+				1,
+				1
+			]
+		}
+	}
 }

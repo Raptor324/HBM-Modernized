@@ -273,9 +273,7 @@ public class MachinePressBlockEntity extends BaseMachineBlockEntity {
             sendUpdateToClient();
         }
     }
-    //? if forge || neoforge {
     @OnlyIn(Dist.CLIENT)
-    //?}
     private void clientTick() {
         float target = convertPressToProgress();
         if (!clientPressInitialized) {
@@ -286,9 +284,7 @@ public class MachinePressBlockEntity extends BaseMachineBlockEntity {
         prevVisualPressPosition = visualPressPosition;
         visualPressPosition = Mth.lerp(0.25F, visualPressPosition, target);
     }
-    //? if forge || neoforge {
     @OnlyIn(Dist.CLIENT)
-    //?}
     public float getPressAnimationProgress(float partialTick) {
         float interpolated = Mth.lerp(partialTick, prevVisualPressPosition, visualPressPosition);
         return Mth.clamp(interpolated, 0.0F, 1.0F);

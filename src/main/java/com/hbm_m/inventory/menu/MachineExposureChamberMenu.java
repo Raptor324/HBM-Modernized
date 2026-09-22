@@ -58,15 +58,14 @@ public class MachineExposureChamberMenu extends AbstractContainerMenu {
         BlockPos pos = buf.readBlockPos();
         BlockEntity be = inv.player.level().getBlockEntity(pos);
         if (be instanceof MachineExposureChamberBlockEntity c) return c;
-        throw new IllegalStateException("No MachineExposureChamberBlockEntity at " + pos);
+        throw new MenuBlockEntityMissingException("No MachineExposureChamberBlockEntity at " + pos);
     }
 
     public MachineExposureChamberBlockEntity getBlockEntity() { return blockEntity; }
 
     @Override
     public boolean stillValid(Player player) {
-        return blockEntity.getLevel() == player.level()
-            && player.distanceToSqr(blockEntity.getBlockPos().getCenter()) <= 64;
+        return MenuReach.stillValid(player, blockEntity);
     }
 
     @Override

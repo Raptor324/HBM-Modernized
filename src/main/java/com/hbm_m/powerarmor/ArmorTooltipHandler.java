@@ -351,9 +351,7 @@ public class ArmorTooltipHandler {
     //? if >= 1.21.1 {
     /*//? if forge {
     @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-    //?} elif fabric {
-    /^@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
-    ^///?} elif neoforge {
+    //?} elif neoforge {
     /^@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
     ^///?}
     private static net.minecraft.core.HolderLookup.Provider getClientProvider() {

@@ -17,10 +17,10 @@ import dev.architectury.platform.Platform;
 //? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?}
-//? if fabric {
-/*import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;*///?}
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 
 /**
@@ -38,11 +38,7 @@ import net.fabricmc.api.Environment;*///?}
  * If Iris is not loaded, lookup fails, or any exception occurs, this class returns
  * the vanilla simple block_lit shader so the renderer still produces output.
  */
-//? if forge {
 @OnlyIn(Dist.CLIENT)
-//?}
-//? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
 public final class IrisExtendedShaderAccess {
 
     private IrisExtendedShaderAccess() {}

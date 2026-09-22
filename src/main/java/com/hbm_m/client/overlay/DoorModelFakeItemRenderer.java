@@ -18,10 +18,9 @@ import net.minecraft.world.item.ItemStack;
 //? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
-//?}
-//? if fabric {
-/*import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
 *///?}
 
 /**
@@ -32,11 +31,7 @@ import net.fabricmc.api.Environment;
  * разрешаем BakedModel из реестра напрямую и рендерим через
  * ItemRenderer.render() с подменённой моделью.
  */
-//? if forge {
 @OnlyIn(Dist.CLIENT)
-//?}
-//? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
 public final class DoorModelFakeItemRenderer {
 
     private static final float ICON_SCALE = 0.9f;

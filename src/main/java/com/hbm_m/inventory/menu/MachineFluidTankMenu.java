@@ -15,7 +15,6 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerData;
-import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.inventory.SimpleContainerData;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.Container;
@@ -173,7 +172,9 @@ public class MachineFluidTankMenu extends AbstractContainerMenu {
                 // Move from player inventory to machine slots
                 if (stackInSlot.getItem() instanceof IItemFluidIdentifier) {
                     // Put into the input fluid identifier slot
-                    if (!moveItemStackTo(stackInSlot, MACHINE_SLOTS + 0, MACHINE_SLOTS + 1, false)) {
+                    // The ID-in slot is added first, so it is index 0. MACHINE_SLOTS equals
+                    // PLAYER_INVENTORY_START, so the old range pointed at the player inventory.
+                    if (!moveItemStackTo(stackInSlot, 0, 1, false)) {
                         return ItemStack.EMPTY;
                     }
                 } else if (FluidItemAccess.hasFluidHandler(stackInSlot)) {
@@ -206,7 +207,6 @@ public class MachineFluidTankMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        return stillValid(ContainerLevelAccess.create(blockEntity.getLevel(), blockEntity.getBlockPos()),
-                player, ModBlocks.FLUID_TANK.get());
+        return MenuReach.stillValid(player, blockEntity, ModBlocks.FLUID_TANK.get());
     }
 }

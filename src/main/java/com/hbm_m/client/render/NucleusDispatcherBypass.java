@@ -1,5 +1,13 @@
 package com.hbm_m.client.render;
 
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
+
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Set;
@@ -19,13 +27,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.phys.Vec3;
 
-//? if forge {
-@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-//?} elif fabric {
-/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
-*///?} elif neoforge {
-/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-*///?}
+@OnlyIn(Dist.CLIENT)
 /**
  * <b>Байпас диспетчера BlockEntity в MAIN-проходе</b> для машин движка Nucleus
  * ({@code MachineRenderers}) — и ТОЛЬКО для них; остальные BE мода идут штатно.
@@ -94,6 +96,13 @@ public final class NucleusDispatcherBypass {
         }
         if (com.hbm_m.client.render.shader.ShaderCompatibilityDetector.isRenderingShadowPass()) {
             return false; // тени — штатный путь (дешёвый и рабочий)
+        }
+        // Sable sublevel / Create-контрапшен: диспетчер (Sable) даёт уже готовый
+        // трансформ, а collectOne не может корректно перевести позицию BE
+        // (за 20M+ блоков дистанционный лимит и float-точность её убивают).
+        // Не перехватываем такой рендер вовсе — идёт штатным путём диспетчера.
+        if (com.hbm_m.compat.ContraptionRenderCompat.isContraptionRender(be)) {
+            return false;
         }
         boolean known = LIVE.contains(be);
         if (!known) {
@@ -165,12 +174,22 @@ public final class NucleusDispatcherBypass {
                                    MultiBufferSource buffers, Matrix4f base,
                                    Vec3 cam, Minecraft mc) {
         BlockPos pos = be.getBlockPos();
+        // Страховка: сублевел/контрапшен BE не должны собираться байпасом
+        // (см. shouldBypass) — их трансформ даёт внешний диспетчер.
+        if (com.hbm_m.compat.ContraptionRenderCompat.isContraptionRender(be)) {
+            return;
+        }
         double dx = pos.getX() - cam.x;
         double dy = pos.getY() - cam.y;
         double dz = pos.getZ() - cam.z;
         double distSq = dx * dx + dy * dy + dz * dz;
-        if (distSq > 128.0 * 128.0 * 4) {
-            return; // страховочный дальний предел (реальный fade — внутри renderParts)
+        // Страховочный дальний предел: чуть больше максимальной КОНФИГ-дистанции
+        // (ползунки статичной/анимированной прорисовки) — реальный мягкий фейд
+        // всё равно живёт внутри renderParts, здесь только дешёвый ранний выход.
+        double maxDist = Math.max(RenderDistanceHelper.getStaticDistanceBlocks(),
+                RenderDistanceHelper.getAnimatedDistanceBlocks()) + 8.0;
+        if (distSq > maxDist * maxDist) {
+            return;
         }
 
         BlockEntityRenderer<?> ber = mc.getBlockEntityRenderDispatcher().getRenderer(be);

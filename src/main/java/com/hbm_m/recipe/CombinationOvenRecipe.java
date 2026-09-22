@@ -141,11 +141,7 @@ public class CombinationOvenRecipe extends PlatformRecipe {
 
     public static class Serializer extends PlatformRecipeSerializer<CombinationOvenRecipe> {
         public static final Serializer INSTANCE = new Serializer();
-        //? if fabric && < 1.21.1 {
-        /*public static final ResourceLocation ID = new ResourceLocation(RefStrings.MODID, "combination_oven");
-        *///?} else {
         public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "combination_oven");
-        //?}
 
         @Override
         public @NotNull CombinationOvenRecipe readJson(@NotNull ResourceLocation recipeId, @NotNull JsonObject json) {

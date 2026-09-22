@@ -33,7 +33,7 @@
       "element": {
         "element_type": "minecraft:single_pool_element",
         "projection": "rigid",
-        "location": "hbm_m:meteor/room-base-thru",
+        "location": "hbm_m:meteor/room10/room-base-thru",
         "processors": "hbm_m:connection_fix"
       }
     },
@@ -42,7 +42,7 @@
       "element": {
         "element_type": "minecraft:single_pool_element",
         "projection": "rigid",
-        "location": "hbm_m:meteor/room-base-end",
+        "location": "hbm_m:meteor/room10/room-base-end",
         "processors": "hbm_m:connection_fix"
       }
     }

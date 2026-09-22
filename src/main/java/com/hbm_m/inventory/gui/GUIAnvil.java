@@ -40,13 +40,8 @@ import net.minecraft.world.item.ItemStack;
 
 public class GUIAnvil extends AbstractContainerScreen<AnvilMenu> {
 
-    //? if fabric && < 1.21.1 {
-    /*private static final ResourceLocation TEXTURE = new ResourceLocation(
-            RefStrings.MODID, "textures/gui/processing/gui_anvil.png");
-    *///?} else {
-        private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(
-            RefStrings.MODID, "textures/gui/processing/gui_anvil.png");
-    //?}
+    private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(
+        RefStrings.MODID, "textures/gui/processing/gui_anvil.png");
 
     private static final int DISPLAY_SLOTS = 10;
 

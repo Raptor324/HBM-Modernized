@@ -54,6 +54,16 @@ public class StructureConnectionFixProcessor extends StructureProcessor {
     private static final Map<ResourceKey<Level>, Queue<PendingPos>> PENDING = new ConcurrentHashMap<>();
     private static final int MAX_ATTEMPTS = 200;
 
+    /** Static and keyed by dimension: without this a queue left undrained when the world closes
+     *  would be replayed against the next world opened in the same JVM, under the same key. */
+    public static void onLevelUnload(Level level) {
+        PENDING.remove(level.dimension());
+    }
+
+    public static void onServerStop() {
+        PENDING.clear();
+    }
+
     private record PendingPos(BlockPos pos, int attempts) {}
 
     @Override

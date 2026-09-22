@@ -72,12 +72,21 @@ public class CrateItem extends BlockItem implements ITooltipProvider {
     }
 
     private @Nullable CrateTooltipData readTooltipData(ItemStack stack) {
-        if (!PlatformHooks.hasItemTag(stack)) return null;
-        CompoundTag tag = PlatformHooks.getItemTag(stack);
-        if (tag == null || !tag.contains("BlockEntityTag")) return null;
-
-        CompoundTag beTag = tag.getCompound("BlockEntityTag");
-        if (!beTag.contains("inventory")) return null;
+        // BaseCrateBlockEntity.saveToItem writes BLOCK_ENTITY_DATA on 1.21.1 (a "BlockEntityTag"
+        // element only on 1.20.1); reading CUSTOM_DATA and looking for that sub-tag found nothing,
+        // so the whole contents tooltip was dead.
+        CompoundTag beTag = null;
+        //? if < 1.21.1 {
+        if (PlatformHooks.hasItemTag(stack)) {
+            CompoundTag tag = PlatformHooks.getItemTag(stack);
+            if (tag != null && tag.contains("BlockEntityTag")) beTag = tag.getCompound("BlockEntityTag");
+        }
+        //?} else {
+        /*net.minecraft.world.item.component.CustomData data =
+                stack.get(net.minecraft.core.component.DataComponents.BLOCK_ENTITY_DATA);
+        if (data != null) beTag = data.copyTag();
+        *///?}
+        if (beTag == null || !beTag.contains("inventory")) return null;
 
         CompoundTag inventoryTag = beTag.getCompound("inventory");
         ModItemStackHandler handler = new ModItemStackHandler(totalSlots) {
@@ -133,7 +142,11 @@ public class CrateItem extends BlockItem implements ITooltipProvider {
         /*// Tooltip-path — клиентский; провайдер из клиентского Level (1.21.1 требует Provider для save).
         CompoundTag keyTag = PlatformHooks.safeItemSave(stack.copy(), PlatformHooks.clientProvider());
         *///?}
+        // This line is outside the version branches, and the two branches spell the key
+        // differently: 1.20.1 ItemStack.save writes "Count", 1.21.1 ItemStack.CODEC writes "count".
+        // Clearing only one left equal items in different stack sizes as separate tooltip rows.
         keyTag.remove("Count");
+        keyTag.remove("count");
         return keyTag.toString();
     }
 

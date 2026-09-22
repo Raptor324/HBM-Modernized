@@ -21,9 +21,6 @@ import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.TooltipFlag;
 //?}
 
-//? if fabric {
-/*import net.minecraft.world.item.TooltipFlag;
-*///?}
 
 import org.jetbrains.annotations.Nullable;
 
@@ -56,15 +53,6 @@ public class DepthOreBlock extends Block {
     }
     *///?}
 
-    //? if fabric {
-    /*@Override
-    public void appendHoverText(ItemStack stack,
-                                @Nullable net.minecraft.world.level.BlockGetter level,
-                                List<Component> tooltip,
-                                TooltipFlag flag) {
-        addDepthOreTooltip(tooltip);
-    }
-    *///?}
 
     private static void addDepthOreTooltip(List<Component> tooltip) {
         tooltip.add(Component.translatable("tooltip.hbm_m.depthstone.line1")
@@ -95,12 +83,6 @@ public class DepthOreBlock extends Block {
     }
     *///?}
 
-    //? if fabric {
-    /*@Override
-    public void wasExploded(Level level, BlockPos pos, Explosion explosion) {
-        explodeDropAndRemove(level, pos);
-    }
-    *///?}
 
     private void explodeDropAndRemove(Level level, BlockPos pos) {
         popResource(level, pos, new ItemStack(this));

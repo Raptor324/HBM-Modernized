@@ -42,19 +42,44 @@ public final class GasMaskUtil {
     }
 
     /**
+     * A worn mask together with the helmet it is attached to, if any.
+     *
+     * <p>{@link ArmorModificationHelper#pryMods} decodes an attachment from the helmet's NBT into a
+     * fresh stack, so edits to that mask are thrown away unless they are written back with
+     * {@code applyMod} - which is what upstream {@code ItemFilter.onItemRightClick} does.</p>
+     */
+    public record WornMask(ItemStack mask, ItemStack helmet) {
+
+        public static final WornMask NONE = new WornMask(ItemStack.EMPTY, ItemStack.EMPTY);
+
+        /** Writes an attached mask back into its helmet. No-op when the mask is the worn item itself. */
+        public void commit() {
+            if (!helmet.isEmpty() && !mask.isEmpty()) {
+                ArmorModificationHelper.applyMod(helmet, mask);
+            }
+        }
+    }
+
+    /**
      * Находит надетую маску на сущности: шлем-маска ИЛИ маска-модификация
      * в шлеме, ИЛИ маска в слоте лица Curios (опциональная интеграция).
      */
-    @Nullable
     public static ItemStack resolveWornMask(LivingEntity entity) {
+        return resolveWornMaskRef(entity).mask();
+    }
+
+    /** As {@link #resolveWornMask}, but keeps the helmet so the mask can be written back after edits. */
+    public static WornMask resolveWornMaskRef(LivingEntity entity) {
         if (entity == null) {
-            return ItemStack.EMPTY;
+            return WornMask.NONE;
         }
-        ItemStack mask = resolveMask(entity.getItemBySlot(EquipmentSlot.HEAD));
+        ItemStack helmet = entity.getItemBySlot(EquipmentSlot.HEAD);
+        ItemStack mask = resolveMask(helmet);
         if (!mask.isEmpty()) {
-            return mask;
+            return new WornMask(mask, mask == helmet ? ItemStack.EMPTY : helmet);
         }
-        return CuriosCompat.getFaceMask(entity);
+        // A Curios stack handler hands out the live stack, so it needs no write-back.
+        return new WornMask(CuriosCompat.getFaceMask(entity), ItemStack.EMPTY);
     }
 
     /**

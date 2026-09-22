@@ -98,6 +98,8 @@ public final class MainRegistry {
         BombDefuser.init();
         PlayerHandler.register();
         ChunkRadiationManager.init();
+        com.hbm_m.handler.pollution.PollutionEvents.init();
+        com.hbm_m.satellite.RayScanEvents.init();
         ModEventHandler.register();
         // Опциональный Curios: слушатели вешаются только при наличии мода,
         // иначе классы Curios API вообще не загружаются (NoClassDefFoundError).
@@ -111,6 +113,10 @@ public final class MainRegistry {
         LifecycleEvent.SETUP.register(MainRegistry::commonSetup);
 
         TickEvent.SERVER_POST.register(server -> {
+            // The move window lives for exactly one tick: pop() from the mixins can be skipped
+            // when another mod cancels the engine method at HEAD.
+            com.hbm_m.multiblock.ContraptionAssemblyGuard.endServerTick();
+
             // 1. Защита от фейковых/недогруженных серверов (Flashback)
             if (server == null) {
                 return; 
@@ -138,11 +144,17 @@ public final class MainRegistry {
 
         LifecycleEvent.SERVER_LEVEL_UNLOAD.register((ServerLevel level) -> {
             com.hbm_m.api.network.UniNodespace.onLevelUnload(level);
+            com.hbm_m.blockentity.network.radio.RTTYNetwork.onLevelUnload(level);
+            com.hbm_m.handler.rbmk.NeutronNodeWorld.removeWorld(level);
+            com.hbm_m.worldgen.StructureConnectionFixProcessor.onLevelUnload(level);
         });
 
         LifecycleEvent.SERVER_STOPPED.register(server -> {
             com.hbm_m.api.network.UniNodespace.onServerStop();
             com.hbm_m.api.fluids.FluidNetProvider.clearAll();
+            com.hbm_m.blockentity.network.radio.RTTYNetwork.onServerStop();
+            com.hbm_m.handler.rbmk.NeutronNodeWorld.removeAllWorlds();
+            com.hbm_m.worldgen.StructureConnectionFixProcessor.onServerStop();
         });
     }
 
@@ -157,16 +169,13 @@ public final class MainRegistry {
         com.hbm_m.event.LungGasHandler.init();
         com.hbm_m.advancement.AchievementHandler.init();
         com.hbm_m.armormod.event.ArmorModTickHandler.init();
+        com.hbm_m.armormod.event.ArmorModificationServerEvents.init();
         com.hbm_m.handler.BossSpawnHandler.init();
         com.hbm_m.config.FalloutConfigJSON.initialize();
         DamageResistanceHandler.initArmorStats();
         com.hbm_m.blockentity.machines.LaunchPadBaseBlockEntity.registerLaunchables();
         com.hbm_m.satellite.Satellite.register();
 
-        // Диагностика загрузки рецептов на 1.21.1 — запускается ПОСЛЕ RegisterEvent.
-        //? if >= 1.21.1 {
-        /*com.hbm_m.recipe.ModRecipes.debugRecipeSerializerRegistry();
-        *///?}
 
         // CentrifugeRecipes.registerRecipes();
         // Рецепты Cyclotron, CrucibleSmelting, MoltenAlloy, ArcWelder и Soldering теперь data-driven (JSON)

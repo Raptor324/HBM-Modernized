@@ -64,11 +64,7 @@ public class FluidBarrelItem extends Item implements ITooltipProvider {
      * 16000 для Forge и 1296000 (16000 * 81) для Fabric.
      */
     public static long getPlatformCapacity() {
-        //? if fabric {
-        /*return CAPACITY * 81L;
-        *///?} else {
         return CAPACITY;
-         //?}
     }
 
     @Override
@@ -90,9 +86,6 @@ public class FluidBarrelItem extends Item implements ITooltipProvider {
             tooltip.add(Component.literal("Empty").withStyle(ChatFormatting.GRAY));
         } else {
             long amount = fluid.getAmount();
-            //? if fabric {
-            /*amount /= 81L;
-            *///?}
             tooltip.add(Component.literal("Fluid: ").withStyle(ChatFormatting.GRAY)
                     .append(fluid.getName().copy().withStyle(ChatFormatting.AQUA)));
             tooltip.add(Component.literal("Amount: ").withStyle(ChatFormatting.GRAY)
@@ -105,9 +98,6 @@ public class FluidBarrelItem extends Item implements ITooltipProvider {
         dev.architectury.fluid.FluidStack fluid = getFluid(stack);
         if (fluid.isEmpty()) return false;
         long amount = fluid.getAmount();
-        //? if fabric {
-        /*amount /= 81L;
-        *///?}
         return amount < CAPACITY;
     }
 
@@ -116,9 +106,6 @@ public class FluidBarrelItem extends Item implements ITooltipProvider {
         dev.architectury.fluid.FluidStack fluid = getFluid(stack);
         if (fluid.isEmpty()) return 0;
         long amount = fluid.getAmount();
-        //? if fabric {
-        /*amount /= 81L;
-        *///?}
         return Math.round(13.0F * amount / CAPACITY);
     }
 

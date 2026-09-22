@@ -123,7 +123,11 @@ final class MachinePartRenderer {
     void enqueue(PoseStack poseStack, Matrix4f blockPose, PoseStack basePoseStack,
                  int packedLight, BlockPos blockPos, BlockEntity blockEntity,
                  @Nullable MultiBufferSource bufferSource, @Nullable float[] sharedLight) {
-        if (ClientRenderFlags.forceVanillaImmediate()) {
+        // Diagram capture renders BEs into a bound offscreen FBO with a fake ortho projection;
+        // deferred paths (instancing/single-VBO) flush only in the main pass, so machines would
+        // vanish from the sketch - draw immediately into the shared buffer source instead.
+        if (ClientRenderFlags.forceVanillaImmediate()
+                || com.hbm_m.compat.simulated.DiagramRenderCompat.isRenderingDiagram()) {
             renderQuadsFallback(poseStack, packedLight, blockEntity, bufferSource);
             return;
         }
@@ -152,7 +156,10 @@ final class MachinePartRenderer {
         if (quads == null || quads.isEmpty() || bufferSource == null) return;
         com.hbm_m.client.render.NucleusDebug.recordDraw(1, 1, "Immediate (fallback)");
         float fade = SingleMeshVboRenderer.getFadeAlpha();
-        VertexConsumer consumer = bufferSource.getBuffer(fade < 0.99f ? RenderType.translucent() : RenderType.solid());
+        // Cutout, not solid: solid has no alpha test, so transparent texels of glass/window
+        // parts come out black. Cutout discards them; translucent stays for the fade path
+        // (alpha blending).
+        VertexConsumer consumer = bufferSource.getBuffer(fade < 0.99f ? RenderType.translucent() : RenderType.cutout());
         PoseStack.Pose pose = poseStack.last();
         for (BakedQuad quad : quads) {
             RenderHooks.putBulkData(consumer, pose, quad, 1f, 1f, 1f, fade, packedLight,

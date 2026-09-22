@@ -19,6 +19,37 @@ public final class RenderHooks {
     /**
      * Начинает построение буфера.
      */
+    /**
+     * Scale for camera-facing text after {@code mulPose(cameraOrientation())}, as vanilla name tags
+     * do it. 1.21 flipped the camera rotation convention: the X sign changed from -1 to +1, and with
+     * the old sign the mirrored quad is back-face culled by RenderType.text* (CULL by default).
+     */
+    public static void scaleBillboardText(PoseStack poseStack, float scale) {
+        //? if < 1.21.1 {
+        poseStack.scale(-scale, -scale, scale);
+        //?} else {
+        /*poseStack.scale(scale, -scale, scale);
+        *///?}
+    }
+
+    /** {@code PoseStack.mulPoseMatrix} (1.20.1) / {@code mulPose(Matrix4f)} (1.21.1). */
+    public static void mulPoseMatrix(PoseStack poseStack, Matrix4f matrix) {
+        //? if < 1.21.1 {
+        poseStack.mulPoseMatrix(matrix);
+        //?} else {
+        /*poseStack.mulPose(matrix);
+        *///?}
+    }
+
+    /** F3 overlay state: {@code Options.renderDebug} on 1.20.1, {@code DebugScreenOverlay} on 1.21.1. */
+    public static boolean isDebugOverlayShown(net.minecraft.client.Minecraft mc) {
+        //? if < 1.21.1 {
+        return mc.options.renderDebug;
+        //?} else {
+        /*return mc.getDebugOverlay().showDebugScreen();
+        *///?}
+    }
+
     public static BufferBuilder beginTesselator(Tesselator tesselator, VertexFormat.Mode mode, VertexFormat format) {
         //? if < 1.21.1 {
         BufferBuilder builder = tesselator.getBuilder();
@@ -111,6 +142,49 @@ public final class RenderHooks {
         *///?}
     }
 
+    /** Position + colour + normal (lines / untextured quads). */
+    public static void vertexColorNormal(VertexConsumer consumer, Matrix4f matrix, float x, float y, float z,
+                                         float r, float g, float b, float a, float nx, float ny, float nz) {
+        //? if < 1.21.1 {
+        consumer.vertex(matrix, x, y, z).color(r, g, b, a).normal(nx, ny, nz).endVertex();
+        //?} else {
+        /*consumer.addVertex(matrix, x, y, z).setColor(r, g, b, a).setNormal(nx, ny, nz);
+        *///?}
+    }
+
+    /** Position + colour + UV + lightmap, camera-space (no matrix) - NT particle quads. */
+    public static void vertexTexColorLight(VertexConsumer consumer, float x, float y, float z,
+                                           float u, float v, int r, int g, int b, int a, int packedLight) {
+        //? if < 1.21.1 {
+        consumer.vertex(x, y, z).color(r, g, b, a).uv(u, v).uv2(packedLight).endVertex();
+        //?} else {
+        /*consumer.addVertex(x, y, z).setColor(r, g, b, a).setUv(u, v).setLight(packedLight);
+        *///?}
+    }
+
+    /** Position (pose) + colour + UV. */
+    public static void vertexTexColor(VertexConsumer consumer, PoseStack.Pose pose, float x, float y, float z,
+                                      float u, float v, float r, float g, float b, float a) {
+        //? if < 1.21.1 {
+        consumer.vertex(pose.pose(), x, y, z).color(r, g, b, a).uv(u, v).endVertex();
+        //?} else {
+        /*consumer.addVertex(pose, x, y, z).setColor(r, g, b, a).setUv(u, v);
+        *///?}
+    }
+
+    /** Like {@link #vertexFull} but the normal is transformed by the pose (normal matrix). */
+    public static void vertexFull(VertexConsumer consumer, PoseStack.Pose pose, float x, float y, float z,
+                                  int r, int g, int b, int a,
+                                  float u, float v,
+                                  int packedOverlay, int packedLight,
+                                  float nx, float ny, float nz) {
+        //? if < 1.21.1 {
+        consumer.vertex(pose.pose(), x, y, z).color(r, g, b, a).uv(u, v).overlayCoords(packedOverlay).uv2(packedLight).normal(pose.normal(), nx, ny, nz).endVertex();
+        //?} else {
+        /*consumer.addVertex(pose.pose(), x, y, z).setColor(r, g, b, a).setUv(u, v).setOverlay(packedOverlay).setLight(packedLight).setNormal(pose, nx, ny, nz);
+        *///?}
+    }
+
     /**
      * Кросс-версионная обёртка для putBulkData.
      * 1.20.1 Forge / 1.21.1+: 9-аргументный вызов (в ванилу 1.21.1 перенесли Forge-сигнатуру).
@@ -118,9 +192,7 @@ public final class RenderHooks {
      */
     public static void putBulkData(VertexConsumer consumer, PoseStack.Pose matrix, BakedQuad quad,
                                    float r, float g, float b, float a, int packedLight, int packedOverlay, boolean readExistingColor) {
-        //? if < 1.21.1 && fabric {
-        /*consumer.putBulkData(matrix, quad, r, g, b, packedLight, packedOverlay);
-        *///?} elif < 1.21.1 && forge {
+        //? if < 1.21.1 && forge {
         consumer.putBulkData(matrix, quad, r, g, b, a, packedLight, packedOverlay, readExistingColor);
         //?} else {
         /*// 1.21.1 (vanilla/neoforge/fabric): 8-arg сигнатура (с alpha, без readExistingColor).
@@ -261,19 +333,6 @@ public final class RenderHooks {
                 net.neoforged.neoforge.client.model.data.ModelData.EMPTY, renderType);
         *///?} else {
         /*return model.getQuads(state, side, rand);
-        *///?}
-    }
-
-    /**
-     * Умножает верхнюю матрицу PoseStack на заданную (кросс-версионно):
-     * 1.20.1 — {@code poseStack.mulPoseMatrix(mat)}; 1.21.1 —
-     * {@code poseStack.last().pose().mul(mat)}.
-     */
-    public static void mulPoseMatrix(PoseStack poseStack, Matrix4f mat) {
-        //? if < 1.21.1 {
-        poseStack.mulPoseMatrix(mat);
-        //?} else {
-        /*poseStack.last().pose().mul(mat);
         *///?}
     }
 

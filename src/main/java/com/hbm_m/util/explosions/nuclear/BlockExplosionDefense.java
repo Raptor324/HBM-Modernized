@@ -108,6 +108,13 @@ public class BlockExplosionDefense {
             return 250.0F;
         }
 
+        // === УСИЛЕННЫЙ БЕТОН - 400 ===
+        // isSpecialConcreteBlock was declared and never called, so reinforced concrete fell through
+        // to the generic path and got its vanilla blast resistance instead of 400.
+        if (isSpecialConcreteBlock(block)) {
+            return 400.0F;
+        }
+
         // === МЕТЕОРИТ - 500 ===
         if (isMeteorBlock(block)) {
             return 500.0F;
@@ -201,11 +208,30 @@ public class BlockExplosionDefense {
     }
     //?}
 
+    // NeoForge counterpart of ForgeClientHooks above: without it no blast-resistance line ever
+    // appeared on 1.21.1 and both translations were orphaned. Registered from ClientSetup.
+    //? if neoforge {
+    /*public static void onItemTooltipNeo(net.neoforged.neoforge.event.entity.player.ItemTooltipEvent event) {
+        if (!(event.getItemStack().getItem() instanceof net.minecraft.world.item.BlockItem blockItem)) return;
+
+        Block block = blockItem.getBlock();
+        if (!isModularBlock(block)) return;
+
+        float defenseValue = getDefenseValueForBlock(block);
+        if (defenseValue >= 10_000.0F) {
+            event.getToolTip().add(Component.translatable("tooltip.hbm_m.explosion_defense.unbreakable"));
+        } else if (defenseValue > 0) {
+            event.getToolTip().add(Component.translatable("tooltip.hbm_m.explosion_defense.value", String.format("%.0f", defenseValue)));
+        }
+    }
+    *///?}
+
     /**
      *  Проверка: это ли один из наших модульных блоков
      */
     private static boolean isModularBlock(Block block) {
         return isConcreteBlock(block) ||
+                isSpecialConcreteBlock(block) ||
                 isMeteorBlock(block) ||
                 isBrickBlock(block) ||
                 isTileBlock(block) ||
@@ -220,6 +246,7 @@ public class BlockExplosionDefense {
      */
     private static float getDefenseValueForBlock(Block block) {
         if (isConcreteBlock(block)) return 250.0F;
+        if (isSpecialConcreteBlock(block)) return 400.0F;
         if (isMeteorBlock(block)) return 500.0F;
         if (isBrickBlock(block)) return 350.0F;
         if (isTileBlock(block)) return 200.0F;

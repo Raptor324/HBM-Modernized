@@ -83,9 +83,3 @@ public class RayVisualizationRenderer {
 }
 //?}
 
-//? if fabric {
-/*package com.hbm_m.client.render;
-
-/^* Fabric: Forge render event bus subscriber isn't wired yet. ^/
-public class RayVisualizationRenderer { }
-*///?}

@@ -143,42 +143,6 @@ public class CargoElevatorBakedModel extends AbstractMultipartBakedModel impleme
     }
     //?}
 
-    //? if fabric {
-    /*@Override
-    public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, RandomSource rand) {
-        if (state == null) {
-            return getItemQuads(side, rand);
-        }
-        return List.of();
-    }
-
-    private List<BakedQuad> getItemQuads(@Nullable Direction side, RandomSource rand) {
-        if (!itemQuadsCached) {
-            buildItemQuads(rand);
-            itemQuadsCached = true;
-        }
-        if (side != null) {
-            return cachedItemQuads.stream()
-                .filter(quad -> quad.getDirection() == side)
-                .toList();
-        }
-        return cachedItemQuads;
-    }
-
-    private void buildItemQuads(RandomSource rand) {
-        List<BakedQuad> allQuads = new ArrayList<>();
-        for (String partName : getItemRenderPartNames()) {
-            BakedModel part = parts.get(partName);
-            if (part != null) {
-                for (Direction dir : Direction.values()) {
-                    allQuads.addAll(part.getQuads(null, dir, rand));
-                }
-                allQuads.addAll(part.getQuads(null, null, rand));
-            }
-        }
-        this.cachedItemQuads = allQuads;
-    }
-    *///?}
 
     @Override
     protected List<String> getItemRenderPartNames() {
@@ -194,9 +158,6 @@ public class CargoElevatorBakedModel extends AbstractMultipartBakedModel impleme
         //? if forge {
         return getParticleIcon(ModelData.EMPTY);
         //?}
-        //? if fabric {
-        /*return super.getParticleIcon();
-        *///?}
         //? if neoforge {
         /*return super.getParticleIcon();
         *///?}

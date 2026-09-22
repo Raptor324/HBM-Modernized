@@ -1,6 +1,7 @@
 package com.hbm_m.network;
 
 import com.hbm_m.blockentity.machines.MachineWoodBurnerBlockEntity;
+import com.hbm_m.network.C2SPacket;
 
 import dev.architectury.networking.NetworkManager.PacketContext;
 
@@ -10,20 +11,15 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
-/**
- * Порт {@code NBTControlPacket} для дровяного генератора: оригинал шлёт ключ
- * {@code "toggle"} (кнопка вкл/выкл) или {@code "switch"} (смена режима
- * твёрдое/жидкое) через {@code receiveControl}.
- */
 public class ToggleWoodBurnerPacket implements C2SPacket {
 
     private final BlockPos pos;
-    /** false = "toggle" (вкл/выкл), true = "switch" (режим горения). */
-    private final boolean switchMode;
+    /** Целевое состояние горелки: true = включена (GUI-кнопка оригинального toggle). */
+    private final boolean state;
 
-    public ToggleWoodBurnerPacket(BlockPos pos, boolean switchMode) {
+    public ToggleWoodBurnerPacket(BlockPos pos, boolean state) {
         this.pos = pos;
-        this.switchMode = switchMode;
+        this.state = state;
     }
 
     // ── Serialization ─────────────────────────────────────────────────────────
@@ -35,7 +31,7 @@ public class ToggleWoodBurnerPacket implements C2SPacket {
     @Override
     public void write(FriendlyByteBuf buf) {
         buf.writeBlockPos(pos);
-        buf.writeBoolean(switchMode);
+        buf.writeBoolean(state);
     }
 
     // ── Handler ───────────────────────────────────────────────────────────────
@@ -45,22 +41,19 @@ public class ToggleWoodBurnerPacket implements C2SPacket {
             if (!(context.getPlayer() instanceof ServerPlayer player)) return;
 
             ServerLevel level = player.serverLevel();
-            BlockEntity be = level.getBlockEntity(msg.pos);
+            BlockEntity be    = ModPacketHandler.blockEntityAt(player, msg.pos);
 
             if (be instanceof MachineWoodBurnerBlockEntity woodBurner) {
-                if (msg.switchMode) {
-                    woodBurner.switchMode();
-                } else {
-                    woodBurner.toggleOn();
-                }
+                woodBurner.setEnabled(msg.state);
+                woodBurner.setChanged();
             }
         });
     }
 
     // ── Send helper ───────────────────────────────────────────────────────────
 
-    public static void sendToServer(BlockPos pos, boolean switchMode) {
+    public static void sendToServer(BlockPos pos, boolean state) {
         ModPacketHandler.sendToServer(ModPacketHandler.TOGGLE_WOOD_BURNER,
-                new ToggleWoodBurnerPacket(pos, switchMode));
+                new ToggleWoodBurnerPacket(pos, state));
     }
 }

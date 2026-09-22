@@ -34,6 +34,31 @@ public final class GlueOutlineCompat {
      * @param slot      ключ слота аутлайнера (одинаковый между кадрами для обновления)
      * @param positions позиции блоков кластера
      */
+    /**
+     * Client: outlines every HBM multiblock that has a part or controller inside {@code box}
+     * (the glue selection box). Shared by the honey glue and super glue handlers.
+     */
+    public static void showMultiblockClusterIn(net.minecraft.world.level.Level level, net.minecraft.world.phys.AABB box) {
+        Set<BlockPos> seeds = null;
+        int scanned = 0;
+        for (BlockPos pos : BlockPos.betweenClosed(
+                BlockPos.containing(box.minX, box.minY, box.minZ),
+                BlockPos.containing(box.maxX, box.maxY, box.maxZ).offset(1, 1, 1))) {
+            if (++scanned > 16384) break;
+            net.minecraft.world.level.block.entity.BlockEntity be = level.getBlockEntity(pos);
+            // IMultiblockPart lives on the block entity, IMultiblockController on the block.
+            if (be instanceof com.hbm_m.interfaces.IMultiblockPart
+                    || level.getBlockState(pos).getBlock() instanceof com.hbm_m.interfaces.IMultiblockController) {
+                if (seeds == null) seeds = new java.util.HashSet<>();
+                seeds.add(pos.immutable());
+            }
+        }
+        if (seeds == null) {
+            return;
+        }
+        showCluster(HBM_CLUSTER_SLOT, MultiblockExpander.expandToFullMultiblock(level, seeds));
+    }
+
     public static void showCluster(Object slot, Set<BlockPos> positions) {
         if (!resolve()) return;
         try {

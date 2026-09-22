@@ -41,7 +41,14 @@ public class MachineWatzPowerplantMenu extends AbstractContainerMenu {
         for (int j = 0; j < 6; j++) {
             for (int i = 0; i < 6; i++) {
                 if (i + j > 1 && i + j < 9 && 5 - i + j > 1 && i + 5 - j > 1) {
-                    this.addSlot(new Slot(machineContainer, index, 17 + i * 18, 8 + j * 18));
+                    // One pellet per slot: the block entity burns a slot as a single pellet (upstream
+                    // getInventoryStackLimit() == 1), and the container wrapper reports 99 by default.
+                    this.addSlot(new Slot(machineContainer, index, 17 + i * 18, 8 + j * 18) {
+                        @Override
+                        public int getMaxStackSize() {
+                            return 1;
+                        }
+                    });
                     index++;
                 }
             }
@@ -68,7 +75,7 @@ public class MachineWatzPowerplantMenu extends AbstractContainerMenu {
         if (blockEntity instanceof MachineWatzPowerplantBlockEntity watz) {
             return watz;
         }
-        throw new IllegalStateException("No MachineWatzPowerplantBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":watz_powerplant_menu");
+        throw new MenuBlockEntityMissingException("No MachineWatzPowerplantBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":watz_powerplant_menu");
     }
 
     public MachineWatzPowerplantBlockEntity getBlockEntity() {
@@ -77,11 +84,7 @@ public class MachineWatzPowerplantMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        if (blockEntity == null || blockEntity.getLevel() != player.level()) {
-            return false;
-        }
-        BlockPos pos = blockEntity.getBlockPos();
-        return player.distanceToSqr(pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D) <= 64.0D;
+        return MenuReach.stillValid(player, blockEntity);
     }
 
     @Override

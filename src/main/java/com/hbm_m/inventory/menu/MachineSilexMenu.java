@@ -9,9 +9,16 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
+//? if forge {
+import net.minecraftforge.items.SlotItemHandler;
+//?} elif neoforge {
+/*import net.neoforged.neoforge.items.SlotItemHandler;
+*///?}
 import net.minecraft.world.level.block.entity.BlockEntity;
 
 public class MachineSilexMenu extends AbstractContainerMenu {
+
+    private static final int MACHINE_SLOTS = 3;
 
     private final MachineSilexBlockEntity blockEntity;
 
@@ -23,14 +30,22 @@ public class MachineSilexMenu extends AbstractContainerMenu {
         super(ModMenuTypes.SILEX_MENU.get(), id);
         this.blockEntity = blockEntity;
 
+        // Upstream ContainerSILEX draws the lasered item at (80,12), its output at (116,90) and
+        // a column of aux slots at y=24; this port keeps input, output and a battery, so they go
+        // on those frames. Without them the machine could only be filled by automation.
+        var handler = blockEntity.getInventory();
+        addSlot(new SlotItemHandler(handler, MachineSilexBlockEntity.SLOT_INPUT, 80, 12));
+        addSlot(new SlotItemHandler(handler, MachineSilexBlockEntity.SLOT_OUTPUT, 116, 90));
+        addSlot(new SlotItemHandler(handler, MachineSilexBlockEntity.SLOT_BATTERY, 8, 24));
+
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 9; col++) {
-                this.addSlot(new Slot(inventory, col + row * 9 + 9, 8 + col * 18, 122 + row * 18));
+                this.addSlot(new Slot(inventory, col + row * 9 + 9, 8 + col * 18, 140 + row * 18));
             }
         }
 
         for (int col = 0; col < 9; col++) {
-            this.addSlot(new Slot(inventory, col, 8 + col * 18, 180));
+            this.addSlot(new Slot(inventory, col, 8 + col * 18, 198));
         }
     }
 
@@ -49,7 +64,7 @@ public class MachineSilexMenu extends AbstractContainerMenu {
         if (inventory.player.level().isClientSide) {
             return null;
         }
-        throw new IllegalStateException("No MachineSilexBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":silex_menu");
+        throw new MenuBlockEntityMissingException("No MachineSilexBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":silex_menu");
     }
 
     public MachineSilexBlockEntity getBlockEntity() {
@@ -58,15 +73,29 @@ public class MachineSilexMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        if (blockEntity == null || blockEntity.getLevel() != player.level()) {
-            return false;
-        }
-        BlockPos pos = blockEntity.getBlockPos();
-        return player.distanceToSqr(pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D) <= 64.0D;
+        return MenuReach.stillValid(player, blockEntity);
     }
 
     @Override
     public net.minecraft.world.item.ItemStack quickMoveStack(Player player, int index) {
-        return net.minecraft.world.item.ItemStack.EMPTY;
+        net.minecraft.world.item.ItemStack result = net.minecraft.world.item.ItemStack.EMPTY;
+        Slot slot = slots.get(index);
+        if (slot == null || !slot.hasItem()) return result;
+
+        net.minecraft.world.item.ItemStack stack = slot.getItem();
+        result = stack.copy();
+
+        if (index < MACHINE_SLOTS) {
+            if (!moveItemStackTo(stack, MACHINE_SLOTS, slots.size(), true)) return net.minecraft.world.item.ItemStack.EMPTY;
+        } else {
+            // Never into the output slot.
+            if (!moveItemStackTo(stack, MachineSilexBlockEntity.SLOT_BATTERY, MachineSilexBlockEntity.SLOT_BATTERY + 1, false)
+             && !moveItemStackTo(stack, MachineSilexBlockEntity.SLOT_INPUT, MachineSilexBlockEntity.SLOT_INPUT + 1, false))
+                return net.minecraft.world.item.ItemStack.EMPTY;
+        }
+
+        if (stack.isEmpty()) slot.set(net.minecraft.world.item.ItemStack.EMPTY);
+        else slot.setChanged();
+        return result;
     }
 }

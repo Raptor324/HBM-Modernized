@@ -1,5 +1,13 @@
 package com.hbm_m.client.compat.dh;
 
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
+
 import org.joml.Matrix4f;
 
 import com.hbm_m.main.MainRegistry;
@@ -25,11 +33,7 @@ import com.seibel.distanthorizons.api.methods.events.sharedParameterObjects.DhAp
  * ВАЖНО: класс трогается только при установленном DH (см. register()/EngineHandler),
  * поэтому compileOnly-зависимость безопасна в рантайме без DH.
  */
-//? if forge {
-@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-//?} elif neoforge {
-/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
- *///?}
+@OnlyIn(Dist.CLIENT)
 public final class DhRenderBridge extends DhApiBeforeApplyShaderRenderEvent {
 
     private static volatile boolean registered = false;

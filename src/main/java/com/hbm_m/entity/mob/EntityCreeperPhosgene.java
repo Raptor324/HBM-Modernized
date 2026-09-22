@@ -79,7 +79,8 @@ public class EntityCreeperPhosgene extends Creeper {
                 z,
                 2.0F,
                 false,
-                Level.ExplosionInteraction.MOB);
+                // 1.7.10: createExplosion(..., isSmoking = false) - hurts entities, never breaks blocks.
+                Level.ExplosionInteraction.NONE);
 
         EntityMist mist = new EntityMist(ModEntities.ENTITY_MIST.get(), this.level());
         mist.setPos(x, y, z);

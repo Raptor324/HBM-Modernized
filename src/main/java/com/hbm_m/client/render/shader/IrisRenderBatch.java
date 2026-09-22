@@ -23,10 +23,6 @@ import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 @OnlyIn(Dist.CLIENT)
 //?}
-//? if fabric {
-/*import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
-@Environment(EnvType.CLIENT)*///?}
 public final class IrisRenderBatch implements AutoCloseable {
 
     private static final IrisRenderBatch INSTANCE = new IrisRenderBatch();
@@ -230,47 +226,6 @@ public final class IrisRenderBatch implements AutoCloseable {
         }
         //?}
 
-        //? if fabric {
-        /*// On Fabric there is no AFTER_BLOCK_ENTITIES event. The persistent
-        // batch model used on Forge keeps shader.apply() bound across all BEs
-        // in one pass — but the eventual shader.clear() fires at
-        // AFTER_TRANSLUCENT, by which point Iris has already moved past the
-        // block entity phase, swapped framebuffers, and unbound the program.
-        // The deferred clear() then corrupts Iris's pipeline state, causing
-        // "No active program" errors and models drawn to screen-space.
-        //
-        // Fix: use non-persistent per-BE batches on Fabric. Each BER's
-        // try-with-resources opens its own apply()/clear() pair that closes
-        // while Iris still has the correct phase active. Nested calls within
-        // one BER return NOOP_NESTED to avoid redundant apply()/clear().
-        // Cost: one apply()/clear() per BE instead of one per frame. This is
-        // acceptable because Fabric block entity dispatch is synchronous and
-        // Iris's apply() is fast when the framebuffer is already bound.
-
-        // Nested call — a parent BER already holds the active batch.
-        if (ACTIVE != null) {
-            return NOOP_NESTED;
-        }
-
-        ShaderInstance shader = IrisExtendedShaderAccess.getBlockShader(shadowPass);
-        if (shader == null) {
-            return null;
-        }
-        try {
-            INSTANCE.setupOuter(shader, projectionMatrix);
-            INSTANCE.isPersistent = false;
-            INSTANCE.isShadowPass = shadowPass;
-            ACTIVE = INSTANCE;
-            return INSTANCE;
-        } catch (Throwable t) {
-            MainRegistry.LOGGER.warn("IrisRenderBatch.begin ({}) failed ({}), falling back to per-call path",
-                    shadowPass ? "shadow" : "main", t.toString());
-            INSTANCE.tryRestoreState();
-            INSTANCE.isPersistent = false;
-            INSTANCE.isShadowPass = false;
-            return null;
-        }
-        *///?}
     }
 
     /**

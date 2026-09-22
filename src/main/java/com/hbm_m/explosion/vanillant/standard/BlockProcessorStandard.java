@@ -58,9 +58,13 @@ public class BlockProcessorStandard implements IBlockProcessor {
             Block block = state.getBlock();
 
             if (!state.isAir()) {
+                // push has to sit here, not inside the canDropFromExplosion branch: pop below runs
+                // for every non-air block, so a block that cannot drop (TNT, for one) popped the
+                // enclosing tick section instead.
+                level.getProfiler().push("explosion_blocks");
+
                 if (state.canDropFromExplosion(level, pos, explosion.compat)) {
 
-                    level.getProfiler().push("explosion_blocks");
 
                     if (chance != null) {
                         dropChance = chance.mutateDropChance(explosion, block, pos, dropChance);
@@ -73,15 +77,19 @@ public class BlockProcessorStandard implements IBlockProcessor {
                         //? if < 1.21.1 {
                         toolWith.enchant(Enchantments.BLOCK_FORTUNE, dropFortune);
                         //?} else {
-                        /*var fortuneHolder =
+                        /*// 1.21.1: BuiltInRegistries.ENCHANTMENT удалён — получаем через RegistryAccess и ResourceKey<Enchantment>.
+                        // Keep the registry holder: Holder.direct() wraps an unregistered holder, and the
+                        // old code also dereferenced Optional.orElse(null) straight away.
+                        net.minecraft.core.Holder<net.minecraft.world.item.enchantment.Enchantment> fortuneEnch =
                                 level.registryAccess()
                                         .lookupOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT)
                                         .get(net.minecraft.resources.ResourceKey.create(
                                                 net.minecraft.core.registries.Registries.ENCHANTMENT,
                                                 net.minecraft.resources.ResourceLocation.withDefaultNamespace("fortune")))
+                                        .map(h -> (net.minecraft.core.Holder<net.minecraft.world.item.enchantment.Enchantment>) h)
                                         .orElse(null);
-                        if (fortuneHolder != null) {
-                            toolWith.enchant(fortuneHolder, dropFortune);
+                        if (fortuneEnch != null) {
+                            toolWith.enchant(fortuneEnch, dropFortune);
                         }
                         *///?}
                     }

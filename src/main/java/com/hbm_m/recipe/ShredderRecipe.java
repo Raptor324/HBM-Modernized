@@ -70,11 +70,7 @@ public class ShredderRecipe extends PlatformRecipe {
 
     public static class Serializer extends PlatformRecipeSerializer<ShredderRecipe> {
         public static final Serializer INSTANCE = new Serializer();
-        //? if fabric && < 1.21.1 {
-        /*public static final ResourceLocation ID = new ResourceLocation(RefStrings.MODID, "shredding");
-        *///?} else {
         public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "shredding");
-        //?}
 
         @Override
         public ShredderRecipe readJson(ResourceLocation recipeId, JsonObject json) {

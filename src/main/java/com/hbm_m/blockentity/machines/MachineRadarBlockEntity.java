@@ -219,6 +219,12 @@ public class MachineRadarBlockEntity extends BaseMachineBlockEntity {
             if (level.getGameTime() % RADAR_SCAN_INTERVAL == 0) {
                 performRadarScan();
             }
+
+            if (level.getGameTime() % 20 == 0) {
+                com.hbm_m.satellite.RayScanEvents.reportEvent(level, worldPosition, com.hbm_m.satellite.RayScanEvents.INFO_RADAR, 200);
+                com.hbm_m.satellite.DetectorEvents.reportEvent(level, com.hbm_m.satellite.DetectorEvents.DURATION_MEDIUM,
+                        com.hbm_m.satellite.DetectorEvents.BurstIntensity.MEDIUM, worldPosition.getX(), worldPosition.getZ());
+            }
             setEnergyStored(Math.max(0L, getEnergyStored() - ENERGY_DRAIN_PER_TICK));
             active = getEnergyStored() > 0;
         } else {
@@ -1277,9 +1283,6 @@ public class MachineRadarBlockEntity extends BaseMachineBlockEntity {
         //? if forge {
         return com.hbm_m.api.energy.ItemEnergyAccess.getForgeEnergy(stack).isPresent();
         //?}
-        //? if fabric {
-        /*return teamreborn.energy.api.EnergyStorage.ITEM.find(stack, null) != null;
-        *///?}
         //? if neoforge {
         /*return stack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM) != null;
         *///?}

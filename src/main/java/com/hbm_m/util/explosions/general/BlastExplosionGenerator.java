@@ -404,13 +404,17 @@ public class BlastExplosionGenerator {
         return noise;
     }
 
+    /** Own generator: this used to call setSeed on the RandomSource it was handed, which is
+     *  level.random, leaving the whole level's RNG seeded from the last noise cell. */
+    private static final RandomSource NOISE_RANDOM = RandomSource.create();
+
     private static double noise(double x, double y, RandomSource random) {
         int ix = (int)Math.floor(x);
         int iy = (int)Math.floor(y);
 
-        // Используем детерминированный seed для стабильности
-        random.setSeed((long)(ix * 374761393L + iy * 668265263L));
-        return random.nextDouble() * 2 - 1;
+        // Детерминированный seed для стабильности формы кратера.
+        NOISE_RANDOM.setSeed((long)(ix * 374761393L + iy * 668265263L));
+        return NOISE_RANDOM.nextDouble() * 2 - 1;
     }
 
     /**

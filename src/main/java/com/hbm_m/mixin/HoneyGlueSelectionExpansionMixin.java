@@ -2,16 +2,12 @@ package com.hbm_m.mixin;
 
 //? if forge || neoforge {
 import com.hbm_m.compat.create.GlueOutlineCompat;
-import com.hbm_m.compat.create.MultiblockExpander;
-import com.hbm_m.interfaces.IMultiblockController;
-import com.hbm_m.interfaces.IMultiblockPart;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.player.LocalPlayer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.BlockHitResult;
 
@@ -22,8 +18,6 @@ import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
-import java.util.HashSet;
-import java.util.Set;
 
 /**
  * Визуальное выделение полного мультиблока HBM при выделении МЕДОКЛЕЕМ
@@ -79,25 +73,7 @@ public abstract class HoneyGlueSelectionExpansionMixin {
                     Math.max(p1.getY(), p2.getY()) + 1.0,
                     Math.max(p1.getZ(), p2.getZ()) + 1.0);
 
-            // Сиды: части/контроллеры HBM внутри бокса (с ограничением объёма скана).
-            Set<BlockPos> seeds = null;
-            int scanned = 0;
-            for (BlockPos pos : BlockPos.betweenClosed(
-                    BlockPos.containing(box.minX, box.minY, box.minZ),
-                    BlockPos.containing(box.maxX, box.maxY, box.maxZ).offset(1, 1, 1))) {
-                if (++scanned > 16384) break;
-                BlockEntity be = clientLevel.getBlockEntity(pos);
-                if (be instanceof IMultiblockPart || be instanceof IMultiblockController) {
-                    if (seeds == null) seeds = new HashSet<>();
-                    seeds.add(pos.immutable());
-                }
-            }
-            if (seeds == null || seeds.isEmpty()) {
-                return;
-            }
-
-            Set<BlockPos> expanded = MultiblockExpander.expandToFullMultiblock(clientLevel, seeds);
-            GlueOutlineCompat.showCluster(GlueOutlineCompat.HBM_CLUSTER_SLOT, expanded);
+            GlueOutlineCompat.showMultiblockClusterIn(clientLevel, box);
         } catch (Throwable ignored) {
             // Подсветка не должна ломать выделение медоклеем.
         }

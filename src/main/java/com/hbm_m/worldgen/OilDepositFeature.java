@@ -77,8 +77,12 @@ public class OilDepositFeature extends Feature<NoneFeatureConfiguration> {
                     if (pos.getY() <= level.getMinBuildHeight() || pos.getY() >= level.getMaxBuildHeight()) continue;
                     if (!replaceable.test(level.getBlockState(pos))) continue;
 
-                    level.setBlock(pos, block.defaultBlockState(), 3);
-                    placed++;
+                    // setBlock silently refuses anything outside the feature step's write radius of
+                    // one chunk, so counting attempts made place() report success for deposits that
+                    // never landed a single block.
+                    if (level.setBlock(pos, block.defaultBlockState(), 3)) {
+                        placed++;
+                    }
                 }
             }
         }
@@ -94,8 +98,11 @@ public class OilDepositFeature extends Feature<NoneFeatureConfiguration> {
     private void addSurfaceSpot(LevelAccessor level, BlockPos origin, net.minecraft.util.RandomSource rand) {
         int spotWidth = 7;
         for (int i = 0; i < 60; i++) {
-            int offX = (int) (rand.nextGaussian() * spotWidth);
-            int offZ = (int) (rand.nextGaussian() * spotWidth);
+            // Clamped to one chunk around the origin: further out the heightmap belongs to a chunk
+            // that has not been carved yet, so getHeight returns nonsense, and setBlock is dropped
+            // anyway (the features step may only write within one chunk).
+            int offX = Math.max(-15, Math.min(15, (int) (rand.nextGaussian() * spotWidth)));
+            int offZ = Math.max(-15, Math.min(15, (int) (rand.nextGaussian() * spotWidth)));
             int x = origin.getX() + offX;
             int z = origin.getZ() + offZ;
 

@@ -1,5 +1,13 @@
 package com.hbm_m.particle.custom;
 
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
+
 import com.hbm_m.client.missile.track.MissileTrackWorldRender;
 import com.hbm_m.particle.LongRangeParticleRenderType;
 import com.hbm_m.particle.ModParticleTypes;
@@ -25,13 +33,7 @@ import java.util.Random;
  * Port of 1.7.10 {@code ParticleRocketFlame} (missileContrail effect): orange exhaust,
  * motion damping, multi-layer billboard, particle atlas alpha blend (FX layer 1).
  */
-//? if forge {
-@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-//?} elif fabric {
-/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
-*///?} elif neoforge {
-/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-*///?}
+@OnlyIn(Dist.CLIENT)
 public class MissileContrailParticle extends TextureSheetParticle {
 
     /** Set by {@link com.hbm_m.entity.missile.MissileBaseEntity} before spawning contrail particles. */

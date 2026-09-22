@@ -118,6 +118,8 @@ repositories {
 	// Curios API (опционально): слот лица для противогазов. См. com.hbm_m.compat.curios.
 	maven("https://maven.theillusivec4.top/") { name = "Illusive Soul Works" }
 	maven("https://maven.caffeinemc.net/releases") { name = "CaffeineMC" }
+	// Sable Companion (dev.ryanhcode) — API-типы для Sable-миксинов, compileOnly
+	maven("https://maven.ryanhcode.dev/releases") { name = "RyanHCode" }
 
 }
 
@@ -137,6 +139,14 @@ dependencies {
 	// строковых таргетов миксинов (@Mixin(targets = "...")) на этапе компиляции.
 	// В рантайм не пакуется; в отсутствие Sable миксины просто не применяются.
 	"compileOnly"("maven.modrinth:sable:2.0.5+mc1.21.1")
+	// The modrinth artifact does not expose BoundingBox3ic - it lives in sable-companion,
+	// which SubLevelAssembleExpansionMixin has to name in its handler signature.
+	// compileOnly: nothing is packed into the mod.
+	if (stonecutter.current.version == "1.21.1") {
+		"compileOnly"("dev.ryanhcode.sable-companion:sable-companion-common-1.21.1:1.6.0") {
+			isTransitive = false
+		}
+	}
 
 	// Рантайм-зависимости для ручного тестирования интеграции с Create
 	// Aeronautics / Sable в runClient (только 1.21.1 - на других версиях
@@ -246,6 +256,19 @@ tasks.named<ProcessResources>("processResources") {
 			}
 		}
 
+		// The block above moves the tag files, but references inside JSON stay "forge:".
+		// Unremapped, recipes match an empty tag and silently stop crafting.
+		// The leading quote in the pattern keeps "neoforge:add_features" intact.
+		// glass is the only tag whose name also changed: NeoForge calls it c:glass_blocks.
+		dataDir.walkTopDown().filter { it.isFile && it.extension == "json" }.forEach { file ->
+			val text = file.readText()
+			if (!text.contains("forge:")) return@forEach
+			val out = text.replace("\"#forge:", "\"#c:").replace("\"forge:", "\"c:")
+				.replace("\"c:glass\"", "\"c:glass_blocks\"").replace("\"#c:glass\"", "\"#c:glass_blocks\"")
+			// "neoforge:" also matches the guard above, so only write when something actually changed.
+			if (out != text) file.writeText(out)
+		}
+
 		// Remap silk-touch условия в loot-таблицах: датаген (1.20.1) пишет
 		// match_tool-предикат с полем "enchantments" внутри ItemPredicate,
 		// а на 1.21.1 это поле удалено — проверки зачарований переехали в
@@ -313,22 +336,15 @@ tasks.named<ProcessResources>("processResources") {
 			}
 		}
 
-		// Ссылки на теги forge:* внутри рецептов → c:* (неймспейс переименован выше).
-		dataDir.resolve("hbm_m").resolve("recipe").walkTopDown()
-			.filter { it.isFile && it.extension == "json" }.forEach { file ->
-				val text = file.readText()
-				if (text.contains("\"forge:")) {
-					file.writeText(text.replace(Regex("\"(tag)\"\\s*:\\s*\"forge:"), "\"$1\": \"c:"))
-				}
-			}
-
 		// Лут-таблицы батарей используют minecraft:copy_nbt, удалённый в 1.20.5+.
 		// На 1.21.1 состояние батареи переносится кодом
 		// (MachineBatteryBlock#playerWillDestroy → MachineBatteryBlockEntity#saveToItemStack),
 		// поэтому таблицы просто исключаем из сборки.
 		listOf("loot_table", "loot_tables").forEach { dirName ->
 			File(File(dataDir, "hbm_m"), dirName).walkTopDown()
-				.filter { it.isFile && it.name.startsWith("machine_battery") }
+				// machine_fensu is a MachineBatteryBlock too - its name just does not start with
+				// machine_battery, so it kept its loot table and dropped a second copy of itself.
+				.filter { it.isFile && (it.name.startsWith("machine_battery") || it.name == "machine_fensu.json") }
 				.forEach { it.delete() }
 		}
 

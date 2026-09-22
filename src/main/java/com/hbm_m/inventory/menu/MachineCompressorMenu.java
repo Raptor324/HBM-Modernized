@@ -17,12 +17,11 @@ import net.minecraftforge.items.SlotItemHandler;
 *///?}
 
 /** Slot-Koordinaten 1:1 aus {@code ContainerCompressor} (1.7.10 Original): Fluid-ID (17,72),
- *  Batterie (152,72). Upgrade-Slots des Originals entfallen (siehe
- *  {@link MachineCompressorBlockEntity}). */
+ *  Batterie (152,72), Upgrades (52,72) und (70,72). */
 public class MachineCompressorMenu extends AbstractContainerMenu {
 
     private final MachineCompressorBlockEntity blockEntity;
-    private static final int MACHINE_SLOTS = 2;
+    private static final int MACHINE_SLOTS = 4;
 
     public MachineCompressorMenu(int id, Inventory inv, FriendlyByteBuf buf) {
         this(id, inv, getBlockEntity(inv, buf));
@@ -35,6 +34,8 @@ public class MachineCompressorMenu extends AbstractContainerMenu {
         var handler = be.getInventory();
         addSlot(new SlotItemHandler(handler, MachineCompressorBlockEntity.SLOT_FLUID_ID, 17, 72));
         addSlot(new SlotItemHandler(handler, MachineCompressorBlockEntity.SLOT_BATTERY, 152, 72));
+        addSlot(new SlotItemHandler(handler, MachineCompressorBlockEntity.SLOT_UPGRADE_1, 52, 72));
+        addSlot(new SlotItemHandler(handler, MachineCompressorBlockEntity.SLOT_UPGRADE_2, 70, 72));
 
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 9; col++) {
@@ -54,15 +55,14 @@ public class MachineCompressorMenu extends AbstractContainerMenu {
         BlockPos pos = buf.readBlockPos();
         BlockEntity be = inv.player.level().getBlockEntity(pos);
         if (be instanceof MachineCompressorBlockEntity c) return c;
-        throw new IllegalStateException("No MachineCompressorBlockEntity at " + pos);
+        throw new MenuBlockEntityMissingException("No MachineCompressorBlockEntity at " + pos);
     }
 
     public MachineCompressorBlockEntity getBlockEntity() { return blockEntity; }
 
     @Override
     public boolean stillValid(Player player) {
-        return blockEntity.getLevel() == player.level()
-            && player.distanceToSqr(blockEntity.getBlockPos().getCenter()) <= 64;
+        return MenuReach.stillValid(player, blockEntity);
     }
 
     @Override
@@ -77,9 +77,13 @@ public class MachineCompressorMenu extends AbstractContainerMenu {
         if (index < MACHINE_SLOTS) {
             if (!moveItemStackTo(stack, MACHINE_SLOTS, slots.size(), true)) return ItemStack.EMPTY;
         } else {
-            if (!moveItemStackTo(stack, MachineCompressorBlockEntity.SLOT_BATTERY, MachineCompressorBlockEntity.SLOT_BATTERY + 1, false)
-             && !moveItemStackTo(stack, MachineCompressorBlockEntity.SLOT_FLUID_ID, MachineCompressorBlockEntity.SLOT_FLUID_ID + 1, false))
+            if (stack.getItem() instanceof com.hbm_m.item.industrial.ItemMachineUpgrade) {
+                if (!moveItemStackTo(stack, MachineCompressorBlockEntity.SLOT_UPGRADE_1, MachineCompressorBlockEntity.SLOT_UPGRADE_2 + 1, false))
+                    return ItemStack.EMPTY;
+            } else if (!moveItemStackTo(stack, MachineCompressorBlockEntity.SLOT_BATTERY, MachineCompressorBlockEntity.SLOT_BATTERY + 1, false)
+                    && !moveItemStackTo(stack, MachineCompressorBlockEntity.SLOT_FLUID_ID, MachineCompressorBlockEntity.SLOT_FLUID_ID + 1, false)) {
                 return ItemStack.EMPTY;
+            }
         }
 
         if (stack.isEmpty()) slot.set(ItemStack.EMPTY);

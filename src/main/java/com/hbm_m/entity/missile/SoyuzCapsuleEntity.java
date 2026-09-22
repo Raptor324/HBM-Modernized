@@ -25,7 +25,34 @@ public class SoyuzCapsuleEntity extends Entity {
 
     private static final double DESCENT_SPEED = 0.6D;
 
+    /**
+     * The launcher force-loads the landing chunk so the capsule can descend into terrain nobody is
+     * standing in. It used to do that with TicketType.FORCED and never released it, so every cargo
+     * launch leaked a permanently loaded region for the rest of the session. The ticket now belongs
+     * to the capsule and goes away with it.
+     */
+    public static final net.minecraft.server.level.TicketType<java.util.UUID> CHUNK_TICKET =
+            net.minecraft.server.level.TicketType.create("hbm_m_soyuz_capsule",
+                    java.util.Comparator.comparing(java.util.UUID::toString));
+    public static final int CHUNK_TICKET_RADIUS = 2;
+
+    private net.minecraft.world.level.ChunkPos loadedChunk;
+
     private final NonNullList<ItemStack> payload = NonNullList.withSize(18, ItemStack.EMPTY);
+
+    /** Called by the launcher right after it takes the ticket out for this capsule. */
+    public void setLoadedChunk(net.minecraft.world.level.ChunkPos pos) {
+        this.loadedChunk = pos;
+    }
+
+    @Override
+    public void remove(RemovalReason reason) {
+        if (loadedChunk != null && level() instanceof net.minecraft.server.level.ServerLevel server) {
+            server.getChunkSource().removeRegionTicket(CHUNK_TICKET, loadedChunk, CHUNK_TICKET_RADIUS, getUUID());
+            loadedChunk = null;
+        }
+        super.remove(reason);
+    }
 
     public SoyuzCapsuleEntity(EntityType<? extends SoyuzCapsuleEntity> type, Level level) {
         super(type, level);
@@ -63,14 +90,17 @@ public class SoyuzCapsuleEntity extends Entity {
 
     @Override
     protected void defineSynchedData() {
-    }
+
+var defs = com.hbm_m.platform.EntityDataHooks.sink(this.entityData);
     //?} else {
     /*@Override
     protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
 
+var defs = com.hbm_m.platform.EntityDataHooks.sink(builder);
+    *///?}
+
     
     }
-    *///?}
 
     @Override
     protected void readAdditionalSaveData(CompoundTag tag) {

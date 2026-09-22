@@ -1,5 +1,4 @@
 package com.hbm_m.datagen.recipes.custom;
-//? if forge {
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -221,4 +220,3 @@ public class AnvilRecipeBuilder extends BaseRecipeBuilder<AnvilRecipeBuilder> {
 
     private record OutputEntry(ItemStack stack, float chance) { }
 }
-//?}

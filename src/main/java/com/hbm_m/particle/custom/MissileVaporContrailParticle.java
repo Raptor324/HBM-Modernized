@@ -1,5 +1,13 @@
 package com.hbm_m.particle.custom;
 
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
+
 import com.hbm_m.client.missile.track.MissileTrackWorldRender;
 import com.hbm_m.particle.LongRangeParticleRenderType;
 import com.mojang.blaze3d.vertex.VertexConsumer;
@@ -25,13 +33,7 @@ import java.util.Random;
  * Port of 1.7.10 {@code ParticleContrail}: lingering gray condensation trail behind rocket exhaust.
  * Stays in the air much longer than {@link MissileContrailParticle}, spreads and fades slowly.
  */
-//? if forge {
-@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-//?} elif fabric {
-/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
-*///?} elif neoforge {
-/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-*///?}
+@OnlyIn(Dist.CLIENT)
 public class MissileVaporContrailParticle extends TextureSheetParticle {
 
     public static float currentSpawnScale = 1.0F;

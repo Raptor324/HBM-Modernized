@@ -1,5 +1,4 @@
 package com.hbm_m.datagen.recipes.custom;
-//? if forge {
 import com.hbm_m.inventory.material.MaterialStack;
 import com.hbm_m.inventory.material.MaterialType;
 
@@ -60,6 +59,7 @@ public final class CrucibleSmeltingRecipeGenerator {
         ingot(writer, "tcalloy",     MaterialType.TCALLOY);
         ingot(writer, "cdalloy",     MaterialType.CDALLOY);
         ingot(writer, "combine_steel", MaterialType.CMB);
+        ingot(writer, "bscco",       MaterialType.BSCCO);
         ingot(writer, "schrabidium", MaterialType.SCHRABIDIUM);
         ingot(writer, "bbronze",     MaterialType.BBRONZE);
         ingot(writer, "abronze",     MaterialType.ABRONZE);
@@ -427,4 +427,3 @@ public final class CrucibleSmeltingRecipeGenerator {
         return Ingredient.of(forgeTag(id));
     }
 }
-//?}

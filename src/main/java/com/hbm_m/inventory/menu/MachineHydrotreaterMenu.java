@@ -57,7 +57,7 @@ public class MachineHydrotreaterMenu extends AbstractContainerMenu {
         if (blockEntity instanceof MachineHydrotreaterBlockEntity be) {
             return be;
         }
-        throw new IllegalStateException("No MachineHydrotreaterBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":hydrotreater_menu");
+        throw new MenuBlockEntityMissingException("No MachineHydrotreaterBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":hydrotreater_menu");
     }
 
     public MachineHydrotreaterBlockEntity getBlockEntity() {
@@ -66,11 +66,7 @@ public class MachineHydrotreaterMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        if (blockEntity == null || blockEntity.getLevel() != player.level()) {
-            return false;
-        }
-        BlockPos pos = blockEntity.getBlockPos();
-        return player.distanceToSqr(pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D) <= 64.0D;
+        return MenuReach.stillValid(player, blockEntity);
     }
 
     @Override

@@ -74,7 +74,7 @@ public class MachineIndustrialGeneratorMenu extends AbstractContainerMenu {
         if (blockEntity instanceof MachineIndustrialGeneratorBlockEntity generator) {
             return generator;
         }
-        throw new IllegalStateException("No MachineIndustrialGeneratorBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":industrial_generator_menu");
+        throw new MenuBlockEntityMissingException("No MachineIndustrialGeneratorBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":industrial_generator_menu");
     }
 
     public MachineIndustrialGeneratorBlockEntity getBlockEntity() {
@@ -83,11 +83,7 @@ public class MachineIndustrialGeneratorMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        if (blockEntity == null || blockEntity.getLevel() != player.level()) {
-            return false;
-        }
-        BlockPos pos = blockEntity.getBlockPos();
-        return player.distanceToSqr(pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D) <= 64.0D;
+        return MenuReach.stillValid(player, blockEntity);
     }
 
     @Override

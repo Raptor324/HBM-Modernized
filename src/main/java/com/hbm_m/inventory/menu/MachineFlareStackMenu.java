@@ -86,7 +86,7 @@ public class MachineFlareStackMenu extends AbstractContainerMenu {
         if (inventory.player.level().isClientSide) {
             return null;
         }
-        throw new IllegalStateException("No MachineFlareStackBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":flare_stack_menu");
+        throw new MenuBlockEntityMissingException("No MachineFlareStackBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":flare_stack_menu");
     }
 
     public MachineFlareStackBlockEntity getBlockEntity() {
@@ -95,11 +95,7 @@ public class MachineFlareStackMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        if (blockEntity == null || blockEntity.getLevel() != player.level()) {
-            return false;
-        }
-        BlockPos pos = blockEntity.getBlockPos();
-        return player.distanceToSqr(pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D) <= 64.0D;
+        return MenuReach.stillValid(player, blockEntity);
     }
 
     /**

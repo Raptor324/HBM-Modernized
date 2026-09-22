@@ -1,5 +1,13 @@
 package com.hbm_m.client.render.implementations;
 
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
+
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 
@@ -16,11 +24,7 @@ import net.minecraft.world.level.Level;
 
 import com.hbm_m.blockentity.decorations.PedestalBlockEntity;
 
-//? if forge {
-@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-//?} elif neoforge {
-/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-*///?}
+@OnlyIn(Dist.CLIENT)
 /**
  * Рендер постамента (порт 1.7.10 RenderPedestalTile): предмет парит над
  * постаментом с масштабом 1.5x. Блок-предметы не вращаются и висят чуть

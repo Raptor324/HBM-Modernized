@@ -14,11 +14,7 @@ import net.minecraft.world.entity.player.Inventory;
 public class GUIMachineOreSlopper extends GuiInfoScreen<MachineOreSlopperMenu> {
 
     private static final ResourceLocation TEXTURE =
-            //? if fabric && < 1.21.1 {
-            /*new ResourceLocation(RefStrings.MODID, "textures/gui/processing/gui_ore_slopper.png");
-            *///?} else {
                         ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/processing/gui_ore_slopper.png");
-            //?}
 
     // Wassertank - links im Panel (vermessen anhand der Textur, siehe gui_ore_slopper.png).
     private static final int TANK_X = 8;

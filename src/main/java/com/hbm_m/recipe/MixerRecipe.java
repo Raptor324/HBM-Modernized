@@ -106,11 +106,7 @@ public class MixerRecipe extends com.hbm_m.platform.recipe.PlatformRecipe {
 
     public static class Serializer extends com.hbm_m.platform.recipe.PlatformRecipeSerializer<MixerRecipe> {
         public static final Serializer INSTANCE = new Serializer();
-        //? if fabric && < 1.21.1 {
-        /*public static final net.minecraft.resources.ResourceLocation ID = new net.minecraft.resources.ResourceLocation(com.hbm_m.lib.RefStrings.MODID, "mixer");
-        *///?} else {
         public static final net.minecraft.resources.ResourceLocation ID = net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(com.hbm_m.lib.RefStrings.MODID, "mixer");
-        //?}
 
         @Override
         public MixerRecipe readJson(net.minecraft.resources.ResourceLocation recipeId, com.google.gson.JsonObject json) {

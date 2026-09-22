@@ -5,6 +5,7 @@ import org.jetbrains.annotations.Nullable;
 import com.hbm_m.blockentity.network.PylonDummyBlockEntity;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelReader;
@@ -45,16 +46,38 @@ public class PylonDummyBlock extends Block implements EntityBlock {
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
         super.onRemove(state, level, pos, newState, isMoving);
-        if (!level.isClientSide && newState.getBlock() != this) {
-            breakCore(level, pos);
+        // Inside an assembly move window the dummy is being carried, not broken: taking the core
+        // down here would delete the pylon the engine is about to put back.
+        if (!level.isClientSide && newState.getBlock() != this && !com.hbm_m.multiblock.ContraptionAssemblyGuard.isMoving()) {
+            breakCore(level, pos, false);
         }
     }
 
+    // Upstream BlockDummyable.onBlockHarvested drops the machine whenever a non-creative player
+    // breaks any dummy block; breakCore's hardcoded drop=false lost the pylon entirely.
+    //? if < 1.21.1 {
+    @Override
+    public void playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
+        if (!level.isClientSide && !com.hbm_m.multiblock.ContraptionAssemblyGuard.isMoving()) {
+            breakCore(level, pos, !player.getAbilities().instabuild);
+        }
+        super.playerWillDestroy(level, pos, state, player);
+    }
+    //?} else {
+    /*@Override
+    public BlockState playerWillDestroy(Level level, BlockPos pos, BlockState state, Player player) {
+        if (!level.isClientSide && !com.hbm_m.multiblock.ContraptionAssemblyGuard.isMoving()) {
+            breakCore(level, pos, !player.getAbilities().instabuild);
+        }
+        return super.playerWillDestroy(level, pos, state, player);
+    }
+    *///?}
+
     /** При разрушении части — рушим ядро (оно в свою очередь убирает остальные части). */
-    private static void breakCore(Level level, BlockPos pos) {
+    private static void breakCore(Level level, BlockPos pos, boolean drop) {
         BlockPos core = findCore(level, pos);
         if (core != null) {
-            level.destroyBlock(core, false);
+            level.destroyBlock(core, drop);
         }
     }
 

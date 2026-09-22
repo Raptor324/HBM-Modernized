@@ -44,6 +44,7 @@ public class ModPacketHandler {
     public static final ResourceLocation CHUNK_RAD_DEBUG_BATCH = id("chunk_rad_debug_batch");
     public static final ResourceLocation HIGHLIGHT_BLOCKS      = id("highlight_blocks");
     public static final ResourceLocation SYNC_ENERGY           = id("sync_energy");
+    public static final ResourceLocation SET_REACTOR_CONTROL   = id("set_reactor_control");
     public static final ResourceLocation AUX_PARTICLE          = id("aux_particle");
     public static final ResourceLocation PWR_PRINTER_SCAN      = id("pwr_printer_scan");
     public static final ResourceLocation VANILLA_EXPLOSION     = id("vanilla_explosion");
@@ -56,10 +57,23 @@ public class ModPacketHandler {
     public static final ResourceLocation SET_ASSEMBLER_RECIPE  = id("set_assembler_recipe");
     public static final ResourceLocation SET_CHEM_RECIPE       = id("set_chem_recipe");
     public static final ResourceLocation SET_CHEM_FACTORY_RECIPE = id("set_chem_factory_recipe");
+    public static final ResourceLocation SET_FUSION_RECIPE     = id("set_fusion_recipe");
+    public static final ResourceLocation SET_PLASMA_FORGE_RECIPE = id("set_plasma_forge_recipe");
+    public static final ResourceLocation SET_KLYSTRON_OUTPUT   = id("set_klystron_output");
     public static final ResourceLocation TOGGLE_WOOD_BURNER    = id("toggle_wood_burner");
     public static final ResourceLocation SET_CRUCIBLE_RECIPE   = id("set_crucible_recipe");
     public static final ResourceLocation HEATEX_CONTROL        = id("heatex_control");
     public static final ResourceLocation OILBURNER_TOGGLE      = id("oilburner_toggle");
+    public static final ResourceLocation TOGGLE_FORCE_FIELD    = id("toggle_force_field");
+    public static final ResourceLocation PNEUMO_TUBE_CONTROL   = id("pneumo_tube_control");
+    public static final ResourceLocation PNEUMO_STORAGE_CONTROL = id("pneumo_storage_control");
+    public static final ResourceLocation DFC_STABILIZER_WATTS  = id("dfc_stabilizer_watts");
+    public static final ResourceLocation CORE_EMITTER_CONTROL  = id("core_emitter_control");
+    public static final ResourceLocation COMBUSTION_ENGINE_CONTROL = id("combustion_engine_control");
+    public static final ResourceLocation DIESEL_GENERATOR_TOGGLE = id("diesel_generator_toggle");
+    public static final ResourceLocation MINING_LASER_TOGGLE = id("mining_laser_toggle");
+    public static final ResourceLocation AMMO_PRESS_SELECT = id("ammo_press_select");
+    public static final ResourceLocation PNEUMO_ACCESS_STATE   = id("pneumo_access_state");
     public static final ResourceLocation BUILD_MISSILE         = id("build_missile");
     public static final ResourceLocation FLUID_TANK_MODE       = id("fluid_tank_mode");
     public static final ResourceLocation DETONATE_ALL          = id("detonate_all");
@@ -69,6 +83,7 @@ public class ModPacketHandler {
     public static final ResourceLocation ANVIL_CRAFT           = id("anvil_craft");
     public static final ResourceLocation ANVIL_SELECT_RECIPE   = id("anvil_select_recipe");
     public static final ResourceLocation POWER_ARMOR_DASH      = id("power_armor_dash");
+    public static final ResourceLocation POWER_ARMOR_DASH_REQUEST = id("power_armor_dash_request");
     public static final ResourceLocation DOOR_MODEL            = id("door_model");
     public static final ResourceLocation FLUID_IDENTIFIER_CTRL = id("fluid_identifier_ctrl");
     public static final ResourceLocation ITEM_DESIGNATOR       = id("item_designator");
@@ -83,6 +98,7 @@ public class ModPacketHandler {
     public static final ResourceLocation COPY_TOOL_KEY               = id("copy_tool_key");
     public static final ResourceLocation MACHINE_CONTROL             = id("machine_control");
     public static final ResourceLocation SOYUZ_LAUNCHER_CONTROL      = id("soyuz_launcher_control");
+    public static final ResourceLocation NUKE_FSTBMB_CONTROL         = id("nuke_fstbmb_control");
     public static final ResourceLocation SOLDERING_STATION_CONTROL   = id("soldering_station_control");
     public static final ResourceLocation ORPHANED_PHANTOMS     = id("orphaned_phantoms");
     public static final ResourceLocation SPAWN_PARTICLE        = id("spawn_particle");
@@ -94,6 +110,7 @@ public class ModPacketHandler {
     public static final ResourceLocation MICROWAVE_SPEED       = id("microwave_speed");
     public static final ResourceLocation ANNIHILATOR_POOL      = id("annihilator_pool");
     public static final ResourceLocation FUNNEL_MODE            = id("funnel_mode");
+    public static final ResourceLocation CRANE_CONTROL          = id("crane_control");
     public static final ResourceLocation RADIO_TORCH_CONTROL    = id("radio_torch_control");
 
 
@@ -199,6 +216,21 @@ public class ModPacketHandler {
         registerC2S(SET_CHEM_FACTORY_RECIPE,
                 com.hbm_m.network.SetChemFactoryRecipeC2SPacket::decode,
                 com.hbm_m.network.SetChemFactoryRecipeC2SPacket::handle);
+        registerC2S(SET_FUSION_RECIPE,
+                SetFusionRecipeC2SPacket::decode,
+                SetFusionRecipeC2SPacket::handle);
+
+        registerC2S(SET_PLASMA_FORGE_RECIPE,
+                SetPlasmaForgeRecipeC2SPacket::decode,
+                SetPlasmaForgeRecipeC2SPacket::handle);
+
+        registerC2S(SET_KLYSTRON_OUTPUT,
+                SetKlystronOutputC2SPacket::decode,
+                SetKlystronOutputC2SPacket::handle);
+
+        registerC2S(SET_REACTOR_CONTROL,
+                SetReactorControlC2SPacket::decode,
+                SetReactorControlC2SPacket::handle);
 
         registerC2S(TOGGLE_WOOD_BURNER,
                 ToggleWoodBurnerPacket::decode,
@@ -215,6 +247,48 @@ public class ModPacketHandler {
         registerC2S(OILBURNER_TOGGLE,
                 com.hbm_m.network.ToggleOilburnerC2SPacket::decode,
                 com.hbm_m.network.ToggleOilburnerC2SPacket::handle);
+        registerC2S(POWER_ARMOR_DASH_REQUEST,
+                com.hbm_m.network.packets.PowerArmorDashC2SPacket::decode,
+                com.hbm_m.network.packets.PowerArmorDashC2SPacket::handle);
+        registerC2S(TOGGLE_FORCE_FIELD,
+                ToggleForceFieldC2SPacket::decode,
+                ToggleForceFieldC2SPacket::handle);
+
+        registerC2S(PNEUMO_TUBE_CONTROL,
+                PneumoTubeControlC2SPacket::decode,
+                PneumoTubeControlC2SPacket::handle);
+
+        registerC2S(PNEUMO_STORAGE_CONTROL,
+                PneumoStorageControlC2SPacket::decode,
+                PneumoStorageControlC2SPacket::handle);
+
+        registerC2S(DFC_STABILIZER_WATTS,
+                DFCStabilizerWattsC2SPacket::decode,
+                DFCStabilizerWattsC2SPacket::handle);
+
+        registerC2S(CORE_EMITTER_CONTROL,
+                CoreEmitterControlC2SPacket::decode,
+                CoreEmitterControlC2SPacket::handle);
+
+        registerC2S(COMBUSTION_ENGINE_CONTROL,
+                CombustionEngineControlC2SPacket::decode,
+                CombustionEngineControlC2SPacket::handle);
+
+        registerC2S(DIESEL_GENERATOR_TOGGLE,
+                DieselGeneratorToggleC2SPacket::decode,
+                DieselGeneratorToggleC2SPacket::handle);
+
+        registerC2S(MINING_LASER_TOGGLE,
+                MiningLaserToggleC2SPacket::decode,
+                MiningLaserToggleC2SPacket::handle);
+
+        registerC2S(AMMO_PRESS_SELECT,
+                AmmoPressSelectC2SPacket::decode,
+                AmmoPressSelectC2SPacket::handle);
+
+        registerC2S(PNEUMO_ACCESS_STATE,
+                PneumoAccessStateC2SPacket::decode,
+                PneumoAccessStateC2SPacket::handle);
 
         registerC2S(BUILD_MISSILE,
                 BuildMissilePacket::decode,
@@ -304,6 +378,10 @@ public class ModPacketHandler {
                 SoyuzLauncherControlPacket::decode,
                 SoyuzLauncherControlPacket::handle);
 
+        registerC2S(NUKE_FSTBMB_CONTROL,
+                NukeFstbmbControlPacket::decode,
+                NukeFstbmbControlPacket::handle);
+
         registerC2S(SOLDERING_STATION_CONTROL,
                 SolderingStationControlPacket::decode,
                 SolderingStationControlPacket::handle);
@@ -332,6 +410,10 @@ public class ModPacketHandler {
                 FunnelModeC2SPacket::decode,
                 FunnelModeC2SPacket::handle);
 
+        registerC2S(CRANE_CONTROL,
+                CraneControlPacket::decode,
+                CraneControlPacket::handle);
+
         registerC2S(RADIO_TORCH_CONTROL,
                 RadioTorchControlPacket::decode,
                 RadioTorchControlPacket::handle);
@@ -340,11 +422,7 @@ public class ModPacketHandler {
     // ══════════════════════ Вспомогательные методы ════════════════════════════
 
     private static ResourceLocation id(String path) {
-        //? if fabric && < 1.21.1 {
-        /*return new ResourceLocation(RefStrings.MODID, path);
-        *///?} else {
         return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, path);
-        //?}
     }
 
     /**
@@ -400,6 +478,31 @@ public class ModPacketHandler {
                 id,
                 (buf, context) -> handler.accept(decoder.apply(buf), context)
         );
+    }
+
+    // ══════════════════════════ C2S validation ════════════════════════════════
+
+    /**
+     * Block entity at a client-supplied {@link net.minecraft.core.BlockPos}, or null. The position
+     * comes from the packet and can point anywhere, so this never loads or generates a chunk on the
+     * server thread — an unloaded position simply reads as null.
+     *
+     * <p>Deliberately no distance check: contraption sub-levels (Sable / Create Aeronautics) drive
+     * block entities the player is legitimately nowhere near, so a radius would break simulation.
+     * This is not an access check either — it only bounds where a packet can reach.
+     */
+    public static net.minecraft.world.level.block.entity.BlockEntity blockEntityAt(
+            ServerPlayer player, net.minecraft.core.BlockPos pos) {
+        if (pos == null) return null;
+        // Compat resolves the chunk once and returns null unless it is already resident, so the
+        // guard and the lookup are a single step that cannot drift apart.
+        var be = com.hbm_m.util.Compat.getTileStandard(player.level(), pos);
+        if (be == null && NET_DEBUG_PACKETS) {
+            com.hbm_m.main.MainRegistry.LOGGER.info(
+                    "[NET-DBG] C2S rejected: no block entity at {} for {}",
+                    pos, player.getGameProfile().getName());
+        }
+        return be;
     }
 
     // ══════════════════════════ Отправка пакетов ══════════════════════════════
@@ -472,10 +575,13 @@ public class ModPacketHandler {
                                          ResourceLocation id, S2CPacket packet) {
         if (level == null) return;
 
+        // Sable ships keep their blocks in far-away plot chunks of the same level; measure from
+        // where the ship actually is. The payload itself must be projected by the sender.
+        Vec3 worldPos = com.hbm_m.compat.sable.SableCompat.toWorld(level, pos);
         double rangeSq = range * range;
         for (ServerPlayer player : level.getServer().getPlayerList().getPlayers()) {
             if (player.level() != level) continue;
-            if (player.position().distanceToSqr(pos) > rangeSq) continue;
+            if (player.position().distanceToSqr(worldPos) > rangeSq) continue;
             sendToPlayer(player, id, packet);
         }
     }

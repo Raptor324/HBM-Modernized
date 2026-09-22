@@ -108,4 +108,13 @@ public class MachineCraneBoxerBlock extends BaseEntityBlock implements com.hbm_m
         return CODEC;
     }
     *///?}
+
+    @Override
+    public void onRemove(net.minecraft.world.level.block.state.BlockState state, net.minecraft.world.level.Level level,
+                            net.minecraft.core.BlockPos pos, net.minecraft.world.level.block.state.BlockState newState, boolean isMoving) {
+        if (!state.is(newState.getBlock())) {
+            com.hbm_m.block.MachineDrops.dropInventory(level, pos);
+        }
+        super.onRemove(state, level, pos, newState, isMoving);
+    }
 }

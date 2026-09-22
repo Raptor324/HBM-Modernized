@@ -27,7 +27,7 @@ import java.util.Map;
  * partial tick, exactly as the original does, so the 200-tick travel reads as smooth motion rather
  * than twenty steps a second.</p>
  */
-public class RBMKAutoloaderRenderer implements BlockEntityRenderer<RBMKAutoloaderBlockEntity> {
+public class RBMKAutoloaderRenderer implements com.hbm_m.client.render.HbmBerBounds<RBMKAutoloaderBlockEntity> {
 
     private static final String MODEL_PATH = "models/rbmk/models/autoloader.obj";
 

@@ -58,6 +58,12 @@ public final class HazmatRegistry {
         for (ItemStack stack : player.getArmorSlots()) {
             res += (float) getResistance(stack);
         }
+
+        // Original: if(player.isPotionActive(HbmPotion.radx)) res += 0.2F;
+        if (com.hbm_m.platform.PlatformHooks.hasEffect(player, com.hbm_m.effect.ModEffects.RADX)) {
+            res += com.hbm_m.effect.RadXEffect.RESISTANCE_BONUS;
+        }
+
         return res;
     }
 

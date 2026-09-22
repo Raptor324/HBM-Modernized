@@ -104,4 +104,14 @@ public class RedCablePaintableBlockEntity extends BaseHbmBlockEntity implements 
         BlockState state = NbtUtils.readBlockState(access.lookupOrThrow(net.minecraft.core.registries.Registries.BLOCK), stateTag);
         setCamo(state);
     }
+
+    // Without this the node outlives the block: the grid stays merged through a position that
+    // no longer conducts, and a conductor placed there later inherits the ghost node.
+    @Override
+    public void setRemoved() {
+        super.setRemoved();
+        if (level instanceof ServerLevel serverLevel) {
+            Nodespace.destroyNode(serverLevel, getBlockPos());
+        }
+    }
 }

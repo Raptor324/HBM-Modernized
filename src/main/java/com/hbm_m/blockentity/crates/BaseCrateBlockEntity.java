@@ -171,6 +171,9 @@ public abstract class BaseCrateBlockEntity extends BaseHbmBlockEntity implements
     }
 
     public boolean isEmpty() {
+        // A structure crate holds its loot as a pending LootTable until first opened; without this a
+        // crate mined before opening was packed as empty and its loot was lost.
+        if (lootTable != null) return false;
         for (int i = 0; i < itemHandler.getSlots(); i++) {
             if (!itemHandler.getStackInSlot(i).isEmpty()) {
                 return false;
@@ -178,6 +181,20 @@ public abstract class BaseCrateBlockEntity extends BaseHbmBlockEntity implements
         }
         return true;
     }
+
+    // The chunk packet does not need every stack of every crate in render distance: nothing on the
+    // client reads them (the menu syncs its own slots, and there is no crate renderer).
+    //? if < 1.21.1 {
+    @Override
+    public @NotNull CompoundTag getUpdateTag() {
+        return new CompoundTag();
+    }
+    //?} else {
+    /*@Override
+    public @NotNull CompoundTag getUpdateTag(net.minecraft.core.HolderLookup.Provider registries) {
+        return new CompoundTag();
+    }
+    *///?}
 
     public void saveToItem(ItemStack stack) {
         //? if < 1.21.1 {
@@ -197,6 +214,22 @@ public abstract class BaseCrateBlockEntity extends BaseHbmBlockEntity implements
                     net.minecraft.world.item.component.CustomData.of(tag));
         }
         *///?}
+    }
+
+    // Upstream TileEntityCrateBase is an ISidedInventory open on every side; the port dropped the
+    // item capability during the Fabric port, so hoppers, pipes and every automation mod saw nothing.
+    @Override
+    public @Nullable Object getItemHandler(@Nullable net.minecraft.core.Direction side) {
+        return itemHandler;
+    }
+
+    /** Leert Inventar und Loot-Tabelle - nach dem Packen in das Kisten-Item. */
+    public void clearContents() {
+        for (int i = 0; i < itemHandler.getSlots(); i++) {
+            itemHandler.setStackInSlot(i, ItemStack.EMPTY);
+        }
+        lootTable = null;
+        lootTableSeed = 0L;
     }
 
     public ModItemStackHandler getItemHandler() {

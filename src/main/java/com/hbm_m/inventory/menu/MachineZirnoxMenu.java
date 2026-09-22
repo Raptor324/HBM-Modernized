@@ -101,7 +101,7 @@ public class MachineZirnoxMenu extends AbstractContainerMenu {
         if (inventory.player.level().isClientSide) {
             return null;
         }
-        throw new IllegalStateException("No MachineZirnoxBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":zirnox_menu");
+        throw new MenuBlockEntityMissingException("No MachineZirnoxBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":zirnox_menu");
     }
 
     public MachineZirnoxBlockEntity getBlockEntity() {
@@ -110,12 +110,14 @@ public class MachineZirnoxMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        if (blockEntity == null || blockEntity.getLevel() != player.level()) {
-            return false;
-        }
-        BlockPos pos = blockEntity.getBlockPos();
-        return player.distanceToSqr(pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D) <= 64.0D;
+        return MenuReach.stillValid(player, blockEntity);
     }
+
+    // Menu indices, not handler indices: the slots are added in the order CO2 in, CO2 out, water in,
+    // water out, while the block entity numbers them CO2 in, water in, CO2 out, water out. Passing
+    // the handler constant put water into the CO2 output slot, where it could never be inserted.
+    private static final int MENU_CO2_IN = MachineZirnoxBlockEntity.ROD_SLOT_COUNT;
+    private static final int MENU_WATER_IN = MENU_CO2_IN + 2;
 
     @Override
     public ItemStack quickMoveStack(Player player, int index) {
@@ -131,13 +133,11 @@ public class MachineZirnoxMenu extends AbstractContainerMenu {
                     return ItemStack.EMPTY;
                 }
             } else if (holdsFluid(stack, ModFluids.CARBONDIOXIDE.getSource())) {
-                if (!this.moveItemStackTo(stack, MachineZirnoxBlockEntity.SLOT_CO2_IN,
-                        MachineZirnoxBlockEntity.SLOT_CO2_IN + 1, false)) {
+                if (!this.moveItemStackTo(stack, MENU_CO2_IN, MENU_CO2_IN + 1, false)) {
                     return ItemStack.EMPTY;
                 }
             } else if (holdsFluid(stack, ModFluids.WATER.getSource()) || stack.is(Items.WATER_BUCKET)) {
-                if (!this.moveItemStackTo(stack, MachineZirnoxBlockEntity.SLOT_WATER_IN,
-                        MachineZirnoxBlockEntity.SLOT_WATER_IN + 1, false)) {
+                if (!this.moveItemStackTo(stack, MENU_WATER_IN, MENU_WATER_IN + 1, false)) {
                     return ItemStack.EMPTY;
                 }
             } else if (stack.is(ModTags.Items.ZIRNOX_RODS)) {

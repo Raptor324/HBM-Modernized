@@ -1,5 +1,13 @@
 package com.hbm_m.particle.helper;
 
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
+
 import com.hbm_m.sound.ModSounds;
 
 import net.minecraft.client.Minecraft;
@@ -16,13 +24,7 @@ import net.minecraft.world.entity.player.Player;
  * Загружается только на клиенте (через ParticleEffectClient), поэтому здесь
  * допустимы клиентские классы.
  */
-//? if forge {
-@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-//?} elif fabric {
-/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
-*///?} elif neoforge {
-/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-*///?}
+@OnlyIn(Dist.CLIENT)
 public class ExplosionClientCreator implements IParticleCreator {
 
 	@Override
@@ -75,11 +77,15 @@ public class ExplosionClientCreator implements IParticleCreator {
 			double oX = rand.nextGaussian() * debrisHorizontalDeviation;
 			double oY = debrisVerticalOffset;
 			double oZ = rand.nextGaussian() * debrisHorizontalDeviation;
-			double angle = -Math.toRadians(45 + rand.nextFloat() * 25);
+			// The original builds the motion as Vec3(velocity,0,0).rotateAroundZ(-pitch), and that
+			// method computes y' = y*cos - x*sin, so a negative angle gives y' = +v*sin(pitch):
+			// debris arcs UPWARDS. Feeding the negative angle straight into sin() flipped it and
+			// shot every spark into the ground.
+			double pitch = Math.toRadians(45 + rand.nextFloat() * 25);
 			double yaw = rand.nextDouble() * Math.PI * 2;
-			double vx = debrisVelocity * Math.cos(angle) * Math.cos(yaw);
-			double vy = debrisVelocity * Math.sin(angle);
-			double vz = debrisVelocity * Math.cos(angle) * Math.sin(yaw);
+			double vx = debrisVelocity * Math.cos(pitch) * Math.cos(yaw);
+			double vy = debrisVelocity * Math.sin(pitch);
+			double vz = debrisVelocity * Math.cos(pitch) * Math.sin(yaw);
 			level.addParticle(sparkType, x + oX, y + oY, z + oZ, vx, vy, vz);
 		}
 	}

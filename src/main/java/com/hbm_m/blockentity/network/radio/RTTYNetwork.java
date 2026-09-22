@@ -74,6 +74,24 @@ public final class RTTYNetwork {
         NEW_MESSAGES.clear();
     }
 
+    /** Drops the channels of a dimension that is going away, so they cannot outlive it. */
+    public static void onLevelUnload(Level level) {
+        ResourceKey<Level> dim = level.dimension();
+        BROADCAST.keySet().removeIf(key -> key.dimension().equals(dim));
+        NEW_MESSAGES.keySet().removeIf(key -> key.dimension().equals(dim));
+    }
+
+    /**
+     * Both maps and the tick guard are static, so without this a singleplayer world carried its
+     * channels into the next one: listeners compare timeStamp against the new world's gameTime and
+     * acted on signals broadcast in the previous save.
+     */
+    public static void onServerStop() {
+        BROADCAST.clear();
+        NEW_MESSAGES.clear();
+        lastProcessedTick = -1;
+    }
+
     private static boolean isNumber(Object o) {
         try {
             Long.parseLong(String.valueOf(o));

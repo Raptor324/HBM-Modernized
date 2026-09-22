@@ -10,7 +10,6 @@ import com.hbm_m.client.render.MdiBatchCoordinator;
 import com.hbm_m.client.render.NucleusDebug;
 import com.hbm_m.client.render.PersistentUploadStaging;
 import com.hbm_m.client.render.RenderFrameLight;
-import com.hbm_m.client.render.implementations.DoorRenderer;
 import com.hbm_m.client.render.implementations.MachineAdvancedAssemblerRenderer;
 import com.hbm_m.client.render.implementations.MachineAssemblerRenderer;
 import com.hbm_m.client.render.implementations.MachineChemicalPlantRenderer;
@@ -30,10 +29,7 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 //?}
-//? if fabric {
-/*import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
-*///?} elif neoforge {
+//? if neoforge {
 /*import net.neoforged.api.distmarker.Dist;
 import net.neoforged.api.distmarker.OnlyIn;
 *///?}
@@ -50,11 +46,7 @@ import net.neoforged.api.distmarker.OnlyIn;
  * (dirty GL texture units → white lightmap).
  */
 
-//? if forge || neoforge {
 @OnlyIn(Dist.CLIENT)
-//?}
-//? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
 public final class InstancedRenderFrame {
 
     private InstancedRenderFrame() {}
@@ -197,9 +189,6 @@ public final class InstancedRenderFrame {
     private static void flushAllInstanced(Matrix4f projection) {
         // Фабричные станки (machine/) — единый реестр вместо N хардкодов flushInstancedBatches.
         com.hbm_m.client.render.machine.MachineRenderRegistry.flushAll(projection);
-
-        // Легаси-рендереры, ещё не мигрированные на фабрику.
-        DoorRenderer.flushInstancedBatches(projection);
     }
 
     /**
@@ -208,7 +197,6 @@ public final class InstancedRenderFrame {
      */
     private static void flushAllInstancedFading(Matrix4f projection) {
         com.hbm_m.client.render.machine.MachineRenderRegistry.flushAllFading(projection);
-        DoorRenderer.flushFadingBatches(projection);
     }
 
     public static void clear() {

@@ -33,6 +33,11 @@ public class LongEnergyWrapper implements IEnergyStorage {
         this.mode = mode;
     }
 
+    /** Младшие 32 бита — совместимость со старыми вызовами без явного режима. */
+    public LongEnergyWrapper(IEnergyConnector handler) {
+        this(handler, BitMode.LOW);
+    }
+
     // --- Утилиты для работы с битами ---
     private static int getLow(long val) {
         return (int) (val & 0xFFFFFFFFL);

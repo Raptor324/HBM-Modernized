@@ -16,10 +16,6 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
-//? if forge {
-import net.minecraftforge.event.ForgeEventFactory;
-//?}
-
 import java.util.HashMap;
 import java.util.List;
 
@@ -49,14 +45,14 @@ public class EntityProcessorStandard implements IEntityProcessor {
         double maxZ = z + (double) size + 1.0D;
 
         List<Entity> entities = level.getEntities(allowSelfDamage ? null : explosion.exploder, new AABB(minX, minY, minZ, maxX, maxY, maxZ));
-        //? if forge {
-        ForgeEventFactory.onExplosionDetonate(level, explosion.compat, entities, size);
-        //?}
+        com.hbm_m.platform.PlatformHooks.fireExplosionDetonate(level, explosion.compat, entities, size);
         Vec3 vec3 = new Vec3(x, y, z);
 
         for (Entity entity : entities) {
 
-            double distanceScaled = entity.distanceToSqr(x, y, z) / size;
+            // 1.7.10 uses entity.getDistance(x, y, z), a linear distance; distanceToSqr is squared,
+            // so the effective radius had shrunk to sqrt(size). Same shape as EntityProcessorCross.
+            double distanceScaled = Math.sqrt(entity.distanceToSqr(x, y, z)) / size;
 
             if (distanceScaled <= 1.0D) {
 
@@ -72,23 +68,23 @@ public class EntityProcessorStandard implements IEntityProcessor {
                     deltaZ /= distance;
 
                     double density = Explosion.getSeenPercent(vec3, entity);
-                    double knockback;
-
-                    if (entity instanceof LivingEntity livingEntity) {
-                        knockback = PlatformHooks.getExplosionKnockbackAfterDampener(livingEntity, density);
-                    } else {
-                        knockback = density;
-                    }
+                    // Two separate values, as in the original and in EntityProcessorCross:100+.
+                    // knockback carries the distance falloff and feeds calculateDamage; the
+                    // enchantment dampener applies only to the velocity. Folding the dampener into
+                    // knockback before calculateDamage made blast protection cut damage a second
+                    // time, and quadratically, since the formula squares it.
+                    double knockback = (1.0D - distanceScaled) * density;
+                    double enchKnockback = entity instanceof LivingEntity livingEntity
+                            ? PlatformHooks.getExplosionKnockbackAfterDampener(livingEntity, knockback)
+                            : knockback;
 
                     entity.hurt(setExplosionSource(level, explosion.compat), calculateDamage(distanceScaled, density, knockback, size));
 
                     Vec3 velocity = new Vec3(
-                            deltaX * knockback,
-                            deltaY * knockback,
-                            deltaZ * knockback
+                            deltaX * enchKnockback,
+                            deltaY * enchKnockback,
+                            deltaZ * enchKnockback
                     );
-
-                    entity.setDeltaMovement(entity.getDeltaMovement().add(velocity));
 
                     if (entity instanceof Player player) {
                         if (!player.isSpectator() && !player.getAbilities().flying) {

@@ -70,7 +70,7 @@ public class MachineSteamEngineBlockEntity extends BaseMachineBlockEntity implem
     private void serverTick(Level level, BlockPos pos) {
         if (level.getGameTime() % 20 == 0) {
             for (Direction dir : Direction.values()) {
-                trySubscribe(steamTank.getTankType(), level, pos.relative(dir), dir);
+                trySubscribe(steamTank, level, pos.relative(dir), dir);
                 tryProvide(spentSteamTank, level, pos.relative(dir), dir);
             }
         }

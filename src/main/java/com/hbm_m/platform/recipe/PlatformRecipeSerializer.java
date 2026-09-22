@@ -42,7 +42,10 @@ public abstract class PlatformRecipeSerializer<R extends Recipe<?>> implements R
     }
     //?} else {
     
-    /*private final MapCodec<R> mapCodec = new MapCodec<R>() {
+    /*/^* RecipeManager assigns the real id, so the codec only ever needs this placeholder. ^/
+    private static final ResourceLocation DUMMY_ID = ResourceLocation.withDefaultNamespace("dummy");
+
+    private final MapCodec<R> mapCodec = new MapCodec<R>() {
         @Override
         public <T> Stream<T> keys(com.mojang.serialization.DynamicOps<T> ops) {
             return Stream.empty();
@@ -51,12 +54,16 @@ public abstract class PlatformRecipeSerializer<R extends Recipe<?>> implements R
         @Override
         public <T> DataResult<R> decode(com.mojang.serialization.DynamicOps<T> ops, MapLike<T> input) {
             try {
-                com.mojang.serialization.Dynamic<T> dynamic = new com.mojang.serialization.Dynamic<>(ops, ops.createMap(input.entries()));
-                com.google.gson.JsonElement json = dynamic.convert(JsonOps.INSTANCE).getValue();
-                R recipe = readJson(ResourceLocation.withDefaultNamespace("dummy"), json.getAsJsonObject());
-                return DataResult.success(recipe);
+                T map = ops.createMap(input.entries());
+                // Recipes already load through JsonOps. Converting again walks arrays element by
+                // element and NPEs on JsonNull, which recipes use for empty grid slots.
+                JsonObject json = map instanceof JsonObject obj
+                        ? obj
+                        : new com.mojang.serialization.Dynamic<>(ops, map).convert(JsonOps.INSTANCE).getValue().getAsJsonObject();
+                return DataResult.success(readJson(DUMMY_ID, json));
             } catch (Exception e) {
-                com.hbm_m.main.MainRegistry.LOGGER.error("PlatformRecipeSerializer: failed to parse recipe", e);
+                // RecipeManager only surfaces the message, so log the cause with its stack trace.
+                com.hbm_m.main.MainRegistry.LOGGER.error("Failed to parse recipe", e);
                 return DataResult.error(() -> "Failed to parse recipe: " + e.getMessage());
             }
         }
@@ -70,7 +77,7 @@ public abstract class PlatformRecipeSerializer<R extends Recipe<?>> implements R
     private final StreamCodec<RegistryFriendlyByteBuf, R> streamCodec = new StreamCodec<RegistryFriendlyByteBuf, R>() {
         @Override
         public R decode(RegistryFriendlyByteBuf buf) {
-            return readNetwork(ResourceLocation.withDefaultNamespace("dummy"), buf);
+            return readNetwork(DUMMY_ID, buf);
         }
 
         @Override

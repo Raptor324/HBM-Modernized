@@ -30,10 +30,6 @@ public final class FluidItemAccess {
         return stack.getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER_ITEM).isPresent();
         //?} else if neoforge {
         /*return stack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.FluidHandler.ITEM) != null;
-        *///?} else if fabric {
-        /*return net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage.ITEM.find(
-                stack, net.fabricmc.fabric.api.transfer.v1.context.ContainerItemContext.withConstant(stack)
-        ) != null;
         *///?} else {
         /*return false;
         *///?}

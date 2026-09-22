@@ -7,7 +7,6 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.atomic.AtomicReference;
 
 import com.hbm_m.block.ModBlocks;
 // Этот класс реализует простую и эффективную систему симуляции радиации в чанках. Ядро всей радиационной механики мода.
@@ -18,6 +17,7 @@ import com.hbm_m.main.MainRegistry;
 import com.hbm_m.network.ChunkRadiationDebugBatchPacket;
 import com.hbm_m.network.ModPacketHandler;
 import com.hbm_m.particle.ModParticleTypes;
+import com.hbm_m.util.Compat;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceKey;
@@ -30,7 +30,6 @@ import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.chunk.ChunkAccess;
 import net.minecraft.world.level.chunk.LevelChunk;
 //? if forge {
 import net.minecraftforge.event.level.ChunkEvent;
@@ -94,7 +93,7 @@ public class ChunkRadiationHandlerSimple extends ChunkRadiationHandler {
             // Источники (BlockHazard и т.д.) накачивают ambient собственным scheduled-tick — здесь только spread+decay.
             Map<ChunkPos, Float> buff = new HashMap<>();
             for (ChunkPos pos : new HashSet<>(currentActiveChunks)) {
-                LevelChunk chunk = level.getChunkSource().getChunk(pos.x, pos.z, false);
+                LevelChunk chunk = Compat.getLoadedChunkAt(level, pos.x, pos.z);
                 if (chunk == null) {
                     continue;
                 }
@@ -168,7 +167,7 @@ public class ChunkRadiationHandlerSimple extends ChunkRadiationHandler {
             chunksToProcess.addAll(radiation.keySet());
 
             for (ChunkPos pos : chunksToProcess) {
-                LevelChunk chunk = level.getChunkSource().getChunk(pos.x, pos.z, false);
+                LevelChunk chunk = Compat.getLoadedChunkAt(level, pos.x, pos.z);
                 if (chunk == null) {
                     continue;
                 }
@@ -254,29 +253,31 @@ public class ChunkRadiationHandlerSimple extends ChunkRadiationHandler {
     @Override
     public float getRadiation(Level level, int x, int y, int z) {
         if (level == null || level.isClientSide()) return 0F;
-        ChunkAccess chunkAccess = level.getChunk(x >> 4, z >> 4);
-        if (chunkAccess instanceof LevelChunk chunk) {
-            AtomicReference<Float> radiation = new AtomicReference<>(0f);
-            getChunkRadiationCap(chunk).ifPresent(cap -> radiation.set(cap.getAmbientRadiation()));
-            return radiation.get();
-        }
-        return 0F;
+        // 1.7.10 reads from an in-memory map, so it answers even for unloaded chunks. Our storage
+        // lives on the chunk, so an unloaded one reads as 0 — the trade for not letting a read
+        // generate terrain, which level.getChunk would do here.
+        LevelChunk chunk = Compat.getLoadedChunk(level, x, z);
+        if (chunk == null) return 0F;
+        // No clamp needed: ChunkRadiation.setAmbientRadiation is the only writer and clamps there.
+        return getChunkRadiationCap(chunk).map(IChunkRadiation::getAmbientRadiation).orElse(0f);
     }
 
     @Override
     public void setRadiation(Level level, int x, int y, int z, float rad) {
         if (level == null || level.isClientSide()) return;
-        ChunkAccess chunkAccess = level.getChunk(x >> 4, z >> 4);
-        if (chunkAccess instanceof LevelChunk chunk) {
-            getChunkRadiationCap(chunk).ifPresent(cap -> {
-                cap.setAmbientRadiation(rad);
-                chunk.setUnsaved(true);
-                if (rad > 1e-6f) {
-                    activeChunksByDimension.computeIfAbsent(level.dimension()
-                    .location(), k -> ConcurrentHashMap.newKeySet()).add(chunk.getPos());
-                }
-            });
-        }
+        // Port of the original world.blockExists(x, 0, z) guard: writes to an unloaded chunk are
+        // dropped instead of forcing a load. Nuke fallout touches 21 chunks per call.
+        LevelChunk chunk = Compat.getLoadedChunk(level, x, z);
+        if (chunk == null) return;
+        getChunkRadiationCap(chunk).ifPresent(cap -> {
+            // setAmbientRadiation clamps to [0, MAX_RAD] itself, so rad is stored as-is.
+            cap.setAmbientRadiation(rad);
+            chunk.setUnsaved(true);
+            if (rad > 1e-6f) {
+                activeChunksByDimension.computeIfAbsent(level.dimension()
+                .location(), k -> ConcurrentHashMap.newKeySet()).add(chunk.getPos());
+            }
+        });
     }
 
     @Override
@@ -317,7 +318,7 @@ public class ChunkRadiationHandlerSimple extends ChunkRadiationHandler {
                     visibleChunks.add(chunkPos);
 
                     float currentValue = 0f;
-                    LevelChunk chunk = level.getChunkSource().getChunk(chunkPos.x, chunkPos.z, false);
+                    LevelChunk chunk = Compat.getLoadedChunkAt(level, chunkPos.x, chunkPos.z);
                     if (chunk != null) {
                         currentValue = getChunkRadiationCap(chunk).map(IChunkRadiation::getAmbientRadiation).orElse(0f);
                     }
@@ -398,11 +399,7 @@ public class ChunkRadiationHandlerSimple extends ChunkRadiationHandler {
             for (int c = 0; c < chunksPerTick; c++) {
                 ChunkPos coords = chunkArray[level.random.nextInt(chunkArray.length)];
 
-                if (!level.hasChunk(coords.x, coords.z)) {
-                    continue;
-                }
-
-                LevelChunk chunk = level.getChunkSource().getChunk(coords.x, coords.z, false);
+                LevelChunk chunk = Compat.getLoadedChunkAt(level, coords.x, coords.z);
                 if (chunk == null) {
                     continue;
                 }

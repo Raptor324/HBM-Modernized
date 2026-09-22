@@ -56,7 +56,7 @@ public class MachineCraneBoxerMenu extends AbstractContainerMenu {
         if (blockEntity instanceof MachineCraneBoxerBlockEntity boxerBlockEntity) {
             return boxerBlockEntity;
         }
-        throw new IllegalStateException("No MachineCraneBoxerBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":crane_boxer_menu");
+        throw new MenuBlockEntityMissingException("No MachineCraneBoxerBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":crane_boxer_menu");
     }
 
     public MachineCraneBoxerBlockEntity getBlockEntity() {
@@ -65,11 +65,7 @@ public class MachineCraneBoxerMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        if (blockEntity == null || blockEntity.getLevel() != player.level()) {
-            return false;
-        }
-        BlockPos pos = blockEntity.getBlockPos();
-        return player.distanceToSqr(pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D) <= 64.0D;
+        return MenuReach.stillValid(player, blockEntity);
     }
 
     @Override

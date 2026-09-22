@@ -56,7 +56,7 @@ public class AchievementHandler {
         item(ModItems.MACHINE_GASCENT,          ModAdvancements.GAS_CENT);
         item(ModItems.MACHINE_CENTRIFUGE,       ModAdvancements.CENTRIFUGE);
         item(ModMaterialItems.get(ModMaterials.SCHRABIDIUM, MaterialShape.NUGGET), ModAdvancements.SCHRAB);
-        block(ModBlocks.MACHINE_CRYSTALLIZER,  ModAdvancements.ACIDIZER);
+        item(ModItems.CRYSTALLIZER,            ModAdvancements.ACIDIZER);
         block(ModBlocks.SILEX,                 ModAdvancements.SILEX);
         item(ModMaterialItems.get(ModMaterials.TECHNETIUM, MaterialShape.NUGGET),     ModAdvancements.TECHNETIUM);
         block(ModBlocks.STRUCT_WATZ_CORE,      ModAdvancements.WATZ);

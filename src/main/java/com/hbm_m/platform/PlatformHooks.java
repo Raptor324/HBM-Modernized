@@ -1,5 +1,13 @@
 package com.hbm_m.platform;
 
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
+
 import java.nio.file.Path;
 import java.util.function.Consumer;
 
@@ -199,11 +207,30 @@ public final class PlatformHooks {
     /**
      * Кросс-версионная фабрика музыкальных пластинок.
      */
-    public static net.minecraft.world.item.Item createRecordItem(int comparatorValue, Object sound, net.minecraft.world.item.Item.Properties properties, int lengthInSeconds) {
+    /**
+     * A jukebox-playable music disc.
+     *
+     * <p>1.21.1 removed {@code RecordItem}: playback is driven by the {@code jukebox_playable}
+     * component pointing at a {@code JukeboxSong} datapack entry. The port kept returning a plain
+     * {@code Item} without that component, so none of the discs could be put in a jukebox.
+     * {@code songId} names the entry under {@code data/hbm_m/jukebox_song/}.</p>
+     */
+    public static net.minecraft.world.item.Item createRecordItem(int comparatorValue, Object sound, net.minecraft.world.item.Item.Properties properties, int lengthInSeconds, String songId) {
         //? if < 1.21.1 {
         return new net.minecraft.world.item.RecordItem(comparatorValue, (net.minecraft.sounds.SoundEvent) sound, properties, lengthInSeconds * 20);
         //?} else {
-        /*return new net.minecraft.world.item.Item(properties);
+        /*return new net.minecraft.world.item.Item(jukeboxProperties(properties, songId));
+        *///?}
+    }
+
+    /** Adds the jukebox_playable component on 1.21.1; a no-op on older versions. */
+    public static net.minecraft.world.item.Item.Properties jukeboxProperties(net.minecraft.world.item.Item.Properties properties, String songId) {
+        //? if < 1.21.1 {
+        return properties;
+        //?} else {
+        /*return properties.jukeboxPlayable(net.minecraft.resources.ResourceKey.create(
+                net.minecraft.core.registries.Registries.JUKEBOX_SONG,
+                net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(com.hbm_m.lib.RefStrings.MODID, songId)));
         *///?}
     }
 
@@ -239,13 +266,13 @@ public final class PlatformHooks {
         //? if < 1.21.1 {
         return stack.save(tag);
         //?} else {
-        
-        /*// ВАЖНО: stack.save(provider, tag) = codec.encode(item, nbtOps, tag) — возвращает НОВЫЙ
-        // слитый тег {Slot,id,count,...} и НЕ заполняет переданный tag. Доливаем результат обратно,
-        // иначе call-site'ы, игнорирующие return, пишут в NBT только собственные ключи (Slot) —
-        // предметы молча терялись при перезагрузке чанка (NukeBaseBlockEntity и др.).
+        /*// ItemStack.save(provider, prefix) encodes through NbtOps, which MERGES into a NEW compound
+        // and leaves the prefix untouched. Callers that build the tag in place (armour mods, bomb
+        // and Soyuz inventories) were storing empty compounds. Keep the 1.20.1 contract: fill `tag`.
         CompoundTag saved = (CompoundTag) stack.save(provider, tag);
-        tag.merge(saved);
+        if (saved != tag) {
+            tag.merge(saved);
+        }
         return tag;
         *///?}
     }
@@ -445,6 +472,25 @@ public final class PlatformHooks {
         *///?}
     }
 
+    /** Does the instance carry the modifier created by {@link #attributeModifier(java.util.UUID, String, double, AttributeModifier.Operation)}? */
+    public static boolean hasAttributeModifier(net.minecraft.world.entity.ai.attributes.AttributeInstance instance, java.util.UUID uuid) {
+        //? if < 1.21.1 {
+        return instance.getModifier(uuid) != null;
+        //?} else {
+        /*return instance.hasModifier(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID,
+                "am_" + uuid.toString().replace('-', '_')));
+        *///?}
+    }
+
+    /** {@code Operation.MULTIPLY_BASE} (1.20.1) / {@code ADD_MULTIPLIED_BASE} (1.21.1). */
+    public static AttributeModifier.Operation multiplyBase() {
+        //? if < 1.21.1 {
+        return AttributeModifier.Operation.MULTIPLY_BASE;
+        //?} else {
+        /*return AttributeModifier.Operation.ADD_MULTIPLIED_BASE;
+        *///?}
+    }
+
     /**
      * Создание {@link AttributeModifier} с именем-идентификатором (без UUID).
      * Заменяет {@code new AttributeModifier(name, value, operation)} на 1.20.1.
@@ -476,11 +522,7 @@ public final class PlatformHooks {
      * Создание ModelResourceLocation. Возвращает Object, чтобы не зависеть от изменения
      * иерархии наследования.
      */
-    //? if forge {
-    @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-    //?} elif neoforge {
-    /*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-     *///?}
+    @OnlyIn(Dist.CLIENT)
     public static Object createModelLocation(ResourceLocation id, String variant) {
         return new net.minecraft.client.resources.model.ModelResourceLocation(id, variant);
     }
@@ -488,11 +530,7 @@ public final class PlatformHooks {
     /**
      * Извлечение ResourceLocation (ID) из ModelResourceLocation.
      */
-    //? if forge {
-    @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-    //?} elif neoforge {
-    /*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-     *///?}
+    @OnlyIn(Dist.CLIENT)
     public static ResourceLocation getModelId(Object modelResourceLocation) {
         //? if < 1.21.1 {
         return (ResourceLocation) modelResourceLocation;
@@ -504,11 +542,7 @@ public final class PlatformHooks {
     /**
      * Регистрация дополнительной standalone-модели.
      */
-    //? if forge {
-    @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-    //?} elif neoforge {
-    /*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-     *///?}
+    @OnlyIn(Dist.CLIENT)
     public static void registerAdditionalModel(Object event, ResourceLocation loc) {
         //? if < 1.21.1 {
         ((net.minecraftforge.client.event.ModelEvent.RegisterAdditional) event).register(loc);
@@ -523,11 +557,7 @@ public final class PlatformHooks {
      * Файл модели при этом ищется в {@code models/item/<path>.json} на обеих версиях:
      * на 1.20.1 через вариант "inventory", на 1.21.1 через standalone-ключ с путём item/<path>.
      */
-    //? if forge {
-    @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-    //?} elif neoforge {
-    /*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-     *///?}
+    @OnlyIn(Dist.CLIENT)
     public static void registerItemModel(Object event, ResourceLocation id) {
         //? if < 1.21.1 {
         ((net.minecraftforge.client.event.ModelEvent.RegisterAdditional) event).register(
@@ -544,11 +574,7 @@ public final class PlatformHooks {
      * Получение запечённой "инвентарной" модели сета, зарегистрированной через
      * {@link #registerItemModel}. Ключ должен совпадать с регистрацией.
      */
-    //? if forge {
-    @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-    //?} elif neoforge {
-    /*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-     *///?}
+    @OnlyIn(Dist.CLIENT)
     public static net.minecraft.client.resources.model.BakedModel getItemModel(
             net.minecraft.client.resources.model.ModelManager manager, ResourceLocation id) {
         //? if < 1.21.1 {
@@ -563,11 +589,7 @@ public final class PlatformHooks {
     /**
      * Регистрация Geometry Loader.
      */
-    //? if forge {
-    @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-    //?} elif neoforge {
-    /*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-     *///?}
+    @OnlyIn(Dist.CLIENT)
     public static void registerGeometryLoader(Object event, String name, Object loader) {
         //? if < 1.21.1 {
         ((net.minecraftforge.client.event.ModelEvent.RegisterGeometryLoaders) event).register(
@@ -584,11 +606,7 @@ public final class PlatformHooks {
      * Используйте это в рендерерах (EntityRenderer/BlockEntityRenderer), чтобы не зависеть
      * от изменения сигнатуры getModel() на 1.21.1.
      */
-    //? if forge {
-    @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-    //?} elif neoforge {
-    /*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-     *///?}
+    @OnlyIn(Dist.CLIENT)
     public static net.minecraft.client.resources.model.BakedModel getModel(
             net.minecraft.client.resources.model.ModelManager manager, ResourceLocation loc) {
         //? if < 1.21.1 {
@@ -900,9 +918,19 @@ public final class PlatformHooks {
     // =====================================================================================
     //  MobEffect bridge.
     //   1.20.1: addEffect/hasEffect/removeEffect принимают MobEffect.
-    //   1.21.1: только Holder<MobEffect>; architectury RegistrySupplier на 1.21.1
-    //           реализует Holder, поэтому кастим сам supplier.
+    //   1.21.1: только Holder<MobEffect>. Architectury RegistrySupplier implements Holder but is
+    //           not a Holder.Reference: MobEffect.CODEC rejects it on save ("Unregistered holder",
+    //           crashing every entity save), and its equals() never matches the registry Reference,
+    //           so hasEffect/removeEffect miss effects that were loaded from NBT or synced from
+    //           the server. Always resolve the real Reference through the registry.
     // =====================================================================================
+
+    //? if >= 1.21.1 {
+    /*private static net.minecraft.core.Holder<net.minecraft.world.effect.MobEffect> effectHolder(
+            dev.architectury.registry.registries.RegistrySupplier<net.minecraft.world.effect.MobEffect> effect) {
+        return net.minecraft.core.registries.BuiltInRegistries.MOB_EFFECT.wrapAsHolder(effect.get());
+    }
+    *///?}
 
     /** {@code living.addEffect(new MobEffectInstance(effect, duration, amplifier))} на обеих версиях. */
     public static boolean addEffect(net.minecraft.world.entity.LivingEntity living,
@@ -911,8 +939,7 @@ public final class PlatformHooks {
         //? if < 1.21.1 {
         return living.addEffect(new net.minecraft.world.effect.MobEffectInstance(effect.get(), duration, amplifier));
         //?} else {
-        /*return living.addEffect(new net.minecraft.world.effect.MobEffectInstance(
-                (net.minecraft.core.Holder<net.minecraft.world.effect.MobEffect>) (Object) effect, duration, amplifier));
+        /*return living.addEffect(new net.minecraft.world.effect.MobEffectInstance(effectHolder(effect), duration, amplifier));
         *///?}
     }
 
@@ -922,7 +949,7 @@ public final class PlatformHooks {
         //? if < 1.21.1 {
         return living.hasEffect(effect.get());
         //?} else {
-        /*return living.hasEffect((net.minecraft.core.Holder<net.minecraft.world.effect.MobEffect>) (Object) effect);
+        /*return living.hasEffect(effectHolder(effect));
         *///?}
     }
 
@@ -932,7 +959,7 @@ public final class PlatformHooks {
         //? if < 1.21.1 {
         return living.removeEffect(effect.get());
         //?} else {
-        /*return living.removeEffect((net.minecraft.core.Holder<net.minecraft.world.effect.MobEffect>) (Object) effect);
+        /*return living.removeEffect(effectHolder(effect));
         *///?}
     }
 
@@ -942,7 +969,66 @@ public final class PlatformHooks {
         //? if < 1.21.1 {
         return living.getEffect(effect.get());
         //?} else {
-        /*return living.getEffect((net.minecraft.core.Holder<net.minecraft.world.effect.MobEffect>) (Object) effect);
+        /*return living.getEffect(effectHolder(effect));
+        *///?}
+    }
+
+    /**
+     * Block-collider ray context without an entity. 1.20.1's constructor takes a nullable Entity;
+     * 1.21.1 overloads it with CollisionContext, which makes a plain {@code null} ambiguous.
+     */
+    public static net.minecraft.world.level.ClipContext clipContext(net.minecraft.world.phys.Vec3 from, net.minecraft.world.phys.Vec3 to,
+                                                                    net.minecraft.world.level.ClipContext.Fluid fluid) {
+        //? if < 1.21.1 {
+        return new net.minecraft.world.level.ClipContext(from, to, net.minecraft.world.level.ClipContext.Block.COLLIDER, fluid, (net.minecraft.world.entity.Entity) null);
+        //?} else {
+        /*return new net.minecraft.world.level.ClipContext(from, to, net.minecraft.world.level.ClipContext.Block.COLLIDER, fluid,
+                net.minecraft.world.phys.shapes.CollisionContext.empty());
+        *///?}
+    }
+
+    /**
+     * {@code DimensionDataStorage.computeIfAbsent} on both versions: 1.20.1 takes loader/creator,
+     * 1.21.1 a {@code SavedData.Factory} whose loader also receives the registries (ignored here).
+     */
+    public static <T extends net.minecraft.world.level.saveddata.SavedData> T getOrCreateSavedData(
+            net.minecraft.server.level.ServerLevel level, String name,
+            java.util.function.Function<CompoundTag, T> loader, java.util.function.Supplier<T> creator) {
+        //? if < 1.21.1 {
+        return level.getDataStorage().computeIfAbsent(loader::apply, creator::get, name);
+        //?} else {
+        /*return level.getDataStorage().computeIfAbsent(
+                new net.minecraft.world.level.saveddata.SavedData.Factory<>(creator, (nbt, provider) -> loader.apply(nbt), null),
+                name);
+        *///?}
+    }
+
+    /**
+     * {@code Player.canInteractWithBlock(pos, slop)} (1.21.1); the same eye-to-AABB test against
+     * the Forge reach attribute on 1.20.1. Kept as the vanilla call on 1.21.1 on purpose: Sable
+     * hooks it for blocks on ships, a hand-rolled distance would ignore the ship's pose.
+     */
+    public static boolean canInteractWithBlock(net.minecraft.world.entity.player.Player player,
+                                               net.minecraft.core.BlockPos pos, double slop) {
+        //? if < 1.21.1 {
+        double reach = player.getBlockReach() + slop;
+        return new net.minecraft.world.phys.AABB(pos).distanceToSqr(player.getEyePosition()) < reach * reach;
+        //?} else {
+        /*return player.canInteractWithBlock(pos, slop);
+        *///?}
+    }
+
+    /**
+     * Событие детонации взрыва: даёт чужим модам (защита территорий и т.п.) отфильтровать
+     * список задетых сущностей. Раньше звалось только на Forge.
+     */
+    public static void fireExplosionDetonate(net.minecraft.world.level.Level level,
+            net.minecraft.world.level.Explosion explosion,
+            java.util.List<net.minecraft.world.entity.Entity> entities, double size) {
+        //? if forge {
+        net.minecraftforge.event.ForgeEventFactory.onExplosionDetonate(level, explosion, entities, size);
+        //?} elif neoforge {
+        /*net.neoforged.neoforge.event.EventHooks.onExplosionDetonate(level, explosion, entities, size);
         *///?}
     }
 

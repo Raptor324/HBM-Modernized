@@ -31,7 +31,7 @@ import net.minecraft.world.item.ItemStack;
  * <p>Data-driven: рецепты читаются напрямую aus {@code RecipeManager} (JSON {@code hbm_m:electrolyser_fluid}),
  * ранее — статический {@code ElectrolyserRecipes} (fluid-mode).</p>
  */
-//? if forge {
+//? if forge || neoforge {
 public class ElectrolyserFluidJeiCategory extends JeiGenericRecipeCategory<ElectrolyserFluidRecipe> {
 
     public static final RecipeType<ElectrolyserFluidRecipe> RECIPE_TYPE =
@@ -120,7 +120,4 @@ public class ElectrolyserFluidJeiCategory extends JeiGenericRecipeCategory<Elect
         // Kein Blueprint-Slot fuer Electrolyser-Fluid-Rezepte.
     }
 }
-//?} else {
-/*public final class ElectrolyserFluidJeiCategory {
-    private ElectrolyserFluidJeiCategory() {}
-}*///?}
+//?}

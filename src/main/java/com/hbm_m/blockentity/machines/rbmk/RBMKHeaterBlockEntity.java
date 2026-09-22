@@ -121,7 +121,7 @@ public class RBMKHeaterBlockEntity extends RBMKColumnBlockEntity
      */
     private void exchangeFluids(Level level) {
         BlockPos pos = getBlockPos();
-        trySubscribe(inputTank.getTankType(), level, pos.below(), Direction.DOWN);
+        trySubscribe(inputTank, level, pos.below(), Direction.DOWN);
 
         if (outputTank.getFill() <= 0) return;
         for (com.mojang.datafixers.util.Pair<BlockPos, Direction> target : getOutputPos(level)) {
@@ -190,6 +190,22 @@ public class RBMKHeaterBlockEntity extends RBMKColumnBlockEntity
         return super.getCapability(cap, side);
     }
     //?}
+
+    // The Forge getCapability above was the only place these were exposed, so on NeoForge the heater
+    // had neither an item slot for automation nor the per-side fluid split (feed in from below,
+    // heated product out of every other face).
+    @Override
+    public @org.jetbrains.annotations.Nullable Object getItemHandler(@org.jetbrains.annotations.Nullable Direction side) {
+        return inventory;
+    }
+
+    //? if neoforge {
+    /*@Override
+    public @org.jetbrains.annotations.Nullable Object getFluidHandler(@org.jetbrains.annotations.Nullable Direction side) {
+        FluidTank tank = (side == Direction.DOWN || side == null) ? inputTank : outputTank;
+        return tank.getCapability();
+    }
+    *///?}
 
     @Override public RBMKType getRBMKType()      { return RBMKType.OTHER; }
     @Override public ColumnType getConsoleType() { return ColumnType.HEATER; }

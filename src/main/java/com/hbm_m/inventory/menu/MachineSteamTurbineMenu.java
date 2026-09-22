@@ -62,7 +62,7 @@ public class MachineSteamTurbineMenu extends AbstractContainerMenu {
         if (blockEntity instanceof MachineSteamTurbineBlockEntity steamTurbine) {
             return steamTurbine;
         }
-        throw new IllegalStateException("No MachineSteamTurbineBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":steam_turbine_menu");
+        throw new MenuBlockEntityMissingException("No MachineSteamTurbineBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":steam_turbine_menu");
     }
 
     public MachineSteamTurbineBlockEntity getBlockEntity() {
@@ -71,11 +71,7 @@ public class MachineSteamTurbineMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        if (blockEntity == null || blockEntity.getLevel() != player.level()) {
-            return false;
-        }
-        BlockPos pos = blockEntity.getBlockPos();
-        return player.distanceToSqr(pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D) <= 64.0D;
+        return MenuReach.stillValid(player, blockEntity);
     }
 
     @Override

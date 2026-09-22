@@ -14,8 +14,10 @@ import net.minecraft.world.entity.player.Inventory;
 
 public class GUIMachineSubstation extends GuiInfoScreen<MachineSubstationMenu> {
 
+    // The gas turbine panel was 223 tall with its own drawn slots and tank, so nothing lined up
+    // with this screen's 176x166 window. gui_linker is a plain panel of exactly that size.
     private static final ResourceLocation TEXTURE =
-            ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/generators/gui_turbinegas.png");
+            ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/gui_linker.png");
 
     private final MachineSubstationBlockEntity substation;
 

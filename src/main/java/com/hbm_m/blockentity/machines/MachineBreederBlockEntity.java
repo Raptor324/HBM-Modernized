@@ -9,6 +9,7 @@ import com.hbm_m.platform.recipe.RecipeHooks;
 import com.hbm_m.recipe.BreederRecipe;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
@@ -27,10 +28,14 @@ import net.minecraft.world.phys.AABB;
  * machine (see {@link BreederRecipe} for the exact material substitutions, since the original's
  * {@code ItemBreedingRod} meta-item system does not exist in this port).
  * <p>
- * SCOPE-Vereinfachung: the original drew "neutron flux" from an adjacent
- * {@code TileEntityReactorResearch} (Research Reactor), which was never ported to this codebase.
- * Power here instead comes purely from the wired HBM/FE energy network (no battery item slot,
- * matching {@code gui_breeder.png}'s simple 2-slot layout, which has no art for one).
+ * Antrieb ist der Neutronenfluss eines angrenzenden Forschungsreaktors, genau wie im Original
+ * ({@code getInteractions()} prueft die vier waagerechten Nachbarn). Das Feld {@code flux} des
+ * Rezepts ist die dafuer noetige Mindeststaerke; darueber laeuft der Brutvorgang entsprechend
+ * schneller. Ein Batteriesteckplatz fehlt wie im Original - {@code gui_breeder.png} hat keine
+ * Grafik dafuer.
+ * <p>
+ * (Ein frueherer Stand dieses Ports zog statt dessen Energie aus dem Netz, weil der
+ * Forschungsreaktor damals noch nicht portiert war. Er ist es inzwischen.)
  * <p>
  * Earlier revisions of this port had grown a battery slot, a fluid tank (driven by
  * {@code FluidBreederRecipes}), and upgrade slots bolted on - none of which exist in the original
@@ -52,6 +57,8 @@ public class MachineBreederBlockEntity extends BaseMachineBlockEntity {
     private int progress = 0;
     private final int duration = DEFAULT_DURATION;
     private boolean isOn = false;
+    /** Original: {@code flux} - Summe des Flusses aller angrenzenden Forschungsreaktoren. */
+    private int flux = 0;
 
     protected final ContainerData data = new ContainerData() {
         @Override
@@ -59,6 +66,7 @@ public class MachineBreederBlockEntity extends BaseMachineBlockEntity {
             return switch (index) {
                 case 0 -> progress;
                 case 1 -> getDuration();
+                case 2 -> flux;
                 default -> 0;
             };
         }
@@ -68,7 +76,7 @@ public class MachineBreederBlockEntity extends BaseMachineBlockEntity {
 
         @Override
         public int getCount() {
-            return 2;
+            return 3;
         }
     };
 
@@ -84,9 +92,14 @@ public class MachineBreederBlockEntity extends BaseMachineBlockEntity {
         entity.ensureNetworkInitialized();
 
         entity.isOn = false;
+        entity.gatherFlux(level, pos);
+
         if (entity.canProcess()) {
-            entity.progress++;
-            entity.setEnergyStored(entity.getEnergyStored() - entity.getPowerRequired());
+            // Original: progress += 0.0025F * (flux / recipe.flux) - doppelter Fluss, doppeltes Tempo.
+            BreederRecipe recipe = entity.findRecipe(entity.inventory.getStackInSlot(SLOT_INPUT));
+            int required = recipe != null ? Math.max(1, recipe.getEnergyPerTick()) : 1;
+            entity.progress += Math.max(1, entity.flux / required);
+
             entity.isOn = true;
 
             if (entity.progress >= entity.getDuration()) {
@@ -103,6 +116,45 @@ public class MachineBreederBlockEntity extends BaseMachineBlockEntity {
         }
     }
 
+    /**
+     * 1:1-Port von {@code getInteractions()}: die vier waagerechten Nachbarn werden auf einen
+     * Forschungsreaktor geprueft und deren Fluss aufaddiert.
+     *
+     * <p>Der Forschungsreaktor ist im Port ein 1x3-Turm; steht der Brutreaktor an einem
+     * Bauteil statt am Steuerblock, wird ueber {@code getControllerPos()} aufgeloest - das
+     * entspricht dem {@code findCore(...)} des Originals.</p>
+     */
+    private void gatherFlux(Level level, BlockPos pos) {
+        int sum = 0;
+
+        for (Direction dir : Direction.Plane.HORIZONTAL) {
+            MachineReactorResearchBlockEntity reactor = resolveReactor(level, pos.relative(dir));
+            if (reactor != null) sum += reactor.getTotalFlux();
+        }
+
+        this.flux = sum;
+    }
+
+    @Nullable
+    private static MachineReactorResearchBlockEntity resolveReactor(Level level, BlockPos pos) {
+        BlockEntity be = level.getBlockEntity(pos);
+
+        if (be instanceof MachineReactorResearchBlockEntity reactor) return reactor;
+
+        if (be instanceof UniversalMachinePartBlockEntity part) {
+            BlockPos controller = part.getControllerPos();
+            if (controller != null
+                    && level.getBlockEntity(controller) instanceof MachineReactorResearchBlockEntity reactor) {
+                return reactor;
+            }
+        }
+        return null;
+    }
+
+    public int getFlux() {
+        return flux;
+    }
+
     private boolean canProcess() {
         ItemStack input = inventory.getStackInSlot(SLOT_INPUT);
         if (input.isEmpty()) return false;
@@ -110,7 +162,8 @@ public class MachineBreederBlockEntity extends BaseMachineBlockEntity {
         BreederRecipe recipe = findRecipe(input);
         if (recipe == null) return false;
 
-        if (getEnergyStored() < recipe.getEnergyPerTick()) return false;
+        // Original: if(this.flux < recipe.flux) return false;
+        if (flux < recipe.getEnergyPerTick()) return false;
 
         ItemStack output = inventory.getStackInSlot(SLOT_OUTPUT);
         if (output.isEmpty()) return true;
@@ -219,6 +272,7 @@ public class MachineBreederBlockEntity extends BaseMachineBlockEntity {
     @Override
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.writeNbtData(tag, registries);
+        tag.putInt("flux", flux);
         tag.putInt("progress", progress);
         tag.putBoolean("isOn", isOn);
     }
@@ -226,6 +280,7 @@ public class MachineBreederBlockEntity extends BaseMachineBlockEntity {
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.readNbtData(tag, registries);
+        flux = tag.getInt("flux");
         progress = tag.getInt("progress");
         isOn = tag.getBoolean("isOn");
     }

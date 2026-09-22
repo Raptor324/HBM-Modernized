@@ -59,7 +59,7 @@ public class ModItemModelProvider extends ItemModelProvider {
             java.util.Map.entry("rbmk_control_reasim_auto", "block/rbmk/rbmk_control_auto_side"),
             java.util.Map.entry("rbmk_steam_inlet", "block/rbmk/rbmk_boiler_pipe_side"),
             java.util.Map.entry("rbmk_steam_outlet", "block/rbmk/rbmk_boiler_pipe_side"),
-            java.util.Map.entry("rbmk_loader", "block/rbmk/rbmk_blank_side"),
+            java.util.Map.entry("rbmk_loader", "block/rbmk/standalone_rbmk_loader"),
             java.util.Map.entry("rbmk_autoloader", "block/rbmk/rbmk_blank_side"),
             java.util.Map.entry("rbmk_crane_console", "block/rbmk/rbmk_console"),
             java.util.Map.entry("rbmk_display", "block/rbmk/rbmk_display"),
@@ -83,6 +83,12 @@ public class ModItemModelProvider extends ItemModelProvider {
     @Override
     protected void registerModels() {
         generateMissileItemModels();
+
+        // ICF-Pellet: zwei Lagen wie im Original (requiresMultipleRenderPasses) - unten der
+        // eingefaerbte Huellring icf_pellet_bg, darueber die unveraenderte Pelletgrafik.
+        withExistingParent("icf_pellet", "item/generated")
+                .texture("layer0", modLoc("item/icf_pellet_bg"))
+                .texture("layer1", modLoc("item/icf_pellet"));
 
         // Мета-предметы вкладки Parts (PartTabMetaItems): плоская модель на свою текстуру
         // (или заданную layer0) либо двухслойная база+оверлей (dye/crayon).
@@ -327,6 +333,12 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.FAT_MAN_EXPLOSIVE);
         simpleItem(ModItems.FAT_MAN_IGNITER);
         simpleItem(ModItems.FAT_MAN_CORE);
+        // Ported from the 1.7.10 assets: these had no texture, so no model was generated.
+        simpleItem(ModItems.IGNITER);
+        simpleItem(ModItems.CELL_SAS3);
+        simpleItem(ModItems.ROD_QUAD_LEAD);
+        simpleItem(ModItems.ROD_QUAD_NP237);
+        simpleItem(ModItems.ROD_QUAD_URANIUM);
         simpleItem(ModItems.DESIGNATOR);
         simpleItem(ModItems.RANGEFINDER);
         simpleItem(ModItems.DESIGNATOR_RANGE);
@@ -834,8 +846,14 @@ public class ModItemModelProvider extends ItemModelProvider {
         blockItemFromBlockModelMachine(ModBlocks.MACHINE_GASCENT);
         // Газовые блоки: blockstate = invisible_gas, поэтому item-модель делаем прямо
         // из block-текстуры (в 1.7.10 предмет был в machineTab и рендерился текстурой газа).
-        withExistingParent(ModBlocks.GAS_ASBESTOS.getId().getPath(), "item/generated").texture("layer0", modLoc("block/gas_asbestos"));
-        withExistingParent(ModBlocks.GAS_COAL.getId().getPath(), "item/generated").texture("layer0", modLoc("block/gas_coal"));
+        // Die Gasbloecke selbst sind unsichtbar, ihr Item braucht darum ein eigenes flaches Modell.
+        for (var gas : java.util.List.of(
+                ModBlocks.GAS_ASBESTOS, ModBlocks.GAS_COAL, ModBlocks.GAS_EXPLOSIVE,
+                ModBlocks.GAS_FLAMMABLE, ModBlocks.GAS_MELTDOWN, ModBlocks.GAS_MONOXIDE,
+                ModBlocks.GAS_RADON, ModBlocks.GAS_RADON_DENSE, ModBlocks.GAS_RADON_TOMB)) {
+            String name = gas.getId().getPath();
+            withExistingParent(name, "item/generated").texture("layer0", modLoc("block/" + name));
+        }
         blockItemFromBlockModelMachine(ModBlocks.CRYSTALLIZER, "crystallizer_item");
         blockItemFromBlockModelMachine(ModBlocks.BREEDER);
         blockItemFromBlockModelMachine(ModBlocks.LARGE_PYLON);
@@ -916,6 +934,7 @@ public class ModItemModelProvider extends ItemModelProvider {
         blockItemFromBlockModelBomb(ModBlocks.NUKE_MIKE);
         blockItemFromBlockModelBomb(ModBlocks.NUKE_TSAR);
         blockItemFromBlockModelBomb(ModBlocks.NUKE_FLEIJA);
+        blockItemFromBlockModelBomb(ModBlocks.NUKE_PROTOTYPE);
         blockItemFromBlockModelBomb(ModBlocks.NUKE_N2);
         blockItemFromBlockModelBomb(ModBlocks.NUKE_SOLINIUM);
         blockItemFromBlockModelBomb(ModBlocks.NUKE_FSTBMB);
@@ -980,12 +999,15 @@ public class ModItemModelProvider extends ItemModelProvider {
         blockItemFromBlockModelMachine(ModBlocks.FIREBOX);
         blockItemFromBlockModelMachine(ModBlocks.FRACTION_SPACER);
         blockItemFromBlockModelMachine(ModBlocks.FURNACE_IRON);
+        blockItemFromBlockModelMachine(ModBlocks.ELECTRIC_FURNACE);
+        blockItemFromBlockModelMachine(ModBlocks.FURNACE_BRICK);
         blockItemFromBlockModelMachine(ModBlocks.FURNACE_STEEL);
         blockItemFromBlockModelMachine(ModBlocks.HEATEX);
         blockItemFromBlockModelMachine(ModBlocks.HEPHAESTUS);
         blockItemFromBlockModelMachine(ModBlocks.ICF);
         blockItemFromBlockModelMachine(ModBlocks.INTAKE);
         blockItemFromBlockModelMachine(ModBlocks.KLYSTRON);
+        blockItemFromBlockModelMachine(ModBlocks.KLYSTRON_CREATIVE);
         blockItemFromBlockModelMachine(ModBlocks.MHDT);
         blockItemFromBlockModelMachine(ModBlocks.MICROWAVE);
         blockItemFromBlockModelMachine(ModBlocks.MINING_LASER);
@@ -1030,7 +1052,7 @@ public class ModItemModelProvider extends ItemModelProvider {
         blockItemFromBlockModelBomb(ModBlocks.DUD_SALTED);
 
         blockItemFromBlockModel(ModBlocks.FLUID_VALVE);
-        blockItemFromBlockModel(ModBlocks.FLUID_PUMP);
+        blockItemFromBlockModelMachine(ModBlocks.FLUID_PUMP);
         blockItemFromBlockModel(ModBlocks.FLUID_EXHAUST);
 
         // Ранее: assets/.../models/item/*.json с parent = блок или простая generated/handheld-текстура
@@ -1155,7 +1177,7 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItemModelByName("iron_plate", "iron_plate");
         simpleItemModelByName("titanium_stamp_plate", "titanium_stamp_plate");
         withExistingParent(ModItems.BLUEPRINT_FOLDER.getId().getPath(), "item/generated")
-                .texture("layer0", modLoc("item/template_folder"));
+                .texture("layer0", modLoc("item/blueprint_folder"));
         blockItemFromBlockModel(ModBlocks.STRAWBERRY_BUSH);
 
         java.util.List.of(
@@ -1687,7 +1709,6 @@ public class ModItemModelProvider extends ItemModelProvider {
                 ModItems.HULL_BIG_TITANIUM,
                 ModItems.HULL_SMALL_ALUMINIUM,
                 ModItems.HULL_SMALL_STEEL,
-                ModItems.ICF_PELLET,
                 ModItems.ICF_PELLET_DEPLETED,
                 ModItems.ICF_PELLET_EMPTY,
                 ModItems.INDUSTRIAL_MAGNET,
@@ -1912,6 +1933,12 @@ public class ModItemModelProvider extends ItemModelProvider {
                 ModItems.PELLET_RTG_RADIUM,
                 ModItems.PELLET_RTG_STRONTIUM,
                 ModItems.PELLET_RTG_WEAK,
+                ModItems.PELLET_RTG_DEPLETED_BISMUTH,
+                ModItems.PELLET_RTG_DEPLETED_LEAD,
+                ModItems.PELLET_RTG_DEPLETED_MERCURY,
+                ModItems.PELLET_RTG_DEPLETED_NEPTUNIUM,
+                ModItems.PELLET_RTG_DEPLETED_NICKEL,
+                ModItems.PELLET_RTG_DEPLETED_ZIRCONIUM,
                 ModItems.PHOTO_PANEL,
                 ModItems.PILE_ROD_BORON,
                 ModItems.PILE_ROD_DETECTOR,
@@ -1923,6 +1950,11 @@ public class ModItemModelProvider extends ItemModelProvider {
                 ModItems.PILL_HERBAL,
                 ModItems.PILL_IODINE,
                 ModItems.PILL_RED,
+                ModItems.RADX,
+                ModItems.PA_COIL_GOLD,
+                ModItems.PA_COIL_NIOBIUM,
+                ModItems.PA_COIL_BSCCO,
+                ModItems.PA_COIL_CHLOROPHYTE,
                 ModItems.PIN,
                 ModItems.PIPES_STEEL,
                 ModItems.PIPETTE,
@@ -2171,6 +2203,15 @@ public class ModItemModelProvider extends ItemModelProvider {
                 ModItems.SHELL,
                 ModItems.UPGRADE_MUFFLER,
                 ModItems.UPGRADE_TEMPLATE,
+                ModItems.PILE_ROD_RA226BE,
+                ModItems.PILE_ROD_PO210BE,
+                ModItems.PILE_ROD_ZR,
+                ModItems.PILE_ROD_NU,
+                ModItems.PILE_ROD_MK2_PU239,
+                ModItems.PILE_ROD_RGP,
+                ModItems.PILE_ROD_WASTE,
+                ModItems.UPGRADE_RADIUS,
+                ModItems.UPGRADE_HEALTH,
                 ModItems.WASTE_NATURAL_URANIUM,
                 ModItems.WASTE_U233,
                 ModItems.WASTE_U235,
@@ -2242,11 +2283,7 @@ public class ModItemModelProvider extends ItemModelProvider {
     private ItemModelBuilder simpleBlockItem(RegistrySupplier<Block> item) {
         return withExistingParent(item.getId().getPath(),
                 ResourceLocation.tryParse("item/generated")).texture("layer0",
-                //? if fabric && < 1.21.1 {
-                /*new ResourceLocation(MainRegistry.MOD_ID,"item/" + item.getId().getPath()));
-                *///?} else {
                                 ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID,"item/" + item.getId().getPath()));
-                //?}
 
     }
 
@@ -2370,18 +2407,10 @@ public class ModItemModelProvider extends ItemModelProvider {
                 String armorItemPath = "item/" + armorItem;
                 String trimPath = "trims/items/" + armorType + "_trim_" + trimMaterial.location().getPath();
                 String currentTrimName = armorItemPath + "_" + trimMaterial.location().getPath() + "_trim";
-                //? if fabric && < 1.21.1 {
-                /*ResourceLocation armorItemResLoc = new ResourceLocation(MOD_ID, armorItemPath);
-                *///?} else {
                                 ResourceLocation armorItemResLoc = ResourceLocation.fromNamespaceAndPath(MOD_ID, armorItemPath);
-                //?}
 
                 ResourceLocation trimResLoc = ResourceLocation.tryParse(trimPath); // minecraft namespace
-                //? if fabric && < 1.21.1 {
-                /*ResourceLocation trimNameResLoc = new ResourceLocation(MOD_ID, currentTrimName);
-                *///?} else {
                                 ResourceLocation trimNameResLoc = ResourceLocation.fromNamespaceAndPath(MOD_ID, currentTrimName);
-                //?}
 
 
                 existingFileHelper.trackGenerated(trimResLoc, PackType.CLIENT_RESOURCES, ".png", "textures");
@@ -2397,13 +2426,8 @@ public class ModItemModelProvider extends ItemModelProvider {
                         .model(new ModelFile.UncheckedModelFile(trimNameResLoc))
                         .predicate(mcLoc("trim_type"), trimValue).end()
                         .texture("layer0",
-                                //? if fabric && < 1.21.1 {
-                                /*new ResourceLocation(MOD_ID,
-                                        "item/" + itemRegistrySupplier.getId().getPath()));
-                                *///?} else {
                                                                 ResourceLocation.fromNamespaceAndPath(MOD_ID,
                                         "item/" + itemRegistrySupplier.getId().getPath()));
-                                //?}
 
             });
         }

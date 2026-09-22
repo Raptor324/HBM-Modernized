@@ -139,11 +139,7 @@ public class PurexRecipeBuilder implements RecipeBuilder {
     }
 
     public void save(@NotNull Consumer<FinishedRecipe> writer, @NotNull String path) {
-        //? if fabric && < 1.21.1 {
-        /*save(writer, new ResourceLocation("hbm_m", path));
-        *///?} else {
                 save(writer, ResourceLocation.fromNamespaceAndPath("hbm_m", path));
-        //?}
 
     }
 

@@ -40,9 +40,6 @@ public class ModelHelper {
     }
 
     private static BakedQuad createQuad(Vector3f from, Vector3f to, Direction direction, TextureAtlasSprite sprite, UVSpec spec) {
-        //? if fabric {
-        /*throw new UnsupportedOperationException("Procedural quad baking is not implemented on Fabric yet.");
-        *///?}
         //? if forge {
         QuadBakingVertexConsumer.Buffered builder = new QuadBakingVertexConsumer.Buffered();
         builder.setSprite(sprite);

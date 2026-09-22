@@ -185,9 +185,17 @@ public class MachineChungusBlock extends BaseEntityBlock implements IMultiblockC
     private InteractionResult handleUse(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         if (!level.isClientSide()) {
             if (level.getBlockEntity(pos) instanceof MachineChungusBlockEntity chungus) {
-                boolean nowOperational = chungus.toggleOperational();
-                player.displayClientMessage(Component.translatable(
-                        nowOperational ? "chat.hbm_m.chungus.on" : "chat.hbm_m.chungus.off"), true);
+                // 1:1: der Hebel schaltet die Dampfstufe - im Betrieb weigert er sich.
+                if (chungus.pullLever()) {
+                    level.playSound(null, pos, net.minecraft.sounds.SoundEvents.LEVER_CLICK,
+                            net.minecraft.sounds.SoundSource.BLOCKS, 1.5F, 1.0F);
+                    player.displayClientMessage(Component.translatable("chat.hbm_m.chungus.stage",
+                            chungus.getSteamTank().getStoredFluid().getFluidType().getDescription()), true);
+                } else {
+                    player.displayClientMessage(
+                            Component.translatable("chat.hbm_m.chungus.busy")
+                                    .withStyle(net.minecraft.ChatFormatting.RED), true);
+                }
             }
         }
         return InteractionResult.sidedSuccess(level.isClientSide());

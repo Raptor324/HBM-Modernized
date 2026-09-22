@@ -30,7 +30,7 @@ import net.minecraft.world.item.ItemStack;
  * -&gt; 1 Ausgabe. Arbeitet direkt mit dem data-driven {@link RotaryFurnaceRecipe} (JSON) -
  * Eingaenge aus {@link RotaryFurnaceRecipe#getInputs()}, Ausgabe aus {@link RotaryFurnaceRecipe#getOutput()}.
  */
-//? if forge {
+//? if forge || neoforge {
 public class RotaryFurnaceJeiCategory extends JeiGenericRecipeCategory<RotaryFurnaceRecipe> {
 
     public static final RecipeType<RotaryFurnaceRecipe> RECIPE_TYPE =
@@ -113,7 +113,4 @@ public class RotaryFurnaceJeiCategory extends JeiGenericRecipeCategory<RotaryFur
         JeiNeiRendering.drawGenericRecipeExtras(graphics, recipe.getDuration(), 0);
     }
 }
-//?} else {
-/*public final class RotaryFurnaceJeiCategory {
-    private RotaryFurnaceJeiCategory() {}
-}*///?}
+//?}

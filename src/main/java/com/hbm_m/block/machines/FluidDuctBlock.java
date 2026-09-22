@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import com.hbm_m.api.fluids.IFluidConnectorBlock;
 import com.hbm_m.api.fluids.FluidCapabilityAccess;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -30,14 +31,6 @@ import com.hbm_m.interfaces.ILookOverlay;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.item.liquids.FluidDuctItem;
 
-//? if fabric {
-/*import net.fabricmc.api.EnvType;
-import net.fabricmc.api.Environment;
-import net.fabricmc.fabric.api.transfer.v1.fluid.FluidStorage;
-import net.fabricmc.fabric.api.transfer.v1.fluid.FluidVariant;
-import net.fabricmc.fabric.api.transfer.v1.storage.Storage;
-import net.fabricmc.fabric.api.transfer.v1.transaction.Transaction;
-*///?}
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
@@ -250,7 +243,6 @@ public class FluidDuctBlock extends BaseEntityBlock implements ILookOverlay {
         refreshAdjacentDucts(level, pos);
     }
 
-    @SuppressWarnings("UnstableApiUsage") // Fabric Transfer API в ветке //? if fabric
     private boolean canConnectTo(LevelAccessor level, BlockPos myPos, BlockPos neighborPos, Direction direction) {
         BlockState neighborState = level.getBlockState(neighborPos);
         Block selfBlock = level.getBlockState(myPos).getBlock();
@@ -264,14 +256,23 @@ public class FluidDuctBlock extends BaseEntityBlock implements ILookOverlay {
             return true;
         }
 
+        Fluid ductFluid = Fluids.EMPTY;
+        BlockEntity myBe = level.getBlockEntity(myPos);
+        if (myBe instanceof FluidDuctBlockEntity myDuct) {
+            Fluid raw = normalizeDuctPaintFluid(myDuct.getFluidType());
+            ductFluid = raw != null ? raw : Fluids.EMPTY;
+        }
+
+        // === Коннектор-блок без тайла (IFluidConnectorBlock) ===
+        // Проверяем ДО ветки "у соседа есть block entity": такие блоки (паровой коннектор РБМК)
+        // тайла не имеют вовсе, поэтому раньше труба к ним не подключалась ни при каких условиях.
+        if (neighborState.getBlock() instanceof IFluidConnectorBlock connector) {
+            if (ductFluid == Fluids.EMPTY) return true;
+            return connector.canConnect(ductFluid, level, neighborPos, direction.getOpposite());
+        }
+
         BlockEntity be = level.getBlockEntity(neighborPos);
         if (be != null) {
-            BlockEntity myBe = level.getBlockEntity(myPos);
-            Fluid ductFluid = Fluids.EMPTY;
-            if (myBe instanceof FluidDuctBlockEntity myDuct) {
-                Fluid raw = normalizeDuctPaintFluid(myDuct.getFluidType());
-                ductFluid = raw != null ? raw : Fluids.EMPTY;
-            }
 
             // === Коннектор мультиблока (UniversalMachinePart) ===
             // Важно: не даём трубе "липнуть" к контроллеру, если подключение разрешено только через части-коннекторы.
@@ -320,39 +321,11 @@ public class FluidDuctBlock extends BaseEntityBlock implements ILookOverlay {
                     return false;
                 }
 
-                // Остальные контроллеры:
-                // - если труба не окрашена (EMPTY) — показываем соединение просто по наличию fluid handler
-                // - если окрашена — fallback через Forge fill(SIMULATE).
-                //? if forge {
-                var cap = ctrl.getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER, null);
-                if (!cap.isPresent()) return false;
-                if (ductFluid == Fluids.EMPTY) return true;
-                var handler = cap.resolve().orElse(null);
-                if (handler == null) return false;
-                int canFill = handler.fill(new net.minecraftforge.fluids.FluidStack(ductFluid, 1), net.minecraftforge.fluids.capability.IFluidHandler.FluidAction.SIMULATE);
-                return canFill > 0;
-                //?}
-
-                //? if fabric {
-                /*// Паритет с Forge: capability FLUID_HANDLER с side=null на контроллере.
-                // SIDED.find(..., null) → getFluidStorage(null) у BlockEntity (см. FabricEntrypoint).
-                if (!(level instanceof Level lvl)) {
-                    return false;
-                }
-                BlockPos ctrlPos = part.getControllerPos();
-                BlockState ctrlState = level.getBlockState(ctrlPos);
-                Storage<FluidVariant> storage = FluidStorage.SIDED.find(lvl, ctrlPos, ctrlState, ctrl, null);
-                if (storage == null) {
-                    return false;
-                }
-                if (ductFluid == Fluids.EMPTY) {
-                    return true;
-                }
-                try (Transaction tx = Transaction.openOuter()) {
-                    long inserted = storage.insert(FluidVariant.of(ductFluid), 81L, tx);
-                    return inserted > 0;
-                }
-                *///?}
+                // Остальные контроллеры (не MK2): судим по наличию жидкостного хендлера у самого
+                // контроллера. Раньше здесь стоял forge-only fill(SIMULATE), и на NeoForge управление
+                // проваливалось вниз, где проверяется уже соседний блок, а не контроллер.
+                return com.hbm_m.api.fluids.FluidCapabilityAccess.hasFluidHandler(
+                        level, part.getControllerPos(), direction.getOpposite());
             }
 
             // Паритет 1.7.10: TileEntityBarrel#canConnect — труба коннектится к бочке только
@@ -653,11 +626,7 @@ public class FluidDuctBlock extends BaseEntityBlock implements ILookOverlay {
     }
 
     @Override
-//? if forge || neoforge {
 @OnlyIn(Dist.CLIENT)
-//?}
-//? if fabric {
-/*@Environment(EnvType.CLIENT)*///?}
     public void printHook(net.minecraft.client.gui.GuiGraphics guiGraphics, Level level, BlockPos pos) {
         BlockEntity be = level.getBlockEntity(pos);
         if (!(be instanceof FluidDuctBlockEntity ductBe)) {

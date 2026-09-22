@@ -18,7 +18,8 @@ import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 
-public class MachineSolderingStationBlockEntity extends BaseMachineBlockEntity {
+public class MachineSolderingStationBlockEntity extends BaseMachineBlockEntity
+        implements com.hbm_m.api.fluids.IFluidStandardReceiverMK2 {
 
     // ─── Slot map (11 total) ──────────────────────────────────────────────────
     public static final int SLOTS      = 11;
@@ -73,6 +74,15 @@ public class MachineSolderingStationBlockEntity extends BaseMachineBlockEntity {
 
     public static void tick(Level level, BlockPos pos, BlockState state, MachineSolderingStationBlockEntity be) {
         if (level.isClientSide) return;
+
+        // The tank had no way to be filled at all: ten of the seventeen soldering recipes ask for
+        // a fluid, so they were unreachable. Subscribe to neighbouring pipes like the other
+        // machines with a tank do.
+        if (level.getGameTime() % 20 == 0) {
+            for (net.minecraft.core.Direction dir : net.minecraft.core.Direction.values()) {
+                be.trySubscribe(be.tank, level, pos.relative(dir), dir);
+            }
+        }
 
         // Charge from battery slot
         com.hbm_m.api.energy.ItemEnergyAccess.getHbmProvider(
@@ -212,6 +222,21 @@ public class MachineSolderingStationBlockEntity extends BaseMachineBlockEntity {
     }
 
     // ─── NBT ──────────────────────────────────────────────────────────────────
+
+    @Override
+    public com.hbm_m.inventory.fluid.tank.FluidTank[] getAllTanks() {
+        return new com.hbm_m.inventory.fluid.tank.FluidTank[] { tank };
+    }
+
+    @Override
+    public com.hbm_m.inventory.fluid.tank.FluidTank[] getReceivingTanks() {
+        return new com.hbm_m.inventory.fluid.tank.FluidTank[] { tank };
+    }
+
+    @Override
+    public boolean isLoaded() {
+        return level != null && !isRemoved() && level.isLoaded(worldPosition);
+    }
 
     @Override
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {

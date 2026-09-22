@@ -10,15 +10,13 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.ContainerData;
-import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.inventory.SimpleContainerData;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
 /** Slot-Koordinaten (176x166 Textur) aus {@code ContainerFurnaceBrick} (1.7.10 Original)
- *  uebernommen: Input (62,35), Brennstoff (35,17), Output (116,35). Der Aschen-Slot (Slot 3)
- *  des Originals entfaellt - siehe {@link MachineFurnaceBrickBlockEntity}. */
+ *  uebernommen: Input (62,35), Brennstoff (35,17), Output (116,35), Asche (35,53). */
 public class MachineFurnaceBrickMenu extends AbstractContainerMenu {
 
     public final MachineFurnaceBrickBlockEntity blockEntity;
@@ -27,7 +25,8 @@ public class MachineFurnaceBrickMenu extends AbstractContainerMenu {
     private static final int SLOT_INPUT = MachineFurnaceBrickBlockEntity.SLOT_INPUT;
     private static final int SLOT_FUEL = MachineFurnaceBrickBlockEntity.SLOT_FUEL;
     private static final int SLOT_OUTPUT = MachineFurnaceBrickBlockEntity.SLOT_OUTPUT;
-    private static final int MACHINE_SLOT_COUNT = 3;
+    private static final int SLOT_ASH = MachineFurnaceBrickBlockEntity.SLOT_ASH;
+    private static final int MACHINE_SLOT_COUNT = 4;
     private static final int PLAYER_INV_START = MACHINE_SLOT_COUNT;
     private static final int PLAYER_INV_END = MACHINE_SLOT_COUNT + 36;
 
@@ -49,6 +48,7 @@ public class MachineFurnaceBrickMenu extends AbstractContainerMenu {
         this.addSlot(new Slot(container, SLOT_INPUT, 62, 35));
         this.addSlot(new FuelSlot(container, SLOT_FUEL, 35, 17));
         this.addSlot(new OutputSlot(container, SLOT_OUTPUT, 116, 35));
+        this.addSlot(new OutputSlot(container, SLOT_ASH, 35, 53));
 
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 9; col++) {
@@ -68,7 +68,7 @@ public class MachineFurnaceBrickMenu extends AbstractContainerMenu {
         if (blockEntity instanceof MachineFurnaceBrickBlockEntity be) {
             return be;
         }
-        throw new IllegalStateException("No MachineFurnaceBrickBlockEntity found at " + pos);
+        throw new MenuBlockEntityMissingException("No MachineFurnaceBrickBlockEntity found at " + pos);
     }
 
     public int getLitTime() { return data.get(DATA_LIT_TIME); }
@@ -90,8 +90,7 @@ public class MachineFurnaceBrickMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        return stillValid(ContainerLevelAccess.create(blockEntity.getLevel(), blockEntity.getBlockPos()),
-                player, ModBlocks.FURNACE_BRICK.get());
+        return MenuReach.stillValid(player, blockEntity, ModBlocks.FURNACE_BRICK.get());
     }
 
     @Override
