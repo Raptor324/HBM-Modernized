@@ -1916,6 +1916,7 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("material.hbm_m.cadmium", "Cadmium");
         add("material.hbm_m.technetium", "Technetium");
         add("material.hbm_m.u238", "Uranium-238");
+        add("material.hbm_m.uranium", "Uranium");
         add("material.hbm_m.schrabidium", "Schrabidium");
         add("material.hbm_m.steel", "Steel");
         add("material.hbm_m.mingrade", "Minecraft Grade Copper");
@@ -2666,6 +2667,7 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("tooltip.hbm_m.barrel.highly_corrosive.no", "Cannot store highly corrosive fluids properly");
         add("tooltip.hbm_m.barrel.antimatter.yes", "Can store antimatter");
         add("tooltip.hbm_m.barrel.antimatter.no", "Cannot store antimatter");
+        add("tooltip.hbm_m.barrel.leaky", "Leaky");
         add("container.hbm_m.solar_mirrors", "Solar Mirrors");
         add("msg.hbm_m.solar_mirror.sky_access", "Mirror has sky access");
         add("msg.hbm_m.solar_mirror.no_sky_access", "Mirror is shaded");

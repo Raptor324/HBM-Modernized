@@ -117,20 +117,7 @@ public abstract class BaseMachineBlockEntity extends BaseHbmBlockEntity implemen
      * Используй это вместо Forge-only доступа через ITEM_HANDLER capability.
      */
     public void dropInventoryContents() {
-        if (level == null) return;
-        // Во время переноса блоков движком сборки (Create/Sable) содержимое уезжает
-        // в NBT-снимок контрапшена; высыпание на пол здесь = дюп предметов.
-        if (com.hbm_m.multiblock.ContraptionAssemblyGuard.isMoving()) {
-            com.hbm_m.main.MainRegistry.LOGGER.info(
-                "[HBM] высыпание инвентаря подавлено (окно сборки контрапшена), BE {}",
-                getClass().getSimpleName());
-            return;
-        }
-        net.minecraft.world.SimpleContainer c = new net.minecraft.world.SimpleContainer(inventory.getSlots());
-        for (int i = 0; i < inventory.getSlots(); i++) {
-            c.setItem(i, inventory.getStackInSlot(i));
-        }
-        net.minecraft.world.Containers.dropContents(level, worldPosition, c);
+        dropInventory();
     }
 
     /**

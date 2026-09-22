@@ -144,12 +144,15 @@ public class MachineFoundryChannelBlock extends BaseEntityBlock {
      */
     private InteractionResult handleUse(BlockState state, Level level, BlockPos pos,
                                         Player player, InteractionHand hand) {
-        if (level.isClientSide) return InteractionResult.SUCCESS;
-        BlockEntity be = level.getBlockEntity(pos);
-        if (!(be instanceof MachineFoundryChannelBlockEntity channel)) return InteractionResult.PASS;
-
+        // Оригинал для не-совка возвращает false: действие не обработано, ваниль продолжает
+        // установку блока из руки. PASS обязан уходить и на клиенте — иначе клиент скипает
+        // предикцию BlockItem и ставящий игрок не слышит звук установки.
         ItemStack held = player.getItemInHand(hand);
         if (!(held.getItem() instanceof ShovelItem)) return InteractionResult.PASS;
+        if (level.isClientSide) return InteractionResult.SUCCESS;
+
+        BlockEntity be = level.getBlockEntity(pos);
+        if (!(be instanceof MachineFoundryChannelBlockEntity channel)) return InteractionResult.PASS;
 
         if (channel.amount > 0 && channel.type != null) {
             ItemStack scrap = CrucibleUtil.createScrap(new MaterialStack(channel.type, channel.amount));

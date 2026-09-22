@@ -32,4 +32,17 @@ public final class BlockProps {
         /*return BlockBehaviour.Properties.ofFullCopy(block);
         *///?}
     }
+
+    /**
+     * Отключает спавн частиц разрушения блока (terrain particles).
+     * Кросс-версионный мост: на 1.20.1 Forge — {@code noParticlesOnBreak()},
+     * на 1.21.1 NeoForge — ванильный {@code noTerrainParticles()}.
+     */
+    public static BlockBehaviour.Properties noParticlesOnBreak(BlockBehaviour.Properties properties) {
+        //? if < 1.21.1 {
+        return properties.noParticlesOnBreak();
+        //?} else {
+        /*return properties.noTerrainParticles();
+        *///?}
+    }
 }

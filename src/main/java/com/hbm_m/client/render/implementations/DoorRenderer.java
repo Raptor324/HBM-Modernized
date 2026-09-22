@@ -410,30 +410,27 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Bak
             boolean useInstancedFrame = frameRenderer != null && frameRenderer.isInitialized();
 
             if (useInstancedFrame) {
-                poseStack.pushPose();
                 boolean useBatching = ClientRenderFlags.useInstancedBatching();
                 boolean inShadowPass = ShaderCompatibilityDetector.isRenderingShadowPass();
                 if (useBatching && !inShadowPass) {
-                    frameRenderer.addInstance(poseStack, packedLight, blockPos, be, bufferSource);
-                } else {
-                    frameRenderer.renderSingle(poseStack, packedLight, blockPos, be, bufferSource);
-                }
-                poseStack.popPose();
-            } else {
-                BakedModel frameModel = model.getPart(staticFramePart);
-                if (frameModel != null) {
                     poseStack.pushPose();
-                    try {
-                        String fallbackKey = "door_" + doorType + "_" + getSelectionCacheKey(selection) + "_" + staticFramePart;
-                        var fallbackRenderer = MeshRenderCache.getOrCreateRenderer(fallbackKey, frameModel);
-                        if (fallbackRenderer != null) {
-                            fallbackRenderer.render(poseStack, packedLight, blockPos, be, bufferSource);
-                        }
-                    } catch (Exception e) {
-                        MainRegistry.LOGGER.debug("DoorRenderer: Fallback frame render failed: {}", e.getMessage());
-                    }
+                    frameRenderer.addInstance(poseStack, packedLight, blockPos, be, bufferSource);
+                    poseStack.popPose();
+                } else if (!useBatching && !inShadowPass) {
+                    // forceVanillaImmediatePath: рама обязана уйти с инстанс-пути ЦЕЛИКОМ.
+                    // renderSingle (и его Iris-ветка drawSingleWithIrisExtended) — тот же
+                    // мировой float-инстанс: на дальних координатах (300k+) его джиттерит,
+                    // хотя створки по флагу уже ушли на камерно-относительный путь.
+                    renderFrameViaFallback(model, staticFramePart, doorType, selection,
+                            poseStack, packedLight, blockPos, be, bufferSource);
+                } else {
+                    poseStack.pushPose();
+                    frameRenderer.renderSingle(poseStack, packedLight, blockPos, be, bufferSource);
                     poseStack.popPose();
                 }
+            } else {
+                renderFrameViaFallback(model, staticFramePart, doorType, selection,
+                        poseStack, packedLight, blockPos, be, bufferSource);
             }
         }
 
@@ -441,6 +438,25 @@ public class DoorRenderer extends AbstractPartBasedRenderer<DoorBlockEntity, Bak
             if (staticFramePart != null && staticFramePart.equals(partName)) continue;
             renderHierarchyVbo(partName, false, be, model, doorDecl, openTicks, poseStack, packedLight, blockPos, bufferSource);
         }
+    }
+
+    /** Камерно-относительный рендер рамы без инстанс-пути: нет frame-инстансера либо форс-ванилла. */
+    private void renderFrameViaFallback(DoorBakedModel model, String staticFramePart, String doorType,
+                                        DoorModelSelection selection, PoseStack poseStack, int packedLight,
+                                        BlockPos blockPos, DoorBlockEntity be, MultiBufferSource bufferSource) {
+        BakedModel frameModel = model.getPart(staticFramePart);
+        if (frameModel == null) return;
+        poseStack.pushPose();
+        try {
+            String fallbackKey = "door_" + doorType + "_" + getSelectionCacheKey(selection) + "_" + staticFramePart;
+            var fallbackRenderer = MeshRenderCache.getOrCreateRenderer(fallbackKey, frameModel);
+            if (fallbackRenderer != null) {
+                fallbackRenderer.render(poseStack, packedLight, blockPos, be, bufferSource);
+            }
+        } catch (Exception e) {
+            MainRegistry.LOGGER.debug("DoorRenderer: Fallback frame render failed: {}", e.getMessage());
+        }
+        poseStack.popPose();
     }
 
     private void renderHierarchyVbo(String partName, boolean child, DoorBlockEntity be, 

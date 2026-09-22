@@ -6,8 +6,6 @@ import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.block.decorations.DoorBlock;
 import com.hbm_m.block.entity.doors.DoorBlockEntity;
-import com.hbm_m.block.entity.doors.DoorDecl;
-import com.hbm_m.block.entity.doors.DoorDeclRegistry;
 import com.hbm_m.block.machines.TransitionSealBlock;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.blockentity.machines.LaunchPadBaseBlockEntity;
@@ -159,14 +157,10 @@ public class UniversalMachinePartBlock extends BaseEntityBlock implements IDeton
         if (customShape != null && !customShape.isEmpty()) {
             masterShape = customShape;
         } else if (controllerBlock instanceof DoorBlock doorBlock) {
-            DoorDecl decl = DoorDeclRegistry.getById(doorBlock.getDoorDeclId());
-
-            if (decl != null && decl.isDynamicShape()) {
-                masterShape = doorBlock.getShape(controllerState, pLevel, controllerPos, pContext);
-            } else {
-                Direction facing = controllerState.getValue(DoorBlock.FACING);
-                masterShape = controller.getStructureHelper().generateShapeFromParts(facing);
-            }
+            // Единая рамка выделения: все части двери возвращают ОДНУ рамку всей двери
+            // (динамическую, перестраиваемую по тикам — DoorBlock.getShape →
+            // getUnifiedSelectionShape). Коллизия при этом поклеточная — см. getCollisionShape.
+            masterShape = doorBlock.getShape(controllerState, pLevel, controllerPos, pContext);
         } else {
             Direction facing = controllerState.getValue(HorizontalDirectionalBlock.FACING);
             masterShape = controller.getStructureHelper().generateShapeFromParts(facing);
@@ -212,33 +206,23 @@ public class UniversalMachinePartBlock extends BaseEntityBlock implements IDeton
             return Shapes.block();
         }
 
-        if (controllerBlock instanceof DoorBlock doorBlock) {
-            BlockEntity controllerBE = pLevel.getBlockEntity(controllerPos);
-
-            DoorDecl decl = DoorDeclRegistry.getById(doorBlock.getDoorDeclId());
-
-            if (decl != null && decl.getStructureDefinition() != null) {
-                DoorDecl.DoorStructureDefinition def = decl.getStructureDefinition();
-
-                Direction facing = controllerState.getValue(DoorBlock.FACING);
-                BlockPos worldOffset = pPos.subtract(controllerPos);
-                BlockPos localOffset = MultiblockStructureHelper.rotateBack(worldOffset, facing);
-
-                boolean isOpen;
-                if (controllerBE instanceof DoorBlockEntity doorBE) {
-                    isOpen = doorBE.getState() != 0;
-                } else {
-                    isOpen = controllerState.getValue(DoorBlock.OPEN);
-                }
-
-                Map<BlockPos, VoxelShape> map = isOpen ? def.getOpenShapes() : def.getClosedShapes();
-
-                VoxelShape shape = map.get(localOffset);
-                if (shape != null) {
-                    if (!shape.isEmpty()) {
-                        return MultiblockStructureHelper.rotateShape(shape, facing);
+        if (controllerBlock instanceof DoorBlock) {
+            // Пошаговая коллизия (порт 1.7.10): ваниль опрашивает коллизию ПОКЛЕТОЧНО,
+            // поэтому фантом отдаёт форму СВОЕЙ клетки на текущий тик (контроллер —
+            // свою, см. DoorBlock.getCollisionShape). Клетка вне диапазона ретракции
+            // (рама) всегда solid, ретрактнувшаяся колонка створки — проходима.
+            // shapes == null (нет символьной схемы) — легаси-путь ниже; ПУСТАЯ карта =
+            // дверь полностью открыта, все клетки проходимы.
+            if (pLevel.getBlockEntity(controllerPos) instanceof DoorBlockEntity doorBE) {
+                Map<BlockPos, VoxelShape> shapes = doorBE.getProgressCollisionShapes();
+                if (shapes != null) {
+                    Direction facing = controllerState.getValue(DoorBlock.FACING);
+                    BlockPos localOffset = MultiblockStructureHelper.rotateBack(pPos.subtract(controllerPos), facing);
+                    VoxelShape cell = shapes.get(localOffset);
+                    if (cell != null && !cell.isEmpty()) {
+                        return MultiblockStructureHelper.rotateShape(cell, facing);
                     }
-                    return shape;
+                    return Shapes.empty();
                 }
             }
         }
@@ -565,6 +549,35 @@ public class UniversalMachinePartBlock extends BaseEntityBlock implements IDeton
     @Override
     public boolean isSignalSource(BlockState state) {
         return true;
+    }
+
+    @Override
+    public boolean hasAnalogOutputSignal(BlockState state) {
+        return true;
+    }
+
+    @Override
+    public int getAnalogOutputSignal(BlockState state, Level level, BlockPos pos) {
+        return resolveComparatorPower(level, pos);
+    }
+
+    /**
+     * Компаратор у фантомной части мультиблока читает уровень ядра — как
+     * 1.7.10 {@code MachineFluidTank.getComparatorInputOverride} через прокси.
+     */
+    private static int resolveComparatorPower(Level level, BlockPos pos) {
+        if (!(level.getBlockEntity(pos) instanceof IMultiblockPart part)) {
+            return 0;
+        }
+        BlockPos controllerPos = part.getControllerPos();
+        if (controllerPos == null) {
+            return 0;
+        }
+        BlockEntity controller = level.getBlockEntity(controllerPos);
+        if (controller instanceof com.hbm_m.blockentity.machines.MachineFluidTankBlockEntity tank) {
+            return tank.getComparatorPower();
+        }
+        return 0;
     }
 
     @Override

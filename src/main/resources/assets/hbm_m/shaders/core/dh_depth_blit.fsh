@@ -10,6 +10,22 @@
 // расширенной проекции (near=0.05, far=8e6 => ndcZ ~= 1 - 0.1/dist),
 // чтобы сравнения с уже записанной ванильной геометрией и последующим
 // дальним контентом были корректны.
+//
+// ДВЕ КОНВЕНЦИИ ГЛУБИНЫ DH (DhReverseZ, запрос через RenderUtil.RENDER_DEF
+// .getRenderDepth() — матрица события для этого НЕГОДНА, она всегда форвард):
+//  - FORWARD_Z (DH <= 3.2.x, 3.3.1+ только под Iris-паком без reverse-Z):
+//    близко=0, даль=1, небо=1. Стандартная перспектива:
+//    ndc = 2d-1, dist = 2fn/((F+N) - ndc(F-N)).
+//  - REVERSE_Z (DH 3.3.1+ по умолчанию без пака; GlDhRenderApiDefinition
+//    .getRenderDepth(), glClearDepth = farDepth = 0): близко=1, даль=0.
+//    Реверс-матрица DH (RenderUtil.setClipPlanes, байткод 3.3.1):
+//    A = m22 = n/(f-n), B = m23 = fn/(f-n)  =>  ndc = A*(f/dist - 1),
+//    откуда dist = f*n / (ndc*(f-n) + n) при обычном ndc = 2d-1.
+//    Числовая проверка (n=73.41, f=7512.3): d=1000 -> decode 1000.2,
+//    d=200 -> 200.02. Небо теперь d = 0.
+//    (НЕВАЖНО: пробовавшийся раньше вариант «ndc = 1-2d + форвард-формула»
+//    соответствовал СТАНДАРТНОЙ реверс-перспективе m22=(f+n)/(f-n), а у DH
+//    своя, см. выше — с ней гриб так и оставался без окклюзии.)
 
 uniform sampler2D Sampler0;
 uniform float DhNear;
@@ -21,20 +37,23 @@ uniform float OutFar;
 // «Fade Nearby DH LODs». Внутри неё DEPTH32F — стохастический шум
 // (bayer-discard террейн-шейдера DH), копировать нельзя.
 uniform float DhFadeMaskDist;
+// Конвенция глубины DH: > 0.5 = REVERSE_Z, иначе FORWARD_Z.
+uniform float DhReverseZ;
 
 in vec2 uv;
 out vec4 fragColor;
 
 void main() {
     float d = texture(Sampler0, uv).r;
-    // Небо DH (LOD не рисовался): глубину не трогаем — остаётся 1.0.
-    if (d >= 0.999999) {
+    bool reverseZ = DhReverseZ > 0.5;
+    // Небо DH (LOD не рисовался): глубину не трогаем. Конвенции противоположны.
+    if (reverseZ ? (d <= 1.0e-6) : (d >= 0.999999)) {
         discard;
     }
-    // Линеаризация forward-Z: ndc = ((F+N)d - 2FN) / ((F-N)d)  =>  d:
     float ndc = d * 2.0 - 1.0;
-    float denom = (DhFar + DhNear) - ndc * (DhFar - DhNear);
-    float dist = (2.0 * DhFar * DhNear) / max(denom, 1e-6);
+    float dist = reverseZ
+        ? (DhFar * DhNear) / max(DhNear + ndc * (DhFar - DhNear), 1.0e-6)
+        : (2.0 * DhFar * DhNear) / max((DhFar + DhNear) - ndc * (DhFar - DhNear), 1.0e-6);
     if (dist < DhFadeMaskDist) {
         discard;
     }

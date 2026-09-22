@@ -11,6 +11,7 @@ import com.hbm_m.platform.RenderHooks;
 import com.hbm_m.client.render.LegacyAnimator;
 import com.hbm_m.client.render.machine.MachineRenderApi;
 import com.hbm_m.client.render.machine.MachineRenderers;
+import com.hbm_m.client.render.machine.MachineRenderHook;
 import com.hbm_m.client.render.util.DiamondPronter;
 import com.hbm_m.inventory.fluid.FluidType;
 import com.hbm_m.inventory.fluid.ModFluids;
@@ -46,21 +47,24 @@ public final class MachineFluidTankRenderer {
     private static final RandomSource RANDOM = RandomSource.create(42);
 
     public static void register() {
-        buildSpec("fluidtank", ModBlockEntities.FLUID_TANK_BE.get(), MachineFluidTankBlockEntity.class);
-        buildSpec("bat9000", ModBlockEntities.BAT9000_BE.get(), com.hbm_m.blockentity.machines.Bat9000BlockEntity.class);
+        buildSpec("fluidtank", ModBlockEntities.FLUID_TANK_BE.get(), MachineFluidTankBlockEntity.class,
+                MachineFluidTankRenderer::renderDiamonds);
+        buildSpec("bat9000", ModBlockEntities.BAT9000_BE.get(), com.hbm_m.blockentity.machines.Bat9000BlockEntity.class,
+                MachineFluidTankRenderer::renderDiamondsBat9000);
     }
 
     private MachineFluidTankRenderer() {}
 
     /** Одна спека на BE-тип; Bat9000 наследует MachineFluidTankBlockEntity — логика общая. */
     private static <T extends MachineFluidTankBlockEntity> void buildSpec(
-            String id, net.minecraft.world.level.block.entity.BlockEntityType<T> type, Class<T> cls) {
+            String id, net.minecraft.world.level.block.entity.BlockEntityType<T> type, Class<T> cls,
+            MachineRenderHook<T> diamonds) {
         MachineRenderers.machine(id, type, cls)
             .part("Frame")
             .dynamicPart("Tank", MachineFluidTankRenderer::tankQuads,
                     be -> String.valueOf(be.getTankTextureLocation()))
             .blockTransform(MachineFluidTankRenderer::applyBlockTransform)
-            .hook(MachineFluidTankRenderer::renderDiamonds)
+            .hook(diamonds)
             .facing(MachineFluidTankRenderer::facing)
             .chunkRenderTypes(net.minecraft.client.renderer.RenderType.cutoutMipped())
             .itemParts("Frame", "Tank")
@@ -103,8 +107,10 @@ public final class MachineFluidTankRenderer {
      * Квады Tank с подменой спрайта на {@code textureLoc}. Нормализация UV: UV
      * дефолтного спрайта → [0,1] → новый спрайт. VBO кешируется фабрикой по ключу
      * texture path — один VBO на уникальную текстуру жидкости.
+     *
+     * <p>Public: переиспользуется предметным рендером {@code FluidTankItemRenderer}.</p>
      */
-    private static List<BakedQuad> buildRetexturedTankQuads(BakedModel tankPart, ResourceLocation textureLoc) {
+    public static List<BakedQuad> buildRetexturedTankQuads(BakedModel tankPart, ResourceLocation textureLoc) {
         List<BakedQuad> original = collectAllQuads(tankPart);
         if (original.isEmpty()) return List.of();
 
@@ -120,7 +126,7 @@ public final class MachineFluidTankRenderer {
     }
 
     /** Сбор всех квадов части (все стороны + null side, neutral RandomSource). */
-    private static List<BakedQuad> collectAllQuads(BakedModel part) {
+    public static List<BakedQuad> collectAllQuads(BakedModel part) {
         List<BakedQuad> quads = new ArrayList<>();
         for (Direction dir : Direction.values()) {
             quads.addAll(RenderHooks.getModelQuads(part, null, dir, RANDOM, null));
@@ -169,15 +175,21 @@ public final class MachineFluidTankRenderer {
     // ── NFPA-алмазы (hook) ─────────────────────────────────────────────
 
     /**
+     * Компенсация фрейма: запечённый фрейм меша смещён на −3 блока по оси X
+     * модели относительно фрейма, в котором 1.7.10 задавала легаси-оффсеты
+     * алмазов (в оригинале TE стоял в другой точке структуры). Подобрано
+     * вручную 2026-09-22, проверено в игре.
+     */
+    private static final float DIAMOND_FRAME_COMP_X = -3.0F;
+
+    /**
      * Алмазы опасности на двух боковых гранях бака (1.7.10 RenderFluidTank):
      * translate(-0.25, 0.5, -1.501)/(0.25, 0.5, 1.501), rotateY ±90°, scale(1, 0.375, 0.375).
      * Стек хука = setupTransform·T(-0.5); возвращаемся в модельный фрейм T(0.5).
      * <p>
-     * ВАЖНО: в 1.7.10 оффсеты заданы в сыром OBJ-фрейме, а наш пайплайн запекает части
-     * С root-трансформом из fluid_tank.json (Forge ObjModel компоузит getRootTransform()
-     * всегда, даже с identity ModelState): baked = T(-0.5,0,-2.5)·RotY(90)·raw.
-     * Поэтому перед легаси-оффсетами вставляются те же T+R — иначе алмазы оказываются
-     * не на тех гранях (сырой Z-фрейм ≠ запечённый, корпус в хуке длинная коробка по Z').
+     * Root-трансформ модели B = T(-0.5,0,-2.5)·RotY(90) повторяется в хуке
+     * (запечён в квады частей, см. ловушку obj-part-loader-root-transform),
+     * затем идёт компенсация фрейма {@link #DIAMOND_FRAME_COMP_X}.
      */
     private static void renderDiamonds(MachineFluidTankBlockEntity be, float partialTick,
                                        PoseStack poseStack, MultiBufferSource buffer,
@@ -194,13 +206,10 @@ public final class MachineFluidTankRenderer {
 
         RenderSystem.disableCull();
 
-        // root-трансформ модели B = T(-0.5,0,-2.5)·RotY(90), затем легаси-оффсеты L:
-        // итого B·L — те же координаты, что в 1.7.10, но в запечённом фрейме модели.
-        // Компенсация T(0.5,0,0.5) из старого хука НЕ нужна: она должна была
-        // выравнивать сырой фрейм, а B·L уже даёт запечённые координаты напрямую.
         poseStack.pushPose();
         poseStack.translate(-0.5F, 0.0F, -2.5F);
         poseStack.mulPose(Axis.YP.rotationDegrees(90.0F));
+        poseStack.translate(DIAMOND_FRAME_COMP_X, 0.0F, 0.0F);
         poseStack.translate(-0.25F, 0.5F, -1.501F);
         poseStack.mulPose(Axis.YP.rotationDegrees(90.0F));
         poseStack.scale(1.0F, 0.375F, 0.375F);
@@ -210,6 +219,7 @@ public final class MachineFluidTankRenderer {
         poseStack.pushPose();
         poseStack.translate(-0.5F, 0.0F, -2.5F);
         poseStack.mulPose(Axis.YP.rotationDegrees(90.0F));
+        poseStack.translate(DIAMOND_FRAME_COMP_X, 0.0F, 0.0F);
         poseStack.translate(0.25F, 0.5F, 1.501F);
         poseStack.mulPose(Axis.YN.rotationDegrees(90.0F));
         poseStack.scale(1.0F, 0.375F, 0.375F);
@@ -217,5 +227,85 @@ public final class MachineFluidTankRenderer {
         poseStack.popPose();
 
         RenderSystem.enableCull();
+    }
+
+    /**
+     * NFPA-алмазы BAT9000 (1.7.10 RenderBAT9000): меш — вертикальный цилиндр
+     * (радиус 2.625, высота 5, chunk mesh без фасинга), 4 алмаза по кругу:
+     * T(center)·rotY(45), затем 4×[ T(2.5,2.25,0)·scale(1,0.75,0.75)·pront, rotY(90) ].
+     * Фейсинг-поворот спеки раскручивается обратно до фрейма угла блока —
+     * в 1.7.10 фасинг-ротации у BAT9000 не было вовсе.
+     * <p>
+     * Центр цилиндра измеряется по фактическим квадам запечённой модели
+     * (raw центр = 0, с запечённым root-трансформом T(0.5,0,0.5) = 0.5) —
+     * хук не расходится с мешем независимо от того, применён ли трансформ.
+     */
+    private static void renderDiamondsBat9000(MachineFluidTankBlockEntity be, float partialTick,
+                                              PoseStack poseStack, MultiBufferSource buffer,
+                                              int packedLight, int packedOverlay, MachineRenderApi api) {
+        Fluid fluid = be.getFluidTank().getTankType();
+        if (fluid == null || fluid == Fluids.EMPTY || fluid == ModFluids.NONE.getSource()) {
+            return;
+        }
+
+        FluidType type = FluidType.forFluid(fluid);
+
+        int light = LevelRenderer.getLightColor(be.getLevel(), be.getBlockPos().above(2));
+
+        RenderSystem.disableCull();
+
+        // Центр запечённого меша в угловом фрейме блока (измеряется один раз)
+        float[] center = bat9000Center;
+        if (center == null) {
+            center = measureBat9000Center(be);
+            bat9000Center = center;
+        }
+
+        poseStack.pushPose();
+        // Раскрутить blockTransform спеки (T(0.5)·R(90+f)·T(-0.5)) до фрейма угла блока:
+        // обратный ход T(0.5)·R(-(90+f))·T(-0.5).
+        float facingDeg = 90.0F + com.hbm_m.util.MultipartFacingTransforms
+                .legacyFacingRotationYDegrees(facing(be));
+        poseStack.translate(0.5F, 0.0F, 0.5F);
+        poseStack.mulPose(Axis.YP.rotationDegrees(-facingDeg));
+        poseStack.translate(-0.5F, 0.0F, -0.5F);
+        // Далее 1:1 RenderBAT9000 (T(x+0.5,y,z+0.5) и rotY(45)).
+        poseStack.translate(center[0], 0.0F, center[1]);
+        poseStack.mulPose(Axis.YP.rotationDegrees(45.0F));
+        for (int j = 0; j < 4; j++) {
+            poseStack.pushPose();
+            poseStack.translate(2.5F, 2.25F, 0.0F);
+            poseStack.scale(1.0F, 0.75F, 0.75F);
+            DiamondPronter.pront(poseStack, buffer, type.poison, type.flammability, type.reactivity, type.symbol, light, packedOverlay);
+            poseStack.popPose();
+            poseStack.mulPose(Axis.YP.rotationDegrees(90.0F));
+        }
+        poseStack.popPose();
+
+        RenderSystem.enableCull();
+    }
+
+    private static volatile float[] bat9000Center;
+
+    /** Центр XZ запечённого меша BAT9000 в угловом фрейме блока (fallback — центр блока). */
+    private static float[] measureBat9000Center(MachineFluidTankBlockEntity be) {
+        BakedModel model = Minecraft.getInstance().getBlockRenderer().getBlockModel(be.getBlockState());
+        List<BakedQuad> quads = collectAllQuads(model);
+        float minX = Float.POSITIVE_INFINITY, maxX = Float.NEGATIVE_INFINITY;
+        float minZ = Float.POSITIVE_INFINITY, maxZ = Float.NEGATIVE_INFINITY;
+        for (BakedQuad quad : quads) {
+            int[] data = quad.getVertices();
+            int vertexSize = data.length / 4;
+            for (int i = 0; i < 4; i++) {
+                float x = Float.intBitsToFloat(data[i * vertexSize]);
+                float z = Float.intBitsToFloat(data[i * vertexSize + 2]);
+                minX = Math.min(minX, x); maxX = Math.max(maxX, x);
+                minZ = Math.min(minZ, z); maxZ = Math.max(maxZ, z);
+            }
+        }
+        if (minX <= maxX) {
+            return new float[]{(minX + maxX) * 0.5F, (minZ + maxZ) * 0.5F};
+        }
+        return new float[]{0.5F, 0.5F};
     }
 }

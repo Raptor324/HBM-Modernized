@@ -272,6 +272,30 @@ public class ModBlockTagProvider extends BlockTagsProvider {
                 .add(ModBlocks.URANIUM_ORE.get());
         //?}
 
+        // Все блоки хранения материалов → forge:storage_blocks/<имя MaterialType>
+        // (или ModMaterials.getId(), если материал не плавится). Тег потребляется
+        // mold_casting/block_*.json (выход блочной формы) — раньше был только для
+        // uranium/plutonium, из-за чего ни один модовый блок не отливался.
+        //? if fabric && < 1.21.1 {
+        /*for (com.hbm_m.item.material.ModMaterials mat : com.hbm_m.item.material.ModMaterials.values()) {
+            if (!mat.has(com.hbm_m.item.material.MaterialShape.BLOCK)) continue;
+            if (!ModBlocks.hasIngotBlock(mat)) continue;
+            com.hbm_m.inventory.material.MaterialType mt = com.hbm_m.inventory.material.MaterialType.of(mat);
+            String tagName = mt != null ? mt.name : mat.getId();
+            this.tag(BlockTags.create(new ResourceLocation("forge", "storage_blocks/" + tagName)))
+                    .add(ModBlocks.getIngotBlock(mat).get());
+        }
+        *///?} else {
+        for (com.hbm_m.item.material.ModMaterials mat : com.hbm_m.item.material.ModMaterials.values()) {
+            if (!mat.has(com.hbm_m.item.material.MaterialShape.BLOCK)) continue;
+            if (!ModBlocks.hasIngotBlock(mat)) continue;
+            com.hbm_m.inventory.material.MaterialType mt = com.hbm_m.inventory.material.MaterialType.of(mat);
+            String tagName = mt != null ? mt.name : mat.getId();
+            this.tag(BlockTags.create(ResourceLocation.fromNamespaceAndPath("forge", "storage_blocks/" + tagName)))
+                    .add(ModBlocks.getIngotBlock(mat).get());
+        }
+        //?}
+
         // ============ CONNECTED TEXTURES (CT) ============
         // Только сталь ↔ ржавая сталь как «одна семья»; остальные деко-CT — только с тем же блоком (см. ConnectedDecoBlockBakedModel).
         this.tag(ModTags.Blocks.DECO_STEEL_CONNECTABLE)

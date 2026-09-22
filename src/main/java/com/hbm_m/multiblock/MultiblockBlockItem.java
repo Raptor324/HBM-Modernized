@@ -4,8 +4,11 @@ import com.hbm_m.interfaces.IMultiblockController;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
@@ -15,17 +18,31 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.List;
+
 /**
  * Item для блока-контроллера мультиблока.
  * При клике автоматически подменяет координаты установки на ядро.
+ *
+ * <p>Тултип: если блок реализует {@link com.hbm_m.block.IPersistentInfoProvider} и предмет
+ * несёт {@code persistent}-тег — делегирует ему (порт {@code ItemBlockBase.addInformation}
+ * из 1.7.10).</p>
  */
-public class MultiblockBlockItem extends BlockItem {
+public class MultiblockBlockItem extends BlockItem implements com.hbm_m.item.ITooltipProvider {
 
     public MultiblockBlockItem(Block pBlock, Properties pProperties) {
         super(pBlock, pProperties);
         if (!(pBlock instanceof IMultiblockController)) {
             throw new IllegalArgumentException("MultiblockBlockItem can only be used with blocks that implement IMultiblockController!");
         }
+    }
+
+    @Override
+    public void appendHbmTooltip(net.minecraft.world.item.ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
+        if (!(getBlock() instanceof com.hbm_m.block.IPersistentInfoProvider provider)) return;
+        CompoundTag tag = com.hbm_m.platform.PlatformHooks.getItemTag(stack);
+        if (tag == null || !tag.contains(com.hbm_m.blockentity.IPersistentNBT.NBT_PERSISTENT_KEY)) return;
+        provider.addInformation(stack, tag.getCompound(com.hbm_m.blockentity.IPersistentNBT.NBT_PERSISTENT_KEY), level, tooltip, flag);
     }
 
     @Override

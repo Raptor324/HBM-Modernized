@@ -171,7 +171,7 @@ public class MachineFoundryBasinBlockEntity extends com.hbm_m.blockentity.BaseHb
 
     /* ── ICrucibleAcceptor ──────────────────────────────────────────────── */
 
-    private boolean standardCheck(MaterialStack stack) {
+    protected boolean standardCheck(MaterialStack stack) {
         if (this.type != null && this.type != stack.type && this.amount > 0) return false;
         if (this.amount >= getCapacity()) return false;
         if (!this.outputSlot.isEmpty()) return false;
@@ -180,7 +180,7 @@ public class MachineFoundryBasinBlockEntity extends com.hbm_m.blockentity.BaseHb
         return getResultFor(stack.type, mold.getMoldType()) != null;
     }
 
-    private @Nullable MaterialStack standardAdd(MaterialStack stack) {
+    protected @Nullable MaterialStack standardAdd(MaterialStack stack) {
         this.type = stack.type;
 
         if (stack.amount + this.amount <= getCapacity()) {

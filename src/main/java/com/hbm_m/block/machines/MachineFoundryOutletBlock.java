@@ -92,8 +92,10 @@ public class MachineFoundryOutletBlock extends BaseEntityBlock {
 
     private InteractionResult handleUse(BlockState state, Level level, BlockPos pos,
                                         Player player, InteractionHand hand, BlockHitResult hit) {
-        if (level.isClientSide) return InteractionResult.SUCCESS;
+        // Sneak-клик уходит в PASS ДО клиентского SUCCESS — иначе клиент скипает предикцию
+        // BlockItem при установке блока по соседству со спуском, и звук установки пропадает.
         if (player.isShiftKeyDown()) return InteractionResult.PASS;
+        if (level.isClientSide) return InteractionResult.SUCCESS;
 
         BlockEntity be = level.getBlockEntity(pos);
         if (!(be instanceof MachineFoundryOutletBlockEntity outlet)) return InteractionResult.PASS;

@@ -40,6 +40,10 @@ public class BarrelCorrodedBlockEntity extends MachineFluidTankBlockEntity {
         this.hasExploded = true;
     }
 
+    /** Паритет 1.7.10 BlockFluidBarrel.breakBlock: barrel_corroded слоты не дропает. */
+    @Override
+    protected boolean dropInventoryOnRemove() { return false; }
+
     @Override
     protected int calculateLeakAmount() {
         if (level == null || level.getGameTime() % 20 != 0) return 0;

@@ -39,6 +39,9 @@ public enum MaterialType {
     CADMIUM     (4800, "cadmium",     0xA85600, SmeltingBehavior.SMELTABLE, null),
     TECHNETIUM  (4399, "technetium",  0xCADFDF, SmeltingBehavior.SMELTABLE, null),
     URANIUM238  (9238, "u238",        0x9AA196, SmeltingBehavior.SMELTABLE, null),
+    // Ориг. MAT_URANIUM (Mats.java:74): общий уран (руда/слиток/блок), moltenColor 0x9AA196.
+    // Ранее отсутствовал (уран уходил в химцепочку); возвращён для паритета плавки с 1.7.10.
+    URANIUM     (9200, "uranium",     0x9AA196, SmeltingBehavior.SMELTABLE, null),
     SCHRABIDIUM (12626,"schrabidium", 0x32FFFF, SmeltingBehavior.SMELTABLE, () -> ModMaterialItems.item(ModMaterials.SCHRABIDIUM, MaterialShape.PLATE_CAST)),
 
     // ── Сплавы (_AS + n) ──
@@ -133,6 +136,25 @@ public enum MaterialType {
 
     public static @Nullable MaterialType byId(int id)      { return BY_ID.get(id); }
     public static @Nullable MaterialType byName(String name){ return BY_NAME.get(name); }
+
+    /**
+     * Соответствие {@link ModMaterials} → {@link MaterialType} (общий маппер для датагена:
+     * теги storage_blocks, авто-генерация рецептов). Сначала по имени, затем несовпадающие
+     * id материалов (ferrouranium→ferro, combine_steel→cmb, advanced_alloy→alloy и т.п.).
+     */
+    public static @Nullable MaterialType of(ModMaterials mat) {
+        MaterialType byName = byName(mat.getId());
+        if (byName != null) return byName;
+        return switch (mat) {
+            case FERROURANIUM        -> FERRO;
+            case MAGNETIZED_TUNGSTEN -> MAGTUNG;
+            case RED_COPPER          -> MINGRADE;
+            case COMBINE_STEEL       -> CMB;
+            case STARMETAL           -> STAR_METAL;
+            case ADVANCED_ALLOY      -> ALLOY;
+            default                  -> null;
+        };
+    }
 
     /** Ключ для экранного информера Устройства настройки (аналог NTMMaterial.getUnlocalizedName → hbmmat.*). */
     public String getUnlocalizedName() {

@@ -40,6 +40,16 @@ public class HbmThermalHandler implements ResourceManagerReloadListener {
     private static int lastHeight = 0;
     private static boolean hasHotEntitiesThisFrame = false;
 
+    /**
+     * Закешированный immediate BufferSource термалки. Создаётся один раз (BufferBuilder
+     * держит NIO-буфер — аллокация per-frame даёт GC-микрофризы). Не shared с
+     * mc.renderBuffers(): endBatch() здесь должен флашить только нашу геометрию.
+     */
+    private static final net.minecraft.client.renderer.MultiBufferSource.BufferSource THERMAL_BUFFER_SOURCE =
+            com.hbm_m.platform.RenderHooks.immediateBufferSource(256);
+    private static final ShadowIgnoringBufferSource THERMAL_BUFFER_WRAPPER =
+            new ShadowIgnoringBufferSource(THERMAL_BUFFER_SOURCE);
+
     private HbmThermalHandler() {}
 
     @Override
@@ -147,9 +157,7 @@ public class HbmThermalHandler implements ResourceManagerReloadListener {
 
             poseStack.pushPose();
             pushedPose = true;
-            net.minecraft.client.renderer.MultiBufferSource.BufferSource originalBufferSource =
-                    com.hbm_m.platform.RenderHooks.immediateBufferSource(256);
-            ShadowIgnoringBufferSource bufferSource = new ShadowIgnoringBufferSource(originalBufferSource);
+            ShadowIgnoringBufferSource bufferSource = THERMAL_BUFFER_WRAPPER;
 
             for (Entity entity : mc.level.entitiesForRendering()) {
                 if (isHotEntity(entity)) {
@@ -171,7 +179,7 @@ public class HbmThermalHandler implements ResourceManagerReloadListener {
                 }
             }
 
-            originalBufferSource.endBatch();
+            THERMAL_BUFFER_SOURCE.endBatch();
         } catch (Exception e) {
             MainRegistry.LOGGER.error("Error rendering thermal entities", e);
         } finally {

@@ -58,6 +58,7 @@ import com.hbm_m.client.render.implementations.TransitionSealRenderer;
 import com.hbm_m.client.render.implementations.MachineGasCentRenderer;
 import com.hbm_m.client.render.implementations.HeaterRenderers;
 import com.hbm_m.client.render.implementations.MachineFluidTankRenderer;
+import com.hbm_m.client.render.implementations.BarrelTankRenderer;
 import com.hbm_m.client.render.implementations.IndustrialTurbineRenderer;
 import com.hbm_m.client.render.implementations.LaunchPadMissileRenderer;
 import com.hbm_m.client.render.implementations.MachineAdvancedAssemblerRenderer;
@@ -609,6 +610,7 @@ public class ClientSetup {
         BlockEntityRenderers.register(ModBlockEntities.INDUSTRIAL_TURBINE_BE.get(), IndustrialTurbineRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.BATTERY_SOCKET_BE.get(), BatterySocketCreativeRenderer::new);
         MachineFluidTankRenderer.register();
+        BarrelTankRenderer.register();
         BlockEntityRenderers.register(ModBlockEntities.LAUNCH_PAD_BE.get(), LaunchPadMissileRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.LAUNCH_PAD_RUSTED_BE.get(), LaunchPadMissileRenderer::new);
         MachineCoolingTowerRenderer.register();

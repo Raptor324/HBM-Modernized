@@ -63,6 +63,38 @@ public abstract class BaseHbmBlockEntity extends BlockEntity implements com.hbm_
     }
 
     // ═════════════════════════════════════════════════════════════════════════════════════
+    //  Централизованный дроп инвентаря при разрушении блока. Платформенно-независимо:
+    //  один источник правды — {@link #getItemHandler(net.minecraft.core.Direction)},
+    //  который переопределяют машины с инвентарём.
+    //  ВАЖНО: НЕ переопределять setRemoved() для дропа, так как на 1.21.1 / NeoForge
+    //  при выгрузке чанков и сохранении мира ваниль вызывает setRemoved(), что приводило
+    //  к дюпу предметов на пол при перезаходе в мир.
+    // ═════════════════════════════════════════════════════════════════════════════════════
+
+    /** Переопределить и вернуть {@code false}, если машина дропает инвентарь сама или хранит в NBT предмета. */
+    protected boolean dropInventoryOnRemove() { return true; }
+
+    /**
+     * Выбрасывает содержимое инвентаря в мир при фактическом разрушении блока / мультиблока.
+     * Очищает слоты после выброса для предотвращения повторного дропа.
+     */
+    public void dropInventory() {
+        if (level == null || level.isClientSide || !dropInventoryOnRemove()) return;
+        if (com.hbm_m.multiblock.ContraptionAssemblyGuard.isMoving()) return;
+        Object handler = getItemHandler(null);
+        if (handler instanceof com.hbm_m.platform.ModItemStackHandler h) {
+            for (int i = 0; i < h.getSlots(); i++) {
+                net.minecraft.world.item.ItemStack stack = h.getStackInSlot(i);
+                if (stack != null && !stack.isEmpty()) {
+                    net.minecraft.world.Containers.dropItemStack(level,
+                            worldPosition.getX(), worldPosition.getY(), worldPosition.getZ(), stack);
+                    h.setStackInSlot(i, net.minecraft.world.item.ItemStack.EMPTY);
+                }
+            }
+        }
+    }
+
+    // ═════════════════════════════════════════════════════════════════════════════════════
     //  Единая точка персистенции — переопределяйте ЭТИ методы в дочерних классах.
     //  Никаких stonecutter-ветвей, никаких версионных сигнатур.
     // ═════════════════════════════════════════════════════════════════════════════════════

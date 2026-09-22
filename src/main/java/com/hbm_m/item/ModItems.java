@@ -1356,6 +1356,11 @@ public class ModItems {
     public static final RegistrySupplier<Item> HEATEX = ITEMS.register("heatex",
         () -> new MultiblockBlockItem(ModBlocks.HEATEX.get(), new Item.Properties()));
 
+    // Strand Caster — мультиблок: рамка футпринта при удержании + проверка препятствий
+    // при установке (порт BlockDummyable 1.7.10, offset 0).
+    public static final RegistrySupplier<Item> STRAND_CASTER = ITEMS.register("strand_caster",
+        () -> new MultiblockBlockItem(ModBlocks.STRAND_CASTER.get(), new Item.Properties()));
+
     public static final RegistrySupplier<Item> OILBURNER = ITEMS.register("oilburner",
         () -> new MultiblockBlockItem(ModBlocks.OILBURNER.get(), new Item.Properties()));
 
@@ -1512,7 +1517,7 @@ public class ModItems {
         () -> new MultiblockBlockItem(ModBlocks.MACHINE_CENTRIFUGE.get(), new Item.Properties()));
 
 	public static final RegistrySupplier<Item> FLUID_TANK = ITEMS.register("fluid_tank",
-        () -> new MultiblockBlockItem(ModBlocks.FLUID_TANK.get(), new Item.Properties()));
+        () -> new com.hbm_m.multiblock.FluidTankBlockItem(ModBlocks.FLUID_TANK.get(), new Item.Properties()));
 
 	public static final RegistrySupplier<Item> BAT9000 = ITEMS.register("bat9000",
         () -> new MultiblockBlockItem(ModBlocks.BAT9000.get(), new Item.Properties()));

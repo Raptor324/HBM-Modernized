@@ -40,6 +40,8 @@ public final class IrisInstancedEncoders {
     private static Method getProgramSet;
     private static Object overworldId;
     private static Method getGbuffersBlock;
+    /** Аргумент ProgramId.Block для единого get(ProgramId) Iris 1.8+ (null = именованный геттер). */
+    private static Object gbuffersProgramIdArg;
     private static Method getFragmentSource;
 
     private IrisInstancedEncoders() {}
@@ -93,6 +95,9 @@ public final class IrisInstancedEncoders {
                         .newInstance("minecraft", "overworld");
                 Class<?> programSet = Class.forName("net.irisshaders.iris.shaderpack.programs.ProgramSet");
                 // Геттеры возвращают Optional<ProgramSource>!
+                // Iris 1.8+ (1.21.1) УДАЛИЛ именованные getGbuffersXxx() в пользу
+                // единого get(ProgramId) — пробуем оба (Oculus 1.20.1 держит
+                // именованные, Iris 1.8.14 — только get(ProgramId.Block)).
                 Method blockGetter = null;
                 for (String name : new String[] {"getGbuffersBlock", "getGbuffersTerrain"}) {
                     try {
@@ -101,11 +106,22 @@ public final class IrisInstancedEncoders {
                     } catch (NoSuchMethodException ignored) {
                     }
                 }
+                Object programIdArg = null;
                 if (blockGetter == null) {
-                    MainRegistry.LOGGER.warn("[HBM-M] IrisInstancedEncoders: ProgramSet gbuffers getters not found");
-                    return false;
+                    try {
+                        Class<?> programIdClass = Class.forName("net.irisshaders.iris.shaderpack.loading.ProgramId");
+                        programIdArg = enumValueOf(programIdClass, "Block");
+                        if (programIdArg == null) {
+                            throw new NoSuchMethodException("ProgramId.Block not found");
+                        }
+                        blockGetter = programSet.getMethod("get", programIdClass);
+                    } catch (ClassNotFoundException | NoSuchMethodException e) {
+                        MainRegistry.LOGGER.warn("[HBM-M] IrisInstancedEncoders: ProgramSet gbuffers getters not found");
+                        return false;
+                    }
                 }
                 getGbuffersBlock = blockGetter;
+                gbuffersProgramIdArg = programIdArg;
                 Class<?> programSource = Class.forName("net.irisshaders.iris.shaderpack.programs.ProgramSource");
                 getFragmentSource = programSource.getMethod("getFragmentSource");
             }
@@ -125,7 +141,9 @@ public final class IrisInstancedEncoders {
             if (programSet == null) {
                 return logMiss("programSet null");
             }
-            Object sourceOpt = getGbuffersBlock.invoke(programSet);
+            Object sourceOpt = (gbuffersProgramIdArg != null)
+                    ? getGbuffersBlock.invoke(programSet, gbuffersProgramIdArg)
+                    : getGbuffersBlock.invoke(programSet);
             if (sourceOpt instanceof java.util.Optional<?> opt) {
                 sourceOpt = opt.orElse(null);
             }
@@ -160,5 +178,14 @@ public final class IrisInstancedEncoders {
     private static boolean logMiss(String reason) {
         MainRegistry.LOGGER.info("[HBM-M] IrisInstancedEncoders: no known gbuffer scheme ({})", reason);
         return false;
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private static Object enumValueOf(Class<?> enumClass, String name) {
+        try {
+            return Enum.valueOf((Class<Enum>) enumClass.asSubclass(Enum.class), name);
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
     }
 }

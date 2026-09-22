@@ -47,6 +47,8 @@ public final class IrisShadowDistortion {
     private static boolean reflected = false;
     private static Method getProgramSet;
     private static Method getShadow;
+    /** Аргумент ProgramId.Shadow для единого get(ProgramId) Iris 1.8+ (null = именованный getShadow()). */
+    private static Object shadowProgramId;
     private static Method getVertexSource;
     private static Method getPackDirectives;
     private static Method getShadowDirectives;
@@ -85,7 +87,18 @@ public final class IrisShadowDistortion {
             if (!reflected) {
                 reflected = true;
                 Class<?> programSet = Class.forName("net.irisshaders.iris.shaderpack.programs.ProgramSet");
-                getShadow = programSet.getMethod("getShadow");
+                // Iris 1.8+ (1.21.1) УДАЛИЛ getShadow() в пользу единого
+                // get(ProgramId) — пробуем оба (Oculus 1.20.1 держит getShadow).
+                try {
+                    getShadow = programSet.getMethod("getShadow");
+                } catch (NoSuchMethodException e) {
+                    Class<?> programIdClass = Class.forName("net.irisshaders.iris.shaderpack.loading.ProgramId");
+                    shadowProgramId = enumValueOf(programIdClass, "Shadow");
+                    if (shadowProgramId == null) {
+                        throw e;
+                    }
+                    getShadow = programSet.getMethod("get", programIdClass);
+                }
                 Class<?> programSource = Class.forName("net.irisshaders.iris.shaderpack.programs.ProgramSource");
                 getVertexSource = programSource.getMethod("getVertexSource");
                 // Порядок вызова как в IrisInstancedEncoders (там цепочка рабочая):
@@ -122,7 +135,9 @@ public final class IrisShadowDistortion {
                         "[HBM-M] IrisShadowDistortion: ProgramSet null - instanced shadows disabled (safe fallback)");
                 return;
             }
-            Object shadowOpt = getShadow.invoke(programSetObj, NO_ARGS);
+            Object shadowOpt = (shadowProgramId != null)
+                    ? getShadow.invoke(programSetObj, shadowProgramId)
+                    : getShadow.invoke(programSetObj, NO_ARGS);
             if (shadowOpt instanceof java.util.Optional<?> opt) {
                 shadowOpt = opt.orElse(null);
             }
@@ -217,6 +232,15 @@ public final class IrisShadowDistortion {
     }
 
     private static final Object[] NO_ARGS = new Object[0];
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private static Object enumValueOf(Class<?> enumClass, String name) {
+        try {
+            return Enum.valueOf((Class<Enum>) enumClass.asSubclass(Enum.class), name);
+        } catch (IllegalArgumentException e) {
+            return null;
+        }
+    }
 
     /**
      * [0] = ShaderPack активного пайплайна, [1] = имя конкретного класса

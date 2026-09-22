@@ -136,6 +136,28 @@ public class ModItemTagProvider extends ItemTagsProvider {
                 ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "ores/uranium")));
         //?}
 
+        // Зеркало цикла ModBlockTagProvider: предметные forge:storage_blocks/<имя>
+        // для всех блоков хранения материалов (выход mold_casting блочной формы).
+        //? if fabric && < 1.21.1 {
+        /*for (ModMaterials mat : ModMaterials.values()) {
+            if (!mat.has(MaterialShape.BLOCK)) continue;
+            if (!ModBlocks.hasIngotBlock(mat)) continue;
+            com.hbm_m.inventory.material.MaterialType mt = com.hbm_m.inventory.material.MaterialType.of(mat);
+            String tagName = mt != null ? mt.name : mat.getId();
+            this.copy(BlockTags.create(new ResourceLocation("forge", "storage_blocks/" + tagName)),
+                    ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "storage_blocks/" + tagName)));
+        }
+        *///?} else {
+        for (ModMaterials mat : ModMaterials.values()) {
+            if (!mat.has(MaterialShape.BLOCK)) continue;
+            if (!com.hbm_m.block.ModBlocks.hasIngotBlock(mat)) continue;
+            com.hbm_m.inventory.material.MaterialType mt = com.hbm_m.inventory.material.MaterialType.of(mat);
+            String tagName = mt != null ? mt.name : mat.getId();
+            this.copy(BlockTags.create(ResourceLocation.fromNamespaceAndPath("forge", "storage_blocks/" + tagName)),
+                    ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "storage_blocks/" + tagName)));
+        }
+        //?}
+
 
 
         this.tag(ModTags.Items.SLABS_HARD)

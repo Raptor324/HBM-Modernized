@@ -1412,6 +1412,7 @@ public class MultiblockStructureHelper {
         }
 
         List<BlockPos> energyConnectorPositions = new ArrayList<>();
+        List<BlockPos> fluidConnectorPositions = new ArrayList<>();
         List<BlockPos> allPlacedPositions = new ArrayList<>();
 
         markRecentlyPlaced(level, controllerPos);
@@ -1497,6 +1498,7 @@ public class MultiblockStructureHelper {
                         Collections.addAll(worldFluid, Direction.values());
                     }
                     partBe.setAllowedFluidSides(worldFluid);
+                    fluidConnectorPositions.add(worldPos);
                 }
                 
                 // === ЗАГЛУШКА ДЛЯ CONVEYOR СИСТЕМЫ ===
@@ -1539,6 +1541,34 @@ public class MultiblockStructureHelper {
                 }
             }
         }
+
+        // Массовое обновление труб вокруг жидкостных коннекторов
+        for (BlockPos connectorPos : fluidConnectorPositions) {
+            com.hbm_m.block.machines.FluidDuctBlock.refreshAdjacentDucts(level, connectorPos);
+            level.updateNeighborsAt(connectorPos, phantomBlockState.get().getBlock());
+        }
+    }
+
+    /**
+     * Повторное обновление труб вокруг всех жидкостных коннекторов структуры.
+     *
+     * <p>Нужно вызывать после {@code setPlacedBy}: ваниль восстанавливает NBT предмета
+     * (тип/заполнение бака) ПОСЛЕ {@code onPlace}, где вызывается {@link #placeStructure}.
+     * Пересчёт труб при постановке видел ещё пустой контроллер, поэтому окрашенная труба
+     * рядом с цистерной, поставленной с уже заданным типом, не рисовала «руку» до
+     * первого ручного обновления (клик по трубе, ANY update сети).</p>
+     */
+    public void refreshFluidConnectorDucts(Level level, BlockPos controllerPos, Direction facing,
+            IMultiblockController controller) {
+        if (level.isClientSide) return;
+        for (BlockPos gridPos : structureMap.keySet()) {
+            PartRole role = resolvePartRole(gridPos, controller);
+            if (role != PartRole.FLUID_CONNECTOR && role != PartRole.UNIVERSAL_CONNECTOR) {
+                continue;
+            }
+            com.hbm_m.block.machines.FluidDuctBlock.refreshAdjacentDucts(level,
+                    getRotatedPos(controllerPos, gridPos, facing));
+        }
     }
 
     private void applyControllerSideConfig(Level level, BlockPos controllerPos, Direction facing) {
@@ -1568,31 +1598,33 @@ public class MultiblockStructureHelper {
     // Вспомогательный метод для красивого форматирования координат
     private String formatPositions(List<BlockPos> positions) {
         if (positions.isEmpty()) return "[]";
-        
-        StringBuilder sb = new StringBuilder("[");
-        for (int i = 0; i < positions.size(); i++) {
-            BlockPos pos = positions.get(i);
-            sb.append(String.format("(%d,%d,%d)", pos.getX(), pos.getY(), pos.getZ()));
-            if (i < positions.size() - 1) {
-                sb.append(", ");
-            }
-        }
-        sb.append("]");
-        return sb.toString();
+        if (positions.size() == 1) return "[" + positions.get(0).toShortString() + "]";
+        return "[" + positions.get(0).toShortString() + " ... " + 
+               positions.get(positions.size() - 1).toShortString() + 
+               " (" + positions.size() + " total)]";
     }    
     
+    /**
+     * Helper to clear multiblock structure, including custom blocks
+     */
     public void destroyStructure(Level level, BlockPos controllerPos, Direction facing) {
-        if (level.isClientSide || IS_DESTROYING.get()) return;
-        // Перенос блоков движком сборки (Create/Sable): разрушать структуру нельзя -
-        // движок уже сохранил state+NBT и вернёт её на месте. Разрушение здесь = дюп.
         if (ContraptionAssemblyGuard.isMoving()) {
-            MainRegistry.LOGGER.info(
+            MainRegistry.LOGGER.debug(
                 "[HBM] destroyStructure подавлен (окно сборки контрапшена), контроллер {}",
                 controllerPos.toShortString());
             return;
         }
         IS_DESTROYING.set(true);
         try {
+            // Централизованный дроп инвентаря контроллера при разрушении мультиблока.
+            // Работает на обоих загрузчиках без loader-специфичного кода, вызывается только
+            // при реальном сносе (не при выгрузке чанков) и очищает слоты для предотвращения дюпов.
+            BlockEntity controllerBe = level.getBlockEntity(controllerPos);
+            if (controllerBe instanceof com.hbm_m.blockentity.BaseHbmBlockEntity hbmBe) {
+                hbmBe.dropInventory();
+            }
+
+            List<BlockPos> fluidPositionsToRefresh = new ArrayList<>();
             for (BlockPos gridPos : structureMap.keySet()) {
                 BlockPos worldPos = getRotatedPos(controllerPos, gridPos, facing);
                 if (level.getBlockState(worldPos).getBlock() instanceof UniversalMachinePartBlock) {
@@ -1602,9 +1634,16 @@ public class MultiblockStructureHelper {
                         if (role.canReceiveEnergy() || role.canSendEnergy()) {
                             com.hbm_m.api.energy.EnergySubscriptions.unsubscribeAll(be);
                         }
+                        if (role == PartRole.FLUID_CONNECTOR || role == PartRole.UNIVERSAL_CONNECTOR) {
+                            fluidPositionsToRefresh.add(worldPos);
+                        }
                     }
                     level.setBlock(worldPos, Blocks.AIR.defaultBlockState(), 3);
                 }
+            }
+
+            for (BlockPos pos : fluidPositionsToRefresh) {
+                com.hbm_m.block.machines.FluidDuctBlock.refreshAdjacentDucts(level, pos);
             }
         } finally { IS_DESTROYING.set(false); }
     }

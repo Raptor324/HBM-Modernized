@@ -2919,6 +2919,7 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("material.hbm_m.cadmium", "Кадмий");
         add("material.hbm_m.technetium", "Технеций");
         add("material.hbm_m.u238", "Уран-238");
+        add("material.hbm_m.uranium", "Уран");
         add("material.hbm_m.schrabidium", "Шрабидий");
         add("material.hbm_m.steel", "Сталь");
         add("material.hbm_m.mingrade", "Красная медь");
@@ -3269,6 +3270,7 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("tooltip.hbm_m.barrel.highly_corrosive.no", "Не может хранить сильно едкие жидкости как следует");
         add("tooltip.hbm_m.barrel.antimatter.yes", "Может хранить антиматерию");
         add("tooltip.hbm_m.barrel.antimatter.no", "Не может хранить антиматерию");
+        add("tooltip.hbm_m.barrel.leaky", "Даёт течь");
         add("container.hbm_m.solar_mirrors", "Солнечные зеркала");
         add("msg.hbm_m.solar_mirror.sky_access", "Зеркало освещено солнцем");
         add("msg.hbm_m.solar_mirror.no_sky_access", "Зеркало затенено");

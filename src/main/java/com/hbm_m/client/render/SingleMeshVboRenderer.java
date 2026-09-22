@@ -674,7 +674,10 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
                 //? if < 1.21.1 {
                 tmpInvViewRot.identity().set(RenderSystem.getInverseViewRotationMatrix());
                 //?} else {
-                /*tmpInvViewRot.identity().rotation(Minecraft.getInstance().gameRenderer.getMainCamera().rotation()).invert();
+                /*// rotation(camera.rotation()) = R_cam⁻¹ БЕЗ доп. invert (см.
+                // FrameViewState.capture) — ранний лишний invert вращал точки
+                // 8-corner светового сэмпла.
+                tmpInvViewRot.identity().rotation(Minecraft.getInstance().gameRenderer.getMainCamera().rotation());
                 *///?}
                 tmpLocalPose.set(tmpInvViewRot).mul(poseStack.last().pose());
                 tmpLocalPose.m30(tmpLocalPose.m30() - (float) (blockPos.getX() - cam.x));
@@ -852,7 +855,9 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
                 //? if < 1.21.1 {
                 tmpInvViewRot.identity().set(RenderSystem.getInverseViewRotationMatrix());
                 //?} else {
-                /*tmpInvViewRot.identity().rotation(Minecraft.getInstance().gameRenderer.getMainCamera().rotation()).invert();
+                /*// rotation(camera.rotation()) = R_cam⁻¹ БЕЗ доп. invert (см.
+                // FrameViewState.capture).
+                tmpInvViewRot.identity().rotation(Minecraft.getInstance().gameRenderer.getMainCamera().rotation());
                 *///?}
                 tmpLocalPose.set(tmpInvViewRot).mul(poseStack.last().pose());
                 tmpLocalPose.m30(tmpLocalPose.m30() - (float) (anchor.getX() - cam.x));
@@ -874,11 +879,18 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
         // legacy constant-UV2 path.
         IrisRenderBatch batch = IrisRenderBatch.active();
         if (batch != null) {
+            // R_cam живёт в RenderSystem.getModelViewMatrix() на ОБЕИХ версиях
+            // (1.20.1 — запечён в pose диспетчера, 1.21.1 — в modelViewStack;
+            // см. фикс в InstancedStaticPartRenderer.addInstance). Раньше сюда
+            // передавался сырой pose — на 1.21.1 без R_cam модели «улетали»
+            // (створки дверей в force vanilla immediate, DAE-узлы).
+            Matrix4f fullModelView = new Matrix4f(RenderSystem.getModelViewMatrix())
+                    .mul(poseStack.last().pose());
             if (haveCorners) {
-                batch.drawCompanionWithPerVertexLight(companion, poseStack.last().pose(),
+                batch.drawCompanionWithPerVertexLight(companion, fullModelView,
                                                       tmpCornerUV, packedLight);
             } else {
-                batch.drawCompanion(companion, poseStack.last().pose(), packedLight);
+                batch.drawCompanion(companion, fullModelView, packedLight);
             }
             return true;
         }

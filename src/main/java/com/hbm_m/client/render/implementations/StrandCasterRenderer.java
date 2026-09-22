@@ -26,13 +26,14 @@ import net.minecraft.world.inventory.InventoryMenu;
  * Strand Caster (машина непрерывного литья) на фабрике {@link MachineRenderers} —
  * порт {@code RenderStrandCaster} (1.7.10). Корпус "caster" — статика; "plate"
  * (плита расплава) — динамическая часть: в оригинале перед отрисовкой ставился
- * GL clip plane {0,0,-1,0.5} в МОДЕЛЬНЫХ координатах, затем вся часть
+ * GL clip plane {0,0,-1,0.5} в МОДЕЛЬНЫХ координатах ДО сдвига, затем вся часть
  * сдвигалась на {@code z = max(-offset + 3.4, 0)} — здесь клиппинг заменён
- * фильтрацией квадов (отбрасываются квадов, все 4 вершины которых имеют
- * натуральный z > 0.51), а сдвиг — статическим трансформом. Поверхность расплава
- * "Surface" синтезируется: 2×2 (x ±0.9, z ±0.999) на {@code y = 2.3 + level},
- * fullbright (240/240), спрайт {@code lava_gray} с запечённым в вершины цветом
- * {@code type.color} (moltenColor).
+ * Sutherland–Hodgman-разрезанием квадов плоскостью {@code v.z + t <= 0.5}
+ * (эквивалент per-fragment отсечения: видимой остаётся только «губка» плиты,
+ * выдающаяся из машины по мере заполнения), а сдвиг — статическим трансформом.
+ * Обе части тинтируются цветом расплава {@code type.color} (moltenColor),
+ * поверхность "Surface" синтезируется: 2×2 (x ±0.9, z ±0.999) на
+ * {@code y = 2.3 + level}, fullbright (240/240), спрайт {@code lava_gray}.
  */
 public final class StrandCasterRenderer {
 
@@ -42,16 +43,29 @@ public final class StrandCasterRenderer {
 
     private StrandCasterRenderer() {}
 
+    /** Кэш-ключ плиты: квантованный сдвиг + цвет металла (тинт запечён в вершины). */
+    private static String plateCacheKey(MachineStrandCasterBlockEntity be) {
+        return (int) (moldOffset(be) * 64) + "_" + (be.type != null ? be.type.color : 0);
+    }
+
+    /** Кэш-ключ поверхности: уровень расплава + цвет металла. */
+    private static String surfaceCacheKey(MachineStrandCasterBlockEntity be) {
+        return (int) (meltLevel(be) * 256) + "_" + (be.type != null ? be.type.color : 0);
+    }
+
     public static void register() {
         MachineRenderers.machine("strand_caster",
                 com.hbm_m.blockentity.ModBlockEntities.STRAND_CASTER_BE.get(),
                 MachineStrandCasterBlockEntity.class)
+            // Расплав светится (оригинал: glDisable(GL_LIGHTING) для plate, fullbright для Surface)
+            .lightOverride("plate", be -> hasMoltenMetal(be)
+                    ? net.minecraft.client.renderer.LightTexture.FULL_BRIGHT : -1)
             .part("caster")
             .dynamicPart("plate", StrandCasterRenderer::plateQuads,
-                    be -> String.valueOf((int) (moldOffset(be) * 64)),
+                    StrandCasterRenderer::plateCacheKey,
                     StrandCasterRenderer::plateTransform)
             .dynamicPart("Surface", StrandCasterRenderer::surfaceQuads,
-                    be -> String.valueOf((int) (meltLevel(be) * 256)))
+                    StrandCasterRenderer::surfaceCacheKey)
             .blockTransform(StrandCasterRenderer::applyBlockTransform)
             .itemParts("caster", "plate")
             .register();
@@ -110,8 +124,11 @@ public final class StrandCasterRenderer {
     }
 
     /**
-     * Квады части "plate", отфильтрованные по клип-плоскости {0,0,-1,0.5}:
-     * квад рисуется, только если хотя бы одна вершина имеет натуральный z <= 0.51.
+     * Квады части "plate" с клипом и тинтом. Порт связки GL_CLIP_PLANE0 {0,0,-1,0.5} +
+     * glTranslated(0,0,t): плоскость задаётся в модельных координатах ДО сдвига, поэтому
+     * фрагмент видим при {@code v.z + t <= 0.5}. Полигоны режутся по плоскости
+     * Sutherland–Hodgman'ом с интерполяцией UV/цвета (per-fragment эквивалент), цвет
+     * вершин домножается на moltenColor (порт glColor3f в оригинале).
      */
     private static List<BakedQuad> plateQuads(MachineStrandCasterBlockEntity be) {
         if (!hasMoltenMetal(be)) return List.of();
@@ -119,25 +136,109 @@ public final class StrandCasterRenderer {
         List<BakedQuad> all = collectPartQuads(be, "plate");
         if (all.isEmpty()) return List.of();
 
+        double t = Math.max(-moldOffset(be) + 3.4, 0);
+        float clipZ = (float) (0.5 - t);
+        int tint = moltenColorRgba(be);
+
         List<BakedQuad> result = new ArrayList<>();
         for (BakedQuad quad : all) {
-            if (!isFullyBeyondClip(quad)) {
-                result.add(quad);
-            }
+            clipQuad(quad, clipZ, tint, result);
         }
         return result;
     }
 
-    /** true — все 4 вершины квада имеют натуральный (модельный) z > 0.5 + эпсилон. */
-    private static boolean isFullyBeyondClip(BakedQuad quad) {
+    /**
+     * Разрезание квада полуплоскостью {@code z <= clipZ} и добавление результата в {@code out}.
+     * Формат вершин BLOCK (8 int: позиция×3, цвет, uv×2, свет, нормаль); на пересечении рёбер
+     * позиция/uv/цвет интерполируются линейно, свет и нормаль берутся с внутренней вершины.
+     * Полигон из 4 вершин остаётся квадом, 3 — квадом с продублированной вершиной,
+     * 5 — квадом + треугольником.
+     */
+    private static void clipQuad(BakedQuad quad, float clipZ, int tint, List<BakedQuad> out) {
         int[] data = quad.getVertices();
         int vertexSize = data.length / 4;
+        if (vertexSize != 8) return; // формат BLOCK
+
+        int[][] v = new int[4][];
+        float[] z = new float[4];
         for (int i = 0; i < 4; i++) {
-            int off = i * vertexSize;
-            float z = Float.intBitsToFloat(data[off + 2]);
-            if (z <= 0.5f + 0.01f) return false;
+            v[i] = java.util.Arrays.copyOfRange(data, i * vertexSize, (i + 1) * vertexSize);
+            z[i] = Float.intBitsToFloat(v[i][2]);
         }
-        return true;
+
+        java.util.List<int[]> poly = new ArrayList<>(5);
+        for (int i = 0; i < 4; i++) {
+            int j = (i + 1) % 4;
+            boolean inI = z[i] <= clipZ;
+            boolean inJ = z[j] <= clipZ;
+            if (inI) poly.add(v[i]);
+            if (inI != inJ) {
+                float s = (clipZ - z[i]) / (z[j] - z[i]);
+                poly.add(lerpVertex(v[i], v[j], s));
+            }
+        }
+
+        int n = poly.size();
+        if (n == 0) return;
+
+        int[][] fan;
+        if (n == 4) {
+            fan = new int[][] { poly.get(0), poly.get(1), poly.get(2), poly.get(3) };
+        } else if (n == 3) {
+            fan = new int[][] { poly.get(0), poly.get(1), poly.get(2), poly.get(2) };
+        } else { // n == 5
+            fan = new int[][] {
+                    poly.get(0), poly.get(1), poly.get(2), poly.get(3),
+                    poly.get(0), poly.get(3), poly.get(4), poly.get(4)
+            };
+        }
+
+        for (int q = 0; q < fan.length / 4; q++) {
+            int[] nd = new int[4 * vertexSize];
+            for (int i = 0; i < 4; i++) {
+                int[] vert = tintVertex(fan[q * 4 + i], tint);
+                System.arraycopy(vert, 0, nd, i * vertexSize, vertexSize);
+            }
+            out.add(new BakedQuad(nd, quad.getTintIndex(), quad.getDirection(), quad.getSprite(), quad.isShade()));
+        }
+    }
+
+    /** Линейная интерполяция позиции/uv/цвета между вершинами; свет и нормаль — от {@code a}. */
+    private static int[] lerpVertex(int[] a, int[] b, float s) {
+        int[] r = new int[a.length];
+        r[0] = Float.floatToRawIntBits(lerp(Float.intBitsToFloat(a[0]), Float.intBitsToFloat(b[0]), s));
+        r[1] = Float.floatToRawIntBits(lerp(Float.intBitsToFloat(a[1]), Float.intBitsToFloat(b[1]), s));
+        r[2] = Float.floatToRawIntBits(lerp(Float.intBitsToFloat(a[2]), Float.intBitsToFloat(b[2]), s));
+        r[3] = lerpColor(a[3], b[3], s);
+        r[4] = Float.floatToRawIntBits(lerp(Float.intBitsToFloat(a[4]), Float.intBitsToFloat(b[4]), s));
+        r[5] = Float.floatToRawIntBits(lerp(Float.intBitsToFloat(a[5]), Float.intBitsToFloat(b[5]), s));
+        r[6] = a[6]; // light
+        r[7] = a[7]; // normal
+        return r;
+    }
+
+    private static float lerp(float a, float b, float s) {
+        return a + (b - a) * s;
+    }
+
+    /** Поканальная интерполяция упакованного цвета (формат вершин: r в младшем байте). */
+    private static int lerpColor(int a, int b, float s) {
+        int r = Math.round(lerp(a & 0xFF, b & 0xFF, s));
+        int g = Math.round(lerp((a >> 8) & 0xFF, (b >> 8) & 0xFF, s));
+        int bl = Math.round(lerp((a >> 16) & 0xFF, (b >> 16) & 0xFF, s));
+        int al = Math.round(lerp((a >> 24) & 0xFF, (b >> 24) & 0xFF, s));
+        return (al << 24) | (bl << 16) | (g << 8) | r;
+    }
+
+    /** Домножение цвета вершины на тинт расплава (порт glColor3f: компонентное умножение). */
+    private static int[] tintVertex(int[] vert, int tint) {
+        int c = vert[3];
+        int r = ((c & 0xFF) * (tint & 0xFF)) / 255;
+        int g = (((c >> 8) & 0xFF) * ((tint >> 8) & 0xFF)) / 255;
+        int b = (((c >> 16) & 0xFF) * ((tint >> 16) & 0xFF)) / 255;
+        int a = (c >>> 24) * ((tint >>> 24) & 0xFF) / 255;
+        vert[3] = (a << 24) | (b << 16) | (g << 8) | r;
+        return vert;
     }
 
     // ── Surface: синтез поверхности расплава ──────────────────────────

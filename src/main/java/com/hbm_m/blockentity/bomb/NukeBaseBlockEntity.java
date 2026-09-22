@@ -72,6 +72,10 @@ public abstract class NukeBaseBlockEntity extends BaseHbmBlockEntity implements 
         if (!stack.isEmpty() && stack.getCount() > getMaxStackSize()) {
             stack.setCount(getMaxStackSize());
         }
+        // GUI-вставка помечает чанк через Slot.setChanged, но прямые вставки
+        // (хоппер через WorldlyContainer) идут сюда — без setChanged чанк
+        // мог выгрузиться, так и не сохранив компоненты.
+        setChanged();
     }
 
     @Override

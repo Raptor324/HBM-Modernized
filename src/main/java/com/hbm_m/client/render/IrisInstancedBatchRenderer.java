@@ -157,7 +157,9 @@ final class IrisInstancedBatchRenderer {
             //? if < 1.21.1 {
             parent.tmpInvViewRot.identity().set(RenderSystem.getInverseViewRotationMatrix());
             //?} else {
-            /*parent.tmpInvViewRot.identity().rotation(Minecraft.getInstance().gameRenderer.getMainCamera().rotation()).invert();
+            /*// rotation(camera.rotation()) = R_cam⁻¹ БЕЗ доп. invert (см.
+            // FrameViewState.capture и fillInstanceCornerLight).
+            parent.tmpInvViewRot.identity().rotation(Minecraft.getInstance().gameRenderer.getMainCamera().rotation());
             *///?}
             parent.tmpLocalPose.set(parent.tmpInvViewRot).mul(poseStack.last().pose());
             parent.tmpLocalPose.m30(parent.tmpLocalPose.m30() - (float) (anchor.getX() - cam.x));

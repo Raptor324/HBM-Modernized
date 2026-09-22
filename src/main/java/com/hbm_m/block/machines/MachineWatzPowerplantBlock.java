@@ -186,20 +186,9 @@ public class MachineWatzPowerplantBlock extends BaseEntityBlock implements IMult
 
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
-        if (state.getBlock() != newState.getBlock()) {
-            BlockEntity be = level.getBlockEntity(pos);
-            //? if forge {
-            if (be != null) be.getCapability(ForgeCapabilities.ITEM_HANDLER).ifPresent(h -> {
-                for (int i = 0; i < h.getSlots(); i++)
-                    Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), h.getStackInSlot(i));
-            });
-            //?} elif neoforge {
-            /*var h = level.getCapability(net.neoforged.neoforge.capabilities.Capabilities.ItemHandler.BLOCK, pos, state, be, null);
-            if (h != null) {
-                for (int i = 0; i < h.getSlots(); i++)
-                    Containers.dropItemStack(level, pos.getX(), pos.getY(), pos.getZ(), h.getStackInSlot(i));
-            }
-            *///?}
+        if (!state.is(newState.getBlock()) && !level.isClientSide()) {
+            Direction facing = state.getValue(FACING);
+            structureHelper.destroyStructure(level, pos, facing);
         }
         super.onRemove(state, level, pos, newState, isMoving);
     }

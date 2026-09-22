@@ -31,7 +31,11 @@ public class GUIMachineStrandCaster extends GuiInfoScreen<MachineStrandCasterMen
 
     private static final int BAR_X = 17, BAR_ANCHOR_Y = 93, BAR_W = 34, BAR_MAX_H = 79, BAR_TEX_ANCHOR_V = 89;
     private static final int INFO_X = 16, INFO_Y = 17, INFO_W = 36, INFO_H = 81;
-    private static final int TANK_X = 82, WATER_TANK_Y = 38, STEAM_TANK_Y = 89, TANK_W = 16, TANK_H = 24;
+    // Оригинальный FluidTankNTM.renderTank(x, y, ...) якорит бак по НИЖНЕЙ грани
+    // (вода: низ y=38 → 14..38; пар: низ y=89 → 65..89). Наш renderTank рисует ВНИЗ
+    // от верхней грани — передаём верхнюю координату (14/65), иначе баки уезжают на
+    // 24px ниже своих рамок («инвертированный» рендер).
+    private static final int TANK_X = 82, WATER_TANK_TOP = 14, STEAM_TANK_TOP = 65, TANK_W = 16, TANK_H = 24;
     private static final int WATER_INFO_Y = 14, STEAM_INFO_Y = 65;
 
     private final MachineStrandCasterMenu menu;
@@ -78,9 +82,9 @@ public class GUIMachineStrandCaster extends GuiInfoScreen<MachineStrandCasterMen
             RenderSystem.disableBlend();
         }
 
-        // Баки воды и отработанного пара (порт renderTank (82,38)/(82,89) 16×24)
-        be.getWaterTank().renderTank(g, this.leftPos + TANK_X, this.topPos + WATER_TANK_Y, TANK_W, TANK_H);
-        be.getSteamTank().renderTank(g, this.leftPos + TANK_X, this.topPos + STEAM_TANK_Y, TANK_W, TANK_H);
+        // Баки воды и отработанного пара (порт renderTank (82, низ 38)/(82, низ 89) 16×24)
+        be.getWaterTank().renderTank(g, this.leftPos + TANK_X, this.topPos + WATER_TANK_TOP, TANK_W, TANK_H);
+        be.getSteamTank().renderTank(g, this.leftPos + TANK_X, this.topPos + STEAM_TANK_TOP, TANK_W, TANK_H);
 
         RenderSystem.setShaderColor(1f, 1f, 1f, 1f);
     }

@@ -376,17 +376,32 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
                 runningOffset += RenderHooks.getByteSize(el);
             }
             //?} else {
-            /*var elements = RenderHooks.getElements(actualFormat);
-            int runningOffset = 0;
+            /*// 1.21.1: у формата нет getElementAttributeNames-совместимого
+            // списка имён для Iris-элементов (id динамические — hardcoded
+            // 11/12/13 больше не совпадают), а паддинги НЕ входят в элементы
+            // (аккумуляция занижала офсеты полей после паддинга). Резолвим
+            // имена по usage+типу, офсеты — нативно из формата.
+            var elements = RenderHooks.getElements(actualFormat);
             for (int i = 0; i < elements.size(); i++) {
                 VertexFormatElement el = elements.get(i);
                 String name = "unknown_" + i;
-                if (el.id() == IRIS_ATTRIB_ENTITY) name = "iris_Entity";
-                else if (el.id() == IRIS_ATTRIB_MID_TEX) name = "mc_midTexCoord";
-                else if (el.id() == IRIS_ATTRIB_TANGENT) name = "at_tangent";
-                elementOffsets.put(name, runningOffset);
+                var usage = RenderHooks.getUsage(el);
+                int glType = RenderHooks.getGlType(el);
+                if (usage == VertexFormatElement.Usage.UV && RenderHooks.getIndex(el) == 3) {
+                    name = "iris_Entity";
+                } else if (usage == VertexFormatElement.Usage.GENERIC
+                        && glType == org.lwjgl.opengl.GL11.GL_FLOAT) {
+                    name = "mc_midTexCoord";
+                } else if (usage == VertexFormatElement.Usage.GENERIC
+                        && glType == org.lwjgl.opengl.GL11.GL_BYTE
+                        && RenderHooks.getCount(el) == 4) {
+                    name = "at_tangent";
+                } else if (usage == VertexFormatElement.Usage.GENERIC
+                        && glType == org.lwjgl.opengl.GL11.GL_SHORT) {
+                    name = "mc_Entity";
+                }
+                elementOffsets.put(name, RenderHooks.getElementOffset(actualFormat, el));
                 elementByName.put(name, el);
-                runningOffset += RenderHooks.getByteSize(el);
             }
             *///?}
 
@@ -1425,6 +1440,16 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
         return o != null ? o : -1;
     }
 
+    /**
+     * Офсет именованного атрибута с фолбэком: на 1.21.1 карта имён может не
+     * знать Iris-имён (динамические id элементов) — тогда берём fallback
+     * (обычно офсет по usage+типу из {@link #getMeshOffset}).
+     */
+    int getMeshAttribByteOffsetOr(String name, int fallback) {
+        Integer o = elementOffsets.get(name);
+        return (o != null && o >= 0) ? o : fallback;
+    }
+
     /** Элемент формата именованного атрибута (тип/компоненты для bake-VAO) или null. */
     VertexFormatElement getMeshAttribElement(String name) {
         return elementByName.get(name);
@@ -1438,7 +1463,6 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
     /** Офсеты (байты) компонентов BLOCK-формата для compute-шейдера. */
     int getMeshOffset(String usageName, int uvIndex) {
         if (actualFormat == null) return -1;
-        int offset = 0;
         for (VertexFormatElement el : RenderHooks.getElements(actualFormat)) {
             var usage = RenderHooks.getUsage(el);
             boolean match = switch (usageName) {
@@ -1446,10 +1470,21 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
                 case "color" -> usage == VertexFormatElement.Usage.COLOR;
                 case "normal" -> usage == VertexFormatElement.Usage.NORMAL;
                 case "uv" -> usage == VertexFormatElement.Usage.UV && RenderHooks.getIndex(el) == uvIndex;
+                // Фолбэк-резолв Iris-generic атрибутов по usage+типу (без имён
+                // карты — на 1.21.1 имена элементов динамические):
+                // mc_midTexCoord = GENERIC FLOAT×2, at_tangent = GENERIC BYTE×4.
+                case "genericFloat2" -> usage == VertexFormatElement.Usage.GENERIC
+                        && RenderHooks.getGlType(el) == org.lwjgl.opengl.GL11.GL_FLOAT;
+                case "genericByte4" -> usage == VertexFormatElement.Usage.GENERIC
+                        && RenderHooks.getGlType(el) == org.lwjgl.opengl.GL11.GL_BYTE
+                        && RenderHooks.getCount(el) == 4;
                 default -> false;
             };
-            if (match) return offset;
-            offset += RenderHooks.getByteSize(el);
+            if (match) {
+                // Точный офсет: на 1.21.1 паддинги не входят в getElements() и
+                // аккумуляция занижала бы офсеты полей после паддинга на 1 байт.
+                return RenderHooks.getElementOffset(actualFormat, el);
+            }
         }
         return -1;
     }

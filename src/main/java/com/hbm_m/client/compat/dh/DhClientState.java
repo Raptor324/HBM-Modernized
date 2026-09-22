@@ -24,79 +24,48 @@ public final class DhClientState {
      *  при копировании глубины в главный буфер (DhDepthCopy). */
     private static volatile float dhNear = 0.05F;
     private static volatile float dhFar = 4096.0F;
+    /**
+     * Конвенция глубины DH-кадра. DH 3.3.1 перевёл GL-движок на REVERSE_Z
+     * (GlDhRenderApiDefinition.getRenderDepth): без активного Iris-пака
+     * DEPTH32F чистится в 0 (небо=0, близко=1), террейн растеризуется
+     * реверс-матрицей (setClipPlanes(mat, far, near, true)). DH <= 3.2.x и
+     * форвард-Z паки — FORWARD_Z. Приходит параметром в {@link #beginDhPass}
+     * из DhRenderBridge.isReverseZDepthActive() (рефлексия RENDER_DEF — сам
+     * DH матрицу события реверсной НЕ отдаёт, детект по знаку m32 ложно
+     * срабатывал). Читают копирующие проходы (DhDepthCopy/RawDhDepthCopy)
+     * для ветки декодирования.
+     */
+    private static volatile boolean dhReverseZ = false;
     /** Время последнего реального DH-кадра: защита от «залипшего» флага,
      *  если DH перестал рендерить (настройка/выгрузка), пока мод установлен. */
     private static volatile long lastBridgeMs = 0;
-    private static long nearClampMismatchCounter = 0;
 
     private DhClientState() {}
 
     /** Called from DhRenderBridge BEFORE applyToMcTexture (DH FBO still bound). */
-    public static void beginDhPass(Matrix4f proj, float near, float far, boolean irisLodOverrideActive) {
+    public static void beginDhPass(Matrix4f proj, float near, float far, boolean irisLodOverrideActive, boolean reverseDepth) {
         dhProjection = proj != null ? new Matrix4f(proj) : null;
-        // КЛИП-ПЛОСКОСТИ зависят от того, КТО растеризует LOD'ы:
-        //
-        // БЕЗ Iris-override LOD'ы рисует нативный DH-шейдер с матрицей, где
-        // near ЗАКЛАМПЛЕН до 7.5 (RenderUtil.setDhProjectionMatrix), а в
-        // событии лежит НЕклампленное значение (rd*16*overdraw/norm: 9.1@rd4,
-        // 22.9@rd5). Декодируем инверсией ИЗ МАТРИЦЫ: n = B/(A-1), f = B/(A+1).
-        //
-        // ПОД Iris-override (пак с dhTerrain-программами) Iris САМ строит
-        // проекцию LOD из СЫРЫХ rp-значений (LodRendererEvents: setPerspective(
-        // fov, aspect, event.value.nearClipPlane, farClipPlane)) — матрица с
-        // клампом вообще не используется. Декод по матрице давал
-        // dist ≈ (7.5/22.9)·true ≈ 0.33·true @rd5: вся скопированная глубина
-        // была втрое «ближе» → гриб резался LOD'ами за своей спиной. Декодируем
-        // ровно те rp-значения, что уходят в setPerspective.
-        float n = near, f = far;
-        if (!irisLodOverrideActive && dhProjection != null) {
-            float[] ext = extractClipPlanes(dhProjection);
-            if (ext != null) {
-                n = ext[0];
-                f = ext[1];
-                // DEFENSE-IN-DEPTH (near-clamp mismatch): нативный DH клампит
-                // near матрицы до min(near, 7.5), а Iris рендерит глубину LOD
-                // БЕЗ клампа (setPerspective с сырыми rp-значениями). Если пак
-                // активен, а rp.near СИЛЬНО больше матричного — глубину писал
-                // Iris, и декодировать надо rp-значениями: иначе вся дальняя
-                // глубина декодируется как (7.5/n_real)·true «ближе», и
-                // LOD-гора позади гриба перетирает его, ошибка ∝ дистанции
-                // (при rd≤4 под паком near=7.34<7.5 кламп не срабатывал, чем
-                // баг маскировался). Кейс «пак без dhTerrain-программ +
-                // нативный рендер» деградирует мягко: такой пак Iris всё
-                // равно лишает композита DH, честной DH-глубины не существует.
-                if (com.hbm_m.client.render.shader.ShaderCompatibilityDetector.isExternalShaderActive()
-                        && near > ext[0] * 1.001F) {
-                    if (nearClampMismatchCounter++ % 600 == 0) {
-                        com.hbm_m.main.MainRegistry.LOGGER.info(
-                                "HBM DH near-clamp mismatch (native matrix near={} vs rp near={}): decoding with rp values",
-                                String.format("%.2f", ext[0]), String.format("%.2f", near));
-                    }
-                    n = near;
-                    f = far;
-                }
-            }
-        }
-        if (n > 0.0F && f > n) {
-            dhNear = n;
-            dhFar = f;
+        // Конвенция глубины приходит из самого DH (RenderUtil.RENDER_DEF
+        // .getRenderDepth(), см. DhRenderBridge.isReverseZDepthActive).
+        // МАТРИЦА ИЗ СОБЫТИЯ для этого непригодна: в 3.3.1 это форвард-копия
+        // с сырыми значениями, реальную реверс-матрицу DH строит отдельно.
+        dhReverseZ = reverseDepth;
+        // КЛИП-ПЛОСКОСТИ декода приходят ГОТОВЫМИ из моста:
+        //  - нативный рендер — репликация RenderUtil.setDhProjectionMatrix
+        //    (R-формула + кламп min(near, 7.5) без height-override);
+        //  - под Iris-override — сырые rp-значения (Iris строит перспективу
+        //    из них без клампа).
+        // Матрица события НЕ используется: в 3.3.1 это форвард-копия с сырыми
+        // значениями — кламп в ней не виден, и декод по rp.near при rd≥3
+        // кодировал LOD-глубину в разы дальше реальной («гриб перед горами,
+        // чем больше RD тем ближе»). В 3.2.x спасало то, что событие отдавало
+        // мутнутый (клампнутый) матрикс — регресс именно 3.3.1.
+        if (near > 0.0F && far > near) {
+            dhNear = near;
+            dhFar = far;
         }
         dhFboActive = true;
         lastBridgeMs = System.currentTimeMillis();
-    }
-
-    /**
-     * Клип-плоскости стандартной перспективы из её матрицы:
-     * A = m22 = (f+n)/(n-f), B = m32 = 2fn/(n-f)  ⇒  n = B/(A-1), f = B/(A+1).
-     * null = матрица не похожа на перспективу (используем rp-значения как фолбэк).
-     */
-    private static float[] extractClipPlanes(Matrix4f p) {
-        float a = p.m22(), b = p.m32();
-        if (Math.abs(a - 1.0F) < 1.0E-4F || Math.abs(a + 1.0F) < 1.0E-6F || b >= 0.0F) return null;
-        float n = b / (a - 1.0F);
-        float f = b / (a + 1.0F);
-        if (n <= 0.0F || f <= n || Float.isInfinite(f)) return null;
-        return new float[] {n, f};
     }
 
     public static void endDhPass() {
@@ -139,4 +108,7 @@ public final class DhClientState {
     public static float dhNear() { return dhNear; }
 
     public static float dhFar() { return dhFar; }
+
+    /** true — глубина DH-кадра реверсивная (близко=1, небо=0), DH 3.3.1+. */
+    public static boolean dhReverseZ() { return dhReverseZ; }
 }

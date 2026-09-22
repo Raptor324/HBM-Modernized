@@ -183,6 +183,29 @@ public final class RenderHooks {
     }
 
     /**
+     * Точный байтовый офсет элемента в формате. На 1.21.1 паддинги НЕ входят
+     * в getElements(), поэтому аккумуляция размеров занижает офсеты полей
+     * после паддинга (напр. IrisVertexFormats.ENTITY: 54 байта, mc_midTexCoord
+     * реально на 42, аккумуляция даёт 41) — берём нативный getOffset(element).
+     * На 1.20.1 паддинги — обычные элементы, аккумуляция точна (нативного
+     * getOffset(Element) нет).
+     *
+     * @return офсет в байтах или -1, если элемента в формате нет
+     */
+    public static int getElementOffset(VertexFormat format, VertexFormatElement element) {
+        //? if < 1.21.1 {
+        int offset = 0;
+        for (VertexFormatElement el : format.getElements()) {
+            if (el == element) return offset;
+            offset += el.getByteSize();
+        }
+        return -1;
+        //?} else {
+        /*return format.getOffset(element);
+        *///?}
+    }
+
+    /**
      * Кросс-платформенное получение квадов из части BakedModel.
      * Forge/NeoForge: 5-аргументный вызов (ModelData.EMPTY + RenderType.solid()).
      * Fabric: ванильный 3-аргументный вызов.
@@ -343,7 +366,7 @@ public final class RenderHooks {
      */
     public static void pushLevelModelView(Matrix4f levelRotation) {
         //? if < 1.21.1 {
-        CURRENT_LEVEL_ROTATION.set(new Matrix4f(levelRotation));
+        copyLevelRotation(levelRotation);
         PoseStack stack = com.mojang.blaze3d.systems.RenderSystem.getModelViewStack();
         stack.pushPose();
         stack.setIdentity();
@@ -351,12 +374,18 @@ public final class RenderHooks {
         com.mojang.blaze3d.systems.RenderSystem.applyModelViewMatrix();
         //?} else {
         /*org.joml.Matrix4fStack stack = com.mojang.blaze3d.systems.RenderSystem.getModelViewStack();
-        CURRENT_LEVEL_ROTATION.set(new org.joml.Matrix4f(levelRotation));
+        copyLevelRotation(levelRotation);
         stack.pushMatrix();
         stack.identity();
         stack.mul(levelRotation);
         com.mojang.blaze3d.systems.RenderSystem.applyModelViewMatrix();
         *///?}
+    }
+
+    /** Копирует в закешированную per-thread матрицу БЕЗ аллокации (кадровый путь). */
+    private static void copyLevelRotation(Matrix4f levelRotation) {
+        CURRENT_LEVEL_ROTATION.get().set(levelRotation);
+        ROTATION_ACTIVE.set(Boolean.TRUE);
     }
 
     /**
@@ -369,17 +398,19 @@ public final class RenderHooks {
      * rsMV=identity в кадрах с мешем). Рендеры, которым критичен поворот
      * камеры (меш ракет), должны брать его отсюда — детерминированно.
      */
-    private static final ThreadLocal<Matrix4f> CURRENT_LEVEL_ROTATION = new ThreadLocal<>();
+    private static final ThreadLocal<Matrix4f> CURRENT_LEVEL_ROTATION = ThreadLocal.withInitial(Matrix4f::new);
+    /** Флаг активности пуша: матрица живёт в TL постоянно, наружу отдаётся только в окне. */
+    private static final ThreadLocal<Boolean> ROTATION_ACTIVE = ThreadLocal.withInitial(() -> Boolean.FALSE);
 
     /** Повтор последнего {@link #pushLevelModelView}; null вне окна. */
     @org.jetbrains.annotations.Nullable
     public static Matrix4f currentLevelRotation() {
-        return CURRENT_LEVEL_ROTATION.get();
+        return ROTATION_ACTIVE.get() ? CURRENT_LEVEL_ROTATION.get() : null;
     }
 
     /** Восстанавливает ModelViewMat после pushLevelModelView. */
     public static void popLevelModelView() {
-        CURRENT_LEVEL_ROTATION.remove();
+        ROTATION_ACTIVE.set(Boolean.FALSE);
         //? if < 1.21.1 {
         PoseStack stack = com.mojang.blaze3d.systems.RenderSystem.getModelViewStack();
         stack.popPose();

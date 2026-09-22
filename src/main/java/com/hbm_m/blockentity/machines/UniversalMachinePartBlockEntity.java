@@ -810,7 +810,12 @@ public class UniversalMachinePartBlockEntity extends BaseHbmBlockEntity implemen
 
     // ═════════════════════════════════════════════════════════════════════════════════════════════
     //  Polymorphic Capability Delegation (для NeoForge автоматической регистрации)
-    // ═══════════════════════════════════════════════════════════════════════════════════════════════
+    // ═════════════════════════════════════════════════════════════════════════════════════════════
+
+    /** Часть делегирует capability контроллеру, поэтому авто-дроп у части отключён:
+     *  иначе при разборке мультиблока контроллерный инвентарь выпадал бы из КАЖДОЙ части. */
+    @Override
+    protected boolean dropInventoryOnRemove() { return false; }
 
     @Override
     public @Nullable Object getItemHandler(@Nullable net.minecraft.core.Direction side) {

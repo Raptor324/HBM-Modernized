@@ -24,6 +24,7 @@ import com.hbm_m.client.render.DoorChunkInvalidationHelper;
 import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.multiblock.PartRole;
+import com.hbm_m.interfaces.IMultiblockController;
 import com.hbm_m.interfaces.IItemFluidIdentifier;
 import com.hbm_m.interfaces.ILookOverlay;
 import com.hbm_m.item.ModItems;
@@ -354,9 +355,22 @@ public class FluidDuctBlock extends BaseEntityBlock implements ILookOverlay {
                 *///?}
             }
 
-            // Контроллер цистерны: прямое подключение запрещено правилами мультиблока.
-            // (Иначе при загрузке чанка возможно кратковременное "прилипание" до восстановления ролей/сторон.)
-            if (be instanceof MachineFluidTankBlockEntity) {
+            // Паритет 1.7.10: TileEntityBarrel#canConnect — труба коннектится к бочке только
+            // по совпадению типа (пустая/неокрашенная труба — разрешаем, конвенция для всех баков).
+            // Для МУЛЬТИБЛОК-цистерны остаётся запрет прямого подключения: соединение только
+            // через части-коннекторы (нашей архитектуры правило, оригинальному BE класса не было).
+            if (be instanceof MachineFluidTankBlockEntity tank) {
+                if (neighborState.getBlock() instanceof BarrelTankBlock) {
+                    if (ductFluid == Fluids.EMPTY) return true;
+                    return ductFluidMatchesTankForVisual(ductFluid, tank);
+                }
+                return false;
+            }
+
+            // Паритет 1.7.10 (Library.canConnectFluid): у мультиблок-контроллеров нет прямого
+            // подключения трубы — только через части-коннекторы (ветка UniversalMachinePart выше).
+            // Без этого трубы визуально "липнут" к контроллеру (хим. установка), а передачи нет.
+            if (neighborState.getBlock() instanceof IMultiblockController) {
                 return false;
             }
 
@@ -371,9 +385,11 @@ public class FluidDuctBlock extends BaseEntityBlock implements ILookOverlay {
     private static boolean ductFluidMatchesTankForVisual(Fluid ductFluidNorm, MachineFluidTankBlockEntity tank) {
         Fluid tankType = tank.getFluidTank().getTankType();
         int fill = tank.getFluidTank().getFill();
+        // Паритет 1.7.10: TileEntityMachineFluidTank#canConnect возвращает true безусловно,
+        // пока тип бака не зафиксирован — "рука" трубы не должна пропадать у пустой цистерны.
         boolean tankCommitted = fill > 0 || FluidTank.isFluidTypeExplicitlySet(tankType);
         if (!tankCommitted) {
-            return false;
+            return true;
         }
         return VanillaFluidEquivalence.sameSubstance(ductFluidNorm, tankType);
     }

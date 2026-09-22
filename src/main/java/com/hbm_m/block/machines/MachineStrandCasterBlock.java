@@ -74,26 +74,42 @@ public class MachineStrandCasterBlock extends BaseEntityBlock implements IMultib
      * Стол 2×7×1 (7 рядов вперёд-назад × 2 колонки) + башня 2×2×3 в передних
      * рядах; ядро — передний ряд, западная колонка (оригинал: башня растёт от
      * ядра вперёд по FACING и влево). Смещение установки 0 — как в оригинале.
+     *
+     * <p>Порты жидкостей (порт {@code getPorts()} 1.7.10: rot−dir, −dir,
+     * rot−5·dir, −5·dir) — обе колонки рядов z=−2 и z=+2 сетки: 'F' — восточная
+     * колонка, наружная сторона = rot (локальный EAST); 'H' — западная колонка,
+     * наружная сторона = rot.getOpposite() (локальный WEST). Роль
+     * FLUID_CONNECTOR заставляет часть-фантом создать узел FluidNet и подписать
+     * контроллер в трубную сеть ({@code UniversalMachinePartBlockEntity}).
      */
     private static MultiblockStructureHelper defineStructure() {
-        String[] y0 = { "CO", "OO", "OO", "OO", "OO", "OO", "OO" };
+        String[] y0 = { "CO", "HF", "OO", "OO", "OO", "HF", "OO" };
         String[] y1 = { "OO", "OO" };
         String[] y2 = { "OO", "OO" };
 
         Map<Character, PartRole> roleMap = Map.of(
                 'O', PartRole.DEFAULT,
+                'F', PartRole.FLUID_CONNECTOR,
+                'H', PartRole.FLUID_CONNECTOR,
                 'C', PartRole.CONTROLLER
         );
 
         Map<Character, Supplier<BlockState>> symbolMap = Map.of();
 
-        return MultiblockStructureHelper.createFromLayersWithRoles(
+        // Стороны портов в локальной сетке; порядок кортежа: north, south, west, east, up, down.
+        Map<Character, boolean[]> fluidSideMap = Map.of(
+                'F', new boolean[] { false, false, false, true, false, false },
+                'H', new boolean[] { false, false, true, false, false, false }
+        );
+
+        return MultiblockStructureHelper.createFromLayersWithRolesAndSides(
                 new String[][] { y0, y1, y2 },
                 symbolMap,
                 () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState(),
                 roleMap,
                 null,
-                null
+                null,
+                fluidSideMap
         );
     }
 
@@ -254,7 +270,7 @@ public class MachineStrandCasterBlock extends BaseEntityBlock implements IMultib
         if (state.getBlock() != newState.getBlock()) {
             BlockEntity be = level.getBlockEntity(pos);
             if (be instanceof MachineStrandCasterBlockEntity caster) {
-                caster.drops();
+                // Инвентарь дропается автоматически в BaseHbmBlockEntity#setRemoved.
                 // Порт breakBlock: расплав высыпается шлаком
                 if (!level.isClientSide() && caster.amount > 0 && caster.type != null) {
                     ItemStack scrap = CrucibleUtil.createScrap(new MaterialStack(caster.type, caster.amount));

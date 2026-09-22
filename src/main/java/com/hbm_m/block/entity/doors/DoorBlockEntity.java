@@ -22,6 +22,9 @@ import com.hbm_m.platform.PlatformHooks;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.world.phys.shapes.VoxelShape;
+
+import java.util.Map;
 import net.minecraft.core.RegistryAccess;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.protocol.Packet;
@@ -663,6 +666,100 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
     public DoorDecl getServerDoorDecl() {
         return DoorDeclRegistry.getById(this.doorDeclId);
     }
+
+    // ==================== Пошаговая коллизия (порт 1.7.10) ====================
+
+    /**
+     * Прогресс открытия для коллизии: {@code openTicks / openTime}. Тиковый (без
+     * partialTick — getCollisionShape не получает частичные тики), шаг = 1 тик,
+     * как в 1.7.10, где extras переставлялись раз в тик.
+     */
+    public float getCollisionProgress() {
+        int openTime = getServerOpenTime();
+        if (openTime <= 0) return state == 0 ? 0.0f : 1.0f;
+        return Math.max(0.0f, Math.min(1.0f, openTicks / (float) openTime));
+    }
+
+    /**
+     * Карта «локальная позиция схемы → коллизия клетки» на текущий тик.
+     * Кэш по тику: пересборка не чаще раза в тик на дверь.
+     *
+     * <p>ВАЖНО: ваниль опрашивает коллизию ПОКЛЕТОЧНО — форма, возвращённая
+     * контроллером, учитывается только если позиция контроллера попала в зону
+     * запроса. Поэтому коллизия раздаётся каждой клетке отдельно
+     * (DoorBlock — клетка ZERO, UniversalMachinePartBlock — своя), а не одним
+     * объединённым шейпом на контроллер.
+     *
+     * @return null ТОЛЬКО если у двери нет символьной схемы (легаси-фоллбэк).
+     *         Пустая карта = все клетки ретрактнулись (дверь полностью открыта) —
+     *         это НЕ повод уходить в легаси!
+     */
+    @Nullable
+    public Map<BlockPos, VoxelShape> getProgressCollisionShapes() {
+        // Ключ кэша: тик + состояние (фейсинг на карту не влияет — она в локальных координатах)
+        int key = openTicks | (state << 16);
+        if (cachedProgressShapesValid && key == cachedProgressShapesKey) {
+            return cachedProgressShapes;
+        }
+
+        DoorDecl decl = getDoorDecl();
+        Map<BlockPos, VoxelShape> shapes = decl != null && decl.getStructureDefinition() != null
+                ? decl.getCollisionShapesAt(getCollisionProgress())
+                : null;
+        cachedProgressShapesKey = key;
+        cachedProgressShapes = shapes;
+        cachedProgressShapesValid = true;
+        return shapes;
+    }
+
+    @Nullable
+    private Map<BlockPos, VoxelShape> cachedProgressShapes;
+    private int cachedProgressShapesKey = Integer.MIN_VALUE;
+    private boolean cachedProgressShapesValid = false;
+
+    /**
+     * ЕДИНАЯ рамка выделения двери в текущий момент: объединение форм всех частей
+     * по прогрессу, повёрнутое по FACING. Используется ТОЛЬКО для выделения
+     * (getShape) — коллизия раздаётся поклеточно (см. getProgressCollisionShapes).
+     *
+     * @return null, если у двери нет символьной схемы (fallback-структуры) —
+     *         вызывающий код откатывается на старый дискретный путь.
+     */
+    @Nullable
+    public VoxelShape getUnifiedSelectionShape() {
+        Direction facing = getFacing();
+        DoorDecl decl = getDoorDecl();
+        boolean staticSelection = decl != null && decl.hasStaticSelectionShape();
+        // Статичная рамка: ключ без тиков — считается один раз
+        int key = staticSelection ? 0 : (openTicks | (state << 16)) | (facing.get3DDataValue() << 20);
+        if (key == cachedUnifiedSelectionKey && cachedUnifiedSelection != null) {
+            return cachedUnifiedSelection;
+        }
+
+        if (decl == null || decl.getStructureDefinition() == null) {
+            return null;
+        }
+        Map<BlockPos, VoxelShape> localShapes = decl.getCollisionShapesAt(
+                staticSelection ? 0.0f : getCollisionProgress());
+        if (localShapes.isEmpty()) {
+            return null;
+        }
+
+        VoxelShape combined = net.minecraft.world.phys.shapes.Shapes.empty();
+        for (Map.Entry<BlockPos, VoxelShape> entry : localShapes.entrySet()) {
+            BlockPos rotatedPos = MultiblockStructureHelper.rotate(entry.getKey(), facing);
+            VoxelShape rotatedShape = MultiblockStructureHelper.rotateShape(entry.getValue(), facing);
+            combined = net.minecraft.world.phys.shapes.Shapes.or(combined,
+                    rotatedShape.move(rotatedPos.getX(), rotatedPos.getY(), rotatedPos.getZ()));
+        }
+        cachedUnifiedSelectionKey = key;
+        cachedUnifiedSelection = combined.optimize();
+        return cachedUnifiedSelection;
+    }
+
+    @Nullable
+    private VoxelShape cachedUnifiedSelection;
+    private int cachedUnifiedSelectionKey = Integer.MIN_VALUE;
 
     // private void updatePhantomBlocks(Level level, BlockPos controllerPos, int openTime) {
     //     Direction facing = getFacing();

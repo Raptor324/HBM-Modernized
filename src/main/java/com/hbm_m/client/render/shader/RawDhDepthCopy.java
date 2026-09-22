@@ -33,6 +33,7 @@ public final class RawDhDepthCopy {
     private static int uOutNear = -1;
     private static int uOutFar = -1;
     private static int uFadeMaskDist = -1;
+    private static int uReverseZ = -1;
     private static int uSampler = -1;
     private static int vao = -1;
     private static int vbo = -1;
@@ -57,13 +58,20 @@ public final class RawDhDepthCopy {
             uniform float uOutNear;
             uniform float uOutFar;
             uniform float uFadeMaskDist;
+            // Конвенция глубины DH: > 0.5 = REVERSE_Z (DH 3.3.1+ без пака,
+            // близко=1/небо=0), иначе FORWARD_Z. Детект в DhClientState.
+            uniform float uReverseZ;
             in vec2 uv;
             void main() {
                 float d = texture(uDepthTex, uv).r;
-                if (d >= 0.999999) { discard; }
+                bool reverseZ = uReverseZ > 0.5;
+                if (reverseZ ? (d <= 1.0e-6) : (d >= 0.999999)) { discard; }
                 float ndc = d * 2.0 - 1.0;
-                float denom = (uDhFar + uDhNear) - ndc * (uDhFar - uDhNear);
-                float dist = (2.0 * uDhFar * uDhNear) / max(denom, 1e-6);
+                // REVERSE_Z (DH 3.3.1+): реверс-матрица DH даёт
+                // ndc = (n/(f-n))*(f/dist - 1)  =>  dist = fn/(ndc*(f-n) + n).
+                float dist = reverseZ
+                    ? (uDhFar * uDhNear) / max(uDhNear + ndc * (uDhFar - uDhNear), 1e-6)
+                    : (2.0 * uDhFar * uDhNear) / max((uDhFar + uDhNear) - ndc * (uDhFar - uDhNear), 1e-6);
                 // Зона dither-fade DH («Fade Nearby DH LODs»): DEPTH32F там — шум.
                 if (dist < uFadeMaskDist) { discard; }
                 // Точное окно нашей проекции: window = 1 - fnEff/dist,
@@ -107,6 +115,8 @@ public final class RawDhDepthCopy {
         GL20.glUniform1f(uOutNear, com.hbm_m.client.compat.dh.DhClientCompat.extendedNear());
         GL20.glUniform1f(uOutFar, com.hbm_m.client.compat.dh.DhClientCompat.extendedFar());
         GL20.glUniform1f(uFadeMaskDist, com.hbm_m.client.compat.dh.DhOcclusionGpu.ditherFadeMaskDistance());
+        GL20.glUniform1f(uReverseZ,
+                com.hbm_m.client.compat.dh.DhClientState.dhReverseZ() ? 1.0F : 0.0F);
         GlStateManager._activeTexture(GL13.GL_TEXTURE0);
         GlStateManager._bindTexture(depthTextureId);
         GL20.glUniform1i(uSampler, 0);
@@ -154,6 +164,7 @@ public final class RawDhDepthCopy {
             uOutNear = GL20.glGetUniformLocation(program, "uOutNear");
             uOutFar = GL20.glGetUniformLocation(program, "uOutFar");
             uFadeMaskDist = GL20.glGetUniformLocation(program, "uFadeMaskDist");
+            uReverseZ = GL20.glGetUniformLocation(program, "uReverseZ");
             uSampler = GL20.glGetUniformLocation(program, "uDepthTex");
             return true;
         } catch (Throwable t) {

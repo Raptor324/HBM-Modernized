@@ -180,20 +180,21 @@ public class EngineHandler {
                 //    FB пайплайна) и копируем DH-глубину туда СЫРОЙ GL-программой
                 //    (RawDhDepthCopy) — маскирование на неё не действует.
                 boolean irisActive = com.hbm_m.client.render.shader.ShaderCompatibilityDetector.isExternalShaderActive();
-                // ГЕЙТ КОПИИ ГЛУБИНЫ (перф, семантика не меняется):
-                //  - без Iris копия нужна ТОЛЬКО дальним мешам ракет — nuke_cloud
-                //    окклюдится в шейдере сэмплированием DH DEPTH32F (Sampler1),
-                //    фуллскрин-проход с gl_FragDepth им не требуется;
-                //  - под Iris setDhShaderFarMode не выставляется: окклюзия ВСЕГО
-                //    дальнего контента — нативным depth-тестом против скопированной
-                //    глубины, поэтому копия нужна при любом дальнем контенте.
-                // hasTrackInBucket даёт только ложноположительные ответы, так что
-                // гейт консервативен: копия никогда не пропускается, когда нужна.
+                // ГЕЙТ КОПИИ ГЛУБИНЫ: копия нужна при ЛЮБОМ дальнем контенте
+                // (частицы ИЛИ меши), в обеих ветках. Историческая разветвление
+                // было рассчитано на окклюзию nuke_cloud сэмплированием DH
+                // DEPTH32F прямо в шейдере (Sampler1) — но тот путь давно
+                // вырезан: shader-side discard «vDhWinZ > lodDepth» убрали
+                // (сравнение window-Z разных конвенций резало гриб по невидимым
+                // источникам глубины), и теперь ВСЁ дальнее окклюдится ТОЛЬКО
+                // нативным depth-тестом против скопированной глубины. Без Iris
+                // гейт оставался farMeshes — и гриб без дальних ракет вообще
+                // не получал копии глубины (DH 3.3.1: «гриб сквозь блоки»
+                // без шейдеров; под шейдерами гейт (hasParticles||farMeshes)
+                // и потому «работало»).
                 boolean farMeshes = com.hbm_m.client.missile.track.MissileTrackWorldRender
                         .hasTrackInBucket(partialTick, splitSq, true);
-                boolean needDepthCopy = irisActive
-                        ? (hasParticles || farMeshes)
-                        : farMeshes;
+                boolean needDepthCopy = hasParticles || farMeshes;
                 if (needDepthCopy) {
                     if (irisActive) {
                         try {
@@ -359,7 +360,7 @@ public class EngineHandler {
      *    отмотал таймлайн) — движок вычисляет границу отката и удаляет только
      *    частицы «из будущего» (шлейф ракеты после точки перемотки), история
      *    до точки остаётся. См. ParticleEngineNT.onWorldGameTime.
-     * 2) worldRunsNormally=false (1.21.1 /tick freeze — см. ветку neoforge):
+     * 2) worldRunsNormally=false (1.21.1 /tick freeze — гейт в ClientWorldFreeze):
      *    частицы замораживаются вместе с миром, как ванильные.
      */
     private static void doParticleTick(boolean worldRunsNormally) {
@@ -381,18 +382,18 @@ public class EngineHandler {
     //? if forge {
     @SubscribeEvent
     public static void onClientTick(TickEvent.ClientTickEvent event) {
-        if (event.phase == TickEvent.Phase.START && !Minecraft.getInstance().isPaused()) {
-            // 1.20.1: /tick freeze нет — мир всегда «тикает» на клиенте.
+        // 1.20.1: /tick freeze нет — мир всегда «тикает» на клиенте.
+        // Гейт паузы — общий с треками ракет (ClientWorldFreeze).
+        if (event.phase == TickEvent.Phase.START && com.hbm_m.client.ClientWorldFreeze.worldRunsNormally()) {
             doParticleTick(true);
         }
     }
     //?} elif neoforge {
     /*@SubscribeEvent
     public static void onClientTick(ClientTickEvent.Pre event) {
-        if (!Minecraft.getInstance().isPaused()) {
-            ClientLevel lvl = Minecraft.getInstance().level;
-            boolean runs = lvl == null || lvl.tickRateManager().runsNormally();
-            doParticleTick(runs);
+        // Гейт паузы + /tick freeze — общий с треками ракет (ClientWorldFreeze).
+        if (com.hbm_m.client.ClientWorldFreeze.worldRunsNormally()) {
+            doParticleTick(true);
         }
     }
     *///?}

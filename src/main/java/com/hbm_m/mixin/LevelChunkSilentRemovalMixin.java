@@ -1,6 +1,5 @@
 package com.hbm_m.mixin;
 
-//? if forge || neoforge {
 import com.hbm_m.interfaces.IMultiblockController;
 import com.hbm_m.interfaces.IMultiblockPart;
 import com.hbm_m.multiblock.ContraptionAssemblyGuard;
@@ -73,4 +72,3 @@ public abstract class LevelChunkSilentRemovalMixin {
         receiver.onRemove(level, pos, otherState, isMoving);
     }
 }
-//?}

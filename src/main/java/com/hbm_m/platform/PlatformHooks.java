@@ -35,6 +35,30 @@ public final class PlatformHooks {
     }
 
     /**
+     * Custom-NBT предмета ДЛЯ ЧТЕНИЯ — без глубокого копирования.
+     *
+     * <p>Все read-геттеры ({@link #getInt}, {@link #getBoolean}, ...) идут через этот
+     * метод. На 1.21.1 использует {@code CustomData.getUnsafe()} — внутренний тег
+     * БЕЗ копирования ({@code getItemTag} делал бы {@code copyTag()} на каждый вызов,
+     * что в горячих путях (радиация, пересчёт брони) мусорит хип целыми деревьями NBT).
+     *
+     * <p><b>ЗАПРЕЩЕНО мутировать</b> возвращённый тег и хранить ссылку дольше текущего
+     * вызова: на 1.21.1 он живёт внутри иммутабельного {@code CustomData} компонента.
+     * Для мутаций — {@link #editItemTag} / {@link #setItemTag}; если нужна владеемая
+     * копия — {@link #getItemTag}.
+     *
+     * @return тег или {@code null}, если у предмета нет custom-NBT
+     */
+    public static CompoundTag getReadOnlyItemTag(ItemStack stack) {
+        //? if < 1.21.1 {
+        return stack.getTag();
+        //?} else {
+        /*net.minecraft.world.item.component.CustomData data = stack.get(net.minecraft.core.component.DataComponents.CUSTOM_DATA);
+        return data == null ? null : data.getUnsafe();
+        *///?}
+    }
+
+    /**
      * Тег из {@link ClientboundBlockEntityDataPacket} (только для чтения).
      *
      * <p><b>Версионная инвариантность:</b> {@code pkt.getTag()} существует и работает
@@ -215,7 +239,14 @@ public final class PlatformHooks {
         //? if < 1.21.1 {
         return stack.save(tag);
         //?} else {
-        /*return (CompoundTag) stack.save(provider, tag);
+        
+        /*// ВАЖНО: stack.save(provider, tag) = codec.encode(item, nbtOps, tag) — возвращает НОВЫЙ
+        // слитый тег {Slot,id,count,...} и НЕ заполняет переданный tag. Доливаем результат обратно,
+        // иначе call-site'ы, игнорирующие return, пишут в NBT только собственные ключи (Slot) —
+        // предметы молча терялись при перезагрузке чанка (NukeBaseBlockEntity и др.).
+        CompoundTag saved = (CompoundTag) stack.save(provider, tag);
+        tag.merge(saved);
+        return tag;
         *///?}
     }
 
@@ -274,31 +305,31 @@ public final class PlatformHooks {
 
     /** {@code stack.getTag().getInt(key)} с защитой от null (0 если тега/ключа нет). */
     public static int getInt(ItemStack stack, String key) {
-        CompoundTag t = getItemTag(stack);
+        CompoundTag t = getReadOnlyItemTag(stack);
         return t == null ? 0 : t.getInt(key);
     }
 
     /** {@code stack.getTag().getLong(key)} с защитой от null. */
     public static long getLong(ItemStack stack, String key) {
-        CompoundTag t = getItemTag(stack);
+        CompoundTag t = getReadOnlyItemTag(stack);
         return t == null ? 0L : t.getLong(key);
     }
 
     /** {@code stack.getTag().getBoolean(key)} с защитой от null. */
     public static boolean getBoolean(ItemStack stack, String key) {
-        CompoundTag t = getItemTag(stack);
+        CompoundTag t = getReadOnlyItemTag(stack);
         return t != null && t.getBoolean(key);
     }
 
     /** {@code stack.getTag().getString(key)} с защитой от null. */
     public static String getString(ItemStack stack, String key) {
-        CompoundTag t = getItemTag(stack);
+        CompoundTag t = getReadOnlyItemTag(stack);
         return t == null ? "" : t.getString(key);
     }
 
     /** {@code stack.getTag().getCompound(key)} с защитой от null. */
     public static CompoundTag getCompound(ItemStack stack, String key) {
-        CompoundTag t = getItemTag(stack);
+        CompoundTag t = getReadOnlyItemTag(stack);
         return t == null ? new CompoundTag() : t.getCompound(key);
     }
 
@@ -319,7 +350,7 @@ public final class PlatformHooks {
 
     /** {@code stack.hasTag() && stack.getTag().contains(key)}. */
     public static boolean contains(ItemStack stack, String key) {
-        CompoundTag t = getItemTag(stack);
+        CompoundTag t = getReadOnlyItemTag(stack);
         return t != null && t.contains(key);
     }
 
@@ -937,6 +968,11 @@ public final class PlatformHooks {
         }
         if (level instanceof net.minecraft.server.level.ServerLevel serverLevel) {
             net.minecraft.world.level.ChunkPos chunkPos = new net.minecraft.world.level.ChunkPos(pos);
+            // Быстрый путь: чанк уже тикает вместе с сущностями — тикет не нужен
+            // (каждый addRegionTicket провоцирует пересчёт графа загрузки чанков).
+            if (serverLevel.isPositionEntityTicking(pos)) {
+                return true;
+            }
             serverLevel.getChunkSource().addRegionTicket(TEMPORARY_CHUNK_TICKET, chunkPos, 2, pos.immutable());
             return serverLevel.getChunk(chunkPos.x, chunkPos.z) != null;
         }

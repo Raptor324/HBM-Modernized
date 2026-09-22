@@ -1,5 +1,6 @@
 {
   "parent": "minecraft:block/block",
+  "render_type": "minecraft:cutout",
   "textures": {
     "top": "hbm_m:block/crucible/foundry_outlet_top",
     "side": "hbm_m:block/crucible/foundry_outlet_side",
@@ -41,30 +42,27 @@
       }
     },
     {
-      "name": "end_south",
-      "from": [5, 2, 15],
-      "to": [11, 8, 16],
-      "faces": {
-        "south": { "uv": [5, 8, 11, 14], "texture": "#front" },
-        "north": { "uv": [5, 8, 11, 14], "texture": "#front" }
-      }
-    },
-    {
-      "name": "end_north",
+      "name": "end_lip",
       "from": [5, 2, 10],
       "to": [11, 8, 11],
       "faces": {
-        "south": { "uv": [5, 8, 11, 14], "texture": "#front" },
         "north": { "uv": [5, 8, 11, 14], "texture": "#front" }
       }
     },
     {
-      "name": "top_frame",
+      "name": "end_back",
+      "from": [5, 2, 15],
+      "to": [11, 8, 16],
+      "faces": {
+        "south": { "uv": [5, 8, 11, 14], "texture": "#front" }
+      }
+    },
+    {
+      "name": "top_rim",
       "from": [5, 7, 10],
       "to": [11, 8, 16],
       "faces": {
-        "up":    { "uv": [5, 10, 11, 16], "texture": "#top" },
-        "down":  { "uv": [5, 10, 11, 16], "texture": "#inner" }
+        "up": { "uv": [5, 10, 11, 16], "texture": "#top" }
       }
     }
   ]

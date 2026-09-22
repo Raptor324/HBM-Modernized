@@ -51,13 +51,15 @@ public final class CrucibleSmeltingRecipeGenerator {
         ingot(writer, "zirconium",   MaterialType.ZIRCONIUM);
         ingot(writer, "osmiridium",  MaterialType.OSMIRIDIUM);
         ingot(writer, "steel",       MaterialType.STEEL);
-        ingot(writer, "alloy",       MaterialType.ALLOY);
+        // Теги обязаны совпадать с генерируемыми ModItemTagProvider по ModMaterials.getId():
+        // advanced_alloy (не alloy), starmetal (не star_metal), combine_steel (не cmb).
+        ingot(writer, "advanced_alloy", MaterialType.ALLOY);
         ingot(writer, "dura_steel",  MaterialType.DURA_STEEL);
         ingot(writer, "desh",        MaterialType.DESH);
-        ingot(writer, "star_metal",  MaterialType.STAR_METAL);
+        ingot(writer, "starmetal",   MaterialType.STAR_METAL);
         ingot(writer, "tcalloy",     MaterialType.TCALLOY);
         ingot(writer, "cdalloy",     MaterialType.CDALLOY);
-        ingot(writer, "cmb",         MaterialType.CMB);
+        ingot(writer, "combine_steel", MaterialType.CMB);
         ingot(writer, "schrabidium", MaterialType.SCHRABIDIUM);
         ingot(writer, "bbronze",     MaterialType.BBRONZE);
         ingot(writer, "abronze",     MaterialType.ABRONZE);
@@ -68,6 +70,8 @@ public final class CrucibleSmeltingRecipeGenerator {
         ingot(writer, "cobalt",      MaterialType.COBALT);
         ingot(writer, "nickel",      MaterialType.NICKEL);
         ingot(writer, "u238",        MaterialType.URANIUM238);
+        // Ориг. MAT_URANIUM: слиток урана плавится, как и в 1.7.10.
+        ingot(writer, "uranium",     MaterialType.URANIUM);
         ingot(writer, "strontium",   MaterialType.STRONTIUM);
         ingot(writer, "calcium",     MaterialType.CALCIUM);
         ingot(writer, "mud",         MaterialType.MUD);
@@ -75,8 +79,7 @@ public final class CrucibleSmeltingRecipeGenerator {
         // ═══════════════════════════════════════════════════════════════════
         // РУДЫ (forge:ores/<material>) — порт MatDistribution.registerOre:
         // 2 слитка основного + побочные (титан/свинец/золото/натрий) + камень
-        // (QUART.q(1) = 162 кванта = 2250 mB). Урановая руда пропущена: уран
-        // идёт через химцепочку (решение 2026-09, сохранено).
+        // (QUART.q(1) = 162 кванта = 2250 mB). Урановая руда — отдельным блоком ниже.
         // ═══════════════════════════════════════════════════════════════════
         oreTagMulti(writer, "byproduct_vanilla_ore_iron",     "forge:ores/iron",      new MaterialStack(MaterialType.IRON,      MaterialStack.MB_PER_INGOT * 2),
                                                               new MaterialStack(MaterialType.TITANIUM,  MaterialStack.MB_PER_NUGGET * 3),
@@ -228,8 +231,7 @@ public final class CrucibleSmeltingRecipeGenerator {
         // ═══════════════════════════════════════════════════════════════════
         // Руды с побочными продуктами (порт MatDistribution.registerOre).
         // Каменная и содовая (натриевая) побочки не портированы — материалов нет в реестре.
-        // Урановая руда пропущена: MAT_URANIUM отсутствует в MaterialType (уран идёт
-        // через химцепочку, не через тигель).
+        // Урановая руда перенесена отдельным блоком ниже (MaterialType.URANIUM).
         // ═══════════════════════════════════════════════════════════════════
         oreByproducts(writer, "byproduct_ore_gneiss_iron", "ore_gneiss_iron", new MaterialStack(MaterialType.IRON,     MaterialStack.MB_PER_INGOT * 2),
                                                     new MaterialStack(MaterialType.TITANIUM, MaterialStack.MB_PER_NUGGET * 3));
@@ -241,19 +243,49 @@ public final class CrucibleSmeltingRecipeGenerator {
         oreByproducts(writer, "byproduct_ore_gneiss_copper", "ore_gneiss_copper",  new MaterialStack(MaterialType.COPPER, MaterialStack.MB_PER_INGOT * 2));
         oreByproducts(writer, "byproduct_ore_nether_cobalt", "ore_nether_cobalt",  new MaterialStack(MaterialType.COBALT, MaterialStack.MB_PER_INGOT));
         oreByproducts(writer, "byproduct_ore_nether_coal", "ore_nether_coal",    new MaterialStack(MaterialType.CARBON, MaterialStack.MB_PER_INGOT * 3));
-    }
 
-    /** Соответствие MaterialType ↔ ModMaterials для авто-генерации по формам. */
-    @Nullable
-    private static com.hbm_m.item.material.ModMaterials modMaterialsOf(MaterialType type) {
-        com.hbm_m.item.material.ModMaterials byId = com.hbm_m.item.material.ModMaterials.byId(type.name);
-        if (byId != null) return byId;
-        return switch (type) {
-            case FERRO    -> com.hbm_m.item.material.ModMaterials.FERROURANIUM;
-            case MAGTUNG  -> com.hbm_m.item.material.ModMaterials.MAGNETIZED_TUNGSTEN;
-            case MINGRADE -> com.hbm_m.item.material.ModMaterials.RED_COPPER;
-            default       -> null;
-        };
+        // ═══════════════════════════════════════════════════════════════════
+        // УРАНОВАЯ РУДА (порт MatDistribution:77 registerOre(U.ore(), ...)):
+        // MAT_URANIUM INGOT.q(2) = 2000 mB + MAT_LEAD NUGGET.q(3) = 333 mB
+        // + MAT_STONE QUART.q(1) = 2250 mB. Все варианты руды (штраф от пропуска
+        // урана исправлен 2026-09-20 — возвращён из 1.7.10).
+        // ═══════════════════════════════════════════════════════════════════
+        oreTagMulti(writer, "byproduct_ore_uranium", "forge:ores/uranium",
+                new MaterialStack(MaterialType.URANIUM, MaterialStack.MB_PER_INGOT * 2),
+                new MaterialStack(MaterialType.LEAD,    MaterialStack.MB_PER_NUGGET * 3),
+                new MaterialStack(MaterialType.STONE,   MB_PER_QUART));
+        oreByproducts(writer, "byproduct_ore_uranium_deepslate", "uranium_ore_deepslate",
+                new MaterialStack(MaterialType.URANIUM, MaterialStack.MB_PER_INGOT * 2),
+                new MaterialStack(MaterialType.LEAD,    MaterialStack.MB_PER_NUGGET * 3),
+                new MaterialStack(MaterialType.STONE,   MB_PER_QUART));
+        oreByproducts(writer, "byproduct_ore_uranium_nether", "nether_uranium_ore",
+                new MaterialStack(MaterialType.URANIUM, MaterialStack.MB_PER_INGOT * 2),
+                new MaterialStack(MaterialType.LEAD,    MaterialStack.MB_PER_NUGGET * 3),
+                new MaterialStack(MaterialType.STONE,   MB_PER_QUART));
+        oreByproducts(writer, "byproduct_ore_uranium_gneiss", "gneiss_uranium_ore",
+                new MaterialStack(MaterialType.URANIUM, MaterialStack.MB_PER_INGOT * 2),
+                new MaterialStack(MaterialType.LEAD,    MaterialStack.MB_PER_NUGGET * 3),
+                new MaterialStack(MaterialType.STONE,   MB_PER_QUART));
+        oreByproducts(writer, "byproduct_ore_uranium_gneiss2", "ore_gneiss_uranium",
+                new MaterialStack(MaterialType.URANIUM, MaterialStack.MB_PER_INGOT * 2),
+                new MaterialStack(MaterialType.LEAD,    MaterialStack.MB_PER_NUGGET * 3),
+                new MaterialStack(MaterialType.STONE,   MB_PER_QUART));
+        oreByproducts(writer, "byproduct_ore_uranium_gneiss_scorched", "ore_gneiss_uranium_scorched",
+                new MaterialStack(MaterialType.URANIUM, MaterialStack.MB_PER_INGOT * 2),
+                new MaterialStack(MaterialType.LEAD,    MaterialStack.MB_PER_NUGGET * 3),
+                new MaterialStack(MaterialType.STONE,   MB_PER_QUART));
+        oreByproducts(writer, "byproduct_ore_uranium_nether2", "ore_nether_uranium",
+                new MaterialStack(MaterialType.URANIUM, MaterialStack.MB_PER_INGOT * 2),
+                new MaterialStack(MaterialType.LEAD,    MaterialStack.MB_PER_NUGGET * 3),
+                new MaterialStack(MaterialType.STONE,   MB_PER_QUART));
+        oreByproducts(writer, "byproduct_ore_uranium_nether2_scorched", "ore_nether_uranium_scorched",
+                new MaterialStack(MaterialType.URANIUM, MaterialStack.MB_PER_INGOT * 2),
+                new MaterialStack(MaterialType.LEAD,    MaterialStack.MB_PER_NUGGET * 3),
+                new MaterialStack(MaterialType.STONE,   MB_PER_QUART));
+        oreByproducts(writer, "byproduct_ore_uranium_scorched", "ore_uranium_scorched",
+                new MaterialStack(MaterialType.URANIUM, MaterialStack.MB_PER_INGOT * 2),
+                new MaterialStack(MaterialType.LEAD,    MaterialStack.MB_PER_NUGGET * 3),
+                new MaterialStack(MaterialType.STONE,   MB_PER_QUART));
     }
 
     /** mB на форму (порт оригинальных квантов MaterialShapes; 1 квант = 1000/72 ≈ 13.89 mB). */
@@ -278,20 +310,24 @@ public final class CrucibleSmeltingRecipeGenerator {
     /** Порт авто-генерации: материал × форма (все объявленные формы предмета). */
     private static void shapeAutogen(Consumer<FinishedRecipe> writer) {
         for (com.hbm_m.item.material.ModMaterials mat : com.hbm_m.item.material.ModMaterials.values()) {
-            // Обратная разрешалка несовпадающих имён (ferrouranium→FERRO и т.п.)
-            MaterialType mt = switch (mat) {
-                case FERROURANIUM        -> MaterialType.FERRO;
-                case MAGNETIZED_TUNGSTEN -> MaterialType.MAGTUNG;
-                case RED_COPPER          -> MaterialType.MINGRADE;
-                default                  -> MaterialType.byName(mat.getId());
-            };
+            // Общий маппер несоответствий имён (ferrouranium→FERRO, combine_steel→CMB и т.д.)
+            MaterialType mt = MaterialType.of(mat);
             if (mt == null || mt.smeltable != MaterialType.SmeltingBehavior.SMELTABLE) continue;
 
             for (com.hbm_m.item.material.MaterialShape shape : mat.getShapes()) {
                 int mb = shapeMb(shape);
                 if (mb <= 0) continue;
-                Item item = com.hbm_m.item.material.ModMaterialItems.item(mat, shape);
-                if (item == null) continue;
+                // Блоки хранения не имеют Item-регистрации в ModMaterialItems (их
+                // регистрирует ModBlocks как BlockHazard) — ищем block_<id> в реестре.
+                Item item;
+                if (shape == com.hbm_m.item.material.MaterialShape.BLOCK) {
+                    ResourceLocation blockId = ResourceLocation.fromNamespaceAndPath("hbm_m", shape.itemId(mat));
+                    if (!BuiltInRegistries.ITEM.containsKey(blockId)) continue;
+                    item = BuiltInRegistries.ITEM.get(blockId);
+                } else {
+                    item = com.hbm_m.item.material.ModMaterialItems.item(mat, shape);
+                    if (item == null) continue;
+                }
                 nuggetItem(writer, "shape_" + mt.name + "_" + shape.name().toLowerCase(java.util.Locale.ROOT), item, mt, mb);
             }
         }

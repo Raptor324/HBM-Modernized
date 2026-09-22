@@ -841,7 +841,12 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
             //? if < 1.21.1 {
             tmpInvViewRot.identity().set(RenderSystem.getInverseViewRotationMatrix());
             //?} else {
-            /*tmpInvViewRot.identity().rotation(Minecraft.getInstance().gameRenderer.getMainCamera().rotation()).invert();
+            /*// rotation(camera.rotation()) = R_cam⁻¹ (frustumMatrix ванилы =
+            // rotation(rotation().conjugate()) = R_cam, quaternion уже несёт
+            // ОБРАТНУЮ view-ротацию — как в FrameViewState.capture; ранний
+            // лишний .invert() поворачивал сэмпл-точки света на R_cam² и
+            // свет «бегал» по машине при повороте камеры.
+            tmpInvViewRot.identity().rotation(Minecraft.getInstance().gameRenderer.getMainCamera().rotation());
             *///?}
             tmpLocalPose.set(tmpInvViewRot).mul(worldPose);
             tmpLocalPose.m30(tmpLocalPose.m30() - (float) (blockPos.getX() - cam.x));

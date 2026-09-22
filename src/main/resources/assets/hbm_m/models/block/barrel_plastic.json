@@ -1,53 +1,126 @@
 {
-  "loader": "forge:composite",
+  "loader": "hbm_m:machine_parts_loader",
+  "model": "hbm_m:models/block/barrel.obj",
+  "flip_v": true,
   "textures": {
-    "particle": "hbm_m:block/barrel_plastic"
-  },
-  "children": {
-    "barrel_plastic_model": {
-      "loader": "forge:obj",
-      "model": "hbm_m:models/block/barrel.obj",
-      "flip-v": true,
-      "textures": {
-        "default": "hbm_m:block/barrel_plastic"
-      }
-    }
+    "particle": "hbm_m:block/barrel_plastic",
+    "default": "hbm_m:block/barrel_plastic"
   },
   "transform": {
-    "translation": [0.50, 0.0, 0.5],
-    "rotation": [0, 0, 0],
+    "translation": [
+      0.5,
+      0.0,
+      0.5
+    ],
+    "rotation": [
+      0,
+      0,
+      0
+    ],
     "scale": 1.0
   },
   "display": {
     "gui": {
-      "rotation": [ 30, 45, 0 ],
-      "translation": [ 0, 0, 0.5 ],
-      "scale": [ 0.65, 0.65, 0.65 ]
+      "rotation": [
+        30,
+        45,
+        0
+      ],
+      "translation": [
+        0,
+        0,
+        0.5
+      ],
+      "scale": [
+        0.65,
+        0.65,
+        0.65
+      ]
     },
     "ground": {
-      "rotation": [ 0, 0, 0 ],
-      "translation": [ 0, 3, 0 ],
-      "scale": [ 0.25, 0.25, 0.25 ]
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "translation": [
+        0,
+        3,
+        0
+      ],
+      "scale": [
+        0.25,
+        0.25,
+        0.25
+      ]
     },
     "fixed": {
-      "rotation": [ 0, 0, 0 ],
-      "translation": [ 0, 0, 0 ],
-      "scale": [ 0.5, 0.5, 0.5 ]
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.5,
+        0.5,
+        0.5
+      ]
     },
     "thirdperson_righthand": {
-      "rotation": [ 75, 180, 0 ],
-      "translation": [ 0, 2.5, 0 ],
-      "scale": [ 0.375, 0.375, 0.375 ]
+      "rotation": [
+        75,
+        180,
+        0
+      ],
+      "translation": [
+        0,
+        2.5,
+        0
+      ],
+      "scale": [
+        0.375,
+        0.375,
+        0.375
+      ]
     },
     "firstperson_righthand": {
-      "rotation": [ 0, 180, 0 ],
-      "translation": [ 2, -1, 0 ],
-      "scale": [ 0.4, 0.4, 0.4 ]
+      "rotation": [
+        0,
+        180,
+        0
+      ],
+      "translation": [
+        2,
+        -1,
+        0
+      ],
+      "scale": [
+        0.4,
+        0.4,
+        0.4
+      ]
     },
     "head": {
-      "rotation": [ 0, 180, 0 ],
-      "translation": [ 0, 13, 7 ],
-      "scale": [ 1, 1, 1 ]
+      "rotation": [
+        0,
+        180,
+        0
+      ],
+      "translation": [
+        0,
+        13,
+        7
+      ],
+      "scale": [
+        1,
+        1,
+        1
+      ]
     }
   }
 }

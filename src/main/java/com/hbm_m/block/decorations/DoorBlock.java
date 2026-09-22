@@ -239,12 +239,21 @@ public class DoorBlock extends BaseEntityBlock implements IMultiblockController 
         }
         
         BlockEntity be = level.getBlockEntity(pos);
-        boolean isOpen;
+        // Пошаговая коллизия (порт 1.7.10): контроллер отдаёт СВОЮ клетку на текущий
+        // тик (фантомы — свои, см. UniversalMachinePartBlock). Ваниль опрашивает
+        // коллизию поклеточно, поэтому раздавать её обязан каждый блок структуры.
         if (be instanceof DoorBlockEntity doorBE) {
-            isOpen = doorBE.getState() != 0; 
-        } else {
-            isOpen = state.getValue(OPEN);
+            Map<BlockPos, VoxelShape> shapes = doorBE.getProgressCollisionShapes();
+            if (shapes != null) {
+                // null/empty клетка = ретрактнулась (нет в карте) → проходима.
+                // shapes == null (нет символьной схемы) — единственный легаси-путь ниже.
+                VoxelShape cell = shapes.get(BlockPos.ZERO);
+                return cell == null || cell.isEmpty() ? Shapes.empty()
+                        : MultiblockStructureHelper.rotateShape(cell, state.getValue(FACING));
+            }
         }
+
+        boolean isOpen = state.getValue(OPEN);
 
         if (isOpen) {
             DoorDecl decl = DoorDeclRegistry.getById(doorDeclId);
@@ -268,35 +277,41 @@ public class DoorBlock extends BaseEntityBlock implements IMultiblockController 
         }
         
         DoorDecl decl = DoorDeclRegistry.getById(doorDeclId);
-        
+
+        // Рамка выделения = единая рамка всей двери в момент t (перестраивается по
+        // тикам) — для всех дверей с BE. Фантомы возвращают ту же рамку (см.
+        // UniversalMachinePartBlock.getShape), поэтому у двери ОДИН общий контур.
+        BlockEntity be = level.getBlockEntity(pos);
+        if (be instanceof DoorBlockEntity doorBE) {
+            VoxelShape unified = doorBE.getUnifiedSelectionShape();
+            if (unified != null) return unified;
+        }
+
         if (decl != null && decl.isDynamicShape()) {
-            BlockEntity be = level.getBlockEntity(pos);
-            if (be instanceof DoorBlockEntity doorBE) {
-                return generateDynamicFullShape(state, level, pos, doorBE);
-            }
+            return generateDynamicFullShape(state, level, pos);
         }
 
         return this.shapeCache.computeIfAbsent(state.getValue(FACING),
                 facing -> getStructureHelper().generateShapeFromParts(facing));
     }
 
-    private VoxelShape generateDynamicFullShape(BlockState state, BlockGetter level, BlockPos pos, DoorBlockEntity doorBE) {
+    /** Статичный fallback (нет BE — например, item-форма): полная закрытая структура. */
+    private VoxelShape generateDynamicFullShape(BlockState state, BlockGetter level, BlockPos pos) {
         Direction facing = state.getValue(FACING);
-        DoorDecl decl = doorBE.getDoorDecl();
+        DoorDecl decl = DoorDeclRegistry.getById(doorDeclId);
         if (decl == null || decl.getStructureDefinition() == null) return Shapes.empty();
-    
+
         VoxelShape combined = Shapes.empty();
-        boolean isOpen = doorBE.getState() != 0;
-        Map<BlockPos, VoxelShape> currentMap = isOpen ? decl.getStructureDefinition().getOpenShapes() : decl.getStructureDefinition().getClosedShapes();
-    
+        Map<BlockPos, VoxelShape> currentMap = decl.getStructureDefinition().getClosedShapes();
+
         for (Map.Entry<BlockPos, VoxelShape> entry : currentMap.entrySet()) {
             VoxelShape partShape = entry.getValue();
             if (partShape.isEmpty()) continue;
-    
+
             BlockPos relativePos = entry.getKey();
             BlockPos rotatedPos = MultiblockStructureHelper.rotate(relativePos, facing);
             VoxelShape rotatedShape = MultiblockStructureHelper.rotateShape(partShape, facing);
-            
+
             combined = Shapes.or(combined, rotatedShape.move(rotatedPos.getX(), rotatedPos.getY(), rotatedPos.getZ()));
         }
         return combined.optimize();

@@ -543,14 +543,11 @@ public class ModBlocks {
             () -> new MachineSteamCondenserBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(3.0f, 4.0f).sound(SoundType.METAL)));
 
     public static final RegistrySupplier<Block> UNIVERSAL_MACHINE_PART = registerBlockWithoutItem("universal_machine_part",
-            //? if < 1.21.1 {
             // dynamicShape() обязателен: без него ваниль кэширует collision shape при регистрации
             // (EmptyBlockGetter, без BE) и MTS/др. моды, зовущие 2-арг getCollisionShape,
             // всегда получают полную коллизию вместо формы из BE контроллера
-            () -> new UniversalMachinePartBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0f).noOcclusion().isSuffocating((state, world, pos) -> false).dynamicShape().noParticlesOnBreak()));
-            //?} else {
-            /*() -> new UniversalMachinePartBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0f).noOcclusion().isSuffocating((state, world, pos) -> false).dynamicShape()));
-            *///?}
+            () -> new UniversalMachinePartBlock(BlockProps.noParticlesOnBreak(
+                    BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0f).noOcclusion().isSuffocating((state, world, pos) -> false).dynamicShape())));
 
 	public static final RegistrySupplier<Block> FLUID_TANK = registerBlockWithoutItem("fluid_tank",
             () -> new MachineFluidTankBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(4.0f).requiresCorrectToolForDrops().noOcclusion().isSuffocating((state, world, pos) -> false)));
@@ -1227,14 +1224,17 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> BARREL_CORRODED = registerBlock("barrel_corroded",
             () -> new com.hbm_m.block.machines.BarrelTankBlock(BlockProps.copy(Blocks.STONE).strength(2.0F, 6.0F).noOcclusion(),
                     com.hbm_m.blockentity.machines.BarrelCorrodedBlockEntity::new,
-                    () -> com.hbm_m.blockentity.ModBlockEntities.BARREL_CORRODED_BE.get()));
+                    () -> com.hbm_m.blockentity.ModBlockEntities.BARREL_CORRODED_BE.get(),
+                    new com.hbm_m.block.machines.BarrelTankBlock.TooltipInfo(
+                            com.hbm_m.blockentity.machines.BarrelCorrodedBlockEntity.CAPACITY,
+                            true, true, true, false, true)));
     public static final RegistrySupplier<Block> BARREL_IRON = registerBlock("barrel_iron",
             () -> new com.hbm_m.block.machines.BarrelTankBlock(BlockProps.copy(Blocks.STONE).strength(2.0F, 6.0F).noOcclusion(),
                     com.hbm_m.blockentity.machines.BarrelIronBlockEntity::new,
                     () -> com.hbm_m.blockentity.ModBlockEntities.BARREL_IRON_BE.get(),
                     new com.hbm_m.block.machines.BarrelTankBlock.TooltipInfo(
                             com.hbm_m.blockentity.machines.BarrelIronBlockEntity.CAPACITY,
-                            false, false, false, false)));
+                            false, false, false, false, false)));
     public static final RegistrySupplier<Block> BARREL_PINK = registerBlock("barrel_pink",
             () -> new CrtBlock(BlockProps.copy(Blocks.STONE).strength(2.0F, 6.0F).noOcclusion()));
     public static final RegistrySupplier<Block> BARREL_PLASTIC = registerBlock("barrel_plastic",
@@ -1243,7 +1243,7 @@ public class ModBlocks {
                     () -> com.hbm_m.blockentity.ModBlockEntities.BARREL_PLASTIC_BE.get(),
                     new com.hbm_m.block.machines.BarrelTankBlock.TooltipInfo(
                             com.hbm_m.blockentity.machines.BarrelPlasticBlockEntity.CAPACITY,
-                            false, false, false, false)));
+                            false, false, null, false, false)));
     public static final RegistrySupplier<Block> BARREL_RED = registerBlock("barrel_red",
             () -> new CrtBlock(BlockProps.copy(Blocks.STONE).strength(2.0F, 6.0F).noOcclusion()));
     public static final RegistrySupplier<Block> BARREL_STEEL = registerBlock("barrel_steel",
@@ -1252,7 +1252,7 @@ public class ModBlocks {
                     () -> com.hbm_m.blockentity.ModBlockEntities.BARREL_STEEL_BE.get(),
                     new com.hbm_m.block.machines.BarrelTankBlock.TooltipInfo(
                             com.hbm_m.blockentity.machines.BarrelSteelBlockEntity.CAPACITY,
-                            true, true, false, false)));
+                            true, true, false, false, false)));
     public static final RegistrySupplier<Block> BARREL_TAINT = registerBlock("barrel_taint",
             () -> new CrtBlock(BlockProps.copy(Blocks.STONE).strength(2.0F, 6.0F).noOcclusion()));
 
@@ -1269,7 +1269,7 @@ public class ModBlocks {
                     () -> com.hbm_m.blockentity.ModBlockEntities.BARREL_TCALLOY_BE.get(),
                     new com.hbm_m.block.machines.BarrelTankBlock.TooltipInfo(
                             com.hbm_m.blockentity.machines.BarrelTcalloyBlockEntity.CAPACITY,
-                            true, true, true, false)));
+                            true, true, true, false, false)));
     public static final RegistrySupplier<Block> BARREL_VITRIFIED = registerBlock("barrel_vitrified",
             () -> new CrtBlock(BlockProps.copy(Blocks.STONE).strength(2.0F, 6.0F).noOcclusion()));
     public static final RegistrySupplier<Block> BARREL_YELLOW = registerBlock("barrel_yellow",
@@ -1280,7 +1280,7 @@ public class ModBlocks {
                     () -> com.hbm_m.blockentity.ModBlockEntities.BARREL_ANTIMATTER_BE.get(),
                     new com.hbm_m.block.machines.BarrelTankBlock.TooltipInfo(
                             com.hbm_m.blockentity.machines.BarrelAntimatterBlockEntity.CAPACITY,
-                            true, true, true, true)));
+                            true, true, true, true, false)));
 
     public static final RegistrySupplier<Block> BARBED_WIRE = registerBlock("barbed_wire",
             () -> new BarbedWireBlock(BlockProps.copy(Blocks.STONE).strength(1.5F, 6.0F).noOcclusion()));
@@ -3073,7 +3073,9 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> STIRLING_STEEL = registerBlock("stirling_steel",
             () -> new com.hbm_m.block.machines.MachineStirlingBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
 
-    public static final RegistrySupplier<Block> STRAND_CASTER = registerBlock("strand_caster",
+    // Айтем регистрируется в ModItems как MultiblockBlockItem (рамка футпринта +
+    // проверка препятствий при установке) — поэтому здесь registerBlockWithoutItem.
+    public static final RegistrySupplier<Block> STRAND_CASTER = registerBlockWithoutItem("strand_caster",
             () -> new com.hbm_m.block.machines.MachineStrandCasterBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
     public static final RegistrySupplier<Block> TORUS = registerBlock("torus",
             () -> new Block(BlockProps.copy(Blocks.IRON_BLOCK).strength(4.0f, 4.0f).sound(SoundType.METAL).noOcclusion()));
@@ -3336,6 +3338,11 @@ public class ModBlocks {
             // Блоки кокса — печное топливо (ориг. FuelHandler 1.7.10: 32000 тиков на любой вариант).
             if (b instanceof com.hbm_m.block.generic.BlockCoke) {
                 return new com.hbm_m.item.industrial.FuelBlockItem(b, new Item.Properties(), 32000);
+            }
+            // Блоки с persistent-тултипом на дропнутом стеке ("x/y mB <жидкость>") — бочки
+            // и крупные резервуары (порт IPersistentInfoProvider из 1.7.10).
+            if (b instanceof com.hbm_m.block.machines.BarrelTankBlock) {
+                return new com.hbm_m.item.PersistentInfoBlockItem(b, new Item.Properties());
             }
             return new BlockItem(b, new Item.Properties());
         });

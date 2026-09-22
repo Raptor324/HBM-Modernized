@@ -48,18 +48,24 @@ public class ParticleEngineNT {
      * отката и удаляет частицы «из будущего».
      */
     public void onWorldGameTime(long gameTime) {
-        this.gameTimeHistory[(int) (this.tickCounter % GAME_TIME_HISTORY)] = gameTime;
+        // Сначала purge-проверка и поиск границы, ПОТОМ штамп: слот текущего тика
+        // уже перезаписан отмотанным временем, и скан с него давал всегда
+        // cutoff == tickCounter (no-op). Скан ведётся с tickCounter-1 — по истории
+        // ДО отмотки; сам слот текущего тика штампуется ниже честным значением.
         if (gameTime < this.lastWorldGameTime) {
             this.purgeCutoff = findRewindCutoff(gameTime);
             purgeFutureParticles();
         }
+        this.gameTimeHistory[(int) (this.tickCounter % GAME_TIME_HISTORY)] = gameTime;
         this.lastWorldGameTime = gameTime;
     }
 
     /** Новейший тик движка, на котором мировое время было <= gameTime. */
     private long findRewindCutoff(long gameTime) {
         long oldest = Math.max(0, this.tickCounter - GAME_TIME_HISTORY + 1);
-        for (long e = this.tickCounter; e >= oldest; e--) {
+        // tickCounter-1: слот tickCounter на момент скана ещё не штампован/перезаписан
+        // (см. onWorldGameTime) — история прошлого начинается с предыдущего тика.
+        for (long e = this.tickCounter - 1; e >= oldest; e--) {
             if (this.gameTimeHistory[(int) (e % GAME_TIME_HISTORY)] <= gameTime) {
                 return e;
             }

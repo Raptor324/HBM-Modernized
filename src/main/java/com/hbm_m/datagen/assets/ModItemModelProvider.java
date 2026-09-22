@@ -905,7 +905,8 @@ public class ModItemModelProvider extends ItemModelProvider {
         blockItemFromBlockModelMachine(ModBlocks.SILEX);
         blockItemFromBlockModelMachine(ModBlocks.MACHINE_ASSEMBLER);
         blockItemFromBlockModelMachine(ModBlocks.ADVANCED_ASSEMBLY_MACHINE);
-        blockItemFromBlockModelMachine(ModBlocks.FLUID_TANK);
+        // fluid_tank: item-модель НЕ датагенится — см. assets/hbm_m/models/item/fluid_tank.json
+        // (main/resources): parent "builtin/entity" как сырая строка, датаген её выдать не может.
         blockItemFromBlockModelMachine(ModBlocks.BAT9000);
         blockItemFromBlockModelMachine(ModBlocks.LAUNCH_PAD);
         blockItemFromBlockModelMachine(ModBlocks.LAUNCH_PAD_RUSTED);
