@@ -1,6 +1,7 @@
 package com.hbm_m.client.render.missile;
 
 import com.hbm_m.entity.missile.MissileABMEntity;
+import com.hbm_m.entity.missile.Missile9M723Entity;
 import com.hbm_m.entity.missile.MissileBaseEntity;
 import com.hbm_m.entity.missile.MissileTestEntity;
 import com.hbm_m.entity.missile.MissileShuttleEntity;
@@ -53,6 +54,10 @@ public final class MissileTextures {
     public static final ResourceLocation MISSILE_HUGE_CL = rl("missile_huge_cl");
     public static final ResourceLocation MISSILE_HUGE_BU = rl("missile_huge_bu");
 
+    public static final ResourceLocation MISSILE_9M723 = rl("missile_9m723");
+    public static final ResourceLocation MISSILE_9M723_BU = rl("missile_9m723_bu");
+    public static final ResourceLocation MISSILE_TOPOL = rl("missile_topol");
+
     public static final ResourceLocation MISSILE_ATLAS_NUCLEAR = rl("missile_atlas_nuclear");
     public static final ResourceLocation MISSILE_ATLAS_THERMO = rl("missile_atlas_thermo");
     public static final ResourceLocation MISSILE_ATLAS_TECTONIC = rl("missile_atlas_tectonic");
@@ -93,6 +98,9 @@ public final class MissileTextures {
         if (item == ModItems.MISSILE_INFERNO.get()) return MISSILE_HUGE_INC;
         if (item == ModItems.MISSILE_RAIN.get()) return MISSILE_HUGE_CL;
         if (item == ModItems.MISSILE_DRILL.get()) return MISSILE_HUGE_BU;
+        if (item == ModItems.MISSILE_9M723.get()) return MISSILE_9M723;
+        if (item == ModItems.MISSILE_9M723_BUSTER.get()) return MISSILE_9M723_BU;
+        if (item == ModItems.MISSILE_TOPOL.get()) return MISSILE_TOPOL;
         if (item == ModItems.MISSILE_SHUTTLE.get()) return MISSILE_SHUTTLE;
 
         if (item == ModItems.MISSILE_NUCLEAR.get()) return MISSILE_ATLAS_NUCLEAR;
@@ -139,6 +147,9 @@ public final class MissileTextures {
         if (entity instanceof MissileTier3.MissileInferno) return MISSILE_HUGE_INC;
         if (entity instanceof MissileTier3.MissileRain) return MISSILE_HUGE_CL;
         if (entity instanceof MissileTier3.MissileDrill) return MISSILE_HUGE_BU;
+        if (entity instanceof Missile9M723Entity.Buster) return MISSILE_9M723_BU;
+        if (entity instanceof Missile9M723Entity.HighExplosive) return MISSILE_9M723;
+        if (entity instanceof com.hbm_m.entity.missile.MissileTopolEntity) return MISSILE_TOPOL;
         if (entity instanceof MissileShuttleEntity) return MISSILE_SHUTTLE;
 
         if (entity instanceof MissileTier4.MissileNuclear) return MISSILE_ATLAS_NUCLEAR;

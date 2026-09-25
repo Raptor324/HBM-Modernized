@@ -39,6 +39,8 @@ public class EntityNukeExplosionMK5 extends EntityExplosionChunkloading {
     private long explosionStart;
     public boolean fallout = true;
     private int falloutAdd = 0;
+    /** Reichweite des Niederschlags als Vielfaches des Kraterradius. */
+    private float falloutFactor = 2.5F;
 
     private IExplosionRay explosion;
 
@@ -57,6 +59,10 @@ public class EntityNukeExplosionMK5 extends EntityExplosionChunkloading {
     public boolean applyCraterBiomes = true;
 
     /** Для API: задать дополнительный радиус fallout. */
+    public void setFalloutFactor(float factor) {
+        if (factor > 0.0F) this.falloutFactor = factor;
+    }
+
     public void setFalloutAdd(int add) {
         this.falloutAdd = add;
     }
@@ -259,7 +265,7 @@ public class EntityNukeExplosionMK5 extends EntityExplosionChunkloading {
      * Реальная реализация будет добавлена при портировании FalloutRain.
      */
     private void spawnFallout() {
-        int scale = (int) (this.length * 2.5 + getFalloutAdd());
+        int scale = (int) (this.length * this.falloutFactor + getFalloutAdd());
         scale = scale * ModClothConfig.get().falloutRangePercent / 100;
         if (scale < 1) scale = 1;
         com.hbm_m.entity.effect.EntityFalloutRain fallout = new com.hbm_m.entity.effect.EntityFalloutRain(ModEntities.NUKE_FALLOUT_RAIN.get(), level());
@@ -287,6 +293,7 @@ public class EntityNukeExplosionMK5 extends EntityExplosionChunkloading {
         this.applyCraterBiomes = tag.getBoolean("applyCraterBiomes");
         this.fallout = tag.getBoolean("fallout");
         this.falloutAdd = tag.getInt("falloutAdd");
+        if (tag.contains("falloutFactor")) this.falloutFactor = tag.getFloat("falloutFactor");
         // Снапшот состояния ChunkEater (алгоритм 0) — взрыв продолжится с места остановки.
         // Для алгоритмов 1/2 снапшот не сохраняется: движок пересоздаётся и пересчитывает
         // лучи заново (уже разрушенные блоки — воздух, пересчёт быстрый).
@@ -306,6 +313,7 @@ public class EntityNukeExplosionMK5 extends EntityExplosionChunkloading {
         tag.putBoolean("applyCraterBiomes", this.applyCraterBiomes);
         tag.putBoolean("fallout", this.fallout);
         tag.putInt("falloutAdd", this.falloutAdd);
+        tag.putFloat("falloutFactor", this.falloutFactor);
         if (explosion != null) {
             // 0 = ChunkEater, 1/2 = Parallelized
             int engine = explosion instanceof NukeMk5ChunkEater ? 0 : 1;

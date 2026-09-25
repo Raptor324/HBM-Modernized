@@ -127,7 +127,7 @@ dependencies {
 }
 
 tasks.withType<JavaCompile>().configureEach {
-	options.compilerArgs.addAll(listOf("-Xmaxerrs", "10000")),
+	options.compilerArgs.addAll(listOf("-Xmaxerrs", "10000"))
 	options.encoding = "UTF-8"
 }
 

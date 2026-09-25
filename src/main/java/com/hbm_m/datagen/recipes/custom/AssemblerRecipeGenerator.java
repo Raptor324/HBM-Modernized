@@ -40,6 +40,9 @@ public final class AssemblerRecipeGenerator {
         registerReactors(writer);
         registerUpgrades(writer);
         registerBombParts(writer);
+        // War nie aufgerufen: dadurch hatte keine einzige Bombe ein Rezept, obwohl die
+        // Rezepte samt Bauteilen seit jeher hier stehen.
+        registerBombRecipes(writer);
         registerMissileParts(writer);
         registerAmmo(writer);
         registerSpace(writer);
@@ -2185,6 +2188,149 @@ public final class AssemblerRecipeGenerator {
                 .addIngredient(ModItems.DRILL_TITANIUM.get(), 1)
                 .addIngredient(Items.GUNPOWDER, 8)
                 .save(writer, "missile_drill");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.MISSILE_9M723.get(), 1), 160, 250)
+                .addIngredient(ModMaterialItems.item(ModMaterials.TITANIUM, MaterialShape.PLATE), 8)
+                .addIngredient(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE), 6)
+                .addIngredient(ModItems.ANALOG_CIRCUIT.get(), 2)
+                .addIngredient(ModItems.BALL_TNT.get(), 4)
+                .save(writer, "missile_9m723");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.MISSILE_9M723_BUSTER.get(), 1), 160, 250)
+                .addIngredient(ModMaterialItems.item(ModMaterials.TITANIUM, MaterialShape.PLATE), 8)
+                .addIngredient(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE), 6)
+                .addIngredient(ModItems.ANALOG_CIRCUIT.get(), 2)
+                .addIngredient(ModItems.DRILL_TITANIUM.get(), 1)
+                .save(writer, "missile_9m723_buster");
+
+        // Mobile Startrampe: Fahrgestell aus Stahl und Titan, dazu die Elektronik der Rampe.
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.MOBILE_LAUNCH_PAD.get(), 1), 400, 400)
+                .addIngredient(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE), 24)
+                .addIngredient(ModMaterialItems.item(ModMaterials.TITANIUM, MaterialShape.PLATE), 16)
+                .addIngredient(ModItems.MOTOR.get(), 8)
+                .addIngredient(ModItems.ANALOG_CIRCUIT.get(), 6)
+                .save(writer, "mobile_launch_pad");
+
+        // Topol-M-Werfer: das groesste Fahrzeug der Mod, entsprechend teuer.
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.TOPOL_LAUNCH_PAD.get(), 1), 600, 600)
+                .addIngredient(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE), 48)
+                .addIngredient(ModMaterialItems.item(ModMaterials.TITANIUM, MaterialShape.PLATE), 32)
+                .addIngredient(ModItems.MOTOR.get(), 16)
+                .addIngredient(ModItems.ANALOG_CIRCUIT.get(), 12)
+                .save(writer, "topol_launch_pad");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.MISSILE_TOPOL.get(), 1), 400, 500)
+                .addIngredient(ModMaterialItems.item(ModMaterials.TITANIUM, MaterialShape.PLATE), 24)
+                .addIngredient(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE), 16)
+                .addIngredient(ModItems.ANALOG_CIRCUIT.get(), 4)
+                .addIngredient(ModItems.MOTOR.get(), 4)
+                .save(writer, "missile_topol");
+
+        // ─── Grossmaschinen, die bisher gar nicht herstellbar waren ──────────────
+        // Im Original haengen sie an Bauteilen, die es im Port noch nicht gibt (Schwerrahmen,
+        // Hydraulikkolben, SC-Batterien). Die Rezepte hier sind darum keine Eins-zu-eins-Kopie,
+        // sondern eine Naeherung auf vorhandenen Teilen - in Aufwand und Stufe vergleichbar.
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModBlocks.CHEMICAL_FACTORY.get().asItem(), 1), 400, 400)
+                .addIngredient(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE), 24)
+                .addIngredient(ModMaterialItems.item(ModMaterials.TITANIUM, MaterialShape.PLATE), 16)
+                .addIngredient(ModItems.MOTOR.get(), 8)
+                .addIngredient(ModItems.ANALOG_CIRCUIT.get(), 8)
+                .save(writer, "chemical_factory");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModBlocks.CYCLOTRON.get().asItem(), 1), 600, 600)
+                .addIngredient(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE_CAST), 32)
+                .addIngredient(ModMaterialItems.item(ModMaterials.TUNGSTEN, MaterialShape.INGOT), 16)
+                .addIngredient(ModItems.COIL_TUNGSTEN.get(), 24)
+                .addIngredient(ModItems.MICROCHIP.get(), 8)
+                .save(writer, "cyclotron");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModBlocks.FEL.get().asItem(), 1), 500, 500)
+                .addIngredient(ModMaterialItems.item(ModMaterials.TITANIUM, MaterialShape.PLATE), 24)
+                .addIngredient(ModItems.COIL_TUNGSTEN.get(), 16)
+                .addIngredient(ModItems.MICROCHIP.get(), 6)
+                .addIngredient(ModItems.CRT_DISPLAY.get(), 2)
+                .save(writer, "fel");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModBlocks.MACHINE_CHUNGUS.get().asItem(), 1), 600, 500)
+                .addIngredient(ModItems.SHELL_STEEL.get(), 6)
+                .addIngredient(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE_CAST), 24)
+                .addIngredient(ModItems.MOTOR.get(), 8)
+                .addIngredient(ModItems.ANALOG_CIRCUIT.get(), 6)
+                .save(writer, "machine_chungus");
+
+        // --- Nachgetragen: Grossgeraet ohne Bezugsweg ----------------------------
+        // Original: 16 Stahlplatten, 8 Wolfram, 4 Panzerglas, 4 Gummi, 16 Bolzen, 2 Motoren
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModItems.SLIDE_DOOR.get(), 1), 200, 100)
+                .addIngredient(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE), 16)
+                .addIngredient(ModMaterialItems.item(ModMaterials.TUNGSTEN, MaterialShape.INGOT), 8)
+                .addIngredient(ModBlocks.REINFORCED_GLASS.get().asItem(), 4)
+                .addIngredient(ModMaterialItems.item(ModMaterials.RUBBER, MaterialShape.INGOT), 4)
+                .addIngredient(ModItems.BOLT_STEEL.get(), 16)
+                .addIngredient(ModItems.MOTOR.get(), 2)
+                .save(writer, "sliding_blast_door");
+
+        // Original: 12 Titanplatten, 12 Duraluminiumplatten (-> Titan), 32 Golddraht,
+        // Verschraenkungssatz, Lithiumbatterie
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModBlocks.MACHINE_TELEPORTER.get().asItem(), 1), 400, 200)
+                .addIngredient(ModMaterialItems.item(ModMaterials.TITANIUM, MaterialShape.PLATE), 24)
+                .addIngredient(ModMaterialItems.item(ModMaterials.GOLD, MaterialShape.WIRE), 32)
+                .addIngredient(ModItems.ENTANGLEMENT_KIT.get(), 1)
+                .addIngredient(ModItems.BATTERY_LITHIUM.get(), 1)
+                .save(writer, "machine_teleporter");
+
+        // Traegheitsfusion und Druckwasserreaktor: im Original Baugruppen mit Bauteilen, die der
+        // Port noch nicht hat. Naeherung auf vorhandenen Teilen, Stufe bleibt spaetes Spiel.
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModBlocks.ICF.get().asItem(), 1), 800, 600)
+                .addIngredient(ModMaterialItems.item(ModMaterials.TUNGSTEN, MaterialShape.PLATE_CAST), 32)
+                .addIngredient(ModMaterialItems.item(ModMaterials.TITANIUM, MaterialShape.PLATE), 24)
+                .addIngredient(ModItems.QUANTUM_CIRCUIT.get(), 4)
+                .addIngredient(ModItems.COIL_TUNGSTEN.get(), 16)
+                .save(writer, "icf");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModBlocks.PWR_CONTROLLER.get().asItem(), 1), 500, 400)
+                .addIngredient(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE_CAST), 24)
+                .addIngredient(ModMaterialItems.item(ModMaterials.LEAD, MaterialShape.PLATE), 16)
+                .addIngredient(ModItems.ADVANCED_CIRCUIT.get(), 6)
+                .addIngredient(ModItems.CRT_DISPLAY.get(), 2)
+                .save(writer, "pwr_controller");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModBlocks.PWR_FUEL.get().asItem(), 1), 300, 300)
+                .addIngredient(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE), 16)
+                .addIngredient(ModMaterialItems.item(ModMaterials.LEAD, MaterialShape.PLATE), 8)
+                .addIngredient(ModItems.ROD_QUAD_EMPTY.get(), 4)
+                .save(writer, "pwr_fuel");
+
+        // Sojus-Rampe und Laserwaffenstellung: ebenfalls Naeherungen.
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModBlocks.SOYUZ_LAUNCHER.get().asItem(), 1), 800, 500)
+                .addIngredient(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE_CAST), 48)
+                .addIngredient(ModMaterialItems.item(ModMaterials.TITANIUM, MaterialShape.PLATE), 32)
+                .addIngredient(ModItems.MOTOR.get(), 12)
+                .addIngredient(ModItems.ADVANCED_CIRCUIT.get(), 8)
+                .save(writer, "soyuz_launcher");
+
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModBlocks.LPW2.get().asItem(), 1), 600, 500)
+                .addIngredient(ModMaterialItems.item(ModMaterials.TITANIUM, MaterialShape.PLATE), 24)
+                .addIngredient(ModItems.COIL_TUNGSTEN.get(), 12)
+                .addIngredient(ModItems.ADVANCED_CIRCUIT.get(), 6)
+                .addIngredient(ModItems.CRT_DISPLAY.get(), 1)
+                .save(writer, "lpw2");
 
         AssemblerRecipeBuilder.assemblerRecipe(
                         new ItemStack(ModItems.MISSILE_SHUTTLE.get(), 1), 120, 250)

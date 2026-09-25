@@ -1632,6 +1632,12 @@ public class ModItems {
 	public static final RegistrySupplier<Item> LAUNCH_PAD_RUSTED = ITEMS.register("launch_pad_rusted",
         () -> new MultiblockBlockItem(ModBlocks.LAUNCH_PAD_RUSTED.get(), new Item.Properties()));
 
+    public static final RegistrySupplier<Item> MOBILE_LAUNCH_PAD = ITEMS.register("mobile_launch_pad",
+        () -> new MultiblockBlockItem(ModBlocks.MOBILE_LAUNCH_PAD.get(), new Item.Properties()));
+
+    public static final RegistrySupplier<Item> TOPOL_LAUNCH_PAD = ITEMS.register("topol_launch_pad",
+        () -> new MultiblockBlockItem(ModBlocks.TOPOL_LAUNCH_PAD.get(), new Item.Properties()));
+
 	public static final RegistrySupplier<Item> NUKE_FAT_MAN = ITEMS.register("nuke_fat_man",
         () -> new MultiblockBlockItem(ModBlocks.NUKE_FAT_MAN.get(), new Item.Properties()));
 
@@ -1703,6 +1709,17 @@ public class ModItems {
             () -> new MissileItem(MissileItem.MissileFormFactor.HUGE, MissileItem.MissileTier.TIER3));
     public static final RegistrySupplier<Item> MISSILE_DRILL = ITEMS.register("missile_drill",
             () -> new MissileItem(MissileItem.MissileFormFactor.HUGE, MissileItem.MissileTier.TIER3));
+
+    // Iskander-M 9M723. Rumpf und Treibstoff folgen dem Tier-3-Schema des Spiels; die reale
+    // Rakete ist feststoffgetrieben, das waere hier aber eine Tier-3-Rakete ohne Betankung.
+    public static final RegistrySupplier<Item> MISSILE_9M723 = ITEMS.register("missile_9m723",
+            () -> new MissileItem(MissileItem.MissileFormFactor.ISKANDER, MissileItem.MissileTier.TIER3));
+    public static final RegistrySupplier<Item> MISSILE_9M723_BUSTER = ITEMS.register("missile_9m723_buster",
+            () -> new MissileItem(MissileItem.MissileFormFactor.ISKANDER, MissileItem.MissileTier.TIER3));
+
+    /** RT-2PM2 Topol-M: eigener Rumpf, 22,5 Bloecke hoch. */
+    public static final RegistrySupplier<Item> MISSILE_TOPOL = ITEMS.register("missile_topol",
+            () -> new MissileItem(MissileItem.MissileFormFactor.TOPOL, MissileItem.MissileTier.TIER4));
     public static final RegistrySupplier<Item> MISSILE_SHUTTLE = ITEMS.register("missile_shuttle",
             () -> new MissileItem(MissileItem.MissileFormFactor.OTHER, MissileItem.MissileTier.TIER3,
                     MissileItem.MissileFuel.KEROSENE_PEROXIDE));

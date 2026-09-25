@@ -13,14 +13,31 @@ public final class NuclearExplosionConfig {
     public final boolean radiationEnabled;
     /** Тип грибного облака (0 = standard, 1 = bale и т.д.). */
     public final int mushroomType;
+    /**
+     * Feste Groesse der Pilzwolke; 0 = wie bisher aus der Sprengkraft ableiten.
+     *
+     * <p>Die Ableitung waechst nur mit der Wurzel der Sprengkraft. Das passt fuer Bomben, laesst
+     * eine Interkontinentalrakete aber kaum groesser aussehen als einen Sprengsatz vom Tisch.
+     */
+    public final float mushroomScale;
+    /** Standzeit der Wolke in Ticks; 0 = aus der Groesse ableiten. */
+    public final int mushroomLifeTicks;
+    /**
+     * Reichweite des Niederschlags als Vielfaches des Kraterradius. Vorgabe 2,5 wie bisher.
+     */
+    public final float falloutFactor;
 
     private NuclearExplosionConfig(int baseStrength, boolean falloutEnabled, int extraFalloutRadius,
-                                   boolean radiationEnabled, int mushroomType) {
+                                   boolean radiationEnabled, int mushroomType, float mushroomScale,
+                                   int mushroomLifeTicks, float falloutFactor) {
         this.baseStrength = baseStrength;
         this.falloutEnabled = falloutEnabled;
         this.extraFalloutRadius = extraFalloutRadius;
         this.radiationEnabled = radiationEnabled;
         this.mushroomType = mushroomType;
+        this.mushroomScale = mushroomScale;
+        this.mushroomLifeTicks = mushroomLifeTicks;
+        this.falloutFactor = falloutFactor;
     }
 
     public static Builder builder(int baseStrength) {
@@ -60,6 +77,9 @@ public final class NuclearExplosionConfig {
         private int extraFalloutRadius = 0;
         private boolean radiationEnabled = true;
         private int mushroomType = 0;
+        private float mushroomScale = 0.0F;
+        private int mushroomLifeTicks = 0;
+        private float falloutFactor = 2.5F;
 
         Builder(int baseStrength) {
             this.baseStrength = baseStrength;
@@ -85,13 +105,34 @@ public final class NuclearExplosionConfig {
             return this;
         }
 
+        /** Feste Wolkengroesse statt der Ableitung aus der Sprengkraft (0 = ableiten). */
+        public Builder mushroomScale(float scale) {
+            this.mushroomScale = scale;
+            return this;
+        }
+
+        /** Feste Standzeit der Wolke in Ticks (0 = aus der Groesse ableiten). */
+        public Builder mushroomLifeTicks(int ticks) {
+            this.mushroomLifeTicks = ticks;
+            return this;
+        }
+
+        /** Reichweite des Niederschlags als Vielfaches des Kraterradius (Vorgabe 2,5). */
+        public Builder falloutFactor(float factor) {
+            this.falloutFactor = factor;
+            return this;
+        }
+
         public NuclearExplosionConfig build() {
             return new NuclearExplosionConfig(
                     baseStrength,
                     falloutEnabled,
                     extraFalloutRadius,
                     radiationEnabled,
-                    mushroomType
+                    mushroomType,
+                    mushroomScale,
+                    mushroomLifeTicks,
+                    falloutFactor
             );
         }
     }

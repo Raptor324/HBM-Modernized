@@ -168,6 +168,123 @@ public final class AnvilRecipeGenerator {
                 stack(ModBlocks.getIngotBlock(ModMaterials.STEEL).get(), 2),
                 stack(ModMaterialItems.item(ModMaterials.COPPER, MaterialShape.WIRE), 32));
 
+        // ─── Nachgetragen: Maschinen, die im Original ueber den Amboss laufen und im Port
+        //     bisher gar nicht herstellbar waren. Mengen und Zutaten aus
+        //     com.hbm.inventory.recipes.anvil.AnvilRecipes (1.7.10).
+        //     Die Originalstufen 2 und 3 liegen hier beide auf dem Stahlamboss: die hoeheren
+        //     Amboss-Stufen des Ports (OIL, NUCLEAR, ...) haengen selbst an Maschinen, die
+        //     erst durch diese Rezepte erreichbar werden - sonst beisst sich die Katze in den
+        //     Schwanz. Wer es strenger will, hebt die betroffenen auf AnvilTier.OIL an.
+
+        // Original Stufe 2: 8 Stahlbarren, 4 Kupferplatten, 2 Motoren, 4 Vakuumroehren
+        registerInventoryRecipe(writer, "steel", "machine_assembler",
+                AnvilTier.STEEL,
+                stack(ModBlocks.MACHINE_ASSEMBLER),
+                stack(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.INGOT), 8),
+                stack(ModMaterialItems.item(ModMaterials.COPPER, MaterialShape.PLATE), 4),
+                stack(ModItems.MOTOR, 2),
+                stack(ModItems.VACUUM_TUBE, 4));
+
+        // Original Stufe 2: Ofen, 8 Stahlplatten, 8 Kupferbarren
+        registerInventoryRecipe(writer, "steel", "firebox",
+                AnvilTier.STEEL,
+                stack(ModBlocks.FIREBOX),
+                stack(Items.FURNACE, 1),
+                stack(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE), 8),
+                stack(Items.COPPER_INGOT, 8));
+
+        // Original Stufe 3: 4 Gummibarren, 16 Kupferbarren, 16 Stahlplatten, 3 Stahlrohre
+        registerInventoryRecipe(writer, "steel", "heatex",
+                AnvilTier.STEEL,
+                stack(ModBlocks.HEATEX),
+                stack(ModMaterialItems.item(ModMaterials.RUBBER, MaterialShape.INGOT), 4),
+                stack(Items.COPPER_INGOT, 16),
+                stack(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE), 16),
+                stack(ModItems.PIPE_STEEL, 3));
+
+        // Original Stufe 3: 4 Kunststoffbarren, 8 Kupferbarren, 8 Stahlplatten,
+        // 8 Wolframspulen, 1 Basisschaltkreis
+        registerInventoryRecipe(writer, "steel", "electric_heater",
+                AnvilTier.STEEL,
+                stack(ModBlocks.ELECTRIC_HEATER),
+                stack(ModMaterialItems.item(ModMaterials.POLYMER, MaterialShape.INGOT), 4),
+                stack(Items.COPPER_INGOT, 8),
+                stack(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE), 8),
+                stack(ModItems.COIL_TUNGSTEN, 8),
+                stack(ModItems.ANALOG_CIRCUIT, 1));
+
+        // Original Stufe 2: 4 Stahltanks, 3 Stahlrohre, 12 Titanbarren, 8 Kupferbarren
+        registerInventoryRecipe(writer, "steel", "oilburner",
+                AnvilTier.STEEL,
+                stack(ModBlocks.OILBURNER),
+                stack(ModItems.TANK_STEEL, 4),
+                stack(ModItems.PIPE_STEEL, 3),
+                stack(ModMaterialItems.item(ModMaterials.TITANIUM, MaterialShape.INGOT), 12),
+                stack(Items.COPPER_INGOT, 8));
+
+        // Der Hochdruckbrenner ist im Original eine Baugruppe; hier die gleiche Rezeptur
+        // wie beim einfachen Brenner, verstaerkt um gegossene Stahlplatten.
+        registerInventoryRecipe(writer, "steel", "oilburner_hp",
+                AnvilTier.STEEL,
+                stack(ModBlocks.OILBURNER_HP),
+                stack(ModBlocks.OILBURNER, 1),
+                stack(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE_CAST), 8),
+                stack(ModItems.PIPE_STEEL, 4));
+
+        // Original Stufe 3: 8 gegossene Stahlplatten, 8 Kupferbarren, 4 Kunststoffbarren
+        registerInventoryRecipe(writer, "steel", "industrial_boiler",
+                AnvilTier.STEEL,
+                stack(ModBlocks.INDUSTRIAL_BOILER),
+                stack(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE_CAST), 8),
+                stack(Items.COPPER_INGOT, 8),
+                stack(ModMaterialItems.item(ModMaterials.POLYMER, MaterialShape.INGOT), 4));
+
+        // Original Stufe 2: 8 Bruchstein, 16 Bretter, 8 Kupferplatten, 2 Bleirohre
+        registerInventoryRecipe(writer, "iron", "pump_steam",
+                AnvilTier.IRON,
+                stack(ModBlocks.PUMP_STEAM),
+                stack(Items.COBBLESTONE, 8),
+                stack(Items.OAK_PLANKS, 16),
+                stack(ModMaterialItems.item(ModMaterials.COPPER, MaterialShape.PLATE), 8),
+                stack(ModItems.PIPE_LEAD, 2));
+
+        // Original Stufe 3: 8 Steinziegel, 16 Stahlplatten, 4 Bleirohre, 2 Motoren,
+        // 4 Vakuumroehren
+        registerInventoryRecipe(writer, "steel", "pump_electric",
+                AnvilTier.STEEL,
+                stack(ModBlocks.PUMP_ELECTRIC),
+                stack(Items.STONE_BRICKS, 8),
+                stack(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE), 16),
+                stack(ModItems.PIPE_LEAD, 4),
+                stack(ModItems.MOTOR, 2),
+                stack(ModItems.VACUUM_TUBE, 4));
+
+        // Ziegelofen und Elektroofen: im Original die fruehesten Schmelzstufen.
+        registerInventoryRecipe(writer, "iron", "furnace_brick",
+                AnvilTier.IRON,
+                stack(ModBlocks.FURNACE_BRICK),
+                stack(Items.BRICKS, 8),
+                stack(ModItems.FIREBRICK, 8),
+                stack(ModMaterialItems.item(ModMaterials.IRON, MaterialShape.PLATE), 4));
+
+        registerInventoryRecipe(writer, "steel", "electric_furnace",
+                AnvilTier.STEEL,
+                stack(ModBlocks.ELECTRIC_FURNACE),
+                stack(ModItems.FIREBRICK, 8),
+                stack(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE), 8),
+                stack(ModItems.COIL_COPPER, 4),
+                stack(ModItems.ANALOG_CIRCUIT, 1));
+
+        // Bergbaubohrer: im Original eine Baugruppe, hier am Amboss, damit der Abbau
+        // ueberhaupt erreichbar ist.
+        registerInventoryRecipe(writer, "steel", "mining_drill",
+                AnvilTier.STEEL,
+                stack(ModBlocks.MINING_DRILL),
+                stack(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE), 16),
+                stack(ModMaterialItems.item(ModMaterials.TITANIUM, MaterialShape.INGOT), 8),
+                stack(ModItems.MOTOR, 4),
+                stack(ModItems.ANALOG_CIRCUIT, 2));
+
     }
 
     private static void registerDisassemblyRecipes(Consumer<FinishedRecipe> writer) {

@@ -268,8 +268,22 @@ public class NukeTorex extends ParticleNT implements FarCapableParticle {
         return 1.0F;
     }
 
+    /** Feste Standzeit in Ticks; 0 = wie bisher aus der Groesse ableiten. */
+    private int maxAgeOverride = 0;
+
+    /**
+     * Standzeit getrennt von der Groesse setzen.
+     *
+     * <p>Sonst haengen beide zusammen: 45 Sekunden mal Groesse. Eine Wolke in voller Groesse
+     * stuende damit dreieinhalb Minuten am Himmel.
+     */
+    public NukeTorex setMaxAgeTicks(int ticks) {
+        this.maxAgeOverride = ticks;
+        return this;
+    }
+
     public int getMaxAge() {
-        return (int) (45 * 20 * this.getScale());
+        return this.maxAgeOverride > 0 ? this.maxAgeOverride : (int) (45 * 20 * this.getScale());
     }
 
     public class Cloudlet {

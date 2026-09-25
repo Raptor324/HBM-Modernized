@@ -53,8 +53,27 @@ public abstract class MissileBaseEntity extends Projectile implements IRadarDete
 
     private static final int CHUNK_TICKET_RADIUS = 3;
 
+    /**
+     * Radius der vorausgeladenen Tickets. {@code addRegionTicket} setzt die Ticketstufe auf
+     * {@code 33 - radius}, und Entitaeten ticken erst ab Stufe 31 - Radius 2 laedt den
+     * Zielchunk also gerade so weit, dass die Rakete dort weiterlaeuft.
+     */
+    private static final int CHUNK_LOOKAHEAD_RADIUS = 2;
+
+    /**
+     * Wie viele Ticks Flugweg im Voraus geladen werden. Jedes Ticket zieht ein 5x5-Feld an
+     * Chunks nach sich, bei Mach 6 liegen die Punkte rund sechs Chunks auseinander - sechs Ticks
+     * sind der Kompromiss zwischen Vorlaufzeit fuer den Chunkladen und Last auf dem Server.
+     */
+    private static final int CHUNK_LOOKAHEAD_TICKS = 6;
+
+    /** Obergrenze, damit ein absurdes Tempo nicht die halbe Welt laedt. */
+    private static final int CHUNK_LOOKAHEAD_MAX = 8;
+
     /** Макс. длина сегмента raycast за тик (как в 1.7.10 — один луч, но без туннелирования). */
     private static final double MAX_COLLISION_SEGMENT = 1.0D;
+    /** Obergrenze fuer Teilschritte pro Tick - Schutz vor Endlosschleifen bei absurden Werten. */
+    private static final int MAX_SUB_STEPS = 256;
 
     protected int startX;
     protected int startZ;
@@ -78,6 +97,9 @@ public abstract class MissileBaseEntity extends Projectile implements IRadarDete
     private double lerpXRot;
 
     private ChunkPos loadedChunk;
+
+    /** Zusaetzlich gehaltene Tickets entlang des Flugwegs; siehe {@link #updateChunkTicket()}. */
+    private final java.util.Set<ChunkPos> lookaheadChunks = new java.util.HashSet<>();
 
     protected MissileBaseEntity(EntityType<? extends MissileBaseEntity> type, Level level) {
         super(type, level);
@@ -103,9 +125,17 @@ public abstract class MissileBaseEntity extends Projectile implements IRadarDete
         if (len == 0) {
             len = 1.0D;
         }
-        this.accelXZ = this.decelY = 1.0D / len;
-        this.decelY *= 2.0D;
+        // Ballistische Bahn, aufgeloest fuer eine frei waehlbare Gipfelhoehe.
+        // Mit senkrechtem Startimpuls 2 erreicht die Bahn ihren Scheitel bei `apogee` und legt
+        // dabei genau `len` horizontal zurueck. apogeeFor() liefert per Default `len` zurueck und
+        // reproduziert damit exakt die Originalwerte (decelY = 2/len, accelXZ = 1/len) - im
+        // Original ist die Gipfelhoehe also immer gleich der Schussweite, was bei weiten Schuessen
+        // bedeutet, dass die Rakete den Grossteil der Strecke weit oberhalb der Bauhoehe fliegt.
+        double apogee = Math.max(1.0D, this.apogeeFor(len));
+        this.decelY = 2.0D / apogee;
+        this.accelXZ = len / (apogee * apogee);
         this.velocity = 0.0D;
+        this.onTrajectorySolved(len, apogee);
 
         this.setDeltaMovement(this.getDeltaMovement().x(), 2.0D, this.getDeltaMovement().z());
 
@@ -238,27 +268,27 @@ public abstract class MissileBaseEntity extends Projectile implements IRadarDete
                 return;
             }
 
-            double mult = this.velocity;
-            Vec3 motion = this.getDeltaMovement();
-            Vec3 step = motion.scale(mult);
-
-            BlockHitResult blockHit = raycastAlongStep(this.position(), step);
-            if (blockHit != null) {
-                Vec3 hitPos = blockHit.getLocation();
-                this.setPos(hitPos.x, hitPos.y, hitPos.z);
-                this.reapplyPosition();
-                this.onHit(blockHit);
+            double stepLimit = maxStepDistance();
+            if (!(stepLimit > 0.0D) || Double.isInfinite(stepLimit)) {
+                // Unveraenderter Pfad: ein Schritt pro Tick, wie im Original.
+                if (!advance(this.velocity)) {
+                    return;
+                }
+                serverTickLogic();
+            } else {
+                // Teilschritte. updateVelocity() bleibt bei einem Aufruf pro Tick, nur die
+                // Integration wird aufgeteilt - sonst laeuft der Euler-Schritt bei hohen
+                // Geschwindigkeiten weg und die Rakete landet vor dem Ziel.
+                updateVelocity();
+                int subSteps = subStepsFor(stepLimit);
+                double stepVelocity = this.velocity / subSteps;
+                for (int i = 0; i < subSteps; i++) {
+                    if (!advance(stepVelocity)) {
+                        return;
+                    }
+                    integrateMotion(stepVelocity);
+                }
             }
-
-            if (this.isRemoved() || this.exploded) {
-                return;
-            }
-
-            this.setPos(this.getX() + step.x, this.getY() + step.y, this.getZ() + step.z);
-            updateRotationFromMotion();
-            normalizeRotationDeltas();
-
-            serverTickLogic();
             com.hbm_m.server.missile.MissileTrackBroadcaster.broadcastPoseForMissile(this);
         } else {
             clientLerpStep();
@@ -267,6 +297,54 @@ public abstract class MissileBaseEntity extends Projectile implements IRadarDete
                 spawnNozzleFlare();
             }
         }
+    }
+
+    /**
+     * Ein Integrationsschritt: Kollisionspruefung, Positionsvorschub um {@code motion * stepVelocity}
+     * und Ausrichtung. Liefert false, wenn die Rakete dabei verschwunden oder detoniert ist.
+     */
+    private boolean advance(double stepVelocity) {
+        Vec3 motion = this.getDeltaMovement();
+        Vec3 step = motion.scale(stepVelocity);
+
+        BlockHitResult blockHit = raycastAlongStep(this.position(), step);
+        if (blockHit != null) {
+            Vec3 hitPos = blockHit.getLocation();
+            this.setPos(hitPos.x, hitPos.y, hitPos.z);
+            this.reapplyPosition();
+            this.onHit(blockHit);
+        }
+
+        if (this.isRemoved() || this.exploded) {
+            return false;
+        }
+
+        this.setPos(this.getX() + step.x, this.getY() + step.y, this.getZ() + step.z);
+        updateRotationFromMotion();
+        normalizeRotationDeltas();
+        return true;
+    }
+
+    /**
+     * Wie viele Integrationsschritte dieser Tick braucht, damit pro Schritt hoechstens
+     * {@code limit} Bloecke zurueckgelegt werden.
+     */
+    private int subStepsFor(double limit) {
+        double stepLength = this.getDeltaMovement().length() * this.velocity;
+        if (!(stepLength > limit)) {
+            return 1;
+        }
+        return (int) Math.min(MAX_SUB_STEPS, Math.ceil(stepLength / limit));
+    }
+
+    /**
+     * Groesste Strecke in Bloecken, die ein einzelner Integrationsschritt zuruecklegen darf.
+     * Unbegrenzt bedeutet: ein Schritt pro Tick. Schnelle Raketen deckeln das, weil der
+     * Euler-Schritt sonst die Bahn verfaelscht - bei einem 3.000-Bloecke-Schuss mit Mach 6
+     * sind das rund 16 Bloecke Fehler zum Ziel, bei 10.000 Bloecken ueber 170.
+     */
+    protected double maxStepDistance() {
+        return Double.POSITIVE_INFINITY;
     }
 
     /**
@@ -311,15 +389,52 @@ public abstract class MissileBaseEntity extends Projectile implements IRadarDete
         }
     }
 
-    protected void serverTickLogic() {
-        if (this.velocity < 4.0D) {
-            this.velocity += Mth.clamp((double) this.tickCount / 60.0D * 0.05D, 0.0D, 0.05D);
-        }
+    /**
+     * Gipfelhoehe der Bahn in Bloecken. Default = Schussweite, also 1:1 das Originalverhalten.
+     * Unterklassen druecken die Bahn flacher, indem sie hier einen Deckel zurueckgeben - der
+     * Einschlagpunkt bleibt dabei exakt erhalten, weil {@code accelXZ} mitgeloest wird.
+     */
+    protected double apogeeFor(double len) {
+        return len;
+    }
 
+    /** Haken fuer Unterklassen, um aus Schussweite und Gipfelhoehe ihr Tempoprofil abzuleiten. */
+    protected void onTrajectorySolved(double len, double apogee) {
+    }
+
+    /** Obergrenze des Zeitfaktors {@code velocity}. NICHT die Geschwindigkeit in Bloecken/Tick. */
+    protected double maxVelocity() {
+        return 4.0D;
+    }
+
+    /**
+     * Fortschreiben von {@code velocity}. Das ist ein reiner Zeitfaktor: die Position rueckt pro
+     * Tick um {@code motion * velocity} vor, und {@code motion} selbst wird ebenfalls mit
+     * {@code velocity} integriert. Dadurch skaliert velocity nur das Tempo entlang der Bahn,
+     * nicht die Bahn selbst - jedes Tempoprofil trifft denselben Punkt.
+     */
+    protected void updateVelocity() {
+        double cap = maxVelocity();
+        if (this.velocity < cap) {
+            this.velocity = Math.min(cap,
+                    this.velocity + Mth.clamp((double) this.tickCount / 60.0D * 0.05D, 0.0D, 0.05D));
+        }
+    }
+
+    protected void serverTickLogic() {
+        this.updateVelocity();
+        this.integrateMotion(this.velocity);
+    }
+
+    /**
+     * Integration von Schub und Schwerkraft ueber einen Zeitfaktor. Das ist der Rumpf des alten
+     * {@code serverTickLogic()}; als Parameter, damit ein Tick in mehrere Schritte zerfallen kann.
+     */
+    protected void integrateMotion(double stepVelocity) {
         Vec3 motion = this.getDeltaMovement();
 
         if (hasPropulsion()) {
-            double motionY = motion.y - this.decelY * this.velocity;
+            double motionY = motion.y - this.decelY * stepVelocity;
 
             Vec3 vector = new Vec3(this.targetX - this.startX, 0, this.targetZ - this.startZ).normalize();
             vector = new Vec3(vector.x * this.accelXZ, 0, vector.z * this.accelXZ);
@@ -328,13 +443,13 @@ public abstract class MissileBaseEntity extends Projectile implements IRadarDete
             double motionZ = motion.z;
 
             if (motionY > 0) {
-                motionX += vector.x * this.velocity;
-                motionZ += vector.z * this.velocity;
+                motionX += vector.x * stepVelocity;
+                motionZ += vector.z * stepVelocity;
             }
 
             if (motionY < 0) {
-                motionX -= vector.x * this.velocity;
-                motionZ -= vector.z * this.velocity;
+                motionX -= vector.x * stepVelocity;
+                motionZ -= vector.z * stepVelocity;
             }
 
             motion = new Vec3(motionX, motionY, motionZ);
@@ -567,17 +682,85 @@ public abstract class MissileBaseEntity extends Projectile implements IRadarDete
             return;
         }
         ChunkPos newPos = new ChunkPos(this.blockPosition());
-        if (newPos.equals(this.loadedChunk)) {
+        if (!newPos.equals(this.loadedChunk)) {
+            if (this.loadedChunk != null) {
+                server.getChunkSource().removeRegionTicket(CHUNK_TICKET, this.loadedChunk, CHUNK_TICKET_RADIUS, this.getUUID());
+            }
+            this.loadedChunk = newPos;
+            server.getChunkSource().addRegionTicket(CHUNK_TICKET, this.loadedChunk, CHUNK_TICKET_RADIUS, this.getUUID());
+        }
+        updateLookaheadTickets(server);
+    }
+
+    /**
+     * Laedt den Flugweg voraus.
+     *
+     * <p>Das Ticket um die eigene Position herum haelt nur die unmittelbaren Nachbarchunks auf
+     * Entitaetenstufe, also ein Fenster von 48 Bloecken. Eine Rakete mit vier Bloecken pro Tick
+     * braucht ein Dutzend Ticks, um da herauszufliegen - genug Zeit, damit das naechste Ticket
+     * traegt. Eine Rakete mit hundert Bloecken pro Tick ist nach einem einzigen Tick draussen,
+     * landet in einem ungeladenen Chunk und hoert dort auf zu ticken: sie haengt in der Luft, der
+     * Einschlag passiert erst, wenn ein Spieler die Gegend laedt.
+     *
+     * <p>Deshalb halten schnelle Raketen zusaetzlich Tickets auf den Chunks, in denen sie in den
+     * naechsten Ticks sein werden. Fuer alles, was seinen aktuellen Chunk nicht pro Tick verlaesst,
+     * aendert sich dadurch nichts - die Vorhersage landet dann im selben Chunk und wird verworfen.
+     */
+    private void updateLookaheadTickets(ServerLevel server) {
+        java.util.Set<ChunkPos> wanted = null;
+
+        Vec3 perTick = this.getDeltaMovement().scale(this.velocity);
+        if (perTick.lengthSqr() > 1.0D) {
+            Vec3 pos = this.position();
+            for (int i = 1; i <= CHUNK_LOOKAHEAD_TICKS; i++) {
+                Vec3 predicted = pos.add(perTick.scale(i));
+                ChunkPos chunk = new ChunkPos(Mth.floor(predicted.x) >> 4, Mth.floor(predicted.z) >> 4);
+                if (chunk.equals(this.loadedChunk)) {
+                    continue;
+                }
+                if (wanted == null) {
+                    wanted = new java.util.HashSet<>();
+                }
+                wanted.add(chunk);
+                if (wanted.size() >= CHUNK_LOOKAHEAD_MAX) {
+                    break;
+                }
+            }
+        }
+
+        if (wanted == null) {
+            releaseLookaheadTickets(server);
             return;
         }
-        if (this.loadedChunk != null) {
-            server.getChunkSource().removeRegionTicket(CHUNK_TICKET, this.loadedChunk, CHUNK_TICKET_RADIUS, this.getUUID());
+
+        for (java.util.Iterator<ChunkPos> it = this.lookaheadChunks.iterator(); it.hasNext(); ) {
+            ChunkPos held = it.next();
+            if (!wanted.contains(held)) {
+                server.getChunkSource().removeRegionTicket(CHUNK_TICKET, held, CHUNK_LOOKAHEAD_RADIUS, this.getUUID());
+                it.remove();
+            }
         }
-        this.loadedChunk = newPos;
-        server.getChunkSource().addRegionTicket(CHUNK_TICKET, this.loadedChunk, CHUNK_TICKET_RADIUS, this.getUUID());
+        for (ChunkPos chunk : wanted) {
+            if (this.lookaheadChunks.add(chunk)) {
+                server.getChunkSource().addRegionTicket(CHUNK_TICKET, chunk, CHUNK_LOOKAHEAD_RADIUS, this.getUUID());
+            }
+        }
+    }
+
+    private void releaseLookaheadTickets(ServerLevel server) {
+        if (this.lookaheadChunks.isEmpty()) {
+            return;
+        }
+        for (ChunkPos held : this.lookaheadChunks) {
+            server.getChunkSource().removeRegionTicket(CHUNK_TICKET, held, CHUNK_LOOKAHEAD_RADIUS, this.getUUID());
+        }
+        this.lookaheadChunks.clear();
     }
 
     protected void releaseChunkTicket() {
+        if (this.level() instanceof ServerLevel server) {
+            releaseLookaheadTickets(server);
+        }
         if (this.loadedChunk == null) {
             return;
         }

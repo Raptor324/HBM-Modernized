@@ -703,6 +703,8 @@ public class ModBlockStateProvider extends BlockStateProvider {
         customMachineBlock(ModBlocks.BREEDER);
         customMachineBlock(ModBlocks.LARGE_PYLON);
         customMachineBlock(ModBlocks.LAUNCH_PAD);
+        customMachineBlock(ModBlocks.MOBILE_LAUNCH_PAD);
+        customMachineBlock(ModBlocks.TOPOL_LAUNCH_PAD);
         customMachineBlock(ModBlocks.LAUNCH_PAD_RUSTED);
         customBombBlock(ModBlocks.NUKE_FAT_MAN);
         customBombBlock(ModBlocks.NUKE_GADGET);

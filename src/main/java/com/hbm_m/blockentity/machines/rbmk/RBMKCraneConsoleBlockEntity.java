@@ -42,7 +42,12 @@ public class RBMKCraneConsoleBlockEntity extends RBMKColumnBlockEntity {
      * lining up with a channel.</p>
      */
     private static final short COOL_DOWN = 20;
-    private short ticksSince = 0;
+    /**
+     * Starts fully charged so the very first key press latches on the next tick. It used to start
+     * at 0, which burned a whole COOL_DOWN second before the crane reacted to anything after every
+     * chunk load - the first press simply did nothing.
+     */
+    private short ticksSince = COOL_DOWN;
     private boolean craneUp, craneDown, craneLeft, craneRight;
 
     private boolean isCooledDown() {
@@ -62,6 +67,10 @@ public class RBMKCraneConsoleBlockEntity extends RBMKColumnBlockEntity {
 
     public double lastTiltFront, lastTiltLeft, tiltFront, tiltLeft;
     public double lastPosFront, lastPosLeft, posFront, posLeft;
+
+    /** Last values pushed to clients; see the sync note at the end of {@link #craneTick}. */
+    private double syncedFront = Double.NaN, syncedLeft = Double.NaN, syncedProgress = Double.NaN;
+    private double syncedTiltFront = Double.NaN, syncedTiltLeft = Double.NaN;
 
     private boolean goesDown = false;
     public double lastProgress = 1D, progress = 1D;
@@ -173,6 +182,19 @@ public class RBMKCraneConsoleBlockEntity extends RBMKColumnBlockEntity {
         }
 
         setChanged();
+
+        // The original pushes its whole crane state to clients EVERY tick (serialize/deserialize
+        // on a BufPacket). This port only called setChanged(), which merely marks the chunk dirty
+        // for saving and sends nothing - so the gantry moved on the server while every client saw
+        // it frozen at wherever it stood when the chunk loaded. From the player's seat the crane
+        // simply did not work: no movement, no claw animation, and the LOAD key grabbed from a
+        // column they could not see it standing over.
+        if (posFront != syncedFront || posLeft != syncedLeft || progress != syncedProgress
+                || tiltFront != syncedTiltFront || tiltLeft != syncedTiltLeft) {
+            syncedFront = posFront; syncedLeft = posLeft; syncedProgress = progress;
+            syncedTiltFront = tiltFront; syncedTiltLeft = tiltLeft;
+            level.sendBlockUpdated(getBlockPos(), getBlockState(), getBlockState(), 3);
+        }
     }
 
     // ─── Crane state ─────────────────────────────────────────────────────────
@@ -265,6 +287,13 @@ public class RBMKCraneConsoleBlockEntity extends RBMKColumnBlockEntity {
         tag.putDouble("posFront", posFront);
         tag.putDouble("posLeft", posLeft);
         tag.putDouble("progress", progress);
+        // Tilt and the two claw gauges are part of the original's sync packet as well. Without
+        // them the renderer had no tilt animation at all and the console's heat/enrichment
+        // readouts stayed at their client-side defaults.
+        tag.putDouble("tiltFront", tiltFront);
+        tag.putDouble("tiltLeft", tiltLeft);
+        tag.putDouble("loadedHeat", loadedHeat);
+        tag.putDouble("loadedEnrichment", loadedEnrichment);
         if (!loadedItem.isEmpty()) tag.put("loadedItem", com.hbm_m.platform.PlatformHooks.safeItemSave(loadedItem, registries));
     }
 
@@ -284,6 +313,10 @@ public class RBMKCraneConsoleBlockEntity extends RBMKColumnBlockEntity {
         posFront = tag.getDouble("posFront");
         posLeft  = tag.getDouble("posLeft");
         progress = tag.contains("progress") ? tag.getDouble("progress") : 1D;
+        tiltFront = tag.getDouble("tiltFront");
+        tiltLeft  = tag.getDouble("tiltLeft");
+        if (tag.contains("loadedHeat"))       loadedHeat       = tag.getDouble("loadedHeat");
+        if (tag.contains("loadedEnrichment")) loadedEnrichment = tag.getDouble("loadedEnrichment");
         loadedItem = tag.contains("loadedItem") ? com.hbm_m.platform.PlatformHooks.itemStackOf(tag.getCompound("loadedItem"), registries) : ItemStack.EMPTY;
     }
 }

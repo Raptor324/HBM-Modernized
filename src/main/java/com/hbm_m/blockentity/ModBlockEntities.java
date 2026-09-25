@@ -967,6 +967,16 @@ public class ModBlockEntities {
 			BlockEntityType.Builder.<LaunchPadBlockEntity>of(LaunchPadBlockEntity::new, ModBlocks.LAUNCH_PAD.get())
 				.build(null));
 
+    public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.machines.MobileLaunchPadBlockEntity>> MOBILE_LAUNCH_PAD_BE =
+        BLOCK_ENTITIES.register("mobile_launch_pad_be", () ->
+            BlockEntityType.Builder.of(com.hbm_m.blockentity.machines.MobileLaunchPadBlockEntity::new,
+                    ModBlocks.MOBILE_LAUNCH_PAD.get()).build(null));
+
+    public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.machines.TopolLaunchPadBlockEntity>> TOPOL_LAUNCH_PAD_BE =
+        BLOCK_ENTITIES.register("topol_launch_pad_be", () ->
+            BlockEntityType.Builder.of(com.hbm_m.blockentity.machines.TopolLaunchPadBlockEntity::new,
+                    ModBlocks.TOPOL_LAUNCH_PAD.get()).build(null));
+
 	public static final RegistrySupplier<BlockEntityType<LaunchPadRustedBlockEntity>> LAUNCH_PAD_RUSTED_BE =
 		BLOCK_ENTITIES.register("launch_pad_rusted_be", () ->
 			BlockEntityType.Builder.<LaunchPadRustedBlockEntity>of(LaunchPadRustedBlockEntity::new, ModBlocks.LAUNCH_PAD_RUSTED.get())

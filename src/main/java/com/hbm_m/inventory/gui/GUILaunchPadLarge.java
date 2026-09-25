@@ -137,6 +137,10 @@ public class GUILaunchPadLarge extends GuiInfoScreen<LaunchPadLargeMenu> {
             case STEALTH -> 1.125F;
             case STRONG -> 1.375F;
             case HUGE -> 0.925F;
+            // 6,35 statt 13,5 Bloecke hoch, also gut doppelt so gross in der Vorschau.
+            case ISKANDER -> 1.9F;
+            // 22,5 Bloecke hoch - die groesste Rakete der Mod, entsprechend klein in der Vorschau.
+            case TOPOL -> 0.55F;
             case ATLAS -> 0.875F;
             case OTHER -> 1.0F;
         };

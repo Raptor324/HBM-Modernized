@@ -201,7 +201,20 @@ public class RBMKHeaterBlockEntity extends RBMKColumnBlockEntity
         d.putInt("maxWater", inputTank.getMaxFill());
         d.putInt("steam",    outputTank.getFill());
         d.putInt("maxSteam", outputTank.getMaxFill());
+        // The original's HEATEX tooltip names both fluids (Fluids.fromID(data.getShort("type"))).
+        // This port's tanks are typed objects rather than numeric fluid IDs, so the console gets
+        // the ready-made translation keys instead.
+        d.putString("type",    fluidKey(inputTank.getConfiguredFluid()));
+        d.putString("hottype", fluidKey(outputTank.getConfiguredFluid()));
         return d;
+    }
+
+    /** Lang key for a fluid, matching this mod's {@code fluid.<namespace>.<path>} convention. */
+    private static String fluidKey(net.minecraft.world.level.material.Fluid fluid) {
+        if (fluid == null) return "";
+        net.minecraft.resources.ResourceLocation id =
+                net.minecraft.core.registries.BuiltInRegistries.FLUID.getKey(fluid);
+        return id == null ? "" : "fluid." + id.getNamespace() + "." + id.getPath();
     }
 
     @Override public Component getDisplayName() { return Component.translatable("block.hbm_m.rbmk_heater"); }

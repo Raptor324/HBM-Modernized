@@ -20,6 +20,7 @@ import com.hbm_m.entity.missile.MissileStealthEntity;
 import com.hbm_m.entity.missile.MissileTier0;
 import com.hbm_m.entity.missile.MissileTier1;
 import com.hbm_m.entity.missile.MissileTier2;
+import com.hbm_m.entity.missile.Missile9M723Entity;
 import com.hbm_m.entity.missile.MissileTier3;
 import com.hbm_m.entity.missile.MissileTier4;
 import com.hbm_m.entity.projectile.ZirnoxDebrisEntity;
@@ -274,6 +275,20 @@ public class ModEntities {
     public static final RegistrySupplier<EntityType<MissileTier3.MissileDrill>> MISSILE_DRILL =
             ENTITY_TYPES.register("missile_drill",
                     () -> missileBuilder(MissileTier3.MissileDrill::new).build("missile_drill"));
+
+    // Iskander-M 9M723 - quasiballistisch, gedrueckte Bahn, Mach-6-Reiseprofil
+    public static final RegistrySupplier<EntityType<Missile9M723Entity.HighExplosive>> MISSILE_9M723 =
+            ENTITY_TYPES.register("missile_9m723",
+                    () -> missileBuilder(Missile9M723Entity.HighExplosive::new).build("missile_9m723"));
+
+    public static final RegistrySupplier<EntityType<Missile9M723Entity.Buster>> MISSILE_9M723_BUSTER =
+            ENTITY_TYPES.register("missile_9m723_buster",
+                    () -> missileBuilder(Missile9M723Entity.Buster::new).build("missile_9m723_buster"));
+
+    /** RT-2PM2 Topol-M - ICBM mit einem Gefechtskopf. */
+    public static final RegistrySupplier<EntityType<com.hbm_m.entity.missile.MissileTopolEntity>> MISSILE_TOPOL =
+            ENTITY_TYPES.register("missile_topol",
+                    () -> missileBuilder(com.hbm_m.entity.missile.MissileTopolEntity::new).build("missile_topol"));
 
     public static final RegistrySupplier<EntityType<MissileShuttleEntity>> MISSILE_SHUTTLE =
             ENTITY_TYPES.register("missile_shuttle",

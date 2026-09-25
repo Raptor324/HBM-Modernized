@@ -283,7 +283,10 @@ public class RBMKColumnRenderer<T extends RBMKColumnBlockEntity> implements com.
     // ─── Cherenkov glow ──────────────────────────────────────────────────────
 
     private static void renderCherenkovGlow(PoseStack ps, MultiBufferSource buf, int height) {
-        VertexConsumer vc = buf.getBuffer(RenderType.lightning());
+        // NOT RenderType.lightning(): its WEATHER_TARGET output state makes the haze render
+        // through blocks under Fabulous graphics. See CustomRenderTypes.RBMK_CHERENKOV.
+        VertexConsumer vc = buf.getBuffer(
+                com.hbm_m.client.ClientRenderHandler.CustomRenderTypes.RBMK_CHERENKOV);
         ps.pushPose();
         ps.translate(0.5, 0.75, 0.5);
         Matrix4f m = ps.last().pose();

@@ -562,6 +562,14 @@ public class ModBlocks {
 	public static final RegistrySupplier<Block> LAUNCH_PAD = registerBlockWithoutItem("launch_pad",
             () -> new LaunchPadBlock(BlockProps.copy(Blocks.IRON_BLOCK).noOcclusion()));
 
+    /** Mobile Startrampe (Iskander-M TEL), 15x5-Grundriss - siehe MobileLaunchPadBlock. */
+    public static final RegistrySupplier<Block> MOBILE_LAUNCH_PAD = registerBlockWithoutItem("mobile_launch_pad",
+            () -> new com.hbm_m.block.machines.MobileLaunchPadBlock(BlockProps.copy(Blocks.IRON_BLOCK).noOcclusion()));
+
+    /** Topol-M-Werfer (MZKT-79221), 25x5-Grundriss mit Aufrichter - siehe TopolLaunchPadBlock. */
+    public static final RegistrySupplier<Block> TOPOL_LAUNCH_PAD = registerBlockWithoutItem("topol_launch_pad",
+            () -> new com.hbm_m.block.machines.TopolLaunchPadBlock(BlockProps.copy(Blocks.IRON_BLOCK).noOcclusion()));
+
     public static final RegistrySupplier<Block> LAUNCH_PAD_RUSTED = registerBlockWithoutItem("launch_pad_rusted",
             () -> new LaunchPadRustedBlock(BlockProps.copy(Blocks.IRON_BLOCK).noOcclusion()));
 

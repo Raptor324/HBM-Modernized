@@ -69,6 +69,7 @@ public final class NuclearExplosionAPI {
 
         entity.fallout = cfg.falloutEnabled;
         entity.setFalloutAdd(cfg.extraFalloutRadius);
+        entity.setFalloutFactor(cfg.falloutFactor);
 
         entity.destroyTerrain = cmd.crater();
         entity.applyEntityDamage = cmd.damage();
@@ -77,7 +78,10 @@ public final class NuclearExplosionAPI {
 
         if (cmd.particles()) {
             float scale = (float) entity.length;
-            if (cfg.mushroomType == 1) {
+            if (cfg.mushroomScale > 0.0F) {
+                NukeTorexCreator.statFacScaled(level, x, y, z, scale, cfg.mushroomType,
+                        cfg.mushroomScale, cfg.mushroomLifeTicks);
+            } else if (cfg.mushroomType == 1) {
                 NukeTorexCreator.statFacBale(level, x, y, z, scale);
             } else {
                 NukeTorexCreator.statFacStandard(level, x, y, z, scale);

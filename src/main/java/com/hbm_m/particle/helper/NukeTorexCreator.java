@@ -14,17 +14,33 @@ import net.minecraft.world.level.Level;
 public class NukeTorexCreator implements IParticleCreator {
 
     public static void statFacStandard(Level level, double x, double y, double z, float scale) {
-        statFac(level, x, y, z, scale, 0);
+        statFac(level, x, y, z, scale, 0, 0.0F, 0);
+    }
+
+    /**
+     * Wie {@link #statFacStandard}, aber mit vorgegebener Wolkengroesse.
+     *
+     * <p>Die abgeleitete Groesse staucht die Sprengkraft stark: sie waechst nur mit der Wurzel,
+     * damit gewoehnliche Bomben nicht den halben Himmel fuellen. Fuer eine Interkontinentalrakete
+     * ist das zu wenig - deren Wolke soll den Baugrenzen nahekommen, auch wenn die echte noch
+     * einmal das Sechzigfache waere.
+     */
+    public static void statFacScaled(Level level, double x, double y, double z, float scale,
+                                     int type, float visualScale, int lifeTicks) {
+        statFac(level, x, y, z, scale, type, visualScale, lifeTicks);
     }
 
     public static void statFacBale(Level level, double x, double y, double z, float scale) {
-        statFac(level, x, y, z, scale, 1);
+        statFac(level, x, y, z, scale, 1, 0.0F, 0);
     }
 
-    private static void statFac(Level level, double x, double y, double z, float scale, int type) {
+    private static void statFac(Level level, double x, double y, double z, float scale, int type,
+                                float visualScale, int lifeTicks) {
         CompoundTag tag = new CompoundTag();
         tag.putString("type", "nuke");
         tag.putFloat("scale", scale);
+        if (visualScale > 0.0F) tag.putFloat("vscale", visualScale);
+        if (lifeTicks > 0) tag.putInt("vlife", lifeTicks);
         if (type == 0 || type == 1) tag.putInt("cType", type);
         if (level instanceof net.minecraft.server.level.ServerLevel serverLevel) {
             // Дальняя прорисовка гриба (Distant Horizons и т.п.): радиус 1000 блоков
@@ -41,8 +57,11 @@ public class NukeTorexCreator implements IParticleCreator {
     public void makeParticle(ClientLevel level, Player player, RandomSource rand, double x, double y, double z, CompoundTag tag) {
         int type = tag.contains("cType") ? tag.getInt("cType") : 0;
         float scale = tag.getFloat("scale");
-        float clampedScale = Mth.clamp((float) BobMathUtil.squirt(scale * 0.01) * 1.5F, 0.5F, 5F);
+        float clampedScale = tag.contains("vscale")
+                ? Mth.clamp(tag.getFloat("vscale"), 0.5F, 5F)
+                : Mth.clamp((float) BobMathUtil.squirt(scale * 0.01) * 1.5F, 0.5F, 5F);
         NukeTorex torex = new NukeTorex(level, x, y, z).setScale(clampedScale, true);
+        if (tag.contains("vlife")) torex.setMaxAgeTicks(tag.getInt("vlife"));
         torex.setType(type);
         ParticleEngineNT.INSTANCE.add(torex);
 

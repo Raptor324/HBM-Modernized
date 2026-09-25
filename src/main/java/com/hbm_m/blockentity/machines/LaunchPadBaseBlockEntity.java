@@ -134,6 +134,9 @@ public abstract class LaunchPadBaseBlockEntity extends BaseMachineBlockEntity
         MISSILES.put(ModItems.MISSILE_INFERNO.get(), ModEntities.MISSILE_INFERNO.get());
         MISSILES.put(ModItems.MISSILE_RAIN.get(), ModEntities.MISSILE_RAIN.get());
         MISSILES.put(ModItems.MISSILE_DRILL.get(), ModEntities.MISSILE_DRILL.get());
+        MISSILES.put(ModItems.MISSILE_9M723.get(), ModEntities.MISSILE_9M723.get());
+        MISSILES.put(ModItems.MISSILE_9M723_BUSTER.get(), ModEntities.MISSILE_9M723_BUSTER.get());
+        MISSILES.put(ModItems.MISSILE_TOPOL.get(), ModEntities.MISSILE_TOPOL.get());
         MISSILES.put(ModItems.MISSILE_SHUTTLE.get(), ModEntities.MISSILE_SHUTTLE.get());
 
         MISSILES.put(ModItems.MISSILE_NUCLEAR.get(), ModEntities.MISSILE_NUCLEAR.get());
@@ -556,12 +559,8 @@ public abstract class LaunchPadBaseBlockEntity extends BaseMachineBlockEntity
         }
 
         MissileBaseEntity missile = type.create(level);
-        missile.initLaunch(
-                worldPosition.getX() + 0.5D,
-                worldPosition.getY() + getLaunchOffset(),
-                worldPosition.getZ() + 0.5D,
-                targetX, targetZ
-        );
+        net.minecraft.world.phys.Vec3 origin = getLaunchOrigin();
+        missile.initLaunch(origin.x, origin.y, origin.z, targetX, targetZ);
         BlockState padState = level.getBlockState(worldPosition);
         if (padState.hasProperty(HorizontalDirectionalBlock.FACING)) {
             missile.setLaunchFacing(padState.getValue(HorizontalDirectionalBlock.FACING));
@@ -578,16 +577,14 @@ public abstract class LaunchPadBaseBlockEntity extends BaseMachineBlockEntity
         }
 
         level.addFreshEntity(missile);
+        net.minecraft.world.phys.Vec3 origin = getLaunchOrigin();
         if (level instanceof ServerLevel server) {
-            MissileWarheadEffects.spawnLaunchSmoke(server,
-                    worldPosition.getX() + 0.5D,
-                    worldPosition.getY() + getLaunchOffset(),
-                    worldPosition.getZ() + 0.5D);
+            MissileWarheadEffects.spawnLaunchSmoke(server, origin.x, origin.y, origin.z);
         }
         level.playSound(null,
-                worldPosition.getX() + 0.5D,
+                origin.x,
                 worldPosition.getY(),
-                worldPosition.getZ() + 0.5D,
+                origin.z,
                 com.hbm_m.sound.ModSounds.MISSILE_TAKEOFF.get(),
                 SoundSource.PLAYERS,
                 // volume = радиус рассылки пакета: 16 × volume = 512 бл. = attenuation_distance
@@ -665,6 +662,18 @@ public abstract class LaunchPadBaseBlockEntity extends BaseMachineBlockEntity
     /** Смещение точки старта ракеты относительно верха блока. */
     protected double getLaunchOffset() {
         return 1.0D;
+    }
+
+    /**
+     * Startpunkt der Rakete in Weltkoordinaten. Standard ist die Mitte des Controllerblocks,
+     * um {@link #getLaunchOffset()} angehoben. Rampen, deren Rakete nicht ueber der Mitte steht
+     * - etwa die mobile Startrampe mit ihrem Aufrichter am Heck - ueberschreiben das hier.
+     */
+    protected net.minecraft.world.phys.Vec3 getLaunchOrigin() {
+        return new net.minecraft.world.phys.Vec3(
+                worldPosition.getX() + 0.5D,
+                worldPosition.getY() + getLaunchOffset(),
+                worldPosition.getZ() + 0.5D);
     }
 
     // -----------------------

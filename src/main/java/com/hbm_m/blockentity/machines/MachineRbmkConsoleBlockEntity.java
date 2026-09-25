@@ -180,6 +180,10 @@ public class MachineRbmkConsoleBlockEntity extends com.hbm_m.blockentity.BaseHbm
                     // 1:1 with the original's RenderRBMKConsole: a column the crane is currently
                     // hovering flashes yellow on the mini-map, driven by this counter.
                     d.putInt("indicator",    col.craneIndicator);
+                    // 1:1 with the original's scan loop: a moderated column carries a flag so the
+                    // console tooltip can append its "Moderated" line. It was never written, so
+                    // that line could never appear no matter how the tooltip was built.
+                    if (col.isModerated()) d.putBoolean("moderated", true);
 
                     if (col instanceof RBMKRodBlockEntity rod)
                         totalFlux += (int) rod.lastFluxQuantity;
@@ -287,12 +291,17 @@ public class MachineRbmkConsoleBlockEntity extends com.hbm_m.blockentity.BaseHbm
                         rod.setTarget(dVal);
                 }
             }
-            case 1 -> { // AZ-5: retract ALL control rods immediately
+            case 1 -> { // AZ-5 emergency shutdown: drive ALL control rods to fully inserted
+                // The original's pressAZ5 only calls setTarget(0) - the rods then TRAVEL down at
+                // the normal dialControlSpeed rate, which is the whole point of the scram taking
+                // time. The port also slammed `level = 0`, teleporting every rod home in a single
+                // tick, so AZ-5 was instantaneous and the positive-scram surge (which needs the
+                // rods to actually move through their range) could never fire.
                 for (int i = 0; i < AREA; i++) {
                     BlockPos cPos = idxToPos(i);
                     if (cPos != null && level.getBlockEntity(cPos) instanceof RBMKControlBlockEntity rod) {
                         rod.setTarget(0);
-                        rod.level = 0;
+                        rod.setChanged();
                     }
                 }
             }

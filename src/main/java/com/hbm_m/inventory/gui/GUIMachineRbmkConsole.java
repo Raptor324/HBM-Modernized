@@ -10,6 +10,7 @@ import com.hbm_m.network.RBMKConsoleControlPacket;
 import com.mojang.blaze3d.systems.RenderSystem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
@@ -300,18 +301,90 @@ public class GUIMachineRbmkConsole extends AbstractContainerScreen<MachineRbmkCo
         RBMKColumnData col = console.columns[idx];
         if (col == null) return;
 
-        List<Component> lines = new ArrayList<>();
-        lines.add(Component.literal(col.type.name()));
-        double heat = col.data.getDouble("heat");
-        lines.add(Component.literal(String.format("Heat: %.1f / %.0f°C", heat, col.data.getDouble("maxHeat"))));
-        if (col.type == ColumnType.FUEL && col.data.contains("enrichment")) {
-            lines.add(Component.literal(String.format("Enrich: %.1f%%", col.data.getDouble("enrichment") * 100)));
-            lines.add(Component.literal(String.format("Xenon:  %.1f%%", col.data.getDouble("xenon"))));
-        }
-        if (col.type == ColumnType.CONTROL)
-            lines.add(Component.literal(String.format("Level: %.1f%%", col.data.getDouble("level") * 100)));
+        g.renderTooltip(this.font, fancyStats(col), java.util.Optional.empty(), mx, my);
+    }
 
-        g.renderTooltip(this.font, lines, java.util.Optional.empty(), mx, my);
+    /** Truncate to one decimal the way the original does ({@code ((int)(v * 10D)) / 10D}). */
+    private static String dec1(double v) { return (((int) (v * 10D)) / 10D) + "°C"; }
+
+    private static final String[] STEAM_KEYS =
+            { "fluid.hbm_m.steam", "fluid.hbm_m.hotsteam",
+              "fluid.hbm_m.superhotsteam", "fluid.hbm_m.ultrahotsteam" };
+
+    private static final String[] GROUP_KEYS =
+            { "rbmk.control.red", "rbmk.control.yellow", "rbmk.control.green",
+              "rbmk.control.blue", "rbmk.control.purple" };
+
+    /**
+     * 1:1 port of the original's {@code RBMKColumn.getFancyStats()}. The port previously had an
+     * ad-hoc tooltip that printed hardcoded English ("Heat:", "Enrich:", "Xenon:") and covered
+     * only FUEL and CONTROL. Consequences: a fuel channel showed neither its core nor its skin
+     * temperature, boilers and heat exchangers showed nothing but their column heat, the
+     * moderator line never appeared, and none of it could be translated. The original's
+     * "Enrich" line is also not enrichment but DEPLETION - (1 - enrichment) - so the number
+     * shown was the complement of the intended one.
+     */
+    private static List<Component> fancyStats(RBMKColumnData col) {
+        List<Component> stats = new ArrayList<>();
+        stats.add(Component.literal(col.type.name()));
+        stats.add(Component.translatable("rbmk.heat", dec1(col.data.getDouble("heat")))
+                .withStyle(ChatFormatting.YELLOW));
+
+        switch (col.type) {
+            case FUEL -> {
+                stats.add(Component.translatable("rbmk.rod.depletion",
+                        (((int) ((1D - col.data.getDouble("enrichment")) * 100000)) / 1000D) + "%")
+                        .withStyle(ChatFormatting.GREEN));
+                stats.add(Component.translatable("rbmk.rod.xenon",
+                        (((int) (col.data.getDouble("xenon") * 1000D)) / 1000D) + "%")
+                        .withStyle(ChatFormatting.DARK_PURPLE));
+                stats.add(Component.translatable("rbmk.rod.coreTemp", dec1(col.data.getDouble("c_coreHeat")))
+                        .withStyle(ChatFormatting.DARK_RED));
+                stats.add(Component.translatable("rbmk.rod.skinTemp",
+                        dec1(col.data.getDouble("c_heat")), dec1(col.data.getDouble("c_maxHeat")))
+                        .withStyle(ChatFormatting.RED));
+            }
+            case BOILER -> {
+                stats.add(Component.translatable("rbmk.boiler.water",
+                        col.data.getInt("water"), col.data.getInt("maxWater"))
+                        .withStyle(ChatFormatting.BLUE));
+                stats.add(Component.translatable("rbmk.boiler.steam",
+                        col.data.getInt("steam"), col.data.getInt("maxSteam"))
+                        .withStyle(ChatFormatting.WHITE));
+                int grade = Math.max(0, Math.min(3, col.data.getShort("steamGrade")));
+                stats.add(Component.translatable("rbmk.boiler.type",
+                        Component.translatable(STEAM_KEYS[grade]))
+                        .withStyle(ChatFormatting.YELLOW));
+            }
+            case CONTROL -> {
+                // The original falls through from CONTROL into CONTROL_AUTO, so the colour group
+                // line is control-only while the level line is shown for both. This port folds
+                // both variants into ColumnType.CONTROL, so the group line is simply conditional
+                // on the tag actually being present.
+                if (col.data.contains("color")) {
+                    short c = col.data.getShort("color");
+                    if (c >= 0 && c < GROUP_KEYS.length)
+                        stats.add(Component.translatable(GROUP_KEYS[c]).withStyle(ChatFormatting.YELLOW));
+                }
+                stats.add(Component.translatable("rbmk.control.level",
+                        ((int) (col.data.getDouble("level") * 100D)) + "%")
+                        .withStyle(ChatFormatting.YELLOW));
+            }
+            case HEATER -> {
+                stats.add(Component.translatable(col.data.getString("type"))
+                        .append(" " + col.data.getInt("water") + "/" + col.data.getInt("maxWater") + "mB")
+                        .withStyle(ChatFormatting.BLUE));
+                stats.add(Component.translatable(col.data.getString("hottype"))
+                        .append(" " + col.data.getInt("steam") + "/" + col.data.getInt("maxSteam") + "mB")
+                        .withStyle(ChatFormatting.RED));
+            }
+            default -> { }
+        }
+
+        if (col.data.getBoolean("moderated"))
+            stats.add(Component.translatable("rbmk.moderated").withStyle(ChatFormatting.YELLOW));
+
+        return stats;
     }
 
     private void renderButtonTooltips(GuiGraphics g, int mx, int my) {

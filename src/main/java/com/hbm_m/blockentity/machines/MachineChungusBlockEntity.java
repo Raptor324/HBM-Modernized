@@ -64,8 +64,13 @@ public class MachineChungusBlockEntity extends BaseMachineBlockEntity
     // Capacity constants (Platzhalter, ~16x Industrial Turbine - beim Playtesten nachjustieren)
     private static final long ENERGY_CAPACITY = 8_000_000L;
     private static final long ENERGY_EXTRACT_RATE = 160_000L;
-    private static final int STEAM_CAPACITY = 1_024_000;
-    private static final int SPENT_STEAM_CAPACITY = 1_024_000;
+    // 1:1 mit TileEntityChungus.inputTankSize/outputTankSize. Die Groesse ist beim Leviathan
+    // Absicht, nicht Willkuer: consumptionPercent() ist 1.0, die Turbine leert ihren Eingangstank
+    // also jeden Tick vollstaendig ("consumes all availible steam per tick") und muss dafuer einen
+    // ganzen Dampfstoss auf einmal aufnehmen koennen. Der Port hatte hier 1_024_000 - rund das
+    // Tausendstel davon.
+    private static final int STEAM_CAPACITY = 1_000_000_000;
+    private static final int SPENT_STEAM_CAPACITY = 1_000_000_000;
 
     // Conversion constants
     private static final double CONSUMPTION_PERCENT = 1.0D; // Original: consumptionPercent() = 1D (alles pro Tick)
@@ -86,7 +91,11 @@ public class MachineChungusBlockEntity extends BaseMachineBlockEntity
     //?}
 
     private boolean isActive = false;
-    /** Lever-Ersatz: per Rechtsklick auf den Controller umgeschaltet, gated den Dampfverbrauch. */
+    /**
+     * Ergebnis, kein Schalter: wird in {@link #processTurbine} jeden Tick aus dem tatsaechlichen
+     * Durchsatz neu bestimmt ({@code operational = ops > 0}), genau wie in
+     * {@code TileEntityTurbineBase.updateEntity}.
+     */
     private boolean operational = false;
     private float anim = 0.0F;
     private float prevAnim = 0.0F;
@@ -116,6 +125,7 @@ public class MachineChungusBlockEntity extends BaseMachineBlockEntity
                     be.anim -= (float) (Math.PI * 2.0);
                 }
             }
+            if (be.isActive) be.spawnExhaust(level, pos);
             ClientSoundBootstrap.updateSound(be, be.spin > 0.001D,
                     () -> be.createLoopingSoundReflect(ModSounds.CHUNGUS_TURBINE.get()));
             return;
@@ -126,6 +136,7 @@ public class MachineChungusBlockEntity extends BaseMachineBlockEntity
         boolean wasActive = be.isActive;
 
         be.processTurbine();
+        be.exchangeFluids(level);
 
         if (be.energy > 0 && level.getGameTime() % 10L == 0L) {
             be.updateEnergyDelta(be.getEnergyStored());
@@ -208,7 +219,11 @@ public class MachineChungusBlockEntity extends BaseMachineBlockEntity
                     spentSteamTank.fillMb(trait.coolsTo, ops * trait.amountProduced);
 
                     maxPower = (long) (ops * trait.heatEnergy * eff);
-                    flywheelEnergy += maxPower;
+                    // Deckeln: spin ist als Bruchteil 0..1 gedacht. Ungedeckelt wuchs
+                    // flywheelEnergy bei grossen Tanks unbegrenzt weiter (Ultraheissdampf liefert
+                    // 120 HE je mB), spin lief weit ueber 1 und die Turbine haette nach einem
+                    // einzigen Dampfstoss noch stundenlang Leistung "nachgeliefert".
+                    flywheelEnergy = Math.min(flywheelEnergy + maxPower, (long) FLYWHEEL_MAX_ENERGY);
                 }
             }
         }
@@ -273,6 +288,97 @@ public class MachineChungusBlockEntity extends BaseMachineBlockEntity
     @Override
     public int getCurrentMode() {
         return 2; // OUTPUT only, so the energy network treats this as a generator.
+    }
+
+    /**
+     * Abdampffahne vor der Turbine, 1:1 aus {@code TileEntityChungus.onClientTick}: zehn
+     * Cloud-Partikel pro Tick, seitlich gaussverteilt, mit leichter Drift zurueck zur Maschine.
+     * Fehlte komplett - eine laufende Turbine war rein optisch nicht von einer stehenden zu
+     * unterscheiden.
+     */
+    private void spawnExhaust(Level level, BlockPos pos) {
+        net.minecraft.core.Direction dir = getBlockState()
+                .getValue(net.minecraft.world.level.block.HorizontalDirectionalBlock.FACING);
+        net.minecraft.core.Direction side = dir.getClockWise();
+        net.minecraft.util.RandomSource rand = level.random;
+
+        for (int i = 0; i < 10; i++) {
+            level.addParticle(net.minecraft.core.particles.ParticleTypes.CLOUD,
+                    pos.getX() + 0.5 + dir.getStepX() * (rand.nextDouble() + 1.25)
+                            + rand.nextGaussian() * side.getStepX() * 0.65,
+                    pos.getY() + 2.5 + rand.nextGaussian() * 0.65,
+                    pos.getZ() + 0.5 + dir.getStepZ() * (rand.nextDouble() + 1.25)
+                            + rand.nextGaussian() * side.getStepZ() * 0.65,
+                    -dir.getStepX() * 0.2, 0, -dir.getStepZ() * 0.2);
+        }
+    }
+
+    /**
+     * Anschlusspunkte der Struktur, an denen die Turbine mit dem Fluidnetz redet: jeder
+     * UNIVERSAL_/FLUID_CONNECTOR-Phantomblock, dazu die Nachbarfelder, die nicht selbst zur
+     * Struktur gehoeren. Wird einmal pro BlockEntity berechnet (Position und Blickrichtung
+     * aendern sich nicht mehr).
+     */
+    private java.util.List<com.mojang.datafixers.util.Pair<BlockPos, net.minecraft.core.Direction>> fluidPorts;
+
+    private java.util.List<com.mojang.datafixers.util.Pair<BlockPos, net.minecraft.core.Direction>> getFluidPorts() {
+        if (fluidPorts != null) return fluidPorts;
+
+        java.util.List<com.mojang.datafixers.util.Pair<BlockPos, net.minecraft.core.Direction>> ports =
+                new java.util.ArrayList<>();
+        if (getBlockState().getBlock() instanceof com.hbm_m.block.machines.MachineChungusBlock block) {
+            var helper = block.getStructureHelper();
+            net.minecraft.core.Direction facing = getBlockState()
+                    .getValue(net.minecraft.world.level.block.HorizontalDirectionalBlock.FACING);
+
+            java.util.Set<BlockPos> occupied = new java.util.HashSet<>();
+            for (BlockPos localPos : helper.getStructureMap().keySet())
+                occupied.add(helper.getRotatedPos(worldPosition, localPos, facing));
+
+            for (BlockPos localPos : helper.getStructureMap().keySet()) {
+                com.hbm_m.multiblock.PartRole role = helper.resolvePartRole(localPos, block);
+                if (role != com.hbm_m.multiblock.PartRole.UNIVERSAL_CONNECTOR
+                        && role != com.hbm_m.multiblock.PartRole.FLUID_CONNECTOR) continue;
+
+                BlockPos connector = helper.getRotatedPos(worldPosition, localPos, facing);
+                for (net.minecraft.core.Direction d : net.minecraft.core.Direction.values()) {
+                    BlockPos neighbour = connector.relative(d);
+                    if (occupied.contains(neighbour)) continue;
+                    ports.add(com.mojang.datafixers.util.Pair.of(neighbour, d));
+                }
+            }
+        }
+        fluidPorts = ports;
+        return ports;
+    }
+
+    /**
+     * 1:1 mit dem Schluss von {@code TileEntityTurbineBase.updateEntity}, das pro Tick ueber alle
+     * {@code getConPos()} laeuft und dort <b>beides</b> tut: {@code tryProvide(tanks[1], ...)} und
+     * {@code trySubscribe(tanks[0].getTankType(), ...)}.
+     * <p>
+     * Genau das fehlte hier komplett - die Turbine hat weder Dampf angefordert noch Altdampf
+     * abgegeben, sondern rein passiv darauf gewartet, bedient zu werden. Der Altdampftank lief
+     * damit voll, und weil {@code outputOps = (maxFill - fill) / amountProduced} den Durchsatz
+     * begrenzt, ging {@code ops} auf 0: die Turbine hoerte auf, ueberhaupt Dampf zu verbrauchen.
+     * Bei Heissdampf faellt das sofort auf, weil dort aus 1 mB Eingang 10 mB Ausgang werden - der
+     * Ausgangstank ist also zehnmal schneller voll, als der Eingang leer wird. Das ist die
+     * Ursache von "unable to release steam because the Leviathan turbines aren't working".
+     * <p>
+     * Der RBMK-Boiler und der Dampfauslass machen es im Port bereits genauso
+     * ({@code RBMKBoilerBlockEntity.exchangeFluids}) - die Turbine war die Ausnahme.
+     */
+    private void exchangeFluids(Level level) {
+        var ports = getFluidPorts();
+        if (ports.isEmpty()) return;
+
+        net.minecraft.world.level.material.Fluid intake = steamTank.getTankType();
+        boolean hasSpent = spentSteamTank.getFill() > 0;
+
+        for (var port : ports) {
+            trySubscribe(intake, level, port.getFirst(), port.getSecond());
+            if (hasSpent) tryProvide(spentSteamTank, level, port.getFirst(), port.getSecond());
+        }
     }
 
     // --- MK2 Fluid-Netzwerk (UNIVERSAL_CONNECTOR-Phantomblöcke der Multiblock-Struktur) ---

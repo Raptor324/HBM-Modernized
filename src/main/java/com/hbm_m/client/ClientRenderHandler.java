@@ -104,6 +104,29 @@ public class ClientRenderHandler {
                         .setWriteMaskState(COLOR_WRITE)
                         .createCompositeState(false));
 
+        /**
+         * Cherenkov haze inside a loaded RBMK fuel channel (see {@code RBMKColumnRenderer}).
+         * Replaces vanilla {@code RenderType.lightning()}, whose {@code WEATHER_TARGET} output
+         * state diverts the batch into the separate weather framebuffer under Fabulous graphics;
+         * that buffer is composited over the scene afterwards, so the haze showed straight
+         * through the reactor's own blocks and the terrain in front of it (x-ray glow).
+         * State is the 1.7.10 original's {@code RenderRBMKFuelChannel}: additive
+         * SRC_ALPHA/ONE, no texture, no lighting, no culling, depth test left on.
+         * Depth WRITE is off (the original leaves the mask enabled, but 1.20's batched
+         * BufferSource draws these quads in a different order than the immediate-mode TESR did,
+         * where a depth-writing invisible plane would occlude later translucents).
+         */
+        public static final RenderType RBMK_CHERENKOV = create("hbm_m_rbmk_cherenkov",
+                DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.QUADS, 2048, false, false,
+                RenderType.CompositeState.builder()
+                        .setShaderState(POSITION_COLOR_SHADER)
+                        .setTransparencyState(LIGHTNING_TRANSPARENCY)
+                        .setDepthTestState(LEQUAL_DEPTH_TEST)
+                        .setCullState(NO_CULL)
+                        .setLightmapState(NO_LIGHTMAP)
+                        .setWriteMaskState(COLOR_WRITE)
+                        .createCompositeState(false));
+
         /** Translucent world overlay; TRANSLUCENT_TARGET required for Iris/Embeddium. */
         public static final RenderType HIGHLIGHT_BOX_FILL = create("highlight_box_fill",
                 DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.QUADS, 131072, false, false,

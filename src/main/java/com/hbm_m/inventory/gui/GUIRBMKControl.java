@@ -50,6 +50,14 @@ public class GUIRBMKControl extends GuiInfoScreen<RBMKControlMenu> {
         if (be.color >= 0 && be.color < 5) {
             g.blit(TEXTURE, leftPos + 28, topPos + 26 + be.color * 11, 184, be.color * 10, 12, 10);
         }
+
+        // Power indicator for the two ReaSim variants, 1:1 with the original's
+        // `if(rod.isPowered()) drawTexturedModalRect(guiLeft + 87, guiTop + 21, 196, rod.hasPower ? 16 : 0, 16, 16)`.
+        // It was missing entirely, so a ReaSim rod sitting on an empty grid gave no visible reason
+        // for refusing to move.
+        if (be.isPowered()) {
+            g.blit(TEXTURE, leftPos + 87, topPos + 21, 196, be.hasPower ? 16 : 0, 16, 16);
+        }
     }
 
     @Override
@@ -59,6 +67,12 @@ public class GUIRBMKControl extends GuiInfoScreen<RBMKControlMenu> {
 
         drawCustomInfoStat(g, mx, my, 71, 29, 16, 56, mx, my,
                 Component.literal((int) (be.level * 100) + "%"));
+
+        // Matching tooltip for the power gauge above - original shows "<power> / <max>HE".
+        if (be.isPowered()) {
+            drawCustomInfoStat(g, mx, my, 87, 21, 16, 16, mx, my,
+                    Component.literal(be.getEnergyStored() + " / " + be.getMaxEnergyStored() + "HE"));
+        }
 
         renderTooltip(g, mx, my);
     }

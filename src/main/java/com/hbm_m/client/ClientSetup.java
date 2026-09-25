@@ -587,6 +587,9 @@ public class ClientSetup {
         ModEntities.MISSILE_INFERNO.ifPresent(entityType -> EntityRenderers.register(entityType, MissileEntityRenderer::new));
         ModEntities.MISSILE_RAIN.ifPresent(entityType -> EntityRenderers.register(entityType, MissileEntityRenderer::new));
         ModEntities.MISSILE_DRILL.ifPresent(entityType -> EntityRenderers.register(entityType, MissileEntityRenderer::new));
+        ModEntities.MISSILE_9M723.ifPresent(entityType -> EntityRenderers.register(entityType, MissileEntityRenderer::new));
+        ModEntities.MISSILE_9M723_BUSTER.ifPresent(entityType -> EntityRenderers.register(entityType, MissileEntityRenderer::new));
+        ModEntities.MISSILE_TOPOL.ifPresent(entityType -> EntityRenderers.register(entityType, MissileEntityRenderer::new));
         ModEntities.MISSILE_SHUTTLE.ifPresent(entityType -> EntityRenderers.register(entityType, MissileEntityRenderer::new));
         ModEntities.MISSILE_NUCLEAR.ifPresent(entityType -> EntityRenderers.register(entityType, MissileEntityRenderer::new));
         ModEntities.MISSILE_NUCLEAR_CLUSTER.ifPresent(entityType -> EntityRenderers.register(entityType, MissileEntityRenderer::new));
@@ -639,6 +642,8 @@ public class ClientSetup {
         BlockEntityRenderers.register(ModBlockEntities.BATTERY_SOCKET_BE.get(), BatterySocketCreativeRenderer::new);
         MachineFluidTankRenderer.register();
         BlockEntityRenderers.register(ModBlockEntities.LAUNCH_PAD_BE.get(), LaunchPadMissileRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.MOBILE_LAUNCH_PAD_BE.get(), com.hbm_m.client.render.implementations.MobileLaunchPadMissileRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.TOPOL_LAUNCH_PAD_BE.get(), com.hbm_m.client.render.implementations.TopolLauncherRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.LAUNCH_PAD_RUSTED_BE.get(), LaunchPadMissileRenderer::new);
         MachineCoolingTowerRenderer.register();
         BlockEntityRenderers.register(ModBlockEntities.GAS_CENTRIFUGE_BE.get(), GasCentrifugeRenderer::new);
@@ -1181,6 +1186,9 @@ public class ClientSetup {
         event.registerEntityRenderer(ModEntities.MISSILE_INFERNO.get(), MissileEntityRenderer::new);
         event.registerEntityRenderer(ModEntities.MISSILE_RAIN.get(), MissileEntityRenderer::new);
         event.registerEntityRenderer(ModEntities.MISSILE_DRILL.get(), MissileEntityRenderer::new);
+        event.registerEntityRenderer(ModEntities.MISSILE_9M723.get(), MissileEntityRenderer::new);
+        event.registerEntityRenderer(ModEntities.MISSILE_9M723_BUSTER.get(), MissileEntityRenderer::new);
+        event.registerEntityRenderer(ModEntities.MISSILE_TOPOL.get(), MissileEntityRenderer::new);
         event.registerEntityRenderer(ModEntities.MISSILE_SHUTTLE.get(), MissileEntityRenderer::new);
         event.registerEntityRenderer(ModEntities.MISSILE_NUCLEAR.get(), MissileEntityRenderer::new);
         event.registerEntityRenderer(ModEntities.MISSILE_NUCLEAR_CLUSTER.get(), MissileEntityRenderer::new);

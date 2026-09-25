@@ -1963,6 +1963,8 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModBlocks.STRUCT_LAUNCHER_CORE_LARGE.get()));
         add.accept(new ItemStack(ModBlocks.STRUCT_SOYUZ_CORE.get()));
         add.accept(new ItemStack(ModItems.LAUNCH_PAD.get()));
+        add.accept(new ItemStack(ModItems.MOBILE_LAUNCH_PAD.get()));
+        add.accept(new ItemStack(ModItems.TOPOL_LAUNCH_PAD.get()));
         add.accept(new ItemStack(ModItems.LAUNCH_PAD_RUSTED.get()));
         add.accept(new ItemStack(ModBlocks.MACHINE_RADAR.get()));
         add.accept(new ItemStack(ModItems.RADAR_SCREEN.get()));
@@ -1995,6 +1997,9 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModItems.MISSILE_INFERNO.get()));
         add.accept(new ItemStack(ModItems.MISSILE_RAIN.get()));
         add.accept(new ItemStack(ModItems.MISSILE_DRILL.get()));
+        add.accept(new ItemStack(ModItems.MISSILE_9M723.get()));
+        add.accept(new ItemStack(ModItems.MISSILE_9M723_BUSTER.get()));
+        add.accept(new ItemStack(ModItems.MISSILE_TOPOL.get()));
         add.accept(new ItemStack(ModItems.MISSILE_NUCLEAR.get()));
         add.accept(new ItemStack(ModItems.MISSILE_NUCLEAR_CLUSTER.get()));
         add.accept(new ItemStack(ModItems.MISSILE_VOLCANO.get()));

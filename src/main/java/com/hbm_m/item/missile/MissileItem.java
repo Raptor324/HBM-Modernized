@@ -102,6 +102,10 @@ public class MissileItem extends Item implements ITooltipProvider {
         STEALTH(MissileFuel.KEROSENE_PEROXIDE),
         STRONG(MissileFuel.KEROSENE_PEROXIDE),
         HUGE(MissileFuel.KEROSENE_LOXY),
+        /** Massstabsgetreue 9M723: 6,35 Bloecke hoch statt der 13,5 der HUGE-Huelle. */
+        ISKANDER(MissileFuel.KEROSENE_LOXY),
+        /** RT-2PM2 Topol-M: 22,5 Bloecke hoch, eigener Rumpf. */
+        TOPOL(MissileFuel.JETFUEL_LOXY),
         ATLAS(MissileFuel.JETFUEL_LOXY),
         OTHER(MissileFuel.KEROSENE_PEROXIDE);
 

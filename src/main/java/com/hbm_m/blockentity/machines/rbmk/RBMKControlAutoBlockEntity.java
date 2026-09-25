@@ -25,10 +25,15 @@ public class RBMKControlAutoBlockEntity extends RBMKControlBlockEntity {
     public String texturePrefix = null;
 
     public RBMKFunction function  = RBMKFunction.LINEAR;
+    // 1:1 with CE's TileEntityRBMKControlAuto: all four fields are plain uninitialised doubles,
+    // i.e. 0. A freshly placed auto rod therefore stays fully inserted until the player actually
+    // configures it. The port shipped invented defaults (0/100/100/1200) which inverted the
+    // safety behaviour: past heatUpper the rod drove to levelUpper = 100%, so an overheating
+    // channel pulled its own automatic rod fully OUT instead of slamming it in.
     public double levelLower = 0.0;    // percent 0-100
-    public double levelUpper = 100.0;  // percent 0-100
-    public double heatLower  = 100.0;
-    public double heatUpper  = 1200.0;
+    public double levelUpper = 0.0;    // percent 0-100
+    public double heatLower  = 0.0;
+    public double heatUpper  = 0.0;
 
     public RBMKControlAutoBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.RBMK_CONTROL_AUTO_BE.get(), pos, state);

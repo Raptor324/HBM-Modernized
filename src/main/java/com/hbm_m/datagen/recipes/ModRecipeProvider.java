@@ -35,6 +35,7 @@ import com.hbm_m.datagen.recipes.custom.FractionTowerRecipeGenerator;
 import com.hbm_m.datagen.recipes.custom.GasCentrifugeRecipeGenerator;
 import com.hbm_m.datagen.recipes.custom.HydrotreaterRecipeGenerator;
 import com.hbm_m.datagen.recipes.custom.LiquefactorRecipeGenerator;
+import com.hbm_m.datagen.recipes.custom.MachineCraftingRecipeGenerator;
 import com.hbm_m.datagen.recipes.custom.MixerRecipeGenerator;
 import com.hbm_m.datagen.recipes.custom.MoldCastingRecipeGenerator;
 import com.hbm_m.datagen.recipes.custom.MoltenAlloyRecipeGenerator;
@@ -78,6 +79,7 @@ public class ModRecipeProvider extends RecipeProvider {
         AssemblerRecipeGenerator.generate(pWriter);
         ChemicalPlantRecipeGenerator.generate(pWriter);
         AnvilRecipeGenerator.generate(pWriter);
+        MachineCraftingRecipeGenerator.generate(pWriter);
         ShredderRecipeGenerator.generate(pWriter, ModRecipeProvider::unlockedByItem);
         CentrifugeRecipeGenerator.generate(pWriter);
         CrystallizerRecipeGenerator.generate(pWriter);
