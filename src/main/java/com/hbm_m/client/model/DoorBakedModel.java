@@ -56,10 +56,31 @@ public class DoorBakedModel extends AbstractMultipartBakedModel implements Abstr
     public DoorBakedModel(Map<String, BakedModel> parts, ItemTransforms transforms, ResourceLocation doorId) {
         super(parts, transforms);
         this.doorId = doorId;
-        
+
         // Кешируем имена частей из JSON
         this.cachedPartNames = parts.keySet().toArray(new String[0]);
     }
+
+    /**
+     * Ленивый токен геометрии модели: canonical-инстанс первой части (обёртки
+     * {@link com.hbm_m.client.loader.RemappedPartModel} раскрываются в canonical).
+     * Одинаков у всех текстурных скинов одной геометрии — дискриминатор VBO-ключа
+     * при шэринге скинов (см. MachineDoorRenderer.doorPartCacheKey).
+     */
+    public Object geometryToken() {
+        Object t = geometryToken;
+        if (t == null) {
+            for (BakedModel p : parts.values()) {
+                t = (p instanceof com.hbm_m.client.loader.RemappedPartModel r) ? r.canonical() : p;
+                break;
+            }
+            t = (t != null) ? t : this;
+            geometryToken = t;
+        }
+        return t;
+    }
+
+    private Object geometryToken;
 
     
     @Override
@@ -499,13 +520,11 @@ public class DoorBakedModel extends AbstractMultipartBakedModel implements Abstr
     // В 1.20+ ItemOverrides имеет приватный конструктор, поэтому кастомные overrides недоступны.
 
     // Без ветки neoforge слой падал в solid, и прозрачные участки рисовались непрозрачными.
-    //? if forge || neoforge {
     @Override
     public ChunkRenderTypeSet getRenderTypes(BlockState state, RandomSource rand, ModelData data) {
         // cutoutMipped для прозрачных текстур (стекло, решётки и т.д.)
         return ChunkRenderTypeSet.of(RenderType.cutoutMipped());
     }
-    //?}
 
     @Override
     public TextureAtlasSprite getParticleIcon() {

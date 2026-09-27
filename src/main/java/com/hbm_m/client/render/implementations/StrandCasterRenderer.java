@@ -83,7 +83,7 @@ public final class StrandCasterRenderer {
     /** Порт offset = amount/cost * 0.375 (сдвиг плиты к изложнице). */
     private static double moldOffset(MachineStrandCasterBlockEntity be) {
         if (be.amount == 0) return 0;
-        int cost = be.getMoldCostMb();
+        int cost = be.getMoldCost();
         return cost > 0 ? (double) be.amount / cost * 0.375 : 0;
     }
 

@@ -180,7 +180,8 @@ public final class MachineCrystallizerRenderer {
         MultiBufferSource.BufferSource buffers = mc.renderBuffers().bufferSource();
         PoseStack poseStack = new PoseStack();
 
-        //? if forge {
+        // Гейт снят: раньше ветка была только на Forge, и отложенная жидкость
+        // кристаллизатора на NeoForge вообще не рисовалась.
         try (var ignored = IrisPhaseGuard.pushBlockEntities()) {
             for (DeferredCrystallizerFluid entry : DEFERRED_FLUIDS) {
                 poseStack.pushPose();
@@ -192,7 +193,6 @@ public final class MachineCrystallizerRenderer {
             }
             buffers.endBatch();
         }
-        //?}
         DEFERRED_FLUIDS.clear();
     }
 

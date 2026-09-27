@@ -12,8 +12,10 @@ import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 import org.joml.Vector4f;
 
+import it.unimi.dsi.fastutil.longs.Long2LongOpenHashMap;
 import it.unimi.dsi.fastutil.longs.Long2ObjectOpenHashMap;
 
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.LevelRenderer;
 import net.minecraft.core.BlockPos;
 import net.minecraft.util.Mth;
@@ -49,17 +51,17 @@ import net.minecraft.world.phys.AABB;
  * lifetime of one frame collapses that to ~6 lookups per machine per frame -
  * an 11–22× reduction.
  *
- * <p><b>Invalidation strategy.</b> The cache uses a render-frame counter that
- * is bumped from {@code ClientModEvents.onRenderLevelStage(AFTER_BLOCK_ENTITIES)}
- * - i.e. ONCE per fully-rendered frame, after both the shadow pass and the
- * main pass have drained their block-entity dispatches. So a sample taken
- * during the shadow pass is reused during the main pass of the same frame
- * (correct - the world hasn't changed between them) and a fresh sample is
- * taken on the next frame. There is no need for a stronger TTL because the
- * lightmap only changes over multiple ticks anyway.
+ * <p><b>Invalidation strategy.</b> Entries are stamped with the client game
+ * time (tick counter) and stay valid for {@link #LIGHT_TTL_TICKS} ticks.
+ * The lightmap UV coordinates stored here are raw sky/block light levels —
+ * they do NOT change with the day/night cycle (the lightmap texture applies
+ * that at draw time), so the only real change driver is block updates around
+ * the machine. Resampling each machine's 6+8 positions EVERY frame was pure
+ * CPU waste; a ≤0.75 s staleness after placing/breaking a nearby block is the
+ * deliberate trade-off. A sample taken during the shadow pass is reused by
+ * the main pass of the same frame (and by subsequent frames within the TTL).
  *
- * <p>Periodic pruning every 600 frames (~10 seconds) drops entries belonging
- * to BlockEntities that haven't been rendered recently - typical
+ * <p>Periodic pruning drops entries older than the TTL - typical
  * "I walked past a chunk and now it's behind me" case - keeping the cache
  * bounded in long sessions.
  *
@@ -70,7 +72,21 @@ import net.minecraft.world.phys.AABB;
 public final class LightSampleCache {
 
     private static final Long2ObjectOpenHashMap<Entry> CACHE = new Long2ObjectOpenHashMap<>();
-    private static long currentFrame = 0L;
+
+    /**
+     * Горизонт валидности записей в игровых тиках. Свет вокруг стоящей машины
+     * меняется только при изменении блоков рядом; ресемпл 6+8 позиций каждый
+     * кадр — чистый CPU-штраф (6.8% кадра на ферме). 15 тиков = 0.75 c —
+     * компромисс «заметность задержки ≈ нет» против «кадр без лайтмап-работы».
+     */
+    private static final int LIGHT_TTL_TICKS = 15;
+
+    /**
+     * Клиентовое игровое время (тик-счётчик), обновляется раз в кадр в {@link #onFrameStart}.
+     * 0, а не MIN_VALUE: разность {@code currentTick - lastTick} обязана не переполняться,
+     * иначе записи, проставленные до первого onFrameStart, считались бы валидными вечно.
+     */
+    private static long currentTick = 0L;
 
     public static final ThreadLocal<Matrix4f> BASE_POSE = ThreadLocal.withInitial(Matrix4f::new);
     public static final ThreadLocal<Boolean> BASE_POSE_SET = ThreadLocal.withInitial(() -> false);
@@ -85,14 +101,14 @@ public final class LightSampleCache {
      * weak-ish identity by holding it directly: BEs are render-thread-owned
      * during the dispatch window, so the reference is always live.
      * <p>
-     * Cleared by {@link #onFrameStart} (so a new frame can't read a stale
-     * entry whose contents would no longer match {@code currentFrame}) and by
-     * {@link #invalidateAll} (level swap).
+     * Валиден, пока не протухнет по тик-TTL (см. {@link #LIGHT_TTL_TICKS}) —
+     * переживает кадры, пока свет реально не изменился. Чистится
+     * {@link #invalidateAll} (смена уровня).
      */
     private static BlockEntity lastQueriedBE = null;
     private static float lastBlockU = 0f;
     private static float lastSkyV = 0f;
-    private static long lastFastFrame = -1L;
+    private static long lastFastTick = Long.MIN_VALUE;
 
     /** Reusable scratch position to avoid allocating per sample. */
     private static final BlockPos.MutableBlockPos SAMPLE_POS = new BlockPos.MutableBlockPos();
@@ -107,14 +123,13 @@ public final class LightSampleCache {
     private static final float[] PRECHECK_UV = new float[2];
 
     private static final int PRUNE_EVERY = 600;
-    private static final int STALE_AFTER_FRAMES = 60;
 
     private LightSampleCache() {}
 
     private static final class Entry {
         float blockU;
         float skyV;
-        long lastFrame;
+        long lastTick;
     }
 
     /**
@@ -132,25 +147,24 @@ public final class LightSampleCache {
     }
 
     /**
-     * Bumps the frame counter; subsequent {@link #getOrSample} calls will
-     * resample once per BlockEntity rather than reusing the previous frame's
-     * value. Periodically prunes stale entries.
+     * Refreshes the tick stamp used for entry validity; runs once per rendered
+     * frame. Periodically prunes entries older than the TTL.
      */
     public static void onFrameStart() {
-        currentFrame++;
-        // Drop the fast-path slot - its frame stamp is now stale, and a new
-        // frame must re-sample anyway. Keeping the BE reference live across
-        // frames would also pin disposed BEs in memory.
-        lastQueriedBE = null;
-        lastFastFrame = -1L;
-        if ((currentFrame % PRUNE_EVERY) == 0) {
+        var level = Minecraft.getInstance().level;
+        if (level != null) {
+            currentTick = level.getGameTime();
+        }
+        if ((currentTick % PRUNE_EVERY) == 0) {
             CACHE.long2ObjectEntrySet().removeIf(e ->
-                e.getValue().lastFrame < currentFrame - STALE_AFTER_FRAMES);
-            // CACHE8 раньше не чистился вообще: ключи включают identityHashCode
-            // рендерера, который меняется на каждом reload/disconnect, — старые записи
-            // становились навсегда недостижимым мусором в map (неограниченный рост).
+                currentTick - e.getValue().lastTick > LIGHT_TTL_TICKS);
+            // Ключи CACHE8 включают identityHashCode рендерера, который меняется
+            // на каждом reload/disconnect, — без prune старые записи становились
+            // навсегда недостижимым мусором в map (неограниченный рост).
             CACHE8.long2ObjectEntrySet().removeIf(e ->
-                e.getValue().lastFrame < currentFrame - STALE_AFTER_FRAMES);
+                currentTick - e.getValue().lastTick > LIGHT_TTL_TICKS);
+            PACKED_CACHE.long2LongEntrySet().removeIf(e ->
+                currentTick - (e.getLongValue() >>> 32) > LIGHT_TTL_TICKS);
         }
     }
 
@@ -188,12 +202,10 @@ public final class LightSampleCache {
             return;
         }
 
-        // Fast path: same BE as the previous call within the same frame.
-        // Hits ~10/11 times for the Advanced Assembler's per-part dispatch
-        // and ~5/6 times for Chemical Plant - that's the bulk of the
-        // calls into this cache. We avoid `getBlockPos().asLong()` AND the
-        // hashmap lookup AND the Entry field reads.
-        if (be == lastQueriedBE && lastFastFrame == currentFrame) {
+        // Fast path: same BE as the previous call, entry not expired.
+        // Hits for the whole per-part dispatch burst of one machine and,
+        // with the tick TTL, for repeated frames while nothing changed.
+        if (be == lastQueriedBE && currentTick - lastFastTick <= LIGHT_TTL_TICKS) {
             outUV[outBase]     = lastBlockU;
             outUV[outBase + 1] = lastSkyV;
             return;
@@ -201,14 +213,14 @@ public final class LightSampleCache {
 
         long key = be.getBlockPos().asLong();
         Entry cached = CACHE.get(key);
-        if (cached != null && cached.lastFrame == currentFrame) {
+        if (cached != null && currentTick - cached.lastTick <= LIGHT_TTL_TICKS) {
             outUV[outBase]     = cached.blockU;
             outUV[outBase + 1] = cached.skyV;
-            // Promote into fast-path slot for the next 10× burst.
+            // Promote into fast-path slot for the next burst.
             lastQueriedBE = be;
             lastBlockU = cached.blockU;
             lastSkyV = cached.skyV;
-            lastFastFrame = currentFrame;
+            lastFastTick = currentTick;
             return;
         }
 
@@ -222,14 +234,14 @@ public final class LightSampleCache {
         }
         cached.blockU = outUV[outBase];
         cached.skyV   = outUV[outBase + 1];
-        cached.lastFrame = currentFrame;
+        cached.lastTick = currentTick;
 
         // Same promotion - and since we sampled fresh, the fast-path slot
         // matches `cached` exactly.
         lastQueriedBE = be;
         lastBlockU = cached.blockU;
         lastSkyV = cached.skyV;
-        lastFastFrame = currentFrame;
+        lastFastTick = currentTick;
     }
 
     /**
@@ -250,11 +262,7 @@ public final class LightSampleCache {
 
         AABB bounds;
         try {
-            //? if forge {
-            bounds = be.getRenderBoundingBox();
-            //?} else {
-            /*bounds = new AABB(be.getBlockPos());
-            *///?}
+            bounds = com.hbm_m.platform.RenderHooks.getRenderBoundingBox(be);
         } catch (Throwable t) {
             bounds = null;
         }
@@ -333,8 +341,9 @@ public final class LightSampleCache {
     public static void invalidateAll() {
         CACHE.clear();
         CACHE8.clear();
+        PACKED_CACHE.clear();
         lastQueriedBE = null;
-        lastFastFrame = -1L;
+        lastFastTick = Long.MIN_VALUE;
     }
 
     // ========================================================================
@@ -349,12 +358,44 @@ public final class LightSampleCache {
      */
     private static final class Entry8 {
         final float[] cornerUV = new float[16]; // 8 x (blockU, skyV) interleaved
-        long lastFrame;
+        long lastTick;
     }
 
     private static final Long2ObjectOpenHashMap<Entry8> CACHE8 = new Long2ObjectOpenHashMap<>();
     private static final BlockPos.MutableBlockPos SAMPLE_POS_8 = new BlockPos.MutableBlockPos();
     private static final Vector4f CORNER_TMP = new Vector4f();
+
+    /**
+     * Per-BE кеш ванильного packedLight ({@code LevelRenderer.getLightColor}) с тем
+     * же тиковым TTL. Значение упаковано как {@code (tick << 32) | packed} — без
+     * аллокации объекта на запись. Диспетчер (NucleusDispatcherBypass.collectOne)
+     * запрашивал его на каждую машину каждый кадр.
+     */
+    private static final Long2LongOpenHashMap PACKED_CACHE = new Long2LongOpenHashMap();
+    private static final long PACKED_MISS = Long.MIN_VALUE;
+
+    static {
+        PACKED_CACHE.defaultReturnValue(PACKED_MISS);
+    }
+
+    /**
+     * Ванильный packedLight по позиции BE с тиковым TTL. null/detached BE —
+     * без кеша (фолбэк вызывающего).
+     */
+    public static int getOrSamplePacked(@Nullable BlockEntity be, int packedLightFallback) {
+        Level level = (be != null) ? be.getLevel() : null;
+        if (level == null) {
+            return packedLightFallback;
+        }
+        long key = be.getBlockPos().asLong();
+        long v = PACKED_CACHE.get(key);
+        if (v != PACKED_MISS && currentTick - (v >>> 32) <= LIGHT_TTL_TICKS) {
+            return (int) v;
+        }
+        int fresh = LevelRenderer.getLightColor(level, be.getBlockState(), be.getBlockPos());
+        PACKED_CACHE.put(key, (currentTick << 32) | (fresh & 0xFFFFFFFFL));
+        return fresh;
+    }
 
     /**
      * Distance to pull each corner sample toward the bbox interior before
@@ -465,7 +506,7 @@ public final class LightSampleCache {
 
         long key = be.getBlockPos().asLong() ^ partIdentityHash;
         Entry8 cached = CACHE8.get(key);
-        if (cached != null && cached.lastFrame == currentFrame) {
+        if (cached != null && currentTick - cached.lastTick <= LIGHT_TTL_TICKS) {
             System.arraycopy(cached.cornerUV, 0, out16, 0, 16);
             return;
         }
@@ -477,7 +518,7 @@ public final class LightSampleCache {
             CACHE8.put(key, cached);
         }
         System.arraycopy(out16, 0, cached.cornerUV, 0, 16);
-        cached.lastFrame = currentFrame;
+        cached.lastTick = currentTick;
     }
 
     /**

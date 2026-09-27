@@ -31,29 +31,35 @@ import net.minecraft.client.renderer.texture.TextureAtlas;
 
 @OnlyIn(Dist.CLIENT)
 /**
- * <b>Tier 1: GPU Compute Bake</b> — запекание инстансов частей в вершинный буфер
- * BLOCK-формата compute-шейдером и отрисовка ОДНИМ {@code glDrawElements}
- * РОДНОЙ программой пака (pack shadow / gbuffers). Пак сам применяет свою
- * тене-дисторсию и кодирует свой gbuffer — никакой репликации схем, 100%
- * совместимость (BSL/Photon/Complementary/…).
+ * <b>Tier 1: GPU Compute Bake</b> — Bakes multiblock part instances into a
+ * BLOCK-format vertex buffer using an OpenGL 4.3 compute shader, followed by
+ * a single {@code glDrawElements} invocation using the active shaderpack's
+ * native program (pack shadow or gbuffers).
  * <p>
- * Контракт (выверен по companion-пути и разбору shadow-vsh паков): паковая
- * shadow-программа содержит round-trip
- * {@code P·M·(P⁻¹·M⁻¹·ftransform)} — математически тождества, итоговый клип
- * всегда {@code ProjMat · ModelViewMat · vertex (+дисторсия)}. Для теней:
- * вершины = shadow-space (записи коллектора), ModelViewMat = identity,
- * ProjMat = P_shadow — тот же контракт, что у Tier-2 drawShadowInstances.
+ * Under this architecture, the shaderpack applies its own shadow distortion and gbuffer
+ * encoding natively without requiring hardcoded static schemas or runtime AST regex
+ * rewriting, ensuring full compatibility across shaderpacks (BSL, Complementary, Photon, etc.).
  * <p>
- * Входы compute: SSBO 0 = меш части (companion VBO — УЖЕ в BLOCK-формате,
- * биндится как SSBO без копии), SSBO 1 = записи инстансов (30 флоатов,
- * layout {@link InstancedStaticPartRenderer#INSTANCE_DATA_SIZE}), SSBO 2 =
- * выход verts×instances. Индексы — CPU-расширение базовых индексов
- * {@code baseIdx + inst*vertCount} (строится один раз на достигнутое число
- * инстансов, дальше кэш). Барьер {@code GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT} → draw.
+ * <b>Shadow Contract:</b> Shadow programs execute a round-trip projection sequence:
+ * {@code P * M * (P^-1 * M^-1 * ftransform)}. For shadows, vertices are transformed
+ * into shadow-space (recorded by {@link IrisShadowBatchCollector}), ModelViewMat is set
+ * to identity, and ProjMat is set to P_shadow.
  * <p>
- * Фолбэк: GL < 4.3 / любая ошибка → {@link #isEnabled()} false → вызывающий
- * код остаётся на Tier 2 (ExtendedShader) / Tier 3 (vanilla instancing).
- * Kill-switch: {@code -Dhbm.gpuBake=false}. Вызов только с render thread.
+ * <b>Compute Pipeline:</b>
+ * <ul>
+ *   <li>SSBO 0: Companion mesh vertices (Iris ENTITY format, bound directly without CPU copying).</li>
+ *   <li>SSBO 1: Instance records (30 floats per instance, or 12 floats for 3x4 affine matrices in shadow passes).</li>
+ *   <li>SSBO 2: Output vertex buffer (verts * instances in a packed 52-byte layout).</li>
+ *   <li>SSBO 3: Bone palette SSBO (up to 64 4x4 bone matrices for dynamic skeletal animations).</li>
+ * </ul>
+ * Indices are dynamically expanded on the CPU once per batch capacity and cached. A memory
+ * barrier ({@code GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT}) synchronizes compute writes before draw submission.
+ * <p>
+ * <b>Fallback:</b> If GL < 4.3 compute shaders are unsupported or an error occurs,
+ * {@link #isEnabled()} returns false and execution falls back to Tier 2 (ExtendedShader)
+ * or Tier 3 (vanilla instancing).
+ *
+ * @credit CrankShaft / Flywheel / Iris
  */
 public final class NucleusGpuBaker {
 
@@ -65,22 +71,29 @@ public final class NucleusGpuBaker {
     private static boolean available = false;
     private static boolean logged = false;
     private static int programId = -1;
+    /** Лочит провал инициализации (например, ошибку компиляции GLSL): без него каждый flush ретраит компиляцию и спамит лог стектрейсом. */
+    private static boolean initFailed = false;
     private static int uMeshStride, uInstStride, uOutStride, uVertCount, uInstCount;
     private static int uOffPos, uOffColor, uOffNormal, uOffUv2;
     private static int uOffUv0, uOffUv1, uOffMidTex, uOffTangent;
     private static int uBakeMode, uCamPos, uOffLight;
+    private static int uTransformMode = -1;
+    private static int uHasBones = -1;
+    private static int uOffBoneId = -1;
 
-    // ── Плотный ВЫХОДНОЙ формат bake (52 байта, кратен 4) ──────────────
-    // Входной companion-меш лежит в формате IrisVertexFormats.ENTITY, чей
-    // stride на 1.21.1 = 54 байта (НЕ кратен 4: невидимый padding после
-    // Normal) — адресовать его флоатами, как раньше, нельзя: 54/4=13.5
-    // обрезалось до 13, и каждая вершина после первой читалась со сдвигом
-    // 2 байта → мусорные позиции → «взорванные» треугольники от машин
-    // (только 1.21.1/Iris; на 1.20.1/Oculus stride 56 кратен 4, потому
-    // старый float-путь там работал). Compute читает ВХОД словами по
-    // байтовым офсетам (любой stride), а пишет в НАШ плотный layout —
-    // порядок полей как у Iris ENTITY (локации 0..5 программ прибиндены
-    // ShaderInstance по порядку атрибутов), но все офсеты выровнены.
+    private static final int BONE_PALETTE_SIZE = 64;
+    private static final int BONE_PALETTE_BYTES = BONE_PALETTE_SIZE * 16 * 4;
+    private static int boneSsbo = -1;
+    private static boolean hasBoneMatrices = false;
+
+    // ── Dense OUTPUT bake layout (52 bytes, 4-byte aligned) ───────────
+    // The input companion mesh uses IrisVertexFormats.ENTITY, whose stride
+    // on 1.21.1 is 54 bytes (unaligned: invisible padding after normal).
+    // Addressing it via floats caused an off-by-2 byte stride misalignment
+    // and exploding triangles on 1.21.1/Iris (on 1.20.1/Oculus stride 56 is
+    // 4-byte aligned). The compute shader reads inputs by byte offsets
+    // using bitfield unpacking and writes to this dense 52-byte layout,
+    // matching the attribute order of Iris ENTITY formats.
     private static final int OUT_STRIDE_BYTES = 52;
     private static final int OUT_OFF_POS = 0;      // 3F
     private static final int OUT_OFF_COLOR = 12;   // 4UB
@@ -99,7 +112,7 @@ public final class NucleusGpuBaker {
 
     private static final java.util.ArrayList<BakedMesh> BAKED = new java.util.ArrayList<>(64);
 
-    /** GPU-состояние bake одного part-renderer'а (по его companion-мешу). */
+    /** GPU bake state for a single part renderer (associated with its companion mesh). */
     private static final class BakedMesh {
         final IrisCompanionMesh mesh;
         final int vaoId;
@@ -122,7 +135,7 @@ public final class NucleusGpuBaker {
 
     private NucleusGpuBaker() {}
 
-    /** Доступен ли Tier-1 (capabilities + kill-switch). Дёшево после первого вызова. */
+    /** Returns true if Tier 1 compute bake is supported and enabled. Cheap after first call. */
     public static boolean isEnabled() {
         if (!KILL_SWITCH) {
             return false;
@@ -146,12 +159,12 @@ public final class NucleusGpuBaker {
     }
 
     /**
-     * Tier-1 теневой флаш: запечь записи коллектора и нарисовать паковой
-     * SHADOW-программой по одному draw на part-renderer. Программа {@code shader}
-     * должна быть уже применена (tryApply — FB забинджен).
+     * Tier 1 shadow flush: bakes shadow collector instance records and submits
+     * a single draw call per part renderer using the active pack shadow shader.
+     * The shader program must already be applied with its framebuffer bound.
      *
-     * @return true — флаш отработал через Tier-1 целиком; false — вызывающий
-     *         продолжает на Tier 2/3.
+     * @return true if the shadow pass was successfully baked and drawn via Tier 1;
+     *         false if falling back to Tier 2/3.
      */
     public static boolean bakeAndDrawShadow(List<IrisShadowBatchCollector.Entry> entries,
                                             ShaderInstance shader, Matrix4f shadowProj) {
@@ -165,9 +178,8 @@ public final class NucleusGpuBaker {
                 return false;
             }
             ensureSharedBuffers();
-            // Стейт дроука — как у Tier-2 drawShadowInstances: геометрия машин
-            // со смешанным winding, без disableCull половина треугольников
-            // вырезается. Snapshot восстанавливает всё на выходе.
+            // Draw state mirrors Tier 2 drawShadowInstances: multiblock machinery has
+            // mixed winding order; culling is disabled to prevent missing faces.
             try (RenderStateGuard ignored = RenderStateGuard.snapshot()) {
                 RenderSystem.enableDepthTest();
                 RenderSystem.depthFunc(GL11.GL_LEQUAL);
@@ -179,7 +191,7 @@ public final class NucleusGpuBaker {
                 if (e.count <= 0) {
                     continue;
                 }
-                IrisCompanionMesh mesh = e.renderer.getOrBuildCompanionForShadowBatch();
+                IrisCompanionMesh mesh = e.getCompanionMesh();
                 if (mesh == null || !mesh.isBuilt()) {
                     bakeSkipLog(e, "companion unbuilt/failed");
                     continue;
@@ -199,9 +211,8 @@ public final class NucleusGpuBaker {
                     continue;
                 }
 
-                // ── Draw: АКТИВНА ПАКОВАЯ программа — её матрицы и её дроук.
-                // Иначе glUniformMatrix4fv улетает в compute-программу
-                // («Uniform must be a matrix type», тени отсутствуют).
+                // ── Draw: activate pack shader program and set projection/model-view matrices.
+                // Pack program must be active to avoid sending uniforms to compute program.
                 GL20.glUseProgram(shader.getId());
                 setMatrices(shader, shadowProj, IDENTITY_MV);
                 RenderSystem.setShaderTexture(0, TextureAtlas.LOCATION_BLOCKS);
@@ -211,7 +222,7 @@ public final class NucleusGpuBaker {
                 NucleusDebug.recordDraw(1, e.count, "GPU bake shadow");
             }
 
-                // Паковая программа уже активна — трекинг Iris остаётся консистентным.
+                // Pack program is active; restore previous VAO and VBO state cleanly.
                 GL20.glUseProgram(shader.getId());
                 com.hbm_m.client.render.GlVaoSafety.bindVertexArray(previousVao);
                 GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, previousArrayBuffer);
@@ -232,17 +243,16 @@ public final class NucleusGpuBaker {
     private static final int MODE_MAIN = 1;
 
     /**
-     * Ядро bake: upload записей → dispatch compute → барьеры.
-     * После успешного возврата outputSsbo содержит verts×count вершин BLOCK-лейаута
-     * (main — camera-relative), bake-VAO рендерера готов к одному glDrawElements.
+     * Core bake execution: uploads instance records, dispatches compute shader, and issues memory barriers.
+     * After successful execution, outputSsbo contains verts * count vertices in BLOCK layout
+     * (camera-relative for main pass), and the bake VAO is ready for a single glDrawElements call.
      */
     private static boolean dispatchBake(BakedMesh baked, FloatBuffer records, int count,
                                         int mode, float camX, float camY, float camZ) {
         if (!uploadInstances(records, count)) {
             return false;
         }
-        // Все байтовые офсеты входа обязаны резолвиться: ldWord с -1 читал бы
-        // out-of-bounds (мусор вместо отказа).
+        // All input byte offsets must resolve: ldWord with -1 would cause out-of-bounds reads.
         int offPos = baked.mesh.getMeshOffset("position", -1);
         int offColor = baked.mesh.getMeshOffset("color", -1);
         int offNormal = baked.mesh.getMeshOffset("normal", -1);
@@ -253,15 +263,28 @@ public final class NucleusGpuBaker {
                 baked.mesh.getMeshOffset("genericFloat2", -1));
         int offTangent = baked.mesh.getMeshAttribByteOffsetOr("at_tangent",
                 baked.mesh.getMeshOffset("genericByte4", -1));
-        if ((offPos | offColor | offNormal | offUv0 | offUv1 | offUv2 | offMidTex | offTangent) < 0) {
-            return false;
+        if (mode == MODE_SHADOW) {
+            // Shadow passes write only depth/shadowcolor; position and UV0 are strictly required.
+            if (offPos < 0 || offUv0 < 0) {
+                return false;
+            }
+        } else {
+            if ((offPos | offColor | offNormal | offUv0 | offUv1 | offUv2 | offMidTex | offTangent) < 0) {
+                return false;
+            }
         }
+
+        int offBoneId = baked.mesh.getMeshAttribByteOffsetOr("bone_id",
+                baked.mesh.getMeshAttribByteOffsetOr("boneId", -1));
+        if (offBoneId < 0 && baked.mesh.getMeshStrideBytes() == 36) {
+            offBoneId = 32;
+        }
+
         expandIndices(baked, count);
 
-        // ── Dispatch: АКТИВНА compute-программа (её glUniform1i/SSBO) ──
+        // ── Dispatch: activate compute program and set uniforms/SSBO bindings ──
         GL20.glUseProgram(programId);
-        // uMeshStride — БАЙТЫ входного меша (54 на 1.21.1 — не кратен 4,
-        // потому вход адресуется словами с байтовой сборкой, см. ldWord).
+        // uMeshStride: input mesh byte stride (e.g. 54 on 1.21.1, byte-assembled via ldWord).
         GL20.glUniform1i(uMeshStride, baked.mesh.getMeshStrideBytes());
         GL20.glUniform1i(uInstStride, InstancedStaticPartRenderer.INSTANCE_DATA_SIZE);
         GL20.glUniform1i(uOutStride, OUT_STRIDE_BYTES / 4);
@@ -277,39 +300,53 @@ public final class NucleusGpuBaker {
         GL20.glUniform1i(uOffTangent, offTangent);
         GL20.glUniform1i(uBakeMode, mode);
         GL20.glUniform1i(uOffLight, InstancedStaticPartRenderer.LIGHT_FLOAT_OFFSET);
+        if (uTransformMode >= 0) {
+            GL20.glUniform1i(uTransformMode, (mode == MODE_SHADOW) ? 1 : 0);
+        }
+        if (uHasBones >= 0) {
+            GL20.glUniform1i(uHasBones, hasBoneMatrices ? 1 : 0);
+        }
+        if (uOffBoneId >= 0) {
+            GL20.glUniform1i(uOffBoneId, offBoneId);
+        }
         if (uCamPos >= 0) {
             GL20.glUniform3f(uCamPos, camX, camY, camZ);
         }
 
         ensureOutputBuffer((long) baked.vertCount * count * OUT_STRIDE_BYTES);
-        // WAR-синхронизация с ПРЕДЫДУЩИМ draw: он ещё читает outputSsbo
-        // вершинными атрибутами, а этот dispatch пишет туда же с нуля (раунд 27).
+        ensureBoneBuffer();
+        // WAR synchronization with previous draw call: ensures shader storage and vertex attribute
+        // arrays are synchronized before compute write.
         GL42.glMemoryBarrier(GL43.GL_SHADER_STORAGE_BARRIER_BIT
                 | GL43.GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT);
         GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, 0, baked.mesh.getMeshVboId());
         GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, 1, instanceSsbo);
         GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, 2, outputSsbo);
+        GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, 3, boneSsbo);
         int total = baked.vertCount * count;
         GL43.glDispatchCompute((total + LOCAL_SIZE - 1) / LOCAL_SIZE, 1, 1);
         GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, 0, 0);
         GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, 1, 0);
         GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, 2, 0);
+        GL30.glBindBufferBase(GL43.GL_SHADER_STORAGE_BUFFER, 3, 0);
         GL42.glMemoryBarrier(GL42.GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT);
         return true;
     }
 
     /**
-     * Tier-1 MAIN-проход: запечь инстансы рендерера в camera-relative вершины и
-     * нарисовать ОДНИМ glDrawElements РОДНОЙ gbuffers-программой пака — пак сам
-     * кодирует свой gbuffer (замена per-instance companion-пути для нераспознанных
-     * схем: BSL 1618 дкоуков → ~27). Записи — мировые (FrameViewState), свет —
-     * трилинейный из 8-corner полей записи (как наш инстансный VSH).
+     * Tier 1 main pass: bakes part instances into camera-relative vertices and draws with
+     * a single glDrawElements using the active pack gbuffers shader.
      *
-     * @param records буфер записей (flip уже сделан вызывающим), count инстансов
-     * @param packShader применённая pack-программа (getBlockShader(false))
-     * @param proj     проекция события (чистая P на обеих версиях)
-     * @param viewRot  R_cam (только ротация, translation=0)
-     * @return true — нарисовано; false — вызывающий уходит на прежний путь
+     * @param records instance records buffer (flip already performed by caller)
+     * @param count number of instances
+     * @param mesh companion mesh
+     * @param packShader applied pack shader program
+     * @param proj projection matrix
+     * @param viewRot camera rotation matrix R_cam
+     * @param camX camera X
+     * @param camY camera Y
+     * @param camZ camera Z
+     * @return true if drawn via Tier 1; false if falling back to companion path
      */
     public static boolean bakeAndDrawMain(FloatBuffer records, int count, IrisCompanionMesh mesh,
                                           ShaderInstance packShader, Matrix4f proj, Matrix4f viewRot,
@@ -343,7 +380,7 @@ public final class NucleusGpuBaker {
                         GL11.GL_UNSIGNED_INT, 0L);
                 NucleusDebug.recordDraw(1, count, "GPU bake main");
             }
-            // Паковая программа уже активна — трекинг Iris остаётся консистентным.
+            // Restore previous VAO and VBO state cleanly.
             com.hbm_m.client.render.GlVaoSafety.bindVertexArray(previousVao);
             GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, previousArrayBuffer);
             return true;
@@ -359,20 +396,14 @@ public final class NucleusGpuBaker {
     }
 
     /**
-     * Iris-расширенные атрибуты (mc_midTexCoord / at_tangent / iris_Entity) на
-     * линкер-локациях ПАКОВОЙ программы. Читаем из НАШЕГО плотного выходного
-     * layout (OUT_OFF_MIDTEX/OUT_OFF_TANGENT): per-vertex статические поля
-     * compute уже скопировал туда из меша, entity-id — константный 0.
-     * Вызывается при забинженном bake-VAO.
+     * Binds Iris extended vertex attributes (mc_midTexCoord, at_tangent, iris_Entity) on the pack program.
+     * Attributes are read from the dense 52-byte output layout.
      */
     private static void bindIrisExtendedAttributes(ShaderInstance shader, BakedMesh baked) {
         int program = shader.getId();
         int entLoc = GL20.glGetAttribLocation(program, "iris_Entity");
         if (entLoc >= 0) {
-            // Константа вместо массива: наши машины не entityId-специфичны.
-            // Ставим ВСЕГДА (раньше — только если слот был занят массивом:
-            // на 1.21.1 локация 6 никем не занята, и атрибут читал мусор из
-            // «current value bank» чужих дроуков).
+            // Supply constant 0 for entity ID since multiblock machines are not entity-specific.
             if (attribBound(entLoc)) {
                 GL20.glDisableVertexAttribArray(entLoc);
             }
@@ -397,12 +428,8 @@ public final class NucleusGpuBaker {
     }
 
     /**
-     * ModelViewMat / ProjMat на паковой программе.
-     * ТОЛЬКО сырые GL-локации: shader.getUniform() на pack-программе возвращает
-     * Uniform-объект, чей upload() бьёт в не-матричный юниформ — 900k
-     * GL_INVALID_OPERATION «Uniform must be a matrix type» и НИКОГДА не
-     * установленные матрицы (тени пропадали целиком, debug.log 0914 00:44).
-     * IrisDerivedMatrixUniforms — тот же механизм, что у companion-флаша.
+     * Sets ModelViewMat / ProjMat on the active pack program using raw GL uniform locations.
+     * Raw locations avoid overhead and type mismatch issues with Minecraft's Uniform wrappers.
      */
     private static final Matrix4f IDENTITY_MV = new Matrix4f();
     private static final float[] MV_FLOATS = new float[16];
@@ -431,9 +458,8 @@ public final class NucleusGpuBaker {
             proj.get(PROJ_FLOATS);
             GL20.glUniformMatrix4fv(projLoc, false, PROJ_FLOATS);
         }
-        // ПРОИЗВОДНЫЕ матрицы — ОБЯЗАТЕЛЬНО: паки (Photon) считают мировые
-        // нормали через mat3(ModelViewMatInverse)·n_view и/или NormalMat.
-        // Без них свет «не с того угла» (инверсия остаётся от прошлого стейта).
+        // Derived matrices: required for shaderpacks (e.g. Photon) calculating world-space
+        // normals via inverse model-view or normal matrices.
         int locInverse = matrixLocs.modelViewInverse();
         if (locInverse >= 0) {
             INVERSE_SCRATCH.set(modelView).invertAffine();
@@ -453,13 +479,16 @@ public final class NucleusGpuBaker {
     private static final org.joml.Matrix3f NORMAL_TMP = new org.joml.Matrix3f();
     private static final float[] NORM_FLOATS = new float[9];
 
-    // ── Init / ресурсы ─────────────────────────────────────────────────
+    // ── Initialization & Resources ─────────────────────────────────────
 
     private static boolean initProgram() {
+        if (initFailed) {
+            return false;
+        }
         try {
             int p = GL20.glCreateProgram();
             int cs = GL20.glCreateShader(GL43.GL_COMPUTE_SHADER);
-            GL20.glShaderSource(cs, COMPUTE_SOURCE);
+            com.hbm_m.platform.RenderHooks.safeShaderSource(cs, COMPUTE_SOURCE);
             GL20.glCompileShader(cs);
             if (GL20.glGetShaderi(cs, GL20.GL_COMPILE_STATUS) == GL11.GL_FALSE) {
                 throw new IllegalStateException("compute compile: " + GL20.glGetShaderInfoLog(cs, 4096));
@@ -487,8 +516,12 @@ public final class NucleusGpuBaker {
             uBakeMode = GL20.glGetUniformLocation(p, "uBakeMode");
             uCamPos = GL20.glGetUniformLocation(p, "uCamPos");
             uOffLight = GL20.glGetUniformLocation(p, "uOffLight");
+            uTransformMode = GL20.glGetUniformLocation(p, "uTransformMode");
+            uHasBones = GL20.glGetUniformLocation(p, "uHasBones");
+            uOffBoneId = GL20.glGetUniformLocation(p, "uOffBoneId");
             instanceSsbo = GL15.glGenBuffers();
             outputSsbo = GL15.glGenBuffers();
+            ensureBoneBuffer();
             if (!logged) {
                 logged = true;
                 com.hbm_m.main.MainRegistry.LOGGER.info(
@@ -496,6 +529,7 @@ public final class NucleusGpuBaker {
             }
             return true;
         } catch (Throwable t) {
+            initFailed = true;
             com.hbm_m.main.MainRegistry.LOGGER.warn("[HBM-M] NucleusGpuBaker init failed - Tier 1 disabled", t);
             return false;
         }
@@ -512,6 +546,7 @@ public final class NucleusGpuBaker {
             GL15.glBufferData(GL43.GL_SHADER_STORAGE_BUFFER, 16L << 20, GL15.GL_DYNAMIC_COPY);
             outputSsboBytes = 16L << 20;
         }
+        ensureBoneBuffer();
     }
 
     private static void ensureOutputBuffer(long bytes) {
@@ -539,13 +574,13 @@ public final class NucleusGpuBaker {
         return true;
     }
 
-    /** CPU-расширение индексов до {@code count} инстансов (кэш по достигнутому). */
+    /** CPU expansion of index buffer up to {@code count} instances (cached). */
     private static void expandIndices(BakedMesh baked, int count) {
         if (baked.filledInstances >= count) {
             return;
         }
-        // GL_ELEMENT_ARRAY_BUFFER — состояние ТЕКУЩЕГО VAO: бинд без нашего VAO
-        // перезаписывал бы EBO чужого (Iris/ванильного) VAO.
+        // GL_ELEMENT_ARRAY_BUFFER is part of VAO state: bind with our VAO active
+        // to avoid overwriting external EBO bindings.
         int prevVao = GL11.glGetInteger(GL30.GL_VERTEX_ARRAY_BINDING);
         GL30.glBindVertexArray(baked.vaoId);
         IntBuffer data = MemoryUtil.memAllocInt(baked.idxCount * count);
@@ -582,26 +617,17 @@ public final class NucleusGpuBaker {
             }
             int vao = GL30.glGenVertexArrays();
             GL30.glBindVertexArray(vao);
-            // Атрибуты указывают на outputSsbo: данные туда пишет compute
-            // (один буфер, два таргета — SSBO-запись + ATTRIB-чтение через барьер).
-            // Указатели — по НАШЕМУ плотному 52-байтовому выходному layout
-            // (см. OUT_* константы): локации 0..5 = Position/Color/UV0/UV1/UV2/
-            // Normal — ровно тот порядок, в котором vanilla ShaderInstance
-            // биндит атрибуты Iris-ENTITY-форматы на ОБЕИХ версиях. Типы
-            // зафиксированы (layout входного Iris-формата совпадает по полям,
-            // отличается только паддингами/stride, которые compute уже учёл).
+            // Attributes point into outputSsbo written by compute shader.
+            // Layout matches our dense 52-byte format (OUT_* offsets):
+            // Locations 0..5 = Position/Color/UV0/UV1/UV2/Normal.
             GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, outputSsbo);
-            // ОБЯЗАТЕЛЬНО: glVertexAttribPointer массив НЕ включает — без
-            // enable все атрибуты читают константу, все вершины в нуле,
-            // тени пустые при валидных дроуках (лог 0914 01:07).
             GL20.glEnableVertexAttribArray(0);
             GL20.glVertexAttribPointer(0, 3, GL11.GL_FLOAT, false, OUT_STRIDE_BYTES, OUT_OFF_POS);
             GL20.glEnableVertexAttribArray(1);
             GL20.glVertexAttribPointer(1, 4, GL11.GL_UNSIGNED_BYTE, true, OUT_STRIDE_BYTES, OUT_OFF_COLOR);
             GL20.glEnableVertexAttribArray(2);
             GL20.glVertexAttribPointer(2, 2, GL11.GL_FLOAT, false, OUT_STRIDE_BYTES, OUT_OFF_UV0);
-            // UV1/UV2 — SHORT-целые: паковые шейдеры читают их как ivec2,
-            // Mojang биндит через glVertexAttribIPointer (integer pipeline).
+            // UV1/UV2: 16-bit short integers bound via glVertexAttribIPointer.
             GL20.glEnableVertexAttribArray(3);
             GL30.glVertexAttribIPointer(3, 2, GL11.GL_SHORT, OUT_STRIDE_BYTES, OUT_OFF_UV1);
             GL20.glEnableVertexAttribArray(4);
@@ -620,15 +646,82 @@ public final class NucleusGpuBaker {
         }
     }
 
-    /** Одноразовый на рендерер лог скипнутого bake-участника (диагностика пустых теней). */
+    /** Diagnostics tracking for skipped bake entries (prevents log spam). */
     private static final java.util.HashSet<Integer> SKIP_LOGGED = new java.util.HashSet<>();
 
     private static void bakeSkipLog(IrisShadowBatchCollector.Entry e, String reason) {
-        Integer key = System.identityHashCode(e.renderer);
+        int key = e.renderer != null ? System.identityHashCode(e.renderer) : System.identityHashCode(e.customMesh);
         if (SKIP_LOGGED.add(key)) {
             com.hbm_m.main.MainRegistry.LOGGER.info(
-                    "[HBM-M] NucleusGpuBaker: renderer {} skipped in shadow bake ({}), instances={}",
+                    "[HBM-M] NucleusGpuBaker: entry {} skipped in shadow bake ({}), instances={}",
                     key, reason, e.count);
+        }
+    }
+
+    public static void setBoneMatrices(org.joml.Matrix4f[] bones) {
+        if (!isEnabled()) return;
+        if (bones == null || bones.length == 0) {
+            hasBoneMatrices = false;
+            return;
+        }
+        ensureBoneBuffer();
+        int count = Math.min(bones.length, BONE_PALETTE_SIZE);
+        FloatBuffer buf = MemoryUtil.memAllocFloat(count * 16);
+        try {
+            for (int i = 0; i < count; i++) {
+                org.joml.Matrix4f m = bones[i];
+                if (m != null) {
+                    m.get(buf);
+                    buf.position((i + 1) * 16);
+                } else {
+                    for (int r = 0; r < 4; r++) {
+                        for (int c = 0; c < 4; c++) {
+                            buf.put(r == c ? 1.0f : 0.0f);
+                        }
+                    }
+                }
+            }
+            buf.flip();
+            GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, boneSsbo);
+            GL15.glBufferSubData(GL43.GL_SHADER_STORAGE_BUFFER, 0L, buf);
+            GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, 0);
+            hasBoneMatrices = true;
+        } finally {
+            MemoryUtil.memFree(buf);
+        }
+    }
+
+    public static void uploadBonePalette(FloatBuffer matrices, int count) {
+        if (!isEnabled() || matrices == null || count <= 0) {
+            hasBoneMatrices = false;
+            return;
+        }
+        ensureBoneBuffer();
+        GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, boneSsbo);
+        GL15.glBufferSubData(GL43.GL_SHADER_STORAGE_BUFFER, 0L, matrices);
+        GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, 0);
+        hasBoneMatrices = true;
+    }
+
+    private static void ensureBoneBuffer() {
+        if (boneSsbo == -1) {
+            boneSsbo = GL15.glGenBuffers();
+            GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, boneSsbo);
+            FloatBuffer defaultBones = MemoryUtil.memAllocFloat(BONE_PALETTE_SIZE * 16);
+            try {
+                for (int i = 0; i < BONE_PALETTE_SIZE; i++) {
+                    for (int r = 0; r < 4; r++) {
+                        for (int c = 0; c < 4; c++) {
+                            defaultBones.put(r == c ? 1.0f : 0.0f);
+                        }
+                    }
+                }
+                defaultBones.flip();
+                GL15.glBufferData(GL43.GL_SHADER_STORAGE_BUFFER, defaultBones, GL15.GL_DYNAMIC_DRAW);
+            } finally {
+                MemoryUtil.memFree(defaultBones);
+                GL15.glBindBuffer(GL43.GL_SHADER_STORAGE_BUFFER, 0);
+            }
         }
     }
 
@@ -652,21 +745,22 @@ public final class NucleusGpuBaker {
             outputSsbo = -1;
             outputSsboBytes = -1;
         }
+        if (boneSsbo != -1) {
+            GL15.glDeleteBuffers(boneSsbo);
+            boneSsbo = -1;
+            hasBoneMatrices = false;
+        }
     }
 
-    // ── Compute-шейдер: один инвок на выходную вершину ─────────────────
-    // MODE_SHADOW (0): вершины в shadow-space, UV2 = полный свет.
-    // MODE_MAIN (1): вершины camera-relative (world - uCamPos), UV2 =
-    // трилинейная интерполяция 8-corner света записи.
+    // ── Compute Shader: one invocation per output vertex ───────────────
+    // MODE_SHADOW (0): vertices in shadow-space, UV2 set to full light.
+    // MODE_MAIN (1): vertices camera-relative (world - uCamPos), UV2 computed via trilinear interpolation.
     //
-    // ВХОД (SSBO 0) — companion-меш в формате IrisVertexFormats.ENTITY,
-    // чей stride МОЖЕТ БЫТЬ НЕ КРАТЕН 4 (1.21.1 = 54 байта: невидимый
-    // padding после Normal; 1.20.1 = 56 — кратен). Поэтому вход адресуется
-    // СЛОВАМИ с побайтовой сборкой (ldWord/ldFloat по байтовым офсетам),
-    // а не float[]-индексацией, как в ранней версии (54/4=13.5 → 13 —
-    // сдвиг всех вершин после первой → мусорные позиции, «взорванные»
-    // треугольники под Iris 1.21.1).
-    // ВЫХОД (SSBO 2) — НАШ плотный 52-байтовый layout (кратен 4):
+    // INPUT (SSBO 0): companion mesh in IrisVertexFormats.ENTITY format,
+    // whose stride may not be a multiple of 4 (1.21.1 = 54 bytes). Therefore,
+    // input data is addressed at word boundaries with byte-level extraction
+    // (ldWord/ldFloat by byte offsets) to prevent misalignment.
+    // OUTPUT (SSBO 2): dense 52-byte aligned vertex layout (divisible by 4):
     // pos 3f@0, color 4ub@12, uv0 2f@16, uv1 2s@24, uv2 2s@28,
     // normal 4b@32, iris_Entity 2us@36, mc_midTexCoord 2f@40, at_tangent 4b@48.
 
@@ -677,13 +771,14 @@ public final class NucleusGpuBaker {
             layout(std430, binding = 0) readonly restrict buffer MeshBuf { uint meshW[]; };
             layout(std430, binding = 1) readonly restrict buffer InstBuf { float instData[]; };
             layout(std430, binding = 2) restrict buffer OutBuf { float outData[]; };
+            layout(std430, binding = 3) readonly restrict buffer BonePaletteSSBO { mat4 uBoneMatrices[64]; };
 
-            uniform int uMeshStride; // БАЙТЫ входного меша (может быть не кратен 4)
-            uniform int uInstStride; // флоаты (30)
-            uniform int uOutStride;  // флоаты выхода (13 = 52 байта)
+            uniform int uMeshStride; // Input mesh byte stride (may be non-multiple of 4)
+            uniform int uInstStride; // Instance record float stride (42: pose+bbox+light+uvRect+tint+grad)
+            uniform int uOutStride;  // Output vertex float stride (13 floats = 52 bytes)
             uniform int uVertCount;
             uniform int uInstCount;
-            uniform int uOffPos;     // байтовые офсеты ВО ВХОДЕ
+            uniform int uOffPos;     // Input byte offsets
             uniform int uOffColor;
             uniform int uOffNormal;
             uniform int uOffUv0;
@@ -692,10 +787,14 @@ public final class NucleusGpuBaker {
             uniform int uOffMidTex;
             uniform int uOffTangent;
             uniform int uBakeMode;   // 0 shadow, 1 main
-            uniform int uOffLight;   // float-офсет 8-corner света в записи (14)
+            uniform int uOffLight;   // Float offset of 8-corner light data (14)
+            uniform int uTransformMode; // 0 pos+quat, 1 3x4 affine matrix
+            uniform int uHasBones;      // 0 no bones, 1 bone palette active
+            uniform int uOffBoneId;     // Byte offset of bone id in mesh (-1 if none)
             uniform vec3 uCamPos;
 
             uint ldWord(uint base, int byteOff) {
+                if (byteOff < 0) return 0u;
                 uint a = base + uint(byteOff);
                 uint w0 = meshW[a >> 2u];
                 uint sh = (a & 3u) * 8u;
@@ -705,6 +804,7 @@ public final class NucleusGpuBaker {
             }
 
             float ldFloat(uint base, int byteOff) {
+                if (byteOff < 0) return 0.0;
                 return uintBitsToFloat(ldWord(base, byteOff));
             }
 
@@ -719,45 +819,112 @@ public final class NucleusGpuBaker {
                 uint inst = gid / uint(uVertCount);
                 uint lv = gid - inst * uint(uVertCount);
 
-                uint mBase = lv * uint(uMeshStride);   // байты входа
-                uint iBase = uint(inst * uInstStride); // флоаты записи
-                uint o = gid * uint(uOutStride);       // флоаты выхода
+                uint mBase = lv * uint(uMeshStride);   // Input mesh byte offset
+                uint iBase = uint(inst * uInstStride); // Instance record float offset
+                uint o = gid * uint(uOutStride);       // Output vertex float offset
 
-                // Позиция: R(quat)·pos + instPos; main — camera-relative.
                 vec3 pos = vec3(ldFloat(mBase, uOffPos),
                                 ldFloat(mBase, uOffPos + 4),
                                 ldFloat(mBase, uOffPos + 8));
-                vec4 rot = vec4(instData[iBase + 3u], instData[iBase + 4u],
-                                instData[iBase + 5u], instData[iBase + 6u]);
-                vec3 outPos = quatRotate(rot, pos)
-                        + vec3(instData[iBase + 0u], instData[iBase + 1u], instData[iBase + 2u]);
-                if (uBakeMode == 1) {
-                    outPos -= uCamPos;
+
+                // Normal decode
+                vec3 nrm;
+                uint nRaw = 0u;
+                if (uOffNormal >= 0) {
+                    nRaw = ldWord(mBase, uOffNormal);
+                    nrm = vec3(float(bitfieldExtract(int(nRaw), 0, 8)) / 127.0,
+                               float(bitfieldExtract(int(nRaw), 8, 8)) / 127.0,
+                               float(bitfieldExtract(int(nRaw), 16, 8)) / 127.0);
+                } else {
+                    nrm = vec3(0.0, 1.0, 0.0);
                 }
+
+                // Dynamic skeletal bone animation support
+                vec4 localPos = vec4(pos, 1.0);
+                if (uHasBones > 0 && uOffBoneId >= 0) {
+                    int bone = int(ldWord(mBase, uOffBoneId));
+                    if (bone >= 0 && bone < 64) {
+                        localPos = uBoneMatrices[bone] * localPos;
+                        nrm = mat3(uBoneMatrices[bone]) * nrm;
+                    }
+                }
+
+                vec3 outPos;
+                vec3 nOut;
+                if (uTransformMode == 1) {
+                    // Full 12-float 3x4 affine transform matrix (row0, row1, row2)
+                    vec4 row0 = vec4(instData[iBase + 0u], instData[iBase + 1u], instData[iBase + 2u], instData[iBase + 3u]);
+                    vec4 row1 = vec4(instData[iBase + 4u], instData[iBase + 5u], instData[iBase + 6u], instData[iBase + 7u]);
+                    vec4 row2 = vec4(instData[iBase + 8u], instData[iBase + 9u], instData[iBase + 10u], instData[iBase + 11u]);
+
+                    outPos = vec3(dot(row0, localPos), dot(row1, localPos), dot(row2, localPos));
+                    if (uBakeMode == 1) {
+                        outPos -= uCamPos;
+                    }
+
+                    // Cofactor / adjoint normal matrix for arbitrary affine transforms (transposed for GLSL column-major order)
+                    mat3 normalMat = transpose(mat3(
+                        cross(row1.xyz, row2.xyz),
+                        cross(row2.xyz, row0.xyz),
+                        cross(row0.xyz, row1.xyz)
+                    ));
+                    float nLenSq = dot(normalMat * nrm, normalMat * nrm);
+                    nOut = (nLenSq > 1e-8) ? normalize(normalMat * nrm) : nrm;
+                } else {
+                    // Legacy pos(3) + quat(4)
+                    vec4 rot = vec4(instData[iBase + 3u], instData[iBase + 4u],
+                                    instData[iBase + 5u], instData[iBase + 6u]);
+                    outPos = quatRotate(rot, localPos.xyz)
+                            + vec3(instData[iBase + 0u], instData[iBase + 1u], instData[iBase + 2u]);
+                    if (uBakeMode == 1) {
+                        outPos -= uCamPos;
+                    }
+                    nOut = normalize(quatRotate(rot, nrm));
+                }
+
                 outData[o + 0u] = outPos.x;
                 outData[o + 1u] = outPos.y;
                 outData[o + 2u] = outPos.z;
 
-                // Альфа цвета × fade инстанса (fade квантован 1/255).
-                uint cRaw = ldWord(mBase, uOffColor);
+                // Color: mesh color × per-instance тинт (рекорд 34..37) с пространственным
+                // фоллоффом (рекорд 38..41). Градиент считается по МОДЕЛЬНОЙ позиции вершины
+                // (pos — до инстанс-трансформа), семантика mix(white, tint, smoothstep) —
+                // ровно как в block_lit_instanced.vsh. Канал 4UB срезает overbright (>1):
+                // светимость накала под паком обеспечивает uv2 (lightmap, см. lightOverride).
+                uint cRaw = (uOffColor >= 0) ? ldWord(mBase, uOffColor) : 0xFFFFFFFFu;
                 float fade = clamp(instData[iBase + 13u], 0.0, 1.0);
-                uint a = uint(float((cRaw >> 24) & 0xFFu) * fade);
-                outData[o + 3u] = uintBitsToFloat((cRaw & 0x00FFFFFFu) | ((a & 0xFFu) << 24));
+                float tA = instData[iBase + 37u]; // сила эмиссии (heat 0..1), НЕ прозрачность
+                float gAxis = instData[iBase + 38u];
+                vec3 tCol = vec3(instData[iBase + 34u], instData[iBase + 35u], instData[iBase + 36u]);
+                vec3 colMul;
+                float gt = 0.0;
+                if (gAxis >= 0.0) {
+                    float gCoord = gAxis < 0.5 ? pos.x : (gAxis < 1.5 ? pos.y : pos.z);
+                    gt = clamp((gCoord - instData[iBase + 40u])
+                             / (instData[iBase + 39u] - instData[iBase + 40u]), 0.0, 1.0);
+                    gt = gt * gt * (3.0 - 2.0 * gt);
+                    colMul = mix(vec3(1.0), tCol, gt);
+                } else {
+                    colMul = tCol;
+                }
+                uint r8 = uint(clamp(float((cRaw >>  0) & 0xFFu) * colMul.r, 0.0, 255.0));
+                uint g8 = uint(clamp(float((cRaw >>  8) & 0xFFu) * colMul.g, 0.0, 255.0));
+                uint b8 = uint(clamp(float((cRaw >> 16) & 0xFFu) * colMul.b, 0.0, 255.0));
+                uint a8 = uint(clamp(float((cRaw >> 24) & 0xFFu) * fade, 0.0, 255.0));
+                outData[o + 3u] = uintBitsToFloat(r8 | (g8 << 8) | (b8 << 16) | (a8 << 24));
 
-                // UV0 — 2 float (сырая копия).
+                // UV0 — 2 floats
                 outData[o + 4u] = ldFloat(mBase, uOffUv0);
                 outData[o + 5u] = ldFloat(mBase, uOffUv0 + 4);
 
-                // UV1 (overlay) — 2 short одним словом (сырая копия).
-                outData[o + 6u] = uintBitsToFloat(ldWord(mBase, uOffUv1));
+                // UV1 (overlay) — 2 shorts packed into one word
+                outData[o + 6u] = (uOffUv1 >= 0) ? uintBitsToFloat(ldWord(mBase, uOffUv1)) : 0.0;
 
-                // UV2 (lightmap) — два ushort в одном слове.
+                // UV2 (lightmap) — 2 ushorts packed into one word
                 uint uv2Bits;
                 if (uBakeMode == 0) {
-                    // shadow: полный свет (для теневой глубины/цвета не критичен).
                     uv2Bits = uint(240 | (240 << 16));
                 } else {
-                    // Трилинейный свет по 8 углам bbox записи (как инстансный VSH).
                     vec3 bmin = vec3(instData[iBase + 7u], instData[iBase + 8u], instData[iBase + 9u]);
                     vec3 bsize = max(vec3(instData[iBase + 10u], instData[iBase + 11u],
                                           instData[iBase + 12u]), vec3(1e-4));
@@ -778,33 +945,32 @@ public final class NucleusGpuBaker {
                     vec2 y0 = mix(x00, x10, w.y);
                     vec2 y1 = mix(x01, x11, w.y);
                     vec2 lm = mix(y0, y1, w.z);
+                    // Эмиссия: доворот lightmap к fullbright на heat*gradient — свечение
+                    // следует тинту (раскалённый металл), а не только lightOverride-частям.
+                    float emit = clamp(tA * gt, 0.0, 1.0);
+                    lm = mix(lm, vec2(240.0), emit);
                     int bu = int(clamp(lm.x, 0.0, 240.0));
                     int sv = int(clamp(lm.y, 0.0, 240.0));
                     uv2Bits = uint(bu | (sv << 16));
                 }
                 outData[o + 7u] = uintBitsToFloat(uv2Bits);
 
-                // Нормаль: 4 GLbyte — декод (sign-extend), вращение, кодек назад.
-                uint nRaw = ldWord(mBase, uOffNormal);
-                vec3 nrm = vec3(float(bitfieldExtract(int(nRaw), 0, 8)) / 127.0,
-                                float(bitfieldExtract(int(nRaw), 8, 8)) / 127.0,
-                                float(bitfieldExtract(int(nRaw), 16, 8)) / 127.0);
-                vec3 nOut = normalize(quatRotate(rot, nrm));
+                // Normal: packed 4 GLbytes
                 uint nPacked = uint(int(round(clamp(nOut.x, -1.0, 1.0) * 127.0)) & 255)
                         | (uint(int(round(clamp(nOut.y, -1.0, 1.0) * 127.0)) & 255) << 8)
                         | (uint(int(round(clamp(nOut.z, -1.0, 1.0) * 127.0)) & 255) << 16)
                         | (nRaw & 0xFF000000u);
                 outData[o + 8u] = uintBitsToFloat(nPacked);
 
-                // iris_Entity — константа 0 (машины не entityId-специфичны).
+                // iris_Entity — constant 0
                 outData[o + 9u] = uintBitsToFloat(0u);
 
-                // mc_midTexCoord — 2 float (сырая копия).
-                outData[o + 10u] = ldFloat(mBase, uOffMidTex);
-                outData[o + 11u] = ldFloat(mBase, uOffMidTex + 4);
+                // mc_midTexCoord — 2 floats
+                outData[o + 10u] = (uOffMidTex >= 0) ? ldFloat(mBase, uOffMidTex) : 0.0;
+                outData[o + 11u] = (uOffMidTex >= 0) ? ldFloat(mBase, uOffMidTex + 4) : 0.0;
 
-                // at_tangent — 4 байта одним словом (сырая копия).
-                outData[o + 12u] = uintBitsToFloat(ldWord(mBase, uOffTangent));
+                // at_tangent — 4 bytes packed into one word
+                outData[o + 12u] = (uOffTangent >= 0) ? uintBitsToFloat(ldWord(mBase, uOffTangent)) : 0.0;
             }
             """;
 }

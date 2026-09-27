@@ -148,15 +148,33 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
         if (!this.modelSelection.equals(selection)) {
             this.modelSelection = selection;
             setChanged();
-            
+
             // Инвалидируем кэш
+            this.cachedModelKey = null;
             if (level != null && level.isClientSide) {
                 this.cachedModelData = null;
+                // uvRect-рекорды инстансов больше не валидны (общий VBO-ключ без скина):
+                // полный пересбор записей рендера с новым rect'ом.
+                this.markRenderDirty();
                 DoorChunkInvalidationHelper.scheduleChunkInvalidation(worldPosition);
             }
-            
+
             syncToClient();
         }
+    }
+
+    /** Кэш строкового VBO-ключа без скина (doorType_modelType); сбрасывается в setModelSelection. */
+    @Nullable
+    private transient String cachedModelKey;
+
+    /** Кэшированный ключ VBO-кэша без скина (шеринг скинов, см. MachineDoorRenderer.shareSkins). */
+    public String cachedModelKey(String doorTypeKey) {
+        String k = cachedModelKey;
+        if (k == null) {
+            k = doorTypeKey + "_" + modelSelection.getModelType().getId();
+            cachedModelKey = k;
+        }
+        return k;
     }
     
     /**

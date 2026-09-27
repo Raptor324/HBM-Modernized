@@ -1,0 +1,31 @@
+/**
+ * Compute scatter upload: batches many small staging-ring → dest-VBO copies into
+ * a single dispatch (one workgroup per copy op, 64 lanes strided over the op's words).
+ * Replaces N per-span glCopyBufferSubData driver calls during mass-update bursts
+ * (TTL re-collect storms, mega-base rebuilds). Engaged by GpuSpanUploader only
+ * above span/byte thresholds on non-Intel GPUs; small transfers stay on the
+ * hardware DMA path (GL31.glCopyBufferSubData).
+ *
+ * @credit CrankShaft / fewizz / Jdb100 (scatter.glsl pattern)
+ */
+#version 430 core
+
+layout(local_size_x = 64) in;
+
+struct CopyOp {
+    uint srcWord;   // word offset in the staging ring
+    uint dstWord;   // word offset in the destination VBO
+    uint words;     // copy length in words (4 bytes)
+    uint pad;
+};
+
+layout(std430, binding = 0) readonly buffer Ops { CopyOp ops[]; };
+layout(std430, binding = 1) readonly buffer Src { uint srcData[]; };
+layout(std430, binding = 2) writeonly buffer Dst { uint dstData[]; };
+
+void main() {
+    CopyOp op = ops[gl_WorkGroupID.x];
+    for (uint w = gl_LocalInvocationID.x; w < op.words; w += 64u) {
+        dstData[op.dstWord + w] = srcData[op.srcWord + w];
+    }
+}

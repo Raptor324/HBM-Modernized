@@ -207,24 +207,7 @@ public abstract class AbstractPartBasedRenderer<T extends BlockEntity, M extends
      * Fabric: только известные подклассы с явным методом (остальные — 1 блок + запас).
      */
     private static AABB frustumCullBounds(BlockEntity blockEntity) {
-        //? if forge {
-        return ((net.minecraftforge.common.extensions.IForgeBlockEntity) blockEntity).getRenderBoundingBox();
-        //?}
-
-        //? if neoforge {
-        /*// На 1.21.1 у BlockEntity есть ванильный getRenderBoundingBox(), но для HBM-машин
-        // используем явные переопределения (мультиблоки с увеличенным AABB), как на Fabric.
-        if (blockEntity instanceof com.hbm_m.api.render.RenderBoundsProvider p) {
-            return p.getRenderBoundingBox();
-        }
-        if (blockEntity instanceof com.hbm_m.blockentity.BaseMachineBlockEntity b) {
-            return b.getRenderBoundingBox();
-        }
-        if (blockEntity instanceof com.hbm_m.block.entity.doors.DoorBlockEntity d) {
-            return d.getRenderBoundingBox();
-        }
-        return new AABB(blockEntity.getBlockPos()).inflate(1.0D);
-        *///?}
+        return com.hbm_m.platform.RenderHooks.getRenderBoundingBox(blockEntity);
     }
 
     // -----------------------------------------------------------------------

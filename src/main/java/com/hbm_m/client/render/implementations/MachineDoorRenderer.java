@@ -93,6 +93,47 @@ public final class MachineDoorRenderer {
             DoorDecl.VAULT_DOOR,
     };
 
+    /** Kill-switch: -Dhbm.doorSkinSharing=false — скины снова получают per-skin VBO. */
+    private static final boolean SKIN_SHARING =
+            !"false".equalsIgnoreCase(System.getProperty("hbm.doorSkinSharing", "true"));
+
+    /**
+     * Ленивая проверка: загруженный block_lit_instanced действительно имеет атрибут
+     * InstUvRect. Защита от «классы свежие, ресурсы устаревшие» (запуск без
+     * processResources): со старым шейдером (texCoord = UV0 passthrough)
+     * нормализованный VBO лёг бы ВЕСЬ атласом на модель — откатываемся в per-skin режим.
+     */
+    private static boolean uvRectAttribSupported;
+    private static boolean uvRectAttribChecked;
+
+    private static boolean uvRectAttribSupported() {
+        if (!uvRectAttribChecked) {
+            var shader = com.hbm_m.client.render.shader.ModShaders.getBlockLitInstancedShader();
+            if (shader == null) {
+                return false; // шейдер ещё не загружен — двери не рендерятся, шарить нечем
+            }
+            uvRectAttribChecked = true;
+            uvRectAttribSupported = org.lwjgl.opengl.GL20.glGetAttribLocation(shader.getId(), "InstUvRect") >= 0;
+            if (!uvRectAttribSupported) {
+                MainRegistry.LOGGER.warn("[HBM-M] block_lit_instanced без InstUvRect — устаревшие shader-ресурсы; "
+                        + "шеринг скинов дверей отключён (пересоберите/перезапустите с processResources)");
+            }
+        }
+        return uvRectAttribSupported;
+    }
+
+    /**
+     * Шеринг VBO между текстурными скинами: ключ кэша без скина, нормализованные
+     * sprite-local UV в VBO, скин — per-instance uvRect (ремап в вершинном шейдере).
+     * ТОЛЬКО вне Iris: companion/GPU-bake/тени под паками держат атласные квады
+     * per-skin — под Iris ключи остаются per-skin (поведение как раньше).
+     */
+    private static boolean shareSkins() {
+        return SKIN_SHARING
+                && !com.hbm_m.client.render.shader.ShaderCompatibilityDetector.isExternalShaderActive()
+                && uvRectAttribSupported();
+    }
+
     /** Нода DAE-сцены с её цепочкой родителей (для компоновки localMatrix в аниматоре). */
     private record DaeNodePath(String name, DaeNode node, List<DaeNode> chain) {}
 
@@ -143,7 +184,8 @@ public final class MachineDoorRenderer {
                     be -> resolveDoorPartQuads(be, part),
                     MachineDoorRenderer::doorPartCacheKey,
                     (be, partialTick, gameTime, pose) ->
-                            applyDoorPartTransform(be, partialTick, pose, part, child));
+                            applyDoorPartTransform(be, partialTick, pose, part, child),
+                    be -> doorUvRect(be, part));
         }
         // DAE-ноды дверей: по части на ноду, инстансинг/MDI общий со станками.
         registerDoorDaeParts(door);
@@ -228,7 +270,8 @@ public final class MachineDoorRenderer {
                         be -> resolveDaeNodeQuads(be, declF, modelF, npF.node()),
                         be -> daeCacheKey(be, declF),
                         (be, partialTick, gameTime, pose) ->
-                                animateDaeNode(be, partialTick, pose, declF, modelF, npF.chain()));
+                                animateDaeNode(be, partialTick, pose, declF, modelF, npF.chain()),
+                        be -> daeUvRect(be, declF, npF.node()));
             }
         }
     }
@@ -331,10 +374,23 @@ public final class MachineDoorRenderer {
         return !(resolveModel(be) instanceof DoorBakedModel);
     }
 
-    /** Ключ VBO-кэша DAE-ноды: дверь + скин (текстура зависит от скина). */
+    /** Ключ VBO-кэша DAE-ноды. При шэринге — дверь без скина (ноды шарят нормализованный VBO). */
     private static String daeCacheKey(DoorBlockEntity be, DoorDecl decl) {
         if (!isDaeModelActive(be)) return "off";
+        if (shareSkins()) return decl.getBlockId().getPath();
         return decl.getBlockId().getPath() + ":" + be.getModelSelection().getSkin().getId();
+    }
+
+    /** uvRect-резолвер DAE-ноды (спрайт текстуры скина) или null вне шеринга. */
+    private static float[] daeUvRect(DoorBlockEntity be, DoorDecl decl, DaeNode node) {
+        if (!shareSkins() || !isDaeModelActive(be)) return null;
+        TextureAtlasSprite s = daeNodeSprite(node, enrichedSelection(be), decl);
+        if (s == null) return null;
+        UV_RECT_SCRATCH[0] = s.getU0();
+        UV_RECT_SCRATCH[1] = s.getV0();
+        UV_RECT_SCRATCH[2] = s.getU1() - s.getU0();
+        UV_RECT_SCRATCH[3] = s.getV1() - s.getV0();
+        return UV_RECT_SCRATCH;
     }
 
     /**
@@ -388,20 +444,97 @@ public final class MachineDoorRenderer {
         return be.getOpenProgress(partialTick) * doorDecl.getOpenTime();
     }
 
-    /** Ключ VBO-кэша OBJ-части: тип двери + тип модели + скин (геометрия части уникальна на triple). */
+    /**
+     * Ключ VBO-кэша OBJ-части.
+     * Шеринг (shareSkins): дверь + токен геометрии скина — текстурные скины одной
+     * геометрии шарят VBO (UV в нём нормализованы, скин уходит в per-instance uvRect).
+     * Токен = canonical-инстанс первой части модели: у скинов с РАЗНОЙ геометрией
+     * (large_vehicle_door: base-obj vs _clean.obj) он разный — шаринг не сработает.
+     * Без шеринга (Iris / kill-switch): прежний ключ дверь+модель+скин.
+     */
     private static String doorPartCacheKey(DoorBlockEntity be) {
         DoorDecl decl = be.getDoorDecl();
         String doorType = decl == null ? "null" : getDoorTypeKey(decl);
-        DoorModelSelection selection = be.getModelSelection();
-        return doorType + "_" + selection.getModelType().getId() + "_" + selection.getSkin().getId();
+        if (!shareSkins()) {
+            DoorModelSelection selection = be.getModelSelection();
+            return doorType + "_" + selection.getModelType().getId() + "_" + selection.getSkin().getId();
+        }
+        if (resolveModel(be) instanceof DoorBakedModel dm) {
+            return be.cachedModelKey(doorType) + "@" + System.identityHashCode(dm.geometryToken());
+        }
+        return be.cachedModelKey(doorType);
     }
 
-    /** Квады OBJ-части из DoorBakedModel; пусто, если части нет/скин не OBJ. */
+    /** Спрайт части: у обёртки скина — целевой спрайт, у canonical — спрайт первого квада (кэш). */
+    private static final ConcurrentHashMap<BakedModel, TextureAtlasSprite> PART_SPRITES = new ConcurrentHashMap<>();
+
+    /** Очистка кэша спрайтов canonical-частей (resource reload — старые модели протухают). */
+    public static void clearPartSpriteCache() {
+        PART_SPRITES.clear();
+    }
+
+    private static TextureAtlasSprite partSprite(BakedModel part) {
+        if (part instanceof com.hbm_m.client.loader.RemappedPartModel r) {
+            return r.toSprite();
+        }
+        TextureAtlasSprite cached = PART_SPRITES.get(part);
+        if (cached != null || PART_SPRITES.containsKey(part)) {
+            return cached;
+        }
+        // canonical-часть: UV запечены её собственным спрайтом — берём из первого квада.
+        TextureAtlasSprite found = null;
+        var rand = RandomSource.create(42L);
+        for (Direction d : Direction.values()) {
+            var q = RenderHooks.getPartQuads(part, null, d, rand);
+            if (!q.isEmpty()) {
+                found = q.get(0).getSprite();
+                break;
+            }
+        }
+        if (found == null) {
+            var q = RenderHooks.getPartQuads(part, null, null, RandomSource.create(42L));
+            found = q.isEmpty() ? null : q.get(0).getSprite();
+        }
+        if (found != null) {
+            PART_SPRITES.put(part, found);
+        }
+        return found;
+    }
+
+    private static final float[] UV_RECT_SCRATCH = new float[4];
+
+    /**
+     * uvRect-резолвер OBJ-части: {u0,v0,du,dv} целевого спрайта скина для ремапа
+     * нормализованного VBO в атлас. Вызывается каждый кадр — держится на map-lookup'ах.
+     */
+    private static float[] doorUvRect(DoorBlockEntity be, String partName) {
+        if (!shareSkins()) return null;
+        if (!(resolveModel(be) instanceof DoorBakedModel dm)) return null;
+        BakedModel part = dm.getPart(partName);
+        if (part == null) return null;
+        TextureAtlasSprite s = partSprite(part);
+        if (s == null) return null;
+        UV_RECT_SCRATCH[0] = s.getU0();
+        UV_RECT_SCRATCH[1] = s.getV0();
+        UV_RECT_SCRATCH[2] = s.getU1() - s.getU0();
+        UV_RECT_SCRATCH[3] = s.getV1() - s.getV0();
+        return UV_RECT_SCRATCH;
+    }
+
+    /** Квады OBJ-части из DoorBakedModel; пусто, если части нет/скин не OBJ.
+     *  При шэринге — нормализованные (sprite-local [0..1]) UV canonical-геометрии. */
     private static List<BakedQuad> resolveDoorPartQuads(DoorBlockEntity be, String partName) {
         BakedModel model = resolveModel(be);
         if (!(model instanceof DoorBakedModel doorModel)) return List.of();
         BakedModel partModel = doorModel.getPart(partName);
         if (partModel == null) return List.of();
+
+        boolean share = shareSkins();
+        if (share && partModel instanceof com.hbm_m.client.loader.RemappedPartModel remapped) {
+            // Каноничная геометрия (общая для всех текстурных скинов) вместо
+            // ремапнутой в спрайт этого скина.
+            partModel = remapped.canonical();
+        }
 
         // Точная копия PartGeometry.collectSolidQuads: общий seed на каждый вызов.
         List<BakedQuad> out = new ArrayList<>();
@@ -410,6 +543,10 @@ public final class MachineDoorRenderer {
             out.addAll(RenderHooks.getPartQuads(partModel, null, d, rand));
         }
         out.addAll(RenderHooks.getPartQuads(partModel, null, null, RandomSource.create(42L)));
+
+        if (share) {
+            out = com.hbm_m.client.model.ModelHelper.normalizeQuadUvsPerQuad(out);
+        }
         return out;
     }
 
@@ -507,35 +644,51 @@ public final class MachineDoorRenderer {
 
     private static List<BakedQuad> bakeDaeNodeQuads(DaeNode node, DoorModelSelection selection,
                                                     DoorDecl doorDecl) {
+        return bakeDaeNodeQuads(node, selection, doorDecl, shareSkins());
+    }
+
+    /** @param normalize нормализовать UV (шеринг VBO); фолбэк-хук рисует напрямую — false. */
+    private static List<BakedQuad> bakeDaeNodeQuads(DaeNode node, DoorModelSelection selection,
+                                                    DoorDecl doorDecl, boolean normalize) {
         try {
-            ResourceLocation rawTexture = resolveDaeTexture(node, selection, doorDecl);
-
-            // Очищаем путь от "textures/" и ".png", чтобы атлас мог найти спрайт
-            String cleanPath = rawTexture.getPath();
-            if (cleanPath.startsWith("textures/")) {
-                cleanPath = cleanPath.substring("textures/".length());
-            }
-            if (cleanPath.endsWith(".png")) {
-                cleanPath = cleanPath.substring(0, cleanPath.length() - 4);
-            }
-            ResourceLocation spriteLocation =
-                    ResourceLocation.fromNamespaceAndPath(rawTexture.getNamespace(), cleanPath);
-
-            TextureAtlasSprite sprite = Minecraft.getInstance().getModelManager()
-                    .getAtlas(TextureAtlas.LOCATION_BLOCKS)
-                    .getSprite(spriteLocation);
-
+            TextureAtlasSprite sprite = daeNodeSprite(node, selection, doorDecl);
             if (sprite == null) {
-                MainRegistry.LOGGER.error("MachineDoorRenderer: Sprite '{}' not found in block atlas!", spriteLocation);
+                MainRegistry.LOGGER.error("MachineDoorRenderer: sprite not found in block atlas for DAE node '{}'", node.name);
                 return List.of();
             }
 
             List<BakedQuad> quads = DaeQuadBaker.bakeNodeQuads(node.mesh, new Matrix4f(), sprite);
-            return quads != null ? quads : List.of();
+            if (quads == null) return List.of();
+            // Шеринг скинов: UV нормализуются в sprite-local — спрайт уходит в
+            // per-instance uvRect, VBO ноды общий для всех скинов двери.
+            if (normalize) {
+                quads = com.hbm_m.client.model.ModelHelper.normalizeQuadUvsPerQuad(quads);
+            }
+            return quads;
         } catch (Exception e) {
             MainRegistry.LOGGER.error("MachineDoorRenderer: failed to bake DAE node '{}'", node.name, e);
             return List.of();
         }
+    }
+
+    private static TextureAtlasSprite daeNodeSprite(DaeNode node, DoorModelSelection selection,
+                                                    DoorDecl doorDecl) {
+        ResourceLocation rawTexture = resolveDaeTexture(node, selection, doorDecl);
+
+        // Очищаем путь от "textures/" и ".png", чтобы атлас мог найти спрайт
+        String cleanPath = rawTexture.getPath();
+        if (cleanPath.startsWith("textures/")) {
+            cleanPath = cleanPath.substring("textures/".length());
+        }
+        if (cleanPath.endsWith(".png")) {
+            cleanPath = cleanPath.substring(0, cleanPath.length() - 4);
+        }
+        ResourceLocation spriteLocation =
+                ResourceLocation.fromNamespaceAndPath(rawTexture.getNamespace(), cleanPath);
+
+        return Minecraft.getInstance().getModelManager()
+                .getAtlas(TextureAtlas.LOCATION_BLOCKS)
+                .getSprite(spriteLocation);
     }
 
     private static ResourceLocation resolveDaeTexture(DaeNode node, DoorModelSelection selection,

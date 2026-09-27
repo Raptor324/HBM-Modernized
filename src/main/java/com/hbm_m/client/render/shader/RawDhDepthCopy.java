@@ -176,7 +176,7 @@ public final class RawDhDepthCopy {
 
     private static int compile(int type, String source) {
         int sh = GL20.glCreateShader(type);
-        GL20.glShaderSource(sh, source);
+        com.hbm_m.platform.RenderHooks.safeShaderSource(sh, source);
         GL20.glCompileShader(sh);
         if (GL20.glGetShaderi(sh, GL20.GL_COMPILE_STATUS) == GL11.GL_FALSE) {
             com.hbm_m.main.MainRegistry.LOGGER.warn(

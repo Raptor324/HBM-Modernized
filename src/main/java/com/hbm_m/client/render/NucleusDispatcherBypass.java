@@ -81,10 +81,6 @@ public final class NucleusDispatcherBypass {
         mainCollected = false;
     }
 
-    /** Уведомление о начале shadow-прохода (тени идут через диспетчер штатно). */
-    public static void noteShadowPassStart() {
-    }
-
     /**
      * Решение миксина диспетчера. MAIN: отмена собранных + регистрация новичков
      * (одиночный рендер новичка против мигания). SHADOW: всегда false.
@@ -141,7 +137,6 @@ public final class NucleusDispatcherBypass {
             collectOne(be, partialTick, pose, buffers, base, cam, mc);
         }
         mainCollected = true;
-        com.hbm_m.client.render.NucleusDebug.recordDraw(0, LIVE.size(), "Bypass main collect");
     }
 
     /**
@@ -196,13 +191,20 @@ public final class NucleusDispatcherBypass {
         if (!(ber instanceof MachineBer<?> machineBer)) {
             return;
         }
+        // Fast-path dirty-skip: чистая машина (без dirty-флага, worldGen-смены
+        // и истёкшего TTL света/fade) подтверждает присутствие roster-assert'ом
+        // вместо полной сборки (матрицы/свет/сравнение 46 флоатов на part).
+        if (((MachineBer<?>) machineBer).tryFastAssertRender(be, mc.level.getGameTime())) {
+            return;
+        }
         pose.last().pose().set(base);
         // Нормаль-часть базиса — иначе нормали иконок хуков без вращения камеры.
         NORMAL_SCRATCH.set(base);
         pose.last().normal().set(NORMAL_SCRATCH);
         pose.translate((float) dx, (float) dy, (float) dz);
-        int packedLight = net.minecraft.client.renderer.LevelRenderer.getLightColor(
-                be.getLevel(), be.getBlockState(), pos);
+        // Свет — через тиковый кеш (LightSampleCache): ванильный getLightColor
+        // на каждую машину каждый кадр давал ~1.5-4% кадра на фермах.
+        int packedLight = com.hbm_m.client.render.LightSampleCache.getOrSamplePacked(be, 0);
         try {
             ((MachineBer<BlockEntity>) machineBer).collectRender(
                     be, partialTick, pose, buffers, packedLight, true);

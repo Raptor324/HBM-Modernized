@@ -200,6 +200,32 @@ public final class RenderHooks {
         *///?}
     }
 
+    /**
+     * Ванильный terrain-shade по направлению квада (те же константы, что печёт
+     * ModelBlockRenderer): UP 1.0, DOWN 0.5, N/S 0.8, W/E 0.6. Квады без
+     * направления (getQuads(null, null, ...)) не затемняем.
+     */
+    public static float quadShade(net.minecraft.core.Direction direction) {
+        if (direction == null) return 1.0f;
+        return switch (direction) {
+            case DOWN -> 0.5f;
+            case UP -> 1.0f;
+            case NORTH, SOUTH -> 0.8f;
+            case WEST, EAST -> 0.6f;
+        };
+    }
+
+    /**
+     * putBulkData с запечённым shade квада в r/g/b — для immediate-путей на
+     * terrain RenderTypes (cutout/solid/translucent): их шейдеры затенение из
+     * нормалей не считают, без bake квады выходят плоскими.
+     */
+    public static void putBulkDataShaded(VertexConsumer consumer, PoseStack.Pose matrix, BakedQuad quad,
+                                         float alpha, int packedLight, int packedOverlay, boolean readExistingColor) {
+        float shade = quadShade(quad.getDirection());
+        putBulkData(consumer, matrix, quad, shade, shade, shade, alpha, packedLight, packedOverlay, readExistingColor);
+    }
+
     // =====================================================================================
     //  VertexFormat & VertexFormatElement Hooks
     // =====================================================================================
@@ -482,6 +508,30 @@ public final class RenderHooks {
     }
 
     /**
+     * Единый доступ к расширенному AABB рендера BlockEntity (куллинг фрустом/светом).
+     * Forge: расширение IForgeBlockEntity#getRenderBoundingBox (наши BE переопределяют его).
+     * На 1.21.1 метода расширения нет — используем явные интерфейс/переопределения
+     * (RenderBoundsProvider, BaseMachineBlockEntity, DoorBlockEntity), остальным — 1 блок + запас.
+     * До хука LightSampleCache на NeoForge игнорировал мультиблочные границы (расхождение света).
+     */
+    public static net.minecraft.world.phys.AABB getRenderBoundingBox(net.minecraft.world.level.block.entity.BlockEntity be) {
+        //? if forge {
+        return ((net.minecraftforge.common.extensions.IForgeBlockEntity) be).getRenderBoundingBox();
+        //?} else {
+        /*if (be instanceof com.hbm_m.api.render.RenderBoundsProvider p) {
+            return p.getRenderBoundingBox();
+        }
+        if (be instanceof com.hbm_m.blockentity.BaseMachineBlockEntity b) {
+            return b.getRenderBoundingBox();
+        }
+        if (be instanceof com.hbm_m.block.entity.doors.DoorBlockEntity d) {
+            return d.getRenderBoundingBox();
+        }
+        return new net.minecraft.world.phys.AABB(be.getBlockPos()).inflate(1.0D);
+        *///?}
+    }
+
+    /**
      * Возвращает частичный тик текущего кадра рендера (0.0 .. 1.0).
      */
     public static float getPartialTick() {
@@ -491,4 +541,38 @@ public final class RenderHooks {
         /*return net.minecraft.client.Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(true);
         *///?}
     }
-}
+
+    /**
+     * Проверяет, открыт ли F3 debug экран игрока.
+     */
+    public static boolean isDebugScreenVisible() {
+        //? if < 1.21.1 {
+        return net.minecraft.client.Minecraft.getInstance().options.renderDebug;
+        //?} else {
+        /*return net.minecraft.client.Minecraft.getInstance().getDebugOverlay().showDebugScreen();
+        *///?}
+    }
+
+    /**
+     * Compiles shader source safely across all desktop OpenGL drivers (especially AMD Windows drivers).
+     *
+     * <p>Identical in function to {@code GL20.glShaderSource(int, CharSequence)} but passes
+     * a null native pointer (0L) for string length to force the driver to rely exclusively
+     * on the null terminator. This works around a critical flaw in AMD Windows drivers
+     * that misread length pointers and trigger memory access violations.
+     *
+     * @credit CrankShaft / fewizz (dev.engine_room.flywheel.backend.gl.GlCompat)
+     *
+     * @param shaderId The OpenGL shader object ID.
+     * @param source   The GLSL shader source code.
+     */
+    public static void safeShaderSource(int shaderId, CharSequence source) {
+        try (org.lwjgl.system.MemoryStack stack = org.lwjgl.system.MemoryStack.stackPush()) {
+            java.nio.ByteBuffer sourceBuffer = org.lwjgl.system.MemoryUtil.memUTF8(source, true);
+            org.lwjgl.PointerBuffer pointers = stack.mallocPointer(1);
+            pointers.put(sourceBuffer);
+            org.lwjgl.opengl.GL20C.nglShaderSource(shaderId, 1, pointers.address0(), 0L);
+            org.lwjgl.system.MemoryUtil.memFree(sourceBuffer);
+        }
+    }
+}

@@ -34,8 +34,8 @@ import net.minecraft.world.item.ItemStack;
 /**
  * Продвинутый сборщик на фабрике {@link MachineRenderers}:
  * Base — статика; Frame — динамическая часть (видима по blockstate-свойству FRAME);
- * Ring — анимация вращения; 8 частей рук — две chain-группы (GPU bone skinning
- * включается автоматически, IDDS 1..4 на группу: lower/upper/head/spike);
+ * Ring — анимация вращения; 8 частей рук — lower/upper/head/spike × 2 группы
+ * (translate+rotate, инстансятся в общий MDI наравне со статикой);
  * иконка рецепта — immediate-хук.
  */
 public final class MachineAdvancedAssemblerRenderer {
@@ -68,8 +68,6 @@ public final class MachineAdvancedAssemblerRenderer {
             .part("ArmUpper2", (be, pt, t, pose) -> applyArm(be, pt, pose, 1, 1, true))
             .part("Head2",     (be, pt, t, pose) -> applyArm(be, pt, pose, 1, 2, true))
             .part("Spike2",    (be, pt, t, pose) -> applyArm(be, pt, pose, 1, 3, true))
-            .chain("ArmLower1", "ArmUpper1", "Head1", "Spike1")
-            .chain("ArmLower2", "ArmUpper2", "Head2", "Spike2")
             .hook(MachineAdvancedAssemblerRenderer::renderRecipeIcon)
             .register();
     }

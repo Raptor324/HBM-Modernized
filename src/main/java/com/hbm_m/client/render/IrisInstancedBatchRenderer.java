@@ -49,6 +49,9 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
  * <p>
  * Extracted from {@link InstancedStaticPartRenderer} to reduce
  * class complexity.
+ *
+ * @credit Iris / coderbot / IMS
+ * @credit Flywheel / janh
  */
 
 @OnlyIn(Dist.CLIENT)
@@ -66,19 +69,19 @@ final class IrisInstancedBatchRenderer {
     private ShaderInstance cachedMatrixShader;
 
     private final Matrix4f tmpInstanceMat = new Matrix4f();
-    /** Scratch: composed shadow model-view для записи в глобальный shadow-батч. */
+    /** Scratch: composed shadow model-view matrix for recording into the global shadow batch. */
     private final Matrix4f tmpShadowMv = new Matrix4f();
-    /** Scratch: мировая трансформация инстанса = inv(shadowMV) · composed. */
+    /** Scratch: instance world transformation = inv(shadowMV) * composed. */
     private final Matrix4f tmpShadowWorld = new Matrix4f();
     private final Vector3f tmpShadowPos = new Vector3f();
     private final Quaternionf tmpShadowRot = new Quaternionf();
-    /** Кэш shadow model-view + инверсии (константа в течение shadow-прохода). */
+    /** Cached shadow model-view and inverse matrices (constant throughout the shadow pass). */
     private final Matrix4f shadowMvCache = new Matrix4f();
     private final Matrix4f shadowInvMvCache = new Matrix4f();
     private boolean shadowInvValid = false;
-    /** Scratch: R_cam (view-ротация) для конверсии мировых записей → view-space. */
+    /** Scratch: R_cam (view rotation) for converting world-space records to view space. */
     private final Matrix4f irisCamRotMat = new Matrix4f();
-    /** Scratch: view-space поза инстанса = R_cam · T(world-cam) · R_world. */
+    /** Scratch: instance view-space pose = R_cam * T(world - cam) * R_world. */
     private final Matrix4f irisViewPoseMat = new Matrix4f();
     private final Quaternionf irisQuatTmp = new Quaternionf();
     private static final Matrix4f IDENTITY = new Matrix4f();
@@ -159,8 +162,8 @@ final class IrisInstancedBatchRenderer {
             //? if < 1.21.1 {
             parent.tmpInvViewRot.identity().set(RenderSystem.getInverseViewRotationMatrix());
             //?} else {
-            /*// rotation(camera.rotation()) = R_cam⁻¹ БЕЗ доп. invert (см.
-            // FrameViewState.capture и fillInstanceCornerLight).
+            /*// rotation(camera.rotation()) = R_cam⁻¹ without extra invert (see
+            // FrameViewState.capture and fillInstanceCornerLight).
             parent.tmpInvViewRot.identity().rotation(Minecraft.getInstance().gameRenderer.getMainCamera().rotation());
             *///?}
             parent.tmpLocalPose.set(parent.tmpInvViewRot).mul(poseStack.last().pose());
@@ -176,17 +179,16 @@ final class IrisInstancedBatchRenderer {
     // ── Single draw with Iris ExtendedShader ───────────────────────────
 
     /**
-     * Батчевый shadow-путь: вместо немедленного {@code drawCompanion} записывает
-     * инстанс в глобальный shadow-батч ({@link IrisShadowBatchCollector}) —
-     * флаш один на всю shadow BE-фазу из Iris-миксина, per-instance дроуки через
-     * pack-программу SHADOW_* (см. flushGlobalShadowBatch).
+     * Batched shadow path: instead of an immediate {@code drawCompanion}, records the
+     * instance into the global shadow batch ({@link IrisShadowBatchCollector}) —
+     * flushed once per entire shadow BlockEntity phase via Iris mixin, submitting
+     * per-instance draws through the shaderpack's SHADOW_* program (see flushGlobalShadowBatch).
      * <p>
-     * Iris передаёт BER'у PoseStack {@code shadowModelView · T(bePos - camPos)}
-     * (ShadowRenderer.renderBlockEntities переводит стек на bePos-cam поверх
-     * createShadowModelView). Запись — точная декомпозиция T(pos)·R(rot) этой
-     * позы: getTranslation/getNormalizedRotation от аффинной матрицы с
-     * ортонормированным 3x3 обратимы без потерь, поэтому флаш
-     * recomposition'ом восстанавливает исходную позу бит-в-бит (до float-шума).
+     * Iris passes the BER a PoseStack of {@code shadowModelView * T(bePos - camPos)}
+     * (ShadowRenderer.renderBlockEntities transforms the stack to bePos - cam on top of
+     * createShadowModelView). Recording is an exact decomposition T(pos) * R(rot) of this
+     * pose: getTranslation/getNormalizedRotation from an affine matrix with an orthonormal
+     * 3x3 are losslessly invertible, restoring the original pose bit-for-bit upon flush.
      */
     boolean tryRecordShadowInstance(PoseStack poseStack, int packedLight,
                                     BlockPos blockPos, @Nullable BlockEntity blockEntity) {
@@ -194,8 +196,7 @@ final class IrisInstancedBatchRenderer {
             return false;
         }
         Matrix4f currentMv = RenderSystem.getModelViewMatrix();
-        // Stash — КАЖДЫЙ кадр (флаш сбрасывает stashValid; условный вызов убивал
-        // батчинг со второго кадра — «no shadow matrices stashed», debug.log 0913).
+        // Stash every frame (flush resets stashValid; conditional calls broke batching from the second frame).
         IrisShadowBatchCollector.stashShadowMatrices(RenderSystem.getProjectionMatrix());
         if (!shadowInvValid || !shadowMvCache.equals(currentMv)) {
             shadowMvCache.set(currentMv);
@@ -204,22 +205,17 @@ final class IrisInstancedBatchRenderer {
         }
         tmpShadowMv.set(currentMv).mul(poseStack.last().pose());
         tmpShadowWorld.set(shadowInvMvCache).mul(tmpShadowMv);
-        tmpShadowWorld.getTranslation(tmpShadowPos);
-        tmpShadowWorld.getNormalizedRotation(tmpShadowRot);
-        // Свет в shadow не нужен (глубина/shadowcolor) — вместо дорогого
-        // 8-corner сэмпла пишем нули (sampleCornersForSingleDraw здесь был
-        // ~2% кадра на ферме).
+        // Light is unneeded in shadow pass (depth/shadowcolor only) — write zeros instead of expensive 8-corner sampling.
         java.util.Arrays.fill(parent.tmpCornerUV, 0.0f);
-        IrisShadowBatchCollector.record(parent, tmpShadowPos, tmpShadowRot, parent.objBbox, parent.tmpCornerUV);
+        IrisShadowBatchCollector.record(parent, tmpShadowWorld, parent.objBbox, parent.tmpCornerUV);
         return true;
     }
 
     boolean drawSingleWithIrisExtended(PoseStack poseStack, int packedLight,
                                        BlockPos blockPos, @Nullable BlockEntity blockEntity) {
-        // Shadow pass: только через АКТИВНЫЙ per-BE батч (см. SingleMeshVboRenderer
-        // .renderWithIrisExtended и IrisRenderBatch.begin). Standalone-путь в
-        // shadow запрещён. Без батча — false, вызывающий addInstance/renderSingle
-        // уйдёт в putBulkData через bufferSource (SHADOW_BLOCK на endBatch).
+        // Shadow pass: only through ACTIVE per-BE batch (see SingleMeshVboRenderer.renderWithIrisExtended
+        // and IrisRenderBatch.begin). Standalone path in shadow pass is prohibited. Without batching,
+        // returns false so caller falls through to bufferSource.putBulkData (SHADOW_BLOCK on endBatch).
         if (ShaderCompatibilityDetector.isRenderingShadowPass() && IrisRenderBatch.active() == null) {
             return false;
         }
@@ -240,8 +236,8 @@ final class IrisInstancedBatchRenderer {
 
         IrisRenderBatch batch = IrisRenderBatch.active();
         if (batch != null) {
-            // R_cam живёт в RenderSystem.getModelViewMatrix() на ОБЕИХ версиях (см. фикс в
-            // InstancedStaticPartRenderer.addInstance) — композит обязателен, иначе модели летают.
+            // R_cam resides in RenderSystem.getModelViewMatrix() on BOTH versions (see fix in
+            // InstancedStaticPartRenderer.addInstance) — composite multiplication is required.
             Matrix4f fullModelView = new Matrix4f(RenderSystem.getModelViewMatrix()).mul(poseStack.last().pose());
             LightSampleCache.getOrSample(blockEntity, packedLight, irisSingleUV, 0);
             int blockUInt = Math.max(0, Math.min(240, Math.round(irisSingleUV[0])));
@@ -321,15 +317,15 @@ final class IrisInstancedBatchRenderer {
     // ── Batch flush (Iris) ─────────────────────────────────────────────
 
     /**
-     * Истинный инстансный флаш под Iris: наш {@code ExtendedShader}
-     * (hbm_m:iris/block_lit_instanced_iris — наш GLSL, юниформы iris_*) +
-     * parent VAO (instance-атрибуты 4..11, divisors уже в VAO-state) +
-     * ОДИН {@code glDrawElementsInstanced} на part-renderer.
+     * True instanced flush under Iris: our {@code ExtendedShader}
+     * (hbm_m:iris/block_lit_instanced_iris — custom GLSL with iris_* uniforms) +
+     * parent VAO (instance attributes 4..11, divisors configured in VAO state) +
+     * ONE {@code glDrawElementsInstanced} call per part renderer.
      * <p>
-     * Порядок обязателен: pack-шейдер применяется ПЕРВЫМ (его apply() биндит
-     * правильный gbuffer-FB) → {@link IrisInstancedShaders#prepare(boolean)}
-     * снапшотит аттачменты живого FBO → наш шейдер рисует в те же текстуры.
-     * При недоступности нашего шейдера — прежний companion per-instance путь.
+     * Order is mandatory: pack shader is applied FIRST (its apply() binds
+     * the active gbuffer FBO) -> {@link IrisInstancedShaders#prepare(boolean)}
+     * snapshots attachments of the live FBO -> our shader draws into the same render targets.
+     * If our shader is unavailable, falls back to the legacy companion per-instance path.
      */
     void flushBatchIris(Matrix4f projectionMatrix) {
         if (ShaderCompatibilityDetector.isRenderingShadowPass()) {
@@ -339,18 +335,18 @@ final class IrisInstancedBatchRenderer {
             return;
         }
 
-        // Pack-шейдер биндит актуальный gbuffer-FB; программу подменяем на нашу.
+        // Pack shader binds active gbuffer FBO; replace program with ours.
         ShaderInstance packShader = IrisExtendedShaderAccess.getBlockShader(false);
         if (packShader == null) {
             return;
         }
 
         // ── Tier 1: GPU Compute Bake (main) ─────────────────────────────
-        // ОДИН glDrawElements на part-renderer РОДНОЙ gbuffers-программой пака —
-        // пак сам кодирует свой gbuffer. Главное следствие: нераспознанные схемы
-        // (BSL: per-instance companion = 1618 дкоуков) получают те же ~27 дкоуков,
-        // что и распознанные (Photon). Записи мировые (FrameViewState), свет —
-        // трилинейный из 8-corner полей записи. Провал → прежние пути ниже.
+        // ONE glDrawElements per part renderer using the pack's NATIVE gbuffers program —
+        // the shaderpack natively encodes its own gbuffer formats. Unrecognized schemas
+        // (BSL: per-instance companion = 1618 draw calls) collapse to ~27 draw calls,
+        // identical to recognized ones (Photon). Instance records are anchor-relative (FrameViewState),
+        // with trilinear lighting evaluated from the 8-corner bounding records.
         if (NucleusGpuBaker.isEnabled()) {
             IrisCompanionMesh bakeMesh = getOrBuildIrisCompanion();
             if (bakeMesh != null && parent.instanceCount > 0 && parent.instanceBuffer != null) {
@@ -363,8 +359,8 @@ final class IrisInstancedBatchRenderer {
                         baked = NucleusGpuBaker.bakeAndDrawMain(bakeRecords, parent.instanceCount,
                                 bakeMesh, packShader,
                                 parent.vanillaHelper.stripViewRotationForInstanced(projectionMatrix),
-                                viewRot, FrameViewState.camX(), FrameViewState.camY(),
-                                FrameViewState.camZ());
+                                viewRot, FrameViewState.relCamX(), FrameViewState.relCamY(),
+                                FrameViewState.relCamZ());
                     }
                 }
                 if (baked) {
@@ -373,15 +369,14 @@ final class IrisInstancedBatchRenderer {
             }
         }
 
-        // РЕГРЕССИЯ-СТОП (чёрная база под паками): deferred-паки пишут gbuffer
-        // СВОИМИ программами в собственном формате — например, схема "packed"
-        // пакует albedo+flat normal+light levels через pack_unorm_2x8 в один
-        // таргет (RENDERTARGETS: 1). Однотаргетный FSH с распакованным
-        // albedo*lightmap композит декодирует в мусор: геометрия верна, цвет
-        // чёрный. Поэтому без распознанного энкодера (IrisInstancedEncoders)
-        // инстансный ExtendedShader не используется: рисуем через
-        // pack-программу BLOCK_ENTITY (companion per-instance — тот же путь,
-        // что у анимированных частей, корректен под любым паком).
+        // REGRESSION-STOP (black base under shaderpacks): deferred packs write gbuffers
+        // using their OWN programs in custom formats (e.g. "packed" schema packs
+        // albedo + flat normal + light levels via pack_unorm_2x8 into a single target
+        // with RENDERTARGETS: 1). Single-target FSH with unpacked albedo*lightmap composite
+        // decodes into garbage (correct geometry, black color). Therefore, without a
+        // recognized encoder (IrisInstancedEncoders), instanced ExtendedShader is bypassed:
+        // render through the pack's BLOCK_ENTITY program (companion per-instance — same path
+        // used by animated parts, universally correct under all packs).
         if (!ClientRenderFlags.irisTrueInstancing()) {
             flushBatchIrisCompanionLegacy(projectionMatrix);
             return;
@@ -392,7 +387,7 @@ final class IrisInstancedBatchRenderer {
                 legacyOnce = false;
                 MainRegistry.LOGGER.info("[HBM-M] flushBatchIris: instanced unavailable -> legacy companion path");
             }
-            // Наш инстансный путь недоступен (рефлексия/версия Iris) — прежний путь.
+            // Custom instanced path unavailable (reflection/version mismatch) — fallback to legacy path.
             flushBatchIrisCompanionLegacy(projectionMatrix);
             return;
         }
@@ -420,32 +415,31 @@ final class IrisInstancedBatchRenderer {
         int prevBlendDstAlpha = GL11.glGetInteger(GL14.GL_BLEND_DST_ALPHA);
         int previousBlockEntityId = IrisExtendedShaderAccess.setCurrentRenderedBlockEntity(0);
 
-        // РЕГРЕССИЯ-ФИКС: closePersistentIfActive перед флашем биндит main-RT
-        // (ExtendedShader.clear -> mainRenderTarget.bindWrite) — без повторного
-        // pack-apply машины писались в main-RT и стирались финальным проходом
-        // («чанки внутри машин», полупрозрачность). tryApply возвращает
-        // актуальный gbuffer-FB; IrisPhaseGuard — фазу BLOCK_ENTITIES.
+        // REGRESSION-FIX: closePersistentIfActive prior to flush binds main-RT
+        // (ExtendedShader.clear -> mainRenderTarget.bindWrite) — without re-applying
+        // the pack shader, machines were drawn into main-RT and cleared by subsequent passes.
+        // tryApply binds the actual gbuffer FBO; IrisPhaseGuard maintains BLOCK_ENTITIES phase.
         try (IrisPhaseGuard phaseGuard = IrisPhaseGuard.pushBlockEntities()) {
             if (!IrisShaderApply.tryApply(packShader)) {
                 return;
             }
             GL30.glBindVertexArray(parent.vaoId);
             GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, parent.instanceVboId);
-            // Span-дифф: только изменившиеся окна записей (мировые координаты —
-            // статичная сцена даёт ноль аплоада).
+            // Span diffing: only uploads modified record spans (anchor-relative coordinates
+            // incur zero GPU upload traffic on static scenes).
             parent.uploadInstanceStreamToBoundVbo();
             parent.vanillaHelper.enableVertexAttribsForDraw();
 
             var mc = Minecraft.getInstance();
             if (mc.gameRenderer != null) {
-                //? if < 1.21.1 {
-                mc.gameRenderer.lightTexture().updateLightTexture(mc.getFrameTime());
-                //?} else {
-                /*mc.gameRenderer.lightTexture().updateLightTexture(mc.getTimer().getGameTimeDeltaPartialTick(true));
-                *///?}
+                // At-most-once-per-frame guard: vanilla already rebuilt the lightmap
+                // at the start of GameRenderer.renderLevel, and RenderFrameLight ran
+                // at present start — a direct updateLightTexture here was a duplicate
+                // 256×256 CPU rebuild per frame.
+                RenderFrameLight.ensureLightTextureUpdated();
             }
 
-            // iris_-юниформы + подмена программы (useIrisProgram); FB пака остаётся.
+            // Bind iris_* uniforms and replace program (useIrisProgram); preserves active pack FBO.
             parent.vanillaHelper.useIrisProgram(
                     ours, parent.vanillaHelper.stripViewRotationForInstanced(projectionMatrix),
                     FrameViewState.viewMatrix());
@@ -456,17 +450,16 @@ final class IrisInstancedBatchRenderer {
             RenderSystem.depthMask(true);
             RenderSystem.disableCull();
 
-            // Divisors 4..11 = 1 уже в VAO-state (заданы при создании) — per-draw
-            // не трогаются, ванильным VAO утечка не грозит.
+            // Divisors for attributes 4..11 are already set to 1 in VAO state during creation;
+            // per-draw state is untouched, preventing state leaks to vanilla VAOs.
             InstancedGlCompat.glDrawElementsInstancedCompat(GL11.GL_TRIANGLES, parent.indexCount,
                     GL11.GL_UNSIGNED_INT, 0, parent.instanceCount);
             NucleusDebug.recordDraw(1, parent.instanceCount, "Iris instanced");
 
-            // НЕ ours.clear() (ребиндит main-RT) и НЕ glUseProgram(0):
-            // ExtendedShader.lastApplied продолжает считать pack-программу активной
-            // и скипает glUseProgram при следующем tryApply — юниформы пака летели
-            // бы в программу 0 (GL_INVALID_OPERATION spam, чёрная база). Возвращаем
-            // pack-программу явно — трекинг Iris остаётся консистентным.
+            // Do NOT call ours.clear() (re-binds main-RT) or glUseProgram(0):
+            // ExtendedShader.lastApplied continues tracking the pack program as active
+            // and skips glUseProgram on subsequent tryApply calls, causing uniforms to target program 0.
+            // Explicitly restore the pack program to keep Iris state tracking consistent.
             GL20.glUseProgram(packShader.getId());
         } catch (Exception e) {
             MainRegistry.LOGGER.error("Error during instanced flush (Iris instanced)", e);
@@ -490,8 +483,8 @@ final class IrisInstancedBatchRenderer {
     }
 
     /**
-     * Прежний companion per-instance путь — fallback, когда наш ExtendedShader
-     * недоступен (рефлексия не сошлась / старая версия Iris/Oculus).
+     * Legacy companion per-instance path — fallback when ExtendedShader
+     * is unavailable (reflection mismatch or older Iris/Oculus build).
      */
     private static boolean legacyOnce = true;
 
@@ -606,12 +599,12 @@ final class IrisInstancedBatchRenderer {
             int lastBlockU = Integer.MIN_VALUE;
             int lastSkyV = Integer.MIN_VALUE;
 
-            // Записи мировые (FrameViewState): Iris-шейдер ждёт view-space позу
-            // инстанса → конверсия R_cam·T(world-cam)·R_world на каждый инстанс.
+            // Anchor-relative coordinates (FrameViewState): Iris shader expects view-space instance pose
+            // -> compute R_cam * T(world - cam) * R_world for each instance.
             irisCamRotMat.set(FrameViewState.inverseViewRotation()).transpose();
-            final float camX = FrameViewState.camX();
-            final float camY = FrameViewState.camY();
-            final float camZ = FrameViewState.camZ();
+            final float camX = FrameViewState.relCamX();
+            final float camY = FrameViewState.relCamY();
+            final float camZ = FrameViewState.relCamZ();
 
             for (int i = 0; i < parent.instanceCount; i++) {
                 int base = i * parent.instanceDataSize;

@@ -54,6 +54,10 @@ out vec3 fragNormal;
 out vec3 worldNormal;
 // Per-vertex fade: InstBboxSize.w when instancing (batched flush reads stale uniform otherwise).
 out float vFadeAlpha;
+// Per-instance тинт: в ЭТОЙ программе атрибута нет (раскладка VAO старая) — всегда white.
+// Атрибутный путь InstColor@13 живёт в block_lit_instanced.vsh; общий block_lit.fsh
+// умножает на vColor в обоих случаях.
+out vec4 vColor;
 
 #ifdef USE_INSTANCING
 mat4 quatToMat4(vec4 q) {
@@ -166,4 +170,5 @@ void main() {
 #else
     vFadeAlpha = FadeAlpha;
 #endif
+    vColor = vec4(1.0);
 }

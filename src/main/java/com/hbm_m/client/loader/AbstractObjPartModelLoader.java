@@ -1,11 +1,13 @@
 package com.hbm_m.client.loader;
 
 import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 import com.google.gson.JsonDeserializationContext;
 import com.google.gson.JsonObject;
@@ -15,6 +17,7 @@ import com.mojang.math.Transformation;
 
 import net.minecraft.client.renderer.block.model.ItemOverrides;
 import net.minecraft.client.renderer.block.model.ItemTransforms;
+import net.minecraft.client.renderer.texture.TextureAtlas;
 import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.model.Material;
@@ -47,6 +50,26 @@ public abstract class AbstractObjPartModelLoader<T extends BakedModel> implement
 
     protected ResourceLocation mapAtlasForTexture(ResourceLocation texture) { return null; }
 
+    /**
+     * Дополнительный transform в пространстве модели для конкретной части
+     * (применяется при запекании через ModelState): сдвиги/повороты, которые
+     * не хочет хранить сам OBJ. По умолчанию — identity.
+     */
+    protected com.mojang.math.Transformation partTransform(String part) {
+        return com.mojang.math.Transformation.identity();
+    }
+
+    /**
+     * Запекание ОДНОЙ части модели. Дефолт — прямой {@code ObjModel.bake}.
+     * Переопределяется загрузчиками с дедупликацией (двери: текстурные скины
+     * шарят canonical-запекание через {@link DoorModelLoader}).
+     */
+    protected BakedModel bakePart(ObjModel model, SinglePartBakingContext partContext, ModelBaker baker,
+                                  Function<Material, TextureAtlasSprite> spriteGetter, ModelState identityState,
+                                  ItemOverrides overrides, ResourceLocation modelName) {
+        return LoaderHooks.bakeObjModel(model, partContext, baker, spriteGetter, identityState, overrides, modelName);
+    }
+
     @Override
     public ObjPartGeometry<T> read(JsonObject jsonObject, JsonDeserializationContext deserializationContext) {
         String modelStr = GsonHelper.getAsString(jsonObject, "model");
@@ -63,13 +86,25 @@ public abstract class AbstractObjPartModelLoader<T extends BakedModel> implement
         private final Set<String> partNames;
         private final boolean flipV;
         private final AbstractObjPartModelLoader<T> loader;
+        /**
+         * Спецификации частей (имя части -> {группа OBJ, текстура-оверрайд}).
+         * Пустая карта = классический режим по {@link #partNames}. Позволяет одной OBJ-группе
+         * выступать несколькими частями с разными текстурами (hot/cold варианты).
+         */
+        private final Map<String, PartSpec> partSpecs;
 
         public ObjPartGeometry(ResourceLocation modelLocation, Set<String> partNames, boolean flipV,
                                AbstractObjPartModelLoader<T> loader) {
+            this(modelLocation, partNames, flipV, loader, Map.of());
+        }
+
+        public ObjPartGeometry(ResourceLocation modelLocation, Set<String> partNames, boolean flipV,
+                               AbstractObjPartModelLoader<T> loader, Map<String, PartSpec> partSpecs) {
             this.modelLocation = modelLocation;
             this.partNames = partNames;
             this.flipV = flipV;
             this.loader = loader;
+            this.partSpecs = partSpecs;
         }
 
         // Парсинг OBJ дедуплицируется глобально в LoaderHooks (по modelLocation + flipV)
@@ -101,6 +136,25 @@ public abstract class AbstractObjPartModelLoader<T extends BakedModel> implement
 
         private BakedModel doBake(IGeometryBakingContext context, ModelBaker baker, Function<Material, TextureAtlasSprite> spriteGetter, ModelState modelState, ItemOverrides overrides, ResourceLocation modelName) {
             ObjModel model = getOrLoadObjModel();
+
+            // Режим спецификаций: имена и группы частей заданы картой (возможны алиасы групп).
+            if (!partSpecs.isEmpty()) {
+                HashMap<String, BakedModel> specParts = new HashMap<>();
+                for (var entry : partSpecs.entrySet()) {
+                    PartSpec spec = entry.getValue();
+                    String group = spec.group() != null ? spec.group() : entry.getKey();
+                    BakedModel baked = LoaderHooks.bakeObjModel(model,
+                            new SinglePartBakingContext(context, group, loader, spec.texture()),
+                            baker, spriteGetter, stateForPart(entry.getKey()), overrides, modelName);
+                    if (baked != null) {
+                        specParts.put(entry.getKey(), baked);
+                    } else {
+                        MainRegistry.LOGGER.warn("{}: Part '{}' (group '{}') baked to NULL!",
+                                loader.getClass().getSimpleName(), entry.getKey(), group);
+                    }
+                }
+                return loader.createBakedModel(specParts, context.getTransforms(), modelName);
+            }
 
             // АВТОрежим: пустой список частей = взять все корневые группы OBJ.
             boolean auto = partNames.isEmpty();
@@ -145,7 +199,7 @@ public abstract class AbstractObjPartModelLoader<T extends BakedModel> implement
             // Параллельное запекание геометрии всех составных частей модели
             names.parallelStream().forEach(partName -> {
                 SinglePartBakingContext partContext = new SinglePartBakingContext(context, partName, loader);
-                BakedModel bakedPart = LoaderHooks.bakeObjModel(model, partContext, baker, spriteGetter, identityState, overrides, modelName);
+                BakedModel bakedPart = loader.bakePart(model, partContext, baker, spriteGetter, identityState, overrides, modelName);
                 if (bakedPart != null) {
                     bakedParts.put(partName, bakedPart);
                 } else {
@@ -172,6 +226,17 @@ public abstract class AbstractObjPartModelLoader<T extends BakedModel> implement
             }
         }
 
+        private ModelState stateForPart(String part) {
+            com.mojang.math.Transformation t = loader.partTransform(part);
+            if (t.isIdentity()) return createIdentityState();
+            return new ModelState() {
+                @Override
+                public @NotNull Transformation getRotation() {
+                    return t;
+                }
+            };
+        }
+
         private ModelState createIdentityState() {
             return new ModelState() {
                 @Override
@@ -182,18 +247,35 @@ public abstract class AbstractObjPartModelLoader<T extends BakedModel> implement
         }
     }
 
+    /** Часть в map-режиме "parts": группа OBJ + опциональная навязанная текстура. */
+    protected record PartSpec(@org.jetbrains.annotations.Nullable String group,
+                              @org.jetbrains.annotations.Nullable ResourceLocation texture) { }
+
     protected static class SinglePartBakingContext implements IGeometryBakingContext {
         private final IGeometryBakingContext parent;
         private final String visiblePart;
         private final AbstractObjPartModelLoader<?> loader;
+        @org.jetbrains.annotations.Nullable
+        private final ResourceLocation textureOverride;
 
         public SinglePartBakingContext(IGeometryBakingContext parent, String visiblePart, AbstractObjPartModelLoader<?> loader) {
+            this(parent, visiblePart, loader, null);
+        }
+
+        public SinglePartBakingContext(IGeometryBakingContext parent, String visiblePart,
+                                       AbstractObjPartModelLoader<?> loader,
+                                       @org.jetbrains.annotations.Nullable ResourceLocation textureOverride) {
             this.parent = parent;
             this.visiblePart = visiblePart;
             this.loader = loader;
+            this.textureOverride = textureOverride;
         }
 
         @Override public String getModelName() { return parent.getModelName(); }
+        /** Имя части (visiblePart), заданное этому контексту запекания. */
+        public String visiblePartName() { return visiblePart; }
+        @Nullable
+        public ResourceLocation textureOverride() { return textureOverride; }
         @Override public boolean isGui3d() { return parent.isGui3d(); }
         @Override public boolean useBlockLight() { return parent.useBlockLight(); }
         @Override public boolean useAmbientOcclusion() { return parent.useAmbientOcclusion(); }
@@ -204,6 +286,9 @@ public abstract class AbstractObjPartModelLoader<T extends BakedModel> implement
 
         @Override
         public Material getMaterial(String name) {
+            if (this.textureOverride != null) {
+                return new Material(TextureAtlas.LOCATION_BLOCKS, this.textureOverride);
+            }
             Material mat = parent.getMaterial(name);
 
             if (this.visiblePart.equalsIgnoreCase("Label")) {

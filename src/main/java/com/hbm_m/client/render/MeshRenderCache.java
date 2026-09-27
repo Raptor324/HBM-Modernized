@@ -14,18 +14,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 
-import com.hbm_m.client.render.shader.IrisBufferHelper;
 import com.hbm_m.main.MainRegistry;
-import com.hbm_m.platform.RenderHooks;
-import com.mojang.blaze3d.systems.RenderSystem;
-import com.mojang.blaze3d.vertex.BufferBuilder;
-import com.mojang.blaze3d.vertex.DefaultVertexFormat;
-import com.mojang.blaze3d.vertex.PoseStack;
-import com.mojang.blaze3d.vertex.VertexBuffer;
-import com.mojang.blaze3d.vertex.VertexFormat;
 
 import net.minecraft.client.renderer.block.model.BakedQuad;
-import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.client.resources.model.BakedModel;
 
 @OnlyIn(Dist.CLIENT)
@@ -44,20 +35,6 @@ public class MeshRenderCache {
             @Override
             protected boolean removeEldestEntry(Map.Entry<String, PartGeometry> eldest) {
                 return size() > MAX_CACHE_SIZE;
-            }
-        }
-    );
-
-    private static final Map<String, VertexBuffer> GPU_BUFFERS = Collections.synchronizedMap(
-        new LinkedHashMap<String, VertexBuffer>(MAX_CACHE_SIZE + 1, 0.75f, true) {
-            @Override
-            protected boolean removeEldestEntry(Map.Entry<String, VertexBuffer> eldest) {
-                if (size() > MAX_CACHE_SIZE) {
-                    VertexBuffer vb = eldest.getValue();
-                    if (vb != null) vb.close();
-                    return true;
-                }
-                return false;
             }
         }
     );
@@ -113,15 +90,6 @@ public class MeshRenderCache {
             k -> PartGeometry.compile(modelPart, partNameFromKey(cacheKey)));
     }
 
-    public static VertexBuffer getOrCreateGPUBuffer(String cacheKey, BakedModel modelPart) {
-        RenderSystem.assertOnRenderThread();
-
-        return GPU_BUFFERS.computeIfAbsent(cacheKey, k -> {
-            List<BakedQuad> quads = getOrCompile(cacheKey, modelPart);
-            return uploadToGPU(quads);
-        });
-    }
-
     public static SingleMeshVboRenderer getOrCreateRenderer(String partKey, BakedModel model) {
         if (FAILED_RENDERER_KEYS.contains(partKey)) return null;
 
@@ -153,46 +121,12 @@ public class MeshRenderCache {
         return getOrCompilePartGeometry(ownerKey(entityType, partName), modelPart);
     }
 
-    public static VertexBuffer getOrCreateGPUBuffer(String entityType, String partName, BakedModel modelPart) {
-        return getOrCreateGPUBuffer(ownerKey(entityType, partName), modelPart);
-    }
-
     public static SingleMeshVboRenderer getOrCreateRenderer(String entityType, String partName, BakedModel model) {
         return getOrCreateRenderer(ownerKey(entityType, partName), model);
     }
 
     private static String partNameFromKey(String cacheKey) {
         return cacheKey.contains(":") ? cacheKey.substring(cacheKey.lastIndexOf(":") + 1) : cacheKey;
-    }
-
-    private static VertexBuffer uploadToGPU(List<BakedQuad> quads) {
-        if (quads.isEmpty()) return null;
-
-        BufferBuilder builder = IrisBufferHelper.create(VertexFormat.Mode.QUADS, DefaultVertexFormat.BLOCK, quads.size() * 32);
-
-        PoseStack.Pose neutralPose = new PoseStack().last();
-        float r = 1.0F, g = 1.0F, b = 1.0F, a = 1.0F;
-        int neutralLight = 0;
-
-        for (BakedQuad quad : quads) {
-            RenderHooks.putBulkData(builder, neutralPose, quad, r, g, b, a, neutralLight, OverlayTexture.NO_OVERLAY, false);
-        }
-
-        //? if < 1.21.1 {
-        BufferBuilder.RenderedBuffer renderedBuffer = builder.end();
-        VertexBuffer vbo = new VertexBuffer(VertexBuffer.Usage.STATIC);
-        vbo.bind();
-        vbo.upload(renderedBuffer);
-        VertexBuffer.unbind();
-        //?} else {
-        /*com.mojang.blaze3d.vertex.MeshData renderedBuffer = builder.buildOrThrow();
-        VertexBuffer vbo = new VertexBuffer(VertexBuffer.Usage.STATIC);
-        vbo.bind();
-        vbo.upload(renderedBuffer);
-        VertexBuffer.unbind();
-        *///?}
-
-        return vbo;
     }
 
     /**
@@ -328,8 +262,6 @@ public class MeshRenderCache {
 
     public static void clear() {
         COMPILED_GEOMETRY.clear();
-        GPU_BUFFERS.values().forEach(vb -> { if (vb != null) vb.close(); });
-        GPU_BUFFERS.clear();
         IRIS_COMPANION_MESHES.values().forEach(m -> { if (m != null) m.destroy(); });
         IRIS_COMPANION_MESHES.clear();
     }
@@ -360,10 +292,6 @@ public class MeshRenderCache {
         return COMPILED_GEOMETRY.size();
     }
 
-    public static int getCachedBuffersCount() {
-        return GPU_BUFFERS.size();
-    }
-
     public static int getCachedRenderersCount() {
         return PART_RENDERERS.size();
     }
@@ -371,7 +299,6 @@ public class MeshRenderCache {
     public static void logCacheStats() {
         MainRegistry.LOGGER.debug("MeshRenderCache stats:");
         MainRegistry.LOGGER.debug("  Compiled part geometry entries: " + getCachedQuadsCount());
-        MainRegistry.LOGGER.debug("  GPU buffers: " + getCachedBuffersCount());
         MainRegistry.LOGGER.debug("  Renderers: " + getCachedRenderersCount());
     }
 }

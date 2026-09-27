@@ -40,7 +40,7 @@ import net.minecraft.world.level.block.entity.BlockEntityType;
  * }
  * }</pre>
  * Движок автоматически даёт: куллинг + fade, VBO на каждую часть, инстансинг,
- * MDI, Iris/Oculus-совместимость, GPU-bones для {@code .chain(...)}-групп и
+ * MDI, Iris/Oculus-совместимость и
  * ванильный immediate-фолбэк (автоматически при сломанном VBO или принудительно
  * через конфиг {@code forceVanillaImmediatePath}).
  */

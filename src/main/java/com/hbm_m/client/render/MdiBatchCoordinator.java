@@ -26,6 +26,7 @@ import org.lwjgl.opengl.GL;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL14;
 import org.lwjgl.opengl.GL15;
+import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
 import org.lwjgl.opengl.GL31;
 import org.lwjgl.opengl.GL40;
@@ -34,6 +35,9 @@ import org.lwjgl.opengl.GL43;
 import org.lwjgl.opengl.GLCapabilities;
 import org.lwjgl.system.MemoryUtil;
 
+import com.hbm_m.client.render.culling.GpuCullingCapability;
+import com.hbm_m.client.render.culling.HiZDepthPyramid;
+import com.hbm_m.client.render.culling.NucleusGpuCuller;
 import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.main.MainRegistry;
@@ -53,14 +57,14 @@ import net.minecraft.client.renderer.texture.TextureAtlas;
  * {@code partsPerMachine}. When all part renderers share the same vertex
  * format (pos vec3 / normal vec3 / uv vec2, stride 32) AND the same legacy
  * (unsliced) per-instance layout (loc 3..11), we can collapse those into
- * <b>one</b> indirect-command buffer + либо цикл {@code glDrawElementsIndirect},
- * либо (опционально) один {@code glMultiDrawElementsIndirect} — общий атлас
- * VAO и единый per-instance VBO.
+ * <b>one</b> indirect-command buffer + either a loop of {@code glDrawElementsIndirect},
+ * or (optionally) a single {@code glMultiDrawElementsIndirect} — sharing a single atlas
+ * VAO and a unified per-instance VBO.
  * <p>
  * <b>Fallback chain (in order):</b>
  * <ol>
- *   <li>{@code hasDrawIndirect && hasBaseInstance} (GL 4.0+ draw indirect + base instance в команде):
- *       путь атласа; один {@code glMultiDrawElementsIndirect} на flush.</li>
+ *   <li>{@code hasDrawIndirect && hasBaseInstance} (GL 4.0+ draw indirect + base instance in command):
+ *       atlas path; one {@code glMultiDrawElementsIndirect} per flush.</li>
  *   <li>Otherwise: legacy per-renderer {@code glDrawElementsInstanced}
  *       (the {@code flushBatchVanilla} path stays as-is).</li>
  * </ol>
@@ -71,105 +75,117 @@ import net.minecraft.client.renderer.texture.TextureAtlas;
  *   <li>Renderer initialised, instanceCount &gt; 0.</li>
  * </ul>
  * <p>
- * <b>Fade ordering (variant G):</b> каждый снапшот инстансов партиционируется на
- * [opaque | fading back-to-front] ({@link #partitionOpaqueFirst}), и командный буфер
- * собирается как [все opaque-поддравы][все fading-поддравы] — один
- * {@code glMultiDrawElementsIndirect}, но непрозрачная геометрия гарантированно
- * запечатывает глубину до затухающей фазы. Без этого дальний непрозрачный станок
- * позади полупрозрачного отваливался по depth-тесту (полупрозрачные фрагменты
- * пишут глубину при {@code depthMask(true)}) и вместо него просвечивал чанк.
+ * <b>Fade ordering (variant G):</b> each instance snapshot is partitioned into
+ * [opaque | fading back-to-front] ({@link #partitionOpaqueFirst}), and the command buffer
+ * is assembled as [all opaque sub-draws][all fading sub-draws] — executed in a single
+ * {@code glMultiDrawElementsIndirect}, but opaque geometry is guaranteed to seal
+ * the depth buffer prior to the fading phase. Without this, a distant opaque machine
+ * behind a fading machine would fail the depth test (as fading fragments write depth
+ * when {@code depthMask(true)}) and the terrain behind it would leak through.
  * <p>
  * <b>Iris path:</b> untouched. {@link InstancedStaticPartRenderer#flush(Matrix4f)}
  * still routes to {@code flushBatchIris} when an external shader is active —
  * the coordinator's eligibility test rejects those flushes up front.
+ *
+ * @credit Flywheel / janh
  */
 
 @OnlyIn(Dist.CLIENT)
 public final class MdiBatchCoordinator {
 
     /**
-     * Полезная нагрузка {@code DrawElementsIndirectCommand} (5×uint32). В буфере каждая команда
-     * выровнена до {@link #INDIRECT_CMD_STRIDE_BYTES}: иначе часть драйверов ломает multi/indirect fetch.
+     * Payload of {@code DrawElementsIndirectCommand} (5×uint32). In the buffer each command
+     * is aligned to {@link #INDIRECT_CMD_STRIDE_BYTES}: otherwise certain drivers break multi/indirect fetching.
      */
     static final int INDIRECT_CMD_PACKED_BYTES = 20;
-    /** Stride между командами в GL_DRAW_INDIRECT_BUFFER (кратно 4, ≥20). */
+    /** Stride between commands in GL_DRAW_INDIRECT_BUFFER (multiple of 4, >= 20). */
     static final int INDIRECT_CMD_STRIDE_BYTES = 32;
 
     private static volatile boolean capsResolved = false;
-    /** Есть {@code glDrawElementsIndirect} и/или {@code glMultiDrawElementsIndirect} (или ARB-аналоги). */
+    /** Whether {@code glDrawElementsIndirect} and/or {@code glMultiDrawElementsIndirect} (or ARB equivalents) are supported. */
     private static volatile boolean hasDrawIndirect = false;
     private static volatile boolean hasBaseInstance = false;
     private static volatile boolean loggedOnce = false;
 
     private static final ThreadLocal<MdiBatchCoordinator> ACTIVE = new ThreadLocal<>();
 
-    /** Prepared on game-tick finalize; atlas upload + GL draw once in {@link #presentScheduledDraw()}. */
-    private static volatile DeferredDraw scheduledDraw;
+    private static long lastGpuCullLogTimeMs = 0L;
 
-    /** GPU instance data from last tick dispatch; redrawn each render frame in {@link #redrawCachedIfAny}. */
-    private static volatile PreparedMdi cachedRedraw;
-    private static volatile long cachedRedrawGameTime = -1L;
+    // ── Стабильные окна instance-атласа ─────────────────────────────────
+    // Инстанс-записи живут в стабильных per-renderer окнах (база + вместимость)
+    // instance VBO атласа: span-дифф GpuSpanUploader видит только реально
+    // изменившиеся записи (квант fade, свет, вход/выход машины), а не весь буфер,
+    // сдвинутый перекладкой. Порядок фаз [opaque|fading] и глобальная
+    // back-to-front сортировка затухающих выражаются ПОРЯДКОМ КОМАНД indirect
+    // буфера: кулл-шейдер (nucleus_cull.comp) компактирует in-place — позиция
+    // выжившего в компактном VBO равна позиции во входном, — поэтому данные
+    // инстансов не переезжают НИКОГДА. Ежекадровая переупаковка fade-слотов и
+    // каскадные сдвиги opaque-окон (главный источник чурна аплоадов при движении
+    // камеры) устранены.
+    private static final int WINDOW_MIN_CAP = 4;
+    /** Свободные дырки {base, capacity} в записях; возвращаются следующим репаком. */
+    private static final java.util.ArrayList<int[]> atlasHoles = new ArrayList<>();
+    private static int atlasHoleTotalInstances = 0;
+    /** Водяной знак размещения окон (в записях); дырки между окнами — норма. */
+    private static int atlasWatermark = 0;
+
+    /** Возвращает окно {@code p} в пул дырок (вызов при снятии записи с ретейнда). */
+    private static void releaseWindow(Pending p) {
+        if (p.atlasWindowBase < 0) {
+            p.atlasWindowCap = 0;
+            return;
+        }
+        atlasHoles.add(new int[]{p.atlasWindowBase, p.atlasWindowCap});
+        atlasHoleTotalInstances += p.atlasWindowCap;
+        p.atlasWindowBase = -1;
+        p.atlasWindowCap = 0;
+        coalesceTailHoles();
+    }
+
+    /** Хвостовые дырки, прилегающие к водяному знаку, возвращают ему место. */
+    private static void coalesceTailHoles() {
+        boolean merged = true;
+        while (merged && atlasWatermark > 0) {
+            merged = false;
+            for (int i = 0; i < atlasHoles.size(); i++) {
+                int[] h = atlasHoles.get(i);
+                if (h[0] + h[1] == atlasWatermark) {
+                    atlasWatermark = h[0];
+                    atlasHoleTotalInstances -= h[1];
+                    atlasHoles.remove(i);
+                    merged = true;
+                    break;
+                }
+            }
+        }
+    }
 
     // ── Retained draw list (clean-frame reuse) ──────────────────────────
-    // Снапшоты, партиция и fade-кэши переживают кадры: чистые рендереры
-    // (submitClean, ни одной записи в буфер за кадр) переиспользуют прошлокадровую
-    // запись без копирования снапшота и span-диффа; грязные сабмиты заменяют
-    // запись на месте (стабильный порядок ⇒ стабильные оффсеты аплоада).
+    // Snapshots, partitioning, and fade caches persist across frames: clean renderers
+    // (submitClean, no buffer writes during the frame) reuse the previous frame's record
+    // without copying snapshots or calculating span diffs; dirty submits replace
+    // records in-place (stable list order -> stable upload offsets).
 
-    /** Кадровый штамп assert-семантики: инкремент в {@link #beginFrame}. */
+    /** Frame timestamp for assertion semantics: incremented in {@link #beginFrame}. */
     private static long retainedFrameStamp = 0L;
     private static final List<Pending> retainedList = new ArrayList<>(64);
     private static final IdentityHashMap<InstancedStaticPartRenderer, Pending> retainedByRenderer = new IdentityHashMap<>();
-    /** Пул нативных снапшот-буферов — заменяет memAllocFloat на каждый сабмит. */
+    /** Pool of native snapshot buffers — avoids calling memAllocFloat on every submit. */
     private static final ArrayDeque<FloatBuffer> snapshotPool = new ArrayDeque<>();
     private static final int SNAPSHOT_POOL_MAX_BUFFERS = 128;
-
-    private static final class DeferredDraw {
-        final List<Pending> drawList;
-        final List<SubDraw> opaqueSubs;
-        final List<FadeSlot> fadeSlots;
-        final int drawTotalInstances;
-        final int pendingSize;
-        final int droppedNoSlot;
-        final long gameTime;
-        final Matrix4f projectionMatrix;
-
-        DeferredDraw(List<Pending> drawList, List<SubDraw> opaqueSubs, List<FadeSlot> fadeSlots,
-                     int drawTotalInstances, int pendingSize, int droppedNoSlot, long gameTime,
-                     Matrix4f projectionMatrix) {
-            this.drawList = drawList;
-            this.opaqueSubs = opaqueSubs;
-            this.fadeSlots = fadeSlots;
-            this.drawTotalInstances = drawTotalInstances;
-            this.pendingSize = pendingSize;
-            this.droppedNoSlot = droppedNoSlot;
-            this.gameTime = gameTime;
-            this.projectionMatrix = new Matrix4f(projectionMatrix);
-        }
-
-        void free() {
-            // Список — срез retained-записей (prepareMdiDraw): освобождение только
-            // через uninstall (пул + снятие установки), иначе двойной recycle.
-            for (Pending p : drawList) {
-                uninstallRetained(p);
-                retainedList.remove(p);
-            }
-            drawList.clear();
-        }
-    }
 
     static final class Pending {
         final InstancedStaticPartRenderer renderer;
         int baseVertex;
         /**
          * Byte offset into the EBO for {@link GL42#glDrawElementsInstancedBaseVertexBaseInstance}
-         * (параметр {@code indices} при привязанном EBO — в байтах).
-         * В {@link GL40#glDrawElementsIndirect} поле {@code firstIndex} команды — смещение в <b>элементах</b>
-         * индекса ({@code GL_UNSIGNED_INT}: делить на 4).
+         * (the {@code indices} parameter with a bound EBO is in bytes).
+         * In {@link GL40#glDrawElementsIndirect} the {@code firstIndex} field of the command
+         * is the index offset in <b>elements</b> ({@code GL_UNSIGNED_INT}: divide bytes by 4).
          */
         int firstIndexBytes;
         int indexCount;
-        /** Snapshot at submit time — сравнение с {@link #dispatch} (H1: repack между submit и draw). */
+        /** Snapshot at submit time — for comparison with {@link #dispatch} (repack between submit and draw). */
         int submitBaseVertex = -1;
         int submitFirstIndexBytes = -1;
         int submitIndexCount = -1;
@@ -178,37 +194,41 @@ public final class MdiBatchCoordinator {
         int[] instanceCullIndices;
         long[] instanceOcclusionKeys;
         FloatBuffer instanceData;
-        /** {@code memAllocFloat} в {@link #submit}; освобождать в {@link #endFrame}. */
+        /** Native buffer allocated with {@code memAllocFloat} in {@link #submit}; freed in {@link #endFrame}. */
         boolean instanceDataNativeOwned;
         /**
-         * Граница «непрозрачные | затухающие» после {@link #partitionOpaqueFirst}:
-         * записи [0, opaqueCount) — fade≈1, [opaqueCount, instanceCount) — затухающие,
-         * отсортированные back-to-front. -1 = partition ещё не выполнялся.
-         * instanceCullIndices/instanceOcclusionKeys при перестановке НЕ переупорядочиваются:
-         * в MDI они не читаются (куллинг lag-1 выполнен на стороне BER).
+         * Boundary between opaque and fading instances after {@link #partitionOpaqueFirst}:
+         * records [0, opaqueCount) have fade ≈ 1.0, and [opaqueCount, instanceCount) are fading,
+         * sorted back-to-front. -1 indicates partitioning has not yet been executed.
+         * instanceCullIndices and instanceOcclusionKeys are NOT reordered: they are not read in MDI.
          */
         int opaqueCount = -1;
         // ── Retained / clean-frame reuse ───────────────────────────────
-        /** Штамп последнего submit/submitClean (кадр, в котором рендерер заявил присутствие). */
+        /** Timestamp of last submit / submitClean (frame when renderer asserted presence). */
         long assertedFrame;
-        /** Штамп последнего ГРЯЗНОГО сабмита (для правила «максимальный сабмит» за кадр). */
+        /** Timestamp of last dirty submit (for max-submit rule within a frame). */
         long dirtySubmittedFrame;
         /**
-         * Снапшот актуален содержимому записей рендерера: партиция и cachedMinFade
-         * посчитаны и не требуют повтора до следующего грязного сабмита.
+         * Snapshot is synchronized with renderer records: partition and cachedMinFade
+         * are precomputed and valid until the next dirty submit.
          */
         boolean partitionValid;
-        /** Оффсет (во флоатах) opaque-окна прошлой заливки — пропуск неизменившихся окон. */
-        int lastOpaqueUploadOffsetFloats = -1;
-        /** Минимальный fade снапшота (считается при партиции вместо per-кадрового скана). */
+        /** Minimum fade value of snapshot (computed during partitioning instead of per-frame scan). */
         float cachedMinFade = 1.0f;
+        // ── Стабильное окно в instance-атласе ──────────────────────────────
+        /** База окна в записях (instance units); -1 = окно ещё не размещено. */
+        int atlasWindowBase = -1;
+        /** Вместимость окна в записях (растёт ×2 при переполнении). */
+        int atlasWindowCap = 0;
+        /** Текущий снапшот уже залит в окно и shadow валиден — аплоад пропускается. */
+        boolean windowUploaded = false;
         Pending(InstancedStaticPartRenderer renderer) { this.renderer = renderer; }
     }
 
     /**
-     * Непрерывный диапазон opaque-инстансов одного {@link Pending} (фаза opaque).
-     * Итоговый командный буфер: [opaque-окна…][fading-слоты по 1 инстансу…] в ОДНОМ
-     * мульти-драве; opaque всегда раньше fading (запечатывает глубину до блендинга).
+     * Contiguous range of opaque instances for a single {@link Pending} (opaque phase).
+     * Output command buffer: [opaque windows...][fading slots of 1 instance...] in ONE
+     * multi-draw; opaque always precedes fading (seals depth prior to blending).
      */
     static final class SubDraw {
         final Pending owner;
@@ -224,18 +244,17 @@ public final class MdiBatchCoordinator {
     }
 
     /**
-     * Один fading-инстанс в глобальном back-to-front порядке. Fading-фаза идёт
-     * С depth-write: самоперекрытие внутри модели (шип внутри кожуха) обязан
-     * работать через depth-test, а взаимный depth-reject машин исключается
-     * глобальной сортировкой слотов по дистанции до камеры (дальние рисуются
-     * первыми, ближние блендятся поверх). По одному инстансу на команду —
-     * команды дешёвые (32 Б), fading-инстансов обычно десятки.
+     * Single fading instance in global back-to-front order. The fading phase executes
+     * with depth-write enabled: self-overlap within a model must resolve via depth-test,
+     * while mutual depth-rejection between machines is eliminated by global camera-distance
+     * sorting (distant instances drawn first, near blended on top). One instance per command —
+     * commands are inexpensive (32 B), and fading instances typically number in the dozens.
      */
     static final class FadeSlot {
         final Pending owner;
         final int srcInstance;
         final float distSq;
-        /** Значение fade записи (для minFade-агрегации без чтения снапшота). */
+        /** Instance fade value (for minFade aggregation without reading snapshot data). */
         float fade = 1.0f;
         int baseInstance;
         FadeSlot(Pending owner, int srcInstance, float distSq, int baseInstance) {
@@ -329,15 +348,13 @@ public final class MdiBatchCoordinator {
     }
 
     /**
-     * Сброс активной MDI-сессии без {@link #dispatch} — при F3+T / очистке GPU-кэшей,
-     * когда кадр уже не должен бить в атлас (см. {@link MdiGeometryAtlas#resetForResourceLifecycle}).
+     * Discards the active MDI session without issuing {@link #dispatch} — called on F3+T / GPU cache clears
+     * when the frame should no longer target the atlas (see {@link MdiGeometryAtlas#resetForResourceLifecycle}).
      */
     public static void discardActiveSessionNoDispatch() {
-        cancelScheduledDraw();
         MdiBatchCoordinator s = ACTIVE.get();
         if (s != null) {
-            // pending-записи валидно установлены в retained (см. submit): снапшоты
-            // остаются живыми, следующий кадр сам переассертит или дропнет записи.
+            // Pending records are retained; snapshots remain alive, and the next frame will re-assert or drop them.
             s.pending.clear();
             s.totalInstances = 0;
             ACTIVE.remove();
@@ -345,169 +362,21 @@ public final class MdiBatchCoordinator {
     }
 
     public void endFrame() {
-        endFrame(false);
-    }
-
-    /**
-     * Finishes accumulation for a game tick. When {@code deferDraw}, uploads instance data
-     * and replaces {@link #scheduledDraw} — only the last deferred batch is drawn per render frame.
-     */
-    public void endFrame(boolean deferDraw) {
         try {
-            if (deferDraw) {
-                scheduleDeferredDraw();
-            } else {
-                dispatch();
-            }
+            dispatch();
         } catch (Throwable t) {
             MainRegistry.LOGGER.error("[HBM-M MDI] dispatch failed; future flushes will use legacy path", t);
         } finally {
-            // pending-записи валидно живут в retained-списке (см. submit) — здесь их
-            // трогать нельзя: снапшоты ещё нужны следующему кадру. Только сброс сессии.
+            // Pending records persist in retainedList; snapshots are needed for the next frame. Only reset session.
             pending.clear();
             totalInstances = 0;
             if (ACTIVE.get() == this) ACTIVE.remove();
         }
     }
 
-    /**
-     * GL draw for the scheduled batch. Call at start of a new client render frame (first
-     * {@code AFTER_ENTITIES}), not {@code AFTER_LEVEL} — dirty texture units after level end.
-     */
-    public static void presentScheduledDraw(Matrix4f projection) {
-        DeferredDraw draw = scheduledDraw;
-        if (draw == null) {
-            return;
-        }
-        scheduledDraw = null;
-        try {
-            executeDeferredDraw(draw, projection);
-        } catch (Throwable t) {
-            MainRegistry.LOGGER.error("[HBM-M MDI] deferred present failed", t);
-        } finally {
-            draw.free();
-        }
-    }
-
-    public static void cancelScheduledDraw() {
-        DeferredDraw draw = scheduledDraw;
-        scheduledDraw = null;
-        if (draw != null) {
-            draw.free();
-        }
-    }
-
     public static void clearCachedRedraw() {
-        cachedRedraw = null;
-        cachedRedrawGameTime = -1L;
-        // Смена мира / ресурс-релоад / сброс атласа: retained-записи невалидны.
+        // Dimension change / resource reload / atlas reset: retained records are invalidated.
         dropAllRetained();
-    }
-
-    /**
-     * Re-emit the last tick's MDI batch (atlas instance VBO already uploaded). Keeps static parts
-     * visible every render frame between game-tick uploads (~20 Hz).
-     */
-    public static void redrawCachedIfAny(Matrix4f projection) {
-        if (ShaderCompatibilityDetector.isExternalShaderActive()) {
-            return;
-        }
-        PreparedMdi snap = cachedRedraw;
-        if (snap == null || snap.drawList.isEmpty() || projection == null) {
-            return;
-        }
-        try {
-            // Atlas could have repacked (eviction) between publish and this
-            // inter-tick redraw: refresh baseVertex/firstIndexBytes against the
-            // current atlas layout, else the cached draw lands on another
-            // renderer's geometry. Entries whose renderer lost its atlas slot
-            // are dropped by refreshDrawListAtlasSlots.
-            MdiGeometryAtlas atlas = MdiGeometryAtlas.getOrCreate();
-            if (atlas != null && atlas.isReady()) {
-                refreshDrawListAtlasSlots(snap.drawList, atlas);
-            }
-            if (snap.drawList.isEmpty()) {
-                return;
-            }
-            executeMdiGlDraw(snap, new Matrix4f(projection), cachedRedrawGameTime);
-        } catch (Throwable t) {
-            MainRegistry.LOGGER.error("[HBM-M MDI] cached redraw failed", t);
-        }
-    }
-
-    private static void publishCachedRedraw(PreparedMdi prepared, long gameTime) {
-        // Cached redraw copies drop instanceData (kept null) to avoid holding
-        // native snapshot buffers across frames. The fade scan in
-        // executeMdiGlDraw reads instanceData — without seeding minFade here it
-        // stays 1.0f and translucent/fading machines flash opaque between ticks.
-        float minFade = 1f;
-        MdiGeometryAtlas atlas = MdiGeometryAtlas.getOrCreate();
-        if (atlas != null && atlas.isReady()) {
-            int instanceFloatsPerInstance = atlas.getInstanceFloatsPerInstance();
-            int fadeOffset = atlas.getInstanceFadeFloatOffset();
-            if (instanceFloatsPerInstance > 0 && fadeOffset >= 0) {
-                for (Pending p : prepared.drawList) {
-                    FloatBuffer buf = p.instanceData;
-                    if (buf == null) continue;
-                    for (int i = 0; i < p.instanceCount; i++) {
-                        float fa = buf.get(i * instanceFloatsPerInstance + fadeOffset);
-                        if (fa < minFade) minFade = fa;
-                    }
-                }
-            }
-        }
-        List<Pending> snap = new ArrayList<>(prepared.drawList.size());
-        for (Pending p : prepared.drawList) {
-            Pending q = new Pending(p.renderer);
-            q.baseVertex = p.baseVertex;
-            q.firstIndexBytes = p.firstIndexBytes;
-            q.indexCount = p.indexCount;
-            q.baseInstance = p.baseInstance;
-            q.instanceCount = p.instanceCount;
-            snap.add(q);
-        }
-        // Cached-снапшоты не несут instanceData: партиция/сортировка невозможны,
-        // весь диапазон трактуем как fading (минимальное изменение поведения dormant-пути).
-        List<FadeSlot> snapSlots = new ArrayList<>(snap.size());
-        int snapBase = 0;
-        for (Pending q : snap) {
-            if (q.instanceCount <= 0) continue;
-            for (int i = 0; i < q.instanceCount; i++) {
-                snapSlots.add(new FadeSlot(q, i, 0f, snapBase++));
-            }
-        }
-        cachedRedraw = new PreparedMdi(
-                snap, List.of(), snapSlots, prepared.drawTotalInstances, prepared.pendingSize, prepared.droppedNoSlot, minFade);
-        cachedRedrawGameTime = gameTime;
-    }
-
-    private void scheduleDeferredDraw() {
-        PreparedMdi prepared = prepareMdiDraw(false);
-        if (prepared == null) {
-            return;
-        }
-        long gameTime = -1L;
-        try {
-            Minecraft mc = Minecraft.getInstance();
-            if (mc != null && mc.level != null) {
-                gameTime = mc.level.getGameTime();
-            }
-        } catch (Throwable ignored) {
-        }
-        DeferredDraw next = new DeferredDraw(
-                prepared.drawList,
-                prepared.opaqueSubs(),
-                prepared.fadeSlots(),
-                prepared.drawTotalInstances,
-                prepared.pendingSize,
-                prepared.droppedNoSlot,
-                gameTime,
-                projectionMatrix);
-        DeferredDraw prev = scheduledDraw;
-        scheduledDraw = next;
-        if (prev != null) {
-            prev.free();
-        }
     }
 
     private record PreparedMdi(List<Pending> drawList, List<SubDraw> opaqueSubs, List<FadeSlot> fadeSlots,
@@ -559,16 +428,17 @@ public final class MdiBatchCoordinator {
         }
     }
 
-    /** Убирает запись из retained-списка/карты и возвращает снапшот в пул. */
+    /** Removes record from retained list/map and returns snapshot buffer to pool. */
     private static void uninstallRetained(Pending p) {
         Pending mapped = retainedByRenderer.get(p.renderer);
         if (mapped == p) {
             retainedByRenderer.remove(p.renderer);
         }
+        releaseWindow(p);
         recycleSnapshot(p);
     }
 
-    /** Retained-записи без assert за кадр — рендерер ушёл из виду/мира. */
+    /** Drops retained records without assertion during frame — renderer became culled or unloaded. */
     private static void dropUnassertedRetained() {
         for (Iterator<Pending> it = retainedList.iterator(); it.hasNext(); ) {
             Pending p = it.next();
@@ -579,7 +449,7 @@ public final class MdiBatchCoordinator {
         }
     }
 
-    /** Полный сброс retained-состояния (смена мира, ресурс-релоад, сброс атласа). */
+    /** Complete purge of retained state (world change, resource reload, atlas reset). */
     private static void dropAllRetained() {
         for (int i = 0; i < retainedList.size(); i++) {
             Pending mapped = retainedByRenderer.get(retainedList.get(i).renderer);
@@ -590,6 +460,15 @@ public final class MdiBatchCoordinator {
         }
         retainedList.clear();
         retainedByRenderer.clear();
+        // Полный сброс раскладки окон: мир/перезагрузка/ресет атласа — GPU-содержимое
+        // утрачено, стабильность баз не имеет смысла; следующее размещение начинается с нуля.
+        atlasHoles.clear();
+        atlasHoleTotalInstances = 0;
+        atlasWatermark = 0;
+    }
+
+    public static void onRenderOriginChanged() {
+        dropAllRetained();
     }
 
     public boolean submit(InstancedStaticPartRenderer renderer,
@@ -654,16 +533,16 @@ public final class MdiBatchCoordinator {
             p.instanceOcclusionKeys = null;
         }
 
-        // Retained-установка: грязный сабмит заменяет запись рендерера НА МЕСТЕ
-        // (стабильный порядок списка ⇒ стабильные оффсеты аплоада у остальных).
-        // Второй сабмит того же рендерера за кадр (Embeddium multi-pass): действует
-        // правило «максимальный сабмит», как в coalescePendingByRenderer.
+        // Retained setup: dirty submit replaces renderer record IN-PLACE
+        // (stable list order -> stable upload offsets for remaining entries).
+        // Secondary submit of the same renderer in one frame (Embeddium multi-pass):
+        // max-submit rule — keep the fullest submit of this frame.
         Pending prev = retainedByRenderer.put(renderer, p);
         if (prev != null) {
             int idx = retainedList.indexOf(prev);
             if (prev.dirtySubmittedFrame == retainedFrameStamp
                     && prev.instanceCount >= instanceCount) {
-                // Первый сабмит этого кадра полнее — оставляем его.
+                // First submit this frame was larger / more complete — retain it.
                 retainedByRenderer.put(renderer, prev);
                 if (idx >= 0) {
                     retainedList.set(idx, prev);
@@ -676,6 +555,14 @@ public final class MdiBatchCoordinator {
                 } else {
                     retainedList.add(p);
                 }
+                // Стабильное окно атласа переезжает вместе с рендерером: снапшот
+                // заменён (дифф перезальёт изменившиеся записи в ту же базу),
+                // геометрия размещения (база/вместимость) сохраняется.
+                p.atlasWindowBase = prev.atlasWindowBase;
+                p.atlasWindowCap = prev.atlasWindowCap;
+                p.windowUploaded = false;
+                prev.atlasWindowBase = -1;
+                prev.atlasWindowCap = 0;
                 recycleSnapshot(prev);
             }
         } else {
@@ -690,12 +577,12 @@ public final class MdiBatchCoordinator {
     }
 
     /**
-     * Чистый re-assert присутствия: рендерер не сделал в этой фазе записей ни одной
-     * записи (skip-write в {@code addInstance}), буфер синхронизирован со снапшотом.
-     * Прошлокадровая запись (снапшот, партиция, cachedMinFade) переиспользуется —
-     * без копирования снапшота, диффа и перезаливки окна.
+     * Clean re-assertion of presence: renderer made zero writes in this phase
+     * (skip-write in {@code addInstance}), buffer is synchronized with snapshot.
+     * Previous frame record (snapshot, partition, cachedMinFade) is reused —
+     * without copying snapshot, diffing, or re-uploading window.
      *
-     * @return true — присутствие засчитано; false — нужен обычный {@link #submit}.
+     * @return true if presence accepted; false if standard {@link #submit} is required.
      */
     public boolean submitClean(InstancedStaticPartRenderer renderer, int indexCount, int instanceCount) {
         if (!ClientRenderFlags.mdiCleanFrameReuse()) {
@@ -720,14 +607,14 @@ public final class MdiBatchCoordinator {
     }
 
     private void dispatch() {
-        PreparedMdi prepared = prepareMdiDraw(true);
+        PreparedMdi prepared = prepareMdiDraw();
         if (prepared == null) {
             return;
         }
         long gameTime = resolveLevelGameTime();
-        // Снапшоты НЕ освобождаются после диспатча: retained-список переживает кадры
-        // (submitClean переиспользует их без копирования). Возврат в пул — при замене
-        // (грязный сабмит), дропе (нет assert / слот атласа) и clearCachedRedraw().
+        // Snapshots are NOT freed after dispatch: retained list persists across frames
+        // (submitClean reuses them without copying). Recycled to pool on replacement
+        // (dirty submit), dropping (no assert / atlas slot lost), or clearCachedRedraw().
         executeMdiGlDraw(prepared, projectionMatrix, gameTime);
     }
 
@@ -742,31 +629,8 @@ public final class MdiBatchCoordinator {
         return -1L;
     }
 
-    private static void executeDeferredDraw(DeferredDraw draw, Matrix4f projectionOverride) {
-        MdiGeometryAtlas atlas = MdiGeometryAtlas.getOrCreate();
-        if (atlas == null || !atlas.isReady()) {
-            return;
-        }
-        refreshDrawListAtlasSlots(draw.drawList, atlas);
-        if (draw.drawList.isEmpty()) {
-            return;
-        }
-        if (!uploadInstancesToAtlas(draw.opaqueSubs, draw.fadeSlots, atlas, atlas.getInstanceFloatsPerInstance())) {
-            return;
-        }
-        Matrix4f proj = projectionOverride != null
-                ? new Matrix4f(projectionOverride)
-                : new Matrix4f(draw.projectionMatrix);
-        PreparedMdi prepared = new PreparedMdi(
-                draw.drawList, draw.opaqueSubs, draw.fadeSlots, draw.drawTotalInstances, draw.pendingSize, draw.droppedNoSlot, 1f);
-        executeMdiGlDraw(prepared, proj, draw.gameTime);
-    }
-
-    /**
-     * @param uploadInstances when {@code false}, only builds/compacts draw list (deferred present uploads later).
-     */
-    private PreparedMdi prepareMdiDraw(boolean uploadInstances) {
-        // Phase B: retained-записи без assert за кадр — рендерер ушёл из виду/мира.
+    private PreparedMdi prepareMdiDraw() {
+        // Phase B: retained records without frame assertion — renderer out of view/world.
         dropUnassertedRetained();
 
         MdiGeometryAtlas atlas = MdiGeometryAtlas.getOrCreate();
@@ -774,8 +638,8 @@ public final class MdiBatchCoordinator {
             return null;
         }
 
-        // Грязные сабмиты: слот-чек + дрейф-диагностика (как раньше). Лузеры
-        // multi-pass уже отсеяны в submit; устанавливать в retained нечего.
+        // Dirty submits: slot check and drift diagnostics. Multi-pass losers
+        // already filtered out in submit; nothing to install into retained.
         int pendingSize = pending.size();
         for (int i = pending.size() - 1; i >= 0; i--) {
             Pending p = pending.get(i);
@@ -810,9 +674,9 @@ public final class MdiBatchCoordinator {
         pending.clear();
         totalInstances = 0;
 
-        // Список кадра = retained-список (стабильный порядок ⇒ стабильные оффсеты
-        // аплоада; переиспользованные записи не перезаливаются). Слот-чек с ленивой
-        // перерегистрацией геометрии из retained-байт рендерера (репак/сброс атласа).
+        // Frame draw list = retained list (stable order -> stable upload offsets;
+        // reused records require no re-upload). Slot check with lazy re-registration
+        // of geometry from retained bytes of renderer (atlas repack/reset).
         List<Pending> drawList = new ArrayList<>(retainedList.size());
         int droppedNoSlot = 0;
         for (Iterator<Pending> it = retainedList.iterator(); it.hasNext(); ) {
@@ -842,8 +706,8 @@ public final class MdiBatchCoordinator {
         int instanceFloatsPerInstance = atlas.getInstanceFloatsPerInstance();
         int instanceFadeOffset = atlas.getInstanceFadeFloatOffset();
 
-        // Вариант G+: партиция [opaque | fading back-to-front] — ТОЛЬКО для записей
-        // с новым снапшотом; чистые переиспользуют прошлокадровую партицию и кэши.
+        // Variant G+: partition [opaque | fading back-to-front] — ONLY for records
+        // with new snapshots; clean records reuse previous frame's partition and caches.
         int cleanRenderers = 0;
         int cleanInstances = 0;
         int drawTotalInstances = 0;
@@ -864,20 +728,56 @@ public final class MdiBatchCoordinator {
             return null;
         }
 
-        // Непрозрачные окна; fading-инстансы — в ПЛОСКИЙ глобальный список,
-        // отсортированный по дистанции до камеры (дальние первыми) — см. FadeSlot.
+        // ── Стабильные окна атласа: размещение / рост / дефрагментация ─────
+        // Окно переезжает только при нехватке вместимости (instanceCount вырос —
+        // новые машины этого part-рендерера вошли в зону); репак при любом
+        // (ре)размещении уплотняет раскладку и возвращает дырки. Базы неизменны
+        // между репаками → span-дифф видит только изменившиеся записи.
+        boolean anyAlloc = false;
+        for (Pending p : drawList) {
+            if (p.atlasWindowBase >= 0 && p.atlasWindowCap >= p.instanceCount) {
+                continue;
+            }
+            int oldCap = p.atlasWindowCap;
+            p.atlasWindowCap = Math.max(WINDOW_MIN_CAP, Math.max(p.instanceCount, oldCap * 2));
+            p.atlasWindowBase = -1;
+            p.windowUploaded = false;
+            anyAlloc = true;
+        }
+        if (anyAlloc) {
+            int base = 0;
+            for (Pending p : drawList) {
+                if (p.atlasWindowBase != base) {
+                    p.atlasWindowBase = base;
+                    p.windowUploaded = false;
+                }
+                base += p.atlasWindowCap;
+            }
+            atlasHoles.clear();
+            atlasHoleTotalInstances = 0;
+            atlasWatermark = base;
+        }
+        if (!atlas.ensureInstanceCapacity(atlasWatermark)) {
+            freeDrawListInstanceBuffers(drawList);
+            dropAllRetained();
+            return null;
+        }
+
+        // Opaque-фаза: команда на окно (база = стабильная база окна).
+        // Затухающие: плоский глобальный список, сортировка по дистанции камеры —
+        // back-to-front порядок несёт ПОРЯДОК КОМАНД (кулл-шейдер компактирует
+        // in-place: компактная позиция = входная), данные не переезжают.
+        // baseInstance затухающего = база окна + индекс записи в снапшоте.
         List<SubDraw> opaqueSubs = new ArrayList<>(drawList.size());
-        int baseInst = 0;
         for (Pending p : drawList) {
             if (p.opaqueCount > 0) {
-                opaqueSubs.add(new SubDraw(p, 0, p.opaqueCount, baseInst));
-                baseInst += p.opaqueCount;
+                opaqueSubs.add(new SubDraw(p, 0, p.opaqueCount, p.atlasWindowBase));
             }
         }
 
-        float camX = FrameViewState.camX();
-        float camY = FrameViewState.camY();
-        float camZ = FrameViewState.camZ();
+        float camX = FrameViewState.relCamX();
+        float camY = FrameViewState.relCamY();
+        float camZ = FrameViewState.relCamZ();
         List<FadeSlot> fadeSlots = new ArrayList<>();
         for (Pending p : drawList) {
             if (p.instanceData == null) continue;
@@ -887,17 +787,14 @@ public final class MdiBatchCoordinator {
                 float dx = p.instanceData.get(base) - camX;
                 float dy = p.instanceData.get(base + 1) - camY;
                 float dz = p.instanceData.get(base + 2) - camZ;
-                FadeSlot s = new FadeSlot(p, i, dx * dx + dy * dy + dz * dz, 0);
+                FadeSlot s = new FadeSlot(p, i, dx * dx + dy * dy + dz * dz, p.atlasWindowBase + i);
                 s.fade = p.instanceData.get(base + instanceFadeOffset);
                 fadeSlots.add(s);
             }
         }
         fadeSlots.sort((a, b) -> Float.compare(b.distSq, a.distSq));
-        for (FadeSlot s : fadeSlots) {
-            s.baseInstance = baseInst++;
-        }
 
-        if (uploadInstances && !uploadInstancesToAtlas(opaqueSubs, fadeSlots, atlas, instanceFloatsPerInstance)) {
+        if (!uploadWindowsToAtlas(drawList, atlas, instanceFloatsPerInstance)) {
             freeDrawListInstanceBuffers(drawList);
             dropAllRetained();
             return null;
@@ -906,7 +803,7 @@ public final class MdiBatchCoordinator {
         return new PreparedMdi(drawList, opaqueSubs, fadeSlots, drawTotalInstances, pendingSize, droppedNoSlot, 1f);
     }
 
-    /** Минимальный fade снапшота (opaque-область ≥ порога по построению — достаточно хвоста fading). */
+    /** Minimum fade value of snapshot (opaque region >= threshold by construction; fading tail suffices). */
     private static float computeCachedMinFade(Pending p, int floatsPerInstance, int fadeOffset) {
         float min = 1.0f;
         if (p.instanceData == null) {
@@ -922,78 +819,56 @@ public final class MdiBatchCoordinator {
         return min;
     }
 
-    private static void refreshDrawListAtlasSlots(List<Pending> drawList, MdiGeometryAtlas atlas) {
-        for (int i = drawList.size() - 1; i >= 0; i--) {
-            Pending p = drawList.get(i);
-            MdiGeometryAtlas.Slot slot = atlas.getCurrentSlot(p.renderer);
-            if (slot == null) {
-                if (p.instanceDataNativeOwned && p.instanceData != null) {
-                    MemoryUtil.memFree(p.instanceData);
-                    p.instanceData = null;
-                    p.instanceDataNativeOwned = false;
-                }
-                drawList.remove(i);
+    /**
+     * Аплоад стабильных окон: каждое {@link Pending} пишет свой снапшот всегда
+     * в одну и ту же базу атласа — дифф {@link GpuSpanUploader} видит только
+     * реально изменившиеся записи (квант fade, свет, вход/выход машины), а не
+     * весь буфер, сдвинутый перекладкой. Окно, не менявшееся с прошлой успешной
+     * заливки при валидном shadow, пропускается целиком (включая memcmp-скан).
+     * <p>
+     * Инвариант корректности: shadow отражает фактическое содержимое GPU-буфера
+     * (все записи идут через GpuSpanUploader; рост вместимости / якорный дрейф /
+     * ресет атласа сбрасывают shadow-валидность → полные заливки), поэтому дифф
+     * безопасен даже для окна, впервые размещённого в чужой бывшей дырке.
+     */
+    private static boolean uploadWindowsToAtlas(List<Pending> drawList,
+                                                MdiGeometryAtlas atlas, int instanceFloatsPerInstance) {
+        boolean shadowValid = atlas.isInstanceShadowValid();
+        for (Pending p : drawList) {
+            if (p.instanceData == null) {
+                return false;
+            }
+            int floats = p.instanceCount * instanceFloatsPerInstance;
+            if (p.instanceData.remaining() < floats) {
+                return false;
+            }
+            if (shadowValid && p.windowUploaded) {
                 continue;
             }
-            p.baseVertex = slot.baseVertex;
-            p.firstIndexBytes = slot.firstIndexBytes;
-            p.indexCount = slot.indexCount;
-        }
-    }
-
-    /**
-     * Заливает инстансы в атлас СТРОГО в порядке [opaqueSubs…, fadeSlots…] — том же,
-     * в котором командам назначены {@code baseInstance}.
-     * Аплоад — span-дифф против CPU-копии атласа ({@link GpuSpanUploader}): статичная
-     * сцена с мировыми координатами записей не даёт ни одного glBufferSubData/copy.
-     * Чистые окна (тот же снапшот на том же оффсете при валидной тени) пропускаются
-     * целиком — даже memcmp-скан диффа не выполняется.
-     */
-    private static boolean uploadInstancesToAtlas(List<SubDraw> opaqueSubs, List<FadeSlot> fadeSlots,
-                                                  MdiGeometryAtlas atlas, int instanceFloatsPerInstance) {
-        int drawTotalInstances = 0;
-        for (SubDraw sub : opaqueSubs) {
-            drawTotalInstances += sub.count;
-        }
-        drawTotalInstances += fadeSlots.size();
-        if (drawTotalInstances == 0) {
-            return false;
-        }
-        if (!atlas.ensureInstanceCapacity(drawTotalInstances)) {
-            return false;
-        }
-        boolean shadowValid = atlas.isInstanceShadowValid();
-        int offsetFloats = 0;
-        for (SubDraw sub : opaqueSubs) {
-            Pending p = sub.owner;
-            if (p.instanceData == null) {
-                return false;
-            }
-            int floats = sub.count * instanceFloatsPerInstance;
-            if (p.instanceData.remaining() < (sub.firstInstance + sub.count) * instanceFloatsPerInstance) {
-                return false;
-            }
-            if (!(shadowValid && p.partitionValid && p.lastOpaqueUploadOffsetFloats == offsetFloats)) {
-                atlas.uploadInstanceWindowSpanned(offsetFloats, p.instanceData,
-                        sub.firstInstance * instanceFloatsPerInstance, floats);
-            }
-            p.lastOpaqueUploadOffsetFloats = offsetFloats;
-            offsetFloats += floats;
-        }
-        for (FadeSlot s : fadeSlots) {
-            Pending p = s.owner;
-            if (p.instanceData == null) {
-                return false;
-            }
-            if (p.instanceData.remaining() < (s.srcInstance + 1) * instanceFloatsPerInstance) {
-                return false;
-            }
-            atlas.uploadInstanceWindowSpanned(offsetFloats, p.instanceData,
-                    s.srcInstance * instanceFloatsPerInstance, instanceFloatsPerInstance);
-            offsetFloats += instanceFloatsPerInstance;
+            atlas.uploadInstanceWindowSpanned(p.atlasWindowBase * instanceFloatsPerInstance,
+                    p.instanceData, 0, floats);
+            p.windowUploaded = true;
         }
         atlas.markInstanceShadowValid();
         return true;
+    }
+
+    // Adaptive occlusion gate (CrankShaft OCCLUSION_VERTICES pattern with hysteresis):
+    // threshold on total MDI instances; below it the cull dispatch runs frustum-only
+    // and the Hi-Z pyramid is not rebuilt (see executeMdiGlDraw).
+    private static final int OCCLUSION_MIN_INSTANCES =
+            Math.max(0, Integer.getInteger("hbm.gpuCull.minInstances", 4096));
+    private static boolean occlusionLatch = false;
+    private static long lastOcclusionGateLogMs = 0L;
+
+    private static void logOcclusionGate(String state, int totalInstances) {
+        long now = System.currentTimeMillis();
+        if (now - lastOcclusionGateLogMs < 1000L) {
+            return;
+        }
+        lastOcclusionGateLogMs = now;
+        MainRegistry.LOGGER.info("[HBM-M GPU Cull] Occlusion gate {} (instances={}, threshold={}, hysteresis={})",
+                state, totalInstances, OCCLUSION_MIN_INSTANCES, OCCLUSION_MIN_INSTANCES >> 1);
     }
 
     private static void executeMdiGlDraw(PreparedMdi prepared, Matrix4f projection, long gameTime) {
@@ -1003,9 +878,9 @@ public final class MdiBatchCoordinator {
         if (drawList.isEmpty() || (opaqueSubs.isEmpty() && fadeSlots.isEmpty())) {
             return;
         }
-        // Embeddium/Iris диспатчат stage-события и из теневых terrain-проходов —
-        // там флашить нельзя (тот же контракт, что у flushBatchIris); заодно это
-        // защищает FrameViewState от захвата камеры теневого прохода.
+        // Embeddium/Iris dispatch stage events from shadow terrain passes as well —
+        // flushing is disallowed there (same contract as flushBatchIris); also protects
+        // FrameViewState from capturing shadow pass camera.
         if (ShaderCompatibilityDetector.isRenderingShadowPass()) {
             return;
         }
@@ -1020,36 +895,68 @@ public final class MdiBatchCoordinator {
             return;
         }
 
+        boolean gpuCullEligible = (ModClothConfig.get().getEffectiveOcclusionCullingMode() == ModClothConfig.OcclusionCullingMode.GPU)
+                && GpuCullingCapability.isSupported()
+                && !ShaderCompatibilityDetector.isRenderingShadowPass();
+        var mc = Minecraft.getInstance();
+        var target = mc.getMainRenderTarget();
+        boolean gpuCullActive = gpuCullEligible && target != null && target.getDepthTextureId() > 0;
+
         int nCmd = opaqueSubs.size() + fadeSlots.size();
+        int totalInstances = 0;
         ByteBuffer cmdBuf = MemoryUtil.memAlloc(nCmd * INDIRECT_CMD_STRIDE_BYTES);
         cmdBuf.order(ByteOrder.nativeOrder());
-        // Порядок команд = порядок аплоада (baseInstance согласованы):
-        // [opaque-окна…][fading-слоты, глобально back-to-front].
+        // Command order matches upload order (baseInstance synchronized):
+        // [opaque windows...][fading slots globally back-to-front].
         for (SubDraw sub : opaqueSubs) {
             Pending p = sub.owner;
             int rowStart = cmdBuf.position();
             cmdBuf.putInt(p.indexCount);
-            cmdBuf.putInt(sub.count);
+            cmdBuf.putInt(gpuCullActive ? 0 : sub.count);
             cmdBuf.putInt(p.firstIndexBytes >>> 2);
             cmdBuf.putInt(p.baseVertex);
             cmdBuf.putInt(sub.baseInstance);
+            cmdBuf.putInt(sub.count);
             while (cmdBuf.position() < rowStart + INDIRECT_CMD_STRIDE_BYTES) {
                 cmdBuf.putInt(0);
             }
+            totalInstances += sub.count;
         }
         for (FadeSlot s : fadeSlots) {
             Pending p = s.owner;
             int rowStart = cmdBuf.position();
             cmdBuf.putInt(p.indexCount);
-            cmdBuf.putInt(1);
+            cmdBuf.putInt(gpuCullActive ? 0 : 1);
             cmdBuf.putInt(p.firstIndexBytes >>> 2);
             cmdBuf.putInt(p.baseVertex);
             cmdBuf.putInt(s.baseInstance);
+            cmdBuf.putInt(1);
             while (cmdBuf.position() < rowStart + INDIRECT_CMD_STRIDE_BYTES) {
                 cmdBuf.putInt(0);
             }
+            totalInstances++;
         }
         cmdBuf.flip();
+
+        // Adaptive occlusion gate (паттерн CrankShaft OCCLUSION_VERTICES с гистерезисом):
+        // полный rebuild Hi-Z пирамиды — фиксированная стоимость кадра (SPD-даунсемпл
+        // всего экрана + барьеры); на малых сценах она превышает выгоду окклюзии.
+        // Ниже порога cull-диспатч работает в frustum-only режиме (пирамида не
+        // перестраивается и не сэмплится), выше 2× порога — двухфазный режим возвращается.
+        // -Dhbm.gpuCull.minInstances=0 — окклюзия всегда активна (старое поведение).
+        boolean occlusionEnabled = gpuCullActive;
+        if (occlusionEnabled && OCCLUSION_MIN_INSTANCES > 0) {
+            if (!occlusionLatch) {
+                if (totalInstances >= OCCLUSION_MIN_INSTANCES) {
+                    occlusionLatch = true;
+                    logOcclusionGate("ENABLED", totalInstances);
+                }
+            } else if (totalInstances < (OCCLUSION_MIN_INSTANCES >> 1)) {
+                occlusionLatch = false;
+                logOcclusionGate("DISABLED", totalInstances);
+            }
+            occlusionEnabled = occlusionLatch;
+        }
 
         try {
             int prevVao = GL11.glGetInteger(GL30.GL_VERTEX_ARRAY_BINDING);
@@ -1075,32 +982,28 @@ public final class MdiBatchCoordinator {
             }
 
             String dispatchDrawMode = "MULTI";
+            boolean gpuCulled = false;
 
             try {
                 GL30.glBindVertexArray(atlas.getVaoId());
                 atlas.enableVertexAttribArraysOnBoundVao();
 
-                var mc = Minecraft.getInstance();
-                if (mc.gameRenderer != null) {
-                    //? if < 1.21.1 {
-                    mc.gameRenderer.lightTexture().updateLightTexture(mc.getFrameTime());
-                    //?} else {
-                    /*// 1.21.1: getPartialTick() удалён — частичное время тика через DeltaTracker.Timer.
-                    mc.gameRenderer.lightTexture().updateLightTexture(mc.getTimer().getGameTimeDeltaPartialTick(true));
-                    *///?}
-                }
+                // Lightmap freshness is owned by RenderFrameLight.ensureLightTextureUpdated()
+                // (present start) on top of vanilla's own updateLightTexture at the start of
+                // GameRenderer.renderLevel — an extra rebuild here was a per-frame duplicate
+                // of a 256×256 CPU upload.
 
                 RenderSystem.setShader(() -> shader);
                 applyCommonUniforms(shader, projection);
-                // РЕГРЕССИЯ-СТОП (MDI): тот же контракт block_lit, что VanillaInstancedBatchRenderer — иначе белые batch.
+                // REGRESSION-STOP (MDI): same block_lit contract as VanillaInstancedBatchRenderer — otherwise white batches.
                 SingleMeshVboRenderer.prepareBlockLitSamplers(shader);
                 shader.apply();
                 InstancedStaticPartRenderer.bindBlockLitTexturesBeforeDraw(shader);
 
                 float minFade = prepared.minFade();
-                // Кэшированные минимумы: cachedMinFade считается при партиции снапшота,
-                // fade отдельных слотов захвачен при перечислении — per-кадровый
-                // стридед-скан всех инстансов не нужен.
+                // Cached minima: cachedMinFade precomputed during snapshot partition,
+                // fade of individual slots captured during enumeration — per-frame
+                // strided scan of all instances is unnecessary.
                 for (SubDraw sub : opaqueSubs) {
                     if (sub.owner.instanceData != null && sub.owner.cachedMinFade < minFade) {
                         minFade = sub.owner.cachedMinFade;
@@ -1125,14 +1028,133 @@ public final class MdiBatchCoordinator {
                     GL11.glDisable(GL31.GL_PRIMITIVE_RESTART);
                 }
 
-                // РЕГРЕССИЯ-ФИКС: ёмкость обязана вмещать ВСЕ команды (nCmd =
-                // opaque-поды + fading-слоты по 1 инстансу), а не только число
-                // рендереров — иначе рост числа fading-инстансов недо-ensure'ил
-                // буфер и glBufferSubData обрезался по GL_INVALID_VALUE.
+                // REGRESSION-FIX: capacity must accommodate ALL commands (nCmd =
+                // opaque sub-draws + 1-instance fading slots), not just renderer count —
+                // otherwise growing fading instances under-ensured buffer and glBufferSubData truncated with GL_INVALID_VALUE.
                 int cmdByteLen = nCmd * INDIRECT_CMD_STRIDE_BYTES;
                 GL15.glBindBuffer(GL40.GL_DRAW_INDIRECT_BUFFER, atlas.getIndirectBufferId());
                 atlas.ensureIndirectCommandByteCapacity(cmdByteLen);
                 GL15.glBufferSubData(GL40.GL_DRAW_INDIRECT_BUFFER, 0, cmdBuf);
+
+                if (gpuCullActive) {
+                    try {
+                        // Полный rebuild пирамиды — только когда окклюзия включена гейтом;
+                        // в frustum-only режиме куллер не сэмплит пирамиду (сдержится
+                        // прошлокадровая/placeholder), экономя полный SPD-даунсемпл экрана.
+                        if (occlusionEnabled) {
+                            HiZDepthPyramid.get().regenerate(target.getDepthTextureId(), target.width, target.height);
+                        }
+                        float zFar = mc.gameRenderer != null ? mc.gameRenderer.getDepthFar() : 1024.0f;
+                        gpuCulled = NucleusGpuCuller.cull(
+                                atlas,
+                                nCmd,
+                                HiZDepthPyramid.get(),
+                                FrameViewState.viewMatrix(),
+                                projection,
+                                0.05f,
+                                zFar,
+                                target.width,
+                                target.height,
+                                !occlusionEnabled
+                        );
+                    } catch (Throwable t) {
+                        MainRegistry.LOGGER.warn("[HBM-M MDI] GPU occlusion culling failed, falling back to full batch: {}", t.getMessage());
+                        gpuCulled = false;
+                    }
+                    
+                    // RESTORE SHADER PROGRAM OVERWRITTEN BY COMPUTE PASSES
+                    GL20.glUseProgram(shader.getId());
+
+                    if (gpuCulled) {
+                        atlas.bindCompactedInstanceVbo();
+
+                        // Diagnostic readback is a full pipeline sync (glGetBufferSubData
+                        // of the whole indirect buffer): only pay it when the stats are
+                        // actually consumed — F3 overlay open or MDI diag logging enabled.
+                        boolean cullStatsNeeded = MdiRenderDiag.isDebugEnabled()
+                                || com.hbm_m.platform.RenderHooks.isDebugScreenVisible();
+                        long now = System.currentTimeMillis();
+                        if (cullStatsNeeded && now - lastGpuCullLogTimeMs >= 1000L) {
+                            lastGpuCullLogTimeMs = now;
+                            try {
+                                GL42.glMemoryBarrier(GL43.GL_BUFFER_UPDATE_BARRIER_BIT | GL43.GL_SHADER_STORAGE_BARRIER_BIT);
+                                cmdBuf.clear();
+                                GL15.glGetBufferSubData(GL40.GL_DRAW_INDIRECT_BUFFER, 0, cmdBuf);
+                                int totalIn = 0;
+                                int totalOut = 0;
+                                for (int i = 0; i < nCmd; i++) {
+                                    int instanceCount = cmdBuf.getInt(i * INDIRECT_CMD_STRIDE_BYTES + 4);
+                                    int originalCount = cmdBuf.getInt(i * INDIRECT_CMD_STRIDE_BYTES + 20);
+                                    totalIn += originalCount;
+                                    totalOut += instanceCount;
+                                }
+                                int culled = Math.max(0, totalIn - totalOut);
+                                float pct = totalIn > 0 ? (culled * 100.0f / totalIn) : 0f;
+                                MainRegistry.LOGGER.info("[HBM-M GPU Cull] Active: cmds={}, instances: {} -> {} (culled: {} / {}%), depthTex={}, Hi-Z mips={}",
+                                        nCmd, totalIn, totalOut, culled, String.format(java.util.Locale.ROOT, "%.1f", pct),
+                                        target.getDepthTextureId(), HiZDepthPyramid.get().getMipLevels());
+                                if (culled == 0 && totalIn > 0) {
+                                    MainRegistry.LOGGER.info("[HBM-M GPU Cull] NOTE: 0 instances were culled (100% passed frustum + Hi-Z occlusion test).");
+                                }
+                                NucleusDebug.recordGpuCull(true, nCmd, totalIn, totalOut);
+                            } catch (Throwable t) {
+                                MainRegistry.LOGGER.warn("[HBM-M GPU Cull] Diagnostic readback failed: {}", t.getMessage());
+                            }
+                        }
+                    } else {
+                        // Safe CPU fallback / unculled restoration:
+                        // Rewrite original instance counts to indirect buffer and retain default instance VBO
+                        cmdBuf.clear();
+                        for (SubDraw sub : opaqueSubs) {
+                            Pending p = sub.owner;
+                            int rowStart = cmdBuf.position();
+                            cmdBuf.putInt(p.indexCount);
+                            cmdBuf.putInt(sub.count);
+                            cmdBuf.putInt(p.firstIndexBytes >>> 2);
+                            cmdBuf.putInt(p.baseVertex);
+                            cmdBuf.putInt(sub.baseInstance);
+                            cmdBuf.putInt(sub.count);
+                            while (cmdBuf.position() < rowStart + INDIRECT_CMD_STRIDE_BYTES) {
+                                cmdBuf.putInt(0);
+                            }
+                        }
+                        for (FadeSlot s : fadeSlots) {
+                            Pending p = s.owner;
+                            int rowStart = cmdBuf.position();
+                            cmdBuf.putInt(p.indexCount);
+                            cmdBuf.putInt(1);
+                            cmdBuf.putInt(p.firstIndexBytes >>> 2);
+                            cmdBuf.putInt(p.baseVertex);
+                            cmdBuf.putInt(s.baseInstance);
+                            cmdBuf.putInt(1);
+                            while (cmdBuf.position() < rowStart + INDIRECT_CMD_STRIDE_BYTES) {
+                                cmdBuf.putInt(0);
+                            }
+                        }
+                        cmdBuf.flip();
+                        GL15.glBufferSubData(GL40.GL_DRAW_INDIRECT_BUFFER, 0, cmdBuf);
+
+                        long now = System.currentTimeMillis();
+                        if (now - lastGpuCullLogTimeMs >= 2000L) {
+                            lastGpuCullLogTimeMs = now;
+                            MainRegistry.LOGGER.warn("[HBM-M GPU Cull] Fallback active! gpuCulled=false; restored CPU unculled instances.");
+                            NucleusDebug.recordGpuCull(false, nCmd, 0, 0);
+                        }
+                    }
+                } else {
+                    long now = System.currentTimeMillis();
+                    if (now - lastGpuCullLogTimeMs >= 3000L) {
+                        lastGpuCullLogTimeMs = now;
+                        MainRegistry.LOGGER.info("[HBM-M GPU Cull] Inactive: eligible={}, targetNull={}, depthTexId={}, mode={}, gpuSupported={}, shadowPass={}",
+                                gpuCullEligible,
+                                target == null,
+                                target != null ? target.getDepthTextureId() : -1,
+                                ModClothConfig.get().getEffectiveOcclusionCullingMode(),
+                                GpuCullingCapability.isSupported(),
+                                ShaderCompatibilityDetector.isRenderingShadowPass());
+                        NucleusDebug.recordGpuCull(false, nCmd, 0, 0);
+                    }
+                }
                 try {
                     GLCapabilities capsBarrier = GL.getCapabilities();
                     if (capsBarrier != null && capsBarrier.glMemoryBarrier != 0L) {
@@ -1141,16 +1163,24 @@ public final class MdiBatchCoordinator {
                 } catch (Throwable ignored) {
                 }
 
+                // CRITICAL SAFETY FOR MDI:
+                // Ensure the indirect buffer is explicitly bound to GL_DRAW_INDIRECT_BUFFER.
+                // If GL_DRAW_INDIRECT_BUFFER is 0 or unbound, glMultiDrawElementsIndirect/glDrawElementsIndirect
+                // treats the offset (0L) as a CPU host memory pointer, instantly causing EXCEPTION_ACCESS_VIOLATION
+                // in the native graphics driver (e.g. nvoglv64.dll / atio6axx.dll).
+                GL15.glBindBuffer(GL40.GL_DRAW_INDIRECT_BUFFER, atlas.getIndirectBufferId());
+                GL30.glBindVertexArray(atlas.getVaoId());
+
                 GLCapabilities caps2 = GL.getCapabilities();
                 boolean canMulti = caps2 != null
                         && (caps2.glMultiDrawElementsIndirect != 0L || caps2.GL_ARB_multi_draw_indirect);
                 boolean canSingle = caps2 != null
                         && (caps2.glDrawElementsIndirect != 0L || caps2.GL_ARB_draw_indirect);
 
-                // Глубина пишется на ОБЕИХ фазах: opaque запечатывает объём, fading
-                // обеспечивает самоперекрытие внутри модели (шип внутри кожуха).
-                // Взаимный depth-reject fading-машин исключён глобальной back-to-front
-                // сортировкой fadeSlots (дальние в командном буфере раньше ближних).
+                // Depth is written during BOTH phases: opaque seals volume, fading
+                // provides self-overlap inside model (spikes inside casing).
+                // Mutual depth-rejection of fading machines is prevented by global
+                // back-to-front sorting of fadeSlots (distant in command buffer before near).
                 if (canMulti) {
                     if (caps2.glMultiDrawElementsIndirect != 0L) {
                         GL43.glMultiDrawElementsIndirect(GL11.GL_TRIANGLES,
@@ -1172,7 +1202,7 @@ public final class MdiBatchCoordinator {
                     dispatchDrawMode = "IND_LOOP";
                 } else {
                     MainRegistry.LOGGER.error(
-                            "[HBM-M MDI] Нет ни glDrawElementsIndirect, ни glMultiDrawElementsIndirect — пропуск отрисовки атласа");
+                            "[HBM-M MDI] Neither glDrawElementsIndirect nor glMultiDrawElementsIndirect available — skipping atlas draw");
                     dispatchDrawMode = "NONE";
                 }
 
@@ -1187,6 +1217,9 @@ public final class MdiBatchCoordinator {
                 logDispatchDiagStatic(prepared.pendingSize, opaqueSubs, fadeSlots, prepared.drawTotalInstances,
                         atlas, prepared.droppedNoSlot, dispatchDrawMode, gameTime);
             } finally {
+                if (gpuCulled) {
+                    atlas.restoreDefaultInstanceVbo();
+                }
                 if (primitiveRestartWas) {
                     GL11.glEnable(GL31.GL_PRIMITIVE_RESTART);
                 }
@@ -1224,58 +1257,12 @@ public final class MdiBatchCoordinator {
     }
 
     /**
-     * Embeddium runs several {@code AFTER_BLOCK_ENTITIES} passes per frame; each flush can
-     * re-submit the same {@link InstancedStaticPartRenderer}. Keep the submission with the
-     * most instances (latest / fullest pass) instead of stacking duplicates into one dispatch.
-     */
-    private void coalescePendingByRenderer() {
-        if (pending.size() <= 1) {
-            return;
-        }
-        IdentityHashMap<InstancedStaticPartRenderer, Pending> best = new IdentityHashMap<>();
-        List<Pending> dropped = new ArrayList<>();
-        for (Pending p : pending) {
-            Pending prev = best.get(p.renderer);
-            if (prev == null) {
-                best.put(p.renderer, p);
-                continue;
-            }
-            if (p.instanceCount > prev.instanceCount) {
-                dropped.add(prev);
-                best.put(p.renderer, p);
-            } else {
-                dropped.add(p);
-            }
-        }
-        if (dropped.isEmpty()) {
-            return;
-        }
-        for (Pending p : dropped) {
-            if (p.instanceDataNativeOwned && p.instanceData != null) {
-                MemoryUtil.memFree(p.instanceData);
-                p.instanceData = null;
-                p.instanceDataNativeOwned = false;
-            }
-        }
-        pending.clear();
-        pending.addAll(best.values());
-        totalInstances = 0;
-        for (Pending p : pending) {
-            totalInstances += p.instanceCount;
-        }
-    }
-
-    /** Lag-1 culling at BER only; per-slice MDI compact caused {@code draws=X/13} flicker. */
-    private static void compactVisibleInstances(Pending p, int floatsPerInstance) {
-    }
-
-    /**
-     * Переставляет записи снапшота в порядке [непрозрачные в исходном порядке |
-     * затухающие back-to-front] и выставляет {@link Pending#opaqueCount}.
+     * Reorders snapshot records to [opaque in original order | fading back-to-front]
+     * and sets {@link Pending#opaqueCount}.
      *
-     * <p>Логика — общий хелпер {@link InstancedStaticPartRenderer#partitionInstancesOpaqueFirst}:
-     * прямой путь (GPU-bones chain-части) партиционирует свои буферы тем же кодом,
-     * чтобы фазовый порядок «opaque раньше fading» совпадал во всех путях рендера.
+     * <p>Logic delegates to shared helper {@link InstancedStaticPartRenderer#partitionInstancesOpaqueFirst}:
+     * direct path (GPU bones chain parts) partitions its buffers with identical code
+     * so phase order (opaque before fading) matches across all render paths.
      */
     private static void partitionOpaqueFirst(Pending p, int floatsPerInstance, int fadeOffset) {
         p.opaqueCount = 0;
@@ -1283,12 +1270,12 @@ public final class MdiBatchCoordinator {
             return;
         }
         p.opaqueCount = InstancedStaticPartRenderer.partitionInstancesOpaqueFirst(
-                p.instanceData, p.instanceCount, floatsPerInstance, fadeOffset);
+                p.instanceData, p.instanceCount, floatsPerInstance, fadeOffset, null);
     }
 
     private static void applyCommonUniforms(ShaderInstance shader, Matrix4f projection) {
         if (shader.PROJECTION_MATRIX != null) shader.PROJECTION_MATRIX.set(projection);
-        // InstPos/InstRot мировые: ModelViewMat = R_cam·T(-cam) (FrameViewState).
+        // InstPos/InstRot are anchor-relative: ModelViewMat = R_cam * T(-relCam) (FrameViewState).
         if (shader.MODEL_VIEW_MATRIX != null) shader.MODEL_VIEW_MATRIX.set(FrameViewState.viewMatrix());
         var fogStart = shader.getUniform("FogStart");
         if (fogStart != null) fogStart.set(RenderSystem.getShaderFogStart());

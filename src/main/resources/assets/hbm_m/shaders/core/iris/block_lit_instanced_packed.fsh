@@ -16,6 +16,10 @@ in vec2 texCoord;
 in vec2 lightLevels;
 in vec3 worldNormal;
 in float vFadeAlpha;
+// Per-instance тинт части (InstColor из block_lit_instanced_packed.vsh).
+// Albedo в gbuffer пака — 8-бит unorm: overbright (RGB > 1) здесь срезается
+// клэмпом паковки, свет накала обеспечивает lightLevels (fullbright).
+in vec4 vColor;
 
 uniform sampler2D iris_Sampler0;
 
@@ -54,9 +58,10 @@ void main() {
 
     vec3 n = normalize(worldNormal);
 
+    vec3 albedo = baseColor.rgb * vColor.rgb;
     fragColor = vec4(
-        packUnorm2x8(baseColor.rg),
-        packUnorm2x8(baseColor.b, 0.0),
+        packUnorm2x8(albedo.rg),
+        packUnorm2x8(albedo.b, 0.0),
         packUnorm2x8(encodeUnitVector(n)),
         packUnorm2x8(lightLevels)
     );

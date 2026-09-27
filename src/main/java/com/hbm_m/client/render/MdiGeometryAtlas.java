@@ -38,9 +38,9 @@ import com.mojang.blaze3d.systems.RenderSystem;
  *       per-part {@code GL_UNSIGNED_INT} indices. Per-part draw commands use
  *       {@code baseVertex} (added to each element index) and a <b>byte offset</b>
  *       into the EBO for {@code glDrawElementsInstancedBaseVertexBaseInstance};
- *       для {@code DrawElementsIndirectCommand.firstIndex} в буфере indirect нужно
- *       то же смещение в <b>элементах</b> (байты / 4). Локальные индексы частей —
- *       как есть (0..N-1 на часть).</li>
+ *       for {@code DrawElementsIndirectCommand.firstIndex} in the indirect buffer,
+ *       the same offset in <b>elements</b> (bytes / 4) is required. Local part indices
+ *       remain as-is (0..N-1 per part).</li>
  *   <li>One instance VBO with the unsliced 30-float instance layout (loc 4..12
  *       with divisor 1), large enough to hold the sum of all per-renderer
  *       {@code MAX_INSTANCES} budgets for a single frame.</li>
@@ -55,6 +55,8 @@ import com.mojang.blaze3d.systems.RenderSystem;
  * stream. When the existing vertex/index buffers don't have room, we
  * reallocate at double capacity and re-upload all known parts. This is rare
  * (happens only on first-frame growth) and amortised across the session.
+ *
+ * @credit Flywheel / CrankShaft
  */
 
 @OnlyIn(Dist.CLIENT)
@@ -64,7 +66,7 @@ public final class MdiGeometryAtlas {
     private static final int VERTEX_STRIDE_BYTES = SingleMeshVboRenderer.MACHINE_PART_VERTEX_STRIDE_BYTES;
 
     /** Unsliced instance layout: 30 floats per instance (see {@link InstancedStaticPartRenderer}). */
-    private static final int INSTANCE_FLOATS = 30;
+    private static final int INSTANCE_FLOATS = InstancedStaticPartRenderer.INSTANCE_DATA_SIZE;
     /** Float index of fade packed in {@code InstBboxSize.w}. */
     private static final int INSTANCE_FADE_FLOAT_OFFSET = 13;
 
@@ -73,7 +75,7 @@ public final class MdiGeometryAtlas {
     /** Slot record returned to the coordinator. */
     public static final class Slot {
         public final int baseVertex;
-        /** Byte offset в EBO для SEQ; для indirect — {@code firstIndexBytes / 4} в поле {@code firstIndex}. */
+        /** Byte offset in EBO for sequential draws; for indirect draws — {@code firstIndexBytes / 4} in the {@code firstIndex} field. */
         public final int firstIndexBytes;
         public final int indexCount;
         Slot(int baseVertex, int firstIndexBytes, int indexCount) {
@@ -103,10 +105,11 @@ public final class MdiGeometryAtlas {
     private int vertexVboId = 0;
     private int indexEboId = 0;
     private int instanceVboId = 0;
+    private int compactedInstanceVboId = 0;
     private int indirectBufId = 0;
 
-    // CPU-копия содержимого instance VBO для span-диффа (GpuSpanUploader):
-    // статичная сцена с мировыми координатами записей даёт ноль аплоадов.
+    // CPU shadow copy of instance VBO contents for span diffing (GpuSpanUploader):
+    // static scenes with anchor-relative records yield zero GPU uploads.
     private FloatBuffer instanceShadow = null;
     private boolean instanceShadowValid = false;
 
@@ -116,7 +119,7 @@ public final class MdiGeometryAtlas {
     private long indexCapBytes = 0;
     private long indexUsedBytes = 0;
     private long instanceCapInstances = 0;
-    /** Размер GL_DRAW_INDIRECT_BUFFER (байты); команды пишем через {@link GL15#glBufferSubData}. */
+    /** Capacity of GL_DRAW_INDIRECT_BUFFER in bytes; commands are written via {@link GL15#glBufferSubData}. */
     private long indirectCmdCapBytes = 0L;
 
     /**
@@ -127,7 +130,7 @@ public final class MdiGeometryAtlas {
 
     private MdiGeometryAtlas() { /* lazy init below */ }
 
-    /** Текущий инстанс без ленивого создания (для диагностики; null = атлас ещё не создан). */
+    /** Current atlas instance without lazy creation (for diagnostics; null if not yet created). */
     public static MdiGeometryAtlas peekOrNull() {
         return INSTANCE;
     }
@@ -151,14 +154,13 @@ public final class MdiGeometryAtlas {
     }
 
     /**
-     * Полный сброс атласа при F3+T / disconnect. Только render-thread.
+     * Complete reset of atlas on F3+T / disconnect. Render thread only.
      * <p>
-     * Без этого {@link #geometryByRenderer} бессрочно держит старые
-     * {@link InstancedStaticPartRenderer} как ключи: после {@code clearCaches()}
-     * на них больше нет ссылок из BER, но Map не даёт их собрать GC и накапливает
-     * вторую/третью копию той же геометрии для новых инстансов рендерера —
-     * отсюда «cog рисуется как base химзавода», дыры в полигонах и полный отказ
-     * MDI до перезахода (слоты/порядок repack расходятся с ожиданиями).
+     * Without this, {@link #geometryByRenderer} indefinitely retains old
+     * {@link InstancedStaticPartRenderer} instances as keys: after {@code clearCaches()}
+     * there are no longer references from BER, but the Map prevents GC collection and
+     * accumulates duplicate geometry copies for new renderer instances —
+     * causing incorrect mesh binding, polygon holes, and complete MDI failure until re-logging.
      */
     public static void resetForResourceLifecycle() {
         if (!RenderSystem.isOnRenderThread()) {
@@ -179,14 +181,14 @@ public final class MdiGeometryAtlas {
     }
 
     private void destroyInternal() {
-        // Native-память принадлежит InstancedStaticPartRenderer и освобождается в его cleanup().
-        // Здесь повторный memFree не нужен, так как GeoRecord хранит срез без отдельного memAlloc.
+        // Native memory is owned by InstancedStaticPartRenderer and freed during its cleanup().
+        // Duplicate memFree is unnecessary here since GeoRecord stores a view slice without separate allocation.
         geometryByRenderer.clear();
         vertexUsedBytes = 0L;
         indexUsedBytes = 0L;
 
-        // Shadow освобождаем ДО early-return по !ready: она могла быть создана
-        // в неудавшемся initialise() (ready=false) — иначе утечка.
+        // Free shadow buffer BEFORE early-return on !ready: it could have been created
+        // during a failed initialise() (ready=false) — avoiding leaks.
         if (instanceShadow != null) {
             MemoryUtil.memFree(instanceShadow);
             instanceShadow = null;
@@ -202,6 +204,7 @@ public final class MdiGeometryAtlas {
             if (vertexVboId != 0) GL15.glDeleteBuffers(vertexVboId);
             if (indexEboId != 0) GL15.glDeleteBuffers(indexEboId);
             if (instanceVboId != 0) GL15.glDeleteBuffers(instanceVboId);
+            if (compactedInstanceVboId != 0) GL15.glDeleteBuffers(compactedInstanceVboId);
             if (indirectBufId != 0) GL15.glDeleteBuffers(indirectBufId);
         } finally {
             guard.restore();
@@ -210,6 +213,7 @@ public final class MdiGeometryAtlas {
         vertexVboId = 0;
         indexEboId = 0;
         instanceVboId = 0;
+        compactedInstanceVboId = 0;
         indirectBufId = 0;
         vertexCapBytes = 0L;
         indexCapBytes = 0L;
@@ -230,9 +234,10 @@ public final class MdiGeometryAtlas {
             vertexVboId = GL15.glGenBuffers();
             indexEboId = GL15.glGenBuffers();
             instanceVboId = GL15.glGenBuffers();
+            compactedInstanceVboId = GL15.glGenBuffers();
             indirectBufId = GL15.glGenBuffers();
 
-            if (vaoId == 0 || vertexVboId == 0 || indexEboId == 0 || instanceVboId == 0 || indirectBufId == 0) {
+            if (vaoId == 0 || vertexVboId == 0 || indexEboId == 0 || instanceVboId == 0 || compactedInstanceVboId == 0 || indirectBufId == 0) {
                 throw new IllegalStateException("Failed to generate one or more atlas GL objects");
             }
 
@@ -260,6 +265,10 @@ public final class MdiGeometryAtlas {
             // Index buffer.
             GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, indexEboId);
             GL15.glBufferData(GL15.GL_ELEMENT_ARRAY_BUFFER, indexCapBytes, GL15.GL_STATIC_DRAW);
+
+            // Compacted instance VBO (allocated to same capacity for GPU culling stream compaction).
+            GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, compactedInstanceVboId);
+            GL15.glBufferData(GL15.GL_ARRAY_BUFFER, instanceCapInstances * INSTANCE_FLOATS * 4L, GL15.GL_STREAM_DRAW);
 
             // Instance VBO + per-instance attribute pointers (loc 4..12), all
             // with divisor 1 — must mirror the unsliced layout in
@@ -299,8 +308,20 @@ public final class MdiGeometryAtlas {
             GL20.glEnableVertexAttribArray(11);
             GL20.glVertexAttribPointer(11, 4, GL11.GL_FLOAT, false, stride, 104);
             GL33.glVertexAttribDivisor(11, 1);
+            // InstUvRect vec4 @ 120 (sprite-local VBO → atlas remap)
+            GL20.glEnableVertexAttribArray(12);
+            GL20.glVertexAttribPointer(12, 4, GL11.GL_FLOAT, false, stride, 120);
+            GL33.glVertexAttribDivisor(12, 1);
+            // InstColor vec4 @ 136 (per-instance RGBA-тинт; white = passthrough)
+            GL20.glEnableVertexAttribArray(13);
+            GL20.glVertexAttribPointer(13, 4, GL11.GL_FLOAT, false, stride, 136);
+            GL33.glVertexAttribDivisor(13, 1);
+            // GradParams vec4 @ 152 (пространственный фоллофф тинта; axis<0 = off)
+            GL20.glEnableVertexAttribArray(14);
+            GL20.glVertexAttribPointer(14, 4, GL11.GL_FLOAT, false, stride, 152);
+            GL33.glVertexAttribDivisor(14, 1);
 
-            // Indirect: один раз выделяем ёмкость; каждый кадр — только glBufferSubData (см. MdiBatchCoordinator).
+            // Indirect: allocate capacity once; each frame only updates via glBufferSubData (see MdiBatchCoordinator).
             long initialIndirectBytes = 4096L * (long) MdiBatchCoordinator.INDIRECT_CMD_STRIDE_BYTES;
             GL15.glBindBuffer(GL40.GL_DRAW_INDIRECT_BUFFER, indirectBufId);
             GL15.glBufferData(GL40.GL_DRAW_INDIRECT_BUFFER, initialIndirectBytes, GL15.GL_STREAM_DRAW);
@@ -325,9 +346,37 @@ public final class MdiGeometryAtlas {
     }
 
     public int getVaoId() { return vaoId; }
+    public int getInstanceVboId() { return instanceVboId; }
+    public int getCompactedInstanceVboId() { return compactedInstanceVboId; }
     public int getIndirectBufferId() { return indirectBufId; }
 
-    /** Ёмкость {@link GL40#GL_DRAW_INDIRECT_BUFFER} (байты); для orphan перед записью команд. */
+    public void bindInstanceVbo(int vboId) {
+        if (!ready || vaoId <= 0) return;
+        GL30.glBindVertexArray(vaoId);
+        GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vboId);
+        int stride = INSTANCE_FLOATS * 4;
+        GL20.glVertexAttribPointer(4, 3, GL11.GL_FLOAT, false, stride, 0);
+        GL20.glVertexAttribPointer(5, 4, GL11.GL_FLOAT, false, stride, 12);
+        GL20.glVertexAttribPointer(6, 3, GL11.GL_FLOAT, false, stride, 28);
+        GL20.glVertexAttribPointer(7, 4, GL11.GL_FLOAT, false, stride, 40);
+        GL20.glVertexAttribPointer(8, 4, GL11.GL_FLOAT, false, stride, 56);
+        GL20.glVertexAttribPointer(9, 4, GL11.GL_FLOAT, false, stride, 72);
+        GL20.glVertexAttribPointer(10, 4, GL11.GL_FLOAT, false, stride, 88);
+        GL20.glVertexAttribPointer(11, 4, GL11.GL_FLOAT, false, stride, 104);
+        GL20.glVertexAttribPointer(12, 4, GL11.GL_FLOAT, false, stride, 120);
+        GL20.glVertexAttribPointer(13, 4, GL11.GL_FLOAT, false, stride, 136);
+        GL20.glVertexAttribPointer(14, 4, GL11.GL_FLOAT, false, stride, 152);
+    }
+
+    public void bindCompactedInstanceVbo() {
+        bindInstanceVbo(compactedInstanceVboId);
+    }
+
+    public void restoreDefaultInstanceVbo() {
+        bindInstanceVbo(instanceVboId);
+    }
+
+    /** Capacity of {@link GL40#GL_DRAW_INDIRECT_BUFFER} in bytes; used for orphaning prior to writing commands. */
     public long getIndirectCommandBufferCapBytes() {
         return indirectCmdCapBytes;
     }
@@ -336,8 +385,8 @@ public final class MdiGeometryAtlas {
     public int getInstanceFadeFloatOffset() { return INSTANCE_FADE_FLOAT_OFFSET; }
 
     /**
-     * Оценка VRAM атласа: использованные вершины/индексы + ёмкость instance VBO
-     * и indirect-буфера. Для секции F3 ({@code NucleusDebug}).
+     * Atlas VRAM estimate: used vertices/indices + capacity of instance VBO
+     * and indirect buffer. Used by F3 debug overlay ({@code NucleusDebug}).
      */
     public synchronized long estimateVramBytes() {
         if (!ready) return 0L;
@@ -346,21 +395,22 @@ public final class MdiGeometryAtlas {
                 + indirectCmdCapBytes;
     }
 
-    /** Только для диагностики MDI: число зарегистрированных частей в атласе. */
+    /** MDI diagnostic counter: number of registered part meshes in the atlas. */
     public synchronized int getRegisteredGeometryCount() {
         return geometryByRenderer.size();
     }
 
     /**
-     * Включает vertex attrib arrays 0..11 на <b>уже привязанном</b> {@link #vaoId}.
-     * После {@link ShaderInstance#apply()} / Embeddium chunk-батчей часть массивов
-     * может оказаться отключённой; без этого MDI рисует только подмножество
-     * атрибутов (типично «видна только base», створки/cogs — нет).
+     * Enables vertex attrib arrays 0..11 on the currently bound {@link #vaoId}.
+     * After {@link ShaderInstance#apply()} / Embeddium chunk-batches, certain arrays
+     * may become disabled; without this MDI draws only a subset of attributes
+     * (e.g. only base mesh visible, moving doors/cogs missing).
      */
     public void enableVertexAttribArraysOnBoundVao() {
         if (!ready || vaoId <= 0) return;
         if (GL11.glGetInteger(GL30.GL_VERTEX_ARRAY_BINDING) != vaoId) return;
-        for (int i = 0; i <= 12; i++) {
+        // Attributes 0..11 are used (0-3 for vertex, 4-11 for instance data).
+        for (int i = 0; i <= 11; i++) {
             GL20.glEnableVertexAttribArray(i);
         }
     }
@@ -374,14 +424,11 @@ public final class MdiGeometryAtlas {
     }
 
     /**
-     * Текущий {@link Slot} для уже зарегистрированного рендерера после любого
-     * {@link #repackGeometryAndRefreshSlots} (рост VBO/EBO). Под {@link MdiBatchCoordinator#dispatch}
-     * нужен именно он: {@code submit} копирует смещения в {@code Pending} в
-     * порядке {@code flushInstancedBatches}, а между двумя {@code flush}
-     * соседних типов машин один {@code registerGeometryIfAbsent} может
-     * вызвать repack и пересчитать {@code GeoRecord#slot} у всех записей —
-     * старые значения в {@code Pending} тогда указывают в пустоту/чужую
-     * геометрию (невидимые двери/сборка, «дырявая» хим установка).
+     * Current {@link Slot} for an already registered renderer after any
+     * {@link #repackGeometryAndRefreshSlots} (VBO/EBO expansion). Required under
+     * {@link MdiBatchCoordinator#dispatch}: {@code submit} copies offsets into {@code Pending}
+     * in the order of {@code flushInstancedBatches}, and between flushes an intermediate
+     * {@code registerGeometryIfAbsent} call may trigger repack and invalidate slot offsets.
      */
     public synchronized Slot getCurrentSlot(InstancedStaticPartRenderer renderer) {
         if (!ready || renderer == null) return null;
@@ -390,10 +437,9 @@ public final class MdiGeometryAtlas {
     }
 
     /**
-     * Удаляет геометрию рендерера из атласа при его {@link InstancedStaticPartRenderer#cleanup()}
-     * до полного {@link #resetForResourceLifecycle()}. Иначе в {@link #geometryByRenderer} остаются
-     * «зомби»-ключи (cleanup уже освободил retained-буферы, а GeoRecord продолжает участвовать в repack),
-     * что ломает порядок/смещения MDI без срабатывания дрейфа слотов в Pending.
+     * Evicts renderer geometry from atlas on {@link InstancedStaticPartRenderer#cleanup()}
+     * prior to full {@link #resetForResourceLifecycle()}. Otherwise {@link #geometryByRenderer}
+     * retains zombie keys whose retained buffers are freed, corrupting subsequent repacks.
      */
     public static void evictRendererIfRegistered(InstancedStaticPartRenderer renderer) {
         if (renderer == null) return;
@@ -448,7 +494,7 @@ public final class MdiGeometryAtlas {
         long indexBytesLen = (long) indexCount * 4L;
         long vertexCount = vertexBytesLen / VERTEX_STRIDE_BYTES;
 
-        // ПЕРЕИСПОЛЬЗУЕМ view-буферы напрямую без повторного memAlloc!
+        // Reuse view buffers directly without secondary memAlloc!
         GeoRecord rec = new GeoRecord(vertexBytesView, indicesView, (int) vertexBytesLen, indexCount);
         try {
             ensureVertexCapacity(vertexUsedBytes + vertexBytesLen);
@@ -578,8 +624,10 @@ public final class MdiGeometryAtlas {
         try {
             GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, instanceVboId);
             GL15.glBufferData(GL15.GL_ARRAY_BUFFER, newCap * INSTANCE_FLOATS * 4L, GL15.GL_STREAM_DRAW);
+            GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, compactedInstanceVboId);
+            GL15.glBufferData(GL15.GL_ARRAY_BUFFER, newCap * INSTANCE_FLOATS * 4L, GL15.GL_STREAM_DRAW);
             instanceCapInstances = newCap;
-            // Ёмкость выросла: старая shadow больше не покрывает буфер — сброс.
+            // Capacity grew: old shadow no longer covers buffer — reset.
             if (instanceShadow != null) {
                 MemoryUtil.memFree(instanceShadow);
             }
@@ -595,11 +643,11 @@ public final class MdiGeometryAtlas {
     }
 
     /**
-     * Span-аплоад окна инстанс-данных в атлас по смещению {@code destFloatOffset}:
-     * дифф против {@link #instanceShadow}, грузятся только изменившиеся диапазоны.
-     * Orphan убран — скипнутые span-ы обязаны сохранять старое содержимое VBO.
-     * Валидность shadow сбрасывается ростом ёмкости; после полного кадра аплоадов
-     * координатор вызывает {@link #markInstanceShadowValid()}.
+     * Span upload of instance data window to atlas at offset {@code destFloatOffset}:
+     * diffed against {@link #instanceShadow}, only uploading changed ranges.
+     * Buffer orphaning is avoided so skipped spans preserve prior VBO content.
+     * Shadow validity is invalidated on capacity expansion; after a full frame of
+     * uploads the coordinator calls {@link #markInstanceShadowValid()}.
      */
     public void uploadInstanceWindowSpanned(int destFloatOffset, FloatBuffer src,
                                             int srcFloatOffset, int floatCount) {
@@ -611,7 +659,7 @@ public final class MdiGeometryAtlas {
         }
     }
 
-    /** Вызывается координатором после успешного аплоада всех окон кадра. */
+    /** Invoked by coordinator after all frame windows have been successfully uploaded. */
     public void markInstanceShadowValid() {
         instanceShadowValid = true;
     }
@@ -620,8 +668,12 @@ public final class MdiGeometryAtlas {
         return instanceShadowValid;
     }
 
+    public void onRenderOriginChanged() {
+        instanceShadowValid = false;
+    }
+
     /**
-     * Расширяет GL_DRAW_INDIRECT_BUFFER при необходимости (редко). Обновление команд — только SubData на стороне координатора.
+     * Expands GL_DRAW_INDIRECT_BUFFER when necessary. Command updates are handled via SubData on the coordinator side.
      */
     public void ensureIndirectCommandByteCapacity(int needBytes) {
         if (!ready || needBytes <= 0) return;

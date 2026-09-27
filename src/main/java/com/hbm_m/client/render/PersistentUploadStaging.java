@@ -152,6 +152,42 @@ public final class PersistentUploadStaging {
         return true;
     }
 
+    /**
+     * Только запись в кольцо БЕЗ немедленной копии — для батчинга (compute
+     * scatter): вызывающий собирает несколько region'ов и переносит их одной
+     * диспетчей {@link ComputeScatterUploader#scatter}.
+     * @return байтовое смещение region'а в кольце или -1 (фенс не освободился /
+     *         не влезает) — вызывающий обязан уйти в per-span fallback.
+     */
+    public long stageRegion(FloatBuffer src, int srcFloatOffset, int floatCount) {
+        long bytes = (long) floatCount * 4L;
+        if (bytes <= 0) {
+            return -1;
+        }
+        if (bytes > capacityBytes) {
+            return -1;
+        }
+        if (writePtr + bytes > capacityBytes) {
+            writePtr = 0;
+        }
+        if (!waitForRange(writePtr, bytes)) {
+            return -1;
+        }
+        FloatBuffer view = src.duplicate();
+        view.position(srcFloatOffset);
+        view.limit(srcFloatOffset + floatCount);
+        MemoryUtil.memCopy(MemoryUtil.memAddress(view), baseAddr + writePtr, bytes);
+        long offset = writePtr;
+        writePtr += bytes;
+        pendingAny = true;
+        return offset;
+    }
+
+    /** GL-идентификатор кольца (SSBO-источник для compute scatter; 0 — недоступно). */
+    public int getBufferId() {
+        return bufferId;
+    }
+
     /** Ёмкость кольца в байтах (0, если staging недоступен). Для F3-метрики VRAM. */
     public long getCapacityBytes() {
         return capacityBytes;

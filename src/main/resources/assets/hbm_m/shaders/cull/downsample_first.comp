@@ -1,0 +1,50 @@
+/**
+ * Forward-Z Single Pass Downsampler (First Pass).
+ * Samples full framebuffer depth texture using hardware textureGather and reduces 2x2 texels into Mip 0.
+ *
+ * @credit CrankShaft / fewizz / Jdb100
+ * Based on FidelityFX SPD v2.1 adapted for OpenGL 4.3 Forward-Z Depth Pyramid in CrankShaft/Flywheel.
+ */
+#version 430 core
+
+#include "downsample.glsl"
+
+layout(local_size_x = 256) in;
+
+layout(binding = 10) uniform sampler2D depth_tex;
+layout(binding = 1, r32f) uniform restrict writeonly image2D mip_0;
+
+float reduce_load_depth_tex(ivec2 tex) {
+    vec2 invSize = 1.0 / vec2(textureSize(depth_tex, 0));
+    vec2 uv = min((vec2(tex) + 0.75) * invSize, 1.0 - invSize);
+    return reduce_4(textureGather(depth_tex, uv));
+}
+
+void downsample_depth_tex(uint x, uint y, ivec2 workgroup_id) {
+    vec4 v;
+
+    ivec2 tex = workgroup_id * 64 + ivec2(x * 2u, y * 2u);
+    ivec2 pix = workgroup_id * 32 + ivec2(x, y);
+    v[0] = reduce_load_depth_tex(tex);
+    imageStore(mip_0, pix, vec4(v[0]));
+
+    tex = workgroup_id * 64 + ivec2(x * 2u + 32u, y * 2u);
+    pix = workgroup_id * 32 + ivec2(x + 16u, y);
+    v[1] = reduce_load_depth_tex(tex);
+    imageStore(mip_0, pix, vec4(v[1]));
+
+    tex = workgroup_id * 64 + ivec2(x * 2u, y * 2u + 32u);
+    pix = workgroup_id * 32 + ivec2(x, y + 16u);
+    v[2] = reduce_load_depth_tex(tex);
+    imageStore(mip_0, pix, vec4(v[2]));
+
+    tex = workgroup_id * 64 + ivec2(x * 2u + 32u, y * 2u + 32u);
+    pix = workgroup_id * 32 + ivec2(x + 16u, y + 16u);
+    v[3] = reduce_load_depth_tex(tex);
+    imageStore(mip_0, pix, vec4(v[3]));
+}
+
+void main() {
+    uvec2 xy = get_xy();
+    downsample_depth_tex(xy.x, xy.y, ivec2(gl_WorkGroupID.xy));
+}

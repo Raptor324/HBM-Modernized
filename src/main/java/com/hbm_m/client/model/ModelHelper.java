@@ -235,6 +235,118 @@ public class ModelHelper {
     }
 
     /**
+     * Аффинный ремап UV квадов из области спрайта {@code from} в область {@code to}.
+     * Основа дедупликации скинов дверей: каноничные квады запекаются один раз с одним
+     * спрайтом, текстурные варианты получают свои UV ленивым ремапом (скины отличаются
+     * ТОЛЬКО аффинным rect'ом спрайта в атласе).
+     * @return исходный список, если ремап не нужен (from == to / null / пустой список).
+     */
+    public static List<BakedQuad> remapQuadUvs(List<BakedQuad> quads, TextureAtlasSprite from, TextureAtlasSprite to) {
+        if (quads == null || quads.isEmpty() || from == null || to == null || from == to) {
+            return quads;
+        }
+        return remapQuadUvsUnit(quads,
+                from.getU0(), from.getV0(), from.getU1() - from.getU0(), from.getV1() - from.getV0(),
+                to.getU0(), to.getV0(), to.getU1() - to.getU0(), to.getV1() - to.getV0(),
+                to);
+    }
+
+    /**
+     * Нормализация UV в sprite-local [0..1] (обратное развёртывание из области {@code sprite}).
+     * Спрайт-метадата квадов сохраняется (потребители типа PartGeometry её не читают).
+     */
+    public static List<BakedQuad> normalizeQuadUvs(List<BakedQuad> quads, TextureAtlasSprite sprite) {
+        if (quads == null || quads.isEmpty() || sprite == null) {
+            return quads;
+        }
+        return remapQuadUvsUnit(quads,
+                sprite.getU0(), sprite.getV0(), sprite.getU1() - sprite.getU0(), sprite.getV1() - sprite.getV0(),
+                0f, 0f, 1f, 1f,
+                sprite);
+    }
+
+    /**
+     * Нормализация UV в sprite-local [0..1] ПО КАЖДОМУ кваду его собственным спрайтом.
+     * Версия для мешей, где части могут нести разные спрайты (canonical-квады дверей).
+     * Квады без спрайта остаются как есть.
+     */
+    public static List<BakedQuad> normalizeQuadUvsPerQuad(List<BakedQuad> quads) {
+        if (quads == null || quads.isEmpty()) {
+            return quads;
+        }
+        List<BakedQuad> result = new ArrayList<>(quads.size());
+        for (BakedQuad quad : quads) {
+            TextureAtlasSprite s = quad.getSprite();
+            if (s == null || s.getU1() - s.getU0() <= 0f || s.getV1() - s.getV0() <= 0f) {
+                result.add(quad);
+                continue;
+            }
+            int[] verts = quad.getVertices();
+            if (verts.length < 4 * MIN_STRIDE || verts.length / 4 < 6) {
+                result.add(quad);
+                continue;
+            }
+            int stride = verts.length / 4;
+            int[] newVerts = verts.clone();
+            float fdu = s.getU1() - s.getU0(), fdv = s.getV1() - s.getV0();
+            for (int v = 0; v < 4; v++) {
+                int i = v * stride;
+                float u = Float.intBitsToFloat(newVerts[i + 4]);
+                float vv = Float.intBitsToFloat(newVerts[i + 5]);
+                newVerts[i + 4] = Float.floatToIntBits((u - s.getU0()) / fdu);
+                newVerts[i + 5] = Float.floatToIntBits((vv - s.getV0()) / fdv);
+            }
+            result.add(new BakedQuad(newVerts, quad.getTintIndex(), quad.getDirection(), s, quad.isShade()));
+        }
+        return result;
+    }
+
+    /**
+     * Развёртывание sprite-local [0..1] UV в область {@code to} (u0,v0 + du,dv).
+     * Обратна {@link #normalizeQuadUvs}.
+     */
+    public static List<BakedQuad> expandQuadUvsUnit(List<BakedQuad> quads,
+                                                    float u0, float v0, float du, float dv,
+                                                    TextureAtlasSprite spriteMeta) {
+        if (quads == null || quads.isEmpty()) {
+            return quads;
+        }
+        return remapQuadUvsUnit(quads, 0f, 0f, 1f, 1f, u0, v0, du, dv, spriteMeta);
+    }
+
+    /** Общий аффинный ремап: uv' = toOrigin + (uv - fromOrigin)/fromSize * toSize. */
+    private static List<BakedQuad> remapQuadUvsUnit(List<BakedQuad> quads,
+                                                    float fu0, float fv0, float fdu, float fdv,
+                                                    float tu0, float tv0, float tdu, float tdv,
+                                                    TextureAtlasSprite spriteMeta) {
+        List<BakedQuad> result = new ArrayList<>(quads.size());
+        for (BakedQuad quad : quads) {
+            int[] verts = quad.getVertices();
+            if (verts.length < 4 * MIN_STRIDE) {
+                result.add(quad);
+                continue;
+            }
+            int stride = verts.length / 4;
+            if (stride < 6) {
+                result.add(quad);
+                continue;
+            }
+            int[] newVerts = verts.clone();
+            for (int v = 0; v < 4; v++) {
+                int i = v * stride;
+                float u = Float.intBitsToFloat(newVerts[i + 4]);
+                float vv = Float.intBitsToFloat(newVerts[i + 5]);
+                float lu = (u - fu0) / fdu;
+                float lv = (vv - fv0) / fdv;
+                newVerts[i + 4] = Float.floatToIntBits(tu0 + lu * tdu);
+                newVerts[i + 5] = Float.floatToIntBits(tv0 + lv * tdv);
+            }
+            result.add(new BakedQuad(newVerts, quad.getTintIndex(), quad.getDirection(), spriteMeta, quad.isShade()));
+        }
+        return result;
+    }
+
+    /**
      * Смещение UV всех вершин квада (stride 8 ints: u,v в {@code base+4}, {@code base+5}).
      * Для текстурной анимации как GL_TEXTURE в 1.7.10.
      */

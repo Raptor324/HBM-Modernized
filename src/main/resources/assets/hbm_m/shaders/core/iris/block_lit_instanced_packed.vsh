@@ -21,6 +21,13 @@ layout(location = 8)  in vec4 InstLightC01;  // corner0.uv, corner1.uv
 layout(location = 9)  in vec4 InstLightC23;
 layout(location = 10) in vec4 InstLightC45;
 layout(location = 11) in vec4 InstLightC67;
+// Sprite-rect ремап (identity 0,0,1,1 = passthrough) — см. block_lit_instanced.vsh.
+layout(location = 12) in vec4 InstUvRect;
+// Per-instance RGBA-тинт (накал/свечение частей; RGB может быть > 1 — overbright).
+layout(location = 13) in vec4 InstColor;
+// Пространственный фоллофф тинта в модельных координатах: x = ось (0/1/2, <0 = off),
+// y = координата полного тинта, z = координата нуля (плавный smoothstep между ними).
+layout(location = 14) in vec4 GradParams;
 
 uniform mat4 iris_ModelViewMat;
 uniform mat4 iris_ProjMat;
@@ -32,6 +39,7 @@ out float vertexDistance;
 out vec3 fragNormal;
 out vec3 worldNormal;
 out float vFadeAlpha;
+out vec4 vColor;
 
 mat4 quatToMat4(vec4 q) {
     float xx = q.x * q.x;
@@ -92,7 +100,22 @@ void main() {
     vec4 viewPos = modelView * vec4(Position, 1.0);
     gl_Position = iris_ProjMat * viewPos;
 
-    texCoord = UV0;
+    // Пространственный фоллофф тинта + эмиссия: gt — вес градиента (1 у источника,
+    // 0 на дальнем конце, smoothstep); vColor = mix(white, tint, gt); lightmap
+    // доворачивается к fullbright на InstColor.a (heat) * gt — свечение следует
+    // тинту по всей текстуре (раскалённый металл), см. MachineSpecBuilder.tintOverride.
+    float glow = 0.0;
+    vColor = InstColor;
+    if (GradParams.x >= 0.0) {
+        float gCoord = GradParams.x < 0.5 ? Position.x : (GradParams.x < 1.5 ? Position.y : Position.z);
+        float gt = clamp((gCoord - GradParams.z) / (GradParams.y - GradParams.z), 0.0, 1.0);
+        gt = gt * gt * (3.0 - 2.0 * gt);
+        vColor = mix(vec4(1.0), InstColor, gt);
+        glow = gt;
+    }
+    uvLm = mix(uvLm, vec2(240.0), clamp(InstColor.a * glow, 0.0, 1.0));
+
+    texCoord = InstUvRect.xy + UV0 * InstUvRect.zw;
     // Центр 16x16 ячейки lightmap — как ванильный блок UV2 -> texcoord.
     lightmapUV = (uvLm + vec2(8.0)) / 256.0;
     // Сырые уровни света 0..1 — их пакует FSH в формат gbuffer пака.

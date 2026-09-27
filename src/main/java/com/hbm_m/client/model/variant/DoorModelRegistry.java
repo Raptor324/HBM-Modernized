@@ -199,7 +199,11 @@ public class DoorModelRegistry implements ResourceManagerReloadListener {
     @Override
     public void onResourceManagerReload(ResourceManager resourceManager) {
         MainRegistry.LOGGER.info("Reloading door model configurations...");
-        
+
+        // Canonical-бейки дверных частей держат спрайты прошлого стича атласа.
+        com.hbm_m.client.loader.DoorModelLoader.clearCanonicalCache();
+        com.hbm_m.client.render.implementations.MachineDoorRenderer.clearPartSpriteCache();
+
         // Сохраняем пользовательские настройки по умолчанию
         Map<String, DoorModelSelection> savedDefaults = new LinkedHashMap<>(defaultSelections);
         

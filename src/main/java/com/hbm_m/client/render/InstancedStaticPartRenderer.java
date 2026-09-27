@@ -76,11 +76,22 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
     //   InstLightC23  vec4 (loc 9) @ 18   -- c2.uv, c3.uv
     //   InstLightC45  vec4 (loc 10) @ 22   -- c4.uv, c5.uv
     //   InstLightC67  vec4 (loc 11) @ 26  -- c6.uv, c7.uv
+    //   InstUvRect    vec4 (loc 12) @ 30  -- uv0.x, uv0.y, du, dv (sprite-local VBO → atlas;
+    //                                     identity 0,0,1,1 для обычных машин, см. UVRECT_FLOAT_OFFSET)
+    //   InstColor     vec4 (loc 13) @ 34  -- per-instance RGBA-тинт (накал/свечение частей; RGB
+    //                                     может быть > 1 — overbright), white = passthrough
+    //   GradParams    vec4 (loc 14) @ 38  -- пространственный фоллофф тинта в МОДЕЛЬНЫХ координатах:
+    //                                     x = ось (0/1/2, <0 = выключен), y = координата полного
+    //                                     тинта (источник), z = координата нуля; плавный
+    //                                     smoothstep между ними (block_lit_instanced.vsh)
     static final int INSTANCE_ATTRIB_FIRST = 4;
     static final int LIGHT_FLOAT_OFFSET = 14;
-    static final int INSTANCE_DATA_SIZE = 30;
+    static final int UVRECT_FLOAT_OFFSET = 30;
+    static final int TINT_FLOAT_OFFSET = 34;
+    static final int GRAD_FLOAT_OFFSET = 38;
+    /** public: читается culling-пакетом (NucleusGpuCuller) и моддев-артефактами. */
+    public static final int INSTANCE_DATA_SIZE = 42;
 
-    final boolean storesPerInstancePartBone;
     final int instanceDataSize;
     final int instanceAttribLast;
     final int instanceFadeFloatOffset;
@@ -103,8 +114,8 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
     static volatile boolean warnedInstancedShaderNullFlush;
 
     /**
-     * Фаза-2 отложенное затухание прямого пути (GPU-bones chain-части и
-     * MDI-fallback): {@code flush()} на прямом пути рисует только opaque-инстансы,
+     * Фаза-2 отложенное затухание прямого пути (MDI-fallback): {@code flush()} на
+     * прямом пути рисует только opaque-инстансы,
      * а затухающие копирует в {@link #fadingSnapshot}; их добирает
      * {@link #flushFading(Matrix4f)} ПОСЛЕ MDI-мульти-драва (см.
      * InstancedRenderFrame). Иначе полупрозрачная геометрия, нарисованная раньше
@@ -115,6 +126,46 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
     FloatBuffer fadingSnapshot;
 
     final float[] instanceLightUV = new float[maxInstances * 2];
+
+    /**
+     * Текущий uvRect записи ({u0, v0, du, dv}); identity {0,0,1,1} для обычных машин.
+     * Заполняется из {@link #addInstance} (новый 7-arg-оверрайд с uvRect) перед записью
+     * рекорда и чтением {@code recordMatchesBuffer}; теневой батч пишет его же в рекорд.
+     */
+    final float[] tmpUvRect = {0f, 0f, 1f, 1f};
+    private static final float[] IDENTITY_UV_RECT = {0f, 0f, 1f, 1f};
+
+    /** Активный uvRect (для рекордов теневого батча); всегда length 4. */
+    float[] getActiveUvRect() {
+        return tmpUvRect;
+    }
+
+    /**
+     * Текущий RGBA-тинт записи; RGB white = passthrough, A = сила эмиссии (heat 0..1) —
+     * шейдеры доворачивают lightmap к fullbright на tint*gradient (glow следует тинту).
+     * Заполняется из {@link #addInstance} перед записью рекорда; теневой батч пишет его же
+     * в рекорд (теневой FB цвет не использует — важно только выравнивание стрида).
+     */
+    final float[] tmpTint = {1f, 1f, 1f, 0f};
+    private static final float[] WHITE_TINT = {1f, 1f, 1f, 0f};
+
+    /**
+     * Текущий пространственный фоллофф тинта {axis, fullCoord, zeroCoord, pad};
+     * axis &lt; 0 = выключен (множитель 1). Конфиг статический на часть
+     * ({@code MachineSpecBuilder.tintFalloff}), но пишется в рекорд инстанса —
+     * шейдер считает градиент по модельным координатам вершины.
+     */
+    final float[] tmpGrad = {-1f, 0f, 0f, 0f};
+
+    /** Активный фоллофф (для рекордов теневого батча); всегда length 4. */
+    float[] getActiveGrad() {
+        return tmpGrad;
+    }
+
+    /** Активный тинт (для рекордов теневого батча); всегда length 4. */
+    float[] getActiveTint() {
+        return tmpTint;
+    }
 
     final Vector3f posTmp = new Vector3f();
     final Quaternionf rotTmp = new Quaternionf();
@@ -135,6 +186,15 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
     private FloatBuffer vboShadow;
     private int vboShadowFloats = 0;
     private boolean vboShadowValid = false;
+    private static long activeAnchorGen = -1L;
+    private long lastAnchorGen = -1L;
+
+    public static void onRenderOriginChanged() {
+        activeAnchorGen = FrameViewState.anchorGeneration();
+        // Записи якорно-относительны: сдвиг якоря протухает их все — fast-path
+        // roster-assert обязан выдать worldGen-мисс и уйти в полный пересбор.
+        NucleusRenderVersion.bump();
+    }
     /** Оценка VRAM этого рендерера (вершины+индексы+instance VBO); 0 = не учтён. */
     private long vramBytes = 0;
 
@@ -153,27 +213,19 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
     final VanillaInstancedBatchRenderer vanillaHelper;
     private final IrisInstancedBatchRenderer irisHelper;
 
-    // ── Scratch for addInstanceGpuBones ─────────────────────────────────
-    private final Matrix4f tmpInstanceMat = new Matrix4f();
+    // ── Scratch ─────────────────────────────────────────────────────────
     private final Matrix4f tmpCompositeMat = new Matrix4f();
 
     // ── Constructors ───────────────────────────────────────────────────
 
     public InstancedStaticPartRenderer(SingleMeshVboRenderer.VboData data) {
-        this(data, null, false);
-    }
-    public InstancedStaticPartRenderer(SingleMeshVboRenderer.VboData data, List<BakedQuad> quadsForIris) {
-        this(data, quadsForIris, false);
+        this(data, null);
     }
 
-    /**
-     * @param storesPerInstancePartBone assembler arms: {@link #addInstanceGpuBones} (no MDI atlas).
-     */
-    public InstancedStaticPartRenderer(SingleMeshVboRenderer.VboData data, List<BakedQuad> quadsForIris, boolean storesPerInstancePartBone) {
+    public InstancedStaticPartRenderer(SingleMeshVboRenderer.VboData data, List<BakedQuad> quadsForIris) {
         this.quadsForIris = quadsForIris;
-        this.storesPerInstancePartBone = storesPerInstancePartBone;
         this.instanceDataSize = INSTANCE_DATA_SIZE;
-        this.instanceAttribLast = 11;
+        this.instanceAttribLast = 14;
         this.instanceFadeFloatOffset = 13; // InstBboxSize.w
         this.lightFloatCount = 16;
         this.tmpCornerUV = new float[lightFloatCount];
@@ -286,6 +338,21 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
             GL20.glVertexAttribPointer(11, 4, GL11.GL_FLOAT, false, stride, (LIGHT_FLOAT_OFFSET + 12) * 4L);
             InstancedGlCompat.glVertexAttribDivisorCompat(11, 1);
 
+            // InstUvRect vec4 (loc 12): sprite-rect ремап normalized-VBO → атлас.
+            GL20.glEnableVertexAttribArray(12);
+            GL20.glVertexAttribPointer(12, 4, GL11.GL_FLOAT, false, stride, UVRECT_FLOAT_OFFSET * 4L);
+            InstancedGlCompat.glVertexAttribDivisorCompat(12, 1);
+
+            // InstColor vec4 (loc 13): per-instance RGBA-тинт (white = passthrough).
+            GL20.glEnableVertexAttribArray(13);
+            GL20.glVertexAttribPointer(13, 4, GL11.GL_FLOAT, false, stride, TINT_FLOAT_OFFSET * 4L);
+            InstancedGlCompat.glVertexAttribDivisorCompat(13, 1);
+
+            // GradParams vec4 (loc 14): пространственный фоллофф тинта (axis<0 = off).
+            GL20.glEnableVertexAttribArray(14);
+            GL20.glVertexAttribPointer(14, 4, GL11.GL_FLOAT, false, stride, GRAD_FLOAT_OFFSET * 4L);
+            InstancedGlCompat.glVertexAttribDivisorCompat(14, 1);
+
             GL30.glBindVertexArray(0);
 
             instanceBuffer = MemoryUtil.memAllocFloat(maxInstances * instanceDataSize);
@@ -306,7 +373,7 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
                 }
             });
 
-            if (!storesPerInstancePartBone && data.byteBuffer != null && data.indices != null
+            if (data.byteBuffer != null && data.indices != null
                     && data.indices.remaining() > 0) {
                 try {
                     java.nio.ByteBuffer srcVb = data.byteBuffer.duplicate();
@@ -379,8 +446,9 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
     void convertToWorldRecord(Matrix4f composed) {
         tmpWorldMat.set(FrameViewState.inverseViewRotation()).mul(composed);
         tmpWorldMat.getTranslation(posTmp);
-        posTmp.add(FrameViewState.camX(), FrameViewState.camY(), FrameViewState.camZ());
+        posTmp.add(FrameViewState.relCamX(), FrameViewState.relCamY(), FrameViewState.relCamZ());
         tmpWorldMat.getNormalizedRotation(rotTmp);
+        rotTmp.normalize();
     }
 
     void memPutInstanceRecordAtBaseFloat(int baseFloatIndex) {
@@ -404,13 +472,27 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
         // fade квантуется до 1/255: иначе плавный ramp фейда по дистанции меняет
         // младшие биты каждый кадр и span-дифф GpuSpanUploader никогда не сходит
         // в ноль при движении камеры. 8 бит альфы на глаз неотличимы.
-        float fade = SingleMeshVboRenderer.getFadeAlpha();
-        fade = Math.round(fade * 255.0f) * (1.0f / 255.0f);
+        float fade = quantizeFade(SingleMeshVboRenderer.getFadeAlpha());
         MemoryUtil.memPutFloat(a + 52, fade);
         long lightA = a + (long) LIGHT_FLOAT_OFFSET * 4L;
         for (int i = 0; i < lightFloatCount; i++) {
             MemoryUtil.memPutFloat(lightA + (long) i * 4L, tmpCornerUV[i]);
         }
+        long uvA = a + (long) UVRECT_FLOAT_OFFSET * 4L;
+        MemoryUtil.memPutFloat(uvA, tmpUvRect[0]);
+        MemoryUtil.memPutFloat(uvA + 4, tmpUvRect[1]);
+        MemoryUtil.memPutFloat(uvA + 8, tmpUvRect[2]);
+        MemoryUtil.memPutFloat(uvA + 12, tmpUvRect[3]);
+        long tintA = a + (long) TINT_FLOAT_OFFSET * 4L;
+        MemoryUtil.memPutFloat(tintA, tmpTint[0]);
+        MemoryUtil.memPutFloat(tintA + 4, tmpTint[1]);
+        MemoryUtil.memPutFloat(tintA + 8, tmpTint[2]);
+        MemoryUtil.memPutFloat(tintA + 12, tmpTint[3]);
+        long gradA = a + (long) GRAD_FLOAT_OFFSET * 4L;
+        MemoryUtil.memPutFloat(gradA, tmpGrad[0]);
+        MemoryUtil.memPutFloat(gradA + 4, tmpGrad[1]);
+        MemoryUtil.memPutFloat(gradA + 8, tmpGrad[2]);
+        MemoryUtil.memPutFloat(gradA + 12, tmpGrad[3]);
     }
 
     /**
@@ -443,13 +525,33 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
         if (MemoryUtil.memGetFloat(a + 40) != sx) return false;
         if (MemoryUtil.memGetFloat(a + 44) != sy) return false;
         if (MemoryUtil.memGetFloat(a + 48) != sz) return false;
-        float fade = SingleMeshVboRenderer.getFadeAlpha();
-        fade = Math.round(fade * 255.0f) * (1.0f / 255.0f);
+        float fade = quantizeFade(SingleMeshVboRenderer.getFadeAlpha());
         if (MemoryUtil.memGetFloat(a + 52) != fade) return false;
         long lightA = a + (long) LIGHT_FLOAT_OFFSET * 4L;
         for (int i = 0; i < lightFloatCount; i++) {
             if (!recEq(MemoryUtil.memGetFloat(lightA + (long) i * 4L), tmpCornerUV[i], LIGHT_EPS)) return false;
         }
+        long uvA = a + (long) UVRECT_FLOAT_OFFSET * 4L;
+        // Точное равенство: rect приходят из стабильных спрайт-границ, меняется
+        // только при смене скина — тогда запись обязана переписаться.
+        if (MemoryUtil.memGetFloat(uvA) != tmpUvRect[0]) return false;
+        if (MemoryUtil.memGetFloat(uvA + 4) != tmpUvRect[1]) return false;
+        if (MemoryUtil.memGetFloat(uvA + 8) != tmpUvRect[2]) return false;
+        if (MemoryUtil.memGetFloat(uvA + 12) != tmpUvRect[3]) return false;
+        long tintA = a + (long) TINT_FLOAT_OFFSET * 4L;
+        // Точное равенство, как у uvRect: резолвер тинта обязан сходиться к стабильным
+        // значениям (иначе skip-write деградирует в ежекадровую запись — не ошибка, но
+        // дешевле в самом резолвере).
+        if (MemoryUtil.memGetFloat(tintA) != tmpTint[0]) return false;
+        if (MemoryUtil.memGetFloat(tintA + 4) != tmpTint[1]) return false;
+        if (MemoryUtil.memGetFloat(tintA + 8) != tmpTint[2]) return false;
+        if (MemoryUtil.memGetFloat(tintA + 12) != tmpTint[3]) return false;
+        long gradA = a + (long) GRAD_FLOAT_OFFSET * 4L;
+        // Фоллофф — статический конфиг части: значения стабильны, сравнение точное.
+        if (MemoryUtil.memGetFloat(gradA) != tmpGrad[0]) return false;
+        if (MemoryUtil.memGetFloat(gradA + 4) != tmpGrad[1]) return false;
+        if (MemoryUtil.memGetFloat(gradA + 8) != tmpGrad[2]) return false;
+        if (MemoryUtil.memGetFloat(gradA + 12) != tmpGrad[3]) return false;
         return true;
     }
 
@@ -492,6 +594,11 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
     void uploadToInstanceVboSpanned(FloatBuffer src, int srcFloatOffset, int destFloatOffset, int floats) {
         if (floats <= 0 || instanceVboId <= 0) {
             return;
+        }
+        if (this.lastAnchorGen != activeAnchorGen) {
+            this.lastAnchorGen = activeAnchorGen;
+            this.vboShadowValid = false;
+            this.mdiBufferSynced = false;
         }
         int need = 64;
         while (need < floats) {
@@ -546,7 +653,7 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
                 VertexConsumer consumer = bufferSource.getBuffer(fade < 0.99f ? RenderType.translucent() : RenderType.solid());
                 var pose = poseStack.last();
                 for (BakedQuad quad : quadsForIris) {
-                    RenderHooks.putBulkData(consumer, pose, quad, 1f, 1f, 1f, fade, packedLight, OverlayTexture.NO_OVERLAY, false);
+                    RenderHooks.putBulkDataShaded(consumer, pose, quad, fade, packedLight, OverlayTexture.NO_OVERLAY, false);
                 }
             }
             return;
@@ -556,6 +663,84 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
     }
 
     // ── addInstance ─────────────────────────────────────────────────────
+
+    /**
+     * Fast-path dirty-skip: может ли слот {@code instanceCount} быть подтверждён
+     * roster-assert'ом для машины {@code posKey} без пересборки записи?
+     * Roster-ключи живут в {@link #instanceOcclusionKeys} (= pos.asLong(), пишется
+     * и в addInstance, и в assert) — содержимое буфера соответствует слоту k,
+     * пока ни одна запись в [0, k] не была переставлена/перезаписана другой машиной.
+     * Только чтение — вызов безопасен в проверочной фазе (до коммита).
+     */
+    public boolean canAssertInstance(long posKey) {
+        return initialized && instanceBuffer != null
+                && instanceCount < maxInstances
+                && instanceOcclusionKeys[instanceCount] == posKey;
+    }
+
+    /**
+     * Квант fade записей инстанс-буфера: 1/255 (см. {@link #memPutInstanceRecordAtBaseFloat}).
+     * Единственная точка квантования — запись, skip-write-сравнение и roster-assert
+     * обязаны сверять один и тот же квант.
+     */
+    public static float quantizeFade(float fade) {
+        return Math.round(fade * 255.0f) * (1.0f / 255.0f);
+    }
+
+    /**
+     * Fast-path dirty-skip с проверкой fade: слот {@code instanceCount} подтверждается
+     * только при совпадении roster-ключа И квантованного fade записи в буфере.
+     * <p>
+     * Дистанционный fade — чистая функция позиции камеры и меняется каждый кадр
+     * движения БЕЗ dirty-события; key-ассерт без этой проверки замораживает альфу
+     * записи до случайного полного пересбора (pop вместо растворения при отдалении,
+     * «застревание» полупрозрачной при приближении). Проверка — одно чтение флоата
+     * из буфера; машины с fade=1 (основная масса) проходят здесь же.
+     */
+    public boolean canAssertInstance(long posKey, float expectedQuantizedFade) {
+        if (!canAssertInstance(posKey)) {
+            return false;
+        }
+        long fadeAddr = instanceBufferAddress
+                + ((long) instanceCount * instanceDataSize + instanceFadeFloatOffset) * 4L;
+        return MemoryUtil.memGetFloat(fadeAddr) == expectedQuantizedFade;
+    }
+
+    /**
+     * Коммит roster-assert для машины {@code blockPos}: содержимое буфера уже
+     * содержит запись прошлого кадра (clear() после флаша сбрасывает только
+     * position), инстанс просто продлевает своё присутствие — без матриц,
+     * света и сравнения флоатов. Вызывать ТОЛЬКО после {@link #canAssertInstance}.
+     */
+    public void assertCleanInstance(BlockPos blockPos) {
+        if (instanceCount >= maxInstances) {
+            return;
+        }
+        long key = OcclusionCullingHelper.occlusionKeyForBlock(blockPos);
+        if (instanceOcclusionKeys[instanceCount] != key) {
+            return; // защитно: вызывающий обязан проверить canAssertInstance
+        }
+        if (instanceCount == 0) {
+            overflowLogged = false;
+            mdiRecordWriteHappened = false;
+            var level = Minecraft.getInstance().level;
+            batchSkyDarken = (level != null) ? level.getSkyDarken(1.0f) : -1f;
+        }
+        instanceCullIndices[instanceCount] = -1;
+        instanceCount++;
+        ((Buffer) instanceBuffer).position(instanceDataSize * instanceCount);
+    }
+
+    /**
+     * Содержимое instance-буфера больше не соответствует roster-ключам
+     * (renderSingle перезаписал слот 0). Все canAssertInstance начнут выдавать
+     * миссы → машины уйдут в полный пересбор.
+     */
+    void invalidateRoster() {
+        if (instanceOcclusionKeys.length > 0) {
+            instanceOcclusionKeys[0] = Long.MIN_VALUE;
+        }
+    }
 
     public void addInstance(PoseStack poseStack, int packedLight, BlockPos blockPos, @Nullable BlockEntity blockEntity) {
         addInstance(poseStack, packedLight, blockPos, blockEntity, null);
@@ -575,7 +760,73 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
     public void addInstance(PoseStack poseStack, int packedLight, BlockPos blockPos,
                             @Nullable BlockEntity blockEntity, @Nullable MultiBufferSource bufferSource,
                             @Nullable float[] sharedCornerUV8) {
+        addInstance(poseStack, packedLight, blockPos, blockEntity, bufferSource, sharedCornerUV8, null);
+    }
+
+    /**
+     * Полная форма: {@code uvRect} = {u0, v0, du, dv} ремапа sprite-local VBO в атлас
+     * (текстурно-вариантные части дверей; null/identity — обычные машины с атласными UV);
+     * {@code tint} = {r,g,b,a} per-instance цветовой множитель (null/white — passthrough;
+     * RGB может быть &gt; 1 — overbright-накал, см. блок_lit InstColor).
+     */
+    public void addInstance(PoseStack poseStack, int packedLight, BlockPos blockPos,
+                            @Nullable BlockEntity blockEntity, @Nullable MultiBufferSource bufferSource,
+                            @Nullable float[] sharedCornerUV8, @Nullable float[] uvRect) {
+        addInstance(poseStack, packedLight, blockPos, blockEntity, bufferSource, sharedCornerUV8, uvRect, null);
+    }
+
+    /** Полная форма с per-instance тинтом; см. 7-arg перегрузку для описания остальных параметров. */
+    public void addInstance(PoseStack poseStack, int packedLight, BlockPos blockPos,
+                            @Nullable BlockEntity blockEntity, @Nullable MultiBufferSource bufferSource,
+                            @Nullable float[] sharedCornerUV8, @Nullable float[] uvRect,
+                            @Nullable float[] tint) {
+        addInstance(poseStack, packedLight, blockPos, blockEntity, bufferSource, sharedCornerUV8, uvRect, tint, null);
+    }
+
+    /**
+     * Полная форма с тинтом и фоллоффом. {@code grad} = {axis (0/1/2, &lt;0 = off),
+     * fullCoord, zeroCoord, pad} — конфиг части ({@code MachineSpecBuilder.tintFalloff}),
+     * фоллофф применяется в шейдере по модельным координатам вершины.
+     */
+    public void addInstance(PoseStack poseStack, int packedLight, BlockPos blockPos,
+                            @Nullable BlockEntity blockEntity, @Nullable MultiBufferSource bufferSource,
+                            @Nullable float[] sharedCornerUV8, @Nullable float[] uvRect,
+                            @Nullable float[] tint, @Nullable float[] grad) {
         if (!initialized) return;
+
+        if (uvRect != null && uvRect.length >= 4) {
+            tmpUvRect[0] = uvRect[0];
+            tmpUvRect[1] = uvRect[1];
+            tmpUvRect[2] = uvRect[2];
+            tmpUvRect[3] = uvRect[3];
+        } else {
+            tmpUvRect[0] = 0f;
+            tmpUvRect[1] = 0f;
+            tmpUvRect[2] = 1f;
+            tmpUvRect[3] = 1f;
+        }
+        if (tint != null && tint.length >= 4) {
+            tmpTint[0] = tint[0];
+            tmpTint[1] = tint[1];
+            tmpTint[2] = tint[2];
+            tmpTint[3] = tint[3];
+        } else {
+            tmpTint[0] = 1f;
+            tmpTint[1] = 1f;
+            tmpTint[2] = 1f;
+            tmpTint[3] = 0f;
+        }
+        if (grad != null && grad.length >= 4 && grad[0] >= 0f) {
+            tmpGrad[0] = grad[0];
+            tmpGrad[1] = grad[1];
+            tmpGrad[2] = grad[2];
+            tmpGrad[3] = grad[3];
+        } else {
+            tmpGrad[0] = -1f;
+            tmpGrad[1] = 0f;
+            tmpGrad[2] = 0f;
+            tmpGrad[3] = 0f;
+        }
 
         // Shadow pass (обе платформы): немедленная отрисовка через АКТИВНЫЙ
         // per-BE батч (быстрый путь, см. IrisRenderBatch.begin). Раньше блок
@@ -594,12 +845,18 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
             }
             if (quadsForIris != null && !quadsForIris.isEmpty() && bufferSource != null) {
                 // Fallback в bufferSource при открытом shadow-батче — см. detach-комментарий в renderSingle.
+                // Тинт читаем из tmpTint (заполнен выше в этом addInstance) — тени цвет не
+                // используют, но alpha/overbright не должны теряться на fallback-пути.
                 com.hbm_m.client.render.shader.IrisRenderBatch.detachCompanionVaoForVanillaWork();
                 float fade = SingleMeshVboRenderer.getFadeAlpha();
+                float tr = tmpTint[0], tg = tmpTint[1], tb = tmpTint[2];
                 VertexConsumer consumer = bufferSource.getBuffer(fade < 0.99f ? RenderType.translucent() : RenderType.solid());
                 var pose = poseStack.last();
                 for (BakedQuad quad : quadsForIris) {
-                    RenderHooks.putBulkData(consumer, pose, quad, 1f, 1f, 1f, fade, packedLight, OverlayTexture.NO_OVERLAY, false);
+                    float shade = RenderHooks.quadShade(quad.getDirection());
+                    RenderHooks.putBulkData(consumer, pose, quad,
+                            shade * tr, shade * tg, shade * tb, fade, packedLight,
+                            OverlayTexture.NO_OVERLAY, false);
                 }
             }
             return;
@@ -712,106 +969,6 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
     /** Identity ModelViewMat для теневого инстанс-дроука (записи уже в shadow-space). */
     private static final Matrix4f IDENTITY_MV = new Matrix4f();
 
-    // ── addInstanceGpuBones ────────────────────────────────────────────
-
-    public void addInstanceGpuBones(PoseStack baseBlockPose, Matrix4f partLocalToBlock,
-                                    int packedLight, BlockPos blockPos,
-                                    @Nullable BlockEntity blockEntity, @Nullable MultiBufferSource bufferSource) {
-        addInstanceGpuBones(baseBlockPose, partLocalToBlock, packedLight, blockPos, blockEntity, bufferSource, null);
-    }
-
-    public void addInstanceGpuBones(PoseStack baseBlockPose, Matrix4f partLocalToBlock,
-                                    int packedLight, BlockPos blockPos,
-                                    @Nullable BlockEntity blockEntity, @Nullable MultiBufferSource bufferSource,
-                                    @Nullable float[] sharedCornerUV8) {
-        if (!initialized || !storesPerInstancePartBone) {
-            addInstance(baseBlockPose, packedLight, blockPos, blockEntity, bufferSource, sharedCornerUV8);
-            return;
-        }
-
-        // Shadow pass: при включённом глобальном батче — запись в коллектор
-        // (per-BE begin(true)+close = apply/clear пака на КАЖДЫЙ BER, ~14% кадра
-        // на ферме ассемблеров — устранено). Без батча — putBulkData.
-        // Инстансный путь: main-проход НЕ рисует немедленно — падает в общий
-        // хвост записи ниже; флаш сделает ОДИН дроук (bake — родной программой
-        // пака при любой схеме; наш ExtendedShader — при распознанной packed).
-        // Иначе анимированные части уходят в поштучный drawSingleWithIrisExtended
-        // (26.9% CPU под BSL, профиль 0914 03:01).
-        boolean external = ShaderCompatibilityDetector.isExternalShaderActive();
-        boolean shadowPass = ShaderCompatibilityDetector.isRenderingShadowPass();
-        boolean instancedMainPath = !shadowPass && external
-                && (ClientRenderFlags.irisTrueInstancing() || NucleusGpuBaker.isEnabled());
-
-        if (external && !instancedMainPath) {
-            PoseStack composed = new PoseStack();
-            composed.pushPose();
-            composed.last().pose().set(baseBlockPose.last().pose()).mul(partLocalToBlock);
-            try {
-                if (shadowPass
-                        && IrisShadowBatchCollector.isBatchingEnabled()
-                        && irisHelper.tryRecordShadowInstance(composed, packedLight, blockPos, blockEntity)) {
-                    return;
-                }
-                if (irisHelper.drawSingleWithIrisExtended(composed, packedLight, blockPos, blockEntity)) {
-                    return;
-                }
-                if (quadsForIris != null && !quadsForIris.isEmpty() && bufferSource != null) {
-                    // Fallback в bufferSource при открытом shadow-батче — см. detach-комментарий в renderSingle.
-                    com.hbm_m.client.render.shader.IrisRenderBatch.detachCompanionVaoForVanillaWork();
-                    float fade = SingleMeshVboRenderer.getFadeAlpha();
-                    VertexConsumer consumer = bufferSource.getBuffer(fade < 0.99f ? RenderType.translucent() : RenderType.solid());
-                    var pose = composed.last();
-                    for (BakedQuad quad : quadsForIris) {
-                        // Раньше на neoforge тело цикла было ПУСТЫМ (putBulkData
-                        // только в forge/fabric ветках) — fallback не рисовал ничего.
-                        RenderHooks.putBulkData(consumer, pose, quad, 1f, 1f, 1f, fade, packedLight, OverlayTexture.NO_OVERLAY, false);
-                    }
-                }
-            } finally {
-                composed.popPose();
-            }
-            return;
-        }
-
-        if (instanceCount >= maxInstances) {
-            OVERFLOW_ADD_COUNT.incrementAndGet();
-            if (!overflowLogged) {
-                overflowLogged = true;
-                MainRegistry.LOGGER.warn(
-                        "InstancedStaticPartRenderer overflow: maxInstances={} reached for tag={}, skipping extra instances until next flush",
-                        maxInstances, mdiTraceTag);
-            }
-            return;
-        }
-        if (instanceCount == 0) {
-            overflowLogged = false;
-            mdiRecordWriteHappened = false;
-            var level = Minecraft.getInstance().level;
-            batchSkyDarken = (level != null) ? level.getSkyDarken(1.0f) : -1f;
-        }
-
-        Matrix4f mat = baseBlockPose.last().pose();
-        tmpInstanceMat.set(mat).mul(partLocalToBlock);
-        tmpCompositeMat.set(RenderSystem.getModelViewMatrix()).mul(tmpInstanceMat);
-        convertToWorldRecord(tmpCompositeMat);
-
-        fillInstanceCornerLight(blockEntity, packedLight, blockPos, mat, sharedCornerUV8);
-
-        int slot = instanceCount;
-        int baseFloat = slot * instanceDataSize;
-        // Skip-write: см. addInstance — сравнение с записью прошлого флаша.
-        if (!recordMatchesBuffer(baseFloat)) {
-            memPutInstanceRecordAtBaseFloat(baseFloat);
-            mdiRecordWriteHappened = true;
-        }
-        instanceCount++;
-        ((Buffer) instanceBuffer).position(instanceDataSize * instanceCount);
-    }
-
-    public boolean usesGpuPartBonePath() {
-        return storesPerInstancePartBone && isInitialized();
-    }
-
     /**
      * Fills {@link #tmpCornerUV} for the instanced VBO and, when Iris flush needs it,
      * {@link #instanceLightUV} for the current slot.
@@ -868,11 +1025,6 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
         flush(RenderSystem.getProjectionMatrix());
     }
 
-    //? if forge {
-    public void flush(net.minecraftforge.client.event.RenderLevelStageEvent event) {
-        flush(event.getProjectionMatrix());
-    }
-    //?}
 
     /**
      * Обязательный re-bind atlas + lightmap после {@link ShaderInstance#apply()} и перед glDraw*.
@@ -956,9 +1108,9 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
      */
     public float fadingSortKeyDistSq() {
         if (deferredFadingCount <= 0 || fadingSnapshot == null) return -1f;
-        float dx = fadingSnapshot.get(0) - FrameViewState.camX();
-        float dy = fadingSnapshot.get(1) - FrameViewState.camY();
-        float dz = fadingSnapshot.get(2) - FrameViewState.camZ();
+        float dx = fadingSnapshot.get(0) - FrameViewState.relCamX();
+        float dy = fadingSnapshot.get(1) - FrameViewState.relCamY();
+        float dz = fadingSnapshot.get(2) - FrameViewState.relCamZ();
         return dx * dx + dy * dy + dz * dz;
     }
 
@@ -974,8 +1126,14 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
      * ({@code MdiBatchCoordinator.partitionOpaqueFirst}) и прямого пути
      * ({@code flushBatchVanilla}): «непрозрачные раньше затухающих» обязан
      * соблюдаться во ВСЕХ путях рендера одинаково.
+     *
+     * @param parallelKeys необязательный параллельный массив roster-ключей
+     *                     (машина на слот): переставляется синхронно с записями,
+     *                     чтобы соответствие «ключ ⇔ запись в слоте» сохранилось
+     *                     после партиции (fast-path dirty-skip). null — не трогать.
      */
-    static int partitionInstancesOpaqueFirst(FloatBuffer buf, int instanceCount, int floatsPerInstance, int fadeOffset) {
+    static int partitionInstancesOpaqueFirst(FloatBuffer buf, int instanceCount, int floatsPerInstance, int fadeOffset,
+                                             long[] parallelKeys) {
         int n = instanceCount;
         if (buf == null || n <= 0) return 0;
 
@@ -988,6 +1146,7 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
         if (fadeTotal == 0) return n;
 
         FloatBuffer tmp = MemoryUtil.memAllocFloat(n * floatsPerInstance);
+        long[] tmpKeys = parallelKeys != null ? new long[n] : null;
         try {
             int[] fadeIdx = new int[fadeTotal];
             float[] fadeDistSq = new float[fadeTotal];
@@ -1004,6 +1163,9 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
                     k++;
                 } else {
                     copyInstanceRecord(buf, recBase, tmp, opaqueWrote * floatsPerInstance, floatsPerInstance);
+                    if (tmpKeys != null) {
+                        tmpKeys[opaqueWrote] = parallelKeys[i];
+                    }
                     opaqueWrote++;
                 }
             }
@@ -1023,9 +1185,15 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
             int dst = opaqueWrote;
             for (int a = 0; a < fadeTotal; a++, dst++) {
                 copyInstanceRecord(buf, fadeIdx[a] * floatsPerInstance, tmp, dst * floatsPerInstance, floatsPerInstance);
+                if (tmpKeys != null) {
+                    tmpKeys[dst] = parallelKeys[fadeIdx[a]];
+                }
             }
             MemoryUtil.memCopy(MemoryUtil.memAddress(tmp), MemoryUtil.memAddress(buf),
                     (long) n * floatsPerInstance * 4L);
+            if (tmpKeys != null) {
+                System.arraycopy(tmpKeys, 0, parallelKeys, 0, n);
+            }
             return n - fadeTotal;
         } finally {
             MemoryUtil.memFree(tmp);

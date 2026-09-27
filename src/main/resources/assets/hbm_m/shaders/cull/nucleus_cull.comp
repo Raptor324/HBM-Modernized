@@ -1,0 +1,232 @@
+/**
+ * GPU Compute Hierarchical-Z Occlusion Culling and Stream Compaction.
+ * Performs 6-plane view-frustum culling, bounding sphere projection, Forward-Z Hi-Z
+ * occlusion testing against the depth pyramid, and atomic stream compaction for MDI draws.
+ *
+ * Workgroup = 32 lanes = one tile of instances. Survivors are compacted two ways:
+ *  - Ballot path (NUCLEUS_BALLOT, injected by NucleusGpuCuller when
+ *    GL_KHR_shader_subgroup is present and subgroup size is 32): warp-level
+ *    subgroupBallot compaction — ONE atomicAdd per tile, no shared memory, no barriers.
+ *  - Fallback: shared-memory inclusive prefix sum (Hillis-Steele) — ONE atomicAdd
+ *    per tile, ordered dense slots.
+ * Both paths produce the same dense deterministic slot layout.
+ *
+ * @credit CrankShaft / fewizz / Jdb100
+ */
+#version 430 core
+// Instance record stride in floats — injected at load time by NucleusGpuCuller from
+// InstancedStaticPartRenderer.INSTANCE_DATA_SIZE (the literal below is only a fallback
+// so the file stays readable standalone; a drift here tore every GPU-culled batch apart).
+#define INST_STRIDE 42u
+
+layout(local_size_x = 32) in;
+
+struct DrawCommand {
+    uint count;
+    uint instanceCount;
+    uint firstIndex;
+    int  baseVertex;
+    uint baseInstance;
+    uint originalCount;
+    uint pad1;
+    uint pad2;
+};
+
+layout(std430, binding = 0) readonly buffer InInstances {
+    float inData[];
+};
+
+layout(std430, binding = 1) writeonly buffer OutInstances {
+    float outData[];
+};
+
+layout(std430, binding = 2) buffer DrawCommands {
+    DrawCommand commands[];
+};
+
+layout(binding = 10) uniform sampler2D uDepthPyramid;
+
+uniform uint uNumCommands;
+uniform int uPyramidLevels;
+uniform vec2 uViewSize;
+uniform mat4 uViewMat;
+uniform float uZNear;
+uniform float uZFar;
+uniform float uP00;
+uniform float uP11;
+uniform vec4 uFrustumPlanes[6];
+uniform uint uFrustumOnly;
+
+shared uint sVis[32];
+shared uint sScanBase;
+
+vec3 quatRotate(vec4 q, vec3 v) {
+    return v + 2.0 * cross(q.xyz, cross(q.xyz, v) + q.w * v);
+}
+
+bool testFrustum(vec3 center, float radius) {
+    for (int i = 0; i < 6; i++) {
+        if (dot(uFrustumPlanes[i].xyz, center) + uFrustumPlanes[i].w < -radius) {
+            return false;
+        }
+    }
+    return true;
+}
+
+bool projectSphere(vec3 c, float r, float znear, float P00, float P11, out vec4 aabb) {
+    if (c.z + r > -znear) {
+        return false;
+    }
+
+    vec3 cr = c * r;
+    float czr2 = c.z * c.z - r * r;
+
+    float vx = sqrt(c.x * c.x + czr2);
+    float minx = (vx * c.x - cr.z) / (vx * c.z + cr.x);
+    float maxx = (vx * c.x + cr.z) / (vx * c.z - cr.x);
+
+    float vy = sqrt(c.y * c.y + czr2);
+    float miny = (vy * c.y - cr.z) / (vy * c.z + cr.y);
+    float maxy = (vy * c.y + cr.z) / (vy * c.z - cr.y);
+
+    aabb = vec4(minx * P00, miny * P11, maxx * P00, maxy * P11);
+    aabb = aabb.xwzy * vec4(-0.5f, -0.5f, -0.5f, -0.5f) + vec4(0.5f);
+
+    return true;
+}
+
+float hizOccluder(vec4 aabb) {
+    vec4 uv = clamp(vec4(min(aabb.xy, aabb.zw), max(aabb.xy, aabb.zw)), 0.0, 1.0);
+    ivec4 rect = ivec4(uv * uViewSize.xyxy + vec4(0.5, 0.5, -0.5, -0.5));
+    if (any(lessThan(rect.zw, rect.xy))) {
+        return -1.0;
+    }
+    rect = min(rect, ivec4(uViewSize.xyxy) - 1) >> 1;
+
+    ivec2 extent = rect.zw - rect.xy;
+    int level = max(findMSB(max(extent.x, extent.y)), 0);
+    level += any(greaterThan((rect.zw >> level) - (rect.xy >> level), ivec2(1))) ? 1 : 0;
+    level = min(level, uPyramidLevels - 1);
+
+    ivec4 bounds = rect >> level;
+
+    float depth01 = texelFetch(uDepthPyramid, bounds.xw, level).r;
+    float depth11 = texelFetch(uDepthPyramid, bounds.zw, level).r;
+    float depth10 = texelFetch(uDepthPyramid, bounds.zy, level).r;
+    float depth00 = texelFetch(uDepthPyramid, bounds.xy, level).r;
+
+    return max(max(depth00, depth01), max(depth10, depth11));
+}
+
+bool testInstanceVisibility(uint inIdx) {
+    uint inFloatOff = inIdx * INST_STRIDE;
+
+    vec3 instPos = vec3(inData[inFloatOff + 0u], inData[inFloatOff + 1u], inData[inFloatOff + 2u]);
+    vec4 instRot = vec4(inData[inFloatOff + 3u], inData[inFloatOff + 4u], inData[inFloatOff + 5u], inData[inFloatOff + 6u]);
+    vec3 bboxMin = vec3(inData[inFloatOff + 7u], inData[inFloatOff + 8u], inData[inFloatOff + 9u]);
+    vec3 bboxSize = vec3(inData[inFloatOff + 10u], inData[inFloatOff + 11u], inData[inFloatOff + 12u]);
+
+    vec3 localCenter = bboxMin + 0.5 * bboxSize;
+    float radius = 0.5 * length(bboxSize);
+
+    vec3 worldCenter = instPos + quatRotate(instRot, localCenter);
+    vec3 viewCenter = (uViewMat * vec4(worldCenter, 1.0)).xyz;
+
+    // 1. 6-plane frustum test in view space
+    bool isVisible = testFrustum(viewCenter, radius);
+
+    // 2. Forward-Z Hi-Z occlusion test (skipped in frustum-only mode:
+    //    adaptive gate keeps the pyramid from being rebuilt on small scenes)
+    if (isVisible && uFrustumOnly == 0u) {
+        vec4 aabb;
+        if (projectSphere(viewCenter, radius, uZNear, uP00, uP11, aabb)) {
+            float occluderDepth = hizOccluder(aabb);
+            float zEye = viewCenter.z + radius;
+            float depthSphere = (uZFar / (uZFar - uZNear)) + (uZFar * uZNear) / ((uZFar - uZNear) * zEye);
+            isVisible = depthSphere <= occluderDepth;
+        }
+    }
+    return isVisible;
+}
+
+void copyInstance(uint inIdx, uint outIdx) {
+    uint inFloatOff = inIdx * INST_STRIDE;
+    uint outFloatOff = outIdx * INST_STRIDE;
+    for (uint f = 0u; f < INST_STRIDE; f++) {
+        outData[outFloatOff + f] = inData[inFloatOff + f];
+    }
+}
+
+/**
+ * Shared-memory compaction of one 32-instance tile (Hillis-Steele inclusive scan).
+ * Must be called workgroup-uniform (all 32 lanes, no divergence).
+ */
+void tileCompactionShared(uint cmdIdx, uint i, bool isVisible, uint origCount, uint baseInstance) {
+    sVis[gl_LocalInvocationID.x] = isVisible ? 1u : 0u;
+    barrier();
+    for (uint off = 1u; off < 32u; off <<= 1u) {
+        uint v = (gl_LocalInvocationID.x >= off) ? sVis[gl_LocalInvocationID.x - off] : 0u;
+        barrier();
+        sVis[gl_LocalInvocationID.x] += v;
+        barrier();
+    }
+    if (gl_LocalInvocationID.x == 31u) {
+        sScanBase = atomicAdd(commands[cmdIdx].instanceCount, sVis[31u]);
+    }
+    barrier();
+
+    if (isVisible) {
+        uint slot = sScanBase + sVis[gl_LocalInvocationID.x] - 1u;
+        if (slot < origCount) {
+            copyInstance(baseInstance + i, baseInstance + slot);
+        }
+    }
+    barrier();
+}
+
+void main() {
+    uint cmdIdx = gl_WorkGroupID.x;
+    if (cmdIdx >= uNumCommands) return;
+
+    uint origCount = commands[cmdIdx].originalCount;
+    uint baseInstance = commands[cmdIdx].baseInstance;
+
+#if defined(NUCLEUS_BALLOT)
+    // CrankShaft-style runtime verification: the workgroup must be exactly one
+    // full 32-lane subgroup (subgroupInvocationID maps 1:1 onto localInvocationID).
+    // Otherwise (e.g. AMD wave64) fall through to the shared-memory path.
+    bool useBallot = subgroupBallot(gl_SubgroupInvocationID == gl_LocalInvocationID.x) == 0xFFFFFFFFu;
+#endif
+
+    for (uint tileStart = 0u; tileStart < origCount; tileStart += 32u) {
+        uint i = tileStart + gl_LocalInvocationID.x;
+        bool isVisible = false;
+        if (i < origCount) {
+            isVisible = testInstanceVisibility(baseInstance + i);
+        }
+
+#if defined(NUCLEUS_BALLOT)
+        if (useBallot) {
+            // Warp-level compaction: the elected lane issues ONE atomicAdd for
+            // the whole tile; every visible lane derives its dense slot from
+            // the ballot mask (no shared memory, no barriers).
+            uvec4 ballot = subgroupBallot(isVisible);
+            uint visCount = subgroupBallotBitCount(ballot);
+            uint scanBase = 0u;
+            if (visCount != 0u && subgroupElect()) {
+                scanBase = atomicAdd(commands[cmdIdx].instanceCount, visCount);
+            }
+            scanBase = subgroupBroadcastFirst(scanBase);
+            if (isVisible) {
+                uint slot = scanBase + subgroupBallotExclusiveBitCount(ballot);
+                if (slot < origCount) {
+                    copyInstance(baseInstance + i, baseInstance + slot);
+                }
+            }
+        } else
+#endif
+        {
+            tileCompactionShared(cmdIdx, i, isVisible, origCount, baseInstance);
+        }
+    }
+}

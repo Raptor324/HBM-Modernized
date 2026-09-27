@@ -36,10 +36,12 @@ public final class MachineSpec<T extends BlockEntity> {
             @Nullable PartAnimator<T> animator,      // null = трансформ не нужен
             @Nullable QuadResolver<T> dynamicQuads,  // null = брать часть модели по имени
             @Nullable Function<T, String> dynamicCacheKey,
-            int boneId,                               // 0 = не bone-часть; 1..N = chain-группа
             boolean animated,                         // гейт по modelUpdateDistance
             String staticCacheKey,                    // предвычисленный "id/name" — без String-аллокаций в hot path
-            @Nullable Function<T, Integer> lightOverride // null/-1 = свет мира; >=0 = форсированный packedLight (fullbright)
+            @Nullable Function<T, Integer> lightOverride, // null/-1 = свет мира; >=0 = форсированный packedLight (fullbright)
+            @Nullable Function<T, float[]> uvRectResolver, // null = атласные UV; иначе {u0,v0,du,dv} ремап sprite-local VBO → атлас
+            @Nullable Function<T, float[]> tintOverride, // null/white = без тинта; иначе {r,g,b,a} per-instance цветовой множитель
+            @Nullable float[] tintFalloff // null = фоллоффа нет; иначе {axis(0/1/2), fullCoord, zeroCoord} в модельных координатах
     ) {
         boolean dynamic() { return dynamicQuads != null; }
     }
@@ -52,6 +54,15 @@ public final class MachineSpec<T extends BlockEntity> {
     final List<PartDef<T>> parts;
     final List<MachineRenderHook<T>> hooks;
     final int viewDistance; // -1 = дефолт по конфигу статики
+    /** Предвычислено: есть ли в спеке анимированные части (гейт fast-path dirty-skip). */
+    final boolean hasAnimatedParts;
+    /**
+     * Предвычислено: есть ли части с ДИНАМИЧЕСКОЙ геометрией И аниматором (двери, transition seal).
+     * Их поза зависит от времени (openTicks/анимация), но флаг animated=false — такие части
+     * ОБЯЗАНЫ рендериться полным путём каждый кадр: roster-assert fast-path заморозил бы позу
+     * (дверной тик не ставит render-dirty), что даёт «бинарную» анимацию.
+     */
+    final boolean hasDynamicAnimators;
     /** Стабильный ключ LightSampleCache для одного 8-corner сэмпла на машину за кадр. */
     final long lightSampleKey;
     @Nullable final MachineSpecBuilder.BlockTransform<T> blockTransform; // null = дефолтный setupBlockTransform
@@ -83,6 +94,18 @@ public final class MachineSpec<T extends BlockEntity> {
         this.parts = List.copyOf(parts);
         this.hooks = List.copyOf(hooks);
         this.viewDistance = viewDistance;
+        boolean anyAnimated = false;
+        boolean anyDynamicAnimator = false;
+        for (PartDef<T> p : parts) {
+            if (p.animated()) {
+                anyAnimated = true;
+            }
+            if (p.animator() != null && p.dynamic()) {
+                anyDynamicAnimator = true;
+            }
+        }
+        this.hasAnimatedParts = anyAnimated;
+        this.hasDynamicAnimators = anyDynamicAnimator;
         this.lightSampleKey = (0x4D4143484C534B4FL) ^ (id.hashCode() * 0x9E3779B97F4A7C15L);
         this.blockTransform = blockTransform;
         this.itemParts = itemParts == null ? null : List.copyOf(itemParts);
@@ -122,6 +145,10 @@ public final class MachineSpec<T extends BlockEntity> {
 
     String id() { return id; }
     List<PartDef<T>> parts() { return parts; }
+    /** Есть ли анимированные (гаснущие по modelUpdateDistance) части. */
+    boolean hasAnimatedParts() { return hasAnimatedParts; }
+    /** Динамические части с аниматором (двери/seal) — fast-path dirty-skip запрещён, см. поле. */
+    boolean hasDynamicAnimators() { return hasDynamicAnimators; }
     List<MachineRenderHook<T>> hooks() { return hooks; }
     Function<T, BakedModel> modelResolver() { return modelResolver; }
     Function<T, Direction> facingResolver() { return facingResolver; }
@@ -154,8 +181,47 @@ public final class MachineSpec<T extends BlockEntity> {
         }
     }
 
+    /**
+     * uvRect части для этого BE ({u0,v0,du,dv} ремапа sprite-local VBO → атлас) или null.
+     * Вызывается каждый кадр на часть — резолвер обязан быть дешёвым (кэш спрайта).
+     */
+    @Nullable float[] resolveUvRect(PartDef<T> part, T be) {
+        if (part.uvRectResolver() == null) return null;
+        try {
+            return part.uvRectResolver().apply(be);
+        } catch (Throwable t) {
+            com.hbm_m.main.MainRegistry.LOGGER.error("[MachineRenderers:{}] part '{}' uvRect failed", id, part.name(), t);
+            return null;
+        }
+    }
+
+    /**
+     * RGBA-тинт части для этого BE ({r,g,b,a} per-instance цветовой множитель) или null
+     * (белый RGB = passthrough). Вызывается каждый кадр на часть (как {@link #resolveUvRect}) —
+     * резолвер обязан быть дешёвым и СХОДИТЬСЯ к стабильным значениям (skip-write
+     * instance-рекорда сравнивает флоаты точно). RGB может быть &gt; 1 — overbright-накал;
+     * альфа = сила эмиссии (heat 0..1), не прозрачность.
+     */
+    @Nullable float[] resolveTint(PartDef<T> part, T be) {
+        if (part.tintOverride() == null) return null;
+        try {
+            return part.tintOverride().apply(be);
+        } catch (Throwable t) {
+            com.hbm_m.main.MainRegistry.LOGGER.error("[MachineRenderers:{}] part '{}' tint failed", id, part.name(), t);
+            return null;
+        }
+    }
+
     String cacheKey(PartDef<T> part, @Nullable String dynamicKey) {
         return part.dynamic() ? part.staticCacheKey() + "/" + dynamicKey : part.staticCacheKey();
+    }
+
+    /**
+     * Существующий GPU-держатель части БЕЗ создания/построения (fast-path dirty-skip).
+     * null — рендерера ещё нет (кеш снесён): вызывающий обязан уйти в полный сбор.
+     */
+    @Nullable MachinePartRenderer findExistingRenderer(PartDef<T> part, @Nullable String dynamicKey) {
+        return partRenderers.get(cacheKey(part, dynamicKey));
     }
 
     /** GPU-держатель части (лениво, на render thread). */
@@ -168,7 +234,7 @@ public final class MachineSpec<T extends BlockEntity> {
             existing.ensureBuilt(partModel, dynQuads);
             return existing;
         }
-        MachinePartRenderer created = new MachinePartRenderer(key, part.name(), part.boneId(), part.dynamic());
+        MachinePartRenderer created = new MachinePartRenderer(key, part.name(), part.dynamic());
         MachinePartRenderer raced = partRenderers.putIfAbsent(key, created);
         if (raced != null) {
             raced.ensureBuilt(partModel, dynQuads);
@@ -194,7 +260,7 @@ public final class MachineSpec<T extends BlockEntity> {
             }
             return existing;
         }
-        MachinePartRenderer created = new MachinePartRenderer(key, part.name(), part.boneId(), part.dynamic());
+        MachinePartRenderer created = new MachinePartRenderer(key, part.name(), part.dynamic());
         MachinePartRenderer raced = partRenderers.putIfAbsent(key, created);
         if (raced != null) {
             if (!raced.isAttempted()) {
@@ -212,6 +278,9 @@ public final class MachineSpec<T extends BlockEntity> {
         }
     }
 
+    /** Переиспользуемый буфер сортировки flushFading (рендер однопоточный). */
+    private final List<MachinePartRenderer> fadingSortBuf = new ArrayList<>();
+
     /** Фаза 2 (после MDI): затухающие инстансы прямых путей — см. InstancedRenderFrame.
      *  Окна рендереров сортируются по дальнему fading-инстансу (back-to-front глобально):
      *  fading идёт с depth-write, несортированный порядок окон depth-reject'ил бы
@@ -220,7 +289,8 @@ public final class MachineSpec<T extends BlockEntity> {
         if (partRenderers.isEmpty()) {
             return;
         }
-        List<MachinePartRenderer> fading = new ArrayList<>(partRenderers.size());
+        List<MachinePartRenderer> fading = fadingSortBuf;
+        fading.clear();
         for (MachinePartRenderer r : partRenderers.values()) {
             if (r.fadingSortKeyDistSq() >= 0f) {
                 fading.add(r);

@@ -1,6 +1,14 @@
 #version 330 core
+// Дедикатный инстансный исходник: defines заданы дефолтом прямо здесь (и дублируются
+// инжектом из ClientSetup.ShaderPreDefinitions). Раньше регистрация редиректила это
+// имя на block_lit.vsh — атрибуты InstUvRect/InstColor/GradParams выпадали из
+// компиляции (на фордже: без тинта частей + молча отключённый шеринг скинов дверей).
+#ifndef USE_INSTANCING
 #define USE_INSTANCING
+#endif
+#ifndef USE_VERTEX_BONE_ID
 #define USE_VERTEX_BONE_ID
+#endif
 
 layout(location = 0) in vec3 Position;
 layout(location = 1) in vec3 Normal;
@@ -20,6 +28,15 @@ layout(location = 8)  in vec4 InstLightC01;  // corner0.uv, corner1.uv
 layout(location = 9)  in vec4 InstLightC23;
 layout(location = 10) in vec4 InstLightC45;
 layout(location = 11) in vec4 InstLightC67;
+// Sprite-rect ремап: UV вершин в sprite-local [0..1] → атлас (u0 + uv*du).
+// Identity (0,0,1,1) для машин с атласными UV — обычный passthrough.
+layout(location = 12) in vec4 InstUvRect;
+// Per-instance RGBA-тинт (накал/свечение частей; RGB может быть > 1 — overbright).
+// White = passthrough; указатель настроен в InstancedStaticPartRenderer (VAO, divisor 1).
+layout(location = 13) in vec4 InstColor;
+// Пространственный фоллофф тинта в модельных координатах: x = ось (0/1/2, <0 = off),
+// y = координата полного тинта, z = координата нуля (плавный smoothstep между ними).
+layout(location = 14) in vec4 GradParams;
 #else
 layout(location = 3)  in vec3 InstPos;
 layout(location = 4)  in vec4 InstRot;
@@ -56,6 +73,8 @@ out vec3 fragNormal;
 out vec3 worldNormal;
 // Per-vertex fade: InstBboxSize.w when instancing (batched flush reads stale uniform otherwise).
 out float vFadeAlpha;
+// Per-instance тинт части (см. MachineSpecBuilder.tintOverride).
+out vec4 vColor;
 
 #ifdef USE_INSTANCING
 mat4 quatToMat4(vec4 q) {
@@ -158,7 +177,26 @@ void main() {
     vec4 viewPos = modelView * vec4(Position, 1.0);
     gl_Position = ProjMat * viewPos;
 
+    // Пространственный фоллофф тинта + эмиссия: gt — вес градиента (1 у источника,
+    // 0 на дальнем конце, smoothstep); vColor = mix(white, tint, gt); lightmap
+    // доворачивается к fullbright на InstColor.a (heat) * gt — свечение следует
+    // тинту по всей текстуре (раскалённый металл), см. MachineSpecBuilder.tintOverride.
+    float glow = 0.0;
+    vColor = InstColor;
+    if (GradParams.x >= 0.0) {
+        float gCoord = GradParams.x < 0.5 ? Position.x : (GradParams.x < 1.5 ? Position.y : Position.z);
+        float gt = clamp((gCoord - GradParams.z) / (GradParams.y - GradParams.z), 0.0, 1.0);
+        gt = gt * gt * (3.0 - 2.0 * gt);
+        vColor = mix(vec4(1.0), InstColor, gt);
+        glow = gt;
+    }
+    uvLm = mix(uvLm, vec2(240.0), clamp(InstColor.a * glow, 0.0, 1.0));
+
+#ifdef USE_VERTEX_BONE_ID
+    texCoord = InstUvRect.xy + UV0 * InstUvRect.zw;
+#else
     texCoord = UV0;
+#endif
     // Center within the 16Г—16 lightmap cell like vanilla block UV2 в†’ texcoord.
     lightmapUV = (uvLm + vec2(8.0)) / 256.0;
     vertexDistance = length(viewPos.xyz);

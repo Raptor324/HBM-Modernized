@@ -251,6 +251,7 @@ final class VanillaInstancedBatchRenderer {
         // с координатором теряется (страховка на случай сдвоенного использования рендерера).
         parent.noteMdiDispatchLost();
         parent.mdiRecordWriteHappened = true;
+        parent.invalidateRoster();
         parent.instanceBuffer.clear();
         Matrix4f mat = new Matrix4f(RenderSystem.getModelViewMatrix()).mul(poseStack.last().pose());
         // Мировые координаты записи (см. InstancedStaticPartRenderer.convertToWorldRecord):
@@ -356,7 +357,6 @@ final class VanillaInstancedBatchRenderer {
 
         MdiBatchCoordinator coord = MdiBatchCoordinator.active();
         if (coord != null
-                && !parent.storesPerInstancePartBone
                 && parent.atlasVertexBytesRetained != null
                 && parent.atlasIndicesRetained != null
                 && parent.atlasIndexCountRetained > 0
@@ -398,14 +398,15 @@ final class VanillaInstancedBatchRenderer {
         // ARRAY_BUFFER, cull, depth test/mask/func и blend+blendFunc —
         // ровно тот набор, который раньше снапшотился вручную ниже.
         try (RenderStateGuard ignored = RenderStateGuard.snapshot()) {
-            // Вариант G на прямом пути (GPU-bones chain-части в MDI не ходят):
+            // Вариант G на прямом пути (рендереры, не принятые атласом):
             // opaque-инстансы рисуются СЕЙЧАС — до MDI-диспетча, затухающие
             // копируются в снапшот; их добирает flushFadingVanilla ПОСЛЕ
-            // мульти-драва. Иначе затухающая цепочка (Ring/руки сборочного)
-            // пишет глубину раньше непрозрачной базы из MDI и depth-reject'ит её.
+            // мульти-драва. Иначе затухающие части пишут глубину раньше
+            // непрозрачной базы из MDI и depth-reject'ят её.
             int stride = parent.instanceDataSize;
             int opaque = InstancedStaticPartRenderer.partitionInstancesOpaqueFirst(
-                    parent.instanceBuffer, parent.instanceCount, stride, parent.instanceFadeFloatOffset);
+                    parent.instanceBuffer, parent.instanceCount, stride, parent.instanceFadeFloatOffset,
+                    parent.instanceOcclusionKeys);
             if (opaque < parent.instanceCount) {
                 // Партиция переставила записи (есть fading) — содержимое буфера
                 // разошлось со снапшотом координатора, чистый путь недоступен.

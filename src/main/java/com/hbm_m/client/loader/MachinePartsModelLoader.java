@@ -57,10 +57,35 @@ public class MachinePartsModelLoader<T extends BakedModel> extends AbstractObjPa
     @Override
     public ObjPartGeometry<T> read(JsonObject json, JsonDeserializationContext ctx) {
         if (json.has("parts") && json.get("parts").isJsonObject()) {
+            JsonObject parts = GsonHelper.getAsJsonObject(json, "parts");
+            // Вариант «одна OBJ, части — группы с алиасами/оверрайдом текстуры»:
+            // записи без "model", но с "group"/"texture" (например, hot/cold варианты одной группы).
+            if (isGroupSpec(parts)) {
+                String model = GsonHelper.getAsString(json, "model");
+                ResourceLocation modelRl = ResourceLocation.tryParse(model);
+                Map<String, PartSpec> specs = new LinkedHashMap<>();
+                for (var entry : parts.entrySet()) {
+                    JsonObject partJson = entry.getValue().getAsJsonObject();
+                    String group = GsonHelper.getAsString(partJson, "group", entry.getKey());
+                    String texture = GsonHelper.getAsString(partJson, "texture", null);
+                    specs.put(entry.getKey(), new PartSpec(group,
+                            texture != null ? ResourceLocation.tryParse(texture) : null));
+                }
+                return new ObjPartGeometry<>(modelRl, specs.keySet(), flipV(json), this, specs);
+            }
             return new MultiObjGeometry<>(parsePartDefs(json), flipV(json), this::createMultiObjModel);
         }
         // Одиночный OBJ, части — все корневые группы (авто). Базовый flow.
         return super.read(json, ctx);
+    }
+
+    private static boolean isGroupSpec(JsonObject parts) {
+        for (var entry : parts.entrySet()) {
+            if (!entry.getValue().isJsonObject()) return false;
+            JsonObject partJson = entry.getValue().getAsJsonObject();
+            if (partJson.has("model")) return false;
+        }
+        return true;
     }
 
     @Override

@@ -46,6 +46,57 @@ public final class NucleusDebug {
     private static int mdiRenderersClean;
     private static int mdiInstancesClean;
 
+    // ── GPU Culling stats ──────────────────────────────────────────────
+    private static volatile boolean gpuCullActive;
+    private static volatile int gpuCullCommands;
+    private static volatile int gpuCullInstancesIn;
+    private static volatile int gpuCullInstancesOut;
+
+    // ── Shadow-pass stats (НЕ гейтятся counting(): main-счётчики в тенях спят,
+    //    эти наоборот живут только там) ─────────────────────────────────────
+    // Сброс — в onShadowPassStart (миксин HEAD renderShadows): теневая фаза кадра
+    // идёт ДО main-фазы, поэтому onFrameStart (main BE-старт) затирал бы счётчики
+    // до отрисовки F3, и строка Shadow никогда не показывалась.
+    private static volatile int shadowFallbackParts;
+    private static volatile int shadowRecords;
+    private static volatile int shadowFlushDraws;
+    private static volatile int shadowFlushInstances;
+    private static volatile String shadowFlushTier = "";
+
+    /** Истинный старт теневой фазы кадра — миксин HEAD Iris ShadowRenderer.renderShadows. */
+    public static void onShadowPassStart() {
+        shadowFallbackParts = 0;
+        shadowRecords = 0;
+        shadowFlushDraws = 0;
+        shadowFlushInstances = 0;
+        shadowFlushTier = "";
+    }
+
+    /** Часть ушла в putBulkData внутри shadow-прохода (поражает глобальный shadow-батч). */
+    public static void recordShadowFallback() {
+        shadowFallbackParts++;
+    }
+
+    /** Инстанс записан в IrisShadowBatchCollector в shadow-проходе. */
+    public static void recordShadowRecord(int instances) {
+        if (instances > 0) shadowRecords += instances;
+    }
+
+    /** Итог флаша глобального shadow-батча (tier + draw/instance counts). */
+    public static void recordShadowFlush(String tier, int draws, int instances) {
+        shadowFlushTier = tier;
+        shadowFlushDraws += draws;
+        shadowFlushInstances += instances;
+    }
+
+    public static void recordGpuCull(boolean active, int commands, int in, int out) {
+        if (!counting()) return;
+        gpuCullActive = active;
+        gpuCullCommands = commands;
+        gpuCullInstancesIn = in;
+        gpuCullInstancesOut = out;
+    }
+
     // ── Lifetime ───────────────────────────────────────────────────────
     /** Сумма VBO прямого пути по живым InstancedStaticPartRenderer (вершины+индексы+instance VBO). */
     private static final AtomicLong RENDERER_VRAM = new AtomicLong();
@@ -74,6 +125,7 @@ public final class NucleusDebug {
 
     public static void recordDraw(int calls, int instances, String drawMode) {
         if (!counting()) return;
+        if (calls <= 0) return;
         drawCalls += calls;
         instancesDrawn += instances;
         switch (drawMode) {
@@ -81,6 +133,10 @@ public final class NucleusDebug {
             case "MDI (indirect loop)":
                 modeMdi = true;
                 mdiVariant = drawMode;
+                break;
+            case "GPU bake main":
+                modeMdi = true;
+                mdiVariant = "GPU bake";
                 break;
             case "Iris batch":
             case "Iris single":
@@ -93,6 +149,8 @@ public final class NucleusDebug {
             case "Immediate (fallback)":
                 modeImmediate = true;
                 break;
+            case "Instanced (direct)":
+            case "Instanced (single)":
             default:
                 modeDirect = true;
                 break;
@@ -161,13 +219,25 @@ public final class NucleusDebug {
         out.add("Geometry Parts in Atlas: §7" + atlasParts);
 
         StringBuilder rendering = new StringBuilder("Rendering: §a").append(machinesRendered).append("§r models");
-        if (ClientRenderFlags.enableOcclusionCulling() && machinesCulled > 0) {
+        if (com.hbm_m.config.ModClothConfig.get().getEffectiveOcclusionCullingMode()
+                == com.hbm_m.config.ModClothConfig.OcclusionCullingMode.CPU && machinesCulled > 0) {
             rendering.append(", §7").append(machinesCulled).append(" culled");
         }
         out.add(rendering.toString());
 
         out.add("Draw Calls: §b" + drawCalls);
         out.add("Instances Drawn: §7" + instancesDrawn);
+
+        if (gpuCullActive && gpuCullInstancesIn > 0) {
+            int culled = Math.max(0, gpuCullInstancesIn - gpuCullInstancesOut);
+            float pct = (culled * 100.0f) / gpuCullInstancesIn;
+            out.add("GPU Cull: §aActive §7(" + culled + "/" + gpuCullInstancesIn + " culled, "
+                    + String.format(Locale.ROOT, "%.1f", pct) + "%, " + gpuCullCommands + " cmds)");
+        } else if (com.hbm_m.config.ModClothConfig.get().getEffectiveOcclusionCullingMode() == com.hbm_m.config.ModClothConfig.OcclusionCullingMode.GPU) {
+            out.add("GPU Cull: §eWaiting/No depth §7(mode=GPU)");
+        } else {
+            out.add("GPU Cull: §7Disabled (mode=" + com.hbm_m.config.ModClothConfig.get().getEffectiveOcclusionCullingMode() + ")");
+        }
 
         PersistentUploadStaging staging = PersistentUploadStaging.peekOrNull();
         String channel = (staging != null) ? "ring" : "subdata";
@@ -203,6 +273,20 @@ public final class NucleusDebug {
             modeLine.append("§7Instanced (direct)");
         }
         out.add("Mode: " + (modeLine.length() > 0 ? modeLine : "§8idle"));
+
+        // Shadow-проход этого кадра: запись в батч / флаш / деградации в putBulkData.
+        // fallback>0 красным — глобальный shadow-батч поражён, тени считает CPU.
+        if (shadowRecords > 0 || shadowFlushDraws > 0 || shadowFallbackParts > 0) {
+            StringBuilder sh = new StringBuilder("Shadow: §a").append(shadowRecords)
+                    .append("§r rec, ")
+                    .append(shadowFlushTier.isEmpty() ? "§8no flush" : "§d" + shadowFlushTier)
+                    .append("§r ").append(shadowFlushDraws).append("dr/")
+                    .append(shadowFlushInstances).append("inst");
+            if (shadowFallbackParts > 0) {
+                sh.append(", §c").append(shadowFallbackParts).append(" FALLBACK§r");
+            }
+            out.add(sh.toString());
+        }
     }
 
     private static String humanBytes(long b) {

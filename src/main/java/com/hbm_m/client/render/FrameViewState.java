@@ -47,6 +47,12 @@ public final class FrameViewState {
     private static final Matrix4f INV_VIEW_ROT = new Matrix4f();
     private static final Matrix4f VIEW = new Matrix4f();
     private static float camX, camY, camZ;
+    private static float relCamX, relCamY, relCamZ;
+    private static net.minecraft.core.BlockPos anchorOrigin = net.minecraft.core.BlockPos.ZERO;
+    private static boolean anchorInitialized = false;
+    private static long anchorGeneration = 0L;
+    private static final double SQR_MAX_ANCHOR_DISTANCE = 256.0 * 256.0;
+
     private static boolean valid = false;
     private static long capturedSerial = -1L;
 
@@ -59,6 +65,46 @@ public final class FrameViewState {
      */
     public static void invalidate() {
         valid = false;
+    }
+
+    public static net.minecraft.core.BlockPos anchorOrigin() {
+        return anchorOrigin;
+    }
+
+    public static long anchorGeneration() {
+        return anchorGeneration;
+    }
+
+    public static boolean checkAnchorDrift(net.minecraft.world.phys.Vec3 cameraPos) {
+        if (!anchorInitialized) {
+            anchorOrigin = net.minecraft.core.BlockPos.containing(cameraPos.x, cameraPos.y, cameraPos.z);
+            anchorInitialized = true;
+            anchorGeneration++;
+            onAnchorChanged();
+            return true;
+        }
+        double dx = cameraPos.x - anchorOrigin.getX();
+        double dy = cameraPos.y - anchorOrigin.getY();
+        double dz = cameraPos.z - anchorOrigin.getZ();
+        if (dx * dx + dy * dy + dz * dz > SQR_MAX_ANCHOR_DISTANCE) {
+            net.minecraft.core.BlockPos oldAnchor = anchorOrigin;
+            anchorOrigin = net.minecraft.core.BlockPos.containing(cameraPos.x, cameraPos.y, cameraPos.z);
+            anchorGeneration++;
+            com.hbm_m.main.MainRegistry.LOGGER.info("[Nucleus] Anchor origin shift: {} -> {} (drift {} m)",
+                    oldAnchor, anchorOrigin, (int) Math.sqrt(dx * dx + dy * dy + dz * dz));
+            onAnchorChanged();
+            return true;
+        }
+        return false;
+    }
+
+    private static void onAnchorChanged() {
+        MdiBatchCoordinator.onRenderOriginChanged();
+        MdiGeometryAtlas atlas = MdiGeometryAtlas.peekOrNull();
+        if (atlas != null && atlas.isReady()) {
+            atlas.onRenderOriginChanged();
+        }
+        InstancedStaticPartRenderer.onRenderOriginChanged();
     }
 
     /** Render thread, внутри renderLevel (BE-проход или stage-события позже). */
@@ -80,6 +126,13 @@ public final class FrameViewState {
         camX = (float) camPos.x;
         camY = (float) camPos.y;
         camZ = (float) camPos.z;
+
+        checkAnchorDrift(camPos);
+
+        relCamX = (float) (camPos.x - anchorOrigin.getX());
+        relCamY = (float) (camPos.y - anchorOrigin.getY());
+        relCamZ = (float) (camPos.z - anchorOrigin.getZ());
+
         capturedSerial = serial;
         valid = true;
     }
@@ -91,18 +144,22 @@ public final class FrameViewState {
     }
 
     /**
-     * V = R_cam · T(-camPos): мировые координаты → view-space.
+     * V = R_cam · T(-relCam): anchor-relative координаты → view-space.
      * Кладётся в uniform ModelViewMat инстанс-программ. Не мутировать результат.
      */
     public static Matrix4f viewMatrix() {
         capture();
-        // invViewRot = R_cam⁻¹ → transpose = R_cam (ротация), затем T(-cam) справа:
-        // V·v = R_cam·(v - camPos).
-        VIEW.set(INV_VIEW_ROT).transpose().translate(-camX, -camY, -camZ);
+        // invViewRot = R_cam⁻¹ → transpose = R_cam (ротация), затем T(-relCam) справа:
+        // V·v = R_cam·(v - relCam).
+        VIEW.set(INV_VIEW_ROT).transpose().translate(-relCamX, -relCamY, -relCamZ);
         return VIEW;
     }
 
     public static float camX() { capture(); return camX; }
     public static float camY() { capture(); return camY; }
     public static float camZ() { capture(); return camZ; }
+
+    public static float relCamX() { capture(); return relCamX; }
+    public static float relCamY() { capture(); return relCamY; }
+    public static float relCamZ() { capture(); return relCamZ; }
 }

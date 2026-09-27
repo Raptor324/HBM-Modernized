@@ -16,12 +16,14 @@ import org.joml.Matrix4f;
 
 import com.hbm_m.client.render.AbstractPartBasedRenderer;
 import com.hbm_m.client.render.ClientRenderFlags;
+import com.hbm_m.client.render.InstancedStaticPartRenderer;
 import com.hbm_m.client.render.IrisShadowBatchCollector;
 import com.hbm_m.client.render.LegacyAnimator;
 import com.hbm_m.client.render.RenderDistanceHelper;
 import com.hbm_m.client.render.SingleMeshVboRenderer;
 import com.hbm_m.client.render.shader.IrisRenderBatch;
 import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
+import com.hbm_m.config.ModClothConfig;
 import com.mojang.blaze3d.systems.RenderSystem;
 import com.mojang.blaze3d.vertex.PoseStack;
 
@@ -40,9 +42,6 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 public final class MachineBer<T extends BlockEntity> extends AbstractPartBasedRenderer<T, BakedModel> {
 
     private final MachineSpec<T> spec;
-
-    // Вспомогательный стек для bone-пути (last().pose() = блочный трансформ).
-    private final PoseStack basePoseStack = new PoseStack();
 
     // ── Кэш дельт анимации (Шаг 1: аниматор исполняется один раз на кадр) ──
     //
@@ -105,10 +104,9 @@ public final class MachineBer<T extends BlockEntity> extends AbstractPartBasedRe
         long now = System.currentTimeMillis();
         if (now - ANIM_LAST_LOG > 5000L) {
             ANIM_LAST_LOG = now;
-            // Кэш анимаций устраняет дублирование вычислений между shadow pass и main pass в рамках одного кадра.
-            // Если теневой проход не выполнялся (STORE_SHADOW == 0), второго прохода в кадре нет — 0% попаданий
-            // является нормальным и ожидаемым поведением. Логируем только при STORE_SHADOW > 0 или флаге -Dhbm.debugAnimCache=true.
-            if (DEBUG_ANIM_CACHE || STORE_SHADOW > 0) {
+            // Диагностика кэша анимаций — только по явному флагу -Dhbm.debugAnimCache=true
+            // (расследование 0914 закрыто; автобревно каждые 5с под тенями фонит).
+            if (DEBUG_ANIM_CACHE) {
                 com.hbm_m.main.MainRegistry.LOGGER.info(
                         "[HBM-M] anim cache: hits={} misses={} ({}% hit) | off={} noSlot={} pos={} frame={} "
                                 + "delta={} (deltaShadow={} deltaMain={}) | stores: shadow={} main={}",
@@ -139,6 +137,35 @@ public final class MachineBer<T extends BlockEntity> extends AbstractPartBasedRe
 
     // Переиспользуемый контекст кадра для хуков (рендер однопоточный).
     private final FrameCtx frameCtx = new FrameCtx();
+
+    /** Scratch для fast-path assert (фаза 1 → фаза 2); однопоточный рендер. */
+    private final java.util.ArrayList<InstancedStaticPartRenderer> fastAssertScratch = new java.util.ArrayList<>();
+
+    /**
+     * Частичный fast-path (машина внутри анимационной зоны): статические части
+     * подтверждаются roster'ом прямо в {@link #renderAll}, анимированные части и
+     * хуки идут полным путём. Выставляется в {@link #tryFastAssertRender},
+     * консьюмится первым же {@code collectRender} (сброс в его finally —
+     * ранние выходы фрустума/куллинга не должны протечкиать на соседний BE).
+     */
+    private BlockEntity partialAssertBE;
+    private boolean animatedPartsResolved;
+    private boolean hasAnimatedPartsCache;
+
+    private boolean hasAnimatedParts() {
+        if (!animatedPartsResolved) {
+            boolean any = false;
+            for (MachineSpec.PartDef<T> part : spec.parts()) {
+                if (part.animated()) {
+                    any = true;
+                    break;
+                }
+            }
+            hasAnimatedPartsCache = any;
+            animatedPartsResolved = true;
+        }
+        return hasAnimatedPartsCache;
+    }
 
     private final class FrameCtx implements MachineRenderApi {
         private float fadeAlpha = 1f;
@@ -182,6 +209,26 @@ public final class MachineBer<T extends BlockEntity> extends AbstractPartBasedRe
     @SuppressWarnings({"unchecked", "rawtypes"})
     public void collectRender(BlockEntity be, float partialTick, PoseStack poseStack,
                               MultiBufferSource bufferSource, int packedLight, boolean applyFrustum) {
+        try {
+            doCollectRender(be, partialTick, poseStack, bufferSource, packedLight, applyFrustum);
+        } finally {
+            // Частичный fast-path живёт только в пределах одного collectRender:
+            // ранние выходы (фрустум/CPU-окклюзия) не переносят флаг на соседний BE.
+            partialAssertBE = null;
+            // Dirty-трекер: сбор состоялся (включая ранние выходы фрустума/куллинга —
+            // машина остаётся в MDI-батче и её догоняет GPU-culler, повторный CPU-обход
+            // до TTL не нужен).
+            if (be instanceof com.hbm_m.api.render.RenderDirtyTracker tracker) {
+                var lvl = be.getLevel();
+                tracker.onRenderCollected(lvl != null ? lvl.getGameTime() : 0L,
+                        com.hbm_m.client.render.NucleusRenderVersion.worldGen());
+            }
+        }
+    }
+
+    @SuppressWarnings({"unchecked", "rawtypes"})
+    private void doCollectRender(BlockEntity be, float partialTick, PoseStack poseStack,
+                                 MultiBufferSource bufferSource, int packedLight, boolean applyFrustum) {
         T blockEntity = (T) be;
         if (ShaderCompatibilityDetector.isRenderingShadowPass()) {
             SHADOW_BER_INVOCATIONS++;
@@ -208,6 +255,124 @@ public final class MachineBer<T extends BlockEntity> extends AbstractPartBasedRe
             poseStack.popPose();
             com.hbm_m.client.render.LightSampleCache.BASE_POSE_SET.set(false);
         }
+    }
+
+    /**
+     * Fast-path dirty-skip: чистая машина БЕЗ пересборки подтверждает своё
+     * присутствие в part-рендерерах (roster-assert). Возврат true означает, что
+     * все статические части подтверждены, {@code collectRender} звать не нужно —
+     * CPU-затраты на машину: distance-чек + сравнение long-ключей на part.
+     * <p>
+     * Гейты: MDI/GPU-cull путь активен, Iris выключен, трекер не протух
+     * (dirty-флаг, worldGen, TTL света/fade). За анимационной зоной (и для
+     * машин без анимированных частей/хуков — в том числе внутри неё) чистая
+     * машина подтверждает ВСЕ статические части roster-assert'ом — полный путь
+     * не нужен. Внутри зоны при наличии анимированных частей или хуков
+     * включается частичный fast-path ({@link #partialAssertBE}): статические
+     * части подтверждаются в renderAll, пер-кадровый контент идёт полным путём.
+     * <p>
+     * Безопасность: фаза 1 — только чтение (поиск рендереров + roster-проверка);
+     * при любом миссе — false, состояние не тронуто, вызывающий делает полный
+     * {@code collectRender}.
+     */
+    @SuppressWarnings("unchecked")
+    public boolean tryFastAssertRender(BlockEntity beRaw, long gameTick) {
+        if (!ClientRenderFlags.nucleusDirtySkip()) {
+            return false;
+        }
+        // Спеки с time-varying динамическими частями (двери: animated=false, но
+        // аниматор зависит от openTicks, который двигает клиентский тик БЕЗ
+        // render-dirty) — roster-assert заморозил бы позу («бинарная» анимация).
+        // Такие части всегда идут полным путём с исполнением аниматора.
+        if (spec.hasDynamicAnimators()) {
+            return false;
+        }
+        if (ShaderCompatibilityDetector.isExternalShaderActive()
+                || ShaderCompatibilityDetector.canUseIrisExtendedShader()
+                || ShaderCompatibilityDetector.isRenderingShadowPass()
+                || ClientRenderFlags.forceVanillaImmediate()) {
+            return false;
+        }
+        // CPU-фрустум/окклюзия пропускаются — их обязан взять на себя GPU-culler.
+        if (ModClothConfig.get().getEffectiveOcclusionCullingMode()
+                != ModClothConfig.OcclusionCullingMode.GPU
+                || !com.hbm_m.client.render.culling.GpuCullingCapability.isSupported()) {
+            return false;
+        }
+        if (!(beRaw instanceof com.hbm_m.api.render.RenderDirtyTracker tracker)) {
+            return false;
+        }
+        if (tracker.isRenderStale(gameTick, com.hbm_m.client.render.NucleusRenderVersion.worldGen())) {
+            return false;
+        }
+        // Анимационная зона: полный путь обязателен только для пер-кадрового
+        // контента — аниматоров анимированных частей и immediate-хуков
+        // (жидкости/предметы/алмазы). Машина без них проходит полным fast-path
+        // и внутри зоны; иначе — частичный: статические части подтвердятся
+        // roster'ом в renderAll (без матриц/света/сравнения флоатов), что
+        // снимает основную часть ежекадровой стоимости зоны.
+        double animDist = RenderDistanceHelper.getAnimatedDistanceBlocks();
+        if (animDist > 0) {
+            double distSq = RenderDistanceHelper.distanceSqToCamera(beRaw.getBlockPos());
+            if (distSq <= animDist * animDist) {
+                if (!spec.hooks().isEmpty() || hasAnimatedParts()) {
+                    partialAssertBE = beRaw;
+                    return false;
+                }
+            }
+        }
+
+        // Дистанционный fade — чистая функция позиции камеры и меняется каждый кадр
+        // движения без какого-либо dirty-события: roster-assert обязан сверять
+        // квантованный fade записи буфера (canAssertInstance(posKey, fade)), иначе
+        // машина в кольце фейда «замораживает» альфу до случайного полного пересбора
+        // — pop вместо растворения при отдалении, полупрозрачный траней при
+        // приближении. За отсечкой (fade<0) подтверждать нечего — полный сбор
+        // (тот же ранний выход по fade, что и всегда).
+        float staticFade = RenderDistanceHelper.computeStaticFade(beRaw);
+        if (staticFade < 0) {
+            return false;
+        }
+        float quantizedFade = InstancedStaticPartRenderer.quantizeFade(staticFade);
+
+        BlockPos pos = beRaw.getBlockPos();
+        long posKey = pos.asLong();
+
+        // Фаза 1 (read-only): резолв рендереров + roster-проверка.
+        fastAssertScratch.clear();
+        for (MachineSpec.PartDef<T> part : spec.parts()) {
+            // Здесь animatedVisible == false (гейт выше) — анимированные части скипаются,
+            // ровно как в renderAll.
+            if (part.animated()) continue;
+            String dynKey = part.dynamic() ? spec.dynamicCacheKeyValue(part, (T) beRaw) : null;
+            MachinePartRenderer r = spec.findExistingRenderer(part, dynKey);
+            if (r == null) {
+                return false; // рендерера нет (кеш снесён) — полный сбор построит
+            }
+            InstancedStaticPartRenderer inst = r.instanced();
+            if (inst == null) {
+                if (r.hasGeometry()) {
+                    return false; // single-VBO/immediate часть — не инстансная
+                }
+                continue; // пустая часть — renderAll её тоже скипает
+            }
+            if (!inst.isInitialized() || !inst.canAssertInstance(posKey, quantizedFade)) {
+                return false;
+            }
+            fastAssertScratch.add(inst);
+        }
+
+        // Фаза 2 (коммит): состояние между фазами не менялось (однопоточный рендер) —
+        // assert не может провалиться.
+        for (InstancedStaticPartRenderer inst : fastAssertScratch) {
+            inst.assertCleanInstance(pos);
+        }
+        // ШТАМП ТРЕКЕРА ЗДЕСЬ НЕ ОБНОВЛЯЕТСЯ: onRenderCollected от каждого удавшегося
+        // assert держал бы штамп свежим каждый кадр, и TTL-пересбор (единственный
+        // владелец обновления света/fade без событийной модели) не срабатывал бы
+        // никогда. Свет/fade обновляются полным сбором по TTL (isRenderStale),
+        // смене worldGen, dirty-флагу или смене кванта fade (проверка выше).
+        return true;
     }
 
     @Override
@@ -248,7 +413,6 @@ public final class MachineBer<T extends BlockEntity> extends AbstractPartBasedRe
         float fade = animatedVisible ? Math.min(staticFade, animFade) : staticFade;
 
         BlockPos blockPos = blockEntity.getBlockPos();
-        Matrix4f blockPose = new Matrix4f(poseStack.last().pose());
 
         FrameCtx ctx = frameCtx;
         ctx.fadeAlpha = fade;
@@ -259,29 +423,34 @@ public final class MachineBer<T extends BlockEntity> extends AbstractPartBasedRe
             boolean shadowPass = ShaderCompatibilityDetector.isRenderingShadowPass();
             // В shadow begin(true)+close = apply()/clear() пака НА КАЖДЫЙ BER — на
             // ферме ассемблеров это ~14% кадра. Когда включён глобальный shadow-батч
-            // (все части уходят в него записями, см. addInstanceGpuBones/addInstance),
+            // (все части уходят в него записями, см. addInstance),
             // немедленный companion-дроук не нужен и батч-обёртка не открывается.
             // Выпавшие из батча части корректно деградируют в putBulkData
             // (bufferSource) или в запись — оба пути без активного батча.
             if (shadowPass && IrisShadowBatchCollector.isBatchingEnabled()) {
                 renderAll(blockEntity, model, partialTick, packedLight, packedOverlay,
-                        poseStack, bufferSource, blockPose, blockPos, ctx, animatedVisible, staticFade, fade);
+                        poseStack, bufferSource, blockPos, ctx, animatedVisible, staticFade, fade);
             } else {
                 try (IrisRenderBatch ignored = IrisRenderBatch.begin(shadowPass, RenderSystem.getProjectionMatrix())) {
                     renderAll(blockEntity, model, partialTick, packedLight, packedOverlay,
-                            poseStack, bufferSource, blockPose, blockPos, ctx, animatedVisible, staticFade, fade);
+                            poseStack, bufferSource, blockPos, ctx, animatedVisible, staticFade, fade);
                 }
             }
         } else {
             renderAll(blockEntity, model, partialTick, packedLight, packedOverlay,
-                    poseStack, bufferSource, blockPose, blockPos, ctx, animatedVisible, staticFade, fade);
+                    poseStack, bufferSource, blockPos, ctx, animatedVisible, staticFade, fade);
         }
     }
 
     private void renderAll(T blockEntity, BakedModel model, float partialTick,
                            int packedLight, int packedOverlay, PoseStack poseStack,
-                           MultiBufferSource bufferSource, Matrix4f blockPose, BlockPos blockPos,
+                           MultiBufferSource bufferSource, BlockPos blockPos,
                            FrameCtx ctx, boolean animatedVisible, float staticFade, float fade) {
+        // Частичный fast-path: подтверждён в tryFastAssertRender для ЭТОГО BE.
+        // Читаем с консьюмом — повторный вызов renderAll не должен задвоить assert.
+        boolean partialAssert = partialAssertBE == blockEntity;
+        partialAssertBE = null;
+        long rosterKey = blockPos.asLong();
         long gameTime = blockEntity.getLevel() != null ? blockEntity.getLevel().getGameTime() : 0L;
 
         // Shared light: при батчинге один 8-corner сэмпл на машину за кадр,
@@ -292,15 +461,22 @@ public final class MachineBer<T extends BlockEntity> extends AbstractPartBasedRe
         boolean shadowNoLight = ShaderCompatibilityDetector.isRenderingShadowPass()
                 && IrisShadowBatchCollector.isBatchingEnabled();
         if (!shadowNoLight && ClientRenderFlags.useInstancedBatching()) {
-            // Фиксированный bbox 1×2×1 вокруг блока BE вместо renderBounds(): new AABB()
-            // на каждую машину каждый кадр — чистый мусор для GC, на свет LOD-сэмпла
-            // влияет мало (сэмпл кешируется в LightSampleCache).
-            sharedLightBbox[0] = -0.5f;
-            sharedLightBbox[1] = 0f;
-            sharedLightBbox[2] = -0.5f;
-            sharedLightBbox[3] = 1.5f;
-            sharedLightBbox[4] = 2f;
-            sharedLightBbox[5] = 1.5f;
+            net.minecraft.world.phys.AABB bb = com.hbm_m.platform.RenderHooks.getRenderBoundingBox(blockEntity);
+            if (bb != null && bb.maxX > bb.minX && bb.maxY > bb.minY && bb.maxZ > bb.minZ) {
+                sharedLightBbox[0] = (float) (bb.minX - blockPos.getX());
+                sharedLightBbox[1] = (float) (bb.minY - blockPos.getY());
+                sharedLightBbox[2] = (float) (bb.minZ - blockPos.getZ());
+                sharedLightBbox[3] = (float) (bb.maxX - blockPos.getX());
+                sharedLightBbox[4] = (float) (bb.maxY - blockPos.getY());
+                sharedLightBbox[5] = (float) (bb.maxZ - blockPos.getZ());
+            } else {
+                sharedLightBbox[0] = -0.5f;
+                sharedLightBbox[1] = 0f;
+                sharedLightBbox[2] = -0.5f;
+                sharedLightBbox[3] = 1.5f;
+                sharedLightBbox[4] = 2f;
+                sharedLightBbox[5] = 1.5f;
+            }
             sharedLightPose.identity();
             com.hbm_m.client.render.LightSampleCache.getOrSample8Lod(blockEntity, spec.lightSampleKey,
                     sharedLightBbox, blockPos, sharedLightPose, packedLight, sharedLight8,
@@ -353,7 +529,28 @@ public final class MachineBer<T extends BlockEntity> extends AbstractPartBasedRe
             poseStack.pushPose();
             try {
                 boolean draw = true;
-                if (part.animator() != null) {
+                // Частичный fast-path (машина внутри анимационной зоны): статическая
+                // часть уже лежит в instance-буфере прошлого кадра — подтверждаем
+                // roster-assert'ом вместо полной пересборки (матрица/свет/30-float
+                // сравнение). Гард по fade — равенство кванта записи буфера текущему
+                // кванту staticFade: выцветающая часть пересобирается только при
+                // смене кванта альфы (1/255), симметрично полному fast-path за
+                // зоной. Семантика позы — как у полного fast-path за зоной:
+                // аниматор статической части (легаси-офсеты, константная поза)
+                // не исполняется, запись буфера не меняется.
+                boolean fastAsserted = false;
+                if (partialAssert && !part.animated()
+                        && !(part.animator() != null && part.dynamic())) {
+                    InstancedStaticPartRenderer inst = renderer.instanced();
+                    if (inst != null && inst.isInitialized()
+                            && inst.canAssertInstance(rosterKey,
+                                    InstancedStaticPartRenderer.quantizeFade(staticFade))) {
+                        int beforeCount = inst.getInstanceCount();
+                        inst.assertCleanInstance(blockPos);
+                        fastAsserted = inst.getInstanceCount() > beforeCount;
+                    }
+                }
+                if (!fastAsserted && part.animator() != null) {
                     long posKey = blockPos == null ? 0L : blockPos.asLong();
                     boolean hit;
                     if (!animCacheOn) {
@@ -401,7 +598,14 @@ public final class MachineBer<T extends BlockEntity> extends AbstractPartBasedRe
                         }
                     }
                 }
-                if (draw) {
+                if (fastAsserted) {
+                    // Поза части нужна хукам (MachineRenderApi.partTransform) даже
+                    // при скипе пересборки — базовая (аниматор статической части
+                    // константный), сохраняем без enqueue.
+                    if (!spec.hooks().isEmpty()) {
+                        ctx.saveTransform(part.name(), poseStack.last().pose());
+                    }
+                } else if (draw) {
                     // Матрицы нужны только хукам (MachineRenderApi.partTransform);
                     // без хуков не аллоцируем ничего.
                     if (!spec.hooks().isEmpty()) {
@@ -424,8 +628,11 @@ public final class MachineBer<T extends BlockEntity> extends AbstractPartBasedRe
                             partSharedLight = null;
                         }
                     }
-                    renderer.enqueue(poseStack, blockPose, basePoseStack, partLight, blockPos,
-                            blockEntity, bufferSource, partSharedLight);
+                    renderer.enqueue(poseStack, partLight, blockPos,
+                            blockEntity, bufferSource, partSharedLight,
+                            spec.resolveUvRect(part, blockEntity),
+                            spec.resolveTint(part, blockEntity),
+                            part.tintFalloff());
                 }
             } catch (Throwable t) {
                 com.hbm_m.main.MainRegistry.LOGGER.error("[MachineRenderers:{}] part '{}' render failed",

@@ -57,6 +57,9 @@ public final class InstancedRenderFrame {
         if (projection == null) {
             return;
         }
+        if (cameraPos != null) {
+            FrameViewState.checkAnchorDrift(cameraPos);
+        }
         RenderFrameLight.onFrameStart();
         ClientRenderFlags.onFrameStart();
         // Shadow-фаза уже отработала: незафлашенный глобальный shadow-батч =
@@ -70,7 +73,11 @@ public final class InstancedRenderFrame {
         IrisExtendedShaderAccess.tickPass();
         MachineChemicalPlantRenderer.clearDeferredFluids();
         MachineCrystallizerRenderer.clearDeferredFluids();
-        if (ClientRenderFlags.enableOcclusionCulling()) {
+        // Single source of truth: the effective occlusion mode. The legacy
+        // enableOcclusionCulling boolean is only a config-load mirror — gating the
+        // CPU helper on it left ray-marching enabled (mode=CPU) without frustum
+        // capture / cache pruning when the mirror drifted.
+        if (ModClothConfig.get().getEffectiveOcclusionCullingMode() == ModClothConfig.OcclusionCullingMode.CPU) {
             OcclusionCullingHelper.onFrameStart();
             OcclusionCullingHelper.captureBlockEntityPassFrustum(blockEntityFrustum);
             OcclusionCullingHelper.captureCpuFrustumFallback(projection, cameraPos);
@@ -102,7 +109,7 @@ public final class InstancedRenderFrame {
             MdiBatchCoordinator coord = MdiBatchCoordinator.beginFrame(projection);
             flushAllInstanced(projection);
             if (coord != null) {
-                coord.endFrame(false);
+                coord.endFrame();
             }
 
             // Фаза 2: затухающие инстансы прямых путей (GPU-bones chain-части
@@ -203,7 +210,6 @@ public final class InstancedRenderFrame {
         MdiRenderFrameGate.reset();
         InstancedRenderStats.clear();
         NucleusDebug.onFrameStart();
-        MdiBatchCoordinator.cancelScheduledDraw();
         MdiBatchCoordinator.discardActiveSessionNoDispatch();
         MdiBatchCoordinator.clearCachedRedraw();
     }

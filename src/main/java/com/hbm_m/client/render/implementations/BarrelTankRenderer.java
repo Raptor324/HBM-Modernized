@@ -137,7 +137,7 @@ public final class BarrelTankRenderer {
             poseStack.translate(-0.5F, -0.5F, -0.5F);
             var pose = poseStack.last();
             for (net.minecraft.client.renderer.block.model.BakedQuad quad : quads) {
-                RenderHooks.putBulkData(vc, pose, quad, 1.0F, 1.0F, 1.0F, 1.0F, packedLight, packedOverlay, false);
+                RenderHooks.putBulkDataShaded(vc, pose, quad, 1.0F, packedLight, packedOverlay, false);
             }
             poseStack.popPose();
         }

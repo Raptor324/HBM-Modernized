@@ -18,6 +18,11 @@ public final class ClientRenderFlags {
     private static int maxInstances = 4096;
     private static boolean forceVanillaImmediate;
     private static boolean mdiCleanFrameReuse = true;
+    private static boolean nucleusDirtySkip = true;
+
+    /** Последние Iris-состояния: их смена инвалидирует fast-path записи (worldGen bump). */
+    private static boolean lastIrisExternal = false;
+    private static boolean lastIrisExtended = false;
 
     private ClientRenderFlags() {}
 
@@ -28,8 +33,19 @@ public final class ClientRenderFlags {
         maxInstances = cfg.maxInstancedInstancesPerPart;
         forceVanillaImmediate = cfg.forceVanillaImmediatePath;
         mdiCleanFrameReuse = cfg.mdiCleanFrameReuse;
+        nucleusDirtySkip = cfg.nucleusRenderDirtySkip
+                && !"false".equalsIgnoreCase(System.getProperty("hbm.dirtySkip", "true"));
         // Один опрос Iris API за кадр — isExternalShaderActive() дальше читает кеш.
         com.hbm_m.client.render.shader.ShaderCompatibilityDetector.updateState();
+        // Смена Iris-состояния: fast-path записи не содержат instanceLightUV,
+        // который заполняют Iris-пути — глобальная инвалидация через worldGen.
+        boolean irisExternal = com.hbm_m.client.render.shader.ShaderCompatibilityDetector.isExternalShaderActive();
+        boolean irisExtended = com.hbm_m.client.render.shader.ShaderCompatibilityDetector.canUseIrisExtendedShader();
+        if (irisExternal != lastIrisExternal || irisExtended != lastIrisExtended) {
+            lastIrisExternal = irisExternal;
+            lastIrisExtended = irisExtended;
+            NucleusRenderVersion.bump();
+        }
     }
 
     /**
@@ -58,6 +74,16 @@ public final class ClientRenderFlags {
      */
     public static boolean mdiCleanFrameReuse() {
         return mdiCleanFrameReuse;
+    }
+
+    /**
+     * Fast-path dirty-skip (GPU-driven сбор машин): чистые BlockEntity
+     * ({@code RenderDirtyTracker}) пропускают ежекадровую пересборку и
+     * подтверждают присутствие roster-assert'ом. Kill-switch
+     * {@link ModClothConfig#nucleusRenderDirtySkip} или {@code -Dhbm.dirtySkip=false}.
+     */
+    public static boolean nucleusDirtySkip() {
+        return nucleusDirtySkip;
     }
 
     /**

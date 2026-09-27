@@ -37,6 +37,14 @@ public final class GpuSpanUploader {
     /** Неизменные промежутки короче этого (флоатов) приклеиваются к соседнему span-у. */
     private static final int MERGE_GAP_FLOATS = 24;
 
+    // Пороги compute scatter (Phase 4): ниже — DMA-путь glCopyBufferSubData,
+    // выше — одна compute-диспетча вместо N driver-копий (не Intel, GL 4.3;
+    // гейты внутри ComputeScatterUploader, kill-switch -Dhbm.gpuScatter=false,
+    // порог -Dhbm.gpuScatter.minSpans=N).
+    private static final int SCATTER_MIN_SPANS =
+            Math.max(2, Integer.getInteger("hbm.gpuScatter.minSpans", 16));
+    private static final long SCATTER_MIN_BYTES = 4096L;
+
     private GpuSpanUploader() {}
 
     /**
@@ -95,12 +103,64 @@ public final class GpuSpanUploader {
             fullUpload(shadow, shadowFloatOffset, src, srcFloatOffset, floatCount, destVbo);
             return;
         }
+        if (n >= SCATTER_MIN_SPANS && ComputeScatterUploader.isGloballyEnabled()
+                && tryScatterBatch(shadow, src, srcFloatOffset, shadowFloatOffset, spans, n, destVbo)) {
+            return;
+        }
         for (int k = 0; k < n; k++) {
             int start = spans[k * 2];
             int end = spans[k * 2 + 1];
             uploadSpan(src, srcFloatOffset + start, end - start, shadowFloatOffset + start, destVbo);
             copyToShadow(shadow, shadowFloatOffset + start, src, srcFloatOffset + start, end - start);
         }
+    }
+
+    /**
+     * Compute scatter batch (Phase 4): все span-ы окна записываются в staging
+     * кольцо ({@link PersistentUploadStaging#stageRegion}), затем переносятся
+     * в dest VBO ОДНОЙ compute-диспетчей вместо N {@code glCopyBufferSubData}.
+     * Shadow синхронизируется только после успешного выпуска диспетчи.
+     *
+     * @return true — батч выпущен; false — по любой причине (нет compute/Intel/
+     *         кольцо занято/мало байт) — вызывающий идёт per-span путём.
+     */
+    private static boolean tryScatterBatch(FloatBuffer shadow, FloatBuffer src, int srcFloatOffset,
+                                           int shadowFloatOffset, int[] spans, int spanCount, int destVbo) {
+        PersistentUploadStaging staging = PersistentUploadStaging.getOrCreate();
+        ComputeScatterUploader scatter = ComputeScatterUploader.getOrCreate();
+        if (staging == null || scatter == null) {
+            return false;
+        }
+        long totalBytes = 0;
+        for (int k = 0; k < spanCount; k++) {
+            totalBytes += (long) (spans[k * 2 + 1] - spans[k * 2]) * 4L;
+        }
+        if (totalBytes < SCATTER_MIN_BYTES) {
+            return false;
+        }
+        long[] ops = new long[spanCount * 3];
+        for (int k = 0; k < spanCount; k++) {
+            int start = spans[k * 2];
+            int end = spans[k * 2 + 1];
+            int floatCount = end - start;
+            long ringOffset = staging.stageRegion(src, srcFloatOffset + start, floatCount);
+            if (ringOffset < 0) {
+                return false;
+            }
+            ops[k * 3] = ringOffset >> 2;
+            ops[k * 3 + 1] = shadowFloatOffset + start;
+            ops[k * 3 + 2] = floatCount;
+        }
+        if (!scatter.scatter(staging.getBufferId(), destVbo, ops, spanCount)) {
+            return false;
+        }
+        for (int k = 0; k < spanCount; k++) {
+            int start = spans[k * 2];
+            int end = spans[k * 2 + 1];
+            copyToShadow(shadow, shadowFloatOffset + start, src, srcFloatOffset + start, end - start);
+        }
+        NucleusDebug.recordUpload(spanCount, totalBytes);
+        return true;
     }
 
     private static void uploadSpan(FloatBuffer src, int srcFloatOffset, int floatCount,

@@ -30,36 +30,50 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+/**
+ * CPU-based occlusion culling helper for BlockEntityRenderers (BERs).
+ * <p>
+ * Implements an Amanatides-Woo fast voxel traversal (DDA ray-march) from the camera
+ * position to the bounding box corners and face centers of multiblock machines.
+ * <p>
+ * Features:
+ * <ul>
+ *   <li>Intra-frame and cross-frame distance-based caching to avoid redundant raycasts on static scenes.</li>
+ *   <li>Integration with the vanilla view frustum captured prior to the BER pass.</li>
+ *   <li>Compatibility guards for Iris shadow passes, Create contraptions, and far sub-level structures.</li>
+ *   <li>Preserved as a reliable fallback when GPU occlusion culling is unsupported or disabled.</li>
+ * </ul>
+ *
+ * @credit John Amanatides / Andrew Woo
+ */
 @OnlyIn(Dist.CLIENT)
 public final class OcclusionCullingHelper {
 
     /**
-     * Кэш результатов ray-march: внутри кадра + короткий reuse между кадрами
-     * (см. {@link #CROSS_FRAME_TTL_TICKS} и сдвиг камеры), чтобы статичные BER
-     * не пересчитывали 15 лучей каждый render-tick.
+     * Ray-march result cache: intra-frame + short cross-frame reuse
+     * (see {@link #CROSS_FRAME_TTL_TICKS} and camera movement threshold),
+     * preventing static BERs from recalculating 15 rays every render frame.
      */
     private static final Long2ObjectOpenHashMap<CachedResult> occlusionCache = new Long2ObjectOpenHashMap<>();
     private static long currentFrame = 0;
 
-    /** Сдвиг камеры больше этого — пересчёт окклюжена для BE. */
+    /** Camera movement exceeding this distance squared triggers occlusion recalculation. */
     private static final double CAMERA_REUSE_MAX_DIST_SQ = 0.25;
 
-    /** Максимум тиков мира между пересчётами (защита от изменений геометрии). */
+    /** Maximum world ticks between recalculations (guards against level geometry changes). */
     private static final int CROSS_FRAME_TTL_TICKS = 20;
 
-    /** Не хранить записи дальше этого манхэттен-расстояния от игрока (блоки). */
+    /** Purge cache entries beyond this Manhattan distance from the player (blocks). */
     private static final int MAX_KEEP_MANHATTAN_BLOCKS = 192;
 
-    /** Жёстный предел размера карты (путешествие без prune). */
+    /** Hard cap on cache entry count. */
     private static final int MAX_CACHE_ENTRIES = 16384;
 
-    /** Глобальный счётчик: инкремент при подсказке «мир/чанк мог измениться». */
+    /** Global counter incremented when client world geometry may have changed. */
     private static long clientGeometryStamp = 0L;
 
     /**
-     * Фрустум vanilla сразу перед циклом BER ({@code RenderLevelStageEvent.AFTER_ENTITIES}).
-     * {@link CpuFrustumCuller} обновлялся после BER — во время {@link #shouldRender} плоскости
-     * были чужие/устаревшие, из-за чего AABB стабильно оказывались «вне фрустума».
+     * Vanilla frustum captured immediately prior to the BER loop ({@code RenderLevelStageEvent.AFTER_ENTITIES}).
      */
     @Nullable
     private static volatile Frustum blockEntityPassFrustum;
@@ -68,24 +82,14 @@ public final class OcclusionCullingHelper {
     private static TagKey<Block> transparentBlocksTag = null;
 
     /**
-     * Только render-thread: {@link #isRayOccluded} вызывается из {@link #shouldRender}
-     * на клиенте во время рендера.
+     * Render-thread scratch: mutable BlockPos for ray-marching.
      */
     private static final BlockPos.MutableBlockPos RAY_MARCH_SCRATCH = new BlockPos.MutableBlockPos();
 
     private OcclusionCullingHelper() {}
 
     /**
-     * Ключ кэша: чистый {@code pos.asLong()}.
-     * <p>
-     * Раньше сюда подмешивался бит {@code 1<<62} для разделения main/shadow фаз,
-     * но {@code BlockPos.asLong()} пакует Y в биты 52–63 — свободного бита нет,
-     * и XOR ломал Y (aliasing с другой позицией по высоте), а
-     * {@code stripShadowKeyBit} corrupил Y при каждом {@code BlockPos.of}.
-     * Тег оказался и не нужен: {@link #shouldRender} выходит ранним {@code return}
-     * в shadow-проходе, поэтому shadow-результаты никогда не попадают в
-     * {@link #occlusionCache}, и столкновение main/shadow в кэше физически
-     * невозможно.
+     * Cache key: raw {@code pos.asLong()}.
      */
     private static long occlusionCacheKey(BlockPos pos) {
         return pos.asLong();
@@ -100,31 +104,23 @@ public final class OcclusionCullingHelper {
     }
 
     /**
-     * Вызывать, когда клиент подозревает изменение геометрии (чанк, baked refresh и т.д.).
-     * Инвалидирует cross-frame reuse окклюжена; intra-frame кэш сбрасывается {@link #onFrameStart}.
+     * Invoked when client world geometry may have changed (chunk reloads, baked refresh, etc.).
+     * Invalidates cross-frame occlusion reuse.
      */
     public static void onClientWorldGeometryMayHaveChanged() {
         clientGeometryStamp++;
     }
 
-    /** Вызывать из {@code RenderLevelStageEvent.Stage.AFTER_ENTITIES} (Forge) перед циклом BER. */
+    /** Invoked from {@code RenderLevelStageEvent.Stage.AFTER_ENTITIES} prior to the BER loop. */
     public static void captureBlockEntityPassFrustum(@Nullable Frustum frustum) {
         blockEntityPassFrustum = frustum;
     }
 
     /**
-     * Вооружает fallback {@link CpuFrustumCuller}: извлекает плоскости из
-     * world-space {@code projection · view} так, чтобы тест против world-space
-     * AABB (как у {@link net.minecraft.world.level.block.entity.BlockEntity}-
-     * {@code getRenderBoundingBox()}) был корректен. Раньше
-     * {@link CpuFrustumCuller#updateFrustum} не имел ни одного вызова →
-     * {@code planesValid} всегда false → {@code isVisible} всегда true и fallback
-     * вообще не каллил.
-     *
-     * <p>В MC 1.20.1 {@code RenderSystem.getModelViewMatrix()} на фазе AFTER_ENTITIES
-     * содержит только поворот камеры R (сдвиг на {@code -cameraPos} вносится в
-     * level PoseStack по каждому объекту, а не в RenderSystem). Поэтому полную
-     * view-матрицу восстанавливаем как {@code R · T(−cam)}.
+     * Arms the fallback {@link CpuFrustumCuller}: extracts planes from world-space
+     * {@code projection * view} so that tests against world-space AABBs
+     * (as returned by {@link net.minecraft.world.level.block.entity.BlockEntity#getRenderBoundingBox()})
+     * remain mathematically correct.
      */
     public static void captureCpuFrustumFallback(Matrix4f projection, Vec3 cameraPos) {
         if (projection == null) {
@@ -132,21 +128,18 @@ public final class OcclusionCullingHelper {
             return;
         }
         try {
-            Matrix4f rot = new Matrix4f(RenderSystem.getModelViewMatrix());           // R
-            // T(−cam): чистый сдвиг. mul даёт R · T(−cam) → столбец сдвига = −R·cam
-            // (именно это и есть view: p_view = R·(p − cam)). setTranslation дал бы −cam —
-            // некорректно, т.к. cameraPos в world-space, а не в повёрнутом.
+            Matrix4f rot = new Matrix4f(RenderSystem.getModelViewMatrix());           // R_cam
             Matrix4f trans = new Matrix4f().setTranslation(
                     (float) -cameraPos.x, (float) -cameraPos.y, (float) -cameraPos.z);
-            Matrix4f view = rot.mul(trans);                                          // R · T(−cam)
-            Matrix4f viewProj = new Matrix4f(projection).mul(view);                  // P · V
+            Matrix4f view = rot.mul(trans);                                          // R * T(-cam)
+            Matrix4f viewProj = new Matrix4f(projection).mul(view);                  // P * V
             CpuFrustumCuller.updateFrustum(viewProj);
         } catch (Throwable err) {
             CpuFrustumCuller.invalidate();
         }
     }
 
-    /** Тот же тест AABB, что vanilla делает для BE перед {@code render}. */
+    /** Same AABB test that vanilla performs for BlockEntities prior to {@code render}. */
     private static boolean aabbPassesBerPassFrustum(AABB renderBounds) {
         Frustum f = blockEntityPassFrustum;
         if (f == null) {
@@ -163,8 +156,8 @@ public final class OcclusionCullingHelper {
     }
 
     /**
-     * Окклюжен через ray-march (центр → углы AABB → центры граней).
-     * Не учитывает frustum vanilla — его добавляет вызывающий при необходимости.
+     * Occlusion test via DDA ray-march (center -> AABB corners -> face centers).
+     * Does not evaluate vanilla frustum — caller performs frustum check first.
      */
     private static boolean legacyRaycastVisibility(Vec3 cameraPos, Level level, AABB renderBounds) {
         double centerX = (renderBounds.minX + renderBounds.maxX) * 0.5;
@@ -215,7 +208,7 @@ public final class OcclusionCullingHelper {
         double lastCamY;
         double lastCamZ;
         long geometryStampAtCheck;
-        String lastReason; // Для логирования
+        String lastReason; // For diagnostics
 
         CachedResult(boolean visible, long frame, long checkGameTime,
                      double lastCamX, double lastCamY, double lastCamZ, long geometryStampAtCheck, String reason) {
@@ -247,19 +240,15 @@ public final class OcclusionCullingHelper {
     }
 
     /**
-     * Определяет, что в данный момент идёт рендер через фейковый мир контрапшена Create.
-     * Делегирует {@link com.hbm_m.compat.ContraptionRenderCompat}, чтобы вся кодовая база
-     * использовала одну и ту же проверку.
+     * Determines whether rendering is currently executing for a Create contraption virtual world.
+     * Delegates to {@link com.hbm_m.compat.ContraptionRenderCompat}.
      */
     private static boolean isContraptionRenderLevel(@Nullable Level level) {
         return level != null && com.hbm_m.compat.ContraptionRenderCompat.isContraptionRenderLevel(level);
     }
 
     /**
-     * Overload для BER-пути: проверяет контрапшен-рендер по {@code be.getLevel()}
-     * (который в контрапшене равен VirtualRenderWorld, а в обычном мире — ClientLevel).
-     * Большинство машин-рендереров передают {@code minecraft.level}, который всегда
-     * ClientLevel, и не различают эти случаи; эта перегрузка даёт корректный путь.
+     * Overload for BER path: checks contraption rendering via {@code be.getLevel()}.
      */
     public static boolean shouldRender(@Nullable net.minecraft.world.level.block.entity.BlockEntity be, AABB renderBounds) {
         if (be == null) return true;
@@ -267,7 +256,8 @@ public final class OcclusionCullingHelper {
     }
 
     public static boolean shouldRender(BlockPos pos, Level level, AABB renderBounds) {
-        if (!ModClothConfig.get().enableOcclusionCulling) return true;
+        ModClothConfig.OcclusionCullingMode mode = ModClothConfig.get().getEffectiveOcclusionCullingMode();
+        if (mode != ModClothConfig.OcclusionCullingMode.CPU) return true;
 
         // Iris shadow pass uses the light-space frustum, not the main camera frustum
         // captured in blockEntityPassFrustum. Culling here would drop off-screen casters
@@ -276,18 +266,13 @@ public final class OcclusionCullingHelper {
             return true;
         }
 
-        // Контрапшен Create (см. ContraptionRenderCompat): если BE висит на фейковом
-        // VirtualRenderWorld/ContraptionWorld, его реальная BlockPos далеко от камеры,
-        // AABB в world-space фрустуме её отбраковывает, ray-march идёт по реальному
-        // уровню (где в позиции BE ничего нет). Пропускаем кулинг — контрапшен сам
-        // решает, что рисовать, через BitSet shouldRenderBlockEntities.
+        // Create contraptions: bypass culling as the virtual world has distinct coordinates
+        // and contraption subsystems manage their own visibility.
         if (isContraptionRenderLevel(level)) {
             return true;
         }
 
-        // Sable/Aeronautics sublevel: уровень — обычный ClientLevel, но блоки лежат
-        // в plot-grid (~160k+ блоков). Фрустум-тест по сохранённой позиции отбросит
-        // машину, хотя на корабле она видима. Аномальная дальность = спец-рендер.
+        // Aeronautics/Sable sub-level plot-grid check: far anomalous coordinates indicate sub-level rendering.
         if (com.hbm_m.compat.ContraptionRenderCompat.isFarFromCamera(pos)) {
             return true;
         }
@@ -348,7 +333,7 @@ public final class OcclusionCullingHelper {
         trimCacheIfNeeded();
     }
 
-    // ЛОГИРОВАНИЕ: Пишет в консоль ТОЛЬКО когда состояние видимости или причина меняются.
+    // DIAGNOSTICS: Logs to console only when visibility state or reason changes.
     private static void logDecision(BlockPos pos, boolean visible, String reason, CachedResult cached) {
         try {
             if (ModClothConfig.get().mdiDebugLogDispatch) {
@@ -461,8 +446,11 @@ public final class OcclusionCullingHelper {
             int pz = pp.getZ();
             occlusionCache.long2ObjectEntrySet().removeIf(e -> {
                 long raw = stripShadowKeyBit(e.getLongKey());
-                BlockPos bp = BlockPos.of(raw);
-                int dist = Math.abs(bp.getX() - px) + Math.abs(bp.getY() - py) + Math.abs(bp.getZ() - pz);
+                // Manhattan distance straight from the packed key — BlockPos.of
+                // here allocated a throwaway object per cached entry per frame.
+                int dist = Math.abs(BlockPos.getX(raw) - px)
+                        + Math.abs(BlockPos.getY(raw) - py)
+                        + Math.abs(BlockPos.getZ(raw) - pz);
                 return dist > MAX_KEEP_MANHATTAN_BLOCKS;
             });
         }

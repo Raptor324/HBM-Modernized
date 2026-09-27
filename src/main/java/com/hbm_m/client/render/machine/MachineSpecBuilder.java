@@ -31,9 +31,10 @@ public final class MachineSpecBuilder<T extends BlockEntity> {
     @Nullable
     private BlockTransform<T> blockTransform; // null = дефолт (T(0.5,0,0.5)+R(90)+R(legacy facing))
     private final List<MachineSpec.PartDef<T>> parts = new ArrayList<>();
-    private final Map<String, Integer> boneIds = new HashMap<>(); // имя части → boneId (1.. внутри группы)
     private final List<MachineRenderHook<T>> hooks = new ArrayList<>();
     private final Map<String, Function<T, Integer>> lightOverrides = new HashMap<>();
+    private final Map<String, Function<T, float[]>> tintOverrides = new HashMap<>();
+    private final Map<String, float[]> tintFalloffs = new HashMap<>();
     private int viewDistance = -1;
     @Nullable
     private java.util.List<String> itemParts;
@@ -78,13 +79,13 @@ public final class MachineSpecBuilder<T extends BlockEntity> {
 
     /** Статическая часть (рисуется в позе блока, без анимации). */
     public MachineSpecBuilder<T> part(String name) {
-        parts.add(new MachineSpec.PartDef<>(name, name, null, null, null, 0, false, id + "/" + name, lightOverrides.get(name)));
+        parts.add(new MachineSpec.PartDef<>(name, name, null, null, null, false, id + "/" + name, lightOverrides.get(name), null, tintOverrides.get(name), tintFalloffs.get(name)));
         return this;
     }
 
     /** Анимированная часть: {@link PartAnimator} задаёт трансформ относительно блока. */
     public MachineSpecBuilder<T> part(String name, PartAnimator<T> animator) {
-        parts.add(new MachineSpec.PartDef<>(name, name, animator, null, null, 0, true, id + "/" + name, lightOverrides.get(name)));
+        parts.add(new MachineSpec.PartDef<>(name, name, animator, null, null, true, id + "/" + name, lightOverrides.get(name), null, tintOverrides.get(name), tintFalloffs.get(name)));
         return this;
     }
 
@@ -93,7 +94,7 @@ public final class MachineSpecBuilder<T extends BlockEntity> {
      * поверх одной части OBJ (например, 4 шестерни из части "Cog").
      */
     public MachineSpecBuilder<T> part(String modelPartName, String name, PartAnimator<T> animator) {
-        parts.add(new MachineSpec.PartDef<>(name, modelPartName, animator, null, null, 0, true, id + "/" + name, lightOverrides.get(name)));
+        parts.add(new MachineSpec.PartDef<>(name, modelPartName, animator, null, null, true, id + "/" + name, lightOverrides.get(name), null, tintOverrides.get(name), tintFalloffs.get(name)));
         return this;
     }
 
@@ -108,12 +109,42 @@ public final class MachineSpecBuilder<T extends BlockEntity> {
     }
 
     /**
+     * Per-instance RGBA-тинт части ({r,g,b,a}; null/белый RGB = passthrough) — раскалённые
+     * сопла, светящиеся окна и т.п. Пишется в рекорд инстанса (attrib 13 InstColor),
+     * меняется КАЖДЫЙ КАДР без пересборки VBO; RGB может быть &gt; 1 — overbright-накал.
+     * <b>Альфа = сила эмиссии (heat 0..1), НЕ прозрачность</b>: шейдеры доворачивают
+     * lightmap к fullbright на alpha*фоллофф ({@link #tintFalloff}), поэтому свечение
+     * следует тинту пространственно. Вызывать ДО объявления part()/dynamicPart().
+     * <p>
+     * Семантика обновления — как у lightOverride: анимированные части получают свежий
+     * тинт каждый кадр; статические — только при полном пересборе (dirty/TTL) — для
+     * плавно меняющегося тинта на статичной части машина должна звать
+     * {@code markRenderDirty()} при смене значения.
+     */
+    public MachineSpecBuilder<T> tintOverride(String partName, Function<T, float[]> fn) {
+        tintOverrides.put(partName, fn);
+        return this;
+    }
+
+    /**
+     * Пространственный фоллофф тинта части: плавное затухание по оси модели (0=x, 1=y,
+     * 2=z) от {@code fullCoord} (тинт полный, «источник» — например срез сопла) до
+     * {@code zeroCoord} (тинт нулевой). Считается в вершинном шейдере по МОДЕЛЬНЫМ
+     * координатам вершины, поэтому одной настройкой покрывает всю часть/модель без
+     * пересборки VBO. Вызывать ДО объявления part()/dynamicPart() с этим именем.
+     */
+    public MachineSpecBuilder<T> tintFalloff(String partName, float axis, float fullCoord, float zeroCoord) {
+        tintFalloffs.put(partName, new float[] {axis, fullCoord, zeroCoord, 0.0F});
+        return this;
+    }
+
+    /**
      * Статическая часть с фиксированным трансформом-«аниматором» (легаси-офсеты запечки:
      * T(-0.5,0,-0.5), yaw-группы). НЕ гейтится по modelUpdateDistance — живёт до
      * статической отсечки, как обычная статика.
      */
     public MachineSpecBuilder<T> staticPart(String name, PartAnimator<T> transform) {
-        parts.add(new MachineSpec.PartDef<>(name, name, transform, null, null, 0, false, id + "/" + name, lightOverrides.get(name)));
+        parts.add(new MachineSpec.PartDef<>(name, name, transform, null, null, false, id + "/" + name, lightOverrides.get(name), null, tintOverrides.get(name), tintFalloffs.get(name)));
         return this;
     }
 
@@ -122,14 +153,14 @@ public final class MachineSpecBuilder<T extends BlockEntity> {
      * VBO кешируется по ключу {@code cacheKeyFn}; возвращаемый квад-лист может быть пустым.
      */
     public MachineSpecBuilder<T> dynamicPart(String name, QuadResolver<T> quads, Function<T, String> cacheKeyFn) {
-        parts.add(new MachineSpec.PartDef<>(name, name, null, quads, cacheKeyFn, 0, false, id + "/" + name, lightOverrides.get(name)));
+        parts.add(new MachineSpec.PartDef<>(name, name, null, quads, cacheKeyFn, false, id + "/" + name, lightOverrides.get(name), null, tintOverrides.get(name), tintFalloffs.get(name)));
         return this;
     }
 
     /** Динамическая часть с per-BE геометрией И анимацией (например, dish крупного/малого радара). */
     public MachineSpecBuilder<T> dynamicPart(String name, PartAnimator<T> animator,
                                              QuadResolver<T> quads, Function<T, String> cacheKeyFn) {
-        parts.add(new MachineSpec.PartDef<>(name, name, animator, quads, cacheKeyFn, 0, true, id + "/" + name, lightOverrides.get(name)));
+        parts.add(new MachineSpec.PartDef<>(name, name, animator, quads, cacheKeyFn, true, id + "/" + name, lightOverrides.get(name), null, tintOverrides.get(name), tintFalloffs.get(name)));
         return this;
     }
 
@@ -140,21 +171,18 @@ public final class MachineSpecBuilder<T extends BlockEntity> {
      */
     public MachineSpecBuilder<T> dynamicPart(String name, QuadResolver<T> quads, Function<T, String> cacheKeyFn,
                                              PartAnimator<T> transform) {
-        parts.add(new MachineSpec.PartDef<>(name, name, transform, quads, cacheKeyFn, 0, false, id + "/" + name, lightOverrides.get(name)));
+        parts.add(new MachineSpec.PartDef<>(name, name, transform, quads, cacheKeyFn, false, id + "/" + name, lightOverrides.get(name), null, tintOverrides.get(name), tintFalloffs.get(name)));
         return this;
     }
 
     /**
-     * Кинематическая группа (GPU bone skinning): части получают per-vertex bone id
-     * 1..N в порядке перечисления ВНУТРИ этой группы и автоматически исключаются из
-     * MDI-атласа (механизм InstancedStaticPartRenderer.addInstanceGpuBones).
-     * Части всё равно нужно объявить через {@link #part(String, PartAnimator)}.
+     * Динамическая часть с uvRect-резолвером: VBO части хранит sprite-local [0..1] UV,
+     * а резолвер отдаёт per-BE {u0,v0,du,dv} ремапа в атлас (текстурно-вариантные
+     * части дверей: один VBO на геометрию, скин — в per-instance uvRect).
      */
-    public MachineSpecBuilder<T> chain(String... partNames) {
-        int boneId = 1;
-        for (String name : partNames) {
-            boneIds.putIfAbsent(name, boneId++);
-        }
+    public MachineSpecBuilder<T> dynamicPart(String name, QuadResolver<T> quads, Function<T, String> cacheKeyFn,
+                                             PartAnimator<T> transform, Function<T, float[]> uvRectFn) {
+        parts.add(new MachineSpec.PartDef<>(name, name, transform, quads, cacheKeyFn, false, id + "/" + name, lightOverrides.get(name), uvRectFn, tintOverrides.get(name), tintFalloffs.get(name)));
         return this;
     }
 
@@ -198,18 +226,8 @@ public final class MachineSpecBuilder<T extends BlockEntity> {
 
     /** Регистрирует BER в ванильном реестре + спеку в {@link MachineRenderRegistry}. */
     public void register() {
-        // проставляем boneId частям по chain-объявлениям
-        List<MachineSpec.PartDef<T>> resolved = new ArrayList<>(parts.size());
-        for (MachineSpec.PartDef<T> p : parts) {
-            Integer bone = boneIds.get(p.name());
-            if (bone != null) {
-                resolved.add(new MachineSpec.PartDef<>(p.name(), p.modelPartName(), p.animator(), p.dynamicQuads(), p.dynamicCacheKey(), bone, p.animated(), p.staticCacheKey(), p.lightOverride()));
-            } else {
-                resolved.add(p);
-            }
-        }
         MachineSpec<T> spec = new MachineSpec<>(id, beClass, type, modelResolver, facingResolver,
-                resolved, hooks, viewDistance, blockTransform, itemParts, itemExcept, chunkRenderTypes);
+                parts, hooks, viewDistance, blockTransform, itemParts, itemExcept, chunkRenderTypes);
         BlockEntityRenderers.register(type, ctx -> new MachineBer<>(spec));
         MachineRenderRegistry.register(spec);
         // Байпас диспетчера: только типы фабрики MachineRenderers (машины Nucleus).

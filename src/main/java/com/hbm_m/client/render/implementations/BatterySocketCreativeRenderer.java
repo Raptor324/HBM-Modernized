@@ -1,12 +1,20 @@
 package com.hbm_m.client.render.implementations;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
 import java.util.Random;
+import java.util.concurrent.ConcurrentHashMap;
 
+import com.hbm_m.block.machines.MachineBatterySocketBlock;
 import com.hbm_m.blockentity.machines.BatterySocketBlockEntity;
-import com.hbm_m.platform.RenderHooks;
+import com.hbm_m.client.model.BatteryPackBakedModel;
 import com.hbm_m.client.render.RenderDistanceHelper;
+import com.hbm_m.item.fekal_electric.ItemBatteryPack;
 import com.hbm_m.item.fekal_electric.ItemCreativeBattery;
 import com.hbm_m.lib.RefStrings;
+import com.hbm_m.platform.PlatformHooks;
+import com.hbm_m.platform.RenderHooks;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.math.Axis;
@@ -20,8 +28,15 @@ import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.client.resources.model.BakedModel;
+import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.util.RandomSource;
+import net.minecraft.world.item.ItemDisplayContext;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 
 //? if < 1.21.1 {
@@ -29,6 +44,14 @@ import net.minecraft.world.level.Level;
 //?} else {
 /*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
 *///?}
+
+/**
+ * Мировой рендер батарейного сокета (паритет с оригинальным BER): тело вставленной
+ * батареи-пака рисуется из item-модели тира (части OBJ Battery/Capacitor с родной
+ * текстурой), creative-батарея — вращающаяся фигура с молниями, прочие энерго-предметы
+ * — медленно вращающийся предмет на «руке». Тело не в chunk-меше, поэтому появляется
+ * сразу после вставки, без пересборки секции.
+ */
 public class BatterySocketCreativeRenderer implements com.hbm_m.client.render.HbmBerBounds<BatterySocketBlockEntity> {
 
     private static final ResourceLocation MOD_SKIN =
@@ -36,6 +59,12 @@ public class BatterySocketCreativeRenderer implements com.hbm_m.client.render.Hb
 
     private static final ResourceLocation STEVE =
             ResourceLocation.withDefaultNamespace("textures/entity/player/wide/steve.png");
+
+    /** Кэш квадов тела по предмету-тиру: части Socket-модели, ремапнутые на спрайт тира. */
+    private static final Map<ResourceLocation, List<net.minecraft.client.renderer.block.model.BakedQuad>> BODY_QUADS =
+            new ConcurrentHashMap<>();
+
+    private static final float ITEM_DEGREES_PER_TICK = 2.5f;
 
     private final PlayerModel<?> playerModel;
 
@@ -45,9 +74,132 @@ public class BatterySocketCreativeRenderer implements com.hbm_m.client.render.Hb
 
     @Override
     public void render(BatterySocketBlockEntity be, float partialTicks, PoseStack poseStack, MultiBufferSource buffer, int packedLight, int packedOverlay) {
-        if (be.getItemHandler().getStackInSlot(0).getItem() instanceof ItemCreativeBattery) {
-            renderFigure(be.getLevel(), be.getBlockPos(), partialTicks, poseStack, buffer);
+        ItemStack stack = be.getItemHandler().getStackInSlot(0);
+        if (stack.isEmpty()) return;
+
+        Level level = be.getLevel();
+        if (level == null) return;
+
+        if (stack.getItem() instanceof ItemCreativeBattery) {
+            renderFigure(level, be.getBlockPos(), partialTicks, poseStack, buffer);
+            return;
         }
+
+        poseStack.pushPose();
+        if (stack.getItem() instanceof ItemBatteryPack pack) {
+            renderPackBody(level, be.getBlockPos(), poseStack, buffer, packedLight, packedOverlay, stack, pack);
+        } else {
+            renderSpinningItem(level, partialTicks, poseStack, buffer, packedLight, packedOverlay, stack);
+        }
+        poseStack.popPose();
+    }
+
+    /** Тело пака: части Socket-модели (Battery/Capacitor) со спрайтом тира, повёрнутые по FACING. */
+    private void renderPackBody(Level level, BlockPos pos, PoseStack poseStack, MultiBufferSource buffer,
+            int packedLight, int packedOverlay, ItemStack stack, ItemBatteryPack pack) {
+        List<net.minecraft.client.renderer.block.model.BakedQuad> quads = bodyQuads(stack, pack);
+        if (quads.isEmpty()) return;
+
+        int rotationY = rotationYForFacing(level, pos);
+        poseStack.translate(0.5, 0, 0.5);
+        // Направление поворота совпадает с transformQuadsByFacing запечённой модели.
+        poseStack.mulPose(Axis.YN.rotationDegrees(rotationY));
+        poseStack.translate(-0.5, 0, -0.5);
+
+        VertexConsumer vc = buffer.getBuffer(RenderType.cutout());
+        var pose = poseStack.last();
+        RandomSource rand = RandomSource.create();
+        for (net.minecraft.client.renderer.block.model.BakedQuad quad : quads) {
+            RenderHooks.putBulkData(vc, pose, quad, 1f, 1f, 1f, 1f, packedLight, packedOverlay, true);
+        }
+    }
+
+    private int rotationYForFacing(Level level, BlockPos pos) {
+        if (level.getBlockState(pos).hasProperty(MachineBatterySocketBlock.FACING)) {
+            return switch (level.getBlockState(pos).getValue(MachineBatterySocketBlock.FACING)) {
+                case SOUTH -> 180;
+                case WEST -> 270;
+                case EAST -> 90;
+                default -> 0;
+            };
+        }
+        return 0;
+    }
+
+    /**
+     * Квады тела пака: запечённая Socket-модель сокета (та же геометрия, что рисовала
+     * chunk-меш раньше) с UV, ремапнутыми на спрайт тира из блок-атласа (спрайты
+     * стичатся через стандартную карту textures в item-JSON'ах паков). Кэш по id предмета.
+     */
+    private static List<net.minecraft.client.renderer.block.model.BakedQuad> bodyQuads(ItemStack stack, ItemBatteryPack pack) {
+        ResourceLocation itemId = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(stack.getItem());
+        if (itemId == null) return List.of();
+        return BODY_QUADS.computeIfAbsent(itemId, id -> {
+            Minecraft mc = Minecraft.getInstance();
+            BlockState socketState = com.hbm_m.block.ModBlocks.MACHINE_BATTERY_SOCKET.get().defaultBlockState();
+            BakedModel socketModel = mc.getBlockRenderer().getBlockModel(socketState);
+            if (!(socketModel instanceof com.hbm_m.client.model.MachineBatterySocketBakedModel multipart)) {
+                com.hbm_m.main.MainRegistry.LOGGER.warn("[BatterySocket] Body model not found for {}", id);
+                return List.of();
+            }
+            BakedModel part = multipart.getPartModels().get(pack.tier.isCapacitor() ? "Capacitor" : "Battery");
+            if (part == null) return List.of();
+
+            ResourceLocation texLoc = ResourceLocation.fromNamespaceAndPath(
+                    RefStrings.MODID, "block/machine/" + pack.tier.tex);
+            TextureAtlasSprite sprite = mc.getTextureAtlas(net.minecraft.world.inventory.InventoryMenu.BLOCK_ATLAS).apply(texLoc);
+
+            RandomSource rand = RandomSource.create();
+            List<net.minecraft.client.renderer.block.model.BakedQuad> out = new ArrayList<>();
+            for (Direction d : Direction.values()) {
+                remapInto(out, com.hbm_m.platform.RenderHooks.getPartQuads(part, null, d, rand), sprite);
+            }
+            remapInto(out, com.hbm_m.platform.RenderHooks.getPartQuads(part, null, null, rand), sprite);
+            return out;
+        });
+    }
+
+    private static void remapInto(List<net.minecraft.client.renderer.block.model.BakedQuad> out,
+            List<net.minecraft.client.renderer.block.model.BakedQuad> source, TextureAtlasSprite sprite) {
+        for (net.minecraft.client.renderer.block.model.BakedQuad quad : source) {
+            out.add(retextureQuad(quad, sprite));
+        }
+    }
+
+    /** Аффинный ремап UV квада из исходного спрайта в спрайт тира. */
+    private static net.minecraft.client.renderer.block.model.BakedQuad retextureQuad(
+            net.minecraft.client.renderer.block.model.BakedQuad original, TextureAtlasSprite sprite) {
+        TextureAtlasSprite oldSprite = original.getSprite();
+        if (oldSprite == null || oldSprite == sprite) return original;
+        float oldUDiff = oldSprite.getU1() - oldSprite.getU0();
+        float oldVDiff = oldSprite.getV1() - oldSprite.getV0();
+        if (oldUDiff == 0 || oldVDiff == 0) return original;
+        int[] oldData = original.getVertices();
+        int[] newData = oldData.clone();
+        int stride = oldData.length / 4;
+        for (int i = 0; i < 4; i++) {
+            int offset = i * stride;
+            float u = Float.intBitsToFloat(oldData[offset + 4]);
+            float v = Float.intBitsToFloat(oldData[offset + 5]);
+            float normU = (u - oldSprite.getU0()) / oldUDiff;
+            float normV = (v - oldSprite.getV0()) / oldVDiff;
+            newData[offset + 4] = Float.floatToIntBits(sprite.getU0() + normU * (sprite.getU1() - sprite.getU0()));
+            newData[offset + 5] = Float.floatToIntBits(sprite.getV0() + normV * (sprite.getV1() - sprite.getV0()));
+        }
+        return new net.minecraft.client.renderer.block.model.BakedQuad(
+                newData, original.getTintIndex(), original.getDirection(), sprite, original.isShade());
+    }
+
+    /** Прочий энерго-предмет: медленное вращение на «руке» внутри сокета. */
+    private void renderSpinningItem(Level level, float partialTicks, PoseStack poseStack,
+            MultiBufferSource buffer, int packedLight, int packedOverlay, ItemStack stack) {
+        float spin = (level.getGameTime() % 3600) * ITEM_DEGREES_PER_TICK + partialTicks * ITEM_DEGREES_PER_TICK;
+        poseStack.translate(0.5, 0.85, 0.5);
+        poseStack.mulPose(Axis.YN.rotationDegrees(spin));
+        poseStack.scale(0.6f, 0.6f, 0.6f);
+        Minecraft.getInstance().getItemRenderer().renderStatic(
+                stack, ItemDisplayContext.GROUND, packedLight, packedOverlay,
+                poseStack, buffer, level, (int) level.getGameTime());
     }
 
     private void renderFigure(Level level, BlockPos pos, float partialTicks, PoseStack poseStack, MultiBufferSource buffer) {
