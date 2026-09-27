@@ -1,6 +1,5 @@
 package com.hbm_m.mixin;
 
-//? if forge || neoforge {
 import java.util.Set;
 
 import org.spongepowered.asm.mixin.Mixin;
@@ -67,4 +66,3 @@ public abstract class SuperGlueSelectionHelperMixin {
         }
     }
 }
-//?}

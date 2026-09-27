@@ -14,7 +14,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
 
-//? if forge || neoforge {
 /**
  * JEI-Kategorie der Verfestigung (siehe {@link SolidificationRecipe}).
  *
@@ -54,7 +53,3 @@ public class SolidificationJeiCategory extends JeiFluidRecipeCategory<Solidifica
         return List.of(recipe.getOutput());
     }
 }
-//?} else {
-/*public final class SolidificationJeiCategory {
-    private SolidificationJeiCategory() {}
-}*///?}

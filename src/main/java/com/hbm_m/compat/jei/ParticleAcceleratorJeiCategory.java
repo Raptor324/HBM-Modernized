@@ -13,7 +13,6 @@ import mezz.jei.api.recipe.RecipeType;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 
-//? if forge || neoforge {
 /**
  * JEI-Kategorie des Teilchenbeschleunigers ({@code hbm_m:particle_accelerator}).
  *
@@ -68,7 +67,3 @@ public class ParticleAcceleratorJeiCategory extends JeiUniversalRecipeCategory<P
         return outputs;
     }
 }
-//?} else {
-/*public final class ParticleAcceleratorJeiCategory {
-    private ParticleAcceleratorJeiCategory() {}
-}*///?}

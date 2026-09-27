@@ -14,7 +14,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
 
-//? if forge || neoforge {
 /**
  * JEI-Kategorie des Pyrolyseofens (siehe {@link PyroOvenRecipe}).
  *
@@ -68,7 +67,3 @@ public class PyroOvenJeiCategory extends JeiFluidRecipeCategory<PyroOvenRecipe> 
         return list;
     }
 }
-//?} else {
-/*public final class PyroOvenJeiCategory {
-    private PyroOvenJeiCategory() {}
-}*///?}

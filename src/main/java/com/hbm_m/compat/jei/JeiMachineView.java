@@ -1,6 +1,5 @@
 package com.hbm_m.compat.jei;
 
-//? if forge || neoforge {
 import java.util.List;
 
 import net.minecraft.network.chat.Component;
@@ -33,4 +32,3 @@ public interface JeiMachineView<R> {
     /** Строки под рецептом: длительность, потребление, шансы. */
     default List<Component> notes(R recipe) { return List.of(); }
 }
-//?}

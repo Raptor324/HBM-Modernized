@@ -1,6 +1,5 @@
 package com.hbm_m.mixin;
 
-//? if forge || neoforge {
 import com.hbm_m.multiblock.ContraptionAssemblyGuard;
 
 import org.spongepowered.asm.mixin.Mixin;
@@ -62,4 +61,3 @@ public abstract class SubLevelMoveWindowMixin {
         ContraptionAssemblyGuard.pop();
     }
 }
-//?}

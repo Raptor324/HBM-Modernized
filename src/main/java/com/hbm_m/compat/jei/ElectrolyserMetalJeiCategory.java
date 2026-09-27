@@ -18,7 +18,6 @@ import net.minecraft.world.item.ItemStack;
  * <p>Data-driven: рецепты читаются напрямую aus {@code RecipeManager} (JSON {@code hbm_m:electrolyser_metal}),
  * ранее — статический {@code ElectrolyserRecipes} (metal-mode).</p>
  */
-//? if forge || neoforge {
 public class ElectrolyserMetalJeiCategory extends JeiGenericRecipeCategory<ElectrolyserMetalRecipe> {
 
     public static final RecipeType<ElectrolyserMetalRecipe> RECIPE_TYPE =
@@ -96,4 +95,3 @@ public class ElectrolyserMetalJeiCategory extends JeiGenericRecipeCategory<Elect
         // Kein Blueprint-Slot fuer Electrolyser-Metal-Rezepte.
     }
 }
-//?}

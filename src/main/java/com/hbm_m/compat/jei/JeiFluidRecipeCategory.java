@@ -14,7 +14,6 @@ import mezz.jei.api.helpers.IGuiHelper;
 import mezz.jei.api.recipe.RecipeIngredientRole;
 import net.minecraft.world.item.ItemStack;
 
-//? if forge || neoforge {
 /**
  * Gemeinsame Grundlage aller JEI-Kategorien, die ueberwiegend mit Fluessigkeiten arbeiten -
  * Reformer, Verkoker, Fraktionierturm, Hydrotreater, Vakuumdestillation, Bruetreaktor,
@@ -130,7 +129,3 @@ public abstract class JeiFluidRecipeCategory<R> extends JeiGenericRecipeCategory
         // Diese Maschinen kennen keine Blaupausen.
     }
 }
-//?} else {
-/*public abstract class JeiFluidRecipeCategory<R> {
-    protected JeiFluidRecipeCategory() {}
-}*///?}

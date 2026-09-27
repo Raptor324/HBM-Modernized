@@ -13,7 +13,6 @@ import mezz.jei.api.recipe.RecipeType;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 
-//? if forge || neoforge {
 /**
  * JEI-Kategorie des Hydrotreaters (siehe {@link HydrotreaterRecipe}).
  *
@@ -53,7 +52,3 @@ public class HydrotreaterJeiCategory extends JeiFluidRecipeCategory<Hydrotreater
                 FluidStack.create(recipe.getSourGas(), recipe.getSourGasMb()));
     }
 }
-//?} else {
-/*public final class HydrotreaterJeiCategory {
-    private HydrotreaterJeiCategory() {}
-}*///?}

@@ -1,4 +1,3 @@
-//? if forge || neoforge {
 package com.hbm_m.client.render.item;
 
 import com.hbm_m.blockentity.machines.rbmk.RBMKColumnBlockEntity;
@@ -56,4 +55,3 @@ public class RBMKColumnItemRenderer extends BlockEntityWithoutLevelRenderer {
         poseStack.popPose();
     }
 }
-//?}

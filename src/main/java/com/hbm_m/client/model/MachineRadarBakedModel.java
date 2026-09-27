@@ -97,12 +97,10 @@ public class MachineRadarBakedModel extends AbstractMultipartBakedModel implemen
     }
 
     // Без ветки neoforge слой падал в solid, и прозрачные участки рисовались непрозрачными.
-    //? if forge || neoforge {
     @Override
     public ChunkRenderTypeSet getRenderTypes(BlockState state, RandomSource rand, ModelData data) {
         return ChunkRenderTypeSet.of(RenderType.cutout());
     }
-    //?}
 
     @Override
     public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, RandomSource rand) {

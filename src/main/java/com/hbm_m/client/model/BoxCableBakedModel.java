@@ -391,7 +391,6 @@ public class BoxCableBakedModel implements BakedModel {
         return transforms != null ? transforms : ItemTransforms.NO_TRANSFORMS;
     }
 
-    //? if forge || neoforge {
     @Override
     public ChunkRenderTypeSet getRenderTypes(BlockState state, RandomSource rand, ModelData data) {
         // CUTOUT: текстуры короба с прозрачными полями, 1.7.10 рендерил их с alpha-тестом
@@ -399,5 +398,4 @@ public class BoxCableBakedModel implements BakedModel {
         // (см. face) закрывают вырезы стенками короба.
         return ChunkRenderTypeSet.of(RenderType.cutout());
     }
-    //?}
 }

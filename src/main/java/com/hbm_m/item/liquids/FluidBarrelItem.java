@@ -254,7 +254,6 @@ public class FluidBarrelItem extends Item implements ITooltipProvider {
     //  initCapabilities/ICapabilityProvider).                              //
     // ================================================================== //
 
-    //? if forge || neoforge {
     public static class FluidBarrelCapabilityHandler implements IFluidHandlerItem {
         protected final BarrelAccess access;
 
@@ -299,7 +298,6 @@ public class FluidBarrelItem extends Item implements ITooltipProvider {
                     : new FluidStack(arch.getFluid(), (int) arch.getAmount());
         }
     }
-    //?}
 
     //? if forge {
     private static class FluidBarrelCapabilityProvider implements ICapabilityProvider {

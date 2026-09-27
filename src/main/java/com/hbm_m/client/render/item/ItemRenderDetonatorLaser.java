@@ -1,4 +1,3 @@
-//? if forge || neoforge {
 package com.hbm_m.client.render.item;
 
 import com.hbm_m.client.ClientRenderHandler;
@@ -188,4 +187,3 @@ public class ItemRenderDetonatorLaser extends BlockEntityWithoutLevelRenderer {
         poseStack.popPose();
     }
 }
-//?}

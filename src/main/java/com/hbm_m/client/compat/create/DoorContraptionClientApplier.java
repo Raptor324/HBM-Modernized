@@ -1,4 +1,3 @@
-//? if forge || neoforge {
 package com.hbm_m.client.compat.create;
 
 import com.hbm_m.block.entity.doors.DoorDecl;
@@ -87,4 +86,3 @@ public final class DoorContraptionClientApplier {
         return null;
     }
 }
-//?}

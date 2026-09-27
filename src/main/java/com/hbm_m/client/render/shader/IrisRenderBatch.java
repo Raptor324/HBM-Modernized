@@ -168,7 +168,6 @@ public final class IrisRenderBatch implements AutoCloseable {
      * @param projectionMatrix  projection matrix to upload once into the shader
      */
     public static IrisRenderBatch begin(boolean shadowPass, Matrix4f projectionMatrix) {
-        //? if forge || neoforge {
         // Shadow pass открывает NON-PERSISTENT батч: он живёт строго внутри
         // одного BER (try-with-resources вызывающего закрывает его до
         // возврата из render()). Раньше существовал персистентный shadow-батч,
@@ -224,7 +223,6 @@ public final class IrisRenderBatch implements AutoCloseable {
             INSTANCE.isShadowPass = false;
             return null;
         }
-        //?}
 
     }
 

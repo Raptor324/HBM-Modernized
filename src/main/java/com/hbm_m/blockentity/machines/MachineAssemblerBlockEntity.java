@@ -520,7 +520,6 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
                 // Shared by Forge and NeoForge: var infers each platform's own IItemHandler, and the
                 // method names match. The block used to be forge-only, so on NeoForge the assembler
                 // never pulled anything from an adjacent inventory.
-                //? if forge || neoforge {
                 var cap = com.hbm_m.api.item.ItemHandlerAccess.getItemHandler(level, neighborPosGlobal, dirToNeighbor);
                 if (cap == null) continue;
 
@@ -546,7 +545,6 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
                         }
                     }
                 }
-                //?}
 
             }
         }
@@ -588,7 +586,6 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
             Direction side2 = facingDir;
             // Shared by Forge and NeoForge, see pullIngredientsForOneCraft: this was forge-only, so
             // on NeoForge the output slot filled up and the machine stalled until emptied by hand.
-            //? if forge || neoforge {
             var cap = com.hbm_m.api.item.ItemHandlerAccess.getItemHandler(level, neighborPos, side1);
             if (cap == null) cap = com.hbm_m.api.item.ItemHandlerAccess.getItemHandler(level, neighborPos, side2);
             if (cap == null) continue;
@@ -604,7 +601,6 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
             }
 
             out = inventory.getStackInSlot(OUTPUT_SLOT);
-            //?}
 
         }
     }
@@ -650,7 +646,6 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
     // ==================== CLIENT ====================
 
 
-    //? if forge || neoforge {
     private ItemStack clientRecipeIconTemplate = ItemStack.EMPTY;
 
     private ItemStack clientRecipeIconCache = ItemStack.EMPTY;
@@ -675,7 +670,6 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
     public void setCrafting(boolean crafting) {
         this.isCrafting = crafting;
     }
-    //?}
 
     public boolean isCrafting() {
         return isCrafting;

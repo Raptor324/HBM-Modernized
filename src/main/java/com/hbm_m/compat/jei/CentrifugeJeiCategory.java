@@ -13,7 +13,6 @@ import mezz.jei.api.recipe.RecipeType;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 
-//? if forge || neoforge {
 public class CentrifugeJeiCategory extends JeiUniversalRecipeCategory<CentrifugeRecipe> {
 
     public static final RecipeType<CentrifugeRecipe> RECIPE_TYPE =
@@ -62,4 +61,3 @@ public class CentrifugeJeiCategory extends JeiUniversalRecipeCategory<Centrifuge
     }
 
 }
-//?}

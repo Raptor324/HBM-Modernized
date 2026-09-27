@@ -26,23 +26,15 @@ public class ModCreativeTabs {
         DeferredRegister.create(RefStrings.MODID, Registries.CREATIVE_MODE_TAB);
 
     private static CreativeModeTab.Builder tabBuilder() {
-        //? if forge || neoforge {
         return CreativeModeTab.builder();
-        //?} else {
-        /*return CreativeModeTab.builder(CreativeModeTab.Row.TOP, 0);
-        *///?}
     }
 
     /**
      * Forge/NeoForge: {@code withTabsBefore} — порядок вкладок (не по registry ID).
      */
     private static CreativeModeTab.Builder tabBuilderAfter(String previousTabId) {
-        //? if forge || neoforge {
         return CreativeModeTab.builder()
                 .withTabsBefore(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, previousTabId));
-        //?} else {
-        /*return CreativeModeTab.builder(CreativeModeTab.Row.TOP, 0);
-        *///?}
     }
 
     // Оригинал: PartsTab (иконка — ingot_uranium)

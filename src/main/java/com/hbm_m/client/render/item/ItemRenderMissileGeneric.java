@@ -1,4 +1,3 @@
-//? if forge || neoforge {
 package com.hbm_m.client.render.item;
 
 import com.hbm_m.client.render.missile.MissileRenderHelper;
@@ -175,4 +174,3 @@ public class ItemRenderMissileGeneric extends BlockEntityWithoutLevelRenderer {
     private record GuiLayout(float scale, float offset) {
     }
 }
-//?}

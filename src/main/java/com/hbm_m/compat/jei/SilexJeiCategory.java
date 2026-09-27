@@ -15,7 +15,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
 
-//? if forge || neoforge {
 /**
  * JEI-Kategorie des SILEX (siehe {@link SilexRecipe}).
  *
@@ -70,7 +69,3 @@ public class SilexJeiCategory extends JeiFluidRecipeCategory<SilexRecipe> {
         return outputs;
     }
 }
-//?} else {
-/*public final class SilexJeiCategory {
-    private SilexJeiCategory() {}
-}*///?}

@@ -1,4 +1,3 @@
-//? if forge || neoforge {
 package com.hbm_m.client.render.item;
 
 import java.util.List;
@@ -153,4 +152,3 @@ public class FluidTankItemRenderer extends BlockEntityWithoutLevelRenderer {
         return ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "block/tank/tank_" + fluidName);
     }
 }
-//?}

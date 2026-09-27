@@ -95,7 +95,6 @@ public class MissileBakedModel extends AbstractMultipartBakedModel implements Ab
 
     }
 
-    //? if forge || neoforge {
     @Override
     public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, RandomSource rand,
                                     ModelData data, @Nullable net.minecraft.client.renderer.RenderType renderType) {
@@ -104,7 +103,6 @@ public class MissileBakedModel extends AbstractMultipartBakedModel implements Ab
         }
         return List.of();
     }
-    //?}
 
     private List<BakedQuad> getItemQuads(@Nullable Direction side, RandomSource rand) {
         if (!itemQuadsCached || cachedItemQuads == null) {

@@ -1,4 +1,3 @@
-//? if forge || neoforge {
 package com.hbm_m.client.compat.create;
 
 import net.minecraft.core.BlockPos;
@@ -85,4 +84,3 @@ public final class ContraptionDoorAnimCache {
         }
     }
 }
-//?}

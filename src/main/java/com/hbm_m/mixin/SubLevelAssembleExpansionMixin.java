@@ -1,6 +1,5 @@
 package com.hbm_m.mixin;
 
-//? if forge || neoforge {
 import com.hbm_m.compat.create.MultiblockExpander;
 
 import net.minecraft.core.BlockPos;
@@ -79,4 +78,3 @@ public abstract class SubLevelAssembleExpansionMixin {
         }
     }
 }
-//?}

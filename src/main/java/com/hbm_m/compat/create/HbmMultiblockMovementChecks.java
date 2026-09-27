@@ -1,6 +1,5 @@
 package com.hbm_m.compat.create;
 
-//? if forge || neoforge {
 import com.hbm_m.interfaces.IMultiblockController;
 import com.hbm_m.interfaces.IMultiblockPart;
 
@@ -105,4 +104,3 @@ public final class HbmMultiblockMovementChecks {
         return result;
     }
 }
-//?}

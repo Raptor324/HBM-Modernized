@@ -1,6 +1,5 @@
 package com.hbm_m.compat.create;
 
-//? if forge || neoforge {
 import java.lang.reflect.Method;
 import java.util.Set;
 
@@ -108,4 +107,3 @@ public final class GlueOutlineCompat {
         return null;
     }
 }
-//?}

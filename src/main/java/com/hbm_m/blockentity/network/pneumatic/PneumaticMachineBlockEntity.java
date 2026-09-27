@@ -86,7 +86,6 @@ public abstract class PneumaticMachineBlockEntity extends BaseMachineBlockEntity
 
     // Both loaders have IBlockEntityExtension#onChunkUnloaded; forge-only here left the node
     // alive on NeoForge after the chunk went away.
-    //? if forge || neoforge {
     @Override
     public void onChunkUnloaded() {
         super.onChunkUnloaded();
@@ -95,5 +94,4 @@ public abstract class PneumaticMachineBlockEntity extends BaseMachineBlockEntity
         }
         if (cache != null) cache.dissolveCache();
     }
-    //?}
 }

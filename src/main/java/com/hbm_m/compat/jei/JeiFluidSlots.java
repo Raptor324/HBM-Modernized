@@ -1,6 +1,5 @@
 package com.hbm_m.compat.jei;
 
-//? if forge || neoforge {
 import mezz.jei.api.gui.builder.IRecipeSlotBuilder;
 import net.minecraft.world.level.material.Fluid;
 
@@ -30,4 +29,3 @@ public final class JeiFluidSlots {
         addFluid(slot, stack.getFluid(), (int) Math.min(Integer.MAX_VALUE, stack.getAmount()), capacityMb);
     }
 }
-//?}

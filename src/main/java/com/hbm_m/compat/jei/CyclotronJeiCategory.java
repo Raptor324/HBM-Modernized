@@ -15,7 +15,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 
-//? if forge || neoforge {
 /**
  * JEI-категория циклотрона ({@code hbm_m:cyclotron}).
  *
@@ -80,4 +79,3 @@ public class CyclotronJeiCategory implements IRecipeCategory<CyclotronRecipe> {
         }
     }
 }
-//?}

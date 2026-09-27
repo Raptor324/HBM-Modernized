@@ -91,7 +91,6 @@ public class CargoElevatorBakedModel extends AbstractMultipartBakedModel impleme
     }
     *///?}
 
-    //? if forge || neoforge {
     @Override
     public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side,
                                      RandomSource rand, ModelData modelData,
@@ -111,7 +110,6 @@ public class CargoElevatorBakedModel extends AbstractMultipartBakedModel impleme
     public ChunkRenderTypeSet getRenderTypes(BlockState state, RandomSource rand, ModelData data) {
         return ChunkRenderTypeSet.of(RenderType.cutoutMipped());
     }
-    //?}
 
     //? if forge {
     private List<BakedQuad> getItemQuads(@Nullable Direction side, RandomSource rand,

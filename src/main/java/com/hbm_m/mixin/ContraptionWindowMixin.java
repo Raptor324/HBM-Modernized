@@ -1,6 +1,5 @@
 package com.hbm_m.mixin;
 
-//? if forge || neoforge {
 import com.hbm_m.multiblock.ContraptionAssemblyGuard;
 
 import net.minecraft.core.BlockPos;
@@ -52,4 +51,3 @@ public abstract class ContraptionWindowMixin {
         ContraptionAssemblyGuard.pop();
     }
 }
-//?}

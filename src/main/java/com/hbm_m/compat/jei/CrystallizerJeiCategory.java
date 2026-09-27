@@ -7,7 +7,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 
-//? if forge || neoforge {
 import dev.architectury.fluid.FluidStack;
 import mezz.jei.api.constants.VanillaTypes;
 import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
@@ -68,4 +67,3 @@ public class CrystallizerJeiCategory implements IRecipeCategory<CrystallizerReci
         }
     }
 }
-//?}

@@ -14,7 +14,6 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.crafting.Ingredient;
 
-//? if forge || neoforge {
 /**
  * JEI-Kategorie des Verfluessigers (siehe {@link LiquefactorRecipe}).
  *
@@ -54,7 +53,3 @@ public class LiquefactorJeiCategory extends JeiFluidRecipeCategory<LiquefactorRe
         return List.of(recipe.getOutput());
     }
 }
-//?} else {
-/*public final class LiquefactorJeiCategory {
-    private LiquefactorJeiCategory() {}
-}*///?}

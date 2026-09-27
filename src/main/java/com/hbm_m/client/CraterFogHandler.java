@@ -1,4 +1,3 @@
-//? if forge || neoforge {
 package com.hbm_m.client;
 
 import com.hbm_m.main.MainRegistry;
@@ -78,4 +77,3 @@ public class CraterFogHandler {
         }
     }
 }
-//?}

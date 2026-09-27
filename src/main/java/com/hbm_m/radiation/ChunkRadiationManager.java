@@ -106,7 +106,6 @@ public class ChunkRadiationManager {
     }
 
     // События чанков для Forge и NeoForge
-    //? if forge || neoforge {
     @SubscribeEvent
     public static void onChunkLoad(ChunkEvent.Load event) {
         if (ModClothConfig.get().enableChunkRads && !event.getLevel().isClientSide() && event.getChunk() instanceof LevelChunk chunk) {
@@ -126,7 +125,6 @@ public class ChunkRadiationManager {
             *///?}
         }
     }
-    //?}
 
     // СТАТИЧЕСКИЕ МЕТОДЫ-ОБЕРТКИ
 

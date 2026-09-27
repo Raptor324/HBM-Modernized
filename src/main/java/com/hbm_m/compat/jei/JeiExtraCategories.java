@@ -1,6 +1,5 @@
 package com.hbm_m.compat.jei;
 
-//? if forge || neoforge {
 import java.util.ArrayList;
 import java.util.List;
 
@@ -318,4 +317,3 @@ public final class JeiExtraCategories {
         registration.addRecipeCatalyst(machine(ModBlocks.CRUCIBLE.get()), MoltenAlloyJeiCategory.RECIPE_TYPE);
     }
 }
-//?}

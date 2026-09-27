@@ -1,6 +1,5 @@
 package com.hbm_m.mixin;
 
-//? if forge || neoforge {
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
@@ -141,4 +140,3 @@ public abstract class ContraptionMixin {
     @Shadow
     private com.simibubi.create.content.contraptions.MountedStorageManager storage;
 }
-//?}

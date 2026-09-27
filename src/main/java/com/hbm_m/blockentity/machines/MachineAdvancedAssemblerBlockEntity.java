@@ -48,7 +48,6 @@ import net.minecraftforge.common.capabilities.Capability;
 import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.common.util.LazyOptional;
 import net.minecraftforge.fluids.capability.IFluidHandler;
-import net.minecraftforge.fml.DistExecutor;
 //?}
 //? if neoforge {
 /*import net.neoforged.api.distmarker.Dist;
@@ -774,7 +773,6 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
     }
 
 
-    //? if forge || neoforge {
     @Nullable
     private ResourceLocation clientRecipeIconCacheId;
 
@@ -848,7 +846,6 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
         ensureAdvAssemblerReflectCache();
         return java.lang.reflect.Array.newInstance(cachedAdvAsmArmComponentType, 0);
     }
-    //?}
 
     @Override
     protected BlockPos[] getExtraEnergyPorts() {

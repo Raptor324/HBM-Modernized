@@ -13,7 +13,6 @@ import mezz.jei.api.recipe.RecipeType;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 
-//? if forge || neoforge {
 /**
  * JEI-Kategorie der Vakuumdestillation (siehe {@link VacuumDistillRecipe}).
  *
@@ -52,7 +51,3 @@ public class VacuumDistillJeiCategory extends JeiFluidRecipeCategory<VacuumDisti
                 FluidStack.create(recipe.getSour(), recipe.getSourMb()));
     }
 }
-//?} else {
-/*public final class VacuumDistillJeiCategory {
-    private VacuumDistillJeiCategory() {}
-}*///?}

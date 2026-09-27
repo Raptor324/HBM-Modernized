@@ -81,13 +81,11 @@ public class DaeBakedModel implements BakedModel {
         return transforms;
     }
 
-    //? if forge || neoforge {
     @Override
     public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side, RandomSource rand,
                                     ModelData modelData, @Nullable RenderType renderType) {
         return side == null ? quads : List.of();
     }
-    //?}
 
     @Override
     @Deprecated

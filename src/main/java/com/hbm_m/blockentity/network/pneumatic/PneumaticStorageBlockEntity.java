@@ -173,13 +173,11 @@ public abstract class PneumaticStorageBlockEntity extends BaseMachineBlockEntity
 
     // Both loaders have IBlockEntityExtension#onChunkUnloaded; forge-only here left the node
     // alive on NeoForge after the chunk went away.
-    //? if forge || neoforge {
     @Override
     public void onChunkUnloaded() {
         super.onChunkUnloaded();
         detach();
     }
-    //?}
 
     @Override
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {

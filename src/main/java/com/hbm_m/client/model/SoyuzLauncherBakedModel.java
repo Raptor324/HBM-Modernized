@@ -66,7 +66,6 @@ public class SoyuzLauncherBakedModel extends AbstractMultipartBakedModel {
         return result;
     }
 
-    //? if forge || neoforge {
     @Override
     public List<BakedQuad> getQuads(@Nullable BlockState state, @Nullable Direction side,
                                      RandomSource rand, ModelData modelData, @Nullable net.minecraft.client.renderer.RenderType renderType) {
@@ -82,7 +81,6 @@ public class SoyuzLauncherBakedModel extends AbstractMultipartBakedModel {
         }
         return result;
     }
-    //?}
 
     @Override
     protected List<String> getItemRenderPartNames() {

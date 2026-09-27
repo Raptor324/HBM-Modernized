@@ -13,7 +13,6 @@ import mezz.jei.api.recipe.RecipeType;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 
-//? if forge || neoforge {
 /**
  * JEI-Kategorie des Verkokers (siehe {@link CokerRecipe}).
  *
@@ -58,7 +57,3 @@ public class CokerJeiCategory extends JeiFluidRecipeCategory<CokerRecipe> {
         return List.of(recipe.getOutput());
     }
 }
-//?} else {
-/*public final class CokerJeiCategory {
-    private CokerJeiCategory() {}
-}*///?}

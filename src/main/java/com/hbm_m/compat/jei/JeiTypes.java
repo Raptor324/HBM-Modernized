@@ -1,6 +1,5 @@
 package com.hbm_m.compat.jei;
 
-//? if forge || neoforge {
 //? if forge {
 import net.minecraftforge.fluids.FluidStack;
 //?} elif neoforge {
@@ -26,4 +25,3 @@ public final class JeiTypes {
             mezz.jei.api.neoforge.NeoForgeTypes.FLUID_STACK;
     *///?}
 }
-//?}

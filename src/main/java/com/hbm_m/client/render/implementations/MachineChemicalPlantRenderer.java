@@ -305,7 +305,6 @@ public final class MachineChemicalPlantRenderer {
      */
     public static void presentDeferredFluids() {
         if (DEFERRED_FLUIDS.isEmpty()) return;
-        //? if forge || neoforge {
         try (var ignored = IrisPhaseGuard.pushBlockEntities()) {
             boolean depthMaskWas = GL11.glGetBoolean(GL11.GL_DEPTH_WRITEMASK);
             PoseStack poseStack = new PoseStack();
@@ -323,7 +322,6 @@ public final class MachineChemicalPlantRenderer {
                 RenderSystem.depthMask(depthMaskWas);
             }
         }
-        //?}
         DEFERRED_FLUIDS.clear();
     }
 

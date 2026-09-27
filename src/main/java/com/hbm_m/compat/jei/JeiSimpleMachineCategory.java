@@ -8,7 +8,6 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import net.neoforged.api.distmarker.OnlyIn;
 *///?}
 
-//? if forge || neoforge {
 import java.util.List;
 
 import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
@@ -125,4 +124,3 @@ public final class JeiSimpleMachineCategory<R> extends JeiGenericRecipeCategory<
         }
     }
 }
-//?}

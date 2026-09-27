@@ -8,7 +8,6 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import net.neoforged.api.distmarker.OnlyIn;
 *///?}
 
-//? if forge || neoforge {
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.inventory.material.MaterialStack;
 import com.hbm_m.lib.RefStrings;
@@ -84,4 +83,3 @@ public class MoltenAlloyJeiCategory implements IRecipeCategory<MoltenAlloyRecipe
         }
     }
 }
-//?}
