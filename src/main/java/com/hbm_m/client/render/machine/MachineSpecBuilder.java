@@ -15,10 +15,11 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 
 /**
- * Билдер спеки станка. Создаётся через {@link MachineRenderers#machine};
- * завершается {@link #register()}, который регистрирует BER и спеку в реестре.
+ * Builder for a machine spec. Created via {@link MachineRenderers#machine};
+ * finished by {@link #register()}, which registers the BER and the spec in the
+ * registry.
  *
- * @param <T> класс BlockEntity станка
+ * @param <T> the machine's BlockEntity class
  */
 public final class MachineSpecBuilder<T extends BlockEntity> {
 
@@ -29,7 +30,7 @@ public final class MachineSpecBuilder<T extends BlockEntity> {
     private Function<T, BakedModel> modelResolver = MachineRenderers::blockstateModel;
     private Function<T, Direction> facingResolver = MachineRenderers::defaultFacing;
     @Nullable
-    private BlockTransform<T> blockTransform; // null = дефолт (T(0.5,0,0.5)+R(90)+R(legacy facing))
+    private BlockTransform<T> blockTransform; // null = default (T(0.5,0,0.5)+R(90)+R(legacy facing))
     private final List<MachineSpec.PartDef<T>> parts = new ArrayList<>();
     private final List<MachineRenderHook<T>> hooks = new ArrayList<>();
     private final Map<String, Function<T, Integer>> lightOverrides = new HashMap<>();
@@ -42,6 +43,8 @@ public final class MachineSpecBuilder<T extends BlockEntity> {
     private java.util.List<String> itemExcept;
     @Nullable
     private java.util.List<net.minecraft.client.renderer.RenderType> chunkRenderTypes;
+    @Nullable
+    private java.util.function.ToLongFunction<T> animationEpoch;
 
     MachineSpecBuilder(String id, Class<T> beClass, net.minecraft.world.level.block.entity.BlockEntityType<T> type) {
         this.id = id;
@@ -49,59 +52,59 @@ public final class MachineSpecBuilder<T extends BlockEntity> {
         this.type = type;
     }
 
-    /** Модель по BE: скины дверей, hot/cold дуговой печи и т.п. По умолчанию — модель blockstate. */
+    /** Model per BE: door skins, hot/cold of the arc furnace, etc. Default - the blockstate model. */
     public MachineSpecBuilder<T> model(Function<T, BakedModel> resolver) {
         this.modelResolver = resolver;
         return this;
     }
 
-    /** Facing станка. По умолчанию — HORIZONTAL_FACING из blockstate, иначе NORTH. */
+    /** Machine facing. Default - HORIZONTAL_FACING from the blockstate, otherwise NORTH. */
     public MachineSpecBuilder<T> facing(Function<T, Direction> resolver) {
         this.facingResolver = resolver;
         return this;
     }
 
     /**
-     * Кастомный блочный трансформ (редко нужно; по умолчанию — translate(0.5,0,0.5)
-     * + rotate(90) + legacy facing rotation). Через {@code animator.translate/rotate}
-     * — он делегирует на PoseStack. Всё содержимое применяется ДО аниматоров частей.
+     * Custom block transform (rarely needed; default - translate(0.5,0,0.5)
+     * + rotate(90) + legacy facing rotation). Use {@code animator.translate/rotate} -
+     * it delegates to the PoseStack. Everything is applied BEFORE the part animators.
      */
     public MachineSpecBuilder<T> blockTransform(BlockTransform<T> fn) {
         this.blockTransform = fn;
         return this;
     }
 
-    /** Кастомный блочный трансформ спеки. */
+    /** Custom block transform of the spec. */
     @FunctionalInterface
     public interface BlockTransform<T extends BlockEntity> {
         void apply(T blockEntity, com.hbm_m.client.render.LegacyAnimator animator);
     }
 
-    /** Статическая часть (рисуется в позе блока, без анимации). */
+    /** Static part (drawn in the block pose, no animation). */
     public MachineSpecBuilder<T> part(String name) {
-        parts.add(new MachineSpec.PartDef<>(name, name, null, null, null, false, id + "/" + name, lightOverrides.get(name), null, tintOverrides.get(name), tintFalloffs.get(name)));
+        parts.add(new MachineSpec.PartDef<>(name, name, null, null, null, false, id + "/" + name, lightOverrides.get(name), null, tintOverrides.get(name), tintFalloffs.get(name), null, null));
         return this;
     }
 
-    /** Анимированная часть: {@link PartAnimator} задаёт трансформ относительно блока. */
+    /** Animated part: {@link PartAnimator} sets the transform relative to the block. */
     public MachineSpecBuilder<T> part(String name, PartAnimator<T> animator) {
-        parts.add(new MachineSpec.PartDef<>(name, name, animator, null, null, true, id + "/" + name, lightOverrides.get(name), null, tintOverrides.get(name), tintFalloffs.get(name)));
+        parts.add(new MachineSpec.PartDef<>(name, name, animator, null, null, true, id + "/" + name, lightOverrides.get(name), null, tintOverrides.get(name), tintFalloffs.get(name), null, null));
         return this;
     }
 
     /**
-     * Анимированная часть, ссылающаяся на чужую модель: несколько логических частей
-     * поверх одной части OBJ (например, 4 шестерни из части "Cog").
+     * Animated part referencing a foreign model: several logical parts on top of
+     * one OBJ part (e.g. 4 gears from the "Cog" part).
      */
     public MachineSpecBuilder<T> part(String modelPartName, String name, PartAnimator<T> animator) {
-        parts.add(new MachineSpec.PartDef<>(name, modelPartName, animator, null, null, true, id + "/" + name, lightOverrides.get(name), null, tintOverrides.get(name), tintFalloffs.get(name)));
+        parts.add(new MachineSpec.PartDef<>(name, modelPartName, animator, null, null, true, id + "/" + name, lightOverrides.get(name), null, tintOverrides.get(name), tintFalloffs.get(name), null, null));
         return this;
     }
 
     /**
-     * Форсированный свет части: функция возвращает packedLight (>=0) или -1 для
-     * света мира. Порт fullbright-частей оригинала (InnerBurning печей, lightmap 240/240).
-     * Вызывать ДО объявления part()/dynamicPart() с этим именем.
+     * Forced part light: the function returns packedLight (>=0) or -1 for world
+     * light. Port of the original's fullbright parts (InnerBurning furnaces,
+     * lightmap 240/240). Call BEFORE declaring part()/dynamicPart() with that name.
      */
     public MachineSpecBuilder<T> lightOverride(String partName, Function<T, Integer> fn) {
         lightOverrides.put(partName, fn);
@@ -109,17 +112,18 @@ public final class MachineSpecBuilder<T extends BlockEntity> {
     }
 
     /**
-     * Per-instance RGBA-тинт части ({r,g,b,a}; null/белый RGB = passthrough) — раскалённые
-     * сопла, светящиеся окна и т.п. Пишется в рекорд инстанса (attrib 13 InstColor),
-     * меняется КАЖДЫЙ КАДР без пересборки VBO; RGB может быть &gt; 1 — overbright-накал.
-     * <b>Альфа = сила эмиссии (heat 0..1), НЕ прозрачность</b>: шейдеры доворачивают
-     * lightmap к fullbright на alpha*фоллофф ({@link #tintFalloff}), поэтому свечение
-     * следует тинту пространственно. Вызывать ДО объявления part()/dynamicPart().
+     * Per-instance RGBA tint of a part ({r,g,b,a}; null/white RGB = passthrough) -
+     * glowing-hot nozzles, lit windows, etc. Written into the instance record
+     * (attrib 13 InstColor), changes EVERY FRAME without VBO rebuild; RGB may be
+     * &gt; 1 - overbright glow. <b>Alpha = emission strength (heat 0..1), NOT
+     * transparency</b>: shaders push the lightmap toward fullbright by
+     * alpha*falloff ({@link #tintFalloff}), so the glow follows the tint
+     * spatially. Call BEFORE declaring part()/dynamicPart().
      * <p>
-     * Семантика обновления — как у lightOverride: анимированные части получают свежий
-     * тинт каждый кадр; статические — только при полном пересборе (dirty/TTL) — для
-     * плавно меняющегося тинта на статичной части машина должна звать
-     * {@code markRenderDirty()} при смене значения.
+     * Update semantics - same as lightOverride: animated parts get a fresh tint
+     * every frame; static ones - only on a full rebuild (dirty/TTL) - for a
+     * smoothly changing tint on a static part the machine must call
+     * {@code markRenderDirty()} when the value changes.
      */
     public MachineSpecBuilder<T> tintOverride(String partName, Function<T, float[]> fn) {
         tintOverrides.put(partName, fn);
@@ -127,11 +131,11 @@ public final class MachineSpecBuilder<T extends BlockEntity> {
     }
 
     /**
-     * Пространственный фоллофф тинта части: плавное затухание по оси модели (0=x, 1=y,
-     * 2=z) от {@code fullCoord} (тинт полный, «источник» — например срез сопла) до
-     * {@code zeroCoord} (тинт нулевой). Считается в вершинном шейдере по МОДЕЛЬНЫМ
-     * координатам вершины, поэтому одной настройкой покрывает всю часть/модель без
-     * пересборки VBO. Вызывать ДО объявления part()/dynamicPart() с этим именем.
+     * Spatial tint falloff of a part: smooth decay along a model axis (0=x, 1=y,
+     * 2=z) from {@code fullCoord} (full tint, the "source" - e.g. the nozzle cut)
+     * to {@code zeroCoord} (zero tint). Evaluated in the vertex shader on the
+     * MODEL coordinates of the vertex, so one setting covers the whole part/model
+     * with no VBO rebuild. Call BEFORE declaring part()/dynamicPart() with that name.
      */
     public MachineSpecBuilder<T> tintFalloff(String partName, float axis, float fullCoord, float zeroCoord) {
         tintFalloffs.put(partName, new float[] {axis, fullCoord, zeroCoord, 0.0F});
@@ -139,98 +143,174 @@ public final class MachineSpecBuilder<T extends BlockEntity> {
     }
 
     /**
-     * Статическая часть с фиксированным трансформом-«аниматором» (легаси-офсеты запечки:
-     * T(-0.5,0,-0.5), yaw-группы). НЕ гейтится по modelUpdateDistance — живёт до
-     * статической отсечки, как обычная статика.
+     * Static part with a fixed transform "animator" (legacy bake offsets:
+     * T(-0.5,0,-0.5), yaw groups). NOT gated by modelUpdateDistance - lives up to
+     * the static cutoff, like regular statics.
      */
     public MachineSpecBuilder<T> staticPart(String name, PartAnimator<T> transform) {
-        parts.add(new MachineSpec.PartDef<>(name, name, transform, null, null, false, id + "/" + name, lightOverrides.get(name), null, tintOverrides.get(name), tintFalloffs.get(name)));
+        parts.add(new MachineSpec.PartDef<>(name, name, transform, null, null, false, id + "/" + name, lightOverrides.get(name), null, tintOverrides.get(name), tintFalloffs.get(name), null, null));
         return this;
     }
 
     /**
-     * Динамическая часть с per-BE геометрией (стены флюид-танка по флюиду, DAE-ноды).
-     * VBO кешируется по ключу {@code cacheKeyFn}; возвращаемый квад-лист может быть пустым.
+     * Dynamic part with per-BE geometry (fluid tank walls by fluid, DAE nodes).
+     * The VBO is cached keyed on {@code cacheKeyFn}; the returned quad list may be empty.
      */
     public MachineSpecBuilder<T> dynamicPart(String name, QuadResolver<T> quads, Function<T, String> cacheKeyFn) {
-        parts.add(new MachineSpec.PartDef<>(name, name, null, quads, cacheKeyFn, false, id + "/" + name, lightOverrides.get(name), null, tintOverrides.get(name), tintFalloffs.get(name)));
+        parts.add(new MachineSpec.PartDef<>(name, name, null, quads, cacheKeyFn, false, id + "/" + name, lightOverrides.get(name), null, tintOverrides.get(name), tintFalloffs.get(name), null, null));
         return this;
     }
 
-    /** Динамическая часть с per-BE геометрией И анимацией (например, dish крупного/малого радара). */
+    /** Dynamic part with per-BE geometry AND animation (e.g. the dish of the large/small radar). */
     public MachineSpecBuilder<T> dynamicPart(String name, PartAnimator<T> animator,
                                              QuadResolver<T> quads, Function<T, String> cacheKeyFn) {
-        parts.add(new MachineSpec.PartDef<>(name, name, animator, quads, cacheKeyFn, true, id + "/" + name, lightOverrides.get(name), null, tintOverrides.get(name), tintFalloffs.get(name)));
+        parts.add(new MachineSpec.PartDef<>(name, name, animator, quads, cacheKeyFn, true, id + "/" + name, lightOverrides.get(name), null, tintOverrides.get(name), tintFalloffs.get(name), null, null));
         return this;
     }
 
     /**
-     * Динамическая часть с per-BE геометрией и фиксированным трансформом-«аниматором»
-     * (легаси-офсеты). Контент статичен (меняется по состоянию BE, не по времени) —
-     * НЕ гейтится по modelUpdateDistance.
+     * Dynamic part with per-BE geometry and a fixed transform "animator" (legacy
+     * offsets). Content is static (changes with BE state, not time) - NOT gated by
+     * modelUpdateDistance.
      */
     public MachineSpecBuilder<T> dynamicPart(String name, QuadResolver<T> quads, Function<T, String> cacheKeyFn,
                                              PartAnimator<T> transform) {
-        parts.add(new MachineSpec.PartDef<>(name, name, transform, quads, cacheKeyFn, false, id + "/" + name, lightOverrides.get(name), null, tintOverrides.get(name), tintFalloffs.get(name)));
+        parts.add(new MachineSpec.PartDef<>(name, name, transform, quads, cacheKeyFn, false, id + "/" + name, lightOverrides.get(name), null, tintOverrides.get(name), tintFalloffs.get(name), null, null));
         return this;
     }
 
     /**
-     * Динамическая часть с uvRect-резолвером: VBO части хранит sprite-local [0..1] UV,
-     * а резолвер отдаёт per-BE {u0,v0,du,dv} ремапа в атлас (текстурно-вариантные
-     * части дверей: один VBO на геометрию, скин — в per-instance uvRect).
+     * Dynamic part with a uvRect resolver: the part's VBO stores sprite-local
+     * [0..1] UVs, and the resolver supplies a per-BE {u0,v0,du,dv} remap into the
+     * atlas (texture-variant door parts: one VBO for geometry, the skin goes into
+     * the per-instance uvRect).
      */
     public MachineSpecBuilder<T> dynamicPart(String name, QuadResolver<T> quads, Function<T, String> cacheKeyFn,
                                              PartAnimator<T> transform, Function<T, float[]> uvRectFn) {
-        parts.add(new MachineSpec.PartDef<>(name, name, transform, quads, cacheKeyFn, false, id + "/" + name, lightOverrides.get(name), uvRectFn, tintOverrides.get(name), tintFalloffs.get(name)));
+        parts.add(new MachineSpec.PartDef<>(name, name, transform, quads, cacheKeyFn, false, id + "/" + name, lightOverrides.get(name), uvRectFn, tintOverrides.get(name), tintFalloffs.get(name), null, null));
         return this;
     }
 
-    /** Дополнительный immediate-проход: жидкости, NFPA-алмазы, предметы-иконки. */
+    /** Extra immediate pass: fluids, NFPA diamonds, item icons. */
     public MachineSpecBuilder<T> hook(MachineRenderHook<T> hook) {
         hooks.add(hook);
         return this;
     }
 
-    /** Дистанция прорисовки BER в блоках. По умолчанию — modelStaticRenderDistance. */
+    /** BER draw distance in blocks. Default - modelStaticRenderDistance. */
     public MachineSpecBuilder<T> viewDistance(int blocks) {
         this.viewDistance = blocks;
         return this;
     }
 
     /**
-     * Явный список частей item-рендера multipart-модели. По умолчанию item
-     * показывает НЕ-динамические части спеки (см. {@link MachineSpec#deriveItemParts});
-     * этот метод нужен, когда динамической части её базовая геометрия в item
-     * всё же нужна (танк флюид-хранилища, плита литейщика).
-     * Мир-рендер у фабричных станков всегда в BER (chunk mesh пуст) — это
-     * следует из самих .part() объявлений и вливается в модель автоматически
-     * при {@link #register()} → {@link MachineRenderRegistry#bindBakedModels}.
+     * Explicit list of item-render parts of the multipart model. By default the
+     * item shows the spec's NON-dynamic parts (see {@link MachineSpec#deriveItemParts});
+     * this method is needed when a dynamic part's base geometry is still wanted in
+     * the item (fluid storage tank, foundry plate).
+     * World rendering of factory machines is always BER (the chunk mesh is empty) -
+     * this follows from the .part() declarations themselves and is merged into the
+     * model automatically at {@link #register()} ->
+     * {@link MachineRenderRegistry#bindBakedModels}.
      */
     public MachineSpecBuilder<T> itemParts(String... parts) {
         this.itemParts = java.util.List.of(parts);
         return this;
     }
 
-    /** Убрать перечисленные части из дефолтного item-набора (не-динамические части спеки). */
+    /** Remove the listed parts from the default item set (the spec's non-dynamic parts). */
     public MachineSpecBuilder<T> itemExcept(String... parts) {
         this.itemExcept = java.util.List.of(parts);
         return this;
     }
 
-    /** Render types чанк-пасса (forge getRenderTypes), когда модель рисуется из chunk mesh. */
+    /** Render types of the chunk pass (forge getRenderTypes) when the model is drawn from the chunk mesh. */
     public MachineSpecBuilder<T> chunkRenderTypes(net.minecraft.client.renderer.RenderType... types) {
         this.chunkRenderTypes = java.util.List.of(types);
         return this;
     }
 
-    /** Регистрирует BER в ванильном реестре + спеку в {@link MachineRenderRegistry}. */
+    /**
+     * Machine animation-epoch - the key to the full roster-assert of "frozen"
+     * animated machines (the fast-path dirty-skip extends to animated parts as
+     * long as the animation does not change). The function must mix the <b>prev
+     * and curr</b> values of ALL animator inputs (arm angles, ring, phases):
+     * <ul>
+     *   <li>epoch equality between frames means the pose is identical at ANY
+     *       partialTick (prev and curr values match - the lerp is degenerate), and
+     *       MachineBer confirms the animated parts via roster-assert without
+     *       running the animators;</li>
+     *   <li>any movement changes at least one (prev, curr) pair, so the epoch
+     *       differs - the machine automatically returns to the full path.</li>
+     * </ul>
+     * The function's cost is a few field reads: called once per machine per frame.
+     * Example - {@code MachineAdvancedAssemblerRenderer}.
+     */
+    public MachineSpecBuilder<T> animationEpoch(java.util.function.ToLongFunction<T> epochFn) {
+        this.animationEpoch = epochFn;
+        return this;
+    }
+
+    /**
+     * Parametric GPU animation of a part: ONE joint (rotation around an axis
+     * through a pivot, or translation along an axis), with per-frame values
+     * supplied by {@code paramsFn} via attrib 15 AnimParams (4 floats). The vertex
+     * shader (block_lit_instanced.vsh) moves the geometry - the CPU neither
+     * rebuilds matrices nor uploads pos/quat of the record every frame: a frozen
+     * joint gives skip-write and ZERO upload.
+     * <p>
+     * {@code legacyAnimator} is REQUIRED - it stays for the degradation paths
+     * (single-VBO/immediate, Iris/Tier1) and shadows: parametrics is active only
+     * on the vanilla MDI path. The axis is normalized; the pivot is in the local
+     * coordinates of the part geometry (for in-place rotation - the part's center).
+     *
+     * @param kind     {@link MachineSpec#KIND_ROTATE} or {@link MachineSpec#KIND_TRANSLATE}
+     * @param paramsFn per-frame parameters (out[0] = angle in degrees or distance in blocks;
+     *                 return false = do not draw this frame)
+     */
+    public MachineSpecBuilder<T> parametricPart(String name, int kind,
+                                                float axisX, float axisY, float axisZ,
+                                                float pivotX, float pivotY, float pivotZ,
+                                                MachineSpec.ParametricParams<T> paramsFn,
+                                                PartAnimator<T> legacyAnimator) {
+        return parametricPart(name, kind, axisX, axisY, axisZ, pivotX, pivotY, pivotZ,
+                0f, 0f, 0f, paramsFn, legacyAnimator);
+    }
+
+    /**
+     * {@link #parametricPart(String, int, float, float, float, float, float, float,
+     * MachineSpec.ParametricParams, PartAnimator)} with a static base offset
+     * {@code (offX, offY, offZ)} applied by MachineBer to the record pose before
+     * enqueue. Use it when the part geometry lives in the legacy bake space (model
+     * centered at (0.5, ., 0.5), the centering carried by the legacy animator): the
+     * record must reproduce the animator's static transforms MINUS the joint itself,
+     * otherwise the GPU-animated part is displaced by the missing offset. Pass the
+     * same translation the legacy animator applies AFTER its joint operation
+     * (e.g. the assembler ring: mulPose(R)·T(-0.5,0,-0.5) → offset (-0.5, 0, -0.5)).
+     */
+    public MachineSpecBuilder<T> parametricPart(String name, int kind,
+                                                float axisX, float axisY, float axisZ,
+                                                float pivotX, float pivotY, float pivotZ,
+                                                float offX, float offY, float offZ,
+                                                MachineSpec.ParametricParams<T> paramsFn,
+                                                PartAnimator<T> legacyAnimator) {
+        parts.add(new MachineSpec.PartDef<>(name, name, legacyAnimator, null, null, true,
+                id + "/" + name, lightOverrides.get(name), null,
+                tintOverrides.get(name), tintFalloffs.get(name),
+                new MachineSpec.ParametricAnim(kind, axisX, axisY, axisZ, pivotX, pivotY, pivotZ,
+                        offX, offY, offZ),
+                paramsFn));
+        return this;
+    }
+
+    /** Registers the BER in the vanilla registry + the spec in {@link MachineRenderRegistry}. */
     public void register() {
         MachineSpec<T> spec = new MachineSpec<>(id, beClass, type, modelResolver, facingResolver,
-                parts, hooks, viewDistance, blockTransform, itemParts, itemExcept, chunkRenderTypes);
+                parts, hooks, viewDistance, blockTransform, itemParts, itemExcept, chunkRenderTypes,
+                animationEpoch);
         BlockEntityRenderers.register(type, ctx -> new MachineBer<>(spec));
         MachineRenderRegistry.register(spec);
-        // Байпас диспетчера: только типы фабрики MachineRenderers (машины Nucleus).
+        // Dispatcher bypass: only MachineRenderers-factory types (Nucleus machines).
         com.hbm_m.client.render.NucleusDispatcherBypass.registerManaged(type);
     }
 }

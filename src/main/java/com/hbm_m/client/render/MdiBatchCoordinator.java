@@ -111,25 +111,25 @@ public final class MdiBatchCoordinator {
 
     private static long lastGpuCullLogTimeMs = 0L;
 
-    // ── Стабильные окна instance-атласа ─────────────────────────────────
-    // Инстанс-записи живут в стабильных per-renderer окнах (база + вместимость)
-    // instance VBO атласа: span-дифф GpuSpanUploader видит только реально
-    // изменившиеся записи (квант fade, свет, вход/выход машины), а не весь буфер,
-    // сдвинутый перекладкой. Порядок фаз [opaque|fading] и глобальная
-    // back-to-front сортировка затухающих выражаются ПОРЯДКОМ КОМАНД indirect
-    // буфера: кулл-шейдер (nucleus_cull.comp) компактирует in-place — позиция
-    // выжившего в компактном VBO равна позиции во входном, — поэтому данные
-    // инстансов не переезжают НИКОГДА. Ежекадровая переупаковка fade-слотов и
-    // каскадные сдвиги opaque-окон (главный источник чурна аплоадов при движении
-    // камеры) устранены.
+    // -- Stable windows of the instance atlas ----------------------------
+    // Instance records live in stable per-renderer windows (base + capacity) of
+    // the atlas instance VBO: the GpuSpanUploader span-diff sees only records that
+    // actually changed (fade quantum, light, machine enter/leave), not the whole
+    // buffer shifted by re-laying-out. The [opaque|fading] phase order and the global
+    // back-to-front sorting of fading instances are expressed via the COMMAND ORDER of the
+    // indirect buffer: the cull shader (nucleus_cull.comp) compacts in-place - the
+    // survivor's position in the compacted VBO equals its input position - so instance
+    // data NEVER moves. Per-frame repacking of fade slots and
+    // cascading shifts of opaque windows (the main source of upload churn on camera
+    // motion) are eliminated.
     private static final int WINDOW_MIN_CAP = 4;
-    /** Свободные дырки {base, capacity} в записях; возвращаются следующим репаком. */
+    /** Free holes {base, capacity} in records; reclaimed by the next repack. */
     private static final java.util.ArrayList<int[]> atlasHoles = new ArrayList<>();
     private static int atlasHoleTotalInstances = 0;
-    /** Водяной знак размещения окон (в записях); дырки между окнами — норма. */
+    /** Window placement watermark (in records); holes between windows are normal. */
     private static int atlasWatermark = 0;
 
-    /** Возвращает окно {@code p} в пул дырок (вызов при снятии записи с ретейнда). */
+    /** Returns window {@code p} to the hole pool (called when a retained record is removed). */
     private static void releaseWindow(Pending p) {
         if (p.atlasWindowBase < 0) {
             p.atlasWindowCap = 0;
@@ -142,7 +142,7 @@ public final class MdiBatchCoordinator {
         coalesceTailHoles();
     }
 
-    /** Хвостовые дырки, прилегающие к водяному знаку, возвращают ему место. */
+    /** Tail holes adjacent to the watermark return their space to it. */
     private static void coalesceTailHoles() {
         boolean merged = true;
         while (merged && atlasWatermark > 0) {
@@ -215,12 +215,12 @@ public final class MdiBatchCoordinator {
         boolean partitionValid;
         /** Minimum fade value of snapshot (computed during partitioning instead of per-frame scan). */
         float cachedMinFade = 1.0f;
-        // ── Стабильное окно в instance-атласе ──────────────────────────────
-        /** База окна в записях (instance units); -1 = окно ещё не размещено. */
+        // -- Stable window in the instance atlas -----------------------------
+        /** Window base in records (instance units); -1 = window not yet placed. */
         int atlasWindowBase = -1;
-        /** Вместимость окна в записях (растёт ×2 при переполнении). */
+        /** Window capacity in records (grows x2 on overflow). */
         int atlasWindowCap = 0;
-        /** Текущий снапшот уже залит в окно и shadow валиден — аплоад пропускается. */
+        /** The current snapshot is already uploaded into the window and the shadow is valid - the upload is skipped. */
         boolean windowUploaded = false;
         Pending(InstancedStaticPartRenderer renderer) { this.renderer = renderer; }
     }
@@ -231,11 +231,19 @@ public final class MdiBatchCoordinator {
      * multi-draw; opaque always precedes fading (seals depth prior to blending).
      */
     static final class SubDraw {
-        final Pending owner;
-        final int firstInstance;
-        final int count;
+        Pending owner;
+        int firstInstance;
+        int count;
         int baseInstance;
         SubDraw(Pending owner, int firstInstance, int count, int baseInstance) {
+            this.owner = owner;
+            this.firstInstance = firstInstance;
+            this.count = count;
+            this.baseInstance = baseInstance;
+        }
+
+        /** Pool reuse: allocation only when the command list grows. */
+        void set(Pending owner, int firstInstance, int count, int baseInstance) {
             this.owner = owner;
             this.firstInstance = firstInstance;
             this.count = count;
@@ -251,13 +259,21 @@ public final class MdiBatchCoordinator {
      * commands are inexpensive (32 B), and fading instances typically number in the dozens.
      */
     static final class FadeSlot {
-        final Pending owner;
-        final int srcInstance;
-        final float distSq;
+        Pending owner;
+        int srcInstance;
+        float distSq;
         /** Instance fade value (for minFade aggregation without reading snapshot data). */
         float fade = 1.0f;
         int baseInstance;
         FadeSlot(Pending owner, int srcInstance, float distSq, int baseInstance) {
+            this.owner = owner;
+            this.srcInstance = srcInstance;
+            this.distSq = distSq;
+            this.baseInstance = baseInstance;
+        }
+
+        /** Pool reuse: allocation only when the fading instance count grows. */
+        void set(Pending owner, int srcInstance, float distSq, int baseInstance) {
             this.owner = owner;
             this.srcInstance = srcInstance;
             this.distSq = distSq;
@@ -268,6 +284,16 @@ public final class MdiBatchCoordinator {
     private final Matrix4f projectionMatrix;
     private final List<Pending> pending = new ArrayList<>(16);
     private int totalInstances = 0;
+
+    // -- Frame scratch (rendering is single-threaded): pools instead of new lists --
+    // PreparedMdi holds these lists only within dispatch() - by the next
+    // frame it is dead. SubDraw/FadeSlot objects are reused: allocation only
+    // when the window/fading-instance count grows.
+    private final ArrayList<Pending> drawListScratch = new ArrayList<>(64);
+    private final ArrayList<SubDraw> subDrawPool = new ArrayList<>(64);
+    private final ArrayList<FadeSlot> fadeSlotPool = new ArrayList<>(64);
+    /** Persistent indirect command buffer (grows on demand), instead of memAlloc/Free per dispatch. */
+    private static ByteBuffer cmdBufScratch;
 
     /** Latest projection from the render event (camera may move within a game tick). */
     public void refreshProjection(Matrix4f projection) {
@@ -383,7 +409,8 @@ public final class MdiBatchCoordinator {
                                int drawTotalInstances, int pendingSize, int droppedNoSlot, float minFade) {}
 
     private static void freeDrawListInstanceBuffers(List<Pending> drawList) {
-        for (Pending p : drawList) {
+        for (int i = 0; i < drawList.size(); i++) {
+            Pending p = drawList.get(i);
             if (p.instanceDataNativeOwned && p.instanceData != null) {
                 MemoryUtil.memFree(p.instanceData);
                 p.instanceData = null;
@@ -460,8 +487,8 @@ public final class MdiBatchCoordinator {
         }
         retainedList.clear();
         retainedByRenderer.clear();
-        // Полный сброс раскладки окон: мир/перезагрузка/ресет атласа — GPU-содержимое
-        // утрачено, стабильность баз не имеет смысла; следующее размещение начинается с нуля.
+        // Full reset of the window layout: world change/reload/atlas reset - GPU content
+        // is lost, base stability is meaningless; the next placement starts from scratch.
         atlasHoles.clear();
         atlasHoleTotalInstances = 0;
         atlasWatermark = 0;
@@ -555,9 +582,9 @@ public final class MdiBatchCoordinator {
                 } else {
                     retainedList.add(p);
                 }
-                // Стабильное окно атласа переезжает вместе с рендерером: снапшот
-                // заменён (дифф перезальёт изменившиеся записи в ту же базу),
-                // геометрия размещения (база/вместимость) сохраняется.
+                // The stable atlas window moves with the renderer: the snapshot is
+                // replaced (the diff will re-upload changed records to the same base);
+                // the placement geometry (base/capacity) is preserved.
                 p.atlasWindowBase = prev.atlasWindowBase;
                 p.atlasWindowCap = prev.atlasWindowCap;
                 p.windowUploaded = false;
@@ -677,7 +704,8 @@ public final class MdiBatchCoordinator {
         // Frame draw list = retained list (stable order -> stable upload offsets;
         // reused records require no re-upload). Slot check with lazy re-registration
         // of geometry from retained bytes of renderer (atlas repack/reset).
-        List<Pending> drawList = new ArrayList<>(retainedList.size());
+        List<Pending> drawList = drawListScratch;
+        drawList.clear();
         int droppedNoSlot = 0;
         for (Iterator<Pending> it = retainedList.iterator(); it.hasNext(); ) {
             Pending p = it.next();
@@ -711,7 +739,8 @@ public final class MdiBatchCoordinator {
         int cleanRenderers = 0;
         int cleanInstances = 0;
         int drawTotalInstances = 0;
-        for (Pending p : drawList) {
+        for (int i = 0; i < drawList.size(); i++) {
+            Pending p = drawList.get(i);
             if (!p.partitionValid) {
                 partitionOpaqueFirst(p, instanceFloatsPerInstance, instanceFadeOffset);
                 p.cachedMinFade = computeCachedMinFade(p, instanceFloatsPerInstance, instanceFadeOffset);
@@ -728,13 +757,14 @@ public final class MdiBatchCoordinator {
             return null;
         }
 
-        // ── Стабильные окна атласа: размещение / рост / дефрагментация ─────
-        // Окно переезжает только при нехватке вместимости (instanceCount вырос —
-        // новые машины этого part-рендерера вошли в зону); репак при любом
-        // (ре)размещении уплотняет раскладку и возвращает дырки. Базы неизменны
-        // между репаками → span-дифф видит только изменившиеся записи.
+        // -- Stable atlas windows: placement / growth / defragmentation ------
+        // A window moves only when capacity runs out (instanceCount grew -
+        // new machines of this part-renderer entered the zone); the repack on any
+        // (re)placement compacts the layout and returns holes. Bases are stable
+        // between repacks -> the span-diff sees only changed records.
         boolean anyAlloc = false;
-        for (Pending p : drawList) {
+        for (int i = 0; i < drawList.size(); i++) {
+            Pending p = drawList.get(i);
             if (p.atlasWindowBase >= 0 && p.atlasWindowCap >= p.instanceCount) {
                 continue;
             }
@@ -746,7 +776,8 @@ public final class MdiBatchCoordinator {
         }
         if (anyAlloc) {
             int base = 0;
-            for (Pending p : drawList) {
+            for (int i = 0; i < drawList.size(); i++) {
+                Pending p = drawList.get(i);
                 if (p.atlasWindowBase != base) {
                     p.atlasWindowBase = base;
                     p.windowUploaded = false;
@@ -763,23 +794,35 @@ public final class MdiBatchCoordinator {
             return null;
         }
 
-        // Opaque-фаза: команда на окно (база = стабильная база окна).
-        // Затухающие: плоский глобальный список, сортировка по дистанции камеры —
-        // back-to-front порядок несёт ПОРЯДОК КОМАНД (кулл-шейдер компактирует
-        // in-place: компактная позиция = входная), данные не переезжают.
-        // baseInstance затухающего = база окна + индекс записи в снапшоте.
-        List<SubDraw> opaqueSubs = new ArrayList<>(drawList.size());
-        for (Pending p : drawList) {
+        // Opaque phase: one command per window (base = the window's stable base).
+        // Fading: a flat global list sorted by camera distance - the back-to-front
+        // order is carried by the COMMAND ORDER (the cull shader compacts
+        // in-place: compacted position = input position), data does not move.
+        // A fading instance's baseInstance = window base + record index in the snapshot.
+        // Lists and objects are pooled: allocation only on growth (see the scratch fields).
+        int subCount = 0;
+        for (int i = 0; i < drawList.size(); i++) {
+            Pending p = drawList.get(i);
             if (p.opaqueCount > 0) {
-                opaqueSubs.add(new SubDraw(p, 0, p.opaqueCount, p.atlasWindowBase));
+                SubDraw s;
+                if (subCount < subDrawPool.size()) {
+                    s = subDrawPool.get(subCount);
+                } else {
+                    s = new SubDraw(null, 0, 0, 0);
+                    subDrawPool.add(s);
+                }
+                subCount++;
+                s.set(p, 0, p.opaqueCount, p.atlasWindowBase);
             }
         }
+        List<SubDraw> opaqueSubs = subDrawPool.subList(0, subCount);
 
         float camX = FrameViewState.relCamX();
         float camY = FrameViewState.relCamY();
         float camZ = FrameViewState.relCamZ();
-        List<FadeSlot> fadeSlots = new ArrayList<>();
-        for (Pending p : drawList) {
+        int fadeCount = 0;
+        for (int di = 0; di < drawList.size(); di++) {
+            Pending p = drawList.get(di);
             if (p.instanceData == null) continue;
             int first = Math.max(0, p.opaqueCount);
             for (int i = first; i < p.instanceCount; i++) {
@@ -787,12 +830,20 @@ public final class MdiBatchCoordinator {
                 float dx = p.instanceData.get(base) - camX;
                 float dy = p.instanceData.get(base + 1) - camY;
                 float dz = p.instanceData.get(base + 2) - camZ;
-                FadeSlot s = new FadeSlot(p, i, dx * dx + dy * dy + dz * dz, p.atlasWindowBase + i);
+                FadeSlot s;
+                if (fadeCount < fadeSlotPool.size()) {
+                    s = fadeSlotPool.get(fadeCount);
+                } else {
+                    s = new FadeSlot(null, 0, 0f, 0);
+                    fadeSlotPool.add(s);
+                }
+                fadeCount++;
+                s.set(p, i, dx * dx + dy * dy + dz * dz, p.atlasWindowBase + i);
                 s.fade = p.instanceData.get(base + instanceFadeOffset);
-                fadeSlots.add(s);
             }
         }
-        fadeSlots.sort((a, b) -> Float.compare(b.distSq, a.distSq));
+        fadeSlotPool.subList(0, fadeCount).sort((a, b) -> Float.compare(b.distSq, a.distSq));
+        List<FadeSlot> fadeSlots = fadeSlotPool.subList(0, fadeCount);
 
         if (!uploadWindowsToAtlas(drawList, atlas, instanceFloatsPerInstance)) {
             freeDrawListInstanceBuffers(drawList);
@@ -820,21 +871,22 @@ public final class MdiBatchCoordinator {
     }
 
     /**
-     * Аплоад стабильных окон: каждое {@link Pending} пишет свой снапшот всегда
-     * в одну и ту же базу атласа — дифф {@link GpuSpanUploader} видит только
-     * реально изменившиеся записи (квант fade, свет, вход/выход машины), а не
-     * весь буфер, сдвинутый перекладкой. Окно, не менявшееся с прошлой успешной
-     * заливки при валидном shadow, пропускается целиком (включая memcmp-скан).
+     * Stable-window upload: each {@link Pending} writes its snapshot always
+     * to the same atlas base - the {@link GpuSpanUploader} diff sees only
+     * records that actually changed (fade quantum, light, machine enter/leave), not
+     * the whole buffer shifted by re-laying-out. A window unchanged since the last
+     * successful upload with a valid shadow is skipped entirely (including the memcmp scan).
      * <p>
-     * Инвариант корректности: shadow отражает фактическое содержимое GPU-буфера
-     * (все записи идут через GpuSpanUploader; рост вместимости / якорный дрейф /
-     * ресет атласа сбрасывают shadow-валидность → полные заливки), поэтому дифф
-     * безопасен даже для окна, впервые размещённого в чужой бывшей дырке.
+     * Correctness invariant: the shadow mirrors the actual GPU buffer contents
+     * (all records go through GpuSpanUploader; a capacity growth / anchor drift /
+     * atlas reset resets shadow validity -> full uploads), so the diff is
+     * safe even for a window placed for the first time into someone else's former hole.
      */
     private static boolean uploadWindowsToAtlas(List<Pending> drawList,
                                                 MdiGeometryAtlas atlas, int instanceFloatsPerInstance) {
         boolean shadowValid = atlas.isInstanceShadowValid();
-        for (Pending p : drawList) {
+        for (int i = 0; i < drawList.size(); i++) {
+            Pending p = drawList.get(i);
             if (p.instanceData == null) {
                 return false;
             }
@@ -856,8 +908,14 @@ public final class MdiBatchCoordinator {
     // Adaptive occlusion gate (CrankShaft OCCLUSION_VERTICES pattern with hysteresis):
     // threshold on total MDI instances; below it the cull dispatch runs frustum-only
     // and the Hi-Z pyramid is not rebuilt (see executeMdiGlDraw).
-    private static final int OCCLUSION_MIN_INSTANCES =
-            Math.max(0, Integer.getInteger("hbm.gpuCull.minInstances", 4096));
+    /** Config nucleusGpuCullMinInstances; -Dhbm.gpuCull.minInstances=N overrides. */
+    private static int occlusionMinInstances() {
+        Integer flag = Integer.getInteger("hbm.gpuCull.minInstances");
+        if (flag != null) {
+            return Math.max(0, flag);
+        }
+        return Math.max(0, com.hbm_m.config.ModClothConfig.get().nucleusGpuCullMinInstances);
+    }
     private static boolean occlusionLatch = false;
     private static long lastOcclusionGateLogMs = 0L;
 
@@ -867,8 +925,9 @@ public final class MdiBatchCoordinator {
             return;
         }
         lastOcclusionGateLogMs = now;
+        int threshold = occlusionMinInstances();
         MainRegistry.LOGGER.info("[HBM-M GPU Cull] Occlusion gate {} (instances={}, threshold={}, hysteresis={})",
-                state, totalInstances, OCCLUSION_MIN_INSTANCES, OCCLUSION_MIN_INSTANCES >> 1);
+                state, totalInstances, threshold, threshold >> 1);
     }
 
     private static void executeMdiGlDraw(PreparedMdi prepared, Matrix4f projection, long gameTime) {
@@ -904,11 +963,23 @@ public final class MdiBatchCoordinator {
 
         int nCmd = opaqueSubs.size() + fadeSlots.size();
         int totalInstances = 0;
-        ByteBuffer cmdBuf = MemoryUtil.memAlloc(nCmd * INDIRECT_CMD_STRIDE_BYTES);
+        // Persistent growing buffer: memAlloc/memFree per dispatch would mean an extra
+        // trip to the allocator and malloc churn on weak CPUs.
+        int needed = nCmd * INDIRECT_CMD_STRIDE_BYTES;
+        ByteBuffer cmdBuf = cmdBufScratch;
+        if (cmdBuf == null || cmdBuf.capacity() < needed) {
+            if (cmdBuf != null) {
+                MemoryUtil.memFree(cmdBuf);
+            }
+            cmdBuf = MemoryUtil.memAlloc(Math.max(needed, 4096));
+            cmdBufScratch = cmdBuf;
+        }
+        cmdBuf.clear();
         cmdBuf.order(ByteOrder.nativeOrder());
         // Command order matches upload order (baseInstance synchronized):
         // [opaque windows...][fading slots globally back-to-front].
-        for (SubDraw sub : opaqueSubs) {
+        for (int i = 0; i < opaqueSubs.size(); i++) {
+            SubDraw sub = opaqueSubs.get(i);
             Pending p = sub.owner;
             int rowStart = cmdBuf.position();
             cmdBuf.putInt(p.indexCount);
@@ -922,7 +993,8 @@ public final class MdiBatchCoordinator {
             }
             totalInstances += sub.count;
         }
-        for (FadeSlot s : fadeSlots) {
+        for (int i = 0; i < fadeSlots.size(); i++) {
+            FadeSlot s = fadeSlots.get(i);
             Pending p = s.owner;
             int rowStart = cmdBuf.position();
             cmdBuf.putInt(p.indexCount);
@@ -938,20 +1010,21 @@ public final class MdiBatchCoordinator {
         }
         cmdBuf.flip();
 
-        // Adaptive occlusion gate (паттерн CrankShaft OCCLUSION_VERTICES с гистерезисом):
-        // полный rebuild Hi-Z пирамиды — фиксированная стоимость кадра (SPD-даунсемпл
-        // всего экрана + барьеры); на малых сценах она превышает выгоду окклюзии.
-        // Ниже порога cull-диспатч работает в frustum-only режиме (пирамида не
-        // перестраивается и не сэмплится), выше 2× порога — двухфазный режим возвращается.
-        // -Dhbm.gpuCull.minInstances=0 — окклюзия всегда активна (старое поведение).
+        // Adaptive occlusion gate (the CrankShaft OCCLUSION_VERTICES pattern with hysteresis):
+        // a full Hi-Z pyramid rebuild is a fixed per-frame cost (SPD downsample of
+        // the whole screen + barriers); on small scenes it outweighs the occlusion benefit.
+        // Below the threshold the cull dispatch runs in frustum-only mode (the pyramid is
+        // not rebuilt nor sampled), above 2x the threshold the two-phase mode returns.
+        // -Dhbm.gpuCull.minInstances=0 - occlusion always active (the old behavior).
         boolean occlusionEnabled = gpuCullActive;
-        if (occlusionEnabled && OCCLUSION_MIN_INSTANCES > 0) {
+        int occlusionMin = occlusionMinInstances();
+        if (occlusionEnabled && occlusionMin > 0) {
             if (!occlusionLatch) {
-                if (totalInstances >= OCCLUSION_MIN_INSTANCES) {
+                if (totalInstances >= occlusionMin) {
                     occlusionLatch = true;
                     logOcclusionGate("ENABLED", totalInstances);
                 }
-            } else if (totalInstances < (OCCLUSION_MIN_INSTANCES >> 1)) {
+            } else if (totalInstances < (occlusionMin >> 1)) {
                 occlusionLatch = false;
                 logOcclusionGate("DISABLED", totalInstances);
             }
@@ -1004,14 +1077,15 @@ public final class MdiBatchCoordinator {
                 // Cached minima: cachedMinFade precomputed during snapshot partition,
                 // fade of individual slots captured during enumeration — per-frame
                 // strided scan of all instances is unnecessary.
-                for (SubDraw sub : opaqueSubs) {
+                for (int i = 0; i < opaqueSubs.size(); i++) {
+                    SubDraw sub = opaqueSubs.get(i);
                     if (sub.owner.instanceData != null && sub.owner.cachedMinFade < minFade) {
                         minFade = sub.owner.cachedMinFade;
                     }
                 }
-                for (FadeSlot s : fadeSlots) {
-                    if (s.fade < minFade) {
-                        minFade = s.fade;
+                for (int i = 0; i < fadeSlots.size(); i++) {
+                    if (fadeSlots.get(i).fade < minFade) {
+                        minFade = fadeSlots.get(i).fade;
                     }
                 }
 
@@ -1038,9 +1112,9 @@ public final class MdiBatchCoordinator {
 
                 if (gpuCullActive) {
                     try {
-                        // Полный rebuild пирамиды — только когда окклюзия включена гейтом;
-                        // в frustum-only режиме куллер не сэмплит пирамиду (сдержится
-                        // прошлокадровая/placeholder), экономя полный SPD-даунсемпл экрана.
+                        // Full pyramid rebuild - only when occlusion is enabled by the gate;
+                        // in frustum-only mode the culler does not sample the pyramid (it holds
+                        // the previous-frame/placeholder one), saving a full SPD screen downsample.
                         if (occlusionEnabled) {
                             HiZDepthPyramid.get().regenerate(target.getDepthTextureId(), target.width, target.height);
                         }
@@ -1079,6 +1153,11 @@ public final class MdiBatchCoordinator {
                             try {
                                 GL42.glMemoryBarrier(GL43.GL_BUFFER_UPDATE_BARRIER_BIT | GL43.GL_SHADER_STORAGE_BARRIER_BIT);
                                 cmdBuf.clear();
+                                // Restrict the read to the bytes actually written this frame:
+                                // the scratch capacity is rounded up (>=4096), and a read past
+                                // the live command range is a driver-side GL_INVALID_VALUE that
+                                // leaves stale zeros here - reported as a phantom "100% culled".
+                                cmdBuf.limit(nCmd * INDIRECT_CMD_STRIDE_BYTES);
                                 GL15.glGetBufferSubData(GL40.GL_DRAW_INDIRECT_BUFFER, 0, cmdBuf);
                                 int totalIn = 0;
                                 int totalOut = 0;
@@ -1105,7 +1184,8 @@ public final class MdiBatchCoordinator {
                         // Safe CPU fallback / unculled restoration:
                         // Rewrite original instance counts to indirect buffer and retain default instance VBO
                         cmdBuf.clear();
-                        for (SubDraw sub : opaqueSubs) {
+                        for (int i = 0; i < opaqueSubs.size(); i++) {
+                            SubDraw sub = opaqueSubs.get(i);
                             Pending p = sub.owner;
                             int rowStart = cmdBuf.position();
                             cmdBuf.putInt(p.indexCount);
@@ -1118,7 +1198,8 @@ public final class MdiBatchCoordinator {
                                 cmdBuf.putInt(0);
                             }
                         }
-                        for (FadeSlot s : fadeSlots) {
+                        for (int i = 0; i < fadeSlots.size(); i++) {
+                            FadeSlot s = fadeSlots.get(i);
                             Pending p = s.owner;
                             int rowStart = cmdBuf.position();
                             cmdBuf.putInt(p.indexCount);
@@ -1170,6 +1251,10 @@ public final class MdiBatchCoordinator {
                 // in the native graphics driver (e.g. nvoglv64.dll / atio6axx.dll).
                 GL15.glBindBuffer(GL40.GL_DRAW_INDIRECT_BUFFER, atlas.getIndirectBufferId());
                 GL30.glBindVertexArray(atlas.getVaoId());
+                // Re-bind the joint specs texture after the GPU-cull dispatch: the
+                // sampler uniform value persists per program, but the TEXTURE on
+                // the specs unit must survive any intermediate compute work.
+                NucleusJointSpecs.bindSampler();
 
                 GLCapabilities caps2 = GL.getCapabilities();
                 boolean canMulti = caps2 != null
@@ -1247,7 +1332,7 @@ public final class MdiBatchCoordinator {
                 restoreVanillaSolidShader();
             }
         } finally {
-            MemoryUtil.memFree(cmdBuf);
+            // cmdBufScratch is persistent - do not free (reused by the next dispatch).
         }
     }
 

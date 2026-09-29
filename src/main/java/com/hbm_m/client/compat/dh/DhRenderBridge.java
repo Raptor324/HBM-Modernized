@@ -231,12 +231,19 @@ public final class DhRenderBridge extends DhApiBeforeApplyShaderRenderEvent {
      * (близко=1, даль/небо=0, glClearDepth = EDhRenderDepth.farDepth = 0).
      *
      * ИСТОЧНИК ИСТИНЫ — сама DH: приватное поле RenderUtil.RENDER_DEF
-     * (в 3.2.x звалось RENDER_API_DEF) хранит забинденный
-     * AbstractDhRenderApiDefinition, и его public getRenderDepth() — ровно
-     * тот запрос, которым DH сам выбирает конвенцию (REVERSE_Z везде, кроме
-     * «Iris-пак активен и пак не reverse-Z»; DH <= 3.2.x возвращал константу
-     * FORWARD_Z). Опрашивается каждый DH-кадр: пользователь может включать/
-     * выключать шейдеры на лету. Field/Method кешируются.
+     * хранит забинденный AbstractDhRenderApiDefinition, и его запрос
+     * направления глубины — ровно то, чем DH сам выбирает конвенцию
+     * (REVERSE_Z везде, кроме «Iris-пак активен и пак не reverse-Z»;
+     * байткод GlDhRenderApiDefinition 3.3.2 подтверждает). Опрашивается
+     * каждый DH-кадр: пользователь может включать/выключать шейдеры на лету.
+     *
+     * ИМЯ МЕТОДА ЗАВИСИТ ОТ ВЕРСИИ DH (оба возвращают енум с name()=="REVERSE_Z"):
+     *  - DH <= 3.3.1: getRenderDepth();
+     *  - DH >= 3.3.2: getDepthDirection() (переименование, семантика та же).
+     *   БЕЗ фолбэка на getDepthDirection детект в 3.3.2 молча падал в
+     *   FORWARD_Z, реверс-глубина без пака декодировалась форвард-формулой
+     *   (близкий LOD → «дальний» depth ≈ 1.0) — гриб просвечивал сквозь
+     *   LOD-рельеф.
      *
      * ПОЧЕМУ НЕ МАТРИЦА ИЗ СОБЫТИЯ: rp.dhProjectionMatrix — это ФОРВАРД-копия
      * с сырыми клип-плоскостями (проверено логом 3.3.1: декод матрицы даёт
@@ -250,7 +257,7 @@ public final class DhRenderBridge extends DhApiBeforeApplyShaderRenderEvent {
      */
     private static boolean isReverseZDepthActive() {
         try {
-            if (reverseDepthMethod == null) {
+            if (reverseDefField == null) {
                 Class<?> renderUtil = Class.forName("com.seibel.distanthorizons.core.util.RenderUtil");
                 try {
                     reverseDefField = renderUtil.getDeclaredField("RENDER_DEF");
@@ -266,7 +273,12 @@ public final class DhRenderBridge extends DhApiBeforeApplyShaderRenderEvent {
                 reverseDefField.setAccessible(true);
                 Class<?> defClass = Class.forName(
                         "com.seibel.distanthorizons.core.wrapperInterfaces.render.AbstractDhRenderApiDefinition");
-                reverseDepthMethod = defClass.getMethod("getRenderDepth");
+                // DH <= 3.3.1 → getRenderDepth(); DH >= 3.3.2 → getDepthDirection().
+                try {
+                    reverseDepthMethod = defClass.getMethod("getRenderDepth");
+                } catch (NoSuchMethodException ignored) {
+                    reverseDepthMethod = defClass.getMethod("getDepthDirection");
+                }
             }
             Object def = reverseDefField.get(null);
             if (def == null) {

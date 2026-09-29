@@ -3,15 +3,12 @@ package com.hbm_m.client.model;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.block.machines.MachineBatterySocketBlock;
-import com.hbm_m.blockentity.machines.BatterySocketBlockEntity;
 import com.hbm_m.lib.RefStrings;
 
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.renderer.block.model.ItemTransforms;
@@ -29,18 +26,13 @@ import net.minecraftforge.client.model.data.ModelData;
 
 public class MachineBatterySocketBakedModel extends AbstractMultipartBakedModel implements AbstractMultipartBakedModel.PartNamesProvider {
 
-    private static final ResourceLocation BATTERY_TEX = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/machines/battery_socket");
-
-    private final Map<Object, List<BakedQuad>> batteryQuadCache = new ConcurrentHashMap<>();
-    private static final Object NULL_SIDE_KEY = new Object();
-
     public MachineBatterySocketBakedModel(Map<String, BakedModel> parts, ItemTransforms transforms) {
         super(parts, transforms);
     }
 
     @Override
     public String[] getPartNames() {
-        return new String[] { "Socket", "Battery" };
+        return new String[] { "Socket", "Battery", "Capacitor" };
     }
 
     @Override
@@ -69,14 +61,6 @@ public class MachineBatterySocketBakedModel extends AbstractMultipartBakedModel 
             quads.addAll(rotationY != 0 ? ModelHelper.transformQuadsByFacing(socketQuads, rotationY) : socketQuads);
         }
 
-        boolean showBattery = modelData != null && Boolean.TRUE.equals(modelData.get(BatterySocketBlockEntity.HAS_INSERT));
-        if (showBattery) {
-            BakedModel battery = getPart("Battery");
-            if (battery != null) {
-                List<BakedQuad> batteryQuads = getRetexturedBatteryQuads(battery, querySide, rand);
-                quads.addAll(rotationY != 0 ? ModelHelper.transformQuadsByFacing(batteryQuads, rotationY) : batteryQuads);
-            }
-        }
 
         return quads;
     }
@@ -102,41 +86,4 @@ public class MachineBatterySocketBakedModel extends AbstractMultipartBakedModel 
         return r;
     }
 
-    private List<BakedQuad> getRetexturedBatteryQuads(BakedModel battery, @Nullable Direction side, RandomSource rand) {
-        Object key = side == null ? NULL_SIDE_KEY : side;
-        return batteryQuadCache.computeIfAbsent(key, k -> {
-            List<BakedQuad> out = new ArrayList<>();
-            TextureAtlasSprite sprite = Minecraft.getInstance().getTextureAtlas(net.minecraft.world.inventory.InventoryMenu.BLOCK_ATLAS).apply(BATTERY_TEX);
-            //? if forge || neoforge {
-            for (BakedQuad q : battery.getQuads(null, side, rand, ModelData.EMPTY, null)) {
-                out.add(retextureQuad(q, sprite));
-            }
-            //?}
-            return out;
-        });
-    }
-
-    private static BakedQuad retextureQuad(BakedQuad original, TextureAtlasSprite newSprite) {
-        int[] oldData = original.getVertices();
-        int[] newData = new int[oldData.length];
-        System.arraycopy(oldData, 0, newData, 0, oldData.length);
-        TextureAtlasSprite oldSprite = original.getSprite();
-        if (oldSprite == null) return original;
-        float oldUDiff = oldSprite.getU1() - oldSprite.getU0();
-        float oldVDiff = oldSprite.getV1() - oldSprite.getV0();
-        float newUDiff = newSprite.getU1() - newSprite.getU0();
-        float newVDiff = newSprite.getV1() - newSprite.getV0();
-        if (oldUDiff == 0 || oldVDiff == 0) return original;
-        int vertexSize = oldData.length / 4;
-        for (int i = 0; i < 4; i++) {
-            int offset = i * vertexSize;
-            float oldU = Float.intBitsToFloat(oldData[offset + 4]);
-            float oldV = Float.intBitsToFloat(oldData[offset + 5]);
-            float normU = (oldU - oldSprite.getU0()) / oldUDiff;
-            float normV = (oldV - oldSprite.getV0()) / oldVDiff;
-            newData[offset + 4] = Float.floatToRawIntBits(newSprite.getU0() + normU * newUDiff);
-            newData[offset + 5] = Float.floatToRawIntBits(newSprite.getV0() + normV * newVDiff);
-        }
-        return new BakedQuad(newData, original.getTintIndex(), original.getDirection(), newSprite, original.isShade());
-    }
 }

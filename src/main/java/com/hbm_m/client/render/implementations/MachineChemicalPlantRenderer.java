@@ -43,21 +43,21 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 
 /**
- * Химкомбинат на фабрике {@link MachineRenderers}: Base — статика; Frame — динамическая
- * часть (по свойству FRAME); Slider/Spinner — анимация; жидкость — immediate-хук с
- * ОТЛОЖЕННОЙ отрисовкой (draw в AFTER_BLOCK_ENTITIES после instanced-flush, см.
- * комментарий у {@link #presentDeferredFluids()}).
+ * Chemical plant on the {@link MachineRenderers} factory: Base is static; Frame is a dynamic
+ * part (per the FRAME property); Slider/Spinner are animated; the fluid is an immediate hook
+ * with DEFERRED drawing (drawn in AFTER_BLOCK_ENTITIES after the instanced flush, see
+ * the comment on {@link #presentDeferredFluids()}).
  * <p>
- * Кастомный блочный трансформ: {@code T(0.5,0,0.5)·R(chemicalPlantPoseRotationY)·T(-0.5,0,-0.5)}
- * (сдвиг -0.5/-0.5 — baked-space частей, как в легаси renderChemicalPlantPartsInternal).
+ * Custom block transform: {@code T(0.5,0,0.5)*R(chemicalPlantPoseRotationY)*T(-0.5,0,-0.5)}
+ * (the -0.5/-0.5 shift is the parts' baked space, as in legacy renderChemicalPlantPartsInternal).
  */
 public final class MachineChemicalPlantRenderer {
 
     private static final float DEG_TO_RAD = (float) (Math.PI / 180.0);
 
     /**
-     * Пивот вращения спиннера в baked-координатах = OBJ-центр (0.5, 0.5) + JSON
-     * root translation (0.5, 0.5). Если меняешь JSON translation — pivot = OBJ_CENTER + JSON_translation.
+     * The spinner's rotation pivot in baked coordinates = OBJ center (0.5, 0.5) + JSON
+     * root translation (0.5, 0.5). If you change the JSON translation -- pivot = OBJ_CENTER + JSON_translation.
      */
     private static final float CHEMPLANT_BAKE_PIVOT_X = 1.0f;
     private static final float CHEMPLANT_BAKE_PIVOT_Z = 1.0f;
@@ -67,8 +67,8 @@ public final class MachineChemicalPlantRenderer {
                 MachineChemicalPlantBlockEntity.class)
             .part("Base")
             .dynamicPart("Frame", MachineChemicalPlantRenderer::frameQuads,
-                    // Ключ по FRAME-состоянию: константный "frame" кешировал бы пустой
-                    // рендерер по первому состоянию навсегда (см. advassembler).
+                    // Key by FRAME state: a constant "frame" key would cache an empty
+                    // renderer from the first state seen, forever (see advassembler).
                     be -> {
                         var st = be.getBlockState();
                         return String.valueOf(st.hasProperty(MachineChemicalPlantBlock.FRAME)
@@ -89,7 +89,7 @@ public final class MachineChemicalPlantRenderer {
         return raw instanceof ConfiguredMultipartBakedModel m ? m : null;
     }
 
-    /** Кастомный блочный трансформ химзавода (+ baked-space сдвиг -0.5/-0.5 для всех частей). */
+    /** Custom block transform of the chemical plant (+ the -0.5/-0.5 baked-space shift for all parts). */
     private static void applyBlockTransform(MachineChemicalPlantBlockEntity be, LegacyAnimator animator) {
         var state = be.getBlockState();
         if (state.hasProperty(MachineChemicalPlantBlock.FACING)) {
@@ -102,7 +102,7 @@ public final class MachineChemicalPlantRenderer {
         animator.translate(-0.5f, 0.0f, -0.5f);
     }
 
-    // ── Части ──────────────────────────────────────────────────────────
+    // -- Parts ----------------------------------------------------------
 
     private static List<BakedQuad> frameQuads(MachineChemicalPlantBlockEntity be) {
         var state = be.getBlockState();
@@ -124,7 +124,7 @@ public final class MachineChemicalPlantRenderer {
                                          long gameTime, PoseStack pose) {
         float anim = be.getAnim(partialTick);
         double sdx = chemicalSps(anim * 0.125) * 0.375;
-        pose.last().pose().mul(new Matrix4f().translate((float) sdx, 0f, 0f));
+        pose.last().pose().translate((float) sdx, 0f, 0f);
         return true;
     }
 
@@ -133,10 +133,10 @@ public final class MachineChemicalPlantRenderer {
         float anim = be.getAnim(partialTick);
         float deg = (anim * 15f) % 360f;
         if (deg < 0f) deg += 360f;
-        pose.last().pose().mul(new Matrix4f()
+        pose.last().pose()
                 .translate(CHEMPLANT_BAKE_PIVOT_X, 0f, CHEMPLANT_BAKE_PIVOT_Z)
                 .rotateY(deg * DEG_TO_RAD)
-                .translate(-CHEMPLANT_BAKE_PIVOT_X, 0f, -CHEMPLANT_BAKE_PIVOT_Z));
+                .translate(-CHEMPLANT_BAKE_PIVOT_X, 0f, -CHEMPLANT_BAKE_PIVOT_Z);
         return true;
     }
 
@@ -146,10 +146,10 @@ public final class MachineChemicalPlantRenderer {
     }
 
     // ==================== DEFERRED FLUID ====================
-    // Копия легаси-прохода из MachineChemicalPlantVboRenderer (жидкость — не OBJ-статика,
-    // UV-скролл per-frame; см. javadoc presentDeferredFluids про порядок отрисовки).
+    // Copy of the legacy pass from MachineChemicalPlantVboRenderer (the fluid is not OBJ
+    // statics; UV scroll is per-frame; see presentDeferredFluids' javadoc for draw order).
 
-    /** Цвет/текстура для fallback; основной путь — mesh с {@code chemical_plant_fluid}. */
+    /** Color/texture for the fallback; the main path is the mesh with {@code chemical_plant_fluid}. */
     public record FluidVisual(FluidStack textureFluid, float r, float g, float b) {}
 
     private record DeferredChemplantFluid(
@@ -164,12 +164,12 @@ public final class MachineChemicalPlantRenderer {
 
     private static final List<DeferredChemplantFluid> DEFERRED_FLUIDS = new ArrayList<>();
 
-    /** Сброс очереди жидкости в начале кадра (или на early-return). */
+    /** Clears the fluid queue at the start of the frame (or on early return). */
     public static void clearDeferredFluids() {
         DEFERRED_FLUIDS.clear();
     }
 
-    /** Хук: только запись в очередь; draw — в {@link #presentDeferredFluids()}. */
+    /** Hook: only enqueues; the draw happens in {@link #presentDeferredFluids()}. */
     private static void scheduleFluid(MachineChemicalPlantBlockEntity be, float partialTick,
                                       PoseStack poseStack, MultiBufferSource bufferSource,
                                       int packedLight, int packedOverlay, MachineRenderApi api) {
@@ -183,7 +183,7 @@ public final class MachineChemicalPlantRenderer {
                 be.getAnim(partialTick), packedLight, packedOverlay, visual));
     }
 
-    /** Видимость жидкости: тот же критерий, что звук и anim. */
+    /** Fluid visibility: the same criterion as sound and anim. */
     private static boolean isChemplantProcessVisible(MachineChemicalPlantBlockEntity be) {
         return be.isChemplantEffectsActive();
     }
@@ -245,7 +245,7 @@ public final class MachineChemicalPlantRenderer {
 
     @Nullable
     private static FluidVisual getTankFallbackVisual(MachineChemicalPlantBlockEntity be) {
-        // На клиенте выбранный рецепт часто не синхронизирован; при этом жидкости в баках видимы.
+        // On the client the selected recipe is often not synced; fluids in the tanks are visible, though.
         var outputs = be.getOutputTanks();
         var inputs = be.getInputTanks();
 
@@ -290,18 +290,18 @@ public final class MachineChemicalPlantRenderer {
         ResourceLocation.fromNamespaceAndPath("hbm_m", "block/machine/chemical_plant_fluid");
 
     /**
-     * Изолированный immediate BufferSource для жидкости. Один endBatch() на кадр —
-     * НЕ shared mc.renderBuffers().bufferSource(): endBatch(translucent) на shared
-     * выкинул бы чужую pending translucent-геометрию раньше времени.
+     * Isolated immediate BufferSource for the fluid. One endBatch() per frame --
+     * NOT the shared mc.renderBuffers().bufferSource(): endBatch(translucent) on the
+     * shared one would prematurely flush someone else's pending translucent geometry.
      */
     private static final MultiBufferSource.BufferSource FLUID_BUFFER_SOURCE =
             RenderHooks.immediateBufferSource(262144);
 
     /**
-     * Отрисовка накопленной за кад жидкости. Вызывается из
-     * {@code InstancedRenderFrame.presentAfterBlockEntities} после closePersistentIfActive
-     * и instanced-flush. depthMask(false) — жидкость не пишет depth (как glDepthMask(false)
-     * в 1.7.10): depth уже содержит opaque-части после instanced-flush.
+     * Draws the fluid accumulated during the frame. Called from
+     * {@code InstancedRenderFrame.presentAfterBlockEntities} after closePersistentIfActive
+     * and the instanced flush. depthMask(false) -- the fluid does not write depth (like
+     * glDepthMask(false) in 1.7.10): depth already contains the opaque parts after the instanced flush.
      */
     public static void presentDeferredFluids() {
         if (DEFERRED_FLUIDS.isEmpty()) return;
@@ -338,7 +338,7 @@ public final class MachineChemicalPlantRenderer {
         TextureAtlasSprite sprite = Minecraft.getInstance().getTextureAtlas(TextureAtlas.LOCATION_BLOCKS)
             .apply(CHEMPLANT_FLUID_TEX);
 
-        // Поворот блока уже применён caller'ом (блочный трансформ спеки).
+        // Block rotation is already applied by the caller (the spec's block transform).
         float du = -anim / 100f;
         float dv = (float) (chemicalSps(anim * 0.1) * 0.1 - 0.25);
         quads = ModelHelper.offsetQuadUvsWrapped(quads, du, dv,

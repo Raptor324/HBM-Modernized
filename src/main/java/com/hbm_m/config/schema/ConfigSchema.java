@@ -48,10 +48,21 @@ public final class ConfigSchema {
         reg(ConfigField.bool("enableChunkRads", ConfigSide.SERVER, ApplyMode.LIVE, "general"));
         reg(ConfigField.bool("enableMOTD", ConfigSide.CLIENT, ApplyMode.LIVE, "general"));
         reg(ConfigField.bool("enableExtendedLogging", ConfigSide.SERVER, ApplyMode.LIVE, "general").withComment("Logs uses of the detonator, nuclear explosions, missile launches, grenades, etc."));
+        reg(ConfigField.integer("energyRatioHe", ConfigSide.SERVER, ApplyMode.LIVE, "general", 1, 1_000_000).withComment("HE units per one FE (HE:FE ratio numerator)"));
+        reg(ConfigField.integer("energyRatioFe", ConfigSide.SERVER, ApplyMode.LIVE, "general", 1, 1_000_000).withComment("FE units per one HE (HE:FE ratio denominator)"));
 
         // ── SERVER: эффекты мира ────────────────────────────────────
         reg(ConfigField.bool("enableRadFogEffect", ConfigSide.SERVER, ApplyMode.LIVE, "world_effects"));
         reg(ConfigField.bool("worldRadEffects", ConfigSide.SERVER, ApplyMode.LIVE, "world_effects"));
+        // Legacy RadiationConfig/MobConfig поля: читались кодом, но не были
+        // зарегистрированы — никогда не попадали в JSON (навсегда дефолт,
+        // тот же класс бага, что RBMK-диалсы).
+        reg(ConfigField.bool("enablePollution", ConfigSide.SERVER, ApplyMode.LIVE, "world_effects").withComment("Enables/disables the pollution grid"));
+        reg(ConfigField.floatNum("pollutionMult", ConfigSide.SERVER, ApplyMode.LIVE, "world_effects", 0F, 10_000F));
+        reg(ConfigField.floatNum("buffMobThreshold", ConfigSide.SERVER, ApplyMode.LIVE, "world_effects", 0F, 10_000F));
+        reg(ConfigField.bool("enablePoison", ConfigSide.SERVER, ApplyMode.LIVE, "world_effects"));
+        reg(ConfigField.bool("enableLeadPoisoning", ConfigSide.SERVER, ApplyMode.LIVE, "world_effects"));
+        reg(ConfigField.bool("enableLeadFromBlocks", ConfigSide.SERVER, ApplyMode.LIVE, "world_effects"));
         reg(ConfigField.bool("taintTrails", ConfigSide.SERVER, ApplyMode.LIVE, "world_effects"));
 
         // ── SERVER: кратерные биомы (ориг. WorldConfig, категория CATEGORY_BIOMES) ──
@@ -138,16 +149,28 @@ public final class ConfigSchema {
         // ── CLIENT: рендеринг ───────────────────────────────────────
         reg(ConfigField.integer("modelUpdateDistance", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering", 0, 20));
         reg(ConfigField.integer("modelStaticRenderDistance", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering", 1, 20));
-        reg(ConfigField.bool("enableOcclusionCulling", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering"));
-        reg(ConfigField.bool("instanceVboOrphanBeforeUpload", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering"));
+        reg(ConfigField.enumField("occlusionCullingMode", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering"));
         // Инстансинг/MDI/GPU-bone skinning всегда включены; forceVanillaImmediatePath — резервный
         // ручной перевод всех OBJ-станков на ванильный immediate-путь (putBulkData).
         reg(ConfigField.bool("forceVanillaImmediatePath", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering"));
         reg(ConfigField.bool("mdiCleanFrameReuse", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering"));
+        reg(ConfigField.bool("nucleusRenderDirtySkip", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering"));
         reg(ConfigField.bool("mdiDebugLogDispatch", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering"));
         reg(ConfigField.bool("mdiVerboseSubdraws", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering"));
         // Размер буферов инстансинга фиксируется при создании рендерера → reload ресурсов
         reg(ConfigField.integer("maxInstancedInstancesPerPart", ConfigSide.CLIENT, ApplyMode.REQUIRES_RESOURCE_RELOAD, "rendering", 256, 16384));
+        // Пайплайн Nucleus: бывшие JVM-флаги -Dhbm.* как пользовательские тумблеры
+        // (конфиг — первоисточник; флаг остаётся аварийным оверрайдом).
+        reg(ConfigField.bool("nucleusAnimCache", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering"));
+        reg(ConfigField.bool("nucleusParametricAnim", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering"));
+        reg(ConfigField.bool("nucleusShadowInstancing", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering"));
+        reg(ConfigField.bool("nucleusDoorSkinSharing", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering"));
+        reg(ConfigField.bool("nucleusDispatcherBypass", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering"));
+        reg(ConfigField.bool("nucleusGpuBake", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering"));
+        reg(ConfigField.bool("nucleusGpuScatter", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering"));
+        reg(ConfigField.bool("nucleusStagingDirect", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering"));
+        reg(ConfigField.integer("nucleusGpuCullMinInstances", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering", 0, 1_000_000));
+        reg(ConfigField.integer("nucleusGpuScatterMinSpans", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering", 2, 512));
         reg(ConfigField.integer("vatsRenderDistanceChunks", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering", 1, 32));
         reg(ConfigField.enumField("thermalRenderMode", ConfigSide.CLIENT, ApplyMode.LIVE, "rendering"));
 
@@ -170,6 +193,8 @@ public final class ConfigSchema {
         // ── CLIENT: отладка (читается только клиентом) ──────────────
         reg(ConfigField.floatNum("debugRenderTextSize", ConfigSide.CLIENT, ApplyMode.LIVE, "debug", 0.05F, 5F));
         reg(ConfigField.integer("debugRenderDistance", ConfigSide.CLIENT, ApplyMode.LIVE, "debug", 1, 20));
+        reg(ConfigField.bool("glDebugOutput", ConfigSide.CLIENT, ApplyMode.LIVE, "debug"));
+        reg(ConfigField.bool("debugAnimCacheLog", ConfigSide.CLIENT, ApplyMode.LIVE, "debug"));
 
         // These were missing from the schema entirely. HbmConfigStore writes and reads the JSON
         // through ConfigSchema.snapshotForJson / applyAll, so an unregistered field never reaches
@@ -272,12 +297,20 @@ public final class ConfigSchema {
                 // Формируем строчку с описанием, дефолтным значением и границами
                 StringBuilder desc = new StringBuilder();
                 if (f.getComment() != null) desc.append(f.getComment()).append(" ");
-                
+
+                // Для enum перечисляем все допустимые значения (не только дефолт)
+                if (f.getType() == ConfigField.FieldType.ENUM) {
+                    List<String> values = f.getEnumValueNames();
+                    if (!values.isEmpty()) {
+                        desc.append("[Values: ").append(String.join(", ", values)).append("] ");
+                    }
+                }
                 if (f.getMin() != null && f.getMax() != null) {
                     desc.append("[Range: ").append(f.getMin()).append(" ~ ").append(f.getMax()).append("] ");
                 }
                 desc.append("[Default: ").append(defaultAsString(f)).append("]");
                 if (f.requiresRestart()) desc.append(" [REQUIRES RESTART]");
+                if (f.isResetOnUpgrade()) desc.append(" [RESET ON UPGRADE]");
 
                 // Записываем фейковый ключ-комментарий
                 out.put("_desc_" + f.getKey(), desc.toString().trim());
@@ -316,6 +349,30 @@ public final class ConfigSchema {
     }
 
     // ================================================================
+    // Миграция конфига (смена версии мода)
+    // ================================================================
+
+    /**
+     * Сбрасывает поля стороны, помеченные {@code resetOnUpgrade}, к значениям по
+     * умолчанию — только те, чьё пользовательское значение отличается от дефолта.
+     * Вызывается из {@link com.hbm_m.config.HbmConfigStore} один раз на версию мода
+     * (по штампу {@code _configVersion} в JSON-файле). Возвращает ключи фактически
+     * сброшенных полей (для лога); поля, уже стоящие на дефолте, не трогает.
+     */
+    public static List<String> resetFlaggedToDefault(ModClothConfig cfg, ConfigSide side) {
+        List<String> reset = new ArrayList<>();
+        ModClothConfig def = defaults();
+        for (ConfigField f : FIELDS.values()) {
+            if (f.getSide() != side || !f.isResetOnUpgrade()) continue;
+            if (!Objects.equals(f.getAsString(cfg), f.getAsString(def))) {
+                f.set(cfg, f.get(def));
+                reset.add(f.getKey());
+            }
+        }
+        return reset;
+    }
+
+    // ================================================================
     // Валидация (перенос validatePostLoad)
     // ================================================================
 
@@ -337,6 +394,7 @@ public final class ConfigSchema {
                 // Поле недоступно — пропускаем
             }
         }
+        cfg.enableOcclusionCulling = (cfg.occlusionCullingMode != ModClothConfig.OcclusionCullingMode.OFF);
     }
 
     // ================================================================

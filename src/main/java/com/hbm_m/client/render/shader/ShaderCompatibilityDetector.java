@@ -20,16 +20,17 @@ import net.neoforged.api.distmarker.OnlyIn;
 *///?}
 
 /**
- * Кросс-лоадерный детектор состояния шейдеров Iris/Oculus.
+ * Cross-loader detector of the Iris/Oculus shader state.
  *
- * <p>Определяет активность Iris-пайплайна через рефлекшн, чтобы VBO-рендер
- * корректно маршрутизировал draw-вызовы через Iris ExtendedShader вместо
- * raw-GL против ванильного шейдера, который Iris подменил (иначе «GL No active program»).</p>
+ * <p>Detects whether an Iris pipeline is active via reflection, so the VBO
+ * renderer can correctly route draw calls through an Iris ExtendedShader
+ * instead of raw-GL against the vanilla shader Iris has replaced (otherwise
+ * "GL No active program").</p>
  *
- * <p><b>Loader-agnostic:</b> проверка загруженности мода делается через
- * {@link dev.architectury.platform.Platform} (работает на Forge/NeoForge/Fabric),
- * поэтому тело класса 100% общее — гейтится только клиентская аннотация
- * ({@code @OnlyIn} на forge/neoforge, {@code @Environment} на fabric).</p>
+ * <p><b>Loader-agnostic:</b> mod presence is checked via
+ * {@link dev.architectury.platform.Platform} (works on Forge/NeoForge/Fabric),
+ * so the class body is 100% common - only the client annotation is gated
+ * ({@code @OnlyIn} on forge/neoforge, {@code @Environment} on fabric).</p>
  */
 @OnlyIn(Dist.CLIENT)
 public class ShaderCompatibilityDetector {
@@ -42,24 +43,24 @@ public class ShaderCompatibilityDetector {
     private static Object irisApiInstance = null;
 
     /**
-     * Hot-path MethodHandles для двух запросов к Iris API, вызываемых каждый кадр
-     * (часто per-BE per-pass). {@link Method#invoke} упаковывает аргументы в
-     * {@code Object[]} и каждый раз проходит access-checks рефлекшна;
-     * {@link MethodHandle#invokeExact} дружелюбен к JIT и избегает обоих. Биндится
-     * через {@code asType()} к {@code (Object)boolean}, чтобы call-сайты могли
-     * invokeExact без знания конкретного класса IrisApi.
+     * Hot-path MethodHandles for the two Iris API queries invoked every frame
+     * (often per-BE per-pass). {@link Method#invoke} boxes arguments into
+     * {@code Object[]} and re-runs reflection access checks each call;
+     * {@link MethodHandle#invokeExact} is JIT friendly and avoids both. Bound
+     * via {@code asType()} to {@code (Object)boolean} so call sites can
+     * invokeExact without knowing the concrete IrisApi class.
      */
     private static MethodHandle irisIsShaderPackInUseMH = null;
     private static MethodHandle irisIsRenderingShadowPassMH = null;
 
-    // Кэш для оптимизации и для обращений с background-потоков (Sodium chunk builder)
+    // Cache for performance and for access from background threads (Sodium chunk builder)
     private static boolean lastState = false;
     /**
-     * Thread-safe кэш: обновляется только с render-потока, читается с любых потоков.
-     * Sodium строит чанки на фоновых потоках — они не могут вызывать Iris API напрямую.
+     * Thread-safe cache: updated only from the render thread, read from any thread.
+     * Sodium builds chunks on background threads - they cannot call the Iris API directly.
      */
     private static volatile boolean cachedShaderActive = false;
-    /** Отложенная инвалидация — обрабатывается в ClientTickEvent.END */
+    /** Deferred invalidation - processed in ClientTickEvent.END */
     private static volatile boolean pendingChunkInvalidation = false;
 
     private static void init() {
@@ -100,9 +101,11 @@ public class ShaderCompatibilityDetector {
     }
 
     /**
-     * Один опрос Iris API за кадр (из {@link com.hbm_m.client.render.ClientRenderFlags#onFrameStart}).
-     * Раньше {@link #isExternalShaderActive()} дергал MethodHandle на каждый вызов
-     * (per-part per-BE per-pass) — на фермах машин это давало проценты кадра.
+     * Polls the Iris API once per frame (from
+     * {@link com.hbm_m.client.render.ClientRenderFlags#onFrameStart}).
+     * Previously {@link #isExternalShaderActive()} hit the MethodHandle on every
+     * call (per-part per-BE per-pass) - on machine farms that cost percent-level
+     * frame time.
      */
     public static void updateState() {
         if (!initialized) init();
@@ -125,7 +128,7 @@ public class ShaderCompatibilityDetector {
                 MainRegistry.LOGGER.info("Shader state changed: {}", isActive ? "Active" : "Inactive");
                 lastState = isActive;
                 OcclusionCullingHelper.clearCache();
-                // Откладываем инвалидацию — вызов из render loop ломает итерацию Sodium (wrapped is null)
+                // Defer invalidation - calling from the render loop breaks the Sodium iteration (wrapped is null)
                 pendingChunkInvalidation = true;
             }
         } catch (Throwable e) {
@@ -134,14 +137,15 @@ public class ShaderCompatibilityDetector {
     }
 
     public static boolean isExternalShaderActive() {
-        // O(1): состояние опрашивается один раз за кадр в updateState().
-        // Фоновые потоки (Sodium chunk builder) тоже читают этот кеш.
+        // O(1): state is polled once per frame in updateState().
+        // Background threads (Sodium chunk builder) also read this cache.
         return cachedShaderActive;
     }
 
     /**
-     * Вызывать из ClientTickEvent.END — инвалидирует чанки при смене шейдера.
-     * НЕ вызывать из render loop — ломает итерацию Sodium (ReferenceOpenHashSet.wrapped is null).
+     * Call from ClientTickEvent.END - invalidates chunks on shader change.
+     * Do NOT call from the render loop - it breaks the Sodium iteration
+     * (ReferenceOpenHashSet.wrapped is null).
      */
     public static void processPendingChunkInvalidation() {
         if (!pendingChunkInvalidation) return;
@@ -157,11 +161,18 @@ public class ShaderCompatibilityDetector {
     }
 
     /**
-     * Проверяет, рендерится ли сейчас shadow pass Iris (для realtime shadows).
+     * Checks whether Iris's shadow pass is currently rendering (for realtime shadows).
+     *
+     * <p>Hot-path note: this is queried per-part from the BER/collect paths, so the
+     * reflection is skipped entirely when no Iris pipeline is active (the common case)
+     * - {@code isRenderingShadowPass()} can only be true while a pack is in use.
+     * The result is NOT frame-cached: Iris starts the shadow pass mid-frame (after
+     * {@code ClientRenderFlags.onFrameStart}), so a frame-level snapshot would feed
+     * stale {@code false} into shadow instancing routing.</p>
      */
     public static boolean isRenderingShadowPass() {
         if (!initialized) init();
-        if (irisApiInstance == null) return false;
+        if (irisApiInstance == null || !cachedShaderActive) return false;
         try {
             boolean result;
             if (irisIsRenderingShadowPassMH != null) {
@@ -172,8 +183,8 @@ public class ShaderCompatibilityDetector {
             } else {
                 return false;
             }
-            // Диагностика 1.21.1 (тени не отбрасываются): подтверждаем, что
-            // shadow pass вообще детектится через IrisApi на этом лоадере.
+            // 1.21.1 diagnostics (shadows not cast): confirm that the shadow pass
+            // is detected at all via IrisApi on this loader.
             if (result && !loggedShadowPassDetected) {
                 loggedShadowPassDetected = true;
                 MainRegistry.LOGGER.info(
@@ -190,7 +201,7 @@ public class ShaderCompatibilityDetector {
     /**
      * {@link net.minecraft.client.renderer.blockentity.BlockEntityRenderer#shouldRenderOffScreen}.
      * When {@code true}, Sodium/vanilla still invoke BER even if the BE AABB is outside
-     * the main camera frustum — required so shader-pack shadow maps include off-screen
+     * the main camera frustum - required so shader-pack shadow maps include off-screen
      * casters whose shadows remain visible on screen.
      */
     public static boolean shouldRenderBlockEntityOffScreen() {
@@ -207,8 +218,8 @@ public class ShaderCompatibilityDetector {
     }
 
     /**
-     * Статическая геометрия машин/дверей всегда предоставляется BER/VBO системой.
-     * Baked world quads для этих моделей не используются.
+     * Static geometry of machines/doors is always provided by the BER/VBO system.
+     * Baked world quads are not used for these models.
      */
     public static boolean useVboGeometry() {
         return true;

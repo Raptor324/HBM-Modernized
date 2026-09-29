@@ -188,7 +188,8 @@ public class ClientModEvents {
             ModClothConfig cfg = ModClothConfig.get();
             Minecraft mc = Minecraft.getInstance();
             var cameraPos = mc.gameRenderer.getMainCamera().getPosition();
-            var frustum = cfg.enableOcclusionCulling ? event.getFrustum() : null;
+            var frustum = cfg.getEffectiveOcclusionCullingMode() == ModClothConfig.OcclusionCullingMode.CPU
+                    ? event.getFrustum() : null;
             InstancedRenderFrame.onBeforeBlockEntities(
                     event.getProjectionMatrix(), cameraPos, frustum);
 

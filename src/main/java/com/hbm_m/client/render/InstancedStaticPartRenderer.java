@@ -43,10 +43,10 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
 /**
- * Instanced Renderer для статических частей (Base/Frame).
- * Без шейдеров рендерит все машины одного типа одним {@code glDrawElementsInstanced}.
- * Под Iris/Oculus переключается на per-machine draw через {@code ExtendedShader}
- * + companion VBO с {@code IrisVertexFormats.ENTITY} layout, что даёт корректный
+ * Instanced renderer for static parts (Base/Frame).
+ * Without shaders it renders all machines of one type with a single {@code glDrawElementsInstanced}.
+ * Under Iris/Oculus it switches to per-machine draws via {@code ExtendedShader}
+ * + a companion VBO with the {@code IrisVertexFormats.ENTITY} layout, which yields correct
  * G-buffer / shadow pass / pack uniforms.
  * <p>
  * Flush logic is delegated to {@link VanillaInstancedBatchRenderer} (vanilla path)
@@ -77,20 +77,26 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
     //   InstLightC45  vec4 (loc 10) @ 22   -- c4.uv, c5.uv
     //   InstLightC67  vec4 (loc 11) @ 26  -- c6.uv, c7.uv
     //   InstUvRect    vec4 (loc 12) @ 30  -- uv0.x, uv0.y, du, dv (sprite-local VBO → atlas;
-    //                                     identity 0,0,1,1 для обычных машин, см. UVRECT_FLOAT_OFFSET)
-    //   InstColor     vec4 (loc 13) @ 34  -- per-instance RGBA-тинт (накал/свечение частей; RGB
-    //                                     может быть > 1 — overbright), white = passthrough
-    //   GradParams    vec4 (loc 14) @ 38  -- пространственный фоллофф тинта в МОДЕЛЬНЫХ координатах:
-    //                                     x = ось (0/1/2, <0 = выключен), y = координата полного
-    //                                     тинта (источник), z = координата нуля; плавный
-    //                                     smoothstep между ними (block_lit_instanced.vsh)
+    //                                     identity 0,0,1,1 for regular machines, see UVRECT_FLOAT_OFFSET)
+    //   InstColor     vec4 (loc 13) @ 34  -- per-instance RGBA tint (part heat/glow; RGB
+    //                                     may be > 1 - overbright), white = passthrough
+    //   GradParams    vec4 (loc 14) @ 38  -- spatial falloff of the tint in MODEL coordinates:
+    //                                     x = axis (0/1/2, <0 = off), y = full-tint
+    //                                     coordinate (source), z = zero coordinate; smooth
+    //                                     smoothstep between them (block_lit_instanced.vsh)
+    //   AnimParams    vec4 (loc 15) @ 42  -- parametric GPU animation (see MachineSpecBuilder
+    //                                     .parametricPart): xyz = joint parameters (angle in degrees
+    //                                     / distance), w = joint index in NucleusJointSpecs
+    //                                     (global RGBA32F spec texture: 2 texels per
+    //                                     joint - kind+axis, pivot). w < 0 = part without parametrics.
     static final int INSTANCE_ATTRIB_FIRST = 4;
     static final int LIGHT_FLOAT_OFFSET = 14;
     static final int UVRECT_FLOAT_OFFSET = 30;
     static final int TINT_FLOAT_OFFSET = 34;
     static final int GRAD_FLOAT_OFFSET = 38;
-    /** public: читается culling-пакетом (NucleusGpuCuller) и моддев-артефактами. */
-    public static final int INSTANCE_DATA_SIZE = 42;
+    static final int ANIM_FLOAT_OFFSET = 42;
+    /** public: read by the culling pipeline (NucleusGpuCuller) and modding artifacts. */
+    public static final int INSTANCE_DATA_SIZE = 46;
 
     final int instanceDataSize;
     final int instanceAttribLast;
@@ -102,25 +108,25 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
     final long[] instanceOcclusionKeys = new long[maxInstances];
     float batchSkyDarken = -1f;
     private boolean overflowLogged = false;
-    /** В этой фазе записи была фактическая запись в instanceBuffer (skip-write не сработал хотя бы раз). */
+    /** During this phase at least one actual write to instanceBuffer happened (skip-write failed at least once). */
     boolean mdiRecordWriteHappened = false;
     /**
-     * Содержимое instanceBuffer синхронизировано со снапшотом MDI-координатора:
-     * последний флаш ушёл accepted-сабмитом и с тех пор записей в буфер не было.
-     * Сбрасывается direct-путём (партиция с перестановкой), renderSingle и неуспешными
-     * сабмитами; истинность позволяет {@code submitClean} переиспользовать снапшот.
+     * The instanceBuffer contents are in sync with the MDI coordinator's snapshot:
+     * the last flush went out as an accepted submit and no writes happened since.
+     * Reset by the direct path (partition with reordering), renderSingle, and failed
+     * submits; being true lets {@code submitClean} reuse the snapshot.
      */
     boolean mdiBufferSynced = false;
     static volatile boolean warnedInstancedShaderNullFlush;
 
     /**
-     * Фаза-2 отложенное затухание прямого пути (MDI-fallback): {@code flush()} на
-     * прямом пути рисует только opaque-инстансы,
-     * а затухающие копирует в {@link #fadingSnapshot}; их добирает
-     * {@link #flushFading(Matrix4f)} ПОСЛЕ MDI-мульти-драва (см.
-     * InstancedRenderFrame). Иначе полупрозрачная геометрия, нарисованная раньше
-     * непрозрачной MDI-базы (она уходит в координатор и рисуется в конце флаша),
-     * пишет глубину и depth-reject'ит базу — вместо неё просвечивает чанк.
+     * Phase-2 deferred fading of the direct path (MDI fallback): {@code flush()} on the
+     * direct path draws only opaque instances,
+     * while fading ones are copied into {@link #fadingSnapshot}; they are picked up by
+     * {@link #flushFading(Matrix4f)} AFTER the MDI multi-draw (see
+     * InstancedRenderFrame). Otherwise translucent geometry drawn earlier than the
+     * opaque MDI base (it goes to the coordinator and is drawn at the end of the flush)
+     * writes depth and depth-rejects the base - the chunk shows through instead of it.
      */
     int deferredFadingCount = 0;
     FloatBuffer fadingSnapshot;
@@ -128,41 +134,61 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
     final float[] instanceLightUV = new float[maxInstances * 2];
 
     /**
-     * Текущий uvRect записи ({u0, v0, du, dv}); identity {0,0,1,1} для обычных машин.
-     * Заполняется из {@link #addInstance} (новый 7-arg-оверрайд с uvRect) перед записью
-     * рекорда и чтением {@code recordMatchesBuffer}; теневой батч пишет его же в рекорд.
+     * Current record uvRect ({u0, v0, du, dv}); identity {0,0,1,1} for regular machines.
+     * Filled by {@link #addInstance} (the new 7-arg overload with uvRect) before writing
+     * the record and reading {@code recordMatchesBuffer}; the shadow batch writes the same into its records.
      */
     final float[] tmpUvRect = {0f, 0f, 1f, 1f};
     private static final float[] IDENTITY_UV_RECT = {0f, 0f, 1f, 1f};
 
-    /** Активный uvRect (для рекордов теневого батча); всегда length 4. */
+    /** Active uvRect (for shadow-batch records); always length 4. */
     float[] getActiveUvRect() {
         return tmpUvRect;
     }
 
     /**
-     * Текущий RGBA-тинт записи; RGB white = passthrough, A = сила эмиссии (heat 0..1) —
-     * шейдеры доворачивают lightmap к fullbright на tint*gradient (glow следует тинту).
-     * Заполняется из {@link #addInstance} перед записью рекорда; теневой батч пишет его же
-     * в рекорд (теневой FB цвет не использует — важно только выравнивание стрида).
+     * Current record RGBA tint; RGB white = passthrough, A = emission strength (heat 0..1) -
+     * shaders push the lightmap toward fullbright by tint*gradient (glow follows the tint).
+     * Filled by {@link #addInstance} before writing the record; the shadow batch writes the same
+     * into its records (the shadow FB does not use color - only the stride alignment matters).
      */
     final float[] tmpTint = {1f, 1f, 1f, 0f};
     private static final float[] WHITE_TINT = {1f, 1f, 1f, 0f};
 
     /**
-     * Текущий пространственный фоллофф тинта {axis, fullCoord, zeroCoord, pad};
-     * axis &lt; 0 = выключен (множитель 1). Конфиг статический на часть
-     * ({@code MachineSpecBuilder.tintFalloff}), но пишется в рекорд инстанса —
-     * шейдер считает градиент по модельным координатам вершины.
+     * Current spatial tint falloff {axis, fullCoord, zeroCoord, pad};
+     * axis &lt; 0 = off (multiplier 1). The config is static per part
+     * ({@code MachineSpecBuilder.tintFalloff}), but is written into the instance record -
+     * the shader computes the gradient from the vertex's model coordinates.
      */
     final float[] tmpGrad = {-1f, 0f, 0f, 0f};
 
-    /** Активный фоллофф (для рекордов теневого батча); всегда length 4. */
+    /**
+     * Current parametric joint parameters of the record (attrib 15 AnimParams):
+     * xyz = parameters, w = joint index (&lt; 0 = no parametrics).
+     */
+    final float[] tmpAnimParams = {0f, 0f, 0f, -1f};
+
+    // Pending parameters (static, like setFadeAlpha): MachineBer sets them
+    // BEFORE renderer.enqueue of a parametric part; addInstance reads and
+    // resets them. -1 = a regular (CPU-animated/static) part.
+    private static float pendingAnimP0, pendingAnimP1, pendingAnimP2;
+    private static int pendingJointIndex = -1;
+
+    /** Set joint parameters for the next {@code addInstance} (parametric GPU animation). */
+    public static void setPendingAnimParams(float p0, float p1, float p2, int jointIndex) {
+        pendingAnimP0 = p0;
+        pendingAnimP1 = p1;
+        pendingAnimP2 = p2;
+        pendingJointIndex = jointIndex;
+    }
+
+    /** Active falloff (for shadow-batch records); always length 4. */
     float[] getActiveGrad() {
         return tmpGrad;
     }
 
-    /** Активный тинт (для рекордов теневого батча); всегда length 4. */
+    /** Active tint (for shadow-batch records); always length 4. */
     float[] getActiveTint() {
         return tmpTint;
     }
@@ -171,7 +197,7 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
     final Quaternionf rotTmp = new Quaternionf();
     final Matrix4f tmpLocalPose = new Matrix4f();
     final Matrix4f tmpInvViewRot = new Matrix4f();
-    /** Scratch для конверсии composed(view) → мировой трансформ (см. {@link #convertToWorldRecord}). */
+    /** Scratch for converting composed(view) to a world transform (see {@link #convertToWorldRecord}). */
     private final Matrix4f tmpWorldMat = new Matrix4f();
     final float[] tmpCornerUV;
 
@@ -179,10 +205,10 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
     FloatBuffer instanceBuffer;
     private long instanceBufferAddress;
 
-    // ── Direct-path VBO shadow (span-diff аплоады) ─────────────────────
-    // CPU-копия содержимого instanceVboId: drawInstanceRange/flushFadingVanilla/
-    // renderSingleVanilla аплоадят только изменившиеся span-ы (см. GpuSpanUploader).
-    // Ленивый alloc: только рендереры, реально ходящие прямым путём (не MDI).
+    // -- Direct-path VBO shadow (span-diff uploads) ----------------------
+    // CPU copy of the instanceVboId contents: drawInstanceRange/flushFadingVanilla/
+    // renderSingleVanilla upload only changed spans (see GpuSpanUploader).
+    // Lazy alloc: only renderers that actually take the direct path (not MDI).
     private FloatBuffer vboShadow;
     private int vboShadowFloats = 0;
     private boolean vboShadowValid = false;
@@ -191,11 +217,11 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
 
     public static void onRenderOriginChanged() {
         activeAnchorGen = FrameViewState.anchorGeneration();
-        // Записи якорно-относительны: сдвиг якоря протухает их все — fast-path
-        // roster-assert обязан выдать worldGen-мисс и уйти в полный пересбор.
+        // Records are anchor-relative: an anchor shift stales them all - the fast-path
+        // roster assert must report a worldGen miss and fall back to a full rebuild.
         NucleusRenderVersion.bump();
     }
-    /** Оценка VRAM этого рендерера (вершины+индексы+instance VBO); 0 = не учтён. */
+    /** VRAM estimate of this renderer (vertices+indices+instance VBO); 0 = not accounted. */
     private long vramBytes = 0;
 
     java.nio.ByteBuffer atlasVertexBytesRetained;
@@ -225,7 +251,7 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
     public InstancedStaticPartRenderer(SingleMeshVboRenderer.VboData data, List<BakedQuad> quadsForIris) {
         this.quadsForIris = quadsForIris;
         this.instanceDataSize = INSTANCE_DATA_SIZE;
-        this.instanceAttribLast = 14;
+        this.instanceAttribLast = 15;
         this.instanceFadeFloatOffset = 13; // InstBboxSize.w
         this.lightFloatCount = 16;
         this.tmpCornerUV = new float[lightFloatCount];
@@ -338,20 +364,26 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
             GL20.glVertexAttribPointer(11, 4, GL11.GL_FLOAT, false, stride, (LIGHT_FLOAT_OFFSET + 12) * 4L);
             InstancedGlCompat.glVertexAttribDivisorCompat(11, 1);
 
-            // InstUvRect vec4 (loc 12): sprite-rect ремап normalized-VBO → атлас.
+            // InstUvRect vec4 (loc 12): sprite-rect remap from normalized VBO to atlas.
             GL20.glEnableVertexAttribArray(12);
             GL20.glVertexAttribPointer(12, 4, GL11.GL_FLOAT, false, stride, UVRECT_FLOAT_OFFSET * 4L);
             InstancedGlCompat.glVertexAttribDivisorCompat(12, 1);
 
-            // InstColor vec4 (loc 13): per-instance RGBA-тинт (white = passthrough).
+            // InstColor vec4 (loc 13): per-instance RGBA tint (white = passthrough).
             GL20.glEnableVertexAttribArray(13);
             GL20.glVertexAttribPointer(13, 4, GL11.GL_FLOAT, false, stride, TINT_FLOAT_OFFSET * 4L);
             InstancedGlCompat.glVertexAttribDivisorCompat(13, 1);
 
-            // GradParams vec4 (loc 14): пространственный фоллофф тинта (axis<0 = off).
+            // GradParams vec4 (loc 14): spatial tint falloff (axis<0 = off).
             GL20.glEnableVertexAttribArray(14);
             GL20.glVertexAttribPointer(14, 4, GL11.GL_FLOAT, false, stride, GRAD_FLOAT_OFFSET * 4L);
             InstancedGlCompat.glVertexAttribDivisorCompat(14, 1);
+
+            // AnimParams vec4 (loc 15): parametric GPU animation (xyz = parameters,
+            // w = joint index; w < 0 = no parametrics - the shader skips the joint delta).
+            GL20.glEnableVertexAttribArray(15);
+            GL20.glVertexAttribPointer(15, 4, GL11.GL_FLOAT, false, stride, ANIM_FLOAT_OFFSET * 4L);
+            InstancedGlCompat.glVertexAttribDivisorCompat(15, 1);
 
             GL30.glBindVertexArray(0);
 
@@ -411,10 +443,10 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
 
         } catch (Exception e) {
             MainRegistry.LOGGER.error("Failed to initialize InstancedStaticPartRenderer", e);
-            // super.cleanup() (AbstractGpuMesh) выходит рано по !initialized — а в
-            // конструкторе initialized ещё false. Уже сгенерированные GL-объекты
-            // удаляем явно, иначе исключение между glGen* и концом try утекает
-            // VAO/vertex VBO/EBO (instanceVboId чистится в cleanup() ниже).
+            // super.cleanup() (AbstractGpuMesh) exits early on !initialized - and in
+            // the constructor initialized is still false. Explicitly delete the
+            // already-generated GL objects, otherwise an exception between glGen* and
+            // the end of try leaks VAO/vertex VBO/EBO (instanceVboId is cleaned in cleanup() below).
             if (vaoId != -1) {
                 try { GL30.glDeleteVertexArrays(vaoId); } catch (Throwable ignored) {}
                 vaoId = -1;
@@ -438,10 +470,10 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
     // ── Instance data write ────────────────────────────────────────────
 
     /**
-     * Конвертирует composed view-space трансформ (R_cam·T(rel)·local, контракт
-     * одинаков на 1.20.1 и 1.21.1 — см. {@link FrameViewState}) в мировые posTmp/rotTmp.
-     * Мир вместо камеры в записи ⇒ движение камеры не «грязнит» инстансы (GpuSpanUploader
-     * даёт нулевой аплоад статичной сцены), камера применяется в vsh через ModelViewMat.
+     * Converts a composed view-space transform (R_cam*T(rel)*local, the contract is
+     * identical on 1.20.1 and 1.21.1 - see {@link FrameViewState}) into world-space posTmp/rotTmp.
+     * World instead of camera in the record => camera motion does not "dirty" the instances
+     * (GpuSpanUploader gives zero upload for a static scene); the camera is applied in the vsh via ModelViewMat.
      */
     void convertToWorldRecord(Matrix4f composed) {
         tmpWorldMat.set(FrameViewState.inverseViewRotation()).mul(composed);
@@ -469,9 +501,9 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
         MemoryUtil.memPutFloat(a + 40, sx);
         MemoryUtil.memPutFloat(a + 44, sy);
         MemoryUtil.memPutFloat(a + 48, sz);
-        // fade квантуется до 1/255: иначе плавный ramp фейда по дистанции меняет
-        // младшие биты каждый кадр и span-дифф GpuSpanUploader никогда не сходит
-        // в ноль при движении камеры. 8 бит альфы на глаз неотличимы.
+        // fade is quantized to 1/255: otherwise the smooth distance-based fade ramp changes
+        // low bits every frame and the GpuSpanUploader span-diff never converges
+        // to zero while the camera moves. 8 bits of alpha are visually indistinguishable.
         float fade = quantizeFade(SingleMeshVboRenderer.getFadeAlpha());
         MemoryUtil.memPutFloat(a + 52, fade);
         long lightA = a + (long) LIGHT_FLOAT_OFFSET * 4L;
@@ -493,19 +525,24 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
         MemoryUtil.memPutFloat(gradA + 4, tmpGrad[1]);
         MemoryUtil.memPutFloat(gradA + 8, tmpGrad[2]);
         MemoryUtil.memPutFloat(gradA + 12, tmpGrad[3]);
+        long animA = a + (long) ANIM_FLOAT_OFFSET * 4L;
+        MemoryUtil.memPutFloat(animA, tmpAnimParams[0]);
+        MemoryUtil.memPutFloat(animA + 4, tmpAnimParams[1]);
+        MemoryUtil.memPutFloat(animA + 8, tmpAnimParams[2]);
+        MemoryUtil.memPutFloat(animA + 12, tmpAnimParams[3]);
     }
 
     /**
-     * Сравнивает компоненты новой записи (posTmp/rotTmp/objBbox/fade/tmpCornerUV)
-     * с содержимым instanceBuffer на слоте {@code baseFloat}. Записи прошлого флаша
-     * сохраняются в буфере (clear() сбрасывает только position), поэтому совпадение
-     * означает «машина не изменилась с прошлого флаша» — memPut можно пропустить.
+     * Compares the new record's components (posTmp/rotTmp/objBbox/fade/tmpCornerUV)
+     * against the instanceBuffer contents at slot {@code baseFloat}. Records of the previous
+     * flush persist in the buffer (clear() only resets position), so a match means
+     * "the machine has not changed since the last flush" - the memPut can be skipped.
      *
-     * <p>Сравнение с допуском (см. {@link #recEq}), а не точное: мировая запись
-     * получается через R⁻¹·(R_cam·T·local), и при ВРАЩЕНИИ камеры произведение
-     * R⁻¹·R_cam≈I даёт ulp-джиттер последних битов — точное равенство считало
-     * все машины грязными при каждом повороте. Допуски на порядки меньше
-     * видимого порога (~пиксель на экране ≈ 2мм на метровой дистанции).
+     * <p>The comparison uses a tolerance (see {@link #recEq}), not exact equality: the world
+     * record is produced via R^-1*(R_cam*T*local), and when the camera ROTATES the product
+     * R^-1*R_cam ~= I introduces ulp jitter in the last bits - exact equality would mark
+     * every machine dirty on each camera turn. The tolerances are orders of magnitude below
+     * the visible threshold (~a pixel on screen ~= 2 mm at meter distances).
      */
     private boolean recordMatchesBuffer(int baseFloatIndex) {
         long a = instanceBufferAddress + (long) baseFloatIndex * 4L;
@@ -532,64 +569,72 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
             if (!recEq(MemoryUtil.memGetFloat(lightA + (long) i * 4L), tmpCornerUV[i], LIGHT_EPS)) return false;
         }
         long uvA = a + (long) UVRECT_FLOAT_OFFSET * 4L;
-        // Точное равенство: rect приходят из стабильных спрайт-границ, меняется
-        // только при смене скина — тогда запись обязана переписаться.
+        // Exact equality: rects come from stable sprite bounds and change
+        // only on a skin change - then the record must be rewritten.
         if (MemoryUtil.memGetFloat(uvA) != tmpUvRect[0]) return false;
         if (MemoryUtil.memGetFloat(uvA + 4) != tmpUvRect[1]) return false;
         if (MemoryUtil.memGetFloat(uvA + 8) != tmpUvRect[2]) return false;
         if (MemoryUtil.memGetFloat(uvA + 12) != tmpUvRect[3]) return false;
         long tintA = a + (long) TINT_FLOAT_OFFSET * 4L;
-        // Точное равенство, как у uvRect: резолвер тинта обязан сходиться к стабильным
-        // значениям (иначе skip-write деградирует в ежекадровую запись — не ошибка, но
-        // дешевле в самом резолвере).
+        // Exact equality, as with uvRect: the tint resolver must converge to stable
+        // values (otherwise skip-write degrades into per-frame writes - not a bug, but
+        // cheaper to fix in the resolver itself).
         if (MemoryUtil.memGetFloat(tintA) != tmpTint[0]) return false;
         if (MemoryUtil.memGetFloat(tintA + 4) != tmpTint[1]) return false;
         if (MemoryUtil.memGetFloat(tintA + 8) != tmpTint[2]) return false;
         if (MemoryUtil.memGetFloat(tintA + 12) != tmpTint[3]) return false;
         long gradA = a + (long) GRAD_FLOAT_OFFSET * 4L;
-        // Фоллофф — статический конфиг части: значения стабильны, сравнение точное.
+        // Falloff is static per-part config: values are stable, comparison is exact.
         if (MemoryUtil.memGetFloat(gradA) != tmpGrad[0]) return false;
         if (MemoryUtil.memGetFloat(gradA + 4) != tmpGrad[1]) return false;
         if (MemoryUtil.memGetFloat(gradA + 8) != tmpGrad[2]) return false;
         if (MemoryUtil.memGetFloat(gradA + 12) != tmpGrad[3]) return false;
+        long animA = a + (long) ANIM_FLOAT_OFFSET * 4L;
+        // Joint parameters use exact equality (like uvRect/tint): the parameter resolver
+        // must converge to stable values, otherwise a frozen part would rewrite the
+        // record tail every frame (the span-diff would never converge to zero).
+        if (MemoryUtil.memGetFloat(animA) != tmpAnimParams[0]) return false;
+        if (MemoryUtil.memGetFloat(animA + 4) != tmpAnimParams[1]) return false;
+        if (MemoryUtil.memGetFloat(animA + 8) != tmpAnimParams[2]) return false;
+        if (MemoryUtil.memGetFloat(animA + 12) != tmpAnimParams[3]) return false;
         return true;
     }
 
-    /** |a-b| ≤ eps (NaN не равен ничему — консервативно пишет запись). */
+    /** |a-b| <= eps (NaN equals nothing - conservatively writes the record). */
     private static boolean recEq(float a, float b, float eps) {
         return Math.abs(a - b) <= eps;
     }
 
-    /** Допуск сравнения мировых координат записи (~1мм — субпиксель даже вблизи). */
+    /** Tolerance for record world coordinates (~1 mm - subpixel even up close). */
     private static final float POS_EPS = 1.0e-3f;
-    /** Допуск кватерниона записи (~1e-4 рад ≈ 0.006° — невидимо). */
+    /** Tolerance for the record quaternion (~1e-4 rad ~= 0.006 deg - invisible). */
     private static final float ROT_EPS = 1.0e-5f;
-    /** Допуск углов света (триллинейные веса тоже проходят через камерно-относительный pose). */
+    /** Tolerance for light angles (trilinear weights also pass through the camera-relative pose). */
     private static final float LIGHT_EPS = 1.0e-4f;
 
     /**
-     * Готов ли рендерер к {@code MdiBatchCoordinator.submitClean}: в этой фазе записи
-     * не было ни одной записи в буфер, и буфер синхронизирован со снапшотом координатора.
+     * Whether the renderer is ready for {@code MdiBatchCoordinator.submitClean}: during this
+     * phase not a single write to the buffer happened, and the buffer is in sync with the coordinator's snapshot.
      */
     boolean canSubmitMdiClean() {
         return ClientRenderFlags.mdiCleanFrameReuse() && !mdiRecordWriteHappened && mdiBufferSynced;
     }
 
-    /** Буфер снова соответствует снапшоту координатора (accepted сабмит/чистый реассерт). */
+    /** The buffer matches the coordinator's snapshot again (accepted submit / clean re-assert). */
     void noteMdiDispatched() {
         mdiBufferSynced = true;
     }
 
-    /** Синхронизация потеряна: direct-путь, перестановка партицией, renderSingle, отказ сабмита. */
+    /** Sync lost: direct path, partition reordering, renderSingle, submit refusal. */
     void noteMdiDispatchLost() {
         mdiBufferSynced = false;
     }
 
     /**
-     * Span-аплоад окна данных в instance VBO прямого пути (offset 0):
-     * сравнивает с теневой копией и грузит только изменившиеся диапазоны.
-     * Orphan убран: при пропуске span-ов GPU-буфер обязан СОХРАНЯТЬ старое
-     * содержимое, glBufferData(orphan) его уничтожил бы.
+     * Span upload of the data window into the direct-path instance VBO (offset 0):
+     * compares against the shadow copy and uploads only changed ranges.
+     * Orphaning removed: when spans are skipped the GPU buffer must KEEP the old
+     * content; glBufferData(orphan) would destroy it.
      */
     void uploadToInstanceVboSpanned(FloatBuffer src, int srcFloatOffset, int destFloatOffset, int floats) {
         if (floats <= 0 || instanceVboId <= 0) {
@@ -621,7 +666,7 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
     }
 
     void uploadInstanceStreamToBoundVbo() {
-        // instanceBuffer уже flip: валидные записи [0, remaining).
+        // instanceBuffer is already flipped: valid records are [0, remaining).
         uploadToInstanceVboSpanned(instanceBuffer, 0, 0, instanceBuffer.remaining());
     }
 
@@ -646,8 +691,8 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
                 return;
             }
             if (quadsForIris != null && !quadsForIris.isEmpty() && bufferSource != null) {
-                // Fallback уходит в bufferSource (отрисовка на endBatch) — companion VAO
-                // shadow-батча обязан быть отвязан (per-part release в shadow отключён).
+                // Fallback goes to bufferSource (drawn at endBatch) - the companion VAO
+                // of the shadow batch must be detached (per-part release in shadow is disabled).
                 com.hbm_m.client.render.shader.IrisRenderBatch.detachCompanionVaoForVanillaWork();
                 float fade = SingleMeshVboRenderer.getFadeAlpha();
                 VertexConsumer consumer = bufferSource.getBuffer(fade < 0.99f ? RenderType.translucent() : RenderType.solid());
@@ -665,12 +710,12 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
     // ── addInstance ─────────────────────────────────────────────────────
 
     /**
-     * Fast-path dirty-skip: может ли слот {@code instanceCount} быть подтверждён
-     * roster-assert'ом для машины {@code posKey} без пересборки записи?
-     * Roster-ключи живут в {@link #instanceOcclusionKeys} (= pos.asLong(), пишется
-     * и в addInstance, и в assert) — содержимое буфера соответствует слоту k,
-     * пока ни одна запись в [0, k] не была переставлена/перезаписана другой машиной.
-     * Только чтение — вызов безопасен в проверочной фазе (до коммита).
+     * Fast-path dirty-skip: can slot {@code instanceCount} be confirmed by a roster
+     * assert for machine {@code posKey} without rebuilding the record?
+     * Roster keys live in {@link #instanceOcclusionKeys} (= pos.asLong(), written both
+     * in addInstance and in the assert) - the buffer contents match slot k as long as
+     * no record in [0, k] has been reordered/overwritten by another machine.
+     * Read-only - safe to call during the checking phase (before commit).
      */
     public boolean canAssertInstance(long posKey) {
         return initialized && instanceBuffer != null
@@ -679,23 +724,23 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
     }
 
     /**
-     * Квант fade записей инстанс-буфера: 1/255 (см. {@link #memPutInstanceRecordAtBaseFloat}).
-     * Единственная точка квантования — запись, skip-write-сравнение и roster-assert
-     * обязаны сверять один и тот же квант.
+     * Fade quantum of instance-buffer records: 1/255 (see {@link #memPutInstanceRecordAtBaseFloat}).
+     * This is the single quantization point - the write, the skip-write comparison, and the
+     * roster assert must all check the same quantum.
      */
     public static float quantizeFade(float fade) {
         return Math.round(fade * 255.0f) * (1.0f / 255.0f);
     }
 
     /**
-     * Fast-path dirty-skip с проверкой fade: слот {@code instanceCount} подтверждается
-     * только при совпадении roster-ключа И квантованного fade записи в буфере.
+     * Fast-path dirty-skip with a fade check: slot {@code instanceCount} is confirmed only
+     * when both the roster key AND the quantized fade of the record in the buffer match.
      * <p>
-     * Дистанционный fade — чистая функция позиции камеры и меняется каждый кадр
-     * движения БЕЗ dirty-события; key-ассерт без этой проверки замораживает альфу
-     * записи до случайного полного пересбора (pop вместо растворения при отдалении,
-     * «застревание» полупрозрачной при приближении). Проверка — одно чтение флоата
-     * из буфера; машины с fade=1 (основная масса) проходят здесь же.
+     * Distance fade is a pure function of camera position and changes every frame of motion
+     * WITHOUT a dirty event; a key-only assert freezes the record's alpha until a random
+     * full rebuild (a pop instead of dissolving when moving away, a "stuck" translucent
+     * when approaching). The check is a single float read from the buffer; machines with
+     * fade=1 (the vast majority) pass right here.
      */
     public boolean canAssertInstance(long posKey, float expectedQuantizedFade) {
         if (!canAssertInstance(posKey)) {
@@ -707,10 +752,10 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
     }
 
     /**
-     * Коммит roster-assert для машины {@code blockPos}: содержимое буфера уже
-     * содержит запись прошлого кадра (clear() после флаша сбрасывает только
-     * position), инстанс просто продлевает своё присутствие — без матриц,
-     * света и сравнения флоатов. Вызывать ТОЛЬКО после {@link #canAssertInstance}.
+     * Commits a roster assert for machine {@code blockPos}: the buffer already holds
+     * last frame's record (clear() after a flush only resets position), so the instance
+     * merely extends its presence - no matrices, no light, no float comparisons.
+     * Call ONLY after {@link #canAssertInstance}.
      */
     public void assertCleanInstance(BlockPos blockPos) {
         if (instanceCount >= maxInstances) {
@@ -718,7 +763,7 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
         }
         long key = OcclusionCullingHelper.occlusionKeyForBlock(blockPos);
         if (instanceOcclusionKeys[instanceCount] != key) {
-            return; // защитно: вызывающий обязан проверить canAssertInstance
+            return; // defensive: the caller must check canAssertInstance
         }
         if (instanceCount == 0) {
             overflowLogged = false;
@@ -732,9 +777,9 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
     }
 
     /**
-     * Содержимое instance-буфера больше не соответствует roster-ключам
-     * (renderSingle перезаписал слот 0). Все canAssertInstance начнут выдавать
-     * миссы → машины уйдут в полный пересбор.
+     * The instance-buffer contents no longer match the roster keys
+     * (renderSingle overwrote slot 0). All canAssertInstance calls will start
+     * missing -> machines fall back to a full rebuild.
      */
     void invalidateRoster() {
         if (instanceOcclusionKeys.length > 0) {
@@ -764,10 +809,10 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
     }
 
     /**
-     * Полная форма: {@code uvRect} = {u0, v0, du, dv} ремапа sprite-local VBO в атлас
-     * (текстурно-вариантные части дверей; null/identity — обычные машины с атласными UV);
-     * {@code tint} = {r,g,b,a} per-instance цветовой множитель (null/white — passthrough;
-     * RGB может быть &gt; 1 — overbright-накал, см. блок_lit InstColor).
+     * Full form: {@code uvRect} = {u0, v0, du, dv} remapping a sprite-local VBO into the atlas
+     * (texture-variant door parts; null/identity - regular machines with atlas UVs);
+     * {@code tint} = {r,g,b,a} per-instance color multiplier (null/white - passthrough;
+     * RGB may be &gt; 1 - overbright heat, see block_lit InstColor).
      */
     public void addInstance(PoseStack poseStack, int packedLight, BlockPos blockPos,
                             @Nullable BlockEntity blockEntity, @Nullable MultiBufferSource bufferSource,
@@ -775,7 +820,7 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
         addInstance(poseStack, packedLight, blockPos, blockEntity, bufferSource, sharedCornerUV8, uvRect, null);
     }
 
-    /** Полная форма с per-instance тинтом; см. 7-arg перегрузку для описания остальных параметров. */
+    /** Full form with a per-instance tint; see the 7-arg overload for the other parameters. */
     public void addInstance(PoseStack poseStack, int packedLight, BlockPos blockPos,
                             @Nullable BlockEntity blockEntity, @Nullable MultiBufferSource bufferSource,
                             @Nullable float[] sharedCornerUV8, @Nullable float[] uvRect,
@@ -784,9 +829,9 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
     }
 
     /**
-     * Полная форма с тинтом и фоллоффом. {@code grad} = {axis (0/1/2, &lt;0 = off),
-     * fullCoord, zeroCoord, pad} — конфиг части ({@code MachineSpecBuilder.tintFalloff}),
-     * фоллофф применяется в шейдере по модельным координатам вершины.
+     * Full form with tint and falloff. {@code grad} = {axis (0/1/2, &lt;0 = off),
+     * fullCoord, zeroCoord, pad} - per-part config ({@code MachineSpecBuilder.tintFalloff});
+     * the falloff is applied in the shader from the vertex's model coordinates.
      */
     public void addInstance(PoseStack poseStack, int packedLight, BlockPos blockPos,
                             @Nullable BlockEntity blockEntity, @Nullable MultiBufferSource bufferSource,
@@ -827,16 +872,24 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
             tmpGrad[2] = 0f;
             tmpGrad[3] = 0f;
         }
+        // Parametric joint (attrib 15): read the pending values and reset them -
+        // one write per enqueue. Not set (regular part) -> w = -1, the vertex
+        // shader skips the joint delta.
+        tmpAnimParams[0] = pendingAnimP0;
+        tmpAnimParams[1] = pendingAnimP1;
+        tmpAnimParams[2] = pendingAnimP2;
+        tmpAnimParams[3] = (float) pendingJointIndex;
+        pendingJointIndex = -1;
 
-        // Shadow pass (обе платформы): немедленная отрисовка через АКТИВНЫЙ
-        // per-BE батч (быстрый путь, см. IrisRenderBatch.begin). Раньше блок
-        // был forge-only: на neoforge 1.21.1 инстансы накапливались в shadow
-        // с теневыми матрицами и затем флашились в основном проходе. Fallback
-        // без батча — putBulkData через bufferSource (SHADOW_BLOCK на endBatch).
+        // Shadow pass (both platforms): immediate drawing through the ACTIVE per-BE
+        // batch (fast path, see IrisRenderBatch.begin). This block used to be forge-only:
+        // on neoforge 1.21.1 instances accumulated in shadow with shadow matrices and were
+        // then flushed in the main pass. Fallback without a batch - putBulkData via
+        // bufferSource (SHADOW_BLOCK at endBatch).
         if (ShaderCompatibilityDetector.isRenderingShadowPass()) {
-            // Глобальный shadow-батч: запись вместо немедленного дроука — флаш один
-            // на всю BE-фазу (Iris-миксин в ShadowRenderer.renderShadows). При
-            // выключенном/неудавшемся батче — прежний немедленный путь.
+            // Global shadow batch: record instead of an immediate draw - one flush
+            // for the whole BE phase (Iris mixin in ShadowRenderer.renderShadows). With
+            // the batch disabled/failed - the previous immediate path.
             if (irisHelper.tryRecordShadowInstance(poseStack, packedLight, blockPos, blockEntity)) {
                 return;
             }
@@ -844,9 +897,9 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
                 return;
             }
             if (quadsForIris != null && !quadsForIris.isEmpty() && bufferSource != null) {
-                // Fallback в bufferSource при открытом shadow-батче — см. detach-комментарий в renderSingle.
-                // Тинт читаем из tmpTint (заполнен выше в этом addInstance) — тени цвет не
-                // используют, но alpha/overbright не должны теряться на fallback-пути.
+                // Fallback to bufferSource with the shadow batch open - see the detach comment in renderSingle.
+                // The tint is read from tmpTint (filled earlier in this addInstance) - shadows do
+                // not use color, but alpha/overbright must not be lost on the fallback path.
                 com.hbm_m.client.render.shader.IrisRenderBatch.detachCompanionVaoForVanillaWork();
                 float fade = SingleMeshVboRenderer.getFadeAlpha();
                 float tr = tmpTint[0], tg = tmpTint[1], tb = tmpTint[2];
@@ -880,13 +933,13 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
         }
 
         Matrix4f mat = poseStack.last().pose();
-        // ВЕРДИКТ ПО ВАНИЛЬНЫМ ИСТОЧНИКАМ 1.21.1 (GameRenderer.renderLevel + LevelRenderer.renderLevel):
-        // R_cam (frustumMatrix) передаётся ОТДЕЛЬНО от проекции и пушится в RenderSystem.getModelViewStack()
-        // перед циклом BE — то есть RenderSystem.getModelViewMatrix() == R_cam на ОБЕИХ версиях,
-        // а poseStack несёт только T(blockPos - cam) * local. Предыдущая ветка "pose уже содержит камеру"
-        // была ложной и выбрасывала R_cam → модели летали по экрану. Стриппинг отменён.
-        // (Уточнение 2026-09-12 по свежим сорсам: на 1.20.1 наоборот — R_cam запечён в poseStack,
-        // а modelViewStack до AFTER_BLOCK_ENTITIES identity; composed = mvm·pose совпадает на обеих.)
+        // VERDICT FROM VANILLA SOURCES 1.21.1 (GameRenderer.renderLevel + LevelRenderer.renderLevel):
+        // R_cam (frustumMatrix) is passed SEPARATELY from the projection and pushed onto RenderSystem.getModelViewStack()
+        // before the BE loop - that is, RenderSystem.getModelViewMatrix() == R_cam on BOTH versions,
+        // while poseStack carries only T(blockPos - cam) * local. The previous "pose already contains the camera"
+        // branch was wrong and dropped R_cam -> models flew across the screen. Stripping cancelled.
+        // (Clarification 2026-09-12 from fresh sources: on 1.20.1 it is the reverse - R_cam is baked into the poseStack,
+        // and modelViewStack is identity until AFTER_BLOCK_ENTITIES; composed = mvm*pose matches on both.)
         tmpCompositeMat.set(RenderSystem.getModelViewMatrix()).mul(mat);
         convertToWorldRecord(tmpCompositeMat);
 
@@ -895,10 +948,10 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
         instanceCullIndices[instanceCount] = -1;
         instanceOcclusionKeys[instanceCount] = OcclusionCullingHelper.occlusionKeyForBlock(blockPos);
         int baseFloat = instanceCount * instanceDataSize;
-        // Skip-write: clear() после флаша сбрасывает только position — записи прошлого
-        // флаша остаются в буфере. Если новая запись побайтово совпадает (статичная
-        // машина: тот же pos/rot, квантованный fade, тот же свет), memPut пропускается,
-        // и координатор может переиспользовать свой снапшот целиком (submitClean).
+        // Skip-write: clear() after a flush only resets position - records of the previous
+        // flush remain in the buffer. If the new record matches byte-for-byte (a static
+        // machine: same pos/rot, quantized fade, same light), the memPut is skipped,
+        // and the coordinator can reuse its snapshot in full (submitClean).
         if (!recordMatchesBuffer(baseFloat)) {
             memPutInstanceRecordAtBaseFloat(baseFloat);
             mdiRecordWriteHappened = true;
@@ -907,23 +960,23 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
         ((Buffer) instanceBuffer).position(instanceDataSize * instanceCount);
     }
 
-    /** Companion-меш для глобального shadow-батча ({@link IrisShadowBatchCollector}); лениво строится. */
+    /** Companion mesh for the global shadow batch ({@link IrisShadowBatchCollector}); built lazily. */
     @Nullable
     IrisCompanionMesh getOrBuildCompanionForShadowBatch() {
         return irisHelper.getOrBuildIrisCompanion();
     }
 
     /**
-     * Инстансный дроук теневых записей: наш ExtendedShader (vanilla-parity FSH —
-     * теневому FB не нужен pack-формат), parent VAO, span-дифф записей в instance
-     * VBO, ОДИН {@code glDrawElementsInstanced} на part-renderer.
+     * Instanced draw of shadow records: our ExtendedShader (vanilla-parity FSH - the
+     * shadow FB needs no pack format), the parent VAO, span-diff of records into the instance
+     * VBO, ONE {@code glDrawElementsInstanced} per part-renderer.
      * <p>
-     * Записи — позы в shadow-space (точная декомпозиция T·R PoseStack'а BER'а),
-     * поэтому ModelViewMat ЖЁСТКО identity: iris_ModelViewMat из RenderSystem
-     * брать нельзя (на Oculus 1.8 стек в shadow может нести shadow-MV — это и
-     * было «ползание» теней в раннем варианте). Клип = P_shadow · pose, ровно
-     * тот же контракт, что у pack-программного drawCompanion-флаша.
-     * {@code records} — position в конце записи; метод делает flip/clear сам.
+     * Records are shadow-space poses (exact decomposition of the BER PoseStack's T*R),
+     * so ModelViewMat is HARD identity: iris_ModelViewMat from RenderSystem
+     * must not be used (on Oculus 1.8 the stack in shadow may carry a shadow-MV - that was
+     * the "crawling shadows" of the early variant). Clip = P_shadow * pose, exactly
+     * the same contract as the pack-program drawCompanion flush.
+     * {@code records} - position at the end of writing; the method flips/clears it itself.
      */
     boolean drawShadowInstances(java.nio.FloatBuffer records, int count,
                                 ShaderInstance shader, Matrix4f proj) {
@@ -944,9 +997,9 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
 
             vanillaHelper.useIrisProgram(shader, proj, IDENTITY_MV);
             SingleMeshVboRenderer.primeIrisInstancedSamplerMap(shader, Minecraft.getInstance());
-            // Паковская тене-дисторсия — обязана совпадать с сэмплером пака
-            // (IrisShadowDistortion извлекает режим/константы из исходника пака).
-            // ВСЕ юниформы объявлены "float" — set(int) у float-юниформа падает
+            // Pack shadow distortion - must match the pack's sampler
+            // (IrisShadowDistortion extracts the mode/constants from the pack source).
+            // ALL uniforms are declared "float" - set(int) on a float uniform throws
             // NPE (Uniform.intValues == null, debug.log 0913 23:41, BSL).
             com.mojang.blaze3d.shaders.Uniform uMode = shader.getUniform("hbmShadowDistortionMode");
             if (uMode != null) { uMode.set((float) com.hbm_m.client.render.shader.IrisShadowDistortion.mode()); uMode.upload(); }
@@ -966,7 +1019,7 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
         return true;
     }
 
-    /** Identity ModelViewMat для теневого инстанс-дроука (записи уже в shadow-space). */
+    /** Identity ModelViewMat for the shadow instanced draw (records are already in shadow-space). */
     private static final Matrix4f IDENTITY_MV = new Matrix4f();
 
     /**
@@ -1000,11 +1053,11 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
             //? if < 1.21.1 {
             tmpInvViewRot.identity().set(RenderSystem.getInverseViewRotationMatrix());
             //?} else {
-            /*// rotation(camera.rotation()) = R_cam⁻¹ (frustumMatrix ванилы =
-            // rotation(rotation().conjugate()) = R_cam, quaternion уже несёт
-            // ОБРАТНУЮ view-ротацию — как в FrameViewState.capture; ранний
-            // лишний .invert() поворачивал сэмпл-точки света на R_cam² и
-            // свет «бегал» по машине при повороте камеры.
+            /*// rotation(camera.rotation()) = R_cam^-1 (vanilla frustumMatrix =
+            // rotation(rotation().conjugate()) = R_cam; the quaternion already carries
+            // the INVERSE view rotation - as in FrameViewState.capture; an early
+            // extra .invert() rotated the light sample points by R_cam^2 and
+            // the light "crawled" over the machine on camera rotation.
             tmpInvViewRot.identity().rotation(Minecraft.getInstance().gameRenderer.getMainCamera().rotation());
             *///?}
             tmpLocalPose.set(tmpInvViewRot).mul(worldPose);
@@ -1027,23 +1080,23 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
 
 
     /**
-     * Обязательный re-bind atlas + lightmap после {@link ShaderInstance#apply()} и перед glDraw*.
+     * Mandatory re-bind of atlas + lightmap after {@link ShaderInstance#apply()} and before glDraw*.
      * <p>
-     * <b>РЕГРЕССИЯ-СТОП:</b> без этого instanced машины белые (Sampler2 читает unit 0 = atlas).
-     * Делегат — {@link SingleMeshVboRenderer#bindBlockLitSamplerTextures}; не дублировать логику здесь.
+     * <b>REGRESSION STOP:</b> without this, instanced machines render white (Sampler2 reads unit 0 = atlas).
+     * Delegates to {@link SingleMeshVboRenderer#bindBlockLitSamplerTextures}; do not duplicate the logic here.
      */
     static void bindBlockLitTexturesBeforeDraw(ShaderInstance shader) {
         SingleMeshVboRenderer.bindBlockLitSamplerTextures(shader);
     }
 
     /**
-     * Вызывается из {@link com.hbm_m.client.render.culling.InstancedRenderFrame#presentAfterBlockEntities}
-     * в том же кадре, что addInstance — не откладывать flush на конец уровня.
+     * Called from {@link com.hbm_m.client.render.culling.InstancedRenderFrame#presentAfterBlockEntities}
+     * in the same frame as addInstance - do not defer the flush to the end of the level.
      */
     @Override
     public void flush(Matrix4f projectionMatrix) {
-        // Отложенное затухание прошлой фазы либо уже нарисовано flushFading(),
-        // либо протухло (повторный AFTER_BLOCK_ENTITIES-проход за кадр) — сброс.
+        // Last phase's deferred fading was either already drawn by flushFading(),
+        // or staled (a second AFTER_BLOCK_ENTITIES pass per frame) - reset.
         deferredFadingCount = 0;
         if (instanceCount == 0) return;
 
@@ -1071,11 +1124,11 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
     }
 
     /**
-     * Фаза 2 (вызывается из InstancedRenderFrame ПОСЛЕ MDI-диспетча): добирает
-     * затухающие инстансы, отложенные прямым путём в {@link #deferFading}.
-     * Безусловно гасит отложенное состояние — пропуск вызова не может
-     * «протухнуть» в следующий кадр. Под Iris отложенного не бывает
-     * (flushBatchVanilla там не вызывается) — естественный no-op.
+     * Phase 2 (called from InstancedRenderFrame AFTER the MDI dispatch): picks up the
+     * fading instances deferred by the direct path in {@link #deferFading}.
+     * Unconditionally clears the deferred state - skipping the call cannot
+     * "leak" into the next frame. Under Iris there is never anything deferred
+     * (flushBatchVanilla is not called there) - a natural no-op.
      */
     public void flushFading(Matrix4f projectionMatrix) {
         int count = deferredFadingCount;
@@ -1087,10 +1140,10 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
     }
 
     /**
-     * Копирует затухающие записи [firstRecord, instanceCount) главного буфера в
-     * снапшот фазы 2. Вызывается из {@code flushBatchVanilla} после партиции;
-     * instanceBuffer в этот момент position=0 (после flip), содержимое уже
-     * переставлено [opaque | fading].
+     * Copies the fading records [firstRecord, instanceCount) of the main buffer into the
+     * phase-2 snapshot. Called from {@code flushBatchVanilla} after the partition;
+     * instanceBuffer is at position=0 at that moment (after flip), with content already
+     * reordered [opaque | fading].
      */
     void deferFading(int firstRecord, int count) {
         deferredFadingCount = count;
@@ -1102,9 +1155,9 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
     }
 
     /**
-     * Ключ сортировки fading-окон прямого пути: distSq ДАЛЬНЕГО fading-инстанса
-     * (запись 0 снапшота — back-to-front внутри рендерера). -1 = фейда нет.
-     * Используется MachineSpec.flushFading для глобального back-to-front порядка окон.
+     * Sort key for direct-path fading windows: the distSq of the FARTHEST fading instance
+     * (record 0 of the snapshot - back-to-front within the renderer). -1 = no fade.
+     * Used by MachineSpec.flushFading for the global back-to-front order of windows.
      */
     public float fadingSortKeyDistSq() {
         if (deferredFadingCount <= 0 || fadingSnapshot == null) return -1f;
@@ -1114,24 +1167,42 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
         return dx * dx + dy * dy + dz * dz;
     }
 
-    /** fade ниже порога считается затухающим (консистентно с minFade-порогом блендинга). */
+    /** Fade below the threshold counts as fading (consistent with the blending minFade threshold). */
     static final float OPAQUE_FADE_THRESHOLD = 0.99f;
 
     /**
-     * Переставляет записи инстанс-буфера в порядке [opaque в исходном порядке |
-     * затухающие back-to-front по |InstPos|²] и возвращает число opaque-записей.
-     * Буфер: position 0, валидные записи [0, instanceCount·stride).
+     * Reorders the instance-buffer records into [opaque in original order |
+     * fading back-to-front by |InstPos|^2] and returns the number of opaque records.
+     * Buffer: position 0, valid records [0, instanceCount*stride).
      * <p>
-     * Общий механизм фазового порядка G для MDI-снапшотов
-     * ({@code MdiBatchCoordinator.partitionOpaqueFirst}) и прямого пути
-     * ({@code flushBatchVanilla}): «непрозрачные раньше затухающих» обязан
-     * соблюдаться во ВСЕХ путях рендера одинаково.
+     * Shared phase-order G mechanism for MDI snapshots
+     * ({@code MdiBatchCoordinator.partitionOpaqueFirst}) and the direct path
+     * ({@code flushBatchVanilla}): "opaque before fading" must hold
+     * identically across ALL render paths.
      *
-     * @param parallelKeys необязательный параллельный массив roster-ключей
-     *                     (машина на слот): переставляется синхронно с записями,
-     *                     чтобы соответствие «ключ ⇔ запись в слоте» сохранилось
-     *                     после партиции (fast-path dirty-skip). null — не трогать.
+     * @param parallelKeys optional parallel array of roster keys
+     *                     (machine per slot): reordered in sync with the records so
+     *                     the "key <-> record in slot" correspondence survives
+     *                     the partition (fast-path dirty-skip). null - leave untouched.
      */
+    /** Partition scratch: a growing persistent buffer instead of memAllocFloat/Free on every dirty frame. */
+    private static FloatBuffer partitionScratch = null;
+    private static long[] partitionScratchKeys = null;
+    private static int[] partitionFadeIdx = null;
+    private static float[] partitionFadeDistSq = null;
+
+    private static FloatBuffer partitionScratch(int floats) {
+        FloatBuffer buf = partitionScratch;
+        if (buf == null || buf.capacity() < floats) {
+            if (buf != null) {
+                MemoryUtil.memFree(buf);
+            }
+            buf = MemoryUtil.memAllocFloat(Math.max(floats, 4096));
+            partitionScratch = buf;
+        }
+        return buf;
+    }
+
     static int partitionInstancesOpaqueFirst(FloatBuffer buf, int instanceCount, int floatsPerInstance, int fadeOffset,
                                              long[] parallelKeys) {
         int n = instanceCount;
@@ -1145,11 +1216,17 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
         }
         if (fadeTotal == 0) return n;
 
-        FloatBuffer tmp = MemoryUtil.memAllocFloat(n * floatsPerInstance);
-        long[] tmpKeys = parallelKeys != null ? new long[n] : null;
+        FloatBuffer tmp = partitionScratch(n * floatsPerInstance);
+        long[] tmpKeys = parallelKeys != null
+                ? (partitionScratchKeys != null && partitionScratchKeys.length >= n
+                        ? partitionScratchKeys
+                        : (partitionScratchKeys = new long[n]))
+                : null;
+        int[] fadeIdx = partitionFadeIdx != null && partitionFadeIdx.length >= fadeTotal
+                ? partitionFadeIdx : (partitionFadeIdx = new int[fadeTotal]);
+        float[] fadeDistSq = partitionFadeDistSq != null && partitionFadeDistSq.length >= fadeTotal
+                ? partitionFadeDistSq : (partitionFadeDistSq = new float[fadeTotal]);
         try {
-            int[] fadeIdx = new int[fadeTotal];
-            float[] fadeDistSq = new float[fadeTotal];
             int opaqueWrote = 0;
             int k = 0;
             for (int i = 0; i < n; i++) {
@@ -1169,7 +1246,7 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
                     opaqueWrote++;
                 }
             }
-            // insertion sort по убыванию distSq (back-to-front); затухающих обычно единицы
+            // insertion sort by descending distSq (back-to-front); fading instances are usually few
             for (int a = 1; a < fadeTotal; a++) {
                 int idx = fadeIdx[a];
                 float d = fadeDistSq[a];
@@ -1196,7 +1273,7 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
             }
             return n - fadeTotal;
         } finally {
-            MemoryUtil.memFree(tmp);
+            // Scratch is persistent - do not free.
         }
     }
 
@@ -1246,8 +1323,8 @@ public class InstancedStaticPartRenderer extends AbstractGpuMesh
     public void cleanup() {
         super.cleanup();
 
-        // Retained-запись координатора для этого рендерера больше не валидна:
-        // слот атласа снесёт evictRendererIfRegistered, флаги запрещают submitClean.
+        // The coordinator's retained record for this renderer is no longer valid:
+        // evictRendererIfRegistered will tear down the atlas slot, and the flags forbid submitClean.
         this.mdiBufferSynced = false;
         this.mdiRecordWriteHappened = false;
 

@@ -65,7 +65,7 @@ public final class MdiGeometryAtlas {
     /** Vertex stride in bytes — pos vec3 + normal vec3 + uv vec2 + int bone_id = 36. */
     private static final int VERTEX_STRIDE_BYTES = SingleMeshVboRenderer.MACHINE_PART_VERTEX_STRIDE_BYTES;
 
-    /** Unsliced instance layout: 30 floats per instance (see {@link InstancedStaticPartRenderer}). */
+    /** Unsliced instance layout: 46 floats per instance (see {@link InstancedStaticPartRenderer}). */
     private static final int INSTANCE_FLOATS = InstancedStaticPartRenderer.INSTANCE_DATA_SIZE;
     /** Float index of fade packed in {@code InstBboxSize.w}. */
     private static final int INSTANCE_FADE_FLOAT_OFFSET = 13;
@@ -312,14 +312,19 @@ public final class MdiGeometryAtlas {
             GL20.glEnableVertexAttribArray(12);
             GL20.glVertexAttribPointer(12, 4, GL11.GL_FLOAT, false, stride, 120);
             GL33.glVertexAttribDivisor(12, 1);
-            // InstColor vec4 @ 136 (per-instance RGBA-тинт; white = passthrough)
+            // InstColor vec4 @ 136 (per-instance RGBA tint; white = passthrough)
             GL20.glEnableVertexAttribArray(13);
             GL20.glVertexAttribPointer(13, 4, GL11.GL_FLOAT, false, stride, 136);
             GL33.glVertexAttribDivisor(13, 1);
-            // GradParams vec4 @ 152 (пространственный фоллофф тинта; axis<0 = off)
+            // GradParams vec4 @ 152 (spatial tint falloff; axis<0 = off)
             GL20.glEnableVertexAttribArray(14);
             GL20.glVertexAttribPointer(14, 4, GL11.GL_FLOAT, false, stride, 152);
             GL33.glVertexAttribDivisor(14, 1);
+            // AnimParams vec4 @ 168 (parametric GPU animation: xyz = parameters,
+            // w = NucleusJointSpecs joint index; w < 0 = no parametrics)
+            GL20.glEnableVertexAttribArray(15);
+            GL20.glVertexAttribPointer(15, 4, GL11.GL_FLOAT, false, stride, 168);
+            GL33.glVertexAttribDivisor(15, 1);
 
             // Indirect: allocate capacity once; each frame only updates via glBufferSubData (see MdiBatchCoordinator).
             long initialIndirectBytes = 4096L * (long) MdiBatchCoordinator.INDIRECT_CMD_STRIDE_BYTES;
@@ -366,6 +371,12 @@ public final class MdiGeometryAtlas {
         GL20.glVertexAttribPointer(12, 4, GL11.GL_FLOAT, false, stride, 120);
         GL20.glVertexAttribPointer(13, 4, GL11.GL_FLOAT, false, stride, 136);
         GL20.glVertexAttribPointer(14, 4, GL11.GL_FLOAT, false, stride, 152);
+        // AnimParams vec4 @ 168: MUST be re-pointed together with the rest -
+        // glVertexAttribPointer binds the CURRENT ARRAY_BUFFER into the VAO per
+        // attribute; skipping 15 left it reading the plain instance VBO while
+        // attribs 4..14 read the compacted one (GPU-culled draws), so parametric
+        // parts received another record's joint parameters.
+        GL20.glVertexAttribPointer(15, 4, GL11.GL_FLOAT, false, stride, 168);
     }
 
     public void bindCompactedInstanceVbo() {

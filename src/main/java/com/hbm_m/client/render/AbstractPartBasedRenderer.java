@@ -32,8 +32,8 @@ public abstract class AbstractPartBasedRenderer<T extends BlockEntity, M extends
         implements com.hbm_m.client.render.HbmBerBounds<T> {
 
     /**
-     * Получает модель для рендеринга. По умолчанию - из blockstate.
-     * Можно переопределить для выбора модели по данным BlockEntity (например, двери с разными скинами).
+     * Gets the model for rendering. By default - from the blockstate.
+     * Can be overridden to pick a model from BlockEntity data (e.g. doors with different skins).
      */
     protected BakedModel getModel(T blockEntity) {
         return Minecraft.getInstance().getBlockRenderer()
@@ -45,7 +45,7 @@ public abstract class AbstractPartBasedRenderer<T extends BlockEntity, M extends
     protected abstract void renderParts(T blockEntity, M model, LegacyAnimator animator, float partialTick,
                                         int packedLight, int packedOverlay, PoseStack poseStack, MultiBufferSource bufferSource);
 
-    /** Поворот/сдвиг блока в локальных координатах перед {@link #renderParts}. */
+    /** Rotation/offset of the block in local coordinates before {@link #renderParts}. */
     protected void setupBlockTransform(LegacyAnimator animator, T blockEntity) {
         animator.setupBlockTransform(getFacing(blockEntity));
     }
@@ -80,11 +80,11 @@ public abstract class AbstractPartBasedRenderer<T extends BlockEntity, M extends
         // Frustum cull FIRST for the main pass. Shadow pass uses light-space
         // bounds; the main-camera frustum here would drop off-screen casters.
         if (ShaderCompatibilityDetector.isRenderingShadowPass()) {
-            // ── Диагностика 1.21.1 (машины не отбрасывают теней под Iris):
-            // счётчик вызовов BER внутри теневого прохода; логируется из
-            // ClientModEvents (AFTER_SKY основного прохода). 0 вызовов =
-            // Iris вообще не зовёт BER в shadow (пустой список теневых BE,
-            // интероп terrain-мода) — тогда проблема не в нашем draw-пути.
+            // 1.21.1 diagnostics (machines cast no shadows under Iris): counter of
+            // BER calls inside the shadow pass; logged from ClientModEvents
+            // (AFTER_SKY of the main pass). 0 calls = Iris never calls BER in
+            // shadow (empty shadow BE list, terrain-mod interop) - then the
+            // problem is not in our draw path.
             SHADOW_BER_INVOCATIONS++;
         } else if (!isInViewFrustum(blockEntity)) {
             return;
@@ -96,9 +96,9 @@ public abstract class AbstractPartBasedRenderer<T extends BlockEntity, M extends
         currentModelViewMatrix.set(poseStack.last().pose());
 
         BakedModel rawModel = getModel(blockEntity);
-        // Continuity (через Connector/FFAPI) оборачивает все blockstate-модели в CtmBakedModel/
-        // EmissiveBakedModel, которые расширяют ForwardingBakedModel (Fabric FRAPI).
-        // Разворачиваем, чтобы instanceof-проверка в getModelType() корректно работала.
+        // Continuity (via Connector/FFAPI) wraps all blockstate models in CtmBakedModel/
+        // EmissiveBakedModel, which extend ForwardingBakedModel (Fabric FRAPI).
+        // Unwrap so the instanceof check in getModelType() works correctly.
         rawModel = unwrapFabricForwardingModels(rawModel);
         M model = getModelType(rawModel);
         
@@ -124,44 +124,50 @@ public abstract class AbstractPartBasedRenderer<T extends BlockEntity, M extends
     }
 
     // -----------------------------------------------------------------------
-    // Общий куллинг и fade для реализаций
+    // Shared culling and fade helpers for implementations
     // -----------------------------------------------------------------------
 
-    /** Occlusion/frustum-куллинг по AABB из {@link #frustumCullBounds}. */
+    /** Occlusion/frustum culling over the AABB from {@link #frustumCullBounds}. */
     protected final boolean passesOcclusionCulling(T blockEntity) {
         return passesOcclusionCulling(blockEntity, frustumCullBounds(blockEntity));
     }
 
-    /** Публичный доступ к AABB этого BE для движковых расчётов (shared light и т.п.). */
+    /** Engine-facing access to this BE's AABB (shared light computations, etc.). */
     protected final AABB renderBounds(T blockEntity) {
         return frustumCullBounds(blockEntity);
     }
 
     /**
-     * Проверка видимости через BE-уровень: в контрапшене Create BE.getLevel() —
-     * VirtualRenderWorld, shouldRender() его распознаёт и пропускает frustum/ray-march
-     * кулинг.
+     * Visibility check via the BE's level: inside a Create contraption BE.getLevel() is
+     * a VirtualRenderWorld; shouldRender() recognizes it and skips frustum/ray-march
+     * culling.
      */
     protected final boolean passesOcclusionCulling(T blockEntity, AABB bounds) {
         return OcclusionCullingHelper.shouldRender(blockEntity, bounds);
     }
 
     /**
-     * Общая логика куллинга + статического fade: пропускает рендер за пределами
-     * дистанции и выставляет {@link SingleMeshVboRenderer#setFadeAlpha}.
+     * Shared culling + static fade logic: skips rendering beyond the distance and
+     * sets {@link SingleMeshVboRenderer#setFadeAlpha}.
      *
-     * @return fade в [0,1], или -1 если рендер следует пропустить.
+     * @return fade in [0,1], or -1 if rendering should be skipped.
      */
     protected final float applyCullingAndStaticFade(T blockEntity) {
         return applyCullingAndStaticFade(blockEntity, frustumCullBounds(blockEntity));
     }
 
     protected final float applyCullingAndStaticFade(T blockEntity, AABB bounds) {
+        return applyCullingAndStaticFade(blockEntity, bounds,
+                RenderDistanceHelper.distanceSqToCamera(blockEntity.getBlockPos()));
+    }
+
+    /** Variant with a precomputed distance - no repeated camera fetch (MachineBer cache per frame). */
+    protected final float applyCullingAndStaticFade(T blockEntity, AABB bounds, double distSq) {
         if (!passesOcclusionCulling(blockEntity, bounds)) {
             NucleusDebug.recordMachineCulled();
             return -1f;
         }
-        float staticFade = RenderDistanceHelper.computeStaticFade(blockEntity);
+        float staticFade = RenderDistanceHelper.computeStaticFade(blockEntity, distSq);
         if (staticFade < 0) {
             NucleusDebug.recordMachineCulled();
             return -1f;
@@ -171,10 +177,10 @@ public abstract class AbstractPartBasedRenderer<T extends BlockEntity, M extends
         return staticFade;
     }
 
-    /** Диагностика shadow pass: вызовы BER с прошлого сброса. См. render(). */
+    /** Shadow pass diagnostics: BER calls since the last reset. See render(). */
     protected static int SHADOW_BER_INVOCATIONS = 0;
 
-    /** Читает и обнуляет счётчик вызовов BER в shadow pass (раз в кадр из AFTER_SKY). */
+    /** Reads and resets the shadow-pass BER call counter (once per frame from AFTER_SKY). */
     public static int drainShadowBerInvocations() {
         int v = SHADOW_BER_INVOCATIONS;
         SHADOW_BER_INVOCATIONS = 0;
@@ -182,10 +188,15 @@ public abstract class AbstractPartBasedRenderer<T extends BlockEntity, M extends
     }
 
     protected boolean isInViewFrustum(T blockEntity) {
-        // Контрапшен (Create train и т.п.): BE висит на фейковом уровне и
-        // getRenderBoundingBox() возвращает AABB в локальных координатах, который
-        // world-space фрустум отбраковывает -> модель невидима (тень рисуется,
-        // т.к. shadow-pass этот чек пропускает). Пропускаем position-based кулл.
+        return isInViewFrustum(blockEntity, frustumCullBounds(blockEntity));
+    }
+
+    /** Variant with a precomputed AABB - the bbox is computed once per (machine, frame). */
+    protected final boolean isInViewFrustum(T blockEntity, AABB bounds) {
+        // Contraption (Create train, etc.): the BE lives on a fake level and
+        // getRenderBoundingBox() returns a local-space AABB, which the world-space
+        // frustum rejects -> the model is invisible (the shadow still renders,
+        // since the shadow pass skips this check). Skip position-based culling.
         if (com.hbm_m.compat.ContraptionRenderCompat.isContraptionRender(blockEntity)) {
             return true;
         }
@@ -197,38 +208,45 @@ public abstract class AbstractPartBasedRenderer<T extends BlockEntity, M extends
         if (frustum == null) {
             return true;
         }
-        AABB box = frustumCullBounds(blockEntity);
-        return frustum.isVisible(box);
+        return frustum.isVisible(bounds);
     }
 
     /**
-     * AABB для frustum-теста до дорогого occlusion ray-march.
+     * AABB for the frustum test before the expensive occlusion ray-march.
      * Forge: {@link net.minecraftforge.common.extensions.IForgeBlockEntity#getRenderBoundingBox()}.
-     * Fabric: только известные подклассы с явным методом (остальные — 1 блок + запас).
+     * Fabric: only known subclasses with an explicit method (others - 1 block + margin).
      */
     private static AABB frustumCullBounds(BlockEntity blockEntity) {
         return com.hbm_m.platform.RenderHooks.getRenderBoundingBox(blockEntity);
     }
 
     // -----------------------------------------------------------------------
-    // Совместимость с Fabric FRAPI (Continuity, Emissive и т.д.)
+    // Fabric FRAPI compatibility (Continuity, Emissive, etc.)
     // -----------------------------------------------------------------------
 
     /**
-     * Поле 'wrapped' в ForwardingBakedModel (Fabric FRAPI).
-     * Кешируется при первом успешном поиске, null - если FRAPI недоступен.
+     * The 'wrapped' field of ForwardingBakedModel (Fabric FRAPI).
+     * Cached on the first successful lookup; null if FRAPI is unavailable.
      */
     private static Field fabricWrappedField;
     private static boolean fabricWrappedFieldChecked = false;
 
     /**
-     * Разворачивает цепочку {@code ForwardingBakedModel} обёрток (Continuity CtmBakedModel,
-     * EmissiveBakedModel и т.п.) до исходной модели.
+     * Unwraps a chain of {@code ForwardingBakedModel} wrappers (Continuity CtmBakedModel,
+     * EmissiveBakedModel, etc.) down to the original model.
      *
-     * <p>Continuity через Connector оборачивает все blockstate-модели в {@code CtmBakedModel}
-     * (extends {@code ForwardingBakedModel}), из-за чего instanceof-проверки в {@link #getModelType}
-     * возвращают null и блок становится невидимым.
+     * <p>Continuity via Connector wraps all blockstate models in {@code CtmBakedModel}
+     * (extends {@code ForwardingBakedModel}), which makes the instanceof checks in
+     * {@link #getModelType} return null and the block invisible.
      */
+    /**
+     * Unwrap cache keyed by model identity (weak keys: wrappers are GC-collected
+     * after reload). Previously the class hierarchy walk ran for every BE on every
+     * pass - now a model is wrapped (or not) once and forever.
+     */
+    private static final java.util.Map<BakedModel, BakedModel> UNWRAP_CACHE =
+            java.util.Collections.synchronizedMap(new java.util.WeakHashMap<>());
+
     public static BakedModel unwrapFabricForwardingModels(BakedModel model) {
         if (model == null) return null;
 
@@ -240,13 +258,24 @@ public abstract class AbstractPartBasedRenderer<T extends BlockEntity, M extends
                 f.setAccessible(true);
                 fabricWrappedField = f;
             } catch (ClassNotFoundException ignored) {
-                // FRAPI недоступен в окружении
+                // FRAPI not present in this environment
             } catch (Exception e) {
                 MainRegistry.LOGGER.warn("[HBM] Failed to get field ForwardingBakedModel.wrapped: {}", e.toString());
             }
         }
-
         if (fabricWrappedField == null) return model;
+
+        BakedModel cached = UNWRAP_CACHE.get(model);
+        if (cached != null) {
+            return cached;
+        }
+        BakedModel unwrapped = unwrapFabricForwardingModelsImpl(model);
+        UNWRAP_CACHE.put(model, unwrapped);
+        return unwrapped;
+    }
+
+    private static BakedModel unwrapFabricForwardingModelsImpl(BakedModel model) {
+        if (model == null) return null;
 
         int depth = 0;
         while (depth++ < 8) {

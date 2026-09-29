@@ -69,6 +69,9 @@ final class IrisInstancedBatchRenderer {
     private ShaderInstance cachedMatrixShader;
 
     private final Matrix4f tmpInstanceMat = new Matrix4f();
+
+    /** Scratch MV composite for a single Iris draw (rendering is single-threaded). */
+    private final Matrix4f tmpSingleMv = new Matrix4f();
     /** Scratch: composed shadow model-view matrix for recording into the global shadow batch. */
     private final Matrix4f tmpShadowMv = new Matrix4f();
     /** Scratch: instance world transformation = inv(shadowMV) * composed. */
@@ -238,7 +241,7 @@ final class IrisInstancedBatchRenderer {
         if (batch != null) {
             // R_cam resides in RenderSystem.getModelViewMatrix() on BOTH versions (see fix in
             // InstancedStaticPartRenderer.addInstance) — composite multiplication is required.
-            Matrix4f fullModelView = new Matrix4f(RenderSystem.getModelViewMatrix()).mul(poseStack.last().pose());
+            Matrix4f fullModelView = tmpSingleMv.set(RenderSystem.getModelViewMatrix()).mul(poseStack.last().pose());
             LightSampleCache.getOrSample(blockEntity, packedLight, irisSingleUV, 0);
             int blockUInt = Math.max(0, Math.min(240, Math.round(irisSingleUV[0])));
             int skyVInt   = Math.max(0, Math.min(240, Math.round(irisSingleUV[1])));
@@ -265,7 +268,7 @@ final class IrisInstancedBatchRenderer {
 
             LightSampleCache.getOrSample(blockEntity, packedLight, irisSingleUV, 0);
 
-            Matrix4f fullModelView = new Matrix4f(RenderSystem.getModelViewMatrix()).mul(poseStack.last().pose());
+            Matrix4f fullModelView = tmpSingleMv.set(RenderSystem.getModelViewMatrix()).mul(poseStack.last().pose());
             parent.vanillaHelper.applyCommonUniforms(shader, RenderSystem.getProjectionMatrix(), fullModelView);
             if (parent.vanillaHelper.uBrightness != null) parent.vanillaHelper.uBrightness.set(
                     parent.vanillaHelper.brightnessFromUV(irisSingleUV[0], irisSingleUV[1], Float.NaN));

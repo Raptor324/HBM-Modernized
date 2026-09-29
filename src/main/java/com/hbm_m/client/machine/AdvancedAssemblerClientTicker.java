@@ -3,6 +3,7 @@ package com.hbm_m.client.machine;
 import java.util.Arrays;
 
 import com.hbm_m.blockentity.machines.MachineAdvancedAssemblerBlockEntity;
+import com.hbm_m.interfaces.IClientTicker;
 import com.hbm_m.sound.AdvancedAssemblerSoundInstance;
 import com.hbm_m.sound.ModSounds;
 
@@ -12,13 +13,12 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.state.BlockState;
 
 /**
  * Клиентский тикер advanced assembler: вынесен из BlockEntity, чтобы dedicated server
  * не загружал класс с полями клиентских звуков.
  */
-public class AdvancedAssemblerClientTicker {
+public class AdvancedAssemblerClientTicker implements IClientTicker {
 
     private final AssemblerArm[] arms = new AssemblerArm[2];
     private float ringAngle;
@@ -29,7 +29,10 @@ public class AdvancedAssemblerClientTicker {
     private boolean wasCraftingLastTick = false;
     private AdvancedAssemblerSoundInstance soundInstance;
 
-    public AdvancedAssemblerClientTicker() {
+    private final MachineAdvancedAssemblerBlockEntity be;
+
+    public AdvancedAssemblerClientTicker(MachineAdvancedAssemblerBlockEntity be) {
+        this.be = be;
         for (int i = 0; i < arms.length; i++) {
             arms[i] = new AssemblerArm();
         }
@@ -47,16 +50,24 @@ public class AdvancedAssemblerClientTicker {
         return arms;
     }
 
-    public void clientTick(Level level, BlockPos pos, BlockState state, MachineAdvancedAssemblerBlockEntity entity) {
-        updateSound(entity);
+    @Override
+    public void clientTick() {
+        Level level = be.getLevel();
+        BlockPos pos = be.getBlockPos();
+        // Distance gate: on assembler farms thousands of tickers each hit the
+        // sound engine every tick (SoundEngine.play stalls the render thread on
+        // its audio-pool future). Beyond ~24 blocks the sounds are inaudible
+        // anyway - keep the animation, skip all OpenAL traffic.
+        boolean inEarshot = isInEarshot(pos);
+        updateSound(be, inEarshot);
 
         this.prevRingAngle = this.ringAngle;
-        boolean craftingNow = entity.isClientCrafting();
+        boolean craftingNow = be.isClientCrafting();
 
         if (craftingNow) {
             for (AssemblerArm arm : arms) {
                 arm.updateInterp();
-                arm.updateArm(level, pos, level.random);
+                arm.updateArm(level, pos, level.random, inEarshot);
             }
         } else {
             for (AssemblerArm arm : arms) {
@@ -69,8 +80,10 @@ public class AdvancedAssemblerClientTicker {
             this.ringTarget = (level.random.nextFloat() * 2 - 1) * 135;
             this.ringSpeed = 10.0F + level.random.nextFloat() * 5.0F;
             this.ringDelay = 0;
-            level.playLocalSound(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
-                ModSounds.ASSEMBLER_START.get(), SoundSource.BLOCKS, 0.5f, 1.0f, false);
+            if (inEarshot) {
+                level.playLocalSound(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
+                    ModSounds.ASSEMBLER_START.get(), SoundSource.BLOCKS, 0.5f, 1.0f, false);
+            }
         }
 
         wasCraftingLastTick = craftingNow;
@@ -87,8 +100,10 @@ public class AdvancedAssemblerClientTicker {
             } else if (this.ringDelay > 0) {
                 this.ringDelay--;
                 if (this.ringDelay == 0) {
-                    level.playLocalSound(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
-                        ModSounds.ASSEMBLER_START.get(), SoundSource.BLOCKS, 0.3f, 1.0f, false);
+                    if (inEarshot) {
+                        level.playLocalSound(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
+                            ModSounds.ASSEMBLER_START.get(), SoundSource.BLOCKS, 0.3f, 1.0f, false);
+                    }
                     this.ringTarget = (level.random.nextFloat() * 2 - 1) * 135;
                     this.ringSpeed = 10.0F + level.random.nextFloat() * 5.0F;
                 }
@@ -102,8 +117,21 @@ public class AdvancedAssemblerClientTicker {
         }
     }
 
-    private void updateSound(MachineAdvancedAssemblerBlockEntity entity) {
-        boolean isCrafting = entity.isClientCrafting();
+    private static boolean isInEarshot(BlockPos pos) {
+        net.minecraft.client.player.LocalPlayer player = Minecraft.getInstance().player;
+        if (player == null) {
+            return false;
+        }
+        double dx = (pos.getX() + 0.5) - player.getX();
+        double dy = (pos.getY() + 0.5) - player.getY();
+        double dz = (pos.getZ() + 0.5) - player.getZ();
+        return dx * dx + dy * dy + dz * dz <= EARSHOT_DISTANCE_SQ;
+    }
+
+    private static final double EARSHOT_DISTANCE_SQ = 24.0 * 24.0;
+
+    private void updateSound(MachineAdvancedAssemblerBlockEntity entity, boolean inEarshot) {
+        boolean isCrafting = entity.isClientCrafting() && inEarshot;
         if (isCrafting && (this.soundInstance == null || this.soundInstance.isStopped())) {
             this.soundInstance = new AdvancedAssemblerSoundInstance(entity.getBlockPos());
             Minecraft.getInstance().getSoundManager().play(this.soundInstance);
@@ -155,7 +183,7 @@ public class AdvancedAssemblerClientTicker {
             speed[3] = 0.5f;
         }
 
-        public void updateArm(Level level, BlockPos pos, RandomSource random) {
+        public void updateArm(Level level, BlockPos pos, RandomSource random, boolean inEarshot) {
             resetSpeed();
             if (actionDelay > 0) {
                 actionDelay--;
@@ -171,8 +199,10 @@ public class AdvancedAssemblerClientTicker {
                     break;
                 case EXTEND_STRIKER:
                     if (move()) {
-                        level.playLocalSound(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
-                            ModSounds.ASSEMBLER_STRIKE_RANDOM.get(), SoundSource.BLOCKS, 0.5f, 1.0F, false);
+                        if (inEarshot) {
+                            level.playLocalSound(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
+                                ModSounds.ASSEMBLER_STRIKE_RANDOM.get(), SoundSource.BLOCKS, 0.5f, 1.0F, false);
+                        }
                         state = ArmActionState.RETRACT_STRIKER;
                         targetAngles[3] = 0f;
                     }

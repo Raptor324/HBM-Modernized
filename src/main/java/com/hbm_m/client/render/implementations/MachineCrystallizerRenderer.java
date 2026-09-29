@@ -43,10 +43,10 @@ import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import com.hbm_m.platform.ClientFluidHooks;
 
 /**
- * Кристаллизатор на фабрике {@link MachineRenderers}: корпус живёт в чанк-меше,
- * спиннер — динамическая часть из injected-модели crystallizer_spinner, жидкость —
- * immediate-хук с отложенной отрисовкой (draw в AFTER_BLOCK_ENTITIES после
- * instanced-flush, см. {@link #presentDeferredFluids()}).
+ * Crystallizer on the {@link MachineRenderers} factory: the body lives in the chunk mesh,
+ * the spinner is a dynamic part from the injected crystallizer_spinner model, the fluid is
+ * an immediate hook with deferred drawing (drawn in AFTER_BLOCK_ENTITIES after the
+ * instanced flush, see {@link #presentDeferredFluids()}).
  */
 public final class MachineCrystallizerRenderer {
 
@@ -61,13 +61,13 @@ public final class MachineCrystallizerRenderer {
             .hook(MachineCrystallizerRenderer::scheduleFluid)
             .register();
 
-        // Кеш квадов спиннера инвалидируется централизованно
+        // The spinner quad cache is invalidated centrally
         RenderCacheManager.register(reason -> cachedSpinnerQuads = null);
     }
 
     private MachineCrystallizerRenderer() {}
 
-    // ── Трансформы (вербатим из легаси applyFacingRotation + matSpinner) ──
+    // -- Transforms (verbatim from legacy applyFacingRotation + matSpinner) --
 
     private static void applyBlockTransform(MachineCrystallizerBlockEntity be, LegacyAnimator animator) {
         BlockState state = be.getBlockState();
@@ -89,14 +89,14 @@ public final class MachineCrystallizerRenderer {
     private static boolean animateSpinner(MachineCrystallizerBlockEntity be, float partialTick,
                                           long gameTime, PoseStack pose) {
         float angle = Mth.lerp(partialTick, be.prevAngle, be.angle);
-        pose.last().pose().mul(new Matrix4f()
+        pose.last().pose()
                 .translate(0.5f, 0f, 0.5f)
                 .rotateY(angle * DEG_TO_RAD)
-                .translate(-0.5f, 0f, -0.5f));
+                .translate(-0.5f, 0f, -0.5f);
         return true;
     }
 
-    // ── Спиннер: injected-модель, квад-кеш ─────────────────────────────
+    // -- Spinner: injected model, quad cache -----------------------------
 
     private static final ResourceLocation SPINNER_MODEL_ID =
             ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/machines/crystallizer_spinner");
@@ -138,12 +138,12 @@ public final class MachineCrystallizerRenderer {
 
     private static final List<DeferredCrystallizerFluid> DEFERRED_FLUIDS = new ArrayList<>();
 
-    /** Сброс очереди жидкости в начале кадра (до BER). */
+    /** Clears the fluid queue at the start of the frame (before BERs). */
     public static void clearDeferredFluids() {
         DEFERRED_FLUIDS.clear();
     }
 
-    /** Хук: фиксируем pose/цвет, draw — позже. */
+    /** Hook: record pose/color now, draw later. */
     private static void scheduleFluid(MachineCrystallizerBlockEntity be, float partialTick,
                                       PoseStack poseStack, MultiBufferSource bufferSource,
                                       int packedLight, int packedOverlay, MachineRenderApi api) {
@@ -165,7 +165,7 @@ public final class MachineCrystallizerRenderer {
     }
 
     /**
-     * После flush instanced: depth уже содержит спиннеры, жидкость только depth-test.
+     * After the instanced flush: depth already contains the spinners, so the fluid only depth-tests.
      */
     public static void presentDeferredFluids() {
         if (DEFERRED_FLUIDS.isEmpty()) {
@@ -180,8 +180,8 @@ public final class MachineCrystallizerRenderer {
         MultiBufferSource.BufferSource buffers = mc.renderBuffers().bufferSource();
         PoseStack poseStack = new PoseStack();
 
-        // Гейт снят: раньше ветка была только на Forge, и отложенная жидкость
-        // кристаллизатора на NeoForge вообще не рисовалась.
+        // Gate removed: this branch used to be Forge-only, and the crystallizer's deferred
+        // fluid was not drawn at all on NeoForge.
         try (var ignored = IrisPhaseGuard.pushBlockEntities()) {
             for (DeferredCrystallizerFluid entry : DEFERRED_FLUIDS) {
                 poseStack.pushPose();

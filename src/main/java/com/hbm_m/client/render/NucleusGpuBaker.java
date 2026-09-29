@@ -48,7 +48,7 @@ import net.minecraft.client.renderer.texture.TextureAtlas;
  * <b>Compute Pipeline:</b>
  * <ul>
  *   <li>SSBO 0: Companion mesh vertices (Iris ENTITY format, bound directly without CPU copying).</li>
- *   <li>SSBO 1: Instance records (30 floats per instance, or 12 floats for 3x4 affine matrices in shadow passes).</li>
+ *   <li>SSBO 1: Instance records (46 floats per instance, or 12 floats for 3x4 affine matrices in shadow passes).</li>
  *   <li>SSBO 2: Output vertex buffer (verts * instances in a packed 52-byte layout).</li>
  *   <li>SSBO 3: Bone palette SSBO (up to 64 4x4 bone matrices for dynamic skeletal animations).</li>
  * </ul>
@@ -71,7 +71,7 @@ public final class NucleusGpuBaker {
     private static boolean available = false;
     private static boolean logged = false;
     private static int programId = -1;
-    /** Лочит провал инициализации (например, ошибку компиляции GLSL): без него каждый flush ретраит компиляцию и спамит лог стектрейсом. */
+    /** Latches an initialization failure (e.g. GLSL compile error): without it every flush would retry compilation and spam the log with stack traces. */
     private static boolean initFailed = false;
     private static int uMeshStride, uInstStride, uOutStride, uVertCount, uInstCount;
     private static int uOffPos, uOffColor, uOffNormal, uOffUv2;
@@ -137,14 +137,21 @@ public final class NucleusGpuBaker {
 
     /** Returns true if Tier 1 compute bake is supported and enabled. Cheap after first call. */
     public static boolean isEnabled() {
-        if (!KILL_SWITCH) {
+        // nucleusGpuBake config is the primary source; -Dhbm.gpuBake=false is the emergency override.
+        if (!com.hbm_m.config.ModClothConfig.get().nucleusGpuBake || !KILL_SWITCH) {
             return false;
         }
         if (!checked) {
             checked = true;
             try {
                 var caps = org.lwjgl.opengl.GL.getCapabilities();
-                available = caps.OpenGL43 || caps.GL_ARB_compute_shader;
+                // Baking needs compute + SSBO as a pair: on exotic hardware with
+                // ARB_compute_shader but without ARB_shader_storage_buffer_object,
+                // glBindBufferBase(SSBO) throws a GL error - cut that off here, ahead
+                // of the catch-all in bake (which remains the last line of defense:
+                // any dispatch failure disables Tier 1 permanently).
+                available = (caps.OpenGL43 || caps.GL_ARB_compute_shader)
+                        && (caps.OpenGL43 || caps.GL_ARB_shader_storage_buffer_object);
                 if (!available && !logged) {
                     logged = true;
                     com.hbm_m.main.MainRegistry.LOGGER.info(
@@ -774,7 +781,7 @@ public final class NucleusGpuBaker {
             layout(std430, binding = 3) readonly restrict buffer BonePaletteSSBO { mat4 uBoneMatrices[64]; };
 
             uniform int uMeshStride; // Input mesh byte stride (may be non-multiple of 4)
-            uniform int uInstStride; // Instance record float stride (42: pose+bbox+light+uvRect+tint+grad)
+            uniform int uInstStride; // Instance record float stride (46: pose+bbox+light+uvRect+tint+grad+animParams)
             uniform int uOutStride;  // Output vertex float stride (13 floats = 52 bytes)
             uniform int uVertCount;
             uniform int uInstCount;
@@ -886,14 +893,15 @@ public final class NucleusGpuBaker {
                 outData[o + 1u] = outPos.y;
                 outData[o + 2u] = outPos.z;
 
-                // Color: mesh color × per-instance тинт (рекорд 34..37) с пространственным
-                // фоллоффом (рекорд 38..41). Градиент считается по МОДЕЛЬНОЙ позиции вершины
-                // (pos — до инстанс-трансформа), семантика mix(white, tint, smoothstep) —
-                // ровно как в block_lit_instanced.vsh. Канал 4UB срезает overbright (>1):
-                // светимость накала под паком обеспечивает uv2 (lightmap, см. lightOverride).
+                // Color: mesh color x per-instance tint (records 34..37) with a spatial
+                // falloff (records 38..41). The gradient is evaluated on the MODEL-space
+                // vertex position (pos, before the instance transform); the
+                // mix(white, tint, smoothstep) semantics match block_lit_instanced.vsh
+                // exactly. The 4UB channel clamps overbright (>1); glow brightness under
+                // shader packs comes from uv2 (lightmap, see lightOverride).
                 uint cRaw = (uOffColor >= 0) ? ldWord(mBase, uOffColor) : 0xFFFFFFFFu;
                 float fade = clamp(instData[iBase + 13u], 0.0, 1.0);
-                float tA = instData[iBase + 37u]; // сила эмиссии (heat 0..1), НЕ прозрачность
+                float tA = instData[iBase + 37u]; // emission strength (heat 0..1), NOT alpha
                 float gAxis = instData[iBase + 38u];
                 vec3 tCol = vec3(instData[iBase + 34u], instData[iBase + 35u], instData[iBase + 36u]);
                 vec3 colMul;
@@ -945,8 +953,8 @@ public final class NucleusGpuBaker {
                     vec2 y0 = mix(x00, x10, w.y);
                     vec2 y1 = mix(x01, x11, w.y);
                     vec2 lm = mix(y0, y1, w.z);
-                    // Эмиссия: доворот lightmap к fullbright на heat*gradient — свечение
-                    // следует тинту (раскалённый металл), а не только lightOverride-частям.
+                    // Emission: push the lightmap toward fullbright by heat*gradient so
+                    // the glow follows the tint (hot metal), not just lightOverride parts.
                     float emit = clamp(tA * gt, 0.0, 1.0);
                     lm = mix(lm, vec2(240.0), emit);
                     int bu = int(clamp(lm.x, 0.0, 240.0));

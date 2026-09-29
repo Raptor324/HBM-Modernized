@@ -20,11 +20,12 @@ import net.minecraft.world.inventory.InventoryMenu;
 import com.hbm_m.platform.RenderHooks;
 
 /**
- * Тигель на фабрике {@link MachineRenderers} — порт {@code RenderCrucible} (1.7.10):
- * корпус (Main) запечён в chunk-mesh; поверхность расплава — динамическая часть
- * из OBJ-части "Lava", поднятой на уровень заполнения
- * ({@code 0.5 + fill * 0.875} в оригинале) и перетекстурированной лавой
- * ({@code hbm_m:block/machine/lava} — копия {@code lava.png} оригинала). VBO кешируется по квантованному уровню.
+ * Crucible on the {@link MachineRenderers} factory -- port of {@code RenderCrucible} (1.7.10):
+ * the body (Main) is baked into the chunk mesh; the melt surface is a dynamic part
+ * built from the OBJ part "Lava", lifted to the fill level
+ * ({@code 0.5 + fill * 0.875} in the original) and retextured with lava
+ * ({@code hbm_m:block/machine/lava} -- a copy of the original {@code lava.png}).
+ * The VBO is cached per quantized fill level.
  */
 public final class CrucibleRenderer {
 
@@ -37,14 +38,14 @@ public final class CrucibleRenderer {
     public static void register() {
         MachineRenderers.machine("crucible", com.hbm_m.blockentity.ModBlockEntities.CRUCIBLE_BE.get(),
                 MachineCrucibleBlockEntity.class)
-            .part("Main") // empty_world_quads: корпус рисует BER
+            .part("Main") // empty_world_quads: the body is drawn by the BER
             .lightOverride("Melt", be -> be.getFillLevel() > 0 ? net.minecraft.client.renderer.LightTexture.pack(15, 15) : -1)
             .dynamicPart("Melt", CrucibleRenderer::meltQuads,
                     be -> String.valueOf((int) (be.getFillLevel() * 64)))
             .register();
     }
 
-    /** Квады поверхности расплава: Lava-часть, поднята на уровень, с лавовым спрайтом. */
+    /** Melt surface quads: the Lava part, lifted to the fill level, with the lava sprite. */
     private static List<BakedQuad> meltQuads(MachineCrucibleBlockEntity be) {
         if (be.getFillLevel() <= 0f) return List.of();
         BakedModel raw = Minecraft.getInstance().getBlockRenderer().getBlockModel(be.getBlockState());
@@ -72,7 +73,7 @@ public final class CrucibleRenderer {
         return result;
     }
 
-    /** Перенос UV квада со старого спрайта на лавовый (формат BLOCK: 8 int на вершину). */
+    /** Remaps a quad's UVs from its old sprite to the lava sprite (BLOCK format: 8 ints per vertex). */
     private static BakedQuad retextureAndFixUV(BakedQuad original, TextureAtlasSprite newSprite) {
         var oldSprite = original.getSprite();
         if (oldSprite == null) return original;

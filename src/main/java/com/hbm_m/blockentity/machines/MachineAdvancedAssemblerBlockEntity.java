@@ -9,6 +9,7 @@ import com.hbm_m.block.machines.MachineAdvancedAssemblerBlock;
 import com.hbm_m.blockentity.BaseMachineBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.capability.ModCapabilities;
+import com.hbm_m.interfaces.IClientTicker;
 import com.hbm_m.interfaces.IFrameSupportable;
 import com.hbm_m.interfaces.IMultiblockSidedIO;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
@@ -108,16 +109,21 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
     private boolean needsClientSync = false;
     private int ticksSinceLastSync = 0;
 
-    private static Object newAdvAssemblerClientTickerInstance() {
-        try {
-            return Class.forName("com.hbm_m.client.machine.AdvancedAssemblerClientTicker").getDeclaredConstructor().newInstance();
-        } catch (ReflectiveOperationException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
+    /**
+     * Клиентское состояние-тикер (звуки, кольцо, руки). Создаётся через
+     * {@link com.hbm_m.util.ClientTickerRegistry} (фабрика регистрируется в
+     * ClientSetup) — общий механизм фабрики, без рефлексии; на dedicated
+     * сервере реестр пуст и тикер null.
+     */
     @Nullable
-    private Object clientTicker = null;
+    private IClientTicker clientTicker = null;
+
+    /** Клиентский тикер для рендерера (null на сервере и до первого клиентского тика). */
+    @Nullable
+    @OnlyIn(Dist.CLIENT)
+    public IClientTicker getClientTicker() {
+        return clientTicker;
+    }
 
     // ContainerData: упаковываем long как два int через LongDataPacker
     protected final ContainerData data = new ContainerData() {
@@ -261,60 +267,17 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
     public static void tick(Level level, BlockPos pos, BlockState state, MachineAdvancedAssemblerBlockEntity entity) {
         if (level.isClientSide) {
             if (entity.clientTicker == null) {
-                entity.clientTicker = newAdvAssemblerClientTickerInstance();
+                entity.clientTicker = com.hbm_m.util.ClientTickerRegistry.create(entity);
+                if (entity.clientTicker == null) {
+                    // Клиентский сетап ещё не добежал (или тип без тикера) —
+                    // NOOP, следующий тик повторит попытку.
+                    entity.clientTicker = IClientTicker.NOOP;
+                    return;
+                }
             }
-            invokeAdvAssemblerClientTick(entity.clientTicker, level, pos, state, entity);
+            entity.clientTicker.clientTick();
         } else {
             entity.serverTick();
-        }
-    }
-
-    private static final String ADV_ASM_CLIENT_TICKER = "com.hbm_m.client.machine.AdvancedAssemblerClientTicker";
-
-    private static volatile java.lang.reflect.Method cachedAdvAsmClientTick;
-    private static volatile java.lang.reflect.Method cachedAdvAsmOnRemoved;
-    private static volatile java.lang.reflect.Method cachedAdvAsmGetRingAngle;
-    private static volatile java.lang.reflect.Method cachedAdvAsmGetPrevRingAngle;
-    private static volatile java.lang.reflect.Method cachedAdvAsmGetArms;
-    private static volatile Class<?> cachedAdvAsmArmComponentType;
-
-    private static void ensureAdvAssemblerReflectCache() {
-        if (cachedAdvAsmGetRingAngle != null) {
-            return;
-        }
-        synchronized (MachineAdvancedAssemblerBlockEntity.class) {
-            if (cachedAdvAsmGetRingAngle != null) {
-                return;
-            }
-            try {
-                Class<?> cl = Class.forName(ADV_ASM_CLIENT_TICKER);
-                cachedAdvAsmClientTick = cl.getMethod("clientTick", Level.class, BlockPos.class, BlockState.class, MachineAdvancedAssemblerBlockEntity.class);
-                cachedAdvAsmOnRemoved = cl.getMethod("onRemoved");
-                cachedAdvAsmGetRingAngle = cl.getMethod("getRingAngle");
-                cachedAdvAsmGetPrevRingAngle = cl.getMethod("getPrevRingAngle");
-                cachedAdvAsmGetArms = cl.getMethod("getArms");
-                cachedAdvAsmArmComponentType = Class.forName(ADV_ASM_CLIENT_TICKER + "$AssemblerArm");
-            } catch (ReflectiveOperationException e) {
-                throw new RuntimeException(e);
-            }
-        }
-    }
-
-    private static void invokeAdvAssemblerClientTick(Object ticker, Level level, BlockPos pos, BlockState state, MachineAdvancedAssemblerBlockEntity entity) {
-        ensureAdvAssemblerReflectCache();
-        try {
-            cachedAdvAsmClientTick.invoke(ticker, level, pos, state, entity);
-        } catch (ReflectiveOperationException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private static void invokeAdvAssemblerClientTickerOnRemoved(Object ticker) {
-        ensureAdvAssemblerReflectCache();
-        try {
-            cachedAdvAsmOnRemoved.invoke(ticker);
-        } catch (ReflectiveOperationException e) {
-            throw new RuntimeException(e);
         }
     }
 
@@ -767,7 +730,7 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
     @Override
     public void setRemoved() {
         if (level != null && level.isClientSide && clientTicker != null) {
-            invokeAdvAssemblerClientTickerOnRemoved(clientTicker);
+            clientTicker.onRemoved();
         }
         super.setRemoved();
     }
@@ -801,50 +764,6 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
                 .map(r -> ((AssemblerRecipe) r).getResultItemSafe())
                 .orElse(ItemStack.EMPTY);
         return clientRecipeIconCache;
-    }
-
-    @OnlyIn(Dist.CLIENT)
-    public float getRingAngle() {
-        if (clientTicker == null) {
-            return 0f;
-        }
-        ensureAdvAssemblerReflectCache();
-        try {
-            return (Float) cachedAdvAsmGetRingAngle.invoke(clientTicker);
-        } catch (ReflectiveOperationException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    @OnlyIn(Dist.CLIENT)
-    public float getPrevRingAngle() {
-        if (clientTicker == null) {
-            return 0f;
-        }
-        ensureAdvAssemblerReflectCache();
-        try {
-            return (Float) cachedAdvAsmGetPrevRingAngle.invoke(clientTicker);
-        } catch (ReflectiveOperationException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    @OnlyIn(Dist.CLIENT)
-    public Object getArms() {
-        if (clientTicker == null) {
-            return emptyAssemblerArmsArray();
-        }
-        ensureAdvAssemblerReflectCache();
-        try {
-            return cachedAdvAsmGetArms.invoke(clientTicker);
-        } catch (ReflectiveOperationException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private static Object emptyAssemblerArmsArray() {
-        ensureAdvAssemblerReflectCache();
-        return java.lang.reflect.Array.newInstance(cachedAdvAsmArmComponentType, 0);
     }
 
     @Override

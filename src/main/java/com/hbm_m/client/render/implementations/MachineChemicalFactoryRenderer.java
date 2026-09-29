@@ -20,24 +20,24 @@ import net.minecraft.client.renderer.block.model.BakedQuad;
 import net.minecraft.client.resources.model.BakedModel;
 
 /**
- * Chemical Factory на фабрике {@link MachineRenderers} — порт 1.7.10
+ * Chemical Factory on the {@link MachineRenderers} factory -- port of 1.7.10
  * {@code RenderChemicalFactory}:
  * <ul>
- *   <li>{@code Base} — статика; {@code Frame} — рендерится по blockstate-свойству
- *       FRAME (видима при блоке над любой клеткой верхнего пояса структуры, считает
- *       сервером {@code MultiblockFrameHelper} — та же система, что у advassembler;
- *       оригинал 1.7.10 проверял только блок строго над ядром);</li>
- *   <li>{@code Fan1}/{@code Fan2} — вращение вокруг собственных пивотов
- *       (±1, 0, 0) на {@code -anim*45°}/тик, пока работает хотя бы одна линия
- *       (anim инкрементится в BE только при didProcess, как в оригинале);</li>
- *   <li>поворот по FACING — как в оригинале: rotate(90) + таблица
- *       (N=0, W=90, S=180, E=270), т.е. {@code 90 + legacyFacingRotationYDegrees};</li>
- *   <li>финальный {@code translate(-0.5, 0, -0.5)} — компенсация baked JSON
- *       root translation (0.5, 0, 0.5), см. пивоты ниже.</li>
+ *   <li>{@code Base} is static; {@code Frame} renders based on the blockstate property
+ *       FRAME (visible when a block sits above any cell of the structure's upper belt,
+ *       as computed server-side by {@code MultiblockFrameHelper} -- the same system as
+ *       advassembler; the 1.7.10 original only checked the block directly above the core);</li>
+ *   <li>{@code Fan1}/{@code Fan2} spin around their own pivots
+ *       (+-1, 0, 0) at {@code -anim*45 deg}/tick while at least one line is running
+ *       (anim is incremented in the BE only on didProcess, as in the original);</li>
+ *   <li>FACING rotation -- as in the original: rotate(90) + table
+ *       (N=0, W=90, S=180, E=270), i.e. {@code 90 + legacyFacingRotationYDegrees};</li>
+ *   <li>the final {@code translate(-0.5, 0, -0.5)} compensates the baked JSON
+ *       root translation (0.5, 0, 0.5), see the pivots below.</li>
  * </ul>
  * <p>
- * Пивоты вентиляторов в baked-координатах = OBJ-пивот (±1, 0, 0) + JSON translation
- * (0.5, 0, 0.5). Если меняешь JSON translation — pivot = OBJ_PIVOT + JSON_translation.
+ * Fan pivots in baked coordinates = OBJ pivot (+-1, 0, 0) + JSON translation
+ * (0.5, 0, 0.5). If you change the JSON translation -- pivot = OBJ_PIVOT + JSON_translation.
  */
 public final class MachineChemicalFactoryRenderer {
 
@@ -54,8 +54,8 @@ public final class MachineChemicalFactoryRenderer {
             .part("Fan1", MachineChemicalFactoryRenderer::animateFan1)
             .part("Fan2", MachineChemicalFactoryRenderer::animateFan2)
             .dynamicPart("Frame", MachineChemicalFactoryRenderer::frameQuads,
-                    // Ключ обязан различать FRAME=false/true: константный ключ кешировал бы
-                    // рендерер по первому встреченному состоянию навсегда (см. advassembler/chemplant).
+                    // The key must distinguish FRAME=false/true: a constant key would cache
+                    // the renderer from the first state seen, forever (see advassembler/chemplant).
                     MachineChemicalFactoryRenderer::frameCacheKey)
             .blockTransform(MachineChemicalFactoryRenderer::applyBlockTransform)
             .chunkRenderTypes(net.minecraft.client.renderer.RenderType.cutout())
@@ -64,7 +64,7 @@ public final class MachineChemicalFactoryRenderer {
 
     private MachineChemicalFactoryRenderer() {}
 
-    // ── Блочный трансформ ──────────────────────────────────────────────
+    // -- Block transform ------------------------------------------------
 
     private static void applyBlockTransform(MachineChemicalFactoryBlockEntity be, LegacyAnimator animator) {
         var state = be.getBlockState();
@@ -76,11 +76,11 @@ public final class MachineChemicalFactoryRenderer {
         } else {
             animator.rotate(90, 0, 1, 0);
         }
-        // baked-space сдвиг -0.5/-0.5: части выпечены с JSON root translation (0.5, 0, 0.5)
+        // baked-space shift -0.5/-0.5: the parts are baked with the JSON root translation (0.5, 0, 0.5)
         animator.translate(-0.5f, 0.0f, -0.5f);
     }
 
-    // ── Части ──────────────────────────────────────────────────────────
+    // -- Parts ----------------------------------------------------------
 
     private static boolean animateFan1(MachineChemicalFactoryBlockEntity be, float partialTick,
                                        long gameTime, PoseStack pose) {
@@ -92,20 +92,20 @@ public final class MachineChemicalFactoryRenderer {
         return animateFan(be, partialTick, pose, FAN2_PIVOT_X);
     }
 
-    /** Оригинал: translate(±1,0,0) → rotate(-anim*45 % 360) → translate(∓1,0,0). */
+    /** Original: translate(+-1,0,0) -> rotate(-anim*45 % 360) -> translate(-+1,0,0). */
     private static boolean animateFan(MachineChemicalFactoryBlockEntity be, float partialTick,
                                       PoseStack pose, float pivotX) {
         float anim = be.getAnim(partialTick);
         float deg = (-anim * 45f) % 360f;
         if (deg < 0f) deg += 360f;
-        pose.last().pose().mul(new Matrix4f()
+        pose.last().pose()
                 .translate(pivotX, 0f, FAN_PIVOT_Z)
                 .rotateY(deg * DEG_TO_RAD)
-                .translate(-pivotX, 0f, -FAN_PIVOT_Z));
+                .translate(-pivotX, 0f, -FAN_PIVOT_Z);
         return true;
     }
 
-    // ── Frame: видима только по свойству FRAME ─────────────────────────
+    // -- Frame: visible only per the FRAME property ---------------------
 
     private static String frameCacheKey(MachineChemicalFactoryBlockEntity be) {
         var state = be.getBlockState();

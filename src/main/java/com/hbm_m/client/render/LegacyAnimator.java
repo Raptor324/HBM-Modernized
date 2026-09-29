@@ -19,24 +19,34 @@ import net.minecraft.core.Direction;
 
 @OnlyIn(Dist.CLIENT)
 /**
- * Transform-фасад (портирован из 1.7.10): обёртка над PoseStack для
- * канонических блочных трансформов и дверных оффсетов ({@link IDoorAnimator}).
- * Немедленный рендер квадов вырезан — вся геометрия идёт через VBO-пайплайн
- * (фабрика {@link com.hbm_m.client.render.machine.MachineRenderers}) или фолбэки движка.
+ * Transform facade (ported from 1.7.10): a PoseStack wrapper for canonical block
+ * transforms and door offsets ({@link IDoorAnimator}).
+ * Immediate quad rendering was removed - all geometry goes through the VBO pipeline
+ * ({@link com.hbm_m.client.render.machine.MachineRenderers} factory) or engine fallbacks.
  */
 public class LegacyAnimator implements IDoorAnimator {
 
-    protected final PoseStack poseStack;
+    private PoseStack poseStack;
 
     public LegacyAnimator(PoseStack poseStack) {
         this.poseStack = poseStack;
     }
 
+    /**
+     * Reusable instance on the render thread (previously a new instance per BE per
+     * pass; the object only holds a PoseStack reference). Not reentrant: create()
+     * lives within a single BE's collect, animation hooks never see the animator.
+     */
+    private static final ThreadLocal<LegacyAnimator> REUSE =
+            ThreadLocal.withInitial(() -> new LegacyAnimator(null));
+
     public static LegacyAnimator create(PoseStack poseStack) {
-        return new LegacyAnimator(poseStack);
+        LegacyAnimator animator = REUSE.get();
+        animator.poseStack = poseStack;
+        return animator;
     }
 
-    // ===== Трансформации =====
+    // ===== Transformations =====
     public void push() { poseStack.pushPose(); }
     public void pop()  { poseStack.popPose(); }
 
@@ -56,8 +66,8 @@ public class LegacyAnimator implements IDoorAnimator {
     }
 
     /**
-     * Химзавод: один источник истины - canonical chunk-угол из
-     * {@link MultipartFacingTransforms#chemicalPlantCanonicalRotationY}, переведённый в PoseStack-конвенцию.
+     * Chemical plant: a single source of truth - the canonical chunk angle from
+     * {@link MultipartFacingTransforms#chemicalPlantCanonicalRotationY}, converted to the PoseStack convention.
      */
     public void setupChemicalPlantBlockTransform(Direction facing) {
         translate(0.5, 0.0, 0.5);

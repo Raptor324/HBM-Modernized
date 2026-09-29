@@ -43,10 +43,58 @@ import com.hbm_m.platform.PlatformHooks;
  * используйте {@link #applyClientUpdate(CompoundTag)} (метод для переопределения, вызывается
  * прослойкой при получении пакета) — он должен делегировать в {@link #readNbtData}.
  */
-public abstract class BaseHbmBlockEntity extends BlockEntity implements com.hbm_m.api.render.RenderBoundsProvider {
+public abstract class BaseHbmBlockEntity extends BlockEntity
+        implements com.hbm_m.api.render.RenderBoundsProvider, com.hbm_m.api.render.RenderDirtyTracker {
+
+    /** TTL рендер-записи в тиках: свет/fade не имеют событийной модели — периодический пересбор. */
+    private static final long RENDER_TTL_TICKS = 15;
+
+    /** true = визуальное состояние изменилось, запись надо пересобрать немедленно. */
+    private volatile boolean renderDirty = true;
+    private long renderCollectTick = Long.MIN_VALUE;
+    private long renderCollectWorldGen = Long.MIN_VALUE;
 
     public BaseHbmBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
+    }
+
+    // ── RenderDirtyTracker: контракт fastpath'а Nucleus (MachineBer.tryFastAssertRender).
+    // Флаг ставится при загрузке BE, смене blockstate и клиентских update-пакетах;
+    // свет/fade инвалидируются периодическим TTL-пересбором в isRenderStale.
+
+    @Override
+    public boolean isRenderDirty() {
+        return renderDirty;
+    }
+
+    @Override
+    public void markRenderDirty() {
+        renderDirty = true;
+    }
+
+    @Override
+    public boolean isRenderStale(long gameTick, long worldGen) {
+        if (renderDirty || worldGen != renderCollectWorldGen) return true;
+        return gameTick - renderCollectTick >= RENDER_TTL_TICKS;
+    }
+
+    @Override
+    public void onRenderCollected(long gameTick, long worldGen) {
+        renderDirty = false;
+        renderCollectTick = gameTick;
+        renderCollectWorldGen = worldGen;
+    }
+
+    @Override
+    public void onLoad() {
+        super.onLoad();
+        renderDirty = true;
+    }
+
+    @Override
+    public void setBlockState(@NotNull BlockState state) {
+        super.setBlockState(state);
+        renderDirty = true;
     }
 
     /**
@@ -134,11 +182,13 @@ public abstract class BaseHbmBlockEntity extends BlockEntity implements com.hbm_
      * render-state, как в {@code MachineFluidTankBlockEntity}).
      */
     protected void applyClientUpdate(@NotNull CompoundTag tag) {
+        renderDirty = true;
         readNbtData(tag, null);
     }
 
     /** Как выше, но с реестрами (neoforge 1.21.1 передаёт реальный Provider из пакета). */
     protected void applyClientUpdate(@NotNull CompoundTag tag, @Nullable HolderLookup.Provider registries) {
+        renderDirty = true;
         readNbtData(tag, registries);
     }
 

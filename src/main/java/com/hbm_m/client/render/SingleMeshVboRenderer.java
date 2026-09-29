@@ -85,11 +85,19 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
      * via {@link #setFadeAlpha(float)} before invoking {@link #render}; the
      * value is uploaded to the {@code FadeAlpha} shader uniform and also applied
      * to the Iris putBulkData fallback path via alpha modulation.
-     * Defaults to 1.0 (fully opaque). NOTE: callers are responsible for
-     * restoring the previous value after their last {@link #render} call —
-     * BERs typically render multiple parts under the same fade, so the
-     * renderer itself does NOT auto-reset between part renders.
-     * See {@code MachinePressRenderer} for the save/restore pattern.
+     * Defaults to 1.0 (fully opaque). NOTE: the value persists across {@link #render}
+     * calls — the renderer itself does NOT auto-reset between part renders, so a
+     * BER renders multiple parts under the same fade by setting it once.
+     * Restoration is centralized in {@code MachineBer.renderParts} — the single
+     * convergence point of BOTH machine draw paths (the BE dispatcher via
+     * {@code AbstractPartBasedRenderer.render} and the dispatcher bypass via
+     * {@code NucleusDispatcherBypass.collectOne}); it snapshots the value on entry
+     * and restores it in {@code finally}. Anything that renders outside that
+     * hierarchy and does not set the fade itself (missiles, doors, custom world
+     * renders) relies on the restored ambient value — a stale sub-1.0 alpha here
+     * means blend + depthMask(false): a translucent mesh that writes no depth and
+     * is painted over by later flushes (symptom: launch pad missile rendered
+     * behind / flickering against farther machines).
      */
     // Fade/missile flags — rendered strictly on the Render Thread. ThreadLocal caused
     // ThreadLocalMap.getEntryAfterMiss overhead in hot render loops (~0.4% frame time).
@@ -142,6 +150,8 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
     private final Matrix4f tmpLocalPose = new Matrix4f();
     private final Matrix4f tmpInvViewRot = new Matrix4f();
     private final float[] tmpCornerUV = new float[16];
+    /** Scratch MV composite for the Iris companion path (rendering is single-threaded). */
+    private final Matrix4f tmpFullMv = new Matrix4f();
 
     // Cached block_lit uniform handles (per renderer instance, invalidated on shader relink).
     private ShaderInstance cachedBlockLitShader;
@@ -340,6 +350,12 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
         if (lightmapGlId > 0) {
             shader.setSampler("Sampler2", lightmapGlId);
         }
+        // Parametric joint specs (attrib 15 AnimParams.w): the 4th JSON sampler -
+        // setSampler registers it; NucleusJointSpecs.applyBinding pins the actual
+        // unit (SAMPLER_UNIT = 4) because apply()'s declaration-index mapping is
+        // unreliable. Id 0 (no joints) is valid: a joint delta only executes when
+        // AnimParams.w >= 0.
+        shader.setSampler("uJointSpecs", NucleusJointSpecs.getTextureId());
     }
 
     /** GL texture id for the block atlas — never trust slot 0 alone after chunk/MDI draws. */
@@ -406,6 +422,19 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
 
         shader.setSampler("Sampler0", atlasGlId);
         shader.setSampler("Sampler2", lightmapGlId);
+
+        // Explicit sampler-unit assignment by raw location. ShaderInstance.apply()
+        // maps declared samplers by declaration INDEX and silently drops entries
+        // absent from the GLSL (Sampler1 is not declared in block_lit.fsh - see the
+        // registration warn), so every later sampler shifts down a unit: Sampler2
+        // landed on TU1 (the overlay) and uJointSpecs on TU2 (the lightmap) - the
+        // joint specs fetch read lightmap pixels and parametric joints went wild
+        // the moment their angle left identity. The program is still active here
+        // (this runs right after apply()); uniform values persist per program.
+        int program = shader.getId();
+        GL20.glUniform1i(GL20.glGetUniformLocation(program, "Sampler0"), 0);
+        GL20.glUniform1i(GL20.glGetUniformLocation(program, "Sampler2"), 2);
+        NucleusJointSpecs.applyBinding(program);
 
         var uSampler0 = shader.getUniform("Sampler0");
         if (uSampler0 != null) uSampler0.set(0);
@@ -902,7 +931,7 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
             // dispatcher pose, 1.21.1 in modelViewStack; see fix in InstancedStaticPartRenderer.addInstance).
             // Passing raw pose here on 1.21.1 without R_cam displaced models (door leaves in forced vanilla
             // immediate mode, DAE nodes).
-            Matrix4f fullModelView = new Matrix4f(RenderSystem.getModelViewMatrix())
+            Matrix4f fullModelView = tmpFullMv.set(RenderSystem.getModelViewMatrix())
                     .mul(poseStack.last().pose());
             if (haveCorners) {
                 batch.drawCompanionWithPerVertexLight(companion, fullModelView,
@@ -943,9 +972,9 @@ public abstract class SingleMeshVboRenderer extends AbstractGpuMesh {
                 // (outside tracking context), ambient * pose composite remains correct (ambient = R_cam).
                 if (entityMissileDepthBias
                         && com.hbm_m.platform.RenderHooks.currentLevelRotation() != null) {
-                    shader.MODEL_VIEW_MATRIX.set(new Matrix4f(poseStack.last().pose()));
+                    shader.MODEL_VIEW_MATRIX.set(tmpFullMv.set(poseStack.last().pose()));
                 } else {
-                    shader.MODEL_VIEW_MATRIX.set(new Matrix4f(RenderSystem.getModelViewMatrix()).mul(poseStack.last().pose()));
+                    shader.MODEL_VIEW_MATRIX.set(tmpFullMv.set(RenderSystem.getModelViewMatrix()).mul(poseStack.last().pose()));
                 }
             }
             if (shader.PROJECTION_MATRIX != null) shader.PROJECTION_MATRIX.set(RenderSystem.getProjectionMatrix());

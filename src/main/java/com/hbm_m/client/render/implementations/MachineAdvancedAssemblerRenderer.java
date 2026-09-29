@@ -13,6 +13,7 @@ import com.hbm_m.client.render.AbstractPartBasedRenderer;
 import com.hbm_m.client.render.MeshRenderCache;
 import com.hbm_m.client.render.machine.MachineRenderApi;
 import com.hbm_m.client.render.machine.MachineRenderers;
+import com.hbm_m.client.render.machine.MachineSpec;
 import com.hbm_m.compat.ContraptionRenderCompat;
 import com.hbm_m.main.MainRegistry;
 import com.hbm_m.util.MultipartFacingTransforms;
@@ -32,11 +33,11 @@ import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 
 /**
- * Продвинутый сборщик на фабрике {@link MachineRenderers}:
- * Base — статика; Frame — динамическая часть (видима по blockstate-свойству FRAME);
- * Ring — анимация вращения; 8 частей рук — lower/upper/head/spike × 2 группы
- * (translate+rotate, инстансятся в общий MDI наравне со статикой);
- * иконка рецепта — immediate-хук.
+ * Advanced assembler on the {@link MachineRenderers} factory:
+ * Base is static; Frame is a dynamic part (visible per the blockstate FRAME property);
+ * Ring is a rotation animation; 8 arm parts -- lower/upper/head/spike x 2 groups
+ * (translate+rotate, instanced into a shared MDI alongside the statics);
+ * the recipe icon is an immediate hook.
  */
 public final class MachineAdvancedAssemblerRenderer {
 
@@ -50,16 +51,26 @@ public final class MachineAdvancedAssemblerRenderer {
     public static void register() {
         MachineRenderers.machine("advassembler", ModBlockEntities.ADVANCED_ASSEMBLY_MACHINE_BE.get(),
                 MachineAdvancedAssemblerBlockEntity.class)
-            // Base/Frame — статика с легаси-офсетом запечки: гаснут по статической
-            // дистанции, анимационная отсечка их не трогает (иначе на 0 в
-            // modelUpdateDistance машина исчезает целиком).
+            // Base/Frame are statics with the legacy bake offset: they fade out by the static
+            // distance and the animation cutoff does not touch them (otherwise at a 0
+            // modelUpdateDistance the machine would disappear entirely).
             .staticPart("Base", MachineAdvancedAssemblerRenderer::applyBakeOffset)
             .dynamicPart("Frame", MachineAdvancedAssemblerRenderer::frameQuads,
-                    // Ключ обязан различать FRAME=false/true: константный ключ кешировал бы
-                    // рендерер по ПЕРВОМУ встреченному состоянию (обычно пустому) навсегда.
+                    // The key must distinguish FRAME=false/true: a constant key would cache
+                    // the renderer from the FIRST state seen (usually empty), forever.
                     be -> frameCacheKey(be),
                     MachineAdvancedAssemblerRenderer::applyBakeOffset)
-            .part("Ring", MachineAdvancedAssemblerRenderer::animateRing)
+            // Ring is a parametric GPU animation (the pattern's sample case): rotation
+            // around Y through the block center. The legacy math mulPose(R)*T(-0.5,0,-0.5)
+            // equals rotating about the pivot (0.5, ., 0.5) in geometry coordinates -- a pure
+            // KIND_ROTATE; the CPU does not rebuild the record, the VSH moves the ring itself.
+            // The record carries the animator's static tail T(-0.5,0,-0.5) as the base
+            // offset (geometry lives in the legacy bake space centered at (0.5,.,0.5)):
+            // without it the GPU ring lands half a block off the machine center.
+            .parametricPart("Ring", MachineSpec.KIND_ROTATE, 0f, 1f, 0f, 0.5f, 0f, 0.5f,
+                    -0.5f, 0f, -0.5f,
+                    MachineAdvancedAssemblerRenderer::ringParams,
+                    MachineAdvancedAssemblerRenderer::animateRing)
             .part("ArmLower1", (be, pt, t, pose) -> applyArm(be, pt, pose, 0, 0, false))
             .part("ArmUpper1", (be, pt, t, pose) -> applyArm(be, pt, pose, 0, 1, false))
             .part("Head1",     (be, pt, t, pose) -> applyArm(be, pt, pose, 0, 2, false))
@@ -68,6 +79,7 @@ public final class MachineAdvancedAssemblerRenderer {
             .part("ArmUpper2", (be, pt, t, pose) -> applyArm(be, pt, pose, 1, 1, true))
             .part("Head2",     (be, pt, t, pose) -> applyArm(be, pt, pose, 1, 2, true))
             .part("Spike2",    (be, pt, t, pose) -> applyArm(be, pt, pose, 1, 3, true))
+            .animationEpoch(MachineAdvancedAssemblerRenderer::animationEpoch)
             .hook(MachineAdvancedAssemblerRenderer::renderRecipeIcon)
             .register();
     }
@@ -75,10 +87,10 @@ public final class MachineAdvancedAssemblerRenderer {
     private MachineAdvancedAssemblerRenderer() {}
 
     /**
-     * Статический кластер (Base + merged Frame) в легаси рисовался внутри пуша
-     * T(-0.5,0,-0.5) поверх блочного трансформа (baked-space частей JSON-модели).
-     * Анимированные части этот офсет несут в собственных матрицах (ringMatrix),
-     * поэтому только Base/Frame применяют его этим «аниматором».
+     * The static cluster (Base + merged Frame) was drawn in legacy inside a push of
+     * T(-0.5,0,-0.5) on top of the block transform (the JSON model parts' baked space).
+     * The animated parts carry this offset in their own matrices (ringMatrix),
+     * so only Base/Frame apply it via this "animator".
      */
     private static boolean applyBakeOffset(MachineAdvancedAssemblerBlockEntity be, float partialTick,
                                            long gameTime, PoseStack pose) {
@@ -90,7 +102,7 @@ public final class MachineAdvancedAssemblerRenderer {
         return be.getBlockState().getValue(MachineAdvancedAssemblerBlock.FACING);
     }
 
-    // ── Frame: видима только по свойству FRAME ─────────────────────────
+    // -- Frame: visible only per the FRAME property ---------------------
 
     private static String frameCacheKey(MachineAdvancedAssemblerBlockEntity be) {
         var state = be.getBlockState();
@@ -116,9 +128,68 @@ public final class MachineAdvancedAssemblerRenderer {
         return MeshRenderCache.getOrCompile("advassembler_Frame", part);
     }
 
-    // ── Анимация: кольцо + цепочки рук ─────────────────────────────────
+    // -- Animation: ring + arm chains -----------------------------------
 
-    /** Кольцо: чистый поворот + офсет запечки, прямо на PoseStack (без new Matrix4f в hot path). */
+    /**
+     * The assembler's animation epoch (contract: {@link MachineSpecBuilder#animationEpoch}):
+     * prev+curr of the ring and of all angles of both arms. While the machine is idle
+     * (all lerps finished, prev==curr), the epoch is constant -- MachineBer confirms the
+     * animated parts with a roster assert without running animators; any movement changes
+     * at least one (prev, curr) pair -- the machine automatically returns to the full path.
+     * Cost: ~20 float reads, called once per machine per frame.
+     */
+    private static long animationEpoch(MachineAdvancedAssemblerBlockEntity be) {
+        AdvancedAssemblerClientTicker ticker =
+                be.getClientTicker() instanceof AdvancedAssemblerClientTicker t ? t : null;
+        if (ticker == null) {
+            return 0L;
+        }
+        long h = 0x9E3779B97F4A7C15L;
+        h = h * 31 + java.lang.Float.floatToRawIntBits(ticker.getRingAngle());
+        h = h * 31 + java.lang.Float.floatToRawIntBits(ticker.getPrevRingAngle());
+        AdvancedAssemblerClientTicker.AssemblerArm[] arms = ticker.getArms();
+        if (arms != null) {
+            for (AdvancedAssemblerClientTicker.AssemblerArm arm : arms) {
+                if (arm == null) continue;
+                for (int i = 0; i < arm.angles.length; i++) {
+                    h = h * 31 + java.lang.Float.floatToRawIntBits(arm.angles[i]);
+                    h = h * 31 + java.lang.Float.floatToRawIntBits(arm.prevAngles[i]);
+                }
+            }
+        }
+        return h;
+    }
+
+    /**
+     * Per-(machine, frame) animation snapshot: the ticker and the ring are resolved ONCE
+     * per frame, not for each of the 9 animated parts (this used to add ~26 Method.invoke
+     * calls per machine -- now it is direct ticker field reads).
+     * Rendering is single-threaded; the shadow/main passes of one frame share the entry
+     * (partialTick and angles are the same within a frame).
+     */
+    private static final class AsmAnimState {
+        MachineAdvancedAssemblerBlockEntity be;
+        long frame = -1L;
+        @Nullable AdvancedAssemblerClientTicker ticker;
+        float ringLerped;
+    }
+
+    private static final ThreadLocal<AsmAnimState> ANIM_STATE = ThreadLocal.withInitial(AsmAnimState::new);
+
+    private static AsmAnimState animState(MachineAdvancedAssemblerBlockEntity be, float partialTick) {
+        AsmAnimState s = ANIM_STATE.get();
+        long frame = com.hbm_m.client.render.IrisShadowBatchCollector.renderFrame();
+        if (s.be != be || s.frame != frame) {
+            s.be = be;
+            s.frame = frame;
+            s.ticker = be.getClientTicker() instanceof AdvancedAssemblerClientTicker t ? t : null;
+            s.ringLerped = s.ticker == null ? 0f
+                    : Mth.lerp(partialTick, s.ticker.getPrevRingAngle(), s.ticker.getRingAngle());
+        }
+        return s;
+    }
+
+    /** Ring: pure rotation + bake offset, directly on the PoseStack (no new Matrix4f in the hot path). */
     private static void applyRingRotation(PoseStack pose, float ringAngleDeg) {
         pose.mulPose(Axis.YP.rotationDegrees(ringAngleDeg));
         pose.translate(-0.5f, 0f, -0.5f);
@@ -126,24 +197,34 @@ public final class MachineAdvancedAssemblerRenderer {
 
     private static boolean animateRing(MachineAdvancedAssemblerBlockEntity be, float partialTick,
                                        long gameTime, PoseStack pose) {
-        float ringLerped = Mth.lerp(partialTick, be.getPrevRingAngle(), be.getRingAngle());
-        applyRingRotation(pose, ringLerped);
+        applyRingRotation(pose, animState(be, partialTick).ringLerped);
+        return true;
+    }
+
+    /**
+     * The ring's GPU joint parameters (attrib 15): the lerped angle. The value is stable
+     * while the ring is idle (prev==curr) -- a skip-write of the record, zero upload.
+     */
+    private static boolean ringParams(MachineAdvancedAssemblerBlockEntity be, float partialTick,
+                                      long gameTime, float[] out) {
+        out[0] = animState(be, partialTick).ringLerped;
         return true;
     }
 
     @Nullable
-    private static AdvancedAssemblerClientTicker.AssemblerArm[] arms(MachineAdvancedAssemblerBlockEntity be) {
-        Object arms = be.getArms();
-        return arms instanceof AdvancedAssemblerClientTicker.AssemblerArm[] a ? a : null;
+    private static AdvancedAssemblerClientTicker.AssemblerArm[] arms(MachineAdvancedAssemblerBlockEntity be,
+                                                                     float partialTick) {
+        AdvancedAssemblerClientTicker ticker = animState(be, partialTick).ticker;
+        return ticker == null ? null : ticker.getArms();
     }
 
     /**
-     * Цепочка руки: матрица части {@code chainIndex} (0=lower, 1=upper, 2=head, 3=spike)
-     * = ring · T1·Rx·T1' · T2·Rx·T2' · … накопительно, как в легаси (matLower→matUpper→matHead→matSpike).
+     * Arm chain: the part {@code chainIndex} matrix (0=lower, 1=upper, 2=head, 3=spike)
+     * = ring * T1*Rx*T1' * T2*Rx*T2' * ... accumulated, as in legacy (matLower->matUpper->matHead->matSpike).
      */
     private static boolean applyArm(MachineAdvancedAssemblerBlockEntity be, float partialTick,
                                     PoseStack pose, int armIndex, int chainIndex, boolean inverted) {
-        AdvancedAssemblerClientTicker.AssemblerArm[] all = arms(be);
+        AdvancedAssemblerClientTicker.AssemblerArm[] all = arms(be, partialTick);
         if (all == null || all.length <= armIndex || all[armIndex] == null) return false;
         var arm = all[armIndex];
 
@@ -154,7 +235,7 @@ public final class MachineAdvancedAssemblerRenderer {
         float angleSign = inverted ? -1f : 1f;
         float zBase = inverted ? -ARM_Z_OFFSET : ARM_Z_OFFSET;
         float headZ = zBase * ARM_HEAD_Z_SCALE;
-        float ringLerped = Mth.lerp(partialTick, be.getPrevRingAngle(), be.getRingAngle());
+        float ringLerped = animState(be, partialTick).ringLerped;
 
         applyRingRotation(pose, ringLerped);
         for (int i = 0; i <= chainIndex; i++) {
@@ -180,17 +261,17 @@ public final class MachineAdvancedAssemblerRenderer {
         return true;
     }
 
-    // ── Иконка рецепта (hook) ──────────────────────────────────────────
+    // -- Recipe icon (hook) ---------------------------------------------
 
     /**
-     * Старый путь из «сырого» стека: R(90)·T(0,1.0625,0)·items (RING_PIVOT_LOCAL = ZERO,
-     * сдвиг к центру вырождается). В текущем фрейме (блочный трансформ уже применён):
-     * R(-90-legacy)·T(-0.5,0,-0.5)·R(90)·T(0,1.0625,0)·items.
+     * The old path from the "raw" stack: R(90)*T(0,1.0625,0)*items (RING_PIVOT_LOCAL = ZERO,
+     * the shift to center degenerates). In the current frame (the block transform already applied):
+     * R(-90-legacy)*T(-0.5,0,-0.5)*R(90)*T(0,1.0625,0)*items.
      */
     private static void renderRecipeIcon(MachineAdvancedAssemblerBlockEntity be, float partialTick,
                                          PoseStack poseStack, MultiBufferSource bufferSource,
                                          int packedLight, int packedOverlay, MachineRenderApi api) {
-        // BE-оверлоад: bypass fade/cull для контрапшенов и Sable sublevel.
+        // BE overload: bypass fade/cull for contraptions and the Sable sublevel.
         if (RenderSystem.isOnRenderThread()
                 && !ContraptionRenderCompat.isContraptionRender(be)
                 && com.hbm_m.client.render.RenderDistanceHelper.distanceSqToCamera(api.blockPos()) > RECIPE_ICON_MAX_DIST_SQ) {

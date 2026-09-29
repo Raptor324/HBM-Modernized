@@ -7,9 +7,9 @@ import com.hbm_m.config.ModClothConfig;
  * Updated once at the start of the block-entity pass to avoid thousands of
  * {@link ModClothConfig#get()} calls when instancing large machine fields.
  * <p>
- * Инстансинг/MDI/GPU-bone skinning включаются автоматически и переключателей
- * в конфиге больше не имеют; единственный ручной резерв —
- * {@link #forceVanillaImmediate()} (ванильный immediate-путь целиком).
+ * Instancing/MDI/GPU-bone skinning are enabled automatically and no longer have
+ * config toggles; the only manual fallback is {@link #forceVanillaImmediate()}
+ * (the vanilla immediate path in full).
  */
 public final class ClientRenderFlags {
 
@@ -20,7 +20,15 @@ public final class ClientRenderFlags {
     private static boolean mdiCleanFrameReuse = true;
     private static boolean nucleusDirtySkip = true;
 
-    /** Последние Iris-состояния: их смена инвалидирует fast-path записи (worldGen bump). */
+    /**
+     * Emergency JVM override {@code -Dhbm.dirtySkip=false}: the config
+     * ({@code nucleusRenderDirtySkip}) is the primary source; the flag can only force OFF.
+     * Read once at class load.
+     */
+    private static final boolean DIRTY_SKIP_FLAG =
+            !"false".equalsIgnoreCase(System.getProperty("hbm.dirtySkip", "true"));
+
+    /** Last Iris states: a change invalidates fast-path records (worldGen bump). */
     private static boolean lastIrisExternal = false;
     private static boolean lastIrisExtended = false;
 
@@ -33,12 +41,11 @@ public final class ClientRenderFlags {
         maxInstances = cfg.maxInstancedInstancesPerPart;
         forceVanillaImmediate = cfg.forceVanillaImmediatePath;
         mdiCleanFrameReuse = cfg.mdiCleanFrameReuse;
-        nucleusDirtySkip = cfg.nucleusRenderDirtySkip
-                && !"false".equalsIgnoreCase(System.getProperty("hbm.dirtySkip", "true"));
-        // Один опрос Iris API за кадр — isExternalShaderActive() дальше читает кеш.
+        nucleusDirtySkip = cfg.nucleusRenderDirtySkip && DIRTY_SKIP_FLAG;
+        // One Iris API poll per frame - isExternalShaderActive() reads the cache afterwards.
         com.hbm_m.client.render.shader.ShaderCompatibilityDetector.updateState();
-        // Смена Iris-состояния: fast-path записи не содержат instanceLightUV,
-        // который заполняют Iris-пути — глобальная инвалидация через worldGen.
+        // Iris state change: fast-path records lack instanceLightUV, which only Iris
+        // paths fill in - global invalidation via worldGen.
         boolean irisExternal = com.hbm_m.client.render.shader.ShaderCompatibilityDetector.isExternalShaderActive();
         boolean irisExtended = com.hbm_m.client.render.shader.ShaderCompatibilityDetector.canUseIrisExtendedShader();
         if (irisExternal != lastIrisExternal || irisExtended != lastIrisExtended) {
@@ -77,28 +84,27 @@ public final class ClientRenderFlags {
     }
 
     /**
-     * Fast-path dirty-skip (GPU-driven сбор машин): чистые BlockEntity
-     * ({@code RenderDirtyTracker}) пропускают ежекадровую пересборку и
-     * подтверждают присутствие roster-assert'ом. Kill-switch
-     * {@link ModClothConfig#nucleusRenderDirtySkip} или {@code -Dhbm.dirtySkip=false}.
+     * Fast-path dirty-skip (GPU-driven machine assembly): clean BlockEntities
+     * ({@code RenderDirtyTracker}) skip the per-frame rebuild and confirm presence
+     * via a roster assert. Kill-switches: {@link ModClothConfig#nucleusRenderDirtySkip}
+     * or {@code -Dhbm.dirtySkip=false}.
      */
     public static boolean nucleusDirtySkip() {
         return nucleusDirtySkip;
     }
 
     /**
-     * Истинный {@code glDrawElementsInstanced} под Iris/Oculus через наш
-     * ExtendedShader. ВКЛЮЧАЕТСЯ автоматически, когда у активного пака
-     * распознана схема gbuffer, для которой есть энкодер
-     * ({@link com.hbm_m.client.render.shader.IrisInstancedEncoders} — детект
-     * по исходнику gbuffer-программы пака, без имён паков; схема "packed" —
-     * gbuffer пакуется парами unorm8: albedo/normal/light).
+     * True {@code glDrawElementsInstanced} under Iris/Oculus via our ExtendedShader.
+     * Enabled automatically when the active pack's gbuffer scheme is recognized and
+     * an encoder exists ({@link com.hbm_m.client.render.shader.IrisInstancedEncoders} -
+     * detected from the pack's gbuffer program source, not pack names; the "packed"
+     * scheme packs gbuffer into unorm8 pairs: albedo/normal/light).
      * <p>
-     * Без распознанной схемы режим уводит main-проход на companion
-     * per-instance через pack-программу BLOCK_ENTITY, shadow-батч — на
-     * pack-программу SHADOW_*: корректно под любым паком. Однотаргетный
-     * «ванильный» FSH под deferred-паком даёт чёрные машины (композит
-     * декодирует мусор), поэтому вслепую инстансинг не включается.
+     * Without a recognized scheme, main-pass instancing falls back to per-instance
+     * companion via the pack's BLOCK_ENTITY program, and the shadow batch to the
+     * pack's SHADOW_* program: correct under any pack. A single-target "vanilla"
+     * FSH under a deferred pack renders black machines (the composite decodes
+     * garbage), so instancing is never enabled blindly.
      */
     public static boolean irisTrueInstancing() {
         return com.hbm_m.client.render.shader.ShaderCompatibilityDetector.isExternalShaderActive()

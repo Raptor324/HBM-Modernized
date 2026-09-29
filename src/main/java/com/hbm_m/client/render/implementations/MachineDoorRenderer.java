@@ -55,24 +55,24 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.RandomSource;
 
 /**
- * Двери на фабрике {@link MachineRenderers} (замена DoorRenderer/DoorVboRenderer/
- * TransitionSealRenderer). Две спеки:
+ * Doors on the {@link MachineRenderers} factory (replacement for DoorRenderer/DoorVboRenderer/
+ * TransitionSealRenderer). Two specs:
  * <ul>
- *   <li><b>door</b> — все 13 {@link DoorDecl} на одном BE-типе. Части — объединение
- *       getPartNames()+getChildren() всех деклараций; часть, отсутствующая в конкретной
- *       модели, скипается движком (partModel == null). Все части объявлены как
- *       staticPart(transform) — трансформ из DoorDecl считается аниматором, но части
- *       НЕ гейтятся анимационной дистанцией (двери — крупная статика).
- *       DAE-скины — по {@code dynamicPart} на ноду DAE-модели: квады резолвятся
- *       по скину BE, аниматор воспроизводит цепочку {@code localMatrix} от корня.
- *       Ноды уходят в общий инстансинг/MDI-пайплайн станков.</li>
- *   <li><b>transition_seal</b> — DAE-модель 26×24, те же dynamicPart-ноды, клип
- *       "animation" (24 c).</li>
+ *   <li><b>door</b> -- all 13 {@link DoorDecl} on a single BE type. Parts are the union
+ *       of getPartNames()+getChildren() of all declarations; a part missing from a specific
+ *       model is skipped by the engine (partModel == null). All parts are declared as
+ *       staticPart(transform) -- the DoorDecl transform acts as the animator, but parts
+ *       are NOT gated by the animation distance (doors are large statics).
+ *       DAE skins go through {@code dynamicPart} on the DAE model's node: quads are resolved
+ *       per the BE's skin, the animator reproduces the {@code localMatrix} chain from the root.
+ *       The nodes join the machines' shared instancing/MDI pipeline.</li>
+ *   <li><b>transition_seal</b> -- a 26x24 DAE model, the same dynamicPart nodes, the "animation"
+ *       clip (24 s).</li>
  * </ul>
- * DAE-модели загружаются на register() (обычный XML из jar); если загрузка не
- * удалась, соответствующая дверь рендерится фолбэк-хуком с ленивой загрузкой.
- * Item-рендер дверей (скины, DAE item-модели) живёт в DoorBakedModel и фабрикой
- * не трогается (dynamicPart в deriveItemParts не попадают).
+ * DAE models load at register() (plain XML from the jar); if loading fails, the corresponding
+ * door renders via a lazily-loading fallback hook.
+ * Door item rendering (skins, DAE item models) lives in DoorBakedModel and is untouched
+ * by the factory (dynamicParts do not reach deriveItemParts).
  */
 @OnlyIn(Dist.CLIENT)
 public final class MachineDoorRenderer {
@@ -93,15 +93,18 @@ public final class MachineDoorRenderer {
             DoorDecl.VAULT_DOOR,
     };
 
-    /** Kill-switch: -Dhbm.doorSkinSharing=false — скины снова получают per-skin VBO. */
-    private static final boolean SKIN_SHARING =
+    /** The nucleusDoorSkinSharing config is the primary source; -Dhbm.doorSkinSharing=false is an emergency override. */
+    private static final boolean SKIN_SHARING_FLAG =
             !"false".equalsIgnoreCase(System.getProperty("hbm.doorSkinSharing", "true"));
+    private static boolean skinSharing() {
+        return com.hbm_m.config.ModClothConfig.get().nucleusDoorSkinSharing && SKIN_SHARING_FLAG;
+    }
 
     /**
-     * Ленивая проверка: загруженный block_lit_instanced действительно имеет атрибут
-     * InstUvRect. Защита от «классы свежие, ресурсы устаревшие» (запуск без
-     * processResources): со старым шейдером (texCoord = UV0 passthrough)
-     * нормализованный VBO лёг бы ВЕСЬ атласом на модель — откатываемся в per-skin режим.
+     * Lazy check: the loaded block_lit_instanced shader actually has the InstUvRect attribute.
+     * Guards against "fresh classes, stale resources" (running without processResources):
+     * with the old shader (texCoord = UV0 passthrough) the normalized VBO would map the WHOLE
+     * atlas onto the model -- fall back to per-skin mode.
      */
     private static boolean uvRectAttribSupported;
     private static boolean uvRectAttribChecked;
@@ -110,44 +113,44 @@ public final class MachineDoorRenderer {
         if (!uvRectAttribChecked) {
             var shader = com.hbm_m.client.render.shader.ModShaders.getBlockLitInstancedShader();
             if (shader == null) {
-                return false; // шейдер ещё не загружен — двери не рендерятся, шарить нечем
+                return false; // shader not loaded yet -- doors are not rendered, nothing to share
             }
             uvRectAttribChecked = true;
             uvRectAttribSupported = org.lwjgl.opengl.GL20.glGetAttribLocation(shader.getId(), "InstUvRect") >= 0;
             if (!uvRectAttribSupported) {
-                MainRegistry.LOGGER.warn("[HBM-M] block_lit_instanced без InstUvRect — устаревшие shader-ресурсы; "
-                        + "шеринг скинов дверей отключён (пересоберите/перезапустите с processResources)");
+                MainRegistry.LOGGER.warn("[HBM-M] block_lit_instanced without InstUvRect -- stale shader resources; "
+                        + "door skin sharing disabled (rebuild/restart with processResources)");
             }
         }
         return uvRectAttribSupported;
     }
 
     /**
-     * Шеринг VBO между текстурными скинами: ключ кэша без скина, нормализованные
-     * sprite-local UV в VBO, скин — per-instance uvRect (ремап в вершинном шейдере).
-     * ТОЛЬКО вне Iris: companion/GPU-bake/тени под паками держат атласные квады
-     * per-skin — под Iris ключи остаются per-skin (поведение как раньше).
+     * VBO sharing between texture skins: the cache key omits the skin, the VBO holds
+     * normalized sprite-local UVs, and the skin goes into a per-instance uvRect (remapped
+     * in the vertex shader). ONLY outside Iris: companion/GPU-bake/shadows under shader packs
+     * keep atlas quads per-skin -- under Iris the keys remain per-skin (behavior as before).
      */
     private static boolean shareSkins() {
-        return SKIN_SHARING
+        return skinSharing()
                 && !com.hbm_m.client.render.shader.ShaderCompatibilityDetector.isExternalShaderActive()
                 && uvRectAttribSupported();
     }
 
-    /** Нода DAE-сцены с её цепочкой родителей (для компоновки localMatrix в аниматоре). */
+    /** A DAE scene node with its chain of parents (for composing localMatrix in the animator). */
     private record DaeNodePath(String name, DaeNode node, List<DaeNode> chain) {}
 
-    /** Загруженные на register() DAE-модели (двери по decl, seal отдельно). */
+    /** DAE models loaded at register() (doors per decl, the seal separately). */
     private static final ConcurrentHashMap<ResourceLocation, DaeModel> DAE_MODELS = new ConcurrentHashMap<>();
-    /** Декларации, чья DAE-модель не загрузилась на register() → фолбэк-хук. */
+    /** Declarations whose DAE model failed to load at register() -> fallback hook. */
     private static final Set<DoorDecl> DAE_REGISTER_FAILED = ConcurrentHashMap.newKeySet();
-    /** Пути, чья загрузка уже ошиблась (анти-спам: не ретраим каждый кадр). */
+    /** Paths whose load already failed (anti-spam: do not retry every frame). */
     private static final Set<ResourceLocation> DAE_LOAD_FAILED = ConcurrentHashMap.newKeySet();
 
-    // Фолбэк-хук: кэш рендереров нод (прямой SingleMeshVboRenderer-путь).
+    // Fallback hook: node renderer cache (direct SingleMeshVboRenderer path).
     private static final ConcurrentHashMap<String, SingleMeshVboRenderer> DAE_RENDERER_CACHE = new ConcurrentHashMap<>();
 
-    // Transition seal: модель + разрешённые пути для debug-оверлея.
+    // Transition seal: model + resolved paths for the debug overlay.
     private static final ResourceLocation SEAL_MODEL_ID =
             ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/block/doors/transition_seal");
     private static final ResourceLocation SEAL_TEX =
@@ -157,15 +160,15 @@ public final class MachineDoorRenderer {
     private static ResourceLocation sealResolvedModelFile;
     private static ResourceLocation sealResolvedTexture;
 
-    // Scratch для doPartTransform (рендер однопоточный, вызов раз в кадр на часть
-    // благодаря anim-кэшу MachineBer).
+    // Scratch for doPartTransform (rendering is single-threaded, called once per frame per part
+    // thanks to MachineBer's anim cache).
     private static final float[] translation = new float[3];
     private static final float[] origin = new float[3];
     private static final float[] rotation = new float[3];
 
     private MachineDoorRenderer() {}
 
-    // ==================== РЕГИСТРАЦИЯ ====================
+    // ==================== REGISTRATION ====================
 
     public static void register() {
         Set<String> allParts = collectAllPartNames();
@@ -176,10 +179,10 @@ public final class MachineDoorRenderer {
                         .facing(DoorBlockEntity::getFacing);
         for (String part : allParts) {
             final boolean child = isChildPart(part);
-            // ВАЖНО: OBJ-части дверей объявлены как dynamicPart, НЕ staticPart —
-            // ключ VBO-кэша спеки обязан включать тип двери и скин (одно имя части
-            // "frame"/"door" у разных дверей = РАЗНАЯ геометрия; кэш по имени части
-            // отдавал бы всем дверям меш первой отрисованной).
+            // IMPORTANT: door OBJ parts are declared as dynamicPart, NOT staticPart --
+            // the spec's VBO cache key must include the door type and skin (the same part
+            // name "frame"/"door" on different doors = DIFFERENT geometry; a cache keyed
+            // by part name would hand every door the mesh of the first one drawn).
             door.dynamicPart(part,
                     be -> resolveDoorPartQuads(be, part),
                     MachineDoorRenderer::doorPartCacheKey,
@@ -187,7 +190,7 @@ public final class MachineDoorRenderer {
                             applyDoorPartTransform(be, partialTick, pose, part, child),
                     be -> doorUvRect(be, part));
         }
-        // DAE-ноды дверей: по части на ноду, инстансинг/MDI общий со станками.
+        // Door DAE nodes: one part per node, instancing/MDI shared with the machines.
         registerDoorDaeParts(door);
         door.hook(MachineDoorRenderer::renderDoorDaeFallbackHook)
                 .register();
@@ -203,21 +206,21 @@ public final class MachineDoorRenderer {
     }
 
     /**
-     * Объединение частей дверей. ИСТОЧНИК ИСТИНЫ — имена "parts" в JSON-моделях
-     * doors/*_modern.json (старый DoorRenderer итерировал model.getPartNames(), а
-     * НЕ DoorDecl.getPartNames(): например, у 9 моделей створки называются
-     * doorLeft/doorRight, у QE — leftDoor/rightDoor, у water door есть bolt —
-     * в DoorDecl.getPartNames() этих имён НЕТ). Плюс замыкание getChildren() из
-     * DoorDecl (water door: door → spinny_*). Часть, которой нет в конкретной
-     * модели, даёт пустой квад-лист и скипается — супермножество безопасно.
-     * При добавлении новой дверной модели с новой частью — дополнить список.
+     * Union of door parts. SOURCE OF TRUTH -- the "parts" names in the JSON models
+     * doors/*_modern.json (the old DoorRenderer iterated model.getPartNames(), NOT
+     * DoorDecl.getPartNames(): for example, 9 models name the leaves doorLeft/doorRight,
+     * QE uses leftDoor/rightDoor, and the water door has a bolt -- none of these names
+     * exist in DoorDecl.getPartNames()). Plus the closure of getChildren() from
+     * DoorDecl (water door: door -> spinny_*). A part missing from a specific
+     * model yields an empty quad list and is skipped -- a superset is safe.
+     * When adding a new door model with a new part -- extend this list.
      */
     private static final String[] EXTRA_JSON_PARTS = {
             "doorLeft", "doorRight",          // large_vehicle_door, round_airlock_door
             "leftDoor", "rightDoor",          // qe_sliding_door
             "DoorTop", "DoorBot",             // cargo_door
-            "Hatch",                          // silo_hatch, silo_hatch_large (створка люка)
-            "base",                           // secure_access_door (рама называется base, не frame!)
+            "Hatch",                          // silo_hatch, silo_hatch_large (hatch leaf)
+            "base",                           // secure_access_door (the frame is called base, not frame!)
             "Door", "Label",                  // vault_door
             "decal",                          // qe_containment_door
             "bolt",                           // water_door
@@ -246,11 +249,11 @@ public final class MachineDoorRenderer {
     }
 
     private static boolean isChildPart(String partName) {
-        // Единственная иерархия в DoorDecl: "door" -> spinny_lower/spinny_upper
+        // The only hierarchy in DoorDecl: "door" -> spinny_lower/spinny_upper
         return partName.startsWith("spinny");
     }
 
-    // ==================== DAE: ЧАСТИ СПЕКИ ====================
+    // ==================== DAE: SPEC PARTS ====================
 
     private static void registerDoorDaeParts(MachineSpecBuilder<DoorBlockEntity> door) {
         for (DoorDecl decl : DOOR_DECLS) {
@@ -305,7 +308,7 @@ public final class MachineDoorRenderer {
         }
     }
 
-    /** Загрузка DAE c кэшем; null при ошибке (ошибка запоминается, не ретраим). */
+    /** Loads a DAE with caching; null on error (the error is remembered, no retries). */
     private static DaeModel loadDaeModel(ResourceLocation path) {
         if (DAE_LOAD_FAILED.contains(path)) return null;
         return DAE_MODELS.computeIfAbsent(path, p -> {
@@ -319,7 +322,7 @@ public final class MachineDoorRenderer {
         });
     }
 
-    /** DFS по сцене: все ноды с геометрией + цепочка родителей для localMatrix. */
+    /** DFS over the scene: all nodes with geometry + the parent chain for localMatrix. */
     private static List<DaeNodePath> collectNodePaths(List<DaeNode> roots) {
         List<DaeNodePath> out = new ArrayList<>();
         Set<String> usedNames = ConcurrentHashMap.newKeySet();
@@ -344,7 +347,7 @@ public final class MachineDoorRenderer {
         }
     }
 
-    // ==================== DOOR: МОДЕЛЬ И ТРАНСФОРМЫ ====================
+    // ==================== DOOR: MODEL AND TRANSFORMS ====================
 
     private static BakedModel resolveModel(DoorBlockEntity be) {
         DoorDecl doorDecl = be.getDoorDecl();
@@ -369,19 +372,19 @@ public final class MachineDoorRenderer {
         return Minecraft.getInstance().getBlockRenderer().getBlockModel(be.getBlockState());
     }
 
-    /** DAE-скин активен для этого BE: модель — НЕ OBJ-multipart (это DAE-baked модель). */
+    /** A DAE skin is active for this BE: the model is NOT OBJ-multipart (it is a DAE-baked model). */
     private static boolean isDaeModelActive(DoorBlockEntity be) {
         return !(resolveModel(be) instanceof DoorBakedModel);
     }
 
-    /** Ключ VBO-кэша DAE-ноды. При шэринге — дверь без скина (ноды шарят нормализованный VBO). */
+    /** DAE node VBO cache key. When sharing -- the door without a skin (nodes share the normalized VBO). */
     private static String daeCacheKey(DoorBlockEntity be, DoorDecl decl) {
         if (!isDaeModelActive(be)) return "off";
         if (shareSkins()) return decl.getBlockId().getPath();
         return decl.getBlockId().getPath() + ":" + be.getModelSelection().getSkin().getId();
     }
 
-    /** uvRect-резолвер DAE-ноды (спрайт текстуры скина) или null вне шеринга. */
+    /** DAE node uvRect resolver (the skin texture's sprite) or null outside sharing. */
     private static float[] daeUvRect(DoorBlockEntity be, DoorDecl decl, DaeNode node) {
         if (!shareSkins() || !isDaeModelActive(be)) return null;
         TextureAtlasSprite s = daeNodeSprite(node, enrichedSelection(be), decl);
@@ -394,9 +397,9 @@ public final class MachineDoorRenderer {
     }
 
     /**
-     * Обогащённый (texturePath из реестра) выбор скина: NBT-синхронизация
-     * reconstructs DoorSkin только по id, из-за чего resolveDaeTexture не находит
-     * текстуру для variant1/variant2. Не меняет modelType, только обогащает skin.
+     * Enriched (texturePath from the registry) skin selection: NBT sync
+     * reconstructs DoorSkin by id only, so resolveDaeTexture cannot find the texture
+     * for variant1/variant2. Does not change modelType, only enriches the skin.
      */
     private static DoorModelSelection enrichedSelection(DoorBlockEntity be) {
         DoorModelSelection selection = be.getModelSelection();
@@ -428,14 +431,15 @@ public final class MachineDoorRenderer {
         throw new IllegalStateException("Unknown door type: " + doorDecl.getClass().getName());
     }
 
-    /** Прогресс открытия 0..openTime с учётом контрапшена (ContraptionDoorAnimCache.chase). */
+    /** Open progress 0..openTime accounting for contraptions (ContraptionDoorAnimCache.chase). */
     private static float openTicks(DoorBlockEntity be, float partialTick, DoorDecl doorDecl) {
         if (ContraptionRenderCompat.isContraptionRender(be)) {
-            // Create VirtualRenderWorld (не ClientLevel): BE пересоздаётся из замороженного
-            // NBT и не тикает — анимацию ведёт chase-кеш, питаемый Contraption-пакетами.
-            // Sable sublevel — это НАСТОЯЩИЙ клиентский BE в основном ClientLevel (plot-grid):
-            // он тикает и синкается сам, а chase-кеш для него никто не заполняет → дверь
-            // навсегда «закрыта». Поэтому chase — только для виртуальных миров.
+            // Create VirtualRenderWorld (not ClientLevel): the BE is recreated from frozen
+            // NBT and does not tick -- the animation is driven by the chase cache, fed by
+            // Contraption packets. The Sable sublevel is a REAL client BE in the main
+            // ClientLevel (plot-grid): it ticks and syncs itself, and nobody fills the
+            // chase cache for it -> the door would stay "closed" forever. Hence chase
+            // is for virtual worlds only.
             if (ContraptionRenderCompat.isContraptionRenderLevel(be.getLevel())) {
                 float progress = ContraptionDoorAnimCache.chase(be, doorDecl.getOpenTime());
                 return progress * doorDecl.getOpenTime();
@@ -445,12 +449,12 @@ public final class MachineDoorRenderer {
     }
 
     /**
-     * Ключ VBO-кэша OBJ-части.
-     * Шеринг (shareSkins): дверь + токен геометрии скина — текстурные скины одной
-     * геометрии шарят VBO (UV в нём нормализованы, скин уходит в per-instance uvRect).
-     * Токен = canonical-инстанс первой части модели: у скинов с РАЗНОЙ геометрией
-     * (large_vehicle_door: base-obj vs _clean.obj) он разный — шаринг не сработает.
-     * Без шеринга (Iris / kill-switch): прежний ключ дверь+модель+скин.
+     * OBJ part VBO cache key.
+     * Sharing (shareSkins): door + skin geometry token -- texture skins of the same
+     * geometry share a VBO (its UVs are normalized, the skin goes into a per-instance uvRect).
+     * Token = the canonical instance of the model's first part: skins with DIFFERENT geometry
+     * (large_vehicle_door: base-obj vs _clean.obj) get different tokens -- sharing will not kick in.
+     * Without sharing (Iris / kill-switch): the old door+model+skin key.
      */
     private static String doorPartCacheKey(DoorBlockEntity be) {
         DoorDecl decl = be.getDoorDecl();
@@ -465,10 +469,10 @@ public final class MachineDoorRenderer {
         return be.cachedModelKey(doorType);
     }
 
-    /** Спрайт части: у обёртки скина — целевой спрайт, у canonical — спрайт первого квада (кэш). */
+    /** Part sprite: for a skin wrapper -- the target sprite, for canonical -- the first quad's sprite (cached). */
     private static final ConcurrentHashMap<BakedModel, TextureAtlasSprite> PART_SPRITES = new ConcurrentHashMap<>();
 
-    /** Очистка кэша спрайтов canonical-частей (resource reload — старые модели протухают). */
+    /** Clears the canonical part sprite cache (resource reload -- old models go stale). */
     public static void clearPartSpriteCache() {
         PART_SPRITES.clear();
     }
@@ -481,7 +485,7 @@ public final class MachineDoorRenderer {
         if (cached != null || PART_SPRITES.containsKey(part)) {
             return cached;
         }
-        // canonical-часть: UV запечены её собственным спрайтом — берём из первого квада.
+        // canonical part: UVs are baked by its own sprite -- take it from the first quad.
         TextureAtlasSprite found = null;
         var rand = RandomSource.create(42L);
         for (Direction d : Direction.values()) {
@@ -504,8 +508,8 @@ public final class MachineDoorRenderer {
     private static final float[] UV_RECT_SCRATCH = new float[4];
 
     /**
-     * uvRect-резолвер OBJ-части: {u0,v0,du,dv} целевого спрайта скина для ремапа
-     * нормализованного VBO в атлас. Вызывается каждый кадр — держится на map-lookup'ах.
+     * OBJ part uvRect resolver: {u0,v0,du,dv} of the skin's target sprite for remapping
+     * the normalized VBO into the atlas. Called every frame -- stays on map lookups.
      */
     private static float[] doorUvRect(DoorBlockEntity be, String partName) {
         if (!shareSkins()) return null;
@@ -521,8 +525,8 @@ public final class MachineDoorRenderer {
         return UV_RECT_SCRATCH;
     }
 
-    /** Квады OBJ-части из DoorBakedModel; пусто, если части нет/скин не OBJ.
-     *  При шэринге — нормализованные (sprite-local [0..1]) UV canonical-геометрии. */
+    /** OBJ part quads from DoorBakedModel; empty if the part is missing / the skin is not OBJ.
+     *  When sharing -- normalized (sprite-local [0..1]) UVs of the canonical geometry. */
     private static List<BakedQuad> resolveDoorPartQuads(DoorBlockEntity be, String partName) {
         BakedModel model = resolveModel(be);
         if (!(model instanceof DoorBakedModel doorModel)) return List.of();
@@ -531,12 +535,12 @@ public final class MachineDoorRenderer {
 
         boolean share = shareSkins();
         if (share && partModel instanceof com.hbm_m.client.loader.RemappedPartModel remapped) {
-            // Каноничная геометрия (общая для всех текстурных скинов) вместо
-            // ремапнутой в спрайт этого скина.
+            // Canonical geometry (shared by all texture skins) instead of the
+            // remap into this skin's sprite.
             partModel = remapped.canonical();
         }
 
-        // Точная копия PartGeometry.collectSolidQuads: общий seed на каждый вызов.
+        // Exact copy of PartGeometry.collectSolidQuads: a fresh seed per call.
         List<BakedQuad> out = new ArrayList<>();
         for (Direction d : Direction.values()) {
             RandomSource rand = RandomSource.create(42L);
@@ -557,14 +561,14 @@ public final class MachineDoorRenderer {
         if (doorDecl == null) return false;
         if (!doorDecl.doesRender(partName, child)) return false;
 
-        // Рама (staticFrame) рисовалась в блочной позе БЕЗ трансформа DoorDecl.
+        // The frame (staticFrame) was drawn in block pose WITHOUT the DoorDecl transform.
         if (isStaticFramePart(partName)) return true;
 
         DoorModelSelection selection = be.getModelSelection();
         float open = openTicks(be, partialTick, doorDecl);
 
         if (child) {
-            // Иерархия: дочерняя часть живёт в позе родителя (старый pushPose-обход).
+            // Hierarchy: the child part lives in the parent's pose (the old pushPose traversal).
             if (!doorDecl.doesRender("door", false)) return false;
             doPartTransform(pose, doorDecl, "door", open, false, selection);
         }
@@ -572,7 +576,7 @@ public final class MachineDoorRenderer {
         return true;
     }
 
-    /** Рама: в старом DoorRenderer выносилась из анимированного обхода и не трансформировалась. */
+    /** Frame: in the old DoorRenderer it was pulled out of the animated traversal and not transformed. */
     private static boolean isStaticFramePart(String partName) {
         return "frame".equalsIgnoreCase(partName)
                 || "base".equalsIgnoreCase(partName)
@@ -594,15 +598,15 @@ public final class MachineDoorRenderer {
         poseStack.translate(-origin[0] + translation[0], -origin[1] + translation[1], -origin[2] + translation[2]);
     }
 
-    // ==================== DOOR: DAE АНИМАТОР/РЕЗОЛВЕР ====================
+    // ==================== DOOR: DAE ANIMATOR/RESOLVER ====================
 
     private static boolean animateDaeNode(DoorBlockEntity be, float partialTick, PoseStack pose,
                                           DoorDecl doorDecl, DaeModel model, List<DaeNode> chain) {
         if (!be.isController() && !ContraptionRenderCompat.isContraptionRender(be)) return false;
         if (!isDaeModelActive(be)) return false;
 
-        // openTicks уже несёт корректный прогресс (0..openTime) с учётом контрапшена
-        // (ContraptionDoorAnimCache.chase) ИЛИ обычного BE.getOpenProgress.
+        // openTicks already carries the correct progress (0..openTime) accounting for the
+        // contraption (ContraptionDoorAnimCache.chase) OR the regular BE.getOpenProgress.
         float time = openTicks(be, partialTick, doorDecl) / 20.0f;
         applyDaeRootOffset(pose, doorDecl);
         mulPoseChain(pose, model, chain, time);
@@ -616,7 +620,7 @@ public final class MachineDoorRenderer {
         return bakeDaeNodeQuads(node, selection, doorDecl);
     }
 
-    /** Offset-повороты DAE-рамки из DoorDecl (getBakedModelRotationOffsetY). */
+    /** Offset rotations of the DAE frame from DoorDecl (getBakedModelRotationOffsetY). */
     private static void applyDaeRootOffset(PoseStack poseStack, DoorDecl doorDecl) {
         int offset = doorDecl.getBakedModelRotationOffsetY();
         if (offset == 0) return;
@@ -624,13 +628,13 @@ public final class MachineDoorRenderer {
         poseStack.mulPose(Axis.YP.rotationDegrees(offset));
         poseStack.translate(-0.5f, 0f, -0.5f);
 
-        // DAE-геометрия рамки DoorFrame хранится по X ∈ [-3.5,+3.5], Z ∈ [-0.5,+0.5]
-        // с pivot 0 = corner блока контроллера, а не его центр. Сдвиг на -1 по
-        // local-Z компенсирует "1 блок к игроку" симметрично для всех facing'ов.
+        // The DoorFrame's DAE geometry is stored with X in [-3.5,+3.5], Z in [-0.5,+0.5]
+        // and pivot 0 = the controller block's corner, not its center. A -1 shift along
+        // local-Z compensates "1 block toward the player" symmetrically for all facings.
         poseStack.translate(0f, 0f, 1f);
     }
 
-    /** Композиция localMatrix цепочки root→node в текущий pose. */
+    /** Composes the localMatrix chain root->node into the current pose. */
     private static void mulPoseChain(PoseStack poseStack, DaeModel model,
                                      List<DaeNode> chain, float time) {
         DaeAnimation clip = model.animations.get("animation");
@@ -647,7 +651,7 @@ public final class MachineDoorRenderer {
         return bakeDaeNodeQuads(node, selection, doorDecl, shareSkins());
     }
 
-    /** @param normalize нормализовать UV (шеринг VBO); фолбэк-хук рисует напрямую — false. */
+    /** @param normalize normalize UVs (VBO sharing); the fallback hook draws directly -- false. */
     private static List<BakedQuad> bakeDaeNodeQuads(DaeNode node, DoorModelSelection selection,
                                                     DoorDecl doorDecl, boolean normalize) {
         try {
@@ -659,8 +663,8 @@ public final class MachineDoorRenderer {
 
             List<BakedQuad> quads = DaeQuadBaker.bakeNodeQuads(node.mesh, new Matrix4f(), sprite);
             if (quads == null) return List.of();
-            // Шеринг скинов: UV нормализуются в sprite-local — спрайт уходит в
-            // per-instance uvRect, VBO ноды общий для всех скинов двери.
+            // Skin sharing: UVs are normalized to sprite-local -- the sprite goes into
+            // a per-instance uvRect, the node VBO is shared by all skins of the door.
             if (normalize) {
                 quads = com.hbm_m.client.model.ModelHelper.normalizeQuadUvsPerQuad(quads);
             }
@@ -675,7 +679,7 @@ public final class MachineDoorRenderer {
                                                     DoorDecl doorDecl) {
         ResourceLocation rawTexture = resolveDaeTexture(node, selection, doorDecl);
 
-        // Очищаем путь от "textures/" и ".png", чтобы атлас мог найти спрайт
+        // Strip "textures/" and ".png" so the atlas can find the sprite
         String cleanPath = rawTexture.getPath();
         if (cleanPath.startsWith("textures/")) {
             cleanPath = cleanPath.substring("textures/".length());
@@ -698,9 +702,9 @@ public final class MachineDoorRenderer {
         if (tex != null && !tex.equals(skin.getTexturePath())) return tex;
         if (skin.getTexturePath() != null) return skin.getTexturePath();
 
-        // Скин без texturePath: для LEGACY — «old» текстура, для MODERN default —
-        // обычная. Этот fallback ВАЖНЕЕ node.texture: в .dae часто стоит битая
-        // ссылка <init_from>door0.png</init_from> (Blender-экспорт).
+        // Skin without texturePath: for LEGACY -- the "old" texture, for MODERN default --
+        // the regular one. This fallback takes precedence over node.texture: .dae files often
+        // carry a broken <init_from>door0.png</init_from> reference (Blender export).
         String basePath = doorDecl.getBlockId().getPath();
         return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID,
                 "block/doors/" + basePath + (selection.isLegacy() ? "_old" : ""));
@@ -747,10 +751,10 @@ public final class MachineDoorRenderer {
         }
     }
 
-    // ==================== DAE ФОЛБЭК-ХУКИ ====================
-    // Используются ТОЛЬКО если DAE-модель не загрузилась на register() (в норме
-    // все ноды идут через dynamicPart и хуки бездействуют). Прямой
-    // SingleMeshVboRenderer-путь без MDI.
+    // ==================== DAE FALLBACK HOOKS ====================
+    // Used ONLY if a DAE model failed to load at register() (normally all nodes go
+    // through dynamicPart and the hooks sit idle). Direct SingleMeshVboRenderer
+    // path without MDI.
 
     private static void renderDoorDaeFallbackHook(DoorBlockEntity be, float partialTick,
                                                   PoseStack poseStack, MultiBufferSource bufferSource,
@@ -861,7 +865,7 @@ public final class MachineDoorRenderer {
         return null;
     }
 
-    /** Debug-оверлей (бывш. TransitionSealRenderer.getDebugInfo). */
+    /** Debug overlay (formerly TransitionSealRenderer.getDebugInfo). */
     public static String getSealDebugInfo() {
         StringBuilder sb = new StringBuilder("Transition seal debug\n");
         sb.append("Model file: ").append(sealResolvedModelFile != null ? sealResolvedModelFile : "<not loaded>");
@@ -891,7 +895,7 @@ public final class MachineDoorRenderer {
         return sb.toString();
     }
 
-    // ==================== ИНВАЛИДАЦИЯ КЭШЕЙ ====================
+    // ==================== CACHE INVALIDATION ====================
 
     public static void clearDaeCaches() {
         for (String key : DAE_RENDERER_CACHE.keySet()) {
@@ -899,8 +903,8 @@ public final class MachineDoorRenderer {
         }
         DAE_RENDERER_CACHE.values().forEach(SingleMeshVboRenderer::cleanup);
         DAE_RENDERER_CACHE.clear();
-        // DAE_MODELS не чистим: ноды захвачены в PartDef-лямбдах спек, объекты
-        // переиспользуются (reload-листенер DaeModel.allModels перепарсит их на месте).
+        // DAE_MODELS is not cleared: the nodes are captured in the specs' PartDef lambdas, the
+        // objects are reused (the DaeModel.allModels reload listener re-parses them in place).
         DAE_REGISTER_FAILED.clear();
         MainRegistry.LOGGER.debug("MachineDoorRenderer DAE caches cleared");
     }

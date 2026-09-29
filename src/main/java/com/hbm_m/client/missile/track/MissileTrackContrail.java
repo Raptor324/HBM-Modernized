@@ -18,13 +18,18 @@ public final class MissileTrackContrail {
                       double fromX, double fromY, double fromZ,
                       double toX, double toY, double toZ,
                       float scale) {
-        Vec3 motion = new Vec3(toX - fromX, toY - fromY, toZ - fromZ);
+        // Вектор НАЗАД (от текущей позиции к предыдущей) — как в entity-пути
+        // (MissileBaseEntity.spawnContrailWithOffset: xOld - getX()) и в оригинале
+        // 1.7.10 (lastTickPos - pos). spawnSegments ставит сегменты вдоль этого
+        // вектора: при векторе вперёд они ложились ПО КУРСУ ракеты, а не позади.
+        Vec3 motion = new Vec3(fromX - toX, fromY - toY, fromZ - toZ);
         double len = motion.length();
         if (len <= 1.0E-6D) {
             return;
         }
         Vec3 motionNorm = motion.normalize();
-        Vec3 exhaust = motionNorm.scale(-1.0D);
+        // Выхлоп дует назад — противоположно полёту, т.е. вдоль motionNorm.
+        Vec3 exhaust = motionNorm;
         spawnSegments(level, toX, toY, toZ, motionNorm, len, exhaust, scale, 0.0D, 0.0D, 0.0D);
     }
 

@@ -1274,7 +1274,6 @@ public class ClientSetup {
                 .build();
         *///?}
 
-        ResourceLocation realVsh = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "shaders/core/block_lit.vsh");
         ResourceLocation virtualInstancedVsh = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "shaders/core/block_lit_instanced.vsh");
 
         com.hbm_m.client.render.shader.modification.ShaderModification instancingDefine =
@@ -1282,9 +1281,16 @@ public class ClientSetup {
                 .define("USE_INSTANCING")
                 .define("USE_VERTEX_BONE_ID");
 
+        // Патчим РЕАЛЬНЫЙ файл block_lit_instanced.vsh defines'ами. Исторический
+        // wrapRedirect(... -> block_lit.vsh) остался с времён, когда файла
+        // block_lit_instanced.vsh не существовало; теперь он полноценный исходник
+        // (InstUvRect/InstColor/GradParams + фоллофф), и редирект на block_lit.vsh
+        // молча выкидывал все пер-инстанс атрибуты из компиляции — на фордже из-за
+        // этого не работал тинт частей и шеринг скинов дверей (атрибут uvRect
+        // отсутствовал в программе).
         net.minecraft.server.packs.resources.ResourceProvider instancedProvider =
-            com.hbm_m.client.render.shader.modification.ShaderPreDefinitions.wrapRedirect(
-                event.getResourceProvider(), virtualInstancedVsh, realVsh, instancingDefine);
+            com.hbm_m.client.render.shader.modification.ShaderPreDefinitions.wrap(
+                event.getResourceProvider(), virtualInstancedVsh, instancingDefine);
 
         event.registerShader(
             new ShaderInstance(

@@ -202,7 +202,7 @@ public final class MissileRenderHelper {
             return;
         }
         RandomSource random = RandomSource.create(42L);
-        // Кросс-лоадерно: forge/neoforge — ModelData+RenderType, fabric — 3-arg.
+        // Cross-loader: forge/neoforge - ModelData+RenderType, fabric - 3-arg.
         List<BakedQuad> quads = com.hbm_m.platform.RenderHooks.getPartQuads(model, null, null, random);
         if (quads.isEmpty()) {
             debugMissile("drawBakedQuads: no quads for {}", BuiltInRegistries.ITEM.getKey(stack.getItem()));
@@ -232,6 +232,24 @@ public final class MissileRenderHelper {
                                        @Nullable MultiBufferSource bufferSource,
                                        @Nullable BlockEntity blockEntity) {
         bindBlockAtlas();
+        // The missile does not participate in the machines' distance fade - draw
+        // strictly opaque. fade is SingleMeshVboRenderer static; force 1.0,
+        // otherwise (a leak from another BER) the draw would go with blend +
+        // depthMask(false) - a translucent mesh without depth writes that later
+        // machine flushes draw on top of.
+        float prevFadeAlpha = SingleMeshVboRenderer.getFadeAlpha();
+        SingleMeshVboRenderer.setFadeAlpha(1.0F);
+        try {
+            drawMissileMeshInner(stack, missileModel, poseStack, packedLight, lightPos, bufferSource, blockEntity);
+        } finally {
+            SingleMeshVboRenderer.setFadeAlpha(prevFadeAlpha);
+        }
+    }
+
+    private static void drawMissileMeshInner(ItemStack stack, MissileBakedModel missileModel, PoseStack poseStack,
+                                             int packedLight, BlockPos lightPos,
+                                             @Nullable MultiBufferSource bufferSource,
+                                             @Nullable BlockEntity blockEntity) {
         String cachePrefix = missileModel.getModelId().toString();
         boolean drewAny = false;
         for (String partName : missileModel.getRenderablePartNames()) {

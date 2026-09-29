@@ -26,23 +26,23 @@ import com.hbm_m.main.MainRegistry;
 
 @OnlyIn(Dist.CLIENT)
 /**
- * Кольцевой persistently-mapped staging-буфер для аплоадов инстанс-данных.
+ * Ring persistently-mapped staging buffer for instance-data uploads.
  * <p>
- * CPU пишет span в замапленную память (memcpy без участия драйвера), затем
- * одна команда {@code glCopyBufferSubData} переносит его в целевой VBO.
- * GPU-GPU копия упорядочена в command stream — с draw, читающим целевой VBO,
- * гонки нет; единственная гонка — CPU-запись против незавершённой копии из
- * staging. Она закрывается кольцом + {@code glFenceSync}: каждый кадр
- * {@link #endFrame()} ставит фенс на записанный диапазон, повторное
- * использование диапазона возможно только после {@code glClientWaitSync}
- * (короткие таймауты; при незасигналенном фенсе {@link #copyRegion}
- * возвращает false — вызывающий деградирует в glBufferSubData).
+ * The CPU writes a span into mapped memory (a driver-free memcpy), then a
+ * single {@code glCopyBufferSubData} transfers it into the target VBO.
+ * The GPU-GPU copy is ordered in the command stream - there is no race with
+ * the draw reading the target VBO; the only race is the CPU write against an
+ * unfinished copy out of staging. It is closed by the ring + {@code glFenceSync}:
+ * each frame {@link #endFrame()} places a fence over the written range, and a
+ * range can be reused only after {@code glClientWaitSync} (short timeouts; if
+ * the fence is not signaled, {@link #copyRegion} returns false and the caller
+ * degrades to glBufferSubData).
  * <p>
- * {@link GL44#GL_MAP_COHERENT_BIT}: запись CPU видна GPU-копии, выпущенной
- * ПОСЛЕ неё с того же потока; flush-вызовы не нужны.
+ * {@link GL44#GL_MAP_COHERENT_BIT}: a CPU write is visible to a GPU copy issued
+ * AFTER it from the same thread; flush calls are not needed.
  * <p>
- * Выделение на процесс (GL-контекст живёт столько же); F3+T не разрушает
- * контекст, пересоздание не требуется.
+ * Allocated per process (the GL context lives as long); F3+T does not destroy
+ * the context, no recreation required.
  */
 public final class PersistentUploadStaging {
 
@@ -58,6 +58,19 @@ public final class PersistentUploadStaging {
     private boolean pendingAny = false;
     private ArrayDeque<FenceRange> fences = new ArrayDeque<>();
 
+    /**
+     * Granularity of intermediate fences (FIFO of short fences - a borrow-list
+     * item of the nucleus_cpu_audit 0925, item 2). One fence per frame forced
+     * a wait on a WRITTEN range to wait for the entire frame: on a weak GPU the
+     * frame tail did not fit into the 17 ms of retries -> the ring stalled and
+     * degraded to glBufferSubData. Short fences every 256 KiB yield a wait on
+     * the exact oldest range (the fence signals as soon as the copies BEFORE it
+     * finish - copies execute on the stream in order).
+     */
+    private static final long FENCE_GRANULARITY_BYTES = 256L * 1024L;
+    /** Start of the current unfenced write run. */
+    private long pendingStart = 0;
+
     private static final class FenceRange {
         final long sync;
         final long start;
@@ -72,12 +85,12 @@ public final class PersistentUploadStaging {
 
     private PersistentUploadStaging() {}
 
-    /** Текущий инстанс без ленивого создания (для диагностики; null = staging не используется). */
+    /** Current instance without lazy creation (for diagnostics; null = staging not in use). */
     public static PersistentUploadStaging peekOrNull() {
         return instance;
     }
 
-    /** null, если GL44 persistent mapping недоступен — вызывающие идут через glBufferSubData. */
+    /** Null when GL44 persistent mapping is unavailable - callers fall back to glBufferSubData. */
     public static PersistentUploadStaging getOrCreate() {
         if (resolved) {
             return instance;
@@ -120,9 +133,9 @@ public final class PersistentUploadStaging {
     }
 
     /**
-     * Копирует {@code floatCount} флоатов из {@code src} (с {@code srcFloatOffset})
-     * в целевой буфер по байтовому смещению {@code destByteOffset} через staging.
-     * @return false — GPU ещё не освободил кольцо, вызывающий обязан уйти в fallback.
+     * Copies {@code floatCount} floats from {@code src} (at {@code srcFloatOffset})
+     * into the target buffer at byte offset {@code destByteOffset} via staging.
+     * @return false - the GPU has not released the ring yet; the caller must fall back.
      */
     public boolean copyRegion(FloatBuffer src, int srcFloatOffset, int floatCount, int destVbo, long destByteOffset) {
         long bytes = (long) floatCount * 4L;
@@ -133,7 +146,14 @@ public final class PersistentUploadStaging {
             return false;
         }
         if (writePtr + bytes > capacityBytes) {
+            // Wrap-around: fence the tail of the ring, restart the run at zero - fence
+            // ranges always have start <= end (otherwise waitForRange cannot match them).
+            if (pendingAny && pendingStart < writePtr) {
+                placeFence(pendingStart, writePtr);
+            }
             writePtr = 0;
+            pendingStart = 0;
+            pendingAny = false;
         }
         if (!waitForRange(writePtr, bytes)) {
             return false;
@@ -148,16 +168,17 @@ public final class PersistentUploadStaging {
         GL31.glCopyBufferSubData(GL31.GL_COPY_READ_BUFFER, GL31.GL_COPY_WRITE_BUFFER,
                 writePtr, destByteOffset, bytes);
         writePtr += bytes;
+        maybeFenceChunk();
         pendingAny = true;
         return true;
     }
 
     /**
-     * Только запись в кольцо БЕЗ немедленной копии — для батчинга (compute
-     * scatter): вызывающий собирает несколько region'ов и переносит их одной
-     * диспетчей {@link ComputeScatterUploader#scatter}.
-     * @return байтовое смещение region'а в кольце или -1 (фенс не освободился /
-     *         не влезает) — вызывающий обязан уйти в per-span fallback.
+     * Writes into the ring WITHOUT an immediate copy - for batching (compute
+     * scatter): the caller accumulates several regions and transfers them with
+     * a single {@link ComputeScatterUploader#scatter} dispatch.
+     * @return the byte offset of the region in the ring, or -1 (fence not released /
+     *         does not fit) - the caller must fall back to per-span uploads.
      */
     public long stageRegion(FloatBuffer src, int srcFloatOffset, int floatCount) {
         long bytes = (long) floatCount * 4L;
@@ -168,7 +189,12 @@ public final class PersistentUploadStaging {
             return -1;
         }
         if (writePtr + bytes > capacityBytes) {
+            if (pendingAny && pendingStart < writePtr) {
+                placeFence(pendingStart, writePtr);
+            }
             writePtr = 0;
+            pendingStart = 0;
+            pendingAny = false;
         }
         if (!waitForRange(writePtr, bytes)) {
             return -1;
@@ -179,32 +205,43 @@ public final class PersistentUploadStaging {
         MemoryUtil.memCopy(MemoryUtil.memAddress(view), baseAddr + writePtr, bytes);
         long offset = writePtr;
         writePtr += bytes;
+        maybeFenceChunk();
         pendingAny = true;
         return offset;
     }
 
-    /** GL-идентификатор кольца (SSBO-источник для compute scatter; 0 — недоступно). */
+    /** GL id of the ring (SSBO source for compute scatter; 0 = unavailable). */
     public int getBufferId() {
         return bufferId;
     }
 
-    /** Ёмкость кольца в байтах (0, если staging недоступен). Для F3-метрики VRAM. */
+    /** Ring capacity in bytes (0 if staging is unavailable). Used for the F3 VRAM metric. */
     public long getCapacityBytes() {
         return capacityBytes;
     }
 
-    /** Фенс на всё записанное с прошлого вызова. В конце каждого кадра (present). */
+    /** Fences everything written since the last call. Runs at the end of each frame (present). */
     public void endFrame() {
-        if (!pendingAny) {
-            return;
+        if (pendingAny && pendingStart < writePtr) {
+            placeFence(pendingStart, writePtr);
         }
+        pendingStart = writePtr;
+        pendingAny = false;
+    }
+
+    private void placeFence(long start, long end) {
         long sync = GL32.glFenceSync(GL32.GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
         if (sync != 0L) {
-            // Диапазон фенса — от начала текущего «прогона» до writePtr; для
-            // ожидания достаточно пересечения с [0, writePtr) цикла кольца.
-            fences.add(new FenceRange(sync, 0L, writePtr));
+            fences.add(new FenceRange(sync, start, end));
         }
-        pendingAny = false;
+    }
+
+    /** Intermediate fence of a run: FIFO of short ranges instead of one per frame. */
+    private void maybeFenceChunk() {
+        if (writePtr - pendingStart >= FENCE_GRANULARITY_BYTES) {
+            placeFence(pendingStart, writePtr);
+            pendingStart = writePtr;
+        }
     }
 
     private boolean waitForRange(long start, long len) {

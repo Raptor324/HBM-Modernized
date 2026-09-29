@@ -21,12 +21,12 @@ import com.hbm_m.main.MainRegistry;
 import com.hbm_m.platform.PlatformHooks;
 
 /**
- * Реестр всех фабричных спек станков. Заменяет пер-renderer бойлерплейт:
+ * Registry of all factory machine specs. Replaces per-renderer boilerplate:
  * <ul>
- *   <li>{@link #flushAll(Matrix4f)} — единый instanced-flush (InstancedRenderFrame
- *       зовёт его в AFTER_BLOCK_ENTITIES вместо N хардкодов flushInstancedBatches);</li>
- *   <li>{@link #clearAll()} — единая инвалидация GPU-кешей (вызывается из
- *       {@code com.hbm_m.client.render.cache.RenderCacheManager} на reload/disconnect).</li>
+ *   <li>{@link #flushAll(Matrix4f)} - a single instanced flush (InstancedRenderFrame
+ *       calls it in AFTER_BLOCK_ENTITIES instead of N hardcoded flushInstancedBatches);</li>
+ *   <li>{@link #clearAll()} - a single GPU-cache invalidation (called from
+ *       {@code com.hbm_m.client.render.cache.RenderCacheManager} on reload/disconnect).</li>
  * </ul>
  */
 @OnlyIn(Dist.CLIENT)
@@ -45,7 +45,43 @@ public final class MachineRenderRegistry {
         return Collections.unmodifiableList(SPECS);
     }
 
-    /** Единый instanced-flush всех фабричных станков (render thread, AFTER_BLOCK_ENTITIES). */
+    // ==================== Stress command helpers (/nucleus stress) ====================
+
+    /**
+     * Registry ids of every block handled by a Nucleus machine spec, namespaced
+     * and sorted ("hbm_m:advanced_assembly_machine", ...) - the Brigadier
+     * suggestion source for stress spawn. Real block ids, not internal spec ids.
+     */
+    public static List<String> managedBlockIds() {
+        List<String> out = new ArrayList<>();
+        for (int i = 0; i < SPECS.size(); i++) {
+            MachineSpec<?> spec = SPECS.get(i);
+            for (net.minecraft.world.level.block.Block block : net.minecraft.core.registries.BuiltInRegistries.BLOCK) {
+                if (!isValidFor(block, spec.type())) {
+                    continue;
+                }
+                var key = net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(block);
+                String id = key.getNamespace() + ":" + key.getPath();
+                if (!out.contains(id)) {
+                    out.add(id);
+                }
+            }
+        }
+        java.util.Collections.sort(out);
+        return out;
+    }
+
+    /** Whether this block is rendered through a Nucleus machine spec. */
+    public static boolean isManagedBlock(net.minecraft.world.level.block.Block block) {
+        for (int i = 0; i < SPECS.size(); i++) {
+            if (isValidFor(block, SPECS.get(i).type())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /** Single instanced flush of all factory machines (render thread, AFTER_BLOCK_ENTITIES). */
     public static void flushAll(Matrix4f projection) {
         for (int i = 0; i < SPECS.size(); i++) {
             SPECS.get(i).flush(projection);
@@ -53,10 +89,10 @@ public final class MachineRenderRegistry {
     }
 
     /**
-     * Фаза 2 (после MDI-диспетча): затухающие инстансы прямых путей —
-     * GPU-bones chain-части (Ring/руки сборочных машин) и MDI-fallback.
-     * Порядок «opaque всех путей → fading MDI → fading прямых путей» устраняет
-     * depth-reject полупрозрачной геометрией непрозрачной базы.
+     * Phase 2 (after the MDI dispatch): fading instances of the direct paths -
+     * GPU-bones chain parts (Ring / assembly machine arms) and MDI-fallback.
+     * The order "opaque of all paths -> fading MDI -> fading direct paths"
+     * eliminates opaque geometry being depth-rejected by translucent geometry.
      */
     public static void flushAllFading(Matrix4f projection) {
         for (int i = 0; i < SPECS.size(); i++) {
@@ -65,16 +101,17 @@ public final class MachineRenderRegistry {
     }
 
     /**
-     * Связывает спеки станков с их запечёнными multipart-моделями — вызывается из
-     * ModelEvent.ModifyBakingResult (после бейка, до первого рендера).
+     * Binds machine specs to their baked multipart models - called from
+     * ModelEvent.ModifyBakingResult (after baking, before the first render).
      *
-     * <p>Один проход по карте бейка: каждый {@link ConfiguredMultipartBakedModel}
-     * резолвится в спеку по ключу записи. У направленных машин КАЖДЫЙ вариант
-     * blockstate (facing с y-поворотом) и item-модель ("item/<id>") — ОТДЕЛЬНЫЕ
-     * инстансы, и каждый получает конфиг спеки (berWorld + item-части + render types).
+     * <p>One pass over the bake map: every {@link ConfiguredMultipartBakedModel}
+     * is resolved to a spec by the entry key. For facing machines EACH blockstate
+     * variant (facing with y-rotation) and item model ("item/<id>") is a SEPARATE
+     * instance, and each receives the spec's config (berWorld + item parts +
+     * render types).
      */
     public static void bindBakedModels(java.util.Map<?, BakedModel> models) {
-        // блок (по ns:path реестра) -> спека; предмет блока -> спека
+        // block (by ns:path registry key) -> spec; block item -> spec
         java.util.Map<String, MachineSpec<?>> byBlock = new java.util.HashMap<>();
         java.util.Map<String, MachineSpec<?>> byItem = new java.util.HashMap<>();
         for (int i = 0; i < SPECS.size(); i++) {
@@ -112,7 +149,7 @@ public final class MachineRenderRegistry {
             MachineSpec<?> spec = SPECS.get(i);
             if (!boundCount.containsKey(spec)) {
                 MainRegistry.LOGGER.warn("[MachineRenderers] spec '{}' bound 0 baked models - "
-                        + "мир будет двоиться, item без item-фильтра", spec.id());
+                        + "the world will render doubled, item without an item filter", spec.id());
             }
         }
     }
@@ -127,7 +164,7 @@ public final class MachineRenderRegistry {
         return false;
     }
 
-    /** Единая инвалидация GPU-кешей всех фабричных станков (render thread). */
+    /** Single GPU-cache invalidation of all factory machines (render thread). */
     public static void clearAll() {
         for (int i = 0; i < SPECS.size(); i++) {
             SPECS.get(i).clear();

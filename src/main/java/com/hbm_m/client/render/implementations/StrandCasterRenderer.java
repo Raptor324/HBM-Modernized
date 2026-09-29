@@ -83,7 +83,7 @@ public final class StrandCasterRenderer {
     /** Port of offset = amount/cost * 0.375 (slab shift toward the mold). */
     private static double moldOffset(MachineStrandCasterBlockEntity be) {
         if (be.amount == 0) return 0;
-        int cost = be.getMoldCost();
+        int cost = be.getMoldCostMb();
         return cost > 0 ? (double) be.amount / cost * 0.375 : 0;
     }
 

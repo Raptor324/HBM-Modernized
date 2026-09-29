@@ -34,12 +34,12 @@ public final class RenderDistanceHelper {
     private RenderDistanceHelper() {}
 
     /**
-     * Ширина зоны fade: доля от дистанции отсечки, зажатая сверху разумным
-     * максимумом. Фиксированные 16 блоков читались как мгновенное исчезновение:
-     * на скорости полёта станок пролетает их за доли секунды, а кольцо фейда
-     * стоит на месте — сквозь него «пролетают» ряды ферм, и выглядит это как
-     * поп-отсечка. Пропорция даёт длинное видимое растворение на любой
-     * дистанции (128 блоков → ~38 блоков зоны, 256 → 64).
+     * Fade zone width: a fraction of the cutoff distance, clamped to a sane
+     * maximum. A fixed 16 blocks read as instant disappearance: at flight speed
+     * a machine crosses them in a fraction of a second while the fade ring stays
+     * put - rows of farms "fly through" it, which looks like a pop cutoff.
+     * A proportion gives a long visible dissolution at any distance
+     * (128 blocks -> ~38 block zone, 256 -> 64).
      */
     private static final double FADE_ZONE_FRACTION = 0.3;
     private static final double FADE_ZONE_MIN_BLOCKS = 16.0;
@@ -113,6 +113,12 @@ public final class RenderDistanceHelper {
         return computeAnimatedFade(blockEntity.getBlockPos());
     }
 
+    /** Variant taking a precomputed distance - no repeated camera fetch (Nucleus hot path). */
+    public static float computeAnimatedFade(BlockEntity blockEntity, double distSq) {
+        if (ContraptionRenderCompat.isContraptionRender(blockEntity)) return 1.0f;
+        return computeFade(blockEntity.getBlockPos(), getAnimatedDistanceBlocks(), distSq);
+    }
+
     /**
      * Computes a fade factor for static parts at the given position.
      */
@@ -128,6 +134,12 @@ public final class RenderDistanceHelper {
         return computeStaticFade(blockEntity.getBlockPos());
     }
 
+    /** Variant taking a precomputed distance - no repeated camera fetch (Nucleus hot path). */
+    public static float computeStaticFade(BlockEntity blockEntity, double distSq) {
+        if (ContraptionRenderCompat.isContraptionRender(blockEntity)) return 1.0f;
+        return computeFade(blockEntity.getBlockPos(), getStaticDistanceBlocks(), distSq);
+    }
+
     /**
      * Core fade calculation.
      *
@@ -137,7 +149,12 @@ public final class RenderDistanceHelper {
      */
     public static float computeFade(BlockPos blockPos, double maxBlocks) {
         if (maxBlocks <= 0) return -1f;
-        double distSq = distanceSqToCamera(blockPos);
+        return computeFade(blockPos, maxBlocks, distanceSqToCamera(blockPos));
+    }
+
+    /** Core fade calculation with a precomputed distance - does not read the camera itself. */
+    public static float computeFade(BlockPos blockPos, double maxBlocks, double distSq) {
+        if (maxBlocks <= 0) return -1f;
         double maxSq = maxBlocks * maxBlocks;
         if (distSq > maxSq) return -1f;
 

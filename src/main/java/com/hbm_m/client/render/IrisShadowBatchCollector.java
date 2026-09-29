@@ -47,6 +47,10 @@ import net.minecraft.client.renderer.ShaderInstance;
  */
 public final class IrisShadowBatchCollector {
 
+    /** Emergency JVM override -Dhbm.shadowInstancing=false; the config nucleusShadowInstancing is the primary source. */
+    private static final boolean SHADOW_INSTANCING_FLAG =
+            !"false".equalsIgnoreCase(System.getProperty("hbm.shadowInstancing", "true"));
+
     /** Floats per instance record — matches instanced data layout. */
     private static final int FLOATS_PER_INSTANCE = InstancedStaticPartRenderer.INSTANCE_DATA_SIZE;
     private static final int GROW_INSTANCES = 256;
@@ -76,8 +80,8 @@ public final class IrisShadowBatchCollector {
     }
 
     private static final List<Entry> ENTRIES = new ArrayList<>(64);
-    /** Identity-индексы над ENTRIES: record() — горячий путь (тысячи/кадр),
-     *  прежний линейный скан давал O(entries) на каждую запись (аудит 0925). */
+    /** Identity indices over ENTRIES: record() is the hot path (thousands per frame);
+     *  the previous linear scan cost O(entries) per record (audit 0925). */
     private static final java.util.IdentityHashMap<InstancedStaticPartRenderer, Entry> BY_RENDERER =
             new java.util.IdentityHashMap<>(64);
     private static final java.util.IdentityHashMap<IrisCompanionMesh, Entry> BY_MESH =
@@ -168,7 +172,7 @@ public final class IrisShadowBatchCollector {
             ENTRIES.add(e);
             BY_MESH.put(companion, e);
         }
-        // Custom mesh: renderer == null → identity uvRect (атласные UV).
+        // Custom mesh: renderer == null -> identity uvRect (atlas UVs).
         appendRecord(e, null, fullTransform, null, null);
     }
 
@@ -210,29 +214,35 @@ public final class IrisShadowBatchCollector {
                 d.put(0.0f);
             }
         }
-        // Floats 30..33: InstUvRect (identity для обычных машин; layout обязан
-        // совпадать с InstancedStaticPartRenderer.INSTANCE_DATA_SIZE).
+        // Floats 30..33: InstUvRect (identity for regular machines; the layout must
+        // match InstancedStaticPartRenderer.INSTANCE_DATA_SIZE).
         float[] uvRect = (renderer != null) ? renderer.getActiveUvRect() : null;
         if (uvRect != null && uvRect.length >= 4) {
             d.put(uvRect[0]).put(uvRect[1]).put(uvRect[2]).put(uvRect[3]);
         } else {
             d.put(0.0f).put(0.0f).put(1.0f).put(1.0f);
         }
-        // Floats 34..37: InstColor (теневому FB цвет не нужен; важно только
-        // выравнивание стрида рекорда с инстанс-раскладкой, читаемой VAO).
+        // Floats 34..37: InstColor (the shadow FB does not use color; only the record
+        // stride alignment with the VAO-read instance layout matters).
         float[] tint = (renderer != null) ? renderer.getActiveTint() : null;
         if (tint != null && tint.length >= 4) {
             d.put(tint[0]).put(tint[1]).put(tint[2]).put(tint[3]);
         } else {
             d.put(1.0f).put(1.0f).put(1.0f).put(1.0f);
         }
-        // Floats 38..41: GradParams (axis<0 = off; стрид-выравнивание, как у InstColor).
+        // Floats 38..41: GradParams (axis<0 = off; stride alignment as with InstColor).
         float[] grad = (renderer != null) ? renderer.getActiveGrad() : null;
         if (grad != null && grad.length >= 4) {
             d.put(grad[0]).put(grad[1]).put(grad[2]).put(grad[3]);
         } else {
             d.put(-1.0f).put(0.0f).put(0.0f).put(0.0f);
         }
+        // Floats 42..45: AnimParams (w = -1 = no parametric joint). The Iris shadow path
+        // animates on the CPU (MachineBer.isParametricPath is disabled there), so the joint
+        // motion is already baked into fullTransform; the stride must still match the
+        // VAO-read instance layout (46 floats), or Tier 1/2 uploads and the Tier 3
+        // record walk run past the buffer.
+        d.put(0.0f).put(0.0f).put(0.0f).put(-1.0f);
         e.count++;
         com.hbm_m.client.render.NucleusDebug.recordShadowRecord(1);
     }
@@ -293,7 +303,8 @@ public final class IrisShadowBatchCollector {
 
             int drawCalls = 0;
             int total = 0;
-            boolean instancedSafe = !"false".equalsIgnoreCase(System.getProperty("hbm.shadowInstancing", "true"))
+            boolean instancedSafe = com.hbm_m.config.ModClothConfig.get().nucleusShadowInstancing
+                    && SHADOW_INSTANCING_FLAG
                     && com.hbm_m.client.render.shader.IrisShadowDistortion.isCompatible();
             if (ours != null && instancedSafe) {
                 try (IrisPhaseGuard guard = IrisPhaseGuard.pushBlockEntities()) {

@@ -26,31 +26,36 @@ import org.slf4j.Logger;
 import com.mojang.logging.LogUtils;
 
 /**
- * Compute scatter uploader: консолидирует N мелких копий staging-ring → dest-VBO
- * в одну compute-диспетчу (Phase 4 roadmap, паттерн scatter.glsl CrankShaft).
+ * Compute scatter uploader: consolidates N small staging-ring -> dest-VBO copies
+ * into a single compute dispatch (Phase 4 roadmap, the scatter.glsl pattern of CrankShaft).
  * <p>
- * Порог включения — в {@link GpuSpanUploader}: массовые burst-апдейты (TTL
- * re-collect, мега-базы) дают десятки span-ов на flush; каждый span через
- * {@code glCopyBufferSubData} — это отдельный driver-вызов. Одна диспетча
- * заменяет их все: ops-SSBO (16 байт на копию) + staging ring как SSBO-источник
- * + dest VBO как SSBO-приёмник.
+ * The enable threshold lives in {@link GpuSpanUploader}: bulk burst updates (TTL
+ * re-collect, mega-bases) produce dozens of spans per flush; each span via
+ * {@code glCopyBufferSubData} is a separate driver call. One dispatch replaces
+ * them all: ops SSBO (16 bytes per copy) + the staging ring as SSBO source
+ * + the dest VBO as SSBO sink.
  * <p>
- * Гейты: GL 4.3 compute (или ARB_compute_shader + SSBO), не Intel iGPU
- * (unified memory — DMA-путь безопаснее и не медленнее), kill-switch
- * {@code -Dhbm.gpuScatter=false}. Барьер после диспетчи открывает dest VBO
- * для последующего использования как vertex-атрибута.
+ * Gates: GL 4.3 compute (or ARB_compute_shader + SSBO), not an Intel iGPU
+ * (unified memory - the DMA path is safer and no slower), kill-switch
+ * {@code -Dhbm.gpuScatter=false}. The barrier after the dispatch makes the dest VBO
+ * available for subsequent use as a vertex attribute.
  */
 @OnlyIn(Dist.CLIENT)
 public final class ComputeScatterUploader {
     private static final Logger LOGGER = LogUtils.getLogger();
 
-    /** Максимум копий в одной диспетче (размер ops-SSBO). */
+    /** Maximum copies in a single dispatch (ops SSBO size). */
     private static final int MAX_OPS = 64;
     /** Struct CopyOp: 4 × uint. */
     private static final int OP_BYTES = 16;
 
-    private static final boolean ENABLED =
+    /** Emergency JVM override -Dhbm.gpuScatter=false; the config nucleusGpuScatter is the primary source. */
+    private static final boolean SCATTER_FLAG =
             !"false".equalsIgnoreCase(System.getProperty("hbm.gpuScatter", "true"));
+
+    private static boolean enabled() {
+        return com.hbm_m.config.ModClothConfig.get().nucleusGpuScatter && SCATTER_FLAG;
+    }
 
     private static ComputeScatterUploader instance;
     private static boolean resolved = false;
@@ -63,20 +68,20 @@ public final class ComputeScatterUploader {
     private ComputeScatterUploader() {}
 
     /**
-     * Системное свойство kill-switch; пороги спанов/байт лежат в
-     * {@link GpuSpanUploader} (там контекст flush'а).
+     * System-property kill-switch; span/byte thresholds live in
+     * {@link GpuSpanUploader} (the flush context is there).
      */
     public static boolean isGloballyEnabled() {
-        return ENABLED;
+        return enabled();
     }
 
-    /** null = scatter недоступен (не GL 4.3, Intel iGPU, компиляция упала) — идти DMA-путём. */
+    /** null = scatter unavailable (no GL 4.3, Intel iGPU, compilation failed) - use the DMA path. */
     public static ComputeScatterUploader getOrCreate() {
         if (resolved) {
             return instance;
         }
         resolved = true;
-        if (!ENABLED || !hardwareCapable()) {
+        if (!enabled() || !hardwareCapable()) {
             return null;
         }
         try {
@@ -100,8 +105,8 @@ public final class ComputeScatterUploader {
                     || !(caps.OpenGL43 || caps.GL_ARB_shader_storage_buffer_object)) {
                 return false;
             }
-            // Intel iGPU: unified memory, scatter не даёт выигрыша и рискует
-            // ring-bus статьями — оставляем DMA-путь (паттерн CrankShaft).
+            // Intel iGPU: unified memory, scatter gains nothing and risks
+            // ring-bus stalls - keep the DMA path (CrankShaft pattern).
             if (isIntelGpu()) {
                 return false;
             }
@@ -174,13 +179,13 @@ public final class ComputeScatterUploader {
     }
 
     /**
-     * Выполняет одну scatter-диспетчу: {@code opCount} копий word-выровненных
-     * диапазонов из {@code srcBufferId} (staging ring) в {@code destVbo}.
+     * Runs a single scatter dispatch: {@code opCount} copies of word-aligned
+     * ranges from {@code srcBufferId} (staging ring) into {@code destVbo}.
      *
-     * @param ops triplets {@code [srcWord, dstWord, words] × opCount} (4-байтное
-     *            выравнивание обязательно — все offset'ы происходят из float-смещений)
-     * @return true — диспетча выпущена (вызывающий синхронизирует shadow);
-     *         false — диспетча не выпущена, вызывающий идёт per-span путём.
+     * @param ops triplets {@code [srcWord, dstWord, words] x opCount} (4-byte
+     *            alignment required - all offsets originate from float offsets)
+     * @return true if the dispatch was issued (the caller syncs the shadow);
+     *         false if not issued, the caller falls back to the per-span path.
      */
     public boolean scatter(int srcBufferId, int destVbo, long[] ops, int opCount) {
         if (programId <= 0 || opsSsbo <= 0 || srcBufferId <= 0 || destVbo <= 0
@@ -213,8 +218,8 @@ public final class ComputeScatterUploader {
         GL20.glUseProgram(programId);
         GL43.glDispatchCompute(opCount, 1, 1);
 
-        // Dest VBO далее используется как vertex-атрибут и читается копиями/SSBO —
-        // без барьера compute-записи не видны последующим командам.
+        // The dest VBO is later used as a vertex attribute and read by copies/SSBOs -
+        // without a barrier the compute writes are invisible to subsequent commands.
         GL42.glMemoryBarrier(GL42.GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT
                 | GL43.GL_SHADER_STORAGE_BARRIER_BIT
                 | GL43.GL_BUFFER_UPDATE_BARRIER_BIT);

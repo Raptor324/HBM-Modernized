@@ -13,12 +13,13 @@ import com.hbm_m.lib.RefStrings;
 
 public class MachineBatterySocketModelLoader extends AbstractObjPartModelLoader<MachineBatterySocketBakedModel> {
 
-    public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "battery_socket");
+    public static final ResourceLocation ID = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "battery_socket_loader");
 
 
     @Override
     protected Set<String> getPartNames(JsonObject jsonObject) {
-        return Set.of("Socket", "Battery");
+        // Capacitor печётся всегда: вставленный конденсаторный пак рендерится этой частью.
+        return Set.of("Socket", "Battery", "Capacitor");
     }
 
     @Override

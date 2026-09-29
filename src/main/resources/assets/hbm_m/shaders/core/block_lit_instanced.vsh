@@ -1,8 +1,8 @@
 #version 330 core
-// Дедикатный инстансный исходник: defines заданы дефолтом прямо здесь (и дублируются
-// инжектом из ClientSetup.ShaderPreDefinitions). Раньше регистрация редиректила это
-// имя на block_lit.vsh — атрибуты InstUvRect/InstColor/GradParams выпадали из
-// компиляции (на фордже: без тинта частей + молча отключённый шеринг скинов дверей).
+// Dedicated instanced source: defines are set by default right here (and duplicated
+// by the injection from ClientSetup.ShaderPreDefinitions). Registration used to
+// redirect this name to block_lit.vsh, so the InstUvRect/InstColor/GradParams
+// attributes were compiled out (on Forge: no part tint + silently disabled door skin sharing).
 #ifndef USE_INSTANCING
 #define USE_INSTANCING
 #endif
@@ -15,8 +15,8 @@ layout(location = 1) in vec3 Normal;
 layout(location = 2) in vec2 UV0;
 
 #ifdef USE_INSTANCING
-// int bone_id: СЂРµР·РµСЂРІ РїРѕРґ merged mesh / РґРѕРєСѓРјРµРЅС‚Р°С†РёСЏ РёРµСЂР°СЂС…РёРё (СЃРј. OLD/render.md).
-// РџРѕР»РЅС‹Р№ pose С‡Р°СЃС‚Рё Р·Р°РґР°С‘С‚СЃСЏ РІ InstPos/InstRot (CPU), UBO/SSBO РІ VS РЅРµ РёСЃРїРѕР»СЊР·СѓРµРј вЂ” СЃРѕРІРјРµСЃС‚РёРјРѕСЃС‚СЊ СЃ Oculus/Iris.
+// int bone_id: reserved for merged mesh / hierarchy documentation (see OLD/render.md).
+// Full part pose comes via InstPos/InstRot (CPU); no UBO/SSBO in the VS - Oculus/Iris compatibility.
 #ifdef USE_VERTEX_BONE_ID
 layout(location = 3) in int BoneId;
 layout(location = 4) in vec3 InstPos;
@@ -28,15 +28,20 @@ layout(location = 8)  in vec4 InstLightC01;  // corner0.uv, corner1.uv
 layout(location = 9)  in vec4 InstLightC23;
 layout(location = 10) in vec4 InstLightC45;
 layout(location = 11) in vec4 InstLightC67;
-// Sprite-rect ремап: UV вершин в sprite-local [0..1] → атлас (u0 + uv*du).
-// Identity (0,0,1,1) для машин с атласными UV — обычный passthrough.
+// Sprite-rect remap: vertex UV from sprite-local [0..1] to the atlas (u0 + uv*du).
+// Identity (0,0,1,1) for machines with atlas UVs - plain passthrough.
 layout(location = 12) in vec4 InstUvRect;
-// Per-instance RGBA-тинт (накал/свечение частей; RGB может быть > 1 — overbright).
-// White = passthrough; указатель настроен в InstancedStaticPartRenderer (VAO, divisor 1).
+// Per-instance RGBA tint (part heat/glow; RGB may exceed 1 - overbright).
+// White = passthrough; the pointer is set up in InstancedStaticPartRenderer (VAO, divisor 1).
 layout(location = 13) in vec4 InstColor;
-// Пространственный фоллофф тинта в модельных координатах: x = ось (0/1/2, <0 = off),
-// y = координата полного тинта, z = координата нуля (плавный smoothstep между ними).
+// Spatial tint falloff in model coordinates: x = axis (0/1/2, <0 = off),
+// y = coordinate of full tint, z = coordinate of zero (smooth smoothstep between them).
 layout(location = 14) in vec4 GradParams;
+// Parametric GPU animation (MachineSpecBuilder.parametricPart): xyz = joint
+// parameters (angle in degrees / translation distance), w = joint index into the global
+// RGBA32F texture NucleusJointSpecs (2 texels: kind+axis, pivot). w < 0 = part without
+// parametrics - no delta applied, the CPU record stays static.
+layout(location = 15) in vec4 AnimParams;
 #else
 layout(location = 3)  in vec3 InstPos;
 layout(location = 4)  in vec4 InstRot;
@@ -53,6 +58,9 @@ layout(location = 11) in float InstFadeAlpha;
 uniform mat4 ModelViewMat;
 uniform mat4 ProjMat;
 uniform float FadeAlpha;
+// Parametric joint specifications (RGBA32F, 2 texels per joint, texelFetch
+// by AnimParams.w): bound by NucleusJointSpecs.bindSampler to unit 3.
+uniform sampler2D uJointSpecs;
 
 // 8-corner trilinear lightmap uniforms (used by the non-instanced path).
 // Corner index encoding matches LightSampleCache.getOrSample8:
@@ -69,11 +77,11 @@ out vec2 texCoord;
 out vec2 lightmapUV;
 out float vertexDistance;
 out vec3 fragNormal;
-// РњРёСЂРѕРІР°СЏ РЅРѕСЂРјР°Р»СЊ (РїРѕРІРѕСЂРѕС‚ РёРЅСЃС‚Р°РЅСЃР°/РјРѕРґРµР»Рё Р±РµР· view-РјР°С‚СЂРёС†С‹) РґР»СЏ РЅР°РїСЂР°РІР»РµРЅРЅРѕРіРѕ Р·Р°С‚РµРЅРµРЅРёСЏ.
+// World normal (instance/model rotation without view matrix) for directional shading.
 out vec3 worldNormal;
 // Per-vertex fade: InstBboxSize.w when instancing (batched flush reads stale uniform otherwise).
 out float vFadeAlpha;
-// Per-instance тинт части (см. MachineSpecBuilder.tintOverride).
+// Per-instance part tint (see MachineSpecBuilder.tintOverride).
 out vec4 vColor;
 
 #ifdef USE_INSTANCING
@@ -120,6 +128,35 @@ vec2 trilinearLightUv(vec3 w, vec4 c01, vec4 c23, vec4 c45, vec4 c67) {
 }
 
 void main() {
+    vec3 vPos = Position;
+    vec3 vNrm = Normal;
+
+#ifdef USE_INSTANCING
+#ifdef USE_VERTEX_BONE_ID
+    // Parametric GPU animation: joint delta in LOCAL part coordinates,
+    // BEFORE the world record (InstPos/InstRot). The CPU does not rebuild the
+    // record - the span diff sees only 4 parameter floats (a frozen part costs
+    // zero upload). Rotation is Rodrigues' formula around the normalized axis.
+    if (AnimParams.w >= 0.0) {
+        vec4 specA = texelFetch(uJointSpecs, ivec2(int(AnimParams.w) * 2, 0), 0);
+        vec4 specB = texelFetch(uJointSpecs, ivec2(int(AnimParams.w) * 2 + 1, 0), 0);
+        float kind = specA.x;
+        vec3 axis = specA.yzw;
+        vec3 pivot = specB.xyz;
+        if (kind < 0.5) {
+            float ang = radians(AnimParams.x);
+            float c = cos(ang);
+            float s = sin(ang);
+            vec3 p = vPos - pivot;
+            vPos = pivot + p * c + cross(axis, p) * s + axis * dot(axis, p) * (1.0 - c);
+            vNrm = vNrm * c + cross(axis, vNrm) * s + axis * dot(axis, vNrm) * (1.0 - c);
+        } else {
+            vPos += axis * AnimParams.x;
+        }
+    }
+#endif
+#endif
+
     mat4 modelView;
     mat4 worldRot = mat4(1.0);
     vec3 bboxMin;
@@ -133,10 +170,10 @@ void main() {
     mat4 rotMatrix = quatToMat4(InstRot);
     mat4 translation = mat4(1.0);
     translation[3] = vec4(InstPos, 1.0);
-    // InstPos/InstRot вЂ” РњРР РћР’Р«Р• РєРѕРѕСЂРґРёРЅР°С‚С‹ (FrameViewState): РґРІРёР¶РµРЅРёРµ РєР°РјРµСЂС‹ РЅРµ
-    // РјРµРЅСЏРµС‚ Р·Р°РїРёСЃРё (span-РґРёС„С„ РґР°С‘С‚ РЅСѓР»РµРІРѕР№ Р°РїР»РѕР°Рґ СЃС‚Р°С‚РёС‡РЅРѕР№ СЃС†РµРЅС‹). РљР°РјРµСЂР°
-    // (R_camВ·T(-cam)) РїСЂРёС…РѕРґРёС‚ С‡РµСЂРµР· ModelViewMat в†’ viewPos РѕСЃС‚Р°С‘С‚СЃСЏ view-space,
-    // С‚СѓРјР°РЅ/РіР»СѓР±РёРЅР° РЅРµ РјРµРЅСЏСЋС‚СЃСЏ.
+    // InstPos/InstRot are WORLD coordinates (FrameViewState): camera movement
+    // does not change the records (span diff yields zero upload for a static scene).
+    // Camera (R_cam*T(-cam)) comes via ModelViewMat, so viewPos stays view-space;
+    // fog/depth are unaffected.
     mat4 instBase = translation * rotMatrix;
     modelView = ModelViewMat * instBase;
     worldRot = rotMatrix;
@@ -147,9 +184,9 @@ void main() {
     lc45 = InstLightC45;
     lc67 = InstLightC67;
 
-    // РњРёСЂРѕРІР°СЏ РЅРѕСЂРјР°Р»СЊ С‡Р°СЃС‚Рё (Р±РµР· view-СЂРѕС‚Р°С†РёРё) вЂ” РґР»СЏ Р·Р°С‚РµРЅРµРЅРёСЏ; fragNormal
-    // СЃРѕС…СЂР°РЅСЏРµС‚ РїСЂРµР¶РЅСЋСЋ СЃРµРјР°РЅС‚РёРєСѓ (СЂРѕС‚Р°С†РёСЏ РёРЅСЃС‚Р°РЅСЃР°, Р±РµР· РєР°РјРµСЂС‹).
-    fragNormal = mat3(instBase) * Normal;
+    // Part world normal (no view rotation) - for shading; fragNormal keeps
+    // its previous semantics (instance rotation, camera-independent).
+    fragNormal = mat3(instBase) * vNrm;
 #else
     modelView = ModelViewMat;
     bboxMin = BboxMin;
@@ -162,29 +199,29 @@ void main() {
     fragNormal = mat3(modelView) * Normal;
 #endif
 
-    // РњРёСЂРѕРІР°СЏ РЅРѕСЂРјР°Р»СЊ: С‚РѕР»СЊРєРѕ РїРѕРІРѕСЂРѕС‚ РёРЅСЃС‚Р°РЅСЃР° (РёР»Рё identity РґР»СЏ РЅРµ-instanced РїСѓС‚Рё),
-    // Р±РµР· view-РјР°С‚СЂРёС†С‹ вЂ” Р·Р°С‚РµРЅРµРЅРёРµ РЅРµ Р·Р°РІРёСЃРёС‚ РѕС‚ РїРѕРІРѕСЂРѕС‚Р° РєР°РјРµСЂС‹.
-    worldNormal = mat3(worldRot) * Normal;
+    // World normal: instance rotation only (or identity for the non-instanced path),
+    // no view matrix - shading is camera-rotation independent.
+    worldNormal = mat3(worldRot) * vNrm;
 
     // Safeguard: when bboxSize has a zero axis the division below would NaN the
     // whole vertex. Clamp to a tiny epsilon per-axis so degenerate meshes still
     // render (with a uniform brightness collapsing all corners to one value).
     vec3 safeSize = max(bboxSize, vec3(1e-4));
-    vec3 w = clamp((Position - bboxMin) / safeSize, 0.0, 1.0);
+    vec3 w = clamp((vPos - bboxMin) / safeSize, 0.0, 1.0);
 
     vec2 uvLm = trilinearLightUv(w, lc01, lc23, lc45, lc67);
 
-    vec4 viewPos = modelView * vec4(Position, 1.0);
+    vec4 viewPos = modelView * vec4(vPos, 1.0);
     gl_Position = ProjMat * viewPos;
 
-    // Пространственный фоллофф тинта + эмиссия: gt — вес градиента (1 у источника,
-    // 0 на дальнем конце, smoothstep); vColor = mix(white, tint, gt); lightmap
-    // доворачивается к fullbright на InstColor.a (heat) * gt — свечение следует
-    // тинту по всей текстуре (раскалённый металл), см. MachineSpecBuilder.tintOverride.
+    // Spatial tint falloff + emission: gt = gradient weight (1 at the source,
+    // 0 at the far end, smoothstep); vColor = mix(white, tint, gt); the lightmap
+    // is pushed toward fullbright by InstColor.a (heat) * gt - the glow follows
+    // the tint across the whole texture (hot metal), see MachineSpecBuilder.tintOverride.
     float glow = 0.0;
     vColor = InstColor;
     if (GradParams.x >= 0.0) {
-        float gCoord = GradParams.x < 0.5 ? Position.x : (GradParams.x < 1.5 ? Position.y : Position.z);
+        float gCoord = GradParams.x < 0.5 ? vPos.x : (GradParams.x < 1.5 ? vPos.y : vPos.z);
         float gt = clamp((gCoord - GradParams.z) / (GradParams.y - GradParams.z), 0.0, 1.0);
         gt = gt * gt * (3.0 - 2.0 * gt);
         vColor = mix(vec4(1.0), InstColor, gt);
@@ -197,7 +234,7 @@ void main() {
 #else
     texCoord = UV0;
 #endif
-    // Center within the 16Г—16 lightmap cell like vanilla block UV2 в†’ texcoord.
+    // Center within the 16x16 lightmap cell like vanilla block UV2 -> texcoord.
     lightmapUV = (uvLm + vec2(8.0)) / 256.0;
     vertexDistance = length(viewPos.xyz);
 
