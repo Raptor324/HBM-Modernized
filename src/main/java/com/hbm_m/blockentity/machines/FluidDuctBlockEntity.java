@@ -34,7 +34,6 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
 //? if forge {
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
  //?}
 
  /**
@@ -161,7 +160,6 @@ public class FluidDuctBlockEntity extends BaseHbmBlockEntity implements IFluidPi
         }
     }
 
-    //? if forge || neoforge {
     @Override
     public void onLoad() {
         super.onLoad();
@@ -186,7 +184,6 @@ public class FluidDuctBlockEntity extends BaseHbmBlockEntity implements IFluidPi
             FluidDuctBlock.refreshAdjacentDucts(level, worldPosition);
         }
     }
-    //?}
 
 
     @Override
@@ -199,7 +196,6 @@ public class FluidDuctBlockEntity extends BaseHbmBlockEntity implements IFluidPi
         super.setRemoved();
     }
 
-    //? if forge || neoforge {
     @Override
     public void onChunkUnloaded() {
         if (level instanceof ServerLevel serverLevel && node != null && !node.isExpired()) {
@@ -209,7 +205,6 @@ public class FluidDuctBlockEntity extends BaseHbmBlockEntity implements IFluidPi
         adapterCache.clear();
         super.onChunkUnloaded();
     }
-    //?}
 
     // =====================================================================================
     // Tick — регистрация Forge-машин в сети
@@ -280,14 +275,7 @@ public class FluidDuctBlockEntity extends BaseHbmBlockEntity implements IFluidPi
      * на Fabric — через Fabric Transfer API FluidStorage.SIDED.
      */
     private static boolean checkNeighborFluidHandler(Level level, BlockEntity neighbor, Direction side) {
-        //? if forge {
-        return neighbor.getCapability(ForgeCapabilities.FLUID_HANDLER, side).isPresent();
-         //?}
-        //? if neoforge {
-        /*// NeoForge 1.21.1: FluidHandler.BLOCK через level.getCapability (BlockEntity.getCapability убран).
-        return level.getCapability(net.neoforged.neoforge.capabilities.Capabilities.FluidHandler.BLOCK,
-                neighbor.getBlockPos(), neighbor.getBlockState(), neighbor, side) != null;
-        *///?}
+        return com.hbm_m.api.fluids.FluidCapabilityAccess.hasFluidHandler(level, neighbor.getBlockPos(), side);
     }
 
     // =====================================================================================
@@ -337,9 +325,7 @@ public class FluidDuctBlockEntity extends BaseHbmBlockEntity implements IFluidPi
      */
     private void refreshClientTintMesh() {
         if (level == null || !level.isClientSide) return;
-        //? if forge || neoforge {
         requestModelDataUpdate();
-        //?}
         level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_IMMEDIATE);
         DoorChunkInvalidationHelper.scheduleChunkInvalidation(worldPosition);
     }

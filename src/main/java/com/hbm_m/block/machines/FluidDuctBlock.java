@@ -15,10 +15,8 @@ import org.jetbrains.annotations.Nullable;
 
 import com.google.common.collect.ImmutableMap;
 import com.hbm_m.api.fluids.HbmFluidRegistry;
-import com.hbm_m.api.fluids.IFluidStandardReceiverMK2;
 import com.hbm_m.api.fluids.VanillaFluidEquivalence;
 import com.hbm_m.blockentity.machines.FluidDuctBlockEntity;
-import com.hbm_m.blockentity.machines.MachineChemicalPlantBlockEntity;
 import com.hbm_m.blockentity.machines.MachineFluidTankBlockEntity;
 import com.hbm_m.blockentity.machines.UniversalMachinePartBlockEntity;
 import com.hbm_m.client.render.DoorChunkInvalidationHelper;
@@ -281,51 +279,13 @@ public class FluidDuctBlock extends BaseEntityBlock implements ILookOverlay {
             if (be instanceof UniversalMachinePartBlockEntity part
                     && part.getControllerPos() != null
                     && (part.getPartRole() == PartRole.FLUID_CONNECTOR || part.getPartRole() == PartRole.UNIVERSAL_CONNECTOR)) {
-                // Проверка стороны коннектора: если набор задан, пусто трактуем как "все стороны" (совместимость IMultiblockPart).
-                var allowed = part.getAllowedFluidSides();
-                if (allowed != null && !allowed.isEmpty() && !allowed.contains(direction.getOpposite())) {
-                    return false;
-                }
-                BlockEntity ctrl = level.getBlockEntity(part.getControllerPos());
-                if (ctrl == null) return false;
-
-                // Химическая установка: коннект трубы визуально не фильтруем по краске/наличию рецепта
-                // (входные жидкости задаются рецептом; см. MachineChemicalPlantBlockEntity#getActiveFluidInputSlotCount).
-                if (ctrl instanceof MachineChemicalPlantBlockEntity) {
-                    return true;
-                }
-
-                // Цистерна: более строгая визуальная логика (не показываем "руку" пока тип не задан/не залит)
-                if (ctrl instanceof MachineFluidTankBlockEntity tank) {
-                    if (ductFluid == Fluids.EMPTY) return true;
-                    return ductFluidMatchesTankForVisual(ductFluid, tank);
-                }
-
-                // Остальные MK2-контроллеры (например Crystallizer):
-                // визуальное соединение нельзя определять через Forge fill(SIMULATE), потому что
-                // полностью заполненный бак вернёт 0 и труба визуально "отлипнет" после перезахода,
-                // хотя сеть и тип жидкости корректные. Для MK2 сверяем именно ожидаемый тип бака.
-                if (ctrl instanceof IFluidStandardReceiverMK2 receiver) {
-                    if (ductFluid == Fluids.EMPTY) return true;
-                    FluidTank[] receiving = receiver.getReceivingTanks();
-                    if (receiving == null) return false;
-                    for (FluidTank tank : receiving) {
-                        if (tank == null) continue;
-                        Fluid expected = normalizeDuctPaintFluid(tank.getTankType());
-                        if (expected != null
-                                && expected != Fluids.EMPTY
-                                && VanillaFluidEquivalence.sameSubstance(ductFluid, expected)) {
-                            return true;
-                        }
-                    }
-                    return false;
-                }
-
-                // Остальные контроллеры (не MK2): судим по наличию жидкостного хендлера у самого
-                // контроллера. Раньше здесь стоял forge-only fill(SIMULATE), и на NeoForge управление
-                // проваливалось вниз, где проверяется уже соседний блок, а не контроллер.
-                return com.hbm_m.api.fluids.FluidCapabilityAccess.hasFluidHandler(
-                        level, part.getControllerPos(), direction.getOpposite());
+                // Паритет 1.7.10 (Library.canConnectFluid): визуальный коннект решает canConnect
+                // САМОГО коннектора-соседа. У частей он безусловен по типу (UniversalMachinePartBlockEntity
+                // #canConnect проверяет только роль и разрешённые стороны) — какой тип у трубы и у баков
+                // мультиблока, неважно; тип гейтит лишь саму передачу (per-type сети + demand баков).
+                // Раньше здесь тип трубы сверялся с receiving-баками контроллера, из-за чего кровяная
+                // труба не липла к турбине (приёмный бак только керосиновый), хотя передача работала.
+                return part.canConnect(ductFluid, direction.getOpposite());
             }
 
             // Паритет 1.7.10: TileEntityBarrel#canConnect — труба коннектится к бочке только

@@ -91,9 +91,6 @@ public class MachineFluidTankBlockEntity extends BaseHbmBlockEntity implements M
     private byte lastRedstone = 0;
     private int age = 0;
 
-    @Nullable
-    private Fluid filterFluid = null;
-
     private final FluidTank fluidTank;
     private final ModItemStackHandler itemHandler;
     protected final ContainerData data;
@@ -142,9 +139,6 @@ public class MachineFluidTankBlockEntity extends BaseHbmBlockEntity implements M
                     case 3: return hasExploded ? 1 : 0;
                     case 4: return onFire ? 1 : 0;
                     case 5: return fluidTank.getPressure();
-                    case 6:
-                        if (filterFluid == null || filterFluid == Fluids.EMPTY) return -1;
-                        return BuiltInRegistries.FLUID.getId(filterFluid);
                     default: return 0;
                 }
             }
@@ -157,7 +151,7 @@ public class MachineFluidTankBlockEntity extends BaseHbmBlockEntity implements M
                 }
             }
             @Override
-            public int getCount() { return 7; }
+            public int getCount() { return 6; }
         };
 
         //? if forge {
@@ -177,8 +171,9 @@ public class MachineFluidTankBlockEntity extends BaseHbmBlockEntity implements M
 
     // =====================================================================================
     // IFluidStandardTransceiverMK2 — нативное участие в MK2-сети.
-    // Mode: 0=drain only (отдача в сеть), 1=fill+drain буфер, 2=fill only (приём из сети), 3=lock.
-    // Совпадает с gui.hbm_m.fluid_tank.mode.*: 0 Output only, 2 Input only (подписи раньше были перепутаны).
+    // Mode (1:1 с 1.7.10 TileEntityMachineFluidTank): 0=fill only (приём из сети),
+    // 1=fill+drain буфер, 2=drain only (отдача в сеть), 3=lock.
+    // Совпадает с gui.hbm_m.fluid_tank.mode.*: 0 Input only, 2 Output only.
     // Приоритет: режим 1 (буфер) → LOW, чтобы обычные приёмники забирали жидкость первыми
     // (как 1.7.10 TileEntityMachineFluidTank#getFluidPriority).
     // =====================================================================================
@@ -189,23 +184,23 @@ public class MachineFluidTankBlockEntity extends BaseHbmBlockEntity implements M
     @Override
     public FluidTank[] getAllTanks() { return new FluidTank[]{ fluidTank }; }
 
-    /** В сеть сливаем, если режим разрешает drain (0/1) и взорванный — нет. */
+    /** В сеть сливаем, если режим разрешает drain (1/2) и взорванный — нет. */
     @Override
     public FluidTank[] getSendingTanks() {
-        if (hasExploded || mode == 2 || mode == 3) return EMPTY_TANKS;
+        if (hasExploded || mode == 0 || mode == 3) return EMPTY_TANKS;
         return new FluidTank[]{ fluidTank };
     }
 
-    /** Из сети принимаем, если режим разрешает fill (1/2) и взорванный — нет. */
+    /** Из сети принимаем, если режим разрешает fill (0/1) и взорванный — нет. */
     @Override
     public FluidTank[] getReceivingTanks() {
-        if (hasExploded || mode == 0 || mode == 3) return EMPTY_TANKS;
+        if (hasExploded || mode == 2 || mode == 3) return EMPTY_TANKS;
         return new FluidTank[]{ fluidTank };
     }
 
     @Override
     public long getProviderSpeed(Fluid fluid, int pressure) {
-        if (hasExploded || mode == 2 || mode == 3) return 0L;
+        if (hasExploded || mode == 0 || mode == 3) return 0L;
         // Скорость зависит от заполненности: пустой бак почти не отдаёт → меньше "пинг-понга".
         // Дополнительно ограничиваем "не более половины текущего fill за тик", чтобы два одинаковых буфера
         // не могли полностью поменяться местами за один тик (классический full↔empty пингпонг).
@@ -216,7 +211,7 @@ public class MachineFluidTankBlockEntity extends BaseHbmBlockEntity implements M
 
     @Override
     public long getReceiverSpeed(Fluid fluid, int pressure) {
-        if (hasExploded || mode == 0 || mode == 3) return 0L;
+        if (hasExploded || mode == 2 || mode == 3) return 0L;
         // Скорость зависит от свободного места: полный бак почти не принимает.
         long dyn = fluidTank.getDynamicNetworkSpeedMb(BASE_NETWORK_SPEED_MB_PER_TICK, false);
         long halfSpace = Math.max(1L, (long) Math.max(0, fluidTank.getMaxFill() - fluidTank.getFill()) / 2L);
@@ -254,7 +249,7 @@ public class MachineFluidTankBlockEntity extends BaseHbmBlockEntity implements M
      */
     @Override
     public boolean isInfiniteNetworkSource(Fluid fluid) {
-        if (hasExploded || mode == 2 || mode == 3) return false;
+        if (hasExploded || mode == 0 || mode == 3) return false;
         if (!com.hbm_m.api.fluids.VanillaFluidEquivalence.sameSubstance(fluid, fluidTank.getTankType())) return false;
         return hasInstantInfiniteBarrel();
     }
@@ -262,7 +257,7 @@ public class MachineFluidTankBlockEntity extends BaseHbmBlockEntity implements M
     /** Бесконечный сток-утилизатор по тем же критериям. */
     @Override
     public boolean isInfiniteNetworkSink(Fluid fluid) {
-        if (hasExploded || mode == 0 || mode == 3) return false;
+        if (hasExploded || mode == 2 || mode == 3) return false;
         if (!com.hbm_m.api.fluids.VanillaFluidEquivalence.sameSubstance(fluid, fluidTank.getTankType())) return false;
         return hasInstantInfiniteBarrel();
     }
@@ -294,12 +289,12 @@ public class MachineFluidTankBlockEntity extends BaseHbmBlockEntity implements M
                 // продолжит работать классический путь через Forge capability.
                 if (!(pipeBe instanceof com.hbm_m.api.fluids.IFluidConnectorMK2)) continue;
 
-                // mode != 0/3 → принимаем
-                if (!entity.hasExploded && entity.mode != 0 && entity.mode != 3) {
+                // mode != 2/3 → принимаем
+                if (!entity.hasExploded && entity.mode != 2 && entity.mode != 3) {
                     entity.trySubscribe(mk2Type, level, pipePos, dir);
                 }
-                // mode != 2/3 и есть содержимое → отдаём
-                if (!entity.hasExploded && entity.mode != 2 && entity.mode != 3 && entity.fluidTank.getFill() > 0) {
+                // mode != 0/3 и есть содержимое → отдаём
+                if (!entity.hasExploded && entity.mode != 0 && entity.mode != 3 && entity.fluidTank.getFill() > 0) {
                     entity.tryProvide(entity.fluidTank, level, pipePos, dir);
                 }
             }
@@ -450,10 +445,7 @@ public class MachineFluidTankBlockEntity extends BaseHbmBlockEntity implements M
 
     public ResourceLocation getTankTextureLocation() {
         Fluid fluid = fluidTank.getTankType();
-        if (fluid == null || fluid == Fluids.EMPTY || fluid == ModFluids.NONE.getSource()) {
-            fluid = getFilterFluid();
-        }
-    
+
         if (fluid == null || fluid == Fluids.EMPTY || fluid == ModFluids.NONE.getSource()) {
             return ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "block/tank/tank_none");
         }
@@ -643,12 +635,6 @@ public class MachineFluidTankBlockEntity extends BaseHbmBlockEntity implements M
         hasExploded = tag.getBoolean("exploded");
         onFire = tag.getBoolean("onFire");
 
-        if (tag.contains("filterFluid")) {
-            filterFluid = BuiltInRegistries.FLUID.get(ResourceLocation.tryParse(tag.getString("filterFluid")));
-        } else {
-            filterFluid = null;
-        }
-
         if (tag.contains("AllowedFluidSides")) {
             int mask = tag.getInt("AllowedFluidSides");
             allowedFluidSides.clear();
@@ -675,13 +661,6 @@ public class MachineFluidTankBlockEntity extends BaseHbmBlockEntity implements M
         tag.putShort("mode", mode);
         tag.putBoolean("exploded", hasExploded);
         tag.putBoolean("onFire", onFire);
-
-        if (filterFluid != null && filterFluid != Fluids.EMPTY) {
-            ResourceLocation key = BuiltInRegistries.FLUID.getKey(filterFluid);
-            if (key != null) {
-                tag.putString("filterFluid", key.toString());
-            }
-        }
 
         if (fluidSidesFromMultiblockStructure) {
             tag.putBoolean("FluidSidesFromMbStructure", true);
@@ -793,9 +772,10 @@ public class MachineFluidTankBlockEntity extends BaseHbmBlockEntity implements M
     }
 
 
-    // Shift+ПКМ идентификатором по цистерне: задаёт тип бака (включая NONE), сливает содержимое, обновляет фильтр для GUI.
+    // Shift+ПКМ идентификатором по цистерне - 1:1 с оригиналом (MachineFluidTank.onBlockActivated):
+    // tank.setTankType(type), ранний выход при том же типе, слив при смене.
 
-    public void setFilterFromIdentifier(ItemStack stack) {
+    public void setTankTypeFromIdentifier(ItemStack stack) {
         if (stack.isEmpty()) {
             return;
         }
@@ -815,23 +795,17 @@ public class MachineFluidTankBlockEntity extends BaseHbmBlockEntity implements M
             return;
         }
 
-        // Если тип уже совпадает — ничего не делаем (не сливаем бак).
+        // Если тип уже совпадает — ничего не делаем (не сливаем бак), как setTankType в 1.7.10.
         if (com.hbm_m.api.fluids.VanillaFluidEquivalence.sameSubstance(resolved, fluidTank.getTankType())) {
             return;
         }
 
         fluidTank.assignTypeAndZeroFluid(resolved);
-        filterFluid = resolved == ModFluids.NONE.getSource() ? null : resolved;
         setChanged();
         if (level != null && !level.isClientSide) {
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_CLIENTS | Block.UPDATE_IMMEDIATE);
             refreshAdjacentFluidDuctConnections();
         }
-    }
-
-    @Nullable
-    public Fluid getFilterFluid() {
-        return filterFluid;
     }
 
     @Nullable
@@ -866,21 +840,21 @@ public class MachineFluidTankBlockEntity extends BaseHbmBlockEntity implements M
 
         @Override
         public int fill(net.minecraftforge.fluids.FluidStack resource, FluidAction action) {
-            if (entity.hasExploded || entity.mode == 0 || entity.mode == 3) return 0;
+            if (entity.hasExploded || entity.mode == 2 || entity.mode == 3) return 0;
             return internal.fill(resource, action);
         }
 
         @NotNull
         @Override
         public net.minecraftforge.fluids.FluidStack drain(net.minecraftforge.fluids.FluidStack resource, FluidAction action) {
-            if (entity.hasExploded || entity.mode == 2 || entity.mode == 3) return net.minecraftforge.fluids.FluidStack.EMPTY;
+            if (entity.hasExploded || entity.mode == 0 || entity.mode == 3) return net.minecraftforge.fluids.FluidStack.EMPTY;
             return internal.drain(resource, action);
         }
 
         @NotNull
         @Override
         public net.minecraftforge.fluids.FluidStack drain(int maxDrain, FluidAction action) {
-            if (entity.hasExploded || entity.mode == 2 || entity.mode == 3) return net.minecraftforge.fluids.FluidStack.EMPTY;
+            if (entity.hasExploded || entity.mode == 0 || entity.mode == 3) return net.minecraftforge.fluids.FluidStack.EMPTY;
             return internal.drain(maxDrain, action);
         }
     }
