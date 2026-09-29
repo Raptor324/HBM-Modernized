@@ -111,3 +111,7 @@ NUL
 *.tmp
 scratch/
 notes/
+
+# Python bytecode
+__pycache__/
+*.pyc

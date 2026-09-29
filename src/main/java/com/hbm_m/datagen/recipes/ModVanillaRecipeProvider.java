@@ -79,6 +79,8 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
         registerPneumaticRecipes(writer);
         registerWasteCompression(writer);
         registerLockRecipes(writer);
+        registerLadderRecipes(writer);
+        registerScorchedOreWashing(writer);
     }
 
     /**
@@ -1038,6 +1040,13 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .requires(ModMaterialItems.item(ModMaterials.LEAD, MaterialShape.INGOT))
                 .unlockedBy(getHasName(ModItems.SILICON_CIRCUIT.get()), has(ModItems.SILICON_CIRCUIT.get()))
                 .save(writer, recipeId("crafting/missile_chip"));
+
+        // CraftingManager.java:997 — 8 кусков кода складываются в launch_code (shapeless).
+        // Сами куски в 1.7.10 падают из данж-лута и редко с мобов (ModEventHandler, 1/250).
+        ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, ModItems.LAUNCH_CODE.get())
+                .requires(ModItems.LAUNCH_CODE_PIECE.get(), 8)
+                .unlockedBy(getHasName(ModItems.LAUNCH_CODE_PIECE.get()), has(ModItems.LAUNCH_CODE_PIECE.get()))
+                .save(writer, recipeId("crafting/launch_code"));
     }
 
     //основные рецепты
@@ -1197,6 +1206,27 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .define('D', ModItems.TURBINE_TITANIUM.get())
                 .unlockedBy(getHasName(ModItems.TURBINE_TITANIUM.get()), has(ModItems.TURBINE_TITANIUM.get()))
                 .save(writer, recipeId("crafting/steam_turbine"));
+
+        // Усиленный ротор турбовентилятора: 8 вольфрамовых лопастей + слиток быстрорежущей стали.
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.TURBINE_TUNGSTEN.get())
+                .pattern("BBB")
+                .pattern("BSB")
+                .pattern("BBB")
+                .define('B', ModItems.BLADE_TUNGSTEN.get())
+                .define('S', ModMaterialItems.item(ModMaterials.DURA_STEEL, MaterialShape.INGOT))
+                .unlockedBy(getHasName(ModItems.BLADE_TUNGSTEN.get()), has(ModItems.BLADE_TUNGSTEN.get()))
+                .save(writer, recipeId("crafting/turbine_tungsten"));
+
+        // Фламенпони: оригинал " O "/"DPD"/" O " (dyePink / dyeYellow / paper).
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.FLAME_PONY.get())
+                .pattern(" O ")
+                .pattern("DPD")
+                .pattern(" O ")
+                .define('D', Items.PINK_DYE)
+                .define('O', Items.YELLOW_DYE)
+                .define('P', Items.PAPER)
+                .unlockedBy(getHasName(Items.PAPER), has(Items.PAPER))
+                .save(writer, recipeId("crafting/flame_pony"));
 
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.INSULATOR.get(), 4)
                 .pattern("$  ")
@@ -1889,6 +1919,51 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .define('#', Ingredient.of(ModTags.Items.SLABS_HARD))
                 .unlockedBy(getHasName(ModItems.FIREBRICK.get()), has(ModItems.FIREBRICK.get()))
                 .save(writer, recipeId("crafting/foundry_channel"));
+
+        // ── Остальная литейка (ориг. CraftingManager #921-927) ──
+        // foundry_mold: "B B" / "BSB"
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.FOUNDRY_MOLD.get())
+                .pattern("% %")
+                .pattern("%#%")
+                .define('%', ModItems.FIREBRICK.get())
+                .define('#', Ingredient.of(ModTags.Items.SLABS_HARD))
+                .unlockedBy(getHasName(ModItems.FIREBRICK.get()), has(ModItems.FIREBRICK.get()))
+                .save(writer, recipeId("crafting/foundry_mold"));
+
+        // foundry_tank: "B B" / "I I" / "BSB" (I = стальной слиток)
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.FOUNDRY_TANK.get())
+                .pattern("% %")
+                .pattern("$ $")
+                .pattern("%#%")
+                .define('%', ModItems.FIREBRICK.get())
+                .define('$', ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.INGOT))
+                .define('#', Ingredient.of(ModTags.Items.SLABS_HARD))
+                .unlockedBy(getHasName(ModItems.FIREBRICK.get()), has(ModItems.FIREBRICK.get()))
+                .save(writer, recipeId("crafting/foundry_tank"));
+
+        // foundry_outlet: shapeless = канал + стальная плита
+        ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, ModBlocks.FOUNDRY_OUTLET.get())
+                .requires(ModBlocks.FOUNDRY_CHANNEL.get())
+                .requires(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE))
+                .unlockedBy(getHasName(ModItems.FIREBRICK.get()), has(ModItems.FIREBRICK.get()))
+                .save(writer, recipeId("crafting/foundry_outlet"));
+
+        // foundry_slagtap: shapeless = канал + каменный кирпич
+        ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, ModBlocks.FOUNDRY_SLAGTAP.get())
+                .requires(ModBlocks.FOUNDRY_CHANNEL.get())
+                .requires(Items.STONE_BRICKS)
+                .unlockedBy(getHasName(ModItems.FIREBRICK.get()), has(ModItems.FIREBRICK.get()))
+                .save(writer, recipeId("crafting/foundry_slagtap"));
+
+        // mold_base: " B " / "BIB" / " B " (B = шамот, I = железный слиток)
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.MOLD_BASE.get())
+                .pattern(" % ")
+                .pattern("%$%")
+                .pattern(" % ")
+                .define('%', ModItems.FIREBRICK.get())
+                .define('$', Items.IRON_INGOT)
+                .unlockedBy(getHasName(ModItems.FIREBRICK.get()), has(ModItems.FIREBRICK.get()))
+                .save(writer, recipeId("crafting/mold_base"));
 
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.EXPLOSIVE_CHARGE.get())
                 .pattern("$% ")
@@ -2652,4 +2727,120 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .unlockedBy(getHasName(billet), has(billet))
                 .save(writer, recipeId("crafting/nugget_" + name + "_decompress"));
     }
+
+    /**
+     * Рецепты металлических лесенок (1:1 с ручными JSON из data/hbm_m/recipes/).
+     * Шаблон: «LLL» / «L#L» / «LLL» — 8 лесенок из 1 материала.
+     */
+    private void registerLadderRecipes(Consumer<FinishedRecipe> writer) {
+        // ladder_copper — 8 шт., ингредиент minecraft:copper_ingot
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.LADDER_COPPER.get(), 8)
+                .pattern("LLL")
+                .pattern("L#L")
+                .pattern("LLL")
+                .define('L', Items.LADDER)
+                .define('#', Items.COPPER_INGOT)
+                .unlockedBy(getHasName(Items.COPPER_INGOT), has(Items.COPPER_INGOT))
+                .save(writer, recipeId("crafting/ladder_copper"));
+
+        // ladder_gold — 8 шт., ингредиент minecraft:gold_ingot
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.LADDER_GOLD.get(), 8)
+                .pattern("LLL")
+                .pattern("L#L")
+                .pattern("LLL")
+                .define('L', Items.LADDER)
+                .define('#', Items.GOLD_INGOT)
+                .unlockedBy(getHasName(Items.GOLD_INGOT), has(Items.GOLD_INGOT))
+                .save(writer, recipeId("crafting/ladder_gold"));
+
+        // ladder_steel — 8 шт., ингредиент hbm_m:steel_ingot
+        Item steelIngot = ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.INGOT);
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.LADDER_STEEL.get(), 8)
+                .pattern("LLL")
+                .pattern("L#L")
+                .pattern("LLL")
+                .define('L', Items.LADDER)
+                .define('#', steelIngot)
+                .unlockedBy(getHasName(steelIngot), has(steelIngot))
+                .save(writer, recipeId("crafting/ladder_steel"));
+
+        // ladder_sturdy — 8 шт., ингредиент тег minecraft:planks
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.LADDER_STURDY.get(), 8)
+                .pattern("LLL")
+                .pattern("L#L")
+                .pattern("LLL")
+                .define('L', Items.LADDER)
+                .define('#', ItemTags.PLANKS)
+                .unlockedBy("has_planks", has(ItemTags.PLANKS))
+                .save(writer, recipeId("crafting/ladder_sturdy"));
+
+        // ladder_titanium — 8 шт., ингредиент hbm_m:titanium_ingot
+        Item titaniumIngot = ModMaterialItems.item(ModMaterials.TITANIUM, MaterialShape.INGOT);
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.LADDER_TITANIUM.get(), 8)
+                .pattern("LLL")
+                .pattern("L#L")
+                .pattern("LLL")
+                .define('L', Items.LADDER)
+                .define('#', titaniumIngot)
+                .unlockedBy(getHasName(titaniumIngot), has(titaniumIngot))
+                .save(writer, recipeId("crafting/ladder_titanium"));
+    }
+
+    /**
+     * Рецепты «смыв» скорчённых урановых руд водяным ведром (1:1 с ручными JSON).
+     * Два варианта на каждую руду: 1 руда + 1 ведро → 1 руда (shapeless),
+     * и 8 руд + 1 ведро в центре → 8 руд (shaped 3×3).
+     */
+    private void registerScorchedOreWashing(Consumer<FinishedRecipe> writer) {
+        // ore_uranium_scorched → uranium_ore
+        washOre(writer,
+                ModBlocks.ORE_URANIUM_SCORCHED.get().asItem(),
+                ModBlocks.URANIUM_ORE.get().asItem(),
+                "uranium_scorched");
+
+        // ore_sellafield_uranium_scorched → uranium_ore (тот же выход, что в оригинале)
+        washOre(writer,
+                ModBlocks.ORE_SELLAFIELD_URANIUM_SCORCHED.get().asItem(),
+                ModBlocks.URANIUM_ORE.get().asItem(),
+                "sellafield_uranium_scorched");
+
+        // ore_gneiss_uranium_scorched → gneiss_uranium_ore
+        washOre(writer,
+                ModBlocks.ORE_GNEISS_URANIUM_SCORCHED.get().asItem(),
+                ModBlocks.GNEISS_URANIUM_ORE.get().asItem(),
+                "gneiss_uranium_scorched");
+
+        // ore_nether_uranium_scorched → nether_uranium_ore
+        washOre(writer,
+                ModBlocks.ORE_NETHER_URANIUM_SCORCHED.get().asItem(),
+                ModBlocks.NETHER_URANIUM_ORE.get().asItem(),
+                "nether_uranium_scorched");
+    }
+
+    /**
+     * Два рецепта смыва: shapeless (1:1) и shaped 3×3 (8:1 центральное ведро).
+     *
+     * @param ore     ингредиент (скорчённая руда)
+     * @param result  результат (нормальная руда)
+     * @param suffix  суффикс для ID рецепта (e.g. {@code "uranium_scorched"})
+     */
+    private void washOre(Consumer<FinishedRecipe> writer, Item ore, Item result, String suffix) {
+        // 1 руда + 1 ведро → 1 руды
+        ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, result)
+                .requires(ore)
+                .requires(Items.WATER_BUCKET)
+                .unlockedBy(getHasName(ore), has(ore))
+                .save(writer, recipeId("crafting/wash_ore_" + suffix));
+
+        // 8 руд + 1 ведро (центр) → 8 руд
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, result, 8)
+                .pattern("OOO")
+                .pattern("OBO")
+                .pattern("OOO")
+                .define('O', ore)
+                .define('B', Items.WATER_BUCKET)
+                .unlockedBy(getHasName(ore), has(ore))
+                .save(writer, recipeId("crafting/wash_ore_" + suffix + "_8"));
+    }
 }
+

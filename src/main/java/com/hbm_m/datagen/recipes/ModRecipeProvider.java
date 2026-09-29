@@ -10,7 +10,9 @@ import org.jetbrains.annotations.NotNull;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.datagen.recipes.custom.AmmoPressRecipeGenerator;
 import com.hbm_m.datagen.recipes.custom.AnvilRecipeGenerator;
+import com.hbm_m.datagen.recipes.custom.ArcFurnaceRecipeGenerator;
 import com.hbm_m.datagen.recipes.custom.ArcWelderRecipeGenerator;
+import com.hbm_m.datagen.recipes.custom.CombinationOvenRecipeGenerator;
 import com.hbm_m.datagen.recipes.custom.PurexRecipeGenerator;
 import com.hbm_m.datagen.recipes.custom.AssemblerRecipeGenerator;
 import com.hbm_m.datagen.recipes.custom.BlastFurnaceRecipeGenerator;
@@ -78,6 +80,8 @@ public class ModRecipeProvider extends RecipeProvider {
         AssemblerRecipeGenerator.generate(pWriter);
         ChemicalPlantRecipeGenerator.generate(pWriter);
         AnvilRecipeGenerator.generate(pWriter);
+        ArcFurnaceRecipeGenerator.generate(pWriter);
+        CombinationOvenRecipeGenerator.generate(pWriter);
         ShredderRecipeGenerator.generate(pWriter, ModRecipeProvider::unlockedByItem);
         CentrifugeRecipeGenerator.generate(pWriter);
         CrystallizerRecipeGenerator.generate(pWriter);
