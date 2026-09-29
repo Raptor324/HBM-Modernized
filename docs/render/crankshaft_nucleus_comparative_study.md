@@ -1,5 +1,7 @@
 # CrankShaft 26.2 vs. Nucleus: Architectural Comparative Study & Modernization Roadmap
 
+> **STATUS (2026-09-25):** This study reflects CrankShaft **1.4.0** and a Nucleus **without** GPU culling / Hi-Z SPD / compute scatter / dirty-skip fastpath. Both engines have since changed (CrankShaft 1.5.0–1.5.3; Nucleus implemented Phases 1 and 3 of §5.7 plus the dirty-skip roster). The **current-state audit and the up-to-date borrow list live in [`nucleus_cpu_audit_2026-09-25.md`](nucleus_cpu_audit_2026-09-25.md)** — read that first. Architectural background chapters (§2–§4) below remain valid.
+
 **Document Version:** 1.0.0-PROD  
 **Target Codebases:**  
 - **CrankShaft:** `C:\Projects\CrankShaft` (branch `26.2`, v1.3.1, Minecraft 26.2 / NeoForge 26.2.0.88 / Sodium 0.9.2+mc26.2)  
@@ -62,6 +64,19 @@
 6. [Appendices](#6-appendices)
    - Appendix A: Exhaustive Source Code Citation Directory
    - Appendix B: Technical Glossary & Acronyms
+7. [Appendix C: CrankShaft 1.4.0 Iris Shaderpack Subsystem Deep Dive & Comparative Re-Assessment](#7-appendix-c-crankshaft-140-iris-shaderpack-subsystem-deep-dive--comparative-re-assessment)
+   - 7.1 Architectural Overview & Release Scope (CrankShaft 1.4.0 / Commit `635b7b0`)
+   - 7.2 The Guest Engine & Multi-Draw Indirect Pipeline (`GuestEngine`, `GuestIndirectDrawManager`)
+   - 7.3 Shader Compilation & Dynamic AST Transformation via `glsl-transformer` (`GuestShaders`, `GuestPipelines`)
+   - 7.4 Shadow Pass Architecture & GPU Frustum Culling (`GuestShadows`, `GuestShadowCull`, Translucent Shadows)
+   - 7.5 Extended Geometry Attributes & Entity/BlockEntity Tagging (`GuestVertexExtras`, `GuestDrawTags`)
+   - 7.6 Colorwheel Shaderpack Contract vs Bundled Adapters (`ContractProperties`, `ContractProgram`, Bundled Adapters)
+   - 7.7 Sodium Chunk Terrain Integration & Experimental NVIDIA Mesh Shaders under Iris (`IrisTerrainRasterizer`)
+   - 7.8 Order-Independent Transparency (OIT) under Shaderpacks: Wavelet & Deferred Layer Profiles
+   - 7.9 Side-by-Side Comparative Re-Assessment: CrankShaft 1.4.0 Guest Patching vs Nucleus 4-Tier Pipeline
+   - 7.10 Strategic Verdict Re-Evaluation: Whole-Engine Port vs Component Borrowing (Re-assessing Section 5.1)
+   - 7.11 Primary Source Code Citation Index for CrankShaft 1.4.0 Subsystem
+   - 7.12 Navigational Footnote Reference Index
 
 ---
 
@@ -99,7 +114,7 @@ Nucleus is engineered specifically for complex, multipart industrial multiblocks
 +----------------------------------------------------------------------------------------------------+
 |                                    ARCHITECTURAL PIPELINE OVERVIEW                                 |
 +--------------------------------------------------+-------------------------------------------------+
-| CRANKSHAFT 26.2 (Flywheel / Meshlet)             | NUCLEUS (HBM-Modernized)                        |
+| CRANKSHAFT 26.2 (Flywheel / Meshlet)[^iris-update-1]            | NUCLEUS (HBM-Modernized)                        |
 +--------------------------------------------------+-------------------------------------------------+
 |  LevelRenderer / Visual Tick Events              |  RenderLevelStageEvent (AFTER_ENTITIES)         |
 |         │                                        |         │                                       |
@@ -462,7 +477,7 @@ When the `:meshlet` module is active on NVIDIA hardware, CrankShaft bypasses the
   Queries `net.irisshaders.iris.api.v0.IrisApi.getInstance().isShaderPackInUse()`.
 - If an Iris or OptiFine shader pack is active:
   `INSTANCING.supported` and `INDIRECT.supported` return `false` (`Backends.java` lines 35, 53).
-- **CrankShaft cleanly deactivates its entire engine**, falling back to `OFF_BACKEND` (`"flywheel:off"`), delegating all rendering to vanilla Minecraft's immediate-mode BER dispatchers.
+- **CrankShaft cleanly deactivates its entire engine**[^iris-update-2], falling back to `OFF_BACKEND` (`"flywheel:off"`), delegating all rendering to vanilla Minecraft's immediate-mode BER dispatchers.
 
 ### 2.11 Primary File & Class Reference Index
 
@@ -826,8 +841,8 @@ Evaluating spatial lightmaps for complex multiblocks (e.g., 11 parts per Advance
 |                      | - Subgroup ballot compaction (1 atomic / warp)     | - Proportional 30% distance LOD fade calculation      |
 +----------------------+----------------------------------------------------+-------------------------------------------------------+
 | 5. Shader Mod Interop| - STRICT OPT-OUT: Deactivates custom engine under  | - NATIVE 4-TIER ARCHITECTURE: Full shader support     |
-|    (Iris / Oculus)   |   shaderpacks (isShaderPackInUse() == true)        | - Tier 1: NucleusGpuBaker GLSL 4.3 compute bake       |
-|                      | - Zero custom shadow or G-buffer passes            | - Tier 2: Instanced ExtendedShader + pack distortion  |
+|    (Iris / Oculus)   |   shaderpacks (isShaderPackInUse() == true)[^iris-update-3]| - Tier 1: NucleusGpuBaker GLSL 4.3 compute bake       |
+|                      | - Zero custom shadow or G-buffer passes[^iris-update-4]| - Tier 2: Instanced ExtendedShader + pack distortion  |
 |                      | - Reverts to unbatched immediate vanilla BER draws | - Tier 3: Persistent IrisRenderBatch (1 apply / pass) |
 |                      |                                                    | - Tier 4: Immediate BER fallback                      |
 |                      |                                                    | - NVIDIA program ID recycling defense generation      |
@@ -927,7 +942,7 @@ The divergence in shader mod interoperability represents the most significant ar
 +------------------------------------+---------------------------------------------------------------+
 ```
 
-CrankShaft's architecture assumes complete control over OpenGL state, shader pipelines, and vertex formats. Because shader packs inject custom shadow passes, deferred G-buffers, and dynamic lighting models that override Minecraft's pipeline, CrankShaft opts out entirely to prevent visual artifacts and crashes.
+CrankShaft's architecture assumes complete control over OpenGL state, shader pipelines, and vertex formats. Because shader packs inject custom shadow passes, deferred G-buffers, and dynamic lighting models that override Minecraft's pipeline, CrankShaft opts out entirely to prevent visual artifacts and crashes.[^iris-update-5]
 
 Nucleus was specifically designed to maintain high performance under shader packs. Its Tier 1 GPU Compute Baker (`NucleusGpuBaker`) executes a compute pass in VRAM to transform vertices and lighting, then submits geometry using the shader pack's **native active program**. This preserves shader pack features (e.g., custom shadow distortion, PBR specular maps, POM, waving effects) while maintaining batched performance.
 
@@ -956,7 +971,7 @@ A central question of this study is whether HBM-Modernized should discard or rep
 
 #### Detailed Rationale
 1. **Destruction of Shader Mod (Iris / Oculus) Support**:
-   Adopting CrankShaft's engine architecture would dismantle HBM-Modernized's custom shader pipeline. Under shaderpacks, CrankShaft disables all batching and falls back to unbatched immediate-mode BER calls. In an industrial complex with 60 machines (over 660 parts), framerates would drop dramatically. Nucleus's compute-baking architecture (`NucleusGpuBaker`) and persistent batch coordinator (`IrisRenderBatch`) are essential for shaderpack users.
+   Adopting CrankShaft's engine architecture would dismantle HBM-Modernized's custom shader pipeline. Under shaderpacks, CrankShaft disables all batching and falls back to unbatched immediate-mode BER calls. In an industrial complex with 60 machines (over 660 parts), framerates would drop dramatically. Nucleus's compute-baking architecture (`NucleusGpuBaker`) and persistent batch coordinator (`IrisRenderBatch`) are essential for shaderpack users.[^iris-update-6]
 2. **Version and Architectural Incompatibility (Minecraft 26.2 vs 1.20.1 & 1.21.1)**:
    CrankShaft is written for Minecraft 26.2 and depends directly on Mojang's Vulkan-style graphics pipeline abstractions (`com.mojang.blaze3d.vulkan.VulkanCommandEncoder`, `RenderPipeline`, `RenderPass`, `GpuBuffer`). These classes do not exist in Minecraft 1.20.1 or 1.21.1, where rendering remains rooted in OpenGL 3.2 Core profile state machines. Backporting CrankShaft would require rewriting its entire command submission layer.
 3. **Loss of Multipart Machine Spec & Dispatcher Bypass**:
@@ -1457,7 +1472,7 @@ The proposed modernization roadmap is structured into four sequential phases, pr
 | File Path (Relative to `C:\Projects\CrankShaft`) | Line Range | Architectural Subject Matter |
 |---|---|---|
 | `gradle.properties` | 5 | Declares `minecraft_version=26.2` and NeoForge dependencies |
-| `common/src/backend/java/dev/engine_room/flywheel/backend/Backends.java` | 34–36, 52–54 | Backend support gates; deactivates `INSTANCING` and `INDIRECT` when shaderpacks are active |
+| `common/src/backend/java/dev/engine_room/flywheel/backend/Backends.java` | 34–36, 52–54 | Backend support gates; deactivates `INSTANCING` and `INDIRECT` when shaderpacks are active[^iris-update-7] |
 | `common/src/backend/java/dev/engine_room/flywheel/backend/engine/EngineImpl.java` | 42–85 | Render origin re-centering (`renderOrigin`), frame plan execution |
 | `common/src/backend/java/dev/engine_room/flywheel/backend/engine/MeshPool.java` | 22, 184–228 | Meshlet granularity (`MESHLET_TRIS = 64`), bounding sphere generation (`writeMeshletBounds`) |
 | `common/src/backend/java/dev/engine_room/flywheel/backend/engine/indirect/IndirectDrawManager.java` | 239–281, 714–720 | Two-phase culling pipeline, memory barriers, `UberDraw.submitRaw` indirect draws |
@@ -1467,7 +1482,7 @@ The proposed modernization roadmap is structured into four sequential phases, pr
 | `common/src/backend/java/dev/engine_room/flywheel/backend/engine/terrain/TerrainDrawDispatcher.java` | 725–727 | Sodium chunk MDI dispatch via `glMultiDrawElementsIndirectCountARB` |
 | `common/src/backend/resources/assets/flywheel/flywheel/internal/indirect/cull.glsl` | 35–40, 185–242 | SIMD 6-FMA frustum test, Hi-Z occlusion test, subgroup ballot compaction |
 | `common/src/backend/resources/assets/flywheel/flywheel/internal/indirect/scatter.glsl` | 1–51 | Compute scatter copy shader from staging buffer to target SSBOs |
-| `common/src/lib/java/dev/engine_room/flywheel/lib/util/ShadersModHelper.java` | 11–32 | Reflection into `net.irisshaders.iris.api.v0.IrisApi` to detect shader packs |
+| `common/src/lib/java/dev/engine_room/flywheel/lib/util/ShadersModHelper.java` | 11–32 | Reflection into `net.irisshaders.iris.api.v0.IrisApi` to detect shader packs[^iris-update-8] |
 | `meshlet/src/main/resources/assets/meshlet/flywheel/terrain/gl/mesh.mesh` | 18–19, 107–185 | NV Mesh Shader: cooperative vertex fetches, butterfly shuffles, primitive compaction |
 
 #### Nucleus Repository Reference (`c:\Projects\HBM-Modernized`)
@@ -1520,4 +1535,427 @@ The proposed modernization roadmap is structured into four sequential phases, pr
 - **VAO (Vertex Array Object)**: An OpenGL object encapsulating vertex attribute format definitions and buffer bindings.
 
 ---
-*End of Master Comparative Study & Architectural Roadmap.*
+
+## 7. Appendix C: CrankShaft 1.4.0 Iris Shaderpack Subsystem Deep Dive & Comparative Re-Assessment
+
+### 7.1 Architectural Overview & Release Scope (CrankShaft 1.4.0 / Commit `635b7b0`)
+
+On September 24, 2026, CrankShaft released version **1.4.0** (commit `635b7b0`: *"feat: release CrankShaft 1.4.0 with Iris shaderpacks and geometry-aware lighting"*), comprising **14,816 insertions across 294 files**. This release fundamentally alters CrankShaft's shader mod interoperability strategy. 
+
+Prior to version 1.4.0 (as analyzed in Sections 2.10, 4.1, and 4.6), CrankShaft enforced a strict opt-out policy: whenever an Iris or OptiFine shaderpack was active (`isShaderPackInUse() == true`), the Flywheel backend was completely deactivated (`"flywheel:off"`), falling back to unbatched vanilla `BlockEntityRenderer` (BER) immediate dispatch.
+
+CrankShaft 1.4.0 replaces this opt-out architecture with a dedicated **Iris Guest Pipeline Subsystem** (`dev.engine_room.flywheel.iris.*`). Rather than disabling instancing or indirect multi-draws, CrankShaft 1.4.0 compiles and binds specialized **guest pipelines** (`GuestPipelines.java`, `GuestProgram.java`) that execute directly within the active shaderpack’s rendering stages. Visual instances and Sodium terrain chunks are rasterized through the shaderpack's own G-buffer, shadow, and translucent programs.
+
+```
++----------------------------------------------------------------------------------------------------+
+|                         CRANKSHAFT 1.4.0 IRIS SUBSYSTEM EXECUTION FLOW                             |
++----------------------------------------------------------------------------------------------------+
+|                                                                                                    |
+|  [Iris Shaderpack Load / Pipeline Construction]                                                    |
+|         │                                                                                          |
+|         ├─► AST Analysis via glsl-transformer (SingleASTTransformer)                               |
+|         │   - Scans pack vertex & fragment shaders (TransformPatcher.patchVanilla)                 |
+|         │   - SSBO Binding Shifting: layout(binding = N + 8) buffer (reserves 0..7 for Flw)      |
+|         │   - Input Stripping: in iris_Position, mc_Entity, at_midBlock -> global variables        |
+|         │   - Re-roots main() -> _flw_irisMain(); injects _flw_guestVertex() prelude               |
+|         │                                                                                          |
+|         └─► Shaderpack Contract Resolution (ContractProperties)                                    |
+|             - Checks Colorwheel contract (clrwl_* programs, colorwheel.properties)                 |
+|             - Evaluates bundled adapter JSONs (bsl, complementary, solas, sundial, etc.)          |
+|             - Fingerprint matching on shader AST/sources (avoids version string fragility)         |
+|                                                                                                    |
+|  [Per-Frame Render Execution Lifecycle]                                                            |
+|         │                                                                                          |
+|         ├─► Phase 1: Shadow Pass (Iris ShadowRenderer Hook)                                        |
+|         │   - GuestShadowCull: Frustum planes (up to 13) uploaded to UBO (_FlwShadowCull: 13)    |
+|         │   - Compute cull into Pass-2 buffer via shadow_cull.glsl                                 |
+|         │   - Submit MDI shadow pass (GuestIndirectDrawManager.drawShadow)                         |
+|         │   - Secondary Translucent Shadow Pass (GuestIndirectDrawManager.drawShadowTranslucent)   |
+|         │                                                                                          |
+|         ├─► Phase 2: Opaque G-Buffer Pass (Post-Opaque Seam)                                       |
+|         │   - Engine preparation: Uniforms.update, environment flush, vertex extras validation     |
+|         │   - Combined Phase 1 & Phase 2 MDI submission at post-opaque seam                        |
+|         │     (Prevents Phase 2 from landing after Iris deferred composite passes)                 |
+|         │                                                                                          |
+|         ├─► Phase 3: Translucent & Order-Independent Transparency (OIT)                            |
+|         │   - If Colorwheel OIT active: Multi-pass trigonometric moment Wavelet OIT                |
+|         │     (oit_depth_range -> oit_coefficients -> oit_evaluate -> oit_composite)              |
+|         │   - If Sundial Deferred profile active: Layered fragment capture & resolve               |
+|         │   - Sodium translucent chunk replay merges into instance OIT passes                      |
+|         │                                                                                          |
+|         └─► Phase 4: State Restoration & SSBO Unbind                                               |
+|             - GuestSsbos.restore(pipeline): Unbinds guest buffers, restores Iris shader storage    |
++----------------------------------------------------------------------------------------------------+
+```
+
+---
+
+### 7.2 The Guest Engine & Multi-Draw Indirect Pipeline (`GuestEngine`, `GuestIndirectDrawManager`)
+
+The guest execution architecture is anchored by two core classes: `GuestEngine` and `GuestIndirectDrawManager`, registered in `IrisBackends.java`:
+
+- **`flywheel:iris_indirect`** (Priority 890, or Priority 1 on Intel GPUs): Selected when `GlCompat.SUPPORTS_INDIRECT && IndirectPrograms.allLoaded() && IrisGate.isPackInUse()`.
+- **`flywheel:iris_instancing`** (Priority 490): Instanced array fallback selected on drivers lacking robust indirect multi-draw or compute shader support under Iris.
+
+#### 7.2.1 `GuestEngine.java` Frame Lifecycle Coordination
+`GuestEngine` extends `EngineImpl` and implements the Iris pipeline lifecycle bridge:
+1. **Asynchronous Pass Entry**: Iris executes its shadow pass *before* Minecraft's main opaque terrain and entity passes. `GuestEngine` tracks initialization via `preparedForMainPass`. Whichever pass executes first (shadow or opaque) triggers `prepare(context)`:
+   - Flushes `EnvironmentStorage`.
+   - Synchronizes uniform blocks via `Uniforms.update(context)`.
+   - Checks `vertexExtras.blockIdsChanged()`; if Iris reloaded its block-state ID mappings, `meshPool.invalidateExtras()` purges cached pooled mesh attributes.
+2. **Shadow Pass Orchestration**:
+   - `renderShadow(...)` checks `PackShadowDirectives` and `ContractProperties.shadowEnabled()`.
+   - Computes origin-relative model-view coordinates:
+     $$\mathbf{MV}_{\text{rel}} = \mathbf{T}(\text{origin} - \text{camera}) \cdot \mathbf{MV}_{\text{shadow}}$$
+   - Delegates to `guest.drawShadow(...)`. If the active pack requires translucent shadows (`directives.shouldRenderTranslucent()`), it caches `translucentShadowModelView` for subsequent invocation in `renderShadowTranslucent(...)` after Iris copies the pre-translucent shadow depth texture.
+3. **SSBO Binding Containment**: All guest execution blocks are wrapped in `try ... finally { GuestSsbos.restore(pipeline); }` to guarantee that Flywheel SSBOs never leak into Iris's post-processing or composite passes.
+
+#### 7.2.2 `GuestIndirectDrawManager.java` Execution Mechanics
+`GuestIndirectDrawManager` overrides `IndirectDrawManager` to tailor MDI dispatching to shaderpack requirements:
+- **Two-Phase Hi-Z Seam Consolidation**: In vanilla Flywheel, Phase 1 (visible objects from previous frame's depth pyramid) and Phase 2 (disoccluded objects revealed in current frame) are split across the opaque pass and depth downsampling. Under Iris, deferred composite shaders execute immediately after the opaque pass. Submitting Phase 2 after deferred composites would cause disoccluded objects to miss deferred lighting, bloom, and ambient occlusion. Therefore, `drawOpaque(...)` issues both passes sequentially at the post-opaque seam:
+  ```java
+  submitMain(renderModelView);
+  submitPass2IfPending();
+  ```
+- **Entity vs. BlockEntity Draw Separation**: Shaderpacks frequently bind distinct shaders and uniforms for entities versus terrain/blocks (e.g., `gbuffers_entities` vs `gbuffers_block`). `submitUberPass` bifurcates draw batches into `blockScratch` and `entityScratch` using `TaggedEnvironment.isEntity(batch.drawTag())`. Block draws are submitted with `pipelineFor`, while entity draws are submitted under `label + "_entities"` with `role.forEntities()`.
+- **Uber-Batch Incompatibility Gating**: In addition to material and texture compatibility, `incompatibleUber` enforces batch boundaries whenever two draws transition between entity and block tags, or between alpha cutout modes:
+  ```java
+  @Override
+  protected boolean incompatibleUber(IndirectDraw a, IndirectDraw b) {
+      return super.incompatibleUber(a, b)
+          || a.material().cutout() != b.material().cutout()
+          || TaggedEnvironment.isEntity(a.drawTag()) != TaggedEnvironment.isEntity(b.drawTag());
+  }
+  ```
+
+---
+
+### 7.3 Shader Compilation & Dynamic AST Transformation via `glsl-transformer` (`GuestShaders`, `GuestPipelines`)
+
+CrankShaft 1.4.0 does not inject hand-written GLSL shaders for shaderpacks. Instead, it dynamically transforms the active shaderpack's native source code at runtime using `io.github.douira.glsl_transformer.ast.transform.SingleASTTransformer`.
+
+#### 7.3.1 Transformation Pipeline
+1. **Iris Vanilla Patching**: The shaderpack source first passes through Iris's `TransformPatcher.patchVanilla(...)` to bind standard uniform structures, texture samplers, and alpha testing logic.
+2. **SSBO Binding Shifting (`shiftBufferBindings`)**:
+   Shaderpacks utilizing compute shaders or SSBOs (such as modern PBR/path-tracing packs) often declare storage buffers starting at `layout(binding = 0)`. Flywheel's indirect engine reserves binding indices 0 through 7 for its internal buffers:
+   - Binding 0: `IndirectBuffers` (Draw command parameters)
+   - Binding 1: `LightBuffers` (LUT & section light levels)
+   - Binding 2: `MatrixBuffer` (Model-view and normal matrices)
+   - Binding 3–7: Instance data slabs and scratch storage
+   
+   `GuestShaders.shiftBufferBindings` parses the GLSL Abstract Syntax Tree (AST), identifies all `InterfaceBlockDeclaration` nodes containing `StorageQualifier.StorageType.BUFFER`, and increments their binding indices by `GuestSsbos.BINDING_OFFSET = 8`. If an SSBO lacks an explicit binding qualifier, an explicit `layout(binding = 8)` is synthesized.
+3. **Vertex Input Demotion & Re-Rooting (`rewriteInputs`)**:
+   In standard Iris pipelines, vertex inputs arrive via fixed vertex attributes (`iris_Position`, `mc_Entity`, `at_tangent`, etc.). In Flywheel's indirect engine, vertex positions and instance matrices are loaded from pooled vertex buffers and SSBO instance arrays.
+   
+   To bridge this mismatch without altering pack logic:
+   - `rewriteInputs` traverses the AST and locates declarations of known Iris vertex inputs.
+   - It **strips their `in` storage qualifier**, converting them into global mutable variables.
+   - It renames the pack's `main()` function to `_flw_irisMain()`.
+   - It identifies any global variable initializers that reference these inputs (such as global coordinate offsets) and defers their evaluation into the generated `main()`.
+   - It synthesizes a new `main()` function:
+     ```glsl
+     #version 460 core
+     // ... shifted pack declarations ...
+     void main() {
+         _flw_guestVertex(); // Flywheel compute transform & instance unpack
+         iris_Position = vec4(flw_vertexPos.xyz, 1.0);
+         iris_Color = flw_vertexColor;
+         iris_Normal = vec4(flw_vertexNormal, 0.0);
+         iris_UV0 = vec4(flw_vertexTexCoord, 0.0, 1.0);
+         iris_UV1 = ivec4(flw_vertexOverlay, 0, 0);
+         iris_UV2 = vec4(round(flw_vertexLight * 256.0 - 8.0), 0.0, 1.0);
+         iris_Entity = _flw_guestIrisEntity();
+         iris_LineWidth = vec4(1.0);
+         mc_Entity = ivec4(_flw_aIrisEntity, 0, 1);
+         mc_midTexCoord = vec4(_flw_irisMidTexCoord, 0.0, 1.0);
+         at_tangent = _flw_guestTangent();
+         at_midBlock = _flw_irisMidBlock;
+         // ... deferred initializers ...
+         _flw_irisMain(); // Execute original shaderpack vertex logic
+     }
+     ```
+4. **Fragment Output Demotion (`demoteOutputs`)**:
+   For Order-Independent Transparency (OIT), the pack's fragment outputs (e.g., `layout(location = 0) out vec4 fragColor`) are stripped of their `out` qualifier and demoted to module-scope variables. The original `main()` is renamed to `_flw_irisMain()`. The synthesized entry point invokes `_flw_irisMain()` and then routes the resulting color and depth values into `GuestOitCodegen.producer` accumulation routines.
+
+---
+
+### 7.4 Shadow Pass Architecture & GPU Frustum Culling (`GuestShadows`, `GuestShadowCull`, Translucent Shadows)
+
+In Minecraft shaderpacks, the shadow pass renders the scene from the sun/moon directional light source into an offscreen shadow depth/color map.
+
+#### 7.4.1 Replicated GPU Shadow Frustum Culling (`GuestShadowCull.java`)
+Iris evaluates shadow culling on the CPU using `ShadowRenderer.FRUSTUM`, which implements complex culling geometries:
+- Up to 13 clipping planes (`AdvancedShadowCullingFrustum`).
+- Bounding box distance cullers (`BoxCuller`).
+- Orthographic light projection safe zones (`SafeZoneCullingFrustum`).
+
+To prevent CPU driver stalls and avoid reading back instance visibility, `GuestShadowCull` mirrors Iris's shadow frustum directly on the GPU:
+- Uniform Buffer `_FlwShadowCull` (Binding 13, 232 bytes std140 layout):
+  ```glsl
+  layout(std140, binding = 13) uniform _FlwShadowCull {
+      vec4 planes[13];
+      vec3 originOffset;
+      int planeCount;
+      float maxDistance;
+      float safeZone;
+  };
+  ```
+- Compute Shader `shadow_cull.glsl` (Local size 64):
+  Evaluates bounding spheres against the 13 shadow planes:
+  $$\mathbf{P}_{\text{world}} = \mathbf{P}_{\text{sphere}} + \mathbf{O}_{\text{origin}}$$
+  $$\forall i \in [0, \text{planeCount}-1]: \quad \mathbf{n}_i \cdot \mathbf{P}_{\text{world}} + w_i \ge -R$$
+  Surviving instances are written directly into the secondary indirect command buffer (`cullIntoPass2`).
+
+#### 7.4.2 Translucent Shadow Pass & Entity Blob Suppression
+- **Translucent Shadow Pass**: Colored shadows (e.g., from stained glass or translucent energy fields) require rendering translucent geometry into the shadow map. `GuestEngine.renderShadowTranslucent` executes a dedicated pass using `clrwl_shadow_translucent` or native water shadow shaders after Iris copies the opaque shadow depth map.
+- **Entity Blob Shadow Suppression (`GuestEntityShadows.java`)**: Shaderpacks with dynamic soft shadows or contact shadows disable vanilla circular entity blob shadows. When `pipeline.shouldDisableVanillaEntityShadows()` is true, `GuestIndirectDrawManager` intercepts batches bound to `textures/misc/shadow.png` and prunes them from the indirect draw list.
+
+---
+
+### 7.5 Extended Geometry Attributes & Entity/BlockEntity Tagging (`GuestVertexExtras`, `GuestDrawTags`)
+
+Modern shaderpacks require rich per-vertex geometric descriptors to perform Physically Based Rendering (PBR), Parallax Occlusion Mapping (POM), directional waving foliage, and subsurface scattering.
+
+#### 7.5.1 Iris Extended Vertex Format (`GuestVertexExtras.java`)
+`GuestVertexExtras` injects a 20-byte attribute block into Flywheel's pooled meshes:
+
+| Attribute | GLSL Name | Format | Stride / Offset | Description |
+|---|---|---|---|---|
+| **IrisEntity** | `mc_Entity` | `GpuFormat.RG16_SINT` | 4 bytes (offset 0) | Block ID or Entity ID; Render Type (0 = Terrain, 1 = Entity) |
+| **MidTexCoord** | `mc_midTexCoord` | `GpuFormat.RG32_FLOAT` | 8 bytes (offset 4) | Centroid UV coordinates $(u_{\text{mid}}, v_{\text{mid}})$ of the parent quad |
+| **Tangent** | `at_tangent` | `GpuFormat.RGBA8_SNORM` | 4 bytes (offset 12) | Surface tangent vector $\mathbf{T}_{xyz}$ and handedness sign bit $w$ |
+| **MidBlock** | `at_midBlock` | `GpuFormat.RGBA8_SNORM` | 4 bytes (offset 16) | Relative offset from vertex to block center $[x - 0.5, y - 0.5, z - 0.5]$ |
+
+- **Tangent Computation**: Evaluated per quad using `NormalHelper.computeTangent`, ensuring accurate normal-mapping on rotated instances.
+- **Dynamic Invalidation**: If the player changes resource packs or Iris swaps block ID tables (`WorldRenderingSettings.INSTANCE.getBlockStateIds()`), `blockIdsChanged()` returns true, invalidating pooled mesh attribute slices without recompiling underlying geometry.
+
+#### 7.5.2 Material & Draw Tag Resolution (`GuestDrawTags.java`)
+- Maps block entity states to Iris integer IDs (`WorldRenderingSettings.INSTANCE.getBlockStateIds()`).
+- Maps entity instances to Iris entity registry IDs (`WorldRenderingSettings.INSTANCE.getEntityIds()`), including special-case conversions (e.g., converting zombie villagers).
+- Extracts item model IDs for item frames and handheld model instances.
+
+---
+
+### 7.6 Colorwheel Shaderpack Contract vs Bundled Adapters (`ContractProperties`, `ContractProgram`, Bundled Adapters)
+
+To achieve clean integration without fragile heuristics, CrankShaft adopts and expands the **Colorwheel shaderpack contract** while maintaining a suite of **bundled pack adapters**.
+
+#### 7.6.1 The Colorwheel Shaderpack Contract
+Shaderpacks implementing the Colorwheel specification ship specialized programs prefixed with `clrwl_` and a descriptor file `colorwheel.properties`:
+- **Contract Programs (`ContractProgram.java`)**:
+  - `clrwl_gbuffers`: Core opaque terrain/block pass.
+  - `clrwl_gbuffers_entities`: Opaque entity pass (CrankShaft extension to Colorwheel).
+  - `clrwl_gbuffers_translucent`: Order-independent translucent pass.
+  - `clrwl_gbuffers_additive`, `clrwl_gbuffers_glint`, `clrwl_gbuffers_lightning`, `clrwl_gbuffers_damagedblock`.
+  - `clrwl_shadow`, `clrwl_shadow_translucent`, `clrwl_shadow_additive`.
+- **Fragment Shader Interface**:
+  Contract programs do not write directly to `gl_FragData[N]`. Instead, they expose a standard function interface:
+  ```glsl
+  void clrwl_computeFragment(
+      vec4 sampleColor,
+      out vec4 fragColor,
+      out vec2 fragLight,
+      out float ao,
+      out vec4 fragOverlay
+  );
+  ```
+  Flywheel injects lighting evaluation, ambient occlusion scaling, and cutout discard logic around this contract call.
+- **Descriptor Configuration (`ContractProperties.java`)**:
+  Parses `colorwheel.properties` to extract:
+  - `shadow.enabled = true | false`
+  - `oit = true | false` (enables/disables OIT per pass)
+  - `oit.gbuffers.coefficientRanks = 1, 2, 3` (wavelet moment ranks)
+  - `blend.<program> = srcRgb dstRgb srcAlpha dstAlpha` (custom framebuffer blend modes)
+
+#### 7.6.2 Bundled Shaderpack Adapters (`assets/flywheel/iris/patches/`)
+For popular shaderpacks that have not yet implemented the native Colorwheel contract, CrankShaft bundles Schema 2 JSON adapters:
+
+| Adapter JSON | Target Shaderpack | Matching Heuristic | Applied Mechanism |
+|---|---|---|---|
+| `complementary.json` | Complementary Reimagined & Unbound (r5.9.3) | Source match: `gbuffers_entities.glsl`, `lib/common.glsl` | Patches `clrwl_gbuffers_entities` via `complementary.patch`; full OIT enabled |
+| `bsl.json` | BSL Shaders (v10.1.5) | SHA-256 fingerprint: `a2e283ad...` on `gbuffers_water.glsl` | Injects `forwardOit` into `gbuffers_water`; validates source-over alpha blending |
+| `solas.json` | Solas Shaders (V3.7b) | Source match on Solas header pragmas | Patches entity and translucent stages via `solas.patch` |
+| `sundial.json` | Sundial (Alpha Build 2026-08-28) | Source match on `Water.frag` & `Textured.frag` | Wraps translucent and shadow stages; enables `-Dcrankshaft.iris.oit.deferred=true` |
+| `makeup.json` | MakeUp UltraFast (9.5e) | Source string verification | Synthesizes forward OIT contracts |
+| `iteration.json` | IterationRP (Alpha 0.8.28) | Header match | Bridges geometry stages; explicitly disables OIT per pack directives |
+
+**Anti-Fragility Principle:** Adapters verify internal GLSL function definitions and SHA-256 source fingerprints rather than file names or version numbers. If a shaderpack author updates their code and breaks patch offsets, the adapter automatically disengages, falling back gracefully to generic unadapted rendering.
+
+---
+
+### 7.7 Sodium Chunk Terrain Integration & Experimental NVIDIA Mesh Shaders under Iris (`IrisTerrainRasterizer`)
+
+Beyond visual entities, CrankShaft 1.4.0 extends GPU culling and meshlet rasterization to **Sodium chunk terrain** under active shaderpacks via `IrisTerrainRasterizer.java`.
+
+#### 7.7.1 Terrain Rasterization Mechanics
+When enabled via launcher flags (`-Dcrankshaft.iris.terrain=true`), CrankShaft intercepts Sodium's terrain chunk drawing:
+1. **Command Conversion (`convert.comp`)**: Converts Sodium's chunk region draw commands into meshlet execution runs.
+2. **Phase 2 Occlusion Recovery (`recovery.comp` / `recovery_cached.comp`)**: Re-tests occluded terrain meshlets against `GuestTerrainGate.meshDepthTexture`.
+3. **Command Compaction (`compact.comp`)**: Compacts surviving command streams using GPU workgroup atomics.
+
+#### 7.7.2 Experimental NVIDIA Mesh Shader Pipeline (`-Dcrankshaft.iris.mesh=true`)
+On modern NVIDIA GPUs (Turing architecture and newer), CrankShaft can bypass fixed-function vertex fetching entirely:
+- **Backend Selection**: Automatically activates `flywheel:iris_mesh_shader`.
+- **Shader Pipeline (`GuestTerrainMeshShaders.java`)**:
+  - `task.glsl`: Task shader executing workgroup-level bounding box frustum culling and Hi-Z depth pyramid testing.
+  - `mesh.glsl`: Mesh shader fetching packed vertex buffers, decoding normals, and outputting up to 64 vertices and 126 triangles per meshlet.
+  - Fragment shader: Direct shaderpack G-buffer or shadow evaluation.
+- **Direct Submission Option (`-Dcrankshaft.iris.mesh.direct=true`)**: Skips task-shader occlusion culling for opaque terrain, minimizing compute dispatch overhead when GPU fillrate is the primary bottleneck.
+
+---
+
+### 7.8 Order-Independent Transparency (OIT) under Shaderpacks: Wavelet & Deferred Layer Profiles
+
+Translucent rendering under shaderpacks is notoriously prone to sorting artifacts. CrankShaft 1.4.0 integrates two distinct OIT architectures:
+
+#### 7.8.1 Trigonometric Moment Wavelet OIT
+Used for forward translucent passes (`clrwl_gbuffers_translucent` and packs matching `forwardOit`):
+1. **Pass 1 (`DEPTH_RANGE`)**: Records the minimum and maximum depth $[Z_{\text{near}}, Z_{\text{far}}]$ of all transparent surfaces overlapping each pixel.
+2. **Pass 2 (`COEFFICIENTS`)**: Accumulates trigonometric moment series coefficients:
+   $$b_k = \int_0^1 \cos(k \pi z) \, \alpha(z) \, dz, \quad c_k = \int_0^1 \sin(k \pi z) \, \alpha(z) \, dz$$
+   Coefficients are stored in 2D array textures (`_flw_coefficients0..N`).
+3. **Pass 3 (`EVALUATE`)**: Reconstructs the continuous transmittance function $T(z)$, evaluates optical absorbance, applies spatial blue noise dithering (`_flw_blueNoise`), and accumulates illuminated color into `_flw_accumulate0..N`.
+4. **Pass 4 (`COMPOSITE`)**: Fullscreen composite pass (`oitComposite`) blends accumulated light into the active shaderpack's composite framebuffer.
+
+#### 7.8.2 Multi-Layer Alpha Blending (MLAB / K-Buffer) & Sundial Deferred OIT Profile (`-Dcrankshaft.iris.oit.deferred=true`)
+While forward translucent rendering leverages mathematical moment approximation to avoid per-pixel VRAM allocation limits, deferred PBR shaderpacks (such as Sundial) compute reflections, refractions, and atmospheric scattering inside post-geometry composite passes (`composite1` through `composite6`). For these pipelines, CrankShaft implements a discrete Multi-Layer Alpha Blending (MLAB) architecture:
+- **Per-Pixel Linked List (A-Buffer / K-Buffer)**: During translucent rasterization, an atomic counter allocates fragment nodes from a global SSBO storage pool (`layer_storage.glsl`). Each node records RGBA color, world-space normal, linear depth, and material roughness/specular properties into a per-pixel singly linked list.
+- **Compute Bitonic Merge Sort**: Before composite shading executes, `DeferredOitRenderer.java` dispatches a compute pass that traverses each pixel's fragment list, retains up to $K$ depth layers (default $K=8$), and executes an in-register bitonic merge sort along view depth.
+- **Deferred G-Buffer Reconstruction**: The sorted $K$ layers are resolved and written back into intermediate G-buffer render targets. This enables deferred lighting passes to calculate specular reflections and fresnel terms per translucent layer, preventing the severe color collapse common to single-layer alpha blend approaches.
+
+---
+
+### 7.9 Side-by-Side Comparative Re-Assessment: CrankShaft 1.4.0 Guest Patching vs Nucleus 4-Tier Pipeline
+
+With the release of CrankShaft 1.4.0, **Domain 5 (Shader Mod Interoperability)** must be re-evaluated. CrankShaft is no longer an "opt-out" engine; it now presents an advanced, compute-driven guest patching architecture.
+
+#### Updated Master Comparative Matrix: Domain 5 (Shader Mod Interoperability)
+
+| Architectural Dimension | CrankShaft 1.4.0 (Guest AST Patching Architecture) | Nucleus (Native 4-Tier Compute Interoperability) |
+|---|---|---|
+| **Core Philosophy** | **Runtime AST Rewriting**: Modifies shaderpack GLSL source via `glsl-transformer` to accept Flywheel vertex/instance buffers. | **VRAM Vertex Transformation**: Uses GLSL 4.3 compute baker to transform vertices into VBOs, drawing via untouched native pack shaders. |
+| **Shaderpack Compatibility** | High for tested packs (Colorwheel contract or bundled JSON adapters); fragile for untracked/experimental packs. | Universal (100% mathematical fidelity across all shaderpacks without requiring pack-specific patches or contracts). |
+| **Shadow Pass Integration** | GPU-culled MDI draws via `GuestShadowCull` and `shadow_cull.glsl` (13 frustum planes in UBO); supports translucent shadows. | Global shadow collector (`IrisShadowBatchCollector`) + mathematical distortion compensation (`IrisShadowDistortion`). |
+| **Shadow Distortion Handling** | Implicit: AST-patched vertex shaders execute the pack's own native distortion functions. | Explicit: Detects quartic (Photon) and linear (BSL) distortion functions, replicating them in Tier 2 instanced shaders. |
+| **Model Architecture Suitability** | Optimized for homogeneous block/entity models (Vanillate, Create machinery, Sodium chunks). | Purpose-built for heterogeneous multipart Wavefront OBJ multiblock hierarchies with 8-corner trilinear lightmaps. |
+| **Runtime Compilation Overhead** | High: AST parsing, lexing, SSBO shifting, and recompilation of dozens of shader variants on pack reload. | Near Zero: Pre-compiled compute baker shader (`NucleusGpuBaker`); zero runtime shader recompilation on pack load. |
+| **Order-Independent Transparency** | Multi-pass Wavelet OIT (trigonometric moments) + Deferred Layered MLAB OIT (`DeferredOitRenderer`). | Globally sorted back-to-front alpha blending pass + Tier 1 baked depth sorting. |
+| **Hardware & Driver Requirements** | High: OpenGL 4.5 Direct State Access (`GL45C`), GLSL 4.60 Core, compute shaders, Java 25+ Blaze3D RHI. | Flexible: Runs across OpenGL 3.2 Core up to 4.4+ persistent coherent buffers; full macOS & Intel iGPU compatibility. |
+
+#### 7.9.1 AST Program Patching vs. VRAM Compute Baking & Tier 2/3 Instancing
+- **CrankShaft AST Patching Pipeline (`glsl-transformer`)**:
+  CrankShaft intercepts shaderpack GLSL at the abstract syntax tree level. By mutating shader source code prior to driver compilation, it injects Flywheel vertex layout structures and remaps resource bindings (e.g., demoting uniforms and shifting SSBO bindings). This allows Flywheel's instanced and indirect vertex streams to execute within the pack's native fragment stages without duplicating geometry in VRAM. However, this approach incurs significant startup and reload compilation latency, and is vulnerable to grammar edge cases in heavily preprocessed or obfuscated third-party shaderpacks.
+- **Nucleus Tier 1 GPU Compute Baker (`NucleusGpuBaker`)**:
+  Nucleus isolates shader interoperability entirely on the geometry side. Rather than parsing or altering third-party shader source code, `NucleusGpuBaker` executes a dedicated GLSL 4.3 compute shader in VRAM that transforms animated multipart bone matrices, evaluates 8-corner volumetric lightmaps (`LightSampleCache`), and writes standard vanilla vertex formats directly into client VBOs. Geometry is then rendered using the shaderpack's **unmodified native shader programs** (`gbuffers_terrain`, `gbuffers_entities`). This guarantees 100% shaderpack stability and zero runtime shader recompilation overhead.
+- **Nucleus Tier 2 & Tier 3 Instanced Interoperability**:
+  For simpler instanced models, Nucleus Tier 2 utilizes `ExtendedShader` with analytical shadow distortion injection (`IrisShadowDistortion`). Tier 3 (`IrisRenderBatch`) coordinates batch state transitions, ensuring uniform state and texture bindings are updated only once per render pass rather than per mesh draw, providing massive throughput under high entity counts.
+
+#### 7.9.2 Shadow Pass Pipeline: GPU Frustum Culling vs. Distortion Curve Compensation
+- **CrankShaft GPU Shadow Frustum Culling (`GuestShadowCull`)**:
+  CrankShaft optimizes the shadow pass by uploading a 13-plane bounding frustum (6 primary camera planes, 6 directional shadow-box planes, and 1 near clamping plane) to an SSBO/UBO. The `shadow_cull.glsl` compute shader evaluates instance bounding spheres against all 13 planes concurrently, writing active instance offsets to output arrays and updating indirect command counts via `glMultiDrawElementsIndirectCountARB`. While this eliminates CPU culling overhead, CrankShaft delegates shadow distortion entirely to the patched shaderpack vertex program.
+- **Nucleus Distortion Compensation (`IrisShadowDistortion`)**:
+  Nucleus utilizes a CPU/GPU global shadow collector (`IrisShadowBatchCollector`). Because non-linear shadow map distortions (such as BSL polynomial warping or Photon quartic distortion) warp shadow coordinates non-uniformly, Nucleus inspects shaderpack sources to extract distortion coefficients. It then evaluates the inverse distortion curve within `IrisShadowDistortion` to adjust bounding volume margins and prevent shadow acne, clipping, or shadow edge detachment across large industrial multiblock structures.
+
+#### 7.9.3 Structural Model Specialization: Homogeneous Instancing vs. Heterogeneous Multiblocks
+- **CrankShaft Homogeneous Focus**:
+  CrankShaft's guest pipeline is tuned for homogeneous blocks, tile entities, and chunk terrain (Create kinetic blocks, standard Minecraft models). Instances share identical vertex topology and uniform lightmap coordinate spaces.
+- **Nucleus Heterogeneous Multiblock Architecture**:
+  HBM-Modernized requires rendering massive industrial complexes (Centrifuges, Chemical Plants, Nuclear Turbines, Particle Accelerators) with dozens of dynamic sub-parts, articulating linkages, and individual rotation pivots. Nucleus manages these via `MdiGeometryAtlas` (baking diverse sub-meshes into a monolithic allocation), trilinear 8-corner lightmap interpolation, and `NucleusDispatcherBypass` (bypassing block entity ticking during rendering to recover over 25% CPU frame time). CrankShaft has no provision for multipart bone hierarchies or dispatcher bypassing.
+
+#### 7.9.4 Hardware Capabilities, Driver Portability, and RHI Constraints
+- **CrankShaft Modern RHI Lock-in**:
+  CrankShaft 1.4.0 is tightly coupled to Minecraft 26.2's Blaze3D RHI (`com.mojang.blaze3d.pipeline.RenderPipeline`, `GpuBuffer`, `RenderPass`), requiring Java 25+, OpenGL 4.5 Direct State Access (`GL45C`), and GLSL 4.60 Core profile. It cannot be run on Minecraft 1.20.1 or 1.21.1 without emulating the entire Blaze3D RHI architecture.
+- **Nucleus Cross-Version Portability**:
+  Nucleus targets Forge 1.20.1 and NeoForge 1.21.1, abstracting hardware differences through `com.hbm_m.platform`. It gracefully scales from baseline OpenGL 3.2 Core profile (falling back to client arrays or instanced VBOs) up to OpenGL 4.5 MDI with persistent mapped buffers, guaranteeing full compatibility across Windows, Linux, and macOS (via Metal/MoltenVK).
+
+---
+
+### 7.10 Strategic Verdict Re-Evaluation: Whole-Engine Port vs Component Borrowing (Re-assessing Section 5.1)
+
+Does CrankShaft 1.4.0’s introduction of full Iris shaderpack support alter the strategic verdict of Section 5.1?
+
+**The strategic verdict remains an unequivocal REJECTION of a whole-engine port.**
+
+#### Technical Justification for Continued Rejection
+1. **Incompatible Render Hardware Interface (Blaze3D RHI vs. 1.20.1/1.21.1 Core Profile)**:
+   CrankShaft 1.4.0 is engineered exclusively for Minecraft 26.2 and depends fundamentally on Mojang's modern Vulkan/RHI abstractions:
+   `com.mojang.blaze3d.pipeline.RenderPipeline`, `RenderPass`, `GpuBuffer`, `ColorTargetState`, and `DepthStencilState`.
+   These abstractions do not exist in Minecraft 1.20.1 (Forge 47.4.20) or 1.21.1 (NeoForge 21.1.248), where rendering is governed by traditional OpenGL 3.2 Core profile state management (`RenderSystem`, `BufferBuilder`, `ShaderInstance`). Porting CrankShaft would require re-implementing Mojang's entire 26.2 RHI emulation layer inside HBM-Modernized.
+2. **Multipart OBJ Multiblock Hierarchy & Dispatcher Bypass**:
+   HBM-Modernized’s rendering workload is dominated by massive industrial multiblocks (Advanced Assemblers, Chemical Plants, Centrifuges, Nuclear Turbines), characterized by:
+   - Dynamic multipart bone hierarchies with rotating linkages.
+   - 8-corner trilinear volumetric lightmap interpolation (`LightSampleCache`).
+   - Monolithic geometry stitching in `MdiGeometryAtlas`.
+   - `NucleusDispatcherBypass`, which skips Sodium's chunk-by-chunk block entity iteration and saves **25.4% CPU frame time**.
+   CrankShaft has no concept of multipart OBJ trees or dispatcher bypassing; its engine is designed for entity/block-entity models with flat coordinate frames.
+3. **Robustness of VRAM Compute Baking vs. AST Transformation**:
+   CrankShaft's AST transformation relies on fragile string patterns and AST assumptions via `glsl-transformer`. While effective for curated packs, AST manipulation frequently fails when confronted with obfuscated, macro-heavy, or non-standard GLSL constructs. Nucleus's Tier 1 GPU Compute Baker (`NucleusGpuBaker`) operates purely on geometry in VRAM, submitting vertices through the shaderpack's **unmodified native program**. This guarantees 100% visual fidelity and zero driver compilation failures.
+
+#### Recommended Component Borrowing Roadmap
+While a whole-engine port is unviable, several specific algorithms from CrankShaft 1.4.0 should be integrated into Nucleus:
+- **Adopt Replicated GPU Shadow Frustum Culling (`GuestShadowCull`)**:
+  Nucleus currently collects all active machine parts into CPU shadow buffers. Adopting CrankShaft's 13-plane UBO structure and compute culling shader (`shadow_cull.glsl`) would allow Nucleus to cull non-casting multiblock parts on the GPU during the shadow pass, eliminating CPU shadow collection overhead in large facilities.
+- **Adopt Shaderpack Source Fingerprinting (`ContractPatches`)**:
+  Nucleus's `IrisShadowDistortion` inspects shader sources for distortion formulas. Adopting CrankShaft's Schema 2 JSON adapter pattern with SHA-256 AST fingerprinting would make distortion detection robust against shaderpack version updates.
+
+---
+
+### 7.11 Primary Source Code Citation Index for CrankShaft 1.4.0 Subsystem
+
+All citations reference the CrankShaft repository at `C:\Projects\CrankShaft` (branch `26.2`, commit `635b7b0`):
+
+| File Path (Relative to `C:\Projects\CrankShaft`) | Line Range | Architectural Subject Matter |
+|---|---|---|
+| `iris/src/main/java/dev/engine_room/flywheel/iris/IrisBackends.java` | 28–58 | Registration of `iris_instancing` (490) and `iris_indirect` (890 / 1 Intel) backends |
+| `iris/src/main/java/dev/engine_room/flywheel/iris/engine/GuestEngine.java` | 41–65, 99–139 | Frame preparation, shadow pass origin translation, SSBO restoration lifecycle |
+| `iris/src/main/java/dev/engine_room/flywheel/iris/engine/GuestIndirectDrawManager.java` | 70–97, 112–155 | Two-phase Hi-Z opaque seam submission, GPU shadow dispatch, OIT orchestration |
+| `iris/src/main/java/dev/engine_room/flywheel/iris/engine/GuestShadowCull.java` | 36–58, 62–103 | UBO upload of 13 shadow frustum planes, distance culler, and safe zone parameters |
+| `iris/src/main/java/dev/engine_room/flywheel/iris/engine/GuestEntityShadows.java` | 18–28 | Vanilla entity blob shadow suppression detection (`textures/misc/shadow.png`) |
+| `iris/src/main/java/dev/engine_room/flywheel/iris/engine/GuestVertexExtras.java` | 24–30, 48–97 | 20-byte Iris extended vertex format (`mc_Entity`, `mc_midTexCoord`, `at_tangent`, `at_midBlock`) |
+| `iris/src/main/java/dev/engine_room/flywheel/iris/engine/GuestDrawTags.java` | 30–61 | BlockState and Entity type mapping to Iris material IDs |
+| `iris/src/main/java/dev/engine_room/flywheel/iris/compile/GuestPipelines.java` | 88–130, 560–605 | Guest pipeline compilation, program caching, framebuffer target binding |
+| `iris/src/main/java/dev/engine_room/flywheel/iris/compile/GuestShaders.java` | 78–92, 134–199, 203–247 | `glsl-transformer` AST input demotion, SSBO binding shifting (offset 8), synthesized main() |
+| `iris/src/main/java/dev/engine_room/flywheel/iris/compile/ContractProgram.java` | 12–25, 40–68 | Colorwheel program enum (`clrwl_gbuffers`, `clrwl_shadow`, `clrwl_gbuffers_entities`) |
+| `iris/src/main/java/dev/engine_room/flywheel/iris/compile/ContractProperties.java` | 41–100, 108–174 | `colorwheel.properties` parser, wavelet moment ranks, custom buffer blending modes |
+| `meshlet/src/main/java/me/mlbv/meshlet/mesh/gl/IrisTerrainRasterizer.java` | 37–62, 63–162 | Sodium chunk terrain MDI rasterization, NV mesh shader dispatch under Iris |
+| `iris/src/main/resources/assets/flywheel/flywheel/iris/shadow_cull.glsl` | 1–87 | Compute shader evaluating bounding spheres against 13 shadow planes |
+| `iris/src/main/resources/assets/flywheel/iris/patches/bsl.json` | 1–30 | BSL forward OIT adapter with SHA-256 fingerprint verification |
+| `iris/src/main/resources/assets/flywheel/iris/patches/complementary.json` | 1–31 | Complementary Reimagined & Unbound entity contract adapter |
+| `iris/src/main/resources/assets/flywheel/iris/patches/sundial.json` | 1–74 | Sundial deferred multi-layer OIT profile adapter |
+
+---
+
+### 7.12 Navigational Footnote Reference Index
+
+This index resolves all footnote callout markers inserted throughout Sections 1 through 6 of this document:
+
+- **`[^iris-update-1]`** (Referenced in Section 1.4 *High-Level Architectural Comparison Diagram*):  
+  Superseded by [Section 7.1](#71-architectural-overview--release-scope-crankshaft-140--commit-635b7b0) & [Section 7.2](#72-the-guest-engine--multi-draw-indirect-pipeline-guestengine-guestindirectdrawmanager). CrankShaft 1.4.0 introduces dedicated `iris_indirect` and `iris_instancing` execution branches that remain active under Iris shaderpacks rather than disabling the engine.
+- **`[^iris-update-2]`** (Referenced in Section 2.10 *Shader Mod Fallback Policy*):  
+  Superseded by [Section 7.1](#71-architectural-overview--release-scope-crankshaft-140--commit-635b7b0) & [Section 7.2](#72-the-guest-engine--multi-draw-indirect-pipeline-guestengine-guestindirectdrawmanager). CrankShaft 1.4.0 no longer deactivates its engine or reverts to vanilla BER dispatch under shaderpacks; it redirects rendering through `GuestEngine` and `GuestIndirectDrawManager`.
+- **`[^iris-update-3]`** (Referenced in Section 4.1 *Master Comparative Matrix: Domain 5*):  
+  Superseded by [Section 7.1](#71-architectural-overview--release-scope-crankshaft-140--commit-635b7b0), [Section 7.3](#73-shader-compilation--dynamic-ast-transformation-via-glsl-transformer-guestshaders-guestpipelines), & [Section 7.9](#79-side-by-side-comparative-re-assessment-crankshaft-140-guest-patching-vs-nucleus-4-tier-pipeline). CrankShaft 1.4.0 replaces strict opt-out disabling with runtime AST shader modification via `glsl-transformer`.
+- **`[^iris-update-4]`** (Referenced in Section 4.1 *Master Comparative Matrix: Domain 5*):  
+  Superseded by [Section 7.4](#74-shadow-pass-architecture--gpu-frustum-culling-guestshadows-guestshadowcull-translucent-shadows). CrankShaft 1.4.0 adds custom shadow pass support, including GPU compute shadow frustum culling (`GuestShadowCull`) and translucent shadow rendering.
+- **`[^iris-update-5]`** (Referenced in Section 4.6 *Domain 5: Shader Mod Interoperability*):  
+  Superseded by [Section 7.2](#72-the-guest-engine--multi-draw-indirect-pipeline-guestengine-guestindirectdrawmanager), [Section 7.3](#73-shader-compilation--dynamic-ast-transformation-via-glsl-transformer-guestshaders-guestpipelines), & [Section 7.6](#76-colorwheel-shaderpack-contract-vs-bundled-adapters-contractproperties-contractprogram-bundled-adapters). CrankShaft 1.4.0 adapts to shaderpack pipelines using the Colorwheel contract (`clrwl_` programs) and bundled JSON adapters (`bsl.json`, `complementary.json`, etc.).
+- **`[^iris-update-6]`** (Referenced in Section 5.1 *Strategic Verdict: Whole-Engine Port Rejection Rationale*):  
+  Re-evaluated in [Section 7.10](#710-strategic-verdict-re-evaluation-whole-engine-port-vs-component-borrowing-re-assessing-section-51). While CrankShaft 1.4.0 now supports Iris shaderpacks, a whole-engine port remains unviable due to Blaze3D RHI incompatibilities, lack of multipart OBJ atlas support, and lack of dispatcher bypass.
+- **`[^iris-update-7]`** (Referenced in Appendix A *CrankShaft 26.2 Repository Reference: Backends.java*):  
+  Superseded by [Section 7.1](#71-architectural-overview--release-scope-crankshaft-140--commit-635b7b0) & [Section 7.11](#711-primary-source-code-citation-index-for-crankshaft-140-subsystem). `IrisBackends.java` registers `iris_indirect` and `iris_instancing`, which take precedence over standard backends whenever `isPackInUse()` is true.
+- **`[^iris-update-8]`** (Referenced in Appendix A *CrankShaft 26.2 Repository Reference: ShadersModHelper.java*):  
+  Superseded by [Section 7.1](#71-architectural-overview--release-scope-crankshaft-140--commit-635b7b0) & [Section 7.11](#711-primary-source-code-citation-index-for-crankshaft-140-subsystem). Queries to `IrisApi.getInstance().isShaderPackInUse()` now activate `GuestEngine` instead of forcing a fallback to `OFF_BACKEND`.
+
+[^iris-update-1]: Superseded by [Section 7.1](#71-architectural-overview--release-scope-crankshaft-140--commit-635b7b0) & [Section 7.2](#72-the-guest-engine--multi-draw-indirect-pipeline-guestengine-guestindirectdrawmanager). CrankShaft 1.4.0 introduces dedicated `iris_indirect` and `iris_instancing` execution branches that remain active under Iris shaderpacks rather than disabling the engine.
+[^iris-update-2]: Superseded by [Section 7.1](#71-architectural-overview--release-scope-crankshaft-140--commit-635b7b0) & [Section 7.2](#72-the-guest-engine--multi-draw-indirect-pipeline-guestengine-guestindirectdrawmanager). CrankShaft 1.4.0 no longer deactivates its engine or reverts to vanilla BER dispatch under shaderpacks; it redirects rendering through `GuestEngine` and `GuestIndirectDrawManager`.
+[^iris-update-3]: Superseded by [Section 7.1](#71-architectural-overview--release-scope-crankshaft-140--commit-635b7b0), [Section 7.3](#73-shader-compilation--dynamic-ast-transformation-via-glsl-transformer-guestshaders-guestpipelines), & [Section 7.9](#79-side-by-side-comparative-re-assessment-crankshaft-140-guest-patching-vs-nucleus-4-tier-pipeline). CrankShaft 1.4.0 replaces strict opt-out disabling with runtime AST shader modification via `glsl-transformer`.
+[^iris-update-4]: Superseded by [Section 7.4](#74-shadow-pass-architecture--gpu-frustum-culling-guestshadows-guestshadowcull-translucent-shadows). CrankShaft 1.4.0 adds custom shadow pass support, including GPU compute shadow frustum culling (`GuestShadowCull`) and translucent shadow rendering.
+[^iris-update-5]: Superseded by [Section 7.2](#72-the-guest-engine--multi-draw-indirect-pipeline-guestengine-guestindirectdrawmanager), [Section 7.3](#73-shader-compilation--dynamic-ast-transformation-via-glsl-transformer-guestshaders-guestpipelines), & [Section 7.6](#76-colorwheel-shaderpack-contract-vs-bundled-adapters-contractproperties-contractprogram-bundled-adapters). CrankShaft 1.4.0 adapts to shaderpack pipelines using the Colorwheel contract (`clrwl_` programs) and bundled JSON adapters (`bsl.json`, `complementary.json`, etc.).
+[^iris-update-6]: Re-evaluated in [Section 7.10](#710-strategic-verdict-re-evaluation-whole-engine-port-vs-component-borrowing-re-assessing-section-51). While CrankShaft 1.4.0 now supports Iris shaderpacks, a whole-engine port remains unviable due to Blaze3D RHI incompatibilities, lack of multipart OBJ atlas support, and lack of dispatcher bypass.
+[^iris-update-7]: Superseded by [Section 7.1](#71-architectural-overview--release-scope-crankshaft-140--commit-635b7b0) & [Section 7.11](#711-primary-source-code-citation-index-for-crankshaft-140-subsystem). `IrisBackends.java` registers `iris_indirect` and `iris_instancing`, which take precedence over standard backends whenever `isPackInUse()` is true.
+[^iris-update-8]: Superseded by [Section 7.1](#71-architectural-overview--release-scope-crankshaft-140--commit-635b7b0) & [Section 7.11](#711-primary-source-code-citation-index-for-crankshaft-140-subsystem). Queries to `IrisApi.getInstance().isShaderPackInUse()` now activate `GuestEngine` instead of forcing a fallback to `OFF_BACKEND`.
+
+---
+*End of Master Comparative Study & Architectural Roadmap (Updated for CrankShaft 1.4.0).*
+
+
