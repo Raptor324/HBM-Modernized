@@ -32,6 +32,21 @@ public final class ClientPowerArmorRender {
 
     public static final ModelResourceLocation DNT_MODEL_BAKED = new ModelResourceLocation(DNT_MODEL_ID, "inventory");
 
+    /** Общая OBJ-геометрия костюма химзащиты (все окрасы шарят меш). По модели на окрас:
+     * UV в запечённых квадах привязаны к атлас-позиции спрайта конкретной текстуры,
+     * поэтому подмена материала в слое цвет не меняет - нужна своя запечённая модель. */
+    public static final ResourceLocation HAZMAT_MODEL_ID = ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "hazmat_armor");
+
+    public static final ModelResourceLocation HAZMAT_MODEL_BAKED = new ModelResourceLocation(HAZMAT_MODEL_ID, "inventory");
+
+    public static final ResourceLocation HAZMAT_RED_MODEL_ID = ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "hazmat_red_armor");
+
+    public static final ModelResourceLocation HAZMAT_RED_MODEL_BAKED = new ModelResourceLocation(HAZMAT_RED_MODEL_ID, "inventory");
+
+    public static final ResourceLocation HAZMAT_GREY_MODEL_ID = ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "hazmat_grey_armor");
+
+    public static final ModelResourceLocation HAZMAT_GREY_MODEL_BAKED = new ModelResourceLocation(HAZMAT_GREY_MODEL_ID, "inventory");
+
     private ClientPowerArmorRender() {}
 }
 

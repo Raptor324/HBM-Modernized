@@ -107,6 +107,10 @@ public final class HazmatRegistry {
         registerSet(ModItems.COBALT_HELMET, ModItems.COBALT_CHESTPLATE, ModItems.COBALT_LEGGINGS, ModItems.COBALT_BOOTS, cobalt);
         registerSet(ModItems.ALLOY_HELMET, ModItems.ALLOY_CHESTPLATE, ModItems.ALLOY_LEGGINGS, ModItems.ALLOY_BOOTS, alloy);
 
+        // Красный и серый костюмы (в оригинале hazRed = 1.0, hazGray = 2.0).
+        registerSet(ModItems.HAZMAT_HELMET_RED, ModItems.HAZMAT_PLATE_RED, ModItems.HAZMAT_LEGS_RED, ModItems.HAZMAT_BOOTS_RED, 1.0D);
+        registerSet(ModItems.HAZMAT_HELMET_GREY, ModItems.HAZMAT_PLATE_GREY, ModItems.HAZMAT_LEGS_GREY, ModItems.HAZMAT_BOOTS_GREY, 2.0D);
+
         registerHazmat(Items.IRON_HELMET, iron * HELMET);
         registerHazmat(Items.IRON_CHESTPLATE, iron * CHEST);
         registerHazmat(Items.IRON_LEGGINGS, iron * LEGS);

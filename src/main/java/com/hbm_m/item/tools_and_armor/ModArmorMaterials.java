@@ -45,8 +45,17 @@ public enum ModArmorMaterials implements ArmorMaterial {
     SECURITY("security", 26, new int[]{ 4, 6, 4, 3 }, 25,
             SoundEvents.ARMOR_EQUIP_CHAIN, 1.25f, 0.03f, () -> Ingredient.of(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE))),
 
-    HAZMAT("hazmat", 26, new int[]{ 2, 4, 2, 1 }, 25,
-            SoundEvents.ARMOR_EQUIP_LEATHER, 0f, 0f, () -> Ingredient.of(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE))),
+    // Хазмат: оригинал HBM_HAZMAT/HBM_HAZMAT2/HBM_HAZMAT3 - factor 60, {2,5,4,1}, ench 5,
+    // ремонт hazmat_cloth(_red/_grey). Радиацию и газы сверх этого считают
+    // HazmatRegistry/ArmorRegistry.
+    HAZMAT("hazmat", 60, new int[]{ 2, 5, 4, 1 }, 5,
+            SoundEvents.ARMOR_EQUIP_LEATHER, 0f, 0f, () -> Ingredient.of(ModItems.HAZMAT_CLOTH.get())),
+
+    HAZMAT_RED("hazmat_red", 60, new int[]{ 2, 5, 4, 1 }, 5,
+            SoundEvents.ARMOR_EQUIP_LEATHER, 0f, 0f, () -> Ingredient.of(ModItems.HAZMAT_CLOTH_RED.get())),
+
+    HAZMAT_GREY("hazmat_grey", 60, new int[]{ 2, 5, 4, 1 }, 5,
+            SoundEvents.ARMOR_EQUIP_LEATHER, 0f, 0f, () -> Ingredient.of(ModItems.HAZMAT_CLOTH_GREY.get())),
 
     PAA("paa", 26, new int[]{ 5, 7, 5, 4 }, 25,
             SoundEvents.ARMOR_EQUIP_GOLD, 1.75f, 0.07f, () -> Ingredient.of(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE))),

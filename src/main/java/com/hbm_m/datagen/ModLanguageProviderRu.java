@@ -3470,6 +3470,9 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("tooltip.hbm_m.mask.noFilter", "Фильтр не установлен!");
         add("curios.identifier.mask", "Маска");
         add("tooltip.hbm_m.mask.filter", "Установленный фильтр:");
+        add("trait.hbm_m.rad_resistance", "Радиационное сопротивление: %s");
+        add("tooltip.hbm_m.hazmat.mudco", "Предоставлено Mud Co. Hazmat Supplies");
+        add("hud.hbm_m.mask.noFilter", "В маске нет фильтра!");
         add("tooltip.hbm_m.attachment.gasProtection", "Газовая защита");
         add("tooltip.hbm_m.attachment.slotHelmet", "Крепится к шлемам на столе модификаций брони");
         add("item.hbm_m.siox.desc", "Обращает мезотелиому вспять силой асбеста!");

@@ -35,6 +35,8 @@ import com.hbm_m.item.nuclear.WatzPelletType;
 import com.hbm_m.item.food.ItemConserve;
 import com.hbm_m.item.food.ItemEnergyDrink;
 import com.hbm_m.item.food.ModFoods;
+import com.hbm_m.item.hazmat.HazmatArmorItem;
+import com.hbm_m.item.hazmat.HazmatMaskArmorItem;
 import com.hbm_m.item.gasmask.ArmorGasMaskItem;
 import com.hbm_m.item.gasmask.ArmorGasMaskItem.Variant;
 import com.hbm_m.item.gasmask.ItemGasMaskFilter;
@@ -454,13 +456,15 @@ public class ModItems {
             () -> new ArmorItem(ModArmorMaterialsAccess.holder(ModArmorMaterials.ASBESTOS), ArmorItem.Type.BOOTS, ModArmorMaterialsAccess.armorProps(ModArmorMaterials.ASBESTOS, ArmorItem.Type.BOOTS)));
 
     public static final RegistrySupplier<Item> HAZMAT_HELMET = ITEMS.register("hazmat_helmet",
-            () -> new ArmorItem(ModArmorMaterialsAccess.holder(ModArmorMaterials.HAZMAT), ArmorItem.Type.HELMET, ModArmorMaterialsAccess.armorProps(ModArmorMaterials.HAZMAT, ArmorItem.Type.HELMET)));
+            // В оригинале жёлтый шлем тоже ArmorHazmatMask (IGasMask, фильтр ставится),
+            // просто без отдельной модели маски - порт ArmorHazmat (1.7.10).
+            () -> new HazmatMaskArmorItem(ModArmorMaterials.HAZMAT, ModArmorMaterialsAccess.armorProps(ModArmorMaterials.HAZMAT, ArmorItem.Type.HELMET), HazmatArmorItem.Variant.YELLOW));
     public static final RegistrySupplier<Item> HAZMAT_CHESTPLATE = ITEMS.register("hazmat_chestplate",
-            () -> new ArmorItem(ModArmorMaterialsAccess.holder(ModArmorMaterials.HAZMAT), ArmorItem.Type.CHESTPLATE, ModArmorMaterialsAccess.armorProps(ModArmorMaterials.HAZMAT, ArmorItem.Type.CHESTPLATE)));
+            () -> new HazmatArmorItem(ModArmorMaterials.HAZMAT, ArmorItem.Type.CHESTPLATE, ModArmorMaterialsAccess.armorProps(ModArmorMaterials.HAZMAT, ArmorItem.Type.CHESTPLATE), HazmatArmorItem.Variant.YELLOW));
     public static final RegistrySupplier<Item> HAZMAT_LEGGINGS = ITEMS.register("hazmat_leggings",
-            () -> new ArmorItem(ModArmorMaterialsAccess.holder(ModArmorMaterials.HAZMAT), ArmorItem.Type.LEGGINGS, ModArmorMaterialsAccess.armorProps(ModArmorMaterials.HAZMAT, ArmorItem.Type.LEGGINGS)));
+            () -> new HazmatArmorItem(ModArmorMaterials.HAZMAT, ArmorItem.Type.LEGGINGS, ModArmorMaterialsAccess.armorProps(ModArmorMaterials.HAZMAT, ArmorItem.Type.LEGGINGS), HazmatArmorItem.Variant.YELLOW));
     public static final RegistrySupplier<Item> HAZMAT_BOOTS = ITEMS.register("hazmat_boots",
-            () -> new ArmorItem(ModArmorMaterialsAccess.holder(ModArmorMaterials.HAZMAT), ArmorItem.Type.BOOTS, ModArmorMaterialsAccess.armorProps(ModArmorMaterials.HAZMAT, ArmorItem.Type.BOOTS)));
+            () -> new HazmatArmorItem(ModArmorMaterials.HAZMAT, ArmorItem.Type.BOOTS, ModArmorMaterialsAccess.armorProps(ModArmorMaterials.HAZMAT, ArmorItem.Type.BOOTS), HazmatArmorItem.Variant.YELLOW));
 
     public static final RegistrySupplier<Item> LIQUIDATOR_HELMET = ITEMS.register("liquidator_helmet",
             () -> new ArmorItem(ModArmorMaterialsAccess.holder(ModArmorMaterials.LIQUIDATOR), ArmorItem.Type.HELMET, ModArmorMaterialsAccess.armorProps(ModArmorMaterials.LIQUIDATOR, ArmorItem.Type.HELMET)));
@@ -2952,22 +2956,22 @@ public class ModItems {
     public static final RegistrySupplier<Item> GUN_PA_RANGED = ITEMS.register("gun_pa_ranged", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> HAND_DRILL = ITEMS.register("hand_drill", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> HAND_DRILL_DESH = ITEMS.register("hand_drill_desh", () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> HAZMAT_BOOTS_GREY = ITEMS.register("hazmat_boots_grey", () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> HAZMAT_BOOTS_RED = ITEMS.register("hazmat_boots_red", () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> HAZMAT_BOOTS_GREY = ITEMS.register("hazmat_boots_grey", () -> new HazmatArmorItem(ModArmorMaterials.HAZMAT_GREY, ArmorItem.Type.BOOTS, ModArmorMaterialsAccess.armorProps(ModArmorMaterials.HAZMAT_GREY, ArmorItem.Type.BOOTS), HazmatArmorItem.Variant.GREY));
+    public static final RegistrySupplier<Item> HAZMAT_BOOTS_RED = ITEMS.register("hazmat_boots_red", () -> new HazmatArmorItem(ModArmorMaterials.HAZMAT_RED, ArmorItem.Type.BOOTS, ModArmorMaterialsAccess.armorProps(ModArmorMaterials.HAZMAT_RED, ArmorItem.Type.BOOTS), HazmatArmorItem.Variant.RED));
     public static final RegistrySupplier<Item> HAZMAT_GREY_KIT = ITEMS.register("hazmat_grey_kit", () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> HAZMAT_HELMET_GREY = ITEMS.register("hazmat_helmet_grey", () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> HAZMAT_HELMET_RED = ITEMS.register("hazmat_helmet_red", () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> HAZMAT_HELMET_GREY = ITEMS.register("hazmat_helmet_grey", () -> new HazmatMaskArmorItem(ModArmorMaterials.HAZMAT_GREY, ModArmorMaterialsAccess.armorProps(ModArmorMaterials.HAZMAT_GREY, ArmorItem.Type.HELMET), HazmatArmorItem.Variant.GREY));
+    public static final RegistrySupplier<Item> HAZMAT_HELMET_RED = ITEMS.register("hazmat_helmet_red", () -> new HazmatMaskArmorItem(ModArmorMaterials.HAZMAT_RED, ModArmorMaterialsAccess.armorProps(ModArmorMaterials.HAZMAT_RED, ArmorItem.Type.HELMET), HazmatArmorItem.Variant.RED));
     public static final RegistrySupplier<Item> HAZMAT_KIT = ITEMS.register("hazmat_kit", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> HAZMAT_LEGS = ITEMS.register("hazmat_legs", () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> HAZMAT_LEGS_GREY = ITEMS.register("hazmat_legs_grey", () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> HAZMAT_LEGS_RED = ITEMS.register("hazmat_legs_red", () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> HAZMAT_LEGS_GREY = ITEMS.register("hazmat_legs_grey", () -> new HazmatArmorItem(ModArmorMaterials.HAZMAT_GREY, ArmorItem.Type.LEGGINGS, ModArmorMaterialsAccess.armorProps(ModArmorMaterials.HAZMAT_GREY, ArmorItem.Type.LEGGINGS), HazmatArmorItem.Variant.GREY));
+    public static final RegistrySupplier<Item> HAZMAT_LEGS_RED = ITEMS.register("hazmat_legs_red", () -> new HazmatArmorItem(ModArmorMaterials.HAZMAT_RED, ArmorItem.Type.LEGGINGS, ModArmorMaterialsAccess.armorProps(ModArmorMaterials.HAZMAT_RED, ArmorItem.Type.LEGGINGS), HazmatArmorItem.Variant.RED));
     public static final RegistrySupplier<Item> HAZMAT_PAA_BOOTS = ITEMS.register("hazmat_paa_boots", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> HAZMAT_PAA_HELMET = ITEMS.register("hazmat_paa_helmet", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> HAZMAT_PAA_LEGS = ITEMS.register("hazmat_paa_legs", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> HAZMAT_PAA_PLATE = ITEMS.register("hazmat_paa_plate", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> HAZMAT_PLATE = ITEMS.register("hazmat_plate", () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> HAZMAT_PLATE_GREY = ITEMS.register("hazmat_plate_grey", () -> new Item(new Item.Properties()));
-    public static final RegistrySupplier<Item> HAZMAT_PLATE_RED = ITEMS.register("hazmat_plate_red", () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> HAZMAT_PLATE_GREY = ITEMS.register("hazmat_plate_grey", () -> new HazmatArmorItem(ModArmorMaterials.HAZMAT_GREY, ArmorItem.Type.CHESTPLATE, ModArmorMaterialsAccess.armorProps(ModArmorMaterials.HAZMAT_GREY, ArmorItem.Type.CHESTPLATE), HazmatArmorItem.Variant.GREY));
+    public static final RegistrySupplier<Item> HAZMAT_PLATE_RED = ITEMS.register("hazmat_plate_red", () -> new HazmatArmorItem(ModArmorMaterials.HAZMAT_RED, ArmorItem.Type.CHESTPLATE, ModArmorMaterialsAccess.armorProps(ModArmorMaterials.HAZMAT_RED, ArmorItem.Type.CHESTPLATE), HazmatArmorItem.Variant.RED));
     public static final RegistrySupplier<Item> HAZMAT_RED_KIT = ITEMS.register("hazmat_red_kit", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> HEAVY_COMPONENT = ITEMS.register("heavy_component", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> HEV_BOOTS = ITEMS.register("hev_boots", () -> new Item(new Item.Properties()));

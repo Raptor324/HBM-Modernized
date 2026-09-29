@@ -20,13 +20,24 @@ public final class ArmorUtil {
     }
 
     public static boolean checkForHazmat(LivingEntity entity) {
+        // Оригинал: жёлтый ИЛИ красный ИЛИ серый костюм (плюс шрабидиум/мутация - те в порте пока не носибельны).
         return checkArmor(entity,
                 ModItems.HAZMAT_HELMET.orElse(null), ModItems.HAZMAT_CHESTPLATE.orElse(null),
-                ModItems.HAZMAT_LEGGINGS.orElse(null), ModItems.HAZMAT_BOOTS.orElse(null));
+                ModItems.HAZMAT_LEGGINGS.orElse(null), ModItems.HAZMAT_BOOTS.orElse(null))
+                || checkArmor(entity,
+                ModItems.HAZMAT_HELMET_RED.orElse(null), ModItems.HAZMAT_PLATE_RED.orElse(null),
+                ModItems.HAZMAT_LEGS_RED.orElse(null), ModItems.HAZMAT_BOOTS_RED.orElse(null))
+                || checkArmor(entity,
+                ModItems.HAZMAT_HELMET_GREY.orElse(null), ModItems.HAZMAT_PLATE_GREY.orElse(null),
+                ModItems.HAZMAT_LEGS_GREY.orElse(null), ModItems.HAZMAT_BOOTS_GREY.orElse(null));
     }
 
     public static boolean checkForHaz2(LivingEntity entity) {
-        return false;
+        // Оригинал: PaA || liquidator || euphemium || rpa || fau || dns.
+        // В порте носибелен только liquidator (PaA - плейсхолдеры).
+        return checkArmor(entity,
+                ModItems.LIQUIDATOR_HELMET.orElse(null), ModItems.LIQUIDATOR_CHESTPLATE.orElse(null),
+                ModItems.LIQUIDATOR_LEGGINGS.orElse(null), ModItems.LIQUIDATOR_BOOTS.orElse(null));
     }
 
     public static boolean checkForDigamma(Player player) {
@@ -76,5 +87,13 @@ public final class ArmorUtil {
     /** Есть ли на сущности маска (надетая, прицепленная к шлему или в слоте лица Curios). */
     public static boolean isWearingMask(LivingEntity entity) {
         return !GasMaskUtil.resolveWornMask(entity).isEmpty();
+    }
+
+    /**
+     * Маска надета, но фильтра нет. Порт {@code ArmorUtil.isWearingEmptyMask} (1.7.10).
+     */
+    public static boolean isWearingEmptyMask(LivingEntity entity) {
+        ItemStack mask = GasMaskUtil.resolveWornMask(entity);
+        return !mask.isEmpty() && !IGasMask.hasFilter(mask);
     }
 }

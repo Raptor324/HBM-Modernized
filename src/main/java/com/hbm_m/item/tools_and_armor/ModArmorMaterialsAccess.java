@@ -67,7 +67,7 @@ public final class ModArmorMaterialsAccess {
         Holder<SoundEvent> equip = switch (m.name()) {
             case "STARMETAL" -> SoundEvents.ARMOR_EQUIP_GOLD;
             case "SECURITY"  -> SoundEvents.ARMOR_EQUIP_CHAIN;
-            case "HAZMAT"    -> SoundEvents.ARMOR_EQUIP_LEATHER;
+            case "HAZMAT", "HAZMAT_RED", "HAZMAT_GREY" -> SoundEvents.ARMOR_EQUIP_LEATHER;
             case "PAA"       -> SoundEvents.ARMOR_EQUIP_GOLD;
             default          -> SoundEvents.ARMOR_EQUIP_IRON;
         };

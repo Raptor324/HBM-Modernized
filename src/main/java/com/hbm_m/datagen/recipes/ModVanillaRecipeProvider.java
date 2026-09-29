@@ -59,6 +59,7 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
     //ЗАРЕГЕСТРИРУЙ ТУТ СВОИ РЕЦЕПТЫ, ИНАЧЕ НЕ ПРОСТИТ
     private void registerAll(@NotNull Consumer<FinishedRecipe> writer) {
         registerToolAndArmorSets(writer);
+        registerHazmatSets(writer);
         registerCrates(writer);
         registerCoil(writer);
         registerCoilTorus(writer);
@@ -2179,6 +2180,58 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
         buildArmorSet(writer, "asbestos", asbestosSheet,
                 ModItems.ASBESTOS_HELMET.get(), ModItems.ASBESTOS_CHESTPLATE.get(),
                 ModItems.ASBESTOS_LEGGINGS.get(), ModItems.ASBESTOS_BOOTS.get());
+    }
+
+    // Костюмы химзащиты: паттерны ArmorRecipes (1.7.10). Шлем - ткань + любая стеклянная панель;
+    // у красного/серого вместо "P" внизу железная пластина.
+    private void registerHazmatSets(Consumer<FinishedRecipe> writer) {
+        ItemLike ironPlate = ModMaterialItems.item(ModMaterials.IRON, MaterialShape.PLATE);
+        Ingredient anyPane = Ingredient.of(Tags.Items.GLASS_PANES);
+
+        buildHazmatSet(writer, "hazmat",
+                ModItems.HAZMAT_CLOTH.get(), ModItems.HAZMAT_HELMET.get(), ModItems.HAZMAT_CHESTPLATE.get(),
+                ModItems.HAZMAT_LEGGINGS.get(), ModItems.HAZMAT_BOOTS.get(), anyPane, ironPlate, true);
+        buildHazmatSet(writer, "hazmat_red",
+                ModItems.HAZMAT_CLOTH_RED.get(), ModItems.HAZMAT_HELMET_RED.get(), ModItems.HAZMAT_PLATE_RED.get(),
+                ModItems.HAZMAT_LEGS_RED.get(), ModItems.HAZMAT_BOOTS_RED.get(), anyPane, ironPlate, false);
+        buildHazmatSet(writer, "hazmat_grey",
+                ModItems.HAZMAT_CLOTH_GREY.get(), ModItems.HAZMAT_HELMET_GREY.get(), ModItems.HAZMAT_PLATE_GREY.get(),
+                ModItems.HAZMAT_LEGS_GREY.get(), ModItems.HAZMAT_BOOTS_GREY.get(), anyPane, ironPlate, false);
+    }
+
+    private void buildHazmatSet(Consumer<FinishedRecipe> writer, String name, ItemLike cloth,
+                                Item helmet, Item chest, Item legs, Item boots,
+                                Ingredient pane, ItemLike ironPlate, boolean yellowHelmet) {
+        if (yellowHelmet) {
+            // "EEE", "EIE", " P "
+            ShapedRecipeBuilder.shaped(RecipeCategory.COMBAT, helmet)
+                    .pattern("EEE").pattern("EIE").pattern(" P ")
+                    .define('E', cloth).define('I', pane).define('P', ironPlate)
+                    .unlockedBy(getHasName(cloth), has(cloth))
+                    .save(writer, recipeId("crafting/" + name + "_helmet"));
+        } else {
+            // "EEE", "IEI", "EFE"
+            ShapedRecipeBuilder.shaped(RecipeCategory.COMBAT, helmet)
+                    .pattern("EEE").pattern("IEI").pattern("EFE")
+                    .define('E', cloth).define('I', pane).define('F', ironPlate)
+                    .unlockedBy(getHasName(cloth), has(cloth))
+                    .save(writer, recipeId("crafting/" + name + "_helmet"));
+        }
+        ShapedRecipeBuilder.shaped(RecipeCategory.COMBAT, chest)
+                .pattern("E E").pattern("EEE").pattern("EEE")
+                .define('E', cloth)
+                .unlockedBy(getHasName(cloth), has(cloth))
+                .save(writer, recipeId("crafting/" + name + "_chestplate"));
+        ShapedRecipeBuilder.shaped(RecipeCategory.COMBAT, legs)
+                .pattern("EEE").pattern("E E").pattern("E E")
+                .define('E', cloth)
+                .unlockedBy(getHasName(cloth), has(cloth))
+                .save(writer, recipeId("crafting/" + name + "_leggings"));
+        ShapedRecipeBuilder.shaped(RecipeCategory.COMBAT, boots)
+                .pattern("E E").pattern("E E")
+                .define('E', cloth)
+                .unlockedBy(getHasName(cloth), has(cloth))
+                .save(writer, recipeId("crafting/" + name + "_boots"));
     }
 
     //крафты катушек

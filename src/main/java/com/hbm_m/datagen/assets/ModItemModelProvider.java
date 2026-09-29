@@ -804,10 +804,7 @@ public class ModItemModelProvider extends ItemModelProvider {
         trimmedArmorItem(ModItems.LIQUIDATOR_CHESTPLATE);
         trimmedArmorItem(ModItems.LIQUIDATOR_LEGGINGS);
         trimmedArmorItem(ModItems.LIQUIDATOR_BOOTS);
-        trimmedArmorItem(ModItems.HAZMAT_HELMET);
-        trimmedArmorItem(ModItems.HAZMAT_CHESTPLATE);
-        trimmedArmorItem(ModItems.HAZMAT_LEGGINGS);
-        trimmedArmorItem(ModItems.HAZMAT_BOOTS);
+        // Жёлтый костюм химзащиты переехал на OBJ-модели (src/main/resources), trimmed-иконки удалены.
         trimmedArmorItem(ModItems.STARMETAL_HELMET);
         trimmedArmorItem(ModItems.STARMETAL_CHESTPLATE);
         trimmedArmorItem(ModItems.STARMETAL_LEGGINGS);
@@ -1680,22 +1677,16 @@ public class ModItemModelProvider extends ItemModelProvider {
                 ModItems.GUN_PA_RANGED,
                 ModItems.HAND_DRILL,
                 ModItems.HAND_DRILL_DESH,
-                ModItems.HAZMAT_BOOTS_GREY,
-                ModItems.HAZMAT_BOOTS_RED,
+                // Наборы red/grey костюма химзащиты теперь броня с OBJ-моделями (src/main/resources),
+                // их simpleItem-модели удалены. Остаются плейсхолдеры и наборы-киты.
                 ModItems.HAZMAT_GREY_KIT,
-                ModItems.HAZMAT_HELMET_GREY,
-                ModItems.HAZMAT_HELMET_RED,
                 ModItems.HAZMAT_KIT,
                 ModItems.HAZMAT_LEGS,
-                ModItems.HAZMAT_LEGS_GREY,
-                ModItems.HAZMAT_LEGS_RED,
                 ModItems.HAZMAT_PAA_BOOTS,
                 ModItems.HAZMAT_PAA_HELMET,
                 ModItems.HAZMAT_PAA_LEGS,
                 ModItems.HAZMAT_PAA_PLATE,
                 ModItems.HAZMAT_PLATE,
-                ModItems.HAZMAT_PLATE_GREY,
-                ModItems.HAZMAT_PLATE_RED,
                 ModItems.HAZMAT_RED_KIT,
                 ModItems.HEAVY_COMPONENT,
                 ModItems.HEV_BOOTS,

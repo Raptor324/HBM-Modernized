@@ -2970,6 +2970,9 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("tooltip.hbm_m.mask.noFilter", "No filter installed!");
         add("curios.identifier.mask", "Mask");
         add("tooltip.hbm_m.mask.filter", "Installed filter:");
+        add("trait.hbm_m.rad_resistance", "Radiation Resistance: %s");
+        add("tooltip.hbm_m.hazmat.mudco", "Brought to you by Mud Co. Hazmat Supplies");
+        add("hud.hbm_m.mask.noFilter", "Your mask has no filter!");
         add("tooltip.hbm_m.attachment.gasProtection", "Gas protection");
         add("tooltip.hbm_m.attachment.slotHelmet", "Attachable to helmets at the Armor Modification Table");
         add("item.hbm_m.siox.desc", "Reverses mesothelioma with the power of Asbestos!");

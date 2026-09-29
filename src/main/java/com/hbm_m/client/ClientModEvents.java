@@ -74,6 +74,14 @@ public class ClientModEvents {
 
         ClientTickEvent.CLIENT_POST.register(client -> {
             com.hbm_m.client.overlay.OverlayInfoToast.tick();
+            // Порт ModEventHandlerClient:919 (1.7.10): метка в статус-стеке (ID_FILTER),
+            // обновляемая каждый тик, пока надета маска без фильтра.
+            if (client.player != null && com.hbm_m.util.ArmorUtil.isWearingEmptyMask(client.player)) {
+                com.hbm_m.client.overlay.OverlayInfoToast.show(
+                        Component.translatable("hud.hbm_m.mask.noFilter").withStyle(ChatFormatting.RED),
+                        20, com.hbm_m.client.overlay.OverlayInfoToast.ID_FILTER,
+                        com.hbm_m.client.overlay.OverlayInfoToast.rgbFromFormatting(ChatFormatting.RED));
+            }
             DoorAnimationDelayHelper.processQueue();
             DoorChunkInvalidationHelper.processPendingInvalidations();
             ShaderCompatibilityDetector.processPendingChunkInvalidation();

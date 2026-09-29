@@ -37,6 +37,8 @@ public class OverlayInfoToast {
     public static final int ID_TOOL_MODE = 2005;
     /** Дальномер / лазерный детонатор (аналог ID_DETONATOR = 8 в 1.7.10). */
     public static final int ID_DETONATOR = 2006;
+    /** Маска без фильтра (аналог ID_FILTER в 1.7.10). */
+    public static final int ID_FILTER = 2007;
 
     // Стиль оригинала: один общий фон 0.25/0.5.
     private static final int BG_COLOR = 0x7F3F3F3F;

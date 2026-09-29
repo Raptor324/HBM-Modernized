@@ -84,6 +84,10 @@ public final class ClientPowerArmorRenderNeoForge {
         raw.addLayer(new BismuthPowerArmorLayer(raw));
         raw.addLayer(new DNTPowerArmorLayer(raw));
         raw.addLayer(new GasMaskLayer(raw));
+        // Костюмы химзащиты - по слою на окрас (общая геометрия, разные текстуры).
+        for (com.hbm_m.item.hazmat.HazmatArmorItem.Variant variant : com.hbm_m.item.hazmat.HazmatArmorItem.Variant.values()) {
+            raw.addLayer(new com.hbm_m.item.hazmat.render.HazmatArmorLayer<>(raw, variant));
+        }
     }
 
     private ClientPowerArmorRenderNeoForge() {}
