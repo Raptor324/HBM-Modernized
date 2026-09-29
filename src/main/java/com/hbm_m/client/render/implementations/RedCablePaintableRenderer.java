@@ -10,13 +10,14 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.world.level.block.state.BlockState;
 
 /**
- * Рендер кабеля-камуфляжа (RedCablePaintableBlock):
- * пасс 0 — замаскированный блок его настоящей моделью, без окраски — базовый красный куб
- * ({@link ModBlocks#RED_CABLE_PAINTABLE_BASE});
- * пасс 1 — полупрозрачная вуаль red_cable_overlay ({@link ModBlocks#RED_CABLE_PAINTABLE_VEIL},
- * модель translucent), в оригинале рисуется всегда (мета 0 = overlay включён).
- * ВАЖНО: renderSingleBlock пропускает состояния с RenderShape.INVISIBLE, поэтому сам paintable
- * (INVISIBLE) рендерить нельзя — используются скрытые хелпер-блоки с RenderShape.MODEL.
+ * Camo cable renderer ({@code RedCablePaintableBlock}):
+ * pass 0 - the disguised block drawn with its real model, no tint; without a disguise
+ * this is the base red cube ({@link ModBlocks#RED_CABLE_PAINTABLE_BASE});
+ * pass 1 - the translucent red_cable_overlay veil ({@link ModBlocks#RED_CABLE_PAINTABLE_VEIL},
+ * translucent model); in the original it is always drawn (meta 0 = overlay enabled).
+ * IMPORTANT: renderSingleBlock skips states with RenderShape.INVISIBLE, so the paintable
+ * block itself (INVISIBLE) cannot be rendered - hidden helper blocks with
+ * RenderShape.MODEL are used instead.
  */
 public class RedCablePaintableRenderer implements BlockEntityRenderer<RedCablePaintableBlockEntity> {
 
@@ -27,10 +28,10 @@ public class RedCablePaintableRenderer implements BlockEntityRenderer<RedCablePa
                        MultiBufferSource buffer, int light, int overlay) {
         BlockState camo = be.getCamo();
         var blockRenderer = Minecraft.getInstance().getBlockRenderer();
-        // Пасс 0: камуфляж или базовый красный куб
+        // Pass 0: camo block or the base red cube
         BlockState shown = camo != null ? camo : ModBlocks.RED_CABLE_PAINTABLE_BASE.get().defaultBlockState();
         blockRenderer.renderSingleBlock(shown, poseStack, buffer, light, overlay);
-        // Пасс 1: вуаль-оверлей
+        // Pass 1: veil overlay
         blockRenderer.renderSingleBlock(ModBlocks.RED_CABLE_PAINTABLE_VEIL.get().defaultBlockState(), poseStack, buffer, light, overlay);
     }
 }

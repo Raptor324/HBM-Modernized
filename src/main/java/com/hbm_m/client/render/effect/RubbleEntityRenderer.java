@@ -12,7 +12,7 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.level.block.state.BlockState;
 
 /**
- * Порт {@code com.hbm.render.entity.projectile.RenderRubble} — текстура из блока-источника.
+ * Port of {@code com.hbm.render.entity.projectile.RenderRubble} - texture taken from the source block.
  */
 public class RubbleEntityRenderer extends EntityRenderer<RubbleEntity> {
 

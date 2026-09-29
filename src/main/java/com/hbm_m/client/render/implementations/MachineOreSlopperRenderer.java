@@ -19,10 +19,10 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 
 /**
- * Сортировщик руды на фабрике {@link MachineRenderers}: Fan — вращение по X,
- * BladesLeft/BladesRight — противофазное вращение по Z. Геометрия —
- * injected-модели (не multipart); блочного трансформа нет (легаси рисовал
- * в сырых координатах блока).
+ * Ore slopper on the {@link MachineRenderers} factory: Fan rotates around X,
+ * BladesLeft/BladesRight rotate around Z in counter-phase. Geometry comes from
+ * injected models (not multipart); no block transform is applied (the legacy
+ * renderer drew in raw block coordinates).
  */
 public final class MachineOreSlopperRenderer {
 
@@ -30,7 +30,7 @@ public final class MachineOreSlopperRenderer {
     private static final ResourceLocation BLADES_LEFT_MODEL_ID = id("ore_slopper_blades_left");
     private static final ResourceLocation BLADES_RIGHT_MODEL_ID = id("ore_slopper_blades_right");
 
-    // Pivots 1:1 из RenderOreSlopper (OBJ-пространство) + 0.5 компенсация baked-сдвига.
+    // Pivots copied 1:1 from RenderOreSlopper (OBJ space) plus 0.5 to compensate the baked offset.
     private static final double BLADES_LEFT_PIVOT_X = 0.375 + 0.5;
     private static final double BLADES_RIGHT_PIVOT_X = -0.375 + 0.5;
     private static final double BLADES_PIVOT_Y = 2.75;
@@ -46,7 +46,7 @@ public final class MachineOreSlopperRenderer {
                     be -> partQuads("ore_slopper/blades_right", BLADES_RIGHT_MODEL_ID), be -> "br")
             .dynamicPart("Fan", MachineOreSlopperRenderer::animateFan,
                     be -> partQuads("ore_slopper/fan", FAN_MODEL_ID), be -> "fan")
-            .blockTransform((be, animator) -> { /* легаси рисовал в сырых координатах */ })
+            .blockTransform((be, animator) -> { /* legacy renderer drew in raw block coordinates */ })
             .register();
     }
 

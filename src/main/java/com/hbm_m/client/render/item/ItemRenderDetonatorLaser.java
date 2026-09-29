@@ -33,13 +33,13 @@ import java.util.Random;
 
 /**
  * 1.7.10 {@code ItemRenderDetonatorLaser} port for {@link com.hbm_m.item.grenades_and_activators.RangeDetonatorItem}.
- * Позиция/поворот/масштаб — из {@code display} в {@code models/item/range_detonator.json}.
+ * Position/rotation/scale come from {@code display} in {@code models/item/range_detonator.json}.
  */
 public class ItemRenderDetonatorLaser extends BlockEntityWithoutLevelRenderer {
 
     public static final ItemRenderDetonatorLaser INSTANCE = new ItemRenderDetonatorLaser();
 
-    /** OBJ в block-координатах (~0–2); JSON {@code display.scale} настраивает поверх. */
+    /** OBJ in block coordinates (~0-2); the JSON {@code display.scale} adjusts on top. */
     private static final float BASE_MESH_SCALE = 0.125F;
 
     private ItemRenderDetonatorLaser() {
@@ -79,8 +79,8 @@ public class ItemRenderDetonatorLaser extends BlockEntityWithoutLevelRenderer {
                 .apply(leftHand, poseStack);
         //?}
         //? if neoforge {
-        /*/// applyTransform у MissileBakedModel — no-op (display применяет сам BEWLR),
-        /// поэтому применяем JSON display напрямую, как в фордж-ветке через resolveDisplayTransforms.
+        /*/// MissileBakedModel's applyTransform is a no-op (display is applied by the BEWLR itself),
+        /// so apply the JSON display directly, like the forge branch does via resolveDisplayTransforms.
         model.getBewlrDisplayTransforms().getTransform(displayContext)
                 .apply(leftHand, poseStack);
         *///?}

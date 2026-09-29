@@ -4,20 +4,21 @@ import org.jetbrains.annotations.Nullable;
 import org.joml.Matrix4f;
 
 /**
- * Контекст, доступный {@link MachineRenderHook}'ам при рендеринге кадра станка.
+ * Context available to {@link MachineRenderHook}s while rendering a machine frame.
  */
 public interface MachineRenderApi {
 
-    /** Итоговый fade этого BE в этом кадре (min(static, animated)). */
+    /** Final fade of this BE in this frame (min(static, animated)). */
     float fadeAlpha();
 
     /**
-     * Итоговая матрица части в этом кадре (block-relative, как на стеке после аниматора),
-     * или {@code null}, если часть не рендерилась. Копия — мутировать безопасно.
-     * Так хуки (предметы-штампы и т.п.) позиционируются относительно анимированной части.
+     * Final matrix of the part in this frame (block-relative, as on the stack after
+     * the animator), or {@code null} if the part was not rendered. A copy - safe to
+     * mutate. Lets hooks (stamp items, etc.) position themselves relative to the
+     * animated part.
      */
     @Nullable Matrix4f partTransform(String partName);
 
-    /** Позиция BlockEntity. */
+    /** BlockEntity position. */
     net.minecraft.core.BlockPos blockPos();
 }

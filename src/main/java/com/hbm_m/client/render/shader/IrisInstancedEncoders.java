@@ -6,26 +6,29 @@ import java.lang.reflect.Method;
 import com.hbm_m.main.MainRegistry;
 
 /**
- * Выбор инстансного gbuffer-энкодера для активного shaderpack'а.
- * <p>
- * <b>Зачем:</b> deferred-паки пишут gbuffer СВОИМИ программами в собственном
- * формате; наш инстансный ExtendedShader обязан воспроизводить формат пака
- * побайтово, иначе композит декодирует мусор (чёрные/битые машины).
- * <p>
- * <b>Как детектим (автоматически, без имён паков):</b> достаём через рефлексию
- * предобработанный исходник gbuffer-программы пака
- * ({@code ShaderPack.getProgramSet(...).getGbuffersBlock().getFragmentSource()}) и
- * ищем сигнатуру схемы кодирования. Если схема знакома — включается
- * соответствующий энкодер ({@code shaders/core/iris/block_lit_instanced_packed}),
- * иначе {@link #hasEncoder()} == false и машины рисуются через pack-программы
- * (companion per-instance) — корректно под ЛЮБЫМ паком.
- * <p>
- * Энкодер "packed": gbuffer-таргет пакуется парами 8-битных каналов
- * ({@code pack_unorm_2x8}: albedo.rg / albedo.b+mask / oct-encoded normal /
- * light levels), нормали в мировых осях, свет в gbuffer НЕ умножается
- * (считается в deferred-композите).
- * <p>
- * Кеш — на поколение пайплайна (смена пака/F3+R инвалидирует автоматически).
+ * Selects the instanced gbuffer encoder for the active shader pack.
+ *
+ * <p><b>Why:</b> deferred packs write the gbuffer with THEIR OWN programs in
+ * their own format; our instanced ExtendedShader must reproduce the pack's
+ * format byte-for-byte, otherwise the composite decodes garbage
+ * (black/broken machines).</p>
+ *
+ * <p><b>How detection works (automatic, no pack names):</b> fetch the pack's
+ * preprocessed gbuffer program source via reflection
+ * ({@code ShaderPack.getProgramSet(...).getGbuffersBlock().getFragmentSource()})
+ * and look for the encoding scheme signature. If the scheme is recognized,
+ * the matching encoder is enabled
+ * ({@code shaders/core/iris/block_lit_instanced_packed}); otherwise
+ * {@link #hasEncoder()} returns false and machines are drawn via pack
+ * programs (companion per-instance) - correct under ANY pack.</p>
+ *
+ * <p>The "packed" encoder: gbuffer targets are packed in pairs of 8-bit
+ * channels ({@code pack_unorm_2x8}: albedo.rg / albedo.b+mask / oct-encoded
+ * normal / light levels), normals in world axes; light is NOT multiplied
+ * into the gbuffer (computed in the deferred composite).</p>
+ *
+ * <p>Cache is per pipeline generation (pack switch / F3+R invalidates it
+ * automatically).</p>
  */
 public final class IrisInstancedEncoders {
 
@@ -40,13 +43,13 @@ public final class IrisInstancedEncoders {
     private static Method getProgramSet;
     private static Object overworldId;
     private static Method getGbuffersBlock;
-    /** Аргумент ProgramId.Block для единого get(ProgramId) Iris 1.8+ (null = именованный геттер). */
+    /** ProgramId.Block argument for the unified get(ProgramId) in Iris 1.8+ (null = named getter). */
     private static Object gbuffersProgramIdArg;
     private static Method getFragmentSource;
 
     private IrisInstancedEncoders() {}
 
-    /** Есть ли для активного пака инстансный gbuffer-энкодер. */
+    /** Returns true if the active pack has a recognized instanced gbuffer encoder. */
     public static boolean hasEncoder() {
         long gen = IrisExtendedShaderAccess.getPipelineGeneration();
         if (detectionDone && detectionGeneration == gen) {
@@ -65,10 +68,11 @@ public final class IrisInstancedEncoders {
     }
 
     /**
-     * Имя ресурса инстансного шейдера (под shaders/core/). Shadow-слот ВСЕГДА
-     * использует базовый vanilla-parity шейдер: теневому FB не нужен pack-формат
-     * gbuffer (глубина + простой цвет), поэтому инстансинг теней универсален
-     * для любого пака. Packed-энкодер — только для main gbuffer.
+     * Resource name of the instanced shader (under shaders/core/). The shadow
+     * slot ALWAYS uses the base vanilla-parity shader: the shadow framebuffer
+     * needs no pack-format gbuffer (depth + simple color), so shadow
+     * instancing is universal for any pack. The packed encoder is for the
+     * main gbuffer only.
      */
     public static String shaderName(boolean shadowPass) {
         return shadowPass || !encoderAvailable
@@ -94,10 +98,10 @@ public final class IrisInstancedEncoders {
                 overworldId = namespacedId.getConstructor(String.class, String.class)
                         .newInstance("minecraft", "overworld");
                 Class<?> programSet = Class.forName("net.irisshaders.iris.shaderpack.programs.ProgramSet");
-                // Геттеры возвращают Optional<ProgramSource>!
-                // Iris 1.8+ (1.21.1) УДАЛИЛ именованные getGbuffersXxx() в пользу
-                // единого get(ProgramId) — пробуем оба (Oculus 1.20.1 держит
-                // именованные, Iris 1.8.14 — только get(ProgramId.Block)).
+                // Getters return Optional<ProgramSource>!
+                // Iris 1.8+ (1.21.1) removed the named getGbuffersXxx() methods in
+                // favor of a unified get(ProgramId) - try both (Oculus 1.20.1 keeps
+                // the named ones; Iris 1.8.14 has only get(ProgramId.Block)).
                 Method blockGetter = null;
                 for (String name : new String[] {"getGbuffersBlock", "getGbuffersTerrain"}) {
                     try {
@@ -158,10 +162,10 @@ public final class IrisInstancedEncoders {
             if (!(f instanceof String glsl)) {
                 return logMiss("fragment source empty");
             }
-            // Сигнатура схемы "packed": пары unorm2x8 + октаздрическая нормаль.
-            // Обе функции приходят из include'ов пака (ProgramSet резолвит includes
-            // при сборке через IncludeProcessor), так что совпадение означает, что
-            // пак реально кодирует gbuffer этой схемой.
+            // Signature of the "packed" scheme: unorm2x8 pairs + octahedral normal.
+            // Both functions come from pack includes (ProgramSet resolves includes
+            // at build time via IncludeProcessor), so a match means the pack really
+            // encodes its gbuffer with this scheme.
             boolean hasPacking = glsl.contains("pack_unorm_2x8");
             boolean hasOctNormal = glsl.contains("encode_unit_vector");
             if (!hasPacking || !hasOctNormal) {

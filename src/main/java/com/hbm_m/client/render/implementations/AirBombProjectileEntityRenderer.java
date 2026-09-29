@@ -37,20 +37,20 @@ public class AirBombProjectileEntityRenderer extends EntityRenderer<AirBombProje
 
         poseStack.pushPose();
 
-        //  СИНХРОНИЗАЦИЯ С САМОЛЁТОМ: поворот по Yaw
+        // Sync with the plane: rotate by yaw
         poseStack.mulPose(Axis.YP.rotationDegrees(-entity.getSynchedYaw()));
 
-        // 🆕 ПОСТОЯННЫЙ НАКЛОН К ЗЕМЛЕ: +1° каждые 10 тиков (НАКОПИТЕЛЬНО)
-        float tiltAngle = (entity.tickCount / 10.0F) * 7.0F;  // 0° → 1° → 2° → 3°...
-        poseStack.mulPose(Axis.XP.rotationDegrees(tiltAngle));  // Наклон носом вниз
+        // Constant tilt toward the ground: +1 degree every 10 ticks (cumulative)
+        float tiltAngle = (entity.tickCount / 10.0F) * 7.0F;  // 0 -> 1 -> 2 -> 3 degrees...
+        poseStack.mulPose(Axis.XP.rotationDegrees(tiltAngle));  // nose-down tilt
 
-        //  Смещение центра модели
+        // Center the model
         poseStack.translate(-0.5, 0.0, -0.5);
 
-        // Используем блок AIRBOMB для рендера
+        // Render using the AIRBOMB block
         BlockState state = ModBlocks.AIRBOMB.get().defaultBlockState();
 
-        // Рисуем модель авиабомбы
+        // Draw the bomb model
         blockRenderer.renderSingleBlock(
                 state,
                 poseStack,

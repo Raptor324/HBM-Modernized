@@ -8,17 +8,17 @@ import com.hbm_m.client.render.machine.MachineRenderers;
 import com.hbm_m.util.MultipartFacingTransforms;
 
 /**
- * Разрушенный ZIRNOX на фабрике {@link MachineRenderers} — порт 1.7.10
- * {@code RenderZirnoxDestroyed}: единственная статическая часть "Plane"
- * ({@code o Plane} в zirnox_destroyed.obj), без анимации.
+ * Destroyed ZIRNOX on the {@link MachineRenderers} factory - port of 1.7.10
+ * {@code RenderZirnoxDestroyed}: a single static part "Plane"
+ * ({@code o Plane} in zirnox_destroyed.obj), no animation.
  * <ul>
- *   <li>поворот по FACING — та же таблица оригинала: N→90°, S→270°, W→180°, E→0°;</li>
- *   <li>root-трансформ JSON — только T(0.5,0,-1.5), без поворота, поэтому в
- *       отличие от {@link MachineZirnoxRenderer} вычитаем сдвиг после полного
- *       поворота 90°+legacy: суммарно T(0.5,0,0.5)·R(90+legacy).</li>
+ *   <li>FACING rotation uses the same original table: N -&gt; 90, S -&gt; 270, W -&gt; 180, E -&gt; 0;</li>
+ *   <li>the JSON root transform is only T(0.5,0,-1.5), without rotation, so unlike
+ *       {@link MachineZirnoxRenderer} the offset is subtracted after the full
+ *       90+legacy rotation: the net result is T(0.5,0,0.5)*R(90+legacy).</li>
  * </ul>
- * Габарит куллинга — {@code getRenderBoundingBox()} в
- * {@link MachineZirnoxDestroyedBlockEntity} (обломки выступают за 5×5×2).
+ * Culling bounds come from {@code getRenderBoundingBox()} in
+ * {@link MachineZirnoxDestroyedBlockEntity} (debris sticks out beyond 5x5x2).
  */
 public final class MachineZirnoxDestroyedRenderer {
 
@@ -36,7 +36,7 @@ public final class MachineZirnoxDestroyedRenderer {
         animator.translate(0.5, 0.0, 0.5);
         animator.rotate(90f + MultipartFacingTransforms.legacyFacingRotationYDegrees(
                 be.getBlockState().getValue(MachineZirnoxDestroyedBlock.FACING)), 0, 1, 0);
-        // Компенсация baked root-трансформа JSON T(0.5,0,-1.5).
+        // Compensate the baked JSON root transform T(0.5,0,-1.5).
         animator.translate(-0.5, 0.0, 1.5);
     }
 }

@@ -21,14 +21,14 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 
 
 /**
- * Гритбокс и Heating Oven на фабрике {@link MachineRenderers} — порт
+ * Grinder (grit box) and Heating Oven on the {@link MachineRenderers} factory -- port of
  * {@code RenderFirebox}/{@code RenderHeatingOven} (1.7.10):
  * <ul>
- *   <li>Main запечён в chunk-mesh (модель blockstate → {@code machine_parts_loader});</li>
- *   <li>Door — анимированная часть (гритбокс: поворот на 135° вокруг шарнира
- *       (1.375, 0, 0.375); печь: сдвиг по Z на 0.75·door/135);</li>
- *   <li>Inner — динамическая часть: InnerBurning при горении, иначе
- *       InnerEmpty (гритбокс) / Inner (печь).</li>
+ *   <li>Main is baked into the chunk mesh (blockstate model -> {@code machine_parts_loader});</li>
+ *   <li>Door is an animated part (grinder: 135-degree rotation around the hinge
+ *       at (1.375, 0, 0.375); oven: Z shift of 0.75 * door / 135);</li>
+ *   <li>Inner is a dynamic part: InnerBurning while burning, otherwise
+ *       InnerEmpty (grinder) / Inner (oven).</li>
  * </ul>
  */
 public final class HeaterRenderers {
@@ -38,10 +38,10 @@ public final class HeaterRenderers {
     private HeaterRenderers() {}
 
     public static void register() {
-        // Гритбокс: дверь вращается, топка InnerEmpty/InnerBurning
+        // Grinder: door rotates, firebox is InnerEmpty/InnerBurning
         MachineRenderers.machine("firebox", com.hbm_m.blockentity.ModBlockEntities.FIREBOX_BE.get(),
                 MachineFireboxBlockEntity.class)
-            .part("Main") // empty_world_quads: корпус рисует BER
+            .part("Main") // empty_world_quads: the body is drawn by the BER
             .lightOverride("Inner", be -> be.isBurning()
                     ? net.minecraft.client.renderer.LightTexture.pack(15, 15) : -1)
             .part("Door", "Door", HeaterRenderers::animateFireboxDoor)
@@ -49,10 +49,10 @@ public final class HeaterRenderers {
                     be -> be.isBurning() ? "burning" : "idle")
             .register();
 
-        // Heating Oven: дверь сдвигается, топка Inner/InnerBurning
+        // Heating oven: door slides, firebox is Inner/InnerBurning
         MachineRenderers.machine("heating_oven", com.hbm_m.blockentity.ModBlockEntities.HEATING_OVEN_BE.get(),
                 HeatingOvenBlockEntity.class)
-            .part("Main") // empty_world_quads: корпус рисует BER
+            .part("Main") // empty_world_quads: the body is drawn by the BER
             .lightOverride("Inner", be -> be.isBurning()
                     ? net.minecraft.client.renderer.LightTexture.pack(15, 15) : -1)
             .part("Door", "Door", HeaterRenderers::animateOvenDoor)
@@ -61,9 +61,9 @@ public final class HeaterRenderers {
             .register();
     }
 
-    // ── Дверцы ───────────────────────────────────────────────────────────
+    // -- Doors ------------------------------------------------------------
 
-    /** Порт RenderFirebox: поворот вокруг шарнира (1.375, 0, 0.375) на -Y. */
+    /** Port of RenderFirebox: rotate around the hinge (1.375, 0, 0.375) by -Y. */
     private static boolean animateFireboxDoor(FireboxBaseBlockEntity be, float partialTick, long gameTime, PoseStack pose) {
         float door = be.getInterpolatedDoorAngle(partialTick);
         pose.translate(1.375F, 0F, 0.375F);
@@ -72,14 +72,14 @@ public final class HeaterRenderers {
         return true;
     }
 
-    /** Порт RenderHeatingOven: дверь сдвигается по Z на door * 0.75 / 135. */
+    /** Port of RenderHeatingOven: the door slides along Z by door * 0.75 / 135. */
     private static boolean animateOvenDoor(FireboxBaseBlockEntity be, float partialTick, long gameTime, PoseStack pose) {
         float door = be.getInterpolatedDoorAngle(partialTick);
         pose.translate(0F, 0F, door * 0.75F / 135F);
         return true;
     }
 
-    // ── Топки ────────────────────────────────────────────────────────────
+    // -- Fireboxes --------------------------------------------------------
 
     private static List<BakedQuad> fireboxInnerQuads(FireboxBaseBlockEntity be) {
         String part = be.isBurning() ? "InnerBurning" : "InnerEmpty";

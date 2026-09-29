@@ -5,8 +5,8 @@ layout(location = 1) in vec3 Normal;
 layout(location = 2) in vec2 UV0;
 
 #ifdef USE_INSTANCING
-// int bone_id: резерв под merged mesh / документация иерархии (см. OLD/render.md).
-// Полный pose части задаётся в InstPos/InstRot (CPU), UBO/SSBO в VS не используем — совместимость с Oculus/Iris.
+// int bone_id: reserved for merged mesh / hierarchy documentation (see OLD/render.md).
+// Full part pose comes via InstPos/InstRot (CPU); no UBO/SSBO in the VS - Oculus/Iris compatibility.
 #ifdef USE_VERTEX_BONE_ID
 layout(location = 3) in int BoneId;
 layout(location = 4) in vec3 InstPos;
@@ -50,13 +50,13 @@ out vec2 texCoord;
 out vec2 lightmapUV;
 out float vertexDistance;
 out vec3 fragNormal;
-// Мировая нормаль (поворот инстанса/модели без view-матрицы) для направленного затенения.
+// World normal (instance/model rotation without view matrix) for directional shading.
 out vec3 worldNormal;
 // Per-vertex fade: InstBboxSize.w when instancing (batched flush reads stale uniform otherwise).
 out float vFadeAlpha;
-// Per-instance тинт: в ЭТОЙ программе атрибута нет (раскладка VAO старая) — всегда white.
-// Атрибутный путь InstColor@13 живёт в block_lit_instanced.vsh; общий block_lit.fsh
-// умножает на vColor в обоих случаях.
+// Per-instance tint: THIS program has no such attribute (old VAO layout) - always white.
+// The attribute path InstColor@13 lives in block_lit_instanced.vsh; the shared
+// block_lit.fsh multiplies by vColor in both cases.
 out vec4 vColor;
 
 #ifdef USE_INSTANCING
@@ -116,10 +116,10 @@ void main() {
     mat4 rotMatrix = quatToMat4(InstRot);
     mat4 translation = mat4(1.0);
     translation[3] = vec4(InstPos, 1.0);
-    // InstPos/InstRot — МИРОВЫЕ координаты (FrameViewState): движение камеры не
-    // меняет записи (span-дифф даёт нулевой аплоад статичной сцены). Камера
-    // (R_cam·T(-cam)) приходит через ModelViewMat → viewPos остаётся view-space,
-    // туман/глубина не меняются.
+    // InstPos/InstRot are WORLD coordinates (FrameViewState): camera movement
+    // does not change the records (span diff yields zero upload for a static scene).
+    // Camera (R_cam*T(-cam)) comes via ModelViewMat, so viewPos stays view-space;
+    // fog/depth are unaffected.
     mat4 instBase = translation * rotMatrix;
     modelView = ModelViewMat * instBase;
     worldRot = rotMatrix;
@@ -130,8 +130,8 @@ void main() {
     lc45 = InstLightC45;
     lc67 = InstLightC67;
 
-    // Мировая нормаль части (без view-ротации) — для затенения; fragNormal
-    // сохраняет прежнюю семантику (ротация инстанса, без камеры).
+    // Part world normal (no view rotation) - for shading; fragNormal keeps
+    // its previous semantics (instance rotation, camera-independent).
     fragNormal = mat3(instBase) * Normal;
 #else
     modelView = ModelViewMat;
@@ -145,8 +145,8 @@ void main() {
     fragNormal = mat3(modelView) * Normal;
 #endif
 
-    // Мировая нормаль: только поворот инстанса (или identity для не-instanced пути),
-    // без view-матрицы — затенение не зависит от поворота камеры.
+    // World normal: instance rotation only (or identity for the non-instanced path),
+    // no view matrix - shading is camera-rotation independent.
     worldNormal = mat3(worldRot) * Normal;
 
     // Safeguard: when bboxSize has a zero axis the division below would NaN the
@@ -161,7 +161,7 @@ void main() {
     gl_Position = ProjMat * viewPos;
 
     texCoord = UV0;
-    // Center within the 16×16 lightmap cell like vanilla block UV2 → texcoord.
+    // Center within the 16x16 lightmap cell like vanilla block UV2 -> texcoord.
     lightmapUV = (uvLm + vec2(8.0)) / 256.0;
     vertexDistance = length(viewPos.xyz);
 

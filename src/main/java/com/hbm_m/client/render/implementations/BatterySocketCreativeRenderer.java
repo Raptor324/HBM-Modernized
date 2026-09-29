@@ -46,11 +46,11 @@ import net.minecraft.world.level.Level;
 *///?}
 
 /**
- * Мировой рендер батарейного сокета (паритет с оригинальным BER): тело вставленной
- * батареи-пака рисуется из item-модели тира (части OBJ Battery/Capacitor с родной
- * текстурой), creative-батарея — вращающаяся фигура с молниями, прочие энерго-предметы
- * — медленно вращающийся предмет на «руке». Тело не в chunk-меше, поэтому появляется
- * сразу после вставки, без пересборки секции.
+ * World renderer for the battery socket (parity with the original BER): the body of an inserted
+ * battery pack is drawn from the tier's item model (the OBJ Battery/Capacitor parts with their
+ * native texture), the creative battery is a spinning figure with lightning bolts, other
+ * energy items are a slowly rotating item on an "arm". The body is not in the chunk mesh,
+ * so it appears right after insertion without a section rebuild.
  */
 public class BatterySocketCreativeRenderer implements com.hbm_m.client.render.HbmBerBounds<BatterySocketBlockEntity> {
 
@@ -60,7 +60,7 @@ public class BatterySocketCreativeRenderer implements com.hbm_m.client.render.Hb
     private static final ResourceLocation STEVE =
             ResourceLocation.withDefaultNamespace("textures/entity/player/wide/steve.png");
 
-    /** Кэш квадов тела по предмету-тиру: части Socket-модели, ремапнутые на спрайт тира. */
+    /** Per-tier body quad cache: Socket-model parts remapped onto the tier's sprite. */
     private static final Map<ResourceLocation, List<net.minecraft.client.renderer.block.model.BakedQuad>> BODY_QUADS =
             new ConcurrentHashMap<>();
 
@@ -94,7 +94,7 @@ public class BatterySocketCreativeRenderer implements com.hbm_m.client.render.Hb
         poseStack.popPose();
     }
 
-    /** Тело пака: части Socket-модели (Battery/Capacitor) со спрайтом тира, повёрнутые по FACING. */
+    /** Pack body: Socket-model parts (Battery/Capacitor) with the tier's sprite, rotated by FACING. */
     private void renderPackBody(Level level, BlockPos pos, PoseStack poseStack, MultiBufferSource buffer,
             int packedLight, int packedOverlay, ItemStack stack, ItemBatteryPack pack) {
         List<net.minecraft.client.renderer.block.model.BakedQuad> quads = bodyQuads(stack, pack);
@@ -102,7 +102,7 @@ public class BatterySocketCreativeRenderer implements com.hbm_m.client.render.Hb
 
         int rotationY = rotationYForFacing(level, pos);
         poseStack.translate(0.5, 0, 0.5);
-        // Направление поворота совпадает с transformQuadsByFacing запечённой модели.
+        // Rotation direction matches the baked model's transformQuadsByFacing.
         poseStack.mulPose(Axis.YN.rotationDegrees(rotationY));
         poseStack.translate(-0.5, 0, -0.5);
 
@@ -127,9 +127,9 @@ public class BatterySocketCreativeRenderer implements com.hbm_m.client.render.Hb
     }
 
     /**
-     * Квады тела пака: запечённая Socket-модель сокета (та же геометрия, что рисовала
-     * chunk-меш раньше) с UV, ремапнутыми на спрайт тира из блок-атласа (спрайты
-     * стичатся через стандартную карту textures в item-JSON'ах паков). Кэш по id предмета.
+     * Pack body quads: the socket's baked Socket model (the same geometry the chunk mesh
+     * used to draw) with UVs remapped onto the tier's sprite from the block atlas (sprites
+     * are stitched via the standard textures map in the packs' item JSONs). Cached per item id.
      */
     private static List<net.minecraft.client.renderer.block.model.BakedQuad> bodyQuads(ItemStack stack, ItemBatteryPack pack) {
         ResourceLocation itemId = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(stack.getItem());
@@ -166,7 +166,7 @@ public class BatterySocketCreativeRenderer implements com.hbm_m.client.render.Hb
         }
     }
 
-    /** Аффинный ремап UV квада из исходного спрайта в спрайт тира. */
+    /** Affine remap of a quad's UVs from its source sprite to the tier's sprite. */
     private static net.minecraft.client.renderer.block.model.BakedQuad retextureQuad(
             net.minecraft.client.renderer.block.model.BakedQuad original, TextureAtlasSprite sprite) {
         TextureAtlasSprite oldSprite = original.getSprite();
@@ -190,7 +190,7 @@ public class BatterySocketCreativeRenderer implements com.hbm_m.client.render.Hb
                 newData, original.getTintIndex(), original.getDirection(), sprite, original.isShade());
     }
 
-    /** Прочий энерго-предмет: медленное вращение на «руке» внутри сокета. */
+    /** Other energy item: slow rotation on the "arm" inside the socket. */
     private void renderSpinningItem(Level level, float partialTicks, PoseStack poseStack,
             MultiBufferSource buffer, int packedLight, int packedOverlay, ItemStack stack) {
         float spin = (level.getGameTime() % 3600) * ITEM_DEGREES_PER_TICK + partialTicks * ITEM_DEGREES_PER_TICK;

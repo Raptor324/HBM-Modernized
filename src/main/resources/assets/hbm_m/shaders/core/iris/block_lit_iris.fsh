@@ -1,15 +1,16 @@
 #version 330 core
-// Iris ExtendedShader-вариант block_lit.fsh: сэмплеры/юниформы с префиксом iris_
-// (ExtendedShader.getUniform() резолвит "iris_" + name).
-// Вывод — ОДИН fragColor: vanilla-parity с iris-fallback (ShaderSynthesizer.fsh),
-// который пишет единственный выход в полный gbuffer — паки рассчитаны на это.
+// Iris ExtendedShader variant of block_lit.fsh: samplers/uniforms use the iris_
+// prefix (ExtendedShader.getUniform() resolves "iris_" + name).
+// Output is a SINGLE fragColor: vanilla parity with the iris fallback
+// (ShaderSynthesizer.fsh), which writes one output to the full gbuffer;
+// shader packs are built around that.
 
 in vec2 texCoord;
 in vec2 lightmapUV;
 in float vertexDistance;
 in float vFadeAlpha;
 in vec3 worldNormal;
-// Per-instance тинт части (InstColor из block_lit_instanced_iris.vsh).
+// Per-instance part tint (InstColor from block_lit_instanced_iris.vsh).
 in vec4 vColor;
 
 uniform sampler2D iris_Sampler0;
@@ -41,8 +42,9 @@ void main() {
         discard;
     }
 
-    // Защита от нулевого vanilla-fog стейта под паком: FogEnd <= FogStart -> тумана нет
-    // (иначе (dist-0)/1e-4 = 1 -> полная заливка FogColor = чёрные машины).
+    // Guard against a zeroed vanilla fog state under a pack: FogEnd <= FogStart
+    // means no fog (otherwise (dist-0)/1e-4 = 1, i.e. full FogColor fill =
+    // black machines).
     float fogFactor = 0.0;
     if (iris_FogEnd > iris_FogStart) {
         fogFactor = clamp((vertexDistance - iris_FogStart) / (iris_FogEnd - iris_FogStart), 0.0, 1.0);

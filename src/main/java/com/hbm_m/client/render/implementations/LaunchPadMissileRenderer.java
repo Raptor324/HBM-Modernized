@@ -40,8 +40,8 @@ public class LaunchPadMissileRenderer implements com.hbm_m.client.render.HbmBerB
         }
 
         boolean shadowPass = ShaderCompatibilityDetector.isRenderingShadowPass();
-        // Гейт снят: IrisRenderBatch-путь был только на Forge, на NeoForge ракета на паде
-        // всегда шла по медленному пути без батча.
+        // Gate removed: the IrisRenderBatch path was Forge-only; on NeoForge the pad missile
+        // always went through the slow path without batching.
         if (ShaderCompatibilityDetector.isExternalShaderActive()) {
             try (IrisRenderBatch batch = IrisRenderBatch.begin(shadowPass, RenderSystem.getProjectionMatrix())) {
                 drawMissileOnPad(be, renderData, poseStack, buffer, packedLight);

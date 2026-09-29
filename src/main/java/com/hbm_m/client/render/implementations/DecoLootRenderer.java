@@ -21,9 +21,8 @@ import com.hbm_m.client.render.HbmBerBounds;
 
 @OnlyIn(Dist.CLIENT)
 /**
- * Рендер «груды лута» (порт 1.7.10 RenderLoot, упрощённый без спец-моделей
- * мини-нюка/дробовика/брони): каждый предмет лежит плашмя на земле в своей
- * сохранённой позиции.
+ * Renders the "loot pile" (port of 1.7.10 RenderLoot, simplified without the special
+ * mini-nuke/shotgun/armor models): each item lies flat on the ground at its saved position.
  */
 public class DecoLootRenderer implements HbmBerBounds<DecoLootBlockEntity> {
 

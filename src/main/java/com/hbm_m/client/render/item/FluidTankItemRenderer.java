@@ -30,15 +30,15 @@ import net.minecraft.world.level.material.Fluids;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * BEWLR предмета цистерны — порт 1.7.10 {@code RenderFluidTank.getRenderer()}
- * ({@code ItemRenderBase.renderCommonWithStack}): предмет читает {@code persistent}-тег
- * дропа и рендерит Frame + Tank, перетекстурированный под залитую жидкость
- * (тот же механизм, что и в мире — {@link MachineFluidTankRenderer}); взорванный
- * бак показывает wrecked-модель {@code fluid_tank_exploded}.
+ * BEWLR for the fluid tank item - port of 1.7.10 {@code RenderFluidTank.getRenderer()}
+ * ({@code ItemRenderBase.renderCommonWithStack}): the item reads the drop's
+ * {@code persistent} tag and renders Frame + Tank retextured to the stored fluid
+ * (same mechanism as in-world - {@link MachineFluidTankRenderer}); an exploded
+ * tank shows the {@code fluid_tank_exploded} wrecked model.
  *
- * <p>Display-трансформы приходят из item-модели {@code fluid_tank.json} (ваниль
- * применяет их до {@code renderByItem}), т.е. предмет стоит ровно там же, где
- * стояла статичная модель — меняется только текстура Tank.</p>
+ * <p>Display transforms come from the {@code fluid_tank.json} item model (vanilla
+ * applies them before {@code renderByItem}), i.e. the item sits exactly where the
+ * static model stood - only the Tank texture changes.</p>
  */
 public class FluidTankItemRenderer extends BlockEntityWithoutLevelRenderer {
 
@@ -51,11 +51,11 @@ public class FluidTankItemRenderer extends BlockEntityWithoutLevelRenderer {
     }
 
     /**
-     * Модель резолвится через blockstate (BlockModelShaper), а НЕ по голому RL через
-     * {@code ModelManager.getModel}: в реестре запечённых моделей лежат только
-     * ModelResourceLocation-ключи вариантов блокстейта/предметов, голый RL вернул бы
-     * missing-модель и предмет рендерился бы пустым. Тот же путь, что и у мирового
-     * {@code MachineFluidTankRenderer}.
+     * The model is resolved through the blockstate (BlockModelShaper), NOT by a
+     * bare RL via {@code ModelManager.getModel}: the baked model registry holds only
+     * ModelResourceLocation keys of blockstate/item variants; a bare RL would
+     * return the missing model and the item would render empty. Same path as the
+     * world-side {@code MachineFluidTankRenderer}.
      */
     private static BakedModel resolveTankModel(boolean exploded) {
         BlockState state = com.hbm_m.block.ModBlocks.FLUID_TANK.get().defaultBlockState();
@@ -79,12 +79,12 @@ public class FluidTankItemRenderer extends BlockEntityWithoutLevelRenderer {
         }
 
         //? if forge {
-        // Гвард HbmItemDisplayWrapper (BakingCompleted) глушит форджевское применение display
-        // у всех isCustomRenderer-моделей — конвенция мода: BEWLR применяет JSON display сам
-        // (паттерн ItemRenderDetonatorLaser). Восстанавливаем ванильную последовательность:
-        // applyTransform(T), затем translate(-0.5).
+        // The HbmItemDisplayWrapper guard (BakingCompleted) disables forge's display
+        // application for all isCustomRenderer models - mod convention: the BEWLR
+        // applies the JSON display itself (ItemRenderDetonatorLaser pattern).
+        // We restore the vanilla sequence: applyTransform(T), then translate(-0.5).
         poseStack.pushPose();
-        poseStack.translate(0.5F, 0.5F, 0.5F); // отменить ванильный translate(-0.5) до renderByItem
+        poseStack.translate(0.5F, 0.5F, 0.5F); // cancel the vanilla translate(-0.5) before renderByItem
         BakedModel displayModel = Minecraft.getInstance().getItemRenderer().getModel(stack, null, null, 0);
         boolean leftHand = displayContext == ItemDisplayContext.FIRST_PERSON_LEFT_HAND
                 || displayContext == ItemDisplayContext.THIRD_PERSON_LEFT_HAND;
@@ -95,7 +95,7 @@ public class FluidTankItemRenderer extends BlockEntityWithoutLevelRenderer {
         poseStack.translate(-0.5F, -0.5F, -0.5F);
         //?}
 
-        // 1.7.10: glDisable(GL_CULL_FACE) вокруг рендера бака.
+        // 1.7.10: glDisable(GL_CULL_FACE) around the tank render.
         RenderSystem.disableCull();
         VertexConsumer consumer = buffer.getBuffer(RenderType.cutoutMipped());
         PoseStack.Pose pose = poseStack.last();
@@ -141,7 +141,7 @@ public class FluidTankItemRenderer extends BlockEntityWithoutLevelRenderer {
         return null;
     }
 
-    /** Разрешение текстуры бака по жидкости — зеркало {@code MachineFluidTankBlockEntity.getTankTextureLocation()}. */
+    /** Tank texture resolution by fluid - mirrors {@code MachineFluidTankBlockEntity.getTankTextureLocation()}. */
     private static ResourceLocation textureFromTank(FluidTank tank) {
         Fluid fluid = tank.getTankType();
         if (fluid == null || fluid == Fluids.EMPTY || fluid == ModFluids.NONE.getSource()) {

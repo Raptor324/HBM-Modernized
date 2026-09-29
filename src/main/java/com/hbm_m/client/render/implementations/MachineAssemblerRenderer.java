@@ -18,18 +18,17 @@ import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 
 /**
- * Сборщик на фабрике {@link MachineRenderers}: Body — статика; Slider/Arm — анимация;
- * 4 шестерни — одна часть модели "Cog" с четырьмя ключами (CogA..CogD);
- * иконка рецепта — immediate-хук.
+ * Assembler on the {@link MachineRenderers} factory: Body is static; Slider/Arm are animated;
+ * the 4 gears are a single "Cog" model part with four keys (CogA..CogD);
+ * the recipe icon is an immediate hook.
  * <p>
- * Отличие от легаси: idle-combined меш (слияние Body+Slider+Arm+4×Cog в один VBO
- * для простаивающих машин) не переносится — при автоматическом MDI все части
- * всех машин одного типа и так собираются в один мульти-draw, отдельная
- * склейка больше не даёт выигрыша.
+ * Difference from legacy: the idle-combined mesh (merging Body+Slider+Arm+4xCog into one VBO
+ * for idle machines) is not ported -- with automatic MDI the parts of all machines of a type
+ * already coalesce into a single multi-draw, so the extra merge no longer pays off.
  */
 public final class MachineAssemblerRenderer {
 
-    /** Degrees → radians multiplier. */
+    /** Degrees -> radians multiplier. */
 
     // Root transform from machine_assembler.json shifts model by (1,0,2); cog center is there, not at origin.
     private static final float ROOT_TX = 1f, ROOT_TZ = 2f;
@@ -45,7 +44,7 @@ public final class MachineAssemblerRenderer {
     public static void register() {
         MachineRenderers.machine("assembler", ModBlockEntities.MACHINE_ASSEMBLER_BE.get(),
                 MachineAssemblerBlockEntity.class)
-            // Body — статика: «аниматор» только применяет легаси yaw/офсеты запечки.
+            // Body is static: the "animator" only applies the legacy yaw/bake offsets.
             .staticPart("Body", MachineAssemblerRenderer::animateBody)
             .part("Slider", MachineAssemblerRenderer::animateSlider)
             .part("Arm", MachineAssemblerRenderer::animateArm)
@@ -60,8 +59,8 @@ public final class MachineAssemblerRenderer {
     private MachineAssemblerRenderer() {}
 
     // ==================== ANIMATION ====================
-    // Легаси-ориентация модели: полный поворот на -90° вокруг центра блока
-    // (поверх блочного трансформа, который уже даёт setupBlockTransform).
+    // Legacy model orientation: a full -90 degree rotation around the block center
+    // (on top of the block transform that setupBlockTransform already provides).
 
     private static void applyLegacyYaw(PoseStack pose) {
         pose.translate(0.5f, 0f, 0.5f);
@@ -70,10 +69,10 @@ public final class MachineAssemblerRenderer {
     }
 
     /**
-     * Body в легаси рисовался внутри той же -90°-группы, что и анимированные части,
-     * с компенсацией T(-0.5,0,-0.5) (root-перенос JSON (1,0,2) в baked-координатах
-     * multipart-модели). Статическая часть фабрики этого офсета не имеет — применяем
-     * трансформом «аниматора» (движок сам снимает матрицу).
+     * In legacy, Body was drawn inside the same -90-degree group as the animated parts,
+     * with the T(-0.5,0,-0.5) compensation (the JSON root translation (1,0,2) in baked
+     * coordinates of the multipart model). The factory's static part does not carry this
+     * offset -- apply it via the "animator" transform (the engine strips the matrix itself).
      */
     private static boolean animateBody(MachineAssemblerBlockEntity be, float partialTick,
                                        long gameTime, PoseStack pose) {
@@ -82,12 +81,12 @@ public final class MachineAssemblerRenderer {
         return true;
     }
 
-    // Анимации легаси тикают от wallclock-миллисекунд (System.currentTimeMillis),
-    // НЕ от игрового времени (тики в 50 раз медленнее).
+    // Legacy animations tick from wallclock milliseconds (System.currentTimeMillis),
+    // NOT from game time (ticks are 50x slower).
 
     private static boolean animateSlider(MachineAssemblerBlockEntity be, float partialTick,
                                              long gameTime, PoseStack pose) {
-        // Slider: ping-pong 0..500 за 5000ms
+        // Slider: ping-pong 0..500 over 5000ms
         float sliderX = sliderX(be, System.currentTimeMillis());
         applyLegacyYaw(pose);
         pose.translate(sliderX, 0, 0);
@@ -105,14 +104,14 @@ public final class MachineAssemblerRenderer {
             float sway = (float) Math.sin(swayRaw / Math.PI / 50);
             armZ = sway * 0.3f;
         }
-        // Arm ездит ВМЕСТЕ со Slider (общий sliderX) + добавляет своё качание armZ.
+        // The arm rides WITH the Slider (shared sliderX) and adds its own armZ sway.
         applyLegacyYaw(pose);
         pose.translate(sliderX(be, time), 0, armZ);
         pose.translate(-0.5f, 0f, -0.5f);
         return true;
     }
 
-    /** Slider: ping-pong 0..500 за 5000ms (общий для Slider и Arm). */
+    /** Slider: ping-pong 0..500 over 5000ms (shared by Slider and Arm). */
     private static float sliderX(MachineAssemblerBlockEntity be, long time) {
         if (!be.isCrafting()) return 0;
         long t = (time % 5000) / 5;
@@ -150,11 +149,11 @@ public final class MachineAssemblerRenderer {
     // ==================== RECIPE ICON (hook) ====================
 
     /**
-     * Иконка рецепта поверх машины. Стек хука уже несёт блочный трансформ
-     * (T(0.5,0,0.5)·R(90)·R(legacy facing)); старый путь из «сырого» стека делал
-     * T(0.5)·R(legacy)·T(-0.5)·R(90)·T(0,1.0625,0)·items, что в текущем фрейме
-     * эквивалентно R(-90)·T(-0.5,0,-0.5)·R(90)·T(0,1.0625,0)·items.
-     * Видимость уже отфильтрована куллингом и анимационной дистанцией движка.
+     * Recipe icon above the machine. The hook stack already carries the block transform
+     * (T(0.5,0,0.5)*R(90)*R(legacy facing)); the old path from the "raw" stack did
+     * T(0.5)*R(legacy)*T(-0.5)*R(90)*T(0,1.0625,0)*items, which in the current frame
+     * equals R(-90)*T(-0.5,0,-0.5)*R(90)*T(0,1.0625,0)*items.
+     * Visibility is already filtered by culling and the engine's animation distance.
      */
     private static void renderRecipeIcon(MachineAssemblerBlockEntity be, float partialTick,
                                          PoseStack poseStack, MultiBufferSource bufferSource,

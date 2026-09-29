@@ -15,8 +15,8 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.Entity;
 
 /**
- * Рендерер для логических/невидимых сущностей (EntityNukeExplosionMK5, AirstrikeAgentEntity и т.д.).
- * Ничего не рисует; нужен только чтобы EntityRenderDispatcher не получал null.
+ * Renderer for logical/invisible entities (EntityNukeExplosionMK5, AirstrikeAgentEntity, etc.).
+ * Draws nothing; it exists only so the EntityRenderDispatcher never receives a null renderer.
  */
 @OnlyIn(Dist.CLIENT)
 public class EmptyEntityRenderer<T extends Entity> extends EntityRenderer<T> {

@@ -14,7 +14,7 @@ import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.main.MainRegistry;
 
 /**
- * Диагностика MDI через {@link ModClothConfig} (раздел rendering).
+ * MDI diagnostics via {@link ModClothConfig} (rendering section).
  */
 
 @OnlyIn(Dist.CLIENT)
@@ -50,6 +50,6 @@ public final class MdiRenderDiag {
             return;
         }
         MainRegistry.LOGGER.info(
-                "[HBM-M MDI] Диагностика (Cloth → rendering): mdiDebugLogDispatch, mdiVerboseSubdraws.");
+                "[HBM-M MDI] Diagnostics (Cloth -> rendering): mdiDebugLogDispatch, mdiVerboseSubdraws.");
     }
 }

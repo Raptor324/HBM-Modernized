@@ -30,8 +30,8 @@ public final class DhClientState {
     private static volatile float dhFar = 4096.0F;
     /**
      * Конвенция глубины DH-кадра. DH 3.3.1 перевёл GL-движок на REVERSE_Z
-     * (GlDhRenderApiDefinition.getRenderDepth): без активного Iris-пака
-     * DEPTH32F чистится в 0 (небо=0, близко=1), террейн растеризуется
+     * (GlDhRenderApiDefinition: getRenderDepth(), в 3.3.2 переименован в
+     * getDepthDirection() — без активного Iris-пака DEPTH32F чистится в 0 (небо=0, близко=1), террейн растеризуется
      * реверс-матрицей (setClipPlanes(mat, far, near, true)). DH <= 3.2.x и
      * форвард-Z паки — FORWARD_Z. Приходит параметром в {@link #beginDhPass}
      * из DhRenderBridge.isReverseZDepthActive() (рефлексия RENDER_DEF — сам

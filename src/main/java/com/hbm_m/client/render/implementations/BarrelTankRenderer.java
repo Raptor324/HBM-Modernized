@@ -38,15 +38,15 @@ import com.mojang.blaze3d.systems.RenderSystem;
 import com.hbm_m.client.render.machine.MachineRenderApi;
 
 /**
- * Порт 1.7.10 {@code RenderFluidBarrel}: патрубки-коннекторы на гранях, где сосед
- * принимает текущую жидкость, и NFPA-алмазы на 4 боковых гранях — всё только когда
- * тип жидкости задан (не NONE). Корпус бочки (часть "Barrel") рендерится спекой
- * через VBO; коннектор (часть "Connector") — immediate из запечённых квадов части.
+ * Port of 1.7.10 {@code RenderFluidBarrel}: connector nozzles on the faces where a neighbor
+ * accepts the current fluid, and NFPA diamonds on the 4 side faces -- all only when
+ * a fluid type is set (not NONE). The barrel body (part "Barrel") is rendered by the spec
+ * through a VBO; the connector (part "Connector") is drawn immediate from the part's baked quads.
  * <p>
- * Калибровка 1:1: TESR оригинала транслировался в центр блока T(0.5,0.5,0.5), коннектор
- * дополнительно центрировался T(0,-0.5,0); алмазы T(0.4,0.30,-0.24)·scale(1,0.25,0.25),
- * 4×rotY(90). Спека объявлена с identity blockTransform, поэтому хук работает в сыром
- * блочном фрейме 0..1.
+ * 1:1 calibration: the original TESR translated to the block center T(0.5,0.5,0.5), the connector
+ * was additionally centered with T(0,-0.5,0); diamonds T(0.4,0.30,-0.24) * scale(1,0.25,0.25),
+ * 4x rotY(90). The spec declares an identity blockTransform, so the hook works in the raw
+ * block frame 0..1.
  */
 public final class BarrelTankRenderer {
 
@@ -94,7 +94,7 @@ public final class BarrelTankRenderer {
         }
     }
 
-    /** NFPA-алмазы: 1:1 RenderFluidBarrel — T(center)·[T(0.4,0.30,-0.24)·scale(1,0.25,0.25)·pront·rotY90]×4. */
+    /** NFPA diamonds: 1:1 RenderFluidBarrel -- T(center) * [T(0.4,0.30,-0.24) * scale(1,0.25,0.25) * pront * rotY90] x4. */
     private static void renderDiamonds(MachineFluidTankBlockEntity be, PoseStack poseStack,
                                        MultiBufferSource buffer, FluidType type, int packedOverlay) {
         int light = LevelRenderer.getLightColor(be.getLevel(), be.getBlockPos());
@@ -113,9 +113,9 @@ public final class BarrelTankRenderer {
     }
 
     /**
-     * Патрубки на гранях, где сосед-коннектор принимает текущую жидкость.
-     * Оригинал: +X rot 0, -X rot 180, -Z rot 90, +Z rot -90; коннектор центрируется T(0,-0.5,0)
-     * в фрейме центра блока.
+     * Nozzles on the faces where a neighboring connector accepts the current fluid.
+     * Original: +X rot 0, -X rot 180, -Z rot 90, +Z rot -90; the connector is centered with T(0,-0.5,0)
+     * in the block-center frame.
      */
     private static void renderConnectors(MachineFluidTankBlockEntity be, Level level,
                                          PoseStack poseStack, MultiBufferSource buffer, Fluid fluid,
@@ -125,9 +125,9 @@ public final class BarrelTankRenderer {
 
         List<net.minecraft.client.renderer.block.model.BakedQuad> quads = collectQuads(connector);
 
-        // RenderType.translucent() — как в MachineCrystallizerRenderer.drawCrystallizerFluidBaked:
-        // пайплайн MachineRenderers флашит solid/translucent батчи; cutoutMipped в immediate-пути
-        // не endBatch'ится и геометрия просто не выводится.
+        // RenderType.translucent() -- as in MachineCrystallizerRenderer.drawCrystallizerFluidBaked:
+        // the MachineRenderers pipeline flushes solid/translucent batches; cutoutMipped is not
+        // endBatch'ed in the immediate path, so the geometry simply never appears.
         VertexConsumer vc = buffer.getBuffer(RenderType.translucent());
         for (Direction dir : Direction.Plane.HORIZONTAL) {
             if (!neighborAccepts(be, level, dir, fluid)) continue;
@@ -153,7 +153,7 @@ public final class BarrelTankRenderer {
         };
     }
 
-    /** Паритет Library.canConnectFluid: сосед-коннектор принимает эту жидкость стороной к нам. */
+    /** Parity with Library.canConnectFluid: the neighbor connector accepts this fluid facing toward us. */
     private static boolean neighborAccepts(MachineFluidTankBlockEntity be, Level level,
                                            Direction dir, Fluid fluid) {
         BlockEntity neighbor = level.getBlockEntity(be.getBlockPos().relative(dir));

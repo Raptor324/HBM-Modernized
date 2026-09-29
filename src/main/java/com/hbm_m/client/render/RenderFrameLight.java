@@ -39,7 +39,7 @@ public final class RenderFrameLight {
             //? if < 1.21.1 {
             mc.gameRenderer.lightTexture().updateLightTexture(mc.getFrameTime());
             //?} else {
-            /*// 1.21.1: getPartialTick() удалён — частичное время тика через DeltaTracker.Timer.
+            /*// 1.21.1: getPartialTick() was removed - partial tick time via DeltaTracker.Timer.
             mc.gameRenderer.lightTexture().updateLightTexture(mc.getTimer().getGameTimeDeltaPartialTick(true));
             *///?}
         }

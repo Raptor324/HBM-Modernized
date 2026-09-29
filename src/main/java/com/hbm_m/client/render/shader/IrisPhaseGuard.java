@@ -161,7 +161,7 @@ public final class IrisPhaseGuard implements AutoCloseable {
             phaseEnumClass = Class.forName("net.irisshaders.iris.pipeline.WorldRenderingPhase");
             setPhase = worldRenderingPipelineClass.getMethod("setPhase", phaseEnumClass);
 
-            // Находим метод getPhase
+            // Locate getPhase (absent in some Iris versions)
             try {
                 getPhase = worldRenderingPipelineClass.getMethod("getPhase");
             } catch (NoSuchMethodException e) {

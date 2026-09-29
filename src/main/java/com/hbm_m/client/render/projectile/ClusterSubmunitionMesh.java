@@ -20,7 +20,8 @@ import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
 
 /**
- * Кэш части {@code MiniNuke} из {@code fatman.obj} для суббоеприпасов кластерной боеголовки.
+ * Cached {@code MiniNuke} part of {@code fatman.obj} for the cluster warhead's
+ * submunitions.
  */
 public final class ClusterSubmunitionMesh {
 
@@ -83,8 +84,8 @@ public final class ClusterSubmunitionMesh {
                 .endVertex();
         //?} else {
         /*// 1.21.1: vertex->addVertex, color->setColor, uv->setUv, overlayCoords->setOverlay, uv2->setLight,
-        // normal(Vector3f,f,f,f) -> setNormal(f,f,f) с ручным умножением на pose.normal() (Matrix3f).
-        // pose.normal() в 1.21.1 возвращает Matrix3f (не Vector3f) — transform'им исходный normal.
+        // normal(Vector3f,f,f,f) -> setNormal(f,f,f) with manual multiplication by pose.normal() (Matrix3f).
+        // pose.normal() in 1.21.1 returns a Matrix3f (not Vector3f) - transform the source normal.
         org.joml.Matrix3f nm = pose.normal();
         org.joml.Vector3f transformed = nm.transform(new org.joml.Vector3f(
                 (float) normal.x(), (float) normal.y(), (float) normal.z()));
@@ -213,14 +214,14 @@ public final class ClusterSubmunitionMesh {
         return new Vec3(ab.x, ab.y, ab.z);
     }
 
-    /** Трансформ модели как {@code LegoClient.RENDER_BOMB}. */
+    /** Model transform, same as {@code LegoClient.RENDER_BOMB}. */
     public static void applyModelTransform(PoseStack poseStack) {
         poseStack.scale(0.0625F, 0.0625F, 0.0625F);
         poseStack.mulPose(com.mojang.math.Axis.YP.rotationDegrees(-90.0F));
         poseStack.translate(0.0D, -1.0D, 1.0D);
     }
 
-    /** Поворот суббоеприпаса как {@code RenderBulletMK4} (yaw − 90°, pitch + 180° по Z). */
+    /** Submunition rotation, same as {@code RenderBulletMK4} (yaw - 90 deg, pitch + 180 deg on Z). */
     public static void applyEntityRotation(PoseStack poseStack, float yaw, float pitch) {
         poseStack.mulPose(com.mojang.math.Axis.YP.rotationDegrees(yaw - 90.0F));
         poseStack.mulPose(com.mojang.math.Axis.ZP.rotationDegrees(pitch + 180.0F));

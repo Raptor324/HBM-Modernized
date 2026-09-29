@@ -24,10 +24,10 @@ import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
 
 /**
- * Пусковая установка Союза на фабрике {@link MachineRenderers}: Table/TowerBase/
- * SupportBase/Legs — статика; Tower/Support — анимированные створы arms (поворот
- * на 45° при старте); ракета-превью — динамическая часть из injected-модели
- * (видима только при hasRocket).
+ * Soyuz launch pad on the {@link MachineRenderers} factory: Table/TowerBase/
+ * SupportBase/Legs are static; Tower/Support are the animated clamp arms
+ * (rotate 45 degrees at launch); the rocket preview is a dynamic part from an
+ * injected model (visible only while hasRocket).
  */
 public final class SoyuzLauncherRenderer {
 
@@ -55,7 +55,7 @@ public final class SoyuzLauncherRenderer {
 
     private SoyuzLauncherRenderer() {}
 
-    /** 0 = сомкнуты на ракете, 45 = полностью раскрыты. Вердикт легаси RenderSoyuzLauncher. */
+    /** 0 = clamped onto the rocket, 45 = fully open. Verdict per legacy RenderSoyuzLauncher. */
     private static double armAngle(SoyuzLauncherBlockEntity be, float partialTick) {
         double rot = be.hasRocket() ? 0.0D : ARM_OPEN_DEGREES;
         if (be.isStarting() && be.getCountdown() < ARM_ANIM_TICKS) {
@@ -80,7 +80,7 @@ public final class SoyuzLauncherRenderer {
         return true;
     }
 
-    /** Legacy: glTranslate(px,py,pz) → glRotate(rot,axisX,0,0) → glTranslate(-px,-py,-pz). */
+    /** Legacy: glTranslate(px,py,pz) -> glRotate(rot,axisX,0,0) -> glTranslate(-px,-py,-pz). */
     private static void applyPivot(PoseStack pose, double px, double py, double pz, double rot, boolean positiveX) {
         pose.translate(px, py, pz);
         pose.mulPose((positiveX ? com.mojang.math.Axis.XP : com.mojang.math.Axis.XN).rotationDegrees((float) rot));

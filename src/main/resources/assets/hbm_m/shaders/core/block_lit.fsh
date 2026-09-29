@@ -4,9 +4,9 @@ in vec2 texCoord;
 in vec2 lightmapUV;
 in float vertexDistance;
 in float vFadeAlpha;
-// Мировая нормаль из VS — для направленного затенения (не зависит от камеры).
+// World normal from the VS - for directional shading (camera-independent).
 in vec3 worldNormal;
-// Per-instance тинт (block_lit_instanced пишет InstColor; block_lit — константу white).
+// Per-instance tint (block_lit_instanced writes InstColor; block_lit writes constant white).
 in vec4 vColor;
 
 uniform sampler2D Sampler0;
@@ -21,7 +21,7 @@ void main() {
     vec4 baseColor = texture(Sampler0, texCoord);
 
     // Vanilla dynamic lightmap: encodes sky darken, client brightness (gamma),
-    // night vision, darkness, and dimension tint — same as block models.
+    // night vision, darkness, and dimension tint - same as block models.
     vec3 lm = texture(Sampler2, lightmapUV).rgb;
     vec3 lit = baseColor.rgb * lm * vColor.rgb;
     // lit *= 0;

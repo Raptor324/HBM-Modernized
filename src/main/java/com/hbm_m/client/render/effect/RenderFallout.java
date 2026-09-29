@@ -25,26 +25,26 @@ public class RenderFallout extends EntityRenderer<EntityFalloutRain> {
         private static final ResourceLocation FALLOUT = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/entity/fallout.png");
 
 
-    /** Максимальный радиус рендера fallout-колонн (в блоках). Уменьшен для оптимизации. */
+    /** Maximum render radius of fallout columns (in blocks). Reduced for performance. */
     private static final int MAX_RENDER_RADIUS = 32;
     /**
-     * Высота «шторы» осадков над поверхностью (блоки). Уменьшена для оптимизации.
+     * Height of the precipitation "curtain" above the surface (blocks). Reduced for performance.
      */
     private static final int MAX_VISUAL_HEIGHT_ABOVE_SURFACE = 24;
     /**
-     * Горизонтальная дистанция камеры до сущности (эпицентра осадков). Согласовано с {@code clientTrackingRange(6)} чанков (~96 бл.).
+     * Horizontal camera-to-entity distance (fallout epicenter). Matches {@code clientTrackingRange(6)} chunks (~96 blocks).
      */
     private static final double MAX_EPICENTER_CAMERA_HORIZONTAL_DIST_SQ = 88.0 * 88.0;
     /**
-     * Колонны только рядом с игроком (как у ванильного дождя вокруг камеры). Уменьшено для оптимизации.
+     * Columns only near the player (like vanilla rain around the camera). Reduced for performance.
      */
     private static final double MAX_COLUMN_CAMERA_HORIZONTAL_DIST_SQ = 48.0 * 48.0;
-    /** Радиус кэш-сетки для колонн (всегда >= MAX_RENDER_RADIUS). */
+    /** Cache grid radius for columns (always >= MAX_RENDER_RADIUS). */
     private static final int CACHE_RADIUS = MAX_RENDER_RADIUS;
-    /** Ширина кэш-сетки: (2 * CACHE_RADIUS + 1)^2 ячеек. */
+    /** Cache grid width: (2 * CACHE_RADIUS + 1)^2 cells. */
     private static final int CACHE_WIDTH = CACHE_RADIUS * 2 + 1;
 
-    /** Кэш данных по колонне fallout. Привязан к центру и игровому тику. */
+    /** Per-column fallout data cache. Bound to the center and game tick. */
     private static final class FalloutColumnCacheEntry {
         int height;
         int lastUpdateTick;
@@ -69,7 +69,7 @@ public class RenderFallout extends EntityRenderer<EntityFalloutRain> {
         ClientLevel world = mc.level;
         if (camera == null || world == null) return;
 
-        // Сглаживаем внутреннюю анимацию по времени (swayLoop и т.п.)
+        // Smooth the internal animation over time (swayLoop etc.)
         float interp = partialTick;
 
         double ex = Mth.lerp(partialTick, entity.xOld, entity.getX());
@@ -83,7 +83,7 @@ public class RenderFallout extends EntityRenderer<EntityFalloutRain> {
         }
 
         poseStack.pushPose();
-        // Отменяем entity offset, оставляем только camera-relative матрицу уровня.
+        // Cancel the entity offset, keep only the camera-relative level matrix.
         poseStack.translate(-ex, -ey, -ez);
         renderRainSnow(entity, interp, poseStack, bufferSource, world, camera);
         poseStack.popPose();
@@ -132,7 +132,7 @@ public class RenderFallout extends EntityRenderer<EntityFalloutRain> {
         boolean fancy = graphics == GraphicsStatus.FANCY || graphics == GraphicsStatus.FABULOUS;
         int verticalLayers = fancy ? 10 : 5;
 
-        // quality / LOD: на fast режем радиус и делаем шаг выборки больше
+        // quality / LOD: on fast graphics reduce the radius and increase the sampling step
         int baseRadius = Math.min(scale, MAX_RENDER_RADIUS);
         int step = fancy ? 1 : 2;
         int renderRadius = Math.max(4, baseRadius);

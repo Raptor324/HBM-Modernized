@@ -8,21 +8,20 @@ import com.hbm_m.client.render.machine.MachineRenderers;
 import com.hbm_m.util.MultipartFacingTransforms;
 
 /**
- * ZIRNOX на фабрике {@link MachineRenderers} — порт 1.7.10 {@code RenderZirnox}:
+ * ZIRNOX on the {@link MachineRenderers} factory - port of 1.7.10 {@code RenderZirnox}:
  * <ul>
- *   <li>единственная статическая часть "Plane" ({@code o Plane} в zirnox.obj);
- *       анимации нет, оригинальный флаг {@code tilted} (падение реактора из
- *       системы machine gravity 528) не портирован — в модернизации этой
- *       подсистемы нет;</li>
- *   <li>поворот по FACING — таблица оригинала (metadata−10): N→90°, S→270°,
- *       W→180°, E→0°, т.е. базовые 90° + {@code legacyFacingRotationYDegrees};</li>
- *   <li>модель выпекается вместе с root-трансформом JSON T(0.5,0,-1.5)·R(90)
- *       (ловушка OBJ root-transform), поэтому после T(0.5,0,0.5)+R(legacy)
- *       вычитаем его: суммарно T(0.5,0,0.5)·R(legacy+90) — ровно математика
- *       оригинального TESR (translate x+0.5/z+0.5 → rotate).</li>
+ *   <li>a single static part "Plane" ({@code o Plane} in zirnox.obj); no animation -
+ *       the original {@code tilted} flag (reactor toppling from the machine gravity
+ *       system 528) is not ported, since the modernization has no such subsystem;</li>
+ *   <li>FACING rotation follows the original table (metadata-10): N -&gt; 90, S -&gt; 270,
+ *       W -&gt; 180, E -&gt; 0, i.e. base 90 degrees + {@code legacyFacingRotationYDegrees};</li>
+ *   <li>the model is baked together with the JSON root transform T(0.5,0,-1.5)*R(90)
+ *       (the OBJ root-transform trap), so after T(0.5,0,0.5)+R(legacy) we subtract it:
+ *       the net result is T(0.5,0,0.5)*R(legacy+90) - exactly the math of the original
+ *       TESR (translate x+0.5/z+0.5 -&gt; rotate).</li>
  * </ul>
- * Габарит куллинга — {@code getRenderBoundingBox()} в
- * {@link MachineZirnoxBlockEntity} (структура 5×5×5, ядро в центре основания).
+ * Culling bounds come from {@code getRenderBoundingBox()} in
+ * {@link MachineZirnoxBlockEntity} (5x5x5 structure, core at the center of the base).
  */
 public final class MachineZirnoxRenderer {
 
@@ -40,7 +39,7 @@ public final class MachineZirnoxRenderer {
         animator.translate(0.5, 0.0, 0.5);
         animator.rotate(MultipartFacingTransforms.legacyFacingRotationYDegrees(
                 be.getBlockState().getValue(MachineZirnoxBlock.FACING)), 0, 1, 0);
-        // Компенсация baked root-трансформа JSON T(0.5,0,-1.5)·R(90).
+        // Compensate the baked JSON root transform T(0.5,0,-1.5)*R(90).
         animator.translate(-0.5, 0.0, 1.5);
     }
 }

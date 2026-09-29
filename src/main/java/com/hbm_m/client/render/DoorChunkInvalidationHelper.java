@@ -21,10 +21,11 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 
 /**
- * Отложенная инвалидация чанков для дверей.
- * Baked models (Iris/Oculus) не обновляются после первого открытия без явной инвалидации -
- * Sodium/Embeddium кэширует чанки. Вызывать processPendingInvalidations из ClientTickEvent.END.
- * Дедупликация: одна и та же позиция не добавляется повторно, пока не обработана.
+ * Deferred chunk invalidation for doors.
+ * Baked models (Iris/Oculus) do not update after the first opening without explicit
+ * invalidation - Sodium/Embeddium caches chunks. Call processPendingInvalidations
+ * from ClientTickEvent.END. Deduplication: the same position is not re-added
+ * while still pending.
  */
 @OnlyIn(Dist.CLIENT)
 public class DoorChunkInvalidationHelper {
@@ -33,8 +34,8 @@ public class DoorChunkInvalidationHelper {
     private static final Set<BlockPos> PENDING_POSITIONS = ConcurrentHashMap.newKeySet();
 
     /**
-     * Запланировать инвалидацию чанка для позиции двери.
-     * Дедупликация: если позиция уже в очереди, повторно не добавляется (устраняет моргание).
+     * Schedule a chunk invalidation for a door position.
+     * Deduplicated: a position already queued is not added again (prevents flicker).
      */
     public static void scheduleChunkInvalidation(BlockPos pos) {
         if (pos == null) return;
@@ -45,7 +46,7 @@ public class DoorChunkInvalidationHelper {
     }
 
     /**
-     * Обработать очередь инвалидаций. Вызывать из ClientTickEvent.END.
+     * Process the invalidation queue. Call from ClientTickEvent.END.
      */
     public static void processPendingInvalidations() {
         Minecraft mc = Minecraft.getInstance();

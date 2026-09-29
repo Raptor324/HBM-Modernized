@@ -12,18 +12,18 @@ import org.lwjgl.opengl.GL30;
 import org.lwjgl.opengl.GL43;
 
 /**
- * КОПИЯ DH-ГЛУБИНЫ В ТЕКУЩЕ ЗАНЯТЫЙ Z-BUFFER — версия для IRIS.
+ * COPY OF THE DH DEPTH INTO THE CURRENTLY BOUND Z-BUFFER - the IRIS variant.
  *
- * Под активным паком нельзя использовать ShaderInstance-проход (dh_depth_blit):
- * неизвестный Iris'у шейдер маскируется на apply()
- * (DepthColorStorage.disableDepthColor). Этот класс компилирует СВОЮ сырую
- * GL-программу мимо MC/Iris-пайплайна и рисует фуллскрин-квад напрямую,
- * поэтому маскирование на него не действует.
+ * <p>Under an active pack, a ShaderInstance pass (dh_depth_blit) cannot be
+ * used: a shader unknown to Iris gets masked on apply()
+ * (DepthColorStorage.disableDepthColor). This class compiles its own raw GL
+ * program outside the MC/Iris pipeline and draws a fullscreen quad directly,
+ * so the masking does not affect it.</p>
  *
- * Целевой framebuffer: вызывающий сначала применяет ExtendedShader частиц
- * (его apply() биндит правильный FB пайплайна), затем мы читаем
- * GL_DRAW_FRAMEBUFFER_BINDING и пишем глубину туда. Конвертация из клип-
- * плоскостей DH в окно расширенной проекции — как в dh_depth_blit.fsh.
+ * <p>Target framebuffer: the caller first applies the particle ExtendedShader
+ * (its apply() binds the correct pipeline FB), then we read
+ * GL_DRAW_FRAMEBUFFER_BINDING and write the depth there. Conversion from DH
+ * clip planes to the extended projection window matches dh_depth_blit.fsh.</p>
  */
 public final class RawDhDepthCopy {
 
@@ -58,8 +58,8 @@ public final class RawDhDepthCopy {
             uniform float uOutNear;
             uniform float uOutFar;
             uniform float uFadeMaskDist;
-            // Конвенция глубины DH: > 0.5 = REVERSE_Z (DH 3.3.1+ без пака,
-            // близко=1/небо=0), иначе FORWARD_Z. Детект в DhClientState.
+            // DH depth convention: > 0.5 = REVERSE_Z (DH 3.3.1+ without a pack,
+            // near=1/sky=0), otherwise FORWARD_Z. Detection in DhClientState.
             uniform float uReverseZ;
             in vec2 uv;
             void main() {
@@ -67,21 +67,21 @@ public final class RawDhDepthCopy {
                 bool reverseZ = uReverseZ > 0.5;
                 if (reverseZ ? (d <= 1.0e-6) : (d >= 0.999999)) { discard; }
                 float ndc = d * 2.0 - 1.0;
-                // REVERSE_Z (DH 3.3.1+): реверс-матрица DH даёт
+                // REVERSE_Z (DH 3.3.1+): DH's reverse matrix gives
                 // ndc = (n/(f-n))*(f/dist - 1)  =>  dist = fn/(ndc*(f-n) + n).
                 float dist = reverseZ
                     ? (uDhFar * uDhNear) / max(uDhNear + ndc * (uDhFar - uDhNear), 1e-6)
                     : (2.0 * uDhFar * uDhNear) / max((uDhFar + uDhNear) - ndc * (uDhFar - uDhNear), 1e-6);
-                // Зона dither-fade DH («Fade Nearby DH LODs»): DEPTH32F там — шум.
+                // DH dither-fade zone ("Fade Nearby DH LODs"): DEPTH32F there is noise.
                 if (dist < uFadeMaskDist) { discard; }
-                // Точное окно нашей проекции: window = 1 - fnEff/dist,
-                // fnEff = F*N/(F-N) (НЕ 0.1/dist — ошибка ×2 в дистанции окклудера).
+                // Exact window of our projection: window = 1 - fnEff/dist,
+                // fnEff = F*N/(F-N) (NOT 0.1/dist - a 2x error in occluder distance).
                 float fnEff = (uOutFar * uOutNear) / (uOutFar - uOutNear);
                 gl_FragDepth = clamp((1.0 - fnEff / dist) + 1.0e-6, 0.0, 1.0);
             }
             """;
 
-    /** Пишет в УЖЕ ЗАБИНДЕННЫЙ draw-framebuffer — вызвать после apply() шейдера контента. */
+    /** Writes into the ALREADY BOUND draw framebuffer - call after the content shader's apply(). */
     public static void copyIntoBoundFramebuffer(float dhNear, float dhFar, int depthTextureId) {
         if (depthTextureId <= 0 || dhNear <= 0.0F || dhFar <= dhNear) {
             return;
@@ -94,18 +94,19 @@ public final class RawDhDepthCopy {
         int prevVao = GL11.glGetInteger(GL30.GL_VERTEX_ARRAY_BINDING);
         int prevActiveTex = GL11.glGetInteger(GL13.GL_ACTIVE_TEXTURE);
         boolean cullWasEnabled = GL11.glIsEnabled(GL11.GL_CULL_FACE);
-        // Предыдущая текстура юнита 0: восстанавливаем ЕЁ, а не сырой ноль.
-        // Раньше после прохода на TU0 оставалась пустая текстура при живом
-        // кеше GlStateManager → следующие ванильные _bindTexture но-опились,
-        // и последующие дро (частицы) сэмплировали «ничто» (чёрные квадраты).
+        // Previous unit-0 texture: restore THAT one, not raw zero. Previously,
+        // after this pass TU0 was left with an empty texture while the
+        // GlStateManager cache was live, so subsequent vanilla _bindTexture
+        // calls were no-ops and later draws (particles) sampled "nothing"
+        // (black squares).
         GlStateManager._activeTexture(GL13.GL_TEXTURE0);
         int prevUnit0Tex = GL11.glGetInteger(GL11.GL_TEXTURE_BINDING_2D);
 
         GlStateManager._colorMask(false, false, false, false);
         RenderSystem.depthMask(true);
         RenderSystem.enableDepthTest();
-        // Пишем только более близкую глубину: ванильная геометрия в пикселе
-        // сохраняется, небо (1.0) заменяется на LOD.
+        // Write only closer depth: vanilla geometry in the pixel is kept,
+        // sky (1.0) is replaced with the LOD.
         RenderSystem.depthFunc(GL11.GL_LESS);
         RenderSystem.disableCull();
 
@@ -124,8 +125,8 @@ public final class RawDhDepthCopy {
         GlStateManager._glBindVertexArray(vao);
         GL11.glDrawArrays(GL11.GL_TRIANGLE_STRIP, 0, 4);
 
-        // Восстановление: возвращаем ПРЕДЫДУЩУЮ текстуру юнита 0 (feedback),
-        // затем стейт — всё через управляемый API, чтобы кеш остался честным.
+        // Restore: put back the PREVIOUS unit-0 texture (feedback), then state -
+        // all through the managed API so the cache stays honest.
         GlStateManager._activeTexture(GL13.GL_TEXTURE0);
         GlStateManager._bindTexture(prevUnit0Tex);
         GlStateManager._colorMask(true, true, true, true);

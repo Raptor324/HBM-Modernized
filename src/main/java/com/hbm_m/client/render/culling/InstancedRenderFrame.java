@@ -38,12 +38,12 @@ import net.neoforged.api.distmarker.OnlyIn;
  * Instanced / MDI batching for OBJ machine parts on vanilla Forge world render stages.
  *
  * <p>One client <em>render frame</em> = one {@code AFTER_BLOCK_ENTITIES} flush + present.
- * Do not defer draw to {@code Level#getGameTime()} — several render frames share one tick,
+ * Do not defer draw to {@code Level#getGameTime()} - several render frames share one tick,
  * buffers would fill to the per-part instance cap ({@link ClientRenderFlags#maxInstances()})
  * and machines would strobe (overflow warnings in log).
  *
- * <p>РЕГРЕССИЯ-СТОП: present here, not {@code AFTER_LEVEL} / {@code RenderTickEvent.END}
- * (dirty GL texture units → white lightmap).
+ * <p>REGRESSION STOP: present here, not {@code AFTER_LEVEL} / {@code RenderTickEvent.END}
+ * (dirty GL texture units lead to a white lightmap).
  */
 
 @OnlyIn(Dist.CLIENT)
@@ -62,11 +62,11 @@ public final class InstancedRenderFrame {
         }
         RenderFrameLight.onFrameStart();
         ClientRenderFlags.onFrameStart();
-        // Shadow-фаза уже отработала: незафлашенный глобальный shadow-батч =
-        // миксин не сработал → авто-откат на немедленный shadow-путь.
+        // Shadow phase has already run: an unflushed global shadow batch means the
+        // mixin did not fire -> automatic fallback to the immediate shadow path.
         com.hbm_m.client.render.IrisShadowBatchCollector.onMainPassFrameStart();
         com.hbm_m.client.render.shader.IrisInstancedShaders.onFrameStart();
-        // Per-frame счётчики секции F3 ([Nucleus]); оверлей рисуется позже в этом же кадре.
+        // Per-frame counters for the F3 ([Nucleus]) section; the overlay draws later in this frame.
         NucleusDebug.onFrameStart();
         // Detect Iris pipeline rebuilds before BER so cached ExtendedShader /
         // sampler bindings are not reused with destroyed GlResources.
@@ -74,7 +74,7 @@ public final class InstancedRenderFrame {
         MachineChemicalPlantRenderer.clearDeferredFluids();
         MachineCrystallizerRenderer.clearDeferredFluids();
         // Single source of truth: the effective occlusion mode. The legacy
-        // enableOcclusionCulling boolean is only a config-load mirror — gating the
+        // enableOcclusionCulling boolean is only a config-load mirror - gating the
         // CPU helper on it left ray-marching enabled (mode=CPU) without frustum
         // capture / cache pruning when the mirror drifted.
         if (ModClothConfig.get().getEffectiveOcclusionCullingMode() == ModClothConfig.OcclusionCullingMode.CPU) {
@@ -97,13 +97,13 @@ public final class InstancedRenderFrame {
         }
 
         // Per-part VBO BERs open a persistent Iris batch even when instanced batching is off.
-        // Must close before outline / hand — not only inside the instanced-flush branch below.
+        // Must close before outline / hand - not only inside the instanced-flush branch below.
         IrisRenderBatch.closePersistentIfActive();
 
         try {
-            // Инстансинг включён всегда; forceVanillaImmediatePath проверяется внутри
-            // ClientRenderFlags.useInstancedBatching() самими BER. MDI включается
-            // автоматически (caps + отсутствие shader pack) — см. MdiBatchCoordinator.beginFrame.
+            // Instancing is always enabled; forceVanillaImmediatePath is checked inside
+            // ClientRenderFlags.useInstancedBatching() by the BERs themselves. MDI is enabled
+            // automatically (caps + no shader pack) - see MdiBatchCoordinator.beginFrame.
             RenderFrameLight.ensureLightTextureUpdated();
 
             MdiBatchCoordinator coord = MdiBatchCoordinator.beginFrame(projection);
@@ -112,14 +112,14 @@ public final class InstancedRenderFrame {
                 coord.endFrame();
             }
 
-            // Фаза 2: затухающие инстансы прямых путей (GPU-bones chain-части
-            // сборочных машин, DoorRenderer, MDI-fallback) — строго ПОСЛЕ
-            // MDI-мульти-драва, чтобы полупрозрачная геометрия не писала глубину
-            // раньше непрозрачных машин (depth-reject «дыра с чанком»).
+            // Phase 2: fading instances of direct (non-MDI) paths (GPU-bones chain parts
+            // of assembler machines, DoorRenderer, MDI fallback) - strictly AFTER the
+            // MDI multi-draw, so translucent geometry does not write depth before
+            // opaque machines (depth-reject "hole in chunk" artifact).
             flushAllInstancedFading(projection);
 
-            // Все span-аплоады кадра ушли в staging-кольцо — ставим фенс,
-            // ограждающий переиспользование диапазона следующим кадром.
+            // All span uploads of this frame went to the staging ring - place a fence
+            // guarding reuse of the range by the next frame.
             PersistentUploadStaging staging = PersistentUploadStaging.getOrCreate();
             if (staging != null) {
                 staging.endFrame();
@@ -127,27 +127,27 @@ public final class InstancedRenderFrame {
 
             MdiRenderFrameGate.advanceAfterPresent();
 
-            // БЕЗ guard'а useInstancedBatching: при выключенном инстансинге
-            // не-instanced путь (SingleMeshVboRenderer.render / renderSingle)
-            // всё равно ходит через LightSampleCache. Без инкремента currentFrame
-            // условие lastFrame == currentFrame остаётся true навсегда — свет машин
-            // замерзает на первом сэмпле, а fast-path слот lastQueriedBE навсегда
-            // удерживает сильную ссылку на последний BlockEntity (пиннит весь Level
-            // после выхода из мира).
+            // NO useInstancedBatching guard here: even with instancing disabled the
+            // non-instanced path (SingleMeshVboRenderer.render / renderSingle) still goes
+            // through LightSampleCache. Without the currentFrame increment, the
+            // lastFrame == currentFrame condition stays true forever - machine light
+            // freezes at the first sample, and the fast-path lastQueriedBE slot keeps a
+            // strong reference to the last BlockEntity (pinning the whole Level after
+            // leaving a world).
             LightSampleCache.onFrameStart();
 
-            // После flush instanced (или при выключенном batching): depth содержит все части BER.
-            // Chemplant/Crystallizer — deferred: рисуется здесь, в AFTER_BLOCK_ENTITIES,
-            // после closePersistentIfActive и instanced-flush, внутри IrisPhaseGuard
-            // BLOCK_ENTITIES (см. MachineChemicalPlantRenderer.presentDeferredFluids).
+            // After the instanced flush (or with batching disabled): depth contains all BER parts.
+            // Chemplant/Crystallizer are deferred: drawn here, in AFTER_BLOCK_ENTITIES,
+            // after closePersistentIfActive and the instanced flush, inside the IrisPhaseGuard
+            // BLOCK_ENTITIES phase (see MachineChemicalPlantRenderer.presentDeferredFluids).
             MachineChemicalPlantRenderer.presentDeferredFluids();
             MachineCrystallizerRenderer.presentDeferredFluids();
         } catch (Throwable t) {
             MainRegistry.LOGGER.error("[HBM-M] instanced present failed", t);
-            // Страховки после исключения: фенс на уже ушедшие в staging копии
-            // (иначе следующий кадр может перезаписать незавершённый диапазон) и
-            // сброс камера-кеша (serial не вырос — без сброса следующий кадр
-            // переиспользовал бы протухшую view-матрицу).
+            // Safety after the exception: fence the staging copies already submitted
+            // (otherwise the next frame may overwrite an unfinished range) and
+            // invalidate the camera cache (serial did not grow - without the reset the
+            // next frame would reuse a stale view matrix).
             PersistentUploadStaging staging = PersistentUploadStaging.getOrCreate();
             if (staging != null) {
                 staging.endFrame();
@@ -194,13 +194,13 @@ public final class InstancedRenderFrame {
     }
 
     private static void flushAllInstanced(Matrix4f projection) {
-        // Фабричные станки (machine/) — единый реестр вместо N хардкодов flushInstancedBatches.
+        // Factory machines (machine/) - single registry instead of N hardcoded flushInstancedBatches.
         com.hbm_m.client.render.machine.MachineRenderRegistry.flushAll(projection);
     }
 
     /**
-     * Фаза 2 флаша: затухающие инстансы прямых (не-MDI) путей. Инвариант кадра:
-     * «opaque всех путей → fading MDI (внутри мульти-драва) → fading прямых путей».
+     * Phase 2 of the flush: fading instances of direct (non-MDI) paths. Frame invariant:
+     * "opaque of all paths -> fading MDI (inside the multi-draw) -> fading of direct paths".
      */
     private static void flushAllInstancedFading(Matrix4f projection) {
         com.hbm_m.client.render.machine.MachineRenderRegistry.flushAllFading(projection);

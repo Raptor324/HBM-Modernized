@@ -42,18 +42,18 @@ public class AirstrikeEntityRenderer<T extends net.minecraft.world.entity.Entity
 
         poseStack.pushPose();
 
-        //  ОДИН поворот: 180° + направление движения
+        // Single rotation: 180 degrees + travel direction
         poseStack.mulPose(Axis.YP.rotationDegrees(-entity.getYRot() + 180.0F));
 
-        //  Смещение центра модели
+        // Center the model
         poseStack.translate(-0.5, 0.0, -0.5);
 
-        //  Масштаб x3
+        // Scale x3
         poseStack.scale(5.0F, 5.0F, 5.0F);
 
         BlockState state = ModBlocks.DORNIER.get().defaultBlockState();
 
-        // Рисуем модель самолета
+        // Draw the plane model
         blockRenderer.renderSingleBlock(
                 state,
                 poseStack,
@@ -68,7 +68,7 @@ public class AirstrikeEntityRenderer<T extends net.minecraft.world.entity.Entity
 
     @Override
     public ResourceLocation getTextureLocation(T entity) {
-        // Не используется при рендере через blockRenderer, можно вернуть что‑нибудь дефолтное
+        // Unused when rendering via blockRenderer; a default value is fine
         return ResourceLocation.withDefaultNamespace("textures/block/iron_block.png");
     }
 }

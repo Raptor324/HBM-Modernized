@@ -8,38 +8,39 @@ import java.util.regex.Pattern;
 import com.hbm_m.main.MainRegistry;
 
 /**
- * Определение тене-дисторсии ("рыбий глаз" вокруг игрока) активного пакa.
- * <p>
- * Пак искажает shadow-map в своём shadow-вершинном шейдере
- * ({@code gl_Position.xy /= distortionFactor; gl_Position.z *= scale}) и
- * компенсирует искажение при сэмплировании теней. Любая геометрия, рисуемая в
- * shadow-map БЕЗ того же искажения, сэмплится не в тех текселях — тени
- * «ползают» за игроком. Поэтому инстансный теневой путь обязан воспроизводить
- * дисторсию пака.
- * <p>
- * Распознавание — по предобработанному (includes развёрнуты) исходнику
- * shadow-вершинной программы пака ({@code ProgramSet.getShadow()}), без имён
- * паков:
+ * Detects the shadow-map distortion ("fisheye" around the player) of the
+ * active shader pack.
+ *
+ * <p>The pack distorts the shadow map in its shadow vertex shader
+ * ({@code gl_Position.xy /= distortionFactor; gl_Position.z *= scale}) and
+ * compensates for the distortion when sampling shadows. Any geometry drawn
+ * into the shadow map WITHOUT the same distortion samples the wrong texels -
+ * shadows "crawl" with the player. The instanced shadow path must therefore
+ * reproduce the pack's distortion.</p>
+ *
+ * <p>Detection works on the preprocessed (includes expanded) source of the
+ * pack's shadow vertex program ({@code ProgramSet.getShadow()}), without
+ * hardcoding pack names:
  * <ul>
- *   <li><b>quartic</b> — {@code quartic_length}-семейство (Photon):
+ *   <li><b>quartic</b> - the {@code quartic_length} family (Photon):
  *       {@code factor = quartic_length(xy) * SHADOW_DISTORTION + (1-SHADOW_DISTORTION)},
  *       {@code z *= SHADOW_DEPTH_SCALE};</li>
- *   <li><b>linear</b> — классика (BSL/Complementary-семейство):
+ *   <li><b>linear</b> - the classic family (BSL/Complementary):
  *       {@code factor = length(xy) * bias + (1-bias)}, {@code z *= 0.2};</li>
- *   <li>нет {@code distort} в исходнике — дисторсии нет вообще.</li>
+ *   <li>no {@code distort} in the source - no distortion at all.</li>
  * </ul>
- * Если схема не распознана — {@link #isCompatible()} false и теневой батч
- * рисуется через pack-программу (per-record, корректно, но медленнее).
- * Константы берутся из {@code #define} в том же исходнике (значения уже
- * подставлены настройками пака на этапе загрузки).
+ * If the scheme is not recognized, {@link #isCompatible()} returns false and
+ * the shadow batch is drawn through pack programs (per-record: correct but
+ * slower). Constants are taken from {@code #define}s in the same source
+ * (values already substituted by pack settings at load time).</p>
  */
 public final class IrisShadowDistortion {
 
-    /** 0 = нет дисторсии, 1 = quartic (Photon-семейство), 2 = linear (BSL-классика). */
+    /** 0 = no distortion, 1 = quartic (Photon family), 2 = linear (BSL classic). */
     private static volatile int mode = 0;
     private static volatile float distortion = 0.85f;
     private static volatile float depthScale = 1.0f;
-    private static volatile boolean compatible = true; // отсутствие дисторсии совместимо
+    private static volatile boolean compatible = true; // absence of distortion is compatible
 
     private static volatile long detectionGeneration = -1L;
     private static volatile boolean detectionDone = false;
@@ -47,7 +48,7 @@ public final class IrisShadowDistortion {
     private static boolean reflected = false;
     private static Method getProgramSet;
     private static Method getShadow;
-    /** Аргумент ProgramId.Shadow для единого get(ProgramId) Iris 1.8+ (null = именованный getShadow()). */
+    /** ProgramId.Shadow argument for the unified get(ProgramId) in Iris 1.8+ (null = named getShadow()). */
     private static Object shadowProgramId;
     private static Method getVertexSource;
     private static Method getPackDirectives;
@@ -57,7 +58,7 @@ public final class IrisShadowDistortion {
 
     private IrisShadowDistortion() {}
 
-    /** Совместим ли инстансный теневой путь с активным паком. */
+    /** Returns true if the instanced shadow path is compatible with the active pack. */
     public static boolean isCompatible() {
         long gen = IrisExtendedShaderAccess.getPipelineGeneration();
         if (detectionDone && detectionGeneration == gen) {
@@ -87,8 +88,8 @@ public final class IrisShadowDistortion {
             if (!reflected) {
                 reflected = true;
                 Class<?> programSet = Class.forName("net.irisshaders.iris.shaderpack.programs.ProgramSet");
-                // Iris 1.8+ (1.21.1) УДАЛИЛ getShadow() в пользу единого
-                // get(ProgramId) — пробуем оба (Oculus 1.20.1 держит getShadow).
+                // Iris 1.8+ (1.21.1) removed getShadow() in favor of the unified
+                // get(ProgramId) - try both (Oculus 1.20.1 keeps getShadow).
                 try {
                     getShadow = programSet.getMethod("getShadow");
                 } catch (NoSuchMethodException e) {
@@ -101,27 +102,29 @@ public final class IrisShadowDistortion {
                 }
                 Class<?> programSource = Class.forName("net.irisshaders.iris.shaderpack.programs.ProgramSource");
                 getVertexSource = programSource.getMethod("getVertexSource");
-                // Порядок вызова как в IrisInstancedEncoders (там цепочка рабочая):
-                // ShaderPack.getProgramSet(NamespacedId) → ProgramSet, и ТОЛЬКО затем
-                // ProgramSet.getShadow(). Прежний getShadow.invoke(ShaderPack) падал
-                // IllegalArgumentException "not an instance of declaring class" (debug.log
-                // 0913 23:33) и навсегда уводил инстансные тени в per-record фолбэк.
+                // Call order mirrors IrisInstancedEncoders (that chain works):
+                // ShaderPack.getProgramSet(NamespacedId) -> ProgramSet, and ONLY then
+                // ProgramSet.getShadow(). The old getShadow.invoke(ShaderPack) threw
+                // IllegalArgumentException "not an instance of declaring class"
+                // (debug.log 0913 23:33) and permanently pushed instanced shadows
+                // into the per-record fallback.
                 Class<?> shaderPack = Class.forName("net.irisshaders.iris.shaderpack.ShaderPack");
                 getProgramSet = shaderPack.getMethod("getProgramSet",
                         Class.forName("net.irisshaders.iris.shaderpack.materialmap.NamespacedId"));
                 Class<?> namespacedId = Class.forName("net.irisshaders.iris.shaderpack.materialmap.NamespacedId");
                 overworldId = namespacedId.getConstructor(String.class, String.class)
                         .newInstance("minecraft", "overworld");
-                // Директивы пака: реальный shadowDistance (BSL-classic считает bias из него:
-                // const float shadowMapBias = 1.0 - 25.6 / shadowDistance; lib/settings.glsl
-                // НЕ попадает в include-развёрнутый исходник — см. quartic-ветку ниже).
+                // Pack directives: the real shadowDistance (BSL-classic derives the
+                // bias from it: const float shadowMapBias = 1.0 - 25.6 /
+                // shadowDistance; lib/settings.glsl does NOT appear in the
+                // include-expanded source - see the quartic branch below).
                 getPackDirectives = programSet.getMethod("getPackDirectives");
                 getShadowDirectives = Class.forName(
                         "net.irisshaders.iris.shaderpack.properties.PackDirectives").getMethod("getShadowDirectives");
                 getShadowDistance = Class.forName(
                         "net.irisshaders.iris.shaderpack.properties.PackShadowDirectives").getMethod("getDistance");
             }
-            // Default: дисторсии нет
+            // Default: no distortion
             mode = 0;
             distortion = 0.85f;
             depthScale = 1.0f;
@@ -144,7 +147,7 @@ public final class IrisShadowDistortion {
             if (shadowOpt == null) {
                 MainRegistry.LOGGER.info(
                         "[HBM-M] IrisShadowDistortion: pack has no shadow program - no distortion, instanced shadows on");
-                return; // нет shadow-программы — нет и дисторсии
+                return; // no shadow program - no distortion
             }
             Object vshOpt = getVertexSource.invoke(shadowOpt);
             if (!(vshOpt instanceof java.util.Optional<?> v) || v.isEmpty()) {
@@ -162,7 +165,7 @@ public final class IrisShadowDistortion {
                 MainRegistry.LOGGER.info(
                         "[HBM-M] IrisShadowDistortion: no distortion in pack shadow vsh (len={}) - instanced shadows on",
                         len);
-                return; // дисторсии нет — совместимо с mode 0
+                return; // no distortion - compatible with mode 0
             }
             if (hasQuartic) {
                 Float d = extractDefine(glsl, "SHADOW_DISTORTION");
@@ -175,11 +178,11 @@ public final class IrisShadowDistortion {
                     logResult("quartic (Photon-family)", d, s, len);
                     return;
                 }
-                // Iris IncludeProcessor разворачивает только #include под shaders/include/;
-                // #include "/settings.glsl" (где у Photon объявлены константы) молча
-                // выбрасывается — vshLen 29346 вместо 188k, defines отсутствуют
-                // (debug.log 0913 23:40, Photon 1.2a). Константы в settings.glsl не
-                // являются слайдерами настроек — берём семейственные дефолты Photon.
+                // Iris's IncludeProcessor only expands #include under shaders/include/;
+                // #include "/settings.glsl" (where Photon declares the constants) is
+                // silently dropped - vshLen 29346 instead of 188k, defines absent
+                // (debug.log 0913 23:40, Photon 1.2a). The settings.glsl constants are
+                // not settings sliders - use the Photon family defaults.
                 mode = 1;
                 distortion = 0.85f;
                 depthScale = 0.2f;
@@ -190,16 +193,16 @@ public final class IrisShadowDistortion {
                                 + "(distortion=0.85, depthScale=0.2)", len);
                 return;
             }
-            // Классика: factor = length(xy) * bias + (1-bias); z *= 0.2
+            // Classic: factor = length(xy) * bias + (1-bias); z *= 0.2
             boolean linearFormula = hasDistortFactor
                     && Pattern.compile("gl_Position\\.z\\s*=\\s*gl_Position\\.z\\s*\\*\\s*0\\.2")
                             .matcher(glsl).find();
             if (linearFormula) {
-                // bias пака: #define/const-литерал, либо формула BSL-classic
-                // "1.0 - <C> / shadowDistance" (само определение живёт в
-                // lib/settings.glsl, который Iris в исходник НЕ разворачивает).
-                // Ранний дефолт 0.85 при shadowDistance=256 давал bias 0.9 → тени
-                // «улетали» от станков (лог 0913 23:41, BSL 10.1.1).
+                // Pack bias: a #define/const literal, or the BSL-classic formula
+                // "1.0 - <C> / shadowDistance" (the definition itself lives in
+                // lib/settings.glsl, which Iris does NOT expand into the source).
+                // The early default of 0.85 at shadowDistance=256 gave bias 0.9, so
+                // shadows "flew away" from machines (log 0913 23:41, BSL 10.1.1).
                 float bias;
                 Float literal = extractDefine(glsl, "shadowMapBias");
                 if (literal == null) {
@@ -243,11 +246,11 @@ public final class IrisShadowDistortion {
     }
 
     /**
-     * [0] = ShaderPack активного пайплайна, [1] = имя конкретного класса
-     * пайплайна (для диагностики). Поле {@code pack} ищется по ВСЕЙ иерархии
-     * класса: рантайм-пайплайн может быть подклассом IrisRenderingPipeline
-     * (NewWorldRenderingPipeline и т.п.) — getDeclaredField на одном классе
-     * здесь падал и молча отключал инстансные тени.
+     * [0] = ShaderPack of the active pipeline, [1] = the concrete pipeline class
+     * name (for diagnostics). The {@code pack} field is searched across the WHOLE
+     * class hierarchy: the runtime pipeline may be a subclass of
+     * IrisRenderingPipeline (NewWorldRenderingPipeline etc.) - getDeclaredField on
+     * a single class failed here and silently disabled instanced shadows.
      */
     private static Object[] currentPackHolder() throws Exception {
         Object manager = Class.forName("net.irisshaders.iris.Iris")
@@ -278,7 +281,7 @@ public final class IrisShadowDistortion {
     }
 
     private static Float extractDefine(String glsl, String name) {
-        // Значение может быть "0.85", ".85", "0.85F" — допускаем F-суффикс.
+        // Value may be "0.85", ".85", "0.85F" - allow the F suffix.
         Matcher m = Pattern.compile("#define\\s+" + Pattern.quote(name)
                 + "\\s+([0-9]*\\.?[0-9]+)[fF]?\\b").matcher(glsl);
         if (m.find()) {
@@ -290,7 +293,7 @@ public final class IrisShadowDistortion {
         return null;
     }
 
-    /** "const float shadowMapBias = 0.9;" → 0.9 (литерал; формула не матчится). */
+    /** "const float shadowMapBias = 0.9;" -> 0.9 (literal; the formula form does not match). */
     private static Float extractConstFloat(String glsl, String name) {
         Matcher m = Pattern.compile("const\\s+float\\s+" + Pattern.quote(name)
                 + "\\s*=\\s*([0-9]*\\.?[0-9]+)[fF]?\\s*;").matcher(glsl);
@@ -305,7 +308,7 @@ public final class IrisShadowDistortion {
 
     /**
      * BSL-classic: "const float shadowMapBias = 1.0 - 25.6 / shadowDistance;"
-     * → 25.6. Нет совпадения — семейственный дефолт 25.6.
+     * -> 25.6. No match - family default 25.6.
      */
     private static float extractShadowDistanceDivisor(String glsl) {
         Matcher m = Pattern.compile("=\\s*1\\.0?[fF]?\\s*-\\s*([0-9]*\\.?[0-9]+)\\s*/\\s*shadowDistance")
@@ -319,7 +322,7 @@ public final class IrisShadowDistortion {
         return 25.6f;
     }
 
-    /** Реальный shadowDistance из директив пака (Iris парсит его из const-директивы). */
+    /** Real shadowDistance from the pack directives (Iris parses it from a const directive). */
     private static float resolveShadowDistance(Object programSetObj) {
         try {
             Object packDirectives = getPackDirectives.invoke(programSetObj);
@@ -337,7 +340,7 @@ public final class IrisShadowDistortion {
         return 256.0f;
     }
 
-    /** Последняя известная дистанция теней пака (для дистанц-куллинга теневого байпас-обхода). */
+    /** Last known shadow distance of the pack (for distance culling in the shadow bypass path). */
     private static volatile float resolvedShadowDistance = 160.0f;
 
     public static float shadowDistance() {
@@ -345,7 +348,7 @@ public final class IrisShadowDistortion {
     }
 
     public static float shadowDistanceSq() {
-        float d = resolvedShadowDistance + 8.0f; // запас на большие AABB машин
+        float d = resolvedShadowDistance + 8.0f; // margin for large machine AABBs
         return d * d;
     }
 

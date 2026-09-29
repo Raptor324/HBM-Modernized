@@ -5,13 +5,12 @@ import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
 /**
- * Дополнительный рендер-проход станка, не являющийся OBJ-геометрией:
- * жидкости (UV-скролл), NFPA-алмазы, предметы-иконки рецептов и т.п.
- * Рисует через обычный immediate-путь ({@code bufferSource}); VBO-пайплайн
- * движка на него не распространяется.
+ * Extra machine render pass that is not OBJ geometry: fluids (UV scroll),
+ * NFPA diamonds, recipe item icons, etc. Draws through the regular immediate
+ * path ({@code bufferSource}); the engine's VBO pipeline does not apply to it.
  * <p>
- * Контракт: {@code poseStack} уже несёт блочный трансформ (центр + facing);
- * хук обязан сам push/pop.
+ * Contract: {@code poseStack} already carries the block transform (center +
+ * facing); the hook must push/pop itself.
  */
 @FunctionalInterface
 public interface MachineRenderHook<T extends BlockEntity> {

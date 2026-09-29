@@ -16,32 +16,32 @@ import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
 
 @OnlyIn(Dist.CLIENT)
 /**
- * Счётчики движка рендера Nucleus + секция F3-экрана.
+ * Counters for the Nucleus render engine plus the F3 debug screen section.
  * <p>
- * Per-frame счётчики сбрасываются в {@link #onFrameStart()} из
- * {@code InstancedRenderFrame.onBeforeBlockEntities} (начало BE-прохода) —
- * F3-оверлей рисуется позже в том же кадре, поэтому видит актуальные значения.
- * Регистрация в shadow-проходе игнорируется (централизованно в точках записи),
- * иначе под Iris машины считались бы дважды.
+ * Per-frame counters are reset in {@link #onFrameStart()}, called from
+ * {@code InstancedRenderFrame.onBeforeBlockEntities} (start of the BE pass).
+ * The F3 overlay is drawn later in the same frame, so it sees current values.
+ * Registration during the shadow pass is ignored (centrally in the recording
+ * entry points), otherwise machines would be counted twice under Iris.
  */
 public final class NucleusDebug {
 
-    // ── Per-frame (сброс в onFrameStart) ───────────────────────────────
+    // ── Per-frame (reset in onFrameStart) ──────────────────────────────
     private static int drawCalls;
     private static int instancesDrawn;
     private static int machinesRendered;
     private static int machinesCulled;
     private static int uploadSpans;
     private static long uploadBytes;
-    /** Какие пути рисовали в кадре. Отдельные флаги, а не «последний путь»:
-     *  chain-части (GPU-bones) всегда идут мимо атласа и рисуются ПОСЛЕ MDI —
-     *  строка mode не должна от этого «падать» на direct. */
+    /** Which paths drew in this frame. Separate flags rather than a "last path":
+     *  chain parts (GPU-bones) always bypass the atlas and draw AFTER MDI —
+     *  the mode line must not "fall back" to direct because of that. */
     private static boolean modeMdi;
     private static boolean modeDirect;
     private static boolean modeIris;
     private static boolean modeImmediate;
     private static String mdiVariant = "MDI (multi)";
-    /** MDI clean-frame reuse: всего рендереров кадра / переиспользованных / инстансов в них. */
+    /** MDI clean-frame reuse: renderers this frame / reused / instances in them. */
     private static int mdiRenderersTotal;
     private static int mdiRenderersClean;
     private static int mdiInstancesClean;
@@ -52,18 +52,19 @@ public final class NucleusDebug {
     private static volatile int gpuCullInstancesIn;
     private static volatile int gpuCullInstancesOut;
 
-    // ── Shadow-pass stats (НЕ гейтятся counting(): main-счётчики в тенях спят,
-    //    эти наоборот живут только там) ─────────────────────────────────────
-    // Сброс — в onShadowPassStart (миксин HEAD renderShadows): теневая фаза кадра
-    // идёт ДО main-фазы, поэтому onFrameStart (main BE-старт) затирал бы счётчики
-    // до отрисовки F3, и строка Shadow никогда не показывалась.
+    // ── Shadow-pass stats (NOT gated by counting(): main counters sleep in
+    //    shadows, these in turn live only there) ────────────────────────────
+    // Reset in onShadowPassStart (mixin HEAD renderShadows): the shadow phase
+    // of a frame runs BEFORE the main phase, so onFrameStart (main BE start)
+    // would wipe the counters before F3 is drawn and the Shadow line would
+    // never show.
     private static volatile int shadowFallbackParts;
     private static volatile int shadowRecords;
     private static volatile int shadowFlushDraws;
     private static volatile int shadowFlushInstances;
     private static volatile String shadowFlushTier = "";
 
-    /** Истинный старт теневой фазы кадра — миксин HEAD Iris ShadowRenderer.renderShadows. */
+    /** True start of the frame's shadow phase — mixin HEAD Iris ShadowRenderer.renderShadows. */
     public static void onShadowPassStart() {
         shadowFallbackParts = 0;
         shadowRecords = 0;
@@ -72,17 +73,17 @@ public final class NucleusDebug {
         shadowFlushTier = "";
     }
 
-    /** Часть ушла в putBulkData внутри shadow-прохода (поражает глобальный shadow-батч). */
+    /** A part went through putBulkData inside the shadow pass (poisons the global shadow batch). */
     public static void recordShadowFallback() {
         shadowFallbackParts++;
     }
 
-    /** Инстанс записан в IrisShadowBatchCollector в shadow-проходе. */
+    /** Instance recorded into IrisShadowBatchCollector during the shadow pass. */
     public static void recordShadowRecord(int instances) {
         if (instances > 0) shadowRecords += instances;
     }
 
-    /** Итог флаша глобального shadow-батча (tier + draw/instance counts). */
+    /** Flush result of the global shadow batch (tier + draw/instance counts). */
     public static void recordShadowFlush(String tier, int draws, int instances) {
         shadowFlushTier = tier;
         shadowFlushDraws += draws;
@@ -98,7 +99,7 @@ public final class NucleusDebug {
     }
 
     // ── Lifetime ───────────────────────────────────────────────────────
-    /** Сумма VBO прямого пути по живым InstancedStaticPartRenderer (вершины+индексы+instance VBO). */
+    /** Total direct-path VBO across live InstancedStaticPartRenderer (vertices+indices+instance VBO). */
     private static final AtomicLong RENDERER_VRAM = new AtomicLong();
 
     private NucleusDebug() {}
@@ -174,10 +175,10 @@ public final class NucleusDebug {
     }
 
     /**
-     * Per-frame MDI clean-reuse статистика (вызывается один раз из prepareMdiDraw).
+     * Per-frame MDI clean-reuse statistics (called once from prepareMdiDraw).
      *
-     * @param total  рендереров в кадре (retained draw list)
-     * @param clean  из них переиспользованных без снапшот-копии и диффа
+     * @param total  renderers in the frame (retained draw list)
+     * @param clean  of those, reused without a snapshot copy or diff
      */
     public static void recordMdiReuse(int total, int clean, int cleanInstances) {
         if (!counting()) return;
@@ -195,11 +196,11 @@ public final class NucleusDebug {
     }
 
     /**
-     * Секция F3. Формат:
+     * F3 screen section. Format:
      * <pre>
-     * [Nucleus] Active                      — жёлтый заголовок; Active зелёный / Not rendering красный
-     * Geometry Parts in Atlas: N            — уникальные part-меши (не машины); растёт лениво
-     * Rendering: N models, M culled         — culled только при включённом куллинге
+     * [Nucleus] Active                      - yellow header; Active green / Not rendering red
+     * Geometry Parts in Atlas: N            - unique part meshes (not machines); grows lazily
+     * Rendering: N models, M culled         - culled only when culling is enabled
      * Draw Calls: N
      * Instances Drawn: N
      * Uploads: 0 B (static) | N spans, X KB
@@ -210,12 +211,12 @@ public final class NucleusDebug {
     public static void appendDebugLines(List<String> out) {
         boolean active = drawCalls > 0;
         out.add("§e[Nucleus] §" + (active ? "aActive" : "cNot rendering"));
-        // peek без создания: F3 в меню не должен инстанцировать атлас/staging.
+        // Peek without creating: F3 in the menu must not instantiate atlas/staging.
         MdiGeometryAtlas atlas = MdiGeometryAtlas.peekOrNull();
         int atlasParts = (atlas != null && atlas.isReady()) ? atlas.getRegisteredGeometryCount() : 0;
-        // Число уникальных part-мешей в атласе (одна запись на часть ТИПА станка;
-        // динамические части — отдельная запись на вариант, напр. танк per-флюид).
-        // Растёт лениво по мере первого появления типов/вариантов в кадре.
+        // Count of unique part meshes in the atlas (one entry per machine-TYPE part;
+        // dynamic parts get a separate entry per variant, e.g. tank per-fluid).
+        // Grows lazily as types/variants first appear in a frame.
         out.add("Geometry Parts in Atlas: §7" + atlasParts);
 
         StringBuilder rendering = new StringBuilder("Rendering: §a").append(machinesRendered).append("§r models");
@@ -257,7 +258,7 @@ public final class NucleusDebug {
                     + "§7 renderers, " + mdiInstancesClean + " inst. static");
         }
 
-        // Immediate (fallback) — деградация: красным и первым в списке.
+        // Immediate (fallback) is a degradation: shown red and first in the list.
         StringBuilder modeLine = new StringBuilder();
         if (modeImmediate) modeLine.append("§cImmediate (fallback)§r");
         if (modeMdi) {
@@ -274,8 +275,8 @@ public final class NucleusDebug {
         }
         out.add("Mode: " + (modeLine.length() > 0 ? modeLine : "§8idle"));
 
-        // Shadow-проход этого кадра: запись в батч / флаш / деградации в putBulkData.
-        // fallback>0 красным — глобальный shadow-батч поражён, тени считает CPU.
+        // Shadow pass of this frame: batch records / flush / degradations in putBulkData.
+        // fallback>0 shown red - the global shadow batch is poisoned, shadows fall back to CPU.
         if (shadowRecords > 0 || shadowFlushDraws > 0 || shadowFallbackParts > 0) {
             StringBuilder sh = new StringBuilder("Shadow: §a").append(shadowRecords)
                     .append("§r rec, ")

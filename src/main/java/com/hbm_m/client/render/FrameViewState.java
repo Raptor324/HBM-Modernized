@@ -17,29 +17,29 @@ import net.minecraft.client.Minecraft;
 
 @OnlyIn(Dist.CLIENT)
 /**
- * Покадровый снимок камеро-зависимых величин для мировых координат инстанс-записей.
+ * Per-frame snapshot of camera-dependent quantities for world-space instance records.
  * <p>
- * Инстанс-записи (InstPos/InstRot) хранят МИРОВЫЕ позицию/поворот — камера
- * вынесена в uniform {@code ModelViewMat} = V = R_cam · T(-camPos). Это делает
- * записи инвариантными к движению камеры (нулевой dirty-поток при статичной
- * сцене — см. GpuSpanUploader) и убирает межтиковый лаг позиций.
+ * Instance records (InstPos/InstRot) store WORLD-space position/rotation - the camera
+ * is factored into the uniform {@code ModelViewMat} = V = R_cam * T(-camPos). This makes
+ * records invariant to camera motion (zero dirty traffic in a static scene - see
+ * GpuSpanUploader) and removes inter-tick position lag.
  * <p>
- * Контракт по ванильным исходникам (проверено по 1.20.1 forge / 1.21.1 neoforge):
+ * Contract derived from vanilla sources (verified against 1.20.1 forge / 1.21.1 neoforge):
  * <ul>
- *   <li><b>1.20.1</b>: GameRenderer.renderLevel пушит R_cam (= Rz(roll)·Rx(pitch)·Ry(yaw+180))
- *       в ПОЗИЦИОННЫЙ poseStack, который идёт в LevelRenderer.renderLevel и используется
- *       BE-циклом (translate(bePos - cam) поверх R_cam). modelViewStack ДО
- *       AFTER_BLOCK_ENTITIES не трогается (пуш только в секции translucent) —
- *       getModelViewMatrix() там identity. R_cam⁻¹ доступен через
+ *   <li><b>1.20.1</b>: GameRenderer.renderLevel pushes R_cam (= Rz(roll)*Rx(pitch)*Ry(yaw+180))
+ *       onto the POSE stack, which goes into LevelRenderer.renderLevel and is used by the
+ *       BE loop (translate(bePos - cam) on top of R_cam). modelViewStack is not touched
+ *       until AFTER_BLOCK_ENTITIES (pushed only in the translucent section) -
+ *       getModelViewMatrix() is identity there. R_cam^-1 is available via
  *       RenderSystem.getInverseViewRotationMatrix().</li>
- *   <li><b>1.21.1</b>: наоборот — R_cam = frustumMatrix = rotation(camera.rotation().conjugate())
- *       пушится в modelViewStack (Matrix4fStack) ПЕРЕД сущностями и живёт до popMatrix
- *       (после AFTER_BLOCK_ENTITIES), а BE-цикл ходит по чистому PoseStack
- *       (translate(bePos - cam), без R_cam).</li>
+ *   <li><b>1.21.1</b>: the reverse - R_cam = frustumMatrix = rotation(camera.rotation().conjugate())
+ *       is pushed onto modelViewStack (Matrix4fStack) BEFORE entities and lives until popMatrix
+ *       (after AFTER_BLOCK_ENTITIES), while the BE loop uses a plain PoseStack
+ *       (translate(bePos - cam), without R_cam).</li>
  * </ul>
- * В обоих случаях composed = getModelViewMatrix()·pose = R_cam·T(rel)·local, поэтому
- * мировой трансформ = invViewRot·composed. Захват делается лениво при первом обращении
- * за кадр (всегда внутри renderLevel — BE-проход или позже), ключ — serial
+ * In both cases composed = getModelViewMatrix()*pose = R_cam*T(rel)*local, so the
+ * world transform = invViewRot*composed. Capture is lazy on first access per frame
+ * (always inside renderLevel - the BE pass or later), keyed by the serial
  * {@link MdiRenderFrameGate}.
  */
 public final class FrameViewState {
@@ -59,9 +59,9 @@ public final class FrameViewState {
     private FrameViewState() {}
 
     /**
-     * Сброс кеша. Вызывается из аварийных путей кадра (исключение до
-     * {@code advanceAfterPresent}): serial при этом не растёт, и без сброса
-     * следующий кадр молча переиспользовал бы протухшую камеру.
+     * Cache reset. Called from emergency frame paths (exception before
+     * {@code advanceAfterPresent}): the serial does not advance then, and without
+     * the reset the next frame would silently reuse a stale camera.
      */
     public static void invalidate() {
         valid = false;
@@ -107,19 +107,19 @@ public final class FrameViewState {
         InstancedStaticPartRenderer.onRenderOriginChanged();
     }
 
-    /** Render thread, внутри renderLevel (BE-проход или stage-события позже). */
+    /** Render thread, inside renderLevel (BE pass or later stage events). */
     private static void capture() {
         long serial = MdiRenderFrameGate.currentSerial();
         if (valid && capturedSerial == serial) {
             return;
         }
-        // invViewRot = R_cam⁻¹ (чистая ротация).
+        // invViewRot = R_cam^-1 (pure rotation).
         //? if < 1.21.1 {
         INV_VIEW_ROT.set(RenderSystem.getInverseViewRotationMatrix());
         //?} else {
-        /*// rotation(camera.rotation()) = R_cam⁻¹: frustumMatrix ванили =
-        // rotation(rotation().conjugate()) = R_cam, т.е. quaternion уже несёт
-        // ОБРАТНУЮ view-ротацию — дополнительный .invert() здесь НЕ нужен.
+        /*// rotation(camera.rotation()) = R_cam^-1: vanilla's frustumMatrix =
+        // rotation(rotation().conjugate()) = R_cam, i.e. the quaternion already carries
+        // the INVERSE view rotation - an extra .invert() is NOT needed here.
         INV_VIEW_ROT.rotation(Minecraft.getInstance().gameRenderer.getMainCamera().rotation());
         *///?}
         var camPos = Minecraft.getInstance().gameRenderer.getMainCamera().getPosition();
@@ -137,20 +137,20 @@ public final class FrameViewState {
         valid = true;
     }
 
-    /** R_cam⁻¹ (ротация без трансляции). Не мутировать возвращаемую матрицу. */
+    /** R_cam^-1 (rotation without translation). Do not mutate the returned matrix. */
     public static Matrix4f inverseViewRotation() {
         capture();
         return INV_VIEW_ROT;
     }
 
     /**
-     * V = R_cam · T(-relCam): anchor-relative координаты → view-space.
-     * Кладётся в uniform ModelViewMat инстанс-программ. Не мутировать результат.
+     * V = R_cam * T(-relCam): anchor-relative coordinates -> view-space.
+     * Set into the ModelViewMat uniform of instanced programs. Do not mutate the result.
      */
     public static Matrix4f viewMatrix() {
         capture();
-        // invViewRot = R_cam⁻¹ → transpose = R_cam (ротация), затем T(-relCam) справа:
-        // V·v = R_cam·(v - relCam).
+        // invViewRot = R_cam^-1 -> transpose = R_cam (rotation), then T(-relCam) on the right:
+        // V*v = R_cam*(v - relCam).
         VIEW.set(INV_VIEW_ROT).transpose().translate(-relCamX, -relCamY, -relCamZ);
         return VIEW;
     }

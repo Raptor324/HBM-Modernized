@@ -20,10 +20,10 @@ import net.minecraft.core.Direction;
 import net.minecraft.resources.ResourceLocation;
 
 /**
- * Дуговая печь на фабрике {@link MachineRenderers}: электроды переключаются между
- * "холодной" и "горячей" injected-моделью по состоянию BE (аналог Hot/Cold-групп
- * оригинального arc_furnace.obj). Статические части (Furnace/Lid/Ring/Cable) живут
- * в обычном чанк-меше блока. Без вращения — чистый state-swap.
+ * Arc furnace on the {@link MachineRenderers} factory: the electrodes switch between
+ * the "cold" and "hot" injected model based on the BE state (analog of the Hot/Cold
+ * groups of the original arc_furnace.obj). Static parts (Furnace/Lid/Ring/Cable) live
+ * in the block's regular chunk mesh. No rotation -- a pure state swap.
  */
 public final class MachineArcFurnaceRenderer {
 

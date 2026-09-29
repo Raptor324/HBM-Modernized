@@ -6,35 +6,35 @@ import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.renderer.ShaderInstance;
 
 /**
- * Выбор шейдера для дальнего контента (NT-частицы, вспышки).
+ * Shader selection for far content (NT particles, flashes).
  *
- * ПОЧЕМУ ЭТО НУЖНО: под активным шейдерпаком Iris маскирует ЛЮБОЙ неизвестный
- * ему модовый ShaderInstance — MixinShaderInstance.onTail вызывает
+ * <p>Why this is needed: under an active Iris shader pack, Iris masks ANY
+ * unknown mod {@link ShaderInstance} - MixinShaderInstance.onTail calls
  * DepthColorStorage.disableDepthColor() (colorMask off + depth test off),
- * поэтому кастомный nuke_cloud рисуется «в никуда». Известные же ключи
- * (vanilla core shaders) заменяются на ExtendedShader пака и маршрутизируются
- * в его пайплайн корректно.
+ * so a custom nuke_cloud shader draws "into nowhere". Known keys (vanilla
+ * core shaders) are replaced by the pack's ExtendedShader and routed into
+ * its pipeline correctly.</p>
  *
- * РЕШЕНИЕ: под паком отдаём ExtendedShader ключа TEXTURED_COLOR
- * (ProgramId.Textured, формат POSITION_TEX_COLOR — совпадает с нашим),
- * полученный рефлексией через ShaderMap. Окклюзия против LOD при этом
- * обеспечивается нативным depth-тестом: DH под Iris рендерит LOD'ы прямо
- * в depth-buffer пака (LodRendererEvents override), отдельная копия глубины
- * не нужна.
+ * <p>Solution: under a pack, return the ExtendedShader for the TEXTURED_COLOR
+ * key (ProgramId.Textured, POSITION_TEX_COLOR format - same as ours),
+ * obtained reflectively via ShaderMap. Occlusion against LODs is provided by
+ * the native depth test: DH under Iris renders LODs directly into the pack's
+ * depth buffer (LodRendererEvents override), so a separate depth copy is not
+ * needed.</p>
  */
 public final class FarContentShaders {
 
     private FarContentShaders() {}
 
-    /** true, если дальний контент должен идти через Iris-pipeline. */
+    /** Returns true if far content should be routed through the Iris pipeline. */
     public static boolean useIrisRouting() {
         return ShaderCompatibilityDetector.isExternalShaderActive();
     }
 
     /**
-     * Шейдер для квадов POSITION_TEX_COLOR. Вызывается на каждый
-     * setupRenderState (Supplier в ShaderStateShard), поэтому переключение
-     * пака подхватывается без пересоздания RenderType.
+     * Shader for POSITION_TEX_COLOR quads. Called on every setupRenderState
+     * (Supplier in ShaderStateShard), so pack switches are picked up without
+     * recreating the RenderType.
      */
     public static ShaderInstance resolveTexColor() {
         if (useIrisRouting()) {
@@ -52,8 +52,8 @@ public final class FarContentShaders {
     }
 
     /**
-     * Аддитивный шейдер для POSITION_TEX_COLOR (вспышки, glare).
-     * Под Iris — тот же ExtendedShader пака; без Iris — nuke_add.
+     * Additive shader for POSITION_TEX_COLOR (flashes, glare).
+     * Under Iris - the pack's ExtendedShader; without Iris - nuke_add.
      */
     public static ShaderInstance resolveAddTexColor() {
         if (useIrisRouting()) {

@@ -75,7 +75,7 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
     private int eboId = -1;
     private int indexCount = 0;
     private int vertexCount = 0;
-    /** Базовые индексы меша (CPU-копия EBO) — для GPU-bake расширения по инстансам. */
+    /** Base mesh indices (CPU copy of the EBO) - for GPU-bake instanced expansion. */
     private int[] baseIndices;
     /**
      * GL attribute location of the per-vertex lightmap (UV2) within this VAO.
@@ -108,7 +108,7 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
      */
     private final float[] objBbox = new float[6];
 
-    // Переиспользуемый массив для записи. Размер будем подгонять при необходимости.
+    // Reusable write array; grown on demand.
     private short[] lightmapTempArray = new short[0];
 
     /**
@@ -359,10 +359,10 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
             // prepareForShader() can hand the linker-resolved locations a
             // pointer to real per-vertex data populated by Iris's
             // MixinBufferBuilder.iris$beforeNext (iris_Entity / mc_midTexCoord
-            // / at_tangent). Имена и порядок — из getElementAttributeNames() /
-            // getElements(); смещения накапливаем по getByteSize() (как раньше
-            // по entrySet getElementMapping), без getElementName/getOffset(Element),
-            // которых нет на 1.20.1 Forge.
+            // / at_tangent). Names and order come from getElementAttributeNames() /
+            // getElements(); offsets are accumulated via getByteSize() (as previously
+            // via entrySet getElementMapping), without getElementName/getOffset(Element),
+            // which do not exist on 1.20.1 Forge.
             elementOffsets.clear();
             elementByName.clear();
             
@@ -378,11 +378,11 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
                 runningOffset += RenderHooks.getByteSize(el);
             }
             //?} else {
-            /*// 1.21.1: у формата нет getElementAttributeNames-совместимого
-            // списка имён для Iris-элементов (id динамические — hardcoded
-            // 11/12/13 больше не совпадают), а паддинги НЕ входят в элементы
-            // (аккумуляция занижала офсеты полей после паддинга). Резолвим
-            // имена по usage+типу, офсеты — нативно из формата.
+            /*// 1.21.1: the format has no getElementAttributeNames-compatible
+            // name list for Iris elements (ids are dynamic - hardcoded
+            // 11/12/13 no longer match), and paddings are NOT part of the elements
+            // (accumulation undercounted field offsets after a padding). Resolve
+            // names by usage+type, offsets natively from the format.
             var elements = RenderHooks.getElements(actualFormat);
             for (int i = 0; i < elements.size(); i++) {
                 VertexFormatElement el = elements.get(i);
@@ -685,9 +685,9 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
         int perSlotBytes = vertexCount * 4;
         int totalBytes = newCapacity * perSlotBytes;
 
-        // 1. Сначала явно снимаем persistent-mapping, потом удаляем буфер.
-        // glDeleteBuffers на persistently-mapped буфере — UB на Mesa/Intel и
-        // утечка mapping'а на ряде других драйверов.
+        // 1. Explicitly unmap the persistent mapping first, then delete the buffer.
+        // glDeleteBuffers on a persistently-mapped buffer is UB on Mesa/Intel and
+        // leaks the mapping on a number of other drivers.
         if (lightmapMapped != null && lightmapVboId != -1) {
             try {
                 GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, lightmapVboId);
@@ -715,7 +715,7 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
             lightmapStagingFence = 0L;
         }
 
-        // 2. Очищаем все ссылки на старую память
+        // 2. Clear all references to the old memory
         lightmapMapped = null;
         lightmapPersistentMapped = false;
         lightmapPersistentDirty = false;
@@ -730,7 +730,7 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
             lightmapCpuScratch = null;
         }
 
-        // 3. Генерируем абсолютно новый VBO
+        // 3. Generate a completely new VBO
         lightmapVboId = GL15.glGenBuffers();
         if (lightmapVboId == 0) {
             lightmapVboId = -1;
@@ -1014,7 +1014,7 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
 
         for (int v = 0; v < vertexCount; v++) {
             int wBase = v * 8;
-            // Unroll цикла (процессор скажет вам спасибо)
+            // Unroll the loop (your CPU will thank you)
             float blockU = w[wBase] * corner16[0] +
                            w[wBase + 1] * corner16[2] +
                            w[wBase + 2] * corner16[4] +
@@ -1033,11 +1033,11 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
                            w[wBase + 6] * corner16[13] +
                            w[wBase + 7] * corner16[15];
 
-            // Быстрое округление вместо Math.round()
+            // Fast rounding instead of Math.round()
             int bu = (int) (blockU + 0.5f);
             int sv = (int) (skyV + 0.5f);
 
-            // Быстрый clamp
+            // Fast clamp
             bu = bu < 0 ? 0 : (bu > 240 ? 240 : bu);
             sv = sv < 0 ? 0 : (sv > 240 ? 240 : sv);
 
@@ -1045,7 +1045,7 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
             lightmapTempArray[v * 2 + 1] = (short) sv;
         }
 
-        // Массовая запись в DirectBuffer — это ОГРОМНЫЙ буст производительности
+        // Bulk writes into a DirectBuffer are a HUGE performance win
         int prevPos = dst.position();
         dst.position(shortOffset);
         dst.put(lightmapTempArray, 0, requiredLength);
@@ -1331,11 +1331,11 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
      */
     private boolean ensureCompanionVaoBound() {
         if (!built || vaoId <= 0) return false;
-        // Безусловный бинд без glGetInteger-верификации: glGet* в горячем цикле
-        // форсирует CPU-GPU синк (~1.5% кадра на ферме). Корректность не страдает —
-        // бинд вызывается всегда (драйвер сам но-опит совпадающий VAO), а
-        // "Embeddium мог перебиндить raw-вызовом" страхуется тем, что мы всё
-        // равно шлём бинд, а не полагаемся на кеш.
+        // Unconditional bind without glGetInteger verification: glGet* in the hot loop
+        // forces a CPU-GPU sync (~1.5% of the frame on the farm). Correctness is not
+        // affected - the bind is always issued (the driver no-ops a matching VAO), and
+        // the "Embeddium may have re-bound via a raw call" concern is covered by the
+        // fact that we always send the bind instead of relying on a cache.
         GlStateManager._glBindVertexArray(vaoId);
         return true;
     }
@@ -1411,14 +1411,14 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
         return indexCount;
     }
 
-    // ── GPU-bake доступ (NucleusGpuBaker) ──────────────────────────────
+    // -- GPU-bake access (NucleusGpuBaker) ------------------------------
 
-    /** VBO меша в BLOCK-формате — биндится как SSBO-вход compute-бейкера. */
+    /** Mesh VBO in BLOCK format - bound as the SSBO input of the compute baker. */
     int getMeshVboId() {
         return vboId;
     }
 
-    /** EBO меша — переиспользуется как источник индексов бейкера. */
+    /** Mesh EBO - reused as the baker's index source. */
     int getMeshEboId() {
         return eboId;
     }
@@ -1431,38 +1431,38 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
         return actualFormat != null ? RenderHooks.getVertexSize(actualFormat) : 0;
     }
 
-    /** Формат меша (для зеркалирования атрибутов в bake-VAO). */
+    /** Mesh format (for mirroring attributes into the bake VAO). */
     VertexFormat getMeshFormat() {
         return actualFormat;
     }
 
-    /** Байтовый офсет именованного атрибута (iris_Entity/mc_midTexCoord/at_tangent) или -1. */
+    /** Byte offset of a named attribute (iris_Entity/mc_midTexCoord/at_tangent), or -1. */
     int getMeshAttribByteOffset(String name) {
         Integer o = elementOffsets.get(name);
         return o != null ? o : -1;
     }
 
     /**
-     * Офсет именованного атрибута с фолбэком: на 1.21.1 карта имён может не
-     * знать Iris-имён (динамические id элементов) — тогда берём fallback
-     * (обычно офсет по usage+типу из {@link #getMeshOffset}).
+     * Named-attribute offset with a fallback: on 1.21.1 the name map may not
+     * know the Iris names (dynamic element ids) - then a fallback is used
+     * (usually the usage+type offset from {@link #getMeshOffset}).
      */
     int getMeshAttribByteOffsetOr(String name, int fallback) {
         Integer o = elementOffsets.get(name);
         return (o != null && o >= 0) ? o : fallback;
     }
 
-    /** Элемент формата именованного атрибута (тип/компоненты для bake-VAO) или null. */
+    /** Format element of a named attribute (type/components for the bake VAO), or null. */
     VertexFormatElement getMeshAttribElement(String name) {
         return elementByName.get(name);
     }
 
-    /** Индексы меша (базовые, без инстанс-офсетов) для CPU-расширения EBO. */
+    /** Mesh indices (base, without instance offsets) for CPU EBO expansion. */
     int[] getMeshIndices() {
         return baseIndices;
     }
 
-    /** Офсеты (байты) компонентов BLOCK-формата для compute-шейдера. */
+    /** Byte offsets of BLOCK-format components for the compute shader. */
     int getMeshOffset(String usageName, int uvIndex) {
         if (actualFormat == null) return -1;
         for (VertexFormatElement el : RenderHooks.getElements(actualFormat)) {
@@ -1472,8 +1472,8 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
                 case "color" -> usage == VertexFormatElement.Usage.COLOR;
                 case "normal" -> usage == VertexFormatElement.Usage.NORMAL;
                 case "uv" -> usage == VertexFormatElement.Usage.UV && RenderHooks.getIndex(el) == uvIndex;
-                // Фолбэк-резолв Iris-generic атрибутов по usage+типу (без имён
-                // карты — на 1.21.1 имена элементов динамические):
+                // Fallback resolution of Iris-generic attributes by usage+type (no
+                // name map - on 1.21.1 element names are dynamic):
                 // mc_midTexCoord = GENERIC FLOAT×2, at_tangent = GENERIC BYTE×4.
                 case "genericFloat2" -> usage == VertexFormatElement.Usage.GENERIC
                         && RenderHooks.getGlType(el) == org.lwjgl.opengl.GL11.GL_FLOAT;
@@ -1483,8 +1483,8 @@ public final class IrisCompanionMesh implements IrisCompanionMeshResource {
                 default -> false;
             };
             if (match) {
-                // Точный офсет: на 1.21.1 паддинги не входят в getElements() и
-                // аккумуляция занижала бы офсеты полей после паддинга на 1 байт.
+                // Exact offset: on 1.21.1 paddings are not part of getElements() and
+                // accumulation would undercount field offsets after a padding by 1 byte.
                 return RenderHooks.getElementOffset(actualFormat, el);
             }
         }

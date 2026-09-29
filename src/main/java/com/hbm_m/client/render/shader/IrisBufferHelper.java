@@ -7,17 +7,20 @@ import com.mojang.blaze3d.vertex.VertexFormat;
 import java.lang.reflect.Method;
 
 /**
- * Хелпер для совместимости BufferBuilder с Iris/Oculus.
- * <p>
- * <b>Когда НЕ использовать:</b> При level render (RenderLevelStageEvent, block entities) с
- * включёнными шейдерами ({@link ShaderCompatibilityDetector#isExternalShaderActive()}).
- * В этом случае вызывайте {@code buffer.begin(mode, DefaultVertexFormat.BLOCK)} напрямую -
- * MixinBufferBuilder расширит формат до TERRAIN, и putBulkData будет дополняться extended data.
- * IrisBufferHelper отключает расширение и приведёт к stride mismatch.
- * <p>
- * <b>Когда использовать:</b> GUI, overlay, не-level рендер - когда нужен именно BLOCK без
- * расширения. Iris предоставляет iris$beginWithoutExtending() - отключает расширение формата.
- * Вызываем через reflection, т.к. Oculus - опциональная зависимость.
+ * BufferBuilder compatibility helper for Iris/Oculus.
+ *
+ * <p><b>When NOT to use:</b> during level render (RenderLevelStageEvent, block
+ * entities) with shaders enabled
+ * ({@link ShaderCompatibilityDetector#isExternalShaderActive()}). In that case
+ * call {@code buffer.begin(mode, DefaultVertexFormat.BLOCK)} directly -
+ * MixinBufferBuilder will extend the format to TERRAIN and putBulkData will be
+ * backfilled with extended data. IrisBufferHelper disables the extension and
+ * would cause a stride mismatch.</p>
+ *
+ * <p><b>When to use:</b> GUI, overlays, non-level render - when BLOCK without
+ * extension is specifically needed. Iris provides iris$beginWithoutExtending(),
+ * which disables format extension. Invoked via reflection because Oculus is an
+ * optional dependency.</p>
  */
 public final class IrisBufferHelper {
 
@@ -27,16 +30,17 @@ public final class IrisBufferHelper {
     private static boolean irisChecked;
 
     /**
-     * Кросс-версионная фабрика {@link BufferBuilder}.
+     * Cross-version {@link BufferBuilder} factory.
      * <p>
-     * На 1.20.1 конструктор {@code new BufferBuilder(int capacity)}, а {@code begin(mode, format)}
-     * вызывается отдельно. На 1.21.1 конструктор требует {@code (VertexFormat, VertexFormat.Mode, int)}
-     * сразу. Этот метод инкапсулирует различие и возвращает builder, готовый к заполнению.
+     * On 1.20.1 the constructor is {@code new BufferBuilder(int capacity)} and
+     * {@code begin(mode, format)} is called separately. On 1.21.1 the constructor
+     * requires {@code (VertexFormat, VertexFormat.Mode, int)} immediately. This
+     * method hides the difference and returns a builder ready to be filled.
      *
-     * @param mode     режим вершин (QUADS, TRIANGLES, …)
-     * @param format   формат вершин (DefaultVertexFormat.BLOCK, …)
-     * @param capacity начальная вместимость в байтах (хинт аллокации)
-     * @return новый BufferBuilder с уже вызванным {@code begin} (формат зафиксирован)
+     * @param mode     vertex mode (QUADS, TRIANGLES, etc.)
+     * @param format   vertex format (DefaultVertexFormat.BLOCK, etc.)
+     * @param capacity initial capacity in bytes (allocation hint)
+     * @return a new BufferBuilder with {@code begin} already called (format fixed)
      */
     public static BufferBuilder create(VertexFormat.Mode mode, VertexFormat format, int capacity) {
         //? if < 1.21.1 {
@@ -49,24 +53,27 @@ public final class IrisBufferHelper {
     }
 
     /**
-     * Класс ExtendingBufferBuilder от Connector/FFAPI (Forgified Fabric API).
-     * Connector использует тот же интерфейс что и Iris, но в другом пакете.
+     * ExtendingBufferBuilder class from Connector/FFAPI (Forgified Fabric API).
+     * Connector uses the same interface as Iris, but in a different package.
      */
     private static Method connectorBeginWithoutExtending;
     private static boolean connectorChecked;
 
     /**
-     * Начинает BufferBuilder с DefaultVertexFormat.BLOCK без расширения Iris.
-     * При активном Iris/Oculus предотвращает переключение на IrisVertexFormats.TERRAIN.
+     * Begins a BufferBuilder with DefaultVertexFormat.BLOCK without Iris
+     * extension. Prevents the switch to IrisVertexFormats.TERRAIN when
+     * Iris/Oculus is active.
      * <p>
-     * Не использовать для level render с шейдерами - там нужен расширенный TERRAIN формат.
+     * Do not use for level render with shaders - the extended TERRAIN format
+     * is required there.
      */
     public static void beginBlockQuads(BufferBuilder buffer) {
         begin(buffer, VertexFormat.Mode.QUADS, DefaultVertexFormat.BLOCK);
     }
 
     /**
-     * {@code begin} без расширения Iris — для {@code POSITION_TEX_COLOR} и прочих immediate-draw путей.
+     * {@code begin} without Iris extension - for {@code POSITION_TEX_COLOR} and
+     * other immediate-draw paths.
      */
     public static void beginWithoutExtending(BufferBuilder buffer, VertexFormat.Mode mode, VertexFormat format) {
         if (tryIrisBeginWithoutExtending(buffer, mode, format)) {
@@ -78,10 +85,12 @@ public final class IrisBufferHelper {
     }
 
     /**
-     * Универсальный begin с отключением Iris-расширения при необходимости.
-     * Для BLOCK/NEW_ENTITY/POSITION_COLOR_TEX_LIGHTMAP вызывает iris$beginWithoutExtending.
+     * Universal begin that disables the Iris extension when needed.
+     * For BLOCK/NEW_ENTITY/POSITION_COLOR_TEX_LIGHTMAP calls
+     * iris$beginWithoutExtending.
      * <p>
-     * Не использовать при рендере block entities во время renderLevel с включёнными шейдерами.
+     * Do not use when rendering block entities during renderLevel with shaders
+     * enabled.
      */
     public static void begin(BufferBuilder buffer, VertexFormat.Mode mode, VertexFormat format) {
         if (format != DefaultVertexFormat.BLOCK && format != DefaultVertexFormat.NEW_ENTITY

@@ -6,9 +6,9 @@ import com.hbm_m.blockentity.machines.MachineCoolingTowerBlockEntity;
 import com.hbm_m.client.render.machine.MachineRenderers;
 
 /**
- * Градирня на фабрике {@link MachineRenderers}: единственная статическая часть
- * "Cube_Cube.001", без анимации. Дистанция прорисовки — конфиг статики
- * (modelStaticRenderDistance); fade по дистанции применяется движком.
+ * Cooling tower on the {@link MachineRenderers} factory: a single static part
+ * "Cube_Cube.001", no animation. Render distance comes from the static-render config
+ * (modelStaticRenderDistance); distance fade is applied by the engine.
  */
 public final class MachineCoolingTowerRenderer {
 

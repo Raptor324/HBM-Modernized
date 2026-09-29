@@ -25,11 +25,11 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 
 /**
- * Большой бур на фабрике {@link MachineRenderers} (1:1 порт 1.7.10 RenderExcavator):
- * Crusher1/Crusher2 — противофазные маятники, Drillbit — вращение + опускание.
- * Шахтные сегменты "Shaft" — стек переменной длины, рисуются immediate-хуком
- * через per-BE VBO (как в легаси). Геометрия — injected-модели (не multipart).
- * Пивоты — OBJ-координаты (origin = центр блока) + 0.5 компенсация baked-сдвига.
+ * Big mining drill on the {@link MachineRenderers} factory (1:1 port of 1.7.10 RenderExcavator):
+ * Crusher1/Crusher2 are counter-phase pendulums, Drillbit spins and lowers.
+ * The mine shaft segments ("Shaft") are a variable-length stack drawn by an immediate hook
+ * through a per-BE VBO (as in legacy). Geometry comes from injected models (not multipart).
+ * Pivots are OBJ coordinates (origin = block center) plus a 0.5 offset compensating the baked shift.
  */
 public final class MachineMiningDrillRenderer {
 
@@ -38,7 +38,7 @@ public final class MachineMiningDrillRenderer {
     private static final ResourceLocation CRUSHER1_MODEL_ID = id("mining_drill_crusher1");
     private static final ResourceLocation CRUSHER2_MODEL_ID = id("mining_drill_crusher2");
 
-    // Original-Pivots (OBJ-Raum) + 0.5 Versatz fuer unseren gebackenen Block-Raum.
+    // Original pivots (OBJ space) + 0.5 offset for our baked block space.
     private static final double CRUSHER1_PIVOT_Z = 2.8125 + 0.5;
     private static final double CRUSHER2_PIVOT_Z = 2.1875 + 0.5;
     private static final double CRUSHER_PIVOT_Y = 2.0;
@@ -114,7 +114,7 @@ public final class MachineMiningDrillRenderer {
         return true;
     }
 
-    /** Вращение бура вокруг Y + опускание на ext (общий для Drillbit и Shaft). */
+    /** Drill rotation around Y plus lowering by ext (shared by Drillbit and Shaft). */
     private static void applyDrillShaftTransform(MachineMiningDrillBlockEntity be, float partialTick, PoseStack pose) {
         float drillAngle = Mth.lerp(partialTick, be.prevDrillRotation, be.drillRotation);
         float ext = Mth.lerp(partialTick, be.prevDrillExtension, be.drillExtension);
@@ -125,8 +125,8 @@ public final class MachineMiningDrillRenderer {
     }
 
     /**
-     * Шахта: сегменты по 2 блока заполняют зазор от опущенного бура —
-     * переменное число инстансов, поэтому immediate-хук через per-BE VBO.
+     * Shaft: 2-block segments fill the gap left by the lowered drill --
+     * a variable number of instances, hence an immediate hook through a per-BE VBO.
      */
     private static void renderShaftStack(MachineMiningDrillBlockEntity be, float partialTick,
                                          PoseStack poseStack, MultiBufferSource bufferSource,

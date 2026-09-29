@@ -20,10 +20,10 @@ import java.util.List;
 @Mod.EventBusSubscriber(modid = "hbm_m", bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
 public class RayVisualizationRenderer {
 
-    // ОПТИМИЗАЦИЯ: Рисуем каждый 5-й луч
+    // Optimization: draw every 5th ray
     private static final int RENDER_STEP = 5;
 
-    // ПРОЗРАЧНОСТЬ: Вернули 0.25 (для debugLineStrip это оптимально)
+    // Transparency: settled on 0.25 (optimal for debugLineStrip)
     private static final float RAY_ALPHA_BASE = 0.25f;
 
     @SubscribeEvent

@@ -63,8 +63,8 @@ public class MeshRenderCache {
     }
 
     /**
-     * Интернированные ключи "class:part" / "entity:part": пары конечны, а конкатенация
-     * на каждый кадр создавала две новые строки на часть перед каждым lookup.
+     * Interned "class:part" / "entity:part" keys: the pairs are finite, while per-frame
+     * concatenation created two new strings per part before every lookup.
      */
     private static final ConcurrentHashMap<Class<?>, ConcurrentHashMap<String, String>> CLASS_KEY_CACHE = new ConcurrentHashMap<>();
     private static final ConcurrentHashMap<String, ConcurrentHashMap<String, String>> OWNER_KEY_CACHE = new ConcurrentHashMap<>();
@@ -80,7 +80,7 @@ public class MeshRenderCache {
     }
 
     /**
-     * Один кэшированный проход getQuads + общий список для Iris/VBO.
+     * A single cached getQuads pass plus a shared quad list for Iris/VBO.
      */
     public static PartGeometry getOrCompilePartGeometry(String cacheKey, BakedModel modelPart) {
         if (modelPart == null) {
@@ -103,11 +103,10 @@ public class MeshRenderCache {
     }
 
     /**
-     * Возвращает уже кешированный {@link SingleMeshVboRenderer} по ключу или {@code null},
-     * если VBO ещё не создан. В отличие от {@link #getOrCreateRenderer}, НЕ строит новый
-     * рендерер — используется для ретекстурированных мешей, где квады собирает caller
-     * (см. {@link #getOrCreateRendererFromQuads}), чтобы избежать повторной ретекстуризации
-     * каждый кадр.
+     * Returns the already-cached {@link SingleMeshVboRenderer} for the key, or {@code null}
+     * if the VBO does not exist yet. Unlike {@link #getOrCreateRenderer}, it does NOT build a
+     * new renderer - used for retextured meshes where the caller collects the quads itself
+     * (see {@link #getOrCreateRendererFromQuads}) to avoid re-texturing every frame.
      */
     public static @org.jetbrains.annotations.Nullable SingleMeshVboRenderer peekRenderer(String partKey) {
         return PART_RENDERERS.get(partKey);
@@ -130,8 +129,8 @@ public class MeshRenderCache {
     }
 
     /**
-     * Один {@link SingleMeshVboRenderer} из явного списка квадов (например merge нескольких частей).
-     * Квады копируются в immutable-список для Iris-пути; ключ должен быть уникален в рамках кэша.
+     * One {@link SingleMeshVboRenderer} from an explicit quad list (e.g. a merge of several parts).
+     * The quads are copied into an immutable list for the Iris path; the key must be unique within the cache.
      */
     public static SingleMeshVboRenderer getOrCreateRendererFromQuadList(String partKey, List<BakedQuad> quads) {
         if (FAILED_RENDERER_KEYS.contains(partKey)) {
@@ -166,8 +165,8 @@ public class MeshRenderCache {
 
                 @Override
                 public void cleanup() {
-                    // См. cleanup() в createRendererForPart: закрываем нативный VboData,
-                    // если initVbo() ни разу не потребил его до очистки кэша.
+                    // See cleanup() in createRendererForPart: close the native VboData
+                    // if initVbo() never consumed it before the cache was cleared.
                     if (pendingData != null) {
                         pendingData.close();
                         pendingData = null;
@@ -219,10 +218,11 @@ public class MeshRenderCache {
 
                 @Override
                 public void cleanup() {
-                    // Если initVbo() ни разу не выполнился (часть закэширована, но не
-                    // отрисована до reload/disconnect), super.cleanup() выходит рано по
-                    // !initialized — а pendingData держит native memAlloc-буферы вершин
-                    // и индексов. Закрываем явно; close() идемпотентен (флаг consumed).
+                    // If initVbo() never ran (the part was cached but not rendered
+                    // before reload/disconnect), super.cleanup() exits early on
+                    // !initialized - while pendingData still holds native memAlloc
+                    // vertex/index buffers. Close them explicitly; close() is
+                    // idempotent (consumed flag).
                     if (pendingData != null) {
                         pendingData.close();
                         pendingData = null;
@@ -278,7 +278,7 @@ public class MeshRenderCache {
     }
 
     /**
-     * Удаляет конкретный рендерер из кэша и выполняет его GL-очистку.
+     * Removes a specific renderer from the cache and performs its GL cleanup.
      */
     public static void removeRenderer(String partKey) {
         SingleMeshVboRenderer renderer = PART_RENDERERS.remove(partKey);

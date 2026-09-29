@@ -20,7 +20,7 @@ import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
 
 /**
- * Кэш {@code sphere_new.obj} для Fleija-облака (без текстуры, только цвет).
+ * Cached {@code sphere_new.obj} mesh for the Fleija cloud (no texture, flat color only).
  */
 public final class FleijaSphereMesh {
 
@@ -71,7 +71,7 @@ public final class FleijaSphereMesh {
         //? if < 1.21.1 {
         consumer.vertex(matrix, x, y, z).color(r, g, b, a).uv(0, 0).overlayCoords(overlay).uv2(light).normal(0, 1, 0).endVertex();
         //?} else {
-        /*// 1.21.1: vertex->addVertex; color(int 0-255), uv->setUv, overlayCoords->setOverlay, uv2->setLight, normal->setNormal, без endVertex.
+        /*// 1.21.1: vertex->addVertex; color takes int 0-255, uv->setUv, overlayCoords->setOverlay, uv2->setLight, normal->setNormal, no endVertex.
         consumer.addVertex(matrix, x, y, z)
                 .setColor((int)(r * 255), (int)(g * 255), (int)(b * 255), (int)(a * 255))
                 .setUv(0, 0).setOverlay(overlay).setLight(light).setNormal(0, 1, 0);

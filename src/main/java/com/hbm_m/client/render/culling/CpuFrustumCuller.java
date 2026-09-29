@@ -15,11 +15,11 @@ import net.neoforged.api.distmarker.OnlyIn;
 *///?}
 
 /**
- * Лёгкий CPU AABB-vs-frustum культинг. Fallback в {@link OcclusionCullingHelper},
- * когда vanilla {@link net.minecraft.client.renderer.culling.Frustum} недоступен.
+ * Lightweight CPU AABB-vs-frustum culling. Fallback for {@link OcclusionCullingHelper}
+ * when the vanilla {@link net.minecraft.client.renderer.culling.Frustum} is unavailable.
  *
- * <p>Стоимость: 6 dot-product сравнений на BE + одна квадратичная дистанция.
- * На 1000 BE это &lt;0.1 ms, против 7.8 ms у raycast-варианта.
+ * <p>Cost: 6 dot-product comparisons per BE plus one squared distance.
+ * For 1000 BEs this is &lt;0.1 ms, versus 7.8 ms for the raycast variant.
  */
 @OnlyIn(Dist.CLIENT)
 public final class CpuFrustumCuller {
@@ -31,9 +31,9 @@ public final class CpuFrustumCuller {
     private CpuFrustumCuller() {}
 
     /**
-     * Извлекает 6 плоскостей фрустума из viewProj-матрицы (Gribb/Hartmann).
-     * Должен вызываться раз в кадр в render-thread с актуальной матрицей
-     * проекции * вида (без перевода в block-space).
+     * Extracts the 6 frustum planes from a viewProj matrix (Gribb/Hartmann).
+     * Must be called once per frame on the render thread with the current
+     * projection * view matrix (without translating to block space).
      */
     public static void updateFrustum(Matrix4f viewProj) {
         float m00 = viewProj.m00(), m01 = viewProj.m01(), m02 = viewProj.m02(), m03 = viewProj.m03();
@@ -65,7 +65,7 @@ public final class CpuFrustumCuller {
         PLANES[idx * 4 + 3] = d * invLen;
     }
 
-    /** True если хотя бы одна корня AABB внутри/пересекает фрустум. */
+    /** True if at least one corner of the AABB is inside / intersects the frustum. */
     public static boolean isVisible(AABB box) {
         if (!planesValid) return true;
         float minX = (float) box.minX, minY = (float) box.minY, minZ = (float) box.minZ;

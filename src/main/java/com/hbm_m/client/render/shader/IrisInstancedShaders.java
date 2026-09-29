@@ -22,27 +22,30 @@ import org.lwjgl.opengl.GL30;
 
 @OnlyIn(Dist.CLIENT)
 /**
- * Фабрика наших {@code ExtendedShader} для истинного glDrawElementsInstanced под
- * Iris/Oculus: шейдер {@code hbm_m:iris/block_lit_instanced_iris} (наш GLSL,
- * юниформы с префиксом {@code iris_} — ExtendedShader.getUniform() резолвит
- * {@code "iris_" + name}) рисует в gbuffer/shadow-FB активного пайплайна.
- * <p>
- * <b>Кадры (framebuffer)</b>: {@code ExtendedShader.apply()} сам биндит
- * {@code writingToBefore/AfterTranslucent} — поэтому мы СНАПШОТИМ живой
- * {@code GL_DRAW_FRAMEBUFFER_BINDING} (в момент вызова pack-шейдер уже забиндил
- * правильный gbuffer/shadow-FB): читаем имена аттачментов 0..7 + depth и строим
- * свои {@code GlFramebuffer} с теми же текстурами. Оба слота пары наполняются
- * одинаково — какой из них apply() выберет по {@code isBeforeTranslucent}, не важно.
- * {@code drawBuffers([COLOR_ATTACHMENT0])} — vanilla-parity вывода: наш FSH имеет
- * один {@code fragColor} (как iris-fallback ShaderSynthesizer), остальные
- * аттачменты не получают undefined-мусор.
- * <p>
- * Конструктор ExtendedShader <b>идентичен</b> на Iris 1.20.1 (1.7.6) и 1.21.1 (1.8+)
- * — одна рефлексия без адаптера. Consumer/BiConsumer передаются как стёртые
- * {@code Consumer<Object>} (дженерики erased — Iris-классы в компайл-тайм не нужны).
- * <p>
- * Отказобезопасность: любая ошибка рефлексии/GL → {@code available=false} и
- * вызывающий код остаётся на прежнем (companion per-instance) пути.
+ * Factory of our {@code ExtendedShader} instances for true glDrawElementsInstanced
+ * under Iris/Oculus: the shader {@code hbm_m:iris/block_lit_instanced_iris} (our
+ * GLSL, uniforms with the {@code iris_} prefix - ExtendedShader.getUniform()
+ * resolves {@code "iris_" + name}) draws into the active pipeline's gbuffer /
+ * shadow FB.
+ *
+ * <p><b>Framebuffers:</b> {@code ExtendedShader.apply()} itself binds
+ * {@code writingToBefore/AfterTranslucent} - therefore we SNAPSHOT the live
+ * {@code GL_DRAW_FRAMEBUFFER_BINDING} (at call time the pack shader has already
+ * bound the correct gbuffer/shadow FB): we read attachment names 0..7 + depth and
+ * build our own {@code GlFramebuffer}s with the same textures. Both slots of the
+ * pair are filled identically - which one apply() picks based on
+ * {@code isBeforeTranslucent} does not matter. {@code drawBuffers
+ * ([COLOR_ATTACHMENT0])} gives vanilla-parity output: our FSH has a single
+ * {@code fragColor} (like the iris-fallback ShaderSynthesizer), so the other
+ * attachments do not receive undefined garbage.</p>
+ *
+ * <p>The ExtendedShader constructor is <b>identical</b> on Iris 1.20.1 (1.7.6) and
+ * 1.21.1 (1.8+) - a single reflection setup with no adapter. Consumer/BiConsumer
+ * are passed as erased {@code Consumer<Object>} (generics are erased - Iris
+ * classes are not needed at compile time).</p>
+ *
+ * <p>Fail-safety: any reflection/GL error sets {@code available=false} and the
+ * calling code stays on the previous (companion per-instance) path.</p>
  */
 public final class IrisInstancedShaders {
 
@@ -52,9 +55,9 @@ public final class IrisInstancedShaders {
     private static Constructor<?> extendedShaderCtor;
     private static Object alphaTestOff;          // AlphaTests.OFF
     private static Object emptyCustomUniforms;   // CustomUniforms.Builder().build()
-    private static Object pipeline;              // IrisRenderingPipeline активная
+    private static Object pipeline;              // active IrisRenderingPipeline
 
-    /** Пер-проходный кеш: (поколение пайплайна, fboId, сигнатура аттачментов) → шейдер. */
+    /** Per-pass cache: (pipeline generation, fboId, attachment signature) -> shader. */
     private static final long[] cachedGen = { -1L, -1L };
     private static final int[] cachedFbo = { -1, -1 };
     private static final int[] cachedAttachSig = { 0, 0 };
@@ -62,16 +65,17 @@ public final class IrisInstancedShaders {
     private static final String[] cachedShaderName = { null, null };
     private static final Object[][] cachedFbPair = { null, null }; // [before, after] GlFramebuffer
 
-    // Кэш ПРОВАЛА конструкции: без него упавший (например, GLSL-ошибка) шейдер
-    // ретраился бы КАЖДЫЙ флаш КАЖДОГО рендерера — компиляция шейдера в цикле =
-    // смерть ФПС + спам лога. Провал живёт до пересборки пайплайна.
+    // Cache of CONSTRUCTION FAILURE: without it a failed (e.g. GLSL error) shader
+    // would be retried on EVERY flush of EVERY renderer - shader compilation in a
+    // loop means FPS death + log spam. The failure lives until a pipeline rebuild.
     private static final boolean[] constructionFailed = { false, false };
     private static final long[] failedAtGeneration = { -1L, -1L };
 
-    // Снапшот gbuffer/shadow-FB per проход (заполняется в captureLiveFramebuffer
-    // из IrisRenderBatch.setupOuter — единственный момент, когда правильный FB
-    // гарантированно забинджен; к моменту AFTER_BLOCK_ENTITIES
-    // closePersistentIfActive уже перекидывает биндинг на main-RenderTarget).
+    // Per-pass snapshot of the gbuffer/shadow-FB (filled in captureLiveFramebuffer
+    // from IrisRenderBatch.setupOuter - the only moment the correct FB is
+    // guaranteed to be bound; by the time of AFTER_BLOCK_ENTITIES
+    // closePersistentIfActive has already switched the binding to the main
+    // RenderTarget).
     private static final int[] capturedFbo = { -1, -1 };
     private static final long[] capturedGen = { -1L, -1L };
     private static final int[] capturedSig = { 0, 0 };
@@ -97,9 +101,9 @@ public final class IrisInstancedShaders {
     }
 
     /**
-     * Одноразовый снапшот живого FB (нужен только как аргумент конструктора
-     * ExtendedShader; в рантайме эти FB не используются). Вызывается из
-     * IrisRenderBatch.setupOuter после pack-apply.
+     * One-time snapshot of the live FB (only needed as an ExtendedShader
+     * constructor argument; these FBs are not used at runtime). Called from
+     * IrisRenderBatch.setupOuter after the pack apply.
      */
     public static void captureLiveFramebuffer(boolean shadowPass) {
         if (!ensureReflected()) {
@@ -124,20 +128,20 @@ public final class IrisInstancedShaders {
                 capturedDepth[slot] == -1 ? "none" : String.valueOf(capturedDepth[slot]));
     }
 
-    /** Совместимость: хук остался в InstancedRenderFrame, ныне no-op. */
+    /** Compatibility: hook remains in InstancedRenderFrame, now a no-op. */
     public static void onFrameStart() {
     }
 
     /**
-     * Лениво строит наш ExtendedShader (один на проход на всю сессию).
-     * КОНСТРУКТОРУ нужны FB-аргументы — отдаём одноразовый снапшот с
-     * {@link #captureLiveFramebuffer}; в рантайме мы НИКОГДА не зовём
-     * apply()/clear() этого шейдера (они бы забиндили эти FB) — биндинг
-     * фреймбуфера делает pack-шейдер, мы подменяем только программу.
-     * Поэтому FB-аргументы после конструкции не играют роли, и весь
-     * resize/пинг-понг аттачментов пака нам не страшен.
+     * Lazily builds our ExtendedShader (one per pass for the whole session).
+     * The CONSTRUCTOR needs FB arguments - we hand it the one-time snapshot from
+     * {@link #captureLiveFramebuffer}; at runtime we NEVER call this shader's
+     * apply()/clear() (they would bind those FBs) - the pack shader does the
+     * framebuffer binding, we only swap the program. The FB arguments therefore
+     * play no role after construction, and the pack's attachment resize/
+     * ping-pong cannot hurt us.
      *
-     * @return наш шейдер или null (снапшота ещё не было / рефлексия недоступна).
+     * @return our shader, or null (no snapshot yet / reflection unavailable).
      */
     public static ShaderInstance getOrCreate(boolean shadowPass) {
         if (!ensureReflected()) {
@@ -145,7 +149,7 @@ public final class IrisInstancedShaders {
         }
         int slot = shadowPass ? 1 : 0;
         if (cachedShader[slot] != null) {
-            // Профиль (схема gbuffer пака) сменился — пересобираем с другим FSH.
+            // The profile (pack gbuffer scheme) changed - rebuild with a different FSH.
             String wanted = IrisInstancedEncoders.shaderName(shadowPass);
             if (!wanted.equals(cachedShaderName[slot])) {
                 disposeSlot(slot);
@@ -154,11 +158,11 @@ public final class IrisInstancedShaders {
             }
         }
         if (capturedFbo[slot] == -1) {
-            return null; // FB-снапшот для аргументов конструктора ещё не снят
+            return null; // FB snapshot for constructor arguments not taken yet
         }
         long generation = IrisExtendedShaderAccess.getPipelineGeneration();
         if (constructionFailed[slot] && failedAtGeneration[slot] == generation) {
-            return null; // уже падало на этой сборке пайплайна — не ретраить каждый кадр
+            return null; // already failed on this pipeline build - do not retry every frame
         }
         try {
             Object[] fbs = buildFramebuffers(slot);
@@ -229,11 +233,11 @@ public final class IrisInstancedShaders {
         if (capturedDepth[slot] != -1) {
             GlFramebufferHolder.addDepthAttachment(framebuffer, capturedDepth[slot]);
         }
-        // На запись только color attachment 0 (наш FSH имеет один выход).
+        // Only color attachment 0 for writing (our FSH has a single output).
         GlFramebufferHolder.drawBuffers0(framebuffer, capturedColorCount[slot] > 0 ? 1 : 0);
     }
 
-    /** Снимает имена текстур текущего GL_DRAW_FRAMEBUFFER в стейджинг. */
+    /** Snapshots the texture names of the current GL_DRAW_FRAMEBUFFER into staging. */
     private static boolean snapshotAttachments(int slot) {
         for (int i = 0; i < capturedColors[slot].length; i++) {
             capturedColors[slot][i] = 0;
@@ -361,7 +365,7 @@ public final class IrisInstancedShaders {
         failedAtGeneration[slot] = -1L;
     }
 
-    /** Отложенный хост для GlFramebuffer-рефлексии (классы Iris только по имени). */
+    /** Deferred host for GlFramebuffer reflection (Iris classes referenced by name only). */
     private static final class GlFramebufferHolder {
         private static final Constructor<?> NO_ARG_CTOR;
         private static final Method ADD_COLOR;
@@ -394,9 +398,9 @@ public final class IrisInstancedShaders {
         }
 
         static void drawBuffers0(Object fb, int count) throws Exception {
-            // ВНИМАНИЕ: Iris GlFramebuffer.drawBuffers принимает ИНДЕКСЫ аттачментов
-            // и сам прибавляет GL_COLOR_ATTACHMENT0 (иначе IllegalArgumentException
-            // "attachment with index 36064" — см. debug.log 0913).
+            // WARNING: Iris GlFramebuffer.drawBuffers takes attachment INDICES and
+            // adds GL_COLOR_ATTACHMENT0 itself (otherwise IllegalArgumentException
+            // "attachment with index 36064" - see debug.log 0913).
             int[] buffers = new int[count];
             for (int i = 0; i < count; i++) {
                 buffers[i] = i;
@@ -405,7 +409,7 @@ public final class IrisInstancedShaders {
         }
     }
 
-    /** Локальный логгер — не тащить MainRegistry в каждое место рефлексии. */
+    /** Local logger - avoid dragging MainRegistry into every reflection site. */
     private static final class MainLog {
         static void warn(String message) {
             com.hbm_m.main.MainRegistry.LOGGER.warn(message);

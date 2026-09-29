@@ -74,17 +74,17 @@ public final class LightSampleCache {
     private static final Long2ObjectOpenHashMap<Entry> CACHE = new Long2ObjectOpenHashMap<>();
 
     /**
-     * Горизонт валидности записей в игровых тиках. Свет вокруг стоящей машины
-     * меняется только при изменении блоков рядом; ресемпл 6+8 позиций каждый
-     * кадр — чистый CPU-штраф (6.8% кадра на ферме). 15 тиков = 0.75 c —
-     * компромисс «заметность задержки ≈ нет» против «кадр без лайтмап-работы».
+     * Record validity horizon in game ticks. Light around a standing machine
+     * changes only when nearby blocks change; resampling 6+8 positions every
+     * frame is a pure CPU cost (6.8% of the frame on the farm). 15 ticks = 0.75 s -
+     * a trade-off between "perceptible delay ~= none" and "a frame without lightmap work".
      */
     private static final int LIGHT_TTL_TICKS = 15;
 
     /**
-     * Клиентовое игровое время (тик-счётчик), обновляется раз в кадр в {@link #onFrameStart}.
-     * 0, а не MIN_VALUE: разность {@code currentTick - lastTick} обязана не переполняться,
-     * иначе записи, проставленные до первого onFrameStart, считались бы валидными вечно.
+     * Client-side game time (tick counter), updated once per frame in {@link #onFrameStart}.
+     * 0, not MIN_VALUE: the difference {@code currentTick - lastTick} must not overflow,
+     * otherwise records set before the first onFrameStart would be considered valid forever.
      */
     private static long currentTick = 0L;
 
@@ -101,9 +101,9 @@ public final class LightSampleCache {
      * weak-ish identity by holding it directly: BEs are render-thread-owned
      * during the dispatch window, so the reference is always live.
      * <p>
-     * Валиден, пока не протухнет по тик-TTL (см. {@link #LIGHT_TTL_TICKS}) —
-     * переживает кадры, пока свет реально не изменился. Чистится
-     * {@link #invalidateAll} (смена уровня).
+     * Valid until it expires by tick TTL (see {@link #LIGHT_TTL_TICKS}) -
+     * it survives frames while the light has not actually changed. Cleared by
+     * {@link #invalidateAll} (level change).
      */
     private static BlockEntity lastQueriedBE = null;
     private static float lastBlockU = 0f;
@@ -158,9 +158,9 @@ public final class LightSampleCache {
         if ((currentTick % PRUNE_EVERY) == 0) {
             CACHE.long2ObjectEntrySet().removeIf(e ->
                 currentTick - e.getValue().lastTick > LIGHT_TTL_TICKS);
-            // Ключи CACHE8 включают identityHashCode рендерера, который меняется
-            // на каждом reload/disconnect, — без prune старые записи становились
-            // навсегда недостижимым мусором в map (неограниченный рост).
+            // CACHE8 keys include the renderer's identityHashCode, which changes
+            // on every reload/disconnect - without pruning, old entries became
+            // permanently unreachable garbage in the map (unbounded growth).
             CACHE8.long2ObjectEntrySet().removeIf(e ->
                 currentTick - e.getValue().lastTick > LIGHT_TTL_TICKS);
             PACKED_CACHE.long2LongEntrySet().removeIf(e ->
@@ -189,8 +189,8 @@ public final class LightSampleCache {
      */
     public static void getOrSample(@Nullable BlockEntity be, int packedLightFallback,
                                    float[] outUV, int outBase) {
-        // Форсированный fullbright (part.lightOverride): мировой семпл игнорируем,
-        // иначе светящиеся части (расплав тигля, InnerBurning) темнеют ночью.
+        // Forced fullbright (part.lightOverride): ignore the world sample,
+        // otherwise glowing parts (crucible melt, InnerBurning) darken at night.
         if (packedLightFallback == net.minecraft.client.renderer.LightTexture.FULL_BRIGHT) {
             outUV[outBase]     = (float) (packedLightFallback & 0xFFFF);
             outUV[outBase + 1] = (float) ((packedLightFallback >>> 16) & 0xFFFF);
@@ -366,10 +366,10 @@ public final class LightSampleCache {
     private static final Vector4f CORNER_TMP = new Vector4f();
 
     /**
-     * Per-BE кеш ванильного packedLight ({@code LevelRenderer.getLightColor}) с тем
-     * же тиковым TTL. Значение упаковано как {@code (tick << 32) | packed} — без
-     * аллокации объекта на запись. Диспетчер (NucleusDispatcherBypass.collectOne)
-     * запрашивал его на каждую машину каждый кадр.
+     * Per-BE cache of vanilla packedLight ({@code LevelRenderer.getLightColor}) with the
+     * same tick TTL. The value is packed as {@code (tick << 32) | packed} - no
+     * per-record object allocation. The dispatcher (NucleusDispatcherBypass.collectOne)
+     * used to query it for every machine every frame.
      */
     private static final Long2LongOpenHashMap PACKED_CACHE = new Long2LongOpenHashMap();
     private static final long PACKED_MISS = Long.MIN_VALUE;
@@ -379,8 +379,8 @@ public final class LightSampleCache {
     }
 
     /**
-     * Ванильный packedLight по позиции BE с тиковым TTL. null/detached BE —
-     * без кеша (фолбэк вызывающего).
+     * Vanilla packedLight at the BE position with a tick TTL. null/detached BE -
+     * no caching (caller's fallback).
      */
     public static int getOrSamplePacked(@Nullable BlockEntity be, int packedLightFallback) {
         Level level = (be != null) ? be.getLevel() : null;
@@ -478,8 +478,8 @@ public final class LightSampleCache {
                                     float[] objBbox, BlockPos blockPos, Matrix4f localPose,
                                     int packedLightFallback, float[] out16) {
 
-        // Форсированный fullbright (part.lightOverride): без 8-corner семпла,
-        // иначе светящиеся части (расплав тигля, InnerBurning) темнеют ночью.
+        // Forced fullbright (part.lightOverride): no 8-corner sample,
+        // otherwise glowing parts (crucible melt, InnerBurning) darken at night.
         if (packedLightFallback == net.minecraft.client.renderer.LightTexture.FULL_BRIGHT) {
             fillFallback8(packedLightFallback, out16);
             return;

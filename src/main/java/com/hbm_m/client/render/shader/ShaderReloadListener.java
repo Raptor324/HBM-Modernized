@@ -10,8 +10,8 @@ import net.minecraft.util.profiling.ProfilerFiller;
 
 
 /**
- * Слушатель перезагрузки ресурсов для детектирования изменений шейдеров
- * Срабатывает при F3+T, смене шейдерпака или загрузке мира
+ * Resource reload listener for detecting shader changes.
+ * Fires on F3+T, shader pack swap, or world load.
  */
 //? if forge {
 import net.minecraftforge.api.distmarker.Dist;
@@ -21,7 +21,7 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 public class ShaderReloadListener extends SimplePreparableReloadListener<Void> {
     
     /**
-     * Фаза подготовки (асинхронная)
+     * Prepare phase (async).
      */
     @Override
     protected Void prepare(ResourceManager resourceManager, ProfilerFiller profiler) {
@@ -32,8 +32,8 @@ public class ShaderReloadListener extends SimplePreparableReloadListener<Void> {
     }
     
     /**
-     * Фаза применения (синхронная, главный поток)
-     * Здесь безопасно обращаться к игровым объектам
+     * Apply phase (sync, main thread).
+     * Safe to touch game objects here.
      */
     @Override
     protected void apply(Void prepared, ResourceManager resourceManager, ProfilerFiller profiler) {

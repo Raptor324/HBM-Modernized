@@ -35,20 +35,20 @@ public class AirstrikeNukeEntityRenderer extends EntityRenderer<AirstrikeNukeEnt
                        MultiBufferSource buffer,
                        int packedLight) {
 
-        poseStack.pushPose(); // ← Добавьте pushPose()
+        poseStack.pushPose(); // added pushPose()
 
-        //  ОДИН поворот: 180° + направление движения
+        // Single rotation: 180 degrees + travel direction
         poseStack.mulPose(Axis.YP.rotationDegrees(-entity.getYRot()));
 
-        //  Смещение центра модели
+        // Center the model
         poseStack.translate(-0.5, 0.0, -0.5);
 
-        //  Масштаб x3
+        // Scale x3
         poseStack.scale(10.0F, 10.0F, 10.0F);
 
         BlockState state = ModBlocks.B29.get().defaultBlockState();
 
-        // Рисуем модель самолета
+        // Draw the plane model
         blockRenderer.renderSingleBlock(
                 state,
                 poseStack,
@@ -63,7 +63,7 @@ public class AirstrikeNukeEntityRenderer extends EntityRenderer<AirstrikeNukeEnt
 
     @Override
     public ResourceLocation getTextureLocation(AirstrikeNukeEntity entity) {
-        // Не используется при рендере через blockRenderer, можно вернуть что‑нибудь дефолтное
+        // Unused when rendering via blockRenderer; a default value is fine
         return ResourceLocation.fromNamespaceAndPath("minecraft", "textures/block/iron_block.png");
     }
 }

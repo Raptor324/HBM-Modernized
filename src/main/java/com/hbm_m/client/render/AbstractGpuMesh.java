@@ -41,25 +41,25 @@ public abstract class AbstractGpuMesh {
         objBbox[3] = data.maxX; objBbox[4] = data.maxY; objBbox[5] = data.maxZ;
     }
     /**
-     * При true - init уже провалился, не пытаемся снова и не логируем
+     * When {@code true}, init has already failed; do not retry or log again.
      */
     protected boolean initFailed = false;
 
     /**
-     * Освобождение GL-ресурсов (VAO/VBO/EBO) на render-треде.
-     * Конкретные рендереры должны вызывать этот метод из своего cleanup().
+     * Releases GL resources (VAO/VBO/EBO) on the render thread.
+     * Concrete renderers must call this from their own {@code cleanup()}.
      */
     public void cleanup() {
         if (!initialized) {
             return;
         }
 
-        // Сохраняем текущие id в локальные переменные
+        // Save current ids into locals
         final int vaoToDelete = this.vaoId;
         final int vboToDelete = this.vboId;
         final int eboToDelete = this.eboId;
 
-        // Локально помечаем как очищенные, чтобы больше не рендерить
+        // Locally mark as cleaned so nothing is rendered anymore
         this.vaoId = -1;
         this.vboId = -1;
         this.eboId = -1;
@@ -67,7 +67,7 @@ public abstract class AbstractGpuMesh {
         this.initialized = false;
         this.initFailed = false;
 
-        // Планируем реальные GL-вызовы на рендер-тред
+        // Schedule the actual GL calls on the render thread
         RenderSystem.recordRenderCall(() -> {
             try {
                 if (vboToDelete != -1) {

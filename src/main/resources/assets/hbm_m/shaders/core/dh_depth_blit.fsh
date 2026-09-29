@@ -1,43 +1,42 @@
 #version 150
 
-// КОПИЯ DH-ГЛУБИНЫ В ГЛАВНЫЙ Z-BUFFER.
-// Комозит DH (apply.frag) переносит в главный FBO только ЦВЕТ LOD'ов,
-// глубина там остаётся небом (1.0) => дальняя геометрия (меши ракет)
-// нативным depth-тестом против LOD всегда «ближе». Этот проход читает
-// DEPTH32F текстуру DH и пишет её в gl_FragDepth ГЛАВНОГО буфера.
+// COPY DH DEPTH INTO THE MAIN Z-BUFFER.
+// The DH composite (apply.frag) transfers only the COLOR of LODs into the main
+// FBO; depth there remains sky (1.0), so distant geometry (missile meshes)
+// always tests "closer" than LODs in the native depth test. This pass reads
+// the DH DEPTH32F texture and writes it into gl_FragDepth of the MAIN buffer.
 //
-// Конвертация: window-Z проекции DH -> дистанция -> window-Z нашей
-// расширенной проекции (near=0.05, far=8e6 => ndcZ ~= 1 - 0.1/dist),
-// чтобы сравнения с уже записанной ванильной геометрией и последующим
-// дальним контентом были корректны.
+// Conversion: DH projection window-Z -> distance -> window-Z of our extended
+// projection (near=0.05, far=8e6 => ndcZ ~= 1 - 0.1/dist) so that comparisons
+// against already-written vanilla geometry and subsequent far content are correct.
 //
-// ДВЕ КОНВЕНЦИИ ГЛУБИНЫ DH (DhReverseZ, запрос через RenderUtil.RENDER_DEF
-// .getRenderDepth() — матрица события для этого НЕГОДНА, она всегда форвард):
-//  - FORWARD_Z (DH <= 3.2.x, 3.3.1+ только под Iris-паком без reverse-Z):
-//    близко=0, даль=1, небо=1. Стандартная перспектива:
+// TWO DH DEPTH CONVENTIONS (DhReverseZ, queried via RenderUtil.RENDER_DEF
+// .getRenderDepth() - the event matrix is UNUSABLE for this, it is always forward):
+//  - FORWARD_Z (DH <= 3.2.x; 3.3.1+ only under the Iris pack without reverse-Z):
+//    near=0, far=1, sky=1. Standard perspective:
 //    ndc = 2d-1, dist = 2fn/((F+N) - ndc(F-N)).
-//  - REVERSE_Z (DH 3.3.1+ по умолчанию без пака; GlDhRenderApiDefinition
-//    .getRenderDepth(), glClearDepth = farDepth = 0): близко=1, даль=0.
-//    Реверс-матрица DH (RenderUtil.setClipPlanes, байткод 3.3.1):
+//  - REVERSE_Z (DH 3.3.1+ default without the pack; GlDhRenderApiDefinition
+//    .getRenderDepth(), glClearDepth = farDepth = 0): near=1, far=0.
+//    DH reverse matrix (RenderUtil.setClipPlanes, 3.3.1 bytecode):
 //    A = m22 = n/(f-n), B = m23 = fn/(f-n)  =>  ndc = A*(f/dist - 1),
-//    откуда dist = f*n / (ndc*(f-n) + n) при обычном ndc = 2d-1.
-//    Числовая проверка (n=73.41, f=7512.3): d=1000 -> decode 1000.2,
-//    d=200 -> 200.02. Небо теперь d = 0.
-//    (НЕВАЖНО: пробовавшийся раньше вариант «ndc = 1-2d + форвард-формула»
-//    соответствовал СТАНДАРТНОЙ реверс-перспективе m22=(f+n)/(f-n), а у DH
-//    своя, см. выше — с ней гриб так и оставался без окклюзии.)
+//    hence dist = f*n / (ndc*(f-n) + n) with the usual ndc = 2d-1.
+//    Numeric check (n=73.41, f=7512.3): d=1000 -> decode 1000.2,
+//    d=200 -> 200.02. Sky now decodes to d = 0.
+//    (IRRELEVANT: an earlier attempt, "ndc = 1-2d + forward formula",
+//    matched the STANDARD reverse perspective m22=(f+n)/(f-n), while DH uses
+//    its own, see above - with it the mushroom stayed unoccluded.)
 
 uniform sampler2D Sampler0;
 uniform float DhNear;
 uniform float DhFar;
-// Клип-плоскости НАШЕЙ расширенной проекции (куда кодируем глубину).
+// Clip planes of OUR extended projection (where depth is encoded to).
 uniform float OutNear;
 uniform float OutFar;
-// Нижняя граница достоверности DH-глубины: репликация зоны dither-fade
-// «Fade Nearby DH LODs». Внутри неё DEPTH32F — стохастический шум
-// (bayer-discard террейн-шейдера DH), копировать нельзя.
+// Lower bound of DH depth validity: mirrors the dither-fade zone of
+// "Fade Nearby DH LODs". Inside it the DEPTH32F is stochastic noise
+// (bayer-discard in the DH terrain shader) and must not be copied.
 uniform float DhFadeMaskDist;
-// Конвенция глубины DH: > 0.5 = REVERSE_Z, иначе FORWARD_Z.
+// DH depth convention: > 0.5 = REVERSE_Z, otherwise FORWARD_Z.
 uniform float DhReverseZ;
 
 in vec2 uv;
@@ -46,7 +45,7 @@ out vec4 fragColor;
 void main() {
     float d = texture(Sampler0, uv).r;
     bool reverseZ = DhReverseZ > 0.5;
-    // Небо DH (LOD не рисовался): глубину не трогаем. Конвенции противоположны.
+    // DH sky (no LOD drawn): leave depth untouched. The conventions are opposite.
     if (reverseZ ? (d <= 1.0e-6) : (d >= 0.999999)) {
         discard;
     }
@@ -57,10 +56,10 @@ void main() {
     if (dist < DhFadeMaskDist) {
         discard;
     }
-    // Точное окно НАШЕЙ проекции: window = 1 - fnEff/dist, fnEff = F*N/(F-N).
-    // ВАЖНО: раньше стояло «1 - 0.1/dist» — ошибочный fnEff (правильно 0.05
-    // для N=0.05/F=8e6), из-за чего каждый окклудер выглядел вдвое ближе и
-    // резал гриб, находясь ЗА ним («гриб уезжает назад при отлёте»).
+    // Exact window of OUR projection: window = 1 - fnEff/dist, fnEff = F*N/(F-N).
+    // IMPORTANT: this used to be "1 - 0.1/dist" - wrong fnEff (correct is 0.05
+    // for N=0.05/F=8e6), which made every occluder look twice as close and cut
+    // the mushroom while being BEHIND it ("the mushroom slides back on fly-away").
     float fnEff = (OutFar * OutNear) / (OutFar - OutNear);
     gl_FragDepth = clamp((1.0 - fnEff / dist) + 1.0e-6, 0.0, 1.0);
     fragColor = vec4(0.0);

@@ -9,19 +9,20 @@ import net.neoforged.api.distmarker.OnlyIn;
 *///?}
 
 /**
- * Глобальный поколенческий счётчик инстанс-записей движка Nucleus.
+ * Global generational counter for Nucleus engine instance records.
  * <p>
- * Инстанс-записи (InstPos/InstRot/свет/fade) в instance-буферах валидны только
- * в рамках «мира» данного поколения. Смена поколения (bump) объявляет ВСЕ записи
- * протухшими: машины с {@code RenderDirtyTracker} пересобираются целиком при
- * ближайшей сборке (roster-assert выдаёт worldGen-мисс).
+ * Instance records (InstPos/InstRot/light/fade) in instance buffers are valid
+ * only within the "world" of the current generation. Bumping the generation
+ * declares ALL records stale: machines tracked by {@code RenderDirtyTracker}
+ * are fully rebuilt at the next collect (the roster assert reports a worldGen
+ * miss).
  * <p>
- * Bump-сайты:
+ * Bump sites:
  * <ul>
- *   <li>дрейф якоря ({@link InstancedStaticPartRenderer#onRenderOriginChanged}) —
- *       записи якорно-относительны, сдвиг якоря делает их все неверными;</li>
- *   <li>смена Iris-состояния ({@code ClientRenderFlags.onFrameStart}) — пути
- *       Iris заполняют {@code instanceLightUV}, которого fast-path не пишет.</li>
+ *   <li>anchor drift ({@link InstancedStaticPartRenderer#onRenderOriginChanged}) -
+ *       records are anchor-relative, so shifting the anchor invalidates them all;</li>
+ *   <li>Iris state change ({@code ClientRenderFlags.onFrameStart}) - Iris paths
+ *       fill {@code instanceLightUV}, which the fast path does not write.</li>
  * </ul>
  */
 @OnlyIn(Dist.CLIENT)

@@ -1,32 +1,33 @@
 #version 330 core
-// Iris ExtendedShader FSH для deferred-паков со схемой gbuffer "packed"
-// (детект — IrisInstancedEncoders по исходнику gbuffers пака):
+// Iris ExtendedShader FSH for deferred shader packs with the "packed" gbuffer
+// scheme (detected by IrisInstancedEncoders from the pack's gbuffers source):
 //   target.x = packUnorm2x8(albedo.rg)
 //   target.y = packUnorm2x8(albedo.b, material_mask)
 //   target.z = packUnorm2x8(encodeUnitVector(flat_normal))
 //   target.w = packUnorm2x8(light_levels)
-// Свет pak считает в deferred-композите — в gbuffer albedo НЕ умножается на
-// lightmap. flat normal — в мировых осях (mat3(gbufferModelViewInverse)*normal
-// на стороне пака). material_mask = 0: модовые блоки не отображены в
-// block.properties пака, спец-материалы им и через pack-программу не назначаются.
-// Побайтовая математика packing/oct-encode совместима с декодером пака
-// (unpack_unorm_2x8: hi*256+lo в 16-бит unorm-канале).
+// The pack computes lighting in its deferred composite, so the gbuffer albedo
+// is NOT multiplied by the lightmap. The flat normal is in world axes
+// (mat3(gbufferModelViewInverse)*normal on the pack side). material_mask = 0:
+// the mod's blocks are not listed in the pack's block.properties, and the pack
+// program assigns no special materials to them.
+// The byte math of packing/oct-encode is compatible with the pack decoder
+// (unpack_unorm_2x8: hi*256+lo in a 16-bit unorm channel).
 
 in vec2 texCoord;
 in vec2 lightLevels;
 in vec3 worldNormal;
 in float vFadeAlpha;
-// Per-instance тинт части (InstColor из block_lit_instanced_packed.vsh).
-// Albedo в gbuffer пака — 8-бит unorm: overbright (RGB > 1) здесь срезается
-// клэмпом паковки, свет накала обеспечивает lightLevels (fullbright).
+// Per-instance part tint (InstColor from block_lit_instanced_packed.vsh).
+// The pack's gbuffer albedo is 8-bit unorm: overbright (RGB > 1) is clamped
+// away by the packing here; heat glow light comes from lightLevels (fullbright).
 in vec4 vColor;
 
 uniform sampler2D iris_Sampler0;
 
 out vec4 fragColor;
 
-// Два 8-битных байта (hi = v.x, lo = v.y) в 16-битный unorm-канал:
-// value = (hi*256 + lo) / 65535, с округлением к ближайшему байту.
+// Two 8-bit bytes (hi = v.x, lo = v.y) into a 16-bit unorm channel:
+// value = (hi*256 + lo) / 65535, with rounding to the nearest byte.
 float packUnorm2x8(vec2 v) {
     v = clamp(v, vec2(0.0), vec2(1.0));
     vec2 bytes = floor(255.0 * v + 0.5);
@@ -41,8 +42,8 @@ vec2 signNonZero(vec2 v) {
     return mix(vec2(-1.0), vec2(1.0), greaterThanEqual(v, vec2(0.0)));
 }
 
-// Октаздрическое кодирование единичного вектора в [0,1]^2:
-// проекция сферы на октаэдр и разворот нижней полусферы по диагоналям.
+// Octahedral encoding of a unit vector into [0,1]^2: project the sphere onto
+// an octahedron and unfold the lower hemisphere along the diagonals.
 vec2 encodeUnitVector(vec3 n) {
     vec2 p = n.xy * (1.0 / (abs(n.x) + abs(n.y) + abs(n.z)));
     p = n.z <= 0.0 ? ((1.0 - abs(p.yx)) * signNonZero(p)) : p;

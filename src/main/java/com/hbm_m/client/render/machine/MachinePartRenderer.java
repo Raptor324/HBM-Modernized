@@ -25,18 +25,18 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
 /**
- * GPU-держатель ОДНОЙ части станка, создаваемый движком автоматически.
+ * GPU holder of a SINGLE machine part, created automatically by the engine.
  * <p>
- * Цепочка деградации per draw (в порядке попыток):
+ * Degradation chain per draw (in attempt order):
  * <ol>
- *   <li>MDI (внутри {@link InstancedStaticPartRenderer#flush} — автоматически,
- *       если GL43/ARB доступны и нет shader pack);</li>
+ *   <li>MDI (inside {@link InstancedStaticPartRenderer#flush} - automatic,
+ *       if GL43/ARB is available and there is no shader pack);</li>
  *   <li>hardware instancing ({@code glDrawElementsInstanced});</li>
  *   <li>per-BE VBO ({@link SingleMeshVboRenderer});</li>
- *   <li>ванильный immediate ({@code putBulkData}) — также принудительно через
+ *   <li>vanilla immediate ({@code putBulkData}) - also forced via
  *       {@code forceVanillaImmediatePath}.</li>
  * </ol>
- * Геометрия строится один раз лениво на render thread; до этого вызовы повторяются.
+ * Geometry is built once, lazily, on the render thread; before that calls are retried.
  */
 final class MachinePartRenderer {
 
@@ -55,7 +55,7 @@ final class MachinePartRenderer {
         this.dynamic = dynamic;
     }
 
-    /** true, если попытка построения уже была (успешной или нет) — квад resolver больше не вызывать. */
+    /** true if a build attempt has already been made (successful or not) - do not call the quad resolver again. */
     boolean isAttempted() { return attempted; }
 
     boolean matches(MachineSpec.PartDef<?> part, String cacheKey) {
@@ -64,7 +64,7 @@ final class MachinePartRenderer {
 
     String key() { return key; }
 
-    /** Ленивое построение. Вне render thread — просто отложить попытку. */
+    /** Lazy build. Off the render thread - simply defer the attempt. */
     void ensureBuilt(@Nullable BakedModel partModel, @Nullable List<BakedQuad> dynamicQuadsIn) {
         if (attempted) return;
         if (!RenderSystem.isOnRenderThread()) return;
@@ -108,16 +108,16 @@ final class MachinePartRenderer {
     InstancedStaticPartRenderer instanced() { return instanced; }
 
     /**
-     * Добавляет текущий кадр-инстанс или рисует fallback-путём.
+     * Adds the current frame instance or draws via a fallback path.
      *
-     * @param poseStack  стек с блочным трансформом + аниматором части (composed pose)
-     * @param sharedLight общий 8-corner световой сэмпл машины (или null)
-     * @param uvRect {u0,v0,du,dv} ремапа sprite-local VBO → атлас или null (атласные UV).
-     *               Не-null означает, что кэшированные quads нормализованы — путь
-     *               single-VBO (без ремапа в шейдере) заменяется immediate-fallback.
-     * @param tint {r,g,b,a} per-instance цветовой множитель или null (white). Не-white
-     *               тинт на single-VBO пути тоже деградирует в immediate (шейдер
-     *               block_lit тинта не читает); RGB может быть &gt; 1 — overbright.
+     * @param poseStack  stack with the block transform + part animator (composed pose)
+     * @param sharedLight shared 8-corner light sample of the machine (or null)
+     * @param uvRect {u0,v0,du,dv} remap of sprite-local VBO -> atlas, or null (atlas UVs).
+     *               Non-null means the cached quads are normalized - the single-VBO path
+     *               (no remap in the shader) is replaced by the immediate fallback.
+     * @param tint {r,g,b,a} per-instance color multiplier or null (white). A non-white
+     *               tint on the single-VBO path also degrades to immediate (the
+     *               block_lit shader does not read tint); RGB may be &gt; 1 - overbright.
      */
     void enqueue(PoseStack poseStack,
                  int packedLight, BlockPos blockPos, BlockEntity blockEntity,
@@ -140,10 +140,11 @@ final class MachinePartRenderer {
             single.render(poseStack, packedLight, blockPos, blockEntity, bufferSource);
             return;
         }
-        // uvRect != null: single-VBO путь держит нормализованные UV, а block_lit_simple
-        // не умеет ремапить. Не-white tint: block_lit тинта не читает. Оба случая —
-        // деградация в immediate (ремап UV в атлас + r/g/b/a в вершины). Фоллофф на
-        // immediate-пути не применяется (пер-вершинный градиент недоступен) — тинт плоский.
+        // uvRect != null: the single-VBO path keeps normalized UVs, and block_lit_simple
+        // cannot remap them. Non-white tint: block_lit does not read tint. Both cases -
+        // degrade to immediate (UV remap into the atlas + r/g/b/a into the vertices).
+        // Falloff is not applied on the immediate path (no per-vertex gradient
+        // available) - the tint is flat.
         noteShadowFallback(shadowFallbackReason(uvRect, tint));
         renderQuadsFallback(poseStack, packedLight, blockEntity, bufferSource, uvRect, tint);
     }
@@ -177,18 +178,18 @@ final class MachinePartRenderer {
         return "single=null";
     }
 
-    /** One-shot guard для warn-лога причины shadow-fallback (счётчик — в NucleusDebug). */
+    /** One-shot guard for the shadow-fallback reason warn log (the counter lives in NucleusDebug). */
     private boolean shadowFallbackLogged;
 
-    /** null или белый RGB — passthrough (единственный случай, когда single-VBO путь допустим).
-     *  Альфу не проверяем: она несёт силу эмиссии (heat), а не прозрачность. */
+    /** null or white RGB - passthrough (the only case where the single-VBO path is allowed).
+     *  Alpha is not checked: it carries emission strength (heat), not transparency. */
     private static boolean isWhiteTint(@Nullable float[] tint) {
         if (tint == null) return true;
         return tint.length >= 4
                 && tint[0] == 1f && tint[1] == 1f && tint[2] == 1f;
     }
 
-    /** Ванильный immediate: универсальный последний уровень и ручной резерв из конфига. */
+    /** Vanilla immediate: the universal last tier and the manual config reserve. */
     void renderQuadsFallback(PoseStack poseStack, int packedLight, BlockEntity blockEntity,
                              @Nullable MultiBufferSource bufferSource, @Nullable float[] uvRect,
                              @Nullable float[] tint) {
@@ -196,7 +197,7 @@ final class MachinePartRenderer {
         List<BakedQuad> drawn = quads;
         if (uvRect != null && uvRect.length >= 4
                 && (uvRect[0] != 0f || uvRect[1] != 0f || uvRect[2] != 1f || uvRect[3] != 1f)) {
-            // Развёртывание нормализованных UV в атласный rect скина (редкий путь).
+            // Expand normalized UVs into the skin's atlas rect (rare path).
             drawn = com.hbm_m.client.model.ModelHelper.expandQuadUvsUnit(quads,
                     uvRect[0], uvRect[1], uvRect[2], uvRect[3],
                     quads.get(0).getSprite());
@@ -214,9 +215,10 @@ final class MachinePartRenderer {
         VertexConsumer consumer = bufferSource.getBuffer(alpha < 0.99f ? RenderType.translucent() : RenderType.cutout());
         PoseStack.Pose pose = poseStack.last();
         for (BakedQuad quad : drawn) {
-            // terrain RenderTypes shade из нормалей не считают — запекаем в r/g/b,
-            // иначе immediate-путь рисует машины плоскими (в отличие от VBO-путей).
-            // Тинт части домножается сверху (r/g/b могут быть > 1 — overbright-накал).
+            // terrain RenderTypes do not compute shade from normals - bake it into
+            // r/g/b, otherwise the immediate path draws machines flat (unlike the
+            // VBO paths). The part tint multiplies on top (r/g/b may be > 1 -
+            // overbright glow).
             float shade = RenderHooks.quadShade(quad.getDirection());
             RenderHooks.putBulkData(consumer, pose, quad,
                     shade * tr, shade * tg, shade * tb, alpha, packedLight,
@@ -231,8 +233,8 @@ final class MachinePartRenderer {
     }
 
     /**
-     * Фаза 2 (после MDI): затухающие инстансы прямого пути.
-     * Для MDI-совместимых рендереров — no-op (их fading нарисовал координатор).
+     * Phase 2 (after MDI): fading instances of the direct path.
+     * For MDI-compatible renderers - no-op (their fading was drawn by the coordinator).
      */
     void flushFading(Matrix4f projection) {
         if (instanced != null) {
@@ -240,7 +242,7 @@ final class MachinePartRenderer {
         }
     }
 
-    /** Ключ глобальной сортировки fading-окон (см. InstancedStaticPartRenderer.fadingSortKeyDistSq). */
+    /** Key of the global fading-window sort (see InstancedStaticPartRenderer.fadingSortKeyDistSq). */
     float fadingSortKeyDistSq() {
         return (instanced != null) ? instanced.fadingSortKeyDistSq() : -1f;
     }
@@ -250,7 +252,7 @@ final class MachinePartRenderer {
             instanced.cleanup();
             instanced = null;
         }
-        single = null;   // владелец — MeshRenderCache (чистится им)
+        single = null;   // owned by MeshRenderCache (it cleans it up)
         quads = null;
         attempted = false;
     }

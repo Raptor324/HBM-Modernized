@@ -26,9 +26,9 @@ import com.hbm_m.blockentity.decorations.PedestalBlockEntity;
 
 @OnlyIn(Dist.CLIENT)
 /**
- * Рендер постамента (порт 1.7.10 RenderPedestalTile): предмет парит над
- * постаментом с масштабом 1.5x. Блок-предметы не вращаются и висят чуть
- * выше; предметы-не-блоки медленно вращаются.
+ * Pedestal renderer (port of 1.7.10 RenderPedestalTile): the item floats above
+ * the pedestal at 1.5x scale. Block items do not rotate and sit slightly higher;
+ * non-block items slowly rotate.
  */
 public class PedestalRenderer implements BlockEntityRenderer<PedestalBlockEntity> {
 

@@ -22,11 +22,11 @@ import net.minecraft.world.level.block.Block;
 import org.joml.Matrix4f;
 
 /**
- * Порт металлической части {@code RenderFoundryTank} (1.7.10, ISBRH): расплав в
- * литейном танке — fullbright-квады (оригинал setBrightness(240)), цвет
- * {@code 255-(255-c)*0.7} от moltenColor; уровень 0.75 (+0.125 за каждый танк
- * снизу/сверху в колонне); боковые квады рисуются только там, где стоит соседний
- * танк (сплошная колонна). Оболочка танка — обычная block-модель.
+ * Port of the metal part of {@code RenderFoundryTank} (1.7.10, ISBRH): the melt in a
+ * foundry tank is drawn as fullbright quads (the original used setBrightness(240)), colored
+ * {@code 255-(255-c)*0.7} from moltenColor; level 0.75 (+0.125 per tank below/above
+ * in the column); side quads are drawn only where a neighboring tank stands
+ * (solid column). The tank shell is a regular block model.
  */
 //? if < 1.21.1 {
 @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
@@ -62,7 +62,7 @@ public class FoundryTankRenderer implements com.hbm_m.client.render.HbmBerBounds
         float max = 0.75f + (conNegY ? 0.125f : 0f) + (conPosY ? 0.125f : 0f);
         float levelY = be.getFillLevel() * max;
 
-        // Оригинал: 255-(255-c)*0.7 — «экранное» осветление к белому.
+        // Original: 255-(255-c)*0.7 -- "screen-style" brightening toward white.
         int raw = be.getFillColor() & 0xFFFFFF;
         int cr = 255 - (int) ((255 - (raw >> 16 & 0xFF)) * 0.7f);
         int cg = 255 - (int) ((255 - (raw >> 8 & 0xFF)) * 0.7f);
@@ -75,10 +75,10 @@ public class FoundryTankRenderer implements com.hbm_m.client.render.HbmBerBounds
         Matrix4f m = poseStack.last().pose();
         int fullbright = 0xF000F0;
 
-        // Верхняя поверхность расплава.
+        // Top surface of the melt.
         hQuad(vc, m, 0f, 1f, 0f, 1f, levelY, r, g, b, fullbright);
 
-        // Боковые квады колонны — только на соединениях с соседними танками.
+        // Column side quads -- only where connected to neighboring tanks.
         if (conPosX) vQuad(vc, m, 1f, true, 0f, 1f, levelY, r, g, b, fullbright);
         if (conNegX) vQuad(vc, m, 0f, true, 0f, 1f, levelY, r, g, b, fullbright);
         if (conPosZ) vQuad(vc, m, 1f, false, 0f, 1f, levelY, r, g, b, fullbright);
@@ -95,14 +95,14 @@ public class FoundryTankRenderer implements com.hbm_m.client.render.HbmBerBounds
     }
 
 
-    /** float 0..1 -> byte для int-цвета хуков. */
+    /** Converts a {@code float} in 0..1 to a byte value for the hooks' int color. */
     private static int color(float c) {
         return (int) (c * 255.0f + 0.5f);
     }
 
     /**
-     * Вертикальный квад колонны расплава высотой 0..y.
-     * axisX=true — плоскость X=fixed (грань восток/запад), иначе Z=fixed (север/юг).
+     * Vertical quad of the melt column, height 0..y.
+     * axisX=true -- the plane X=fixed (east/west face), otherwise Z=fixed (north/south).
      */
     private static void vQuad(VertexConsumer vc, Matrix4f m,
                               float fixed, boolean axisX, float u0, float u1, float y,

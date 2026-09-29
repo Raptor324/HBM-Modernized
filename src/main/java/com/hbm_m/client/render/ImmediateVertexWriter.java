@@ -15,13 +15,13 @@ import org.joml.Vector3f;
 import org.joml.Vector4f;
 
 /**
- * Безопасная запись {@code POSITION_TEX_COLOR} для Embeddium {@code SodiumBufferBuilder}:
- * int-цвет, {@code uv} перед {@code color}, либо полный {@code vertex(...)} через MethodHandle.
+ * Safe {@code POSITION_TEX_COLOR} writing for the Embeddium {@code SodiumBufferBuilder}:
+ * int color, {@code uv} before {@code color}, or the full {@code vertex(...)} via a MethodHandle.
  *
- * Горячий путь (билборды ядерного гриба): определение Sodium-буфера выносится наружу
- * один раз на батч ({@link #isSodiumBuffer} + перегрузки с boolean), чтобы не гонять
- * getClass().getName() на каждый угол квада; трансформация матрицы идёт через
- * переиспользуемый scratch-вектор — ноль аллокаций на вершину.
+ * <p>Hot path (mushroom-cloud billboards): the Sodium-buffer check is hoisted out of the
+ * hot loop once per batch ({@link #isSodiumBuffer} plus boolean overloads) to avoid running
+ * getClass().getName() for every quad corner; matrix transformation goes through a
+ * reused scratch vector - zero allocations per vertex.
  */
 
 @OnlyIn(Dist.CLIENT)
@@ -33,12 +33,12 @@ public final class ImmediateVertexWriter {
     private static volatile boolean sodiumResolved = false;
     private static java.lang.invoke.MethodHandle sodiumFullVertex;
 
-    /** Scratch для трансформации матрицы — рендер однопоточный, переиспользуем. */
+    /** Scratch vector for matrix transformation - rendering is single-threaded, so reuse it. */
     private static final Vector4f SCRATCH_POS = new Vector4f();
 
     private ImmediateVertexWriter() {}
 
-    /** Быстрая проверка буфера Embeddium для выноса из горячего цикла. */
+    /** Fast Embeddium buffer check, hoisted out of the hot loop. */
     public static boolean isSodiumBuffer(VertexConsumer consumer) {
         return SODIUM_BUILDER.equals(consumer.getClass().getName());
     }
@@ -63,7 +63,7 @@ public final class ImmediateVertexWriter {
         }
     }
 
-    /** Camera-facing quad (billboard) в локальных координатах эффекта. */
+    /** Camera-facing quad (billboard) in effect-local coordinates. */
     public static void billboardQuad(
             VertexConsumer consumer,
             Matrix4f matrix,
@@ -74,7 +74,7 @@ public final class ImmediateVertexWriter {
         billboardQuad(consumer, isSodiumBuffer(consumer), matrix, cx, cy, cz, left, up, r, g, b, a, u0, v0, u1, v1);
     }
 
-    /** Горячий вариант: sodium-флаг разрешён вызывающим один раз на батч. */
+    /** Hot variant: the sodium flag is resolved by the caller once per batch. */
     public static void billboardQuad(
             VertexConsumer consumer,
             boolean sodium,
@@ -128,7 +128,7 @@ public final class ImmediateVertexWriter {
         }
     }
 
-    /** Quad в мировых/камера-relative координатах (без Matrix4f). */
+    /** Quad in world/camera-relative coordinates (no Matrix4f). */
     public static void worldQuad(
             VertexConsumer consumer,
             float x0, float y0, float z0,
@@ -172,7 +172,7 @@ public final class ImmediateVertexWriter {
                     0.0F, 0.0F, 1.0F);
             return true;
         } catch (Throwable ignored) {
-            // Сбой sodium-пути — падаем обратно на ванильную запись
+            // Sodium path failure - fall back to vanilla writing
             sodiumFullVertex = null;
             return false;
         }
