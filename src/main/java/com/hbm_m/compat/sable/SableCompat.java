@@ -37,6 +37,17 @@ public final class SableCompat {
         return toWorld(level, new Vec3(pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D));
     }
 
+    /**
+     * Sub-level (plot grid) direction -> world direction: the rotation part only, no translation.
+     * {@code pos} must be the plot-grid position the direction originates from (used to find the
+     * ship); identity when it is not on a sub-level or without Sable. Client-side: resolves via
+     * the client companion ({@code getContainingClient}); for server code prefer a sub-level
+     * pose directly (e.g. {@code TurbofanAirflowFrame}).
+     */
+    public static Vec3 toWorldVector(Level level, Vec3 pos, Vec3 dir) {
+        return LOADED ? Impl.toWorldVector(pos, dir) : dir;
+    }
+
     // The companion jar is only on the 1.21.1 compile classpath (Sable has no 1.20.1 build).
     private static final class Impl {
         static Vec3 toWorld(Level level, Vec3 pos) {
@@ -48,6 +59,23 @@ public final class SableCompat {
             }
             *///?} else {
             return pos;
+            //?}
+        }
+
+        static Vec3 toWorldVector(Vec3 pos, Vec3 dir) {
+            //? if >= 1.21.1 {
+            /*try {
+                var access = dev.ryanhcode.sable.companion.SableCompanion.INSTANCE.getContainingClient(
+                        new org.joml.Vector3d(pos.x, pos.y, pos.z));
+                if (access == null) return dir;
+                org.joml.Vector3d out = access.logicalPose()
+                        .transformNormal(new org.joml.Vector3d(dir.x, dir.y, dir.z), new org.joml.Vector3d());
+                return new Vec3(out.x, out.y, out.z);
+            } catch (Throwable t) {
+                return dir;
+            }
+            *///?} else {
+            return dir;
             //?}
         }
     }

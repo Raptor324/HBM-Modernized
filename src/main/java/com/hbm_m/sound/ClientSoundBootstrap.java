@@ -1,25 +1,43 @@
 package com.hbm_m.sound;
 
-import java.lang.reflect.Method;
 import java.util.function.Supplier;
+
+import javax.annotation.Nullable;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
+import com.hbm_m.block.entity.doors.DoorBlockEntity;
+import com.hbm_m.blockentity.machines.MachineChungusBlockEntity;
+import com.hbm_m.blockentity.machines.MachineIndustrialTurbineBlockEntity;
+import com.hbm_m.blockentity.machines.MachineTurbofanBlockEntity;
+
 /**
- * Вызовы {@link ClientSoundManager} через reflection, чтобы common-классы (BlockEntity и т.д.)
- * не имели в constant pool ссылок на клиентские типы — иначе dedicated server падает при загрузке класса.
+ * Делегирование к клиентскому звуковому мосту ({@link IClientSoundAccess}).
+ * Реализация ставится один раз из клиентского сетапа ({@link #install});
+ * dedicated server её не загружает — все методы молча выходят по isClientSide.
+ * <p>
+ * Раньше каждый вызов каждой машины делал рефлексивный
+ * {@code Class.forName + getMethod + invoke} (не кэшированный) — теперь прямой
+ * invokeinterface через установленный мост.
  */
 public final class ClientSoundBootstrap {
 
-    private static final String CLIENT_SOUND_MANAGER = "com.hbm_m.sound.ClientSoundManager";
+    @Nullable
+    private static volatile IClientSoundAccess access;
 
     private ClientSoundBootstrap() {}
 
-    private static Class<?> managerClass() throws ClassNotFoundException {
-        return Class.forName(CLIENT_SOUND_MANAGER);
+    /** Вызывается один раз из клиентского сетапа (ClientSetup). */
+    public static void install(IClientSoundAccess bridge) {
+        access = bridge;
+    }
+
+    @Nullable
+    public static IClientSoundAccess peek() {
+        return access;
     }
 
     private static boolean isClientSide(Level level) {
@@ -27,99 +45,79 @@ public final class ClientSoundBootstrap {
     }
 
     public static void playOneShotSound(Level level, BlockPos pos, SoundEvent sound, float volume) {
-        if (!isClientSide(level) || sound == null) {
+        if (!isClientSide(level) || sound == null || access == null) {
             return;
         }
-        try {
-            Method m = managerClass().getMethod("playOneShotSound", BlockPos.class, SoundEvent.class, float.class);
-            m.invoke(null, pos, sound, volume);
-        } catch (ReflectiveOperationException e) {
-            throw new RuntimeException(e);
-        }
+        access.playOneShotSound(pos, sound, volume);
     }
 
     public static void stopSound(Level level, BlockPos pos) {
-        if (!isClientSide(level)) {
+        if (!isClientSide(level) || access == null) {
             return;
         }
-        try {
-            Method m = managerClass().getMethod("stopSound", BlockPos.class);
-            m.invoke(null, pos);
-        } catch (ReflectiveOperationException e) {
-            throw new RuntimeException(e);
-        }
+        access.stopSound(pos);
     }
 
     public static void stopSpecificSound(Level level, BlockPos pos, String soundType) {
-        if (!isClientSide(level)) {
+        if (!isClientSide(level) || access == null) {
             return;
         }
-        try {
-            Method m = managerClass().getMethod("stopSpecificSound", BlockPos.class, String.class);
-            m.invoke(null, pos, soundType);
-        } catch (ReflectiveOperationException e) {
-            throw new RuntimeException(e);
-        }
+        access.stopSpecificSound(pos, soundType);
     }
 
     public static void updateDoorSoundRaw(Level level, BlockPos pos, String soundType, boolean isMoving, Supplier<?> loopSoundSupplier) {
-        if (!isClientSide(level)) {
+        if (!isClientSide(level) || access == null) {
             return;
         }
-        try {
-            Method m = managerClass().getMethod(
-                "updateDoorSoundRaw",
-                BlockPos.class,
-                String.class,
-                boolean.class,
-                Supplier.class
-            );
-            m.invoke(null, pos, soundType, isMoving, loopSoundSupplier);
-        } catch (ReflectiveOperationException e) {
-            throw new RuntimeException(e);
-        }
+        access.updateDoorSoundRaw(pos, soundType, isMoving, loopSoundSupplier);
     }
 
     /**
      * Speed-driven loop ({@code AudioWrapper} in the original): pitch and volume follow
-     * {@code speed} (0..1) every tick, {@code <= 0} ends it. The instance comes from
-     * {@code client.sound.MachineLoopSoundFactory} by reflection.
+     * {@code speed} (0..1) every tick, {@code <= 0} ends it.
      */
     public static void updateMachineLoop(BlockEntity be, boolean shouldBePlaying, SoundEvent sound, double yOffset,
                                          double maxDistance, java.util.function.ToDoubleFunction<BlockEntity> speed) {
-        if (be == null || be.getLevel() == null || !be.getLevel().isClientSide()) {
+        if (be == null || be.getLevel() == null || !be.getLevel().isClientSide() || access == null) {
             return;
         }
-        try {
-            Class<?> factory = Class.forName("com.hbm_m.client.sound.MachineLoopSoundFactory");
-            // Out of range the instance would stop itself on its first tick and be recreated here
-            // on the next one; the original does not even start it then.
-            boolean playing = shouldBePlaying && (boolean) factory
-                    .getMethod("inRange", BlockEntity.class, double.class, double.class)
-                    .invoke(null, be, yOffset, maxDistance);
-            updateSound(be, playing, () -> {
-                try {
-                    return factory.getMethod("create", BlockEntity.class, SoundEvent.class, double.class, double.class,
-                                    java.util.function.ToDoubleFunction.class)
-                            .invoke(null, be, sound, yOffset, maxDistance, speed);
-                } catch (ReflectiveOperationException e) {
-                    throw new RuntimeException(e);
-                }
-            });
-        } catch (ReflectiveOperationException e) {
-            throw new RuntimeException(e);
-        }
+        // Out of range the instance would stop itself on its first tick and be recreated here
+        // on the next one; the original does not even start it then.
+        boolean playing = shouldBePlaying && access.machineLoopInRange(be, yOffset, maxDistance);
+        updateSound(be, playing, () -> access.createMachineLoop(be, sound, yOffset, maxDistance, speed));
     }
 
     public static void updateSound(BlockEntity be, boolean shouldBePlaying, Supplier<?> soundSupplier) {
-        if (be == null || be.getLevel() == null || !be.getLevel().isClientSide()) {
+        updateSound(be, shouldBePlaying, soundSupplier, IClientSoundAccess.DEFAULT_AUDIBILITY_RANGE);
+    }
+
+    /** Distance-gated variant: machines with a custom hearing radius pass their own range. */
+    public static void updateSound(BlockEntity be, boolean shouldBePlaying, Supplier<?> soundSupplier, double maxDistance) {
+        if (be == null || be.getLevel() == null || !be.getLevel().isClientSide() || access == null) {
             return;
         }
-        try {
-            Method m = managerClass().getMethod("updateSound", BlockEntity.class, boolean.class, Supplier.class);
-            m.invoke(null, be, shouldBePlaying, soundSupplier);
-        } catch (ReflectiveOperationException e) {
-            throw new RuntimeException(e);
-        }
+        access.updateSound(be, shouldBePlaying, soundSupplier, maxDistance);
+    }
+
+    // ── Loop-фабрики станков (возвращают opaque инстанс звука для Supplier) ──
+
+    public static Object createDoorLoop(DoorBlockEntity be, SoundEvent sound) {
+        IClientSoundAccess a = access;
+        return a == null ? null : a.createDoorLoop(be, sound);
+    }
+
+    public static Object createChungusLoop(MachineChungusBlockEntity be, SoundEvent sound) {
+        IClientSoundAccess a = access;
+        return a == null ? null : a.createChungusLoop(be, sound);
+    }
+
+    public static Object createTurbineLoop(MachineIndustrialTurbineBlockEntity be, SoundEvent sound) {
+        IClientSoundAccess a = access;
+        return a == null ? null : a.createTurbineLoop(be, sound);
+    }
+
+    public static Object createTurbofanLoop(MachineTurbofanBlockEntity be) {
+        IClientSoundAccess a = access;
+        return a == null ? null : a.createTurbofanLoop(be);
     }
 }

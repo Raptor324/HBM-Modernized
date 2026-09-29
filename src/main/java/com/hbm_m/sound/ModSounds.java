@@ -112,6 +112,10 @@ public class ModSounds {
     public static final RegistrySupplier<SoundEvent> LARGE_TURBINE = registerSoundEvents("block.large_turbine");
     public static final RegistrySupplier<SoundEvent> CHUNGUS_TURBINE = registerSoundEvents("block.chungus_turbine");
 
+    // Оригинал: hbm:block.turbofanOperate (цикл) и block.damage (набор dam1-4, перегрузка форсажа).
+    public static final RegistrySupplier<SoundEvent> TURBOFAN_OPERATE = registerSoundEvents("block.turbofan_operate");
+    public static final RegistrySupplier<SoundEvent> MACHINE_DAMAGE = registerSoundEvents("block.machine_damage");
+
     // Fusionsreaktor (Original: hbm:block.boilerGroan / block.fel / block.fusionReactorSpin)
     public static final RegistrySupplier<SoundEvent> BOILER_GROAN = registerSoundEvents("block.boiler_groan");
     public static final RegistrySupplier<SoundEvent> FEL_LOOP = registerSoundEvents("block.fel");

@@ -55,6 +55,8 @@ public final class GameTestRegistration {
         event.register(CableGameTest.class);
         event.register(ArmorTableGameTest.class);
         event.register(ContraptionMoveGameTest.class);
+        event.register(TurbofanGameTest.class);
+        event.register(TurbofanIntegrationGameTest.class);
     }
     //?} elif neoforge {
     /*@SubscribeEvent
@@ -74,6 +76,8 @@ public final class GameTestRegistration {
         event.register(CableGameTest.class);
         event.register(ArmorTableGameTest.class);
         event.register(ContraptionMoveGameTest.class);
+        event.register(TurbofanGameTest.class);
+        event.register(TurbofanIntegrationGameTest.class);
     }
      *///?}
 }

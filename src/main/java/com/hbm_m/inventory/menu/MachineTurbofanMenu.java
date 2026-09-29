@@ -14,20 +14,17 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
-//? if forge {
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-//?}
 
 /**
- * 1:1-Port der Slot-Koordinaten aus {@code ContainerMachineTurbofan} (1.7.10-Original), abzueglich
- * des Upgrade-Slots (Original-Slot 2 bei 98,71) - dieser Block hat kein Upgrade-System, siehe
- * {@link MachineTurbofanBlockEntity}. Die verbleibenden 4 Original-Slots behalten ihre Original-
- * Koordinaten:
+ * 1:1-Port der Slot-Koordinaten aus {@code ContainerMachineTurbofan} (1.7.10-Original). Die
+ * Upgrade- und Identifier-Slots behalten ihre Original-Koordinaten; die Indizes verschoben
+ * (Upgrade = Original-Slot 2 -> hier Slot 4), um alte gespeicherte Inventare nicht zu brechen:
  * <pre>
- * Original-Slot 0 (Treibstoff-Behaelter)   -> hier Slot 0, (17, 17)
+ * Original-Slot 0 (Treibstoff-Behaelter)     -> hier Slot 0, (17, 17)
  * Original-Slot 1 (Leer-Behaelter, TakeOnly) -> hier Slot 1, (17, 53)
- * Original-Slot 3 (Batterie)               -> hier Slot 2, (143, 71)
- * Original-Slot 4 (Fluid-Identifier)       -> hier Slot 3, (44, 71)
+ * Original-Slot 2 (Upgrade AFTERBURN/flame_pony) -> hier Slot 4, (98, 71)
+ * Original-Slot 3 (Batterie)                 -> hier Slot 2, (143, 71)
+ * Original-Slot 4 (Fluid-Identifier)         -> hier Slot 3, (44, 71)
  * </pre>
  */
 public class MachineTurbofanMenu extends AbstractContainerMenu {
@@ -94,15 +91,14 @@ public class MachineTurbofanMenu extends AbstractContainerMenu {
         return MenuReach.stillValid(player, blockEntity);
     }
 
+    /** Оригинал: ItemMachineUpgrade и flame_pony идут в слот форсажа. */
+    private static boolean isAfterburnerUpgrade(ItemStack stack) {
+        return stack.getItem() instanceof com.hbm_m.item.industrial.ItemMachineUpgrade
+                || stack.is(com.hbm_m.item.ModItems.FLAME_PONY.get());
+    }
+
     private static boolean isEnergySource(ItemStack stack) {
-        if (ItemEnergyAccess.getHbmProvider(stack).isPresent()) return true;
-        //? if forge {
-        if (stack.getCapability(ForgeCapabilities.ENERGY).isPresent()) return true;
-        //?}
-        //? if neoforge {
-        /*if (stack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM) != null) return true;
-        *///?}
-        return false;
+        return ItemEnergyAccess.isEnergySource(stack);
     }
 
     @Override
@@ -121,6 +117,10 @@ public class MachineTurbofanMenu extends AbstractContainerMenu {
             } else {
                 if (isEnergySource(slotStack)) {
                     if (!this.moveItemStackTo(slotStack, SLOT_BATTERY, SLOT_BATTERY + 1, false)) {
+                        return ItemStack.EMPTY;
+                    }
+                } else if (isAfterburnerUpgrade(slotStack)) {
+                    if (!this.moveItemStackTo(slotStack, SLOT_UPGRADE, SLOT_UPGRADE + 1, false)) {
                         return ItemStack.EMPTY;
                     }
                 } else if (slotStack.getItem() instanceof IItemFluidIdentifier) {

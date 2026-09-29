@@ -87,10 +87,18 @@ public class ParticleEngineNT {
         if (com.hbm_m.compat.sable.SableCompat.isLoaded()) {
             net.minecraft.world.phys.Vec3 world = com.hbm_m.compat.sable.SableCompat.toWorld(effect.level, effect.x, effect.y, effect.z);
             if (world.x != effect.x || world.y != effect.y || world.z != effect.z) {
+                // Скорость задана в осях корабля (plot-сетки): без поворота вместе с позицией
+                // пламя форсажа на повёрнутом судне улетает не в ту сторону.
+                net.minecraft.world.phys.Vec3 motion = com.hbm_m.compat.sable.SableCompat.toWorldVector(
+                        effect.level, new net.minecraft.world.phys.Vec3(effect.x, effect.y, effect.z),
+                        new net.minecraft.world.phys.Vec3(effect.xd, effect.yd, effect.zd));
                 effect.setPos(world.x, world.y, world.z);
                 effect.xo = world.x;
                 effect.yo = world.y;
                 effect.zo = world.z;
+                effect.xd = motion.x;
+                effect.yd = motion.y;
+                effect.zd = motion.z;
             }
         }
         // В нормальном режиме = текущий тик; в режиме отката новые частицы

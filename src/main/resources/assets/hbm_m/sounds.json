@@ -966,5 +966,22 @@
       "hbm_m:weapon/spark_shoot2",
       "hbm_m:weapon/spark_shoot3"
     ]
+  },
+  "block.turbofan_operate": {
+    "category": "blocks",
+    "sounds": [
+      "hbm_m:block/turbofan_operate"
+    ],
+    "attenuation_distance": 64,
+    "streamed": true
+  },
+  "block.machine_damage": {
+    "category": "blocks",
+    "sounds": [
+      "hbm_m:block/dam1",
+      "hbm_m:block/dam2",
+      "hbm_m:block/dam3",
+      "hbm_m:block/dam4"
+    ]
   }
 }

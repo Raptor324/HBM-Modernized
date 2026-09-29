@@ -20,7 +20,8 @@
     "SubLevelRelinkMixin",
     "SubLevelRelocateMixin",
     "SubLevelAssembleExpansionMixin",
-    "HoneyGlueSelectionExpansionMixin"
+    "HoneyGlueSelectionExpansionMixin",
+    "compat.sable.TurbofanSableMixin"
   ],
   "server": [
   ],

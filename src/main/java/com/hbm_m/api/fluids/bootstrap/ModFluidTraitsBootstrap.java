@@ -145,8 +145,10 @@ public final class ModFluidTraitsBootstrap {
         t(ModFluids.GASOLINE_LEADED, null, LQ, P_FUEL_LEADED);
         // AERO-Grade: 1:1-Vorbedingung fuer den Turbofan (nur AERO-Combustibles verbrennt er, siehe
         // TileEntityMachineTurbofan im Original).
-        t(ModFluids.KEROSENE, null, LQ, P_FUEL, new FT_Combustible(FuelGrade.AERO, 4_000));
-        t(ModFluids.KEROSENE_REFORM, null, LQ, P_FUEL, new FT_Combustible(FuelGrade.AERO, 4_000));
+        // 1.7.10: registerCalculatedFuel(KEROSENE, ...) = 3_850_000 HE/ведро (100k/0.09*1*2*1.1*1.05*1.5);
+        // KEROSENE_REFORM = FT_Flammable(KEROSENE) 2_560_000 * complexityReform 2.5 = 6_400_000.
+        t(ModFluids.KEROSENE, null, LQ, P_FUEL, new FT_Combustible(FuelGrade.AERO, 3_850_000));
+        t(ModFluids.KEROSENE_REFORM, null, LQ, P_FUEL, new FT_Combustible(FuelGrade.AERO, 6_400_000));
         t(ModFluids.HEAVYOIL_VACUUM, null, LQ, VIS, P_OIL);
         t(ModFluids.LIGHTOIL, null, LQ, P_FUEL);
         t(ModFluids.LIGHTOIL_CRACK, null, LQ, P_FUEL);

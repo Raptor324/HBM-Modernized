@@ -16,12 +16,29 @@ import java.util.Set;
 public final class HbmMixinConfigPlugin implements IMixinConfigPlugin {
 
     private static final String CLIENT_PACKAGE = "com.hbm_m.mixin.client.";
+    /** Compat-миксины, применяемые только при наличии целевого мода в рантайме. */
+    private static final String SABLE_COMPAT_PACKAGE = "com.hbm_m.mixin.compat.sable.";
 
     private static boolean dedicatedServer() {
         //? if forge {
         return net.minecraftforge.fml.loading.FMLEnvironment.dist.isDedicatedServer();
         //?} elif neoforge {
         /*return net.neoforged.fml.loading.FMLEnvironment.dist.isDedicatedServer();
+        *///?} else {
+        /*return false;
+        *///?}
+    }
+
+    private static boolean sableLoaded() {
+        // ВАЖНО: shouldApplyMixin вызывается при загрузке конфига миксинов, КОГДА ModList ещё
+        // не построен (решение принимается до конструирования модов) - ModList.get() тут null
+        // и гейт молча скипал миксин навсегда. LoadingModList доступен сразу после discovery.
+        //? if forge {
+        var loading = net.minecraftforge.fml.loading.FMLLoader.getLoadingModList();
+        return loading != null && loading.getModFileById("sable") != null;
+        //?} elif neoforge {
+        /*var loading = net.neoforged.fml.loading.FMLLoader.getLoadingModList();
+        return loading != null && loading.getModFileById("sable") != null;
         *///?} else {
         /*return false;
         *///?}
@@ -37,7 +54,14 @@ public final class HbmMixinConfigPlugin implements IMixinConfigPlugin {
 
     @Override
     public boolean shouldApplyMixin(String targetClassName, String mixinClassName) {
-        return !(mixinClassName.startsWith(CLIENT_PACKAGE) && dedicatedServer());
+        if (mixinClassName.startsWith(CLIENT_PACKAGE) && dedicatedServer()) {
+            return false;
+        }
+        // Мод опционален: без него миксин, добавляющий интерфейсы мода в наш класс, сломал бы загрузку BE.
+        if (mixinClassName.startsWith(SABLE_COMPAT_PACKAGE)) {
+            return sableLoaded();
+        }
+        return true;
     }
 
     @Override

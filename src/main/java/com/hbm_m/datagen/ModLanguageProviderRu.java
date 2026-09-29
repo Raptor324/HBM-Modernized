@@ -1939,7 +1939,9 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add(ModBlocks.CORE_INJECTOR.get(), "Инжектор ядра (WIP)");
         add(ModBlocks.CORE_RECEIVER.get(), "Приемник ядра (WIP)");
         add(ModBlocks.VACUUM_DISTILL.get(), "Вакуумная дистилляция (WIP)");
-        add(ModBlocks.TURBOFAN.get(), "Турбовентилятор (WIP)");
+        add(ModBlocks.TURBOFAN.get(), "Турбовентилятор");
+        add("desc.hbm_m.turbofan.efficiency", "Расход топлива:");
+        add("desc.hbm_m.turbofan.aviation", "-Авиационный: 100%");
 
         // --- WIP Machines (3D OBJ models) ---
         add(ModBlocks.AMMO_PRESS.get(), "Пресс для патронов");

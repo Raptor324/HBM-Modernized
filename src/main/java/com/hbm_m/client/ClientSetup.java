@@ -73,6 +73,7 @@ import com.hbm_m.client.render.implementations.MachineOreSlopperRenderer;
 import com.hbm_m.client.render.implementations.MachineArcFurnaceRenderer;
 import com.hbm_m.client.render.implementations.SoyuzRocketRenderer;
 import com.hbm_m.client.render.implementations.MachineCrystallizerRenderer;
+import com.hbm_m.client.render.implementations.MachineTurbofanRenderer;
 import com.hbm_m.client.render.implementations.MachineHydraulicFrackiningTowerRenderer;
 import com.hbm_m.client.render.implementations.SoyuzLauncherRenderer;
 import com.hbm_m.client.render.implementations.MachinePressRenderer;
@@ -261,6 +262,10 @@ public class ClientSetup {
         PowerArmorHardLandingCameraShakeClient.initClient();
         PowerArmorSounds.register();
         PowerArmorStepSoundHandler.initClient();
+
+        // Мост клиентских звуков: одна установка вместо рефлексии на каждый вызов
+        // (все машины: циклы, дверные звуки, one-shot, танк/турбовентилятор).
+        com.hbm_m.sound.ClientSoundBootstrap.install(new com.hbm_m.client.sound.ClientSoundBridge());
 
         // MOTD при входе в мир — решение принимает клиент (client.json -> enableMOTD).
         com.hbm_m.client.ClientMotdHandler.register();
@@ -595,6 +600,7 @@ public class ClientSetup {
         BlockEntityRenderers.register(ModBlockEntities.PEDESTAL_BE.get(), com.hbm_m.client.render.implementations.PedestalRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.DECO_LOOT_BE.get(), com.hbm_m.client.render.implementations.DecoLootRenderer::new);
         MachinePressRenderer.register();
+        MachineTurbofanRenderer.register();
         MachineChemicalPlantRenderer.register();
         MachineChemicalFactoryRenderer.register();
         MachineZirnoxRenderer.register();

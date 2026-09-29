@@ -3,39 +3,35 @@ package com.hbm_m.inventory.gui;
 import com.hbm_m.blockentity.machines.MachineTurbofanBlockEntity;
 import com.hbm_m.client.GuiCompat;
 import com.hbm_m.inventory.menu.MachineTurbofanMenu;
-import com.hbm_m.lib.RefStrings;
 import com.hbm_m.util.EnergyFormatter;
 
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Inventory;
 
 /**
- * 1:1-Port von {@code GUIMachineTurbofan} (1.7.10-Original): imageWidth/imageHeight (176x203) und
- * Label-Positionen 1:1 uebernommen. Original nutzt {@code GUIElements}-Fluid-Gauges fuer den
- * Kerosin-Tank und drawTexturedModalRect-UVs (176+16, 52-i) fuer den Energie-Balken; die Original-
- * Textur existiert 1:1 unter {@code textures/gui/generators/gui_turbofan.png}, daher wird der
- * Energie-Balken exakt wie im Original per Textur-UV geblittet. Der Kerosin-Tankfuellstand
- * verwendet - analog zum bereits portierten Combustion Engine - ein Fuellrechteck statt der
- * komplexen Original-Gauge-Klasse (kein 1:1-Aequivalent in diesem Repo). Afterburner-Anzeige und
- * Blut-Gauge des Originals entfallen (siehe {@link MachineTurbofanBlockEntity}-Klassenkommentar:
- * kein Upgrade-System, kein Blut-Fluid an diesem Block).
+ * 1:1-порт {@code GUIMachineTurbofan} (1.7.10): 176x203, энергетический бар
+ * (UV 192, снизу вверх), иконки форсажа над слотом улучшений (атлас x=176),
+ * круглый датчик крови при showBlood (13 кадров), бак отрисовывается
+ * {@code FluidTank.renderTank} (текстура жидкости, тайлинг 16x16 - как в оригинале).
  */
 public class GUIMachineTurbofan extends AbstractContainerScreen<MachineTurbofanMenu> {
 
     private static final ResourceLocation TEXTURE =
-            ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/generators/gui_turbofan.png");
+            ResourceLocation.fromNamespaceAndPath(com.hbm_m.lib.RefStrings.MODID, "textures/gui/generators/gui_turbofan.png");
+    private static final ResourceLocation SMALL_ROUND =
+            ResourceLocation.fromNamespaceAndPath(com.hbm_m.lib.RefStrings.MODID, "textures/gui/gauges/small_round.png");
 
     private static final int TANK_X = 35;
     private static final int TANK_Y = 17;
     private static final int TANK_W = 34;
     private static final int TANK_H = 52;
-    private static final int KEROSENE_COLOR = 0xFFFFA5D2;
 
     private static final int POWER_X = 143;
-    private static final int POWER_Y = 17;
+    private static final int POWER_BOTTOM = 69;
     private static final int POWER_H = 52;
 
     private final MachineTurbofanBlockEntity turbofan;
@@ -52,24 +48,34 @@ public class GUIMachineTurbofan extends AbstractContainerScreen<MachineTurbofanM
     protected void renderBg(GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
         int x = leftPos;
         int y = topPos;
-        guiGraphics.blit(TEXTURE, x, y, 0, 0, imageWidth, imageHeight);
+        guiGraphics.blit(TEXTURE, x, y, 0, 0, imageWidth, imageHeight, 256, 256);
         // тайл может отсутствовать в реплее Flashback
         if (turbofan == null) return;
 
-        // Energie-Balken: 1:1-Original-UV (drawTexturedModalRect(guiLeft+143, guiTop+69-i, 176+16, 52-i, 16, i))
+        // Энергетический бар: 1:1-оригинальные UV (176+16, 52-i).
         long maxPower = turbofan.getMaxEnergyStored();
         int power = maxPower > 0 ? (int) (turbofan.getEnergyStored() * POWER_H / maxPower) : 0;
-        if (power > POWER_H) power = POWER_H;
+        power = Mth.clamp(power, 0, POWER_H);
         if (power > 0) {
-            guiGraphics.blit(TEXTURE, x + POWER_X, y + POWER_Y + (POWER_H - power), 192, POWER_H - power, 16, power);
+            guiGraphics.blit(TEXTURE, x + POWER_X, y + POWER_BOTTOM - power, 192, POWER_H - power, 16, power, 256, 256);
         }
 
-        // Kerosin-Tank: Fuellrechteck-Fallback (Original nutzt GUIElements.Gauge, hier nicht 1:1 verfuegbar)
-        var tank = turbofan.getTank();
-        int fuelH = tank.getMaxFill() > 0 ? tank.getFill() * TANK_H / tank.getMaxFill() : 0;
-        if (fuelH > 0) {
-            guiGraphics.fill(x + TANK_X, y + TANK_Y + (TANK_H - fuelH), x + TANK_X + TANK_W, y + TANK_Y + TANK_H, KEROSENE_COLOR);
+        // Иконки форсажа: кадр min(afterburner, 6) - 1 из атласа (176, кадр*16).
+        if (turbofan.getAfterburner() > 0) {
+            int frame = Math.min(turbofan.getAfterburner(), 6) - 1;
+            guiGraphics.blit(TEXTURE, x + 98, y + 44, 176, frame * 16, 16, 16, 256, 256);
         }
+
+        // Датчик крови: 13 кадров 18x18, показывается после первой добытой крови.
+        if (turbofan.isShowingBlood()) {
+            var blood = turbofan.getBloodTank();
+            int frame = blood.getMaxFill() <= 0 ? 0
+                    : Mth.clamp((int) Math.round(12.0D * blood.getFill() / blood.getMaxFill()), 0, 12);
+            guiGraphics.blit(SMALL_ROUND, x + 97, y + 16, 0, frame * 18, 18, 18, 18, 234);
+        }
+
+        // Бак керосина: 1:1 renderTank (текстура жидкости, тайлинг 16x16).
+        turbofan.getTank().renderTank(guiGraphics, x + TANK_X, y + TANK_Y, TANK_W, TANK_H);
     }
 
     @Override
@@ -84,14 +90,17 @@ public class GUIMachineTurbofan extends AbstractContainerScreen<MachineTurbofanM
         super.render(guiGraphics, mouseX, mouseY, partialTick);
         // тайл может отсутствовать в реплее Flashback
         if (turbofan != null) {
-        if (isPointInRect(POWER_X, POWER_Y, 16, POWER_H, mouseX, mouseY)) {
-            guiGraphics.renderTooltip(font, Component.translatable("gui.hbm_m.energy",
-                    EnergyFormatter.format(turbofan.getEnergyStored()), EnergyFormatter.format(turbofan.getMaxEnergyStored())), mouseX, mouseY);
-        }
-        if (isPointInRect(TANK_X, TANK_Y, TANK_W, TANK_H, mouseX, mouseY)) {
-            var tank = turbofan.getTank();
-            guiGraphics.renderTooltip(font, Component.literal(tank.getFill() + " / " + tank.getMaxFill() + " mB"), mouseX, mouseY);
-        }
+            // Тултипы баков рисует сам FluidTank (оригинальный renderTankInfo).
+            turbofan.getTank().renderTankInfo(guiGraphics, font, mouseX, mouseY,
+                    leftPos + TANK_X, topPos + TANK_Y, TANK_W, TANK_H);
+            if (turbofan.isShowingBlood() && isPointInRect(97, 16, 18, 18, mouseX, mouseY)) {
+                var blood = turbofan.getBloodTank();
+                guiGraphics.renderTooltip(font, Component.literal(blood.getFill() + " / " + blood.getMaxFill() + " mB"), mouseX, mouseY);
+            }
+            if (isPointInRect(POWER_X, 17, 16, POWER_H, mouseX, mouseY)) {
+                guiGraphics.renderTooltip(font, Component.translatable("gui.hbm_m.energy",
+                        EnergyFormatter.format(turbofan.getEnergyStored()), EnergyFormatter.format(turbofan.getMaxEnergyStored())), mouseX, mouseY);
+            }
         }
 
         renderTooltip(guiGraphics, mouseX, mouseY);

@@ -31,6 +31,26 @@ public class ClientSoundManager {
     }
 
     public static void updateDoorSound(BlockPos pos, String soundType, boolean isMoving, Supplier<AbstractTickableSoundInstance> loopSoundSupplier) {
+        updateDoorSound(pos, soundType, isMoving, loopSoundSupplier, IClientSoundAccess.DEFAULT_AUDIBILITY_RANGE);
+    }
+
+    /**
+     * Distance-gated funnel for ALL machine/door loops: while the local player is
+     * beyond {@code maxDistance} the loop is not created (and an existing one is
+     * stopped). Beyond that range the sound is inaudible anyway, but on machine
+     * farms thousands of far-away tickers kept OpenAL channels alive and stalled
+     * the render thread in {@code SoundEngine.play}. Range is honored in world
+     * coordinates (Sable ships relocate blocks, so raw BE position would not do).
+     * Machines with a non-default hearing radius (turbofan) pass their own range.
+     */
+    public static void updateDoorSound(BlockPos pos, String soundType, boolean isMoving,
+                                       Supplier<AbstractTickableSoundInstance> loopSoundSupplier, double maxDistance) {
+        if (!isAudible(pos, maxDistance)) {
+            if (isMoving) {
+                stopSpecificSound(pos, soundType);
+            }
+            return;
+        }
         String key = getKey(pos, soundType);
         if (isMoving) {
             ACTIVE_SOUNDS.compute(key, (k, existing) -> {
@@ -89,6 +109,23 @@ public class ClientSoundManager {
 
     // Метод для старых машин
     public static void updateSound(BlockEntity be, boolean shouldBePlaying, Supplier<? extends AbstractTickableSoundInstance> soundSupplier) {
-        updateDoorSound(be.getBlockPos(), "machine", shouldBePlaying, (Supplier<AbstractTickableSoundInstance>) soundSupplier);
+        updateSound(be, shouldBePlaying, soundSupplier, IClientSoundAccess.DEFAULT_AUDIBILITY_RANGE);
+    }
+
+    public static void updateSound(BlockEntity be, boolean shouldBePlaying,
+                                   Supplier<? extends AbstractTickableSoundInstance> soundSupplier, double maxDistance) {
+        updateDoorSound(be.getBlockPos(), "machine", shouldBePlaying, (Supplier<AbstractTickableSoundInstance>) soundSupplier, maxDistance);
+    }
+
+    /** Player-distance test in world coordinates (Sable ship positions converted). */
+    private static boolean isAudible(BlockPos pos, double maxDistance) {
+        Minecraft mc = Minecraft.getInstance();
+        net.minecraft.client.player.LocalPlayer player = mc.player;
+        if (player == null || mc.level == null) {
+            return false;
+        }
+        net.minecraft.world.phys.Vec3 world = com.hbm_m.compat.sable.SableCompat.toWorld(
+                mc.level, pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D);
+        return player.distanceToSqr(world.x, world.y, world.z) < maxDistance * maxDistance;
     }
 }
