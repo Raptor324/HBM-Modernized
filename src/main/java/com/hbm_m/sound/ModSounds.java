@@ -151,7 +151,6 @@ public class ModSounds {
     public static final RegistrySupplier<SoundEvent> SLIDING_DOOR_OPENING = registerSoundEvents("block.sliding_door_opening");
     public static final RegistrySupplier<SoundEvent> SLIDING_DOOR_SHUT = registerSoundEvents("block.sliding_door_shut");
     public static final RegistrySupplier<SoundEvent> TRANSITION_SEAL_OPEN = registerSoundEvents("block.transition_seal_open");
-    public static final RegistrySupplier<SoundEvent> TRANSITION_SEAL_CLOSE = registerSoundEvents("block.transition_seal_close");
     public static final RegistrySupplier<SoundEvent> WGH_START = registerSoundEvents("block.wgh_start");
     public static final RegistrySupplier<SoundEvent> WGH_STOP = registerSoundEvents("block.wgh_stop");
     public static final RegistrySupplier<SoundEvent> VAULT_SCRAPE = registerSoundEvents("block.vault_scrape");

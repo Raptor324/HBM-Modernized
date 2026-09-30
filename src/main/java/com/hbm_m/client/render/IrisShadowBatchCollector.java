@@ -135,8 +135,9 @@ public final class IrisShadowBatchCollector {
     }
 
     /**
-     * Universal part instance recording: 12-float 3x4 affine transform matrix
-     * supporting translation, rotation, and non-uniform scaling.
+     * Universal part instance recording: the affine pose is decomposed into
+     * pos + normalized rotation (the record layout the shared instance VAO reads);
+     * non-uniform scale is dropped, matching the main-pass instanced format.
      */
     public static void record(InstancedStaticPartRenderer renderer, Matrix4f fullTransform,
                               float[] bboxMin, float[] cornerUV16) {
@@ -185,6 +186,10 @@ public final class IrisShadowBatchCollector {
         record(renderer, mat, bboxMin, cornerUV16);
     }
 
+    /** Render-thread-only scratch for the affine → pos/quat decomposition (hot record path). */
+    private static final Vector3f SCRATCH_POS = new Vector3f();
+    private static final Quaternionf SCRATCH_ROT = new Quaternionf();
+
     private static void appendRecord(Entry e, InstancedStaticPartRenderer renderer, Matrix4f fullTransform,
                                      float[] bboxMin, float[] cornerUV16) {
         if ((e.count + 1) * FLOATS_PER_INSTANCE > e.data.capacity()) {
@@ -195,14 +200,25 @@ public final class IrisShadowBatchCollector {
             e.data = grown;
         }
         FloatBuffer d = e.data;
-        // 12-float 3x4 affine matrix (row-major: row0, row1, row2)
-        // Row 0: m00, m10, m20, tx
-        d.put(fullTransform.m00()).put(fullTransform.m10()).put(fullTransform.m20()).put(fullTransform.m30());
-        // Row 1: m01, m11, m21, ty
-        d.put(fullTransform.m01()).put(fullTransform.m11()).put(fullTransform.m21()).put(fullTransform.m31());
-        // Row 2: m02, m12, m22, tz
-        d.put(fullTransform.m02()).put(fullTransform.m12()).put(fullTransform.m22()).put(fullTransform.m32());
-        d.put(0.0f); // Float 12: bone id / extra
+        // Floats 0..13: the SAME instance layout the main pass writes and the shared
+        // instance VAO + block_lit_instanced_iris.vsh read: pos @0, quat @3, bboxMin @7,
+        // bboxSize.xyz @10, fade @13. Writing a raw 3x4 matrix here made Tier 2
+        // (drawShadowInstances) interpret matrix elements as position and quaternion -
+        // shattered machines in the shadow map (Tier 1/3 read the matrix form, which is
+        // why the breakage only showed with GPU Bake off + Shadow Batch on).
+        SCRATCH_POS.set(fullTransform.m30(), fullTransform.m31(), fullTransform.m32());
+        fullTransform.getNormalizedRotation(SCRATCH_ROT);
+        d.put(SCRATCH_POS.x).put(SCRATCH_POS.y).put(SCRATCH_POS.z);
+        d.put(SCRATCH_ROT.x).put(SCRATCH_ROT.y).put(SCRATCH_ROT.z).put(SCRATCH_ROT.w);
+        if (bboxMin != null && bboxMin.length >= 6) {
+            d.put(bboxMin[0]).put(bboxMin[1]).put(bboxMin[2]);
+            d.put(bboxMin[3] - bboxMin[0]).put(bboxMin[4] - bboxMin[1]).put(bboxMin[5] - bboxMin[2]);
+        } else {
+            // Custom-mesh records carry no bbox; a unit box keeps the light-interp
+            // weights finite (light is zeros in the shadow pass anyway).
+            d.put(0.0f).put(0.0f).put(0.0f);
+            d.put(1.0f).put(1.0f).put(1.0f);
+        }
         d.put(1.0f); // Float 13: fade alpha (1.0)
         // Floats 14..29 (16 floats): corner light / padding
         if (cornerUV16 != null && cornerUV16.length >= 16) {
@@ -331,6 +347,8 @@ public final class IrisShadowBatchCollector {
                         return;
                     }
                     final Matrix4f recordPose = new Matrix4f();
+                    final Vector3f pos = new Vector3f();
+                    final Quaternionf rot = new Quaternionf();
                     for (int i = 0; i < ENTRIES.size(); i++) {
                         Entry e = ENTRIES.get(i);
                         if (e.count <= 0) {
@@ -342,28 +360,12 @@ public final class IrisShadowBatchCollector {
                         }
                         for (int r = 0; r < e.count; r++) {
                             int base = r * FLOATS_PER_INSTANCE;
-                            float m00 = e.data.get(base + 0);
-                            float m10 = e.data.get(base + 1);
-                            float m20 = e.data.get(base + 2);
-                            float tx  = e.data.get(base + 3);
-
-                            float m01 = e.data.get(base + 4);
-                            float m11 = e.data.get(base + 5);
-                            float m21 = e.data.get(base + 6);
-                            float ty  = e.data.get(base + 7);
-
-                            float m02 = e.data.get(base + 8);
-                            float m12 = e.data.get(base + 9);
-                            float m22 = e.data.get(base + 10);
-                            float tz  = e.data.get(base + 11);
-
-                            // Reconstruct full affine transform matrix
-                            recordPose.set(
-                                m00, m01, m02, 0.0f,
-                                m10, m11, m12, 0.0f,
-                                m20, m21, m22, 0.0f,
-                                tx,  ty,  tz,  1.0f
-                            );
+                            // Records are pos(3) + quat(4) + bbox(7) (see appendRecord);
+                            // rebuild T(pos) * R(rot) for the companion draw.
+                            pos.set(e.data.get(base + 0), e.data.get(base + 1), e.data.get(base + 2));
+                            rot.set(e.data.get(base + 3), e.data.get(base + 4),
+                                    e.data.get(base + 5), e.data.get(base + 6));
+                            recordPose.translationRotate(pos, rot);
                             batch.drawCompanion(companion, recordPose, 0);
                             drawCalls++;
                         }

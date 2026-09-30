@@ -48,7 +48,7 @@ import net.minecraft.client.renderer.texture.TextureAtlas;
  * <b>Compute Pipeline:</b>
  * <ul>
  *   <li>SSBO 0: Companion mesh vertices (Iris ENTITY format, bound directly without CPU copying).</li>
- *   <li>SSBO 1: Instance records (46 floats per instance, or 12 floats for 3x4 affine matrices in shadow passes).</li>
+ *   <li>SSBO 1: Instance records (46 floats per instance: pos+quat+bbox+light+uvRect+tint+grad+anim).</li>
  *   <li>SSBO 2: Output vertex buffer (verts * instances in a packed 52-byte layout).</li>
  *   <li>SSBO 3: Bone palette SSBO (up to 64 4x4 bone matrices for dynamic skeletal animations).</li>
  * </ul>
@@ -308,7 +308,9 @@ public final class NucleusGpuBaker {
         GL20.glUniform1i(uBakeMode, mode);
         GL20.glUniform1i(uOffLight, InstancedStaticPartRenderer.LIGHT_FLOAT_OFFSET);
         if (uTransformMode >= 0) {
-            GL20.glUniform1i(uTransformMode, (mode == MODE_SHADOW) ? 1 : 0);
+            // Both main and shadow records are pos+quat now (IrisShadowBatchCollector
+            // decomposes the affine pose, the record layout matches the shared VAO).
+            GL20.glUniform1i(uTransformMode, 0);
         }
         if (uHasBones >= 0) {
             GL20.glUniform1i(uHasBones, hasBoneMatrices ? 1 : 0);

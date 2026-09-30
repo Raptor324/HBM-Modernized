@@ -103,10 +103,11 @@ public class TransitionSealBlockEntity extends BaseHbmBlockEntity {
     @Override
     //?}
     public AABB getRenderBoundingBox() {
-        // AABB(BlockPos, BlockPos) не существует — собираем через double-конструктор (версионно-инвариантно).
-        BlockPos top = worldPosition.offset(0, 24, 0);
-        return new AABB(worldPosition.getX(), worldPosition.getY(), worldPosition.getZ(),
-                top.getX(), top.getY(), top.getZ()).inflate(13);
+        // The seal is 26 wide (radius 13), 24 tall at rest, but reaches Y=42 when fully open.
+        return new AABB(
+                worldPosition.getX() - 13, worldPosition.getY(), worldPosition.getZ() - 13,
+                worldPosition.getX() + 14, worldPosition.getY() + 44, worldPosition.getZ() + 14
+        );
     }
 
     // Animation state
@@ -155,7 +156,9 @@ public class TransitionSealBlockEntity extends BaseHbmBlockEntity {
 
         if(!level.isClientSide) {
             if(moving && !wasMoving) {
-                level.playSound(null, worldPosition, opening ? ModSounds.TRANSITION_SEAL_OPEN.get() : ModSounds.TRANSITION_SEAL_CLOSE.get(), SoundSource.BLOCKS, 2.0F, 1.0F);
+                // 1.7.10 parity: DoorDecl.getCloseSoundStart() defaults to the open
+                // sound - the same long mechanical track plays in both directions.
+                level.playSound(null, worldPosition, ModSounds.TRANSITION_SEAL_OPEN.get(), SoundSource.BLOCKS, 2.0F, 1.0F);
             }
             if(!moving && wasMoving) {
                 level.playSound(null, worldPosition, ModSounds.METAL_STOP_1.get(), SoundSource.BLOCKS, 2.0F, 1.0F);

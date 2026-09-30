@@ -359,12 +359,6 @@
       "hbm_m:block/switch_on"
     ]
   },
-  "block.transition_seal_close": {
-    "subtitle": "sounds.hbm_m.subtitle.transition_seal_close",
-    "sounds": [
-      "hbm_m:block/door/transition_seal_close"
-    ]
-  },
   "block.transition_seal_open": {
     "subtitle": "sounds.hbm_m.subtitle.transition_seal_open",
     "sounds": [
