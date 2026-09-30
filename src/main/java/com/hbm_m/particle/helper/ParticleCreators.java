@@ -20,6 +20,7 @@ public final class ParticleCreators {
         CREATORS.put("gasfire", new GasFireCreator());
         CREATORS.put("hadron", new HadronCreator());
         CREATORS.put("tau", new TauCreator());
+        CREATORS.put("giblets", new GibletCreator());
     }
 
     public static Map<String, IParticleCreator> particleCreators() {
