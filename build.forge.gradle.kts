@@ -90,9 +90,12 @@ legacyForge {
 			ideName = "Forge GameTest (${stonecutter.active?.version})"
 			systemProperty("forge.gameTestServer", "true")
 			systemProperty("forge.enableGameTest", "true")
-			jvmArguments.addAll("-Xmx4G", "-Xms2G", "-Dfile.encoding=UTF-8", "-Dconsole.encoding=UTF-8",
-				"-Duser.language=en", "-Duser.country=US")
-			// TODO(other-agent WIP): doFirst недоступен в runs-DSL — перенести в tasks.named("gameTestServer")
+			jvmArguments.addAll("-Xmx12G", "-Xms2G", "-Dfile.encoding=UTF-8", "-Dconsole.encoding=UTF-8",
+				"-Duser.language=en", "-Duser.country=US",
+				// Точечный прогон одного класса: все тесты зарегистрированы в неймспейс hbm_m,
+				// а тяжёлый интеграционный турбины - в tf_integration (см. TurbofanIntegrationGameTest).
+				// Оверрайд неймспейса: -PgameTestNamespace=hbm_m (NukeProfileGameTest и др.)
+				"-Dforge.enabledGameTestNamespaces=${project.findProperty("gameTestNamespace") ?: "tf_integration"}")
 		}
 
 		register("data") {
@@ -117,6 +120,24 @@ legacyForge {
 			sourceSet(sourceSets["main"])
 		}
 	}
+}
+
+// Регенерация мира гейм-тестов: каждый прогон стартует со свежим ванильным
+// террейном (кратер ядерного профиля NukeProfileGameTest не должен портить
+// следующие тесты, а автосейв на кратеризованном мире душил прогон).
+tasks.matching { it.name == "runGameTestServer" }.configureEach {
+	doFirst { delete("runGameTest/world") }
+}
+
+// Forge в собранном jar применяет AT только из META-INF/accesstransformer.cfg.
+// accessTransformers{} в legacyForge{} ModDevGradle использует лишь для дев-окружения,
+// поэтому пакуем per-версию cfg сами, а сырые aw/* из ресурсов вычищаем.
+tasks.processResources {
+	from(rootProject.file("src/main/resources/aw/${stonecutter.current.version}.cfg")) {
+		rename { "accesstransformer.cfg" }
+		into("META-INF")
+	}
+	exclude("aw/")
 }
 
 mixin {
@@ -185,7 +206,7 @@ dependencies {
 	// Distant Horizons: compileOnly для официального API (DhApiBeforeApplyShaderRenderEvent
 	// и пр.) в com.hbm_m.client.compat.dh.DhRenderBridge. Класс моста грузится только при
 	// установленном DH, поэтому отсутствие зависимости в рантайме безопасно.
-	"modCompileOnly"("maven.modrinth:distanthorizons:3.2.0-b-1.20.1") // 3.2.0-b-1.20.1
+	"modCompileOnly"("maven.modrinth:distanthorizons:3.3.2-1.20.1") // 3.3.2-1.20.1 (latest 2026-09-21)
 	// "modRuntimeOnly"("maven.modrinth:distanthorizons:3.2.0-b-1.20.1")
 
 	// "modRuntimeOnly"("curse.maven:xaeros-world-map-317780:7598469")
@@ -220,7 +241,12 @@ stonecutter {
 tasks.matching { it.name == "runGameTestServer" }.configureEach {
 	doFirst {
 		file("runGameTest").mkdirs()
+		// Гейтест-сервер хранит мир в runGameTest/world (level-name из server.properties),
+		// а НЕ в "Test Level" - форс-загруженные чанки арен сохраняются в level.dat, и
+		// неубитый мир копит их от упавших прогонов, пока сервер не начнёт грузить
+		// сотни тысяч чанков на старте и не умрёт по OOM.
 		delete(file("runGameTest/Test Level"))
+		delete(file("runGameTest/world"))
 		file("runGameTest/eula.txt").writeText("eula=true")
 	}
 }

@@ -3348,7 +3348,7 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("text.autoconfig.hbm_m.option.enableChunkLoading", "Enable chunk loading");
         add("text.autoconfig.hbm_m.option.enableChunkLoading.@Tooltip", "Allows procedural explosions to keep the central chunk loaded and generate new chunks.");
         add("text.autoconfig.hbm_m.option.explosionAlgorithm", "Explosion algorithm");
-        add("text.autoconfig.hbm_m.option.explosionAlgorithm.@Tooltip", "0 = Legacy, 1 = Threaded DDA, 2 = Threaded DDA with damage accumulation.");
+        add("text.autoconfig.hbm_m.option.explosionAlgorithm.@Tooltip", "0 = Legacy (single-threaded, only already-loaded chunks, no forced loading), 1 = Threaded DDA (async chunk loading, recommended), 2 = Threaded DDA with damage accumulation.");
         add("text.autoconfig.hbm_m.option.enableCraterBiomes", "Enable crater biomes");
         add("text.autoconfig.hbm_m.option.enableCraterBiomes.@Tooltip", "Converts the crater left by nuclear explosions into radioactive crater biomes.");
         add("text.autoconfig.hbm_m.option.craterBiomeInnerRad", "Inner crater biome RAD/s");
@@ -3361,6 +3361,10 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("text.autoconfig.hbm_m.option.craterBiomeWaterMult.@Tooltip", "Multiplier applied to crater biome RAD/s when the player is in water or rain.");
         add("text.autoconfig.hbm_m.option.limitExplosionLifespan", "Explosion lifespan limit");
         add("text.autoconfig.hbm_m.option.limitExplosionLifespan.@Tooltip", "How long an explosion can stay unloaded before it dies (seconds). 0 = unlimited.");
+        add("text.autoconfig.hbm_m.option.blastChunksInFlight", "Blast chunks in flight");
+        add("text.autoconfig.hbm_m.option.blastChunksInFlight.@Tooltip", "Max chunks the MK5 explosion loads simultaneously. 0 = auto (max(64, cores*8)).");
+        add("text.autoconfig.hbm_m.option.bombMaxThreads", "Bomb worker threads");
+        add("text.autoconfig.hbm_m.option.bombMaxThreads.@Tooltip", "Max ForkJoinPool threads for MK5 ray tracing. <=0 = cores + value (default -1).");
 
         // Rendering — missing missile tracking and instanced render options
         add("text.autoconfig.hbm_m.option.enableMissileNetworkTrack", "Track missiles over network");

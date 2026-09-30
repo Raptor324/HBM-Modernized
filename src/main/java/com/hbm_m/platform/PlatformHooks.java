@@ -1082,4 +1082,73 @@ public final class PlatformHooks {
             serverLevel.getChunkSource().removeRegionTicket(type, pos, radius, value);
         }
     }
+
+    /**
+     * Namespace of conventional item/block tags: "forge" on 1.20.1, "c" on 1.21+
+     * (the NeoForge build remaps generated forge: tag JSONs to c:).
+     */
+    public static String conventionalTagNamespace() {
+        //? if < 1.21.1 {
+        return "forge";
+        //? } else {
+        /*return "c";
+        *///? }
+    }
+
+    /**
+     * Whether the player is a modded fake player (Mts/Prepare etc.) — loader-specific class.
+     */
+    public static boolean isFakePlayer(net.minecraft.world.entity.player.Player player) {
+        //? if < 1.21.1 {
+        return player instanceof net.minecraftforge.common.util.FakePlayer;
+        //? } else {
+        /*return player instanceof net.neoforged.neoforge.common.util.FakePlayer;
+        *///? }
+    }
+
+    /**
+     * Средний MSPT сервера. 1.20.1: {@code getAverageTickTime()} (миллисекунды, float);
+     * 1.21.1: {@code getAverageTickTimeNanos()} (наносекунды).
+     */
+    public static double averageTickMs(net.minecraft.server.MinecraftServer server) {
+        //? if < 1.21.1 {
+        return server.getAverageTickTime();
+        //? } else {
+        /*return server.getAverageTickTimeNanos() / 1_000_000.0;
+         *///? }
+    }
+
+    // Кэш приватного конструктора FallingBlockEntity (см. newFallingBlock).
+    private static volatile java.lang.reflect.Constructor<?> hbm$fallingBlockCtor;
+
+    private static java.lang.reflect.Constructor<?> hbm$fallingBlockCtor()
+            throws NoSuchMethodException {
+        java.lang.reflect.Constructor<?> ctor = hbm$fallingBlockCtor;
+        if (ctor == null) {
+            ctor = net.minecraft.world.entity.item.FallingBlockEntity.class
+                    .getDeclaredConstructor(Level.class, double.class, double.class, double.class,
+                            net.minecraft.world.level.block.state.BlockState.class);
+            ctor.setAccessible(true);
+            hbm$fallingBlockCtor = ctor;
+        }
+        return ctor;
+    }
+
+    /**
+     * Falling entity «как в ванильном {@code FallingBlockEntity.fall}», но без его
+     * Level.setBlock. Конструктор {@code (Level, double, double, double, BlockState)}
+     * приватный на обеих версиях — зовём рефлексией (статический fall внутри делает
+     * Level.setBlock, который Sable заворачивает с синхронной догрузкой соседних
+     * чанков — недопустимо в массовых спавнах осыпи фоллаута).
+     */
+    public static net.minecraft.world.entity.item.FallingBlockEntity newFallingBlock(
+            Level level, double x, double y, double z,
+            net.minecraft.world.level.block.state.BlockState state) {
+        try {
+            return (net.minecraft.world.entity.item.FallingBlockEntity)
+                    hbm$fallingBlockCtor().newInstance(level, x, y, z, state);
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException("FallingBlockEntity private ctor", e);
+        }
+    }
 }

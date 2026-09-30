@@ -140,6 +140,12 @@ public final class MainRegistry {
             }
             // Отложенный фикс соединений решёток/паней после спавна структур
             com.hbm_m.worldgen.StructureConnectionFixProcessor.tickIfReady(server);
+
+            // Диагностика зависаний серверного потока (ванильный watchdog есть только на dedicated)
+            com.hbm_m.util.ServerHangWatchdog.tickFinished(server);
+
+            // Гейм-тест профиля ядерного взрыва: виталки и завершение на серверном тике
+            nukeTestServerTick(server);
         });
 
         LifecycleEvent.SERVER_LEVEL_UNLOAD.register((ServerLevel level) -> {
@@ -155,7 +161,54 @@ public final class MainRegistry {
             com.hbm_m.blockentity.network.radio.RTTYNetwork.onServerStop();
             com.hbm_m.handler.rbmk.NeutronNodeWorld.removeAllWorlds();
             com.hbm_m.worldgen.StructureConnectionFixProcessor.onServerStop();
+            nukeTestReset();
         });
+    }
+
+    // Гейм-тест профиля ядерного взрыва: класс живёт в com.hbm_m.test, который
+    // вырезается из прод-jar (exclude "com/hbm_m/test/**") — прямая ссылка из
+    // общего кода роняет прод NoClassDefFoundError'ом при заходе в мир. Хук
+    // резолвится один раз: в деве это живой MethodHandle, в проде — тихий no-op.
+    private static volatile java.lang.invoke.MethodHandle hbm$nukeTestTick;
+    private static volatile java.lang.invoke.MethodHandle hbm$nukeTestReset;
+    private static volatile boolean hbm$nukeTestResolved;
+
+    private static void nukeTestServerTick(net.minecraft.server.MinecraftServer server) {
+        nukeTestResolve();
+        java.lang.invoke.MethodHandle tick = hbm$nukeTestTick;
+        if (tick != null) {
+            try {
+                tick.invoke(server);
+            } catch (Throwable t) {
+                LOGGER.error("[HBM] NukeProfileGameTest.serverTick failed", t);
+            }
+        }
+    }
+
+    private static void nukeTestReset() {
+        nukeTestResolve();
+        java.lang.invoke.MethodHandle reset = hbm$nukeTestReset;
+        if (reset != null) {
+            try {
+                reset.invoke();
+            } catch (Throwable t) {
+                LOGGER.error("[HBM] NukeProfileGameTest.reset failed", t);
+            }
+        }
+    }
+
+    private static void nukeTestResolve() {
+        if (hbm$nukeTestResolved) return;
+        hbm$nukeTestResolved = true;
+        try {
+            Class<?> cls = Class.forName("com.hbm_m.test.NukeProfileGameTest");
+            hbm$nukeTestTick = java.lang.invoke.MethodHandles.lookup().unreflect(
+                    cls.getMethod("serverTick", net.minecraft.server.MinecraftServer.class));
+            hbm$nukeTestReset = java.lang.invoke.MethodHandles.lookup().unreflect(
+                    cls.getMethod("reset"));
+        } catch (ReflectiveOperationException ignored) {
+            // прод-jar: тестовые классы исключены из сборки
+        }
     }
 
     private static void commonSetup() {

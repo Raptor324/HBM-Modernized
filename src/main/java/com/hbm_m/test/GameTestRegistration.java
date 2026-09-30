@@ -57,6 +57,7 @@ public final class GameTestRegistration {
         event.register(ContraptionMoveGameTest.class);
         event.register(TurbofanGameTest.class);
         event.register(TurbofanIntegrationGameTest.class);
+        event.register(NukeProfileGameTest.class);
     }
     //?} elif neoforge {
     /*@SubscribeEvent
@@ -78,6 +79,7 @@ public final class GameTestRegistration {
         event.register(ContraptionMoveGameTest.class);
         event.register(TurbofanGameTest.class);
         event.register(TurbofanIntegrationGameTest.class);
+        event.register(NukeProfileGameTest.class);
     }
      *///?}
 }

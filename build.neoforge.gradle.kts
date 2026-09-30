@@ -94,10 +94,23 @@ neoForge {
 			ideName = "NeoForge GameTest (${stonecutter.active?.version})"
 			systemProperty("neoforge.gameTestServer", "true")
 			systemProperty("neoforge.enableGameTest", "true")
-			jvmArguments.addAll("-Xmx4G", "-Xms2G", "-Dfile.encoding=UTF-8",
-				"-Duser.language=en", "-Duser.country=US")
-			// TODO(other-agent WIP): doFirst недоступен в runs-DSL — перенести в tasks.named("gameTestServer")
+				jvmArguments.addAll("-Xmx12G", "-Xms2G", "-Dfile.encoding=UTF-8",
+					"-Duser.language=en", "-Duser.country=US",
+					// Точечный прогон одного класса: все тесты зарегистрированы в неймспейс hbm_m,
+					// а тяжёлый интеграционный турбины - в tf_integration (см. TurbofanIntegrationGameTest).
+					// Оверрайд неймспейса: -PgameTestNamespace=hbm_m (NukeProfileGameTest и др.)
+					"-Dneoforge.enabledGameTestNamespaces=${project.findProperty("gameTestNamespace") ?: "tf_integration"}")
+			// Оверрайды NukeProfileGameTest: -PnukeStrength=300 -PnukeBudget=15
+			if (project.hasProperty("nukeStrength")) systemProperty("hbm.nukeProfileStrength", project.property("nukeStrength") as String)
+			if (project.hasProperty("nukeBudget")) systemProperty("hbm.nukeProfileBudgetMinutes", project.property("nukeBudget") as String)
 		}
+	}
+
+	// Регенерация мира гейм-тестов: каждый прогон стартует со свежим ванильным
+	// террейном (кратер ядерного профиля NukeProfileGameTest не должен портить
+	// следующие тесты, а автосейв на кратеризованном мире душил прогон).
+	tasks.matching { it.name == "runGameTestServer" }.configureEach {
+		doFirst { delete("runGameTest/world") }
 	}
 
 	mods {
@@ -106,6 +119,17 @@ neoForge {
 		}
 	}
 	sourceSets["main"].resources.srcDir(rootProject.file("src/generated/resources"))
+}
+
+// NeoForge в собранном jar применяет AT только из META-INF/accesstransformer.cfg.
+// accessTransformers{} в neoForge{} ModDevGradle использует лишь для дев-окружения,
+// поэтому пакуем per-версию cfg сами, а сырые aw/* из ресурсов вычищаем.
+tasks.processResources {
+	from(rootProject.file("src/main/resources/aw/${stonecutter.current.version}.cfg")) {
+		rename { "accesstransformer.cfg" }
+		into("META-INF")
+	}
+	exclude("aw/")
 }
 
 repositories {
@@ -160,7 +184,7 @@ dependencies {
 	"compileOnly"("dev.engine-room.flywheel:flywheel-neoforge-api-$mcVer:${prop("deps.flywheel")}")
 	// Distant Horizons: compileOnly для официального API (см. DhRenderBridge).
 	// Класс моста грузится только при установленном DH.
-	"compileOnly"("maven.modrinth:distanthorizons:3.2.0-b-1.21.1") // 3.2.0-b-1.21.1
+	"compileOnly"("maven.modrinth:distanthorizons:3.3.2-1.21.1") // 3.3.2-1.21.1 (latest 2026-09-21)
 	// "runtimeOnly"("maven.modrinth:distanthorizons:3.2.0-b-1.21.1")
 
 	"compileOnly"("maven.modrinth:u6dRKJwZ:${prop("deps.jei")}")
@@ -386,7 +410,12 @@ stonecutter {
 tasks.matching { it.name == "runGameTestServer" }.configureEach {
 	doFirst {
 		file("runGameTest").mkdirs()
+		// Гейтест-сервер хранит мир в runGameTest/world (level-name из server.properties),
+		// а НЕ в "Test Level" - форс-загруженные чанки арен сохраняются в level.dat, и
+		// неубитый мир копит их от упавших прогонов, пока сервер не начнёт грузить
+		// сотни тысяч чанков на старте и не умрёт по OOM.
 		delete(file("runGameTest/Test Level"))
+		delete(file("runGameTest/world"))
 		file("runGameTest/eula.txt").writeText("eula=true")
 	}
 }

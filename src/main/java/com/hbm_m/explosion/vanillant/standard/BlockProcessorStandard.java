@@ -74,24 +74,8 @@ public class BlockProcessorStandard implements IBlockProcessor {
 
                     ItemStack toolWith = new ItemStack(Items.DIAMOND_PICKAXE);
                     if (dropFortune > 0) {
-                        //? if < 1.21.1 {
-                        toolWith.enchant(Enchantments.BLOCK_FORTUNE, dropFortune);
-                        //?} else {
-                        /*// 1.21.1: BuiltInRegistries.ENCHANTMENT удалён — получаем через RegistryAccess и ResourceKey<Enchantment>.
-                        // Keep the registry holder: Holder.direct() wraps an unregistered holder, and the
-                        // old code also dereferenced Optional.orElse(null) straight away.
-                        net.minecraft.core.Holder<net.minecraft.world.item.enchantment.Enchantment> fortuneEnch =
-                                level.registryAccess()
-                                        .lookupOrThrow(net.minecraft.core.registries.Registries.ENCHANTMENT)
-                                        .get(net.minecraft.resources.ResourceKey.create(
-                                                net.minecraft.core.registries.Registries.ENCHANTMENT,
-                                                net.minecraft.resources.ResourceLocation.withDefaultNamespace("fortune")))
-                                        .map(h -> (net.minecraft.core.Holder<net.minecraft.world.item.enchantment.Enchantment>) h)
-                                        .orElse(null);
-                        if (fortuneEnch != null) {
-                            toolWith.enchant(fortuneEnch, dropFortune);
-                        }
-                        *///?}
+                        // Хук скрывает переход Enchantment -> Holder<Enchantment> и динамический реестр 1.21.1.
+                        com.hbm_m.platform.ItemHooks.setEnchantmentLevel(toolWith, level, "minecraft:fortune", dropFortune);
                     }
 
                     if (level instanceof ServerLevel serverLevel) {

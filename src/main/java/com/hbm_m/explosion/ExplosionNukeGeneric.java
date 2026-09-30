@@ -134,12 +134,12 @@ public class ExplosionNukeGeneric {
             Block b = state.getBlock();
 
             if (b == Blocks.GRASS_BLOCK || b == Blocks.MYCELIUM || b == ModBlocks.WASTE_GRASS.get()) {
-                level.setBlock(pos, Blocks.DIRT.defaultBlockState(), NukeMk5ChunkEater.FAST_BLOCK_FLAGS);
+                level.setBlock(pos, Blocks.DIRT.defaultBlockState(), Block.UPDATE_CLIENTS | Block.UPDATE_NEIGHBORS);
                 return;
             }
 
             if (state.is(BlockTags.LEAVES) || state.is(BlockTags.PLANKS) || state.is(BlockTags.LOGS)) {
-                level.setBlock(pos, Blocks.AIR.defaultBlockState(), NukeMk5ChunkEater.FAST_BLOCK_FLAGS);
+                level.setBlock(pos, Blocks.AIR.defaultBlockState(), Block.UPDATE_CLIENTS | Block.UPDATE_NEIGHBORS);
             }
         }
     }

@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026 movblock <admin@movblock.mov>
+// SPDX-FileCopyrightText: 2026 mlbv <51232730+mlbv@users.noreply.github.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+// Ported from the NTM Next project (MK5 crater generation system).
 package com.hbm_m.entity.effect;
 
 import com.hbm_m.block.ModBlocks;
@@ -5,7 +9,7 @@ import com.hbm_m.block.generic.BlockFallout;
 import com.hbm_m.config.FalloutConfigJSON;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.entity.logic.EntityExplosionChunkloading;
-import com.hbm_m.explosion.NukeMk5ChunkEater;
+import com.hbm_m.explosion.BlastChunkUtil;
 import com.hbm_m.radiation.ChunkRadiationManager;
 import com.hbm_m.util.WorldUtil;
 import com.hbm_m.world.biome.ModBiomes;
@@ -30,11 +34,11 @@ import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.biome.Biome;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.chunk.LevelChunkSection;
-import net.minecraft.world.level.levelgen.Heightmap;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -59,8 +63,15 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
      */
     private static final int MAX_PENDING_LOAD_TICKETS = 64;
 
+    /** Глубина stomp-прохода по колонке (паритет stompColumn из NEXT). */
+    private static final int MAX_SOLID_DEPTH = 3;
+    /** Мягкие блоки (твёрдость ≤ 6) над воздухом осыпаются падающими сущностями. */
+    private static final float HARDNESS_BOUND = 6.0F;
+
     private final LongSet issuedTickets = new LongOpenHashSet();
     private boolean firstTick = true;
+    /** Активен ли наш счётчик массовых операций (защита от двойного release). */
+    private boolean hbm$massOpAcquired;
     private int tickDelay;
     private final Map<ResourceKey<Biome>, Holder<Biome>> biomeCache = new HashMap<>();
     private final LongList chunksToProcess = new LongArrayList();
@@ -120,6 +131,12 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
 
         if (!level().isClientSide) {
             updateChunkTicket();
+
+            if (firstTick) {
+                // Массовая операция: параллельный сейв чанков (ChunkMapSaveMixin)
+                hbm$massOpAcquired = true;
+                com.hbm_m.util.ChunkSaveParallelizer.acquireMassOp();
+            }
 
             long start = System.currentTimeMillis();
 
@@ -250,6 +267,8 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
         FalloutConfigJSON.FalloutEntry.BlockWriter writer =
                 (lvl, pos, state) -> ed.set(pos.getX(), pos.getY(), pos.getZ(), state);
 
+        LongArrayList spawnFalling = new LongArrayList();
+        int chunkTopY = topSolidY(ed);
         for (int x = minX; x < minX + 16; x++) {
             for (int z = minZ; z < minZ + 16; z++) {
                 double dx = x - ex;
@@ -257,11 +276,23 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
                 double distSq = dx * dx + dz * dz;
                 if (outerRing && distSq > scaleSq) continue;
 
-                stomp(serverLevel, ed, writer, x, z, Math.sqrt(distSq) * percentPerBlock);
+                stomp(serverLevel, ed, writer, spawnFalling, x, z, Math.sqrt(distSq) * percentPerBlock, chunkTopY);
             }
         }
 
-        clearChunkFluidsPostStomp(ed);
+        // Осыпь краёв — после прохода чанка: fall() сам убирает источник
+        // (level.setBlock флагом 3), нельзя звать посреди итерации секций
+        if (!spawnFalling.isEmpty()) {
+            spawnFallingBlocks(serverLevel, ed, spawnFalling);
+        }
+
+        // Батч-свет: одна задача на чанк вместо checkBlock за каждый блок
+        // (fire-and-forget: light engine разберёт асинхронно, серверный поток не ждёт)
+        if (!ed.lightPositions.isEmpty()) {
+            BlastChunkUtil.updateLight(serverLevel, chunk, ed.lightPositions, ed.lightSectionsMask);
+            ed.lightPositions.clear();
+            ed.lightSectionsMask = 0;
+        }
 
         modified |= ed.modified;
 
@@ -302,6 +333,10 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
         private LevelChunkSection section;
         private int sectionIdx = Integer.MIN_VALUE;
 
+        /** Позиции для батч-пересчёта света — сбрасываются в конце прохода чанка. */
+        final LongArrayList lightPositions = new LongArrayList();
+        long lightSectionsMask;
+
         ChunkEditor(ServerLevel level, LevelChunk chunk) {
             this.level = level;
             this.chunk = chunk;
@@ -330,52 +365,50 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
         }
 
         void set(int x, int y, int z, BlockState state) {
-            if (WorldUtil.setBlockFast(chunk, writePos.set(x, y, z), state)) {
-                modified = true;
-                // Секции могли пересоздаться, но индекс не меняется — просто перечитываем
-                // текущую секцию, чтобы не терять кэш на следующем же чтении
-                LevelChunkSection[] arr = chunk.getSections();
-                if (sectionIdx >= 0 && sectionIdx < arr.length) {
-                    section = arr[sectionIdx];
-                } else {
-                    section = null;
-                    sectionIdx = Integer.MIN_VALUE;
+            if (y < chunk.getMinBuildHeight() || y >= chunk.getMaxBuildHeight()) return;
+            BlockState old = getState(x, y, z);
+            if (old == state) return;
+
+            writePos.set(x, y, z);
+
+            // Блоки с BE (машины, сундуки): полный ванильный путь — BE корректно
+            // снимается, содержимое сундуков выпадает. Лут-таблицу НЕРАЗГРАБЛЕННЫХ
+            // сундуков затираем: иначе unpackLootTable на удалении порождает лут
+            // (карты сокровищ → ExplorationMap → renderBiomePreviewMap) с
+            // СИНХРОННОЙ догрузкой чанков на серверном потоке — жёсткие фризы TPS.
+            if (old.hasBlockEntity()) {
+                net.minecraft.world.level.block.entity.BlockEntity be =
+                        chunk.getBlockEntity(writePos, LevelChunk.EntityCreationType.IMMEDIATE);
+                if (be instanceof net.minecraft.world.level.block.entity.RandomizableContainerBlockEntity loot) {
+                    loot.setLootTable(null, 0L);
                 }
-            }
-        }
-    }
-
-    private void clearChunkFluidsPostStomp(ChunkEditor ed) {
-        double craterRadius = getScale() * 0.4D;
-        double craterRadiusSq = craterRadius * craterRadius;
-        double ex = getX();
-        double ez = getZ();
-
-        LevelChunk chunk = ed.chunk;
-        int baseX = chunk.getPos().x << 4;
-        int baseZ = chunk.getPos().z << 4;
-
-        BlockState air = Blocks.AIR.defaultBlockState();
-        LevelChunkSection[] sections = chunk.getSections();
-        for (int s = 0; s < sections.length; s++) {
-            LevelChunkSection section = sections[s];
-            if (section == null || section.hasOnlyAir()) continue;
-
-            int sectionMinY = ed.level.getSectionYFromSectionIndex(s) << 4;
-
-            for (int lx = 0; lx < 16; lx++) {
-                int wx = baseX + lx;
-                for (int lz = 0; lz < 16; lz++) {
-                    double dx = wx + 0.5D - ex;
-                    double dz = baseZ + lz + 0.5D - ez;
-                    if (dx * dx + dz * dz > craterRadiusSq) continue;
-
-                    for (int ly = 0; ly < 16; ly++) {
-                        if (!section.getBlockState(lx, ly, lz).getFluidState().isEmpty()) {
-                            ed.set(wx, sectionMinY + ly, baseZ + lz, air);
-                        }
+                if (WorldUtil.setBlockFast(chunk, writePos, state)) {
+                    modified = true;
+                    LevelChunkSection[] arr = chunk.getSections();
+                    if (sectionIdx >= 0 && sectionIdx < arr.length) {
+                        section = arr[sectionIdx];
+                    } else {
+                        section = null;
+                        sectionIdx = Integer.MIN_VALUE;
                     }
                 }
+                return;
+            }
+
+            // Блоки без BE: пишем прямо в секцию, минуя onRemove — бамбук/листва/
+            // трава уничтожаются, не выпадая предметами (сотни item-сущностей в
+            // бамбуковом лесу душили TPS). Heightmap/onPlace — как у вырезки MK5,
+            // свет — одним батчем на чанк в конце прохода.
+            LevelChunkSection s = sectionFor(y);
+            if (s == null) return;
+            BlockState prev = s.setBlockState(x & 15, y & 15, z & 15, state);
+            if (prev == state || prev == null) return;
+
+            modified = true;
+            chunk.setUnsaved(true);
+            if (BlastChunkUtil.postCarveBlockUpdate(level, chunk, writePos, prev, state)) {
+                lightPositions.add(writePos.asLong());
+                lightSectionsMask |= 1L << sectionIdx;
             }
         }
     }
@@ -463,22 +496,27 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
         outerChunksToProcess.addAll(outerTmp);
     }
 
+    /**
+     * Порт stompColumn из NEXT: сверху вниз по колонке, не глубже {@value #MAX_SOLID_DEPTH}
+     * твёрдых блоков. За один проход: слой осадков над первым твёрдым, огонь под
+     * горючим (<65%), трансмутации таблицей fallout, вулканическое ядро →
+     * радиоактивное, и сбор мягких блоков над воздухом в осыпь (rim collapse —
+     * края кратера осыпаются падающими блоками, как в оригинале).
+     * Жидкости НЕ вычищаются: вода вне кратера остаётся, в кратер натекает
+     * сама (в NEXT осадки и поджиг на жидкость не кладутся).
+     */
     private void stomp(ServerLevel level, ChunkEditor ed, FalloutConfigJSON.FalloutEntry.BlockWriter writer,
-                       int x, int z, double distPercent) {
+                       LongArrayList spawnFalling, int x, int z, double distPercent, int topY) {
         int depth = 0;
         int minY = level.getMinBuildHeight();
-        int maxY = level.getMaxBuildHeight();
-        int surfaceY = level.getHeight(Heightmap.Types.WORLD_SURFACE, x, z);
-        int topY = Math.min(maxY - 1, surfaceY + 8);
+        int maxY = level.getMaxBuildHeight() - 1;
+        if (topY < minY) return;
 
-        BlockState air = Blocks.AIR.defaultBlockState();
         BlockState fire = Blocks.FIRE.defaultBlockState();
+        Block fallout = ModBlocks.NUCLEAR_FALLOUT.get();
 
         for (int y = topY; y >= minY; y--) {
-            // break, not return: tryPlaceFalloutLayer below has to run. depth reaches 3 in any
-            // ordinary column (grass, dirt, stone), so returning here meant the fallout layer was
-            // never placed on normal terrain at all.
-            if (depth >= 3) break;
+            if (depth >= MAX_SOLID_DEPTH) break;
 
             // Скип целиком воздушных секций: после кратера под поверхностью десятки
             // секций воздуха, поблочный провал до minY был заметной частью тика.
@@ -489,75 +527,108 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
 
             BlockState state = ed.getState(x, y, z);
 
-            if (state.isAir() || state.is(ModBlocks.NUCLEAR_FALLOUT.get())) continue;
+            if (state.isAir() || state.is(fallout)) continue;
 
-            if (!state.getFluidState().isEmpty()) {
-                ed.set(x, y, z, air);
-                continue;
-            }
-
-            BlockState aboveState = ed.getState(x, y + 1, z);
-            apiPos.set(x, y, z);
-
-            if (distPercent < 65 && state.isFlammable(level, apiPos, Direction.UP)) {
-                if (random.nextInt(5) == 0 && aboveState.isAir()) {
-                    ed.set(x, y + 1, z, fire);
+            BlockState aboveState = null;
+            int upY = y + 1;
+            if (depth == 0 && upY <= maxY) {
+                aboveState = ed.getState(x, upY, z);
+                boolean replaceable = aboveState.isAir()
+                        || (aboveState.canBeReplaced() && aboveState.getFluidState().isEmpty());
+                if (replaceable) {
+                    double d = distPercent / 100.0D;
+                    double chance = 0.1D - Math.pow(d - 0.7D, 2);
+                    if (chance >= random.nextDouble()
+                            && BlockFallout.canSurviveOn(level, apiPos.set(x, y, z))) {
+                        ed.set(x, upY, z, fallout.defaultBlockState());
+                    }
                 }
             }
 
-            boolean eval = false;
+            if (distPercent < 65 && upY <= maxY && state.isFlammable(level, apiPos.set(x, y, z), Direction.UP)) {
+                if (aboveState == null) aboveState = ed.getState(x, upY, z);
+                if (aboveState.isAir() && random.nextInt(5) == 0) {
+                    ed.set(x, upY, z, fire);
+                }
+            }
+
+            boolean transformed = false;
             for (FalloutConfigJSON.FalloutEntry entry : FalloutConfigJSON.entries) {
                 if (entry.eval(level, apiPos, state, distPercent, writer)) {
                     if (entry.isSolid()) depth++;
-                    eval = true;
+                    transformed = true;
                     break;
                 }
             }
 
-            if (!eval && state.isSolidRender(level, apiPos)) {
-                depth++;
+            // Мягкий блок (твёрдость ≤ 6) над воздухом — колонка осыпается падающими
+            // блоками; собираем позиции, сущности спавним после прохода чанка
+            if (y > minY && distPercent < 65) {
+                apiPos.set(x, y, z);
+                float hardness = state.getDestroySpeed(level, apiPos);
+                if (hardness >= 0F && hardness <= HARDNESS_BOUND && ed.getState(x, y - 1, z).isAir()) {
+                    for (int i = 0; i <= depth; i++) {
+                        int yy = y + i;
+                        if (yy > maxY) break;
+                        BlockState colState = ed.getState(x, yy, z);
+                        if (colState.isAir()) continue;
+                        float h = colState.getDestroySpeed(level, apiPos.set(x, yy, z));
+                        if (h >= 0F && h <= HARDNESS_BOUND) {
+                            spawnFalling.add(BlockPos.asLong(x, yy, z));
+                        }
+                    }
+                }
             }
-        }
 
-        tryPlaceFalloutLayer(ed, x, z, distPercent);
+            if (!transformed && state.canOcclude()) depth++;
+        }
     }
 
-    private void tryPlaceFalloutLayer(ChunkEditor ed, int x, int z, double distPercent) {
-        Level level = level();
-        int topY = Math.min(level.getMaxBuildHeight() - 1, level.getHeight(Heightmap.Types.WORLD_SURFACE, x, z) + 8);
-
-        BlockState falloutState = ModBlocks.NUCLEAR_FALLOUT.get().defaultBlockState();
-
-        for (int y = topY; y >= level.getMinBuildHeight(); y--) {
-            if (ed.isSectionEmpty(y)) {
-                y &= ~15;
-                continue;
+    /** Верхний непустой Y чанка (верх верхней непустой секции) — выше могут быть деревья. */
+    private int topSolidY(ChunkEditor ed) {
+        LevelChunkSection[] sections = ed.chunk.getSections();
+        for (int i = sections.length - 1; i >= 0; i--) {
+            if (!sections[i].hasOnlyAir()) {
+                int top = (ed.level.getSectionYFromSectionIndex(i) << 4) + 15;
+                return Math.min(ed.level.getMaxBuildHeight() - 1, top);
             }
-            BlockState state = ed.getState(x, y, z);
-            if (state.isAir() || state.is(ModBlocks.NUCLEAR_FALLOUT.get())) {
-                continue;
-            }
+        }
+        return -1;
+    }
 
-            BlockState aboveState = ed.getState(x, y + 1, z);
-            if (!aboveState.isAir() && !(aboveState.canBeReplaced() && aboveState.getFluidState().isEmpty())) {
-                return;
+    /**
+     * Спавн собранной осыпи: ванильный falling entity без дропа предметов.
+     * НЕ зовём FallingBlockEntity.fall(): внутри он гасит исходную позицию через
+     * Level.setBlock, а Sable заворачивает LevelChunk.setBlockState и на каждое
+     * такое изменение сканирует окрестность с синхронной догрузкой соседних
+     * чанков на серверном потоке (замер 0929: ~34% тика фоллаута). Исходную
+     * позицию гасим через ChunkEditor — тот же быстрый путь, что и вся вырезка.
+     */
+    private void spawnFallingBlocks(ServerLevel level, ChunkEditor ed, LongArrayList positions) {
+        for (int i = 0, n = positions.size(); i < n; i++) {
+            long lp = positions.getLong(i);
+            BlockPos pos = BlockPos.of(lp);
+            BlockState state = ed.getState(pos.getX(), pos.getY(), pos.getZ());
+            if (state.isAir()) continue;
+            if (state.hasProperty(net.minecraft.world.level.block.state.properties.BlockStateProperties.WATERLOGGED)) {
+                state = state.setValue(net.minecraft.world.level.block.state.properties.BlockStateProperties.WATERLOGGED, Boolean.FALSE);
             }
-
-            if (!BlockFallout.canSurviveOn(level, apiPos.set(x, y, z))) {
-                return;
-            }
-
-            double chance = 0.1 - Math.pow(distPercent / 100.0 - 0.7, 2);
-            if (chance >= random.nextDouble()) {
-                ed.set(x, y + 1, z, falloutState);
-            }
-            return;
+            net.minecraft.world.entity.item.FallingBlockEntity entity =
+                    com.hbm_m.platform.PlatformHooks.newFallingBlock(
+                            level, pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5, state);
+            entity.dropItem = false;
+            ed.set(pos.getX(), pos.getY(), pos.getZ(), state.getFluidState().createLegacyBlock());
+            level.addFreshEntity(entity);
         }
     }
 
     @Override
     public void remove(RemovalReason reason) {
         clearChunkTicket();
+        if (hbm$massOpAcquired) {
+            hbm$massOpAcquired = false;
+            com.hbm_m.util.ChunkSaveParallelizer.releaseMassOp();
+        }
         if (!issuedTickets.isEmpty() && level() instanceof ServerLevel serverLevel) {
             for (long packed : issuedTickets) {
                 ChunkPos cp = new ChunkPos(packed);

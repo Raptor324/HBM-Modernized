@@ -32,6 +32,19 @@ public abstract class EntityExplosionChunkloading extends Entity {
         super(type, level);
     }
 
+    //? if < 1.21.1 {
+
+    @Override
+    protected void defineSynchedData() {
+        // нет синхронизируемых полей
+    }
+    //?} else {
+    /*@Override
+    protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
+        // нет синхронизируемых полей
+    }
+    *///?}
+
     /** Радиус region ticket в чанках; переопределяется под радиус кратера / fallout. */
     protected int getChunkLoadRadius() {
         return DEFAULT_CHUNK_TICKET_RADIUS;

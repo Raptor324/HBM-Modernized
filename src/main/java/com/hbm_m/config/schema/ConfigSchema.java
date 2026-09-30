@@ -132,9 +132,14 @@ public final class ConfigSchema {
         reg(ConfigField.integer("falloutRangePercent", ConfigSide.SERVER, ApplyMode.LIVE, "explosions", 0, 500));
         reg(ConfigField.integer("falloutDelay", ConfigSide.SERVER, ApplyMode.LIVE, "explosions", 0, 100));
         reg(ConfigField.bool("enableChunkLoading", ConfigSide.SERVER, ApplyMode.LIVE, "explosions"));
-        reg(ConfigField.integer("explosionAlgorithm", ConfigSide.SERVER, ApplyMode.LIVE, "explosions", 0, 2));
+        // resetOnUpgrade: принудительный переход всех пользователей на Threaded DDA
+        // (дефолт 1); кастомные 0/2 сбрасываются один раз при смене версии мода.
+        reg(ConfigField.integer("explosionAlgorithm", ConfigSide.SERVER, ApplyMode.LIVE, "explosions", 0, 2)
+                .withComment("Crater generator: 0 = Legacy (loaded chunks only), 1 = Threaded DDA, 2 = Threaded DDA + damage accumulation")
+                .resetOnUpgrade());
         reg(ConfigField.integer("limitExplosionLifespan", ConfigSide.SERVER, ApplyMode.LIVE, "explosions", 0, 3600));
-        reg(ConfigField.bool("enableNukeNBTSaving", ConfigSide.SERVER, ApplyMode.LIVE, "explosions"));
+        reg(ConfigField.integer("blastChunksInFlight", ConfigSide.SERVER, ApplyMode.LIVE, "explosions", 0, 65536));
+        reg(ConfigField.integer("bombMaxThreads", ConfigSide.SERVER, ApplyMode.LIVE, "explosions", -16, 256));
 
         // ── SERVER: сетевая трассировка ракет ───────────────────────
         reg(ConfigField.bool("enableMissileNetworkTrack", ConfigSide.SERVER, ApplyMode.LIVE, "missile_track"));

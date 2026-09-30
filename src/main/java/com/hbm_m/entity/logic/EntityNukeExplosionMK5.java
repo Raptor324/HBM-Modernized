@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2026 movblock <admin@movblock.mov>
+// SPDX-FileCopyrightText: 2026 mlbv <51232730+mlbv@users.noreply.github.com>
+// SPDX-License-Identifier: LGPL-3.0-only
+// Ported from the NTM Next project (MK5 crater generation system).
 package com.hbm_m.entity.logic;
 
 import java.util.List;
@@ -5,35 +9,43 @@ import java.util.List;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.entity.ModEntities;
 import com.hbm_m.explosion.ExplosionNukeGeneric;
+import com.hbm_m.explosion.ExplosionNukeRayBatched;
+import com.hbm_m.explosion.ExplosionNukeRayParallelized;
+import com.hbm_m.explosion.IExplosionRay;
+import com.hbm_m.explosion.NoOpExplosionRay;
+import com.hbm_m.main.MainRegistry;
 import com.hbm_m.util.ContaminationUtil;
 import com.hbm_m.util.ContaminationUtil.ContaminationType;
 import com.hbm_m.util.ContaminationUtil.HazardType;
-import com.hbm_m.explosion.IExplosionRay;
-import com.hbm_m.explosion.NoOpExplosionRay;
-import com.hbm_m.explosion.NukeMk5ChunkEater;
-import com.hbm_m.main.MainRegistry;
 import com.hbm_m.util.WorldUtil;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * Сущность длительного ядерного взрыва (MK5) для 1.20.1 Forge.
- * Управляет лучевым разрушением, уроном и (опционально) fallout-осадками.
+ * Сущность длительного ядерного взрыва (MK5).
+ *
+ * <p>Логика переделана на бюджетную модель: движок взрыва выполняет работу в
+ * {@link IExplosionRay#update(long)} с ms-бюджетом на тик (конфиг
+ * {@code mk5TickTimeMs}), чанки грузятся по требованию с капом in-flight и не
+ * удерживаются тикетами после обработки. Состояние взрыва в NBT НЕ сохраняется —
+ * после перезахода взрыв пересчитывается (уже разрушенные блоки — воздух).
  */
-public class EntityNukeExplosionMK5 extends EntityExplosionChunkloading {
+public class EntityNukeExplosionMK5 extends EntityExplosionChunkloading
+        implements com.hbm_m.explosion.BombForkJoinPool.IJobCancellable {
 
     /** Сила взрыва (масштаб радиуса и длины лучей). */
     public int strength;
-    /** Количество лучей, вычисляемых за тик. */
+    /** Количество лучей за тик — легаси-поле, движки больше не используют его. */
     public int speed;
-    /** Максимальная длина лучей. */
+    /** Максимальная длина лучей (радиус кратера). */
     public int length;
 
     private long explosionStart;
@@ -41,11 +53,7 @@ public class EntityNukeExplosionMK5 extends EntityExplosionChunkloading {
     private int falloutAdd = 0;
 
     private IExplosionRay explosion;
-
-    /** Снапшот {@link NukeMk5ChunkEater} из NBT, ожидает восстановления в первом тике. */
-    private CompoundTag pendingExplosionState;
-    /** Какой движок был сохранён в NBT: 0 = ChunkEater, 1 = Parallelized. */
-    private int resumedEngine = -1;
+    private boolean initialized = false;
 
     /** Разрушение блоков лучами MK5 (кратер). */
     public boolean destroyTerrain = true;
@@ -70,36 +78,6 @@ public class EntityNukeExplosionMK5 extends EntityExplosionChunkloading {
     }
 
     @Override
-    protected int getChunkLoadRadius() {
-        if (this.length <= 0) {
-            return super.getChunkLoadRadius();
-        }
-        // Тикет должен покрывать кратер, НО уровень тикета = 33 - radius, и отрицательные
-        // уровни системой тикетов не поддерживаются (ванильный FORCED использует максимум 31):
-        // при радиусе >33 внешнее кольцо области вообще не догружается (замерено: 128 чанков
-        // висели незагруженными вечно). Поэтому кап 31, а недостающие внешние чанки
-        // NukeMk5ChunkEater догружает сам точечными тикетами радиуса 2 (уровень 31 = FULL).
-        return Math.max(super.getChunkLoadRadius(), Math.min(31, ((this.length + 15) >> 4) + 3));
-    }
-
-    //? if < 1.21.1 {
-
-    @Override
-    protected void defineSynchedData() {
-
-var defs = com.hbm_m.platform.EntityDataHooks.sink(this.entityData);
-    //?} else {
-    /*@Override
-    protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
-
-var defs = com.hbm_m.platform.EntityDataHooks.sink(builder);
-    *///?}
-
-        // нет синхронизируемых полей
-    
-    }
-
-    @Override
     public void tick() {
         super.tick();
 
@@ -109,80 +87,54 @@ var defs = com.hbm_m.platform.EntityDataHooks.sink(builder);
         }
 
         if (!level().isClientSide) {
-            updateChunkTicket();
+            // Аварийный выключатель (ориг. ключ 6.00): лимит жизни взрыва в секундах.
+            // tickCount персистится в NBT, поэтому лимит срабатывает и после перезахода —
+            // можно остановить зависший/нежелательный взрыв правкой конфига.
+            int lifespan = ModClothConfig.get().limitExplosionLifespan;
+            if (lifespan > 0 && this.tickCount > lifespan * 20) {
+                MainRegistry.LOGGER.warn("[NUKE MK5] Explosion exceeded lifespan limit ({}s), discarding", lifespan);
+                this.discard();
+                return;
+            }
+
             if (this.tickCount <= 1) {
                 com.hbm_m.advancement.ModAdvancements.grantAll(level(),
                         com.hbm_m.advancement.ModAdvancements.MANHATTAN);
             }
-        }
 
-        // радиация в первые тики после начала взрыва
-        // No explosion != null guard: the ray engine is created further down in this same tick, so on
-        // tick 1 it was still null and the largest dose of the ramp was silently skipped. radiate()
-        // does not touch the engine.
-        if (!level().isClientSide && applyInstantPlayerRads && this.tickCount < 10 && strength >= 75) {
-            float baseRads = 2_500_000F / (this.tickCount * 5 + 1);
-            radiate(baseRads, this.length * 2);
-        }
+            // радиация в первые тики после начала взрыва
+            if (applyInstantPlayerRads && initialized && this.tickCount < 10 && strength >= 75) {
+                float baseRads = 2_500_000F / (this.tickCount * 5 + 1);
+                radiate(baseRads, this.length * 2);
+            }
 
-        // урон и поджог живых сущностей
-        if (applyEntityDamage) {
-            ExplosionNukeGeneric.dealDamage(level(), getX(), getY(), getZ(), this.length * 2);
-        }
-
-        // лениво инициализируем лучевой движок
-        if (explosion == null) {
-            explosionStart = System.currentTimeMillis();
-            if (pendingExplosionState != null) {
-                // NBT-resume: продолжаем сохранённое состояние ChunkEater с места остановки
-                MainRegistry.LOGGER.info("[NUKE MK5] Explosion entity resumed from NBT: strength={}, length={} at ({},{},{})",
-                        strength, length, (int) getX(), (int) getY(), (int) getZ());
-                if (destroyTerrain && resumedEngine == 0) {
-                    NukeMk5ChunkEater eater = new NukeMk5ChunkEater(
-                            level(), (int) getX(), (int) getY(), (int) getZ(), strength, speed, length);
-                    eater.loadState(pendingExplosionState);
-                    explosion = eater;
-                } else {
-                    // несохраняемый движок (1/2) — пересоздаём и пересчитываем лучи
-                    createExplosionEngine();
-                }
-                pendingExplosionState = null;
-            } else {
-                MainRegistry.LOGGER.info("[NUKE MK5] Explosion entity started: algorithm={}, strength={}, speed={}, length={} at ({},{},{})",
-                        ModClothConfig.get().explosionAlgorithm, strength, speed, length,
-                        (int) getX(), (int) getY(), (int) getZ());
-                if (destroyTerrain) {
-                    createExplosionEngine();
-                } else {
-                    explosion = NoOpExplosionRay.INSTANCE;
-                }
+            // урон и поджог живых сущностей
+            if (applyEntityDamage) {
+                ExplosionNukeGeneric.dealDamage(level(), getX(), getY(), getZ(), this.length * 2);
             }
         }
 
-        int timeBudgetMs = ModClothConfig.get().mk5TickTimeMs;
+        if (!level().isClientSide && !initialized) {
+            explosionStart = System.currentTimeMillis();
+            createExplosionEngine();
+            initialized = true;
+        }
 
-        if (!explosion.isComplete()) {
-            explosion.cacheChunksTick(timeBudgetMs);
-            explosion.destructionTick(timeBudgetMs);
+        if (explosion == null) return;
+
+        if (explosion.hasFailed()) {
+            this.discard();
+        } else if (!explosion.isComplete()) {
+            explosion.update(ModClothConfig.get().mk5TickTimeMs);
         } else {
             if (explosionStart != 0) {
                 MainRegistry.LOGGER.info("[NUKE MK5] Explosion complete. Time elapsed: {}ms",
                         (System.currentTimeMillis() - explosionStart));
             }
 
-            // Fallout будет реализован отдельной задачей (FalloutRain + RenderFallout).
-            //
-            // ВНИМАНИЕ: здесь НЕ должно быть прямого ChunkRadiationManager.incrementRad.
-            // В 1.7.10 путь NukeBoy/NukeMan/NukeMike → EntityNukeExplosionMK5 НЕ накачивает
-            // chunk-радиацию напрямую. Источников chunk radiation после взрыва block-fatman
-            // в оригинале НЕТ (BlockSellafieldSlaked extends Block — инертный, MK5 только
-            // применяет дозу живым сущностям через ContaminationUtil.contaminate).
-            //
-            // Радиация в кратере в 1.7.10 появляется ИСКЛЮЧИТЕЛЬНО через crater biomes:
-            // EntityFalloutRain → getBiomeChange меняет биом на craterBiome/craterInnerBiome/
-            // craterOuterBiome, а EntityEffectHandler.onUpdate каждые 20 тиков добавляет
-            // игроку 25/5/0.5 RAD/сек соответственно (см. WorldConfig.craterBiome*Rad).
-
+            // Радиация в кратере появляется ИСКЛЮЧИТЕЛЬНО через crater biomes:
+            // EntityFalloutRain меняет биом на craterBiome/craterInnerBiome/craterOuterBiome,
+            // а EntityEffectHandler добавляет дозу по WorldConfig.craterBiome*Rad.
             if (fallout) {
                 spawnFallout();
             }
@@ -194,37 +146,43 @@ var defs = com.hbm_m.platform.EntityDataHooks.sink(builder);
     /**
      * 6.06_explosionAlgorithm: 0 = Legacy (Batched, однопоточный),
      * 1 = Threaded DDA, 2 = Threaded DDA с накоплением урона.
-     * В оригинале 1.7.10 ветка 1/2 (ExplosionNukeRayParallelized) была закомментирована
-     * и конфиг фактически не работал — здесь подключён по назначению.
      */
     private void createExplosionEngine() {
         // Original: eine ausgewachsene Zuendung ist eine volle Minute lang aus dem Orbit zu sehen.
         com.hbm_m.satellite.DetectorEvents.reportEvent(level(), com.hbm_m.satellite.DetectorEvents.DURATION_HIGH,
                 com.hbm_m.satellite.DetectorEvents.BurstIntensity.HIGH, getX(), getZ());
 
-        int algorithm = ModClothConfig.get().explosionAlgorithm;
-        if ((algorithm == 1 || algorithm == 2) && level() instanceof ServerLevel server) {
-            explosion = new com.hbm_m.explosion.ExplosionNukeRayParallelized(
-                    server,
-                    getX(), getY(), getZ(),
-                    strength, speed, length
-            );
+        if (!destroyTerrain) {
+            explosion = NoOpExplosionRay.INSTANCE;
         } else {
-            explosion = new NukeMk5ChunkEater(
-                    level(),
-                    (int) getX(),
-                    (int) getY(),
-                    (int) getZ(),
-                    strength,
-                    speed,
-                    length
-            );
+            // Массовые операции: включить параллельный сейв чанков (ChunkMapSaveMixin)
+            if (!level().isClientSide) {
+                hbm$massOpAcquired = true;
+                com.hbm_m.util.ChunkSaveParallelizer.acquireMassOp();
+            }
+            int algorithm = ModClothConfig.get().explosionAlgorithm;
+            MainRegistry.LOGGER.info("[NUKE MK5] Explosion started: algorithm={}, strength={}, length={} at ({},{},{})",
+                    algorithm, strength, length, (int) getX(), (int) getY(), (int) getZ());
+            if ((algorithm == 1 || algorithm == 2) && level() instanceof ServerLevel server) {
+                explosion = new ExplosionNukeRayParallelized(
+                        server, getX(), getY(), getZ(), strength, length, algorithm);
+            } else {
+                explosion = new ExplosionNukeRayBatched(
+                        level(),
+                        (int) getX(),
+                        (int) getY(),
+                        (int) getZ(),
+                        strength,
+                        length);
+            }
         }
     }
 
+    /** Активен ли наш счётчик массовых операций (защита от двойного release). */
+    private boolean hbm$massOpAcquired;
+
     /**
      * Применяет дозу радиации к живым существам по линии видимости.
-     * В Modernized можно интегрировать с системой PlayerHandler/ChunkRadiationManager.
      */
     private void radiate(float rads, double range) {
         AABB box = new AABB(getX(), getY(), getZ(), getX(), getY(), getZ()).inflate(range);
@@ -243,8 +201,7 @@ var defs = com.hbm_m.platform.EntityDataHooks.sink(builder);
                 BlockPos pos = new BlockPos(
                         (int) Math.floor(getX() + vec.x * i),
                         (int) Math.floor(getY() + vec.y * i),
-                        (int) Math.floor(getZ() + vec.z * i)
-                );
+                        (int) Math.floor(getZ() + vec.z * i));
                 BlockState state = level().getBlockState(pos);
                 res += state.getBlock().getExplosionResistance();
             }
@@ -259,10 +216,6 @@ var defs = com.hbm_m.platform.EntityDataHooks.sink(builder);
         }
     }
 
-    /**
-     * Точка расширения для спавна FalloutRain и других осадков.
-     * Реальная реализация будет добавлена при портировании FalloutRain.
-     */
     private void spawnFallout() {
         int scale = (int) (this.length * 2.5 + getFalloutAdd());
         scale = scale * ModClothConfig.get().falloutRangePercent / 100;
@@ -278,7 +231,19 @@ var defs = com.hbm_m.platform.EntityDataHooks.sink(builder);
     public void remove(RemovalReason reason) {
         if (explosion != null) explosion.cancel();
         clearChunkTicket();
+        if (hbm$massOpAcquired) {
+            hbm$massOpAcquired = false;
+            com.hbm_m.util.ChunkSaveParallelizer.releaseMassOp();
+        }
         super.remove(reason);
+    }
+
+    @Override
+    public void cancelJob() {
+        if (level() instanceof ServerLevel server) {
+            if (server.getServer().isSameThread()) this.discard();
+            else server.getServer().execute(this::discard);
+        }
     }
 
     @Override
@@ -293,11 +258,8 @@ var defs = com.hbm_m.platform.EntityDataHooks.sink(builder);
         this.applyCraterBiomes = !tag.contains("applyCraterBiomes") || tag.getBoolean("applyCraterBiomes");
         this.fallout = tag.getBoolean("fallout");
         this.falloutAdd = tag.getInt("falloutAdd");
-        // Снапшот состояния ChunkEater (алгоритм 0) — взрыв продолжится с места остановки.
-        // Для алгоритмов 1/2 снапшот не сохраняется: движок пересоздаётся и пересчитывает
-        // лучи заново (уже разрушенные блоки — воздух, пересчёт быстрый).
-        this.pendingExplosionState = tag.contains("explosionState") ? tag.getCompound("explosionState") : null;
-        this.resumedEngine = tag.getInt("explosionEngine");
+        // Старые сейвы несут "explosionState" (снапшот ChunkEater) — намеренно НЕ читаем:
+        // движки состояния не персистируют, взрыв пересчитывается с нуля.
     }
 
     @Override
@@ -312,14 +274,6 @@ var defs = com.hbm_m.platform.EntityDataHooks.sink(builder);
         tag.putBoolean("applyCraterBiomes", this.applyCraterBiomes);
         tag.putBoolean("fallout", this.fallout);
         tag.putInt("falloutAdd", this.falloutAdd);
-        if (explosion != null) {
-            // 0 = ChunkEater, 1/2 = Parallelized
-            int engine = explosion instanceof NukeMk5ChunkEater ? 0 : 1;
-            tag.putInt("explosionEngine", engine);
-            if (ModClothConfig.get().enableNukeNBTSaving && explosion instanceof NukeMk5ChunkEater eater) {
-                tag.put("explosionState", eater.saveState());
-            }
-        }
     }
 
     /**
@@ -338,4 +292,3 @@ var defs = com.hbm_m.platform.EntityDataHooks.sink(builder);
         return explosionMK5;
     }
 }
-

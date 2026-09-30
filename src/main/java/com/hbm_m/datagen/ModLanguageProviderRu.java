@@ -3810,7 +3810,7 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("text.autoconfig.hbm_m.option.enableChunkLoading", "Прогрузка чанков");
         add("text.autoconfig.hbm_m.option.enableChunkLoading.@Tooltip", "Разрешает процедурным взрывам удерживать центральный чанк загруженным и генерировать новые чанки.");
         add("text.autoconfig.hbm_m.option.explosionAlgorithm", "Алгоритм взрыва");
-        add("text.autoconfig.hbm_m.option.explosionAlgorithm.@Tooltip", "0 = Legacy, 1 = Threaded DDA, 2 = Threaded DDA с накоплением урона.");
+        add("text.autoconfig.hbm_m.option.explosionAlgorithm.@Tooltip", "0 = Legacy (однопоточный, только уже загруженные чанки, без принудительной загрузки), 1 = Threaded DDA (асинхронная загрузка чанков, рекомендуется), 2 = Threaded DDA с накоплением урона.");
         add("text.autoconfig.hbm_m.option.enableCraterBiomes", "Биомы кратеров");
         add("text.autoconfig.hbm_m.option.enableCraterBiomes.@Tooltip", "Превращает кратер от ядерного взрыва в радиоактивные биомы кратеров.");
         add("text.autoconfig.hbm_m.option.craterBiomeInnerRad", "RAD/s внутреннего биома кратера");
@@ -3823,6 +3823,10 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("text.autoconfig.hbm_m.option.craterBiomeWaterMult.@Tooltip", "Множитель RAD/s в биомах кратера, когда игрок в воде или под дождём.");
         add("text.autoconfig.hbm_m.option.limitExplosionLifespan", "Лимит жизни взрыва");
         add("text.autoconfig.hbm_m.option.limitExplosionLifespan.@Tooltip", "Сколько секунд невыгруженный взрыв может просуществовать. 0 = без лимита.");
+        add("text.autoconfig.hbm_m.option.blastChunksInFlight", "Чанков в полёте у взрыва");
+        add("text.autoconfig.hbm_m.option.blastChunksInFlight.@Tooltip", "Максимум чанков, которые MK5-взрыв грузит одновременно. 0 = авто (max(64, ядра*8)).");
+        add("text.autoconfig.hbm_m.option.bombMaxThreads", "Потоков расчёта взрывов");
+        add("text.autoconfig.hbm_m.option.bombMaxThreads.@Tooltip", "Максимум потоков ForkJoinPool для трассировки лучей MK5. <=0 = ядра + значение (по умолчанию -1).");
 
         // Rendering — недостающие опции трекинга ракет и instanced-рендера
         add("text.autoconfig.hbm_m.option.enableMissileNetworkTrack", "Отслеживать ракеты по сети");

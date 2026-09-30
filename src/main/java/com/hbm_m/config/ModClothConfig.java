@@ -394,12 +394,14 @@ public class ModClothConfig {
     public int falloutDelay = 4;
     /** Включить принудительную прогрузку чанков взрывом (chunk ticket). Ориг. ключ: 6.05_enableChunkLoading = true */
     public boolean enableChunkLoading = true;
-    /** Алгоритм взрыва: 0 = Legacy (однопоточный), 1/2 = многопоточный движок с той же энергомоделью Legacy (идентичны). Ориг. ключ: 6.06_explosionAlgorithm (в 1.7.10 дефолт 2, но фактически всегда работал Legacy). */
-    public int explosionAlgorithm = 0;
+    /** Алгоритм взрыва: 0 = Legacy (однопоточный; работает ТОЛЬКО по уже загруженным чанкам, принудительной загрузки нет), 1 = Threaded DDA (асинхронная загрузка чанков, рекомендуется), 2 = Threaded DDA с накоплением урона. Ориг. ключ: 6.06_explosionAlgorithm (в оригинале дефолт 2). */
+    public int explosionAlgorithm = 1;
     /** Лимит жизни невыгруженного взрыва в секундах; 0 = без лимита (ориг. BombConfig.limitExplosionLifespan, ключ 6.00). */
     public int limitExplosionLifespan = 0;
-    /** Сохранять состояние взрыва MK5 в NBT — после перезахода взрыв продолжается с места остановки (ориг. BombConfig.enableNukeNBTSaving). */
-    public boolean enableNukeNBTSaving = true;
+    /** Кап одновременно загружаемых взрывом чанков; 0 = авто (max(64, ядра*8)). */
+    public int blastChunksInFlight = 0;
+    /** Максимум потоков ForkJoinPool взрывов; <=0 = ядра + значение (по умолчанию -1). */
+    public int bombMaxThreads = -1;
 
     // ════════════════════════════════════════════════════════════════
     // Тепловизор
