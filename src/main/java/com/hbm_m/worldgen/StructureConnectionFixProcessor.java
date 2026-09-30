@@ -20,6 +20,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.TagKey;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelReader;
+import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.CrossCollisionBlock;
 import net.minecraft.world.level.block.state.BlockState;
@@ -100,24 +101,35 @@ public class StructureConnectionFixProcessor extends StructureProcessor {
     /**
      * Вызывается из серверного тика: пересчитывает соединения у отложенных
      * позиций, чьи чанки уже загружены.
+     *
+     * <p>ВАЖНО: доступ к чанку только НЕБЛОКИРУЮЩИЙ. Связка {@code isLoaded} +
+     * {@code getBlockState} гонится: {@code hasChunk} проверяет лишь уровень
+     * тикета (holder есть), а {@code getBlockState} делает {@code getChunk(FULL, true)}
+     * — синхронное managedBlock-ожидание worldgen. После MK5-кратера это вешало
+     * серверный поток на 90+ секунд (watchdog: getBlockState -> getChunk ->
+     * managedBlock). {@code getChunkNow} отдаёт чанк только если он уже готов,
+     * иначе позиция просто откладывается.
      */
     public static void tick(ServerLevel level) {
         Queue<PendingPos> queue = PENDING.get(level.dimension());
         if (queue == null || queue.isEmpty()) return;
         List<PendingPos> remaining = new ArrayList<>();
-        // Drain-паттерн: poll до пустой очереди, незагруженные — возвращаем в хвост.
+        // Drain-паттерн: poll до пустой очереди, неготовые — возвращаем в хвост.
         // Новые записи, добавленные воркерами во время обработки, просто обработаются
         // на следующем тике; clear()/итерация по списку под нагрузкой не используется.
         PendingPos entry;
         while ((entry = queue.poll()) != null) {
             BlockPos pos = entry.pos();
-            if (!level.isLoaded(pos)) {
+            // getChunkNow отдаёт только готовый FULL-чанк, без генерации и без ожидания
+            LevelChunk chunk = level.getChunkSource()
+                    .getChunkNow(pos.getX() >> 4, pos.getZ() >> 4);
+            if (chunk == null) {
                 if (entry.attempts() < MAX_ATTEMPTS) {
                     remaining.add(new PendingPos(pos, entry.attempts() + 1));
                 }
                 continue;
             }
-            BlockState current = level.getBlockState(pos);
+            BlockState current = chunk.getBlockState(pos);
             if (current.getBlock() instanceof CrossCollisionBlock) {
                 BlockState fixed = Block.updateFromNeighbourShapes(current, level, pos);
                 if (fixed != current) {

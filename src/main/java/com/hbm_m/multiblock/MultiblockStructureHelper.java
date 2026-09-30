@@ -763,12 +763,8 @@ public class MultiblockStructureHelper {
                 net.minecraft.nbt.CompoundTag nbt = null;
                 
                 if (oldBE != null) {
-                    //? if < 1.21.1 {
-                    nbt = oldBE.saveWithFullMetadata();
-                    //?} else {
-                    /*// 1.21.1: saveWithFullMetadata требует HolderLookup.Provider.
-                    nbt = oldBE.saveWithFullMetadata(level.registryAccess());
-                    *///?}
+                    // Хук кросс-версионный; x/y/z проставляются ниже вручную.
+                    nbt = com.hbm_m.platform.PlatformHooks.saveBlockEntityWithoutMetadata(oldBE, level.registryAccess());
                     level.removeBlockEntity(currentCtrlPos);
                 }
                 
@@ -781,12 +777,7 @@ public class MultiblockStructureHelper {
                     nbt.putInt("z", newCtrlPos.getZ());
                     BlockEntity newBE = level.getBlockEntity(newCtrlPos);
                     if (newBE != null) {
-                        //? if < 1.21.1 {
-                        newBE.load(nbt);
-                        //?} else {
-                        /*// 1.21.1: BlockEntity.load(CompoundTag) удалён — loadCustomOnly с Provider.
-                        newBE.loadCustomOnly(nbt, level.registryAccess());
-                        *///?}
+                        com.hbm_m.platform.PlatformHooks.loadBlockEntityTag(newBE, nbt, level.registryAccess());
                     }
                 }
                 level.updateNeighborsAt(currentCtrlPos, state.getBlock());

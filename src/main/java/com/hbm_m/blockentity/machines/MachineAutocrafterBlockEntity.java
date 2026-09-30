@@ -146,11 +146,8 @@ public class MachineAutocrafterBlockEntity extends BaseMachineBlockEntity {
             if (outSlot.getCount() + result.getCount() > outSlot.getMaxStackSize()) return;
         }
 
-        //? if < 1.21.1 {
-        NonNullList<ItemStack> remaining = recipe.getRemainingItems(grid);
-        //?} else {
-        /*NonNullList<ItemStack> remaining = recipe.getRemainingItems(grid.toCraftingInput());
-        *///?}
+        NonNullList<ItemStack> remaining =
+                com.hbm_m.platform.recipe.RecipeHooks.getRemainingItemsCrafting(recipe, grid);
         for (int i = 0; i < GRID_SIZE; i++) {
             inventory.getStackInSlot(RECIPE_START + i).shrink(1);
 

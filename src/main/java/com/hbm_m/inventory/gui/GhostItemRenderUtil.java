@@ -55,11 +55,7 @@ public final class GhostItemRenderUtil {
         PoseStack pose = guiGraphics.pose();
         pose.pushPose();
         pose.translate(x + 8.0F, y + 8.0F, 150.0F);
-        //? if < 1.21.1 {
-        pose.mulPoseMatrix(new org.joml.Matrix4f().scaling(1.0F, -1.0F, 1.0F));
-        //?} else {
-        /*pose.mulPose(new org.joml.Matrix4f().scaling(1.0F, -1.0F, 1.0F));
-        *///?}
+        com.hbm_m.platform.RenderHooks.mulPoseMatrix(pose, new org.joml.Matrix4f().scaling(1.0F, -1.0F, 1.0F));
         pose.scale(16.0F, 16.0F, 16.0F);
 
         MultiBufferSource tintedSource = tintBufferSource(guiGraphics.bufferSource(), alpha);

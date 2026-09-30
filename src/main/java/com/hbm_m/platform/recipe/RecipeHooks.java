@@ -282,6 +282,17 @@ public class RecipeHooks {
         return out;
     }
 
+    /** {@code CraftingRecipe.getRemainingItems} mit versionsuebergreifender Eingabe. */
+    public static net.minecraft.core.NonNullList<net.minecraft.world.item.ItemStack> getRemainingItemsCrafting(
+            net.minecraft.world.item.crafting.CraftingRecipe recipe,
+            com.hbm_m.util.SimpleCraftingContainer grid) {
+        //? if < 1.21.1 {
+        return recipe.getRemainingItems(grid);
+        //?} else {
+        /*return recipe.getRemainingItems(grid.toCraftingInput());
+        *///?}
+    }
+
     /** {@code CraftingRecipe.matches} mit versionsuebergreifender Eingabe. */
     public static boolean craftingMatches(net.minecraft.world.item.crafting.CraftingRecipe recipe,
                                           com.hbm_m.util.SimpleCraftingContainer grid, Level level) {

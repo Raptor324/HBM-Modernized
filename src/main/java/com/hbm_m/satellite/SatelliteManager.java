@@ -22,22 +22,7 @@ public class SatelliteManager extends SavedData {
     }
 
     public static SatelliteManager get(ServerLevel level) {
-        //? if < 1.21.1 {
-        return level.getDataStorage().computeIfAbsent(
-                SatelliteManager::load,
-                SatelliteManager::new,
-                DATA_NAME
-        );
-        //?} else {
-        /*return level.getDataStorage().computeIfAbsent(
-                new net.minecraft.world.level.saveddata.SavedData.Factory<>(
-                        SatelliteManager::new,
-                        (nbt, provider) -> load(nbt),
-                        null
-                ),
-                DATA_NAME
-        );
-        *///?}
+        return com.hbm_m.platform.PlatformHooks.getOrCreateSavedData(level, DATA_NAME, SatelliteManager::load, SatelliteManager::new);
     }
 
     private static SatelliteManager load(CompoundTag nbt) {
