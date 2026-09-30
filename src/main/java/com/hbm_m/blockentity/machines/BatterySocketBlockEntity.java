@@ -147,18 +147,14 @@ public class BatterySocketBlockEntity extends BaseMachineBlockEntity implements 
         return slot == SLOT_BATTERY;
     }
 
-    //? if forge || neoforge {
-    @Override
-    public ModelData getModelData() {
-        return ModelData.builder()
-                .with(HAS_INSERT, !inventory.getStackInSlot(0).isEmpty())
-                .build();
-    }
-    //?}
-
 
     public long getEnergyDelta() {
         return energyDelta;
+    }
+
+    /** Вставленная батарея — для HUD прицела (ориг. socket.syncStack). */
+    public net.minecraft.world.item.ItemStack getBatteryStack() {
+        return inventory.getStackInSlot(SLOT_BATTERY);
     }
 
     @Override

@@ -37,7 +37,7 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
-public class MachineTowerSmallBlock extends BaseEntityBlock implements IMultiblockController {
+public class MachineTowerSmallBlock extends BaseEntityBlock implements IMultiblockController, com.hbm_m.interfaces.ILookOverlay {
 
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
 
@@ -129,6 +129,32 @@ public class MachineTowerSmallBlock extends BaseEntityBlock implements IMultiblo
             return Shapes.empty();
         }
         return Shapes.block();
+    }
+
+    /**
+     * Порт {@code MachineTowerSmall.printHook}: список баков, первый (горячий вход) зелёным
+     * {@code "-> "}, остальные (выход) красным {@code "<- "}; формат {@code <имя>: <заполнено>/<объём>mB}.
+     */
+    @Override
+    public void printHook(net.minecraft.client.gui.GuiGraphics guiGraphics, Level level, BlockPos pos) {
+        BlockEntity be = level.getBlockEntity(pos);
+        if (!(be instanceof MachineTowerSmallBlockEntity tower)) return;
+
+        java.util.List<net.minecraft.network.chat.Component> text = new java.util.ArrayList<>();
+        com.hbm_m.inventory.fluid.tank.FluidTank[] tanks = tower.getTanks();
+        for (int i = 0; i < tanks.length; i++) {
+            com.hbm_m.inventory.fluid.tank.FluidTank tank = tanks[i];
+            text.add(net.minecraft.network.chat.Component.literal(i < 1 ? "-> " : "<- ")
+                    .withStyle(i < 1 ? net.minecraft.ChatFormatting.GREEN : net.minecraft.ChatFormatting.RED)
+                    .append(net.minecraft.network.chat.Component.literal("")
+                            .append(com.hbm_m.inventory.fluid.FluidType.forFluid(tank.getTankType()).getLocalizedName())
+                            .withStyle(net.minecraft.ChatFormatting.WHITE))
+                    .append(net.minecraft.network.chat.Component.literal(
+                            ": " + tank.getFill() + "/" + tank.getMaxFill() + "mB")
+                            .withStyle(net.minecraft.ChatFormatting.WHITE)));
+        }
+        com.hbm_m.interfaces.ILookOverlay.printGeneric(guiGraphics,
+                net.minecraft.network.chat.Component.translatable(getDescriptionId()), 0xffff00, 0x404000, text);
     }
 
     @Nullable

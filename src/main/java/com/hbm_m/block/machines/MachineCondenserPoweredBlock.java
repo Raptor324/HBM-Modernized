@@ -43,7 +43,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
  * {@link MachineLargeTurbineBlock}. Kein GUI (siehe Klassenkommentar in
  * {@link MachineCondenserPoweredBlockEntity}) - Rechtsklick tut nichts.
  */
-public class MachineCondenserPoweredBlock extends BaseEntityBlock implements IMultiblockController {
+public class MachineCondenserPoweredBlock extends BaseEntityBlock implements IMultiblockController, com.hbm_m.interfaces.ILookOverlay {
 
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
 
@@ -123,6 +123,32 @@ public class MachineCondenserPoweredBlock extends BaseEntityBlock implements IMu
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
         return new MachineCondenserPoweredBlockEntity(pos, state);
+    }
+
+    /** Порт MachineCondenserPowered.printHook: буфер HE и баки входа/выхода. */
+    @Override
+    public void printHook(net.minecraft.client.gui.GuiGraphics guiGraphics, Level level, BlockPos pos) {
+        BlockEntity be = level.getBlockEntity(pos);
+        if (!(be instanceof MachineCondenserPoweredBlockEntity tower)) return;
+
+        java.util.List<net.minecraft.network.chat.Component> text = new java.util.ArrayList<>();
+        text.add(net.minecraft.network.chat.Component.literal(
+                com.hbm_m.util.EnergyFormatter.format(tower.getEnergyStored()) + "HE / "
+                + com.hbm_m.util.EnergyFormatter.format(tower.getMaxEnergyStored()) + "HE"));
+
+        com.hbm_m.inventory.fluid.tank.FluidTank[] tanks = { tower.getSpentSteamTank(), tower.getWaterTank() };
+        for (int i = 0; i < tanks.length; i++) {
+            com.hbm_m.inventory.fluid.tank.FluidTank tank = tanks[i];
+            text.add(net.minecraft.network.chat.Component.literal(i < 1 ? "-> " : "<- ")
+                    .withStyle(i < 1 ? net.minecraft.ChatFormatting.GREEN : net.minecraft.ChatFormatting.RED)
+                    .append(net.minecraft.network.chat.Component.literal(
+                            com.hbm_m.inventory.fluid.FluidType.forFluid(tank.getTankType()).getLocalizedName().getString()
+                            + ": " + String.format(java.util.Locale.US, "%,d", tank.getFill())
+                            + "/" + String.format(java.util.Locale.US, "%,d", tank.getMaxFill()) + "mB")));
+        }
+
+        com.hbm_m.interfaces.ILookOverlay.printGeneric(guiGraphics,
+                net.minecraft.network.chat.Component.translatable(getDescriptionId()), 0xffff00, 0x404000, text);
     }
 
     @Nullable

@@ -79,6 +79,8 @@ public class MachineMassStorageBlockEntity extends BaseMachineBlockEntity {
     }
 
     public long getStockpile() { return stockpile; }
+    /** Filter-slot stack (defines the stored item type); empty stack = no type locked. */
+    public ItemStack getFilterStack() { return inventory.getStackInSlot(SLOT_FILTER); }
     /** Die Groesse dieser Kiste - sie steht am Block, nicht am Blockentity. */
     public long getCapacity() {
         return getBlockState().getBlock() instanceof com.hbm_m.block.machines.MachineMassStorageBlock storage

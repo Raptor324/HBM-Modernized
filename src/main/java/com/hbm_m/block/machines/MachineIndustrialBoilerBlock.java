@@ -41,7 +41,6 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 //? if forge {
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
 //?}
 
 
@@ -49,7 +48,7 @@ import net.minecraftforge.common.capabilities.ForgeCapabilities;
  * Industrial Boiler - converts water to steam using heat.
  * Multiblock structure: 3x3x5 (no ladder parts).
  */
-public class MachineIndustrialBoilerBlock extends BaseEntityBlock implements IMultiblockController {
+public class MachineIndustrialBoilerBlock extends BaseEntityBlock implements IMultiblockController, com.hbm_m.interfaces.ILookOverlay {
 
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
     public static final BooleanProperty LIT = BooleanProperty.create("lit");
@@ -146,6 +145,31 @@ public class MachineIndustrialBoilerBlock extends BaseEntityBlock implements IMu
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
         return new MachineIndustrialBoilerBlockEntity(pos, state);
+    }
+
+    /** Порт MachineHeatBoilerIndustrial.printHook: запас тепла TU и баки воды/пара. */
+    @Override
+    public void printHook(net.minecraft.client.gui.GuiGraphics guiGraphics, Level level, BlockPos pos) {
+        BlockEntity be = level.getBlockEntity(pos);
+        if (!(be instanceof MachineIndustrialBoilerBlockEntity boiler)) return;
+
+        java.util.List<net.minecraft.network.chat.Component> text = new java.util.ArrayList<>();
+        text.add(net.minecraft.network.chat.Component.literal(
+                String.format(java.util.Locale.US, "%,d", boiler.getHeat()) + "TU"));
+
+        com.hbm_m.inventory.fluid.tank.FluidTank[] tanks = boiler.getAllTanks();
+        for (int i = 0; i < tanks.length; i++) {
+            com.hbm_m.inventory.fluid.tank.FluidTank tank = tanks[i];
+            text.add(net.minecraft.network.chat.Component.literal(i < 1 ? "-> " : "<- ")
+                    .withStyle(i < 1 ? net.minecraft.ChatFormatting.GREEN : net.minecraft.ChatFormatting.RED)
+                    .append(net.minecraft.network.chat.Component.literal(
+                            com.hbm_m.inventory.fluid.FluidType.forFluid(tank.getTankType()).getLocalizedName().getString()
+                            + ": " + String.format(java.util.Locale.US, "%,d", tank.getFill())
+                            + " / " + String.format(java.util.Locale.US, "%,d", tank.getMaxFill()) + "mB")));
+        }
+
+        com.hbm_m.interfaces.ILookOverlay.printGeneric(guiGraphics,
+                net.minecraft.network.chat.Component.translatable(getDescriptionId()), 0xffff00, 0x404000, text);
     }
 
     //? if < 1.21.1 {

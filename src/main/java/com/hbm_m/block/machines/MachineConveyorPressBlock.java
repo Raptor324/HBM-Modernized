@@ -40,7 +40,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
  * Original {@code onBlockActivated}/{@code onScrew}).
  */
 public class MachineConveyorPressBlock extends com.hbm_m.block.machines.DummyableMachineBlock
-        implements com.hbm_m.block.network.IConveyorBelt {
+        implements com.hbm_m.block.network.IConveyorBelt, com.hbm_m.interfaces.ILookOverlay {
 
     /**
      * 1:1-Port von {@code MachineConveyorPress} (1.7.10): drei Felder hoch
@@ -158,6 +158,45 @@ public class MachineConveyorPressBlock extends com.hbm_m.block.machines.Dummyabl
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
         return new MachineConveyorPressBlockEntity(pos, state);
+    }
+
+    /** Fadenkreuz-HUD: Port von {@code MachineConveyorPress.printHook} (HE-Puffer + Stempel). */
+    @Override
+    public void printHook(net.minecraft.client.gui.GuiGraphics guiGraphics, Level level, BlockPos pos) {
+        BlockEntity be = level.getBlockEntity(pos);
+        if (!(be instanceof MachineConveyorPressBlockEntity press)) return;
+
+        java.util.List<net.minecraft.network.chat.Component> text = new java.util.ArrayList<>();
+        text.add(net.minecraft.network.chat.Component.literal(
+                shortNumber(press.getEnergyStored()) + "HE / " + shortNumber(press.getMaxEnergyStored()) + "HE"));
+
+        ItemStack stamp = press.getStampStack();
+        if (stamp.isEmpty()) {
+            text.add(net.minecraft.network.chat.Component.literal("Installed stamp: NONE")
+                    .withStyle(net.minecraft.ChatFormatting.RED));
+        } else {
+            text.add(net.minecraft.network.chat.Component.literal("Installed stamp: ")
+                    .append(stamp.getHoverName()));
+        }
+
+        com.hbm_m.interfaces.ILookOverlay.printGeneric(guiGraphics,
+                net.minecraft.network.chat.Component.translatable(getDescriptionId()), 0xffff00, 0x404000, text);
+    }
+
+    /** Port von {@code BobMathUtil.getShortNumber} (wie im Original: k/M/G/T/P/E mit zwei Stellen). */
+    private static String shortNumber(long value) {
+        double res;
+        String suffix = "";
+        long abs = Math.abs(value);
+        if (abs >= 1_000_000_000_000_000_000L) { res = value / 1.0E18; suffix = "E"; }
+        else if (abs >= 1_000_000_000_000_000L) { res = value / 1.0E15; suffix = "P"; }
+        else if (abs >= 1_000_000_000_000L) { res = value / 1.0E12; suffix = "T"; }
+        else if (abs >= 1_000_000_000L) { res = value / 1.0E9; suffix = "G"; }
+        else if (abs >= 1_000_000L) { res = value / 1.0E6; suffix = "M"; }
+        else if (abs >= 1_000L) { res = value / 1.0E3; suffix = "k"; }
+        else { return Long.toString(value); }
+        res = res <= -100.0 ? Math.round(res * 10.0) / 10.0 : Math.round(res * 100.0) / 100.0;
+        return res + suffix;
     }
 
     @Override

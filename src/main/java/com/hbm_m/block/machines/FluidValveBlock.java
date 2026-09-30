@@ -26,10 +26,32 @@ import net.minecraft.world.phys.BlockHitResult;
  * Открыт по умолчанию; при сигнале редстоуна закрывается (разрывает граф).
  * Тип жидкости задаётся fluid-идентификатором.
  */
-public class FluidValveBlock extends BaseEntityBlock {
+public class FluidValveBlock extends BaseEntityBlock implements com.hbm_m.interfaces.ILookOverlay {
 
     public FluidValveBlock(Properties props) {
         super(props);
+    }
+
+    /**
+     * Порт {@code FluidValve.printHook}: имя жидкости, заданной идентификатором, окрашенное
+     * в её цвет (та же схема, что у {@link FluidDuctBlock}).
+     */
+    @Override
+    public void printHook(net.minecraft.client.gui.GuiGraphics guiGraphics, Level level, BlockPos pos) {
+        BlockEntity be = level.getBlockEntity(pos);
+        if (!(be instanceof FluidValveBlockEntity valve)) return;
+        Fluid fluid = valve.getFluidType();
+        if (fluid == null || fluid == Fluids.EMPTY) {
+            fluid = com.hbm_m.inventory.fluid.ModFluids.NONE.getSource();
+        }
+        int rgb = com.hbm_m.api.fluids.HbmFluidRegistry.getTintColor(fluid) & 0xFFFFFF;
+        String name = com.hbm_m.api.fluids.HbmFluidRegistry.getFluidName(fluid);
+        java.util.List<net.minecraft.network.chat.Component> text = new java.util.ArrayList<>();
+        text.add(net.minecraft.network.chat.Component.literal(name)
+                .withStyle(net.minecraft.network.chat.Style.EMPTY
+                        .withColor(net.minecraft.network.chat.TextColor.fromRgb(rgb))));
+        com.hbm_m.interfaces.ILookOverlay.printGeneric(guiGraphics,
+                net.minecraft.network.chat.Component.translatable(getDescriptionId()), 0xffff00, 0x404000, text);
     }
 
     @Override

@@ -113,7 +113,7 @@ public class MachineHephaestusBlockEntity extends BaseMachineBlockEntity impleme
         return level.getFluidState(target).is(FluidTags.LAVA) ? LAVA_HEAT : 0;
     }
 
-    private int getTotalHeat() {
+    public int getTotalHeat() {
         int total = 0;
         for (int h : heatLayers) total += h;
         return total;

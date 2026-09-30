@@ -38,7 +38,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
  * Support-Block-Abriss-Logik. Hier: einfache kleine Box (wie ein Redstone-Fackel-Aequivalent),
  * platziert an der geklickten Flaeche - funktional ausreichend fuer einen reinen Wegpunkt-Marker.
  */
-public class MachineDroneWaypointBlock extends BaseEntityBlock {
+public class MachineDroneWaypointBlock extends BaseEntityBlock implements com.hbm_m.interfaces.ILookOverlay {
 
     public static final DirectionProperty FACING = BlockStateProperties.FACING;
     private static final VoxelShape SHAPE = Block.box(6, 6, 6, 10, 10, 10);
@@ -46,6 +46,25 @@ public class MachineDroneWaypointBlock extends BaseEntityBlock {
     public MachineDroneWaypointBlock(Properties properties) {
         super(properties);
         this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.UP));
+    }
+
+    /**
+     * Port of {@code DroneWaypoint.printHook}: "Waypoint distance: n" plus "Next waypoint:
+     * x / y / z" when a next waypoint is linked.
+     */
+    @Override
+    public void printHook(net.minecraft.client.gui.GuiGraphics guiGraphics, Level level, BlockPos pos) {
+        BlockEntity be = level.getBlockEntity(pos);
+        if (!(be instanceof MachineDroneWaypointBlockEntity waypoint)) return;
+        java.util.List<net.minecraft.network.chat.Component> text = new java.util.ArrayList<>();
+        text.add(net.minecraft.network.chat.Component.literal("Waypoint distance: " + waypoint.getHeight()));
+        BlockPos next = waypoint.getNextTarget();
+        if (next != null) {
+            text.add(net.minecraft.network.chat.Component.literal(
+                    "Next waypoint: " + next.getX() + " / " + next.getY() + " / " + next.getZ()));
+        }
+        com.hbm_m.interfaces.ILookOverlay.printGeneric(guiGraphics,
+                net.minecraft.network.chat.Component.translatable(getDescriptionId()), 0xffff00, 0x404000, text);
     }
 
     @Override

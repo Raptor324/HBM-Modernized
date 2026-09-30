@@ -145,7 +145,6 @@ public class ClientModEvents {
         }
     }
 
-    //? if forge || neoforge {
     @SubscribeEvent
     public static void onRenderLevelStage(RenderLevelStageEvent event) {
         // KHR_debug-колбэк (первый кадр, render thread): ловит сообщения драйвера
@@ -243,21 +242,32 @@ public class ClientModEvents {
         com.hbm_m.client.render.shader.ShaderBindResync.forceHonestBlendState();
     }
 
+    /** Прицельный HUD блоков {@link com.hbm_m.interfaces.ILookOverlay} (ориг. TooltipHandler). */
+    @SubscribeEvent
+    public static void onBlockLookOverlay(net.minecraftforge.client.event.RenderGuiEvent.Pre event) {
+        com.hbm_m.client.overlay.BlockLookOverlayHud.render(event.getGuiGraphics());
+    }
+
     /** Секция движка рендера Nucleus на F3-экране (левая панель). */
     @SubscribeEvent
     public static void onNucleusDebugText(net.minecraftforge.client.event.CustomizeGuiOverlayEvent.DebugText event) {
-        // 1.20.1 Forge диспатчит DebugText даже при закрытом F3 (и в чате) —
-        // без гейта секция [Nucleus] висит на HUD постоянно.
-        if (!net.minecraft.client.Minecraft.getInstance().options.renderDebug) {
+        if (!com.hbm_m.platform.RenderHooks.isDebugScreenVisible()) {
             return;
         }
         com.hbm_m.client.render.NucleusDebug.appendDebugLines(event.getLeft());
     }
     //?} elif neoforge {
     /*@SubscribeEvent
+    public static void onBlockLookOverlay(net.neoforged.neoforge.client.event.RenderGuiEvent.Pre event) {
+        // Паритет с Forge: прицельный HUD блоков ILookOverlay (раньше был только на 1.20.1).
+        com.hbm_m.client.overlay.BlockLookOverlayHud.render(event.getGuiGraphics());
+    }
+
+    @SubscribeEvent
     public static void onNucleusDebugText(net.neoforged.neoforge.client.event.CustomizeGuiOverlayEvent.DebugText event) {
-        // 1.21.1: Options.renderDebug удалён; событие приходит только при открытом
-        // дебаг-экране — дополнительный гейт не нужен.
+        if (!com.hbm_m.platform.RenderHooks.isDebugScreenVisible()) {
+            return;
+        }
         com.hbm_m.client.render.NucleusDebug.appendDebugLines(event.getLeft());
     }
     *///?}
@@ -266,7 +276,6 @@ public class ClientModEvents {
      * Instanced flush — только {@link com.hbm_m.client.render.culling.InstancedRenderFrame#presentAfterBlockEntities}
      * на {@code AFTER_BLOCK_ENTITIES}. {@code RenderTickEvent.END} / отложенный flush → белые модели.
      */
-    //?}
 
     // ── Диагностика shadow pass (1.21.1: машины не отбрасывают теней) ──
     /** Предыдущее значение счётчика; логируем только первое значение и смены 0↔N. */

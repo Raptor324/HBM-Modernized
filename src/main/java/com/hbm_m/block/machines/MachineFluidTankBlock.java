@@ -55,13 +55,12 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 //? if forge {
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
 //?}
 
 
 import net.minecraft.world.level.Explosion;
 
-public class MachineFluidTankBlock extends BaseEntityBlock implements IMultiblockController, IPersistentInfoProvider {
+public class MachineFluidTankBlock extends BaseEntityBlock implements IMultiblockController, IPersistentInfoProvider, com.hbm_m.interfaces.ILookOverlay {
 
     /**
      * Whether this machine has been blown up. Drives the model swap to the wrecked variant - the
@@ -236,6 +235,27 @@ public class MachineFluidTankBlock extends BaseEntityBlock implements IMultibloc
         list.add(Component.literal(tank.getFill() + "/" + tank.getMaxFill() + "mB ")
                 .append(name)
                 .withStyle(ChatFormatting.YELLOW));
+    }
+
+    /**
+     * Порт {@code MachineFluidTank.printHook} → {@code IRepairable.addGenericOverlay}: список
+     * материалов ремонта ("Repair with:"). Как и в оригинале, показывается ТОЛЬКО когда игрок
+     * держит газовую горелку в главной руке и бак взорван; иначе HUD вообще не выводится.
+     */
+    @Override
+    public void printHook(net.minecraft.client.gui.GuiGraphics guiGraphics, Level level, BlockPos pos) {
+        net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
+        if (mc.player == null || mc.player.getMainHandItem().getItem() != ModItems.BLOWTORCH.get()) return;
+        BlockEntity be = level.getBlockEntity(pos);
+        if (!(be instanceof MachineFluidTankBlockEntity tank) || !tank.isDamaged()) return;
+
+        List<Component> text = new java.util.ArrayList<>();
+        text.add(Component.literal("Repair with:").withStyle(ChatFormatting.GOLD));
+        for (ItemStack mat : tank.getRepairMaterials()) {
+            text.add(Component.literal("- " + mat.getHoverName().getString() + " x" + mat.getCount()));
+        }
+        com.hbm_m.interfaces.ILookOverlay.printGeneric(guiGraphics,
+                Component.translatable(getDescriptionId()), 0xffff00, 0x404000, text);
     }
 
     // ═══════════════ Компаратор (порт hasComparatorInputOverride) ═══════════════

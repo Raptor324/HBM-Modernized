@@ -40,7 +40,6 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 //? if forge {
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
 //?}
 
 
@@ -50,7 +49,7 @@ import net.minecraftforge.common.capabilities.ForgeCapabilities;
  */
 import net.minecraft.world.level.Explosion;
 
-public class MachineRefineryBlock extends BaseEntityBlock implements IMultiblockController {
+public class MachineRefineryBlock extends BaseEntityBlock implements IMultiblockController, com.hbm_m.interfaces.ILookOverlay {
 
     /**
      * Whether this machine has been blown up. Drives the model swap to the wrecked variant - the
@@ -147,6 +146,29 @@ public class MachineRefineryBlock extends BaseEntityBlock implements IMultiblock
             structureHelper.destroyStructure(level, pos, facing);
         }
         super.onRemove(state, level, pos, newState, isMoving);
+    }
+
+    /**
+     * Порт {@code MachineRefinery.printHook} → {@code IRepairable.addGenericOverlay}: список
+     * материалов ремонта ("Repair with:"). Как и в оригинале, показывается ТОЛЬКО когда игрок
+     * держит газовую горелку в главной руке и завод взорван; иначе HUD вообще не выводится.
+     */
+    @Override
+    public void printHook(net.minecraft.client.gui.GuiGraphics guiGraphics, Level level, BlockPos pos) {
+        net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
+        if (mc.player == null || mc.player.getMainHandItem().getItem() != com.hbm_m.item.ModItems.BLOWTORCH.get()) return;
+        BlockEntity be = level.getBlockEntity(pos);
+        if (!(be instanceof MachineRefineryBlockEntity refinery) || !refinery.isDamaged()) return;
+
+        java.util.List<net.minecraft.network.chat.Component> text = new java.util.ArrayList<>();
+        text.add(net.minecraft.network.chat.Component.literal("Repair with:")
+                .withStyle(net.minecraft.ChatFormatting.GOLD));
+        for (net.minecraft.world.item.ItemStack mat : refinery.getRepairMaterials()) {
+            text.add(net.minecraft.network.chat.Component.literal(
+                    "- " + mat.getHoverName().getString() + " x" + mat.getCount()));
+        }
+        com.hbm_m.interfaces.ILookOverlay.printGeneric(guiGraphics,
+                net.minecraft.network.chat.Component.translatable(getDescriptionId()), 0xffff00, 0x404000, text);
     }
 
     @Nullable

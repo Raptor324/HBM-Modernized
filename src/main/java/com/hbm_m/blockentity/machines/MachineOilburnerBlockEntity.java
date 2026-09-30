@@ -251,6 +251,11 @@ public class MachineOilburnerBlockEntity extends BaseMachineBlockEntity
         return setting;
     }
 
+    /** Множитель тепла (HP-вариант горелки ×2) — для HUD прицела. */
+    public int getHeatMultiplier() {
+        return heatMultiplier;
+    }
+
     /** Порт {@code receiveControl("toggle")}: isOn = !isOn (кнопка GUI). */
     public void toggleOn() {
         this.isOn = !this.isOn;

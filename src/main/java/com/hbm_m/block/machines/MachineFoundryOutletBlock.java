@@ -2,6 +2,8 @@ package com.hbm_m.block.machines;
 
 import com.google.common.collect.ImmutableMap;
 import com.hbm_m.blockentity.machines.MachineFoundryOutletBlockEntity;
+import com.hbm_m.item.ModItems;
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.network.chat.Component;
@@ -35,7 +37,7 @@ import java.util.Map;
  * FACING = pour direction; the spout body is attached to the opposite side
  * (where the channel connects). Original bounds: 6px wide, 8px high, 6px deep.
  */
-public class MachineFoundryOutletBlock extends BaseEntityBlock {
+public class MachineFoundryOutletBlock extends BaseEntityBlock implements com.hbm_m.interfaces.ILookOverlay {
 
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
 
@@ -118,6 +120,30 @@ public class MachineFoundryOutletBlock extends BaseEntityBlock {
     @Nullable @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
         return new MachineFoundryOutletBlockEntity(pos, state);
+    }
+
+    /**
+     * Порт FoundryOutlet.printHook: состояние фильтра, его инверсии и редстоуна.
+     * Наследуется шлакоотводом (FoundrySlagtap extends FoundryOutlet, как в оригинале).
+     */
+    @Override
+    public void printHook(net.minecraft.client.gui.GuiGraphics guiGraphics, Level level, BlockPos pos) {
+        BlockEntity be = level.getBlockEntity(pos);
+        if (!(be instanceof MachineFoundryOutletBlockEntity outlet)) return;
+
+        java.util.List<Component> text = new java.util.ArrayList<>();
+        if (outlet.filter != null) {
+            text.add(Component.translatable("foundry.hbm_m.filter",
+                    Component.translatable("material.hbm_m." + outlet.filter.name)).withStyle(ChatFormatting.YELLOW));
+        }
+        if (outlet.invertFilter) {
+            text.add(Component.translatable("foundry.hbm_m.filter_inverted").withStyle(ChatFormatting.YELLOW));
+        }
+        if (outlet.invertRedstone) {
+            text.add(Component.translatable("foundry.hbm_m.inverted").withStyle(ChatFormatting.DARK_RED));
+        }
+        com.hbm_m.interfaces.ILookOverlay.printGeneric(guiGraphics,
+                Component.translatable(getDescriptionId()), 0xFF4000, 0x401000, text);
     }
 
     @Nullable @Override

@@ -30,7 +30,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 import dev.architectury.registry.menu.MenuRegistry;
 import org.jetbrains.annotations.Nullable;
 
-public abstract class RBMKColumnBlock extends BaseEntityBlock {
+public abstract class RBMKColumnBlock extends BaseEntityBlock implements com.hbm_m.interfaces.ILookOverlay {
 
     /** Set to false to suppress lid drops globally (e.g. during world gen). */
     public static boolean dropLids = true;
@@ -111,6 +111,70 @@ public abstract class RBMKColumnBlock extends BaseEntityBlock {
         }
 
         return InteractionResult.PASS;
+    }
+
+    // ─── DODD diagnostic overlay ─────────────────────────────────────────────
+
+    /**
+     * Port of the original {@code RBMKBase.printHook} → {@code TileEntityRBMKBase.diagnosticPrintHook}.
+     * The green "Dump of Ordered Data Diagnostic (DODD)" title is drawn higher than usual
+     * (pZ-20, with the block name below it at pZ-10) to leave room for the data lines, so
+     * {@link com.hbm_m.interfaces.ILookOverlay#printGeneric} (title pinned at pZ-10) can't
+     * express this layout and the rendering is done inline, copying printGeneric's structure.
+     */
+    @Override
+    public void printHook(net.minecraft.client.gui.GuiGraphics guiGraphics, Level level, BlockPos pos) {
+        BlockEntity be = level.getBlockEntity(pos);
+        if (!(be instanceof RBMKColumnBlockEntity col)) return;
+
+        net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
+        if (!mc.options.getCameraType().isFirstPerson() || mc.options.hideGui) return;
+        if (mc.gameMode != null && mc.gameMode.getPlayerMode() == net.minecraft.world.level.GameType.SPECTATOR) return;
+
+        net.minecraft.nbt.CompoundTag flush = new net.minecraft.nbt.CompoundTag();
+        col.getDiagData(flush);
+
+        int pX = mc.getWindow().getGuiScaledWidth() / 2 + 8;
+        int pZ = mc.getWindow().getGuiScaledHeight() / 2;
+
+        java.util.List<String> exceptions = java.util.List.of("x", "y", "z", "items", "id", "muffled");
+
+        //Keep the title unlocalized is cool.
+        String title = "Dump of Ordered Data Diagnostic (DODD)";
+        guiGraphics.drawString(mc.font, title, pX + 1, pZ - 19, 0x006000, false);
+        guiGraphics.drawString(mc.font, title, pX, pZ - 20, 0x00FF00, false);
+
+        String blockName = net.minecraft.network.chat.Component.translatable(getDescriptionId()).getString();
+        guiGraphics.drawString(mc.font, blockName, pX + 1, pZ - 9, 0x606000, false);
+        guiGraphics.drawString(mc.font, blockName, pX, pZ - 10, 0xffff00, false);
+
+        String[] ents = flush.getAllKeys().toArray(new String[0]);
+        java.util.Arrays.sort(ents);
+
+        for (String key : ents) {
+
+            if (exceptions.contains(key))
+                continue;
+            net.minecraft.nbt.Tag valueTag = flush.get(key);
+            if (valueTag == null)
+                continue;
+            // 1.7.10's NBTTagString.toString() printed raw text; modern toString() SNBT-quotes
+            // strings, so strings are printed as-is while numeric tags keep their type suffix.
+            String value = valueTag instanceof net.minecraft.nbt.StringTag
+                    ? valueTag.getAsString() : valueTag.toString();
+            //No...'d' doesn't refer to "day" and 's' doesn't refer to "second". Meaningless.
+            if (!value.isEmpty()) {
+                char lastChar = value.charAt(value.length() - 1);
+                if (lastChar == 'd' || lastChar == 's' || lastChar == 'b') {
+                    value = value.substring(0, value.length() - 1);
+                }
+            }
+            // Оригинал локализует ключ через tile.rbmk.dodd.<key> (I18nUtil.resolveKey);
+            // ключи добавлены в оба lang-файла, неизвестные ключи падают в raw-вид сами.
+            String localized = net.minecraft.network.chat.Component.translatable("tile.rbmk.dodd." + key).getString();
+            guiGraphics.drawString(mc.font, localized + ": " + value, pX, pZ, 0xFFFFFF, false);
+            pZ += 10;
+        }
     }
 
     // ─── Placement ────────────────────────────────────────────────────────────

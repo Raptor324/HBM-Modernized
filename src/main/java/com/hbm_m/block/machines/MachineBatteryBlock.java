@@ -45,7 +45,7 @@ import net.minecraft.world.phys.BlockHitResult;
  * Универсальный класс блока для всех энергохранилищ.
  *  Корректно интегрирован в энергосеть HBM.
  */
-public class MachineBatteryBlock extends BaseEntityBlock {
+public class MachineBatteryBlock extends BaseEntityBlock implements com.hbm_m.interfaces.ILookOverlay {
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
     private final long capacity;
 
@@ -88,6 +88,26 @@ public class MachineBatteryBlock extends BaseEntityBlock {
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
         return new MachineBatteryBlockEntity(pos, state);
+    }
+
+    /** Порт MachineBattery.printHook: запас HE и процент заряда, окрашенный по уровню. */
+    @Override
+    public void printHook(net.minecraft.client.gui.GuiGraphics guiGraphics, Level level, BlockPos pos) {
+        BlockEntity be = level.getBlockEntity(pos);
+        if (!(be instanceof MachineBatteryBlockEntity battery)) return;
+
+        java.util.List<net.minecraft.network.chat.Component> text = new java.util.ArrayList<>();
+        text.add(net.minecraft.network.chat.Component.literal(
+                EnergyFormatter.format(battery.getEnergyStored()) + " / " + EnergyFormatter.format(battery.getMaxEnergyStored()) + " HE"));
+
+        double percent = (double) battery.getEnergyStored() / (double) battery.getMaxEnergyStored();
+        int charge = (int) Math.floor(percent * 10_000D);
+        int color = ((int) (0xFF - 0xFF * percent)) << 16 | ((int) (0xFF * percent) << 8);
+        text.add(net.minecraft.network.chat.Component.literal((charge / 100D) + "%")
+                .withStyle(style -> style.withColor(net.minecraft.network.chat.TextColor.fromRgb(color))));
+
+        com.hbm_m.interfaces.ILookOverlay.printGeneric(guiGraphics,
+                net.minecraft.network.chat.Component.translatable(getDescriptionId()), 0xffff00, 0x404000, text);
     }
 
     @Nullable

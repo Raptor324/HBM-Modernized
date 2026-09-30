@@ -8,6 +8,7 @@ import org.jetbrains.annotations.Nullable;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.blockentity.machines.MachineOilburnerBlockEntity;
+import com.hbm_m.inventory.fluid.trait.FT_Flammable;
 import com.hbm_m.interfaces.IMultiblockController;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
@@ -47,7 +48,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
  * Также используется для {@code oilburner_hp}. Отвёртка — мощность 1..10,
  * клик — GUI.
  */
-public class MachineOilburnerBlock extends BaseEntityBlock implements IMultiblockController {
+public class MachineOilburnerBlock extends BaseEntityBlock implements IMultiblockController, com.hbm_m.interfaces.ILookOverlay {
 
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
 
@@ -128,6 +129,30 @@ public class MachineOilburnerBlock extends BaseEntityBlock implements IMultibloc
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
         return new MachineOilburnerBlockEntity(pos, state);
+    }
+
+    /** Порт HeaterOilburner.printHook: расход топлива mB/тик и тепловыделение TU/тик. */
+    @Override
+    public void printHook(net.minecraft.client.gui.GuiGraphics guiGraphics, Level level, BlockPos pos) {
+        BlockEntity be = level.getBlockEntity(pos);
+        if (!(be instanceof MachineOilburnerBlockEntity heater)) return;
+
+        java.util.List<net.minecraft.network.chat.Component> text = new java.util.ArrayList<>();
+        text.add(net.minecraft.network.chat.Component.literal("-> ").withStyle(net.minecraft.ChatFormatting.GREEN)
+                .append(net.minecraft.network.chat.Component.literal(heater.getSetting() + " mB/t")));
+
+        var tankType = heater.getOilTank().getTankType();
+        FT_Flammable trait = com.hbm_m.inventory.fluid.FluidType.getTrait(tankType, FT_Flammable.class);
+        if (trait != null) {
+            // Оригинал: heatEnergy * setting / 1000 (умножение ДО деления — без потери округления);
+            // heatMultiplier — порт-овское расширение HP-варианта горелки.
+            long heat = trait.getHeatEnergy() * (long) heater.getSetting() * heater.getHeatMultiplier() / 1000L;
+            text.add(net.minecraft.network.chat.Component.literal("<- ").withStyle(net.minecraft.ChatFormatting.RED)
+                    .append(net.minecraft.network.chat.Component.literal(
+                            String.format(java.util.Locale.US, "%,d", heat) + " TU/t")));
+        }
+        com.hbm_m.interfaces.ILookOverlay.printGeneric(guiGraphics,
+                net.minecraft.network.chat.Component.translatable(getDescriptionId()), 0xffff00, 0x404000, text);
     }
 
     @Nullable

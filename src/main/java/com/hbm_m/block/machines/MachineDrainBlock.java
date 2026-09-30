@@ -26,7 +26,7 @@ import org.jetbrains.annotations.Nullable;
  * <p>Er belegt wie im Original drei Felder in einer Reihe ({@code getDimensions {0,0,2,0,0,0}}) -
  * der Kern vorn, zwei Dummyzellen dahinter.</p>
  */
-public class MachineDrainBlock extends com.hbm_m.block.machines.DummyableMachineBlock {
+public class MachineDrainBlock extends com.hbm_m.block.machines.DummyableMachineBlock implements com.hbm_m.interfaces.ILookOverlay {
 
     public MachineDrainBlock(Properties properties) { super(properties); }
 
@@ -36,6 +36,25 @@ public class MachineDrainBlock extends com.hbm_m.block.machines.DummyableMachine
                 .box(0, 0, 2, 0, 0, 0)
                 .placementOffset(0)
                 .build(() -> com.hbm_m.block.ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState());
+    }
+
+    /** Порт {@code MachineDrain.printHook}: зелёная подача и содержимое единственного бака. */
+    @Override
+    public void printHook(net.minecraft.client.gui.GuiGraphics guiGraphics, Level level, BlockPos pos) {
+        BlockEntity be = level.getBlockEntity(pos);
+        if (!(be instanceof MachineDrainBlockEntity drain)) return;
+
+        com.hbm_m.inventory.fluid.tank.FluidTank tank = drain.getTank();
+        java.util.List<net.minecraft.network.chat.Component> text = new java.util.ArrayList<>();
+        text.add(net.minecraft.network.chat.Component.literal("-> ").withStyle(net.minecraft.ChatFormatting.GREEN)
+                .append(net.minecraft.network.chat.Component.literal("")
+                        .append(com.hbm_m.inventory.fluid.FluidType.forFluid(tank.getTankType()).getLocalizedName())
+                        .withStyle(net.minecraft.ChatFormatting.WHITE))
+                .append(net.minecraft.network.chat.Component.literal(
+                        ": " + tank.getFill() + "/" + tank.getMaxFill() + "mB")
+                        .withStyle(net.minecraft.ChatFormatting.WHITE)));
+        com.hbm_m.interfaces.ILookOverlay.printGeneric(guiGraphics,
+                net.minecraft.network.chat.Component.translatable(getDescriptionId()), 0xffff00, 0x404000, text);
     }
 
     @Nullable @Override

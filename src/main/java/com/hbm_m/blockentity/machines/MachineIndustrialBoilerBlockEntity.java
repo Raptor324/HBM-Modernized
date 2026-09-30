@@ -312,6 +312,11 @@ public class MachineIndustrialBoilerBlockEntity extends BaseMachineBlockEntity i
         isOn = true;
     }
 
+    /** TU-Waermepuffer fuer das Look-Overlay-HUD (Original: {@code boiler.heat}). */
+    public int getHeat() {
+        return heat;
+    }
+
     public boolean isActive() {
         return isOn;
     }

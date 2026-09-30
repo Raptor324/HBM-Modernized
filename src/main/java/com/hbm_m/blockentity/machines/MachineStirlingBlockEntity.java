@@ -173,6 +173,11 @@ public class MachineStirlingBlockEntity extends BaseMachineBlockEntity {
         return hasCog;
     }
 
+    /** Kreative Variante (kein MaxHeat/kein HUD-Prozent/kein Overspeed, wie im Original). */
+    public boolean isCreative() {
+        return isCreative;
+    }
+
     public int getHeat() {
         return heat;
     }

@@ -58,7 +58,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
  * <p>Клик с изложницей вставляет её (порт onBlockActivated), лопата высыпает
  * расплав в шлак, отвёртка вынимает изложницу, иначе открывается GUI.
  */
-public class MachineStrandCasterBlock extends BaseEntityBlock implements IMultiblockController {
+public class MachineStrandCasterBlock extends BaseEntityBlock implements IMultiblockController, com.hbm_m.interfaces.ILookOverlay {
 
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
 
@@ -175,6 +175,25 @@ public class MachineStrandCasterBlock extends BaseEntityBlock implements IMultib
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
         return new MachineStrandCasterBlockEntity(pos, state);
+    }
+
+    /** Порт MachineStrandCaster.printHook: красная строка без изложницы, синяя — название установленной. */
+    @Override
+    public void printHook(net.minecraft.client.gui.GuiGraphics guiGraphics, Level level, BlockPos pos) {
+        BlockEntity be = level.getBlockEntity(pos);
+        if (!(be instanceof MachineStrandCasterBlockEntity caster)) return;
+
+        java.util.List<net.minecraft.network.chat.Component> text = new java.util.ArrayList<>();
+        ItemCastMold mold = caster.getInstalledMold();
+        if (mold == null) {
+            text.add(net.minecraft.network.chat.Component.translatable("foundry.hbm_m.noCast")
+                    .withStyle(net.minecraft.ChatFormatting.RED));
+        } else {
+            text.add(net.minecraft.network.chat.Component.literal(mold.getMoldType().label)
+                    .withStyle(net.minecraft.ChatFormatting.BLUE));
+        }
+        com.hbm_m.interfaces.ILookOverlay.printGeneric(guiGraphics,
+                net.minecraft.network.chat.Component.translatable(getDescriptionId()), 0xFF4000, 0x401000, text);
     }
 
     @Override

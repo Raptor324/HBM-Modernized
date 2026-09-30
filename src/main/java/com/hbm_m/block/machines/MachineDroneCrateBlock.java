@@ -22,10 +22,27 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 
 /** Drone Crate - Port von {@code DroneCrate} (1.7.10 Original). Passiver Wuerfel, keine Ausrichtung. */
-public class MachineDroneCrateBlock extends BaseEntityBlock {
+public class MachineDroneCrateBlock extends BaseEntityBlock implements com.hbm_m.interfaces.ILookOverlay {
 
     public MachineDroneCrateBlock(Properties properties) {
         super(properties);
+    }
+
+    /**
+     * Port of {@code DroneCrate.printHook}: "Next waypoint: x / y / z" - nur wenn ein
+     * naechstes Ziel gesetzt ist, sonst gar kein HUD (wie im Original).
+     */
+    @Override
+    public void printHook(net.minecraft.client.gui.GuiGraphics guiGraphics, Level level, BlockPos pos) {
+        BlockEntity be = level.getBlockEntity(pos);
+        if (!(be instanceof MachineDroneCrateBlockEntity crate)) return;
+        BlockPos next = crate.getNextTarget();
+        if (next == null) return;
+        java.util.List<net.minecraft.network.chat.Component> text = new java.util.ArrayList<>();
+        text.add(net.minecraft.network.chat.Component.literal(
+                "Next waypoint: " + next.getX() + " / " + next.getY() + " / " + next.getZ()));
+        com.hbm_m.interfaces.ILookOverlay.printGeneric(guiGraphics,
+                net.minecraft.network.chat.Component.translatable(getDescriptionId()), 0xffff00, 0x404000, text);
     }
 
     @Override

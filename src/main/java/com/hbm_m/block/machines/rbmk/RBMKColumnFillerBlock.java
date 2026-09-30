@@ -26,7 +26,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
  * Every interaction (right-click, breaking) is forwarded to the real column at the base position,
  * found by scanning downward (bounded by {@code RBMKDials.getColumnHeight}).
  */
-public class RBMKColumnFillerBlock extends Block {
+public class RBMKColumnFillerBlock extends Block implements com.hbm_m.interfaces.ILookOverlay {
 
     private static final VoxelShape SHAPE = Shapes.block();
     /** Matches the original's {@code getCollisionBoundingBoxFromPool} extra 0.25 lid height. */
@@ -60,6 +60,20 @@ public class RBMKColumnFillerBlock extends Block {
             if (contiguousOnly && !(below instanceof RBMKColumnFillerBlock)) return null;
         }
         return null;
+    }
+
+    /**
+     * The original's DODD overlay (RBMKBase.printHook → diagnosticPrintHook) reached the core
+     * from any column segment via findCore - and the crosshair spends most of its time on a
+     * filler segment, not on the base block. Resolve the base and let the column block draw.
+     */
+    @Override
+    public void printHook(net.minecraft.client.gui.GuiGraphics guiGraphics, Level level, BlockPos pos) {
+        BlockPos basePos = findBase(level, pos);
+        if (basePos == null) return;
+        if (level.getBlockState(basePos).getBlock() instanceof com.hbm_m.interfaces.ILookOverlay ilo) {
+            ilo.printHook(guiGraphics, level, basePos);
+        }
     }
 
     @Override

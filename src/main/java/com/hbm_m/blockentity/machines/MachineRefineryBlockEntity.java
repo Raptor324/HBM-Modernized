@@ -131,6 +131,18 @@ public class MachineRefineryBlockEntity extends BaseMachineBlockEntity implement
         this.setChanged();
         syncExplodedState();
     }
+
+    /** 1.7.10 {@code IRepairable.isDamaged()}. */
+    public boolean isDamaged() {
+        return this.hasExploded;
+    }
+
+    /** 1.7.10 {@code IRepairable.getRepairMaterials()}: 8 стальных пластин + 4 рулона скотча. */
+    public java.util.List<ItemStack> getRepairMaterials() {
+        return java.util.List.of(
+                new ItemStack(com.hbm_m.item.ModItems.STEEL_PLATE.get(), 8),
+                new ItemStack(com.hbm_m.item.ModItems.DUCTTAPE.get(), 4));
+    }
     /**
      * Pushes {@code hasExploded} into the blockstate so the wrecked model is used. The state is
      * the single source of truth for rendering; the field stays authoritative for behaviour.

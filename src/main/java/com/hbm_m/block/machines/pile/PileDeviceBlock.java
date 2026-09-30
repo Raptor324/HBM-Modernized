@@ -37,7 +37,7 @@ import org.jetbrains.annotations.Nullable;
  * zugehoerige Kanalblock liegt also entgegen der Blickrichtung, und Redstone wird davor
  * abgegriffen.</p>
  */
-public abstract class PileDeviceBlock extends BaseEntityBlock {
+public abstract class PileDeviceBlock extends BaseEntityBlock implements com.hbm_m.interfaces.ILookOverlay {
 
     public static final net.minecraft.world.level.block.state.properties.DirectionProperty FACING =
             HorizontalDirectionalBlock.FACING;
@@ -45,6 +45,47 @@ public abstract class PileDeviceBlock extends BaseEntityBlock {
     protected PileDeviceBlock(Properties properties) {
         super(properties);
         registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH));
+    }
+
+    /**
+     * Порт {@code BlockPileDevice.printHook}: у загрузчика — температура канала, вкладыш и задний
+     * стержень с выгоранием; у привода — уровень извлечения. У вентиля строк нет — как и
+     * в оригинале, HUD вовсе не выводится. Заголовок берётся из описания конкретного блока
+     * (в оригинале — имя предмета по метадате).
+     */
+    @Override
+    public void printHook(net.minecraft.client.gui.GuiGraphics guiGraphics, Level level, BlockPos pos) {
+        BlockEntity tile = level.getBlockEntity(pos);
+
+        java.util.List<net.minecraft.network.chat.Component> text = new java.util.ArrayList<>();
+
+        if (tile instanceof com.hbm_m.blockentity.machines.pile.PileLoaderBlockEntity device) {
+            text.add(net.minecraft.network.chat.Component.literal("Temp: "
+                    + (int) Math.round(device.getChannelTemp()) + " / "
+                    + com.hbm_m.blockentity.machines.pile.PileCoreBlockEntity.MAX_HEAT + "°C"));
+            if (!device.getStack().isEmpty()) {
+                text.add(net.minecraft.network.chat.Component.literal("Loading: ")
+                        .append(device.getStack().getHoverName()));
+            }
+            if (!device.getChannelStack().isEmpty()) {
+                text.add(net.minecraft.network.chat.Component.literal("Last rod: ")
+                        .append(device.getChannelStack().getHoverName()));
+                if (device.getChannelDepletion() > 0) {
+                    text.add(net.minecraft.network.chat.Component.literal("Depletion: "
+                            + (int) Math.round(device.getChannelDepletion()) + "%"));
+                }
+            }
+        }
+
+        if (tile instanceof com.hbm_m.blockentity.machines.pile.PileControlBlockEntity device) {
+            text.add(net.minecraft.network.chat.Component.literal(
+                    "Extraction level: " + (int) (device.getExtension() * 100) + "%"));
+        }
+
+        if (!text.isEmpty()) {
+            com.hbm_m.interfaces.ILookOverlay.printGeneric(guiGraphics,
+                    net.minecraft.network.chat.Component.translatable(getDescriptionId()), 0xffff00, 0x404000, text);
+        }
     }
 
     @Override

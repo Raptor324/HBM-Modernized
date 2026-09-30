@@ -40,7 +40,7 @@ import dev.architectury.registry.menu.MenuRegistry;
  * {@code TileEntityMachineRotaryFurnace}) als einzelner Block, siehe
  * {@link MachineRotaryFurnaceBlockEntity} fuer Details zur Vereinfachung ggue. dem Multiblock-Original.
  */
-public class MachineRotaryFurnaceBlock extends BaseEntityBlock {
+public class MachineRotaryFurnaceBlock extends BaseEntityBlock implements com.hbm_m.interfaces.ILookOverlay {
     public static final BooleanProperty LIT = BlockStateProperties.LIT;
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
     public static final VoxelShape SHAPE = Block.box(0, 0, 0, 16, 16, 16);
@@ -94,6 +94,30 @@ public class MachineRotaryFurnaceBlock extends BaseEntityBlock {
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
         return new MachineRotaryFurnaceBlockEntity(pos, state);
+    }
+
+    /**
+     * Fadenkreuz-HUD: Port von {@code MachineRotaryFurnace.printHook}. Das Original ist ein
+     * Multiblock und zeigt je nach angeschautem Anschluss nur dessen Leitungen (Dampf, Fluid,
+     * Brennstoff); dieser Port ist ein Einzelblock, darum erscheinen die angeschlossenen
+     * Leitungen zusammen. Die Dampf-Zufuehrung ist im Port nicht enthalten (kein Dampftank)
+     * und entfaellt daher.
+     */
+    @Override
+    public void printHook(net.minecraft.client.gui.GuiGraphics guiGraphics, Level level, BlockPos pos) {
+        BlockEntity be = level.getBlockEntity(pos);
+        if (!(be instanceof MachineRotaryFurnaceBlockEntity furnace)) return;
+
+        com.hbm_m.inventory.fluid.tank.FluidTank tank = furnace.getTank();
+        java.util.List<net.minecraft.network.chat.Component> text = new java.util.ArrayList<>();
+        text.add(net.minecraft.network.chat.Component.literal("-> ").withStyle(net.minecraft.ChatFormatting.GREEN)
+                .append(net.minecraft.network.chat.Component.literal(
+                        com.hbm_m.inventory.fluid.FluidType.forFluid(tank.getTankType()).getLocalizedName().getString())));
+        text.add(net.minecraft.network.chat.Component.literal("-> ").withStyle(net.minecraft.ChatFormatting.YELLOW)
+                .append(net.minecraft.network.chat.Component.literal("Fuel")));
+
+        com.hbm_m.interfaces.ILookOverlay.printGeneric(guiGraphics,
+                net.minecraft.network.chat.Component.translatable(getDescriptionId()), 0xffff00, 0x404000, text);
     }
 
     @Override

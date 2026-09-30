@@ -53,7 +53,7 @@ import org.jetbrains.annotations.Nullable;
  * <p><b>Abweichung:</b> das Original arbeitet rekursiv; hier laeuft dieselbe Suche ueber einen
  * Stapel, damit sie bei tausend Bloecken nicht den Aufrufstapel sprengt. Das Ergebnis ist dasselbe.</p>
  */
-public class ICFControllerBlock extends BaseEntityBlock {
+public class ICFControllerBlock extends BaseEntityBlock implements com.hbm_m.interfaces.ILookOverlay {
 
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
 
@@ -103,6 +103,36 @@ public class ICFControllerBlock extends BaseEntityBlock {
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
         return createTickerHelper(type, ModBlockEntities.ICF_CONTROLLER_BE.get(),
                 (lvl, pos, st, be) -> ICFControllerBlockEntity.tick(lvl, pos, st, (ICFControllerBlockEntity) be));
+    }
+
+    /** Fadenkreuz-HUD: Port von {@code MachineICFController.printHook} (HE-Puffer des Pults). */
+    @Override
+    public void printHook(net.minecraft.client.gui.GuiGraphics guiGraphics, Level level, BlockPos pos) {
+        BlockEntity be = level.getBlockEntity(pos);
+        if (!(be instanceof ICFControllerBlockEntity icf)) return;
+
+        java.util.List<net.minecraft.network.chat.Component> text = new java.util.ArrayList<>();
+        text.add(net.minecraft.network.chat.Component.literal(
+                shortNumber(icf.getEnergyStored()) + "/" + shortNumber(icf.getMaxEnergyStored()) + "HE"));
+
+        com.hbm_m.interfaces.ILookOverlay.printGeneric(guiGraphics,
+                net.minecraft.network.chat.Component.translatable(getDescriptionId()), 0xffff00, 0x404000, text);
+    }
+
+    /** Port von {@code BobMathUtil.getShortNumber} (wie im Original: k/M/G/T/P/E mit zwei Stellen). */
+    private static String shortNumber(long value) {
+        double res;
+        String suffix = "";
+        long abs = Math.abs(value);
+        if (abs >= 1_000_000_000_000_000_000L) { res = value / 1.0E18; suffix = "E"; }
+        else if (abs >= 1_000_000_000_000_000L) { res = value / 1.0E15; suffix = "P"; }
+        else if (abs >= 1_000_000_000_000L) { res = value / 1.0E12; suffix = "T"; }
+        else if (abs >= 1_000_000_000L) { res = value / 1.0E9; suffix = "G"; }
+        else if (abs >= 1_000_000L) { res = value / 1.0E6; suffix = "M"; }
+        else if (abs >= 1_000L) { res = value / 1.0E3; suffix = "k"; }
+        else { return Long.toString(value); }
+        res = res <= -100.0 ? Math.round(res * 10.0) / 10.0 : Math.round(res * 100.0) / 100.0;
+        return res + suffix;
     }
 
     // ── Zusammenbau ─────────────────────────────────────────────────────────

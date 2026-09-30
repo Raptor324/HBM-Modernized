@@ -18,9 +18,26 @@ import net.minecraft.world.phys.BlockHitResult;
 import org.jetbrains.annotations.Nullable;
 
 /** Port of {@code RadioTorchCounter} (1.7.10 Original) - the only radio-torch with a real item-filter GUI. */
-public class RadioTorchCounterBlock extends RadioTorchBaseBlock {
+public class RadioTorchCounterBlock extends RadioTorchBaseBlock implements com.hbm_m.interfaces.ILookOverlay {
 
     public RadioTorchCounterBlock(Properties properties) { super(properties); }
+
+    /** Port of {@code RadioTorchCounter.printHook}: per configured channel "Freq n:" and "Signal n:". */
+    @Override
+    public void printHook(net.minecraft.client.gui.GuiGraphics guiGraphics, Level level, BlockPos pos) {
+        BlockEntity be = level.getBlockEntity(pos);
+        if (!(be instanceof RadioTorchCounterBlockEntity radio)) return;
+        java.util.List<net.minecraft.network.chat.Component> text = new java.util.ArrayList<>();
+        for (int i = 0; i < RadioTorchCounterBlockEntity.SLOT_COUNT; i++) {
+            if (radio.channel[i].isEmpty()) continue;
+            text.add(net.minecraft.network.chat.Component.literal("Freq " + (i + 1) + ": " + radio.channel[i])
+                    .withStyle(net.minecraft.ChatFormatting.AQUA));
+            text.add(net.minecraft.network.chat.Component.literal("Signal " + (i + 1) + ": " + radio.lastCount[i])
+                    .withStyle(net.minecraft.ChatFormatting.RED));
+        }
+        com.hbm_m.interfaces.ILookOverlay.printGeneric(guiGraphics,
+                net.minecraft.network.chat.Component.translatable(getDescriptionId()), 0xffff00, 0x404000, text);
+    }
 
     @Nullable @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {

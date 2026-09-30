@@ -255,6 +255,30 @@ public class RBMKRodBlockEntity extends RBMKColumnBlockEntity
     @Override public double    maxHeat()           { return 1500; }
     @Override public ColumnType getConsoleType()   { return ColumnType.FUEL; }
 
+    // ─── DODD diagnostic ────────────────────────────────────────────────────────
+
+    /**
+     * Port of the original TileEntityRBMKRod.getDiagData: on top of the base dump it adds the
+     * f_yield / f_xenon / f_heat display strings - the exact values the original shipped to the
+     * console renderer in serialize(). The client receives the whole fuelSlot through regular
+     * sync, so the strings are computed right here. The raw fuelSlot itself is dropped from the
+     * dump: in the original the fuel item ("items") was on the exclusion list and only these
+     * three human-readable lines were shown.
+     */
+    @Override
+    public void getDiagData(CompoundTag tag) {
+        super.getDiagData(tag);
+        tag.remove("fuelSlot");
+        if (!fuelSlot.isEmpty() && fuelSlot.getItem() instanceof RBMKRodItem rod) {
+            tag.putString("f_yield", RBMKRodItem.getYield(fuelSlot) + " / " + rod.yield
+                    + " (" + (RBMKRodItem.getEnrichment(fuelSlot) * 100) + "%)");
+            tag.putString("f_xenon", RBMKRodItem.getPoison(fuelSlot) + "%");
+            tag.putString("f_heat", String.format(java.util.Locale.US, "%.6f", RBMKRodItem.getCoreHeat(fuelSlot))
+                    + " / " + String.format(java.util.Locale.US, "%.6f", RBMKRodItem.getHullHeat(fuelSlot))
+                    + " / " + String.format(java.util.Locale.US, "%.2f", rod.meltingPoint));
+        }
+    }
+
     // â"€â"€â"€ NBT â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
 
     

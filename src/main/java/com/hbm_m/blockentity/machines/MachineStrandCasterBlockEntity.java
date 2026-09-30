@@ -157,6 +157,12 @@ public class MachineStrandCasterBlockEntity extends BaseHbmBlockEntity implement
         return mold == null ? 0 : mold.getMoldType().getCostMb();
     }
 
+    /** Стоимость изложницы для HUD прицела (алиас getMoldCostMb до перехода на кванты). */
+    public int getMoldCost() {
+        ItemCastMold mold = getInstalledMold();
+        return mold == null ? 0 : mold.getMoldType().getCostMb();
+    }
+
     /** Порт getCapacity: без изложницы буфер вмещает 50000 mB, с изложницей — 10 стоимостей. */
     public int getCapacity() {
         ItemCastMold mold = getInstalledMold();

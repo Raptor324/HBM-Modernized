@@ -35,7 +35,7 @@ import net.minecraft.world.phys.BlockHitResult;
  * Редстоун отключает выход.
  * Fluid identifier задаёт тип жидкости.
  */
-public class FluidPumpBlock extends BaseEntityBlock {
+public class FluidPumpBlock extends BaseEntityBlock implements com.hbm_m.interfaces.ILookOverlay {
 
     /** Направление «вперёд» (к выходу); совпадает с {@link FluidPumpBlockEntity#getFacing()}. */
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
@@ -113,6 +113,34 @@ public class FluidPumpBlock extends BaseEntityBlock {
             return InteractionResult.sidedSuccess(level.isClientSide);
         }
         return InteractionResult.PASS;
+    }
+
+    /**
+     * Порт {@code FluidPump.printHook}: тип и давление буфера с расходом mB/t, приоритет
+     * в сети и объём буферизованной жидкости.
+     */
+    @Override
+    public void printHook(net.minecraft.client.gui.GuiGraphics guiGraphics, Level level, BlockPos pos) {
+        BlockEntity be = level.getBlockEntity(pos);
+        if (!(be instanceof FluidPumpBlockEntity pump)) return;
+        com.hbm_m.inventory.fluid.tank.FluidTank tank = pump.getAllTanks()[0];
+
+        java.util.List<net.minecraft.network.chat.Component> text = new java.util.ArrayList<>();
+        String body = com.hbm_m.inventory.fluid.FluidType.forFluid(tank.getTankType()).getLocalizedName().getString()
+                + " (" + tank.getPressure() + " PU): "
+                + String.format(java.util.Locale.US, "%,d", pump.bufferSize) + "mB/t";
+        text.add(net.minecraft.network.chat.Component.literal("-> ").withStyle(net.minecraft.ChatFormatting.GREEN)
+                .append(net.minecraft.network.chat.Component.literal(body).withStyle(net.minecraft.ChatFormatting.WHITE))
+                .append(net.minecraft.network.chat.Component.literal(" ->").withStyle(net.minecraft.ChatFormatting.RED)));
+        text.add(net.minecraft.network.chat.Component.literal("Priority: ")
+                .append(net.minecraft.network.chat.Component.literal(pump.priority.name())
+                        .withStyle(net.minecraft.ChatFormatting.YELLOW)));
+        if (tank.getFill() > 0) {
+            text.add(net.minecraft.network.chat.Component.literal(
+                    String.format(java.util.Locale.US, "%,d", tank.getFill()) + "mB buffered"));
+        }
+        com.hbm_m.interfaces.ILookOverlay.printGeneric(guiGraphics,
+                net.minecraft.network.chat.Component.translatable(getDescriptionId()), 0xffff00, 0x404000, text);
     }
 
     //? if >1.20.1 {

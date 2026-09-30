@@ -38,7 +38,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
  * Multiblock structure: 3x3x7 (в плане 3x7, высота 3 блока).
  * Model parts: Turbine (body), Flywheel (animated), Gauge
  */
-public class MachineIndustrialTurbineBlock extends BaseEntityBlock implements IMultiblockController {
+public class MachineIndustrialTurbineBlock extends BaseEntityBlock implements IMultiblockController, com.hbm_m.interfaces.ILookOverlay {
 
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
 
@@ -137,6 +137,46 @@ public class MachineIndustrialTurbineBlock extends BaseEntityBlock implements IM
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
         return new MachineIndustrialTurbineBlockEntity(pos, state);
+    }
+
+    /** Порт MachineIndustrialTurbine.printHook: баки, буфер HE и спиннер оборотов. */
+    @Override
+    public void printHook(net.minecraft.client.gui.GuiGraphics guiGraphics, Level level, BlockPos pos) {
+        BlockEntity be = level.getBlockEntity(pos);
+        if (!(be instanceof MachineIndustrialTurbineBlockEntity turbine)) return;
+
+        var inputTank = turbine.getSteamTank();
+        var outputTank = turbine.getSpentSteamTank();
+        net.minecraft.world.level.material.Fluid inputType = inputTank.getTankType();
+        net.minecraft.world.level.material.Fluid outputType = com.hbm_m.inventory.fluid.ModFluids.NONE.getSource();
+        com.hbm_m.inventory.fluid.trait.FT_Coolable trait =
+                com.hbm_m.inventory.fluid.FluidType.getTrait(inputType, com.hbm_m.inventory.fluid.trait.FT_Coolable.class);
+        if (trait != null) outputType = trait.coolsTo;
+
+        double spin = turbine.getSpin();
+        int color = ((int) (0xFF - 0xFF * spin)) << 16 | ((int) (0xFF * spin) << 8);
+        int time = (int) ((level.getGameTime() / 4) % 4);
+        String[] spinner = {"▖ ", "▘ ", " ▘", " ▖"};
+
+        java.util.List<net.minecraft.network.chat.Component> text = new java.util.ArrayList<>();
+        text.add(net.minecraft.network.chat.Component.literal("-> ").withStyle(net.minecraft.ChatFormatting.GREEN)
+                .append(net.minecraft.network.chat.Component.literal(
+                        com.hbm_m.inventory.fluid.FluidType.forFluid(inputType).getLocalizedName().getString()
+                        + ": " + String.format(java.util.Locale.US, "%,d", inputTank.getFill())
+                        + "/" + String.format(java.util.Locale.US, "%,d", inputTank.getMaxFill()) + "mB")));
+        text.add(net.minecraft.network.chat.Component.literal("<- ").withStyle(net.minecraft.ChatFormatting.RED)
+                .append(net.minecraft.network.chat.Component.literal(
+                        com.hbm_m.inventory.fluid.FluidType.forFluid(outputType).getLocalizedName().getString()
+                        + ": " + String.format(java.util.Locale.US, "%,d", outputTank.getFill())
+                        + "/" + String.format(java.util.Locale.US, "%,d", outputTank.getMaxFill()) + "mB")));
+        text.add(net.minecraft.network.chat.Component.literal("<- "
+                + com.hbm_m.util.EnergyFormatter.format(turbine.getEnergyStored()) + "HE ("
+                + spinner[turbine.getEnergyStored() <= 0 ? 0 : time]
+                + (int) Math.round(spin * 100) + "%)")
+                .withStyle(style -> style.withColor(net.minecraft.network.chat.TextColor.fromRgb(color))));
+
+        com.hbm_m.interfaces.ILookOverlay.printGeneric(guiGraphics,
+                net.minecraft.network.chat.Component.translatable(getDescriptionId()), 0xffff00, 0x404000, text);
     }
 
     @Nullable

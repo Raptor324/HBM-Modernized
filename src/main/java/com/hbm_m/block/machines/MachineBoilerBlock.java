@@ -41,7 +41,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
  * - vereinfacht-aber-proportionaler Ersatz fuer das Original-Dimension-Array {@code {3,0,1,1,1,1}}.
  * Kein GUI (siehe Klassenkommentar in {@link MachineBoilerBlockEntity}).
  */
-public class MachineBoilerBlock extends BaseEntityBlock implements IMultiblockController {
+public class MachineBoilerBlock extends BaseEntityBlock implements IMultiblockController, com.hbm_m.interfaces.ILookOverlay {
 
     /**
      * Whether this machine has been blown up. Drives the model swap to the wrecked variant - the
@@ -122,6 +122,39 @@ public class MachineBoilerBlock extends BaseEntityBlock implements IMultiblockCo
             return Shapes.empty();
         }
         return Shapes.block();
+    }
+
+    /**
+     * Порт {@code MachineHeatBoiler.printHook}: запас тепла в TU и два бака — вода (зелёная
+     * подача) и пар (красный выход). Как и в оригинале, у взорванного котла HUD не показывается.
+     */
+    @Override
+    public void printHook(net.minecraft.client.gui.GuiGraphics guiGraphics, Level level, BlockPos pos) {
+        if (level.getBlockState(pos).getValue(EXPLODED)) return;
+        BlockEntity be = level.getBlockEntity(pos);
+        if (!(be instanceof MachineBoilerBlockEntity boiler)) return;
+
+        java.util.List<net.minecraft.network.chat.Component> text = new java.util.ArrayList<>();
+        text.add(net.minecraft.network.chat.Component.literal(
+                String.format(java.util.Locale.US, "%,d", boiler.getHeat()) + "TU"));
+        text.add(net.minecraft.network.chat.Component.literal("-> ").withStyle(net.minecraft.ChatFormatting.GREEN)
+                .append(net.minecraft.network.chat.Component.literal("")
+                        .append(com.hbm_m.inventory.fluid.FluidType.forFluid(boiler.getWaterTank().getTankType()).getLocalizedName())
+                        .withStyle(net.minecraft.ChatFormatting.WHITE))
+                .append(net.minecraft.network.chat.Component.literal(
+                        ": " + String.format(java.util.Locale.US, "%,d", boiler.getWaterTank().getFill())
+                        + " / " + String.format(java.util.Locale.US, "%,d", boiler.getWaterTank().getMaxFill()) + "mB")
+                        .withStyle(net.minecraft.ChatFormatting.WHITE)));
+        text.add(net.minecraft.network.chat.Component.literal("<- ").withStyle(net.minecraft.ChatFormatting.RED)
+                .append(net.minecraft.network.chat.Component.literal("")
+                        .append(com.hbm_m.inventory.fluid.FluidType.forFluid(boiler.getSteamTank().getTankType()).getLocalizedName())
+                        .withStyle(net.minecraft.ChatFormatting.WHITE))
+                .append(net.minecraft.network.chat.Component.literal(
+                        ": " + String.format(java.util.Locale.US, "%,d", boiler.getSteamTank().getFill())
+                        + " / " + String.format(java.util.Locale.US, "%,d", boiler.getSteamTank().getMaxFill()) + "mB")
+                        .withStyle(net.minecraft.ChatFormatting.WHITE)));
+        com.hbm_m.interfaces.ILookOverlay.printGeneric(guiGraphics,
+                net.minecraft.network.chat.Component.translatable(getDescriptionId()), 0xffff00, 0x404000, text);
     }
 
     @Nullable

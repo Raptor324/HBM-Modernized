@@ -558,5 +558,17 @@ public abstract class RBMKColumnBlockEntity extends BaseHbmBlockEntity {
         lidState    = tag.contains("lidState") ? tag.getInt("lidState") : 1;
     }
 
+    /**
+     * Порт оригинального TileEntityRBMKBase.getDiagData — источник данных для DODD-оверлея
+     * («Dump of Ordered Data Diagnostic», см. {@link com.hbm_m.block.machines.rbmk.RBMKColumnBlock#printHook}).
+     * Пишет только данные колонки: x/y/z/id ванилла сюда не добавляет (их пишет
+     * saveWithFullMetadata, а не writeNbtData), а виртуальный вызов writeNbtData доходит
+     * до переопределений конкретного типа колонки. bestEffortProvider() на 1.20.1 возвращает
+     * null (как в load), на 1.21.1 — клиентский Provider, нужный для записи ItemStack'ов.
+     */
+    public void getDiagData(CompoundTag tag) {
+        writeNbtData(tag, PlatformHooks.bestEffortProvider());
+    }
+
 }
 

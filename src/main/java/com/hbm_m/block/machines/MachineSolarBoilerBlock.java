@@ -45,7 +45,7 @@ import dev.architectury.registry.menu.MenuRegistry;
  * Солнечный котёл: вода → пар за счёт солнца.
  * Мультиблок 3×3×3, контроллер в центре нижнего слоя.
  */
-public class MachineSolarBoilerBlock extends BaseEntityBlock implements IMultiblockController {
+public class MachineSolarBoilerBlock extends BaseEntityBlock implements IMultiblockController, com.hbm_m.interfaces.ILookOverlay {
 
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
     public static final BooleanProperty LIT = BooleanProperty.create("lit");
@@ -143,6 +143,33 @@ public class MachineSolarBoilerBlock extends BaseEntityBlock implements IMultibl
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
         return new MachineSolarBoilerBlockEntity(pos, state);
+    }
+
+    /** Порт MachineSolarBoiler.printHook: баки и предупреждение о нехватке солнца. */
+    @Override
+    public void printHook(net.minecraft.client.gui.GuiGraphics guiGraphics, Level level, BlockPos pos) {
+        BlockEntity be = level.getBlockEntity(pos);
+        if (!(be instanceof MachineSolarBoilerBlockEntity boiler)) return;
+
+        java.util.List<net.minecraft.network.chat.Component> text = new java.util.ArrayList<>();
+        com.hbm_m.inventory.fluid.tank.FluidTank[] tanks = boiler.getTanks();
+        for (int i = 0; i < tanks.length; i++) {
+            com.hbm_m.inventory.fluid.tank.FluidTank tank = tanks[i];
+            text.add(net.minecraft.network.chat.Component.literal(i < 1 ? "-> " : "<- ")
+                    .withStyle(i < 1 ? net.minecraft.ChatFormatting.GREEN : net.minecraft.ChatFormatting.RED)
+                    .append(net.minecraft.network.chat.Component.literal(
+                            com.hbm_m.inventory.fluid.FluidType.forFluid(tank.getTankType()).getLocalizedName().getString()
+                            + ": " + tank.getFill() + "/" + tank.getMaxFill() + "mB")));
+        }
+
+        if (boiler.getSolarBrightness() < 1) {
+            boolean blink = System.currentTimeMillis() % 1000 < 500;
+            text.add(net.minecraft.network.chat.Component.literal("Too cold!")
+                    .withStyle(style -> style.withColor(net.minecraft.network.chat.TextColor.fromRgb(blink ? 0xff0000 : 0xffff00))));
+        }
+
+        com.hbm_m.interfaces.ILookOverlay.printGeneric(guiGraphics,
+                net.minecraft.network.chat.Component.translatable(getDescriptionId()), 0xffff00, 0x404000, text);
     }
 
     //? if < 1.21.1 {

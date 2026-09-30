@@ -47,7 +47,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
  * dem Controller) mit dem Energie-Port an der Spitze, plus 2 seitliche und 1 vorderer
  * Fluid-Port (UNIVERSAL_CONNECTOR).
  */
-public class MachineChungusBlock extends BaseEntityBlock implements IMultiblockController {
+public class MachineChungusBlock extends BaseEntityBlock implements IMultiblockController, com.hbm_m.interfaces.ILookOverlay {
 
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
 
@@ -168,6 +168,46 @@ public class MachineChungusBlock extends BaseEntityBlock implements IMultiblockC
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
         return new MachineChungusBlockEntity(pos, state);
+    }
+
+    /** Порт MachineChungus.printHook: входной/выходной бак и буфер HE. */
+    @Override
+    public void printHook(net.minecraft.client.gui.GuiGraphics guiGraphics, Level level, BlockPos pos) {
+        BlockEntity be = level.getBlockEntity(pos);
+        if (!(be instanceof MachineChungusBlockEntity chungus)) return;
+
+        var inputTank = chungus.getSteamTank();
+        var outputTank = chungus.getSpentSteamTank();
+        net.minecraft.world.level.material.Fluid inputType = inputTank.getTankType();
+        net.minecraft.world.level.material.Fluid outputType = com.hbm_m.inventory.fluid.ModFluids.NONE.getSource();
+        com.hbm_m.inventory.fluid.trait.FT_Coolable trait =
+                com.hbm_m.inventory.fluid.FluidType.getTrait(inputType, com.hbm_m.inventory.fluid.trait.FT_Coolable.class);
+        if (trait != null) outputType = trait.coolsTo;
+
+        java.util.List<net.minecraft.network.chat.Component> text = new java.util.ArrayList<>();
+        text.add(net.minecraft.network.chat.Component.literal("-> ").withStyle(net.minecraft.ChatFormatting.GREEN)
+                .append(net.minecraft.network.chat.Component.literal("")
+                        .append(com.hbm_m.inventory.fluid.FluidType.forFluid(inputType).getLocalizedName())
+                        .withStyle(net.minecraft.ChatFormatting.WHITE))
+                .append(net.minecraft.network.chat.Component.literal(
+                        ": " + String.format(java.util.Locale.US, "%,d", inputTank.getFill())
+                        + "/" + String.format(java.util.Locale.US, "%,d", inputTank.getMaxFill()) + "mB")
+                        .withStyle(net.minecraft.ChatFormatting.WHITE)));
+        text.add(net.minecraft.network.chat.Component.literal("<- ").withStyle(net.minecraft.ChatFormatting.RED)
+                .append(net.minecraft.network.chat.Component.literal("")
+                        .append(com.hbm_m.inventory.fluid.FluidType.forFluid(outputType).getLocalizedName())
+                        .withStyle(net.minecraft.ChatFormatting.WHITE))
+                .append(net.minecraft.network.chat.Component.literal(
+                        ": " + String.format(java.util.Locale.US, "%,d", outputTank.getFill())
+                        + "/" + String.format(java.util.Locale.US, "%,d", outputTank.getMaxFill()) + "mB")
+                        .withStyle(net.minecraft.ChatFormatting.WHITE)));
+        text.add(net.minecraft.network.chat.Component.literal("<- ").withStyle(net.minecraft.ChatFormatting.RED)
+                .append(net.minecraft.network.chat.Component.literal(
+                        com.hbm_m.util.EnergyFormatter.format(chungus.getEnergyStored()) + "HE")
+                        .withStyle(net.minecraft.ChatFormatting.WHITE)));
+
+        com.hbm_m.interfaces.ILookOverlay.printGeneric(guiGraphics,
+                net.minecraft.network.chat.Component.translatable(getDescriptionId()), 0xffff00, 0x404000, text);
     }
 
     //? if < 1.21.1 {
