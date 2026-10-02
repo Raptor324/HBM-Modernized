@@ -8,7 +8,6 @@ import net.minecraftforge.api.distmarker.OnlyIn;
 import net.neoforged.api.distmarker.OnlyIn;
 *///?}
 
-//? if forge || neoforge {
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.List;
@@ -96,7 +95,7 @@ public class MoldCastingJeiCategory implements IRecipeCategory<MoldCastingRecipe
 
     @Override
     public void draw(MoldCastingRecipe recipe, IRecipeSlotsView slots, GuiGraphics graphics, double mouseX, double mouseY) {
-        int cost = recipe.getMold().getCostMb();
+        int cost = recipe.getMold().getCost();
         MaterialStack molten = new MaterialStack(recipe.getMaterial(), cost);
         JeiMoltenRendering.drawSwatch(graphics, 6, SLOT_Y, molten);
         JeiMoltenRendering.drawLabel(graphics, 6, SLOT_Y + 22, molten);
@@ -111,4 +110,3 @@ public class MoldCastingJeiCategory implements IRecipeCategory<MoldCastingRecipe
         return out;
     }
 }
-//?}

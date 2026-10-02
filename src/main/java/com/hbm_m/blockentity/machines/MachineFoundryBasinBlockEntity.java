@@ -108,7 +108,7 @@ public class MachineFoundryBasinBlockEntity extends com.hbm_m.blockentity.BaseHb
     public int getCapacity() {
         ItemCastMold mold = getInstalledMold();
         if (mold == null) return 0;
-        return mold.getMoldType().getCostMb();
+        return mold.getMoldType().getCost();
     }
 
     private @Nullable ItemStack getResultFor(MaterialType type, ItemCastMold.MoldType mold) {

@@ -2,6 +2,7 @@ package com.hbm_m.blockentity.machines;
 
 import com.hbm_m.api.block.ICrucibleAcceptor;
 import com.hbm_m.blockentity.ModBlockEntities;
+import com.hbm_m.inventory.material.MaterialShapes;
 import com.hbm_m.inventory.material.MaterialStack;
 import com.hbm_m.inventory.material.MaterialType;
 import net.minecraft.core.BlockPos;
@@ -27,7 +28,8 @@ import java.util.List;
  */
 public class MachineFoundryChannelBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity implements ICrucibleAcceptor, com.hbm_m.interfaces.ICopiable {
 
-    public static final int CAPACITY = MaterialStack.MB_PER_INGOT * 2;
+    /** Оригинал: INGOT.q(2) = 144 кванта (2 слитка). */
+    public static final int CAPACITY = MaterialShapes.INGOT * 2;
 
     @Nullable public MaterialType type = null;
     public int amount = 0;

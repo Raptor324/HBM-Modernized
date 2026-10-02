@@ -1,14 +1,15 @@
 package com.hbm_m.compat.jei;
 
-//? if forge || neoforge {
 import com.hbm_m.inventory.material.MaterialStack;
+import com.hbm_m.item.material.ScrapItem;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 
 /**
  * Расплавленный материал — не предмет и не жидкость, JEI-ингредиента для него нет.
- * Рисуем цветной квадрат из {@code MaterialType.color} и подпись с количеством,
+ * Рисуем цветной квадрат из {@code MaterialType.color} и подпись с количеством
+ * (порт {@code Mats.formatAmount}: блоки/слитки/самородки/кванты),
  * как это делает сам тигель в своём GUI.
  */
 public final class JeiMoltenRendering {
@@ -23,10 +24,9 @@ public final class JeiMoltenRendering {
         graphics.renderOutline(x - 1, y - 1, SWATCH + 2, SWATCH + 2, 0xFF373737);
     }
 
-    /** Подпись «1000 mB Steel» рядом со свотчем. */
+    /** Подпись «1 ingot Steel» (quant-разбивка {@code Mats.formatAmount}) рядом со свотчем. */
     public static void drawLabel(GuiGraphics graphics, int x, int y, MaterialStack stack) {
-        String text = stack.amount + " mB " + stack.type.name;
+        String text = ScrapItem.formatAmount(stack.amount, false).getString() + " " + stack.type.name;
         graphics.drawString(Minecraft.getInstance().font, text, x, y, 0x404040, false);
     }
 }
-//?}

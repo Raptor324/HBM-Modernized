@@ -97,10 +97,9 @@ public class GUIMachineStrandCaster extends GuiInfoScreen<MachineStrandCasterMen
             list.add(Component.translatable("gui.hbm_m.crucible.empty").withStyle(ChatFormatting.RED));
         } else {
             boolean shift = hasShiftDown();
-            int quanta = (int) ((long) be.amount * ScrapItem.QUANTA_PER_INGOT / MaterialStack.MB_PER_INGOT);
             list.add(Component.literal("").withStyle(ChatFormatting.YELLOW)
                     .append(GUIScreenRecipeSelector.materialNameOf(new MaterialStack(be.type, 0)))
-                    .append(Component.literal(": " + ScrapItem.formatAmount(quanta, shift).getString())));
+                    .append(Component.literal(": " + ScrapItem.formatAmount(be.amount, shift).getString())));
         }
         drawCustomInfoStat(g, (int) mouseX, (int) mouseY,
                 INFO_X, INFO_Y, INFO_W, INFO_H, (int) mouseX, (int) mouseY,

@@ -3,6 +3,7 @@ package com.hbm_m.recipe;
 import org.jetbrains.annotations.NotNull;
 
 import com.google.gson.JsonObject;
+import com.hbm_m.inventory.material.MaterialShapes;
 import com.hbm_m.inventory.material.MaterialStack;
 import com.hbm_m.inventory.material.MaterialType;
 import com.hbm_m.lib.RefStrings;
@@ -44,7 +45,7 @@ import java.util.List;
  *   "type": "hbm_m:crucible_smelting",
  *   "ingredient": { ...Ingredient... },
  *   "material": "iron",            // MaterialType.name (строковый id материала)
- *   "amount": 144                 // mB; default MaterialStack.MB_PER_INGOT
+ *   "amount": 72                   // кванты (1 слиток = 72); default MaterialShapes.INGOT
  * }
  * }</pre>
  *
@@ -58,8 +59,8 @@ public class CrucibleSmeltingRecipe extends PlatformRecipe {
     /** Выходы плавки; обычно один, у руд с побочными продуктами — несколько (порт MatDistribution). */
     private final List<MaterialStack> outputs;
 
-    public CrucibleSmeltingRecipe(ResourceLocation id, Ingredient input, MaterialType material, int amountMb) {
-        this(id, input, List.of(new MaterialStack(material, Math.max(1, amountMb))));
+    public CrucibleSmeltingRecipe(ResourceLocation id, Ingredient input, MaterialType material, int amountQuanta) {
+        this(id, input, List.of(new MaterialStack(material, Math.max(1, amountQuanta))));
     }
 
     public CrucibleSmeltingRecipe(ResourceLocation id, Ingredient input, List<MaterialStack> outputs) {
@@ -73,7 +74,7 @@ public class CrucibleSmeltingRecipe extends PlatformRecipe {
 
     /** Первый выход (удобство для JEI/старого кода). */
     public MaterialType getMaterial() { return outputs.get(0).type; }
-    public int getAmountMb() { return outputs.get(0).amount; }
+    public int getAmountQuanta() { return outputs.get(0).amount; }
     public String getMaterialName() { return outputs.get(0).type != null ? outputs.get(0).type.name : "iron"; }
 
     /** Проверяет совпадение входа (тигель сам управляет how much to consume). */
@@ -155,7 +156,7 @@ public class CrucibleSmeltingRecipe extends PlatformRecipe {
                 throw new IllegalStateException("Unknown material '" + matName
                         + "' in crucible_smelting recipe " + recipeId);
             }
-            int amount = GsonHelper.getAsInt(json, "amount", MaterialStack.MB_PER_INGOT);
+            int amount = GsonHelper.getAsInt(json, "amount", MaterialShapes.INGOT);
             return new CrucibleSmeltingRecipe(recipeId, input, mat, amount);
         }
 

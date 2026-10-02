@@ -14,7 +14,7 @@ import net.minecraft.world.item.crafting.RecipeSerializer;
  *
  * <p>Чистый ванильный 1.20.1 код внутри {@code //? if forge} — датаген компилируется
  * только на 1.20.1-forge. CrucibleSmelting не имеет предметного выхода (предмет →
- * расплавленный {@link MaterialType} в mB), поэтому {@link #getResult()} возвращает
+ * расплавленный {@link MaterialType} в квантах), поэтому {@link #getResult()} возвращает
  * {@link Items#AIR} — ванильный {@code RecipeBuilder} требует реализацию, но для
  * material-рецептов результат не используется.</p>
  *
@@ -24,7 +24,7 @@ import net.minecraft.world.item.crafting.RecipeSerializer;
  *   "type": "hbm_m:crucible_smelting",
  *   "ingredient": { ...Ingredient... },
  *   "material": "iron",     // MaterialType.name (строковый id материала)
- *   "amount": 144           // mB; default MaterialStack.MB_PER_INGOT
+ *   "amount": 72            // кванты (1 слиток = 72); default MaterialShapes.INGOT
  * }
  * }</pre>
  */
@@ -32,26 +32,26 @@ public class CrucibleSmeltingRecipeBuilder extends BaseRecipeBuilder<CrucibleSme
 
     private final Ingredient input;
     private final MaterialType material;
-    private final int amountMb;
+    private final int amountQuanta;
     /** Мульти-выход (руды с побочными продуктами, порт MatDistribution); null = одиночный выход. */
     private final java.util.List<com.hbm_m.inventory.material.MaterialStack> multiOutputs;
 
-    private CrucibleSmeltingRecipeBuilder(Ingredient input, MaterialType material, int amountMb) {
+    private CrucibleSmeltingRecipeBuilder(Ingredient input, MaterialType material, int amountQuanta) {
         this.input = input;
         this.material = material;
-        this.amountMb = amountMb;
+        this.amountQuanta = amountQuanta;
         this.multiOutputs = null;
     }
 
     private CrucibleSmeltingRecipeBuilder(Ingredient input, java.util.List<com.hbm_m.inventory.material.MaterialStack> outputs) {
         this.input = input;
         this.material = outputs.isEmpty() ? MaterialType.IRON : outputs.get(0).type;
-        this.amountMb = outputs.isEmpty() ? 1 : outputs.get(0).amount;
+        this.amountQuanta = outputs.isEmpty() ? 1 : outputs.get(0).amount;
         this.multiOutputs = java.util.List.copyOf(outputs);
     }
 
-    public static CrucibleSmeltingRecipeBuilder crucibleSmelting(Ingredient input, MaterialType material, int amountMb) {
-        return new CrucibleSmeltingRecipeBuilder(input, material, amountMb);
+    public static CrucibleSmeltingRecipeBuilder crucibleSmelting(Ingredient input, MaterialType material, int amountQuanta) {
+        return new CrucibleSmeltingRecipeBuilder(input, material, amountQuanta);
     }
 
     /** Мульти-выход: руда, дающая несколько материалов (оригинал registerOre/registerEntry). */
@@ -65,16 +65,16 @@ public class CrucibleSmeltingRecipeBuilder extends BaseRecipeBuilder<CrucibleSme
     }
 
     /** Item-перегрузка: {@code input} — одиночный предмет. */
-    public static CrucibleSmeltingRecipeBuilder crucibleSmelting(Item input, MaterialType material, int amountMb) {
-        return crucibleSmelting(Ingredient.of(input), material, amountMb);
+    public static CrucibleSmeltingRecipeBuilder crucibleSmelting(Item input, MaterialType material, int amountQuanta) {
+        return crucibleSmelting(Ingredient.of(input), material, amountQuanta);
     }
 
     /** Item-tag перегрузка: {@code input} — forge-тег (строка вида {@code "forge:ingots/iron"}). */
-    public static CrucibleSmeltingRecipeBuilder crucibleSmelting(String tagId, MaterialType material, int amountMb) {
+    public static CrucibleSmeltingRecipeBuilder crucibleSmelting(String tagId, MaterialType material, int amountQuanta) {
         net.minecraft.tags.TagKey<Item> tag = net.minecraft.tags.TagKey.create(
                 net.minecraft.core.registries.Registries.ITEM,
                 net.minecraft.resources.ResourceLocation.parse(tagId));
-        return crucibleSmelting(Ingredient.of(tag), material, amountMb);
+        return crucibleSmelting(Ingredient.of(tag), material, amountQuanta);
     }
 
     @Override
@@ -99,7 +99,7 @@ public class CrucibleSmeltingRecipeBuilder extends BaseRecipeBuilder<CrucibleSme
         }
         // MaterialType идентифицируется строкой name (см. CrucibleSmeltingRecipe.Serializer.readJson — MaterialType.byName).
         json.addProperty("material", this.material != null ? this.material.name : "iron");
-        json.addProperty("amount", this.amountMb);
+        json.addProperty("amount", this.amountQuanta);
     }
 
     @Override

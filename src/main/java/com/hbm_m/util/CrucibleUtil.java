@@ -4,7 +4,6 @@ import com.hbm_m.api.block.ICrucibleAcceptor;
 import com.hbm_m.inventory.material.MaterialStack;
 import com.hbm_m.item.material.ModMaterialItems;
 import com.hbm_m.item.material.ModMaterials;
-import com.hbm_m.item.material.ScrapItem;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.item.Item;
@@ -18,9 +17,9 @@ import java.util.List;
 
 /**
  * Порт {@code com.hbm.util.CrucibleUtil} (1.7.10): вертикальный хитскан вниз
- * от точки налива до первого блока с {@link ICrucibleAcceptor}; розлив списком
- * стаканов порциями не меньше {@code minQuanta} mB; «safe»-семантика — без
- * приёмника ничего не теряется. Количество — в mB (в оригинале кванты 72/слиток).
+ * от точки налива до первого блока с {@link ICrucibleAcceptor}; розлив
+ * стаканов порциями не меньше {@code minQuanta} квантов; «safe»-семантика —
+ * без приёмника ничего не теряется. Количество — в квантах, 1:1 с оригиналом.
  */
 public class CrucibleUtil {
 
@@ -108,9 +107,9 @@ public class CrucibleUtil {
     }
 
     /**
-     * Шлак-предмет из MaterialStack: mB → кванты ({@code ×72/1000}), материал —
-     * по имени MaterialType через {@link ModMaterials#byId}; без предмета шлака
-     * для материала возвращает EMPTY.
+     * Шлак-предмет из MaterialStack: количество уже в квантах (1:1 с тегом
+     * {@code amount} предмета), материал — по имени MaterialType через
+     * {@link ModMaterials#byId}; без предмета шлака для материала возвращает EMPTY.
      */
     public static ItemStack createScrap(MaterialStack stack) {
         if (stack == null || stack.isEmpty()) return ItemStack.EMPTY;
@@ -119,7 +118,7 @@ public class CrucibleUtil {
         Item item = ModMaterialItems.scrapItem(mat);
         if (item == null) return ItemStack.EMPTY;
 
-        int quanta = (int) ((long) stack.amount * ScrapItem.QUANTA_PER_INGOT / MaterialStack.MB_PER_INGOT);
+        int quanta = stack.amount;
         if (quanta <= 0) return ItemStack.EMPTY;
 
         ItemStack out = new ItemStack(item, 1);

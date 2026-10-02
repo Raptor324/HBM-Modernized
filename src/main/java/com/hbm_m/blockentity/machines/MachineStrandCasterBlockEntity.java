@@ -151,29 +151,23 @@ public class MachineStrandCasterBlockEntity extends BaseHbmBlockEntity implement
         return stack.getItem() instanceof ItemCastMold mold ? mold : null;
     }
 
-    /** Стоимость изложницы (mB за отливку) для рендера; 0 если изложницы нет. */
-    public int getMoldCostMb() {
-        ItemCastMold mold = getInstalledMold();
-        return mold == null ? 0 : mold.getMoldType().getCostMb();
-    }
-
-    /** Стоимость изложницы для HUD прицела (алиас getMoldCostMb до перехода на кванты). */
+    /** Стоимость изложницы (квантов за отливку) для рендера; 0 если изложницы нет. */
     public int getMoldCost() {
         ItemCastMold mold = getInstalledMold();
-        return mold == null ? 0 : mold.getMoldType().getCostMb();
+        return mold == null ? 0 : mold.getMoldType().getCost();
     }
 
-    /** Порт getCapacity: без изложницы буфер вмещает 50000 mB, с изложницей — 10 стоимостей. */
+    /** Порт getCapacity: без изложницы буфер вмещает 50 000 квантов, с изложницей — 10 стоимостей. */
     public int getCapacity() {
         ItemCastMold mold = getInstalledMold();
-        return mold == null ? 50_000 : mold.getMoldType().getCostMb() * 10;
+        return mold == null ? 50_000 : mold.getMoldType().getCost() * 10;
     }
 
+    /** Порт getWaterRequired: 5 mB воды на каждый квант стоимости изложницы. */
     private int getWaterRequired() {
         ItemCastMold mold = getInstalledMold();
         if (mold == null) return 50;
-        int quanta = (int) Math.round((double) mold.getMoldType().getCostMb() * com.hbm_m.item.material.ScrapItem.QUANTA_PER_INGOT / MaterialStack.MB_PER_INGOT);
-        return Math.max(1, quanta * 5);
+        return Math.max(1, mold.getMoldType().getCost() * 5);
     }
 
     /** Data-driven поиск результата (mold, material) — замена {@code mold.getOutput(type)}. */
@@ -223,7 +217,7 @@ public class MachineStrandCasterBlockEntity extends BaseHbmBlockEntity implement
             ItemStack out = be.getResultFor(be.type, mold.getMoldType());
 
             if (out != null && !out.isEmpty()) {
-                be.amount -= moldsToCast * mold.getMoldType().getCostMb();
+                be.amount -= moldsToCast * mold.getMoldType().getCost();
 
                 int remaining = out.getCount() * moldsToCast;
                 int maxStackSize = out.getMaxStackSize();
@@ -277,7 +271,7 @@ public class MachineStrandCasterBlockEntity extends BaseHbmBlockEntity implement
         ItemStack out = getResultFor(type, mold.getMoldType());
         if (out == null || out.isEmpty()) return 0;
 
-        int cost = mold.getMoldType().getCostMb();
+        int cost = mold.getMoldType().getCost();
         if (cost <= 0) return 0;
 
         int freeSlots = 0;
@@ -351,7 +345,7 @@ public class MachineStrandCasterBlockEntity extends BaseHbmBlockEntity implement
     private boolean standardCheck(MaterialStack stack) {
         if (this.type != null && this.type != stack.type) return false;
         ItemCastMold mold = getInstalledMold();
-        int limit = mold != null ? mold.getMoldType().getCostMb() * 9 : this.getCapacity();
+        int limit = mold != null ? mold.getMoldType().getCost() * 9 : this.getCapacity();
         return !(this.amount >= limit || getInstalledMold() == null);
     }
 
@@ -360,7 +354,7 @@ public class MachineStrandCasterBlockEntity extends BaseHbmBlockEntity implement
     public @Nullable MaterialStack pour(Level level, BlockPos pos, Direction side, MaterialStack stack) {
         this.type = stack.type;
         ItemCastMold mold = getInstalledMold();
-        int limit = mold != null ? mold.getMoldType().getCostMb() * 9 : this.getCapacity();
+        int limit = mold != null ? mold.getMoldType().getCost() * 9 : this.getCapacity();
 
         if (stack.amount + this.amount <= limit) {
             this.amount += stack.amount;

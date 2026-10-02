@@ -4,6 +4,7 @@ import org.jetbrains.annotations.NotNull;
 
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
+import com.hbm_m.inventory.material.MaterialShapes;
 import com.hbm_m.inventory.material.MaterialStack;
 import com.hbm_m.inventory.material.MaterialType;
 import com.hbm_m.lib.RefStrings;
@@ -33,13 +34,13 @@ import net.minecraft.world.level.Level;
  * {
  *   "type": "hbm_m:molten_alloy",
  *   "frequency": 20,                                  // тиков между попытками (legacy)
- *   "inputs":  [ { "material": "iron",   "amount": 288 }, ... ],
- *   "outputs": [ { "material": "steel",  "amount": 288 }, ... ]
+ *   "inputs":  [ { "material": "iron",   "amount": 16 }, ... ],
+ *   "outputs": [ { "material": "steel",  "amount": 16 }, ... ]
  * }
  * }</pre>
  *
  * <p>{@link MaterialType} разрешается через {@link MaterialType#byName(String)} (строковый
- * {@code name}, без namespace). {@code amount} — в mB.</p>
+ * {@code name}, без namespace). {@code amount} — в квантах (1 слиток = 72, самородок = 8).</p>
  */
 public class MoltenAlloyRecipe extends PlatformRecipe {
 
@@ -109,7 +110,7 @@ public class MoltenAlloyRecipe extends PlatformRecipe {
                     throw new IllegalStateException("Unknown material '" + matName
                             + "' in molten_alloy recipe " + key);
                 }
-                int amount = GsonHelper.getAsInt(el, "amount", MaterialStack.MB_PER_INGOT);
+                int amount = GsonHelper.getAsInt(el, "amount", MaterialShapes.INGOT);
                 out[i] = new MaterialStack(mat, amount);
             }
             return out;

@@ -1,5 +1,6 @@
 package com.hbm_m.item.material;
 
+import com.hbm_m.inventory.material.MaterialShapes;
 import com.hbm_m.item.ITooltipProvider;
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
@@ -62,29 +63,35 @@ public class ItemCastMold extends Item implements ITooltipProvider {
         public int getSize() { return this.size; }
 
         /**
-         * Стоимость заливки в mB (ёмкость формы) — 1:1 с {@code ItemMold.Mold.getCost()} оригинала.
-         * Оригинальные кванты (MaterialShapes): NUGGET=8, WIRE=9, BILLET=48, INGOT/GEM/DENSEWIRE/
-         * PLATE=72, CASTPLATE=216, SHELL=288, PIPE=216, BLOCK=648, LIGHTBARREL=216, HEAVYBARREL=432,
-         * LIGHTRECEIVER=288, HEAVYRECEIVER=648, MECHANISM/STOCK=288, GRIP=144; квант = 1000/72 mB.
+         * Стоимость заливки в квантах (ёмкость формы) — 1:1 с {@code ItemMold.Mold.getCost()}
+         * оригинала: NUGGET=8, BILLET=48, INGOT/GEM/DENSEWIRE/PLATE=72 (WIRE берётся ×8 = 72),
+         * CASTPLATE=216, INGOT.q(3)=216 (blade), INGOT.q(4)=SHELL=288 (blades/stamp/shell),
+         * PIPE=216, ×9 слитков/плит=BLOCK=648, LIGHTBARREL=216, HEAVYBARREL=432,
+         * LIGHTRECEIVER=288, HEAVYRECEIVER=648, MECHANISM/STOCK=288, GRIP=144.
          * 0 = формы нет в оригинале (заливка невозможна).
          */
-        public int getCostMb() {
+        public int getCost() {
             return switch (this) {
-                case NUGGET                        -> 111;   // NUGGET.q(1) = 8q
-                case BILLET                        -> 667;   // BILLET.q(1) = 48q
-                case INGOT, PLATE, WIRE, WIRE_DENSE, GEM -> 1000; // 72q (WIRE берётся ×8 = 72q)
-                case BLADE                         -> 3000;  // INGOT.q(3) = 216q
-                case BLADES, STAMP, SHELL          -> 4000;  // 288q (INGOT.q(4) / SHELL.q(1))
-                case PLATE_CAST                    -> 3000;  // CASTPLATE.q(1) = 216q
-                case WIRES_DENSE                   -> 9000;  // DENSEWIRE.q(9) = 648q
-                case PIPE                          -> 3000;  // PIPE.q(1) = 216q
-                case INGOTS, PLATES, PLATES_CAST, BLOCK, PIPES -> 9000; // 648q
-                case BARREL_LIGHT                  -> 3000;  // LIGHTBARREL = 216q
-                case BARREL_HEAVY                  -> 6000;  // HEAVYBARREL = 432q
-                case RECEIVER_LIGHT                -> 4000;  // LIGHTRECEIVER = 288q
-                case RECEIVER_HEAVY                -> 9000;  // HEAVYRECEIVER = 648q
-                case MECHANISM, STOCK              -> 4000;  // 288q
-                case GRIP                          -> 2000;  // GRIP = 144q
+                case NUGGET                        -> MaterialShapes.NUGGET;   // 8
+                case BILLET                        -> MaterialShapes.BILLET;   // 48
+                case INGOT, PLATE, WIRE, WIRE_DENSE, GEM -> MaterialShapes.INGOT; // 72
+                case BLADE                         -> MaterialShapes.INGOT * 3;   // 216
+                case BLADES, STAMP                 -> MaterialShapes.INGOT * 4;   // 288
+                case SHELL                         -> MaterialShapes.SHELL;    // 288
+                case PLATE_CAST                    -> MaterialShapes.CASTPLATE; // 216
+                case WIRES_DENSE                   -> MaterialShapes.BLOCK;    // 648
+                case PIPE                          -> MaterialShapes.PIPE;     // 216
+                case INGOTS, PLATES, PLATES_CAST, BLOCK, PIPES -> MaterialShapes.BLOCK; // 648
+                case BARREL_LIGHT                  -> MaterialShapes.LIGHTBARREL;   // 216
+                case BARREL_HEAVY                  -> MaterialShapes.HEAVYBARREL;   // 432
+                case RECEIVER_LIGHT                -> MaterialShapes.LIGHTRECEIVER; // 288
+                case RECEIVER_HEAVY                -> MaterialShapes.HEAVYRECEIVER; // 648
+                case MECHANISM, STOCK              -> MaterialShapes.MECHANISM;     // 288
+                case GRIP                          -> MaterialShapes.GRIP;     // 144
+                // Казённые формы (ориг. id 16 c9 / id 17 c50, PLATE.q(1,4) / PLATE.q(1,2)):
+                // порт переименовал их в C357/CBUCKSHOT — те же стоимости и выходы.
+                case C357                          -> MaterialShapes.INGOT / 4;    // 18
+                case CBUCKSHOT                     -> MaterialShapes.INGOT / 2;    // 36
                 default                            -> 0;     // нет в ItemMold оригинала
             };
         }

@@ -3,12 +3,12 @@ package com.hbm_m.inventory.material;
 import net.minecraft.nbt.CompoundTag;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * Порция расплавленного материала: {@link MaterialType} + количество в квантах.
+ * Порт {@code Mats.MaterialStack} 1.7.10; единица измерения — квант
+ * ({@link MaterialShapes#QUANTUM} = 1/72 слитка), все операции целочисленны.
+ */
 public class MaterialStack {
-
-    public static final int MB_PER_INGOT  = 1_000;
-    public static final int MB_PER_NUGGET = MB_PER_INGOT / 9;
-    public static final int MB_PER_PLATE  = 2_000;
-    public static final int BUCKET        = 9_000;
 
     public final MaterialType type;
     public int amount;
@@ -35,5 +35,5 @@ public class MaterialStack {
     }
 
     @Override
-    public String toString() { return amount + "mb " + type.name; }
+    public String toString() { return amount + "q " + type.name; }
 }

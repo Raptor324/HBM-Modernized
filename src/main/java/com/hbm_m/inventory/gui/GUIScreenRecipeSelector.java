@@ -633,19 +633,15 @@ public class GUIScreenRecipeSelector extends Screen {
 
         tooltip.add(Component.translatable("gui.recipe.input").withStyle(ChatFormatting.BOLD));
         for (MaterialStack in : recipe.getInputs()) {
-            int quanta = (int) Math.round((double) in.amount * com.hbm_m.item.material.ScrapItem.QUANTA_PER_INGOT
-                    / MaterialStack.MB_PER_INGOT);
             tooltip.add(materialNameOf(in).copy().withStyle(ChatFormatting.GRAY)
                     .append(Component.literal(": ").withStyle(ChatFormatting.GRAY))
-                    .append(com.hbm_m.item.material.ScrapItem.formatAmount(quanta, shift)));
+                    .append(com.hbm_m.item.material.ScrapItem.formatAmount(in.amount, shift)));
         }
         tooltip.add(Component.translatable("gui.recipe.output").withStyle(ChatFormatting.BOLD));
         for (MaterialStack out : recipe.getOutputs()) {
-            int quanta = (int) Math.round((double) out.amount * com.hbm_m.item.material.ScrapItem.QUANTA_PER_INGOT
-                    / MaterialStack.MB_PER_INGOT);
             tooltip.add(materialNameOf(out).copy().withStyle(ChatFormatting.GRAY)
                     .append(Component.literal(": ").withStyle(ChatFormatting.GRAY))
-                    .append(com.hbm_m.item.material.ScrapItem.formatAmount(quanta, shift)));
+                    .append(com.hbm_m.item.material.ScrapItem.formatAmount(out.amount, shift)));
         }
     }
 

@@ -102,12 +102,53 @@ public class MachineFoundryOutletBlock extends BaseEntityBlock implements com.hb
         BlockEntity be = level.getBlockEntity(pos);
         if (!(be instanceof MachineFoundryOutletBlockEntity outlet)) return InteractionResult.PASS;
 
+        net.minecraft.world.item.ItemStack held = player.getItemInHand(hand);
+
+        // Оригинал FoundryOutlet.onBlockActivated: клик ломом (scraps) ставит фильтр материала.
+        if (held.getItem() instanceof com.hbm_m.item.material.ScrapItem) {
+            com.hbm_m.item.material.ModMaterials mat = com.hbm_m.item.material.ScrapItem.getMaterial(held);
+            com.hbm_m.inventory.material.MaterialType type =
+                    mat != null ? com.hbm_m.inventory.material.MaterialType.byName(mat.getId()) : null;
+            if (type != null) {
+                outlet.filter = type;
+                outlet.setChanged();
+                level.sendBlockUpdated(pos, state, state, 3);
+                player.displayClientMessage(Component.translatable("foundry.hbm_m.filter",
+                        Component.translatable("material.hbm_m." + type.name)), true);
+            }
+            return InteractionResult.SUCCESS;
+        }
+
+        // Оригинал onScrew SCREWDRIVER: сброс фильтра и его инверсии.
+        if (held.getItem() == ModItems.SCREWDRIVER.get()) {
+            if (outlet.filter != null || outlet.invertFilter) {
+                outlet.filter = null;
+                outlet.invertFilter = false;
+                outlet.setChanged();
+                level.sendBlockUpdated(pos, state, state, 3);
+                player.displayClientMessage(Component.translatable("foundry.hbm_m.filter_cleared"), true);
+            }
+            return InteractionResult.SUCCESS;
+        }
+
+        // Оригинал onScrew HAND_DRILL: переключение инверсии фильтра.
+        if (held.getItem() == ModItems.HAND_DRILL.get() || held.getItem() == ModItems.HAND_DRILL_DESH.get()) {
+            outlet.invertFilter = !outlet.invertFilter;
+            outlet.setChanged();
+            level.sendBlockUpdated(pos, state, state, 3);
+            player.displayClientMessage(Component.translatable(outlet.invertFilter
+                    ? "foundry.hbm_m.filter_inverted"
+                    : "foundry.hbm_m.filter_normal"), true);
+            return InteractionResult.SUCCESS;
+        }
+
+        // Оригинал: клик всем остальным (в т.ч. пустой рукой) — инверсия редстоуна.
         outlet.invertRedstone = !outlet.invertRedstone;
         outlet.setChanged();
         level.sendBlockUpdated(pos, state, state, 3);
-        player.displayClientMessage(Component.literal(outlet.invertRedstone
-                ? "Outlet: closed by default, opens with redstone"
-                : "Outlet: open by default, closes with redstone"), true);
+        player.displayClientMessage(Component.translatable(outlet.invertRedstone
+                ? "foundry.hbm_m.redstone_closed"
+                : "foundry.hbm_m.redstone_open"), true);
         return InteractionResult.SUCCESS;
     }
 

@@ -5,6 +5,7 @@ import java.util.List;
 
 import com.hbm_m.blockentity.BaseHbmBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
+import com.hbm_m.inventory.material.MaterialShapes;
 import com.hbm_m.inventory.material.MaterialStack;
 import com.hbm_m.inventory.material.MaterialType;
 import com.hbm_m.platform.ModItemStackHandler;
@@ -46,22 +47,22 @@ import org.jetbrains.annotations.Nullable;
  * шлак, лицевая — материалы рецепта, порциями 3 самородка за тик в
  * {@code ICrucibleAcceptor} вниз по потоку.
  *
- * <p>Ёмкости в mB (оригинал: BLOCK.q(16) = 144 слитка на список):
- * {@code 144 × 1000 mB}. Порция налива: 3 самородка = 333 mB.
+ * <p>Ёмкости в квантах, 1:1 с оригиналом: {@code BLOCK.q(16)} = 11 520 квантов
+ * (= 16 блоков = 144 слитка) на список. Порция налива: {@code NUGGET.q(3)} = 24 кванта.
  */
 public class MachineCrucibleBlockEntity extends BaseHbmBlockEntity implements com.hbm_m.api.block.ICrucibleAcceptor, com.hbm_m.interfaces.IMetalCopiable {
 
     /** Слоты плавильного буфера (в оригинале слоты 1..9 при 10-слотовом инвентаре; слот 0 никогда не использовался). */
     public static final int SMELT_SLOTS = 9;
 
-    public static final int RECIPE_CAPACITY_MB = 144_000;
-    public static final int WASTE_CAPACITY_MB  = 144_000;
-    public static final int PROCESS_TIME       = 20_000;
-    public static final double DIFFUSION       = 0.25D;
-    public static final int MAX_HEAT           = 100_000;
+    public static final int RECIPE_CAPACITY = MaterialShapes.BLOCK * 16;
+    public static final int WASTE_CAPACITY  = MaterialShapes.BLOCK * 16;
+    public static final int PROCESS_TIME    = 20_000;
+    public static final double DIFFUSION    = 0.25D;
+    public static final int MAX_HEAT        = 100_000;
 
     /** Минимальная порция налива — 3 самородка (оригинал NUGGET.q(3)). */
-    public static final int MIN_POUR_MB = MaterialStack.MB_PER_NUGGET * 3;
+    public static final int MIN_POUR = MaterialShapes.NUGGET * 3;
 
     private static final int POUR_RANGE = 6;
 
@@ -94,9 +95,9 @@ public class MachineCrucibleBlockEntity extends BaseHbmBlockEntity implements co
             case 0 -> progress; case 1 -> PROCESS_TIME;
             case 2 -> heat;     case 3 -> MAX_HEAT;
             case 4 -> totalAmount(recipeStack);
-            case 5 -> RECIPE_CAPACITY_MB;
+            case 5 -> RECIPE_CAPACITY;
             case 6 -> totalAmount(wasteStack);
-            case 7 -> WASTE_CAPACITY_MB;
+            case 7 -> WASTE_CAPACITY;
             default -> 0; }; }
         @Override public void set(int i, int v) { }
         @Override public int getCount() { return 8; }
@@ -113,8 +114,8 @@ public class MachineCrucibleBlockEntity extends BaseHbmBlockEntity implements co
 
     public int totalRecipeAmount() { return totalAmount(recipeStack); }
     public int totalWasteAmount()  { return totalAmount(wasteStack); }
-    public int getRecipeCap() { return RECIPE_CAPACITY_MB; }
-    public int getWasteCap()  { return WASTE_CAPACITY_MB; }
+    public int getRecipeCap() { return RECIPE_CAPACITY; }
+    public int getWasteCap()  { return WASTE_CAPACITY; }
 
     /** Наибольший стакан расплава — для цвета заливки. */
     public @Nullable MaterialStack getMaterialStack() {
@@ -189,7 +190,7 @@ public class MachineCrucibleBlockEntity extends BaseHbmBlockEntity implements co
         }
 
         /* урон существам в расплаве */
-        int totalCap = RECIPE_CAPACITY_MB + WASTE_CAPACITY_MB;
+        int totalCap = RECIPE_CAPACITY + WASTE_CAPACITY;
         int totalMass = be.totalAmount(be.recipeStack) + be.totalAmount(be.wasteStack);
         double meltLevel = ((double) totalMass / (double) totalCap) * 0.875D;
 
@@ -258,7 +259,7 @@ public class MachineCrucibleBlockEntity extends BaseHbmBlockEntity implements co
         double pz = pos.getZ() + 0.5D + dir.getStepZ() * 1.875D;
 
         Vec3[] impact = new Vec3[1];
-        MaterialStack didPour = CrucibleUtil.pourFullStack(level, px, py, pz, POUR_RANGE, true, stacks, MIN_POUR_MB, impact);
+        MaterialStack didPour = CrucibleUtil.pourFullStack(level, px, py, pz, POUR_RANGE, true, stacks, MIN_POUR, impact);
 
         if (didPour != null) {
             // Порт aux-частицы "foundry": поток расплава (ParticleFoundry) от точки налива
@@ -423,7 +424,7 @@ public class MachineCrucibleBlockEntity extends BaseHbmBlockEntity implements co
             if (recipeInputRequired == 0) {
                 wasteAmount += mat.amount;
             } else {
-                int matMaximum = recipeInputRequired * RECIPE_CAPACITY_MB / recipeContent;
+                int matMaximum = recipeInputRequired * RECIPE_CAPACITY / recipeContent;
                 int amountStored = getStoredAmount(this.recipeStack, mat.type);
 
                 matchesRecipe = true;
@@ -435,7 +436,7 @@ public class MachineCrucibleBlockEntity extends BaseHbmBlockEntity implements co
             }
         }
 
-        return recipeAmount <= RECIPE_CAPACITY_MB && wasteAmount <= WASTE_CAPACITY_MB && matchesRecipe;
+        return recipeAmount <= RECIPE_CAPACITY && wasteAmount <= WASTE_CAPACITY && matchesRecipe;
     }
 
     public void addToStack(List<MaterialStack> stack, MaterialStack matStack) {
@@ -484,16 +485,16 @@ public class MachineCrucibleBlockEntity extends BaseHbmBlockEntity implements co
         MoltenAlloyRecipe recipe = getLoadedRecipe(level);
 
         if (recipe == null) {
-            return totalAmount(this.wasteStack) < WASTE_CAPACITY_MB;
+            return totalAmount(this.wasteStack) < WASTE_CAPACITY;
         }
 
         int recipeContent = 0;
         for (MaterialStack in : recipe.getInputs()) recipeContent += in.amount;
         int recipeInputRequired = getAmountFromInputs(recipe, stack.type);
-        int matMaximum = recipeInputRequired * RECIPE_CAPACITY_MB / recipeContent;
+        int matMaximum = recipeInputRequired * RECIPE_CAPACITY / recipeContent;
         int amountStored = getStoredAmount(this.recipeStack, stack.type);
 
-        return amountStored < matMaximum && totalAmount(this.recipeStack) < RECIPE_CAPACITY_MB;
+        return amountStored < matMaximum && totalAmount(this.recipeStack) < RECIPE_CAPACITY;
     }
 
     /** Порт pour: заливка расплава в тигель (в т.ч. возврат выхода рецепта). */
@@ -503,12 +504,12 @@ public class MachineCrucibleBlockEntity extends BaseHbmBlockEntity implements co
 
         if (recipe == null) {
             int amount = totalAmount(this.wasteStack);
-            if (amount + stack.amount <= WASTE_CAPACITY_MB) {
+            if (amount + stack.amount <= WASTE_CAPACITY) {
                 addToStack(this.wasteStack, stack.copy());
                 syncToClient();
                 return null;
             } else {
-                int toAdd = WASTE_CAPACITY_MB - amount;
+                int toAdd = WASTE_CAPACITY - amount;
                 addToStack(this.wasteStack, new MaterialStack(stack.type, toAdd));
                 syncToClient();
                 return new MaterialStack(stack.type, stack.amount - toAdd);
@@ -518,7 +519,7 @@ public class MachineCrucibleBlockEntity extends BaseHbmBlockEntity implements co
         int recipeContent = 0;
         for (MaterialStack in : recipe.getInputs()) recipeContent += in.amount;
         int recipeInputRequired = getAmountFromInputs(recipe, stack.type);
-        int matMaximum = recipeInputRequired * RECIPE_CAPACITY_MB / recipeContent;
+        int matMaximum = recipeInputRequired * RECIPE_CAPACITY / recipeContent;
 
         if (recipeInputRequired + stack.amount <= matMaximum) {
             addToStack(this.recipeStack, stack.copy());
@@ -527,7 +528,7 @@ public class MachineCrucibleBlockEntity extends BaseHbmBlockEntity implements co
         }
 
         // Порт формулы оригинала; ограничение снизу исключает отрицательный добавляемый объём
-        int toAdd = Math.min(matMaximum - stack.amount, RECIPE_CAPACITY_MB - totalAmount(this.recipeStack));
+        int toAdd = Math.min(matMaximum - stack.amount, RECIPE_CAPACITY - totalAmount(this.recipeStack));
         if (toAdd <= 0) {
             return stack;
         }
@@ -581,22 +582,13 @@ public class MachineCrucibleBlockEntity extends BaseHbmBlockEntity implements co
         if (level == null || stack.isEmpty()) return out;
 
         // Плавление литейных отходов (ScrapItem): количество из тега "amount" (в квантах), материал из ModMaterials
-        if (stack.getItem() instanceof com.hbm_m.item.material.ScrapItem scrap) {
-            com.hbm_m.item.material.ModMaterials mat = scrap.getMaterial();
-            if (mat == null) {
-                for (com.hbm_m.item.material.ModMaterialItems.ScrapEntry entry : com.hbm_m.item.material.ModMaterialItems.FOUNDRY_SCRAPS) {
-                    if (com.hbm_m.item.material.ModMaterialItems.scrapItem(entry.mat()) == stack.getItem()) {
-                        mat = entry.mat();
-                        break;
-                    }
-                }
-            }
+        if (stack.getItem() instanceof com.hbm_m.item.material.ScrapItem) {
+            com.hbm_m.item.material.ModMaterials mat = com.hbm_m.item.material.ScrapItem.getMaterial(stack);
             if (mat != null) {
                 MaterialType type = MaterialType.byName(mat.getId());
                 if (type != null) {
-                    int quanta = com.hbm_m.item.material.ScrapItem.getAmount(stack);
-                    int amountMb = (int) Math.max(1, Math.round((double) quanta * MaterialStack.MB_PER_INGOT / com.hbm_m.item.material.ScrapItem.QUANTA_PER_INGOT));
-                    out.add(new MaterialStack(type, amountMb));
+                    // Количество лома уже в квантах — 1:1 с системой тигля (оригинал).
+                    out.add(new MaterialStack(type, com.hbm_m.item.material.ScrapItem.getAmount(stack)));
                     return out;
                 }
             }

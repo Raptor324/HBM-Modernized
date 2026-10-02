@@ -22,8 +22,8 @@ import net.minecraft.world.item.crafting.RecipeSerializer;
  * {
  *   "type": "hbm_m:molten_alloy",
  *   "frequency": 20,
- *   "inputs":  [ { "material": "iron",   "amount": 288 }, ... ],
- *   "outputs": [ { "material": "steel",  "amount": 288 }, ... ]
+ *   "inputs":  [ { "material": "iron",   "amount": 16 }, ... ],
+ *   "outputs": [ { "material": "steel",  "amount": 16 }, ... ]
  * }
  * }</pre>
  */

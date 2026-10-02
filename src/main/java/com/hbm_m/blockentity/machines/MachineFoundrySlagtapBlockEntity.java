@@ -18,7 +18,8 @@ import org.jetbrains.annotations.Nullable;
  */
 public class MachineFoundrySlagtapBlockEntity extends MachineFoundryOutletBlockEntity {
 
-    private static final int POUR_RANGE = 4;
+    /** Оригинал: хитскан от y-0.125 вниз на 15 блоков (TileEntityFoundrySlagtap). */
+    private static final int POUR_RANGE = 15;
 
     public MachineFoundrySlagtapBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.FOUNDRY_SLAGTAP_BE.get(), pos, state);
@@ -35,7 +36,9 @@ public class MachineFoundrySlagtapBlockEntity extends MachineFoundryOutletBlockE
 
     @Override
     public @Nullable MaterialStack flow(Level level, BlockPos pos, Direction side, MaterialStack stack) {
-        for (int i = 0; i <= POUR_RANGE; i++) {
+        // Скан начинается СЛЕДУЮЩЕГО блока (оригинальный луч идёт от низа крана вниз),
+        // иначе i=0 попадает в сам шлакоотвод.
+        for (int i = 1; i <= POUR_RANGE; i++) {
             BlockPos scan = pos.below(i);
             var block = level.getBlockState(scan).getBlock();
 
