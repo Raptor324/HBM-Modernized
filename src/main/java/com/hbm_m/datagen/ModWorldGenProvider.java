@@ -104,11 +104,9 @@ public final class ModWorldGenProvider {
         ore(ctx, "asbestos_ore", stone, deepslate, ModBlocks.ASBESTOS_ORE.get(), ModBlocks.ASBESTOS_ORE_DEEPSLATE.get(), 7);
         ore(ctx, "cinnabar_ore", stone, deepslate, ModBlocks.CINNABAR_ORE.get(), ModBlocks.CINNABAR_ORE_DEEPSLATE.get(), 4);
         ore(ctx, "cobalt_ore", stone, deepslate, ModBlocks.COBALT_ORE.get(), ModBlocks.COBALT_ORE_DEEPSLATE.get(), 5);
-        ore(ctx, "lithium_ore", stone, deepslate, ModBlocks.LITHIUM_ORE.get(), ModBlocks.LITHIUM_ORE_DEEPSLATE.get(), 6);
         ore(ctx, "coltan_ore", stone, deepslate, ModBlocks.COLTAN_ORE.get(), ModBlocks.COLTAN_ORE_DEEPSLATE.get(), 4);
         ore(ctx, "alexandrite_ore", stone, null, ModBlocks.ALEXANDRITE_ORE.get(), null, 3);
         ore(ctx, "australium_ore", stone, deepslate, ModBlocks.AUSTRALIUM_ORE.get(), null, 6);
-        ore(ctx, "sequestrum_ore", stone, deepslate, ModBlocks.SEQUESTRUM_ORE.get(), null, 7);
 
         // Потайные скважины красной комнаты (1/4 чанка, y 6..19 в 1.7.10 -> 6..30)
         simpleBlock(ctx, "stone_keyhole", ModBlocks.STONE_KEYHOLE.get());
@@ -146,6 +144,19 @@ public final class ModWorldGenProvider {
         ore(ctx, "nether_smoldering_ore", netherrack, null, ModBlocks.NETHER_SMOLDERING_ORE.get(), null, 8);
         ore(ctx, "depth_nether_neodymium_bottom", netherrack, null, ModBlocks.DEPTH_NETHER_NEODYMIUM.get(), null, 9);
         ore(ctx, "depth_nether_neodymium_top", netherrack, null, ModBlocks.DEPTH_NETHER_NEODYMIUM.get(), null, 9);
+
+        // --- глубинные залежи верхнего мира (DepthDeposit.generateConditionOverworld 1.7.10:
+        //     сферы радиуса 5 у y 0..3, вокруг — оправа из stone_depth; шанс на чанк 1/N:
+        //     руды 1/16, кластеры 1/24 и 1/32). Ванильный ore-feature оправу не умеет,
+        //     поэтому кладём только рудный блок (размер 9 — по аналогии с neodymium).
+        //     Один блок в обоих таргетах (камень + глубинный сланец): на y 0..3 в 1.18+
+        //     почти весь камень — глубинный сланец. ---
+        ore(ctx, "depth_cinnabar", stone, deepslate, ModBlocks.DEPTH_CINNABAR.get(), ModBlocks.DEPTH_CINNABAR.get(), 9);
+        ore(ctx, "depth_zirconium", stone, deepslate, ModBlocks.DEPTH_ZIRCONIUM.get(), ModBlocks.DEPTH_ZIRCONIUM.get(), 9);
+        ore(ctx, "depth_borax", stone, deepslate, ModBlocks.DEPTH_BORAX.get(), ModBlocks.DEPTH_BORAX.get(), 9);
+        ore(ctx, "cluster_depth_iron", stone, deepslate, ModBlocks.CLUSTER_DEPTH_IRON.get(), ModBlocks.CLUSTER_DEPTH_IRON.get(), 9);
+        ore(ctx, "cluster_depth_titanium", stone, deepslate, ModBlocks.CLUSTER_DEPTH_TITANIUM.get(), ModBlocks.CLUSTER_DEPTH_TITANIUM.get(), 9);
+        ore(ctx, "cluster_depth_tungsten", stone, deepslate, ModBlocks.CLUSTER_DEPTH_TUNGSTEN.get(), ModBlocks.CLUSTER_DEPTH_TUNGSTEN.get(), 9);
 
         // --- руда Энда (ore_tikite оригинала) ---
         ore(ctx, "tikite_ore", new BlockMatchTest(Blocks.END_STONE), null, ModBlocks.TIKITE_ORE.get(), null, 6);
@@ -189,11 +200,9 @@ public final class ModWorldGenProvider {
         p.put("asbestos_ore", PlacementParams.of(10, 0, 128));
         p.put("cinnabar_ore", PlacementParams.of(8, -64, 10));
         p.put("cobalt_ore", PlacementParams.of(6, -64, -20));
-        p.put("lithium_ore", PlacementParams.of(4, -64, -40));
         p.put("coltan_ore", PlacementParams.of(2, -56, 0));
         p.put("alexandrite_ore", PlacementParams.of(1, -48, -24));
         p.put("australium_ore", PlacementParams.rare(1, -64, -48, 12));
-        p.put("sequestrum_ore", PlacementParams.of(10, 0, 128));
         p.put("gas_flammable", PlacementParams.of(12, -60, 0));
         // Гнейсовый пласт: полоса у бывшей поверхности 1.7.10 (y≈30 → -48..0)
         p.put("stone_gneiss", PlacementParams.of(1, -48, 0));
@@ -270,6 +279,15 @@ public final class ModWorldGenProvider {
                 HeightRangePlacement.uniform(VerticalAnchor.absolute(0), VerticalAnchor.absolute(0)),
                 BiomeFilter.biome()));
 
+        // Глубинные залежи верхнего мира: 1 попытка на чанк с шансом 1/N (оригинал
+        // DepthDeposit.generateConditionOverworld: rand.nextInt(chance)==0), y 0..3.
+        depthDeposit(ctx, features, "depth_cinnabar", 16);
+        depthDeposit(ctx, features, "depth_zirconium", 16);
+        depthDeposit(ctx, features, "depth_borax", 16);
+        depthDeposit(ctx, features, "cluster_depth_iron", 24);
+        depthDeposit(ctx, features, "cluster_depth_titanium", 32);
+        depthDeposit(ctx, features, "cluster_depth_tungsten", 32);
+
         // Поверхностные: мины и неразорвавшиеся боеприпасы (surface_structures)
         surfacePlaced(ctx, features, "mine_ap", 200, -2);
         surfacePlaced(ctx, features, "dud_conventional", 900, -1);
@@ -291,12 +309,15 @@ public final class ModWorldGenProvider {
                 "uranium_ore", "thorium_ore", "titanium_ore", "sulfur_ore", "aluminum_ore",
                 "fluorite_ore", "niter_ore", "tungsten_ore", "lead_ore",
                 "beryllium_ore", "rareground_ore", "lignite_ore", "asbestos_ore", "cinnabar_ore",
-                "cobalt_ore", "lithium_ore", "coltan_ore", "alexandrite_ore", "australium_ore",
-                "sequestrum_ore", "gas_flammable",
+                "cobalt_ore", "coltan_ore", "alexandrite_ore", "australium_ore",
+                "gas_flammable",
                 "stone_gneiss", "gneiss_iron_ore", "gneiss_gold_ore", "gneiss_uranium_ore",
                 "gneiss_copper_ore", "gneiss_asbestos_ore", "gneiss_lithium_ore", "gneiss_rare_ore", "gneiss_gas_ore",
                 "resource_asbestos", "resource_bauxite", "resource_hematite", "resource_limestone",
                 "resource_malachite", "resource_sulfur",
+                // Глубинные залежи (DepthDeposit оригинала)
+                "depth_cinnabar", "depth_zirconium", "depth_borax",
+                "cluster_depth_iron", "cluster_depth_titanium", "cluster_depth_tungsten",
                 "ore_bedrock_mineral", "ore_bedrock_oil", "oil_deposit", "stone_keyhole");
         addModifier(ctx, biomes, placed, "add_overworld_ores", BiomeTags.IS_OVERWORLD, overworldOres,
                 GenerationStep.Decoration.UNDERGROUND_ORES);
@@ -392,6 +413,15 @@ public final class ModWorldGenProvider {
     private static void placed(BootstapContext<PlacedFeature> ctx, HolderGetter<ConfiguredFeature<?, ?>> features,
             String name, List<PlacementModifier> mods) {
         placedRef(ctx, features, name, name, mods);
+    }
+
+    /** Размещение глубинной залежи: 1 попытка на чанк с шансом 1/{@code chunkChance}, y 0..3. */
+    private static void depthDeposit(BootstapContext<PlacedFeature> ctx,
+            HolderGetter<ConfiguredFeature<?, ?>> features, String name, int chunkChance) {
+        placed(ctx, features, name, List.of(
+                RarityFilter.onAverageOnceEvery(chunkChance), CountPlacement.of(1), InSquarePlacement.spread(),
+                HeightRangePlacement.uniform(VerticalAnchor.absolute(0), VerticalAnchor.absolute(3)),
+                BiomeFilter.biome()));
     }
 
     private static void placedRef(BootstapContext<PlacedFeature> ctx, HolderGetter<ConfiguredFeature<?, ?>> features,

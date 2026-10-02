@@ -8,7 +8,6 @@ import java.util.Set;
 import java.util.function.Supplier;
 
 import com.hbm_m.platform.BlockProps;
-import com.hbm_m.api.energy.ConverterBlock;
 import com.hbm_m.api.energy.SwitchBlock;
 import com.hbm_m.api.energy.WireBlock;
 import com.hbm_m.block.bomb.BlockTaint;
@@ -360,9 +359,6 @@ public class ModBlocks {
     public static List<RegistrySupplier<Block>> getAnvilBlocks() {
         return List.of(ANVIL_IRON, ANVIL_LEAD, ANVIL_STEEL, ANVIL_DESH, ANVIL_FERROURANIUM, ANVIL_SATURNITE, ANVIL_BISMUTH_BRONZE, ANVIL_ARSENIC_BRONZE, ANVIL_SCHRABIDATE, ANVIL_DNT, ANVIL_OSMIRIDIUM, ANVIL_MURKY);
     }
-
-    public static final RegistrySupplier<Block> CONVERTER_BLOCK = registerBlock("converter_block",
-            () -> new ConverterBlock(BlockProps.copy(Blocks.IRON_BLOCK).noOcclusion()));
 
     public static final RegistrySupplier<Block> EMP = registerBlock("emp",
             () -> new Block(BlockProps.copy(Blocks.IRON_BLOCK)
@@ -1160,12 +1156,6 @@ public class ModBlocks {
             () -> new DepthOreBlock(BlockProps.copy(Blocks.DEEPSLATE).strength(4.5F, 6.0F).noOcclusion()));
     public static final RegistrySupplier<Block> DEPTH_CINNABAR = registerBlock("depth_cinnabar",
             () -> new DepthOreBlock(BlockProps.copy(Blocks.DEEPSLATE).strength(4.5F, 6.0F).noOcclusion()));
-    public static final RegistrySupplier<Block> DEPTH_IRON = registerBlock("depth_iron",
-            () -> new DepthOreBlock(BlockProps.copy(Blocks.DEEPSLATE).strength(4.5F, 6.0F).noOcclusion()));
-    public static final RegistrySupplier<Block> DEPTH_TUNGSTEN = registerBlock("depth_tungsten",
-            () -> new DepthOreBlock(BlockProps.copy(Blocks.DEEPSLATE).strength(4.5F, 6.0F).noOcclusion()));
-    public static final RegistrySupplier<Block> DEPTH_TITANIUM = registerBlock("depth_titanium",
-            () -> new DepthOreBlock(BlockProps.copy(Blocks.DEEPSLATE).strength(4.5F, 6.0F).noOcclusion()));
     public static final RegistrySupplier<Block> DEPTH_ZIRCONIUM = registerBlock("depth_zirconium",
             () -> new DepthOreBlock(BlockProps.copy(Blocks.DEEPSLATE).strength(4.5F, 6.0F).noOcclusion()));
 
@@ -1959,10 +1949,6 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> RESOURCE_SULFUR = registerBlock("resource_sulfur",
             () -> new Block(BlockProps.copy(Blocks.STONE).strength(3.0f, 3.0f).requiresCorrectToolForDrops()));
 
-    public static final RegistrySupplier<Block> SEQUESTRUM_ORE = registerBlock("sequestrum_ore",
-            () -> new Block(BlockProps.copy(Blocks.STONE).strength(3.0f, 3.0f).requiresCorrectToolForDrops()));
-
-
     public static final RegistrySupplier<Block> LIGNITE_ORE = registerBlock("lignite_ore",
             () -> new Block(BlockProps.copy(Blocks.STONE).strength(3.0f, 3.0f).requiresCorrectToolForDrops()));
 
@@ -2065,17 +2051,12 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> NITER_ORE_DEEPSLATE = registerBlock("niter_ore_deepslate",
             () -> new Block(BlockProps.copy(Blocks.DEEPSLATE).strength(5.0f, 5.0f).requiresCorrectToolForDrops()));
 
-    public static final RegistrySupplier<Block> LITHIUM_ORE = registerBlock("lithium_ore",
-            () -> new Block(BlockProps.copy(Blocks.STONE).strength(3.0f, 3.0f).requiresCorrectToolForDrops()));
-
-    public static final RegistrySupplier<Block> LITHIUM_ORE_DEEPSLATE = registerBlock("lithium_ore_deepslate",
-            () -> new Block(BlockProps.copy(Blocks.DEEPSLATE).strength(5.0f, 5.0f).requiresCorrectToolForDrops()));
-
     public static final RegistrySupplier<Block> ALEXANDRITE_ORE = registerBlock("alexandrite_ore",
-            () -> new Block(BlockProps.copy(Blocks.STONE).strength(3.0f, 3.0f).requiresCorrectToolForDrops()));
+            // Оригинал: BlockDepthOre — глубинная порода, добывается ломателем породы
+            () -> new DepthOreBlock(BlockProps.copy(Blocks.STONE)));
 
     public static final RegistrySupplier<Block> COLTAN_ORE = registerBlock("coltan_ore",
-            () -> new Block(BlockProps.copy(Blocks.STONE).strength(3.0f, 3.0f).requiresCorrectToolForDrops()));
+            () -> new Block(BlockProps.copy(Blocks.STONE).strength(15.0F, 6.0F).requiresCorrectToolForDrops()));
 
     public static final RegistrySupplier<Block> COLTAN_ORE_DEEPSLATE = registerBlock("coltan_ore_deepslate",
             () -> new Block(BlockProps.copy(Blocks.DEEPSLATE).strength(5.0f, 5.0f).requiresCorrectToolForDrops()));
@@ -2162,9 +2143,9 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> GNEISS_GAS_ORE = registerBlock("gneiss_gas_ore",
             () -> new Block(BlockProps.copy(Blocks.STONE).strength(3.0f, 3.0f).requiresCorrectToolForDrops()));
 
-    /** Порт {@code ore_tikite} (BlockDragonProof; дракон-стойкость опущена). */
+    /** Порт {@code ore_tikite} (BlockDragonProof — Эндер-дракон не может разрушить блок). */
     public static final RegistrySupplier<Block> TIKITE_ORE = registerBlock("tikite_ore",
-            () -> new Block(BlockProps.copy(Blocks.END_STONE).strength(5.0f, 10.0f).requiresCorrectToolForDrops()));
+            () -> new com.hbm_m.block.generic.BlockDragonProof(BlockProps.copy(Blocks.END_STONE).strength(5.0f, 10.0f).requiresCorrectToolForDrops()));
 
     /** Порт {@code ore_oil_sand} (песчаные нефтяные месторождения в пустынях). */
     public static final RegistrySupplier<Block> ORE_OIL_SAND = registerBlock("ore_oil_sand",
@@ -2381,6 +2362,18 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> BARBED_WIRE_ACID = registerBlock("barbed_wire_acid", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> BARBED_WIRE_ULTRADEATH = registerBlock("barbed_wire_ultradeath", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> BASALT = registerBlock("basalt", () -> new Block(BlockProps.copy(Blocks.STONE)));
+    // Руды базальта (ориг. BlockOreBasalt 1.7.10, меты 0-4): застывшая volcanic_lava_block.
+    public static final RegistrySupplier<Block> ORE_BASALT_SULFUR = registerBlock("ore_basalt_sulfur", () -> new Block(BlockProps.copy(Blocks.STONE).requiresCorrectToolForDrops()));
+    public static final RegistrySupplier<Block> ORE_BASALT_FLUORITE = registerBlock("ore_basalt_fluorite", () -> new Block(BlockProps.copy(Blocks.STONE).requiresCorrectToolForDrops()));
+    public static final RegistrySupplier<Block> ORE_BASALT_ASBESTOS = registerBlock("ore_basalt_asbestos", () -> new Block(BlockProps.copy(Blocks.STONE).requiresCorrectToolForDrops()));
+    public static final RegistrySupplier<Block> ORE_BASALT_GEM = registerBlock("ore_basalt_gem", () -> new Block(BlockProps.copy(Blocks.STONE).requiresCorrectToolForDrops()));
+    public static final RegistrySupplier<Block> ORE_BASALT_MOLYSITE = registerBlock("ore_basalt_molysite", () -> new Block(BlockProps.copy(Blocks.STONE).requiresCorrectToolForDrops()));
+    // Метеоритные руды (порт BlockMeteorOre 1.7.10).
+    public static final RegistrySupplier<Block> ORE_METEOR_IRON = registerBlock("ore_meteor_iron", () -> new Block(BlockProps.copy(Blocks.STONE).requiresCorrectToolForDrops()));
+    public static final RegistrySupplier<Block> ORE_METEOR_COPPER = registerBlock("ore_meteor_copper", () -> new Block(BlockProps.copy(Blocks.STONE).requiresCorrectToolForDrops()));
+    public static final RegistrySupplier<Block> ORE_METEOR_ALUMINIUM = registerBlock("ore_meteor_aluminium", () -> new Block(BlockProps.copy(Blocks.STONE).requiresCorrectToolForDrops()));
+    public static final RegistrySupplier<Block> ORE_METEOR_RAREEARTH = registerBlock("ore_meteor_rareearth", () -> new Block(BlockProps.copy(Blocks.STONE).requiresCorrectToolForDrops()));
+    public static final RegistrySupplier<Block> ORE_METEOR_COBALT = registerBlock("ore_meteor_cobalt", () -> new Block(BlockProps.copy(Blocks.STONE).requiresCorrectToolForDrops()));
     public static final RegistrySupplier<Block> BASALT_SMOOTH = registerBlock("basalt_smooth", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> BASALT_TILES = registerBlock("basalt_tiles", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> BATTERY_LITHIUM_BLOCK = registerBlock("battery_lithium_block", () -> new Block(BlockProps.copy(Blocks.STONE)));
@@ -2436,13 +2429,15 @@ public class ModBlocks {
      * folgt, und der einzige, der ueberhaupt sichtbar ist.
      */
     public static final RegistrySupplier<Block> CHLORINE_GAS = registerBlock("chlorine_gas", com.hbm_m.block.gas.BlockGasChlorine::new);
-    public static final RegistrySupplier<Block> CLUSTER_ALUMINIUM = registerBlock("cluster_aluminium", () -> new Block(BlockProps.copy(Blocks.STONE)));
-    public static final RegistrySupplier<Block> CLUSTER_COPPER = registerBlock("cluster_copper", () -> new Block(BlockProps.copy(Blocks.STONE)));
-    public static final RegistrySupplier<Block> CLUSTER_DEPTH_IRON = registerBlock("cluster_depth_iron", () -> new Block(BlockProps.copy(Blocks.STONE)));
-    public static final RegistrySupplier<Block> CLUSTER_DEPTH_TITANIUM = registerBlock("cluster_depth_titanium", () -> new Block(BlockProps.copy(Blocks.STONE)));
-    public static final RegistrySupplier<Block> CLUSTER_DEPTH_TUNGSTEN = registerBlock("cluster_depth_tungsten", () -> new Block(BlockProps.copy(Blocks.STONE)));
-    public static final RegistrySupplier<Block> CLUSTER_IRON = registerBlock("cluster_iron", () -> new Block(BlockProps.copy(Blocks.STONE)));
-    public static final RegistrySupplier<Block> CLUSTER_TITANIUM = registerBlock("cluster_titanium", () -> new Block(BlockProps.copy(Blocks.STONE)));
+    public static final RegistrySupplier<Block> CLUSTER_ALUMINIUM = registerBlock("cluster_aluminium", () -> new Block(BlockProps.copy(Blocks.STONE).strength(5.0F, 15.0F).requiresCorrectToolForDrops()));
+    public static final RegistrySupplier<Block> CLUSTER_COPPER = registerBlock("cluster_copper", () -> new Block(BlockProps.copy(Blocks.STONE).strength(5.0F, 15.0F).requiresCorrectToolForDrops()));
+    // Глубинные кластеры (оригинал: BlockDepthOre — неразрушимая порода,
+    // добывается только IDepthRockTool; дропают crystal_iron/titanium/tungsten)
+    public static final RegistrySupplier<Block> CLUSTER_DEPTH_IRON = registerBlock("cluster_depth_iron", () -> new DepthOreBlock(BlockProps.copy(Blocks.STONE)));
+    public static final RegistrySupplier<Block> CLUSTER_DEPTH_TITANIUM = registerBlock("cluster_depth_titanium", () -> new DepthOreBlock(BlockProps.copy(Blocks.STONE)));
+    public static final RegistrySupplier<Block> CLUSTER_DEPTH_TUNGSTEN = registerBlock("cluster_depth_tungsten", () -> new DepthOreBlock(BlockProps.copy(Blocks.STONE)));
+    public static final RegistrySupplier<Block> CLUSTER_IRON = registerBlock("cluster_iron", () -> new Block(BlockProps.copy(Blocks.STONE).strength(5.0F, 15.0F).requiresCorrectToolForDrops()));
+    public static final RegistrySupplier<Block> CLUSTER_TITANIUM = registerBlock("cluster_titanium", () -> new Block(BlockProps.copy(Blocks.STONE).strength(5.0F, 15.0F).requiresCorrectToolForDrops()));
     public static final RegistrySupplier<Block> CM_FLUX = registerBlock("cm_flux", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> CM_HEAT = registerBlock("cm_heat", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> CMB_BRICK = registerBlock("cmb_brick", () -> new Block(BlockProps.copy(Blocks.STONE)));
@@ -2537,7 +2532,22 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> FIELD_DISTURBER = registerBlock("field_disturber", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> FIRE_DIGAMMA = registerBlock("fire_digamma", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> FIREWORKS = registerBlock("fireworks", () -> new Block(BlockProps.copy(Blocks.STONE)));
-    public static final RegistrySupplier<Block> FISSURE_BOMB = registerBlock("fissure_bomb", () -> new Block(BlockProps.copy(Blocks.STONE)));
+    public static final RegistrySupplier<Block> FISSURE_BOMB = registerBlock("fissure_bomb",
+            () -> new com.hbm_m.block.bomb.FissureBombBlock(BlockProps.copy(Blocks.TNT).strength(0.0F)));
+
+    // World fluid blocks volcanic_lava_block / rad_lava_block (VolcanicLavaBlock / RadLavaBlock,
+    // Architectury world fluid) are registered further below, right before the WAND_* blocks.
+
+    // Порт BlockFissure 1.7.10 ("ore_volcano", Geothermal Vent): создаётся кратером Fissure Bomb.
+    // Неразрушимый (hardness -1, resistance 1 000 000), свет 1. Random tick изливает
+    // volcanic_lava_block (rad-вариант — rad_lava_block) сверху, 1:1 из оригинала.
+    public static final RegistrySupplier<Block> ORE_VOLCANO = registerBlockWithoutItem("ore_volcano",
+            () -> new com.hbm_m.block.generic.BlockFissure(BlockProps.copy(Blocks.BEDROCK)
+                    .strength(-1.0F, 1000000.0F).lightLevel(state -> 1).randomTicks(), false));
+    /** Rad variant of the geothermal vent (original block metadata != 0): erupts rad_lava_block. */
+    public static final RegistrySupplier<Block> ORE_VOLCANO_RAD = registerBlockWithoutItem("ore_volcano_rad",
+            () -> new com.hbm_m.block.generic.BlockFissure(BlockProps.copy(Blocks.BEDROCK)
+                    .strength(-1.0F, 1000000.0F).lightLevel(state -> 1).randomTicks(), true));
     public static final RegistrySupplier<Block> FLAME_WAR = registerBlock("flame_war", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> FLUID_COUNTER_VALVE = registerBlock("fluid_counter_valve", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> FLUID_DUCT_BOX = registerBlock("fluid_duct_box", () -> new Block(BlockProps.copy(Blocks.STONE)));
@@ -2649,10 +2659,6 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> MACHINE_CONTROLLER = registerBlock("machine_controller",
             () -> new com.hbm_m.block.machines.MachineReactorControlBlock(
                     BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0F, 10.0F).requiresCorrectToolForDrops().noOcclusion()));
-    public static final RegistrySupplier<Block> MACHINE_CONVERTER_HE_RF = registerBlock("machine_converter_he_rf",
-            () -> new com.hbm_m.block.machines.MachineConverterHeRfBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0f, 10.0f).noOcclusion()));
-    public static final RegistrySupplier<Block> MACHINE_CONVERTER_RF_HE = registerBlock("machine_converter_rf_he",
-            () -> new com.hbm_m.block.machines.MachineConverterRfHeBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0f, 10.0f).noOcclusion()));
     public static final RegistrySupplier<Block> MACHINE_CRYSTALLIZER = registerBlock("machine_crystallizer", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> MACHINE_DETECTOR = registerBlock("machine_detector", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> MACHINE_EPRESS = registerBlock("machine_epress", () -> new Block(BlockProps.copy(Blocks.STONE)));
@@ -2989,8 +2995,16 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> VENT_PINK_CLOUD = registerBlock("vent_pink_cloud", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> VINE_PHOSPHOR = registerBlock("vine_phosphor", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> VINYL_TILE_LARGE = registerBlock("vinyl_tile_large", () -> new Block(BlockProps.copy(Blocks.STONE)));
-    public static final RegistrySupplier<Block> VOLCANO_CORE = registerBlock("volcano_core", () -> new Block(BlockProps.copy(Blocks.STONE)));
-    public static final RegistrySupplier<Block> VOLCANO_RAD_CORE = registerBlock("volcano_rad_core", () -> new Block(BlockProps.copy(Blocks.STONE)));
+    // Растущее ядро вулкана (порт BlockVolcano 1.7.10, 5 состояний: static/growing × active/extinguishing + smoldering)
+    public static final RegistrySupplier<Block> VOLCANO_CORE = registerBlock("volcano_core",
+            () -> new com.hbm_m.block.bomb.VolcanoCoreBlock(BlockProps.copy(Blocks.STONE)));
+    public static final RegistrySupplier<Block> VOLCANO_RAD_CORE = registerBlock("volcano_rad_core",
+            () -> new com.hbm_m.block.bomb.VolcanoCoreBlock(BlockProps.copy(Blocks.STONE)));
+    // Вулканические лавы — мировые флюид-блоки (VolcanicBlock/RadBlock 1.7.10), флюиды в ModFluids
+    public static final RegistrySupplier<com.hbm_m.block.fluid.VolcanicLavaBlock> VOLCANIC_LAVA_BLOCK = registerBlockWithoutItem("volcanic_lava_block",
+            () -> new com.hbm_m.block.fluid.VolcanicLavaBlock(() -> com.hbm_m.inventory.fluid.ModFluids.VOLCANIC_LAVA.getSource(), BlockProps.copy(Blocks.LAVA)));
+    public static final RegistrySupplier<com.hbm_m.block.fluid.RadLavaBlock> RAD_LAVA_BLOCK = registerBlockWithoutItem("rad_lava_block",
+            () -> new com.hbm_m.block.fluid.RadLavaBlock(() -> com.hbm_m.inventory.fluid.ModFluids.RAD_LAVA.getSource(), BlockProps.copy(Blocks.LAVA)));
     public static final RegistrySupplier<Block> WAND_AIR = registerBlock("wand_air", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> WAND_JIGSAW = registerBlock("wand_jigsaw", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> WAND_LOGIC = registerBlock("wand_logic", () -> new Block(BlockProps.copy(Blocks.STONE)));
@@ -3442,8 +3456,6 @@ public class ModBlocks {
             () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> ORE_GNEISS_IRON = registerBlock("ore_gneiss_iron",
             () -> new Block(BlockProps.copy(Blocks.STONE)));
-    public static final RegistrySupplier<Block> ORE_GNEISS_LITHIUM = registerBlock("ore_gneiss_lithium",
-            () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> ORE_GNEISS_RARE = registerBlock("ore_gneiss_rare",
             () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> ORE_GNEISS_URANIUM = registerBlock("ore_gneiss_uranium",
@@ -3470,10 +3482,9 @@ public class ModBlocks {
             () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> ORE_RARE = registerBlock("ore_rare",
             () -> new Block(BlockProps.copy(Blocks.STONE)));
+    /** Original: {@code BlockGeneric(Material.sand).setHardness(0.5F)} — копается лопатой, resistance 2.5 (0.5 x 5). */
     public static final RegistrySupplier<Block> ORE_TEKTITE_OSMIRIDIUM = registerBlock("ore_tektite_osmiridium",
-            () -> new Block(BlockProps.copy(Blocks.STONE)));
-    public static final RegistrySupplier<Block> ORE_TIKITE = registerBlock("ore_tikite",
-            () -> new Block(BlockProps.copy(Blocks.STONE)));
+            () -> new Block(BlockProps.copy(Blocks.STONE).strength(0.5F, 2.5F)));
     public static final RegistrySupplier<Block> ORE_URANIUM_SCORCHED = registerBlock("ore_uranium_scorched",
             () -> new Block(BlockProps.copy(Blocks.STONE)));
     // Uranmeiler (Chicago Pile). Der Ziegel wird gemauert, der Bohrer macht daraus den Meiler.

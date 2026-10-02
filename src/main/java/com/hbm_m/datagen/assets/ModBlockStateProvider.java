@@ -144,15 +144,11 @@ public class ModBlockStateProvider extends BlockStateProvider {
         blockWithItem(ModBlocks.RESOURCE_LIMESTONE);
         blockWithItem(ModBlocks.RESOURCE_MALACHITE);
         blockWithItem(ModBlocks.RESOURCE_SULFUR);
-        blockWithItem(ModBlocks.DEPTH_IRON);
-        blockWithItem(ModBlocks.DEPTH_TITANIUM);
-        blockWithItem(ModBlocks.DEPTH_TUNGSTEN);
         blockWithItem(ModBlocks.DEPTH_CINNABAR);
         blockWithItem(ModBlocks.DEPTH_ZIRCONIUM);
         blockWithItem(ModBlocks.DEPTH_STONE);
         blockWithItem(ModBlocks.DEPTH_BORAX);
         blockWithItem(ModBlocks.WASTE_LEAVES);
-        blockWithItem(ModBlocks.BEDROCK_OIL);
         blockWithItem(ModBlocks.REINFORCED_STONE);
         blockWithItem(ModBlocks.CONCRETE_HAZARD);
         blockWithItem(ModBlocks.BRICK_CONCRETE);
@@ -281,37 +277,9 @@ public class ModBlockStateProvider extends BlockStateProvider {
         simpleBlockWithItem(ModBlocks.LOGIC_BLOCK.get(), models().cubeAll("logic_block", modLoc("block/ported/logic_block")));
         simpleBlockWithItem(ModBlocks.MACHINE_RADAR.get(), models().cubeAll("machine_radar", modLoc("block/ported/machine_radar")));
         simpleBlockWithItem(ModBlocks.MUSH_BLOCK_STEM.get(), models().cubeAll("mush_block_stem", modLoc("block/ported/mush_block_stem")));
-        simpleBlockWithItem(ModBlocks.ORE_ALEXANDRITE.get(), models().cubeAll("ore_alexandrite", modLoc("block/ported/ore_alexandrite")));
-        simpleBlockWithItem(ModBlocks.ORE_ALUMINIUM.get(), models().cubeAll("ore_aluminium", modLoc("block/ported/ore_aluminium")));
-        simpleBlockWithItem(ModBlocks.ORE_AUSTRALIUM.get(), models().cubeAll("ore_australium", modLoc("block/ported/ore_australium")));
-        simpleBlockWithItem(ModBlocks.ORE_CINNEBAR.get(), models().cubeAll("ore_cinnebar", modLoc("block/ported/ore_cinnebar")));
-        simpleBlockWithItem(ModBlocks.ORE_COLTAN.get(), models().cubeAll("ore_coltan", modLoc("block/ported/ore_coltan")));
-        simpleBlockWithItem(ModBlocks.ORE_COPPER.get(), models().cubeAll("ore_copper", modLoc("block/ported/ore_copper")));
-        simpleBlockWithItem(ModBlocks.ORE_DEPTH_BORAX.get(), models().cubeAll("ore_depth_borax", modLoc("block/ported/ore_depth_borax")));
-        simpleBlockWithItem(ModBlocks.ORE_DEPTH_CINNEBAR.get(), models().cubeAll("ore_depth_cinnebar", modLoc("block/ported/ore_depth_cinnebar")));
-        simpleBlockWithItem(ModBlocks.ORE_DEPTH_NETHER_NEODYMIUM.get(), models().cubeAll("ore_depth_nether_neodymium", modLoc("block/ported/ore_depth_nether_neodymium")));
-        simpleBlockWithItem(ModBlocks.ORE_DEPTH_ZIRCONIUM.get(), models().cubeAll("ore_depth_zirconium", modLoc("block/ported/ore_depth_zirconium")));
-        simpleBlockWithItem(ModBlocks.ORE_GNEISS_ASBESTOS.get(), models().cubeAll("ore_gneiss_asbestos", modLoc("block/ported/ore_gneiss_asbestos")));
-        simpleBlockWithItem(ModBlocks.ORE_GNEISS_COPPER.get(), models().cubeAll("ore_gneiss_copper", modLoc("block/ported/ore_gneiss_copper")));
-        simpleBlockWithItem(ModBlocks.ORE_GNEISS_GAS.get(), models().cubeAll("ore_gneiss_gas", modLoc("block/ported/ore_gneiss_gas")));
-        simpleBlockWithItem(ModBlocks.ORE_GNEISS_GOLD.get(), models().cubeAll("ore_gneiss_gold", modLoc("block/ported/ore_gneiss_gold")));
-        simpleBlockWithItem(ModBlocks.ORE_GNEISS_IRON.get(), models().cubeAll("ore_gneiss_iron", modLoc("block/ported/ore_gneiss_iron")));
-        simpleBlockWithItem(ModBlocks.ORE_GNEISS_LITHIUM.get(), models().cubeAll("ore_gneiss_lithium", modLoc("block/ported/ore_gneiss_lithium")));
-        simpleBlockWithItem(ModBlocks.ORE_GNEISS_RARE.get(), models().cubeAll("ore_gneiss_rare", modLoc("block/ported/ore_gneiss_rare")));
-        simpleBlockWithItem(ModBlocks.ORE_GNEISS_URANIUM.get(), models().cubeAll("ore_gneiss_uranium", modLoc("block/ported/ore_gneiss_uranium")));
         simpleBlockWithItem(ModBlocks.ORE_GNEISS_URANIUM_SCORCHED.get(), models().cubeAll("ore_gneiss_uranium_scorched", modLoc("block/ported/ore_gneiss_uranium_scorched")));
-        simpleBlockWithItem(ModBlocks.ORE_NETHER_COAL.get(), models().cubeAll("ore_nether_coal", modLoc("block/ported/ore_nether_coal")));
-        simpleBlockWithItem(ModBlocks.ORE_NETHER_COBALT.get(), models().cubeAll("ore_nether_cobalt", modLoc("block/ported/ore_nether_cobalt")));
-        simpleBlockWithItem(ModBlocks.ORE_NETHER_FIRE.get(), models().cubeAll("ore_nether_fire", modLoc("block/ported/ore_nether_fire")));
-        simpleBlockWithItem(ModBlocks.ORE_NETHER_PLUTONIUM.get(), models().cubeAll("ore_nether_plutonium", modLoc("block/ported/ore_nether_plutonium")));
-        simpleBlockWithItem(ModBlocks.ORE_NETHER_SMOLDERING.get(), models().cubeAll("ore_nether_smoldering", modLoc("block/ported/ore_nether_smoldering")));
-        simpleBlockWithItem(ModBlocks.ORE_NETHER_SULFUR.get(), models().cubeAll("ore_nether_sulfur", modLoc("block/ported/ore_nether_sulfur")));
-        simpleBlockWithItem(ModBlocks.ORE_NETHER_TUNGSTEN.get(), models().cubeAll("ore_nether_tungsten", modLoc("block/ported/ore_nether_tungsten")));
-        simpleBlockWithItem(ModBlocks.ORE_NETHER_URANIUM.get(), models().cubeAll("ore_nether_uranium", modLoc("block/ported/ore_nether_uranium")));
         simpleBlockWithItem(ModBlocks.ORE_NETHER_URANIUM_SCORCHED.get(), models().cubeAll("ore_nether_uranium_scorched", modLoc("block/ported/ore_nether_uranium_scorched")));
-        simpleBlockWithItem(ModBlocks.ORE_RARE.get(), models().cubeAll("ore_rare", modLoc("block/ported/ore_rare")));
         simpleBlockWithItem(ModBlocks.ORE_TEKTITE_OSMIRIDIUM.get(), models().cubeAll("ore_tektite_osmiridium", modLoc("block/ported/ore_tektite_osmiridium")));
-        simpleBlockWithItem(ModBlocks.ORE_TIKITE.get(), models().cubeAll("ore_tikite", modLoc("block/ported/ore_tikite")));
         simpleBlockWithItem(ModBlocks.ORE_URANIUM_SCORCHED.get(), models().cubeAll("ore_uranium_scorched", modLoc("block/ported/ore_uranium_scorched")));
         pileBlockStates();
         simpleBlockWithItem(ModBlocks.PILE_BRICK.get(), models().cubeBottomTop("pile_brick",
@@ -885,7 +853,6 @@ public class ModBlockStateProvider extends BlockStateProvider {
         // red_* ЛЭП (коннекторы/пилоны): ручные blockstates с OBJ-моделями и поворотами (assets/hbm_m/blockstates).
         // PYLON_DUMMY не датагенится вовсе (invisible).
 
-        blockWithItem(ModBlocks.CONVERTER_BLOCK);
         blockWithItem(ModBlocks.STEAM_CONDENSER);
 
         orientableBlockWithItem(
@@ -1625,15 +1592,12 @@ public class ModBlockStateProvider extends BlockStateProvider {
         oreWithItem(ModBlocks.TITANIUM_ORE_DEEPSLATE);
         oreWithItem(ModBlocks.SULFUR_ORE);
         oreWithItem(ModBlocks.ORE_OIL);
-        oreWithItem(ModBlocks.SEQUESTRUM_ORE);
         oreWithItem(ModBlocks.SCHRABIDIUM_ORE);
         oreWithItem(ModBlocks.SCHRABIDIUM_ORE_NETHER);
         oreWithItem(ModBlocks.SCHRABIDIUM_ORE_GNEISS);
         // Руды паритета генерации с 1.7.10 (медная руда не нужна — есть ванильная)
         oreWithItem(ModBlocks.NITER_ORE);
         oreWithItem(ModBlocks.NITER_ORE_DEEPSLATE);
-        oreWithItem(ModBlocks.LITHIUM_ORE);
-        oreWithItem(ModBlocks.LITHIUM_ORE_DEEPSLATE);
         oreWithItem(ModBlocks.ALEXANDRITE_ORE);
         oreWithItem(ModBlocks.COLTAN_ORE);
         oreWithItem(ModBlocks.COLTAN_ORE_DEEPSLATE);
@@ -1662,6 +1626,27 @@ public class ModBlockStateProvider extends BlockStateProvider {
         oreWithItem(ModBlocks.GNEISS_GAS_ORE);
         oreWithItem(ModBlocks.TIKITE_ORE);
         oreWithItem(ModBlocks.ORE_OIL_SAND);
+
+        // Метеоритные руды (порт BlockMeteorOre 1.7.10, ore_meteor.*)
+        oreWithItem(ModBlocks.ORE_METEOR_IRON);
+        oreWithItem(ModBlocks.ORE_METEOR_COPPER);
+        oreWithItem(ModBlocks.ORE_METEOR_ALUMINIUM);
+        oreWithItem(ModBlocks.ORE_METEOR_RAREEARTH);
+        oreWithItem(ModBlocks.ORE_METEOR_COBALT);
+
+        // Руды базальта (порт BlockOreBasalt 1.7.10): боковая текстура + "_top" для верхней
+        // и нижней граней (ориг. getIcon: side <= 1 -> topIcons).
+        basaltOreWithItem(ModBlocks.ORE_BASALT_SULFUR);
+        basaltOreWithItem(ModBlocks.ORE_BASALT_FLUORITE);
+        basaltOreWithItem(ModBlocks.ORE_BASALT_ASBESTOS);
+        basaltOreWithItem(ModBlocks.ORE_BASALT_GEM);
+        basaltOreWithItem(ModBlocks.ORE_BASALT_MOLYSITE);
+
+        // ore_volcano (порт BlockFissure 1.7.10, Geothermal Vent): рендерится как bedrock
+        // (первый мультипасс оригинала; оверлей molten_overlay не портирован).
+        simpleBlockWithItem(ModBlocks.ORE_VOLCANO.get(),
+                models().withExistingParent("ore_volcano", mcLoc("block/cube_all"))
+                        .texture("all", mcLoc("block/bedrock")));
 
         simpleBlockWithItem(ModBlocks.BLOCK_SCHRABIDIUM_CLUSTER.get(),
                 models().cubeBottomTop(
@@ -2774,18 +2759,6 @@ public class ModBlockStateProvider extends BlockStateProvider {
                                 .face(net.minecraft.core.Direction.EAST).texture("#side").end()
                         .end()
         );
-        simpleBlockWithItem(ModBlocks.MACHINE_CONVERTER_HE_RF.get(),
-                models().cubeAll(
-                        ModBlocks.MACHINE_CONVERTER_HE_RF.getId().getPath(),
-                        modLoc("block/machine_converter_he_rf")
-                )
-        );
-        simpleBlockWithItem(ModBlocks.MACHINE_CONVERTER_RF_HE.get(),
-                models().cubeAll(
-                        ModBlocks.MACHINE_CONVERTER_RF_HE.getId().getPath(),
-                        modLoc("block/machine_converter_rf_he")
-                )
-        );
         simpleBlockWithItem(ModBlocks.MACHINE_CRYSTALLIZER.get(),
                 models().cubeAll(
                         ModBlocks.MACHINE_CRYSTALLIZER.getId().getPath(),
@@ -3708,17 +3681,42 @@ public class ModBlockStateProvider extends BlockStateProvider {
                         modLoc("block/vinyl_tile_large")
                 )
         );
-        simpleBlockWithItem(ModBlocks.VOLCANO_CORE.get(),
-                models().cubeAll(
-                        ModBlocks.VOLCANO_CORE.getId().getPath(),
-                        modLoc("block/volcano_core")
-                )
+        // Ядро вулкана: 5 состояний (меты BlockVolcano 1.7.10), одна текстура на все
+        getVariantBuilder(ModBlocks.VOLCANO_CORE.get()).partialState().setModels(
+                ConfiguredModel.builder().modelFile(
+                        models().cubeAll(
+                                ModBlocks.VOLCANO_CORE.getId().getPath(),
+                                modLoc("block/volcano_core")
+                        )
+                ).build()
         );
-        simpleBlockWithItem(ModBlocks.VOLCANO_RAD_CORE.get(),
-                models().cubeAll(
-                        ModBlocks.VOLCANO_RAD_CORE.getId().getPath(),
-                        modLoc("block/volcano_rad_core")
-                )
+        itemModels().withExistingParent(ModBlocks.VOLCANO_CORE.getId().getPath(), modLoc("block/volcano_core"));
+        getVariantBuilder(ModBlocks.VOLCANO_RAD_CORE.get()).partialState().setModels(
+                ConfiguredModel.builder().modelFile(
+                        models().cubeAll(
+                                ModBlocks.VOLCANO_RAD_CORE.getId().getPath(),
+                                modLoc("block/volcano_rad_core")
+                        )
+                ).build()
+        );
+        itemModels().withExistingParent(ModBlocks.VOLCANO_RAD_CORE.getId().getPath(), modLoc("block/volcano_rad_core"));
+        // Вулканические лавы — флюид-блоки (LEVEL×FALLING): модель нужна только для
+        // частиц разрушения, реальный рендер — флюидный по текстурам ModFluids
+        getVariantBuilder(ModBlocks.VOLCANIC_LAVA_BLOCK.get()).partialState().setModels(
+                ConfiguredModel.builder().modelFile(
+                        models().cubeAll(
+                                ModBlocks.VOLCANIC_LAVA_BLOCK.getId().getPath(),
+                                modLoc("block/volcanic_lava_still")
+                        )
+                ).build()
+        );
+        getVariantBuilder(ModBlocks.RAD_LAVA_BLOCK.get()).partialState().setModels(
+                ConfiguredModel.builder().modelFile(
+                        models().cubeAll(
+                                ModBlocks.RAD_LAVA_BLOCK.getId().getPath(),
+                                modLoc("block/rad_lava_still")
+                        )
+                ).build()
         );
         simpleBlockWithItem(ModBlocks.WAND_AIR.get(),
                 models().cubeAll(
@@ -3832,6 +3830,21 @@ public class ModBlockStateProvider extends BlockStateProvider {
 
         // 4. Создаем модель для предмета-блока
         simpleBlockItem(blockObject.get(), models().getExistingFile(modLoc("block/" + textureName)));
+    }
+
+    /**
+     * Руда базальта (порт BlockOreBasalt 1.7.10): боковая текстура {@code ore_basalt_<subtype>}
+     * и верхняя {@code ore_basalt_<subtype>_top} — она же идёт в низ (в оригинале side <= 1
+     * возвращает topIcons, т.е. и верх, и низ показывают "_top").
+     */
+    private void basaltOreWithItem(RegistrySupplier<Block> blockObject) {
+        String name = blockObject.getId().getPath(); // например "ore_basalt_sulfur"
+        ModelFile model = models().cubeBottomTop(
+                name,
+                modLoc("block/" + name),
+                modLoc("block/" + name + "_top"),
+                modLoc("block/" + name + "_top"));
+        simpleBlockWithItem(blockObject.get(), model);
     }
 
     /**

@@ -233,7 +233,7 @@ public final class MissileWarheadEffects {
         spawnMissileDebris(level, x, y, z, motion.x, motion.y, motion.z, 0.25D, debris, rareDrop);
     }
 
-    private static void spawnLightRubble(ServerLevel level, double x, double y, double z, int count) {
+    public static void spawnLightRubble(ServerLevel level, double x, double y, double z, int count) {
         BlockPos ground = BlockPos.containing(x, y - 0.5D, z);
         BlockState state = level.getBlockState(ground);
         if (state.isAir()) {

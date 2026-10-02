@@ -4,6 +4,7 @@ import com.hbm_m.api.fluids.IFluidConnectorMK2;
 import com.hbm_m.api.fluids.IFluidStandardTransceiverMK2;
 import com.hbm_m.api.fluids.VanillaFluidEquivalence;
 import com.hbm_m.blockentity.BaseMachineBlockEntity;
+import com.hbm_m.block.ModBlocks;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.inventory.fluid.FluidType;
 import com.hbm_m.inventory.fluid.ModFluids;
@@ -22,6 +23,7 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
@@ -35,9 +37,9 @@ import net.minecraft.world.level.material.Fluids;
  * MachineBoilerBlockEntity}, aber mit direktem Block-Scan statt {@code IHeatSource}-Pull, 1:1 aus
  * dem Original).
  * <p>
- * SCOPE-Entscheidung: {@code volcanic_lava_block} (Waerme-Gewicht 150) und {@code ore_volcano}
- * (Gewicht 300 + 3-facher "Fissure"-Bonus fuer 20 Ticks) existieren in diesem Port nicht - nur
- * gewoehnliche Lava (Gewicht 5, 1:1 aus dem Original) wird als Waermequelle erkannt.
+ * SCOPE: {@code volcanic_lava_block} (heat weight 150) and {@code ore_volcano}/{@code
+ * ore_volcano_rad} (weight 300 + 3x "Fissure" bonus for 20 ticks) are recognised since the
+ * volcanic system port, 1:1 with the original; plain lava stays at weight 5.
  */
 public class MachineHephaestusBlockEntity extends BaseMachineBlockEntity implements IFluidStandardTransceiverMK2 {
 
@@ -45,6 +47,10 @@ public class MachineHephaestusBlockEntity extends BaseMachineBlockEntity impleme
     private static final int SCAN_RANGE = 7;
     private static final int SCAN_WINDOW = 10;
     private static final int LAVA_HEAT = 5;
+    private static final int VOLCANIC_HEAT = 150;
+    private static final int FISSURE_HEAT = 300;
+
+    private long fissureScanTime = Long.MIN_VALUE / 2;
 
     private final FluidTank inputTank = new FluidTank(ModFluids.CRUDE_OIL.getSource(), TANK_CAPACITY);
     private final FluidTank outputTank = new FluidTank(ModFluids.HOTOIL.getSource(), TANK_CAPACITY);
@@ -110,12 +116,25 @@ public class MachineHephaestusBlockEntity extends BaseMachineBlockEntity impleme
         // MachineSolarBoilerBlockEntity.
         BlockPos target = new BlockPos(x, y, z);
         if (!level.isLoaded(target)) return 0;
-        return level.getFluidState(target).is(FluidTags.LAVA) ? LAVA_HEAT : 0;
+        if (level.getFluidState(target).is(FluidTags.LAVA)) return LAVA_HEAT;
+
+        Block b = level.getBlockState(target).getBlock();
+        if (b == ModBlocks.VOLCANIC_LAVA_BLOCK.get()) return VOLCANIC_HEAT;
+
+        if (b == ModBlocks.ORE_VOLCANO.get() || b == ModBlocks.ORE_VOLCANO_RAD.get()) {
+            // Original: flags fissureScanTime so getTotalHeat triples the sum for 20 ticks.
+            this.fissureScanTime = level.getGameTime();
+            return FISSURE_HEAT;
+        }
+        return 0;
     }
 
+    /** Суммарное тепло слоёв сканирования (ориг. bufferedHeat) — публичный для HUD прицела. */
     public int getTotalHeat() {
         int total = 0;
         for (int h : heatLayers) total += h;
+        // 1:1 from the original: a fissure in the scan window triples the heat for 20 ticks.
+        if (level != null && level.getGameTime() - this.fissureScanTime < 20) total *= 3;
         return total;
     }
 
@@ -181,6 +200,8 @@ public class MachineHephaestusBlockEntity extends BaseMachineBlockEntity impleme
         super.writeNbtData(tag, registries);
         inputTank.writeToNBT(tag, "input");
         outputTank.writeToNBT(tag, "output");
+        // Тепло уходит клиенту каждый тик (sendUpdateToClient) — для HUD прицела (ориг. bufferedHeat).
+        tag.putInt("hud_heat", getTotalHeat());
     }
 
     @Override

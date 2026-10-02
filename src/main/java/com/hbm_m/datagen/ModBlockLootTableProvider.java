@@ -197,67 +197,74 @@ public class ModBlockLootTableProvider extends BlockLootSubProvider {
         );
 
 
+        // Глубинные руды (1.7.10 BlockDepthOre: cinnebar 2-3, borax ×1, nugget_zirconium 2-3)
         dropOreType2(
                 ModBlocks.DEPTH_CINNABAR.get(),
                 ModBlocks.DEPTH_CINNABAR.get(),
                 ModItems.CINNABAR.get(),
-                3.0f, 5.0f
+                2.0f, 3.0f
         );
 
         dropOreType2(
                 ModBlocks.DEPTH_BORAX.get(),
                 ModBlocks.DEPTH_BORAX.get(),
                 ModItems.BORAX.get(),
-                3.0f, 5.0f
+                1.0f, 1.0f
         );
 
         dropOreType2(
-                ModBlocks.DEPTH_TITANIUM.get(),
-                ModBlocks.DEPTH_TITANIUM.get(),
-                ModItems.TITANIUM_RAW.get(),
-                3.0f, 5.0f
-        );
-        dropOreType2(
-                ModBlocks.DEPTH_TUNGSTEN.get(),
-                ModBlocks.DEPTH_TUNGSTEN.get(),
-                ModItems.TUNGSTEN_RAW.get(),
-                3.0f, 5.0f
-        );
-        dropOreType2(
                 ModBlocks.DEPTH_ZIRCONIUM.get(),
                 ModBlocks.DEPTH_ZIRCONIUM.get(),
-                ModItems.ZIRCONIUM_SHARP.get(),
-                3.0f, 5.0f
+                ModMaterialItems.item(ModMaterials.ZIRCONIUM, MaterialShape.NUGGET),
+                2.0f, 3.0f
         );
+
+        // Глубинные кластеры (1.7.10 cluster_depth_*: crystal_iron/titanium/tungsten ×1)
+        dropOreType1(
+                ModBlocks.CLUSTER_DEPTH_IRON.get(),
+                ModBlocks.CLUSTER_DEPTH_IRON.get(),
+                ModMaterialItems.item(ModMaterials.IRON, MaterialShape.CRYSTAL)
+        );
+        dropOreType1(
+                ModBlocks.CLUSTER_DEPTH_TITANIUM.get(),
+                ModBlocks.CLUSTER_DEPTH_TITANIUM.get(),
+                ModMaterialItems.item(ModMaterials.TITANIUM, MaterialShape.CRYSTAL)
+        );
+        dropOreType1(
+                ModBlocks.CLUSTER_DEPTH_TUNGSTEN.get(),
+                ModBlocks.CLUSTER_DEPTH_TUNGSTEN.get(),
+                ModMaterialItems.item(ModMaterials.TUNGSTEN, MaterialShape.CRYSTAL)
+        );
+
         dropOreType2(
                 ModBlocks.FLUORITE_ORE.get(),
                 ModBlocks.FLUORITE_ORE.get(),
                 ModItems.FLUORITE.get(),
-                1.0f, 3.0f
+                2.0f, 4.0f
         );
         dropOreType2(
                 ModBlocks.SULFUR_ORE.get(),
                 ModBlocks.SULFUR_ORE.get(),
                 ModItems.SULFUR.get(),
-                1.0f, 3.0f
+                2.0f, 4.0f
         );
         dropOreType2(
                 ModBlocks.LIGNITE_ORE.get(),
                 ModBlocks.LIGNITE_ORE.get(),
                 ModItems.LIGNITE.get(),
-                1.0f, 3.0f
+                1.0f, 1.0f
         );
         dropOreType2(
                 ModBlocks.RAREGROUND_ORE.get(),
                 ModBlocks.RAREGROUND_ORE.get(),
                 ModItems.RAREGROUND_ORE_CHUNK.get(),
-                1.0f, 3.0f
+                1.0f, 1.0f
         );
         dropOreType2(
                 ModBlocks.RAREGROUND_ORE_DEEPSLATE.get(),
                 ModBlocks.RAREGROUND_ORE_DEEPSLATE.get(),
                 ModItems.RAREGROUND_ORE_CHUNK.get(),
-                1.0f, 3.0f
+                1.0f, 1.0f
         );
         dropOreType2(
                 ModBlocks.STRAWBERRY_BUSH.get(),
@@ -269,25 +276,45 @@ public class ModBlockLootTableProvider extends BlockLootSubProvider {
                 ModBlocks.CINNABAR_ORE.get(),
                 ModBlocks.CINNABAR_ORE.get(),
                 ModItems.CINNABAR.get(),
-                1.0f, 3.0f
+                1.0f, 1.0f
         );
         dropOreType2(
                 ModBlocks.CINNABAR_ORE_DEEPSLATE.get(),
                 ModBlocks.CINNABAR_ORE_DEEPSLATE.get(),
                 ModItems.CINNABAR.get(),
-                1.0f, 3.0f
+                1.0f, 1.0f
         );
-        dropOreType2(
-                ModBlocks.DEPTH_IRON.get(),
-                ModBlocks.DEPTH_IRON.get(),
-                Items.RAW_IRON,
-                1.0f, 3.0f
-        );
+        // Ванильная iron_ore уже дропает raw_iron своим лутом — переопределение не нужно.
         dropOreType2(
                 ModBlocks.ASBESTOS_ORE.get(),
                 ModBlocks.ASBESTOS_ORE.get(),
                 ModMaterialItems.item(ModMaterials.ASBESTOS, MaterialShape.INGOT),
-                1.0f, 3.0f
+                1.0f, 1.0f
+        );
+        // Deepslate-варианты (в оригинале их нет; ведут себя как каменные твины):
+        dropOreType2(
+                ModBlocks.SULFUR_ORE_DEEPSLATE.get(),
+                ModBlocks.SULFUR_ORE_DEEPSLATE.get(),
+                ModItems.SULFUR.get(),
+                2.0f, 4.0f
+        );
+        dropOreType2(
+                ModBlocks.FLUORITE_ORE_DEEPSLATE.get(),
+                ModBlocks.FLUORITE_ORE_DEEPSLATE.get(),
+                ModItems.FLUORITE.get(),
+                2.0f, 4.0f
+        );
+        dropOreType2(
+                ModBlocks.LIGNITE_ORE_DEEPSLATE.get(),
+                ModBlocks.LIGNITE_ORE_DEEPSLATE.get(),
+                ModItems.LIGNITE.get(),
+                1.0f, 1.0f
+        );
+        dropOreType2(
+                ModBlocks.ASBESTOS_ORE_DEEPSLATE.get(),
+                ModBlocks.ASBESTOS_ORE_DEEPSLATE.get(),
+                ModMaterialItems.item(ModMaterials.ASBESTOS, MaterialShape.INGOT),
+                1.0f, 1.0f
         );
         dropOreType2(
                 ModBlocks.RESOURCE_ASBESTOS.get(),
@@ -313,16 +340,10 @@ public class ModBlockLootTableProvider extends BlockLootSubProvider {
                 ModItems.LIMESTONE.get(),
                 1.0f, 3.0f
         );
-        dropOreType2(
-                ModBlocks.SEQUESTRUM_ORE.get(),
-                ModBlocks.SEQUESTRUM_ORE.get(),
-                ModItems.SEQUESTRUM.get(),
-                1.0f, 3.0f
-        );
 
         // Пропущенные руды (сверялись с 1.7.10 BlockOre/BlockDepthOre/BlockDragonProof):
-        // гнейсовые железо/медь/золото/уран/литий/газ и незерские уголь/уран/плутоний/
-        // вольфрам/тлеющая руда, а также tikite и australium в оригинале дропают сами
+        // гнейсовые железо/медь/золото/уран/литий/газ и незерские уран/плутоний/
+        // вольфрам, а также tikite и australium в оригинале дропают сами
         // себя — оставляем dropSelf (базовый проход).
 
         // ore_nether_sulfur → sulfur ×2-4
@@ -331,6 +352,44 @@ public class ModBlockLootTableProvider extends BlockLootSubProvider {
                 ModBlocks.NETHER_SULFUR_ORE.get(),
                 ModItems.SULFUR.get(),
                 2.0f, 4.0f
+        );
+        // ore_nether_coal → coal_infernal ×1 (1.7.10 BlockNetherCoal)
+        dropOreType2(
+                ModBlocks.NETHER_COAL_ORE.get(),
+                ModBlocks.NETHER_COAL_ORE.get(),
+                ModItems.COAL_INFERNAL.get(),
+                1.0f, 1.0f
+        );
+        // ore_nether_smoldering → powder_fire ×1 (1.7.10 BlockSmolder)
+        dropOreType2(
+                ModBlocks.NETHER_SMOLDERING_ORE.get(),
+                ModBlocks.NETHER_SMOLDERING_ORE.get(),
+                ModItems.FIRE_POWDER.get(),
+                1.0f, 1.0f
+        );
+        // ore_depth_nether_neodymium → fragment_neodymium ×2-3 (1.7.10 BlockDepthOre)
+        dropOreType2(
+                ModBlocks.DEPTH_NETHER_NEODYMIUM.get(),
+                ModBlocks.DEPTH_NETHER_NEODYMIUM.get(),
+                ModItems.FRAGMENT_NEODYMIUM.get(),
+                2.0f, 3.0f
+        );
+        // Селлафилд: алмаз/изумруд/рад-самоцвет (1:1 с BlockSellafieldOre 1.7.10,
+        // fortune через ore_drops; классовый getDrops-байпас удалён).
+        dropOreType1(
+                ModBlocks.ORE_SELLAFIELD_DIAMOND.get(),
+                ModBlocks.ORE_SELLAFIELD_DIAMOND.get(),
+                net.minecraft.world.item.Items.DIAMOND
+        );
+        dropOreType1(
+                ModBlocks.ORE_SELLAFIELD_EMERALD.get(),
+                ModBlocks.ORE_SELLAFIELD_EMERALD.get(),
+                net.minecraft.world.item.Items.EMERALD
+        );
+        dropOreType1(
+                ModBlocks.ORE_SELLAFIELD_RADGEM.get(),
+                ModBlocks.ORE_SELLAFIELD_RADGEM.get(),
+                ModItems.GEM_RAD.get()
         );
         // ore_alexandrite → gem_alexandrite ×1
         dropOreType1(
@@ -375,6 +434,36 @@ public class ModBlockLootTableProvider extends BlockLootSubProvider {
                 ModBlocks.GNEISS_ASBESTOS_ORE.get(),
                 ModMaterialItems.item(ModMaterials.ASBESTOS, MaterialShape.INGOT)
         );
+        // Руды базальта (ориг. BlockOreBasalt.EnumBasaltOreType): фиксированный дроп ×1
+        // (SULFUR→sulfur, FLUORITE→fluorite, ASBESTOS→ingot_asbestos, GEM→gem_volcanic,
+        // MOLYSITE→powder_molysite; порт: molysite)
+        dropOreType1(
+                ModBlocks.ORE_BASALT_SULFUR.get(),
+                ModBlocks.ORE_BASALT_SULFUR.get(),
+                ModItems.SULFUR.get()
+        );
+        dropOreType1(
+                ModBlocks.ORE_BASALT_FLUORITE.get(),
+                ModBlocks.ORE_BASALT_FLUORITE.get(),
+                ModItems.FLUORITE.get()
+        );
+        dropOreType1(
+                ModBlocks.ORE_BASALT_ASBESTOS.get(),
+                ModBlocks.ORE_BASALT_ASBESTOS.get(),
+                ModMaterialItems.item(ModMaterials.ASBESTOS, MaterialShape.INGOT)
+        );
+        dropOreType1(
+                ModBlocks.ORE_BASALT_GEM.get(),
+                ModBlocks.ORE_BASALT_GEM.get(),
+                ModItems.GEM_VOLCANIC.get()
+        );
+        dropOreType1(
+                ModBlocks.ORE_BASALT_MOLYSITE.get(),
+                ModBlocks.ORE_BASALT_MOLYSITE.get(),
+                ModItems.MOLYSITE.get()
+        );
+        // ore_meteor_* дропают сами себя (автоцикл dropSelf) — переплавка даёт слитки/кусы
+        // (ориг. SmeltingRecipes.java:48-52). ore_volcano неразрушим — dropSelf тоже подходит.
         // ore_niter → niter ×2-4 (порт: crystal_niter)
         dropOreType2(
                 ModBlocks.NITER_ORE.get(),

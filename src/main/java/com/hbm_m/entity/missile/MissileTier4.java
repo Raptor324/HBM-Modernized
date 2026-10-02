@@ -6,7 +6,9 @@ import com.hbm_m.explosion.NuclearExplosionAPI;
 import com.hbm_m.explosion.NuclearExplosionConfig;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
 
 /**
@@ -91,13 +93,35 @@ public abstract class MissileTier4 extends MissileBaseEntity {
         }
 
         @Override
+        protected ItemStack getDebrisRareDrop() {
+            // 1.7.10 EntityMissileVolcano: rare drop warhead_volcano
+            return new ItemStack(com.hbm_m.item.ModItems.WARHEAD_VOLCANO.get());
+        }
+
+        @Override
         protected void onMissileImpact(BlockPos pos) {
             if (level().isClientSide) {
                 return;
             }
-            level().explode(this, pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D,
-                    10.0F, Level.ExplosionInteraction.BLOCK);
-            // TODO: volcano warhead
+            // 1.7.10 EntityMissileVolcano: ExplosionLarge.explode(w, x, y, z, 10F, cloud, rubble, shrapnel)
+            // (взрыв без огня) + куб вулканической лавы 3×3×3 + volcano_core в центре.
+            if (level() instanceof net.minecraft.server.level.ServerLevel server) {
+                com.hbm_m.explosion.MissileWarheadEffects.standardExplode(this, server, pos, 10.0F, false, 16);
+                com.hbm_m.explosion.MissileWarheadEffects.composeEffectStandard(server, pos);
+                com.hbm_m.explosion.MissileWarheadEffects.spawnShrapnelBurst(server,
+                        pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D, 10);
+                com.hbm_m.explosion.MissileWarheadEffects.spawnLightRubble(server,
+                        pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D, 5);
+            }
+            BlockState lava = com.hbm_m.block.ModBlocks.VOLCANIC_LAVA_BLOCK.get().defaultBlockState();
+            for (int x = -1; x <= 1; x++) {
+                for (int y = -1; y <= 1; y++) {
+                    for (int z = -1; z <= 1; z++) {
+                        level().setBlock(pos.offset(x, y, z), lava, 3);
+                    }
+                }
+            }
+            level().setBlock(pos, com.hbm_m.block.ModBlocks.VOLCANO_CORE.get().defaultBlockState(), 3);
         }
     }
 

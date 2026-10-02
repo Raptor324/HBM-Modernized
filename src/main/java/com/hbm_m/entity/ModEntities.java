@@ -497,6 +497,17 @@ public class ModEntities {
                             .updateInterval(1)
                             .build("bomblet_zeta"));
 
+    /** Port of {@code EntityShrapnel}: шрапнель и вулканические лавовые сгустки (ядро вулкана). */
+    public static final RegistrySupplier<EntityType<com.hbm_m.entity.projectile.ShrapnelEntity>> SHRAPNEL =
+            ENTITY_TYPES.register("shrapnel",
+                    () -> EntityType.Builder.<com.hbm_m.entity.projectile.ShrapnelEntity>of(
+                                    com.hbm_m.entity.projectile.ShrapnelEntity::new, MobCategory.MISC)
+                            .sized(0.25F, 0.25F)
+                            .fireImmune()
+                            .clientTrackingRange(64)
+                            .updateInterval(10)
+                            .build("shrapnel"));
+
     /** 1:1 port of {@code EntityUFO}: 15x4 flying fortress, 20000 HP. */
     public static final RegistrySupplier<EntityType<com.hbm_m.entity.mob.EntityUFO>> UFO =
             ENTITY_TYPES.register("ufo",

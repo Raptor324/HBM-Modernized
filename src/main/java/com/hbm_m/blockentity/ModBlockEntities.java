@@ -1,5 +1,4 @@
 package com.hbm_m.blockentity;
-import com.hbm_m.api.energy.ConverterBlockEntity;
 import com.hbm_m.api.energy.SwitchBlockEntity;
 import com.hbm_m.api.energy.WireBlockEntity;
 import com.hbm_m.block.ModBlocks;
@@ -369,6 +368,11 @@ public class ModBlockEntities {
     public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.machines.MachineHephaestusBlockEntity>> HEPHAESTUS_BE =
             BLOCK_ENTITIES.register("hephaestus_be", () ->
                     BlockEntityType.Builder.of(com.hbm_m.blockentity.machines.MachineHephaestusBlockEntity::new, ModBlocks.HEPHAESTUS.get()).build(null));
+
+    public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.bomb.VolcanoCoreBlockEntity>> VOLCANO_CORE_BE =
+            BLOCK_ENTITIES.register("volcano_core_be", () ->
+                    BlockEntityType.Builder.of(com.hbm_m.blockentity.bomb.VolcanoCoreBlockEntity::new,
+                            ModBlocks.VOLCANO_CORE.get(), ModBlocks.VOLCANO_RAD_CORE.get()).build(null));
 
     public static final RegistrySupplier<BlockEntityType<MachineRbmkConsoleBlockEntity>> RBMK_CONSOLE_BE =
             BLOCK_ENTITIES.register("rbmk_console_be", () ->
@@ -1366,18 +1370,6 @@ public class ModBlockEntities {
                             TemplateCrateBlockEntity::new,
                             ModBlocks.CRATE_TEMPLATE.get()
                     ).build(null));
-
-    public static final RegistrySupplier<BlockEntityType<ConverterBlockEntity>> CONVERTER_BE =
-            BLOCK_ENTITIES.register("converter_be",
-                    () -> BlockEntityType.Builder.of(ConverterBlockEntity::new, ModBlocks.CONVERTER_BLOCK.get()).build(null));
-
-    public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.machines.MachineConverterHeRfBlockEntity>> MACHINE_CONVERTER_HE_RF_BE =
-            BLOCK_ENTITIES.register("machine_converter_he_rf_be",
-                    () -> BlockEntityType.Builder.of(com.hbm_m.blockentity.machines.MachineConverterHeRfBlockEntity::new, ModBlocks.MACHINE_CONVERTER_HE_RF.get()).build(null));
-
-    public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.machines.MachineConverterRfHeBlockEntity>> MACHINE_CONVERTER_RF_HE_BE =
-            BLOCK_ENTITIES.register("machine_converter_rf_he_be",
-                    () -> BlockEntityType.Builder.of(com.hbm_m.blockentity.machines.MachineConverterRfHeBlockEntity::new, ModBlocks.MACHINE_CONVERTER_RF_HE.get()).build(null));
 
     public static final RegistrySupplier<BlockEntityType<HeatingOvenBlockEntity>> HEATING_OVEN_BE =
             BLOCK_ENTITIES.register("heating_oven_be", () ->

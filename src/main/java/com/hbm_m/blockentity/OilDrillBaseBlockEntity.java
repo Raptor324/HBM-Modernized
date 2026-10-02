@@ -270,7 +270,7 @@ public abstract class OilDrillBaseBlockEntity extends BaseMachineBlockEntity imp
         Block b = level.getBlockState(pos).getBlock();
 
         // suck filled oil blocks directly
-        if (b == ModBlocks.ORE_OIL.get() || b == ModBlocks.BEDROCK_OIL.get()) {
+        if (b == ModBlocks.ORE_OIL.get() || b == ModBlocks.ORE_BEDROCK_OIL.get()) {
             doSuck(pos);
             return true;
         }

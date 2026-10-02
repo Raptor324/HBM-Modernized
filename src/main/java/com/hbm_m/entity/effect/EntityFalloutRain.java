@@ -529,6 +529,13 @@ public class EntityFalloutRain extends EntityExplosionChunkloading {
 
             if (state.isAir() || state.is(fallout)) continue;
 
+            if (state.is(ModBlocks.VOLCANO_CORE.get())) {
+                ed.set(x, y, z, ModBlocks.VOLCANO_RAD_CORE.get().defaultBlockState()
+                        .setValue(com.hbm_m.block.bomb.VolcanoCoreBlock.VOLCANO_TYPE,
+                                state.getValue(com.hbm_m.block.bomb.VolcanoCoreBlock.VOLCANO_TYPE)));
+                continue;
+            }
+
             BlockState aboveState = null;
             int upY = y + 1;
             if (depth == 0 && upY <= maxY) {

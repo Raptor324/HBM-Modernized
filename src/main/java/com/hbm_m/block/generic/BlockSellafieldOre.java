@@ -33,11 +33,6 @@ public class BlockSellafieldOre extends BlockSellafieldSlaked {
         this.maxXp = maxXp;
     }
 
-    @Override
-    public List<ItemStack> getDrops(BlockState state, LootParams.Builder params) {
-        return Collections.singletonList(new ItemStack(dropItem.get()));
-    }
-
     //? if < 1.21.1 {
     @Override
     public int getExpDrop(BlockState state, LevelReader level, RandomSource random, BlockPos pos, int fortune, int silkTouch) {
@@ -47,14 +42,17 @@ public class BlockSellafieldOre extends BlockSellafieldSlaked {
         return random.nextInt(maxXp - minXp + 1) + minXp;
     }
     //?} else {
-    /*// 1.21.1 (neoforge): Block.getExpDrop удалён из Block — опыт руды обрабатывается
-    // через DropExperienceBlock с IntProvider. Метод оставлен как обычный public
-    // (без @Override) — сигнатура валидна, но ванильным механизмом не вызывается.
-    public int getExpDrop(BlockState state, LevelReader level, RandomSource random, BlockPos pos, int fortuneLevel, boolean dropFromExplosion) {
-        if (dropFromExplosion || minXp <= 0) {
+    /*// 1.21.1 (neoforge): IBlockExtension.getExpDrop(BlockState, LevelAccessor, BlockPos,
+    // BlockEntity, Entity, ItemStack) — реальный хук, вызываемый из BlockBehaviour.spawnAfterBreak
+    // (см. DropExperienceBlock в NeoForge 21.1). Шёлк проверяем по тулзе, XP 3-7 как в оригинале.
+    @Override
+    public int getExpDrop(BlockState state, net.minecraft.world.level.LevelAccessor level, BlockPos pos,
+            net.minecraft.world.level.block.entity.BlockEntity blockEntity,
+            net.minecraft.world.entity.Entity breaker, ItemStack tool) {
+        if (minXp <= 0 || getSilkTouchLevel(tool, level) > 0) {
             return 0;
         }
-        return random.nextInt(maxXp - minXp + 1) + minXp;
+        return level.getRandom().nextInt(maxXp - minXp + 1) + minXp;
     }
     *///?}
 
@@ -67,7 +65,7 @@ public class BlockSellafieldOre extends BlockSellafieldSlaked {
     }
 
     public static BlockSellafieldOre radgemOre(Properties properties) {
-        return new BlockSellafieldOre(properties, () -> Items.DIAMOND, 3, 7);
+        return new BlockSellafieldOre(properties, () -> com.hbm_m.item.ModItems.GEM_RAD.get(), 3, 7);
     }
 
     /** Uranium / schrabidium sellafite ore — дроп самого блока (как в 1.7.10 без silk). */
@@ -79,4 +77,10 @@ public class BlockSellafieldOre extends BlockSellafieldSlaked {
             }
         };
     }
+
+    /** Silk-touch check: 1.20.1 takes the raw enchantment, 1.21.1 a Holder. */
+    private static int getSilkTouchLevel(net.minecraft.world.item.ItemStack tool, net.minecraft.world.level.LevelAccessor level) {
+        return com.hbm_m.platform.ItemHooks.getEnchantmentLevel(tool, level, "minecraft:silk_touch");
+    }
 }
+

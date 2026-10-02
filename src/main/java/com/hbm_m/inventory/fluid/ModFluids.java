@@ -4,6 +4,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Supplier;
 
+import com.hbm_m.block.ModBlocks;
 import com.hbm_m.main.MainRegistry;
 
 import dev.architectury.core.fluid.ArchitecturyFlowingFluid;
@@ -14,6 +15,7 @@ import dev.architectury.registry.registries.RegistrySupplier;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
+import net.minecraft.world.level.block.LiquidBlock;
 import net.minecraft.world.level.material.Fluid;
 
 //? if forge {
@@ -107,6 +109,50 @@ public class ModFluids {
 
     private static FluidEntry registerPlasma(String name, int color) {
         return registerFluid(name, -50, 50, color);
+    }
+
+    /**
+     * Мировая жидкость — с блоком-жидкостью в мире (аналог BlockFluidClassic 1.7.10).
+     * Используется для вулканических лав: медленный лавоподобный растек
+     * (tickDelay 20, slopeFindDistance 2), свечение 15, текстуры из block/.
+     */
+    private static FluidEntry registerWorldFluid(String name, Supplier<RegistrySupplier<? extends LiquidBlock>> block) {
+        final RegistrySupplier<?>[] sourceRef   = new RegistrySupplier[1];
+        final RegistrySupplier<?>[] flowingRef  = new RegistrySupplier[1];
+        SimpleArchitecturyFluidAttributes attributes = SimpleArchitecturyFluidAttributes
+                .ofSupplier(
+                        () -> (Supplier<? extends Fluid>) flowingRef[0],
+                        () -> (Supplier<? extends Fluid>) sourceRef[0]
+                )
+                .sourceTexture(ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "block/" + name + "_still"))
+                .flowingTexture(ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "block/" + name + "_flowing"))
+                .color(0xFFFFFFFF)
+                .density(1500)
+                .viscosity(3000)
+                .luminosity(15)
+                .temperature(1300)
+                .explosionResistance(100.0F)
+                .tickDelay(20)
+                .slopeFindDistance(2)
+                .blockSupplier(block)
+                .fillSound(SoundEvents.BUCKET_FILL)
+                .emptySound(SoundEvents.BUCKET_EMPTY);
+
+        RegistrySupplier<Fluid> source = FLUIDS.register(
+                ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, name),
+                () -> new ArchitecturyFlowingFluid.Source(attributes)
+        );
+        RegistrySupplier<Fluid> flowing = FLUIDS.register(
+                ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, name + "_flowing"),
+                () -> new ArchitecturyFlowingFluid.Flowing(attributes)
+        );
+        sourceRef[0]  = source;
+        flowingRef[0] = flowing;
+
+        FluidEntry entry = new FluidEntry(source, flowing);
+        FLUID_ENTRIES.put(name, entry);
+        TINT_COLORS.put(name, 0xFFFFFFFF);
+        return entry;
     }
 
     //=====================================================================================//
@@ -320,6 +366,10 @@ public class ModFluids {
     public static final FluidEntry DEATH = registerFluid("death", 0x717A88);
     public static final FluidEntry PAIN = registerFluid("pain", 0x938541);
     public static final FluidEntry STELLAR_FLUX = registerFluid("stellar_flux", 0xE300FF);
+
+    // Вулканические лавы (мировые флюид-блоки) — VolcanicBlock / RadBlock 1.7.10
+    public static final FluidEntry VOLCANIC_LAVA = registerWorldFluid("volcanic_lava", () -> ModBlocks.VOLCANIC_LAVA_BLOCK);
+    public static final FluidEntry RAD_LAVA = registerWorldFluid("rad_lava", () -> ModBlocks.RAD_LAVA_BLOCK);
 
     //=====================================================================================//
     // Helper method to get fluid by name

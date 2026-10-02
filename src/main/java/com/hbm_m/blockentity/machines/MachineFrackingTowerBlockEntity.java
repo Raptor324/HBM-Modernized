@@ -455,12 +455,11 @@ public class MachineFrackingTowerBlockEntity extends BaseMachineBlockEntity impl
 
     protected boolean isAnyOilDeposit(Block block) {
         return block == ModBlocks.ORE_OIL.get()
-                || block == ModBlocks.ORE_BEDROCK_OIL.get()
-                || block == ModBlocks.BEDROCK_OIL.get();
+                || block == ModBlocks.ORE_BEDROCK_OIL.get();
     }
 
     protected boolean isBedrockOilDeposit(Block block) {
-        return block == ModBlocks.ORE_BEDROCK_OIL.get() || block == ModBlocks.BEDROCK_OIL.get();
+        return block == ModBlocks.ORE_BEDROCK_OIL.get();
     }
 
     /**
