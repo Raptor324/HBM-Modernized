@@ -128,6 +128,9 @@ public final class EnergySubscriptions {
                 if (node.net != null && node.net.isValid()) {
                     if (be instanceof IEnergyProvider prov) node.net.addProvider(prov);
                     if (be instanceof IEnergyReceiver rec) node.net.addReceiver(rec);
+                    // Buffer-режим подписывается в обход trySubscribe — скан чужих FE
+                    // у граней junction-нода запускаем здесь.
+                    node.net.refreshForeign(level, be.getBlockPos());
                 }
                 return;
             } else {

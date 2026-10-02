@@ -13,10 +13,6 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
-//? if forge {
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-//?}
-
 public class MachineDieselGeneratorMenu extends AbstractContainerMenu {
 
     private final MachineDieselGeneratorBlockEntity blockEntity;
@@ -39,14 +35,7 @@ public class MachineDieselGeneratorMenu extends AbstractContainerMenu {
         this.addSlot(new Slot(container, SLOT_BATTERY, 141, 71) {
             @Override
             public boolean mayPlace(ItemStack stack) {
-                if (ItemEnergyAccess.getHbmProvider(stack).isPresent()) return true;
-                //? if forge {
-                return stack.getCapability(ForgeCapabilities.ENERGY).isPresent();
-                //?} elif neoforge {
-                /*return stack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM) != null;
-                *///?} else {
-                /*return false;
-                *///?}
+                return ItemEnergyAccess.isEnergySource(stack);
             }
         });
 
@@ -95,16 +84,7 @@ public class MachineDieselGeneratorMenu extends AbstractContainerMenu {
                     return ItemStack.EMPTY;
                 }
             } else {
-                boolean isEnergySource = ItemEnergyAccess.getHbmProvider(slotStack).isPresent();
-                //? if forge {
-                if (!isEnergySource) {
-                    isEnergySource = slotStack.getCapability(ForgeCapabilities.ENERGY).isPresent();
-                }
-                //?} elif neoforge {
-                /*if (!isEnergySource) {
-                    isEnergySource = slotStack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM) != null;
-                }
-                *///?}
+                boolean isEnergySource = ItemEnergyAccess.isEnergySource(slotStack);
                 if (!this.moveItemStackTo(slotStack, SLOT_BATTERY, SLOT_BATTERY + 1, false)) {
                     return ItemStack.EMPTY;
                 }

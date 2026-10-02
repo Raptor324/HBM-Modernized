@@ -39,7 +39,6 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
 import net.minecraft.world.phys.shapes.Shapes;
 //? if forge {
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
 //?}
 import dev.architectury.registry.menu.MenuRegistry;
 

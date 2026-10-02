@@ -421,28 +421,11 @@ public abstract class BaseMachineBlockEntity extends BaseHbmBlockEntity implemen
 
         if (transferred) return;
 
-        //? if forge {
-        batteryStack.getCapability(ForgeCapabilities.ENERGY).ifPresent(itemEnergy -> {
-            if (!itemEnergy.canExtract()) return;
-            int intTransfer = (int) Math.min(Integer.MAX_VALUE, maxTransfer);
-            if (intTransfer <= 0) return;
-            int extracted = itemEnergy.extractEnergy(intTransfer, false);
-            if (extracted > 0) {
-                setEnergyStored(energy + extracted);
-            }
-        });
-        //?}
-
-        //? if neoforge {
-        /*IEnergyStorage itemEnergy = batteryStack.getCapability(Capabilities.EnergyStorage.ITEM);
-        if (itemEnergy == null || !itemEnergy.canExtract()) return;
-        int intTransfer = (int) Math.min(Integer.MAX_VALUE, maxTransfer);
-        if (intTransfer <= 0) return;
-        int extracted = itemEnergy.extractEnergy(intTransfer, false);
-        if (extracted > 0) {
-            setEnergyStored(energy + extracted);
+        // Чужой FE-предмет: конверсия 5:1 с выравниванием по кванту (ItemEnergyAccess).
+        long extractedHe = ItemEnergyAccess.extractHeFromFe(batteryStack, maxTransfer, false);
+        if (extractedHe > 0) {
+            setEnergyStored(energy + extractedHe);
         }
-        *///?}
     }
 
     /**
@@ -458,42 +441,13 @@ public abstract class BaseMachineBlockEntity extends BaseHbmBlockEntity implemen
         long toTransfer = Math.min(this.energy, this.maxExtract > 0 ? this.maxExtract : this.maxReceive);
         if (toTransfer <= 0) return;
 
-        //? if forge {
-        var hbmCap = itemToCharge.getCapability(ModCapabilities.HBM_ENERGY_RECEIVER);
-        if (hbmCap.isPresent()) {
-            hbmCap.ifPresent(target -> {
-                if (!target.canReceive()) return;
-                long accepted = target.receiveEnergy(toTransfer, false);
-                if (accepted > 0) setEnergyStored(energy - accepted);
-            });
-            return;
-        }
-        itemToCharge.getCapability(ForgeCapabilities.ENERGY).ifPresent(target -> {
-            if (!target.canReceive()) return;
-            int maxTransfer = (int) Math.min(toTransfer, Integer.MAX_VALUE);
-            if (maxTransfer <= 0) return;
-            int accepted = target.receiveEnergy(maxTransfer, false);
-            if (accepted > 0) setEnergyStored(energy - accepted);
-        });
-        //?}
-
-        //? if neoforge {
-        /*// Сначала HBM-приёмник (кастомная capability предмета), затем FE через NeoForge Capabilities.
-        var hbm = ItemEnergyAccess.getHbmReceiver(itemToCharge);
-        if (hbm.isPresent()) {
-            var target = hbm.get();
-            if (!target.canReceive()) return;
-            long accepted = target.receiveEnergy(toTransfer, false);
-            if (accepted > 0) setEnergyStored(energy - accepted);
-            return;
-        }
-        IEnergyStorage target = itemToCharge.getCapability(Capabilities.EnergyStorage.ITEM);
-        if (target == null || !target.canReceive()) return;
-        int maxTransfer = (int) Math.min(toTransfer, Integer.MAX_VALUE);
-        if (maxTransfer <= 0) return;
-        int accepted = target.receiveEnergy(maxTransfer, false);
-        if (accepted > 0) setEnergyStored(energy - accepted);
-        *///?}
+        // Сначала HBM-приёмник (наша capability предмета), затем чужой FE
+        // через конверсионный хелпер ItemEnergyAccess (5:1, квант).
+        long acceptedHe = ItemEnergyAccess.getHbmReceiver(itemToCharge)
+                .filter(target -> target.canReceive())
+                .map(target -> target.receiveEnergy(toTransfer, false))
+                .orElseGet(() -> ItemEnergyAccess.receiveHeIntoFe(itemToCharge, toTransfer, false));
+        if (acceptedHe > 0) setEnergyStored(energy - acceptedHe);
     }
 
     /**
@@ -502,15 +456,8 @@ public abstract class BaseMachineBlockEntity extends BaseHbmBlockEntity implemen
      */
     protected static boolean isEnergyProviderItem(ItemStack stack) {
         if (stack.isEmpty()) return false;
-        if (ItemEnergyAccess.getHbmProvider(stack).map(p -> p.canExtract()).orElse(false)) return true;
-        //? if forge {
-        return stack.getCapability(ForgeCapabilities.ENERGY)
-                .map(net.minecraftforge.energy.IEnergyStorage::canExtract).orElse(false);
-        //?}
-        //? if neoforge {
-        /*IEnergyStorage cap = stack.getCapability(Capabilities.EnergyStorage.ITEM);
-        return cap != null && cap.canExtract();
-        *///?}
+        return ItemEnergyAccess.getHbmProvider(stack).map(p -> p.canExtract()).orElse(false)
+                || ItemEnergyAccess.canForgeExtract(stack);
     }
 
     /**
@@ -519,15 +466,8 @@ public abstract class BaseMachineBlockEntity extends BaseHbmBlockEntity implemen
      */
     protected static boolean isEnergyReceiverItem(ItemStack stack) {
         if (stack.isEmpty()) return false;
-        if (ItemEnergyAccess.getHbmReceiver(stack).isPresent()) return true;
-        //? if forge {
-        return stack.getCapability(ForgeCapabilities.ENERGY)
-                .map(net.minecraftforge.energy.IEnergyStorage::canReceive).orElse(false);
-        //?}
-        //? if neoforge {
-        /*IEnergyStorage cap = stack.getCapability(Capabilities.EnergyStorage.ITEM);
-        return cap != null && cap.canReceive();
-        *///?}
+        return ItemEnergyAccess.getHbmReceiver(stack).isPresent()
+                || ItemEnergyAccess.canForgeReceive(stack);
     }
 
     /**
@@ -600,10 +540,7 @@ public abstract class BaseMachineBlockEntity extends BaseHbmBlockEntity implemen
     public @Nullable Object getEnergyStorage(@Nullable net.minecraft.core.Direction side) {
         if (!canConnectEnergy(side)) return null;
         //? if neoforge {
-        /*return new com.hbm_m.api.energy.LongEnergyWrapper(this,
-                side == Direction.DOWN
-                        ? com.hbm_m.api.energy.LongEnergyWrapper.BitMode.HIGH
-                        : com.hbm_m.api.energy.LongEnergyWrapper.BitMode.LOW);
+        /*return new com.hbm_m.api.energy.LongEnergyWrapper(this);
         *///?} else {
         return null;
         //?}

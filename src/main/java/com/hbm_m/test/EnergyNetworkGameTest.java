@@ -1,6 +1,5 @@
 package com.hbm_m.test;
 
-import com.hbm_m.api.energy.ConverterBlockEntity;
 import com.hbm_m.api.energy.Nodespace;
 import com.hbm_m.api.energy.PowerNet;
 import com.hbm_m.api.energy.SwitchBlock;
@@ -564,20 +563,6 @@ public final class EnergyNetworkGameTest {
                 checkEq(frozen[0], nowFe, "Open switch stops all further transfer");
             })
             .thenSucceed();
-    }
-
-    @GameTest(template = "empty3x3x3", batch = "energy_flow", timeoutTicks = 250)
-    public static void flowConverterPullsFromHbmNet(GameTestHelper helper) {
-        placeBattery(helper, new BlockPos(1, 1, 1), 2, 100_000L);
-        placeWire(helper, new BlockPos(2, 1, 1));
-        helper.setBlock(new BlockPos(2, 1, 2), ModBlocks.CONVERTER_BLOCK.get());
-
-        helper.succeedWhen(() -> {
-            BlockEntity conv = helper.getLevel().getBlockEntity(helper.absolutePos(new BlockPos(2, 1, 2)));
-            check(conv instanceof ConverterBlockEntity, "Converter BE exists");
-            long buffered = ((ConverterBlockEntity) conv).getEnergyStored();
-            check(buffered > 0, "Converter buffers energy pulled from the HBM network (got " + buffered + ")");
-        });
     }
 
     /**

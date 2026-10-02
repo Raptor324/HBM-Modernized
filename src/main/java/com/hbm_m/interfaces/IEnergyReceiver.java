@@ -61,6 +61,8 @@ public interface IEnergyReceiver extends IEnergyConnector {
 
         if (node != null && node.net != null && node.net.isValid()) {
             node.net.addReceiver(this);
+            // Заодно сеть сканирует грани проводника на чужие FE-хранилища.
+            node.net.refreshForeign(level, new BlockPos(x, y, z));
             return true;
         }
         return false;

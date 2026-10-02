@@ -4,6 +4,8 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.interfaces.IEnergyConnector;
+import com.hbm_m.interfaces.IEnergyProvider;
+import com.hbm_m.interfaces.IEnergyReceiver;
 import com.hbm_m.interfaces.IMultiblockPart;
 import com.hbm_m.multiblock.PartRole;
 import com.hbm_m.api.fluids.FluidNetProvider;
@@ -50,7 +52,8 @@ import net.minecraftforge.fluids.capability.IFluidHandler;
 
 
 @SuppressWarnings("UnstableApiUsage")
-public class UniversalMachinePartBlockEntity extends BaseHbmBlockEntity implements IMultiblockPart, IEnergyConnector, IFluidConnectorMK2,
+public class UniversalMachinePartBlockEntity extends BaseHbmBlockEntity implements IMultiblockPart, IEnergyConnector,
+        com.hbm_m.interfaces.IEnergyReceiver, com.hbm_m.interfaces.IEnergyProvider, IFluidConnectorMK2,
         com.hbm_m.api.block.ICrucibleAcceptor, com.hbm_m.interfaces.IRelocatable {
 
     // Виртуальные узлы жидкостной сети на позиции коннектора, по одному на тип жидкости контроллера.
@@ -254,11 +257,10 @@ public class UniversalMachinePartBlockEntity extends BaseHbmBlockEntity implemen
             }
         }
 
-        // Энергия: роль-коннектор должна быть узлом энергосети,
-        // чтобы коннектор-к-коннектору работал точно как через кабели.
-        if (be.role.canReceiveEnergy() || be.role.canSendEnergy()) {
-            com.hbm_m.api.energy.EnergySubscriptions.update(be);
-        }
+        // Энергия: часть — ПАССИВНАЯ цель Direct Provision (реализует IEnergyReceiver/Provider
+        // с делегированием в контроллер, паритет TileEntityProxyPower 1.7.10). Самоподписка
+        // здесь не нужна и вредна: провода у коннекторов уже подписывает контроллер через
+        // getExtraEnergyPorts — вторая подписка от части задваивала бы спрос приёмника.
 
         if (!isFluidConnector(be.role) || be.controllerPos == null) {
             return;
@@ -591,6 +593,98 @@ public class UniversalMachinePartBlockEntity extends BaseHbmBlockEntity implemen
         return this.allowedFluidSides;
     }
 
+    // ═════════════ Энергия: делегирование в контроллер (Direct Provision) ═════════════
+    // Паритет 1.7.10 TileEntityProxyPower: энергоприёмник/поставщик соседней машины,
+    // приложенный к клетке-коннектору мультиблока, видит часть как полноценный
+    // IEnergyReceiver/IEnergyProvider — вся логика (режимы, приоритет, скорость)
+    // живёт в контроллере. Роль-гейт: только коннекторные роли участвуют.
+
+    private @Nullable IEnergyReceiver controllerReceiver() {
+        if (level == null || controllerPos == null || !this.role.canReceiveEnergy()) return null;
+        BlockEntity be = level.getBlockEntity(controllerPos);
+        return be instanceof IEnergyReceiver r ? r : null;
+    }
+
+    private @Nullable IEnergyProvider controllerProvider() {
+        if (level == null || controllerPos == null || !this.role.canSendEnergy()) return null;
+        BlockEntity be = level.getBlockEntity(controllerPos);
+        return be instanceof IEnergyProvider p ? p : null;
+    }
+
+    @Override
+    public long getEnergyStored() {
+        IEnergyReceiver r = controllerReceiver();
+        if (r != null) return r.getEnergyStored();
+        IEnergyProvider p = controllerProvider();
+        return p == null ? 0L : p.getEnergyStored();
+    }
+
+    @Override
+    public long getMaxEnergyStored() {
+        IEnergyReceiver r = controllerReceiver();
+        if (r != null) return r.getMaxEnergyStored();
+        IEnergyProvider p = controllerProvider();
+        return p == null ? 0L : p.getMaxEnergyStored();
+    }
+
+    @Override
+    public void setEnergyStored(long energy) {
+        IEnergyReceiver r = controllerReceiver();
+        if (r != null) { r.setEnergyStored(energy); return; }
+        IEnergyProvider p = controllerProvider();
+        if (p != null) p.setEnergyStored(energy);
+    }
+
+    @Override
+    public long getReceiveSpeed() {
+        IEnergyReceiver r = controllerReceiver();
+        return r == null ? 0L : r.getReceiveSpeed();
+    }
+
+    @Override
+    public long receiveEnergy(long maxReceive, boolean simulate) {
+        IEnergyReceiver r = controllerReceiver();
+        return r == null ? 0L : r.receiveEnergy(maxReceive, simulate);
+    }
+
+    @Override
+    public boolean canReceive() {
+        IEnergyReceiver r = controllerReceiver();
+        return r != null && r.canReceive();
+    }
+
+    @Override
+    public IEnergyReceiver.Priority getPriority() {
+        IEnergyReceiver r = controllerReceiver();
+        return r == null ? IEnergyReceiver.Priority.NORMAL : r.getPriority();
+    }
+
+    /** Через receiveEnergy (а не setEnergyStored): сохраняются режимы и лимиты контроллера. */
+    @Override
+    public long transferPower(long power) {
+        if (power <= 0) return power;
+        long accepted = receiveEnergy(power, false);
+        return power - accepted;
+    }
+
+    @Override
+    public long getProvideSpeed() {
+        IEnergyProvider p = controllerProvider();
+        return p == null ? 0L : p.getProvideSpeed();
+    }
+
+    @Override
+    public long extractEnergy(long maxExtract, boolean simulate) {
+        IEnergyProvider p = controllerProvider();
+        return p == null ? 0L : p.extractEnergy(maxExtract, simulate);
+    }
+
+    @Override
+    public boolean canExtract() {
+        IEnergyProvider p = controllerProvider();
+        return p != null && p.canExtract();
+    }
+
     /**
      * Как Forge {@code getCapability(HBM_ENERGY_*)}: часть с ролью коннектора участвует в визуале проводов и
      * {@link com.hbm_m.capability.ModCapabilities#hasEnergyComponent} на Fabric ({@code instanceof}).
@@ -609,7 +703,6 @@ public class UniversalMachinePartBlockEntity extends BaseHbmBlockEntity implemen
         return allowedEnergySides.contains(side);
     }
 
-    //? if forge || neoforge {
     @Override
     public void onLoad() {
         super.onLoad();
@@ -634,7 +727,6 @@ public class UniversalMachinePartBlockEntity extends BaseHbmBlockEntity implemen
         }
         com.hbm_m.api.energy.EnergySubscriptions.unsubscribeAll(this);
     }
-    //?}
 
     // getCapability/invalidateCaps below are Forge-only: NeoForge 1.21.1 removed
     // BlockEntity.getCapability entirely. Only the two lifecycle hooks above apply to both.

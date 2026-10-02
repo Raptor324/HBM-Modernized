@@ -79,15 +79,15 @@ public class ModCapabilities {
             event.registerBlockEntity(
                 Capabilities.EnergyStorage.BLOCK, type,
                 (be, side) -> {
-                    if (be instanceof com.hbm_m.api.energy.ConverterBlockEntity conv)
-                        return new com.hbm_m.api.energy.HbmForgeWrapper(conv);
+                    if (be instanceof com.hbm_m.api.energy.WireBlockEntity wire) return wire.getFeStorage();
+                    if (be instanceof BaseHbmBlockEntity hbm && !hbm.joinsEnergyNetwork()) return null; // машины без энергии (пресс)
                     return (be instanceof BaseHbmBlockEntity hbm) ? (net.neoforged.neoforge.energy.IEnergyStorage) hbm.getEnergyStorage(side) : null;
                 }
             );
 
             // 4. HBM Custom Energy
-            event.registerBlockEntity(HBM_ENERGY_PROVIDER, type, (be, side) -> (be instanceof IEnergyProvider p) ? p : null);
-            event.registerBlockEntity(HBM_ENERGY_RECEIVER, type, (be, side) -> (be instanceof IEnergyReceiver r) ? r : null);
+            event.registerBlockEntity(HBM_ENERGY_PROVIDER, type, (be, side) -> (be instanceof BaseHbmBlockEntity hbm && !hbm.joinsEnergyNetwork()) ? null : (be instanceof IEnergyProvider p) ? p : null);
+            event.registerBlockEntity(HBM_ENERGY_RECEIVER, type, (be, side) -> (be instanceof BaseHbmBlockEntity hbm && !hbm.joinsEnergyNetwork()) ? null : (be instanceof IEnergyReceiver r) ? r : null);
             event.registerBlockEntity(HBM_ENERGY_CONNECTOR, type, (be, side) -> (be instanceof IEnergyConnector c && c.canConnectEnergy(side)) ? c : null);
         }
 

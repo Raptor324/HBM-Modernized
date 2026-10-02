@@ -14,10 +14,6 @@ import net.minecraft.world.inventory.*;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
-//? if forge {
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-//?}
-
 public class MachineEPressMenu extends AbstractContainerMenu {
 
     public final MachineEPressBlockEntity blockEntity;
@@ -157,14 +153,7 @@ public class MachineEPressMenu extends AbstractContainerMenu {
 
         @Override
         public boolean mayPlace(ItemStack stack) {
-            if (ItemEnergyAccess.getHbmProvider(stack).isPresent()) return true;
-            //? if forge {
-            return stack.getCapability(ForgeCapabilities.ENERGY).isPresent();
-            //?} elif neoforge {
-            /*return stack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM) != null;
-            *///?} else {
-            /*return false;
-            *///?}
+            return ItemEnergyAccess.isEnergySource(stack);
         }
     }
 

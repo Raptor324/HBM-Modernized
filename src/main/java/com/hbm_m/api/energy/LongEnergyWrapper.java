@@ -1,4 +1,3 @@
-//? if forge || neoforge {
 package com.hbm_m.api.energy;
 
 import com.hbm_m.interfaces.IEnergyConnector;
@@ -13,77 +12,35 @@ import net.minecraftforge.energy.IEnergyStorage;
 *///?}
 
 /**
- * Обертка для совместимости между HBM Energy (long) и Forge Energy (int).
- * Работает с младшими (LOW) или старшими (HIGH) 32 битами long-значения.
- *
- * ВАЖНО: HIGH режим работает с битами умноженными на 2^32!
+ * FE-обёртка над HBM-энергией (long) для чужих модов: FE-уровень = feFromHe(HE),
+ * перенос выравнивается по {@link EnergyConversion#feQuantum()}, чтобы конверсия
+ * не теряла доли HE. Запросы ограничены комнатой/скоростью машины — как в оригинале.
  */
 public class LongEnergyWrapper implements IEnergyStorage {
 
     private final IEnergyConnector handler;
-    private final BitMode mode;
 
-    public enum BitMode {
-        LOW,  // Младшие 32 бита (0-2,147,483,647)
-        HIGH  // Старшие 32 бита (каждая единица = 2^32 в long)
-    }
-
-    public LongEnergyWrapper(IEnergyConnector handler, BitMode mode) {
-        this.handler = handler;
-        this.mode = mode;
-    }
-
-    /** Младшие 32 бита — совместимость со старыми вызовами без явного режима. */
     public LongEnergyWrapper(IEnergyConnector handler) {
-        this(handler, BitMode.LOW);
+        this.handler = handler;
     }
 
-    // --- Утилиты для работы с битами ---
-    private static int getLow(long val) {
-        return (int) (val & 0xFFFFFFFFL);
-    }
-
-    private static int getHigh(long val) {
-        return (int) (val >> 32);
-    }
-
-    private static long pack(int high, int low) {
-        return ((long) high << 32) | (low & 0xFFFFFFFFL);
-    }
-
-    // --- Forge Energy IEnergyStorage ---
     @Override
     public int receiveEnergy(int maxReceive, boolean simulate) {
         if (!(handler instanceof IEnergyReceiver receiver) || !receiver.canReceive()) {
             return 0;
         }
 
-        long currentEnergy = receiver.getEnergyStored();
-        long maxEnergy = receiver.getMaxEnergyStored();
+        long room = receiver.getMaxEnergyStored() - receiver.getEnergyStored();
+        long offered = Math.min(room, receiver.getReceiveSpeed());
 
-        if (mode == BitMode.LOW) {
-            // LOW режим: работаем с младшими битами
-            long toReceive = Math.min(maxReceive, maxEnergy - currentEnergy);
-            long received = receiver.receiveEnergy(toReceive, simulate);
-            return (int) Math.min(received, Integer.MAX_VALUE);
-
-        } else {
-            // HIGH режим: работаем со старшими битами
-            int currentHigh = getHigh(currentEnergy);
-            int maxHigh = getHigh(maxEnergy);
-            int currentLow = getLow(currentEnergy);
-
-            int canReceive = Math.min(maxReceive, maxHigh - currentHigh);
-            if (canReceive <= 0) return 0;
-
-            if (!simulate) {
-                // Увеличиваем HIGH биты, сохраняя LOW
-                long newEnergy = pack(currentHigh + canReceive, currentLow);
-                receiver.setEnergyStored(newEnergy);
-            }
-
-            return canReceive;
+        long acceptableFe = EnergyConversion.feFromHe(offered);
+        long quantum = EnergyConversion.feQuantum();
+        long fits = Math.min(maxReceive, acceptableFe) / quantum * quantum;
+        int accepted = (int) Math.max(0L, fits);
+        if (accepted > 0 && !simulate) {
+            receiver.transferPower(EnergyConversion.heFromFe(accepted));
         }
+        return accepted;
     }
 
     @Override
@@ -92,30 +49,15 @@ public class LongEnergyWrapper implements IEnergyStorage {
             return 0;
         }
 
-        long currentEnergy = provider.getEnergyStored();
-
-        if (mode == BitMode.LOW) {
-            // LOW режим: работаем с младшими битами
-            long toExtract = Math.min(maxExtract, currentEnergy);
-            long extracted = provider.extractEnergy(toExtract, simulate);
-            return (int) Math.min(extracted, Integer.MAX_VALUE);
-
-        } else {
-            // HIGH режим: работаем со старшими битами
-            int currentHigh = getHigh(currentEnergy);
-            int currentLow = getLow(currentEnergy);
-
-            int canExtract = Math.min(maxExtract, currentHigh);
-            if (canExtract <= 0) return 0;
-
-            if (!simulate) {
-                // Уменьшаем HIGH биты, сохраняя LOW
-                long newEnergy = pack(currentHigh - canExtract, currentLow);
-                provider.setEnergyStored(newEnergy);
-            }
-
-            return canExtract;
+        long available = Math.min(provider.getEnergyStored(), provider.getProvideSpeed());
+        long extractableFe = EnergyConversion.feFromHe(available);
+        long quantum = EnergyConversion.feQuantum();
+        long gives = Math.min(maxExtract, extractableFe) / quantum * quantum;
+        int extracted = (int) Math.max(0L, gives);
+        if (extracted > 0 && !simulate) {
+            provider.usePower(EnergyConversion.heFromFe(extracted));
         }
+        return extracted;
     }
 
     @Override
@@ -128,7 +70,7 @@ public class LongEnergyWrapper implements IEnergyStorage {
             energy = r.getEnergyStored();
         }
 
-        return (mode == BitMode.LOW) ? getLow(energy) : getHigh(energy);
+        return (int) Math.min(Integer.MAX_VALUE, EnergyConversion.feFromHe(energy));
     }
 
     @Override
@@ -141,7 +83,7 @@ public class LongEnergyWrapper implements IEnergyStorage {
             maxEnergy = r.getMaxEnergyStored();
         }
 
-        return (mode == BitMode.LOW) ? getLow(maxEnergy) : getHigh(maxEnergy);
+        return (int) Math.min(Integer.MAX_VALUE, EnergyConversion.feFromHe(maxEnergy));
     }
 
     @Override
@@ -154,4 +96,3 @@ public class LongEnergyWrapper implements IEnergyStorage {
         return handler instanceof IEnergyReceiver r && r.canReceive();
     }
 }
-//?}

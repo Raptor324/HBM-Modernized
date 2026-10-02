@@ -184,7 +184,7 @@ public class BatterySocketMenu extends AbstractContainerMenu implements ILongEne
         return ContainerLevelAccess.create(level, blockEntity.getBlockPos()).evaluate((lvl, pos) -> {
             Block b = lvl.getBlockState(pos).getBlock();
             return b instanceof MachineBatterySocketBlock
-                    && player.distanceToSqr(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5) <= 64 * 64;
+                    && player.distanceToSqr(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5) <= 64.0D;
         }, true);
     }
 

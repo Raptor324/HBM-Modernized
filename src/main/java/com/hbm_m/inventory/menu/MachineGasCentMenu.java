@@ -22,10 +22,6 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
-//? if forge {
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-//?}
-
 public class MachineGasCentMenu extends AbstractContainerMenu implements ILongEnergyMenu {
 
     private final MachineGasCentBlockEntity blockEntity;
@@ -87,15 +83,8 @@ public class MachineGasCentMenu extends AbstractContainerMenu implements ILongEn
                         .map(provider -> provider.canExtract())
                         .orElse(false);
                 if (hbm) return true;
-                //? if forge {
-                return com.hbm_m.api.energy.ItemEnergyAccess.getForgeEnergy(stack)
-                        .map(storage -> storage.canExtract())
-                        .orElse(false);
-                //?} elif neoforge {
-                /*return stack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM) != null;
-                *///?} else {
-                /*return false;
-                *///?}
+                // Унифицировано: на NeoForge раньше был голый presence-check — выровнено по Forge.
+                return com.hbm_m.api.energy.ItemEnergyAccess.canForgeExtract(stack);
             }
         });
 
@@ -241,13 +230,7 @@ public class MachineGasCentMenu extends AbstractContainerMenu implements ILongEn
             boolean isBattery = com.hbm_m.api.energy.ItemEnergyAccess.getHbmProvider(slotStack)
                     .map(provider -> provider.canExtract())
                     .orElse(false);
-            //? if forge {
-            isBattery = isBattery || com.hbm_m.api.energy.ItemEnergyAccess.getForgeEnergy(slotStack)
-                    .map(storage -> storage.canExtract())
-                    .orElse(false);
-            //?} elif neoforge {
-            /*isBattery = isBattery || slotStack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM) != null;
-            *///?}
+            isBattery = isBattery || com.hbm_m.api.energy.ItemEnergyAccess.canForgeExtract(slotStack);
 
             if (isBattery) {
                 if (!this.moveItemStackTo(slotStack, BATTERY_SLOT, BATTERY_SLOT + 1, false)) {

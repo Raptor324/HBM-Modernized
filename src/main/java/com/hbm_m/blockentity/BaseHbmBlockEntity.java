@@ -46,55 +46,68 @@ import com.hbm_m.platform.PlatformHooks;
 public abstract class BaseHbmBlockEntity extends BlockEntity
         implements com.hbm_m.api.render.RenderBoundsProvider, com.hbm_m.api.render.RenderDirtyTracker {
 
-    /** TTL рендер-записи в тиках: свет/fade не имеют событийной модели — периодический пересбор. */
-    private static final long RENDER_TTL_TICKS = 15;
-
-    /** true = визуальное состояние изменилось, запись надо пересобрать немедленно. */
-    private volatile boolean renderDirty = true;
-    private long renderCollectTick = Long.MIN_VALUE;
-    private long renderCollectWorldGen = Long.MIN_VALUE;
-
     public BaseHbmBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
     }
 
-    // ── RenderDirtyTracker: контракт fastpath'а Nucleus (MachineBer.tryFastAssertRender).
-    // Флаг ставится при загрузке BE, смене blockstate и клиентских update-пакетах;
-    // свет/fade инвалидируются периодическим TTL-пересбором в isRenderStale.
+
+    // ═════════════════════════════════════════════════════════════════════════════════════
+    //  Render dirty tracking (GPU-driven сбор машин: см. com.hbm_m.api.render.RenderDirtyTracker)
+    //  Чистая машина пропускает ежекадровую сборку (матрицы/свет/сравнение записей) и
+    //  подтверждает присутствие roster-assert'ом. Свет/fade не имеют событийной модели —
+    //  обновляются TTL-пересбором (штамп gameTick, фаза размазана по позиции).
+    // ═════════════════════════════════════════════════════════════════════════════════════
+
+    /** TTL пересбора света/fade в тиках — консистентен с LightSampleCache.LIGHT_TTL_TICKS. */
+    private static final long NUCLEUS_RENDER_REFRESH_TICKS = 15;
+
+    private boolean nucleusRenderDirty = true;
+    private long nucleusLastRenderTick = Long.MIN_VALUE;
+    private long nucleusLastRenderWorldGen = -1L;
 
     @Override
     public boolean isRenderDirty() {
-        return renderDirty;
+        return nucleusRenderDirty;
     }
 
     @Override
     public void markRenderDirty() {
-        renderDirty = true;
+        nucleusRenderDirty = true;
     }
 
     @Override
     public boolean isRenderStale(long gameTick, long worldGen) {
-        if (renderDirty || worldGen != renderCollectWorldGen) return true;
-        return gameTick - renderCollectTick >= RENDER_TTL_TICKS;
+        if (nucleusRenderDirty || nucleusLastRenderWorldGen != worldGen) {
+            return true;
+        }
+        long since = gameTick - nucleusLastRenderTick;
+        if (since < 0) {
+            return true; // смена измерения/откат времени
+        }
+        // Фаза по позиции: машины фермы не пересобираются все в один тик.
+        long phase = (worldPosition.asLong() >>> 4) & 7;
+        return since >= NUCLEUS_RENDER_REFRESH_TICKS + phase;
     }
 
     @Override
     public void onRenderCollected(long gameTick, long worldGen) {
-        renderDirty = false;
-        renderCollectTick = gameTick;
-        renderCollectWorldGen = worldGen;
+        nucleusRenderDirty = false;
+        nucleusLastRenderTick = gameTick;
+        nucleusLastRenderWorldGen = worldGen;
     }
 
     @Override
     public void onLoad() {
         super.onLoad();
-        renderDirty = true;
+        // Загрузка чанка / пересоздание BE при смене blockstate — запись надо собрать заново.
+        nucleusRenderDirty = true;
     }
 
     @Override
-    public void setBlockState(@NotNull BlockState state) {
+    public void setBlockState(BlockState state) {
         super.setBlockState(state);
-        renderDirty = true;
+        // LevelChunk переиспользует BE-инстанс при смене состояния того же блока.
+        nucleusRenderDirty = true;
     }
 
     /**
@@ -182,13 +195,11 @@ public abstract class BaseHbmBlockEntity extends BlockEntity
      * render-state, как в {@code MachineFluidTankBlockEntity}).
      */
     protected void applyClientUpdate(@NotNull CompoundTag tag) {
-        renderDirty = true;
         readNbtData(tag, null);
     }
 
     /** Как выше, но с реестрами (neoforge 1.21.1 передаёт реальный Provider из пакета). */
     protected void applyClientUpdate(@NotNull CompoundTag tag, @Nullable HolderLookup.Provider registries) {
-        renderDirty = true;
         readNbtData(tag, registries);
     }
 
@@ -259,11 +270,13 @@ public abstract class BaseHbmBlockEntity extends BlockEntity
     //? if forge {
     @Override
     public void handleUpdateTag(@NotNull CompoundTag tag) {
+        nucleusRenderDirty = true;
         applyClientUpdate(tag);
     }
 
     @Override
     public void onDataPacket(@NotNull Connection net, @NotNull ClientboundBlockEntityDataPacket pkt) {
+        nucleusRenderDirty = true;
         CompoundTag tag = PlatformHooks.getItemTag(pkt);
         if (tag != null) applyClientUpdate(tag);
     }
@@ -274,11 +287,13 @@ public abstract class BaseHbmBlockEntity extends BlockEntity
     // Переопределяем с безусловным применением.
     @Override
     public void handleUpdateTag(@NotNull CompoundTag tag, HolderLookup.Provider registries) {
+        nucleusRenderDirty = true;
         applyClientUpdate(tag, registries);
     }
 
     @Override
     public void onDataPacket(@NotNull Connection net, @NotNull ClientboundBlockEntityDataPacket pkt, HolderLookup.Provider registries) {
+        nucleusRenderDirty = true;
         applyClientUpdate(pkt.getTag(), registries);
     }
     *///?}
@@ -323,5 +338,14 @@ public abstract class BaseHbmBlockEntity extends BlockEntity
      */
     public @Nullable Object getEnergyStorage(@Nullable net.minecraft.core.Direction side) {
         return null;
+    }
+
+    /**
+     * Участвует ли BE в энергетической сети вообще (провода, зарядка, выдача).
+     * Машины без энергии (пресс) переопределяют в {@code false}: на Forge их getCapability
+     * возвращает empty, на NeoForge ModCapabilities не регистрирует на них energy-капы.
+     */
+    public boolean joinsEnergyNetwork() {
+        return true;
     }
 }

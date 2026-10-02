@@ -65,6 +65,12 @@ public class MachineCapacitorBlockEntity extends BaseMachineBlockEntity {
         Direction last = null;
         // Ohne Deckel: eine sehr lange Kette ist zulaessig, eine endlose nicht.
         for (int step = 0; step < 64; step++) {
+            // Просмотр цепочки идёт по СОСЕДНИМ позициям: если чанк соседа уже
+            // выгружен (типично — при выгрузке мира/остановке сервера), запрос
+            // getBlockState синхронно загрузит чанк с диска, и он снова попадёт
+            // в очередь выгрузки — лавина повторных загрузок висит stopServer
+            // на минуты. Цепочка просто обрывается на границе загруженности.
+            if (!level.hasChunkAt(pos)) break;
             BlockState state = level.getBlockState(pos);
             if (state.getBlock() != com.hbm_m.block.ModBlocks.CAPACITOR_BUS.get()) break;
             if (!state.hasProperty(MachineCapacitorBlock.FACING)) break;

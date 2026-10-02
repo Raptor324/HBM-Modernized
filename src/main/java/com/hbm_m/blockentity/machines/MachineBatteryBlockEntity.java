@@ -101,17 +101,7 @@ public class MachineBatteryBlockEntity extends BaseMachineBlockEntity implements
         if (slot != SLOT_CHARGE && slot != SLOT_DISCHARGE) return false;
         if (stack.isEmpty()) return false;
         if (stack.getItem() instanceof ItemCreativeBattery) return true;
-        //? if forge {
-        return stack.getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.ENERGY).isPresent()
-                || stack.getCapability(com.hbm_m.capability.ModCapabilities.HBM_ENERGY_PROVIDER).isPresent()
-                || stack.getCapability(com.hbm_m.capability.ModCapabilities.HBM_ENERGY_RECEIVER).isPresent();
-        //?}
-        //? if neoforge {
-        /*// NeoForge: FE через Capabilities.EnergyStorage.ITEM + HBM через ItemEnergyAccess.
-        return stack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM) != null
-                || com.hbm_m.api.energy.ItemEnergyAccess.getHbmProvider(stack).isPresent()
-                || com.hbm_m.api.energy.ItemEnergyAccess.getHbmReceiver(stack).isPresent();
-        *///?}
+        return com.hbm_m.api.energy.ItemEnergyAccess.isEnergyItem(stack);
     }
 
     @Override

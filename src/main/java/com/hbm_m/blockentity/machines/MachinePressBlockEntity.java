@@ -118,6 +118,11 @@ public class MachinePressBlockEntity extends BaseMachineBlockEntity {
         return false;
     }
 
+    @Override
+    public boolean joinsEnergyNetwork() {
+        return false;
+    }
+
     //? if forge {
     @Override
     public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
