@@ -180,8 +180,9 @@ public class UniversalMachinePartBlock extends BaseEntityBlock
             // getUnifiedSelectionShape). Коллизия при этом поклеточная — см. getCollisionShape.
             masterShape = doorBlock.getShape(controllerState, pLevel, controllerPos, pContext);
         } else {
-            Direction facing = controllerState.getValue(HorizontalDirectionalBlock.FACING);
-            masterShape = controller.getStructureHelper().generateShapeFromParts(facing);
+            MultiblockStructureHelper helper = controller.getStructureHelper();
+            if (helper == null) return Shapes.block();
+            masterShape = helper.generateShapeFromParts(resolveFacing(controllerState));
         }
 
         BlockPos vecToController = controllerPos.subtract(pPos);
@@ -246,7 +247,8 @@ public class UniversalMachinePartBlock extends BaseEntityBlock
         }
 
         MultiblockStructureHelper helper = controller.getStructureHelper();
-        Direction facing = controllerState.getValue(HorizontalDirectionalBlock.FACING);
+        if (helper == null) return Shapes.block();
+        Direction facing = resolveFacing(controllerState);
 
         BlockPos worldOffset = pPos.subtract(controllerPos);
         BlockPos localOffset = MultiblockStructureHelper.rotateBack(worldOffset, facing);
@@ -353,6 +355,17 @@ public class UniversalMachinePartBlock extends BaseEntityBlock
     }
     *///?}
 
+    /**
+     * Поворотная ось контроллера для маппинга клетки в локальную сетку. Контроллеры без
+     * facing (неремонтируемые мультиблоки вроде Orbus/бочек) не вращаются - для них
+     * NORTH = тождественный поворот.
+     */
+    private static Direction resolveFacing(BlockState controllerState) {
+        return controllerState.hasProperty(HorizontalDirectionalBlock.FACING)
+                ? controllerState.getValue(HorizontalDirectionalBlock.FACING)
+                : Direction.NORTH;
+    }
+
     private boolean isFullBlockInGrid(BlockGetter level, BlockPos pos) {
         if (level.getBlockEntity(pos) instanceof IMultiblockPart part) {
             BlockPos controllerPos = part.getControllerPos();
@@ -360,7 +373,8 @@ public class UniversalMachinePartBlock extends BaseEntityBlock
                 BlockState controllerState = level.getBlockState(controllerPos);
                 if (controllerState.getBlock() instanceof IMultiblockController controller) {
                     MultiblockStructureHelper helper = controller.getStructureHelper();
-                    Direction facing = controllerState.getValue(HorizontalDirectionalBlock.FACING);
+                    if (helper == null) return true;
+                    Direction facing = resolveFacing(controllerState);
                     
                     BlockPos worldOffset = pos.subtract(controllerPos);
                     BlockPos localOffset = MultiblockStructureHelper.rotateBack(worldOffset, facing);
