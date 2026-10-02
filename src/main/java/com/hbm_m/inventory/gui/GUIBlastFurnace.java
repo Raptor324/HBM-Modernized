@@ -13,7 +13,15 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.Slot;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
+@OnlyIn(Dist.CLIENT)
 public class GUIBlastFurnace extends AbstractContainerScreen<BlastFurnaceMenu> {
     private static final ResourceLocation GUI_TEXTURE =
                         ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "textures/gui/gui_blast_furnace_legacy.png");

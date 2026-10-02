@@ -14,7 +14,15 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.entity.player.Inventory;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
+@OnlyIn(Dist.CLIENT)
 public class GUIMachineSolderingStation extends GuiInfoScreen<MachineSolderingStationMenu> {
 
     private static final ResourceLocation TEXTURE =

@@ -10,6 +10,13 @@ import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /**
  * Eigenes, kompaktes Einzelblock-GUI-Layout (das Original {@code GUIMachineArcFurnaceLarge} ist
@@ -17,6 +24,7 @@ import net.minecraft.world.entity.player.Inventory;
  * {@link MachineArcFurnaceBlockEntity}). Zwei generische Fluid-Ausgabetanks nebeneinander rechts
  * im Panel, Fortschrittsbalken analog zum Combination Oven.
  */
+@OnlyIn(Dist.CLIENT)
 public class GUIMachineArcFurnace extends GuiInfoScreen<MachineArcFurnaceMenu> {
 
     private static final ResourceLocation TEXTURE =

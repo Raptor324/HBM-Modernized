@@ -24,11 +24,19 @@ import mezz.jei.api.recipe.RecipeType;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /**
  * JEI category for Arc Furnace recipes - 1 Item-Eingang -&gt; optionaler Item-Ausgang + bis zu 2
  * Fluid-Ausgaenge (siehe {@link ArcFurnaceRecipe}).
  */
+@OnlyIn(Dist.CLIENT)
 public class ArcFurnaceJeiCategory extends JeiGenericRecipeCategory<ArcFurnaceRecipe> {
 
     public static final RecipeType<ArcFurnaceRecipe> RECIPE_TYPE =

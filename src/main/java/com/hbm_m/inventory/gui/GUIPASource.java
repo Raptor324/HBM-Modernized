@@ -6,11 +6,19 @@ import com.hbm_m.inventory.menu.PASourceMenu;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /**
  * Oberflaeche der Teilchenquelle. Sie zeigt zusaetzlich den Zustand des Strahls in der Farbe des
  * Originals ({@link PAState#color}), den zuletzt gemessenen Impuls und die Streuung.
  */
+@OnlyIn(Dist.CLIENT)
 public class GUIPASource extends GUIPABase<PASourceMenu> {
 
     public GUIPASource(PASourceMenu menu, Inventory playerInventory, Component title) {

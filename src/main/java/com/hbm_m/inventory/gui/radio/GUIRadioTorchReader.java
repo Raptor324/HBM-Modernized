@@ -12,8 +12,16 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /** Port of {@code GUIScreenRadioTorchReader} (1.7.10 Original). 8 rows of Channel + Value-name. */
+@OnlyIn(Dist.CLIENT)
 public class GUIRadioTorchReader extends Screen {
 
     private final BlockPos pos;

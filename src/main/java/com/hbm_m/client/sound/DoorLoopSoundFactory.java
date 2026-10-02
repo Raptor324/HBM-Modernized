@@ -9,11 +9,19 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /**
  * Клиентский цикл звука двери — вынесен из {@link DoorBlockEntity}, чтобы серверный класс BE
  * не содержал в bytecode ссылок на {@link AbstractTickableSoundInstance}.
  */
+@OnlyIn(Dist.CLIENT)
 public final class DoorLoopSoundFactory {
 
     private DoorLoopSoundFactory() {}

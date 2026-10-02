@@ -11,12 +11,20 @@ import com.mojang.blaze3d.vertex.VertexFormat;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.util.Mth;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /**
  * 1:1-Port von {@code GUIElements.drawSmoothGauge} (1.7.10): ein Zeiger als zwei Dreiecke -
  * aussen eine um Faktor 1,5 vergroesserte Kontur, innen der eigentliche Zeiger. Der Ausschlag
  * laeuft ueber 270 Grad und beginnt bei -45 Grad, genau wie im Original.
  */
+@OnlyIn(Dist.CLIENT)
 public final class GuiGaugeNeedle {
 
     private GuiGaugeNeedle() {}

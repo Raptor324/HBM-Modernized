@@ -19,6 +19,13 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 //? if < 1.21.1 {
 import net.minecraftforge.client.model.obj.ObjModel;
 //?} else {
@@ -39,6 +46,7 @@ import net.minecraftforge.client.model.obj.ObjModel;
  * <p>
  * Кэш чистится на resource reload (см. {@link #clearCanonicalCache}).
  */
+@OnlyIn(Dist.CLIENT)
 public class DoorModelLoader extends AbstractObjPartModelLoader<DoorBakedModel> {
 
     private static final Set<String> DEFAULT_PART_NAMES = Set.of(

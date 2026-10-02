@@ -11,12 +11,20 @@ import net.minecraft.world.item.ArmorItem;
 
 import java.util.HashMap;
 import org.jetbrains.annotations.Nullable;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /**
  * Загрузчик OBJ-костюма химзащиты (все три окраса шарят одну геометрию,
  * текстура выбирается в item-модели через "default" и в слое - через PartMaterials).
  * Имена частей совпадают с "o <name>" в hazmat.obj.
  */
+@OnlyIn(Dist.CLIENT)
 public class HazmatArmorModelLoader extends AbstractObjPartModelLoader<HazmatArmorBakedModel> {
 
     private static final Set<String> PART_NAMES = Set.of(

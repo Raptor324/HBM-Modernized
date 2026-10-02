@@ -15,12 +15,20 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /**
  * Solar Boiler GUI: same slot/tank layout as {@link GUIMachineIndustrialBoiler} (water in/out,
  * steam in/out, two tank bars) but no energy bar - purely solar driven. The leftmost decorative
  * icon column is repurposed as a sunlight/mirror-count info hover instead of an energy readout.
  */
+@OnlyIn(Dist.CLIENT)
 public class GUIMachineSolarBoiler extends GuiInfoScreen<MachineSolarBoilerMenu> {
 
     private static final ResourceLocation TEXTURE =

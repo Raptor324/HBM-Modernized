@@ -11,6 +11,13 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 
 import java.util.List;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /**
  * 1:1-Port von {@code GUIICF} (1.7.10), 248x222.
@@ -20,6 +27,7 @@ import java.util.List;
  *
  * <p>Die Hitze zeigt die runde Anzeige bei (196, 98) - derselbe Zeiger wie im Original.</p>
  */
+@OnlyIn(Dist.CLIENT)
 public class GUIMachineICF extends AbstractContainerScreen<MachineICFMenu> {
 
     private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(

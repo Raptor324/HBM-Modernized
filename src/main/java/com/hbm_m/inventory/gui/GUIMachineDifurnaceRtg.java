@@ -12,8 +12,16 @@ import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /** Port of {@code GUIMachineDiFurnaceRTG} (1.7.10 Original). */
+@OnlyIn(Dist.CLIENT)
 public class GUIMachineDifurnaceRtg extends AbstractContainerScreen<MachineDifurnaceRtgMenu> {
 
     private static final ResourceLocation TEXTURE =

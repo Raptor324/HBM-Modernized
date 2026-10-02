@@ -13,6 +13,13 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.entity.player.Inventory;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /**
  * GUI des Reaktorsteuerpults, 1:1 aus {@code GUIReactorControl} (1.7.10).
@@ -21,6 +28,7 @@ import net.minecraft.world.entity.player.Inventory;
  * Uebernahmeflaeche, links drei Flaechen fuer die Kennlinie. Die beiden Waermefelder zeigen den
  * Wert wie im Original geteilt durch 50 und rechnen ihn beim Uebernehmen wieder hoch.</p>
  */
+@OnlyIn(Dist.CLIENT)
 public class GUIReactorControl extends GuiInfoScreen<MachineReactorControlMenu> {
 
     private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(

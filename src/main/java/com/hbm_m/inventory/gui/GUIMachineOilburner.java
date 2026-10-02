@@ -18,6 +18,13 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.entity.player.Inventory;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /**
  * Порт {@code GUIOilburner} (1.7.10 Original). Также используется вариантом
@@ -28,6 +35,7 @@ import net.minecraft.world.entity.player.Inventory;
  * (44,17) 16×52, кнопка вкл/выкл (80,54) 16×14 → {@link ToggleOilburnerC2SPacket}
  * (оригинальный NBTControlPacket "toggle"), тултипы горения "N mB/t" / "N TU/t".
  */
+@OnlyIn(Dist.CLIENT)
 public class GUIMachineOilburner extends GuiInfoScreen<MachineOilburnerMenu> {
 
     private static final ResourceLocation TEXTURE =

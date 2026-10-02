@@ -10,6 +10,13 @@ import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /**
  * Verwendet die portierte Original-Panel-Textur (nur der statische Rahmen, keine geratenen Icon-
@@ -17,6 +24,7 @@ import net.minecraft.world.entity.player.Inventory;
  * Raster-Anzeige des Originals entfaellt (siehe Klassenkommentar in
  * {@link MachineAutocrafterBlockEntity}).
  */
+@OnlyIn(Dist.CLIENT)
 public class GUIMachineAutocrafter extends AbstractContainerScreen<MachineAutocrafterMenu> {
 
     private static final ResourceLocation TEXTURE =

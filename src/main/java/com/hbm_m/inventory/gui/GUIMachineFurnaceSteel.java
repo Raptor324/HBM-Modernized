@@ -9,10 +9,18 @@ import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /** GUI der Stahlpresse - drei parallele Fortschrittspfeile (eine je Schmelzspur) + gemeinsame
  *  Brennstoffanzeige, siehe {@link com.hbm_m.blockentity.machines.MachineFurnaceSteelBlockEntity}
  *  fuer die zugrundeliegende Vereinfachung ggue. dem waermequellenbetriebenen Original. */
+@OnlyIn(Dist.CLIENT)
 public class GUIMachineFurnaceSteel extends AbstractContainerScreen<MachineFurnaceSteelMenu> {
 
     private static final ResourceLocation TEXTURE =

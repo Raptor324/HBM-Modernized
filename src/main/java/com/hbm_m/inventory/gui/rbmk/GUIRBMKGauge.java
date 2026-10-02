@@ -11,6 +11,13 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /**
  * Port of {@code GUIScreenRBMKGauge} (1.7.10 Original) - four gauge units, each configured with an
@@ -18,6 +25,7 @@ import net.minecraft.network.chat.Component;
  * config screen, matching the "SCOPE-Vereinfachung" already used for the radio-torch family's
  * config screens.
  */
+@OnlyIn(Dist.CLIENT)
 public class GUIRBMKGauge extends Screen {
 
     private static final int UNITS = RBMKGaugeBlockEntity.UNITS;

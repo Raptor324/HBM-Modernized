@@ -30,6 +30,13 @@ import net.minecraftforge.client.model.data.ModelData;
 /*import net.neoforged.neoforge.client.ChunkRenderTypeSet;
 import net.neoforged.neoforge.client.model.data.ModelData;
 *///?}
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /**
  * Порт RenderBoxDuct (1.7.10) для PowerCableBox: короб рисуется КАК НЕСКОЛЬКО боксов —
@@ -39,6 +46,7 @@ import net.neoforged.neoforge.client.model.data.ModelData;
  * Грань строго по параметру side; side == null при состоянии блока = пусто (квады уже
  * разложены по сторонам), иначе будет двойная отрисовка.
  */
+@OnlyIn(Dist.CLIENT)
 public class BoxCableBakedModel implements BakedModel {
 
     private static final ResourceLocation TEX_STRAIGHT = rl("boxduct_cable_straight");

@@ -66,8 +66,16 @@ import mezz.jei.api.registration.IRecipeRegistration;
 import mezz.jei.api.registration.ISubtypeRegistration;
 
 import javax.annotation.Nonnull;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 @JeiPlugin
+@OnlyIn(Dist.CLIENT)
 public class HbmJeiPlugin implements IModPlugin {
 
     private static final ResourceLocation PLUGIN_UID =

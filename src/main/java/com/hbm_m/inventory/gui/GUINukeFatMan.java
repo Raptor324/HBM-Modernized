@@ -16,11 +16,19 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /**
  * GUI for Fat Man bomb
  * Uses texture fat_man_schematic.png, lens overlays, ready indicator, and info panel with description tooltip.
  */
+@OnlyIn(Dist.CLIENT)
 public class GUINukeFatMan extends GuiInfoScreen<NukeFatManMenu> {
 
     private static final ResourceLocation TEXTURE =

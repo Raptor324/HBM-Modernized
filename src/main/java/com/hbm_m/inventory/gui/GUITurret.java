@@ -15,8 +15,16 @@ import net.minecraft.world.entity.player.Inventory;
 
 import java.util.ArrayList;
 import java.util.List;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /** Generischer GUI-Screen fuer alle Turret-Varianten - Textur kommt aus {@link com.hbm_m.blockentity.machines.TurretStats}. */
+@OnlyIn(Dist.CLIENT)
 public class GUITurret extends AbstractContainerScreen<TurretMenu> {
 
     private final ResourceLocation texture;

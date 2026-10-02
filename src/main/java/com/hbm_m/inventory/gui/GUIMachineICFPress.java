@@ -11,12 +11,20 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 
 import java.util.List;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /**
  * 1:1-Port von {@code GUIICFPress} (1.7.10), 176x180. Die beiden Brennstofftanks stehen links und
  * rechts neben den Kapselplaetzen; zwischen ihnen zeigt eine kleine Leiste an, wieviele
  * Myonenladungen noch da sind.
  */
+@OnlyIn(Dist.CLIENT)
 public class GUIMachineICFPress extends AbstractContainerScreen<MachineICFPressMenu> {
 
     private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(

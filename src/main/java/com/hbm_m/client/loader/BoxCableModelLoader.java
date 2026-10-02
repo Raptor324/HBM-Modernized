@@ -23,11 +23,19 @@ import net.minecraftforge.client.model.geometry.IUnbakedGeometry;
 import net.neoforged.neoforge.client.model.geometry.IGeometryLoader;
 import net.neoforged.neoforge.client.model.geometry.IUnbakedGeometry;
 *///?}
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /**
  * Лоадер модели box-кабеля (порт PowerCableBox): читает "size" (0-4) и отдаёт
  * {@link BoxCableBakedModel}, рисующий короб с per-face спрайтами по маске подключений.
  */
+@OnlyIn(Dist.CLIENT)
 public class BoxCableModelLoader implements IGeometryLoader<BoxCableModelLoader.BoxCableGeometry> {
 
     @Override

@@ -72,6 +72,77 @@ public final class RenderHooks {
     }
 
     /**
+     * Draws a quad in POSITION format using Tesselator and the active shader.
+     */
+    public static void drawQuad(float x0, float y0, float x1, float y1, float z) {
+        //? if < 1.21.1 {
+        BufferBuilder bb = Tesselator.getInstance().getBuilder();
+        bb.begin(VertexFormat.Mode.QUADS, com.mojang.blaze3d.vertex.DefaultVertexFormat.POSITION);
+        bb.vertex(x0, y0, z).endVertex();
+        bb.vertex(x1, y0, z).endVertex();
+        bb.vertex(x1, y1, z).endVertex();
+        bb.vertex(x0, y1, z).endVertex();
+        Tesselator.getInstance().end();
+        //?} else {
+        /*BufferBuilder bb = Tesselator.getInstance().begin(
+                VertexFormat.Mode.QUADS, com.mojang.blaze3d.vertex.DefaultVertexFormat.POSITION);
+        bb.addVertex(x0, y0, z);
+        bb.addVertex(x1, y0, z);
+        bb.addVertex(x1, y1, z);
+        bb.addVertex(x0, y1, z);
+        com.mojang.blaze3d.vertex.BufferUploader.drawWithShader(bb.buildOrThrow());
+        *///?}
+    }
+
+    /**
+     * Creates a PlainBufferSource for custom sortable / isolated render types.
+     */
+    public static net.minecraft.client.renderer.MultiBufferSource.BufferSource createPlainBufferSource(int bufferSize) {
+        //? if < 1.21.1 {
+        return new com.hbm_m.client.render.PlainBufferSource(
+                new com.mojang.blaze3d.vertex.BufferBuilder(bufferSize));
+        //?} else {
+        /*return new com.hbm_m.client.render.PlainBufferSource(
+                new com.mojang.blaze3d.vertex.ByteBufferBuilder(bufferSize));
+        *///?}
+    }
+
+    /**
+     * Cross-version vertex format for textured colored geometry without lightmap:
+     * POSITION_COLOR_TEX on 1.20.1 vs POSITION_TEX_COLOR on 1.21.1.
+     */
+    public static VertexFormat positionColorTexFormat() {
+        //? if < 1.21.1 {
+        return com.mojang.blaze3d.vertex.DefaultVertexFormat.POSITION_COLOR_TEX;
+        //?} else {
+        /*return com.mojang.blaze3d.vertex.DefaultVertexFormat.POSITION_TEX_COLOR;
+        *///?}
+    }
+
+    private static final class ShardAccess extends net.minecraft.client.renderer.RenderStateShard {
+        private ShardAccess(String name, Runnable setupState, Runnable clearState) {
+            super(name, setupState, clearState);
+        }
+        //? if < 1.21.1 {
+        static final ShaderStateShard POSITION_COLOR_TEX = POSITION_COLOR_TEX_SHADER;
+        //?} else {
+        /*static final ShaderStateShard TEXT_BACKGROUND = RENDERTYPE_TEXT_BACKGROUND_SHADER;
+        *///?}
+    }
+
+    /**
+     * Cross-version shader shard for textured colored geometry without lightmap:
+     * POSITION_COLOR_TEX_SHADER on 1.20.1 vs RENDERTYPE_TEXT_BACKGROUND_SHADER on 1.21.1.
+     */
+    public static net.minecraft.client.renderer.RenderStateShard.ShaderStateShard positionColorTexShader() {
+        //? if < 1.21.1 {
+        return ShardAccess.POSITION_COLOR_TEX;
+        //?} else {
+        /*return ShardAccess.TEXT_BACKGROUND;
+        *///?}
+    }
+
+    /**
      * Кросс-версионное создание BufferSource (immediate).
      */
     public static net.minecraft.client.renderer.MultiBufferSource.BufferSource immediateBufferSource(int capacity) {
@@ -94,6 +165,28 @@ public final class RenderHooks {
     }
 
     /**
+     * Добавляет вершину с позицией, текстурными координатами и цветом (без матрицы).
+     */
+    public static void vertexTexColor(VertexConsumer consumer, float x, float y, float z, float u, float v, int r, int g, int b, int a) {
+        //? if < 1.21.1 {
+        consumer.vertex(x, y, z).uv(u, v).color(r, g, b, a).endVertex();
+        //?} else {
+        /*consumer.addVertex(x, y, z).setUv(u, v).setColor(r, g, b, a);
+        *///?}
+    }
+
+    /**
+     * Вершина: позиция + UV, без цвета — формат POSITION_TEX (beaconBeam: цвет несет сама текстура).
+     */
+    public static void vertexTex(VertexConsumer consumer, Matrix4f matrix, float x, float y, float z, float u, float v) {
+        //? if < 1.21.1 {
+        consumer.vertex(matrix, x, y, z).uv(u, v).endVertex();
+        //?} else {
+        /*consumer.addVertex(matrix, x, y, z).setUv(u, v);
+         *///?}
+    }
+
+    /**
      * Добавляет вершину с позицией и цветом.
      */
     public static void vertexColor(VertexConsumer consumer, Matrix4f matrix, float x, float y, float z, int r, int g, int b, int a) {
@@ -101,6 +194,29 @@ public final class RenderHooks {
         consumer.vertex(matrix, x, y, z).color(r, g, b, a).endVertex();
         //?} else {
         /*consumer.addVertex(matrix, x, y, z).setColor(r, g, b, a);
+        *///?}
+    }
+
+    /**
+     * Adds a vertex with position and float-based color components (0.0F .. 1.0F).
+     */
+    public static void vertexColor(VertexConsumer consumer, Matrix4f matrix, float x, float y, float z,
+                                   float r, float g, float b, float a) {
+        //? if < 1.21.1 {
+        consumer.vertex(matrix, x, y, z).color(r, g, b, a).endVertex();
+        //?} else {
+        /*consumer.addVertex(matrix, x, y, z).setColor(r, g, b, a);
+        *///?}
+    }
+
+    /**
+     * Adds a vertex with position only (format POSITION).
+     */
+    public static void vertexPos(VertexConsumer consumer, float x, float y, float z) {
+        //? if < 1.21.1 {
+        consumer.vertex(x, y, z).endVertex();
+        //?} else {
+        /*consumer.addVertex(x, y, z);
         *///?}
     }
 
@@ -113,6 +229,21 @@ public final class RenderHooks {
         //?} else {
         /*consumer.addVertex((float) x, (float) y, (float) z).setColor(r, g, b, a);
         *///?}
+    }
+
+    /**
+     * Вершина: позиция (с матрицей) + цвет + UV (без света/нормали) — формат POSITION_TEX_COLOR,
+     * аддитивные эффекты (лучи демон-лампы, вспышки) с привязанной white-текстурой.
+     * ВАЖНО: порядок вызовов = порядок элементов формата (POSITION → UV → COLOR),
+     * BufferBuilder пишет по текущему элементному курсору без проверки типа.
+     */
+    public static void vertexColorUv(VertexConsumer consumer, Matrix4f matrix, float x, float y, float z,
+                                     int r, int g, int b, int a, float u, float v) {
+        //? if < 1.21.1 {
+        consumer.vertex(matrix, x, y, z).uv(u, v).color(r, g, b, a).endVertex();
+        //?} else {
+        /*consumer.addVertex(matrix, x, y, z).setUv(u, v).setColor(r, g, b, a);
+         *///?}
     }
 
     /**

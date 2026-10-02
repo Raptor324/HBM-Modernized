@@ -16,6 +16,13 @@ import net.minecraft.world.entity.player.Inventory;
 
 import java.util.List;
 import java.util.Locale;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /**
  * 1:1-Port von {@code GUIPneumoStorageMono} (1.7.10), 200x181.
@@ -23,6 +30,7 @@ import java.util.Locale;
  * <p>Links die drei Vorlagenplaetze, daneben je ein Fuellbalken von 124 Bildpunkten Laenge und die
  * Menge samt Prozentwert. Rechts oben die runde Druckluftanzeige, darunter der Druckstufenregler.</p>
  */
+@OnlyIn(Dist.CLIENT)
 public class GUIPneumoStorageMono extends AbstractContainerScreen<PneumoStorageMonoMenu> {
 
     private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(

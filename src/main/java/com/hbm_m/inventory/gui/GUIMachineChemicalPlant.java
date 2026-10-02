@@ -24,11 +24,19 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import org.jetbrains.annotations.Nullable;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /**
  * GUI для Chemical Plant - порт с 1.7.10.
  * UV-координаты и layout соответствуют оригинальному GUIMachineChemicalPlant.
  */
+@OnlyIn(Dist.CLIENT)
 public class GUIMachineChemicalPlant extends AbstractContainerScreen<MachineChemicalPlantMenu> {
 
     private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(

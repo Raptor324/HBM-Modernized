@@ -9,6 +9,13 @@ import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /**
  * Direct port of the layout baked into {@code gui_breeder.png}: input slot -> vertical flux bar
@@ -17,6 +24,7 @@ import net.minecraft.world.entity.player.Inventory;
  * previous version of this class assumed a much richer battery/fluid-tank/upgrade-slot layout that
  * has no art anywhere in this texture and was removed (see {@code MachineBreederBlockEntity}).
  */
+@OnlyIn(Dist.CLIENT)
 public class GUIMachineBreeder extends GuiInfoScreen<MachineBreederMenu> {
 
     private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(

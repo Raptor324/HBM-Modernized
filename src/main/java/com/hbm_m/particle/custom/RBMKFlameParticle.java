@@ -20,6 +20,13 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 
 import com.mojang.blaze3d.vertex.VertexConsumer;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /**
  * 1:1 port of {@code ParticleRBMKFlame} - the long-lived flame plume rising off burning and
@@ -34,6 +41,7 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
  * <p>The sheet is also fully opaque with a black backdrop, so it only looks like fire under
  * additive blending - see {@link AdditiveParticleRenderType}.</p>
  */
+@OnlyIn(Dist.CLIENT)
 public class RBMKFlameParticle extends TextureSheetParticle {
 
     /** The original's {@code f0 = 1F / 14F}: the strip is addressed as fourteen columns. */

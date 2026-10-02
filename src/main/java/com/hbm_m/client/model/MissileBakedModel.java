@@ -20,10 +20,18 @@ import net.minecraftforge.client.model.data.ModelData;
 /*import net.neoforged.neoforge.client.model.data.ModelData;
 *///?}
 import org.jetbrains.annotations.Nullable;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /**
  * Baked missile mesh for inventory / BER / entity VBO paths. World chunk mesh is skipped (VBO only).
  */
+@OnlyIn(Dist.CLIENT)
 public class MissileBakedModel extends AbstractMultipartBakedModel implements AbstractMultipartBakedModel.PartNamesProvider {
 
     private final String[] partNames;

@@ -11,6 +11,13 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Inventory;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /**
  * 1:1-порт {@code GUIMachineTurbofan} (1.7.10): 176x203, энергетический бар
@@ -18,6 +25,7 @@ import net.minecraft.world.entity.player.Inventory;
  * круглый датчик крови при showBlood (13 кадров), бак отрисовывается
  * {@code FluidTank.renderTank} (текстура жидкости, тайлинг 16x16 - как в оригинале).
  */
+@OnlyIn(Dist.CLIENT)
 public class GUIMachineTurbofan extends AbstractContainerScreen<MachineTurbofanMenu> {
 
     private static final ResourceLocation TEXTURE =

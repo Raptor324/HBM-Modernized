@@ -17,6 +17,13 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.Slot;
 
 import java.util.List;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /**
  * 1:1-Port von {@code GUIPneumoStorageAccess} (1.7.10), 210x251.
@@ -32,6 +39,7 @@ import java.util.List;
  * sich der Bildschirm ueber die Sitzung hinweg - im Original sind das ebenfalls statische
  * Felder.</p>
  */
+@OnlyIn(Dist.CLIENT)
 public class GUIPneumoStorageAccess extends AbstractContainerScreen<PneumoStorageAccessMenu> {
 
     private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(

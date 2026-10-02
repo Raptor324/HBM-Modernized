@@ -40,7 +40,15 @@ import net.neoforged.neoforge.client.model.geometry.IGeometryLoader;
 import net.neoforged.neoforge.client.model.geometry.IUnbakedGeometry;
 import net.neoforged.neoforge.client.model.obj.ObjModel;
 *///?}
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
+@OnlyIn(Dist.CLIENT)
 public class SoyuzRocketModelLoader implements IGeometryLoader<SoyuzRocketModelLoader.Geometry> {
 
     private static final ResourceLocation MODEL = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/soyuz/soyuz.obj");

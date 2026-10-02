@@ -1,10 +1,18 @@
 package com.hbm_m.compat.jei;
 
 import net.minecraft.client.gui.GuiGraphics;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /**
  * Draws NEI-style slot frames on top of the shared {@link JeiNeiTextures#GUI_NEI} background.
  */
+@OnlyIn(Dist.CLIENT)
 public final class JeiNeiRendering {
 
     private JeiNeiRendering() {

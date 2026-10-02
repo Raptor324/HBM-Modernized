@@ -11,6 +11,13 @@ import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /**
  * Vereinfachtes GUI (siehe Klassenkommentar in {@link MachineTurbineGasBlockEntity}) - das
@@ -19,6 +26,7 @@ import net.minecraft.world.entity.player.Inventory;
  * Start/Stop- und Auto-Modus-Buttons, Leistungsregler) entfallen ersatzlos - reine Statusanzeige
  * (Tanks, Energiepuffer) analog zu {@link GUIMachineLargeTurbine}.
  */
+@OnlyIn(Dist.CLIENT)
 public class GUIMachineTurbineGas extends GuiInfoScreen<MachineTurbineGasMenu> {
 
     private static final ResourceLocation TEXTURE =

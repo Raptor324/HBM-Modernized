@@ -26,10 +26,18 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /**
  * JEI port of {@code AnvilRecipeHandler}: {@code gui_nei_anvil.png} and per-shape slot layout.
  */
+@OnlyIn(Dist.CLIENT)
 public class AnvilJeiCategory implements IRecipeCategory<AnvilRecipe> {
 
     public static final RecipeType<AnvilRecipe> RECIPE_TYPE =

@@ -11,7 +11,15 @@ import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
+@OnlyIn(Dist.CLIENT)
 public class GUIMachineSubstation extends GuiInfoScreen<MachineSubstationMenu> {
 
     // The gas turbine panel was 223 tall with its own drawn slots and tank, so nothing lined up

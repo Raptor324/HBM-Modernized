@@ -10,9 +10,17 @@ import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /** GUI des Elektrolyseurs - beide Modi (Fluid + Metall) in einem Fenster, Fortschritts-/
  *  Fuellstandsanzeigen als Fuellrechtecke (siehe {@code GUIMachineElectricFurnace}). */
+@OnlyIn(Dist.CLIENT)
 public class GUIMachineElectrolyser extends AbstractContainerScreen<MachineElectrolyserMenu> {
 
     private static final ResourceLocation TEXTURE =

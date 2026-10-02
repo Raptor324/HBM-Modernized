@@ -14,6 +14,13 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 
 import java.util.List;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /**
  * 1:1-Port von {@code GUIPneumoStorageClutter} (1.7.10), 200x235.
@@ -22,6 +29,7 @@ import java.util.List;
  * der Druckstufenregler bei (174, 36): ein Klick darauf schaltet die Stufe weiter und damit die
  * Reichweite, in der Terminals dieses Lager noch sehen.</p>
  */
+@OnlyIn(Dist.CLIENT)
 public class GUIPneumoStorageClutter extends AbstractContainerScreen<PneumoStorageClutterMenu> {
 
     private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(

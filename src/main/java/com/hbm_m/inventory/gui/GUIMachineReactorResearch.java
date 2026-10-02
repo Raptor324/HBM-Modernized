@@ -11,6 +11,13 @@ import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /**
  * Vereinfachtes GUI (siehe Klassenkommentar in {@link MachineReactorResearchBlockEntity}) - das
@@ -18,6 +25,7 @@ import net.minecraft.world.entity.player.Inventory;
  * 3x3/2x2-Kern-Diagramm sowie das Textfeld zur manuellen Regelstab-Eingabe entfallen zugunsten
  * einfacher Text-Anzeigen (Redstone-Sperre steuert die Reaktorleistung stattdessen).
  */
+@OnlyIn(Dist.CLIENT)
 public class GUIMachineReactorResearch extends GuiInfoScreen<MachineReactorResearchMenu> {
 
     private static final ResourceLocation TEXTURE =

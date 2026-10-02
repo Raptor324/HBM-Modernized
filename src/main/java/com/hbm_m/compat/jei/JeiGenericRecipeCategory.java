@@ -10,10 +10,18 @@ import mezz.jei.api.recipe.RecipeIngredientRole;
 import mezz.jei.api.recipe.category.IRecipeCategory;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.world.item.ItemStack;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /**
  * JEI port of {@code NEIGenericRecipeHandler}: shared {@code gui_nei.png} background and slot layout.
  */
+@OnlyIn(Dist.CLIENT)
 public abstract class JeiGenericRecipeCategory<R> implements IRecipeCategory<R> {
 
     protected final IGuiHelper guiHelper;

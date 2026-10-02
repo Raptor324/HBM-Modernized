@@ -11,10 +11,18 @@ import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.player.Inventory;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /**
  * Экран кастомной бомбы: сетка 9x3 + расчётный состав заряда.
  */
+@OnlyIn(Dist.CLIENT)
 public class GUINukeCustom extends GuiInfoScreen<NukeCustomMenu> {
 
     private static final net.minecraft.resources.ResourceLocation TEXTURE =

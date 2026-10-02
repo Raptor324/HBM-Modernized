@@ -10,6 +10,13 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /**
  * Клиентский цикл звука турбовентилятора (оригинал: TURBOFAN_LOOP, AudioWrapper):
@@ -23,6 +30,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
  * plot-координаты дают гигантскую дистанцию. Жизненный цикл: BE удалён или
  * momentum = 0 -> stop; пересоздание - через ClientSoundManager по ключу позиции.
  */
+@OnlyIn(Dist.CLIENT)
 public final class TurbofanLoopSoundFactory {
 
     private TurbofanLoopSoundFactory() {}

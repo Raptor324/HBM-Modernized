@@ -35,10 +35,18 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /**
  * JEI port of {@code PurexRecipeHandler} (extends {@code NEIGenericRecipeHandler}).
  */
+@OnlyIn(Dist.CLIENT)
 public class PurexJeiCategory extends JeiGenericRecipeCategory<PurexRecipe> {
 
     public static final RecipeType<PurexRecipe> RECIPE_TYPE =

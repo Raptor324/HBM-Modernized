@@ -3,11 +3,19 @@ package com.hbm_m.particle.explosions.basic;
 import com.hbm_m.particle.explosions.AbstractExplosionParticle;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.particle.SpriteSet;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /**
  *  Огонь взрыва (красно-оранжевый пламя)
  * Основание взрыва
  */
+@OnlyIn(Dist.CLIENT)
 public class ExplosionFireParticle extends AbstractExplosionParticle {
 
     public ExplosionFireParticle(ClientLevel level, double x, double y, double z,

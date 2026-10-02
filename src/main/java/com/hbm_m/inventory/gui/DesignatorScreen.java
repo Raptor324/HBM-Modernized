@@ -18,11 +18,19 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /**
  * GUI for manual designator: adjust target X/Z with buttons.
  * Port from 1.7.10 GUIScreenDesignator. No container/menu.
  */
+@OnlyIn(Dist.CLIENT)
 public class DesignatorScreen extends Screen {
 
         private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(

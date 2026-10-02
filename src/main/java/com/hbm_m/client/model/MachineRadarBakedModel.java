@@ -22,11 +22,19 @@ import net.minecraftforge.client.model.data.ModelData;
 /*import net.neoforged.neoforge.client.ChunkRenderTypeSet;
 import net.neoforged.neoforge.client.model.data.ModelData;
 *///?}
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /**
  * Малый радар: {@code Base} + {@code Dish}; большой — {@code Radar} + {@code Dish}.
  * При {@link ShaderCompatibilityDetector#useVboGeometry()} chunk mesh пуст — геометрия в BER/VBO.
  */
+@OnlyIn(Dist.CLIENT)
 public class MachineRadarBakedModel extends AbstractMultipartBakedModel implements AbstractMultipartBakedModel.PartNamesProvider {
 
     private static final String[] PRIORITY = { "Base", "Radar", "Dish" };

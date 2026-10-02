@@ -18,6 +18,13 @@ import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.inventory.Slot;
 
 import java.util.List;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /**
  * 1:1-Port von {@code GUIPneumoTube} (1.7.10), 176×185.
@@ -30,6 +37,7 @@ import java.util.List;
  * {@code gui_pneumatic_endpoint.png}: dort gibt es nur den Filter, denn Druckstufe und
  * Reihenfolge betreffen allein das Senden.</p>
  */
+@OnlyIn(Dist.CLIENT)
 public class GUIPneumoTube extends AbstractContainerScreen<PneumoTubeMenu> {
 
     private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(

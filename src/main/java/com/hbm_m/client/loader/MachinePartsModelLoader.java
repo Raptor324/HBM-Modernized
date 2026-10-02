@@ -36,6 +36,13 @@ import net.minecraftforge.client.model.obj.ObjModel;
 /*import net.neoforged.neoforge.client.model.geometry.IGeometryBakingContext;
 import net.neoforged.neoforge.client.model.obj.ObjModel;
 *///?}
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /**
  * ЕДИНЫЙ лоадер OBJ-моделей станков ({@code "loader": "hbm_m:machine_parts_loader"}).
@@ -52,6 +59,7 @@ import net.neoforged.neoforge.client.model.obj.ObjModel;
  * запекания моделей ({@code MachineRenderRegistry.bindBakedModels}).
  * Подклассы (Press) могут подменить тип модели.
  */
+@OnlyIn(Dist.CLIENT)
 public class MachinePartsModelLoader<T extends BakedModel> extends AbstractObjPartModelLoader<T> {
 
     @Override

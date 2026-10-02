@@ -17,12 +17,20 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /**
  * Direct port of the 1.7.10 {@code GUIMachineGasCent}: same 206x204 canvas, same widget/tank/
  * slot coordinates, sourcing the energy-bar and progress-arrow sprites from the actual texture
  * instead of drawing placeholder colored fills.
  */
+@OnlyIn(Dist.CLIENT)
 public class GUIMachineGasCent extends GuiInfoScreen<MachineGasCentMenu> {
 
     private static final ResourceLocation TEXTURE =

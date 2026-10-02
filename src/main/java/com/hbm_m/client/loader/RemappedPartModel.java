@@ -15,6 +15,13 @@ import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.Direction;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.block.state.BlockState;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /**
  * Обёртка над canonical-запечённой частью OBJ: отдаёт квады с UV, аффинно
@@ -26,6 +33,7 @@ import net.minecraft.world.level.block.state.BlockState;
  * (одноразовое строительство VBO части, item-квады раз в секунду). Часть
  * отдаёт только квады — методы модели делегируют canonical-части.
  */
+@OnlyIn(Dist.CLIENT)
 public final class RemappedPartModel implements BakedModel {
 
     private final BakedModel canonical;

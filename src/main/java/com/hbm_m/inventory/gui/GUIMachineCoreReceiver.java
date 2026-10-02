@@ -12,6 +12,13 @@ import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /**
  * 1:1-Port von {@code GUICoreReceiver} (1.7.10), 176x166.
@@ -23,6 +30,7 @@ import net.minecraft.world.entity.player.Inventory;
  * <p>Der Tankfuellstand wird als farbiges Rechteck gezeichnet, weil die Originaltextur dafuer
  * keine eigenen Bildkoordinaten mitbringt.
  */
+@OnlyIn(Dist.CLIENT)
 public class GUIMachineCoreReceiver extends GuiInfoScreen<MachineCoreReceiverMenu> {
 
     private static final ResourceLocation TEXTURE =

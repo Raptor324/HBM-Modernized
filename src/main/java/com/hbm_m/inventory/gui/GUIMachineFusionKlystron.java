@@ -15,11 +15,19 @@ import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /**
  * 1:1-Port von {@code GUIFusionKlystron} (1.7.10). Das Textfeld schickt bei jeder Aenderung den
  * neuen Zielwert an den Server - genau wie das {@code NBTControlPacket} des Originals.
  */
+@OnlyIn(Dist.CLIENT)
 public class GUIMachineFusionKlystron extends GuiInfoScreen<MachineFusionKlystronMenu> {
 
     private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(

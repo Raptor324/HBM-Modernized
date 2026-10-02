@@ -8,6 +8,13 @@ import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.particle.SpriteSet;
 import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /**
  * Порт {@code com.hbm.particle.ParticleMukeWave} (1.7.10) — расширяющееся кольцо ударной волны.
@@ -22,6 +29,7 @@ import net.minecraft.world.phys.Vec3;
  * Прежняя реализация игнорировала waveScale (фиксированный quadSize ~1.0, рост 1%/тик) —
  * кольцо было крошечным (~1.3 блока) вместо 25/45/65 блоков.
  */
+@OnlyIn(Dist.CLIENT)
 public class ShockwaveRingParticle extends AbstractExplosionParticle {
 
     private final float waveScale;

@@ -12,11 +12,19 @@ import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.client.resources.model.ModelResourceLocation;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ArmorItem;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /**
  * Модель для рендеринга T51 Power Armor в GUI и руке.
  * Использует абстрактный базовый класс для общей логики рендеринга.
  */
+@OnlyIn(Dist.CLIENT)
 public class T51ArmorBakedModel extends AbstractArmorBakedModel {
 
     private static final String[] T51_ORDER = {

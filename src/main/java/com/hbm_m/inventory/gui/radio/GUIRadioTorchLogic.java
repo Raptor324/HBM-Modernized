@@ -12,11 +12,19 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /**
  * Port of {@code GUIScreenRadioTorchLogic} (1.7.10 Original). 16 rule rows, each a comparison-value
  * text field plus a cycle-button for the operator (0-9: &lt; &lt;= &gt;= &gt; == != equals !equals contains !contains).
  */
+@OnlyIn(Dist.CLIENT)
 public class GUIRadioTorchLogic extends Screen {
 
     private static final String[] OPS = {"<", "<=", ">=", ">", "==", "!=", "equals", "!equals", "contains", "!contains"};

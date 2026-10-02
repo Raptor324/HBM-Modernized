@@ -10,6 +10,13 @@ import org.joml.Vector4f;
 
 import java.util.ArrayList;
 import java.util.List;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /**
  * Bakes DAE scene meshes into block-atlas {@link BakedQuad}s. Each triangle becomes a
@@ -18,6 +25,7 @@ import java.util.List;
  * entity renderer's pose-stack geometry. Shared by the item model loader and the
  * transition seal BER.
  */
+@OnlyIn(Dist.CLIENT)
 public final class DaeQuadBaker {
 
     private DaeQuadBaker() { }

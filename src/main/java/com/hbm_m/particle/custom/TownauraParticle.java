@@ -9,10 +9,18 @@ import net.minecraft.client.particle.ParticleRenderType;
 import net.minecraft.client.particle.SpriteSet;
 import net.minecraft.client.particle.TextureSheetParticle;
 import net.minecraft.core.particles.SimpleParticleType;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /**
  * Клиентская «townaura». Порт {@code EntityAuraFX} + {@code ClientProxy} mode {@code townaura} (1.7.10).
  */
+@OnlyIn(Dist.CLIENT)
 public class TownauraParticle extends TextureSheetParticle {
 
     private static final double DRAG = 0.99D;

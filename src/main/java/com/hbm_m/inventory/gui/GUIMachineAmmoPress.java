@@ -19,6 +19,13 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /**
  * Die Oberflaeche der Munitionspresse mit der <b>Rezeptliste</b> des Originals: links vier Spalten
@@ -28,6 +35,7 @@ import net.minecraft.world.item.ItemStack;
  * wieder auf. Solange etwas gewaehlt ist, zeigen die leeren Eingabefelder als blasse Schemen, was
  * dort hineingehoert - man sieht auf einen Blick, was noch fehlt.</p>
  */
+@OnlyIn(Dist.CLIENT)
 public class GUIMachineAmmoPress extends AbstractContainerScreen<MachineAmmoPressMenu> {
 
     private static final ResourceLocation TEXTURE =

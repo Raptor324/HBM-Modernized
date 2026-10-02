@@ -15,7 +15,15 @@ import com.mojang.blaze3d.vertex.BufferBuilder;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
 import com.hbm_m.powerarmor.ModPowerArmorItem;
 import com.mojang.blaze3d.systems.RenderSystem;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 // рендер полосок энергии брони
+@OnlyIn(Dist.CLIENT)
 public class OverlayPowerArmor {
 
     public static void render(GuiGraphics guiGraphics, float partialTick, int screenWidth, int screenHeight) {

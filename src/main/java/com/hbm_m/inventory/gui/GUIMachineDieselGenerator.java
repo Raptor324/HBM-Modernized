@@ -10,6 +10,13 @@ import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /**
  * Verwendet die portierte Original-Panel-Textur - Tank-/Energieanzeigen als eigene
@@ -18,6 +25,7 @@ import net.minecraft.world.entity.player.Inventory;
  * <p>Der <b>An/Aus-Knopf</b> sitzt wie im Original unter der Laufanzeige: der obere Kreis meldet,
  * dass der Motor wirklich brennt, der Knopf darunter schaltet ihn.</p>
  */
+@OnlyIn(Dist.CLIENT)
 public class GUIMachineDieselGenerator extends AbstractContainerScreen<MachineDieselGeneratorMenu> {
 
     private static final ResourceLocation TEXTURE =

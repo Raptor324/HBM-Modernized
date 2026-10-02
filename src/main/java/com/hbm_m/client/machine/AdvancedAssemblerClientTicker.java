@@ -13,11 +13,19 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.Level;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /**
  * Клиентский тикер advanced assembler: вынесен из BlockEntity, чтобы dedicated server
  * не загружал класс с полями клиентских звуков.
  */
+@OnlyIn(Dist.CLIENT)
 public class AdvancedAssemblerClientTicker implements IClientTicker {
 
     private final AssemblerArm[] arms = new AssemblerArm[2];

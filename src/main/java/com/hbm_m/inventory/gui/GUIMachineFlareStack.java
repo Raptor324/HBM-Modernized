@@ -17,12 +17,20 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.level.material.Fluids;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /**
  * Порт {@code GUIMachineGasFlare} (1.7.10): клапан ("valve") и поджиг ("dial") —
  * кликабельные области с оверлеями из текстуры, иконка пламени при горении,
  * бак и батарея. Позиции и регионы текстуры 1:1 с оригиналом.
  */
+@OnlyIn(Dist.CLIENT)
 public class GUIMachineFlareStack extends GuiInfoScreen<MachineFlareStackMenu> {
 
     private static final ResourceLocation TEXTURE =

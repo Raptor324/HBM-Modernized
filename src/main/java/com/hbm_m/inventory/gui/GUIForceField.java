@@ -14,6 +14,13 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.entity.player.Inventory;
 
 import java.util.List;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /**
  * 1:1-Port von {@code GUIForceField} (1.7.10), Textur {@code gui_field.png}.
@@ -21,6 +28,7 @@ import java.util.List;
  * <p>Links der Energiebalken, daneben die Schildstaerke - beide 16 mal 52 gross und von unten
  * gefuellt. Rechts bei (142, 34) sitzt der Schalter; leuchtet er, laeuft das Feld.</p>
  */
+@OnlyIn(Dist.CLIENT)
 public class GUIForceField extends AbstractContainerScreen<ForceFieldMenu> {
 
     private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(

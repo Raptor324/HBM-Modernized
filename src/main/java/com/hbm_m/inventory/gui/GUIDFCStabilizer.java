@@ -16,6 +16,13 @@ import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.entity.player.Inventory;
 
 import java.util.List;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /**
  * 1:1-Port von {@code GUICoreStabilizer} (1.7.10), 176x166.
@@ -26,6 +33,7 @@ import java.util.List;
  * <p>Die Wattzahl kostet in der <b>vierten Potenz</b>: eins kostet eine Einheit je Tick, hundert
  * kosten hundert Millionen. Der Hinweis am Knopf nennt darum immer den tatsaechlichen Verbrauch.</p>
  */
+@OnlyIn(Dist.CLIENT)
 public class GUIDFCStabilizer extends AbstractContainerScreen<DFCStabilizerMenu> {
 
     private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(

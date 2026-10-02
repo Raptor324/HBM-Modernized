@@ -11,6 +11,13 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 
 import java.util.List;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /**
  * 1:1-Port von {@code GUICore} (1.7.10), 176x166.
@@ -22,6 +29,7 @@ import java.util.List;
  * <p>Der Farbstreifen unter den Plaetzen zeigt die Mischfarbe beider Katalysatoren. Ist er
  * schwarz, fehlt einer - dann laeuft der Kern gar nicht erst an.</p>
  */
+@OnlyIn(Dist.CLIENT)
 public class GUIDFCCore extends AbstractContainerScreen<DFCCoreMenu> {
 
     private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(

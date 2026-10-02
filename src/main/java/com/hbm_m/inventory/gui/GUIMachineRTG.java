@@ -8,12 +8,20 @@ import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /**
  * GUI des RTG-Generators, 1:1 aus {@code GUIMachineRTG} (1.7.10): links das 3x5-Feld fuer die
  * Pellets, rechts zwei senkrechte Balken - Waerme bei x=124, Energie bei x=146, beide 52 Pixel
  * hoch und von unten nach oben gefuellt.
  */
+@OnlyIn(Dist.CLIENT)
 public class GUIMachineRTG extends GuiInfoScreen<MachineRTGMenu> {
 
     private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(

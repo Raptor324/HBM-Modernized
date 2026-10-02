@@ -16,7 +16,15 @@ import net.minecraft.world.entity.player.Inventory;
 
 import java.util.List;
 import java.util.Optional;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
+@OnlyIn(Dist.CLIENT)
 public class GUIMachineBlastFurnace extends AbstractContainerScreen<MachineBlastFurnaceMenu> {
     private static final ResourceLocation GUI_TEXTURE =
                         ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "textures/gui/gui_blast_furnace.png");

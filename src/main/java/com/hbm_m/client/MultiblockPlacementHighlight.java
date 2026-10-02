@@ -20,6 +20,13 @@ import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.entity.player.Player;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /**
  * Кубическая рамка выделения при удержании предмета мультиблока (порт
@@ -35,6 +42,7 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
  * пустой — перед ним checkPoseStack), поэтому координаты отдаются как мир - камера,
  * ровно как это делает ванильный renderHitOutline в обеих версиях.
  */
+@OnlyIn(Dist.CLIENT)
 public final class MultiblockPlacementHighlight {
 
     private MultiblockPlacementHighlight() {}

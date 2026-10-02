@@ -13,6 +13,13 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /**
  * Generic port of {@code AudioWrapper} loops driven by a machine speed: the original updates
@@ -20,6 +27,7 @@ import net.minecraft.world.level.block.entity.BlockEntity;
  * player walks out of range. Reached through {@code ClientSoundBootstrap} by reflection so the
  * block entity classes carry no client types.
  */
+@OnlyIn(Dist.CLIENT)
 public final class MachineLoopSoundFactory {
 
     private MachineLoopSoundFactory() {}

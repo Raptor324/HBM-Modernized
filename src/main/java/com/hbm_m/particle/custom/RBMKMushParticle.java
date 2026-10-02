@@ -20,6 +20,13 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.phys.Vec3;
 
 import com.mojang.blaze3d.vertex.VertexConsumer;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /**
  * 1:1 port of {@code ParticleRBMKMush} - the mushroom cloud thrown up by a meltdown.
@@ -33,6 +40,7 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
  * original adds {@code particleScale} to the interpolated Y), and its horizontal UVs run 1 to 0,
  * i.e. the frame is mirrored.</p>
  */
+@OnlyIn(Dist.CLIENT)
 public class RBMKMushParticle extends TextureSheetParticle {
 
     private static final int SEGMENTS = 30;

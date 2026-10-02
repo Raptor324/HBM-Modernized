@@ -16,10 +16,18 @@ import mezz.jei.api.recipe.RecipeType;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /**
  * JEI port of {@code AssemblyMachineRecipeHandler} (extends {@code NEIGenericRecipeHandler}).
  */
+@OnlyIn(Dist.CLIENT)
 public class AssemblerJeiCategory extends JeiGenericRecipeCategory<AssemblerRecipe> {
 
     public static final RecipeType<AssemblerRecipe> RECIPE_TYPE =

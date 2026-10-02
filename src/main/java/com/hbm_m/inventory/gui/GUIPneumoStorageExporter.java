@@ -14,6 +14,13 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 
 import java.util.List;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /**
  * 1:1-Port von {@code GUIPneumoStorageExporter} (1.7.10), 176x185.
@@ -23,6 +30,7 @@ import java.util.List;
  * Herkunft der Filter. Steht die auf Funk, legt sich eine Blende ueber die Vorlagenplaetze - sie
  * werden dann nicht mehr gelesen.</p>
  */
+@OnlyIn(Dist.CLIENT)
 public class GUIPneumoStorageExporter extends AbstractContainerScreen<PneumoStorageExporterMenu> {
 
     private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(

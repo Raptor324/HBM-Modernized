@@ -23,12 +23,20 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.item.ItemStack;
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
 
 /**
  * 1:1-Port von {@code GUIFusionTorus} (1.7.10). Alle Koordinaten, Balken, LEDs und Zeiger sind
  * unveraendert uebernommen; die Rezeptauswahl laeuft ueber den bereits vorhandenen
  * {@link GUIScreenRecipeSelector}.
  */
+@OnlyIn(Dist.CLIENT)
 public class GUIMachineFusionTorus extends GuiInfoScreen<MachineFusionTorusMenu> {
 
     private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(
