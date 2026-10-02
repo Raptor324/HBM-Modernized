@@ -51,11 +51,12 @@ public class LaunchPadRustedMenu extends AbstractContainerMenu {
                 ? blockEntity.getInventory()
                 : new DummyItemStackHandler(MACHINE_SLOTS));
 
-        // Выходной слот (нельзя класть предметы)
+        // Слот ракеты: порт принимает missile_doomsday_rusted предметом (в 1.7.10 силос
+        // из SiloComponent спавнился уже заряженным, отдельной загрузки не было)
         this.addSlot(new Slot(machineContainer, SLOT_OUTPUT, 26, 72) {
             @Override
             public boolean mayPlace(net.minecraft.world.item.ItemStack stack) {
-                return false;
+                return stack.is(com.hbm_m.item.ModItems.MISSILE_DOOMSDAY_RUSTED.get());
             }
         });
         // Launch codes

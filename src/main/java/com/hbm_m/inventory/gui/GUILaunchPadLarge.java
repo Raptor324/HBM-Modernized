@@ -88,15 +88,12 @@ public class GUILaunchPadLarge extends GuiInfoScreen<LaunchPadLargeMenu> {
         tanks[0].renderTank(guiGraphics, this.leftPos + TANK_X, this.topPos + TANK_TOP_Y, TANK_W, TANK_H);
         tanks[1].renderTank(guiGraphics, this.leftPos + OXIDIZER_TANK_X, this.topPos + TANK_TOP_Y, TANK_W, TANK_H);
 
-        //? if forge || neoforge {
-        renderMissilePreview(guiGraphics, be);
-        //?}
+        renderMissilePreview(guiGraphics, be, this.leftPos, this.topPos);
 
-        renderStatusLabel(guiGraphics, be);
+        renderStatusLabel(guiGraphics, be, this.leftPos, this.topPos);
     }
 
-    //? if forge || neoforge {
-    private void renderMissilePreview(GuiGraphics guiGraphics, LaunchPadBaseBlockEntity be) {
+    static void renderMissilePreview(GuiGraphics guiGraphics, LaunchPadBaseBlockEntity be, float leftPos, float topPos) {
         ItemStack missileStack = be.getMissilePreviewStack();
         if (missileStack.isEmpty() || !(missileStack.getItem() instanceof MissileItem missileItem)) {
             return;
@@ -104,7 +101,7 @@ public class GUILaunchPadLarge extends GuiInfoScreen<LaunchPadLargeMenu> {
 
         float scale = resolvePreviewScale(missileItem, missileStack);
         guiGraphics.pose().pushPose();
-        guiGraphics.pose().translate(this.leftPos + 70.0F, this.topPos + 120.0F, 100.0F);
+        guiGraphics.pose().translate(leftPos + 70.0F, topPos + 120.0F, 100.0F);
 
         guiGraphics.pose().mulPose(Axis.YP.rotationDegrees(90.0F));
         guiGraphics.pose().scale(scale, scale, scale);
@@ -123,7 +120,6 @@ public class GUILaunchPadLarge extends GuiInfoScreen<LaunchPadLargeMenu> {
         Lighting.setupFor3DItems();
         guiGraphics.pose().popPose();
     }
-    //?}
 
     private static float resolvePreviewScale(MissileItem missile, ItemStack stack) {
         float scale = switch (missile.formFactor) {
@@ -139,7 +135,7 @@ public class GUILaunchPadLarge extends GuiInfoScreen<LaunchPadLargeMenu> {
         return scale;
     }
 
-    private void renderStatusLabel(GuiGraphics guiGraphics, LaunchPadBaseBlockEntity be) {
+    static void renderStatusLabel(GuiGraphics guiGraphics, LaunchPadBaseBlockEntity be, float leftPos, float topPos) {
         String key;
         float textScale;
         int color;
@@ -162,11 +158,12 @@ public class GUILaunchPadLarge extends GuiInfoScreen<LaunchPadLargeMenu> {
         }
 
         Component text = Component.translatable(key);
+        net.minecraft.client.gui.Font font = net.minecraft.client.Minecraft.getInstance().font;
         guiGraphics.pose().pushPose();
-        guiGraphics.pose().translate(this.leftPos + 34.0F, this.topPos + 107.0F, 0.0F);
+        guiGraphics.pose().translate(leftPos + 34.0F, topPos + 107.0F, 0.0F);
         guiGraphics.pose().scale(textScale, textScale, 1.0F);
-        int w = this.font.width(text);
-        guiGraphics.drawString(this.font, text, -w / 2, -this.font.lineHeight / 2, color, false);
+        int w = font.width(text);
+        guiGraphics.drawString(font, text, -w / 2, -font.lineHeight / 2, color, false);
         guiGraphics.pose().popPose();
     }
 
