@@ -85,6 +85,7 @@ public class ClientModEvents {
             DoorAnimationDelayHelper.processQueue();
             DoorChunkInvalidationHelper.processPendingInvalidations();
             ShaderCompatibilityDetector.processPendingChunkInvalidation();
+            com.hbm_m.client.stress.NucleusStressManager.clientTick(client);
             ClientRenderHandler.onClientTickEnd();
             if (client.player != null) {
                 ParticleEffectClient.tickRadiationAura(client.player);

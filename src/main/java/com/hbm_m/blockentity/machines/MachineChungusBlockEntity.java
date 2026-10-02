@@ -316,17 +316,10 @@ public class MachineChungusBlockEntity extends BaseMachineBlockEntity
         return spin;
     }
 
-    private static final String CHUNGUS_LOOP_SOUND_FACTORY = "com.hbm_m.client.sound.ChungusLoopSoundFactory";
 
-    @OnlyIn(Dist.CLIENT)
     private Object createLoopingSoundReflect(SoundEvent sound) {
-        try {
-            return Class.forName(CHUNGUS_LOOP_SOUND_FACTORY)
-                    .getMethod("create", MachineChungusBlockEntity.class, SoundEvent.class)
-                    .invoke(null, this, sound);
-        } catch (ReflectiveOperationException e) {
-            throw new RuntimeException(e);
-        }
+        // Клиентская loop-фабрика через звуковой мост (без рефлексии).
+        return com.hbm_m.sound.ClientSoundBootstrap.createChungusLoop(this, sound);
     }
 
     public float getAnim(float partialTicks) {

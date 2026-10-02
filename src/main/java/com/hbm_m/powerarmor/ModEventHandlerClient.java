@@ -1,4 +1,3 @@
-//? if forge {
 package com.hbm_m.powerarmor;
 
 import java.util.HashSet;
@@ -17,8 +16,6 @@ import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.blaze3d.vertex.VertexFormat;
 
-import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.event.TickEvent;
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -37,9 +34,9 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.Level;
-import net.minecraft.world.phys.BlockHitResult;
-import net.minecraft.world.phys.HitResult;
+
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RegisterGuiOverlaysEvent;
 import net.minecraftforge.client.event.RenderGuiEvent;
 import net.minecraftforge.client.event.RenderItemInFrameEvent;
@@ -47,10 +44,23 @@ import net.minecraftforge.client.event.RenderLevelStageEvent;
 import net.minecraftforge.client.event.ScreenEvent;
 import net.minecraftforge.client.gui.overlay.ForgeGui;
 import net.minecraftforge.client.gui.overlay.IGuiOverlay;
+import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.player.ItemTooltipEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.bus.api.EventPriority;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.neoforge.client.event.RenderGuiEvent;
+import net.neoforged.neoforge.client.event.RenderItemInFrameEvent;
+import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
+import net.neoforged.neoforge.client.event.ScreenEvent;
+import net.neoforged.neoforge.event.entity.player.ItemTooltipEvent;
+*///?}
 
 /**
  * Клиентский обработчик событий для HBM's Nuclear Tech Modernized
@@ -63,8 +73,17 @@ import net.minecraftforge.fml.common.Mod;
  * - Система подсказок
  * - Звуковые эффекты
  * - Рендеринг специальных эффектов
+ * - Сплеш-тексты главного меню
+ *
+ * Кросс-версионный (forge + neoforge): loader-специфичны только импорты
+ * событий, аннотация подписки, GUI-оверлеи (IGuiOverlay) и клиентский тик
+ * (на forge — TickEvent с фазами, на neoforge — ClientTickEvent.Pre/Post).
  */
+//? if forge {
 @Mod.EventBusSubscriber(modid = RefStrings.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
+//?} elif neoforge {
+/*@EventBusSubscriber(modid = RefStrings.MODID, bus = EventBusSubscriber.Bus.GAME, value = Dist.CLIENT)
+*///?}
 public class ModEventHandlerClient {
 
     static {
@@ -98,7 +117,6 @@ public class ModEventHandlerClient {
 
     // Система сплешей
     private static String modSplashText; // null = ванилла
-    private static net.minecraft.network.chat.Component currentSplash = null;
     private static int lastTitleScreenId = 0;
     // baseline = то, что было у TitleScreen после Init.Post (ванилла или другой мод, который успел раньше)
     private static SplashRenderer baselineSplash = null;
@@ -119,6 +137,7 @@ public class ModEventHandlerClient {
     private static final long PERFORMANCE_CHECK_INTERVAL = 1000; // Проверка каждую секунду
     private static boolean performanceWarningsLogged = false;
 
+    //? if forge {
     /**
      * Оверлей для ядерной вспышки
      * Рисуется поверх прицела для максимальной видимости
@@ -194,6 +213,7 @@ public class ModEventHandlerClient {
         MainRegistry.LOGGER.info("Registered HBM nuclear flash overlay.");
         // Примечание: Thermal overlay регистрируется в ClientSetup.java
     }
+    //?}
 
     /**
      * HUD-shake при ядерном взрыве (NukeTorex устанавливает shakeTimestamp).
@@ -210,12 +230,37 @@ public class ModEventHandlerClient {
         event.getGuiGraphics().pose().translate(horizontal * mult, vertical * mult, 0);
     }
 
+    //? if forge {
     /**
      * Обработка клиентского тика
      * Оптимизировано для производительности - тяжелые проверки выполняются периодически
      */
     @SubscribeEvent
     public static void onClientTick(TickEvent.ClientTickEvent event) {
+        if (event.phase == TickEvent.Phase.START) {
+            clientTickStart();
+        }
+        if (event.phase == TickEvent.Phase.END) {
+            clientTickEnd();
+        }
+    }
+    //?} elif neoforge {
+    /*/^*
+     * Обработка клиентского тика (neoforge: вместо фазового TickEvent — Pre/Post).
+     * Оптимизировано для производительности - тяжелые проверки выполняются периодически
+     ^/
+    @SubscribeEvent
+    public static void onClientTickPre(ClientTickEvent.Pre event) {
+        clientTickStart();
+    }
+
+    @SubscribeEvent
+    public static void onClientTickPost(ClientTickEvent.Post event) {
+        clientTickEnd();
+    }
+    *///?}
+
+    private static void clientTickStart() {
         Minecraft mc = Minecraft.getInstance();
 
         if (mc.level == null || mc.player == null) {
@@ -224,58 +269,60 @@ public class ModEventHandlerClient {
 
         long currentTime = System.currentTimeMillis();
 
-        if (event.phase == TickEvent.Phase.START) {
-
-            // Периодическая проверка производительности (раз в секунду)
-            if (currentTime - lastPerformanceCheck > PERFORMANCE_CHECK_INTERVAL) {
-                lastPerformanceCheck = currentTime;
-                checkPerformanceWarnings(mc);
-            }
-
-            // TODO: Реализовать обработку пепельного шторма (BlockAshes.ashes)
-            // TODO: Реализовать обновление яркости (currentBrightness/lastBrightness)
-            // TODO: Реализовать проверку маски (ArmorUtil.isWearingEmptyMask)
+        // Периодическая проверка производительности (раз в секунду)
+        if (currentTime - lastPerformanceCheck > PERFORMANCE_CHECK_INTERVAL) {
+            lastPerformanceCheck = currentTime;
+            checkPerformanceWarnings(mc);
         }
 
-        if (event.phase == TickEvent.Phase.END) {
-            // Обработка ввода делается в ModConfigKeybindHandler.java
-
-            // Автоматическая деактивация VATS и тепловизора, если броня их не поддерживает
-            if (mc.player != null) {
-                if (vatsActive && ModPowerArmorItem.hasFSBArmor(mc.player)) {
-                    var chestplate = mc.player.getItemBySlot(net.minecraft.world.entity.EquipmentSlot.CHEST);
-                    if (chestplate.getItem() instanceof ModPowerArmorItem armorItem) {
-                        if (!armorItem.getSpecs().hasVats) {
-                            vatsActive = false;
-                        }
-                    } else {
-                        vatsActive = false;
-                    }
-                } else if (vatsActive && !ModPowerArmorItem.hasFSBArmor(mc.player)) {
-                    vatsActive = false;
-                }
-
-                if (thermalActive && ModPowerArmorItem.hasFSBArmor(mc.player)) {
-                    var chestplate = mc.player.getItemBySlot(net.minecraft.world.entity.EquipmentSlot.CHEST);
-                    if (chestplate.getItem() instanceof ModPowerArmorItem armorItem) {
-                        if (!armorItem.getSpecs().hasThermal) {
-                            thermalActive = false;
-                        }
-                    } else {
-                        thermalActive = false;
-                    }
-                } else if (thermalActive && !ModPowerArmorItem.hasFSBArmor(mc.player)) {
-                    thermalActive = false;
-                }
-            }
-
-            handleThermalSpectralFallback(mc);
-
-            // TODO: Реализовать обработку высоты шага для FSB брони
-            // TODO: Реализовать отдачу оружия
-        }
+        // TODO: Реализовать обработку пепельного шторма (BlockAshes.ashes)
+        // TODO: Реализовать обновление яркости (currentBrightness/lastBrightness)
+        // TODO: Реализовать проверку маски (ArmorUtil.isWearingEmptyMask)
     }
 
+    private static void clientTickEnd() {
+        Minecraft mc = Minecraft.getInstance();
+
+        if (mc.level == null || mc.player == null) {
+            return;
+        }
+
+        // Обработка ввода делается в ModConfigKeybindHandler.java
+
+        // Автоматическая деактивация VATS и тепловизора, если броня их не поддерживает
+        if (mc.player != null) {
+            if (vatsActive && ModPowerArmorItem.hasFSBArmor(mc.player)) {
+                var chestplate = mc.player.getItemBySlot(net.minecraft.world.entity.EquipmentSlot.CHEST);
+                if (chestplate.getItem() instanceof ModPowerArmorItem armorItem) {
+                    if (!armorItem.getSpecs().hasVats) {
+                        vatsActive = false;
+                    }
+                } else {
+                    vatsActive = false;
+                }
+            } else if (vatsActive && !ModPowerArmorItem.hasFSBArmor(mc.player)) {
+                vatsActive = false;
+            }
+
+            if (thermalActive && ModPowerArmorItem.hasFSBArmor(mc.player)) {
+                var chestplate = mc.player.getItemBySlot(net.minecraft.world.entity.EquipmentSlot.CHEST);
+                if (chestplate.getItem() instanceof ModPowerArmorItem armorItem) {
+                    if (!armorItem.getSpecs().hasThermal) {
+                        thermalActive = false;
+                    }
+                } else {
+                    thermalActive = false;
+                }
+            } else if (thermalActive && !ModPowerArmorItem.hasFSBArmor(mc.player)) {
+                thermalActive = false;
+            }
+        }
+
+        handleThermalSpectralFallback(mc);
+
+        // TODO: Реализовать обработку высоты шага для FSB брони
+        // TODO: Реализовать отдачу оружия
+    }
 
     /**
      * Проверка производительности и вывод предупреждений
@@ -448,6 +495,12 @@ public class ModEventHandlerClient {
         }
     }
 
+    /**
+     * Сплеш-тексты главного меню: на Init.Post запоминаем ванильный (или чужой)
+     * сплеш как baseline, на Render.Pre с наивысшим приоритетом подменяем на наш
+     * с шансом 30%. На 1.21.1 TitleScreen создаёт сплеш лениво в init(), т.е. ДО
+     * Init.Post — baseline и подмена работают одинаково на обоих таргетах.
+     */
     @SubscribeEvent
     public static void onScreenInit(ScreenEvent.Init.Post event) {
         if (!(event.getScreen() instanceof TitleScreen ts)) return;
@@ -468,44 +521,42 @@ public class ModEventHandlerClient {
         }
     }
 
-    @SubscribeEvent(priority = net.minecraftforge.eventbus.api.EventPriority.HIGHEST)
+    @SubscribeEvent(priority = EventPriority.HIGHEST)
     public static void onTitleRenderPre(ScreenEvent.Render.Pre event) {
         if (!(event.getScreen() instanceof TitleScreen ts)) return;
-    
+
         // если по шансам выбрали ваниллу - не вмешиваемся
         if (modSplashText == null) {
-            // опционально: если вдруг остался наш сплеш (редко), можно восстановить baseline
-            // restoreBaselineIfOurs(ts);
             return;
         }
-    
+
         SplashRenderer current = getSplash(ts);
-    
+
         // Вежливый режим: если другой мод поменял splash на что-то своё (не baseline и не наш),
         // то не перетираем его.
         if (COOPERATIVE_SPLASH) {
             boolean isOurs = (current != null && current == hbmmSplashRenderer);
             boolean isBaseline = (current == baselineSplash);
             boolean isEmpty = (current == null);
-    
+
             if (!(isOurs || isBaseline || isEmpty)) {
                 return;
             }
         }
-    
+
         // кэшируем объект SplashRenderer: создаём только если изменился текст
         if (hbmmSplashRenderer == null || !modSplashText.equals(hbmmSplashTextCached)) {
             hbmmSplashRenderer = new SplashRenderer(modSplashText);
             hbmmSplashTextCached = modSplashText;
         }
-    
+
         setSplash(ts, hbmmSplashRenderer);
     }
 
     private static java.lang.reflect.Field resolveSplashField() {
         if (splashFieldResolved) return splashField;
         splashFieldResolved = true;
-    
+
         try {
             for (java.lang.reflect.Field f : TitleScreen.class.getDeclaredFields()) {
                 if (f.getType() == SplashRenderer.class) {
@@ -517,7 +568,7 @@ public class ModEventHandlerClient {
         } catch (Throwable t) {
             MainRegistry.LOGGER.warn("Failed to resolve TitleScreen splash field", t);
         }
-    
+
         return null;
     }
 
@@ -541,24 +592,23 @@ public class ModEventHandlerClient {
         }
     }
 
-
     /**
      * Получает случайный веселый сплеш-текст или null для ванильного сплеша
      * Кастомные сплеши появляются с шансом 30%
      */
     private static net.minecraft.network.chat.Component pickSplash() {
         double r = Math.random();
-    
+
         // 70% vanilla
         if (r < 0.70) {
             return null;
         }
-    
+
         // +0.2% rare (absolute)
         if (r < 0.702) {
             return net.minecraft.network.chat.Component.literal("Redditors aren't people!");
         }
-    
+
         // 29.8% normal mod splashes
         int rand = (int) (Math.random() * 26);
         String text = switch (rand) {
@@ -797,8 +847,10 @@ public class ModEventHandlerClient {
         if (brightness <= 0.01F) return;
 
         GuiGraphics guiGraphics = event.getGuiGraphics();
-        int w = event.getWindow().getGuiScaledWidth();
-        int h = event.getWindow().getGuiScaledHeight();
+        // guiWidth/guiHeight вместо event.getWindow() — у RenderGuiEvent на neoforge
+        // нет getWindow(); значения совпадают (габариты GUI-масштаба).
+        int w = guiGraphics.guiWidth();
+        int h = guiGraphics.guiHeight();
         int alpha = (int) (brightness * 255) << 24;
         int color = 0x00FFFFFF | alpha;
         guiGraphics.fill(-FLASH_PADDING, -FLASH_PADDING, w + FLASH_PADDING, h + FLASH_PADDING, color);
@@ -845,7 +897,7 @@ public class ModEventHandlerClient {
                 if (soundEvent != null) {
                     RandomSource random = level.getRandom();
                     float pitch = 0.9F + random.nextFloat() * 0.2F;
-                    level.playSound(player, player.getX(), player.getY(), player.getZ(), 
+                    level.playSound(player, player.getX(), player.getY(), player.getZ(),
                         soundEvent, SoundSource.PLAYERS, 0.2F, pitch);
                 }
             }
@@ -876,20 +928,21 @@ public class ModEventHandlerClient {
 
     public static boolean isThermalActive() {
         return thermalActive;
-    }  
+    }
 
+    //? if forge {
     /**
      * Рендерит оверлей тепловизора
      */
     public static void onRenderThermalOverlay(ForgeGui gui, GuiGraphics guiGraphics, float partialTick, int screenWidth, int screenHeight) {
         renderThermalOverlayHud(guiGraphics, partialTick, screenWidth, screenHeight);
     }
+    //?}
 
     /**
      * Loader-agnostic HUD hook для тепловизора.
      *
      * Forge: вызывается из {@link #onRenderThermalOverlay(ForgeGui, GuiGraphics, float, int, int)}.
-     * Fabric: вызывается из {@code ClientSetup.initClient()} через HudRenderCallback.
      */
     public static void renderThermalOverlayHud(GuiGraphics guiGraphics, float partialTick, int screenWidth, int screenHeight) {
         Minecraft mc = Minecraft.getInstance();
@@ -923,13 +976,8 @@ public class ModEventHandlerClient {
         guiGraphics.drawString(mc.font, "THERMAL VISION", 10, 10, 0x00FF00);
     }
 
-    /**
-     * Прицельный HUD для блоков {@link ILookOverlay}
-     */
-    @SubscribeEvent(priority = EventPriority.NORMAL)
-    public static void onRenderGuiPreBlockLookOverlays(RenderGuiEvent.Pre event) {
-        com.hbm_m.client.overlay.BlockLookOverlayHud.render(event.getGuiGraphics());
-    }
+    // Прицельный HUD блоков ILookOverlay переехал в ClientModEvents.onBlockLookOverlay
+    // (единая точка вызова для forge и neoforge — здесь оставался бы двойной рендер на 1.20.1).
 
     // TODO: Добавить методы для HUD оверлеев
     // TODO: Добавить методы для визуальных эффектов
@@ -1001,7 +1049,7 @@ public class ModEventHandlerClient {
      * TODO: RenderOverhead система
      * Оригинальный код: onRenderWorldLastEvent - RenderOverhead
      * Требует: Систему оверлейного рендеринга для маркеров и эффектов
-     * Сложность: Высокая - комплексный рендеринг
+     * Сложность: Высокая - комплексная физика движения
      */
 
     /**
@@ -1021,4 +1069,3 @@ public class ModEventHandlerClient {
     // TODO: Добавить вспомогательные методы
 
 }
-//?}

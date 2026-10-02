@@ -50,7 +50,6 @@ import net.minecraft.world.phys.AABB;
 
 public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity implements IMultiblockPart, com.hbm_m.interfaces.ILockable, com.hbm_m.interfaces.IRelocatable
 {
-    private static final String DOOR_LOOP_SOUND_FACTORY = "com.hbm_m.client.sound.DoorLoopSoundFactory";
 
     // 0=закрыта, 1=открыта, 2=закрывается, 3=открывается
     public byte state = 0;
@@ -958,15 +957,10 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
         }
     }
 
-    @OnlyIn(Dist.CLIENT)
     private Object createLoopingSoundReflect(SoundEvent sound) {
-        try {
-            return Class.forName(DOOR_LOOP_SOUND_FACTORY)
-                .getMethod("create", DoorBlockEntity.class, SoundEvent.class)
-                .invoke(null, this, sound);
-        } catch (ReflectiveOperationException e) {
-            throw new RuntimeException(e);
-        }
+        // Клиентская loop-фабрика через звуковой мост (без рефлексии); на сервере
+        // мост не установлен и сапплаер не вызывается (updateDoorSoundRaw гейтится).
+        return com.hbm_m.sound.ClientSoundBootstrap.createDoorLoop(this, sound);
     }
 
     @Override

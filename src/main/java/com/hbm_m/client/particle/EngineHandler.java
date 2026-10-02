@@ -9,11 +9,12 @@ import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.renderer.MultiBufferSource;
 import com.mojang.blaze3d.systems.RenderSystem;
 
+import dev.architectury.event.events.client.ClientPlayerEvent;
+import dev.architectury.event.events.client.ClientTickEvent;
+
 //? if forge {
 import net.minecraftforge.api.distmarker.Dist;
-import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
 import net.minecraftforge.client.event.RenderLevelStageEvent;
-import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 
@@ -23,8 +24,6 @@ import net.minecraftforge.fml.common.Mod;
 /*import net.neoforged.api.distmarker.Dist;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.EventBusSubscriber;
-import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
-import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 
 @net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
@@ -32,9 +31,25 @@ import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
 *///?}
 public class EngineHandler {
 
-    @SubscribeEvent
-    public static void onLeave(ClientPlayerNetworkEvent.LoggingOut event) {
-        ParticleEngineNT.INSTANCE.clear();
+    private static boolean initialized = false;
+
+    /**
+     * Единая регистрация на Architectury-событиях вместо дублированных loader-обработчиков:
+     * CLIENT_PLAYER_QUIT заменяет ClientPlayerNetworkEvent.LoggingOut, CLIENT_PRE —
+     * TickEvent.ClientTickEvent(START)/ClientTickEvent.Pre. Вызывается из ClientSetup.initClient().
+     * Loader-обработчики кадра (RenderLevelStage/RenderTick) остаются на шинах лоадеров:
+     * на NeoForge 1.21.1 render-tick-события нет, эта пара осознанно разводится гейтом.
+     */
+    public static void init() {
+        if (initialized) return;
+        initialized = true;
+        ClientPlayerEvent.CLIENT_PLAYER_QUIT.register(player -> ParticleEngineNT.INSTANCE.clear());
+        ClientTickEvent.CLIENT_PRE.register(client -> {
+            // Гейт паузы + /tick freeze — общий с треками ракет (ClientWorldFreeze).
+            if (com.hbm_m.client.ClientWorldFreeze.worldRunsNormally()) {
+                doParticleTick(true);
+            }
+        });
     }
 
     //? if forge {
@@ -378,23 +393,4 @@ public class EngineHandler {
         }
         engine.tick();
     }
-
-    //? if forge {
-    @SubscribeEvent
-    public static void onClientTick(TickEvent.ClientTickEvent event) {
-        // 1.20.1: /tick freeze нет — мир всегда «тикает» на клиенте.
-        // Гейт паузы — общий с треками ракет (ClientWorldFreeze).
-        if (event.phase == TickEvent.Phase.START && com.hbm_m.client.ClientWorldFreeze.worldRunsNormally()) {
-            doParticleTick(true);
-        }
-    }
-    //?} elif neoforge {
-    /*@SubscribeEvent
-    public static void onClientTick(ClientTickEvent.Pre event) {
-        // Гейт паузы + /tick freeze — общий с треками ракет (ClientWorldFreeze).
-        if (com.hbm_m.client.ClientWorldFreeze.worldRunsNormally()) {
-            doParticleTick(true);
-        }
-    }
-    *///?}
 }

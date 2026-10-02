@@ -326,17 +326,10 @@ public class MachineIndustrialTurbineBlockEntity extends BaseMachineBlockEntity
         return spin;
     }
 
-    private static final String TURBINE_LOOP_SOUND_FACTORY = "com.hbm_m.client.sound.TurbineLoopSoundFactory";
 
-    @OnlyIn(Dist.CLIENT)
     private Object createLoopingSoundReflect(SoundEvent sound) {
-        try {
-            return Class.forName(TURBINE_LOOP_SOUND_FACTORY)
-                    .getMethod("create", MachineIndustrialTurbineBlockEntity.class, SoundEvent.class)
-                    .invoke(null, this, sound);
-        } catch (ReflectiveOperationException e) {
-            throw new RuntimeException(e);
-        }
+        // Клиентская loop-фабрика через звуковой мост (без рефлексии).
+        return com.hbm_m.sound.ClientSoundBootstrap.createTurbineLoop(this, sound);
     }
 
     public float getAnim(float partialTicks) {

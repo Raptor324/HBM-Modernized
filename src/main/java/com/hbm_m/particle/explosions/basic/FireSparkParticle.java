@@ -2,6 +2,7 @@ package com.hbm_m.particle.explosions.basic;
 
 import java.util.List;
 
+import com.hbm_m.main.MainRegistry;
 import com.hbm_m.particle.explosions.AbstractExplosionParticle;
 
 import net.minecraft.client.Minecraft;
@@ -125,7 +126,7 @@ public class FireSparkParticle extends AbstractExplosionParticle {
                 for (LivingEntity living : nearbyMobs) {
                     //  ПОДЖОГ НА 10 СЕКУНД (200 тиков)
                     com.hbm_m.platform.PlatformHooks.setSecondsOnFire(living, 10);
-                    System.out.println("[FireSpark] 🔥 Поджог: " + living.getName().getString());
+                    MainRegistry.LOGGER.debug("[FireSpark] 🔥 Поджог: {}", living.getName().getString());
                 }
             });
         }
@@ -208,14 +209,14 @@ public class FireSparkParticle extends AbstractExplosionParticle {
                 if (!belowState.isAir() && belowState.isSolidRender(serverLevel, blockPos)) {
                     server.execute(() -> {
                         serverLevel.setBlock(firePos, Blocks.FIRE.defaultBlockState(), 3);
-                        System.out.println("[FireSpark]  Огонь поставлен: " + firePos + " (сверху)");
+                        MainRegistry.LOGGER.debug("[FireSpark]  Огонь поставлен: {} (сверху)", firePos);
                     });
                 }
             } else {
                 // Для других сторон просто ставим огонь
                 server.execute(() -> {
                     serverLevel.setBlock(firePos, Blocks.FIRE.defaultBlockState(), 3);
-                    System.out.println("[FireSpark]  Огонь поставлен: " + firePos + " (с " + side + ")");
+                    MainRegistry.LOGGER.debug("[FireSpark]  Огонь поставлен: {} (с {})", firePos, side);
                 });
             }
         }

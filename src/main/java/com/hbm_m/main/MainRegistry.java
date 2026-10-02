@@ -78,6 +78,12 @@ public final class MainRegistry {
         ModBiomes.init();
         ModBlocks.init();
         ModEntities.init();
+        // Атрибуты и спавн-плейсменты мобов (Architectury, единый путь для Forge/NeoForge)
+        com.hbm_m.entity.ModEntityEvents.init();
+        // Ранняя клиентская регистрация (частицы/цвета/entity-рендереры) через Architectury.
+        // Должна идти ДО loader-событий: на NeoForge 1.21.1 они стреляют раньше FMLClientSetupEvent.
+        dev.architectury.utils.EnvExecutor.runInEnv(dev.architectury.utils.Env.CLIENT,
+                () -> com.hbm_m.client.ClientSetup::registerCommonClientContent);
         ModExplosionParticles.init();
         ModSounds.init();
         ModItems.init();
@@ -237,10 +243,8 @@ public final class MainRegistry {
         // На Fabric DeferredRegister жидкостей ещё не заполнил BuiltInRegistries на момент SETUP
         // (см. FabricEntrypoint#registerFluidDependentSetupWhenReady).
         
-        //? if forge || neoforge {
         // Рецепты Crystallizer теперь data-driven (JSON), CrystallizerRecipes.registerDefaults удалён.
         ModFluidTraitsBootstrap.registerAll();
-        //?}
 
         LOGGER.info("Common setup finished");
     }
