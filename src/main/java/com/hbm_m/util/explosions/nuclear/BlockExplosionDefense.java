@@ -171,60 +171,41 @@ public class BlockExplosionDefense {
         return 100.0F;
     }
 
-    //? if forge {
-    @net.minecraftforge.fml.common.Mod.EventBusSubscriber(
-            modid = "hbm_m",
-            bus = net.minecraftforge.fml.common.Mod.EventBusSubscriber.Bus.FORGE,
-            value = net.minecraftforge.api.distmarker.Dist.CLIENT
-    )
-    public static final class ForgeClientHooks {
-        private ForgeClientHooks() {}
-
-        @net.minecraftforge.eventbus.api.SubscribeEvent
-        public static void onItemTooltip(net.minecraftforge.event.entity.player.ItemTooltipEvent event) {
-            ItemStack stack = event.getItemStack();
-
-            // Проверяем, это ли BlockItem (блок в виде предмета)
-            if (!(stack.getItem() instanceof net.minecraft.world.item.BlockItem blockItem)) {
-                return;
-            }
-
-            // Получаем блок из предмета
-            var block = blockItem.getBlock();
-
-            // Проверяем, это ли один из наших модульных блоков
-            if (isModularBlock(block)) {
-                // Определяем коэффициент защиты по типу блока
-                float defenseValue = getDefenseValueForBlock(block);
-
-                // Добавляем локализованную строку в тултип
-                if (defenseValue >= 10_000.0F) {
-                    event.getToolTip().add(Component.translatable("tooltip.hbm_m.explosion_defense.unbreakable"));
-                } else if (defenseValue > 0) {
-                    event.getToolTip().add(Component.translatable("tooltip.hbm_m.explosion_defense.value", String.format("%.0f", defenseValue)));
-                }
-            }
-        }
+    /**
+     * Единая регистрация тултипа взрывостойкости через Architectury ClientTooltipEvent.ITEM
+     * (вместо forge-only @SubscribeEvent-хука и мёртвого NeoForge-близнеца, который никто
+     * не регистрировал). Вызывается из ClientSetup.initClient(). Сигнатура колбэка различается
+     * между версиями Architectury (на 1.21.1 добавился TooltipContext) — гейтится только лямбда.
+     */
+    public static void initClientTooltip() {
+        //? if < 1.21.1 {
+        dev.architectury.event.events.client.ClientTooltipEvent.ITEM.register(
+                (stack, lines, flag) -> appendExplosionDefenseTooltip(stack, lines));
+        //?} else {
+        /*dev.architectury.event.events.client.ClientTooltipEvent.ITEM.register(
+                (stack, lines, context, flag) -> appendExplosionDefenseTooltip(stack, lines));
+        *///?}
     }
-    //?}
 
-    // NeoForge counterpart of ForgeClientHooks above: without it no blast-resistance line ever
-    // appeared on 1.21.1 and both translations were orphaned. Registered from ClientSetup.
-    //? if neoforge {
-    /*public static void onItemTooltipNeo(net.neoforged.neoforge.event.entity.player.ItemTooltipEvent event) {
-        if (!(event.getItemStack().getItem() instanceof net.minecraft.world.item.BlockItem blockItem)) return;
+    private static void appendExplosionDefenseTooltip(ItemStack stack, java.util.List<Component> lines) {
+        // Проверяем, это ли BlockItem (блок в виде предмета)
+        if (!(stack.getItem() instanceof net.minecraft.world.item.BlockItem blockItem)) {
+            return;
+        }
 
-        Block block = blockItem.getBlock();
-        if (!isModularBlock(block)) return;
+        // Проверяем, это ли один из наших модульных блоков
+        if (!isModularBlock(blockItem.getBlock())) {
+            return;
+        }
 
-        float defenseValue = getDefenseValueForBlock(block);
+        // Определяем коэффициент защиты по типу блока и добавляем локализованную строку
+        float defenseValue = getDefenseValueForBlock(blockItem.getBlock());
         if (defenseValue >= 10_000.0F) {
-            event.getToolTip().add(Component.translatable("tooltip.hbm_m.explosion_defense.unbreakable"));
+            lines.add(Component.translatable("tooltip.hbm_m.explosion_defense.unbreakable"));
         } else if (defenseValue > 0) {
-            event.getToolTip().add(Component.translatable("tooltip.hbm_m.explosion_defense.value", String.format("%.0f", defenseValue)));
+            lines.add(Component.translatable("tooltip.hbm_m.explosion_defense.value", String.format("%.0f", defenseValue)));
         }
     }
-    *///?}
 
     /**
      *  Проверка: это ли один из наших модульных блоков

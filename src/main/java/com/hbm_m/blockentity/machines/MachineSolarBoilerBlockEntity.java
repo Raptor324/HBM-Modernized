@@ -272,6 +272,11 @@ public class MachineSolarBoilerBlockEntity extends BaseMachineBlockEntity implem
                 && getTank(TANK_STEAM).getFill() < getTank(TANK_STEAM).getMaxFill();
     }
 
+    /** 0-15 Himmelslicht ueber der Struktur - HUD-Pendant zum Original-{@code display} ("Too cold!"). */
+    public int getSolarBrightness() {
+        return solarBrightness;
+    }
+
     // ═══════════════════════════ Tanks ════════════════════════════════
 
     public FluidTank[] getTanks() {
@@ -308,7 +313,6 @@ public class MachineSolarBoilerBlockEntity extends BaseMachineBlockEntity implem
     public int getWaterCapacity()  { return getTank(TANK_WATER).getMaxFill(); }
     public int getSteamAmount()    { return getTank(TANK_STEAM).getFill(); }
     public int getSteamCapacity()  { return getTank(TANK_STEAM).getMaxFill(); }
-    public int getSolarBrightness() { return solarBrightness; }
     public int getActiveMirrorCount() { return activeMirrorCount; }
 
     // --- NBT ---

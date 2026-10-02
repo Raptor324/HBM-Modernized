@@ -49,12 +49,7 @@ public class HazardRegistry {
 
     // Conventional tags live in the "c" namespace on 1.21+; build.neoforge.gradle.kts moves the
     // generated forge: tag files there, so a runtime lookup on "forge" matched nothing.
-    public static final String CONVENTIONAL_NS =
-            //? if >= 1.21.1 {
-            /*"c";
-            *///?} else {
-            "forge";
-            //?}
+    public static final String CONVENTIONAL_NS = com.hbm_m.platform.PlatformHooks.conventionalTagNamespace();
 
     public static final TagKey<Item> URANIUM_INGOTS = TagKey.create(Registries.ITEM,
                         ResourceLocation.fromNamespaceAndPath(CONVENTIONAL_NS, "ingots/uranium"));

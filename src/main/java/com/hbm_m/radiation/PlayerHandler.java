@@ -321,6 +321,7 @@ public class PlayerHandler {
             Commands.literal(RefStrings.MODID)
                 .then(HbmExplosionCommands.buildExplosionBranch())
                 .then(Commands.literal("rad")
+                    .requires(src -> src.hasPermission(2))
                     .then(Commands.argument("targets", EntityArgument.entities())
                         .then(Commands.literal("clear")
                             .executes(ctx -> {
