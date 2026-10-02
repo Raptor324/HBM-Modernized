@@ -44,7 +44,7 @@ public class Bat9000Menu extends AbstractContainerMenu {
     private static final int HOTBAR_END = HOTBAR_START + 9;
 
     public Bat9000Menu(int id, Inventory inv, FriendlyByteBuf extraData) {
-        this(id, inv, inv.player.level().getBlockEntity(extraData.readBlockPos()), new SimpleContainerData(7));
+        this(id, inv, inv.player.level().getBlockEntity(extraData.readBlockPos()), new SimpleContainerData(6));
     }
 
     public Bat9000Menu(int id, Inventory inv, BlockEntity entity, ContainerData data) {
@@ -52,7 +52,8 @@ public class Bat9000Menu extends AbstractContainerMenu {
         this.blockEntity = (MachineFluidTankBlockEntity) entity;
         this.data = data;
 
-        checkContainerDataCount(data, 7);
+        // Должно совпадать с getCount() ContainerData в MachineFluidTankBlockEntity
+        checkContainerDataCount(data, 6);
 
         // Слоты машины напрямую через ModItemStackHandler (кросс-платформенно, без Forge SlotItemHandler).
         Container handlerContainer = new ModItemStackHandlerContainer(blockEntity.getItemHandler(), blockEntity::setChanged);
@@ -143,10 +144,6 @@ public class Bat9000Menu extends AbstractContainerMenu {
 
     public int getPressure() {
         return this.data.get(5);
-    }
-
-    public int getFilterFluidId() {
-        return this.data.get(6);
     }
 
     @Override

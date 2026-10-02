@@ -40,7 +40,7 @@ public class MachineFluidTankMenu extends AbstractContainerMenu {
     private static final int HOTBAR_END = HOTBAR_START + 9;
 
     public MachineFluidTankMenu(int id, Inventory inv, FriendlyByteBuf extraData) {
-        this(id, inv, inv.player.level().getBlockEntity(extraData.readBlockPos()), new SimpleContainerData(7));
+        this(id, inv, inv.player.level().getBlockEntity(extraData.readBlockPos()), new SimpleContainerData(6));
     }
 
     public MachineFluidTankMenu(int id, Inventory inv, BlockEntity entity, ContainerData data) {
@@ -48,7 +48,8 @@ public class MachineFluidTankMenu extends AbstractContainerMenu {
         this.blockEntity = (MachineFluidTankBlockEntity) entity;
         this.data = data;
 
-        checkContainerDataCount(data, 7);
+        // Должно совпадать с getCount() ContainerData в MachineFluidTankBlockEntity
+        checkContainerDataCount(data, 6);
 
         // Слоты машины напрямую через ModItemStackHandler (кросс-платформенно, без Forge SlotItemHandler).
         Container handlerContainer = new ModItemStackHandlerContainer(blockEntity.getItemHandler(), blockEntity::setChanged);
@@ -147,11 +148,6 @@ public class MachineFluidTankMenu extends AbstractContainerMenu {
     /** Synced tank pressure (PU), same index as {@link com.hbm_m.blockentity.machines.MachineFluidTankBlockEntity} ContainerData. */
     public int getPressure() {
         return this.data.get(5);
-    }
-
-    /** Filter fluid ID for tooltip when tank is empty (-1 if no filter) */
-    public int getFilterFluidId() {
-        return this.data.get(6);
     }
 
     @Override

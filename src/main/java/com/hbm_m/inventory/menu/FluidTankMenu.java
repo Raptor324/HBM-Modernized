@@ -42,7 +42,7 @@ public class FluidTankMenu extends AbstractContainerMenu {
     private static final int HOTBAR_END = HOTBAR_START + 9;
 
     public FluidTankMenu(int id, Inventory inv, FriendlyByteBuf extraData) {
-        this(id, inv, inv.player.level().getBlockEntity(extraData.readBlockPos()), new SimpleContainerData(7));
+        this(id, inv, inv.player.level().getBlockEntity(extraData.readBlockPos()), new SimpleContainerData(6));
     }
 
     public FluidTankMenu(int id, Inventory inv, BlockEntity entity, ContainerData data) {
@@ -51,7 +51,8 @@ public class FluidTankMenu extends AbstractContainerMenu {
         this.blockEntity = (MachineFluidTankBlockEntity) entity;
         this.data = data;
 
-        checkContainerDataCount(data, 7);
+        // Должно совпадать с getCount() ContainerData в MachineFluidTankBlockEntity
+        checkContainerDataCount(data, 6);
 
         var container = new ModItemStackHandlerContainer(this.blockEntity.getItemHandler(), this.blockEntity::setChanged);
 
@@ -141,10 +142,6 @@ public class FluidTankMenu extends AbstractContainerMenu {
 
     public int getPressure() {
         return this.data.get(5);
-    }
-
-    public int getFilterFluidId() {
-        return this.data.get(6);
     }
 
     @Override

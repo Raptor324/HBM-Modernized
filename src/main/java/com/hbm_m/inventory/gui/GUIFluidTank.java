@@ -16,12 +16,21 @@ import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
 import dev.architectury.fluid.FluidStack;
 
+//? if forge {
+import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.api.distmarker.OnlyIn;
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+*///?}
+
 /**
  * Единый GUI для всех жидкостных бочек и Orbus — как в 1.7.10, где все варианты
  * использовали один {@code GUIBarrel}/{@code GUIMachineFluidTank}.
  * Вместимость танка читается из block entity через меню, поэтому классу не нужны
  * варианты под каждый тип бочки.
  */
+@OnlyIn(Dist.CLIENT)
 public class GUIFluidTank extends AbstractContainerScreen<FluidTankMenu> {
 
     private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "textures/gui/storage/gui_tank.png");
@@ -35,12 +44,12 @@ public class GUIFluidTank extends AbstractContainerScreen<FluidTankMenu> {
     private static final int MODE_BUTTON_Y = 34;
     private static final int MODE_BUTTON_SIZE = 18;
 
+    /**
+     * Ряд иконки режима в текстуре = нумерация режимов 1.7.10 (0=input, 1=buffer,
+     * 2=output, 3=off), совпадающая с логической после выравнивания на оригинал.
+     */
     private static int modeButtonSpriteRow(int logicalMode) {
-        return switch (logicalMode) {
-            case 0 -> 2;
-            case 2 -> 0;
-            default -> logicalMode;
-        };
+        return logicalMode;
     }
 
     public GUIFluidTank(FluidTankMenu menu, Inventory inv, Component title) {
