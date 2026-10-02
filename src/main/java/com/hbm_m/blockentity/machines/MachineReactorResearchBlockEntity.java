@@ -47,15 +47,15 @@ public class MachineReactorResearchBlockEntity extends BaseMachineBlockEntity {
     private static final int MAX_HEAT = 50_000;
     private static final double SPEED = 0.04D;
 
-    private static final Map<Item, Item> FUEL_TO_WASTE = new HashMap<>();
+    private static final Map<Item, String> FUEL_TO_WASTE = new HashMap<>();
     static {
-        FUEL_TO_WASTE.put(ModItems.PLATE_FUEL_U233.get(), ModItems.WASTE_PLATE_U233.get());
-        FUEL_TO_WASTE.put(ModItems.PLATE_FUEL_U235.get(), ModItems.WASTE_PLATE_U235.get());
-        FUEL_TO_WASTE.put(ModItems.PLATE_FUEL_MOX.get(), ModItems.WASTE_PLATE_MOX.get());
-        FUEL_TO_WASTE.put(ModItems.PLATE_FUEL_PU239.get(), ModItems.WASTE_PLATE_PU239.get());
-        FUEL_TO_WASTE.put(ModItems.PLATE_FUEL_SA326.get(), ModItems.WASTE_PLATE_SA326.get());
-        FUEL_TO_WASTE.put(ModItems.PLATE_FUEL_RA226BE.get(), ModItems.WASTE_PLATE_RA226BE.get());
-        FUEL_TO_WASTE.put(ModItems.PLATE_FUEL_PU238BE.get(), ModItems.WASTE_PLATE_PU238BE.get());
+        FUEL_TO_WASTE.put(ModItems.PLATE_FUEL_U233.get(), "waste_plate_u233_cooling");
+        FUEL_TO_WASTE.put(ModItems.PLATE_FUEL_U235.get(), "waste_plate_u235_cooling");
+        FUEL_TO_WASTE.put(ModItems.PLATE_FUEL_MOX.get(), "waste_plate_mox_cooling");
+        FUEL_TO_WASTE.put(ModItems.PLATE_FUEL_PU239.get(), "waste_plate_pu239_cooling");
+        FUEL_TO_WASTE.put(ModItems.PLATE_FUEL_SA326.get(), "waste_plate_sa326_cooling");
+        FUEL_TO_WASTE.put(ModItems.PLATE_FUEL_RA226BE.get(), "waste_plate_ra226be_cooling");
+        FUEL_TO_WASTE.put(ModItems.PLATE_FUEL_PU238BE.get(), "waste_plate_pu238be_cooling");
     }
 
     private int heat;
@@ -149,7 +149,9 @@ public class MachineReactorResearchBlockEntity extends BaseMachineBlockEntity {
                 totalFlux += outFlux;
 
                 if (ItemPlateFuel.getLifeTime(stack) > rod.lifeTime) {
-                    Item waste = FUEL_TO_WASTE.get(stack.getItem());
+                    // Original: new ItemStack(waste_plate_x, 1, 1) - heisser Abfall fuer das Abklingbecken.
+                    String wasteId = FUEL_TO_WASTE.get(stack.getItem());
+                    Item waste = wasteId != null ? com.hbm_m.item.PartTabMetaItems.itemOrNull(wasteId) : null;
                     inventory.setStackInSlot(i, waste != null ? new ItemStack(waste, 1) : ItemStack.EMPTY);
                 }
 
@@ -158,6 +160,9 @@ public class MachineReactorResearchBlockEntity extends BaseMachineBlockEntity {
                 }
                 continue;
             }
+
+            if (stack.is(com.hbm_m.item.ModItems.METEORITE_SWORD_BRED.get()))
+                inventory.setStackInSlot(i, new ItemStack(com.hbm_m.item.ModItems.METEORITE_SWORD_IRRADIATED.get()));
 
             slotFlux[i] = 0;
         }
@@ -271,7 +276,8 @@ public class MachineReactorResearchBlockEntity extends BaseMachineBlockEntity {
 
     @Override
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
-        return stack.getItem() instanceof ItemPlateFuel;
+        // Original-GUI prueft die Plaetze nicht; die Schwertkette bestrahlt das gezuechtete Schwert hier
+        return stack.getItem() instanceof ItemPlateFuel || stack.is(com.hbm_m.item.ModItems.METEORITE_SWORD_BRED.get());
     }
 
     // ── Menu ────────────────────────────────────────────────────────────────

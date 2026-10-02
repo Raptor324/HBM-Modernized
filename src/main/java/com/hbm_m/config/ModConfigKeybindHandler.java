@@ -7,7 +7,6 @@ import com.hbm_m.inventory.gui.GUIMultiDetonator;
 import com.hbm_m.item.grenades_and_activators.MultiDetonatorItem;
 import com.hbm_m.powerarmor.ModPowerArmorItem;
 import com.hbm_m.powerarmor.PowerArmorClientState;
-import com.hbm_m.powerarmor.PowerArmorHandlers;
 import com.mojang.blaze3d.platform.InputConstants;
 
 import dev.architectury.event.events.client.ClientTickEvent;
@@ -55,26 +54,7 @@ public class ModConfigKeybindHandler {
                     CATEGORY
             );*///?}
 
-    public static final KeyMapping POWER_ARMOR_DASH = new KeyMapping(
-            "key.hbm_m.power_armor_dash",
-            InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_V,
-            CATEGORY
-    );
 
-    public static final KeyMapping POWER_ARMOR_VATS = new KeyMapping(
-            "key.hbm_m.power_armor_vats",
-            InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_C,
-            CATEGORY
-    );
-
-    public static final KeyMapping POWER_ARMOR_THERMAL = new KeyMapping(
-            "key.hbm_m.power_armor_thermal",
-            InputConstants.Type.KEYSYM,
-            GLFW.GLFW_KEY_X,
-            CATEGORY
-    );
 
     public static final KeyMapping OPEN_MULTI_DETONATOR = new KeyMapping(
             "key.hbm_m.multi_detonator_open",
@@ -106,9 +86,6 @@ public class ModConfigKeybindHandler {
         //? if fabric {
         /*// Fabric: KeyBindingHelper-обвязка Architectury, регистрация в любой момент валидна.
         KeyMappingRegistry.register(OPEN_CONFIG);
-        KeyMappingRegistry.register(POWER_ARMOR_DASH);
-        KeyMappingRegistry.register(POWER_ARMOR_VATS);
-        KeyMappingRegistry.register(POWER_ARMOR_THERMAL);
         KeyMappingRegistry.register(OPEN_MULTI_DETONATOR);
         KeyMappingRegistry.register(RBMK_CRANE_UP);
         KeyMappingRegistry.register(RBMK_CRANE_DOWN);
@@ -132,10 +109,15 @@ public class ModConfigKeybindHandler {
      */
     public static void registerAll(java.util.function.Consumer<KeyMapping> registrar) {
         registrar.accept(OPEN_CONFIG);
-        registrar.accept(POWER_ARMOR_DASH);
-        registrar.accept(POWER_ARMOR_VATS);
-        registrar.accept(POWER_ARMOR_THERMAL);
         registrar.accept(OPEN_MULTI_DETONATOR);
+        // Kran-Tasten waren auf Forge/NeoForge nie angemeldet (nur im Fabric-Zweig) - nachgezogen.
+        registrar.accept(RBMK_CRANE_UP);
+        registrar.accept(RBMK_CRANE_DOWN);
+        registrar.accept(RBMK_CRANE_LEFT);
+        registrar.accept(RBMK_CRANE_RIGHT);
+        registrar.accept(RBMK_CRANE_LOAD);
+        // Alle Tasten des Originals (HbmKeybinds, Kategorie hbm.key).
+        com.hbm_m.handler.HbmKeybinds.registerAll(registrar);
     }
 
     private static void onClientPostTick() {
@@ -153,60 +135,24 @@ public class ModConfigKeybindHandler {
             }
         }
 
-        // Обработка dash силовой брони
-        if (POWER_ARMOR_DASH.consumeClick()) {
-            if (mc.player != null && ModPowerArmorItem.hasFSBArmor(mc.player)) {
-                var chestplate = mc.player.getItemBySlot(net.minecraft.world.entity.EquipmentSlot.CHEST);
-                if (chestplate.getItem() instanceof ModPowerArmorItem armorItem) {
-                    var specs = armorItem.getSpecs();
-                    if (specs.dashCount > 0) {
-                        // TODO: Отправить пакет на сервер для выполнения dash
-                        PowerArmorHandlers.performDash(mc.player);
-                        OverlayInfoToast.show(Component.translatable("hud.hbm_m.dash.perform"), 60, OverlayInfoToast.ID_DASH, 0x00FF00);
-                    }
-                }
-            }
-        }
+        // Original-Tasten: Zustandsaenderungen an den Server (Dash, Jetpack, HUD, Magnet, Zug, Kran ...).
+        // Der fruehere Port-eigene Dash auf "V" ist entfallen - der Dash laeuft 1:1 ueber
+        // EnumKeybind.DASH (Linke Umschalttaste) und EntityEffectHandler.handleDashing.
+        com.hbm_m.handler.HbmKeybinds.onClientTick();
 
-        // Обработка VATS
-        if (POWER_ARMOR_VATS.consumeClick()) {
-            if (mc.player != null && ModPowerArmorItem.hasFSBArmor(mc.player)) {
-                var chestplate = mc.player.getItemBySlot(net.minecraft.world.entity.EquipmentSlot.CHEST);
-                if (chestplate.getItem() instanceof ModPowerArmorItem armorItem) {
-                    var specs = armorItem.getSpecs();
-                    if (specs.hasVats) {
-                        if (PowerArmorClientState.isVATSActive()) {
-                            PowerArmorClientState.deactivateVATS();
-                            OverlayInfoToast.show(Component.translatable("hud.hbm_m.vats.off"), 60, OverlayInfoToast.ID_VATS, 0xFF0000);
-                        } else {
-                            PowerArmorClientState.activateVATS();
-                            OverlayInfoToast.show(Component.translatable("hud.hbm_m.vats.on"), 60, OverlayInfoToast.ID_VATS, 0x00FF00);
-                        }
-                    }
-                }
+        // Original: VATS und Waermebild sind keine Tasten, sondern laufen automatisch, solange das volle
+        // FSB-Set sie hat und das HUD (HbmPlayerProps.enableHUD) an ist.
+        if (mc.player != null) {
+            boolean hud = com.hbm_m.extprop.HbmPlayerProps.getData(mc.player).enableHUD;
+            com.hbm_m.powerarmor.ModArmorFSB plate = null;
+            if (com.hbm_m.powerarmor.ModArmorFSB.hasFSBArmor(mc.player)) {
+                plate = (com.hbm_m.powerarmor.ModArmorFSB) mc.player.getItemBySlot(net.minecraft.world.entity.EquipmentSlot.CHEST).getItem();
             }
-        }
-
-        // Обработка thermal vision
-        if (POWER_ARMOR_THERMAL.consumeClick()) {
-            if (mc.player != null && ModPowerArmorItem.hasFSBArmor(mc.player)) {
-                var chestplate = mc.player.getItemBySlot(net.minecraft.world.entity.EquipmentSlot.CHEST);
-                if (chestplate.getItem() instanceof ModPowerArmorItem armorItem) {
-                    var specs = armorItem.getSpecs();
-                    if (specs.hasThermal) {
-                        if (PowerArmorClientState.isThermalActive()) {
-                            PowerArmorClientState.deactivateThermal();
-                            OverlayInfoToast.show(Component.translatable("hud.hbm_m.thermal.off"), 60, OverlayInfoToast.ID_THERMAL, 0xFF0000);
-                        } else {
-                            PowerArmorClientState.activateThermal();
-                            // If activation was blocked by first-use warning, do not show "ON" toast.
-                            if (PowerArmorClientState.isThermalActive()) {
-                                OverlayInfoToast.show(Component.translatable("hud.hbm_m.thermal.on"), 60, OverlayInfoToast.ID_THERMAL, 0x00FF00);
-                            }
-                        }
-                    }
-                }
-            }
+            if (hud && plate != null && plate.vats) PowerArmorClientState.activateVATS(); else PowerArmorClientState.deactivateVATS();
+            if (hud && plate != null && plate.thermal) PowerArmorClientState.activateThermal(); else PowerArmorClientState.deactivateThermal();
+        } else {
+            PowerArmorClientState.deactivateVATS();
+            PowerArmorClientState.deactivateThermal();
         }
 
         // Multi-detonator GUI (R)

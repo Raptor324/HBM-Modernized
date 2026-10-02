@@ -28,7 +28,7 @@ import net.minecraft.world.phys.BlockHitResult;
  * Die Umwandlungstabelle steht 1:1 in {@code BlockToolConversion.registerRecipes()}:
  * {@code ToolType.TORCH + fusion_component:0 + STEEL.plateCast() -> fusion_component:1}.</p>
  */
-public class FusionComponentBlock extends Block implements com.hbm_m.interfaces.ILookOverlay {
+public class FusionComponentBlock extends Block implements com.hbm_m.interfaces.ILookOverlay, com.hbm_m.api.block.IToolable {
 
     /**
      * 1:1-Port von {@code BlockToolConversion.printHook}: solange der Spieler den Brenner in der
@@ -67,30 +67,18 @@ public class FusionComponentBlock extends Block implements com.hbm_m.interfaces.
         return stack.is(ModItems.BLOWTORCH.get()) || stack.is(ModItems.ACETYLENE_TORCH.get());
     }
 
-    //? if < 1.21.1 {
+    /** 1:1 {@code BlockToolConversion.onScrew}: TORCH + STEEL.plateCast() -> verschweisste Spule. */
     @Override
-    public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player,
-                                 InteractionHand hand, BlockHitResult hit) {
-        return convert(level, pos, player, hand);
-    }
-    //?} else {
-    /*@Override
-    protected InteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos,
-                                          Player player, InteractionHand hand, BlockHitResult hit) {
-        return convert(level, pos, player, hand);
-    }
-    *///?}
-
-    private InteractionResult convert(Level level, BlockPos pos, Player player, InteractionHand hand) {
-        if (!isTorch(player.getItemInHand(hand))) return InteractionResult.PASS;
-        if (level.isClientSide()) return InteractionResult.SUCCESS;
+    public boolean onScrew(Level level, Player player, BlockPos pos, net.minecraft.core.Direction side, float fX, float fY, float fZ,
+                           InteractionHand hand, com.hbm_m.api.block.IToolable.ToolType tool) {
+        if (level.isClientSide()) return false;
+        if (tool != com.hbm_m.api.block.IToolable.ToolType.TORCH) return false;
 
         // Original: InventoryUtil.doesPlayerHaveAStacks(player, list, true) - Material wird verbraucht.
-        if (!player.isCreative() && !consumePlate(player)) return InteractionResult.CONSUME;
+        if (!consumePlate(player)) return false;
 
         level.setBlock(pos, ModBlocks.FUSION_COMPONENT_BSCCO_WELDED.get().defaultBlockState(), 3);
-        level.playSound(null, pos, SoundEvents.ANVIL_USE, SoundSource.BLOCKS, 0.5F, 1.5F);
-        return InteractionResult.CONSUME;
+        return true;
     }
 
     private static boolean consumePlate(Player player) {

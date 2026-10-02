@@ -1,10 +1,40 @@
 {
-  "variants": {
-    "facing=north": { "model": "hbm_m:block/flood_lamp", "y": 270 },
-    "facing=east": { "model": "hbm_m:block/flood_lamp", "y": 0 },
-    "facing=south": { "model": "hbm_m:block/flood_lamp", "y": 90 },
-    "facing=west": { "model": "hbm_m:block/flood_lamp", "y": 180 },
-    "facing=up": { "model": "hbm_m:block/flood_lamp_top"},
-    "facing=down": { "model": "hbm_m:block/flood_lamp_bottom"}
+ "variants": {
+  "broken=false,facing=down": {
+   "model": "hbm_m:block/lights/flood_lamp_down"
+  },
+  "broken=true,facing=down": {
+   "model": "hbm_m:block/lights/flood_lamp_down"
+  },
+  "broken=false,facing=up": {
+   "model": "hbm_m:block/lights/flood_lamp_up"
+  },
+  "broken=true,facing=up": {
+   "model": "hbm_m:block/lights/flood_lamp_up"
+  },
+  "broken=false,facing=north": {
+   "model": "hbm_m:block/lights/flood_lamp_north"
+  },
+  "broken=true,facing=north": {
+   "model": "hbm_m:block/lights/flood_lamp_north"
+  },
+  "broken=false,facing=south": {
+   "model": "hbm_m:block/lights/flood_lamp_south"
+  },
+  "broken=true,facing=south": {
+   "model": "hbm_m:block/lights/flood_lamp_south"
+  },
+  "broken=false,facing=west": {
+   "model": "hbm_m:block/lights/flood_lamp_west"
+  },
+  "broken=true,facing=west": {
+   "model": "hbm_m:block/lights/flood_lamp_west"
+  },
+  "broken=false,facing=east": {
+   "model": "hbm_m:block/lights/flood_lamp_east"
+  },
+  "broken=true,facing=east": {
+   "model": "hbm_m:block/lights/flood_lamp_east"
   }
+ }
 }

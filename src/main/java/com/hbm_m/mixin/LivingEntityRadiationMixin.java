@@ -23,8 +23,8 @@ public class LivingEntityRadiationMixin {
         // чтобы счётчик Гейгера не показывал устаревшие значения при выключенной радиации.
         // Отдельные под-методы (handleCraterBiomeRadiation, handleRadiationFromChunk и т.д.)
         // сами проверяют enableRadiation и возвращаются раньше, если радиация выключена.
-        if (!self.level().isClientSide()) {
-            EntityEffectHandler.onUpdate(self);
-        }
+        // Original: LivingUpdateEvent laeuft auf beiden Seiten; clientseitig nur Dash, Leiter-Hack,
+        // Plinking und Kraterstaub (siehe EntityEffectHandler.onUpdate).
+        EntityEffectHandler.onUpdate(self);
     }
 }

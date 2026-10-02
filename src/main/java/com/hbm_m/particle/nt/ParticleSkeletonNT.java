@@ -36,6 +36,10 @@ public class ParticleSkeletonNT extends ParticleNT {
             RefStrings.MODID, "textures/particle/skeleton.png");
     private static final ResourceLocation TEXTURE_EXT = ResourceLocation.fromNamespaceAndPath(
             RefStrings.MODID, "textures/particle/skoilet.png");
+    private static final ResourceLocation TEXTURE_BLOOD = ResourceLocation.fromNamespaceAndPath(
+            RefStrings.MODID, "textures/particle/skeleton_blood.png");
+    private static final ResourceLocation TEXTURE_BLOOD_EXT = ResourceLocation.fromNamespaceAndPath(
+            RefStrings.MODID, "textures/particle/skoilet_blood.png");
     private static final ResourceLocation SKELETON_OBJ = ResourceLocation.fromNamespaceAndPath(
             RefStrings.MODID, "models/effect/skeleton.obj");
 
@@ -69,6 +73,10 @@ public class ParticleSkeletonNT extends ParticleNT {
     private float momentumYaw;
     private float momentumPitch;
     private int initialDelay = 20;
+    /** Original particleGravity (0.02, Gib 0.04). */
+    private float gravity = 0.02F;
+    private ResourceLocation useTexture = TEXTURE;
+    private ResourceLocation useTextureExt = TEXTURE_EXT;
 
     private float yaw, pitch, prevYaw, prevPitch;
 
@@ -98,6 +106,28 @@ public class ParticleSkeletonNT extends ParticleNT {
         this.momentumYaw = this.random.nextFloat() * 5 * (this.random.nextBoolean() ? 1 : -1);
     }
 
+    /** Original {@code makeGib}: ohne Anfangsverzoegerung, blutige Textur, doppelte Schwerkraft, kuerzere Lebenszeit. */
+    public ParticleSkeletonNT makeGib() {
+        this.initialDelay = -2; // skip post delay motion randomization
+        this.useTexture = TEXTURE_BLOOD;
+        this.useTextureExt = TEXTURE_BLOOD_EXT;
+        this.gravity = 0.04F;
+        this.lifetime = 600 + this.random.nextInt(20);
+        return this;
+    }
+
+    /** Skelette behalten beim Zerfetzen ihre normale Textur (Original: skel). */
+    public void useCleanTexture() {
+        this.useTexture = TEXTURE;
+        this.useTextureExt = TEXTURE_EXT;
+    }
+
+    public void setMotion(double x, double y, double z) {
+        this.xd = x;
+        this.yd = y;
+        this.zd = z;
+    }
+
     public void setRotation(float yaw, float pitch) {
         this.yaw = this.prevYaw = yaw;
         this.pitch = this.prevPitch = pitch;
@@ -125,7 +155,7 @@ public class ParticleSkeletonNT extends ParticleNT {
 
         boolean wasOnGround = this.onGround;
 
-        this.yd -= 0.02; // 1.7.10 particleGravity = 0.02
+        this.yd -= this.gravity; // 1.7.10 particleGravity
         this.move(this.xd, this.yd, this.zd);
         this.xd *= 0.98D;
         this.yd *= 0.98D;
@@ -291,7 +321,7 @@ public class ParticleSkeletonNT extends ParticleNT {
     public RenderType getRenderType() {
         // 1.7.10 parity: blend SRC_ALPHA/ONE_MINUS_SRC_ALPHA + depth test LEQUAL + depth write ON + cull ON.
         // entityTranslucent has COLOR-only write, which is why bones didn't occlude each other in the old code.
-        ResourceLocation useTexture = (kind == BoneKind.SKULL_VILLAGER) ? TEXTURE_EXT : TEXTURE;
+        ResourceLocation useTexture = (kind == BoneKind.SKULL_VILLAGER) ? this.useTextureExt : this.useTexture;
         return com.hbm_m.client.ClientRenderHandler.CustomRenderTypes.SKELETON_PARTICLES.apply(useTexture);
     }
 

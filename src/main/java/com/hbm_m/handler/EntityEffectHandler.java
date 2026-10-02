@@ -43,6 +43,11 @@ public final class EntityEffectHandler {
 
     public static void onUpdate(LivingEntity entity) {
         if (entity.level().isClientSide()) {
+            // Original: die Kraterbiome zeigen dem eigenen Spieler "townaura"-Staub.
+            if (entity instanceof Player player) EntityEffectHandlerExtra.clientTick(player);
+            EntityEffectHandlerExtra.handleDashing(entity);
+            EntityEffectHandlerExtra.handlePlinking(entity);
+            if (entity instanceof Player player) EntityEffectHandlerExtra.handleFauxLadder(player);
             return;
         }
 
@@ -51,9 +56,8 @@ public final class EntityEffectHandler {
             HbmLivingProps.setRadEnv(entity, 0F);
         }
 
-        if (!(entity instanceof Player)) {
-            handleRadiationEffect(entity);
-        }
+        // Schild-Regeneration, Zeitbombe, 528-Netherbrand und Sync (Original: Anfang von onUpdate).
+        EntityEffectHandlerExtra.serverHead(entity);
 
         // Накачка от crater biome (1.7.10 EntityEffectHandler строки 114-124).
         // Биомы кратера эмиттят радиацию напрямую в игрока, минуя chunk ambient.
@@ -62,11 +66,31 @@ public final class EntityEffectHandler {
         // Чанковая доза для всех сущностей, включая игроков (1.7.10: handleRadiationFX → contaminate → radEnv).
         handleRadiationFromChunk(entity);
 
+        EntityEffectHandlerExtra.handleContamination(entity);
+        EntityEffectHandlerExtra.handleContagion(entity);
+
+        if (!(entity instanceof Player)) {
+            handleRadiationEffect(entity);
+        }
+
         handleRadiationFX(entity);
+        EntityEffectHandlerExtra.handleDigamma(entity);
 
         handleLungDisease(entity);
+        EntityEffectHandlerExtra.handleOil(entity);
 
         handlePollution(entity);
+        EntityEffectHandlerExtra.handleTemperature(entity);
+
+        EntityEffectHandlerExtra.handleDashing(entity);
+        EntityEffectHandlerExtra.handlePlinking(entity);
+
+        if (entity instanceof Player player) EntityEffectHandlerExtra.handleFauxLadder(player);
+    }
+
+    /** Fuer den Vomit-Klang der Ansteckung (MKU) aus {@link EntityEffectHandlerExtra}. */
+    static void vomitSound(Level level, LivingEntity entity) {
+        playVomitSound(level, entity);
     }
 
     /**

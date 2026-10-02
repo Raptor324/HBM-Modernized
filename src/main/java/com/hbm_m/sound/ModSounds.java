@@ -117,6 +117,8 @@ public class ModSounds {
     // RBMK meltdown / boiler venting - the 1.7.10 originals are hbm:block.rbmk_explosion,
     // hbm:block.rbmk_az5_cover and hbm:block.steamEngineOperate.
     public static final RegistrySupplier<SoundEvent> RBMK_EXPLOSION = registerSoundEvents("block.rbmk_explosion");
+    /** Original NTMSounds.REACTOR_GEIGER_LOOP ("block.reactorLoop"). */
+    public static final RegistrySupplier<SoundEvent> REACTOR_LOOP = registerSoundEvents("block.reactorloop");
     public static final RegistrySupplier<SoundEvent> RBMK_AZ5_COVER = registerSoundEvents("block.rbmk_az5_cover");
     public static final RegistrySupplier<SoundEvent> STEAM_ENGINE_OPERATE = registerSoundEvents("block.steam_engine_operate");
     /** {@code hbm:weapon.dFlash}: the digamma spear discharging. */
@@ -202,6 +204,7 @@ public class ModSounds {
     
     // Метод для регистрации в Forge EventBus
     public static void init() {
+        HbmSoundsNT.init();
         SOUND_EVENTS.register();
     }
 }

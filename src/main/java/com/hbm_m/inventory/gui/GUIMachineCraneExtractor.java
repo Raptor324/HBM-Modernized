@@ -80,20 +80,12 @@ public class GUIMachineCraneExtractor extends GuiInfoScreen<MachineCraneExtracto
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         if (extractor == null) return super.mouseClicked(mouseX, mouseY, button); // тайл может отсутствовать в реплее Flashback
-        for (int i = 0; i < 9; i++) {
-            Slot slot = this.menu.slots.get(i);
-            if (isHoveringSlot(slot, (int) mouseX, (int) mouseY) && button == 1 && slot.hasItem()) {
-                extractor.nextMode(i);
-                return true;
-            }
-        }
-
         if (isHovering(187, 34, 18, 18, (int) mouseX, (int) mouseY)) {
-            extractor.toggleMaxEject();
+            { net.minecraft.nbt.CompoundTag data = new net.minecraft.nbt.CompoundTag(); data.putBoolean("maxEject", true); com.hbm_m.network.NBTControlPacket.sendToServer(extractor.getBlockPos(), data); playClickSound(); }
             return true;
         }
         if (isHovering(128, 30, 14, 26, (int) mouseX, (int) mouseY)) {
-            extractor.toggleWhitelist();
+            { net.minecraft.nbt.CompoundTag data = new net.minecraft.nbt.CompoundTag(); data.putBoolean("whitelist", true); com.hbm_m.network.NBTControlPacket.sendToServer(extractor.getBlockPos(), data); playClickSound(); }
             return true;
         }
 

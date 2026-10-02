@@ -6,9 +6,9 @@
   "refmap": "mixins.hbm_m.refmap.json",
   "mixins": [
     "SlotMixin",
-    "PlayerStepSoundMixin",
     "CreeperMixin",
     "CreeperAccessor",
+    "MobAccessor",
     "LivingEntityRadiationMixin",
     "SuperGlueSelectionHelperMixin",
     "ContraptionMixin",
@@ -27,7 +27,8 @@
     "ModelBlockRendererMixin",
     "LivingEntityRendererInvoker",
     "client.MixinItemRendererTemplatePreview",
-    "client.MixinAbstractClientPlayerSkin"
+    "client.MixinAbstractClientPlayerSkin",
+    "client.MixinPlayerRendererHide"
   ],
   "injectors": {
     "defaultRequire": 1

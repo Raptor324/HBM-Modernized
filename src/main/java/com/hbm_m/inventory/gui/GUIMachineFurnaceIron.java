@@ -39,6 +39,9 @@ public class GUIMachineFurnaceIron extends AbstractContainerScreen<MachineFurnac
         if (j > 0) {
             guiGraphics.blit(TEXTURE, x + 53, y + 45, 176, 23, j, 5);
         }
+
+        if (menu.canSmelt())
+            guiGraphics.blit(TEXTURE, x + 70, y + 16, 176, 0, 18, 18);
     }
 
     @Override
@@ -51,6 +54,22 @@ public class GUIMachineFurnaceIron extends AbstractContainerScreen<MachineFurnac
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
         com.hbm_m.client.GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
+
+        // Original: ueber leeren Brennstoffslots die Brennzeitboni, dazu Fortschritt und Restbrennzeit
+        if (menu.getCarried().isEmpty()) {
+            for (int i = 1; i < 3; ++i) {
+                net.minecraft.world.inventory.Slot slot = this.menu.slots.get(i);
+                if (this.isHovering(slot.x, slot.y, 16, 16, mouseX, mouseY) && !slot.hasItem()) {
+                    var bonuses = com.hbm_m.blockentity.machines.MachineFurnaceIronBlockEntity.burnModule.getTimeDesc();
+                    if (!bonuses.isEmpty()) guiGraphics.renderComponentTooltip(font, bonuses, mouseX, mouseY);
+                }
+            }
+        }
+        if (this.isHovering(52, 35, 71, 7, mouseX, mouseY))
+            guiGraphics.renderTooltip(font, Component.literal((menu.getProgress() * 100 / Math.max(menu.getProcessingTime(), 1)) + "%"), mouseX, mouseY);
+        if (this.isHovering(52, 44, 71, 7, mouseX, mouseY))
+            guiGraphics.renderTooltip(font, Component.literal((menu.getLitTime() / 20) + "s"), mouseX, mouseY);
+
         renderTooltip(guiGraphics, mouseX, mouseY);
     }
 }

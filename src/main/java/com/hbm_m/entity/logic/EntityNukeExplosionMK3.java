@@ -140,6 +140,43 @@ public class EntityNukeExplosionMK3 extends EntityExplosionChunkloading {
         entity.speed = ModClothConfig.get().blastSpeed;
         entity.coefficient = 1.0F;
         entity.coefficient2 = 1.0F;
+
+        // 1:1: ein Feldstoerer (field_disturber) im Umkreis 300 verhindert die Explosion
+        java.util.Iterator<java.util.Map.Entry<ATEntry, Long>> it = at.entrySet().iterator();
+        while (it.hasNext()) {
+            java.util.Map.Entry<ATEntry, Long> next = it.next();
+            if (next.getValue() < level.getGameTime()) {
+                it.remove();
+                continue;
+            }
+            ATEntry entry = next.getKey();
+            if (!entry.dim.equals(level.dimension().location().toString())) continue;
+            double dx = x - entry.x, dy = y - entry.y, dz = z - entry.z;
+            if (Math.sqrt(dx * dx + dy * dy + dz * dz) < 300) {
+                entity.discard();
+                if (level instanceof net.minecraft.server.level.ServerLevel sl) {
+                    for (int i = 0; i < 2; i++) {
+                        double ix = i == 0 ? x : (entry.x + 0.5);
+                        double iy = i == 0 ? y : (entry.y + 0.5);
+                        double iz = i == 0 ? z : (entry.z + 0.5);
+                        level.playSound(null, ix, iy, iz, com.hbm_m.sound.HbmSoundsNT.get("entity.ufoBlast"), net.minecraft.sounds.SoundSource.HOSTILE, 15.0F, 0.7F + level.random.nextFloat() * 0.2F);
+                        net.minecraft.nbt.CompoundTag data = new net.minecraft.nbt.CompoundTag();
+                        data.putString("type", "plasmablast");
+                        data.putFloat("r", 0.0F);
+                        data.putFloat("g", 0.75F);
+                        data.putFloat("b", 1.0F);
+                        data.putFloat("scale", 7.5F);
+                        com.hbm_m.particle.helper.IParticleCreator.sendPacket(sl, ix, iy, iz, 150, data);
+                    }
+                }
+                break;
+            }
+        }
         return entity;
     }
+
+    /** 1:1 {@code EntityNukeExplosionMK3.at}: aktive Feldstoerer -> Ablauf-Weltzeit. */
+    public static final java.util.HashMap<ATEntry, Long> at = new java.util.HashMap<>();
+
+    public record ATEntry(String dim, int x, int y, int z) {}
 }

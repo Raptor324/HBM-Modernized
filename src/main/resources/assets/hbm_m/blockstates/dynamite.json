@@ -1,0 +1,10 @@
+{
+ "variants": {
+  "ignite_on_break=false": {
+   "model": "hbm_m:block/bomb/dynamite"
+  },
+  "ignite_on_break=true": {
+   "model": "hbm_m:block/bomb/dynamite"
+  }
+ }
+}

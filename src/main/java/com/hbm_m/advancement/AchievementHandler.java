@@ -44,8 +44,8 @@ public class AchievementHandler {
     static {
         item(ModItems.PISTON_SELENIUM,         ModAdvancements.SELENIUM);
         item(ModItems.GUN_B92,                 ModAdvancements.SELENIUM);
-        item(ModItems.BATTERY_POTATO,          ModAdvancements.POTATO);
-        block(ModBlocks.MACHINE_PRESS,         ModAdvancements.BURNER_PRESS);
+        item(ModItems.BATTERY_POTATOS,         ModAdvancements.POTATO);
+        block(ModBlocks.PRESS,         ModAdvancements.BURNER_PRESS);
         item(ModItems.RBMK_FUEL_EMPTY,         ModAdvancements.RBMK);
         block(ModBlocks.CHEMICAL_PLANT,        ModAdvancements.CHEMPLANT);
         block(ModBlocks.CONCRETE,              ModAdvancements.CONCRETE);
@@ -53,10 +53,10 @@ public class AchievementHandler {
         item(ModMaterialItems.get(ModMaterials.POLYMER, MaterialShape.PLATE), ModAdvancements.POLYMER);
         item(ModMaterialItems.get(ModMaterials.DESH, MaterialShape.NUGGET),  ModAdvancements.DESH);
         item(ModItems.GEM_TANTALIUM,           ModAdvancements.TANTALUM);
-        block(ModBlocks.MACHINE_GASCENT,       ModAdvancements.GAS_CENT);
-        block(ModBlocks.MACHINE_CENTRIFUGE,    ModAdvancements.CENTRIFUGE);
+        item(ModItems.GAS_CENTRIFUGE,          ModAdvancements.GAS_CENT);
+        block(ModBlocks.CENTRIFUGE,    ModAdvancements.CENTRIFUGE);
         item(ModMaterialItems.get(ModMaterials.SCHRABIDIUM, MaterialShape.NUGGET), ModAdvancements.SCHRAB);
-        block(ModBlocks.MACHINE_CRYSTALLIZER,  ModAdvancements.ACIDIZER);
+        block(ModBlocks.CRYSTALLIZER,  ModAdvancements.ACIDIZER);
         block(ModBlocks.SILEX,                 ModAdvancements.SILEX);
         item(ModMaterialItems.get(ModMaterials.TECHNETIUM, MaterialShape.NUGGET),     ModAdvancements.TECHNETIUM);
         block(ModBlocks.STRUCT_WATZ_CORE,      ModAdvancements.WATZ);
@@ -134,9 +134,21 @@ public class AchievementHandler {
                                             net.minecraft.world.level.block.state.BlockState state,
                                             net.minecraft.server.level.ServerPlayer player,
                                             dev.architectury.utils.value.IntValue exp) {
-        if (state.is(ModBlocks.STONE_GNEISS.get())) {
+        // Original: nur beim ersten Mal (Erfolg noch nicht freigeschaltet) gibt es 500 XP dazu.
+        if (state.is(ModBlocks.STONE_GNEISS.get()) && !hasAdvancement(player, ModAdvancements.STRATUM)) {
             ModAdvancements.grant(player, ModAdvancements.STRATUM);
+            exp.accept(500);
         }
         return EventResult.pass();
+    }
+
+    private static boolean hasAdvancement(net.minecraft.server.level.ServerPlayer player, String id) {
+        net.minecraft.resources.ResourceLocation rl = net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, id);
+        //? if < 1.21.1 {
+        var adv = player.server.getAdvancements().getAdvancement(rl);
+        //?} else {
+        /*var adv = player.server.getAdvancements().get(rl);
+        *///?}
+        return adv != null && player.getAdvancements().getOrStartProgress(adv).isDone();
     }
 }

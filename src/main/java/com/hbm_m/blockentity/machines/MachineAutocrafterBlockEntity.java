@@ -79,7 +79,7 @@ public class MachineAutocrafterBlockEntity extends BaseMachineBlockEntity {
     /** 1:1-Port von {@code nextMode}: ein Rechtsklick schaltet den Filter dieses Platzes weiter. */
     public void nextMode(int index) {
         if (index < 0 || index >= GRID_SIZE) return;
-        matcher.nextMode(index);
+        matcher.nextMode(index, inventory.getStackInSlot(index));
         setChanged();
         sendUpdateToClient();
     }

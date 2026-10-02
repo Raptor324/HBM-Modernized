@@ -101,7 +101,7 @@ public class MachineDroneRequesterBlockEntity extends BaseMachineBlockEntity {
     }
 
     public void nextFilterMode(int index) {
-        matcher.nextMode(index);
+        matcher.nextMode(index, inventory.getStackInSlot(index));
         setChanged();
     }
 

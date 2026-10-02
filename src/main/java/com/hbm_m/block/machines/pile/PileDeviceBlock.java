@@ -104,7 +104,7 @@ public abstract class PileDeviceBlock extends BaseEntityBlock {
         BlockEntity tile = level.getBlockEntity(target);
         if (tile instanceof PileBaseBlockEntity pile) {
             PileCoreBlockEntity core = pile.getCore(level);
-            if (core != null) core.drillChannel(level, target, drillDir, player);
+            if (core != null && core.drillChannel(level, target, drillDir, player)) com.hbm_m.item.tool.ItemTooling.onScrewed(player, hand);
         }
         return InteractionResult.CONSUME;
     }

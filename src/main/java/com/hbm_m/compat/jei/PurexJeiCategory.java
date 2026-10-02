@@ -5,7 +5,6 @@ import java.util.List;
 
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.item.ModItems;
-import com.hbm_m.item.industrial.ItemBlueprintFolder;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.recipe.PurexRecipe;
 import com.hbm_m.recipe.PurexRecipe.CountedIngredient;
@@ -176,8 +175,7 @@ public class PurexJeiCategory extends JeiGenericRecipeCategory<PurexRecipe> {
             return;
         }
 
-        ItemStack folder = new ItemStack(ModItems.BLUEPRINT_FOLDER.get());
-        ItemBlueprintFolder.writeBlueprintPool(folder, recipe.getBlueprintPool());
+        ItemStack folder = com.hbm_m.item.industrial.ItemBlueprints.make(recipe.getBlueprintPool());
         addUnframedSlot(builder, RecipeIngredientRole.RENDER_ONLY, 75 + machineXOffset, 10)
                 .addItemStack(folder);
     }

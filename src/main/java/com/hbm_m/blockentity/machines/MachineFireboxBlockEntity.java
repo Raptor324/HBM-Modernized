@@ -79,15 +79,22 @@ public class MachineFireboxBlockEntity extends BaseMachineBlockEntity implements
         return new double[] { 1D, 1D };
     }
 
-    /** 1:1-Port von {@code getAshFromFuel}: welche Asche dieser Brennstoff hinterlaesst. */
-    private static MachineAshpitBlockEntity.AshType ashFromFuel(ItemStack stack) {
+    /**
+     * 1:1-Port von {@code getAshFromFuel}: welche Asche dieser Brennstoff hinterlaesst. Das Original prueft die
+     * Oredict-Namen (Coke/Coal/Lignite -> Kohle, log*, *Wood*, *Sapling* -> Holz); im Port ueber Registriernamen und
+     * die entsprechenden Tags (Staemme, Bretter, Setzlinge, Holzstufen/-treppen, Stock = stickWood).
+     */
+    public static MachineAshpitBlockEntity.AshType ashFromFuel(ItemStack stack) {
         String id = net.minecraft.core.registries.BuiltInRegistries.ITEM
                 .getKey(stack.getItem()).getPath();
 
-        if (id.contains("coke") || id.contains("coal") || id.contains("lignite")) {
+        if (id.contains("coke") || id.contains("coal") || id.contains("lignite") || stack.is(net.minecraft.tags.ItemTags.COALS)) {
             return MachineAshpitBlockEntity.AshType.COAL;
         }
-        if (id.contains("log") || id.contains("wood") || id.contains("plank") || id.contains("sapling")) {
+        if (id.contains("log") || id.contains("wood") || id.contains("plank") || id.contains("sapling")
+                || stack.is(net.minecraft.tags.ItemTags.LOGS) || stack.is(net.minecraft.tags.ItemTags.PLANKS)
+                || stack.is(net.minecraft.tags.ItemTags.SAPLINGS) || stack.is(net.minecraft.tags.ItemTags.WOODEN_SLABS)
+                || stack.is(net.minecraft.tags.ItemTags.WOODEN_STAIRS) || stack.is(net.minecraft.world.item.Items.STICK)) {
             return MachineAshpitBlockEntity.AshType.WOOD;
         }
         return MachineAshpitBlockEntity.AshType.MISC;

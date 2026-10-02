@@ -244,8 +244,8 @@ public class ModEventHandlerClient {
             if (mc.player != null) {
                 if (vatsActive && ModPowerArmorItem.hasFSBArmor(mc.player)) {
                     var chestplate = mc.player.getItemBySlot(net.minecraft.world.entity.EquipmentSlot.CHEST);
-                    if (chestplate.getItem() instanceof ModPowerArmorItem armorItem) {
-                        if (!armorItem.getSpecs().hasVats) {
+                    if (chestplate.getItem() instanceof com.hbm_m.powerarmor.ModArmorFSB armorItem) {
+                        if (!armorItem.vats) {
                             vatsActive = false;
                         }
                     } else {
@@ -257,8 +257,8 @@ public class ModEventHandlerClient {
 
                 if (thermalActive && ModPowerArmorItem.hasFSBArmor(mc.player)) {
                     var chestplate = mc.player.getItemBySlot(net.minecraft.world.entity.EquipmentSlot.CHEST);
-                    if (chestplate.getItem() instanceof ModPowerArmorItem armorItem) {
-                        if (!armorItem.getSpecs().hasThermal) {
+                    if (chestplate.getItem() instanceof com.hbm_m.powerarmor.ModArmorFSB armorItem) {
+                        if (!armorItem.thermal) {
                             thermalActive = false;
                         }
                     } else {
@@ -907,14 +907,14 @@ public class ModEventHandlerClient {
         }
 
         var chestplate = player.getItemBySlot(net.minecraft.world.entity.EquipmentSlot.CHEST);
-        if (!(chestplate.getItem() instanceof ModPowerArmorItem armorItem)) {
+        if (!(chestplate.getItem() instanceof com.hbm_m.powerarmor.ModArmorFSB armorItem)) {
             thermalActive = false;
             return;
         }
 
-        var specs = armorItem.getSpecs();
+        var specs = armorItem;
         // Проверяем, поддерживает ли броня тепловизор
-        if (!specs.hasThermal) {
+        if (!specs.thermal) {
             // Если броня не поддерживает тепловизор, деактивируем его
             thermalActive = false;
             return;

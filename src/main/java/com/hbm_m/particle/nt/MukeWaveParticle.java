@@ -27,6 +27,13 @@ public class MukeWaveParticle extends ParticleNT {
         this.noClip = true;
     }
 
+    /** Original {@code ParticleMukeWave.setup(scale, maxAge)} - fuer ExplosionCreator. */
+    public MukeWaveParticle setup(float scale, int maxAge) {
+        this.waveScale = scale;
+        this.lifetime = maxAge;
+        return this;
+    }
+
     @Override
     public void render(VertexConsumer ignored, Camera camera, float partialTicks, PoseStack levelPoseStack) {
         FogRenderer.setupNoFog();

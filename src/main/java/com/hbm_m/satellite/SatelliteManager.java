@@ -5,7 +5,7 @@ import java.util.Map;
 
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.saveddata.SavedData;
 
 /**
@@ -44,7 +44,7 @@ public class SatelliteManager extends SavedData {
         SatelliteManager manager = new SatelliteManager();
         int count = nbt.getInt("satCount");
         for (int i = 0; i < count; i++) {
-            Satellite sat = Satellite.create(nbt.getInt("sat_id_" + i));
+            Satellite sat = Satellite.createFromId(nbt.getInt("sat_id_" + i));
             if (sat == null) {
                 continue;
             }
@@ -62,15 +62,31 @@ public class SatelliteManager extends SavedData {
         return byFrequency.get(freq);
     }
 
-    public void orbit(ServerLevel level, int freq, Item item, double x, double y, double z) {
-        int id = Satellite.getIDFromItem(item);
-        Satellite sat = Satellite.create(id);
-        if (sat == null) {
-            return;
+    /** 1:1 {@code XSatelliteRegistry.orbit}: belegt die Frequenz oder liefert ein Teil an den vorhandenen Satelliten. */
+    public void orbit(ServerLevel level, ItemStack stack, int freq, double x, double y, double z) {
+        Satellite existing = byFrequency.get(freq);
+
+        if (existing != null) {
+            existing.onPartDelivered(level, stack);
+        } else {
+            Satellite sat = Satellite.createFromItem(stack);
+            if (sat != null) {
+                byFrequency.put(freq, sat);
+                sat.onOrbit(level, x, y, z);
+                setDirty();
+            }
         }
-        byFrequency.put(freq, sat);
-        sat.onOrbit(level, x, y, z);
-        setDirty();
+    }
+
+    /** Fuer /satellite descend (Original CommandSatellites). */
+    public Satellite remove(int freq) {
+        Satellite sat = byFrequency.remove(freq);
+        if (sat != null) setDirty();
+        return sat;
+    }
+
+    public Map<Integer, Satellite> all() {
+        return byFrequency;
     }
 
     //? if < 1.21.1 {

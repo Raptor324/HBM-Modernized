@@ -53,6 +53,16 @@ public class ConveyorLiftBlock extends ConveyorBlockBase {
     }
 
     @Override
+    public Direction getInputDirection(BlockState state) {
+        return Direction.DOWN;
+    }
+
+    @Override
+    public Direction getOutputDirection(BlockState state) {
+        return Direction.UP;
+    }
+
+    @Override
     public Direction getTravelDirection(Level level, BlockPos pos, Vec3 itemPos) {
         if (!isTop(level, pos)) return Direction.DOWN;
         return level.getBlockState(pos).getValue(FACING);

@@ -87,6 +87,12 @@ public class ModRecipeProvider extends RecipeProvider {
         FusionRecipeGenerator.generate(pWriter);
         PlasmaForgeRecipeGenerator.generate(pWriter);
         FusionAssemblerRecipeGenerator.generate(pWriter);
+        com.hbm_m.datagen.recipes.custom.ConsumableRecipeGenerator.generate(pWriter);
+        com.hbm_m.datagen.recipes.custom.RodRecipeGenerator.generate(pWriter);
+        com.hbm_m.datagen.recipes.custom.WeaponRecipeGenerator.generate(pWriter);
+        com.hbm_m.datagen.recipes.custom.ArmorRecipeGenerator.generate(pWriter);
+        com.hbm_m.datagen.recipes.custom.LegacyBedrockOreRecipeGenerator.generate(pWriter);
+        com.hbm_m.datagen.recipes.custom.ToolRecipeGenerator.generate(pWriter);
         MixerRecipeGenerator.generate(pWriter);
         CrucibleSmeltingRecipeGenerator.generate(pWriter);
         MoltenAlloyRecipeGenerator.generate(pWriter);

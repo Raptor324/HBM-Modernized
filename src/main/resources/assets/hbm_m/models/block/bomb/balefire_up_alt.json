@@ -1,0 +1,7 @@
+{
+ "parent": "hbm_m:block/bomb/template_fire_up_alt_tinted",
+ "render_type": "minecraft:cutout",
+ "textures": {
+  "fire": "hbm_m:block/bomb/balefire"
+ }
+}

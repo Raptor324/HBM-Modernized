@@ -1,0 +1,10 @@
+{
+ "variants": {
+  "on=false": {
+   "model": "hbm_m:block/fluid_switch_off"
+  },
+  "on=true": {
+   "model": "hbm_m:block/fluid_switch_on"
+  }
+ }
+}

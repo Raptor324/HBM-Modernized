@@ -10,4 +10,9 @@ import net.minecraft.world.item.ItemStack;
 public interface IItemControlReceiver {
 
     void receiveControl(ItemStack stack, CompoundTag data);
+
+    /** Original {@code receiveControl(EntityPlayer, ItemStack, NBTTagCompound)}; Standard ohne Spieler. */
+    default void receiveControl(net.minecraft.world.entity.player.Player player, ItemStack stack, CompoundTag data) {
+        receiveControl(stack, data);
+    }
 }

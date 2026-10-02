@@ -1,64 +1,79 @@
 package com.hbm_m.block.generic;
 
-import com.hbm_m.hazard.HazardRegistry;
-import com.hbm_m.hazard.HazardSystem;
-import com.hbm_m.radiation.ChunkRadiationManager;
+import com.hbm_m.block.ModBlocks;
+import com.hbm_m.effect.ModEffects;
+import com.hbm_m.particle.ModParticleTypes;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.particles.ParticleTypes;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
-import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
 
 /**
- * Порт {@link com.hbm.blocks.generic.BlockOre} 1.7.10.
- *
- * <p>В 1.7.10 {@code BlockOre} имеет {@code rad}-поле и {@code updateTick}, который при {@code rad > 0}
- * эмиттит радиацию в чанк и перепланирует себя каждые 20 тиков. Здесь используется та же логика через
- * {@link HazardSystem#getHazardLevelFromStack} — если у блока есть RADIATION hazard (например
- * {@code waste_trinitite}), он становится per-tick эмиттером, как BlockHazard.</p>
+ * 1:1 {@link com.hbm.blocks.generic.BlockOre} (1.7.10). Die Drops ({@code getItemDropped}/{@code quantityDropped}/
+ * Glueck, {@code noFortune}, keine Behutsamkeit fuer {@code ore_oil}) stehen in den Loot-Tabellen
+ * ({@code ModBlockLootTableProvider}); hier das Verhalten: Effekte beim Betreten, Partikel der Trinitit-/Muellbloecke
+ * und das Nachruecken des Oelerzes. Das veraltete {@code rad}-Feld ist bei allen Original-Erzen 0 - keine Strahlung.
  */
 public class BlockOre extends Block {
-
-    /** 1.7.10 {@code BlockOre#tickRate} = 20 при rad > 0. */
-    private static final int RAD_TICK_INTERVAL = 20;
 
     public BlockOre(Properties properties) {
         super(properties);
     }
 
     @Override
-    public void animateTick(BlockState state, Level level, BlockPos pos, RandomSource random) {
-        level.addParticle(ParticleTypes.MYCELIUM,
-                pos.getX() + random.nextFloat(),
-                pos.getY() + 1.1F,
-                pos.getZ() + random.nextFloat(),
-                0.0D, 0.0D, 0.0D);
-    }
+    public void stepOn(Level world, BlockPos pos, BlockState state, Entity entity) {
+        super.stepOn(world, pos, state, entity);
 
-    @Override
-    public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
-        super.onPlace(state, level, pos, oldState, isMoving);
-        if (currentRad() > 0F && !level.isClientSide) {
-            level.scheduleTick(pos, this, RAD_TICK_INTERVAL);
+        if (entity instanceof LivingEntity living) {
+
+            if (this == ModBlocks.FROZEN_DIRT.get()) {
+                living.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 2 * 60 * 20, 2));
+            }
+            if (this == ModBlocks.BLOCK_TRINITITE.get()) {
+                living.addEffect(new MobEffectInstance(ModEffects.RADIATION.get(), 30 * 20, 2));
+            }
+            if (this == ModBlocks.BLOCK_WASTE.get()) {
+                living.addEffect(new MobEffectInstance(ModEffects.RADIATION.get(), 30 * 20, 2));
+            }
+            if (this == ModBlocks.WASTE_TRINITITE.get() || this == ModBlocks.WASTE_TRINITITE_RED.get()) {
+                living.addEffect(new MobEffectInstance(ModEffects.RADIATION.get(), 5 * 20, 2));
+            }
+            if (this == ModBlocks.BRICK_JUNGLE_OOZE.get()) {
+                living.addEffect(new MobEffectInstance(ModEffects.RADIATION.get(), 15 * 20, 9));
+            }
+            if (this == ModBlocks.BRICK_JUNGLE_MYSTIC.get()) {
+                living.addEffect(new MobEffectInstance(ModEffects.TAINT.get(), 15 * 20, 2));
+            }
         }
     }
 
-    /** Порт {@code BlockOre#updateTick} (1.7.10): эмиттит {@code rad} и перепланирует себя. */
     @Override
-    public void tick(BlockState state, ServerLevel level, BlockPos pos, RandomSource random) {
-        float rad = currentRad();
-        if (rad > 0F) {
-            ChunkRadiationManager.incrementRad(level, pos.getX(), pos.getY(), pos.getZ(), rad);
-            level.scheduleTick(pos, this, RAD_TICK_INTERVAL);
+    public void animateTick(BlockState state, Level world, BlockPos pos, RandomSource rand) {
+        super.animateTick(state, world, pos, rand);
+        int x = pos.getX(), y = pos.getY(), z = pos.getZ();
+
+        if (this == ModBlocks.BLOCK_TRINITITE.get() || this == ModBlocks.BLOCK_WASTE.get()) {
+            world.addParticle(ModParticleTypes.TOWNAURA.get(), x + rand.nextFloat(), y + 1.0625, z + rand.nextFloat(), 0, 0, 0);
+        }
+        if ((this == ModBlocks.WASTE_TRINITITE.get() || this == ModBlocks.WASTE_TRINITITE_RED.get()) && rand.nextInt(5) == 0) {
+            world.addParticle(ModParticleTypes.TOWNAURA.get(), x + rand.nextFloat(), y + 1.0625, z + rand.nextFloat(), 0, 0, 0);
         }
     }
 
-    /** {@code rad = hazard × 0.1F} (как BlockHazard в 1.7.10). */
-    protected float currentRad() {
-        return HazardSystem.getHazardLevelFromStack(new ItemStack(this), HazardRegistry.RADIATION) * 0.1F;
+    /** onNeighborBlockChange: liegt unter dem Oelerz ein leeres Oelerz, tauschen beide (das Oel "rutscht nach"). */
+    @Override
+    public void neighborChanged(BlockState state, Level world, BlockPos pos, Block block, BlockPos fromPos, boolean isMoving) {
+        super.neighborChanged(state, world, pos, block, fromPos, isMoving);
+        if (world.isClientSide) return;
+        if (world.getBlockState(pos.below()).is(ModBlocks.ORE_OIL_EMPTY.get())) {
+            world.setBlock(pos, ModBlocks.ORE_OIL_EMPTY.get().defaultBlockState(), 3);
+            world.setBlock(pos.below(), ModBlocks.ORE_OIL.get().defaultBlockState(), 3);
+        }
     }
 }

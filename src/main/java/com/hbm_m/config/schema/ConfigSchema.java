@@ -45,6 +45,23 @@ public final class ConfigSchema {
     private static void register() {
         // ── SERVER: общие ───────────────────────────────────────────
         reg(ConfigField.bool("enableRadiation", ConfigSide.SERVER, ApplyMode.LIVE, "general").withComment("Enables / disables global radiation system"));
+        reg(ConfigField.bool("enableMeteorStrikes", ConfigSide.SERVER, ApplyMode.LIVE, "meteor").withComment("Toggles the spawning of meteors"));
+        reg(ConfigField.bool("enableMycelium", ConfigSide.SERVER, ApplyMode.LIVE, "general").withComment("Allows glowing mycelium to spread"));
+        reg(ConfigField.bool("cleanupDeadDirt", ConfigSide.SERVER, ApplyMode.LIVE, "world_effects").withComment("Whether dead grass and mycelium should decay into dirt"));
+        reg(ConfigField.bool("enable528ColtanDeposit", ConfigSide.SERVER, ApplyMode.LIVE, "528").withComment("Enables the coltan deposit. A large amount of coltan will spawn around a single random location in the world."));
+        reg(ConfigField.bool("enableMachineGravity", ConfigSide.SERVER, ApplyMode.LIVE, "general").withComment("Requires large large machines to have a proper foundation, or else they tilt and break. Independent of 528 mode."));
+        reg(ConfigField.bool("enable528MachineGravity", ConfigSide.SERVER, ApplyMode.LIVE, "528").withComment("Requires most large machines to have a proper foundation, or else they tilt and break."));
+        reg(ConfigField.bool("enable528ColtanSpawn", ConfigSide.SERVER, ApplyMode.LIVE, "528").withComment("Enables coltan ore as a random spawn in the world. Unlike the deposit option, coltan will not just spawn in one central location."));
+        reg(ConfigField.integer("coltanRate", ConfigSide.SERVER, ApplyMode.LIVE, "528", 0, Integer.MAX_VALUE).withComment("Determines how many coltan ore veins are to be expected in a chunk. These values do not affect the frequency in deposits, and only apply if random coltan spawning is enabled."));
+        reg(ConfigField.bool("enableMeteorShowers", ConfigSide.SERVER, ApplyMode.LIVE, "meteor").withComment("Toggles meteor showers, which start with a 1% chance for every spawned meteor"));
+        reg(ConfigField.bool("enableMeteorTails", ConfigSide.SERVER, ApplyMode.LIVE, "meteor").withComment("Toggles the particle effect created by falling meteors"));
+        reg(ConfigField.bool("enableSpecialMeteors", ConfigSide.SERVER, ApplyMode.LIVE, "meteor").withComment("Toggles rare, special meteor types with different impact effects"));
+        reg(ConfigField.integer("meteorStrikeChance", ConfigSide.SERVER, ApplyMode.LIVE, "meteor", 1, Integer.MAX_VALUE).withComment("The probability of a meteor spawning (an average of once every nTH ticks)"));
+        reg(ConfigField.integer("meteorShowerChance", ConfigSide.SERVER, ApplyMode.LIVE, "meteor", 1, Integer.MAX_VALUE).withComment("The probability of a meteor spawning during meteor shower (an average of once every nTH ticks)"));
+        reg(ConfigField.integer("meteorShowerDuration", ConfigSide.SERVER, ApplyMode.LIVE, "meteor", 0, Integer.MAX_VALUE).withComment("Max duration of meteor shower in ticks"));
+        reg(ConfigField.bool("renderRebarSimple", ConfigSide.CLIENT, ApplyMode.LIVE, "general").withComment("Renders rebar with only three bars (needs a resource reload)"));
+        reg(ConfigField.bool("renderReeds", ConfigSide.CLIENT, ApplyMode.LIVE, "general").withComment("Renders reeds all the way down to the ground (needs a chunk reload)"));
+        reg(ConfigField.integer("renderRebarLimit", ConfigSide.CLIENT, ApplyMode.LIVE, "general", 0, 100000).withComment("How many rebar blocks may render their concrete fill per frame"));
         reg(ConfigField.bool("enableChunkRads", ConfigSide.SERVER, ApplyMode.LIVE, "general"));
         reg(ConfigField.bool("enableMOTD", ConfigSide.CLIENT, ApplyMode.LIVE, "general"));
 

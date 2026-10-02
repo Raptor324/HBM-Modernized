@@ -55,6 +55,8 @@ public final class ShredderRecipeGenerator {
     public static void generate(Consumer<FinishedRecipe> writer,
                                 Function<ItemLike, InventoryChangeTrigger.TriggerInstance> hasItem) {
         registerBasicConversions(writer);
+        registerDecoPipes(writer);
+        registerSteelDeco(writer);
         registerMetalPowders(writer);
         registerModRawOreRecipes(writer);
         generatePowderProcessing(writer, hasItem);
@@ -88,6 +90,36 @@ public final class ShredderRecipeGenerator {
             ShredderRecipeBuilder.shredderRecipe(ModItems.LIMESTONE.get(),
                             ModMaterialItems.get(ModMaterials.LIMESTONE, MaterialShape.POWDER), 1)
                     .save(writer, "shredder/limestone_to_powder");
+        }
+    }
+
+    /** ShredderRecipes: boxcar -> 32 Stahlstaub, steel_poles -> 2 kleiner Stahlstaub, steel_corner -> 18 kleiner Stahlstaub. */
+    private static void registerSteelDeco(Consumer<FinishedRecipe> writer) {
+        ShredderRecipeBuilder.shredderRecipe(ModBlocks.BOXCAR.get().asItem(), ModMaterialItems.get(ModMaterials.STEEL, MaterialShape.POWDER), 32)
+                .save(writer, "shredder/boxcar");
+        ShredderRecipeBuilder.shredderRecipe(ModBlocks.STEEL_POLE.get().asItem(), ModMaterialItems.get(ModMaterials.STEEL, MaterialShape.POWDER_TINY), 2)
+                .save(writer, "shredder/steel_pole");
+        ShredderRecipeBuilder.shredderRecipe(ModBlocks.STEEL_CORNER.get().asItem(), ModMaterialItems.get(ModMaterials.STEEL, MaterialShape.POWDER_TINY), 18)
+                .save(writer, "shredder/steel_corner");
+        ShredderRecipeBuilder.shredderRecipe(ModBlocks.STEEL_SCAFFOLD.get().asItem(), ModMaterialItems.get(ModMaterials.STEEL, MaterialShape.POWDER_TINY), 4)
+                .save(writer, "shredder/steel_scaffold");
+        ShredderRecipeBuilder.shredderRecipe(ModBlocks.STEEL_SCAFFOLD_RED.get().asItem(), ModMaterialItems.get(ModMaterials.STEEL, MaterialShape.POWDER_TINY), 4)
+                .save(writer, "shredder/steel_scaffold_red");
+        ShredderRecipeBuilder.shredderRecipe(ModBlocks.STEEL_SCAFFOLD_WHITE.get().asItem(), ModMaterialItems.get(ModMaterials.STEEL, MaterialShape.POWDER_TINY), 4)
+                .save(writer, "shredder/steel_scaffold_white");
+        ShredderRecipeBuilder.shredderRecipe(ModBlocks.STEEL_SCAFFOLD_YELLOW.get().asItem(), ModMaterialItems.get(ModMaterials.STEEL, MaterialShape.POWDER_TINY), 4)
+                .save(writer, "shredder/steel_scaffold_yellow");
+        ShredderRecipeBuilder.shredderRecipe(ModBlocks.DUNGEON_CHAIN.get().asItem(), ModMaterialItems.get(ModMaterials.STEEL, MaterialShape.POWDER_TINY), 1)
+                .save(writer, "shredder/dungeon_chain");
+        ShredderRecipeBuilder.shredderRecipe(ModBlocks.STEEL_GRATE.get().asItem(), ModMaterialItems.get(ModMaterials.STEEL, MaterialShape.POWDER_TINY), 3)
+                .save(writer, "shredder/steel_grate");
+    }
+
+    /** ShredderRecipes: alle 24 deco_pipe-Varianten -> 1 Stahlstaub. */
+    private static void registerDecoPipes(Consumer<FinishedRecipe> writer) {
+        for (var pipe : java.util.List.of(ModBlocks.DECO_PIPE, ModBlocks.DECO_PIPE_RUSTED, ModBlocks.DECO_PIPE_GREEN, ModBlocks.DECO_PIPE_GREEN_RUSTED, ModBlocks.DECO_PIPE_RED, ModBlocks.DECO_PIPE_MARKED, ModBlocks.DECO_PIPE_RIM, ModBlocks.DECO_PIPE_RIM_RUSTED, ModBlocks.DECO_PIPE_RIM_GREEN, ModBlocks.DECO_PIPE_RIM_GREEN_RUSTED, ModBlocks.DECO_PIPE_RIM_RED, ModBlocks.DECO_PIPE_RIM_MARKED, ModBlocks.DECO_PIPE_FRAMED, ModBlocks.DECO_PIPE_FRAMED_RUSTED, ModBlocks.DECO_PIPE_FRAMED_GREEN, ModBlocks.DECO_PIPE_FRAMED_GREEN_RUSTED, ModBlocks.DECO_PIPE_FRAMED_RED, ModBlocks.DECO_PIPE_FRAMED_MARKED, ModBlocks.DECO_PIPE_QUAD, ModBlocks.DECO_PIPE_QUAD_RUSTED, ModBlocks.DECO_PIPE_QUAD_GREEN, ModBlocks.DECO_PIPE_QUAD_GREEN_RUSTED, ModBlocks.DECO_PIPE_QUAD_RED, ModBlocks.DECO_PIPE_QUAD_MARKED)) {
+            ShredderRecipeBuilder.shredderRecipe(pipe.get().asItem(), ModMaterialItems.get(ModMaterials.STEEL, MaterialShape.POWDER), 1)
+                    .save(writer, "shredder/" + pipe.getId().getPath());
         }
     }
 

@@ -78,6 +78,12 @@ public class DepthOreBlock extends Block {
     // Запретить ломать блок инструментом (игроком)
     @Override
     public float getDestroyProgress(BlockState state, Player player, BlockGetter level, BlockPos pos) {
+        // Original BlockDepth.getPlayerRelativeBlockHardness: IDepthRockTool bricht Tiefengestein mit 1/50
+        net.minecraft.world.item.ItemStack held = player.getMainHandItem();
+        if (!held.isEmpty() && held.getItem() instanceof com.hbm_m.api.item.IDepthRockTool tool) {
+            if (tool.canBreakRock(level, player, held, state, pos))
+                return (float) (1D / 50D);
+        }
         return 0.0F;
     }
 

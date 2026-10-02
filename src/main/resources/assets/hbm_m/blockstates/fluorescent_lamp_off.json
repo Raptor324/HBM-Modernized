@@ -1,0 +1,652 @@
+{
+ "variants": {
+  "broken=false,conn=down,facing=down,part=single": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_down_single"
+  },
+  "broken=true,conn=down,facing=down,part=single": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_down_single"
+  },
+  "broken=false,conn=up,facing=down,part=single": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_down_single"
+  },
+  "broken=true,conn=up,facing=down,part=single": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_down_single"
+  },
+  "broken=false,conn=north,facing=down,part=single": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_down_single"
+  },
+  "broken=true,conn=north,facing=down,part=single": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_down_single"
+  },
+  "broken=false,conn=south,facing=down,part=single": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_down_single"
+  },
+  "broken=true,conn=south,facing=down,part=single": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_down_single"
+  },
+  "broken=false,conn=west,facing=down,part=single": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_down_single"
+  },
+  "broken=true,conn=west,facing=down,part=single": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_down_single"
+  },
+  "broken=false,conn=east,facing=down,part=single": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_down_single"
+  },
+  "broken=true,conn=east,facing=down,part=single": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_down_single"
+  },
+  "broken=false,conn=down,facing=down,part=cap": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_down_single"
+  },
+  "broken=true,conn=down,facing=down,part=cap": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_down_single"
+  },
+  "broken=false,conn=down,facing=down,part=mid": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_down_single"
+  },
+  "broken=true,conn=down,facing=down,part=mid": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_down_single"
+  },
+  "broken=false,conn=up,facing=down,part=cap": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_down_single"
+  },
+  "broken=true,conn=up,facing=down,part=cap": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_down_single"
+  },
+  "broken=false,conn=up,facing=down,part=mid": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_down_single"
+  },
+  "broken=true,conn=up,facing=down,part=mid": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_down_single"
+  },
+  "broken=false,conn=north,facing=down,part=cap": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_down_cap_north"
+  },
+  "broken=true,conn=north,facing=down,part=cap": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_down_cap_north"
+  },
+  "broken=false,conn=north,facing=down,part=mid": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_down_mid_north"
+  },
+  "broken=true,conn=north,facing=down,part=mid": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_down_mid_north"
+  },
+  "broken=false,conn=south,facing=down,part=cap": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_down_cap_south"
+  },
+  "broken=true,conn=south,facing=down,part=cap": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_down_cap_south"
+  },
+  "broken=false,conn=south,facing=down,part=mid": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_down_mid_south"
+  },
+  "broken=true,conn=south,facing=down,part=mid": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_down_mid_south"
+  },
+  "broken=false,conn=west,facing=down,part=cap": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_down_cap_west"
+  },
+  "broken=true,conn=west,facing=down,part=cap": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_down_cap_west"
+  },
+  "broken=false,conn=west,facing=down,part=mid": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_down_mid_west"
+  },
+  "broken=true,conn=west,facing=down,part=mid": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_down_mid_west"
+  },
+  "broken=false,conn=east,facing=down,part=cap": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_down_cap_east"
+  },
+  "broken=true,conn=east,facing=down,part=cap": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_down_cap_east"
+  },
+  "broken=false,conn=east,facing=down,part=mid": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_down_mid_east"
+  },
+  "broken=true,conn=east,facing=down,part=mid": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_down_mid_east"
+  },
+  "broken=false,conn=down,facing=up,part=single": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_up_single"
+  },
+  "broken=true,conn=down,facing=up,part=single": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_up_single"
+  },
+  "broken=false,conn=up,facing=up,part=single": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_up_single"
+  },
+  "broken=true,conn=up,facing=up,part=single": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_up_single"
+  },
+  "broken=false,conn=north,facing=up,part=single": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_up_single"
+  },
+  "broken=true,conn=north,facing=up,part=single": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_up_single"
+  },
+  "broken=false,conn=south,facing=up,part=single": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_up_single"
+  },
+  "broken=true,conn=south,facing=up,part=single": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_up_single"
+  },
+  "broken=false,conn=west,facing=up,part=single": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_up_single"
+  },
+  "broken=true,conn=west,facing=up,part=single": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_up_single"
+  },
+  "broken=false,conn=east,facing=up,part=single": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_up_single"
+  },
+  "broken=true,conn=east,facing=up,part=single": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_up_single"
+  },
+  "broken=false,conn=down,facing=up,part=cap": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_up_single"
+  },
+  "broken=true,conn=down,facing=up,part=cap": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_up_single"
+  },
+  "broken=false,conn=down,facing=up,part=mid": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_up_single"
+  },
+  "broken=true,conn=down,facing=up,part=mid": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_up_single"
+  },
+  "broken=false,conn=up,facing=up,part=cap": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_up_single"
+  },
+  "broken=true,conn=up,facing=up,part=cap": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_up_single"
+  },
+  "broken=false,conn=up,facing=up,part=mid": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_up_single"
+  },
+  "broken=true,conn=up,facing=up,part=mid": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_up_single"
+  },
+  "broken=false,conn=north,facing=up,part=cap": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_up_cap_north"
+  },
+  "broken=true,conn=north,facing=up,part=cap": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_up_cap_north"
+  },
+  "broken=false,conn=north,facing=up,part=mid": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_up_mid_north"
+  },
+  "broken=true,conn=north,facing=up,part=mid": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_up_mid_north"
+  },
+  "broken=false,conn=south,facing=up,part=cap": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_up_cap_south"
+  },
+  "broken=true,conn=south,facing=up,part=cap": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_up_cap_south"
+  },
+  "broken=false,conn=south,facing=up,part=mid": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_up_mid_south"
+  },
+  "broken=true,conn=south,facing=up,part=mid": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_up_mid_south"
+  },
+  "broken=false,conn=west,facing=up,part=cap": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_up_cap_west"
+  },
+  "broken=true,conn=west,facing=up,part=cap": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_up_cap_west"
+  },
+  "broken=false,conn=west,facing=up,part=mid": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_up_mid_west"
+  },
+  "broken=true,conn=west,facing=up,part=mid": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_up_mid_west"
+  },
+  "broken=false,conn=east,facing=up,part=cap": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_up_cap_east"
+  },
+  "broken=true,conn=east,facing=up,part=cap": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_up_cap_east"
+  },
+  "broken=false,conn=east,facing=up,part=mid": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_up_mid_east"
+  },
+  "broken=true,conn=east,facing=up,part=mid": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_up_mid_east"
+  },
+  "broken=false,conn=down,facing=north,part=single": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_north_single"
+  },
+  "broken=true,conn=down,facing=north,part=single": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_north_single"
+  },
+  "broken=false,conn=up,facing=north,part=single": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_north_single"
+  },
+  "broken=true,conn=up,facing=north,part=single": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_north_single"
+  },
+  "broken=false,conn=north,facing=north,part=single": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_north_single"
+  },
+  "broken=true,conn=north,facing=north,part=single": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_north_single"
+  },
+  "broken=false,conn=south,facing=north,part=single": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_north_single"
+  },
+  "broken=true,conn=south,facing=north,part=single": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_north_single"
+  },
+  "broken=false,conn=west,facing=north,part=single": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_north_single"
+  },
+  "broken=true,conn=west,facing=north,part=single": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_north_single"
+  },
+  "broken=false,conn=east,facing=north,part=single": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_north_single"
+  },
+  "broken=true,conn=east,facing=north,part=single": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_north_single"
+  },
+  "broken=false,conn=down,facing=north,part=cap": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_north_cap_down"
+  },
+  "broken=true,conn=down,facing=north,part=cap": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_north_cap_down"
+  },
+  "broken=false,conn=down,facing=north,part=mid": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_north_mid_down"
+  },
+  "broken=true,conn=down,facing=north,part=mid": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_north_mid_down"
+  },
+  "broken=false,conn=up,facing=north,part=cap": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_north_cap_up"
+  },
+  "broken=true,conn=up,facing=north,part=cap": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_north_cap_up"
+  },
+  "broken=false,conn=up,facing=north,part=mid": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_north_mid_up"
+  },
+  "broken=true,conn=up,facing=north,part=mid": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_north_mid_up"
+  },
+  "broken=false,conn=north,facing=north,part=cap": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_north_single"
+  },
+  "broken=true,conn=north,facing=north,part=cap": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_north_single"
+  },
+  "broken=false,conn=north,facing=north,part=mid": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_north_single"
+  },
+  "broken=true,conn=north,facing=north,part=mid": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_north_single"
+  },
+  "broken=false,conn=south,facing=north,part=cap": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_north_single"
+  },
+  "broken=true,conn=south,facing=north,part=cap": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_north_single"
+  },
+  "broken=false,conn=south,facing=north,part=mid": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_north_single"
+  },
+  "broken=true,conn=south,facing=north,part=mid": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_north_single"
+  },
+  "broken=false,conn=west,facing=north,part=cap": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_north_cap_west"
+  },
+  "broken=true,conn=west,facing=north,part=cap": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_north_cap_west"
+  },
+  "broken=false,conn=west,facing=north,part=mid": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_north_mid_west"
+  },
+  "broken=true,conn=west,facing=north,part=mid": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_north_mid_west"
+  },
+  "broken=false,conn=east,facing=north,part=cap": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_north_cap_east"
+  },
+  "broken=true,conn=east,facing=north,part=cap": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_north_cap_east"
+  },
+  "broken=false,conn=east,facing=north,part=mid": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_north_mid_east"
+  },
+  "broken=true,conn=east,facing=north,part=mid": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_north_mid_east"
+  },
+  "broken=false,conn=down,facing=south,part=single": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_south_single"
+  },
+  "broken=true,conn=down,facing=south,part=single": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_south_single"
+  },
+  "broken=false,conn=up,facing=south,part=single": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_south_single"
+  },
+  "broken=true,conn=up,facing=south,part=single": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_south_single"
+  },
+  "broken=false,conn=north,facing=south,part=single": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_south_single"
+  },
+  "broken=true,conn=north,facing=south,part=single": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_south_single"
+  },
+  "broken=false,conn=south,facing=south,part=single": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_south_single"
+  },
+  "broken=true,conn=south,facing=south,part=single": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_south_single"
+  },
+  "broken=false,conn=west,facing=south,part=single": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_south_single"
+  },
+  "broken=true,conn=west,facing=south,part=single": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_south_single"
+  },
+  "broken=false,conn=east,facing=south,part=single": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_south_single"
+  },
+  "broken=true,conn=east,facing=south,part=single": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_south_single"
+  },
+  "broken=false,conn=down,facing=south,part=cap": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_south_cap_down"
+  },
+  "broken=true,conn=down,facing=south,part=cap": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_south_cap_down"
+  },
+  "broken=false,conn=down,facing=south,part=mid": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_south_mid_down"
+  },
+  "broken=true,conn=down,facing=south,part=mid": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_south_mid_down"
+  },
+  "broken=false,conn=up,facing=south,part=cap": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_south_cap_up"
+  },
+  "broken=true,conn=up,facing=south,part=cap": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_south_cap_up"
+  },
+  "broken=false,conn=up,facing=south,part=mid": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_south_mid_up"
+  },
+  "broken=true,conn=up,facing=south,part=mid": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_south_mid_up"
+  },
+  "broken=false,conn=north,facing=south,part=cap": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_south_single"
+  },
+  "broken=true,conn=north,facing=south,part=cap": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_south_single"
+  },
+  "broken=false,conn=north,facing=south,part=mid": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_south_single"
+  },
+  "broken=true,conn=north,facing=south,part=mid": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_south_single"
+  },
+  "broken=false,conn=south,facing=south,part=cap": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_south_single"
+  },
+  "broken=true,conn=south,facing=south,part=cap": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_south_single"
+  },
+  "broken=false,conn=south,facing=south,part=mid": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_south_single"
+  },
+  "broken=true,conn=south,facing=south,part=mid": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_south_single"
+  },
+  "broken=false,conn=west,facing=south,part=cap": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_south_cap_west"
+  },
+  "broken=true,conn=west,facing=south,part=cap": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_south_cap_west"
+  },
+  "broken=false,conn=west,facing=south,part=mid": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_south_mid_west"
+  },
+  "broken=true,conn=west,facing=south,part=mid": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_south_mid_west"
+  },
+  "broken=false,conn=east,facing=south,part=cap": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_south_cap_east"
+  },
+  "broken=true,conn=east,facing=south,part=cap": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_south_cap_east"
+  },
+  "broken=false,conn=east,facing=south,part=mid": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_south_mid_east"
+  },
+  "broken=true,conn=east,facing=south,part=mid": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_south_mid_east"
+  },
+  "broken=false,conn=down,facing=west,part=single": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_west_single"
+  },
+  "broken=true,conn=down,facing=west,part=single": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_west_single"
+  },
+  "broken=false,conn=up,facing=west,part=single": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_west_single"
+  },
+  "broken=true,conn=up,facing=west,part=single": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_west_single"
+  },
+  "broken=false,conn=north,facing=west,part=single": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_west_single"
+  },
+  "broken=true,conn=north,facing=west,part=single": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_west_single"
+  },
+  "broken=false,conn=south,facing=west,part=single": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_west_single"
+  },
+  "broken=true,conn=south,facing=west,part=single": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_west_single"
+  },
+  "broken=false,conn=west,facing=west,part=single": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_west_single"
+  },
+  "broken=true,conn=west,facing=west,part=single": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_west_single"
+  },
+  "broken=false,conn=east,facing=west,part=single": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_west_single"
+  },
+  "broken=true,conn=east,facing=west,part=single": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_west_single"
+  },
+  "broken=false,conn=down,facing=west,part=cap": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_west_cap_down"
+  },
+  "broken=true,conn=down,facing=west,part=cap": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_west_cap_down"
+  },
+  "broken=false,conn=down,facing=west,part=mid": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_west_mid_down"
+  },
+  "broken=true,conn=down,facing=west,part=mid": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_west_mid_down"
+  },
+  "broken=false,conn=up,facing=west,part=cap": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_west_cap_up"
+  },
+  "broken=true,conn=up,facing=west,part=cap": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_west_cap_up"
+  },
+  "broken=false,conn=up,facing=west,part=mid": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_west_mid_up"
+  },
+  "broken=true,conn=up,facing=west,part=mid": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_west_mid_up"
+  },
+  "broken=false,conn=north,facing=west,part=cap": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_west_cap_north"
+  },
+  "broken=true,conn=north,facing=west,part=cap": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_west_cap_north"
+  },
+  "broken=false,conn=north,facing=west,part=mid": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_west_mid_north"
+  },
+  "broken=true,conn=north,facing=west,part=mid": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_west_mid_north"
+  },
+  "broken=false,conn=south,facing=west,part=cap": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_west_cap_south"
+  },
+  "broken=true,conn=south,facing=west,part=cap": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_west_cap_south"
+  },
+  "broken=false,conn=south,facing=west,part=mid": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_west_mid_south"
+  },
+  "broken=true,conn=south,facing=west,part=mid": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_west_mid_south"
+  },
+  "broken=false,conn=west,facing=west,part=cap": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_west_single"
+  },
+  "broken=true,conn=west,facing=west,part=cap": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_west_single"
+  },
+  "broken=false,conn=west,facing=west,part=mid": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_west_single"
+  },
+  "broken=true,conn=west,facing=west,part=mid": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_west_single"
+  },
+  "broken=false,conn=east,facing=west,part=cap": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_west_single"
+  },
+  "broken=true,conn=east,facing=west,part=cap": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_west_single"
+  },
+  "broken=false,conn=east,facing=west,part=mid": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_west_single"
+  },
+  "broken=true,conn=east,facing=west,part=mid": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_west_single"
+  },
+  "broken=false,conn=down,facing=east,part=single": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_east_single"
+  },
+  "broken=true,conn=down,facing=east,part=single": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_east_single"
+  },
+  "broken=false,conn=up,facing=east,part=single": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_east_single"
+  },
+  "broken=true,conn=up,facing=east,part=single": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_east_single"
+  },
+  "broken=false,conn=north,facing=east,part=single": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_east_single"
+  },
+  "broken=true,conn=north,facing=east,part=single": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_east_single"
+  },
+  "broken=false,conn=south,facing=east,part=single": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_east_single"
+  },
+  "broken=true,conn=south,facing=east,part=single": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_east_single"
+  },
+  "broken=false,conn=west,facing=east,part=single": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_east_single"
+  },
+  "broken=true,conn=west,facing=east,part=single": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_east_single"
+  },
+  "broken=false,conn=east,facing=east,part=single": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_east_single"
+  },
+  "broken=true,conn=east,facing=east,part=single": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_east_single"
+  },
+  "broken=false,conn=down,facing=east,part=cap": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_east_cap_down"
+  },
+  "broken=true,conn=down,facing=east,part=cap": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_east_cap_down"
+  },
+  "broken=false,conn=down,facing=east,part=mid": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_east_mid_down"
+  },
+  "broken=true,conn=down,facing=east,part=mid": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_east_mid_down"
+  },
+  "broken=false,conn=up,facing=east,part=cap": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_east_cap_up"
+  },
+  "broken=true,conn=up,facing=east,part=cap": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_east_cap_up"
+  },
+  "broken=false,conn=up,facing=east,part=mid": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_east_mid_up"
+  },
+  "broken=true,conn=up,facing=east,part=mid": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_east_mid_up"
+  },
+  "broken=false,conn=north,facing=east,part=cap": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_east_cap_north"
+  },
+  "broken=true,conn=north,facing=east,part=cap": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_east_cap_north"
+  },
+  "broken=false,conn=north,facing=east,part=mid": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_east_mid_north"
+  },
+  "broken=true,conn=north,facing=east,part=mid": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_east_mid_north"
+  },
+  "broken=false,conn=south,facing=east,part=cap": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_east_cap_south"
+  },
+  "broken=true,conn=south,facing=east,part=cap": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_east_cap_south"
+  },
+  "broken=false,conn=south,facing=east,part=mid": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_east_mid_south"
+  },
+  "broken=true,conn=south,facing=east,part=mid": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_east_mid_south"
+  },
+  "broken=false,conn=west,facing=east,part=cap": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_east_single"
+  },
+  "broken=true,conn=west,facing=east,part=cap": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_east_single"
+  },
+  "broken=false,conn=west,facing=east,part=mid": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_east_single"
+  },
+  "broken=true,conn=west,facing=east,part=mid": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_east_single"
+  },
+  "broken=false,conn=east,facing=east,part=cap": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_east_single"
+  },
+  "broken=true,conn=east,facing=east,part=cap": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_east_single"
+  },
+  "broken=false,conn=east,facing=east,part=mid": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_east_single"
+  },
+  "broken=true,conn=east,facing=east,part=mid": {
+   "model": "hbm_m:block/lights/fluorescent_lamp_off_east_single"
+  }
+ }
+}

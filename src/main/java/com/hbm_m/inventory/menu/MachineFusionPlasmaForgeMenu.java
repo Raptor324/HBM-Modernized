@@ -94,7 +94,7 @@ public class MachineFusionPlasmaForgeMenu extends AbstractContainerMenu {
             if (!moveItemStackTo(stack, MACHINE_SLOTS, slots.size(), true)) return ItemStack.EMPTY;
         } else {
             // Original: Blaupause -> Slot 1, Batterie -> Slot 0, alles andere in Booster/Eingaben.
-            if (copy.is(ModItems.BLUEPRINT_FOLDER.get())) {
+            if (copy.is(ModItems.BLUEPRINTS.get())) {
                 if (!moveItemStackTo(stack, FusionPlasmaForgeBlockEntity.SLOT_BLUEPRINT,
                         FusionPlasmaForgeBlockEntity.SLOT_BLUEPRINT + 1, false)) return ItemStack.EMPTY;
             } else if (!moveItemStackTo(stack, FusionPlasmaForgeBlockEntity.SLOT_BOOSTER,

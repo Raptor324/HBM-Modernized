@@ -36,54 +36,149 @@ public enum ModArmorMaterials implements ArmorMaterial {
 /*public enum ModArmorMaterials {
 *///?}
 
-    ALLOY("alloy", 26, new int[]{ 5, 7, 5, 4 }, 25,
-            SoundEvents.ARMOR_EQUIP_IRON, 1.25f, 0.05f, () -> Ingredient.of(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE))),
+    /** Original HBM_ALLOY (Deprecated), ohne Reparaturmaterial. */
+    ALLOY("alloy", 40, new int[]{ 3, 8, 6, 3 }, 12,
+            SoundEvents.ARMOR_EQUIP_IRON, 0f, 0f, () -> Ingredient.EMPTY),
 
-    STARMETAL("starmetal", 26, new int[]{ 8, 8, 8, 8 }, 25,
-            SoundEvents.ARMOR_EQUIP_GOLD, 2f, 0.2f, () -> Ingredient.of(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE))),
+    /** Original HBM_STARMETAL. */
+    STARMETAL("starmetal", 150, new int[]{ 3, 8, 6, 3 }, 100,
+            SoundEvents.ARMOR_EQUIP_IRON, 0f, 0f, () -> Ingredient.of(ModMaterialItems.item(ModMaterials.STARMETAL, MaterialShape.INGOT))),
 
-    SECURITY("security", 26, new int[]{ 4, 6, 4, 3 }, 25,
-            SoundEvents.ARMOR_EQUIP_CHAIN, 1.25f, 0.03f, () -> Ingredient.of(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE))),
+    /** Original HBM_SECURITY. */
+    SECURITY("security", 100, new int[]{ 3, 8, 6, 3 }, 15,
+            SoundEvents.ARMOR_EQUIP_IRON, 0f, 0f, () -> Ingredient.of(ModItems.PLATE_KEVLAR.get())),
 
-    HAZMAT("hazmat", 26, new int[]{ 2, 4, 2, 1 }, 25,
-            SoundEvents.ARMOR_EQUIP_LEATHER, 0f, 0f, () -> Ingredient.of(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE))),
+    /** Original HBM_HAZMAT. */
+    HAZMAT("hazmat", 60, new int[]{ 2, 5, 4, 1 }, 5,
+            SoundEvents.ARMOR_EQUIP_LEATHER, 0f, 0f, () -> Ingredient.of(ModItems.HAZMAT_CLOTH.get())),
 
-    PAA("paa", 26, new int[]{ 5, 7, 5, 4 }, 25,
-            SoundEvents.ARMOR_EQUIP_GOLD, 1.75f, 0.07f, () -> Ingredient.of(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE))),
+    /** Original HBM_HAZMAT2. */
+    HAZMAT_RED("hazmat_red", 60, new int[]{ 2, 5, 4, 1 }, 5,
+            SoundEvents.ARMOR_EQUIP_LEATHER, 0f, 0f, () -> Ingredient.of(ModItems.HAZMAT_CLOTH_RED.get())),
 
-    LIQUIDATOR("liquidator", 26, new int[]{ 5, 7, 6, 4 }, 25,
-            SoundEvents.ARMOR_EQUIP_IRON, 1.5f, 0.1f, () -> Ingredient.of(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE))),
+    /** Original HBM_HAZMAT3. */
+    HAZMAT_GREY("hazmat_grey", 60, new int[]{ 2, 5, 4, 1 }, 5,
+            SoundEvents.ARMOR_EQUIP_LEATHER, 0f, 0f, () -> Ingredient.of(ModItems.HAZMAT_CLOTH_GREY.get())),
 
-    STEEL("steel", 26, new int[]{ 4, 5, 3, 2 }, 25,
-            SoundEvents.ARMOR_EQUIP_IRON, 1f, 0.03f, () -> Ingredient.of(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE))),
+    /** Original HBM_PAA. */
+    PAA("paa", 75, new int[]{ 3, 8, 6, 3 }, 25,
+            SoundEvents.ARMOR_EQUIP_IRON, 0f, 0f, () -> Ingredient.of(ModItems.PLATE_PAA.get())),
 
-    // The two jackts are steel-tier in the original (aMatSteel) but carry their own skin, and
-    // the shimmer weapons check for them by identity - so they need their own material rather
-    // than sharing STEEL's texture.
-    JACKT("jackt", 26, new int[]{ 4, 5, 3, 2 }, 25,
-            SoundEvents.ARMOR_EQUIP_LEATHER, 1f, 0.03f, () -> Ingredient.of(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE))),
+    /** Original HBM_LIQUIDATOR. */
+    LIQUIDATOR("liquidator", 750, new int[]{ 3, 8, 6, 3 }, 10,
+            SoundEvents.ARMOR_EQUIP_IRON, 0f, 0f, () -> Ingredient.of(ModMaterialItems.item(ModMaterials.LEAD, MaterialShape.PLATE))),
 
-    JACKT2("jackt2", 26, new int[]{ 4, 5, 3, 2 }, 25,
-            SoundEvents.ARMOR_EQUIP_LEATHER, 1f, 0.03f, () -> Ingredient.of(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE))),
+    /** Original HBM_STEEL. */
+    STEEL("steel", 30, new int[]{ 3, 8, 6, 3 }, 5,
+            SoundEvents.ARMOR_EQUIP_IRON, 0f, 0f, () -> Ingredient.of(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.INGOT))),
 
-    COBALT("cobalt", 26, new int[]{ 2, 4, 2, 1 }, 25,
-            SoundEvents.ARMOR_EQUIP_IRON, 0.25f, 0f, () -> Ingredient.of(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE))),
+    /** Original aMatSteel (eigene Textur). */
+    JACKT("jackt", 30, new int[]{ 3, 8, 6, 3 }, 5,
+            SoundEvents.ARMOR_EQUIP_IRON, 0f, 0f, () -> Ingredient.of(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.INGOT))),
 
-    AJR("ajr", 26, new int[]{ 7, 8, 6, 5 }, 25,
-            SoundEvents.ARMOR_EQUIP_IRON, 2f, 0.3f, () -> Ingredient.of(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE))),
+    /** Original aMatSteel (eigene Textur). */
+    JACKT2("jackt2", 30, new int[]{ 3, 8, 6, 3 }, 5,
+            SoundEvents.ARMOR_EQUIP_IRON, 0f, 0f, () -> Ingredient.of(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.INGOT))),
 
-    ASBESTOS("asbestos", 26, new int[]{ 3, 5, 3, 2 }, 25,
-            SoundEvents.ARMOR_EQUIP_IRON, 0f, 0f, () -> Ingredient.of(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE))),
+    /** Original HBM_COBALT. */
+    COBALT("cobalt", 70, new int[]{ 3, 8, 6, 3 }, 60,
+            SoundEvents.ARMOR_EQUIP_IRON, 0f, 0f, () -> Ingredient.of(ModMaterialItems.item(ModMaterials.COBALT, MaterialShape.INGOT))),
 
-    TITANIUM("titanium", 26, new int[]{ 5, 7, 5, 4 }, 15,
-            SoundEvents.ARMOR_EQUIP_IRON, 1f, 0.05f, () -> Ingredient.of(ModMaterialItems.item(ModMaterials.IRON, MaterialShape.PLATE))),
+    /** Original HBM_T45AJR (AJR, AJRO, RPA, NCRPA). */
+    AJR("ajr", 150, new int[]{ 3, 8, 6, 3 }, 0,
+            SoundEvents.ARMOR_EQUIP_IRON, 0f, 0f, () -> Ingredient.of(ModItems.PLATE_ARMOR_AJR.get())),
 
+    /** Original HBM_ASBESTOS. */
+    ASBESTOS("asbestos", 20, new int[]{ 1, 4, 3, 1 }, 5,
+            SoundEvents.ARMOR_EQUIP_LEATHER, 0f, 0f, () -> Ingredient.of(ModItems.ASBESTOS_CLOTH.get())),
+
+    /** Original HBM_TITANIUM. */
+    TITANIUM("titanium", 25, new int[]{ 3, 8, 6, 3 }, 9,
+            SoundEvents.ARMOR_EQUIP_IRON, 0f, 0f, () -> Ingredient.of(ModMaterialItems.item(ModMaterials.TITANIUM, MaterialShape.INGOT))),
+
+    /** Original HBM_BISMUTH. */
     BISMUTH("bismuth", 100, new int[]{ 3, 8, 6, 3 }, 100,
-            SoundEvents.ARMOR_EQUIP_IRON, 2f, 0.2f, () -> Ingredient.of(ModMaterialItems.item(ModMaterials.BISMUTH, MaterialShape.PLATE))),
+            SoundEvents.ARMOR_EQUIP_IRON, 0f, 0f, () -> Ingredient.of(ModMaterialItems.item(ModMaterials.BISMUTH, MaterialShape.PLATE))),
 
-    /** Противогазы: только шлем, символическая защита (лёгкие защищает фильтр). */
-    GAS_MASK("gas_mask", 5, new int[]{ 1, 0, 0, 0 }, 5,
-            SoundEvents.ARMOR_EQUIP_LEATHER, 0f, 0f, () -> Ingredient.of(ModItems.RAG_DAMP.get()));
+    /** Original HBM_SCHRABIDIUM. */
+    SCHRABIDIUM("schrabidium", 100, new int[]{ 3, 8, 6, 3 }, 50,
+            SoundEvents.ARMOR_EQUIP_IRON, 0f, 0f, () -> Ingredient.of(ModMaterialItems.item(ModMaterials.SCHRABIDIUM, MaterialShape.INGOT))),
+
+    /** Original HBM_EUPHEMIUM. */
+    EUPHEMIUM("euphemium", 15000000, new int[]{ 3, 8, 6, 3 }, 100,
+            SoundEvents.ARMOR_EQUIP_IRON, 0f, 0f, () -> Ingredient.EMPTY),
+
+    /** Original HBM_CMB. */
+    CMB("cmb", 60, new int[]{ 3, 8, 6, 3 }, 50,
+            SoundEvents.ARMOR_EQUIP_IRON, 0f, 0f, () -> Ingredient.of(ModMaterialItems.item(ModMaterials.COMBINE_STEEL, MaterialShape.INGOT))),
+
+    /** Original HBM_AUSIII. */
+    AUS3("aus3", 375, new int[]{ 2, 6, 5, 2 }, 0,
+            SoundEvents.ARMOR_EQUIP_IRON, 0f, 0f, () -> Ingredient.of(ModMaterialItems.item(ModMaterials.AUSTRALIUM, MaterialShape.INGOT))),
+
+    /** Original HBM_ZIRCONIUM. */
+    ZIRCONIUM("zirconium", 1000, new int[]{ 2, 5, 3, 1 }, 1000,
+            SoundEvents.ARMOR_EQUIP_IRON, 0f, 0f, () -> Ingredient.of(ModMaterialItems.item(ModMaterials.ZIRCONIUM, MaterialShape.INGOT))),
+
+    /** Original HBM_DNT_LOLOLOL. */
+    DNT("dnt", 3, new int[]{ 1, 1, 1, 1 }, 0,
+            SoundEvents.ARMOR_EQUIP_IRON, 0f, 0f, () -> Ingredient.of(ModMaterialItems.item(ModMaterials.DINEUTRONIUM, MaterialShape.INGOT))),
+
+    /** Original HBM_T51. */
+    T51("t51", 150, new int[]{ 3, 8, 6, 3 }, 0,
+            SoundEvents.ARMOR_EQUIP_IRON, 0f, 0f, () -> Ingredient.of(ModItems.PLATE_ARMOR_TITANIUM.get())),
+
+    /** Original HBM_DESH (Dampfanzug). */
+    DESH("desh", 150, new int[]{ 3, 8, 6, 3 }, 0,
+            SoundEvents.ARMOR_EQUIP_IRON, 0f, 0f, () -> Ingredient.of(ModMaterialItems.item(ModMaterials.DESH, MaterialShape.INGOT))),
+
+    /** Original HBM_BNUUY (Dieselanzug). */
+    DIESEL("diesel", 150, new int[]{ 3, 8, 6, 3 }, 0,
+            SoundEvents.ARMOR_EQUIP_IRON, 0f, 0f, () -> Ingredient.of(ModMaterialItems.item(ModMaterials.COPPER, MaterialShape.PLATE))),
+
+    /** Original HBM_BLACKJACK. */
+    BJ("bj", 150, new int[]{ 3, 8, 6, 3 }, 0,
+            SoundEvents.ARMOR_EQUIP_IRON, 0f, 0f, () -> Ingredient.of(ModItems.PLATE_ARMOR_LUNAR.get())),
+
+    /** Original HBM_ENV. */
+    ENV("env", 150, new int[]{ 3, 8, 6, 3 }, 10,
+            SoundEvents.ARMOR_EQUIP_IRON, 0f, 0f, () -> Ingredient.of(ModItems.PLATE_ARMOR_HEV.get())),
+
+    /** Original HBM_HEV. */
+    HEV("hev", 150, new int[]{ 3, 8, 6, 3 }, 0,
+            SoundEvents.ARMOR_EQUIP_IRON, 0f, 0f, () -> Ingredient.of(ModItems.PLATE_ARMOR_HEV.get())),
+
+    /** Original HBM_DIGAMMA. */
+    FAU("fau", 150, new int[]{ 3, 8, 6, 3 }, 0,
+            SoundEvents.ARMOR_EQUIP_IRON, 0f, 0f, () -> Ingredient.of(ModItems.PLATE_ARMOR_FAU.get())),
+
+    /** Original HBM_DNT_NANO. */
+    DNS("dns", 150, new int[]{ 3, 8, 6, 3 }, 0,
+            SoundEvents.ARMOR_EQUIP_IRON, 0f, 0f, () -> Ingredient.of(ModItems.PLATE_ARMOR_DNT.get())),
+
+    /** Original HBM_TRENCH (Taurun, Verzauberbarkeit 10). */
+    TAURUN("taurun", 150, new int[]{ 3, 8, 6, 3 }, 10,
+            SoundEvents.ARMOR_EQUIP_IRON, 0f, 0f, () -> Ingredient.of(ModMaterialItems.item(ModMaterials.IRON, MaterialShape.PLATE))),
+
+    /** Original HBM_TRENCH (Trenchmaster). */
+    TRENCH("trench", 150, new int[]{ 3, 8, 6, 3 }, 0,
+            SoundEvents.ARMOR_EQUIP_IRON, 0f, 0f, () -> Ingredient.of(ModMaterialItems.item(ModMaterials.IRON, MaterialShape.PLATE))),
+
+    /** Original HBM_RAGS. */
+    RAGS("rags", 150, new int[]{ 1, 1, 1, 1 }, 0,
+            SoundEvents.ARMOR_EQUIP_LEATHER, 0f, 0f, () -> Ingredient.of(ModItems.RAG.get())),
+
+    /** Original ArmorMaterial.CHAIN (Roben, Umhaenge). */
+    CHAIN("chain", 15, new int[]{ 2, 5, 4, 1 }, 12,
+            SoundEvents.ARMOR_EQUIP_CHAIN, 0f, 0f, () -> Ingredient.of(net.minecraft.world.item.Items.IRON_INGOT)),
+
+    /** Original ArmorMaterial.IRON (Brille, Maske der Schande). */
+    IRON("iron", 15, new int[]{ 2, 6, 5, 2 }, 9,
+            SoundEvents.ARMOR_EQUIP_IRON, 0f, 0f, () -> Ingredient.of(net.minecraft.world.item.Items.IRON_INGOT)),
+
+    /** Original ArmorGasMask: ArmorMaterial.IRON. */
+    GAS_MASK("gas_mask", 15, new int[]{ 2, 6, 5, 2 }, 9,
+            SoundEvents.ARMOR_EQUIP_IRON, 0f, 0f, () -> Ingredient.of(net.minecraft.world.item.Items.IRON_INGOT));
 
     private final String name;
     private final int durabilityMultiplier;
@@ -94,7 +189,8 @@ public enum ModArmorMaterials implements ArmorMaterial {
     private final float knockbackResistance;
     private final Supplier<Ingredient> repairIngredient;
 
-    private static final int[] BASE_DURABILITY = { 11, 16, 16, 13 };
+    /** 1.7.10 ItemArmor.maxDamageArray: Helm 11, Brust 16, Beine 15, Stiefel 13. */
+    private static final int[] BASE_DURABILITY = { 11, 16, 15, 13 };
 
     ModArmorMaterials(String name, int durabilityMultiplier, int[] protectionAmounts, int enchantmentValue, Object equipSound,
                       float toughness, float knockbackResistance, Supplier<Ingredient> repairIngredient) {

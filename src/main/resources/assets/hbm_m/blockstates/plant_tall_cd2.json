@@ -1,0 +1,10 @@
+{
+ "variants": {
+  "half=lower": {
+   "model": "hbm_m:block/plant_tall_cd2_lower"
+  },
+  "half=upper": {
+   "model": "hbm_m:block/plant_tall_cd2_upper"
+  }
+ }
+}

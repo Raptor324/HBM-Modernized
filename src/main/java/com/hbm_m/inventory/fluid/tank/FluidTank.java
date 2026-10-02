@@ -34,6 +34,7 @@ public class FluidTank implements Cloneable {
     public static final Set<Item> noDualUnload = new HashSet<>();
 
     static {
+        loadingHandlers.add(new FluidLoaderRegistry()); // Original FluidLoaderStandard (FluidContainerRegistry)
         loadingHandlers.add(new FluidLoaderStandard());
         loadingHandlers.add(new FluidLoaderFillableItem());
         loadingHandlers.add(new FluidLoaderInfinite());

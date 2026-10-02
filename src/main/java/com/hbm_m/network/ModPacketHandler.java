@@ -1,7 +1,6 @@
 package com.hbm_m.network;
 
 import com.hbm_m.lib.RefStrings;
-import com.hbm_m.network.packets.PowerArmorDashPacket;
 import com.hbm_m.network.sounds.GeigerSoundPacket;
 import dev.architectury.networking.NetworkManager;
 import dev.architectury.networking.NetworkManager.PacketContext;
@@ -40,6 +39,9 @@ public class ModPacketHandler {
     // S2C
     public static final ResourceLocation GEIGER_SOUND          = id("geiger_sound");
     public static final ResourceLocation RADIATION_DATA        = id("radiation_data");
+    public static final ResourceLocation EXT_PROP              = id("ext_prop");
+    public static final ResourceLocation EXPLOSION_KNOCKBACK   = id("explosion_knockback");
+    public static final ResourceLocation KEYBIND               = id("keybind");
     public static final ResourceLocation INFO_TOAST           = id("info_toast");
     public static final ResourceLocation CHUNK_RAD_DEBUG_BATCH = id("chunk_rad_debug_batch");
     public static final ResourceLocation HIGHLIGHT_BLOCKS      = id("highlight_blocks");
@@ -78,14 +80,11 @@ public class ModPacketHandler {
     public static final ResourceLocation SYNC_POINT            = id("sync_point");
     public static final ResourceLocation ANVIL_CRAFT           = id("anvil_craft");
     public static final ResourceLocation ANVIL_SELECT_RECIPE   = id("anvil_select_recipe");
-    public static final ResourceLocation POWER_ARMOR_DASH      = id("power_armor_dash");
     public static final ResourceLocation DOOR_MODEL            = id("door_model");
     public static final ResourceLocation FLUID_IDENTIFIER_CTRL = id("fluid_identifier_ctrl");
     public static final ResourceLocation ITEM_DESIGNATOR       = id("item_designator");
     public static final ResourceLocation UPDATE_RADAR          = id("update_radar");
         public static final ResourceLocation ZIRNOX_CONTROL        = id("zirnox_control");
-    public static final ResourceLocation WATZ_CONTROL          = id("watz_control");
-    public static final ResourceLocation PWR_CONTROL           = id("pwr_control");
     public static final ResourceLocation RBMK_CONSOLE_CONTROL        = id("rbmk_console_control");
     public static final ResourceLocation RBMK_CONTROL_CONTROL        = id("rbmk_control_control");
     public static final ResourceLocation RBMK_BOILER_CONTROL         = id("rbmk_boiler_control");
@@ -103,6 +102,7 @@ public class ModPacketHandler {
     public static final ResourceLocation ANNIHILATOR_POOL      = id("annihilator_pool");
     public static final ResourceLocation FUNNEL_MODE            = id("funnel_mode");
     public static final ResourceLocation RADIO_TORCH_CONTROL    = id("radio_torch_control");
+    public static final ResourceLocation NBT_CONTROL            = id("nbt_control");
 
 
     // ══════════════════════════ Регистрация ═══════════════════════════════════
@@ -127,6 +127,14 @@ public class ModPacketHandler {
         registerS2C(RADIATION_DATA,
                 RadiationDataPacket::decode,
                 RadiationDataPacket::handle);
+
+        registerS2C(EXT_PROP,
+                ExtPropPacket::decode,
+                ExtPropPacket::handle);
+
+        registerS2C(EXPLOSION_KNOCKBACK,
+                ExplosionKnockbackPacket::decode,
+                ExplosionKnockbackPacket::handle);
 
         registerS2C(CHUNK_RAD_DEBUG_BATCH,
                 ChunkRadiationDebugBatchPacket::decode,
@@ -156,9 +164,6 @@ public class ModPacketHandler {
                 DoorContraptionStatePacket::decode,
                 DoorContraptionStatePacket::handle);
 
-        registerS2C(POWER_ARMOR_DASH,
-                PowerArmorDashPacket::decode,
-                PowerArmorDashPacket::handle);
 
         registerS2C(ORPHANED_PHANTOMS,
                 HighlightBlocksPacket.OrphanedPhantomsPacket::fromBytes,
@@ -191,6 +196,10 @@ public class ModPacketHandler {
         registerC2S(GIVE_TEMPLATE,
                 GiveTemplateC2SPacket::decode,
                 GiveTemplateC2SPacket::handle);
+
+        registerC2S(KEYBIND,
+                KeybindPacket::decode,
+                KeybindPacket::handle);
 
         registerC2S(UPDATE_BATTERY,
                 UpdateBatteryC2SPacket::decode,
@@ -316,13 +325,7 @@ public class ModPacketHandler {
                 ZirnoxControlPacket::decode,
                 ZirnoxControlPacket::handle);
 
-        registerC2S(WATZ_CONTROL,
-                WatzControlPacket::decode,
-                WatzControlPacket::handle);
 
-        registerC2S(PWR_CONTROL,
-                PWRControlPacket::decode,
-                PWRControlPacket::handle);
 
         registerC2S(RBMK_CONSOLE_CONTROL,
                 RBMKConsoleControlPacket::decode,
@@ -375,6 +378,10 @@ public class ModPacketHandler {
         registerC2S(RADIO_TORCH_CONTROL,
                 RadioTorchControlPacket::decode,
                 RadioTorchControlPacket::handle);
+
+        registerC2S(NBT_CONTROL,
+                NBTControlPacket::decode,
+                NBTControlPacket::handle);
     }
 
     // ══════════════════════ Вспомогательные методы ════════════════════════════

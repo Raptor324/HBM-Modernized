@@ -1,0 +1,28 @@
+{
+ "variants": {
+  "age=0": {
+   "model": "hbm_m:block/bomb/digamma_matter"
+  },
+  "age=1": {
+   "model": "hbm_m:block/bomb/digamma_matter"
+  },
+  "age=2": {
+   "model": "hbm_m:block/bomb/digamma_matter"
+  },
+  "age=3": {
+   "model": "hbm_m:block/bomb/digamma_matter"
+  },
+  "age=4": {
+   "model": "hbm_m:block/bomb/digamma_matter"
+  },
+  "age=5": {
+   "model": "hbm_m:block/bomb/digamma_matter"
+  },
+  "age=6": {
+   "model": "hbm_m:block/bomb/digamma_matter"
+  },
+  "age=7": {
+   "model": "hbm_m:block/bomb/digamma_matter"
+  }
+ }
+}

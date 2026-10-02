@@ -59,6 +59,8 @@ public class ArmorModTickHandler {
             for (ItemStack mod : ArmorModificationHelper.pryMods(armor)) {
                 if (mod != null && !mod.isEmpty() && mod.getItem() instanceof ItemArmorMod armorMod) {
                     armorMod.modUpdate(entity, armor);
+                    // Original ModEventHandler.onLivingUpdate: Mods tragen ihre eigenen Hazards.
+                    com.hbm_m.hazard.HazardSystem.applyHazards(mod, entity);
                 }
             }
         }

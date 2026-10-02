@@ -60,7 +60,7 @@ public class GUIMachineCraneInserter extends GuiInfoScreen<MachineCraneInserterM
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         if (inserter != null && isHovering(151, 34, 18, 18, (int) mouseX, (int) mouseY)) {
-            inserter.toggleDestroyer();
+            { net.minecraft.nbt.CompoundTag data = new net.minecraft.nbt.CompoundTag(); data.putBoolean("destroyer", true); com.hbm_m.network.NBTControlPacket.sendToServer(inserter.getBlockPos(), data); playClickSound(); }
             return true;
         }
         return super.mouseClicked(mouseX, mouseY, button);

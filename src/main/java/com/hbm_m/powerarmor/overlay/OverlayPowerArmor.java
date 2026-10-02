@@ -31,7 +31,7 @@ public class OverlayPowerArmor {
         }
     
         ItemStack chestplate = player.getItemBySlot(EquipmentSlot.CHEST);
-        if (!(chestplate.getItem() instanceof ModPowerArmorItem armorItem)) {
+        if (!(chestplate.getItem() instanceof com.hbm_m.powerarmor.ModArmorFSB armorItem)) {
             return;
         }
     
@@ -42,7 +42,7 @@ public class OverlayPowerArmor {
             player.getItemBySlot(EquipmentSlot.FEET)
         };
     
-        boolean noHelmet = armorItem.getSpecs().noHelmetRequired;
+        boolean noHelmet = armorItem.noHelmet;
         int piecesToShow = noHelmet ? 3 : 4;
     
         // Базовая позиция слева (центр - 91)
@@ -73,12 +73,12 @@ public class OverlayPowerArmor {
     
         for (int i = 0; i < piecesToShow; i++) {
             ItemStack stack = armorPieces[i];
-            if (!(stack.getItem() instanceof ModPowerArmorItem pieceArmor)) {
+            if (!(stack.getItem() instanceof com.hbm_m.powerarmor.ModArmorFSBPowered pieceArmor)) {
                 continue;
             }
     
-            long currentEnergy = pieceArmor.getEnergy(stack);
-            long maxEnergy = pieceArmor.getModifiedCapacity(stack); 
+            long currentEnergy = pieceArmor.getCharge(stack);
+            long maxEnergy = pieceArmor.getMaxCharge(stack); 
     
             if (maxEnergy <= 0) continue;
     
@@ -118,8 +118,8 @@ public class OverlayPowerArmor {
             LocalPlayer player = mc.player;
             if (player != null && !player.isCreative()) {
                 ItemStack chestplate = player.getItemBySlot(EquipmentSlot.CHEST);
-                if (chestplate.getItem() instanceof ModPowerArmorItem armorItem) {
-                    boolean noHelmet = armorItem.getSpecs().noHelmetRequired;
+                if (chestplate.getItem() instanceof com.hbm_m.powerarmor.ModArmorFSB armorItem) {
+                    boolean noHelmet = armorItem.noHelmet;
                     int piecesToShow = noHelmet ? 3 : 4;
                     gui.leftHeight += (piecesToShow * 3) + 2;
                 }

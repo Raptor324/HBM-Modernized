@@ -1,25 +1,23 @@
 package com.hbm_m.block.machines;
 
+import java.util.List;
+
 import org.jetbrains.annotations.Nullable;
 
-import com.hbm_m.blockentity.machines.PWRPartBlockEntity;
-import com.hbm_m.blockentity.machines.PWRPartBlockEntity.Kind;
-
-import net.minecraft.core.BlockPos;
-import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.BaseEntityBlock;
-import net.minecraft.world.level.block.RenderShape;
-import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.RotatedPillarBlock;
 
 /**
- * Shared block class for every non-controller PWR structure block (fuel/control/channel/heatex/
- * heatsink/neutron_source/casing/reflector/port), parametrized by {@link Kind} - matches this
- * port's established "one shared block entity class per block family" convention (e.g.
- * {@code RBMKPanelBlock}). See {@link PWRPartBlockEntity} for why this differs from the
- * original's single generic {@code pwr_block} carrier.
+ * 1:1 die PWR-Bauteile des Originals: {@code BlockGenericTooltip} (Waermetauscher, Kuehlkoerper, Neutronenquelle,
+ * Reflektor, Huelle, Anschluss) bzw. {@code BlockPillarPWR} (Brennstab, Steuerstab, Kuehlkanal) - einfache Bloecke mit
+ * Beschreibung. Beim Zusammenbau setzt der Controller an ihre Stelle den Traeger {@code pwr_block}
+ * ({@link PWRBlock}), der sich das Bauteil merkt.
  */
-public class PWRPartBlock extends BaseEntityBlock {
+public class PWRPartBlock extends Block implements PWRPart {
 
     private final Kind kind;
 
@@ -28,36 +26,27 @@ public class PWRPartBlock extends BaseEntityBlock {
         this.kind = kind;
     }
 
-    public Kind getKind() {
-        return kind;
-    }
+    @Override public Kind getKind() { return kind; }
 
     @Override
-    public RenderShape getRenderShape(BlockState state) {
-        return RenderShape.MODEL;
+    public void appendHoverText(ItemStack stack, @Nullable BlockGetter level, List<Component> list, TooltipFlag flag) {
+        com.hbm_m.util.StandardInfo.add(list, getDescriptionId() + ".desc");
     }
 
-    @Nullable
-    @Override
-    public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
-        return new PWRPartBlockEntity(pos, state, kind);
-    }
+    /** 1:1 {@code BlockPillarPWR}. */
+    public static class Pillar extends RotatedPillarBlock implements PWRPart {
+        private final Kind kind;
 
-    @Override
-    public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
-        if (!state.is(newState.getBlock()) && !level.isClientSide) {
-            if (level.getBlockEntity(pos) instanceof PWRPartBlockEntity part) {
-                part.notifyRemoved();
-            }
+        public Pillar(Kind kind, Properties properties) {
+            super(properties);
+            this.kind = kind;
         }
-        super.onRemove(state, level, pos, newState, isMoving);
-    }
 
-    //? if >1.20.1 {
-    /*@Override
-    protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
-        return simpleCodec(p -> new PWRPartBlock(this.kind, p));
-    }
-    *///?}
+        @Override public Kind getKind() { return kind; }
 
+        @Override
+        public void appendHoverText(ItemStack stack, @Nullable BlockGetter level, List<Component> list, TooltipFlag flag) {
+            com.hbm_m.util.StandardInfo.add(list, getDescriptionId() + ".desc");
+        }
+    }
 }

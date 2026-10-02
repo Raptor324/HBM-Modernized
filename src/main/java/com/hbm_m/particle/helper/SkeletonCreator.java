@@ -35,6 +35,19 @@ public class SkeletonCreator implements IParticleCreator {
         }
     }
 
+    /** Original {@code composeEffectGib}: Knochen fliegen blutig auseinander. */
+    public static void composeEffectGib(net.minecraft.world.level.Level level, Entity entity, float force) {
+        if (level instanceof net.minecraft.server.level.ServerLevel serverLevel) {
+            CompoundTag data = new CompoundTag();
+            data.putString("type", "skeleton");
+            data.putInt("entityID", entity.getId());
+            data.putFloat("brightness", 1F);
+            data.putFloat("force", force);
+            data.putBoolean("gib", true);
+            IParticleCreator.sendPacket(serverLevel, entity.getX(), entity.getY(), entity.getZ(), 100, data);
+        }
+    }
+
     @Override
     public void makeParticle(ClientLevel level, Player player, RandomSource rand, double x, double y, double z, CompoundTag tag) {
         if (SKULLANIZER.isEmpty()) init();
@@ -46,11 +59,15 @@ public class SkeletonCreator implements IParticleCreator {
         ClientVanishHandler.vanish(entityID);
 
         float brightness = tag.getFloat("brightness");
+        boolean gib = tag.getBoolean("gib");
+        float force = tag.getFloat("force");
+        boolean skel = living instanceof net.minecraft.world.entity.monster.AbstractSkeleton;
         Function<LivingEntity, BoneDefinition[]> bonealizer = SKULLANIZER.get(living.getType());
         boolean baby = living.isBaby();
         if (bonealizer != null) {
             BoneDefinition[] bones = bonealizer.apply(living);
             for (BoneDefinition bone : bones) {
+                if (gib && rand.nextBoolean() && !skel) continue;
                 // Baby-вариант: вся кость уменьшается вдвое (ванильный масштаб 0.5),
                 // но череп остаётся полноразмерным — как в рендере baby-мобов ванили
                 // (голова ребёнка вдвое крупнее пропорционально телу).
@@ -66,6 +83,11 @@ public class SkeletonCreator implements IParticleCreator {
                         bone.type, scale
                 );
                 skeleton.setRotation(bone.yaw, bone.pitch);
+                if (gib) {
+                    skeleton.makeGib();
+                    if (skel) skeleton.useCleanTexture();
+                    skeleton.setMotion(rand.nextGaussian() * force, (rand.nextGaussian() + 1) * force, rand.nextGaussian() * force);
+                }
                 ParticleEngineNT.INSTANCE.add(skeleton);
             }
         }

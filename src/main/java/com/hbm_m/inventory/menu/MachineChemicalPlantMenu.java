@@ -9,7 +9,6 @@ import com.hbm_m.api.fluids.FluidItemAccess;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.blockentity.machines.MachineChemicalPlantBlockEntity;
 import com.hbm_m.inventory.ModItemStackHandlerContainer;
-import com.hbm_m.item.industrial.ItemBlueprintFolder;
 import com.hbm_m.item.industrial.ItemMachineUpgrade;
 
 import net.minecraft.network.FriendlyByteBuf;
@@ -208,7 +207,7 @@ public class MachineChemicalPlantMenu extends AbstractContainerMenu {
                     *///?}
             ) {
                 if (!moveItemStackTo(stack, 0, 1, false)) return ItemStack.EMPTY;
-            } else if (stack.getItem() instanceof ItemBlueprintFolder) {
+            } else if (stack.getItem() instanceof com.hbm_m.item.industrial.ItemBlueprints) {
                 if (!moveItemStackTo(stack, 1, 2, false)) return ItemStack.EMPTY;
             } else if (stack.getItem() instanceof ItemMachineUpgrade) {
                 if (!moveItemStackTo(stack, 2, 4, false)) return ItemStack.EMPTY;

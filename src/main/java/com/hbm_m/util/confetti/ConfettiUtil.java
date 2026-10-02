@@ -27,19 +27,16 @@ public final class ConfettiUtil {
     public static void decideConfetti(LivingEntity entity, DamageSource source) {
         if (entity.isAlive()) return;
 
-        // Nuclear blast от Fatman / MK5 / MK3 / Tom / Fleija -> cremate
-        if (source.is(ModDamageTypes.NUCLEAR_BLAST)) {
-            cremate(entity);
-            return;
-        }
-
-        // Будущие типы урона (laser, electricity, plasma) - портируются отдельно
-        // if (source.is(ModDamageTypes.LASER)) { pulverize(entity); return; }
-        // if (source.is(ModDamageTypes.ELECTRIC)) { pulverize(entity); return; }
-        // if (source.is(ModDamageTypes.PLASMA)) { cremate(entity); return; }
-        // if (source.is(net.minecraft.world.damagesource.DamageTypes.EXPLOSION) || source.is(net.minecraft.world.damagesource.DamageTypes.PLAYER_EXPLOSION)) { gib(entity); return; }
-        // if (source.is(net.minecraft.world.damagesource.DamageTypes.ON_FIRE)) { cremate(entity); return; }
+        String type = source.getMsgId().toLowerCase(java.util.Locale.US);
+        if (type.equals("laser")) pulverize(entity);
+        if (type.equals("electric")) pulverize(entity);
+        if (type.equals("plasma")) cremate(entity);
+        if (source.is(net.minecraft.tags.DamageTypeTags.IS_EXPLOSION)) gib(entity);
+        if (source.is(net.minecraft.tags.DamageTypeTags.IS_FIRE)) cremate(entity);
+        // Port: Kernwaffen haben einen eigenen Schadenstyp (im Original eine Explosion mit Feuer)
+        if (source.is(ModDamageTypes.NUCLEAR_BLAST)) cremate(entity);
     }
+
 
     /**
      * Полное распыление: пепел + скелет с полной яркостью.
@@ -67,5 +64,31 @@ public final class ConfettiUtil {
                 2.0F, 0.9F + entity.getRandom().nextFloat() * 0.2F);
     }
 
-    // TODO: портировать gib() и giblets при необходимости
+    /** 1:1 {@code ConfettiUtil.gib}: blutige Knochen, Fleischfetzen ("giblets") und Knack-Geraeusch. */
+    public static void gib(LivingEntity entity) {
+        if (entity instanceof net.minecraft.world.entity.animal.Ocelot) return;
+
+        int type = 0;
+        if (entity instanceof net.minecraft.world.entity.monster.Slime) type = 1; // MagmaCube ist ein Slime
+        if (entity instanceof net.minecraft.world.entity.monster.Creeper) type = 1;
+        if (entity instanceof net.minecraft.world.entity.animal.AbstractGolem) type = 2;
+        if (entity instanceof net.minecraft.world.entity.monster.Blaze) type = 2;
+        if (entity instanceof com.hbm_m.entity.mob.EntityRADBeast) type = 2;
+        if (entity instanceof com.hbm_m.entity.mob.EntityUFO) type = 2;
+        if (entity instanceof com.hbm_m.entity.mob.botprime.EntityBOTPrimeBase) type = 2;
+        // EntityCyberCrab/TeslaCrab/TaintCrab/FBIDrone (type 2) kommen mit den Mobs
+
+        SkeletonCreator.composeEffectGib(entity.level(), entity, 0.25F);
+
+        if (entity instanceof net.minecraft.world.entity.monster.AbstractSkeleton) return;
+
+        if (entity.level() instanceof net.minecraft.server.level.ServerLevel server) {
+            net.minecraft.nbt.CompoundTag vdat = new net.minecraft.nbt.CompoundTag();
+            vdat.putString("type", "giblets");
+            vdat.putInt("ent", entity.getId());
+            vdat.putInt("gibType", type);
+            com.hbm_m.particle.helper.IParticleCreator.sendPacket(server, entity.getX(), entity.getY() + entity.getBbHeight() * 0.5, entity.getZ(), 150, vdat);
+        }
+        entity.level().playSound(null, entity.getX(), entity.getY(), entity.getZ(), net.minecraft.sounds.SoundEvents.ZOMBIE_BREAK_WOODEN_DOOR, SoundSource.HOSTILE, 2.0F, 0.95F + entity.getRandom().nextFloat() * 0.2F);
+    }
 }

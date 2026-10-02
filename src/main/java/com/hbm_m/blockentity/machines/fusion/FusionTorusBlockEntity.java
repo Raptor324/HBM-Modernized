@@ -53,9 +53,7 @@ import net.minecraft.world.phys.AABB;
  * Originals ({@code TileEntityCooledBase}), die hier - wie im Original - direkt im Tick steht
  * statt ueber die Basisklasse zu laufen.</p>
  *
- * <p><b>Nicht portiert:</b> {@code checkTilt(TiltType.CONFIG, true)} - die "Maschinen-Schwerkraft"
- * des Originals ist ein globales, per Config abschaltbares System, das es in diesem Port (noch)
- * nicht gibt. Mit ausgeschalteter Config verhaelt sich das Original identisch.</p>
+ * <p>{@code checkTilt(TiltType.CONFIG, true)} wie im Original: gekippt zuendet das Plasma nicht.</p>
  */
 public class FusionTorusBlockEntity extends BaseMachineBlockEntity
         implements IFluidStandardTransceiverMK2, NodeNet.ILoadedEntry, IRORValueProvider, IRORInteractive {
@@ -135,6 +133,11 @@ public class FusionTorusBlockEntity extends BaseMachineBlockEntity
 
     // ═══════════════════════════════════ Tick ═══════════════════════════════════
 
+    @Override public int getFloorCount() { return 6 * 6; }
+    @Override public BlockPos getFloorPosFromIndex(int index) {
+        return new BlockPos(worldPosition.getX() - 5 + (index / 6) * 2, worldPosition.getY() - 1, worldPosition.getZ() - 5 + (index % 6) * 2);
+    }
+
     public static void tick(Level level, BlockPos pos, BlockState state, FusionTorusBlockEntity be) {
         if (level instanceof ServerLevel serverLevel) {
             be.serverTick(serverLevel, pos);
@@ -144,6 +147,7 @@ public class FusionTorusBlockEntity extends BaseMachineBlockEntity
     }
 
     private void serverTick(ServerLevel level, BlockPos pos) {
+        this.checkTilt(TiltType.CONFIG, true);
 
         ensureNetworkInitialized();
 
@@ -235,7 +239,7 @@ public class FusionTorusBlockEntity extends BaseMachineBlockEntity
 
         this.processSpeed = factor;
         this.bonusSpeed = collectors * 0.5D;
-        moduleUpdate(recipe, isCool() && ignition);
+        moduleUpdate(recipe, !this.tilted && isCool() && ignition);
 
         if (didProcess && recipe != null) {
             this.plasmaEnergy = (long) Math.ceil(recipe.getOutputTemp() * factor);
@@ -514,7 +518,7 @@ public class FusionTorusBlockEntity extends BaseMachineBlockEntity
     @Override
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
         if (slot == SLOT_BATTERY) return true;
-        if (slot == SLOT_BLUEPRINT) return stack.is(ModItems.BLUEPRINT_FOLDER.get());
+        if (slot == SLOT_BLUEPRINT) return stack.is(ModItems.BLUEPRINTS.get());
         return false;
     }
 

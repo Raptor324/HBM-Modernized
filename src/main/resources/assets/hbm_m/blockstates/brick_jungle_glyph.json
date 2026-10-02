@@ -1,0 +1,52 @@
+{
+ "variants": {
+  "glyph=0": {
+   "model": "hbm_m:block/brick_jungle_glyph_0"
+  },
+  "glyph=1": {
+   "model": "hbm_m:block/brick_jungle_glyph_1"
+  },
+  "glyph=2": {
+   "model": "hbm_m:block/brick_jungle_glyph_2"
+  },
+  "glyph=3": {
+   "model": "hbm_m:block/brick_jungle_glyph_3"
+  },
+  "glyph=4": {
+   "model": "hbm_m:block/brick_jungle_glyph_4"
+  },
+  "glyph=5": {
+   "model": "hbm_m:block/brick_jungle_glyph_5"
+  },
+  "glyph=6": {
+   "model": "hbm_m:block/brick_jungle_glyph_6"
+  },
+  "glyph=7": {
+   "model": "hbm_m:block/brick_jungle_glyph_7"
+  },
+  "glyph=8": {
+   "model": "hbm_m:block/brick_jungle_glyph_8"
+  },
+  "glyph=9": {
+   "model": "hbm_m:block/brick_jungle_glyph_9"
+  },
+  "glyph=10": {
+   "model": "hbm_m:block/brick_jungle_glyph_10"
+  },
+  "glyph=11": {
+   "model": "hbm_m:block/brick_jungle_glyph_11"
+  },
+  "glyph=12": {
+   "model": "hbm_m:block/brick_jungle_glyph_12"
+  },
+  "glyph=13": {
+   "model": "hbm_m:block/brick_jungle_glyph_13"
+  },
+  "glyph=14": {
+   "model": "hbm_m:block/brick_jungle_glyph_14"
+  },
+  "glyph=15": {
+   "model": "hbm_m:block/brick_jungle_glyph_15"
+  }
+ }
+}

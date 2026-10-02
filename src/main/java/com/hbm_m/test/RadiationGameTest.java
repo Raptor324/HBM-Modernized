@@ -669,10 +669,10 @@ public final class RadiationGameTest {
 
     @GameTest(template = "empty3x3x3", batch = "radiation", timeoutTicks = 100)
     public static void hazmat_diamondChestplate(GameTestHelper helper) {
-        // Diamond chestplate: 0.25 (hardcoded).
+        // Diamond chestplate: im Original (HazmatRegistry.initDefault) nicht eingetragen -> 0.
         double res = HazmatRegistry.getResistance(new ItemStack(Items.DIAMOND_CHESTPLATE));
-        check(Math.abs(res - 0.25) < 1e-6,
-                "diamond chestplate resistance = 0.25 (got " + res + ")");
+        check(res == 0.0,
+                "diamond chestplate resistance = 0 (got " + res + ")");
         helper.succeed();
     }
 

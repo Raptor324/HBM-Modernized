@@ -22,7 +22,7 @@ public final class ModDamageSources {
      * @param key   Ключ типа урона из ModDamageTypes.
      * @return      Новый экземпляр DamageSource.
      */
-    private static DamageSource create(Level level, ResourceKey<DamageType> key) {
+    public static DamageSource create(Level level, ResourceKey<DamageType> key) {
         return new DamageSource(level.registryAccess().registryOrThrow(Registries.DAMAGE_TYPE).getHolderOrThrow(key));
     }
 
@@ -33,7 +33,7 @@ public final class ModDamageSources {
      * @param key           Ключ типа урона из ModDamageTypes.
      * @return              Новый экземпляр DamageSource.
      */
-    private static DamageSource create(Entity attacker, Entity directEntity, ResourceKey<DamageType> key) {
+    public static DamageSource create(Entity attacker, Entity directEntity, ResourceKey<DamageType> key) {
         return new DamageSource(
             attacker.level().registryAccess().registryOrThrow(Registries.DAMAGE_TYPE).getHolderOrThrow(key),
             directEntity,
@@ -48,6 +48,8 @@ public final class ModDamageSources {
     public static DamageSource radiation(Level level) { return create(level, ModDamageTypes.RADIATION); }
     public static DamageSource taint(Level level) { return create(level, ModDamageTypes.TAINT); }
     public static DamageSource acid(Level level) { return create(level, ModDamageTypes.ACID); }
+    public static DamageSource mudPoisoning(Level level) { return create(level, ModDamageTypes.MUD_POISONING); }
+    public static DamageSource shrapnel(Level level) { return create(level, ModDamageTypes.SHRAPNEL); }
     public static DamageSource rubble(Level level) { return create(level, ModDamageTypes.RUBBLE); }
     public static DamageSource blackHole(Level level) { return create(level, ModDamageTypes.BLACK_HOLE); }
     public static DamageSource meteorite(Level level) { return create(level, ModDamageTypes.METEORITE); }
@@ -69,6 +71,7 @@ public final class ModDamageSources {
     public static DamageSource vacuum(Level level) { return create(level, ModDamageTypes.VACUUM); }
     public static DamageSource microwave(Level level) { return create(level, ModDamageTypes.MICROWAVE); }
     public static DamageSource broadcast(Level level) { return create(level, ModDamageTypes.BROADCAST); }
+    public static DamageSource pc(Level level) { return create(level, ModDamageTypes.PC); }
     public static DamageSource enervation(Level level) { return create(level, ModDamageTypes.ENERVATION); }
     // ... и другие типы урона, которые могут быть без источника
 

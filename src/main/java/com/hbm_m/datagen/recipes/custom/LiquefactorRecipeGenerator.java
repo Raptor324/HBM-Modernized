@@ -47,6 +47,7 @@ public final class LiquefactorRecipeGenerator {
         put(writer, "ethanol_from_dandelion", Items.DANDELION, ModFluids.ETHANOL, 150);
         put(writer, "ethanol_from_poppy",     Items.POPPY,     ModFluids.ETHANOL, 50);
         put(writer, "biogas_from_biomass",    ModItems.BIOMASS.get(), ModFluids.BIOGAS, 125);
+        put(writer, "biogas_from_glyphid_gland", ModItems.GLYPHID_GLAND_EMPTY.get(), ModFluids.BIOGAS, 2000);
         put(writer, "fishoil_from_cod",       Items.COD,       ModFluids.FISHOIL, 100);
         put(writer, "fishoil_from_salmon",    Items.SALMON,    ModFluids.FISHOIL, 100);
         put(writer, "sunfloweroil",           Items.SUNFLOWER, ModFluids.SUNFLOWEROIL, 100);

@@ -86,7 +86,30 @@ import net.neoforged.api.distmarker.OnlyIn;
  * same block type (depth-capped). Vanilla does not expose Ctrl on the server; use sneak for recursive mode.
  */
 @SuppressWarnings("UnstableApiUsage")
-public class FluidDuctBlock extends BaseEntityBlock implements ILookOverlay {
+public class FluidDuctBlock extends BaseEntityBlock implements ILookOverlay, com.hbm_m.interfaces.IAnalyzable {
+
+    /** Original {@code FluidDuctBase.getDebugInfo}. */
+    @Override
+    public java.util.List<String> getDebugInfo(Level world, BlockPos pos) {
+        if (world instanceof net.minecraft.server.level.ServerLevel server
+                && world.getBlockEntity(pos) instanceof com.hbm_m.blockentity.machines.FluidDuctBlockEntity pipe) {
+            net.minecraft.world.level.material.Fluid type = pipe.getFluidType();
+            if (type != null) {
+                var node = com.hbm_m.api.network.UniNodespace.getNode(server, pos, com.hbm_m.api.fluids.FluidNetProvider.forFluid(type));
+                if (node != null && node.net != null) {
+                    com.hbm_m.api.fluids.FluidNet net = (com.hbm_m.api.fluids.FluidNet) node.net;
+                    java.util.List<String> debug = new java.util.ArrayList<>();
+                    debug.add("Links: " + net.links.size());
+                    debug.add("Subscribers: " + net.receiverEntries.size());
+                    debug.add("Providers: " + net.providerEntries.size());
+                    debug.add("Transfer: " + net.fluidTracker);
+                    return debug;
+                }
+            }
+        }
+        return null;
+    }
+
 
     public static final BooleanProperty NORTH = BlockStateProperties.NORTH;
     public static final BooleanProperty EAST = BlockStateProperties.EAST;

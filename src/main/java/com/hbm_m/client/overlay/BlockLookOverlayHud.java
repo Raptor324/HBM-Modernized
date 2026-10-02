@@ -28,7 +28,9 @@ public final class BlockLookOverlayHud {
         if (hr.getType() != HitResult.Type.BLOCK) return;
         BlockHitResult bhr = (BlockHitResult) hr;
 
-        if (level.getBlockState(bhr.getBlockPos()).getBlock() instanceof ILookOverlay ilo) {
+        if (mc.player.getMainHandItem().getItem() instanceof ILookOverlay held) {
+            held.printHook(guiGraphics, level, bhr.getBlockPos());
+        } else if (level.getBlockState(bhr.getBlockPos()).getBlock() instanceof ILookOverlay ilo) {
             ilo.printHook(guiGraphics, level, bhr.getBlockPos());
         }
     }

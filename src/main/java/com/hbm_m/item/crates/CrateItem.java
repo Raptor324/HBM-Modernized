@@ -42,6 +42,24 @@ public class CrateItem extends BlockItem implements ITooltipProvider {
     public void appendHbmTooltip(ItemStack stack, @Nullable Level level,
                                 List<Component> tooltip, TooltipFlag flag) {
 
+        // 1:1 BlockStorageCrate.addInformation: Spinnen und Schloss verbergen den Inhalt
+        CompoundTag root = PlatformHooks.hasItemTag(stack) ? PlatformHooks.getItemTag(stack) : null;
+        CompoundTag be = root != null && root.contains("BlockEntityTag") ? root.getCompound("BlockEntityTag") : null;
+        if (be != null) {
+            boolean locked = be.getBoolean("isLocked");
+            if (be.getBoolean("spiders")) {
+                if (locked) tooltip.add(Component.literal("This container is locked.").withStyle(ChatFormatting.RED));
+                tooltip.add(Component.literal("Skittering emanates from within...").withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC));
+                return;
+            }
+            if (locked) {
+                tooltip.add(Component.literal("This container is locked.").withStyle(ChatFormatting.RED));
+                CrateTooltipData d = readTooltipData(stack);
+                tooltip.add(Component.literal(d != null && d.occupiedSlots() > 0 ? "It feels heavy..." : "It feels empty...").withStyle(ChatFormatting.YELLOW));
+                return;
+            }
+        }
+
         CrateTooltipData data = readTooltipData(stack);
         if (data == null) return;
 
@@ -64,6 +82,11 @@ public class CrateItem extends BlockItem implements ITooltipProvider {
 
     @Override
     public Optional<TooltipComponent> getTooltipImage(ItemStack stack) {
+        CompoundTag root = PlatformHooks.hasItemTag(stack) ? PlatformHooks.getItemTag(stack) : null;
+        if (root != null && root.contains("BlockEntityTag")) {
+            CompoundTag be = root.getCompound("BlockEntityTag");
+            if (be.getBoolean("isLocked") || be.getBoolean("spiders")) return Optional.empty();
+        }
         CrateTooltipData data = readTooltipData(stack);
         if (data == null || data.previewEntries().isEmpty()) {
             return Optional.empty();

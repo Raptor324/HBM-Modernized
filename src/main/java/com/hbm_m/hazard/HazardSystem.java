@@ -39,6 +39,9 @@ public final class HazardSystem {
     private static final Map<TagKey<Item>, HazardData> TAG_RULES = new ConcurrentHashMap<>();
     // Правила для конкретных предметов (самый высокий приоритет)
     private static final Map<Item, HazardData> ITEM_RULES = new ConcurrentHashMap<>();
+    /** Original HazardSystem.trafos: stapelabhaengige Nachbearbeitung (NBT-Strahlung, Behaelterinhalt, ME). */
+    public static final List<com.hbm_m.hazard.transformer.HazardTransformerBase> trafos = new ArrayList<>();
+
     // Кэш для уже вычисленных результатов. Ключ - Item, Значение - финальный список опасностей.
     private static final Map<Item, List<HazardEntry>> HAZARD_CACHE = new ConcurrentHashMap<>();
 
@@ -87,6 +90,20 @@ public final class HazardSystem {
         if (stack == null || stack.isEmpty()) {
             return Collections.emptyList();
         }
+
+        List<HazardEntry> base = getItemHazards(stack);
+        if (trafos.isEmpty() || !stack.hasTag()) return base;
+
+        // transformPre (alle Originale leer) laeuft vor den Regeln, transformPost danach - wie im Original.
+        List<HazardEntry> entries = new ArrayList<>(base);
+        for (com.hbm_m.hazard.transformer.HazardTransformerBase trafo : trafos) {
+            trafo.transformPost(stack, entries);
+        }
+        return entries.size() == base.size() ? base : entries;
+    }
+
+    /** Regeln aus Tags und Gegenstand (pro Gegenstand zwischengespeichert). */
+    private static List<HazardEntry> getItemHazards(ItemStack stack) {
 
         Item item = stack.getItem();
 

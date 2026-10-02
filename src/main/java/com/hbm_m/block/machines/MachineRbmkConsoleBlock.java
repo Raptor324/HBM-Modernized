@@ -166,6 +166,32 @@ public class MachineRbmkConsoleBlock extends BaseEntityBlock implements IMultibl
                 return InteractionResult.SUCCESS;
             }
 
+            // 1:1 RBMKConsole.onBlockActivated: ein Klick oben auf das Buch, das auf dem Pult liegt, gibt das
+            // RBMK-Handbuch (book_guide Typ RBMK), falls man es noch nicht hat.
+            if (hit.getDirection() == net.minecraft.core.Direction.UP) {
+                net.minecraft.world.phys.Vec3 vec = new net.minecraft.world.phys.Vec3(1.375D, 0, 0.75D);
+                switch (state.getValue(FACING)) {
+                    case NORTH -> vec = vec.yRot((float) Math.toRadians(90));
+                    case SOUTH -> vec = vec.yRot((float) Math.toRadians(270));
+                    case WEST -> vec = vec.yRot((float) Math.toRadians(180));
+                    default -> { }
+                }
+                double hX = hit.getLocation().x;
+                double hZ = hit.getLocation().z;
+                double rX = pos.getX() + 0.5D + vec.x;
+                double rZ = pos.getZ() + 0.5D + vec.z;
+                double size = 0.1875D;
+                com.hbm_m.item.tool.ItemGuideBook.BookType rbmk = com.hbm_m.item.tool.ItemGuideBook.BookType.RBMK;
+
+                if (Math.abs(hX - rX) < size && Math.abs(hZ - rZ) < size
+                        && player.getInventory().items.stream().noneMatch(s -> s.is(com.hbm_m.item.ModItems.BOOK_GUIDE.get())
+                                && com.hbm_m.item.tool.ItemGuideBook.getType(s) == rbmk)) {
+                    player.getInventory().add(com.hbm_m.item.tool.ItemGuideBook.make(rbmk));
+                    player.inventoryMenu.broadcastChanges();
+                    return InteractionResult.SUCCESS;
+                }
+            }
+
             if (entity instanceof MenuProvider menuProvider) {
                 MenuRegistry.openExtendedMenu((ServerPlayer) player, menuProvider, buf -> buf.writeBlockPos(pos));
             }

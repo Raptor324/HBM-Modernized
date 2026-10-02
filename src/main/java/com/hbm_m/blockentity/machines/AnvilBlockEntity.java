@@ -149,7 +149,7 @@ public class AnvilBlockEntity extends BaseHbmBlockEntity implements MenuProvider
         Optional<AnvilRecipe> recipeOpt = resolveCombineRecipe(level, slotA, slotB);
     
         ItemStack result = recipeOpt
-                .map(recipe -> recipe.getResultItem(level.registryAccess()).copy())
+                .map(recipe -> recipe.getOutputFor(slotA, slotB))
                 .orElse(ItemStack.EMPTY);
     
         ItemStack currentOutput = itemHandler.getStackInSlot(2);
@@ -166,6 +166,9 @@ public class AnvilBlockEntity extends BaseHbmBlockEntity implements MenuProvider
      */
     private boolean canCraftRecipe(AnvilRecipe recipe, ItemStack slotA, ItemStack slotB) {
         if (!hasMatchingInputs(slotA, slotB, recipe)) {
+            return false;
+        }
+        if (recipe.isHot() && (!AnvilRecipe.isHotEnough(slotA) || !AnvilRecipe.isHotEnough(slotB))) {
             return false;
         }
         return recipe.canCraftOn(getTier());

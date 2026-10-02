@@ -1,86 +1,96 @@
 package com.hbm_m.particle.helper;
 
+import com.hbm_m.particle.nt.MukeWaveParticle;
+import com.hbm_m.particle.nt.ParticleDebrisNT;
+import com.hbm_m.particle.nt.ParticleEngineNT;
+import com.hbm_m.particle.nt.ParticleRocketFlameNT;
 import com.hbm_m.sound.ModSounds;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.multiplayer.ClientLevel;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
-import net.minecraft.core.particles.SimpleParticleType;
+import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.phys.Vec3;
 
 /**
- * Клиентская часть {@link ExplosionCreator}: звук near/far + волна/облако/обломки.
- * Загружается только на клиенте (через ParticleEffectClient), поэтому здесь
- * допустимы клиентские классы.
+ * Client-Haelfte von {@link ExplosionCreator} ("explosionLarge") - 1:1-Port von
+ * {@code ExplosionCreator.makeParticle} (1.7.10): verzoegerter Knall nach Schallgeschwindigkeit,
+ * Stosswellenring, aufsteigende Feuerwolken ({@code ParticleRocketFlame}) und fliegende Brocken aus
+ * den echten Bloecken rund um den Einschlag ({@code ParticleDebris} + {@code WorldInAJar}).
  */
-//? if forge {
-@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-//?} elif fabric {
-/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
-*///?} elif neoforge {
-/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-*///?}
 public class ExplosionClientCreator implements IParticleCreator {
 
 	@Override
-	public void makeParticle(ClientLevel level, Player player, RandomSource rand, double x, double y, double z, CompoundTag tag) {
+	public void makeParticle(ClientLevel world, Player player, RandomSource rand, double x, double y, double z, CompoundTag data) {
 
-		float waveScale = tag.getFloat("waveScale");
-		float cloudScale = tag.getFloat("cloudScale");
-		float cloudSpeedMult = tag.getFloat("cloudSpeedMult");
-		int cloudCount = tag.getInt("cloudCount");
-		int debrisCount = tag.getInt("debrisCount");
-		float debrisVelocity = tag.getFloat("debrisVelocity");
-		float debrisHorizontalDeviation = tag.getFloat("debrisHorizontalDeviation");
-		float debrisVerticalOffset = tag.getFloat("debrisVerticalOffset");
-		float soundRange = tag.getFloat("soundRange");
+		int cloudCount = data.getInt("cloudCount");
+		float cloudScale = data.getFloat("cloudScale");
+		float cloudSpeedMult = data.getFloat("cloudSpeedMult");
+		float waveScale = data.getFloat("waveScale");
+		int debrisCount = data.getInt("debrisCount");
+		int debrisSize = data.getInt("debrisSize");
+		int debrisRetry = data.getInt("debrisRetry");
+		float debrisVelocity = data.getFloat("debrisVelocity");
+		float debrisHorizontalDeviation = data.getFloat("debrisHorizontalDeviation");
+		float debrisVerticalOffset = data.getFloat("debrisVerticalOffset");
+		float soundRange = data.getFloat("soundRange");
 
-		// ══ SOUND: near/far + отложенное воспроизведение по скорости звука (1:1 с 1.7.10) ══
-		if (player != null) {
-			float dist = (float) Math.sqrt(player.distanceToSqr(x, y, z));
-			if (dist <= soundRange) {
-				SoundEvent sound = dist <= soundRange * 0.4D
-						? ModSounds.EXPLOSION_LARGE_NEAR.get()
-						: ModSounds.EXPLOSION_LARGE_FAR.get();
-				SimpleSoundInstance instance = new SimpleSoundInstance(
-						sound,
-						net.minecraft.sounds.SoundSource.PLAYERS,
-						1000F,                                   // громкость (как в оригинале)
-						level.random.nextFloat() * 0.2F + 0.9F,  // питч: 0.9 + rand * 0.2
-						level.random,
-						x, y, z
-				);
-				Minecraft.getInstance().getSoundManager().playDelayed(instance, (int) (dist / ExplosionCreator.SPEED_OF_SOUND));
-			}
+		float dist = (float) Math.sqrt(player.distanceToSqr(x, y, z));
+		if (dist <= soundRange) {
+			SoundEvent sound = dist <= soundRange * 0.4D ? ModSounds.EXPLOSION_LARGE_NEAR.get() : ModSounds.EXPLOSION_LARGE_FAR.get();
+			SimpleSoundInstance instance = new SimpleSoundInstance(sound, net.minecraft.sounds.SoundSource.PLAYERS,
+					1000F, 0.9F + rand.nextFloat() * 0.2F, rand, x, y, z);
+			Minecraft.getInstance().getSoundManager().playDelayed(instance, (int) (dist / ExplosionCreator.SPEED_OF_SOUND));
 		}
 
-		// ══ WAVE (1.7.10: ParticleMukeWave, wave.setup(waveScale, 25*waveScale/45)) ══
-		level.addParticle((SimpleParticleType) com.hbm_m.particle.ModExplosionParticles.SHOCKWAVE_RING.get(), x, y + 2, z, waveScale, 0, 0);
+		ParticleEngineNT.INSTANCE.add(new MukeWaveParticle(world, x, y + 2, z).setup(waveScale, (int) (25F * waveScale / 45)));
 
-		// ══ SMOKE PLUME (облако) ══
-		SimpleParticleType cloudType = (SimpleParticleType) com.hbm_m.particle.ModExplosionParticles.WAVE_SMOKE.get();
 		for (int i = 0; i < cloudCount; i++) {
-			double mX = rand.nextGaussian() * 0.5D * cloudSpeedMult;
-			double mY = rand.nextDouble() * 3D * cloudSpeedMult;
-			double mZ = rand.nextGaussian() * 0.5D * cloudSpeedMult;
-			level.addParticle(cloudType, x, y, z, mX * cloudScale, mY * cloudScale, mZ * cloudScale);
+			ParticleRocketFlameNT fx = new ParticleRocketFlameNT(world, x, y, z).setScale(cloudScale);
+			fx.xd = rand.nextGaussian() * 0.5 * cloudSpeedMult;
+			fx.yd = rand.nextDouble() * 3 * cloudSpeedMult;
+			fx.zd = rand.nextGaussian() * 0.5 * cloudSpeedMult;
+			fx.setMaxAge(70 + rand.nextInt(20));
+			fx.noClip = true;
+			ParticleEngineNT.INSTANCE.add(fx);
 		}
 
-		// ══ DEBRIS ══
-		SimpleParticleType sparkType = (SimpleParticleType) com.hbm_m.particle.ModExplosionParticles.EXPLOSION_SPARK.get();
 		for (int c = 0; c < debrisCount; c++) {
 			double oX = rand.nextGaussian() * debrisHorizontalDeviation;
 			double oY = debrisVerticalOffset;
 			double oZ = rand.nextGaussian() * debrisHorizontalDeviation;
-			double angle = -Math.toRadians(45 + rand.nextFloat() * 25);
-			double yaw = rand.nextDouble() * Math.PI * 2;
-			double vx = debrisVelocity * Math.cos(angle) * Math.cos(yaw);
-			double vy = debrisVelocity * Math.sin(angle);
-			double vz = debrisVelocity * Math.cos(angle) * Math.sin(yaw);
-			level.addParticle(sparkType, x + oX, y + oY, z + oZ, vx, vy, vz);
+			int cX = (int) Math.floor(x + oX + 0.5);
+			int cY = (int) Math.floor(y + oY + 0.5);
+			int cZ = (int) Math.floor(z + oZ + 0.5);
+
+			Vec3 motion = new Vec3(debrisVelocity, 0, 0)
+					.zRot((float) -Math.toRadians(45 + rand.nextFloat() * 25))
+					.yRot((float) (rand.nextDouble() * Math.PI * 2));
+			ParticleDebrisNT particle = new ParticleDebrisNT(world, x, y, z, motion.x, motion.y, motion.z, debrisSize);
+
+			if (debrisSize > 0) {
+				int middle = debrisSize / 2 - 1;
+				for (int i = 0; i < 2; i++) for (int j = 0; j < 2; j++) for (int k = 0; k < 2; k++)
+					particle.setBlock(middle + i, middle + j, middle + k, world.getBlockState(new BlockPos(cX + i, cY + j, cZ + k)));
+
+				for (int layer = 2; layer <= (debrisSize / 2); layer++) {
+					for (int i = 0; i < debrisRetry; i++) {
+						int jx = -layer + rand.nextInt(layer * 2 + 1);
+						int jy = -layer + rand.nextInt(layer * 2 + 1);
+						int jz = -layer + rand.nextInt(layer * 2 + 1);
+						if (!particle.isAir(middle + jx + 1, middle + jy, middle + jz) || !particle.isAir(middle + jx - 1, middle + jy, middle + jz)
+								|| !particle.isAir(middle + jx, middle + jy + 1, middle + jz) || !particle.isAir(middle + jx, middle + jy - 1, middle + jz)
+								|| !particle.isAir(middle + jx, middle + jy, middle + jz + 1) || !particle.isAir(middle + jx, middle + jy, middle + jz - 1)) {
+							particle.setBlock(middle + jx, middle + jy, middle + jz, world.getBlockState(new BlockPos(cX + jx, cY + jy, cZ + jz)));
+						}
+					}
+				}
+			}
+			ParticleEngineNT.INSTANCE.add(particle);
 		}
 	}
 }

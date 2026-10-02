@@ -3,7 +3,6 @@ package com.hbm_m.compat.jei;
 import java.util.List;
 
 import com.hbm_m.item.ModItems;
-import com.hbm_m.item.industrial.ItemBlueprintFolder;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.recipe.AssemblerRecipe;
 import com.hbm_m.recipe.AssemblerRecipe.AssemblerInputSlot;
@@ -114,8 +113,7 @@ public class AssemblerJeiCategory extends JeiGenericRecipeCategory<AssemblerReci
             return;
         }
 
-        ItemStack folder = new ItemStack(ModItems.BLUEPRINT_FOLDER.get());
-        ItemBlueprintFolder.writeBlueprintPool(folder, recipe.getBlueprintPool());
+        ItemStack folder = com.hbm_m.item.industrial.ItemBlueprints.make(recipe.getBlueprintPool());
         addUnframedSlot(builder, RecipeIngredientRole.RENDER_ONLY, 75 + machineXOffset, 10)
                 .addItemStack(folder);
     }

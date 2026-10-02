@@ -53,6 +53,8 @@ public class InfiniteFluidItem extends Item implements ITooltipProvider {
     @Nullable
     private final Fluid fixedFluid;
     private final boolean instantNetwork;
+    /** Original {@code ItemInfiniteFluid.chance}: nur jede n-te Uebertragung liefert (chlorine_pinwheel: 1 mB, 1:2). */
+    private int chance = 1;
 
     /** Универсальная бесконечная бочка (тип берётся из NBT или запроса), instant для сети. */
     public InfiniteFluidItem(Properties properties, int transferRate) {
@@ -83,6 +85,15 @@ public class InfiniteFluidItem extends Item implements ITooltipProvider {
             return BuiltInRegistries.FLUID.get(ResourceLocation.tryParse(PlatformHooks.getString(stack, "FluidType")));
         }
         return Fluids.EMPTY;
+    }
+
+    public InfiniteFluidItem chance(int chance) {
+        this.chance = chance;
+        return this;
+    }
+
+    public int getChance() {
+        return chance;
     }
 
     /** true только для универсальной бесконечной бочки (fluid_barrel_infinite). */
@@ -135,9 +146,16 @@ public class InfiniteFluidItem extends Item implements ITooltipProvider {
             return Fluids.EMPTY;
         }
 
+        /** Original FluidLoaderInfinite: bei chance > 1 greift nur jede chance-te Uebertragung. */
+        protected boolean rollChance() {
+            int chance = container.getItem() instanceof InfiniteFluidItem inf ? inf.chance : 1;
+            return chance <= 1 || java.util.concurrent.ThreadLocalRandom.current().nextInt(chance) == 0;
+        }
+
         /** Возвращает фактически поглощённый объём (mB). */
         public int fill(Fluid fluid, int amount, boolean simulate) {
             if (fluid == null || amount <= 0) return 0;
+            if (!rollChance()) return 0;
             Fluid type = getConfiguredFluid();
             // Если не настроена — поглощаем любой тип (универсальная бочка).
             // Если настроена — поглощаем только тот же substance (для ванильных water/lava).
@@ -151,6 +169,7 @@ public class InfiniteFluidItem extends Item implements ITooltipProvider {
         public dev.architectury.fluid.FluidStack drain(int maxDrain, boolean simulate) {
             Fluid type = getConfiguredFluid();
             if (type == Fluids.EMPTY) return dev.architectury.fluid.FluidStack.empty();
+            if (!rollChance()) return dev.architectury.fluid.FluidStack.empty();
             return dev.architectury.fluid.FluidStack.create(type, Math.min(maxDrain, rate));
         }
 
@@ -160,6 +179,7 @@ public class InfiniteFluidItem extends Item implements ITooltipProvider {
             if (type != Fluids.EMPTY && !com.hbm_m.api.fluids.VanillaFluidEquivalence.sameSubstance(type, fluid)) {
                 return dev.architectury.fluid.FluidStack.empty();
             }
+            if (!rollChance()) return dev.architectury.fluid.FluidStack.empty();
             return dev.architectury.fluid.FluidStack.create(fluid, Math.min(maxDrain, rate));
         }
     }

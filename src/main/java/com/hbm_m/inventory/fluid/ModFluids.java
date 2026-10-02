@@ -352,6 +352,7 @@ public class ModFluids {
      */
     //? if forge {
     public static void register(IEventBus eventBus) {
+        WorldFluids.init();
         FLUIDS.register();
     }
     //?}

@@ -37,6 +37,9 @@ public final class ChemicalPlantRecipeGenerator {
         registerExplosives(writer);
         registerDhc(writer);
         registerConstructionMaterials(writer);
+        registerBatteries(writer);
+        registerFuelAdditives(writer);
+        registerNapalm(writer);
         registerFuelsAndElectrodes(writer);
         registerPolymers(writer);
         registerMisc(writer);
@@ -45,6 +48,85 @@ public final class ChemicalPlantRecipeGenerator {
         // chem.hydrogencoke, chem.tarsand, chem.tel, chem.deicer, chem.ducrete,
         // chem.batterylead, chem.batterylithium, chem.batterysodium, chem.batteryschrabidium, chem.batteryquantum,
         // chem.cordite, chem.coltancleaning, chem.coltanpain, chem.yellowcake, chem.balefire, chem.osmiridiumdeath, chem.meth
+    }
+
+    private static net.minecraft.world.item.Item rid(String id) {
+        net.minecraft.world.item.Item item = net.minecraft.core.registries.BuiltInRegistries.ITEM.get(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("hbm_m", id));
+        if (item == Items.AIR) throw new IllegalStateException("Chemiewerk: unbekannter Gegenstand " + id);
+        return item;
+    }
+
+    /** 1:1 ChemicalPlantRecipes chem.napalm: leerer Kanister + Benzin + Aromaten (Polystyrol-Ersatz). */
+    private static void registerNapalm(Consumer<FinishedRecipe> writer) {
+        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(40, 100)
+            .addItemInput(ModItems.CANISTER_EMPTY.get(), 1)
+            .addFluidInput(ModFluids.GASOLINE.getSource(), 100)
+            .addFluidInput(ModFluids.AROMATICS.getSource(), 50)
+            .addItemOutput(new ItemStack(ModItems.CANISTER_NAPALM.get()))
+            .save(writer, "chemplant/chem_napalm");
+    }
+
+    /** 1:1 ChemicalPlantRecipes chem.tel / chem.deicer (fuel_additive). ANY_TAR = alle Teere/Wachse. */
+    private static void registerFuelAdditives(Consumer<FinishedRecipe> writer) {
+        var tar = net.minecraft.world.item.crafting.Ingredient.of(rid("oil_tar_crude"), rid("oil_tar_crack"), rid("oil_tar_coal"), rid("oil_tar_wood"), rid("oil_tar_wax"), rid("oil_tar_paraffin"));
+
+        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(40, 100)
+            .addItemInput(tar, 1)
+            .addItemInput(rid("lead_powder"), 1)
+            .addFluidInput(ModFluids.PETROLEUM.getSource(), 100)
+            .addFluidInput(ModFluids.STEAM.getSource(), 1_000)
+            .addItemOutput(new ItemStack(ModItems.FUEL_ADDITIVE_ANTIKNOCK.get()))
+            .save(writer, "chemplant/chem_tel");
+
+        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(40, 100)
+            .addFluidInput(ModFluids.GAS.getSource(), 100)
+            .addFluidInput(ModFluids.HYDROGEN.getSource(), 50)
+            .addItemOutput(new ItemStack(ModItems.FUEL_ADDITIVE_DEICER.get()))
+            .save(writer, "chemplant/chem_deicer");
+    }
+
+    /** 1:1 ChemicalPlantRecipes "BATTERIES": chem.batterylead ... chem.batteryquantum. ANY_PLASTIC = Polymer/Bakelit, ANY_HARDPLASTIC = PC/PVC, ANY_BISMOIDBRONZE = Bismut-/Arsenbronze. */
+    private static void registerBatteries(Consumer<FinishedRecipe> writer) {
+        var plastic = net.minecraft.world.item.crafting.Ingredient.of(rid("polymer_ingot"), rid("bakelite_ingot"));
+        var hardPlastic = net.minecraft.world.item.crafting.Ingredient.of(rid("pc_ingot"), rid("pvc_ingot"));
+
+        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(100, 100)
+            .addItemInput(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE), 4)
+            .addItemInput(rid("lead_ingot"), 4)
+            .addFluidInput(ModFluids.SULFURIC_ACID.getSource(), 8_000)
+            .addItemOutput(new ItemStack(ModItems.BATTERY_PACK_BATTERY_LEAD.get()))
+            .save(writer, "chemplant/chem_batterylead");
+
+        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(100, 1_000)
+            .addItemInput(rid("lithium_powder"), 12)
+            .addItemInput(rid("cobalt_powder"), 8)
+            .addItemInput(plastic, 4)
+            .addFluidInput(ModFluids.OXYGEN.getSource(), 2_000)
+            .addItemOutput(new ItemStack(ModItems.BATTERY_PACK_BATTERY_LITHIUM.get()))
+            .save(writer, "chemplant/chem_batterylithium");
+
+        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(100, 10_000)
+            .addItemInput(rid("powder_sodium"), 24)
+            .addItemInput(rid("iron_powder"), 24)
+            .addItemInput(hardPlastic, 12)
+            .addItemOutput(new ItemStack(ModItems.BATTERY_PACK_BATTERY_SODIUM.get()))
+            .save(writer, "chemplant/chem_batterysodium");
+
+        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(100, 25_000)
+            .addItemInput(rid("schrabidium_powder"), 24)
+            .addItemInput(net.minecraft.world.item.crafting.Ingredient.of(rid("plate_cast_bbronze"), rid("plate_cast_abronze")), 8)
+            .addFluidInput(ModFluids.HELIUM4.getSource(), 8_000)
+            .addItemOutput(new ItemStack(ModItems.BATTERY_PACK_BATTERY_SCHRABIDIUM.get()))
+            .save(writer, "chemplant/chem_batteryschrabidium");
+
+        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(100, 100_000)
+            .addItemInput(rid("wire_dense_bscco"), 24)
+            .addItemInput(rid("pellet_charged"), 32)
+            .addItemInput(rid("cft_ingot"), 16)
+            .addFluidInput(ModFluids.PERFLUOROMETHYL_COLD.getSource(), 8_000)
+            .addItemOutput(new ItemStack(ModItems.BATTERY_PACK_BATTERY_QUANTUM.get()))
+            .addFluidOutput(ModFluids.PERFLUOROMETHYL.getSource(), 8_000)
+            .save(writer, "chemplant/chem_batteryquantum");
     }
 
     /** Concrete/asphalt/aggregate/obsidian family — port of 1.7.10 chem.concrete/concreteasbestos/liquidconk/asphalt/aggregate/obsidian. */

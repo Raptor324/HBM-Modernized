@@ -127,6 +127,76 @@ public class ClientRenderHandler {
                         .setWriteMaskState(COLOR_WRITE)
                         .createCompositeState(false));
 
+        /** BeamPronter SOLID ({@code prontBeamwithDepth}): additiv, ohne Culling, schreibt Tiefe. */
+        public static final RenderType BEAM_SOLID_DEPTH = create("hbm_m_beam_solid_depth",
+                DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.QUADS, 256, false, false,
+                RenderType.CompositeState.builder()
+                        .setShaderState(POSITION_COLOR_SHADER)
+                        .setTransparencyState(LIGHTNING_TRANSPARENCY)
+                        .setDepthTestState(LEQUAL_DEPTH_TEST)
+                        .setCullState(NO_CULL)
+                        .setLightmapState(NO_LIGHTMAP)
+                        .setWriteMaskState(COLOR_DEPTH_WRITE)
+                        .createCompositeState(false));
+
+        /** BeamPronter LINE: untexturierte Linien, ohne Mischung, ohne Tiefe schreiben. */
+        public static final RenderType BEAM_LINES = create("hbm_m_beam_lines",
+                DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.DEBUG_LINES, 256, false, false,
+                RenderType.CompositeState.builder()
+                        .setShaderState(POSITION_COLOR_SHADER)
+                        .setDepthTestState(LEQUAL_DEPTH_TEST)
+                        .setCullState(NO_CULL)
+                        .setLightmapState(NO_LIGHTMAP)
+                        .setWriteMaskState(COLOR_WRITE)
+                        .createCompositeState(false));
+
+        /** RenderDeathBlast/RenderOrbitalLaser-Strahl: additiv, ohne Textur/Licht, Rueckseiten ausgeblendet, keine Tiefe schreiben. */
+        public static final RenderType ORBITAL_BEAM = create("hbm_m_orbital_beam",
+                DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.QUADS, 1024, false, false,
+                RenderType.CompositeState.builder()
+                        .setShaderState(POSITION_COLOR_SHADER)
+                        .setTransparencyState(LIGHTNING_TRANSPARENCY)
+                        .setDepthTestState(LEQUAL_DEPTH_TEST)
+                        .setCullState(CULL)
+                        .setLightmapState(NO_LIGHTMAP)
+                        .setWriteMaskState(COLOR_WRITE)
+                        .createCompositeState(false));
+
+        /** RenderDeathBlast-Kugel, erster Durchgang: normale Alphamischung, Rueckseiten ausgeblendet. */
+        public static final RenderType ORBITAL_ORB = create("hbm_m_orbital_orb",
+                DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.TRIANGLES, 8192, false, true,
+                RenderType.CompositeState.builder()
+                        .setShaderState(POSITION_COLOR_SHADER)
+                        .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
+                        .setDepthTestState(LEQUAL_DEPTH_TEST)
+                        .setCullState(CULL)
+                        .setLightmapState(NO_LIGHTMAP)
+                        .setWriteMaskState(COLOR_DEPTH_WRITE)
+                        .createCompositeState(false));
+
+        /** Untexturierte, volle helle Modellteile ohne Backface-Culling (RenderLantern "Light"). */
+        public static final RenderType SOLID_COLOR_NOCULL = create("hbm_m_solid_color_nocull",
+                DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.TRIANGLES, 8192, false, false,
+                RenderType.CompositeState.builder()
+                        .setShaderState(POSITION_COLOR_SHADER)
+                        .setDepthTestState(LEQUAL_DEPTH_TEST)
+                        .setCullState(NO_CULL)
+                        .setLightmapState(NO_LIGHTMAP)
+                        .setWriteMaskState(COLOR_DEPTH_WRITE)
+                        .createCompositeState(false));
+
+        /** RenderDeathBlast-Kugel, Leuchthuellen: additiv. */
+        public static final RenderType ORBITAL_ORB_GLOW = create("hbm_m_orbital_orb_glow",
+                DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.TRIANGLES, 65536, false, true,
+                RenderType.CompositeState.builder()
+                        .setShaderState(POSITION_COLOR_SHADER)
+                        .setTransparencyState(LIGHTNING_TRANSPARENCY)
+                        .setDepthTestState(LEQUAL_DEPTH_TEST)
+                        .setCullState(CULL)
+                        .setLightmapState(NO_LIGHTMAP)
+                        .setWriteMaskState(COLOR_DEPTH_WRITE)
+                        .createCompositeState(false));
+
         /** Translucent world overlay; TRANSLUCENT_TARGET required for Iris/Embeddium. */
         public static final RenderType HIGHLIGHT_BOX_FILL = create("highlight_box_fill",
                 DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.QUADS, 131072, false, false,
@@ -242,6 +312,68 @@ public class ClientRenderHandler {
                                 .setDepthTestState(LEQUAL_DEPTH_TEST)
                                 .setWriteMaskState(COLOR_WRITE)
                                 .createCompositeState(false)));
+
+        /** Additive Texturpartikel ({@code glBlendFunc(SRC_ALPHA, ONE)}) - z.B. ParticlePlasmaBlast. */
+        public static final Function<ResourceLocation, RenderType> ADDITIVE_PARTICLES = Util.memoize(
+                texture -> create("hbm_m_additive_particles", DefaultVertexFormat.POSITION_COLOR_TEX_LIGHTMAP, VertexFormat.Mode.QUADS, 1536, false, false,
+                        RenderType.CompositeState.builder()
+                                .setShaderState(POSITION_COLOR_TEX_LIGHTMAP_SHADER)
+                                .setTextureState(new RenderStateShard.TextureStateShard(texture, false, false))
+                                .setTransparencyState(LIGHTNING_TRANSPARENCY)
+                                .setCullState(NO_CULL)
+                                .setLightmapState(LIGHTMAP)
+                                .setDepthTestState(LEQUAL_DEPTH_TEST)
+                                .setWriteMaskState(COLOR_WRITE)
+                                .createCompositeState(false)));
+
+        /** Untexturierte, additive Dreiecke (ParticleAmatFlash - Strahlenkranz). */
+        public static final RenderType ADDITIVE_TRIANGLES = create("hbm_m_additive_triangles",
+                DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.TRIANGLES, 8192, false, false,
+                RenderType.CompositeState.builder()
+                        .setShaderState(POSITION_COLOR_SHADER)
+                        .setTransparencyState(LIGHTNING_TRANSPARENCY)
+                        .setCullState(CULL)
+                        .setDepthTestState(LEQUAL_DEPTH_TEST)
+                        .setWriteMaskState(COLOR_WRITE)
+                        .createCompositeState(false));
+
+        /** Untexturierte Linien ohne Tiefentest (ParticleDebugLine). */
+        public static final RenderType DEBUG_LINES_NO_DEPTH = create("hbm_m_debug_lines_no_depth",
+                DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.DEBUG_LINES, 256, false, false,
+                RenderType.CompositeState.builder()
+                        .setShaderState(POSITION_COLOR_SHADER)
+                        .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
+                        .setCullState(NO_CULL)
+                        .setDepthTestState(NO_DEPTH_TEST)
+                        .setWriteMaskState(COLOR_WRITE)
+                        .createCompositeState(false));
+
+        /**
+         * Invertierendes Blending ({@code glBlendFunc(ONE_MINUS_DST_COLOR, ONE_MINUS_SRC_COLOR)}),
+         * untexturiert - die Kugelschalen von ParticleRift.
+         */
+        private static final RenderStateShard.TransparencyStateShard INVERT_TRANSPARENCY =
+                new RenderStateShard.TransparencyStateShard("hbm_m_invert_transparency", () -> {
+                    com.mojang.blaze3d.systems.RenderSystem.enableBlend();
+                    com.mojang.blaze3d.systems.RenderSystem.blendFuncSeparate(
+                            com.mojang.blaze3d.platform.GlStateManager.SourceFactor.ONE_MINUS_DST_COLOR,
+                            com.mojang.blaze3d.platform.GlStateManager.DestFactor.ONE_MINUS_SRC_COLOR,
+                            com.mojang.blaze3d.platform.GlStateManager.SourceFactor.ONE,
+                            com.mojang.blaze3d.platform.GlStateManager.DestFactor.ZERO);
+                }, () -> {
+                    com.mojang.blaze3d.systems.RenderSystem.disableBlend();
+                    com.mojang.blaze3d.systems.RenderSystem.defaultBlendFunc();
+                });
+
+        public static final RenderType INVERT_TRIANGLES = create("hbm_m_invert_triangles",
+                DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.TRIANGLES, 65536, false, false,
+                RenderType.CompositeState.builder()
+                        .setShaderState(POSITION_COLOR_SHADER)
+                        .setTransparencyState(INVERT_TRANSPARENCY)
+                        .setCullState(CULL)
+                        .setDepthTestState(LEQUAL_DEPTH_TEST)
+                        .setWriteMaskState(COLOR_WRITE)
+                        .createCompositeState(false));
 
         public static final Function<ResourceLocation, RenderType> ASHES_PARTICLES = Util.memoize(
                 texture -> create("ashes_particles", DefaultVertexFormat.POSITION_COLOR_TEX_LIGHTMAP, VertexFormat.Mode.QUADS, 1536, false, false,

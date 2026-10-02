@@ -63,6 +63,119 @@ public abstract class BaseHbmBlockEntity extends BlockEntity implements com.hbm_
     }
 
     // ═════════════════════════════════════════════════════════════════════════════════════
+    //  1:1 TileEntityLoadedBase.checkTilt - Maschinen ohne tragfaehiges Fundament kippen.
+    // ═════════════════════════════════════════════════════════════════════════════════════
+
+    public enum TiltType { UNAVOIDABLE, CONFIG }
+
+    public boolean tilted = false;
+    public int tiltBlocksChecked = 0;
+    public int tiltBlocksValid = 0;
+
+    /**
+     * Prueft pro Sekunde einen Bodenblock; nach einem vollen Durchgang ist die Maschine gekippt, wenn weniger als 95 %
+     * tragen. Schwere Maschinen brauchen volle, undurchsichtige Bloecke ohne Sand/Wolle/Erde und mindestens die
+     * Explosionsfestigkeit von Stein, normale nur eine feste Oberseite ohne Sand, tote/oelige Erde und rissigen Stein.
+     */
+    public void checkTilt(TiltType cfg, boolean extraHeavy) {
+        if (level == null || level.isClientSide) return;
+        boolean doesTilt = false;
+        if (cfg == TiltType.UNAVOIDABLE) doesTilt = true;
+        if (cfg == TiltType.CONFIG && com.hbm_m.config.ModClothConfig.get().enableMachineGravity) doesTilt = true;
+        if (cfg == TiltType.CONFIG && com.hbm_m.config.GeneralConfig.enable528 && com.hbm_m.config.ModClothConfig.get().enable528MachineGravity) doesTilt = true;
+
+        if (!doesTilt) { setTilted(false); return; }
+        if (this.getFloorCount() <= 0) { setTilted(false); return; }
+        // Original: BlockPos.getIdentity
+        int identity = (worldPosition.getY() + worldPosition.getZ() * 27644437) * 27644437 + worldPosition.getX();
+        if ((level.getGameTime() + identity) % 20 != 0) return;
+
+        if (this.tiltBlocksChecked >= this.getFloorCount()) {
+
+            if (this.tiltBlocksValid >= this.tiltBlocksChecked * 0.95) {
+                setTilted(false);
+            } else {
+                if (!this.tilted) level.playSound(null, worldPosition.getX() + 0.5, worldPosition.getY() + 0.5, worldPosition.getZ() + 0.5,
+                        com.hbm_m.sound.HbmSoundsNT.get("hbm:block.metalImpact"), net.minecraft.sounds.SoundSource.BLOCKS, 3F, 1F);
+                setTilted(true);
+            }
+
+            this.setChanged();
+            this.tiltBlocksChecked = 0;
+            this.tiltBlocksValid = 0;
+        }
+
+        BlockPos pos = getFloorPosFromIndex(this.tiltBlocksChecked);
+        if (pos == null) return;
+
+        BlockState ground = level.getBlockState(pos);
+        this.tiltBlocksChecked++;
+
+        if (extraHeavy) {
+            if (!ground.isFaceSturdy(level, pos, net.minecraft.core.Direction.UP)) return;
+            if (!ground.isRedstoneConductor(level, pos)) return;
+            if (isSandMaterial(ground) || ground.is(net.minecraft.tags.BlockTags.WOOL) || isGroundMaterial(ground)) return;
+            if (ground.getBlock().getExplosionResistance() < net.minecraft.world.level.block.Blocks.STONE.getExplosionResistance()) return;
+            this.tiltBlocksValid++;
+        } else {
+            if (!ground.isFaceSturdy(level, pos, net.minecraft.core.Direction.UP)) return;
+            if (isSandMaterial(ground)) return;
+            if (ground.is(com.hbm_m.block.ModBlocks.DIRT_DEAD.get()) || ground.is(com.hbm_m.block.ModBlocks.DIRT_OILY.get())
+                    || ground.is(com.hbm_m.block.ModBlocks.STONE_CRACKED.get())) return;
+            this.tiltBlocksValid++;
+        }
+    }
+
+    /** Original {@code Material.sand}: Sand, Kies, Seelensand. */
+    private static boolean isSandMaterial(BlockState s) {
+        return s.is(net.minecraft.tags.BlockTags.SAND) || s.is(net.minecraft.world.level.block.Blocks.GRAVEL)
+                || s.is(net.minecraft.world.level.block.Blocks.SOUL_SAND) || s.is(net.minecraft.world.level.block.Blocks.SUSPICIOUS_GRAVEL);
+    }
+
+    /** Original {@code Material.ground}: Erde samt Varianten, Ackerboden (Gras und Myzel waren Material.grass). */
+    private static boolean isGroundMaterial(BlockState s) {
+        return s.is(net.minecraft.world.level.block.Blocks.DIRT) || s.is(net.minecraft.world.level.block.Blocks.COARSE_DIRT)
+                || s.is(net.minecraft.world.level.block.Blocks.PODZOL) || s.is(net.minecraft.world.level.block.Blocks.ROOTED_DIRT)
+                || s.is(net.minecraft.world.level.block.Blocks.FARMLAND) || s.is(net.minecraft.world.level.block.Blocks.DIRT_PATH)
+                || s.is(net.minecraft.world.level.block.Blocks.MUD);
+    }
+
+    private void setTilted(boolean t) {
+        if (this.tilted != t) {
+            this.tilted = t;
+            this.setChanged();
+            if (level != null) level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
+        }
+    }
+
+    public int getFloorCount() { return 0; }
+    public @Nullable BlockPos getFloorPosFromIndex(int index) { return null; }
+
+    public BlockPos standardFloor3x3(int index) {
+        return new BlockPos(worldPosition.getX() - 1 + (index / 2) * 2, worldPosition.getY() - 1, worldPosition.getZ() - 1 + (index % 2) * 2);
+    }
+    public BlockPos standardFloor5x5(int index) {
+        return new BlockPos(worldPosition.getX() - 2 + (index / 3) * 2, worldPosition.getY() - 1, worldPosition.getZ() - 2 + (index % 3) * 2);
+    }
+    public BlockPos standardFloor7x7(int index) {
+        return new BlockPos(worldPosition.getX() - 3 + (index / 4) * 2, worldPosition.getY() - 1, worldPosition.getZ() - 3 + (index % 4) * 2);
+    }
+
+    /** Liest "tilted" aus einem Client-Update; bei Aenderung wird das (gekippte) Blockmodell neu gebaut. */
+    private void readTiltClient(@NotNull CompoundTag tag) {
+        boolean t = tag.getBoolean("tilted");
+        if (t != this.tilted) {
+            this.tilted = t;
+            if (level != null && level.isClientSide) {
+                //? if forge {
+                this.requestModelDataUpdate();
+                //?}
+                level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 8);
+            }
+        }
+    }
+
+    // ═════════════════════════════════════════════════════════════════════════════════════
     //  Единая точка персистенции — переопределяйте ЭТИ методы в дочерних классах.
     //  Никаких stonecutter-ветвей, никаких версионных сигнатур.
     // ═════════════════════════════════════════════════════════════════════════════════════
@@ -114,24 +227,28 @@ public abstract class BaseHbmBlockEntity extends BlockEntity implements com.hbm_
     @Override
     protected void saveAdditional(@NotNull CompoundTag tag) {
         super.saveAdditional(tag);
+        tag.putBoolean("tilted", tilted);
         writeNbtData(tag, null);
     }
 
     @Override
     public void load(@NotNull CompoundTag tag) {
         super.load(tag);
+        this.tilted = tag.getBoolean("tilted");
         readNbtData(tag, null);
     }
     //?} else {
     /*@Override
     protected void saveAdditional(@NotNull CompoundTag tag, HolderLookup.Provider registries) {
         super.saveAdditional(tag, registries);
+        tag.putBoolean("tilted", tilted);
         writeNbtData(tag, registries);
     }
 
     @Override
     protected void loadAdditional(@NotNull CompoundTag tag, HolderLookup.Provider registries) {
         super.loadAdditional(tag, registries);
+        this.tilted = tag.getBoolean("tilted");
         readNbtData(tag, registries);
     }
     *///?}
@@ -144,6 +261,7 @@ public abstract class BaseHbmBlockEntity extends BlockEntity implements com.hbm_
     @Override
     public @NotNull CompoundTag getUpdateTag() {
         CompoundTag tag = super.getUpdateTag();
+        tag.putBoolean("tilted", tilted);
         writeNbtData(tag, null);
         return tag;
     }
@@ -151,6 +269,7 @@ public abstract class BaseHbmBlockEntity extends BlockEntity implements com.hbm_
     /*@Override
     public @NotNull CompoundTag getUpdateTag(net.minecraft.core.HolderLookup.Provider registries) {
         CompoundTag tag = super.getUpdateTag(registries);
+        tag.putBoolean("tilted", tilted);
         writeNbtData(tag, registries);
         return tag;
     }
@@ -158,6 +277,7 @@ public abstract class BaseHbmBlockEntity extends BlockEntity implements com.hbm_
     /*@Override
     public @NotNull CompoundTag getUpdateTag(HolderLookup.Provider registries) {
         CompoundTag tag = super.getUpdateTag(registries);
+        tag.putBoolean("tilted", tilted);
         writeNbtData(tag, registries);
         return tag;
     }
@@ -172,13 +292,14 @@ public abstract class BaseHbmBlockEntity extends BlockEntity implements com.hbm_
     //? if forge {
     @Override
     public void handleUpdateTag(@NotNull CompoundTag tag) {
+        readTiltClient(tag);
         applyClientUpdate(tag);
     }
 
     @Override
     public void onDataPacket(@NotNull Connection net, @NotNull ClientboundBlockEntityDataPacket pkt) {
         CompoundTag tag = PlatformHooks.getItemTag(pkt);
-        if (tag != null) applyClientUpdate(tag);
+        if (tag != null) { readTiltClient(tag); applyClientUpdate(tag); }
     }
     //?}
 

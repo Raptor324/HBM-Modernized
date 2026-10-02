@@ -1,7 +1,16 @@
 {
-  "variants": {
-    "": {
-      "model": "hbm_m:block/steel_corner"
-    }
+ "variants": {
+  "facing=south": {
+   "model": "hbm_m:block/deco/steel_corner_south"
+  },
+  "facing=north": {
+   "model": "hbm_m:block/deco/steel_corner_north"
+  },
+  "facing=east": {
+   "model": "hbm_m:block/deco/steel_corner_east"
+  },
+  "facing=west": {
+   "model": "hbm_m:block/deco/steel_corner_west"
   }
+ }
 }

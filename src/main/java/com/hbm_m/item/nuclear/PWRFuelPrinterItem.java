@@ -1,24 +1,25 @@
 package com.hbm_m.item.nuclear;
 
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
+import java.util.Set;
 
 import org.jetbrains.annotations.Nullable;
 
-import com.hbm_m.block.machines.PWRPartBlock;
+import com.hbm_m.block.ModBlocks;
+import com.hbm_m.block.machines.MachinePWRControllerBlock;
+import com.hbm_m.block.machines.PWRBlock;
+import com.hbm_m.blockentity.machines.PWRBlockEntity;
 import com.hbm_m.blockentity.machines.PWRControllerBlockEntity;
-import com.hbm_m.blockentity.machines.PWRPartBlockEntity.Kind;
-import com.hbm_m.network.PWRPrinterScanPacket;
 import com.hbm_m.network.ModPacketHandler;
+import com.hbm_m.network.PWRPrinterScanPacket;
 
-import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionResult;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
@@ -28,16 +29,25 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
 /**
- * PWR Printer. 1:1 in purpose to {@code com.hbm.items.machine.ItemPWRPrinter} (1.7.10): right-click
- * an assembled PWR controller to scan its structure and open a per-layer construction diagram
- * (see {@code GUIPWRPrinter}). The original rendered a rotatable 3D slice viewer; this port shows
- * the same information (which block goes where, layer by layer) as a flat 2D grid per Y-layer
- * with next/prev navigation instead - the only UX-only simplification in the PWR feature (the
- * reactor mechanics themselves are a 1:1 port).
+ * 1:1 {@code ItemPWRPrinter}: auf einen PWR-Controller angewandt flutet er die Traeger ab, schickt Grenzen, Richtung und
+ * Bauteile an den Client und oeffnet dort den Schnittdrucker ({@code GUIScreenSlicePrinter}), der jede Lage als PNG nach
+ * {@code .minecraft/printer/} schreibt.
  */
 public class PWRFuelPrinterItem extends Item implements com.hbm_m.item.ITooltipProvider {
 
-    private static final int MAX_SIZE = 4096;
+    private int x1, y1, z1;
+    private int x2, y2, z2;
+    private Direction dir;
+
+    private final Set<BlockPos> fill = new HashSet<>();
+
+    /** Original: {@code whitelist} - nur Traeger und Controller werden gedruckt. */
+    public static Set<Block> whitelist() {
+        Set<Block> set = new HashSet<>();
+        set.add(ModBlocks.PWR_BLOCK.get());
+        set.add(ModBlocks.PWR_CONTROLLER.get());
+        return set;
+    }
 
     public PWRFuelPrinterItem(Properties properties) {
         super(properties);
@@ -45,68 +55,77 @@ public class PWRFuelPrinterItem extends Item implements com.hbm_m.item.ITooltipP
 
     @Override
     public InteractionResult useOn(UseOnContext context) {
-        Level level = context.getLevel();
-        BlockPos pos = context.getClickedPos();
-        Player player = context.getPlayer();
+        Level world = context.getLevel();
+        BlockEntity tile = world.getBlockEntity(context.getClickedPos());
+        if (!(tile instanceof PWRControllerBlockEntity pwr)) return InteractionResult.PASS;
+        if (world.isClientSide) return InteractionResult.SUCCESS;
 
-        if (!(level.getBlockEntity(pos) instanceof PWRControllerBlockEntity controller) || !controller.assembled) {
-            return InteractionResult.PASS;
-        }
-        if (level.isClientSide) {
-            return InteractionResult.SUCCESS;
-        }
-        if (!(player instanceof ServerPlayer serverPlayer)) {
-            return InteractionResult.SUCCESS;
-        }
-
-        scanAndSend(level, pos, serverPlayer);
-        return InteractionResult.CONSUME;
+        if (context.getPlayer() instanceof ServerPlayer player) syncAndScreenshot(world, pwr, player);
+        return InteractionResult.SUCCESS;
     }
 
-    private void scanAndSend(Level level, BlockPos controllerPos, ServerPlayer player) {
-        Map<BlockPos, Kind> found = new HashMap<>();
-        found.put(controllerPos, null);
-        floodFill(level, controllerPos, found);
+    public void syncAndScreenshot(Level world, PWRControllerBlockEntity pwr, ServerPlayer player) {
+        findBounds(world, pwr);
 
-        int x1 = Integer.MAX_VALUE, y1 = Integer.MAX_VALUE, z1 = Integer.MAX_VALUE;
-        int x2 = Integer.MIN_VALUE, y2 = Integer.MIN_VALUE, z2 = Integer.MIN_VALUE;
-        for (BlockPos p : found.keySet()) {
-            x1 = Math.min(x1, p.getX()); y1 = Math.min(y1, p.getY()); z1 = Math.min(z1, p.getZ());
-            x2 = Math.max(x2, p.getX()); y2 = Math.max(y2, p.getY()); z2 = Math.max(z2, p.getZ());
-        }
+        int sizeX = x2 - x1 + 1;
+        int sizeY = y2 - y1 + 1;
+        int sizeZ = z2 - z1 + 1;
 
-        int sizeX = x2 - x1 + 1, sizeY = y2 - y1 + 1, sizeZ = z2 - z1 + 1;
-        byte[] grid = new byte[sizeX * sizeY * sizeZ];
-        int bx1 = x1, by1 = y1, bz1 = z1, bsx = sizeX, bsy = sizeY;
-        for (Map.Entry<BlockPos, Kind> entry : found.entrySet()) {
-            BlockPos p = entry.getKey();
-            int idx = (p.getX() - bx1) + (p.getY() - by1) * bsx + (p.getZ() - bz1) * bsx * bsy;
-            Kind k = entry.getValue();
-            grid[idx] = (byte) (k == null ? 16 /* controller marker */ : k.ordinal() + 1);
+        int[] blockSync = new int[sizeX * sizeY * sizeZ];
+        int i = 0;
+
+        for (int x = x1; x <= x2; x++) {
+            for (int y = y1; y <= y2; y++) {
+                for (int z = z1; z <= z2; z++) {
+                    BlockEntity tile = world.getBlockEntity(new BlockPos(x, y, z));
+                    if (tile instanceof PWRBlockEntity b && b.block != null) {
+                        blockSync[i] = BuiltInRegistries.BLOCK.getId(b.block);
+                    }
+                    i++;
+                }
+            }
         }
 
         ModPacketHandler.sendToPlayer(player, ModPacketHandler.PWR_PRINTER_SCAN,
-                new PWRPrinterScanPacket(sizeX, sizeY, sizeZ, grid));
+                new PWRPrinterScanPacket(x1, y1, z1, x2, y2, z2, dir.get3DDataValue(), blockSync));
     }
 
-    private void floodFill(Level level, BlockPos pos, Map<BlockPos, Kind> found) {
-        if (found.size() >= MAX_SIZE) return;
+    public void findBounds(Level world, PWRControllerBlockEntity pwr) {
+        BlockPos p = pwr.getBlockPos();
+        dir = world.getBlockState(p).getValue(MachinePWRControllerBlock.FACING).getOpposite();
 
-        for (Direction dir : Direction.values()) {
-            BlockPos n = pos.relative(dir);
-            if (found.containsKey(n)) continue;
+        fill.clear();
+        fill.add(p);
+        x1 = x2 = p.getX();
+        y1 = y2 = p.getY();
+        z1 = z2 = p.getZ();
+        floodFill(world, p.relative(dir));
+    }
 
-            Block block = level.getBlockState(n).getBlock();
-            if (block instanceof PWRPartBlock partBlock) {
-                found.put(n, partBlock.getKind());
-                floodFill(level, n, found);
-            }
+    public void floodFill(Level world, BlockPos pos) {
+        if (fill.contains(pos)) return;
+
+        if (world.getBlockState(pos).getBlock() instanceof PWRBlock) {
+            fill.add(pos);
+
+            x1 = Math.min(x1, pos.getX());
+            y1 = Math.min(y1, pos.getY());
+            z1 = Math.min(z1, pos.getZ());
+            x2 = Math.max(x2, pos.getX());
+            y2 = Math.max(y2, pos.getY());
+            z2 = Math.max(z2, pos.getZ());
+
+            floodFill(world, pos.offset(1, 0, 0));
+            floodFill(world, pos.offset(-1, 0, 0));
+            floodFill(world, pos.offset(0, 1, 0));
+            floodFill(world, pos.offset(0, -1, 0));
+            floodFill(world, pos.offset(0, 0, 1));
+            floodFill(world, pos.offset(0, 0, -1));
         }
     }
 
     @Override
     public void appendHbmTooltip(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
-        tooltip.add(Component.literal("Use on an assembled PWR controller to generate construction diagrams")
-                .withStyle(ChatFormatting.GRAY));
+        tooltip.add(Component.literal("Use on a constructed PWR controller to generate construction diagrams"));
     }
 }

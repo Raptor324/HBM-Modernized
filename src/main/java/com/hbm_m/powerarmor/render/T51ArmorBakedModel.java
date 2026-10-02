@@ -71,7 +71,7 @@ public class T51ArmorBakedModel extends AbstractArmorBakedModel {
         }
 
         @Override
-        public Class<? extends ModPowerArmorItem> getArmorItemClass() {
+        public Class<? extends net.minecraft.world.item.Item> getArmorItemClass() {
             return T51Armor.class;
         }
 

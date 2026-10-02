@@ -1,65 +1,52 @@
 package com.hbm_m.armormod.item;
 
-// Это мод, который увеличивает максимальное здоровье игрока при установке на броню.
-// Он подходит для всех типов брони и добавляет соответствующую строку в тултип
-import com.google.common.collect.HashMultimap;
-import com.google.common.collect.Multimap;
-import net.minecraft.ChatFormatting;
-import net.minecraft.network.chat.Component;
-import net.minecraft.world.entity.ai.attributes.Attribute;
-import net.minecraft.world.entity.ai.attributes.AttributeModifier;
-import net.minecraft.world.entity.ai.attributes.Attributes;
-import net.minecraft.world.item.ItemStack;
-//? if >= 1.21.1 {
-/*import net.minecraft.core.Holder;
-*///?}
-
 import java.util.List;
 
+import org.jetbrains.annotations.Nullable;
+
+import com.hbm_m.armormod.util.ArmorModificationHelper;
+import com.hbm_m.extprop.HbmLivingProps;
+import com.hbm_m.extprop.HbmPlayerProps;
+import com.hbm_m.item.ModItems;
+
+import net.minecraft.ChatFormatting;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.effect.MobEffectInstance;
+import net.minecraft.world.effect.MobEffects;
+import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.Level;
+
+/** 1:1 {@code ItemModHealth} (Herzteile, black_diamond): +Lebenspunkte. */
 public class ItemModHealth extends ItemArmorMod {
 
-    private final double health;
+    float health;
 
-
-    public ItemModHealth(Properties pProperties, int type, double health) {
-        // Указываем, что этот мод подходит для всех типов брони
-        super(pProperties, type);
+    public ItemModHealth(float health) {
+        super(new Properties().stacksTo(1), ArmorModificationHelper.extra, false, true, false, false);
         this.health = health;
     }
 
     @Override
-    public List<Component> getEffectTooltipLines() {
-        //? if < 1.21.1 {
-        return List.of(Component.literal("+" + this.health + " " + Component.translatable(Attributes.MAX_HEALTH.getDescriptionId()).getString()).withStyle(ChatFormatting.RED));
-        //?} else {
-        /*return List.of(Component.literal("+" + this.health + " " + Component.translatable(Attributes.MAX_HEALTH.value().getDescriptionId()).getString()).withStyle(ChatFormatting.RED));
-        *///?}
+    public void addInformation(ItemStack stack, @Nullable Level level, List<Component> list) {
+        list.add(line("+" + (Math.round(health * 10) * 0.1) + " health", blink(ChatFormatting.RED, ChatFormatting.LIGHT_PURPLE)));
+        list.add(Component.empty());
+        if (this == ModItems.BLACK_DIAMOND.get()) {
+            list.add(line("Nostalgia", ChatFormatting.DARK_GRAY));
+            list.add(Component.empty());
+        }
     }
 
     @Override
-    public Multimap<
-            //? if < 1.21.1 {
-            Attribute//?} else {
-            /*Holder<Attribute>*///?}
-            , AttributeModifier> getModifiers(ItemStack armor) {
-        Multimap<
-                //? if < 1.21.1 {
-                Attribute//?} else {
-                /*Holder<Attribute>*///?}
-                , AttributeModifier> multimap = HashMultimap.create();
-        multimap.put(
-            Attributes.MAX_HEALTH,
-            createModifier(armor,
-                    //? if < 1.21.1 {
-                    Attributes.MAX_HEALTH//?} else {
-                    /*Attributes.MAX_HEALTH.value()*///?}
-                    , "HBM Armor Mod Health", this.health,
-                    //? if < 1.21.1 {
-                    AttributeModifier.Operation.ADDITION//?} else {
-                    /*AttributeModifier.Operation.ADD_VALUE*///?}
-            )
-        );
+    public void addDesc(List<Component> list, ItemStack stack, ItemStack armor) {
+        list.add(descLine(blink(ChatFormatting.RED, ChatFormatting.LIGHT_PURPLE), stack, " (+" + (Math.round(health * 10) * 0.1) + " health)"));
+    }
 
+    @Override
+    public com.google.common.collect.Multimap<net.minecraft.world.entity.ai.attributes.Attribute, net.minecraft.world.entity.ai.attributes.AttributeModifier> getModifiers(ItemStack armor) {
+        com.google.common.collect.Multimap<net.minecraft.world.entity.ai.attributes.Attribute, net.minecraft.world.entity.ai.attributes.AttributeModifier> multimap = com.google.common.collect.HashMultimap.create();
+        multimap.put(net.minecraft.world.entity.ai.attributes.Attributes.MAX_HEALTH, modifier(armor, "NTM Armor Mod Health", health, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADDITION));
         return multimap;
     }
 }

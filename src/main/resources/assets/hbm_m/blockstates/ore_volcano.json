@@ -1,0 +1,10 @@
+{
+ "variants": {
+  "crater=false": {
+   "model": "hbm_m:block/bomb/ore_volcano"
+  },
+  "crater=true": {
+   "model": "hbm_m:block/bomb/ore_volcano"
+  }
+ }
+}

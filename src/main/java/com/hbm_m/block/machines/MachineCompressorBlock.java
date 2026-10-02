@@ -2,138 +2,139 @@ package com.hbm_m.block.machines;
 
 import org.jetbrains.annotations.Nullable;
 
+import com.hbm_m.block.ModBlocks;
 import com.hbm_m.blockentity.ModBlockEntities;
+import com.hbm_m.blockentity.machines.MachineCompressorBaseBlockEntity;
 import com.hbm_m.blockentity.machines.MachineCompressorBlockEntity;
+import com.hbm_m.blockentity.machines.MachineCompressorCompactBlockEntity;
+import com.hbm_m.multiblock.DummyableStructureBuilder;
+import com.hbm_m.multiblock.MultiblockStructureHelper;
 
+import dev.architectury.registry.menu.MenuRegistry;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
-import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.context.BlockPlaceContext;
-import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.BaseEntityBlock;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.Mirror;
 import net.minecraft.world.level.block.RenderShape;
-import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
-import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.block.state.StateDefinition;
-import net.minecraft.world.level.block.state.properties.BlockStateProperties;
-import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
-import net.minecraft.world.phys.shapes.CollisionContext;
-import net.minecraft.world.phys.shapes.Shapes;
-import net.minecraft.world.phys.shapes.VoxelShape;
-import dev.architectury.registry.menu.MenuRegistry;
 
 /**
- * Compressor - Direktport des 1.7.10 Originals ({@code MachineCompressor}/
- * {@code TileEntityMachineCompressor}) als einzelner Block, siehe
- * {@link MachineCompressorBlockEntity} fuer Details zur Vereinfachung.
+ * 1:1 {@code MachineCompressor} und {@code MachineCompressorCompact}.
+ * <ul>
+ *   <li>Kompressor: {@code {2,0,1,2,1,1}}, {@code {3,-3,1,1,1,1}}, {@code {8,-4,0,0,1,1}}, {@code getOffset 2};
+ *   Anschlusszellen hinten, links, rechts.</li>
+ *   <li>Kompakter Kompressor: {@code {2,0,1,1,3,3}}, {@code getOffset 1}; sechs Anschlusszellen auf Hoehe 1.</li>
+ * </ul>
  */
-public class MachineCompressorBlock extends BaseEntityBlock {
-    public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
-    public static final VoxelShape SHAPE = Block.box(0, 0, 0, 16, 16, 16);
+public class MachineCompressorBlock extends DummyableMachineBlock {
 
-    public MachineCompressorBlock(BlockBehaviour.Properties properties) {
+    private final boolean compact;
+
+    public MachineCompressorBlock(Properties properties) {
+        this(properties, false);
+    }
+
+    public MachineCompressorBlock(Properties properties, boolean compact) {
         super(properties);
-        this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH));
+        this.compact = compact;
     }
 
     @Override
-    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(FACING);
+    protected MultiblockStructureHelper defineStructure() {
+        // defineStructure laeuft im Superkonstruktor, bevor 'compact' gesetzt ist - daher ueber den Registriernamen
+        return isCompactConstruction() ? compactStructure() : largeStructure();
     }
 
-    @Override
-    public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        return SHAPE;
+    private static final ThreadLocal<Boolean> BUILDING_COMPACT = ThreadLocal.withInitial(() -> false);
+
+    private static boolean isCompactConstruction() {
+        return BUILDING_COMPACT.get();
     }
 
-    @Nullable
-    @Override
-    public BlockState getStateForPlacement(BlockPlaceContext context) {
-        return this.defaultBlockState().setValue(FACING, context.getHorizontalDirection().getOpposite());
+    /** Baut den kompakten Kompressor (die Struktur muss beim Superkonstruktor feststehen). */
+    public static MachineCompressorBlock createCompact(Properties properties) {
+        BUILDING_COMPACT.set(true);
+        try {
+            return new MachineCompressorBlock(properties, true);
+        } finally {
+            BUILDING_COMPACT.set(false);
+        }
     }
 
-    @Override
-    public BlockState rotate(BlockState state, Rotation rotation) {
-        return state.setValue(FACING, rotation.rotate(state.getValue(FACING)));
+    private static MultiblockStructureHelper largeStructure() {
+        return DummyableStructureBuilder.create()
+                .box(2, 0, 1, 2, 1, 1)
+                .box(3, -3, 1, 1, 1, 1)
+                .box(8, -4, 0, 0, 1, 1)
+                .extra(-1, 0, 0)
+                .extra(0, 0, 1)
+                .extra(0, 0, -1)
+                .placementOffset(2)
+                .build(() -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState());
     }
 
-    @Override
-    public BlockState mirror(BlockState state, Mirror mirror) {
-        return state.rotate(mirror.getRotation(state.getValue(FACING)));
+    private static MultiblockStructureHelper compactStructure() {
+        return DummyableStructureBuilder.create()
+                .box(2, 0, 1, 1, 3, 3)
+                .extra(0, 1, 3)
+                .extra(0, 1, -3)
+                .extra(1, 1, 1)
+                .extra(1, 1, -1)
+                .extra(-1, 1, 1)
+                .extra(-1, 1, -1)
+                .placementOffset(1)
+                .build(() -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState());
     }
 
     @Override
     public RenderShape getRenderShape(BlockState state) {
-        return RenderShape.MODEL;
-    }
-
-    @Override
-    public VoxelShape getOcclusionShape(BlockState state, BlockGetter level, BlockPos pos) {
-        return Shapes.block();
+        return RenderShape.ENTITYBLOCK_ANIMATED;
     }
 
     @Nullable
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
-        return new MachineCompressorBlockEntity(pos, state);
+        return compact ? new MachineCompressorCompactBlockEntity(pos, state) : new MachineCompressorBlockEntity(pos, state);
     }
 
+    @Nullable
     @Override
-    public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean moving) {
-        if (state.getBlock() != newState.getBlock()) {
-            BlockEntity be = level.getBlockEntity(pos);
-            if (be instanceof MachineCompressorBlockEntity compressor) {
-                compressor.dropInventoryContents();
-            }
+    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
+        if (compact) {
+            return createTickerHelper(type, ModBlockEntities.COMPRESSOR_COMPACT_BE.get(),
+                    (lvl, pos, st, be) -> MachineCompressorBaseBlockEntity.tick(lvl, pos, st, be));
         }
-        super.onRemove(state, level, pos, newState, moving);
+        return createTickerHelper(type, ModBlockEntities.COMPRESSOR_BE.get(),
+                (lvl, pos, st, be) -> MachineCompressorBaseBlockEntity.tick(lvl, pos, st, be));
     }
 
     //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
-
-        if (!level.isClientSide() && level.getBlockEntity(pos) instanceof MenuProvider p) {
-            MenuRegistry.openExtendedMenu((ServerPlayer) player, p, buf -> buf.writeBlockPos(pos));
-        }
-        return InteractionResult.sidedSuccess(level.isClientSide());
-        }
+        return open(level, pos, player);
+    }
     //?} else {
     /*@Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
-
-        if (!level.isClientSide() && level.getBlockEntity(pos) instanceof MenuProvider p) {
-            MenuRegistry.openExtendedMenu((ServerPlayer) player, p, buf -> buf.writeBlockPos(pos));
-        }
-        return InteractionResult.sidedSuccess(level.isClientSide());
-        }
+        return open(level, pos, player);
+    }
     *///?}
 
-
-    @Nullable
-    @Override
-    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
-        return createTickerHelper(type, ModBlockEntities.COMPRESSOR_BE.get(), MachineCompressorBlockEntity::tick);
+    private InteractionResult open(Level level, BlockPos pos, Player player) {
+        if (!level.isClientSide() && level.getBlockEntity(pos) instanceof MachineCompressorBaseBlockEntity compressor) {
+            MenuRegistry.openExtendedMenu((ServerPlayer) player, compressor, buf -> buf.writeBlockPos(pos));
+        }
+        return InteractionResult.sidedSuccess(level.isClientSide());
     }
 
     //? if >1.20.1 {
     /*public static final com.mojang.serialization.MapCodec<MachineCompressorBlock> CODEC = simpleCodec(MachineCompressorBlock::new);
-
-    @Override
-    protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
-        return CODEC;
-    }
+    @Override protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() { return CODEC; }
     *///?}
 }

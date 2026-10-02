@@ -24,92 +24,93 @@ import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Съёмный противогаз-модификация: прицепляется к шлему (слот helmet_only, стол модификаций)
- * и даёт защиту лёгких через фильтр. ПКМ — вкрутить фильтр в прицепленную маску,
- * Шифт+ПКМ — выкрутить. Порт {@link com.hbm.items.armor.ItemModGasmask} (1.7.10).
+ * 1:1 {@code com.hbm.items.armor.ItemModGasmask}: Gasmaske als Helm-Mod. Shift+Rechtsklick nimmt den
+ * Filter aus der gehaltenen Maske; Filter werden wie bei normalen Masken eingesetzt.
  */
 public class ItemModGasmask extends ItemArmorMod implements IGasMask {
 
     private final boolean mono;
 
     public ItemModGasmask(Properties properties, boolean mono) {
-        super(properties.stacksTo(1), ArmorModificationHelper.helmet_only);
+        super(properties.stacksTo(1), ArmorModificationHelper.helmet_only, true, false, false, false);
         this.mono = mono;
     }
 
     @Override
     public EnumSet<HazardClass> getBlacklist() {
         return mono
-                ? EnumSet.of(HazardClass.GAS_BLISTERING, HazardClass.GAS_LUNG, HazardClass.BACTERIA)
+                ? EnumSet.of(HazardClass.GAS_LUNG, HazardClass.GAS_BLISTERING, HazardClass.BACTERIA)
                 : EnumSet.of(HazardClass.GAS_BLISTERING);
     }
 
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
-        // Маска на голове, прицепленная к шлему или в слоте лица Curios.
-        ItemStack mask = GasMaskUtil.resolveWornMask(player);
 
-        if (mask.getItem() instanceof IGasMask) {
-            // Маска уже прицеплена к шлему — обрабатываем как обычную маску.
-            if (player.isShiftKeyDown()) {
-                ItemStack filter = GasMaskUtil.takeFilter(mask);
-                if (!filter.isEmpty()) {
-                    if (!level.isClientSide()) {
-                        if (!player.getInventory().add(filter)) {
-                            player.drop(filter, false);
-                        }
-                        level.playSound(null, player.getX(), player.getY(), player.getZ(),
-                                ModSounds.FILTER_SCREW.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
-                    }
-                    return InteractionResultHolder.sidedSuccess(stack, level.isClientSide());
-                }
-                return InteractionResultHolder.pass(stack);
-            }
+        if (player.isShiftKeyDown()) {
+            ItemStack filter = GasMaskUtil.takeFilter(stack);
 
-            ItemStack held = player.getItemInHand(hand);
-            if (held.getItem() instanceof ItemGasMaskFilter && IGasMask.isFilterApplicable(mask, held)) {
-                if (!level.isClientSide()) {
-                    ItemStack old = GasMaskUtil.takeFilter(mask);
-                    IGasMask.installFilter(mask, held.getItem());
-                    if (old.isEmpty()) {
-                        held.shrink(1);
-                    } else {
-                        player.setItemInHand(hand, old);
-                    }
-                    level.playSound(null, player.getX(), player.getY(), player.getZ(),
-                            ModSounds.FILTER_SCREW.get(), SoundSource.PLAYERS, 1.0F, 1.0F);
+            if (!filter.isEmpty()) {
+                if (!player.getInventory().add(filter)) {
+                    player.drop(filter, true);
                 }
-                return InteractionResultHolder.sidedSuccess(stack, level.isClientSide());
             }
         }
 
-        return InteractionResultHolder.pass(stack);
+        return super.use(level, player, hand);
+    }
+
+    @Override
+    public void addInformation(ItemStack stack, @Nullable Level level, List<Component> list) {
+        list.add(Component.literal("Gas protection").withStyle(ChatFormatting.GREEN));
+        list.add(Component.empty());
     }
 
     @Override
     public void appendHbmTooltip(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
-        tooltip.add(Component.translatable("tooltip.hbm_m.attachment.gasProtection").withStyle(ChatFormatting.GREEN));
-        tooltip.add(Component.translatable("tooltip.hbm_m.attachment.slotHelmet").withStyle(ChatFormatting.GRAY));
-        if (!IGasMask.hasFilter(stack)) {
-            tooltip.add(Component.translatable("tooltip.hbm_m.mask.noFilter").withStyle(ChatFormatting.RED));
-        } else {
-            ItemStack filter = new ItemStack(IGasMask.getFilterItem(IGasMask.getFilterId(stack)));
-            int dmg = IGasMask.getFilterDamage(stack);
-            int max = filter.getItem() instanceof ItemGasMaskFilter f ? f.maxFilterDamage : ItemGasMaskFilter.DEFAULT_MAX_DAMAGE;
-            tooltip.add(Component.literal("  ").append(filter.getHoverName())
-                    .append(Component.literal(" (" + Math.max(0, (max - dmg) * 100 / max) + "%)"))
-                    .withStyle(ChatFormatting.YELLOW));
+        super.appendHbmTooltip(stack, level, tooltip, flag);
+        addGasMaskTooltip(stack, tooltip);
+
+        EnumSet<HazardClass> haz = getBlacklist();
+        if (!haz.isEmpty()) {
+            tooltip.add(Component.literal("Will never protect against:").withStyle(ChatFormatting.RED));
+            for (HazardClass clazz : haz) {
+                tooltip.add(Component.literal(" -").append(Component.translatable(clazz.translationKey)).withStyle(ChatFormatting.DARK_RED));
+            }
         }
+    }
+
+    @Override
+    public void addDesc(List<Component> list, ItemStack stack, ItemStack armor) {
+        list.add(descLine(ChatFormatting.GREEN, stack, " (gas protection)"));
+        addGasMaskTooltip(stack, list);
+    }
+
+    /** Original {@code ArmorUtil.addGasMaskTooltip}. */
+    public static void addGasMaskTooltip(ItemStack mask, List<Component> list) {
+        if (!(mask.getItem() instanceof IGasMask)) return;
+
+        if (!IGasMask.hasFilter(mask)) {
+            list.add(Component.literal("No filter installed!").withStyle(ChatFormatting.RED));
+            return;
+        }
+
+        list.add(Component.literal("Installed filter:").withStyle(ChatFormatting.GOLD));
+
+        ItemStack filter = new ItemStack(IGasMask.getFilterItem(IGasMask.getFilterId(mask)));
+        int meta = IGasMask.getFilterDamage(mask);
+        int max = filter.getItem() instanceof ItemGasMaskFilter f ? f.maxFilterDamage : ItemGasMaskFilter.DEFAULT_MAX_DAMAGE;
+
+        String append = "";
+        if (max > 0) {
+            append = " (" + ((max - meta) * 100 / max) + "%)";
+        }
+
+        list.add(Component.literal("  ").append(filter.getHoverName()).append(append));
     }
 
     /** Текстура M65-модели для рендера прицепленной маски (см. клиентский GasMaskLayer). */
     public String getModelTexture() {
         return mono ? ArmorGasMaskItem.Variant.MONO.modelTexture : ArmorGasMaskItem.Variant.M65.modelTexture;
-    }
-
-    @Override
-    public List<Component> getEffectTooltipLines() {
-        return List.of(Component.translatable("tooltip.hbm_m.attachment.gasProtection").withStyle(ChatFormatting.GREEN));
     }
 }

@@ -140,32 +140,31 @@ public class FluidIdentifierItem extends Item implements IItemFluidIdentifier, I
                 setType(stack, secondary, true);
                 setType(stack, primary, false);
                 level.playSound(null, player.getX(), player.getY(), player.getZ(),
-                    SoundEvents.EXPERIENCE_ORB_PICKUP, SoundSource.PLAYERS, 0.45F, 1.25F);
+                    SoundEvents.EXPERIENCE_ORB_PICKUP, SoundSource.PLAYERS, 0.25F, 1.25F);
             }
             return InteractionResultHolder.sidedSuccess(stack, level.isClientSide);
         }
     }
 
+    //? if forge {
+    /** Original getContainerItem = Kopie: bleibt beim Handwerk im Raster (Rezepte fuer Kanister-Etiketten u. a.). */
     @Override
-    public Component getName(ItemStack stack) {
-        Fluid primary = getType(stack, true);
-        
-        if (primary == null || primary == net.minecraft.world.level.material.Fluids.EMPTY || primary == ModFluids.NONE.getSource()) {
-            return Component.translatable("item.hbm_m.fluid_identifier.none");
-        }
-
-        // Позволяем клиенту самому переводить и склеивать текст (работает в мультиплеере для разных языков)
-        Component fluidName = FluidStack.create(primary, 1000).getName();
-
-        return Component.translatable("item.hbm_m.fluid_identifier", fluidName);
+    public boolean hasCraftingRemainingItem(ItemStack stack) {
+        return true;
     }
 
     @Override
+    public ItemStack getCraftingRemainingItem(ItemStack stack) {
+        return stack.copy();
+    }
+    //?}
+
+    @Override
     public void appendHbmTooltip(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
-        tooltip.add(Component.translatable("item.hbm_m.fluid_identifier.info").withStyle(ChatFormatting.GRAY));
+        tooltip.add(Component.translatable(getDescriptionId() + ".info").withStyle(ChatFormatting.GRAY));
         tooltip.add(Component.literal("   ").append(getFluidDisplayName(getType(stack, true)).copy().withStyle(ChatFormatting.AQUA)));
         
-        tooltip.add(Component.translatable("item.hbm_m.fluid_identifier.info2").withStyle(ChatFormatting.GRAY));
+        tooltip.add(Component.translatable(getDescriptionId() + ".info2").withStyle(ChatFormatting.GRAY));
         tooltip.add(Component.literal("   ").append(getFluidDisplayName(getType(stack, false)).copy().withStyle(ChatFormatting.AQUA)));
     }
 
@@ -257,8 +256,9 @@ public class FluidIdentifierItem extends Item implements IItemFluidIdentifier, I
         public static void showSwapActiveTypeToast(ItemStack stack) {
             Fluid newActive = getType(stack, false);
             Component fluidLine = getFluidDisplayName(newActive);
+            // Original: PlayerInformPacket(secondary.getConditionalName(), 7, 3000) - nur der Name
             com.hbm_m.client.overlay.OverlayInfoToast.show(
-                    Component.translatable("toast.hbm_m.fluid_identifier_active", fluidLine),
+                    fluidLine,
                     60,
                     com.hbm_m.client.overlay.OverlayInfoToast.ID_FLUID_IDENTIFIER_SWAP);
         }

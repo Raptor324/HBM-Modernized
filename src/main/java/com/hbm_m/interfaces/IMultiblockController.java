@@ -29,6 +29,11 @@ public interface IMultiblockController {
         return -1;
     }
 
+    /** Original {@code BlockDummyable.getHeightOffset()}: senkrechter Versatz des Kerns gegenueber dem Klickpunkt. */
+    default int getHeightOffset() {
+        return 0;
+    }
+
     /**
      * Returns the specific role of a multiblock part based on its local offset from the controller.
      * This is where you define which parts are energy connectors, item inputs/outputs, etc.

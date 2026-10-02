@@ -1,0 +1,10 @@
+{
+ "variants": {
+  "erupting=false": {
+   "model": "hbm_m:block/geysir_nether"
+  },
+  "erupting=true": {
+   "model": "hbm_m:block/geysir_nether"
+  }
+ }
+}

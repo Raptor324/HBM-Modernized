@@ -41,7 +41,7 @@ public class RadioTorchReaderBlockEntity extends com.hbm_m.blockentity.BaseHbmBl
 
         Direction facing = state.hasProperty(RadioTorchBaseBlock.FACING) ? state.getValue(RadioTorchBaseBlock.FACING) : Direction.UP;
         BlockPos sourcePos = pos.relative(facing.getOpposite());
-        if (!(level.getBlockEntity(sourcePos) instanceof IRORValueProvider provider)) return;
+        if (!(com.hbm_m.api.redstoneoverradio.IRORInfo.resolve(level, sourcePos) instanceof IRORValueProvider provider)) return;
 
         for (int i = 0; i < 8; i++) {
             String channel = be.channels[i];

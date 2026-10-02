@@ -66,6 +66,10 @@ public class ModWorldGen {
     public static final RegistrySupplier<Feature<NoneFeatureConfiguration>> NETHER_BEDROCK_ORE =
             FEATURES.register("nether_bedrock_ore", () -> new NetherBedrockOreFeature(NoneFeatureConfiguration.CODEC));
 
+    /** 1:1 HbmWorldGen: Coltan-Lagerstaette um den Seed-Punkt (+ optional zufaellige Coltan-Adern). */
+    public static final RegistrySupplier<Feature<NoneFeatureConfiguration>> COLTAN_DEPOSIT =
+            FEATURES.register("coltan_deposit", () -> new ColtanDepositFeature(NoneFeatureConfiguration.CODEC));
+
     /** Порт MapGenBubble (каменные нефтяные месторождения). */
     public static final RegistrySupplier<Feature<NoneFeatureConfiguration>> OIL_DEPOSIT =
             FEATURES.register("oil_deposit", () -> OilDepositFeature.stone(NoneFeatureConfiguration.CODEC));

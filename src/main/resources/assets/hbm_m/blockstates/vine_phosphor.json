@@ -1,0 +1,16 @@
+{
+ "variants": {
+  "look=ground": {
+   "model": "hbm_m:block/deco/vine_phosphor_ground"
+  },
+  "look=middle": {
+   "model": "hbm_m:block/deco/vine_phosphor_middle"
+  },
+  "look=hang": {
+   "model": "hbm_m:block/deco/vine_phosphor_hang"
+  },
+  "look=hang_over": {
+   "model": "hbm_m:block/deco/vine_phosphor_hang_over"
+  }
+ }
+}

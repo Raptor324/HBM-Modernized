@@ -4,15 +4,16 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.api.fluids.IFluidStandardTransceiverMK2;
 import com.hbm_m.api.redstoneoverradio.IRORInteractive;
 import com.hbm_m.api.redstoneoverradio.IRORValueProvider;
+import com.hbm_m.api.tile.IControlReceiver;
+import com.hbm_m.block.ModBlocks;
 import com.hbm_m.blockentity.BaseMachineBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
-import com.hbm_m.blockentity.machines.PWRPartBlockEntity.Kind;
-import com.hbm_m.explosion.ExplosionNukeGeneric;
 import com.hbm_m.inventory.fluid.FluidType;
 import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
@@ -24,82 +25,53 @@ import com.hbm_m.inventory.menu.PWRControllerMenu;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.item.nuclear.PWRFuelItem;
 import com.hbm_m.item.nuclear.PWRFuelType;
+import com.hbm_m.platform.ModItemStackHandler;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.particles.ParticleTypes;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.NbtUtils;
 import net.minecraft.network.chat.Component;
-import net.minecraft.server.level.ServerLevel;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.material.Fluid;
+
+//? if forge {
+import net.minecraftforge.common.capabilities.Capability;
+import net.minecraftforge.common.capabilities.ForgeCapabilities;
+import net.minecraftforge.common.util.LazyOptional;
+import net.minecraftforge.items.IItemHandler;
+//?}
 
 /**
- * PWR reactor core. 1:1 port of {@code com.hbm.tileentity.machine.TileEntityPWRController}
- * (1.7.10, 708 lines): a flood-fill-assembled structure of {@code pwr_fuel}/{@code pwr_control}/
- * {@code pwr_channel}/{@code pwr_heatex}/{@code pwr_heatsink}/{@code pwr_neutron_source} (core
- * blocks) bounded by {@code pwr_casing}/{@code pwr_reflector}/{@code pwr_port} (casing blocks).
- * Assembly, structure scanning, and part delegation live in
- * {@code MachinePWRControllerBlock}/{@link PWRPartBlockEntity} (via
- * {@link com.hbm_m.multiblock.IDummyCorePart} instead of the original's meta-carrier-block trick
- * - see {@link PWRPartBlockEntity}'s class doc for why that's the one non-behavioral deviation).
- * <p>
- * <b>Fuel:</b> {@link PWRFuelType}'s 15 archetypes are a 1:1 port of the original's
- * {@code EnumPWRFuel} curves/constants (see that class's doc).
- * <p>
- * <b>Dropped safeguard (not a mechanic):</b> the original's {@code unloadDelay} guard froze
- * production for 40 ticks after any of 5 chunks up to 2 chunks away (searching for distant fluid
- * sources) loaded, to avoid a startup glitch. Ports here are always physically adjacent to the
- * controller/parts (loaded together with this block entity by definition in 1.20), so that
- * specific race condition can't occur and the guard has no equivalent to port.
- * <p>
- * <b>Meltdown:</b> the original replaced every fuel rod position with a corium block and spawned
- * ~100 shrapnel entities. This port has no corium block/debris system yet (a separate, currently
- * unimplemented feature - the same TODO already exists on {@code RBMKRodBlockEntity}'s own
- * meltdown, so this isn't a PWR-specific gap) - meltdown here destroys the rod blocks, plus the
- * same radiation-spike + explosion treatment already used by {@code MachineZirnoxBlockEntity}/
- * {@code MachineWatzPowerplantBlockEntity} for comparable large reactors in this port.
- * <p>
- * <b>Redstone-over-Radio / comparator:</b> ported 1:1 ({@link #provideRORValue}/
- * {@link #runRORFunction}, {@link #getComparatorPower()} - see that method's doc for why it
- * implements the original's evident intent rather than its literal, dead-code condition).
- * <p>
- * <b>OpenComputers:</b> not ported, matching this port's project-wide convention of skipping OC
- * integration (OpenComputers isn't a dependency of this port at all - see e.g.
- * {@code MachineCapacitorBlockEntity}'s class doc for the same documented omission elsewhere).
+ * 1:1 {@code TileEntityPWRController}. Der Aufbau wird von {@code MachinePWRControllerBlock} geflutet und in Traeger
+ * ({@code pwr_block}) verwandelt; {@link #setup} zaehlt Bauteile und Brennstab-Verbindungen. Gespalten wird nur, wenn die
+ * Umgebung (+-2 Chunks) geladen ist ({@code unloadDelay}), sonst werden Kern- und Huellenhitze genullt. Ueberhitzt der Kern,
+ * werden alle Brennstaebe zu Corium und der Reaktor explodiert.
  */
 public class PWRControllerBlockEntity extends BaseMachineBlockEntity
-        implements IFluidStandardTransceiverMK2, IRORValueProvider, IRORInteractive {
+        implements IFluidStandardTransceiverMK2, IControlReceiver, IRORValueProvider, IRORInteractive {
 
-    public static final int SLOT_FUEL_IN = 0;
-    public static final int SLOT_FUEL_OUT = 1;
-
-    public static final long CORE_HEAT_CAPACITY_BASE = 10_000_000L;
-    public static final long HULL_HEAT_CAPACITY_BASE = 10_000_000L;
-
-    public static final int COOLANT_MAX = 128_000;
-    public static final int COOLANT_HOT_MAX = 128_000;
-
-    private final FluidTank coolantTank = new FluidTank(ModFluids.COOLANT.getSource(), COOLANT_MAX);
-    private final FluidTank coolantHotTank = new FluidTank(ModFluids.COOLANT_HOT.getSource(), COOLANT_HOT_MAX);
-
-    public boolean assembled = false;
-
+    public FluidTank[] tanks;
     public long coreHeat;
+    public static final long coreHeatCapacityBase = 10_000_000;
+    public long coreHeatCapacity = 10_000_000;
     public long hullHeat;
-    public long coreHeatCapacity = CORE_HEAT_CAPACITY_BASE;
+    public static final long hullHeatCapacityBase = 10_000_000;
     public double flux;
-    public double rodLevel = 100D;
-    public double rodTarget = 100D;
 
-    @Nullable public PWRFuelType typeLoaded;
+    public double rodLevel = 100;
+    public double rodTarget = 100;
+
+    public int typeLoaded;
     public int amountLoaded;
     public double progress;
     public double processTime;
@@ -108,33 +80,36 @@ public class PWRControllerBlockEntity extends BaseMachineBlockEntity
     public int connections;
     public int connectionsControlled;
     public int heatexCount;
-    public int channelCount;
     public int heatsinkCount;
+    public int channelCount;
     public int sourceCount;
 
-    private final List<BlockPos> ports = new ArrayList<>();
-    private final List<BlockPos> rods = new ArrayList<>();
+    public int unloadDelay = 0;
+    public boolean assembled;
+
+    protected List<BlockPos> ports = new ArrayList<>();
+    protected List<BlockPos> rods = new ArrayList<>();
+
+    //? if forge {
+    private final LazyOptional<IItemHandler> automationHandler;
+    //?}
 
     public PWRControllerBlockEntity(BlockPos pos, BlockState state) {
-        super(ModBlockEntities.PWR_CONTROLLER_BE.get(), pos, state, 2, 0L, 0L);
+        super(ModBlockEntities.PWR_CONTROLLER_BE.get(), pos, state, 3, 0L, 0L);
+        this.tanks = new FluidTank[2];
+        this.tanks[0] = new FluidTank(ModFluids.COOLANT.getSource(), 128_000);
+        this.tanks[1] = new FluidTank(ModFluids.COOLANT_HOT.getSource(), 128_000);
+        //? if forge {
+        this.automationHandler = LazyOptional.of(() -> new AutomationHandler(inventory));
+        //?}
     }
 
-    // ── Assembly ────────────────────────────────────────────────────────────
+    /** Einrichtung des Reaktors beim Zusammenbau: zaehlt Bauteile und berechnet die Brennstab-Verbindungen. */
+    public void setup(Map<BlockPos, Block> partMap, Map<BlockPos, Block> rodMap) {
 
-    public void setAssembled(boolean assembled) {
-        if (this.assembled != assembled) {
-            this.assembled = assembled;
-            setChanged();
-            sendUpdateToClient();
-        }
-    }
-
-    public List<BlockPos> getPorts() { return ports; }
-    public List<BlockPos> getRods() { return rods; }
-
-    /** 1:1 port of {@code TileEntityPWRController.setup}. */
-    public void setup(Map<BlockPos, Kind> partMap) {
         rodCount = 0;
+        connections = 0;
+        connectionsControlled = 0;
         heatexCount = 0;
         channelCount = 0;
         heatsinkCount = 0;
@@ -142,34 +117,39 @@ public class PWRControllerBlockEntity extends BaseMachineBlockEntity
         ports.clear();
         rods.clear();
 
-        for (Map.Entry<BlockPos, Kind> entry : partMap.entrySet()) {
-            switch (entry.getValue()) {
-                case FUEL -> { rodCount++; rods.add(entry.getKey()); }
-                case HEATEX -> heatexCount++;
-                case CHANNEL -> channelCount++;
-                case HEATSINK -> heatsinkCount++;
-                case NEUTRON_SOURCE -> sourceCount++;
-                case PORT -> ports.add(entry.getKey());
-                default -> { /* control/casing/reflector: no counter, but do affect connection scan below */ }
-            }
-        }
-
         int connectionsDouble = 0;
         int connectionsControlledDouble = 0;
 
-        for (BlockPos fuelPos : rods) {
+        for (Map.Entry<BlockPos, Block> entry : partMap.entrySet()) {
+            Block block = entry.getValue();
+
+            if (block == ModBlocks.PWR_FUEL.get()) rodCount++;
+            if (block == ModBlocks.PWR_HEATEX.get()) heatexCount++;
+            if (block == ModBlocks.PWR_CHANNEL.get()) channelCount++;
+            if (block == ModBlocks.PWR_HEATSINK.get()) heatsinkCount++;
+            if (block == ModBlocks.PWR_NEUTRON_SOURCE.get()) sourceCount++;
+            if (block == ModBlocks.PWR_PORT.get()) ports.add(entry.getKey());
+        }
+
+        for (Map.Entry<BlockPos, Block> entry : rodMap.entrySet()) {
+            BlockPos fuelPos = entry.getKey();
+
+            rods.add(fuelPos);
+
             for (Direction dir : Direction.values()) {
+
                 boolean controlled = false;
+
                 for (int i = 1; i < 16; i++) {
                     BlockPos checkPos = fuelPos.relative(dir, i);
-                    Kind atPos = partMap.get(checkPos);
-                    if (atPos == null || atPos == Kind.CASING) break;
-                    if (atPos == Kind.CONTROL) controlled = true;
-                    if (atPos == Kind.FUEL) {
+                    Block atPos = partMap.get(checkPos);
+                    if (atPos == null || atPos == ModBlocks.PWR_CASING.get()) break;
+                    if (atPos == ModBlocks.PWR_CONTROL.get()) controlled = true;
+                    if (atPos == ModBlocks.PWR_FUEL.get()) {
                         if (controlled) connectionsControlledDouble++; else connectionsDouble++;
                         break;
                     }
-                    if (atPos == Kind.REFLECTOR) {
+                    if (atPos == ModBlocks.PWR_REFLECTOR.get()) {
                         if (controlled) connectionsControlledDouble += 2; else connectionsDouble += 2;
                         break;
                     }
@@ -181,121 +161,251 @@ public class PWRControllerBlockEntity extends BaseMachineBlockEntity
         connectionsControlled = connectionsControlledDouble / 2;
         heatsinkCount = Math.min(heatsinkCount, 80);
 
-        coreHeatCapacity = CORE_HEAT_CAPACITY_BASE + heatsinkCount * (CORE_HEAT_CAPACITY_BASE / 20);
+        // int64, weil die Kapazitaet ab 2127 Kuehlkoerpern int32 sprengt
+        this.coreHeatCapacity = coreHeatCapacityBase + this.heatsinkCount * (coreHeatCapacityBase / 20);
+        setChanged();
     }
-
-    // ── Tick ────────────────────────────────────────────────────────────────
 
     public static void tick(Level level, BlockPos pos, BlockState state, PWRControllerBlockEntity be) {
-        if (level.isClientSide() || !(level instanceof ServerLevel serverLevel)) {
-            return;
+        if (!level.isClientSide) {
+            be.serverTick(level, pos);
+        } else {
+            com.hbm_m.sound.ClientSoundBootstrap.updateSound(be, be.amountLoaded > 0, be::createAudioLoop);
         }
-        be.serverTick(serverLevel, pos);
     }
 
-    private void serverTick(ServerLevel level, BlockPos pos) {
-        if (!assembled) return;
+    private void serverTick(Level level, BlockPos pos) {
 
-        if (level.getGameTime() % 20 == 0) {
-            for (BlockPos portPos : ports) {
+        ItemStack[] slots = { inventory.getStackInSlot(0), inventory.getStackInSlot(1), inventory.getStackInSlot(2) };
+        this.tanks[0].setType(2, slots);
+        setupTanks();
+
+        if (unloadDelay > 0) unloadDelay--;
+
+        int chunkX = pos.getX() >> 4;
+        int chunkZ = pos.getZ() >> 4;
+
+        // Fluessigkeitsquellen liegen oft nicht im selben Chunk, also zwei Chunks Abstand
+        if (!level.hasChunk(chunkX, chunkZ) ||
+                !level.hasChunk(chunkX + 2, chunkZ + 2) ||
+                !level.hasChunk(chunkX + 2, chunkZ - 2) ||
+                !level.hasChunk(chunkX - 2, chunkZ + 2) ||
+                !level.hasChunk(chunkX - 2, chunkZ - 2)) {
+            this.unloadDelay = 60;
+        }
+
+        if (this.assembled) {
+            for (BlockPos p : ports) {
                 for (Direction dir : Direction.values()) {
-                    BlockPos neighbor = portPos.relative(dir);
-                    if (coolantHotTank.getFill() > 0) tryProvide(coolantHotTank, level, neighbor, dir);
-                    trySubscribe(coolantTank.getTankType(), level, neighbor, dir);
+                    BlockPos portPos = p.relative(dir);
+
+                    if (tanks[1].getFill() > 0) this.tryProvide(tanks[1], level, portPos, dir);
+                    this.trySubscribe(tanks[0].getTankType(), level, portPos, dir);
                 }
             }
-        }
 
-        loadFuel();
+            // Spaltung erst, wenn die Umgebung 40 Ticks oder laenger geladen ist
+            if (this.unloadDelay <= 0) {
 
-        double diff = rodLevel - rodTarget;
-        if (diff < 1D && diff > -1D) rodLevel = rodTarget;
-        else if (rodTarget > rodLevel) rodLevel++;
-        else if (rodTarget < rodLevel) rodLevel--;
+                ItemStack fuelIn = inventory.getStackInSlot(0);
+                if ((typeLoaded == -1 || amountLoaded <= 0) && fuelIn.getItem() instanceof PWRFuelItem fresh) {
+                    typeLoaded = fresh.getType().ordinal();
+                    amountLoaded++;
+                    inventory.extractItem(0, 1, false);
+                    setChanged();
+                } else if (fuelIn.getItem() instanceof PWRFuelItem fresh && fresh.getType().ordinal() == typeLoaded && amountLoaded < rodCount) {
+                    amountLoaded++;
+                    inventory.extractItem(0, 1, false);
+                    setChanged();
+                }
+                double diff = this.rodLevel - this.rodTarget;
+                if (diff < 1 && diff > -1) this.rodLevel = this.rodTarget;
+                if (this.rodTarget > this.rodLevel) this.rodLevel++;
+                if (this.rodTarget < this.rodLevel) this.rodLevel--;
 
-        double moderatorMultiplier = 1D;
-        FT_PWRModerator moderator = FluidType.getTrait(coolantTank.getStoredFluid(), FT_PWRModerator.class);
-        if (moderator != null) {
-            moderatorMultiplier = moderator.getMultiplier();
-        }
+                double multiplier = 1D;
 
-        int newFlux = sourceCount * 20;
+                FT_PWRModerator moderator = FluidType.getTrait(tanks[0].getTankType(), FT_PWRModerator.class);
+                if (moderator != null) {
+                    multiplier = moderator.getMultiplier();
+                }
 
-        if (typeLoaded != null && amountLoaded > 0) {
-            double usedRods = getTotalProcessMultiplier();
-            double fluxPerRod = flux / rodCount;
-            double outputPerRod = typeLoaded.burnFunc.applyAsDouble(fluxPerRod);
-            double totalOutput = outputPerRod * amountLoaded * usedRods;
-            double totalHeatOutput = totalOutput * typeLoaded.heatEmission;
-            if (coolantTank.getFill() > 0) totalHeatOutput *= moderatorMultiplier;
+                int newFlux = this.sourceCount * 20;
 
-            coreHeat += Math.round(totalHeatOutput);
-            newFlux += totalOutput;
+                if (typeLoaded != -1 && amountLoaded > 0) {
 
-            processTime = typeLoaded.yield;
-            progress += totalOutput;
+                    PWRFuelType fuel = fuelType(typeLoaded);
+                    double usedRods = getTotalProcessMultiplier();
+                    double fluxPerRod = this.flux / this.rodCount;
+                    double outputPerRod = fuel.function.effonix(fluxPerRod);
+                    double totalOutput = outputPerRod * amountLoaded * usedRods;
+                    double totalHeatOutput = totalOutput * fuel.heatEmission;
 
-            if (progress >= processTime) {
-                progress -= processTime;
-                produceHotFuel(typeLoaded);
-                amountLoaded--;
+                    if (tanks[0].getFill() > 0) {
+                        totalHeatOutput *= multiplier;
+                    }
+
+                    this.coreHeat += totalHeatOutput;
+                    newFlux += totalOutput;
+
+                    this.processTime = (int) fuel.yield;
+                    this.progress += totalOutput;
+
+                    if (this.progress >= this.processTime) {
+                        this.progress -= this.processTime;
+
+                        ItemStack out = inventory.getStackInSlot(1);
+                        Item hot = hotFuelItemFor(fuel);
+                        if (out.isEmpty()) {
+                            inventory.setStackInSlot(1, new ItemStack(hot));
+                        } else if (out.getItem() == hot && out.getCount() < out.getMaxStackSize()) {
+                            out.grow(1);
+                        }
+
+                        this.amountLoaded--;
+                        setChanged();
+                    }
+
+                    if (level.getGameTime() % 100 == 0)
+                        com.hbm_m.satellite.RayScanEvents.reportEvent(level, worldPosition, com.hbm_m.satellite.RayScanEvents.INFO_NUCLEAR, 200);
+                }
+
+                if (this.amountLoaded <= 0) {
+                    this.typeLoaded = -1;
+                }
+
+                if (amountLoaded > rodCount) amountLoaded = rodCount;
+
+                /* KERNKUEHLUNG */
+                double coreCoolingApproachNum = getXOverE((double) this.heatexCount * 5 / (double) getRodCountForCoolant(), 2) / 2D;
+                long averageCoreHeat = (this.coreHeat + this.hullHeat) / 2;
+                this.coreHeat -= (coreHeat - averageCoreHeat) * coreCoolingApproachNum;
+                this.hullHeat -= (hullHeat - averageCoreHeat) * coreCoolingApproachNum;
+
+                updateCoolant();
+
+                this.coreHeat *= 0.999D;
+                this.hullHeat *= 0.999D;
+
+                this.flux = newFlux;
+
+                if (tanks[0].getFill() > 0) {
+                    this.flux *= multiplier;
+                }
+
+                if (this.coreHeat > this.coreHeatCapacity) {
+                    meltDown(level);
+                    return;
+                }
+            } else {
+                this.hullHeat = 0;
+                this.coreHeat = 0;
             }
-
-            if (level != null && level.getGameTime() % 100 == 0) {
-                com.hbm_m.satellite.RayScanEvents.reportEvent(level, worldPosition, com.hbm_m.satellite.RayScanEvents.INFO_NUCLEAR, 200);
-            }
-
-            if (amountLoaded <= 0) typeLoaded = null;
-            if (amountLoaded > rodCount) amountLoaded = rodCount;
         }
 
-        double coreCoolingApproachNum = getXOverE((double) heatexCount * 5D / getRodCountForCoolant(), 2D) / 2D;
-        long averageHeat = (coreHeat + hullHeat) / 2;
-        coreHeat -= Math.round((coreHeat - averageHeat) * coreCoolingApproachNum);
-        hullHeat -= Math.round((hullHeat - averageHeat) * coreCoolingApproachNum);
-
-        updateCoolant();
-
-        coreHeat = Math.round(coreHeat * 0.999D);
-        hullHeat = Math.round(hullHeat * 0.999D);
-
-        flux = coolantTank.getFill() > 0 ? newFlux * moderatorMultiplier : newFlux;
-
-        if (coreHeat > coreHeatCapacity) {
-            meltDown(level);
-        }
-
-        setChanged();
         sendUpdateToClient();
     }
 
-    private void loadFuel() {
-        ItemStack slot0 = getInventory().getStackInSlot(SLOT_FUEL_IN);
-        if (!(slot0.getItem() instanceof PWRFuelItem fuel)) return;
+    protected void meltDown(Level level) {
 
-        if (typeLoaded == null && amountLoaded <= 0) {
-            typeLoaded = fuel.getType();
-            amountLoaded++;
-            slot0.shrink(1);
-            setChanged();
-        } else if (fuel.getType() == typeLoaded && amountLoaded < rodCount) {
-            amountLoaded++;
-            slot0.shrink(1);
-            setChanged();
+        level.destroyBlock(worldPosition, false);
+
+        double x = 0;
+        double y = 0;
+        double z = 0;
+
+        for (BlockPos pos : this.rods) {
+            // Original: breakBlock des Traegers (Bauteil zurueck) und sofort Corium darueber
+            level.setBlock(pos, ModBlocks.CORIUM_BLOCK.get().defaultBlockState()
+                    .setValue(com.hbm_m.block.fluid.FiniteFluidBlock.LEVEL, 5), 3);
+
+            x += pos.getX() + 0.5;
+            y += pos.getY() + 0.5;
+            z += pos.getZ() + 0.5;
+        }
+
+        x /= rods.size();
+        y /= rods.size();
+        z /= rods.size();
+
+        level.explode(null, x, y, z, 15F, true, Level.ExplosionInteraction.BLOCK);
+    }
+
+    /** Original: {@code createAudioLoop} - Geigerschleife, Lautstaerke 1, Reichweite 10. */
+    private Object createAudioLoop() {
+        try {
+            return Class.forName("com.hbm_m.client.sound.PWRLoopSoundFactory")
+                    .getMethod("create", PWRControllerBlockEntity.class)
+                    .invoke(null, this);
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException(e);
         }
     }
 
-    private void produceHotFuel(PWRFuelType type) {
-        Item hot = hotFuelItemFor(type);
-        ItemStack slot1 = getInventory().getStackInSlot(SLOT_FUEL_OUT);
-        if (slot1.isEmpty()) {
-            getInventory().setStackInSlot(SLOT_FUEL_OUT, new ItemStack(hot));
-        } else if (slot1.getItem() == hot && slot1.getCount() < slot1.getMaxStackSize()) {
-            slot1.grow(1);
-        }
+    protected void updateCoolant() {
+
+        FT_Heatable trait = FluidType.getTrait(tanks[0].getTankType(), FT_Heatable.class);
+        if (trait == null || trait.getEfficiency(HeatingType.PWR) <= 0) return;
+
+        double coolingEff = (double) this.channelCount / (double) getRodCountForCoolant() * 0.1D; // 10% Kuehlung bei gleicher Anzahl
+        if (coolingEff > 1D) coolingEff = 1D;
+
+        // Zyklenzahl deckeln, damit die Rechnung nicht ueberlaeuft
+        int heatToUse = (int) Math.min(Math.min(this.hullHeat, (long) (this.hullHeat * coolingEff * trait.getEfficiency(HeatingType.PWR))), 2_000_000_000);
+        HeatingStep step = trait.getFirstStep();
+        int coolCycles = tanks[0].getFill() / step.amountReq;
+        int hotCycles = (tanks[1].getMaxFill() - tanks[1].getFill()) / step.amountProduced;
+        int heatCycles = heatToUse / step.heatReq;
+        int cycles = Math.min(coolCycles, Math.min(hotCycles, heatCycles));
+
+        this.hullHeat -= step.heatReq * cycles;
+        this.tanks[0].setFill(tanks[0].getFill() - step.amountReq * cycles);
+        this.tanks[1].setFill(tanks[1].getFill() + step.amountProduced * cycles);
     }
 
-    private static Item hotFuelItemFor(PWRFuelType type) {
+    protected int getRodCountForCoolant() {
+        return this.rodCount + (int) Math.ceil(this.heatsinkCount / 4D);
+    }
+
+    protected void setupTanks() {
+
+        FT_Heatable trait = FluidType.getTrait(tanks[0].getTankType(), FT_Heatable.class);
+
+        if (trait == null || trait.getEfficiency(HeatingType.PWR) <= 0) {
+            tanks[0].setTankType(ModFluids.NONE.getSource());
+            tanks[1].setTankType(ModFluids.NONE.getSource());
+            return;
+        }
+
+        tanks[1].setTankType(trait.getFirstStep().typeProduced);
+    }
+
+    public double getTotalProcessMultiplier() {
+        double totalConnections = this.connections + this.connectionsControlled * (1D - (this.rodLevel / 100D));
+        return connectinFunc(totalConnections);
+    }
+
+    public double connectinFunc(double connections) {
+        return connections / 10D * (1D - getXOverE(connections, 300D)) + connections / 150D * getXOverE(connections, 300D);
+    }
+
+    public double getXOverE(double x, double d) {
+        return 1 - Math.pow(Math.E, -x / d);
+    }
+
+    public static PWRFuelType fuelType(int ordinal) {
+        PWRFuelType[] v = PWRFuelType.values();
+        return v[Math.abs(ordinal) % v.length];
+    }
+
+    /** {@code pwr_fuel} mit Metadaten {@code ordinal}. */
+    public static Item freshFuelItemFor(PWRFuelType type) {
+        Item it = BuiltInRegistries.ITEM.get(ResourceLocation.fromNamespaceAndPath(com.hbm_m.lib.RefStrings.MODID, "pwr_fuel_" + type.name().toLowerCase(java.util.Locale.ROOT)));
+        return it == null ? Items.AIR : it;
+    }
+
+    /** {@code pwr_fuel_hot} mit Metadaten {@code ordinal}. */
+    public static Item hotFuelItemFor(PWRFuelType type) {
         return switch (type) {
             case MEU -> ModItems.PWR_FUEL_MEU_HOT.get();
             case HEU233 -> ModItems.PWR_FUEL_HEU233_HOT.get();
@@ -315,261 +425,186 @@ public class PWRControllerBlockEntity extends BaseMachineBlockEntity
         };
     }
 
-    /** 1:1 port of {@code TileEntityPWRController.getTotalProcessMultiplier}. */
-    public double getTotalProcessMultiplier() {
-        double totalConnections = connections + connectionsControlled * (1D - (rodLevel / 100D));
-        return connectinFunc(totalConnections);
-    }
+    // ── Inventar ────────────────────────────────────────────────────────────
 
-    private double connectinFunc(double c) {
-        double x = getXOverE(c, 300D);
-        return c / 10D * (1D - x) + c / 150D * x;
-    }
-
-    private double getXOverE(double x, double d) {
-        return 1D - Math.pow(Math.E, -x / d);
-    }
-
-    private int getRodCountForCoolant() {
-        return rodCount + (int) Math.ceil(heatsinkCount / 4D);
-    }
-
-    private void updateCoolant() {
-        FT_Heatable trait = FluidType.getTrait(coolantTank.getStoredFluid(), FT_Heatable.class);
-        if (trait == null || trait.getEfficiency(HeatingType.PWR) <= 0) return;
-
-        double coolingEff = Math.min(1D, (double) channelCount / getRodCountForCoolant() * 0.1D);
-
-        HeatingStep step = trait.getFirstStep();
-        if (step == null) return;
-
-        long heatToUse = Math.min(Math.min(hullHeat, (long) (hullHeat * coolingEff * trait.getEfficiency(HeatingType.PWR))), 2_000_000_000L);
-        int coolCycles = coolantTank.getFill() / step.amountReq;
-        int hotCycles = (coolantHotTank.getCapacityMb() - coolantHotTank.getFluidAmountMb()) / step.amountProduced;
-        long heatCycles = step.heatReq > 0 ? heatToUse / step.heatReq : 0;
-
-        long cycles = Math.max(0, Math.min(coolCycles, Math.min(hotCycles, heatCycles)));
-        if (cycles <= 0) return;
-
-        hullHeat -= step.heatReq * cycles;
-        coolantTank.drainMb((int) (step.amountReq * cycles));
-        coolantHotTank.fillMb(step.typeProduced, (int) (step.amountProduced * cycles));
-    }
-
-    private void meltDown(ServerLevel level) {
-        for (BlockPos rodPos : rods) {
-            level.destroyBlock(rodPos, false);
-        }
-
-        typeLoaded = null;
-        amountLoaded = 0;
-        progress = 0;
-        coreHeat = 0;
-        hullHeat = 0;
-        assembled = false;
-
-        double x = 0, y = 0, z = 0;
-        int n = Math.max(1, rods.size());
-        for (BlockPos rodPos : rods) {
-            x += rodPos.getX() + 0.5D;
-            y += rodPos.getY() + 0.5D;
-            z += rodPos.getZ() + 0.5D;
-        }
-        if (rods.isEmpty()) {
-            x = worldPosition.getX() + 0.5D;
-            y = worldPosition.getY() + 0.5D;
-            z = worldPosition.getZ() + 0.5D;
-        } else {
-            x /= n; y /= n; z /= n;
-        }
-
-        ExplosionNukeGeneric.incrementRad(level, x, y, z, 15F);
-        level.sendParticles(ParticleTypes.LARGE_SMOKE, x, y, z, 40, 1.5D, 1.0D, 1.5D, 0.03D);
-        level.sendParticles(ParticleTypes.EXPLOSION, x, y, z, 4, 0.8D, 0.5D, 0.8D, 0.01D);
-        level.explode(null, x, y, z, 15.0F, Level.ExplosionInteraction.BLOCK);
-    }
-
-    // ── GUI gauges ──────────────────────────────────────────────────────────
-
-    public int getGaugeScaled(int scale, int type) {
-        return switch (type) {
-            case 0 -> (int) Math.min((long) coolantTank.getFill() * scale / COOLANT_MAX, scale);
-            case 1 -> (int) Math.min((long) coolantHotTank.getFill() * scale / COOLANT_HOT_MAX, scale);
-            case 2 -> (int) Math.min(coreHeat * scale / coreHeatCapacity, scale);
-            default -> 0;
+    @Override
+    protected ModItemStackHandler createInventoryHandler(int size) {
+        return new ModItemStackHandler(size) {
+            @Override
+            protected void onContentsChanged(int slot) { setChanged(); }
         };
     }
 
-    public void setRodTarget(double target) {
-        rodTarget = Math.max(0D, Math.min(100D, target));
-        setChanged();
-        sendUpdateToClient();
+    @Override
+    protected boolean isItemValidForSlot(int slot, ItemStack stack) {
+        if (slot == 0) return stack.getItem() instanceof PWRFuelItem;
+        return false;
     }
 
-    public FluidTank getCoolantTank() { return coolantTank; }
-    public FluidTank getCoolantHotTank() { return coolantHotTank; }
+    // ── Steuerung / ROR ─────────────────────────────────────────────────────
 
-    // ── Comparator ──────────────────────────────────────────────────────────
-
-    /**
-     * The original's {@code getComparatorInputOverride} gated this behind a metadata check
-     * ({@code meta >= 6}) that can never be true for the controller's own block position (its
-     * metadata only ever holds its facing, 2-5) - i.e. the override was effectively dead code in
-     * the original. This port implements the evident intent instead (a comparator readout of the
-     * reactor), using the hot-coolant tank fill the same way {@code TileEntityBarrel} exposes its
-     * own fill percentage.
-     */
-    public int getComparatorPower() {
-        if (coolantHotTank.getFill() == 0) return 0;
-        double frac = (double) coolantHotTank.getFill() / coolantHotTank.getCapacityMb() * 15D;
-        return (int) Math.max(0, Math.min(15, Math.round(frac) + 1));
+    @Override
+    public boolean hasPermission(Player player) {
+        return player.distanceToSqr(worldPosition.getX() + 0.5D, worldPosition.getY() + 0.5D, worldPosition.getZ() + 0.5D) <= 64.0D;
     }
 
-    // ── Redstone-over-Radio ─────────────────────────────────────────────────
+    @Override
+    public void receiveControl(CompoundTag data) {
+        if (data.contains("control")) {
+            this.rodTarget = Mth.clamp(data.getInt("control"), 0, 100);
+            setChanged();
+        }
+    }
 
-    public static final String[] ROR = new String[] {
-        PREFIX_VALUE + "rods",
-        PREFIX_VALUE + "coreheat",
-        PREFIX_VALUE + "hullheat",
-        PREFIX_VALUE + "coldbuf",
-        PREFIX_VALUE + "hotbuf",
-        PREFIX_VALUE + "flux",
-        PREFIX_VALUE + "depletion",
-        PREFIX_FUNCTION + "setrods" + NAME_SEPARATOR + "percent",
-        PREFIX_FUNCTION + "jettison",
+    public static final String[] ROR = new String[] { // nicht mit RUR verwechseln
+            PREFIX_VALUE + "rods",
+            PREFIX_VALUE + "coreheat",
+            PREFIX_VALUE + "hullheat",
+            PREFIX_VALUE + "coldbuf",
+            PREFIX_VALUE + "hotbuf",
+            PREFIX_VALUE + "flux",
+            PREFIX_VALUE + "depletion",
+            PREFIX_FUNCTION + "setrods" + NAME_SEPARATOR + "percent",
+            PREFIX_FUNCTION + "jettison",
     };
 
     @Override
-    public String[] getFunctionInfo() {
-        return ROR;
-    }
+    public String[] getFunctionInfo() { return ROR; }
 
     @Override
     public String provideRORValue(String name) {
-        if ((PREFIX_VALUE + "rods").equals(name)) return "" + (int) (100 - rodLevel);
-        if ((PREFIX_VALUE + "coreheat").equals(name)) return "" + coreHeat;
-        if ((PREFIX_VALUE + "hullheat").equals(name)) return "" + hullHeat;
-        if ((PREFIX_VALUE + "coldbuf").equals(name)) return "" + coolantTank.getFill();
-        if ((PREFIX_VALUE + "hotbuf").equals(name)) return "" + coolantHotTank.getFill();
-        if ((PREFIX_VALUE + "flux").equals(name)) return "" + (int) flux;
-        if ((PREFIX_VALUE + "depletion").equals(name)) return "" + (int) (processTime > 0 ? progress * 100 / processTime : 0);
+        if ((PREFIX_VALUE + "rods").equals(name)) return "" + (int) (100 - this.rodLevel);
+        if ((PREFIX_VALUE + "coreheat").equals(name)) return "" + this.coreHeat;
+        if ((PREFIX_VALUE + "hullheat").equals(name)) return "" + this.hullHeat;
+        if ((PREFIX_VALUE + "coldbuf").equals(name)) return "" + this.tanks[0].getFill();
+        if ((PREFIX_VALUE + "hotbuf").equals(name)) return "" + this.tanks[1].getFill();
+        if ((PREFIX_VALUE + "flux").equals(name)) return "" + (int) this.flux;
+        if ((PREFIX_VALUE + "depletion").equals(name)) return "" + (int) (this.progress * 100 / this.processTime);
         return null;
     }
 
     @Override
     public String runRORFunction(String name, String[] params) {
+
         if ((PREFIX_FUNCTION + "setrods").equals(name) && params.length > 0) {
             int percent = IRORInteractive.parseInt(params[0], 0, 100);
-            setRodTarget(percent);
-            return null;
-        }
-        if ((PREFIX_FUNCTION + "jettison").equals(name)) {
-            typeLoaded = null;
-            amountLoaded = 0;
-            progress = 0;
+            this.rodTarget = percent;
             setChanged();
-            sendUpdateToClient();
             return null;
         }
+
+        if ((PREFIX_FUNCTION + "jettison").equals(name)) {
+            this.typeLoaded = -1;
+            this.amountLoaded = 0;
+            this.progress = 0;
+            setChanged();
+            return null;
+        }
+
         return null;
     }
 
-    // ── IFluidStandardTransceiverMK2 ───────────────────────────────────────
+    // ── Fluessigkeit ────────────────────────────────────────────────────────
 
-    @Override public FluidTank[] getAllTanks() { return new FluidTank[]{ coolantTank, coolantHotTank }; }
-    @Override public FluidTank[] getReceivingTanks() { return new FluidTank[]{ coolantTank }; }
-    @Override public FluidTank[] getSendingTanks() { return new FluidTank[]{ coolantHotTank }; }
+    @Override public FluidTank[] getAllTanks() { return tanks; }
+    @Override public FluidTank[] getSendingTanks() { return new FluidTank[] { tanks[1] }; }
+    @Override public FluidTank[] getReceivingTanks() { return new FluidTank[] { tanks[0] }; }
 
     @Override
     public boolean isLoaded() {
         return level != null && !isRemoved() && level.isLoaded(worldPosition);
     }
 
-    @Override
-    public boolean canConnect(Fluid fluid, Direction fromDir) {
-        return fromDir != null;
-    }
-
-    // ── NBT ───────────────────────────────────────────────────────────────
+    // ── NBT ─────────────────────────────────────────────────────────────────
 
     @Override
-    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-        coolantTank.writeToNBT(tag, "tank_coolant");
-        coolantHotTank.writeToNBT(tag, "tank_coolant_hot");
-        tag.putBoolean("assembled", assembled);
-        tag.putLong("coreHeat", coreHeat);
-        tag.putLong("hullHeat", hullHeat);
-        tag.putLong("coreHeatCapacity", coreHeatCapacity);
-        tag.putDouble("flux", flux);
-        tag.putDouble("rodLevel", rodLevel);
-        tag.putDouble("rodTarget", rodTarget);
-        if (typeLoaded != null) tag.putString("typeLoaded", typeLoaded.name());
-        tag.putInt("amountLoaded", amountLoaded);
-        tag.putDouble("progress", progress);
-        tag.putDouble("processTime", processTime);
+    protected void readNbtData(CompoundTag nbt, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(nbt, registries);
 
-        tag.putInt("rodCount", rodCount);
-        tag.putInt("connections", connections);
-        tag.putInt("connectionsControlled", connectionsControlled);
-        tag.putInt("heatexCount", heatexCount);
-        tag.putInt("channelCount", channelCount);
-        tag.putInt("heatsinkCount", heatsinkCount);
-        tag.putInt("sourceCount", sourceCount);
+        tanks[0].readFromNBT(nbt, "t0");
+        tanks[1].readFromNBT(nbt, "t1");
 
-        tag.putInt("portCount", ports.size());
-        for (int i = 0; i < ports.size(); i++) {
-            com.hbm_m.platform.PlatformHooks.writeBlockPos(tag, "port" + i, ports.get(i));
-        }
-        tag.putInt("rodPosCount", rods.size());
-        for (int i = 0; i < rods.size(); i++) {
-            com.hbm_m.platform.PlatformHooks.writeBlockPos(tag, "rodPos" + i, rods.get(i));
-        }
-    }
+        this.assembled = nbt.getBoolean("assembled");
+        this.coreHeat = Math.max(nbt.getInt("coreHeat"), nbt.getLong("coreHeatL"));
+        this.hullHeat = Math.max(nbt.getInt("hullHeat"), nbt.getLong("hullHeatL"));
+        this.flux = nbt.getDouble("flux");
+        this.rodLevel = nbt.getDouble("rodLevel");
+        this.rodTarget = nbt.getDouble("rodTarget");
+        this.typeLoaded = nbt.getInt("typeLoaded");
+        this.amountLoaded = nbt.getInt("amountLoaded");
+        this.progress = nbt.getDouble("progress");
+        this.processTime = nbt.getDouble("processTime");
+        this.coreHeatCapacity = Math.max(nbt.getInt("coreHeatCapacity"), nbt.getLong("coreHeatCapacityL"));
+        if (this.coreHeatCapacity < coreHeatCapacityBase) this.coreHeatCapacity = coreHeatCapacityBase;
 
-    @Override
-    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-        coolantTank.readFromNBT(tag, "tank_coolant");
-        coolantHotTank.readFromNBT(tag, "tank_coolant_hot");
-        assembled = tag.getBoolean("assembled");
-        coreHeat = tag.getLong("coreHeat");
-        hullHeat = tag.getLong("hullHeat");
-        coreHeatCapacity = tag.contains("coreHeatCapacity") ? tag.getLong("coreHeatCapacity") : CORE_HEAT_CAPACITY_BASE;
-        flux = tag.getDouble("flux");
-        rodLevel = tag.getDouble("rodLevel");
-        rodTarget = tag.getDouble("rodTarget");
-        typeLoaded = tag.contains("typeLoaded") ? PWRFuelType.valueOf(tag.getString("typeLoaded")) : null;
-        amountLoaded = tag.getInt("amountLoaded");
-        progress = tag.getDouble("progress");
-        processTime = tag.getDouble("processTime");
-
-        rodCount = tag.getInt("rodCount");
-        connections = tag.getInt("connections");
-        connectionsControlled = tag.getInt("connectionsControlled");
-        heatexCount = tag.getInt("heatexCount");
-        channelCount = tag.getInt("channelCount");
-        heatsinkCount = tag.getInt("heatsinkCount");
-        sourceCount = tag.getInt("sourceCount");
+        this.rodCount = nbt.getInt("rodCount");
+        this.connections = nbt.getInt("connections");
+        this.connectionsControlled = nbt.getInt("connectionsControlled");
+        this.heatexCount = nbt.getInt("heatexCount");
+        this.channelCount = nbt.getInt("channelCount");
+        this.sourceCount = nbt.getInt("sourceCount");
+        this.heatsinkCount = nbt.getInt("heatsinkCount");
 
         ports.clear();
-        int portCount = tag.getInt("portCount");
+        int portCount = nbt.getInt("portCount");
         for (int i = 0; i < portCount; i++) {
-            if (tag.contains("port" + i)) ports.add(com.hbm_m.platform.PlatformHooks.readBlockPos(tag, "port" + i));
+            int[] port = nbt.getIntArray("p" + i);
+            if (port.length == 3) ports.add(new BlockPos(port[0], port[1], port[2]));
         }
+
         rods.clear();
-        int rodPosCount = tag.getInt("rodPosCount");
-        for (int i = 0; i < rodPosCount; i++) {
-            if (tag.contains("rodPos" + i)) rods.add(com.hbm_m.platform.PlatformHooks.readBlockPos(tag, "rodPos" + i));
+        int rodCount = nbt.getInt("rodCount");
+        for (int i = 0; i < rodCount; i++) {
+            if (nbt.contains("r" + i)) {
+                int[] port = nbt.getIntArray("r" + i);
+                if (port.length == 3) rods.add(new BlockPos(port[0], port[1], port[2]));
+            }
         }
     }
-
-    // ── Misc ──────────────────────────────────────────────────────────────
 
     @Override
-    protected boolean isItemValidForSlot(int slot, ItemStack stack) {
-        return slot == SLOT_FUEL_IN && stack.getItem() instanceof PWRFuelItem;
+    protected void writeNbtData(CompoundTag nbt, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(nbt, registries);
+
+        tanks[0].writeToNBT(nbt, "t0");
+        tanks[1].writeToNBT(nbt, "t1");
+
+        nbt.putBoolean("assembled", assembled);
+        nbt.putLong("coreHeatL", coreHeat);
+        nbt.putLong("hullHeatL", hullHeat);
+        nbt.putDouble("flux", flux);
+        nbt.putDouble("rodLevel", rodLevel);
+        nbt.putDouble("rodTarget", rodTarget);
+        nbt.putInt("typeLoaded", typeLoaded);
+        nbt.putInt("amountLoaded", amountLoaded);
+        nbt.putDouble("progress", progress);
+        nbt.putDouble("processTime", processTime);
+        nbt.putLong("coreHeatCapacityL", coreHeatCapacity);
+
+        nbt.putInt("rodCount", rodCount);
+        nbt.putInt("connections", connections);
+        nbt.putInt("connectionsControlled", connectionsControlled);
+        nbt.putInt("heatexCount", heatexCount);
+        nbt.putInt("channelCount", channelCount);
+        nbt.putInt("sourceCount", sourceCount);
+        nbt.putInt("heatsinkCount", heatsinkCount);
+
+        nbt.putInt("portCount", ports.size());
+        for (int i = 0; i < ports.size(); i++) {
+            BlockPos pos = ports.get(i);
+            nbt.putIntArray("p" + i, new int[] { pos.getX(), pos.getY(), pos.getZ() });
+        }
+
+        nbt.putInt("rodCount", rods.size());
+        for (int i = 0; i < rods.size(); i++) {
+            BlockPos pos = rods.get(i);
+            nbt.putIntArray("r" + i, new int[] { pos.getX(), pos.getY(), pos.getZ() });
+        }
     }
 
-    @Override protected Component getDefaultName() { return Component.translatable("container.hbm_m.pwr_controller"); }
+    // ── Sonstiges ───────────────────────────────────────────────────────────
+
+    @Override protected Component getDefaultName() { return Component.translatable("container.pwrController"); }
     @Override public Component getDisplayName() { return getDefaultName(); }
 
     @Nullable
@@ -577,4 +612,41 @@ public class PWRControllerBlockEntity extends BaseMachineBlockEntity
     public AbstractContainerMenu createMenu(int id, Inventory inv, Player player) {
         return PWRControllerMenu.create(id, inv, this);
     }
+
+    //? if forge {
+    @Override
+    public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
+        if (cap == ForgeCapabilities.ITEM_HANDLER) return automationHandler.cast();
+        return super.getCapability(cap, side);
+    }
+
+    @Override
+    public @Nullable Object getItemHandler(@Nullable Direction side) {
+        return automationHandler.orElse(null);
+    }
+
+    @Override
+    public void invalidateCaps() {
+        super.invalidateCaps();
+        automationHandler.invalidate();
+    }
+
+    /** Original: {@code getAccessibleSlotsFromSide = {0, 1}}, Einfuegen nur gueltig in 0, Entnahme nur aus 1. */
+    private class AutomationHandler implements IItemHandler {
+        private final ModItemStackHandler inv;
+        AutomationHandler(ModItemStackHandler inv) { this.inv = inv; }
+        @Override public int getSlots() { return 2; }
+        @Override public @NotNull ItemStack getStackInSlot(int slot) { return inv.getStackInSlot(slot); }
+        @Override public @NotNull ItemStack insertItem(int slot, @NotNull ItemStack stack, boolean simulate) {
+            if (!isItemValidForSlot(slot, stack)) return stack;
+            return inv.insertItem(slot, stack, simulate);
+        }
+        @Override public @NotNull ItemStack extractItem(int slot, int amount, boolean simulate) {
+            if (slot != 1) return ItemStack.EMPTY;
+            return inv.extractItem(slot, amount, simulate);
+        }
+        @Override public int getSlotLimit(int slot) { return inv.getSlotLimit(slot); }
+        @Override public boolean isItemValid(int slot, @NotNull ItemStack stack) { return isItemValidForSlot(slot, stack); }
+    }
+    //?}
 }

@@ -56,7 +56,7 @@ public class ItemBoltgun extends Item {
 
             if (!level.isClientSide) {
                 level.playSound(null, entity.getX(), entity.getY(), entity.getZ(),
-                        SoundEvents.PISTON_CONTRACT, SoundSource.PLAYERS, 1.0F, 1.0F);
+                        com.hbm_m.sound.HbmSoundsNT.get("hbm:item.boltgun"), SoundSource.PLAYERS, 1.0F, 1.0F);
                 player.getInventory().removeItem(slot, 1);
 
                 // attackEntityFromIgnoreIFrame: the original deliberately bypasses the
@@ -86,6 +86,31 @@ public class ItemBoltgun extends Item {
             if (player.getInventory().getItem(i).is(bolt)) return i;
         }
         return -1;
+    }
+
+    /** Original onItemUse: {@code IToolable.onScrew(..., ToolType.BOLT)}, Nietgeraeusch und kleine Explosion. */
+    @Override
+    public net.minecraft.world.InteractionResult useOn(net.minecraft.world.item.context.UseOnContext ctx) {
+        Level world = ctx.getLevel();
+        net.minecraft.core.BlockPos pos = ctx.getClickedPos();
+        Player player = ctx.getPlayer();
+        if (player != null && world.getBlockState(pos).getBlock() instanceof com.hbm_m.api.block.IToolable toolable) {
+            net.minecraft.world.phys.Vec3 hit = ctx.getClickLocation();
+            float fX = (float) (hit.x - pos.getX()), fY = (float) (hit.y - pos.getY()), fZ = (float) (hit.z - pos.getZ());
+            if (toolable.onScrew(world, player, pos, ctx.getClickedFace(), fX, fY, fZ, ctx.getHand(), com.hbm_m.api.block.IToolable.ToolType.BOLT)) {
+                if (!world.isClientSide) {
+                    world.playSound(null, player.getX(), player.getY(), player.getZ(), com.hbm_m.sound.HbmSoundsNT.get("hbm:item.boltgun"), SoundSource.PLAYERS, 1.0F, 1.0F);
+                    net.minecraft.core.Direction dir = ctx.getClickedFace();
+                    double off = 0.25;
+                    if (world instanceof ServerLevel server) {
+                        server.sendParticles(ParticleTypes.EXPLOSION, pos.getX() + fX + dir.getStepX() * off, pos.getY() + fY + dir.getStepY() * off, pos.getZ() + fZ + dir.getStepZ() * off, 1, 0, 0, 0, 0);
+                    }
+                }
+                // Original gibt auch bei Erfolg false zurueck
+                return net.minecraft.world.InteractionResult.PASS;
+            }
+        }
+        return net.minecraft.world.InteractionResult.PASS;
     }
 
     /** The gun itself never damages anything by swinging - only the rivets do. */

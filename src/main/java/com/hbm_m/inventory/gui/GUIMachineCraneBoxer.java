@@ -68,7 +68,7 @@ public class GUIMachineCraneBoxer extends GuiInfoScreen<MachineCraneBoxerMenu> {
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         if (boxer != null && isHovering(151, 34, 18, 18, (int) mouseX, (int) mouseY)) {
-            boxer.nextMode();
+            { net.minecraft.nbt.CompoundTag data = new net.minecraft.nbt.CompoundTag(); data.putBoolean("toggle", true); com.hbm_m.network.NBTControlPacket.sendToServer(boxer.getBlockPos(), data); playClickSound(); }
             return true;
         }
         return super.mouseClicked(mouseX, mouseY, button);

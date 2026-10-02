@@ -1,0 +1,16 @@
+{
+ "variants": {
+  "orient=upright_x": {
+   "model": "hbm_m:block/deco/steel_scaffold_white_upright_x"
+  },
+  "orient=flat_ns": {
+   "model": "hbm_m:block/deco/steel_scaffold_white_flat_ns"
+  },
+  "orient=upright_z": {
+   "model": "hbm_m:block/deco/steel_scaffold_white_upright_z"
+  },
+  "orient=flat_we": {
+   "model": "hbm_m:block/deco/steel_scaffold_white_flat_we"
+  }
+ }
+}

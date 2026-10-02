@@ -133,26 +133,25 @@ public class SoyuzEntity extends Entity {
             return;
         }
 
-        if (mode == 0) {
-            // Satellite mode: consume whatever chip was placed in the satellite slot.
-            ItemStack chip = payload.isEmpty() ? ItemStack.EMPTY : payload.get(0);
-            if (!chip.isEmpty() && chip.is(ModItems.FLAME_PONY.get()) && level() instanceof ServerLevel server) {
-                for (var player : server.players()) {
-                    server.sendParticles(net.minecraft.core.particles.ParticleTypes.FIREWORK,
-                            getX(), getY(), getZ(), 40, 1.0, 1.0, 1.0, 0.1);
+        if (mode == 0 && level() instanceof ServerLevel server) {
+            // 1:1 EntitySoyuz.deployPayload
+            ItemStack load = payload.isEmpty() ? ItemStack.EMPTY : payload.get(0);
+
+            if (!load.isEmpty()) {
+
+                if (load.is(ModItems.FLAME_PONY.get())) {
+                    com.hbm_m.explosion.ExplosionLarge.spawnTracers(server, getX(), getY(), getZ(), 25);
+                    com.hbm_m.advancement.ModAdvancements.grantAll(level(), com.hbm_m.advancement.ModAdvancements.SPACE);
                 }
-                com.hbm_m.advancement.ModAdvancements.grantAll(level(),
-                        com.hbm_m.advancement.ModAdvancements.SPACE);
-            } else if (!chip.isEmpty() && chip.is(ModBlocks.SAT_FOEQ.get().asItem())
-                    && level() instanceof ServerLevel server) {
-                com.hbm_m.advancement.ModAdvancements.grantAll(level(),
-                        com.hbm_m.advancement.ModAdvancements.FOEQ);
-                com.hbm_m.satellite.SatelliteManager.get(server).orbit(
-                        server, com.hbm_m.item.ISatChip.getFreqS(chip), chip.getItem(), getX(), getY(), getZ());
-            } else if (!chip.isEmpty() && chip.getItem() instanceof com.hbm_m.item.ISatChip
-                    && level() instanceof ServerLevel server) {
-                com.hbm_m.satellite.SatelliteManager.get(server).orbit(
-                        server, com.hbm_m.item.ISatChip.getFreqS(chip), chip.getItem(), getX(), getY(), getZ());
+
+                if (load.is(ModItems.SAT_FOEQ.get())) {
+                    com.hbm_m.advancement.ModAdvancements.grantAll(level(), com.hbm_m.advancement.ModAdvancements.FOEQ);
+                }
+
+                if (load.getItem() instanceof com.hbm_m.item.ISatChip) {
+                    int freq = com.hbm_m.item.ISatChip.getFreqS(load);
+                    com.hbm_m.satellite.SatelliteManager.get(server).orbit(server, load, freq, getX(), getY(), getZ());
+                }
             }
         } else if (mode == 1 && level() instanceof ServerLevel server) {
             SoyuzCapsuleEntity capsule = ModEntities.SOYUZ_CAPSULE.get().create(server);

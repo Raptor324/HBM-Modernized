@@ -232,6 +232,32 @@ public final class ModMaterialItems {
         if (mat == ModMaterials.IRON && shape == MaterialShape.POWDER) {
             return new RadioactiveItem(props);
         }
+        // Essbare Materialien des Originals: ingot_smore = ItemFood(10, 20F), ingot_semtex/ingot_c4 =
+        // ItemLemon(4, 5, true), powder_cement = ItemLemon(2, 0.5F).
+        if (mat == ModMaterials.SMORE && shape == MaterialShape.INGOT) {
+            return com.hbm_m.item.food.HbmFoodItem.of(10, 20F, false).noDesc().props(props).build();
+        }
+        if ((mat == ModMaterials.SEMTEX || mat == ModMaterials.C4) && shape == MaterialShape.INGOT) {
+            return com.hbm_m.item.food.HbmFoodItem.of(4, 5, true).props(props).build();
+        }
+        if (mat == ModMaterials.CEMENT && shape == MaterialShape.POWDER) {
+            return com.hbm_m.item.food.HbmFoodItem.of(2, 0.5F, false).props(props).build();
+        }
+        // Heisse Barren des Originals (ItemHot / ItemHotDusted, Meta 0 = steel_dusted_ingot)
+        if (shape == MaterialShape.INGOT && (mat == ModMaterials.METEORITE || mat == ModMaterials.METEORITE_FORGED
+                || mat == ModMaterials.CHAINSSTEEL)) {
+            String tex = mat == ModMaterials.CHAINSSTEEL ? "chainsteel" : mat == ModMaterials.METEORITE ? "meteorite" : "meteorite_forged";
+            return new com.hbm_m.item.special.ItemHot(mat == ModMaterials.CHAINSSTEEL ? 100 : 200,
+                    net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("hbm_m", "textures/item/ingot/ingot_" + tex + "_hot.png"), props);
+        }
+        if (shape == MaterialShape.INGOT && mat == ModMaterials.STEEL_DUSTED) {
+            return new com.hbm_m.item.special.ItemHotDusted(200, 0,
+                    net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("hbm_m", "textures/item/ingot/ingot_steel_dusted_hot.png"), props);
+        }
+        // crystal_xen = ItemDrop im Original (maxStack 1, verschiebt beim Aufprall Bloecke).
+        if (mat == ModMaterials.XEN && shape == MaterialShape.CRYSTAL) {
+            return new com.hbm_m.item.special.ItemDrop(props.stacksTo(1));
+        }
         // Лор-строки оригинала (desc в 1.7.10) для материалов.
         List<Component> lore = materialLore(mat, shape);
         if (lore != null) {

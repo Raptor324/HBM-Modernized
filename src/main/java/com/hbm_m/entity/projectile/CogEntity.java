@@ -42,6 +42,10 @@ public class CogEntity extends Entity {
     private static final EntityDataAccessor<Integer> ORIENTATION =
             SynchedEntityData.defineId(CogEntity.class, EntityDataSerializers.INT);
 
+    /** Original: {@code dataWatcher} 11 - Bauart des Motors (0 normal, 1 Stahl, 2 kreativ). */
+    private static final EntityDataAccessor<Integer> META =
+            SynchedEntityData.defineId(CogEntity.class, EntityDataSerializers.INT);
+
     /** Original: {@code newExplosion(..., 3F, false)} beim Aufprall. */
     private static final float IMPACT_POWER = 3F;
     /** Original: unter dieser Geschwindigkeit bleibt es liegen. */
@@ -60,16 +64,25 @@ public class CogEntity extends Entity {
         return cog;
     }
 
+    public CogEntity setMeta(int meta) {
+        entityData.set(META, meta);
+        return this;
+    }
+
+    public int getMeta() { return entityData.get(META); }
+
     //? if < 1.21.1 {
 
     @Override
     protected void defineSynchedData() {
         entityData.define(ORIENTATION, 0);
+        entityData.define(META, 0);
     }
     //?} else {
     /*@Override
     protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
         builder.define(ORIENTATION, 0);
+        builder.define(META, 0);
     }
     *///?}
 
@@ -142,7 +155,7 @@ public class CogEntity extends Entity {
     public InteractionResult interact(Player player, InteractionHand hand) {
         if (level().isClientSide()) return InteractionResult.SUCCESS;
 
-        if (player.getInventory().add(new ItemStack(ModItems.GEAR_LARGE.get()))) {
+        if (player.getInventory().add(com.hbm_m.blockentity.machines.MachineStirlingBlockEntity.gearFor(getMeta()))) {
             level().playSound(null, getX(), getY(), getZ(), SoundEvents.ITEM_PICKUP,
                     SoundSource.PLAYERS, 0.2F, 1.0F);
             discard();
@@ -158,12 +171,14 @@ public class CogEntity extends Entity {
     @Override
     protected void readAdditionalSaveData(CompoundTag tag) {
         entityData.set(ORIENTATION, tag.getInt("orientation"));
+        entityData.set(META, tag.getInt("meta"));
         age = tag.getInt("age");
     }
 
     @Override
     protected void addAdditionalSaveData(CompoundTag tag) {
         tag.putInt("orientation", getOrientation());
+        tag.putInt("meta", getMeta());
         tag.putInt("age", age);
     }
 

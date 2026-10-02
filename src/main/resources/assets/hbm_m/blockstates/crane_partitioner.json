@@ -1,0 +1,19 @@
+{
+ "variants": {
+  "facing=east": {
+   "model": "hbm_m:block/crane_partitioner"
+  },
+  "facing=north": {
+   "model": "hbm_m:block/crane_partitioner",
+   "y": 270
+  },
+  "facing=west": {
+   "model": "hbm_m:block/crane_partitioner",
+   "y": 180
+  },
+  "facing=south": {
+   "model": "hbm_m:block/crane_partitioner",
+   "y": 90
+  }
+ }
+}

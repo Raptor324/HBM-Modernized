@@ -1,0 +1,40 @@
+{
+ "variants": {
+  "end=false,facing=up": {
+   "model": "hbm_m:block/deco/dungeon_chain_hanging"
+  },
+  "end=false,facing=north": {
+   "model": "hbm_m:block/deco/dungeon_chain_wall"
+  },
+  "end=false,facing=east": {
+   "model": "hbm_m:block/deco/dungeon_chain_wall",
+   "y": 90
+  },
+  "end=false,facing=south": {
+   "model": "hbm_m:block/deco/dungeon_chain_wall",
+   "y": 180
+  },
+  "end=false,facing=west": {
+   "model": "hbm_m:block/deco/dungeon_chain_wall",
+   "y": 270
+  },
+  "end=true,facing=up": {
+   "model": "hbm_m:block/deco/dungeon_chain_hanging_end"
+  },
+  "end=true,facing=north": {
+   "model": "hbm_m:block/deco/dungeon_chain_wall_end"
+  },
+  "end=true,facing=east": {
+   "model": "hbm_m:block/deco/dungeon_chain_wall_end",
+   "y": 90
+  },
+  "end=true,facing=south": {
+   "model": "hbm_m:block/deco/dungeon_chain_wall_end",
+   "y": 180
+  },
+  "end=true,facing=west": {
+   "model": "hbm_m:block/deco/dungeon_chain_wall_end",
+   "y": 270
+  }
+ }
+}

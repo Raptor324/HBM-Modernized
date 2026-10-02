@@ -1,0 +1,8 @@
+{
+ "parent": "minecraft:block/cube_all",
+ "textures": {
+  "all": "hbm_m:block/hadron_coil_gold",
+  "ct": "hbm_m:block/hadron_coil_gold_ct",
+  "particle": "hbm_m:block/hadron_coil_gold"
+ }
+}

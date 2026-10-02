@@ -71,6 +71,11 @@ public class ClientModEvents {
                 handleItemTooltip(stack, context.level(), lines, flag));
         *///?}
 
+        // ModEventHandlerClient.onClientTick (START): Aschezaehler der Digamma-Asche abbauen
+        ClientTickEvent.CLIENT_PRE.register(client -> {
+            if (client.level != null && client.player != null) com.hbm_m.block.generic.BlockAshes.clientTick();
+        });
+
         ClientTickEvent.CLIENT_POST.register(client -> {
             com.hbm_m.client.overlay.OverlayInfoToast.tick();
             DoorAnimationDelayHelper.processQueue();
@@ -198,6 +203,7 @@ public class ClientModEvents {
                     mcCapture.getTimer().getGameTimeDeltaPartialTick(true));
             *///?}
             MissileTrackClient.beginRenderFrame();
+            com.hbm_m.client.render.implementations.RebarRenderer.beginFrame();
             logShadowBerDiagnostics();
         }
 
@@ -224,6 +230,7 @@ public class ClientModEvents {
                     event.getPoseStack(),
                     cameraPos);
             InstancedRenderFrame.presentAfterBlockEntities(event.getProjectionMatrix(), cameraPos);
+            com.hbm_m.client.RebarPlacerPreview.render(event.getPoseStack(), cameraPos);
             return;
         }
 

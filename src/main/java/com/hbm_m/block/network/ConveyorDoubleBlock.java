@@ -34,4 +34,9 @@ public class ConveyorDoubleBlock extends ConveyorBendableBlock {
 
         return new Vec3(posX, pos.getY() + 0.25, posZ);
     }
+
+    @Override
+    public net.minecraft.world.item.Item getWandItem() {
+        return com.hbm_m.item.ModItems.CONVEYOR_WAND_DOUBLE.get();
+    }
 }

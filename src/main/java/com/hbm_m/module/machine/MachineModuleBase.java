@@ -14,7 +14,6 @@ import net.minecraft.world.level.Level;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.interfaces.IEnergyReceiver;
-import com.hbm_m.item.industrial.ItemBlueprintFolder;
 import com.hbm_m.platform.ModItemStackHandler;
 import com.hbm_m.recipe.index.ModRecipeIndex;
 
@@ -113,7 +112,7 @@ public abstract class MachineModuleBase<T extends Recipe<?>> {
      */
     protected static boolean isBlueprintPoolAllowed(@Nullable String recipePool, ItemStack blueprint) {
         if (recipePool == null || recipePool.isEmpty()) return true;
-        String installed = ItemBlueprintFolder.getBlueprintPool(blueprint);
+        String installed = com.hbm_m.item.industrial.ItemBlueprints.getBlueprintPool(blueprint);
         return installed != null && !installed.isEmpty() && installed.equals(recipePool);
     }
 

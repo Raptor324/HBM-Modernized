@@ -94,6 +94,9 @@ public abstract class MissileTier0 extends MissileBaseEntity {
             }
 
             ExplosionNukeGeneric.empBlast(level(), (int) getX(), (int) getY(), (int) getZ(), 50);
+            com.hbm_m.entity.effect.EntityEMPBlast wave = new com.hbm_m.entity.effect.EntityEMPBlast(level(), 50);
+            wave.setPos(getX(), getY(), getZ());
+            level().addFreshEntity(wave);
 
         }
 

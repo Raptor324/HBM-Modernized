@@ -191,6 +191,20 @@ public class MachineFlareStackBlock extends BaseEntityBlock implements IMultiblo
         return RenderShape.MODEL;
     }
 
+    /** Original {@code MachineGasFlare.addInformation} (fest im Code, englisch). */
+    @Override
+    public void appendHoverText(net.minecraft.world.item.ItemStack stack, @Nullable BlockGetter level,
+                                java.util.List<net.minecraft.network.chat.Component> list, net.minecraft.world.item.TooltipFlag flag) {
+        net.minecraft.ChatFormatting gold = net.minecraft.ChatFormatting.GOLD, red = net.minecraft.ChatFormatting.RED, yellow = net.minecraft.ChatFormatting.YELLOW;
+        list.add(net.minecraft.network.chat.Component.literal("Can burn fluids and vent gasses").withStyle(gold));
+        list.add(net.minecraft.network.chat.Component.literal("Burns up to ").withStyle(gold).append(net.minecraft.network.chat.Component.literal("10mB/t").withStyle(red)));
+        list.add(net.minecraft.network.chat.Component.literal("Vents up to ").withStyle(gold).append(net.minecraft.network.chat.Component.literal("50mB/t").withStyle(red)));
+        list.add(net.minecraft.network.chat.Component.empty());
+        list.add(net.minecraft.network.chat.Component.literal("Fuel efficiency:").withStyle(yellow));
+        list.add(net.minecraft.network.chat.Component.literal("-Flammable Gasses: ").withStyle(yellow).append(net.minecraft.network.chat.Component.literal("20%").withStyle(red)));
+        list.add(net.minecraft.network.chat.Component.literal("-Flammable Liquids: ").withStyle(yellow).append(net.minecraft.network.chat.Component.literal("10%").withStyle(red)));
+    }
+
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
         return structureHelper.generateShapeFromParts(state.getValue(FACING));

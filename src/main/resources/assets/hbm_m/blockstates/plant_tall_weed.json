@@ -1,0 +1,10 @@
+{
+ "variants": {
+  "half=lower": {
+   "model": "hbm_m:block/plant_tall_weed_lower"
+  },
+  "half=upper": {
+   "model": "hbm_m:block/plant_tall_weed_upper"
+  }
+ }
+}

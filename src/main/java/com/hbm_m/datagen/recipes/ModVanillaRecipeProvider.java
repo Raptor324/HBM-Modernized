@@ -1,6 +1,7 @@
 package com.hbm_m.datagen.recipes;
 //? if forge {
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Consumer;
 
@@ -715,22 +716,9 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .unlockedBy(getHasName(ModItems.DUCTTAPE.get()), has(ModItems.DUCTTAPE.get()))
                 .save(writer, recipeId("crafting/attachment_mask_mono"));
 
-        // ── Лекарства (1.7.10 ConsumableRecipes / CraftingManager) ────────────
-        ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, ModItems.SIOX.get(), 8)
-                .requires(ModMaterialItems.item(ModMaterials.COAL, MaterialShape.POWDER))
-                .requires(ModMaterialItems.item(ModMaterials.ASBESTOS, MaterialShape.POWDER))
-                .requires(Items.GOLD_NUGGET)
-                .unlockedBy(getHasName(Items.GOLD_NUGGET), has(Items.GOLD_NUGGET))
-                .save(writer, recipeId("crafting/siox"));
+        // Medizin: siehe ConsumableRecipeGenerator (1:1). pill_herbal braucht die Fingerhut-Blume
+        // (plant_flower FOXGLOVE) und folgt mit den Pflanzen.
 
-        // pill_herbal (1.7.10: угольная пыль + ядовитая картошка + адский нарост + наперстянка;
-        // наперстянка в порт не перенесена — опущена)
-        ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, ModItems.PILL_HERBAL.get())
-                .requires(ModMaterialItems.item(ModMaterials.COAL, MaterialShape.POWDER))
-                .requires(Items.POISONOUS_POTATO)
-                .requires(Items.NETHER_WART)
-                .unlockedBy(getHasName(Items.NETHER_WART), has(Items.NETHER_WART))
-                .save(writer, recipeId("crafting/pill_herbal"));
 
         ShapedRecipeBuilder.shaped(RecipeCategory.COMBAT, ModBlocks.TURRET_SENTRY.get())
                 .pattern("PPL")
@@ -1142,6 +1130,436 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
 
         registerRadAbsorberRecipes(writer);
 
+        // SmeltingRecipes: Meteorerze (je 10 XP)
+        saveSmeltingStackRecipe(writer, recipeId("smelting/ore_meteor_iron"), ModBlocks.ORE_METEOR_IRON.get(), new ItemStack(Items.IRON_INGOT, 16), 10.0F);
+        saveSmeltingStackRecipe(writer, recipeId("smelting/ore_meteor_copper"), ModBlocks.ORE_METEOR_COPPER.get(), new ItemStack(Items.COPPER_INGOT, 16), 10.0F);
+        saveSmeltingStackRecipe(writer, recipeId("smelting/ore_meteor_aluminium"), ModBlocks.ORE_METEOR_ALUMINIUM.get(), new ItemStack(ModItems.CRYOLITE_CHUNK.get(), 16), 10.0F);
+        saveSmeltingStackRecipe(writer, recipeId("smelting/ore_meteor_rareearth"), ModBlocks.ORE_METEOR_RAREEARTH.get(), new ItemStack(ModItems.RAREGROUND_ORE_CHUNK.get(), 16), 10.0F);
+        saveSmeltingStackRecipe(writer, recipeId("smelting/ore_meteor_cobalt"), ModBlocks.ORE_METEOR_COBALT.get(), new ItemStack(ModMaterialItems.item(ModMaterials.COBALT, MaterialShape.INGOT), 4), 10.0F);
+
+
+        // ---- R4 (CraftingManager 1:1) ----
+        Ingredient r4Plastic = Ingredient.of(ModMaterialItems.item(ModMaterials.POLYMER, MaterialShape.INGOT), ModMaterialItems.item(ModMaterials.BAKELITE, MaterialShape.INGOT));
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.BATTERY_SC_EMPTY.get())
+                .pattern("PGP").pattern("L L").pattern("PGP")
+                .define('P', r4Plastic)
+                .define('G', r4("wire_gold"))
+                .define('L', r4("plate_lead"))
+                .unlockedBy("has_plate_lead", has(r4("plate_lead")))
+                .save(writer, recipeId("crafting/battery_sc_empty"));
+        ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, ModItems.BATTERY_SC_WASTE.get())
+                .requires(ModItems.BATTERY_SC_EMPTY.get()).requires(r4("billet_nuclear_waste"), 2)
+                .unlockedBy("has_battery_sc_empty", has(ModItems.BATTERY_SC_EMPTY.get()))
+                .save(writer, recipeId("crafting/battery_sc_waste"));
+        ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, ModItems.BATTERY_SC_RA226.get())
+                .requires(ModItems.BATTERY_SC_EMPTY.get()).requires(r4("billet_ra226"), 2)
+                .unlockedBy("has_battery_sc_empty", has(ModItems.BATTERY_SC_EMPTY.get()))
+                .save(writer, recipeId("crafting/battery_sc_ra226"));
+        ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, ModItems.BATTERY_SC_TC99.get())
+                .requires(ModItems.BATTERY_SC_EMPTY.get()).requires(r4("billet_technetium"), 2)
+                .unlockedBy("has_battery_sc_empty", has(ModItems.BATTERY_SC_EMPTY.get()))
+                .save(writer, recipeId("crafting/battery_sc_tc99"));
+        ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, ModItems.BATTERY_SC_CO60.get())
+                .requires(ModItems.BATTERY_SC_EMPTY.get()).requires(r4("billet_co60"), 2)
+                .unlockedBy("has_battery_sc_empty", has(ModItems.BATTERY_SC_EMPTY.get()))
+                .save(writer, recipeId("crafting/battery_sc_co60"));
+        ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, ModItems.BATTERY_SC_PU238.get())
+                .requires(ModItems.BATTERY_SC_EMPTY.get()).requires(r4("billet_pu238"), 2)
+                .unlockedBy("has_battery_sc_empty", has(ModItems.BATTERY_SC_EMPTY.get()))
+                .save(writer, recipeId("crafting/battery_sc_pu238"));
+        ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, ModItems.BATTERY_SC_PO210.get())
+                .requires(ModItems.BATTERY_SC_EMPTY.get()).requires(r4("billet_polonium"), 2)
+                .unlockedBy("has_battery_sc_empty", has(ModItems.BATTERY_SC_EMPTY.get()))
+                .save(writer, recipeId("crafting/battery_sc_po210"));
+        ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, ModItems.BATTERY_SC_AU198.get())
+                .requires(ModItems.BATTERY_SC_EMPTY.get()).requires(r4("billet_au198"), 2)
+                .unlockedBy("has_battery_sc_empty", has(ModItems.BATTERY_SC_EMPTY.get()))
+                .save(writer, recipeId("crafting/battery_sc_au198"));
+        ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, ModItems.BATTERY_SC_PB209.get())
+                .requires(ModItems.BATTERY_SC_EMPTY.get()).requires(r4("billet_pb209"), 2)
+                .unlockedBy("has_battery_sc_empty", has(ModItems.BATTERY_SC_EMPTY.get()))
+                .save(writer, recipeId("crafting/battery_sc_pb209"));
+        ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, ModItems.BATTERY_SC_AM241.get())
+                .requires(ModItems.BATTERY_SC_EMPTY.get()).requires(r4("billet_am241"), 2)
+                .unlockedBy("has_battery_sc_empty", has(ModItems.BATTERY_SC_EMPTY.get()))
+                .save(writer, recipeId("crafting/battery_sc_am241"));
+        {
+            ItemStack fullPotato = new ItemStack(ModItems.BATTERY_POTATO.get());
+            com.hbm_m.item.fekal_electric.ModBatteryItem.setEnergy(fullPotato, ((com.hbm_m.item.fekal_electric.ModBatteryItem) ModItems.BATTERY_POTATO.get()).getCapacity());
+            ItemStack fullPotatos = new ItemStack(ModItems.BATTERY_POTATOS.get());
+            com.hbm_m.item.fekal_electric.ModBatteryItem.setEnergy(fullPotatos, ((com.hbm_m.item.fekal_electric.ModBatteryItem) ModItems.BATTERY_POTATOS.get()).getCapacity());
+            saveShapelessStackRecipe(writer, recipeId("crafting/battery_potatos"), fullPotatos,
+                    List.of(net.minecraftforge.common.crafting.StrictNBTIngredient.of(fullPotato), Ingredient.of(ModItems.TURRET_CHIP.get()), Ingredient.of(Items.REDSTONE)),
+                    ModItems.TURRET_CHIP.get(), "has_turret_chip");
+        }
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.KEY_KIT.get())
+                .pattern("PKP").pattern("DTD").pattern("PKP")
+                .define('P', r4("plate_gold"))
+                .define('K', ModItems.KEY.get())
+                .define('D', r4("desh_powder"))
+                .define('T', Ingredient.of(ModItems.SCREWDRIVER.get(), ModItems.SCREWDRIVER_DESH.get()))
+                .unlockedBy("has_key", has(ModItems.KEY.get()))
+                .save(writer, recipeId("crafting/key_kit"));
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.RECORD_LC.get())
+                .pattern(" S ").pattern("SDS").pattern(" S ")
+                .define('S', r4Plastic)
+                .define('D', Ingredient.of(r4("lapis_powder")))
+                .unlockedBy("has_polymer", has(ModMaterialItems.item(ModMaterials.POLYMER, MaterialShape.INGOT)))
+                .save(writer, recipeId("crafting/record_lc"));
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.RECORD_SS.get())
+                .pattern(" S ").pattern("SDS").pattern(" S ")
+                .define('S', r4Plastic)
+                .define('D', Ingredient.of(r4("red_copper_powder")))
+                .unlockedBy("has_polymer", has(ModMaterialItems.item(ModMaterials.POLYMER, MaterialShape.INGOT)))
+                .save(writer, recipeId("crafting/record_ss"));
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.RECORD_VC.get())
+                .pattern(" S ").pattern("SDS").pattern(" S ")
+                .define('S', r4Plastic)
+                .define('D', Ingredient.of(ModMaterialItems.item(ModMaterials.COMBINE_STEEL, MaterialShape.POWDER)))
+                .unlockedBy("has_polymer", has(ModMaterialItems.item(ModMaterials.POLYMER, MaterialShape.INGOT)))
+                .save(writer, recipeId("crafting/record_vc"));
+        ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, ModItems.BOOK_OF_.get())
+                .requires(ModItems.PAGE_OF_PAGE1.get())
+                .requires(ModItems.PAGE_OF_PAGE2.get())
+                .requires(ModItems.PAGE_OF_PAGE3.get())
+                .requires(ModItems.PAGE_OF_PAGE4.get())
+                .requires(ModItems.PAGE_OF_PAGE5.get())
+                .requires(ModItems.PAGE_OF_PAGE6.get())
+                .requires(ModItems.PAGE_OF_PAGE7.get())
+                .requires(ModItems.PAGE_OF_PAGE8.get())
+                .requires(ModItems.EGG_BALEFIRE.get())
+                .unlockedBy("has_page_of_page1", has(ModItems.PAGE_OF_PAGE1.get()))
+                .save(writer, recipeId("crafting/book_of_"));
+        ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, ModItems.CIRCUIT_STAR_COMPONENT_CHIPSET.get())
+                .requires(ModItems.CIRCUIT_STAR_PIECE_BRIDGE_BIOS.get())
+                .requires(ModItems.CIRCUIT_STAR_PIECE_BRIDGE_BUS.get())
+                .requires(ModItems.CIRCUIT_STAR_PIECE_BRIDGE_CHIPSET.get())
+                .requires(ModItems.CIRCUIT_STAR_PIECE_BRIDGE_CMOS.get())
+                .requires(ModItems.CIRCUIT_STAR_PIECE_BRIDGE_IO.get())
+                .requires(ModItems.CIRCUIT_STAR_PIECE_BRIDGE_NORTH.get())
+                .requires(ModItems.CIRCUIT_STAR_PIECE_BRIDGE_SOUTH.get())
+                .unlockedBy("has_piece", has(ModItems.CIRCUIT_STAR_PIECE_BRIDGE_BIOS.get()))
+                .save(writer, recipeId("crafting/circuit_star_component_chipset"));
+        ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, ModItems.CIRCUIT_STAR_COMPONENT_CPU.get())
+                .requires(ModItems.CIRCUIT_STAR_PIECE_CPU_CACHE.get())
+                .requires(ModItems.CIRCUIT_STAR_PIECE_CPU_CLOCK.get())
+                .requires(ModItems.CIRCUIT_STAR_PIECE_CPU_EXT.get())
+                .requires(ModItems.CIRCUIT_STAR_PIECE_CPU_LOGIC.get())
+                .requires(ModItems.CIRCUIT_STAR_PIECE_CPU_REGISTER.get())
+                .requires(ModItems.CIRCUIT_STAR_PIECE_CPU_SOCKET.get())
+                .unlockedBy("has_piece", has(ModItems.CIRCUIT_STAR_PIECE_CPU_CACHE.get()))
+                .save(writer, recipeId("crafting/circuit_star_component_cpu"));
+        ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, ModItems.CIRCUIT_STAR_COMPONENT_RAM.get())
+                .requires(ModItems.CIRCUIT_STAR_PIECE_MEM_SOCKET.get())
+                .requires(ModItems.CIRCUIT_STAR_PIECE_MEM_16K_A.get())
+                .requires(ModItems.CIRCUIT_STAR_PIECE_MEM_16K_B.get())
+                .requires(ModItems.CIRCUIT_STAR_PIECE_MEM_16K_C.get())
+                .requires(ModItems.CIRCUIT_STAR_PIECE_MEM_16K_D.get())
+                .unlockedBy("has_piece", has(ModItems.CIRCUIT_STAR_PIECE_MEM_SOCKET.get()))
+                .save(writer, recipeId("crafting/circuit_star_component_ram"));
+        ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, ModItems.CIRCUIT_STAR_COMPONENT_CARD.get())
+                .requires(ModItems.CIRCUIT_STAR_PIECE_CARD_BOARD.get())
+                .requires(ModItems.CIRCUIT_STAR_PIECE_CARD_PROCESSOR.get())
+                .unlockedBy("has_piece", has(ModItems.CIRCUIT_STAR_PIECE_CARD_BOARD.get()))
+                .save(writer, recipeId("crafting/circuit_star_component_card"));
+        ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, ModItems.CIRCUIT_STAR.get())
+                .requires(ModItems.CIRCUIT_STAR_COMPONENT_CHIPSET.get())
+                .requires(ModItems.CIRCUIT_STAR_COMPONENT_CPU.get())
+                .requires(ModItems.CIRCUIT_STAR_COMPONENT_RAM.get())
+                .requires(ModItems.CIRCUIT_STAR_COMPONENT_CARD.get())
+                .requires(ModItems.CIRCUIT_STAR_PIECE_BOARD_TRANSISTOR.get())
+                .requires(ModItems.CIRCUIT_STAR_PIECE_BOARD_CONVERTER.get())
+                .requires(ModItems.CIRCUIT_STAR_PIECE_BOARD_BLANK.get())
+                .unlockedBy("has_component", has(ModItems.CIRCUIT_STAR_COMPONENT_CHIPSET.get()))
+                .save(writer, recipeId("crafting/circuit_star"));
+
+        // ToolRecipes: Coltan-Kompass und Werkzeugkiste; CraftingManager: Holobaender
+        ShapedRecipeBuilder.shaped(RecipeCategory.TOOLS, ModItems.COLTAN_TOOL.get())
+                .pattern("ACA").pattern("CXC").pattern("ACA")
+                .define('A', Items.COPPER_INGOT)
+                .define('C', ModItems.CINNABAR.get())
+                .define('X', Items.COMPASS)
+                .unlockedBy("has_cinnabar", has(ModItems.CINNABAR.get()))
+                .save(writer, recipeId("crafting/coltan_tool"));
+        ShapedRecipeBuilder.shaped(RecipeCategory.TOOLS, ModItems.TOOLBOX.get())
+                .pattern("CCC").pattern("CIC")
+                .define('C', ModMaterialItems.item(ModMaterials.COPPER, MaterialShape.PLATE))
+                .define('I', Items.IRON_INGOT)
+                .unlockedBy("has_iron_ingot", has(Items.IRON_INGOT))
+                .save(writer, recipeId("crafting/toolbox"));
+        ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, ModItems.HOLOTAPE_IMAGE_RESTORED.get())
+                .requires(ModItems.HOLOTAPE_IMAGE_DIGAMMA.get())
+                .requires(Ingredient.of(ModItems.SCREWDRIVER.get(), ModItems.SCREWDRIVER_DESH.get()))
+                .requires(ModItems.DUCTTAPE.get())
+                .requires(ModItems.ARMOR_POLISH.get())
+                .unlockedBy("has_holotape", has(ModItems.HOLOTAPE_IMAGE_DIGAMMA.get()))
+                .save(writer, recipeId("crafting/holotape_image_restored"));
+        ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, ModItems.HOLOTAPE_DAMAGED.get())
+                .requires(ModItems.HOLOTAPE_IMAGE_RESTORED.get())
+                .requires(ModItems.UPGRADE_MUFFLER.get())
+                .requires(ModItems.CRT_DISPLAY.get())
+                .requires(ModItems.GEM_ALEXANDRITE.get())
+                .unlockedBy("has_holotape", has(ModItems.HOLOTAPE_IMAGE_RESTORED.get()))
+                .save(writer, recipeId("crafting/holotape_damaged"));
+
+        // R5 CraftingManager: Behaelter
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.CANISTER_EMPTY.get(), 2)
+                .pattern("S ").pattern("AA").pattern("AA")
+                .define('S', ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE))
+                .define('A', ModMaterialItems.item(ModMaterials.ALUMINUM, MaterialShape.PLATE))
+                .unlockedBy("has_steel_plate", has(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE)))
+                .save(writer, recipeId("crafting/canister_empty"));
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.GAS_EMPTY.get(), 2)
+                .pattern("S ").pattern("AA").pattern("AA")
+                .define('A', ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE))
+                .define('S', ModMaterialItems.item(ModMaterials.COPPER, MaterialShape.PLATE))
+                .unlockedBy("has_steel_plate", has(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE)))
+                .save(writer, recipeId("crafting/gas_empty"));
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.FLUID_TANK_EMPTY.get(), 8)
+                .pattern("121").pattern("1G1").pattern("121")
+                .define('1', ModMaterialItems.item(ModMaterials.ALUMINUM, MaterialShape.PLATE))
+                .define('2', ModMaterialItems.item(ModMaterials.IRON, MaterialShape.PLATE))
+                .define('G', net.minecraftforge.common.Tags.Items.GLASS_PANES)
+                .unlockedBy("has_al_plate", has(ModMaterialItems.item(ModMaterials.ALUMINUM, MaterialShape.PLATE)))
+                .save(writer, recipeId("crafting/fluid_tank_empty"));
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.FLUID_TANK_LEAD_EMPTY.get(), 4)
+                .pattern("LUL").pattern("LTL").pattern("LUL")
+                .define('L', ModMaterialItems.item(ModMaterials.LEAD, MaterialShape.PLATE))
+                .define('U', r4("billet_u238"))
+                .define('T', ModItems.FLUID_TANK_EMPTY.get())
+                .unlockedBy("has_fluid_tank", has(ModItems.FLUID_TANK_EMPTY.get()))
+                .save(writer, recipeId("crafting/fluid_tank_lead_empty"));
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.FLUID_BARREL_EMPTY.get(), 2)
+                .pattern("121").pattern("1G1").pattern("121")
+                .define('1', ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE))
+                .define('2', ModMaterialItems.item(ModMaterials.ALUMINUM, MaterialShape.PLATE))
+                .define('G', net.minecraftforge.common.Tags.Items.GLASS_PANES)
+                .unlockedBy("has_steel_plate", has(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE)))
+                .save(writer, recipeId("crafting/fluid_barrel_empty"));
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.DISPERSER_CANISTER_EMPTY.get(), 4)
+                .pattern(" P ").pattern("PGP").pattern(" P ")
+                .define('P', Ingredient.of(ModMaterialItems.item(ModMaterials.POLYMER_COMPOSITE, MaterialShape.INGOT), ModMaterialItems.item(ModMaterials.PVC, MaterialShape.INGOT)))
+                .define('G', ModBlocks.GLASS_BORON.get())
+                .unlockedBy("has_glass_boron", has(ModBlocks.GLASS_BORON.get()))
+                .save(writer, recipeId("crafting/disperser_canister_empty"));
+
+        // ---- R5: Rezepte mit Fluessigkeitsbehaeltern (Original Fluids.X.getDict(menge) / fluid_tank_full mit Meta) ----
+        ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, ModItems.BALL_TNT.get(), 4)
+                .requires(com.hbm_m.recipe.FluidContainerIngredient.of(fl("aromatics"), 1000))
+                .requires(r4("niter"))
+                .requires(Ingredient.of(r4("chemistry_set"), r4("chemistry_set_boron")))
+                .unlockedBy("has_x", has(r4("niter")))
+                .save(writer, recipeId("crafting/ball_tnt"));
+        ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, r4("c4_ingot"), 4)
+                .requires(com.hbm_m.recipe.FluidContainerIngredient.of(fl("unsaturateds"), 1000))
+                .requires(r4("niter"))
+                .requires(Ingredient.of(r4("chemistry_set"), r4("chemistry_set_boron")))
+                .unlockedBy("has_x", has(r4("niter")))
+                .save(writer, recipeId("crafting/c4_ingot"));
+        ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, Items.CLAY_BALL, 4)
+                .requires(net.minecraft.tags.ItemTags.SAND)
+                .requires(r4("dust"))
+                .requires(r4("dust"))
+                .requires(com.hbm_m.recipe.FluidContainerIngredient.of(fl("water"), 1000))
+                .unlockedBy("has_x", has(r4("dust")))
+                .save(writer, recipeId("crafting/clay_ball_dust"));
+        ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, r4("bakelite_powder"), 2)
+                .requires(com.hbm_m.recipe.FluidContainerIngredient.of(fl("aromatics"), 1000))
+                .requires(com.hbm_m.recipe.FluidContainerIngredient.of(fl("petroleum"), 1000))
+                .requires(Ingredient.of(r4("chemistry_set"), r4("chemistry_set_boron")))
+                .unlockedBy("has_x", has(r4("chemistry_set")))
+                .save(writer, recipeId("crafting/bakelite_powder"));
+        ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, r4("chocolate_milk"), 1)
+                .requires(net.minecraftforge.common.Tags.Items.GLASS_PANES)
+                .requires(Items.COCOA_BEANS)
+                .requires(Items.MILK_BUCKET)
+                .requires(com.hbm_m.recipe.FluidContainerIngredient.of(fl("nitroglycerin"), 1000))
+                .unlockedBy("has_x", has(Items.COCOA_BEANS))
+                .save(writer, recipeId("crafting/chocolate_milk"));
+        ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, r4("can_creature"), 1)
+                .requires(r4("can_empty"))
+                .requires(net.minecraft.world.item.crafting.Ingredient.of(net.minecraft.world.item.alchemy.PotionUtils.setPotion(new net.minecraft.world.item.ItemStack(Items.POTION), net.minecraft.world.item.alchemy.Potions.WATER)))
+                .requires(Items.SUGAR)
+                .requires(com.hbm_m.recipe.FluidContainerIngredient.of(fl("diesel"), 1000))
+                .unlockedBy("has_x", has(r4("can_empty")))
+                .save(writer, recipeId("crafting/can_creature"));
+        ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, ModItems.MISSILE_TAINT.get(), 1)
+                .requires(r4("missile_assembly"))
+                .requires(com.hbm_m.recipe.FluidContainerIngredient.of(fl("watz"), 1000))
+                .requires(r4("spark_mix_powder"))
+                .requires(r4("magic_powder"))
+                .unlockedBy("has_x", has(r4("missile_assembly")))
+                .save(writer, recipeId("crafting/missile_taint"));
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, r4("ammo_fireext"), 1)
+                .pattern(" P ")
+                .pattern("BDB")
+                .pattern(" P ")
+                .define('P', ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE))
+                .define('B', r4("bolt_steel"))
+                .define('D', strict(ModItems.FLUID_TANK_FULL.get(), "water"))
+                .unlockedBy("has_x", has(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE)))
+                .save(writer, recipeId("crafting/ammo_fireext"));
+        ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, r4("lamp_tritium_green_off"), 1)
+                .requires(net.minecraftforge.common.Tags.Items.GLASS)
+                .requires(r4("fire_powder"))
+                .requires(com.hbm_m.recipe.FluidContainerIngredient.of(fl("tritium"), 1000))
+                .requires(r4("sulfur"))
+                .unlockedBy("has_x", has(r4("fire_powder")))
+                .save(writer, recipeId("crafting/lamp_tritium_green_off"));
+        ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, r4("lamp_tritium_blue_off"), 1)
+                .requires(net.minecraftforge.common.Tags.Items.GLASS)
+                .requires(r4("fire_powder"))
+                .requires(com.hbm_m.recipe.FluidContainerIngredient.of(fl("tritium"), 1000))
+                .requires(r4("aluminum_powder"))
+                .unlockedBy("has_x", has(r4("fire_powder")))
+                .save(writer, recipeId("crafting/lamp_tritium_blue_off"));
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, r4("flame_conspiracy"), 1)
+                .pattern(" S ")
+                .pattern("STS")
+                .pattern(" S ")
+                .define('S', com.hbm_m.recipe.FluidContainerIngredient.of(fl("kerosene"), 1000))
+                .define('T', ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.INGOT))
+                .unlockedBy("has_x", has(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.INGOT)))
+                .save(writer, recipeId("crafting/flame_conspiracy"));
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, r4("jetpack_tank"), 1)
+                .pattern(" S ")
+                .pattern("BKB")
+                .pattern(" S ")
+                .define('S', ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE))
+                .define('B', r4("bolt_steel"))
+                .define('K', com.hbm_m.recipe.FluidContainerIngredient.of(fl("kerosene"), 1000))
+                .unlockedBy("has_x", has(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE)))
+                .save(writer, recipeId("crafting/jetpack_tank"));
+        ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, r4("gun_kit_1"), 1)
+                .requires(com.hbm_m.item.tags_and_tiers.ModTags.Items.RUBBER_BAR)
+                .requires(com.hbm_m.recipe.FluidContainerIngredient.of(fl("woodoil"), 1000))
+                .requires(Items.IRON_INGOT)
+                .unlockedBy("has_x", has(Items.IRON_INGOT))
+                .save(writer, recipeId("crafting/gun_kit_1"));
+        ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, r4("gun_kit_2"), 1)
+                .requires(r4("gun_kit_1"))
+                .requires(r4("wrench"))
+                .requires(r4("ducttape"))
+                .requires(com.hbm_m.recipe.FluidContainerIngredient.of(fl("lubricant"), 1000))
+                .unlockedBy("has_x", has(r4("gun_kit_1")))
+                .save(writer, recipeId("crafting/gun_kit_2"));
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, r4("inf_water"), 1)
+                .pattern("222")
+                .pattern("131")
+                .pattern("222")
+                .define('1', com.hbm_m.recipe.FluidContainerIngredient.of(fl("water"), 1000))
+                .define('2', ModMaterialItems.item(ModMaterials.ALUMINUM, MaterialShape.PLATE))
+                .define('3', Items.DIAMOND)
+                .unlockedBy("has_x", has(Items.DIAMOND))
+                .save(writer, recipeId("crafting/inf_water"));
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, r4("ams_core_eyeofharmony"), 1)
+                .pattern("ALA")
+                .pattern("LSL")
+                .pattern("ALA")
+                .define('A', r4("plate_dalekanium"))
+                .define('L', strict(ModItems.FLUID_BARREL_FULL.get(), "lava"))
+                .define('S', r4("black_hole"))
+                .unlockedBy("has_x", has(r4("black_hole")))
+                .save(writer, recipeId("crafting/ams_core_eyeofharmony"));
+        ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, Items.SLIME_BALL, 16)
+                .requires(Items.BONE_MEAL)
+                .requires(Items.BONE_MEAL)
+                .requires(Items.BONE_MEAL)
+                .requires(Items.BONE_MEAL)
+                .requires(com.hbm_m.recipe.FluidContainerIngredient.of(fl("sulfuric_acid"), 1000))
+                .unlockedBy("has_x", has(Items.BONE_MEAL))
+                .save(writer, recipeId("crafting/slime_ball_acid"));
+        ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, r4("solid_fuel"), 3)
+                .requires(com.hbm_m.recipe.FluidContainerIngredient.of(fl("heatingoil"), 16000))
+                .requires(Ingredient.of(r4("chemistry_set"), r4("chemistry_set_boron")))
+                .unlockedBy("has_x", has(r4("chemistry_set")))
+                .save(writer, recipeId("crafting/solid_fuel"));
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, r4("press_preheater"), 1)
+                .pattern("CCC")
+                .pattern("SLS")
+                .pattern("TST")
+                .define('C', ModMaterialItems.item(ModMaterials.COPPER, MaterialShape.PLATE))
+                .define('S', Items.STONE)
+                .define('L', com.hbm_m.recipe.FluidContainerIngredient.of(fl("lava"), 1000))
+                .define('T', ModMaterialItems.item(ModMaterials.TUNGSTEN, MaterialShape.INGOT))
+                .unlockedBy("has_x", has(ModMaterialItems.item(ModMaterials.TUNGSTEN, MaterialShape.INGOT)))
+                .save(writer, recipeId("crafting/press_preheater"));
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, r4("part_generic_piston_hydraulic"), 4)
+                .pattern(" I ")
+                .pattern("CPC")
+                .pattern(" I ")
+                .define('I', ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.INGOT))
+                .define('C', ModMaterialItems.item(ModMaterials.TITANIUM, MaterialShape.INGOT))
+                .define('P', com.hbm_m.recipe.FluidContainerIngredient.of(fl("lubricant"), 1000))
+                .unlockedBy("has_x", has(ModMaterialItems.item(ModMaterials.TITANIUM, MaterialShape.INGOT)))
+                .save(writer, recipeId("crafting/piston_hydraulic"));
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, r4("drone_patrol_express"), 1)
+                .pattern(" P ")
+                .pattern("KDK")
+                .pattern(" P ")
+                .define('P', ModMaterialItems.item(ModMaterials.TITANIUM, MaterialShape.PLATE_WELDED))
+                .define('K', com.hbm_m.recipe.FluidContainerIngredient.of(fl("kerosene"), 1000))
+                .define('D', r4("drone_patrol"))
+                .unlockedBy("has_x", has(r4("drone_patrol")))
+                .save(writer, recipeId("crafting/drone_patrol_express"));
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, r4("drone_patrol_express_chunkloading"), 1)
+                .pattern(" P ")
+                .pattern("KDK")
+                .pattern(" P ")
+                .define('P', ModMaterialItems.item(ModMaterials.TITANIUM, MaterialShape.PLATE_WELDED))
+                .define('K', com.hbm_m.recipe.FluidContainerIngredient.of(fl("kerosene"), 1000))
+                .define('D', r4("drone_patrol_chunkloading"))
+                .unlockedBy("has_x", has(r4("drone_patrol_chunkloading")))
+                .save(writer, recipeId("crafting/drone_patrol_express_chunkloading"));
+        ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, r4("bdcl"), 1)
+                .requires(Ingredient.of(r4("oil_tar_crude"), r4("oil_tar_crack"), r4("oil_tar_coal"), r4("oil_tar_wood"), r4("oil_tar_wax"), r4("oil_tar_paraffin")))
+                .requires(com.hbm_m.recipe.FluidContainerIngredient.of(fl("water"), 1000))
+                .requires(net.minecraftforge.common.Tags.Items.DYES_WHITE)
+                .unlockedBy("has_x", has(Items.WHITE_DYE))
+                .save(writer, recipeId("crafting/bdcl"));
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.CONVEYOR_WAND_EXPRESS.get(), 8)
+                .pattern("CCC")
+                .pattern("CLC")
+                .pattern("CCC")
+                .define('C', ModItems.CONVEYOR_WAND_REGULAR.get())
+                .define('L', com.hbm_m.recipe.FluidContainerIngredient.of(fl("lubricant"), 1000))
+                .unlockedBy("has_x", has(ModItems.CONVEYOR_WAND_REGULAR.get()))
+                .save(writer, recipeId("crafting/conveyor_wand_express"));
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, r4("laser_crystal_co2"), 1)
+                .pattern("QDQ")
+                .pattern("NCN")
+                .pattern("QDQ")
+                .define('Q', r4("glass_quartz"))
+                .define('D', ModMaterialItems.item(ModMaterials.DESH, MaterialShape.INGOT))
+                .define('N', ModMaterialItems.item(ModMaterials.NIOBIUM, MaterialShape.INGOT))
+                .define('C', strict(ModItems.FLUID_TANK_FULL.get(), "carbondioxide"))
+                .unlockedBy("has_x", has(r4("glass_quartz")))
+                .save(writer, recipeId("crafting/laser_crystal_co2"));
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, r4("barbed_wire_acid"), 8)
+                .pattern("BBB")
+                .pattern("BIB")
+                .pattern("BBB")
+                .define('B', r4("barbed_wire"))
+                .define('I', strict(ModItems.FLUID_TANK_FULL.get(), "peroxide"))
+                .unlockedBy("has_x", has(r4("barbed_wire")))
+                .save(writer, recipeId("crafting/barbed_wire_acid"));
+        {
+            // CraftingManager: 2 Kanister Schmiermittel aus Heizoel + Ungesaettigten
+            net.minecraft.world.item.ItemStack lube = com.hbm_m.item.liquids.ItemFluidTank.make(ModItems.CANISTER_FULL.get(), fl("lubricant"), 2);
+            saveShapelessStackRecipe(writer, recipeId("crafting/canister_full_lubricant"), lube,
+                    List.of(com.hbm_m.recipe.FluidContainerIngredient.of(fl("heatingoil"), 1000), com.hbm_m.recipe.FluidContainerIngredient.of(fl("unsaturateds"), 1000),
+                            Ingredient.of(ModItems.CANISTER_EMPTY.get()), Ingredient.of(ModItems.CANISTER_EMPTY.get()), Ingredient.of(r4("chemistry_set"), r4("chemistry_set_boron"))),
+                    ModItems.CANISTER_EMPTY.get(), "has_canister");
+        }
+
+        // CraftingManager: Buch + Kartoffel = RBMK-Handbuch, Buch + Eisenbarren = Starterhandbuch
+        saveShapelessStackRecipe(writer, recipeId("crafting/book_guide_rbmk"),
+                com.hbm_m.item.tool.ItemGuideBook.make(com.hbm_m.item.tool.ItemGuideBook.BookType.RBMK),
+                List.of(Ingredient.of(Items.BOOK), Ingredient.of(Items.POTATO)), Items.BOOK, "has_book");
+        saveShapelessStackRecipe(writer, recipeId("crafting/book_guide_starter"),
+                com.hbm_m.item.tool.ItemGuideBook.make(com.hbm_m.item.tool.ItemGuideBook.BookType.STARTER),
+                List.of(Ingredient.of(Items.BOOK), Ingredient.of(Items.IRON_INGOT)), Items.BOOK, "has_book");
+
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.GEIGER_COUNTER_BLOCK.get())
                 .pattern("#  ")
                 .pattern("   ")
@@ -1393,7 +1811,7 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .unlockedBy(getHasName(ModMaterialItems.item(ModMaterials.TANTALIUM, MaterialShape.NUGGET)), has(ModMaterialItems.item(ModMaterials.TANTALIUM, MaterialShape.NUGGET)))
                 .save(writer, recipeId("crafting/capacitor_tantalum"));
 
-        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.CAGE_LAMP.get(), 4)
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.CAGE_LAMP.get(), 8)
                 .pattern("%")
                 .pattern("@")
                 .pattern("!")
@@ -1408,10 +1826,260 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .pattern("@")
                 .pattern("!")
                 .define('%', Ingredient.of(Tags.Items.GLASS_PANES))
-                .define('@', ModMaterialItems.item(ModMaterials.RED_COPPER, MaterialShape.POWDER))
+                .define('@', ModMaterialItems.item(ModMaterials.BROMINE, MaterialShape.POWDER))
                 .define('!', ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE))
                 .unlockedBy(getHasName(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE)), has(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE)))
                 .save(writer, recipeId("crafting/flood_lamp"));
+
+        // CraftingManager: lantern
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.LANTERN.get(), 1)
+                .pattern("PGP").pattern(" S ").pattern(" S ")
+                .define('P', Ingredient.of(Tags.Items.GLASS_PANES))
+                .define('G', Items.GLOWSTONE_DUST)
+                .define('S', ModBlocks.STEEL_BEAM.get())
+                .unlockedBy("has_steel_beam", has(ModBlocks.STEEL_BEAM.get()))
+                .save(writer, recipeId("crafting/lantern"));
+
+        // CraftingManager: filing_cabinet (Stahl)
+        ShapedRecipeBuilder.shaped(RecipeCategory.DECORATIONS, ModBlocks.FILE_CABINET_STEEL.get(), 1)
+                .pattern(" P ").pattern("PIP").pattern(" P ")
+                .define('P', ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE))
+                .define('I', ModMaterialItems.item(ModMaterials.POLYMER, MaterialShape.PLATE))
+                .unlockedBy("has_steel_plate", has(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE)))
+                .save(writer, recipeId("crafting/file_cabinet_steel"));
+
+        // CraftingManager: plushie Yomi / Number Nine
+        saveShapedStackRecipe(writer, recipeId("crafting/plushie_yomi"),
+                com.hbm_m.item.TrinketBlockItem.make(ModBlocks.PLUSHIE.get().asItem(), com.hbm_m.block.decorations.TrinketTypes.PlushieType.YOMI.ordinal()),
+                new String[] { "LCR" },
+                mapOf('L', Ingredient.of(Tags.Items.CROPS_CARROT), 'C', Ingredient.of(ModItems.RAG.get()), 'R', Ingredient.of(ModItems.VACUUM_TUBE.get())),
+                ModItems.RAG.get(), "has_rag");
+        saveShapedStackRecipe(writer, recipeId("crafting/plushie_numbernine"),
+                com.hbm_m.item.TrinketBlockItem.make(ModBlocks.PLUSHIE.get().asItem(), com.hbm_m.block.decorations.TrinketTypes.PlushieType.NUMBERNINE.ordinal()),
+                new String[] { " C ", "LCR", " C " },
+                mapOf('L', Ingredient.of(ModItems.CIGARETTE.get()), 'C', Ingredient.of(ModItems.RAG.get()), 'R', Ingredient.of(Items.COAL)),
+                ModItems.RAG.get(), "has_rag");
+
+        // CraftingManager: det_cord / det_charge / det_nuke, MineralRecipes: block_semtex/block_c4 <-> Barren
+        ShapedRecipeBuilder.shaped(RecipeCategory.REDSTONE, ModBlocks.DET_CORD.get(), 4)
+                .pattern(" P ").pattern("PGP").pattern(" P ")
+                .define('P', Items.PAPER).define('G', Items.GUNPOWDER)
+                .unlockedBy("has_gunpowder", has(Items.GUNPOWDER))
+                .save(writer, recipeId("crafting/det_cord"));
+        ShapedRecipeBuilder.shaped(RecipeCategory.REDSTONE, ModBlocks.DET_CHARGE.get(), 1)
+                .pattern("PDP").pattern("DTD").pattern("PDP")
+                .define('P', ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE))
+                .define('D', ModBlocks.DET_CORD.get())
+                .define('T', Ingredient.of(ModMaterialItems.item(ModMaterials.SEMTEX, MaterialShape.INGOT), ModMaterialItems.item(ModMaterials.C4, MaterialShape.INGOT)))
+                .unlockedBy("has_det_cord", has(ModBlocks.DET_CORD.get()))
+                .save(writer, recipeId("crafting/det_charge"));
+        ShapedRecipeBuilder.shaped(RecipeCategory.REDSTONE, ModBlocks.DET_NUKE.get(), 1)
+                .pattern("PFP").pattern("DCD").pattern("PFP")
+                .define('P', ModItems.NEUTRON_REFLECTOR.get())
+                .define('D', ModBlocks.DET_CHARGE.get())
+                .define('C', ModItems.FAT_MAN_CORE.get())
+                .define('F', ModItems.CONTROLLER.get())
+                .unlockedBy("has_det_charge", has(ModBlocks.DET_CHARGE.get()))
+                .save(writer, recipeId("crafting/det_nuke"));
+        ShapedRecipeBuilder.shaped(RecipeCategory.BUILDING_BLOCKS, ModBlocks.BLOCK_SEMTEX.get(), 1)
+                .pattern("###").pattern("###").pattern("###")
+                .define('#', ModMaterialItems.item(ModMaterials.SEMTEX, MaterialShape.INGOT))
+                .unlockedBy("has_ingot_semtex", has(ModMaterialItems.item(ModMaterials.SEMTEX, MaterialShape.INGOT)))
+                .save(writer, recipeId("crafting/block_semtex"));
+        ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, ModMaterialItems.item(ModMaterials.SEMTEX, MaterialShape.INGOT), 9)
+                .requires(ModBlocks.BLOCK_SEMTEX.get())
+                .unlockedBy("has_block_semtex", has(ModBlocks.BLOCK_SEMTEX.get()))
+                .save(writer, recipeId("crafting/ingot_semtex_from_block"));
+        ShapedRecipeBuilder.shaped(RecipeCategory.BUILDING_BLOCKS, ModBlocks.BLOCK_C4.get(), 1)
+                .pattern("###").pattern("###").pattern("###")
+                .define('#', ModMaterialItems.item(ModMaterials.C4, MaterialShape.INGOT))
+                .unlockedBy("has_ingot_c4", has(ModMaterialItems.item(ModMaterials.C4, MaterialShape.INGOT)))
+                .save(writer, recipeId("crafting/block_c4"));
+        ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, ModMaterialItems.item(ModMaterials.C4, MaterialShape.INGOT), 9)
+                .requires(ModBlocks.BLOCK_C4.get())
+                .unlockedBy("has_block_c4", has(ModBlocks.BLOCK_C4.get()))
+                .save(writer, recipeId("crafting/ingot_c4_from_block"));
+        // CraftingManager: fireworks
+        ShapedRecipeBuilder.shaped(RecipeCategory.REDSTONE, ModBlocks.FIREWORKS.get(), 1)
+                .pattern("PPP").pattern("PPP").pattern("WIW")
+                .define('P', Items.PAPER).define('W', Ingredient.of(ItemTags.PLANKS)).define('I', Tags.Items.INGOTS_IRON)
+                .unlockedBy("has_paper", has(Items.PAPER))
+                .save(writer, recipeId("crafting/fireworks"));
+        // CraftingManager: flame_war, emp_bomb
+        ShapedRecipeBuilder.shaped(RecipeCategory.REDSTONE, ModBlocks.FLAME_WAR.get(), 1)
+                .pattern("WHW").pattern("CTP").pattern("WOW")
+                .define('W', Ingredient.of(ItemTags.PLANKS)).define('T', Items.TNT)
+                .define('H', ModItems.FLAME_PONY.get()).define('C', ModItems.FLAME_CONSPIRACY.get())
+                .define('P', ModItems.FLAME_POLITICS.get()).define('O', ModItems.FLAME_OPINION.get())
+                .unlockedBy("has_flame_pony", has(ModItems.FLAME_PONY.get()))
+                .save(writer, recipeId("crafting/flame_war"));
+        ShapedRecipeBuilder.shaped(RecipeCategory.REDSTONE, ModBlocks.EMP_BOMB.get(), 1)
+                .pattern("LML").pattern("LCL").pattern("LML")
+                .define('L', ModMaterialItems.item(ModMaterials.LEAD, MaterialShape.PLATE))
+                .define('M', ModItems.MAGNETRON.get()).define('C', ModItems.ADVANCED_CIRCUIT.get())
+                .unlockedBy("has_magnetron", has(ModItems.MAGNETRON.get()))
+                .save(writer, recipeId("crafting/emp_bomb"));
+        // CraftingManager: Haftladungen
+        ShapelessRecipeBuilder.shapeless(RecipeCategory.REDSTONE, ModBlocks.CHARGE_DYNAMITE.get(), 1)
+                .requires(ModItems.STICK_DYNAMITE.get()).requires(ModItems.STICK_DYNAMITE.get()).requires(ModItems.STICK_DYNAMITE.get()).requires(ModItems.DUCTTAPE.get())
+                .unlockedBy("has_stick_dynamite", has(ModItems.STICK_DYNAMITE.get()))
+                .save(writer, recipeId("crafting/charge_dynamite"));
+        ShapedRecipeBuilder.shaped(RecipeCategory.REDSTONE, ModBlocks.CHARGE_MINER.get(), 1)
+                .pattern(" F ").pattern("FCF").pattern(" F ")
+                .define('F', Items.FLINT).define('C', ModBlocks.CHARGE_DYNAMITE.get())
+                .unlockedBy("has_charge_dynamite", has(ModBlocks.CHARGE_DYNAMITE.get()))
+                .save(writer, recipeId("crafting/charge_miner"));
+        ShapelessRecipeBuilder.shapeless(RecipeCategory.REDSTONE, ModBlocks.CHARGE_SEMTEX.get(), 1)
+                .requires(ModItems.STICK_SEMTEX.get()).requires(ModItems.STICK_SEMTEX.get()).requires(ModItems.STICK_SEMTEX.get()).requires(ModItems.DUCTTAPE.get())
+                .unlockedBy("has_stick_semtex", has(ModItems.STICK_SEMTEX.get()))
+                .save(writer, recipeId("crafting/charge_semtex"));
+        ShapelessRecipeBuilder.shapeless(RecipeCategory.REDSTONE, ModBlocks.CHARGE_C4.get(), 1)
+                .requires(ModItems.STICK_C4.get()).requires(ModItems.STICK_C4.get()).requires(ModItems.STICK_C4.get()).requires(ModItems.DUCTTAPE.get())
+                .unlockedBy("has_stick_c4", has(ModItems.STICK_C4.get()))
+                .save(writer, recipeId("crafting/charge_c4"));
+        // WeaponRecipes: dynamite / tnt_ntm / semtex / fissure_bomb
+        ShapedRecipeBuilder.shaped(RecipeCategory.REDSTONE, ModBlocks.DYNAMITE.get(), 1)
+                .pattern("DDD").pattern("DSD").pattern("DDD")
+                .define('D', ModItems.STICK_DYNAMITE.get()).define('S', ModItems.SAFETY_FUSE.get())
+                .unlockedBy("has_stick_dynamite", has(ModItems.STICK_DYNAMITE.get()))
+                .save(writer, recipeId("crafting/dynamite"));
+        ShapedRecipeBuilder.shaped(RecipeCategory.REDSTONE, ModBlocks.TNT_NTM.get(), 1)
+                .pattern("DDD").pattern("DSD").pattern("DDD")
+                .define('D', ModItems.STICK_TNT.get()).define('S', ModItems.SAFETY_FUSE.get())
+                .unlockedBy("has_stick_tnt", has(ModItems.STICK_TNT.get()))
+                .save(writer, recipeId("crafting/tnt_ntm"));
+        ShapedRecipeBuilder.shaped(RecipeCategory.REDSTONE, ModBlocks.SEMTEX.get(), 1)
+                .pattern("DDD").pattern("DSD").pattern("DDD")
+                .define('D', ModItems.STICK_SEMTEX.get()).define('S', ModItems.SAFETY_FUSE.get())
+                .unlockedBy("has_stick_semtex", has(ModItems.STICK_SEMTEX.get()))
+                .save(writer, recipeId("crafting/semtex"));
+        ShapedRecipeBuilder.shaped(RecipeCategory.REDSTONE, ModBlocks.FISSURE_BOMB.get(), 1)
+                .pattern("SUS").pattern("RPR").pattern("SUS")
+                .define('S', ModBlocks.SEMTEX.get())
+                .define('U', ModBlocks.getIngotBlock(ModMaterials.URANIUM238).get())
+                .define('R', ModMaterialItems.item(ModMaterials.TANTALIUM, MaterialShape.INGOT))
+                .define('P', ModMaterialItems.item(ModMaterials.PLUTONIUM239, MaterialShape.BILLET))
+                .unlockedBy("has_semtex", has(ModBlocks.SEMTEX.get()))
+                .save(writer, recipeId("crafting/fissure_bomb"));
+
+        // CraftingManager: Kabelschalter/-melder/-diode (red_wire_coated des Originals)
+        ShapedRecipeBuilder.shaped(RecipeCategory.REDSTONE, ModBlocks.CABLE_SWITCH.get(), 1)
+                .pattern("S").pattern("W").define('S', net.minecraft.world.item.Items.LEVER).define('W', ModBlocks.RED_WIRE_COATED.get())
+                .unlockedBy("has_wire", has(ModBlocks.RED_WIRE_COATED.get())).save(writer, recipeId("crafting/cable_switch"));
+        ShapedRecipeBuilder.shaped(RecipeCategory.REDSTONE, ModBlocks.CABLE_DETECTOR.get(), 1)
+                .pattern("S").pattern("W").define('S', net.minecraft.world.item.Items.REDSTONE).define('W', ModBlocks.RED_WIRE_COATED.get())
+                .unlockedBy("has_wire", has(ModBlocks.RED_WIRE_COATED.get())).save(writer, recipeId("crafting/cable_detector"));
+        ShapedRecipeBuilder.shaped(RecipeCategory.REDSTONE, ModBlocks.CABLE_DIODE.get(), 1)
+                .pattern(" Q ").pattern("CAC").pattern(" Q ")
+                .define('Q', ModMaterialItems.item(ModMaterials.SILICON, MaterialShape.NUGGET)).define('C', ModBlocks.RED_CABLE.get())
+                .define('A', ModMaterialItems.item(ModMaterials.ALUMINUM, MaterialShape.INGOT))
+                .unlockedBy("has_cable", has(ModBlocks.RED_CABLE.get())).save(writer, recipeId("crafting/cable_diode"));
+
+        // CraftingManager: Schienen
+        ShapedRecipeBuilder.shaped(RecipeCategory.TRANSPORTATION, ModBlocks.RAIL_WOOD.get(), 16)
+                .pattern("S S").pattern("SRS").pattern("S S")
+                .define('S', net.minecraft.world.item.Items.STICK).define('R', com.hbm_m.item.PartTabMetaItems.itemOrNull("plant_item_rope"))
+                .unlockedBy("has_rope", has(com.hbm_m.item.PartTabMetaItems.itemOrNull("plant_item_rope"))).save(writer, recipeId("crafting/rail_wood"));
+        ShapedRecipeBuilder.shaped(RecipeCategory.TRANSPORTATION, ModBlocks.RAIL_NARROW.get(), 64)
+                .pattern("S S").pattern("S S").pattern("S S")
+                .define('S', ModBlocks.STEEL_BEAM.get())
+                .unlockedBy("has_steel_beam", has(ModBlocks.STEEL_BEAM.get())).save(writer, recipeId("crafting/rail_narrow"));
+        ShapedRecipeBuilder.shaped(RecipeCategory.TRANSPORTATION, ModBlocks.RAIL_HIGHSPEED.get(), 16)
+                .pattern("S S").pattern("SIS").pattern("S S")
+                .define('S', ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.INGOT)).define('I', ModMaterialItems.item(ModMaterials.IRON, MaterialShape.PLATE))
+                .unlockedBy("has_steel", has(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.INGOT))).save(writer, recipeId("crafting/rail_highspeed"));
+        ShapedRecipeBuilder.shaped(RecipeCategory.TRANSPORTATION, ModBlocks.RAIL_BOOSTER.get(), 6)
+                .pattern("S S").pattern("CIC").pattern("SRS")
+                .define('S', ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.INGOT)).define('I', ModMaterialItems.item(ModMaterials.IRON, MaterialShape.PLATE))
+                .define('R', ModMaterialItems.item(ModMaterials.RED_COPPER, MaterialShape.INGOT)).define('C', ModItems.COIL_COPPER.get())
+                .unlockedBy("has_steel", has(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.INGOT))).save(writer, recipeId("crafting/rail_booster"));
+
+        // CraftingManager: hadron_coil_* zurueck zu dichtem Draht
+        ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, ModMaterialItems.item(ModMaterials.GOLD, MaterialShape.WIRE_DENSE), 4)
+                .requires(ModBlocks.HADRON_COIL_GOLD.get())
+                .unlockedBy("has_hadron_coil_gold", has(ModBlocks.HADRON_COIL_GOLD.get()))
+                .save(writer, recipeId("crafting/uncraft_hadron_coil_gold"));
+        ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, ModMaterialItems.item(ModMaterials.NEODYMIUM, MaterialShape.WIRE_DENSE), 4)
+                .requires(ModBlocks.HADRON_COIL_NEODYMIUM.get())
+                .unlockedBy("has_hadron_coil_neodymium", has(ModBlocks.HADRON_COIL_NEODYMIUM.get()))
+                .save(writer, recipeId("crafting/uncraft_hadron_coil_neodymium"));
+        ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, ModMaterialItems.item(ModMaterials.MAGNETIZED_TUNGSTEN, MaterialShape.WIRE_DENSE), 4)
+                .requires(ModBlocks.HADRON_COIL_MAGTUNG.get())
+                .unlockedBy("has_hadron_coil_magtung", has(ModBlocks.HADRON_COIL_MAGTUNG.get()))
+                .save(writer, recipeId("crafting/uncraft_hadron_coil_magtung"));
+        ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, ModMaterialItems.item(ModMaterials.SCHRABIDIUM, MaterialShape.WIRE_DENSE), 2)
+                .requires(ModBlocks.HADRON_COIL_SCHRABIDIUM.get())
+                .unlockedBy("has_hadron_coil_schrabidium", has(ModBlocks.HADRON_COIL_SCHRABIDIUM.get()))
+                .save(writer, recipeId("crafting/uncraft_hadron_coil_schrabidium"));
+        ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, ModMaterialItems.item(ModMaterials.SCHRABIDATE, MaterialShape.WIRE_DENSE), 2)
+                .requires(ModBlocks.HADRON_COIL_SCHRABIDATE.get())
+                .unlockedBy("has_hadron_coil_schrabidate", has(ModBlocks.HADRON_COIL_SCHRABIDATE.get()))
+                .save(writer, recipeId("crafting/uncraft_hadron_coil_schrabidate"));
+        ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, ModMaterialItems.item(ModMaterials.STAR_METAL, MaterialShape.WIRE_DENSE), 2)
+                .requires(ModBlocks.HADRON_COIL_STARMETAL.get())
+                .unlockedBy("has_hadron_coil_starmetal", has(ModBlocks.HADRON_COIL_STARMETAL.get()))
+                .save(writer, recipeId("crafting/uncraft_hadron_coil_starmetal"));
+        ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, ModItems.POWDER_CHLOROPHYTE.get(), 2)
+                .requires(ModBlocks.HADRON_COIL_CHLOROPHYTE.get())
+                .unlockedBy("has_hadron_coil_chlorophyte", has(ModBlocks.HADRON_COIL_CHLOROPHYTE.get()))
+                .save(writer, recipeId("crafting/uncraft_hadron_coil_chlorophyte"));
+        ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, ModMaterialItems.item(ModMaterials.DNT, MaterialShape.WIRE_DENSE), 1)
+                .requires(ModBlocks.HADRON_COIL_MESE.get())
+                .unlockedBy("has_hadron_coil_mese", has(ModBlocks.HADRON_COIL_MESE.get()))
+                .save(writer, recipeId("crafting/uncraft_hadron_coil_mese"));
+
+        // CraftingManager: vinyl_tile (Meta 0 = vinyl_tile, Meta 1 = vinyl_tile_small)
+        ShapedRecipeBuilder.shaped(RecipeCategory.BUILDING_BLOCKS, ModBlocks.VINYL_TILE.get(), 4)
+                .pattern(" I ").pattern("IBI").pattern(" I ")
+                .define('I', ModMaterialItems.item(ModMaterials.POLYMER, MaterialShape.PLATE))
+                .define('B', ModBlocks.BRICK_LIGHT.get())
+                .unlockedBy("has_brick_light", has(ModBlocks.BRICK_LIGHT.get()))
+                .save(writer, recipeId("crafting/vinyl_tile"));
+        ShapedRecipeBuilder.shaped(RecipeCategory.BUILDING_BLOCKS, ModBlocks.VINYL_TILE_SMALL.get(), 4)
+                .pattern("BB").pattern("BB")
+                .define('B', ModBlocks.VINYL_TILE.get())
+                .unlockedBy("has_vinyl_tile", has(ModBlocks.VINYL_TILE.get()))
+                .save(writer, recipeId("crafting/vinyl_tile_small"));
+        ShapelessRecipeBuilder.shapeless(RecipeCategory.BUILDING_BLOCKS, ModBlocks.VINYL_TILE.get())
+                .requires(ModBlocks.VINYL_TILE_SMALL.get())
+                .unlockedBy("has_vinyl_tile_small", has(ModBlocks.VINYL_TILE_SMALL.get()))
+                .save(writer, recipeId("crafting/vinyl_tile_from_small"));
+
+        // WeaponRecipes: lamp_demon
+        ShapedRecipeBuilder.shaped(RecipeCategory.DECORATIONS, ModBlocks.LAMP_DEMON.get(), 1)
+                .pattern(" D ").pattern("S S")
+                .define('D', ModItems.DEMON_CORE_CLOSED.get())
+                .define('S', ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.INGOT))
+                .unlockedBy("has_demon_core", has(ModItems.DEMON_CORE_CLOSED.get()))
+                .save(writer, recipeId("crafting/lamp_demon"));
+
+        // CraftingManager: deco_emitter
+        ShapedRecipeBuilder.shaped(RecipeCategory.DECORATIONS, ModBlocks.DECO_EMITTER.get(), 1)
+                .pattern("IDI").pattern("DRD").pattern("IDI")
+                .define('I', Tags.Items.INGOTS_IRON)
+                .define('D', Tags.Items.GEMS_DIAMOND)
+                .define('R', Tags.Items.STORAGE_BLOCKS_REDSTONE)
+                .unlockedBy("has_diamond", has(Items.DIAMOND))
+                .save(writer, recipeId("crafting/deco_emitter"));
+
+        // CraftingManager: floodlight
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.FLOODLIGHT.get(), 2)
+                .pattern("CSC").pattern("TST").pattern("G G")
+                .define('C', ModItems.CAPACITOR.get())
+                .define('S', ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE))
+                .define('T', ModItems.COIL_TUNGSTEN.get())
+                .define('G', Ingredient.of(Tags.Items.GLASS_PANES))
+                .unlockedBy("has_coil_tungsten", has(ModItems.COIL_TUNGSTEN.get()))
+                .save(writer, recipeId("crafting/floodlight"));
+
+        // CraftingManager: spotlight_fluoro (Neonroehre)
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.FLUORESCENT_LAMP.get(), 8)
+                .pattern("G").pattern("M").pattern("A")
+                .define('G', Ingredient.of(Tags.Items.GLASS_PANES))
+                .define('M', r4("nugget_mercury"))
+                .define('A', ModMaterialItems.item(ModMaterials.ALUMINUM, MaterialShape.PLATE))
+                .unlockedBy("has_mercury", has(r4("nugget_mercury")))
+                .save(writer, recipeId("crafting/fluorescent_lamp"));
 
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.BARBED_WIRE.get(), 16)
                 .pattern("$@$")
@@ -1471,25 +2139,7 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .unlockedBy(getHasName(ModItems.ADVANCED_CIRCUIT.get()), has(ModItems.ADVANCED_CIRCUIT.get()))
                 .save(writer, recipeId("crafting/multi_detonator"));
 
-        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.MINE_AP.get())
-                .pattern("@  ")
-                .pattern("#  ")
-                .pattern("$  ")
-                .define('#', ModItems.BALL_TNT.get())
-                .define('$', ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.INGOT))
-                .define('@', ModItems.INSULATOR.get())
-                .unlockedBy(getHasName(ModItems.BALL_TNT.get()), has(ModItems.BALL_TNT.get()))
-                .save(writer, recipeId("crafting/mine_ap"));
-
-        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.MINE_FAT.get())
-                .pattern("@  ")
-                .pattern("#  ")
-                .pattern("$  ")
-                .define('#', ModBlocks.MINE_AP.get())
-                .define('$', ModMaterialItems.item(ModMaterials.TUNGSTEN, MaterialShape.INGOT))
-                .define('@', ModMaterialItems.item(ModMaterials.PLUTONIUM, MaterialShape.BILLET))
-                .unlockedBy(getHasName(ModMaterialItems.item(ModMaterials.PLUTONIUM, MaterialShape.BILLET)), has(ModMaterialItems.item(ModMaterials.PLUTONIUM, MaterialShape.BILLET)))
-                .save(writer, recipeId("crafting/mine_fat"));
+        // mine_ap / mine_shrap / mine_he: WeaponRecipeGenerator (1:1 WeaponRecipes). mine_fat braucht ammo_standard NUKE_DEMO (Waffenrunde).
 
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.RANGEFINDER.get())
                 .pattern("GRC")
@@ -1514,15 +2164,6 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .unlockedBy(getHasName(ModItems.ADVANCED_CIRCUIT.get()), has(ModItems.ADVANCED_CIRCUIT.get()))
                 .save(writer, recipeId("crafting/range_detonator"));
 
-        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.BALL_TNT.get(), 4)
-                .pattern("#$ ")
-                .pattern("@  ")
-                .pattern("   ")
-                .define('@', ModItems.SEQUESTRUM.get())
-                .define('#', Items.GUNPOWDER)
-                .define('$', Items.SUGAR)
-                .unlockedBy(getHasName(ModItems.SEQUESTRUM.get()), has(ModItems.SEQUESTRUM.get()))
-                .save(writer, recipeId("crafting/ball_tnt"));
 
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.TEMPLATE_FOLDER.get())
                 .pattern("@#@")
@@ -1536,13 +2177,13 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
         // BUILDING BLOCKS START
 
         // DECO
-        ShapedRecipeBuilder.shaped(RecipeCategory.DECORATIONS, ModBlocks.DECO_STEEL_SCAFFOLD.get(), 8)
+        ShapedRecipeBuilder.shaped(RecipeCategory.DECORATIONS, ModBlocks.STEEL_SCAFFOLD.get(), 8)
                 .pattern("###")
                 .pattern(" # ")
                 .pattern("###")
                 .define('#', ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.INGOT))
                 .unlockedBy("has_steel_ingot", has(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.INGOT)))
-                .save(writer, recipeId("crafting/deco_steel_scaffold"));
+                .save(writer, recipeId("crafting/steel_scaffold"));
 
         ShapedRecipeBuilder.shaped(RecipeCategory.DECORATIONS, ModBlocks.STEEL_POLE.get(), 16)
                 .pattern("# #")
@@ -1556,11 +2197,95 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .pattern("# #")
                 .pattern("#@#")
                 .pattern("$$$")
-                .define('#', ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.INGOT))
+                .define('#', ModMaterialItems.item(ModMaterials.TUNGSTEN, MaterialShape.INGOT))
                 .define('@', ModMaterialItems.item(ModMaterials.RED_COPPER, MaterialShape.INGOT))
                 .define('$', ModMaterialItems.item(ModMaterials.BERYLLIUM, MaterialShape.INGOT))
-                .unlockedBy("has_steel_ingot", has(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.INGOT)))
+                .unlockedBy("has_tungsten_ingot", has(ModMaterialItems.item(ModMaterials.TUNGSTEN, MaterialShape.INGOT)))
                 .save(writer, recipeId("crafting/antenna_top"));
+
+        // CraftingManager: tape_recorder, pole_satellite_receiver, steel_beam, steel_wall, steel_corner, steel_roof
+        ShapedRecipeBuilder.shaped(RecipeCategory.DECORATIONS, ModBlocks.TAPE_RECORDER.get(), 4)
+                .pattern("TST").pattern("SSS")
+                .define('T', ModMaterialItems.item(ModMaterials.TUNGSTEN, MaterialShape.INGOT))
+                .define('S', ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.INGOT))
+                .unlockedBy("has_steel_ingot", has(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.INGOT)))
+                .save(writer, recipeId("crafting/tape_recorder"));
+        ShapedRecipeBuilder.shaped(RecipeCategory.DECORATIONS, ModBlocks.POLE_SATELLITE_RECEIVER.get(), 1)
+                .pattern("SS ").pattern("SCR").pattern("SS ")
+                .define('S', ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.INGOT))
+                .define('C', ModItems.VACUUM_TUBE.get())
+                .define('R', ModMaterialItems.item(ModMaterials.RED_COPPER, MaterialShape.WIRE))
+                .unlockedBy("has_vacuum_tube", has(ModItems.VACUUM_TUBE.get()))
+                .save(writer, recipeId("crafting/pole_satellite_receiver"));
+        ShapedRecipeBuilder.shaped(RecipeCategory.DECORATIONS, ModBlocks.STEEL_BEAM.get(), 8)
+                .pattern("S").pattern("S").pattern("S")
+                .define('S', ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.INGOT))
+                .unlockedBy("has_steel_ingot", has(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.INGOT)))
+                .save(writer, recipeId("crafting/steel_beam"));
+        // CraftingManager: steel_beam aus Geruest, chain, steel_grate(_wide), Geruest-Faerben (Block im Rezept = jede Farbe)
+        ShapedRecipeBuilder.shaped(RecipeCategory.DECORATIONS, ModBlocks.STEEL_BEAM.get(), 8)
+                .pattern("S").pattern("S").pattern("S")
+                .define('S', Ingredient.of(ModBlocks.STEEL_SCAFFOLD.get(), ModBlocks.STEEL_SCAFFOLD_RED.get(), ModBlocks.STEEL_SCAFFOLD_WHITE.get(), ModBlocks.STEEL_SCAFFOLD_YELLOW.get()))
+                .unlockedBy("has_steel_scaffold", has(ModBlocks.STEEL_SCAFFOLD.get()))
+                .save(writer, recipeId("crafting/steel_beam_from_scaffold"));
+        ShapedRecipeBuilder.shaped(RecipeCategory.DECORATIONS, ModBlocks.DUNGEON_CHAIN.get(), 8)
+                .pattern("S").pattern("S").pattern("S")
+                .define('S', ModBlocks.STEEL_BEAM.get())
+                .unlockedBy("has_steel_beam", has(ModBlocks.STEEL_BEAM.get()))
+                .save(writer, recipeId("crafting/dungeon_chain"));
+        ShapedRecipeBuilder.shaped(RecipeCategory.DECORATIONS, ModBlocks.STEEL_GRATE.get(), 4)
+                .pattern("SS").pattern("SS")
+                .define('S', ModBlocks.STEEL_BEAM.get())
+                .unlockedBy("has_steel_beam", has(ModBlocks.STEEL_BEAM.get()))
+                .save(writer, recipeId("crafting/steel_grate"));
+        ShapedRecipeBuilder.shaped(RecipeCategory.DECORATIONS, ModBlocks.STEEL_GRATE_WIDE.get(), 4)
+                .pattern("SS")
+                .define('S', ModBlocks.STEEL_GRATE.get())
+                .unlockedBy("has_steel_grate", has(ModBlocks.STEEL_GRATE.get()))
+                .save(writer, recipeId("crafting/steel_grate_wide"));
+        ShapedRecipeBuilder.shaped(RecipeCategory.DECORATIONS, ModBlocks.STEEL_GRATE.get(), 1)
+                .pattern("SS")
+                .define('S', ModBlocks.STEEL_GRATE_WIDE.get())
+                .unlockedBy("has_steel_grate_wide", has(ModBlocks.STEEL_GRATE_WIDE.get()))
+                .save(writer, recipeId("crafting/steel_grate_from_wide"));
+        ShapedRecipeBuilder.shaped(RecipeCategory.DECORATIONS, ModBlocks.STEEL_SCAFFOLD.get(), 8)
+                .pattern("SSS").pattern("SDS").pattern("SSS")
+                .define('S', Ingredient.of(ModBlocks.STEEL_SCAFFOLD.get(), ModBlocks.STEEL_SCAFFOLD_RED.get(), ModBlocks.STEEL_SCAFFOLD_WHITE.get(), ModBlocks.STEEL_SCAFFOLD_YELLOW.get()))
+                .define('D', Tags.Items.DYES_GRAY)
+                .unlockedBy("has_steel_scaffold", has(ModBlocks.STEEL_SCAFFOLD.get()))
+                .save(writer, recipeId("crafting/steel_scaffold_dye"));
+        ShapedRecipeBuilder.shaped(RecipeCategory.DECORATIONS, ModBlocks.STEEL_SCAFFOLD_RED.get(), 8)
+                .pattern("SSS").pattern("SDS").pattern("SSS")
+                .define('S', Ingredient.of(ModBlocks.STEEL_SCAFFOLD.get(), ModBlocks.STEEL_SCAFFOLD_RED.get(), ModBlocks.STEEL_SCAFFOLD_WHITE.get(), ModBlocks.STEEL_SCAFFOLD_YELLOW.get()))
+                .define('D', Tags.Items.DYES_RED)
+                .unlockedBy("has_steel_scaffold", has(ModBlocks.STEEL_SCAFFOLD.get()))
+                .save(writer, recipeId("crafting/steel_scaffold_red_dye"));
+        ShapedRecipeBuilder.shaped(RecipeCategory.DECORATIONS, ModBlocks.STEEL_SCAFFOLD_WHITE.get(), 8)
+                .pattern("SSS").pattern("SDS").pattern("SSS")
+                .define('S', Ingredient.of(ModBlocks.STEEL_SCAFFOLD.get(), ModBlocks.STEEL_SCAFFOLD_RED.get(), ModBlocks.STEEL_SCAFFOLD_WHITE.get(), ModBlocks.STEEL_SCAFFOLD_YELLOW.get()))
+                .define('D', Tags.Items.DYES_WHITE)
+                .unlockedBy("has_steel_scaffold", has(ModBlocks.STEEL_SCAFFOLD.get()))
+                .save(writer, recipeId("crafting/steel_scaffold_white_dye"));
+        ShapedRecipeBuilder.shaped(RecipeCategory.DECORATIONS, ModBlocks.STEEL_SCAFFOLD_YELLOW.get(), 8)
+                .pattern("SSS").pattern("SDS").pattern("SSS")
+                .define('S', Ingredient.of(ModBlocks.STEEL_SCAFFOLD.get(), ModBlocks.STEEL_SCAFFOLD_RED.get(), ModBlocks.STEEL_SCAFFOLD_WHITE.get(), ModBlocks.STEEL_SCAFFOLD_YELLOW.get()))
+                .define('D', Tags.Items.DYES_YELLOW)
+                .unlockedBy("has_steel_scaffold", has(ModBlocks.STEEL_SCAFFOLD.get()))
+                .save(writer, recipeId("crafting/steel_scaffold_yellow_dye"));
+        ShapedRecipeBuilder.shaped(RecipeCategory.DECORATIONS, ModBlocks.STEEL_WALL.get(), 4)
+                .pattern("SSS").pattern("SSS")
+                .define('S', ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.INGOT))
+                .unlockedBy("has_steel_ingot", has(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.INGOT)))
+                .save(writer, recipeId("crafting/steel_wall"));
+        ShapelessRecipeBuilder.shapeless(RecipeCategory.DECORATIONS, ModBlocks.STEEL_CORNER.get(), 1)
+                .requires(ModBlocks.STEEL_WALL.get()).requires(ModBlocks.STEEL_WALL.get())
+                .unlockedBy("has_steel_wall", has(ModBlocks.STEEL_WALL.get()))
+                .save(writer, recipeId("crafting/steel_corner"));
+        ShapedRecipeBuilder.shaped(RecipeCategory.DECORATIONS, ModBlocks.STEEL_ROOF.get(), 2)
+                .pattern("SSS")
+                .define('S', ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.INGOT))
+                .unlockedBy("has_steel_ingot", has(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.INGOT)))
+                .save(writer, recipeId("crafting/steel_roof"));
 
         // OTHER
         ShapedRecipeBuilder.shaped(RecipeCategory.BUILDING_BLOCKS, ModBlocks.REINFORCED_GLASS.get(), 5)
@@ -1580,6 +2305,54 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .define('#', ModItems.BOLT_STEEL.get())
                 .unlockedBy("has_concrete", has(ModBlocks.CONCRETE.get()))
                 .save(writer, recipeId("crafting/rebar"));
+
+        // CraftingManager: grosses Zahnrad (Meta 0)
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.GEAR_LARGE.get())
+                .pattern("III")
+                .pattern("ICI")
+                .pattern("III")
+                .define('I', ModMaterialItems.item(ModMaterials.IRON, MaterialShape.PLATE))
+                .define('C', Items.COPPER_INGOT)
+                .unlockedBy("has_iron_plate", has(ModMaterialItems.item(ModMaterials.IRON, MaterialShape.PLATE)))
+                .save(writer, recipeId("crafting/gear_large"));
+
+        // ToolRecipes: Geschuetz-KI-Chip (ANY_PLASTIC = Polymer oder Bakelit)
+        ShapedRecipeBuilder.shaped(RecipeCategory.TOOLS, ModItems.TURRET_CHIP.get())
+                .pattern("WWW")
+                .pattern("CPC")
+                .pattern("WWW")
+                .define('W', ModMaterialItems.item(ModMaterials.GOLD, MaterialShape.WIRE))
+                .define('P', Ingredient.of(ModMaterialItems.item(ModMaterials.POLYMER, MaterialShape.INGOT), ModMaterialItems.item(ModMaterials.BAKELITE, MaterialShape.INGOT)))
+                .define('C', ModItems.ADVANCED_CIRCUIT.get())
+                .unlockedBy("has_advanced_circuit", has(ModItems.ADVANCED_CIRCUIT.get()))
+                .save(writer, recipeId("crafting/turret_chip"));
+
+        // CraftingManager: Redstone-Batterie und Kupfer-Kondensator (battery_pack)
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.BATTERY_PACK_BATTERY_REDSTONE.get())
+                .pattern("IRI").pattern("PRP").pattern("IRI")
+                .define('I', ModMaterialItems.item(ModMaterials.IRON, MaterialShape.PLATE))
+                .define('R', Items.REDSTONE_BLOCK)
+                .define('P', ModMaterialItems.item(ModMaterials.POLYMER, MaterialShape.PLATE))
+                .unlockedBy("has_redstone_block", has(Items.REDSTONE_BLOCK))
+                .save(writer, recipeId("crafting/battery_pack_redstone"));
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.BATTERY_PACK_CAPACITOR_COPPER.get())
+                .pattern("IRI").pattern("PRP").pattern("IRI")
+                .define('I', ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE))
+                .define('R', Items.COPPER_BLOCK)
+                .define('P', ModMaterialItems.item(ModMaterials.POLYMER, MaterialShape.PLATE))
+                .unlockedBy("has_copper_block", has(Items.COPPER_BLOCK))
+                .save(writer, recipeId("crafting/battery_pack_capacitor_copper"));
+
+        // ToolRecipes: Bewehrungs-Setzer
+        ShapedRecipeBuilder.shaped(RecipeCategory.TOOLS, ModItems.REBAR_PLACER.get())
+                .pattern("RDR")
+                .pattern("DWD")
+                .pattern("RDR")
+                .define('R', ModBlocks.REBAR.get())
+                .define('D', ModItems.DUCTTAPE.get())
+                .define('W', ModItems.WRENCH.get())
+                .unlockedBy("has_rebar", has(ModBlocks.REBAR.get()))
+                .save(writer, recipeId("crafting/rebar_placer"));
 
         ShapedRecipeBuilder.shaped(RecipeCategory.BUILDING_BLOCKS, ModBlocks.REINFORCED_STONE.get(), 4)
                 .pattern("#$#")
@@ -2017,43 +2790,22 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
         buildToolSet(writer, "titanium", titaniumIngot,
                 ModItems.TITANIUM_SWORD.get(), ModItems.TITANIUM_SHOVEL.get(), ModItems.TITANIUM_PICKAXE.get(),
                 ModItems.TITANIUM_HOE.get(), ModItems.TITANIUM_AXE.get());
-        buildArmorSet(writer, "titanium", titaniumIngot,
-                ModItems.TITANIUM_HELMET.get(), ModItems.TITANIUM_CHESTPLATE.get(),
-                ModItems.TITANIUM_LEGGINGS.get(), ModItems.TITANIUM_BOOTS.get());
+        // Ruestungsrezepte: ArmorRecipeGenerator (1:1 ArmorRecipes)
 
         ItemLike steelIngot = ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.INGOT);
         buildToolSet(writer, "steel", steelIngot,
                 ModItems.STEEL_SWORD.get(), ModItems.STEEL_SHOVEL.get(), ModItems.STEEL_PICKAXE.get(),
                 ModItems.STEEL_HOE.get(), ModItems.STEEL_AXE.get());
-        buildArmorSet(writer, "steel", steelIngot,
-                ModItems.STEEL_HELMET.get(), ModItems.STEEL_CHESTPLATE.get(),
-                ModItems.STEEL_LEGGINGS.get(), ModItems.STEEL_BOOTS.get());
+        // Ruestungsrezepte: ArmorRecipeGenerator (1:1 ArmorRecipes)
 
-        ItemLike starmetalIngot = ModMaterialItems.item(ModMaterials.STARMETAL, MaterialShape.INGOT);
-        buildToolSet(writer, "starmetal", starmetalIngot,
-                ModItems.STARMETAL_SWORD.get(), ModItems.STARMETAL_SHOVEL.get(), ModItems.STARMETAL_PICKAXE.get(),
-                ModItems.STARMETAL_HOE.get(), ModItems.STARMETAL_AXE.get());
-        buildArmorSet(writer, "starmetal", starmetalIngot,
-                ModItems.STARMETAL_HELMET.get(), ModItems.STARMETAL_CHESTPLATE.get(),
-                ModItems.STARMETAL_LEGGINGS.get(), ModItems.STARMETAL_BOOTS.get());
-
-        ItemLike alloyIngot = ModMaterialItems.item(ModMaterials.ADVANCED_ALLOY, MaterialShape.INGOT);
-        buildToolSet(writer, "alloy", alloyIngot,
-                ModItems.ALLOY_SWORD.get(), ModItems.ALLOY_SHOVEL.get(), ModItems.ALLOY_PICKAXE.get(),
-                ModItems.ALLOY_HOE.get(), ModItems.ALLOY_AXE.get());
-        buildArmorSet(writer, "alloy", alloyIngot,
-                ModItems.ALLOY_HELMET.get(), ModItems.ALLOY_CHESTPLATE.get(),
-                ModItems.ALLOY_LEGGINGS.get(), ModItems.ALLOY_BOOTS.get());
+        // Sternmetall-Werkzeuge: ToolRecipeGenerator (Aufwertung der verzierten Kobaltwerkzeuge, LBSM ist aus).
+        // Legierungswerkzeuge haben im Original kein Rezept.
 
         ItemLike cobaltIngot = ModMaterialItems.item(ModMaterials.COBALT, MaterialShape.INGOT);
-        buildArmorSet(writer, "cobalt", cobaltIngot,
-                ModItems.COBALT_HELMET.get(), ModItems.COBALT_CHESTPLATE.get(),
-                ModItems.COBALT_LEGGINGS.get(), ModItems.COBALT_BOOTS.get());
+        // Ruestungsrezepte: ArmorRecipeGenerator (1:1 ArmorRecipes)
 
         ItemLike asbestosSheet = ModMaterialItems.item(ModMaterials.ASBESTOS, MaterialShape.INGOT);
-        buildArmorSet(writer, "asbestos", asbestosSheet,
-                ModItems.ASBESTOS_HELMET.get(), ModItems.ASBESTOS_CHESTPLATE.get(),
-                ModItems.ASBESTOS_LEGGINGS.get(), ModItems.ASBESTOS_BOOTS.get());
+        // Ruestungsrezepte: ArmorRecipeGenerator (1:1 ArmorRecipes)
     }
 
     //крафты катушек
@@ -2252,19 +3004,20 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
     }
 
     private void registerMeteoriteSword(Consumer<FinishedRecipe> writer) {
+        // Original ToolRecipes: {"  B", "GB ", "SG "}, B = blade_meteorite, G = Goldplatte, S = Stock
         ShapedRecipeBuilder.shaped(RecipeCategory.COMBAT, ModItems.METEORITE_SWORD.get())
-                .pattern(" M ")
-                .pattern("PMP")
-                .pattern(" S ")
-                .define('M', ModMaterialItems.item(ModMaterials.METEORITE_FORGED, MaterialShape.INGOT))
-                .define('P', ModMaterialItems.item(ModMaterials.GOLD, MaterialShape.PLATE))
+                .pattern("  B")
+                .pattern("GB ")
+                .pattern("SG ")
+                .define('B', ModItems.BLADE_METEORITE.get())
+                .define('G', ModMaterialItems.item(ModMaterials.GOLD, MaterialShape.PLATE))
                 .define('S', Items.STICK)
-                .unlockedBy(getHasName(ModMaterialItems.item(ModMaterials.METEORITE_FORGED, MaterialShape.INGOT)),
-                        has(ModMaterialItems.item(ModMaterials.METEORITE_FORGED, MaterialShape.INGOT)))
+                .unlockedBy(getHasName(ModItems.BLADE_METEORITE.get()), has(ModItems.BLADE_METEORITE.get()))
                 .save(writer, recipeId("meteorite_sword"));
 
+        // Original SmeltingRecipes: meteorite_sword -> meteorite_sword_seared, 0 XP
         registerSmelting(writer, ModItems.METEORITE_SWORD.get(), ModItems.METEORITE_SWORD_SEARED.get(),
-                0.7F, 200, "meteorite_sword_seared");
+                0.0F, 200, "meteorite_sword_seared");
     }
 
     //регистрация и прочее
@@ -2376,6 +3129,93 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
             @Override
             public RecipeSerializer<?> getType() {
                 return RecipeSerializer.SHAPED_RECIPE;
+            }
+
+            @Override
+            @Nullable
+            public JsonObject serializeAdvancement() {
+                return advancement.serializeToJson();
+            }
+
+            @Override
+            @Nullable
+            public ResourceLocation getAdvancementId() {
+                return advancementId;
+            }
+        });
+    }
+
+    /** Ofenrezept mit Stapelgroesse im Ergebnis (Forge liest "result" als Stapel). */
+    private void saveSmeltingStackRecipe(Consumer<FinishedRecipe> writer, ResourceLocation recipeId, ItemLike input, ItemStack result, float xp) {
+        Advancement.Builder advancement = Advancement.Builder.advancement();
+        advancement.addCriterion("has_input", has(input));
+        ResourceLocation advancementId = recipeId.withPrefix("recipes/" + RecipeCategory.MISC.getFolderName() + "/");
+
+        writer.accept(new FinishedRecipe() {
+            @Override
+            public void serializeRecipeData(@NotNull JsonObject json) {
+                json.addProperty("type", "minecraft:smelting");
+                json.addProperty("category", "misc");
+                json.add("ingredient", Ingredient.of(input).toJson());
+                json.add("result", stackToJson(result));
+                json.addProperty("experience", xp);
+                json.addProperty("cookingtime", 200);
+            }
+
+            @Override public ResourceLocation getId() { return recipeId; }
+            @Override public RecipeSerializer<?> getType() { return RecipeSerializer.SMELTING_RECIPE; }
+            @Override @Nullable public JsonObject serializeAdvancement() { return advancement.serializeToJson(); }
+            @Override @Nullable public ResourceLocation getAdvancementId() { return advancementId; }
+        });
+    }
+
+    /** R5: Fluessigkeit per Port-Name. */
+    private static net.minecraft.world.level.material.Fluid fl(String name) {
+        var e = com.hbm_m.inventory.fluid.ModFluids.getEntry(name);
+        if (e == null) throw new IllegalStateException("R5-Rezept: unbekannte Fluessigkeit " + name);
+        return e.getSource();
+    }
+
+    /** R5: genau dieser gefuellte Behaelter (Original new ItemStack(fluid_tank_full, 1, Fluids.X.getID())). */
+    private static Ingredient strict(net.minecraft.world.item.Item container, String fluid) {
+        return net.minecraftforge.common.crafting.StrictNBTIngredient.of(com.hbm_m.item.liquids.ItemFluidTank.make(container, fl(fluid), 1));
+    }
+
+    /** R4: Gegenstand per ID (Datagen, Registries sind eingefroren); unbekannte ID bricht den Lauf ab. */
+    private static net.minecraft.world.item.Item r4(String id) {
+        net.minecraft.world.item.Item item = net.minecraft.core.registries.BuiltInRegistries.ITEM.get(ResourceLocation.fromNamespaceAndPath("hbm_m", id));
+        if (item == Items.AIR) throw new IllegalStateException("R4-Rezept: unbekannter Gegenstand " + id);
+        return item;
+    }
+
+    /** Formloses Rezept mit NBT im Ergebnis (Metadaten-Varianten des Originals). */
+    private void saveShapelessStackRecipe(Consumer<FinishedRecipe> writer, ResourceLocation recipeId,
+            ItemStack result, List<Ingredient> ingredients, ItemLike unlockItem, String unlockCriterion) {
+        Advancement.Builder advancement = Advancement.Builder.advancement();
+        advancement.addCriterion(unlockCriterion, has(unlockItem));
+        ResourceLocation advancementId = recipeId.withPrefix("recipes/" + RecipeCategory.MISC.getFolderName() + "/");
+
+        writer.accept(new FinishedRecipe() {
+            @Override
+            public void serializeRecipeData(@NotNull JsonObject json) {
+                json.addProperty("type", "minecraft:crafting_shapeless");
+                json.addProperty("category", "misc");
+                JsonArray ingredientsJson = new JsonArray();
+                for (Ingredient ingredient : ingredients) {
+                    ingredientsJson.add(ingredient.toJson());
+                }
+                json.add("ingredients", ingredientsJson);
+                json.add("result", stackToJson(result));
+            }
+
+            @Override
+            public ResourceLocation getId() {
+                return recipeId;
+            }
+
+            @Override
+            public RecipeSerializer<?> getType() {
+                return RecipeSerializer.SHAPELESS_RECIPE;
             }
 
             @Override

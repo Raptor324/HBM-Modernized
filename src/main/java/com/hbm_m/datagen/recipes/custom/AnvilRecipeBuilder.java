@@ -34,6 +34,7 @@ public class AnvilRecipeBuilder extends BaseRecipeBuilder<AnvilRecipeBuilder> {
     @Nullable
     private AnvilTier upperTier;
     private AnvilRecipe.OverlayType overlay = AnvilRecipe.OverlayType.NONE;
+    private boolean hot = false;
 
     private AnvilRecipeBuilder(ItemStack inputA, ItemStack inputB, ItemStack output, AnvilTier tier) {
         this.inputA = inputA;
@@ -45,6 +46,12 @@ public class AnvilRecipeBuilder extends BaseRecipeBuilder<AnvilRecipeBuilder> {
 
     public static AnvilRecipeBuilder anvilRecipe(ItemStack inputA, ItemStack inputB, ItemStack output, AnvilTier tier) {
         return new AnvilRecipeBuilder(inputA, inputB, output, tier);
+    }
+
+    /** Original {@code AnvilSmithingHotRecipe}. */
+    public AnvilRecipeBuilder hot() {
+        this.hot = true;
+        return this;
     }
 
     public AnvilRecipeBuilder keepInputA() {
@@ -154,6 +161,9 @@ public class AnvilRecipeBuilder extends BaseRecipeBuilder<AnvilRecipeBuilder> {
         }
         if (overlay != AnvilRecipe.OverlayType.NONE) {
             json.addProperty("overlay", overlay.name().toLowerCase(Locale.ROOT));
+        }
+        if (hot) {
+            json.addProperty("hot", true);
         }
     }
 

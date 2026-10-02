@@ -1,0 +1,22 @@
+{
+ "variants": {
+  "facing=down": {
+   "model": "hbm_m:block/bomb/charge_semtex_down"
+  },
+  "facing=up": {
+   "model": "hbm_m:block/bomb/charge_semtex_up"
+  },
+  "facing=north": {
+   "model": "hbm_m:block/bomb/charge_semtex_north"
+  },
+  "facing=south": {
+   "model": "hbm_m:block/bomb/charge_semtex_south"
+  },
+  "facing=west": {
+   "model": "hbm_m:block/bomb/charge_semtex_west"
+  },
+  "facing=east": {
+   "model": "hbm_m:block/bomb/charge_semtex_east"
+  }
+ }
+}

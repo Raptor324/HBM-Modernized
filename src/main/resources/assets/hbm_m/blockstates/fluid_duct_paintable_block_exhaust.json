@@ -1,0 +1,10 @@
+{
+ "variants": {
+  "hidden=false": {
+   "model": "hbm_m:block/fluid_duct_paintable_block_exhaust_particle"
+  },
+  "hidden=true": {
+   "model": "hbm_m:block/fluid_duct_paintable_block_exhaust_particle"
+  }
+ }
+}

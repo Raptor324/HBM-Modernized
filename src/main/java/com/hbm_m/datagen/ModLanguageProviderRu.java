@@ -24,6 +24,15 @@ import net.minecraftforge.common.data.LanguageProvider;
 
 public class ModLanguageProviderRu extends LanguageProvider {
 
+    private boolean restportActive = false;
+
+    @Override
+    public void add(String key, String value) {
+        if (!restportActive && RestportLang.has(key)) return;
+        super.add(key, value);
+    }
+
+
     public ModLanguageProviderRu(PackOutput output) {
         super(output, RefStrings.MODID, "ru_ru");
     }
@@ -112,6 +121,11 @@ public class ModLanguageProviderRu extends LanguageProvider {
 
         @Override
     protected void addTranslations() {
+        // Originaltexte aus dem Restport zuerst; spaetere Port-Eintraege mit gleichem Schluessel
+        // werden in add(...) uebersprungen (Original hat Vorrang vor erfundenen Texten).
+        restportActive = true;
+        RestportLang.addAll(this::add, true);
+        restportActive = false;
         addConfigTranslations();
 
         // Автоматическая локализация слитков
@@ -372,8 +386,6 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("pseudofluid.hbm_m.mud_heavy", "Отходы WATZ (концентрат)");
         add("jei.hbm_m.gas_centrifuge.info", "Требуется %s центрифуг(и)");
         add("jei.hbm_m.gas_centrifuge.info_high_speed", "Требуется %s центрифуг(и) (ускоренная)");
-        add("tooltip.hbm_m.satchip.freq", "Частота: %s");
-        add("message.hbm_m.satchip.freq_set", "Частота установлена: %s");
         add("gui.launchPad.notReady", "Не готова");
         add("gui.launchPad.loading", "Загрузка...");
         add("gui.launchPad.ready", "Готова");
@@ -385,78 +397,78 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("gui.hbm_m.shredder.blade_warning.desc", "Установите или отремонтируйте лезвия шреддера.");
         // БРОНЯ
         add("item.hbm_m.alloy_helmet", "Шлем из продвинутого сплава");
-        add("item.hbm_m.alloy_chestplate", "Нагрудник из продвинутого сплава");
-        add("item.hbm_m.alloy_leggings", "Поножи из продвинутого сплава");
+        add("item.hbm_m.alloy_plate", "Нагрудник из продвинутого сплава");
+        add("item.hbm_m.alloy_legs", "Поножи из продвинутого сплава");
         add("item.hbm_m.alloy_boots", "Ботинки из продвинутого сплава");
 
         add("item.hbm_m.cobalt_helmet", "Кобальтовый шлем");
-        add("item.hbm_m.cobalt_chestplate", "Кобальтовый нагрудник");
-        add("item.hbm_m.cobalt_leggings", "Кобальтовые поножи");
+        add("item.hbm_m.cobalt_plate", "Кобальтовый нагрудник");
+        add("item.hbm_m.cobalt_legs", "Кобальтовые поножи");
         add("item.hbm_m.cobalt_boots", "Кобальтовые ботинки");
 
         add("item.hbm_m.titanium_helmet", "Титановый шлем");
-        add("item.hbm_m.titanium_chestplate", "Титановый нагрудник");
-        add("item.hbm_m.titanium_leggings", "Титановые поножи");
+        add("item.hbm_m.titanium_plate", "Титановый нагрудник");
+        add("item.hbm_m.titanium_legs", "Титановые поножи");
         add("item.hbm_m.titanium_boots", "Титановые ботинки");
 
         add("item.hbm_m.security_helmet", "Шлем охранника");
-        add("item.hbm_m.security_chestplate", "Нагрудник охранника");
-        add("item.hbm_m.security_leggings", "Поножи охранника");
+        add("item.hbm_m.security_plate", "Нагрудник охранника");
+        add("item.hbm_m.security_legs", "Поножи охранника");
         add("item.hbm_m.security_boots", "Ботинки охранника");
 
         add("item.hbm_m.steel_helmet", "Стальной шлем");
-        add("item.hbm_m.steel_chestplate", "Стальной нагрудник");
-        add("item.hbm_m.steel_leggings", "Стальные поножи");
+        add("item.hbm_m.steel_plate", "Стальной нагрудник");
+        add("item.hbm_m.steel_legs", "Стальные поножи");
         add("item.hbm_m.steel_boots", "Стальные ботинки");
 
         add("item.hbm_m.asbestos_helmet", "Огнезащитный шлем");
-        add("item.hbm_m.asbestos_chestplate", "Огнезащитный нагрудник");
-        add("item.hbm_m.asbestos_leggings", "Огнезащитные поножи");
+        add("item.hbm_m.asbestos_plate", "Огнезащитный нагрудник");
+        add("item.hbm_m.asbestos_legs", "Огнезащитные поножи");
         add("item.hbm_m.asbestos_boots", "Огнезащитные ботинки");
 
         add("item.hbm_m.hazmat_helmet", "Защитный шлем");
-        add("item.hbm_m.hazmat_chestplate", "Защитный нагрудник");
-        add("item.hbm_m.hazmat_leggings", "Защитные поножи");
+        add("item.hbm_m.hazmat_plate", "Защитный нагрудник");
+        add("item.hbm_m.hazmat_legs", "Защитные поножи");
         add("item.hbm_m.hazmat_boots", "Защитные ботинки");
 
         add("item.hbm_m.liquidator_helmet", "Шлем костюма Ликвидатора");
-        add("item.hbm_m.liquidator_chestplate", "Нагрудник костюма Ликвидатора");
-        add("item.hbm_m.liquidator_leggings", "Поножи костюма Ликвидатора");
+        add("item.hbm_m.liquidator_plate", "Нагрудник костюма Ликвидатора");
+        add("item.hbm_m.liquidator_legs", "Поножи костюма Ликвидатора");
         add("item.hbm_m.liquidator_boots", "Ботинки костюма Ликвидатора");
 
         add("item.hbm_m.paa_helmet", "Боевой защитный шлем PaA");
-        add("item.hbm_m.paa_chestplate", "Защищающая нагрудная пластина из PaA");
-        add("item.hbm_m.paa_leggings", "Укреплённые поножи из PaA");
+        add("item.hbm_m.paa_plate", "Защищающая нагрудная пластина из PaA");
+        add("item.hbm_m.paa_legs", "Укреплённые поножи из PaA");
         add("item.hbm_m.paa_boots", "''Старые добрые ботинки'' из PaA");
 
         add("item.hbm_m.starmetal_helmet", "Шлем из звёздного металла");
-        add("item.hbm_m.starmetal_chestplate", "Нагрудник из звёздного металла");
-        add("item.hbm_m.starmetal_leggings", "Поножи из звёздного металла");
+        add("item.hbm_m.starmetal_plate", "Нагрудник из звёздного металла");
+        add("item.hbm_m.starmetal_legs", "Поножи из звёздного металла");
         add("item.hbm_m.starmetal_boots", "Ботинки из звёздного металла");
 
         add(ModItems.T51_HELMET.get(), "Шлем силовой брони T-51b");
-        add(ModItems.T51_CHESTPLATE.get(), "Нагрудник силовой брони T-51b");
-        add(ModItems.T51_LEGGINGS.get(), "Поножи силовой брони T-51b");
+        add(ModItems.T51_PLATE.get(), "Нагрудник силовой брони T-51b");
+        add(ModItems.T51_LEGS.get(), "Поножи силовой брони T-51b");
         add(ModItems.T51_BOOTS.get(), "Ботинки силовой брони T-51b");
 
         add(ModItems.AJR_HELMET.get(), "Шлем Стальных Рейнджеров");
-        add(ModItems.AJR_CHESTPLATE.get(), "Нагрудник Стальных Рейнджеров");
-        add(ModItems.AJR_LEGGINGS.get(), "Поножи Стальных Рейнджеров");
+        add(ModItems.AJR_PLATE.get(), "Нагрудник Стальных Рейнджеров");
+        add(ModItems.AJR_LEGS.get(), "Поножи Стальных Рейнджеров");
         add(ModItems.AJR_BOOTS.get(), "Ботинки Стальных Рейнджеров");
 
         add(ModItems.BISMUTH_HELMET.get(), "Висмутовый шлем силовой брони");
-        add(ModItems.BISMUTH_CHESTPLATE.get(), "Висмутовый нагрудник силовой брони");
-        add(ModItems.BISMUTH_LEGGINGS.get(), "Висмутовые поножи силовой брони");
+        add(ModItems.BISMUTH_PLATE.get(), "Висмутовый нагрудник силовой брони");
+        add(ModItems.BISMUTH_LEGS.get(), "Висмутовые поножи силовой брони");
         add(ModItems.BISMUTH_BOOTS.get(), "Висмутовые ботинки силовой брони");
 
         add(ModItems.AJRO_HELMET.get(), "Шлем силовой брони AJR");
-        add(ModItems.AJRO_CHESTPLATE.get(), "Нагрудник силовой брони AJR");
-        add(ModItems.AJRO_LEGGINGS.get(), "Поножи силовой брони AJR");
+        add(ModItems.AJRO_PLATE.get(), "Нагрудник силовой брони AJR");
+        add(ModItems.AJRO_LEGS.get(), "Поножи силовой брони AJR");
         add(ModItems.AJRO_BOOTS.get(), "Ботинки силовой брони AJR");
 
         add(ModItems.DNT_HELMET.get(), "Шлем DNT-Нанокостюма");
-        add(ModItems.DNT_CHESTPLATE.get(), "Нагрудник DNT-Нанокостюма");
-        add(ModItems.DNT_LEGGINGS.get(), "Поножи DNT-Нанокостюма");
+        add(ModItems.DNT_PLATE.get(), "Нагрудник DNT-Нанокостюма");
+        add(ModItems.DNT_LEGS.get(), "Поножи DNT-Нанокостюма");
         add(ModItems.DNT_BOOTS.get(), "Ботинки DNT-Нанокостюма");
 
         add("item.hbm_m.geiger_counter", "Счетчик Гейгера");
@@ -657,13 +669,6 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("item.hbm_m.upgrade_overdrive_3", "Апгрейд овердрайва Mk.III");
 
         // Upgrade tooltips
-        add("tooltip.hbm_m.upgrade.type.speed", "Скорость: ускоряет работу, увеличивает потребление");
-        add("tooltip.hbm_m.upgrade.type.effect", "Эффективность: увеличивает радиус/эффект");
-        add("tooltip.hbm_m.upgrade.type.power", "Мощность: снижает потребление энергии");
-        add("tooltip.hbm_m.upgrade.type.fortune", "Удача: увеличивает выход продукции");
-        add("tooltip.hbm_m.upgrade.type.afterburn", "Форсаж: добавляет дополнительные эффекты");
-        add("tooltip.hbm_m.upgrade.type.overdrive", "Овердрайв: экстремальное ускорение");
-        add("tooltip.hbm_m.upgrade.tier", "Уровень: %d");
 
         // === ИНСТРУМЕНТЫ И УСТРОЙСТВА ===
         add("tooltip.hbm_m.gigadet.line1", "Был создан по приколу");
@@ -676,10 +681,6 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("tooltip.hbm_m.detminer.line1", "Не наносит урон сущностям и игрокам");
         add("tooltip.hbm_m.detminer.line4", "Позволяет добывать глубинные руды и камень");
 
-        add("tooltip.hbm_m.dudnuke.line1", "Ядерное оружие высокой мощности!");
-        add("tooltip.hbm_m.dudnuke.line4", "Если кратер загрузился некорректно");
-        add("tooltip.hbm_m.dudnuke.line5", "или без биомов, то перезапустите мир");
-        add("tooltip.hbm_m.dudnuke.line6", "Может быть обезврежена");
 
         add("tooltip.hbm_m.dudsalted.line1", "Ядерное оружие высокой мощности!");
         add("tooltip.hbm_m.dudsalted.line4", "Если кратер загрузился некорректно");
@@ -689,10 +690,7 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("tooltip.hbm_m.dudfugas.line1", "Фугасная бомба высокой мощности!");
         add("tooltip.hbm_m.dudfugas.line6", "Может быть обезврежена");
 
-        add("tooltip.hbm_m.defuser.line1", "Устройство для обезвреживания мин и бомб");
 
-        add("tooltip.hbm_m.crowbar.line1", "Инструмент для вскрытия контейнеров");
-        add("tooltip.hbm_m.crowbar.line2", "Открывает ящики по нажатию ПКМ");
 
         add("tooltip.hbm_m.mine_nuke.line1", "Ядерное оружие!");
         add("tooltip.hbm_m.mine_nuke.line2", "Радиус поражения: 35 метров");
@@ -804,16 +802,7 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add(ModBlocks.CAGE_LAMP.get(), "Лампа в клетке");
         add(ModBlocks.FLOOD_LAMP.get(), "Прожектор");
         add(ModBlocks.B29.get(), "B-29");
-        add(ModBlocks.DORNIER.get(), "Dornier");
-        add(ModBlocks.FILE_CABINET.get(), "Шкафчик");
-        add(ModBlocks.TAPE_RECORDER.get(), "Магнитофон");
-        add(ModBlocks.CRT_BROKEN.get(), "Сломанный монитор");
-        add(ModBlocks.CRT_BSOD.get(), "BSOD Монитор ");
-        add(ModBlocks.CRT_CLEAN.get(), "Монитор");
-        add(ModBlocks.TOASTER.get(), "Тостер");
-        add(ModBlocks.STEEL_POLE.get(), "Antenna Pole"); //NEEDS TRANSLATION
-        add(ModBlocks.ANTENNA_TOP.get(), "Antenna Top"); //NEEDS TRANSLATION
-        add(ModBlocks.PUTER.get(), "(PC) Personal Computer"); //NEEDS TRANSLATION
+        add(ModBlocks.DORNIER.get(), "Dornier"); //NEEDS TRANSLATION //NEEDS TRANSLATION //NEEDS TRANSLATION
         add(ModBlocks.BARREL_CORRODED.get(), "Проржавевшая бочка");
         add(ModBlocks.BARREL_LOX.get(), "Бочка с жидким кислородом");
         add(ModBlocks.BARREL_ANTIMATTER.get(), "Магнитный контейнер антиматерии");
@@ -907,9 +896,6 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add(ModBlocks.SILO_HATCH_LARGE.get(), "Люк ракетной шахты");
         add(ModBlocks.CARGO_DOOR.get(), "Грузовая дверь");
 
-        add(ModBlocks.DUD_SALTED.get(), "Неразорвавшаяся солёная бомба");
-        add(ModBlocks.DUD_NUKE.get(), "Неразорвавшаяся ядерная бомба");
-        add(ModBlocks.DUD_CONVENTIONAL.get(), "Неразорвавшаяся фугасная бомба");
         add(ModBlocks.MINE_FAT.get(), "Мина 'Толстяк'");
         add(ModBlocks.NUKE_FAT_MAN.get(), "Ядерная бомба 'Толстяк'");
         add(ModItems.NUKE_PROTOTYPE.get(), "Прототип атомной бомбы");
@@ -1016,7 +1002,6 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add(ModItems.SEQUESTRUM.get(), "Селитра");
         // русский:
         add(ModBlocks.ASPHALT.get(), "Асфальт");
-        add(ModBlocks.BARRICADE.get(), "Мешки с песком");
         add(ModBlocks.CONCRETE_PILLAR.get(), "Колонна из бетона");
         add(ModBlocks.BASALT_BRICK.get(), "Базальтовые кирпичи");
         add(ModBlocks.BASALT_POLISHED.get(), "Отполированный базальт");
@@ -1079,8 +1064,6 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add(ModBlocks.METEOR_PILLAR.get(), "Метеоритная колонна");
         add(ModBlocks.METEOR_POLISHED.get(), "Отполированный метеорит");
         add(ModBlocks.METEOR_TREASURE.get(), "Блок метеоритных сокровищ");
-        add(ModBlocks.VINYL_TILE.get(), "Виниловая плитка");
-        add(ModBlocks.VINYL_TILE_SMALL.get(), "Мелкая виниловая плитка");
 
         add(ModBlocks.CONCRETE_ASBESTOS_SLAB.get(), "Плита из асбестобетона");
         add(ModBlocks.CONCRETE_BLACK_SLAB.get(), "Чёрная бетонная плита");
@@ -1187,31 +1170,11 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add(ModBlocks.BLOCK_SCRAP.get(), "Блок металлолома");
         add(ModBlocks.BLOCK_ELECTRICAL_SCRAP.get(), "Электрический лом");
         add(ModBlocks.DECO_TITANIUM.get(), "Титановая отделка");
-        add(ModBlocks.WOOD_STRUCTURE.get(), "Строительное дерево");
-        add(ModBlocks.STEEL_BEAM.get(), "Стальная балка");
         add(ModBlocks.STEEL_GRATE.get(), "Стальная решётка");
         add(ModBlocks.STEEL_GRATE_WIDE.get(), "Широкая стальная решётка");
-        add(ModBlocks.TOXIC_BLOCK.get(), "Токсичные отходы");
         add(ModBlocks.BALEFIRE.get(), "Адское пламя");
         add(ModBlocks.PLANT_DEAD.get(), "Мёртвое растение");
-        add(ModBlocks.POLE_TOP.get(), "Верхушка антенны");
-        add(ModBlocks.POLE_SATELLITE_RECEIVER.get(), "Спутниковая антенна");
         add(ModBlocks.DECO_LOOT.get(), "Груда хлама");
-        add(ModBlocks.DECO_PIPE.get(), "Стальная труба");
-        add(ModBlocks.DECO_PIPE_RUSTED.get(), "Ржавая стальная труба");
-        add(ModBlocks.DECO_PIPE_RED.get(), "Красная стальная труба");
-        add(ModBlocks.DECO_PIPE_MARKED.get(), "Маркированная стальная труба");
-        add(ModBlocks.DECO_PIPE_QUAD.get(), "Квадро-труба");
-        add(ModBlocks.DECO_PIPE_QUAD_RUSTED.get(), "Ржавая квадро-труба");
-        add(ModBlocks.DECO_PIPE_QUAD_RED.get(), "Красная квадро-труба");
-        add(ModBlocks.DECO_PIPE_QUAD_MARKED.get(), "Маркированная квадро-труба");
-        add(ModBlocks.DECO_PIPE_FRAMED.get(), "Труба в обвязке");
-        add(ModBlocks.DECO_PIPE_FRAMED_RUSTED.get(), "Ржавая труба в обвязке");
-        add(ModBlocks.DECO_PIPE_FRAMED_RED.get(), "Красная труба в обвязке");
-        add(ModBlocks.DECO_PIPE_FRAMED_GREEN_RUSTED.get(), "Зелёная ржавая труба в обвязке");
-        add(ModBlocks.DECO_PIPE_RIM.get(), "Труба с ободом");
-        add(ModBlocks.DECO_PIPE_RIM_RUSTED.get(), "Ржавая труба с ободом");
-        add(ModBlocks.DECO_PIPE_RIM_MARKED.get(), "Маркированная труба с ободом");
         add(ModBlocks.BRICK_COMPOUND_STAIRS.get(), "Ступени из сложного кирпича");
         add(ModBlocks.REINFORCED_BRICK_STAIRS.get(), "Ступени из укреплённого кирпича");
         add(ModBlocks.LIGHTSTONE_BRICKS_STAIRS.get(), "Ступени из кирпичей светокамня");
@@ -1286,11 +1249,6 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add(ModItems.PIPE_ALUMINUM.get(), "Алюминиевая труба");
         add(ModItems.PIPE_DURA_STEEL.get(), "Труба (Быстрорежущая сталь)");
         
-        add("item.hbm_m.fluid_identifier", "Мульти-жидкостный идентификатор: %s");
-        add("item.hbm_m.fluid_identifier.none", "Мульти-жидкостный идентификатор");
-        add("item.hbm_m.fluid_identifier.info", "Жидкостный идентификатор для:");
-        add("item.hbm_m.fluid_identifier.info2", "Второй тип:");
-        add("toast.hbm_m.fluid_identifier_active", "Текущий тип: %s");
         add("item.hbm_m.bucket_crude_oil", "Ведро сырой нефти (WIP)");
         add("item.hbm_m.inf_water", "Бочка с бесконечной водой");
         add("item.hbm_m.inf_water_mk2", "Бочка с бесконечной водой mk2");
@@ -1498,7 +1456,6 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add(ModItems.CANNED_FIST.get(), "Консервированный кулак");
         add(ModItems.CANNED_FRIED.get(), "Жареная консерва");
         add(ModItems.CANNED_HOTDOGS.get(), "Консервированные хот-доги");
-        add(ModItems.CANNED_JIZZ.get(), "Консервированное жеребцовое молочко");
         add(ModItems.CANNED_KEROSENE.get(), "Консервированный керосин");
         add(ModItems.CANNED_LEFTOVERS.get(), "Консервированные остатки");
         add(ModItems.CANNED_MILK.get(), "Консервированное молоко");
@@ -1787,11 +1744,6 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("item.hbm_m.crystal_xen", "Ксеноновый кристалл");
 
         add("item.hbm_m.blueprint_folder", "Папка шаблонов");
-        add("item.hbm_m.blueprint_folder.named", "Папка шаблонов машин");
-        add("item.hbm_m.blueprint_folder.empty", "Пустая папка");
-        add("item.hbm_m.blueprint_folder.obsolete", "Устаревший шаблон (группа удалена)");
-        add("item.hbm_m.blueprint_folder.desc", "Вставьте в Сборочную машину для разблокировки рецептов");
-        add("item.hbm_m.blueprint_folder.recipes", "Содержит рецепты:");
         add("gui.hbm_m.recipe_from_group", "Из группы:");
         
         add("sounds.hbm_m.radaway_use", "Использование антирадина");
@@ -1861,7 +1813,6 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("block.hbm_m.anvil_murky", "Мрачная наковальня");
         add("block.hbm_m.door_office", "Офисная дверь");
         add("block.hbm_m.door_bunker", "Бункерная дверь");
-        add("block.hbm_m.metal_door", "Металлическая дверь");
         add("block.hbm_m.demon_lamp", "Милая лампа (WIP)");
         add("block.hbm_m.explosive_charge", "Заряд взрывчатки");
         add("block.hbm_m.det_miner", "Шахтёрский заряд");
@@ -1904,7 +1855,6 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add(ModBlocks.INDUSTRIAL_BOILER.get(), "Промышленный котел");
         add(ModBlocks.SOLAR_BOILER.get(), "Солнечный котел");
         add(ModBlocks.SOLAR_MIRRORS.get(), "Солнечные зеркала (WIP)");
-        add(ModBlocks.WATZ_POWERPLANT.get(), "Электростанция Ватц");
         add(ModBlocks.HYDROTREATER.get(), "Гидроочиститель (WIP)");
         add(ModBlocks.CATALYTIC_REFORMER.get(), "Каталитический риформер (WIP)");
         add(ModBlocks.DEUTERIUM_TOWER.get(), "Башня дейтерия (WIP)");
@@ -2007,7 +1957,6 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("container.hbm_m.machine_battery_redd", "Реддендитовая батарея");
         add(ModBlocks.FIREBOX.get(), "Топка");
         add("container.hbm_m.firebox", "Топка");
-        add(ModBlocks.FRACTION_SPACER.get(), "Фракционный разделитель (WIP)");
         add(ModBlocks.FURNACE_IRON.get(), "Железная печь");
         add("container.hbm_m.furnace_iron", "Железная печь");
         add(ModBlocks.FURNACE_STEEL.get(), "Стальная печь");
@@ -2065,7 +2014,6 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("container.hbm_m.purex", "PUREX");
         add(ModBlocks.TORUS.get(), "Тор (WIP)");
         add(ModBlocks.TURBINEGAS.get(), "Газовая турбина");
-        add(ModBlocks.WATZ_PUMP.get(), "Насос WATZ (WIP)");
         add(ModBlocks.CHUNGUS.get(), "Чангус (WIP)");
 
         add("block.hbm_m.machine_battery", "Энергохранилище");
@@ -2794,7 +2742,6 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("block.hbm_m.soyuz_capsule", "Грузовая посадочная капсула");
         add("block.hbm_m.soyuz_launcher", "Стартовая платформа \"Союза\"");
         add("block.hbm_m.spikes", "Шипы");
-        add("block.hbm_m.steel_corner", "Стальной угол");
         add("block.hbm_m.steel_roof", "Плоская стальная крыша");
         add("block.hbm_m.steel_scaffold", "Стальные подмостки");
         add("block.hbm_m.steel_wall", "Стальная стенка");
@@ -2857,8 +2804,6 @@ public class ModLanguageProviderRu extends LanguageProvider {
 
         // POWER ARMOR CONTROLS
         add("key.hbm_m.power_armor_dash", "Рывок силовой брони");
-        add("key.hbm_m.power_armor_vats", "VATS силовой брони");
-        add("key.hbm_m.power_armor_thermal", "Тепловизор силовой брони");
         add("key.hbm_m.rbmk_crane_up", "РБМК Кран: вверх");
         add("key.hbm_m.rbmk_crane_down", "РБМК Кран: вниз");
         add("key.hbm_m.rbmk_crane_left", "РБМК Кран: влево");
@@ -3197,7 +3142,6 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("container.hbm_m.solar_mirrors", "Солнечные зеркала");
         add("msg.hbm_m.solar_mirror.sky_access", "Зеркало освещено солнцем");
         add("msg.hbm_m.solar_mirror.no_sky_access", "Зеркало затенено");
-        add("container.hbm_m.watz_powerplant", "Электростанция Ватц");
         add("container.hbm_m.hydrotreater", "Гидроочиститель");
         add("container.hbm_m.catalytic_reformer", "Каталитический риформер");
         add("container.hbm_m.deuterium_tower", "Башня дейтерия");
@@ -3408,24 +3352,8 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("digamma.playerHealth", "Влияние дигаммы:");
         add("digamma.playerRes", "Сопротивление к дигамме:");
 
-        add("tooltip.hbm_m.abilities", "Способности:");
-        add("tooltip.hbm_m.vein_miner", "Жилковый майнер (%s)");
-        add("tooltip.hbm_m.aoe", "Зона действия %s");
-        add("tooltip.hbm_m.silk_touch", "Шёлковое касание");
-        add("tooltip.hbm_m.fortune", "Удача (%s)");
-        add("tooltip.hbm_m.right_click", "ПКМ - переключить способность");
         add("tooltip.hbm_m.rbmk_fuel_drx", "Продвинутый ядерный топливный стержень с повышенной энергоотдачей");
-        add("tooltip.hbm_m.shift_right_click", "Shift + ПКМ - выключить всё");
 
-        add("message.hbm_m.vein_miner.enabled", "Жилковый майнер %s активирован!");
-        add("message.hbm_m.vein_miner.disabled", "Жилковый майнер %s деактивирован!");
-        add("message.hbm_m.aoe.enabled", "Зона действия %1$s x %1$s x %1$s активирована!");
-        add("message.hbm_m.aoe.disabled", "Зона действия %s x %s x %s деактивирована!");
-        add("message.hbm_m.silk_touch.enabled", "Шёлковое касание активировано!");
-        add("message.hbm_m.silk_touch.disabled", "Шёлковое касание деактивировано!");
-        add("message.hbm_m.fortune.enabled", "Удача %s активирована!");
-        add("message.hbm_m.fortune.disabled", "Удача %s деактивирована!");
-        add("message.hbm_m.disabled", "Все способности выключены!");
         add("message.hbm_m.loaded", "Мир загружен с %s %s для Minecraft %s!");
         add("message.hbm_m.modernized", "Hbm's Nuclear Tech Mod: Modernized");
         add("message.hbm_m.new_version", "Доступна новая версия %s!");

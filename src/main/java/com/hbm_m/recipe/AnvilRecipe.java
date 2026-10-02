@@ -41,6 +41,8 @@ public class AnvilRecipe extends PlatformRecipe {
     @Nullable
     private final String blueprintPool;
     private final OverlayType overlay;
+    /** Original {@code AnvilSmithingHotRecipe}: ItemHot-Zutaten brauchen Hitze >= 0.5, Ergebnis erbt die mittlere Hitze. */
+    private boolean hot = false;
 
     public AnvilRecipe(ResourceLocation id, ItemStack inputA, ItemStack inputB,
                        List<ItemStack> inventoryInputs, List<ResultEntry> outputs,
@@ -81,10 +83,48 @@ public class AnvilRecipe extends PlatformRecipe {
     }
 
     private boolean matchesExact(ItemStack slotA, ItemStack slotB) {
-        return PlatformHooks.isSameItemSameTags(slotA, inputA) &&
-               PlatformHooks.isSameItemSameTags(slotB, inputB) &&
+        return stackMatches(slotA, inputA) &&
+               stackMatches(slotB, inputB) &&
                slotA.getCount() >= inputA.getCount() &&
                slotB.getCount() >= inputB.getCount();
+    }
+
+    /** Wie ComparableStack des Originals: ohne NBT im Rezept zaehlt nur der Gegenstand. */
+    private boolean stackMatches(ItemStack actual, ItemStack required) {
+        if (required.isEmpty()) return actual.isEmpty();
+        if (actual.isEmpty()) return false;
+        if (hot && !isHotEnough(actual)) return false;
+        if (PlatformHooks.hasItemTag(required)) return PlatformHooks.isSameItemSameTags(actual, required);
+        return actual.is(required.getItem());
+    }
+
+    public boolean isHot() {
+        return hot;
+    }
+
+    public AnvilRecipe setHot(boolean hot) {
+        this.hot = hot;
+        return this;
+    }
+
+    /** {@code AnvilSmithingHotRecipe.doesStackMatch}: ItemHot unter halber Hitze passt nicht. */
+    public static boolean isHotEnough(ItemStack stack) {
+        if (stack.getItem() instanceof com.hbm_m.item.special.ItemHot) {
+            return com.hbm_m.item.special.ItemHot.getHeat(stack) >= 0.5D;
+        }
+        return true;
+    }
+
+    /** {@code AnvilSmithingHotRecipe.getOutput}: sind beide Zutaten und das Ergebnis ItemHot, erbt es die mittlere Hitze. */
+    public ItemStack getOutputFor(ItemStack left, ItemStack right) {
+        ItemStack output = getResultItemSafe();
+        if (hot && left.getItem() instanceof com.hbm_m.item.special.ItemHot && right.getItem() instanceof com.hbm_m.item.special.ItemHot
+                && output.getItem() instanceof com.hbm_m.item.special.ItemHot) {
+            double h1 = com.hbm_m.item.special.ItemHot.getHeat(left);
+            double h2 = com.hbm_m.item.special.ItemHot.getHeat(right);
+            com.hbm_m.item.special.ItemHot.heatUp(output, (h1 + h2) / 2D);
+        }
+        return output;
     }
 
     public boolean canCraftOn(AnvilTier tier) {
@@ -254,7 +294,8 @@ public class AnvilRecipe extends PlatformRecipe {
             String blueprintPool = GsonHelper.getAsString(json, "blueprint_pool", null);
             OverlayType overlay = OverlayType.byName(GsonHelper.getAsString(json, "overlay", "none"));
 
-            return new AnvilRecipe(id, inputA, inputB, inventoryInputs, outputs, tier, upper, blueprintPool, overlay, consumeA, consumeB);
+            return new AnvilRecipe(id, inputA, inputB, inventoryInputs, outputs, tier, upper, blueprintPool, overlay, consumeA, consumeB)
+                    .setHot(GsonHelper.getAsBoolean(json, "hot", false));
         }
 
         @Override
@@ -287,8 +328,9 @@ public class AnvilRecipe extends PlatformRecipe {
             }
             String blueprintPool = buffer.readBoolean() ? buffer.readUtf() : null;
             OverlayType overlay = OverlayType.values()[buffer.readVarInt()];
+            boolean hot = buffer.readBoolean();
 
-            return new AnvilRecipe(id, inputA, inputB, inventoryInputs, outputs, tier, upper, blueprintPool, overlay, consumeA, consumeB);
+            return new AnvilRecipe(id, inputA, inputB, inventoryInputs, outputs, tier, upper, blueprintPool, overlay, consumeA, consumeB).setHot(hot);
         }
 
         @Override
@@ -319,6 +361,7 @@ public class AnvilRecipe extends PlatformRecipe {
                 buffer.writeBoolean(false);
             }
             buffer.writeVarInt(recipe.overlay.ordinal());
+            buffer.writeBoolean(recipe.hot);
         }
 
         private static ItemStack itemStackFromJson(JsonObject object) {

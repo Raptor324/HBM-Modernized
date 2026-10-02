@@ -1,0 +1,10 @@
+{
+  "loader": "forge:obj",
+  "model": "hbm_m:models/block/lights/fluorescent_lamp_off_north_cap_west.obj",
+  "flip_v": true,
+  "render_type": "minecraft:cutout",
+  "textures": {
+    "texture": "hbm_m:block/fluorescent_lamp_off",
+    "particle": "hbm_m:block/fluorescent_lamp_off"
+  }
+}

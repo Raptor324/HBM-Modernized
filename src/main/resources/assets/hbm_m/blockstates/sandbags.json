@@ -1,0 +1,52 @@
+{
+ "variants": {
+  "north=false,south=false,east=false,west=false": {
+   "model": "hbm_m:block/deco/sandbags_0000"
+  },
+  "north=false,south=false,east=false,west=true": {
+   "model": "hbm_m:block/deco/sandbags_0001"
+  },
+  "north=false,south=false,east=true,west=false": {
+   "model": "hbm_m:block/deco/sandbags_0010"
+  },
+  "north=false,south=false,east=true,west=true": {
+   "model": "hbm_m:block/deco/sandbags_0011"
+  },
+  "north=false,south=true,east=false,west=false": {
+   "model": "hbm_m:block/deco/sandbags_0100"
+  },
+  "north=false,south=true,east=false,west=true": {
+   "model": "hbm_m:block/deco/sandbags_0101"
+  },
+  "north=false,south=true,east=true,west=false": {
+   "model": "hbm_m:block/deco/sandbags_0110"
+  },
+  "north=false,south=true,east=true,west=true": {
+   "model": "hbm_m:block/deco/sandbags_0111"
+  },
+  "north=true,south=false,east=false,west=false": {
+   "model": "hbm_m:block/deco/sandbags_1000"
+  },
+  "north=true,south=false,east=false,west=true": {
+   "model": "hbm_m:block/deco/sandbags_1001"
+  },
+  "north=true,south=false,east=true,west=false": {
+   "model": "hbm_m:block/deco/sandbags_1010"
+  },
+  "north=true,south=false,east=true,west=true": {
+   "model": "hbm_m:block/deco/sandbags_1011"
+  },
+  "north=true,south=true,east=false,west=false": {
+   "model": "hbm_m:block/deco/sandbags_1100"
+  },
+  "north=true,south=true,east=false,west=true": {
+   "model": "hbm_m:block/deco/sandbags_1101"
+  },
+  "north=true,south=true,east=true,west=false": {
+   "model": "hbm_m:block/deco/sandbags_1110"
+  },
+  "north=true,south=true,east=true,west=true": {
+   "model": "hbm_m:block/deco/sandbags_1111"
+  }
+ }
+}

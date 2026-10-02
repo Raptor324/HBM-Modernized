@@ -1,0 +1,30 @@
+{
+ "variants": {
+  "facing=up": {
+   "model": "hbm_m:block/bomb/block_semtex"
+  },
+  "facing=down": {
+   "model": "hbm_m:block/bomb/block_semtex",
+   "x": 180
+  },
+  "facing=north": {
+   "model": "hbm_m:block/bomb/block_semtex",
+   "x": 90
+  },
+  "facing=south": {
+   "model": "hbm_m:block/bomb/block_semtex",
+   "x": 90,
+   "y": 180
+  },
+  "facing=west": {
+   "model": "hbm_m:block/bomb/block_semtex",
+   "x": 90,
+   "y": 270
+  },
+  "facing=east": {
+   "model": "hbm_m:block/bomb/block_semtex",
+   "x": 90,
+   "y": 90
+  }
+ }
+}

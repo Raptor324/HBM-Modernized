@@ -18,7 +18,7 @@ public class MachineBatterySocketModelLoader extends AbstractObjPartModelLoader<
 
     @Override
     protected Set<String> getPartNames(JsonObject jsonObject) {
-        return Set.of("Socket", "Battery");
+        return Set.of("Socket", "Battery", "Capacitor");
     }
 
     @Override

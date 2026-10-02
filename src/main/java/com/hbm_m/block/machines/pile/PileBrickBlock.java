@@ -165,7 +165,10 @@ public class PileBrickBlock extends Block {
     //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
-        return assemble(level, pos, player, hand, hit);
+        InteractionResult r = assemble(level, pos, player, hand, hit);
+        // Original onScrew liefert nach der Seitenpruefung immer true -> Abnutzung des Bohrers
+        if (r != InteractionResult.PASS) com.hbm_m.item.tool.ItemTooling.onScrewed(player, hand);
+        return r;
     }
     //?} else {
     /*@Override

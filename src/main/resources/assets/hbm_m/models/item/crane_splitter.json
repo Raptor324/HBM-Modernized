@@ -1,0 +1,130 @@
+{
+  "parent": "minecraft:block/block",
+  "loader": "forge:obj",
+  "model": "hbm_m:models/item/crane_splitter.obj",
+  "flip_v": true,
+  "render_type": "minecraft:cutout",
+  "textures": {
+    "l_top_left": "hbm_m:block/crane_splitter_top_left",
+    "l_top_right": "hbm_m:block/crane_splitter_top_right",
+    "l_back_left": "hbm_m:block/crane_splitter_back_left",
+    "l_front_left": "hbm_m:block/crane_splitter_front_left",
+    "l_inner": "hbm_m:block/crane_splitter_inner",
+    "l_inner_side": "hbm_m:block/crane_splitter_inner_side",
+    "l_belt": "hbm_m:block/crane_splitter_belt",
+    "l_left": "hbm_m:block/crane_splitter_left",
+    "r_top_right": "hbm_m:block/crane_splitter_top_right",
+    "r_top_left": "hbm_m:block/crane_splitter_top_left",
+    "r_back_right": "hbm_m:block/crane_splitter_back_right",
+    "r_front_right": "hbm_m:block/crane_splitter_front_right",
+    "r_inner": "hbm_m:block/crane_splitter_inner",
+    "r_inner_side": "hbm_m:block/crane_splitter_inner_side",
+    "r_belt": "hbm_m:block/crane_splitter_belt",
+    "r_right": "hbm_m:block/crane_splitter_right",
+    "particle": "hbm_m:block/crane_splitter_inner_side"
+  },
+  "display": {
+    "gui": {
+      "rotation": [
+        30,
+        225,
+        0
+      ],
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.4,
+        0.4,
+        0.4
+      ]
+    },
+    "ground": {
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "translation": [
+        0,
+        3,
+        0
+      ],
+      "scale": [
+        0.25,
+        0.25,
+        0.25
+      ]
+    },
+    "fixed": {
+      "rotation": [
+        0,
+        0,
+        0
+      ],
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.4,
+        0.4,
+        0.4
+      ]
+    },
+    "thirdperson_righthand": {
+      "rotation": [
+        75,
+        45,
+        0
+      ],
+      "translation": [
+        0,
+        2.5,
+        0
+      ],
+      "scale": [
+        0.3,
+        0.3,
+        0.3
+      ]
+    },
+    "firstperson_righthand": {
+      "rotation": [
+        0,
+        45,
+        0
+      ],
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.3,
+        0.3,
+        0.3
+      ]
+    },
+    "firstperson_lefthand": {
+      "rotation": [
+        0,
+        225,
+        0
+      ],
+      "translation": [
+        0,
+        0,
+        0
+      ],
+      "scale": [
+        0.3,
+        0.3,
+        0.3
+      ]
+    }
+  }
+}

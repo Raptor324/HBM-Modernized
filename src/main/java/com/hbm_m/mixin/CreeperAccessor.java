@@ -16,6 +16,11 @@ public interface CreeperAccessor {
         throw new AssertionError();
     }
 
+    @Accessor("DATA_IS_IGNITED")
+    static EntityDataAccessor<Boolean> hbm_m$getDataIsIgnited() {
+        throw new AssertionError();
+    }
+
     @Accessor("maxSwell")
     void hbm_m$setMaxSwell(int maxSwell);
 }

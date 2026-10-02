@@ -129,7 +129,7 @@ public class PileBlock extends BaseEntityBlock {
             PileCoreBlockEntity core = pile.getCore(level);
             if (core != null) {
                 Direction dir = hit.getDirection().getOpposite();
-                core.drillChannel(level, pos, dir, player);
+                if (core.drillChannel(level, pos, dir, player)) com.hbm_m.item.tool.ItemTooling.onScrewed(player, hand);
                 return InteractionResult.CONSUME;
             }
         }

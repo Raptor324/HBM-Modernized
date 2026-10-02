@@ -1,0 +1,13 @@
+{
+  "parent": "minecraft:block/block",
+  "loader": "forge:obj",
+  "model": "hbm_m:models/block/deco/crt.obj",
+  "flip_v": true,
+  "render_type": "minecraft:cutout",
+  "textures": {
+    "texture": "hbm_m:block/deco/crt_blinking",
+    "screen": "hbm_m:block/deco/crt_blinking",
+    "particle": "hbm_m:block/deco/crt_blinking"
+  },
+  "mtl_override": "hbm_m:models/block/deco/crt_lit.mtl"
+}

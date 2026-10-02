@@ -39,8 +39,9 @@ import net.minecraft.world.level.block.state.BlockState;
  * trifft, sprengt beim Aufprall und laesst sich danach wieder aufsammeln und einbauen. Je heisser
  * der Motor beim Platzen war, desto weiter fliegt es.</p>
  *
- * <p><b>Anmerkung:</b> das Original verlangt je Bauart ein eigenes Zahnrad (Metadatenvarianten);
- * dieser Port kennt nur das eine {@code gear_large}, das damit alle drei repariert.
+ * <p>Wie im Original verlangt jede Bauart ihr eigenes Zahnrad ({@code getGeatMeta}): der normale Motor
+ * {@code gear_large}, der Stahlmotor {@code gear_large_steel}. Meta 2 (kreativ) gibt es als Gegenstand nicht; hier
+ * gilt dafuer {@code gear_large}.
  */
 public class MachineStirlingBlockEntity extends BaseMachineBlockEntity {
 
@@ -144,7 +145,7 @@ public class MachineStirlingBlockEntity extends BaseMachineBlockEntity {
 
         com.hbm_m.entity.projectile.CogEntity cog = com.hbm_m.entity.projectile.CogEntity.create(level,
                 pos.getX() + 0.5 + facing.getStepX(), pos.getY() + 1, pos.getZ() + 0.5 + facing.getStepZ(),
-                facing);
+                facing).setMeta(getGeatMeta());
         cog.setDeltaMovement(sideways.getStepX(),
                 1D + (heat - maxHeat) * 0.0001D,
                 sideways.getStepZ());
@@ -158,15 +159,28 @@ public class MachineStirlingBlockEntity extends BaseMachineBlockEntity {
 
     /** Rechtsklick mit passendem Zahnrad repariert die Maschine (1:1 aus dem Original). */
     public boolean tryRepair(Player player, ItemStack held) {
-        if (hasCog || held.getItem() != ModItems.GEAR_LARGE.get()) return false;
+        if (hasCog || held.isEmpty() || held.getItem() != gearFor(getGeatMeta()).getItem()) return false;
         held.shrink(1);
         hasCog = true;
         if (level != null) {
-            level.playSound(null, worldPosition, SoundEvents.ANVIL_USE, SoundSource.BLOCKS, 1.0F, 1.0F);
+            level.playSound(null, worldPosition.getX() + 0.5, worldPosition.getY() + 0.5, worldPosition.getZ() + 0.5,
+                    com.hbm_m.sound.HbmSoundsNT.get("hbm:item.upgradePlug"), SoundSource.BLOCKS, 1.5F, 0.75F);
         }
         setChanged();
         sendUpdateToClient();
         return true;
+    }
+
+    /** Original TileEntityStirling.getGeatMeta: 0 normal, 1 Stahl, 2 kreativ. */
+    public int getGeatMeta() {
+        BlockState state = getBlockState();
+        return state.is(ModBlocks.STIRLING.get()) ? 0 : state.is(ModBlocks.STIRLING_CREATIVE.get()) ? 2 : 1;
+    }
+
+    /** Das Zahnrad zur Bauart ({@code new ItemStack(gear_large, 1, meta)}). */
+    public static ItemStack gearFor(int meta) {
+        if (meta == 1) return new ItemStack(com.hbm_m.item.PartTabMetaItems.get("gear_large_steel").get());
+        return new ItemStack(ModItems.GEAR_LARGE.get());
     }
 
     public boolean hasCog() {

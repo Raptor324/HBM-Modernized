@@ -1,0 +1,34 @@
+{
+ "variants": {
+  "facing=east,half=left": {
+   "model": "hbm_m:block/crane_splitter_left"
+  },
+  "facing=east,half=right": {
+   "model": "hbm_m:block/crane_splitter_right"
+  },
+  "facing=north,half=left": {
+   "model": "hbm_m:block/crane_splitter_left",
+   "y": 270
+  },
+  "facing=north,half=right": {
+   "model": "hbm_m:block/crane_splitter_right",
+   "y": 270
+  },
+  "facing=west,half=left": {
+   "model": "hbm_m:block/crane_splitter_left",
+   "y": 180
+  },
+  "facing=west,half=right": {
+   "model": "hbm_m:block/crane_splitter_right",
+   "y": 180
+  },
+  "facing=south,half=left": {
+   "model": "hbm_m:block/crane_splitter_left",
+   "y": 90
+  },
+  "facing=south,half=right": {
+   "model": "hbm_m:block/crane_splitter_right",
+   "y": 90
+  }
+ }
+}

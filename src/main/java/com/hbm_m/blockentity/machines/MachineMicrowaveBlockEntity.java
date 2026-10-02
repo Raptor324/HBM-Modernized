@@ -23,10 +23,10 @@ import net.minecraft.world.level.block.state.BlockState;
 /**
  * Microwave: Direktport der Kernlogik aus {@code TileEntityMicrowave} (1.7.10 Original).
  * <p>
- * Vereinfachung: das Original nutzt Vanilla {@code FurnaceRecipes.smelting()} gefiltert auf
+ * Rezepte: das Original nutzt Vanilla {@code FurnaceRecipes.smelting()} gefiltert auf
  * {@code ItemFood}-Eingaben/-Ergebnisse - hier 1:1 uebernommen ueber die moderne
  * {@code RecipeType.SMELTING}-Suche mit einem zusaetzlichen {@code isEdible()}-Filter auf
- * Eingang UND Ergebnis (entspricht {@code instanceof ItemFood} Check im Original). Das
+ * Eingang ODER Ergebnis (wie der {@code instanceof ItemFood}-Check im Original). Das
  * OpenComputers-Interface des Originals entfaellt (dieser Port hat keine OC-Integration).
  * <p>
  * WICHTIG - 1:1 aus dem Original uebernommenes Verhalten: bei {@code speed == maxSpeed} (5)

@@ -1,0 +1,19 @@
+{
+ "variants": {
+  "facing=south": {
+   "model": "hbm_m:block/deco/crt_blinking",
+   "y": 270
+  },
+  "facing=west": {
+   "model": "hbm_m:block/deco/crt_blinking"
+  },
+  "facing=north": {
+   "model": "hbm_m:block/deco/crt_blinking",
+   "y": 90
+  },
+  "facing=east": {
+   "model": "hbm_m:block/deco/crt_blinking",
+   "y": 180
+  }
+ }
+}

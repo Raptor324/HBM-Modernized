@@ -82,7 +82,7 @@ public class RadioTorchCounterBlockEntity extends BaseMachineBlockEntity impleme
     }
 
     public void nextFilterMode(int index) {
-        matcher.nextMode(index);
+        matcher.nextMode(index, inventory.getStackInSlot(index));
         setChanged();
     }
 

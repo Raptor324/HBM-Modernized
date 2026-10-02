@@ -72,16 +72,8 @@ public class GUIMachineCraneGrabber extends GuiInfoScreen<MachineCraneGrabberMen
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
         if (grabber == null) return super.mouseClicked(mouseX, mouseY, button); // тайл может отсутствовать в реплее Flashback
-        for (int i = 0; i < 9; i++) {
-            Slot slot = this.menu.slots.get(i);
-            if (isHoveringSlot(slot, (int) mouseX, (int) mouseY) && button == 1 && slot.hasItem()) {
-                grabber.nextMode(i);
-                return true;
-            }
-        }
-
         if (isHovering(97, 30, 14, 26, (int) mouseX, (int) mouseY)) {
-            grabber.toggleWhitelist();
+            { net.minecraft.nbt.CompoundTag data = new net.minecraft.nbt.CompoundTag(); data.putBoolean("whitelist", true); com.hbm_m.network.NBTControlPacket.sendToServer(grabber.getBlockPos(), data); playClickSound(); }
             return true;
         }
 

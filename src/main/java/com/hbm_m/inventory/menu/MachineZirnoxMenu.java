@@ -6,7 +6,6 @@ import com.hbm_m.inventory.ModItemStackHandlerContainer;
 import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.item.ModItems;
-import com.hbm_m.item.liquids.FluidBarrelItem;
 import com.hbm_m.item.tags_and_tiers.ModTags;
 import com.hbm_m.platform.DummyItemStackHandler;
 
@@ -165,12 +164,8 @@ public class MachineZirnoxMenu extends AbstractContainerMenu {
             return VanillaFluidEquivalence.sameSubstance(targetFluid, net.minecraft.world.level.material.Fluids.WATER);
         }
 
-        if (!stack.is(ModItems.FLUID_BARREL.get())) {
-            return false;
-        }
-
-        FluidStack fluid = FluidBarrelItem.getFluid(stack);
-        return !fluid.isEmpty() && VanillaFluidEquivalence.sameSubstance(fluid.getFluid(), targetFluid);
+        // Original: alles, was die FluidContainerRegistry als Behaelter dieser Fluessigkeit kennt
+        return com.hbm_m.inventory.FluidContainerRegistry.getFluidContent(stack, targetFluid) > 0;
     }
 
     private static final class TakeOnlySlot extends Slot {

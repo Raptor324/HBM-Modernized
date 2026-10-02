@@ -62,24 +62,24 @@ public class MobGearHandler {
             new Entry(ModItems.STEEL_HELMET.get(), 8)));
 
     private static final SlotPool ZOMBIE_CHEST = new SlotPool(7000, List.of(
-            new Entry(ModItems.STARMETAL_CHESTPLATE.get(), 1),
-            new Entry(ModItems.COBALT_CHESTPLATE.get(), 2),
-            new Entry(ModItems.ALLOY_CHESTPLATE.get(), 2),
-            new Entry(ModItems.STEEL_CHESTPLATE.get(), 2)));
+            new Entry(ModItems.STARMETAL_PLATE.get(), 1),
+            new Entry(ModItems.COBALT_PLATE.get(), 2),
+            new Entry(ModItems.ALLOY_PLATE.get(), 2),
+            new Entry(ModItems.STEEL_PLATE.get(), 2)));
 
     private static final SlotPool SKELETON_CHEST = new SlotPool(7000, List.of(
-            new Entry(ModItems.STARMETAL_CHESTPLATE.get(), 1),
-            new Entry(ModItems.COBALT_CHESTPLATE.get(), 2),
-            new Entry(ModItems.ALLOY_CHESTPLATE.get(), 2),
-            new Entry(ModItems.STEEL_CHESTPLATE.get(), 8),
-            new Entry(ModItems.TITANIUM_CHESTPLATE.get(), 4)));
+            new Entry(ModItems.STARMETAL_PLATE.get(), 1),
+            new Entry(ModItems.COBALT_PLATE.get(), 2),
+            new Entry(ModItems.ALLOY_PLATE.get(), 2),
+            new Entry(ModItems.STEEL_PLATE.get(), 8),
+            new Entry(ModItems.TITANIUM_PLATE.get(), 4)));
 
     private static final SlotPool ZOMBIE_LEGS = new SlotPool(7000, List.of(
             new Entry(ModItems.ZIRCONIUM_LEGS.get(), 1),
-            new Entry(ModItems.COBALT_LEGGINGS.get(), 2),
-            new Entry(ModItems.STEEL_LEGGINGS.get(), 16),
-            new Entry(ModItems.TITANIUM_LEGGINGS.get(), 8),
-            new Entry(ModItems.ALLOY_LEGGINGS.get(), 2)));
+            new Entry(ModItems.COBALT_LEGS.get(), 2),
+            new Entry(ModItems.STEEL_LEGS.get(), 16),
+            new Entry(ModItems.TITANIUM_LEGS.get(), 8),
+            new Entry(ModItems.ALLOY_LEGS.get(), 2)));
 
     private static final SlotPool SKELETON_LEGS = ZOMBIE_LEGS;
 
@@ -96,7 +96,7 @@ public class MobGearHandler {
 
     /** Рукопашный пул зомби (MobUtil.slotPoolCommonS слот 0; reer_graar в порт не перенесён). */
     private static final SlotPool ZOMBIE_HAND = new SlotPool(10000, List.of(
-            new Entry(ModItems.PIPE_LEAD.get(), 30),
+            new Entry(ModItems.WEAPON_PIPE_LEAD.get(), 30),
             new Entry(ModItems.CROWBAR.get(), 25),
             new Entry(ModItems.GEIGER_COUNTER.get(), 20),
             new Entry(ModItems.STEEL_PICKAXE.get(), 12),

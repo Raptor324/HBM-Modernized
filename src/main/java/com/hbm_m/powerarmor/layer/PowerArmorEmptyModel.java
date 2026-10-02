@@ -29,6 +29,34 @@ public class PowerArmorEmptyModel extends HumanoidModel<LivingEntity> {
         return LayerDefinition.create(meshdefinition, 64, 64);
     }
 
+    /** Sichtbarkeit je Slot und Pose des Originalmodells uebernehmen. */
+    public static PowerArmorEmptyModel prepare(PowerArmorEmptyModel model, net.minecraft.world.entity.EquipmentSlot slot, HumanoidModel<?> original) {
+        model.setAllVisible(false);
+        switch (slot) {
+            case HEAD -> model.head.visible = true;
+            case CHEST -> {
+                model.body.visible = true;
+                model.rightArm.visible = true;
+                model.leftArm.visible = true;
+            }
+            case LEGS, FEET -> {
+                model.rightLeg.visible = true;
+                model.leftLeg.visible = true;
+            }
+            default -> {}
+        }
+        model.crouching = original.crouching;
+        model.riding = original.riding;
+        model.young = original.young;
+        model.head.copyFrom(original.head);
+        model.body.copyFrom(original.body);
+        model.rightArm.copyFrom(original.rightArm);
+        model.leftArm.copyFrom(original.leftArm);
+        model.rightLeg.copyFrom(original.rightLeg);
+        model.leftLeg.copyFrom(original.leftLeg);
+        return model;
+    }
+
     //? if < 1.21.1 {
     @Override
     public void renderToBuffer(@NotNull PoseStack poseStack, @NotNull VertexConsumer buffer, int packedLight,

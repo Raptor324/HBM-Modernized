@@ -146,11 +146,48 @@ public final class MachineCraftingRecipeGenerator {
         shapeless(writer, "fluid_duct_silver", ModItems.FLUID_DUCT_SILVER.get(), 1,
                 ModItems.FLUID_DUCT.get(), mat(ModMaterials.ALUMINUM, MaterialShape.PLATE));
 
-        // Original: "S", "W" mit S = Hebel, W = fluid_duct_paintable
+        // CraftingManager: fraction_spacer
+        shaped(writer, "fraction_spacer", ModBlocks.FRACTION_SPACER.get(), 1,
+                new String[]{"BHB"},
+                'H', ModItems.SHELL_STEEL.get(),
+                'B', Items.IRON_BARS);
+
+        // CraftingManager: crane_partitioner
+        shaped(writer, "crane_partitioner", ModBlocks.CRANE_PARTITIONER.get(), 1,
+                new String[]{" M ", "BCB"},
+                'M', ModItems.MICROCHIP.get(),
+                'B', ModItems.CONVEYOR_WAND_REGULAR.get(),
+                'C', ModItems.CRATE_STEEL.get());
+
+        // CraftingManager: pipe_anchor
+        shaped(writer, "pipe_anchor", ModBlocks.PIPE_ANCHOR.get(), 2,
+                new String[]{"P", "P", "S"},
+                'P', ModItems.PIPE_STEEL.get(),
+                'S', mat(ModMaterials.STEEL, MaterialShape.INGOT));
+
+        // CraftingManager: fluid_duct_paintable / fluid_duct_paintable_block_exhaust
+        shaped(writer, "fluid_duct_paintable", ModBlocks.FLUID_DUCT_PAINTABLE.get(), 8,
+                new String[]{"SAS", "A A", "SAS"},
+                'S', mat(ModMaterials.STEEL, MaterialShape.INGOT),
+                'A', mat(ModMaterials.ALUMINUM, MaterialShape.PLATE));
+        shaped(writer, "fluid_duct_paintable_block_exhaust", ModBlocks.FLUID_DUCT_PAINTABLE_BLOCK_EXHAUST.get(), 8,
+                new String[]{"SAS", "A A", "SAS"},
+                'S', Items.IRON_INGOT,
+                'A', mat(ModMaterials.POLYMER, MaterialShape.PLATE));
+
+        // CraftingManager: fluid_valve / fluid_switch / fluid_counter_valve
         shaped(writer, "fluid_valve", ModBlocks.FLUID_VALVE.get(), 1,
                 new String[]{"S", "W"},
                 'S', Items.LEVER,
-                'W', ModItems.FLUID_DUCT.get());
+                'W', ModBlocks.FLUID_DUCT_PAINTABLE.get());
+        shaped(writer, "fluid_switch", ModBlocks.FLUID_SWITCH.get(), 1,
+                new String[]{"S", "W"},
+                'S', Items.REDSTONE,
+                'W', ModBlocks.FLUID_DUCT_PAINTABLE.get());
+        shaped(writer, "fluid_counter_valve", ModBlocks.FLUID_COUNTER_VALVE.get(), 1,
+                new String[]{"S", "W"},
+                'S', ModItems.MICROCHIP.get(),
+                'W', ModBlocks.FLUID_SWITCH.get());
 
         shaped(writer, "fluid_exhaust", ModBlocks.FLUID_EXHAUST.get(), 1,
                 new String[]{"P", "D"},
@@ -400,23 +437,47 @@ public final class MachineCraftingRecipeGenerator {
     // --- Dritte Fuhre: Kraene, Rohrpost, Restmaschinen -----------------------
 
     private static void cranesAndTubes(Consumer<FinishedRecipe> writer) {
-        // Kraene. Im Original sind die Zutaten Foerderband-Zauberstaebe und Druckluftkolben;
-        // beides kennt der Port nicht, deshalb der Stahlkolbensatz und einfache Schaltkreise.
-        // Muster und Stueckzahlen bleiben wie im Original.
-        crane(writer, "crane_inserter", ModBlocks.CRANE_INSERTER.get(),
-                new String[]{"CCC", "C C", "CPC"});
-        crane(writer, "crane_extractor", ModBlocks.CRANE_EXTRACTOR.get(),
-                new String[]{"CCC", "CPC", "CCC"});
-        crane(writer, "crane_grabber", ModBlocks.CRANE_GRABBER.get(),
-                new String[]{"C C", "P P", "CCC"});
-        crane(writer, "crane_splitter", ModBlocks.CRANE_SPLITTER.get(),
-                new String[]{"III", "PCP", "III"});
-        crane(writer, "crane_router", ModBlocks.CRANE_ROUTER.get(),
-                new String[]{"PIP", "ICI", "PIP"});
-        crane(writer, "crane_boxer", ModBlocks.CRANE_BOXER.get(),
-                new String[]{"WWW", "WPW", "CCC"});
-        crane(writer, "crane_unboxer", ModBlocks.CRANE_UNBOXER.get(),
-                new String[]{"WWW", "WSW", "CCC"});
+        // Kraene 1:1 (CraftingManager): Gehaeuse Steinziegel/Eisen/Stahl ergibt 1/2/4 Stueck,
+        // B = Foerderband-Stab, P = Druckluftkolben.
+        net.minecraft.world.item.Item piston = pistonPneumatic();
+        net.minecraft.world.item.Item wand = ModItems.CONVEYOR_WAND_REGULAR.get();
+        Object[][] casings = {
+                {Blocks.STONE_BRICKS, 1, "stonebrick"},
+                {Items.IRON_INGOT, 2, "iron"},
+                {mat(ModMaterials.STEEL, MaterialShape.INGOT), 4, "steel"}};
+        for (Object[] c : casings) {
+            ItemLike casing = (ItemLike) c[0];
+            int amount = (Integer) c[1];
+            shaped(writer, "crane_inserter_" + c[2], ModBlocks.CRANE_INSERTER.get(), amount,
+                    new String[]{"CCC", "C C", "CBC"}, 'C', casing, 'B', wand);
+            shaped(writer, "crane_extractor_" + c[2], ModBlocks.CRANE_EXTRACTOR.get(), amount,
+                    new String[]{"CCC", "CPC", "CBC"}, 'C', casing, 'B', wand, 'P', piston);
+            shaped(writer, "crane_grabber_" + c[2], ModBlocks.CRANE_GRABBER.get(), amount,
+                    new String[]{"C C", "P P", "CBC"}, 'C', casing, 'B', wand, 'P', piston);
+        }
+        shaped(writer, "crane_boxer", ModBlocks.CRANE_BOXER.get(), 1,
+                new String[]{"WWW", "WPW", "CCC"}, 'W', net.minecraft.tags.ItemTags.PLANKS, 'P', piston, 'C', wand);
+        shaped(writer, "crane_unboxer", ModBlocks.CRANE_UNBOXER.get(), 1,
+                new String[]{"WWW", "WPW", "CCC"}, 'W', Items.STICK, 'P', Items.SHEARS, 'C', wand);
+        shaped(writer, "crane_router", ModBlocks.CRANE_ROUTER.get(), 1,
+                new String[]{"PIP", "ICI", "PIP"}, 'P', piston, 'I', polymer(MaterialShape.PLATE), 'C', ModItems.INTEGRATED_CIRCUIT.get());
+        shaped(writer, "crane_splitter", ModBlocks.CRANE_SPLITTER.get(), 1,
+                new String[]{"III", "PCP", "III"}, 'P', piston, 'I', mat(ModMaterials.STEEL, MaterialShape.INGOT), 'C', ModItems.VACUUM_TUBE.get());
+        shaped(writer, "conveyor_press", ModBlocks.CONVEYOR_PRESS.get(), 1,
+                new String[]{"CPC", "CBC", "CCC"}, 'C', mat(ModMaterials.COPPER, MaterialShape.PLATE), 'P', ModBlocks.EPRESS.get(), 'B', wand);
+
+        // Foerderband-Staebe 1:1 (CraftingManager). EXPRESS braucht 1000 mB Schmiermittel im Behaelter
+        // (Fluids.LUBRICANT.getDict) und folgt mit den Fluessigkeitsbehaeltern (R5).
+        shaped(writer, "conveyor_wand_leather", wand, 16,
+                new String[]{"LLL", "I I", "LLL"}, 'L', Items.LEATHER, 'I', Items.IRON_INGOT);
+        shaped(writer, "conveyor_wand_rope", wand, 16,
+                new String[]{"RSR", "I I", "RSR"}, 'I', Items.IRON_INGOT, 'R', com.hbm_m.item.PartTabMetaItems.itemOrNull("plant_item_rope"), 'S', mat(ModMaterials.IRON, MaterialShape.PLATE));
+        shaped(writer, "conveyor_wand_rubber", wand, 64,
+                new String[]{"LLL", "I I", "LLL"}, 'L', com.hbm_m.item.tags_and_tiers.ModTags.Items.RUBBER_BAR, 'I', Items.IRON_INGOT);
+        shaped(writer, "conveyor_wand_double", ModItems.CONVEYOR_WAND_DOUBLE.get(), 1,
+                new String[]{"CPC"}, 'C', wand, 'P', mat(ModMaterials.IRON, MaterialShape.PLATE));
+        shaped(writer, "conveyor_wand_triple", ModItems.CONVEYOR_WAND_TRIPLE.get(), 1,
+                new String[]{"DPC"}, 'C', wand, 'D', ModItems.CONVEYOR_WAND_DOUBLE.get(), 'P', mat(ModMaterials.STEEL, MaterialShape.PLATE));
 
         // Rohrpost: im Original gibt es dafuer kein Werkbankrezept mehr, die Teile stammen aus
         // der Baugruppe. Hier eine durchgaengige Reihe auf Stahl, Polymer und Schaltkreis -
@@ -431,6 +492,10 @@ public final class MachineCraftingRecipeGenerator {
                 ModItems.PISTON_SET_STEEL.get());
         pneumatic(writer, "pneumatic_storage_clutter", ModBlocks.PNEUMATIC_STORAGE_CLUTTER.get(),
                 ModBlocks.CRATE_STEEL.get());
+    }
+
+    private static net.minecraft.world.item.Item pistonPneumatic() {
+        return com.hbm_m.item.PartTabMetaItems.itemOrNull("part_generic_piston_pneumatic");
     }
 
     private static void crane(Consumer<FinishedRecipe> writer, String name, ItemLike out, String[] pattern) {
@@ -484,11 +549,7 @@ public final class MachineCraftingRecipeGenerator {
                 'D', ModItems.INTEGRATED_CIRCUIT.get(),
                 'I', polymer(MaterialShape.INGOT));
 
-        // Seemine: Stahlhuelle mit Sprengsatz - im Original ohne eigenes Rezept.
-        shaped(writer, "naval_mine", ModBlocks.NAVAL_MINE.get(), 1,
-                new String[]{" S ", "STS", " S "},
-                'S', ModItems.SHELL_STEEL.get(),
-                'T', Blocks.TNT);
+        // Seemine: Original ass.minenaval (AssemblerRecipeGenerator), kein Werkbankrezept.
 
         // Batterieblock und Ofenblock: im Original Baugruppen, hier als Werkbankstufe.
         shaped(writer, "bat9000", ModBlocks.BAT9000.get(), 1,
@@ -497,10 +558,7 @@ public final class MachineCraftingRecipeGenerator {
                 'C', ModItems.CAPACITOR_BOARD.get(),
                 'B', ModItems.BATTERY_LITHIUM.get());
 
-        shaped(writer, "orbus", ModBlocks.ORBUS.get(), 1,
-                new String[]{"PPP", "PTP", "PPP"},
-                'P', mat(ModMaterials.STEEL, MaterialShape.PLATE_CAST),
-                'T', ModItems.TANK_STEEL.get());
+        // orbus: 1:1 ass.orbus im AssemblerRecipeGenerator (kein Werkbankrezept im Original)
     }
 
     private static void barrel(Consumer<FinishedRecipe> writer, String name, ItemLike out,
@@ -544,7 +602,18 @@ public final class MachineCraftingRecipeGenerator {
             if (all.indexOf(symbol) < 0) {
                 continue;
             }
-            ItemLike ingredient = (ItemLike) keys[i + 1];
+            Object key = keys[i + 1];
+            if (key instanceof net.minecraft.tags.TagKey<?> tag) {
+                @SuppressWarnings("unchecked")
+                net.minecraft.tags.TagKey<net.minecraft.world.item.Item> itemTag = (net.minecraft.tags.TagKey<net.minecraft.world.item.Item>) tag;
+                builder.define(symbol, itemTag);
+                continue;
+            }
+            if (key instanceof net.minecraft.world.item.crafting.Ingredient ing) {
+                builder.define(symbol, ing);
+                continue;
+            }
+            ItemLike ingredient = (ItemLike) key;
             builder.define(symbol, ingredient);
             if (first == null) {
                 first = ingredient;

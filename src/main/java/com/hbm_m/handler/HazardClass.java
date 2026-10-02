@@ -6,16 +6,16 @@ package com.hbm_m.handler;
  */
 public enum HazardClass {
 
-    // Угольная пыль, крупная взвесь
-    PARTICLE_COARSE("hazard.particleCoarse"),
-    // Асбестовая пыль, мелкодисперсные частицы
-    PARTICLE_FINE("hazard.particleFine"),
-    GAS_MONOXIDE("hazard.gasMonoxide"),
-    GAS_LUNG("hazard.gasLung"),
-    GAS_BLISTERING("hazard.gasBlistering"),
-    BACTERIA("hazard.bacteria"),
-    SAND("hazard.sand"),
-    LIGHT("hazard.light");
+    GAS_LUNG("hazard.gasChlorine"),				//also attacks eyes -> no half mask
+    GAS_MONOXIDE("hazard.gasMonoxide"),				//only affects lungs
+    GAS_INERT("hazard.gasInert"),					//SA
+    PARTICLE_COARSE("hazard.particleCoarse"),		//only affects lungs
+    PARTICLE_FINE("hazard.particleFine"),			//only affects lungs
+    BACTERIA("hazard.bacteria"),					//no half masks
+    //NERVE_AGENT("hazard.nerveAgent"),				//aggressive nerve agent, also attacks skin
+    GAS_BLISTERING("hazard.corrosive"),				//corrosive substance, also attacks skin
+    SAND("hazard.sand"),							//blinding sand particles
+    LIGHT("hazard.light");							//blinding light
 
     public final String translationKey;
 

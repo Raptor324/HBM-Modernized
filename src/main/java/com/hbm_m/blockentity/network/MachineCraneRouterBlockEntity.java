@@ -3,43 +3,31 @@ package com.hbm_m.blockentity.network;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.hbm_m.block.network.IConveyorBelt;
-import com.hbm_m.block.network.IEnterableBlock;
+import com.hbm_m.api.tile.IControlReceiver;
 import com.hbm_m.blockentity.BaseMachineBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
-import com.hbm_m.entity.conveyor.MovingConveyorItemEntity;
+import com.hbm_m.interfaces.ICopiable;
 import com.hbm_m.inventory.filter.ModulePatternMatcher;
 import com.hbm_m.inventory.menu.MachineCraneRouterMenu;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.nbt.ListTag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
-//? if forge {
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.items.IItemHandler;
-import net.minecraftforge.items.ItemHandlerHelper;
-//?}
-
 /**
- * Crane Router - Port von {@code CraneRouter}/{@code TileEntityCraneRouter} (1.7.10 Original).
- * Passiver Foerderband-Sortierer ohne eigenes FACING: 6 Seiten (DOWN/UP/NORTH/SOUTH/WEST/EAST,
- * gleiche Ordinal-Reihenfolge wie das Original-{@code ForgeDirection}), je mit eigenem 5-Slot-
- * {@link ModulePatternMatcher} und Modus (NONE/WHITELIST/BLACKLIST/WILDCARD). Ankommende Items
- * werden gegen jede aktive Seite geprueft; bei mehreren gueltigen Zielen wird zufaellig gewaehlt;
- * gibt es keine Treffer, greifen WILDCARD-Seiten als Fallback; ansonsten faellt das Item einfach
- * an Ort und Stelle herunter - 1:1 aus dem Original ({@code CraneRouter.getOutputDir}).
+ * 1:1 {@code TileEntityCraneRouter}: je Seite 5 Filter mit eigenem Matcher und ein Modus (aus, Weissliste, Schwarzliste,
+ * Wildcard). {@link #sort} verteilt Stapel auf die Richtungen; Index 6 = nicht zuzuordnen.
  */
-public class MachineCraneRouterBlockEntity extends BaseMachineBlockEntity implements IEnterableBlock {
+public class MachineCraneRouterBlockEntity extends BaseMachineBlockEntity
+        implements IControlReceiver, ICopiable, CraneBaseBlockEntity.ControlReceiverFilter {
 
     public static final int SLOTS_PER_SIDE = 5;
     public static final int SIDE_COUNT = 6;
@@ -50,57 +38,61 @@ public class MachineCraneRouterBlockEntity extends BaseMachineBlockEntity implem
     public static final int MODE_BLACKLIST = 2;
     public static final int MODE_WILDCARD = 3;
 
-    private final ModulePatternMatcher[] patterns = new ModulePatternMatcher[SIDE_COUNT];
-    private final int[] modes = new int[SIDE_COUNT];
+    public ModulePatternMatcher[] patterns = new ModulePatternMatcher[6]; // Original: "why did i make six matchers???"
+    public int[] modes = new int[6];
 
     public MachineCraneRouterBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.CRANE_ROUTER_BE.get(), pos, state, INVENTORY_SIZE, 0L, 0L, 0L);
-        for (int i = 0; i < SIDE_COUNT; i++) patterns[i] = new ModulePatternMatcher(SLOTS_PER_SIDE);
+        for (int i = 0; i < patterns.length; i++) patterns[i] = new ModulePatternMatcher(5);
     }
 
-    @Override
-    public void onItemEnter(Level level, BlockPos pos, MovingConveyorItemEntity item) {
-        if (level.isClientSide) return;
+    /** Verteilt Kopien der Stapel auf die Richtungen (Index = 3D-Datenwert, 6 = unbekannt). */
+    @SuppressWarnings("unchecked")
+    public List<ItemStack>[] sort(ItemStack... stacks) {
+        List<ItemStack>[] output = new List[7];
+        for (int i = 0; i < 7; i++) output[i] = new ArrayList<>();
 
-        ItemStack stack = item.getItem().copy();
-        Direction dir = getOutputDir(level, stack);
-
-        if (dir == null) {
-            ItemEntity drop = new ItemEntity(level, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, stack);
-            level.addFreshEntity(drop);
-        } else {
-            sendOnRoute(level, pos, dir, stack);
+        for (ItemStack stack : stacks) {
+            if (stack == null || stack.isEmpty()) continue;
+            Direction dir = getOutputDir(stack.copy());
+            output[dir == null ? 6 : dir.get3DDataValue()].add(stack);
         }
-
-        item.discard();
-        setChanged();
+        return output;
     }
 
-    private Direction getOutputDir(Level level, ItemStack stack) {
+    public Direction getOutputDir(ItemStack stack) {
         List<Direction> validDirs = new ArrayList<>();
 
-        for (int side = 0; side < SIDE_COUNT; side++) {
+        // Filter aller Seiten pruefen
+        for (int side = 0; side < 6; side++) {
+            ModulePatternMatcher matcher = patterns[side];
             int mode = modes[side];
+
+            // abgeschaltete und Wildcard-Seiten ueberspringen
             if (mode == MODE_NONE || mode == MODE_WILDCARD) continue;
 
-            boolean matches = false;
-            for (int slot = 0; slot < SLOTS_PER_SIDE; slot++) {
-                ItemStack filter = inventory.getStackInSlot(side * SLOTS_PER_SIDE + slot);
+            boolean matchesFilter = false;
+
+            for (int slot = 0; slot < 5; slot++) {
+                ItemStack filter = inventory.getStackInSlot(side * 5 + slot);
                 if (filter.isEmpty()) continue;
-                if (patterns[side].isValidForFilter(filter, slot, stack)) {
-                    matches = true;
+
+                // ein Treffer genuegt
+                if (matcher.isValidForFilter(filter, slot, stack)) {
+                    matchesFilter = true;
                     break;
                 }
             }
 
-            if ((mode == MODE_WHITELIST && matches) || (mode == MODE_BLACKLIST && !matches)) {
-                validDirs.add(Direction.values()[side]);
+            if ((mode == MODE_WHITELIST && matchesFilter) || (mode == MODE_BLACKLIST && !matchesFilter)) {
+                validDirs.add(Direction.from3DDataValue(side));
             }
         }
 
+        // noch keine Richtung: Wildcard-Seiten
         if (validDirs.isEmpty()) {
-            for (int side = 0; side < SIDE_COUNT; side++) {
-                if (modes[side] == MODE_WILDCARD) validDirs.add(Direction.values()[side]);
+            for (int side = 0; side < 6; side++) {
+                if (modes[side] == MODE_WILDCARD) validDirs.add(Direction.from3DDataValue(side));
             }
         }
 
@@ -108,59 +100,110 @@ public class MachineCraneRouterBlockEntity extends BaseMachineBlockEntity implem
         return validDirs.get(level.random.nextInt(validDirs.size()));
     }
 
-    private void sendOnRoute(Level level, BlockPos pos, Direction dir, ItemStack stack) {
-        BlockPos targetPos = pos.relative(dir);
-        var targetBlock = level.getBlockState(targetPos).getBlock();
-
-        if (targetBlock instanceof IConveyorBelt belt) {
-            var snap = belt.snapNewItem(level, targetPos, new net.minecraft.world.phys.Vec3(
-                    targetPos.getX() + 0.5, targetPos.getY() + 0.5, targetPos.getZ() + 0.5));
-            MovingConveyorItemEntity moving = MovingConveyorItemEntity.create(level, snap.x, snap.y, snap.z, stack);
-            level.addFreshEntity(moving);
-            if (targetBlock instanceof IEnterableBlock enterable) {
-                enterable.onItemEnter(level, targetPos, moving);
-                moving.discard();
-            }
-            return;
-        }
-
-        //? if forge {
-        BlockEntity targetBe = level.getBlockEntity(targetPos);
-        if (targetBe != null) {
-            IItemHandler handler = targetBe.getCapability(ForgeCapabilities.ITEM_HANDLER, dir.getOpposite()).orElse(null);
-            if (handler != null) {
-                ItemStack remainder = ItemHandlerHelper.insertItem(handler, stack, false);
-                if (remainder.isEmpty()) return;
-                stack = remainder;
-            }
-        }
-        //?}
-
-        ItemEntity drop = new ItemEntity(level, targetPos.getX() + 0.5, targetPos.getY() + 0.5, targetPos.getZ() + 0.5, stack);
-        level.addFreshEntity(drop);
+    public static void tick(Level level, BlockPos pos, BlockState state, MachineCraneRouterBlockEntity be) {
+        if (!level.isClientSide) be.sendUpdateToClient();
     }
-
-    // ── Filter/mode API ─────────────────────────────────────────────────────
 
     public ModulePatternMatcher getMatcher(int side) { return patterns[side]; }
     public int getMode(int side) { return modes[side]; }
 
-    public void nextTargetMode(int side) {
-        modes[side] = (modes[side] + 1) % 4;
+    @Override
+    public void nextMode(int index) {
+        int matcher = index / 5;
+        int mIndex = index % 5;
+        this.patterns[matcher].nextMode(mIndex, inventory.getStackInSlot(index));
         setChanged();
+        sendUpdateToClient();
     }
 
-    public void nextFilterMode(int index) {
-        int side = index / SLOTS_PER_SIDE;
-        int slot = index % SLOTS_PER_SIDE;
-        patterns[side].nextMode(slot);
-        setChanged();
+    /** Original {@code initPattern}: {@code initPatternSmart}. */
+    public void initPattern(ItemStack stack, int index) {
+        int matcher = index / 5;
+        int mIndex = index % 5;
+        this.patterns[matcher].initPatternSmart(mIndex, stack);
     }
 
-    public void initPattern(int index, ItemStack stack) {
-        int side = index / SLOTS_PER_SIDE;
-        int slot = index % SLOTS_PER_SIDE;
-        patterns[side].initPattern(slot, stack);
+    @Override public int[] getFilterSlots() { return new int[] { 0, INVENTORY_SIZE }; }
+
+    public boolean hasPermission(Player player) {
+        return Math.sqrt(player.distanceToSqr(worldPosition.getX(), worldPosition.getY(), worldPosition.getZ())) < 20;
+    }
+
+    @Override
+    public void receiveControl(CompoundTag data) {
+        if (data.contains("toggle")) {
+            int i = data.getInt("toggle");
+            modes[i]++;
+            if (modes[i] > 3) modes[i] = 0;
+        }
+        if (data.contains("slot")) setFilterContents(data);
+        setChanged();
+        sendUpdateToClient();
+    }
+
+    // ── Kopierwerkzeug ──────────────────────────────────────────────────────
+
+    @Override
+    public CompoundTag getSettings(Level world, BlockPos pos) {
+        CompoundTag nbt = new CompoundTag();
+        ListTag tags = new ListTag();
+        int count = 0;
+        for (int i = getFilterSlots()[0]; i < getFilterSlots()[1]; i++) {
+            ItemStack stack = inventory.getStackInSlot(i);
+            if (!stack.isEmpty()) {
+                CompoundTag slotNBT = new CompoundTag();
+                slotNBT.putByte("slot", (byte) count);
+                stack.save(slotNBT);
+                tags.add(slotNBT);
+            }
+            count++;
+        }
+        nbt.put("items", tags);
+        nbt.putIntArray("modes", modes);
+        return nbt;
+    }
+
+    @Override
+    public void pasteSettings(CompoundTag nbt, int index, Level world, Player player, BlockPos pos) {
+        ListTag items = nbt.getList("items", 10);
+        int listSize = items.size();
+        if (listSize > 0 && nbt.contains("modes")) {
+            for (int i = 0; i < listSize; i++) {
+                CompoundTag slotNBT = items.getCompound(i);
+                byte slot = slotNBT.getByte("slot");
+                ItemStack loaded = ItemStack.of(slotNBT);
+                if (!loaded.isEmpty() && slot > index * 5 && slot < Math.min(index * 5 + 5, 30)) {
+                    inventory.setStackInSlot(slot, loaded);
+                    nextMode(slot);
+                    setChanged();
+                }
+            }
+            modes = nbt.getIntArray("modes");
+        } else {
+            // Original: IControlReceiverFilter.super.pasteSettings
+            int count = 0;
+            for (int i = getFilterSlots()[0]; i < getFilterSlots()[1]; i++) {
+                if (i < listSize) {
+                    CompoundTag slotNBT = items.getCompound(count);
+                    byte slot = slotNBT.getByte("slot");
+                    ItemStack loaded = ItemStack.of(slotNBT);
+                    boolean router = nbt.contains("modes") && slot > index * 5 && slot < index * +5;
+                    if (!loaded.isEmpty() && index < listSize && (slot < getFilterSlots()[1] || router)) {
+                        inventory.setStackInSlot(slot + getFilterSlots()[0], loaded);
+                        nextMode(slot);
+                        setChanged();
+                    }
+                }
+                count++;
+            }
+        }
+    }
+
+    @Override
+    public String[] infoForDisplay(Level world, BlockPos pos) {
+        String[] options = new String[patterns.length];
+        for (int i = 0; i < options.length; i++) options[i] = "copytool.pattern" + i;
+        return options;
     }
 
     // ── NBT ─────────────────────────────────────────────────────────────────
@@ -168,10 +211,10 @@ public class MachineCraneRouterBlockEntity extends BaseMachineBlockEntity implem
     @Override
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.writeNbtData(tag, registries);
-        for (int i = 0; i < SIDE_COUNT; i++) {
-            CompoundTag patternTag = new CompoundTag();
-            patterns[i].writeToNBT(patternTag);
-            tag.put("pattern" + i, patternTag);
+        for (int i = 0; i < patterns.length; i++) {
+            CompoundTag compound = new CompoundTag();
+            patterns[i].writeToNBT(compound);
+            tag.put("pattern" + i, compound);
         }
         tag.putIntArray("modes", modes);
     }
@@ -179,29 +222,27 @@ public class MachineCraneRouterBlockEntity extends BaseMachineBlockEntity implem
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.readNbtData(tag, registries);
-        for (int i = 0; i < SIDE_COUNT; i++) {
-            patterns[i].readFromNBT(tag.getCompound("pattern" + i));
-        }
+        for (int i = 0; i < patterns.length; i++) patterns[i].readFromNBT(tag.getCompound("pattern" + i));
         int[] loaded = tag.getIntArray("modes");
-        if (loaded.length == SIDE_COUNT) System.arraycopy(loaded, 0, modes, 0, SIDE_COUNT);
+        this.modes = loaded.length == 6 ? loaded : new int[6];
     }
 
-    // ── Slot validation / Menu ─────────────────────────────────────────────
+    /** Original: kein Automatisierungszugriff ({@code TileEntityMachineBase}). */
+    @Override protected boolean isItemValidForSlot(int slot, ItemStack stack) { return false; }
 
+    //? if forge {
     @Override
-    protected boolean isItemValidForSlot(int slot, ItemStack stack) {
-        return true;
-    }
-
-    @Override
-    protected Component getDefaultName() {
-        return Component.translatable("container.hbm_m.crane_router");
+    public <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(net.minecraftforge.common.capabilities.Capability<T> cap, @org.jetbrains.annotations.Nullable Direction side) {
+        if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER) return net.minecraftforge.common.util.LazyOptional.empty();
+        return super.getCapability(cap, side);
     }
 
     @Override
-    public Component getDisplayName() {
-        return getDefaultName();
-    }
+    public @org.jetbrains.annotations.Nullable Object getItemHandler(@org.jetbrains.annotations.Nullable Direction side) { return null; }
+    //?}
+
+    @Override protected Component getDefaultName() { return Component.translatable("container.craneRouter"); }
+    @Override public Component getDisplayName() { return getDefaultName(); }
 
     @Override
     public AbstractContainerMenu createMenu(int id, Inventory inventory, Player player) {

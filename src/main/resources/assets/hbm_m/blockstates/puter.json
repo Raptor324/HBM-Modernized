@@ -1,0 +1,19 @@
+{
+ "variants": {
+  "facing=north": {
+   "model": "hbm_m:block/deco/puter",
+   "y": 180
+  },
+  "facing=south": {
+   "model": "hbm_m:block/deco/puter"
+  },
+  "facing=west": {
+   "model": "hbm_m:block/deco/puter",
+   "y": 90
+  },
+  "facing=east": {
+   "model": "hbm_m:block/deco/puter",
+   "y": 270
+  }
+ }
+}

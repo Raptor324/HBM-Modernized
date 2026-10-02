@@ -83,7 +83,7 @@ public class MachineFusionTorusMenu extends AbstractContainerMenu {
             if (!moveItemStackTo(stack, MACHINE_SLOTS, slots.size(), true)) return ItemStack.EMPTY;
         } else {
             // Original: Blaupausen in den Blaupausenslot, Batterien in den Batterieslot, sonst nichts.
-            if (copy.is(ModItems.BLUEPRINT_FOLDER.get())) {
+            if (copy.is(ModItems.BLUEPRINTS.get())) {
                 if (!moveItemStackTo(stack, FusionTorusBlockEntity.SLOT_BLUEPRINT,
                         FusionTorusBlockEntity.SLOT_BLUEPRINT + 1, false)) return ItemStack.EMPTY;
             } else {

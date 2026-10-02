@@ -39,6 +39,7 @@ public final class AssemblerRecipeGenerator {
         registerAccelerators(writer);
         registerReactors(writer);
         registerUpgrades(writer);
+        registerOrbus(writer);
         registerBombParts(writer);
         // War nie aufgerufen: dadurch hatte keine einzige Bombe ein Rezept, obwohl die
         // Rezepte samt Bauteilen seit jeher hier stehen.
@@ -46,6 +47,8 @@ public final class AssemblerRecipeGenerator {
         registerMissileParts(writer);
         registerAmmo(writer);
         registerSpace(writer);
+        registerSatellites(writer);
+        registerBatteryPacks(writer);
         registerTurrets(writer);
         registerGapMachines(writer);
 
@@ -219,40 +222,7 @@ public final class AssemblerRecipeGenerator {
                 .addIngredient(ModItems.MOTOR_BISMUTH.get(), 2)
                 .save(writer, "rotary_furnace");
 
-        // Conveyor belts — the original obtains these exclusively via the "Conveyor Wand" tool
-        // (right-click placement, ItemConveyorWand, hidden from NEI), which this port doesn't have;
-        // ported instead as ordinary placeable blocks (matching this port's existing convention for
-        // the other machine blocks), so a plausible Assembler recipe is invented here to make them
-        // obtainable in survival.
-        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.CONVEYOR.get(), 4), 80, 40)
-                .addIngredient(ModMaterialItems.item(ModMaterials.IRON, MaterialShape.PLATE), 4)
-                .addIngredient(Ingredient.of(Items.REDSTONE), 2)
-                .save(writer, "conveyor");
-
-        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.CONVEYOR_DOUBLE.get(), 4), 100, 50)
-                .addIngredient(ModMaterialItems.item(ModMaterials.IRON, MaterialShape.PLATE), 8)
-                .addIngredient(Ingredient.of(Items.REDSTONE), 3)
-                .save(writer, "conveyor_double");
-
-        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.CONVEYOR_TRIPLE.get(), 4), 120, 60)
-                .addIngredient(ModMaterialItems.item(ModMaterials.IRON, MaterialShape.PLATE), 12)
-                .addIngredient(Ingredient.of(Items.REDSTONE), 4)
-                .save(writer, "conveyor_triple");
-
-        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.CONVEYOR_EXPRESS.get(), 4), 100, 60)
-                .addIngredient(ModMaterialItems.item(ModMaterials.IRON, MaterialShape.PLATE), 4)
-                .addIngredient(ModMaterialItems.item(ModMaterials.RED_COPPER, MaterialShape.INGOT), 2)
-                .addIngredient(Ingredient.of(Items.REDSTONE), 4)
-                .save(writer, "conveyor_express");
-
-        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.CONVEYOR_LIFT.get(), 2), 100, 60)
-                .addIngredient(ModMaterialItems.item(ModMaterials.IRON, MaterialShape.PLATE), 6)
-                .addIngredient(Ingredient.of(Items.REDSTONE), 2)
-                .save(writer, "conveyor_lift");
-
-        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.CONVEYOR_CHUTE.get(), 2), 80, 40)
-                .addIngredient(ModMaterialItems.item(ModMaterials.IRON, MaterialShape.PLATE), 6)
-                .save(writer, "conveyor_chute");
+        // Foerderbaender: nur ueber den Foerderband-Stab (MachineCraftingRecipeGenerator), wie im Original.
 
         // Microwave — no ass.* recipe existed in the original 1.7.10 either; invented here.
         AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.MICROWAVE.get(), 1), 120, 60)
@@ -321,12 +291,7 @@ public final class AssemblerRecipeGenerator {
                 .addIngredient(ModItems.PISTON_SET_STEEL.get(), 1)
                 .save(writer, "epress");
 
-        // Conveyor Press — no ass.* recipe existed in the original 1.7.10 either; invented here.
-        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.CONVEYOR_PRESS.get(), 1), 150, 90)
-                .addIngredient(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.INGOT), 16)
-                .addIngredient(ModMaterialItems.item(ModMaterials.IRON, MaterialShape.PLATE), 10)
-                .addIngredient(ModItems.MOTOR.get(), 2)
-                .save(writer, "conveyor_press");
+        // Foerderbandpresse: Werkbankrezept 1:1 im MachineCraftingRecipeGenerator.
 
         // Autocrafter — no ass.* recipe existed in the original 1.7.10 either; invented here.
         AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.MACHINE_AUTOCRAFTER.get(), 1), 150, 90)
@@ -727,6 +692,16 @@ public final class AssemblerRecipeGenerator {
                 .addIngredient(ModItems.ANALOG_CIRCUIT.get(), 1)
                 .save(writer, "compressor");
 
+        // Original: ass.compactcompressor
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModBlocks.COMPRESSOR_COMPACT.get(), 1), 200, 100)
+                .addIngredient(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE_CAST), 8)
+                .addIngredient(ModItems.SHELL_TITANIUM.get(), 4)
+                .addIngredient(ModItems.PIPE_COPPER.get(), 4)
+                .addIngredient(ModItems.MOTOR.get(), 2)
+                .addIngredient(ModItems.INTEGRATED_CIRCUIT.get(), 4)
+                .save(writer, "compressor_compact");
+
         AssemblerRecipeBuilder.assemblerRecipe(
                         new ItemStack(ModBlocks.SILEX.get(), 1), 400, 100)
                 .addIngredient(ModBlocks.GLASS_QUARTZ.get().asItem(), 16)
@@ -837,13 +812,6 @@ public final class AssemblerRecipeGenerator {
                 .addIngredient(ModBlocks.GLASS_QUARTZ.get().asItem(), 16)
                 .save(writer, "hephaestus");
 
-        AssemblerRecipeBuilder.assemblerRecipe(
-                        new ItemStack(ModItems.CAPACITOR_TANTALUM.get(), 1), 100, 10_000)
-                .addIngredient(Ingredient.of(
-                        ModMaterialItems.item(ModMaterials.PVC, MaterialShape.INGOT),
-                        ModMaterialItems.item(ModMaterials.POLYMER_COMPOSITE, MaterialShape.INGOT)), 16)
-                .addIngredient(ModMaterialItems.item(ModMaterials.TANTALIUM, MaterialShape.INGOT), 24)
-                .save(writer, "capacitortantalum");
     }
 
     /** Particle accelerator components — port of 1.7.10 beamline/rfc/quadrupole/dipole/source/detector/exposurechamber. */
@@ -1000,6 +968,16 @@ public final class AssemblerRecipeGenerator {
     // dort sind alle elf Originalrezepte enthalten (inkl. Klystron, MHDT, Koppler, Plasmaschmiede
     // und Torus-Kern) und die ANY_RESISTANTALLOY-/Schaltkreis-Zuordnung entspricht dem Original.
 
+    /** 1:1 ass.orbus: 8 geschweisste Widerstandslegierungsplatten, 4 Saturnit-Gussplatten, 8 dichte BSCCO-Draehte, Po210-Radionuklidbatterie. */
+    private static void registerOrbus(Consumer<FinishedRecipe> writer) {
+        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.ORBUS.get(), 1), 300, 100)
+                .addIngredient(Ingredient.of(ModMaterialItems.item(ModMaterials.TCALLOY, MaterialShape.PLATE_WELDED), ModMaterialItems.item(ModMaterials.CDALLOY, MaterialShape.PLATE_WELDED)), 8)
+                .addIngredient(ModMaterialItems.item(ModMaterials.SATURNITE, MaterialShape.PLATE_CAST), 4)
+                .addIngredient(ModMaterialItems.item(ModMaterials.BSCCO, MaterialShape.WIRE_DENSE), 8)
+                .addIngredient(ModItems.BATTERY_SC_PO210.get(), 1)
+                .save(writer, "orbus");
+    }
+
     /** WATZ reactor rods — port of 1.7.10 ass.watzrod / ass.watzcooler. */
     private static void registerUpgrades(Consumer<FinishedRecipe> writer) {
         AssemblerRecipeBuilder.assemblerRecipe(
@@ -1018,20 +996,6 @@ public final class AssemblerRecipeGenerator {
                 .addIngredient(ModMaterialItems.item(ModMaterials.COPPER, MaterialShape.PLATE_CAST), 4)
                 .addIngredient(ModMaterialItems.item(ModMaterials.RUBBER, MaterialShape.INGOT), 2)
                 .save(writer, "watzcooler");
-
-        // Watz Powerplant controller - the original 1.7.10 mod had no craftable recipe for the
-        // Watz multiblock controller itself (loot/creative only, same situation as the plain
-        // Breeder handled elsewhere in this file); this recipe is therefore invented, scaled to
-        // the same reactor-multiblock tier as "zirnox" above.
-        AssemblerRecipeBuilder.assemblerRecipe(
-                        new ItemStack(ModItems.WATZ_POWERPLANT.get(), 1), 240, 400)
-                .addIngredient(ModItems.SHELL_STEEL.get(), 4)
-                .addIngredient(ModItems.PIPE_STEEL.get(), 8)
-                .addIngredient(ModMaterialItems.item(ModMaterials.ZIRCONIUM, MaterialShape.INGOT), 8)
-                .addIngredient(ModMaterialItems.item(ModMaterials.SATURNITE, MaterialShape.INGOT), 8)
-                .addIngredient(Ingredient.of(ModBlocks.CONCRETE.get()), 16)
-                .addIngredient(ModItems.INTEGRATED_CIRCUIT.get(), 4)
-                .save(writer, "watz_powerplant");
 
         AssemblerRecipeBuilder.assemblerRecipe(
                         new ItemStack(ModItems.UPGRADE_OVERDRIVE_1.get(), 1), 200, 100)
@@ -1201,6 +1165,96 @@ public final class AssemblerRecipeGenerator {
     }
 
     /** Space program — port of 1.7.10 soyuzcore/satellitemapper/satellitescanner/satelliteradar/satelliteresonator. */
+    private static net.minecraft.world.item.Item rid(String id) {
+        net.minecraft.world.item.Item item = net.minecraft.core.registries.BuiltInRegistries.ITEM.get(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("hbm_m", id));
+        if (item == net.minecraft.world.item.Items.AIR) throw new IllegalStateException("Assembler: unbekannter Gegenstand " + id);
+        return item;
+    }
+
+    /**
+     * 1:1 AssemblyMachineRecipes "batteries": ass.capacitorgold/niobium/tantalum/bismuth. ass.capacitorspark braucht
+     * Perfluormethan (Fluessigkeiten kann der Port-Assembler-Rezepttyp noch nicht) und fehlt deshalb noch.
+     */
+    private static void registerBatteryPacks(Consumer<FinishedRecipe> writer) {
+        var plastic = net.minecraft.world.item.crafting.Ingredient.of(rid("polymer_ingot"), rid("bakelite_ingot"));
+        var hardPlastic = net.minecraft.world.item.crafting.Ingredient.of(rid("pc_ingot"), rid("pvc_ingot"));
+
+        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModItems.BATTERY_PACK_CAPACITOR_GOLD.get()), 100, 100)
+                .addIngredient(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE), 8)
+                .addIngredient(ModMaterialItems.item(ModMaterials.GOLD, MaterialShape.WIRE_DENSE), 16)
+                .save(writer, "capacitorgold");
+        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModItems.BATTERY_PACK_CAPACITOR_NIOBIUM.get()), 100, 1_000)
+                .addIngredient(plastic, 12)
+                .addIngredient(rid("wire_dense_niobium"), 24)
+                .save(writer, "capacitorniobium");
+        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModItems.BATTERY_PACK_CAPACITOR_TANTALUM.get()), 100, 10_000)
+                .addIngredient(hardPlastic, 16)
+                .addIngredient(rid("tantalium_ingot"), 24)
+                .save(writer, "capacitortantalum");
+        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModItems.BATTERY_PACK_CAPACITOR_BISMUTH.get()), 100, 25_000)
+                .addIngredient(hardPlastic, 24)
+                .addIngredient(rid("bismuth_ingot"), 24)
+                .addIngredient(ModItems.QUANTUM_CHIP.get(), 1)
+                .save(writer, "capacitorbismuth");
+    }
+
+    /**
+     * 1:1 AssemblyMachineRecipes ass.spysat ... ass.rayscansat + ass.satlink (die heutigen Satelliten).
+     */
+    private static void registerSatellites(Consumer<FinishedRecipe> writer) {
+        var alShell = ModItems.SHELL_ALUMINUM.get();
+        var photo = ModItems.PHOTO_PANEL.get();
+        var lde = rid("part_generic_lde");
+        var goldCast = ModMaterialItems.item(ModMaterials.GOLD, MaterialShape.PLATE_CAST);
+        var bigmtCast = ModMaterialItems.item(ModMaterials.SATURNITE, MaterialShape.PLATE_CAST);
+
+        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModItems.SATELLITE_SPY.get()), 1_200, 25_000)
+                .addIngredient(alShell, 16).addIngredient(photo, 32).addIngredient(ModItems.INTEGRATED_CIRCUIT.get(), 16)
+                .addIngredient(rid("part_generic_glass_polarized"), 8).addIngredient(lde, 16).addIngredient(ModItems.CONTROLLER.get(), 3)
+                .save(writer, "spysat");
+        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModItems.SATELLITE_SCANNER.get()), 1_200, 25_000)
+                .addIngredient(alShell, 16).addIngredient(photo, 32).addIngredient(ModMaterialItems.item(ModMaterials.GOLD, MaterialShape.WIRE_DENSE), 32)
+                .addIngredient(ModItems.BISMOID_CIRCUIT.get(), 16).addIngredient(lde, 16).addIngredient(ModItems.CONTROLLER.get(), 3)
+                .save(writer, "scansat");
+        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModItems.SATELLITE_RADAR.get()), 1_200, 25_000)
+                .addIngredient(goldCast, 16).addIngredient(photo, 32).addIngredient(ModItems.MAGNETRON.get(), 32)
+                .addIngredient(ModItems.BISMOID_CIRCUIT.get(), 16).addIngredient(lde, 4).addIngredient(ModItems.CONTROLLER.get(), 3)
+                .save(writer, "radarsat");
+        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModItems.SATELLITE_MINER_ASTRO.get()), 1_200, 25_000)
+                .addIngredient(bigmtCast, 16).addIngredient(photo, 8).addIngredient(ModItems.THRUSTER_MEDIUM.get(), 1)
+                .addIngredient(ModItems.MOTOR_BISMUTH.get(), 4).addIngredient(lde, 16).addIngredient(ModItems.CONTROLLER_ADVANCED.get(), 2)
+                .save(writer, "astrominer");
+        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModItems.SATELLITE_MINER_LUNAR.get()), 1_200, 25_000)
+                .addIngredient(bigmtCast, 16).addIngredient(photo, 8).addIngredient(ModItems.THRUSTER_MEDIUM.get(), 1)
+                .addIngredient(ModItems.MOTOR_BISMUTH.get(), 4).addIngredient(lde, 16).addIngredient(ModItems.CONTROLLER_ADVANCED.get(), 2)
+                .save(writer, "lunarminer");
+        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModItems.SATELLITE_PRECISION_LASER.get()), 1_200, 25_000)
+                .addIngredient(rid("shell_weaponsteel"), 16).addIngredient(photo, 32).addIngredient(ModItems.BATTERY_PACK_CAPACITOR_TANTALUM.get(), 1)
+                .addIngredient(rid("crystal_redstone"), 16).addIngredient(lde, 16).addIngredient(ModItems.CONTROLLER_ADVANCED.get(), 3)
+                .save(writer, "orbitallaser");
+        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModItems.SATELLITE_DEATH_RAY.get()), 1_200, 25_000)
+                .addIngredient(rid("shell_weaponsteel"), 32).addIngredient(rid("billet_pu_mix"), 32).addIngredient(ModItems.BATTERY_PACK_CAPACITOR_BISMUTH.get(), 1)
+                .addIngredient(net.minecraft.world.item.Items.EMERALD, 32).addIngredient(lde, 16).addIngredient(ModItems.CONTROLLER_ADVANCED.get(), 5)
+                .save(writer, "deathray");
+        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModItems.SATELLITE_XENIUM_RESONATOR.get()), 1_200, 25_000)
+                .addIngredient(goldCast, 16).addIngredient(photo, 32).addIngredient(rid("crystal_xen"), 1)
+                .addIngredient(ModItems.BISMOID_CIRCUIT.get(), 24).addIngredient(lde, 4).addIngredient(ModItems.CONTROLLER_ADVANCED.get(), 1)
+                .save(writer, "xenrelay");
+        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModItems.SATELLITE_DETECTOR.get()), 1_200, 25_000)
+                .addIngredient(goldCast, 16).addIngredient(photo, 64).addIngredient(rid("wire_dense_bscco"), 16)
+                .addIngredient(ModItems.BISMOID_CIRCUIT.get(), 24).addIngredient(lde, 16).addIngredient(ModItems.CONTROLLER_ADVANCED.get(), 1)
+                .save(writer, "detectorsat");
+        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModItems.SATELLITE_RAY_SCAN.get()), 1_200, 25_000)
+                .addIngredient(rid("shell_saturnite"), 16).addIngredient(photo, 32).addIngredient(rid("wire_dense_schrabidate"), 16)
+                .addIngredient(ModItems.QUANTUM_CIRCUIT.get(), 16).addIngredient(lde, 16).addIngredient(ModItems.CONTROLLER_ADVANCED.get(), 3)
+                .save(writer, "rayscansat");
+
+        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.MACHINE_SATLINK.get()), 100, 1_000)
+                .addIngredient(ModBlocks.STEEL_SCAFFOLD.get().asItem(), 16).addIngredient(ModMaterialItems.item(ModMaterials.ALUMINUM, MaterialShape.PLATE), 16)
+                .addIngredient(ModItems.MAGNETRON.get(), 3).addIngredient(ModItems.CONTROLLER.get(), 1)
+                .save(writer, "satlink");
+    }
+
     private static void registerSpace(Consumer<FinishedRecipe> writer) {
         AssemblerRecipeBuilder.assemblerRecipe(
                         new ItemStack(ModBlocks.STRUCT_SOYUZ_CORE.get(), 1), 1200, 100)
@@ -1484,7 +1538,7 @@ public final class AssemblerRecipeGenerator {
         AssemblerRecipeBuilder.assemblerRecipe(
                         new ItemStack(ModItems.COOLING_TOWER.get(), 1), 240, 400)
                 .addIngredient(Ingredient.of(ModBlocks.CONCRETE.get()), 128)
-                .addIngredient(Ingredient.of(ModBlocks.DECO_STEEL_SCAFFOLD.get()), 32)
+                .addIngredient(Ingredient.of(ModBlocks.STEEL_SCAFFOLD.get()), 32)
                 .addIngredient(Ingredient.of(ModBlocks.STEAM_CONDENSER.get()), 16)
                 .addIngredient(ModItems.PIPE_STEEL.get(), 8)
                 .save(writer, "cooling_tower");
@@ -1700,12 +1754,6 @@ public final class AssemblerRecipeGenerator {
                 .addIngredient(ModMaterialItems.item(ModMaterials.GOLD, MaterialShape.WIRE), 24)
                 .save(writer, "assembler/fat_man_igniter");
 
-        AssemblerRecipeBuilder.assemblerRecipe(  //TODO: WIP RECIPES, NEEDS REWORK WHEN FULL PROCESSING IS PORTED
-                        new ItemStack(ModItems.BALL_TNT.get(), 10), 80, 150)
-                .addIngredient(Ingredient.of(ModBlocks.FREAKY_ALIEN_BLOCK.get()), 1)
-                .addIngredient(ModItems.SULFUR.get(), 4)
-                .addIngredient(ModMaterialItems.item(ModMaterials.LEAD, MaterialShape.POWDER), 4)
-                .save(writer, "ball_tnt");
 
         AssemblerRecipeBuilder.assemblerRecipe(  //TODO: WIP RECIPES, NEEDS REWORK WHEN FULL PROCESSING IS PORTED
                         new ItemStack(ModBlocks.NUKE_FAT_MAN.get(), 1), 80, 150)
@@ -2005,7 +2053,7 @@ public final class AssemblerRecipeGenerator {
                         ModMaterialItems.item(ModMaterials.POLYMER, MaterialShape.INGOT),
                         ModMaterialItems.item(ModMaterials.BAKELITE, MaterialShape.INGOT),
                         ModMaterialItems.item(ModMaterials.IRON, MaterialShape.PLATE)), 16)
-                .addIngredient(Ingredient.of(ModBlocks.DECO_STEEL_SCAFFOLD.get()), 24)
+                .addIngredient(Ingredient.of(ModBlocks.STEEL_SCAFFOLD.get()), 24)
                 .addIngredient(ModItems.ADVANCED_CIRCUIT.get(), 2)
                 .save(writer, "assembler/launch_pad");
 
@@ -2057,13 +2105,7 @@ public final class AssemblerRecipeGenerator {
                 .addIngredient(Items.ENDER_PEARL, 2)
                 .save(writer, "missile_bhole");
 
-        AssemblerRecipeBuilder.assemblerRecipe(
-                        new ItemStack(ModItems.MISSILE_TAINT.get(), 1), 60, 100)
-                .addIngredient(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE), 2)
-                .addIngredient(Items.ROTTEN_FLESH, 8)
-                .addIngredient(Items.GUNPOWDER, 4)
-                .addIngredient(Items.REDSTONE, 2)
-                .save(writer, "missile_taint");
+        // missile_taint: Werkbankrezept 1:1 (WeaponRecipes, Watz-Schlamm im Behaelter) im ModVanillaRecipeProvider
 
         AssemblerRecipeBuilder.assemblerRecipe(
                         new ItemStack(ModItems.MISSILE_EMP.get(), 1), 60, 100)
@@ -2268,6 +2310,29 @@ public final class AssemblerRecipeGenerator {
                 .addIngredient(ModItems.ANALOG_CIRCUIT.get(), 6)
                 .save(writer, "machine_chungus");
 
+        // AssemblyMachineRecipes: ass.sealframe / ass.sealcontroller
+        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.SEAL_FRAME.get().asItem(), 1), 100, 100)
+                .addIngredient(ModMaterialItems.item(ModMaterials.DURA_STEEL, MaterialShape.INGOT), 1)
+                .addIngredient(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE_CAST), 1)
+                .addIngredient(ModMaterialItems.item(ModMaterials.RED_COPPER, MaterialShape.WIRE_DENSE), 1)
+                .save(writer, "seal_frame");
+        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.SEAL_CONTROLLER.get().asItem(), 1), 100, 100)
+                .addIngredient(ModMaterialItems.item(ModMaterials.DURA_STEEL, MaterialShape.INGOT), 1)
+                .addIngredient(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE_CAST), 1)
+                .addIngredient(ModMaterialItems.item(ModMaterials.POLYMER, MaterialShape.INGOT), 4)
+                .addIngredient(ModMaterialItems.item(ModMaterials.RED_COPPER, MaterialShape.WIRE_DENSE), 4)
+                .save(writer, "seal_controller");
+
+        // AssemblyMachineRecipes: ass.blastdoor
+        AssemblerRecipeBuilder.assemblerRecipe(
+                        new ItemStack(ModBlocks.BLAST_DOOR.get().asItem(), 1), 200, 100)
+                .addIngredient(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.INGOT), 12)
+                .addIngredient(ModMaterialItems.item(ModMaterials.LEAD, MaterialShape.PLATE), 6)
+                .addIngredient(ModMaterialItems.item(ModMaterials.RUBBER, MaterialShape.INGOT), 2)
+                .addIngredient(ModItems.BOLT_HIGHSPEED_STEEL.get(), 8)
+                .addIngredient(ModItems.MOTOR.get(), 1)
+                .save(writer, "blast_door");
+
         // --- Nachgetragen: Grossgeraet ohne Bezugsweg ----------------------------
         // Original: 16 Stahlplatten, 8 Wolfram, 4 Panzerglas, 4 Gummi, 16 Bolzen, 2 Motoren
         AssemblerRecipeBuilder.assemblerRecipe(
@@ -2428,6 +2493,34 @@ public final class AssemblerRecipeGenerator {
         AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModItems.PILE_ROD_NU.get(), 1), 40, 200)
                 .addIngredient(ModMaterialItems.item(ModMaterials.URANIUM, MaterialShape.BILLET), 3)
                 .save(writer, "pile_rod_mk2_nu");
+
+        // Original ass.levibomb / ass.endobomb / ass.exobomb
+        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.FLOAT_BOMB.get(), 1), 200, 100)
+                .addIngredient(ModMaterialItems.item(ModMaterials.TITANIUM, MaterialShape.PLATE), 12)
+                .addIngredient(ModMaterialItems.item(ModMaterials.SCHRABIDIUM, MaterialShape.NUGGET), 3)
+                .addIngredient(ModItems.ADVANCED_CIRCUIT.get(), 4)
+                .addIngredient(ModMaterialItems.item(ModMaterials.GOLD, MaterialShape.WIRE_DENSE), 8)
+                .save(writer, "levibomb");
+        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.THERM_ENDO.get(), 1), 200, 100)
+                .addIngredient(ModMaterialItems.item(ModMaterials.TITANIUM, MaterialShape.PLATE), 12)
+                .addIngredient(ModItems.POWDER_ICE.get(), 32)
+                .addIngredient(ModItems.ADVANCED_CIRCUIT.get(), 1)
+                .addIngredient(ModItems.COIL_GOLD.get(), 4)
+                .save(writer, "endobomb");
+        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.THERM_EXO.get(), 1), 200, 100)
+                .addIngredient(ModMaterialItems.item(ModMaterials.TITANIUM, MaterialShape.PLATE), 12)
+                .addIngredient(ModItems.FIRE_POWDER.get(), 32)
+                .addIngredient(ModItems.ADVANCED_CIRCUIT.get(), 1)
+                .addIngredient(ModItems.COIL_GOLD.get(), 4)
+                .save(writer, "exobomb");
+
+        // Original ass.minenaval
+        AssemblerRecipeBuilder.assemblerRecipe(new ItemStack(ModBlocks.MINE_NAVAL.get(), 1), 300, 100)
+                .addIngredient(ModItems.SPHERE_STEEL.get(), 1)
+                .addIngredient(ModItems.PIPE_STEEL.get(), 3)
+                .addIngredient(ModItems.ADVANCED_CIRCUIT.get(), 1)
+                .addIngredient(net.minecraft.world.item.crafting.Ingredient.of(ModMaterialItems.item(ModMaterials.SEMTEX, MaterialShape.INGOT), ModMaterialItems.item(ModMaterials.C4, MaterialShape.INGOT)), 24)
+                .save(writer, "minenaval");
     }
 }
 //?}

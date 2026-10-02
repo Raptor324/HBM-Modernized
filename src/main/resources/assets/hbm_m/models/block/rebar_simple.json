@@ -1,0 +1,105 @@
+{
+  "parent": "block/block",
+  "textures": {
+    "rebar": "hbm_m:block/rebar",
+    "particle": "hbm_m:block/rebar"
+  },
+  "elements": [
+    {
+      "from": [
+        7,
+        -0.016,
+        7
+      ],
+      "to": [
+        9,
+        16.016,
+        9
+      ],
+      "faces": {
+        "north": {
+          "texture": "#rebar"
+        },
+        "south": {
+          "texture": "#rebar"
+        },
+        "east": {
+          "texture": "#rebar"
+        },
+        "west": {
+          "texture": "#rebar"
+        },
+        "up": {
+          "texture": "#rebar"
+        },
+        "down": {
+          "texture": "#rebar"
+        }
+      }
+    },
+    {
+      "from": [
+        -0.016,
+        7,
+        7
+      ],
+      "to": [
+        16.016,
+        9,
+        9
+      ],
+      "faces": {
+        "north": {
+          "texture": "#rebar"
+        },
+        "south": {
+          "texture": "#rebar"
+        },
+        "east": {
+          "texture": "#rebar"
+        },
+        "west": {
+          "texture": "#rebar"
+        },
+        "up": {
+          "texture": "#rebar"
+        },
+        "down": {
+          "texture": "#rebar"
+        }
+      }
+    },
+    {
+      "from": [
+        7,
+        7,
+        -0.016
+      ],
+      "to": [
+        9,
+        9,
+        16.016
+      ],
+      "faces": {
+        "north": {
+          "texture": "#rebar"
+        },
+        "south": {
+          "texture": "#rebar"
+        },
+        "east": {
+          "texture": "#rebar"
+        },
+        "west": {
+          "texture": "#rebar"
+        },
+        "up": {
+          "texture": "#rebar"
+        },
+        "down": {
+          "texture": "#rebar"
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "parent": "minecraft:block/block",
+  "loader": "forge:obj",
+  "model": "hbm_m:models/block/deco/scaffold_upright_z.obj",
+  "flip_v": true,
+  "render_type": "minecraft:cutout",
+  "textures": {
+    "texture": "hbm_m:block/deco/scaffold_yellow",
+    "particle": "hbm_m:block/deco/scaffold_yellow"
+  }
+}

@@ -1,0 +1,16 @@
+{
+ "variants": {
+  "facing=south": {
+   "model": "hbm_m:block/deco/steel_wall_south"
+  },
+  "facing=north": {
+   "model": "hbm_m:block/deco/steel_wall_north"
+  },
+  "facing=east": {
+   "model": "hbm_m:block/deco/steel_wall_east"
+  },
+  "facing=west": {
+   "model": "hbm_m:block/deco/steel_wall_west"
+  }
+ }
+}

@@ -73,6 +73,11 @@ public class FusionTorusRenderer implements BlockEntityRenderer<FusionTorusBlock
 
         pose.pushPose();
         pose.translate(0.5D, 0D, 0.5D);
+        if (be.tilted) {
+            pose.translate(0, -1, 0);
+            pose.mulPose(Axis.ZP.rotationDegrees(10));
+            pose.mulPose(Axis.YP.rotationDegrees(5));
+        }
         applyFacing(be.getBlockState(), pose);
 
         VertexConsumer solid = buffer.getBuffer(RenderType.cutout());

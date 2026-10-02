@@ -62,12 +62,91 @@ public class BossSpawnHandler {
     }
 
     private static void onLevelTick(ServerLevel level) {
+        // Original rollTheDice: Meteore unabhaengig von Schwierigkeit und Dimension (Spielerfilter unten)
+        if (ModClothConfig.get().enableMeteorStrikes) {
+            meteorUpdate(level);
+        }
+
         if (level.getDifficulty() == Difficulty.PEACEFUL) return;
         // isSurfaceWorld: no stalking in the Nether or the End.
         if (!level.dimensionType().natural()) return;
 
         rollMaskMan(level);
         rollRadBeasts(level);
+    }
+
+    // ─── Meteore (1:1 BossSpawnHandler.meteorUpdate / spawnMeteorAtPlayer) ──
+
+    private static final java.util.Random meteorRand = new java.util.Random();
+    public static int meteorShower = 0;
+
+    private static void meteorUpdate(ServerLevel world) {
+        ModClothConfig cfg = ModClothConfig.get();
+
+        if (meteorRand.nextInt(meteorShower > 0 ? cfg.meteorShowerChance : cfg.meteorStrikeChance) == 0) {
+
+            if (!world.players().isEmpty()) {
+
+                ServerPlayer p = world.players().get(meteorRand.nextInt(world.players().size()));
+
+                if (p != null && world.dimension() == net.minecraft.world.level.Level.OVERWORLD) {
+
+                    boolean repell = false;
+                    boolean strike = true;
+
+                    for (net.minecraft.world.item.ItemStack armor : p.getInventory().armor) {
+                        if (!armor.isEmpty() && com.hbm_m.armormod.util.ArmorModificationHelper.hasMods(armor)) {
+
+                            for (net.minecraft.world.item.ItemStack mod : com.hbm_m.armormod.util.ArmorModificationHelper.pryMods(armor)) {
+
+                                if (mod != null && !mod.isEmpty()) {
+                                    if (mod.getItem() == com.hbm_m.item.ModItems.PROTECTION_CHARM.get()) repell = true;
+                                    if (mod.getItem() == com.hbm_m.item.ModItems.METEOR_CHARM.get()) strike = false;
+                                }
+                            }
+                        }
+                    }
+
+                    // Original prueft hier noch Sockel (BlockPedestal) mit Schutz-/Meteoritenamulett im Umkreis von 100
+                    // Bloecken; der Sockel ist noch nicht portiert.
+
+                    if (strike) spawnMeteorAtPlayer(p, repell);
+                }
+            }
+        }
+
+        if (meteorShower > 0) {
+            meteorShower--;
+            if (meteorShower == 0 && cfg.enableDebugLogging)
+                com.hbm_m.main.MainRegistry.LOGGER.info("Ended meteor shower.");
+        }
+
+        if (meteorRand.nextInt(cfg.meteorStrikeChance * 100) == 0 && cfg.enableMeteorShowers) {
+            meteorShower = (int) (cfg.meteorShowerDuration * 0.75 + cfg.meteorShowerDuration * 0.25 * meteorRand.nextFloat());
+
+            if (cfg.enableDebugLogging)
+                com.hbm_m.main.MainRegistry.LOGGER.info("Started meteor shower! Duration: " + meteorShower);
+        }
+    }
+
+    public static void spawnMeteorAtPlayer(net.minecraft.world.entity.player.Player player, boolean repell) {
+
+        com.hbm_m.entity.projectile.EntityMeteor meteor = new com.hbm_m.entity.projectile.EntityMeteor(player.level());
+        meteor.moveTo(player.getX() + meteorRand.nextInt(201) - 100, 384, player.getZ() + meteorRand.nextInt(201) - 100, 0, 0);
+
+        net.minecraft.world.phys.Vec3 vec;
+        if (repell) {
+            vec = new net.minecraft.world.phys.Vec3(meteor.getX() - player.getX(), 0, meteor.getZ() - player.getZ()).normalize();
+            double vel = meteorRand.nextDouble();
+            vec = new net.minecraft.world.phys.Vec3(vec.x * vel, vec.y, vec.z * vel);
+            meteor.safe = true;
+        } else {
+            vec = new net.minecraft.world.phys.Vec3(meteorRand.nextDouble() - 0.5D, 0, 0);
+            vec = vec.yRot((float) (Math.PI * meteorRand.nextDouble()));
+        }
+
+        meteor.setDeltaMovement(vec.x, -2.5, vec.z);
+        player.level().addFreshEntity(meteor);
     }
 
     // ─── MaskMan ─────────────────────────────────────────────────────────────
@@ -102,7 +181,7 @@ public class BossSpawnHandler {
         if (!ModClothConfig.get().enableRadiation) return false;
 
         // The original tracks whether the acidizer was ever crafted or placed via the stats list.
-        var item = ModBlocks.MACHINE_CRYSTALLIZER.get().asItem();
+        var item = ModBlocks.CRYSTALLIZER.get().asItem();
         boolean acidizer = player.getStats().getValue(Stats.ITEM_CRAFTED.get(item)) > 0
                 || player.getStats().getValue(Stats.ITEM_USED.get(item)) > 0;
         if (!acidizer) return false;

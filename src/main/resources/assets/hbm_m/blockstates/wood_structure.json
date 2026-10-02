@@ -1,0 +1,16 @@
+{
+ "variants": {
+  "nx=false,px=false": {
+   "model": "hbm_m:block/deco/wood_structure_roof_00"
+  },
+  "nx=false,px=true": {
+   "model": "hbm_m:block/deco/wood_structure_roof_01"
+  },
+  "nx=true,px=false": {
+   "model": "hbm_m:block/deco/wood_structure_roof_10"
+  },
+  "nx=true,px=true": {
+   "model": "hbm_m:block/deco/wood_structure_roof_11"
+  }
+ }
+}

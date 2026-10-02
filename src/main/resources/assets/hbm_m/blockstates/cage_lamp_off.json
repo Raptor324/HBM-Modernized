@@ -1,0 +1,40 @@
+{
+ "variants": {
+  "broken=false,facing=down": {
+   "model": "hbm_m:block/lights/cage_lamp_off_down"
+  },
+  "broken=true,facing=down": {
+   "model": "hbm_m:block/lights/cage_lamp_off_down"
+  },
+  "broken=false,facing=up": {
+   "model": "hbm_m:block/lights/cage_lamp_off_up"
+  },
+  "broken=true,facing=up": {
+   "model": "hbm_m:block/lights/cage_lamp_off_up"
+  },
+  "broken=false,facing=north": {
+   "model": "hbm_m:block/lights/cage_lamp_off_north"
+  },
+  "broken=true,facing=north": {
+   "model": "hbm_m:block/lights/cage_lamp_off_north"
+  },
+  "broken=false,facing=south": {
+   "model": "hbm_m:block/lights/cage_lamp_off_south"
+  },
+  "broken=true,facing=south": {
+   "model": "hbm_m:block/lights/cage_lamp_off_south"
+  },
+  "broken=false,facing=west": {
+   "model": "hbm_m:block/lights/cage_lamp_off_west"
+  },
+  "broken=true,facing=west": {
+   "model": "hbm_m:block/lights/cage_lamp_off_west"
+  },
+  "broken=false,facing=east": {
+   "model": "hbm_m:block/lights/cage_lamp_off_east"
+  },
+  "broken=true,facing=east": {
+   "model": "hbm_m:block/lights/cage_lamp_off_east"
+  }
+ }
+}

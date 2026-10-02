@@ -34,12 +34,11 @@ import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
 /**
- * Brick Furnace: Direktport der Kernlogik aus {@code TileEntityFurnaceBrick} (1.7.10 Original).
+ * Brick Furnace: 1:1-Port von {@code TileEntityFurnaceBrick} (1.7.10 Original).
  * <p>
- * Vereinfachung: Das Aschen-Byprodukt-System des Originals (Slot 3, {@code powder_ash} mit
- * Holz-/Kohle-/Sonstiges-Schadenswerten via {@code EnumAshType}) wird NICHT portiert - es
- * basiert auf einem 1.7.10-Item/Klassifikationssystem, das in diesem Port keine Entsprechung
- * hat (kein {@code powder_ash}, kein {@code EnumAshType}). Slot 3 entfaellt daher ersatzlos.
+ * Asche wie im Original: jede verbrannte Brennstoffeinheit zaehlt ihre Brenndauer auf den Holz-, Kohle- oder
+ * Sonstiges-Zaehler ({@code getAshFromFuel}); ab 2000 wandert ein Aschehaeufchen in Slot 3. Die Zaehler werden
+ * wie im Original nicht gespeichert.
  * <p>
  * 100% Vanilla-Schmelzrezepte, Vanilla-Brennstoff-Erkennung wie bei {@code MachineFurnaceIron}.
  * Einzigartig an dieser Maschine: eine vom Eingangs-Item abhaengige Geschwindigkeitsmultiplikator
@@ -50,7 +49,8 @@ public class MachineFurnaceBrickBlockEntity extends com.hbm_m.blockentity.BaseHb
     public static final int SLOT_INPUT = 0;
     public static final int SLOT_FUEL = 1;
     public static final int SLOT_OUTPUT = 2;
-    private static final int SLOT_COUNT = 3;
+    public static final int SLOT_ASH = 3;
+    private static final int SLOT_COUNT = 4;
 
     private static final int PROCESSING_THRESHOLD = 200;
 
@@ -67,7 +67,7 @@ public class MachineFurnaceBrickBlockEntity extends com.hbm_m.blockentity.BaseHb
         public boolean isItemValid(int slot, @NotNull ItemStack stack) {
             return switch (slot) {
                 case SLOT_FUEL -> isFuel(stack);
-                case SLOT_OUTPUT -> false;
+                case SLOT_OUTPUT, SLOT_ASH -> false;
                 default -> true;
             };
         }
@@ -76,6 +76,10 @@ public class MachineFurnaceBrickBlockEntity extends com.hbm_m.blockentity.BaseHb
     private int litTime = 0;
     private int litDuration = 0;
     private int progress = 0;
+
+    public int ashLevelWood;
+    public int ashLevelCoal;
+    public int ashLevelMisc;
 
     private static final int DATA_COUNT = 3;
     private static final int DATA_LIT_TIME = 0;
@@ -184,11 +188,37 @@ public class MachineFurnaceBrickBlockEntity extends com.hbm_m.blockentity.BaseHb
         litTime = burnTicks;
 
         var remainderItem = fuelStack.getItem().getCraftingRemainingItem();
+        MachineAshpitBlockEntity.AshType type = MachineFireboxBlockEntity.ashFromFuel(fuelStack);
         fuelStack.shrink(1);
+
+        if (type == MachineAshpitBlockEntity.AshType.WOOD) ashLevelWood += burnTicks;
+        if (type == MachineAshpitBlockEntity.AshType.COAL) ashLevelCoal += burnTicks;
+        if (type == MachineAshpitBlockEntity.AshType.MISC) ashLevelMisc += burnTicks;
+        int threshold = 2000;
+        if (processAsh(ashLevelWood, com.hbm_m.item.ModItems.ASH_WOOD.get(), threshold)) ashLevelWood -= threshold;
+        if (processAsh(ashLevelCoal, com.hbm_m.item.ModItems.ASH_COAL.get(), threshold)) ashLevelCoal -= threshold;
+        if (processAsh(ashLevelMisc, com.hbm_m.item.ModItems.ASH_MISC.get(), threshold)) ashLevelMisc -= threshold;
+
         if (fuelStack.isEmpty() && remainderItem != null) {
             inventory.setStackInSlot(SLOT_FUEL, new ItemStack(remainderItem));
         }
         return true;
+    }
+
+    /** Original {@code processAsh}: legt bei erreichter Schwelle ein Aschehaeufchen in Slot 3, falls es passt. */
+    protected boolean processAsh(int level, net.minecraft.world.item.Item ash, int threshold) {
+        if (level >= threshold) {
+            ItemStack slot = inventory.getStackInSlot(SLOT_ASH);
+            if (slot.isEmpty()) {
+                inventory.setStackInSlot(SLOT_ASH, new ItemStack(ash));
+                return true;
+            } else if (slot.getCount() < slot.getMaxStackSize() && slot.is(ash)) {
+                slot.grow(1);
+                inventory.setStackInSlot(SLOT_ASH, slot);
+                return true;
+            }
+        }
+        return false;
     }
 
     private boolean canSmelt(Level level) {

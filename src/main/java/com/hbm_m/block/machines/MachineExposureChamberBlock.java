@@ -2,86 +2,59 @@ package com.hbm_m.block.machines;
 
 import org.jetbrains.annotations.Nullable;
 
+import com.hbm_m.block.ModBlocks;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.blockentity.machines.MachineExposureChamberBlockEntity;
+import com.hbm_m.multiblock.DummyableStructureBuilder;
+import com.hbm_m.multiblock.MultiblockStructureHelper;
 
+import dev.architectury.registry.menu.MenuRegistry;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
-import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.context.BlockPlaceContext;
-import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.BaseEntityBlock;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.Mirror;
 import net.minecraft.world.level.block.RenderShape;
-import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
-import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.block.state.StateDefinition;
-import net.minecraft.world.level.block.state.properties.BlockStateProperties;
-import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
-import net.minecraft.world.phys.shapes.CollisionContext;
-import net.minecraft.world.phys.shapes.Shapes;
-import net.minecraft.world.phys.shapes.VoxelShape;
-import dev.architectury.registry.menu.MenuRegistry;
 
 /**
- * Exposure Chamber - Direktport des 1.7.10 Originals ({@code MachineExposureChamber}/
- * {@code TileEntityMachineExposureChamber}) als einzelner Block, siehe
- * {@link MachineExposureChamberBlockEntity} fuer Details zur Vereinfachung.
+ * 1:1 {@code MachineExposureChamber}: Kammer {@code {4,0,2,2,2,2}} ({@code getOffset 2}), daneben die Beschleuniger-
+ * strecke nach {@code -rot} ({@code rot = dir.getRotation(UP)}) mit Magnetringen und dem Endstueck bei 7-8 Bloecken;
+ * dort sitzen die fuenf Anschlusszellen. Gezeichnet vom {@code ExposureChamberRenderer}.
  */
-public class MachineExposureChamberBlock extends BaseEntityBlock {
-    public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
-    public static final VoxelShape SHAPE = Block.box(0, 0, 0, 16, 16, 16);
+public class MachineExposureChamberBlock extends DummyableMachineBlock {
 
-    public MachineExposureChamberBlock(BlockBehaviour.Properties properties) {
+    public MachineExposureChamberBlock(Properties properties) {
         super(properties);
-        this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH));
     }
 
     @Override
-    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(FACING);
-    }
-
-    @Override
-    public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        return SHAPE;
-    }
-
-    @Nullable
-    @Override
-    public BlockState getStateForPlacement(BlockPlaceContext context) {
-        return this.defaultBlockState().setValue(FACING, context.getHorizontalDirection().getOpposite());
-    }
-
-    @Override
-    public BlockState rotate(BlockState state, Rotation rotation) {
-        return state.setValue(FACING, rotation.rotate(state.getValue(FACING)));
-    }
-
-    @Override
-    public BlockState mirror(BlockState state, Mirror mirror) {
-        return state.rotate(mirror.getRotation(state.getValue(FACING)));
+    protected MultiblockStructureHelper defineStructure() {
+        // Original: rot = dir.getRotation(UP).getOpposite() - im Builder also negative side-Werte
+        return DummyableStructureBuilder.create()
+                .box(4, 0, 2, 2, 2, 2)
+                .box(3, 0, 0, 0, -3, 8)
+                .boxAt(0, 2, 0, 0, 0, 1, -1, -3, 6)
+                .boxAt(0, 2, 0, 0, 0, -1, 1, -3, 6)
+                .boxAt(0, 0, -7, 3, 0, 1, -1, 0, 1)
+                .boxAt(0, 0, -7, 3, 0, -1, 1, 0, 1)
+                .extra(1, 0, -7)
+                .extra(-1, 0, -7)
+                .extra(1, 0, -8)
+                .extra(-1, 0, -8)
+                .extra(0, 0, -8)
+                .placementOffset(2)
+                .build(() -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState());
     }
 
     @Override
     public RenderShape getRenderShape(BlockState state) {
-        return RenderShape.MODEL;
-    }
-
-    @Override
-    public VoxelShape getOcclusionShape(BlockState state, BlockGetter level, BlockPos pos) {
-        return Shapes.block();
+        return RenderShape.ENTITYBLOCK_ANIMATED;
     }
 
     @Nullable
@@ -90,50 +63,34 @@ public class MachineExposureChamberBlock extends BaseEntityBlock {
         return new MachineExposureChamberBlockEntity(pos, state);
     }
 
+    @Nullable
     @Override
-    public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean moving) {
-        if (state.getBlock() != newState.getBlock()) {
-            BlockEntity be = level.getBlockEntity(pos);
-            if (be instanceof MachineExposureChamberBlockEntity chamber) {
-                chamber.dropInventoryContents();
-            }
-        }
-        super.onRemove(state, level, pos, newState, moving);
+    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
+        return createTickerHelper(type, ModBlockEntities.EXPOSURE_CHAMBER_BE.get(),
+                (lvl, pos, st, be) -> MachineExposureChamberBlockEntity.tick(lvl, pos, st, be));
     }
 
     //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
-
-        if (!level.isClientSide() && level.getBlockEntity(pos) instanceof MenuProvider p) {
-            MenuRegistry.openExtendedMenu((ServerPlayer) player, p, buf -> buf.writeBlockPos(pos));
-        }
-        return InteractionResult.sidedSuccess(level.isClientSide());
-        }
+        return open(level, pos, player);
+    }
     //?} else {
     /*@Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
-
-        if (!level.isClientSide() && level.getBlockEntity(pos) instanceof MenuProvider p) {
-            MenuRegistry.openExtendedMenu((ServerPlayer) player, p, buf -> buf.writeBlockPos(pos));
-        }
-        return InteractionResult.sidedSuccess(level.isClientSide());
-        }
+        return open(level, pos, player);
+    }
     *///?}
 
-
-    @Nullable
-    @Override
-    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
-        return createTickerHelper(type, ModBlockEntities.EXPOSURE_CHAMBER_BE.get(), MachineExposureChamberBlockEntity::tick);
+    private InteractionResult open(Level level, BlockPos pos, Player player) {
+        if (!level.isClientSide() && level.getBlockEntity(pos) instanceof MachineExposureChamberBlockEntity chamber) {
+            MenuRegistry.openExtendedMenu((ServerPlayer) player, chamber, buf -> buf.writeBlockPos(pos));
+        }
+        return InteractionResult.sidedSuccess(level.isClientSide());
     }
 
     //? if >1.20.1 {
     /*public static final com.mojang.serialization.MapCodec<MachineExposureChamberBlock> CODEC = simpleCodec(MachineExposureChamberBlock::new);
-
-    @Override
-    protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
-        return CODEC;
-    }
+    @Override protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() { return CODEC; }
     *///?}
 }

@@ -189,7 +189,7 @@ public class RBMKRodBlockEntity extends RBMKColumnBlockEntity
             BlockPos base = getBlockPos();
             for (int i = h; i >= 0; i--) {
                 level.setBlock(base.above(i), i <= h + 1 - reduce
-                        ? com.hbm_m.block.ModBlocks.RBMK_CORIUM.get().defaultBlockState()
+                        ? com.hbm_m.block.ModBlocks.CORIUM_BLOCK.get().defaultBlockState()
                         : net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
             }
             int count = 1 + level.random.nextInt(h);

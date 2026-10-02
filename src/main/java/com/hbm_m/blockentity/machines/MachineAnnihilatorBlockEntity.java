@@ -2,218 +2,289 @@ package com.hbm_m.blockentity.machines;
 
 import java.math.BigInteger;
 
-import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.annihilator.AnnihilatorPoolManager;
-import com.hbm_m.inventory.fluid.trait.FT_Polluting;
-import com.hbm_m.inventory.fluid.trait.FluidTrait.FluidReleaseType;
 import com.hbm_m.api.fluids.IFluidStandardReceiverMK2;
 import com.hbm_m.blockentity.BaseMachineBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.hazard.HazardRegistry;
 import com.hbm_m.hazard.HazardSystem;
+import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
+import com.hbm_m.inventory.fluid.trait.FT_Polluting;
+import com.hbm_m.inventory.fluid.trait.FluidTrait.FluidReleaseType;
 import com.hbm_m.inventory.menu.MachineAnnihilatorMenu;
-import com.hbm_m.radiation.ChunkRadiationAccess;
+import com.hbm_m.item.liquids.FluidIdentifierItem;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.chunk.LevelChunk;
 import net.minecraft.world.level.material.Fluid;
+import net.minecraft.world.phys.AABB;
 
 /**
- * Annihilator - Port von {@code TileEntityMachineAnnihilator} (1.7.10 Original). Kein Antimaterie-
- * Reaktor trotz des Namens: eine Item-/Fluid-"Muellvernichtung", die jede zerstoerte Menge in
- * einem persistenten, welt-gespeicherten, per Namen waehlbaren "Pool" ({@link AnnihilatorPoolManager})
- * aufsummiert (BigInteger, da die Summen ueber long hinauswachsen koennen). Der "Monitor"-Slot
- * zeigt per Tooltip den aktuellen Zaehlerstand fuer das dort abgelegte Item/Fluid an.
- * <p>
- * SCOPE-Entscheidung (Meilenstein-Auszahlung): Das Original zahlt bei Erreichen konfigurierter
- * BigInteger-Schwellwerte pro Pool spezifische Blueprint-Items aus ({@code ItemBlueprints.make(...)},
- * ~12 einzigartige Items), gated hinter {@code GeneralConfig.enable528} (in 1.7.10 standardmaessig
- * AUS). Diese individuellen Blueprint-Items wurden in diesem Port nie angelegt (nur ein generisches
- * {@code ModItems.BLUEPRINTS}-Item existiert) - das Meilenstein-Auszahlungssystem (Slots 2-7, Payout-
- * Request/-Claim) wird daher NICHT uebernommen, da die Zielinhalte fehlen und das Feature selbst im
- * Original experimentell/deaktiviert war. Die eigentliche Kernmechanik (Zaehlung, Pools, Monitor,
- * Strahlung) ist vollstaendig 1:1 uebernommen.
- * <p>
- * Die Verschmutzung beim Vernichten von Fluiden ist portiert (BURN mit der doppelten Menge).
- * Ebenfalls nicht uebernommen: ({@code
- * FT_Polluting.pollute(...)} im Original) - {@link com.hbm_m.inventory.fluid.trait.FT_Polluting}
- * ist in diesem Port rein deklarative Tooltip-Metadata ohne Wirkmethode (siehe gleiche Entscheidung
- * bei {@link MachineFlareStackBlockEntity}).
+ * 1:1 {@code TileEntityMachineAnnihilator}: vernichtet alles in Slot 0 und den Inhalt des 2,5-Mio.-mB-Tanks und
+ * zaehlt es im gewaehlten Pool ({@link AnnihilatorPoolManager}). Erreichte Meilensteine werden in die Ausgabeslots
+ * 2-7 ausgezahlt; ein Gegenstand in Slot 9 wird einzeln vernichtet und zahlt dabei immer den hoechsten erreichten
+ * Meilenstein nach Slot 10 aus. Slot 8 zeigt den Zaehlerstand (Item oder per Fluidkennung ein Fluid). Beim Vernichten
+ * brennt oben eine Flamme, strahlende Gegenstaende verstrahlen den Schlot.
  */
-public class MachineAnnihilatorBlockEntity extends BaseMachineBlockEntity implements IFluidStandardReceiverMK2 {
+public class MachineAnnihilatorBlockEntity extends BaseMachineBlockEntity implements IFluidStandardReceiverMK2,
+        com.hbm_m.api.tile.IControlReceiver {
 
     public static final int SLOT_INPUT = 0;
-    public static final int SLOT_MONITOR = 1;
-    private static final int SLOT_COUNT = 2;
+    public static final int SLOT_FLUID_ID = 1;
+    public static final int SLOT_MONITOR = 8;
+    public static final int SLOT_REQUEST = 9;
+    public static final int SLOT_PAYOUT = 10;
+    private static final int SLOT_COUNT = 11;
 
-    private static final int TANK_CAPACITY_MB = 64_000;
-    private static final String DEFAULT_POOL = "Recycling";
+    public String pool = "Recycling";
+    public int timer;
 
-    private final FluidTank tank = new FluidTank(TANK_CAPACITY_MB) {
-        @Override
-        public void onContentsChanged() {
-            setChanged();
-            sendUpdateToClient();
-        }
-    };
-
-    private String poolName = DEFAULT_POOL;
-    private String monitorDisplay = "";
+    public final FluidTank tank = new FluidTank(ModFluids.NONE.getSource(), 2_500_000);
+    public BigInteger monitorBigInt = BigInteger.ZERO;
 
     public MachineAnnihilatorBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.ANNIHILATOR_BE.get(), pos, state, SLOT_COUNT, 0L, 0L, 0L);
     }
 
-    //? if forge {
-    @Override
-    public @NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(
-            net.minecraftforge.common.capabilities.Capability<T> cap, @Nullable Direction side) {
-        if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER) {
-            return tank.getForgeFluidCapability().cast();
-        }
-        return super.getCapability(cap, side);
+    /** Original {@code ForgeDirection.getOrientation(meta - 10)} - im Port die FACING-Richtung. */
+    private Direction dir() {
+        BlockState state = getBlockState();
+        return state.hasProperty(com.hbm_m.block.machines.MachineAnnihilatorBlock.FACING)
+                ? state.getValue(com.hbm_m.block.machines.MachineAnnihilatorBlock.FACING) : Direction.NORTH;
     }
-    //?}
-
-    // ==================== TICK ====================
 
     public static void tick(Level level, BlockPos pos, BlockState state, MachineAnnihilatorBlockEntity be) {
-        if (level.isClientSide() || !(level instanceof ServerLevel serverLevel)) return;
+        if (level instanceof ServerLevel serverLevel) be.serverTick(serverLevel);
+    }
 
-        if (level.getGameTime() % 20 == 0) {
-            for (Direction dir : Direction.values()) {
-                be.trySubscribe(be.tank.getTankType(), level, pos.relative(dir), dir);
+    private void serverTick(ServerLevel world) {
+
+        ItemStack[] slots = slotsArray();
+        if (this.tank.setType(SLOT_FLUID_ID, slots)) applySlots(slots);
+
+        if (this.pool != null && !this.pool.isEmpty()) {
+
+            for (DirPos con : getConPos()) {
+                if (tank.getTankType() != ModFluids.NONE.getSource()) this.trySubscribe(tank.getTankType(), world, con.pos, con.dir);
+            }
+
+            AnnihilatorPoolManager data = AnnihilatorPoolManager.get(world);
+            boolean didSomething = false;
+
+            ItemStack trash = inventory.getStackInSlot(SLOT_INPUT);
+            if (!trash.isEmpty()) {
+                onDestroy(trash);
+                tryAddPayout(data.pushToPool(pool, trash, false));
+                inventory.setStackInSlot(SLOT_INPUT, ItemStack.EMPTY);
+                this.setChanged();
+                didSomething = true;
+            }
+            if (tank.getFill() > 0) {
+                FT_Polluting.pollute(world, worldPosition, tank.getTankType(), FluidReleaseType.BURN, tank.getFill() * 2);
+                tryAddPayout(data.pushToPool(pool, tank.getTankType(), tank.getFill(), false));
+                tank.setFill(0);
+                this.setChanged();
+                didSomething = true;
+            }
+
+            if (didSomething) {
+                Direction dir = dir();
+                com.hbm_m.util.ParticleUtil.spawnGasFlame(world, worldPosition.getX() + 0.5 - dir.getStepX() * 3, worldPosition.getY() + 8.75,
+                        worldPosition.getZ() + 0.5 - dir.getStepZ() * 3, world.random.nextGaussian() * 0.05, 0.1, world.random.nextGaussian() * 0.05);
+
+                if (world.getGameTime() % 3 == 0)
+                    world.playSound(null, worldPosition.getX() + 0.5 - dir.getStepX() * 3, worldPosition.getY() + 8.75, worldPosition.getZ() + 0.5 - dir.getStepZ() * 3,
+                            com.hbm_m.sound.HbmSoundsNT.get("hbm:weapon.flamethrowerShoot"), SoundSource.BLOCKS, 1F, 0.5F + world.random.nextFloat() * 0.25F);
+            }
+
+            ItemStack monitor = inventory.getStackInSlot(SLOT_MONITOR);
+            if (!monitor.isEmpty()) {
+                if (monitor.getItem() instanceof FluidIdentifierItem) {
+                    Fluid type = FluidIdentifierItem.resolvePrimaryForTank(monitor);
+                    monitor(data, type == null ? null : AnnihilatorPoolManager.fluidKey(type));
+                } else {
+                    monitor(data, AnnihilatorPoolManager.compKey(monitor));
+                }
+            }
+
+            ItemStack request = inventory.getStackInSlot(SLOT_REQUEST);
+            if (!request.isEmpty()) {
+                ItemStack single = request.copy();
+                single.setCount(1);
+                onDestroy(single);
+                ItemStack payout = data.pushToPool(pool, single, true);
+                inventory.extractItem(SLOT_REQUEST, 1, false);
+                if (payout != null) {
+                    ItemStack out = inventory.getStackInSlot(SLOT_PAYOUT);
+                    if (out.isEmpty()) {
+                        inventory.setStackInSlot(SLOT_PAYOUT, payout);
+                    } else if (ItemStack.isSameItemSameTags(out, payout) && out.getMaxStackSize() >= out.getCount() + payout.getCount()) {
+                        out.grow(payout.getCount());
+                        inventory.setStackInSlot(SLOT_PAYOUT, out);
+                    }
+                }
             }
         }
 
-        be.destroyInput(serverLevel);
-        be.destroyFluid(serverLevel);
-        be.updateMonitor(serverLevel);
-
-        be.setChanged();
-        be.sendUpdateToClient();
+        sendUpdateToClient();
     }
 
-    private void destroyInput(ServerLevel level) {
-        ItemStack input = inventory.getStackInSlot(SLOT_INPUT);
-        if (input.isEmpty()) return;
-
-        Item item = input.getItem();
-        int count = input.getCount();
-
-        applyRadiation(level, input, count);
-
-        ResourceLocation id = BuiltInRegistries.ITEM.getKey(item);
-        AnnihilatorPoolManager.get(level).add(poolName, "item:" + id, count);
-
-        inventory.setStackInSlot(SLOT_INPUT, ItemStack.EMPTY);
-    }
-
-    private void destroyFluid(ServerLevel level) {
-        int fill = tank.getFill();
-        if (fill <= 0) return;
-
-        Fluid fluid = tank.getTankType();
-        ResourceLocation id = BuiltInRegistries.FLUID.getKey(fluid);
-        AnnihilatorPoolManager.get(level).add(poolName, "fluid:" + id, fill);
-
-        // Original: FT_Polluting.pollute(..., BURN, tank.getFill() * 2).
-        FT_Polluting.pollute(level, worldPosition, fluid, FluidReleaseType.BURN, fill * 2F);
-
-        tank.drainMb(fill);
-    }
-
-    /** Port of {@code TileEntityMachineAnnihilator.onDestroy}'s radiation hazard check. */
-    private void applyRadiation(ServerLevel level, ItemStack stack, int count) {
-        float hazard = HazardSystem.getHazardLevelFromStack(stack, HazardRegistry.RADIATION);
-        if (hazard <= 0f) return;
-
-        float amount = Math.min(1000f, hazard * count);
-        LevelChunk chunk = level.getChunkAt(worldPosition);
-        ChunkRadiationAccess.get(chunk).ifPresent(rad ->
-                rad.setAmbientRadiation(rad.getAmbientRadiation() + amount));
-    }
-
-    private void updateMonitor(ServerLevel level) {
-        ItemStack monitorStack = inventory.getStackInSlot(SLOT_MONITOR);
-        if (monitorStack.isEmpty()) {
-            monitorDisplay = "";
-            return;
+    public void onDestroy(ItemStack stack) {
+        float radiation = HazardSystem.getHazardLevelFromStack(stack, HazardRegistry.RADIATION);
+        if (radiation > 0) {
+            Direction dir = dir();
+            com.hbm_m.radiation.ChunkRadiationManager.incrementRad(level, worldPosition.getX() - dir.getStepX() * 3, worldPosition.getY() + 9,
+                    worldPosition.getZ() - dir.getStepZ() * 3, Math.min(radiation * 5F, 1_000F));
         }
-        ResourceLocation id = BuiltInRegistries.ITEM.getKey(monitorStack.getItem());
-        BigInteger count = AnnihilatorPoolManager.get(level).get(poolName, "item:" + id);
-        monitorDisplay = count.toString();
     }
 
-    // ==================== IFluidUserMK2 / MK2-Netz ====================
+    /** Anschluss samt Richtung (Original {@code DirPos}). */
+    private record DirPos(BlockPos pos, Direction dir) { }
+
+    public DirPos[] getConPos() {
+        Direction dir = dir();
+        Direction rot = dir.getClockWise(); // Original: dir.getRotation(UP)
+        BlockPos p = worldPosition;
+
+        return new DirPos[] {
+                new DirPos(p.relative(dir, 5), dir),
+                new DirPos(p.relative(dir, 3).relative(rot, 2), rot),
+                new DirPos(p.relative(dir, 3).relative(rot, -2), rot.getOpposite())
+        };
+    }
+
+    public void monitor(AnnihilatorPoolManager data, @Nullable String key) {
+        if (data.hasPool(this.pool) && key != null) {
+            this.monitorBigInt = data.getOrNull(this.pool, key);
+            if (this.monitorBigInt == null) this.monitorBigInt = BigInteger.ZERO;
+        } else {
+            this.monitorBigInt = BigInteger.ZERO;
+        }
+    }
+
+    public void tryAddPayout(@Nullable ItemStack payout) {
+        if (payout == null) return;
+
+        for (int i = 2; i <= 7; i++) {
+            ItemStack slot = inventory.getStackInSlot(i);
+            if (!slot.isEmpty() && ItemStack.isSameItemSameTags(slot, payout) && slot.getMaxStackSize() >= slot.getCount() + payout.getCount()) {
+                slot.grow(payout.getCount());
+                inventory.setStackInSlot(i, slot);
+                this.setChanged();
+                return;
+            }
+        }
+
+        for (int i = 2; i <= 7; i++) {
+            if (inventory.getStackInSlot(i).isEmpty()) {
+                inventory.setStackInSlot(i, payout);
+                this.setChanged();
+                return;
+            }
+        }
+    }
+
+    private ItemStack[] slotsArray() {
+        ItemStack[] arr = new ItemStack[SLOT_COUNT];
+        for (int i = 0; i < SLOT_COUNT; i++) arr[i] = inventory.getStackInSlot(i);
+        return arr;
+    }
+
+    private void applySlots(ItemStack[] arr) {
+        for (int i = 0; i < SLOT_COUNT; i++) inventory.setStackInSlot(i, arr[i] == null ? ItemStack.EMPTY : arr[i]);
+    }
+
+    /** Original: Muell (0), Fluidkennung (1), Monitor (8) und Auszahlungsanfrage (9) nehmen Gegenstaende an. */
+    @Override
+    protected boolean isItemValidForSlot(int slot, ItemStack stack) {
+        if (slot == SLOT_INPUT) return true;
+        if (slot == SLOT_FLUID_ID && stack.getItem() instanceof com.hbm_m.interfaces.IItemFluidIdentifier) return true;
+        if (slot == SLOT_MONITOR) return true;
+        if (slot == SLOT_REQUEST) return true;
+        return false;
+    }
+
+    // ==================== Fluid ====================
+
+    @Override public FluidTank[] getAllTanks() { return new FluidTank[] { tank }; }
+    @Override public FluidTank[] getReceivingTanks() { return new FluidTank[] { tank }; }
 
     @Override
-    public FluidTank[] getAllTanks() { return new FluidTank[] { tank }; }
-
-    @Override
-    public FluidTank[] getReceivingTanks() { return new FluidTank[] { tank }; }
+    public com.hbm_m.api.fluids.ConnectionPriority getFluidPriority() {
+        return com.hbm_m.api.fluids.ConnectionPriority.LOW;
+    }
 
     @Override
     public boolean isLoaded() {
         return level != null && !isRemoved() && level.isLoaded(worldPosition);
     }
 
+    // ==================== Steuerung ====================
+
     @Override
-    public boolean canConnect(Fluid fluid, Direction fromDir) {
-        return fromDir != null;
+    public boolean hasPermission(Player player) {
+        return player.distanceToSqr(worldPosition.getX() + 0.5, worldPosition.getY() + 0.5, worldPosition.getZ() + 0.5) <= 64;
     }
+
+    @Override
+    public void receiveControl(CompoundTag data) {
+        if (data.contains("pool")) setPoolName(data.getString("pool"));
+    }
+
+    /** Original {@code receiveControl}: nur nicht leere Namen werden uebernommen. */
+    public void setPoolName(String pool) {
+        if (pool != null && !pool.isEmpty()) {
+            this.pool = pool;
+            this.setChanged();
+            sendUpdateToClient();
+        }
+    }
+
+    public String getPoolName() { return pool; }
+    public FluidTank getTank() { return tank; }
 
     // ==================== NBT ====================
 
     @Override
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.writeNbtData(tag, registries);
-        tag.putString("pool_name", poolName);
-        tag.putString("monitor_display", monitorDisplay);
-        tank.writeToNBT(tag, "tank");
+        tank.writeToNBT(tag, "t");
+        tag.putString("pool", pool == null ? "" : pool);
+        tag.putByteArray("monitor", monitorBigInt.toByteArray());
     }
 
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.readNbtData(tag, registries);
-        poolName = tag.contains("pool_name") ? tag.getString("pool_name") : DEFAULT_POOL;
-        monitorDisplay = tag.getString("monitor_display");
-        tank.readFromNBT(tag, "tank");
+        tank.readFromNBT(tag, "t");
+        pool = tag.getString("pool");
+        byte[] mon = tag.getByteArray("monitor");
+        monitorBigInt = mon.length == 0 ? BigInteger.ZERO : new BigInteger(mon);
     }
 
-    // ==================== GETTERS / MENU ====================
+    // ==================== Menue ====================
 
     @Override
     protected Component getDefaultName() {
-        return Component.translatable("container.hbm_m.annihilator");
+        return Component.translatable("container.annihilator");
     }
 
     @Override
     public Component getDisplayName() {
         return getDefaultName();
-    }
-
-    @Override
-    protected boolean isItemValidForSlot(int slot, ItemStack stack) {
-        // Beide Slots sind reine Ablage-Slots (Input wird sofort vernichtet, Monitor ist nur
-        // eine Anzeige-Referenz) - Automation legt hier ab, die Maschine nimmt selbst nichts weg.
-        return slot == SLOT_INPUT || slot == SLOT_MONITOR;
     }
 
     @Nullable
@@ -222,22 +293,14 @@ public class MachineAnnihilatorBlockEntity extends BaseMachineBlockEntity implem
         return new MachineAnnihilatorMenu(containerId, playerInventory, this);
     }
 
-    public FluidTank getTank() {
-        return tank;
-    }
+    private AABB bb = null;
 
-    public String getPoolName() {
-        return poolName;
-    }
-
-    public void setPoolName(String poolName) {
-        this.poolName = (poolName == null || poolName.isBlank()) ? DEFAULT_POOL : poolName.trim();
-        setChanged();
-        sendUpdateToClient();
-    }
-
-    /** Kumulierter Zaehlerstand fuer das aktuell im Monitor-Slot liegende Item, als String (BigInteger). */
-    public String getMonitorDisplay() {
-        return monitorDisplay;
+    //? if forge {
+    @Override
+    //?}
+    public AABB getRenderBoundingBox() {
+        if (bb == null) bb = new AABB(worldPosition.getX() - 5, worldPosition.getY(), worldPosition.getZ() - 5,
+                worldPosition.getX() + 6, worldPosition.getY() + 8, worldPosition.getZ() + 6);
+        return bb;
     }
 }

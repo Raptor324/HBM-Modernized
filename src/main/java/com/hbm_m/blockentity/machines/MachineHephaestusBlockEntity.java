@@ -1,8 +1,6 @@
 package com.hbm_m.blockentity.machines;
 
-import com.hbm_m.api.fluids.IFluidConnectorMK2;
 import com.hbm_m.api.fluids.IFluidStandardTransceiverMK2;
-import com.hbm_m.api.fluids.VanillaFluidEquivalence;
 import com.hbm_m.blockentity.BaseMachineBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.inventory.fluid.FluidType;
@@ -14,182 +12,243 @@ import com.hbm_m.inventory.fluid.trait.FT_Heatable.HeatingType;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.tags.FluidTags;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
-import net.minecraft.world.level.material.Fluids;
+import net.minecraft.world.phys.AABB;
 
 /**
- * Hephaestus - Port von {@code TileEntityMachineHephaestus} (1.7.10 Original). Passiver
- * geothermischer Waermetauscher (kein Inventar, kein GUI, keine Elektrizitaet) - scannt zyklisch
- * (10 Ticks Rotationsfenster, ein Layer pro Tick, 15x15-Flaeche) den Untergrund auf Lava/Vulkan-
- * Bloecke und nutzt die Summe als Waerme fuer {@code FT_Heatable} (analog zu {@code
- * MachineBoilerBlockEntity}, aber mit direktem Block-Scan statt {@code IHeatSource}-Pull, 1:1 aus
- * dem Original).
- * <p>
- * SCOPE-Entscheidung: {@code volcanic_lava_block} (Waerme-Gewicht 150) und {@code ore_volcano}
- * (Gewicht 300 + 3-facher "Fissure"-Bonus fuer 20 Ticks) existieren in diesem Port nicht - nur
- * gewoehnliche Lava (Gewicht 5, 1:1 aus dem Original) wird als Waermequelle erkannt.
+ * 1:1 {@code TileEntityMachineHephaestus}: Erdwaermetauscher. Jede Sekunde wird reihum eine der zehn Schichten unter
+ * dem Kern in 15x15 abgetastet (Lava 5, Vulkanlava 150, Vulkanerz 300 - letzteres verdreifacht die Summe fuer 20
+ * Ticks); mit der Summe erhitzt er das Eingangsfluid nach dessen erster Waermetauscherstufe. Acht Anschluesse unten
+ * und oben. Im Betrieb drehen sich die Rotoren, der Kern glueht und Dampfwolken steigen auf.
  */
 public class MachineHephaestusBlockEntity extends BaseMachineBlockEntity implements IFluidStandardTransceiverMK2 {
 
-    private static final int TANK_CAPACITY = 24_000;
-    private static final int SCAN_RANGE = 7;
-    private static final int SCAN_WINDOW = 10;
-    private static final int LAVA_HEAT = 5;
+    public final FluidTank input = new FluidTank(ModFluids.CRUDE_OIL.getSource(), 24_000);
+    public final FluidTank output = new FluidTank(ModFluids.HOTOIL.getSource(), 24_000);
 
-    private final FluidTank inputTank = new FluidTank(ModFluids.CRUDE_OIL.getSource(), TANK_CAPACITY);
-    private final FluidTank outputTank = new FluidTank(ModFluids.HOTOIL.getSource(), TANK_CAPACITY);
+    public int bufferedHeat;
+    public float rot;
+    public float prevRot;
 
-    private final int[] heatLayers = new int[SCAN_WINDOW];
+    private final int[] heat = new int[10];
+    private long fissureScanTime;
 
     public MachineHephaestusBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.HEPHAESTUS_BE.get(), pos, state, 0, 0L, 0L, 0L);
     }
 
     public static void tick(Level level, BlockPos pos, BlockState state, MachineHephaestusBlockEntity be) {
-        if (!level.isClientSide) {
-            be.serverTick(level, pos);
-        }
+        if (!level.isClientSide) be.serverTick(level, pos);
+        else be.clientTick(level, pos);
     }
 
-    private void serverTick(Level level, BlockPos pos) {
+    private void serverTick(Level world, BlockPos pos) {
+
         setupTanks();
 
-        if (level.getGameTime() % 20 == 0) {
-            for (Direction dir : Direction.values()) {
-                if (dir == Direction.UP || dir == Direction.DOWN) continue;
-                BlockPos neighborPos = pos.relative(dir);
-                BlockEntity neighborBe = level.getBlockEntity(neighborPos);
-                if (!(neighborBe instanceof IFluidConnectorMK2)) continue;
-                if (!FluidTank.isFluidTypeExplicitlySet(inputTank.getTankType())) continue;
-                trySubscribe(inputTank.getTankType(), level, neighborPos, dir);
-            }
+        if (world.getGameTime() % 20 == 0) {
+            this.updateConnections(world);
         }
 
-        int layer = (int) (level.getGameTime() % SCAN_WINDOW);
-        int y = pos.getY() - 1 - layer;
-        int heat = 0;
+        int height = (int) (world.getGameTime() % 10);
+        int range = 7;
+        int y = pos.getY() - 1 - height;
 
-        if (y >= level.getMinBuildHeight()) {
-            for (int x = -SCAN_RANGE; x <= SCAN_RANGE; x++) {
-                for (int z = -SCAN_RANGE; z <= SCAN_RANGE; z++) {
-                    heat += heatFromBlock(level, pos.getX() + x, y, pos.getZ() + z);
+        heat[height] = 0;
+
+        if (y >= world.getMinBuildHeight()) {
+            for (int x = -range; x <= range; x++) {
+                for (int z = -range; z <= range; z++) {
+                    heat[height] += heatFromBlock(world, pos.getX() + x, y, pos.getZ() + z);
                 }
             }
         }
-        heatLayers[layer] = heat;
 
         heatFluid();
 
-        if (outputTank.getFill() > 0) {
-            for (Direction dir : Direction.values()) {
-                if (dir == Direction.UP || dir == Direction.DOWN) continue;
-                BlockPos neighborPos = pos.relative(dir);
-                BlockEntity neighborBe = level.getBlockEntity(neighborPos);
-                if (!(neighborBe instanceof IFluidConnectorMK2)) continue;
-                tryProvide(outputTank, level, neighborPos, dir);
+        if (output.getFill() > 0) {
+            for (DirPos con : getConPos()) {
+                this.tryProvide(output, world, con.pos, con.dir);
             }
         }
+        this.bufferedHeat = this.getTotalHeat();
 
         setChanged();
         sendUpdateToClient();
     }
 
-    private int heatFromBlock(Level level, int x, int y, int z) {
-        return level.getFluidState(new BlockPos(x, y, z)).is(FluidTags.LAVA) ? LAVA_HEAT : 0;
-    }
+    private void clientTick(Level world, BlockPos pos) {
 
-    private int getTotalHeat() {
-        int total = 0;
-        for (int h : heatLayers) total += h;
-        return total;
-    }
+        this.prevRot = this.rot;
 
-    private void heatFluid() {
-        FT_Heatable trait = FluidType.getTrait(inputTank.getTankType(), FT_Heatable.class);
-        if (trait == null) return;
+        if (this.bufferedHeat > 0) {
+            this.rot += 0.5F;
 
-        HeatingStep step = trait.getFirstStep();
-        if (step == null || step.amountReq <= 0) return;
-
-        int heat = getTotalHeat();
-        int inputOps = inputTank.getFluidAmountMb() / step.amountReq;
-        int outputOps = (outputTank.getCapacityMb() - outputTank.getFluidAmountMb()) / step.amountProduced;
-        int heatOps = step.heatReq > 0 ? heat / step.heatReq : 0;
-        int ops = Math.min(Math.min(inputOps, outputOps), heatOps);
-        if (ops <= 0) return;
-
-        inputTank.drainMb(ops * step.amountReq);
-        outputTank.fillMb(step.typeProduced, ops * step.amountProduced);
-    }
-
-    private void setupTanks() {
-        FT_Heatable trait = FluidType.getTrait(inputTank.getTankType(), FT_Heatable.class);
-        if (trait != null && trait.getEfficiency(HeatingType.HEATEXCHANGER) > 0) {
-            HeatingStep step = trait.getFirstStep();
-            if (step != null) {
-                outputTank.setTankType(step.typeProduced);
-                return;
+            if (world.random.nextInt(7) == 0) {
+                double x = world.random.nextGaussian() * 2;
+                double y = world.random.nextGaussian() * 3;
+                double z = world.random.nextGaussian() * 2;
+                world.addParticle(ParticleTypes.CLOUD, pos.getX() + 0.5 + x, pos.getY() + 6 + y, pos.getZ() + 0.5 + z, 0, 0, 0);
             }
         }
-        outputTank.setTankType(ModFluids.NONE.getSource());
+
+        com.hbm_m.sound.ClientSoundBootstrap.updateSound(this, this.bufferedHeat > 0, this::createAudioLoop);
+
+        if (this.rot >= 360F) {
+            this.prevRot -= 360F;
+            this.rot -= 360F;
+        }
     }
 
-    // ── IFluidStandardTransceiverMK2 ─────────────────────────────────────────
-
-    @Override public FluidTank[] getAllTanks()      { return new FluidTank[]{ inputTank, outputTank }; }
-    @Override public FluidTank[] getReceivingTanks() { return new FluidTank[]{ inputTank }; }
-    @Override public FluidTank[] getSendingTanks() {
-        return outputTank.getFill() > 0 ? new FluidTank[]{ outputTank } : FluidTank.EMPTY_ARRAY;
+    private Object createAudioLoop() {
+        try {
+            return Class.forName("com.hbm_m.client.sound.HephaestusLoopSoundFactory").getMethod("create", MachineHephaestusBlockEntity.class).invoke(null, this);
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException(e);
+        }
     }
+
+    protected void heatFluid() {
+
+        FT_Heatable trait = FluidType.getTrait(input.getTankType(), FT_Heatable.class);
+
+        if (trait != null) {
+            int heat = this.getTotalHeat();
+            HeatingStep step = trait.getFirstStep();
+
+            int inputOps = input.getFill() / step.amountReq;
+            int outputOps = (output.getMaxFill() - output.getFill()) / step.amountProduced;
+            int heatOps = heat / step.heatReq;
+            int ops = Math.min(Math.min(inputOps, outputOps), heatOps);
+
+            input.setFill(input.getFill() - step.amountReq * ops);
+            output.setFill(output.getFill() + step.amountProduced * ops);
+            setChanged();
+        }
+    }
+
+    protected void setupTanks() {
+
+        FT_Heatable trait = FluidType.getTrait(input.getTankType(), FT_Heatable.class);
+
+        if (trait != null && trait.getEfficiency(HeatingType.HEATEXCHANGER) > 0) {
+            Fluid outType = trait.getFirstStep().typeProduced;
+            output.setTankType(outType);
+            return;
+        }
+
+        input.setTankType(ModFluids.NONE.getSource());
+        output.setTankType(ModFluids.NONE.getSource());
+    }
+
+    protected int heatFromBlock(Level world, int x, int y, int z) {
+        BlockState state = world.getBlockState(new BlockPos(x, y, z));
+        Block b = state.getBlock();
+
+        if (b == Blocks.LAVA) return 5;
+        if (b == com.hbm_m.block.ModBlocks.VOLCANIC_LAVA_BLOCK.get()) return 150;
+
+        if (b == com.hbm_m.block.ModBlocks.ORE_VOLCANO.get()) {
+            this.fissureScanTime = world.getGameTime();
+            return 300;
+        }
+
+        return 0;
+    }
+
+    public int getTotalHeat() {
+        boolean fissure = level != null && level.getGameTime() - this.fissureScanTime < 20;
+        int heat = 0;
+
+        for (int h : this.heat) {
+            heat += h;
+        }
+
+        if (fissure) {
+            heat *= 3;
+        }
+
+        return heat;
+    }
+
+    private void updateConnections(Level world) {
+
+        if (input.getTankType() == ModFluids.NONE.getSource()) return;
+
+        for (DirPos con : getConPos()) {
+            this.trySubscribe(input.getTankType(), world, con.pos, con.dir);
+        }
+    }
+
+    /** Anschluss samt Richtung (Original {@code DirPos}). */
+    private record DirPos(BlockPos pos, Direction dir) { }
+
+    private DirPos[] getConPos() {
+        BlockPos p = worldPosition;
+        return new DirPos[] {
+                new DirPos(p.offset(2, 0, 0), Direction.EAST),
+                new DirPos(p.offset(-2, 0, 0), Direction.WEST),
+                new DirPos(p.offset(0, 0, 2), Direction.SOUTH),
+                new DirPos(p.offset(0, 0, -2), Direction.NORTH),
+                new DirPos(p.offset(2, 11, 0), Direction.EAST),
+                new DirPos(p.offset(-2, 11, 0), Direction.WEST),
+                new DirPos(p.offset(0, 11, 2), Direction.SOUTH),
+                new DirPos(p.offset(0, 11, -2), Direction.NORTH)
+        };
+    }
+
+    // ── Fluid ──────────────────────────────────────────────────────────────
+
+    @Override public FluidTank[] getAllTanks() { return new FluidTank[] { input, output }; }
+    @Override public FluidTank[] getReceivingTanks() { return new FluidTank[] { input }; }
+    @Override public FluidTank[] getSendingTanks() { return new FluidTank[] { output }; }
 
     @Override
     public boolean isLoaded() {
         return level != null && !isRemoved() && level.isLoaded(worldPosition);
     }
 
+    /** Original: nur seitlich. */
     @Override
     public boolean canConnect(Fluid fluid, Direction fromDir) {
-        if (fromDir == null || fromDir == Direction.UP || fromDir == Direction.DOWN) return false;
-        if (fluid == null || fluid == Fluids.EMPTY) return false;
-        return VanillaFluidEquivalence.sameSubstance(fluid, ModFluids.CRUDE_OIL.getSource());
+        return fromDir != null && fromDir != Direction.UP && fromDir != Direction.DOWN;
     }
 
-    // ── Accessors ────────────────────────────────────────────────────────────
+    public FluidTank getInputTank()  { return input; }
+    public FluidTank getOutputTank() { return output; }
 
-    public FluidTank getInputTank()  { return inputTank; }
-    public FluidTank getOutputTank() { return outputTank; }
-
-    // ── NBT ─────────────────────────────────────────────────────────────────
+    // ── NBT ────────────────────────────────────────────────────────────────
 
     @Override
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.writeNbtData(tag, registries);
-        inputTank.writeToNBT(tag, "input");
-        outputTank.writeToNBT(tag, "output");
+        input.writeToNBT(tag, "0");
+        output.writeToNBT(tag, "1");
+        tag.putInt("bufferedHeat", bufferedHeat);
     }
 
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.readNbtData(tag, registries);
-        inputTank.readFromNBT(tag, "input");
-        outputTank.readFromNBT(tag, "output");
+        input.readFromNBT(tag, "0");
+        output.readFromNBT(tag, "1");
+        bufferedHeat = tag.getInt("bufferedHeat");
     }
-
-    // ── Slot validation / Menu ─────────────────────────────────────────────
 
     @Override
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
-        return false; // Kein Inventar - siehe Klassenkommentar.
+        return false;
     }
 
     @Override
@@ -205,5 +264,16 @@ public class MachineHephaestusBlockEntity extends BaseMachineBlockEntity impleme
     @Override
     public AbstractContainerMenu createMenu(int id, Inventory inventory, Player player) {
         return null; // Kein GUI im Original.
+    }
+
+    private AABB bb = null;
+
+    //? if forge {
+    @Override
+    //?}
+    public AABB getRenderBoundingBox() {
+        if (bb == null) bb = new AABB(worldPosition.getX() - 3, worldPosition.getY(), worldPosition.getZ() - 3,
+                worldPosition.getX() + 4, worldPosition.getY() + 12, worldPosition.getZ() + 4);
+        return bb;
     }
 }

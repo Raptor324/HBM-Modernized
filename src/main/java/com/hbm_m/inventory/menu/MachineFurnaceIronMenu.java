@@ -37,12 +37,12 @@ public class MachineFurnaceIronMenu extends AbstractContainerMenu {
     private static final int DATA_PROGRESS = 2;
 
     public MachineFurnaceIronMenu(int id, Inventory inventory, FriendlyByteBuf extraData) {
-        this(id, inventory, getBlockEntity(inventory, extraData), new SimpleContainerData(3));
+        this(id, inventory, getBlockEntity(inventory, extraData), new SimpleContainerData(MachineFurnaceIronBlockEntity.DATA_COUNT));
     }
 
     public MachineFurnaceIronMenu(int id, Inventory inventory, BlockEntity entity, ContainerData data) {
         super(ModMenuTypes.FURNACE_IRON_MENU.get(), id);
-        checkContainerDataCount(data, 3);
+        checkContainerDataCount(data, MachineFurnaceIronBlockEntity.DATA_COUNT);
         this.blockEntity = (MachineFurnaceIronBlockEntity) entity;
         this.data = data;
 
@@ -85,12 +85,15 @@ public class MachineFurnaceIronMenu extends AbstractContainerMenu {
     public int getProgress() { return data.get(DATA_PROGRESS); }
 
     public int getBurnProgressScaled(int scale) {
-        int duration = getLitDuration();
-        return duration > 0 ? getLitTime() * scale / duration : 0;
+        return getLitTime() * scale / Math.max(getLitDuration(), 1);
     }
 
+    public int getProcessingTime() { return data.get(3); }
+    public boolean canSmelt() { return data.get(4) != 0; }
+
+    /** Original: {@code progress * 70 / max(processingTime, 1)}. */
     public int getCookProgressScaled(int scale) {
-        return getProgress() * scale / 160;
+        return getProgress() * scale / Math.max(getProcessingTime(), 1);
     }
 
     public boolean isLit() {
@@ -116,16 +119,8 @@ public class MachineFurnaceIronMenu extends AbstractContainerMenu {
                 if (!this.moveItemStackTo(slotStack, PLAYER_INV_START, PLAYER_INV_END, true)) {
                     return ItemStack.EMPTY;
                 }
-            } else {
-                if (MachineFurnaceIronBlockEntity.isFuel(slotStack)) {
-                    if (!this.moveItemStackTo(slotStack, SLOT_FUEL_1, SLOT_FUEL_2 + 1, false)) {
-                        if (!this.moveItemStackTo(slotStack, SLOT_INPUT, SLOT_INPUT + 1, false)) {
-                            return ItemStack.EMPTY;
-                        }
-                    }
-                } else if (!this.moveItemStackTo(slotStack, SLOT_INPUT, SLOT_INPUT + 1, false)) {
-                    return ItemStack.EMPTY;
-                }
+            } else if (!this.moveItemStackTo(slotStack, 0, 5, false)) { // Original: mergeItemStack(0, 5)
+                return ItemStack.EMPTY;
             }
 
             if (slotStack.isEmpty()) {

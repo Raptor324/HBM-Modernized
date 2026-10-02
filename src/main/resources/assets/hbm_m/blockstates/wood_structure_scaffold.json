@@ -1,0 +1,100 @@
+{
+ "variants": {
+  "py=false,nx=false,nz=false,px=false,pz=false": {
+   "model": "hbm_m:block/deco/wood_structure_scaffold_00000"
+  },
+  "py=false,nx=false,nz=false,px=false,pz=true": {
+   "model": "hbm_m:block/deco/wood_structure_scaffold_00001"
+  },
+  "py=false,nx=false,nz=false,px=true,pz=false": {
+   "model": "hbm_m:block/deco/wood_structure_scaffold_00010"
+  },
+  "py=false,nx=false,nz=false,px=true,pz=true": {
+   "model": "hbm_m:block/deco/wood_structure_scaffold_00011"
+  },
+  "py=false,nx=false,nz=true,px=false,pz=false": {
+   "model": "hbm_m:block/deco/wood_structure_scaffold_00100"
+  },
+  "py=false,nx=false,nz=true,px=false,pz=true": {
+   "model": "hbm_m:block/deco/wood_structure_scaffold_00101"
+  },
+  "py=false,nx=false,nz=true,px=true,pz=false": {
+   "model": "hbm_m:block/deco/wood_structure_scaffold_00110"
+  },
+  "py=false,nx=false,nz=true,px=true,pz=true": {
+   "model": "hbm_m:block/deco/wood_structure_scaffold_00111"
+  },
+  "py=false,nx=true,nz=false,px=false,pz=false": {
+   "model": "hbm_m:block/deco/wood_structure_scaffold_01000"
+  },
+  "py=false,nx=true,nz=false,px=false,pz=true": {
+   "model": "hbm_m:block/deco/wood_structure_scaffold_01001"
+  },
+  "py=false,nx=true,nz=false,px=true,pz=false": {
+   "model": "hbm_m:block/deco/wood_structure_scaffold_01010"
+  },
+  "py=false,nx=true,nz=false,px=true,pz=true": {
+   "model": "hbm_m:block/deco/wood_structure_scaffold_01011"
+  },
+  "py=false,nx=true,nz=true,px=false,pz=false": {
+   "model": "hbm_m:block/deco/wood_structure_scaffold_01100"
+  },
+  "py=false,nx=true,nz=true,px=false,pz=true": {
+   "model": "hbm_m:block/deco/wood_structure_scaffold_01101"
+  },
+  "py=false,nx=true,nz=true,px=true,pz=false": {
+   "model": "hbm_m:block/deco/wood_structure_scaffold_01110"
+  },
+  "py=false,nx=true,nz=true,px=true,pz=true": {
+   "model": "hbm_m:block/deco/wood_structure_scaffold_01111"
+  },
+  "py=true,nx=false,nz=false,px=false,pz=false": {
+   "model": "hbm_m:block/deco/wood_structure_scaffold_10000"
+  },
+  "py=true,nx=false,nz=false,px=false,pz=true": {
+   "model": "hbm_m:block/deco/wood_structure_scaffold_10001"
+  },
+  "py=true,nx=false,nz=false,px=true,pz=false": {
+   "model": "hbm_m:block/deco/wood_structure_scaffold_10010"
+  },
+  "py=true,nx=false,nz=false,px=true,pz=true": {
+   "model": "hbm_m:block/deco/wood_structure_scaffold_10011"
+  },
+  "py=true,nx=false,nz=true,px=false,pz=false": {
+   "model": "hbm_m:block/deco/wood_structure_scaffold_10100"
+  },
+  "py=true,nx=false,nz=true,px=false,pz=true": {
+   "model": "hbm_m:block/deco/wood_structure_scaffold_10101"
+  },
+  "py=true,nx=false,nz=true,px=true,pz=false": {
+   "model": "hbm_m:block/deco/wood_structure_scaffold_10110"
+  },
+  "py=true,nx=false,nz=true,px=true,pz=true": {
+   "model": "hbm_m:block/deco/wood_structure_scaffold_10111"
+  },
+  "py=true,nx=true,nz=false,px=false,pz=false": {
+   "model": "hbm_m:block/deco/wood_structure_scaffold_11000"
+  },
+  "py=true,nx=true,nz=false,px=false,pz=true": {
+   "model": "hbm_m:block/deco/wood_structure_scaffold_11001"
+  },
+  "py=true,nx=true,nz=false,px=true,pz=false": {
+   "model": "hbm_m:block/deco/wood_structure_scaffold_11010"
+  },
+  "py=true,nx=true,nz=false,px=true,pz=true": {
+   "model": "hbm_m:block/deco/wood_structure_scaffold_11011"
+  },
+  "py=true,nx=true,nz=true,px=false,pz=false": {
+   "model": "hbm_m:block/deco/wood_structure_scaffold_11100"
+  },
+  "py=true,nx=true,nz=true,px=false,pz=true": {
+   "model": "hbm_m:block/deco/wood_structure_scaffold_11101"
+  },
+  "py=true,nx=true,nz=true,px=true,pz=false": {
+   "model": "hbm_m:block/deco/wood_structure_scaffold_11110"
+  },
+  "py=true,nx=true,nz=true,px=true,pz=true": {
+   "model": "hbm_m:block/deco/wood_structure_scaffold_11111"
+  }
+ }
+}

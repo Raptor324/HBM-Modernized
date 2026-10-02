@@ -39,7 +39,7 @@ public class RadioTorchControllerBlockEntity extends com.hbm_m.blockentity.BaseH
 
         Direction facing = state.hasProperty(RadioTorchBaseBlock.FACING) ? state.getValue(RadioTorchBaseBlock.FACING) : Direction.UP;
         BlockPos sourcePos = pos.relative(facing.getOpposite());
-        if (!(level.getBlockEntity(sourcePos) instanceof IRORInteractive ror)) return;
+        if (!(com.hbm_m.api.redstoneoverradio.IRORInfo.resolve(level, sourcePos) instanceof IRORInteractive ror)) return;
 
         RTTYNetwork.RttyChannel chan = RTTYNetwork.listen(level, be.channel);
         if (chan == null) return;

@@ -45,6 +45,10 @@ public class BatterySocketBlockEntity extends BaseMachineBlockEntity implements 
 
     //? if forge {
     public static final ModelProperty<Boolean> HAS_INSERT = new ModelProperty<>();
+    /** Original RenderBatterySocket: ein battery_pack zeigt je nach Art den Teil "Battery" oder "Capacitor" mit eigener Textur. */
+    public static final ModelProperty<com.hbm_m.item.fekal_electric.ItemBatteryPack.EnumBatteryPack> PACK = new ModelProperty<>();
+    /** 1:1 RenderBatterySocket: {@code battery_sc} zeigt das Batterieteil mit {@code battery_sc_tex}. */
+    public static final ModelProperty<Boolean> SC = new ModelProperty<>();
     //?}
 
     private static final int SLOT_BATTERY = 0;
@@ -119,12 +123,115 @@ public class BatterySocketBlockEntity extends BaseMachineBlockEntity implements 
 
         be.ensureNetworkInitialized();
 
+        // 1:1 TileEntityBatterySocket: eingelegte Radionuklidbatterie schwankt in der Leistung und entlaedt sich alle 1-3 Minuten
+        if (be.hasSCLoaded()) {
+            if (be.damageTarget == 0) be.pickNewSCTarget();
+            be.damageTimer++;
+            if (be.damageTimer >= be.damageTarget) be.discharge();
+            be.fluctuate();
+        }
+
         long gameTime = level.getGameTime();
         if (gameTime % 10 == 0) {
             long cur = be.getEnergyStoredFromStack();
             be.energyDelta = (cur - be.lastEnergySample) / 10;
             be.lastEnergySample = cur;
         }
+    }
+
+    public int damageTimer;
+    public int damageTarget;
+    public double scPowerMult = 1D;
+
+    protected boolean hasSCLoaded() {
+        ItemStack stack = inventory.getStackInSlot(SLOT_BATTERY);
+        return stack.getItem() instanceof com.hbm_m.item.fekal_electric.ItemBatterySC sc
+                && sc.type != com.hbm_m.item.fekal_electric.ItemBatterySC.EnumBatterySC.EMPTY;
+    }
+
+    protected void pickNewSCTarget() {
+        this.damageTimer = 0;
+        this.damageTarget = 1200 + level.random.nextInt(2400); // 1-3 minutes;
+        this.setChanged();
+    }
+
+    protected void fluctuate() {
+        double steppy = 1D / 100D;
+        this.scPowerMult += (steppy * (level.random.nextDouble() * 2 - 1));
+        this.scPowerMult = net.minecraft.util.Mth.clamp(scPowerMult, 0.1D, 1D);
+    }
+
+    /**
+     * 1:1 {@code discharge()}: auf jedes Lebewesen im Umkreis von 15 Bloecken geht ein durchschlagender Elektrostrahl
+     * (BulletConfig "discharge": 50 Schaden, elektrisch). Der Strahl trifft Bloecke/Wesen auf dem Weg und loest dort
+     * {@link #explodeDischarge} aus; ein getroffener Block wird ohne Drop zerstoert (BEAM_DISCHARGE_HIT).
+     * Die Strahl-Optik des Waffensystems (EntityBulletBeamBase) steht noch aus, bis dahin Funken entlang der Bahn.
+     */
+    protected void discharge() {
+        pickNewSCTarget();
+        if (!(level instanceof ServerLevel server)) return;
+
+        Direction dir = getBlockState().getValue(MachineBatterySocketBlock.FACING);
+        Direction rot = dir.getClockWise();
+
+        double x = worldPosition.getX() + 0.5 - dir.getStepX() * 0.5 + rot.getStepX() * 0.5;
+        double y = worldPosition.getY() + 1;
+        double z = worldPosition.getZ() + 0.5 - dir.getStepZ() * 0.5 + rot.getStepX() * 0.5;
+
+        double range = 15;
+        java.util.List<net.minecraft.world.entity.LivingEntity> potentialTargets = level.getEntitiesOfClass(net.minecraft.world.entity.LivingEntity.class,
+                new AABB(x, y, z, x, y, z).inflate(range, range, range));
+        java.util.Collections.shuffle(potentialTargets);
+
+        for (net.minecraft.world.entity.LivingEntity target : potentialTargets) {
+            net.minecraft.world.phys.Vec3 initialDelta = new net.minecraft.world.phys.Vec3(target.getX() - x, target.getY() + target.getBbHeight() / 2 - y, target.getZ() - z);
+            if (initialDelta.length() > range) continue;
+            initialDelta = initialDelta.normalize();
+            double dominantAxis = Math.max(Math.abs(initialDelta.x), Math.max(Math.abs(initialDelta.y), Math.abs(initialDelta.z)));
+            initialDelta = initialDelta.scale(1.125D / dominantAxis); // move 1.125 blocks outwards
+            net.minecraft.world.phys.Vec3 start = new net.minecraft.world.phys.Vec3(worldPosition.getX() + initialDelta.x, worldPosition.getY() + initialDelta.y, worldPosition.getZ() + initialDelta.z);
+            net.minecraft.world.phys.Vec3 actualDelta = new net.minecraft.world.phys.Vec3(target.getX() - start.x, target.getY() + target.getBbHeight() / 2 - start.y, target.getZ() - start.z);
+            beamHitscan(server, start, actualDelta);
+        }
+
+        explodeDischarge(level, x + level.random.nextGaussian() * 0.5, y + level.random.nextGaussian() * 0.5, z + level.random.nextGaussian() * 0.5);
+    }
+
+    /** performHitscanExternal eines durchschlagenden Strahls: ein Block begrenzt die Bahn, alle Wesen davor werden getroffen. */
+    private void beamHitscan(ServerLevel server, net.minecraft.world.phys.Vec3 start, net.minecraft.world.phys.Vec3 delta) {
+        net.minecraft.world.phys.Vec3 end = start.add(delta);
+        net.minecraft.world.phys.BlockHitResult blockHit = server.clip(new net.minecraft.world.level.ClipContext(start, end,
+                net.minecraft.world.level.ClipContext.Block.COLLIDER, net.minecraft.world.level.ClipContext.Fluid.NONE, null));
+        if (blockHit.getType() != net.minecraft.world.phys.HitResult.Type.MISS) end = blockHit.getLocation();
+
+        net.minecraft.world.phys.Vec3 from = start;
+        net.minecraft.world.phys.Vec3 to = end;
+        for (net.minecraft.world.entity.Entity e : server.getEntities((net.minecraft.world.entity.Entity) null, new AABB(from, to).inflate(1D), ent -> ent.isPickable() && ent.isAlive())) {
+            java.util.Optional<net.minecraft.world.phys.Vec3> hit = e.getBoundingBox().inflate(0.3D).clip(from, to);
+            if (hit.isEmpty()) continue;
+            e.hurt(com.hbm_m.damagesource.ModDamageSources.create(server, com.hbm_m.damagesource.ModDamageTypes.ELECTRICITY), 50F);
+            explodeDischarge(server, hit.get().x, hit.get().y, hit.get().z);
+        }
+
+        if (blockHit.getType() == net.minecraft.world.phys.HitResult.Type.BLOCK) {
+            server.destroyBlock(blockHit.getBlockPos(), false);
+            explodeDischarge(server, end.x, end.y, end.z);
+        }
+
+        double len = start.distanceTo(end);
+        for (double d = 0; d < len; d += 0.25D) {
+            net.minecraft.world.phys.Vec3 p = start.add(end.subtract(start).scale(d / len));
+            server.sendParticles(net.minecraft.core.particles.ParticleTypes.ELECTRIC_SPARK, p.x, p.y, p.z, 1, 0, 0, 0, 0);
+        }
+    }
+
+    public static void explodeDischarge(Level world, double x, double y, double z) {
+        com.hbm_m.explosion.vanillant.ExplosionVNT vnt = new com.hbm_m.explosion.vanillant.ExplosionVNT(world, x, y, z, 5F);
+        vnt.setEntityProcessor(new com.hbm_m.explosion.vanillant.standard.EntityProcessorCrossSmooth(1, 20));
+        vnt.setPlayerProcessor(new com.hbm_m.explosion.vanillant.standard.PlayerProcessorStandard());
+        vnt.setSFX(new com.hbm_m.explosion.vanillant.standard.ExplosionEffectStandard());
+        vnt.explode();
+        world.playSound(null, x, y, z, com.hbm_m.sound.HbmSoundsNT.get("hbm:entity.ufoBlast"), net.minecraft.sounds.SoundSource.BLOCKS, 5.0F, 0.9F + world.random.nextFloat() * 0.2F);
     }
 
     /** Backwards-compatible accessor for renderers/menus. */
@@ -145,8 +252,11 @@ public class BatterySocketBlockEntity extends BaseMachineBlockEntity implements 
     //? if forge {
     @Override
     public ModelData getModelData() {
+        ItemStack inserted = inventory.getStackInSlot(0);
         return ModelData.builder()
-                .with(HAS_INSERT, !inventory.getStackInSlot(0).isEmpty())
+                .with(HAS_INSERT, !inserted.isEmpty())
+                .with(PACK, inserted.getItem() instanceof com.hbm_m.item.fekal_electric.ItemBatteryPack bp ? bp.pack : null)
+                .with(SC, inserted.getItem() instanceof com.hbm_m.item.fekal_electric.ItemBatterySC)
                 .build();
     }
     //?}
@@ -215,6 +325,7 @@ public class BatterySocketBlockEntity extends BaseMachineBlockEntity implements 
         if (r.isPresent()) result = r.get().getEnergyStored();
         else result = stackProvider().map(IEnergyProvider::getEnergyStored).orElse(0L);
         //?}
+        if (level != null && hasSCLoaded()) result *= this.scPowerMult;
         return result;
     }
 
@@ -400,12 +511,16 @@ public class BatterySocketBlockEntity extends BaseMachineBlockEntity implements 
         tag.putInt("priorityV2", priority.ordinal());
         tag.putLong("energyDelta", energyDelta);
         tag.putLong("lastEnergySample", lastEnergySample);
+        tag.putInt("damageTimer", damageTimer);
+        tag.putInt("damageTarget", damageTarget);
     }
 
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.readNbtData(tag, registries);
         modeOnNoSignal = tag.getInt("modeOnNoSignal");
+        damageTimer = tag.getInt("damageTimer");
+        damageTarget = tag.getInt("damageTarget");
         modeOnSignal = tag.getInt("modeOnSignal");
         // priorityV2 — ординал нового 5-уровневого enum'а; старый "priority" (3 уровня) сдвигаем на +1
         if (tag.contains("priorityV2")) {

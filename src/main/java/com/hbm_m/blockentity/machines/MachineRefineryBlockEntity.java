@@ -153,8 +153,13 @@ public class MachineRefineryBlockEntity extends BaseMachineBlockEntity implement
               INVENTORY_SIZE, ENERGY_CAPACITY, ENERGY_RECEIVE_RATE);
     }
 
+    @Override public int getFloorCount() { return 2 * 2; }
+    @Override public BlockPos getFloorPosFromIndex(int index) { return this.standardFloor3x3(index); }
+
     public static void tick(Level level, BlockPos pos, BlockState state, MachineRefineryBlockEntity be) {
         if (level.isClientSide()) return;
+
+        be.checkTilt(TiltType.CONFIG, false);
 
         boolean changed = false;
 

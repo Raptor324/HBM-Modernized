@@ -1,0 +1,110 @@
+{
+ "multipart": [
+  {
+   "apply": {
+    "model": "hbm_m:block/cable_diode_pad"
+   }
+  },
+  {
+   "when": {
+    "facing": "north"
+   },
+   "apply": {
+    "model": "hbm_m:block/cable_diode_plate",
+    "y": 180
+   }
+  },
+  {
+   "when": {
+    "facing": "east"
+   },
+   "apply": {
+    "model": "hbm_m:block/cable_diode_plate",
+    "y": 270
+   }
+  },
+  {
+   "when": {
+    "facing": "south"
+   },
+   "apply": {
+    "model": "hbm_m:block/cable_diode_plate"
+   }
+  },
+  {
+   "when": {
+    "facing": "west"
+   },
+   "apply": {
+    "model": "hbm_m:block/cable_diode_plate",
+    "y": 90
+   }
+  },
+  {
+   "when": {
+    "facing": "up"
+   },
+   "apply": {
+    "model": "hbm_m:block/cable_diode_plate",
+    "x": 90
+   }
+  },
+  {
+   "when": {
+    "facing": "down"
+   },
+   "apply": {
+    "model": "hbm_m:block/cable_diode_plate",
+    "x": 270
+   }
+  },
+  {
+   "when": {
+    "north": "true"
+   },
+   "apply": {
+    "model": "hbm_m:block/red_cable_arm_north"
+   }
+  },
+  {
+   "when": {
+    "east": "true"
+   },
+   "apply": {
+    "model": "hbm_m:block/red_cable_arm_east"
+   }
+  },
+  {
+   "when": {
+    "south": "true"
+   },
+   "apply": {
+    "model": "hbm_m:block/red_cable_arm_south"
+   }
+  },
+  {
+   "when": {
+    "west": "true"
+   },
+   "apply": {
+    "model": "hbm_m:block/red_cable_arm_west"
+   }
+  },
+  {
+   "when": {
+    "up": "true"
+   },
+   "apply": {
+    "model": "hbm_m:block/red_cable_arm_up"
+   }
+  },
+  {
+   "when": {
+    "down": "true"
+   },
+   "apply": {
+    "model": "hbm_m:block/red_cable_arm_down"
+   }
+  }
+ ]
+}

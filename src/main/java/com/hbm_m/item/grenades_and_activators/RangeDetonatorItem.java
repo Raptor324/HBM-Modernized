@@ -84,6 +84,16 @@ public class RangeDetonatorItem extends Item implements ITooltipProvider {
                 BlockState state = level.getBlockState(targetPos);
                 Block block = state.getBlock();
 
+                // Original ItemLaserDetonator: IBomb-Bloecke melden ihren BombReturnCode
+                if (block instanceof com.hbm_m.api.bomb.IBomb bomb) {
+                    com.hbm_m.api.bomb.IBomb.BombReturnCode ret = bomb.explode(level, targetPos);
+                    player.displayClientMessage(Component.translatable(ret.getUnlocalizedMessage())
+                            .withStyle(ret.wasSuccessful() ? ChatFormatting.YELLOW : ChatFormatting.RED), true);
+                    level.playSound(null, player.getX(), player.getY(), player.getZ(),
+                            ModSounds.TOOL_TECH_BLEEP.get(), player.getSoundSource(), 1.0F, 1.0F);
+                    return InteractionResultHolder.success(stack);
+                }
+
                 // Проверяем, поддерживает ли блок детонацию
                 if (block instanceof IDetonatable detonatable) {
                     boolean success = detonatable.onDetonate(level, targetPos, state, player);

@@ -155,6 +155,7 @@ public final class ModWorldGenProvider {
         ctx.register(cf("ore_bedrock_oil"), new ConfiguredFeature<>(ModWorldGen.BEDROCK_OIL_ORE.get(), new NoneFeatureConfiguration()));
         ctx.register(cf("nether_bedrock_ore"), new ConfiguredFeature<>(ModWorldGen.NETHER_BEDROCK_ORE.get(), new NoneFeatureConfiguration()));
         ctx.register(cf("oil_deposit"), new ConfiguredFeature<>(ModWorldGen.OIL_DEPOSIT.get(), new NoneFeatureConfiguration()));
+        ctx.register(cf("coltan_deposit"), new ConfiguredFeature<>(ModWorldGen.COLTAN_DEPOSIT.get(), new NoneFeatureConfiguration()));
         ctx.register(cf("sand_oil_deposit"), new ConfiguredFeature<>(ModWorldGen.SAND_OIL_DEPOSIT.get(), new NoneFeatureConfiguration()));
 
         simpleBlock(ctx, "mine_ap", ModBlocks.MINE_AP.get());
@@ -245,6 +246,8 @@ public final class ModWorldGenProvider {
                 HeightRangePlacement.uniform(VerticalAnchor.absolute(-64), VerticalAnchor.absolute(-63)),
                 BiomeFilter.biome()));
         // Нефтяные месторождения (MapGenBubble oilSpawn=100: 1/100 чанков, y 15..40 → -48..-8)
+        // 1:1 HbmWorldGen: einmal pro Chunk, das Feature verteilt selbst (Lagerstaette + optionale Zufallsadern)
+        placed(ctx, features, "coltan_deposit", List.of(BiomeFilter.biome()));
         placed(ctx, features, "oil_deposit", List.of(
                 RarityFilter.onAverageOnceEvery(100), InSquarePlacement.spread(),
                 HeightRangePlacement.uniform(VerticalAnchor.absolute(-48), VerticalAnchor.absolute(-8)),
@@ -291,7 +294,7 @@ public final class ModWorldGenProvider {
                 "uranium_ore", "thorium_ore", "titanium_ore", "sulfur_ore", "aluminum_ore",
                 "fluorite_ore", "niter_ore", "tungsten_ore", "lead_ore",
                 "beryllium_ore", "rareground_ore", "lignite_ore", "asbestos_ore", "cinnabar_ore",
-                "cobalt_ore", "lithium_ore", "coltan_ore", "alexandrite_ore", "australium_ore",
+                "cobalt_ore", "lithium_ore", "coltan_deposit", "alexandrite_ore", "australium_ore",
                 "sequestrum_ore", "gas_flammable",
                 "stone_gneiss", "gneiss_iron_ore", "gneiss_gold_ore", "gneiss_uranium_ore",
                 "gneiss_copper_ore", "gneiss_asbestos_ore", "gneiss_lithium_ore", "gneiss_rare_ore", "gneiss_gas_ore",

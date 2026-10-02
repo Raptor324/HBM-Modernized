@@ -199,7 +199,8 @@ public class MachineFluidTankBlockEntity extends BaseHbmBlockEntity implements M
     /** Из сети принимаем, если режим разрешает fill (1/2) и взорванный — нет. */
     @Override
     public FluidTank[] getReceivingTanks() {
-        if (hasExploded || mode == 0 || mode == 3) return EMPTY_TANKS;
+        // Original TileEntityBarrel.getDemand: gekippt nimmt nichts an
+        if (hasExploded || tilted || mode == 0 || mode == 3) return EMPTY_TANKS;
         return new FluidTank[]{ fluidTank };
     }
 
@@ -285,11 +286,14 @@ public class MachineFluidTankBlockEntity extends BaseHbmBlockEntity implements M
     public static void tick(Level level, BlockPos pos, BlockState state, MachineFluidTankBlockEntity entity) {
         if (level.isClientSide) return;
 
+        entity.updateTilt();
+
         // 1.7.10-стиль: подписываемся на трубы у разрешённых сторон.
         // FluidDuctBlockEntity#tick сам по себе нас не подключит, потому что мы IFluidConnectorMK2
         // (это сделано умышленно — нативный MK2-путь даёт давление/приоритет/per-(fluid,pressure)).
         Fluid mk2Type = entity.fluidTank.getTankType();
-        if (mk2Type != null && mk2Type != Fluids.EMPTY && mk2Type != ModFluids.NONE.getSource()) {
+        // Original TileEntityBarrel: "if(!this.tilted) for(DirPos pos : getConPos())"
+        if (!entity.tilted && mk2Type != null && mk2Type != Fluids.EMPTY && mk2Type != ModFluids.NONE.getSource()) {
             for (Direction dir : Direction.values()) {
                 if (entity.fluidSidesFromMultiblockStructure) {
                     if (!entity.allowedFluidSides.contains(dir)) continue;
@@ -571,6 +575,9 @@ public class MachineFluidTankBlockEntity extends BaseHbmBlockEntity implements M
             }
         }
     }
+
+    /** Hook fuer {@code checkTilt} vor dem eigentlichen Tick (Original: BigAssTank vor super.updateEntity). */
+    protected void updateTilt() { }
 
     public byte getComparatorPower() {
         if (fluidTank.getFill() == 0) return 0;

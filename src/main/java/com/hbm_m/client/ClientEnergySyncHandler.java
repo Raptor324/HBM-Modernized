@@ -25,10 +25,10 @@ import net.minecraft.world.item.ItemStack;
 /*@Environment(EnvType.CLIENT)*///?}
 public class ClientEnergySyncHandler {
 
-    private static final int ARMOR_SLOT_HEAD = ModArmorFSBPowered.ARMOR_SLOT_HEAD;
-    private static final int ARMOR_SLOT_CHEST = ModArmorFSBPowered.ARMOR_SLOT_CHEST;
-    private static final int ARMOR_SLOT_LEGS = ModArmorFSBPowered.ARMOR_SLOT_LEGS;
-    private static final int ARMOR_SLOT_FEET = ModArmorFSBPowered.ARMOR_SLOT_FEET;
+    private static final int ARMOR_SLOT_HEAD = 0;
+    private static final int ARMOR_SLOT_CHEST = 1;
+    private static final int ARMOR_SLOT_LEGS = 2;
+    private static final int ARMOR_SLOT_FEET = 3;
 
     // Добавили аргумент long delta
     public static void handle(int containerId, long energy, long maxEnergy, long delta) {

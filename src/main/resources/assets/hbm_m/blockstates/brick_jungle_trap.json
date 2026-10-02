@@ -1,0 +1,49 @@
+{
+ "variants": {
+  "trap=falling_rocks": {
+   "model": "hbm_m:block/brick_jungle_trap"
+  },
+  "trap=fire": {
+   "model": "hbm_m:block/brick_jungle_trap"
+  },
+  "trap=arrow": {
+   "model": "hbm_m:block/brick_jungle_trap"
+  },
+  "trap=spikes": {
+   "model": "hbm_m:block/brick_jungle_trap"
+  },
+  "trap=mine": {
+   "model": "hbm_m:block/brick_jungle_trap"
+  },
+  "trap=web": {
+   "model": "hbm_m:block/brick_jungle_trap"
+  },
+  "trap=flaming_arrow": {
+   "model": "hbm_m:block/brick_jungle_trap"
+  },
+  "trap=pillar": {
+   "model": "hbm_m:block/brick_jungle_trap"
+  },
+  "trap=rad_conversion": {
+   "model": "hbm_m:block/brick_jungle_trap"
+  },
+  "trap=magic_converstion": {
+   "model": "hbm_m:block/brick_jungle_trap"
+  },
+  "trap=slowness": {
+   "model": "hbm_m:block/brick_jungle_trap"
+  },
+  "trap=weakness": {
+   "model": "hbm_m:block/brick_jungle_trap"
+  },
+  "trap=poison_dart": {
+   "model": "hbm_m:block/brick_jungle_trap"
+  },
+  "trap=zombie": {
+   "model": "hbm_m:block/brick_jungle_trap"
+  },
+  "trap=spiders": {
+   "model": "hbm_m:block/brick_jungle_trap"
+  }
+ }
+}

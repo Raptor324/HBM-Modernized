@@ -1,0 +1,41 @@
+{
+ "parent": "hbm_m:block/brick_forgotten_0",
+ "overrides": [
+  {
+   "predicate": {
+    "hbm_m:meta": 1
+   },
+   "model": "hbm_m:block/brick_forgotten_1"
+  },
+  {
+   "predicate": {
+    "hbm_m:meta": 2
+   },
+   "model": "hbm_m:block/brick_forgotten_2"
+  },
+  {
+   "predicate": {
+    "hbm_m:meta": 3
+   },
+   "model": "hbm_m:block/brick_forgotten_3"
+  },
+  {
+   "predicate": {
+    "hbm_m:meta": 4
+   },
+   "model": "hbm_m:block/brick_forgotten_4"
+  },
+  {
+   "predicate": {
+    "hbm_m:meta": 5
+   },
+   "model": "hbm_m:block/brick_forgotten_5"
+  },
+  {
+   "predicate": {
+    "hbm_m:meta": 6
+   },
+   "model": "hbm_m:block/brick_forgotten_6"
+  }
+ ]
+}

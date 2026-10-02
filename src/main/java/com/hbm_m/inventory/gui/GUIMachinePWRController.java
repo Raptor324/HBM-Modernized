@@ -1,137 +1,158 @@
 package com.hbm_m.inventory.gui;
 
+import java.util.Locale;
+
 import com.hbm_m.blockentity.machines.PWRControllerBlockEntity;
-import com.hbm_m.client.GuiCompat;
 import com.hbm_m.inventory.menu.PWRControllerMenu;
 import com.hbm_m.lib.RefStrings;
-import com.hbm_m.network.PWRControlPacket;
+import com.hbm_m.network.NBTControlPacket;
 import com.mojang.blaze3d.systems.RenderSystem;
 
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.item.ItemStack;
 
-/**
- * Simple, self-drawn layout on top of the original's {@code gui_pwr.png} texture (already
- * present in this port's assets), following the same approach as
- * {@code GUIMachineWatzPowerplant}: no pixel-perfect reproduction of the original
- * {@code GUIPWR} overlay coordinates, tanks rendered with the generic
- * {@code FluidTank#renderTank} helper. The original's draggable control-rod slider is replaced
- * with +/-5% buttons for simplicity.
- */
+/** 1:1 {@code GUIPWR}: Textfeld fuer die Steuerstabstellung, Bestaetigen ueber den Knopf rechts daneben. */
 public class GUIMachinePWRController extends GuiInfoScreen<PWRControllerMenu> {
 
     private static final ResourceLocation TEXTURE =
             ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/reactors/gui_pwr.png");
 
-    private static final int TANK_COOLANT_X = 132;
-    private static final int TANK_HOT_X = 152;
-    private static final int TANK_Y = 8;
-    private static final int TANK_WIDTH = 16;
-    private static final int TANK_HEIGHT = 108;
-
-    private static final int HEAT_BAR_X = 8;
-    private static final int HEAT_BAR_Y = 8;
-    private static final int HEAT_BAR_WIDTH = 108;
-    private static final int HEAT_BAR_HEIGHT = 12;
-
-    private static final int ROD_MINUS_X = 8;
-    private static final int ROD_PLUS_X = 96;
-    private static final int ROD_BUTTON_Y = 40;
-    private static final int ROD_BUTTON_SIZE = 18;
-
-    private final PWRControllerBlockEntity pwr;
+    private final PWRControllerBlockEntity controller;
+    private EditBox field;
 
     public GUIMachinePWRController(PWRControllerMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
-        this.pwr = menu.getBlockEntity();
-        this.imageWidth = 226;
-        this.imageHeight = 230;
-        this.inventoryLabelY = 137;
+        this.controller = menu.getBlockEntity();
+        this.imageWidth = 176;
+        this.imageHeight = 188;
     }
 
     @Override
-    protected void renderBg(GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
+    protected void init() {
+        super.init();
+        this.field = new EditBox(this.font, leftPos + 57, topPos + 63, 30, 8, Component.empty());
+        this.field.setTextColor(0x00ff00);
+        this.field.setTextColorUneditable(0x008000);
+        this.field.setBordered(false);
+        this.field.setMaxLength(3);
+        String text = controller == null ? "" : (100 - controller.rodTarget) + "";
+        this.field.setValue(text.length() > 3 ? text.substring(0, 3) : text);
+        this.addRenderableWidget(this.field);
+    }
+
+    @Override
+    public void render(GuiGraphics g, int x, int y, float interp) {
+        com.hbm_m.client.GuiCompat.renderBackground(this, g, x, y, interp);
+        super.render(g, x, y, interp);
+
+        if (controller != null) {
+            drawCustomInfoStat(g, x, y, 115, 31, 18, 18, x, y, Component.literal("Core: " + String.format(Locale.US, "%,d", controller.coreHeat) + " / " + String.format(Locale.US, "%,d", controller.coreHeatCapacity) + " TU"));
+            drawCustomInfoStat(g, x, y, 151, 31, 18, 18, x, y, Component.literal("Hull: " + String.format(Locale.US, "%,d", controller.hullHeat) + " / " + String.format(Locale.US, "%,d", PWRControllerBlockEntity.hullHeatCapacityBase) + " TU"));
+
+            drawCustomInfoStat(g, x, y, 52, 31, 36, 18, x, y, Component.literal(((int) (controller.progress * 100 / controller.processTime)) + "%"));
+            drawCustomInfoStat(g, x, y, 52, 53, 54, 4, x, y, Component.literal("Control rod level: " + (100 - (Math.round(controller.rodLevel * 100) / 100)) + "%"));
+
+            if (controller.typeLoaded != -1 && controller.amountLoaded > 0) {
+                ItemStack display = new ItemStack(PWRControllerBlockEntity.freshFuelItemFor(PWRControllerBlockEntity.fuelType(controller.typeLoaded)));
+                if (leftPos + 88 <= x && leftPos + 88 + 18 > x && topPos + 4 < y && topPos + 4 + 18 >= y) g.renderTooltip(this.font, display, x, y);
+            }
+
+            controller.tanks[0].renderTankInfo(g, font, x, y, leftPos + 8, topPos + 5, 16, 52);
+            controller.tanks[1].renderTankInfo(g, font, x, y, leftPos + 26, topPos + 5, 16, 52);
+        }
+
+        this.renderTooltip(g, x, y);
+    }
+
+    @Override
+    protected void renderLabels(GuiGraphics g, int mouseX, int mouseY) {
+        g.drawString(this.font, this.playerInventoryTitle, 8, this.imageHeight - 96 + 2, 4210752, false);
+        if (controller == null) return;
+
+        float scale = 1.25F;
+        String flux = String.format(Locale.US, "%,.1f", controller.flux);
+        g.pose().pushPose();
+        g.pose().scale(1 / scale, 1 / scale, 1);
+        g.drawString(this.font, flux, (int) (165 * scale - this.font.width(flux)), (int) (64 * scale), 0x00ff00, false);
+        g.pose().popPose();
+    }
+
+    @Override
+    protected void renderBg(GuiGraphics g, float interp, int mouseX, int mouseY) {
         RenderSystem.setShader(GameRenderer::getPositionTexShader);
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
-        guiGraphics.blit(TEXTURE, this.leftPos, this.topPos, 0, 0, this.imageWidth, this.imageHeight);
-        // тайл может отсутствовать в реплее Flashback
-        if (pwr == null) return;
+        g.blit(TEXTURE, leftPos, topPos, 0, 0, imageWidth, imageHeight);
+        if (controller == null) return;
 
-        pwr.getCoolantTank().renderTank(guiGraphics, this.leftPos + TANK_COOLANT_X, this.topPos + TANK_Y, TANK_WIDTH, TANK_HEIGHT);
-        pwr.getCoolantHotTank().renderTank(guiGraphics, this.leftPos + TANK_HOT_X, this.topPos + TANK_Y, TANK_WIDTH, TANK_HEIGHT);
+        if (controller.hullHeat > PWRControllerBlockEntity.hullHeatCapacityBase * 0.8 || controller.coreHeat > controller.coreHeatCapacity * 0.8)
+            g.blit(TEXTURE, leftPos + 147, topPos, 176, 14, 26, 26);
 
-        int heatScaled = pwr.getGaugeScaled(HEAT_BAR_WIDTH, 2);
-        int heatColor = pwr.coreHeat > pwr.coreHeatCapacity / 2 ? 0xFFCC3333 : 0xFFCC8833;
-        guiGraphics.fill(this.leftPos + HEAT_BAR_X, this.topPos + HEAT_BAR_Y,
-                this.leftPos + HEAT_BAR_X + heatScaled, this.topPos + HEAT_BAR_Y + HEAT_BAR_HEIGHT, heatColor);
+        int p = (int) (controller.progress * 33 / controller.processTime);
+        g.blit(TEXTURE, leftPos + 54, topPos + 33, 176, 0, p, 14);
 
-        guiGraphics.fill(this.leftPos + ROD_MINUS_X, this.topPos + ROD_BUTTON_Y,
-                this.leftPos + ROD_MINUS_X + ROD_BUTTON_SIZE, this.topPos + ROD_BUTTON_Y + ROD_BUTTON_SIZE, 0xFF884433);
-        guiGraphics.fill(this.leftPos + ROD_PLUS_X, this.topPos + ROD_BUTTON_Y,
-                this.leftPos + ROD_PLUS_X + ROD_BUTTON_SIZE, this.topPos + ROD_BUTTON_Y + ROD_BUTTON_SIZE, 0xFF338844);
+        int c = (int) (controller.rodLevel * 52 / 100);
+        g.blit(TEXTURE, leftPos + 53, topPos + 54, 176, 40, c, 2);
+
+        GuiGaugeNeedle.draw(g, leftPos + 124, topPos + 40, (double) controller.coreHeat / (double) controller.coreHeatCapacity, 5, 2, 1, 0x7F0000);
+        GuiGaugeNeedle.draw(g, leftPos + 160, topPos + 40, (double) controller.hullHeat / (double) PWRControllerBlockEntity.hullHeatCapacityBase, 5, 2, 1, 0x7F0000);
+
+        if (controller.typeLoaded != -1 && controller.amountLoaded > 0) {
+            ItemStack display = new ItemStack(PWRControllerBlockEntity.freshFuelItemFor(PWRControllerBlockEntity.fuelType(controller.typeLoaded)));
+            drawFuelStack(g, display, leftPos + 89, topPos + 5, ChatFormatting.YELLOW + "" + controller.amountLoaded + "/" + controller.rodCount);
+        }
+
+        // Original: renderTank(x, yUnten, z, 16, 52)
+        controller.tanks[0].renderTank(g, leftPos + 8, topPos + 57 - 52, 16, 52);
+        controller.tanks[1].renderTank(g, leftPos + 26, topPos + 57 - 52, 16, 52);
+    }
+
+    /** Original: {@code drawItemStack} mit halb grosser Beschriftung unter dem Gegenstand. */
+    private void drawFuelStack(GuiGraphics g, ItemStack stack, int x, int y, String label) {
+        g.pose().pushPose();
+        g.pose().translate(0.0F, 0.0F, 32.0F);
+        g.renderItem(stack, x, y);
+        g.pose().scale(0.5F, 0.5F, 0.5F);
+        int w = this.font.width(label);
+        int lx = (x + w / 4) * 2;
+        int ly = (y + 15) * 2;
+        g.pose().translate(0.0F, 0.0F, 200.0F);
+        g.drawString(this.font, label, lx + 19 - 2 - w, ly + 6 + 3, 0xFFFFFF, true);
+        g.pose().popPose();
     }
 
     @Override
-    protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
-        Component title = this.title;
-        guiGraphics.drawString(this.font, title, this.imageWidth / 2 - this.font.width(title) / 2, 6, 0x404040, false);
-        guiGraphics.drawString(this.font, this.playerInventoryTitle, 8, this.inventoryLabelY, 0x404040, false);
-    }
+    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        boolean handled = super.mouseClicked(mouseX, mouseY, button);
 
-    @Override
-    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        com.hbm_m.client.GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTick);
-        super.render(guiGraphics, mouseX, mouseY, partialTick);
-        // тайл может отсутствовать в реплее Flashback
-        if (pwr != null) {
-        if (isPointInRect(TANK_COOLANT_X, TANK_Y, TANK_WIDTH, TANK_HEIGHT, mouseX, mouseY)) {
-            pwr.getCoolantTank().renderTankInfo(guiGraphics, this.font, mouseX, mouseY,
-                    this.leftPos + TANK_COOLANT_X, this.topPos + TANK_Y, TANK_WIDTH, TANK_HEIGHT);
-        }
-        if (isPointInRect(TANK_HOT_X, TANK_Y, TANK_WIDTH, TANK_HEIGHT, mouseX, mouseY)) {
-            pwr.getCoolantHotTank().renderTankInfo(guiGraphics, this.font, mouseX, mouseY,
-                    this.leftPos + TANK_HOT_X, this.topPos + TANK_Y, TANK_WIDTH, TANK_HEIGHT);
-        }
+        if (controller != null && leftPos + 88 <= mouseX && leftPos + 88 + 18 > mouseX && topPos + 58 < mouseY && topPos + 58 + 18 >= mouseY) {
+            try {
+                int level = (int) Mth.clamp(Double.parseDouble(field.getValue()), 0, 100);
+                field.setValue(level + "");
 
-        drawCustomInfoStat(guiGraphics, mouseX, mouseY,
-                HEAT_BAR_X, HEAT_BAR_Y, HEAT_BAR_WIDTH, HEAT_BAR_HEIGHT,
-                this.leftPos + HEAT_BAR_X, this.topPos + HEAT_BAR_Y,
-                Component.literal("Core heat: " + pwr.coreHeat + " / " + pwr.coreHeatCapacity),
-                Component.literal("Flux: " + Math.round(pwr.flux)));
-
-        drawCustomInfoStat(guiGraphics, mouseX, mouseY,
-                0, 60, imageWidth, 12,
-                this.leftPos + 4, this.topPos + 60,
-                Component.literal("Control rods: " + Math.round(pwr.rodLevel) + "% -> " + Math.round(pwr.rodTarget) + "%"),
-                Component.literal(pwr.typeLoaded != null ? ("Loaded: " + pwr.typeLoaded + " x" + pwr.amountLoaded) : "No fuel loaded"));
-
-        }
-        this.renderTooltip(guiGraphics, mouseX, mouseY);
-    }
-
-    @Override
-    public boolean mouseClicked(double x, double y, int button) {
-        // тайл может отсутствовать в реплее Flashback
-        if (pwr == null) return super.mouseClicked(x, y, button);
-        if (isWithin(ROD_MINUS_X, ROD_BUTTON_Y, ROD_BUTTON_SIZE, ROD_BUTTON_SIZE, x, y)) {
-            PWRControlPacket.sendToServer(pwr.getBlockPos(), Math.max(0D, pwr.rodTarget - 5D));
-            playClickSound();
+                CompoundTag control = new CompoundTag();
+                control.putInt("control", 100 - level);
+                NBTControlPacket.sendToServer(controller.getBlockPos(), control);
+                playClickSound();
+            } catch (NumberFormatException ignored) {
+                // Original: NumberUtils.isNumber - sonst passiert nichts
+            }
             return true;
         }
-        if (isWithin(ROD_PLUS_X, ROD_BUTTON_Y, ROD_BUTTON_SIZE, ROD_BUTTON_SIZE, x, y)) {
-            PWRControlPacket.sendToServer(pwr.getBlockPos(), Math.min(100D, pwr.rodTarget + 5D));
-            playClickSound();
-            return true;
-        }
-        return super.mouseClicked(x, y, button);
+        return handled;
     }
 
-    private boolean isWithin(int relX, int relY, int w, int h, double mouseX, double mouseY) {
-        double x = this.leftPos + relX;
-        double y = this.topPos + relY;
-        return mouseX >= x && mouseX < x + w && mouseY >= y && mouseY < y + h;
+    @Override
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        if (this.field.isFocused() && this.field.keyPressed(keyCode, scanCode, modifiers)) return true;
+        if (this.field.isFocused() && keyCode != 256) return true;
+        return super.keyPressed(keyCode, scanCode, modifiers);
     }
 }

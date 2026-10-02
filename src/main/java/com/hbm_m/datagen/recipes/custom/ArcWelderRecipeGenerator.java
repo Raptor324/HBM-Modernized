@@ -111,7 +111,7 @@ public final class ArcWelderRecipeGenerator {
     private static void registerMissiles(Consumer<FinishedRecipe> writer) {
         // Fuel tanks
         emit(writer, "fuel_tank_small_a", new ItemStack(ModItems.FUEL_TANK_SMALL.get()), 100, 1_000L,
-                p(new ItemStack(ModBlocks.DECO_STEEL_SCAFFOLD.get().asItem(), 4)),
+                p(new ItemStack(ModBlocks.STEEL_SCAFFOLD.get().asItem(), 4)),
                 p(new ItemStack(ModMaterialItems.item(ModMaterials.COPPER, MaterialShape.PLATE), 4)),
                 p(new ItemStack(ModMaterialItems.item(ModMaterials.ALUMINUM, MaterialShape.PLATE), 6)));
 
@@ -121,12 +121,12 @@ public final class ArcWelderRecipeGenerator {
                 p(new ItemStack(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE), 4)));
 
         emit(writer, "fuel_tank_medium", new ItemStack(ModItems.FUEL_TANK_MEDIUM.get()), 100, 2_000L,
-                p(new ItemStack(ModBlocks.DECO_STEEL_SCAFFOLD.get().asItem(), 12)),
+                p(new ItemStack(ModBlocks.STEEL_SCAFFOLD.get().asItem(), 12)),
                 p(new ItemStack(ModMaterialItems.item(ModMaterials.TITANIUM, MaterialShape.PLATE), 8)),
                 p(new ItemStack(ModMaterialItems.item(ModMaterials.ALUMINIUM, MaterialShape.PLATE_CAST), 4)));
 
         emit(writer, "fuel_tank_large", new ItemStack(ModItems.FUEL_TANK_LARGE.get()), 400, 50_000L,
-                p(new ItemStack(ModBlocks.DECO_STEEL_SCAFFOLD.get().asItem(), 16)),
+                p(new ItemStack(ModBlocks.STEEL_SCAFFOLD.get().asItem(), 16)),
                 p(new ItemStack(ModMaterialItems.item(ModMaterials.SATURNITE, MaterialShape.PLATE), 12)),
                 p(new ItemStack(ModMaterialItems.item(ModMaterials.ALUMINIUM, MaterialShape.PLATE_WELDED), 8)));
 

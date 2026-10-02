@@ -1,0 +1,11 @@
+{
+  "parent": "minecraft:block/block",
+  "loader": "forge:obj",
+  "model": "hbm_m:models/block/bomb/det_cord_cz.obj",
+  "flip_v": true,
+  "render_type": "minecraft:cutout",
+  "textures": {
+    "texture": "hbm_m:block/bomb/det_cord",
+    "particle": "hbm_m:block/bomb/det_cord"
+  }
+}

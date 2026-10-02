@@ -4,6 +4,7 @@ import java.util.function.Consumer;
 
 import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.item.ModItems;
+import com.hbm_m.item.nuclear.WatzPelletType;
 import com.hbm_m.item.material.MaterialShape;
 import com.hbm_m.item.material.ModMaterialItems;
 import com.hbm_m.item.material.ModMaterials;
@@ -41,6 +42,35 @@ public class PurexRecipeGenerator {
         wasteRecipe(writer, "waste_mox", ModItems.WASTE_MOX.get(), ModMaterialItems.item(ModMaterials.MOX_FUEL, MaterialShape.NUGGET));
         wasteRecipe(writer, "waste_schrabidium", ModItems.WASTE_SCHRABIDIUM.get(), ModMaterialItems.item(ModMaterials.SCHRABIDIUM, MaterialShape.NUGGET));
         wasteRecipe(writer, "waste_zfb_mox", ModItems.WASTE_ZFB_MOX.get(), ModMaterialItems.item(ModMaterials.PU_MIX, MaterialShape.NUGGET));
+
+        // Watz (Original: purex.watz*, setup(60, watzPower = 10_000); NQD/NQR nur mit fremdem nuggetNaquadria)
+        watz(writer, "watzschrab", WatzPelletType.SCHRABIDIUM, nug(ModMaterials.SOLINIUM, 15), nug(ModMaterials.EUPHEMIUM, 3));
+        watz(writer, "watzhes", WatzPelletType.HES, nug(ModMaterials.SOLINIUM, 17), nug(ModMaterials.EUPHEMIUM, 1));
+        watz(writer, "watzmes", WatzPelletType.MES, nug(ModMaterials.SOLINIUM, 12), nug(ModMaterials.TANTALIUM, 6));
+        watz(writer, "watzles", WatzPelletType.LES, nug(ModMaterials.SOLINIUM, 9), nug(ModMaterials.TANTALIUM, 9));
+        watz(writer, "watzhen", WatzPelletType.HEN, nug(ModMaterials.PLUTONIUM239, 12), nug(ModMaterials.TECHNETIUM, 6));
+        watz(writer, "watzmeu", WatzPelletType.MEU, nug(ModMaterials.PLUTONIUM239, 12), nug(ModMaterials.BISMUTH, 6));
+        watz(writer, "watzmep", WatzPelletType.MEP, nug(ModMaterials.PLUTONIUM241, 12), nug(ModMaterials.BISMUTH, 6));
+        watz(writer, "watzlead", WatzPelletType.LEAD, nug(ModMaterials.LEAD, 6), nug(ModMaterials.BISMUTH, 12));
+        watz(writer, "watzboron", WatzPelletType.BORON, new ItemStack(ModMaterialItems.item(ModMaterials.COAL, MaterialShape.POWDER_TINY), 12), nug(ModMaterials.CO60, 6));
+        watz(writer, "watzdu", WatzPelletType.DU, nug(ModMaterials.POLONIUM, 12), nug(ModMaterials.PLUTONIUM238, 6));
+    }
+
+    private static ItemStack nug(ModMaterials mat, int count) {
+        return new ItemStack(ModMaterialItems.item(mat, MaterialShape.NUGGET), count);
+    }
+
+    /** 1:1 purex.watz*: verbrauchtes Pellet + 500 Kerosin + 250 Salpetersaeure -> zwei Nuggetsorten + 2 Atommuell + 1000 Schlamm. */
+    private static void watz(Consumer<FinishedRecipe> writer, String name, WatzPelletType type, ItemStack a, ItemStack b) {
+        PurexRecipeBuilder.purexRecipe(60, 10_000)
+                .addItemInput(ModItems.WATZ_PELLET_DEPLETED.get(type).get(), 1)
+                .addFluidInput(ModFluids.KEROSENE.getSource(), 500)
+                .addFluidInput(ModFluids.NITRIC_ACID.getSource(), 250)
+                .addItemOutput(a)
+                .addItemOutput(b)
+                .addItemOutput(new ItemStack(ModItems.NUCLEAR_WASTE.get(), 2))
+                .addFluidOutput(ModFluids.WATZ.getSource(), 1_000)
+                .save(writer, "purex/" + name);
     }
 
     /** 1:1 aus dem Original-Muster: 1x Waste-Item + Kerosin + Salpetersaeure -&gt; 1x Nugget + 1x winziger Atommuell. */

@@ -66,6 +66,7 @@ public class EntityCreeperVolatile extends Creeper {
         vnt.setBlockAllocator(new BlockAllocatorBulkie(60.0D, this.isPowered() ? 32 : 16));
         vnt.setBlockProcessor(new BlockProcessorStandard().withBlockEffect(new BlockMutatorBulkie(slagShell)));
         vnt.setEntityProcessor(new EntityProcessorStandard().withRangeMod(0.5F));
+        vnt.setPlayerProcessor(new com.hbm_m.explosion.vanillant.standard.PlayerProcessorStandard());
         vnt.setSFX(new ExplosionEffectStandard());
         vnt.explode();
     }

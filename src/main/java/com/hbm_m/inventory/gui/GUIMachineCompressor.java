@@ -1,68 +1,90 @@
 package com.hbm_m.inventory.gui;
 
-import com.hbm_m.blockentity.machines.MachineCompressorBlockEntity;
+import com.hbm_m.blockentity.machines.MachineCompressorBaseBlockEntity;
 import com.hbm_m.client.GuiCompat;
 import com.hbm_m.inventory.menu.MachineCompressorMenu;
 import com.hbm_m.lib.RefStrings;
 
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 
-/** GUI des Kompressors - Fortschritts-/Fuellstands-/Energieanzeigen als Fuellrechtecke (siehe
- *  {@code GUIMachineElectricFurnace}). */
-public class GUIMachineCompressor extends AbstractContainerScreen<MachineCompressorMenu> {
+/** 1:1 {@code GUICompressor}: Druckstufenwahl (0-4 PU) per Klick, Tanks, Fortschritt, Energie. */
+public class GUIMachineCompressor extends GuiInfoScreen<MachineCompressorMenu> {
 
     private static final ResourceLocation TEXTURE =
             ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/processing/gui_compressor.png");
 
-    private final MachineCompressorBlockEntity blockEntity;
+    private final MachineCompressorBaseBlockEntity compressor;
 
-    public GUIMachineCompressor(MachineCompressorMenu menu, Inventory inventory, Component title) {
-        super(menu, inventory, title);
-        this.blockEntity = menu.getBlockEntity();
+    public GUIMachineCompressor(MachineCompressorMenu menu, Inventory inv, Component title) {
+        super(menu, inv, title);
+        this.compressor = menu.getBlockEntity();
         this.imageWidth = 176;
-        this.imageHeight = 176;
-        this.inventoryLabelY = imageHeight - 96 + 2;
+        this.imageHeight = 204;
     }
 
     @Override
-    protected void renderBg(GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
-        int x = leftPos;
-        int y = topPos;
-        guiGraphics.blit(TEXTURE, x, y, 0, 0, imageWidth, imageHeight);
+    public void render(GuiGraphics g, int mouseX, int mouseY, float f) {
+        GuiCompat.renderBackground(this, g, mouseX, mouseY, f);
+        super.render(g, mouseX, mouseY, f);
 
-        if (blockEntity != null) { // тайл может отсутствовать в реплее Flashback
-            int progress = blockEntity.getProgressScaled(24);
-            if (progress > 0) {
-                guiGraphics.fill(x + 76, y + 40, x + 76 + progress, y + 48, 0xFFC0C0C0);
-            }
+        if (compressor != null) {
+            compressor.tanks[0].renderTankInfo(g, font, mouseX, mouseY, leftPos + 17, topPos + 18, 16, 52);
+            compressor.tanks[1].renderTankInfo(g, font, mouseX, mouseY, leftPos + 107, topPos + 18, 16, 52);
+            drawElectricityInfo(g, mouseX, mouseY, 152, 18, 16, 52, compressor.getEnergyStored(), MachineCompressorBaseBlockEntity.maxPower);
 
-            var tanks = blockEntity.getTanks();
-            int inFill = tanks[0].getMaxFill() > 0 ? tanks[0].getFill() * 52 / tanks[0].getMaxFill() : 0;
-            if (inFill > 0) guiGraphics.fill(x + 17, y + 88 - inFill, x + 33, y + 88, 0xFF3080FF);
+            for (int j = 0; j < 5; j++) drawCustomInfoStat(g, mouseX, mouseY, 43 + j * 11, 46, 8, 14, mouseX, mouseY, Component.literal(j + " PU -> " + (j + 1) + " PU"));
+        }
 
-            int outFill = tanks[1].getMaxFill() > 0 ? tanks[1].getFill() * 52 / tanks[1].getMaxFill() : 0;
-            if (outFill > 0) guiGraphics.fill(x + 134, y + 88 - outFill, x + 150, y + 88, 0xFFFFA030);
+        this.renderTooltip(g, mouseX, mouseY);
+    }
 
-            if (blockEntity.getEnergyStored() > 0) {
-                guiGraphics.fill(x + 152, y + 20, x + 164, y + 52, 0xFF3080FF);
+    @Override
+    public boolean mouseClicked(double mx, double my, int button) {
+        if (compressor != null) {
+            int x = (int) mx, y = (int) my;
+            for (int j = 0; j < 5; j++) {
+
+                if (leftPos + 43 + j * 11 <= x && leftPos + 43 + 8 + j * 11 > x && topPos + 46 < y && topPos + 46 + 14 >= y) {
+
+                    playClickSound();
+                    CompoundTag data = new CompoundTag();
+                    data.putInt("compression", j);
+                    com.hbm_m.network.NBTControlPacket.sendToServer(compressor.getBlockPos(), data);
+                }
             }
         }
+        return super.mouseClicked(mx, my, button);
     }
 
     @Override
-    protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
-        guiGraphics.drawString(font, title, imageWidth / 2 - font.width(title) / 2, 6, 0x404040, false);
-        guiGraphics.drawString(font, playerInventoryTitle, 8, inventoryLabelY, 4210752, false);
+    protected void renderLabels(GuiGraphics g, int mouseX, int mouseY) {
+        Component name = this.title;
+        g.drawString(font, name, 70 - font.width(name) / 2, 6, 0xC7C1A3, false);
+        g.drawString(font, playerInventoryTitle, 8, this.imageHeight - 96 + 2, 4210752, false);
     }
 
     @Override
-    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        com.hbm_m.client.GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTick);
-        super.render(guiGraphics, mouseX, mouseY, partialTick);
-        renderTooltip(guiGraphics, mouseX, mouseY);
+    protected void renderBg(GuiGraphics g, float partialTick, int mouseX, int mouseY) {
+        g.blit(TEXTURE, leftPos, topPos, 0, 0, imageWidth, imageHeight);
+        if (compressor == null) return; // тайл может отсутствовать в реплее Flashback
+
+        if (compressor.getEnergyStored() >= compressor.powerRequirement) {
+            g.blit(TEXTURE, leftPos + 156, topPos + 4, 176, 52, 9, 12);
+        }
+
+        g.blit(TEXTURE, leftPos + 43 + compressor.tanks[0].getPressure() * 11, topPos + 46, 193, 18, 8, 124);
+
+        int i = compressor.progress * 55 / Math.max(compressor.processTime, 1);
+        g.blit(TEXTURE, leftPos + 42, topPos + 26, 192, 0, i, 17);
+
+        int j = (int) (compressor.getEnergyStored() * 52 / MachineCompressorBaseBlockEntity.maxPower);
+        g.blit(TEXTURE, leftPos + 152, topPos + 70 - j, 176, 52 - j, 16, j);
+
+        compressor.tanks[0].renderTank(g, leftPos + 17, topPos + 70, 16, 52);
+        compressor.tanks[1].renderTank(g, leftPos + 107, topPos + 70, 16, 52);
     }
 }

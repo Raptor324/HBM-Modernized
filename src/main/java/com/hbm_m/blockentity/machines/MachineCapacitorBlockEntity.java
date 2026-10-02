@@ -26,10 +26,21 @@ import net.minecraft.world.level.block.state.BlockState;
  * die Reihe, gilt die ganze Kette als ungueltig und der Kondensator gibt nichts ab. So laesst sich
  * eine Batteriebank hinter einer Wand verstecken und trotzdem sauber anzapfen.</p>
  *
- * <p><b>Nicht portiert:</b> Redstone-over-Radio und OpenComputers - beides hat hier keine
- * Entsprechung.
+ * <p>Redstone-over-Radio wie im Original ({@code fill}, {@code fillpercent}); OpenComputers gibt es hier nicht.</p>
  */
-public class MachineCapacitorBlockEntity extends BaseMachineBlockEntity {
+public class MachineCapacitorBlockEntity extends BaseMachineBlockEntity implements com.hbm_m.api.redstoneoverradio.IRORValueProvider {
+
+    @Override
+    public String[] getFunctionInfo() {
+        return new String[] { PREFIX_VALUE + "fill", PREFIX_VALUE + "fillpercent" };
+    }
+
+    @Override
+    public String provideRORValue(String name) {
+        if ((PREFIX_VALUE + "fill").equals(name)) return "" + getEnergyStored();
+        if ((PREFIX_VALUE + "fillpercent").equals(name)) return "" + getEnergyStored() * 100 / getMaxEnergyStored();
+        return null;
+    }
 
     public MachineCapacitorBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.MACHINE_CAPACITOR_BE.get(), pos, state, 0,

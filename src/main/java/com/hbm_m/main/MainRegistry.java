@@ -9,7 +9,6 @@ import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.effect.ModEffects;
 import com.hbm_m.entity.ModEntities;
-import com.hbm_m.event.BombDefuser;
 import com.hbm_m.event.CrateBreaker;
 import com.hbm_m.event.HazardEventHandler;
 import com.hbm_m.event.PlayerHazardHandler;
@@ -92,7 +91,6 @@ public final class MainRegistry {
         HazardEventHandler.init();
         PlayerHazardHandler.init();
         ScrewdriverInteractionHandler.init();
-        BombDefuser.init();
         PlayerHandler.register();
         ChunkRadiationManager.init();
         com.hbm_m.handler.pollution.PollutionEvents.init();
@@ -130,6 +128,7 @@ public final class MainRegistry {
             boolean rbmkCacheClear = NeutronNodeWorld.advanceTick();
             for (ServerLevel rbmkLevel : server.getAllLevels()) {
                 NeutronNodeWorld.tick(rbmkLevel, rbmkCacheClear);
+                com.hbm_m.handler.neutron.PileNeutronHandler.tick(rbmkLevel);
             }
             // Отложенный фикс соединений решёток/паней после спавна структур
             com.hbm_m.worldgen.StructureConnectionFixProcessor.tickIfReady(server);
@@ -153,14 +152,16 @@ public final class MainRegistry {
         com.hbm_m.handler.HazmatRegistry.registerHazmats();
         com.hbm_m.handler.ArmorRegistryInit.init();
         HazardRegistry.registerItems();
+        HazardRegistry.registerTrafos();
         com.hbm_m.event.LungGasHandler.init();
         com.hbm_m.advancement.AchievementHandler.init();
         com.hbm_m.armormod.event.ArmorModTickHandler.init();
         com.hbm_m.handler.BossSpawnHandler.init();
         com.hbm_m.config.FalloutConfigJSON.initialize();
-        DamageResistanceHandler.initArmorStats();
+        DamageResistanceHandler.init();
         com.hbm_m.blockentity.machines.LaunchPadBaseBlockEntity.registerLaunchables();
         com.hbm_m.satellite.Satellite.register();
+        com.hbm_m.satellite.CommandSatellites.init();
 
         // Диагностика загрузки рецептов на 1.21.1 — запускается ПОСЛЕ RegisterEvent.
         //? if >= 1.21.1 {

@@ -1,11 +1,17 @@
 package com.hbm_m.annihilator;
 
 import java.math.BigInteger;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import net.minecraft.nbt.CompoundTag;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.item.Item;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.saveddata.SavedData;
 
 /**
@@ -93,5 +99,80 @@ public class AnnihilatorPoolManager extends SavedData {
         Map<String, BigInteger> counts = pools.get(pool);
         if (counts == null) return BigInteger.ZERO;
         return counts.getOrDefault(key, BigInteger.ZERO);
+    }
+
+    // ═════════════════════════════════════════════════════════════════════════════════════
+    //  1:1 AnnihilatorSavedData.pushToPool / AnnihilatorPool.increment
+    // ═════════════════════════════════════════════════════════════════════════════════════
+
+    /** Sammel-Oredict-Namen des Originals ohne eigenen Tag im Port. */
+    public static final String ANY_PLASTIC = "hbm_m:any_plastic";
+    public static final String ANY_HARDPLASTIC = "hbm_m:any_hardplastic";
+    public static final String ANY_RESISTANTALLOY = "hbm_m:any_resistantalloy";
+
+    public static String itemKey(Item item) { return "item:" + BuiltInRegistries.ITEM.getKey(item); }
+    /** Original {@code ComparableStack(stack).makeSingular()} - im Port ohne Metadaten gleich der Item-ID. */
+    public static String compKey(ItemStack stack) { return "comp:" + BuiltInRegistries.ITEM.getKey(stack.getItem()); }
+    public static String fluidKey(Fluid fluid) { return "fluid:" + BuiltInRegistries.FLUID.getKey(fluid); }
+
+    /** Original {@code ItemStackUtil.getOreDictNames}: die Item-Tags plus die Sammelnamen ANY_*. */
+    public static List<String> dictNames(ItemStack stack) {
+        List<String> names = new ArrayList<>();
+        stack.getTags().forEach(t -> names.add(t.location().toString()));
+        String id = BuiltInRegistries.ITEM.getKey(stack.getItem()).getPath();
+        if (id.equals("polymer_ingot") || id.equals("bakelite_ingot")) names.add(ANY_PLASTIC);
+        if (id.equals("pc_ingot") || id.equals("pvc_ingot")) names.add(ANY_HARDPLASTIC);
+        if (id.equals("tcalloy_ingot") || id.equals("cdalloy_ingot")) names.add(ANY_RESISTANTALLOY);
+        return names;
+    }
+
+    /** Original {@code AnnihilatorPool.increment}: zaehlt hoch und liefert ggf. die Meilenstein-Auszahlung. */
+    public ItemStack increment(String pool, String key, long amount, boolean alwaysPayOut) {
+        Map<String, BigInteger> counts = pools.computeIfAbsent(pool, p -> new HashMap<>());
+        ItemStack payout;
+        BigInteger counter = counts.get(key);
+        if (counter == null) {
+            counter = BigInteger.valueOf(amount);
+            payout = AnnihilatorRecipes.getHighestPayoutFromKey(key, BigInteger.ZERO, counter);
+        } else {
+            BigInteger prev = counter;
+            counter = counter.add(BigInteger.valueOf(amount));
+            payout = AnnihilatorRecipes.getHighestPayoutFromKey(key, alwaysPayOut ? null : prev, counter);
+        }
+        counts.put(key, counter);
+        return payout;
+    }
+
+    /** Fuer Fluide. */
+    public ItemStack pushToPool(String pool, Fluid type, long amount, boolean alwaysPayOut) {
+        ItemStack payout = increment(pool, fluidKey(type), amount, alwaysPayOut);
+        this.setDirty();
+        return payout;
+    }
+
+    /** Fuer Items: Item (Wildcard), Item+Meta und alle Oredict-Namen. */
+    public ItemStack pushToPool(String pool, ItemStack stack, boolean alwaysPayOut) {
+        ItemStack itemPayout = increment(pool, itemKey(stack.getItem()), stack.getCount(), alwaysPayOut);
+        ItemStack compPayout = increment(pool, compKey(stack), stack.getCount(), alwaysPayOut);
+        ItemStack dictPayout = null;
+
+        for (String name : dictNames(stack)) if (name != null && !name.isEmpty()) {
+            ItemStack payout = increment(pool, "dict:" + name, stack.getCount(), alwaysPayOut);
+            if (payout != null) dictPayout = payout;
+        }
+
+        this.setDirty();
+
+        return dictPayout != null ? dictPayout : compPayout != null ? compPayout : itemPayout;
+    }
+
+    /** Original {@code monitor}: Zaehlerstand des Schluessels, sonst null (wie {@code pool.items.get(type)}). */
+    public BigInteger getOrNull(String pool, String key) {
+        Map<String, BigInteger> counts = pools.get(pool);
+        return counts == null ? null : counts.get(key);
+    }
+
+    public boolean hasPool(String pool) {
+        return pools.containsKey(pool);
     }
 }

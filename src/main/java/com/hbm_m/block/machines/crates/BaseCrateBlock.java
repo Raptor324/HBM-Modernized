@@ -40,6 +40,10 @@ public abstract class BaseCrateBlock extends BaseEntityBlock {
     //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        // Original: mit Schloss oder Nachschluessel-Set in der Hand oeffnet sich nichts (das Item handelt selbst)
+        ItemStack held = player.getItemInHand(hand);
+        if (!held.isEmpty() && (held.getItem() instanceof com.hbm_m.item.tool.ItemLock || held.is(com.hbm_m.item.ModItems.KEY_KIT.get()))) return InteractionResult.PASS;
+        if (player.isShiftKeyDown()) return InteractionResult.PASS;
         return openCrateMenu(state, level, pos, player);
     }
     //?} else {
@@ -51,10 +55,12 @@ public abstract class BaseCrateBlock extends BaseEntityBlock {
 
     private InteractionResult openCrateMenu(BlockState state, Level level, BlockPos pos, Player player) {
         if (!level.isClientSide() && level.getBlockEntity(pos) instanceof BaseCrateBlockEntity crateEntity) {
+            if (!crateEntity.canAccess(player)) return InteractionResult.SUCCESS;
             // Генерируем лут из таблицы структуры (если назначена) при первом открытии.
             crateEntity.unpackLootTable(player);
             playOpenSound(level, pos);
             MenuRegistry.openExtendedMenu((ServerPlayer) player, crateEntity, buf -> buf.writeBlockPos(pos));
+            crateEntity.spawnSpiders(player);
         }
         return InteractionResult.sidedSuccess(level.isClientSide());
     }
@@ -118,12 +124,27 @@ public abstract class BaseCrateBlock extends BaseEntityBlock {
         if (blockEntity instanceof BaseCrateBlockEntity crateEntity) {
             if (!level.isClientSide) {
                 ItemStack stack = new ItemStack(this);
-                if (!crateEntity.isEmpty()) {
+                if (!crateEntity.isEmpty() || crateEntity.isLocked() || crateEntity.hasSpiders) {
                     crateEntity.saveToItem(stack);
                 }
                 popResource(level, pos, stack);
             }
         }
+    }
+
+    @Override public boolean hasAnalogOutputSignal(BlockState state) { return true; }
+
+    @Override
+    public int getAnalogOutputSignal(BlockState state, Level level, BlockPos pos) {
+        if (!(level.getBlockEntity(pos) instanceof BaseCrateBlockEntity crate)) return 0;
+        // Container.calcRedstoneFromInventory
+        float f = 0; int filled = 0;
+        for (int i = 0; i < crate.getSlotCount(); i++) {
+            ItemStack s = crate.getItemHandler().getStackInSlot(i);
+            if (!s.isEmpty()) { f += (float) s.getCount() / (float) Math.min(64, s.getMaxStackSize()); filled++; }
+        }
+        f /= crate.getSlotCount();
+        return net.minecraft.util.Mth.floor(f * 14.0F) + (filled > 0 ? 1 : 0);
     }
 
     private void playOpenSound(Level level, BlockPos pos) {

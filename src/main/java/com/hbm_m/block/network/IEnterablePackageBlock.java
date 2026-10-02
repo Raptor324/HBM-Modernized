@@ -1,19 +1,24 @@
 package com.hbm_m.block.network;
 
+import org.jetbrains.annotations.Nullable;
+
 import com.hbm_m.entity.conveyor.MovingConveyorPackageEntity;
 
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.world.level.Level;
 
 /**
- * Port des {@code IConveyorPackage}-Teils von {@code api.hbm.conveyor.IEnterableBlock} (1.7.10
- * Original). Eigenstaendiges Interface statt einer zweiten Methode auf {@link IEnterableBlock},
- * da letzteres bereits dokumentiert als "keine Paket-Nutzlast in diesem Port" eingefuehrt und von
- * mehreren Crane-Bloecken (Inserter/Extractor/Grabber/Router) implementiert wurde, bevor Boxer/
- * Unboxer (die einzigen Nutzer von {@link MovingConveyorPackageEntity}) hinzukamen - eine
- * nachtraegliche Erweiterung des bestehenden Interfaces haette alle bereits fertigen Implementierer
- * zu einer No-Op-Methode gezwungen.
+ * Paket-Teil von {@code api.hbm.conveyor.IEnterableBlock} ({@code canPackageEnter}/{@code onPackageEnter}). Bloecke, die
+ * im Original {@code canPackageEnter} fest mit {@code false} beantworten (Aufteiler, Portionierer), implementieren dieses
+ * Interface nicht. {@code dir} ist die Seite, durch die das Paket hereinkommt ({@code null} = unbekannt, {@code UP} beim
+ * Hineinfallen).
  */
 public interface IEnterablePackageBlock {
+
+    default boolean canPackageEnter(Level level, BlockPos pos, @Nullable Direction dir, MovingConveyorPackageEntity entity) {
+        return true;
+    }
+
     void onPackageEnter(Level level, BlockPos pos, MovingConveyorPackageEntity item);
 }

@@ -151,7 +151,6 @@ import com.hbm_m.inventory.menu.ModMenuTypes;
 import com.hbm_m.item.BlockAbsorberItem;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.item.industrial.ItemAssemblyTemplate;
-import com.hbm_m.item.industrial.ItemBlueprintFolder;
 import com.hbm_m.item.tags_and_tiers.ModTags;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.main.MainRegistry;
@@ -159,14 +158,11 @@ import com.hbm_m.network.ModPacketHandler;
 import com.hbm_m.particle.explosions.basic.CameraShakeHandler;
 import com.hbm_m.platform.PlatformHooks;
 import com.hbm_m.platform.recipe.RecipeHooks;
-import com.hbm_m.powerarmor.PowerArmorSounds;
-import com.hbm_m.powerarmor.PowerArmorStepSoundHandler;
 import com.hbm_m.powerarmor.layer.AbstractObjArmorLayer;
 import com.hbm_m.powerarmor.layer.ModModelLayers;
 import com.hbm_m.powerarmor.layer.PowerArmorEmptyModel;
 import com.hbm_m.powerarmor.overlay.HbmThermalHandler;
 import com.hbm_m.powerarmor.overlay.OverlayPowerArmor;
-import com.hbm_m.powerarmor.overlay.PowerArmorHardLandingCameraShakeClient;
 import com.hbm_m.recipe.AssemblerRecipe;
 import com.hbm_m.recipe.ChemicalPlantRecipe;
 import com.mojang.blaze3d.vertex.DefaultVertexFormat;
@@ -258,9 +254,6 @@ public class ClientSetup {
         ClientModEvents.init();
         com.hbm_m.client.missile.track.MissileTrackClientEvents.register();
         CameraShakeHandler.initClient();
-        PowerArmorHardLandingCameraShakeClient.initClient();
-        PowerArmorSounds.register();
-        PowerArmorStepSoundHandler.initClient();
 
         // MOTD при входе в мир — решение принимает клиент (client.json -> enableMOTD).
         com.hbm_m.client.ClientMotdHandler.register();
@@ -297,6 +290,19 @@ public class ClientSetup {
         *///?}
 
         event.enqueueWork(ClientSetup::registerRadAbsorberItemProperties);
+        event.enqueueWork(ClientSetup::registerAlexandriteItemProperties);
+        event.enqueueWork(ClientSetup::registerR4ItemProperties);
+        event.enqueueWork(ClientSetup::registerPolaroidItemProperties);
+        event.enqueueWork(() -> {
+            for (var b : new net.minecraft.world.level.block.Block[] { ModBlocks.BRICK_FORGOTTEN.get(), ModBlocks.BRICK_FORGOTTEN_LOCK.get() })
+                net.minecraft.client.renderer.item.ItemProperties.register(b.asItem(), ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "meta"),
+                        (stack, level, entity, seed) -> { try { return Integer.parseInt(com.hbm_m.block.generic.JungleBricks.stateOf(stack, "meta")); } catch (NumberFormatException e) { return 0; } });
+        });
+        event.enqueueWork(() -> net.minecraft.client.renderer.item.ItemProperties.register(ModBlocks.BRICK_JUNGLE_GLYPH.get().asItem(),
+                ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "glyph"),
+                (stack, level, entity, seed) -> { try { return Integer.parseInt(com.hbm_m.block.generic.JungleBricks.stateOf(stack, "glyph")); } catch (NumberFormatException e) { return 0; } }));
+        event.enqueueWork(ClientSetup::registerBlueprintItemProperties);
+        event.enqueueWork(ClientSetup::registerPipetteItemProperties);
         event.enqueueWork(ClientSetup::registerRbmkPelletItemProperties);
         event.enqueueWork(ClientSetup::registerRenderLayers);
     }
@@ -336,11 +342,11 @@ public class ClientSetup {
     public static void onRegisterClientExtensions(net.neoforged.neoforge.client.extensions.common.RegisterClientExtensionsEvent event) {
         var ext = com.hbm_m.powerarmor.ModPowerArmorItem.createNeoForgeClientExtensions();
         event.registerItem(ext,
-                ModItems.T51_HELMET.get(), ModItems.T51_CHESTPLATE.get(), ModItems.T51_LEGGINGS.get(), ModItems.T51_BOOTS.get(),
-                ModItems.AJR_HELMET.get(), ModItems.AJR_CHESTPLATE.get(), ModItems.AJR_LEGGINGS.get(), ModItems.AJR_BOOTS.get(),
-                ModItems.AJRO_HELMET.get(), ModItems.AJRO_CHESTPLATE.get(), ModItems.AJRO_LEGGINGS.get(), ModItems.AJRO_BOOTS.get(),
-                ModItems.DNT_HELMET.get(), ModItems.DNT_CHESTPLATE.get(), ModItems.DNT_LEGGINGS.get(), ModItems.DNT_BOOTS.get(),
-                ModItems.BISMUTH_HELMET.get(), ModItems.BISMUTH_CHESTPLATE.get(), ModItems.BISMUTH_LEGGINGS.get(), ModItems.BISMUTH_BOOTS.get());
+                ModItems.T51_HELMET.get(), ModItems.T51_PLATE.get(), ModItems.T51_LEGS.get(), ModItems.T51_BOOTS.get(),
+                ModItems.AJR_HELMET.get(), ModItems.AJR_PLATE.get(), ModItems.AJR_LEGS.get(), ModItems.AJR_BOOTS.get(),
+                ModItems.AJRO_HELMET.get(), ModItems.AJRO_PLATE.get(), ModItems.AJRO_LEGS.get(), ModItems.AJRO_BOOTS.get(),
+                ModItems.DNT_HELMET.get(), ModItems.DNT_PLATE.get(), ModItems.DNT_LEGS.get(), ModItems.DNT_BOOTS.get(),
+                ModItems.BISMUTH_HELMET.get(), ModItems.BISMUTH_PLATE.get(), ModItems.BISMUTH_LEGS.get(), ModItems.BISMUTH_BOOTS.get());
     }
     *///?}
 
@@ -365,6 +371,71 @@ public class ClientSetup {
         // der ueberhaupt gerendert wird, und zwar durchscheinend.
         net.minecraft.client.renderer.ItemBlockRenderTypes.setRenderLayer(
                 ModBlocks.CHLORINE_GAS.get(), RenderType.translucent());
+        // Welt-Fluessigkeiten: BlockFluidBase.getRenderBlockPass() == 1 (durchscheinend), ausser den
+        // Bloecken, die im Original auf Pass 0 ueberschreiben (Schrabidiumsaeure, beide Laven).
+        for (var e : new com.hbm_m.inventory.fluid.WorldFluids.Entry[] {
+                com.hbm_m.inventory.fluid.WorldFluids.MUD, com.hbm_m.inventory.fluid.WorldFluids.ACID,
+                com.hbm_m.inventory.fluid.WorldFluids.TOXIC, com.hbm_m.inventory.fluid.WorldFluids.SULFURIC_ACID }) {
+            net.minecraft.client.renderer.ItemBlockRenderTypes.setRenderLayer(e.getSource(), RenderType.translucent());
+            net.minecraft.client.renderer.ItemBlockRenderTypes.setRenderLayer(e.getFlowing(), RenderType.translucent());
+        }
+    }
+
+    /**
+     * Original ItemAlexandrite.TextureAlexandrite: das Bild (Frame) = Blocklicht an der Spielerposition (0-15),
+     * gilt fuer jeden Alexandrit gleichzeitig.
+     */
+    /**
+     * R4: Coltan-Kompass (TextureColtass: Bild nach Nadelwinkel, hbm_m:angle = Bild / 32) und Werkzeugkiste
+     * (getIcon: offene Kiste solange "isOpen").
+     */
+    private static void registerR4ItemProperties() {
+        net.minecraft.client.renderer.item.ItemProperties.register(ModItems.COLTAN_TOOL.get(),
+                ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "angle"),
+                (stack, level, entity, seed) -> {
+                    net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
+                    if (mc.level == null || mc.player == null)
+                        return com.hbm_m.item.tool.ItemColtanCompass.needleFrame(null, 0, 0, 0, 32) / 32F;
+                    return com.hbm_m.item.tool.ItemColtanCompass.needleFrame(mc.level, mc.player.getX(), mc.player.getZ(), mc.player.getYRot(), 32) / 32F;
+                });
+        net.minecraft.client.renderer.item.ItemProperties.register(ModItems.TOOLBOX.get(),
+                ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "open"),
+                (stack, level, entity, seed) -> stack.hasTag() && stack.getTag().getBoolean("isOpen") ? 1F : 0F);
+    }
+
+    private static void registerAlexandriteItemProperties() {
+        net.minecraft.client.renderer.item.ItemProperties.register(
+                ModItems.GEM_ALEXANDRITE.get(),
+                ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "light"),
+                (stack, level, entity, seed) -> {
+                    net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
+                    if (mc.level == null || mc.player == null) return 0F;
+                    return mc.level.getBrightness(net.minecraft.world.level.LightLayer.BLOCK, mc.player.blockPosition()) / 15F;
+                }
+        );
+    }
+
+    /** Original setTextureName("polaroid_" / "glitch_" + MainRegistry.polaroidID). */
+    private static void registerPipetteItemProperties() {
+        for (var item : new net.minecraft.world.item.Item[] { ModItems.PIPETTE.get(), ModItems.PIPETTE_BORON.get(), ModItems.PIPETTE_LABORATORY.get() }) {
+            net.minecraft.client.renderer.item.ItemProperties.register(item,
+                    ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "filled"),
+                    (stack, level, entity, seed) -> stack.hasTag() && stack.getTag().getShort("fill") > 0 ? 1F : 0F);
+        }
+    }
+
+    private static void registerBlueprintItemProperties() {
+        net.minecraft.client.renderer.item.ItemProperties.register(ModItems.BLUEPRINTS.get(),
+                ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "blueprint"),
+                (stack, level, entity, seed) -> com.hbm_m.item.industrial.ItemBlueprints.iconIndex(stack));
+    }
+
+    private static void registerPolaroidItemProperties() {
+        for (var item : new net.minecraft.world.item.Item[] { ModItems.POLAROID.get(), ModItems.GLITCH.get() }) {
+            net.minecraft.client.renderer.item.ItemProperties.register(item,
+                    ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "polaroid"),
+                    (stack, level, entity, seed) -> com.hbm_m.main.Polaroid.id() / 18F);
+        }
     }
 
     private static void registerRadAbsorberItemProperties() {
@@ -493,13 +564,19 @@ public class ClientSetup {
         MenuRegistry.registerScreenFactory(ModMenuTypes.ANVIL_MENU.get(), GUIAnvil::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.CENTRIFUGE_MENU.get(), GUIMachineCentrifuge::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.IRON_CRATE_MENU.get(), GUIIronCrate::new);
+        MenuRegistry.registerScreenFactory(ModMenuTypes.FILE_CABINET_MENU.get(), com.hbm_m.inventory.gui.GUIFileCabinet::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.STEEL_CRATE_MENU.get(), GUISteelCrate::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.DESH_CRATE_MENU.get(), GUIDeshCrate::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.TUNGSTEN_CRATE_MENU.get(), GUITungstenCrate::new);
+        MenuRegistry.registerScreenFactory(ModMenuTypes.SAFE_MENU.get(), com.hbm_m.inventory.gui.GUISafe::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.TEMPLATE_CRATE_MENU.get(), GUITemplateCrate::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.FLUID_TANK_MENU.get(), GUIMachineFluidTank::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.BAT9000_MENU.get(), com.hbm_m.inventory.gui.GUIBat9000::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.BOOK_MENU.get(), com.hbm_m.inventory.gui.GUIBook::new);
+        MenuRegistry.registerScreenFactory(ModMenuTypes.HELD_ITEM_MENU.get(), com.hbm_m.inventory.gui.GUIHeldItem::new);
+        MenuRegistry.registerScreenFactory(ModMenuTypes.REBAR_MENU.get(), com.hbm_m.inventory.gui.GUIRebar::new);
+        MenuRegistry.registerScreenFactory(ModMenuTypes.SAT_DOCK_MENU.get(), com.hbm_m.inventory.gui.GUISatDock::new);
+        MenuRegistry.registerScreenFactory(ModMenuTypes.LEMEGETON_MENU.get(), com.hbm_m.inventory.gui.GUILemegeton::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.ORBUS_MENU.get(), com.hbm_m.inventory.gui.GUIFluidTank::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.MACHINE_WASTE_DRUM_MENU.get(), com.hbm_m.inventory.gui.GUIMachineWasteDrum::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.BARREL_IRON_MENU.get(), com.hbm_m.inventory.gui.GUIBarrelIron::new);
@@ -549,8 +626,8 @@ public class ClientSetup {
         ModEntities.SOYUZ_CAPSULE.ifPresent(entityType -> EntityRenderers.register(entityType, com.hbm_m.client.render.implementations.SoyuzCapsuleEntityRenderer::new));
         ModEntities.ZIRNOX_DEBRIS.ifPresent(entityType -> EntityRenderers.register(entityType, ZirnoxDebrisRenderer::new));
         ModEntities.RBMK_DEBRIS.ifPresent(entityType -> EntityRenderers.register(entityType, com.hbm_m.client.render.rbmk.RBMKDebrisRenderer::new));
-        ModEntities.MOVING_CONVEYOR_ITEM.ifPresent(entityType -> EntityRenderers.register(entityType, ThrownItemRenderer::new));
-        ModEntities.MOVING_CONVEYOR_PACKAGE.ifPresent(entityType -> EntityRenderers.register(entityType, ThrownItemRenderer::new));
+        ModEntities.MOVING_CONVEYOR_ITEM.ifPresent(entityType -> EntityRenderers.register(entityType, com.hbm_m.client.render.entity.MovingConveyorRenderers.Item::new));
+        ModEntities.MOVING_CONVEYOR_PACKAGE.ifPresent(entityType -> EntityRenderers.register(entityType, com.hbm_m.client.render.entity.MovingConveyorRenderers.Package::new));
         ModEntities.DELIVERY_DRONE.ifPresent(entityType -> EntityRenderers.register(entityType, com.hbm_m.client.render.implementations.DeliveryDroneRenderer::new));
         ModEntities.REQUEST_DRONE.ifPresent(entityType -> EntityRenderers.register(entityType, com.hbm_m.client.render.implementations.DeliveryDroneRenderer::new));
         ModEntities.TURRET_BULLET.ifPresent(entityType -> EntityRenderers.register(entityType, ThrownItemRenderer::new));
@@ -560,6 +637,22 @@ public class ClientSetup {
         ModEntities.GRENADE_IF_SLIME_PROJECTILE.ifPresent(entityType -> EntityRenderers.register(entityType, ThrownItemRenderer::new));
         ModEntities.GRENADE_IF_HE_PROJECTILE.ifPresent(entityType -> EntityRenderers.register(entityType, ThrownItemRenderer::new));
         ModEntities.GRENADE_PROJECTILE.ifPresent(entityType -> EntityRenderers.register(entityType, ThrownItemRenderer::new));
+        ModEntities.GRENADE_BOUNCY_GENERIC.ifPresent(entityType -> EntityRenderers.register(entityType, ThrownItemRenderer::new));
+        ModEntities.DISPERSER_CANISTER.ifPresent(entityType -> EntityRenderers.register(entityType, ThrownItemRenderer::new));
+        ModEntities.TNT_PRIMED_BASE.ifPresent(entityType -> EntityRenderers.register(entityType, com.hbm_m.client.render.entity.TNTPrimedBaseRenderer::new));
+        ModEntities.CHLORINE_FX.ifPresent(t -> EntityRenderers.register(t, c -> new com.hbm_m.client.render.entity.MultiCloudRenderer<>(c, "chlorine")));
+        ModEntities.PINK_CLOUD_FX.ifPresent(t -> EntityRenderers.register(t, c -> new com.hbm_m.client.render.entity.MultiCloudRenderer<>(c, "pc")));
+        ModEntities.CLOUD_FX.ifPresent(t -> EntityRenderers.register(t, c -> new com.hbm_m.client.render.entity.MultiCloudRenderer<>(c, "cloud")));
+        ModEntities.ORANGE_FX.ifPresent(t -> EntityRenderers.register(t, c -> new com.hbm_m.client.render.entity.MultiCloudRenderer<>(c, "orange")));
+        ModEntities.EMP_BLAST.ifPresent(entityType -> EntityRenderers.register(entityType, com.hbm_m.client.render.entity.EMPBlastRenderer::new));
+        ModEntities.FIREWORKS.ifPresent(entityType -> EntityRenderers.register(entityType, EmptyEntityRenderer::new));
+        ModEntities.DEATH_BLAST.ifPresent(entityType -> EntityRenderers.register(entityType, com.hbm_m.client.render.effect.OrbitalStrikeRenderer::deathBlast));
+        ModEntities.ORBITAL_LASER.ifPresent(entityType -> EntityRenderers.register(entityType, com.hbm_m.client.render.effect.OrbitalStrikeRenderer::orbitalLaser));
+        ModEntities.MINER_ROCKET.ifPresent(entityType -> EntityRenderers.register(entityType, com.hbm_m.client.render.implementations.MinerRocketRenderer::new));
+        ModEntities.METEOR.ifPresent(entityType -> EntityRenderers.register(entityType, com.hbm_m.client.render.implementations.MeteorRenderer::new));
+        ModEntities.BOXCAR.ifPresent(entityType -> EntityRenderers.register(entityType, com.hbm_m.client.render.implementations.BoxcarRenderer::new));
+        ModEntities.BOAT_RUBBER.ifPresent(entityType -> EntityRenderers.register(entityType, com.hbm_m.client.render.implementations.BoatRubberRenderer::new));
+        ModEntities.ITEM_BUOYANT.ifPresent(entityType -> EntityRenderers.register(entityType, net.minecraft.client.renderer.entity.ItemEntityRenderer::new));
         ModEntities.GRENADEHE_PROJECTILE.ifPresent(entityType -> EntityRenderers.register(entityType, ThrownItemRenderer::new));
         ModEntities.GRENADEFIRE_PROJECTILE.ifPresent(entityType -> EntityRenderers.register(entityType, ThrownItemRenderer::new));
         ModEntities.GRENADESMART_PROJECTILE.ifPresent(entityType -> EntityRenderers.register(entityType, ThrownItemRenderer::new));
@@ -604,6 +697,7 @@ public class ClientSetup {
         ModEntities.DIGAMMA_QUASAR.ifPresent(entityType -> EntityRenderers.register(entityType, RenderQuasar::new));
         ModEntities.DIGAMMA_SPEAR.ifPresent(entityType -> EntityRenderers.register(entityType, com.hbm_m.client.render.effect.SpearRenderer::new));
         ModEntities.RUBBLE.ifPresent(entityType -> EntityRenderers.register(entityType, RubbleEntityRenderer::new));
+        ModEntities.SHRAPNEL.ifPresent(entityType -> EntityRenderers.register(entityType, com.hbm_m.client.render.effect.ShrapnelRenderer::new));
         ModEntities.PILE_DEBRIS.ifPresent(entityType -> EntityRenderers.register(entityType, com.hbm_m.client.render.effect.PileDebrisRenderer::new));
         ModEntities.COG.ifPresent(entityType -> EntityRenderers.register(entityType, com.hbm_m.client.render.effect.CogRenderer::new));
 
@@ -616,11 +710,40 @@ public class ClientSetup {
             BlockEntityRenderers.register(ModBlockEntities.PNEUMO_TUBE_PAINTABLE_BE.get(),
                     com.hbm_m.client.render.implementations.PneumoTubePaintableRenderer::new);
             BlockEntityRenderers.register(ModBlockEntities.RED_CONNECTOR_BE.get(), wireRenderer);
+            BlockEntityRenderers.register(ModBlockEntities.FLOODLIGHT.get(), com.hbm_m.client.render.implementations.FloodlightRenderer::new);
+            BlockEntityRenderers.register(ModBlockEntities.LANTERN.get(), com.hbm_m.client.render.implementations.LanternRenderer::new);
+            BlockEntityRenderers.register(ModBlockEntities.DECO_BLOCK.get(), com.hbm_m.client.render.implementations.DecoBlockRenderer::new);
+            BlockEntityRenderers.register(ModBlockEntities.DECO_EMITTER.get(), com.hbm_m.client.render.implementations.EmitterRenderer::new);
+            BlockEntityRenderers.register(ModBlockEntities.SKELETON_HOLDER.get(), com.hbm_m.client.render.implementations.SkeletonHolderRenderer::new);
+            BlockEntityRenderers.register(ModBlockEntities.VENDING_MACHINE.get(), com.hbm_m.client.render.implementations.VendingMachineRenderer::new);
+            BlockEntityRenderers.register(ModBlockEntities.TRINKET.get(), com.hbm_m.client.render.implementations.TrinketRenderer::new);
+            BlockEntityRenderers.register(ModBlockEntities.FILE_CABINET.get(), com.hbm_m.client.render.implementations.FileCabinetRenderer::new);
+            BlockEntityRenderers.register(ModBlockEntities.CHARGE.get(), com.hbm_m.client.render.implementations.ChargeRenderer::new);
+            BlockEntityRenderers.register(ModBlockEntities.DEMON_LAMP.get(), com.hbm_m.client.render.implementations.DemonLampRenderer::new);
+            BlockEntityRenderers.register(ModBlockEntities.THRESHER_BE.get(), com.hbm_m.client.render.implementations.ThresherRenderer::new);
+            BlockEntityRenderers.register(ModBlockEntities.AUTOSAW_BE.get(), com.hbm_m.client.render.implementations.AutosawRenderer::new);
+            BlockEntityRenderers.register(ModBlockEntities.PYROOVEN_BE.get(), com.hbm_m.client.render.implementations.PyroOvenRenderer::new);
+            BlockEntityRenderers.register(ModBlockEntities.ANNIHILATOR_BE.get(), com.hbm_m.client.render.implementations.AnnihilatorRenderer::new);
+            BlockEntityRenderers.register(ModBlockEntities.BOILER_BE.get(), com.hbm_m.client.render.implementations.BoilerRenderer::new);
+            BlockEntityRenderers.register(ModBlockEntities.COMBUSTION_ENGINE_BE.get(), com.hbm_m.client.render.implementations.CombustionEngineRenderer::new);
+            BlockEntityRenderers.register(ModBlockEntities.COMPRESSOR_BE.get(), com.hbm_m.client.render.implementations.CompressorRenderer.Large::new);
+            BlockEntityRenderers.register(ModBlockEntities.COMPRESSOR_COMPACT_BE.get(), com.hbm_m.client.render.implementations.CompressorRenderer.Compact::new);
+            BlockEntityRenderers.register(ModBlockEntities.CONDENSER_POWERED_BE.get(), com.hbm_m.client.render.implementations.CondenserPoweredRenderer::new);
+            BlockEntityRenderers.register(ModBlockEntities.EXPOSURE_CHAMBER_BE.get(), com.hbm_m.client.render.implementations.ExposureChamberRenderer::new);
+            BlockEntityRenderers.register(ModBlockEntities.FURNACE_STEEL_BE.get(), com.hbm_m.client.render.implementations.FurnaceSteelRenderer::new);
+            BlockEntityRenderers.register(ModBlockEntities.HEPHAESTUS_BE.get(), com.hbm_m.client.render.implementations.HephaestusRenderer::new);
+            BlockEntityRenderers.register(ModBlockEntities.LARGE_TURBINE_BE.get(), com.hbm_m.client.render.implementations.LargeTurbineRenderer::new);
+            BlockEntityRenderers.register(ModBlockEntities.LPW2_BE.get(), com.hbm_m.client.render.implementations.Lpw2Renderer::new);
+            BlockEntityRenderers.register(ModBlockEntities.CRASHED_BOMB.get(), com.hbm_m.client.render.implementations.CrashedBombRenderer::new);
             BlockEntityRenderers.register(ModBlockEntities.RED_CONNECTOR_SUPER_BE.get(), wireRenderer);
             BlockEntityRenderers.register(ModBlockEntities.RED_PYLON_BE.get(), wireRenderer);
             BlockEntityRenderers.register(ModBlockEntities.RED_PYLON_MEDIUM_BE.get(), wireRenderer);
             BlockEntityRenderers.register(ModBlockEntities.RED_PYLON_LARGE_BE.get(), wireRenderer);
             BlockEntityRenderers.register(ModBlockEntities.RED_CABLE_PAINTABLE_BE.get(), com.hbm_m.client.render.implementations.RedCablePaintableRenderer::new);
+            BlockEntityRenderers.register(ModBlockEntities.FLUID_DUCT_PAINTABLE.get(), com.hbm_m.client.render.implementations.PaintableDuctRenderer::new);
+            BlockEntityRenderers.register(ModBlockEntities.PIPE_ANCHOR.get(), com.hbm_m.client.render.implementations.PipeAnchorRenderer::new);
+            BlockEntityRenderers.register(ModBlockEntities.BLAST_DOOR.get(), com.hbm_m.client.render.implementations.BlastDoorRenderer::new);
+            BlockEntityRenderers.register(ModBlockEntities.STRUCT_WATZ_CORE.get(), com.hbm_m.client.render.implementations.StructWatzCoreRenderer::new);
         }
 
         MachineAdvancedAssemblerRenderer.register();
@@ -674,6 +797,10 @@ public class ClientSetup {
         // Kern, damit man den Reaktor ueberhaupt von Hand bauen kann (RenderFusionTorusMultiblock).
         BlockEntityRenderers.register(ModBlockEntities.STRUCT_TORUS_CORE_BE.get(),
                 com.hbm_m.client.render.implementations.StructTorusCoreRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.SATLINK_BE.get(),
+                com.hbm_m.client.render.implementations.SatLinkRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.REBAR_BE.get(),
+                com.hbm_m.client.render.implementations.RebarRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.FUSION_KLYSTRON_BE.get(),
                 com.hbm_m.client.render.implementations.FusionKlystronRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.FUSION_KLYSTRON_CREATIVE_BE.get(),
@@ -739,8 +866,9 @@ public class ClientSetup {
             }
 
             for (String pool : blueprintPools) {
-                ItemStack folderStack = new ItemStack(ModItems.BLUEPRINT_FOLDER.get());
-                ItemBlueprintFolder.writeBlueprintPool(folderStack, pool);
+                // Original ItemBlueprints.getSubItems: geheime Pools nicht im Reiter
+                if (pool.startsWith(com.hbm_m.item.industrial.BlueprintPools.POOL_PREFIX_SECRET)) continue;
+                ItemStack folderStack = com.hbm_m.item.industrial.ItemBlueprints.make(pool);
                 acceptor.accept(folderStack);
             }
 
@@ -767,6 +895,10 @@ public class ClientSetup {
     @SubscribeEvent
     public static void onModelBake(ModelEvent.ModifyBakingResult event) {
         java.util.Map modelRegistry = event.getModels();
+        if (ModClothConfig.get().renderRebarSimple) {
+            BakedModel simple = (BakedModel) modelRegistry.get(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/rebar_simple"));
+            if (simple != null) modelRegistry.put(PlatformHooks.createModelLocation(ModBlocks.REBAR.getId(), ""), simple);
+        }
         Object leavesLocation = PlatformHooks.createModelLocation(ModBlocks.WASTE_LEAVES.getId(), "");
         BakedModel originalModel = (BakedModel) modelRegistry.get(leavesLocation);
         
@@ -825,6 +957,21 @@ public class ClientSetup {
         wrapConnectedDecoCtTerrainModels(models);
         wrapPileCtTerrainModels(models);
         wrapIcfCtTerrainModels(models);
+        wrapPwrCtTerrainModels(models);
+        wrapHadronCoilCtTerrainModels(models);
+        wrapBoxDuctModels(models);
+        // R6e: RenderReeds - Schilf bis zum Gewaessergrund
+        {
+            Object loc = PlatformHooks.createModelLocation(ModBlocks.PLANT_REEDS.getId(), "");
+            BakedModel baked = (BakedModel) models.get(loc);
+            if (baked != null && !(baked instanceof com.hbm_m.client.model.ReedsBakedModel)) models.put(loc, new com.hbm_m.client.model.ReedsBakedModel(baked));
+        }
+        // checkTilt: gekippte Maschinen (Absenkung wie in den Originalrenderern)
+        wrapTilted(models, ModBlocks.MACHINE_BIGASSTANK.get(), 1D);
+        wrapTilted(models, ModBlocks.MACHINE_BLAST_FURNACE.get(), 0.25D);
+        wrapTilted(models, ModBlocks.FLARE_STACK.get(), 0.25D);
+        wrapTilted(models, ModBlocks.REFINERY.get(), 0.25D);
+        wrapTilted(models, ModBlocks.ZIRNOX.get(), 0.5D);
 
         //? if forge {
         @SuppressWarnings("unchecked")
@@ -844,6 +991,30 @@ public class ClientSetup {
                 new CtEntry(ModBlocks.DECO_ALUMINUM, "deco_aluminum"),
                 new CtEntry(ModBlocks.DECO_BERYLLIUM, "deco_beryllium"),
                 new CtEntry(ModBlocks.DECO_LEAD, "deco_lead"),
+                new CtEntry(ModBlocks.GLASS_BORON, "glass_boron"),
+                new CtEntry(ModBlocks.GLASS_LEAD, "glass_lead"),
+                new CtEntry(ModBlocks.GLASS_URANIUM, "glass_uranium"),
+                new CtEntry(ModBlocks.GLASS_TRINITITE, "glass_trinitite"),
+                new CtEntry(ModBlocks.GLASS_POLONIUM, "glass_polonium"),
+                new CtEntry(ModBlocks.GLASS_ASH, "glass_ash"),
+                new CtEntry(ModBlocks.GLASS_QUARTZ, "glass_quartz"),
+                new CtEntry(ModBlocks.GLASS_POLARIZED, "glass_polarized"),
+                new CtEntry(ModBlocks.REINFORCED_LAMINATE, "reinforced_laminate"),
+                new CtEntry(ModBlocks.PLATEMETAL_BASE, "platemetal_base"),
+                new CtEntry(ModBlocks.PLATEMETAL_BLACK, "platemetal_black"),
+                new CtEntry(ModBlocks.PLATEMETAL_WHITE, "platemetal_white"),
+                new CtEntry(ModBlocks.PLATEMETAL_RED, "platemetal_red"),
+                new CtEntry(ModBlocks.PLATEMETAL_GREEN, "platemetal_green"),
+                new CtEntry(ModBlocks.PLATEMETAL_LIGHT_GRAY, "platemetal_light_gray"),
+                new CtEntry(ModBlocks.PLATEMETAL_BLUE, "platemetal_blue"),
+                new CtEntry(ModBlocks.PLATEMETAL_PURPLE, "platemetal_purple"),
+                new CtEntry(ModBlocks.PLATEMETAL_CYAN, "platemetal_cyan"),
+                new CtEntry(ModBlocks.PLATEMETAL_PINK, "platemetal_pink"),
+                new CtEntry(ModBlocks.PLATEMETAL_LIME, "platemetal_lime"),
+                new CtEntry(ModBlocks.PLATEMETAL_YELLOW, "platemetal_yellow"),
+                new CtEntry(ModBlocks.PLATEMETAL_LIGHT_BLUE, "platemetal_light_blue"),
+                new CtEntry(ModBlocks.PLATEMETAL_MAGENTA, "platemetal_magenta"),
+                new CtEntry(ModBlocks.PLATEMETAL_ORANGE, "platemetal_orange"),
         };
 
         for (CtEntry e : entries) {
@@ -909,6 +1080,75 @@ public class ClientSetup {
      * 1:1-Port von {@code BlockICF.getFragments}: die Aussenhaut und die Anschlussstellen tragen
      * jeweils ein eigenes Paar, und beide verbinden sich auch mit dem Steuerblock.
      */
+    /** R7i: Kastenrohre - jeder Blockzustand und das Gegenstandsmodell bekommen das RenderBoxDuct-Modell. */
+    @SuppressWarnings("unchecked")
+    private static void wrapTilted(java.util.Map models, Block block, double drop) {
+        //? if < 1.21.1 {
+        for (net.minecraft.world.level.block.state.BlockState st : block.getStateDefinition().getPossibleStates()) {
+            Object loc = net.minecraft.client.renderer.block.BlockModelShaper.stateToModelLocation(st);
+            BakedModel baked = (BakedModel) models.get(loc);
+            if (baked != null && !(baked instanceof com.hbm_m.client.model.TiltedBakedModel))
+                models.put(loc, new com.hbm_m.client.model.TiltedBakedModel(baked, drop));
+        }
+        //?}
+    }
+
+    private static void wrapBoxDuctModels(java.util.Map models) {
+        //? if < 1.21.1 {
+        for (RegistrySupplier<Block> sup : java.util.List.of(ModBlocks.FLUID_DUCT_BOX, ModBlocks.FLUID_DUCT_EXHAUST, ModBlocks.RED_CABLE_BOX)) {
+            com.hbm_m.block.network.BoxDuctBlock block = (com.hbm_m.block.network.BoxDuctBlock) sup.get();
+            BakedModel shared = null;
+            for (net.minecraft.world.level.block.state.BlockState st : block.getStateDefinition().getPossibleStates()) {
+                Object loc = net.minecraft.client.renderer.block.BlockModelShaper.stateToModelLocation(st);
+                BakedModel orig = (BakedModel) models.get(loc);
+                if (orig == null || orig instanceof com.hbm_m.client.model.BoxDuctBakedModel) continue;
+                if (shared == null) shared = new com.hbm_m.client.model.BoxDuctBakedModel(block.kind, orig);
+                models.put(loc, shared);
+            }
+            Object itemLoc = new net.minecraft.client.resources.model.ModelResourceLocation(sup.getId(), "inventory");
+            BakedModel itemOrig = (BakedModel) models.get(itemLoc);
+            if (itemOrig != null && !(itemOrig instanceof com.hbm_m.client.model.BoxDuctBakedModel.Item))
+                models.put(itemLoc, new com.hbm_m.client.model.BoxDuctBakedModel.Item(block.kind, itemOrig));
+        }
+        //?}
+    }
+
+    /** 1:1 {@code BlockHadronCoil.canConnect}: jede Spule verbindet sich mit jeder anderen Spule. */
+    private static void wrapHadronCoilCtTerrainModels(java.util.Map models) {
+        java.util.function.BiPredicate<net.minecraft.world.level.block.Block, net.minecraft.world.level.block.Block> connects =
+                (a, b) -> b instanceof com.hbm_m.block.machines.HadronCoilBlock;
+        for (RegistrySupplier<Block> coil : java.util.List.of(ModBlocks.HADRON_COIL_ALLOY, ModBlocks.HADRON_COIL_GOLD, ModBlocks.HADRON_COIL_NEODYMIUM,
+                ModBlocks.HADRON_COIL_MAGTUNG, ModBlocks.HADRON_COIL_SCHRABIDIUM, ModBlocks.HADRON_COIL_SCHRABIDATE, ModBlocks.HADRON_COIL_STARMETAL,
+                ModBlocks.HADRON_COIL_CHLOROPHYTE, ModBlocks.HADRON_COIL_MESE)) {
+            Object loc = PlatformHooks.createModelLocation(coil.getId(), "");
+            BakedModel baked = (BakedModel) models.get(loc);
+            if (baked == null || baked instanceof ConnectedDecoBlockBakedModel) continue;
+            String base = coil.getId().getPath();
+            models.put(loc, new ConnectedDecoBlockBakedModel(baked, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/" + base),
+                    ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/" + base + "_ct"), null, connects));
+        }
+    }
+
+    /** 1:1 {@code BlockPWR.getFragments}: Huelle und Anschluss je mit eigener CT-Textur, verbunden mit Traeger und Controller. */
+    private static void wrapPwrCtTerrainModels(java.util.Map models) {
+        var block = ModBlocks.PWR_BLOCK.get();
+        var controller = ModBlocks.PWR_CONTROLLER.get();
+        java.util.function.BiPredicate<net.minecraft.world.level.block.Block,
+                net.minecraft.world.level.block.Block> connects = (a, b) -> b == block || b == controller;
+
+        for (net.minecraft.world.level.block.state.BlockState state : block.getStateDefinition().getPossibleStates()) {
+            boolean port = state.getValue(com.hbm_m.block.machines.PWRBlock.PORT);
+            ResourceLocation full = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, port ? "block/pwr_casing_port" : "block/pwr_block");
+            ResourceLocation ct = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, port ? "block/pwr_casing_port_ct" : "block/pwr_block_ct");
+
+            Object loc = PlatformHooks.createModelLocation(ModBlocks.PWR_BLOCK.getId(), "port=" + port);
+            BakedModel baked = (BakedModel) models.get(loc);
+            if (baked == null || baked instanceof ConnectedDecoBlockBakedModel) continue;
+
+            models.put(loc, new ConnectedDecoBlockBakedModel(baked, full, ct, null, connects));
+        }
+    }
+
     private static void wrapIcfCtTerrainModels(java.util.Map models) {
         var block = ModBlocks.ICF_BLOCK.get();
         var controller = ModBlocks.ICF_CONTROLLER.get();
@@ -942,6 +1182,8 @@ public class ClientSetup {
         PlatformHooks.registerItemModel(event, com.hbm_m.powerarmor.render.ClientPowerArmorRender.DNT_MODEL_ID);
 
         PlatformHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/round_airlock_door_legacy"));
+        // ClientConfig.RENDER_REBAR_SIMPLE: nur drei Staebe
+        PlatformHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/rebar_simple"));
         PlatformHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/machines/crystallizer_fluid"));
         PlatformHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/machines/crystallizer_spinner"));
 
@@ -1079,9 +1321,19 @@ public class ClientSetup {
 
     @SubscribeEvent
     public static void onRegisterItemColors(RegisterColorHandlersEvent.Item event) {
+        // R6e: getRenderColor - Gras-Farbe (0.5, 1.0) fuer Tabak/Hanf
+        event.register((stack, tintIndex) -> tintIndex == 0 ? net.minecraft.world.level.GrassColor.get(0.5D, 1.0D) : 0xFFFFFF,
+                ModBlocks.PLANT_FLOWER_TOBACCO.get(), ModBlocks.PLANT_FLOWER_WEED.get(), ModBlocks.PLANT_TALL_WEED.get());
+        event.register((stack, tintIndex) -> tintIndex >= 0 && tintIndex < 6
+                ? com.hbm_m.block.machines.MachineCraneRouterBlock.SIDE_COLORS[tintIndex] : 0xffffff, ModBlocks.CRANE_ROUTER.get());
+        // Original ItemPipette.getColorFromItemStack (Pass 1 = Fluessigkeitsfarbe)
+        event.register((stack, tintIndex) -> opaqueTint(stack.hasTag() && stack.getItem() instanceof com.hbm_m.item.tool.ItemPipette p ? p.getColor(stack, tintIndex) : 0xFFFFFF),
+                ModItems.PIPETTE.get(), ModItems.PIPETTE_BORON.get(), ModItems.PIPETTE_LABORATORY.get());
         // Мета-предметы вкладки Parts (PartTabMetaItems): тинт базовой текстуры цветом
         // материала/красителя (аппроксимация ItemAutogen/ItemChemicalDye оригинала).
         // Двухслойные (dye/crayon) тинтуруются только на layer1 (оверлей).
+        // Original ItemBookLore.getColorFromItemStack: Schicht 1 Einband, Schicht 2 Titel
+        event.register((stack, tintIndex) -> opaqueTint(com.hbm_m.item.special.ItemBookLore.getColor(stack, tintIndex)), ModItems.BOOK_LORE.get());
         event.register((stack, tintIndex) ->
                 opaqueTint(com.hbm_m.item.PartTabMetaItems.tintFor(stack.getItem(), tintIndex)),
                 com.hbm_m.item.PartTabMetaItems.tintedItems());
@@ -1089,10 +1341,10 @@ public class ClientSetup {
             if (tintIndex == 0) return opaqueTint(0xFFFFFF);
             return opaqueTint(com.hbm_m.item.liquids.FluidIdentifierItem.getTintColor(stack));
         }, ModItems.FLUID_IDENTIFIER.get());
-        event.register((stack, tintIndex) -> {
-            if (tintIndex == 0) return opaqueTint(0xFFFFFF);
-            return opaqueTint(com.hbm_m.item.liquids.FluidBarrelItem.getTintColor(stack));
-        }, ModItems.FLUID_BARREL.get());
+        // Original ItemFluidTank/ItemCanister/ItemGasTank/ItemDisperser.getColorFromItemStack
+        event.register((stack, tintIndex) -> opaqueTint(((com.hbm_m.item.liquids.ItemFluidTank) stack.getItem()).getColor(stack, tintIndex)),
+                ModItems.FLUID_TANK_FULL.get(), ModItems.FLUID_TANK_LEAD_FULL.get(), ModItems.FLUID_BARREL_FULL.get(), ModItems.FLUID_PACK_FULL.get(),
+                ModItems.CANISTER_FULL.get(), ModItems.GAS_FULL.get(), ModItems.DISPERSER_CANISTER.get(), ModItems.GLYPHID_GLAND.get());
         // Fluid Duct - tint overlay layer with fluid color
         event.register((stack, tintIndex) -> {
             if (tintIndex == 0) return opaqueTint(0xFFFFFF);
@@ -1118,6 +1370,27 @@ public class ClientSetup {
 
     @SubscribeEvent
     public static void onRegisterBlockColors(RegisterColorHandlersEvent.Block event) {
+        // R6e: BlockNTMFlower/BlockTallPlant.colorMultiplier - Tabak und Hanf laubfarben
+        event.register((state, level, pos, tintIndex) -> level != null && pos != null
+                ? net.minecraft.client.renderer.BiomeColors.getAverageFoliageColor(level, pos)
+                : net.minecraft.world.level.GrassColor.get(0.5D, 1.0D),
+                ModBlocks.PLANT_FLOWER_TOBACCO.get(), ModBlocks.PLANT_FLOWER_WEED.get(), ModBlocks.PLANT_TALL_WEED.get());
+        // 1:1 CraneRouter.colorMultiplier: Seite 0-5 rot, orange, gelb, gruen, blau, violett
+        event.register((state, level, pos, tintIndex) -> tintIndex >= 0 && tintIndex < 6
+                ? com.hbm_m.block.machines.MachineCraneRouterBlock.SIDE_COLORS[tintIndex] : 0xffffff, ModBlocks.CRANE_ROUTER.get());
+        // R6c: Balefire.colorMultiplier (dunkler mit steigendem Alter)
+        event.register((state, level, pos, tintIndex) -> com.hbm_m.block.bomb.BalefireBlock.color(state), com.hbm_m.block.ModBlocks.BALEFIRE.get());
+        // R7i: FluidDuctBox.colorMultiplier - weisse Kastenrohre in (aufgehellter) Fluessigkeitsfarbe
+        event.register((state, level, pos, tintIndex) -> {
+            if (tintIndex != 0 || level == null || pos == null || state.getValue(com.hbm_m.block.network.BoxDuctBlock.META) % 3 != 2) return 0xFFFFFF;
+            if (!(level.getBlockEntity(pos) instanceof com.hbm_m.blockentity.network.PaintableDuctBlockEntity pipe)) return 0xFFFFFF;
+            net.minecraft.world.level.material.Fluid f = pipe.getFluidType();
+            if (f == null || f == net.minecraft.world.level.material.Fluids.EMPTY) f = com.hbm_m.inventory.fluid.ModFluids.NONE.getSource();
+            int c = com.hbm_m.api.fluids.HbmFluidRegistry.getTintColor(f);
+            int r = c >> 16 & 255, g = c >> 8 & 255, b = c & 255;
+            r = (int) (r + (255 - r) * 0.25D); g = (int) (g + (255 - g) * 0.25D); b = (int) (b + (255 - b) * 0.25D);
+            return (r << 16) | (g << 8) | b;
+        }, com.hbm_m.block.ModBlocks.FLUID_DUCT_BOX.get());
         net.minecraft.client.color.block.BlockColor sellafiteTint = (state, level, pos, tintIndex) -> {
             if (tintIndex != 0) return 0xFFFFFF;
             int levelValue = state.getValue(com.hbm_m.block.generic.BlockSellafieldSlaked.COLOR_LEVEL);
@@ -1203,6 +1476,7 @@ public class ClientSetup {
         event.registerEntityRenderer(ModEntities.DIGAMMA_QUASAR.get(), RenderQuasar::new);
         event.registerEntityRenderer(ModEntities.DIGAMMA_SPEAR.get(), com.hbm_m.client.render.effect.SpearRenderer::new);
         event.registerEntityRenderer(ModEntities.RUBBLE.get(), RubbleEntityRenderer::new);
+        event.registerEntityRenderer(ModEntities.SHRAPNEL.get(), com.hbm_m.client.render.effect.ShrapnelRenderer::new);
         event.registerEntityRenderer(ModEntities.RAD_BEAST.get(), com.hbm_m.client.render.mob.RADBeastRenderer::new);
         event.registerEntityRenderer(ModEntities.BOT_PRIME_HEAD.get(), com.hbm_m.client.render.mob.BOTPrimeRenderer::head);
         event.registerEntityRenderer(ModEntities.BOT_PRIME_BODY.get(), com.hbm_m.client.render.mob.BOTPrimeRenderer::body);
@@ -1265,6 +1539,15 @@ public class ClientSetup {
         MainRegistry.LOGGER.info("Registered custom particle providers.");
     }
 
+    /** Original ItemRendererHot: Gluehen der ItemHot-Gegenstaende im Inventar. */
+    @SubscribeEvent
+    public static void onRegisterItemDecorations(net.minecraftforge.client.event.RegisterItemDecorationsEvent event) {
+        for (net.minecraft.world.item.Item item : net.minecraft.core.registries.BuiltInRegistries.ITEM) {
+            if (item instanceof com.hbm_m.item.special.ItemHot) event.register(item, HotItemDecorator.INSTANCE);
+        }
+        event.register(com.hbm_m.item.ModItems.BROKEN_ITEM.get(), BrokenItemDecorator.INSTANCE);
+    }
+
     @SubscribeEvent
     public static void onRegisterGuiOverlays(net.minecraftforge.client.event.RegisterGuiOverlaysEvent event) {
         MainRegistry.LOGGER.info("Registering GUI overlays...");
@@ -1272,6 +1555,7 @@ public class ClientSetup {
         event.registerAbove(net.minecraftforge.client.gui.overlay.VanillaGuiOverlay.ARMOR_LEVEL.id(), "power_armor_hud", OverlayPowerArmor.POWER_ARMOR_OVERLAY);
         event.registerAbove(net.minecraftforge.client.gui.overlay.VanillaGuiOverlay.PORTAL.id(), "radiation_pixels", OverlayRadiationVisuals.RADIATION_PIXELS_OVERLAY);
         event.registerAboveAll("info_toast", OverlayInfoToast.OVERLAY);
+        event.registerAbove(net.minecraftforge.client.gui.overlay.VanillaGuiOverlay.CROSSHAIR.id(), "tool_ability_indicator", ToolAbilityClient.OVERLAY);
         event.registerAboveAll("gas_mask_overlay", com.hbm_m.client.overlay.OverlayGasMask.OVERLAY);
         MainRegistry.LOGGER.info("GUI overlays registered.");
     }
@@ -1522,6 +1806,8 @@ public class ClientSetup {
     public static void registerLayerDefinitions(EntityRenderersEvent.RegisterLayerDefinitions event) {
         event.registerLayerDefinition(ModModelLayers.POWER_ARMOR, PowerArmorEmptyModel::createBodyLayer);
         event.registerLayerDefinition(ModModelLayers.GAS_MASK, com.hbm_m.client.model.GasMaskModels::createGasMask);
+        event.registerLayerDefinition(com.hbm_m.client.render.armor.ArmorAccessoryModels.GOGGLES, com.hbm_m.client.render.armor.ArmorAccessoryModels::createGoggles);
+        event.registerLayerDefinition(com.hbm_m.client.render.armor.ArmorAccessoryModels.JETPACK, com.hbm_m.client.render.armor.ArmorAccessoryModels::createJetpack);
         event.registerLayerDefinition(ModModelLayers.M65, com.hbm_m.client.model.GasMaskModels::createM65);
     }
 }

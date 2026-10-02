@@ -25,7 +25,6 @@ import net.minecraft.world.level.block.state.BlockState;
  *   nach Fuellstand und deckelt ihn zusaetzlich auf die Haelfte des Inhalts je Tick - ohne diesen
  *   Deckel koennten zwei gleich grosse Tanks ihren Inhalt jeden Tick vollstaendig tauschen. Die
  *   Originalformel kennt diesen Schutz nicht; sie hier einzusetzen waere ein Rueckschritt.</li>
- *   <li>Die Kippkontrolle des Originals ({@code checkTilt}) ist projektweit nicht portiert.</li>
  * </ul>
  *
  * <p>Antimaterie sprengt den Tank wie im Original - das erledigt bereits die geerbte Pruefung aus
@@ -39,6 +38,15 @@ public class MachineBigAssTankBlockEntity extends MachineFluidTankBlockEntity {
     public MachineBigAssTankBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.BIGASSTANK_BE.get(), pos, state, CAPACITY);
     }
+
+    /** Original: {@code checkTilt(TiltType.UNAVOIDABLE, true)} - ohne schweres Fundament kippt der Tank immer. */
+    @Override
+    protected void updateTilt() {
+        this.checkTilt(TiltType.UNAVOIDABLE, true);
+    }
+
+    @Override public int getFloorCount() { return 4 * 4; }
+    @Override public BlockPos getFloorPosFromIndex(int index) { return this.standardFloor7x7(index); }
 
     @Override
     public Component getDisplayName() {

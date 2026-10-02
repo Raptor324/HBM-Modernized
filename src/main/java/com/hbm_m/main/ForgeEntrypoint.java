@@ -2,7 +2,6 @@
 package com.hbm_m.main;
 
 import com.hbm_m.capability.ModCapabilities;
-import com.hbm_m.event.BombDefuser;
 import com.hbm_m.event.CrateBreaker;
 import com.hbm_m.handler.MobGearHandler;
 import com.hbm_m.inventory.fluid.ModFluids;
@@ -26,6 +25,7 @@ public final class ForgeEntrypoint {
         IEventBus modBus = FMLJavaModLoadingContext.get().getModEventBus();
         EventBuses.registerModEventBus(RefStrings.MODID, modBus);
         MainRegistry.init();
+        com.hbm_m.recipe.FluidContainerIngredient.register();
         ModWorldGen.register(modBus);
         ModFluids.register(modBus);
         modBus.addListener(ModCapabilities::register);

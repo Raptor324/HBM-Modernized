@@ -42,7 +42,7 @@ import org.jetbrains.annotations.Nullable;
  * Bloecke - die Umwandlung setzt darum den Nachfolgeblock statt der Metadatenzahl. Die Zutaten
  * sind unveraendert.</p>
  */
-public class ICFComponentBlock extends Block {
+public class ICFComponentBlock extends Block implements com.hbm_m.api.block.IToolable {
 
     /** Womit umgewandelt wird - im Original {@code ToolType}. */
     public enum Tool { TORCH, BOLT }
@@ -61,59 +61,53 @@ public class ICFComponentBlock extends Block {
         this.result = result;
     }
 
-    private boolean matchesTool(ItemStack stack) {
-        if (tool == null) return false;
-        return switch (tool) {
-            case TORCH -> stack.is(ModItems.BLOWTORCH.get()) || stack.is(ModItems.ACETYLENE_TORCH.get());
-            case BOLT -> stack.is(ModItems.WRENCH.get()) || stack.is(ModItems.WRENCH_ARCHINEER.get());
-        };
-    }
-
-    /** Das Material, das die Umwandlung kostet - Gegenstand und Anzahl. */
+    /** Das Material, das die Umwandlung kostet ({@code BlockToolConversion.registerRecipes}). */
     private List<CostEntry> cost() {
         if (tool == Tool.TORCH) {
-            return List.of(new CostEntry(
-                    ModMaterialItems.item(ModMaterials.BISMUTH_BRONZE, MaterialShape.INGOT), 1));
+            // ANY_BISMOIDBRONZE.plateCast() = Bismut- oder Arsenbronze-Gussplatte
+            return List.of(new CostEntry(List.of(
+                    ModMaterialItems.item(ModMaterials.BBRONZE, MaterialShape.PLATE_CAST),
+                    ModMaterialItems.item(ModMaterials.ABRONZE, MaterialShape.PLATE_CAST)), 1));
         }
         return List.of(
-                new CostEntry(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE_CAST), 1),
+                new CostEntry(List.of(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE_CAST)), 1),
                 // Original: DURA.bolt() - Durastahl heisst in diesem Port High-Speed Steel.
-                new CostEntry(ModItems.BOLT_HIGHSPEED_STEEL.get(), 4));
+                new CostEntry(List.of(ModItems.BOLT_HIGHSPEED_STEEL.get()), 4));
     }
 
-    private record CostEntry(Item item, int count) {}
+    private record CostEntry(List<Item> items, int count) {}
 
-    private InteractionResult convert(Level level, BlockPos pos, Player player, InteractionHand hand) {
-        if (result == null || !matchesTool(player.getItemInHand(hand))) return InteractionResult.PASS;
-        if (level.isClientSide()) return InteractionResult.SUCCESS;
+    /** 1:1 {@code BlockToolConversion.onScrew}: Werkzeug passt, Material vorhanden -> Nachfolgeblock. */
+    @Override
+    public boolean onScrew(Level level, Player player, BlockPos pos, net.minecraft.core.Direction side, float fX, float fY, float fZ,
+                           InteractionHand hand, com.hbm_m.api.block.IToolable.ToolType toolType) {
+        if (level.isClientSide()) return false;
+        if (result == null || tool == null || !tool.name().equals(toolType.name())) return false;
 
         // Original: InventoryUtil.doesPlayerHaveAStacks(player, list, true) - erst pruefen, dann nehmen.
         List<CostEntry> cost = cost();
-        if (!player.isCreative()) {
-            for (CostEntry entry : cost) {
-                if (countInInventory(player, entry.item()) < entry.count()) return InteractionResult.CONSUME;
-            }
-            for (CostEntry entry : cost) consume(player, entry.item(), entry.count());
+        for (CostEntry entry : cost) {
+            if (countInInventory(player, entry.items()) < entry.count()) return false;
         }
+        for (CostEntry entry : cost) consume(player, entry.items(), entry.count());
 
         level.setBlock(pos, result.get().defaultBlockState(), 3);
-        level.playSound(null, pos, SoundEvents.ANVIL_USE, SoundSource.BLOCKS, 0.5F, 1.5F);
-        return InteractionResult.CONSUME;
+        return true;
     }
 
-    private static int countInInventory(Player player, Item item) {
+    private static int countInInventory(Player player, List<Item> items) {
         int count = 0;
         for (int i = 0; i < player.getInventory().getContainerSize(); i++) {
             ItemStack stack = player.getInventory().getItem(i);
-            if (stack.is(item)) count += stack.getCount();
+            if (items.contains(stack.getItem())) count += stack.getCount();
         }
         return count;
     }
 
-    private static void consume(Player player, Item item, int amount) {
+    private static void consume(Player player, List<Item> items, int amount) {
         for (int i = 0; i < player.getInventory().getContainerSize() && amount > 0; i++) {
             ItemStack stack = player.getInventory().getItem(i);
-            if (!stack.is(item)) continue;
+            if (!items.contains(stack.getItem())) continue;
 
             int taken = Math.min(amount, stack.getCount());
             stack.shrink(taken);
@@ -121,17 +115,4 @@ public class ICFComponentBlock extends Block {
         }
     }
 
-    //? if < 1.21.1 {
-    @Override
-    public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player,
-                                 InteractionHand hand, BlockHitResult hit) {
-        return convert(level, pos, player, hand);
-    }
-    //?} else {
-    /*@Override
-    protected InteractionResult useItemOn(ItemStack stack, BlockState state, Level level, BlockPos pos,
-                                          Player player, InteractionHand hand, BlockHitResult hit) {
-        return convert(level, pos, player, hand);
-    }
-    *///?}
 }

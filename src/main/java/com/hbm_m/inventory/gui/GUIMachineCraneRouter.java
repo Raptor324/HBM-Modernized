@@ -99,17 +99,9 @@ public class GUIMachineCraneRouter extends GuiInfoScreen<MachineCraneRouterMenu>
             for (int row = 0; row < 3; row++) {
                 int side = col * 3 + row;
                 if (isHovering(7 + col * 222, 16 + row * 26, 18, 18, (int) mouseX, (int) mouseY)) {
-                    router.nextTargetMode(side);
+                    { net.minecraft.nbt.CompoundTag data = new net.minecraft.nbt.CompoundTag(); data.putInt("toggle", side); com.hbm_m.network.NBTControlPacket.sendToServer(router.getBlockPos(), data); playClickSound(); }
                     return true;
                 }
-            }
-        }
-
-        for (int i = 0; i < MachineCraneRouterBlockEntity.INVENTORY_SIZE; i++) {
-            Slot slot = this.menu.slots.get(i);
-            if (isHoveringSlot(slot, (int) mouseX, (int) mouseY) && button == 1 && slot.hasItem()) {
-                router.nextFilterMode(i);
-                return true;
             }
         }
 

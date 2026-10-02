@@ -1,0 +1,19 @@
+{
+ "variants": {
+  "facing=north": {
+   "model": "hbm_m:block/deco/machine_uf6_tank"
+  },
+  "facing=west": {
+   "model": "hbm_m:block/deco/machine_uf6_tank",
+   "y": 270
+  },
+  "facing=south": {
+   "model": "hbm_m:block/deco/machine_uf6_tank",
+   "y": 180
+  },
+  "facing=east": {
+   "model": "hbm_m:block/deco/machine_uf6_tank",
+   "y": 90
+  }
+ }
+}

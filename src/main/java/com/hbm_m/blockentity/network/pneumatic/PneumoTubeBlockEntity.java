@@ -166,7 +166,7 @@ public class PneumoTubeBlockEntity extends BaseMachineBlockEntity
     public void nextReceiveOrder() { receiveOrder = (byte) ((receiveOrder + 1) % 2); setChanged(); }
     public void nextFilterMode(int index) {
         if (index >= 0 && index < FILTER_SLOTS) {
-            matcher.nextMode(index);
+            matcher.nextMode(index, getInventory().getStackInSlot(index));
             setChanged();
         }
     }

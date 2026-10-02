@@ -1,0 +1,8 @@
+newmtl frame
+map_Kd #frame
+newmtl mesh
+map_Kd #mesh
+newmtl side
+map_Kd #side
+newmtl top
+map_Kd #top

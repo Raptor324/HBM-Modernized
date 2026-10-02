@@ -3,7 +3,6 @@ package com.hbm_m.api.energy;
 import com.hbm_m.capability.ModCapabilities;
 import com.hbm_m.interfaces.IEnergyProvider;
 import com.hbm_m.interfaces.IEnergyReceiver;
-import com.hbm_m.powerarmor.ModArmorFSBPowered;
 import com.hbm_m.platform.PlatformHooks;
 
 import net.minecraft.core.Direction;
@@ -66,11 +65,11 @@ public class EnergyCapabilityProvider implements ICapabilityProvider {
         }
 
         private boolean isPoweredArmor() {
-            return stack.getItem() instanceof ModArmorFSBPowered;
+            return stack.getItem() instanceof com.hbm_m.api.item.IBatteryItem;
         }
 
-        private ModArmorFSBPowered poweredArmor() {
-            return (ModArmorFSBPowered) stack.getItem();
+        private com.hbm_m.api.item.IBatteryItem poweredArmor() {
+            return (com.hbm_m.api.item.IBatteryItem) stack.getItem();
         }
 
         @Override

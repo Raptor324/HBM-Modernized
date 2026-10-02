@@ -1,0 +1,40 @@
+{
+ "variants": {
+  "meta=0": {
+   "model": "hbm_m:block/floodlight_particle"
+  },
+  "meta=1": {
+   "model": "hbm_m:block/floodlight_particle"
+  },
+  "meta=2": {
+   "model": "hbm_m:block/floodlight_particle"
+  },
+  "meta=3": {
+   "model": "hbm_m:block/floodlight_particle"
+  },
+  "meta=4": {
+   "model": "hbm_m:block/floodlight_particle"
+  },
+  "meta=5": {
+   "model": "hbm_m:block/floodlight_particle"
+  },
+  "meta=6": {
+   "model": "hbm_m:block/floodlight_particle"
+  },
+  "meta=7": {
+   "model": "hbm_m:block/floodlight_particle"
+  },
+  "meta=8": {
+   "model": "hbm_m:block/floodlight_particle"
+  },
+  "meta=9": {
+   "model": "hbm_m:block/floodlight_particle"
+  },
+  "meta=10": {
+   "model": "hbm_m:block/floodlight_particle"
+  },
+  "meta=11": {
+   "model": "hbm_m:block/floodlight_particle"
+  }
+ }
+}

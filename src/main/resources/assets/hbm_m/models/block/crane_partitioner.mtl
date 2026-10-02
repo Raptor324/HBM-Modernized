@@ -1,0 +1,12 @@
+newmtl back
+map_Kd #back
+newmtl side
+map_Kd #side
+newmtl inner
+map_Kd #inner
+newmtl innerside
+map_Kd #innerside
+newmtl belt
+map_Kd #belt
+newmtl top
+map_Kd #top

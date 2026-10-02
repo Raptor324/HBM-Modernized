@@ -295,7 +295,6 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.BALL_TNT);
         simpleItem(ModItems.DEFUSER);
         simpleItem(ModItems.AIRSTRIKE_AGENT);
-        simpleItem(ModItems.CROWBAR);
         simpleItem(ModItems.OIL_DETECTOR);
         simpleItem(ModItems.MULTI_DETONATOR);
         simpleItem(ModItems.AIRSTRIKE_TEST);
@@ -348,7 +347,15 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.LEAD_CLADDING);
         simpleItem(ModItems.RUBBER_CLADDING);
         simpleItem(ModItems.PAINT_CLADDING);
+        simpleItem(ModItems.CLADDING_IRON);
+        simpleItem(ModItems.CLADDING_OBSIDIAN);
         simpleItem(ModItems.RADAWAY);
+        simpleItem(ModItems.RADAWAY_STRONG);
+        simpleItem(ModItems.SINGULARITY_COUNTER_RESONANT);
+        simpleItem(ModItems.SINGULARITY_SUPER_HEATED);
+        simpleItem(ModItems.SINGULARITY_SPARK);
+        simpleItem(ModItems.EUPHEMIUM_KIT);
+        simpleItem(ModItems.RADAWAY_FLUSH);
         simpleItem(ModItems.CREATIVE_BATTERY);
         simpleItem(ModItems.TEMPLATE_FOLDER);
 
@@ -400,7 +407,6 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.CANNED_FIST);
         simpleItem(ModItems.CANNED_FRIED);
         simpleItem(ModItems.CANNED_HOTDOGS);
-        simpleItem(ModItems.CANNED_JIZZ);
         simpleItem(ModItems.CANNED_KEROSENE);
         simpleItem(ModItems.CANNED_LEFTOVERS);
         simpleItem(ModItems.CANNED_MILK);
@@ -532,6 +538,10 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.ROD_ZIRNOX_U235_FUEL_DEPLETED);
         simpleItem(ModItems.ROD_ZIRNOX_URANIUM_FUEL);
         simpleItem(ModItems.ROD_ZIRNOX_URANIUM_FUEL_DEPLETED);
+        simpleItemModelByName("rod_zirnox_natural_uranium_fuel_depleted", "rod_zirnox_uranium_fuel_depleted");
+        for (var dep : ModItems.PWR_FUEL_DEPLETED.values()) {
+            simpleItemModelByName(dep.getId().getPath(), "pwr_fuel_depleted");
+        }
         simpleItem(ModItems.ROD_ZIRNOX_ZFB_MOX);
         simpleItem(ModItems.ROD_ZIRNOX_ZFB_MOX_DEPLETED);
 
@@ -565,16 +575,8 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.PWR_FUEL_BFB_AM_MIX_HOT);
         simpleItem(ModItems.PWR_FUEL_BFB_PU241);
         simpleItem(ModItems.PWR_FUEL_BFB_PU241_HOT);
-        simpleItem(ModItems.WATZ_PELLET_SCHRABIDIUM_OXIDE);
-        simpleItem(ModItems.WATZ_PELLET_SCHRABIDIUM_OXIDE_DEPLETED);
-        simpleItem(ModItems.WATZ_PELLET_LES_OXIDE);
-        simpleItem(ModItems.WATZ_PELLET_LES_OXIDE_DEPLETED);
-        simpleItem(ModItems.WATZ_PELLET_NATURAL_URANIUM);
-        simpleItem(ModItems.WATZ_PELLET_NATURAL_URANIUM_DEPLETED);
-        simpleItem(ModItems.WATZ_PELLET_BORON_CARBIDE);
-        simpleItem(ModItems.WATZ_PELLET_BORON_CARBIDE_DEPLETED);
-        simpleItem(ModItems.WATZ_PELLET_LEAD_SHIELD);
-        simpleItem(ModItems.WATZ_PELLET_LEAD_SHIELD_DEPLETED);
+        for (var sup : ModItems.WATZ_PELLET.values()) simpleItem(sup);
+        for (var sup : ModItems.WATZ_PELLET_DEPLETED.values()) simpleItem(sup);
 
         simpleItem(ModMaterialItems.get(ModMaterials.IRON, MaterialShape.PLATE));
         simpleItem(ModMaterialItems.get(ModMaterials.STEEL, MaterialShape.PLATE));
@@ -743,49 +745,218 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.POWDER_CHLOROCALCITE);
         simpleItem(ModItems.POWDER_SODIUM);
 
+        // WeaponSpecial (Original ItemSword -> in der Hand gehalten)
+
+        // Faehigkeitswerkzeuge und Schwerter (Original: ItemTool/ItemSword, isFull3D)
+        handheldItem(ModItems.CHAINSAW);
+        handheldItem(ModItems.WAND_K);
+        handheldItem(ModItems.MYSTERYSHOVEL);
+        // R5: Fluessigkeitsbehaelter (Pass 1/2 werden per ItemColor eingefaerbt)
+        for (String e : new String[] { "fluid_tank_empty", "fluid_tank_lead_empty", "fluid_barrel_empty", "fluid_pack_empty", "disperser_canister_empty", "glyphid_gland_empty" })
+            withExistingParent(e, "item/generated").texture("layer0", modLoc("item/" + e));
+        for (String f : new String[] { "fluid_tank_full", "fluid_tank_lead_full", "fluid_barrel_full", "fluid_pack_full" })
+            withExistingParent(f, "item/generated").texture("layer0", modLoc("item/" + f)).texture("layer1", modLoc("item/" + f + "_overlay"));
+        withExistingParent("canister_full", "item/generated").texture("layer0", modLoc("item/canister_empty")).texture("layer1", modLoc("item/canister_full_overlay"));
+        withExistingParent("gas_full", "item/generated").texture("layer0", modLoc("item/gas_empty")).texture("layer1", modLoc("item/gas_full_bottle")).texture("layer2", modLoc("item/gas_full_label"));
+        withExistingParent("disperser_canister", "item/generated").texture("layer0", modLoc("item/disperser_canister")).texture("layer1", modLoc("item/disperser_canister_overlay"));
+        withExistingParent("glyphid_gland", "item/generated").texture("layer0", modLoc("item/glyphid_gland")).texture("layer1", modLoc("item/glyphid_gland_overlay"));
+        // R4: Lore-Buch (Seiten + eingefaerbter Einband + Titel), Holobaender, Coltan-Kompass, Werkzeugkiste
+        withExistingParent("book_lore", "item/generated").texture("layer0", modLoc("item/book_lore")).texture("layer1", modLoc("item/book_lore_cover")).texture("layer2", modLoc("item/book_lore_title"));
+        withExistingParent("holotape_image_digamma", "item/generated").texture("layer0", modLoc("item/holotape_image"));
+        withExistingParent("holotape_image_restored", "item/generated").texture("layer0", modLoc("item/holotape_image"));
+        withExistingParent("holotape_image_fe_hall", "item/generated").texture("layer0", modLoc("item/holotape_image"));
+        withExistingParent("holotape_image_fe_corridor", "item/generated").texture("layer0", modLoc("item/holotape_image"));
+        withExistingParent("holotape_image_fe_server", "item/generated").texture("layer0", modLoc("item/holotape_image"));
+        withExistingParent("holotape_image_feh_dome", "item/generated").texture("layer0", modLoc("item/holotape_image"));
+        withExistingParent("holotape_image_feh_boat", "item/generated").texture("layer0", modLoc("item/holotape_image"));
+        withExistingParent("holotape_image_feh_lsc", "item/generated").texture("layer0", modLoc("item/holotape_image"));
+        withExistingParent("holotape_image_f3_rc", "item/generated").texture("layer0", modLoc("item/holotape_image"));
+        withExistingParent("holotape_image_f3_iv", "item/generated").texture("layer0", modLoc("item/holotape_image"));
+        withExistingParent("holotape_image_f3_wm", "item/generated").texture("layer0", modLoc("item/holotape_image"));
+        withExistingParent("holotape_image_nv_crater", "item/generated").texture("layer0", modLoc("item/holotape_image"));
+        withExistingParent("holotape_image_nv_divide", "item/generated").texture("layer0", modLoc("item/holotape_image"));
+        withExistingParent("holotape_image_nv_bm", "item/generated").texture("layer0", modLoc("item/holotape_image"));
+        withExistingParent("holotape_image_o_1", "item/generated").texture("layer0", modLoc("item/holotape_image"));
+        withExistingParent("holotape_image_o_2", "item/generated").texture("layer0", modLoc("item/holotape_image"));
+        withExistingParent("holotape_image_o_3", "item/generated").texture("layer0", modLoc("item/holotape_image"));
+        withExistingParent("holotape_image_challenge", "item/generated").texture("layer0", modLoc("item/holotape_image"));
+        {
+            var coltass = withExistingParent("coltan_tool", "item/generated").texture("layer0", modLoc("item/coltan_tool/coltan_tool_00"));
+            for (int i = 1; i < 32; i++) {
+                String n = String.format("coltan_tool/coltan_tool_%02d", i);
+                withExistingParent(n, "item/generated").texture("layer0", modLoc("item/" + n));
+                coltass.override().predicate(modLoc("angle"), i / 32F - 0.001F).model(new net.minecraftforge.client.model.generators.ModelFile.UncheckedModelFile(modLoc("item/" + n))).end();
+            }
+        }
+        withExistingParent("toolbox_open", "item/generated").texture("layer0", modLoc("item/toolbox")).texture("layer1", modLoc("item/toolbox_open"));
+        withExistingParent("toolbox", "item/generated").texture("layer0", modLoc("item/toolbox"))
+                .override().predicate(modLoc("open"), 1F).model(new net.minecraftforge.client.model.generators.ModelFile.UncheckedModelFile(modLoc("item/toolbox_open"))).end();
+        handheldItem(ModItems.SCHRABIDIUM_SWORD);
+        handheldItem(ModItems.SCHRABIDIUM_PICKAXE);
+        handheldItem(ModItems.SCHRABIDIUM_AXE);
+        handheldItem(ModItems.SCHRABIDIUM_SHOVEL);
+        handheldItem(ModItems.SCHRABIDIUM_HOE);
+        handheldItem(ModItems.TITANIUM_SWORD);
+        handheldItem(ModItems.TITANIUM_PICKAXE);
+        handheldItem(ModItems.TITANIUM_AXE);
+        handheldItem(ModItems.TITANIUM_SHOVEL);
+        handheldItem(ModItems.TITANIUM_HOE);
+        handheldItem(ModItems.STEEL_SWORD);
+        handheldItem(ModItems.STEEL_PICKAXE);
+        handheldItem(ModItems.STEEL_AXE);
+        handheldItem(ModItems.STEEL_SHOVEL);
+        handheldItem(ModItems.STEEL_HOE);
+        handheldItem(ModItems.ALLOY_SWORD);
+        handheldItem(ModItems.ALLOY_PICKAXE);
+        handheldItem(ModItems.ALLOY_AXE);
+        handheldItem(ModItems.ALLOY_SHOVEL);
+        handheldItem(ModItems.ALLOY_HOE);
+        handheldItem(ModItems.CMB_SWORD);
+        handheldItem(ModItems.CMB_PICKAXE);
+        handheldItem(ModItems.CMB_AXE);
+        handheldItem(ModItems.CMB_SHOVEL);
+        handheldItem(ModItems.CMB_HOE);
+        handheldItem(ModItems.ELEC_SWORD);
+        handheldItem(ModItems.ELEC_PICKAXE);
+        handheldItem(ModItems.ELEC_AXE);
+        handheldItem(ModItems.ELEC_SHOVEL);
+        handheldItem(ModItems.DESH_SWORD);
+        handheldItem(ModItems.DESH_PICKAXE);
+        handheldItem(ModItems.DESH_AXE);
+        handheldItem(ModItems.DESH_SHOVEL);
+        handheldItem(ModItems.DESH_HOE);
+        handheldItem(ModItems.COBALT_SWORD);
+        handheldItem(ModItems.COBALT_PICKAXE);
+        handheldItem(ModItems.COBALT_AXE);
+        handheldItem(ModItems.COBALT_SHOVEL);
+        handheldItem(ModItems.COBALT_HOE);
+        handheldItem(ModItems.COBALT_DECORATED_SWORD);
+        handheldItem(ModItems.COBALT_DECORATED_PICKAXE);
+        handheldItem(ModItems.COBALT_DECORATED_AXE);
+        handheldItem(ModItems.COBALT_DECORATED_SHOVEL);
+        handheldItem(ModItems.COBALT_DECORATED_HOE);
+        handheldItem(ModItems.STARMETAL_SWORD);
+        handheldItem(ModItems.STARMETAL_PICKAXE);
+        handheldItem(ModItems.STARMETAL_AXE);
+        handheldItem(ModItems.STARMETAL_SHOVEL);
+        handheldItem(ModItems.STARMETAL_HOE);
+        handheldItem(ModItems.CENTRI_STICK);
+        handheldItem(ModItems.SMASHING_HAMMER);
+        handheldItem(ModItems.BISMUTH_PICKAXE);
+        handheldItem(ModItems.BISMUTH_AXE);
+        handheldItem(ModItems.VOLCANIC_PICKAXE);
+        handheldItem(ModItems.VOLCANIC_AXE);
+        handheldItem(ModItems.CHLOROPHYTE_PICKAXE);
+        handheldItem(ModItems.CHLOROPHYTE_AXE);
+        handheldItem(ModItems.MESE_PICKAXE);
+        handheldItem(ModItems.MESE_AXE);
+        handheldItem(ModItems.DNT_SWORD);
+        handheldItem(ModItems.DWARVEN_PICKAXE);
+        handheldItem(ModItems.CROWBAR);
+        handheldItem(ModItems.MESE_GAVEL);
+        handheldItem(ModItems.WEAPON_PIPE_LEAD);
+        handheldItem(ModItems.REER_GRAAR);
+        handheldItem(ModItems.REDSTONE_SWORD);
+        handheldItem(ModItems.BIG_SWORD);
+        // ingot_steel_dusted Meta 1-9 (gleiche Textur wie Meta 0)
+        for (var dusted : ModItems.STEEL_DUSTED_INGOTS) {
+            withExistingParent(dusted.getId().getPath(), "item/generated").texture("layer0", modLoc("item/ingot/ingot_steel_dusted"));
+        }
+        handheldItem(ModItems.MATCHSTICK);
+        handheldItem(ModItems.BALEFIRE_AND_STEEL);
+        // Alexandrit: Frame = Blocklicht (Eigenschaft hbm_m:light, 16 Stufen)
+        {
+            var alex = withExistingParent("gem_alexandrite", "item/generated").texture("layer0", modLoc("item/alexandrite/gem_alexandrite_0"));
+            for (int i = 1; i < 16; i++) {
+                withExistingParent("alexandrite/gem_alexandrite_" + i, "item/generated").texture("layer0", modLoc("item/alexandrite/gem_alexandrite_" + i));
+                alex.override().predicate(modLoc("light"), i / 15F - 0.01F).model(new net.minecraftforge.client.model.generators.ModelFile.UncheckedModelFile(modLoc("item/alexandrite/gem_alexandrite_" + i))).end();
+            }
+        }
+        handheldItem(ModItems.ROD_OF_DISCORD);
+        // Polaroid/Glitch: Bild nach MainRegistry.polaroidID (Eigenschaft hbm_m:polaroid = id / 18)
+        for (String base : new String[] { "polaroid", "glitch" }) {
+            var model = withExistingParent(base, "item/generated").texture("layer0", modLoc("item/polaroid/" + base + "_1"));
+            for (int i = 2; i <= 18; i++) {
+                withExistingParent("polaroid/" + base + "_" + i, "item/generated").texture("layer0", modLoc("item/polaroid/" + base + "_" + i));
+                model.override().predicate(modLoc("polaroid"), i / 18F - 0.01F).model(new net.minecraftforge.client.model.generators.ModelFile.UncheckedModelFile(modLoc("item/polaroid/" + base + "_" + i))).end();
+            }
+        }
+        handheldItem(ModItems.HAND_DRILL);
+        handheldItem(ModItems.HAND_DRILL_DESH);
+        // Pipetten: Pass 0 Koerper, Pass 1 Fluessigkeitsfarbe; leer -> pipette_empty (Eigenschaft hbm_m:filled)
+        for (var pip : java.util.List.of(ModItems.PIPETTE, ModItems.PIPETTE_BORON, ModItems.PIPETTE_LABORATORY)) {
+            String n = pip.getId().getPath();
+            String overlay = pip == ModItems.PIPETTE_LABORATORY ? "item/pipette_laboratory_overlay" : "item/pipette_overlay";
+            withExistingParent(n, "item/generated").texture("layer0", modLoc("item/" + n)).texture("layer1", modLoc("item/pipette_empty"))
+                    .override().predicate(modLoc("filled"), 0.5F).model(new net.minecraftforge.client.model.generators.ModelFile.UncheckedModelFile(modLoc("item/" + n + "_filled"))).end();
+            withExistingParent(n + "_filled", "item/generated").texture("layer0", modLoc("item/" + n)).texture("layer1", modLoc(overlay));
+        }
+        simpleItem(ModItems.UPGRADE_SMELTER);
+        simpleItem(ModItems.UPGRADE_SHREDDER);
+        simpleItem(ModItems.UPGRADE_CENTRIFUGE);
+        simpleItem(ModItems.UPGRADE_CRYSTALLIZER);
+        simpleItem(ModItems.UPGRADE_NULLIFIER);
+        simpleItem(ModItems.UPGRADE_GC_SPEED);
+        handheldItem(ModItems.BLOWTORCH);
+        handheldItem(ModItems.ACETYLENE_TORCH);
+        handheldItem(ModItems.WRENCH_ARCHINEER);
+        handheldItem(ModItems.SCHRABIDIUM_HAMMER);
+        handheldItem(ModItems.ULLAPOOL_CABER);
+        handheldItem(ModItems.BOTTLE_OPENER);
+        handheldItem(ModItems.WRENCH_FLIPPED);
+        handheldItem(ModItems.MEMESPOON);
+        handheldItem(ModItems.WOOD_GAVEL);
+        handheldItem(ModItems.LEAD_GAVEL);
+        handheldItem(ModItems.DIAMOND_GAVEL);
+        handheldItem(ModItems.STOPSIGN);
+        handheldItem(ModItems.SOPSIGN);
+        handheldItem(ModItems.CHERNOBYLSIGN);
+        withExistingParent("shimmer_sledge", "item/handheld").texture("layer0", modLoc("item/shimmer_sledge_original"));
+        handheldItem(ModItems.SHIMMER_AXE);
+        withExistingParent("pch", "item/handheld").texture("layer0", modLoc("item/schrabidium_hammer"));
+
         trimmedArmorItem(ModItems.ALLOY_HELMET);
-        trimmedArmorItem(ModItems.ALLOY_CHESTPLATE);
-        trimmedArmorItem(ModItems.ALLOY_LEGGINGS);
+        trimmedArmorItem(ModItems.ALLOY_PLATE);
+        trimmedArmorItem(ModItems.ALLOY_LEGS);
         trimmedArmorItem(ModItems.ALLOY_BOOTS);
         trimmedArmorItem(ModItems.TITANIUM_HELMET);
-        trimmedArmorItem(ModItems.TITANIUM_CHESTPLATE);
-        trimmedArmorItem(ModItems.TITANIUM_LEGGINGS);
+        trimmedArmorItem(ModItems.TITANIUM_PLATE);
+        trimmedArmorItem(ModItems.TITANIUM_LEGS);
         trimmedArmorItem(ModItems.TITANIUM_BOOTS);
         trimmedArmorItem(ModItems.SECURITY_HELMET);
-        trimmedArmorItem(ModItems.SECURITY_CHESTPLATE);
-        trimmedArmorItem(ModItems.SECURITY_LEGGINGS);
+        trimmedArmorItem(ModItems.SECURITY_PLATE);
+        trimmedArmorItem(ModItems.SECURITY_LEGS);
         trimmedArmorItem(ModItems.SECURITY_BOOTS);
         trimmedArmorItem(ModItems.ASBESTOS_HELMET);
-        trimmedArmorItem(ModItems.ASBESTOS_CHESTPLATE);
-        trimmedArmorItem(ModItems.ASBESTOS_LEGGINGS);
+        trimmedArmorItem(ModItems.ASBESTOS_PLATE);
+        trimmedArmorItem(ModItems.ASBESTOS_LEGS);
         trimmedArmorItem(ModItems.ASBESTOS_BOOTS);
         trimmedArmorItem(ModItems.AJR_HELMET);
-        trimmedArmorItem(ModItems.AJR_CHESTPLATE);
-        trimmedArmorItem(ModItems.AJR_LEGGINGS);
+        trimmedArmorItem(ModItems.AJR_PLATE);
+        trimmedArmorItem(ModItems.AJR_LEGS);
         trimmedArmorItem(ModItems.AJR_BOOTS);
         trimmedArmorItem(ModItems.STEEL_HELMET);
-        trimmedArmorItem(ModItems.STEEL_CHESTPLATE);
-        trimmedArmorItem(ModItems.STEEL_LEGGINGS);
+        trimmedArmorItem(ModItems.STEEL_PLATE);
+        trimmedArmorItem(ModItems.STEEL_LEGS);
         trimmedArmorItem(ModItems.STEEL_BOOTS);
-        trimmedArmorItem(ModItems.PAA_HELMET);
-        trimmedArmorItem(ModItems.PAA_CHESTPLATE);
-        trimmedArmorItem(ModItems.PAA_LEGGINGS);
+        trimmedArmorItem(ModItems.PAA_PLATE);
+        trimmedArmorItem(ModItems.PAA_LEGS);
         trimmedArmorItem(ModItems.PAA_BOOTS);
         trimmedArmorItem(ModItems.LIQUIDATOR_HELMET);
-        trimmedArmorItem(ModItems.LIQUIDATOR_CHESTPLATE);
-        trimmedArmorItem(ModItems.LIQUIDATOR_LEGGINGS);
+        trimmedArmorItem(ModItems.LIQUIDATOR_PLATE);
+        trimmedArmorItem(ModItems.LIQUIDATOR_LEGS);
         trimmedArmorItem(ModItems.LIQUIDATOR_BOOTS);
         trimmedArmorItem(ModItems.HAZMAT_HELMET);
-        trimmedArmorItem(ModItems.HAZMAT_CHESTPLATE);
-        trimmedArmorItem(ModItems.HAZMAT_LEGGINGS);
+        trimmedArmorItem(ModItems.HAZMAT_PLATE);
+        trimmedArmorItem(ModItems.HAZMAT_LEGS);
         trimmedArmorItem(ModItems.HAZMAT_BOOTS);
         trimmedArmorItem(ModItems.STARMETAL_HELMET);
-        trimmedArmorItem(ModItems.STARMETAL_CHESTPLATE);
-        trimmedArmorItem(ModItems.STARMETAL_LEGGINGS);
+        trimmedArmorItem(ModItems.STARMETAL_PLATE);
+        trimmedArmorItem(ModItems.STARMETAL_LEGS);
         trimmedArmorItem(ModItems.STARMETAL_BOOTS);
         trimmedArmorItem(ModItems.COBALT_HELMET);
-        trimmedArmorItem(ModItems.COBALT_CHESTPLATE);
-        trimmedArmorItem(ModItems.COBALT_LEGGINGS);
+        trimmedArmorItem(ModItems.COBALT_PLATE);
+        trimmedArmorItem(ModItems.COBALT_LEGS);
         trimmedArmorItem(ModItems.COBALT_BOOTS);
 
         evenSimplerBlockItem(ModBlocks.REINFORCED_STONE_STAIRS);
@@ -953,6 +1124,7 @@ public class ModItemModelProvider extends ItemModelProvider {
         blockItemFromBlockModelMachine(ModBlocks.COMBINATION_OVEN);
         blockItemFromBlockModelMachine(ModBlocks.COMBUSTION_ENGINE);
         blockItemFromBlockModelMachine(ModBlocks.COMPRESSOR);
+        blockItemFromBlockModelMachine(ModBlocks.COMPRESSOR_COMPACT);
         blockItemFromBlockModelMachine(ModBlocks.CONDENSER_POWERED);
         blockItemFromBlockModelMachine(ModBlocks.CONVEYOR_PRESS);
         blockItemFromBlockModelMachine(ModBlocks.COUPLER);
@@ -967,7 +1139,6 @@ public class ModItemModelProvider extends ItemModelProvider {
         blockItemFromBlockModelMachine(ModBlocks.FENSU);
         // FENSU2 (machine_battery_redd) item model is generated by orientableBlockWithItem in ModBlockStateProvider.
         blockItemFromBlockModelMachine(ModBlocks.FIREBOX);
-        blockItemFromBlockModelMachine(ModBlocks.FRACTION_SPACER);
         blockItemFromBlockModelMachine(ModBlocks.FURNACE_IRON);
         blockItemFromBlockModelMachine(ModBlocks.FURNACE_STEEL);
         blockItemFromBlockModelMachine(ModBlocks.HEATEX);
@@ -996,16 +1167,18 @@ public class ModItemModelProvider extends ItemModelProvider {
         blockItemFromBlockModelMachine(ModBlocks.ASHPIT);
         blockItemFromBlockModelMachine(ModBlocks.REACTOR_RESEARCH);
         blockItemFromBlockModelMachine(ModBlocks.MACHINE_RADGEN);
-        itemModelFromBlockResourcePath(ModBlocks.CRANE_INSERTER.getId().getPath(), "block/crane_inserter_north");
-        itemModelFromBlockResourcePath(ModBlocks.CRANE_EXTRACTOR.getId().getPath(), "block/crane_extractor_north");
-        itemModelFromBlockResourcePath(ModBlocks.CRANE_GRABBER.getId().getPath(), "block/crane_grabber_north");
-        itemModelFromBlockResourcePath(ModBlocks.CRANE_BOXER.getId().getPath(), "block/crane_boxer_north");
-        itemModelFromBlockResourcePath(ModBlocks.CRANE_UNBOXER.getId().getPath(), "block/crane_unboxer_north");
+        itemModelFromBlockResourcePath(ModBlocks.CRANE_INSERTER.getId().getPath(), "block/crane_inserter_inventory");
+        itemModelFromBlockResourcePath(ModBlocks.CRANE_EXTRACTOR.getId().getPath(), "block/crane_extractor_inventory");
+        itemModelFromBlockResourcePath(ModBlocks.CRANE_GRABBER.getId().getPath(), "block/crane_grabber_inventory");
+        itemModelFromBlockResourcePath(ModBlocks.CRANE_BOXER.getId().getPath(), "block/crane_boxer_inventory");
+        itemModelFromBlockResourcePath(ModBlocks.CRANE_UNBOXER.getId().getPath(), "block/crane_unboxer_inventory");
         blockItemFromBlockModelMachine(ModBlocks.SOURCE);
         blockItemFromBlockModelMachine(ModBlocks.MACHINE_LARGE_TURBINE);
         blockItemFromBlockModelMachine(ModBlocks.LPW2);
         blockItemFromBlockModelMachine(ModBlocks.STEAM_ENGINE);
         blockItemFromBlockModelMachine(ModBlocks.STIRLING);
+        blockItemFromBlockModelMachine(ModBlocks.MACHINE_SATLINK);
+        blockItemFromBlockModelMachine(ModBlocks.SAT_DOCK);
         blockItemFromBlockModelMachine(ModBlocks.STIRLING_CREATIVE);
         blockItemFromBlockModelMachine(ModBlocks.STIRLING_STEEL);
         blockItemFromBlockModelMachine(ModBlocks.STRAND_CASTER);
@@ -1015,11 +1188,7 @@ public class ModItemModelProvider extends ItemModelProvider {
         blockItemFromBlockModelMachine(ModBlocks.WATZ_PUMP);
         blockItemFromBlockModelMachine(ModBlocks.CHUNGUS);
 
-        blockItemFromBlockModelBomb(ModBlocks.DUD_CONVENTIONAL);
-        blockItemFromBlockModelBomb(ModBlocks.DUD_NUKE);
-        blockItemFromBlockModelBomb(ModBlocks.DUD_SALTED);
 
-        blockItemFromBlockModel(ModBlocks.FLUID_VALVE);
         blockItemFromBlockModel(ModBlocks.FLUID_PUMP);
         blockItemFromBlockModel(ModBlocks.FLUID_EXHAUST);
 
@@ -1031,7 +1200,6 @@ public class ModItemModelProvider extends ItemModelProvider {
         blockItemFromBlockModel(ModBlocks.NUCLEAR_FALLOUT);
         blockItemFromBlockModel(ModBlocks.BLOCK_FALLOUT);
 
-        blockItemFromBlockModel(ModBlocks.ANTENNA_TOP);
         blockItemFromBlockModel(ModBlocks.ASBESTOS_ORE);
         blockItemFromBlockModel(ModBlocks.B29);
         blockItemFromBlockModel(ModBlocks.SOYUZ_LAUNCHER);
@@ -1055,20 +1223,12 @@ public class ModItemModelProvider extends ItemModelProvider {
         blockItemFromBlockModel(ModBlocks.BARREL_VITRIFIED);
         blockItemFromBlockModel(ModBlocks.BARREL_YELLOW);
         blockItemFromBlockModel(ModBlocks.C4);
-        blockItemFromBlockModel(ModBlocks.CAGE_LAMP);
         blockItemFromBlockModel(ModBlocks.CINNABAR_ORE);
         blockItemFromBlockModel(ModBlocks.COBALT_ORE);
         blockItemFromBlockModel(ModBlocks.CRATE_CONSERVE);
-        blockItemFromBlockModel(ModBlocks.CRT_BROKEN);
-        blockItemFromBlockModel(ModBlocks.CRT_BSOD);
-        blockItemFromBlockModel(ModBlocks.CRT_CLEAN);
-        blockItemFromBlockModel(ModBlocks.DECO_STEEL_SCAFFOLD);
         blockItemFromBlockModel(ModBlocks.DET_MINER);
         blockItemFromBlockModel(ModBlocks.DORNIER);
         blockItemFromBlockModel(ModBlocks.EXPLOSIVE_CHARGE);
-        blockItemFromBlockModel(ModBlocks.FILE_CABINET);
-        blockItemFromBlockModel(ModBlocks.FLOOD_LAMP);
-        itemModelFromBlockResourcePath("fluorescent_lamp", "block/fluorescent_lamp");
         blockItemFromBlockModel(ModBlocks.FLUORITE_ORE);
         blockItemFromBlockModel(ModBlocks.FREAKY_ALIEN_BLOCK);
         blockItemFromBlockModel(ModBlocks.GEIGER_COUNTER_BLOCK);
@@ -1078,23 +1238,20 @@ public class ModItemModelProvider extends ItemModelProvider {
         blockItemFromBlockModelBomb(ModBlocks.MINE_AP);
         blockItemFromBlockModelBomb(ModBlocks.MINE_FAT);
         blockItemFromBlockModelBomb(ModBlocks.NAVAL_MINE);
+        blockItemFromBlockModelBomb(ModBlocks.MINE_NAVAL);
         blockItemFromBlockModel(ModBlocks.NUCLEAR_CHARGE);
-        blockItemFromBlockModel(ModBlocks.PUTER);
         blockItemFromBlockModel(ModBlocks.RAREGROUND_ORE);
         blockItemFromBlockModel(ModBlocks.RAREGROUND_ORE_DEEPSLATE);
         blockItemFromBlockModel(ModBlocks.REBAR);
         blockItemFromBlockModel(ModBlocks.REFINERY);
         blockItemFromBlockModel(ModBlocks.SHREDDER);
         blockItemFromBlockModel(ModBlocks.SMOKE_BOMB);
-        blockItemFromBlockModel(ModBlocks.STEEL_POLE);
         blockItemFromBlockModel(ModBlocks.SULFUR_ORE);
         withGeneratedBlockParent("switch", "block/switch_on");
-        blockItemFromBlockModel(ModBlocks.TAPE_RECORDER);
         blockItemFromBlockModel(ModBlocks.THORIUM_ORE);
         blockItemFromBlockModel(ModBlocks.THORIUM_ORE_DEEPSLATE);
         blockItemFromBlockModel(ModBlocks.TITANIUM_ORE);
         blockItemFromBlockModel(ModBlocks.TITANIUM_ORE_DEEPSLATE);
-        blockItemFromBlockModel(ModBlocks.TOASTER);
         blockItemFromBlockModel(ModBlocks.TUNGSTEN_ORE);
         blockItemFromBlockModel(ModBlocks.WASTE_CHARGE);
 
@@ -1143,8 +1300,18 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItemModelByName("bucket_crude_oil", "bucket_crude_oil");
         simpleItemModelByName("iron_plate", "iron_plate");
         simpleItemModelByName("titanium_stamp_plate", "titanium_stamp_plate");
-        withExistingParent(ModItems.BLUEPRINT_FOLDER.getId().getPath(), "item/generated")
-                .texture("layer0", modLoc("item/template_folder"));
+        simpleItem(ModItems.BLUEPRINT_FOLDER);
+        simpleItem(ModItems.BLUEPRINT_FOLDER_DISCOVER);
+        simpleItem(ModItems.BLUEPRINT_FOLDER_SECRET);
+        // ItemBlueprints.getIcon: blau / discover / secret / 528 (Eigenschaft hbm_m:blueprint)
+        {
+            var bp = withExistingParent("blueprints", "item/generated").texture("layer0", modLoc("item/blueprints"));
+            String[] v = { "discover", "secret", "528" };
+            for (int i = 0; i < v.length; i++) {
+                withExistingParent("blueprints_" + v[i], "item/generated").texture("layer0", modLoc("item/blueprints_" + v[i]));
+                bp.override().predicate(modLoc("blueprint"), i + 1 - 0.01F).model(new net.minecraftforge.client.model.generators.ModelFile.UncheckedModelFile(modLoc("item/blueprints_" + v[i]))).end();
+            }
+        }
         blockItemFromBlockModel(ModBlocks.STRAWBERRY_BUSH);
 
         java.util.List.of(
@@ -1185,32 +1352,25 @@ public class ModItemModelProvider extends ItemModelProvider {
         ).forEach(this::crystalItem);
 
         java.util.List.of(
-                ModItems.ALLOY_SWORD,
-                ModItems.ALLOY_AXE,
-                ModItems.ALLOY_PICKAXE,
-                ModItems.ALLOY_SHOVEL,
-                ModItems.ALLOY_HOE,
-                ModItems.STEEL_SWORD,
-                ModItems.STEEL_AXE,
-                ModItems.STEEL_PICKAXE,
-                ModItems.STEEL_SHOVEL,
-                ModItems.STEEL_HOE,
-                ModItems.TITANIUM_SWORD,
-                ModItems.TITANIUM_AXE,
-                ModItems.TITANIUM_PICKAXE,
                 ModItems.DRILL_TITANIUM,
-                ModItems.TITANIUM_SHOVEL,
-                ModItems.TITANIUM_HOE,
-                ModItems.STARMETAL_SWORD,
-                ModItems.STARMETAL_AXE,
-                ModItems.STARMETAL_PICKAXE,
-                ModItems.STARMETAL_SHOVEL,
-                ModItems.STARMETAL_HOE
+                // setFull3D() im Original
+                ModItems.SYRINGE_EMPTY,
+                ModItems.SYRINGE_METAL_EMPTY,
+                ModItems.SYRINGE_METAL_STIMPAK,
+                ModItems.SYRINGE_METAL_MEDX,
+                ModItems.SYRINGE_METAL_PSYCHO,
+                ModItems.SYRINGE_METAL_SUPER,
+                ModItems.SYRINGE_TAINT,
+                ModItems.SYRINGE_MKUNICORN,
+                ModItems.SYRINGE_ANTIDOTE,
+                ModItems.SYRINGE_POISON,
+                ModItems.SYRINGE_AWESOME,
+                ModItems.CIGARETTE,
+                ModItems.CRACKPIPE
         ).forEach(this::handheldItem);
 
         // DEV: importierte fehlende Items aus dem Original-HBM (zur Sichtung)
         java.util.List.of(
-                ModItems.ACETYLENE_TORCH,
                 ModItems.AJR_LEGS,
                 ModItems.AJR_PLATE,
                 ModItems.AJRO_LEGS,
@@ -1279,7 +1439,6 @@ public class ModItemModelProvider extends ItemModelProvider {
                 ModItems.AUSTRALIUM_III,
                 ModItems.BACK_TESLA,
                 ModItems.BALEFIRE_AND_HAM,
-                ModItems.BALEFIRE_AND_STEEL,
                 ModItems.BALEFIRE_SCRAMBLED,
                 ModItems.BALL_DYNAMITE,
                 ModItems.BALL_FIRECLAY,
@@ -1293,7 +1452,6 @@ public class ModItemModelProvider extends ItemModelProvider {
                 ModItems.BDCL,
                 ModItems.BEDROCK_ORE_FRAGMENT,
                 ModItems.BETA,
-                ModItems.BIG_SWORD,
                 ModMaterialItems.get(ModMaterials.ACTINIUM, MaterialShape.BILLET),
                 ModMaterialItems.get(ModMaterials.AM241, MaterialShape.BILLET),
                 ModMaterialItems.get(ModMaterials.AM242, MaterialShape.BILLET),
@@ -1349,9 +1507,7 @@ public class ModItemModelProvider extends ItemModelProvider {
                 ModItems.BIO_WAFER,
                 ModItems.BIOMASS,
                 ModItems.BIOMASS_COMPRESSED,
-                ModItems.BISMUTH_AXE,
                 ModItems.BISMUTH_LEGS,
-                ModItems.BISMUTH_PICKAXE,
                 ModItems.BISMUTH_PLATE,
                 ModItems.BISMUTH_TOOL,
                 ModItems.BJ_BOOTS,
@@ -1365,9 +1521,90 @@ public class ModItemModelProvider extends ItemModelProvider {
                 ModItems.BLADES_DESH,
                 ModItems.BLADES_STEEL,
                 ModItems.BLADES_TITANIUM,
-                ModItems.BLOWTORCH,
-                ModItems.BLUEPRINTS,
                 ModItems.BOARD_COPPER,
+                ModItems.SATELLITE_SPY,
+                ModItems.SATELLITE_SCANNER,
+                ModItems.SATELLITE_RADAR,
+                ModItems.SATELLITE_MINER_ASTRO,
+                ModItems.SATELLITE_MINER_LUNAR,
+                ModItems.SATELLITE_PRECISION_LASER,
+                ModItems.SATELLITE_DEATH_RAY,
+                ModItems.SATELLITE_XENIUM_RESONATOR,
+                ModItems.SATELLITE_RELAY,
+                ModItems.SATELLITE_DETECTOR,
+                ModItems.SATELLITE_RAY_SCAN,
+                ModItems.COAL_ETERNAL,
+                ModItems.FUEL_ADDITIVE_ANTIKNOCK,
+                ModItems.FUEL_ADDITIVE_DEICER,
+                ModItems.PAGE_OF_PAGE1,
+                ModItems.PAGE_OF_PAGE2,
+                ModItems.PAGE_OF_PAGE3,
+                ModItems.PAGE_OF_PAGE4,
+                ModItems.PAGE_OF_PAGE5,
+                ModItems.PAGE_OF_PAGE6,
+                ModItems.PAGE_OF_PAGE7,
+                ModItems.PAGE_OF_PAGE8,
+                ModItems.INGOT_METAL_SCRAP,
+                ModItems.INGOT_METAL_INGOT,
+                ModItems.INGOT_METAL_COUNTER,
+                ModItems.INGOT_METAL_KEY,
+                ModItems.INGOT_METAL_BEACON,
+                ModItems.INGOT_METAL_CASING,
+                ModItems.INGOT_METAL_CLOCKWORK,
+                ModItems.INGOT_METAL_BAR,
+                ModItems.INGOT_METAL_DETECTOR,
+                ModItems.STAMP_BOOK_PRINTING1,
+                ModItems.STAMP_BOOK_PRINTING2,
+                ModItems.STAMP_BOOK_PRINTING3,
+                ModItems.STAMP_BOOK_PRINTING4,
+                ModItems.STAMP_BOOK_PRINTING5,
+                ModItems.STAMP_BOOK_PRINTING6,
+                ModItems.STAMP_BOOK_PRINTING7,
+                ModItems.STAMP_BOOK_PRINTING8,
+                ModItems.CIRCUIT_STAR_PIECE_BOARD_BLANK,
+                ModItems.CIRCUIT_STAR_PIECE_BOARD_TRANSISTOR,
+                ModItems.CIRCUIT_STAR_PIECE_BOARD_CONVERTER,
+                ModItems.CIRCUIT_STAR_PIECE_BRIDGE_NORTH,
+                ModItems.CIRCUIT_STAR_PIECE_BRIDGE_SOUTH,
+                ModItems.CIRCUIT_STAR_PIECE_BRIDGE_IO,
+                ModItems.CIRCUIT_STAR_PIECE_BRIDGE_BUS,
+                ModItems.CIRCUIT_STAR_PIECE_BRIDGE_CHIPSET,
+                ModItems.CIRCUIT_STAR_PIECE_BRIDGE_CMOS,
+                ModItems.CIRCUIT_STAR_PIECE_BRIDGE_BIOS,
+                ModItems.CIRCUIT_STAR_PIECE_CPU_REGISTER,
+                ModItems.CIRCUIT_STAR_PIECE_CPU_CLOCK,
+                ModItems.CIRCUIT_STAR_PIECE_CPU_LOGIC,
+                ModItems.CIRCUIT_STAR_PIECE_CPU_CACHE,
+                ModItems.CIRCUIT_STAR_PIECE_CPU_EXT,
+                ModItems.CIRCUIT_STAR_PIECE_CPU_SOCKET,
+                ModItems.CIRCUIT_STAR_PIECE_MEM_SOCKET,
+                ModItems.CIRCUIT_STAR_PIECE_MEM_16K_A,
+                ModItems.CIRCUIT_STAR_PIECE_MEM_16K_B,
+                ModItems.CIRCUIT_STAR_PIECE_MEM_16K_C,
+                ModItems.CIRCUIT_STAR_PIECE_MEM_16K_D,
+                ModItems.CIRCUIT_STAR_PIECE_CARD_BOARD,
+                ModItems.CIRCUIT_STAR_PIECE_CARD_PROCESSOR,
+                ModItems.CIRCUIT_STAR_COMPONENT_CHIPSET,
+                ModItems.CIRCUIT_STAR_COMPONENT_CPU,
+                ModItems.CIRCUIT_STAR_COMPONENT_RAM,
+                ModItems.CIRCUIT_STAR_COMPONENT_CARD,
+                ModItems.BATTERY_SC_EMPTY,
+                ModItems.BATTERY_SC_WASTE,
+                ModItems.BATTERY_SC_RA226,
+                ModItems.BATTERY_SC_TC99,
+                ModItems.BATTERY_SC_CO60,
+                ModItems.BATTERY_SC_PU238,
+                ModItems.BATTERY_SC_PO210,
+                ModItems.BATTERY_SC_AU198,
+                ModItems.BATTERY_SC_PB209,
+                ModItems.BATTERY_SC_AM241,
+                ModItems.BATTERY_POTATOS,
+                ModItems.MEMORY,
+                ModItems.KEY_KIT,
+                ModItems.KEY_FAKE,
+                ModItems.RECORD_LC,
+                ModItems.RECORD_SS,
+                ModItems.RECORD_VC,
                 ModItems.BOAT_RUBBER,
                 ModItems.BOBMAZON,
                 ModItems.BOLT_SPIKE,
@@ -1386,7 +1623,6 @@ public class ModItemModelProvider extends ItemModelProvider {
                 ModItems.BOTTLE_EMPTY,
                 ModItems.BOTTLE_MERCURY,
                 ModItems.BOTTLE_NUKA,
-                ModItems.BOTTLE_OPENER,
                 ModItems.BOTTLE_QUANTUM,
                 ModItems.BOTTLE_RAD,
                 ModItems.BOTTLE_SPARKLE,
@@ -1418,6 +1654,7 @@ public class ModItemModelProvider extends ItemModelProvider {
                 ModItems.CAP_STAR,
                 ModItems.CAP_SUNSET,
                 ModItems.CAPE_GASMASK,
+                ModItems.CAPE_HIDDEN,
                 ModItems.CAPE_RADIATION,
                 ModItems.CAPE_SCHRABIDIUM,
                 ModItems.CARD_AOS,
@@ -1434,15 +1671,10 @@ public class ModItemModelProvider extends ItemModelProvider {
                 ModItems.CELL_PUF6,
                 ModItems.CELL_TRITIUM,
                 ModItems.CELL_UF6,
-                ModItems.CENTRI_STICK,
-                ModItems.CHAINSAW,
                 ModItems.CHEESE,
                 ModItems.CHEMISTRY_SET,
                 ModItems.CHEMISTRY_SET_BORON,
-                ModItems.CHERNOBYLSIGN,
                 ModItems.CHLORINE_PINWHEEL,
-                ModItems.CHLOROPHYTE_AXE,
-                ModItems.CHLOROPHYTE_PICKAXE,
                 ModItems.CHOCOLATE,
                 ModItems.CHOCOLATE_MILK,
                 ModItems.CHOPPER,
@@ -1452,31 +1684,16 @@ public class ModItemModelProvider extends ItemModelProvider {
                 ModItems.CHOPPER_TAIL,
                 ModItems.CHOPPER_TORSO,
                 ModItems.CHOPPER_WING,
-                ModItems.CIGARETTE,
                 ModItems.CINNEBAR,
                 ModItems.CIRCUIT_STAR,
                 ModItems.CLAY_TABLET,
-                ModItems.CMB_AXE,
                 ModItems.CMB_BOOTS,
                 ModItems.CMB_HELMET,
-                ModItems.CMB_HOE,
                 ModItems.CMB_LEGS,
                 ModItems.CMB_PLATE,
-                ModItems.CMB_SHOVEL,
-                ModItems.CMB_SWORD,
                 ModItems.COAL_INFERNAL,
-                ModItems.COBALT_AXE,
-                ModItems.COBALT_DECORATED_AXE,
-                ModItems.COBALT_DECORATED_HOE,
-                ModItems.COBALT_DECORATED_PICKAXE,
-                ModItems.COBALT_DECORATED_SHOVEL,
-                ModItems.COBALT_DECORATED_SWORD,
-                ModItems.COBALT_HOE,
                 ModItems.COBALT_LEGS,
-                ModItems.COBALT_PICKAXE,
                 ModItems.COBALT_PLATE,
-                ModItems.COBALT_SHOVEL,
-                ModItems.COBALT_SWORD,
                 ModItems.COFFEE,
                 ModItems.COFFEE_RADIUM,
                 ModItems.COIN_CREEPER,
@@ -1491,7 +1708,6 @@ public class ModItemModelProvider extends ItemModelProvider {
                 ModItems.CONTAINMENT_BOX,
                 ModItems.CORDITE,
                 ModItems.COTTON_CANDY,
-                ModItems.CRACKPIPE,
                 ModItems.CRATE_CALLER,
                 ModItems.CRUCIBLE_TEMPLATE,
                 ModItems.CUBE_POWER,
@@ -1514,29 +1730,18 @@ public class ModItemModelProvider extends ItemModelProvider {
                 ModItems.DEFUSER_GOLD,
                 ModItems.DEMON_CORE_CLOSED,
                 ModItems.DEMON_CORE_OPEN,
-                ModItems.DESH_AXE,
-                ModItems.DESH_HOE,
-                ModItems.DESH_PICKAXE,
-                ModItems.DESH_SHOVEL,
-                ModItems.DESH_SWORD,
                 ModItems.DESIGNATOR_ARTY_RANGE,
                 ModItems.DETONATOR_DE,
                 ModItems.DETONATOR_DEADMAN,
                 ModItems.DEUTERIUM_FILTER,
-                ModItems.DIAMOND_GAVEL,
                 ModItems.DIESELSUIT_BOOTS,
                 ModItems.DIESELSUIT_HELMET,
                 ModItems.DIESELSUIT_LEGS,
                 ModItems.DIESELSUIT_PLATE,
-                ModItems.DISPERSER_CANISTER,
-                ModItems.DNS_BOOTS,
-                ModItems.DNS_HELMET,
-                ModItems.DNS_LEGS,
-                ModItems.DNS_PLATE,
+                ModItems.DNT_BOOTS,
+                ModItems.DNT_HELMET,
                 ModItems.DNT_LEGS,
                 ModItems.DNT_PLATE,
-                ModItems.DNT_SWORD,
-                ModItems.DOOR_METAL,
                 ModItems.DOOR_RED,
                 ModItems.DRAX,
                 ModItems.DRAX_MK2,
@@ -1557,16 +1762,14 @@ public class ModItemModelProvider extends ItemModelProvider {
                 ModItems.DRONE_PATROL_EXPRESS,
                 ModItems.DRONE_PATROL_EXPRESS_CHUNKLOADING,
                 ModItems.DRONE_REQUEST,
-                ModItems.DWARVEN_PICKAXE,
                 ModItems.DYSFUNCTIONAL_REACTOR,
                 ModItems.EGG_BALEFIRE,
                 ModItems.EGG_BALEFIRE_SHARD,
                 ModItems.EGG_GLYPHID,
-                ModItems.ELEC_SHOVEL,
-                ModItems.ELEC_SWORD,
                 ModItems.ENERGY_CORE,
                 ModItems.ENTANGLEMENT_KIT,
                 ModItems.ENVSUIT_BOOTS,
+                ModItems.ENVSUIT_HELMET,
                 ModItems.ENVSUIT_LEGS,
                 ModItems.ENVSUIT_PLATE,
                 ModItems.EUPHEMIUM_BOOTS,
@@ -1592,7 +1795,6 @@ public class ModItemModelProvider extends ItemModelProvider {
                 ModItems.FLEIJA_IGNITER,
                 ModItems.FLEIJA_KIT,
                 ModItems.FLEIJA_PROPELLANT,
-                ModItems.FLUID_IDENTIFIER_MULTI,
                 ModItems.FLYWHEEL_BERYLLIUM,
                 ModItems.FOODITEM,
                 ModItems.FRAGMENT_ACTINIUM,
@@ -1626,16 +1828,13 @@ public class ModItemModelProvider extends ItemModelProvider {
                 ModItems.GAS_MASK_OLDE,
                 ModItems.GAS_TESTER,
                 ModItems.GEAR_LARGE,
-                ModItems.GEM_ALEXANDRITE,
                 ModItems.GEM_RAD,
                 ModItems.GEM_SODALITE,
                 ModItems.GEM_TANTALIUM,
                 ModItems.GEM_VOLCANIC,
                 ModItems.GENERATOR_FRONT,
                 ModItems.GENERATOR_STEEL,
-                ModItems.GLITCH,
                 ModItems.GLOWING_STEW,
-                ModItems.GLYPHID_GLAND,
                 ModItems.GLYPHID_MEAT,
                 ModItems.GLYPHID_MEAT_GRILLED,
                 ModItems.GOGGLES,
@@ -1645,8 +1844,6 @@ public class ModItemModelProvider extends ItemModelProvider {
                 ModItems.GUN_KIT_1,
                 ModItems.GUN_KIT_2,
                 ModItems.GUN_PA_RANGED,
-                ModItems.HAND_DRILL,
-                ModItems.HAND_DRILL_DESH,
                 ModItems.HAZMAT_BOOTS_GREY,
                 ModItems.HAZMAT_BOOTS_RED,
                 ModItems.HAZMAT_GREY_KIT,
@@ -1719,7 +1916,6 @@ public class ModItemModelProvider extends ItemModelProvider {
                 ModItems.LAUNCH_CODE,
                 ModItems.LAUNCH_CODE_PIECE,
                 ModItems.LAUNCH_KEY,
-                ModItems.LEAD_GAVEL,
                 ModItems.LEMON,
                 ModItems.LINKER,
                 ModItems.LIQUIDATOR_LEGS,
@@ -1736,17 +1932,24 @@ public class ModItemModelProvider extends ItemModelProvider {
                 ModItems.MASK_OF_INFAMY,
                 ModItems.MASK_PISS,
                 ModItems.MASK_RAG,
-                ModItems.MATCHSTICK,
                 ModItems.MECH_KEY,
                 ModItems.MED_BAG,
                 ModItems.MED_IPECAC,
                 ModItems.MED_PTSD,
+                ModItems.MED_SCHIZOPHRENIA,
+                ModItems.CHEESE_QUESADILLA,
+                ModItems.FMN,
+                ModItems.FIVE_HTP,
+                ModItems.FLASK_INFUSION,
+                ModItems.APPLE_SCHRABIDIUM_1,
+                ModItems.APPLE_SCHRABIDIUM_2,
+                ModItems.APPLE_LEAD_1,
+                ModItems.APPLE_LEAD_2,
+                ModItems.TEM_FLAKES_1,
+                ModItems.TEM_FLAKES_2,
+                ModItems.MARSHMALLOW_ROASTED,
                 ModItems.MEDAL_LIQUIDATOR,
                 ModItems.MELTDOWN_TOOL,
-                ModItems.MEMESPOON,
-                ModItems.MESE_AXE,
-                ModItems.MESE_GAVEL,
-                ModItems.MESE_PICKAXE,
                 ModItems.METEOR_CHARM,
                 ModItems.METEOR_REMOTE,
                 ModItems.MIKE_COOLING_UNIT,
@@ -1774,6 +1977,11 @@ public class ModItemModelProvider extends ItemModelProvider {
                 ModItems.NITRA,
                 ModItems.NITRA_SMALL,
                 ModItems.NO9,
+                ModItems.NCRPA_BOOTS,
+                ModItems.NCRPA_HELMET,
+                ModItems.NCRPA_LEGS,
+                ModItems.NCRPA_PLATE,
+                ModItems.HAT,
                 ModItems.NOTHING,
                 ModItems.NUCLEAR_WASTE,
                 ModItems.NUCLEAR_WASTE_LONG,
@@ -1917,9 +2125,6 @@ public class ModItemModelProvider extends ItemModelProvider {
                 ModItems.PA_COIL_CHLOROPHYTE,
                 ModItems.PIN,
                 ModItems.PIPES_STEEL,
-                ModItems.PIPETTE,
-                ModItems.PIPETTE_BORON,
-                ModItems.PIPETTE_LABORATORY,
                 ModItems.PISTON_SELENIUM,
                 ModItems.PISTON_SET_DESH,
                 ModItems.PISTON_SET_DURA,
@@ -1929,7 +2134,6 @@ public class ModItemModelProvider extends ItemModelProvider {
                 ModItems.PLASTIC_BAG,
                 ModItems.PLATE_ALUMINIUM,
                 ModMaterialItems.get(ModMaterials.POLYMER, MaterialShape.PLATE),
-                ModItems.POLAROID,
                 ModItems.POLLUTION_DETECTOR,
                 ModItems.POWER_NET_TOOL,
                 ModItems.PROTECTION_CHARM,
@@ -1973,7 +2177,6 @@ public class ModItemModelProvider extends ItemModelProvider {
                 ModItems.REACTOR_CORE,
                 ModItems.REACTOR_SENSOR,
                 ModItems.REBAR_PLACER,
-                ModItems.REDSTONE_SWORD,
                 ModItems.RING_PULL,
                 ModItems.RING_STARMETAL,
                 ModItems.ROBES_BOOTS,
@@ -1983,7 +2186,6 @@ public class ModItemModelProvider extends ItemModelProvider {
                 ModItems.ROCKET_FUEL,
                 ModItems.ROD_DUAL_EMPTY,
                 ModItems.ROD_EMPTY,
-                ModItems.ROD_OF_DISCORD,
                 ModItems.ROD_QUAD_EMPTY,
                 ModItems.RPA_BOOTS,
                 ModItems.RPA_HELMET,
@@ -2006,19 +2208,15 @@ public class ModItemModelProvider extends ItemModelProvider {
                 ModItems.SAT_INTERFACE,
                 ModItems.SAT_LUNAR_MINER,
                 ModItems.SAT_MINER,
+                ModItems.SAT_FOEQ,
+                ModItems.SAT_SCANNER,
                 ModItems.SAT_RELAY,
                 ModItems.SAWBLADE,
                 ModItems.SCHNITZEL_VEGAN,
-                ModItems.SCHRABIDIUM_AXE,
                 ModItems.SCHRABIDIUM_BOOTS,
-                ModItems.SCHRABIDIUM_HAMMER,
                 ModItems.SCHRABIDIUM_HELMET,
-                ModItems.SCHRABIDIUM_HOE,
                 ModItems.SCHRABIDIUM_LEGS,
-                ModItems.SCHRABIDIUM_PICKAXE,
                 ModItems.SCHRABIDIUM_PLATE,
-                ModItems.SCHRABIDIUM_SHOVEL,
-                ModItems.SCHRABIDIUM_SWORD,
                 ModMaterialItems.get(ModMaterials.SCRAP_NUCLEAR, MaterialShape.SCRAP),
                 ModMaterialItems.get(ModMaterials.SCRAP_OIL, MaterialShape.SCRAP),
                 ModMaterialItems.get(ModMaterials.SCRAP_PLASTIC, MaterialShape.SCRAP),
@@ -2035,15 +2233,12 @@ public class ModItemModelProvider extends ItemModelProvider {
                 ModItems.SERVO_SET_DESH,
                 ModItems.SETTINGS_TOOL,
                 ModItems.SHACKLES,
-                ModItems.SHIMMER_AXE,
                 ModItems.SHIMMER_AXE_HEAD,
                 ModItems.SHIMMER_HANDLE,
                 ModItems.SHIMMER_HEAD,
-                ModItems.SHIMMER_SLEDGE,
                 ModItems.SINGULARITY,
                 ModItems.SIOX,
                 ModItems.SIPHON,
-                ModItems.SMASHING_HAMMER,
                 ModItems.SOLID_FUEL,
                 ModItems.SOLID_FUEL_BF,
                 ModItems.SOLID_FUEL_PRESTO,
@@ -2054,7 +2249,6 @@ public class ModItemModelProvider extends ItemModelProvider {
                 ModItems.SOLINIUM_IGNITER,
                 ModItems.SOLINIUM_KIT,
                 ModItems.SOLINIUM_PROPELLANT,
-                ModItems.SOPSIGN,
                 ModItems.SPAWN_DUCK,
                 ModItems.SPAWN_UFO,
                 ModItems.SPAWN_WORM,
@@ -2080,20 +2274,8 @@ public class ModItemModelProvider extends ItemModelProvider {
                 ModItems.STICK_DYNAMITE_FISHING,
                 ModItems.STICK_SEMTEX,
                 ModItems.STICK_TNT,
-                ModItems.STOPSIGN,
                 ModItems.STRUCTURE_CUSTOMMACHINE,
                 ModItems.SURVEY_SCANNER,
-                ModItems.SYRINGE_ANTIDOTE,
-                ModItems.SYRINGE_AWESOME,
-                ModItems.SYRINGE_EMPTY,
-                ModItems.SYRINGE_METAL_EMPTY,
-                ModItems.SYRINGE_METAL_MEDX,
-                ModItems.SYRINGE_METAL_PSYCHO,
-                ModItems.SYRINGE_METAL_STIMPAK,
-                ModItems.SYRINGE_METAL_SUPER,
-                ModItems.SYRINGE_MKUNICORN,
-                ModItems.SYRINGE_POISON,
-                ModItems.SYRINGE_TAINT,
                 ModItems.TANK_STEEL,
                 ModItems.TAURUN_BOOTS,
                 ModItems.TAURUN_HELMET,
@@ -2115,10 +2297,7 @@ public class ModItemModelProvider extends ItemModelProvider {
                 ModItems.TURBINE_TUNGSTEN,
                 ModItems.TURRET_CHIP,
                 ModItems.TWINKIE,
-                ModItems.ULLAPOOL_CABER,
                 ModItems.UNDEFINED,
-                ModItems.VOLCANIC_AXE,
-                ModItems.VOLCANIC_PICKAXE,
                 ModItems.WAND_D,
                 ModItems.WAND_S,
                 ModItems.WARHEAD_INCENDIARY_LARGE,
@@ -2138,10 +2317,7 @@ public class ModItemModelProvider extends ItemModelProvider {
                 ModItems.WINGS_LIMP,
                 ModItems.WINGS_MURK,
                 ModItems.WIRING_RED_COPPER,
-                ModItems.WOOD_GAVEL,
                 ModItems.WRENCH,
-                ModItems.WRENCH_ARCHINEER,
-                ModItems.WRENCH_FLIPPED,
                 ModItems.XANAX,
                 ModItems.ZIRCONIUM_LEGS
         ).forEach(this::simpleItem);

@@ -1,0 +1,77 @@
+{
+ "parent": "minecraft:block/block",
+ "textures": {
+  "c": "hbm_m:block/hadron_coil_alloy",
+  "particle": "hbm_m:block/hadron_coil_alloy"
+ },
+ "elements": [
+  {
+   "from": [
+    2,
+    2,
+    2
+   ],
+   "to": [
+    14,
+    14,
+    14
+   ],
+   "faces": {
+    "north": {
+     "uv": [
+      2,
+      2,
+      14,
+      14
+     ],
+     "texture": "#c"
+    },
+    "south": {
+     "uv": [
+      2,
+      2,
+      14,
+      14
+     ],
+     "texture": "#c"
+    },
+    "east": {
+     "uv": [
+      2,
+      2,
+      14,
+      14
+     ],
+     "texture": "#c"
+    },
+    "west": {
+     "uv": [
+      2,
+      2,
+      14,
+      14
+     ],
+     "texture": "#c"
+    },
+    "up": {
+     "uv": [
+      2,
+      2,
+      14,
+      14
+     ],
+     "texture": "#c"
+    },
+    "down": {
+     "uv": [
+      2,
+      2,
+      14,
+      14
+     ],
+     "texture": "#c"
+    }
+   }
+  }
+ ]
+}

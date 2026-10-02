@@ -80,4 +80,34 @@ public final class GasMaskUtil {
         out.setDamageValue(Math.max(0, dmg));
         return out;
     }
+
+    /** 1:1 {@code ArmorUtil.addGasMaskTooltip}: eingesetzter Filter mit Restlaufzeit (die Blacklist bleibt unberuehrt). */
+    public static void addGasMaskTooltip(ItemStack mask, java.util.List<net.minecraft.network.chat.Component> list, java.util.EnumSet<com.hbm_m.handler.HazardClass> blacklist) {
+
+        if (mask.isEmpty() || !(mask.getItem() instanceof IGasMask))
+            return;
+
+        if (!IGasMask.hasFilter(mask)) {
+            list.add(net.minecraft.network.chat.Component.literal("No filter installed!").withStyle(net.minecraft.ChatFormatting.RED));
+            return;
+        }
+
+        list.add(net.minecraft.network.chat.Component.literal("Installed filter:").withStyle(net.minecraft.ChatFormatting.GOLD));
+
+        ItemStack filter = new ItemStack(IGasMask.getFilterItem(IGasMask.getFilterId(mask)));
+        int meta = IGasMask.getFilterDamage(mask);
+        int max = filter.getItem() instanceof ItemGasMaskFilter f ? f.maxFilterDamage : ItemGasMaskFilter.DEFAULT_MAX_DAMAGE;
+
+        String append = "";
+
+        if (max > 0) {
+            append = " (" + ((max - meta) * 100 / max) + "%)";
+        }
+
+        list.add(net.minecraft.network.chat.Component.literal("  ").append(filter.getHoverName()).append(append));
+        java.util.List<net.minecraft.network.chat.Component> lore = new java.util.ArrayList<>();
+        filter.getItem().appendHoverText(filter, null, lore, net.minecraft.world.item.TooltipFlag.NORMAL);
+        if (filter.getItem() instanceof com.hbm_m.item.ITooltipProvider provider) provider.appendHbmTooltip(filter, null, lore, net.minecraft.world.item.TooltipFlag.NORMAL);
+        lore.forEach(x -> list.add(net.minecraft.network.chat.Component.literal("  ").append(x).withStyle(net.minecraft.ChatFormatting.YELLOW)));
+    }
 }

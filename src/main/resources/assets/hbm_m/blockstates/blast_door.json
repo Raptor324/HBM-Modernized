@@ -1,0 +1,16 @@
+{
+ "variants": {
+  "facing=north": {
+   "model": "hbm_m:block/blast_door_particle"
+  },
+  "facing=south": {
+   "model": "hbm_m:block/blast_door_particle"
+  },
+  "facing=east": {
+   "model": "hbm_m:block/blast_door_particle"
+  },
+  "facing=west": {
+   "model": "hbm_m:block/blast_door_particle"
+  }
+ }
+}

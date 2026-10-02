@@ -749,10 +749,31 @@ public class MachineRadarBlockEntity extends BaseMachineBlockEntity {
      * @return true если команда принята установкой
      */
     public boolean handleLaunchCommand(int linkSlot, int action, int targetId, int x, int z) {
+        return handleLaunchCommand(null, linkSlot, action, targetId, x, z);
+    }
+
+    public boolean handleLaunchCommand(@org.jetbrains.annotations.Nullable net.minecraft.world.entity.player.Player player,
+                                       int linkSlot, int action, int targetId, int x, int z) {
         if (level == null || level.isClientSide) {
             return false;
         }
         if (linkSlot < SLOT_LINK_FIRST || linkSlot > SLOT_LINK_LAST) {
+            return false;
+        }
+
+        // 1:1 TileEntityMachineRadarNT.receiveControl: ein Relais-Satellitenchip im Linkplatz schickt die
+        // Koordinaten (y = 60) als onCoordAction an den Satelliten seiner Frequenz.
+        net.minecraft.world.item.ItemStack linkStack = inventory.getStackInSlot(linkSlot);
+        if (!linkStack.isEmpty() && linkStack.is(com.hbm_m.item.ModItems.SAT_RELAY.get())) {
+            if (action == ACTION_LAUNCH_AT_COORDS && player != null && level instanceof net.minecraft.server.level.ServerLevel server) {
+                com.hbm_m.satellite.Satellite sat = com.hbm_m.satellite.SatelliteManager.get(server)
+                        .getSatFromFreq(com.hbm_m.item.ISatChip.getFreqS(linkStack));
+                int y = 60; //one day I will make radars transmit Y coordinate as well and you will be butchered alhamdulila
+                level.playSound(null, player.getX(), player.getY(), player.getZ(), com.hbm_m.sound.ModSounds.TOOL_TECH_BLEEP.get(),
+                        SoundSource.PLAYERS, 1.0F, 1.0F);
+                if (sat != null) sat.onCoordAction(server, player, x, y, z);
+                return true;
+            }
             return false;
         }
 
@@ -1268,6 +1289,7 @@ public class MachineRadarBlockEntity extends BaseMachineBlockEntity {
         if (slot >= SLOT_LINK_FIRST && slot <= SLOT_LINK_LAST) {
             return stack.getItem() instanceof com.hbm_m.item.tool.ItemRadarLinker
                     || stack.getItem() instanceof com.hbm_m.api.item.IDesignatorItem
+                    || stack.is(com.hbm_m.item.ModItems.SAT_RELAY.get())
                     || isBattery(stack);
         }
         return false;

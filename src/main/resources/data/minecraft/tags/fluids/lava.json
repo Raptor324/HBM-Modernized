@@ -1,0 +1,9 @@
+{
+  "replace": false,
+  "values": [
+    "hbm_m:volcanic_lava_fluid",
+    "hbm_m:volcanic_lava_fluid_flowing",
+    "hbm_m:rad_lava_fluid",
+    "hbm_m:rad_lava_fluid_flowing"
+  ]
+}

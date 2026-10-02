@@ -1,59 +1,60 @@
 package com.hbm_m.item.satellite;
 
-import com.hbm_m.item.ITooltipProvider;
 import java.util.List;
 
 import com.hbm_m.item.ISatChip;
-import com.hbm_m.sound.ModSounds;
+import com.hbm_m.item.ITooltipProvider;
+import com.hbm_m.item.ModItems;
 
-import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
-import net.minecraft.sounds.SoundSource;
-import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResultHolder;
-import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
 
 /**
- * Generic satellite payload chip (e.g. {@code sat_gerald}): carries a "freq" tag so it can be
- * matched to an {@link com.hbm_m.item.designator.ItemSatDesignator} remote after launch.
- * <p>
- * The legacy mod set frequency via a dedicated GUI keypad ({@code GUIScreenSatCoord}); that
- * screen isn't ported (out of scope - see Satellite Manager plan), so frequency is set with a
- * simple sneak + right-click cycle instead.
+ * 1:1 {@code com.hbm.items.machine.ItemSatChip}: Satellitenchip mit Frequenz (NBT "freq"); die Frequenz
+ * setzt der Satelliten-Verknuepfer. Der fruehere Port-eigene Schleichen+Rechtsklick-Zaehler ist entfernt.
  */
 public class ItemSatChip extends Item implements ISatChip, ITooltipProvider {
-
-    private static final int MAX_FREQ = 1000;
 
     public ItemSatChip(Properties properties) {
         super(properties.stacksTo(1));
     }
 
     @Override
-    public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
-        ItemStack stack = player.getItemInHand(hand);
-        if (!player.isShiftKeyDown()) {
-            return InteractionResultHolder.pass(stack);
+    public void appendHbmTooltip(ItemStack itemstack, Level level, List<Component> list, TooltipFlag flag) {
+
+        list.add(Component.translatable("satchip.frequency").append(": " + getFreq(itemstack)));
+
+        if (this == ModItems.SAT_FOEQ.get())
+            list.add(Component.translatable("satchip.foeq"));
+
+        if (this == ModItems.SAT_GERALD.get()) {
+            for (String line : Component.translatable("satchip.gerald.desc").getString().split("\\$")) {
+                list.add(Component.literal(line));
+            }
         }
 
-        int next = (getFreq(stack) + 1) % MAX_FREQ;
-        setFreq(stack, next);
+        if (this == ModItems.SAT_LASER.get())
+            list.add(Component.translatable("satchip.laser"));
 
-        if (level.isClientSide()) {
-            player.displayClientMessage(Component.translatable("message.hbm_m.satchip.freq_set", next), true);
-        }
-        level.playSound(player, player.blockPosition(), ModSounds.TOOL_TECH_BLEEP.get(),
-                SoundSource.PLAYERS, 1.0F, 1.0F);
+        if (this == ModItems.SAT_MAPPER.get())
+            list.add(Component.translatable("satchip.mapper"));
 
-        return InteractionResultHolder.success(stack);
-    }
+        if (this == ModItems.SAT_MINER.get())
+            list.add(Component.translatable("satchip.miner"));
 
-    @Override
-    public void appendHbmTooltip(ItemStack stack, Level level, List<Component> tooltip, TooltipFlag flag) {
-        tooltip.add(Component.translatable("tooltip.hbm_m.satchip.freq", getFreq(stack)).withStyle(ChatFormatting.GRAY));
+        if (this == ModItems.SAT_LUNAR_MINER.get())
+            list.add(Component.translatable("satchip.lunar_miner"));
+
+        if (this == ModItems.SAT_RADAR.get())
+            list.add(Component.translatable("satchip.radar"));
+
+        if (this == ModItems.SAT_RESONATOR.get())
+            list.add(Component.translatable("satchip.resonator"));
+
+        if (this == ModItems.SAT_SCANNER.get())
+            list.add(Component.translatable("satchip.scanner"));
     }
 }

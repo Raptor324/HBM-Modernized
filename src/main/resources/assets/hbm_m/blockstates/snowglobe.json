@@ -1,0 +1,52 @@
+{
+ "variants": {
+  "rotation=0": {
+   "model": "hbm_m:block/deco/snowglobe_particle"
+  },
+  "rotation=1": {
+   "model": "hbm_m:block/deco/snowglobe_particle"
+  },
+  "rotation=2": {
+   "model": "hbm_m:block/deco/snowglobe_particle"
+  },
+  "rotation=3": {
+   "model": "hbm_m:block/deco/snowglobe_particle"
+  },
+  "rotation=4": {
+   "model": "hbm_m:block/deco/snowglobe_particle"
+  },
+  "rotation=5": {
+   "model": "hbm_m:block/deco/snowglobe_particle"
+  },
+  "rotation=6": {
+   "model": "hbm_m:block/deco/snowglobe_particle"
+  },
+  "rotation=7": {
+   "model": "hbm_m:block/deco/snowglobe_particle"
+  },
+  "rotation=8": {
+   "model": "hbm_m:block/deco/snowglobe_particle"
+  },
+  "rotation=9": {
+   "model": "hbm_m:block/deco/snowglobe_particle"
+  },
+  "rotation=10": {
+   "model": "hbm_m:block/deco/snowglobe_particle"
+  },
+  "rotation=11": {
+   "model": "hbm_m:block/deco/snowglobe_particle"
+  },
+  "rotation=12": {
+   "model": "hbm_m:block/deco/snowglobe_particle"
+  },
+  "rotation=13": {
+   "model": "hbm_m:block/deco/snowglobe_particle"
+  },
+  "rotation=14": {
+   "model": "hbm_m:block/deco/snowglobe_particle"
+  },
+  "rotation=15": {
+   "model": "hbm_m:block/deco/snowglobe_particle"
+  }
+ }
+}

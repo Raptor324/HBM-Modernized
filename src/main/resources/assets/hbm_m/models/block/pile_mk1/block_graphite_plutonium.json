@@ -1,0 +1,7 @@
+{
+ "parent": "minecraft:block/cube_column",
+ "textures": {
+  "end": "hbm_m:block/pile_mk1/block_graphite_plutonium",
+  "side": "hbm_m:block/pile_mk1/block_graphite"
+ }
+}

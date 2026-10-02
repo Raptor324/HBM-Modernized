@@ -15,7 +15,6 @@ import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.inventory.menu.MachineZirnoxMenu;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.item.industrial.ZirnoxRodItem;
-import com.hbm_m.item.liquids.FluidBarrelItem;
 import com.hbm_m.item.tags_and_tiers.ModTags;
 
 import dev.architectury.fluid.FluidStack;
@@ -106,6 +105,9 @@ public class MachineZirnoxBlockEntity extends BaseMachineBlockEntity implements 
         this.steamTank = new FluidTank(ModFluids.SUPERHOTSTEAM.getSource(), STEAM_MAX);
     }
 
+    @Override public int getFloorCount() { return 3 * 3; }
+    @Override public BlockPos getFloorPosFromIndex(int index) { return this.standardFloor5x5(index); }
+
     public static void tick(Level level, BlockPos pos, BlockState state, MachineZirnoxBlockEntity be) {
         if (!level.isClientSide) {
             be.update(level, pos);
@@ -113,6 +115,7 @@ public class MachineZirnoxBlockEntity extends BaseMachineBlockEntity implements 
     }
 
     private void update(Level level, BlockPos pos) {
+        this.checkTilt(TiltType.CONFIG, true);
         int  oldCo2      = co2Tank.getFill();
         int  oldWater    = waterTank.getFill();
         int  oldSteam    = steamTank.getFill();
@@ -128,6 +131,8 @@ public class MachineZirnoxBlockEntity extends BaseMachineBlockEntity implements 
             for (int slot = 0; slot < ROD_SLOT_COUNT; slot++) {
                 ItemStack stack = inventory.getStackInSlot(slot);
                 if (!stack.isEmpty() && stack.getItem() instanceof ZirnoxRodItem) decay(slot);
+                else if (stack.is(ModItems.METEORITE_SWORD_BRED.get()))
+                    inventory.setStackInSlot(slot, new ItemStack(ModItems.METEORITE_SWORD_IRRADIATED.get()));
             }
         }
 
@@ -148,8 +153,8 @@ public class MachineZirnoxBlockEntity extends BaseMachineBlockEntity implements 
             }
         }
 
-        // Push steam out / pull water in via pipes
-        for (Direction dir : Direction.values()) {
+        // Push steam out / pull water in via pipes (Original: gekippt keine Anschluesse)
+        if (!this.tilted) for (Direction dir : Direction.values()) {
             if (fluidSidesFromMultiblockStructure) {
                 if (!allowedFluidSides.contains(dir)) continue;
             } else if (!allowedFluidSides.isEmpty() && !allowedFluidSides.contains(dir)) {
@@ -414,7 +419,7 @@ public class MachineZirnoxBlockEntity extends BaseMachineBlockEntity implements 
 
     private RodSpec getRodSpec(ItemStack stack) {
         if (stack.isEmpty()) return null;
-        if (stack.is(ModItems.ROD_ZIRNOX_NATURAL_URANIUM_FUEL.get()))   return new RodSpec(250_000, 30,  false, new ItemStack(ModItems.ROD_ZIRNOX_URANIUM_FUEL_DEPLETED.get()));
+        if (stack.is(ModItems.ROD_ZIRNOX_NATURAL_URANIUM_FUEL.get()))   return new RodSpec(250_000, 30,  false, new ItemStack(ModItems.ROD_ZIRNOX_NATURAL_URANIUM_FUEL_DEPLETED.get()));
         if (stack.is(ModItems.ROD_ZIRNOX_URANIUM_FUEL.get()))           return new RodSpec(200_000, 50,  false, new ItemStack(ModItems.ROD_ZIRNOX_URANIUM_FUEL_DEPLETED.get()));
         if (stack.is(ModItems.ROD_ZIRNOX_TH232.get()))                  return new RodSpec(20_000,  0,   true,  new ItemStack(ModItems.ROD_ZIRNOX_THORIUM_FUEL.get()));
         if (stack.is(ModItems.ROD_ZIRNOX_THORIUM_FUEL.get()))           return new RodSpec(200_000, 40,  false, new ItemStack(ModItems.ROD_ZIRNOX_THORIUM_FUEL_DEPLETED.get()));
@@ -448,7 +453,7 @@ public class MachineZirnoxBlockEntity extends BaseMachineBlockEntity implements 
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
         if (stack == null || stack.isEmpty()) return false;
         if (slot >= 0 && slot < ROD_SLOT_COUNT)
-            return stack.is(ModTags.Items.ZIRNOX_RODS);
+            return stack.is(ModTags.Items.ZIRNOX_RODS) || stack.is(ModItems.METEORITE_SWORD_BRED.get());
         if (slot == SLOT_CO2_IN)
             return holdsFluid(stack, ModFluids.CARBONDIOXIDE.getSource());
         if (slot == SLOT_WATER_IN)
@@ -460,9 +465,8 @@ public class MachineZirnoxBlockEntity extends BaseMachineBlockEntity implements 
         if (stack.isEmpty()) return false;
         if (stack.is(Items.WATER_BUCKET))
             return VanillaFluidEquivalence.sameSubstance(targetFluid, Fluids.WATER);
-        if (!stack.is(ModItems.FLUID_BARREL.get())) return false;
-        FluidStack fluid = FluidBarrelItem.getFluid(stack);
-        return !fluid.isEmpty() && VanillaFluidEquivalence.sameSubstance(fluid.getFluid(), targetFluid);
+        // Original: alles, was die FluidContainerRegistry als Behaelter dieser Fluessigkeit kennt
+        return com.hbm_m.inventory.FluidContainerRegistry.getFluidContent(stack, targetFluid) > 0;
     }
 
     // ── Misc ──────────────────────────────────────────────────────────────

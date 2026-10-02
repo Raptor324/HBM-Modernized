@@ -106,6 +106,23 @@ public class ModItemTagProvider extends ItemTagsProvider {
             }
         }
 
+        // OreDictManager: "ore" + EnumBedrockOre.oreName -> ore_enriched (Thorium232 = forge:ores/thorium)
+        this.tag(ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "ores/iron"))).add(com.hbm_m.item.PartTabMetaItems.get("ore_enriched_iron").get());
+        this.tag(ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "ores/copper"))).add(com.hbm_m.item.PartTabMetaItems.get("ore_enriched_copper").get());
+        this.tag(ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "ores/borax"))).add(com.hbm_m.item.PartTabMetaItems.get("ore_enriched_borax").get());
+        this.tag(ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "ores/asbestos"))).add(com.hbm_m.item.PartTabMetaItems.get("ore_enriched_asbestos").get());
+        this.tag(ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "ores/niobium"))).add(com.hbm_m.item.PartTabMetaItems.get("ore_enriched_niobium").get());
+        this.tag(ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "ores/titanium"))).add(com.hbm_m.item.PartTabMetaItems.get("ore_enriched_titanium").get());
+        this.tag(ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "ores/tungsten"))).add(com.hbm_m.item.PartTabMetaItems.get("ore_enriched_tungsten").get());
+        this.tag(ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "ores/gold"))).add(com.hbm_m.item.PartTabMetaItems.get("ore_enriched_gold").get());
+        this.tag(ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "ores/uranium"))).add(com.hbm_m.item.PartTabMetaItems.get("ore_enriched_uranium").get());
+        this.tag(ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "ores/thorium"))).add(com.hbm_m.item.PartTabMetaItems.get("ore_enriched_thorium").get());
+        this.tag(ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "ores/chlorocalcite"))).add(com.hbm_m.item.PartTabMetaItems.get("ore_enriched_chlorocalcite").get());
+        this.tag(ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "ores/fluorite"))).add(com.hbm_m.item.PartTabMetaItems.get("ore_enriched_fluorite").get());
+        this.tag(ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "ores/hematite"))).add(com.hbm_m.item.PartTabMetaItems.get("ore_enriched_hematite").get());
+        this.tag(ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "ores/malachite"))).add(com.hbm_m.item.PartTabMetaItems.get("ore_enriched_malachite").get());
+        this.tag(ItemTags.create(ResourceLocation.fromNamespaceAndPath("forge", "ores/neodymium"))).add(com.hbm_m.item.PartTabMetaItems.get("ore_enriched_neodymium").get());
+
         //  БАЗОВЫЕ ПОРОШКИ (всегда существуют)
         powdersTagBuilder.add(ModItems.DUST.getKey());
         powdersTagBuilder.add(ModItems.DUST_TINY.getKey());
@@ -349,39 +366,39 @@ public class ModItemTagProvider extends ItemTagsProvider {
 
         this.tag(ItemTags.TRIMMABLE_ARMOR)
         .add(ModItems.ALLOY_HELMET.get(),
-                ModItems.ALLOY_CHESTPLATE.get(),
-                ModItems.ALLOY_LEGGINGS.get(),
+                ModItems.ALLOY_PLATE.get(),
+                ModItems.ALLOY_LEGS.get(),
                 ModItems.TITANIUM_HELMET.get(),
-                ModItems.TITANIUM_CHESTPLATE.get(),
-                ModItems.TITANIUM_LEGGINGS.get(),
+                ModItems.TITANIUM_PLATE.get(),
+                ModItems.TITANIUM_LEGS.get(),
                 ModItems.TITANIUM_BOOTS.get(),
                 ModItems.STEEL_HELMET.get(),
-                ModItems.STEEL_CHESTPLATE.get(),
-                ModItems.STEEL_LEGGINGS.get(),
+                ModItems.STEEL_PLATE.get(),
+                ModItems.STEEL_LEGS.get(),
                 ModItems.STEEL_BOOTS.get(),
                 ModItems.HAZMAT_HELMET.get(),
-                ModItems.HAZMAT_CHESTPLATE.get(),
-                ModItems.HAZMAT_LEGGINGS.get(),
+                ModItems.HAZMAT_PLATE.get(),
+                ModItems.HAZMAT_LEGS.get(),
                 ModItems.HAZMAT_BOOTS.get(),
                 ModItems.SECURITY_HELMET.get(),
-                ModItems.SECURITY_CHESTPLATE.get(),
-                ModItems.SECURITY_LEGGINGS.get(),
+                ModItems.SECURITY_PLATE.get(),
+                ModItems.SECURITY_LEGS.get(),
                 ModItems.SECURITY_BOOTS.get(),
                 ModItems.AJR_HELMET.get(),
-                ModItems.AJR_CHESTPLATE.get(),
-                ModItems.AJR_LEGGINGS.get(),
+                ModItems.AJR_PLATE.get(),
+                ModItems.AJR_LEGS.get(),
                 ModItems.AJR_BOOTS.get(),
                 ModItems.STARMETAL_HELMET.get(),
-                ModItems.STARMETAL_CHESTPLATE.get(),
-                ModItems.STARMETAL_LEGGINGS.get(),
+                ModItems.STARMETAL_PLATE.get(),
+                ModItems.STARMETAL_LEGS.get(),
                 ModItems.STARMETAL_BOOTS.get(),
                 ModItems.ASBESTOS_HELMET.get(),
-                ModItems.ASBESTOS_CHESTPLATE.get(),
-                ModItems.ASBESTOS_LEGGINGS.get(),
+                ModItems.ASBESTOS_PLATE.get(),
+                ModItems.ASBESTOS_LEGS.get(),
                 ModItems.ASBESTOS_BOOTS.get(),
                 ModItems.COBALT_HELMET.get(),
-                ModItems.COBALT_CHESTPLATE.get(),
-                ModItems.COBALT_LEGGINGS.get(),
+                ModItems.COBALT_PLATE.get(),
+                ModItems.COBALT_LEGS.get(),
                 ModItems.COBALT_BOOTS.get(),
                 ModItems.ALLOY_BOOTS.get());
 

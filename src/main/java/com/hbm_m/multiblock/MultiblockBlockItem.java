@@ -101,7 +101,7 @@ public class MultiblockBlockItem extends BlockItem {
             offset = helper.getPlacementOffset();
         }
         
-        BlockPos corePos = MultiblockPlacement.getCorePos(facadePos, facing, offset);
+        BlockPos corePos = MultiblockPlacement.getCorePos(facadePos, facing, offset).above(controller.getHeightOffset());
         if (corePos.equals(facadePos)) {
             return null;
         }

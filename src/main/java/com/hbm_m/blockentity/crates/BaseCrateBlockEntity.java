@@ -35,7 +35,12 @@ import net.minecraft.world.phys.Vec3;
  * {@code WeightedRandomChestContent.generateChestContents}; современный эквивалент —
  * JSON лут-таблица, назначаемая {@link com.hbm_m.worldgen.StructureLootProcessor}.</p>
  */
-public abstract class BaseCrateBlockEntity extends BaseHbmBlockEntity implements MenuProvider {
+public abstract class BaseCrateBlockEntity extends BaseHbmBlockEntity implements MenuProvider, com.hbm_m.api.tile.ILockableTile {
+
+    /** 1:1 {@code TileEntityLockableBase}: Schloss der Kiste. */
+    public final com.hbm_m.api.tile.LockState lockState = new com.hbm_m.api.tile.LockState();
+    /** 1:1 {@code TileEntityCrateBase.hasSpiders}: beim ersten Oeffnen springen drei Hoehlenspinnen heraus. */
+    public boolean hasSpiders = false;
 
     protected final ModItemStackHandler itemHandler;
 
@@ -74,6 +79,8 @@ public abstract class BaseCrateBlockEntity extends BaseHbmBlockEntity implements
             }
         }
         tag.put("inventory", com.hbm_m.platform.ItemStackSerialization.serialize(itemHandler, registries));
+        if (lockState.isLocked) lockState.write(tag);
+        if (hasSpiders) tag.putBoolean("spiders", true);
     }
 
     @Override
@@ -86,6 +93,43 @@ public abstract class BaseCrateBlockEntity extends BaseHbmBlockEntity implements
         if (tag.contains("inventory")) {
             com.hbm_m.platform.ItemStackSerialization.deserialize(itemHandler, tag.getCompound("inventory"), registries);
         }
+        if (tag.contains("isLocked")) lockState.read(tag);
+        hasSpiders = tag.getBoolean("spiders");
+    }
+
+    public boolean canAccess(Player player) {
+        return lockState.canAccess(level, player);
+    }
+
+    // ---- ILockableTile ----
+    @Override public boolean isLocked() { return lockState.isLocked; }
+    @Override public void lock() { lockState.isLocked = true; setChanged(); }
+    @Override public void unlock() { lockState.isLocked = false; setChanged(); }
+    @Override public void setPins(int pins) { lockState.lock = pins; setChanged(); }
+    @Override public int getPins() { return lockState.lock; }
+    @Override public void setMod(double mod) { lockState.lockMod = mod; setChanged(); }
+    @Override public double getMod() { return lockState.lockMod; }
+    @Override public boolean isCheesable() { return lockState.cheesable; }
+
+    /** 1:1 {@code TileEntityCrateBase.fillWithSpiders}. */
+    public void fillWithSpiders() {
+        this.hasSpiders = true;
+        setChanged();
+    }
+
+    /** 1:1 {@code TileEntityCrateBase.spawnSpiders}: drei Hoehlenspinnen mit dem Oeffnenden als Ziel. */
+    public void spawnSpiders(Player player) {
+        if (!hasSpiders || level == null) return;
+        java.util.Random random = new java.util.Random();
+        for (int i = 0; i < 3; i++) {
+            net.minecraft.world.entity.monster.CaveSpider spider = net.minecraft.world.entity.EntityType.CAVE_SPIDER.create(level);
+            if (spider == null) continue;
+            spider.moveTo(worldPosition.getX() + random.nextGaussian() * 2, worldPosition.getY() + 1, worldPosition.getZ() + random.nextGaussian() * 2, random.nextFloat(), 0);
+            spider.setTarget(player);
+            level.addFreshEntity(spider);
+        }
+        hasSpiders = false;
+        setChanged();
     }
 
     public boolean isEmpty() {

@@ -65,9 +65,10 @@ public class ConveyorBlockBase extends Block implements IConveyorBelt {
     @Nullable
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext context) {
-        // Original: floor((yaw*4/360)+0.5)&3 → 0=south,1=west,2=north,3=east (Notchian yaw wrap),
-        // matched here 1:1 via the player's horizontal-facing (which uses the same convention).
-        return this.defaultBlockState().setValue(FACING, context.getHorizontalDirection());
+        // Original onBlockPlacedBy: floor((yaw*4/360)+0.5)&3 = 0/1/2/3 -> meta 2/5/3/4 (NORTH/EAST/SOUTH/WEST),
+        // d.h. Blick nach Sueden (Yaw 0) ergibt NORTH - die Gegenrichtung des Blicks. Items laufen gegen
+        // FACING (snap - dir * speed), also vom Spieler weg.
+        return this.defaultBlockState().setValue(FACING, context.getHorizontalDirection().getOpposite());
     }
 
     // ==================== IConveyorBelt ====================
@@ -86,6 +87,26 @@ public class ConveyorBlockBase extends Block implements IConveyorBelt {
         double len = motion.length();
         if (len < 1.0E-6) return itemPos;
         return itemPos.add(motion.scale(speed / len));
+    }
+
+    /** Original {@code getInputDirection}: die Seite, von der Items kommen (= Metadaten-Richtung). */
+    public Direction getInputDirection(BlockState state) {
+        return state.getValue(FACING);
+    }
+
+    /** Original {@code getOutputDirection}: die Seite, zu der Items laufen. */
+    public Direction getOutputDirection(BlockState state) {
+        return state.getValue(FACING).getOpposite();
+    }
+
+    /** Original {@code getItemDropped}/{@code getItem}: alle Foerderbaender werden als {@code conveyor_wand} gehalten. */
+    public net.minecraft.world.item.Item getWandItem() {
+        return com.hbm_m.item.ModItems.CONVEYOR_WAND_REGULAR.get();
+    }
+
+    @Override
+    public net.minecraft.world.item.ItemStack getCloneItemStack(net.minecraft.world.level.BlockGetter level, BlockPos pos, BlockState state) {
+        return new net.minecraft.world.item.ItemStack(getWandItem());
     }
 
     public Direction getTravelDirection(Level level, BlockPos pos, Vec3 itemPos) {

@@ -280,7 +280,7 @@ public abstract class RBMKColumnBlockEntity extends BaseHbmBlockEntity {
         for (RBMKColumnBlockEntity col : columns) {
             if (!(col instanceof RBMKRodBlockEntity)) continue;
             BlockPos p = col.getBlockPos();
-            if (!level.getBlockState(p).is(com.hbm_m.block.ModBlocks.RBMK_CORIUM.get())) continue;
+            if (!level.getBlockState(p).is(com.hbm_m.block.ModBlocks.CORIUM_BLOCK.get())) continue;
 
             for (int dx = -1; dx <= 1; dx++) {
                 for (int dy = -1; dy <= 1; dy++) {

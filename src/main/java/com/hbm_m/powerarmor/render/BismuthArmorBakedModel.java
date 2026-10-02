@@ -56,7 +56,7 @@ public class BismuthArmorBakedModel extends AbstractArmorBakedModel {
         }
 
         @Override
-        public Class<? extends ModPowerArmorItem> getArmorItemClass() {
+        public Class<? extends net.minecraft.world.item.Item> getArmorItemClass() {
             return BismuthArmor.class;
         }
 

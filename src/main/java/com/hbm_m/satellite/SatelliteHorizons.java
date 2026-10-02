@@ -1,5 +1,7 @@
 package com.hbm_m.satellite;
 
+import java.util.Locale;
+
 import com.hbm_m.entity.ModEntities;
 import com.hbm_m.entity.projectile.TomEntity;
 
@@ -10,17 +12,24 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.player.Player;
 
 /**
- * "Gerald the Construction Android" ({@code sat_gerald}). Despite the name, the legacy
- * behavior (class {@code SatelliteHorizons}) has nothing to do with construction: it's a
- * one-time orbital strike - the matching-frequency designator drops a meteor from Y=600 that
- * detonates into a 600-block-radius explosion. Port of legacy
- * {@code com.hbm.saveddata.satellites.SatelliteHorizons}.
+ * 1:1 {@code SatelliteHorizons} ({@code sat_gerald}): einmaliger Orbitalschlag - am Ziel faellt aus Y 600 ein
+ * {@link TomEntity}. Wie im Original speichert er nur "used" (kein super.writeToNBT).
  */
 public class SatelliteHorizons extends Satellite {
 
-    private boolean used = false;
+    public static final String CMD_FIRE = "fire";
+    public static final String CMD_CANFIRE = "settarget";
 
-    public SatelliteHorizons() {
+    boolean used = false;
+
+    public SatelliteHorizons() { }
+
+    @Override public String getType() { return "PAYLOAD_UNKNOWN"; }
+
+    @Override
+    public void onOrbit(ServerLevel world, double x, double y, double z) {
+        super.onOrbit(world, x, y, z);
+        com.hbm_m.advancement.ModAdvancements.grantAll(world, com.hbm_m.advancement.ModAdvancements.HORIZONS_START);
     }
 
     @Override
@@ -33,37 +42,43 @@ public class SatelliteHorizons extends Satellite {
         used = nbt.getBoolean("used");
     }
 
-    /** {@code SatelliteHorizons.onOrbit}: reaching orbit is itself the first advancement. */
     @Override
-    public void onOrbit(ServerLevel level, double x, double y, double z) {
-        super.onOrbit(level, x, y, z);
-        com.hbm_m.advancement.ModAdvancements.grantAll(level,
-                com.hbm_m.advancement.ModAdvancements.HORIZONS_START);
+    public void onCommandImpl(ServerLevel world, String... cmd) {
+        if (cmd.length <= 0) return;
+
+        if (cmd[0].equals(CMD_FIRE)) {
+            theHorizons(world, targetX, targetZ);
+            return;
+        }
+
+        if (cmd[0].equals(CMD_CANFIRE)) {
+            this.tx = (!used) + "";
+            this.tx = this.tx.toUpperCase(Locale.US);
+        }
     }
 
     @Override
-    public void onCoordAction(ServerLevel level, Player player, int x, int y, int z) {
-        if (used) {
-            return;
-        }
+    public void onCoordAction(ServerLevel world, Player player, int x, int y, int z) {
+        this.setTarget(x, z);
+        this.theHorizons(world, x, z);
+    }
+
+    public void theHorizons(ServerLevel world, int x, int z) {
+        if (used) return;
         used = true;
-        SatelliteManager.get(level).setDirty();
+        SatelliteManager.get(world).setDirty();
 
-        TomEntity tom = ModEntities.TOM_METEOR.get().create(level);
-        if (tom == null) {
-            return;
-        }
+        TomEntity tom = ModEntities.TOM_METEOR.get().create(world);
+        if (tom == null) return;
         tom.setPos(x + 0.5, 600, z + 0.5);
-        level.getChunkSource().addRegionTicket(
-                net.minecraft.server.level.TicketType.FORCED,
-                new net.minecraft.world.level.ChunkPos(x >> 4, z >> 4), 2,
-                net.minecraft.world.level.ChunkPos.ZERO);
-        level.addFreshEntity(tom);
 
-        level.getServer().getPlayerList().broadcastSystemMessage(
+        world.getChunkSource().addRegionTicket(net.minecraft.server.level.TicketType.FORCED,
+                new net.minecraft.world.level.ChunkPos(x >> 4, z >> 4), 2, net.minecraft.world.level.ChunkPos.ZERO);
+
+        world.addFreshEntity(tom);
+        com.hbm_m.advancement.ModAdvancements.grantAll(world, com.hbm_m.advancement.ModAdvancements.HORIZONS_END);
+
+        world.getServer().getPlayerList().broadcastSystemMessage(
                 Component.literal("Horizons has been activated.").withStyle(ChatFormatting.RED), false);
-
-        com.hbm_m.advancement.ModAdvancements.grantAll(level,
-                com.hbm_m.advancement.ModAdvancements.HORIZONS_END);
     }
 }

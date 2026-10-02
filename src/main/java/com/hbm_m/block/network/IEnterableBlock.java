@@ -15,4 +15,12 @@ import net.minecraft.world.level.Level;
  */
 public interface IEnterableBlock {
     void onItemEnter(Level level, BlockPos pos, MovingConveyorItemEntity item);
+
+    /**
+     * 1:1 {@code canItemEnter}: {@code dir} ist die Seite des Blocks, durch die das Teil hereinkommt
+     * ({@code null} = {@code ForgeDirection.UNKNOWN}); von oben hereinfallend {@code UP}.
+     */
+    default boolean canItemEnter(Level level, BlockPos pos, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction dir, MovingConveyorItemEntity item) {
+        return true;
+    }
 }

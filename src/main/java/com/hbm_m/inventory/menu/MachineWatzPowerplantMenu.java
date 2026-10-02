@@ -14,12 +14,7 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
-/**
- * 24 pellet slots laid out in the same diamond/octagon shape as the original
- * {@code ContainerWatz} (i, j in [0,6) with the corners clipped), reflecting the reactor's
- * cross-shaped footprint even though the multiblock casing itself is a simplified 5x5x3 box
- * (see class doc on {@code MachineWatzPowerplantBlock}).
- */
+/** 1:1 {@code ContainerWatz}: 24 Pelletplaetze in Achteckform (i, j aus [0,6), Ecken abgeschnitten). */
 public class MachineWatzPowerplantMenu extends AbstractContainerMenu {
 
     private static final int MACHINE_SLOT_COUNT = MachineWatzPowerplantBlockEntity.PELLET_SLOTS;
@@ -41,7 +36,11 @@ public class MachineWatzPowerplantMenu extends AbstractContainerMenu {
         for (int j = 0; j < 6; j++) {
             for (int i = 0; i < 6; i++) {
                 if (i + j > 1 && i + j < 9 && 5 - i + j > 1 && i + 5 - j > 1) {
-                    this.addSlot(new Slot(machineContainer, index, 17 + i * 18, 8 + j * 18));
+                    this.addSlot(new Slot(machineContainer, index, 17 + i * 18, 8 + j * 18) {
+                        // Original: SlotNonRetarded -> isItemValidForSlot, Stapelgrenze 1
+                        @Override public boolean mayPlace(ItemStack stack) { return blockEntity.getInventory().isItemValid(getContainerSlot(), stack); }
+                        @Override public int getMaxStackSize() { return 1; }
+                    });
                     index++;
                 }
             }
@@ -97,7 +96,7 @@ public class MachineWatzPowerplantMenu extends AbstractContainerMenu {
                 if (!this.moveItemStackTo(stack, PLAYER_SLOT_START, this.slots.size(), true)) {
                     return ItemStack.EMPTY;
                 }
-            } else if (stack.getItem() instanceof WatzPelletItem) {
+            } else if (WatzPelletItem.isFresh(stack)) {
                 if (!this.moveItemStackTo(stack, 0, MACHINE_SLOT_COUNT, false)) {
                     return ItemStack.EMPTY;
                 }

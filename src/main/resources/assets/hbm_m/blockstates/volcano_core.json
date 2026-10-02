@@ -1,0 +1,19 @@
+{
+ "variants": {
+  "mode=0": {
+   "model": "hbm_m:block/bomb/volcano_core"
+  },
+  "mode=1": {
+   "model": "hbm_m:block/bomb/volcano_core"
+  },
+  "mode=2": {
+   "model": "hbm_m:block/bomb/volcano_core"
+  },
+  "mode=3": {
+   "model": "hbm_m:block/bomb/volcano_core"
+  },
+  "mode=4": {
+   "model": "hbm_m:block/bomb/volcano_core"
+  }
+ }
+}

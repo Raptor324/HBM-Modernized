@@ -1,0 +1,43 @@
+{
+ "parent": "minecraft:block/block",
+ "render_type": "minecraft:cutout",
+ "textures": {
+  "chain": "hbm_m:block/deco/chain_end",
+  "particle": "hbm_m:block/deco/chain_end"
+ },
+ "elements": [
+  {
+   "from": [
+    0,
+    0,
+    15.2
+   ],
+   "to": [
+    16,
+    16,
+    15.2
+   ],
+   "shade": false,
+   "faces": {
+    "north": {
+     "uv": [
+      0,
+      0,
+      16,
+      16
+     ],
+     "texture": "#chain"
+    },
+    "south": {
+     "uv": [
+      16,
+      0,
+      0,
+      16
+     ],
+     "texture": "#chain"
+    }
+   }
+  }
+ ]
+}

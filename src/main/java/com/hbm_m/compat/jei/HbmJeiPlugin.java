@@ -45,7 +45,6 @@ import com.hbm_m.recipe.RadiolysisRecipe;
 import com.hbm_m.recipe.ElectrolyserFluidRecipe;
 import com.hbm_m.recipe.ElectrolyserMetalRecipe;
 import com.hbm_m.item.industrial.ItemAssemblyTemplate;
-import com.hbm_m.item.liquids.FluidBarrelItem;
 import com.hbm_m.item.liquids.FluidDuctItem;
 import com.hbm_m.item.liquids.FluidIdentifierItem;
 
@@ -262,7 +261,7 @@ public class HbmJeiPlugin implements IModPlugin {
         registration.addRecipeCatalyst(new ItemStack(ModBlocks.CRACKING_TOWER.get()), CrackingTowerJeiCategory.RECIPE_TYPE);
         registration.addRecipeCatalyst(new ItemStack(ModBlocks.RADIOLYSIS.get()), RadiolysisJeiCategory.RECIPE_TYPE);
         // Microwave teilt sich Vanilla-Ofen-Rezepte mit dem eingebauten JEI-Ofen-Kategorie.
-        registration.addRecipeCatalyst(new ItemStack(ModBlocks.MACHINE_MICROWAVE.get()), mezz.jei.api.constants.RecipeTypes.SMELTING);
+        registration.addRecipeCatalyst(new ItemStack(ModBlocks.MICROWAVE.get()), mezz.jei.api.constants.RecipeTypes.SMELTING);
     }
 
     @Override
@@ -301,15 +300,14 @@ public class HbmJeiPlugin implements IModPlugin {
 
     @Override
     public void registerItemSubtypes(@Nonnull ISubtypeRegistration registration) {
-        registration.registerSubtypeInterpreter(
-            ModItems.FLUID_BARREL.get(),
-            (stack, ctx) -> {
-                dev.architectury.fluid.FluidStack fluid = FluidBarrelItem.getFluid(stack);
-                if (fluid.isEmpty()) return "empty";
-                ResourceLocation fluidId = BuiltInRegistries.FLUID.getKey(fluid.getFluid());
-                return (fluidId != null ? fluidId.toString() : "unknown") + ":" + fluid.getAmount();
-            }
-        );
+        // Fluessigkeitsbehaelter: je Fluessigkeit ein eigener Eintrag (Original: Metadaten)
+        for (var sup : java.util.List.of(ModItems.FLUID_TANK_FULL, ModItems.FLUID_TANK_LEAD_FULL, ModItems.FLUID_BARREL_FULL, ModItems.FLUID_PACK_FULL,
+                ModItems.CANISTER_FULL, ModItems.GAS_FULL, ModItems.DISPERSER_CANISTER, ModItems.GLYPHID_GLAND)) {
+            registration.registerSubtypeInterpreter(sup.get(), (stack, ctx) -> {
+                ResourceLocation fluidId = BuiltInRegistries.FLUID.getKey(com.hbm_m.item.liquids.ItemFluidTank.getFluid(stack));
+                return fluidId != null ? fluidId.toString() : "none";
+            });
+        }
 
         registration.registerSubtypeInterpreter(
             ModItems.FLUID_IDENTIFIER.get(),

@@ -1,0 +1,16 @@
+{
+ "variants": {
+  "axis=y": {
+   "model": "hbm_m:block/deco/pink_log"
+  },
+  "axis=z": {
+   "model": "hbm_m:block/deco/pink_log_horizontal",
+   "x": 90
+  },
+  "axis=x": {
+   "model": "hbm_m:block/deco/pink_log_horizontal",
+   "x": 90,
+   "y": 90
+  }
+ }
+}

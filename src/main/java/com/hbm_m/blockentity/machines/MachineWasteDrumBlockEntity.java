@@ -20,10 +20,8 @@ import net.minecraft.world.level.material.Fluids;
  * While the drum has at least one adjacent water block, every stored {@code RBMKRodItem} cools down
  * (releasing heat into the surrounding pool) instead of remaining at reactor operating temperature.
  * <p>
- * SCOPE-Vereinfachung: Das Original transformiert zusaetzlich beliebige {@code FuelPoolRecipes}-
- * Items (nicht nur RBMK-Staebe) nach einer zufaelligen Zeit in ein anderes Item (z.B. langsamer
- * Abfallzerfall im Wasserbecken) - dieses Rezeptsystem existiert in diesem Port nicht und wurde
- * nicht mitportiert. Der Kernmechanismus (RBMK-Stab-Kuehlbecken, wasserabhaengig) bleibt erhalten.
+ * Alles andere aus {@link com.hbm_m.inventory.recipes.FuelPoolRecipes} (heisser Abfall, heisse PWR-Staebe)
+ * kuehlt zufaellig ab: Chance 1 / (60 * 60 * 20 / Wasserseiten) pro Tick und Slot.
  */
 public class MachineWasteDrumBlockEntity extends BaseMachineBlockEntity {
 
@@ -44,19 +42,26 @@ public class MachineWasteDrumBlockEntity extends BaseMachineBlockEntity {
         }
         if (water <= 0) return;
 
+        int r = 60 * 60 * 20 / water;
+
         for (int i = 0; i < INVENTORY_SIZE; i++) {
             ItemStack stack = be.inventory.getStackInSlot(i);
-            if (stack.isEmpty() || !(stack.getItem() instanceof RBMKRodItem rod)) continue;
+            if (stack.isEmpty()) continue;
 
-            rod.updateHeat(level, stack, COOL_MOD);
-            rod.provideHeat(level, stack, PROVIDE_HEAT, COOL_MOD);
+            if (stack.getItem() instanceof RBMKRodItem rod) {
+                rod.updateHeat(level, stack, COOL_MOD);
+                rod.provideHeat(level, stack, PROVIDE_HEAT, COOL_MOD);
+            } else if (level.random.nextInt(r) == 0) {
+                ItemStack out = com.hbm_m.inventory.recipes.FuelPoolRecipes.recipes().get(stack.getItem());
+                if (out != null) be.inventory.setStackInSlot(i, out.copy());
+            }
         }
         be.setChanged();
     }
 
     @Override
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
-        return stack.getItem() instanceof RBMKRodItem;
+        return com.hbm_m.inventory.recipes.FuelPoolRecipes.isInput(stack) || stack.getItem() instanceof RBMKRodItem;
     }
 
     @Override

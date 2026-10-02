@@ -11,7 +11,7 @@ import java.util.UUID;
 import com.google.common.collect.Multimap;
 import com.hbm_m.armormod.item.ItemArmorMod;
 import com.hbm_m.armormod.item.ItemModBattery;
-import com.hbm_m.armormod.item.ItemModRadProtection;
+import com.hbm_m.armormod.item.ItemModCladding;
 import com.hbm_m.hazard.HazardSystem;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.platform.PlatformHooks;
@@ -49,6 +49,22 @@ public class ArmorModificationHelper {
 
     public static final int MOD_SLOTS = 9;
 
+    /** Original {@code ArmorModHandler.UUIDs}, Index = armorType (0 Helm ... 3 Stiefel). */
+    public static final UUID[] UUIDs = new UUID[] {
+            UUID.fromString("8d6e5c77-133e-4056-9c80-a9e42a1a0b65"),
+            UUID.fromString("b1b7ee0e-1d14-4400-8037-f7f2e02f21ca"),
+            UUID.fromString("30b50d2a-4858-4e5b-88d4-3e3612224238"),
+            UUID.fromString("426ee0d0-7587-4697-aaef-4772ab202e78")
+    };
+
+    /** Original {@code ArmorModHandler.fixedUUIDs}. */
+    public static final UUID[] fixedUUIDs = new UUID[] {
+            UUID.fromString("e572caf4-3e65-4152-bc79-c4d4048cbd29"),
+            UUID.fromString("bed30902-8a6a-4769-9f65-2a9b67469fff"),
+            UUID.fromString("baebf7b3-1eda-4a14-b233-068e2493e9a2"),
+            UUID.fromString("28016c1b-d992-4324-9409-a9f9f0ffb85c")
+    };
+
     public static final String MOD_COMPOUND_KEY = "hbm_armor_mods";
     public static final String MOD_SLOT_KEY_PREFIX = "mod_slot_";
     public static final String MODIFIER_MARKER_KEY = "hbm_mod_attribute";
@@ -85,32 +101,9 @@ public class ArmorModificationHelper {
             return false;
         }
 
-        ArmorItem armorItem = (ArmorItem) armor.getItem();
-        int armorSlot = armorItem.getType().getSlot().getIndex();
-        int modType = modItem.type;
-
-        // Проверяем совместимость по типу брони и модификации
-        switch (modType) {
-            case helmet_only -> {
-                return armorSlot == 3; // HEAD
-            }
-            case plate_only -> {
-                return armorSlot == 2; // CHEST
-            }
-            case legs_only -> {
-                return armorSlot == 1; // LEGS
-            }
-            case boots_only -> {
-                return armorSlot == 0; // FEET
-            }
-            case servos, cladding, kevlar, extra, battery -> {
-                // Эти модификации могут применяться к любой броне
-                return true;
-            }
-            default -> {
-                return false;
-            }
-        }
+        // Original ArmorModHandler.isApplicable: armorType gegen die vier Flags der Mod.
+        int type = ItemArmorMod.armorType(armor);
+        return (type == 0 && modItem.helmet) || (type == 1 && modItem.chestplate) || (type == 2 && modItem.leggings) || (type == 3 && modItem.boots);
     }
 
     /**
@@ -476,8 +469,8 @@ public class ArmorModificationHelper {
         // 2. Добавляем защиту от каждого установленного мода
         List<ItemStack> mods = getModsFromArmor(armorStack);
         for (ItemStack modStack : mods) {
-            if (modStack.getItem() instanceof ItemModRadProtection radMod) {
-                totalProtection += radMod.getProtectionValue();
+            if (modStack.getItem() instanceof ItemModCladding radMod) {
+                totalProtection += (float) radMod.rad;
             }
         }
         

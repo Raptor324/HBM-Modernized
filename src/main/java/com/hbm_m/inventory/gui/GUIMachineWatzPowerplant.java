@@ -1,125 +1,105 @@
 package com.hbm_m.inventory.gui;
 
+import java.util.Locale;
+
 import com.hbm_m.blockentity.machines.MachineWatzPowerplantBlockEntity;
-import com.hbm_m.client.GuiCompat;
 import com.hbm_m.inventory.menu.MachineWatzPowerplantMenu;
 import com.hbm_m.lib.RefStrings;
-import com.hbm_m.network.WatzControlPacket;
+import com.hbm_m.network.NBTControlPacket;
 import com.mojang.blaze3d.systems.RenderSystem;
 
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Inventory;
 
-/**
- * Simple, self-drawn layout on top of the original's {@code gui_watz.png}/{@code fluids/watz.png}
- * textures (already present in this port's assets). Pixel-perfect reproduction of the original
- * {@code GUIWatz} overlay coordinates was out of scope; tanks are rendered with the generic
- * {@code FluidTank#renderTank} helper (same approach as {@code GUIMachineArcFurnace}) instead of
- * hand-placed gauge sprites.
- */
+/** 1:1 {@code GUIWatz}. */
 public class GUIMachineWatzPowerplant extends GuiInfoScreen<MachineWatzPowerplantMenu> {
 
     private static final ResourceLocation TEXTURE =
             ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/reactors/gui_watz.png");
-
-    private static final int TANK_COOLANT_X = 132;
-    private static final int TANK_HOT_X = 152;
-    private static final int TANK_WASTE_X = 172;
-    private static final int TANK_Y = 8;
-    private static final int TANK_WIDTH = 16;
-    private static final int TANK_HEIGHT = 108;
-
-    private static final int BUTTON_X = 132;
-    private static final int BUTTON_Y = 122;
-    private static final int BUTTON_SIZE = 18;
 
     private final MachineWatzPowerplantBlockEntity watz;
 
     public GUIMachineWatzPowerplant(MachineWatzPowerplantMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
         this.watz = menu.getBlockEntity();
-        this.imageWidth = 226;
-        this.imageHeight = 230;
-        this.inventoryLabelY = 137;
+        this.imageWidth = 176;
+        this.imageHeight = 229;
+        this.inventoryLabelY = this.imageHeight - 93;
     }
 
     @Override
-    protected void renderBg(GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
-        RenderSystem.setShader(GameRenderer::getPositionTexShader);
-        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
-        guiGraphics.blit(TEXTURE, this.leftPos, this.topPos, 0, 0, this.imageWidth, this.imageHeight);
+    public void render(GuiGraphics g, int x, int y, float interp) {
+        com.hbm_m.client.GuiCompat.renderBackground(this, g, x, y, interp);
+        super.render(g, x, y, interp);
 
-        // Тайл может отсутствовать в реплее Flashback
+        // Tile kann in einer Flashback-Wiedergabe fehlen
+        if (watz != null) {
+            drawCustomInfoStat(g, x, y, 13, 100, 18, 18, x, y, Component.literal(String.format(Locale.US, "%,d", watz.heat) + " TU"));
+            drawCustomInfoStat(g, x, y, 143, 71, 16, 16, x, y,
+                    Component.literal(watz.isLocked ? "Unlock pellet IO configuration" : "Lock pellet IO configuration"));
+
+            watz.tanks[0].renderTankInfo(g, font, x, y, leftPos + 142, topPos + 23, 6, 45);
+            watz.tanks[1].renderTankInfo(g, font, x, y, leftPos + 148, topPos + 23, 6, 45);
+            watz.tanks[2].renderTankInfo(g, font, x, y, leftPos + 154, topPos + 23, 6, 45);
+        }
+
+        this.renderTooltip(g, x, y);
+    }
+
+    @Override
+    protected void renderLabels(GuiGraphics g, int mouseX, int mouseY) {
+        g.drawString(this.font, this.playerInventoryTitle, 8, this.imageHeight - 93, 4210752, false);
         if (watz == null) return;
 
-        watz.coolantTank.renderTank(guiGraphics, this.leftPos + TANK_COOLANT_X, this.topPos + TANK_Y, TANK_WIDTH, TANK_HEIGHT);
-        watz.coolantHotTank.renderTank(guiGraphics, this.leftPos + TANK_HOT_X, this.topPos + TANK_Y, TANK_WIDTH, TANK_HEIGHT);
-        watz.wasteTank.renderTank(guiGraphics, this.leftPos + TANK_WASTE_X, this.topPos + TANK_Y, TANK_WIDTH, TANK_HEIGHT);
-
-        int color = watz.isOn ? 0xFF33CC33 : 0xFFCC3333;
-        guiGraphics.fill(this.leftPos + BUTTON_X, this.topPos + BUTTON_Y,
-                this.leftPos + BUTTON_X + BUTTON_SIZE, this.topPos + BUTTON_Y + BUTTON_SIZE, color);
-    }
-
-    @Override
-    protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
-        Component title = this.title;
-        guiGraphics.drawString(this.font, title, this.imageWidth / 2 - this.font.width(title) / 2, 6, 0x404040, false);
-        guiGraphics.drawString(this.font, this.playerInventoryTitle, 8, this.inventoryLabelY, 0x404040, false);
-    }
-
-    @Override
-    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        com.hbm_m.client.GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTick);
-        super.render(guiGraphics, mouseX, mouseY, partialTick);
-
-        // Тайл может отсутствовать в реплее Flashback
-        if (watz == null) {
-            this.renderTooltip(guiGraphics, mouseX, mouseY);
-            return;
-        }
-
-        if (isPointInRect(TANK_COOLANT_X, TANK_Y, TANK_WIDTH, TANK_HEIGHT, mouseX, mouseY)) {
-            watz.coolantTank.renderTankInfo(guiGraphics, this.font, mouseX, mouseY,
-                    this.leftPos + TANK_COOLANT_X, this.topPos + TANK_Y, TANK_WIDTH, TANK_HEIGHT);
-        }
-        if (isPointInRect(TANK_HOT_X, TANK_Y, TANK_WIDTH, TANK_HEIGHT, mouseX, mouseY)) {
-            watz.coolantHotTank.renderTankInfo(guiGraphics, this.font, mouseX, mouseY,
-                    this.leftPos + TANK_HOT_X, this.topPos + TANK_Y, TANK_WIDTH, TANK_HEIGHT);
-        }
-        if (isPointInRect(TANK_WASTE_X, TANK_Y, TANK_WIDTH, TANK_HEIGHT, mouseX, mouseY)) {
-            watz.wasteTank.renderTankInfo(guiGraphics, this.font, mouseX, mouseY,
-                    this.leftPos + TANK_WASTE_X, this.topPos + TANK_Y, TANK_WIDTH, TANK_HEIGHT);
-        }
-
-        drawCustomInfoStat(guiGraphics, mouseX, mouseY,
-                BUTTON_X, BUTTON_Y, BUTTON_SIZE, BUTTON_SIZE,
-                this.leftPos + BUTTON_X, this.topPos + BUTTON_Y,
-                Component.literal(watz.isOn ? "Reactor: ON" : "Reactor: OFF"),
-                Component.literal(watz.redstonePowered ? "(forced on by redstone)" : "(click to toggle)"));
-
-        drawCustomInfoStat(guiGraphics, mouseX, mouseY,
-                0, 152, imageWidth, 12,
-                this.leftPos + 4, this.topPos + 152,
-                Component.literal("Heat: " + Math.round(watz.heat) + " / " + Math.round(MachineWatzPowerplantBlockEntity.MAX_SAFE_HEAT)),
-                Component.literal("Flux: " + Math.round(watz.fluxLastBase + watz.fluxLastReaction)));
-
-        this.renderTooltip(guiGraphics, mouseX, mouseY);
+        float scale = 1.25F;
+        String flux = String.format(Locale.US, "%,.1f", watz.fluxDisplay);
+        g.pose().pushPose();
+        g.pose().scale(1 / scale, 1 / scale, 1);
+        g.drawString(this.font, flux, (int) (161 * scale - this.font.width(flux)), (int) (107 * scale), 0x00ff00, false);
+        g.pose().popPose();
     }
 
     @Override
     public boolean mouseClicked(double x, double y, int button) {
-        // тайл может отсутствовать в реплее Flashback
-        if (watz == null) return super.mouseClicked(x, y, button);
-        if (this.leftPos + BUTTON_X <= x && this.leftPos + BUTTON_X + BUTTON_SIZE > x
-                && this.topPos + BUTTON_Y <= y && this.topPos + BUTTON_Y + BUTTON_SIZE > y) {
-            WatzControlPacket.sendToServer(watz.getBlockPos(), 0);
+        if (watz != null && leftPos + 142 <= x && leftPos + 142 + 18 > x && topPos + 70 < y && topPos + 70 + 18 >= y) {
+            CompoundTag control = new CompoundTag();
+            control.putBoolean("lock", true);
+            NBTControlPacket.sendToServer(watz.getBlockPos(), control);
             playClickSound();
             return true;
         }
         return super.mouseClicked(x, y, button);
+    }
+
+    @Override
+    protected void renderBg(GuiGraphics g, float interp, int x, int y) {
+        RenderSystem.setShader(GameRenderer::getPositionTexShader);
+        float col = watz == null ? 1F : Mth.clamp(1 - (float) Math.log(watz.heat / 100_000D + 1) * 0.4F, 0F, 1F);
+        RenderSystem.setShaderColor(1.0F, col, col, 1.0F);
+        g.blit(TEXTURE, leftPos, topPos, 0, 0, 131, 122);
+        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
+
+        g.blit(TEXTURE, leftPos + 131, topPos, 131, 0, 36, 122);
+        g.blit(TEXTURE, leftPos, topPos + 130, 0, 130, imageWidth, 99);
+        g.blit(TEXTURE, leftPos + 126, topPos + 31, 176, 31, 9, 60);
+        g.blit(TEXTURE, leftPos + 105, topPos + 96, 185, 26, 30, 26);
+        g.blit(TEXTURE, leftPos + 9, topPos + 96, 184, 0, 26, 26);
+
+        if (watz == null) return;
+
+        if (watz.isOn) g.blit(TEXTURE, leftPos + 147, topPos + 8, 176, 0, 8, 8);
+        if (watz.isLocked) g.blit(TEXTURE, leftPos + 142, topPos + 70, 210, 0, 18, 18);
+
+        GuiGaugeNeedle.draw(g, leftPos + 22, topPos + 109, 1D - col, 5, 2, 1, 0x7F0000);
+
+        // Original: renderTank(x, yUnten, z, 4, 43) - hier mit oberer Kante
+        watz.tanks[0].renderTank(g, leftPos + 143, topPos + 69 - 43, 4, 43);
+        watz.tanks[1].renderTank(g, leftPos + 149, topPos + 69 - 43, 4, 43);
+        watz.tanks[2].renderTank(g, leftPos + 155, topPos + 69 - 43, 4, 43);
     }
 }

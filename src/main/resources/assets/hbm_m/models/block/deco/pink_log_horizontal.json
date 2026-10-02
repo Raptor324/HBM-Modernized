@@ -1,0 +1,7 @@
+{
+ "parent": "minecraft:block/cube_column_horizontal",
+ "textures": {
+  "end": "hbm_m:block/deco/pink_log",
+  "side": "minecraft:block/oak_log"
+ }
+}

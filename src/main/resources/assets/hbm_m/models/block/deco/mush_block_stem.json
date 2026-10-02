@@ -1,0 +1,7 @@
+{
+ "parent": "minecraft:block/cube_column",
+ "textures": {
+  "end": "hbm_m:block/deco/mush_block_inside",
+  "side": "hbm_m:block/deco/mush_block_stem"
+ }
+}

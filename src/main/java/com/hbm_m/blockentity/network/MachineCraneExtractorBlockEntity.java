@@ -1,53 +1,35 @@
 package com.hbm_m.blockentity.network;
 
-import java.util.EnumMap;
-import java.util.Map;
-
-import com.hbm_m.block.machines.MachineCraneExtractorBlock;
+import com.hbm_m.api.tile.IControlReceiver;
 import com.hbm_m.block.network.IConveyorBelt;
-import com.hbm_m.block.network.IEnterableBlock;
-import com.hbm_m.blockentity.BaseMachineBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
-import com.hbm_m.entity.conveyor.MovingConveyorItemEntity;
-import com.hbm_m.inventory.UpgradeManager;
 import com.hbm_m.inventory.filter.ModulePatternMatcher;
 import com.hbm_m.inventory.menu.MachineCraneExtractorMenu;
 import com.hbm_m.item.industrial.ItemMachineUpgrade;
+import com.hbm_m.platform.ModItemStackHandler;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
 //? if forge {
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
 import net.minecraftforge.items.IItemHandler;
 //?}
 
 /**
- * Crane Extractor - Port von {@code TileEntityCraneExtractor} (1.7.10 Original). Zieht periodisch
- * Items aus dem Inventar auf der Eingabeseite, prueft sie gegen einen 9-Slot-{@link ModulePatternMatcher}
- * (Whitelist/Blacklist umschaltbar), und legt passende Items auf das Foerderband der Ausgabeseite -
- * oder in den 9-Slot-Puffer, falls dort kein Foerderband liegt. Stack-/Ejector-Upgrades erhoehen
- * Menge pro Zug bzw. verkuerzen das Intervall, exakt wie im Original (Mk.I/II/III -&gt; 4/16/64 bzw.
- * 10/5/2 Ticks).
- * <p>
- * SCOPE-Vereinfachung: Das Original vertauscht Input-/Output-Seite bewusst ("switcheroo"-Kommentar
- * im Original) relativ zu {@code TileEntityCraneBase}s generischem Input/Output-Seitenpaar. Hier:
- * feste, dokumentierte Konvention - Extraktionsquelle ist {@link #FACING}.getOpposite() (hinter dem
- * Block), Auswurfziel ist {@link #FACING} (vor dem Block) - funktional aequivalent, ohne die
- * Original-Klassenhierarchie (TileEntityCraneBase mit screwdriver-ueberschreibbarem Seitenpaar)
- * nachzubauen.
+ * 1:1 {@code TileEntityCraneExtractor}: 9 Filter, 9 Puffer, Stapel- und Auswurf-Upgrade. Zieht aus dem Inventar am Ausgang
+ * (Filter nach Weiss-/Schwarzliste) und legt auf das Band am Eingang; ohne Band landet es im Puffer. Hat es nichts gezogen,
+ * leert es den Puffer auf das Band (ohne Filter).
  */
-public class MachineCraneExtractorBlockEntity extends BaseMachineBlockEntity implements IEnterableBlock {
+public class MachineCraneExtractorBlockEntity extends CraneBaseBlockEntity implements IControlReceiver, CraneBaseBlockEntity.ControlReceiverFilter {
 
     public static final int FILTER_START = 0;
     public static final int FILTER_END = 8;
@@ -57,201 +39,182 @@ public class MachineCraneExtractorBlockEntity extends BaseMachineBlockEntity imp
     public static final int SLOT_UPGRADE_EJECTOR = 19;
     public static final int INVENTORY_SIZE = 20;
 
-    private final ModulePatternMatcher matcher = new ModulePatternMatcher(9);
-    private final UpgradeManager upgradeManager = new UpgradeManager();
-    private boolean isWhitelist = false;
-    private boolean maxEject = false;
-
-    private static final Map<ItemMachineUpgrade.UpgradeType, Integer> UPGRADE_CAPS = new EnumMap<>(ItemMachineUpgrade.UpgradeType.class);
-    static {
-        UPGRADE_CAPS.put(ItemMachineUpgrade.UpgradeType.STACK, 3);
-        UPGRADE_CAPS.put(ItemMachineUpgrade.UpgradeType.EJECTOR, 3);
-    }
+    public boolean isWhitelist = false;
+    public boolean maxEject = false;
+    public final ModulePatternMatcher matcher = new ModulePatternMatcher(9);
 
     public MachineCraneExtractorBlockEntity(BlockPos pos, BlockState state) {
-        super(ModBlockEntities.CRANE_EXTRACTOR_BE.get(), pos, state, INVENTORY_SIZE, 0L, 0L, 0L);
+        super(ModBlockEntities.CRANE_EXTRACTOR_BE.get(), pos, state, INVENTORY_SIZE);
     }
 
-    public static void tick(Level level, BlockPos pos, BlockState state, MachineCraneExtractorBlockEntity be) {
-        if (!level.isClientSide) {
-            be.serverTick(level, pos, state);
-        }
+    /** Stufe eines Upgrades des gegebenen Typs, 0 = keins. */
+    public static int upgradeTier(ItemStack stack, ItemMachineUpgrade.UpgradeType type) {
+        return stack.getItem() instanceof ItemMachineUpgrade up && up.getUpgradeType() == type ? up.getTier() : 0;
     }
 
-    private void serverTick(Level level, BlockPos pos, BlockState state) {
-        upgradeManager.checkSlots(inventory, SLOT_UPGRADE_STACK, SLOT_UPGRADE_EJECTOR, UPGRADE_CAPS);
-
-        int delay = switch (upgradeManager.getLevel(ItemMachineUpgrade.UpgradeType.EJECTOR)) {
+    public static int delayFor(ItemStack ejector) {
+        return switch (upgradeTier(ejector, ItemMachineUpgrade.UpgradeType.EJECTOR)) {
             case 1 -> 10;
             case 2 -> 5;
             case 3 -> 2;
             default -> 20;
         };
+    }
 
-        if (level.getGameTime() % delay != 0) return;
-        if (level.hasNeighborSignal(pos)) return;
-
-        int amount = switch (upgradeManager.getLevel(ItemMachineUpgrade.UpgradeType.STACK)) {
+    public static int amountFor(ItemStack stackUpgrade) {
+        return switch (upgradeTier(stackUpgrade, ItemMachineUpgrade.UpgradeType.STACK)) {
             case 1 -> 4;
             case 2 -> 16;
             case 3 -> 64;
             default -> 1;
         };
+    }
 
-        Direction facing = state.getValue(MachineCraneExtractorBlock.FACING);
-        Direction pullSide = facing.getOpposite();
-        Direction ejectSide = facing;
+    @Override
+    protected ModItemStackHandler createInventoryHandler(int size) {
+        return new ModItemStackHandler(size) {
+            @Override
+            protected void onContentsChanged(int slot) { setChanged(); }
 
-        BlockPos sourcePos = pos.relative(pullSide);
-        BlockPos ejectPos = pos.relative(ejectSide);
+            @Override
+            public boolean isItemValid(int slot, ItemStack stack) { return isItemValidForSlot(slot, stack); }
 
-        BlockEntity sourceBe = level.getBlockEntity(sourcePos);
-        var ejectBlock = level.getBlockState(ejectPos).getBlock();
-        IConveyorBelt belt = ejectBlock instanceof IConveyorBelt ib ? ib : null;
+            /** Original {@code setInventorySlotContents}: Einstecken eines Upgrades spielt den Steckerklang. */
+            @Override
+            public void setStackInSlot(int slot, ItemStack stack) {
+                super.setStackInSlot(slot, stack);
+                if (!stack.isEmpty() && level != null && ((upgradeTier(stack, ItemMachineUpgrade.UpgradeType.EJECTOR) > 0 && slot == SLOT_UPGRADE_EJECTOR)
+                        || (upgradeTier(stack, ItemMachineUpgrade.UpgradeType.STACK) > 0 && slot == SLOT_UPGRADE_STACK))) {
+                    level.playSound(null, worldPosition, com.hbm_m.sound.ModSounds.UPGRADE_PLUG.get(), SoundSource.BLOCKS, 1.0F, 1.0F);
+                }
+            }
+        };
+    }
 
-        boolean hasSent = false;
+    public static void tick(Level level, BlockPos pos, BlockState state, MachineCraneExtractorBlockEntity be) {
+        be.serverTick(level, pos);
+    }
 
-        //? if forge {
-        IItemHandler source = sourceBe != null
-                ? sourceBe.getCapability(ForgeCapabilities.ITEM_HANDLER, pullSide.getOpposite()).orElse(null)
-                : null;
+    private void serverTick(Level level, BlockPos pos) {
+        int delay = delayFor(inventory.getStackInSlot(SLOT_UPGRADE_EJECTOR));
 
-        if (source != null) {
-            for (int slot = 0; slot < source.getSlots() && !hasSent; slot++) {
-                ItemStack stack = source.getStackInSlot(slot);
-                if (stack.isEmpty()) continue;
+        if (level.getGameTime() % delay == 0 && !level.hasNeighborSignal(pos)) {
+            int amount = amountFor(inventory.getStackInSlot(SLOT_UPGRADE_STACK));
 
-                int maxTarget = Math.min(amount, stack.getMaxStackSize());
-                if (maxEject && stack.getCount() < maxTarget) continue;
+            Direction inputSide = getOutputSide(); // Achtung, vertauscht!
+            Direction outputSide = getInputSide();
+            IConveyorBelt belt = CraneInventoryUtil.beltAt(level, pos.relative(outputSide));
 
-                boolean match = matchesFilter(stack);
-                if (!((isWhitelist && match) || (!isWhitelist && !match))) continue;
+            boolean hasSent = false;
 
-                int toSend = Math.min(amount, stack.getCount());
-                ItemStack simulated = source.extractItem(slot, toSend, true);
-                if (simulated.isEmpty()) continue;
+            //? if forge {
+            IItemHandler inv = CraneInventoryUtil.inventoryAt(level, pos.relative(inputSide), inputSide.getOpposite());
 
-                ItemStack sendStack = simulated.copy();
+            /* aus einem angeschlossenen Inventar senden */
+            if (inv != null) {
+                for (int index = 0; index < inv.getSlots(); index++) {
+                    ItemStack stack = inv.getStackInSlot(index);
 
-                if (belt != null) {
-                    source.extractItem(slot, sendStack.getCount(), false);
-                    sendItem(level, ejectPos, ejectSide, sendStack);
-                    hasSent = true;
-                } else {
-                    ItemStack remainder = insertIntoBuffer(sendStack.copy());
-                    int accepted = sendStack.getCount() - remainder.getCount();
-                    if (accepted > 0) {
-                        source.extractItem(slot, accepted, false);
-                        hasSent = true;
+                    if (!stack.isEmpty() && !inv.extractItem(index, 1, true).isEmpty()) {
+
+                        int maxTarget = Math.min(amount, stack.getMaxStackSize());
+                        if (this.maxEject && stack.getCount() < maxTarget) continue;
+                        boolean match = this.matchesFilter(stack);
+
+                        if ((isWhitelist && match) || (!isWhitelist && !match)) {
+                            stack = stack.copy();
+                            int toSend = Math.min(amount, stack.getCount());
+
+                            if (belt != null) {
+                                ItemStack taken = inv.extractItem(index, toSend, false);
+                                CraneInventoryUtil.sendItemAndEnter(level, pos, outputSide, belt, taken);
+                            } else {
+                                stack.setCount(toSend);
+                                ItemStack remaining = tryAddToBuffer(stack);
+                                inv.extractItem(index, toSend - remaining.getCount(), false);
+                            }
+                            hasSent = true;
+                            break;
+                        }
+                    }
+                }
+            }
+            //?}
+
+            /* hat nichts gesendet: Puffer ohne Filter auf das Band */
+            if (!hasSent && belt != null) {
+                for (int i = BUFFER_START; i <= BUFFER_END; i++) {
+                    ItemStack stack = inventory.getStackInSlot(i);
+
+                    if (!stack.isEmpty()) {
+                        stack = stack.copy();
+                        int toSend = Math.min(amount, stack.getCount());
+
+                        int maxTarget = Math.min(amount, stack.getMaxStackSize());
+                        if (this.maxEject && stack.getCount() < maxTarget) continue;
+
+                        inventory.extractItem(i, toSend, false);
+                        stack.setCount(toSend);
+                        CraneInventoryUtil.sendItemAndEnter(level, pos, outputSide, belt, stack);
+                        break;
                     }
                 }
             }
         }
-        //?}
 
-        if (!hasSent && belt != null) {
-            for (int slot = BUFFER_START; slot <= BUFFER_END; slot++) {
-                ItemStack stack = inventory.getStackInSlot(slot);
-                if (stack.isEmpty()) continue;
+        sendUpdateToClient();
+    }
 
-                int maxTarget = Math.min(amount, stack.getMaxStackSize());
-                if (maxEject && stack.getCount() < maxTarget) continue;
-
-                int toSend = Math.min(amount, stack.getCount());
-                ItemStack sendStack = stack.copy();
-                sendStack.setCount(toSend);
-                stack.shrink(toSend);
-                if (stack.isEmpty()) inventory.setStackInSlot(slot, ItemStack.EMPTY);
-
-                sendItem(level, ejectPos, ejectSide, sendStack);
-                break;
+    /** Original: {@code InventoryUtil.tryAddItemToInventory(slots, 9, 17, stack)}. */
+    private ItemStack tryAddToBuffer(ItemStack stack) {
+        ItemStack rest = stack.copy();
+        for (int i = BUFFER_START; i <= BUFFER_END && !rest.isEmpty(); i++) {
+            ItemStack cur = inventory.getStackInSlot(i);
+            if (!cur.isEmpty() && ItemStack.isSameItemSameTags(cur, rest) && cur.getCount() < cur.getMaxStackSize()) {
+                int move = Math.min(cur.getMaxStackSize() - cur.getCount(), rest.getCount());
+                cur.grow(move);
+                rest.shrink(move);
             }
         }
-
+        for (int i = BUFFER_START; i <= BUFFER_END && !rest.isEmpty(); i++) {
+            if (inventory.getStackInSlot(i).isEmpty()) {
+                inventory.setStackInSlot(i, rest.copy());
+                rest.setCount(0);
+            }
+        }
         setChanged();
-    }
-
-    private void sendItem(Level level, BlockPos ejectPos, Direction ejectSide, ItemStack stack) {
-        BlockEntity ejectBe = level.getBlockEntity(ejectPos);
-        var ejectBlock = level.getBlockState(ejectPos).getBlock();
-
-        if (ejectBlock instanceof IConveyorBelt belt) {
-            var snap = belt.snapNewItem(level, ejectPos, new net.minecraft.world.phys.Vec3(
-                    ejectPos.getX() + 0.5, ejectPos.getY() + 0.5, ejectPos.getZ() + 0.5));
-            MovingConveyorItemEntity moving = MovingConveyorItemEntity.create(level, snap.x, snap.y, snap.z, stack);
-            level.addFreshEntity(moving);
-
-            if (ejectBlock instanceof IEnterableBlock enterable) {
-                enterable.onItemEnter(level, ejectPos, moving);
-                moving.discard();
-            }
-            return;
-        }
-
-        //? if forge {
-        if (ejectBe != null) {
-            IItemHandler handler = ejectBe.getCapability(ForgeCapabilities.ITEM_HANDLER, ejectSide.getOpposite()).orElse(null);
-            if (handler != null) {
-                ItemStack remainder = net.minecraftforge.items.ItemHandlerHelper.insertItem(handler, stack, false);
-                if (remainder.isEmpty()) return;
-                stack = remainder;
-            }
-        }
-        //?}
-
-        ItemEntity drop = new ItemEntity(level, ejectPos.getX() + 0.5, ejectPos.getY() + 0.5, ejectPos.getZ() + 0.5, stack);
-        level.addFreshEntity(drop);
-    }
-
-    private ItemStack insertIntoBuffer(ItemStack stack) {
-        for (int i = BUFFER_START; i <= BUFFER_END && !stack.isEmpty(); i++) {
-            ItemStack current = inventory.getStackInSlot(i);
-            if (current.isEmpty()) {
-                inventory.setStackInSlot(i, stack);
-                return ItemStack.EMPTY;
-            } else if (com.hbm_m.platform.PlatformHooks.isSameItemSameTags(current, stack)) {
-                int space = current.getMaxStackSize() - current.getCount();
-                if (space > 0) {
-                    int toMove = Math.min(space, stack.getCount());
-                    current.grow(toMove);
-                    stack.shrink(toMove);
-                }
-            }
-        }
-        return stack;
+        return rest;
     }
 
     public boolean matchesFilter(ItemStack stack) {
-        for (int i = FILTER_START; i <= FILTER_END; i++) {
+        for (int i = 0; i < 9; i++) {
             ItemStack filter = inventory.getStackInSlot(i);
-            if (!filter.isEmpty() && matcher.isValidForFilter(filter, i, stack)) {
-                return true;
-            }
+            if (!filter.isEmpty() && this.matcher.isValidForFilter(filter, i, stack)) return true;
         }
         return false;
     }
 
-    // ── IEnterableBlock (not used for input - kept for interface parity with the network) ──
-
     @Override
-    public void onItemEnter(Level level, BlockPos pos, MovingConveyorItemEntity item) {
-        // Extractor pulls actively; it does not accept items pushed onto it from a conveyor.
+    public void nextMode(int i) {
+        this.matcher.nextMode(i, inventory.getStackInSlot(i));
+        setChanged();
+        sendUpdateToClient();
     }
 
-    // ── Filter/mode/toggle API ─────────────────────────────────────────────
+    @Override public int[] getFilterSlots() { return new int[] { 0, 9 }; }
 
     public ModulePatternMatcher getMatcher() { return matcher; }
     public boolean isWhitelist() { return isWhitelist; }
-    public void toggleWhitelist() { isWhitelist = !isWhitelist; setChanged(); }
     public boolean isMaxEject() { return maxEject; }
-    public void toggleMaxEject() { maxEject = !maxEject; setChanged(); }
 
-    public void nextMode(int filterSlot) {
-        matcher.nextMode(filterSlot);
+    @Override
+    public void receiveControl(CompoundTag data) {
+        if (data.contains("whitelist")) this.isWhitelist = !this.isWhitelist;
+        if (data.contains("maxEject")) this.maxEject = !this.maxEject;
+        if (data.contains("slot")) setFilterContents(data);
         setChanged();
+        sendUpdateToClient();
     }
-
-    // ── NBT ─────────────────────────────────────────────────────────────────
 
     @Override
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
@@ -269,38 +232,18 @@ public class MachineCraneExtractorBlockEntity extends BaseMachineBlockEntity imp
         matcher.readFromNBT(tag);
     }
 
-    // ── Slot validation / Menu ─────────────────────────────────────────────
-
+    /** Original: {@code isItemValidForSlot} - nur Puffer (9-17) fuer Automatisierung. */
     @Override
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
-        if (slot >= FILTER_START && slot <= FILTER_END) return true;
-        if (slot >= BUFFER_START && slot <= BUFFER_END) return true;
-        if (slot == SLOT_UPGRADE_STACK) return stack.getItem() instanceof ItemMachineUpgrade up && up.getUpgradeType() == ItemMachineUpgrade.UpgradeType.STACK;
-        if (slot == SLOT_UPGRADE_EJECTOR) return stack.getItem() instanceof ItemMachineUpgrade up && up.getUpgradeType() == ItemMachineUpgrade.UpgradeType.EJECTOR;
-        return false;
+        return slot > 8 && slot < 18;
     }
 
-    @Override
-    public void setChanged() {
-        super.setChanged();
-    }
+    @Override protected boolean canExtractItem(int slot, ItemStack stack) { return slot > 8 && slot < 18; }
 
-    /** Ueberschreibt: Filter-Slots (0-8) setzen zusaetzlich den Match-Modus, wie im Original. */
-    public void setFilterSlot(int index, ItemStack stack) {
-        inventory.setStackInSlot(index, stack);
-        matcher.initPattern(index, stack);
-        setChanged();
-    }
+    @Override protected int[] getAccessibleSlots() { return new int[] { 9, 10, 11, 12, 13, 14, 15, 16, 17 }; }
 
-    @Override
-    protected Component getDefaultName() {
-        return Component.translatable("container.hbm_m.crane_extractor");
-    }
-
-    @Override
-    public Component getDisplayName() {
-        return getDefaultName();
-    }
+    @Override protected Component getDefaultName() { return Component.translatable("container.craneExtractor"); }
+    @Override public Component getDisplayName() { return getDefaultName(); }
 
     @Override
     public AbstractContainerMenu createMenu(int id, Inventory inventory, Player player) {

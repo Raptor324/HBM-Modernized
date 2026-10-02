@@ -27,7 +27,7 @@ public class MachineFurnaceBrickMenu extends AbstractContainerMenu {
     private static final int SLOT_INPUT = MachineFurnaceBrickBlockEntity.SLOT_INPUT;
     private static final int SLOT_FUEL = MachineFurnaceBrickBlockEntity.SLOT_FUEL;
     private static final int SLOT_OUTPUT = MachineFurnaceBrickBlockEntity.SLOT_OUTPUT;
-    private static final int MACHINE_SLOT_COUNT = 3;
+    private static final int MACHINE_SLOT_COUNT = 4;
     private static final int PLAYER_INV_START = MACHINE_SLOT_COUNT;
     private static final int PLAYER_INV_END = MACHINE_SLOT_COUNT + 36;
 
@@ -49,6 +49,8 @@ public class MachineFurnaceBrickMenu extends AbstractContainerMenu {
         this.addSlot(new Slot(container, SLOT_INPUT, 62, 35));
         this.addSlot(new FuelSlot(container, SLOT_FUEL, 35, 17));
         this.addSlot(new OutputSlot(container, SLOT_OUTPUT, 116, 35));
+        // Original: SlotCraftingOutput fuer die Asche
+        this.addSlot(new OutputSlot(container, MachineFurnaceBrickBlockEntity.SLOT_ASH, 35, 53));
 
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 9; col++) {

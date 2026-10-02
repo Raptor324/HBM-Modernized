@@ -279,6 +279,9 @@ public class MachineBlastFurnaceBlockEntity extends BaseHbmBlockEntity implement
 
     // ==================== TICK ====================
 
+    @Override public int getFloorCount() { return 2 * 2; }
+    @Override public BlockPos getFloorPosFromIndex(int index) { return this.standardFloor3x3(index); }
+
     public static void tick(Level level, BlockPos pos, BlockState state, MachineBlastFurnaceBlockEntity entity) {
         if (level.isClientSide()) {
             entity.clientTick(level, pos);
@@ -288,12 +291,13 @@ public class MachineBlastFurnaceBlockEntity extends BaseHbmBlockEntity implement
     }
 
     private void serverTick(ServerLevel level, BlockPos pos, BlockState state) {
+        this.checkTilt(TiltType.CONFIG, false);
         loadFuel();
 
         boolean wasProgressing = progressing;
         speed = 0D;
         BlastFurnaceRecipe recipe = findRecipe();
-        if (recipe != null && canProcess(recipe)) {
+        if (!this.tilted && recipe != null && canProcess(recipe)) {
             speed = Mth.clamp(0.5D + airTank.getFluidAmountMb() * 8D / AIR_CAPACITY_MB, 0.5D, 5D);
             progressing = true;
             progress += speed / recipe.getDuration();

@@ -1,143 +1,137 @@
 package com.hbm_m.inventory.gui;
 
+import java.util.Locale;
+
 import com.hbm_m.blockentity.machines.MachineCombustionEngineBlockEntity;
 import com.hbm_m.client.GuiCompat;
+import com.hbm_m.inventory.fluid.FluidType;
+import com.hbm_m.inventory.fluid.trait.FT_Combustible;
 import com.hbm_m.inventory.menu.MachineCombustionEngineMenu;
 import com.hbm_m.lib.RefStrings;
 
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.item.ItemStack;
 
 /**
- * Verwendet die portierte Original-Panel-Textur - Tank-/Energieanzeigen als eigene
- * Fuellrechteck-Overlays.
- *
- * <p>Die beiden Bedienelemente sind 1:1 uebernommen: der <b>Zuendknopf</b> oben und der
- * <b>Drosselregler</b> darunter, der sich von null bis dreissig ziehen laesst. Die Drossel
- * bestimmt direkt den Durchsatz - man stellt den Motor auf den Verbrauch ein, den man wirklich
- * abnimmt, statt ihn volllaufen und abschalten zu lassen.</p>
+ * 1:1 {@code GUICombustionEngine}: Zuendknopf, Drosselregler (bei gehaltener Maus folgt er der Maus), Leistungsanzeige
+ * mit Kolbensymbol, Tank und Energiebalken.
  */
-public class GUIMachineCombustionEngine extends AbstractContainerScreen<MachineCombustionEngineMenu> {
+public class GUIMachineCombustionEngine extends GuiInfoScreen<MachineCombustionEngineMenu> {
 
     private static final ResourceLocation TEXTURE =
             ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/generators/gui_combustion.png");
 
-    private final MachineCombustionEngineBlockEntity blockEntity;
-
-    /**
-     * Waehrend des Ziehens zeigt der Schieber sofort die neue Stellung, ohne auf die Antwort des
-     * Servers zu warten - sonst haengt er sichtbar hinterher.
-     */
-    private int dragThrottle = -1;
+    private final MachineCombustionEngineBlockEntity engine;
+    private int setting = 0;
+    private boolean isMouseLocked = false;
 
     public GUIMachineCombustionEngine(MachineCombustionEngineMenu menu, Inventory inventory, Component title) {
         super(menu, inventory, title);
-        this.blockEntity = menu.getBlockEntity();
+        this.engine = menu.getBlockEntity();
+        if (engine != null) this.setting = engine.setting;
         this.imageWidth = 176;
         this.imageHeight = 203;
-        this.inventoryLabelY = imageHeight - 96 + 2;
     }
 
     @Override
-    protected void renderBg(GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
-        int x = leftPos;
-        int y = topPos;
-        guiGraphics.blit(TEXTURE, x, y, 0, 0, imageWidth, imageHeight);
+    public void render(GuiGraphics g, int x, int y, float interp) {
+        GuiCompat.renderBackground(this, g, x, y, interp);
+        super.render(g, x, y, interp);
+        if (engine == null) return; // тайл может отсутствовать в реплее Flashback
 
-        if (blockEntity != null) { // тайл может отсутствовать в реплее Flashback
-            var tank = blockEntity.getTank();
-            int fuelH = tank.getMaxFill() > 0 ? tank.getFill() * 52 / tank.getMaxFill() : 0;
-            if (fuelH > 0) guiGraphics.fill(x + 35, y + 17 + (52 - fuelH), x + 51, y + 69, 0xFF804000);
-
-            long max = blockEntity.getMaxEnergyStored();
-            long energy = blockEntity.getEnergyStored();
-            int energyH = max > 0 ? (int) (energy * 52L / max) : 0;
-            if (energyH > 0) guiGraphics.fill(x + 143, y + 17 + (52 - energyH), x + 159, y + 69, 0xFFFF3020);
-
-            // Original: der gedrueckte Zuendknopf wird aus (192,0) ueberblendet.
-            if (blockEntity.isOn()) {
-                guiGraphics.blit(TEXTURE, x + 79, y + 13, 192, 0, 35, 15);
-            }
-
-            // Original: der Schieber sitzt bei 79 + setting * 32 / 30.
-            int knob = 79 + (throttle() * 32 / MachineCombustionEngineBlockEntity.MAX_THROTTLE);
-            guiGraphics.blit(TEXTURE, x + knob, y + 38, 192, 15, 4, 8);
+        if (!isMouseLocked) {
+            drawElectricityInfo(g, x, y, 143, 17, 16, 52, engine.getEnergyStored(), MachineCombustionEngineBlockEntity.maxPower);
+            engine.tank.renderTankInfo(g, this.font, x, y, leftPos + 35, topPos + 17, 16, 52);
         }
-    }
 
-    private int throttle() {
-        if (dragThrottle >= 0) return dragThrottle;
-        return blockEntity != null ? blockEntity.getSetting() : 0;
-    }
+        if (isMouseLocked || (leftPos + 80 <= x && leftPos + 80 + 34 > x && topPos + 38 < y && topPos + 38 + 8 >= y)) {
+            g.renderTooltip(font, Component.literal(((setting * 2) / 10D) + "mB/t"),
+                    Mth.clamp(x, leftPos + 80, leftPos + 114), Mth.clamp(y, topPos + 38, topPos + 46));
+        }
 
-    /** Original: {@code setting = (x - guiLeft - 81) * 30 / 32}, geklemmt auf null bis dreissig. */
-    private int throttleAt(double mouseX) {
-        int raw = (int) ((mouseX - leftPos - 81) * MachineCombustionEngineBlockEntity.MAX_THROTTLE / 32);
-        return Math.max(0, Math.min(MachineCombustionEngineBlockEntity.MAX_THROTTLE, raw));
-    }
-
-    @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (blockEntity != null) {
-            // Original-Trefferflaeche des Zuendknopfs: (89,13), 16 x 14.
-            if (isHovering(89, 13, 16, 14, mouseX, mouseY)) {
-                com.hbm_m.network.CombustionEngineControlC2SPacket.sendToggle(blockEntity.getBlockPos());
-                playClick();
-                return true;
+        ItemStack piston = engine.getInventory().getStackInSlot(MachineCombustionEngineBlockEntity.SLOT_PISTON);
+        if (MachineCombustionEngineBlockEntity.pistonType(piston.getItem()) >= 0) {
+            double power = 0;
+            FT_Combustible trait = FluidType.getTrait(engine.tank.getTankType(), FT_Combustible.class);
+            if (trait != null) {
+                power = setting * 0.2 * trait.getCombustionEnergy() / 1_000D * MachineCombustionEngineBlockEntity.efficiency(piston, engine.tank.getTankType());
             }
+            drawCustomInfoStat(g, x, y, 79, 50, 35, 14, x, y,
+                    Component.literal(String.format(Locale.US, "%,d", (int) (power)) + " HE/t").withStyle(ChatFormatting.YELLOW),
+                    Component.literal(String.format(Locale.US, "%,d", (int) (power * 20)) + " HE/s").withStyle(ChatFormatting.YELLOW));
+        }
 
-            // Original-Trefferflaeche des Reglers: (79,38), 36 x 8.
-            if (isHovering(79, 38, 36, 8, mouseX, mouseY)) {
-                dragThrottle = throttleAt(mouseX);
-                com.hbm_m.network.CombustionEngineControlC2SPacket.sendThrottle(
-                        blockEntity.getBlockPos(), dragThrottle);
-                playClick();
-                return true;
+        drawCustomInfoStat(g, x, y, 79, 13, 35, 15, x, y, Component.literal("Ignition"));
+
+        if (isMouseLocked) {
+
+            int setting = (x - leftPos - 81) * 30 / 32;
+            setting = Mth.clamp(setting, 0, 30);
+
+            if (this.setting != setting) {
+                this.setting = setting;
+                com.hbm_m.network.CombustionEngineControlC2SPacket.sendThrottle(engine.getBlockPos(), setting);
             }
         }
-        return super.mouseClicked(mouseX, mouseY, button);
+
+        this.renderTooltip(g, x, y);
     }
 
     @Override
-    public boolean mouseDragged(double mouseX, double mouseY, int button, double dragX, double dragY) {
-        if (dragThrottle >= 0 && blockEntity != null) {
-            int next = throttleAt(mouseX);
-            if (next != dragThrottle) {
-                dragThrottle = next;
-                com.hbm_m.network.CombustionEngineControlC2SPacket.sendThrottle(
-                        blockEntity.getBlockPos(), next);
+    public boolean mouseClicked(double mx, double my, int button) {
+        if (engine != null) {
+            int x = (int) mx, y = (int) my;
+            if (leftPos + 89 <= x && leftPos + 89 + 16 > x && topPos + 13 < y && topPos + 13 + 14 >= y) {
+                playClickSound();
+                com.hbm_m.network.CombustionEngineControlC2SPacket.sendToggle(engine.getBlockPos());
             }
-            return true;
+
+            if (leftPos + 79 <= x && leftPos + 79 + 36 > x && topPos + 38 < y && topPos + 38 + 8 >= y) {
+                playClickSound();
+                isMouseLocked = true;
+            }
         }
-        return super.mouseDragged(mouseX, mouseY, button, dragX, dragY);
+        return super.mouseClicked(mx, my, button);
     }
 
     @Override
-    public boolean mouseReleased(double mouseX, double mouseY, int button) {
-        dragThrottle = -1;
-        return super.mouseReleased(mouseX, mouseY, button);
-    }
-
-    private void playClick() {
-        if (minecraft != null) {
-            minecraft.getSoundManager().play(net.minecraft.client.resources.sounds.SimpleSoundInstance.forUI(
-                    net.minecraft.sounds.SoundEvents.UI_BUTTON_CLICK, 1.0F));
+    public boolean mouseReleased(double mx, double my, int button) {
+        if (isMouseLocked && (button == 0 || button == 1)) {
+            isMouseLocked = false;
         }
+        return super.mouseReleased(mx, my, button);
     }
 
     @Override
-    protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
-        guiGraphics.drawString(font, title, imageWidth / 2 - font.width(title) / 2, 6, 0x404040, false);
-        guiGraphics.drawString(font, playerInventoryTitle, 8, inventoryLabelY, 4210752, false);
+    protected void renderLabels(GuiGraphics g, int mouseX, int mouseY) {
+        g.drawString(font, playerInventoryTitle, 8, this.imageHeight - 96 + 2, 4210752, false);
     }
 
     @Override
-    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        com.hbm_m.client.GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTick);
-        super.render(guiGraphics, mouseX, mouseY, partialTick);
-        renderTooltip(guiGraphics, mouseX, mouseY);
+    protected void renderBg(GuiGraphics g, float interp, int x, int y) {
+        g.blit(TEXTURE, leftPos, topPos, 0, 0, imageWidth, imageHeight);
+        if (engine == null) return;
+
+        ItemStack piston = engine.getInventory().getStackInSlot(MachineCombustionEngineBlockEntity.SLOT_PISTON);
+        int i = MachineCombustionEngineBlockEntity.pistonType(piston.getItem());
+        if (i >= 0) {
+            g.blit(TEXTURE, leftPos + 80, topPos + 51, 176, 52 + i * 12, 25, 12);
+        }
+
+        g.blit(TEXTURE, leftPos + 79 + (setting * 32 / 30), topPos + 38, 192, 15, 4, 8);
+
+        if (engine.isOn) {
+            g.blit(TEXTURE, leftPos + 79, topPos + 13, 192, 0, 35, 15);
+        }
+
+        int p = (int) (engine.getEnergyStored() * 53 / MachineCombustionEngineBlockEntity.maxPower);
+        g.blit(TEXTURE, leftPos + 143, topPos + 69 - p, 176, 52 - p, 16, p);
+
+        engine.tank.renderTank(g, leftPos + 35, topPos + 69, 16, 52);
     }
 }

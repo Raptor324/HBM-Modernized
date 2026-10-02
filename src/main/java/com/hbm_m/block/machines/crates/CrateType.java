@@ -12,7 +12,9 @@ public enum CrateType {
     STEEL(9, 6, 176, 222, "gui_crate_steel"),
     TUNGSTEN(9, 3, 176, 168, "gui_crate_tungsten"),
     TEMPLATE(9, 3, 176, 168, "gui_crate_template"),
-    DESH(13, 8, 248, 256, "gui_crate_desh");
+    DESH(13, 8, 248, 256, "gui_crate_desh"),
+    /** 1:1 {@code ContainerSafe}/{@code GUISafe}: 5x3 ab x = 44. */
+    SAFE(5, 3, 176, 168, "gui_safe");
 
     private final int cols;
     private final int rows;
@@ -40,6 +42,7 @@ public enum CrateType {
 
     /** X-отступ для слотов ящика (позиция первого слота в Menu) */
     public int getCrateSlotStartX() {
+        if (this == SAFE) return 44;
         return 8;
     }
 

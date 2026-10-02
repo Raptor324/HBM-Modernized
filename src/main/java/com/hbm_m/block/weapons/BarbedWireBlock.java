@@ -4,8 +4,6 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.ai.attributes.AttributeInstance;
-import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
@@ -29,30 +27,54 @@ public class BarbedWireBlock extends Block {
         this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH));
     }
 
+    /**
+     * 1:1 {@code BarbedWire.onEntityCollidedWithBlock}: wie Spinnennetz festhalten und bremsen (x/z * 0.15, y * 0.1),
+     * dazu je nach Art 2 Kaktusschaden (+ Feuer 1 s / Gift 5 s Stufe 3 / Saeure auf die Ruestung / Wither 5 s Stufe 5)
+     * bzw. beim Todesdraht 5 Schaden "pc" und Strahlung 5 s Stufe 10. Jeden Tick, keine Ruestungspruefung.
+     */
     @Override
-    public void entityInside(BlockState state, Level level, BlockPos pos, Entity entity) {
-        if (entity instanceof LivingEntity living && !level.isClientSide) {
-            // Замедление как паутина
-            entity.makeStuckInBlock(state, new Vec3(0.25D, 0.05D, 0.25D));
+    public void entityInside(BlockState state, Level level, BlockPos pos, Entity ent) {
+        ent.makeStuckInBlock(state, new Vec3(0.15D, 0.1D, 0.15D));
 
-            // Урон каждые 0.5 сек, если суммарная броня < 8
-            if (level.getGameTime() % 10 == 0) {
-                if (living instanceof Player player && (player.isCreative() || player.isSpectator())) {
-                    return;
-                }
+        if (level.isClientSide) return;
+        Block self = state.getBlock();
 
-                if (getTotalArmorPoints(living) < 8) {
-                    living.hurt(level.damageSources().cactus(), 3.0F);
-                }
+        if (self == com.hbm_m.block.ModBlocks.BARBED_WIRE.get()) {
+            ent.hurt(level.damageSources().cactus(), 2.0F);
+        }
+
+        if (self == com.hbm_m.block.ModBlocks.BARBED_WIRE_FIRE.get()) {
+            ent.hurt(level.damageSources().cactus(), 2.0F);
+            ent.setSecondsOnFire(1);
+        }
+
+        if (self == com.hbm_m.block.ModBlocks.BARBED_WIRE_POISON.get()) {
+            ent.hurt(level.damageSources().cactus(), 2.0F);
+            if (ent instanceof LivingEntity living)
+                living.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.POISON, 5 * 20, 2));
+        }
+
+        if (self == com.hbm_m.block.ModBlocks.BARBED_WIRE_ACID.get()) {
+            ent.hurt(level.damageSources().cactus(), 2.0F);
+            if (ent instanceof Player player) {
+                com.hbm_m.util.ArmorUtil.damageSuit(player, net.minecraft.world.entity.EquipmentSlot.HEAD, 1);
+                com.hbm_m.util.ArmorUtil.damageSuit(player, net.minecraft.world.entity.EquipmentSlot.CHEST, 1);
+                com.hbm_m.util.ArmorUtil.damageSuit(player, net.minecraft.world.entity.EquipmentSlot.LEGS, 1);
+                com.hbm_m.util.ArmorUtil.damageSuit(player, net.minecraft.world.entity.EquipmentSlot.FEET, 1);
             }
         }
-    }
 
-    // Правильный способ посчитать броню в 1.20.1
-    private int getTotalArmorPoints(LivingEntity entity) {
-        AttributeInstance attribute = entity.getAttribute(Attributes.ARMOR);
-        if (attribute == null) return 0;
-        return (int) Math.round(attribute.getValue()); // уже учитывает всю экипировку
+        if (self == com.hbm_m.block.ModBlocks.BARBED_WIRE_WITHER.get()) {
+            ent.hurt(level.damageSources().cactus(), 2.0F);
+            if (ent instanceof LivingEntity living)
+                living.addEffect(new net.minecraft.world.effect.MobEffectInstance(net.minecraft.world.effect.MobEffects.WITHER, 5 * 20, 4));
+        }
+
+        if (self == com.hbm_m.block.ModBlocks.BARBED_WIRE_ULTRADEATH.get()) {
+            ent.hurt(com.hbm_m.damagesource.ModDamageSources.create(level, com.hbm_m.damagesource.ModDamageTypes.PC), 5.0F);
+            if (ent instanceof LivingEntity living)
+                living.addEffect(new net.minecraft.world.effect.MobEffectInstance(com.hbm_m.effect.ModEffects.RADIATION.get(), 5 * 20, 9));
+        }
     }
 
     // Визуальный хитбокс (поменяй под свою модель)

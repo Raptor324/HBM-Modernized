@@ -107,6 +107,12 @@ public final class CrystallizerRecipeGenerator {
                         Items.BLACK_DYE, 1, fluid(ModFluids.SULFURIC_ACID, 250),
                         new ItemStack(Items.SLIME_BALL, 4), MIXING_TIME, 0f)
                 .save(writer, "crystallizer/black_dye_to_slime");
+
+        // Bewehrung + 1000 mB Beton -> Bewehrter Beton (Zeit 10).
+        CrystallizerRecipeBuilder.crystallizerRecipe(
+                        ModBlocks.REBAR.get().asItem(), 1, fluid(ModFluids.CONCRETE, 1_000),
+                        new ItemStack(ModBlocks.CONCRETE_REBAR.get()), 10, 0f)
+                .save(writer, "crystallizer/rebar_to_concrete_rebar");
     }
 
     /** Руда по forge-тегу с перекисью 500 mB, baseTime, productivity 0.05 (базовый случай). */

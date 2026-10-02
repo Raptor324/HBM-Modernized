@@ -1,0 +1,22 @@
+{
+ "variants": {
+  "facing=down": {
+   "model": "hbm_m:block/bomb/charge_dynamite_down"
+  },
+  "facing=up": {
+   "model": "hbm_m:block/bomb/charge_dynamite_up"
+  },
+  "facing=north": {
+   "model": "hbm_m:block/bomb/charge_dynamite_north"
+  },
+  "facing=south": {
+   "model": "hbm_m:block/bomb/charge_dynamite_south"
+  },
+  "facing=west": {
+   "model": "hbm_m:block/bomb/charge_dynamite_west"
+  },
+  "facing=east": {
+   "model": "hbm_m:block/bomb/charge_dynamite_east"
+  }
+ }
+}

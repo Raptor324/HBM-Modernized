@@ -123,7 +123,7 @@ public class UpdateRadarC2SPacket implements C2SPacket {
             }
 
             if (packet.hasLaunch) {
-                radar.handleLaunchCommand(packet.linkSlot, packet.launchAction,
+                radar.handleLaunchCommand(player, packet.linkSlot, packet.launchAction,
                         packet.targetId, packet.targetX, packet.targetZ);
             } else if (packet.buttonId == MachineRadarBlockEntity.ACTION_OPEN_SLOTS) {
                 MenuRegistry.openExtendedMenu(player,

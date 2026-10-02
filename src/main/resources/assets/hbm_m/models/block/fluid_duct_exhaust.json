@@ -1,0 +1,6 @@
+{
+ "parent": "minecraft:block/block",
+ "textures": {
+  "particle": "hbm_m:block/boxduct_exhaust_straight"
+ }
+}

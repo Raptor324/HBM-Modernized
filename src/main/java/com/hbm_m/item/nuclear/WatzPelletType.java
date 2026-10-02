@@ -1,90 +1,63 @@
 package com.hbm_m.item.nuclear;
 
-import java.util.function.DoubleUnaryOperator;
+import java.util.Locale;
+
+import com.hbm_m.util.function.Function;
+import com.hbm_m.util.function.Function.FunctionLinear;
+import com.hbm_m.util.function.Function.FunctionQuadratic;
+import com.hbm_m.util.function.Function.FunctionSqrt;
+import com.hbm_m.util.function.Function.FunctionSqrtFalling;
 
 /**
- * Fuel/absorber archetypes for the Watz reactor, ported from the original
- * {@code ItemWatzPellet.EnumWatzType} (1.7.10) enum-meta item.
- * <p>
- * SCOPE NOTE: the original defined 12 pellet variants driven by a small algebra library
- * ({@code Function}/{@code FunctionLinear}/{@code FunctionSqrt}/{@code FunctionSqrtFalling}/
- * {@code FunctionQuadratic}). Porting that whole function-object hierarchy was judged out of
- * scope; instead this enum captures the same qualitative behaviour (self-igniting fuel,
- * flux-dependent fuel, absorbers with different response curves) with 5 representative types
- * using plain {@link DoubleUnaryOperator} lambdas, each with equivalent burn/heat/absorb shapes.
- * <p>
- * Fields mirror the original: {@code passiveFlux} (base neutron flux emitted regardless of
- * reaction), {@code heatEmission} (heat produced per unit of burn/absorb), {@code mudContent}
- * (waste "Watz" fluid produced per unit of burn/absorb, in mB), {@code yield} (total burn/absorb
- * budget before depletion). {@code burnFunc} converts input flux -> burn rate (null for pure
- * absorbers). {@code heatDiv} throttles burn as stored heat rises (temperature coefficient,
- * null = no throttling). {@code absorbFunc} converts flux -> absorbed heat for
- * moderator/absorber pellets (null for pure fuel).
+ * 1:1 {@code ItemWatzPellet.EnumWatzType} (Watz Isotropic Fuel, Oxidized). Im Port ist jede Metadatenstufe ein
+ * eigenes Item ({@code watz_pellet_<typ>} / {@code watz_pellet_depleted_<typ>}), die Reihenfolge entspricht der
+ * Original-Metadatenreihenfolge.
  */
 public enum WatzPelletType {
 
-    /** Self-igniting, high-output fuel. Analogous to SCHRABIDIUM/HES in the original. */
-    SCHRABIDIUM_OXIDE(
-            2_000D, 20D, 0.0050D, 1_500_000D,
-            flux -> flux * 1.5D,
-            heat -> 1D + Math.sqrt(Math.max(0D, heat)) / 10D,
-            null
-    ),
+    SCHRABIDIUM(0x32FFFF, 0x005C5C, 2_000, 20D, 0.01D, new FunctionLinear(1.5D), new FunctionSqrtFalling(10D), null),
+    HES(0x66DCD6, 0x023933, 1_750, 20D, 0.005D, new FunctionLinear(1.25D), new FunctionSqrtFalling(15D), null),
+    MES(0xCBEADF, 0x28473C, 1_500, 15D, 0.0025D, new FunctionLinear(1.15D), new FunctionSqrtFalling(15D), null),
+    LES(0xABB4A8, 0x0C1105, 1_250, 15D, 0.00125D, new FunctionLinear(1D), new FunctionSqrtFalling(20D), null),
+    HEN(0xA6B2A6, 0x030F03, 0, 10D, 0.0005D, new FunctionSqrt(100), new FunctionSqrtFalling(10D), null),
+    MEU(0xC1C7BD, 0x2B3227, 0, 10D, 0.0005D, new FunctionSqrt(75), new FunctionSqrtFalling(10D), null),
+    MEP(0x9AA3A0, 0x111A17, 0, 15D, 0.0005D, new FunctionSqrt(150), new FunctionSqrtFalling(10D), null),
+    /** Standardabsorber, negativer Koeffizient. */
+    LEAD(0xA6A6B2, 0x03030F, 0, 0, 0.0025D, null, null, new FunctionSqrt(10)),
+    /** Verbesserter Absorber, linear. */
+    BORON(0xBDC8D2, 0x29343E, 0, 0, 0.0025D, null, null, new FunctionLinear(10)),
+    /** Absorber mit positivem Koeffizienten. */
+    DU(0xC1C7BD, 0x2B3227, 0, 0, 0.0025D, null, null, new FunctionQuadratic(1D, 1D).withDiv(100)),
+    NQD(0x4B4B4B, 0x121212, 2_000, 20, 0.01D, new FunctionLinear(2D), new FunctionSqrt(1D / 25D).withOff(25D * 25D), null),
+    NQR(0x2D2D2D, 0x0B0B0B, 2_500, 30, 0.01D, new FunctionLinear(1.5D), new FunctionSqrt(1D / 25D).withOff(25D * 25D), null);
 
-    /** Moderate-output enriched fuel that still self-sustains. Analogous to LES. */
-    LES_OXIDE(
-            1_250D, 15D, 0.0025D, 1_000_000D,
-            flux -> flux * 1.0D,
-            heat -> 1D + Math.sqrt(Math.max(0D, heat)) / 20D,
-            null
-    ),
-
-    /** Needs external neutron flux from neighbours to sustain a reaction. Analogous to HEN/MEU. */
-    NATURAL_URANIUM(
-            0D, 10D, 0.0010D, 800_000D,
-            flux -> Math.sqrt(Math.max(0D, flux) * 75D),
-            heat -> 1D + Math.sqrt(Math.max(0D, heat)) / 10D,
-            null
-    ),
-
-    /** Improved absorber/moderator, roughly linear response. Analogous to BORON. */
-    BORON_CARBIDE(
-            0D, 0D, 0.0025D, 2_000_000D,
-            null, null,
-            flux -> Math.sqrt(Math.max(0D, flux)) * 10D
-    ),
-
-    /** Standard absorber/shielding pellet, sqrt response. Analogous to LEAD. */
-    LEAD_SHIELD(
-            0D, 0D, 0.0025D, 2_000_000D,
-            null, null,
-            flux -> Math.sqrt(Math.max(0D, flux) * 10D)
-    );
-
-    public final double passiveFlux;
-    public final double heatEmission;
+    public double yield = 500_000_000;
+    public final int colorLight;
+    public final int colorDark;
+    /** Schlamm pro Reaktionsfluss. */
     public final double mudContent;
-    public final double yield;
-    public final DoubleUnaryOperator burnFunc;
-    public final DoubleUnaryOperator heatDiv;
-    public final DoubleUnaryOperator absorbFunc;
+    /** Grundfluss. */
+    public final double passive;
+    /** Waerme pro ausgehendem Fluss. */
+    public final double heatEmission;
+    /** Fluss -> Reaktivitaet(0). */
+    public final Function burnFunc;
+    /** Reaktivitaet(0) -> Reaktivitaet(1) abhaengig von der Hitze (Temperaturkoeffizient). */
+    public final Function heatDiv;
+    /** Fluss -> Waerme (Absorption fuer nicht-aktive Pellets). */
+    public final Function absorbFunc;
 
-    WatzPelletType(double passiveFlux, double heatEmission, double mudContent, double yield,
-                   DoubleUnaryOperator burnFunc, DoubleUnaryOperator heatDiv, DoubleUnaryOperator absorbFunc) {
-        this.passiveFlux = passiveFlux;
+    WatzPelletType(int colorLight, int colorDark, double passive, double heatEmission, double mudContent,
+                   Function burnFunction, Function heatDivisor, Function absorbFunction) {
+        this.colorLight = colorLight;
+        this.colorDark = colorDark;
+        this.passive = passive;
         this.heatEmission = heatEmission;
-        this.mudContent = mudContent;
-        this.yield = yield;
-        this.burnFunc = burnFunc;
-        this.heatDiv = heatDiv;
-        this.absorbFunc = absorbFunc;
+        this.mudContent = mudContent / 2D;
+        this.burnFunc = burnFunction;
+        this.heatDiv = heatDivisor;
+        this.absorbFunc = absorbFunction;
     }
 
-    public boolean isFuel() {
-        return burnFunc != null;
-    }
-
-    public boolean isAbsorber() {
-        return absorbFunc != null;
-    }
+    public String id() { return name().toLowerCase(Locale.US); }
 }

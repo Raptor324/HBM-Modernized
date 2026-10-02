@@ -57,6 +57,83 @@ public class ModClothConfig {
         public double absorberHeatConversion = 0.05;
     }
 
+    // ════════════════════════════════════════════════════════════════
+    // Original ServerConfig (1.7.10, JSON-Konfiguration hbmServer.json)
+    // ════════════════════════════════════════════════════════════════
+    /** Original: ServerConfig.DAMAGE_COMPATIBILITY_MODE. */
+    public boolean damageCompatibilityMode = false;
+    /** Original: ServerConfig.MINE_AP_DAMAGE / HE / SHRAP / NUKE / NAVAL. */
+    public float mineApDamage = 10F;
+    public float mineHeDamage = 35F;
+    public float mineShrapDamage = 7.5F;
+    public float mineNukeDamage = 100F;
+    public float mineNavalDamage = 60F;
+    /** Original: ServerConfig.CRATE_OPEN_HELD. */
+    public boolean crateOpenHeld = true;
+    /** Original: ServerConfig.CRATE_KEEP_CONTENTS. */
+    public boolean crateKeepContents = true;
+    /** Original: ServerConfig.ITEM_HAZARD_DROP_TICKRATE. */
+    public int itemHazardDropTickrate = 2;
+    /** Original: ServerConfig.ENABLE_MKU - Ansteckung (contagion) durch das MKU. */
+    public boolean enableMKU = true;
+    /** Original: PotionConfig.potionSickness ("OFF" = 0 Standard, "NORMAL" = 1, "TERRARIA" = 2 -> Dauer x12). */
+    public int potionSickness = 0;
+    /** Original: ServerConfig.STRUCTURE_DEBUG. */
+    public boolean structureDebug = false;
+    /** Original: ServerConfig.AUTOCAL_MAX_CLOCK. */
+    public int autocalMaxClock = 20;
+    /** Original: GeneralConfig.enable528NetherBurn - Spieler brennen im Nether (528-Modus). */
+    public boolean enable528NetherBurn = false;
+    /** Original: GeneralConfig.enableMachineGravity - grosse Maschinen brauchen ein Fundament (checkTilt). */
+    public boolean enableMachineGravity = false;
+    /** Original: GeneralConfig.enable528MachineGravity - dasselbe im 528-Modus (nur wirksam mit enable528). */
+    public boolean enable528MachineGravity = true;
+    /** Original: GeneralConfig.enableMycelium - Toedliches Myzel breitet sich aus. */
+    public boolean enableMycelium = false;
+    /** Original: RadiationConfig.cleanupDeadDirt - tote Erde/Myzel werden sofort wieder zu Erde. */
+    public boolean cleanupDeadDirt = false;
+    /** Original: GeneralConfig.enable528ColtanDeposit - Coltan-Lagerstaette um einen Seed-Punkt. */
+    public boolean enable528ColtanDeposit = true;
+    /** Original: GeneralConfig.enable528ColtanSpawn - Coltan zusaetzlich als zufaellige Ader ueberall. */
+    public boolean enable528ColtanSpawn = false;
+    /** Original: GeneralConfig.coltanRate - Adern pro Chunk bei enable528ColtanSpawn. */
+    public int coltanRate = 2;
+    /** Original GeneralConfig.enableExtendedLogging (Granaten, Bomben ins Log). */
+    public boolean enableExtendedLogging = false;
+    /** Original ToolConfig (CATEGORY_TOOLS 11.xx), Standardwerte aus loadFromConfig. */
+    public int toolRecursionDepth = 1000;
+    public boolean toolRecursiveStone = false;
+    public boolean toolRecursiveNetherrack = false;
+    public boolean toolAbilityHammer = true;
+    public boolean toolAbilityVein = true;
+    public boolean toolAbilityLuck = true;
+    public boolean toolAbilitySilk = true;
+    public boolean toolAbilityFurnace = true;
+    public boolean toolAbilityShredder = true;
+    public boolean toolAbilityCentrifuge = true;
+    public boolean toolAbilityCrystallizer = true;
+    public boolean toolAbilityMercury = true;
+    public boolean toolAbilityExplosion = true;
+    /** Original ClientConfig.TOOL_HUD_INDICATOR_X / _Y. */
+    public int toolHudIndicatorX = 0;
+    public int toolHudIndicatorY = 0;
+    /** Original ClientConfig.RENDER_REBAR_SIMPLE (nur drei Staebe, wirkt nach Neuladen der Ressourcen) / RENDER_REBAR_LIMIT. */
+    public boolean renderRebarSimple = false;
+    /** Original ClientConfig.RENDER_REEDS: Schilf bis zum Gewaessergrund zeichnen. */
+    public boolean renderReeds = true;
+    public int renderRebarLimit = 250;
+    /** Original: generalOverride (1-18 erzwingt die Polaroid-Zahl, 0 = zufaellig). */
+    public int polaroidOverride = 0;
+
+    /** Original WorldConfig (Kategorie METEOR), Werte wie nach dem Laden der Originalkonfig. */
+    public boolean enableMeteorStrikes = true;
+    public boolean enableMeteorShowers = true;
+    public boolean enableMeteorTails = true;
+    public boolean enableSpecialMeteors = true;
+    public int meteorStrikeChance = 20 * 60 * 60 * 5;
+    public int meteorShowerChance = 20 * 60 * 15;
+    public int meteorShowerDuration = 20 * 60 * 30;
+
     public boolean enableRadiation = true;
     public boolean enableChunkRads = true;
 
@@ -114,6 +191,10 @@ public class ModClothConfig {
 
     /** Взрыв антиматерии при падении ячейки/пеллета (WeaponConfig.dropCell). */
     public boolean dropCell = true;
+    /** Original WeaponConfig.dropCrys: Xen-Kristalle verschieben beim Fallenlassen Bloecke. */
+    public boolean dropCrys = true;
+    /** Original WeaponConfig.dropDead: Totmann-Sprengsatz explodiert beim Fallenlassen. */
+    public boolean dropDead = true;
 
     // ════════════════════════════════════════════════════════════════
     // Игрок (радиация)

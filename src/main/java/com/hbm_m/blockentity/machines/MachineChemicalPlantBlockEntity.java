@@ -20,7 +20,6 @@ import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.inventory.menu.MachineChemicalPlantMenu;
 import com.hbm_m.item.fekal_electric.ItemCreativeBattery;
-import com.hbm_m.item.industrial.ItemBlueprintFolder;
 import com.hbm_m.item.industrial.ItemMachineUpgrade;
 import com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType;
 import com.hbm_m.module.machine.MachineModuleChemplant;
@@ -252,8 +251,9 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity
 
         if (entity.module.getDidProcess()) {
             ItemStack maybeSword = entity.inventory.getStackInSlot(SLOT_BATTERY);
-            if (!maybeSword.isEmpty() && maybeSword.is(com.hbm_m.item.ModItems.METEORITE_SWORD.get())) {
-                entity.inventory.setStackInSlot(SLOT_BATTERY, new ItemStack(com.hbm_m.item.ModItems.METEORITE_SWORD_SEARED.get()));
+            // Original: meteorite_sword_machined -> meteorite_sword_treated im Batterieplatz
+            if (!maybeSword.isEmpty() && maybeSword.is(com.hbm_m.item.ModItems.METEORITE_SWORD_MACHINED.get())) {
+                entity.inventory.setStackInSlot(SLOT_BATTERY, new ItemStack(com.hbm_m.item.ModItems.METEORITE_SWORD_TREATED.get()));
                 dirty = true;
             }
         }
@@ -463,10 +463,12 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity
         if (slot == SLOT_BATTERY) {
             if (stack.isEmpty()) return false;
             if (stack.getItem() instanceof ItemCreativeBattery) return true;
+            // Original-GUI prueft den Platz nicht; die Schwertkette legt das Schwert hier ab
+            if (stack.is(com.hbm_m.item.ModItems.METEORITE_SWORD_MACHINED.get())) return true;
             return isEnergyProviderItem(stack);
         }
         if (slot == SLOT_SCHEMATIC) {
-            return stack.getItem() instanceof ItemBlueprintFolder;
+            return stack.getItem() instanceof com.hbm_m.item.industrial.ItemBlueprints;
         }
         if (slot >= SLOT_UPGRADE_START && slot <= SLOT_UPGRADE_END) {
             return stack.getItem() instanceof ItemMachineUpgrade;
@@ -495,7 +497,7 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity
     public List<ChemicalPlantRecipe> getAvailableRecipes() {
         if (level == null) return List.of();
         ItemStack folder = inventory.getStackInSlot(SLOT_SCHEMATIC);
-        String installedPool = ItemBlueprintFolder.getBlueprintPool(folder);
+        String installedPool = com.hbm_m.item.industrial.ItemBlueprints.getBlueprintPool(folder);
         List<ChemicalPlantRecipe> all = com.hbm_m.recipe.index.ModRecipeIndex.of(level.getRecipeManager())
                 .getAll(ChemicalPlantRecipe.Type.INSTANCE);
         return all.stream().filter(r -> {

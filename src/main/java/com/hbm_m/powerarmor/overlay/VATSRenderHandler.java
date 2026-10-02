@@ -43,7 +43,7 @@ public class VATSRenderHandler {
         if (!ModPowerArmorItem.hasFSBArmor(player)) return;
 
         ItemStack chest = player.getItemBySlot(EquipmentSlot.CHEST);
-        if (!(chest.getItem() instanceof ModPowerArmorItem armorItem) || !armorItem.getSpecs().hasVats) return;
+        if (!(chest.getItem() instanceof com.hbm_m.powerarmor.ModArmorFSB armorItem) || !armorItem.vats) return;
 
         // В радиусе
         int chunks = ModClothConfig.get().vatsRenderDistanceChunks;

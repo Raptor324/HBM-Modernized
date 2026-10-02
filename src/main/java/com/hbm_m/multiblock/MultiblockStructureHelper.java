@@ -63,6 +63,20 @@ public class MultiblockStructureHelper {
     }
 
     /**
+     * Original {@code BlockDummyable.safeRem = true; ...; safeRem = false}: Teile entfernen, ohne dass der Rest der
+     * Struktur samt Kern mit abgerissen wird (z.B. der geplatzte Boiler).
+     */
+    public static void runSafeRemove(Runnable action) {
+        boolean prev = IS_DESTROYING.get();
+        IS_DESTROYING.set(true);
+        try {
+            action.run();
+        } finally {
+            IS_DESTROYING.set(prev);
+        }
+    }
+
+    /**
      * Окно (в тиках) подавления взаимодействия со свежеустановленной структурой.
      *
      * <p>Ваниль повторяет пакет {@code UseItemOn} каждые 4 тика, пока зажата ПКМ. Из-за

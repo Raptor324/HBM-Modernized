@@ -1,6 +1,8 @@
 package com.hbm_m.inventory.menu;
 
-import com.hbm_m.blockentity.machines.MachineCompressorBlockEntity;
+import com.hbm_m.blockentity.machines.MachineCompressorBaseBlockEntity;
+import com.hbm_m.inventory.ModItemStackHandlerContainer;
+import com.hbm_m.platform.DummyItemStackHandler;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
@@ -10,80 +12,88 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
-//? if forge {
-import net.minecraftforge.items.SlotItemHandler;
-//?} elif neoforge {
-/*import net.neoforged.neoforge.items.SlotItemHandler;
-*///?}
 
-/** Slot-Koordinaten 1:1 aus {@code ContainerCompressor} (1.7.10 Original): Fluid-ID (17,72),
- *  Batterie (152,72). Upgrade-Slots des Originals entfallen (siehe
- *  {@link MachineCompressorBlockEntity}). */
+/** 1:1 {@code ContainerCompressor}: Fluidkennung, Batterie, zwei Upgrades - fuer beide Kompressoren. */
 public class MachineCompressorMenu extends AbstractContainerMenu {
 
-    private final MachineCompressorBlockEntity blockEntity;
-    private static final int MACHINE_SLOTS = 2;
+    private static final int MACHINE_SLOTS = 4;
+
+    private final MachineCompressorBaseBlockEntity blockEntity;
 
     public MachineCompressorMenu(int id, Inventory inv, FriendlyByteBuf buf) {
         this(id, inv, getBlockEntity(inv, buf));
     }
 
-    public MachineCompressorMenu(int id, Inventory inv, MachineCompressorBlockEntity be) {
+    public MachineCompressorMenu(int id, Inventory inv, MachineCompressorBaseBlockEntity be) {
         super(ModMenuTypes.COMPRESSOR_MENU.get(), id);
         this.blockEntity = be;
 
-        var handler = be.getInventory();
-        addSlot(new SlotItemHandler(handler, MachineCompressorBlockEntity.SLOT_FLUID_ID, 17, 72));
-        addSlot(new SlotItemHandler(handler, MachineCompressorBlockEntity.SLOT_BATTERY, 152, 72));
+        var tile = new ModItemStackHandlerContainer(
+                be != null ? be.getInventory() : new DummyItemStackHandler(MACHINE_SLOTS),
+                be != null ? be::setChanged : null);
 
-        for (int row = 0; row < 3; row++) {
-            for (int col = 0; col < 9; col++) {
-                addSlot(new Slot(inv, col + row * 9 + 9, 8 + col * 18, 122 + row * 18));
+        // Fluidkennung
+        addSlot(new Slot(tile, 0, 17, 72));
+        // Batterie
+        addSlot(new Slot(tile, 1, 152, 72));
+        // Upgrades
+        addSlot(new Slot(tile, 2, 52, 72));
+        addSlot(new Slot(tile, 3, 70, 72));
+
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 9; j++) {
+                addSlot(new Slot(inv, j + i * 9 + 9, 8 + j * 18, 122 + i * 18));
             }
         }
-        for (int col = 0; col < 9; col++) {
-            addSlot(new Slot(inv, col, 8 + col * 18, 180));
+        for (int i = 0; i < 9; i++) {
+            addSlot(new Slot(inv, i, 8 + i * 18, 180));
         }
     }
 
-    public static MachineCompressorMenu create(int id, Inventory inv, MachineCompressorBlockEntity be) {
+    public static MachineCompressorMenu create(int id, Inventory inv, MachineCompressorBaseBlockEntity be) {
         return new MachineCompressorMenu(id, inv, be);
     }
 
-    private static MachineCompressorBlockEntity getBlockEntity(Inventory inv, FriendlyByteBuf buf) {
+    private static MachineCompressorBaseBlockEntity getBlockEntity(Inventory inv, FriendlyByteBuf buf) {
         BlockPos pos = buf.readBlockPos();
         BlockEntity be = inv.player.level().getBlockEntity(pos);
-        if (be instanceof MachineCompressorBlockEntity c) return c;
-        throw new IllegalStateException("No MachineCompressorBlockEntity at " + pos);
+        if (be instanceof MachineCompressorBaseBlockEntity c) return c;
+        if (inv.player.level().isClientSide) return null;
+        throw new IllegalStateException("No compressor at " + pos);
     }
 
-    public MachineCompressorBlockEntity getBlockEntity() { return blockEntity; }
+    public MachineCompressorBaseBlockEntity getBlockEntity() { return blockEntity; }
 
     @Override
     public boolean stillValid(Player player) {
-        return blockEntity.getLevel() == player.level()
+        return blockEntity != null && blockEntity.getLevel() == player.level()
             && player.distanceToSqr(blockEntity.getBlockPos().getCenter()) <= 64;
     }
 
     @Override
     public ItemStack quickMoveStack(Player player, int index) {
-        ItemStack result = ItemStack.EMPTY;
-        Slot slot = slots.get(index);
-        if (slot == null || !slot.hasItem()) return result;
+        ItemStack var3 = ItemStack.EMPTY;
+        Slot var4 = slots.get(index);
 
-        ItemStack stack = slot.getItem();
-        result = stack.copy();
+        if (var4 != null && var4.hasItem()) {
+            ItemStack var5 = var4.getItem();
+            var3 = var5.copy();
 
-        if (index < MACHINE_SLOTS) {
-            if (!moveItemStackTo(stack, MACHINE_SLOTS, slots.size(), true)) return ItemStack.EMPTY;
-        } else {
-            if (!moveItemStackTo(stack, MachineCompressorBlockEntity.SLOT_BATTERY, MachineCompressorBlockEntity.SLOT_BATTERY + 1, false)
-             && !moveItemStackTo(stack, MachineCompressorBlockEntity.SLOT_FLUID_ID, MachineCompressorBlockEntity.SLOT_FLUID_ID + 1, false))
-                return ItemStack.EMPTY;
+            if (index <= 3) {
+                if (!moveItemStackTo(var5, MACHINE_SLOTS, slots.size(), true)) return ItemStack.EMPTY;
+            } else {
+                if (var3.getItem() instanceof com.hbm_m.api.item.IBatteryItem) {
+                    if (!moveItemStackTo(var5, 1, 2, false)) return ItemStack.EMPTY;
+                } else if (var3.getItem() instanceof com.hbm_m.interfaces.IItemFluidIdentifier) {
+                    if (!moveItemStackTo(var5, 0, 1, false)) return ItemStack.EMPTY;
+                } else {
+                    if (!moveItemStackTo(var5, 2, 4, false)) return ItemStack.EMPTY;
+                }
+            }
+
+            if (var5.isEmpty()) var4.set(ItemStack.EMPTY);
+            else var4.setChanged();
         }
-
-        if (stack.isEmpty()) slot.set(ItemStack.EMPTY);
-        else slot.setChanged();
-        return result;
+        return var3;
     }
 }

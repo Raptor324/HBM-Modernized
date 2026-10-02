@@ -14,7 +14,6 @@ import com.hbm_m.interfaces.IMultiblockSidedIO;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.inventory.menu.MachineAdvancedAssemblerMenu;
 import com.hbm_m.item.fekal_electric.ItemCreativeBattery;
-import com.hbm_m.item.industrial.ItemBlueprintFolder;
 import com.hbm_m.module.machine.MachineModuleAdvancedAssembler;
 import com.hbm_m.multiblock.MultiblockFrameHelper;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
@@ -205,10 +204,12 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
     @Override
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
         if (slot == ENERGY_SLOT) {
+            // Original-GUI prueft den Platz nicht; die Schwertkette legt das Schwert hier ab
+            if (getClass() == MachineAdvancedAssemblerBlockEntity.class && stack.is(com.hbm_m.item.ModItems.METEORITE_SWORD_ALLOYED.get())) return true;
             return isEnergyProviderItem(stack);
         }
         if (slot == BLUEPRINT_FOLDER_SLOT) {
-            return stack.getItem() instanceof ItemBlueprintFolder;
+            return stack.getItem() instanceof com.hbm_m.item.industrial.ItemBlueprints;
         }
         if (slot >= OUTPUT_SLOT_START && slot <= OUTPUT_SLOT_END) {
             return false;
@@ -355,7 +356,7 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
                 if (currentRecipe != null && wasCrafting) {
                     String recipePool = currentRecipe.getBlueprintPool();
                     if (recipePool != null && !recipePool.isEmpty()) {
-                        String currentPool = ItemBlueprintFolder.getBlueprintPool(blueprintStack);
+                        String currentPool = com.hbm_m.item.industrial.ItemBlueprints.getBlueprintPool(blueprintStack);
                         if (!recipePool.equals(currentPool)) {
                             selectedRecipeId = null;
                             cachedRecipe = null;
@@ -380,6 +381,12 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
 
             assemblerModule.update(1.0, 1.0, true, blueprintStack);
             boolean isCraftingNow = assemblerModule.isProcessing();
+
+            // Original TileEntityMachineAssemblyMachine: meteorite_sword_alloyed -> meteorite_sword_machined im Batterieplatz
+            if (isCraftingNow && getClass() == MachineAdvancedAssemblerBlockEntity.class
+                    && inventory.getStackInSlot(ENERGY_SLOT).is(com.hbm_m.item.ModItems.METEORITE_SWORD_ALLOYED.get())) {
+                inventory.setStackInSlot(ENERGY_SLOT, new ItemStack(com.hbm_m.item.ModItems.METEORITE_SWORD_MACHINED.get()));
+            }
 
             if (isCraftingNow && assemblerModule.getPreferredRecipe() != null) {
                 ResourceLocation autoSelectedRecipeId = RecipeHooks.recipeId(level.getRecipeManager(), AssemblerRecipe.Type.INSTANCE, assemblerModule.getPreferredRecipe());
@@ -506,7 +513,7 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
     public List<AssemblerRecipe> getAvailableRecipes() {
         if (level == null) return List.of();
         ItemStack folderStack = getBlueprintFolder();
-        String activePool = ItemBlueprintFolder.getBlueprintPool(folderStack);
+        String activePool = com.hbm_m.item.industrial.ItemBlueprints.getBlueprintPool(folderStack);
         List<AssemblerRecipe> allRecipes = com.hbm_m.recipe.index.ModRecipeIndex.of(level.getRecipeManager())
                 .getAll(AssemblerRecipe.Type.INSTANCE);
         return allRecipes.stream()

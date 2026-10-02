@@ -27,6 +27,13 @@ public final class BlastFurnaceRecipeGenerator {
 
     public static void generate(Consumer<FinishedRecipe> writer) {
         // IRON + COAL -> steel x1
+        // BlastFurnaceRecipes: Benzinkanister + Schleimball = Napalmkanister
+        BlastFurnaceRecipeBuilder.blastFurnaceRecipe(
+                new ItemStack(ModItems.CANISTER_NAPALM.get()),
+                net.minecraftforge.common.crafting.StrictNBTIngredient.of(com.hbm_m.item.liquids.ItemFluidTank.make(ModItems.CANISTER_FULL.get(), com.hbm_m.inventory.fluid.ModFluids.GASOLINE.getSource(), 1)),
+                Ingredient.of(net.minecraftforge.common.Tags.Items.SLIMEBALLS)
+        ).save(writer, "blast_furnace/canister_napalm");
+
         BlastFurnaceRecipeBuilder.blastFurnaceRecipe(
                 new ItemStack(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.INGOT)),
                 Ingredient.of(Items.IRON_INGOT),

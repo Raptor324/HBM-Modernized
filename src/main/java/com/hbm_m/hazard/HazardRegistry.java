@@ -61,7 +61,15 @@ public class HazardRegistry {
                         ResourceLocation.fromNamespaceAndPath("forge", "ingots/sodium"));
             //?}
 
+    /** Original registerTrafos: NBT-Strahlung und Behaelterinhalt (LBSM "safe crates" gibt es im Port nicht). */
+    public static void registerTrafos() {
+        HazardSystem.trafos.add(new com.hbm_m.hazard.transformer.HazardTransformerRadiationNBT());
+        HazardSystem.trafos.add(new com.hbm_m.hazard.transformer.HazardTransformerRadiationContainer());
+    }
+
     public static void registerItems() {
+        // HazardRegistry: holotape_image HOLO_RESTORED = Digamma 1
+        HazardSystem.register(ModItems.HOLOTAPE_IMAGE_RESTORED.get(), new HazardData(new HazardEntry(DIGAMMA, 1F)));
         for (ModMaterials ingot : ModMaterials.values()) {
             switch (ingot) {
                 case PU_MIX -> HazardSystem.register(ModMaterialItems.item(ingot, MaterialShape.INGOT), new HazardData(
@@ -278,6 +286,67 @@ public class HazardRegistry {
         registerOtherWastePair(ModItems.WASTE_SCHRABIDIUM.get(), "waste_schrabidium_cooling", 15f);
         registerOtherWastePair(ModItems.WASTE_ZFB_MOX.get(), "waste_zfb_mox_cooling", 5f);
 
+        // Platten-Abfall des Forschungsreaktors: wst * ingot * x, Ra/Pu-Be als Strahlenquelle (Original registerRadSourceWaste).
+        registerWasteBase(ModItems.WASTE_PLATE_U233.get(), "waste_plate_u233_cooling", 15f * 13F, false);
+        registerWasteBase(ModItems.WASTE_PLATE_U235.get(), "waste_plate_u235_cooling", 15f * 10F, false);
+        registerWasteBase(ModItems.WASTE_PLATE_MOX.get(), "waste_plate_mox_cooling", 15f * 16F, false);
+        registerWasteBase(ModItems.WASTE_PLATE_PU239.get(), "waste_plate_pu239_cooling", 15f * 13.5F, false);
+        registerWasteBase(ModItems.WASTE_PLATE_SA326.get(), "waste_plate_sa326_cooling", 15f * 10F, false);
+        registerWasteBase(ModItems.WASTE_PLATE_RA226BE.get(), "waste_plate_ra226be_cooling", 75F * 3F * 0.1F * 3, true);
+        registerWasteBase(ModItems.WASTE_PLATE_PU238BE.get(), "waste_plate_pu238be_cooling", 10F * 3F * 0.1F * 1, true);
+
+        // ZIRNOX (Original: rod_dual = 1.0, wst = 15)
+        registerZirnox(ModItems.ROD_ZIRNOX_NATURAL_URANIUM_FUEL.get(), 0.35F, 15F * 11.5F);
+        registerZirnox(ModItems.ROD_ZIRNOX_URANIUM_FUEL.get(), 0.5F, 15F * 10F);
+        registerZirnox(ModItems.ROD_ZIRNOX_TH232.get(), 0.1F, 1.75F);
+        registerZirnox(ModItems.ROD_ZIRNOX_THORIUM_FUEL.get(), 1.75F, 15F * 7.5F);
+        registerZirnox(ModItems.ROD_ZIRNOX_MOX_FUEL.get(), 2.5F, 15F * 10F);
+        registerZirnox(ModItems.ROD_ZIRNOX_PLUTONIUM_FUEL.get(), 4.25F, 15F * 12.5F);
+        registerZirnox(ModItems.ROD_ZIRNOX_U233_FUEL.get(), 5.0F, 15F * 10F);
+        registerZirnox(ModItems.ROD_ZIRNOX_U235_FUEL.get(), 1.0F, 15F * 11F);
+        registerZirnox(ModItems.ROD_ZIRNOX_LES_FUEL.get(), 5.85F, 15F * 15F);
+        registerZirnox(ModItems.ROD_ZIRNOX_LITHIUM.get(), 0, 0.001F);
+        registerZirnox(ModItems.ROD_ZIRNOX_ZFB_MOX.get(), 2.5F, 15F * 5F);
+        HazardSystem.register(ModItems.ROD_ZIRNOX_NATURAL_URANIUM_FUEL_DEPLETED.get(), new HazardData(new HazardEntry(RADIATION, 15F * 11.5F)));
+        HazardSystem.register(ModItems.ROD_ZIRNOX_URANIUM_FUEL_DEPLETED.get(), new HazardData(new HazardEntry(RADIATION, 15F * 10F)));
+        HazardSystem.register(ModItems.ROD_ZIRNOX_THORIUM_FUEL_DEPLETED.get(), new HazardData(new HazardEntry(RADIATION, 15F * 7.5F)));
+        HazardSystem.register(ModItems.ROD_ZIRNOX_MOX_FUEL_DEPLETED.get(), new HazardData(new HazardEntry(RADIATION, 15F * 10F)));
+        HazardSystem.register(ModItems.ROD_ZIRNOX_PLUTONIUM_FUEL_DEPLETED.get(), new HazardData(new HazardEntry(RADIATION, 15F * 12.5F)));
+        HazardSystem.register(ModItems.ROD_ZIRNOX_U233_FUEL_DEPLETED.get(), new HazardData(new HazardEntry(RADIATION, 15F * 10F)));
+        HazardSystem.register(ModItems.ROD_ZIRNOX_U235_FUEL_DEPLETED.get(), new HazardData(new HazardEntry(RADIATION, 15F * 11F)));
+        HazardSystem.register(ModItems.ROD_ZIRNOX_LES_FUEL_DEPLETED.get(), new HazardData(new HazardEntry(RADIATION, 15F * 15F), new HazardEntry(BLINDING, 20F)));
+        HazardSystem.register(ModItems.ROD_ZIRNOX_TRITIUM.get(), new HazardData(new HazardEntry(RADIATION, 0.001F)));
+        HazardSystem.register(ModItems.ROD_ZIRNOX_ZFB_MOX_DEPLETED.get(), new HazardData(new HazardEntry(RADIATION, 15F * 5F)));
+
+        // Watz-Pellets (Original :444-453, ingot = 1)
+        watzPellet(com.hbm_m.item.nuclear.WatzPelletType.SCHRABIDIUM, 15.0F * 4);
+        watzPellet(com.hbm_m.item.nuclear.WatzPelletType.HES, 5.85F * 4);
+        watzPellet(com.hbm_m.item.nuclear.WatzPelletType.MES, 5.85F * 4);
+        watzPellet(com.hbm_m.item.nuclear.WatzPelletType.LES, 5.85F * 4);
+        watzPellet(com.hbm_m.item.nuclear.WatzPelletType.HEN, 2.5F * 4);
+        watzPellet(com.hbm_m.item.nuclear.WatzPelletType.MEU, 0.5F * 4);
+        watzPellet(com.hbm_m.item.nuclear.WatzPelletType.MEP, 6.25F * 4);
+        watzPellet(com.hbm_m.item.nuclear.WatzPelletType.DU, 0.25F * 4);
+        watzPellet(com.hbm_m.item.nuclear.WatzPelletType.NQD, 1.0F * 4);
+        watzPellet(com.hbm_m.item.nuclear.WatzPelletType.NQR, 5.0F * 4);
+
+        // PWR (Original registerPWRFuel: Brennstab base, heiss base*10 + HOT 5, abgebrannt base*10)
+        registerPWR(com.hbm_m.item.nuclear.PWRFuelType.MEU, 0.5F * 0.5F * 2);
+        registerPWR(com.hbm_m.item.nuclear.PWRFuelType.HEU233, 5.0F * 0.5F * 2);
+        registerPWR(com.hbm_m.item.nuclear.PWRFuelType.HEU235, 1.0F * 0.5F * 2);
+        registerPWR(com.hbm_m.item.nuclear.PWRFuelType.MEN, 1.5F * 0.5F * 2);
+        registerPWR(com.hbm_m.item.nuclear.PWRFuelType.HEN237, 2.5F * 0.5F * 2);
+        registerPWR(com.hbm_m.item.nuclear.PWRFuelType.MOX, 2.5F * 0.5F * 2);
+        registerPWR(com.hbm_m.item.nuclear.PWRFuelType.MEP, 6.25F * 0.5F * 2);
+        registerPWR(com.hbm_m.item.nuclear.PWRFuelType.HEP239, 5.0F * 0.5F * 2);
+        registerPWR(com.hbm_m.item.nuclear.PWRFuelType.HEP241, 25.0F * 0.5F * 2);
+        registerPWR(com.hbm_m.item.nuclear.PWRFuelType.MEA, 9.0F * 0.5F * 2);
+        registerPWR(com.hbm_m.item.nuclear.PWRFuelType.HEA242, 9.5F * 0.5F * 2);
+        registerPWR(com.hbm_m.item.nuclear.PWRFuelType.HES326, 15.0F * 0.5F * 2);
+        registerPWR(com.hbm_m.item.nuclear.PWRFuelType.HES327, 17.5F * 0.5F * 2);
+        registerPWR(com.hbm_m.item.nuclear.PWRFuelType.BFB_AM_MIX, 9.0F * 0.5F);
+        registerPWR(com.hbm_m.item.nuclear.PWRFuelType.BFB_PU241, 25.0F * 0.5F);
+
         // plate fuel — base radiation only (GIT registerOtherFuel, no FuelRadiation modifier yet)
         HazardSystem.register(ModItems.PLATE_FUEL_U233.get(), new HazardData(
                 new HazardEntry(RADIATION, 5f)));
@@ -356,6 +425,34 @@ public class HazardRegistry {
      * охлаждающееся (meta 1, предмет из PartTabMetaItems) = base + HOT 5,
      * где base = wst(15) * billet(0.5) * mult.
      */
+    /** Original registerOtherWaste / registerRadSourceWaste mit fertigem Basiswert. */
+    private static void registerWasteBase(Item fresh, String coolingId, float base, boolean radSource) {
+        HazardSystem.register(fresh, new HazardData(new HazardEntry(RADIATION, radSource ? base : base * 0.075F)));
+        Item cooling = com.hbm_m.item.PartTabMetaItems.itemOrNull(coolingId);
+        if (cooling != null) {
+            HazardSystem.register(cooling, new HazardData(new HazardEntry(RADIATION, base), new HazardEntry(HOT, 5F)));
+        }
+    }
+
+    private static void watzPellet(com.hbm_m.item.nuclear.WatzPelletType type, float rad) {
+        HazardSystem.register(ModItems.WATZ_PELLET.get(type).get(), new HazardData(new HazardEntry(RADIATION, rad)));
+    }
+
+    /** Original registerOtherFuel(rod_zirnox, meta, base, target, false). */
+    private static void registerZirnox(Item rod, float base, float target) {
+        HazardSystem.register(rod, new HazardData(new HazardEntry(RADIATION, base).addMod(new com.hbm_m.hazard.modifier.HazardModifierFuelRadiation(target))));
+    }
+
+    /** Original registerPWRFuel. Die heissen Staebe sind im Port eigene Items (pwr_fuel_*_hot). */
+    private static void registerPWR(com.hbm_m.item.nuclear.PWRFuelType type, float baseRad) {
+        String n = type.name().toLowerCase(java.util.Locale.ROOT);
+        Item fuel = net.minecraft.core.registries.BuiltInRegistries.ITEM.get(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(com.hbm_m.lib.RefStrings.MODID, "pwr_fuel_" + n));
+        Item hot = net.minecraft.core.registries.BuiltInRegistries.ITEM.get(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(com.hbm_m.lib.RefStrings.MODID, "pwr_fuel_" + n + "_hot"));
+        if (fuel != net.minecraft.world.item.Items.AIR) HazardSystem.register(fuel, new HazardData(new HazardEntry(RADIATION, baseRad)));
+        if (hot != net.minecraft.world.item.Items.AIR) HazardSystem.register(hot, new HazardData(new HazardEntry(RADIATION, baseRad * 10), new HazardEntry(HOT, 5)));
+        HazardSystem.register(ModItems.PWR_FUEL_DEPLETED.get(type).get(), new HazardData(new HazardEntry(RADIATION, baseRad * 10)));
+    }
+
     private static void registerOtherWastePair(Item fresh, String coolingId, float mult) {
         float base = 15f * 0.5f * mult;
         if (fresh != null) {

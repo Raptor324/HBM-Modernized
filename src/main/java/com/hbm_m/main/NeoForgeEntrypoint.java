@@ -3,7 +3,6 @@
 
 import com.hbm_m.capability.ModCapabilities;
 import com.hbm_m.capability.ModAttachments;
-import com.hbm_m.event.BombDefuser;
 import com.hbm_m.event.CrateBreaker;
 import com.hbm_m.handler.MobGearHandler;
 import com.hbm_m.inventory.fluid.ModFluids;

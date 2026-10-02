@@ -1,0 +1,16 @@
+{
+ "variants": {
+  "facing=north": {
+   "model": "hbm_m:block/lantern_particle"
+  },
+  "facing=south": {
+   "model": "hbm_m:block/lantern_particle"
+  },
+  "facing=west": {
+   "model": "hbm_m:block/lantern_particle"
+  },
+  "facing=east": {
+   "model": "hbm_m:block/lantern_particle"
+  }
+ }
+}

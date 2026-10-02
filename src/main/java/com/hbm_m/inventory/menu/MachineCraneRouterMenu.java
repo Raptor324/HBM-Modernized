@@ -9,6 +9,7 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.ClickType;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -33,13 +34,7 @@ public class MachineCraneRouterMenu extends AbstractContainerMenu {
                 int side = col * 3 + row;
                 for (int k = 0; k < 5; k++) {
                     int slotIndex = side * 5 + k;
-                    this.addSlot(new Slot(container, slotIndex, 34 + k * 18 + col * 98, 17 + row * 26) {
-                        @Override
-                        public void set(ItemStack stack) {
-                            super.set(stack);
-                            blockEntity.initPattern(slotIndex, stack);
-                        }
-                    });
+                    this.addSlot(new PatternSlot(container, slotIndex, 34 + k * 18 + col * 98, 17 + row * 26));
                 }
             }
         }
@@ -81,6 +76,14 @@ public class MachineCraneRouterMenu extends AbstractContainerMenu {
     }
 
     /** Filter slots are never shift-click transferable, matching the original. */
+    /** Original {@code ContainerCraneRouter.slotClick}: alle 30 Filterplaetze als Geister. */
+    @Override
+    public void clicked(int slotId, int button, ClickType clickType, Player player) {
+        if (blockEntity != null && PatternSlot.handle(this, slotId, button, clickType, player, 0, 29,
+                blockEntity::nextMode, (i, s) -> blockEntity.initPattern(s, i))) return;
+        super.clicked(slotId, button, clickType, player);
+    }
+
     @Override
     public ItemStack quickMoveStack(Player player, int index) {
         return ItemStack.EMPTY;

@@ -1,0 +1,22 @@
+{
+ "variants": {
+  "facing=down": {
+   "model": "hbm_m:block/bomb/charge_miner_down"
+  },
+  "facing=up": {
+   "model": "hbm_m:block/bomb/charge_miner_up"
+  },
+  "facing=north": {
+   "model": "hbm_m:block/bomb/charge_miner_north"
+  },
+  "facing=south": {
+   "model": "hbm_m:block/bomb/charge_miner_south"
+  },
+  "facing=west": {
+   "model": "hbm_m:block/bomb/charge_miner_west"
+  },
+  "facing=east": {
+   "model": "hbm_m:block/bomb/charge_miner_east"
+  }
+ }
+}

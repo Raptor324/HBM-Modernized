@@ -3,7 +3,6 @@ package com.hbm_m.item.gasmask;
 import java.util.List;
 
 import com.hbm_m.handler.ArmorRegistry;
-import com.hbm_m.item.ITooltipProvider;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.sound.ModSounds;
 
@@ -25,7 +24,7 @@ import org.jetbrains.annotations.Nullable;
  * прицепленную к шлему как модификация), старый фильтр возвращается в руку.
  * Порт {@link com.hbm.items.tool.ItemFilter} (1.7.10).
  */
-public class ItemGasMaskFilter extends Item implements ITooltipProvider {
+public class ItemGasMaskFilter extends Item {
 
     public static final int DEFAULT_MAX_DAMAGE = 20000;
 
@@ -68,13 +67,5 @@ public class ItemGasMaskFilter extends Item implements ITooltipProvider {
         return InteractionResultHolder.sidedSuccess(filterStack, level.isClientSide());
     }
 
-    @Override
-    public void appendHbmTooltip(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
-        // Классы защиты фильтра — как в оригинале выводится регистрация ArmorRegistry.
-        tooltip.add(Component.translatable("hazard.prot").withStyle(ChatFormatting.GREEN));
-        for (var clazz : ArmorRegistry.getProtection(stack.getItem())) {
-            tooltip.add(Component.literal("  ").append(Component.translatable(clazz.translationKey))
-                    .withStyle(ChatFormatting.YELLOW));
-        }
-    }
+    // Schutzklassen zeigt der globale Tooltip (ArmorTooltipHandler, Original drawTooltip).
 }

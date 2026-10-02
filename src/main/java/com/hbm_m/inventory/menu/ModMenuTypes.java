@@ -173,6 +173,9 @@ public class ModMenuTypes {
     public static final RegistrySupplier<MenuType<MachineSolarBoilerMenu>> SOLAR_BOILER_MENU =
             MENUS.register("solar_boiler_menu", () -> MenuRegistry.ofExtended(MachineSolarBoilerMenu::new));
 
+    public static final RegistrySupplier<MenuType<FileCabinetMenu>> FILE_CABINET_MENU =
+            MENUS.register("file_cabinet_menu", () -> MenuRegistry.ofExtended(FileCabinetMenu::new));
+
     public static final RegistrySupplier<MenuType<IronCrateMenu>> IRON_CRATE_MENU =
             MENUS.register("iron_crate_menu", () -> MenuRegistry.ofExtended(IronCrateMenu::new));
 
@@ -182,6 +185,8 @@ public class ModMenuTypes {
     public static final RegistrySupplier<MenuType<DeshCrateMenu>> DESH_CRATE_MENU =
             MENUS.register("desh_crate_menu", () -> MenuRegistry.ofExtended(DeshCrateMenu::new));
 
+    public static final RegistrySupplier<MenuType<SafeMenu>> SAFE_MENU =
+            MENUS.register("safe_menu", () -> MenuRegistry.ofExtended(SafeMenu::new));
     public static final RegistrySupplier<MenuType<TungstenCrateMenu>> TUNGSTEN_CRATE_MENU =
             MENUS.register("tungsten_crate_menu", () -> MenuRegistry.ofExtended(TungstenCrateMenu::new));
 
@@ -193,6 +198,21 @@ public class ModMenuTypes {
 
     public static final RegistrySupplier<MenuType<Bat9000Menu>> BAT9000_MENU =
             MENUS.register("bat9000_menu", () -> MenuRegistry.ofExtended(Bat9000Menu::new));
+
+    public static final RegistrySupplier<MenuType<LemegetonMenu>> LEMEGETON_MENU =
+            MENUS.register("lemegeton_menu", () -> MenuRegistry.ofExtended(LemegetonMenu::new));
+
+    /** Bleibox, Plastiktuete, Huelsentasche (Original ContainerLeadBox/PlasticBag/CasingBag). */
+    public static final RegistrySupplier<MenuType<HeldItemMenu>> HELD_ITEM_MENU =
+            MENUS.register("held_item_menu", () -> MenuRegistry.ofExtended(HeldItemMenu::new));
+
+    /** Original ContainerSatDock. */
+    public static final RegistrySupplier<MenuType<MachineSatDockMenu>> SAT_DOCK_MENU =
+            MENUS.register("sat_dock_menu", () -> MenuRegistry.ofExtended(MachineSatDockMenu::new));
+
+    /** Original ItemRebarPlacer.ContainerRebar. */
+    public static final RegistrySupplier<MenuType<RebarMenu>> REBAR_MENU =
+            MENUS.register("rebar_menu", () -> MenuRegistry.ofExtended(RebarMenu::new));
 
     public static final RegistrySupplier<MenuType<com.hbm_m.inventory.menu.BookMenu>> BOOK_MENU =
             MENUS.register("book_menu", () -> MenuRegistry.ofExtended(com.hbm_m.inventory.menu.BookMenu::new));

@@ -342,6 +342,17 @@ public class ModEntities {
                             .updateInterval(1)
                             .build("black_hole"));
 
+    /** Original {@code entity_shrapnel} (EntityMappings, Tracking 1000). */
+    public static final RegistrySupplier<EntityType<com.hbm_m.entity.projectile.EntityShrapnel>> SHRAPNEL =
+            ENTITY_TYPES.register("entity_shrapnel",
+                    () -> EntityType.Builder.<com.hbm_m.entity.projectile.EntityShrapnel>of(
+                                    com.hbm_m.entity.projectile.EntityShrapnel::new, MobCategory.MISC)
+                            .sized(0.25F, 0.25F)
+                            .clientTrackingRange(64)
+                            .updateInterval(1)
+                            .fireImmune()
+                            .build("entity_shrapnel"));
+
     public static final RegistrySupplier<EntityType<com.hbm_m.entity.projectile.RubbleEntity>> RUBBLE =
             ENTITY_TYPES.register("rubble",
                     () -> EntityType.Builder.<com.hbm_m.entity.projectile.RubbleEntity>of(
@@ -368,6 +379,122 @@ public class ModEntities {
                             .clientTrackingRange(256)
                             .updateInterval(1)
                             .build("raging_vortex"));
+
+    /** Original EntityGrenadeBouncyGeneric (Dynamit u. a.). */
+    public static final RegistrySupplier<EntityType<com.hbm_m.entity.grenades.EntityGrenadeBouncyGeneric>> GRENADE_BOUNCY_GENERIC =
+            ENTITY_TYPES.register("grenade_bouncy_generic",
+                    () -> EntityType.Builder.<com.hbm_m.entity.grenades.EntityGrenadeBouncyGeneric>of(
+                                    com.hbm_m.entity.grenades.EntityGrenadeBouncyGeneric::new, MobCategory.MISC)
+                            .sized(0.25F, 0.25F).clientTrackingRange(4).updateInterval(10)
+                            .build("grenade_bouncy_generic"));
+    /** Original EntityDisperserCanister ("entity_disperser"), geworfener Dispersionskanister / Glyphiden-Druese. */
+    /** R6c: 1:1 EntityFireworks. */
+    public static final RegistrySupplier<EntityType<com.hbm_m.entity.effect.EntityFireworks>> FIREWORKS =
+            ENTITY_TYPES.register("entity_firework_ball",
+                    () -> EntityType.Builder.<com.hbm_m.entity.effect.EntityFireworks>of(
+                                    com.hbm_m.entity.effect.EntityFireworks::new, MobCategory.MISC)
+                            .sized(0.25F, 0.25F).clientTrackingRange(16).updateInterval(1)
+                            .build("entity_firework_ball"));
+
+    /** R6c: 1:1 EntityEMPBlast ("entity_emp_blast"). */
+    /** R6d: 1:1 EntityModFX-Gaswolke ({@code entity_chlorine_fx}). */
+    public static final RegistrySupplier<EntityType<com.hbm_m.entity.effect.EntityModFX.Chlorine>> CHLORINE_FX =
+            ENTITY_TYPES.register("entity_chlorine_fx",
+                    () -> EntityType.Builder.<com.hbm_m.entity.effect.EntityModFX.Chlorine>of(
+                                    com.hbm_m.entity.effect.EntityModFX.Chlorine::new, MobCategory.MISC)
+                            .fireImmune().sized(0.2F, 0.2F).clientTrackingRange(16).updateInterval(1)
+                            .build("entity_chlorine_fx"));
+    /** R6d: 1:1 EntityModFX-Gaswolke ({@code entity_pink_cloud_fx}). */
+    public static final RegistrySupplier<EntityType<com.hbm_m.entity.effect.EntityModFX.PinkCloud>> PINK_CLOUD_FX =
+            ENTITY_TYPES.register("entity_pink_cloud_fx",
+                    () -> EntityType.Builder.<com.hbm_m.entity.effect.EntityModFX.PinkCloud>of(
+                                    com.hbm_m.entity.effect.EntityModFX.PinkCloud::new, MobCategory.MISC)
+                            .fireImmune().sized(0.2F, 0.2F).clientTrackingRange(16).updateInterval(1)
+                            .build("entity_pink_cloud_fx"));
+    /** R6d: 1:1 EntityModFX-Gaswolke ({@code entity_cloud_fx}). */
+    public static final RegistrySupplier<EntityType<com.hbm_m.entity.effect.EntityModFX.Cloud>> CLOUD_FX =
+            ENTITY_TYPES.register("entity_cloud_fx",
+                    () -> EntityType.Builder.<com.hbm_m.entity.effect.EntityModFX.Cloud>of(
+                                    com.hbm_m.entity.effect.EntityModFX.Cloud::new, MobCategory.MISC)
+                            .fireImmune().sized(0.2F, 0.2F).clientTrackingRange(16).updateInterval(1)
+                            .build("entity_cloud_fx"));
+    /** R6d: 1:1 EntityModFX-Gaswolke ({@code entity_agent_orange}). */
+    public static final RegistrySupplier<EntityType<com.hbm_m.entity.effect.EntityModFX.Orange>> ORANGE_FX =
+            ENTITY_TYPES.register("entity_agent_orange",
+                    () -> EntityType.Builder.<com.hbm_m.entity.effect.EntityModFX.Orange>of(
+                                    com.hbm_m.entity.effect.EntityModFX.Orange::new, MobCategory.MISC)
+                            .fireImmune().sized(0.2F, 0.2F).clientTrackingRange(16).updateInterval(1)
+                            .build("entity_agent_orange"));
+    public static final RegistrySupplier<EntityType<com.hbm_m.entity.effect.EntityEMPBlast>> EMP_BLAST =
+            ENTITY_TYPES.register("entity_emp_blast",
+                    () -> EntityType.Builder.<com.hbm_m.entity.effect.EntityEMPBlast>of(
+                                    com.hbm_m.entity.effect.EntityEMPBlast::new, MobCategory.MISC)
+                            .fireImmune().sized(1.5F, 1.5F).clientTrackingRange(16).updateInterval(10)
+                            .build("entity_emp_blast"));
+
+    /** R6c: 1:1 EntityTNTPrimedBase ("entity_ntm_tnt_primed"). */
+    public static final RegistrySupplier<EntityType<com.hbm_m.entity.item.EntityTNTPrimedBase>> TNT_PRIMED_BASE =
+            ENTITY_TYPES.register("entity_ntm_tnt_primed",
+                    () -> EntityType.Builder.<com.hbm_m.entity.item.EntityTNTPrimedBase>of(
+                                    com.hbm_m.entity.item.EntityTNTPrimedBase::new, MobCategory.MISC)
+                            .fireImmune().sized(0.98F, 0.98F).clientTrackingRange(10).updateInterval(10)
+                            .build("entity_ntm_tnt_primed"));
+
+    public static final RegistrySupplier<EntityType<com.hbm_m.entity.grenades.EntityDisperserCanister>> DISPERSER_CANISTER =
+            ENTITY_TYPES.register("entity_disperser",
+                    () -> EntityType.Builder.<com.hbm_m.entity.grenades.EntityDisperserCanister>of(
+                                    com.hbm_m.entity.grenades.EntityDisperserCanister::new, MobCategory.MISC)
+                            .sized(0.25F, 0.25F).clientTrackingRange(4).updateInterval(10)
+                            .build("entity_disperser"));
+    /** Original EntityBoatRubber. */
+    public static final RegistrySupplier<EntityType<com.hbm_m.entity.item.EntityBoatRubber>> BOAT_RUBBER =
+            ENTITY_TYPES.register("boat_rubber",
+                    () -> EntityType.Builder.<com.hbm_m.entity.item.EntityBoatRubber>of(
+                                    com.hbm_m.entity.item.EntityBoatRubber::new, MobCategory.MISC)
+                            .sized(1.5F, 0.6F).clientTrackingRange(10)
+                            .build("boat_rubber"));
+    /** Original EntityMeteor (entity_meteor, Reichweite 250). */
+    public static final RegistrySupplier<EntityType<com.hbm_m.entity.projectile.EntityMeteor>> METEOR =
+            ENTITY_TYPES.register("entity_meteor",
+                    () -> EntityType.Builder.<com.hbm_m.entity.projectile.EntityMeteor>of(
+                                    com.hbm_m.entity.projectile.EntityMeteor::new, MobCategory.MISC)
+                            .sized(4.0F, 4.0F).clientTrackingRange(16).updateInterval(1).fireImmune()
+                            .build("entity_meteor"));
+    /** Original EntityBoxcar (entity_boxcar, Reichweite 1000). */
+    public static final RegistrySupplier<EntityType<com.hbm_m.entity.projectile.EntityBoxcar>> BOXCAR =
+            ENTITY_TYPES.register("entity_boxcar",
+                    () -> EntityType.Builder.<com.hbm_m.entity.projectile.EntityBoxcar>of(
+                                    com.hbm_m.entity.projectile.EntityBoxcar::new, MobCategory.MISC)
+                            .sized(0.25F, 0.25F).clientTrackingRange(64).updateInterval(1).fireImmune()
+                            .build("entity_boxcar"));
+    /** Original EntityDeathBlast (Orbitaler Todesstrahl). */
+    public static final RegistrySupplier<EntityType<com.hbm_m.entity.logic.EntityDeathBlast>> DEATH_BLAST =
+            ENTITY_TYPES.register("entity_laser_blast",
+                    () -> EntityType.Builder.<com.hbm_m.entity.logic.EntityDeathBlast>of(
+                                    com.hbm_m.entity.logic.EntityDeathBlast::new, MobCategory.MISC)
+                            .sized(0.5F, 0.5F).clientTrackingRange(64).updateInterval(20)
+                            .build("entity_laser_blast"));
+    /** Original EntityOrbitalLaser. */
+    public static final RegistrySupplier<EntityType<com.hbm_m.entity.logic.EntityOrbitalLaser>> ORBITAL_LASER =
+            ENTITY_TYPES.register("entity_orbital_laser",
+                    () -> EntityType.Builder.<com.hbm_m.entity.logic.EntityOrbitalLaser>of(
+                                    com.hbm_m.entity.logic.EntityOrbitalLaser::new, MobCategory.MISC)
+                            .sized(0.5F, 0.5F).clientTrackingRange(64).updateInterval(20)
+                            .build("entity_orbital_laser"));
+    /** Original EntityMinerRocket (entity_miner_lander). */
+    public static final RegistrySupplier<EntityType<com.hbm_m.entity.missile.EntityMinerRocket>> MINER_ROCKET =
+            ENTITY_TYPES.register("entity_miner_lander",
+                    () -> EntityType.Builder.<com.hbm_m.entity.missile.EntityMinerRocket>of(
+                                    com.hbm_m.entity.missile.EntityMinerRocket::new, MobCategory.MISC)
+                            .sized(1.0F, 3.0F).clientTrackingRange(16).updateInterval(1)
+                            .build("entity_miner_lander"));
+    /** Original EntityItemBuoyant. */
+    public static final RegistrySupplier<EntityType<com.hbm_m.entity.item.EntityItemBuoyant>> ITEM_BUOYANT =
+            ENTITY_TYPES.register("item_buoyant",
+                    () -> EntityType.Builder.<com.hbm_m.entity.item.EntityItemBuoyant>of(
+                                    com.hbm_m.entity.item.EntityItemBuoyant::new, MobCategory.MISC)
+                            .sized(0.25F, 0.25F).clientTrackingRange(6).updateInterval(20)
+                            .build("item_buoyant"));
 
     public static final RegistrySupplier<EntityType<com.hbm_m.entity.effect.QuasarEntity>> DIGAMMA_QUASAR =
             ENTITY_TYPES.register("digamma_quasar",

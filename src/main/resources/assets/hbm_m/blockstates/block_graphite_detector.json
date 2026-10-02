@@ -1,0 +1,64 @@
+{
+ "variants": {
+  "meta=0": {
+   "model": "hbm_m:block/pile_mk1/block_graphite_detector"
+  },
+  "meta=1": {
+   "model": "hbm_m:block/pile_mk1/block_graphite_detector",
+   "x": 90
+  },
+  "meta=2": {
+   "model": "hbm_m:block/pile_mk1/block_graphite_detector",
+   "x": 90,
+   "y": 90
+  },
+  "meta=3": {
+   "model": "hbm_m:block/pile_mk1/plain"
+  },
+  "meta=4": {
+   "model": "hbm_m:block/pile_mk1/block_graphite_detector_aluminum"
+  },
+  "meta=5": {
+   "model": "hbm_m:block/pile_mk1/block_graphite_detector_aluminum",
+   "x": 90
+  },
+  "meta=6": {
+   "model": "hbm_m:block/pile_mk1/block_graphite_detector_aluminum",
+   "x": 90,
+   "y": 90
+  },
+  "meta=7": {
+   "model": "hbm_m:block/pile_mk1/plain"
+  },
+  "meta=8": {
+   "model": "hbm_m:block/pile_mk1/block_graphite_detector_out"
+  },
+  "meta=9": {
+   "model": "hbm_m:block/pile_mk1/block_graphite_detector_out",
+   "x": 90
+  },
+  "meta=10": {
+   "model": "hbm_m:block/pile_mk1/block_graphite_detector_out",
+   "x": 90,
+   "y": 90
+  },
+  "meta=11": {
+   "model": "hbm_m:block/pile_mk1/plain"
+  },
+  "meta=12": {
+   "model": "hbm_m:block/pile_mk1/block_graphite_detector_out_aluminum"
+  },
+  "meta=13": {
+   "model": "hbm_m:block/pile_mk1/block_graphite_detector_out_aluminum",
+   "x": 90
+  },
+  "meta=14": {
+   "model": "hbm_m:block/pile_mk1/block_graphite_detector_out_aluminum",
+   "x": 90,
+   "y": 90
+  },
+  "meta=15": {
+   "model": "hbm_m:block/pile_mk1/plain"
+  }
+ }
+}

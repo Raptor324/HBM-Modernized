@@ -61,6 +61,13 @@ public class GasMaskLayer<T extends LivingEntity, M extends HumanoidModel<T>> ex
             renderVariant(entity, mask.variant, IGasMask.hasFilter(head), poseStack, buffer, packedLight);
         }
 
+        // 1b. Original ArmorHazmatMask/ArmorLiquidator: M65-Modell mit der Ruestungstextur.
+        if (head.getItem() instanceof com.hbm_m.powerarmor.ModArmorFSB fsb && fsb.isObjArmor()
+                && (head.getItem() instanceof com.hbm_m.powerarmor.ArmorHazmatMask || head.getItem() instanceof com.hbm_m.powerarmor.ArmorLiquidator)) {
+            String tex = fsb.getTexture();
+            renderM65(entity, tex.substring(tex.indexOf(':') + 1), IGasMask.hasFilter(head), poseStack, buffer, packedLight);
+        }
+
         // 2. Маска, прицепленная к шлему как модификация (attachment_mask).
         for (ItemStack mod : ArmorModificationHelper.pryMods(head)) {
             if (!mod.isEmpty() && mod.getItem() instanceof ItemModGasmask gasmask) {

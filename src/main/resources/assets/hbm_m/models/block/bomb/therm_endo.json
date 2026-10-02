@@ -1,0 +1,7 @@
+{
+ "parent": "minecraft:block/cube_column",
+ "textures": {
+  "end": "hbm_m:block/bomb/therm_top",
+  "side": "hbm_m:block/bomb/therm_endo"
+ }
+}

@@ -1,0 +1,10 @@
+{
+ "variants": {
+  "erupting=false": {
+   "model": "hbm_m:block/geysir_chlorine"
+  },
+  "erupting=true": {
+   "model": "hbm_m:block/geysir_chlorine"
+  }
+ }
+}

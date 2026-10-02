@@ -32,6 +32,16 @@ public class ConveyorBendableBlock extends ConveyorBlockBase {
     }
 
     @Override
+    public Direction getOutputDirection(BlockState state) {
+        Direction primary = state.getValue(FACING).getOpposite();
+        ConveyorBend bend = state.getValue(BEND);
+        // Original: dir 2 (+8, rechts) -> getRotation(UP), dir 1 (+4, links) -> getRotation(DOWN)
+        if (bend == ConveyorBend.RIGHT) return primary.getClockWise();
+        if (bend == ConveyorBend.LEFT) return primary.getCounterClockWise();
+        return primary;
+    }
+
+    @Override
     public Direction getTravelDirection(Level level, BlockPos pos, Vec3 itemPos) {
         BlockState state = level.getBlockState(pos);
         Direction primary = state.getValue(FACING);

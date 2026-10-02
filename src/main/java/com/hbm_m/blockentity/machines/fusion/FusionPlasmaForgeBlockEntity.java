@@ -472,7 +472,7 @@ public class FusionPlasmaForgeBlockEntity extends BaseMachineBlockEntity
     @Override
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
         if (slot == SLOT_BATTERY) return true;
-        if (slot == SLOT_BLUEPRINT) return stack.is(ModItems.BLUEPRINT_FOLDER.get());
+        if (slot == SLOT_BLUEPRINT) return stack.is(ModItems.BLUEPRINTS.get());
         if (slot == SLOT_BOOSTER) {
             for (Booster b : getBoosters()) if (stack.is(b.item())) return true;
             return false;

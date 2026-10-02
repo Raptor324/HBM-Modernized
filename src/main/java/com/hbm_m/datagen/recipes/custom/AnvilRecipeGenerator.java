@@ -92,11 +92,58 @@ public final class AnvilRecipeGenerator {
                 stack(ModBlocks.ANVIL_OSMIRIDIUM.get(), 1),
                 AnvilTier.IRON);
 
+        // Original AnvilRecipes: AnvilSmithingHotRecipe (Stufe 3). ItemHot-Zutaten brauchen Hitze >= 0.5,
+        // sind beide Zutaten und das Ergebnis ItemHot, erbt das Ergebnis die mittlere Hitze.
+        for (int i = 0; i < 9; i++) {
+            ItemStack dusted = i == 0 ? stack(ModMaterialItems.item(ModMaterials.STEEL_DUSTED, MaterialShape.INGOT), 1) : stack(ModItems.STEEL_DUSTED_INGOTS.get(i - 1).get(), 1);
+            registerCombineRecipe(writer, "oil", "steel_dusted_" + (i + 1), dusted, dusted.copy(),
+                    stack(ModItems.STEEL_DUSTED_INGOTS.get(i).get(), 1), AnvilTier.OIL, AnvilRecipeBuilder::hot);
+        }
+        registerCombineRecipe(writer, "oil", "chainsteel",
+                stack(ModItems.STEEL_DUSTED_INGOTS.get(8).get(), 1), stack(ModItems.STEEL_DUSTED_INGOTS.get(8).get(), 1),
+                stack(ModMaterialItems.item(ModMaterials.CHAINSSTEEL, MaterialShape.INGOT), 1), AnvilTier.OIL, AnvilRecipeBuilder::hot);
+        registerCombineRecipe(writer, "oil", "meteorite_forged",
+                stack(ModMaterialItems.item(ModMaterials.METEORITE, MaterialShape.INGOT), 1), stack(ModMaterialItems.item(ModMaterials.METEORITE, MaterialShape.INGOT), 1), stack(ModMaterialItems.item(ModMaterials.METEORITE_FORGED, MaterialShape.INGOT), 1), AnvilTier.OIL, AnvilRecipeBuilder::hot);
+        registerCombineRecipe(writer, "oil", "blade_meteorite",
+                stack(ModMaterialItems.item(ModMaterials.METEORITE_FORGED, MaterialShape.INGOT), 1), stack(ModMaterialItems.item(ModMaterials.METEORITE_FORGED, MaterialShape.INGOT), 1), stack(ModItems.BLADE_METEORITE.get(), 1), AnvilTier.OIL, AnvilRecipeBuilder::hot);
+        registerCombineRecipe(writer, "oil", "meteorite_sword_reforged",
+                stack(ModItems.METEORITE_SWORD_SEARED.get(), 1), stack(ModMaterialItems.item(ModMaterials.METEORITE_FORGED, MaterialShape.INGOT), 1),
+                stack(ModItems.METEORITE_SWORD_REFORGED.get(), 1), AnvilTier.OIL, AnvilRecipeBuilder::hot);
+        registerCombineRecipe(writer, "oil", "cobalt_decorated_sword",
+                stack(ModItems.COBALT_SWORD.get(), 1), stack(ModMaterialItems.item(ModMaterials.METEORITE, MaterialShape.INGOT), 1),
+                stack(ModItems.COBALT_DECORATED_SWORD.get(), 1), AnvilTier.OIL, AnvilRecipeBuilder::hot);
+        registerCombineRecipe(writer, "oil", "cobalt_decorated_pickaxe",
+                stack(ModItems.COBALT_PICKAXE.get(), 1), stack(ModMaterialItems.item(ModMaterials.METEORITE, MaterialShape.INGOT), 1),
+                stack(ModItems.COBALT_DECORATED_PICKAXE.get(), 1), AnvilTier.OIL, AnvilRecipeBuilder::hot);
+        registerCombineRecipe(writer, "oil", "cobalt_decorated_axe",
+                stack(ModItems.COBALT_AXE.get(), 1), stack(ModMaterialItems.item(ModMaterials.METEORITE, MaterialShape.INGOT), 1),
+                stack(ModItems.COBALT_DECORATED_AXE.get(), 1), AnvilTier.OIL, AnvilRecipeBuilder::hot);
+        registerCombineRecipe(writer, "oil", "cobalt_decorated_shovel",
+                stack(ModItems.COBALT_SHOVEL.get(), 1), stack(ModMaterialItems.item(ModMaterials.METEORITE, MaterialShape.INGOT), 1),
+                stack(ModItems.COBALT_DECORATED_SHOVEL.get(), 1), AnvilTier.OIL, AnvilRecipeBuilder::hot);
+        registerCombineRecipe(writer, "oil", "cobalt_decorated_hoe",
+                stack(ModItems.COBALT_HOE.get(), 1), stack(ModMaterialItems.item(ModMaterials.METEORITE, MaterialShape.INGOT), 1),
+                stack(ModItems.COBALT_DECORATED_HOE.get(), 1), AnvilTier.OIL, AnvilRecipeBuilder::hot);
+
+        // Original AnvilRecipes: smithingRecipes.add(new AnvilSmithingRecipe(1916169, wings_murk, wings_limp, particle_tachyon))
+        registerCombineRecipe(writer, "murky", "wings_murk",
+                stack(ModItems.WINGS_LIMP.get(), 1),
+                stack(ModItems.PARTICLE_TACHYON.get(), 1),
+                stack(ModItems.WINGS_MURK.get(), 1),
+                AnvilTier.MURKY);
+
 
 
     }
 
     private static void registerCraftRecipes(Consumer<FinishedRecipe> writer) {
+        // Original AnvilRecipes: Knochen, Leder, Federn -> wings_limp (Stufe 2)
+        registerInventoryRecipe(writer, "steel", "wings_limp", AnvilTier.STEEL,
+                stack(ModItems.WINGS_LIMP.get(), 1),
+                stack(net.minecraft.world.item.Items.BONE, 16),
+                stack(net.minecraft.world.item.Items.LEATHER, 4),
+                stack(net.minecraft.world.item.Items.FEATHER, 24));
+
 
         registerInventoryRecipe(writer, "steel", "1coil_copper_torus",
                 AnvilTier.STEEL,
@@ -288,6 +335,30 @@ public final class AnvilRecipeGenerator {
     }
 
     private static void registerDisassemblyRecipes(Consumer<FinishedRecipe> writer) {
+        // AnvilRecipes: Kastenrohre (Bau/Rueckbau, Stufe 2)
+        for (int i = 0; i < 15; i += 3) {
+            ItemStack[] plates = { stack(ModMaterialItems.item(ModMaterials.IRON, MaterialShape.PLATE), 1), stack(ModMaterialItems.item(ModMaterials.COPPER, MaterialShape.PLATE), 1),
+                    stack(ModMaterialItems.item(ModMaterials.ALUMINUM, MaterialShape.PLATE), 1) };
+            for (int j = 0; j < 3; j++) {
+                ItemStack box = com.hbm_m.block.network.BoxDuctBlock.stack(ModBlocks.FLUID_DUCT_BOX.get().asItem(), i + j);
+                registerInventoryRecipe(writer, "steel", "fluid_duct_box_" + (i + j), AnvilTier.STEEL, box, plates[j].copy());
+                registerDisassemblyRecipe(writer, "steel", "fluid_duct_box_" + (i + j), AnvilTier.STEEL, box.copy(), plates[j].copy(), b -> {});
+            }
+            ItemStack ex = com.hbm_m.block.network.BoxDuctBlock.stack(ModBlocks.FLUID_DUCT_EXHAUST.get().asItem(), i);
+            ex.setCount(8);
+            registerInventoryRecipe(writer, "steel", "fluid_duct_exhaust_" + i, AnvilTier.STEEL, ex, plates[0].copy(), stack(ModMaterialItems.item(ModMaterials.POLYMER, MaterialShape.PLATE), 1));
+            registerDisassemblyRecipe(writer, "steel", "fluid_duct_exhaust_" + i, AnvilTier.STEEL, ex.copy(), plates[0].copy(),
+                    b -> b.addOutput(stack(ModMaterialItems.item(ModMaterials.POLYMER, MaterialShape.PLATE), 1), 1.0F));
+        }
+        for (int i = 0; i < 5; i++) {
+            ItemStack cb = com.hbm_m.block.network.BoxDuctBlock.stack(ModBlocks.RED_CABLE_BOX.get().asItem(), i);
+            cb.setCount(16);
+            registerInventoryRecipe(writer, "steel", "red_cable_box_" + i, AnvilTier.STEEL, cb, stack(ModMaterialItems.item(ModMaterials.RED_COPPER, MaterialShape.INGOT), 1),
+                    stack(ModMaterialItems.item(ModMaterials.POLYMER, MaterialShape.PLATE), 1));
+            registerDisassemblyRecipe(writer, "steel", "red_cable_box_" + i, AnvilTier.STEEL, cb.copy(), stack(ModMaterialItems.item(ModMaterials.RED_COPPER, MaterialShape.INGOT), 1),
+                    b -> b.addOutput(stack(ModMaterialItems.item(ModMaterials.POLYMER, MaterialShape.PLATE), 1), 1.0F));
+        }
+
 
         registerDisassemblyRecipe(writer, "steel", "crt_breakdown1",
                 AnvilTier.STEEL,
@@ -349,12 +420,7 @@ public final class AnvilRecipeGenerator {
                 builder -> builder
                         .addOutput(stack(ModItems.FAT_MAN_CORE), 0.001F));
 
-        registerDisassemblyRecipe(writer, "steel", "freaky_breakdown",
-                AnvilTier.STEEL,
-                stack(ModBlocks.FREAKY_ALIEN_BLOCK),
-                stack(ModItems.CANNED_JIZZ, 1),
-                builder -> builder
-                        .addOutput(stack(ModItems.CANNED_ASBESTOS), 0.5F));
+
 
     }
 

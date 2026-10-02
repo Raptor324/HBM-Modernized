@@ -38,7 +38,7 @@ public class MachineBatterySocketBakedModel extends AbstractMultipartBakedModel 
 
     @Override
     public String[] getPartNames() {
-        return new String[] { "Socket", "Battery" };
+        return new String[] { "Socket", "Battery", "Capacitor" };
     }
 
     @Override
@@ -61,7 +61,20 @@ public class MachineBatterySocketBakedModel extends AbstractMultipartBakedModel 
         }
 
         boolean showBattery = modelData != null && Boolean.TRUE.equals(modelData.get(BatterySocketBlockEntity.HAS_INSERT));
-        if (showBattery) {
+        com.hbm_m.item.fekal_electric.ItemBatteryPack.EnumBatteryPack pack = modelData != null ? modelData.get(BatterySocketBlockEntity.PACK) : null;
+        if (showBattery && pack != null) {
+            BakedModel part = getPart(pack.isCapacitor() ? "Capacitor" : "Battery");
+            if (part != null) {
+                List<BakedQuad> packQuads = getPackQuads(part, pack.name(), "block/machine/battery_pack/" + pack.texture, querySide, rand);
+                quads.addAll(rotationY != 0 ? ModelHelper.transformQuadsByFacing(packQuads, rotationY) : packQuads);
+            }
+        } else if (showBattery && Boolean.TRUE.equals(modelData.get(BatterySocketBlockEntity.SC))) {
+            BakedModel part = getPart("Battery");
+            if (part != null) {
+                List<BakedQuad> scQuads = getPackQuads(part, "SC", "block/machine/battery_sc", querySide, rand);
+                quads.addAll(rotationY != 0 ? ModelHelper.transformQuadsByFacing(scQuads, rotationY) : scQuads);
+            }
+        } else if (showBattery) {
             BakedModel battery = getPart("Battery");
             if (battery != null) {
                 List<BakedQuad> batteryQuads = getRetexturedBatteryQuads(battery, querySide, rand);
@@ -117,6 +130,23 @@ public class MachineBatterySocketBakedModel extends AbstractMultipartBakedModel 
         }
         return r;
     }
+
+    private final Map<String, List<BakedQuad>> packQuadCache = new ConcurrentHashMap<>();
+
+    //? if forge {
+    private List<BakedQuad> getPackQuads(BakedModel part, String name, String texture, @Nullable Direction side, RandomSource rand) {
+        String key = name + "|" + (side == null ? "null" : side.getName());
+        return packQuadCache.computeIfAbsent(key, k -> {
+            List<BakedQuad> out = new ArrayList<>();
+            TextureAtlasSprite sprite = Minecraft.getInstance().getTextureAtlas(net.minecraft.world.inventory.InventoryMenu.BLOCK_ATLAS)
+                    .apply(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, texture));
+            for (BakedQuad q : part.getQuads(null, side, rand, ModelData.EMPTY, null)) {
+                out.add(retextureQuad(q, sprite));
+            }
+            return out;
+        });
+    }
+    //?}
 
     private List<BakedQuad> getRetexturedBatteryQuads(BakedModel battery, @Nullable Direction side, RandomSource rand) {
         Object key = side == null ? NULL_SIDE_KEY : side;

@@ -65,6 +65,7 @@ public class EntityCreeperGold extends Creeper {
         vnt.setBlockProcessor(new BlockProcessorStandard()
                 .withBlockEffect(new BlockMutatorBulkie(Blocks.GOLD_ORE)));
         vnt.setEntityProcessor(new EntityProcessorStandard().withRangeMod(0.5F));
+        vnt.setPlayerProcessor(new com.hbm_m.explosion.vanillant.standard.PlayerProcessorStandard());
         vnt.setSFX(new ExplosionEffectStandard());
         vnt.explode();
     }

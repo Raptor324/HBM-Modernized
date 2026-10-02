@@ -130,7 +130,7 @@ final class HbmLoaderAdapters {
     }
 
     static ForgeLikeUnbakedModel batterySocket(ResourceLocation id, JsonObject json, ResourceManager rm, Gson gson) {
-        return objParts(id, json, rm, gson, Set.of("Socket", "Battery"), (p, t, loc) -> new MachineBatterySocketBakedModel(p, t));
+        return objParts(id, json, rm, gson, Set.of("Socket", "Battery", "Capacitor"), (p, t, loc) -> new MachineBatterySocketBakedModel(p, t));
     }
 
     static ForgeLikeUnbakedModel door(ResourceLocation id, JsonObject json, ResourceManager rm, Gson gson) {

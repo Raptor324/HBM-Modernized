@@ -1,0 +1,100 @@
+{
+ "variants": {
+  "nx=false,nz=false,px=false,pz=false,py=false": {
+   "model": "hbm_m:block/deco/wood_barrier_00000"
+  },
+  "nx=false,nz=false,px=false,pz=false,py=true": {
+   "model": "hbm_m:block/deco/wood_barrier_00001"
+  },
+  "nx=false,nz=false,px=false,pz=true,py=false": {
+   "model": "hbm_m:block/deco/wood_barrier_00010"
+  },
+  "nx=false,nz=false,px=false,pz=true,py=true": {
+   "model": "hbm_m:block/deco/wood_barrier_00011"
+  },
+  "nx=false,nz=false,px=true,pz=false,py=false": {
+   "model": "hbm_m:block/deco/wood_barrier_00100"
+  },
+  "nx=false,nz=false,px=true,pz=false,py=true": {
+   "model": "hbm_m:block/deco/wood_barrier_00101"
+  },
+  "nx=false,nz=false,px=true,pz=true,py=false": {
+   "model": "hbm_m:block/deco/wood_barrier_00110"
+  },
+  "nx=false,nz=false,px=true,pz=true,py=true": {
+   "model": "hbm_m:block/deco/wood_barrier_00111"
+  },
+  "nx=false,nz=true,px=false,pz=false,py=false": {
+   "model": "hbm_m:block/deco/wood_barrier_01000"
+  },
+  "nx=false,nz=true,px=false,pz=false,py=true": {
+   "model": "hbm_m:block/deco/wood_barrier_01001"
+  },
+  "nx=false,nz=true,px=false,pz=true,py=false": {
+   "model": "hbm_m:block/deco/wood_barrier_01010"
+  },
+  "nx=false,nz=true,px=false,pz=true,py=true": {
+   "model": "hbm_m:block/deco/wood_barrier_01011"
+  },
+  "nx=false,nz=true,px=true,pz=false,py=false": {
+   "model": "hbm_m:block/deco/wood_barrier_01100"
+  },
+  "nx=false,nz=true,px=true,pz=false,py=true": {
+   "model": "hbm_m:block/deco/wood_barrier_01101"
+  },
+  "nx=false,nz=true,px=true,pz=true,py=false": {
+   "model": "hbm_m:block/deco/wood_barrier_01110"
+  },
+  "nx=false,nz=true,px=true,pz=true,py=true": {
+   "model": "hbm_m:block/deco/wood_barrier_01111"
+  },
+  "nx=true,nz=false,px=false,pz=false,py=false": {
+   "model": "hbm_m:block/deco/wood_barrier_10000"
+  },
+  "nx=true,nz=false,px=false,pz=false,py=true": {
+   "model": "hbm_m:block/deco/wood_barrier_10001"
+  },
+  "nx=true,nz=false,px=false,pz=true,py=false": {
+   "model": "hbm_m:block/deco/wood_barrier_10010"
+  },
+  "nx=true,nz=false,px=false,pz=true,py=true": {
+   "model": "hbm_m:block/deco/wood_barrier_10011"
+  },
+  "nx=true,nz=false,px=true,pz=false,py=false": {
+   "model": "hbm_m:block/deco/wood_barrier_10100"
+  },
+  "nx=true,nz=false,px=true,pz=false,py=true": {
+   "model": "hbm_m:block/deco/wood_barrier_10101"
+  },
+  "nx=true,nz=false,px=true,pz=true,py=false": {
+   "model": "hbm_m:block/deco/wood_barrier_10110"
+  },
+  "nx=true,nz=false,px=true,pz=true,py=true": {
+   "model": "hbm_m:block/deco/wood_barrier_10111"
+  },
+  "nx=true,nz=true,px=false,pz=false,py=false": {
+   "model": "hbm_m:block/deco/wood_barrier_11000"
+  },
+  "nx=true,nz=true,px=false,pz=false,py=true": {
+   "model": "hbm_m:block/deco/wood_barrier_11001"
+  },
+  "nx=true,nz=true,px=false,pz=true,py=false": {
+   "model": "hbm_m:block/deco/wood_barrier_11010"
+  },
+  "nx=true,nz=true,px=false,pz=true,py=true": {
+   "model": "hbm_m:block/deco/wood_barrier_11011"
+  },
+  "nx=true,nz=true,px=true,pz=false,py=false": {
+   "model": "hbm_m:block/deco/wood_barrier_11100"
+  },
+  "nx=true,nz=true,px=true,pz=false,py=true": {
+   "model": "hbm_m:block/deco/wood_barrier_11101"
+  },
+  "nx=true,nz=true,px=true,pz=true,py=false": {
+   "model": "hbm_m:block/deco/wood_barrier_11110"
+  },
+  "nx=true,nz=true,px=true,pz=true,py=true": {
+   "model": "hbm_m:block/deco/wood_barrier_11111"
+  }
+ }
+}

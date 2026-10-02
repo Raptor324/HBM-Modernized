@@ -27,10 +27,15 @@ import net.minecraft.world.level.block.entity.BlockEntity;
  * Отвертка для настройки дверей и конвертера энергии.
  * ПКМ по двери (контроллеру или любой части) - открывает GUI, дверь не открывается.
  */
-public class ScrewdriverItem extends Item implements ITooltipProvider {
+/**
+ * 1:1 {@code screwdriver}/{@code screwdriver_desh} = {@code ItemTooling(ToolType.SCREWDRIVER, 100 | 0)}: bleibt beim
+ * Craften erhalten (nutzt sich um 1 ab) und ruft {@code IToolable.onScrew}; zusaetzlich oeffnet er im Port das
+ * Tuer-Auswahlmenue.
+ */
+public class ScrewdriverItem extends com.hbm_m.item.tool.ItemTooling implements ITooltipProvider {
 
-    public ScrewdriverItem(Properties properties) {
-        super(properties.stacksTo(1));
+    public ScrewdriverItem(int durability, Properties properties) {
+        super(com.hbm_m.api.block.IToolable.ToolType.SCREWDRIVER, durability, properties);
     }
 
     @Override
@@ -46,7 +51,7 @@ public class ScrewdriverItem extends Item implements ITooltipProvider {
         if (player == null) return InteractionResult.PASS;
 
         DoorBlockEntity doorEntity = resolveDoorController(level, pos);
-        if (doorEntity == null) return InteractionResult.PASS;
+        if (doorEntity == null) return super.useOn(context);
 
         if (level.isClientSide) {
             EnvExecutor.runInEnv(Env.CLIENT, () -> () ->
