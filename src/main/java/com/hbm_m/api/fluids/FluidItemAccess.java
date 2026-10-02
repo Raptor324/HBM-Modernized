@@ -28,7 +28,7 @@ public final class FluidItemAccess {
         if (stack.isEmpty()) return false;
         //? if forge {
         return stack.getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER_ITEM).isPresent();
-        //?} else if neoforge {
+        //?} elif neoforge {
         /*return stack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.FluidHandler.ITEM) != null;
         *///?} else {
         /*return false;

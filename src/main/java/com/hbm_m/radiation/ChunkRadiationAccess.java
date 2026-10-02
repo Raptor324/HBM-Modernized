@@ -12,7 +12,7 @@ public final class ChunkRadiationAccess {
     public static Optional<IChunkRadiation> get(LevelChunk chunk) {
         //? if forge {
         return chunk.getCapability(com.hbm_m.capability.ChunkRadiationProvider.CHUNK_RADIATION_CAPABILITY).resolve();
-        //?} else if neoforge {
+        //?} elif neoforge {
         /*// NeoForge 1.21.1: AttachmentType取代 capabilities. ModAttachments.CHUNK_RADIATION
         // уже зарегистрирован в NeoForgeEntrypoint — здесь только читаем.
         return Optional.ofNullable(chunk.getData(com.hbm_m.capability.ModAttachments.CHUNK_RADIATION.get()));

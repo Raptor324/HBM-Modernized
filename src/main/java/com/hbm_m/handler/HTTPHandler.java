@@ -107,7 +107,7 @@ public class HTTPHandler {
 	private static String modrinthLoader() {
 		//? if neoforge {
 		/*return "neoforge";
-		*///?} else if forge {
+		*///?} elif forge {
 		return "forge";
 		//?} else {
 		/*return "fabric";
