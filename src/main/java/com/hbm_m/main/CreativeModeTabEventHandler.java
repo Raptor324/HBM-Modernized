@@ -14,12 +14,14 @@ import java.util.function.Consumer;
 
 import com.hbm_m.api.fluids.HbmFluidRegistry;
 import com.hbm_m.block.ModBlocks;
+import com.hbm_m.block.generic.BlockAbsorber;
 import com.hbm_m.client.ClientSetup;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.creativetabs.MissileTab;
 import com.hbm_m.creativetabs.NukeTab;
 import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.item.ModItems;
+import com.hbm_m.item.BlockAbsorberItem;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.item.fekal_electric.ModBatteryItem;
 import com.hbm_m.item.liquids.FluidBarrelItem;
@@ -169,7 +171,6 @@ public final class CreativeModeTabEventHandler {
 
     private static void addCastMolds(Consumer<ItemStack> add) {
         add.accept(new ItemStack(ModItems.MOLD_BASE.get()));
-        add.accept(new ItemStack(ModItems.MOLD_STEEL_BASE.get()));
         add.accept(new ItemStack(ModItems.MOLD_NUGGET.get()));
         add.accept(new ItemStack(ModItems.MOLD_BILLET.get()));
         add.accept(new ItemStack(ModItems.MOLD_INGOT.get()));
@@ -198,9 +199,6 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModItems.MOLD_GRIP.get()));
         add.accept(new ItemStack(ModItems.MOLD_C357.get()));
         add.accept(new ItemStack(ModItems.MOLD_CBUCKSHOT.get()));
-        add.accept(new ItemStack(ModItems.MOLD_HULL_SMALL.get()));
-        add.accept(new ItemStack(ModItems.MOLD_HULL_BIG.get()));
-        add.accept(new ItemStack(ModItems.MOLD_MOGUS.get()));
     }
 
     // ==================== Вкладки мода (порядок оригинала 1.7.10) ====================
@@ -1175,11 +1173,17 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModItems.DEBRIS_ELEMENT.get()));
         add.accept(new ItemStack(ModItems.REACHER.get()));
         add.accept(new ItemStack(ModItems.MELTDOWN_TOOL.get()));
-        addBattery(add, ModItems.CREATIVE_BATTERY.get());
+        // Оригинал: battery_creative — один предмет во вкладке (addBattery дал бы «пустой» + «заряженный»
+        // дубль: батарея самозаряжается и выглядит одинаково). Заряд добирает inventoryTick.
+        add.accept(new ItemStack(ModItems.CREATIVE_BATTERY.get()));
         add.accept(new ItemStack(ModItems.CUBE_POWER.get()));
         addBattery(add, ModItems.BATTERY_SCHRABIDIUM.get());
         addBattery(add, ModItems.BATTERY_POTATO.get());
         addBattery(add, ModBlocks.HEV_BATTERY.get());
+        // Большие батареи-паки для сокета : заряд и пустой экземпляр.
+        for (var pack : ModItems.BATTERY_PACKS) {
+            addBattery(add, pack.get());
+        }
         add.accept(new ItemStack(ModItems.FUSION_CORE.get()));
         add.accept(new ItemStack(ModItems.FUSE.get()));
         add.accept(new ItemStack(ModItems.ARC_ELECTRODE.get()));
@@ -1276,9 +1280,8 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModBlocks.SULFUR_ORE.get()));
         add.accept(new ItemStack(ModBlocks.THORIUM_ORE.get()));
         add.accept(new ItemStack(ModBlocks.NITER_ORE.get()));
-        add.accept(new ItemStack(ModBlocks.ORE_COPPER.get()));
         add.accept(new ItemStack(ModBlocks.TUNGSTEN_ORE.get()));
-        add.accept(new ItemStack(ModBlocks.ORE_ALUMINIUM.get()));
+        add.accept(new ItemStack(ModBlocks.ALUMINUM_ORE.get()));
         add.accept(new ItemStack(ModBlocks.FLUORITE_ORE.get()));
         add.accept(new ItemStack(ModBlocks.LEAD_ORE.get()));
         add.accept(new ItemStack(ModBlocks.SCHRABIDIUM_ORE.get()));
@@ -1289,61 +1292,74 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModBlocks.CLUSTER_TITANIUM.get()));
         add.accept(new ItemStack(ModBlocks.CLUSTER_ALUMINIUM.get()));
         add.accept(new ItemStack(ModBlocks.CLUSTER_COPPER.get()));
-        add.accept(new ItemStack(ModBlocks.ORE_NETHER_COAL.get()));
-        add.accept(new ItemStack(ModBlocks.ORE_NETHER_SMOLDERING.get()));
-        add.accept(new ItemStack(ModBlocks.ORE_NETHER_URANIUM.get()));
+        add.accept(new ItemStack(ModBlocks.NETHER_COAL_ORE.get()));
+        add.accept(new ItemStack(ModBlocks.NETHER_SMOLDERING_ORE.get()));
+        add.accept(new ItemStack(ModBlocks.NETHER_URANIUM_ORE.get()));
         add.accept(new ItemStack(ModBlocks.ORE_NETHER_URANIUM_SCORCHED.get()));
-        add.accept(new ItemStack(ModBlocks.ORE_NETHER_PLUTONIUM.get()));
-        add.accept(new ItemStack(ModBlocks.ORE_NETHER_TUNGSTEN.get()));
-        add.accept(new ItemStack(ModBlocks.ORE_NETHER_SULFUR.get()));
-        add.accept(new ItemStack(ModBlocks.ORE_NETHER_FIRE.get()));
-        add.accept(new ItemStack(ModBlocks.ORE_NETHER_COBALT.get()));
+        add.accept(new ItemStack(ModBlocks.NETHER_PLUTONIUM_ORE.get()));
+        add.accept(new ItemStack(ModBlocks.NETHER_TUNGSTEN_ORE.get()));
+        add.accept(new ItemStack(ModBlocks.NETHER_SULFUR_ORE.get()));
+        add.accept(new ItemStack(ModBlocks.NETHER_FIRE_ORE.get()));
+        add.accept(new ItemStack(ModBlocks.NETHER_COBALT_ORE.get()));
         add.accept(new ItemStack(ModBlocks.SCHRABIDIUM_ORE_NETHER.get()));
+        // Meteor Ores (ориг. порядок: после незер-руд, перед гнейсовыми)
+        add.accept(new ItemStack(ModBlocks.ORE_METEOR_IRON.get()));
+        add.accept(new ItemStack(ModBlocks.ORE_METEOR_COPPER.get()));
+        add.accept(new ItemStack(ModBlocks.ORE_METEOR_ALUMINIUM.get()));
+        add.accept(new ItemStack(ModBlocks.ORE_METEOR_RAREEARTH.get()));
+        add.accept(new ItemStack(ModBlocks.ORE_METEOR_COBALT.get()));
         add.accept(new ItemStack(ModBlocks.STONE_GNEISS.get()));
-        add.accept(new ItemStack(ModBlocks.ORE_GNEISS_IRON.get()));
-        add.accept(new ItemStack(ModBlocks.ORE_GNEISS_GOLD.get()));
-        add.accept(new ItemStack(ModBlocks.ORE_GNEISS_URANIUM.get()));
+        add.accept(new ItemStack(ModBlocks.GNEISS_IRON_ORE.get()));
+        add.accept(new ItemStack(ModBlocks.GNEISS_GOLD_ORE.get()));
+        add.accept(new ItemStack(ModBlocks.GNEISS_URANIUM_ORE.get()));
         add.accept(new ItemStack(ModBlocks.ORE_GNEISS_URANIUM_SCORCHED.get()));
-        add.accept(new ItemStack(ModBlocks.ORE_GNEISS_COPPER.get()));
-        add.accept(new ItemStack(ModBlocks.ORE_GNEISS_ASBESTOS.get()));
-        add.accept(new ItemStack(ModBlocks.ORE_GNEISS_LITHIUM.get()));
+        add.accept(new ItemStack(ModBlocks.GNEISS_COPPER_ORE.get()));
+        add.accept(new ItemStack(ModBlocks.GNEISS_ASBESTOS_ORE.get()));
+        add.accept(new ItemStack(ModBlocks.GNEISS_LITHIUM_ORE.get()));
         add.accept(new ItemStack(ModBlocks.SCHRABIDIUM_ORE_GNEISS.get()));
-        add.accept(new ItemStack(ModBlocks.ORE_GNEISS_RARE.get()));
-        add.accept(new ItemStack(ModBlocks.ORE_GNEISS_GAS.get()));
+        add.accept(new ItemStack(ModBlocks.GNEISS_RARE_ORE.get()));
+        add.accept(new ItemStack(ModBlocks.GNEISS_GAS_ORE.get()));
         add.accept(new ItemStack(ModBlocks.GNEISS_BRICK.get()));
         add.accept(new ItemStack(ModBlocks.GNEISS_TILE.get()));
         add.accept(new ItemStack(ModBlocks.GNEISS_CHISELED.get()));
         add.accept(new ItemStack(ModBlocks.STONE_DEPTH.get()));
-        add.accept(new ItemStack(ModBlocks.ORE_DEPTH_CINNEBAR.get()));
-        add.accept(new ItemStack(ModBlocks.ORE_DEPTH_ZIRCONIUM.get()));
-        add.accept(new ItemStack(ModBlocks.ORE_DEPTH_BORAX.get()));
+        add.accept(new ItemStack(ModBlocks.DEPTH_CINNABAR.get()));
+        add.accept(new ItemStack(ModBlocks.DEPTH_ZIRCONIUM.get()));
+        add.accept(new ItemStack(ModBlocks.DEPTH_BORAX.get()));
         add.accept(new ItemStack(ModBlocks.CLUSTER_DEPTH_IRON.get()));
         add.accept(new ItemStack(ModBlocks.CLUSTER_DEPTH_TITANIUM.get()));
         add.accept(new ItemStack(ModBlocks.CLUSTER_DEPTH_TUNGSTEN.get()));
-        add.accept(new ItemStack(ModBlocks.ORE_ALEXANDRITE.get()));
+        add.accept(new ItemStack(ModBlocks.ALEXANDRITE_ORE.get()));
         add.accept(new ItemStack(ModBlocks.DEPTH_BRICK.get()));
         add.accept(new ItemStack(ModBlocks.DEPTH_TILES.get()));
         add.accept(new ItemStack(ModBlocks.DEPTH_NETHER_BRICK.get()));
         add.accept(new ItemStack(ModBlocks.DEPTH_NETHER_TILES.get()));
         add.accept(new ItemStack(ModBlocks.DEPTH_DNT.get()));
         add.accept(new ItemStack(ModBlocks.STONE_DEPTH_NETHER.get()));
-        add.accept(new ItemStack(ModBlocks.ORE_DEPTH_NETHER_NEODYMIUM.get()));
+        add.accept(new ItemStack(ModBlocks.DEPTH_NETHER_NEODYMIUM.get()));
         add.accept(new ItemStack(ModBlocks.STONE_POROUS.get()));
         add.accept(new ItemStack(ModBlocks.BASALT.get()));
         add.accept(new ItemStack(ModBlocks.BASALT_SMOOTH.get()));
         add.accept(new ItemStack(ModBlocks.BASALT_BRICK.get()));
         add.accept(new ItemStack(ModBlocks.BASALT_POLISHED.get()));
         add.accept(new ItemStack(ModBlocks.BASALT_TILES.get()));
-        add.accept(new ItemStack(ModBlocks.ORE_AUSTRALIUM.get()));
-        add.accept(new ItemStack(ModBlocks.ORE_RARE.get()));
+        add.accept(new ItemStack(ModBlocks.AUSTRALIUM_ORE.get()));
+        add.accept(new ItemStack(ModBlocks.RAREGROUND_ORE.get()));
         add.accept(new ItemStack(ModBlocks.COBALT_ORE.get()));
-        add.accept(new ItemStack(ModBlocks.ORE_CINNEBAR.get()));
-        add.accept(new ItemStack(ModBlocks.ORE_COLTAN.get()));
+        add.accept(new ItemStack(ModBlocks.CINNABAR_ORE.get()));
+        add.accept(new ItemStack(ModBlocks.COLTAN_ORE.get()));
         add.accept(new ItemStack(ModBlocks.ORE_OIL.get()));
         add.accept(new ItemStack(ModBlocks.ORE_OIL_EMPTY.get()));
         add.accept(new ItemStack(ModBlocks.ORE_OIL_SAND.get()));
         add.accept(new ItemStack(ModBlocks.ORE_BEDROCK_OIL.get()));
-        add.accept(new ItemStack(ModBlocks.ORE_TIKITE.get()));
+        // Basalt Ores (ориг. порядок: после nether depth ores, перед энд-рудой ore_tikite)
+        add.accept(new ItemStack(ModBlocks.ORE_BASALT_SULFUR.get()));
+        add.accept(new ItemStack(ModBlocks.ORE_BASALT_FLUORITE.get()));
+        add.accept(new ItemStack(ModBlocks.ORE_BASALT_ASBESTOS.get()));
+        add.accept(new ItemStack(ModBlocks.ORE_BASALT_GEM.get()));
+        add.accept(new ItemStack(ModBlocks.ORE_BASALT_MOLYSITE.get()));
+        add.accept(new ItemStack(ModBlocks.TIKITE_ORE.get()));
+        add.accept(new ItemStack(ModBlocks.ORE_VOLCANO.get()));
         add.accept(new ItemStack(ModBlocks.BLOCK_PU_MIX.get()));
         add.accept(new ItemStack(ModBlocks.BLOCK_SULFUR.get()));
         add.accept(new ItemStack(ModBlocks.BLOCK_NITER.get()));
@@ -1733,8 +1749,6 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModBlocks.WATZ_COOLER.get()));
         add.accept(new ItemStack(ModBlocks.WATZ_END.get()));
         add.accept(new ItemStack(ModBlocks.WATZ_PUMP.get()));
-        add.accept(new ItemStack(ModBlocks.MACHINE_CONVERTER_HE_RF.get()));
-        add.accept(new ItemStack(ModBlocks.MACHINE_CONVERTER_RF_HE.get()));
         // Achtung: DFC_EMITTER/INJECTOR/RECEIVER sind reine Platzhalterbloecke ohne Logik. Die
         // arbeitenden Maschinen heissen im Port CORE_EMITTER/INJECTOR/RECEIVER und lagen bisher
         // nicht im Reiter - der Spieler bekam also die toten Attrappen.
@@ -1894,7 +1908,10 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModBlocks.GAS_COAL.get()));
         add.accept(new ItemStack(ModBlocks.GAS_FLAMMABLE.get()));
         add.accept(new ItemStack(ModBlocks.GAS_EXPLOSIVE.get()));
-        add.accept(new ItemStack(ModBlocks.RAD_ABSORBER.get()));
+        // Все 4 уровня поглотителя (мета 0–3 оригинала), каждый со своей текстурой/именем
+        for (BlockAbsorber.EnumAbsorberTier tier : BlockAbsorber.EnumAbsorberTier.values()) {
+            add.accept(BlockAbsorberItem.forTier(ModBlocks.RAD_ABSORBER.get(), tier));
+        }
         add.accept(new ItemStack(ModBlocks.DECON.get()));
     }
 
@@ -2548,38 +2565,38 @@ public final class CreativeModeTabEventHandler {
         // add.accept(new ItemStack(ModBlocks.LOGIC_BLOCK.get()));
         // add.accept(new ItemStack(ModBlocks.MACHINE_RADAR.get()));
         // add.accept(new ItemStack(ModBlocks.MUSH_BLOCK_STEM.get()));
-        // add.accept(new ItemStack(ModBlocks.ORE_ALEXANDRITE.get()));
-        // add.accept(new ItemStack(ModBlocks.ORE_ALUMINIUM.get()));
-        // add.accept(new ItemStack(ModBlocks.ORE_AUSTRALIUM.get()));
-        // add.accept(new ItemStack(ModBlocks.ORE_CINNEBAR.get()));
-        // add.accept(new ItemStack(ModBlocks.ORE_COLTAN.get()));
+        // add.accept(new ItemStack(ModBlocks.ALEXANDRITE_ORE.get()))
+        // add.accept(new ItemStack(ModBlocks.ALUMINUM_ORE.get()))
+        // add.accept(new ItemStack(ModBlocks.AUSTRALIUM_ORE.get()))
+        // add.accept(new ItemStack(ModBlocks.CINNABAR_ORE.get()))
+        // add.accept(new ItemStack(ModBlocks.COLTAN_ORE.get()))
         // add.accept(new ItemStack(ModBlocks.ORE_COPPER.get()));
-        // add.accept(new ItemStack(ModBlocks.ORE_DEPTH_BORAX.get()));
-        // add.accept(new ItemStack(ModBlocks.ORE_DEPTH_CINNEBAR.get()));
-        // add.accept(new ItemStack(ModBlocks.ORE_DEPTH_NETHER_NEODYMIUM.get()));
-        // add.accept(new ItemStack(ModBlocks.ORE_DEPTH_ZIRCONIUM.get()));
-        // add.accept(new ItemStack(ModBlocks.ORE_GNEISS_ASBESTOS.get()));
-        // add.accept(new ItemStack(ModBlocks.ORE_GNEISS_COPPER.get()));
-        // add.accept(new ItemStack(ModBlocks.ORE_GNEISS_GAS.get()));
-        // add.accept(new ItemStack(ModBlocks.ORE_GNEISS_GOLD.get()));
-        // add.accept(new ItemStack(ModBlocks.ORE_GNEISS_IRON.get()));
-        // add.accept(new ItemStack(ModBlocks.ORE_GNEISS_LITHIUM.get()));
-        // add.accept(new ItemStack(ModBlocks.ORE_GNEISS_RARE.get()));
-        // add.accept(new ItemStack(ModBlocks.ORE_GNEISS_URANIUM.get()));
+        // add.accept(new ItemStack(ModBlocks.DEPTH_BORAX.get()))
+        // add.accept(new ItemStack(ModBlocks.DEPTH_CINNABAR.get()))
+        // add.accept(new ItemStack(ModBlocks.DEPTH_NETHER_NEODYMIUM.get()))
+        // add.accept(new ItemStack(ModBlocks.DEPTH_ZIRCONIUM.get()))
+        // add.accept(new ItemStack(ModBlocks.GNEISS_ASBESTOS_ORE.get()))
+        // add.accept(new ItemStack(ModBlocks.GNEISS_COPPER_ORE.get()))
+        // add.accept(new ItemStack(ModBlocks.GNEISS_GAS_ORE.get()))
+        // add.accept(new ItemStack(ModBlocks.GNEISS_GOLD_ORE.get()))
+        // add.accept(new ItemStack(ModBlocks.GNEISS_IRON_ORE.get()))
+        // add.accept(new ItemStack(ModBlocks.GNEISS_LITHIUM_ORE.get()))
+        // add.accept(new ItemStack(ModBlocks.GNEISS_RARE_ORE.get()))
+        // add.accept(new ItemStack(ModBlocks.GNEISS_URANIUM_ORE.get()))
         // add.accept(new ItemStack(ModBlocks.ORE_GNEISS_URANIUM_SCORCHED.get()));
-        // add.accept(new ItemStack(ModBlocks.ORE_NETHER_COAL.get()));
-        // add.accept(new ItemStack(ModBlocks.ORE_NETHER_COBALT.get()));
-        // add.accept(new ItemStack(ModBlocks.ORE_NETHER_FIRE.get()));
-        // add.accept(new ItemStack(ModBlocks.ORE_NETHER_PLUTONIUM.get()));
-        // add.accept(new ItemStack(ModBlocks.ORE_NETHER_SMOLDERING.get()));
-        // add.accept(new ItemStack(ModBlocks.ORE_NETHER_SULFUR.get()));
-        // add.accept(new ItemStack(ModBlocks.ORE_NETHER_TUNGSTEN.get()));
-        // add.accept(new ItemStack(ModBlocks.ORE_NETHER_URANIUM.get()));
+        // add.accept(new ItemStack(ModBlocks.NETHER_COAL_ORE.get()))
+        // add.accept(new ItemStack(ModBlocks.NETHER_COBALT_ORE.get()))
+        // add.accept(new ItemStack(ModBlocks.NETHER_FIRE_ORE.get()))
+        // add.accept(new ItemStack(ModBlocks.NETHER_PLUTONIUM_ORE.get()))
+        // add.accept(new ItemStack(ModBlocks.NETHER_SMOLDERING_ORE.get()))
+        // add.accept(new ItemStack(ModBlocks.NETHER_SULFUR_ORE.get()))
+        // add.accept(new ItemStack(ModBlocks.NETHER_TUNGSTEN_ORE.get()))
+        // add.accept(new ItemStack(ModBlocks.NETHER_URANIUM_ORE.get()))
         // add.accept(new ItemStack(ModBlocks.ORE_NETHER_URANIUM_SCORCHED.get()));
         // add.accept(new ItemStack(ModBlocks.ORE_OIL_SAND.get()));
-        // add.accept(new ItemStack(ModBlocks.ORE_RARE.get()));
+        // add.accept(new ItemStack(ModBlocks.RAREGROUND_ORE.get()));
         // add.accept(new ItemStack(ModBlocks.ORE_TEKTITE_OSMIRIDIUM.get()));
-        // add.accept(new ItemStack(ModBlocks.ORE_TIKITE.get()));
+        // add.accept(new ItemStack(ModBlocks.TIKITE_ORE.get()))
         // add.accept(new ItemStack(ModBlocks.ORE_URANIUM_SCORCHED.get()));
         // add.accept(new ItemStack(ModBlocks.PILE_BLOCK.get()));
         // add.accept(new ItemStack(ModBlocks.PILE_BRICK.get()));
@@ -2636,12 +2653,9 @@ public final class CreativeModeTabEventHandler {
         // add.accept(new ItemStack(ModItems.MOLD_CBUCKSHOT.get()));
         // add.accept(new ItemStack(ModItems.MOLD_GEM.get()));
         // add.accept(new ItemStack(ModItems.MOLD_GRIP.get()));
-        // add.accept(new ItemStack(ModItems.MOLD_HULL_BIG.get()));
-        // add.accept(new ItemStack(ModItems.MOLD_HULL_SMALL.get()));
         // add.accept(new ItemStack(ModItems.MOLD_INGOT.get()));
         // add.accept(new ItemStack(ModItems.MOLD_INGOTS.get()));
         // add.accept(new ItemStack(ModItems.MOLD_MECHANISM.get()));
-        // add.accept(new ItemStack(ModItems.MOLD_MOGUS.get()));
         // add.accept(new ItemStack(ModItems.MOLD_NUGGET.get()));
         // add.accept(new ItemStack(ModItems.MOLD_PIPE.get()));
         // add.accept(new ItemStack(ModItems.MOLD_PIPES.get()));
@@ -2691,7 +2705,6 @@ public final class CreativeModeTabEventHandler {
         // add.accept(new ItemStack(ModBlocks.INDUSTRIAL_TURBINE.get()));
         // add.accept(new ItemStack(ModBlocks.TURBINE.get()));
         // add.accept(new ItemStack(ModBlocks.SUBSTATION.get()));
-        // add.accept(new ItemStack(ModBlocks.CONVERTER_BLOCK.get()));
         // add.accept(new ItemStack(ModBlocks.WIRE_COATED.get()));
         // add.accept(new ItemStack(ModBlocks.DECON.get()));
         // add.accept(new ItemStack(ModBlocks.EMP.get()));
@@ -2967,8 +2980,6 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModBlocks.MACHINE_BOILER.get()));
         add.accept(new ItemStack(ModBlocks.MACHINE_CHUNGUS.get()));
         add.accept(new ItemStack(ModBlocks.MACHINE_CONTROLLER.get()));
-        add.accept(new ItemStack(ModBlocks.MACHINE_CONVERTER_HE_RF.get()));
-        add.accept(new ItemStack(ModBlocks.MACHINE_CONVERTER_RF_HE.get()));
         add.accept(new ItemStack(ModItems.CRYSTALLIZER.get()));
         add.accept(new ItemStack(ModBlocks.MACHINE_DETECTOR.get()));
         add.accept(new ItemStack(ModBlocks.MACHINE_EPRESS.get()));
@@ -3430,7 +3441,6 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModItems.COTTON_CANDY.get()));
         add.accept(new ItemStack(ModItems.CRACKPIPE.get()));
         add.accept(new ItemStack(ModItems.CRATE_CALLER.get()));
-        add.accept(new ItemStack(ModItems.CRUCIBLE_TEMPLATE.get()));
         add.accept(new ItemStack(ModItems.CUBE_POWER.get()));
         add.accept(new ItemStack(ModItems.CUSTOM_AMAT.get()));
         add.accept(new ItemStack(ModItems.CUSTOM_DIRTY.get()));

@@ -1461,16 +1461,6 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .unlockedBy(getHasName(ModMaterialItems.item(ModMaterials.COPPER, MaterialShape.PLATE_CAST)), has(ModMaterialItems.item(ModMaterials.COPPER, MaterialShape.PLATE_CAST)))
                 .save(writer, recipeId("crafting/steam_condenser"));
 
-        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.CONVERTER_BLOCK.get())
-                .pattern("###")
-                .pattern("@@@")
-                .pattern("$$$")
-                .define('#', ModItems.CAPACITOR.get())
-                .define('@', Items.REDSTONE)
-                .define('$', ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.INGOT))
-                .unlockedBy(getHasName(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.INGOT)), has(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.INGOT)))
-                .save(writer, recipeId("crafting/converter_block"));
-
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.MACHINE_BATTERY_SOCKET.get())
                 .pattern("$@$")
                 .define('$', ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE))
@@ -1486,6 +1476,27 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .define('R', ModItems.COIL_COPPER.get())
                 .unlockedBy(getHasName(ModItems.COIL_COPPER.get()), has(ModItems.COIL_COPPER.get()))
                 .save(writer, recipeId("crafting/machine_battery_socket_frame"));
+
+        // Большие батареи-паки порт двух рецептов оригинала.
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.BATTERY_PACK_REDSTONE.get())
+                .pattern("IRI")
+                .pattern("PRP")
+                .pattern("IRI")
+                .define('I', ModMaterialItems.item(ModMaterials.IRON, MaterialShape.PLATE))
+                .define('P', ModMaterialItems.item(ModMaterials.POLYMER, MaterialShape.PLATE))
+                .define('R', Items.REDSTONE_BLOCK)
+                .unlockedBy(getHasName(ModMaterialItems.item(ModMaterials.POLYMER, MaterialShape.PLATE)), has(ModMaterialItems.item(ModMaterials.POLYMER, MaterialShape.PLATE)))
+                .save(writer, recipeId("crafting/battery_pack_battery_redstone"));
+
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.BATTERY_PACK_CAPACITOR_COPPER.get())
+                .pattern("IRI")
+                .pattern("PRP")
+                .pattern("IRI")
+                .define('I', ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE))
+                .define('P', ModMaterialItems.item(ModMaterials.POLYMER, MaterialShape.PLATE))
+                .define('R', Items.COPPER_BLOCK)
+                .unlockedBy(getHasName(ModMaterialItems.item(ModMaterials.POLYMER, MaterialShape.PLATE)), has(ModMaterialItems.item(ModMaterials.POLYMER, MaterialShape.PLATE)))
+                .save(writer, recipeId("crafting/battery_pack_capacitor_copper"));
 
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.BOLT_STEEL.get(), 16)
                 .pattern("$")
@@ -1662,10 +1673,10 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .pattern("#$ ")
                 .pattern("@  ")
                 .pattern("   ")
-                .define('@', ModItems.SEQUESTRUM.get())
+                .define('@', ModMaterialItems.item(ModMaterials.NITER, MaterialShape.CRYSTAL))
                 .define('#', Items.GUNPOWDER)
                 .define('$', Items.SUGAR)
-                .unlockedBy(getHasName(ModItems.SEQUESTRUM.get()), has(ModItems.SEQUESTRUM.get()))
+                .unlockedBy(getHasName(ModMaterialItems.item(ModMaterials.NITER, MaterialShape.CRYSTAL)), has(ModMaterialItems.item(ModMaterials.NITER, MaterialShape.CRYSTAL)))
                 .save(writer, recipeId("crafting/ball_tnt"));
 
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.TEMPLATE_FOLDER.get())

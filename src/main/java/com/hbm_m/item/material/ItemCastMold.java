@@ -34,8 +34,6 @@ public class ItemCastMold extends Item implements ITooltipProvider {
         BLADE         ("Cast Blade Mold", 0),
         BLADES        ("Cast Blades Mold", 0),
         GEM           ("Cast Gem Mold", 0),
-        HULL_SMALL    ("Cast Small Hull Mold", 0),
-        HULL_BIG      ("Cast Big Hull Mold", 0),
         SHELL         ("Cast Shell Mold", 0),
         MECHANISM     ("Cast Mechanism Mold", 0),
         GRIP          ("Cast Grip Mold", 0),
@@ -44,12 +42,9 @@ public class ItemCastMold extends Item implements ITooltipProvider {
         BARREL_HEAVY  ("Cast Heavy Barrel Mold", 0),
         RECEIVER_LIGHT("Cast Light Receiver Mold", 0),
         RECEIVER_HEAVY("Cast Heavy Receiver Mold", 0),
-        BASE          ("Cast Base Mold", 0),
-        STEEL_BASE    ("Cast Steel Base Mold", 0),
         STAMP         ("Cast Stamp Mold", 0),
         C357          ("Cast .357 Casing Mold", 0),
-        CBUCKSHOT     ("Cast Buckshot Mold", 0),
-        MOGUS         ("Cast Mogus Mold", 0);
+        CBUCKSHOT     ("Cast Buckshot Mold", 0);
 
         public final String label;
         /** 0 = малая форма (foundry_mold), 1 = большая (foundry_basin) — ItemMold.Mold.size оригинала. */

@@ -177,6 +177,15 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("config.hbm_m.category.debug.tooltip", "Debug rendering and logging.");
         add("config.hbm_m.category.rendering.tooltip", "Client rendering options.");
         add("config.hbm_m.category.overlay.tooltip", "Screen overlays (pixel effect, highlight).");
+
+        add("config.hbm_m.field.occlusionCullingMode", "Multiblock Occlusion Culling");
+        add("config.hbm_m.field.occlusionCullingMode.tooltip", "Selects occlusion culling mode for multiblock machines.\nGPU: Hierarchical-Z depth pyramid culling via OpenGL 4.3 compute shaders.\nCPU: Voxel ray-marching against world blocks.\nOFF: Occlusion culling disabled.\nTip: enable CPU when many machines are hidden behind blocks/terrain — it saves GPU fill by not drawing them. In open biomes it gives little and costs CPU instead.");
+        add("config.hbm_m.rendering.occlusionCullingMode.gpu_unsupported", "GPU occlusion culling is unsupported on your hardware: %s");
+        add("text.autoconfig.hbm_m.option.occlusionCullingMode", "Multiblock Occlusion Culling");
+        add("text.autoconfig.hbm_m.option.occlusionCullingMode.@Tooltip", "Selects occlusion culling mode for multiblock machines.\nGPU: Hierarchical-Z depth pyramid culling via OpenGL 4.3 compute shaders.\nCPU: Voxel ray-marching against world blocks.\nOFF: Occlusion culling disabled.\nTip: enable CPU when many machines are hidden behind blocks/terrain — it saves GPU fill by not drawing them. In open biomes it gives little and costs CPU instead.");
+        add("text.autoconfig.hbm_m.option.occlusionCullingMode.GPU", "GPU");
+        add("text.autoconfig.hbm_m.option.occlusionCullingMode.CPU", "CPU");
+        add("text.autoconfig.hbm_m.option.occlusionCullingMode.OFF", "OFF");
     }
 
     @Override
@@ -629,6 +638,23 @@ public class ModLanguageProviderEn extends LanguageProvider {
 
         add(ModItems.BATTERY_POTATO.get(), "Potato Battery");
         add(ModItems.BATTERY.get(), "Battery");
+
+        // Большие батареи-паки (бэкпорт оригинала)
+        add(ModItems.BATTERY_PACK_REDSTONE.get(), "Redstone Battery");
+        add(ModItems.BATTERY_PACK_LEAD.get(), "Lead-Acid Battery");
+        add(ModItems.BATTERY_PACK_LITHIUM.get(), "Lithium-Ion Battery");
+        add(ModItems.BATTERY_PACK_SODIUM.get(), "Sodium-Iron Battery");
+        add(ModItems.BATTERY_PACK_SCHRABIDIUM.get(), "Schrabidium Battery");
+        add(ModItems.BATTERY_PACK_QUANTUM.get(), "Quantum Battery");
+        add(ModItems.BATTERY_PACK_CAPACITOR_COPPER.get(), "Copper Capacitor");
+        add(ModItems.BATTERY_PACK_CAPACITOR_GOLD.get(), "Gold Capacitor");
+        add(ModItems.BATTERY_PACK_CAPACITOR_NIOBIUM.get(), "Niobium Capacitor");
+        add(ModItems.BATTERY_PACK_CAPACITOR_TANTALUM.get(), "Tantalum Capacitor");
+        add(ModItems.BATTERY_PACK_CAPACITOR_BISMUTH.get(), "Bismuth Capacitor");
+        add(ModItems.BATTERY_PACK_CAPACITOR_SPARK.get(), "Spark Capacitor");
+        add("tooltip.hbm_m.battery_pack.time_for_full_charge", "Time for full charge: %s min");
+        add("tooltip.hbm_m.battery_pack.charge_lasts_for", "Charge lasts for: %s min");
+
         add(ModItems.BATTERY_RED_CELL.get(), "Red Energy Cell");
         add(ModItems.BATTERY_RED_CELL_6.get(), "Red Energy Cell x6");
         add(ModItems.BATTERY_RED_CELL_24.get(), "Red Energy Cell x24");
@@ -1039,20 +1065,17 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("tooltip.hbm_m.grenade_if.standard.line2", "Standard timed explosion");
         add("tooltip.hbm_m.grenade_if.default.line2", "Throw it and wait for the boom");
 
-        add("tooltip.hbm_m.depthstone.line1", "Can be mined or destroyed only by explosion!");
-        add("tooltip.hbm_m.depthstone.line4", "Use Det Miner to safe-mine depth ores");
+        add("tooltip.hbm_m.depthstone.line1", "Can only be destroyed by explosions");
+        add("tooltip.hbm_m.depthstone.line4", "Depth pickaxes (bismuth and above) can mine depth rock");
+        add("tooltip.hbm_m.depth_rock_breaker", "Can break depth rock!");
 
         add(ModItems.CRT_DISPLAY.get(), "CRT");
         add(ModItems.MAGNETRON.get(), "Magnetron");
         add(ModItems.TURBINE_TITANIUM.get(), "Titanium Turbine");
         add(ModBlocks.DEPTH_STONE.get(), "Depth Stone");
         add(ModBlocks.DEPTH_CINNABAR.get(), "Deep Cinnabar Ore");
-        add(ModBlocks.DEPTH_IRON.get(), "Deep Iron Ore");
         add(ModBlocks.DEPTH_ZIRCONIUM.get(), "Deep Zirconium Ore");
         add(ModBlocks.DEPTH_BORAX.get(), "Deep Borax Ore");
-        add(ModBlocks.DEPTH_TUNGSTEN.get(), "Deep Tungsten Ore");
-        add(ModBlocks.DEPTH_TITANIUM.get(), "Deep Titanium Ore");
-        add(ModBlocks.BEDROCK_OIL.get(), "Bedrock Oil");
         add(ModBlocks.BURNED_GRASS.get(), "Burned Grass");
         add(ModBlocks.WASTE_PLANKS.get(), "Burned Planks");
         add(ModBlocks.WASTE_LOG.get(), "Burned Log");
@@ -1287,7 +1310,6 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add(ModBlocks.METEOR_CRUSHED_STAIRS.get(), "Crushed Meteor Stairs");
 
         add(ModItems.COIL_TUNGSTEN.get(), "Heating Element");
-        add(ModBlocks.CONVERTER_BLOCK.get(), "Energy Converter");
         add(ModBlocks.MACHINE_BATTERY_DINEUTRONIUM.get(), "Spark Battery");
         add(ModBlocks.MACHINE_BATTERY_SCHRABIDIUM.get(), "Shrabidium Battery");
         add(ModBlocks.MACHINE_BATTERY_LITHIUM.get(), "Lithium Battery");
@@ -1351,9 +1373,9 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("gui.hbm_m.fluid_tank.empty_locked", "Empty (tank type: %s)");
         add("gui.hbm_m.fluid_tank.empty_filter", "Empty (filter: %s)");
         add("gui.hbm_m.fluid_tank.filter_set", "Type set to %s!");
-        add("gui.hbm_m.fluid_tank.mode.0", "Mode: Output only");
+        add("gui.hbm_m.fluid_tank.mode.0", "Mode: Input only");
         add("gui.hbm_m.fluid_tank.mode.1", "Mode: Buffer");
-        add("gui.hbm_m.fluid_tank.mode.2", "Mode: Input only");
+        add("gui.hbm_m.fluid_tank.mode.2", "Mode: Output only");
         add("gui.hbm_m.fluid_tank.mode.3", "Mode: Disabled");
         add("gui.hbm_m.fluid_tank.pressure", "Pressure: %s PU");
         add("gui.hbm_m.fluid_tank.pressurized", "Pressurized — use a compressor!");
@@ -2341,7 +2363,9 @@ public class ModLanguageProviderEn extends LanguageProvider {
             add(ModBlocks.CORE_INJECTOR.get(), "Core Injector (WIP)");
             add(ModBlocks.CORE_RECEIVER.get(), "Core Receiver (WIP)");
             add(ModBlocks.VACUUM_DISTILL.get(), "Vacuum Distill (WIP)");
-            add(ModBlocks.TURBOFAN.get(), "Turbofan (WIP)");
+            add(ModBlocks.TURBOFAN.get(), "Turbofan");
+            add("desc.hbm_m.turbofan.efficiency", "Fuel efficiency:");
+            add("desc.hbm_m.turbofan.aviation", "-Aviation: 100%");
             add(ModBlocks.INDUSTRIAL_TURBINE.get(), "Industrial Turbine");
         add(ModBlocks.TURBINE.get(), "Turbine (WIP)");
         add(ModBlocks.SUBSTATION.get(), "Substation (WIP)");
@@ -2611,8 +2635,6 @@ public class ModLanguageProviderEn extends LanguageProvider {
 
 
         // ORES
-        add(ModBlocks.SEQUESTRUM_ORE.get(), "Niter Ore");
-        add(ModItems.SEQUESTRUM.get(), "Niter");
         add(ModItems.AIRSTRIKE_TEST.get(), "Airstrike Designator");
         add(ModItems.AIRSTRIKE_HEAVY.get(), "Airstrike Designator");
         add(ModItems.AIRSTRIKE_AGENT.get(), "Airstrike Designator");
@@ -2649,8 +2671,6 @@ public class ModLanguageProviderEn extends LanguageProvider {
         // Ore generation parity with 1.7.10
         add("block.hbm_m.niter_ore", "Niter Ore");
         add("block.hbm_m.niter_ore_deepslate", "Deepslate Niter Ore");
-        add("block.hbm_m.lithium_ore", "Lithium Ore");
-        add("block.hbm_m.lithium_ore_deepslate", "Deepslate Lithium Ore");
         add("block.hbm_m.alexandrite_ore", "Alexandrite Ore");
         add("block.hbm_m.coltan_ore", "Coltan Ore");
         add("block.hbm_m.coltan_ore_deepslate", "Deepslate Coltan Ore");
@@ -2668,6 +2688,20 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("block.hbm_m.nether_plutonium_ore", "Nether Plutonium Ore");
         add("block.hbm_m.nether_smoldering_ore", "Smoldering Nether Ore");
         add("block.hbm_m.depth_nether_neodymium", "Nether Depth Neodymium Ore");
+        // Meteor Ores (ориг. en_US.lang: tile.ore_meteor.*)
+        add("block.hbm_m.ore_meteor_iron", "Meteor Iron Ore");
+        add("block.hbm_m.ore_meteor_copper", "Meteor Copper Ore");
+        add("block.hbm_m.ore_meteor_aluminium", "Meteor Aluminium Ore");
+        add("block.hbm_m.ore_meteor_rareearth", "Meteor Rare Earth Ore");
+        add("block.hbm_m.ore_meteor_cobalt", "Meteor Cobalt Ore");
+        // Basalt Ores (ориг. en_US.lang: tile.ore_basalt_*)
+        add("block.hbm_m.ore_basalt_sulfur", "Sulfur-Rich Basalt");
+        add("block.hbm_m.ore_basalt_fluorite", "Fluorite-Rich Basalt");
+        add("block.hbm_m.ore_basalt_asbestos", "Asbestos-Rich Basalt");
+        add("block.hbm_m.ore_basalt_gem", "Gem-Rich Basalt");
+        add("block.hbm_m.ore_basalt_molysite", "Molysite-Rich Basalt");
+        // ore_volcano (ориг. BlockFissure, en_US.lang: tile.ore_volcano.name)
+        add("block.hbm_m.ore_volcano", "Geothermal Vent");
         add("block.hbm_m.tikite_ore", "Tikite Ore");
         add("block.hbm_m.ore_oil_sand", "Oil Sand");
         add("block.hbm_m.australium_ore", "Australium Ore");
@@ -2786,7 +2820,7 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("container.hbm_m.substation", "Substation (WIP)");
         add("container.hbm_m.heating_oven", "Heating Oven");
         add("container.hbm_m.advanced_assembly_machine", "Assembly Machine");
-        add(ModBlocks.CRUCIBLE.get(), "Crucible (WIP)");
+        add(ModBlocks.CRUCIBLE.get(), "Crucible");
         add(ModBlocks.FOUNDRY_BASIN.get(), "Foundry Basin");
         add(ModBlocks.FOUNDRY_OUTLET.get(), "Foundry Outlet");
         add(ModBlocks.FOUNDRY_CHANNEL.get(), "Foundry Channel");
@@ -3124,8 +3158,6 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("chat.hbm_m.chungus.stage", "Compressor setting: %s");
         add("chat.hbm_m.chungus.busy", "Cannot change compressor setting while operational!");
 
-        add("text.autoconfig.hbm_m.title", "Radiation Settings (HBM Modernized)");
-
         // CONFIG
 
         // ── Config GUI (config.hbm_m.*) — custom vanilla-widget menu ──
@@ -3145,7 +3177,6 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("text.autoconfig.hbm_m.option.enableRadiation", "Enable radiation");
         add("text.autoconfig.hbm_m.option.enableChunkRads", "Enable chunk radiation");
         add("text.autoconfig.hbm_m.option.enableMOTD", "Join MOTD and update notice");
-        add("text.autoconfig.hbm_m.option.usePrismSystem", "Use PRISM system (otherwise Simple), WIP");
 
         add("text.autoconfig.hbm_m.category.world_effects", "World Effects");
 
@@ -3192,23 +3223,88 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("text.autoconfig.hbm_m.category.chunk", "Chunk");
 
         add("text.autoconfig.hbm_m.option.maxRad", "Max chunk radiation");
-        add("text.autoconfig.hbm_m.option.fogRad", "Fog radiation threshold");
-        add("text.autoconfig.hbm_m.option.fogCh", "Fog chance (1 in fogCh), WIP");
         add("text.autoconfig.hbm_m.option.radChunkDecay", "Chunk radiation decay rate");
         add("text.autoconfig.hbm_m.option.radChunkSpreadFactor", "Chunk radiation spread factor");
         add("text.autoconfig.hbm_m.option.radSpreadThreshold", "Radiation spread threshold");
         add("text.autoconfig.hbm_m.option.minRadDecayAmount", "Min decay per tick");
-        add("text.autoconfig.hbm_m.option.radSourceInfluenceFactor", "Source influence factor");
         add("text.autoconfig.hbm_m.option.radRandomizationFactor", "Chunk radiation randomization factor");
 
         add("text.autoconfig.hbm_m.category.rendering", "Rendering");
 
         add("text.autoconfig.hbm_m.option.modelUpdateDistance", "Distance for .obj model animated parts rendering");
         add("text.autoconfig.hbm_m.option.modelStaticRenderDistance", "Distance for .obj model static parts rendering");
-        add("text.autoconfig.hbm_m.option.enableOcclusionCulling", "Enable model occlusion culling");
         add("text.autoconfig.hbm_m.option.forceVanillaImmediatePath", "Force vanilla immediate path (fallback)");
         add("text.autoconfig.hbm_m.option.mdiCleanFrameReuse", "MDI clean-frame reuse");
         add("text.autoconfig.hbm_m.option.mdiCleanFrameReuse.@Tooltip", "Reuse the MDI instance snapshot when no instance data changed this frame (zero uploads for static scenes). Disable only for debugging.");
+        add("text.autoconfig.hbm_m.option.nucleusAnimCache", "Nucleus: animation delta cache");
+        add("text.autoconfig.hbm_m.option.nucleusAnimCache.@Tooltip", "Part animators run once per frame; the second (shadow/main) pass reuses the cached delta. Disable only if machine parts glitch.");
+        add("text.autoconfig.hbm_m.option.nucleusParametricAnim", "Nucleus: GPU parametric animation");
+        add("text.autoconfig.hbm_m.option.nucleusParametricAnim.@Tooltip", "Single-joint part motion (rotation/translation) is applied in the vertex shader; the CPU only writes joint parameters - a working machine uploads 4 floats per instance, a stopped one nothing. Disable if animated parts glitch.");
+        add("text.autoconfig.hbm_m.option.nucleusDitherFade", "Nucleus: dither distance fade");
+        add("text.autoconfig.hbm_m.option.nucleusDitherFade.@Tooltip", "Distance fade dissolves machines with a per-pixel screen hash instead of alpha blending. No per-frame sorting of the fading tail, no blending passes - cheaper, but machines appear with grain in the transition band instead of a smooth fade.");
+        add("text.autoconfig.hbm_m.option.nucleusShadowInstancing", "Nucleus: shadow batch (Iris)");
+        add("text.autoconfig.hbm_m.option.nucleusShadowInstancing.@Tooltip", "Batch all machine shadow-pass geometry into instanced draws instead of per-block-entity rendering. Disable if machine shadows flicker or disappear under a shader pack.");
+        add("text.autoconfig.hbm_m.option.nucleusDoorSkinSharing", "Nucleus: door skin sharing");
+        add("text.autoconfig.hbm_m.option.nucleusDoorSkinSharing.@Tooltip", "One VBO per door geometry with per-instance skin UV remap. Disable if door skins render with wrong textures (falls back to per-skin VBOs).");
+        add("text.autoconfig.hbm_m.option.nucleusDispatcherBypass", "Nucleus: dispatcher bypass");
+        add("text.autoconfig.hbm_m.option.nucleusDispatcherBypass.@Tooltip", "Collect factory machines with a flat pass instead of the vanilla/Sodium block-entity dispatcher. Disable if machines disappear or render twice.");
+        add("text.autoconfig.hbm_m.option.nucleusGpuBake", "Nucleus: GPU bake (Iris Tier 1)");
+        add("text.autoconfig.hbm_m.option.nucleusGpuBake.@Tooltip", "Bake machine instances into a vertex buffer with a compute shader (one draw per part). Requires OpenGL 4.3; otherwise Tier 2/3 is used automatically.");
+        add("text.autoconfig.hbm_m.option.nucleusGpuScatter", "Nucleus: compute scatter uploads");
+        add("text.autoconfig.hbm_m.option.nucleusGpuScatter.@Tooltip", "Upload many changed instance spans with one compute dispatch instead of sequential buffer copies. Requires OpenGL 4.3 and a non-Intel GPU; otherwise the DMA path is used.");
+        add("text.autoconfig.hbm_m.option.nucleusStagingDirect", "Nucleus: direct span uploads");
+        add("text.autoconfig.hbm_m.option.nucleusStagingDirect.@Tooltip", "Use glBufferSubData directly instead of the persistent staging ring when uploading spans. A/B option for integrated GPUs with unified memory (where a GPU-GPU copy is an extra memcpy).");
+        add("text.autoconfig.hbm_m.option.nucleusGpuCullMinInstances", "Nucleus: GPU occlusion gate (instances)");
+        add("text.autoconfig.hbm_m.option.nucleusGpuCullMinInstances.@Tooltip", "Total instanced count above which the GPU culler enables occlusion (Hi-Z pyramid rebuild; 2:1 hysteresis). Lower to enable occlusion sooner on small scenes; 0 = always on.");
+        add("text.autoconfig.hbm_m.option.nucleusGpuScatterMinSpans", "Nucleus: scatter min spans");
+        add("text.autoconfig.hbm_m.option.nucleusGpuScatterMinSpans.@Tooltip", "Minimum changed spans per window before the upload switches from sequential copies to a compute scatter dispatch.");
+        add("text.autoconfig.hbm_m.option.glDebugOutput", "GL debug callback");
+        add("text.autoconfig.hbm_m.option.glDebugOutput.@Tooltip", "Log HIGH/MEDIUM OpenGL driver messages via KHR_debug. Applies after restart.");
+        add("text.autoconfig.hbm_m.option.debugAnimCacheLog", "Log animation cache stats");
+        add("text.autoconfig.hbm_m.option.debugAnimCacheLog.@Tooltip", "Periodic (every 5 s) hit/miss statistics of the Nucleus animation delta cache.");
+
+        // ── Audit 0928: labels for fields that had none ──────────────
+        add("text.autoconfig.hbm_m.option.enableDhRenderBridge", "Distant Horizons render bridge");
+        add("text.autoconfig.hbm_m.option.enableDhRenderBridge.@Tooltip", "Render distant missiles/fungus inside the DH framebuffer. Disable to A/B rendering artifacts (cave see-through, foliage order): if artifacts persist without the bridge, they come from DH itself.");
+        add("text.autoconfig.hbm_m.option.enableExtendedLogging", "Extended action logging");
+        add("text.autoconfig.hbm_m.option.enableExtendedLogging.@Tooltip", "Logs uses of the detonator, nuclear explosions, missile launches, grenades, etc.");
+        add("text.autoconfig.hbm_m.option.nucleusRenderDirtySkip", "Nucleus: fast-path dirty skip");
+        add("text.autoconfig.hbm_m.option.nucleusRenderDirtySkip.@Tooltip", "Clean machines skip the per-frame rebuild and are re-asserted by roster instead; rebuild happens on dirty events and the periodic light/fade TTL refresh only.");
+        add("text.autoconfig.hbm_m.option.enablePollution", "Enable pollution");
+        add("text.autoconfig.hbm_m.option.enablePollution.@Tooltip", "Master switch for the pollution grid.");
+        add("text.autoconfig.hbm_m.option.pollutionMult", "Pollution multiplier");
+        add("text.autoconfig.hbm_m.option.pollutionMult.@Tooltip", "Factor applied to every entry added to the pollution grid.");
+        add("text.autoconfig.hbm_m.option.buffMobThreshold", "Buffed mob threshold");
+        add("text.autoconfig.hbm_m.option.buffMobThreshold.@Tooltip", "Chunk pollution above this value spawns buffed monsters.");
+        add("text.autoconfig.hbm_m.option.enablePoison", "Poison effects");
+        add("text.autoconfig.hbm_m.option.enablePoison.@Tooltip", "Poison effect on creatures standing in polluted chunks.");
+        add("text.autoconfig.hbm_m.option.enableLeadPoisoning", "Lead poisoning (air)");
+        add("text.autoconfig.hbm_m.option.enableLeadPoisoning.@Tooltip", "Lead poisoning from heavy metal dust in the air of polluted chunks.");
+        add("text.autoconfig.hbm_m.option.enableLeadFromBlocks", "Lead poisoning (mining)");
+        add("text.autoconfig.hbm_m.option.enableLeadFromBlocks.@Tooltip", "Lead poisoning when mining blocks in polluted chunks.");
+        add("text.autoconfig.hbm_m.option.energyRatioHe", "HE:FE ratio - HE units");
+        add("text.autoconfig.hbm_m.option.energyRatioHe.@Tooltip", "HE units per one FE (default 5 HE = 1 FE).");
+        add("text.autoconfig.hbm_m.option.energyRatioFe", "HE:FE ratio - FE units");
+        add("text.autoconfig.hbm_m.option.energyRatioFe.@Tooltip", "FE units per one HE (default 5 HE = 1 FE).");
+        add("text.autoconfig.hbm_m.option.netherAmbientRad", "Nether ambient radiation");
+        add("text.autoconfig.hbm_m.option.netherAmbientRad.@Tooltip", "Ambient background radiation in the Nether, RAD.");
+        add("text.autoconfig.hbm_m.option.basaltDeltasRadMult", "Basalt Deltas radiation multiplier");
+        add("text.autoconfig.hbm_m.option.basaltDeltasRadMult.@Tooltip", "Multiplier of ambient radiation in the Basalt Deltas.");
+        add("text.autoconfig.hbm_m.option.rbmkDials.passiveCooling", "RBMK: passive cooling");
+        add("text.autoconfig.hbm_m.option.rbmkDials.passiveCoolingInner", "RBMK: inner passive cooling");
+        add("text.autoconfig.hbm_m.option.rbmkDials.columnHeatFlow", "RBMK: column heat flow");
+        add("text.autoconfig.hbm_m.option.rbmkDials.fuelDiffusionMod", "RBMK: fuel diffusion modifier");
+        add("text.autoconfig.hbm_m.option.rbmkDials.heatProvision", "RBMK: heat provision");
+        add("text.autoconfig.hbm_m.option.rbmkDials.boilerHeatConsumption", "RBMK: boiler heat consumption");
+        add("text.autoconfig.hbm_m.option.rbmkDials.controlSpeedMod", "RBMK: control rod speed modifier");
+        add("text.autoconfig.hbm_m.option.rbmkDials.reactivityMod", "RBMK: reactivity modifier");
+        add("text.autoconfig.hbm_m.option.rbmkDials.outgasserMod", "RBMK: outgasser speed modifier");
+        add("text.autoconfig.hbm_m.option.rbmkDials.surgeMod", "RBMK: control surge modifier");
+        add("text.autoconfig.hbm_m.option.rbmkDials.reasimBoilerSpeed", "RBMK: REASIM boiler speed");
+        add("text.autoconfig.hbm_m.option.rbmkDials.moderatorEfficiency", "RBMK: moderator efficiency");
+        add("text.autoconfig.hbm_m.option.rbmkDials.absorberEfficiency", "RBMK: absorber efficiency");
+        add("text.autoconfig.hbm_m.option.rbmkDials.reflectorEfficiency", "RBMK: reflector efficiency");
+        add("text.autoconfig.hbm_m.option.rbmkDials.absorberHeatConversion", "RBMK: absorber heat conversion");
 
         add("text.autoconfig.hbm_m.option.vatsRenderDistanceChunks", "VATS render distance (chunks)");
 
@@ -3226,7 +3322,6 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("text.autoconfig.hbm_m.option.enableRadiation.@Tooltip", "If disabled, all radiation is turned off (chunks, items)");
         add("text.autoconfig.hbm_m.option.enableChunkRads.@Tooltip", "If disabled, chunk radiation is always 0");
         add("text.autoconfig.hbm_m.option.enableMOTD.@Tooltip", "Welcome message on world join and a notice when a newer release is on Modrinth");
-        add("text.autoconfig.hbm_m.option.usePrismSystem.@Tooltip", "Use PRISM system for chunk radiation (WIP)");
 
         add("text.autoconfig.hbm_m.option.maxPlayerRad.@Tooltip", "Maximum radiation the player can accumulate");
         add("text.autoconfig.hbm_m.option.radDecay.@Tooltip", "How fast player radiation decays per tick");
@@ -3246,18 +3341,14 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("text.autoconfig.hbm_m.option.radiationPixelEffect.radiationPixelMaxLifetime.@Tooltip", "The maximum time (in ticks) a single pixel will stay on the screen. A random value between min and max lifetime is chosen for each pixel.");
         
         add("text.autoconfig.hbm_m.option.maxRad.@Tooltip", "Maximum chunk radiation");
-        add("text.autoconfig.hbm_m.option.fogRad.@Tooltip", "Chunk radiation for fog to appear (WIP)");
-        add("text.autoconfig.hbm_m.option.fogCh.@Tooltip", "Chance for fog to appear (WIP)");
         add("text.autoconfig.hbm_m.option.radChunkDecay.@Tooltip", "How fast chunk radiation decays");
         add("text.autoconfig.hbm_m.option.radChunkSpreadFactor.@Tooltip", "How much radiation spreads to neighboring chunks");
         add("text.autoconfig.hbm_m.option.radSpreadThreshold.@Tooltip", "Below this, radiation doesn't spread");
         add("text.autoconfig.hbm_m.option.minRadDecayAmount.@Tooltip", "Minimum decay per tick in chunk");
-        add("text.autoconfig.hbm_m.option.radSourceInfluenceFactor.@Tooltip", "Influence of radioactive blocks in chunk");
         add("text.autoconfig.hbm_m.option.radRandomizationFactor.@Tooltip", "Randomization factor for chunk radiation");
 
         add("text.autoconfig.hbm_m.option.modelUpdateDistance.@Tooltip", "Distance for .obj model animated parts rendering (in chunks)");
         add("text.autoconfig.hbm_m.option.modelStaticRenderDistance.@Tooltip", "Distance for .obj model static parts rendering (in chunks)");
-        add("text.autoconfig.hbm_m.option.enableOcclusionCulling.@Tooltip", "Enable model occlusion culling (disable if your models are not rendering correctly)");
         add("text.autoconfig.hbm_m.option.forceVanillaImmediatePath.@Tooltip", "Render all OBJ machines through the vanilla immediate path (putBulkData) instead of the automatic VBO/instancing pipeline. Emergency fallback if machines render white/invisible or broken.");
 
         add("text.autoconfig.hbm_m.option.vatsRenderDistanceChunks.@Tooltip","Max distance for mob health highlighting. Higher values increase range but reduce performance.");
@@ -3372,8 +3463,6 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("text.autoconfig.hbm_m.option.missileTrackMaxRangeBlocks.@Tooltip", "Maximum distance (in blocks) at which missiles are network-tracked. 0 = unlimited.");
         add("text.autoconfig.hbm_m.option.missileTrackInterval", "Missile track interval");
         add("text.autoconfig.hbm_m.option.missileTrackInterval.@Tooltip", "How often (in ticks) missile positions are synced to clients.");
-        add("text.autoconfig.hbm_m.option.instanceVboOrphanBeforeUpload", "Instance VBO orphaning");
-        add("text.autoconfig.hbm_m.option.instanceVboOrphanBeforeUpload.@Tooltip", "Orphan the instance VBO (glBufferData NULL) before upload to avoid driver sync stalls. Disable only if it causes issues.");
         add("text.autoconfig.hbm_m.option.mdiDebugLogDispatch", "MDI debug log dispatch");
         add("text.autoconfig.hbm_m.option.mdiDebugLogDispatch.@Tooltip", "Log one INFO line per MDI dispatch (sub-draw count, instances, atlas).");
         add("text.autoconfig.hbm_m.option.mdiVerboseSubdraws", "MDI verbose subdraws");
@@ -3546,7 +3635,7 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add(ModBlocks.FOUNDRY_SLAGTAP.get(), "Foundry Spill Outlet");
         add(ModItems.MOLD_BARREL_HEAVY.get(), "Cast Mold: Heavy Barrel");
         add(ModItems.MOLD_BARREL_LIGHT.get(), "Cast Mold: Light Barrel");
-        add(ModItems.MOLD_BASE.get(), "Cast Mold: Base");
+        add(ModItems.MOLD_BASE.get(), "Blank Foundry Mold");
         add(ModItems.MOLD_BILLET.get(), "Cast Mold: Billet");
         add(ModItems.MOLD_BLADE.get(), "Cast Mold: Blade");
         add(ModItems.MOLD_BLADES.get(), "Cast Mold: Blades");
@@ -3555,12 +3644,9 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add(ModItems.MOLD_CBUCKSHOT.get(), "Cast Mold: Buckshot");
         add(ModItems.MOLD_GEM.get(), "Cast Mold: Gem");
         add(ModItems.MOLD_GRIP.get(), "Cast Mold: Grip");
-        add(ModItems.MOLD_HULL_BIG.get(), "Cast Mold: Big Hull");
-        add(ModItems.MOLD_HULL_SMALL.get(), "Cast Mold: Small Hull");
         add(ModItems.MOLD_INGOT.get(), "Cast Mold: Ingot");
         add(ModItems.MOLD_INGOTS.get(), "Cast Mold: Ingots");
         add(ModItems.MOLD_MECHANISM.get(), "Cast Mold: Mechanism");
-        add(ModItems.MOLD_MOGUS.get(), "Cast Mold: Mogus");
         add(ModItems.MOLD_NUGGET.get(), "Cast Mold: Nugget");
         add(ModItems.MOLD_PIPE.get(), "Cast Mold: Pipe");
         add(ModItems.MOLD_PIPES.get(), "Cast Mold: Pipes");
@@ -3572,7 +3658,6 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add(ModItems.MOLD_RECEIVER_LIGHT.get(), "Cast Mold: Light Receiver");
         add(ModItems.MOLD_SHELL.get(), "Cast Mold: Shell");
         add(ModItems.MOLD_STAMP.get(), "Cast Mold: Stamp");
-        add(ModItems.MOLD_STEEL_BASE.get(), "Cast Mold: Steel Base");
         add(ModItems.MOLD_STOCK.get(), "Cast Mold: Stock");
         add(ModItems.MOLD_WIRE.get(), "Cast Mold: Wire");
         add(ModItems.MOLD_WIRE_DENSE.get(), "Cast Mold: Dense Wire");
@@ -3692,8 +3777,6 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add(ModBlocks.MACHINE_BOILER.get(), "Boiler");
         add(ModBlocks.MACHINE_CHUNGUS.get(), "Leviathan Steam Turbine");
         add(ModBlocks.MACHINE_CONTROLLER.get(), "Reactor Remote Control Block");
-        add(ModBlocks.MACHINE_CONVERTER_HE_RF.get(), "HE to RF Converter");
-        add(ModBlocks.MACHINE_CONVERTER_RF_HE.get(), "RF to HE Converter");
         add(ModBlocks.MACHINE_CRYSTALLIZER.get(), "Ore Acidizer");
         add(ModBlocks.MACHINE_DETECTOR.get(), "Power Detector");
         add(ModBlocks.MACHINE_EPRESS.get(), "Electric Press");
@@ -3924,6 +4007,9 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add(ModBlocks.VINYL_TILE_LARGE.get(), "Large Vinyl Tile");
         add(ModBlocks.VOLCANO_CORE.get(), "Volcano Core");
         add(ModBlocks.VOLCANO_RAD_CORE.get(), "Rad Volcano Core");
+        // 1.7.10 en_US.lang: и volcanic_lava_block, и rad_lava_block названы "Volcanic Lava"
+        add(ModBlocks.VOLCANIC_LAVA_BLOCK.get(), "Volcanic Lava");
+        add(ModBlocks.RAD_LAVA_BLOCK.get(), "Volcanic Lava");
         add(ModBlocks.WAND_AIR.get(), "Structure Wand Block (Air)");
         add(ModBlocks.WAND_JIGSAW.get(), "Structure Wand Block (Jigsaw)");
         add(ModBlocks.WAND_LOGIC.get(), "Structure Wand Block (Logic)");
@@ -4455,7 +4541,6 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add(ModItems.COTTON_CANDY.get(), "Radioactive Cotton Candy");
         add(ModItems.CRACKPIPE.get(), "Health Pipe");
         add(ModItems.CRATE_CALLER.get(), "Supply Drop Requester");
-        add(ModItems.CRUCIBLE_TEMPLATE.get(), "Crucible Template:");
         add(ModItems.CUBE_POWER.get(), "Electronium Cube");
         add(ModItems.CUSTOM_AMAT.get(), "Custom Nuke Antimatter Rod");
         add(ModItems.CUSTOM_DIRTY.get(), "Custom Nuke Dirty Rod");
@@ -4831,7 +4916,7 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add(ModItems.LEAD_GAVEL.get(), "Leaden Gavel");
         add(ModItems.LEMON.get(), "\"Lemon\"");
         add(ModItems.LINKER.get(), "Telelinker");
-        add(ModItems.LIQUIDATOR_LEGS.get(), "Liquidator Suit Leggins");
+        add(ModItems.LIQUIDATOR_LEGS.get(), "Liquidator Suit Leggings");
         add(ModItems.LIQUIDATOR_PLATE.get(), "Liquidator Suit Chestplate");
         add(ModItems.LITHIUM.get(), "Lithium Cube");
         add(ModItems.LODESTONE.get(), "Lodestone");
@@ -5386,6 +5471,72 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("foundry.hbm_m.noCast", "No Mold");
         add("foundry.hbm_m.mold_small", "Foundry Mold");
         add("foundry.hbm_m.mold_large", "Foundry Basin");
+        // ── Foundry outlet (ориг. foundry.filter/inverted/invertFilter) ──
+        add("foundry.hbm_m.redstone_open", "Outlet: open by default, closes with redstone");
+        add("foundry.hbm_m.redstone_closed", "Outlet: closed by default, opens with redstone");
+        add("foundry.hbm_m.inverted", "Redstone inverted");
+        add("foundry.hbm_m.filter", "Filter: %s");
+        add("foundry.hbm_m.filter_cleared", "Filter cleared");
+        add("foundry.hbm_m.filter_inverted", "Filter inverted");
+        add("foundry.hbm_m.filter_normal", "Filter normal");
+        // ── RBMK DODD (ориг. tile.rbmk.dodd.*, en_US.lang) ──
+        add("tile.rbmk.dodd.heat", "Column Heat");
+        add("tile.rbmk.dodd.reasimWater", "ReaSim Water");
+        add("tile.rbmk.dodd.reasimSteam", "ReaSim Steam");
+        add("tile.rbmk.dodd.level", "Level");
+        add("tile.rbmk.dodd.targetLevel", "Target Level");
+        add("tile.rbmk.dodd.startingLevel", "Starting Level");
+        add("tile.rbmk.dodd.mult", "Mult");
+        add("tile.rbmk.dodd.color", "Color");
+        add("tile.rbmk.dodd.levelLower", "Level Lower");
+        add("tile.rbmk.dodd.levelUpper", "Level Upper");
+        add("tile.rbmk.dodd.heatLower", "Heat Lower");
+        add("tile.rbmk.dodd.heatUpper", "Heat Upper");
+        add("tile.rbmk.dodd.function", "Function");
+        add("tile.rbmk.dodd.fluxSlow", "Flux Slow");
+        add("tile.rbmk.dodd.fluxFast", "Flux Fast");
+        add("tile.rbmk.dodd.hasRod", "Has Rod");
+        add("tile.rbmk.dodd.progress", "Progress");
+        add("tile.rbmk.dodd.gas", "Gas");
+        add("tile.rbmk.dodd.cooled", "Cooled");
+        add("tile.rbmk.dodd.burned", "Burned");
+        add("tile.rbmk.dodd.feed", "Feed");
+        add("tile.rbmk.dodd.steam", "Steam");
+        add("tile.rbmk.dodd.cryo", "Cryo");
+        add("tile.rbmk.dodd.fuel", "Fuel");
+        add("tile.rbmk.dodd.f_heat", "Fuel Heat");
+        add("tile.rbmk.dodd.f_xenon", "Fuel Xenon");
+        add("tile.rbmk.dodd.f_yield", "Fuel Yield");
+        add("tile.rbmk.dodd.feed_type", "Feed Type(ID)");
+        add("tile.rbmk.dodd.steam_type", "Steam Type(ID)");
+        add("tile.rbmk.dodd.cryo_type", "Cryo Type(ID)");
+        add("tile.rbmk.dodd.gas_type", "Gas Type(ID)");
+        add("tile.rbmk.dodd.fuel_type", "Fuel Type(ID)");
+        add("tile.rbmk.dodd.feed_p", "Feed Pressure");
+        add("tile.rbmk.dodd.steam_p", "Steam Pressure");
+        add("tile.rbmk.dodd.cryo_p", "Cryo Pressure");
+        add("tile.rbmk.dodd.gas_p", "Gas Pressure");
+        add("tile.rbmk.dodd.fuel_p", "Fuel Pressure");
+        add("tile.rbmk.dodd.feed_max", "Feed Max Amount");
+        add("tile.rbmk.dodd.steam_max", "Steam Max Amount");
+        add("tile.rbmk.dodd.cryo_max", "Cryo Max Amount");
+        add("tile.rbmk.dodd.gas_max", "Gas Max Amount");
+        add("tile.rbmk.dodd.fuel_max", "Fuel Max Amount");
+        add("tile.rbmk.dodd.feed_amt", "Feed Amount");
+        add("tile.rbmk.dodd.steam_amt", "Steam Amount");
+        add("tile.rbmk.dodd.cryo_amt", "Cryo Amount");
+        add("tile.rbmk.dodd.gas_amt", "Gas Amount");
+        add("tile.rbmk.dodd.fuel_amt", "Fuel Amount");
+        add("tile.rbmk.dodd.t0", "Cold PFM Amount");
+        add("tile.rbmk.dodd.t0_max", "Cold PFM Capacity");
+        add("tile.rbmk.dodd.t0_type", "Cold PFM Type");
+        add("tile.rbmk.dodd.t0_p", "Cold PFM Pressure");
+        add("tile.rbmk.dodd.t1", "PFM Amount");
+        add("tile.rbmk.dodd.t1_max", "PFM Capacity");
+        add("tile.rbmk.dodd.t1_type", "PFM Type");
+        add("tile.rbmk.dodd.t1_p", "PFM Pressure");
+        add("tile.rbmk.dodd.lidState", "Lid State");
+        add("tile.rbmk.dodd.explodeOnBroken", "Explodes when broken");
     }
 }
 //?}

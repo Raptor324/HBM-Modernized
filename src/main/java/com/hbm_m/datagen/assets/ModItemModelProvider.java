@@ -356,7 +356,6 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.CRT_DISPLAY);
         simpleItem(ModItems.MAGNETRON);
         simpleItem(ModItems.TURBINE_TITANIUM);
-        simpleItem(ModItems.SEQUESTRUM);
         simpleItem(ModItems.BLADE_STEEL);
         simpleItem(ModItems.BLADE_TITANIUM);
         simpleItem(ModItems.BLADE_ALLOY);
@@ -514,6 +513,8 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.BATTERY_SPARK_CELL_2500);
         simpleItem(ModItems.BATTERY_SPARK_CELL_10000);
         simpleItem(ModItems.BATTERY_SPARK_CELL_POWER);
+
+        generateBatteryPackModels();
 
         simpleItem(ModItems.DEPTH_ORES_SCANNER);
         simpleItem(ModItems.ZIRCONIUM_SHARP);
@@ -1523,7 +1524,6 @@ public class ModItemModelProvider extends ItemModelProvider {
                 ModItems.COTTON_CANDY,
                 ModItems.CRACKPIPE,
                 ModItems.CRATE_CALLER,
-                ModItems.CRUCIBLE_TEMPLATE,
                 ModItems.CUBE_POWER,
                 ModItems.CUSTOM_AMAT,
                 ModItems.CUSTOM_DIRTY,
@@ -2468,6 +2468,66 @@ public class ModItemModelProvider extends ItemModelProvider {
     private void generateMissileItemModels() {
         for (MissileItemModelDefinitions.Definition definition : MissileItemModelDefinitions.all()) {
             missileItemFromObjModel(definition.itemPath(), definition.hull(), definition.texture());
+        }
+    }
+
+    /**
+     * Item-модели больших батарей-паков (бэкпорт оригинала battery_pack_*.json): одна OBJ-часть
+     * (Battery/Capacitor) модели сокета с текстурой тира через {@code hbm_m:battery_pack_loader}.
+     * Display-трансформы скопированы из оригинала — геометрия OBJ идентична.
+     */
+    private void generateBatteryPackModels() {
+        for (RegistrySupplier<Item> pack : ModItems.BATTERY_PACKS) {
+            com.hbm_m.item.fekal_electric.ItemBatteryPack item = (com.hbm_m.item.fekal_electric.ItemBatteryPack) pack.get();
+            String tierTex = "hbm_m:block/machine/" + item.tier.tex;
+            String part = item.tier.isCapacitor() ? "Capacitor" : "Battery";
+            getBuilder(pack.getId().getPath())
+                    .transforms()
+                            .transform(net.minecraft.world.item.ItemDisplayContext.THIRD_PERSON_RIGHT_HAND)
+                                    .rotation(-164.5f, 11.35f, 165.04f).translation(-1.574f, 2.807f, 1.284f).scale(0.1406f)
+                            .end()
+                            .transform(net.minecraft.world.item.ItemDisplayContext.THIRD_PERSON_LEFT_HAND)
+                                    .rotation(-164.5f, 11.35f, 165.04f).translation(-0.4145f, 3.049f, 1.592f).scale(0.1406f)
+                            .end()
+                            .transform(net.minecraft.world.item.ItemDisplayContext.FIRST_PERSON_RIGHT_HAND)
+                                    .rotation(154.92f, -4.53f, 177.88f).translation(0.177f, 3.661f, 2.024f).scale(0.15f)
+                            .end()
+                            .transform(net.minecraft.world.item.ItemDisplayContext.FIRST_PERSON_LEFT_HAND)
+                                    .rotation(154.92f, -4.53f, 177.88f).translation(0.177f, 3.661f, 2.024f).scale(0.15f)
+                            .end()
+                            .transform(net.minecraft.world.item.ItemDisplayContext.GUI)
+                                    .rotation(-150f, -45f, -180f).translation(0f, -0.268f, -7f).scale(0.3125f)
+                            .end()
+                            .transform(net.minecraft.world.item.ItemDisplayContext.HEAD)
+                                    .rotation(0f, -50f, 155f).translation(5.223f, -21.046f, 6.225f).scale(0.6f)
+                            .end()
+                            .transform(net.minecraft.world.item.ItemDisplayContext.GROUND)
+                                    .rotation(0f, 90f, 0f).translation(0f, -1f, 0f).scale(0.1875f)
+                            .end()
+                            .transform(net.minecraft.world.item.ItemDisplayContext.FIXED)
+                                    .rotation(0f, -90f, 0f).translation(0f, 3.44f, 0.5f).scale(0.375f)
+                            .end()
+                    .end()
+                    .guiLight(net.minecraft.client.renderer.block.model.BlockModel.GuiLight.SIDE)
+                    .customLoader((parent, helper) ->
+                            new CustomLoaderBuilder<ItemModelBuilder>(
+                                    ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "battery_pack"), parent, helper) {
+                                @Override
+                                public JsonObject toJson(JsonObject json) {
+                                    super.toJson(json);
+                                    json.addProperty("model", "hbm_m:models/block/machines/machine_battery_socket.obj");
+                                    json.addProperty("flip_v", true);
+                                    json.addProperty("part", part);
+                                    json.addProperty("texture", tierTex);
+                                    // Стандартная карта текстур: гарантия прошивки спрайта тира
+                                    // в блок-атлас (иначе в мире будет missing tex).
+                                    JsonObject textures = new JsonObject();
+                                    textures.addProperty("default", tierTex);
+                                    textures.addProperty("particle", tierTex);
+                                    json.add("textures", textures);
+                                    return json;
+                                }
+                            });
         }
     }
 

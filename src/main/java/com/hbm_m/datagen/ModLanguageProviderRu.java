@@ -489,6 +489,22 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add(ModItems.BATTERY_RED_CELL.get(), "Красная энергоячейка");
         add(ModItems.BATTERY_RED_CELL_6.get(), "Красная энергоячейка x6");
         add(ModItems.BATTERY_RED_CELL_24.get(), "Красная энергоячейка x24");
+
+        // Большие батареи-паки (бэкпорт оригинала)
+        add(ModItems.BATTERY_PACK_REDSTONE.get(), "Редстоуновый аккумулятор");
+        add(ModItems.BATTERY_PACK_LEAD.get(), "Свинцово-серный аккумулятор");
+        add(ModItems.BATTERY_PACK_LITHIUM.get(), "Литий-ионный аккумулятор");
+        add(ModItems.BATTERY_PACK_SODIUM.get(), "Натриево-железный аккумулятор");
+        add(ModItems.BATTERY_PACK_SCHRABIDIUM.get(), "Шрабидиевый аккумулятор");
+        add(ModItems.BATTERY_PACK_QUANTUM.get(), "Квантовый аккумулятор");
+        add(ModItems.BATTERY_PACK_CAPACITOR_COPPER.get(), "Медный конденсатор");
+        add(ModItems.BATTERY_PACK_CAPACITOR_GOLD.get(), "Золотой конденсатор");
+        add(ModItems.BATTERY_PACK_CAPACITOR_NIOBIUM.get(), "Ниобиевый конденсатор");
+        add(ModItems.BATTERY_PACK_CAPACITOR_TANTALUM.get(), "Танталовый конденсатор");
+        add(ModItems.BATTERY_PACK_CAPACITOR_BISMUTH.get(), "Висмутовый конденсатор");
+        add(ModItems.BATTERY_PACK_CAPACITOR_SPARK.get(), "Спарк-конденсатор");
+        add("tooltip.hbm_m.battery_pack.time_for_full_charge", "Время полной зарядки: %s мин");
+        add("tooltip.hbm_m.battery_pack.charge_lasts_for", "Заряда хватит на: %s мин");
         add(ModItems.BATTERY_ADVANCED.get(), "Продвинутая батарея");
         add(ModItems.BATTERY_ADVANCED_CELL.get(), "Продвинутая энергоячейка");
         add(ModItems.BATTERY_ADVANCED_CELL_4.get(), "Продвинутая энергоячейка x4");
@@ -1023,12 +1039,9 @@ public class ModLanguageProviderRu extends LanguageProvider {
 
 
 // ru_ru case
-        add(ModBlocks.CONVERTER_BLOCK.get(), "Конвертер энергии");
         add(ModBlocks.MACHINE_BATTERY_DINEUTRONIUM.get(), "Динейтрониевое энергохранилище");
         add(ModBlocks.MACHINE_BATTERY_SCHRABIDIUM.get(), "Шрабидиевое энергохранилище");
         add(ModBlocks.MACHINE_BATTERY_LITHIUM.get(), "Литиевое энергохранилище");
-        add(ModBlocks.SEQUESTRUM_ORE.get(), "Селитровая руда");
-        add(ModItems.SEQUESTRUM.get(), "Селитра");
         // русский:
         add(ModBlocks.ASPHALT.get(), "Асфальт");
         add(ModBlocks.BARRICADE.get(), "Мешки с песком");
@@ -1252,12 +1265,8 @@ public class ModLanguageProviderRu extends LanguageProvider {
 
         add(ModBlocks.DEPTH_STONE.get(), "Глубинный камень");
         add(ModBlocks.DEPTH_CINNABAR.get(), "Глубинная киноварная руда");
-        add(ModBlocks.DEPTH_IRON.get(), "Глубинная железная руда");
         add(ModBlocks.DEPTH_ZIRCONIUM.get(), "Глубинная циркониевая руда");
         add(ModBlocks.DEPTH_BORAX.get(), "Глубинная бура");
-        add(ModBlocks.DEPTH_TUNGSTEN.get(), "Глубинная вольфрамовая руда");
-        add(ModBlocks.DEPTH_TITANIUM.get(), "Глубинная титановая руда");
-        add(ModBlocks.BEDROCK_OIL.get(), "Бедроковая нефть");
         add(ModBlocks.BURNED_GRASS.get(), "Выжженная трава");
         add(ModBlocks.WASTE_PLANKS.get(), "Выжженные доски");
         add(ModBlocks.WASTE_LOG.get(), "Выжженное бревно");
@@ -1317,9 +1326,9 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("gui.hbm_m.fluid_tank.empty_locked", "Пусто (тип цистерны: %s)");
         add("gui.hbm_m.fluid_tank.empty_filter", "Пусто (фильтр: %s)");
         add("gui.hbm_m.fluid_tank.filter_set", "Тип установлен: %s!");
-        add("gui.hbm_m.fluid_tank.mode.0", "Режим: Только вывод");
+        add("gui.hbm_m.fluid_tank.mode.0", "Режим: Только ввод");
         add("gui.hbm_m.fluid_tank.mode.1", "Режим: Буфер");
-        add("gui.hbm_m.fluid_tank.mode.2", "Режим: Только ввод");
+        add("gui.hbm_m.fluid_tank.mode.2", "Режим: Только вывод");
         add("gui.hbm_m.fluid_tank.mode.3", "Режим: Отключено");
         add("gui.hbm_m.fluid_tank.pressure", "Давление: %s PU");
         add("gui.hbm_m.fluid_tank.pressurized", "Под давлением — используйте компрессор!");
@@ -1348,8 +1357,9 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("fluid.hbm_m.toxin.redmud.line2", "Кожные ожоги и системная интоксикация");
 
 
-        add("tooltip.hbm_m.depthstone.line1", "Может быть уничтожен только взрывом!");
-        add("tooltip.hbm_m.depthstone.line4", "Используйте Шахтёрский заряд для безопасной добычи");
+        add("tooltip.hbm_m.depthstone.line1", "Может быть добыт только взрывом");
+        add("tooltip.hbm_m.depthstone.line4", "Глубинные кирки (бисмут и выше) могут добывать глубинную породу");
+        add("tooltip.hbm_m.depth_rock_breaker", "Может ломать глубинную породу!");
         add(ModItems.MOTOR_BISMUTH.get(), "Висмутовый мотор");
         add(ModItems.MOTOR_DESH.get(), "Деш мотор");
         add(ModItems.MOTOR.get(), "Мотор");
@@ -2031,6 +2041,7 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add(ModBlocks.FENSU.get(), "Промышленный вентилятор (WIP)");
         add(ModBlocks.FENSU2.get(), "Реддендитовая батарея");
         add("container.hbm_m.machine_battery_redd", "Реддендитовая батарея");
+        add("container.hbm_m.machine_fensu", "FEnSU");
         add(ModBlocks.FIREBOX.get(), "Топка");
         add("container.hbm_m.firebox", "Топка");
         add(ModBlocks.FRACTION_SPACER.get(), "Фракционный разделитель (WIP)");
@@ -2429,8 +2440,6 @@ public class ModLanguageProviderRu extends LanguageProvider {
         // Руды паритета генерации с 1.7.10
         add("block.hbm_m.niter_ore", "Селитровая руда");
         add("block.hbm_m.niter_ore_deepslate", "Глубинная селитровая руда");
-        add("block.hbm_m.lithium_ore", "Литиевая руда");
-        add("block.hbm_m.lithium_ore_deepslate", "Глубинная литиевая руда");
         add("block.hbm_m.alexandrite_ore", "Александритовая руда");
         add("block.hbm_m.coltan_ore", "Колтановая руда");
         add("block.hbm_m.coltan_ore_deepslate", "Глубинная колтановая руда");
@@ -2448,6 +2457,20 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("block.hbm_m.nether_plutonium_ore", "Адская плутониевая руда");
         add("block.hbm_m.nether_smoldering_ore", "Дымящаяся адская руда");
         add("block.hbm_m.depth_nether_neodymium", "Адская глубинная неодимовая руда");
+        // Метеоритные руды (ориг. ru_RU.lang: tile.ore_meteor.*)
+        add("block.hbm_m.ore_meteor_iron", "Метеоритная железная руда");
+        add("block.hbm_m.ore_meteor_copper", "Метеоритная медная руда");
+        add("block.hbm_m.ore_meteor_aluminium", "Метеоритная алюминиевая руда");
+        add("block.hbm_m.ore_meteor_rareearth", "Метеоритная редкоземельная руда");
+        add("block.hbm_m.ore_meteor_cobalt", "Метеоритная кобальтовая руда");
+        // Руды базальта (ориг. ru_RU.lang: tile.ore_basalt_*)
+        add("block.hbm_m.ore_basalt_sulfur", "Богатый серой базальт");
+        add("block.hbm_m.ore_basalt_fluorite", "Богатый флюоритом базальт");
+        add("block.hbm_m.ore_basalt_asbestos", "Богатый асбестом базальт");
+        add("block.hbm_m.ore_basalt_gem", "Богатый самоцветами базальт");
+        add("block.hbm_m.ore_basalt_molysite", "Богатый молизитом базальт");
+        // ore_volcano (ориг. BlockFissure, ru_RU.lang: tile.ore_volcano.name)
+        add("block.hbm_m.ore_volcano", "Геотермальный источник");
         add("block.hbm_m.tikite_ore", "Тикитовая руда");
         add("block.hbm_m.ore_oil_sand", "Нефтеносный песок");
         add("block.hbm_m.australium_ore", "Аустралиумовая руда");
@@ -2686,8 +2709,6 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("block.hbm_m.logic_block", "Блок действия подземелья");
         add("block.hbm_m.machine_boiler", "Бойлер");
         add("block.hbm_m.machine_controller", "Блок удалённого доступа к реактору");
-        add("block.hbm_m.machine_converter_he_rf", "Конвертер энергии HE в RF");
-        add("block.hbm_m.machine_converter_rf_he", "Конвертер энергии RF в HE");
         add("block.hbm_m.machine_crystallizer", "Рудный окислитель");
         add("block.hbm_m.machine_detector", "Детектор мощности");
         add("block.hbm_m.machine_drain", "Сливная труба");
@@ -2718,37 +2739,9 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("block.hbm_m.moon_turf", "Лунный грунт");
         add("block.hbm_m.mush", "Светящийся гриб");
         add("block.hbm_m.oil_spill", "Разлитая нефть");
-        add("block.hbm_m.ore_alexandrite", "Александритовая руда");
-        add("block.hbm_m.ore_aluminium", "Алюминиевая руда");
-        add("block.hbm_m.ore_australium", "Австралиевая руда");
-        add("block.hbm_m.ore_cinnebar", "Киноварная руда");
-        add("block.hbm_m.ore_coltan", "Колтановая руда");
-        add("block.hbm_m.ore_copper", "Медная руда");
-        add("block.hbm_m.ore_depth_borax", "Глубинная бура");
-        add("block.hbm_m.ore_depth_cinnebar", "Глубинная киноварь");
-        add("block.hbm_m.ore_depth_nether_neodymium", "Адская глубинная неодимовая руда");
-        add("block.hbm_m.ore_depth_zirconium", "Глубинная циркониевая руда");
-        add("block.hbm_m.ore_gneiss_asbestos", "Сланцевая асбестовая руда");
-        add("block.hbm_m.ore_gneiss_copper", "Сланцевая медная руда");
-        add("block.hbm_m.ore_gneiss_gas", "Сланцевый газ");
-        add("block.hbm_m.ore_gneiss_gold", "Сланцевая золотая руда");
-        add("block.hbm_m.ore_gneiss_iron", "Сланцевая железная руда");
-        add("block.hbm_m.ore_gneiss_lithium", "Сланцевая литиевая руда");
-        add("block.hbm_m.ore_gneiss_rare", "Сланцевая редкоземельная руда");
-        add("block.hbm_m.ore_gneiss_uranium", "Сланцевая урановая руда");
         add("block.hbm_m.ore_gneiss_uranium_scorched", "Обожжённая сланцевая урановая руда");
-        add("block.hbm_m.ore_nether_coal", "Горящая руда адского угля");
-        add("block.hbm_m.ore_nether_cobalt", "Адская кобальтовая руда");
-        add("block.hbm_m.ore_nether_fire", "Адская фосфорная руда");
-        add("block.hbm_m.ore_nether_plutonium", "Адская плутониевая руда");
-        add("block.hbm_m.ore_nether_smoldering", "Тлеющий адский камень");
-        add("block.hbm_m.ore_nether_sulfur", "Адская серная руда");
-        add("block.hbm_m.ore_nether_tungsten", "Адская вольфрамовая руда");
-        add("block.hbm_m.ore_nether_uranium", "Адская урановая руда");
         add("block.hbm_m.ore_nether_uranium_scorched", "Обожжённая адская урановая руда");
-        add("block.hbm_m.ore_rare", "Редкоземельная руда");
         add("block.hbm_m.ore_tektite_osmiridium", "Перемешанный с осмиридием тектит");
-        add("block.hbm_m.ore_tikite", "Трикситовая руда");
         add("block.hbm_m.ore_uranium_scorched", "Обожжённая урановая руда");
         add("block.hbm_m.pile_block", "Чикагская поленница");
         add("block.hbm_m.pile_brick", "Графитовые блоки Чикагской поленницы");
@@ -2855,6 +2848,9 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("block.hbm_m.vent_pink_cloud", "Воздушный клапан с розовым облаком");
         add("block.hbm_m.volcano_core", "Вулканическое ядро");
         add("block.hbm_m.volcano_rad_core", "Радиоактивное вулканическое ядро");
+        // ru_RU.lang оригинала: обе лавы — «Вулканическая лава»
+        add("block.hbm_m.volcanic_lava_block", "Вулканическая лава");
+        add("block.hbm_m.rad_lava_block", "Вулканическая лава");
         add("block.hbm_m.wand_air", "Блок для структурной палочки (Air)");
         add("block.hbm_m.wand_jigsaw", "Блок для структурной палочки (Jigsaw)");
         add("block.hbm_m.wand_logic", "Блок для структурной палочки (Logic)");
@@ -3007,7 +3003,7 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("container.hbm_m.armor_table", "Стол модификации брони");
         add("container.hbm_m.machine_assembler", "Сборочная машина (LEGACY)");
         add("container.hbm_m.advanced_assembly_machine", "Сборочная машина");
-        add(ModBlocks.CRUCIBLE.get(), "Тигель (WIP)");
+        add(ModBlocks.CRUCIBLE.get(), "Тигель");
         add(ModBlocks.FOUNDRY_BASIN.get(), "Литейный бассейн");
         add(ModBlocks.FOUNDRY_CHANNEL.get(), "Литейный канал");
         add("container.hbm_m.crucible", "Тигель");
@@ -3611,7 +3607,6 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("text.autoconfig.hbm_m.option.enableRadiation", "Включить радиацию");
         add("text.autoconfig.hbm_m.option.enableChunkRads", "Включить радиацию в чанках");
         add("text.autoconfig.hbm_m.option.enableMOTD", "Сообщение при входе в мир (MOTD)");
-        add("text.autoconfig.hbm_m.option.usePrismSystem", "Использовать систему PRISM (иначе Simple, WIP)");
 
         add("text.autoconfig.hbm_m.category.world_effects", "Эффекты мира");
         add("text.autoconfig.hbm_m.option.enableRadFogEffect", "Радиоактивный туман в чанках");
@@ -3652,23 +3647,96 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("text.autoconfig.hbm_m.category.chunk", "Чанк");
         
         add("text.autoconfig.hbm_m.option.maxRad", "Максимальная радиация в чанке");
-        add("text.autoconfig.hbm_m.option.fogRad", "Порог радиации для появления тумана");
-        add("text.autoconfig.hbm_m.option.fogCh", "Шанс появления тумана (1 из fogCh), WIP");
         add("text.autoconfig.hbm_m.option.radChunkDecay", "Скорость распада радиации в чанке");
         add("text.autoconfig.hbm_m.option.radChunkSpreadFactor", "Фактор распространения радиации между чанками");
         add("text.autoconfig.hbm_m.option.radSpreadThreshold", "Порог распространения радиации");
         add("text.autoconfig.hbm_m.option.minRadDecayAmount", "Мин. распад радиации за тик");
-        add("text.autoconfig.hbm_m.option.radSourceInfluenceFactor", "Влияние источников радиации на чанк");
         add("text.autoconfig.hbm_m.option.radRandomizationFactor", "Фактор рандомизации радиации в чанке");
 
         add("text.autoconfig.hbm_m.category.rendering", "Рендеринг");
 
         add("text.autoconfig.hbm_m.option.modelUpdateDistance", "Дистанция для рендеринга динамических частей .obj моделей");
         add("text.autoconfig.hbm_m.option.modelStaticRenderDistance", "Дистанция для рендеринга статических частей .obj моделей");
-        add("text.autoconfig.hbm_m.option.enableOcclusionCulling", "Включить куллинг моделей");
+        add("text.autoconfig.hbm_m.option.occlusionCullingMode", "Отсечение невидимых моделей");
+        add("text.autoconfig.hbm_m.option.occlusionCullingMode.GPU", "GPU");
+        add("text.autoconfig.hbm_m.option.occlusionCullingMode.CPU", "CPU");
+        add("text.autoconfig.hbm_m.option.occlusionCullingMode.OFF", "ВЫКЛ");
+        add("config.hbm_m.field.occlusionCullingMode", "Отсечение невидимых мультиблоков");
+        add("config.hbm_m.field.occlusionCullingMode.tooltip", "Режим отсечения невидимых машин за препятствиями.\nGPU: Иерархическая пирамида глубин (Hi-Z) через compute-шейдеры OpenGL 4.3.\nCPU: Трассировка лучей по блокам чанка на процессоре.\nOFF: Отсечение выключено.\nСовет: включайте CPU, когда много моделей скрыто за блоками — сэкономит отрисовку слабого GPU; в открытых биомах даёт мало и нагружает процессор.");
+        add("config.hbm_m.field.occlusionCullingMode.gpu_unsupported", "GPU-отсечение не поддерживается вашим видеоадаптером: %s");
+        add("config.hbm_m.rendering.occlusionCullingMode.gpu_unsupported", "GPU-отсечение не поддерживается вашим видеоадаптером: %s");
         add("text.autoconfig.hbm_m.option.forceVanillaImmediatePath", "Ванильный immediate-путь (резерв)");
         add("text.autoconfig.hbm_m.option.mdiCleanFrameReuse", "MDI: переиспользование чистого кадра");
         add("text.autoconfig.hbm_m.option.mdiCleanFrameReuse.@Tooltip", "Переиспользовать MDI-снапшот инстансов, если данные не менялись с прошлого кадра (ноль аплоадов для статичной сцены). Отключать только для отладки.");
+        add("text.autoconfig.hbm_m.option.nucleusAnimCache", "Nucleus: кэш дельт анимаций");
+        add("text.autoconfig.hbm_m.option.nucleusAnimCache.@Tooltip", "Аниматоры частей исполняются один раз за кадр, второй проход (тень/основной) берёт кэшированную дельту. Отключать при глюках анимации станков.");
+        add("text.autoconfig.hbm_m.option.nucleusParametricAnim", "Nucleus: GPU-параметрика анимации");
+        add("text.autoconfig.hbm_m.option.nucleusParametricAnim.@Tooltip", "Движение деталей с одним суставом (вращение/сдвиг) считается в вершинном шейдере; CPU пишет только параметры сустава — работающая машина льёт 4 флоата на инстанс, стоящая — ноль. Отключать при артефактах анимации.");
+        add("text.autoconfig.hbm_m.option.nucleusDitherFade", "Nucleus: дизеринг дистанционного фейда");
+        add("text.autoconfig.hbm_m.option.nucleusDitherFade.@Tooltip", "Дистанционный фейд растворяет станки попиксельным экранным хешем вместо альфа-блендинга. Не нужны ни сортировка фейд-хвоста, ни проходы с блендингом — дешевле, но машины проявляются «зерном» в переходной полосе, а не плавно.");
+        add("text.autoconfig.hbm_m.option.nucleusShadowInstancing", "Nucleus: теневой батч (Iris)");
+        add("text.autoconfig.hbm_m.option.nucleusShadowInstancing.@Tooltip", "Геометрия станков в теневом проходе уходит пачкой инстансных дроуков вместо отрисовки per-BE. Отключать при мерцании/пропадании теней станков под шейдерпаком.");
+        add("text.autoconfig.hbm_m.option.nucleusDoorSkinSharing", "Nucleus: шеринг скинов дверей");
+        add("text.autoconfig.hbm_m.option.nucleusDoorSkinSharing.@Tooltip", "Один VBO на геометрию двери, скин — per-instance UV-ремап. Отключать при неправильных текстурах дверей (откат в per-skin VBO).");
+        add("text.autoconfig.hbm_m.option.nucleusDispatcherBypass", "Nucleus: байпас диспетчера");
+        add("text.autoconfig.hbm_m.option.nucleusDispatcherBypass.@Tooltip", "Сбор станков фабрики плоским обходом вместо ванильного/Sodium-диспетчера BlockEntity. Отключать при исчезновении или задвоении станков.");
+        add("text.autoconfig.hbm_m.option.nucleusGpuBake", "Nucleus: GPU-bake (Iris Tier 1)");
+        add("text.autoconfig.hbm_m.option.nucleusGpuBake.@Tooltip", "Запекание инстансов станков в вершинный буфер compute-шейдером (один draw на part). Требует OpenGL 4.3; без поддержки автоматически используется Tier 2/3.");
+        add("text.autoconfig.hbm_m.option.nucleusGpuScatter", "Nucleus: compute-скаттер аплоадов");
+        add("text.autoconfig.hbm_m.option.nucleusGpuScatter.@Tooltip", "Заливка многих изменившихся span'ов одним compute-диспетчем вместо последовательных копий. Требует OpenGL 4.3 и не-Intel GPU; иначе DMA-путь.");
+        add("text.autoconfig.hbm_m.option.nucleusStagingDirect", "Nucleus: прямые аплоады спанов");
+        add("text.autoconfig.hbm_m.option.nucleusStagingDirect.@Tooltip", "Прямой glBufferSubData вместо persistently-mapped кольца при заливке спанов. A/B-опция для встроенных GPU с общей памятью (где GPU-GPU копия — лишний memcpy).");
+        add("text.autoconfig.hbm_m.option.nucleusGpuCullMinInstances", "Nucleus: порог GPU-окклюзии (инстансы)");
+        add("text.autoconfig.hbm_m.option.nucleusGpuCullMinInstances.@Tooltip", "Общее число инстансов, выше которого GPU-culler включает окклюзию (перестройка Hi-Z пирамиды; гистерезис 2:1). Уменьшите, чтобы окклюзия включалась раньше; 0 = всегда.");
+        add("text.autoconfig.hbm_m.option.nucleusGpuScatterMinSpans", "Nucleus: минимум span'ов для скаттера");
+        add("text.autoconfig.hbm_m.option.nucleusGpuScatterMinSpans.@Tooltip", "Минимум изменившихся span'ов в окне, при котором заливка переключается с последовательных копий на compute-скаттер.");
+        add("text.autoconfig.hbm_m.option.glDebugOutput", "GL debug callback");
+        add("text.autoconfig.hbm_m.option.glDebugOutput.@Tooltip", "Лог HIGH/MEDIUM сообщений OpenGL-драйвера через KHR_debug. Вступает в силу после перезапуска.");
+        add("text.autoconfig.hbm_m.option.debugAnimCacheLog", "Лог статистики кэша анимаций");
+        add("text.autoconfig.hbm_m.option.debugAnimCacheLog.@Tooltip", "Периодическая (раз в 5 с) статистика попаданий кэша дельт анимаций Nucleus.");
+
+        // ── Аудит 0928: лейблы для полей, у которых их не было ──────
+        add("text.autoconfig.hbm_m.option.enableDhRenderBridge", "DH-мост рендера");
+        add("text.autoconfig.hbm_m.option.enableDhRenderBridge.@Tooltip", "Рендер дальних ракет/гриба внутри фреймбуфера Distant Horizons. Отключите для A/B-теста артефактов (просвечивание пещер, порядок листвы): если артефакты остаются без моста — их источник сам DH.");
+        add("text.autoconfig.hbm_m.option.enableExtendedLogging", "Расширенный лог действий");
+        add("text.autoconfig.hbm_m.option.enableExtendedLogging.@Tooltip", "Логирует использование детонатора, ядерные взрывы, пуски ракет, гранаты и т.д.");
+        add("text.autoconfig.hbm_m.option.nucleusRenderDirtySkip", "Nucleus: fast-path dirty-skip");
+        add("text.autoconfig.hbm_m.option.nucleusRenderDirtySkip.@Tooltip", "Чистые машины не пересобираются каждый кадр, а подтверждаются roster-assert'ом; пересбор — только по dirty-событиям и периодическому TTL света/fade.");
+        add("text.autoconfig.hbm_m.option.enablePollution", "Загрязнение");
+        add("text.autoconfig.hbm_m.option.enablePollution.@Tooltip", "Главный выключатель сетки загрязнения.");
+        add("text.autoconfig.hbm_m.option.pollutionMult", "Множитель загрязнения");
+        add("text.autoconfig.hbm_m.option.pollutionMult.@Tooltip", "Множитель на каждую запись в сетку загрязнения.");
+        add("text.autoconfig.hbm_m.option.buffMobThreshold", "Порог усиленных мобов");
+        add("text.autoconfig.hbm_m.option.buffMobThreshold.@Tooltip", "При загрязнении чанка выше этого значения спавнятся усиленные монстры.");
+        add("text.autoconfig.hbm_m.option.enablePoison", "Отравление");
+        add("text.autoconfig.hbm_m.option.enablePoison.@Tooltip", "Эффект отравления у существ в загрязнённых чанках.");
+        add("text.autoconfig.hbm_m.option.enableLeadPoisoning", "Отравление свинцом (воздух)");
+        add("text.autoconfig.hbm_m.option.enableLeadPoisoning.@Tooltip", "Отравление свинцом от тяжёлой пыли в воздухе загрязнённых чанков.");
+        add("text.autoconfig.hbm_m.option.enableLeadFromBlocks", "Отравление свинцом (добыча)");
+        add("text.autoconfig.hbm_m.option.enableLeadFromBlocks.@Tooltip", "Отравление свинцом при добыче блоков в загрязнённых чанках.");
+        add("text.autoconfig.hbm_m.option.energyRatioHe", "Курс HE:FE — единицы HE");
+        add("text.autoconfig.hbm_m.option.energyRatioHe.@Tooltip", "Единиц HE за один FE (по умолчанию 5 HE = 1 FE).");
+        add("text.autoconfig.hbm_m.option.energyRatioFe", "Курс HE:FE — единицы FE");
+        add("text.autoconfig.hbm_m.option.energyRatioFe.@Tooltip", "Единиц FE за один HE (по умолчанию 5 HE = 1 FE).");
+        add("text.autoconfig.hbm_m.option.netherAmbientRad", "Фоновая радиация Ада");
+        add("text.autoconfig.hbm_m.option.netherAmbientRad.@Tooltip", "Фоновая радиация в Незере, RAD.");
+        add("text.autoconfig.hbm_m.option.basaltDeltasRadMult", "Множитель радиации Базальтовых дельт");
+        add("text.autoconfig.hbm_m.option.basaltDeltasRadMult.@Tooltip", "Множитель фоновой радиации в Базальтовых дельтах.");
+        add("text.autoconfig.hbm_m.option.rbmkDials.passiveCooling", "RBMK: пассивное охлаждение");
+        add("text.autoconfig.hbm_m.option.rbmkDials.passiveCoolingInner", "RBMK: внутреннее пассивное охлаждение");
+        add("text.autoconfig.hbm_m.option.rbmkDials.columnHeatFlow", "RBMK: теплопоток колонны");
+        add("text.autoconfig.hbm_m.option.rbmkDials.fuelDiffusionMod", "RBMK: модификатор диффузии топлива");
+        add("text.autoconfig.hbm_m.option.rbmkDials.heatProvision", "RBMK: теплоподача");
+        add("text.autoconfig.hbm_m.option.rbmkDials.boilerHeatConsumption", "RBMK: потребление тепла котлом");
+        add("text.autoconfig.hbm_m.option.rbmkDials.controlSpeedMod", "RBMK: скорость стержней (мод.)");
+        add("text.autoconfig.hbm_m.option.rbmkDials.reactivityMod", "RBMK: реактивность (мод.)");
+        add("text.autoconfig.hbm_m.option.rbmkDials.outgasserMod", "RBMK: скорость дегазатора (мод.)");
+        add("text.autoconfig.hbm_m.option.rbmkDials.surgeMod", "RBMK: всплеск стержней (мод.)");
+        add("text.autoconfig.hbm_m.option.rbmkDials.reasimBoilerSpeed", "RBMK: скорость котла REASIM");
+        add("text.autoconfig.hbm_m.option.rbmkDials.moderatorEfficiency", "RBMK: КПД замедлителя");
+        add("text.autoconfig.hbm_m.option.rbmkDials.absorberEfficiency", "RBMK: КПД поглотителя");
+        add("text.autoconfig.hbm_m.option.rbmkDials.reflectorEfficiency", "RBMK: КПД отражателя");
+        add("text.autoconfig.hbm_m.option.rbmkDials.absorberHeatConversion", "RBMK: преобразование тепла поглотителем");
 
         add("text.autoconfig.hbm_m.option.vatsRenderDistanceChunks", "Дальность прорисовки VATS");
 
@@ -3683,7 +3751,6 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("text.autoconfig.hbm_m.option.enableRadiation.@Tooltip", "Если выключено, вся радиация отключается (чанки, предметы)");
         add("text.autoconfig.hbm_m.option.enableChunkRads.@Tooltip", "Если выключено, радиация в чанках всегда 0");
         add("text.autoconfig.hbm_m.option.enableMOTD.@Tooltip", "Приветствие при входе в мир и уведомление, если на Modrinth есть более новая версия мода");
-        add("text.autoconfig.hbm_m.option.usePrismSystem.@Tooltip", "Использовать систему PRISM для радиации в чанках (WIP)");
 
         add("text.autoconfig.hbm_m.option.maxPlayerRad.@Tooltip", "Максимальная радиация, которую может накопить игрок");
         add("text.autoconfig.hbm_m.option.radDecay.@Tooltip", "Скорость распада радиации у игрока за тик");
@@ -3707,19 +3774,16 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("text.autoconfig.hbm_m.option.infoToastOffsetY.@Tooltip", "Расстояние от верхнего края экрана.");
 
         add("text.autoconfig.hbm_m.option.maxRad.@Tooltip", "Максимальная радиация в чанке");
-        add("text.autoconfig.hbm_m.option.fogRad.@Tooltip", "Порог радиации для появления тумана (WIP)");
-        add("text.autoconfig.hbm_m.option.fogCh.@Tooltip", "Шанс появления тумана (WIP)");
         add("text.autoconfig.hbm_m.option.radChunkDecay.@Tooltip", "Скорость распада радиации в чанке");
         add("text.autoconfig.hbm_m.option.radChunkSpreadFactor.@Tooltip", "Сколько радиации распространяется на соседние чанки");
         add("text.autoconfig.hbm_m.option.radSpreadThreshold.@Tooltip", "Ниже этого значения радиация не распространяется");
         add("text.autoconfig.hbm_m.option.minRadDecayAmount.@Tooltip", "Минимальный распад радиации за тик в чанке");
-        add("text.autoconfig.hbm_m.option.radSourceInfluenceFactor.@Tooltip", "Влияние источников радиации на чанк.");
         add("text.autoconfig.hbm_m.option.radRandomizationFactor.@Tooltip", "Фактор рандомизации радиации в чанке");
 
         add("text.autoconfig.hbm_m.option.modelUpdateDistance.@Tooltip", "Дистанция для рендеринга динамических частей .obj моделей (в чанках)");
         add("text.autoconfig.hbm_m.option.modelStaticRenderDistance.@Tooltip", "Дистанция для рендеринга статических частей .obj моделей (в чанках)");
         add("text.autoconfig.hbm_m.option.enableMissileNetworkTrack.@Tooltip", "Включите это, если хотите чтобы сервер отсылал всем клиентам пакеты с местоположением баллистических ракет, чтобы их было видно ЗА ванильной дальностью прорисовки.");
-        add("text.autoconfig.hbm_m.option.enableOcclusionCulling.@Tooltip", "Включить куллинг моделей (выключите, если ваши модели рендерятся некорректно)");
+        add("text.autoconfig.hbm_m.option.occlusionCullingMode.@Tooltip", "Режим отсечения невидимых машин за препятствиями.\nGPU: Иерархическая пирамида глубин (Hi-Z) через compute-шейдеры OpenGL 4.3.\nCPU: Трассировка лучей по блокам чанка на процессоре.\nOFF: Отсечение выключено.\nСовет: включайте CPU, когда много моделей скрыто за блоками — сэкономит отрисовку слабого GPU; в открытых биомах даёт мало и нагружает процессор.");
         add("text.autoconfig.hbm_m.option.forceVanillaImmediatePath.@Tooltip", "Рисовать все OBJ-станки ванильным immediate-путём (putBulkData) вместо автоматического VBO/инстансинг-пайплайна. Аварийный резерв, если станки рендерятся белыми/невидимыми или сломанными.");
 
         add("text.autoconfig.hbm_m.option.vatsRenderDistanceChunks.@Tooltip", "Дальность отрисовки полосок здоровья мобов (чанки). Больше значение - дальше видно, но выше нагрузка.");
@@ -3834,8 +3898,6 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("text.autoconfig.hbm_m.option.missileTrackMaxRangeBlocks.@Tooltip", "Максимальное расстояние (в блоках), на котором ракеты синхронизируются по сети. 0 = без лимита.");
         add("text.autoconfig.hbm_m.option.missileTrackInterval", "Интервал трекинга ракет");
         add("text.autoconfig.hbm_m.option.missileTrackInterval.@Tooltip", "Как часто (в тиках) позиции ракет отправляются клиентам.");
-        add("text.autoconfig.hbm_m.option.instanceVboOrphanBeforeUpload", "Orphaning instance VBO");
-        add("text.autoconfig.hbm_m.option.instanceVboOrphanBeforeUpload.@Tooltip", "Перед заливкой instance VBO вызывать glBufferData(NULL) того же размера, чтобы драйвер не синхронизировался с предыдущим кадром. Отключайте только при проблемах.");
         add("text.autoconfig.hbm_m.option.mdiDebugLogDispatch", "Лог MDI-диспетча");
         add("text.autoconfig.hbm_m.option.mdiDebugLogDispatch.@Tooltip", "Писать одну строку INFO на каждый MDI-dispatch (число sub-draw, инстансов, атлас).");
         add("text.autoconfig.hbm_m.option.mdiVerboseSubdraws", "Подробный лог MDI");
@@ -3890,6 +3952,73 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("foundry.hbm_m.noCast", "Нет изложницы");
         add("foundry.hbm_m.mold_small", "Литейная форма");
         add("foundry.hbm_m.mold_large", "Литейный бассейн");
+        add(ModItems.MOLD_BASE.get(), "Пустая литейная форма");
+        // ── Спуск (ориг. foundry.filter/inverted/invertFilter) ──
+        add("foundry.hbm_m.redstone_open", "Спуск: открыт по умолчанию, закрывается редстоуном");
+        add("foundry.hbm_m.redstone_closed", "Спуск: закрыт по умолчанию, открывается редстоуном");
+        add("foundry.hbm_m.inverted", "Редстоун инвертирован");
+        add("foundry.hbm_m.filter", "Фильтр: %s");
+        add("foundry.hbm_m.filter_cleared", "Фильтр сброшен");
+        add("foundry.hbm_m.filter_inverted", "Фильтр инвертирован");
+        add("foundry.hbm_m.filter_normal", "Фильтр обычный");
+        // ── RBMK DODD (ориг. tile.rbmk.dodd.*, ru_RU.lang) ──
+        add("tile.rbmk.dodd.heat", "Температура колонны");
+        add("tile.rbmk.dodd.reasimWater", "Вода РеаСим");
+        add("tile.rbmk.dodd.reasimSteam", "Пар РеаСим");
+        add("tile.rbmk.dodd.level", "Уровень");
+        add("tile.rbmk.dodd.targetLevel", "Целевой уровень");
+        add("tile.rbmk.dodd.startingLevel", "Начальный уровень");
+        add("tile.rbmk.dodd.mult", "Мульт.");
+        add("tile.rbmk.dodd.color", "Цвет");
+        add("tile.rbmk.dodd.levelLower", "Уровень ниже");
+        add("tile.rbmk.dodd.levelUpper", "Уровень выше");
+        add("tile.rbmk.dodd.heatLower", "Температура ниже");
+        add("tile.rbmk.dodd.heatUpper", "Температура выше");
+        add("tile.rbmk.dodd.function", "Функция");
+        add("tile.rbmk.dodd.fluxSlow", "Медленный поток");
+        add("tile.rbmk.dodd.fluxFast", "Быстрый поток");
+        add("tile.rbmk.dodd.hasRod", "Имеет стержень");
+        add("tile.rbmk.dodd.progress", "Прогресс");
+        add("tile.rbmk.dodd.gas", "Газ");
+        add("tile.rbmk.dodd.cooled", "Охлажденный");
+        add("tile.rbmk.dodd.burned", "Сожженный");
+        add("tile.rbmk.dodd.feed", "Жидкость");
+        add("tile.rbmk.dodd.steam", "Пар");
+        add("tile.rbmk.dodd.cryo", "Крио");
+        add("tile.rbmk.dodd.fuel", "Топливо");
+        add("tile.rbmk.dodd.f_heat", "Температура топлива");
+        add("tile.rbmk.dodd.f_xenon", "Отравление ксеноном");
+        add("tile.rbmk.dodd.f_yield", "Выход топлива");
+        add("tile.rbmk.dodd.feed_type", "Тип жидкости(ID)");
+        add("tile.rbmk.dodd.steam_type", "Тип пара(ID)");
+        add("tile.rbmk.dodd.cryo_type", "Тип крио(ID)");
+        add("tile.rbmk.dodd.gas_type", "Тип газа(ID)");
+        add("tile.rbmk.dodd.fuel_type", "Тип топлива(ID)");
+        add("tile.rbmk.dodd.feed_p", "Давление");
+        add("tile.rbmk.dodd.steam_p", "Давление пара");
+        add("tile.rbmk.dodd.cryo_p", "Давление крио");
+        add("tile.rbmk.dodd.gas_p", "Давление газа");
+        add("tile.rbmk.dodd.fuel_p", "Давление топлива");
+        add("tile.rbmk.dodd.feed_max", "Максимальное количество жидкости");
+        add("tile.rbmk.dodd.steam_max", "Максимальное количество пара");
+        add("tile.rbmk.dodd.cryo_max", "Максимальное количество крио");
+        add("tile.rbmk.dodd.gas_max", "Максимальное количество газа");
+        add("tile.rbmk.dodd.fuel_max", "Максимальное количество топлива");
+        add("tile.rbmk.dodd.feed_amt", "Количество жидкости");
+        add("tile.rbmk.dodd.steam_amt", "Количество пара");
+        add("tile.rbmk.dodd.cryo_amt", "Количество крио");
+        add("tile.rbmk.dodd.gas_amt", "Количество газа");
+        add("tile.rbmk.dodd.fuel_amt", "Количество топлива");
+        add("tile.rbmk.dodd.t0", "Количество холодный перфторометан");
+        add("tile.rbmk.dodd.t0_max", "Максимально холодный перфторометан");
+        add("tile.rbmk.dodd.t0_type", "Тип холодный перфторометан(ID)");
+        add("tile.rbmk.dodd.t0_p", "Давление холодный перфторометан");
+        add("tile.rbmk.dodd.t1", "Количество перфторометан");
+        add("tile.rbmk.dodd.t1_max", "Максимально перфторометан");
+        add("tile.rbmk.dodd.t1_type", "Тип перфторометан(ID)");
+        add("tile.rbmk.dodd.t1_p", "Давление перфторометан");
+        add("tile.rbmk.dodd.lidState", "Состояние крышки");
+        add("tile.rbmk.dodd.explodeOnBroken", "Взрывается при разрушении");
     }
 }
 //?}
