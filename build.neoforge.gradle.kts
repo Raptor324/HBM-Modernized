@@ -190,6 +190,12 @@ dependencies {
 	"compileOnly"("maven.modrinth:u6dRKJwZ:${prop("deps.jei")}")
 	"runtimeOnly"("maven.modrinth:u6dRKJwZ:${prop("deps.jei")}")
 
+	// Jade (WAILA fork): плагин com.hbm_m.compat.jade (см. комментарий в build.forge.gradle.kts).
+	// Классы плагина грузит только сканер @WailaPlugin самого Jade — без Jade в рантайме
+	// они никогда не загружаются, поэтому compileOnly-зависимость в прод безопасна.
+	"compileOnly"("maven.modrinth:jade:15.10.6+neoforge")
+	"runtimeOnly"("maven.modrinth:jade:15.10.6+neoforge")
+
 	// Curios (опционально): API для компиляции, сам мод — в рантайм для тестов.
 	"compileOnly"("top.theillusivec4.curios:curios-neoforge:9.5.1+1.21.1:api")
 	"runtimeOnly"("top.theillusivec4.curios:curios-neoforge:9.5.1+1.21.1")

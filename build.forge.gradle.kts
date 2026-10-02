@@ -211,6 +211,10 @@ dependencies {
 
 	// "modRuntimeOnly"("curse.maven:xaeros-world-map-317780:7598469")
     // "modRuntimeOnly"("curse.maven:xaeros-minimap-263420:7598586")
+	// Jade (WAILA fork): плагин com.hbm_m.compat.jade. compileOnly берёт ТОТ ЖЕ файл, что и
+	// рантайм, чтобы API плагина гарантированно совпадал с тем, под чем запускаемся. Классы
+	// плагина грузит только сканер @WailaPlugin самого Jade — без Jade они не загружаются.
+	"modCompileOnly"("curse.maven:jade-324717:6855440")
 	"modRuntimeOnly"("curse.maven:jade-324717:6855440")
 }
 
