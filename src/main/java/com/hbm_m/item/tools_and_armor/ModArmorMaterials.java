@@ -60,8 +60,9 @@ public enum ModArmorMaterials implements ArmorMaterial {
     PAA("paa", 26, new int[]{ 5, 7, 5, 4 }, 25,
             SoundEvents.ARMOR_EQUIP_GOLD, 1.75f, 0.07f, () -> Ingredient.of(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE))),
 
-    LIQUIDATOR("liquidator", 26, new int[]{ 5, 7, 6, 4 }, 25,
-            SoundEvents.ARMOR_EQUIP_IRON, 1.5f, 0.1f, () -> Ingredient.of(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE))),
+    // Оригинал HBM_LIQUIDATOR: factor 750, {3,8,6,3}, ench 10, ремонт plate_lead.
+    LIQUIDATOR("liquidator", 750, new int[]{ 3, 8, 6, 3 }, 10,
+            SoundEvents.ARMOR_EQUIP_IRON, 1.5f, 0.1f, () -> Ingredient.of(ModMaterialItems.item(ModMaterials.LEAD, MaterialShape.PLATE))),
 
     STEEL("steel", 26, new int[]{ 4, 5, 3, 2 }, 25,
             SoundEvents.ARMOR_EQUIP_IRON, 1f, 0.03f, () -> Ingredient.of(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE))),

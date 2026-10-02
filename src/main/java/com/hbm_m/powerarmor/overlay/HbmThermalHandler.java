@@ -200,7 +200,7 @@ public class HbmThermalHandler implements ResourceManagerReloadListener {
         try {
             thermalChain.process(partialTick);
         } catch (Exception e) {
-            e.printStackTrace();
+            MainRegistry.LOGGER.error("Thermal vision post-chain failed; cleaning up", e);
             cleanup();
         }
         RenderSystem.disableBlend();

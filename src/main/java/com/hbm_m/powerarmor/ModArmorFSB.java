@@ -26,9 +26,6 @@ import net.minecraft.world.phys.Vec3;
 import java.util.function.Consumer;
 
 import net.minecraftforge.client.extensions.common.IClientItemExtensions;
-import net.minecraftforge.event.entity.living.LivingAttackEvent;
-import net.minecraftforge.event.entity.living.LivingHurtEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 //?}
 
@@ -352,17 +349,6 @@ public class ModArmorFSB extends ArmorItem {
         consumer.accept(new IClientItemExtensions() {
             // Basic implementation, can be extended for part hiding
         });
-    }
-
-    // Event handlers (Forge-only)
-    @SubscribeEvent
-    public static void onLivingAttack(LivingAttackEvent event) {
-        // Handle attack events for FSB armor
-    }
-
-    @SubscribeEvent
-    public static void onLivingHurt(LivingHurtEvent event) {
-        // Handle hurt events for FSB armor
     }
     //?}
 }
