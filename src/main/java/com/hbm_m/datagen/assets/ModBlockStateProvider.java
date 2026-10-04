@@ -2668,12 +2668,8 @@ public class ModBlockStateProvider extends BlockStateProvider {
         ladderBlockWithItem(ModBlocks.LADDER_STURDY.get(), "block/ladder_sturdy");
         ladderBlockWithItem(ModBlocks.LADDER_TITANIUM.get(), "block/ladder_titanium");
         ladderBlockWithItem(ModBlocks.LADDER_TUNGSTEN.get(), "block/ladder_tungsten");
-        simpleBlockWithItem(ModBlocks.LAMP_DEMON.get(),
-                models().cubeAll(
-                        ModBlocks.LAMP_DEMON.getId().getPath(),
-                        modLoc("block/lamp_demon")
-                )
-        );
+        // lamp_demon: blockstate + block model hand-written (OBJ via forge:composite,
+        // 6-way facing), only the item model is generated.
         simpleBlockWithItem(ModBlocks.LAMP_TRITIUM_BLUE_OFF.get(),
                 models().cubeAll(
                         ModBlocks.LAMP_TRITIUM_BLUE_OFF.getId().getPath(),

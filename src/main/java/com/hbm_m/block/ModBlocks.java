@@ -22,6 +22,7 @@ import com.hbm_m.block.decorations.CageLampBlock;
 import com.hbm_m.block.decorations.CrateCanBlock;
 import com.hbm_m.block.decorations.CrtBlock;
 import com.hbm_m.block.decorations.DecorShapeBlock;
+import com.hbm_m.block.decorations.DemonLampBlock;
 import com.hbm_m.block.decorations.DoorBlock;
 import com.hbm_m.block.decorations.GrateBlock;
 import com.hbm_m.block.decorations.KeyholeBlock;
@@ -2638,7 +2639,11 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> LADDER_STURDY = registerBlock("ladder_sturdy", () -> new net.minecraft.world.level.block.LadderBlock(BlockProps.copy(Blocks.LADDER)));
     public static final RegistrySupplier<Block> LADDER_TITANIUM = registerBlock("ladder_titanium", () -> new net.minecraft.world.level.block.LadderBlock(BlockProps.copy(Blocks.LADDER)));
     public static final RegistrySupplier<Block> LADDER_TUNGSTEN = registerBlock("ladder_tungsten", () -> new net.minecraft.world.level.block.LadderBlock(BlockProps.copy(Blocks.LADDER)));
-    public static final RegistrySupplier<Block> LAMP_DEMON = registerBlock("lamp_demon", () -> new Block(BlockProps.copy(Blocks.STONE)));
+    public static final RegistrySupplier<Block> LAMP_DEMON = registerBlock("lamp_demon",
+            () -> new DemonLampBlock(BlockBehaviour.Properties.of()
+                    .mapColor(MapColor.METAL).sound(SoundType.METAL).strength(3.0F)
+                    .lightLevel(state -> 15)
+                    .noOcclusion().requiresCorrectToolForDrops()));
     public static final RegistrySupplier<Block> LAMP_TRITIUM_BLUE_OFF = registerBlock("lamp_tritium_blue_off", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> LAMP_TRITIUM_BLUE_ON = registerBlock("lamp_tritium_blue_on", () -> new Block(BlockProps.copy(Blocks.STONE)));
     public static final RegistrySupplier<Block> LAMP_TRITIUM_GREEN_OFF = registerBlock("lamp_tritium_green_off", () -> new Block(BlockProps.copy(Blocks.STONE)));

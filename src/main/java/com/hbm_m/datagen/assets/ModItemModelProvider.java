@@ -1102,6 +1102,7 @@ public class ModItemModelProvider extends ItemModelProvider {
         blockItemFromBlockModel(ModBlocks.FLUORITE_ORE);
         blockItemFromBlockModel(ModBlocks.FREAKY_ALIEN_BLOCK);
         blockItemFromBlockModel(ModBlocks.GEIGER_COUNTER_BLOCK);
+        blockItemFromBlockModel(ModBlocks.LAMP_DEMON);
         blockItemFromBlockModel(ModBlocks.LEAD_ORE);
         blockItemFromBlockModel(ModBlocks.LEAD_ORE_DEEPSLATE);
         blockItemFromBlockModel(ModBlocks.LIGNITE_ORE);

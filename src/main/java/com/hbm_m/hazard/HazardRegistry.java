@@ -524,6 +524,9 @@ public class HazardRegistry {
         hazard(ModItems.CORDITE.get(), new HazardEntry(EXPLOSIVE, 2.0f));
         hazard(ModItems.BALLISTITE.get(), new HazardEntry(EXPLOSIVE, 1.0f));
         hazard(ModItems.BALL_DYNAMITE.get(), new HazardEntry(EXPLOSIVE, 2.0f));
+
+        // Лампа из заряда-демона: закрытый демонический заряд на подставке — полная доза заряда.
+        hazard(ModBlocks.LAMP_DEMON.get().asItem(), new HazardEntry(RADIATION, 100000f));
     }
 
     private static void hazard(Item item, HazardEntry... entries) {

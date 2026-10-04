@@ -1558,6 +1558,14 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .unlockedBy(getHasName(Items.IRON_INGOT), has(Items.IRON_INGOT))
                 .save(writer, recipeId("crafting/cage_lamp"));
 
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.LAMP_DEMON.get(), 1)
+                .pattern(" D ")
+                .pattern("S S")
+                .define('D', ModItems.DEMON_CORE_CLOSED.get())
+                .define('S', ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.INGOT))
+                .unlockedBy(getHasName(ModItems.DEMON_CORE_CLOSED.get()), has(ModItems.DEMON_CORE_CLOSED.get()))
+                .save(writer, recipeId("crafting/lamp_demon"));
+
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.FLOOD_LAMP.get(), 8)
                 .pattern("%")
                 .pattern("@")

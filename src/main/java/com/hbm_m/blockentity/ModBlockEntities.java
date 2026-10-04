@@ -465,6 +465,10 @@ public class ModBlockEntities {
             BLOCK_ENTITIES.register("deco_loot_be", () ->
                     BlockEntityType.Builder.of(com.hbm_m.blockentity.decorations.DecoLootBlockEntity::new, com.hbm_m.block.ModBlocks.DECO_LOOT.get()).build(null));
 
+    public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.decorations.DemonLampBlockEntity>> DEMON_LAMP_BE =
+            BLOCK_ENTITIES.register("demon_lamp_be", () ->
+                    BlockEntityType.Builder.of(com.hbm_m.blockentity.decorations.DemonLampBlockEntity::new, com.hbm_m.block.ModBlocks.LAMP_DEMON.get()).build(null));
+
     public static final RegistrySupplier<BlockEntityType<DeconBlockEntity>> DECON_BE =
             BLOCK_ENTITIES.register("decon_be", () ->
                     BlockEntityType.Builder.of(DeconBlockEntity::new, ModBlocks.DECON.get()).build(null));

@@ -637,6 +637,7 @@ public class ClientSetup {
         MachineDoorRenderer.register();
         BlockEntityRenderers.register(ModBlockEntities.PEDESTAL_BE.get(), com.hbm_m.client.render.implementations.PedestalRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.DECO_LOOT_BE.get(), com.hbm_m.client.render.implementations.DecoLootRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.DEMON_LAMP_BE.get(), com.hbm_m.client.render.implementations.DemonLampRenderer::new);
         MachinePressRenderer.register();
         MachineTurbofanRenderer.register();
         MachineChemicalPlantRenderer.register();
