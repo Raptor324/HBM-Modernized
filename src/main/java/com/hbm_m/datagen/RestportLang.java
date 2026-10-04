@@ -195,6 +195,7 @@ public final class RestportLang {
         e("block.hbm_m.lantern", "Lantern", "Светильник");
         e("block.hbm_m.leaves_layer", "Fallen Leaves", "Упавшие листья");
         e("block.hbm_m.lightstone_tile_stairs", "Lightstone Tile Stairs", "Ступеньки из светлокаменной плитки");
+        e("block.hbm_m.liquefactor.desc", "Powerful universal machine to turn items into fluids.$Comes with versatile catalytic components, heating elements$and a built-in hydrator for petrochemical liquefaction.", "Мощная машина для превращения предметов в жидкости.$Поставляется с универсальными каталитическими компонентами, нагревательными элементами$и встроенным гидратором для нефтехимического сжижения.");
         e("block.hbm_m.machine_satlink", "Satellite Ground Station", "Наземная станция спутника");
         e("block.hbm_m.meteor_battery", "Starmetal Static Electricity Generator", "Генератор статического электричества из звездного металла");
         e("block.hbm_m.mine_ap", "Anti-Personell Mine", "Противопехотная мина");
@@ -202,6 +203,8 @@ public final class RestportLang {
         e("block.hbm_m.mine_he", "Anti-Tank Mine", "Противотанковая мина");
         e("block.hbm_m.mine_naval", "Naval Mine", "Морская мина");
         e("block.hbm_m.mine_shrap", "Shrapnel Mine", "Мина со шрапнелью");
+        e("block.hbm_m.mining_laser.desc.ceiling", "Only placeable on a ceiling.", "Устанавливается только на потолок.");
+        e("block.hbm_m.mining_laser.desc.multiblock", "3x3x3 Multiblock", "Мультиблок 3x3x3");
         e("block.hbm_m.mud_block", "Poisonous Mud", "Токсичные отходы");
         e("block.hbm_m.mush", "Glowing Mushroom", "Светящийся гриб");
         e("block.hbm_m.mush_block", "Glowing Mushroom Block", "Блок светящегося гриба");
@@ -252,6 +255,9 @@ public final class RestportLang {
         e("block.hbm_m.platemetal_yellow", "Yellow Platemetal Block", "Блок из листового металла (Желтый)");
         e("block.hbm_m.plushie", "%s Plushie", "Плюшевая игрушка %s");
         e("block.hbm_m.pole_satellite_receiver", "Satellite Dish", "Спутниковая тарелка");
+        e("block.hbm_m.pump_electric.desc", "Uses electricity to pump up groundwater$Generates up to 10,000mB/t$Needs to be placed below Y:70", "Использует электричество для выкачивания грунтовых вод$Выкачивает до 10,000мБ/тик$Должно быть размещено ниже Y:70");
+        e("block.hbm_m.pump_steam.desc", "Uses steam to pump up groundwater$Generates up to 1,000mB/t$Needs to be placed below Y:70", "Использует пар для выкачивания грунтовых вод$Выкачывает до 1000мБ/тик$Должно быть размещено ниже Y:70");
+        e("block.hbm_m.purex.desc", "Reprocessing machine for many nuclear fuels.$Most recipes require kerosene and nitric acid.", "Машина для переработки многих видов ядерного топлива.$Для большинства рецептов требуются керосин и азотная кислота.");
         e("block.hbm_m.puter", "IBM Personal Computer 300PL", "Персональный компьютер IBM 300PL");
         e("block.hbm_m.pwr_block", "PWR", "Водо-водяной энергетический реактор (ВВЭР)");
         e("block.hbm_m.pwr_casing.desc", "Needs to cover all internal parts for the reactor to form$Placement: Casing", "Для формирования реактора необходимо покрыть все внутренние части$Размещение: Обшивка");
@@ -274,6 +280,7 @@ public final class RestportLang {
         e("block.hbm_m.semtex", "Semtex", "Семтекс");
         e("block.hbm_m.skeleton_holder", "Oh, that's a dead guy", "О, это мёртвый парень");
         e("block.hbm_m.snowglobe", "Snowglobe", "Снежный шар");
+        e("block.hbm_m.solidifier.desc", "A universal machine fitted with cooling systems and other$versatile tools for turning fluids solid using various$processes such as freezing and petrochemical polymerization.", "Универсальная машина, оснащенная системами охлаждения и другими$универсальными инструментами для превращения жидкостей в твердые вещества с использованием различных$процессов, таких как замораживание и нефтехимическая полимеризация.");
         e("block.hbm_m.spikes", "Spikes", "Шипы");
         e("block.hbm_m.spotlight_beam", "Spotlight Beam", "Луч прожектора");
         e("block.hbm_m.stalactite_asbestos", "Asbestos Stalactite", "Асбестовый сталактит");
@@ -290,6 +297,7 @@ public final class RestportLang {
         e("block.hbm_m.stalagmite_ice", "Icy Stalagmite", "Ледяной сталагмит");
         e("block.hbm_m.stalagmite_snow", "Snowy Stalagmite", "Снежный сталагмит");
         e("block.hbm_m.stalagmite_sulfur", "Sulfurous Stalagmite", "Сернистый сталагмит");
+        e("block.hbm_m.steam_engine.desc", "Efficiency: 85%%", "Эффективность: 85%%");
         e("block.hbm_m.steel_beam", "Steel Beam", "Стальная балка");
         e("block.hbm_m.steel_corner", "Steel Wall Corner", "Стальной угол");
         e("block.hbm_m.steel_pole", "Steel Pole", "Стальные опоры");
@@ -581,7 +589,16 @@ public final class RestportLang {
         e("damage.inset", "Resistances when worn in set:", "Сопротивления к при полном наборе:");
         e("damage.item", "Resistances when worn:", "Сопротивления к:");
         e("damage.other", "Other", "Прочему");
+        e("desc.gui.radiolysis.desc", "§9Description§r$This RTG is more efficient then others, and$comes equipped with a radiolysis chamber for$cracking and sterilization.", "§9Описание§r$Этот РИТЭГ более эффективен, чем другие, и$оснащен камерой радиолиза для$крекинга и стерилизации.");
+        e("desc.gui.rtg.heat", "§eCurrent heat level: %s", "§eТекущий уровень тепла: %s");
+        e("desc.gui.rtg.pelletHeat", "%s (%s heat)", "%s (%s тепла)");
+        e("desc.gui.rtg.pelletPower", "%s (%s HE/tick)", "%s (%s HE/тик)");
+        e("desc.gui.rtg.pellets", "Accepted Pellets:", "Принимаемые пеллеты:");
+        e("desc.gui.rtgBFurnace.desc", "Requires at least 15 heat to process$The more heat on top of that, the faster it runs$Heat going over maximum speed will have no effect$Short-lived pellets may decay", "Требует хотя бы 15 единиц тепла$Чем больше тепла добавляется, тем быстрее оно работает$Нагрев, превышающий максимальную скорость, не будет иметь никакого эффекта$Короткоживущие пеллеты могут распадаться");
         e("desc.gui.satdock.desc", "Requires linked miner sat chip.$Cargo ship will land periodically to$deliver resources.", "Requires linked miner sat chip.$Cargo ship will land periodically to$deliver resources.");
+        e("desc.gui.turbinegas.automode", "§2Automatic turbine throttling mode§r$By clicking the \"AUTO\" button, the turbine$will automatically adjust the throttle position$based on the power required from the network$and the fuel level in the internal tank", "§2Автоматический режим турбины§r$Нажав кнопку \"AUTO\", турбина автоматически$отрегулирует позицию регулятора$в зависимости от требуемой мощности сети$и количества оставшегося топлива");
+        e("desc.gui.turbinegas.fuels", "§6Accepted fuels:§r", "§6Принимаемое топливо:");
+        e("desc.gui.turbinegas.warning", "§cFuel or lubricant level low!§r", "§cНизкий уровень топлива или смазки!§r");
         e("desc.item.pileRod", "§eUse on drilled graphite to insert$§eUse screwdriver to extract$", "§eПКМ по просверлённому графиту для вставки$§eПКМ отвёрткой чтобы извлечь$");
         e("desc.item.pipette.corrosive", "Can handle corrosive liquids.", "Может работать с коррозийными жидкостями.");
         e("desc.item.pipette.laboratory", "Now with 50x more precision!", "Теперь с 50-кратной точностью!");

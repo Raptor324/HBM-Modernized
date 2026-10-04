@@ -40,8 +40,8 @@ public class GUIMachinePyroOven extends GuiInfoScreen<MachinePyroOvenMenu> {
         int p = (int) (pyro.getProgress() * 27);
         guiGraphics.blit(TEXTURE, this.leftPos + 57, this.topPos + 47, 176, 0, p, 12);
 
-        pyro.getTank0().renderTank(guiGraphics, this.leftPos + 8, this.topPos + 70, 16, 52);
-        pyro.getTank1().renderTank(guiGraphics, this.leftPos + 116, this.topPos + 70, 16, 52);
+        pyro.getTank0().renderTank(guiGraphics, this.leftPos + 8, this.topPos + 18, 16, 52);
+        pyro.getTank1().renderTank(guiGraphics, this.leftPos + 116, this.topPos + 18, 16, 52);
     }
 
     @Override

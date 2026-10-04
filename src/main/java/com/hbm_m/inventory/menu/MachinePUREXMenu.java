@@ -1,8 +1,9 @@
 package com.hbm_m.inventory.menu;
 
-import com.hbm_m.api.energy.ItemEnergyAccess;
 import com.hbm_m.blockentity.machines.MachinePUREXBlockEntity;
 import com.hbm_m.inventory.ModItemStackHandlerContainer;
+import com.hbm_m.item.industrial.ItemBlueprints;
+import com.hbm_m.item.industrial.ItemMachineUpgrade;
 import com.hbm_m.lib.RefStrings;
 
 import net.minecraft.core.BlockPos;
@@ -13,20 +14,18 @@ import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
-//? if forge {
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-//?}
 
+/**
+ * 1:1 {@code ContainerMachinePUREX}: Batterie (152,81), Ordner (35,126), Upgrades (152,108/126), drei Eingaenge ab
+ * (8,90), sechs Ausgaenge 2x3 ab (80,36), Spielerinventar ab y 174.
+ */
 public class MachinePUREXMenu extends AbstractContainerMenu {
 
-    private final MachinePUREXBlockEntity blockEntity;
-
-    private static final int ITEM_INPUT_START = MachinePUREXBlockEntity.ITEM_INPUT_START;
-    private static final int ITEM_OUTPUT_START = MachinePUREXBlockEntity.ITEM_OUTPUT_START;
-    private static final int SLOT_BATTERY = MachinePUREXBlockEntity.SLOT_BATTERY;
-    private static final int MACHINE_SLOT_COUNT = 10;
+    private static final int MACHINE_SLOT_COUNT = MachinePUREXBlockEntity.SLOT_COUNT;
     private static final int PLAYER_INV_START = MACHINE_SLOT_COUNT;
     private static final int PLAYER_INV_END = MACHINE_SLOT_COUNT + 36;
+
+    private final MachinePUREXBlockEntity blockEntity;
 
     public MachinePUREXMenu(int id, Inventory inventory, FriendlyByteBuf extraData) {
         this(id, inventory, getBlockEntity(inventory, extraData));
@@ -36,45 +35,45 @@ public class MachinePUREXMenu extends AbstractContainerMenu {
         super(ModMenuTypes.PUREX_MENU.get(), id);
         this.blockEntity = blockEntity;
 
-        var container = new ModItemStackHandlerContainer(blockEntity.getInventory(), blockEntity::setChanged);
+        var handler = blockEntity.getInventory();
+        var container = new ModItemStackHandlerContainer(handler, blockEntity::setChanged);
 
-        this.addSlot(new Slot(container, SLOT_BATTERY, 17, 71) {
-            @Override
-            public boolean mayPlace(ItemStack stack) {
-                if (ItemEnergyAccess.getHbmProvider(stack).isPresent()) return true;
-                //? if forge {
-                if (stack.getCapability(ForgeCapabilities.ENERGY).isPresent()) return true;
-                //?}
-                //? if neoforge {
-                /*if (stack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM) != null) return true;
-                *///?}
-                return false;
-            }
+        // Batterie
+        this.addSlot(new Slot(container, 0, 152, 81));
+        // Blueprint-Ordner
+        this.addSlot(new Slot(container, 1, 35, 126) {
+            @Override public boolean mayPlace(ItemStack stack) { return handler.isItemValid(1, stack); }
         });
-
-        for (int i = 0; i < 3; i++) {
-            this.addSlot(new Slot(container, ITEM_INPUT_START + i, 44 + i * 18, 20));
-        }
-
-        for (int i = 0; i < 6; i++) {
-            this.addSlot(new Slot(container, ITEM_OUTPUT_START + i, 98 + (i % 3) * 18, 20 + (i / 3) * 18) {
-                @Override
-                public boolean mayPlace(ItemStack stack) {
-                    return false; // Nur Entnahme - wird von der Maschine befuellt.
-                }
+        // Upgrades
+        for (int i = 0; i < 2; i++) {
+            final int s = 2 + i;
+            this.addSlot(new Slot(container, s, 152, 108 + i * 18) {
+                @Override public boolean mayPlace(ItemStack stack) { return handler.isItemValid(s, stack); }
             });
         }
-
-        int playerInvX = 8;
-        int playerInvY = 108;
+        // Eingaenge
+        for (int i = 0; i < 3; i++) {
+            final int s = 4 + i;
+            this.addSlot(new Slot(container, s, 8 + i * 18, 90) {
+                @Override public boolean mayPlace(ItemStack stack) { return handler.isItemValid(s, stack); }
+            });
+        }
+        // Ausgaenge
         for (int row = 0; row < 3; row++) {
-            for (int col = 0; col < 9; col++) {
-                this.addSlot(new Slot(inventory, col + row * 9 + 9, playerInvX + col * 18, playerInvY + row * 18));
+            for (int col = 0; col < 2; col++) {
+                this.addSlot(new Slot(container, 7 + col + row * 2, 80 + col * 18, 36 + row * 18) {
+                    @Override public boolean mayPlace(ItemStack stack) { return false; }
+                });
             }
         }
-        int hotbarY = playerInvY + 58;
+
+        for (int row = 0; row < 3; row++) {
+            for (int col = 0; col < 9; col++) {
+                this.addSlot(new Slot(inventory, col + row * 9 + 9, 8 + col * 18, 174 + row * 18));
+            }
+        }
         for (int col = 0; col < 9; col++) {
-            this.addSlot(new Slot(inventory, col, playerInvX + col * 18, hotbarY));
+            this.addSlot(new Slot(inventory, col, 8 + col * 18, 174 + 58));
         }
     }
 
@@ -93,13 +92,12 @@ public class MachinePUREXMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        if (blockEntity == null || blockEntity.getLevel() != player.level()) {
-            return false;
-        }
+        if (blockEntity == null || blockEntity.getLevel() != player.level()) return false;
         BlockPos pos = blockEntity.getBlockPos();
         return player.distanceToSqr(pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D) <= 64.0D;
     }
 
+    /** Original {@code transferStackInSlot}: Batterie, Ordner, Upgrades, sonst Eingaenge. */
     @Override
     public ItemStack quickMoveStack(Player player, int index) {
         ItemStack result = ItemStack.EMPTY;
@@ -110,39 +108,25 @@ public class MachinePUREXMenu extends AbstractContainerMenu {
             result = slotStack.copy();
 
             if (index < MACHINE_SLOT_COUNT) {
-                if (!this.moveItemStackTo(slotStack, PLAYER_INV_START, PLAYER_INV_END, true)) {
-                    return ItemStack.EMPTY;
-                }
+                if (!this.moveItemStackTo(slotStack, PLAYER_INV_START, PLAYER_INV_END, true)) return ItemStack.EMPTY;
             } else {
-                boolean isEnergySource = ItemEnergyAccess.getHbmProvider(slotStack).isPresent();
-                        //? if forge {
-                        if (!isEnergySource) {
-                            isEnergySource = slotStack.getCapability(ForgeCapabilities.ENERGY).isPresent();
-                        }
-                        //?}
-                        //? if neoforge {
-                        /*if (!isEnergySource) {
-                            isEnergySource = slotStack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM) != null;
-                        }
-                        *///?}
-                if (isEnergySource) {
-                    if (!this.moveItemStackTo(slotStack, SLOT_BATTERY, SLOT_BATTERY + 1, false)) {
-                        return ItemStack.EMPTY;
-                    }
-                } else if (!this.moveItemStackTo(slotStack, ITEM_INPUT_START, ITEM_INPUT_START + 3, false)) {
-                    return ItemStack.EMPTY;
+                boolean battery = com.hbm_m.api.energy.ItemEnergyAccess.getHbmProvider(slotStack).isPresent()
+                        || com.hbm_m.api.energy.ItemEnergyAccess.getHbmReceiver(slotStack).isPresent();
+                if (battery) {
+                    if (!this.moveItemStackTo(slotStack, 0, 1, false)) return ItemStack.EMPTY;
+                } else if (slotStack.getItem() instanceof ItemBlueprints) {
+                    if (!this.moveItemStackTo(slotStack, 1, 2, false)) return ItemStack.EMPTY;
+                } else if (slotStack.getItem() instanceof ItemMachineUpgrade) {
+                    if (!this.moveItemStackTo(slotStack, 2, 4, false)) return ItemStack.EMPTY;
+                } else {
+                    if (!this.moveItemStackTo(slotStack, 4, 7, false)) return ItemStack.EMPTY;
                 }
             }
 
-            if (slotStack.isEmpty()) {
-                slot.set(ItemStack.EMPTY);
-            } else {
-                slot.setChanged();
-            }
+            if (slotStack.isEmpty()) slot.set(ItemStack.EMPTY);
+            else slot.setChanged();
 
-            if (slotStack.getCount() == result.getCount()) {
-                return ItemStack.EMPTY;
-            }
+            if (slotStack.getCount() == result.getCount()) return ItemStack.EMPTY;
             slot.onTake(player, slotStack);
         }
         return result;

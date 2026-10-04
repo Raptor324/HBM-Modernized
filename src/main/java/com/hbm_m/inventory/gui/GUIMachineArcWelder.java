@@ -54,7 +54,7 @@ public class GUIMachineArcWelder extends GuiInfoScreen<MachineArcWelderMenu> {
         drawInfoPanel(guiGraphics, 78, 67, PanelType.SMALL_BLUE_INFO);
 
         if (arcWelder != null) {
-            arcWelder.tank.renderTank(guiGraphics, this.leftPos + 35, this.topPos + 79, 34, 16);
+            arcWelder.tank.renderTank(guiGraphics, this.leftPos + 35, this.topPos + 63, 34, 16);
         }
     }
 

@@ -37,7 +37,8 @@ import net.minecraft.world.level.material.Fluids;
  * (Fluid -> Item, 1:1). Upgrade-Slots (Speed/Power) via {@link UpgradeManager}, analog zu
  * {@code OilDrillBaseBlockEntity}.
  */
-public class MachineSolidifierBlockEntity extends BaseMachineBlockEntity implements IFluidStandardTransceiverMK2 {
+public class MachineSolidifierBlockEntity extends BaseMachineBlockEntity implements IFluidStandardTransceiverMK2,
+        com.hbm_m.interfaces.IUpgradeInfoProvider {
 
     public static final int SLOT_OUTPUT    = 0;
     public static final int SLOT_BATTERY   = 1;
@@ -69,18 +70,18 @@ public class MachineSolidifierBlockEntity extends BaseMachineBlockEntity impleme
     }
 
     private void serverTick(Level level, BlockPos pos) {
-        ensureNetworkInitialized();
         chargeFromBatterySlot(SLOT_BATTERY);
 
         ItemStack[] slots = inventorySlotArray();
         if (tank.setType(SLOT_FLUID_ID, slots)) applySlotsArray(slots);
 
-        if (level.getGameTime() % 20 == 0) {
-            for (Direction dir : Direction.values()) {
-                BlockPos neighborPos = pos.relative(dir);
-                BlockEntity neighborBe = level.getBlockEntity(neighborPos);
-                if (!(neighborBe instanceof IFluidConnectorMK2)) continue;
-                trySubscribe(tank.getTankType(), level, neighborPos, dir);
+        // Original getConPos: oben (y+4), unten (y-1) und an den vier Seiten in Hoehe y+1
+        if (level instanceof net.minecraft.server.level.ServerLevel world) {
+            BlockPos[] cons = { pos.above(4), pos.below(), pos.offset(2, 1, 0), pos.offset(-2, 1, 0), pos.offset(0, 1, 2), pos.offset(0, 1, -2) };
+            Direction[] dirs = { Direction.UP, Direction.DOWN, Direction.EAST, Direction.WEST, Direction.SOUTH, Direction.NORTH };
+            for (int i = 0; i < cons.length; i++) {
+                trySubscribe(world, cons[i].getX(), cons[i].getY(), cons[i].getZ(), dirs[i]);
+                trySubscribe(tank.getTankType(), level, cons[i], dirs[i]);
             }
         }
 
@@ -150,8 +151,37 @@ public class MachineSolidifierBlockEntity extends BaseMachineBlockEntity impleme
         return null;
     }
 
-    private Map<UpgradeType, Integer> getValidUpgrades() {
-        return Map.of(UpgradeType.SPEED, 3, UpgradeType.POWER, 3);
+    private static final Map<UpgradeType, Integer> VALID_UPGRADES = Map.of(UpgradeType.SPEED, 3, UpgradeType.POWER, 3);
+
+    @Override
+    public Map<UpgradeType, Integer> getValidUpgrades() {
+        return VALID_UPGRADES;
+    }
+
+    @Override
+    public boolean canProvideInfo(UpgradeType type, int level, boolean extendedInfo) {
+        return type == UpgradeType.SPEED || type == UpgradeType.POWER;
+    }
+
+    @Override
+    public void provideInfo(UpgradeType type, int level, java.util.List<Component> info, boolean extendedInfo) {
+        info.add(com.hbm_m.interfaces.IUpgradeInfoProvider.getStandardLabel(getBlockState().getBlock()));
+        if (type == UpgradeType.SPEED) {
+            info.add(Component.translatable(KEY_DELAY, "-" + (level * 25) + "%").withStyle(net.minecraft.ChatFormatting.GREEN));
+            info.add(Component.translatable(KEY_CONSUMPTION, "+" + (level * 100) + "%").withStyle(net.minecraft.ChatFormatting.RED));
+        }
+        if (type == UpgradeType.POWER) {
+            info.add(Component.translatable(KEY_CONSUMPTION, "-" + (100 - 100 / (level + 1)) + "%").withStyle(net.minecraft.ChatFormatting.GREEN));
+        }
+    }
+
+    /** Original: 3x4x3 um den Kern. */
+    //? if forge {
+    @Override
+    //?}
+    public net.minecraft.world.phys.AABB getRenderBoundingBox() {
+        return new net.minecraft.world.phys.AABB(worldPosition.getX() - 1, worldPosition.getY(), worldPosition.getZ() - 1,
+                worldPosition.getX() + 2, worldPosition.getY() + 4, worldPosition.getZ() + 2);
     }
 
     // ── Inventory helpers ────────────────────────────────────────────────────

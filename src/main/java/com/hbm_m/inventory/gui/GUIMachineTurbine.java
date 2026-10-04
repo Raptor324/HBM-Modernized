@@ -57,8 +57,8 @@ public class GUIMachineTurbine extends GuiInfoScreen<MachineTurbineMenu> {
             drawInfoPanel(guiGraphics, -16, 68, PanelType.LARGE_RED_EXCLAMATION);
         }
 
-        turbine.getTanks()[0].renderTank(guiGraphics, this.leftPos + 62, this.topPos + 69, 16, 52);
-        turbine.getTanks()[1].renderTank(guiGraphics, this.leftPos + 134, this.topPos + 69, 16, 52);
+        turbine.getTanks()[0].renderTank(guiGraphics, this.leftPos + 62, this.topPos + 17, 16, 52);
+        turbine.getTanks()[1].renderTank(guiGraphics, this.leftPos + 134, this.topPos + 17, 16, 52);
     }
 
     @Override

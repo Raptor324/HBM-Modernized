@@ -185,6 +185,18 @@ public class ClientRenderHandler {
                         .setWriteMaskState(COLOR_DEPTH_WRITE)
                         .createCompositeState(false));
 
+        /** Untexturiertes, halbtransparentes Glas ohne Culling und ohne Tiefenschreiben (RenderRadGen "Glass"). */
+        public static final RenderType TRANSLUCENT_COLOR_NOCULL = create("hbm_m_translucent_color_nocull",
+                DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.TRIANGLES, 8192, false, true,
+                RenderType.CompositeState.builder()
+                        .setShaderState(POSITION_COLOR_SHADER)
+                        .setTransparencyState(TRANSLUCENT_TRANSPARENCY)
+                        .setDepthTestState(LEQUAL_DEPTH_TEST)
+                        .setCullState(NO_CULL)
+                        .setLightmapState(NO_LIGHTMAP)
+                        .setWriteMaskState(COLOR_WRITE)
+                        .createCompositeState(false));
+
         /** RenderDeathBlast-Kugel, Leuchthuellen: additiv. */
         public static final RenderType ORBITAL_ORB_GLOW = create("hbm_m_orbital_orb_glow",
                 DefaultVertexFormat.POSITION_COLOR, VertexFormat.Mode.TRIANGLES, 65536, false, true,

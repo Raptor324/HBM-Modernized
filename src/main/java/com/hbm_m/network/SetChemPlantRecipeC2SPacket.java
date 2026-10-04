@@ -54,6 +54,8 @@ public class SetChemPlantRecipeC2SPacket implements C2SPacket {
             BlockEntity be = player.level().getBlockEntity(msg.blockPos);
             if (be instanceof MachineChemicalPlantBlockEntity chemPlant) {
                 chemPlant.setSelectedRecipe(msg.recipeId);
+            } else if (be instanceof com.hbm_m.blockentity.machines.MachinePUREXBlockEntity purex) {
+                purex.setSelectedRecipe(msg.recipeId);
             }
         });
     }

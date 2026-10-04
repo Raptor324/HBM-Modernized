@@ -28,14 +28,15 @@ import net.minecraft.world.level.material.Fluids;
  * Radiolysis Collector: Direktport der Fluid-Crack-Kernmechanik aus
  * {@code TileEntityMachineRadiolysis} (1.7.10 Original).
  * <p>
- * <p><b>Er hat keinen Stromanschluss.</b> Seine ganze Leistung kommt aus zehn
+ * <p>Seine ganze Leistung kommt aus zehn
  * {@link com.hbm_m.item.machine.ItemRTGPellet RTG-Pellets}: ihre Waerme wird zu Energie
  * ({@code heat * 10} je Tick) <b>und</b> bestimmt, wie schnell gecrackt wird. Erst ab Hitze 100
  * laeuft ueberhaupt etwas, und je heisser, desto kuerzer der Abstand - von dreissig Ticks
  * herunter auf fuenf. Wer schnell cracken will, muss also teure Pellets verheizen.</p>
  *
- * <p><b>Nicht portiert:</b> das Entseuchen ({@code sterilize}, ab Hitze 200) - dieser Port hat
- * kein Seuchensystem, an dem es etwas zu entfernen gaebe. Die eigentliche Fluid-Crack-Logik (100mB Input -&gt; zwei Output-Fluessigkeiten alle
+ * Strom und Fluide gehen an den vier Anschluessen zwei Bloecke vom Kern ab; die Fluidkennung (Platz 10/11) legt
+ * den Eingangstyp fest. Ab Hitze 200 wird alle 100 Ticks ein verseuchter Gegenstand ({@code ntmContagion})
+ * entseucht, Nahrung (ausser Pfannkuchen) dabei vernichtet. Die eigentliche Fluid-Crack-Logik (100mB Input -&gt; zwei Output-Fluessigkeiten alle
  * {@code CRACK_INTERVAL} Ticks) ist 1:1 aus dem Original uebernommen, inkl. Wiederverwendung der
  * Cracking-Tower-Rezepttabelle wie im Original: eigene {@link RadiolysisRecipe}-Eintraege zuerst,
  * dann Fallback auf {@link CrackingTowerRecipe}.
@@ -66,7 +67,7 @@ public class MachineRadiolysisBlockEntity extends BaseMachineBlockEntity impleme
     private final FluidTank[] tanks = new FluidTank[3];
 
     public MachineRadiolysisBlockEntity(BlockPos pos, BlockState state) {
-        super(ModBlockEntities.RADIOLYSIS_BE.get(), pos, state, SLOT_COUNT, MAX_POWER, MAX_POWER);
+        super(ModBlockEntities.RADIOLYSIS_BE.get(), pos, state, SLOT_COUNT, MAX_POWER, 0L, MAX_POWER);
         tanks[0] = new FluidTank(2_000);
         tanks[1] = new FluidTank(2_000);
         tanks[2] = new FluidTank(2_000);
@@ -88,18 +89,30 @@ public class MachineRadiolysisBlockEntity extends BaseMachineBlockEntity impleme
         // Original: chargeItemsFromTE - der Platz gibt Energie ab, statt welche zu holen.
         be.chargeItemInSlot(SLOT_BATTERY);
 
-        if (level.getGameTime() % 10 == 0) {
-            for (Direction dir : Direction.values()) {
-                be.trySubscribe(be.tanks[0].getTankType(), level, pos.relative(dir), dir);
-                if (be.tanks[1].getFill() > 0) be.tryProvide(be.tanks[1], level, pos.relative(dir), dir);
-                if (be.tanks[2].getFill() > 0) be.tryProvide(be.tanks[2], level, pos.relative(dir), dir);
-            }
+        // Original: tanks[0].setType(10, 11, slots) und setupTanks()
+        ItemStack[] slots = new ItemStack[be.inventory.getSlots()];
+        for (int i = 0; i < slots.length; i++) slots[i] = be.inventory.getStackInSlot(i);
+        if (be.tanks[0].setType(SLOT_FLUID_ID, SLOT_FLUID_ID_OUT, slots)) {
+            for (int i = 0; i < slots.length; i++) be.inventory.setStackInSlot(i, slots[i]);
         }
+        be.setupTanks();
 
         // 1:1: {@code crackTime = max(-0.1 * (heat - 100) + 30, 5)} - je heisser, desto oefter.
         if (be.heat > CRACK_HEAT_MIN) {
             int crackTime = (int) Math.max(-0.1D * (be.heat - CRACK_HEAT_MIN) + 30D, 5D);
             if (level.getGameTime() % crackTime == 0) be.crack();
+
+            if (be.heat >= 200 && level.getGameTime() % 100 == 0) be.sterilize();
+        }
+
+        if (level instanceof net.minecraft.server.level.ServerLevel world) {
+            for (Direction dir : Direction.Plane.HORIZONTAL) {
+                BlockPos con = pos.relative(dir, 2);
+                be.tryProvide(world, con.getX(), con.getY(), con.getZ(), dir);
+                be.trySubscribe(be.tanks[0].getTankType(), level, con, dir);
+                if (be.tanks[1].getFill() > 0) be.tryProvide(be.tanks[1], level, con, dir);
+                if (be.tanks[2].getFill() > 0) be.tryProvide(be.tanks[2], level, con, dir);
+            }
         }
 
         be.setChanged();
@@ -147,6 +160,59 @@ public class MachineRadiolysisBlockEntity extends BaseMachineBlockEntity impleme
         }
     }
 
+    private void setupTanks() {
+        CrackResult recipe = findCrackRecipe();
+        net.minecraft.world.level.material.Fluid none = com.hbm_m.inventory.fluid.ModFluids.NONE.getSource();
+        if (recipe != null) {
+            tanks[1].setTankType(recipe.outA());
+            tanks[2].setTankType(recipe.outB());
+        } else {
+            tanks[0].setTankType(none);
+            tanks[1].setTankType(none);
+            tanks[2].setTankType(none);
+        }
+    }
+
+    /** Original {@code sterilize}: Nahrung verbrennt, verseuchte Gegenstaende kommen entseucht auf Platz 13. */
+    private void sterilize() {
+        ItemStack in = inventory.getStackInSlot(SLOT_IRRADIATE_IN);
+        if (in.isEmpty()) return;
+
+        if (in.getItem().isEdible() && in.getItem() != com.hbm_m.item.ModItems.PANCAKE.get()) {
+            in = in.copy();
+            in.shrink(1);
+            inventory.setStackInSlot(SLOT_IRRADIATE_IN, in);
+        }
+
+        if (!checkIfValid()) return;
+
+        in = inventory.getStackInSlot(SLOT_IRRADIATE_IN);
+        ItemStack output = in.copy();
+        output.setCount(1);
+        output.removeTagKey("ntmContagion");
+
+        ItemStack out = inventory.getStackInSlot(SLOT_IRRADIATE_OUT);
+        if (out.isEmpty()) {
+            ItemStack rest = in.copy();
+            rest.shrink(1);
+            inventory.setStackInSlot(SLOT_IRRADIATE_IN, rest);
+            inventory.setStackInSlot(SLOT_IRRADIATE_OUT, output);
+        } else if (out.getItem() == output.getItem() && out.getCount() + 1 <= out.getMaxStackSize()) {
+            ItemStack rest = in.copy();
+            rest.shrink(1);
+            inventory.setStackInSlot(SLOT_IRRADIATE_IN, rest);
+            ItemStack grown = out.copy();
+            grown.grow(1);
+            grown.removeTagKey("ntmContagion");
+            inventory.setStackInSlot(SLOT_IRRADIATE_OUT, grown);
+        }
+    }
+
+    private boolean checkIfValid() {
+        ItemStack in = inventory.getStackInSlot(SLOT_IRRADIATE_IN);
+        return !in.isEmpty() && in.hasTag() && in.getTag().getBoolean("ntmContagion");
+    }
+
     private boolean hasSpace(int left, int right) {
         return tanks[1].getFill() + left <= tanks[1].getMaxFill() && tanks[2].getFill() + right <= tanks[2].getMaxFill();
     }
@@ -180,6 +246,16 @@ public class MachineRadiolysisBlockEntity extends BaseMachineBlockEntity impleme
         tanks[0].writeToNBT(tag, "tank0");
         tanks[1].writeToNBT(tag, "tank1");
         tanks[2].writeToNBT(tag, "tank2");
+        tag.putInt("heat", heat);
+    }
+
+    /** Original: 3x3x3 um den Kern. */
+    //? if forge {
+    @Override
+    //?}
+    public net.minecraft.world.phys.AABB getRenderBoundingBox() {
+        return new net.minecraft.world.phys.AABB(worldPosition.getX() - 1, worldPosition.getY(), worldPosition.getZ() - 1,
+                worldPosition.getX() + 2, worldPosition.getY() + 3, worldPosition.getZ() + 2);
     }
 
     @Override
@@ -188,6 +264,7 @@ public class MachineRadiolysisBlockEntity extends BaseMachineBlockEntity impleme
         tanks[0].readFromNBT(tag, "tank0");
         tanks[1].readFromNBT(tag, "tank1");
         tanks[2].readFromNBT(tag, "tank2");
+        heat = tag.getInt("heat");
     }
 
     // ==================== GUI ====================

@@ -132,6 +132,6 @@ public class GUIMachineCombustionEngine extends GuiInfoScreen<MachineCombustionE
         int p = (int) (engine.getEnergyStored() * 53 / MachineCombustionEngineBlockEntity.maxPower);
         g.blit(TEXTURE, leftPos + 143, topPos + 69 - p, 176, 52 - p, 16, p);
 
-        engine.tank.renderTank(g, leftPos + 35, topPos + 69, 16, 52);
+        engine.tank.renderTank(g, leftPos + 35, topPos + 17, 16, 52);
     }
 }

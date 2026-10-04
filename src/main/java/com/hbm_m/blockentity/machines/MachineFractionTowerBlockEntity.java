@@ -5,6 +5,7 @@ import org.jetbrains.annotations.NotNull;
 import com.hbm_m.api.fluids.IFluidStandardTransceiverMK2;
 import com.hbm_m.blockentity.BaseMachineBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
+import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.inventory.menu.MachineFractionTowerMenu;
 import com.hbm_m.recipe.FractionTowerRecipe;
@@ -22,77 +23,100 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
 
 /**
- * Fraktionsturm: Portierung der Kernrezeptlogik aus {@code TileEntityMachineFractionTower} (1.7.10 Original).
- * Spaltet alle 10 Ticks 100mB eines schweren Oel-Fluids (Tank 0) in zwei leichtere Fraktionen (Tank 1/2) auf,
- * ueber die data-driven Rezeptliste {@link FractionTowerRecipe} (Port von {@code FractionRecipes}).
- * <p>
- * Vereinfachung ggue. Original: das 1.7.10-Original ist ein 4-hohes Multiblock, das Fluid zwischen gestapelten
- * Tuermen weiterreicht (Oel steigt auf, Fraktionen sinken ab). Diese Portierung ist bewusst ein Einzelblock -
- * Ein-/Ausgabe erfolgt direkt ueber das MK2-Rohrnetz an allen 6 Seiten, analog zum bereits portierten
- * {@link MachineGasCentrifugeBlockEntity}.
+ * 1:1 {@code TileEntityMachineFractionTower}: alle 10 Ticks 100 mB Eingangsfluid -> zwei Fraktionen
+ * ({@code FractionRecipes}). Gestapelte Tuerme (Kern drei Bloecke hoeher) gleichen ihre Tanktypen an, Oel steigt nach
+ * oben, die Fraktionen sinken nach unten. Eingang und Ausgaenge an den vier Anschlusszellen; Typ per Fluidkennung nur
+ * am untersten Segment. Kein GUI im Original, nur das Blick-Overlay.
  */
 public class MachineFractionTowerBlockEntity extends BaseMachineBlockEntity implements IFluidStandardTransceiverMK2 {
 
-    private static final int TANK_CAPACITY_MB = 4000;
-    private static final int FRACTIONATE_INTERVAL = 10;
-    private static final int INPUT_PER_CYCLE_MB = 100;
-
-    private final FluidTank[] tanks = new FluidTank[3];
+    public final FluidTank[] tanks = new FluidTank[] {
+            new FluidTank(ModFluids.HEAVYOIL.getSource(), 4000),
+            new FluidTank(ModFluids.BITUMEN.getSource(), 4000),
+            new FluidTank(ModFluids.SMEAR.getSource(), 4000)
+    };
 
     public MachineFractionTowerBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.FRACTION_TOWER_BE.get(), pos, state, 0, 0L, 0L, 0L);
-        tanks[0] = new FluidTank(TANK_CAPACITY_MB) {
-            @Override
-            public boolean isFluidValid(Fluid fluid) {
-                // Data-driven: рецепт ищется в RecipeManager (заменяет FractionTowerRecipes.has).
-                return FractionTowerRecipe.hasRecipe(level, fluid);
-            }
-        };
-        tanks[1] = new FluidTank(TANK_CAPACITY_MB);
-        tanks[2] = new FluidTank(TANK_CAPACITY_MB);
     }
 
     public static void tick(Level level, BlockPos pos, BlockState state, MachineFractionTowerBlockEntity be) {
         if (level.isClientSide) return;
 
-        be.setupTanks();
+        if (level.getBlockEntity(pos.above(3)) instanceof MachineFractionTowerBlockEntity frac) {
 
-        if (level.getGameTime() % FRACTIONATE_INTERVAL == 0) {
-            be.fractionate();
+            // Typen angleichen
+            for (int i = 0; i < 3; i++) frac.tanks[i].setTankType(be.tanks[i].getTankType());
+
+            int oil = Math.min(be.tanks[0].getFill(), frac.tanks[0].getMaxFill() - frac.tanks[0].getFill());
+            int left = Math.min(frac.tanks[1].getFill(), be.tanks[1].getMaxFill() - be.tanks[1].getFill());
+            int right = Math.min(frac.tanks[2].getFill(), be.tanks[2].getMaxFill() - be.tanks[2].getFill());
+
+            // Oel nach oben, Fraktionen nach unten
+            be.tanks[0].setFill(be.tanks[0].getFill() - oil);
+            be.tanks[1].setFill(be.tanks[1].getFill() + left);
+            be.tanks[2].setFill(be.tanks[2].getFill() + right);
+            frac.tanks[0].setFill(frac.tanks[0].getFill() + oil);
+            frac.tanks[1].setFill(frac.tanks[1].getFill() - left);
+            frac.tanks[2].setFill(frac.tanks[2].getFill() - right);
+            frac.setChanged();
         }
 
-        for (Direction dir : Direction.values()) {
-            BlockPos neighborPos = pos.relative(dir);
-            be.trySubscribe(be.tanks[0].getTankType(), level, neighborPos, dir);
-            be.tryProvide(be.tanks[1], level, neighborPos, dir);
-            be.tryProvide(be.tanks[2], level, neighborPos, dir);
+        be.setupTanks();
+
+        BlockPos[] cons = { pos.offset(2, 0, 0), pos.offset(-2, 0, 0), pos.offset(0, 0, 2), pos.offset(0, 0, -2) };
+        Direction[] dirs = { Direction.EAST, Direction.WEST, Direction.SOUTH, Direction.NORTH };
+        for (int i = 0; i < 4; i++) be.trySubscribe(be.tanks[0].getTankType(), level, cons[i], dirs[i]);
+
+        if (level.getGameTime() % 10 == 0) be.fractionate();
+
+        for (int i = 0; i < 4; i++) {
+            be.tryProvide(be.tanks[1], level, cons[i], dirs[i]);
+            be.tryProvide(be.tanks[2], level, cons[i], dirs[i]);
         }
 
         be.setChanged();
         be.sendUpdateToClient();
     }
 
-    /** Direktport von {@code setupTanks()}: konformiert die Ausgabetanks auf den Rezepttyp, solange sie leer sind
-     *  (im Original wird der Typ bedingungslos ueberschrieben, hier vorsichtiger um kein Fluid zu vernichten). */
     private void setupTanks() {
         FractionTowerRecipe recipe = FractionTowerRecipe.getRecipe(level, tanks[0].getTankType());
-        if (recipe == null) return;
-        if (tanks[1].isEmpty()) tanks[1].conform(recipe.getOutputA());
-        if (tanks[2].isEmpty()) tanks[2].conform(recipe.getOutputB());
+        Fluid none = ModFluids.NONE.getSource();
+        if (recipe != null) {
+            tanks[1].setTankType(recipe.getOutputA());
+            tanks[2].setTankType(recipe.getOutputB());
+        } else {
+            tanks[0].setTankType(none);
+            tanks[1].setTankType(none);
+            tanks[2].setTankType(none);
+        }
     }
 
-    /** Direktport von {@code fractionate()}. */
-    private boolean fractionate() {
+    private void fractionate() {
         FractionTowerRecipe recipe = FractionTowerRecipe.getRecipe(level, tanks[0].getTankType());
-        if (recipe == null) return false;
-        if (tanks[0].getFill() < INPUT_PER_CYCLE_MB) return false;
-        if (tanks[1].getFill() + recipe.getOutputAMb() > tanks[1].getMaxFill()) return false;
-        if (tanks[2].getFill() + recipe.getOutputBMb() > tanks[2].getMaxFill()) return false;
+        if (recipe == null) return;
 
-        tanks[0].drainMb(INPUT_PER_CYCLE_MB);
-        tanks[1].fillMb(recipe.getOutputA(), recipe.getOutputAMb());
-        tanks[2].fillMb(recipe.getOutputB(), recipe.getOutputBMb());
-        return true;
+        int left = recipe.getOutputAMb();
+        int right = recipe.getOutputBMb();
+
+        if (tanks[0].getFill() >= 100 && hasSpace(left, right)) {
+            tanks[0].setFill(tanks[0].getFill() - 100);
+            tanks[1].setFill(tanks[1].getFill() + left);
+            tanks[2].setFill(tanks[2].getFill() + right);
+        }
+    }
+
+    private boolean hasSpace(int left, int right) {
+        return tanks[1].getFill() + left <= tanks[1].getMaxFill() && tanks[2].getFill() + right <= tanks[2].getMaxFill();
+    }
+
+    /** Original: 3x3x3 um den Kern. */
+    //? if forge {
+    @Override
+    //?}
+    public net.minecraft.world.phys.AABB getRenderBoundingBox() {
+        return new net.minecraft.world.phys.AABB(worldPosition.getX() - 1, worldPosition.getY(), worldPosition.getZ() - 1,
+                worldPosition.getX() + 2, worldPosition.getY() + 3, worldPosition.getZ() + 2);
     }
 
     // ==================== GUI (generische GuiInfoScreen-Balken) ====================
@@ -138,8 +162,7 @@ public class MachineFractionTowerBlockEntity extends BaseMachineBlockEntity impl
 
     @Override
     public boolean canConnect(Fluid fluid, Direction fromDir) {
-        return fromDir != null && (FractionTowerRecipe.hasRecipe(level, fluid)
-                || tanks[1].getTankType() == fluid || tanks[2].getTankType() == fluid);
+        return fromDir != null;
     }
 
     // ==================== NBT ====================

@@ -79,6 +79,9 @@ public class GUIScreenRecipeSelector extends Screen {
     @Nullable
     private FusionPlasmaForgeBlockEntity plasmaForge;
 
+    @Nullable
+    private com.hbm_m.blockentity.machines.MachinePUREXBlockEntity purex;
+
     private record RecipeEntry(ResourceLocation id, ItemStack icon, @Nullable net.minecraft.world.item.crafting.Recipe<?> recipe) {}
 
     /** Поиск по имени иконки, пути/id рецепта (англ.) — чтобы находить по chem_gasoline и т.п. */
@@ -357,7 +360,7 @@ public class GUIScreenRecipeSelector extends Screen {
         if (assembler != null) {
             ModPacketHandler.sendToServer(ModPacketHandler.SET_ASSEMBLER_RECIPE,
                 new SetAssemblerRecipeC2SPacket(machinePos, selectedRecipe));
-        } else if (chemicalPlant != null) {
+        } else if (chemicalPlant != null || purex != null) {
             ModPacketHandler.sendToServer(ModPacketHandler.SET_CHEM_RECIPE,
                 new SetChemPlantRecipeC2SPacket(machinePos, selectedRecipe));
         } else if (fusionTorus != null) {
@@ -407,6 +410,8 @@ public class GUIScreenRecipeSelector extends Screen {
                 currentFolder = assembler.getBlueprintFolder();
             } else if (chemicalPlant != null) {
                 currentFolder = chemicalPlant.getBlueprintFolder();
+            } else if (purex != null) {
+                currentFolder = purex.getBlueprintFolder();
             }
 
             if (!ItemStack.matches(lastFolderStack, currentFolder)) {
@@ -447,6 +452,12 @@ public class GUIScreenRecipeSelector extends Screen {
                     if (icon.isEmpty()) icon = new ItemStack(com.hbm_m.item.ModItems.TEMPLATE_FOLDER.get());
                     allRecipes.add(new RecipeEntry(RecipeHooks.recipeId(this.minecraft.level.getRecipeManager(), ChemicalPlantRecipe.Type.INSTANCE, recipe), icon, recipe));
                 }
+            } else if (purex != null) {
+                for (com.hbm_m.recipe.PurexRecipe recipe : purex.getAvailableRecipes()) {
+                    ItemStack icon = recipe.getResultItem(this.minecraft.level.registryAccess());
+                    if (icon.isEmpty()) icon = new ItemStack(com.hbm_m.item.ModItems.TEMPLATE_FOLDER.get());
+                    allRecipes.add(new RecipeEntry(RecipeHooks.recipeId(this.minecraft.level.getRecipeManager(), com.hbm_m.recipe.PurexRecipe.Type.INSTANCE, recipe), icon, recipe));
+                }
             } else if (fusionTorus != null) {
                 for (FusionRecipe recipe : FusionTorusBlockEntity.getAllRecipes(this.minecraft.level)) {
                     ItemStack icon = recipe.getResultItem(this.minecraft.level.registryAccess());
@@ -474,6 +485,7 @@ public class GUIScreenRecipeSelector extends Screen {
     private void bindMachineContext() {
         if (this.minecraft == null || this.minecraft.level == null) return;
         BlockEntity be = this.minecraft.level.getBlockEntity(this.machinePos);
+        this.purex = be instanceof com.hbm_m.blockentity.machines.MachinePUREXBlockEntity p ? p : null;
         if (be instanceof MachineAdvancedAssemblerBlockEntity a) {
             this.assembler = a;
             this.chemicalPlant = null;
@@ -517,6 +529,43 @@ public class GUIScreenRecipeSelector extends Screen {
 
             tooltip.add(Component.empty());
             com.hbm_m.util.TemplateTooltipUtil.buildRecipeTooltip(assemblerRecipe, tooltip);
+            return;
+        }
+
+        if (recipe instanceof com.hbm_m.recipe.PurexRecipe purexRecipe) {
+            String pool = purexRecipe.getBlueprintPool();
+            if (pool != null && !pool.isEmpty()) {
+                tooltip.add(Component.empty());
+                tooltip.add(Component.translatable("gui.hbm_m.recipe_from_group").withStyle(ChatFormatting.AQUA));
+                tooltip.add(Component.literal("  " + pool).withStyle(ChatFormatting.GOLD));
+            }
+            tooltip.add(Component.empty());
+            tooltip.add(Component.translatable("gui.recipe.duration").append(": ")
+                    .append(Component.literal(String.format(java.util.Locale.ROOT, "%.1fs", purexRecipe.getDuration() / 20.0)))
+                    .withStyle(ChatFormatting.RED));
+            tooltip.add(Component.translatable("gui.recipe.consumption").append(": ")
+                    .append(Component.literal(purexRecipe.getPowerConsumption() + "HE/t"))
+                    .withStyle(ChatFormatting.RED));
+            tooltip.add(Component.empty());
+            tooltip.add(Component.translatable("gui.recipe.input").withStyle(ChatFormatting.BOLD));
+            for (var in : purexRecipe.getItemInputs()) {
+                ItemStack[] variants = in.ingredient().getItems();
+                String name = variants.length == 0 ? "?" : variants[0].getHoverName().getString();
+                tooltip.add(Component.literal("  " + in.count() + "x " + name).withStyle(ChatFormatting.GRAY));
+            }
+            for (var fin : purexRecipe.getFluidInputs()) {
+                tooltip.add(Component.literal("  " + fin.amount() + "mB ").withStyle(ChatFormatting.BLUE)
+                        .append(FluidLocalization.nameFromFluidId(fin.fluidId()).copy().withStyle(ChatFormatting.GRAY)));
+            }
+            tooltip.add(Component.translatable("gui.recipe.output").withStyle(ChatFormatting.BOLD));
+            for (ItemStack out : purexRecipe.getItemOutputs()) {
+                if (out.isEmpty()) continue;
+                tooltip.add(Component.literal("  " + out.getCount() + "x ").withStyle(ChatFormatting.GRAY).append(out.getHoverName()));
+            }
+            for (var out : purexRecipe.getFluidOutputs()) {
+                if (out.isEmpty()) continue;
+                tooltip.add(Component.literal("  " + out.getAmount() + "mB ").withStyle(ChatFormatting.BLUE).append(FluidStackHooks.getName(out)));
+            }
             return;
         }
 

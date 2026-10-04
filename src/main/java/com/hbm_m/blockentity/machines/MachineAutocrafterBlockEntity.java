@@ -74,7 +74,7 @@ public class MachineAutocrafterBlockEntity extends BaseMachineBlockEntity {
 
     public com.hbm_m.inventory.filter.ModulePatternMatcher getMatcher() { return matcher; }
     public int getRecipeIndex() { return recipeIndex; }
-    public int getRecipeCount() { return recipes.size(); }
+    public int getRecipeCount() { return level != null && level.isClientSide ? recipeCountClient : recipes.size(); }
 
     /** 1:1-Port von {@code nextMode}: ein Rechtsklick schaltet den Filter dieses Platzes weiter. */
     public void nextMode(int index) {
@@ -126,8 +126,27 @@ public class MachineAutocrafterBlockEntity extends BaseMachineBlockEntity {
         be.serverTick(level);
     }
 
+    /** Original {@code readFromNBT}: nach dem Laden die passenden Rezepte neu suchen, Index behalten. */
+    private boolean recipesLoaded = false;
+    private int recipeCountClient = 0;
+
     private void serverTick(Level level) {
+        if (!recipesLoaded) {
+            recipesLoaded = true;
+            int keep = recipeIndex;
+            recipes = com.hbm_m.platform.recipe.RecipeHooks.getAllCraftingRecipesFor(level, buildGrid(TEMPLATE_START));
+            recipeIndex = recipes.isEmpty() ? 0 : Math.min(keep, recipes.size() - 1);
+            updateTemplateResult();
+        }
+
         chargeFromBatterySlot(SLOT_BATTERY);
+        if (level instanceof net.minecraft.server.level.ServerLevel world) {
+            for (net.minecraft.core.Direction dir : net.minecraft.core.Direction.values()) {
+                BlockPos p = worldPosition.relative(dir);
+                this.trySubscribe(world, p.getX(), p.getY(), p.getZ(), dir);
+            }
+        }
+        sendUpdateToClient();
         if (getEnergyStored() < CONSUMPTION) return;
         if (recipes.isEmpty()) return;
 
@@ -152,16 +171,18 @@ public class MachineAutocrafterBlockEntity extends BaseMachineBlockEntity {
         /*NonNullList<ItemStack> remaining = recipe.getRemainingItems(grid.toCraftingInput());
         *///?}
         for (int i = 0; i < GRID_SIZE; i++) {
-            inventory.getStackInSlot(RECIPE_START + i).shrink(1);
+            ItemStack ingredient = inventory.getStackInSlot(RECIPE_START + i);
+            if (ingredient.isEmpty()) continue;
 
+            ItemStack shrunk = ingredient.copy();
+            shrunk.shrink(1);
+            inventory.setStackInSlot(RECIPE_START + i, shrunk);
+
+            // Original: der Behaelter kommt nur in einen leer gewordenen Platz, kaputte Werkzeuge verschwinden
             ItemStack leftover = remaining.get(i);
-            if (!leftover.isEmpty()) {
-                ItemStack slotStack = inventory.getStackInSlot(RECIPE_START + i);
-                if (slotStack.isEmpty()) {
-                    inventory.setStackInSlot(RECIPE_START + i, leftover);
-                } else if (level != null) {
-                    net.minecraft.world.level.block.Block.popResource(level, worldPosition, leftover);
-                }
+            if (shrunk.isEmpty() && !leftover.isEmpty()) {
+                if (leftover.isDamageableItem() && leftover.getDamageValue() > leftover.getMaxDamage()) continue;
+                inventory.setStackInSlot(RECIPE_START + i, leftover);
             }
         }
 
@@ -212,12 +233,55 @@ public class MachineAutocrafterBlockEntity extends BaseMachineBlockEntity {
         // Ohne Vorlage an dieser Stelle geht nichts hinein.
         if (filter.isEmpty()) return false;
 
+        // Original: gestapelte Behaelter-Items nie
+        if (stack.getCount() > 1 && stack.hasCraftingRemainingItem()) return false;
+
         // Original: hoechstens vier Stueck je Platz - der Autocrafter ist kein Lager.
-        if (stack.getCount() > 4) return false;
         ItemStack present = inventory.getStackInSlot(slot);
         if (!present.isEmpty() && present.getCount() + stack.getCount() > 4) return false;
+        if (stack.getCount() > 4) return false;
 
-        return matcher.isValidForFilter(filter, filterIndex, stack);
+        // Original: alle Plaetze sammeln, in die das Item passen wuerde
+        java.util.List<Integer> validSlots = new java.util.ArrayList<>();
+        for (int i = 0; i < GRID_SIZE; i++) {
+            ItemStack f = inventory.getStackInSlot(TEMPLATE_START + i);
+            if (f.isEmpty() || matcher.getMode(i) == null || matcher.getMode(i).isEmpty()) continue;
+
+            if (matcher.isValidForFilter(f, i, stack)) {
+                validSlots.add(i + RECIPE_START);
+                // leerer, passender Platz: sofort ja
+                if (i + RECIPE_START == slot && present.isEmpty()) return true;
+            }
+        }
+
+        if (!validSlots.contains(slot)) return false;
+
+        int size = present.getCount();
+
+        // Original: ein anderer Platz, der dasselbe Item dringender braucht, hat Vorrang
+        for (Integer i : validSlots) {
+            ItemStack valid = inventory.getStackInSlot(i);
+            if (valid.isEmpty()) return false;
+            if (valid.getItem() != stack.getItem()) continue;
+            if (valid.getCount() < size) return false;
+        }
+
+        // Original: Behaelter-Items nicht stapeln
+        return !stack.hasCraftingRemainingItem();
+    }
+
+    /** Original {@code breakBlock}: nur die echten Plaetze ab 10 fallen heraus, die Vorlage ist ein Geisterbild. */
+    @Override
+    public void dropInventoryContents() {
+        if (level == null) return;
+        if (com.hbm_m.multiblock.ContraptionAssemblyGuard.isMoving()) return;
+        for (int i = RECIPE_START; i < inventory.getSlots(); i++) {
+            ItemStack stack = inventory.getStackInSlot(i);
+            if (!stack.isEmpty()) {
+                net.minecraft.world.Containers.dropItemStack(level, worldPosition.getX(), worldPosition.getY(), worldPosition.getZ(), stack.copy());
+                inventory.setStackInSlot(i, ItemStack.EMPTY);
+            }
+        }
     }
 
     /** Die Vorlage aendert sich nur ueber die Oberflaeche - danach muss neu gesucht werden. */
@@ -232,6 +296,7 @@ public class MachineAutocrafterBlockEntity extends BaseMachineBlockEntity {
         super.writeNbtData(tag, registries);
         matcher.writeToNBT(tag);
         tag.putInt("recipeIndex", recipeIndex);
+        tag.putInt("recipeCount", recipes.size());
     }
 
     @Override
@@ -240,6 +305,7 @@ public class MachineAutocrafterBlockEntity extends BaseMachineBlockEntity {
         super.readNbtData(tag, registries);
         matcher.readFromNBT(tag);
         recipeIndex = tag.getInt("recipeIndex");
+        recipeCountClient = tag.getInt("recipeCount");
     }
 
     @Nullable

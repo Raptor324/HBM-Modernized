@@ -89,6 +89,6 @@ public class GUIMachineFlareStack extends GuiInfoScreen<MachineFlareStackMenu> {
         if (flare.isOn && flare.doesBurn && flare.tank.getFill() > 0 && FluidType.forFluid(flare.tank.getTankType()).hasTrait(FT_Flammable.class))
             g.blit(TEXTURE, this.leftPos + 88, this.topPos + 29, 176, 24, 18, 18);
 
-        flare.tank.renderTank(g, this.leftPos + 35, this.topPos + 69, 16, 52);
+        flare.tank.renderTank(g, this.leftPos + 35, this.topPos + 17, 16, 52);
     }
 }

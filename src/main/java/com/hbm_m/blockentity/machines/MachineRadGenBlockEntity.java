@@ -23,11 +23,8 @@ import net.minecraft.world.level.block.state.BlockState;
  * Verarbeitungs-"Warteschlangen" (Slots 0-11 Eingabe, 12-23 Ausgabe), jede verarbeitet
  * unabhaengig ein Item ueber {@code maxProgress} Ticks und erzeugt dabei kontinuierlich
  * {@code production} HE/Tick - 1:1 aus dem Original.
- * <p>
- * SCOPE-Entscheidung: Die Original-Fairness-Pruefung in {@code isItemValidForSlot} (verhindert
- * eine Warteschlange staerker zu befuellen als andere) entfaellt - jeder der 12 Eingabeslots
- * akzeptiert unabhaengig jeden gueltigen Brennstoff (kleinere QoL-Vereinfachung ohne
- * Gameplay-Auswirkung auf die Kernmechanik).
+ * Strom geht hinten ({@code -4 dir}) heraus; die Fairness-Pruefung beim Befuellen verteilt Brennstoff gleichmaessig
+ * auf die Warteschlangen.
  */
 public class MachineRadGenBlockEntity extends BaseMachineBlockEntity implements IEnergyModeHolder {
 
@@ -37,7 +34,7 @@ public class MachineRadGenBlockEntity extends BaseMachineBlockEntity implements 
     public static final int INVENTORY_SIZE    = 24;
 
     private static final long MAX_POWER = 1_000_000L;
-    private static final long ENERGY_EXTRACT_RATE = 50_000L;
+    private static final long ENERGY_EXTRACT_RATE = MAX_POWER;
 
     private final int[] progress = new int[QUEUE_COUNT];
     private final int[] maxProgress = new int[QUEUE_COUNT];
@@ -63,8 +60,14 @@ public class MachineRadGenBlockEntity extends BaseMachineBlockEntity implements 
     }
 
     private void serverTick() {
-        ensureNetworkInitialized();
         output = 0;
+
+        // Original: tryProvide(x - dir*4, y, z - dir*4, dir.getOpposite())
+        if (level instanceof net.minecraft.server.level.ServerLevel world) {
+            net.minecraft.core.Direction dir = getBlockState().getValue(com.hbm_m.block.machines.DummyableMachineBlock.FACING);
+            BlockPos p = worldPosition.relative(dir, -4);
+            this.tryProvide(world, p.getX(), p.getY(), p.getZ(), dir.getOpposite());
+        }
 
         for (int i = 0; i < QUEUE_COUNT; i++) {
             ItemStack input = inventory.getStackInSlot(SLOT_INPUT_START + i);
@@ -139,6 +142,15 @@ public class MachineRadGenBlockEntity extends BaseMachineBlockEntity implements 
 
     public int getProgress(int queue)    { return progress[queue]; }
     public int getMaxProgress(int queue) { return maxProgress[queue]; }
+    public int getProduction(int queue) { return production[queue]; }
+
+    /** Original: {@code INFINITE_EXTENT_AABB}. */
+    //? if forge {
+    @Override
+    //?}
+    public net.minecraft.world.phys.AABB getRenderBoundingBox() {
+        return INFINITE_EXTENT_AABB;
+    }
     public boolean isProcessing(int queue) { return processing[queue] != null; }
     public int getOutput()   { return output; }
     public boolean isOn()    { return isOn; }
@@ -193,10 +205,23 @@ public class MachineRadGenBlockEntity extends BaseMachineBlockEntity implements 
 
     @Override
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
-        if (slot < SLOT_OUTPUT_START) {
-            return findRecipe(stack) != null;
+        // Original: nur gueltiger Brennstoff, und kein Slot darf voller werden als ein anderer mit gleichem Inhalt
+        if (slot >= SLOT_OUTPUT_START) return false;
+        RadGenRecipe recipe = findRecipe(stack);
+        if (recipe == null || recipe.getDuration() <= 0) return false;
+
+        ItemStack current = inventory.getStackInSlot(slot);
+        if (current.isEmpty()) return true;
+
+        int size = current.getCount();
+
+        for (int j = 0; j < QUEUE_COUNT; j++) {
+            ItemStack other = inventory.getStackInSlot(j);
+            if (other.isEmpty()) return false;
+            if (other.getItem() == stack.getItem() && other.getCount() < size) return false;
         }
-        return false;
+
+        return true;
     }
 
     // ── Menu ────────────────────────────────────────────────────────────────

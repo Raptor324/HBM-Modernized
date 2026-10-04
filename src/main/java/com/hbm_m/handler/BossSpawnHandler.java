@@ -278,6 +278,11 @@ public class BossSpawnHandler {
         persistentData(player).putInt(MASKMAN_TIMER, value);
     }
 
+    /** Original {@code markFBI}: Razzia-Markierung fuer die naechsten 20 Minuten (Radiolyse-Kammer, Radiobox). */
+    public static void markFBI(ServerPlayer player) {
+        persistentData(player).putLong("fbiMark", player.level().getGameTime() + 20 * 60 * 20);
+    }
+
     /** Raises {@link #RAD_MARK} so the next roll can send a RAD Beast pack. */
     public static void markForRadBeasts(ServerPlayer player) {
         persistentData(player).putBoolean(RAD_MARK, true);

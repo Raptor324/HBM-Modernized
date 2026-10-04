@@ -53,6 +53,12 @@ public class MachinePumpElectricBlockEntity extends BaseMachineBlockEntity imple
     }
 
     private void serverTick(ServerLevel level, BlockPos pos) {
+        // Original: alle 20 Ticks Stromanschluss an den vier Anschluessen
+        if (level.getGameTime() % 20 == 0) for (Direction dir : Direction.Plane.HORIZONTAL) {
+            BlockPos conPos = pos.relative(dir, 2);
+            trySubscribe(level, conPos.getX(), conPos.getY(), conPos.getZ(), dir);
+        }
+
         for (Direction dir : Direction.Plane.HORIZONTAL) {
             BlockPos conPos = pos.relative(dir, 2);
             if (water.getFill() > 0) {
@@ -64,7 +70,6 @@ public class MachinePumpElectricBlockEntity extends BaseMachineBlockEntity imple
             groundCheckDelay--;
         } else {
             onGround = PumpGroundCheck.check(level, pos);
-            groundCheckDelay = 20;
         }
 
         isOn = false;
@@ -83,6 +88,7 @@ public class MachinePumpElectricBlockEntity extends BaseMachineBlockEntity imple
         if (rotor >= 360F) {
             rotor -= 360F;
             lastRotor -= 360F;
+            PumpBlockEntity.playCycleSound(level, worldPosition);
         }
     }
 
@@ -96,6 +102,15 @@ public class MachinePumpElectricBlockEntity extends BaseMachineBlockEntity imple
     }
 
     public FluidTank getWaterTank() { return water; }
+
+    /** Original {@code getRenderBoundingBox}: 3x5x3 um den Kern. */
+    //? if forge {
+    @Override
+    //?}
+    public net.minecraft.world.phys.AABB getRenderBoundingBox() {
+        return new net.minecraft.world.phys.AABB(worldPosition.getX() - 1, worldPosition.getY(), worldPosition.getZ() - 1,
+                worldPosition.getX() + 2, worldPosition.getY() + 5, worldPosition.getZ() + 2);
+    }
 
     @Override
     protected Component getDefaultName() { return Component.translatable("container.hbm_m.machine_pump_electric"); }

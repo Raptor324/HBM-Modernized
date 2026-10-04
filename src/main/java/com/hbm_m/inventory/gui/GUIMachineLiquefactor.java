@@ -55,6 +55,8 @@ public class GUIMachineLiquefactor extends GuiInfoScreen<MachineLiquefactorMenu>
         int i = (int) (power * TANK_H / maxPower);
         if (i > 0) {
             guiGraphics.blit(TEXTURE, leftPos + ENERGY_X, topPos + ENERGY_Y + TANK_H - i, 176, TANK_H - i, TANK_W, i);
+            // Original: Blitzsymbol, sobald Strom anliegt
+            guiGraphics.blit(TEXTURE, leftPos + 138, topPos + 4, 176, 52, 9, 12);
         }
 
         int progressWidth = be.getProgressScaled(PROGRESS_MAX_WIDTH);

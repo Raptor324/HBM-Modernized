@@ -76,10 +76,10 @@ public final class CyclotronRecipeGenerator {
         // PART_COPPER — amatProduced = 15
         // ═══════════════════════════════════════════════════════════════════
         tag(writer, "cu_beryllium", "part_copper", "beryllium",  15, "quartz_powder");
-        tag(writer, "cu_coal",     "part_copper", "coal",        15, "bromine_powder");
+        tag(writer, "cu_coal",     "part_copper", "coal",        15, "bromide_powder");
         tag(writer, "cu_titanium", "part_copper", "titanium",    15, "strontium_powder");
         tag(writer, "cu_iron",     "part_copper", "iron",        15, "niobium_powder");
-        item(writer, "cu_bromine", "part_copper",  "bromine_powder",     15, "iodine_powder");
+        item(writer, "cu_bromine", "part_copper",  "bromide_powder",     15, "iodine_powder");
         item(writer, "cu_strontium","part_copper", "strontium_powder",   15, "neodymium_powder");
         item(writer, "cu_niobium", "part_copper",  "niobium_powder",     15, "caesium_powder");
         item(writer, "cu_iodine",  "part_copper",  "iodine_powder",      15, "polonium_powder");

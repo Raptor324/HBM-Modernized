@@ -1,64 +1,76 @@
 package com.hbm_m.blockentity.machines;
 
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
+import com.hbm_m.api.fluids.IFluidStandardSenderMK2;
+import com.hbm_m.block.ModBlocks;
+import com.hbm_m.block.gas.BlockGasBase;
 import com.hbm_m.blockentity.BaseMachineBlockEntity;
+import com.hbm_m.blockentity.ModBlockEntities;
+import com.hbm_m.inventory.UpgradeManager;
+import com.hbm_m.inventory.fluid.ModFluids;
+import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.inventory.menu.MachineMiningLaserMenu;
+import com.hbm_m.item.ModItems;
+import com.hbm_m.item.industrial.ItemMachineUpgrade;
+import com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType;
+import com.hbm_m.item.material.MaterialShape;
+import com.hbm_m.item.material.ModMaterialItems;
+import com.hbm_m.item.material.ModMaterials;
+import com.hbm_m.platform.ModItemStackHandler;
+import com.hbm_m.platform.recipe.PlatformRecipe;
+import com.hbm_m.platform.recipe.RecipeHooks;
+import com.hbm_m.platform.recipe.RecipeInputWrapper;
+import com.hbm_m.recipe.CentrifugeRecipe;
+import com.hbm_m.recipe.CrystallizerRecipe;
+import com.hbm_m.recipe.ModRecipes;
+import com.hbm_m.recipe.ShredderRecipe;
 
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
+import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.item.crafting.RecipeType;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.storage.loot.LootParams;
-import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
+import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.phys.AABB;
-import net.minecraft.world.phys.Vec3;
 
 /**
- * Mining Laser - Port von {@code TileEntityMachineMiningLaser} (1.7.10 Original). Trotz des Namens
- * keine Ziel-/Weltraumwaffe: eine automatisierte, senkrecht nach unten abteufende "Quarry", die
- * Schicht fuer Schicht direkt unterhalb der Maschine abbaut (mechanisch fast identisch zum bereits
- * portierten {@link MachineMiningDrillBlockEntity}, hier aber OHNE Bohrkopf-Item - die Original-
- * Maschine braucht keinen Drillbit, ihre Geschwindigkeit/Fortune kommt ausschliesslich aus dem
- * (in diesem Port bereits durchgaengig entfernten) Upgrade-System).
- * <p>
- * SCOPE-Entscheidungen:
- * <ul>
- *   <li><b>Acht Upgrade-Slots</b> wie im Original. Sie sind das, was den Laser vom Bohrer
- *   unterscheidet: EFFECT verbreitert den Schacht ({@code 1 + Stufe * 2}, hoechstens 25 - also bis
- *   zu 51 Bloecke breit), SPEED bricht schneller und frisst dafuer mehr, POWER senkt den Verbrauch,
- *   OVERDRIVE laesst mehrere Durchgaenge pro Tick laufen, FORTUNE erhoeht die Ausbeute. Die
- *   Verbrauchsformel ist 1:1: {@code Grundlast - Grundlast * POWER / 16 + Grundlast * SPEED / 16}.</li>
- *   <li>Der <b>An/Aus-Knopf</b> in der Oberflaeche ist wie im Original vorhanden - ein Laser, der
- *   von allein losgraebt, sobald Strom anliegt, waere kaum zu baendigen.</li>
- *   <li>Kein Oel-Tank/Fluid-Sender: das Original saugt Oel-Erz-Drops in einen internen Tank. Dieser
- *   Port hat kein generisches "Oel-Erz-Block"-Konzept fuer normales Abbauen (Oel kommt in diesem
- *   Port ausschliesslich ueber das dedizierte {@code MachinePumpjackBlockEntity}-Lagerstaetten-
- *   system) - die Ziel-Infrastruktur existiert schlicht nicht, daher entfaellt dieser Teil
- *   vollstaendig (siehe gleiche Begruendung wie bei RTG->Batterie in MachineRadiolysisBlockEntity).</li>
- *   <li>Kein Fluessigkeits-Damm-Bau (Original: {@code buildDam()}) - Fluessigkeiten werden beim
- *   Antreffen einfach entfernt statt eingedaemmt.</li>
- *   <li>Mob-Entzuendung (Original: Nebeneffekt beim Abbauen) IST uebernommen: naheliegende
- *   {@link LivingEntity}s im Arbeitsbereich werden beim Abbauen kurz entzuendet.</li>
- * </ul>
+ * 1:1 {@code TileEntityMachineMiningLaser}: haengt unter der Decke und tastet sich Ebene fuer Ebene nach unten. Pro
+ * Ebene wird das erste abbaubare Feld im Quadrat {@code (2*range+1)} gesucht, mit dem Strahl angebrochen
+ * ({@code 1/(Haerte*15/Tempo)} Fortschritt pro Durchgang) und abgebaut; Fluessigkeiten werden entfernt und rundherum
+ * mit Barrikaden abgedaemmt. Drops im Umkreis werden in die 21 Ausgabeslots gesaugt, Oelerz fuellt den
+ * 64.000-mB-Oeltank (+500 mB), Lebewesen am Ziel fangen Feuer. Sonder-Upgrades: Kristallisierer, Zentrifuge,
+ * Schredder, Schmelzer, Nullifizierer (verwirft Bruchgestein) und Screm. Ausgabe an Kisten/Truhen/Tresor/Trichter und
+ * Oel an Rohre an den vier Anschluessen zwei Bloecke vom Kern; Strom kommt von oben, Redstone an einem der
+ * Anschlussbloecke haelt an.
  */
-public class MachineMiningLaserBlockEntity extends BaseMachineBlockEntity {
+public class MachineMiningLaserBlockEntity extends BaseMachineBlockEntity implements IFluidStandardSenderMK2,
+        com.hbm_m.interfaces.IUpgradeInfoProvider {
 
-    /** 1:1 aus dem Original: Slot 0 Batterie, 1-8 Upgrades, 9-29 Ausgabe. */
+    /** Original: Slot 0 Batterie, 1-8 Upgrades, 9-29 Ausgabe. */
     public static final int SLOT_BATTERY = 0;
     public static final int UPGRADE_START = 1;
     public static final int UPGRADE_COUNT = 8;
@@ -66,282 +78,576 @@ public class MachineMiningLaserBlockEntity extends BaseMachineBlockEntity {
     public static final int OUTPUT_COUNT = 21;
     private static final int SLOT_COUNT = OUTPUT_START + OUTPUT_COUNT;
 
-    /** Original: die Stapelgrenzen der einzelnen Upgrade-Sorten. */
-    private static final java.util.Map<com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType, Integer> UPGRADE_CAPS =
-            java.util.Map.of(
-                    com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType.SPEED, 12,
-                    com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType.EFFECT, 12,
-                    com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType.OVERDRIVE, 3,
-                    com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType.FORTUNE, 3);
+    public static final long maxPower = 100000000;
+    public static final int consumption = 10000;
 
-    private static final long CAPACITY = 1_000_000L;
-    private static final long MAX_RECEIVE = 2_000L;
-    private static final long ENERGY_PER_TICK = 250L;
+    private static final Map<UpgradeType, Integer> VALID_UPGRADES = new EnumMap<>(UpgradeType.class);
+    static {
+        VALID_UPGRADES.put(UpgradeType.SPEED, 12);
+        VALID_UPGRADES.put(UpgradeType.POWER, 12);
+        VALID_UPGRADES.put(UpgradeType.EFFECT, 12);
+        VALID_UPGRADES.put(UpgradeType.FORTUNE, 3);
+        VALID_UPGRADES.put(UpgradeType.OVERDRIVE, 9);
+    }
 
-    /** Original: {@code range = 1} ohne Upgrades, also ein 3x3-Schacht. */
-    private static final int BASE_RADIUS = 1;
-    /** Original: {@code Math.min(range, 25)}. */
-    private static final int MAX_RADIUS = 25;
-    private static final double BASE_SPEED = 1.5D;
-    private static final Set<Block> IGNORED_BLOCKS = Set.of(Blocks.BEDROCK, Blocks.BARRIER);
+    public final FluidTank tank = new FluidTank(ModFluids.CRUDE_OIL.getSource(), 64_000);
 
-    private final com.hbm_m.inventory.UpgradeManager upgradeManager = new com.hbm_m.inventory.UpgradeManager();
+    public boolean isOn;
+    private boolean redstonePowered;
+    public int targetX;
+    public int targetY = Integer.MIN_VALUE;
+    public int targetZ;
+    public int lastTargetX;
+    public int lastTargetY;
+    public int lastTargetZ;
+    public boolean beam;
+    double breakProgress;
+    private double clientBreakProgress;
 
-    /** Original: {@code isOn} - der Knopf in der Oberflaeche. */
-    private boolean isOn = false;
-
-    /** Die aus den Upgrades errechneten Werte des laufenden Ticks. */
-    private int curRadius = BASE_RADIUS;
-    private int curSpeed = 1;
-    private int curFortune = 0;
-    private long curConsumption = ENERGY_PER_TICK;
-
-    private boolean operational = false;
-    private int targetDepth = 0;
-    private int ticksWorked = 0;
-    private int currentTicksToWork = 100;
+    public final UpgradeManager upgradeManager = new UpgradeManager();
 
     public MachineMiningLaserBlockEntity(BlockPos pos, BlockState state) {
-        super(com.hbm_m.blockentity.ModBlockEntities.MINING_LASER_BE.get(), pos, state, SLOT_COUNT, CAPACITY, MAX_RECEIVE, 0L);
+        super(ModBlockEntities.MINING_LASER_BE.get(), pos, state, SLOT_COUNT, maxPower, maxPower, 0L);
+    }
+
+    private record DirPos(BlockPos pos, Direction dir) { }
+
+    private DirPos[] getConPos() {
+        BlockPos p = worldPosition;
+        return new DirPos[] {
+                new DirPos(p.offset(2, 0, 0), Direction.EAST),
+                new DirPos(p.offset(-2, 0, 0), Direction.WEST),
+                new DirPos(p.offset(0, 0, 2), Direction.SOUTH),
+                new DirPos(p.offset(0, 0, -2), Direction.NORTH),
+        };
+    }
+
+    private boolean isMultiblockRedstonePowered(Level world) {
+        for (DirPos con : getConPos()) {
+            if (world.hasNeighborSignal(con.pos.relative(con.dir.getOpposite()))) return true;
+        }
+        return false;
     }
 
     public static void tick(Level level, BlockPos pos, BlockState state, MachineMiningLaserBlockEntity be) {
-        if (level.isClientSide() || !(level instanceof ServerLevel serverLevel)) return;
-        be.serverTick(serverLevel, pos);
+        if (level instanceof ServerLevel serverLevel) be.serverTick(serverLevel, pos);
     }
 
-    private void serverTick(ServerLevel level, BlockPos pos) {
+    private void serverTick(ServerLevel world, BlockPos pos) {
+
+        this.trySubscribe(world, pos.getX(), pos.getY() + 2, pos.getZ(), Direction.UP);
+
+        for (DirPos con : getConPos()) {
+            this.tryProvide(tank, world, con.pos, con.dir);
+        }
+
         chargeFromBatterySlot(SLOT_BATTERY);
 
-        applyUpgrades();
+        // Fortschritt zuruecksetzen, wenn sich das Ziel aendert
+        if (lastTargetX != targetX || lastTargetY != targetY || lastTargetZ != targetZ)
+            breakProgress = 0;
 
-        boolean wasOperational = operational;
-        operational = canWork(level, pos);
+        lastTargetX = targetX;
+        lastTargetY = targetY;
+        lastTargetZ = targetZ;
 
-        if (operational) {
-            // Original: {@code cycles = 1 + OVERDRIVE} Durchgaenge in einem einzigen Tick.
-            int cycles = 1 + upgradeManager.getLevel(com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType.OVERDRIVE);
+        boolean prevRedstone = this.redstonePowered;
+        this.redstonePowered = this.isMultiblockRedstonePowered(world);
+
+        if (prevRedstone != this.redstonePowered) {
+            this.setChanged();
+        }
+
+        boolean shouldRun = this.isOn && !this.redstonePowered;
+
+        if (shouldRun) {
+
+            upgradeManager.checkSlots(inventory, UPGRADE_START, UPGRADE_START + UPGRADE_COUNT - 1, VALID_UPGRADES);
+            int cycles = 1 + upgradeManager.getLevel(UpgradeType.OVERDRIVE);
+            int speed = 1 + upgradeManager.getLevel(UpgradeType.SPEED);
+            int range = 1 + upgradeManager.getLevel(UpgradeType.EFFECT) * 2;
+            int fortune = upgradeManager.getLevel(UpgradeType.FORTUNE);
+            int consumption = MachineMiningLaserBlockEntity.consumption
+                    - (MachineMiningLaserBlockEntity.consumption * upgradeManager.getLevel(UpgradeType.POWER) / 16)
+                    + (MachineMiningLaserBlockEntity.consumption * upgradeManager.getLevel(UpgradeType.SPEED) / 16);
 
             for (int i = 0; i < cycles; i++) {
-                if (getEnergyStored() < curConsumption) break;
-                setEnergyStored(getEnergyStored() - curConsumption);
 
-                if (tryMine(level, pos)) {
-                    targetDepth++;
-                    setChanged();
-                    sendUpdateToClient();
+                if (energy < consumption) {
+                    beam = false;
+                    break;
+                }
 
-                    if (targetDepth > maxDepth(level, pos)) {
-                        operational = false;
-                        break;
+                energy -= consumption;
+
+                // Original: targetY <= 0 -> neu ab yCoord - 2 (hier die Weltuntergrenze)
+                if (targetY <= world.getMinBuildHeight())
+                    targetY = pos.getY() - 2;
+
+                scan(world, pos, range);
+
+                BlockPos target = new BlockPos(targetX, targetY, targetZ);
+                BlockState state = world.getBlockState(target);
+
+                if (state.liquid()) {
+                    world.setBlock(target, Blocks.AIR.defaultBlockState(), 3);
+                    buildDam(world);
+                    continue;
+                }
+
+                if (beam && canBreak(world, state, target)) {
+
+                    breakProgress += getBreakSpeed(world, speed);
+                    clientBreakProgress = Math.min(breakProgress, 1);
+
+                    if (breakProgress < 1) {
+                        world.destroyBlockProgress(-1, target, (int) Math.floor(breakProgress * 10));
+                    } else {
+                        breakBlock(world, fortune);
+                        buildDam(world);
                     }
                 }
             }
         } else {
-            ticksWorked = 0;
+            targetY = pos.getY() - 2;
+            beam = false;
         }
 
-        if (wasOperational != operational) {
-            setChanged();
-            sendUpdateToClient();
+        for (DirPos con : getConPos()) {
+            this.tryFillContainer(world, con.pos);
         }
+
+        setChanged();
+        sendUpdateToClient();
     }
 
-    /**
-     * Liest die Upgrades und rechnet die Werte des Ticks aus - 1:1 die Formeln des Originals.
-     */
-    private void applyUpgrades() {
-        upgradeManager.checkSlots(inventory, UPGRADE_START, UPGRADE_START + UPGRADE_COUNT - 1, UPGRADE_CAPS);
-
-        int effect = upgradeManager.getLevel(com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType.EFFECT);
-        int speed = upgradeManager.getLevel(com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType.SPEED);
-        int power = upgradeManager.getLevel(com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType.POWER);
-
-        int newRadius = Math.min(MAX_RADIUS, BASE_RADIUS + effect * 2);
-        curSpeed = 1 + speed;
-        curFortune = upgradeManager.getLevel(com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType.FORTUNE);
-
-        // Original: mehr Tempo kostet genauso viel, wie ein Sparmodul einspart.
-        curConsumption = ENERGY_PER_TICK
-                - (ENERGY_PER_TICK * power / 16L)
-                + (ENERGY_PER_TICK * speed / 16L);
-
-        if (newRadius != curRadius) {
-            curRadius = newRadius;
-            setChanged();
-            sendUpdateToClient();
+    private void buildDam(Level world) {
+        for (Direction dir : Direction.values()) {
+            BlockPos p = new BlockPos(targetX + dir.getStepX(), targetY + dir.getStepY(), targetZ + dir.getStepZ());
+            if (world.getBlockState(p).liquid()) world.setBlock(p, ModBlocks.BARRICADE.get().defaultBlockState(), 3);
         }
     }
 
-    private boolean canWork(ServerLevel level, BlockPos pos) {
-        // 1:1: ohne Zuendung graebt er nicht, egal wieviel Strom anliegt.
-        if (!isOn) return false;
-        if (level.hasNeighborSignal(pos)) return false;
-        if (getEnergyStored() < curConsumption) return false;
-        return targetDepth <= maxDepth(level, pos);
+    private void tryFillContainer(Level world, BlockPos p) {
+
+        Block b = world.getBlockState(p).getBlock();
+        if (b != Blocks.CHEST && b != Blocks.TRAPPED_CHEST && b != ModBlocks.CRATE_IRON.get() && b != ModBlocks.CRATE_DESH.get()
+                && b != ModBlocks.CRATE_STEEL.get() && b != ModBlocks.SAFE.get() && b != Blocks.HOPPER)
+            return;
+
+        var handler = com.hbm_m.api.item.ItemHandlerAccess.getItemHandler(world, p, null);
+        if (handler == null)
+            return;
+
+        for (int i = OUTPUT_START; i < OUTPUT_START + OUTPUT_COUNT; i++) {
+
+            ItemStack stack = inventory.getStackInSlot(i);
+            if (!stack.isEmpty()) {
+                int prev = stack.getCount();
+                ItemStack rest = stack.copy();
+                // Original InventoryUtil.tryAddItemToInventory: erst aufstocken, dann leere Slots
+                for (int j = 0; j < handler.getSlots() && !rest.isEmpty(); j++) {
+                    if (!handler.getStackInSlot(j).isEmpty()) rest = handler.insertItem(j, rest, false);
+                }
+                for (int j = 0; j < handler.getSlots() && !rest.isEmpty(); j++) {
+                    if (handler.getStackInSlot(j).isEmpty()) rest = handler.insertItem(j, rest, false);
+                }
+                inventory.setStackInSlot(i, rest);
+
+                if (rest.isEmpty() || rest.getCount() < prev)
+                    return;
+            }
+        }
     }
 
-    private int maxDepth(Level level, BlockPos pos) {
-        return pos.getY() - level.getMinBuildHeight() - 2;
-    }
+    private void breakBlock(ServerLevel world, int fortune) {
 
-    private int getTargetY(BlockPos pos) {
-        return pos.getY() - 1 - targetDepth;
-    }
+        BlockPos target = new BlockPos(targetX, targetY, targetZ);
+        BlockState state = world.getBlockState(target);
+        Block b = state.getBlock();
+        boolean normal = true;
+        boolean doesBreak = true;
 
-    private boolean shouldIgnoreBlock(Level level, BlockState state, BlockPos pos) {
-        if (state.isAir()) return true;
-        if (IGNORED_BLOCKS.contains(state.getBlock())) return true;
-        return state.getDestroySpeed(level, pos) < 0;
-    }
+        ItemStack stack = new ItemStack(b);
 
-    /** Bohrt eine 3x3-Ebene direkt unterhalb der Maschine, Schicht fuer Schicht (analog Mining Drill). */
-    private boolean tryMine(ServerLevel level, BlockPos pos) {
-        int y = getTargetY(pos);
+        if (!stack.isEmpty()) {
+            if (hasCrystallizer()) {
 
-        boolean ignoreAll = true;
-        float combinedHardness = 0F;
+                CrystallizerRecipe result = getCrystallizerOutput(world, stack, ModFluids.PEROXIDE.getSource());
+                if (result == null) result = getCrystallizerOutput(world, stack, ModFluids.SULFURIC_ACID.getSource());
 
-        for (int x = pos.getX() - curRadius; x <= pos.getX() + curRadius; x++) {
-            for (int z = pos.getZ() - curRadius; z <= pos.getZ() + curRadius; z++) {
-                BlockPos target = new BlockPos(x, y, z);
-                BlockState state = level.getBlockState(target);
-                if (state.getFluidState().isEmpty() && shouldIgnoreBlock(level, state, target)) continue;
+                if (result != null) {
+                    spawn(world, result.getOutput());
+                    normal = false;
+                }
 
-                ignoreAll = false;
-                combinedHardness += Math.max(0F, state.getDestroySpeed(level, target));
+            } else if (hasCentrifuge()) {
+
+                CentrifugeRecipe recipe = findRecipe(world, ModRecipes.CENTRIFUGE_TYPE.get(), stack);
+                if (recipe != null) {
+                    for (ItemStack sta : recipe.getOutputs()) {
+                        if (sta != null && !sta.isEmpty()) {
+                            spawn(world, sta.copy());
+                            normal = false;
+                        }
+                    }
+                }
+
+            } else if (hasShredder()) {
+
+                ShredderRecipe recipe = findRecipe(world, ShredderRecipe.Type.INSTANCE, stack);
+                ItemStack result = recipe != null ? recipe.getOutput() : ItemStack.EMPTY;
+                if (!result.isEmpty() && result.getItem() != ModMaterialItems.item(ModMaterials.SCRAP, MaterialShape.SCRAP)) {
+                    spawn(world, result.copy());
+                    normal = false;
+                }
+
+            } else if (hasSmelter()) {
+
+                Optional<net.minecraft.world.item.crafting.SmeltingRecipe> recipe = RecipeHooks.getRecipeFor(world, RecipeType.SMELTING, stack);
+                if (recipe.isPresent()) {
+                    ItemStack result = recipe.get().getResultItem(world.registryAccess());
+                    if (!result.isEmpty()) {
+                        spawn(world, result.copy());
+                        normal = false;
+                    }
+                }
             }
         }
 
-        if (ignoreAll) {
-            ticksWorked = 0;
-            return true;
+        if (doesBreak) {
+            if (normal) {
+                // Original dropBlockAsItem(..., fortune): Werkzeug mit Glueck fuer die Beutetabellen
+                ItemStack tool = new ItemStack(Items.DIAMOND_PICKAXE);
+                if (fortune > 0) com.hbm_m.platform.ItemHooks.setEnchantmentLevel(tool, world, "minecraft:fortune", fortune);
+                Block.dropResources(state, world, target, world.getBlockEntity(target), null, tool);
+            }
+            world.destroyBlock(target, false);
         }
 
-        ticksWorked++;
-        // Original: {@code getBreakSpeed(speed)} - jede Tempostufe bricht entsprechend schneller.
-        currentTicksToWork = Math.max(1, (int) Math.ceil(combinedHardness / (BASE_SPEED * curSpeed)));
+        suckDrops(world);
 
-        if (ticksWorked >= currentTicksToWork) {
-            breakLayer(level, pos, y);
-            ticksWorked = 0;
+        if (doesScream()) {
+            world.playSound(null, targetX + 0.5, targetY + 0.5, targetZ + 0.5, com.hbm_m.sound.HbmSoundsNT.get("hbm:block.screm"), SoundSource.BLOCKS, 2000.0F, 1.0F);
         }
 
+        breakProgress = 0;
+    }
+
+    private void spawn(Level world, ItemStack stack) {
+        world.addFreshEntity(new ItemEntity(world, targetX + 0.5, targetY + 0.5, targetZ + 0.5, stack));
+    }
+
+    @Nullable
+    private static CrystallizerRecipe getCrystallizerOutput(Level world, ItemStack stack, Fluid acid) {
+        for (CrystallizerRecipe r : RecipeHooks.getAllRecipes(world, ModRecipes.CRYSTALLIZER_TYPE.get())) {
+            if (!r.matchesInput(stack)) continue;
+            if (r.getAcid() == null ? acid == ModFluids.PEROXIDE.getSource() : r.getAcid().getFluid() == acid) return r;
+        }
+        return null;
+    }
+
+    @Nullable
+    private static <R extends PlatformRecipe> R findRecipe(Level world, RecipeType<R> type, ItemStack stack) {
+        RecipeInputWrapper wrapper = new RecipeInputWrapper(new SimpleContainer(stack.copy()));
+        for (R r : RecipeHooks.getAllRecipes(world, type)) {
+            if (r.matchesRecipe(wrapper, world)) return r;
+        }
+        return null;
+    }
+
+    private static Set<Item> bad;
+
+    private static Set<Item> bad() {
+        if (bad == null) bad = Set.of(
+                Blocks.DIRT.asItem(),
+                Blocks.STONE.asItem(),
+                Blocks.COBBLESTONE.asItem(),
+                Blocks.SAND.asItem(),
+                Blocks.SANDSTONE.asItem(),
+                Blocks.GRAVEL.asItem(),
+                ModBlocks.BASALT.get().asItem(),
+                ModBlocks.STONE_GNEISS.get().asItem(),
+                Items.FLINT,
+                Items.SNOWBALL,
+                Items.WHEAT_SEEDS);
+        return bad;
+    }
+
+    // "suck"
+    private void suckDrops(Level world) {
+
+        int rangeHor = 3;
+        int rangeVer = 1;
+        boolean nullifier = hasNullifier();
+
+        List<ItemEntity> items = world.getEntitiesOfClass(ItemEntity.class, new AABB(
+                targetX + 0.5 - rangeHor, targetY + 0.5 - rangeVer, targetZ + 0.5 - rangeHor,
+                targetX + 0.5 + rangeHor, targetY + 0.5 + rangeVer, targetZ + 0.5 + rangeHor));
+
+        for (ItemEntity item : items) {
+
+            if (!item.isAlive()) continue;
+
+            if (nullifier && bad().contains(item.getItem().getItem())) {
+                item.discard();
+                continue;
+            }
+
+            if (item.getItem().getItem() == ModBlocks.ORE_OIL.get().asItem()) {
+
+                tank.setTankType(ModFluids.CRUDE_OIL.getSource());
+
+                tank.setFill(tank.getFill() + 500);
+                if (tank.getFill() > tank.getMaxFill())
+                    tank.setFill(tank.getMaxFill());
+
+                item.discard();
+                continue;
+            }
+
+            ItemStack stack = addToOutput(item.getItem().copy());
+
+            if (stack.isEmpty()) {
+                item.discard();
+            } else {
+                item.setItem(stack.copy());
+            }
+        }
+
+        List<LivingEntity> mobs = world.getEntitiesOfClass(LivingEntity.class, new AABB(
+                targetX + 0.5 - 1, targetY + 0.5 - 1, targetZ + 0.5 - 1,
+                targetX + 0.5 + 1, targetY + 0.5 + 1, targetZ + 0.5 + 1));
+
+        for (LivingEntity mob : mobs) {
+            com.hbm_m.platform.PlatformHooks.setSecondsOnFire(mob, 5);
+        }
+    }
+
+    /** Original {@code InventoryUtil.tryAddItemToInventory(slots, 9, 29, stack)}. */
+    private ItemStack addToOutput(ItemStack toAdd) {
+        for (int i = OUTPUT_START; i < OUTPUT_START + OUTPUT_COUNT && !toAdd.isEmpty(); i++) {
+            ItemStack slot = inventory.getStackInSlot(i);
+            if (!slot.isEmpty() && com.hbm_m.platform.PlatformHooks.isSameItemSameTags(slot, toAdd)) {
+                int move = Math.min(slot.getMaxStackSize() - slot.getCount(), toAdd.getCount());
+                if (move > 0) {
+                    ItemStack grown = slot.copy();
+                    grown.grow(move);
+                    inventory.setStackInSlot(i, grown);
+                    toAdd.shrink(move);
+                }
+            }
+        }
+        for (int i = OUTPUT_START; i < OUTPUT_START + OUTPUT_COUNT && !toAdd.isEmpty(); i++) {
+            if (inventory.getStackInSlot(i).isEmpty()) {
+                inventory.setStackInSlot(i, toAdd.copy());
+                toAdd = ItemStack.EMPTY;
+            }
+        }
+        return toAdd;
+    }
+
+    public double getBreakSpeed(Level world, int speed) {
+
+        BlockPos target = new BlockPos(targetX, targetY, targetZ);
+        float hardness = world.getBlockState(target).getDestroySpeed(world, target) * 15 / speed;
+
+        if (hardness == 0)
+            return 1;
+
+        return 1 / hardness;
+    }
+
+    public void scan(Level world, BlockPos pos, int range) {
+
+        for (int x = -range; x <= range; x++) {
+            for (int z = -range; z <= range; z++) {
+
+                BlockPos p = new BlockPos(x + pos.getX(), targetY, z + pos.getZ());
+                BlockState state = world.getBlockState(p);
+
+                if (state.liquid()) {
+                    continue;
+                }
+
+                if (canBreak(world, state, p)) {
+                    targetX = p.getX();
+                    targetZ = p.getZ();
+                    beam = true;
+                    return;
+                }
+            }
+        }
+
+        beam = false;
+        targetY--;
+    }
+
+    private static boolean canBreak(Level world, BlockState state, BlockPos p) {
+        return !state.isAir() && !(state.getBlock() instanceof BlockGasBase) && state.getDestroySpeed(world, p) >= 0
+                && !state.liquid() && state.getBlock() != Blocks.BEDROCK;
+    }
+
+    private boolean hasUpgrade(Item upgrade) {
+        for (int i = UPGRADE_START; i < UPGRADE_START + UPGRADE_COUNT; i++) {
+            if (inventory.getStackInSlot(i).getItem() == upgrade) return true;
+        }
         return false;
     }
 
-    private void breakLayer(ServerLevel level, BlockPos pos, int y) {
-        for (int x = pos.getX() - curRadius; x <= pos.getX() + curRadius; x++) {
-            for (int z = pos.getZ() - curRadius; z <= pos.getZ() + curRadius; z++) {
-                BlockPos target = new BlockPos(x, y, z);
-                BlockState state = level.getBlockState(target);
-
-                if (!state.getFluidState().isEmpty()) {
-                    level.setBlockAndUpdate(target, Blocks.AIR.defaultBlockState());
-                    continue;
-                }
-                if (shouldIgnoreBlock(level, state, target)) continue;
-
-                mineSingleBlock(level, target, state);
-            }
+    public int getRange() {
+        int range = 1;
+        for (int i = UPGRADE_START; i < UPGRADE_START + UPGRADE_COUNT; i++) {
+            Item item = inventory.getStackInSlot(i).getItem();
+            if (item == ModItems.UPGRADE_EFFECT_1.get()) range += 2;
+            else if (item == ModItems.UPGRADE_EFFECT_2.get()) range += 4;
+            else if (item == ModItems.UPGRADE_EFFECT_3.get()) range += 6;
         }
-
-        igniteNearbyEntities(level, pos, y);
-        level.playSound(null, pos, SoundEvents.FIRECHARGE_USE, SoundSource.BLOCKS, 1.0F, 1.4F);
+        return Math.min(range, 25);
     }
 
-   private void mineSingleBlock(ServerLevel level, BlockPos pos, BlockState state) {
-        ItemStack tool = new ItemStack(net.minecraft.world.item.Items.DIAMOND_PICKAXE);
-        if (curFortune > 0) {
-            com.hbm_m.platform.ItemHooks.setEnchantmentLevel(tool, level, "minecraft:fortune", curFortune);
-        }
+    public boolean hasNullifier() { return hasUpgrade(ModItems.UPGRADE_NULLIFIER.get()); }
+    public boolean hasSmelter() { return hasUpgrade(ModItems.UPGRADE_SMELTER.get()); }
+    public boolean hasShredder() { return hasUpgrade(ModItems.UPGRADE_SHREDDER.get()); }
+    public boolean hasCentrifuge() { return hasUpgrade(ModItems.UPGRADE_CENTRIFUGE.get()); }
+    public boolean hasCrystallizer() { return hasUpgrade(ModItems.UPGRADE_CRYSTALLIZER.get()); }
+    public boolean doesScream() { return hasUpgrade(ModItems.UPGRADE_SCREM.get()); }
 
-        LootParams.Builder builder = new LootParams.Builder(level)
-                .withParameter(LootContextParams.ORIGIN, Vec3.atCenterOf(pos))
-                .withParameter(LootContextParams.TOOL, tool)
-                .withParameter(LootContextParams.BLOCK_STATE, state)
-                .withOptionalParameter(LootContextParams.BLOCK_ENTITY, level.getBlockEntity(pos));
+    public int getConsumption() { return consumption; }
 
-        List<ItemStack> drops = state.getDrops(builder);
-        level.removeBlock(pos, false);
+    public int getWidth() { return 1 + getRange() * 2; }
 
-        for (ItemStack drop : drops) {
-            insertOrDrop(pos, drop);
-        }
-    }
+    public long getPowerScaled(long i) { return (energy * i) / maxPower; }
 
-    /** Nebeneffekt aus dem Original: Kreaturen im Arbeitsbereich werden kurz entzuendet. */
-    private void igniteNearbyEntities(ServerLevel level, BlockPos pos, int y) {
-        AABB area = new AABB(
-                pos.getX() - curRadius, y, pos.getZ() - curRadius,
-                pos.getX() + curRadius + 1, y + 1, pos.getZ() + curRadius + 1);
-        for (LivingEntity entity : level.getEntitiesOfClass(LivingEntity.class, area)) {
-            com.hbm_m.platform.PlatformHooks.setSecondsOnFire(entity, 2);
-        }
-    }
+    public int getProgressScaled(int i) { return (int) (breakProgress * i); }
 
-    private void insertOrDrop(BlockPos minedAt, ItemStack toInsert) {
-        if (toInsert.isEmpty()) return;
-
-        for (int i = OUTPUT_START; i < OUTPUT_START + OUTPUT_COUNT && !toInsert.isEmpty(); i++) {
-            ItemStack slotStack = inventory.getStackInSlot(i);
-            if (!slotStack.isEmpty() && com.hbm_m.platform.PlatformHooks.isSameItemSameTags(slotStack, toInsert)) {
-                int room = slotStack.getMaxStackSize() - slotStack.getCount();
-                int move = Math.min(room, toInsert.getCount());
-                if (move > 0) {
-                    slotStack.grow(move);
-                    toInsert.shrink(move);
-                }
-            }
-        }
-        for (int i = OUTPUT_START; i < OUTPUT_START + OUTPUT_COUNT && !toInsert.isEmpty(); i++) {
-            if (inventory.getStackInSlot(i).isEmpty()) {
-                inventory.setStackInSlot(i, toInsert.copy());
-                toInsert.setCount(0);
-            }
-        }
-
-        if (!toInsert.isEmpty() && level != null) {
-            Block.popResource(level, minedAt, toInsert);
-        }
-    }
-
-    public int getProgressScaled(int scale) {
-        if (currentTicksToWork <= 0) return 0;
-        return Math.min(scale, ticksWorked * scale / currentTicksToWork);
-    }
-
-    public int getDrillDepth() { return targetDepth; }
-    public boolean isActive() { return operational; }
     public boolean isOn() { return isOn; }
 
-    /** Original: {@code getWidth() = 1 + getRange() * 2} - die Kantenlaenge des Schachts. */
-    public int getWidth() { return 1 + curRadius * 2; }
+    public FluidTank getTank() { return tank; }
 
-    /** Original: der {@code AuxButtonPacket}-Knopf in der Oberflaeche. */
+    /** Original: {@code AuxButtonPacket} des An/Aus-Knopfs. */
     public void toggleOn() {
         isOn = !isOn;
         setChanged();
         sendUpdateToClient();
     }
 
+    /** Original {@code setInventorySlotContents}: Upgrade einstecken macht das Steckgeraeusch. */
+    @Override
+    protected ModItemStackHandler createInventoryHandler(int size) {
+        return new ModItemStackHandler(size) {
+            @Override
+            protected void onContentsChanged(int slot) {
+                setChanged();
+                ItemStack stack = getStackInSlot(slot);
+                if (level != null && !level.isClientSide && slot >= UPGRADE_START && slot < UPGRADE_START + UPGRADE_COUNT
+                        && stack.getItem() instanceof ItemMachineUpgrade) {
+                    level.playSound(null, worldPosition.getX() + 0.5, worldPosition.getY() + 1.5, worldPosition.getZ() + 0.5,
+                            com.hbm_m.sound.HbmSoundsNT.get("hbm:item.upgradePlug"), SoundSource.BLOCKS, 1.0F, 1.0F);
+                }
+            }
+
+            @Override
+            public boolean isItemValid(int slot, @NotNull ItemStack stack) {
+                return isItemValidForSlot(slot, stack);
+            }
+        };
+    }
+
+    @Override
+    protected boolean isItemValidForSlot(int slot, ItemStack stack) {
+        if (slot == SLOT_BATTERY) return isEnergyProviderItem(stack);
+        if (slot >= UPGRADE_START && slot < UPGRADE_START + UPGRADE_COUNT) return stack.getItem() instanceof ItemMachineUpgrade;
+        return false;
+    }
+
+    // ==================== Fluid ====================
+
+    @Override public FluidTank[] getSendingTanks() { return new FluidTank[] { tank }; }
+    @Override public FluidTank[] getAllTanks() { return new FluidTank[] { tank }; }
+
+    @Override
+    public boolean isLoaded() {
+        return level != null && !isRemoved() && level.isLoaded(worldPosition);
+    }
+
+    // ==================== NBT ====================
+
     @Override
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.writeNbtData(tag, registries);
-        tag.putInt("target_depth", targetDepth);
-        tag.putBoolean("operational", operational);
+        tank.writeToNBT(tag, "oil");
+        tag.putLong("power", energy);
         tag.putBoolean("isOn", isOn);
-        tag.putInt("radius", curRadius);
+        // Client-Sync (Original serialize)
+        tag.putInt("ltX", lastTargetX);
+        tag.putInt("ltY", lastTargetY);
+        tag.putInt("ltZ", lastTargetZ);
+        tag.putInt("tX", targetX);
+        tag.putInt("tY", targetY);
+        tag.putInt("tZ", targetZ);
+        tag.putBoolean("beam", beam);
+        tag.putDouble("progress", clientBreakProgress);
+        tag.putBoolean("redstone", redstonePowered);
     }
 
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.readNbtData(tag, registries);
-        targetDepth = tag.getInt("target_depth");
-        operational = tag.getBoolean("operational");
+        tank.readFromNBT(tag, "oil");
+        energy = tag.getLong("power");
         isOn = tag.getBoolean("isOn");
-        curRadius = tag.contains("radius") ? tag.getInt("radius") : BASE_RADIUS;
+        redstonePowered = false;
     }
+
+    @Override
+    protected void applyClientUpdate(@NotNull CompoundTag tag) {
+        super.applyClientUpdate(tag);
+        lastTargetX = tag.getInt("ltX");
+        lastTargetY = tag.getInt("ltY");
+        lastTargetZ = tag.getInt("ltZ");
+        targetX = tag.getInt("tX");
+        targetY = tag.getInt("tY");
+        targetZ = tag.getInt("tZ");
+        beam = tag.getBoolean("beam");
+        breakProgress = tag.getDouble("progress");
+        redstonePowered = tag.getBoolean("redstone");
+    }
+
+    // ==================== Upgrades ====================
+
+    @Override
+    public boolean canProvideInfo(UpgradeType type, int level, boolean extendedInfo) {
+        return type == UpgradeType.SPEED || type == UpgradeType.POWER || type == UpgradeType.OVERDRIVE || type == UpgradeType.EFFECT || type == UpgradeType.FORTUNE;
+    }
+
+    @Override
+    public void provideInfo(UpgradeType type, int level, List<Component> info, boolean extendedInfo) {
+        info.add(com.hbm_m.interfaces.IUpgradeInfoProvider.getStandardLabel(getBlockState().getBlock()));
+        if (type == UpgradeType.SPEED) {
+            info.add(Component.translatable(KEY_DELAY, "-" + (100 - 100 / (level + 1)) + "%").withStyle(ChatFormatting.GREEN));
+            info.add(Component.translatable(KEY_CONSUMPTION, "+" + (100 * level / 16) + "%").withStyle(ChatFormatting.RED));
+        }
+        if (type == UpgradeType.POWER) {
+            info.add(Component.translatable(KEY_CONSUMPTION, "-" + (100 * level / 16) + "%").withStyle(ChatFormatting.GREEN));
+        }
+        if (type == UpgradeType.EFFECT) {
+            info.add(Component.translatable(KEY_RANGE, "+" + (2 * level) + "m").withStyle(ChatFormatting.GREEN));
+        }
+        if (type == UpgradeType.FORTUNE) {
+            info.add(Component.translatable(KEY_FORTUNE, "+" + level).withStyle(ChatFormatting.GREEN));
+        }
+        if (type == UpgradeType.OVERDRIVE) {
+            info.add(Component.literal("YES").withStyle(System.currentTimeMillis() % 1000 < 500 ? ChatFormatting.RED : ChatFormatting.DARK_GRAY));
+        }
+    }
+
+    @Override
+    public Map<UpgradeType, Integer> getValidUpgrades() {
+        return VALID_UPGRADES;
+    }
+
+    // ==================== Sonstiges ====================
 
     @Override
     protected Component getDefaultName() {
@@ -349,19 +655,8 @@ public class MachineMiningLaserBlockEntity extends BaseMachineBlockEntity {
     }
 
     @Override
-    public Component getDisplayName() {
+    public @NotNull Component getDisplayName() {
         return getDefaultName();
-    }
-
-    @Override
-    protected boolean isItemValidForSlot(int slot, ItemStack stack) {
-        if (slot == SLOT_BATTERY) {
-            return isEnergyProviderItem(stack);
-        }
-        if (slot >= UPGRADE_START && slot < UPGRADE_START + UPGRADE_COUNT) {
-            return stack.getItem() instanceof com.hbm_m.item.industrial.ItemMachineUpgrade;
-        }
-        return false; // Ausgabe-Slots: kein manuelles Einlegen.
     }
 
     @Nullable
@@ -370,11 +665,11 @@ public class MachineMiningLaserBlockEntity extends BaseMachineBlockEntity {
         return new MachineMiningLaserMenu(id, inventory, this);
     }
 
+    /** Original: {@code INFINITE_EXTENT_AABB}, Sichtweite 256. */
     //? if forge {
     @Override
     //?}
     public AABB getRenderBoundingBox() {
-        double depth = targetDepth + 4.0D;
-        return super.getRenderBoundingBox().inflate(curRadius, 0, curRadius).expandTowards(0, -depth, 0);
+        return INFINITE_EXTENT_AABB;
     }
 }

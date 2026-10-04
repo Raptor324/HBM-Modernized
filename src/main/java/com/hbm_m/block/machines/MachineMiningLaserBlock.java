@@ -1,129 +1,65 @@
 package com.hbm_m.block.machines;
 
-import java.util.Map;
-import java.util.function.Supplier;
+import java.util.List;
 
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.blockentity.machines.MachineMiningLaserBlockEntity;
-import com.hbm_m.interfaces.IMultiblockController;
+import com.hbm_m.multiblock.DummyableStructureBuilder;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
-import com.hbm_m.multiblock.PartRole;
 
 import dev.architectury.registry.menu.MenuRegistry;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.BaseEntityBlock;
-import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.block.state.StateDefinition;
-import net.minecraft.world.level.block.state.properties.BlockStateProperties;
-import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
-import net.minecraft.world.phys.shapes.CollisionContext;
-import net.minecraft.world.phys.shapes.Shapes;
-import net.minecraft.world.phys.shapes.VoxelShape;
 
 /**
- * Mining Laser - Port von {@code MachineMiningLaser} (1.7.10 Original), auf diesem Repo-eigenen
- * {@link IMultiblockController}-Framework, analog zu {@link MachineAnnihilatorBlock}.
- * <p>
- * Footprint: 3x3, 1 Ebene, Controller mittig. Vereinfacht-aber-proportionaler Ersatz fuer das
- * Original {@code {1,1,1,1,1,1}} (echtes 3x3x3-Volumen, deckenmontiert). Die Original-Deckenmontage-
- * Beschraenkung ("Only placeable on a ceiling") wurde NICHT uebernommen - die Maschine arbeitet
- * wie {@link com.hbm_m.block.machines.MachineMiningDrillBlock} bodenstehend und baut direkt unter
- * sich ab (siehe Klassenkommentar in {@link MachineMiningLaserBlockEntity}).
+ * 1:1 {@code MachineMiningLaser}: {@code getDimensions {1,1,1,1,1,1}}, {@code getOffset 0}, {@code getHeightOffset -1}
+ * (der Kern sitzt eine Ebene unter dem Klickpunkt, daher nur an Decken platzierbar). Anschlusszellen an den vier
+ * Seiten und oben. Gezeichnet vom {@code MiningLaserRenderer}.
  */
-public class MachineMiningLaserBlock extends BaseEntityBlock implements IMultiblockController {
-
-    public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
-
-    private final MultiblockStructureHelper structureHelper;
+public class MachineMiningLaserBlock extends DummyableMachineBlock {
 
     public MachineMiningLaserBlock(Properties properties) {
         super(properties);
-        this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH));
-        this.structureHelper = defineStructure();
-    }
-
-    private static MultiblockStructureHelper defineStructure() {
-        String[] layer = {
-            "OOO",
-            "OCO",
-            "OOO"
-        };
-
-        Map<Character, PartRole> roleMap = Map.of(
-                'O', PartRole.DEFAULT,
-                'C', PartRole.CONTROLLER
-        );
-
-        Map<Character, Supplier<BlockState>> symbolMap = Map.of();
-
-        return MultiblockStructureHelper.createFromLayersWithRoles(
-                new String[][] { layer },
-                symbolMap,
-                () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState(),
-                roleMap,
-                null,
-                null
-        );
     }
 
     @Override
-    public MultiblockStructureHelper getStructureHelper() {
-        return this.structureHelper;
+    protected MultiblockStructureHelper defineStructure() {
+        return DummyableStructureBuilder.create()
+                .box(1, 1, 1, 1, 1, 1)
+                .extra(1, 0, 0)
+                .extra(-1, 0, 0)
+                .extra(0, 0, 1)
+                .extra(0, 0, -1)
+                .extra(0, 1, 0)
+                .placementOffset(0)
+                .build(() -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState());
     }
 
     @Override
-    public PartRole getPartRole(BlockPos localOffset) {
-        return structureHelper.resolvePartRole(localOffset, this);
-    }
-
-    @Override
-    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(FACING);
-    }
-
-    @Override
-    public BlockState getStateForPlacement(BlockPlaceContext context) {
-        return this.defaultBlockState().setValue(FACING, context.getHorizontalDirection().getOpposite());
+    public int getHeightOffset() {
+        return -1;
     }
 
     @Override
     public RenderShape getRenderShape(BlockState state) {
-        return RenderShape.MODEL;
-    }
-
-    @Override
-    public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        return structureHelper.generateShapeFromParts(state.getValue(FACING));
-    }
-
-    @Override
-    public VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        return structureHelper.getSpecificPartShape(structureHelper.getControllerOffset(), state.getValue(FACING));
-    }
-
-    @Override
-    public VoxelShape getOcclusionShape(BlockState state, BlockGetter level, BlockPos pos) {
-        if (!structureHelper.isFullBlock(structureHelper.getControllerOffset(), state.getValue(FACING))) {
-            return Shapes.empty();
-        }
-        return Shapes.block();
+        return RenderShape.ENTITYBLOCK_ANIMATED;
     }
 
     @Nullable
@@ -134,79 +70,38 @@ public class MachineMiningLaserBlock extends BaseEntityBlock implements IMultibl
 
     @Nullable
     @Override
-    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(
-            Level level,
-            BlockState state,
-            BlockEntityType<T> type
-    ) {
-        return createTickerHelper(
-                type,
-                ModBlockEntities.MINING_LASER_BE.get(),
-                (lvl, pos, st, be) -> MachineMiningLaserBlockEntity.tick(lvl, pos, st, (MachineMiningLaserBlockEntity) be)
-        );
-    }
-
-    @Override
-    public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
-        super.onPlace(state, level, pos, oldState, isMoving);
-        if (!state.is(oldState.getBlock()) && !level.isClientSide()) {
-            structureHelper.placeStructure(level, pos, state.getValue(FACING), this);
-        }
+    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
+        return createTickerHelper(type, ModBlockEntities.MINING_LASER_BE.get(),
+                (lvl, pos, st, be) -> MachineMiningLaserBlockEntity.tick(lvl, pos, st, (MachineMiningLaserBlockEntity) be));
     }
 
     //? if < 1.21.1 {
     @Override
-    public InteractionResult use(BlockState state, Level level, BlockPos pos,
-                                  Player player, InteractionHand hand, BlockHitResult hit) {
-
-        if (!level.isClientSide()) {
-            BlockEntity entity = level.getBlockEntity(pos);
-            if (entity instanceof MachineMiningLaserBlockEntity miningLaserEntity) {
-                MenuRegistry.openExtendedMenu((ServerPlayer) player, miningLaserEntity, buf -> buf.writeBlockPos(pos));
-            } else {
-                throw new IllegalStateException("Container provider is missing!");
-            }
-        }
-        return InteractionResult.sidedSuccess(level.isClientSide());
-        }
+    public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        return open(level, pos, player);
+    }
     //?} else {
     /*@Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
-
-        if (!level.isClientSide()) {
-            BlockEntity entity = level.getBlockEntity(pos);
-            if (entity instanceof MachineMiningLaserBlockEntity miningLaserEntity) {
-                MenuRegistry.openExtendedMenu((ServerPlayer) player, miningLaserEntity, buf -> buf.writeBlockPos(pos));
-            } else {
-                throw new IllegalStateException("Container provider is missing!");
-            }
-        }
-        return InteractionResult.sidedSuccess(level.isClientSide());
-        }
+        return open(level, pos, player);
+    }
     *///?}
 
+    private InteractionResult open(Level level, BlockPos pos, Player player) {
+        if (!level.isClientSide() && !player.isShiftKeyDown() && level.getBlockEntity(pos) instanceof MachineMiningLaserBlockEntity laser) {
+            MenuRegistry.openExtendedMenu((ServerPlayer) player, laser, buf -> buf.writeBlockPos(pos));
+        }
+        return InteractionResult.sidedSuccess(level.isClientSide());
+    }
 
     @Override
-    public void onRemove(BlockState state, Level level, BlockPos pos,
-                          BlockState newState, boolean isMoving) {
-        if (!state.is(newState.getBlock())) {
-            BlockEntity blockEntity = level.getBlockEntity(pos);
-            if (blockEntity instanceof MachineMiningLaserBlockEntity miningLaserEntity) {
-                miningLaserEntity.dropInventoryContents();
-            }
-            if (!level.isClientSide()) {
-                structureHelper.destroyStructure(level, pos, state.getValue(FACING));
-            }
-        }
-        super.onRemove(state, level, pos, newState, isMoving);
+    public void appendHoverText(ItemStack stack, @Nullable BlockGetter level, List<Component> list, TooltipFlag flag) {
+        list.add(Component.translatable("block.hbm_m.mining_laser.desc.multiblock"));
+        list.add(Component.translatable("block.hbm_m.mining_laser.desc.ceiling"));
     }
 
     //? if >1.20.1 {
     /*public static final com.mojang.serialization.MapCodec<MachineMiningLaserBlock> CODEC = simpleCodec(MachineMiningLaserBlock::new);
-
-    @Override
-    protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
-        return CODEC;
-    }
+    @Override protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() { return CODEC; }
     *///?}
 }

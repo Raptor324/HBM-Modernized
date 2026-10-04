@@ -33,15 +33,17 @@ import org.jetbrains.annotations.Nullable;
 public class MachineDifurnaceRtgBlock extends BaseEntityBlock {
 
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
+    /** Original: {@code machine_difurnace_rtg_on} (Lichtstaerke 1.0) statt {@code _off}. */
+    public static final net.minecraft.world.level.block.state.properties.BooleanProperty LIT = BlockStateProperties.LIT;
 
     public MachineDifurnaceRtgBlock(Properties properties) {
-        super(properties);
-        this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH));
+        super(properties.lightLevel(st -> st.getValue(LIT) ? 15 : 0));
+        this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH).setValue(LIT, false));
     }
 
     @Override
     protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(FACING);
+        builder.add(FACING, LIT);
     }
 
     @Override

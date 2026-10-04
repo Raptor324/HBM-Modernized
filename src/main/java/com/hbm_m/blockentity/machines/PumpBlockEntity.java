@@ -61,7 +61,6 @@ public abstract class PumpBlockEntity extends com.hbm_m.blockentity.BaseHbmBlock
             groundCheckDelay--;
         } else {
             onGround = PumpGroundCheck.check(level, pos);
-            groundCheckDelay = 20;
         }
 
         isOn = false;
@@ -80,7 +79,26 @@ public abstract class PumpBlockEntity extends com.hbm_m.blockentity.BaseHbmBlock
         if (rotor >= 360F) {
             rotor -= 360F;
             lastRotor -= 360F;
+            playCycleSound(level, worldPosition);
         }
+    }
+
+    /** Original: Takt-Geraeusch der Dampfmaschine und Platschen bei jeder vollen Umdrehung. */
+    static void playCycleSound(Level level, BlockPos pos) {
+        if (level == null) return;
+        level.playLocalSound(pos.getX(), pos.getY(), pos.getZ(), com.hbm_m.sound.ModSounds.STEAM_ENGINE_OPERATE.get(),
+                net.minecraft.sounds.SoundSource.BLOCKS, 0.5F, 0.75F, false);
+        level.playLocalSound(pos.getX(), pos.getY(), pos.getZ(), net.minecraft.sounds.SoundEvents.GENERIC_SPLASH,
+                net.minecraft.sounds.SoundSource.BLOCKS, 1F, 0.5F, false);
+    }
+
+    /** Original {@code getRenderBoundingBox}: 3x5x3 um den Kern. */
+    //? if forge {
+    @Override
+    //?}
+    public net.minecraft.world.phys.AABB getRenderBoundingBox() {
+        return new net.minecraft.world.phys.AABB(worldPosition.getX() - 1, worldPosition.getY(), worldPosition.getZ() - 1,
+                worldPosition.getX() + 2, worldPosition.getY() + 5, worldPosition.getZ() + 2);
     }
 
     protected abstract boolean canOperate();

@@ -3,411 +3,341 @@ package com.hbm_m.blockentity.machines;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.hbm_m.api.fluids.IFluidConnectorMK2;
 import com.hbm_m.api.fluids.IFluidStandardTransceiverMK2;
-import com.hbm_m.api.fluids.VanillaFluidEquivalence;
+import com.hbm_m.api.redstoneoverradio.IRORInteractive;
+import com.hbm_m.api.redstoneoverradio.IRORValueProvider;
+import com.hbm_m.block.machines.DummyableMachineBlock;
 import com.hbm_m.blockentity.BaseMachineBlockEntity;
-import com.hbm_m.handler.pollution.PollutionHandler;
-import com.hbm_m.inventory.fluid.trait.PollutionType;
 import com.hbm_m.blockentity.ModBlockEntities;
+import com.hbm_m.handler.pollution.PollutionHandler;
 import com.hbm_m.inventory.fluid.FluidType;
 import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.inventory.fluid.trait.FT_Combustible;
 import com.hbm_m.inventory.fluid.trait.FT_Combustible.FuelGrade;
+import com.hbm_m.inventory.fluid.trait.PollutionType;
 import com.hbm_m.inventory.menu.MachineTurbineGasMenu;
-import com.hbm_m.interfaces.IEnergyModeHolder;
-import com.hbm_m.item.fekal_electric.ItemCreativeBattery;
 import com.hbm_m.item.liquids.FluidIdentifierItem;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.sounds.SoundEvents;
-import net.minecraft.sounds.SoundSource;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
-import net.minecraft.world.level.material.Fluids;
+import net.minecraft.world.phys.AABB;
 
 /**
- * Gas Turbine - Port von {@code TileEntityMachineTurbineGas} (1.7.10 Original).
- * <p>
- * Das Zustandsmodell ist 1:1 uebernommen: Anlauframpe ueber 580 Ticks (mit dem vollen
- * Anzeigenausschlag zu Beginn), Auslauframpe ueber 225, Drehzahl- und Temperaturtraegheit,
- * geglaettete Momentanleistung und die lastabhaengige Wasserverdampfung.
- * <p>
- * Ersetzt ist nur die Bedienung: das Original hat GUI-Knoepfe fuer Start/Stop, Auto-Modus und
- * einen Leistungsregler ({@code IControlReceiver}). Dieser Port kennt projektweit kein
- * Steuerpaket, darum schaltet Redstone die Turbine (entsperrt laeuft an, gesperrt laeuft aus) und
- * der Leistungsregler folgt dauerhaft der Auto-Modus-Formel des Originals. Nicht portiert sind
- * ausserdem OpenComputers und die beiden Turbinenklaenge (ersatzweise Leuchtfeuer-Klaenge).
- * <p>
- * WICHTIGER FUND: GAS/SYNGAS/REFORMGAS/OXYHYDROGEN besassen im Original selbst NIE eine {@code
- * FT_Combustible}-Eigenschaft (siehe Kommentar in {@code ContainerMachineTurbineGas}: "redundant
- * restriction that does nothing at best and at worst breaks shit") - {@code hasAcceptableFuel()}
- * war dort permanent {@code false}, der Gas Turbine also nie tatsaechlich lauffaehig. Die
- * entsprechenden Traits wurden in {@code ModFluidTraitsBootstrap} nachtraeglich (mit erfundenen,
- * nicht 1:1 belegten Energiewerten) ergaenzt, damit dieser Port tatsaechlich funktioniert - analog
- * zur Industrial-Generator-Entscheidung dieser Session.
+ * 1:1 {@code TileEntityMachineTurbineGas}: Gasturbine mit Start/Stop-Knopf, Leistungsschieber (0-60), Automatik (folgt
+ * Speicherstand und Kraftstoff), Anlauf ueber 580 Ticks mit Anzeigenausschlag, Auslauf ueber 225, Drehzahl- und
+ * Temperaturtraegheit, geglaetteter Momentanleistung und lastabhaengiger Heissdampferzeugung. Kraftstoff (Gas-Klasse)
+ * und Schmiermittel links/rechts vorn, Wasser hinten, Heissdampf rechts oben, Strom links oben. Bedienung ueber
+ * {@code IControlReceiver}, Klaenge Anlauf/Lauf/Auslauf, ROR-Werte und -Funktionen.
  */
-public class MachineTurbineGasBlockEntity extends BaseMachineBlockEntity implements IFluidStandardTransceiverMK2, IEnergyModeHolder {
+public class MachineTurbineGasBlockEntity extends BaseMachineBlockEntity implements IFluidStandardTransceiverMK2,
+        com.hbm_m.api.tile.IControlReceiver, IRORValueProvider, IRORInteractive {
 
-    public static final int SLOT_BATTERY  = 0;
+    public static final int SLOT_BATTERY = 0;
     public static final int SLOT_FLUID_ID = 1;
     public static final int INVENTORY_SIZE = 2;
 
-    private static final int GAS_TANK_CAPACITY      = 100_000;
-    private static final int LUBE_TANK_CAPACITY      = 16_000;
-    private static final int WATER_TANK_CAPACITY     = 16_000;
-    private static final int HOTSTEAM_TANK_CAPACITY  = 160_000;
-    private static final long MAX_POWER              = 1_000_000L;
-    private static final long ENERGY_EXTRACT_RATE    = 50_000L;
+    public static final long maxPower = 1000000L;
 
-    /** Kraftstoffverbrauch pro Tick bei Volllast, mb - 1:1 aus dem Original ({@code fuelMaxCons}). */
-    private static final Map<Fluid, Double> FUEL_MAX_CONSUMPTION = new HashMap<>();
+    public int rpm; // 0-100
+    public int temp; // 0-800
+    public int rpmIdle = 10;
+    public int tempIdle = 300;
+
+    public int powerSliderPos; // 0-60
+    public int throttle; // 0-100
+
+    public boolean autoMode;
+    public int state = 0; // 0 aus, -1 Anlauf, 1 Betrieb
+
+    public int counter = 0;
+    public int instantPowerOutput;
+    public double waterToBoil;
+
+    public final FluidTank[] tanks = new FluidTank[] {
+            new FluidTank(ModFluids.GAS.getSource(), 100000),
+            new FluidTank(ModFluids.LUBRICANT.getSource(), 16000),
+            new FluidTank(ModFluids.WATER.getSource(), 16000),
+            new FluidTank(ModFluids.HOTSTEAM.getSource(), 160000)
+    };
+
+    public static final Map<Fluid, Double> fuelMaxCons = new HashMap<>();
     static {
-        FUEL_MAX_CONSUMPTION.put(ModFluids.GAS.getSource(), 50D);
-        FUEL_MAX_CONSUMPTION.put(ModFluids.SYNGAS.getSource(), 10D);
-        FUEL_MAX_CONSUMPTION.put(ModFluids.OXYHYDROGEN.getSource(), 100D);
-        FUEL_MAX_CONSUMPTION.put(ModFluids.REFORMGAS.getSource(), 5D);
+        fuelMaxCons.put(ModFluids.GAS.getSource(), 50D);
+        fuelMaxCons.put(ModFluids.SYNGAS.getSource(), 10D);
+        fuelMaxCons.put(ModFluids.OXYHYDROGEN.getSource(), 100D);
+        fuelMaxCons.put(ModFluids.REFORMGAS.getSource(), 5D);
     }
-    private static final double DEFAULT_MAX_CONSUMPTION = 5D;
 
-    private final FluidTank gasTank      = new FluidTank(ModFluids.GAS.getSource(), GAS_TANK_CAPACITY);
-    private final FluidTank lubeTank     = new FluidTank(ModFluids.LUBRICANT.getSource(), LUBE_TANK_CAPACITY);
-    private final FluidTank waterTank    = new FluidTank(ModFluids.WATER.getSource(), WATER_TANK_CAPACITY);
-    private final FluidTank hotsteamTank = new FluidTank(ModFluids.HOTSTEAM.getSource(), HOTSTEAM_TANK_CAPACITY);
+    /** Fuer die GUI: Speicherstand vor Abgabe ans Netz (Original {@code powerBeforeNet}). */
+    public long powerBeforeNet;
 
-    private double fuelToConsume  = 0D;
-    private double waterToBoilAcc = 0D;
-    private boolean active = false;
-
-    // ── Zustandsmodell, 1:1 aus dem Original ────────────────────────────────
-    /** Original: {@code rpmIdle = 10}. */
-    private static final int RPM_IDLE = 10;
-    /** Original: {@code tempIdle = 300}. */
-    private static final int TEMP_IDLE = 300;
-    /** Original: der Zaehler laeuft beim Anlauf bis 580 und beim Auslauf von 225 herunter. */
-    private static final int STARTUP_END = 580;
-    private static final int SHUTDOWN_START = 225;
-
-    /** 0-100, Drehzahlanzeige. Leistung entsteht erst oberhalb von {@link #RPM_IDLE}. */
-    private int rpm = 0;
-    /** 0-800 Grad; ab 300 wird Wasser verdampft. */
-    private int temp = 0;
-    /** Original: {@code powerSliderPos}, 0 bis 60. */
-    private int powerSliderPos = 0;
-    /** Original: {@code throttle}, 0 bis 100 - dieselbe Groesse, andere Skala. */
-    private int throttle = 0;
-    /** Original: {@code state} - 0 aus, -1 im Anlauf, 1 in Betrieb. */
-    private int state = 0;
-    /** Original: {@code counter} - treibt Anlauf und Auslauf. */
-    private int counter = 0;
-    /** Original: {@code instantPowerOutput} - geglaettete Momentanleistung. */
-    private int instantPowerOutput = 0;
-    /** Original: {@code waterToBoil} - nur zur Anzeige zwischengehalten. */
-    private double waterToBoil = 0D;
-    /** Original: {@code rpmLast}/{@code tempLast} - Ausgangswerte der Auslauframpe. */
-    private int rpmLast = 0;
-    private int tempLast = 0;
+    int rpmLast;
+    int tempLast;
+    double fuelToConsume;
 
     public MachineTurbineGasBlockEntity(BlockPos pos, BlockState state) {
-        super(ModBlockEntities.TURBINEGAS_BE.get(), pos, state, INVENTORY_SIZE, MAX_POWER, 0L, ENERGY_EXTRACT_RATE);
+        super(ModBlockEntities.TURBINEGAS_BE.get(), pos, state, INVENTORY_SIZE, maxPower, 0L, maxPower);
     }
 
-    @Override
-    public int getCurrentMode() {
-        return 2; // OUTPUT only, so the energy network treats this as a generator.
+    public static void tick(Level level, BlockPos pos, BlockState state, MachineTurbineGasBlockEntity be) {
+        if (level instanceof ServerLevel world) be.serverTick(world, pos);
+        else be.clientTick();
     }
 
-    public static void tick(Level level, BlockPos pos, BlockState state, MachineTurbineGasBlockEntity blockEntity) {
-        if (!level.isClientSide) {
-            blockEntity.serverTick();
-        }
-    }
+    private void serverTick(ServerLevel world, BlockPos pos) {
 
-    private void serverTick() {
-        ensureNetworkInitialized();
-
-        ItemStack idStack = inventory.getStackInSlot(SLOT_FLUID_ID);
-        if (idStack.getItem() instanceof FluidIdentifierItem) {
-            Fluid candidate = FluidIdentifierItem.resolvePrimaryForTank(idStack);
-            FT_Combustible trait = candidate != null ? FluidType.getTrait(candidate, FT_Combustible.class) : null;
-            if (trait != null && trait.getGrade() == FuelGrade.GAS) {
-                ItemStack[] slots = new ItemStack[]{ idStack };
-                if (gasTank.setType(0, slots)) {
-                    setChanged();
-                }
-            }
-        }
-
-        chargeItemInSlot(SLOT_BATTERY);
-
-        if (level.getGameTime() % 20 == 0) {
-            for (Direction dir : Direction.values()) {
-                BlockPos neighborPos = worldPosition.relative(dir);
-                BlockEntity neighborBe = level.getBlockEntity(neighborPos);
-                if (!(neighborBe instanceof IFluidConnectorMK2)) continue;
-
-                trySubscribe(gasTank.getTankType(), level, neighborPos, dir);
-                trySubscribe(lubeTank.getTankType(), level, neighborPos, dir);
-                trySubscribe(waterTank.getTankType(), level, neighborPos, dir);
-                if (hotsteamTank.getFill() > 0) {
-                    tryProvide(hotsteamTank, level, neighborPos, dir);
-                }
-            }
-        }
-
-        boolean wasActive = active;
-
-        waterToBoil = 0D;
-        // Original: throttle = powerSliderPos * 100 / 60.
+        waterToBoil = 0;
         throttle = powerSliderPos * 100 / 60;
 
-        // Das Original schaltet die Turbine ueber GUI-Knoepfe ein und aus. Dieser Port kennt
-        // projektweit kein Steuerpaket, darum uebernimmt Redstone den Schalter: entsperrt heisst
-        // anlaufen, gesperrt heisst auslaufen.
-        boolean wantRun = !level.hasNeighborSignal(worldPosition);
-
-        if (wantRun && state == 0 && hasAcceptableFuel()
-                && gasTank.getFluidAmountMb() > 0 && lubeTank.getFluidAmountMb() > 0) {
-            state = -1;
-            counter = 0;
-        } else if (!wantRun && state != 0) {
-            state = 0;
+        ItemStack id = inventory.getStackInSlot(SLOT_FLUID_ID);
+        if (id.getItem() instanceof FluidIdentifierItem) {
+            Fluid fluid = FluidIdentifierItem.getType(id, true);
+            if (fluid != null) {
+                FT_Combustible trait = FluidType.getTrait(fluid, FT_Combustible.class);
+                if (trait != null && trait.getGrade() == FuelGrade.GAS) tanks[0].setTankType(fluid);
+            }
         }
 
-        updateAutoSlider();
+        if (autoMode) {
+            int powerSliderTarget;
+            if (tanks[0].getFill() * 10 > tanks[0].getMaxFill()) {
+                powerSliderTarget = 60 - (int) (60 * energy / maxPower);
+            } else {
+                powerSliderTarget = (int) (tanks[0].getFill() * 0.0001 * (60 - (int) (60 * energy / maxPower)));
+            }
+
+            if (powerSliderTarget > powerSliderPos) powerSliderPos++;
+            else if (powerSliderTarget < powerSliderPos) powerSliderPos--;
+        }
 
         switch (state) {
-            case 0 -> shutdown();
-            case -1 -> { stopIfNotReady(); startup(); }
-            case 1 -> { stopIfNotReady(); run(); }
+            case 0 -> shutdown(world);
+            case -1 -> { stopIfNotReady(); startup(world); }
+            case 1 -> { stopIfNotReady(); run(world); }
             default -> { }
         }
 
-        active = state == 1;
+        Direction dir = getBlockState().getValue(DummyableMachineBlock.FACING);
+        Direction rot = dir.getClockWise();
 
-        if (wasActive != active || rpm > 0 || counter > 0) {
-            setChanged();
-            sendUpdateToClient();
+        powerBeforeNet = Math.min(this.energy, maxPower);
+
+        // Original: zuerst Akku und Netz bedienen, dann auf die Kapazitaet begrenzen
+        chargeItemInSlot(SLOT_BATTERY);
+        BlockPos powerPos = pos.relative(rot, 5).above();
+        this.tryProvide(world, powerPos.getX(), powerPos.getY(), powerPos.getZ(), rot);
+
+        if (this.energy > maxPower) this.energy = maxPower;
+
+        for (int i = 0; i < 2; i++) { // Kraftstoff und Schmiermittel
+            this.trySubscribe(tanks[i].getTankType(), world, pos.relative(dir, -2).relative(rot), dir.getOpposite());
+            this.trySubscribe(tanks[i].getTankType(), world, pos.relative(dir, 2).relative(rot), dir);
+        }
+        // Wasser
+        this.trySubscribe(tanks[2].getTankType(), world, pos.relative(dir, -2).relative(rot, -4), dir.getOpposite());
+        this.trySubscribe(tanks[2].getTankType(), world, pos.relative(dir, 2).relative(rot, -4), dir);
+        // Heissdampf
+        this.tryProvide(tanks[3], world, pos.relative(rot, -6).above(), rot.getOpposite());
+
+        setChanged();
+        sendUpdateToClient();
+    }
+
+    private void clientTick() {
+        com.hbm_m.sound.ClientSoundBootstrap.updateSound(this, rpm >= 10 && state != -1, this::createAudioLoop);
+    }
+
+    private Object createAudioLoop() {
+        try {
+            return Class.forName("com.hbm_m.client.sound.TurbineGasLoopSoundFactory").getMethod("create", MachineTurbineGasBlockEntity.class).invoke(null, this);
+        } catch (ReflectiveOperationException e) {
+            throw new RuntimeException(e);
         }
     }
 
-    /**
-     * Original: der {@code autoMode}-Zweig aus {@code updateEntity}. Dort waehlbar, hier immer
-     * aktiv - der Port hat keine GUI-Knoepfe, und das lastabhaengige Nachfuehren ist das
-     * sinnvollere Standardverhalten.
-     */
-    private void updateAutoSlider() {
-        if (state == 0) return;
-
-        int target;
-        // Original: unter 10% Tankfuellung wird der Verbrauch linear zurueckgenommen.
-        if (gasTank.getFluidAmountMb() * 10 > gasTank.getCapacityMb()) {
-            target = 60 - (int) (60 * getEnergyStored() / getMaxEnergyStored());
-        } else {
-            target = (int) (gasTank.getFluidAmountMb() * 0.0001D
-                    * (60 - (int) (60 * getEnergyStored() / getMaxEnergyStored())));
-        }
-
-        // Original: der Regler gleitet, er springt nicht.
-        if (target > powerSliderPos) powerSliderPos++;
-        else if (target < powerSliderPos) powerSliderPos--;
+    @Override
+    public void setRemoved() {
+        super.setRemoved();
+        if (level != null && level.isClientSide) com.hbm_m.sound.ClientSoundBootstrap.updateSound(this, false, null);
     }
 
-    /** Original: {@code stopIfNotReady} - ohne Kraftstoff oder Schmiermittel geht sie aus. */
     private void stopIfNotReady() {
-        if (gasTank.getFluidAmountMb() == 0 || lubeTank.getFluidAmountMb() == 0) state = 0;
+        if (tanks[0].getFill() == 0 || tanks[1].getFill() == 0) state = 0;
         if (!hasAcceptableFuel()) state = 0;
     }
 
-    /**
-     * Original: {@code startup} - die Anzeige schlaegt erst einmal voll aus und zurueck, dann
-     * laufen Drehzahl und Temperatur ueber gut eine halbe Minute auf Leerlauf hoch.
-     */
-    private void startup() {
+    public boolean hasAcceptableFuel() {
+        FT_Combustible trait = FluidType.getTrait(tanks[0].getTankType(), FT_Combustible.class);
+        return trait != null && trait.getGrade() == FuelGrade.GAS;
+    }
+
+    private void startup(Level world) {
         counter++;
 
-        if (counter <= 20) {
-            rpm = 5 * counter;
-        } else if (counter <= 40) {
-            rpm = 100 - 5 * (counter - 20);
-        } else if (counter > 50) {
-            rpm = RPM_IDLE * (counter - 50) / 530;
-            temp = TEMP_IDLE * (counter - 50) / 530;
+        if (counter <= 20) rpm = 5 * counter;
+        else if (counter > 20 && counter <= 40) rpm = 100 - 5 * (counter - 20);
+        else if (counter > 50) {
+            rpm = rpmIdle * (counter - 50) / 530;
+            temp = tempIdle * (counter - 50) / 530;
         }
 
-        if (counter == 50 && level != null) {
-            level.playSound(null, worldPosition, SoundEvents.BEACON_ACTIVATE, SoundSource.BLOCKS, 1.0F, 0.6F);
+        if (counter == 50) {
+            world.playSound(null, worldPosition.getX(), worldPosition.getY() + 2, worldPosition.getZ(),
+                    com.hbm_m.sound.HbmSoundsNT.get("hbm:block.turbinegasStartup"), SoundSource.BLOCKS, 1.0F, 1.0F);
         }
 
-        if (counter == STARTUP_END) {
-            // Original: auf 225 setzen, damit ein sofortiges Abschalten sauber auslaeuft.
-            counter = SHUTDOWN_START;
+        if (counter == 580) {
+            counter = 225; // damit ein sofortiges Abschalten sauber auslaeuft
             state = 1;
         }
     }
 
-    /** Original: {@code shutdown} - erst auf Leerlauf abbremsen, dann ueber 225 Ticks auslaufen. */
-    private void shutdown() {
+    private void shutdown(Level world) {
+        autoMode = false;
         instantPowerOutput = 0;
 
         if (powerSliderPos > 0) powerSliderPos--;
 
         if (rpm <= 10 && counter > 0) {
 
-            if (counter == SHUTDOWN_START) {
-                if (level != null) {
-                    level.playSound(null, worldPosition, SoundEvents.BEACON_DEACTIVATE, SoundSource.BLOCKS, 1.0F, 0.6F);
-                }
+            if (counter == 225) {
+                world.playSound(null, worldPosition.getX(), worldPosition.getY() + 2, worldPosition.getZ(),
+                        com.hbm_m.sound.HbmSoundsNT.get("hbm:block.turbinegasShutdown"), SoundSource.BLOCKS, 1.0F, 1.0F);
                 rpmLast = rpm;
                 tempLast = temp;
             }
 
             counter--;
-            rpm = rpmLast * counter / SHUTDOWN_START;
-            temp = tempLast * counter / SHUTDOWN_START;
+
+            rpm = rpmLast * counter / 225;
+            temp = tempLast * counter / 225;
 
         } else if (rpm > 11) {
-            // Original: ein absichtlich unerreichbarer Wert, damit der Zweig oben erst danach greift.
             counter = 42069;
             rpm--;
         } else if (rpm == 11) {
-            counter = SHUTDOWN_START;
+            counter = 225;
             rpm--;
         }
     }
 
-    /**
-     * Original: {@code run} - Drehzahl und Temperatur laufen der Drosselstellung traege nach,
-     * die Drehzahl mit einem Schritt je 5 Ticks nach oben und je 2 nach unten.
-     */
-    private void run() {
-        int target = (int) (throttle * 0.9D);
-
-        if (target > rpm - RPM_IDLE) {
-            if (level.getGameTime() % 5 == 0) rpm++;
-        } else if (target < rpm - RPM_IDLE) {
-            if (level.getGameTime() % 2 == 0) rpm--;
-        }
-
-        FT_Combustible trait = FluidType.getTrait(gasTank.getStoredFluid(), FT_Combustible.class);
-        int maxTemp = trait != null ? getFluidBurnTemp(trait) : TEMP_IDLE;
-
-        int tempTarget = throttle * 5 * (maxTemp - TEMP_IDLE) / 500;
-        if (tempTarget > temp - TEMP_IDLE) {
-            if (level.getGameTime() % 2 == 0) temp++;
-        } else if (tempTarget < temp - TEMP_IDLE) {
-            if (level.getGameTime() % 2 == 0) temp--;
-        }
-
-        // Original: SOOT_PER_SECOND * 3 im Sekundentakt - ausser bei Knallgas, das sauber verbrennt.
-        if (level.getGameTime() % 20 == 0
-                && gasTank.getTankType() != ModFluids.OXYHYDROGEN.getSource()) {
-            PollutionHandler.incrementPollution(level, worldPosition, PollutionType.SOOT,
-                    PollutionHandler.SOOT_PER_SECOND * 3);
-        }
-
-        double consMax = FUEL_MAX_CONSUMPTION.getOrDefault(gasTank.getTankType(), DEFAULT_MAX_CONSUMPTION);
-        makePower(consMax, throttle);
+    /** Original: Brenntemperatur aus der Verbrennungsenergie, 300 bis 800 Grad. */
+    protected int getFluidBurnTemp(Fluid type) {
+        FT_Combustible trait = FluidType.getTrait(type, FT_Combustible.class);
+        double dFuel = trait != null ? trait.getCombustionEnergy() : 0;
+        return (int) Math.floor(800D - (Math.pow(Math.E, -dFuel / 100_000D)) * 300D);
     }
 
-    private boolean hasAcceptableFuel() {
-        FT_Combustible trait = FluidType.getTrait(gasTank.getStoredFluid(), FT_Combustible.class);
-        return trait != null && trait.getGrade() == FuelGrade.GAS;
+    private void run(Level world) {
+
+        if ((int) (throttle * 0.9) > rpm - rpmIdle) {
+            if (world.getGameTime() % 5 == 0) rpm++;
+        } else if ((int) (throttle * 0.9) < rpm - rpmIdle) {
+            if (world.getGameTime() % 2 == 0) rpm--;
+        }
+
+        int maxTemp = getFluidBurnTemp(tanks[0].getTankType());
+
+        if (throttle * 5 * (maxTemp - tempIdle) / 500 > temp - tempIdle) {
+            if (world.getGameTime() % 2 == 0) temp++;
+        } else if (throttle * 5 * (maxTemp - tempIdle) / 500 < temp - tempIdle) {
+            if (world.getGameTime() % 2 == 0) temp--;
+        }
+
+        double consumption = fuelMaxCons.getOrDefault(tanks[0].getTankType(), 5D);
+        if (world.getGameTime() % 20 == 0 && tanks[0].getTankType() != ModFluids.OXYHYDROGEN.getSource())
+            PollutionHandler.incrementPollution(world, worldPosition, PollutionType.SOOT, PollutionHandler.SOOT_PER_SECOND * 3);
+        makePower(world, consumption, throttle);
     }
 
-    /** 1:1-Port von {@code makePower(double consMax, int throttle)}. */
-    private void makePower(double consMax, int throttle) {
+    private void makePower(Level world, double consMax, int throttle) {
 
-        // Original: Leerlaufverbrauch plus lastabhaengiger Anteil.
         double idleConsumption = consMax * 0.05D;
-        double consumption = idleConsumption + consMax * throttle / 100D;
+        double consumption = idleConsumption + consMax * throttle / 100;
 
         fuelToConsume += consumption;
-        int toDrainFuel = (int) Math.floor(fuelToConsume);
-        fuelToConsume -= toDrainFuel;
 
-        if (toDrainFuel > 0) {
-            if (toDrainFuel >= gasTank.getFluidAmountMb()) {
-                gasTank.drainMb(gasTank.getFluidAmountMb());
-                state = 0;
-            } else {
-                gasTank.drainMb(toDrainFuel);
-            }
+        tanks[0].setFill(tanks[0].getFill() - (int) Math.floor(fuelToConsume));
+        fuelToConsume -= (int) Math.floor(fuelToConsume);
+
+        if (world.getGameTime() % 10 == 0) tanks[1].setFill(tanks[1].getFill() - 1);
+
+        if (tanks[0].getFill() < 0) {
+            tanks[0].setFill(0);
+            state = 0;
+        }
+        if (tanks[1].getFill() < 0) {
+            tanks[1].setFill(0);
+            state = 0;
         }
 
-        if (level.getGameTime() % 10 == 0) {
-            if (lubeTank.getFluidAmountMb() <= 1) {
-                lubeTank.drainMb(lubeTank.getFluidAmountMb());
-                state = 0;
-            } else {
-                lubeTank.drainMb(1);
-            }
+        long energyPerMb = 0;
+        FT_Combustible trait = FluidType.getTrait(tanks[0].getTankType(), FT_Combustible.class);
+        if (trait != null) energyPerMb = trait.getCombustionEnergy() / 1000L;
+
+        int rpmEff = rpm - rpmIdle;
+
+        if (instantPowerOutput < (consMax * energyPerMb * rpmEff / 90)) {
+            instantPowerOutput += Math.random() * 0.005 * consMax * energyPerMb;
+            if (instantPowerOutput > (consMax * energyPerMb * rpmEff / 90))
+                instantPowerOutput = (int) (consMax * energyPerMb * rpmEff / 90);
+        } else if (instantPowerOutput > (consMax * energyPerMb * rpmEff / 90)) {
+            instantPowerOutput -= Math.random() * 0.011 * consMax * energyPerMb;
+            if (instantPowerOutput < (consMax * energyPerMb * rpmEff / 90))
+                instantPowerOutput = (int) (consMax * energyPerMb * rpmEff / 90);
         }
+        this.energy += instantPowerOutput;
 
-        FT_Combustible trait = FluidType.getTrait(gasTank.getStoredFluid(), FT_Combustible.class);
-        long energyPerMb = trait != null ? trait.getCombustionEnergy() / 1000L : 0L;
+        double waterPerTick = (consMax * energyPerMb * (temp - tempIdle) / 220000);
 
-        // Original: rpmEff ist die Drehzahl oberhalb des Leerlaufs, 0 bis 90.
-        int rpmEff = rpm - RPM_IDLE;
-        double targetOutput = consMax * energyPerMb * rpmEff / 90D;
+        this.waterToBoil = waterPerTick;
 
-        // Original: die Leistung wird herangefuehrt statt umgeschaltet, damit sie nicht springt.
-        if (instantPowerOutput < targetOutput) {
-            instantPowerOutput += Math.random() * 0.005D * consMax * energyPerMb;
-            if (instantPowerOutput > targetOutput) instantPowerOutput = (int) targetOutput;
-        } else if (instantPowerOutput > targetOutput) {
-            instantPowerOutput -= Math.random() * 0.011D * consMax * energyPerMb;
-            if (instantPowerOutput < targetOutput) instantPowerOutput = (int) targetOutput;
-        }
-
-        if (instantPowerOutput > 0) {
-            setEnergyStored(Math.min(getMaxEnergyStored(), getEnergyStored() + instantPowerOutput));
-        }
-
-        // Original: die verdampfte Wassermenge haengt an der Temperatur ueber Leerlauf.
-        double waterPerTick = consMax * energyPerMb * (temp - TEMP_IDLE) / 220_000D;
-        waterToBoil = waterPerTick;
-        waterToBoilAcc += Math.max(0D, waterPerTick);
-
-        int heatCycles = (int) Math.floor(waterToBoilAcc);
-        int waterCycles = waterTank.getFluidAmountMb();
-        int steamCycles = (hotsteamTank.getCapacityMb() - hotsteamTank.getFluidAmountMb()) / 10;
+        int heatCycles = (int) Math.floor(waterToBoil);
+        int waterCycles = tanks[2].getFill();
+        int steamCycles = (tanks[3].getMaxFill() - tanks[3].getFill()) / 10;
         int cycles = Math.min(heatCycles, Math.min(waterCycles, steamCycles));
-        if (cycles > 0) {
-            waterToBoilAcc -= cycles;
-            waterTank.drainMb(cycles);
-            hotsteamTank.fillMb(ModFluids.HOTSTEAM.getSource(), cycles * 10);
-        }
+
+        tanks[2].setFill(tanks[2].getFill() - cycles);
+        tanks[3].setFill(tanks[3].getFill() + cycles * 10);
     }
 
-    /** 1:1 aus dem Original: skaliert von 300°C-800°C anhand der Verbrennungsenergie. */
-    private static int getFluidBurnTemp(FT_Combustible trait) {
-        double dFuel = trait.getCombustionEnergy();
-        return (int) Math.floor(800D - Math.pow(Math.E, -dFuel / 100_000D) * 300D);
+    // ==================== Steuerung ====================
+
+    @Override
+    public boolean hasPermission(Player player) {
+        return Math.sqrt(player.distanceToSqr(worldPosition.getX(), worldPosition.getY(), worldPosition.getZ())) < 25;
     }
 
-    // ── IFluidStandardTransceiverMK2 ─────────────────────────────────────────
-
     @Override
-    public FluidTank[] getAllTanks() { return new FluidTank[] { gasTank, lubeTank, waterTank, hotsteamTank }; }
-
-    @Override
-    public FluidTank[] getReceivingTanks() { return new FluidTank[] { gasTank, lubeTank, waterTank }; }
-
-    @Override
-    public FluidTank[] getSendingTanks() {
-        return hotsteamTank.getFill() > 0 ? new FluidTank[]{ hotsteamTank } : FluidTank.EMPTY_ARRAY;
+    public void receiveControl(CompoundTag data) {
+        if (data.contains("slidPos")) powerSliderPos = (int) data.getDouble("slidPos");
+        if (data.contains("autoMode")) autoMode = data.getBoolean("autoMode");
+        if (data.contains("state")) state = data.getInt("state");
+        this.setChanged();
     }
+
+    @Override
+    public boolean canConnectEnergy(Direction side) {
+        return side != Direction.DOWN;
+    }
+
+    // ==================== Fluid ====================
+
+    @Override public FluidTank[] getAllTanks() { return tanks; }
+    @Override public FluidTank[] getReceivingTanks() { return new FluidTank[] { tanks[0], tanks[1], tanks[2] }; }
+    @Override public FluidTank[] getSendingTanks() { return new FluidTank[] { tanks[3] }; }
 
     @Override
     public boolean isLoaded() {
@@ -416,91 +346,172 @@ public class MachineTurbineGasBlockEntity extends BaseMachineBlockEntity impleme
 
     @Override
     public boolean canConnect(Fluid fluid, Direction fromDir) {
-        if (fromDir == null || fluid == null || fluid == Fluids.EMPTY) return false;
-        if (VanillaFluidEquivalence.sameSubstance(fluid, ModFluids.HOTSTEAM.getSource())) return true;
-        if (VanillaFluidEquivalence.sameSubstance(fluid, ModFluids.WATER.getSource())) return true;
-        if (VanillaFluidEquivalence.sameSubstance(fluid, ModFluids.LUBRICANT.getSource())) return true;
-        FT_Combustible trait = FluidType.getTrait(fluid, FT_Combustible.class);
-        return trait != null && trait.getGrade() == FuelGrade.GAS;
+        return fromDir != null && fromDir != Direction.DOWN;
     }
 
-    // ── Accessors ────────────────────────────────────────────────────────────
+    // ==================== Accessors ====================
 
-    public int getRpm()      { return rpm; }
-    public int getTemp()     { return temp; }
-    public int getState()    { return state; }
+    public FluidTank getGasTank() { return tanks[0]; }
+    public FluidTank getLubeTank() { return tanks[1]; }
+    public FluidTank getWaterTank() { return tanks[2]; }
+    public FluidTank getHotsteamTank() { return tanks[3]; }
+    public int getRpm() { return rpm; }
+    public int getTemp() { return temp; }
+    public int getState() { return state; }
     public int getThrottle() { return throttle; }
-    public double getWaterToBoil() { return waterToBoil; }
     public int getInstantPowerOutput() { return instantPowerOutput; }
+    public double getWaterToBoil() { return waterToBoil; }
+    public boolean isActive() { return state == 1; }
 
-    public FluidTank getGasTank()      { return gasTank; }
-    public FluidTank getLubeTank()     { return lubeTank; }
-    public FluidTank getWaterTank()    { return waterTank; }
-    public FluidTank getHotsteamTank() { return hotsteamTank; }
-
-    public boolean isActive() { return active; }
-
-    public int getPowerScaled(int scale) {
-        long max = Math.max(getMaxEnergyStored(), 1L);
-        return (int) Math.min(scale, getEnergyStored() * scale / max);
-    }
-
-    // ── NBT ─────────────────────────────────────────────────────────────────
+    // ==================== NBT ====================
 
     @Override
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.writeNbtData(tag, registries);
-        tag.putBoolean("active", active);
-        tag.putDouble("fuel_to_consume", fuelToConsume);
-        tag.putDouble("water_to_boil_acc", waterToBoilAcc);
-        tag.putInt("rpm", rpm);
-        tag.putInt("temp", temp);
-        tag.putInt("state", state);
-        tag.putInt("counter", counter);
-        tag.putInt("slider", powerSliderPos);
-        tag.putInt("instantPower", instantPowerOutput);
-        tag.putInt("rpmLast", rpmLast);
-        tag.putInt("tempLast", tempLast);
-        gasTank.writeToNBT(tag, "gas");
-        lubeTank.writeToNBT(tag, "lube");
-        waterTank.writeToNBT(tag, "water");
-        hotsteamTank.writeToNBT(tag, "hotsteam");
+        tanks[0].writeToNBT(tag, "gas");
+        tanks[1].writeToNBT(tag, "lube");
+        tanks[2].writeToNBT(tag, "water");
+        tanks[3].writeToNBT(tag, "densesteam");
+        tag.putBoolean("automode", autoMode);
+        tag.putLong("power", energy);
+        // Original: nur der laufende Zustand wird gespeichert
+        if (state == 1) {
+            tag.putInt("state", this.state);
+            tag.putInt("rpm", this.rpm);
+            tag.putInt("temperature", this.temp);
+            tag.putInt("slidPos", this.powerSliderPos);
+            tag.putInt("instPwr", instantPowerOutput);
+            tag.putInt("counter", 225);
+        } else {
+            tag.putInt("state", 0);
+            tag.putInt("rpm", 0);
+            tag.putInt("temperature", 20);
+            tag.putInt("slidPos", 0);
+            tag.putInt("instpwr", 0);
+            tag.putInt("counter", 0);
+        }
+        // Client-Sync (Original serialize)
+        tag.putLong("powerBeforeNet", powerBeforeNet);
+        tag.putInt("syncState", state);
+        tag.putInt("syncRpm", rpm);
+        tag.putInt("syncTemp", temp);
+        tag.putInt("syncSlid", powerSliderPos);
+        tag.putInt("syncThrottle", throttle);
+        tag.putInt("syncCounter", counter);
+        tag.putInt("syncInst", instantPowerOutput);
     }
 
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.readNbtData(tag, registries);
-        active = tag.getBoolean("active");
-        fuelToConsume = tag.getDouble("fuel_to_consume");
-        waterToBoilAcc = tag.getDouble("water_to_boil_acc");
-        rpm = tag.getInt("rpm");
-        temp = tag.getInt("temp");
-        state = tag.getInt("state");
-        counter = tag.getInt("counter");
-        powerSliderPos = tag.getInt("slider");
-        instantPowerOutput = tag.getInt("instantPower");
-        rpmLast = tag.getInt("rpmLast");
-        tempLast = tag.getInt("tempLast");
-        gasTank.readFromNBT(tag, "gas");
-        lubeTank.readFromNBT(tag, "lube");
-        waterTank.readFromNBT(tag, "water");
-        hotsteamTank.readFromNBT(tag, "hotsteam");
+        tanks[0].readFromNBT(tag, "gas");
+        tanks[1].readFromNBT(tag, "lube");
+        tanks[2].readFromNBT(tag, "water");
+        tanks[3].readFromNBT(tag, "densesteam");
+        this.autoMode = tag.getBoolean("automode");
+        this.energy = tag.getLong("power");
+        this.state = tag.getInt("state");
+        this.rpm = tag.getInt("rpm");
+        this.temp = tag.getInt("temperature");
+        this.powerSliderPos = tag.getInt("slidPos");
+        this.instantPowerOutput = tag.getInt("instPwr");
+        this.counter = tag.getInt("counter");
     }
 
-    // ── Slot validation ──────────────────────────────────────────────────────
+    @Override
+    protected void applyClientUpdate(CompoundTag tag) {
+        super.applyClientUpdate(tag);
+        this.energy = tag.getLong("powerBeforeNet");
+        this.state = tag.getInt("syncState");
+        this.rpm = tag.getInt("syncRpm");
+        this.temp = tag.getInt("syncTemp");
+        this.powerSliderPos = tag.getInt("syncSlid");
+        this.throttle = tag.getInt("syncThrottle");
+        // Original serialize: im Betrieb kommt die Momentanleistung, sonst der Zaehler
+        if (this.state != 1) this.counter = tag.getInt("syncCounter");
+        else this.instantPowerOutput = tag.getInt("syncInst");
+    }
+
+    // ==================== ROR ====================
+
+    @Override
+    public String[] getFunctionInfo() {
+        return new String[] {
+                PREFIX_VALUE + "turbinepercent",
+                PREFIX_VALUE + "turbinespeed",
+                PREFIX_VALUE + "output",
+                PREFIX_VALUE + "state",
+                PREFIX_VALUE + "automode",
+                PREFIX_VALUE + "temp",
+                PREFIX_VALUE + "power",
+                PREFIX_VALUE + "fuel",
+                PREFIX_VALUE + "lubricant",
+                PREFIX_VALUE + "water",
+                PREFIX_VALUE + "steam",
+                PREFIX_FUNCTION + "setauto" + NAME_SEPARATOR + "auto",
+                PREFIX_FUNCTION + "setthrottle" + NAME_SEPARATOR + "percent",
+                PREFIX_FUNCTION + "setstate" + NAME_SEPARATOR + "state"
+        };
+    }
+
+    @Override
+    public String provideRORValue(String name) {
+        if ((PREFIX_VALUE + "turbinepercent").equals(name)) return "" + (int) (this.powerSliderPos * 100D / 60D);
+        if ((PREFIX_VALUE + "turbinespeed").equals(name)) return "" + this.rpm;
+        if ((PREFIX_VALUE + "output").equals(name)) return "" + (int) (this.instantPowerOutput * 20);
+        if ((PREFIX_VALUE + "state").equals(name)) return "" + this.state;
+        if ((PREFIX_VALUE + "automode").equals(name)) return "" + (this.autoMode ? 1 : 0);
+        if ((PREFIX_VALUE + "temp").equals(name)) return "" + this.temp;
+        if ((PREFIX_VALUE + "power").equals(name)) return "" + this.energy;
+        if ((PREFIX_VALUE + "fuel").equals(name)) return "" + tanks[0].getFill();
+        if ((PREFIX_VALUE + "lubricant").equals(name)) return "" + tanks[1].getFill();
+        if ((PREFIX_VALUE + "water").equals(name)) return "" + tanks[2].getFill();
+        if ((PREFIX_VALUE + "steam").equals(name)) return "" + tanks[3].getFill();
+        return null;
+    }
+
+    @Override
+    public String runRORFunction(String name, String[] params) {
+        if ((PREFIX_FUNCTION + "setauto").equals(name) && params.length > 0) {
+            try {
+                this.autoMode = Integer.parseInt(params[0]) == 1;
+                this.setChanged();
+            } catch (NumberFormatException e) { }
+            return null;
+        }
+        if ((PREFIX_FUNCTION + "setthrottle").equals(name) && params.length > 0) {
+            try {
+                int percent = Math.max(0, Math.min(100, Integer.parseInt(params[0])));
+                this.powerSliderPos = percent * 60 / 100;
+                this.setChanged();
+            } catch (NumberFormatException e) { }
+            return null;
+        }
+        if ((PREFIX_FUNCTION + "setstate").equals(name) && params.length > 0) {
+            try {
+                int newState = Integer.parseInt(params[0]);
+                if (newState == 1) {
+                    if (this.state == 0) this.state = -1;
+                } else if (newState == 0) {
+                    if (this.state == 1) this.state = 0;
+                }
+                this.setChanged();
+            } catch (NumberFormatException e) { }
+            return null;
+        }
+        return null;
+    }
+
+    // ==================== Sonstiges ====================
 
     @Override
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
         return switch (slot) {
-            case SLOT_BATTERY -> stack.getItem() instanceof ItemCreativeBattery
-                                  || isEnergyProviderItem(stack)
-                                  || isEnergyReceiverItem(stack);
+            case SLOT_BATTERY -> isEnergyProviderItem(stack) || isEnergyReceiverItem(stack);
             case SLOT_FLUID_ID -> stack.getItem() instanceof FluidIdentifierItem;
             default -> false;
         };
     }
-
-    // ── Menu ────────────────────────────────────────────────────────────────
 
     @Override
     protected Component getDefaultName() {
@@ -515,5 +526,14 @@ public class MachineTurbineGasBlockEntity extends BaseMachineBlockEntity impleme
     @Override
     public AbstractContainerMenu createMenu(int id, Inventory inventory, Player player) {
         return MachineTurbineGasMenu.create(id, inventory, this);
+    }
+
+    /** Original: 11x3x11 um den Kern. */
+    //? if forge {
+    @Override
+    //?}
+    public AABB getRenderBoundingBox() {
+        return new AABB(worldPosition.getX() - 5, worldPosition.getY(), worldPosition.getZ() - 5,
+                worldPosition.getX() + 6, worldPosition.getY() + 3, worldPosition.getZ() + 6);
     }
 }

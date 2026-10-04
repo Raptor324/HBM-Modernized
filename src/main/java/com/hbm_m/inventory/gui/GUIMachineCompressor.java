@@ -84,7 +84,7 @@ public class GUIMachineCompressor extends GuiInfoScreen<MachineCompressorMenu> {
         int j = (int) (compressor.getEnergyStored() * 52 / MachineCompressorBaseBlockEntity.maxPower);
         g.blit(TEXTURE, leftPos + 152, topPos + 70 - j, 176, 52 - j, 16, j);
 
-        compressor.tanks[0].renderTank(g, leftPos + 17, topPos + 70, 16, 52);
-        compressor.tanks[1].renderTank(g, leftPos + 107, topPos + 70, 16, 52);
+        compressor.tanks[0].renderTank(g, leftPos + 17, topPos + 18, 16, 52);
+        compressor.tanks[1].renderTank(g, leftPos + 107, topPos + 18, 16, 52);
     }
 }

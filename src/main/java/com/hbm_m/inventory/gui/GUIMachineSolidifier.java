@@ -45,7 +45,7 @@ public class GUIMachineSolidifier extends GuiInfoScreen<MachineSolidifierMenu> {
             guiGraphics.blit(TEXTURE, this.leftPos + 138, this.topPos + 4, 176, 52, 9, 12);
         }
 
-        solidifier.getTank().renderTank(guiGraphics, this.leftPos + 35, this.topPos + 88, 16, 52);
+        solidifier.getTank().renderTank(guiGraphics, this.leftPos + 35, this.topPos + 36, 16, 52);
     }
 
     @Override

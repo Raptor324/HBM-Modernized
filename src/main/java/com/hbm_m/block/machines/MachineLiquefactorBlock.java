@@ -1,93 +1,100 @@
 package com.hbm_m.block.machines;
 
-import javax.annotation.Nullable;
+import java.util.List;
 
+import org.jetbrains.annotations.Nullable;
+
+import com.hbm_m.block.ModBlocks;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.blockentity.machines.MachineLiquefactorBlockEntity;
-import com.hbm_m.interfaces.IMultiblockController;
+import com.hbm_m.multiblock.DummyableStructureBuilder;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
-import com.hbm_m.multiblock.MultiblockStructureStubs;
-import com.hbm_m.multiblock.PartRole;
+
+import dev.architectury.registry.menu.MenuRegistry;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.Containers;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
-import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.TooltipFlag;
+import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.BaseEntityBlock;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
-import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.block.state.StateDefinition;
-import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
-//? if forge {
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-//?}
-import dev.architectury.registry.menu.MenuRegistry;
 
-public class MachineLiquefactorBlock extends BaseEntityBlock implements IMultiblockController {
-    public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
-    private final MultiblockStructureHelper structureHelper;
-    public MachineLiquefactorBlock(BlockBehaviour.Properties p) {
-        super(p);
-        this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH));
-        this.structureHelper = MultiblockStructureStubs.singleController();
+/**
+ * 1:1 {@code MachineLiquefactor}: {@code getDimensions {3,0,1,1,1,1}}, {@code getOffset 1}; Anschlusszellen oben auf der
+ * Saeule und an den vier Seiten in der zweiten Ebene. Gezeichnet vom {@code SolidifierRenderer.liquefactor}.
+ */
+public class MachineLiquefactorBlock extends DummyableMachineBlock {
+
+    public MachineLiquefactorBlock(Properties properties) {
+        super(properties);
     }
-    @Override public RenderShape getRenderShape(BlockState s) { return RenderShape.MODEL; }
-    @Override protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> b) { b.add(FACING); }
-    @Nullable @Override public BlockState getStateForPlacement(BlockPlaceContext c) { return this.defaultBlockState().setValue(FACING, c.getHorizontalDirection().getOpposite()); }
-    @Override public void onRemove(BlockState s, Level l, BlockPos p, BlockState ns, boolean m) {
-        if (s.getBlock() != ns.getBlock() && l.getBlockEntity(p) instanceof com.hbm_m.blockentity.BaseMachineBlockEntity machine) {
-            machine.dropInventoryContents();
-        }
-        super.onRemove(s, l, p, ns, m);
+
+    @Override
+    protected MultiblockStructureHelper defineStructure() {
+        return DummyableStructureBuilder.create()
+                .box(3, 0, 1, 1, 1, 1)
+                .extra(0, 3, 0)
+                .extra(1, 1, 0)
+                .extra(-1, 1, 0)
+                .extra(0, 1, 1)
+                .extra(0, 1, -1)
+                .placementOffset(1)
+                .build(() -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState());
     }
-    @Nullable @Override public BlockEntity newBlockEntity(BlockPos p, BlockState s) { return new MachineLiquefactorBlockEntity(p, s); }
+
+    @Override
+    public RenderShape getRenderShape(BlockState state) {
+        return RenderShape.ENTITYBLOCK_ANIMATED;
+    }
+
+    @Nullable
+    @Override
+    public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
+        return new MachineLiquefactorBlockEntity(pos, state);
+    }
+
+    @Nullable
+    @Override
+    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
+        return createTickerHelper(type, ModBlockEntities.LIQUEFACTOR_BE.get(),
+                (lvl, pos, st, be) -> MachineLiquefactorBlockEntity.tick(lvl, pos, st, be));
+    }
+
     //? if < 1.21.1 {
-    @Override public InteractionResult use(BlockState s, Level l, BlockPos p, Player pl, InteractionHand h, BlockHitResult r) {
-        return openMenu(s, l, p, pl, h, r);
+    @Override
+    public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        return open(level, pos, player);
     }
     //?} else {
     /*@Override
-    protected InteractionResult useWithoutItem(BlockState s, Level l, BlockPos p, Player pl, BlockHitResult r) {
-        return openMenu(s, l, p, pl, InteractionHand.MAIN_HAND, r);
+    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+        return open(level, pos, player);
     }
     *///?}
 
-    private InteractionResult openMenu(BlockState s, Level l, BlockPos p, Player pl, InteractionHand h, BlockHitResult r) {
-        if (!l.isClientSide() && l.getBlockEntity(p) instanceof MenuProvider mp) MenuRegistry.openExtendedMenu((ServerPlayer) pl, mp, buf -> buf.writeBlockPos(p));
-        return InteractionResult.sidedSuccess(l.isClientSide());
-    }
-    @Nullable @Override public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level l, BlockState s, BlockEntityType<T> t) {
-        return createTickerHelper(t, ModBlockEntities.LIQUEFACTOR_BE.get(), MachineLiquefactorBlockEntity::tick);
-    }
-
-    @Override
-    public MultiblockStructureHelper getStructureHelper() {
-        return structureHelper;
+    private InteractionResult open(Level level, BlockPos pos, Player player) {
+        if (!level.isClientSide() && !player.isShiftKeyDown() && level.getBlockEntity(pos) instanceof MachineLiquefactorBlockEntity liquefactor) {
+            MenuRegistry.openExtendedMenu((ServerPlayer) player, liquefactor, buf -> buf.writeBlockPos(pos));
+        }
+        return InteractionResult.sidedSuccess(level.isClientSide());
     }
 
     @Override
-    public PartRole getPartRole(BlockPos localOffset) {
-        return structureHelper.resolvePartRole(localOffset, this);
+    public void appendHoverText(ItemStack stack, @Nullable BlockGetter level, List<Component> list, TooltipFlag flag) {
+        com.hbm_m.util.StandardInfo.add(list, getDescriptionId() + ".desc");
     }
 
     //? if >1.20.1 {
     /*public static final com.mojang.serialization.MapCodec<MachineLiquefactorBlock> CODEC = simpleCodec(MachineLiquefactorBlock::new);
-
-    @Override
-    protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
-        return CODEC;
-    }
+    @Override protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() { return CODEC; }
     *///?}
 }

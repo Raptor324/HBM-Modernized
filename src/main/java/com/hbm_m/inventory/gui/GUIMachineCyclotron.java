@@ -49,9 +49,9 @@ public class GUIMachineCyclotron extends GuiInfoScreen<MachineCyclotronMenu> {
 
         if (cyclotron != null) {
             var tanks = cyclotron.getAllTanks();
-            tanks[0].renderTank(guiGraphics, this.leftPos + 11, this.topPos + 88, 34, 7, 1);
-            tanks[1].renderTank(guiGraphics, this.leftPos + 11, this.topPos + 97, 34, 7, 1);
-            tanks[2].renderTank(guiGraphics, this.leftPos + 107, this.topPos + 97, 34, 16, 1);
+            tanks[0].renderTank(guiGraphics, this.leftPos + 11, this.topPos + 81, 34, 7, 1);
+            tanks[1].renderTank(guiGraphics, this.leftPos + 11, this.topPos + 90, 34, 7, 1);
+            tanks[2].renderTank(guiGraphics, this.leftPos + 107, this.topPos + 81, 34, 16, 1);
         }
     }
 

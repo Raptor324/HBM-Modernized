@@ -44,12 +44,19 @@ public class SilexJeiCategory extends JeiFluidRecipeCategory<SilexRecipe> {
 
     @Override
     protected List<FluidStack> getInputFluids(SilexRecipe recipe) {
-        return List.of(FluidStack.create(ModFluids.PEROXIDE.getSource(), recipe.getPeroxideMb()));
+        // Original: Items laden mit Peroxid, Fluid-Rezepte pumpen das Fluid selbst in die Ladeleiste
+        if (recipe.getFluids().isEmpty()) return List.of(FluidStack.create(ModFluids.PEROXIDE.getSource(), recipe.getFluidProduced()));
+        List<FluidStack> out = new ArrayList<>();
+        for (var id : recipe.getFluids()) {
+            var fluid = net.minecraft.core.registries.BuiltInRegistries.FLUID.get(id);
+            if (fluid != null) out.add(FluidStack.create(fluid, recipe.getFluidProduced()));
+        }
+        return out;
     }
 
     @Override
     protected List<Ingredient> getInputItems(SilexRecipe recipe) {
-        return List.of(recipe.getInput());
+        return recipe.getInput().isEmpty() ? List.of() : List.of(recipe.getInput());
     }
 
     @Override

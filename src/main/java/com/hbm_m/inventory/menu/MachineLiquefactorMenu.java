@@ -21,7 +21,7 @@ public class MachineLiquefactorMenu extends AbstractContainerMenu {
     private final MachineLiquefactorBlockEntity blockEntity;
     private static final int SLOT_INPUT = MachineLiquefactorBlockEntity.SLOT_INPUT;
     private static final int SLOT_BATTERY = MachineLiquefactorBlockEntity.SLOT_BATTERY;
-    private static final int MACHINE_SLOT_COUNT = 2;
+    private static final int MACHINE_SLOT_COUNT = MachineLiquefactorBlockEntity.SLOT_COUNT;
     private static final int PLAYER_INV_START = MACHINE_SLOT_COUNT;
     private static final int PLAYER_INV_END = MACHINE_SLOT_COUNT + 36;
 
@@ -36,6 +36,13 @@ public class MachineLiquefactorMenu extends AbstractContainerMenu {
         var container = new ModItemStackHandlerContainer(blockEntity.getInventory(), blockEntity::setChanged);
         this.addSlot(new Slot(container, SLOT_INPUT, 35, 54));
         this.addSlot(new Slot(container, SLOT_BATTERY, 134, 72));
+        // Original SlotUpgrade
+        for (int i = 0; i < 2; i++) {
+            final int s = MachineLiquefactorBlockEntity.SLOT_UPGRADE_1 + i;
+            this.addSlot(new Slot(container, s, 98, 36 + i * 18) {
+                @Override public boolean mayPlace(ItemStack stack) { return stack.getItem() instanceof com.hbm_m.item.industrial.ItemMachineUpgrade; }
+            });
+        }
 
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 9; col++) {
@@ -86,6 +93,8 @@ public class MachineLiquefactorMenu extends AbstractContainerMenu {
                 if (!this.moveItemStackTo(slotStack, PLAYER_INV_START, PLAYER_INV_END, true)) {
                     return ItemStack.EMPTY;
                 }
+            } else if (slotStack.getItem() instanceof com.hbm_m.item.industrial.ItemMachineUpgrade) {
+                if (!this.moveItemStackTo(slotStack, 2, 4, false)) return ItemStack.EMPTY;
             } else {
                 if (!this.moveItemStackTo(slotStack, SLOT_INPUT, SLOT_INPUT + 1, false)) {
                     return ItemStack.EMPTY;

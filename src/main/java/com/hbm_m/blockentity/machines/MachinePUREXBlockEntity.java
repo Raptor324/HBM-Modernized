@@ -1,21 +1,32 @@
 package com.hbm_m.blockentity.machines;
 
+import java.util.EnumMap;
 import java.util.List;
+import java.util.Map;
 
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.api.fluids.IFluidStandardTransceiverMK2;
+import com.hbm_m.api.redstoneoverradio.IRORValueProvider;
 import com.hbm_m.blockentity.BaseMachineBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
+import com.hbm_m.inventory.UpgradeManager;
+import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.inventory.menu.MachinePUREXMenu;
+import com.hbm_m.item.industrial.ItemMachineUpgrade;
+import com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType;
+import com.hbm_m.module.machine.MachineModulePurex;
 import com.hbm_m.recipe.PurexRecipe;
 
-import dev.architectury.fluid.FluidStack;
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
@@ -23,205 +34,171 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
+import net.minecraft.world.phys.AABB;
 
 /**
- * PUREX - Port von {@code TileEntityMachinePUREX}/{@code ModuleMachinePUREX} (1.7.10 Original,
- * "Plutonium-Uranium Redox EXtraction"). Der mod-interne allgemeine Wiederaufbereitungs-Knoten
- * fuer ~40 unzusammenhaengende Chemie-/Abfall-Rezepte (Zirnox-/PWR-/Watz-Abfall -> Nuggets +
- * Kern-Abfall, Schrabidium-Extraktion, Antimaterie-Verarbeitung, etc.) - siehe {@link PurexRecipe}
- * fuer die Rezeptform (bis zu 3 Item-Eingaenge, 3 Fluid-Eingaenge, 6 Item-Ausgaenge, 1 Fluid-
- * Ausgang je Rezept), 1:1 aus dem Original-Limit uebernommen.
- * <p>
- * SCOPE-Entscheidungen:
- * <ul>
- *   <li>Sie belegt wie im Original fuenf mal fuenf Felder und fuenf in der Hoehe
- *   ({@code getDimensions {4,0,2,2,2,2}}); der ganze Sockelrand ist Anschlussflaeche.</li>
- *   <li>Kein Blueprint-Slot/Rezeptauswahl-GUI (Original waehlt manuell aus einer Liste passender
- *   Rezepte). Stattdessen automatische Erkennung: jeden Tick wird das erste {@link PurexRecipe}
- *   gesucht, dessen Item-/Fluid-Eingaenge mit dem aktuellen Slot-/Tank-Inhalt uebereinstimmen -
- *   entspricht in etwa den "Autoswitch-Gruppen" des Originals (automatische Erkennung anhand des
- *   eingelegten Materials), nur global statt gruppenweise.</li>
- *   <li>Kein Upgrade-System (SPEED/POWER-Slots) - konsistent mit dem Rest dieses Ports.</li>
- * </ul>
+ * 1:1 {@code TileEntityMachinePUREX}: 13 Slots (Batterie, Blueprint-Ordner, zwei Upgrades, drei Eingaenge, sechs
+ * Ausgaenge), drei Eingangs- und ein Ausgangstank zu je 24.000 mB, Rezept per Rezeptwaehler. Der Energiespeicher
+ * waechst mit dem Rezept ({@code power * 100}, mindestens 1.000.000). Upgrades: Tempo/Strom/Overdrive je bis 3.
+ * Zwanzig Anschluesse rund um den Sockelrand. Clientseitig dreht sich der Luefter, pumpt der Kolben und das Geruest
+ * erscheint, sobald ueber der Anlage ein Block sitzt.
  */
-public class MachinePUREXBlockEntity extends BaseMachineBlockEntity implements IFluidStandardTransceiverMK2 {
+public class MachinePUREXBlockEntity extends BaseMachineBlockEntity implements IFluidStandardTransceiverMK2,
+        com.hbm_m.interfaces.IUpgradeInfoProvider, IRORValueProvider {
 
     public static final int SLOT_BATTERY = 0;
-    public static final int ITEM_INPUT_START = 1;
-    private static final int ITEM_INPUT_COUNT = 3;
-    public static final int ITEM_OUTPUT_START = 4;
-    private static final int ITEM_OUTPUT_COUNT = 6;
-    private static final int SLOT_COUNT = 10;
+    public static final int SLOT_BLUEPRINT = 1;
+    public static final int SLOT_UPGRADE_1 = 2;
+    public static final int SLOT_UPGRADE_2 = 3;
+    public static final int ITEM_INPUT_START = 4;
+    public static final int ITEM_OUTPUT_START = 7;
+    public static final int SLOT_COUNT = 13;
 
-    private static final int TANK_CAPACITY_MB = 24_000;
-    private static final long MAX_POWER = 1_000_000L;
+    private static final Map<UpgradeType, Integer> VALID_UPGRADES = new EnumMap<>(UpgradeType.class);
+    static {
+        VALID_UPGRADES.put(UpgradeType.SPEED, 3);
+        VALID_UPGRADES.put(UpgradeType.POWER, 3);
+        VALID_UPGRADES.put(UpgradeType.OVERDRIVE, 3);
+    }
 
-    private final FluidTank[] inputTanks = new FluidTank[3];
-    private final FluidTank outputTank = new FluidTank(TANK_CAPACITY_MB);
+    public final FluidTank[] inputTanks = new FluidTank[3];
+    public final FluidTank[] outputTanks = new FluidTank[1];
 
-    private int progressTicks = 0;
-    private int currentDuration = 1;
+    public boolean didProcess = false;
+
+    public boolean frame = false;
+    public int anim;
+    public int prevAnim;
+
+    public final MachineModulePurex purexModule;
+    public final UpgradeManager upgradeManager = new UpgradeManager();
 
     public MachinePUREXBlockEntity(BlockPos pos, BlockState state) {
-        super(ModBlockEntities.PUREX_BE.get(), pos, state, SLOT_COUNT, MAX_POWER, MAX_POWER);
-        for (int i = 0; i < inputTanks.length; i++) {
-            inputTanks[i] = new FluidTank(TANK_CAPACITY_MB);
-        }
-    }
+        super(ModBlockEntities.PUREX_BE.get(), pos, state, SLOT_COUNT, 1_000_000L, 1_000_000L);
+        for (int i = 0; i < 3; i++) inputTanks[i] = new FluidTank(ModFluids.NONE.getSource(), 24_000);
+        outputTanks[0] = new FluidTank(ModFluids.NONE.getSource(), 24_000);
 
-    //? if forge {
-    @Override
-    public @org.jetbrains.annotations.NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(
-            net.minecraftforge.common.capabilities.Capability<T> cap, @Nullable Direction side) {
-        if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER) {
-            return inputTanks[0].getForgeFluidCapability().cast();
-        }
-        return super.getCapability(cap, side);
+        this.purexModule = new MachineModulePurex(this, inventory,
+                new int[] { 4, 5, 6 }, new int[] { 7, 8, 9, 10, 11, 12 },
+                inputTanks, outputTanks, null);
     }
-    //?}
 
     public static void tick(Level level, BlockPos pos, BlockState state, MachinePUREXBlockEntity be) {
-        if (level.isClientSide()) return;
-        be.serverTick(level, pos);
+        be.purexModule.setLevel(level);
+        if (level instanceof ServerLevel serverLevel) be.serverTick(serverLevel, pos);
+        else be.clientTick(level, pos);
     }
 
-    private void serverTick(Level level, BlockPos pos) {
+    private record DirPos(BlockPos pos, Direction dir) { }
+
+    private DirPos[] getConPos() {
+        BlockPos p = worldPosition;
+        DirPos[] out = new DirPos[20];
+        int n = 0;
+        for (int i = -2; i <= 2; i++) out[n++] = new DirPos(p.offset(3, 0, i), Direction.EAST);
+        for (int i = -2; i <= 2; i++) out[n++] = new DirPos(p.offset(-3, 0, i), Direction.WEST);
+        for (int i = -2; i <= 2; i++) out[n++] = new DirPos(p.offset(i, 0, 3), Direction.SOUTH);
+        for (int i = -2; i <= 2; i++) out[n++] = new DirPos(p.offset(i, 0, -3), Direction.NORTH);
+        return out;
+    }
+
+    private void serverTick(ServerLevel world, BlockPos pos) {
+
+        PurexRecipe recipe = purexModule.peekRecipe();
+        long maxPower = 1_000_000L;
+        if (recipe != null) maxPower = (long) recipe.getPowerConsumption() * 100L;
+        maxPower = Math.max(Math.max(energy, maxPower), 1_000_000L);
+        if (maxPower != getMaxEnergyStored()) setEnergyCapacity(maxPower);
+
         chargeFromBatterySlot(SLOT_BATTERY);
+        upgradeManager.checkSlots(inventory, SLOT_UPGRADE_1, SLOT_UPGRADE_2, VALID_UPGRADES);
 
-        if (level.getGameTime() % 20 == 0) {
-            for (Direction dir : Direction.values()) {
-                for (FluidTank tank : inputTanks) {
-                    trySubscribe(tank.getTankType(), level, pos.relative(dir), dir);
-                }
-                tryProvide(outputTank, level, pos.relative(dir), dir);
-            }
+        for (DirPos con : getConPos()) {
+            this.trySubscribe(world, con.pos.getX(), con.pos.getY(), con.pos.getZ(), con.dir);
+            for (FluidTank tank : inputTanks) if (tank.getTankType() != ModFluids.NONE.getSource()) this.trySubscribe(tank.getTankType(), world, con.pos, con.dir);
+            for (FluidTank tank : outputTanks) if (tank.getFill() > 0) this.tryProvide(tank, world, con.pos, con.dir);
         }
 
-        PurexRecipe recipe = findRecipe(level);
-        boolean dirty = false;
+        double speed = 1D;
+        double pow = 1D;
 
-        if (recipe != null && canProcess(recipe) && getEnergyStored() >= recipe.getPowerConsumption()) {
-            currentDuration = Math.max(1, recipe.getDuration());
-            progressTicks++;
-            setEnergyStored(getEnergyStored() - recipe.getPowerConsumption());
-            dirty = true;
-            if (progressTicks >= currentDuration) {
-                progressTicks = 0;
-                completeCycle(recipe);
-            }
-        } else if (progressTicks > 0) {
-            progressTicks = 0;
-            dirty = true;
-        }
+        speed += Math.min(upgradeManager.getLevel(UpgradeType.SPEED), 3) / 3D;
+        speed += Math.min(upgradeManager.getLevel(UpgradeType.OVERDRIVE), 3);
 
-        if (dirty) {
-            setChanged();
-            sendUpdateToClient();
+        pow -= Math.min(upgradeManager.getLevel(UpgradeType.POWER), 3) * 0.25D;
+        pow += Math.min(upgradeManager.getLevel(UpgradeType.SPEED), 3) * 1D;
+        pow += Math.min(upgradeManager.getLevel(UpgradeType.OVERDRIVE), 3) * 10D / 3D;
+
+        boolean dirty = this.purexModule.updateAndGetDirty(speed, pow, true, inventory.getStackInSlot(SLOT_BLUEPRINT));
+        this.didProcess = this.purexModule.getDidProcess();
+        if (dirty) setChanged();
+
+        sendUpdateToClient();
+    }
+
+    private void clientTick(Level world, BlockPos pos) {
+        this.prevAnim = this.anim;
+        if (this.didProcess) this.anim++;
+
+        if (world.getGameTime() % 20 == 0) {
+            frame = !world.getBlockState(pos.above(5)).isAir();
         }
+    }
+
+    // ==================== Rezeptwahl ====================
+
+    @Nullable
+    public ResourceLocation getSelectedRecipeId() {
+        return purexModule.getSelectedRecipeId();
     }
 
     @Nullable
-    private PurexRecipe findRecipe(Level level) {
-        // Кросс-версионный доступ: RecipeHooks.getAllRecipes разворачивает RecipeHolder на 1.21.1.
-        List<PurexRecipe> recipes = com.hbm_m.platform.recipe.RecipeHooks.getAllRecipes(level, PurexRecipe.Type.INSTANCE);
-        for (PurexRecipe recipe : recipes) {
-            if (canProcess(recipe)) return recipe;
-        }
-        return null;
+    public PurexRecipe getSelectedRecipe() {
+        return purexModule.peekRecipe();
     }
 
-    private boolean canProcess(PurexRecipe recipe) {
-        List<PurexRecipe.CountedIngredient> itemInputs = recipe.getItemInputs();
-        if (itemInputs.size() > ITEM_INPUT_COUNT) return false;
-        for (int i = 0; i < itemInputs.size(); i++) {
-            ItemStack slotStack = inventory.getStackInSlot(ITEM_INPUT_START + i);
-            PurexRecipe.CountedIngredient req = itemInputs.get(i);
-            if (!req.ingredient().test(slotStack) || slotStack.getCount() < req.count()) return false;
-        }
-
-        List<PurexRecipe.FluidIngredient> fluidInputs = recipe.getFluidInputs();
-        if (fluidInputs.size() > inputTanks.length) return false;
-        for (int i = 0; i < fluidInputs.size(); i++) {
-            PurexRecipe.FluidIngredient req = fluidInputs.get(i);
-            Fluid fluid = net.minecraft.core.registries.BuiltInRegistries.FLUID.get(req.fluidId());
-            FluidTank tank = inputTanks[i];
-            if (tank.isEmpty() || tank.getStoredFluid() != fluid || tank.getFluidAmountMb() < req.amount()) {
-                return false;
-            }
-        }
-
-        List<ItemStack> itemOutputs = recipe.getItemOutputs();
-        if (itemOutputs.size() > ITEM_OUTPUT_COUNT) return false;
-        for (int i = 0; i < itemOutputs.size(); i++) {
-            ItemStack output = itemOutputs.get(i);
-            if (output.isEmpty()) continue;
-            ItemStack outSlot = inventory.getStackInSlot(ITEM_OUTPUT_START + i);
-            if (!outSlot.isEmpty()) {
-                if (!com.hbm_m.platform.PlatformHooks.isSameItemSameTags(outSlot, output)) return false;
-                if (outSlot.getCount() + output.getCount() > outSlot.getMaxStackSize()) return false;
-            }
-        }
-
-        List<FluidStack> fluidOutputs = recipe.getFluidOutputs();
-        if (!fluidOutputs.isEmpty()) {
-            FluidStack fluidOut = fluidOutputs.get(0);
-            if (!fluidOut.isEmpty()) {
-                if (!outputTank.isEmpty() && outputTank.getStoredFluid() != fluidOut.getFluid()) return false;
-                if (outputTank.getFluidAmountMb() + fluidOut.getAmount() > outputTank.getCapacityMb()) return false;
-            }
-        }
-
-        return true;
+    public void setSelectedRecipe(@Nullable ResourceLocation recipeId) {
+        purexModule.setSelectedRecipe(recipeId);
+        if (level != null && !level.isClientSide) purexModule.syncTankConfigurationToRecipe(level);
+        setChanged();
+        if (level != null && !level.isClientSide) sendUpdateToClient();
     }
 
-    private void completeCycle(PurexRecipe recipe) {
-        List<PurexRecipe.CountedIngredient> itemInputs = recipe.getItemInputs();
-        for (int i = 0; i < itemInputs.size(); i++) {
-            inventory.getStackInSlot(ITEM_INPUT_START + i).shrink(itemInputs.get(i).count());
-        }
-
-        List<PurexRecipe.FluidIngredient> fluidInputs = recipe.getFluidInputs();
-        for (int i = 0; i < fluidInputs.size(); i++) {
-            inputTanks[i].drainMb(fluidInputs.get(i).amount());
-        }
-
-        List<ItemStack> itemOutputs = recipe.getItemOutputs();
-        for (int i = 0; i < itemOutputs.size(); i++) {
-            ItemStack output = itemOutputs.get(i);
-            if (output.isEmpty()) continue;
-            ItemStack outSlot = inventory.getStackInSlot(ITEM_OUTPUT_START + i);
-            if (outSlot.isEmpty()) {
-                inventory.setStackInSlot(ITEM_OUTPUT_START + i, output.copy());
-            } else {
-                outSlot.grow(output.getCount());
-            }
-        }
-
-        List<FluidStack> fluidOutputs = recipe.getFluidOutputs();
-        if (!fluidOutputs.isEmpty()) {
-            FluidStack fluidOut = fluidOutputs.get(0);
-            if (!fluidOut.isEmpty()) {
-                outputTank.fillMb(fluidOut.getFluid(), (int) fluidOut.getAmount());
-            }
-        }
+    public ItemStack getBlueprintFolder() {
+        return inventory.getStackInSlot(SLOT_BLUEPRINT);
     }
 
-    // ==================== IFluidUserMK2 / MK2-Netz ====================
+    /** Original {@code GUIScreenRecipeSelector}: alle Rezepte, deren Pool frei oder im Ordner installiert ist. */
+    public List<PurexRecipe> getAvailableRecipes() {
+        if (level == null) return List.of();
+        String installedPool = com.hbm_m.item.industrial.ItemBlueprints.getBlueprintPool(getBlueprintFolder());
+        return com.hbm_m.recipe.index.ModRecipeIndex.of(level.getRecipeManager()).getAll(PurexRecipe.Type.INSTANCE).stream().filter(r -> {
+            String pool = r.getBlueprintPool();
+            if (pool == null || pool.isEmpty()) return true;
+            return installedPool != null && !installedPool.isEmpty() && installedPool.equals(pool);
+        }).toList();
+    }
+
+    /** Fortschritt 0..1 wie {@code purexModule.progress} im Original. */
+    public double getProgressFraction() {
+        return purexModule.getProgressPercent();
+    }
+
+    // ==================== Slots ====================
 
     @Override
-    public FluidTank[] getAllTanks() {
-        return new FluidTank[] { inputTanks[0], inputTanks[1], inputTanks[2], outputTank };
+    protected boolean isItemValidForSlot(int slot, ItemStack stack) {
+        if (slot == SLOT_BATTERY) return true;
+        if (slot == SLOT_BLUEPRINT && stack.getItem() instanceof com.hbm_m.item.industrial.ItemBlueprints) return true;
+        if (slot >= SLOT_UPGRADE_1 && slot <= SLOT_UPGRADE_2 && stack.getItem() instanceof ItemMachineUpgrade) return true;
+        return this.purexModule != null && this.purexModule.isItemValidForSlot(slot, stack);
     }
 
-    @Override
-    public FluidTank[] getSendingTanks() {
-        return new FluidTank[] { outputTank };
-    }
+    // ==================== Fluid ====================
 
-    @Override
-    public FluidTank[] getReceivingTanks() {
-        return inputTanks;
-    }
+    @Override public FluidTank[] getReceivingTanks() { return inputTanks; }
+    @Override public FluidTank[] getSendingTanks() { return outputTanks; }
+    @Override public FluidTank[] getAllTanks() { return new FluidTank[] { inputTanks[0], inputTanks[1], inputTanks[2], outputTanks[0] }; }
 
     @Override
     public boolean isLoaded() {
@@ -238,26 +215,73 @@ public class MachinePUREXBlockEntity extends BaseMachineBlockEntity implements I
     @Override
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.writeNbtData(tag, registries);
-        tag.putInt("progress", progressTicks);
-        tag.putInt("duration", currentDuration);
-        for (int i = 0; i < inputTanks.length; i++) {
-            inputTanks[i].writeToNBT(tag, "tank_in_" + i);
-        }
-        outputTank.writeToNBT(tag, "tank_out");
+        for (int i = 0; i < 3; i++) inputTanks[i].writeToNBT(tag, "i" + i);
+        outputTanks[0].writeToNBT(tag, "o" + 0);
+        tag.putLong("power", energy);
+        tag.putLong("maxPower", getMaxEnergyStored());
+        tag.putBoolean("didProcess", didProcess);
+        purexModule.writeNBT(tag);
     }
 
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.readNbtData(tag, registries);
-        progressTicks = tag.getInt("progress");
-        currentDuration = tag.contains("duration") ? Math.max(1, tag.getInt("duration")) : 1;
-        for (int i = 0; i < inputTanks.length; i++) {
-            inputTanks[i].readFromNBT(tag, "tank_in_" + i);
-        }
-        outputTank.readFromNBT(tag, "tank_out");
+        for (int i = 0; i < 3; i++) inputTanks[i].readFromNBT(tag, "i" + i);
+        outputTanks[0].readFromNBT(tag, "o" + 0);
+        if (tag.contains("maxPower")) setEnergyCapacity(Math.max(1, tag.getLong("maxPower")));
+        if (tag.contains("power")) energy = tag.getLong("power");
+        purexModule.readNBT(tag);
+        didProcess = tag.getBoolean("didProcess");
+        purexModule.didProcess = didProcess;
     }
 
-    // ==================== GETTERS / MENU ====================
+    // ==================== Upgrades ====================
+
+    @Override
+    public boolean canProvideInfo(UpgradeType type, int level, boolean extendedInfo) {
+        return type == UpgradeType.SPEED || type == UpgradeType.POWER || type == UpgradeType.OVERDRIVE;
+    }
+
+    @Override
+    public void provideInfo(UpgradeType type, int level, List<Component> info, boolean extendedInfo) {
+        info.add(com.hbm_m.interfaces.IUpgradeInfoProvider.getStandardLabel(getBlockState().getBlock()));
+        if (type == UpgradeType.SPEED) {
+            info.add(Component.translatable(KEY_SPEED, "+" + (level * 100 / 3) + "%").withStyle(ChatFormatting.GREEN));
+            info.add(Component.translatable(KEY_CONSUMPTION, "+" + (level * 50) + "%").withStyle(ChatFormatting.RED));
+        }
+        if (type == UpgradeType.POWER) {
+            info.add(Component.translatable(KEY_CONSUMPTION, "-" + (level * 25) + "%").withStyle(ChatFormatting.GREEN));
+        }
+        if (type == UpgradeType.OVERDRIVE) {
+            info.add(Component.literal("YES").withStyle(System.currentTimeMillis() % 1000 < 500 ? ChatFormatting.RED : ChatFormatting.DARK_GRAY));
+        }
+    }
+
+    @Override
+    public Map<UpgradeType, Integer> getValidUpgrades() {
+        return VALID_UPGRADES;
+    }
+
+    // ==================== ROR ====================
+
+    @Override
+    public String[] getFunctionInfo() {
+        return new String[] {
+                PREFIX_VALUE + "progress",
+                PREFIX_VALUE + "recipe",
+                PREFIX_VALUE + "active",
+        };
+    }
+
+    @Override
+    public String provideRORValue(String name) {
+        if ((PREFIX_VALUE + "progress").equals(name)) return "" + (int) Math.round(getProgressFraction() * 100);
+        if ((PREFIX_VALUE + "recipe").equals(name)) return getSelectedRecipeId() == null ? "null" : getSelectedRecipeId().toString();
+        if ((PREFIX_VALUE + "active").equals(name)) return "" + (this.didProcess ? 1 : 0);
+        return null;
+    }
+
+    // ==================== Sonstiges ====================
 
     @Override
     protected Component getDefaultName() {
@@ -265,15 +289,8 @@ public class MachinePUREXBlockEntity extends BaseMachineBlockEntity implements I
     }
 
     @Override
-    public Component getDisplayName() {
+    public @NotNull Component getDisplayName() {
         return getDefaultName();
-    }
-
-    @Override
-    protected boolean isItemValidForSlot(int slot, ItemStack stack) {
-        if (slot == SLOT_BATTERY) return isEnergyProviderItem(stack);
-        if (slot >= ITEM_INPUT_START && slot < ITEM_INPUT_START + ITEM_INPUT_COUNT) return true;
-        return false; // Ausgabe-Slots: kein manuelles Einlegen.
     }
 
     @Nullable
@@ -282,19 +299,12 @@ public class MachinePUREXBlockEntity extends BaseMachineBlockEntity implements I
         return new MachinePUREXMenu(containerId, playerInventory, this);
     }
 
-    public FluidTank getInputTank(int index) {
-        return inputTanks[index];
-    }
-
-    public FluidTank getOutputTank() {
-        return outputTank;
-    }
-
-    public int getProgressScaled(int scale) {
-        return currentDuration <= 0 ? 0 : (progressTicks * scale) / currentDuration;
-    }
-
-    public boolean isActive() {
-        return progressTicks > 0;
+    /** Original: 5x5x5 um den Kern. */
+    //? if forge {
+    @Override
+    //?}
+    public AABB getRenderBoundingBox() {
+        return new AABB(worldPosition.getX() - 2, worldPosition.getY(), worldPosition.getZ() - 2,
+                worldPosition.getX() + 3, worldPosition.getY() + 5, worldPosition.getZ() + 3);
     }
 }

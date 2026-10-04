@@ -39,8 +39,8 @@ public class GUIMachineCoker extends GuiInfoScreen<MachineCokerMenu> {
             int h = coker.getMaxHeat() > 0 ? coker.getHeat() * 52 / coker.getMaxHeat() : 0;
             guiGraphics.blit(TEXTURE, this.leftPos + 61, this.topPos + 55, 176, 5, h, 5);
 
-            coker.getTank0().renderTank(guiGraphics, this.leftPos + 35, this.topPos + 70, 16, 52);
-            coker.getTank1().renderTank(guiGraphics, this.leftPos + 125, this.topPos + 70, 16, 52);
+            coker.getTank0().renderTank(guiGraphics, this.leftPos + 35, this.topPos + 18, 16, 52);
+            coker.getTank1().renderTank(guiGraphics, this.leftPos + 125, this.topPos + 18, 16, 52);
         }
     }
 

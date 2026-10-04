@@ -2312,12 +2312,20 @@ public class ModBlockStateProvider extends BlockStateProvider {
             horizontalBlock(ModBlocks.MACHINE_DRAIN.get(), drain);
             simpleBlockItem(ModBlocks.MACHINE_DRAIN.get(), drain);
         }
-        orientableBlockWithItem(
-                ModBlocks.MACHINE_DIFURNACE_RTG,
-                modLoc("block/difurnace_side_tall"),
-                modLoc("block/difurnace_front_off_tall"),
-                modLoc("block/difurnace_top_off_alt")
-        );
+        {
+            // 1:1 MachineDiFurnaceRTG: an/aus wechselt Front- und Deckeltextur, Seiten/Boden machine_rtg_furnace_side_alt
+            var off = models().orientableWithBottom("machine_difurnace_rtg_off", modLoc("block/machine_rtg_furnace_side_alt"),
+                    modLoc("block/rtg_difurnace_front_off"), modLoc("block/machine_rtg_furnace_side_alt"), modLoc("block/rtg_difurnace_top_off"))
+                    .texture("particle", modLoc("block/rtg_difurnace_front_off"));
+            var on = models().orientableWithBottom("machine_difurnace_rtg_on", modLoc("block/machine_rtg_furnace_side_alt"),
+                    modLoc("block/rtg_difurnace_front_on"), modLoc("block/machine_rtg_furnace_side_alt"), modLoc("block/rtg_difurnace_top_on"))
+                    .texture("particle", modLoc("block/rtg_difurnace_front_on"));
+            getVariantBuilder(ModBlocks.MACHINE_DIFURNACE_RTG.get()).forAllStates(st -> ConfiguredModel.builder()
+                    .modelFile(st.getValue(com.hbm_m.block.machines.MachineDifurnaceRtgBlock.LIT) ? on : off)
+                    .rotationY(((int) st.getValue(com.hbm_m.block.machines.MachineDifurnaceRtgBlock.FACING).toYRot() + 180) % 360)
+                    .build());
+            simpleBlockItem(ModBlocks.MACHINE_DIFURNACE_RTG.get(), off);
+        }
         simpleBlockWithItem(ModBlocks.MACHINE_TELEPORTER.get(),
                 models().cubeBottomTop(
                         ModBlocks.MACHINE_TELEPORTER.getId().getPath(),

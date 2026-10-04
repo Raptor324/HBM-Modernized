@@ -1,122 +1,57 @@
 package com.hbm_m.block.machines;
 
-import java.util.Map;
-import java.util.function.Supplier;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Locale;
 
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.blockentity.machines.MachineSteamEngineBlockEntity;
-import com.hbm_m.interfaces.IMultiblockController;
+import com.hbm_m.inventory.fluid.FluidType;
+import com.hbm_m.inventory.fluid.tank.FluidTank;
+import com.hbm_m.multiblock.DummyableStructureBuilder;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
-import com.hbm_m.multiblock.PartRole;
 
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
-import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResult;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.BaseEntityBlock;
-import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.block.state.StateDefinition;
-import net.minecraft.world.level.block.state.properties.BlockStateProperties;
-import net.minecraft.world.level.block.state.properties.DirectionProperty;
-import net.minecraft.world.phys.BlockHitResult;
-import net.minecraft.world.phys.shapes.CollisionContext;
-import net.minecraft.world.phys.shapes.Shapes;
-import net.minecraft.world.phys.shapes.VoxelShape;
 
 /**
- * Steam Engine - Port von {@code MachineSteamEngine} (1.7.10 Original), auf diesem Repo-eigenen
- * {@link IMultiblockController}-Framework. Footprint: 1 breit x 3 hoch (vereinfacht-aber-
- * proportionaler Ersatz fuer das Original-Dimension-Array {@code {1,0,5,1,1,1}}, 5 hoch), analog
- * zu {@link MachinePressBlock}. Kein GUI (siehe Klassenkommentar in
- * {@link MachineSteamEngineBlockEntity}) - Rechtsklick tut nichts.
+ * 1:1 {@code MachineSteamEngine}: {@code getDimensions {1,0,5,1,1,1}}, {@code getOffset 1}; drei Anschlusszellen rechts
+ * vom Kern in Hoehe +1 (Strom und Fluid). Kein GUI, dafuer das Blick-Overlay mit beiden Tanks.
  */
-public class MachineSteamEngineBlock extends BaseEntityBlock implements IMultiblockController {
-
-    public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
-
-    private final MultiblockStructureHelper structureHelper;
+public class MachineSteamEngineBlock extends DummyableMachineBlock implements com.hbm_m.interfaces.ILookOverlay {
 
     public MachineSteamEngineBlock(Properties properties) {
         super(properties);
-        this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH));
-        this.structureHelper = defineStructure();
-    }
-
-    private static MultiblockStructureHelper defineStructure() {
-        String[] bottom = { "C" };
-        String[] middle = { "O" };
-        String[] top = { "O" };
-
-        Map<Character, PartRole> roleMap = Map.of(
-                'O', PartRole.DEFAULT,
-                'C', PartRole.CONTROLLER
-        );
-
-        Map<Character, Supplier<BlockState>> symbolMap = Map.of();
-
-        return MultiblockStructureHelper.createFromLayersWithRoles(
-                new String[][] { bottom, middle, top },
-                symbolMap,
-                () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState(),
-                roleMap,
-                null,
-                null
-        );
     }
 
     @Override
-    public MultiblockStructureHelper getStructureHelper() {
-        return this.structureHelper;
-    }
-
-    @Override
-    public PartRole getPartRole(BlockPos localOffset) {
-        return structureHelper.resolvePartRole(localOffset, this);
-    }
-
-    @Override
-    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(FACING);
-    }
-
-    @Override
-    public BlockState getStateForPlacement(BlockPlaceContext context) {
-        return this.defaultBlockState().setValue(FACING, context.getHorizontalDirection().getOpposite());
+    protected MultiblockStructureHelper defineStructure() {
+        return DummyableStructureBuilder.create()
+                .box(1, 0, 5, 1, 1, 1)
+                .extra(0, 1, 1)
+                .extra(1, 1, 1)
+                .extra(-1, 1, 1)
+                .placementOffset(1)
+                .build(() -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState());
     }
 
     @Override
     public RenderShape getRenderShape(BlockState state) {
-        return RenderShape.MODEL;
-    }
-
-    @Override
-    public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        return structureHelper.generateShapeFromParts(state.getValue(FACING));
-    }
-
-    @Override
-    public VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        return structureHelper.getSpecificPartShape(structureHelper.getControllerOffset(), state.getValue(FACING));
-    }
-
-    @Override
-    public VoxelShape getOcclusionShape(BlockState state, BlockGetter level, BlockPos pos) {
-        if (!structureHelper.isFullBlock(structureHelper.getControllerOffset(), state.getValue(FACING))) {
-            return Shapes.empty();
-        }
-        return Shapes.block();
+        return RenderShape.ENTITYBLOCK_ANIMATED;
     }
 
     @Nullable
@@ -127,59 +62,35 @@ public class MachineSteamEngineBlock extends BaseEntityBlock implements IMultibl
 
     @Nullable
     @Override
-    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(
-            Level level,
-            BlockState state,
-            BlockEntityType<T> type
-    ) {
-        return createTickerHelper(
-                type,
-                ModBlockEntities.STEAM_ENGINE_BE.get(),
-                (lvl, pos, st, be) -> MachineSteamEngineBlockEntity.tick(lvl, pos, st, (MachineSteamEngineBlockEntity) be)
-        );
+    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
+        return createTickerHelper(type, ModBlockEntities.STEAM_ENGINE_BE.get(),
+                (lvl, pos, st, be) -> MachineSteamEngineBlockEntity.tick(lvl, pos, st, (MachineSteamEngineBlockEntity) be));
     }
 
     @Override
-    public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
-        super.onPlace(state, level, pos, oldState, isMoving);
-        if (!state.is(oldState.getBlock()) && !level.isClientSide()) {
-            structureHelper.placeStructure(level, pos, state.getValue(FACING), this);
-        }
+    public void appendHoverText(ItemStack stack, @Nullable BlockGetter level, List<Component> list, TooltipFlag flag) {
+        com.hbm_m.util.StandardInfo.add(list, getDescriptionId() + ".desc");
     }
 
-    //? if < 1.21.1 {
-    @Override
-    public InteractionResult use(BlockState state, Level level, BlockPos pos,
-                                  Player player, InteractionHand hand, BlockHitResult hit) {
-
-        return InteractionResult.PASS; // Kein GUI im Original.
-        }
-    //?} else {
-    /*@Override
-    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
-
-        return InteractionResult.PASS; // Kein GUI im Original.
-        }
-    *///?}
-
+    private static MutableComponent tankLine(String arrow, ChatFormatting color, FluidTank tank) {
+        return Component.literal(arrow).withStyle(color).append(Component.literal("").withStyle(ChatFormatting.RESET)
+                .append(FluidType.forFluid(tank.getTankType()).getLocalizedName())
+                .append(": " + String.format(Locale.US, "%,d", tank.getFill()) + " / " + String.format(Locale.US, "%,d", tank.getMaxFill()) + "mB"));
+    }
 
     @Override
-    public void onRemove(BlockState state, Level level, BlockPos pos,
-                          BlockState newState, boolean isMoving) {
-        if (!state.is(newState.getBlock())) {
-            if (!level.isClientSide()) {
-                structureHelper.destroyStructure(level, pos, state.getValue(FACING));
-            }
-        }
-        super.onRemove(state, level, pos, newState, isMoving);
+    public void printHook(net.minecraft.client.gui.GuiGraphics g, Level world, BlockPos pos) {
+        if (!(world.getBlockEntity(pos) instanceof MachineSteamEngineBlockEntity engine)) return;
+
+        List<Component> text = new ArrayList<>();
+        text.add(tankLine("-> ", ChatFormatting.GREEN, engine.tanks[0]));
+        text.add(tankLine("<- ", ChatFormatting.RED, engine.tanks[1]));
+
+        com.hbm_m.interfaces.ILookOverlay.printGeneric(g, Component.translatable(getDescriptionId()), 0xffff00, 0x404000, text);
     }
 
     //? if >1.20.1 {
     /*public static final com.mojang.serialization.MapCodec<MachineSteamEngineBlock> CODEC = simpleCodec(MachineSteamEngineBlock::new);
-
-    @Override
-    protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
-        return CODEC;
-    }
+    @Override protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() { return CODEC; }
     *///?}
 }

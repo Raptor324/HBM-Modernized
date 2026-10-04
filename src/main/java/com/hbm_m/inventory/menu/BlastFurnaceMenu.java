@@ -63,12 +63,13 @@ public class BlastFurnaceMenu extends AbstractContainerMenu {
         Slot slot = slotId >= 0 && slotId < this.slots.size() ? this.slots.get(slotId) : null;
         int configSlot = resolveConfigSlotIndex(slotId);
         if (slot != null && configSlot >= 0 && clickType == ClickType.PICKUP && dragType == 1 && getCarried().isEmpty()) {
+            // Original slotClick: nur leerer Platz mit leerer Hand schaltet die Seite um, sonst normales Klicken
             if (!slot.hasItem()) {
                 if (!player.level().isClientSide()) {
                     blockEntity.cycleSide(configSlot);
                 }
+                return;
             }
-            return;
         }
         super.clicked(slotId, dragType, clickType, player);
     }

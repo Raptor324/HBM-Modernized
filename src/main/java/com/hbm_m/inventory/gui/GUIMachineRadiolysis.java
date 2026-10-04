@@ -1,66 +1,97 @@
 package com.hbm_m.inventory.gui;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import com.hbm_m.blockentity.machines.MachineRadiolysisBlockEntity;
-import com.hbm_m.client.GuiCompat;
 import com.hbm_m.inventory.menu.MachineRadiolysisMenu;
+import com.hbm_m.item.machine.ItemRTGPellet;
 import com.hbm_m.lib.RefStrings;
+import com.mojang.blaze3d.systems.RenderSystem;
 
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 
-/** GUI des Radiolyse-Kollektors - Fuellstands-/Energieanzeigen als Fuellrechtecke (siehe
- *  {@code GUIMachineElectricFurnace}). */
-public class GUIMachineRadiolysis extends AbstractContainerScreen<MachineRadiolysisMenu> {
+/**
+ * 1:1 {@code GUIRadiolysis}: 230x166, Energiesaeule links, schmaler Eingangstank, zwei kleine Ausgangstanks und links
+ * drei Info-Felder (Beschreibung, aktuelle Hitze, Liste der Pellets mit Leistung).
+ */
+public class GUIMachineRadiolysis extends GuiInfoScreen<MachineRadiolysisMenu> {
 
     private static final ResourceLocation TEXTURE =
             ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/gui_radiolysis.png");
 
-    private final MachineRadiolysisBlockEntity blockEntity;
+    private final MachineRadiolysisBlockEntity radiolysis;
 
     public GUIMachineRadiolysis(MachineRadiolysisMenu menu, Inventory inventory, Component title) {
         super(menu, inventory, title);
-        this.blockEntity = menu.getBlockEntity();
-        // Original: 230x166 - die Oberflaeche ist breiter, weil rechts die Pelletplaetze sitzen.
+        this.radiolysis = menu.getBlockEntity();
         this.imageWidth = 230;
         this.imageHeight = 166;
-        this.inventoryLabelY = imageHeight - 96 + 2;
-        this.titleLabelX = 88;
+    }
+
+    /** Original {@code I18nUtil.resolveKeyArray}: Zeilen am {@code $} trennen. */
+    private static Component[] lines(String key, Object... args) {
+        String[] split = Component.translatable(key, args).getString().split("\\$");
+        Component[] out = new Component[split.length];
+        for (int i = 0; i < split.length; i++) out[i] = Component.literal(split[i]);
+        return out;
     }
 
     @Override
-    protected void renderBg(GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
-        int x = leftPos;
-        int y = topPos;
-        guiGraphics.blit(TEXTURE, x, y, 0, 0, imageWidth, imageHeight);
-        // тайл может отсутствовать в реплее Flashback
-        if (blockEntity == null) return;
+    public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
+        com.hbm_m.client.GuiCompat.renderBackground(this, g, mouseX, mouseY, partialTick);
+        super.render(g, mouseX, mouseY, partialTick);
 
-        var tanks = blockEntity.getTanks();
+        if (radiolysis != null) {
+            var tanks = radiolysis.getTanks();
+            tanks[0].renderTankInfo(g, this.font, mouseX, mouseY, leftPos + 61, topPos + 17, 8, 52);
+            tanks[1].renderTankInfo(g, this.font, mouseX, mouseY, leftPos + 87, topPos + 17, 12, 16);
+            tanks[2].renderTankInfo(g, this.font, mouseX, mouseY, leftPos + 87, topPos + 53, 12, 16);
 
-        // 1:1: der Energiebalken sitzt bei (8, 17), 16 breit, 34 hoch - von unten gefuellt.
-        int i = blockEntity.getMaxEnergyStored() > 0
-                ? (int) (blockEntity.getEnergyStored() * 34L / blockEntity.getMaxEnergyStored()) : 0;
-        if (i > 0) guiGraphics.blit(TEXTURE, x + 8, y + 51 - i, 240, 34 - i, 16, i);
+            drawElectricityInfo(g, mouseX, mouseY, 8, 17, 16, 34, radiolysis.getEnergyStored(), radiolysis.getMaxEnergyStored());
 
-        // Original: der Eingangstank schmal bei (61, 17), die beiden Ausgaben bei (87, 17/53).
-        tanks[0].renderTank(guiGraphics, x + 61, y + 17, 8, 52);
-        tanks[1].renderTank(guiGraphics, x + 87, y + 17, 12, 16);
-        tanks[2].renderTank(guiGraphics, x + 87, y + 53, 12, 16);
+            drawCustomInfoStat(g, mouseX, mouseY, -16, 16, 16, 16, leftPos - 8, topPos + 16 + 16, lines("desc.gui.radiolysis.desc"));
+            drawCustomInfoStat(g, mouseX, mouseY, -16, 16 + 18, 16, 16, leftPos - 8, topPos + 16 + 18 + 16, lines("desc.gui.rtg.heat", radiolysis.getHeat()));
+
+            List<Component> pelletText = new ArrayList<>();
+            pelletText.add(Component.translatable("desc.gui.rtg.pellets"));
+            for (ItemRTGPellet pellet : ItemRTGPellet.PELLETS) {
+                pelletText.add(Component.translatable("desc.gui.rtg.pelletPower", Component.translatable(pellet.getDescriptionId()), pellet.getHeat() * 10));
+            }
+            drawCustomInfoStat(g, mouseX, mouseY, -16, 16 + 36, 16, 16, leftPos - 8, topPos + 16 + 36 + 16, pelletText.toArray(new Component[0]));
+        }
+
+        renderTooltip(g, mouseX, mouseY);
     }
 
     @Override
-    protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
-        guiGraphics.drawString(font, title, imageWidth / 2 - font.width(title) / 2, 6, 0x404040, false);
-        guiGraphics.drawString(font, playerInventoryTitle, 8, inventoryLabelY, 4210752, false);
+    protected void renderLabels(GuiGraphics g, int mouseX, int mouseY) {
+        g.drawString(font, title, 88 - font.width(title) / 2, 6, 4210752, false);
+        g.drawString(font, playerInventoryTitle, 8, imageHeight - 96 + 2, 4210752, false);
     }
 
     @Override
-    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        com.hbm_m.client.GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTick);
-        super.render(guiGraphics, mouseX, mouseY, partialTick);
-        renderTooltip(guiGraphics, mouseX, mouseY);
+    protected void renderBg(GuiGraphics g, float partialTick, int mouseX, int mouseY) {
+        RenderSystem.setShader(GameRenderer::getPositionTexShader);
+        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
+        g.blit(TEXTURE, leftPos, topPos, 0, 0, imageWidth, imageHeight, 256, 256);
+        if (radiolysis == null) return; // тайл может отсутствовать в реплее Flashback
+
+        int i = (int) (radiolysis.getEnergyStored() * 34L / Math.max(1L, radiolysis.getMaxEnergyStored()));
+        g.blit(TEXTURE, leftPos + 8, topPos + 51 - i, 240, 34 - i, 16, i, 256, 256);
+
+        var tanks = radiolysis.getTanks();
+        tanks[0].renderTank(g, leftPos + 61, topPos + 17, 8, 52);
+        for (int j = 0; j < 2; j++) {
+            tanks[j + 1].renderTank(g, leftPos + 87, topPos + 17 + j * 36, 12, 16);
+        }
+
+        drawInfoPanel(g, -16, 16, PanelType.LARGE_BLUE_STAR);
+        drawInfoPanel(g, -16, 16 + 18, PanelType.LARGE_BLUE_INFO);
+        drawInfoPanel(g, -16, 16 + 36, PanelType.LARGE_GREEN_INFO);
     }
 }

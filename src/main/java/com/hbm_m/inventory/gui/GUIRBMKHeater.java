@@ -60,9 +60,9 @@ public class GUIRBMKHeater extends GuiInfoScreen<RBMKHeaterMenu> {
         if (be == null) return;
 
         // Original: rod.feed.renderTank(guiLeft+68, guiTop+82, zLevel, 14, 58);
-        be.inputTank.renderTank(g, x + 68, y + 82, 14, 58);
+        be.inputTank.renderTank(g, x + 68, y + 24, 14, 58);
         // Original: rod.steam.renderTank(guiLeft+126, guiTop+82, zLevel, 14, 58);
-        be.outputTank.renderTank(g, x + 126, y + 82, 14, 58);
+        be.outputTank.renderTank(g, x + 126, y + 24, 14, 58);
 
         // Original: drawTexturedModalRect(guiLeft+72, guiTop+72, 176, 0, 10, 10);
         g.blit(TEXTURE, x + 72, y + 72, 176, 0, 10, 10);

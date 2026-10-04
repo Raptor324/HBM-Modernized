@@ -1,93 +1,60 @@
 package com.hbm_m.block.machines;
 
-import java.util.Map;
-import java.util.function.Supplier;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.blockentity.machines.MachineFractionTowerBlockEntity;
-import com.hbm_m.interfaces.IMultiblockController;
+import com.hbm_m.inventory.fluid.FluidType;
+import com.hbm_m.item.liquids.FluidIdentifierItem;
+import com.hbm_m.multiblock.DummyableStructureBuilder;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
-import com.hbm_m.multiblock.PartRole;
 
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
-import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
-import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.context.BlockPlaceContext;
-import net.minecraft.world.level.BlockGetter;
+import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.BaseEntityBlock;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.block.state.StateDefinition;
-import net.minecraft.world.level.block.state.properties.DirectionProperty;
+import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.phys.BlockHitResult;
-import net.minecraft.world.phys.shapes.CollisionContext;
-import net.minecraft.world.phys.shapes.Shapes;
-import net.minecraft.world.phys.shapes.VoxelShape;
-import dev.architectury.registry.menu.MenuRegistry;
 
-public class MachineFractionTowerBlock extends BaseEntityBlock implements IMultiblockController {
-
-    public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
-
-    private final MultiblockStructureHelper structureHelper;
+/**
+ * 1:1 {@code MachineFractionTower}: {@code getDimensions {2,0,1,1,1,1}}, {@code getOffset 1}; vier Anschlusszellen um
+ * den Kern. Stapelbar (der naechste Kern sitzt drei Bloecke hoeher). Fluidkennung nur am untersten Segment; kein GUI,
+ * dafuer das Blick-Overlay. Gezeichnet vom {@code FractionTowerRenderer}.
+ */
+public class MachineFractionTowerBlock extends DummyableMachineBlock implements com.hbm_m.interfaces.ILookOverlay {
 
     public MachineFractionTowerBlock(Properties properties) {
         super(properties);
-        this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH));
-        this.structureHelper = defineStructure();
-    }
-
-    private static MultiblockStructureHelper defineStructure() {
-        String[] layer0 = { 
-            "OCO",
-            "FOF",
-            "OFO"
-         };
-        String[] layers = { 
-            "OOO",
-            "OOO",
-            "OOO"
-        };
-
-        Map<Character, PartRole> roleMap = Map.of(
-                'O', PartRole.DEFAULT,
-                'F', PartRole.FLUID_CONNECTOR,
-                'C', PartRole.CONTROLLER
-        );
-
-        Map<Character, Supplier<BlockState>> symbolMap = Map.of();
-
-        return MultiblockStructureHelper.createFromLayersWithRoles(
-                new String[][] { layer0, layers, layers },
-                symbolMap,
-                () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState(),
-                roleMap,
-                null,
-                null
-        );
     }
 
     @Override
-    public MultiblockStructureHelper getStructureHelper() {
-        return this.structureHelper;
+    protected MultiblockStructureHelper defineStructure() {
+        return DummyableStructureBuilder.create()
+                .box(2, 0, 1, 1, 1, 1)
+                .extra(1, 0, 0)
+                .extra(-1, 0, 0)
+                .extra(0, 0, 1)
+                .extra(0, 0, -1)
+                .placementOffset(1)
+                .build(() -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState());
     }
 
     @Override
-    public PartRole getPartRole(BlockPos localOffset) {
-        return structureHelper.resolvePartRole(localOffset, this);
+    public RenderShape getRenderShape(BlockState state) {
+        return RenderShape.ENTITYBLOCK_ANIMATED;
     }
 
     @Nullable
@@ -99,96 +66,61 @@ public class MachineFractionTowerBlock extends BaseEntityBlock implements IMulti
     @Nullable
     @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
-        return createTickerHelper(type, ModBlockEntities.FRACTION_TOWER_BE.get(), MachineFractionTowerBlockEntity::tick);
-    }
-
-    @Override
-    public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
-        super.onPlace(state, level, pos, oldState, isMoving);
-        if (!state.is(oldState.getBlock()) && !level.isClientSide()) {
-            BlockPos core = placeMultiblockStructure(level, pos, state);
-            if (core == null) {
-                return;
-            }
-        }
-    }
-
-
-    @Override
-    public boolean canSurvive(BlockState state, net.minecraft.world.level.LevelReader level, BlockPos pos) {
-        return super.canSurvive(state, level, pos) && canSurviveMultiblockPlacement(state, level, pos);
-    }
-
-    @Override
-    public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
-        if (!state.is(newState.getBlock()) && !level.isClientSide()) {
-            structureHelper.destroyStructure(level, pos, state.getValue(FACING));
-        }
-        super.onRemove(state, level, pos, newState, isMoving);
+        return createTickerHelper(type, ModBlockEntities.FRACTION_TOWER_BE.get(),
+                (lvl, pos, st, be) -> MachineFractionTowerBlockEntity.tick(lvl, pos, st, (MachineFractionTowerBlockEntity) be));
     }
 
     //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
-        return openMenu(state, level, pos, player, hand, hit);
+        return activate(level, pos, player, player.getItemInHand(hand));
     }
     //?} else {
     /*@Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
-        return openMenu(state, level, pos, player, InteractionHand.MAIN_HAND, hit);
+        return activate(level, pos, player, player.getMainHandItem());
     }
     *///?}
 
-    private InteractionResult openMenu(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
-        if (!level.isClientSide) {
-            BlockEntity entity = level.getBlockEntity(pos);
-            if (entity instanceof MenuProvider menuProvider) {
-                MenuRegistry.openExtendedMenu((ServerPlayer) player, menuProvider, buf -> buf.writeBlockPos(pos));
+    private InteractionResult activate(Level world, BlockPos pos, Player player, ItemStack held) {
+        if (!world.isClientSide && !player.isShiftKeyDown()) {
+            if (!held.isEmpty() && held.getItem() instanceof FluidIdentifierItem) {
+                if (!(world.getBlockEntity(pos) instanceof MachineFractionTowerBlockEntity cracker)) return InteractionResult.PASS;
+
+                if (world.getBlockEntity(pos.below(3)) instanceof MachineFractionTowerBlockEntity) {
+                    player.displayClientMessage(Component.literal("You can only change the type in the bottom segment!").withStyle(ChatFormatting.RED), false);
+                } else {
+                    Fluid type = FluidIdentifierItem.resolvePrimaryForTank(held);
+                    if (type == null) return InteractionResult.PASS;
+                    cracker.tanks[0].setTankType(type);
+                    cracker.setChanged();
+                    player.displayClientMessage(Component.literal("Changed type to ").withStyle(ChatFormatting.YELLOW)
+                            .append(FluidType.forFluid(type).getLocalizedName()).append(Component.literal("!")), false);
+                }
+                return InteractionResult.SUCCESS;
             }
+            return InteractionResult.PASS;
         }
-        return InteractionResult.sidedSuccess(level.isClientSide);
+        return InteractionResult.SUCCESS;
     }
 
     @Override
-    public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        return structureHelper.generateShapeFromParts(state.getValue(FACING));
-    }
+    public void printHook(net.minecraft.client.gui.GuiGraphics g, Level world, BlockPos pos) {
+        if (!(world.getBlockEntity(pos) instanceof MachineFractionTowerBlockEntity cracker)) return;
 
-    @Override
-    public VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        return structureHelper.getSpecificPartShape(structureHelper.getControllerOffset(), state.getValue(FACING));
-    }
-
-    @Override
-    public VoxelShape getOcclusionShape(BlockState state, BlockGetter level, BlockPos pos) {
-        if (!structureHelper.isFullBlock(structureHelper.getControllerOffset(), state.getValue(FACING))) {
-            return Shapes.empty();
+        List<Component> text = new ArrayList<>();
+        for (int i = 0; i < cracker.tanks.length; i++) {
+            text.add((i == 0 ? Component.literal("-> ").withStyle(ChatFormatting.GREEN) : Component.literal("<- ").withStyle(ChatFormatting.RED))
+                    .append(Component.literal("").withStyle(ChatFormatting.RESET)
+                            .append(FluidType.forFluid(cracker.tanks[i].getTankType()).getLocalizedName())
+                            .append(": " + cracker.tanks[i].getFill() + "/" + cracker.tanks[i].getMaxFill() + "mB")));
         }
-        return Shapes.block();
-    }
 
-    @Override
-    public RenderShape getRenderShape(BlockState state) {
-        return RenderShape.MODEL;
-    }
-
-    @Nullable
-    @Override
-    public BlockState getStateForPlacement(BlockPlaceContext context) {
-        return this.defaultBlockState().setValue(FACING, context.getHorizontalDirection().getOpposite());
-    }
-
-    @Override
-    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(FACING);
+        com.hbm_m.interfaces.ILookOverlay.printGeneric(g, Component.translatable(getDescriptionId()), 0xffff00, 0x404000, text);
     }
 
     //? if >1.20.1 {
     /*public static final com.mojang.serialization.MapCodec<MachineFractionTowerBlock> CODEC = simpleCodec(MachineFractionTowerBlock::new);
-
-    @Override
-    protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
-        return CODEC;
-    }
+    @Override protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() { return CODEC; }
     *///?}
 }
