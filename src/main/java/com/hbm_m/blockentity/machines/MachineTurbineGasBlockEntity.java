@@ -174,7 +174,7 @@ public class MachineTurbineGasBlockEntity extends BaseMachineBlockEntity impleme
         // Das Original schaltet die Turbine ueber GUI-Knoepfe ein und aus. Dieser Port kennt
         // projektweit kein Steuerpaket, darum uebernimmt Redstone den Schalter: entsperrt heisst
         // anlaufen, gesperrt heisst auslaufen.
-        boolean wantRun = !level.hasNeighborSignal(worldPosition);
+        boolean wantRun = !com.hbm_m.util.SafeRedstone.hasNeighborSignal(level, worldPosition);
 
         if (wantRun && state == 0 && hasAcceptableFuel()
                 && gasTank.getFluidAmountMb() > 0 && lubeTank.getFluidAmountMb() > 0) {

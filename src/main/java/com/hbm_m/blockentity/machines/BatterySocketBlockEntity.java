@@ -168,7 +168,7 @@ public class BatterySocketBlockEntity extends BaseMachineBlockEntity implements 
     @Override
     public int getCurrentMode() {
         if (level == null) return modeOnNoSignal;
-        return level.hasNeighborSignal(worldPosition) ? modeOnSignal : modeOnNoSignal;
+        return com.hbm_m.util.SafeRedstone.hasNeighborSignal(level, worldPosition) ? modeOnSignal : modeOnNoSignal;
     }
 
     private int getMode() {

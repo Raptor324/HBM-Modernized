@@ -25,10 +25,11 @@
     "SubLevelRelocateMixin",
     "SubLevelAssembleExpansionMixin",
     "HoneyGlueSelectionExpansionMixin",
-    "compat.sable.TurbofanSableMixin"
+    "compat.sable.TurbofanSableMixin",
+    "GameTestServerMassSaveMixin"
   ],
   "server": [
-  ],
+],
   "client": [
     "GameRendererMixin",
     "LightTextureMixin",

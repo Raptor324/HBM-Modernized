@@ -84,7 +84,7 @@ public class FluidValveBlockEntity extends BaseHbmBlockEntity implements IFluidP
      * Вызывается из block.neighborChanged.
      */
     public void updateRedstone(Level level, BlockPos pos) {
-        boolean powered = level.hasNeighborSignal(pos);
+        boolean powered = com.hbm_m.util.SafeRedstone.hasNeighborSignal(level, pos);
         boolean newOpen = !powered; // нет сигнала = открыт
         if (newOpen == open) return;
         open = newOpen;
@@ -135,7 +135,7 @@ public class FluidValveBlockEntity extends BaseHbmBlockEntity implements IFluidP
 
     private void initFromLevel(Level level) {
         if (level.isClientSide) return;
-        boolean powered = level.hasNeighborSignal(worldPosition);
+        boolean powered = com.hbm_m.util.SafeRedstone.hasNeighborSignal(level, worldPosition);
         boolean newOpen = !powered;
         if (newOpen != open) {
             updateRedstone(level, worldPosition);

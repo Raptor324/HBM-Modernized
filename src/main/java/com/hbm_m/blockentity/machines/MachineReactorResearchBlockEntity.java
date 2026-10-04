@@ -124,7 +124,7 @@ public class MachineReactorResearchBlockEntity extends BaseMachineBlockEntity {
             targetLevel = externalTarget;
         } else {
             externalTarget = null;
-            targetLevel = level.hasNeighborSignal(pos) ? 0D : 1.0D;
+            targetLevel = com.hbm_m.util.SafeRedstone.hasNeighborSignal(level, pos) ? 0D : 1.0D;
         }
 
         if (this.level < targetLevel) {

@@ -652,10 +652,10 @@ public abstract class LaunchPadBaseBlockEntity extends BaseMachineBlockEntity
         MultiblockStructureHelper helper = controller.getStructureHelper();
         Direction facing = blockState.getValue(HorizontalDirectionalBlock.FACING);
 
-        boolean isPowered = level.hasNeighborSignal(worldPosition);
+        boolean isPowered = com.hbm_m.util.SafeRedstone.hasNeighborSignal(level, worldPosition);
         if (!isPowered) {
             for (BlockPos partPos : helper.getAllPartPositions(worldPosition, facing)) {
-                if (level.hasNeighborSignal(partPos)) {
+                if (com.hbm_m.util.SafeRedstone.hasNeighborSignal(level, partPos)) {
                     isPowered = true;
                     break;
                 }

@@ -175,7 +175,11 @@ dependencies {
 	// Рантайм-зависимости для ручного тестирования интеграции с Create
 	// Aeronautics / Sable в runClient (только 1.21.1 - на других версиях
 	// этих модов нет). Create 6.x тащит Flywheel/Ponder внутри себя (jarJar).
-	if (stonecutter.current.version == "1.21.1") {
+	// noClientMods (runData / gameTestServer) их выключает: на геймтест-сервере
+	// Sable в отсутствие игроков всё равно тикает свою физику и зависает
+	// навечно в нативном степе Rapier (SubLevelPhysicsSystem.tickPipelinePhysics
+	// -> Rapier3D.step, CPU 100% на Server thread, см. thread dump 2026-10-01).
+	if (stonecutter.current.version == "1.21.1" && !project.hasProperty("noClientMods")) {
 		"runtimeOnly"("maven.modrinth:create:6.0.10+mc1.21.1")
 		"runtimeOnly"("maven.modrinth:sable:2.0.5+mc1.21.1")
 		"runtimeOnly"("maven.modrinth:create-aeronautics:1.3.1+mc1.21.1") // bundled: simulated + offroad внутри

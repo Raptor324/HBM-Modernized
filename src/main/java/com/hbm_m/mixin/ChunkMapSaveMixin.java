@@ -8,6 +8,7 @@ import it.unimi.dsi.fastutil.longs.Long2ObjectLinkedOpenHashMap;
 
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.server.level.ChunkHolder;
+import net.minecraft.server.level.ChunkMap;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.ChunkPos;
 import net.minecraft.world.level.chunk.ChunkAccess;
@@ -18,9 +19,14 @@ import net.minecraft.world.entity.ai.village.poi.PoiManager;
 import org.spongepowered.asm.mixin.Final;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
+import org.spongepowered.asm.mixin.Unique;
 import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
+
+import java.util.function.BooleanSupplier;
 
 /**
  * Параллельная сериализация чанков при массовых операциях (кратер MK5/фоллаут) —
@@ -64,6 +70,44 @@ public abstract class ChunkMapSaveMixin {
     @Shadow
     @Final
     private Long2ObjectLinkedOpenHashMap<ChunkHolder> visibleChunkMap;
+
+    @Shadow
+    private boolean saveChunkIfNeeded(ChunkHolder holder) {
+        throw new AssertionError();
+    }
+
+    /**
+     * Итерационный бюджет одного прохода processUnloads в mass-op режиме (см. redirect ниже).
+     */
+    @Unique
+    private static int hbm$saveScanBudget;
+
+    @Inject(method = "processUnloads", at = @At("HEAD"))
+    private void hbm$resetSaveScanBudget(BooleanSupplier hasMoreTime, CallbackInfo ci) {
+        hbm$saveScanBudget = 256;
+    }
+
+    /**
+     * В mass-op режиме (геймтест-сервер, штормы MK5/фоллаута) пер-тиковый auto-save-скан
+     * processUnloads бесполезен и дорог: он проходит ВЕСЬ visibleChunkMap в поисках 20 грязных
+     * чанков на каждый тик, а одноразовые миры всё равно сохраняют чанк ровно один раз - при
+     * выгрузке (scheduleUnload → save, та же параллельная сериализация). JFR на геймтест-сьюте
+     * 1.21.1: GameTestServer тикает ~600 раз/сек, и скан при ~1500 живых холдерах сжигал ~40%
+     * серверного потока даже когда сохранять было нечего. Дополнительно бюджет итераций
+     * страхует тик от длинных проходов: после 256 холдеров скан молча останавливается до
+     * следующего тика.
+     */
+    @Redirect(
+            method = "processUnloads",
+            at = @At(
+                    value = "INVOKE",
+                    target = "Lnet/minecraft/server/level/ChunkMap;saveChunkIfNeeded(Lnet/minecraft/server/level/ChunkHolder;)Z"))
+    private boolean hbm$skipIdleSaveScan(ChunkMap self, ChunkHolder holder) {
+        if (ChunkSaveParallelizer.isMassOperation()) {
+            return --hbm$saveScanBudget <= 0;
+        }
+        return this.saveChunkIfNeeded(holder);
+    }
 
     // write(ChunkPos, CompoundTag) — public, УНАСЛЕДОВАН обоими версиями от
     // ChunkStorage (1.20.1: void, 1.21.1: CompletableFuture<Void>); AP миксинов

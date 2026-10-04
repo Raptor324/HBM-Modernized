@@ -222,11 +222,13 @@ public final class EnergySubscriptions {
         boolean any = false;
         for (Direction dir : Direction.values()) {
             BlockPos p = center.relative(dir);
+            if (!level.hasChunkAt(p)) continue;
             any |= rec.trySubscribe(level, p.getX(), p.getY(), p.getZ(), dir);
         }
         for (BlockPos pos : extra) {
             for (Direction dir : Direction.values()) {
                 BlockPos p = pos.relative(dir);
+                if (!level.hasChunkAt(p)) continue;
                 any |= rec.trySubscribe(level, p.getX(), p.getY(), p.getZ(), dir);
             }
         }
@@ -237,11 +239,13 @@ public final class EnergySubscriptions {
         boolean any = false;
         for (Direction dir : Direction.values()) {
             BlockPos p = center.relative(dir);
+            if (!level.hasChunkAt(p)) continue;
             any |= prov.tryProvide(level, p.getX(), p.getY(), p.getZ(), dir);
         }
         for (BlockPos pos : extra) {
             for (Direction dir : Direction.values()) {
                 BlockPos p = pos.relative(dir);
+                if (!level.hasChunkAt(p)) continue;
                 any |= prov.tryProvide(level, p.getX(), p.getY(), p.getZ(), dir);
             }
         }

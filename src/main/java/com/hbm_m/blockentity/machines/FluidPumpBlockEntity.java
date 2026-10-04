@@ -109,7 +109,7 @@ public class FluidPumpBlockEntity extends BaseHbmBlockEntity implements IFluidSt
             entity.tank.changeTankSize(nextSize);
         }
 
-        entity.redstonePowered = level.hasNeighborSignal(pos);
+        entity.redstonePowered = com.hbm_m.util.SafeRedstone.hasNeighborSignal(level, pos);
 
         // Входная сторона (CW от facing): подписка как receiver
         Direction inDir  = rotateClockwise(entity.facing);

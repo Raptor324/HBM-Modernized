@@ -101,7 +101,7 @@ public class MachineDieselGeneratorBlockEntity extends com.hbm_m.blockentity.Mac
         boolean burned = false;
 
         // 1:1: ohne Zuendung passiert nichts, egal wieviel Diesel im Tank steht.
-        if (isOn && !level.hasNeighborSignal(pos)) {
+        if (isOn && !com.hbm_m.util.SafeRedstone.hasNeighborSignal(level, pos)) {
             Fluid fuel = tank.getStoredFluid();
             FT_Combustible combustible = FluidType.getTrait(fuel, FT_Combustible.class);
             double efficiency = fuelEfficiency(combustible);

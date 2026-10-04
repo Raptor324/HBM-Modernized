@@ -107,7 +107,7 @@ public class MachineBatteryBlockEntity extends BaseMachineBlockEntity implements
     @Override
     public int getCurrentMode() {
         if (level == null) return modeOnNoSignal;
-        return level.hasNeighborSignal(this.worldPosition) ? modeOnSignal : modeOnNoSignal;
+        return com.hbm_m.util.SafeRedstone.hasNeighborSignal(level, this.worldPosition) ? modeOnSignal : modeOnNoSignal;
     }
 
     // Паритет с оригиналом (TileEntityMachineBattery.getProviderSpeed/getReceiverSpeed):
