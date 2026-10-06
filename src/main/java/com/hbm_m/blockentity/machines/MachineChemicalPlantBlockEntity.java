@@ -525,7 +525,7 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity
      * реально продвигается в этом тике (didProcess). Прогресс в одиночку не
      * запускает эффекты — иначе при паузе из-за нехватки энергии звук/анимация
      * продолжаются, что противоречит поведению оригинала.
-     * Синхронизация didProcess при переходе true→false гарантируется в
+     * Sync of didProcess on BOTH transitions (true→false and false→true) is guaranteed in
      * {@link com.hbm_m.module.machine.MachineModuleChemplant#updateAndGetDirty}.
      */
     public boolean isChemplantEffectsActive() {

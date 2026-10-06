@@ -60,7 +60,10 @@ import java.util.Set;
  * маршрутизирует клики в дочерние виджеты, только если позиция скроллбара
  * сдвинута к правому краю списка (переопределение {@code getScrollbarPosition()}).
  * Без этого дефолтный {@code width/2 + 124} оказывается посередине экрана и
- * клики по правым виджетам отбрасываются.
+ * клики по правым виджетам отбрасываются. Позиция обязана оставаться минимум
+ * на 6px левее правой границы виджета: ванильная клик-зона перетаскивания —
+ * {@code [pos, pos+6)} — иначе лежит за пределами и drag умирает (см. комментарий
+ * у переопределения).
  */
 public class ConfigScreen extends Screen {
 
@@ -430,8 +433,11 @@ public class ConfigScreen extends Screen {
         }
 
         if (!clientEdits.isEmpty()) {
+            Map<String, String> before = ConfigSchema.snapshot(ModClothConfig.get(), ConfigSide.CLIENT);
             ConfigSchema.applyAll(ModClothConfig.get(), ConfigSide.CLIENT, clientEdits);
             ModClothConfig.saveClient();
+            // Debug-лог изменений: только фактически изменившиеся ключи (после клэмпа).
+            com.hbm_m.config.ConfigDebugLogger.logChanges(ConfigSide.CLIENT, before);
         }
         if (!serverEdits.isEmpty() && showServer) {
             // Сервер применит, сохранит и рассылает sync всем (включая нас).
@@ -956,10 +962,19 @@ public class ConfigScreen extends Screen {
          * экрана. При этом {@code getEntryAtPosition} отбрасывает клики с
          * {@code x >= getScrollbarPosition()}, из-за чего правые виджеты (тогглы,
          * слайдеры) не получают ввод. Сдвигаем скроллбар к правому краю списка.
+         *
+         * <p>Вторая половина контракта: клик-зона скроллбара — {@code [pos, pos+6)},
+         * и она обязана лежать ВНУТРИ границ виджета ({@code x <= getRight()}).
+         * Ванильный {@code updateScrollingState} ловит клик по зоне до проверки
+         * {@code isMouseOver}, но если зона торчит за правый край (pos = getRight()),
+         * клик не «потребляется» → список не получает focused+dragging →
+         * {@code ContainerEventHandler.mouseDragged} не пересылает drag в список,
+         * и перетаскивание полосы мышью умирает. Отступ 6px возвращает зону внутрь;
+         * правые виджеты строки заканчиваются на getRight()-10, так что они не задеты.
          */
         @Override
         protected int getScrollbarPosition() {
-            return this.getRight();
+            return this.getRight() - 6;
         }
 
         /**

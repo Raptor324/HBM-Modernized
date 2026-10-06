@@ -1090,9 +1090,9 @@ public final class PlatformHooks {
     public static String conventionalTagNamespace() {
         //? if < 1.21.1 {
         return "forge";
-        //? } else {
+        //?} else {
         /*return "c";
-        *///? }
+        *///?}
     }
 
     /**
@@ -1101,9 +1101,9 @@ public final class PlatformHooks {
     public static boolean isFakePlayer(net.minecraft.world.entity.player.Player player) {
         //? if < 1.21.1 {
         return player instanceof net.minecraftforge.common.util.FakePlayer;
-        //? } else {
+        //?} else {
         /*return player instanceof net.neoforged.neoforge.common.util.FakePlayer;
-        *///? }
+        *///?}
     }
 
     /**
@@ -1113,9 +1113,9 @@ public final class PlatformHooks {
     public static double averageTickMs(net.minecraft.server.MinecraftServer server) {
         //? if < 1.21.1 {
         return server.getAverageTickTime();
-        //? } else {
+        //?} else {
         /*return server.getAverageTickTimeNanos() / 1_000_000.0;
-         *///? }
+         *///?}
     }
 
     // Кэш приватного конструктора FallingBlockEntity (см. newFallingBlock).

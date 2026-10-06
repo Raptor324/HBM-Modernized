@@ -56,7 +56,11 @@ public class MachineModuleChemplant extends MachineModuleBase<ChemicalPlantRecip
 
         boolean wasProcessing = this.didProcess;
         super.update(speed, powerMul, extraCondition, blueprint);
-        if (wasProcessing && !this.didProcess) {
+        // didProcess drives the client-side anim/sound (see
+        // MachineChemicalPlantBlockEntity#isChemplantEffectsActive), so BOTH edges must
+        // reach the client: true->false (machine stalled) and false->true (machine resumed).
+        // Strictly edge-triggered: steady state syncs nothing extra.
+        if (wasProcessing != this.didProcess) {
             this.needsSync = true;
         }
         return needsSync;

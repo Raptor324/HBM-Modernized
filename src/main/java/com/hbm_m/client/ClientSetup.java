@@ -300,8 +300,14 @@ public class ClientSetup {
         // MOTD при входе в мир — решение принимает клиент (client.json -> enableMOTD).
         com.hbm_m.client.ClientMotdHandler.register();
 
+        // Debug-дамп клиентских параметров при входе в мир (серверные приходят отдельно,
+        // с первым ConfigSyncS2CPacket — см. ConfigDebugLogger).
+        dev.architectury.event.events.client.ClientPlayerEvent.CLIENT_PLAYER_JOIN.register(
+                player -> com.hbm_m.config.ConfigDebugLogger.dumpSide(com.hbm_m.config.schema.ConfigSide.CLIENT));
+
         dev.architectury.event.events.client.ClientPlayerEvent.CLIENT_PLAYER_QUIT.register(player -> {
             com.hbm_m.config.ModClothConfig.reloadServer();
+            com.hbm_m.config.ConfigDebugLogger.resetClientSession();
             ClientRadiationData.clearAll();
             com.hbm_m.client.stress.NucleusStressManager.reset();
         });

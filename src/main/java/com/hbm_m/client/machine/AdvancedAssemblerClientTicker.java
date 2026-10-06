@@ -10,7 +10,6 @@ import com.hbm_m.sound.ModSounds;
 import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.sounds.SoundSource;
-import net.minecraft.util.Mth;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.level.Level;
 //? if forge {
@@ -85,7 +84,7 @@ public class AdvancedAssemblerClientTicker implements IClientTicker {
         }
 
         if (craftingNow && !wasCraftingLastTick) {
-            this.ringTarget = (level.random.nextFloat() * 2 - 1) * 135;
+            this.ringTarget += (level.random.nextFloat() * 2 - 1) * 135;
             this.ringSpeed = 10.0F + level.random.nextFloat() * 5.0F;
             this.ringDelay = 0;
             if (inEarshot) {
@@ -98,12 +97,29 @@ public class AdvancedAssemblerClientTicker implements IClientTicker {
 
         if (craftingNow) {
             if (this.ringAngle != this.ringTarget) {
-                float ringDelta = Mth.wrapDegrees(this.ringTarget - this.ringAngle);
-                if (Math.abs(ringDelta) <= this.ringSpeed) {
+                // Linear travel toward the (accumulating) target - NO wrapDegrees:
+                // wrapping here made the ring take the "short arc" against its travel
+                // direction, wander past +-180 and then SNAP to the target when the
+                // wrapped delta crossed zero (the visible 360-degree backswing).
+                if (Math.abs(this.ringTarget - this.ringAngle) <= this.ringSpeed) {
                     this.ringAngle = this.ringTarget;
-                    this.ringDelay = 20 + level.random.nextInt(21);
                 } else {
-                    this.ringAngle += Math.signum(ringDelta) * this.ringSpeed;
+                    this.ringAngle += Math.signum(this.ringTarget - this.ringAngle) * this.ringSpeed;
+                }
+                if (this.ringAngle == this.ringTarget) {
+                    // Normalize the whole trajectory (target + current + previous) so
+                    // the render lerp stays continuous across the +-360 boundary.
+                    if (this.ringTarget >= 360f) {
+                        this.ringTarget -= 360f;
+                        this.ringAngle -= 360f;
+                        this.prevRingAngle -= 360f;
+                    }
+                    if (this.ringTarget <= -360f) {
+                        this.ringTarget += 360f;
+                        this.ringAngle += 360f;
+                        this.prevRingAngle += 360f;
+                    }
+                    this.ringDelay = 20 + level.random.nextInt(21);
                 }
             } else if (this.ringDelay > 0) {
                 this.ringDelay--;
@@ -112,17 +128,12 @@ public class AdvancedAssemblerClientTicker implements IClientTicker {
                         level.playLocalSound(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
                             ModSounds.ASSEMBLER_START.get(), SoundSource.BLOCKS, 0.3f, 1.0f, false);
                     }
-                    this.ringTarget = (level.random.nextFloat() * 2 - 1) * 135;
+                    this.ringTarget += (level.random.nextFloat() * 2 - 1) * 135;
                     this.ringSpeed = 10.0F + level.random.nextFloat() * 5.0F;
                 }
             }
-        } else {
-            if (Math.abs(this.ringAngle) > 0.1f) {
-                this.ringAngle = Mth.lerp(0.1f, this.ringAngle, 0);
-            } else {
-                this.ringAngle = 0;
-            }
         }
+        // Not crafting: the ring freezes in place (no return-to-zero unwind).
     }
 
     private static boolean isInEarshot(BlockPos pos) {

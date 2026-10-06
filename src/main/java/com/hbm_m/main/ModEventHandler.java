@@ -25,6 +25,10 @@ public final class ModEventHandler {
 	public static void register() {
 		PlayerEvent.PLAYER_JOIN.register(ModEventHandler::onPlayerJoin);
 		EntityEvent.LIVING_DEATH.register(ModEventHandler::onLivingDeath);
+		// Debug-дамп серверной стороны конфига: dedicated — при старте сервера,
+		// SP — при входе в мир (стартует интегрированный сервер).
+		dev.architectury.event.events.common.LifecycleEvent.SERVER_STARTED.register(
+				server -> com.hbm_m.config.ConfigDebugLogger.dumpSide(com.hbm_m.config.schema.ConfigSide.SERVER));
 	}
 
 	private static void onPlayerJoin(Player player) {
