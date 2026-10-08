@@ -1,5 +1,7 @@
 package com.hbm_m.item.satellite;
 
+import com.hbm_m.platform.StackNbt;
+
 import com.hbm_m.interfaces.IItemControlReceiver;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.satellite.Satellite;
@@ -45,7 +47,7 @@ public class ItemSatInterface extends ItemSatChip implements IItemControlReceive
             return;
 
         Satellite sat = SatelliteManager.get((ServerLevel) world).getSatFromFreq(this.getFreq(stack));
-        stack.getOrCreateTag().putBoolean(KEY_NBT_CONNECTED, sat != null);
+        StackNbt.orCreate(stack).putBoolean(KEY_NBT_CONNECTED, sat != null);
     }
 
     @Override

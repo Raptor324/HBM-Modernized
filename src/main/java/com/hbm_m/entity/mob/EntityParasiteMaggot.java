@@ -5,7 +5,9 @@ import org.jetbrains.annotations.Nullable;
 import net.minecraft.core.BlockPos;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
+//? if < 1.21.1 {
 import net.minecraft.world.entity.MobType;
+//?}
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.FloatGoal;
@@ -96,8 +98,10 @@ public class EntityParasiteMaggot extends Monster {
     @Override
     protected void playStepSound(BlockPos pos, BlockState state) { }
 
+    //? if < 1.21.1 {
     @Override
     public MobType getMobType() {
         return MobType.ARTHROPOD;
     }
+    //?}
 }

@@ -24,6 +24,31 @@ public final class ItemHooks {
     }
 
     /**
+     * Ersatz fuer {@code stack.hurtAndBreak(n, e, x -> x.broadcastBreakEvent(slot))} (Ausruestungsslot statt Hand).
+     */
+    public static void hurtAndBreak(ItemStack stack, int amount, LivingEntity entity, net.minecraft.world.entity.EquipmentSlot slot) {
+        //? if < 1.21.1 {
+        stack.hurtAndBreak(amount, entity, e -> e.broadcastBreakEvent(slot));
+        //?} else {
+        /*stack.hurtAndBreak(amount, entity, slot);
+        *///?}
+    }
+
+    /**
+     * Ersatz fuer {@code stack.hurtAndBreak(n, e, x -> {})} (ohne Zerbrech-Animation). Auf 1.21.1 nur
+     * serverseitig wirksam (wie Vanilla).
+     */
+    public static void hurtAndBreakSilent(ItemStack stack, int amount, LivingEntity entity) {
+        //? if < 1.21.1 {
+        stack.hurtAndBreak(amount, entity, e -> {});
+        //?} else {
+        /*if (entity.level() instanceof net.minecraft.server.level.ServerLevel sl) {
+            stack.hurtAndBreak(amount, sl, entity, item -> {});
+        }
+        *///?}
+    }
+
+    /**
      * Кросс-версионное чтение уровня зачарования.
      * Скрывает переход от Enchantment (1.20.1) к Holder<Enchantment> и динамическому реестру (1.21.1).
      */

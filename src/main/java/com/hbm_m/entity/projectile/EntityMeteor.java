@@ -188,7 +188,11 @@ public class EntityMeteor extends Entity {
         return 1.0F;
     }
 
+    //? if < 1.21.1 {
     @Override protected void defineSynchedData() { }
+    //?} else {
+    /*@Override protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) { }
+    *///?}
     @Override protected void readAdditionalSaveData(CompoundTag nbt) { this.safe = nbt.getBoolean("safe"); }
     @Override protected void addAdditionalSaveData(CompoundTag nbt) { nbt.putBoolean("safe", safe); }
 }

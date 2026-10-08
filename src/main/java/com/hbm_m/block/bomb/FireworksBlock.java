@@ -101,4 +101,8 @@ public class FireworksBlock extends BaseEntityBlock {
         player.sendSystemMessage(Component.translatable("block.hbm_m.fireworks.message", te.message).withStyle(ChatFormatting.YELLOW));
         return InteractionResult.SUCCESS;
     }
+    //? if >= 1.21.1 {
+    /*public static final com.mojang.serialization.MapCodec<FireworksBlock> CODEC = simpleCodec(FireworksBlock::new);
+    @Override protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() { return CODEC; }
+    *///?}
 }

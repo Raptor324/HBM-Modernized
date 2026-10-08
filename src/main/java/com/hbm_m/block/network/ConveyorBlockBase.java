@@ -105,7 +105,11 @@ public class ConveyorBlockBase extends Block implements IConveyorBelt {
     }
 
     @Override
+    //? if < 1.21.1 {
     public net.minecraft.world.item.ItemStack getCloneItemStack(net.minecraft.world.level.BlockGetter level, BlockPos pos, BlockState state) {
+    //?} else {
+    /*public net.minecraft.world.item.ItemStack getCloneItemStack(net.minecraft.world.level.LevelReader level, BlockPos pos, BlockState state) {
+    *///?}
         return new net.minecraft.world.item.ItemStack(getWandItem());
     }
 

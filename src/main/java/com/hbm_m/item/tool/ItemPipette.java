@@ -1,5 +1,7 @@
 package com.hbm_m.item.tool;
 
+import com.hbm_m.platform.StackNbt;
+
 import java.util.List;
 
 import javax.annotation.Nullable;
@@ -49,38 +51,38 @@ public class ItemPipette extends Item implements IFillableItem, ITooltipProvider
         tag.putString("type", BuiltInRegistries.FLUID.getKey(Fluids.EMPTY).toString()); // sets "type" and "fill" NBT
         tag.putShort("fill", (short) 0);
         tag.putShort("capacity", this.getMaxFill()); // set "capacity"
-        stack.setTag(tag);
+        StackNbt.set(stack, tag);
     }
 
     public Fluid getType(ItemStack stack) {
-        if (!stack.hasTag()) initNBT(stack);
-        ResourceLocation id = ResourceLocation.tryParse(stack.getTag().getString("type"));
+        if (!StackNbt.has(stack)) initNBT(stack);
+        ResourceLocation id = ResourceLocation.tryParse(StackNbt.read(stack).getString("type"));
         if (id == null) return Fluids.EMPTY;
         Fluid f = BuiltInRegistries.FLUID.get(id);
         return f == null ? Fluids.EMPTY : f;
     }
 
     public short getCapacity(ItemStack stack) {
-        if (!stack.hasTag()) initNBT(stack);
-        return stack.getTag().getShort("capacity");
+        if (!StackNbt.has(stack)) initNBT(stack);
+        return StackNbt.read(stack).getShort("capacity");
     }
 
     public void setFill(ItemStack stack, Fluid type, short fill) {
-        if (!stack.hasTag()) initNBT(stack);
-        stack.getTag().putString("type", BuiltInRegistries.FLUID.getKey(type).toString());
-        stack.getTag().putShort("fill", fill);
+        if (!StackNbt.has(stack)) initNBT(stack);
+        StackNbt.tag(stack).putString("type", BuiltInRegistries.FLUID.getKey(type).toString());
+        StackNbt.tag(stack).putShort("fill", fill);
     }
 
     @Override
     public int getFill(ItemStack stack) {
-        if (!stack.hasTag()) initNBT(stack);
-        return stack.getTag().getShort("fill");
+        if (!StackNbt.has(stack)) initNBT(stack);
+        return StackNbt.read(stack).getShort("fill");
     }
 
     @Override
     public InteractionResultHolder<ItemStack> use(Level world, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
-        if (!stack.hasTag()) initNBT(stack);
+        if (!StackNbt.has(stack)) initNBT(stack);
 
         if (!world.isClientSide) {
             if (this.getFill(stack) == 0) {
@@ -90,7 +92,7 @@ public class ItemPipette extends Item implements IFillableItem, ITooltipProvider
                 else
                     a = !player.isShiftKeyDown() ? Math.min(this.getCapacity(stack) + 50, 1_000) : Math.max(this.getCapacity(stack) - 50, 50);
 
-                stack.getTag().putShort("capacity", (short) a);
+                StackNbt.tag(stack).putShort("capacity", (short) a);
                 player.sendSystemMessage(Component.literal(a + "/" + this.getMaxFill() + "mB"));
             } else {
                 player.sendSystemMessage(Component.translatable("desc.item.pipette.noEmpty"));
@@ -251,5 +253,59 @@ public class ItemPipette extends Item implements IFillableItem, ITooltipProvider
             return new net.minecraftforge.fluids.FluidStack(type, amount);
         }
     }
-    //?}
+    //?} elif neoforge {
+    /*// NeoForge: Anmeldung als Capabilities.FluidHandler.ITEM in ModCapabilities.register
+    /^* Anbindung an Tanks/Lader des Ports (IFluidHandlerItem ueber tryFill/tryEmpty). ^/
+    public static class PipetteCapability implements net.neoforged.neoforge.fluids.capability.IFluidHandlerItem {
+
+        private final ItemStack stack;
+
+        public PipetteCapability(ItemStack stack) {
+            this.stack = stack;
+        }
+
+        private ItemPipette item() { return (ItemPipette) stack.getItem(); }
+
+        @Override public ItemStack getContainer() { return stack; }
+        @Override public int getTanks() { return 1; }
+
+        @Override
+        public net.neoforged.neoforge.fluids.FluidStack getFluidInTank(int tank) {
+            int fill = item().getFill(stack);
+            return fill <= 0 ? net.neoforged.neoforge.fluids.FluidStack.EMPTY : new net.neoforged.neoforge.fluids.FluidStack(item().getType(stack), fill);
+        }
+
+        @Override public int getTankCapacity(int tank) { return item().getCapacity(stack); }
+
+        @Override
+        public boolean isFluidValid(int tank, net.neoforged.neoforge.fluids.FluidStack fs) {
+            return item().acceptsFluid(fs.getFluid(), stack);
+        }
+
+        @Override
+        public int fill(net.neoforged.neoforge.fluids.FluidStack resource, net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction action) {
+            if (resource.isEmpty() || !item().acceptsFluid(resource.getFluid(), stack)) return 0;
+            if (action.simulate()) {
+                return Math.min(resource.getAmount(), item().getCapacity(stack) - item().getFill(stack));
+            }
+            return resource.getAmount() - item().tryFill(resource.getFluid(), resource.getAmount(), stack);
+        }
+
+        @Override
+        public net.neoforged.neoforge.fluids.FluidStack drain(net.neoforged.neoforge.fluids.FluidStack resource, net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction action) {
+            if (resource.isEmpty() || resource.getFluid() != item().getType(stack)) return net.neoforged.neoforge.fluids.FluidStack.EMPTY;
+            return drain(resource.getAmount(), action);
+        }
+
+        @Override
+        public net.neoforged.neoforge.fluids.FluidStack drain(int maxDrain, net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction action) {
+            Fluid type = item().getType(stack);
+            int fill = item().getFill(stack);
+            if (fill <= 0 || type == Fluids.EMPTY) return net.neoforged.neoforge.fluids.FluidStack.EMPTY;
+            int amount = Math.min(maxDrain, fill);
+            if (action.execute()) item().tryEmpty(type, amount, stack);
+            return new net.neoforged.neoforge.fluids.FluidStack(type, amount);
+        }
+    }
+    *///?}
 }

@@ -41,10 +41,17 @@ public class EntityDisperserCanister extends EntityGrenadeBase implements ItemSu
         super(ModEntities.DISPERSER_CANISTER.get(), world, x, y, z);
     }
 
+    //? if < 1.21.1 {
     @Override
     protected void defineSynchedData() {
         this.entityData.define(STACK, new ItemStack(ModItems.DISPERSER_CANISTER.get()));
     }
+    //?} else {
+    /*@Override
+    protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
+        builder.define(STACK, new ItemStack(ModItems.DISPERSER_CANISTER.get()));
+    }
+    *///?}
 
     public EntityDisperserCanister setFluid(Fluid fluid) {
         ItemStack s = this.entityData.get(STACK).copy();

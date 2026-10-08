@@ -286,7 +286,11 @@ public class ExplosionNukeGeneric {
         BlockState s = world.getBlockState(pos);
         Block b = s.getBlock();
 
+        //? if < 1.21.1 {
         if (s.is(net.minecraftforge.common.Tags.Blocks.GLASS) || s.is(BlockTags.WOODEN_DOORS) || b == Blocks.IRON_DOOR || s.is(BlockTags.LEAVES)) {
+        //?} else {
+        /*if (s.is(net.neoforged.neoforge.common.Tags.Blocks.GLASS_BLOCKS) || s.is(BlockTags.WOODEN_DOORS) || b == Blocks.IRON_DOOR || s.is(BlockTags.LEAVES)) {
+        *///?}
             world.setBlock(pos, Blocks.AIR.defaultBlockState(), 3);
         } else if (b == Blocks.GRASS_BLOCK) {
             world.setBlock(pos, ModBlocks.WASTE_EARTH.get().defaultBlockState(), 3);

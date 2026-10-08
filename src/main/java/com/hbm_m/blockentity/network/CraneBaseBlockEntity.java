@@ -1,5 +1,7 @@
 package com.hbm_m.blockentity.network;
 
+import com.hbm_m.platform.StackNbt;
+
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.block.network.CraneBaseBlock;
@@ -143,7 +145,40 @@ public abstract class CraneBaseBlockEntity extends BaseMachineBlockEntity implem
         super.invalidateCaps();
         automation.invalidate();
     }
-    //?}
+    //?} elif neoforge {
+    /*/^* {@code ISidedInventory}-Sicht: nur zugaengliche Plaetze, Entnahme nach {@link #canExtractItem}. ^/
+    private class AutomationView extends CraneInventoryUtil.SlotView {
+        private final int[] access;
+        AutomationView() { this(getAccessibleSlots()); }
+        private AutomationView(int[] access) { super(inventory, access); this.access = access; }
+        @Override public ItemStack extractItem(int slot, int amount, boolean simulate) {
+            if (!canExtractItem(access[slot], inventory.getStackInSlot(access[slot]))) return ItemStack.EMPTY;
+            return super.extractItem(slot, amount, simulate);
+        }
+    }
+
+    private com.hbm_m.platform.LazyCap<net.neoforged.neoforge.items.IItemHandler> automation = com.hbm_m.platform.LazyCap.empty();
+
+    @Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER) {
+            if (!automation.isPresent()) automation = com.hbm_m.platform.LazyCap.of(() -> new AutomationView());
+            return automation.cast();
+        }
+        return super.getHbmCapability(cap, side);
+    }
+
+    @Override
+    public @Nullable Object getItemHandler(@Nullable Direction side) {
+        return new AutomationView();
+    }
+
+    @Override
+    public void invalidateHbmCaps() {
+        super.invalidateHbmCaps();
+        automation.invalidate();
+    }
+    *///?}
 
     /** Original: Zugriff aus 20 Bloecken Entfernung. */
     public boolean hasPermission(Player player) {
@@ -166,7 +201,7 @@ public abstract class CraneBaseBlockEntity extends BaseMachineBlockEntity implem
                 if (!stack.isEmpty()) {
                     CompoundTag slotNBT = new CompoundTag();
                     slotNBT.putByte("slot", (byte) count);
-                    stack.save(slotNBT);
+                    com.hbm_m.platform.StackNbt.save(stack, slotNBT);
                     tags.add(slotNBT);
                 }
                 count++;
@@ -196,7 +231,7 @@ public abstract class CraneBaseBlockEntity extends BaseMachineBlockEntity implem
                     if (i < listSize) {
                         CompoundTag slotNBT = items.getCompound(count);
                         byte slot = slotNBT.getByte("slot");
-                        ItemStack loaded = ItemStack.of(slotNBT);
+                        ItemStack loaded = StackNbt.parse(slotNBT);
                         // Original: "router"-Pruefung ist durch "index * + 5" immer falsch
                         boolean router = nbt.contains("modes") && slot > index * 5 && slot < index * +5;
                         if (!loaded.isEmpty() && (slot < filter.getFilterSlots()[1] || router)) {
@@ -226,7 +261,7 @@ public abstract class CraneBaseBlockEntity extends BaseMachineBlockEntity implem
         default void setFilterContents(CompoundTag nbt) {
             BaseMachineBlockEntity tile = (BaseMachineBlockEntity) this;
             int slot = nbt.getInt("slot");
-            ItemStack item = ItemStack.of(nbt.getCompound("stack"));
+            ItemStack item = StackNbt.parse(nbt.getCompound("stack"));
             item.setCount(1);
             tile.getInventory().setStackInSlot(slot, item);
             nextMode(slot);

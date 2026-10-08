@@ -1,5 +1,7 @@
 package com.hbm_m.block.bomb;
 
+import com.hbm_m.platform.StackNbt;
+
 import java.util.List;
 
 import javax.annotation.Nullable;
@@ -62,18 +64,22 @@ public class VolcanoBlock extends BaseEntityBlock {
         ItemStack s = new ItemStack(item);
         CompoundTag bst = new CompoundTag();
         bst.putString("mode", Integer.toString(mode));
-        s.getOrCreateTag().put("BlockStateTag", bst);
+        com.hbm_m.platform.BlockStateItemData.put(s, bst);
         return s;
     }
 
     public static int modeOf(ItemStack stack) {
-        CompoundTag t = stack.getTag();
+        CompoundTag t = StackNbt.tag(stack);
         if (t == null || !t.contains("BlockStateTag")) return 0;
         try { return Integer.parseInt(t.getCompound("BlockStateTag").getString("mode")); } catch (NumberFormatException e) { return 0; }
     }
 
     @Override
+    //? if < 1.21.1 {
     public void appendHoverText(ItemStack stack, @Nullable BlockGetter level, List<Component> list, TooltipFlag flag) {
+    //?} else {
+    /*public void appendHoverText(ItemStack stack, net.minecraft.world.item.Item.TooltipContext hbmTooltipCtx, List<Component> list, TooltipFlag flag) {
+    *///?}
         int meta = modeOf(stack);
         if (meta == META_SMOLDERING) {
             list.add(Component.literal("SHIELD VOLCANO").withStyle(ChatFormatting.GOLD));
@@ -84,7 +90,11 @@ public class VolcanoBlock extends BaseEntityBlock {
     }
 
     @Override
+    //? if < 1.21.1 {
     public ItemStack getCloneItemStack(BlockGetter level, BlockPos pos, BlockState state) {
+    //?} else {
+    /*public ItemStack getCloneItemStack(net.minecraft.world.level.LevelReader level, BlockPos pos, BlockState state) {
+    *///?}
         return stack(asItem(), state.getValue(MODE));
     }
 
@@ -104,4 +114,8 @@ public class VolcanoBlock extends BaseEntityBlock {
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
         return level.isClientSide ? null : createTickerHelper(type, ModBlockEntities.VOLCANO_CORE.get(), VolcanoCoreBlockEntity::serverTick);
     }
+    //? if >= 1.21.1 {
+    /*public static final com.mojang.serialization.MapCodec<VolcanoBlock> CODEC = com.hbm_m.platform.BlockCodecs.unsupported(VolcanoBlock.class);
+    @Override protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() { return CODEC; }
+    *///?}
 }

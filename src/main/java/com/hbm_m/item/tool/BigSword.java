@@ -10,6 +10,10 @@ import net.minecraft.world.item.Tier;
 public class BigSword extends SwordItem {
 
     public BigSword(Tier material) {
+        //? if < 1.21.1 {
         super(material, 4, -2.4F, new Properties());
+        //?} else {
+        /*super(material, new Properties().attributes(SwordItem.createAttributes(material, 4, -2.4F)));
+        *///?}
     }
 }

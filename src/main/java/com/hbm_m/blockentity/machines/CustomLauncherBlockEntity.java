@@ -1,5 +1,7 @@
 package com.hbm_m.blockentity.machines;
 
+import com.hbm_m.platform.RenderBounds;
+
 import java.util.List;
 
 import org.jetbrains.annotations.NotNull;
@@ -391,7 +393,14 @@ public abstract class CustomLauncherBlockEntity extends BaseMachineBlockEntity
         if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER) return net.minecraftforge.common.util.LazyOptional.empty();
         return super.getCapability(cap, side);
     }
-    //?}
+    //?} elif neoforge {
+    /*@Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        // Original: canInsertItem/canExtractItem false - Trichter und Rohre kommen nicht an das Inventar
+        if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER) return com.hbm_m.platform.LazyCap.empty();
+        return super.getHbmCapability(cap, side);
+    }
+    *///?}
 
     @Override
     public AbstractContainerMenu createMenu(int containerId, Inventory inv, Player player) {
@@ -400,7 +409,7 @@ public abstract class CustomLauncherBlockEntity extends BaseMachineBlockEntity
 
     @Override
     public AABB getRenderBoundingBox() {
-        return INFINITE_EXTENT_AABB;
+        return RenderBounds.INFINITE;
     }
 
     @Override

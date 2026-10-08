@@ -18,7 +18,7 @@ public class ContainerItem extends Item {
         this.container = container;
     }
 
-    //? if forge {
+    //? if forge || neoforge {
     @Override
     public boolean hasCraftingRemainingItem(ItemStack stack) {
         return true;

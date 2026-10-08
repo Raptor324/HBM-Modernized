@@ -346,7 +346,13 @@ public class DoorBakedModel extends AbstractMultipartBakedModel implements Abstr
         // cutoutMipped для прозрачных текстур (стекло, решётки и т.д.)
         return ChunkRenderTypeSet.of(RenderType.cutoutMipped());
     }
-    //?}
+    //?} elif neoforge {
+    /*@Override
+    public net.neoforged.neoforge.client.ChunkRenderTypeSet getRenderTypes(BlockState state, RandomSource rand,
+            net.neoforged.neoforge.client.model.data.ModelData data) {
+        return net.neoforged.neoforge.client.ChunkRenderTypeSet.of(RenderType.cutoutMipped());
+    }
+    *///?}
 
     @Override
     public TextureAtlasSprite getParticleIcon() {

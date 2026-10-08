@@ -41,7 +41,11 @@ public class ItemTrain extends Item {
     }
 
     @Override
+    //? if < 1.21.1 {
     public void appendHoverText(@NotNull ItemStack stack, @Nullable Level level, @NotNull List<Component> list, @NotNull TooltipFlag flag) {
+    //?} else {
+    /*public void appendHoverText(@NotNull ItemStack stack, net.minecraft.world.item.Item.TooltipContext hbmTooltipCtx, @NotNull List<Component> list, @NotNull TooltipFlag flag) {
+    *///?}
         EnumTrainType train = this.train;
 
         if (train.engine != null) list.add(Component.literal(ChatFormatting.GREEN + "Engine: " + ChatFormatting.RESET + train.engine));

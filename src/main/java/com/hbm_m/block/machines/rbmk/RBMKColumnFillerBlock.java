@@ -135,11 +135,11 @@ public class RBMKColumnFillerBlock extends Block implements com.hbm_m.interfaces
     }
     //?} else {
     /*@Override
-    public ItemStack getCloneItemStack(LevelReader level, BlockPos pos, BlockState state, boolean includeData) {
+    public ItemStack getCloneItemStack(LevelReader level, BlockPos pos, BlockState state) {
         BlockPos basePos = findBase(level, pos);
         if (basePos == null) return ItemStack.EMPTY;
         BlockState baseState = level.getBlockState(basePos);
-        return baseState.getBlock().getCloneItemStack(level, basePos, baseState, includeData);
+        return baseState.getBlock().getCloneItemStack(level, basePos, baseState);
     }
     *///?}
 

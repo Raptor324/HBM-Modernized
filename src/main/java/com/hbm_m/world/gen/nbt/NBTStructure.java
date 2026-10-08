@@ -280,7 +280,11 @@ public class NBTStructure {
 
     private void loadStructure(InputStream inputStream) {
         try {
+            //? if < 1.21.1 {
             CompoundTag data = NbtIo.readCompressed(inputStream);
+            //?} else {
+            /*CompoundTag data = NbtIo.readCompressed(inputStream, net.minecraft.nbt.NbtAccounter.unlimitedHeap());
+            *///?}
 
             // GROESSE (fuer die Zentrierung)
             int[] size = parsePos(data.getList("size", Tag.TAG_INT));

@@ -22,7 +22,7 @@ import net.minecraft.world.level.material.Fluids;
 import net.minecraft.world.phys.Vec3;
 
 /** 1:1 {@code RenderPipeAnchor}: Anker nach Anbringseite gedreht, Leitung (in aufgehellter Fluessigkeitsfarbe) nur vom "dominanten" Anker. */
-public class PipeAnchorRenderer implements BlockEntityRenderer<PipeAnchorBlockEntity> {
+public class PipeAnchorRenderer implements com.hbm_m.client.render.HbmBerBounds<PipeAnchorBlockEntity> {
 
     public static final SimpleObjModel MODEL = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/network/pipe_anchor.obj"));
     public static final ResourceLocation TEX = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/network/pipe_anchor.png");

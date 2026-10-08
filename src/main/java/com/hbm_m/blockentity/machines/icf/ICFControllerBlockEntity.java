@@ -1,5 +1,7 @@
 package com.hbm_m.blockentity.machines.icf;
 
+import com.hbm_m.platform.PlatformHooks;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -221,7 +223,7 @@ public class ICFControllerBlockEntity extends BaseMachineBlockEntity {
         for (Entity e : level.getEntitiesOfClass(Entity.class, beam)) {
             // Original: {@code DamageSource.inFire}, 50 Schaden und fuenf Sekunden Feuer.
             e.hurt(level.damageSources().inFire(), 50F);
-            e.setSecondsOnFire(5);
+            PlatformHooks.setSecondsOnFire(e, 5);
         }
 
         be.setEnergyStored(0L);

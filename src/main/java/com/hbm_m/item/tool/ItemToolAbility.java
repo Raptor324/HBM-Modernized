@@ -1,5 +1,13 @@
 package com.hbm_m.item.tool;
 
+import com.hbm_m.platform.PlatformHooks;
+
+import com.hbm_m.platform.AttributeOps;
+
+import com.hbm_m.platform.ItemHooks;
+
+import com.hbm_m.platform.StackNbt;
+
 import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Comparator;
@@ -118,6 +126,9 @@ public class ItemToolAbility extends TieredItem implements IDepthRockTool, IItem
         this.damage = damage;
         this.movement = movement;
         this.toolType = type;
+        //? if >= 1.21.1 {
+        /*com.hbm_m.platform.ItemComponentHooks.deferRarity(this, () -> this.rarity != Rarity.COMMON ? this.rarity : null);
+        *///?}
     }
 
     public ItemToolAbility addAbility(IBaseAbility ability, int level) {
@@ -140,10 +151,12 @@ public class ItemToolAbility extends TieredItem implements IDepthRockTool, IItem
         return availableAbilities;
     }
 
+    //? if < 1.21.1 {
     @Override
     public Rarity getRarity(ItemStack stack) {
         return this.rarity != Rarity.COMMON ? this.rarity : super.getRarity(stack);
     }
+    //?}
 
     @Override
     public boolean hurtEnemy(ItemStack stack, LivingEntity victim, LivingEntity attacker) {
@@ -153,7 +166,7 @@ public class ItemToolAbility extends TieredItem implements IDepthRockTool, IItem
                     ability.onHit(level, attacker.level(), player, victim, this));
         }
 
-        stack.hurtAndBreak(1, attacker, e -> e.broadcastBreakEvent(EquipmentSlot.MAINHAND));
+        ItemHooks.hurtAndBreak(stack, 1, attacker, EquipmentSlot.MAINHAND);
 
         return true;
     }
@@ -202,7 +215,7 @@ public class ItemToolAbility extends TieredItem implements IDepthRockTool, IItem
     @Override
     public boolean mineBlock(ItemStack stack, Level level, BlockState state, BlockPos pos, LivingEntity entity) {
         if (!level.isClientSide && state.getDestroySpeed(level, pos) != 0.0F) {
-            stack.hurtAndBreak(1, entity, e -> e.broadcastBreakEvent(EquipmentSlot.MAINHAND));
+            ItemHooks.hurtAndBreak(stack, 1, entity, EquipmentSlot.MAINHAND);
         }
         return true;
     }
@@ -246,7 +259,15 @@ public class ItemToolAbility extends TieredItem implements IDepthRockTool, IItem
         if (toolType == null || !toolType.isEffective(state)) return false;
         return net.minecraftforge.common.TierSortingRegistry.isCorrectTierForDrops(getTier(), state);
     }
-    //?}
+    //?} else {
+    /*@Override
+    public boolean isCorrectToolForDrops(ItemStack stack, BlockState state) {
+        if (!canOperate(stack)) return false;
+        if (toolType == null || !toolType.isEffective(state)) return false;
+        // 1.21.1: Abbaustufe ueber das Tag der nicht abbaubaren Bloecke des Materials
+        return !state.is(getTier().getIncorrectBlocksForDrops());
+    }
+    *///?}
 
     @Override
     public boolean canBreakRock(BlockGetter world, Player player, ItemStack tool, BlockState block, BlockPos pos) {
@@ -257,7 +278,7 @@ public class ItemToolAbility extends TieredItem implements IDepthRockTool, IItem
         //? if forge {
         return this.isShears(stack) && state.getBlock() instanceof net.minecraftforge.common.IForgeShearable s && s.isShearable(stack, world, pos);
         //?} else {
-        /*return this.isShears(stack) && state.getBlock() instanceof net.neoforged.neoforge.common.IShearable s && s.isShearable(stack, world, pos);
+        /*return this.isShears(stack) && state.getBlock() instanceof net.neoforged.neoforge.common.IShearable s && s.isShearable(null, stack, world, pos);
         *///?}
     }
 
@@ -267,11 +288,21 @@ public class ItemToolAbility extends TieredItem implements IDepthRockTool, IItem
 
     @Override
     @SuppressWarnings("deprecation")
+    //? if < 1.21.1 {
     public Multimap<Attribute, AttributeModifier> getDefaultAttributeModifiers(EquipmentSlot slot) {
         if (slot != EquipmentSlot.MAINHAND) return super.getDefaultAttributeModifiers(slot);
         ImmutableMultimap.Builder<Attribute, AttributeModifier> builder = ImmutableMultimap.builder();
-        builder.put(Attributes.ATTACK_DAMAGE, new AttributeModifier(ITEM_MODIFIER_UUID, "Tool modifier", this.damage, AttributeModifier.Operation.ADDITION));
-        builder.put(Attributes.MOVEMENT_SPEED, new AttributeModifier(ITEM_MODIFIER_UUID, "Tool modifier", movement, AttributeModifier.Operation.MULTIPLY_BASE));
+    //?} else {
+    /*public net.minecraft.world.item.component.ItemAttributeModifiers getDefaultAttributeModifiers(ItemStack stack) {
+        return com.hbm_m.platform.AttributeHooks.fromSlots(this::hbmSlotModifiers);
+    }
+
+    private Multimap<net.minecraft.core.Holder<Attribute>, AttributeModifier> hbmSlotModifiers(EquipmentSlot slot) {
+        if (slot != EquipmentSlot.MAINHAND) return ImmutableMultimap.of();
+        ImmutableMultimap.Builder<net.minecraft.core.Holder<Attribute>, AttributeModifier> builder = ImmutableMultimap.builder();
+    *///?}
+        builder.put(Attributes.ATTACK_DAMAGE, com.hbm_m.platform.AttributeHooks.modifier(ITEM_MODIFIER_UUID, "Tool modifier", this.damage, AttributeOps.ADDITION));
+        builder.put(Attributes.MOVEMENT_SPEED, com.hbm_m.platform.AttributeHooks.modifier(ITEM_MODIFIER_UUID, "Tool modifier", movement, AttributeOps.MULTIPLY_BASE));
         return builder.build();
     }
 
@@ -356,8 +387,13 @@ public class ItemToolAbility extends TieredItem implements IDepthRockTool, IItem
         //?} else {
         /*net.neoforged.neoforge.common.IShearable target = (net.neoforged.neoforge.common.IShearable) state.getBlock();
         *///?}
+        //? if < 1.21.1 {
         if (target.isShearable(held, world, pos)) {
             List<ItemStack> drops = target.onSheared(player, held, world, pos, EnchantmentHelper.getItemEnchantmentLevel(Enchantments.BLOCK_FORTUNE, held));
+        //?} else {
+        /*if (target.isShearable(player, held, world, pos)) {
+            List<ItemStack> drops = target.onSheared(player, held, world, pos);
+        *///?}
             Random rand = new Random();
 
             for (ItemStack stack : drops) {
@@ -370,7 +406,7 @@ public class ItemToolAbility extends TieredItem implements IDepthRockTool, IItem
                 world.addFreshEntity(entityitem);
             }
 
-            held.hurtAndBreak(1, player, e -> e.broadcastBreakEvent(EquipmentSlot.MAINHAND));
+            ItemHooks.hurtAndBreak(held, 1, player, EquipmentSlot.MAINHAND);
             player.awardStat(Stats.BLOCK_MINED.get(state.getBlock()));
         }
     }
@@ -403,7 +439,9 @@ public class ItemToolAbility extends TieredItem implements IDepthRockTool, IItem
                 if (itemstack.isEmpty()) {
                     //? if forge {
                     net.minecraftforge.event.ForgeEventFactory.onPlayerDestroyItem(player, toolCopy, InteractionHand.MAIN_HAND);
-                    //?}
+                    //?} elif neoforge {
+                    /*net.neoforged.neoforge.event.EventHooks.onPlayerDestroyItem(player, toolCopy, InteractionHand.MAIN_HAND);
+                    *///?}
                     player.setItemInHand(InteractionHand.MAIN_HAND, ItemStack.EMPTY);
                 }
             }
@@ -522,12 +560,12 @@ public class ItemToolAbility extends TieredItem implements IDepthRockTool, IItem
     public Configuration getConfiguration(ItemStack stack) {
         Configuration config = new Configuration();
 
-        if (stack == null || !stack.hasTag() || !stack.getTag().contains("ability") || !stack.getTag().contains("abilityPresets")) {
+        if (stack == null || !StackNbt.has(stack) || !StackNbt.read(stack).contains("ability") || !StackNbt.read(stack).contains("abilityPresets")) {
             config.reset(availableAbilities);
             return config;
         }
 
-        config.readFromNBT(stack.getTag());
+        config.readFromNBT(StackNbt.tag(stack));
         config.restrictTo(availableAbilities);
         return config;
     }
@@ -537,7 +575,7 @@ public class ItemToolAbility extends TieredItem implements IDepthRockTool, IItem
             return;
         }
 
-        config.writeToNBT(stack.getOrCreateTag());
+        config.writeToNBT(StackNbt.orCreate(stack));
     }
 
     @Override
@@ -566,7 +604,9 @@ public class ItemToolAbility extends TieredItem implements IDepthRockTool, IItem
             double reach = 4.5D;
             //? if forge {
             reach = playerMP.getBlockReach();
-            //?}
+            //?} elif >= 1.21.1 {
+            /*reach = playerMP.blockInteractionRange();
+            *///?}
             HitResult mop = playerMP.pick(reach, 1.0F, false);
 
             if (mop instanceof BlockHitResult bhr && mop.getType() == HitResult.Type.BLOCK) {

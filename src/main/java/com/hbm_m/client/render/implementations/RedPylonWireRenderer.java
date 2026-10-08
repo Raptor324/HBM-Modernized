@@ -18,7 +18,7 @@ import net.minecraft.world.phys.Vec3;
  * Каждый пилон рисует свою половину провода (от крепления до середины пролёта),
  * провис — четверть-синус; текстура wire.png с тайлингом UV каждые 1/8 блока — 1:1.
  */
-public class RedPylonWireRenderer implements BlockEntityRenderer<PylonBaseBlockEntity> {
+public class RedPylonWireRenderer implements com.hbm_m.client.render.HbmBerBounds<PylonBaseBlockEntity> {
 
     private static final int SEGMENTS = 10;
     private static final double GIRTH = 0.03125D;

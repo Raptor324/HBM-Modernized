@@ -168,5 +168,25 @@ public class MachineDroneRequesterBlockEntity extends BaseMachineBlockEntity {
         super.invalidateCaps();
         sidedItems.invalidate();
     }
-    //?}
+    //?} elif neoforge {
+    /*/^* Original {@code ISidedInventory}: Slots {9-17}; nichts hinein, alles heraus. ^/
+    private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
+            new com.hbm_m.blockentity.SidedItemAccess.Rules() {
+                @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return com.hbm_m.blockentity.SidedItemAccess.range(9, 17); }
+                @Override public boolean canInsert(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return false; }
+                @Override public boolean canExtract(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return true; }
+            });
+
+    @Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER && side != null) return sidedItems.get(side).cast();
+        return super.getHbmCapability(cap, side);
+    }
+
+    @Override
+    public void invalidateHbmCaps() {
+        super.invalidateHbmCaps();
+        sidedItems.invalidate();
+    }
+    *///?}
 }

@@ -69,8 +69,16 @@ public class FluidDuctGaugeBlock extends BaseEntityBlock implements ILookOverlay
     }
 
     /** {@code FluidDuctBase.onBlockActivated}: Fluessigkeitsidentifikator stellt die Rohrsorte (geschlichen: ganzes Netz). */
+    //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+    //?} else {
+    /*@Override
+    protected net.minecraft.world.ItemInteractionResult useItemOn(net.minecraft.world.item.ItemStack hbmHeld, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        return com.hbm_m.platform.BlockUseHooks.item(hbmUse(state, level, pos, player, hand, hit));
+    }
+    private InteractionResult hbmUse(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+    *///?}
         ItemStack held = player.getItemInHand(hand);
         if (!held.isEmpty() && held.getItem() instanceof IItemFluidIdentifier && level.getBlockEntity(pos) instanceof FluidDuctGaugeBlockEntity) {
             if (com.hbm_m.api.fluids.PipeTypeChanger.onIdentifier(level, pos, player, held)) return InteractionResult.sidedSuccess(level.isClientSide);
@@ -79,7 +87,11 @@ public class FluidDuctGaugeBlock extends BaseEntityBlock implements ILookOverlay
     }
 
     @Override
+    //? if < 1.21.1 {
     public void appendHoverText(ItemStack stack, @Nullable net.minecraft.world.level.BlockGetter level, List<Component> list, net.minecraft.world.item.TooltipFlag flag) {
+    //?} else {
+    /*public void appendHoverText(ItemStack stack, net.minecraft.world.item.Item.TooltipContext hbmTooltipCtx, List<Component> list, net.minecraft.world.item.TooltipFlag flag) {
+    *///?}
         com.hbm_m.util.StandardInfo.add(list, getDescriptionId() + ".desc");
     }
 

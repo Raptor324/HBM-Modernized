@@ -1,5 +1,7 @@
 package com.hbm_m.armormod.item;
 
+import com.hbm_m.platform.AttributeOps;
+
 import java.util.List;
 
 import org.jetbrains.annotations.Nullable;
@@ -37,9 +39,14 @@ public class ItemModIron extends ItemArmorMod {
     }
 
     @Override
+    //? if < 1.21.1 {
     public com.google.common.collect.Multimap<net.minecraft.world.entity.ai.attributes.Attribute, net.minecraft.world.entity.ai.attributes.AttributeModifier> getModifiers(ItemStack armor) {
         com.google.common.collect.Multimap<net.minecraft.world.entity.ai.attributes.Attribute, net.minecraft.world.entity.ai.attributes.AttributeModifier> multimap = com.google.common.collect.HashMultimap.create();
-        multimap.put(net.minecraft.world.entity.ai.attributes.Attributes.KNOCKBACK_RESISTANCE, modifier(armor, "NTM Armor Mod Knockback", 0.5, net.minecraft.world.entity.ai.attributes.AttributeModifier.Operation.ADDITION));
+    //?} else {
+    /*public com.google.common.collect.Multimap<net.minecraft.core.Holder<net.minecraft.world.entity.ai.attributes.Attribute>, net.minecraft.world.entity.ai.attributes.AttributeModifier> getModifiers(ItemStack armor) {
+        com.google.common.collect.Multimap<net.minecraft.core.Holder<net.minecraft.world.entity.ai.attributes.Attribute>, net.minecraft.world.entity.ai.attributes.AttributeModifier> multimap = com.google.common.collect.HashMultimap.create();
+    *///?}
+        multimap.put(net.minecraft.world.entity.ai.attributes.Attributes.KNOCKBACK_RESISTANCE, modifier(armor, "NTM Armor Mod Knockback", 0.5, AttributeOps.ADDITION));
         return multimap;
     }
 }

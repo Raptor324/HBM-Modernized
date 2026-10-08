@@ -19,7 +19,9 @@ import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.MobSpawnType;
+//? if < 1.21.1 {
 import net.minecraft.world.entity.MobType;
+//?}
 import net.minecraft.world.entity.SpawnGroupData;
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
@@ -94,10 +96,19 @@ public class EntityUndeadSoldier extends Monster {
     }
 
     @Override
+    //? if < 1.21.1 {
     public @Nullable SpawnGroupData finalizeSpawn(@NotNull ServerLevelAccessor level, @NotNull DifficultyInstance difficulty, @NotNull MobSpawnType reason, @Nullable SpawnGroupData data, @Nullable net.minecraft.nbt.CompoundTag tag) {
+    //?} else {
+    /*public @Nullable SpawnGroupData finalizeSpawn(@NotNull ServerLevelAccessor level, @NotNull DifficultyInstance difficulty, @NotNull MobSpawnType reason, @Nullable SpawnGroupData data) {
+        net.minecraft.nbt.CompoundTag tag = null;
+    *///?}
         this.addRandomArmor();
         this.entityData.set(DW_TYPE, random.nextBoolean() ? TYPE_ZOMBIE : TYPE_SKELETON);
+        //? if < 1.21.1 {
         return super.finalizeSpawn(level, difficulty, reason, data, tag);
+        //?} else {
+        /*return super.finalizeSpawn(level, difficulty, reason, data);
+        *///?}
     }
 
     /** Original {@code addRandomArmor}: feste Taurun-Ruestung und eine zufaellige Waffe. */
@@ -146,10 +157,12 @@ public class EntityUndeadSoldier extends Monster {
         if (type == TYPE_SKELETON) this.playSound(SoundEvents.SKELETON_STEP, 0.15F, 1.0F);
     }
 
+    //? if < 1.21.1 {
     @Override
     public @NotNull MobType getMobType() {
         return MobType.UNDEAD;
     }
+    //?}
 
     /** Original {@code getCanSpawnHere}: nicht friedlich, frei von Entities/Bloecken/Fluessigkeit - ohne Lichtpruefung. */
     @Override
@@ -163,6 +176,11 @@ public class EntityUndeadSoldier extends Monster {
     }
 
     /** Original {@code dropFewItems}/{@code dropEquipment}: leer. */
+    //? if < 1.21.1 {
     @Override
     protected void dropCustomDeathLoot(@NotNull DamageSource source, int looting, boolean player) { }
+    //?} else {
+    /*@Override
+    protected void dropCustomDeathLoot(net.minecraft.server.level.ServerLevel hbmLevel, @NotNull DamageSource source, boolean player) { }
+    *///?}
 }

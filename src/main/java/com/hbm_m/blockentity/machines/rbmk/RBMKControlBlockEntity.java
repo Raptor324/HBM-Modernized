@@ -137,7 +137,18 @@ public abstract class RBMKControlBlockEntity extends RBMKColumnBlockEntity imple
         }
         return super.getCapability(cap, side);
     }
-    //?}
+    //?} elif neoforge {
+    /*@Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (isPowered()) {
+            if (cap == com.hbm_m.platform.HbmCap.HBM_ENERGY_RECEIVER)
+                return com.hbm_m.platform.LazyCap.of(() -> (IEnergyReceiver) this).cast();
+            if (cap == com.hbm_m.platform.HbmCap.HBM_ENERGY_CONNECTOR)
+                return com.hbm_m.platform.LazyCap.of(() -> (com.hbm_m.interfaces.IEnergyConnector) this).cast();
+        }
+        return super.getHbmCapability(cap, side);
+    }
+    *///?}
 
     @Override
     public void setRemoved() {

@@ -57,7 +57,11 @@ public class ItemDrillbit extends Item {
     }
 
     @Override
+    //? if < 1.21.1 {
     public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> list, TooltipFlag flag) {
+    //?} else {
+    /*public void appendHoverText(ItemStack stack, net.minecraft.world.item.Item.TooltipContext hbmTooltipCtx, List<Component> list, TooltipFlag flag) {
+    *///?}
         list.add(Component.literal("Speed: " + ((int) (type.speed * 100)) + "%").withStyle(ChatFormatting.YELLOW));
         list.add(Component.literal("Tier: " + type.tier).withStyle(ChatFormatting.YELLOW));
         if (type.fortune > 0) list.add(Component.literal("Fortune " + type.fortune).withStyle(ChatFormatting.LIGHT_PURPLE));

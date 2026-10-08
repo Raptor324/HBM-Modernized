@@ -123,7 +123,11 @@ public class SpotlightBlock extends Block implements ISpotlight {
     }
 
     @Override
+    //? if < 1.21.1 {
     public boolean isPathfindable(BlockState state, BlockGetter world, BlockPos pos, PathComputationType type) {
+    //?} else {
+    /*protected boolean isPathfindable(BlockState state, PathComputationType type) {
+    *///?}
         return true;
     }
 
@@ -253,8 +257,16 @@ public class SpotlightBlock extends Block implements ISpotlight {
     }
 
     // Replace bulbs on broken lights with a click
+    //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+    //?} else {
+    /*@Override
+    protected net.minecraft.world.ItemInteractionResult useItemOn(net.minecraft.world.item.ItemStack hbmHeld, BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        return com.hbm_m.platform.BlockUseHooks.item(hbmUse(state, world, pos, player, hand, hit));
+    }
+    private InteractionResult hbmUse(BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+    *///?}
         if (!state.getValue(BROKEN)) return InteractionResult.PASS;
         repair(world, pos);
         return InteractionResult.sidedSuccess(world.isClientSide);
@@ -272,7 +284,11 @@ public class SpotlightBlock extends Block implements ISpotlight {
     }
 
     @Override
+    //? if < 1.21.1 {
     public ItemStack getCloneItemStack(BlockGetter world, BlockPos pos, BlockState state) {
+    //?} else {
+    /*public ItemStack getCloneItemStack(net.minecraft.world.level.LevelReader world, BlockPos pos, BlockState state) {
+    *///?}
         return new ItemStack(getOn());
     }
 

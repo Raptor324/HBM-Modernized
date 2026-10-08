@@ -48,4 +48,8 @@ public class DemonLampBlock extends BaseEntityBlock {
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
         return level.isClientSide ? null : createTickerHelper(type, ModBlockEntities.DEMON_LAMP.get(), DemonLampBlockEntity::serverTick);
     }
+    //? if >= 1.21.1 {
+    /*public static final com.mojang.serialization.MapCodec<DemonLampBlock> CODEC = simpleCodec(DemonLampBlock::new);
+    @Override protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() { return CODEC; }
+    *///?}
 }

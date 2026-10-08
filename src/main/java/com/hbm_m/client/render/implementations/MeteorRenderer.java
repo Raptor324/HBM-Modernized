@@ -53,7 +53,11 @@ public class MeteorRenderer extends EntityRenderer<EntityMeteor> {
     }
 
     private static void v(VertexConsumer t, Matrix4f m, float x, float y, float z, float u, float v, int light) {
+        //? if < 1.21.1 {
         t.vertex(m, x, y, z).color(1F, 1F, 1F, 1F).uv(u, v).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(light).normal(0, 1, 0).endVertex();
+        //?} else {
+        /*t.addVertex(m, x, y, z).setColor(1F, 1F, 1F, 1F).setUv(u, v).setOverlay(OverlayTexture.NO_OVERLAY).setLight(light).setNormal(0, 1, 0);
+        *///?}
     }
 
     @Override

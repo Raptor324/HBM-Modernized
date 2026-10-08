@@ -125,6 +125,16 @@ public class ModPacketHandler {
     public static void registerClientReceivers() {
         if (CLIENT_RECEIVERS_REGISTERED) return;
         CLIENT_RECEIVERS_REGISTERED = true;
+        //? if >= 1.21.1 {
+        /*// Dedizierter Server: nur die Pakettypen anmelden (wie registerS2C dort). Die Methodenreferenzen unten
+        // wuerden die Paketklassen verlinken, deren Client-Lambdas (Minecraft/LocalPlayer) den Serverstart sprengen.
+        if (dev.architectury.platform.Platform.getEnvironment() != Env.CLIENT) {
+            for (ResourceLocation id : new ResourceLocation[] { GEIGER_SOUND, INFO_TOAST, HBM_ANIMATION, RADIATION_DATA, EXT_PROP, EXPLOSION_KNOCKBACK, CHUNK_RAD_DEBUG_BATCH, HIGHLIGHT_BLOCKS, SYNC_ENERGY, AUX_PARTICLE, PWR_PRINTER_SCAN, VANILLA_EXPLOSION, DOOR_CONTRAPTION_STATE, ORPHANED_PHANTOMS, SPAWN_PARTICLE, MISSILE_TRACK, MISSILE_TRACK_STOP, CONFIG_SYNC, IMPACT_SYNC, POLLUTION_SYNC, PERMA_SYNC_MEME, PARTICLE_BURST }) {
+                NetworkManager.registerS2CPayloadType(id);
+            }
+            return;
+        }
+        *///?}
 
         registerS2C(GEIGER_SOUND,
                 GeigerSoundPacket::decode,

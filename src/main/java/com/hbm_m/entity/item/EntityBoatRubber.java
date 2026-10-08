@@ -1,5 +1,7 @@
 package com.hbm_m.entity.item;
 
+import com.hbm_m.platform.PlatformHooks;
+
 import java.util.List;
 
 import com.hbm_m.entity.ModEntities;
@@ -68,12 +70,21 @@ public class EntityBoatRubber extends Entity {
         this.zo = z;
     }
 
+    //? if < 1.21.1 {
     @Override
     protected void defineSynchedData() {
         this.entityData.define(TIME_SINCE_HIT, 0);
         this.entityData.define(FORWARD_DIRECTION, 1);
         this.entityData.define(DAMAGE_TAKEN, 0.0F);
     }
+    //?} else {
+    /*@Override
+    protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
+        builder.define(TIME_SINCE_HIT, 0);
+        builder.define(FORWARD_DIRECTION, 1);
+        builder.define(DAMAGE_TAKEN, 0.0F);
+    }
+    *///?}
 
     @Override
     protected MovementEmission getMovementEmission() {
@@ -102,7 +113,9 @@ public class EntityBoatRubber extends Entity {
     }
 
     /** Original getMountedYOffset() = -0.3 (von der Mitte aus) - hier von der Unterkante. */
+    //? if < 1.21.1 {
     @Override
+    //?}
     public double getPassengersRidingOffset() {
         return -0.15D;
     }
@@ -147,7 +160,11 @@ public class EntityBoatRubber extends Entity {
 
     /** Original setPositionAndRotation2 (isBoatEmpty ist beim Schlauchboot immer true). */
     @Override
+    //? if < 1.21.1 {
     public void lerpTo(double x, double y, double z, float yaw, float pitch, int interp, boolean teleport) {
+    //?} else {
+    /*public void lerpTo(double x, double y, double z, float yaw, float pitch, int interp) {
+    *///?}
         this.boatPosRotationIncrements = interp;
         this.boatX = x;
         this.boatY = y;
@@ -401,7 +418,7 @@ public class EntityBoatRubber extends Entity {
         if (this.hasPassenger(passenger)) {
             double offX = Math.cos((double) this.getYRot() * Math.PI / 180.0D) * 0.4D;
             double offZ = Math.sin((double) this.getYRot() * Math.PI / 180.0D) * 0.4D;
-            move.accept(passenger, this.getX() + offX, this.getY() + this.getPassengersRidingOffset() + passenger.getMyRidingOffset(), this.getZ() + offZ);
+            move.accept(passenger, this.getX() + offX, this.getY() + this.getPassengersRidingOffset() + PlatformHooks.getMyRidingOffset(passenger), this.getZ() + offZ);
 
             if (passenger instanceof Player player) {
                 player.yBodyRot = Mth.wrapDegrees(this.getYRot() + 90F);

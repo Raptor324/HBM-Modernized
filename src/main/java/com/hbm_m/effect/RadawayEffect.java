@@ -16,7 +16,9 @@ import java.util.function.Consumer;
 
 //? if forge {
 import net.minecraftforge.client.extensions.common.IClientMobEffectExtensions;
-//?}
+//?} elif neoforge {
+/*import net.neoforged.neoforge.client.extensions.common.IClientMobEffectExtensions;
+*///?}
 
 public class RadawayEffect extends MobEffect {
 
@@ -59,7 +61,7 @@ public class RadawayEffect extends MobEffect {
 
     // На Fabric рендеринг делается через Mixin (см. MixinEffectRenderingInventoryScreen,
     // MixinGui) — они вызывают RadawayEffectRenderer напрямую.
-    //? if forge {
+    //? if forge || neoforge {
     @Override
     public void initializeClient(@NotNull Consumer<IClientMobEffectExtensions> consumer) {
         consumer.accept(new IClientMobEffectExtensions() {

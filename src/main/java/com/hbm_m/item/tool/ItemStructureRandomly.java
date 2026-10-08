@@ -22,8 +22,17 @@ public class ItemStructureRandomly extends ItemStructureTool {
     }
 
     @Override
+    //? if < 1.21.1 {
     public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> list, TooltipFlag flag) {
+    //?} else {
+    /*public void appendHoverText(ItemStack stack, net.minecraft.world.item.Item.TooltipContext hbmTooltipCtx, List<Component> list, TooltipFlag flag) {
+        Level level = com.hbm_m.platform.PlatformHooks.tooltipLevel(hbmTooltipCtx);
+    *///?}
+        //? if < 1.21.1 {
         super.appendHoverText(stack, level, list, flag);
+        //?} else {
+        /*super.appendHoverText(stack, hbmTooltipCtx, list, flag);
+        *///?}
         list.add(Component.literal("Click to print a <randomlyFillWithBlocks>").withStyle(ChatFormatting.YELLOW));
         list.add(Component.literal("line with the targeted block.").withStyle(ChatFormatting.YELLOW));
     }

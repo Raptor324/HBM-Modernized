@@ -1,5 +1,7 @@
 package com.hbm_m.item.weapon;
 
+import com.hbm_m.platform.StackNbt;
+
 import java.util.List;
 
 import javax.annotation.Nullable;
@@ -35,7 +37,7 @@ public class GunB92CellItem extends Item {
                     if (p > 1) {
                         GunB92Item.setPower(other, p - 1);
                         setPower(stack, getPower(stack) + 1);
-                        if (getPower(stack) == 25) stack.getOrCreateTag().putBoolean("full", true);
+                        if (getPower(stack) == 25) StackNbt.orCreate(stack).putBoolean("full", true);
                         return;
                     }
                 }
@@ -44,7 +46,11 @@ public class GunB92CellItem extends Item {
     }
 
     @Override
+    //? if < 1.21.1 {
     public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> list, TooltipFlag flag) {
+    //?} else {
+    /*public void appendHoverText(ItemStack stack, net.minecraft.world.item.Item.TooltipContext hbmTooltipCtx, List<Component> list, TooltipFlag flag) {
+    *///?}
         list.add(Component.literal("Draws energy from the B92, allowing you to"));
         list.add(Component.literal("reload it an additional 25 times."));
         list.add(Component.literal("The cell will permanently hold its charge,"));
@@ -55,18 +61,18 @@ public class GunB92CellItem extends Item {
     }
 
     public static int getPower(ItemStack stack) {
-        return stack.getTag() == null ? 0 : stack.getTag().getInt("energy");
+        return StackNbt.read(stack) == null ? 0 : StackNbt.read(stack).getInt("energy");
     }
 
     public static void setPower(ItemStack stack, int i) {
-        stack.getOrCreateTag().putInt("energy", i);
+        StackNbt.orCreate(stack).putInt("energy", i);
     }
 
     /** Original getFullCell(): Meta 1, 25 Ladungen. */
     public static ItemStack getFullCell() {
         ItemStack stack = new ItemStack(ModItems.GUN_B92_AMMO.get());
         setPower(stack, 25);
-        stack.getOrCreateTag().putBoolean("full", true);
+        StackNbt.orCreate(stack).putBoolean("full", true);
         return stack;
     }
 }

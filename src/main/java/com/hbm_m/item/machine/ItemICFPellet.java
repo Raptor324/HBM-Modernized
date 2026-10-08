@@ -1,5 +1,7 @@
 package com.hbm_m.item.machine;
 
+import com.hbm_m.platform.StackNbt;
+
 import com.hbm_m.item.ITooltipProvider;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.inventory.fluid.ModFluids;
@@ -154,7 +156,7 @@ public class ItemICFPellet extends Item implements ITooltipProvider {
     }
 
     public static long getDepletion(ItemStack stack) {
-        CompoundTag tag = stack.getTag();
+        CompoundTag tag = StackNbt.read(stack);
         return tag == null ? 0L : tag.getLong(KEY_DEPLETION);
     }
 
@@ -163,13 +165,13 @@ public class ItemICFPellet extends Item implements ITooltipProvider {
      * mit dem Reaktionsfaktor beider Brennstoffe zu Hitze.
      */
     public static long react(ItemStack stack, long heat) {
-        CompoundTag tag = stack.getOrCreateTag();
+        CompoundTag tag = StackNbt.orCreate(stack);
         tag.putLong(KEY_DEPLETION, tag.getLong(KEY_DEPLETION) + heat);
         return (long) (heat * getType(stack, true).reactionMult * getType(stack, false).reactionMult);
     }
 
     public static boolean isMuon(ItemStack stack) {
-        CompoundTag tag = stack.getTag();
+        CompoundTag tag = StackNbt.read(stack);
         return tag != null && tag.getBoolean(KEY_MUON);
     }
 
@@ -179,7 +181,7 @@ public class ItemICFPellet extends Item implements ITooltipProvider {
     }
 
     public static ItemStack setup(ItemStack stack, EnumICFFuel type1, EnumICFFuel type2, boolean muon) {
-        CompoundTag tag = stack.getOrCreateTag();
+        CompoundTag tag = StackNbt.orCreate(stack);
         tag.putByte(KEY_TYPE_1, (byte) type1.ordinal());
         tag.putByte(KEY_TYPE_2, (byte) type2.ordinal());
         tag.putBoolean(KEY_MUON, muon);
@@ -204,7 +206,7 @@ public class ItemICFPellet extends Item implements ITooltipProvider {
     }
 
     public static EnumICFFuel getType(ItemStack stack, boolean first) {
-        CompoundTag tag = stack.getTag();
+        CompoundTag tag = StackNbt.read(stack);
         if (tag == null) return first ? EnumICFFuel.DEUTERIUM : EnumICFFuel.TRITIUM;
 
         int ordinal = tag.getByte(first ? KEY_TYPE_1 : KEY_TYPE_2);

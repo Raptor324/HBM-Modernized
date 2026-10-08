@@ -92,7 +92,10 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
     //? if forge {
     private LazyOptional<IItemHandler> lazyInputProxy = LazyOptional.empty();
     private LazyOptional<IItemHandler> lazyOutputProxy = LazyOptional.empty();
-    //?}
+    //?} elif neoforge {
+    /*private com.hbm_m.platform.LazyCap<net.neoforged.neoforge.items.IItemHandler> lazyInputProxy = com.hbm_m.platform.LazyCap.empty();
+    private com.hbm_m.platform.LazyCap<net.neoforged.neoforge.items.IItemHandler> lazyOutputProxy = com.hbm_m.platform.LazyCap.empty();
+    *///?}
 
     //? if fabric {
     /*@Nullable private Storage<ItemVariant> inputProxy;
@@ -266,7 +269,99 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
             }
         };
     }
-    //?}
+    //?} elif neoforge {
+    /*public com.hbm_m.platform.LazyCap<net.neoforged.neoforge.items.IItemHandler> getItemHandlerForPart(PartRole role) {
+        if (role == PartRole.ITEM_INPUT) {
+            if (!lazyInputProxy.isPresent()) {
+                lazyInputProxy = com.hbm_m.platform.LazyCap.of(this::createInputProxy);
+            }
+            return lazyInputProxy;
+        }
+        if (role == PartRole.ITEM_OUTPUT) {
+            if (!lazyOutputProxy.isPresent()) {
+                lazyOutputProxy = com.hbm_m.platform.LazyCap.of(this::createOutputProxy);
+            }
+            return lazyOutputProxy;
+        }
+        return com.hbm_m.platform.LazyCap.empty();
+    }
+
+    @NotNull
+    private net.neoforged.neoforge.items.IItemHandler createInputProxy() {
+        return new net.neoforged.neoforge.items.IItemHandler() {
+            @Override
+            public int getSlots() {
+                return INPUT_SLOT_END - INPUT_SLOT_START + 1;
+            }
+
+            @NotNull
+            @Override
+            public ItemStack getStackInSlot(int slot) {
+                return inventory.getStackInSlot(slot + INPUT_SLOT_START);
+            }
+
+            @NotNull
+            @Override
+            public ItemStack insertItem(int slot, @NotNull ItemStack stack, boolean simulate) {
+                return inventory.insertItem(slot + INPUT_SLOT_START, stack, simulate);
+            }
+
+            @NotNull
+            @Override
+            public ItemStack extractItem(int slot, int amount, boolean simulate) {
+                return ItemStack.EMPTY;
+            }
+
+            @Override
+            public int getSlotLimit(int slot) {
+                return inventory.getSlotLimit(slot + INPUT_SLOT_START);
+            }
+
+            @Override
+            public boolean isItemValid(int slot, @NotNull ItemStack stack) {
+                return inventory.isItemValid(slot + INPUT_SLOT_START, stack);
+            }
+        };
+    }
+
+    @NotNull
+    private net.neoforged.neoforge.items.IItemHandler createOutputProxy() {
+        return new net.neoforged.neoforge.items.IItemHandler() {
+            @Override
+            public int getSlots() {
+                return 1;
+            }
+
+            @NotNull
+            @Override
+            public ItemStack getStackInSlot(int slot) {
+                return slot == 0 ? inventory.getStackInSlot(OUTPUT_SLOT) : ItemStack.EMPTY;
+            }
+
+            @NotNull
+            @Override
+            public ItemStack insertItem(int slot, @NotNull ItemStack stack, boolean simulate) {
+                return stack;
+            }
+
+            @NotNull
+            @Override
+            public ItemStack extractItem(int slot, int amount, boolean simulate) {
+                return slot == 0 ? inventory.extractItem(OUTPUT_SLOT, amount, simulate) : ItemStack.EMPTY;
+            }
+
+            @Override
+            public int getSlotLimit(int slot) {
+                return slot == 0 ? inventory.getSlotLimit(OUTPUT_SLOT) : 0;
+            }
+
+            @Override
+            public boolean isItemValid(int slot, @NotNull ItemStack stack) {
+                return false;
+            }
+        };
+    }
+    *///?}
 
     //? if fabric {
     /*public Storage<ItemVariant> getItemStorageForPart(PartRole role) {
@@ -423,7 +518,40 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
                 }
             });
         }
-        //?}
+        //?} elif neoforge {
+        /*// РћР±С‹С‡РЅР°СЏ Р±Р°С‚Р°СЂРµСЏ С‡РµСЂРµР· HBM capability
+        com.hbm_m.platform.HbmCaps.item(energySourceStack, com.hbm_m.platform.HbmCap.HBM_ENERGY_PROVIDER).ifPresent(itemEnergy -> {
+            long energyNeeded = this.getMaxEnergyStored() - this.getEnergyStored();
+            if (energyNeeded <= 0) return;
+
+            long maxCanReceive = this.getReceiveSpeed();
+            long energyToTransfer = Math.min(energyNeeded, maxCanReceive);
+
+            if (energyToTransfer > 0) {
+                long extracted = itemEnergy.extractEnergy(energyToTransfer, false);
+                if (extracted > 0) {
+                    this.setEnergyStored(this.getEnergyStored() + extracted);
+                    setChanged();
+                }
+            }
+        });
+
+        // Fallback РЅР° Forge Energy РґР»СЏ СЃРѕРІРјРµСЃС‚РёРјРѕСЃС‚Рё
+        if (!com.hbm_m.platform.HbmCaps.item(energySourceStack, com.hbm_m.platform.HbmCap.HBM_ENERGY_PROVIDER).isPresent()) {
+            com.hbm_m.platform.HbmCaps.item(energySourceStack, com.hbm_m.platform.HbmCap.ENERGY).ifPresent(itemEnergy -> {
+                long energyNeeded = this.getMaxEnergyStored() - this.getEnergyStored();
+                if (energyNeeded <= 0) return;
+
+                int maxTransfer = (int) Math.min(Integer.MAX_VALUE, Math.min(energyNeeded, this.getReceiveSpeed()));
+                int extracted = itemEnergy.extractEnergy(maxTransfer, false);
+
+                if (extracted > 0) {
+                    this.setEnergyStored(this.getEnergyStored() + extracted);
+                    setChanged();
+                }
+            });
+        }
+        *///?}
 
         //? if fabric {
         /*var itemEnergy = EnergyStorage.ITEM.find(energySourceStack, null);
@@ -608,7 +736,33 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
                         }
                     }
                 }
-                //?}
+                //?} elif neoforge {
+                /*net.neoforged.neoforge.items.IItemHandler cap = com.hbm_m.platform.HbmCaps.get(neighbor, com.hbm_m.platform.HbmCap.ITEM_HANDLER, dirToNeighbor).orElse(null);
+                if (cap == null) continue;
+
+                for (int slot = 0; slot < cap.getSlots() && missing > 0; slot++) {
+                    ItemStack possible = cap.getStackInSlot(slot);
+                    if (possible.isEmpty() || !ingredient.test(possible)) continue;
+
+                    ItemStack simulated = cap.extractItem(slot, missing, true);
+                    if (simulated.isEmpty()) continue;
+
+                    ItemStack toInsert = simulated.copy();
+                    for (int dest = INPUT_SLOT_START; dest <= INPUT_SLOT_END && !toInsert.isEmpty(); dest++) {
+                        ItemStack remain = inventory.insertItem(dest, toInsert.copy(), true);
+                        int inserted = toInsert.getCount() - remain.getCount();
+
+                        if (inserted > 0) {
+                            ItemStack actuallyExtracted = cap.extractItem(slot, inserted, false);
+                            inventory.insertItem(dest, actuallyExtracted.copy(), false);
+                            lastPullSources.add(neighborPosGlobal);
+                            setChanged();
+                            missing -= inserted;
+                            toInsert = remain;
+                        }
+                    }
+                }
+                *///?}
 
                 //? if fabric {
                 /*Storage<ItemVariant> cap = ItemStorage.SIDED.find(level, neighborPosGlobal, dirToNeighbor);
@@ -704,7 +858,25 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
             }
 
             out = inventory.getStackInSlot(OUTPUT_SLOT);
-            //?}
+            //?} elif neoforge {
+            /*net.neoforged.neoforge.items.IItemHandler cap = com.hbm_m.platform.HbmCaps.get(neighbor, com.hbm_m.platform.HbmCap.ITEM_HANDLER, side1)
+                    .orElse(com.hbm_m.platform.HbmCaps.get(neighbor, com.hbm_m.platform.HbmCap.ITEM_HANDLER, side2)
+                            .orElse(null));
+
+            if (cap == null) continue;
+
+            ItemStack toInsert = out.copy();
+            for (int slot = 0; slot < cap.getSlots() && !toInsert.isEmpty(); slot++) {
+                ItemStack remaining = cap.insertItem(slot, toInsert.copy(), false);
+
+                if (remaining.getCount() < toInsert.getCount()) {
+                    inventory.getStackInSlot(OUTPUT_SLOT).shrink(toInsert.getCount() - remaining.getCount());
+                    toInsert = remaining;
+                }
+            }
+
+            out = inventory.getStackInSlot(OUTPUT_SLOT);
+            *///?}
 
             //? if fabric {
             /*Storage<ItemVariant> cap = ItemStorage.SIDED.find(level, neighborPos, side1);
@@ -764,7 +936,22 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
         lazyInputProxy.invalidate();
         lazyOutputProxy.invalidate();
     }
-    //?}
+    //?} elif neoforge {
+    /*@Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER) {
+            return itemHandler.cast();
+        }
+        return super.getHbmCapability(cap, side);
+    }
+
+    @Override
+    public void invalidateHbmCaps() {
+        super.invalidateHbmCaps();
+        lazyInputProxy.invalidate();
+        lazyOutputProxy.invalidate();
+    }
+    *///?}
 
     // ==================== CLIENT ====================
 

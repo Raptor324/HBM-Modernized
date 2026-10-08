@@ -1,5 +1,7 @@
 package com.hbm_m.blockentity.machines;
 
+import com.hbm_m.platform.RenderBounds;
+
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.api.fluids.IFluidStandardTransceiverMK2;
@@ -214,6 +216,6 @@ public class MachineSteamEngineBlockEntity extends BaseMachineBlockEntity implem
     @Override
     //?}
     public AABB getRenderBoundingBox() {
-        return INFINITE_EXTENT_AABB;
+        return RenderBounds.INFINITE;
     }
 }

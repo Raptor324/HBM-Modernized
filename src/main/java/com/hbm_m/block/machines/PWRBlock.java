@@ -54,7 +54,11 @@ public class PWRBlock extends BaseEntityBlock {
 
     /** Original: {@code getItemDropped} gibt null. */
     @Override
+    //? if < 1.21.1 {
     public ItemStack getCloneItemStack(BlockGetter level, BlockPos pos, BlockState state) { return ItemStack.EMPTY; }
+    //?} else {
+    /*public ItemStack getCloneItemStack(net.minecraft.world.level.LevelReader level, BlockPos pos, BlockState state) { return ItemStack.EMPTY; }
+    *///?}
 
     /**
      * 1:1 {@code breakBlock}: das gemerkte Bauteil kommt zurueck und der Controller verliert den Zusammenbau. Das

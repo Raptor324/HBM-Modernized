@@ -22,7 +22,7 @@ import net.minecraft.world.level.block.state.BlockState;
  * ({@code renderWorld}: Teil {@code SignTurn}/{@code SignStraight} je nach Stellung); die Schiene selbst ist hier ein
  * statisches OBJ-Blockmodell, das stellungsabhaengige Schild rendert dieser BER mit denselben Verschiebungen/Drehungen.
  */
-public class RailSwitchRenderer implements BlockEntityRenderer<RailSwitchBlockEntity> {
+public class RailSwitchRenderer implements com.hbm_m.client.render.HbmBerBounds<RailSwitchBlockEntity> {
 
     private static final SimpleObjModel SWITCH = new SimpleObjModel(rl("models/block/rail/rail_standard_switch.obj"));
     private static final SimpleObjModel SWITCH_FLIPPED = new SimpleObjModel(rl("models/block/rail/rail_standard_switch_flipped.obj"));

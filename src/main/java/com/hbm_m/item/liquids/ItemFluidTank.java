@@ -1,5 +1,7 @@
 package com.hbm_m.item.liquids;
 
+import com.hbm_m.platform.StackNbt;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
@@ -43,13 +45,13 @@ public class ItemFluidTank extends Item {
     }
 
     public static void setFluid(ItemStack stack, Fluid fluid) {
-        stack.getOrCreateTag().putString(NBT_TYPE, BuiltInRegistries.FLUID.getKey(fluid).toString());
+        StackNbt.orCreate(stack).putString(NBT_TYPE, BuiltInRegistries.FLUID.getKey(fluid).toString());
     }
 
     /** Fluids.fromID(meta): ohne NBT {@code NONE}. */
     public static Fluid getFluid(ItemStack stack) {
-        if (!stack.hasTag() || !stack.getTag().contains(NBT_TYPE)) return ModFluids.NONE.getSource();
-        ResourceLocation id = ResourceLocation.tryParse(stack.getTag().getString(NBT_TYPE));
+        if (!StackNbt.has(stack) || !StackNbt.read(stack).contains(NBT_TYPE)) return ModFluids.NONE.getSource();
+        ResourceLocation id = ResourceLocation.tryParse(StackNbt.read(stack).getString(NBT_TYPE));
         Fluid f = id == null ? Fluids.EMPTY : BuiltInRegistries.FLUID.get(id);
         return f == null || f == Fluids.EMPTY ? ModFluids.NONE.getSource() : f;
     }

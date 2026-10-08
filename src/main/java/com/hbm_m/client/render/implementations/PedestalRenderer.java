@@ -26,7 +26,7 @@ import com.hbm_m.blockentity.decorations.PedestalBlockEntity;
  * постаментом с масштабом 1.5x. Блок-предметы не вращаются и висят чуть
  * выше; предметы-не-блоки медленно вращаются.
  */
-public class PedestalRenderer implements BlockEntityRenderer<PedestalBlockEntity> {
+public class PedestalRenderer implements com.hbm_m.client.render.HbmBerBounds<PedestalBlockEntity> {
 
     public PedestalRenderer(BlockEntityRendererProvider.Context context) {}
 

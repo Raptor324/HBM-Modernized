@@ -1,5 +1,5 @@
 package com.hbm_m.compat.jei;
-//? if forge {
+//? if forge || neoforge {
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -7,7 +7,6 @@ import java.util.List;
 
 import javax.annotation.Nullable;
 
-import mezz.jei.api.forge.ForgeTypes;
 import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
 import mezz.jei.api.gui.builder.IRecipeSlotBuilder;
 import mezz.jei.api.gui.drawable.IDrawable;
@@ -121,7 +120,7 @@ public class NeiUniversalJeiCategory implements IRecipeCategory<NeiUniversalJeiC
         IRecipeSlotBuilder b = builder.addSlot(role, x, y);
         if (frame != null) b.setBackground(frame, -1, -1);
         if (slot.fluid() != null) {
-            b.setCustomRenderer(ForgeTypes.FLUID_STACK, new HbmFluidJeiRenderer(16, 16))
+            b.setCustomRenderer(JeiFluidTypes.FLUID_STACK, new HbmFluidJeiRenderer(16, 16))
                     .addFluidStack(slot.fluid(), Math.max(slot.amount(), 1));
         } else {
             b.addItemStacks(slot.items());

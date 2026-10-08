@@ -57,7 +57,7 @@ public class GuiWandJigsaw extends Screen {
 
     @Override
     public void render(GuiGraphics graphics, int mouseX, int mouseY, float partialTicks) {
-        renderBackground(graphics);
+        com.hbm_m.client.GuiCompat.renderBackground(this, graphics, mouseX, mouseY, partialTicks);
 
         graphics.drawString(font, "Target pool:", width / 2 - 150, 37, 0xA0A0A0);
         graphics.drawString(font, "Name:", width / 2 - 150, 87, 0xA0A0A0);

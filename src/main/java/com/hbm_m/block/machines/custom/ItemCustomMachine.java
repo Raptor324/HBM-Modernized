@@ -1,5 +1,7 @@
 package com.hbm_m.block.machines.custom;
 
+import com.hbm_m.platform.StackNbt;
+
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.config.CustomMachineConfigJSON;
@@ -24,13 +26,13 @@ public class ItemCustomMachine extends BlockItem {
 
     public static ItemStack make(String machineType) {
         ItemStack stack = new ItemStack(ModItems.CUSTOM_MACHINE.get());
-        stack.getOrCreateTag().putString("machineType", machineType);
+        StackNbt.orCreate(stack).putString("machineType", machineType);
         return stack;
     }
 
     @Nullable
     public static String machineType(ItemStack stack) {
-        return stack.hasTag() && stack.getTag().contains("machineType") ? stack.getTag().getString("machineType") : null;
+        return StackNbt.has(stack) && StackNbt.read(stack).contains("machineType") ? StackNbt.read(stack).getString("machineType") : null;
     }
 
     @Override

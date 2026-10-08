@@ -87,8 +87,16 @@ public class SoyuzLauncherBlock extends DummyableMachineBlock {
         return createTickerHelper(type, ModBlockEntities.SOYUZ_LAUNCHER_BE.get(), SoyuzLauncherBlockEntity::serverTick);
     }
 
+    //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+    //?} else {
+    /*@Override
+    protected net.minecraft.world.ItemInteractionResult useItemOn(net.minecraft.world.item.ItemStack hbmHeld, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        return com.hbm_m.platform.BlockUseHooks.item(hbmUse(state, level, pos, player, hand, hit));
+    }
+    private InteractionResult hbmUse(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+    *///?}
         if (player.isShiftKeyDown()) return level.isClientSide() ? InteractionResult.SUCCESS : InteractionResult.PASS; // Original: Client true, Server geschlichen false
         if (!level.isClientSide() && level.getBlockEntity(pos) instanceof SoyuzLauncherBlockEntity be) {
             com.hbm_m.handler.BossSpawnHandler.markFBI((ServerPlayer) player);

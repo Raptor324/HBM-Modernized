@@ -31,7 +31,7 @@ import net.minecraft.world.item.ItemStack;
  * <p>Ebenfalls enthalten: das Plasmabecken ({@code renderPlasma}), der schwebende Gegenstand des
  * laufenden Rezepts ({@code renderItem}) und die Plasmasaeule darueber ({@code renderBeam}).</p>
  */
-public class FusionPlasmaForgeRenderer implements BlockEntityRenderer<FusionPlasmaForgeBlockEntity> {
+public class FusionPlasmaForgeRenderer implements com.hbm_m.client.render.HbmBerBounds<FusionPlasmaForgeBlockEntity> {
 
     private static final String OBJ = "models/block/machines/plasma_forge.obj";
     private static final String TORUS_OBJ = "models/block/machines/torus.obj";
@@ -216,10 +216,17 @@ public class FusionPlasmaForgeRenderer implements BlockEntityRenderer<FusionPlas
                                  float x2, float y2, float z2, float u2, float v2,
                                  float x3, float y3, float z3, float u3, float v3) {
         float base = 1F;
+        //? if < 1.21.1 {
         vc.vertex(m, x0, y0, z0).color(1F, 1F, 1F, y0 <= base ? 1F : 0F).uv(u0, v0).endVertex();
         vc.vertex(m, x1, y1, z1).color(1F, 1F, 1F, y1 <= base ? 1F : 0F).uv(u1, v1).endVertex();
         vc.vertex(m, x2, y2, z2).color(1F, 1F, 1F, y2 <= base ? 1F : 0F).uv(u2, v2).endVertex();
         vc.vertex(m, x3, y3, z3).color(1F, 1F, 1F, y3 <= base ? 1F : 0F).uv(u3, v3).endVertex();
+        //?} else {
+        /*vc.addVertex(m, x0, y0, z0).setColor(1F, 1F, 1F, y0 <= base ? 1F : 0F).setUv(u0, v0);
+        vc.addVertex(m, x1, y1, z1).setColor(1F, 1F, 1F, y1 <= base ? 1F : 0F).setUv(u1, v1);
+        vc.addVertex(m, x2, y2, z2).setColor(1F, 1F, 1F, y2 <= base ? 1F : 0F).setUv(u2, v2);
+        vc.addVertex(m, x3, y3, z3).setColor(1F, 1F, 1F, y3 <= base ? 1F : 0F).setUv(u3, v3);
+        *///?}
     }
 
     private void renderStrikerArm(FusionPlasmaForgeBlockEntity be, VertexConsumer vc, PoseStack pose,
@@ -329,10 +336,17 @@ public class FusionPlasmaForgeRenderer implements BlockEntityRenderer<FusionPlas
     private static void quad(VertexConsumer vc, org.joml.Matrix4f m, float r, float g, float b,
                              double x0, double y0, double z0, double x1, double y1, double z1,
                              double x2, double y2, double z2, double x3, double y3, double z3) {
+        //? if < 1.21.1 {
         vc.vertex(m, (float) x0, (float) y0, (float) z0).color(r, g, b, 1F).endVertex();
         vc.vertex(m, (float) x1, (float) y1, (float) z1).color(r, g, b, 1F).endVertex();
         vc.vertex(m, (float) x2, (float) y2, (float) z2).color(r, g, b, 0F).endVertex();
         vc.vertex(m, (float) x3, (float) y3, (float) z3).color(r, g, b, 0F).endVertex();
+        //?} else {
+        /*vc.addVertex(m, (float) x0, (float) y0, (float) z0).setColor(r, g, b, 1F);
+        vc.addVertex(m, (float) x1, (float) y1, (float) z1).setColor(r, g, b, 1F);
+        vc.addVertex(m, (float) x2, (float) y2, (float) z2).setColor(r, g, b, 0F);
+        vc.addVertex(m, (float) x3, (float) y3, (float) z3).setColor(r, g, b, 0F);
+        *///?}
     }
 
     private static void draw(VertexConsumer vc, PoseStack pose, Map<String, List<float[]>> obj,

@@ -1,5 +1,9 @@
 package com.hbm_m.powerarmor;
 
+import com.hbm_m.platform.PlatformHooks;
+
+import com.hbm_m.platform.AttributeOps;
+
 import java.util.UUID;
 
 import com.google.common.collect.ImmutableMultimap;
@@ -26,6 +30,9 @@ public final class ArmorAttributes {
             case CHESTPLATE -> 1;
             case LEGGINGS -> 2;
             case BOOTS -> 3;
+            //? if >= 1.21.1 {
+            /*default -> 1;
+            *///?}
         };
     }
 
@@ -35,9 +42,9 @@ public final class ArmorAttributes {
 
     /** Vanilla-Werte des Slots plus die zusaetzlichen Modifikatoren. */
     @SafeVarargs
-    public static Multimap<Attribute, AttributeModifier> with(Multimap<Attribute, AttributeModifier> base,
-                                                              java.util.Map.Entry<Attribute, AttributeModifier>... extra) {
-        ImmutableMultimap.Builder<Attribute, AttributeModifier> builder = ImmutableMultimap.builder();
+    public static <K> Multimap<K, AttributeModifier> with(Multimap<K, AttributeModifier> base,
+                                                              java.util.Map.Entry<K, AttributeModifier>... extra) {
+        ImmutableMultimap.Builder<K, AttributeModifier> builder = ImmutableMultimap.builder();
         builder.putAll(base);
         for (var e : extra) builder.put(e.getKey(), e.getValue());
         return builder.build();
@@ -47,8 +54,8 @@ public final class ArmorAttributes {
     public static void speed(LivingEntity player, UUID uuid, String name, double amount, boolean apply) {
         AttributeInstance speed = player.getAttribute(Attributes.MOVEMENT_SPEED);
         if (speed == null) return;
-        speed.removeModifier(uuid);
-        if (apply) speed.addTransientModifier(new AttributeModifier(uuid, name, amount, AttributeModifier.Operation.ADDITION));
+        com.hbm_m.platform.AttributeHooks.removeModifier(speed, uuid);
+        if (apply) speed.addTransientModifier(PlatformHooks.attributeModifier(uuid, name, amount, AttributeOps.ADDITION));
     }
 
     public static boolean isSlot(ArmorItem item, EquipmentSlot slot) {

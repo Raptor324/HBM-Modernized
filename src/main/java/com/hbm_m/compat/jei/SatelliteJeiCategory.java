@@ -1,5 +1,5 @@
 package com.hbm_m.compat.jei;
-//? if forge {
+//? if forge || neoforge {
 
 import java.util.ArrayList;
 import java.util.List;
@@ -93,7 +93,7 @@ public class SatelliteJeiCategory implements IRecipeCategory<SatelliteJeiCategor
             slot.addRichTooltipCallback((view, tooltip) -> {
                 ItemStack shown = view.getDisplayedItemStack().orElse(ItemStack.EMPTY);
                 for (Outcome o : cell) {
-                    if (ItemStack.isSameItemSameTags(o.stack(), shown)) {
+                    if (com.hbm_m.platform.StackNbt.sameItemSameTags(o.stack(), shown)) {
                         tooltip.add(Component.literal(((int) (o.chance() * 10F) / 10F) + "%").withStyle(ChatFormatting.RED));
                         break;
                     }

@@ -19,7 +19,7 @@ import net.minecraft.resources.ResourceLocation;
  * 1:1 {@code RenderFloodlight}: Sockel nach Befestigungsseite gedreht, Leuchtenkopf um die Neigung, Lampen im Betrieb
  * voll hell, aus mit 25 % Farbe.
  */
-public class FloodlightRenderer implements BlockEntityRenderer<FloodlightBlockEntity> {
+public class FloodlightRenderer implements com.hbm_m.client.render.HbmBerBounds<FloodlightBlockEntity> {
 
     public static final SimpleObjModel FLOODLIGHT = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/block/floodlight.obj"));
     public static final ResourceLocation TEX = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/block/machine/floodlight.png");

@@ -129,4 +129,8 @@ public class MachineReactorControlBlock extends BaseEntityBlock {
         if (!(te instanceof com.hbm_m.blockentity.machines.MachineReactorControlBlockEntity control)) return 0;
         return (int) Math.ceil((double) control.getHeat() * 15D / 50000D);
     }
+    //? if >= 1.21.1 {
+    /*public static final com.mojang.serialization.MapCodec<MachineReactorControlBlock> CODEC = simpleCodec(MachineReactorControlBlock::new);
+    @Override protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() { return CODEC; }
+    *///?}
 }

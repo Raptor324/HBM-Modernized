@@ -28,7 +28,11 @@ public class EntityDeathBlast extends Entity {
         this(ModEntities.DEATH_BLAST.get(), world);
     }
 
+    //? if < 1.21.1 {
     @Override protected void defineSynchedData() { }
+    //?} else {
+    /*@Override protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) { }
+    *///?}
     @Override protected void readAdditionalSaveData(CompoundTag nbt) { }
     @Override protected void addAdditionalSaveData(CompoundTag nbt) { }
 

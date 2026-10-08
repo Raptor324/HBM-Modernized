@@ -36,11 +36,19 @@ public class EntityMinerRocket extends Entity {
         this(ModEntities.MINER_ROCKET.get(), world);
     }
 
+    //? if < 1.21.1 {
     @Override
     protected void defineSynchedData() {
         this.entityData.define(MODE, 0);
         this.entityData.define(SAT, 0);
     }
+    //?} else {
+    /*@Override
+    protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
+        builder.define(MODE, 0);
+        builder.define(SAT, 0);
+    }
+    *///?}
 
     public int getMode() { return entityData.get(MODE); }
     public void setMode(int mode) { entityData.set(MODE, mode); }

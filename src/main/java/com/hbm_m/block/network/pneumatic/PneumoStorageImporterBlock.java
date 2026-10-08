@@ -32,4 +32,8 @@ public class PneumoStorageImporterBlock extends PneumaticStorageBlockBase {
         return createTickerHelper(type, ModBlockEntities.PNEUMO_STORAGE_IMPORTER_BE.get(),
                 (lvl, p, st, be) -> PneumoStorageImporterBlockEntity.tick(lvl, p, st, (PneumoStorageImporterBlockEntity) be));
     }
+    //? if >= 1.21.1 {
+    /*public static final com.mojang.serialization.MapCodec<PneumoStorageImporterBlock> CODEC = simpleCodec(PneumoStorageImporterBlock::new);
+    @Override protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() { return CODEC; }
+    *///?}
 }

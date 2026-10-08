@@ -293,7 +293,41 @@ public class MachineSawmillBlockEntity extends BaseMachineBlockEntity {
         sided.values().forEach(net.minecraftforge.common.util.LazyOptional::invalidate);
         sided.clear();
     }
-    //?}
+    //?} elif neoforge {
+    /*private final Map<Direction, com.hbm_m.platform.LazyCap<net.neoforged.neoforge.items.IItemHandler>> sided = new EnumMap<>(Direction.class);
+
+    /^* Original {@code canExtractItem}: alles ausser dem Eingang. ^/
+    @Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER && side != null) {
+            return sided.computeIfAbsent(side, d -> com.hbm_m.platform.LazyCap.of(() -> new net.neoforged.neoforge.items.IItemHandler() {
+                @Override public int getSlots() { return SLOT_COUNT; }
+                @Override public @NotNull ItemStack getStackInSlot(int slot) { return inventory.getStackInSlot(slot); }
+                @Override public @NotNull ItemStack insertItem(int slot, @NotNull ItemStack stack, boolean simulate) {
+                    if (slot != 0 || stack.isEmpty()) return stack;
+                    ItemStack one = stack.copyWithCount(1);
+                    if (!isItemValidForSlot(0, one)) return stack;
+                    if (!simulate) inventory.setStackInSlot(0, one);
+                    return stack.copyWithCount(stack.getCount() - 1);
+                }
+                @Override public @NotNull ItemStack extractItem(int slot, int amount, boolean simulate) {
+                    if (slot == 0) return ItemStack.EMPTY;
+                    return inventory.extractItem(slot, amount, simulate);
+                }
+                @Override public int getSlotLimit(int slot) { return slot == 0 ? 1 : inventory.getSlotLimit(slot); }
+                @Override public boolean isItemValid(int slot, @NotNull ItemStack stack) { return slot == 0 && isItemValidForSlot(0, stack.copyWithCount(1)); }
+            })).cast();
+        }
+        return super.getHbmCapability(cap, side);
+    }
+
+    @Override
+    public void invalidateHbmCaps() {
+        super.invalidateHbmCaps();
+        sided.values().forEach(com.hbm_m.platform.LazyCap::invalidate);
+        sided.clear();
+    }
+    *///?}
 
     @Override
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {

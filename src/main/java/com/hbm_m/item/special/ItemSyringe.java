@@ -1,5 +1,7 @@
 package com.hbm_m.item.special;
 
+import com.hbm_m.platform.EffectHooks;
+
 import java.util.List;
 
 import org.jetbrains.annotations.Nullable;
@@ -119,7 +121,7 @@ public class ItemSyringe extends Item implements ITooltipProvider {
                     player.removeEffect(MobEffects.POISON);
                     player.removeEffect(MobEffects.WEAKNESS);
                     player.removeEffect(MobEffects.WITHER);
-                    player.removeEffect(ModEffects.RADIATION.get());
+                    player.removeEffect(EffectHooks.of(ModEffects.RADIATION));
 
                     ModConsumables.applyPotionSickness(player, 15);
 
@@ -128,7 +130,7 @@ public class ItemSyringe extends Item implements ITooltipProvider {
             }
             case TAINT -> {
                 if (!world.isClientSide) {
-                    player.addEffect(new MobEffectInstance(ModEffects.TAINT.get(), 60 * 20, 0));
+                    player.addEffect(new MobEffectInstance(EffectHooks.of(ModEffects.TAINT), 60 * 20, 0));
                     player.addEffect(new MobEffectInstance(MobEffects.CONFUSION, 5 * 20, 0));
 
                     stack.shrink(1);
@@ -170,7 +172,7 @@ public class ItemSyringe extends Item implements ITooltipProvider {
             }
             case CBT_DEVICE -> {
                 if (!world.isClientSide) {
-                    player.addEffect(new MobEffectInstance(ModEffects.BANG.get(), 30, 0));
+                    player.addEffect(new MobEffectInstance(EffectHooks.of(ModEffects.BANG), 30, 0));
 
                     stack.shrink(1);
                     play(world, player, "hbm:item.vice");
@@ -226,7 +228,7 @@ public class ItemSyringe extends Item implements ITooltipProvider {
                 }
             }
             case TAINT -> {
-                entity.addEffect(new MobEffectInstance(ModEffects.TAINT.get(), 60 * 20, 0));
+                entity.addEffect(new MobEffectInstance(EffectHooks.of(ModEffects.TAINT), 60 * 20, 0));
                 entity.addEffect(new MobEffectInstance(MobEffects.CONFUSION, 5 * 20, 0));
                 afterHit(stack, world, entity, entityPlayer);
                 if (entityPlayer instanceof Player player) {

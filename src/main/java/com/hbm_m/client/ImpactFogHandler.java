@@ -1,4 +1,4 @@
-//? if forge {
+//? if forge || neoforge {
 package com.hbm_m.client;
 
 import com.hbm_m.handler.ImpactWorldHandler;
@@ -6,17 +6,29 @@ import com.hbm_m.main.MainRegistry;
 
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.level.Level;
+//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.ViewportEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+//?} else {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.neoforge.client.event.ViewportEvent;
+import net.neoforged.bus.api.EventPriority;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+*///?}
 
 /**
  * Original {@code WorldProviderNTM.getFogColor} (Oberwelt): Nebelfarbe nach dem Tom-Einschlag - gruen/blau
  * gedaempft durch Staub, waehrend des Feuersturms bis auf {@code max(1 - dust * 2, 0)} verdunkelt.
  */
+//? if forge {
 @Mod.EventBusSubscriber(modid = MainRegistry.MOD_ID, value = Dist.CLIENT)
+//?} else {
+/*@EventBusSubscriber(modid = MainRegistry.MOD_ID, value = Dist.CLIENT)
+*///?}
 public class ImpactFogHandler {
 
     @SubscribeEvent(priority = EventPriority.LOW)

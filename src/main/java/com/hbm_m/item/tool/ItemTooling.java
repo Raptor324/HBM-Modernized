@@ -1,5 +1,7 @@
 package com.hbm_m.item.tool;
 
+import com.hbm_m.platform.ItemHooks;
+
 import com.hbm_m.api.block.IToolable;
 
 import net.minecraft.core.BlockPos;
@@ -36,7 +38,7 @@ public class ItemTooling extends ItemCraftingDegradation {
             Vec3 hit = ctx.getClickLocation();
             if (toolable.onScrew(world, ctx.getPlayer(), pos, ctx.getClickedFace(), (float) (hit.x - pos.getX()), (float) (hit.y - pos.getY()), (float) (hit.z - pos.getZ()), ctx.getHand(), this.type)) {
                 if (ctx.getItemInHand().getMaxDamage() > 0)
-                    ctx.getItemInHand().hurtAndBreak(1, ctx.getPlayer(), p -> p.broadcastBreakEvent(ctx.getHand()));
+                    ItemHooks.hurtAndBreak(ctx.getItemInHand(), 1, ctx.getPlayer(), ctx.getHand());
                 return InteractionResult.sidedSuccess(world.isClientSide);
             }
         }
@@ -48,7 +50,7 @@ public class ItemTooling extends ItemCraftingDegradation {
     public static void onScrewed(Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
         if (stack.getItem() instanceof ItemTooling && stack.getMaxDamage() > 0) {
-            stack.hurtAndBreak(1, player, p -> p.broadcastBreakEvent(hand));
+            ItemHooks.hurtAndBreak(stack, 1, player, hand);
         }
     }
 }

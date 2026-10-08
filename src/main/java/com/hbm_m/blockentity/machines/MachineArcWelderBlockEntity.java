@@ -362,5 +362,40 @@ public class MachineArcWelderBlockEntity extends BaseMachineBlockEntity implemen
     private net.minecraftforge.items.IItemHandler itemAccess(int[] slots) {
         return com.hbm_m.blockentity.SidedItemAccess.fixed(() -> inventory, slots, (slot, stack) -> slot < 3, (slot, stack) -> slot == SLOT_OUT);
     }
-    //?}
+    //?} elif neoforge {
+    /*/^* Original: rot Slot 0, gelb Slot 1, gruen Slot 2 (je plus Ausgang 3); alle anderen Zellen ohne Zugriff. ^/
+    @Override
+    public net.neoforged.neoforge.items.IItemHandler getConditionalItemHandler(net.minecraft.core.BlockPos part, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        net.minecraft.world.level.block.state.BlockState state = getBlockState();
+        net.minecraft.core.Direction dir = state.hasProperty(com.hbm_m.block.machines.MachineArcWelderBlock.FACING)
+                ? state.getValue(com.hbm_m.block.machines.MachineArcWelderBlock.FACING) : net.minecraft.core.Direction.NORTH;
+        net.minecraft.core.Direction rot = dir.getClockWise(); // ForgeDirection.getRotation(UP)
+        net.minecraft.core.BlockPos c = worldPosition;
+
+        // Rot
+        if (part.equals(c.relative(rot)) || part.equals(c.relative(rot.getOpposite()).relative(dir.getOpposite())))
+            return itemAccess(new int[] {0, 3});
+        // Gelb
+        if (part.equals(c.relative(dir.getOpposite())))
+            return itemAccess(new int[] {1, 3});
+        // Gruen
+        if (part.equals(c.relative(rot.getOpposite())) || part.equals(c.relative(rot).relative(dir.getOpposite())))
+            return itemAccess(new int[] {2, 3});
+
+        return itemAccess(new int[] { });
+    }
+
+    @Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER && side != null) {
+            net.neoforged.neoforge.items.IItemHandler h = itemAccess(new int[] {1, 3});
+            return com.hbm_m.platform.LazyCap.of(() -> h).cast();
+        }
+        return super.getHbmCapability(cap, side);
+    }
+
+    private net.neoforged.neoforge.items.IItemHandler itemAccess(int[] slots) {
+        return com.hbm_m.blockentity.SidedItemAccess.fixed(() -> inventory, slots, (slot, stack) -> slot < 3, (slot, stack) -> slot == SLOT_OUT);
+    }
+    *///?}
 }

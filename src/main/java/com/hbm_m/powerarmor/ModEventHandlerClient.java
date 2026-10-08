@@ -1,4 +1,4 @@
-//? if forge {
+//? if forge || neoforge {
 package com.hbm_m.powerarmor;
 
 import java.util.HashSet;
@@ -17,8 +17,32 @@ import com.mojang.blaze3d.vertex.Tesselator;
 import com.mojang.blaze3d.vertex.VertexConsumer;
 import com.mojang.blaze3d.vertex.VertexFormat;
 
+//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.event.TickEvent;
+import net.minecraftforge.client.event.RegisterGuiOverlaysEvent;
+import net.minecraftforge.client.event.RenderGuiEvent;
+import net.minecraftforge.client.event.RenderItemInFrameEvent;
+import net.minecraftforge.client.event.RenderLevelStageEvent;
+import net.minecraftforge.client.event.ScreenEvent;
+import net.minecraftforge.client.gui.overlay.ForgeGui;
+import net.minecraftforge.client.gui.overlay.IGuiOverlay;
+import net.minecraftforge.event.entity.player.ItemTooltipEvent;
+import net.minecraftforge.eventbus.api.EventPriority;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
+//?} else {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.neoforge.client.event.ClientTickEvent;
+import net.neoforged.neoforge.client.event.RenderGuiEvent;
+import net.neoforged.neoforge.client.event.RenderItemInFrameEvent;
+import net.neoforged.neoforge.client.event.RenderLevelStageEvent;
+import net.neoforged.neoforge.client.event.ScreenEvent;
+import net.neoforged.neoforge.event.entity.player.ItemTooltipEvent;
+import net.neoforged.bus.api.EventPriority;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+*///?}
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
@@ -40,17 +64,6 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.HitResult;
-import net.minecraftforge.client.event.RegisterGuiOverlaysEvent;
-import net.minecraftforge.client.event.RenderGuiEvent;
-import net.minecraftforge.client.event.RenderItemInFrameEvent;
-import net.minecraftforge.client.event.RenderLevelStageEvent;
-import net.minecraftforge.client.event.ScreenEvent;
-import net.minecraftforge.client.gui.overlay.ForgeGui;
-import net.minecraftforge.client.gui.overlay.IGuiOverlay;
-import net.minecraftforge.event.entity.player.ItemTooltipEvent;
-import net.minecraftforge.eventbus.api.EventPriority;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
 
 /**
  * Клиентский обработчик событий для HBM's Nuclear Tech Modernized
@@ -64,7 +77,11 @@ import net.minecraftforge.fml.common.Mod;
  * - Звуковые эффекты
  * - Рендеринг специальных эффектов
  */
+//? if forge {
 @Mod.EventBusSubscriber(modid = RefStrings.MODID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
+//?} else {
+/*@EventBusSubscriber(modid = RefStrings.MODID, bus = EventBusSubscriber.Bus.GAME, value = Dist.CLIENT)
+*///?}
 public class ModEventHandlerClient {
 
     static {
@@ -119,6 +136,8 @@ public class ModEventHandlerClient {
     private static final long PERFORMANCE_CHECK_INTERVAL = 1000; // Проверка каждую секунду
     private static boolean performanceWarningsLogged = false;
 
+    //? if forge {
+    // neo-pendant: keins - Forge-only IGuiOverlay/RegisterGuiOverlaysEvent; der Handler haengt am FORGE-Bus und feuert dort nie (Mod-Bus-Ereignis), der Blitz kommt aus onRenderGuiNuclearFlash. NeoForge lehnt Mod-Bus-Ereignisse am Spielbus ab.
     /**
      * Оверлей для ядерной вспышки
      * Рисуется поверх прицела для максимальной видимости
@@ -194,6 +213,7 @@ public class ModEventHandlerClient {
         MainRegistry.LOGGER.info("Registered HBM nuclear flash overlay.");
         // Примечание: Thermal overlay регистрируется в ClientSetup.java
     }
+    //?}
 
     /**
      * HUD-shake при ядерном взрыве (NukeTorex устанавливает shakeTimestamp).
@@ -214,8 +234,19 @@ public class ModEventHandlerClient {
      * Обработка клиентского тика
      * Оптимизировано для производительности - тяжелые проверки выполняются периодически
      */
+    //? if forge {
     @SubscribeEvent
     public static void onClientTick(TickEvent.ClientTickEvent event) {
+    //?} else {
+    /*// NeoForge: getrennte Pre/Post-Ereignisse statt TickEvent.Phase, gemeinsamer Rumpf unten
+    @SubscribeEvent
+    public static void onClientTickPre(ClientTickEvent.Pre event) { onClientTick(true); }
+
+    @SubscribeEvent
+    public static void onClientTickPost(ClientTickEvent.Post event) { onClientTick(false); }
+
+    private static void onClientTick(boolean start) {
+    *///?}
         Minecraft mc = Minecraft.getInstance();
 
         if (mc.level == null || mc.player == null) {
@@ -224,7 +255,11 @@ public class ModEventHandlerClient {
 
         long currentTime = System.currentTimeMillis();
 
+        //? if forge {
         if (event.phase == TickEvent.Phase.START) {
+        //?} else {
+        /*if (start) {
+        *///?}
 
             // Периодическая проверка производительности (раз в секунду)
             if (currentTime - lastPerformanceCheck > PERFORMANCE_CHECK_INTERVAL) {
@@ -237,7 +272,11 @@ public class ModEventHandlerClient {
             // TODO: Реализовать проверку маски (ArmorUtil.isWearingEmptyMask)
         }
 
+        //? if forge {
         if (event.phase == TickEvent.Phase.END) {
+        //?} else {
+        /*if (!start) {
+        *///?}
             // Обработка ввода делается в ModConfigKeybindHandler.java
 
             // Автоматическая деактивация VATS и тепловизора, если броня их не поддерживает
@@ -471,7 +510,11 @@ public class ModEventHandlerClient {
         }
     }
 
+    //? if forge {
     @SubscribeEvent(priority = net.minecraftforge.eventbus.api.EventPriority.HIGHEST)
+    //?} else {
+    /*@SubscribeEvent(priority = net.neoforged.bus.api.EventPriority.HIGHEST)
+    *///?}
     public static void onTitleRenderPre(ScreenEvent.Render.Pre event) {
         if (!(event.getScreen() instanceof TitleScreen ts)) return;
     
@@ -800,8 +843,13 @@ public class ModEventHandlerClient {
         if (brightness <= 0.01F) return;
 
         GuiGraphics guiGraphics = event.getGuiGraphics();
+        //? if forge {
         int w = event.getWindow().getGuiScaledWidth();
         int h = event.getWindow().getGuiScaledHeight();
+        //?} else {
+        /*int w = Minecraft.getInstance().getWindow().getGuiScaledWidth();
+        int h = Minecraft.getInstance().getWindow().getGuiScaledHeight();
+        *///?}
         int alpha = (int) (brightness * 255) << 24;
         int color = 0x00FFFFFF | alpha;
         guiGraphics.fill(-FLASH_PADDING, -FLASH_PADDING, w + FLASH_PADDING, h + FLASH_PADDING, color);
@@ -881,12 +929,15 @@ public class ModEventHandlerClient {
         return thermalActive;
     }  
 
+    //? if forge {
+    // neo-pendant: keins - Forge-only Signatur (ForgeGui), nirgends angemeldet (nur THERMAL_OVERLAY).
     /**
      * Рендерит оверлей тепловизора
      */
     public static void onRenderThermalOverlay(ForgeGui gui, GuiGraphics guiGraphics, float partialTick, int screenWidth, int screenHeight) {
         renderThermalOverlayHud(guiGraphics, partialTick, screenWidth, screenHeight);
     }
+    //?}
 
     /**
      * Loader-agnostic HUD hook для тепловизора.

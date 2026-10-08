@@ -8,7 +8,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 
 /** 1:1 {@code TileEntityDecoBlock}: traegt nur das Modell (Boxcar, Duchess Gambit). */
-public class DecoBlockEntity extends BlockEntity {
+public class DecoBlockEntity extends BlockEntity implements com.hbm_m.api.render.RenderBoundsProvider {
 
     public DecoBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.DECO_BLOCK.get(), pos, state);

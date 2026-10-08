@@ -159,7 +159,13 @@ public class MissileContrailParticle extends TextureSheetParticle {
     public boolean shouldCull() {
         return false;
     }
-    //?}
+    //?} elif neoforge {
+    /*// NeoForge 1.21.1: kein shouldCull mehr - unendliche Box = nie wegcullen (gleiches Verhalten)
+    @Override
+    public net.minecraft.world.phys.AABB getRenderBoundingBox(float partialTicks) {
+        return net.minecraft.world.phys.AABB.INFINITE;
+    }
+    *///?}
 
     @Override
     public int getLightColor(float partialTick) {

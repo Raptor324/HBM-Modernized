@@ -90,7 +90,69 @@ public final class CraneInventoryUtil {
         f /= (float) inv.getSlots();
         return Mth.floor(f * 14.0F) + (nonEmpty > 0 ? 1 : 0);
     }
-    //?}
+    //?} elif neoforge {
+    /*/^*
+     * Zielinventar an {@code pos}, von Seite {@code side} aus betrachtet. Original {@code InventoryUtil.masquerade}: Oefen
+     * nehmen von jeder Seite Brennstoff (1) und Eingabe (0) an.
+     ^/
+    @Nullable
+    public static net.neoforged.neoforge.items.IItemHandler inventoryAt(Level level, BlockPos pos, Direction side) {
+        BlockEntity te = level.getBlockEntity(pos);
+        if (te == null) return null;
+        if (te instanceof AbstractFurnaceBlockEntity furnace) return new SlotView(new net.neoforged.neoforge.items.wrapper.InvWrapper(furnace), new int[] { 1, 0 });
+        return com.hbm_m.platform.HbmCaps.get(te, com.hbm_m.platform.HbmCap.ITEM_HANDLER, side).orElse(null);
+    }
+
+    /^*
+     * 1:1 {@code CraneInserter.addToInventory}: erst auf gleiche Stapel auffuellen, dann leere Plaetze belegen.
+     * Veraendert {@code toAdd}; gibt den Rest zurueck ({@link ItemStack#EMPTY} = alles untergebracht).
+     ^/
+    public static ItemStack addToInventory(net.neoforged.neoforge.items.IItemHandler inv, ItemStack toAdd) {
+        for (int i = 0; i < inv.getSlots() && !toAdd.isEmpty(); i++) {
+            ItemStack stack = inv.getStackInSlot(i);
+            if (!stack.isEmpty() && ItemStack.isSameItemSameComponents(stack, toAdd)
+                    && stack.getCount() < Math.min(stack.getMaxStackSize(), inv.getSlotLimit(i))) {
+                ItemStack rest = inv.insertItem(i, toAdd.copy(), false);
+                toAdd.setCount(rest.getCount());
+            }
+        }
+        for (int i = 0; i < inv.getSlots() && !toAdd.isEmpty(); i++) {
+            if (inv.getStackInSlot(i).isEmpty()) {
+                ItemStack rest = inv.insertItem(i, toAdd.copy(), false);
+                toAdd.setCount(rest.getCount());
+            }
+        }
+        return toAdd.isEmpty() ? ItemStack.EMPTY : toAdd;
+    }
+
+    /^* Sicht auf ausgewaehlte Plaetze eines Inventars (Original: {@code access}-Array). ^/
+    public static class SlotView implements net.neoforged.neoforge.items.IItemHandler {
+        private final net.neoforged.neoforge.items.IItemHandler inv;
+        private final int[] access;
+        public SlotView(net.neoforged.neoforge.items.IItemHandler inv, int[] access) { this.inv = inv; this.access = access; }
+        @Override public int getSlots() { return access.length; }
+        @Override public ItemStack getStackInSlot(int slot) { return inv.getStackInSlot(access[slot]); }
+        @Override public ItemStack insertItem(int slot, ItemStack stack, boolean simulate) { return inv.insertItem(access[slot], stack, simulate); }
+        @Override public ItemStack extractItem(int slot, int amount, boolean simulate) { return inv.extractItem(access[slot], amount, simulate); }
+        @Override public int getSlotLimit(int slot) { return inv.getSlotLimit(access[slot]); }
+        @Override public boolean isItemValid(int slot, ItemStack stack) { return inv.isItemValid(access[slot], stack); }
+    }
+
+    /^* Vanilla {@code Container.calcRedstoneFromInventory} fuer einen Item-Handler. ^/
+    public static int comparator(net.neoforged.neoforge.items.IItemHandler inv) {
+        int nonEmpty = 0;
+        float f = 0.0F;
+        for (int i = 0; i < inv.getSlots(); i++) {
+            ItemStack stack = inv.getStackInSlot(i);
+            if (!stack.isEmpty()) {
+                f += (float) stack.getCount() / (float) Math.min(inv.getSlotLimit(i), stack.getMaxStackSize());
+                nonEmpty++;
+            }
+        }
+        f /= (float) inv.getSlots();
+        return Mth.floor(f * 14.0F) + (nonEmpty > 0 ? 1 : 0);
+    }
+    *///?}
 
     /** Original: {@code getClosestSnappingPosition} fuer ein aus {@code from} in Richtung {@code dir} ausgegebenes Objekt. */
     public static Vec3 snap(Level level, BlockPos from, Direction dir, IConveyorBelt belt) {

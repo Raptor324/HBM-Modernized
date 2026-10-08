@@ -1,5 +1,7 @@
 package com.hbm_m.item.fekal_electric;
 
+import com.hbm_m.platform.StackNbt;
+
 import com.hbm_m.sound.HbmSoundsNT;
 
 import net.minecraft.sounds.SoundSource;
@@ -40,10 +42,10 @@ public class ItemPotatos extends ModBatteryItem {
     }
 
     private static int getTimer(ItemStack stack) {
-        return stack.hasTag() ? stack.getTag().getInt("timer") : 0;
+        return StackNbt.has(stack) ? StackNbt.read(stack).getInt("timer") : 0;
     }
 
     private static void setTimer(ItemStack stack, int i) {
-        stack.getOrCreateTag().putInt("timer", i);
+        StackNbt.orCreate(stack).putInt("timer", i);
     }
 }

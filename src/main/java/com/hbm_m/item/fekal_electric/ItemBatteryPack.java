@@ -1,5 +1,7 @@
 package com.hbm_m.item.fekal_electric;
 
+import com.hbm_m.platform.StackNbt;
+
 import java.util.List;
 import java.util.Locale;
 
@@ -93,7 +95,7 @@ public class ItemBatteryPack extends ModBatteryItem {
         long chargeRate = pack.chargeRate;
         long dischargeRate = pack.dischargeRate;
         long charge = maxCharge;
-        if (itemstack.hasTag()) charge = getEnergy(itemstack);
+        if (StackNbt.has(itemstack)) charge = getEnergy(itemstack);
 
         list.add(Component.literal("Energy stored: " + EnergyFormatter.format(charge) + "/" + EnergyFormatter.format(maxCharge) + "HE (" + (charge * 1000 / maxCharge / 10D) + "%)").withStyle(ChatFormatting.GREEN));
         list.add(Component.literal("Charge rate: " + EnergyFormatter.format(chargeRate) + "HE/t").withStyle(ChatFormatting.YELLOW));

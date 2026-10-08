@@ -1,5 +1,7 @@
 package com.hbm_m.blockentity.machines;
 
+import com.hbm_m.platform.RenderBounds;
+
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -192,7 +194,7 @@ public class BlastDoorBlockEntity extends BaseHbmBlockEntity implements ILockabl
     @Override public boolean isCheesable() { return lockState.cheesable; }
 
     @Override
-    public AABB getRenderBoundingBox() { return INFINITE_EXTENT_AABB; }
+    public AABB getRenderBoundingBox() { return RenderBounds.INFINITE; }
 
     @Override
     protected void applyClientUpdate(@NotNull CompoundTag tag) {

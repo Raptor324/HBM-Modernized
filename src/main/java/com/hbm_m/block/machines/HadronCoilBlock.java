@@ -22,7 +22,11 @@ public class HadronCoilBlock extends Block {
     }
 
     @Override
+    //? if < 1.21.1 {
     public void appendHoverText(ItemStack stack, @Nullable BlockGetter level, List<Component> list, TooltipFlag flag) {
+    //?} else {
+    /*public void appendHoverText(ItemStack stack, net.minecraft.world.item.Item.TooltipContext hbmTooltipCtx, List<Component> list, TooltipFlag flag) {
+    *///?}
         list.add(Component.literal(Component.translatable("info.coil").getString() + ": " + String.format(Locale.US, "%,d", factor)));
     }
 }

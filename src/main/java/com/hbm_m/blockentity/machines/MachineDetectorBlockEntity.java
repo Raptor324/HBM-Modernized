@@ -18,7 +18,7 @@ import net.minecraft.world.level.block.state.BlockState;
  * audit10: 1:1 {@code TileEntityMachineDetector} ({@code detector}): nimmt an allen Seiten Strom an (Puffer 5 HE,
  * Prioritaet HIGH), verbraucht 1 HE je Tick und ist dabei "an" (Original-Metadate 1 = Redstone 15).
  */
-public class MachineDetectorBlockEntity extends BlockEntity implements IEnergyReceiver {
+public class MachineDetectorBlockEntity extends BlockEntity implements IEnergyReceiver, com.hbm_m.platform.HbmCapabilityProvider {
 
     public long power;
 
@@ -56,14 +56,30 @@ public class MachineDetectorBlockEntity extends BlockEntity implements IEnergyRe
     }
 
     @Override
+    //? if < 1.21.1 {
     public void load(CompoundTag nbt) {
+    //?} else {
+    /*public void loadAdditional(CompoundTag nbt, net.minecraft.core.HolderLookup.Provider registries) {
+    *///?}
+        //? if < 1.21.1 {
         super.load(nbt);
+        //?} else {
+        /*super.loadAdditional(nbt, registries);
+        *///?}
         this.power = nbt.getLong("power");
     }
 
     @Override
+    //? if < 1.21.1 {
     protected void saveAdditional(CompoundTag nbt) {
+    //?} else {
+    /*protected void saveAdditional(CompoundTag nbt, net.minecraft.core.HolderLookup.Provider registries) {
+    *///?}
+        //? if < 1.21.1 {
         super.saveAdditional(nbt);
+        //?} else {
+        /*super.saveAdditional(nbt, registries);
+        *///?}
         nbt.putLong("power", power);
     }
 
@@ -97,5 +113,14 @@ public class MachineDetectorBlockEntity extends BlockEntity implements IEnergyRe
             return net.minecraftforge.common.util.LazyOptional.of(() -> (com.hbm_m.interfaces.IEnergyConnector) this).cast();
         return super.getCapability(cap, side);
     }
-    //?}
+    //?} elif neoforge {
+    /*@Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == com.hbm_m.platform.HbmCap.HBM_ENERGY_RECEIVER)
+            return com.hbm_m.platform.LazyCap.of(() -> (IEnergyReceiver) this).cast();
+        if (cap == com.hbm_m.platform.HbmCap.HBM_ENERGY_CONNECTOR)
+            return com.hbm_m.platform.LazyCap.of(() -> (com.hbm_m.interfaces.IEnergyConnector) this).cast();
+        return com.hbm_m.platform.HbmCapabilityProvider.super.getHbmCapability(cap, side);
+    }
+    *///?}
 }

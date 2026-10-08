@@ -57,8 +57,16 @@ public class FloodlightBeamBlockEntity extends BlockEntity {
     }
 
     @Override
+    //? if < 1.21.1 {
     public void load(CompoundTag nbt) {
+    //?} else {
+    /*public void loadAdditional(CompoundTag nbt, net.minecraft.core.HolderLookup.Provider registries) {
+    *///?}
+        //? if < 1.21.1 {
         super.load(nbt);
+        //?} else {
+        /*super.loadAdditional(nbt, registries);
+        *///?}
         this.sourceX = nbt.getInt("sourceX");
         this.sourceY = nbt.getInt("sourceY");
         this.sourceZ = nbt.getInt("sourceZ");
@@ -66,8 +74,16 @@ public class FloodlightBeamBlockEntity extends BlockEntity {
     }
 
     @Override
+    //? if < 1.21.1 {
     protected void saveAdditional(CompoundTag nbt) {
+    //?} else {
+    /*protected void saveAdditional(CompoundTag nbt, net.minecraft.core.HolderLookup.Provider registries) {
+    *///?}
+        //? if < 1.21.1 {
         super.saveAdditional(nbt);
+        //?} else {
+        /*super.saveAdditional(nbt, registries);
+        *///?}
         nbt.putInt("sourceX", sourceX);
         nbt.putInt("sourceY", sourceY);
         nbt.putInt("sourceZ", sourceZ);

@@ -288,7 +288,29 @@ public class MachineBatteryBlockEntity extends BaseMachineBlockEntity implements
         super.invalidateCaps();
         sidedItems.invalidate();
     }
-    //?}
+    //?} elif neoforge {
+    /*/^* Original {@code ISidedInventory}: unten {0, 1}, oben {0}, Seiten {1}; Akkus hinein, leere aus 0 und volle aus 1 heraus. ^/
+    private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
+            new com.hbm_m.blockentity.SidedItemAccess.Rules() {
+                @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return side == net.minecraft.core.Direction.DOWN ? new int[] { 0, 1 } : side == net.minecraft.core.Direction.UP ? new int[] { 0 } : new int[] { 1 }; }
+                @Override public boolean canInsert(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return isItemValidForSlot(slot, stack); }
+                @Override public boolean canExtract(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { if (com.hbm_m.blockentity.SidedItemAccess.charge(stack) < 0) return false;
+                    if (slot == 0 && com.hbm_m.blockentity.SidedItemAccess.isEmptyBattery(stack)) return true;
+                    return slot == 1 && com.hbm_m.blockentity.SidedItemAccess.isFullBattery(stack); }
+            });
+
+    @Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER && side != null) return sidedItems.get(side).cast();
+        return super.getHbmCapability(cap, side);
+    }
+
+    @Override
+    public void invalidateHbmCaps() {
+        super.invalidateHbmCaps();
+        sidedItems.invalidate();
+    }
+    *///?}
 
     // ── Redstone-over-Radio (1:1 TileEntityMachineBattery) ──
 

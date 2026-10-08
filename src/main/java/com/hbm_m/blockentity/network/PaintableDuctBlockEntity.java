@@ -131,7 +131,7 @@ public class PaintableDuctBlockEntity extends BaseHbmBlockEntity implements IFlu
         super.setRemoved();
     }
 
-    //? if forge {
+    //? if forge || neoforge {
     @Override
     public void onChunkUnloaded() {
         if (node != null) node.expired = true;

@@ -43,7 +43,9 @@ import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
+//? if < 1.21.1 {
 import net.minecraft.world.entity.MobType;
+//?}
 import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.FloatGoal;
@@ -274,9 +276,19 @@ public class EntityGlyphid extends Monster implements IResistanceProvider {
         updateArmSwingProgress();
     }
 
+    //? if < 1.21.1 {
     @Override
     protected void dropCustomDeathLoot(DamageSource source, int looting, boolean recentlyHit) {
+    //?} else {
+    /*@Override
+    protected void dropCustomDeathLoot(net.minecraft.server.level.ServerLevel hbmLevel, DamageSource source, boolean recentlyHit) {
+        int looting = com.hbm_m.platform.MobHooks.lootingLevel(hbmLevel, source);
+    *///?}
+        //? if < 1.21.1 {
         super.dropCustomDeathLoot(source, looting, recentlyHit);
+        //?} else {
+        /*super.dropCustomDeathLoot(hbmLevel, source, recentlyHit);
+        *///?}
         Item drop = isOnFire() ? ModItems.GLYPHID_MEAT_GRILLED.get() : ModItems.GLYPHID_MEAT.get();
         if (random.nextInt(2) == 0) this.spawnAtLocation(new ItemStack(drop, ((int) getGlyphidScale() * 2) + looting), 0F);
     }
@@ -655,10 +667,12 @@ public class EntityGlyphid extends Monster implements IResistanceProvider {
         return super.doHurtTarget(victim);
     }
 
+    //? if < 1.21.1 {
     @Override
     public MobType getMobType() {
         return MobType.ARTHROPOD;
     }
+    //?}
 
     /// TASK SYSTEM START ///
     public int getCurrentTask() {

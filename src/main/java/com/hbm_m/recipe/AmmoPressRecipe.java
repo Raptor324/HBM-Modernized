@@ -140,7 +140,9 @@ public class AmmoPressRecipe extends PlatformRecipe {
             JsonArray ingredientsArray = GsonHelper.getAsJsonArray(json, "ingredients");
             NonNullList<Ingredient> inputs = NonNullList.withSize(AmmoPressRecipe.GRID_SIZE, Ingredient.EMPTY);
             for (int i = 0; i < AmmoPressRecipe.GRID_SIZE && i < ingredientsArray.size(); i++) {
-                inputs.set(i, RecipeHooks.ingredientFromJson(ingredientsArray.get(i)));
+                // leere Felder stehen als JSON-null im Rezept (Datagen) -> Ingredient.EMPTY
+                com.google.gson.JsonElement el = ingredientsArray.get(i);
+                inputs.set(i, el == null || el.isJsonNull() ? Ingredient.EMPTY : RecipeHooks.ingredientFromJson(el));
             }
 
             int[] counts = new int[AmmoPressRecipe.GRID_SIZE];

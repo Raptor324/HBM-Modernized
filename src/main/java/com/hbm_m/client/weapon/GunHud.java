@@ -61,13 +61,19 @@ public final class GunHud {
         RenderSystem.setShaderTexture(0, tex);
         RenderSystem.setShaderColor(1F, 1F, 1F, 1F);
         var m = g.pose().last().pose();
-        BufferBuilder buf = Tesselator.getInstance().getBuilder();
-        buf.begin(VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
+        BufferBuilder buf = com.hbm_m.platform.RenderHooks.beginTesselator(Tesselator.getInstance(), VertexFormat.Mode.QUADS, DefaultVertexFormat.POSITION_TEX);
+        //? if < 1.21.1 {
         buf.vertex(m, 0, (float) h, 0).uv((float) wMin, (float) hMax).endVertex();
         buf.vertex(m, (float) w, (float) h, 0).uv((float) wMax, (float) hMax).endVertex();
         buf.vertex(m, (float) w, 0, 0).uv((float) wMax, (float) hMin).endVertex();
         buf.vertex(m, 0, 0, 0).uv((float) wMin, (float) hMin).endVertex();
-        Tesselator.getInstance().end();
+        //?} else {
+        /*buf.addVertex(m, 0, (float) h, 0).setUv((float) wMin, (float) hMax);
+        buf.addVertex(m, (float) w, (float) h, 0).setUv((float) wMax, (float) hMax);
+        buf.addVertex(m, (float) w, 0, 0).setUv((float) wMax, (float) hMin);
+        buf.addVertex(m, 0, 0, 0).setUv((float) wMin, (float) hMin);
+        *///?}
+        com.hbm_m.platform.RenderHooks.drawWithShader(buf);
         RenderSystem.disableBlend();
     }
 

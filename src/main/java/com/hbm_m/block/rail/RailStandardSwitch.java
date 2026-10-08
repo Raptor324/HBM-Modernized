@@ -105,9 +105,17 @@ public class RailStandardSwitch extends BlockRailWaypointSystem implements Entit
         return false;
     }
 
+    //? if < 1.21.1 {
     @Override
     @SuppressWarnings("deprecation")
     public InteractionResult use(BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+    //?} else {
+    /*@Override
+    protected net.minecraft.world.ItemInteractionResult useItemOn(net.minecraft.world.item.ItemStack hbmHeld, BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        return com.hbm_m.platform.BlockUseHooks.item(hbmUse(state, world, pos, player, hand, hit));
+    }
+    private InteractionResult hbmUse(BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+    *///?}
         return useSwitch(this, world, pos, player, hand);
     }
 

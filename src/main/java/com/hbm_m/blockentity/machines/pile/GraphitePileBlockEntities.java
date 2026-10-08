@@ -129,16 +129,32 @@ public final class GraphitePileBlockEntities {
         @Override public void receiveNeutrons(int n) { this.neutrons += n; }
 
         @Override
+        //? if < 1.21.1 {
         public void load(CompoundTag nbt) {
+        //?} else {
+        /*public void loadAdditional(CompoundTag nbt, net.minecraft.core.HolderLookup.Provider registries) {
+        *///?}
+            //? if < 1.21.1 {
             super.load(nbt);
+            //?} else {
+            /*super.loadAdditional(nbt, registries);
+            *///?}
             this.heat = nbt.getInt("heat");
             this.progress = nbt.getInt("progress");
             this.neutrons = nbt.getInt("neutrons");
         }
 
         @Override
+        //? if < 1.21.1 {
         protected void saveAdditional(CompoundTag nbt) {
+        //?} else {
+        /*protected void saveAdditional(CompoundTag nbt, net.minecraft.core.HolderLookup.Provider registries) {
+        *///?}
+            //? if < 1.21.1 {
             super.saveAdditional(nbt);
+            //?} else {
+            /*super.saveAdditional(nbt, registries);
+            *///?}
             nbt.putInt("heat", this.heat);
             nbt.putInt("progress", this.progress);
             nbt.putInt("neutrons", this.neutrons);
@@ -174,15 +190,31 @@ public final class GraphitePileBlockEntities {
         @Override public void receiveNeutrons(int n) { this.neutrons += n; }
 
         @Override
+        //? if < 1.21.1 {
         public void load(CompoundTag nbt) {
+        //?} else {
+        /*public void loadAdditional(CompoundTag nbt, net.minecraft.core.HolderLookup.Provider registries) {
+        *///?}
+            //? if < 1.21.1 {
             super.load(nbt);
+            //?} else {
+            /*super.loadAdditional(nbt, registries);
+            *///?}
             this.progress = nbt.getInt("progress");
             this.neutrons = nbt.getInt("neutrons");
         }
 
         @Override
+        //? if < 1.21.1 {
         protected void saveAdditional(CompoundTag nbt) {
+        //?} else {
+        /*protected void saveAdditional(CompoundTag nbt, net.minecraft.core.HolderLookup.Provider registries) {
+        *///?}
+            //? if < 1.21.1 {
             super.saveAdditional(nbt);
+            //?} else {
+            /*super.saveAdditional(nbt, registries);
+            *///?}
             nbt.putInt("progress", this.progress);
             nbt.putInt("neutrons", this.neutrons);
         }
@@ -211,14 +243,30 @@ public final class GraphitePileBlockEntities {
         @Override public void receiveNeutrons(int n) { this.neutrons += n; }
 
         @Override
+        //? if < 1.21.1 {
         public void load(CompoundTag nbt) {
+        //?} else {
+        /*public void loadAdditional(CompoundTag nbt, net.minecraft.core.HolderLookup.Provider registries) {
+        *///?}
+            //? if < 1.21.1 {
             super.load(nbt);
+            //?} else {
+            /*super.loadAdditional(nbt, registries);
+            *///?}
             this.maxNeutrons = nbt.getInt("maxNeutrons");
         }
 
         @Override
+        //? if < 1.21.1 {
         protected void saveAdditional(CompoundTag nbt) {
+        //?} else {
+        /*protected void saveAdditional(CompoundTag nbt, net.minecraft.core.HolderLookup.Provider registries) {
+        *///?}
+            //? if < 1.21.1 {
             super.saveAdditional(nbt);
+            //?} else {
+            /*super.saveAdditional(nbt, registries);
+            *///?}
             nbt.putInt("maxNeutrons", this.maxNeutrons);
         }
     }

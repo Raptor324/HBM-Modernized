@@ -39,7 +39,7 @@ import java.util.Map;
  * all ported verbatim from {@code RenderRBMKConsole}, so the drawn body lines up exactly with the
  * multiblock footprint declared in {@code MachineRbmkConsoleBlock#defineStructure}.
  */
-public class MachineRbmkConsoleRenderer implements BlockEntityRenderer<MachineRbmkConsoleBlockEntity> {
+public class MachineRbmkConsoleRenderer implements com.hbm_m.client.render.HbmBerBounds<MachineRbmkConsoleBlockEntity> {
 
     private static final int GRID = MachineRbmkConsoleBlockEntity.GRID;
     private static final String MODEL_PATH = "models/block/rbmk_console.obj";

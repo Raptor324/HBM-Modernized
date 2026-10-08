@@ -29,7 +29,7 @@ import net.minecraft.world.phys.AABB;
  * <p>Die Pruefpositionen stammen unveraendert aus {@code updateEntity}; {@code cbarp} heisst dort
  * "check block at relative position" und rechnet quer, hoch und laengs zur Blickrichtung.</p>
  */
-public class ICFStructBlockEntity extends BlockEntity {
+public class ICFStructBlockEntity extends BlockEntity implements com.hbm_m.api.render.RenderBoundsProvider {
 
     /** Original: die Schleife laeuft von -8 bis 8. */
     private static final int HALF_LENGTH = 8;

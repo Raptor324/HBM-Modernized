@@ -183,7 +183,11 @@ public class BulletConfig implements Cloneable {
             BlockPos pos = mop.getBlockPos();
             BlockState state = bullet.level().getBlockState(pos);
             Block b = state.getBlock();
+            //? if < 1.21.1 {
             if (state.getSoundType() == net.minecraft.world.level.block.SoundType.GLASS || state.is(net.minecraftforge.common.Tags.Blocks.GLASS) || state.is(net.minecraftforge.common.Tags.Blocks.GLASS_PANES)) {
+            //?} else {
+            /*if (state.getSoundType() == net.minecraft.world.level.block.SoundType.GLASS || state.is(net.neoforged.neoforge.common.Tags.Blocks.GLASS_BLOCKS) || state.is(net.neoforged.neoforge.common.Tags.Blocks.GLASS_PANES)) {
+            *///?}
                 bullet.level().destroyBlock(pos, false);
                 bullet.setPosition(mop.hitVec.xCoord, mop.hitVec.yCoord, mop.hitVec.zCoord);
                 return;

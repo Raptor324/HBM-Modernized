@@ -29,7 +29,7 @@ import net.minecraft.world.phys.Vec3;
  * 1:1 {@code RenderBatteryREDD}: Sockel, drehendes Rad mit vollhellen Lichtern, gelbe Bewegungsschlieren am Radrand
  * (Laenge je nach Tempo), Plasma mit wanderndem Funkeln und bei Drehung zufaellige Entladungsblitze.
  */
-public class BatteryREDDRenderer implements BlockEntityRenderer<BatteryREDDBlockEntity> {
+public class BatteryREDDRenderer implements com.hbm_m.client.render.HbmBerBounds<BatteryREDDBlockEntity> {
 
     private static ResourceLocation rl(String p) { return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, p); }
 
@@ -116,7 +116,11 @@ public class BatteryREDDRenderer implements BlockEntityRenderer<BatteryREDDBlock
 
     private static void quad(VertexConsumer vc, Matrix4f m, float[][] q, int a, int b, int c, int d) {
         for (int k : new int[] { a, b, c, a, c, d }) {
+            //? if < 1.21.1 {
             vc.vertex(m, q[k][0], q[k][1], q[k][2]).color(1F, 1F, 0F, q[k][3]).endVertex();
+            //?} else {
+            /*vc.addVertex(m, q[k][0], q[k][1], q[k][2]).setColor(1F, 1F, 0F, q[k][3]);
+            *///?}
         }
     }
 

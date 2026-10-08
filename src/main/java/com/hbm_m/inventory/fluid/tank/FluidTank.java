@@ -133,7 +133,12 @@ public class FluidTank implements Cloneable {
     public net.minecraftforge.common.util.LazyOptional<net.minecraftforge.fluids.capability.IFluidHandler> getForgeFluidCapability() {
         return (net.minecraftforge.common.util.LazyOptional<net.minecraftforge.fluids.capability.IFluidHandler>) getCapability();
     }
-    //?}
+    //?} elif neoforge {
+    /*/^* NeoForge-Gegenstueck fuer die gespiegelten getHbmCapability-Zweige (Capability-Bruecke, siehe HbmCapabilityProvider). ^/
+    public com.hbm_m.platform.LazyCap<net.neoforged.neoforge.fluids.capability.IFluidHandler> getForgeFluidCapability() {
+        return com.hbm_m.platform.LazyCap.ofObj(getCapability());
+    }
+    *///?}
 
     public void assignTypeAndZeroFluid(Fluid newType) {
         if (!isEmpty()) drainMb(getFluidAmountMb());

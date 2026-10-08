@@ -59,8 +59,14 @@ public abstract class PlatformRecipeSerializer<R extends Recipe<?>> implements R
                 System.err.println("[HBM DEBUG] PlatformRecipeSerializer.decode CALLED #" + decodeCallCount + " ops=" + ops.getClass().getSimpleName());
             }
             try {
-                com.mojang.serialization.Dynamic<T> dynamic = new com.mojang.serialization.Dynamic<>(ops, ops.createMap(input.entries()));
-                com.google.gson.JsonElement json = dynamic.convert(JsonOps.INSTANCE).getValue();
+                // JSON-Werte direkt uebernehmen: Dynamic.convert verliert JSON-null in Listen (JsonOps.getStream -> null -> NPE),
+                // z.B. leere Felder der Munitionspresse.
+                com.google.gson.JsonObject json = new com.google.gson.JsonObject();
+                input.entries().forEach(e -> {
+                    String key = ops.getStringValue(e.getFirst()).getOrThrow();
+                    T v = e.getSecond();
+                    json.add(key, v instanceof com.google.gson.JsonElement je ? je : ops.convertTo(JsonOps.INSTANCE, v));
+                });
                 R recipe = readJson(ResourceLocation.withDefaultNamespace("dummy"), com.hbm_m.recipe.condition.ConfigRecipeFlags.resolveVariants(json.getAsJsonObject()));
                 decodeSuccessCount++;
                 if (decodeSuccessCount <= 5) {

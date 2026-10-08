@@ -54,4 +54,8 @@ public class TestObjTesterBlock extends BaseEntityBlock {
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
         return new ObjTesterBlockEntity(pos, state);
     }
+    //? if >= 1.21.1 {
+    /*public static final com.mojang.serialization.MapCodec<TestObjTesterBlock> CODEC = simpleCodec(TestObjTesterBlock::new);
+    @Override protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() { return CODEC; }
+    *///?}
 }

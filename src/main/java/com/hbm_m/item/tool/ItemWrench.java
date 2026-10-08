@@ -1,5 +1,7 @@
 package com.hbm_m.item.tool;
 
+import com.hbm_m.platform.StackNbt;
+
 import java.util.List;
 
 import javax.annotation.Nullable;
@@ -33,7 +35,11 @@ public class ItemWrench extends SwordItem implements ITooltipProvider {
     public static final int ID_WRENCH = 13;
 
     public ItemWrench(Tier mat, Properties properties) {
+        //? if < 1.21.1 {
         super(mat, 4, -2.4F, properties);
+        //?} else {
+        /*super(mat, properties.attributes(SwordItem.createAttributes(mat, 4, -2.4F)));
+        *///?}
     }
 
     @Override
@@ -53,21 +59,21 @@ public class ItemWrench extends SwordItem implements ITooltipProvider {
 
             if (be instanceof IPipelineBase second) {
 
-                if (stack.getTag() == null)
-                    stack.setTag(new CompoundTag());
+                if (StackNbt.read(stack) == null)
+                    StackNbt.set(stack, new CompoundTag());
 
-                if (!stack.getTag().contains("x")) {
-                    stack.setTag(new CompoundTag());
-                    stack.getTag().putInt("x", pos.getX());
-                    stack.getTag().putInt("y", pos.getY());
-                    stack.getTag().putInt("z", pos.getZ());
+                if (!StackNbt.read(stack).contains("x")) {
+                    StackNbt.set(stack, new CompoundTag());
+                    StackNbt.tag(stack).putInt("x", pos.getX());
+                    StackNbt.tag(stack).putInt("y", pos.getY());
+                    StackNbt.tag(stack).putInt("z", pos.getZ());
 
                     if (!world.isClientSide) {
                         player.sendSystemMessage(Component.literal("Pipe start"));
                     }
                 } else if (!world.isClientSide) {
 
-                    BlockPos p1 = new BlockPos(stack.getTag().getInt("x"), stack.getTag().getInt("y"), stack.getTag().getInt("z"));
+                    BlockPos p1 = new BlockPos(StackNbt.read(stack).getInt("x"), StackNbt.read(stack).getInt("y"), StackNbt.read(stack).getInt("z"));
 
                     if (world.getBlockEntity(p1) instanceof IPipelineBase first) {
 
@@ -87,9 +93,9 @@ public class ItemWrench extends SwordItem implements ITooltipProvider {
                         player.sendSystemMessage(Component.literal("Pipe error"));
                     }
 
-                    stack.getTag().remove("x");
-                    stack.getTag().remove("y");
-                    stack.getTag().remove("z");
+                    StackNbt.tag(stack).remove("x");
+                    StackNbt.tag(stack).remove("y");
+                    StackNbt.tag(stack).remove("z");
                 }
 
                 player.swing(ctx.getHand());
@@ -111,10 +117,10 @@ public class ItemWrench extends SwordItem implements ITooltipProvider {
 
     @Override
     public void appendHbmTooltip(ItemStack itemstack, @Nullable Level level, List<Component> list, TooltipFlag flag) {
-        if (itemstack.getTag() != null) {
-            list.add(Component.literal("Pipe start x: " + itemstack.getTag().getInt("x")));
-            list.add(Component.literal("Pipe start y: " + itemstack.getTag().getInt("y")));
-            list.add(Component.literal("Pipe start z: " + itemstack.getTag().getInt("z")));
+        if (StackNbt.read(itemstack) != null) {
+            list.add(Component.literal("Pipe start x: " + StackNbt.read(itemstack).getInt("x")));
+            list.add(Component.literal("Pipe start y: " + StackNbt.read(itemstack).getInt("y")));
+            list.add(Component.literal("Pipe start z: " + StackNbt.read(itemstack).getInt("z")));
         } else {
             list.add(Component.literal("Right-click anchor to connect"));
         }
@@ -122,11 +128,11 @@ public class ItemWrench extends SwordItem implements ITooltipProvider {
 
     @Override
     public void inventoryTick(ItemStack stack, Level world, Entity entity, int slot, boolean inhand) {
-        if (world.isClientSide && stack.getTag() != null) {
+        if (world.isClientSide && StackNbt.read(stack) != null) {
             Vec3 vec = new Vec3(
-                    entity.getX() - stack.getTag().getInt("x"),
-                    entity.getY() - stack.getTag().getInt("y"),
-                    entity.getZ() - stack.getTag().getInt("z"));
+                    entity.getX() - StackNbt.read(stack).getInt("x"),
+                    entity.getY() - StackNbt.read(stack).getInt("y"),
+                    entity.getZ() - StackNbt.read(stack).getInt("z"));
             com.hbm_m.client.overlay.OverlayInfoToast.show(stack.getHoverName().copy().append(": " + ((int) vec.length()) + "m"), 20, ID_WRENCH);
         }
     }

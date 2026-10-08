@@ -1,5 +1,7 @@
 package com.hbm_m.item.special;
 
+import com.hbm_m.platform.StackNbt;
+
 import com.hbm_m.inventory.HeldItemInventory;
 import com.hbm_m.item.ModItems;
 
@@ -28,14 +30,14 @@ public class ItemKitCustom extends ItemKitNBT {
     public static ItemStack create(String name, String lore, int color1, int color2, ItemStack... contents) {
         ItemStack stack = new ItemStack(ModItems.KIT_CUSTOM.get());
 
-        stack.getOrCreateTag();
+        StackNbt.orCreate(stack);
 
         setColor(stack, color1, 1);
         setColor(stack, color2, 2);
 
         if (lore != null) addTooltipToStack(stack, lore.split("\\$"));
         // EnumChatFormatting.RESET: Name ohne die Kursivschrift umbenannter Gegenstaende
-        stack.setHoverName(Component.literal(name).withStyle(s -> s.withItalic(false)));
+        StackNbt.setCustomName(stack, Component.literal(name).withStyle(s -> s.withItalic(false)));
         HeldItemInventory.addStacksToNBT(stack, contents);
 
         return stack;
@@ -43,18 +45,25 @@ public class ItemKitCustom extends ItemKitNBT {
 
     /** {@code ItemStackUtil.addTooltipToStack}: haengt Zeilen an {@code display.Lore} an. */
     public static void addTooltipToStack(ItemStack stack, String... lines) {
-        var display = stack.getOrCreateTagElement("display");
+        //? if < 1.21.1 {
+        var display = StackNbt.orCreateElement(stack, "display");
         ListTag lore = display.getList("Lore", 8);
         for (String line : lines) lore.add(StringTag.valueOf(Component.Serializer.toJson(Component.literal(line))));
         display.put("Lore", lore);
+        //?} else {
+        /*// 1.21.1: Lore ist die Komponente LORE (gleicher Stil wie display.Lore)
+        for (String line : lines)
+            stack.update(net.minecraft.core.component.DataComponents.LORE, net.minecraft.world.item.component.ItemLore.EMPTY,
+                    l -> l.withLineAdded(Component.literal(line)));
+        *///?}
     }
 
     public static void setColor(ItemStack stack, int color, int index) {
-        stack.getOrCreateTag().putInt("color" + index, color);
+        StackNbt.orCreate(stack).putInt("color" + index, color);
     }
 
     public static int getColor(ItemStack stack, int index) {
-        if (!stack.hasTag()) return 0;
-        return stack.getTag().getInt("color" + index);
+        if (!StackNbt.has(stack)) return 0;
+        return StackNbt.read(stack).getInt("color" + index);
     }
 }

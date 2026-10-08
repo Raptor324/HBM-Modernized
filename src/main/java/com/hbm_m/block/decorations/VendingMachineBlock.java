@@ -108,4 +108,8 @@ public class VendingMachineBlock extends DummyableMachineBlock {
         }
         return ItemStack.EMPTY;
     }
+    //? if >= 1.21.1 {
+    /*public static final com.mojang.serialization.MapCodec<VendingMachineBlock> CODEC = com.hbm_m.platform.BlockCodecs.unsupported(VendingMachineBlock.class);
+    @Override protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() { return CODEC; }
+    *///?}
 }

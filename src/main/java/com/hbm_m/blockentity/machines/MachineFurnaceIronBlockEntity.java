@@ -1,5 +1,7 @@
 package com.hbm_m.blockentity.machines;
 
+import com.hbm_m.platform.StackNbt;
+
 import java.util.List;
 
 import org.jetbrains.annotations.NotNull;
@@ -236,7 +238,7 @@ public class MachineFurnaceIronBlockEntity extends com.hbm_m.blockentity.BaseHbm
         ItemStack out = inventory.getStackInSlot(SLOT_OUTPUT);
         if (out.isEmpty()) return true;
 
-        if (!ItemStack.isSameItemSameTags(result, out)) return false;
+        if (!StackNbt.sameItemSameTags(result, out)) return false;
         if (result.getCount() + out.getCount() > out.getMaxStackSize()) return false;
 
         return true;
@@ -349,5 +351,25 @@ public class MachineFurnaceIronBlockEntity extends com.hbm_m.blockentity.BaseHbm
         super.invalidateCaps();
         sidedItems.invalidate();
     }
-    //?}
+    //?} elif neoforge {
+    /*/^* Original {@code ISidedInventory}: Slots {0-3}; Schmelzgut in 0, Brennstoff in 1-2, nur das Ergebnis heraus. ^/
+    private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
+            new com.hbm_m.blockentity.SidedItemAccess.Rules() {
+                @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return new int[] { 0, 1, 2, 3 }; }
+                @Override public boolean canInsert(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return slot < 3 && isItemValidForSlot(slot, stack); }
+                @Override public boolean canExtract(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return slot == 3; }
+            });
+
+    @Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER && side != null) return sidedItems.get(side).cast();
+        return super.getHbmCapability(cap, side);
+    }
+
+    @Override
+    public void invalidateHbmCaps() {
+        super.invalidateHbmCaps();
+        sidedItems.invalidate();
+    }
+    *///?}
 }

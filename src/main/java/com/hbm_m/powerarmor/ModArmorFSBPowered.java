@@ -1,5 +1,7 @@
 package com.hbm_m.powerarmor;
 
+import com.hbm_m.platform.StackNbt;
+
 import java.util.List;
 
 import org.jetbrains.annotations.Nullable;
@@ -57,44 +59,44 @@ public class ModArmorFSBPowered extends ModArmorFSB implements com.hbm_m.api.ite
 
     public void chargeBattery(ItemStack stack, long i) {
         if (stack.getItem() instanceof ModArmorFSBPowered) {
-            if (stack.hasTag()) {
-                stack.getTag().putLong("charge", stack.getTag().getLong("charge") + i);
+            if (StackNbt.has(stack)) {
+                StackNbt.tag(stack).putLong("charge", StackNbt.read(stack).getLong("charge") + i);
             } else {
-                stack.setTag(new CompoundTag());
-                stack.getTag().putLong("charge", i);
+                StackNbt.set(stack, new CompoundTag());
+                StackNbt.tag(stack).putLong("charge", i);
             }
         }
     }
 
     public void setCharge(ItemStack stack, long i) {
         if (stack.getItem() instanceof ModArmorFSBPowered) {
-            if (!stack.hasTag()) stack.setTag(new CompoundTag());
-            stack.getTag().putLong("charge", i);
+            if (!StackNbt.has(stack)) StackNbt.set(stack, new CompoundTag());
+            StackNbt.tag(stack).putLong("charge", i);
         }
     }
 
     public void dischargeBattery(ItemStack stack, long i) {
         if (stack.getItem() instanceof ModArmorFSBPowered) {
-            if (stack.hasTag()) {
-                stack.getTag().putLong("charge", stack.getTag().getLong("charge") - i);
+            if (StackNbt.has(stack)) {
+                StackNbt.tag(stack).putLong("charge", StackNbt.read(stack).getLong("charge") - i);
             } else {
-                stack.setTag(new CompoundTag());
-                stack.getTag().putLong("charge", getMaxCharge(stack) - i);
+                StackNbt.set(stack, new CompoundTag());
+                StackNbt.tag(stack).putLong("charge", getMaxCharge(stack) - i);
             }
 
-            if (stack.getTag().getLong("charge") < 0)
-                stack.getTag().putLong("charge", 0);
+            if (StackNbt.read(stack).getLong("charge") < 0)
+                StackNbt.tag(stack).putLong("charge", 0);
         }
     }
 
     public long getCharge(ItemStack stack) {
         if (stack.getItem() instanceof ModArmorFSBPowered) {
-            if (stack.hasTag()) {
-                return Math.min(stack.getTag().getLong("charge"), getMaxCharge(stack));
+            if (StackNbt.has(stack)) {
+                return Math.min(StackNbt.read(stack).getLong("charge"), getMaxCharge(stack));
             } else {
-                stack.setTag(new CompoundTag());
-                stack.getTag().putLong("charge", getMaxCharge(stack));
-                return stack.getTag().getLong("charge");
+                StackNbt.set(stack, new CompoundTag());
+                StackNbt.tag(stack).putLong("charge", getMaxCharge(stack));
+                return StackNbt.read(stack).getLong("charge");
             }
         }
         return 0;
@@ -146,11 +148,11 @@ public class ModArmorFSBPowered extends ModArmorFSB implements com.hbm_m.api.ite
     //? if forge {
     @Override
     @SuppressWarnings("removal")
+    //?}
     public void onArmorTick(ItemStack stack, Level world, Player player) {
         super.onArmorTick(stack, world, player);
         armorTick(stack, world, player);
     }
-    //?}
 
     /** Original onArmorTick-Rumpf der Unterklassen (nach dem Akku-Abzug). */
     protected void armorTick(ItemStack stack, Level world, Player player) {
@@ -159,6 +161,7 @@ public class ModArmorFSBPowered extends ModArmorFSB implements com.hbm_m.api.ite
         }
     }
 
+    // neo-pendant: ModCapabilities.registerBatteryItemCaps (RegisterCapabilitiesEvent, Item-Capabilities)
     //? if forge {
     @Nullable
     @Override

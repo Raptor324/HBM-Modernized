@@ -127,6 +127,7 @@ public class FluidBarrelItem extends Item implements ITooltipProvider {
         return 0xFFFF00;
     }
 
+    // neo-pendant: ModCapabilities.registerBatteryItemCaps (RegisterCapabilitiesEvent, Item-Capabilities)
     //? if forge {
     @Override
     public ICapabilityProvider initCapabilities(ItemStack stack, @Nullable CompoundTag nbt) {
@@ -314,6 +315,7 @@ public class FluidBarrelItem extends Item implements ITooltipProvider {
     }
     //?}
 
+    // neo-pendant: ModCapabilities.registerBatteryItemCaps (RegisterCapabilitiesEvent, Item-Capabilities)
     //? if forge {
     private static class FluidBarrelCapabilityProvider implements ICapabilityProvider {
         private final FluidBarrelCapabilityHandler handler;

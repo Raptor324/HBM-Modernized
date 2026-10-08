@@ -76,7 +76,11 @@ public class MultiCloudRenderer<T extends EntityModFX> extends EntityRenderer<T>
     }
 
     private static void quad(VertexConsumer vc, Matrix4f m, Matrix3f n, float x, float y, float u, float v, float c, int light) {
+        //? if < 1.21.1 {
         vc.vertex(m, x, y, 0).color(c, c, c, 1F).uv(u, v).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(light).normal(n, 0, 1, 0).endVertex();
+        //?} else {
+        /*com.hbm_m.platform.RenderHooks.normal(vc.addVertex(m, x, y, 0).setColor(c, c, c, 1F).setUv(u, v).setOverlay(OverlayTexture.NO_OVERLAY).setLight(light), n, 0, 1, 0);
+        *///?}
     }
 
     @Override public ResourceLocation getTextureLocation(T fx) { return frame(fx); }

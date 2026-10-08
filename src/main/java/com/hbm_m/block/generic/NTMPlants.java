@@ -93,14 +93,22 @@ public final class NTMPlants {
         @Override
         public void randomTick(BlockState state, ServerLevel world, BlockPos pos, RandomSource rand) {
             if (!(type == FlowerType.WEED || type == FlowerType.CD0 || type == FlowerType.CD1)) return;
+            //? if < 1.21.1 {
             if (isValidBonemealTarget(world, pos, state, false) && isBonemealSuccess(world, rand, pos, state) && rand.nextInt(3) == 0) {
+            //?} else {
+            /*if (isValidBonemealTarget(world, pos, state) && isBonemealSuccess(world, rand, pos, state) && rand.nextInt(3) == 0) {
+            *///?}
                 performBonemeal(world, rand, pos, state);
             }
         }
 
         /* Wachstumsbedingung */
         @Override
+        //? if < 1.21.1 {
         public boolean isValidBonemealTarget(LevelReader world, BlockPos pos, BlockState state, boolean client) {
+        //?} else {
+        /*public boolean isValidBonemealTarget(LevelReader world, BlockPos pos, BlockState state) {
+        *///?}
             if (type == FlowerType.CD0 || type == FlowerType.CD1) {
                 if (!waterNearSoil(world, pos.below())) return false;
             }
@@ -139,6 +147,10 @@ public final class NTMPlants {
             // uebrige Blumen: Knochenmehl verdoppelt sie
             Block.popResource(world, pos, new ItemStack(this));
         }
+        //? if >= 1.21.1 {
+        /*public static final com.mojang.serialization.MapCodec<Flower> CODEC = com.hbm_m.platform.BlockCodecs.unsupported(Flower.class);
+        @Override protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BushBlock> codec() { return CODEC; }
+        *///?}
     }
 
     // ═════════════════════════════════════════════════════════════════════════════════════════
@@ -218,8 +230,21 @@ public final class NTMPlants {
         }
 
         /** Original {@code onBlockHarvested}: die untere Haelfte nimmt die obere mit. */
+        //? if < 1.21.1 {
         @Override
         public void playerWillDestroy(Level world, BlockPos pos, BlockState state, Player player) {
+            harvestTop(world, pos, state, player);
+            super.playerWillDestroy(world, pos, state, player);
+        }
+        //?} else {
+        /*@Override
+        public BlockState playerWillDestroy(Level world, BlockPos pos, BlockState state, Player player) {
+            harvestTop(world, pos, state, player);
+            return super.playerWillDestroy(world, pos, state, player);
+        }
+        *///?}
+
+        private void harvestTop(Level world, BlockPos pos, BlockState state, Player player) {
             if (!world.isClientSide && state.getValue(HALF) == DoubleBlockHalf.LOWER) {
                 BlockState above = world.getBlockState(pos.above());
                 if (above.is(this)) {
@@ -229,7 +254,6 @@ public final class NTMPlants {
                     detectCut = true;
                 }
             }
-            super.playerWillDestroy(world, pos, state, player);
         }
 
         /** Original: jede Haelfte gibt eine Blume (Hanf bzw. Cadmiumweide); die oberste Weide zusaetzlich 3-6 Blaetter. */
@@ -254,7 +278,11 @@ public final class NTMPlants {
                 return;
             }
 
+            //? if < 1.21.1 {
             if (isValidBonemealTarget(world, pos, state, false) && isBonemealSuccess(world, rand, pos, state) && rand.nextInt(3) == 0) {
+            //?} else {
+            /*if (isValidBonemealTarget(world, pos, state) && isBonemealSuccess(world, rand, pos, state) && rand.nextInt(3) == 0) {
+            *///?}
                 performBonemeal(world, rand, pos, state);
             }
         }
@@ -265,7 +293,11 @@ public final class NTMPlants {
 
         /* Wachstumsbedingung */
         @Override
+        //? if < 1.21.1 {
         public boolean isValidBonemealTarget(LevelReader world, BlockPos pos, BlockState state, boolean client) {
+        //?} else {
+        /*public boolean isValidBonemealTarget(LevelReader world, BlockPos pos, BlockState state) {
+        *///?}
             BlockPos base = lower(pos, state);
             if (type == TallType.CD2 || type == TallType.CD3) {
                 if (!waterNearSoil(world, base.below())) return false;
@@ -398,7 +430,7 @@ public final class NTMPlants {
         public List<ItemStack> getDrops(BlockState state, LootParams.Builder builder) {
             if (type == StoneType.MALACHITE) {
                 ItemStack tool = builder.getOptionalParameter(LootContextParams.TOOL);
-                int fortune = tool == null ? 0 : EnchantmentHelper.getItemEnchantmentLevel(Enchantments.BLOCK_FORTUNE, tool);
+                int fortune = tool == null ? 0 : com.hbm_m.platform.ItemHooks.getEnchantmentLevel(tool, builder.getLevel(), "minecraft:fortune");
                 return List.of(new ItemStack(ModItems.MALACHITE_CHUNK.get(), 3 + fortune + builder.getLevel().random.nextInt(fortune + 2)));
             }
             return List.of(new ItemStack(this));
@@ -414,7 +446,11 @@ public final class NTMPlants {
         public NoSpawn(Properties p) { super(p.isValidSpawn((s, l, pos, e) -> false)); }
 
         @Override
+        //? if < 1.21.1 {
         public void appendHoverText(ItemStack stack, @Nullable BlockGetter level, List<Component> list, TooltipFlag flag) {
+        //?} else {
+        /*public void appendHoverText(ItemStack stack, net.minecraft.world.item.Item.TooltipContext hbmTooltipCtx, List<Component> list, TooltipFlag flag) {
+        *///?}
             list.add(Component.translatable("tile.nospawn").withStyle(net.minecraft.ChatFormatting.RED));
         }
     }

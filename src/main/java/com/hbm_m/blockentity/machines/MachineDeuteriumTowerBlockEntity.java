@@ -59,7 +59,15 @@ public class MachineDeuteriumTowerBlockEntity extends BaseMachineBlockEntity imp
         }
         return super.getCapability(cap, side);
     }
-    //?}
+    //?} elif neoforge {
+    /*@Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == com.hbm_m.platform.HbmCap.FLUID_HANDLER) {
+            return com.hbm_m.platform.LazyCap.ofObj(tanks[TANK_WATER].getCapability()).cast();
+        }
+        return super.getHbmCapability(cap, side);
+    }
+    *///?}
 
     public static void tick(Level level, BlockPos pos, BlockState state, MachineDeuteriumTowerBlockEntity be) {
         if (level.isClientSide()) return;

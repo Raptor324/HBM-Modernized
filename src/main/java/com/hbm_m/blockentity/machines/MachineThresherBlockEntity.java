@@ -36,7 +36,9 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.properties.DoubleBlockHalf;
 import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.phys.AABB;
+//? if forge {
 import net.minecraftforge.common.IPlantable;
+//?}
 
 /**
  * 1:1 {@code TileEntityMachineThresher}: ein schwenkender Erntearm. Die Armspitze wird aus dem Winkel berechnet (zwei
@@ -236,7 +238,11 @@ public class MachineThresherBlockEntity extends com.hbm_m.blockentity.BaseHbmBlo
 
     /** Original: {@code IGrowable.func_149851_a} - was noch waechst, wird nicht geerntet. */
     public static boolean shouldIgnore(Level world, BlockPos pos, BlockState state) {
+        //? if < 1.21.1 {
         if (state.getBlock() instanceof BonemealableBlock g) return g.isValidBonemealTarget(world, pos, state, world.isClientSide);
+        //?} else {
+        /*if (state.getBlock() instanceof BonemealableBlock g) return g.isValidBonemealTarget(world, pos, state);
+        *///?}
         return false;
     }
 
@@ -280,6 +286,7 @@ public class MachineThresherBlockEntity extends com.hbm_m.blockentity.BaseHbmBlo
         boolean replanted = false;
 
         for (ItemStack drop : drops) {
+            //? if forge {
             if (!replanted && drop.getItem() instanceof net.minecraft.world.item.BlockItem bi && bi.getBlock() instanceof IPlantable seed) {
                 if (soil.canSustainPlant(world, pos.below(), Direction.UP, seed)) {
                     replacement = seed.getPlant(world, pos);
@@ -287,6 +294,23 @@ public class MachineThresherBlockEntity extends com.hbm_m.blockentity.BaseHbmBlo
                     drop.shrink(1);
                 }
             }
+            //?} else {
+            /*// NeoForge hat kein IPlantable mehr: Forge-1.20.1-IPlantables waren BushBlock, Kaktus und Zuckerrohr;
+            // getPlant = vorhandener Zustand, falls derselbe Block, sonst Grundzustand.
+            if (!replanted && drop.getItem() instanceof net.minecraft.world.item.BlockItem bi
+                    && (bi.getBlock() instanceof net.minecraft.world.level.block.BushBlock || bi.getBlock() instanceof net.minecraft.world.level.block.CactusBlock
+                        || bi.getBlock() instanceof net.minecraft.world.level.block.SugarCaneBlock)) {
+                Block seed = bi.getBlock();
+                BlockState cur = world.getBlockState(pos);
+                BlockState plant = cur.getBlock() == seed ? cur : seed.defaultBlockState();
+                net.neoforged.neoforge.common.util.TriState t = soil.canSustainPlant(world, pos.below(), Direction.UP, plant);
+                if (t.isDefault() ? plant.canSurvive(world, pos) : t.isTrue()) {
+                    replacement = plant;
+                    replanted = true;
+                    drop.shrink(1);
+                }
+            }
+            *///?}
             if (!drop.isEmpty()) dropItem(drop);
         }
 

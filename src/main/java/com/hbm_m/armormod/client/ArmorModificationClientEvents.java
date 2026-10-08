@@ -14,13 +14,21 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
 import net.minecraftforge.fml.event.lifecycle.FMLClientSetupEvent;
 import com.hbm_m.main.MainRegistry;
-//?}
+//?} elif neoforge {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+import net.neoforged.fml.event.lifecycle.FMLClientSetupEvent;
+import com.hbm_m.main.MainRegistry;
+*///?}
 
 import java.util.List;
 
 //? if forge {
 @Mod.EventBusSubscriber(modid = MainRegistry.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
-//?}
+//?} elif neoforge {
+/*@EventBusSubscriber(modid = MainRegistry.MOD_ID, bus = EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
+*///?}
 public class ArmorModificationClientEvents {
 
     //? if forge {
@@ -28,7 +36,12 @@ public class ArmorModificationClientEvents {
     public static void onClientSetup(FMLClientSetupEvent event) {
         init();
     }
-    //?}
+    //?} elif neoforge {
+    /*@SubscribeEvent
+    public static void onClientSetup(FMLClientSetupEvent event) {
+        init();
+    }
+    *///?}
 
     public static void init() {
         //? if < 1.21.1 {

@@ -1,5 +1,7 @@
 package com.hbm_m.entity.mob;
 
+import com.hbm_m.platform.PlatformHooks;
+
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -112,7 +114,7 @@ public class EntityQuackos extends EntityDuck implements IDespawnable {
         float f1 = Mth.cos(this.yBodyRot * (float) Math.PI / 180.0F);
         float f2 = 0.1F;
         float f3 = 0.0F;
-        move.accept(passenger, getX() + (double) (f2 * f), getY() + (double) (this.getBbHeight() - 0.125F) + passenger.getMyRidingOffset() + (double) f3, getZ() - (double) (f2 * f1));
+        move.accept(passenger, getX() + (double) (f2 * f), getY() + (double) (this.getBbHeight() - 0.125F) + PlatformHooks.getMyRidingOffset(passenger) + (double) f3, getZ() - (double) (f2 * f1));
 
         if (passenger instanceof LivingEntity living) {
             living.yBodyRot = this.yBodyRot;
@@ -131,8 +133,13 @@ public class EntityQuackos extends EntityDuck implements IDespawnable {
     @Override
     public void die(@NotNull DamageSource sourceOrRatherLackThereof) { }
 
+    //? if < 1.21.1 {
     @Override
     public boolean canBeLeashed(@NotNull Player player) {
+    //?} else {
+    /*@Override
+    public boolean canBeLeashed() {
+    *///?}
         return false;
     }
 

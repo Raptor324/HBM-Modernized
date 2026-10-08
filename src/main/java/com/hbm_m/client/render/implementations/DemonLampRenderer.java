@@ -18,7 +18,7 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.resources.ResourceLocation;
 
 /** 1:1 {@code RenderDemonLamp}: Lampe plus zwei Kraenze aus 16 blauen, additiven Lichtfaechern bis 15 Bloecke. */
-public class DemonLampRenderer implements BlockEntityRenderer<DemonLampBlockEntity> {
+public class DemonLampRenderer implements com.hbm_m.client.render.HbmBerBounds<DemonLampBlockEntity> {
 
     public static final SimpleObjModel MODEL = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/blocks/demon_lamp.obj"));
     public static final ResourceLocation TEX = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/machines/demon_lamp.png");
@@ -53,10 +53,17 @@ public class DemonLampRenderer implements BlockEntityRenderer<DemonLampBlockEnti
                 float x0 = (float) (vx * near), z0 = (float) (vz * near), x1 = (float) (vx * far), z1 = (float) (vz * far);
                 double a = Math.PI * 2D / 16D, c = Math.cos(a), s = Math.sin(a);
                 double nvx = vx * c + vz * s, nvz = vz * c - vx * s;
+                //? if < 1.21.1 {
                 vc.vertex(m, x0, (float) y0, z0).color(0F, 0.75F, 1F, 0.25F).endVertex();
                 vc.vertex(m, x1, (float) y1, z1).color(0F, 0.75F, 1F, 0F).endVertex();
                 vc.vertex(m, (float) (nvx * far), (float) y1, (float) (nvz * far)).color(0F, 0.75F, 1F, 0F).endVertex();
                 vc.vertex(m, (float) (nvx * near), (float) y0, (float) (nvz * near)).color(0F, 0.75F, 1F, 0.25F).endVertex();
+                //?} else {
+                /*vc.addVertex(m, x0, (float) y0, z0).setColor(0F, 0.75F, 1F, 0.25F);
+                vc.addVertex(m, x1, (float) y1, z1).setColor(0F, 0.75F, 1F, 0F);
+                vc.addVertex(m, (float) (nvx * far), (float) y1, (float) (nvz * far)).setColor(0F, 0.75F, 1F, 0F);
+                vc.addVertex(m, (float) (nvx * near), (float) y0, (float) (nvz * near)).setColor(0F, 0.75F, 1F, 0.25F);
+                *///?}
                 vx = nvx;
                 vz = nvz;
             }

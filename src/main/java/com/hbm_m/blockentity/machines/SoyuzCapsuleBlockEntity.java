@@ -19,7 +19,7 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.AABB;
 
 /** 1:1 {@code TileEntitySoyuzCapsule}: Inventar mit 19 Plaetzen, Name {@code container.soyuzCapsule}. */
-public class SoyuzCapsuleBlockEntity extends BaseContainerBlockEntity {
+public class SoyuzCapsuleBlockEntity extends BaseContainerBlockEntity implements com.hbm_m.api.render.RenderBoundsProvider {
 
     private NonNullList<ItemStack> slots = NonNullList.withSize(19, ItemStack.EMPTY);
 
@@ -71,17 +71,46 @@ public class SoyuzCapsuleBlockEntity extends BaseContainerBlockEntity {
 
     @Override public void clearContent() { slots.clear(); }
 
+    //? if >= 1.21.1 {
+    /*@Override protected NonNullList<ItemStack> getItems() { return slots; }
+    @Override protected void setItems(NonNullList<ItemStack> items) { slots = items; }
+    *///?}
+
     @Override
+    //? if < 1.21.1 {
     public void load(@NotNull CompoundTag nbt) {
+    //?} else {
+    /*public void loadAdditional(@NotNull CompoundTag nbt, net.minecraft.core.HolderLookup.Provider registries) {
+    *///?}
+        //? if < 1.21.1 {
         super.load(nbt);
+        //?} else {
+        /*super.loadAdditional(nbt, registries);
+        *///?}
         slots = NonNullList.withSize(getContainerSize(), ItemStack.EMPTY);
+        //? if < 1.21.1 {
         ContainerHelper.loadAllItems(nbt, slots);
+        //?} else {
+        /*ContainerHelper.loadAllItems(nbt, slots, registries);
+        *///?}
     }
 
     @Override
+    //? if < 1.21.1 {
     protected void saveAdditional(@NotNull CompoundTag nbt) {
+    //?} else {
+    /*protected void saveAdditional(@NotNull CompoundTag nbt, net.minecraft.core.HolderLookup.Provider registries) {
+    *///?}
+        //? if < 1.21.1 {
         super.saveAdditional(nbt);
+        //?} else {
+        /*super.saveAdditional(nbt, registries);
+        *///?}
+        //? if < 1.21.1 {
         ContainerHelper.saveAllItems(nbt, slots);
+        //?} else {
+        /*ContainerHelper.saveAllItems(nbt, slots, registries);
+        *///?}
     }
 
     @Override

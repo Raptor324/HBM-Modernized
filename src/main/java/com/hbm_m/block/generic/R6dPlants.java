@@ -161,7 +161,11 @@ public final class R6dPlants {
             if (world.isEmptyBlock(p) && canMushGrowHere(world, p)) world.setBlock(p, defaultBlockState(), 2);
         }
 
+        //? if < 1.21.1 {
         @Override public boolean isValidBonemealTarget(LevelReader w, BlockPos pos, BlockState s, boolean client) { return canSurvive(s, w, pos); }
+        //?} else {
+        /*@Override public boolean isValidBonemealTarget(LevelReader w, BlockPos pos, BlockState s) { return canSurvive(s, w, pos); }
+        *///?}
         @Override public boolean isBonemealSuccess(Level w, RandomSource rand, BlockPos pos, BlockState s) { return rand.nextFloat() < 0.4D; }
 
         @Override
@@ -199,7 +203,11 @@ public final class R6dPlants {
         }
 
         @Override
+        //? if < 1.21.1 {
         public ItemStack getCloneItemStack(BlockGetter level, BlockPos pos, BlockState state) {
+        //?} else {
+        /*public ItemStack getCloneItemStack(net.minecraft.world.level.LevelReader level, BlockPos pos, BlockState state) {
+        *///?}
             return new ItemStack(ModBlocks.MUSH.get());
         }
     }

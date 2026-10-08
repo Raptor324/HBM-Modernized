@@ -1,5 +1,11 @@
 package com.hbm_m.item.weapon;
 
+import com.hbm_m.platform.PlatformHooks;
+
+import com.hbm_m.platform.AttributeOps;
+
+import com.hbm_m.platform.StackNbt;
+
 import java.util.List;
 
 import javax.annotation.Nullable;
@@ -52,7 +58,11 @@ public class GunB92Item extends Item {
     @Override
     public void releaseUsing(ItemStack stack, Level level, LivingEntity living, int timeLeft) {
         if (!(living instanceof Player player) || player.isShiftKeyDown()) return;
+        //? if < 1.21.1 {
         int j = this.getUseDuration(stack) - timeLeft;
+        //?} else {
+        /*int j = this.getUseDuration(stack, living) - timeLeft;
+        *///?}
         // Original: ArrowLooseEvent (Forge) - hier ohne Ereignis, die Ladung ist die Haltedauer.
         if (j < 10.0D) return;
 
@@ -103,7 +113,11 @@ public class GunB92Item extends Item {
     }
 
     @Override
+    //? if < 1.21.1 {
     public int getUseDuration(ItemStack stack) {
+    //?} else {
+    /*public int getUseDuration(ItemStack stack, net.minecraft.world.entity.LivingEntity hbmUser) {
+    *///?}
         return 72000;
     }
 
@@ -132,7 +146,11 @@ public class GunB92Item extends Item {
     }
 
     @Override
+    //? if < 1.21.1 {
     public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> list, TooltipFlag flag) {
+    //?} else {
+    /*public void appendHoverText(ItemStack stack, net.minecraft.world.item.Item.TooltipContext hbmTooltipCtx, List<Component> list, TooltipFlag flag) {
+    *///?}
         int id = Polaroid.id();
         if (id == 11) {
             list.add(Component.literal("A weapon that came from the stars."));
@@ -159,10 +177,19 @@ public class GunB92Item extends Item {
     /** Original: getItemAttributeModifiers - Angriffsschaden +3,5. */
     @Override
     @SuppressWarnings("deprecation")
+    //? if < 1.21.1 {
     public Multimap<Attribute, AttributeModifier> getDefaultAttributeModifiers(EquipmentSlot slot) {
         if (slot != EquipmentSlot.MAINHAND) return super.getDefaultAttributeModifiers(slot);
+    //?} else {
+    /*public net.minecraft.world.item.component.ItemAttributeModifiers getDefaultAttributeModifiers(ItemStack stack) {
+        return com.hbm_m.platform.AttributeHooks.fromSlots(this::hbmSlotModifiers);
+    }
+
+    private Multimap<net.minecraft.core.Holder<Attribute>, AttributeModifier> hbmSlotModifiers(EquipmentSlot slot) {
+        if (slot != EquipmentSlot.MAINHAND) return ImmutableMultimap.of();
+    *///?}
         return ImmutableMultimap.of(Attributes.ATTACK_DAMAGE,
-                new AttributeModifier(BASE_ATTACK_DAMAGE_UUID, "Weapon modifier", 3.5, AttributeModifier.Operation.ADDITION));
+                com.hbm_m.platform.AttributeHooks.modifier(com.hbm_m.platform.AttributeHooks.BASE_ATTACK_DAMAGE_UUID, "Weapon modifier", 3.5, AttributeOps.ADDITION));
     }
 
     //? if forge {
@@ -200,21 +227,21 @@ public class GunB92Item extends Item {
     // ---- NBT wie im Original: "animation" / "energy" ----
 
     public static int getAnim(ItemStack stack) {
-        CompoundTag t = stack.getTag();
+        CompoundTag t = StackNbt.read(stack);
         return t == null ? 0 : t.getInt("animation");
     }
 
     private static void setAnim(ItemStack stack, int i) {
-        stack.getOrCreateTag().putInt("animation", i);
+        StackNbt.orCreate(stack).putInt("animation", i);
     }
 
     public static int getPower(ItemStack stack) {
-        CompoundTag t = stack.getTag();
+        CompoundTag t = StackNbt.read(stack);
         return t == null ? 0 : t.getInt("energy");
     }
 
     public static void setPower(ItemStack stack, int i) {
-        stack.getOrCreateTag().putInt("energy", i);
+        StackNbt.orCreate(stack).putInt("energy", i);
     }
 
     public static float getRotationFromAnim(ItemStack stack) {

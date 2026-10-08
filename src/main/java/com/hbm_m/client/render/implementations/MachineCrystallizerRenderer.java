@@ -126,7 +126,8 @@ public final class MachineCrystallizerRenderer {
 
     private static List<BakedQuad> collectModelQuads(BakedModel model, @Nullable RenderType renderType) {
         List<BakedQuad> quads = new ArrayList<>();
-        //? if forge {
+        // NeoForge: gleiche API (vorher fehlten dort Spinner und Fluessigkeit)
+        //? if forge || neoforge {
         quads.addAll(model.getQuads(null, null, RANDOM, ModelData.EMPTY, renderType));
         for (Direction dir : Direction.values()) {
             quads.addAll(model.getQuads(null, dir, RANDOM, ModelData.EMPTY, renderType));
@@ -196,7 +197,8 @@ public final class MachineCrystallizerRenderer {
         MultiBufferSource.BufferSource buffers = mc.renderBuffers().bufferSource();
         PoseStack poseStack = new PoseStack();
 
-        //? if forge {
+        // NeoForge: gleiche API (vorher fehlten dort Spinner und Fluessigkeit)
+        //? if forge || neoforge {
         try (var ignored = IrisPhaseGuard.pushBlockEntities()) {
             for (DeferredCrystallizerFluid entry : DEFERRED_FLUIDS) {
                 poseStack.pushPose();

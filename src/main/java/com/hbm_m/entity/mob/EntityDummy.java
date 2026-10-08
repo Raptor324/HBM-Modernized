@@ -57,6 +57,11 @@ public class EntityDummy extends Mob {
         return getName();
     }
 
+    //? if < 1.21.1 {
     @Override
     protected void dropCustomDeathLoot(@NotNull DamageSource source, int looting, boolean recentlyHit) { }
+    //?} else {
+    /*@Override
+    protected void dropCustomDeathLoot(net.minecraft.server.level.ServerLevel hbmLevel, @NotNull DamageSource source, boolean recentlyHit) { }
+    *///?}
 }

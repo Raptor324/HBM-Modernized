@@ -76,7 +76,7 @@ public final class WatzBlocks {
     }
 
     /** 1:1 {@code TileEntityWatzStruct}. */
-    public static class StructCoreBlockEntity extends BlockEntity {
+    public static class StructCoreBlockEntity extends BlockEntity implements com.hbm_m.api.render.RenderBoundsProvider {
 
         public StructCoreBlockEntity(BlockPos pos, BlockState state) { super(ModBlockEntities.STRUCT_WATZ_CORE.get(), pos, state); }
 

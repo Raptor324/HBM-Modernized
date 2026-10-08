@@ -160,14 +160,14 @@ public final class GraphitePileBlocks {
                     int newMeta = meta(s);
                     CompoundTag newTag = new CompoundTag();
                     BlockEntity te = world.getBlockEntity(p);
-                    if (newBlock instanceof DrilledTE && te != null) newTag = te.saveWithoutMetadata();
+                    if (newBlock instanceof DrilledTE && te != null) newTag = com.hbm_m.platform.BlockHooks.saveWithoutMetadata(te);
 
                     world.setBlock(p, oldBlock.defaultBlockState().setValue(META, (oldMeta & ~0b100) | (newMeta & 0b100)), 3);
 
                     if (oldBlock instanceof DrilledTE) {
                         BlockEntity nte = world.getBlockEntity(p);
                         if (nte != null) {
-                            if (!oldTag.isEmpty()) nte.load(oldTag);
+                            if (!oldTag.isEmpty()) com.hbm_m.platform.BlockHooks.loadFull(nte, oldTag);
                             else if (nte instanceof GraphitePileBlockEntities.Fuel f && (oldMeta & 8) != 0) f.progress = GraphitePileBlockEntities.Fuel.maxProgress - 1000;
                         }
                     }

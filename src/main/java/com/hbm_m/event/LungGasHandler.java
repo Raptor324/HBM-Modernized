@@ -1,5 +1,7 @@
 package com.hbm_m.event;
 
+import com.hbm_m.platform.EffectHooks;
+
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.effect.ModEffects;
@@ -69,7 +71,7 @@ public final class LungGasHandler {
         if (metal < 5) return;
 
         int amplifier = metal < 10 ? 0 : (metal < 25 ? 1 : 2);
-        player.addEffect(new MobEffectInstance(ModEffects.LEAD.get(), 100, amplifier));
+        player.addEffect(new MobEffectInstance(EffectHooks.of(ModEffects.LEAD), 100, amplifier));
     }
 
     private static boolean isCoalBlock(BlockState state) {

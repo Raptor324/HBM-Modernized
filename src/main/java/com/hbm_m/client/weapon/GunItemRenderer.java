@@ -50,7 +50,11 @@ public class GunItemRenderer extends BlockEntityWithoutLevelRenderer {
         ps.translate(0.5, 0.5, 0.5); // ItemRenderer verschiebt vor dem BEWLR um -0.5
 
         GunGL.begin(ps, buffers, light, overlay);
+        //? if < 1.21.1 {
         ItemRenderWeaponBase.interp = Minecraft.getInstance().getFrameTime();
+        //?} else {
+        /*ItemRenderWeaponBase.interp = Minecraft.getInstance().getTimer().getGameTimeDeltaPartialTick(true);
+        *///?}
 
         switch (ctx) {
             case GUI -> {

@@ -1,5 +1,7 @@
 package com.hbm_m.item.tool;
 
+import com.hbm_m.platform.StackNbt;
+
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
@@ -109,21 +111,21 @@ public class ItemToolAbilityFueled extends ItemToolAbility implements IFillableI
 
     @Override
     public int getFill(ItemStack stack) {
-        if (stack.getTag() == null) {
-            stack.setTag(new CompoundTag());
+        if (StackNbt.read(stack) == null) {
+            StackNbt.set(stack, new CompoundTag());
             setFill(stack, maxFuel);
             return maxFuel;
         }
 
-        return stack.getTag().getInt("fuel");
+        return StackNbt.read(stack).getInt("fuel");
     }
 
     public void setFill(ItemStack stack, int fill) {
-        if (stack.getTag() == null) {
-            stack.setTag(new CompoundTag());
+        if (StackNbt.read(stack) == null) {
+            StackNbt.set(stack, new CompoundTag());
         }
 
-        stack.getTag().putInt("fuel", fill);
+        StackNbt.tag(stack).putInt("fuel", fill);
     }
 
     @Override

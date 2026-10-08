@@ -2,7 +2,6 @@ package com.hbm_m.network;
 
 import dev.architectury.networking.NetworkManager.PacketContext;
 
-import net.minecraft.client.Minecraft;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
@@ -38,7 +37,7 @@ public class ExplosionKnockbackPacket implements S2CPacket {
 
     public static void handle(ExplosionKnockbackPacket m, PacketContext context) {
         context.queue(() -> {
-            Player thePlayer = Minecraft.getInstance().player;
+            Player thePlayer = com.hbm_m.client.ClientAccess.player();
             if (thePlayer == null) return;
             thePlayer.setDeltaMovement(thePlayer.getDeltaMovement().add(m.motionX, m.motionY, m.motionZ));
         });

@@ -26,7 +26,7 @@ import net.minecraft.world.phys.AABB;
  * Ende {@code floodlight_beam}-Lichtbloecke; im Betrieb wird alle 5 Ticks ein Strahl neu berechnet. Ohne Strom 60 Ticks
  * Sperre, Lichter weg.
  */
-public class FloodlightBlockEntity extends BlockEntity implements IEnergyReceiver {
+public class FloodlightBlockEntity extends BlockEntity implements IEnergyReceiver, com.hbm_m.api.render.RenderBoundsProvider, com.hbm_m.platform.HbmCapabilityProvider {
 
     public float rotation;
     protected BlockPos[] lightPos = new BlockPos[15];
@@ -197,25 +197,49 @@ public class FloodlightBlockEntity extends BlockEntity implements IEnergyReceive
     // --- NBT / Sync ---
 
     @Override
+    //? if < 1.21.1 {
     public void load(CompoundTag nbt) {
+    //?} else {
+    /*public void loadAdditional(CompoundTag nbt, net.minecraft.core.HolderLookup.Provider registries) {
+    *///?}
+        //? if < 1.21.1 {
         super.load(nbt);
+        //?} else {
+        /*super.loadAdditional(nbt, registries);
+        *///?}
         this.rotation = nbt.getFloat("rotation");
         this.power = nbt.getLong("power");
         this.isOn = nbt.getBoolean("isOn");
     }
 
     @Override
+    //? if < 1.21.1 {
     protected void saveAdditional(CompoundTag nbt) {
+    //?} else {
+    /*protected void saveAdditional(CompoundTag nbt, net.minecraft.core.HolderLookup.Provider registries) {
+    *///?}
+        //? if < 1.21.1 {
         super.saveAdditional(nbt);
+        //?} else {
+        /*super.saveAdditional(nbt, registries);
+        *///?}
         nbt.putFloat("rotation", rotation);
         nbt.putLong("power", power);
         nbt.putBoolean("isOn", isOn);
     }
 
     @Override
+    //? if < 1.21.1 {
     public CompoundTag getUpdateTag() {
+    //?} else {
+    /*public CompoundTag getUpdateTag(net.minecraft.core.HolderLookup.Provider registries) {
+    *///?}
         CompoundTag tag = new CompoundTag();
+        //? if < 1.21.1 {
         saveAdditional(tag);
+        //?} else {
+        /*saveAdditional(tag, registries);
+        *///?}
         return tag;
     }
 
@@ -227,7 +251,7 @@ public class FloodlightBlockEntity extends BlockEntity implements IEnergyReceive
 
     @Override
     public AABB getRenderBoundingBox() {
-        return new AABB(worldPosition.offset(-1, -1, -1), worldPosition.offset(2, 2, 2));
+        return com.hbm_m.platform.BlockHooks.aabb(worldPosition.offset(-1, -1, -1), worldPosition.offset(2, 2, 2));
     }
 
     // --- Energie (IEnergyReceiverMK2) ---
@@ -260,5 +284,14 @@ public class FloodlightBlockEntity extends BlockEntity implements IEnergyReceive
             return net.minecraftforge.common.util.LazyOptional.of(() -> (com.hbm_m.interfaces.IEnergyConnector) this).cast();
         return super.getCapability(cap, side);
     }
-    //?}
+    //?} elif neoforge {
+    /*@Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == com.hbm_m.platform.HbmCap.HBM_ENERGY_RECEIVER && canConnectEnergy(side))
+            return com.hbm_m.platform.LazyCap.of(() -> (IEnergyReceiver) this).cast();
+        if (cap == com.hbm_m.platform.HbmCap.HBM_ENERGY_CONNECTOR && canConnectEnergy(side))
+            return com.hbm_m.platform.LazyCap.of(() -> (com.hbm_m.interfaces.IEnergyConnector) this).cast();
+        return com.hbm_m.platform.HbmCapabilityProvider.super.getHbmCapability(cap, side);
+    }
+    *///?}
 }

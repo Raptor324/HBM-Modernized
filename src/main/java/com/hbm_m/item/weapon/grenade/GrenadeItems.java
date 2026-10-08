@@ -42,17 +42,21 @@ public final class GrenadeItems {
     public static void registerDispenser() {
         net.minecraft.world.level.block.DispenserBlock.registerBehavior(GRENADE_UNIVERSAL.get(), new net.minecraft.core.dispenser.DefaultDispenseItemBehavior() {
             @Override
+            //? if < 1.21.1 {
             protected net.minecraft.world.item.ItemStack execute(net.minecraft.core.BlockSource source, net.minecraft.world.item.ItemStack stack) {
+            //?} else {
+            /*protected net.minecraft.world.item.ItemStack execute(net.minecraft.core.dispenser.BlockSource source, net.minecraft.world.item.ItemStack stack) {
+            *///?}
 
-                net.minecraft.core.Direction enumfacing = source.getBlockState().getValue(net.minecraft.world.level.block.DispenserBlock.FACING);
+                net.minecraft.core.Direction enumfacing = com.hbm_m.platform.DispenseHooks.state(source).getValue(net.minecraft.world.level.block.DispenserBlock.FACING);
 
-                com.hbm_m.entity.grenade.EntityGrenadeUniversal grenade = new com.hbm_m.entity.grenade.EntityGrenadeUniversal(source.getLevel(), stack);
+                com.hbm_m.entity.grenade.EntityGrenadeUniversal grenade = new com.hbm_m.entity.grenade.EntityGrenadeUniversal(com.hbm_m.platform.DispenseHooks.level(source), stack);
                 EnumGrenadeShell shell = grenade.getShell();
 
                 // this kinda sucks ass but it works so i'm not complaining
-                grenade.setPosition(source.x() + enumfacing.getStepX() * 0.75, source.y() + enumfacing.getStepY() * 0.75, source.z() + enumfacing.getStepZ() * 0.75);
+                grenade.setPosition(com.hbm_m.platform.DispenseHooks.x(source) + enumfacing.getStepX() * 0.75, com.hbm_m.platform.DispenseHooks.y(source) + enumfacing.getStepY() * 0.75, com.hbm_m.platform.DispenseHooks.z(source) + enumfacing.getStepZ() * 0.75);
                 grenade.setDeltaMovement(enumfacing.getStepX() * shell.getYeetForce(), enumfacing.getStepY() * shell.getYeetForce(), enumfacing.getStepZ() * shell.getYeetForce());
-                source.getLevel().addFreshEntity(grenade);
+                com.hbm_m.platform.DispenseHooks.level(source).addFreshEntity(grenade);
 
                 stack.shrink(1);
                 return stack;

@@ -178,5 +178,42 @@ public abstract class MachineFoundryCastingBaseBlockEntity extends MachineFoundr
         if (outputHandler != null) outputHandler.invalidate();
         outputHandler = null;
     }
-    //?}
+    //?} elif neoforge {
+    /*private com.hbm_m.platform.LazyCap<net.neoforged.neoforge.items.IItemHandler> outputHandler;
+
+    /^* Original {@code ISidedInventory}: von allen Seiten nur Platz 1 entnehmbar, nichts einfuegbar. ^/
+    @Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER) {
+            if (outputHandler == null) {
+                outputHandler = com.hbm_m.platform.LazyCap.of(() -> new net.neoforged.neoforge.items.IItemHandler() {
+                    @Override public int getSlots() { return 1; }
+                    @Override public @NotNull ItemStack getStackInSlot(int slot) { return slots[1]; }
+                    @Override public @NotNull ItemStack insertItem(int slot, @NotNull ItemStack stack, boolean simulate) { return stack; }
+                    @Override public @NotNull ItemStack extractItem(int slot, int amount, boolean simulate) {
+                        if (slots[1].isEmpty()) return ItemStack.EMPTY;
+                        ItemStack out = slots[1].copyWithCount(Math.min(amount, slots[1].getCount()));
+                        if (!simulate) {
+                            slots[1].shrink(out.getCount());
+                            if (slots[1].isEmpty()) slots[1] = ItemStack.EMPTY;
+                            markForUpdate();
+                        }
+                        return out;
+                    }
+                    @Override public int getSlotLimit(int slot) { return 64; }
+                    @Override public boolean isItemValid(int slot, @NotNull ItemStack stack) { return false; }
+                });
+            }
+            return outputHandler.cast();
+        }
+        return super.getHbmCapability(cap, side);
+    }
+
+    @Override
+    public void invalidateHbmCaps() {
+        super.invalidateHbmCaps();
+        if (outputHandler != null) outputHandler.invalidate();
+        outputHandler = null;
+    }
+    *///?}
 }

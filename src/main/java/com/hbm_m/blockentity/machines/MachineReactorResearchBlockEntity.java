@@ -405,7 +405,43 @@ public class MachineReactorResearchBlockEntity extends BaseMachineBlockEntity im
         sided.values().forEach(net.minecraftforge.common.util.LazyOptional::invalidate);
         sided.clear();
     }
-    //?}
+    //?} elif neoforge {
+    /*private final Map<Direction, com.hbm_m.platform.LazyCap<net.neoforged.neoforge.items.IItemHandler>> sided = new EnumMap<>(Direction.class);
+
+    /^*
+     * Original Automatisierung: {@code isItemValidForSlot} laesst wegen {@code i <= 0} nur Platz 0 und nur exakt
+     * {@code ItemPlateFuel} zu, entnommen werden nur heisse Abfallplatten.
+     ^/
+    @Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER && side != null) {
+            return sided.computeIfAbsent(side, d -> com.hbm_m.platform.LazyCap.of(() -> new net.neoforged.neoforge.items.IItemHandler() {
+                @Override public int getSlots() { return INVENTORY_SIZE; }
+                @Override public @NotNull ItemStack getStackInSlot(int slot) { return inventory.getStackInSlot(slot); }
+                @Override public @NotNull ItemStack insertItem(int slot, @NotNull ItemStack stack, boolean simulate) {
+                    if (!isItemValid(slot, stack)) return stack;
+                    return inventory.insertItem(slot, stack, simulate);
+                }
+                @Override public @NotNull ItemStack extractItem(int slot, int amount, boolean simulate) {
+                    if (!isWasteOutput(inventory.getStackInSlot(slot))) return ItemStack.EMPTY;
+                    return inventory.extractItem(slot, amount, simulate);
+                }
+                @Override public int getSlotLimit(int slot) { return inventory.getSlotLimit(slot); }
+                @Override public boolean isItemValid(int slot, @NotNull ItemStack stack) {
+                    return slot == 0 && stack.getItem().getClass() == ItemPlateFuel.class;
+                }
+            })).cast();
+        }
+        return super.getHbmCapability(cap, side);
+    }
+
+    @Override
+    public void invalidateHbmCaps() {
+        super.invalidateHbmCaps();
+        sided.values().forEach(com.hbm_m.platform.LazyCap::invalidate);
+        sided.clear();
+    }
+    *///?}
 
     // ── Menu ────────────────────────────────────────────────────────────────
 

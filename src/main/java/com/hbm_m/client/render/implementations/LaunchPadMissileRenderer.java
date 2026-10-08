@@ -42,7 +42,8 @@ public class LaunchPadMissileRenderer implements com.hbm_m.client.render.HbmBerB
         }
 
         boolean shadowPass = ShaderCompatibilityDetector.isRenderingShadowPass();
-        //? if forge {
+        // Phase C: Iris-Batch auch auf NeoForge (gleiche Klassen), wie Forge
+        //? if forge || neoforge {
         if (ShaderCompatibilityDetector.isExternalShaderActive()) {
             try (IrisRenderBatch batch = IrisRenderBatch.begin(shadowPass, RenderSystem.getProjectionMatrix())) {
                 drawMissileOnPad(be, renderData, poseStack, buffer, packedLight, partialTicks);

@@ -24,7 +24,6 @@ import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.entity.item.PrimedTnt;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.enchantment.ProtectionEnchantment;
 import net.minecraft.world.level.Explosion;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
@@ -156,7 +155,9 @@ public class ExplosionNT {
             List<Entity> list = this.worldObj.getEntities(this.exploder, new AABB(i, k, l, j, i2, j2));
             //? if forge {
             net.minecraftforge.event.ForgeEventFactory.onExplosionDetonate(this.worldObj, this.vanilla, list, this.explosionSize);
-            //?}
+            //?} elif neoforge {
+            /*net.neoforged.neoforge.event.EventHooks.onExplosionDetonate(this.worldObj, this.vanilla, list, this.explosionSize);
+            *///?}
             Vec3 vec3 = new Vec3(this.explosionX, this.explosionY, this.explosionZ);
 
             for (Entity entity : list) {
@@ -173,7 +174,7 @@ public class ExplosionNT {
                         double d10 = Explosion.getSeenPercent(vec3, entity);
                         double d11 = (1.0D - d4) * d10;
                         entity.hurt(worldObj.damageSources().explosion(vanilla), (float) ((int) ((d11 * d11 + d11) / 2.0D * 8.0D * this.explosionSize + 1.0D)));
-                        double d8 = entity instanceof LivingEntity le ? ProtectionEnchantment.getExplosionKnockbackAfterDampener(le, d11) : d11;
+                        double d8 = entity instanceof LivingEntity le ? com.hbm_m.platform.PlatformHooks.getExplosionKnockbackAfterDampener(le, d11) : d11;
                         entity.setDeltaMovement(entity.getDeltaMovement().add(cx * d8, cy * d8, cz * d8));
                         if (entity instanceof Player p) {
                             this.affectedEntities.put(p, new Vec3(cx * d11, cy * d11, cz * d11));

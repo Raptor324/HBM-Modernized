@@ -225,7 +225,12 @@ final class RegionChunkRadiationStorage {
             if (file != null) return file;
             if (regions.size() >= MAX_OPEN_REGIONS) regions.removeLast().close();
             Files.createDirectories(root);
+            //? if < 1.21.1 {
             file = new RegionFile(regionPath(root, pos), root, sync);
+            //?} else {
+            /*// 1.21.1: RegionStorageInfo dient nur Logs/JFR
+            file = new RegionFile(new net.minecraft.world.level.chunk.storage.RegionStorageInfo("hbm_m", net.minecraft.world.level.Level.OVERWORLD, "radiation_ntmnext"), regionPath(root, pos), root, sync);
+            *///?}
             regions.putAndMoveToFirst(key, file);
             return file;
         }

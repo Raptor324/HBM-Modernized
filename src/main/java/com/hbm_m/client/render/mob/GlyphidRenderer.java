@@ -92,7 +92,11 @@ public class GlyphidRenderer<T extends EntityGlyphid> extends MobRenderer<T, Gly
         public void render(PoseStack ps, MultiBufferSource buf, int light, T entity, float limbSwing, float limbSwingAmount, float pt, float ageInTicks, float netHeadYaw, float headPitch) {
             if (entity.getSubtype() != EntityGlyphid.TYPE_INFECTED || entity instanceof EntityGlyphidNuclear) return;
             VertexConsumer vc = buf.getBuffer(RenderType.entityTranslucent(glyphid_infested_tex));
+            //? if < 1.21.1 {
             this.getParentModel().renderToBuffer(ps, vc, light, LivingEntityOverlay.overlay(entity), 1F, 1F, 1F, 1F);
+            //?} else {
+            /*this.getParentModel().renderToBuffer(ps, vc, light, LivingEntityOverlay.overlay(entity));
+            *///?}
         }
     }
 
@@ -125,7 +129,13 @@ public class GlyphidRenderer<T extends EntityGlyphid> extends MobRenderer<T, Gly
         }
 
         @Override
+        //? if < 1.21.1 {
         public void renderToBuffer(PoseStack ps, VertexConsumer vc, int light, int overlay, float r, float g, float b, float a) {
+        //?} else {
+        /*public void renderToBuffer(PoseStack ps, VertexConsumer vc, int light, int overlay, int hbmColor) {
+            float r = net.minecraft.util.FastColor.ARGB32.red(hbmColor) / 255F, g = net.minecraft.util.FastColor.ARGB32.green(hbmColor) / 255F;
+            float b = net.minecraft.util.FastColor.ARGB32.blue(hbmColor) / 255F, a = net.minecraft.util.FastColor.ARGB32.alpha(hbmColor) / 255F;
+        *///?}
             ps.pushPose();
 
             ps.mulPose(Axis.XP.rotationDegrees(180));

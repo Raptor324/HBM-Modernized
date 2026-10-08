@@ -293,7 +293,7 @@ public class FusionPlasmaForgeBlockEntity extends BaseMachineBlockEntity
     @Nullable
     public PlasmaForgeRecipe getRecipe(Level level) {
         if (selectedRecipeId == null) return null;
-        return level.getRecipeManager().byKey(selectedRecipeId)
+        return com.hbm_m.platform.recipe.RecipeHooks.getRecipeByKey(level.getRecipeManager(), selectedRecipeId)
                 .filter(r -> r instanceof PlasmaForgeRecipe)
                 .map(r -> (PlasmaForgeRecipe) r)
                 .orElse(null);
@@ -311,7 +311,7 @@ public class FusionPlasmaForgeBlockEntity extends BaseMachineBlockEntity
     }
 
     public static List<PlasmaForgeRecipe> getAllRecipes(Level level) {
-        return level.getRecipeManager().getAllRecipesFor(ModRecipes.PLASMA_FORGE_TYPE.get());
+        return com.hbm_m.platform.recipe.RecipeHooks.getAllRecipes(level, ModRecipes.PLASMA_FORGE_TYPE.get());
     }
 
     /** Original: {@code ModuleMachinePlasma.setupTanks} - Tankgroesse folgt dem Rezept. */
@@ -841,5 +841,25 @@ public class FusionPlasmaForgeBlockEntity extends BaseMachineBlockEntity
         super.invalidateCaps();
         sidedItems.invalidate();
     }
-    //?}
+    //?} elif neoforge {
+    /*/^* Original {@code ISidedInventory}: Slots {2-15}; Zutaten und Booster nach Rezept hinein, Ergebnis und verstopfte Eingaenge heraus. ^/
+    private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
+            new com.hbm_m.blockentity.SidedItemAccess.Rules() {
+                @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return com.hbm_m.blockentity.SidedItemAccess.range(2, 15); }
+                @Override public boolean canInsert(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return isItemValidForSlot(slot, stack); }
+                @Override public boolean canExtract(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return slot == 15 || isSlotClogged(slot); }
+            });
+
+    @Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER && side != null) return sidedItems.get(side).cast();
+        return super.getHbmCapability(cap, side);
+    }
+
+    @Override
+    public void invalidateHbmCaps() {
+        super.invalidateHbmCaps();
+        sidedItems.invalidate();
+    }
+    *///?}
 }

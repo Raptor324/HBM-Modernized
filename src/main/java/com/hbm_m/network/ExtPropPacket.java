@@ -5,7 +5,6 @@ import com.hbm_m.extprop.HbmPlayerProps;
 
 import dev.architectury.networking.NetworkManager.PacketContext;
 
-import net.minecraft.client.Minecraft;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.server.level.ServerPlayer;
@@ -45,7 +44,7 @@ public class ExtPropPacket implements S2CPacket {
 
     public static void handle(ExtPropPacket msg, PacketContext context) {
         context.queue(() -> {
-            Player p = Minecraft.getInstance().player;
+            Player p = com.hbm_m.client.ClientAccess.player();
             if (p == null) return;
             if (msg.living != null) p.getPersistentData().put(HbmLivingProps.KEY, msg.living);
             HbmPlayerProps props = HbmPlayerProps.get(p);

@@ -1,5 +1,7 @@
 package com.hbm_m.api.fluids.bootstrap;
 
+import com.hbm_m.platform.EffectHooks;
+
 import static com.hbm_m.api.fluids.bootstrap.ModFluidPollutionPresets.POISON_EXTREME;
 import static com.hbm_m.api.fluids.bootstrap.ModFluidPollutionPresets.POISON_MINOR;
 import static com.hbm_m.api.fluids.bootstrap.ModFluidPollutionPresets.P_FUEL;
@@ -303,7 +305,7 @@ public final class ModFluidTraitsBootstrap {
 
     private static FT_Toxin toxinEstradiol() {
         return new FT_Toxin()
-                .addEntry(new FT_Toxin.ToxinEffects(com.hbm_m.handler.HazardClass.PARTICLE_FINE, false).add(() -> new net.minecraft.world.effect.MobEffectInstance(com.hbm_m.effect.ModEffects.DEATH.get(), 72000, 0)));
+                .addEntry(new FT_Toxin.ToxinEffects(com.hbm_m.handler.HazardClass.PARTICLE_FINE, false).add(() -> new net.minecraft.world.effect.MobEffectInstance(EffectHooks.of(com.hbm_m.effect.ModEffects.DEATH), 72000, 0)));
     }
 
     private static FT_Toxin toxinRedmud() {

@@ -200,7 +200,7 @@ public class MobGearHandler {
         EntityEvent.ADD.register((entity, level) -> {
             if (level.isClientSide() || !(entity instanceof Mob living)) return EventResult.pass();
             if (living.getPersistentData().contains(SKELEGUN_TAG)) {
-                Item gun = net.minecraft.core.registries.BuiltInRegistries.ITEM.get(new net.minecraft.resources.ResourceLocation(living.getPersistentData().getString(SKELEGUN_TAG)));
+                Item gun = net.minecraft.core.registries.BuiltInRegistries.ITEM.get(net.minecraft.resources.ResourceLocation.parse(living.getPersistentData().getString(SKELEGUN_TAG)));
                 living.getPersistentData().remove(SKELEGUN_TAG);
                 if (gun != net.minecraft.world.item.Items.AIR) living.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(gun));
             }

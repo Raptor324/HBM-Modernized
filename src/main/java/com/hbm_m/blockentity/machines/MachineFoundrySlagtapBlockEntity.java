@@ -32,7 +32,7 @@ public class MachineFoundrySlagtapBlockEntity extends MachineFoundryOutletBlockE
     private static BlockHitResult trace(Level world, BlockPos pos) {
         Vec3 start = new Vec3(pos.getX() + 0.5, pos.getY() - 0.125, pos.getZ() + 0.5);
         Vec3 end = new Vec3(pos.getX() + 0.5, pos.getY() + 0.125 - 15, pos.getZ() + 0.5);
-        BlockHitResult mop = world.clip(new ClipContext(start, end, ClipContext.Block.OUTLINE, ClipContext.Fluid.ANY, null));
+        BlockHitResult mop = world.clip(new ClipContext(start, end, ClipContext.Block.OUTLINE, ClipContext.Fluid.ANY, (net.minecraft.world.entity.Entity) null));
         return mop == null || mop.getType() != HitResult.Type.BLOCK ? null : mop;
     }
 

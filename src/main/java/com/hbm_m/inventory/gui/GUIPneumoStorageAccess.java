@@ -285,8 +285,13 @@ public class GUIPneumoStorageAccess extends AbstractContainerScreen<PneumoStorag
     }
 
     /** Original: gescrollt wird zeilenweise durch das Verzeichnis. */
+    //? if < 1.21.1 {
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+    //?} else {
+    /*@Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double scrollX, double delta) {
+    *///?}
         setScroll(scrollIndex - (int) Math.signum(delta));
         return true;
     }

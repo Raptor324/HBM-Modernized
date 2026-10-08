@@ -1,5 +1,7 @@
 package com.hbm_m.block.fluid;
 
+import com.hbm_m.platform.PlatformHooks;
+
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.damagesource.ModDamageSources;
 import com.hbm_m.util.ContaminationUtil;
@@ -43,7 +45,7 @@ public class CoriumFiniteBlock extends FiniteFluidBlock {
     @Override
     public void entityInside(BlockState state, Level level, BlockPos pos, Entity entity) {
         entity.makeStuckInBlock(state, new Vec3(0.25D, 0.05D, 0.25D));
-        entity.setSecondsOnFire(3);
+        PlatformHooks.setSecondsOnFire(entity, 3);
         entity.hurt(ModDamageSources.radiation(level), 2F);
         if (entity instanceof LivingEntity living) {
             ContaminationUtil.contaminate(living, ContaminationUtil.HazardType.RADIATION, ContaminationUtil.ContaminationType.CREATIVE, 1F);

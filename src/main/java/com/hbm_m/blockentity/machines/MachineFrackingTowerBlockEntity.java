@@ -517,7 +517,7 @@ public class MachineFrackingTowerBlockEntity extends BaseMachineBlockEntity impl
     // CAPABILITIES
     //=====================================================================================//
 
-    //? if forge {
+    //? if forge || neoforge {
     @Override
     protected void setupFluidCapability() {
         setFluidHandler(new FrackingTowerFluidHandler(this));

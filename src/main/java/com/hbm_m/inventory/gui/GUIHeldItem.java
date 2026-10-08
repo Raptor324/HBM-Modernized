@@ -1,5 +1,7 @@
 package com.hbm_m.inventory.gui;
 
+import com.hbm_m.platform.StackNbt;
+
 import com.hbm_m.inventory.menu.HeldItemMenu;
 import com.hbm_m.lib.RefStrings;
 
@@ -29,7 +31,7 @@ public class GUIHeldItem extends AbstractContainerScreen<HeldItemMenu> {
 
     @Override
     public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
-        this.renderBackground(g);
+        com.hbm_m.client.GuiCompat.renderBackground(this, g, mouseX, mouseY, partialTick);
         super.render(g, mouseX, mouseY, partialTick);
         this.renderTooltip(g, mouseX, mouseY);
     }
@@ -39,24 +41,24 @@ public class GUIHeldItem extends AbstractContainerScreen<HeldItemMenu> {
         Component inv = Component.translatable("container.inventory");
         switch (menu.layout) {
             case LEAD_BOX -> {
-                Component name = menu.box.target.hasCustomHoverName() ? menu.box.target.getHoverName() : Component.translatable("container.leadBox");
+                Component name = StackNbt.hasCustomName(menu.box.target) ? menu.box.target.getHoverName() : Component.translatable("container.leadBox");
                 g.drawString(font, name, this.imageWidth / 2 - font.width(name) / 2, 6, 4210752, false);
                 g.drawString(font, inv, 8, this.imageHeight - 96 + 2, 4210752, false);
             }
             case PLASTIC_BAG -> g.drawString(font, inv, 8, this.imageHeight - 96 + 2, 4210752, false);
             case TOOLBOX -> {
-                Component name = menu.box.target.hasCustomHoverName() ? menu.box.target.getHoverName() : Component.translatable("container.toolBox");
+                Component name = StackNbt.hasCustomName(menu.box.target) ? menu.box.target.getHoverName() : Component.translatable("container.toolBox");
                 g.drawString(font, name, this.imageWidth / 2 - font.width(name) / 2, 37, 4210752, false);
                 g.drawString(font, inv, 8, this.imageHeight - 96 + 2, 4210752, false);
             }
             case AMMO_BAG -> {
                 // GUIAmmoBag
-                Component name = menu.box.target.hasCustomHoverName() ? menu.box.target.getHoverName() : Component.translatable("container.ammoBag");
+                Component name = StackNbt.hasCustomName(menu.box.target) ? menu.box.target.getHoverName() : Component.translatable("container.ammoBag");
                 g.drawString(font, name, this.imageWidth / 2 - font.width(name) / 2, 6, 0xffffff, false);
                 g.drawString(font, inv, 8, this.imageHeight - 98, 4210752, false);
             }
             case CASING_BAG -> {
-                Component name = menu.box.target.hasCustomHoverName() ? menu.box.target.getHoverName() : Component.translatable("container.casingBag");
+                Component name = StackNbt.hasCustomName(menu.box.target) ? menu.box.target.getHoverName() : Component.translatable("container.casingBag");
                 g.drawString(font, name, this.imageWidth / 2 - font.width(name) / 2, 6, 0xffffff, false);
                 g.drawString(font, inv, 8, this.imageHeight - 98, 4210752, false);
             }

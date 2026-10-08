@@ -19,7 +19,7 @@ import net.minecraft.world.item.ItemDisplayContext;
 import net.minecraft.world.item.ItemStack;
 
 /** 1:1 {@code RenderPistonInserter}: Rahmen, ausfahrender Kolben und der eingelegte Gegenstand auf der Kolbenplatte. */
-public class PistonInserterRenderer implements BlockEntityRenderer<PistonInserterBlockEntity> {
+public class PistonInserterRenderer implements com.hbm_m.client.render.HbmBerBounds<PistonInserterBlockEntity> {
 
     public static final SimpleObjModel MODEL = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/block/piston_inserter.obj"));
     public static final ResourceLocation TEX = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/machines/piston_inserter.png");

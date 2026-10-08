@@ -132,7 +132,19 @@ public class UniversalMachinePartBlockEntity extends BaseHbmBlockEntity implemen
      */
     private final net.minecraftforge.common.util.LazyOptional<IEnergyConnector> selfEnergyConnector =
             net.minecraftforge.common.util.LazyOptional.of(() -> this);
-    //?}
+    //?} elif neoforge {
+    /*/^*
+     * Reiner Konnektivitäts-Marker für JEDEN Teil der Struktur (auch DEFAULT-Phantomblöcke), NICHT
+     * an die Connector-Rollen delegiert. Nodespace#PowerNode lehnt Knoten ohne
+     * ModCapabilities.hasEnergyComponent() sofort ab (PowerNode#isValid) - ohne diesen Marker
+     * würden DEFAULT-Blöcke nie als Knoten registriert, und der Controller könnte nie eine
+     * physische Kette zu weit entfernten Connectoren (z.B. Chungus' Energie-Connector 10 Blöcke
+     * entfernt) bilden. canConnectEnergy() bleibt unabhängig rollenbasiert - Kabel docken weiterhin
+     * nur visuell an echten Connector-Rollen an.
+     ^/
+    private final com.hbm_m.platform.LazyCap<IEnergyConnector> selfEnergyConnector =
+            com.hbm_m.platform.LazyCap.of(() -> this);
+    *///?}
 
     public UniversalMachinePartBlockEntity(BlockPos pPos, BlockState pBlockState) {
         super(ModBlockEntities.UNIVERSAL_MACHINE_PART_BE.get(), pPos, pBlockState);
@@ -166,6 +178,9 @@ public class UniversalMachinePartBlockEntity extends BaseHbmBlockEntity implemen
         if (level != null && !level.isClientSide()) {
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_CLIENTS);
         }
+        //? if neoforge {
+        /*invalidateCapabilities(); // NeoForge-Capability-Cache: Seiten/Rolle geaendert
+        *///?}
     }
 
     @Override
@@ -185,6 +200,9 @@ public class UniversalMachinePartBlockEntity extends BaseHbmBlockEntity implemen
                 }
             }
         }
+        //? if neoforge {
+        /*invalidateCapabilities(); // NeoForge-Capability-Cache: Seiten/Rolle geaendert
+        *///?}
     }
 
     private static boolean isFluidConnector(PartRole r) {
@@ -404,7 +422,15 @@ public class UniversalMachinePartBlockEntity extends BaseHbmBlockEntity implemen
                 if (fs != null && !fs.isEmpty()) result.add(fs.getFluid());
             }
         }
-        //?}
+        //?} elif neoforge {
+        /*net.neoforged.neoforge.fluids.capability.IFluidHandler handler = com.hbm_m.platform.HbmCaps.get(controller, com.hbm_m.platform.HbmCap.FLUID_HANDLER, null).resolve().orElse(null);
+        if (handler != null) {
+            for (int i = 0; i < handler.getTanks(); i++) {
+                net.neoforged.neoforge.fluids.FluidStack fs = handler.getFluidInTank(i);
+                if (fs != null && !fs.isEmpty()) result.add(fs.getFluid());
+            }
+        }
+        *///?}
         //? if fabric {
         /*if (controller.getLevel() instanceof ServerLevel sl) {
             BlockPos bp = controller.getBlockPos();
@@ -498,6 +524,9 @@ public class UniversalMachinePartBlockEntity extends BaseHbmBlockEntity implemen
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_CLIENTS);
             level.updateNeighborsAt(worldPosition, getBlockState().getBlock());
         }
+        //? if neoforge {
+        /*invalidateCapabilities(); // NeoForge-Capability-Cache: Seiten/Rolle geaendert
+        *///?}
     }
 
     @Override
@@ -513,6 +542,9 @@ public class UniversalMachinePartBlockEntity extends BaseHbmBlockEntity implemen
             level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_CLIENTS);
             level.updateNeighborsAt(worldPosition, getBlockState().getBlock());
         }
+        //? if neoforge {
+        /*invalidateCapabilities(); // NeoForge-Capability-Cache: Seiten/Rolle geaendert
+        *///?}
     }
 
     /**
@@ -666,7 +698,120 @@ public class UniversalMachinePartBlockEntity extends BaseHbmBlockEntity implemen
         super.invalidateCaps();
         selfEnergyConnector.invalidate();
     }
-    //?}
+    //?} elif neoforge {
+    /*@Override
+    public void onLoad() {
+        super.onLoad();
+        // При загрузке мира роль восстанавливается из NBT, минуя setPartRole.
+        // Уведомляем соседей, чтобы трубы/провода обновили визуальные соединения.
+        if (level != null && !level.isClientSide() &&
+                (isFluidConnector(role) || role.canReceiveEnergy() || role.canSendEnergy())) {
+            level.updateNeighborsAt(worldPosition, getBlockState().getBlock());
+        }
+        // Клиент: после перезахода трубы могут визуально "не увидеть" коннектор до первого апдейта.
+        // Пересчитаем соединения вокруг части, чтобы рукава не отлипали/не липли к контроллеру случайно.
+        if (level != null && level.isClientSide && (isFluidConnector(role) || role.canReceiveEnergy() || role.canSendEnergy())) {
+            FluidDuctBlock.refreshAdjacentDucts(level, worldPosition);
+        }
+    }
+
+    @Override
+    public void onChunkUnloaded() {
+        super.onChunkUnloaded();
+        if (this.level instanceof ServerLevel sl) {
+            destroyAllFluidNodes(sl);
+        }
+        com.hbm_m.api.energy.EnergySubscriptions.unsubscribeAll(this);
+    }
+
+
+    @NotNull
+    @Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        var level = this.level;
+        if (this.controllerPos == null || level == null) {
+            return super.getHbmCapability(cap, side);
+        }
+
+        BlockEntity controllerBE = level.getBlockEntity(this.controllerPos);
+        if (controllerBE == null) {
+            return super.getHbmCapability(cap, side);
+        }
+
+        // === ДЕЛЕГИРОВАНИЕ ЭНЕРГИИ ===
+        // ENERGY_CONNECTOR и UNIVERSAL_CONNECTOR оба принимают/отдают энергию (PartRole.canReceiveEnergy/canSendEnergy)
+        if (this.role.canReceiveEnergy() || this.role.canSendEnergy()) {
+            boolean energySideOk = side == null
+                    || allowedEnergySides.isEmpty()
+                    || allowedEnergySides.contains(side);
+            if (!energySideOk) {
+                return super.getHbmCapability(cap, side);
+            }
+
+            // HBM API (Provider, Receiver, Connector)
+            if (cap == com.hbm_m.platform.HbmCap.HBM_ENERGY_PROVIDER ||
+                    cap == com.hbm_m.platform.HbmCap.HBM_ENERGY_RECEIVER ||
+                    cap == com.hbm_m.platform.HbmCap.HBM_ENERGY_CONNECTOR)
+            {
+                return com.hbm_m.platform.HbmCaps.get(controllerBE, cap, side);
+            }
+
+            // Forge Energy API (как и было)
+            if (cap == com.hbm_m.platform.HbmCap.ENERGY) {
+                return com.hbm_m.platform.HbmCaps.get(controllerBE, cap, side);
+            }
+        }
+
+        // Reiner Konnektivitäts-Marker für ALLE Rollen (auch DEFAULT) - siehe Javadoc bei
+        // selfEnergyConnector. Greift nur, wenn der Block oben NICHT schon als echte
+        // Connector-Rolle an den Controller delegiert hat.
+        if (cap == com.hbm_m.platform.HbmCap.HBM_ENERGY_CONNECTOR) {
+            return selfEnergyConnector.cast();
+        }
+
+        // === ДЕЛЕГИРОВАНИЕ ПРЕДМЕТОВ ===
+        if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER &&
+                (this.role == PartRole.ITEM_INPUT || this.role == PartRole.ITEM_OUTPUT
+                        || this.role == PartRole.UNIVERSAL_CONNECTOR)) {
+            // Original IConditionalInvAccess: Zugriff haengt von dieser Zelle ab
+            if (controllerBE instanceof com.hbm_m.interfaces.IConditionalInvAccess cond) {
+                net.neoforged.neoforge.items.IItemHandler h = cond.getConditionalItemHandler(this.worldPosition, side);
+                return h == null ? com.hbm_m.platform.LazyCap.empty() : com.hbm_m.platform.LazyCap.of(() -> h).cast();
+            }
+            // MachineAssemblerBlockEntity вернет специальный proxy-handler
+            if (controllerBE instanceof MachineAssemblerBlockEntity assembler && this.role != PartRole.UNIVERSAL_CONNECTOR) {
+                return assembler.getItemHandlerForPart(this.role).cast();
+            }
+            if (controllerBE instanceof MachineBlastFurnaceBlockEntity furnace) {
+                return com.hbm_m.platform.HbmCaps.get(controllerBE, cap, side);
+            }
+
+            // Для других машин (если появятся) можно делегировать напрямую
+            return com.hbm_m.platform.HbmCaps.get(controllerBE, cap, side);
+        }
+
+        // === ДЕЛЕГИРОВАНИЕ ЖИДКОСТЕЙ ===
+        if (cap == com.hbm_m.platform.HbmCap.FLUID_HANDLER && isFluidConnector(this.role)) {
+            boolean fluidSideOk = side == null
+                    || allowedFluidSides.isEmpty()
+                    || allowedFluidSides.contains(side);
+            if (!fluidSideOk) {
+                return super.getHbmCapability(cap, side);
+            }
+            // Всегда делегируем в контроллер как "внутренний" доступ (side == null),
+            // чтобы настройки сторон контроллера не блокировали подключение через коннектор.
+            return com.hbm_m.platform.HbmCaps.get(controllerBE, cap, null);
+        }
+
+        return super.getHbmCapability(cap, side);
+    }
+
+    @Override
+    public void invalidateHbmCaps() {
+        super.invalidateHbmCaps();
+        selfEnergyConnector.invalidate();
+    }
+    *///?}
 
     @Override
     protected void writeNbtData(@NotNull CompoundTag pTag, @Nullable HolderLookup.Provider registries) {

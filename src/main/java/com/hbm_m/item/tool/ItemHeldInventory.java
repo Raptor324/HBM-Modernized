@@ -1,5 +1,7 @@
 package com.hbm_m.item.tool;
 
+import com.hbm_m.platform.StackNbt;
+
 import com.hbm_m.inventory.HeldItemInventory;
 import com.hbm_m.inventory.menu.HeldItemMenu;
 
@@ -49,27 +51,27 @@ public class ItemHeldInventory extends Item {
      * sammeln sich pro Huelsentyp im NBT, jede volle Einheit legt eine Huelse in die Tasche.
      */
     public static boolean pushCasing(ItemStack bag, ItemStack casing, float amount) {
-        if (!bag.hasTag()) bag.setTag(new net.minecraft.nbt.CompoundTag());
+        if (!StackNbt.has(bag)) StackNbt.set(bag, new net.minecraft.nbt.CompoundTag());
         String name = casing.getDescriptionId() + "@0";
         boolean ret = false;
 
         //only add if the previous number did not exceed 1 (i.e. the bag ran full, and may have been emptied, we don't know)
-        if (bag.getTag().getFloat(name) < 1) {
+        if (StackNbt.read(bag).getFloat(name) < 1) {
             ret = true;
-            bag.getTag().putFloat(name, bag.getTag().getFloat(name) + amount);
+            StackNbt.tag(bag).putFloat(name, StackNbt.read(bag).getFloat(name) + amount);
         }
 
-        if (bag.getTag().getFloat(name) >= 1) {
+        if (StackNbt.read(bag).getFloat(name) >= 1) {
             HeldItemInventory inv = new HeldItemInventory(null, bag, HeldItemMenu.Layout.CASING_BAG.size, 64, (s, st) -> false, false, false);
             ItemStack toAdd = casing.copy();
 
-            while (bag.getTag().getFloat(name) >= 1) {
+            while (StackNbt.read(bag).getFloat(name) >= 1) {
                 boolean didSomething = false;
 
                 for (int i = 0; i < inv.getContainerSize(); i++) {
                     if (toAdd.getCount() <= 0) break;
                     ItemStack slot = inv.getItem(i);
-                    if (!slot.isEmpty() && ItemStack.isSameItemSameTags(slot, toAdd)) {
+                    if (!slot.isEmpty() && StackNbt.sameItemSameTags(slot, toAdd)) {
                         int am = Math.min(toAdd.getCount(), slot.getMaxStackSize() - slot.getCount());
                         toAdd.shrink(am);
                         slot.grow(am);
@@ -88,7 +90,7 @@ public class ItemHeldInventory extends Item {
                 }
 
                 if (didSomething) {
-                    bag.getTag().putFloat(name, bag.getTag().getFloat(name) - 1F);
+                    StackNbt.tag(bag).putFloat(name, StackNbt.read(bag).getFloat(name) - 1F);
                     ret = true;
                 } else {
                     break;

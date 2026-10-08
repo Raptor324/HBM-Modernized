@@ -26,6 +26,7 @@ public class ArmorEuphemium extends ArmorItem {
 
     //? if forge {
     @Override
+    //?}
     public String getArmorTexture(ItemStack stack, Entity entity, EquipmentSlot slot, String type) {
         if (stack.getItem() == ModItems.EUPHEMIUM_HELMET.get() || stack.getItem() == ModItems.EUPHEMIUM_PLATE.get() || stack.getItem() == ModItems.EUPHEMIUM_BOOTS.get()) {
             return "hbm_m:textures/armor/euphemium_1.png";
@@ -36,8 +37,21 @@ public class ArmorEuphemium extends ArmorItem {
         return null;
     }
 
+    //? if neoforge {
+    /*/^* NeoForge: Textur ueber die String-Variante (1.20.1 Forge {@code getArmorTexture(.., String type)}). ^/
+    @Override
+    public net.minecraft.resources.ResourceLocation getArmorTexture(ItemStack stack, Entity entity, EquipmentSlot slot,
+            net.minecraft.world.item.ArmorMaterial.Layer layer, boolean innerModel) {
+        String tex = this.getArmorTexture(stack, entity, slot, (String) null);
+        return tex == null ? null : net.minecraft.resources.ResourceLocation.parse(tex);
+    }
+    *///?}
+
+    //? if forge {
     @Override
     @SuppressWarnings("removal")
+    //?}
+    // NeoForge: Aufruf ueber ArmorTickNeoForge
     public void onArmorTick(@NotNull ItemStack armor, @NotNull Level world, @NotNull Player player) {
         if (ArmorUtil.checkArmor(player, ModItems.EUPHEMIUM_HELMET.get(), ModItems.EUPHEMIUM_PLATE.get(), ModItems.EUPHEMIUM_LEGS.get(), ModItems.EUPHEMIUM_BOOTS.get())) {
             player.addEffect(new MobEffectInstance(MobEffects.REGENERATION, 5, 127, true, true));
@@ -55,5 +69,4 @@ public class ArmorEuphemium extends ArmorItem {
     //do literally nothing lole
     @Override
     public void setDamage(ItemStack stack, int damage) { }
-    //?}
 }

@@ -1,5 +1,7 @@
 package com.hbm_m.recipe;
 
+import com.hbm_m.platform.StackNbt;
+
 import com.hbm_m.platform.PlatformHooks;
 import com.hbm_m.platform.recipe.PlatformRecipe;
 import com.hbm_m.platform.recipe.PlatformRecipeSerializer;
@@ -159,10 +161,10 @@ public class AnvilRecipe extends PlatformRecipe {
         switch (special) {
             case "cyanide":
                 // AnvilSmithingCyanideRecipe: rechts Plan C oder rote Pille, links beliebige Nahrung
-                return (doesStackMatch(r, right) || r.getItem() == itemById("pill_red")) && l.isEdible();
+                return (doesStackMatch(r, right) || r.getItem() == itemById("pill_red")) && PlatformHooks.isEdible(l);
             case "rename":
                 // AnvilSmithingRenameRecipe: links beliebig, rechts ein benanntes Namensschild
-                return doesStackMatch(r, right) && r.hasCustomHoverName();
+                return doesStackMatch(r, right) && StackNbt.hasCustomName(r);
             default:
                 break;
         }
@@ -211,9 +213,9 @@ public class AnvilRecipe extends PlatformRecipe {
             case "rename": {
                 ItemStack out = l.copy();
                 out.setCount(1);
-                if (r.hasCustomHoverName()) {
+                if (StackNbt.hasCustomName(r)) {
                     String name = r.getHoverName().getString().replace("\\&", "§");
-                    out.setHoverName(Component.literal("§r" + name));
+                    StackNbt.setCustomName(out, Component.literal("§r" + name));
                 }
                 return out;
             }

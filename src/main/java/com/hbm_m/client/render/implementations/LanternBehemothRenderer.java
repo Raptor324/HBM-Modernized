@@ -16,7 +16,7 @@ import net.minecraft.resources.ResourceLocation;
  * 1:1 {@code RenderLanternBehemoth}: rostige Laterne; kaputt schief (5 Grad um X, 10 um Z) mit rot pulsierendem
  * Licht, repariert gruen pulsierend (0.5-1.0).
  */
-public class LanternBehemothRenderer implements BlockEntityRenderer<LanternBehemothBlockEntity> {
+public class LanternBehemothRenderer implements com.hbm_m.client.render.HbmBerBounds<LanternBehemothBlockEntity> {
 
     public static final ResourceLocation TEX = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/trinkets/lantern_rusty.png");
 

@@ -21,7 +21,7 @@ import net.minecraft.world.level.material.Fluid;
  * fluid network on every face.</p>
  */
 public class RBMKSteamOutletBlockEntity extends BlockEntity
-        implements com.hbm_m.api.fluids.IFluidStandardSenderMK2 {
+        implements com.hbm_m.api.fluids.IFluidStandardSenderMK2, com.hbm_m.platform.HbmCapabilityProvider {
 
     /**
      * CE types this tank as <b>superhot</b> steam ({@code new FluidTankNTM(Fluids.SUPERHOTSTEAM, 32000)}),
@@ -93,7 +93,19 @@ public class RBMKSteamOutletBlockEntity extends BlockEntity
         }
         return super.getCapability(cap, side);
     }
-    //?}
+    //?} elif neoforge {
+    /*/^*
+     * Without this the tank existed but nothing could ever reach it - pipes and tanks had no
+     * handler to talk to, so the channel simply refused every connection.
+     ^/
+    @Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == com.hbm_m.platform.HbmCap.FLUID_HANDLER) {
+            return com.hbm_m.platform.LazyCap.ofObj(steamTank.getCapability()).cast();
+        }
+        return com.hbm_m.platform.HbmCapabilityProvider.super.getHbmCapability(cap, side);
+    }
+    *///?}
 
     // ─── NBT / Sync ──────────────────────────────────────────────────────────
 

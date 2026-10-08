@@ -43,7 +43,7 @@ import com.hbm_m.platform.PlatformHooks;
  * используйте {@link #applyClientUpdate(CompoundTag)} (метод для переопределения, вызывается
  * прослойкой при получении пакета) — он должен делегировать в {@link #readNbtData}.
  */
-public abstract class BaseHbmBlockEntity extends BlockEntity implements com.hbm_m.api.render.RenderBoundsProvider {
+public abstract class BaseHbmBlockEntity extends BlockEntity implements com.hbm_m.api.render.RenderBoundsProvider, com.hbm_m.platform.HbmCapabilityProvider {
 
     public BaseHbmBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
@@ -167,7 +167,7 @@ public abstract class BaseHbmBlockEntity extends BlockEntity implements com.hbm_
         if (t != this.tilted) {
             this.tilted = t;
             if (level != null && level.isClientSide) {
-                //? if forge {
+                //? if forge || neoforge {
                 this.requestModelDataUpdate();
                 //?}
                 level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 8);
@@ -302,6 +302,15 @@ public abstract class BaseHbmBlockEntity extends BlockEntity implements com.hbm_
         if (tag != null) { readTiltClient(tag); applyClientUpdate(tag); }
     }
     //?}
+
+    //? if neoforge {
+    /*/^* Forge ruft invalidateCaps() aus setRemoved(); auf NeoForge die gespiegelten Forge-Zweige (invalidateHbmCaps). ^/
+    @Override
+    public void setRemoved() {
+        super.setRemoved();
+        invalidateHbmCaps();
+    }
+    *///?}
 
     // ═══════════════════════════════════════════════════════════════════════════════════════════
     //  Capability Providers (Автоматизация для NeoForge и платформенных адаптеров)

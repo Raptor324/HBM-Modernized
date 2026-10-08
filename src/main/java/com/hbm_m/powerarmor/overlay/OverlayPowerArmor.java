@@ -128,5 +128,20 @@ public class OverlayPowerArmor {
     }
 
     public static final IGuiOverlay POWER_ARMOR_OVERLAY = OverlayPowerArmor::onRenderOverlay;
-    //?}
+    //?} elif neoforge {
+    /*/^* NeoForge-Gegenstueck zu onRenderOverlay: leftHeight liegt an Minecraft.gui. ^/
+    public static void renderNeo(GuiGraphics guiGraphics, float partialTick, int screenWidth, int screenHeight) {
+        render(guiGraphics, partialTick, screenWidth, screenHeight);
+        Minecraft mc = Minecraft.getInstance();
+        LocalPlayer player = mc.player;
+        if (player != null && !player.isCreative()) {
+            ItemStack chestplate = player.getItemBySlot(EquipmentSlot.CHEST);
+            if (chestplate.getItem() instanceof com.hbm_m.powerarmor.ModArmorFSB armorItem) {
+                boolean noHelmet = armorItem.noHelmet;
+                int piecesToShow = noHelmet ? 3 : 4;
+                mc.gui.leftHeight += (piecesToShow * 3) + 2;
+            }
+        }
+    }
+    *///?}
 }

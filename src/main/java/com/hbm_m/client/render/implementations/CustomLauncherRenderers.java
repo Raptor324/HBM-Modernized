@@ -46,7 +46,7 @@ public final class CustomLauncherRenderers {
     }
 
     /** {@code RenderCompactLauncher}: Gestell, Rakete auf 1.0625. */
-    public static class Compact implements BlockEntityRenderer<CompactLauncherBlockEntity> {
+    public static class Compact implements com.hbm_m.client.render.HbmBerBounds<CompactLauncherBlockEntity> {
 
         public Compact(BlockEntityRendererProvider.Context ctx) { }
 
@@ -66,7 +66,7 @@ public final class CustomLauncherRenderers {
     }
 
     /** {@code RenderLaunchTable}: Tisch, Rampe nach Groesse, Geruestturm bis zur Rakete, die Rakete auf 2.0625. */
-    public static class Table implements BlockEntityRenderer<LaunchTableBlockEntity> {
+    public static class Table implements com.hbm_m.client.render.HbmBerBounds<LaunchTableBlockEntity> {
 
         public Table(BlockEntityRendererProvider.Context ctx) { }
 

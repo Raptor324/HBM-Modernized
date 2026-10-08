@@ -2027,7 +2027,15 @@ public class TurretBaseBlockEntity extends BaseMachineBlockEntity implements IFl
         }
         return super.getCapability(cap, side);
     }
-    //?}
+    //?} elif neoforge {
+    /*@Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (stats == TurretStats.FRITZ && cap == com.hbm_m.platform.HbmCap.FLUID_HANDLER) {
+            return com.hbm_m.platform.LazyCap.ofObj(tank.getCapability()).cast();
+        }
+        return super.getHbmCapability(cap, side);
+    }
+    *///?}
 
     @Override
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {

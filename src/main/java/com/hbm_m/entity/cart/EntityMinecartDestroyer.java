@@ -1,5 +1,7 @@
 package com.hbm_m.entity.cart;
 
+import com.hbm_m.platform.StackNbt;
+
 import java.util.List;
 
 import org.jetbrains.annotations.NotNull;
@@ -73,7 +75,7 @@ public class EntityMinecartDestroyer extends EntityMinecartContainerBase {
                 for (int i = 0; i < 9; i++) {
                     ItemStack match = getItem(i);
 
-                    if (!match.isEmpty() && ItemStack.isSameItemSameTags(match, stack)) {
+                    if (!match.isEmpty() && StackNbt.sameItemSameTags(match, stack)) {
                         item.discard();
                         sound = true;
                         continue outer;

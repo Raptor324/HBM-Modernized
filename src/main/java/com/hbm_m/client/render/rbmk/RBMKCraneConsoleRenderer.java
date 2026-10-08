@@ -30,7 +30,7 @@ import java.util.Map;
  * scanned reactor span and height, then the {@code Lift} drops by up to 3.25 blocks as the crane
  * lowers - the same construction, in the same order, as the original.</p>
  */
-public class RBMKCraneConsoleRenderer implements BlockEntityRenderer<RBMKCraneConsoleBlockEntity> {
+public class RBMKCraneConsoleRenderer implements com.hbm_m.client.render.HbmBerBounds<RBMKCraneConsoleBlockEntity> {
 
     private static final int FULLBRIGHT = LightTexture.FULL_BRIGHT;
 

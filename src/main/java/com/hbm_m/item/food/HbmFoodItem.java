@@ -57,6 +57,9 @@ public class HbmFoodItem extends Item {
         this.foil = b.foil;
         this.rarityOverride = b.rarity;
         this.desc = b.desc;
+        //? if >= 1.21.1 {
+        /*com.hbm_m.platform.ItemComponentHooks.deferRarity(this, () -> this.rarityOverride);
+        *///?}
     }
 
     public static Builder of(int heal, float saturation, boolean wolf) {
@@ -79,7 +82,11 @@ public class HbmFoodItem extends Item {
     }
 
     @Override
+    //? if < 1.21.1 {
     public int getUseDuration(ItemStack stack) {
+    //?} else {
+    /*public int getUseDuration(ItemStack stack, net.minecraft.world.entity.LivingEntity hbmUser) {
+    *///?}
         return useDuration;
     }
 
@@ -93,13 +100,19 @@ public class HbmFoodItem extends Item {
         return foil || super.isFoil(stack);
     }
 
+    //? if < 1.21.1 {
     @Override
     public Rarity getRarity(ItemStack stack) {
         return rarityOverride != null ? rarityOverride : super.getRarity(stack);
     }
+    //?}
 
     @Override
+    //? if < 1.21.1 {
     public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
+    //?} else {
+    /*public void appendHoverText(ItemStack stack, net.minecraft.world.item.Item.TooltipContext hbmTooltipCtx, List<Component> tooltip, TooltipFlag flag) {
+    *///?}
         if (desc) addDescLines(this.getDescriptionId() + ".desc", tooltip);
     }
 
@@ -144,6 +157,12 @@ public class HbmFoodItem extends Item {
         public Builder rarity(Rarity r) { this.rarity = r; return this; }
         public Builder noDesc() { this.desc = false; return this; }
 
+        //? if >= 1.21.1 {
+        /*// 1.21.1: Vanilla-MobEffects sind Holder
+        public Builder potion(net.minecraft.core.Holder<MobEffect> effect, int seconds, int amplifier, float chance) {
+            return potion(effect.value(), seconds, amplifier, chance);
+        }
+        *///?}
         /** Original {@code setPotionEffect(id, seconds, amplifier, probability)}. */
         public Builder potion(MobEffect effect, int seconds, int amplifier, float chance) {
             this.effect = effect;

@@ -1,5 +1,7 @@
 package com.hbm_m.blockentity.machines.rbmk;
 
+import com.hbm_m.platform.StackNbt;
+
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.handler.rbmk.RBMKDials;
 import com.hbm_m.handler.rbmk.RBMKOutgasserRecipes;
@@ -220,7 +222,15 @@ public class RBMKOutgasserBlockEntity extends RBMKColumnBlockEntity
         }
         return super.getCapability(cap, side);
     }
-    //?}
+    //?} elif neoforge {
+    /*@Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == com.hbm_m.platform.HbmCap.FLUID_HANDLER) {
+            return com.hbm_m.platform.LazyCap.ofObj(gasTank.getCapability()).cast();
+        }
+        return super.getHbmCapability(cap, side);
+    }
+    *///?}
 
     // ─── IRBMKLoadable ───────────────────────────────────────────────────────
 
@@ -266,8 +276,8 @@ public class RBMKOutgasserBlockEntity extends RBMKColumnBlockEntity
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.readNbtData(tag, registries);
-        inputSlot  = tag.contains("inputSlot")  ? ItemStack.of(tag.getCompound("inputSlot"))  : ItemStack.EMPTY;
-        outputSlot = tag.contains("outputSlot") ? ItemStack.of(tag.getCompound("outputSlot")) : ItemStack.EMPTY;
+        inputSlot  = tag.contains("inputSlot")  ? StackNbt.parse(tag.getCompound("inputSlot"))  : ItemStack.EMPTY;
+        outputSlot = tag.contains("outputSlot") ? StackNbt.parse(tag.getCompound("outputSlot")) : ItemStack.EMPTY;
         gasTank.readFromNBT(tag, "gas");
         progress = tag.getDouble("progress");
         lastUsedFlux = tag.getDouble("lastUsedFlux");

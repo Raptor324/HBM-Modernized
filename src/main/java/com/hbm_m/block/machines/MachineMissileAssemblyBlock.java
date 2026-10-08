@@ -1,5 +1,7 @@
 package com.hbm_m.block.machines;
 
+import com.hbm_m.platform.StackNbt;
+
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.blockentity.machines.MissileAssemblyBlockEntity;
@@ -64,7 +66,7 @@ public class MachineMissileAssemblyBlock extends BaseEntityBlock {
     @Override
     public void setPlacedBy(Level level, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack stack) {
         super.setPlacedBy(level, pos, state, placer, stack);
-        if (stack.hasCustomHoverName() && level.getBlockEntity(pos) instanceof MissileAssemblyBlockEntity be) {
+        if (StackNbt.hasCustomName(stack) && level.getBlockEntity(pos) instanceof MissileAssemblyBlockEntity be) {
             be.setCustomName(stack.getHoverName().getString());
         }
     }

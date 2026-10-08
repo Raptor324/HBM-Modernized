@@ -1,4 +1,4 @@
-//? if forge {
+//? if forge || neoforge {
 package com.hbm_m.powerarmor.overlay;
 
 import com.hbm_m.extprop.HbmLivingProps;
@@ -12,17 +12,29 @@ import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
+//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RenderGuiOverlayEvent;
 import net.minecraftforge.client.gui.overlay.VanillaGuiOverlay;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+//?} else {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.neoforge.client.event.RenderGuiLayerEvent;
+import net.neoforged.neoforge.client.gui.VanillaGuiLayers;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+*///?}
 
 /**
  * 1:1 {@code ArmorHEV.handleOverlay}/{@code renderOverlay}: Mit dem HEV-Anzug ersetzen Zahlen die
  * Herz- und Ruestungsleiste (+Gesundheit x5, ||Ladung, Strahlungsbalken, RAD/s).
  */
+//? if forge {
 @Mod.EventBusSubscriber(modid = MainRegistry.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
+//?} else {
+/*@EventBusSubscriber(modid = MainRegistry.MOD_ID, bus = EventBusSubscriber.Bus.GAME, value = Dist.CLIENT)
+*///?}
 public final class HEVHudOverlay {
 
     private HEVHudOverlay() {}
@@ -32,21 +44,35 @@ public final class HEVHudOverlay {
     private static float lastResult;
 
     @SubscribeEvent
+    //? if forge {
     public static void onOverlay(RenderGuiOverlayEvent.Pre event) {
+    //?} else {
+    /*public static void onOverlay(RenderGuiLayerEvent.Pre event) {
+    *///?}
         Player player = Minecraft.getInstance().player;
         if (player == null) return;
 
         ItemStack plate = player.getItemBySlot(EquipmentSlot.CHEST);
         if (ModArmorFSB.hasFSBArmorIgnoreCharge(player) && plate.getItem() == ModItems.HEV_PLATE.get()) {
 
+            //? if forge {
             if (event.getOverlay() == VanillaGuiOverlay.ARMOR_LEVEL.type()) {
+            //?} else {
+            /*if (VanillaGuiLayers.ARMOR_LEVEL.equals(event.getName())) {
+            *///?}
                 event.setCanceled(true);
                 return;
             }
 
+            //? if forge {
             if (event.getOverlay() == VanillaGuiOverlay.PLAYER_HEALTH.type()) {
                 event.setCanceled(true);
                 renderOverlay(event.getGuiGraphics(), event.getWindow().getGuiScaledHeight(), player);
+            //?} else {
+            /*if (VanillaGuiLayers.PLAYER_HEALTH.equals(event.getName())) {
+                event.setCanceled(true);
+                renderOverlay(event.getGuiGraphics(), Minecraft.getInstance().getWindow().getGuiScaledHeight(), player);
+            *///?}
             }
         }
     }

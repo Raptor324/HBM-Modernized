@@ -48,4 +48,8 @@ public class PileControlBlock extends PileDeviceBlock {
         // Original: der Bohrer greift beim Steuerantrieb senkrecht nach unten durch.
         return passDrillThrough(state, level, pos, player, hand, true);
     }
+    //? if >= 1.21.1 {
+    /*public static final com.mojang.serialization.MapCodec<PileControlBlock> CODEC = simpleCodec(PileControlBlock::new);
+    @Override protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() { return CODEC; }
+    *///?}
 }

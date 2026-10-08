@@ -1,5 +1,7 @@
 package com.hbm_m.inventory.menu;
 
+import com.hbm_m.platform.StackNbt;
+
 import com.hbm_m.inventory.HeldItemInventory;
 
 import net.minecraft.network.FriendlyByteBuf;
@@ -62,7 +64,7 @@ public class HeldItemMenu extends AbstractContainerMenu {
         ItemStack held = inv.player.getItemInHand(hand);
         this.box = new HeldItemInventory(inv.player, held, layout.size, layout.stackLimit,
                 layout == Layout.TOOLBOX ? (s, st) -> !(st.getItem() instanceof com.hbm_m.item.tool.ItemToolBox)
-                        : layout == Layout.AMMO_BAG ? (s, st) -> !st.hasTag()
+                        : layout == Layout.AMMO_BAG ? (s, st) -> !StackNbt.has(st)
                         : layout == Layout.CASING_BAG ? (s, st) -> false : (s, st) -> true,
                 layout.crateSounds, layout.checkSize);
         this.box.startOpen(inv.player);

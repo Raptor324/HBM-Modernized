@@ -177,7 +177,7 @@ public class MachineCoolingTowerBlockEntity extends BaseMachineBlockEntity imple
         waterTimer = tag.getByte("waterTimer");
     }
 
-    //? if forge {
+    //? if forge || neoforge {
     @Override
     protected void setupFluidCapability() {
         setFluidHandler(new CoolingTowerFluidHandler(this));

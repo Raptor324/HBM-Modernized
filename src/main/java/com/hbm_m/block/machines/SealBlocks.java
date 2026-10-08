@@ -117,12 +117,18 @@ public final class SealBlocks {
         //? if < 1.21.1 {
         @Override
         public InteractionResult use(BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        //?} else {
+        /*@Override
+        protected net.minecraft.world.ItemInteractionResult useItemOn(net.minecraft.world.item.ItemStack hbmHeld, BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+            return com.hbm_m.platform.BlockUseHooks.item(hbmUse(state, world, pos, player, hand, hit));
+        }
+        private InteractionResult hbmUse(BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        *///?}
             if (world.isClientSide) return InteractionResult.SUCCESS;
             if (player.isShiftKeyDown()) return world.isClientSide() ? InteractionResult.SUCCESS : InteractionResult.PASS; // Original: Client true, Server geschlichen false
             toggle(world, pos);
             return InteractionResult.SUCCESS;
         }
-        //?}
 
         @Override
         public BombReturnCode explode(Level world, BlockPos pos) {
@@ -189,14 +195,30 @@ public final class SealBlocks {
         }
 
         @Override
+        //? if < 1.21.1 {
         public void load(CompoundTag nbt) {
+        //?} else {
+        /*public void loadAdditional(CompoundTag nbt, net.minecraft.core.HolderLookup.Provider registries) {
+        *///?}
+            //? if < 1.21.1 {
             super.load(nbt);
+            //?} else {
+            /*super.loadAdditional(nbt, registries);
+            *///?}
             controller = new BlockPos(nbt.getInt("x1"), nbt.getInt("y1"), nbt.getInt("z1"));
         }
 
         @Override
+        //? if < 1.21.1 {
         protected void saveAdditional(CompoundTag nbt) {
+        //?} else {
+        /*protected void saveAdditional(CompoundTag nbt, net.minecraft.core.HolderLookup.Provider registries) {
+        *///?}
+            //? if < 1.21.1 {
             super.saveAdditional(nbt);
+            //?} else {
+            /*super.saveAdditional(nbt, registries);
+            *///?}
             nbt.putInt("x1", controller.getX());
             nbt.putInt("y1", controller.getY());
             nbt.putInt("z1", controller.getZ());

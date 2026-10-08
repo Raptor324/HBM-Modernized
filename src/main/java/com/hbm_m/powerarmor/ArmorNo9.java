@@ -76,16 +76,18 @@ public class ArmorNo9 extends ArmorModel implements IAttackHandler, IDamageHandl
     //? if forge {
     @Override
     @SuppressWarnings("removal")
+    //?}
+    // NeoForge: Aufruf ueber ArmorTickNeoForge
     public void onArmorTick(@NotNull ItemStack armor, @NotNull Level world, @NotNull Player player) {
 
         if (!world.isClientSide) {
 
             boolean turnOn = HbmPlayerProps.getData(player).enableHUD;
-            boolean wasOn = armor.getOrCreateTag().getBoolean("isOn");
+            boolean wasOn = com.hbm_m.platform.StackNbt.orCreate(armor).getBoolean("isOn");
 
             if (turnOn && !wasOn) world.playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.FLINTANDSTEEL_USE, SoundSource.PLAYERS, 1F, 1.5F);
             if (!turnOn && wasOn) world.playSound(null, player.getX(), player.getY(), player.getZ(), SoundEvents.FIRE_EXTINGUISH, SoundSource.PLAYERS, 0.5F, 2F);
-            armor.getOrCreateTag().putBoolean("isOn", turnOn); // a crude way of syncing the "enableHUD" prop to other players is just by piggybacking off the NBT sync
+            com.hbm_m.platform.StackNbt.orCreate(armor).putBoolean("isOn", turnOn); // a crude way of syncing the "enableHUD" prop to other players is just by piggybacking off the NBT sync
 
             if (HbmLivingProps.getBlackLung(player) > HbmLivingProps.maxBlackLung * 0.9) {
                 HbmLivingProps.setBlackLung(player, (int) (HbmLivingProps.maxBlackLung * 0.9));
@@ -95,5 +97,4 @@ public class ArmorNo9 extends ArmorModel implements IAttackHandler, IDamageHandl
             }
         }
     }
-    //?}
 }

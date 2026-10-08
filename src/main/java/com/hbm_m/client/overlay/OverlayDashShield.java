@@ -136,5 +136,30 @@ public final class OverlayDashShield {
             gui.leftHeight += renderShieldBar(g, w, h, gui.leftHeight, props);
         }
     };
-    //?}
+    //?} elif neoforge {
+    /*/^* NeoForge-Gegenstueck zu DASH_OVERLAY (Ebene ueber HOTBAR, in ClientSetup angemeldet). ^/
+    public static void renderDashNeo(GuiGraphics g, int h) {
+        LocalPlayer player = Minecraft.getInstance().player;
+        if (player == null || Minecraft.getInstance().options.hideGui) return;
+        HbmPlayerProps props = HbmPlayerProps.getData(player);
+        if (props.getDashCount() > 0) renderDashBar(g, h, props);
+    }
+
+    /^* NeoForge-Gegenstueck zu SHIELD_OVERLAY: ForgeGui.shouldDrawSurvivalElements/setupOverlayRenderState nachgebildet. ^/
+    public static void renderShieldNeo(GuiGraphics g, int w, int h) {
+        Minecraft mc = Minecraft.getInstance();
+        LocalPlayer player = mc.player;
+        boolean survival = mc.gameMode != null && mc.gameMode.canHurtPlayer() && mc.getCameraEntity() instanceof net.minecraft.world.entity.player.Player;
+        if (player == null || mc.options.hideGui || !survival) return;
+        HbmPlayerProps props = HbmPlayerProps.getData(player);
+        if (props.getEffectiveMaxShield() > 0) {
+            RenderSystem.enableBlend();
+            RenderSystem.defaultBlendFunc();
+            RenderSystem.disableDepthTest();
+            RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
+            RenderSystem.setShader(net.minecraft.client.renderer.GameRenderer::getPositionTexShader);
+            mc.gui.leftHeight += renderShieldBar(g, w, h, mc.gui.leftHeight, props);
+        }
+    }
+    *///?}
 }

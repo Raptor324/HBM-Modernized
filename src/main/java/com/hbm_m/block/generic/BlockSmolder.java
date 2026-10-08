@@ -1,5 +1,7 @@
 package com.hbm_m.block.generic;
 
+import com.hbm_m.platform.PlatformHooks;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.util.RandomSource;
@@ -31,6 +33,6 @@ public class BlockSmolder extends Block {
 
     @Override
     public void stepOn(Level world, BlockPos pos, BlockState state, Entity entity) {
-        entity.setSecondsOnFire(3);
+        PlatformHooks.setSecondsOnFire(entity, 3);
     }
 }

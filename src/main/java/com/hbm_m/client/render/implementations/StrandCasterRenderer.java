@@ -64,10 +64,17 @@ public class StrandCasterRenderer implements com.hbm_m.client.render.HbmBerBound
             org.joml.Matrix3f n = ps.last().normal();
             float y = 2.3F + level;
             int full = 0xF000F0;
+            //? if < 1.21.1 {
             vc.vertex(m, -0.9F, y, -0.999F).color(r, g, b, 1F).uv(0, 0).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(full).normal(n, 0, 1, 0).endVertex();
             vc.vertex(m, -0.9F, y, 0.999F).color(r, g, b, 1F).uv(0, 1).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(full).normal(n, 0, 1, 0).endVertex();
             vc.vertex(m, 0.9F, y, 0.999F).color(r, g, b, 1F).uv(1, 1).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(full).normal(n, 0, 1, 0).endVertex();
             vc.vertex(m, 0.9F, y, -0.999F).color(r, g, b, 1F).uv(1, 0).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(full).normal(n, 0, 1, 0).endVertex();
+            //?} else {
+            /*com.hbm_m.platform.RenderHooks.normal(vc.addVertex(m, -0.9F, y, -0.999F).setColor(r, g, b, 1F).setUv(0, 0).setOverlay(OverlayTexture.NO_OVERLAY).setLight(full), n, 0, 1, 0);
+            com.hbm_m.platform.RenderHooks.normal(vc.addVertex(m, -0.9F, y, 0.999F).setColor(r, g, b, 1F).setUv(0, 1).setOverlay(OverlayTexture.NO_OVERLAY).setLight(full), n, 0, 1, 0);
+            com.hbm_m.platform.RenderHooks.normal(vc.addVertex(m, 0.9F, y, 0.999F).setColor(r, g, b, 1F).setUv(1, 1).setOverlay(OverlayTexture.NO_OVERLAY).setLight(full), n, 0, 1, 0);
+            com.hbm_m.platform.RenderHooks.normal(vc.addVertex(m, 0.9F, y, -0.999F).setColor(r, g, b, 1F).setUv(1, 0).setOverlay(OverlayTexture.NO_OVERLAY).setLight(full), n, 0, 1, 0);
+            *///?}
         }
 
         ps.popPose();

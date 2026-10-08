@@ -63,9 +63,11 @@ public class AdditiveParticleRenderType implements ParticleRenderType {
     }
     //?} else {
     /*// 1.21: begin() bekommt den Tesselator und liefert den BufferBuilder zurueck;
-    // einen end()-Hook gibt es nicht mehr - der Zustand wird vom Partikel-Pass zurueckgesetzt.
+    // einen end()-Hook gibt es nicht mehr - Ruecksetzen in ParticleRenderStateNeoForge (AFTER_PARTICLES).
     @Override
     public BufferBuilder begin(com.mojang.blaze3d.vertex.Tesselator tesselator, TextureManager textureManager) {
+        // 1.21.1 hat kein end() mehr - Ruecksetzen nach dem Partikel-Pass, siehe ParticleRenderStateNeoForge
+        ParticleRenderStateNeoForge.capture();
         RenderSystem.enableBlend();
         RenderSystem.blendFuncSeparate(
                 GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE,

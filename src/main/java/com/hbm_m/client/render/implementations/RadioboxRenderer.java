@@ -24,7 +24,7 @@ import net.minecraft.resources.ResourceLocation;
  * 1:1 {@code RenderDecoBlock} fuer die Radiobox mit {@code ModelRadio} (32x32): Kasten, Frontplatte und der Hebel,
  * der aus (20 Grad) oder an (160 Grad) steht.
  */
-public class RadioboxRenderer implements BlockEntityRenderer<RadioboxBlockEntity> {
+public class RadioboxRenderer implements com.hbm_m.client.render.HbmBerBounds<RadioboxBlockEntity> {
 
     private static final ResourceLocation TEX = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/model_radio.png");
 

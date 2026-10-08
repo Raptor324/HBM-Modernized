@@ -115,7 +115,7 @@ public class CogEntity extends EntityThrowableInterp {
             //? if < 1.21.1 {
             e.hurt(com.hbm_m.damagesource.ModDamageSources.rubble(level()), 1000);
             //?} else {
-            /*if (level() instanceof ServerLevel serverLevel) e.hurt(serverLevel, com.hbm_m.damagesource.ModDamageSources.rubble(level()), 1000);
+            /*e.hurt(com.hbm_m.damagesource.ModDamageSources.rubble(level()), 1000);
             *///?}
             if (!e.isAlive() && e instanceof LivingEntity && level() instanceof ServerLevel sl) {
                 CompoundTag vdat = new CompoundTag();

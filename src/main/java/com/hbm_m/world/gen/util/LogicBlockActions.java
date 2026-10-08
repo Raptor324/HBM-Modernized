@@ -77,7 +77,11 @@ public class LogicBlockActions {
 
     private static void onSpawnWithEgg(Level world, EntityUndeadSoldier mob) {
         if (world instanceof ServerLevel server) {
+            //? if < 1.21.1 {
             mob.finalizeSpawn(server, server.getCurrentDifficultyAt(mob.blockPosition()), MobSpawnType.EVENT, null, null);
+            //?} else {
+            /*mob.finalizeSpawn(server, server.getCurrentDifficultyAt(mob.blockPosition()), MobSpawnType.EVENT, null);
+            *///?}
         }
     }
 

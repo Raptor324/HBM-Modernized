@@ -63,7 +63,7 @@ public class ItemPool {
     /** Wie oben, {@code damage} entspricht der Meta eines beschaedigbaren Gegenstands (z.B. Gasmaske 60). */
     public ItemPool add(String id, int damage, int min, int max, int weight) {
         buildingList.add(new Entry(() -> {
-            ResourceLocation rl = id.contains(":") ? new ResourceLocation(id) : new ResourceLocation(RefStrings.MODID, id);
+            ResourceLocation rl = id.contains(":") ? ResourceLocation.parse(id) : ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, id);
             Item item = BuiltInRegistries.ITEM.getOptional(rl).orElse(null);
             if (item == null || item == Items.AIR) return ItemStack.EMPTY;
             ItemStack stack = new ItemStack(item);
@@ -186,7 +186,12 @@ public class ItemPool {
             var cap = be.getCapability(net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER).resolve();
             if (cap.isPresent() && cap.get() instanceof net.minecraftforge.items.IItemHandlerModifiable h) return handler(h);
         }
-        //?}
+        //?} elif neoforge {
+        /*if (te instanceof net.minecraft.world.level.block.entity.BlockEntity be && be.getLevel() != null) {
+            var cap = be.getLevel().getCapability(net.neoforged.neoforge.capabilities.Capabilities.ItemHandler.BLOCK, be.getBlockPos(), null);
+            if (cap instanceof net.neoforged.neoforge.items.IItemHandlerModifiable h) return handler(h);
+        }
+        *///?}
         return null;
     }
 
@@ -197,7 +202,14 @@ public class ItemPool {
             public void set(int slot, ItemStack stack) { h.setStackInSlot(slot, stack); }
         };
     }
-    //?}
+    //?} elif neoforge {
+    /*private static Inv handler(net.neoforged.neoforge.items.IItemHandlerModifiable h) {
+        return new Inv() {
+            public int size() { return h.getSlots(); }
+            public void set(int slot, ItemStack stack) { h.setStackInSlot(slot, stack); }
+        };
+    }
+    *///?}
 
     /** Ersatzpool des Originals. */
     private static WeightedContent[] backupPool;
@@ -207,8 +219,8 @@ public class ItemPool {
             List<WeightedContent> l = new ArrayList<>();
             l.add(new WeightedContent(new ItemStack(Items.BREAD), 1, 3, 10));
             l.add(new WeightedContent(new ItemStack(Items.STICK), 2, 5, 10));
-            BuiltInRegistries.ITEM.getOptional(new ResourceLocation(RefStrings.MODID, "scrap")).ifPresent(i -> l.add(new WeightedContent(new ItemStack(i), 1, 3, 10)));
-            BuiltInRegistries.ITEM.getOptional(new ResourceLocation(RefStrings.MODID, "dust")).ifPresent(i -> l.add(new WeightedContent(new ItemStack(i), 2, 5, 5)));
+            BuiltInRegistries.ITEM.getOptional(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "scrap")).ifPresent(i -> l.add(new WeightedContent(new ItemStack(i), 1, 3, 10)));
+            BuiltInRegistries.ITEM.getOptional(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "dust")).ifPresent(i -> l.add(new WeightedContent(new ItemStack(i), 2, 5, 5)));
             backupPool = l.toArray(new WeightedContent[0]);
         }
         return backupPool;

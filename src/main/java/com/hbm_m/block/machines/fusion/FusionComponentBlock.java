@@ -38,7 +38,7 @@ public class FusionComponentBlock extends Block implements com.hbm_m.interfaces.
      */
     @Override
     public void printHook(net.minecraft.client.gui.GuiGraphics guiGraphics, Level level, BlockPos pos) {
-        Player player = net.minecraft.client.Minecraft.getInstance().player;
+        Player player = com.hbm_m.client.ClientAccess.player();
         if (player == null) return;
         if (!isTorch(player.getMainHandItem()) && !isTorch(player.getOffhandItem())) return;
 

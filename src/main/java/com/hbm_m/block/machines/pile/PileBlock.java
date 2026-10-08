@@ -149,4 +149,8 @@ public class PileBlock extends BaseEntityBlock {
         return drill(state, level, pos, player, InteractionHand.MAIN_HAND, hit);
     }
     *///?}
+    //? if >= 1.21.1 {
+    /*public static final com.mojang.serialization.MapCodec<PileBlock> CODEC = simpleCodec(PileBlock::new);
+    @Override protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() { return CODEC; }
+    *///?}
 }

@@ -1,5 +1,7 @@
 package com.hbm_m.block.gas;
 
+import com.hbm_m.platform.EffectHooks;
+
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.effect.ModEffects;
 import com.hbm_m.extprop.HbmLivingProps;
@@ -32,8 +34,8 @@ public class BlockGasRadonTomb extends BlockGasBase {
 
     @Override
     protected void affect(LivingEntity living) {
-        living.removeEffect(ModEffects.RADAWAY.get()); //get fucked
-        living.removeEffect(ModEffects.RADX.get());
+        living.removeEffect(EffectHooks.of(ModEffects.RADAWAY)); //get fucked
+        living.removeEffect(EffectHooks.of(ModEffects.RADX));
 
         ContaminationUtil.contaminate(living, HazardType.RADIATION, ContaminationType.RAD_BYPASS, 0.5F);
         HbmLivingProps.incrementAsbestos(living, 10);

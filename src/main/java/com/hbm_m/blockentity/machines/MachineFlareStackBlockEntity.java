@@ -1,5 +1,9 @@
 package com.hbm_m.blockentity.machines;
 
+import com.hbm_m.platform.RenderBounds;
+
+import com.hbm_m.platform.PlatformHooks;
+
 import java.util.EnumMap;
 import java.util.List;
 import java.util.Map;
@@ -175,7 +179,7 @@ public class MachineFlareStackBlockEntity extends BaseMachineBlockEntity impleme
 
                     List<Entity> list = world.getEntitiesOfClass(Entity.class, new AABB(pos.getX() - 1, pos.getY() + 12, pos.getZ() - 2, pos.getX() + 2, pos.getY() + 17, pos.getZ() + 2));
                     for (Entity e : list) {
-                        e.setSecondsOnFire(5);
+                        PlatformHooks.setSecondsOnFire(e, 5);
                         e.hurt(world.damageSources().onFire(), 5F);
                     }
 
@@ -331,6 +335,6 @@ public class MachineFlareStackBlockEntity extends BaseMachineBlockEntity impleme
     @Override
     //?}
     public AABB getRenderBoundingBox() {
-        return INFINITE_EXTENT_AABB;
+        return RenderBounds.INFINITE;
     }
 }

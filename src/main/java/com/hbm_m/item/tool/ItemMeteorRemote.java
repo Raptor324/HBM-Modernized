@@ -1,5 +1,7 @@
 package com.hbm_m.item.tool;
 
+import com.hbm_m.platform.ItemHooks;
+
 import java.util.List;
 
 import javax.annotation.Nullable;
@@ -36,7 +38,7 @@ public class ItemMeteorRemote extends Item implements ITooltipProvider {
     @Override
     public InteractionResultHolder<ItemStack> use(Level world, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
-        stack.hurtAndBreak(1, player, p -> p.broadcastBreakEvent(hand));
+        ItemHooks.hurtAndBreak(stack, 1, player, hand);
 
         if (!world.isClientSide) {
             BossSpawnHandler.spawnMeteorAtPlayer(player, false);

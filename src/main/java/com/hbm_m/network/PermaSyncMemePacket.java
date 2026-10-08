@@ -1,5 +1,7 @@
 package com.hbm_m.network;
 
+import com.hbm_m.platform.EffectHooks;
+
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -52,7 +54,7 @@ public class PermaSyncMemePacket implements S2CPacket {
     public static void sendTo(ServerPlayer player) {
         List<Integer> ids = new ArrayList<>();
         for (Player p : player.serverLevel().players()) {
-            if (p.hasEffect(ModEffects.DEATH.get())) {
+            if (p.hasEffect(EffectHooks.of(ModEffects.DEATH))) {
                 ids.add(p.getId());
             }
         }

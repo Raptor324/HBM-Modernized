@@ -1,5 +1,7 @@
 package com.hbm_m.blockentity.network;
 
+import com.hbm_m.platform.StackNbt;
+
 import com.hbm_m.api.tile.IControlReceiver;
 import com.hbm_m.block.network.IConveyorBelt;
 import com.hbm_m.blockentity.ModBlockEntities;
@@ -139,7 +141,39 @@ public class MachineCraneExtractorBlockEntity extends CraneBaseBlockEntity imple
                     }
                 }
             }
-            //?}
+            //?} elif neoforge {
+            /*net.neoforged.neoforge.items.IItemHandler inv = CraneInventoryUtil.inventoryAt(level, pos.relative(inputSide), inputSide.getOpposite());
+
+            /^ aus einem angeschlossenen Inventar senden ^/
+            if (inv != null) {
+                for (int index = 0; index < inv.getSlots(); index++) {
+                    ItemStack stack = inv.getStackInSlot(index);
+
+                    if (!stack.isEmpty() && !inv.extractItem(index, 1, true).isEmpty()) {
+
+                        int maxTarget = Math.min(amount, stack.getMaxStackSize());
+                        if (this.maxEject && stack.getCount() < maxTarget) continue;
+                        boolean match = this.matchesFilter(stack);
+
+                        if ((isWhitelist && match) || (!isWhitelist && !match)) {
+                            stack = stack.copy();
+                            int toSend = Math.min(amount, stack.getCount());
+
+                            if (belt != null) {
+                                ItemStack taken = inv.extractItem(index, toSend, false);
+                                CraneInventoryUtil.sendItemAndEnter(level, pos, outputSide, belt, taken);
+                            } else {
+                                stack.setCount(toSend);
+                                ItemStack remaining = tryAddToBuffer(stack);
+                                inv.extractItem(index, toSend - remaining.getCount(), false);
+                            }
+                            hasSent = true;
+                            break;
+                        }
+                    }
+                }
+            }
+            *///?}
 
             /* hat nichts gesendet: Puffer ohne Filter auf das Band */
             if (!hasSent && belt != null) {
@@ -170,7 +204,7 @@ public class MachineCraneExtractorBlockEntity extends CraneBaseBlockEntity imple
         ItemStack rest = stack.copy();
         for (int i = BUFFER_START; i <= BUFFER_END && !rest.isEmpty(); i++) {
             ItemStack cur = inventory.getStackInSlot(i);
-            if (!cur.isEmpty() && ItemStack.isSameItemSameTags(cur, rest) && cur.getCount() < cur.getMaxStackSize()) {
+            if (!cur.isEmpty() && StackNbt.sameItemSameTags(cur, rest) && cur.getCount() < cur.getMaxStackSize()) {
                 int move = Math.min(cur.getMaxStackSize() - cur.getCount(), rest.getCount());
                 cur.grow(move);
                 rest.shrink(move);

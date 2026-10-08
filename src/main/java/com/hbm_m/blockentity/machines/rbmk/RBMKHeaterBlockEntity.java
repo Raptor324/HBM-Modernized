@@ -189,7 +189,20 @@ public class RBMKHeaterBlockEntity extends RBMKColumnBlockEntity
         }
         return super.getCapability(cap, side);
     }
-    //?}
+    //?} elif neoforge {
+    /*/^* Bottom face takes the feed, every other face hands out the heated product. ^/
+    @Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == com.hbm_m.platform.HbmCap.FLUID_HANDLER) {
+            if (side == Direction.DOWN || side == null) return com.hbm_m.platform.LazyCap.ofObj(inputTank.getCapability()).cast();
+            return com.hbm_m.platform.LazyCap.ofObj(outputTank.getCapability()).cast();
+        }
+        if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER) {
+            return com.hbm_m.platform.LazyCap.of(() -> inventory).cast();
+        }
+        return super.getHbmCapability(cap, side);
+    }
+    *///?}
 
     @Override public RBMKType getRBMKType()      { return RBMKType.OTHER; }
     @Override public ColumnType getConsoleType() { return ColumnType.HEATER; }

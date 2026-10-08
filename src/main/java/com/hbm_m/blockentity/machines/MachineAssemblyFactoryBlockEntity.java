@@ -58,9 +58,7 @@ import net.minecraft.world.phys.AABB;
 public class MachineAssemblyFactoryBlockEntity extends BaseMachineBlockEntity
         implements IFluidStandardTransceiverMK2, IUpgradeInfoProvider, IFluidPartDelegateProvider,
         com.hbm_m.api.redstoneoverradio.IRORValueProvider
-        //? if forge {
         , com.hbm_m.interfaces.IConditionalInvAccess
-        //?}
 {
 
     private static final String SOUND_INSTANCE = "com.hbm_m.sound.AssemblyFactorySoundInstance";
@@ -403,7 +401,48 @@ public class MachineAssemblyFactoryBlockEntity extends BaseMachineBlockEntity
         @Override public int getSlotLimit(int s) { return inventory.getSlotLimit(map[s]); }
         @Override public boolean isItemValid(int s, @NotNull ItemStack stack) { return isItemValidForAutomation(map[s], stack); }
     }
-    //?}
+    //?} elif neoforge {
+    /*@Override
+    public net.neoforged.neoforge.items.IItemHandler getConditionalItemHandler(BlockPos part, @Nullable Direction side) {
+        BlockPos[] io = ioParts();
+        for (int i = 0; i < io.length; i++) {
+            if (io[i].equals(part)) {
+                int[] map = new int[16];
+                for (int k = 0; k < 12; k++) map[k] = inputSlot(i, k);
+                map[12] = 17; map[13] = 31; map[14] = 45; map[15] = 59; // entering flavor town...
+                return new SlotView(map);
+            }
+        }
+        return new SlotView(ACCESSIBLE);
+    }
+
+    @Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER && side != null) {
+            net.neoforged.neoforge.items.IItemHandler h = new SlotView(ACCESSIBLE);
+            return com.hbm_m.platform.LazyCap.of(() -> h).cast();
+        }
+        return super.getHbmCapability(cap, side);
+    }
+
+    /^* Sicht auf ausgewaehlte Slots mit den Original-Regeln fuer Einfuegen/Entnehmen. ^/
+    private class SlotView implements net.neoforged.neoforge.items.IItemHandler {
+        private final int[] map;
+        SlotView(int[] map) { this.map = map; }
+        @Override public int getSlots() { return map.length; }
+        @Override public @NotNull ItemStack getStackInSlot(int s) { return inventory.getStackInSlot(map[s]); }
+        @Override public @NotNull ItemStack insertItem(int s, @NotNull ItemStack stack, boolean simulate) {
+            if (!isItemValidForAutomation(map[s], stack)) return stack;
+            return inventory.insertItem(map[s], stack, simulate);
+        }
+        @Override public @NotNull ItemStack extractItem(int s, int amount, boolean simulate) {
+            if (!canExtractAutomated(map[s])) return ItemStack.EMPTY;
+            return inventory.extractItem(map[s], amount, simulate);
+        }
+        @Override public int getSlotLimit(int s) { return inventory.getSlotLimit(map[s]); }
+        @Override public boolean isItemValid(int s, @NotNull ItemStack stack) { return isItemValidForAutomation(map[s], stack); }
+    }
+    *///?}
 
     /** Menue/GUI: Eingaenge frei bestueckbar wie im Original-Container, Ausgaenge gesperrt (Original addOutputSlots). */
     @Override

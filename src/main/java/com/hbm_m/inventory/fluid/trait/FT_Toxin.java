@@ -168,7 +168,11 @@ public class FT_Toxin extends FluidTrait {
                 if (eff.getAmplifier() > 0) {
                     line.append(" ").append(Component.translatable("potion.potency." + eff.getAmplifier()));
                 }
+                //? if < 1.21.1 {
                 line.append(" " + StringUtil.formatTickDuration(eff.getDuration()));
+                //?} else {
+                /*line.append(" " + StringUtil.formatTickDuration(eff.getDuration(), 20.0F));
+                *///?}
                 info.add(line);
             }
         }

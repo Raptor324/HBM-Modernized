@@ -31,6 +31,7 @@ public class OverlayGasMask {
     private static final String BASE_GASMASK = "textures/misc/overlay_gasmask.png";
     private static final String BASE_GOGGLES = "textures/misc/overlay_goggles.png";
 
+    // neo-pendant: ClientSetup.onRegisterGuiOverlays (neoforge-Zweig)
     //? if forge {
     public static final IGuiOverlay OVERLAY = (gui, gfx, partialTick, screenWidth, screenHeight) ->
             render(gfx);

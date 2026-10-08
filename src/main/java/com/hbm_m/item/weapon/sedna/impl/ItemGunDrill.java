@@ -32,7 +32,11 @@ public class ItemGunDrill extends ItemGunBaseNT implements IFillableItem, IBatte
 
     /** Original {@code getHarvestLevel(stack, toolClass)}: Eisen-Stufe, durch Bohrkopf-Mods erhoeht. */
     public int getHarvestLevel(ItemStack stack) {
+        //? if < 1.21.1 {
         return XFactoryDrill.getModdableHarvestLevel(stack, Tiers.IRON.getLevel());
+        //?} else {
+        /*return XFactoryDrill.getModdableHarvestLevel(stack, 2 /^ Tiers.IRON, 1.20.1-Stufe ^/);
+        *///?}
     }
 
     /**

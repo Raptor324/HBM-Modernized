@@ -1,5 +1,7 @@
 package com.hbm_m.block.generic;
 
+import com.hbm_m.platform.PlatformHooks;
+
 import javax.annotation.Nullable;
 
 import com.hbm_m.block.ModBlocks;
@@ -38,7 +40,7 @@ public class BlockMeteorMolten extends BlockOre {
 
     @Override
     public void stepOn(Level world, BlockPos pos, BlockState state, Entity entity) {
-        entity.setSecondsOnFire(5);
+        PlatformHooks.setSecondsOnFire(entity, 5);
         super.stepOn(world, pos, state, entity);
     }
 

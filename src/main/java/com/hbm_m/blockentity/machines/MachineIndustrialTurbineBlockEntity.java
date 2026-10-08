@@ -93,7 +93,9 @@ public class MachineIndustrialTurbineBlockEntity extends BaseMachineBlockEntity
 
     //? if forge {
     private LazyOptional<IFluidHandler> lazySpentHandler;
-    //?}
+    //?} elif neoforge {
+    /*private com.hbm_m.platform.LazyCap<net.neoforged.neoforge.fluids.capability.IFluidHandler> lazySpentHandler;
+    *///?}
 
 
     private boolean isActive = false;
@@ -112,7 +114,9 @@ public class MachineIndustrialTurbineBlockEntity extends BaseMachineBlockEntity
 
         //? if forge {
         this.lazySpentHandler = LazyOptional.empty();
-        //?}
+        //?} elif neoforge {
+        /*this.lazySpentHandler = com.hbm_m.platform.LazyCap.empty();
+        *///?}
     }
 
     public static void tick(Level level, BlockPos pos, BlockState state, MachineIndustrialTurbineBlockEntity be) {
@@ -514,7 +518,133 @@ public class MachineIndustrialTurbineBlockEntity extends BaseMachineBlockEntity
             return drained;
         }
     }
-    //?}
+    //?} elif neoforge {
+    /*@Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        // UP = spent output; остальные стороны (steam input) отдаёт базовый fluidHandlerOpt.
+        if (cap == com.hbm_m.platform.HbmCap.FLUID_HANDLER && side == Direction.UP) {
+            return lazySpentHandler.cast();
+        }
+        return super.getHbmCapability(cap, side);
+    }
+
+    @Override
+    protected void setupFluidCapability() {
+        // Steam input — обработчик по умолчанию — через базовый fluidHandlerOpt.
+        setFluidHandler(new SteamInputHandler(this));
+        lazySpentHandler = com.hbm_m.platform.LazyCap.of(() -> new SpentSteamOutputHandler(this));
+    }
+
+    @Override
+    public void invalidateHbmCaps() {
+        super.invalidateHbmCaps();
+        lazySpentHandler.invalidate();
+    }
+
+    private static class SteamInputHandler implements net.neoforged.neoforge.fluids.capability.IFluidHandler {
+        private final MachineIndustrialTurbineBlockEntity be;
+
+        SteamInputHandler(MachineIndustrialTurbineBlockEntity be) {
+            this.be = be;
+        }
+
+        @Override
+        public int getTanks() { return 1; }
+
+        @Override
+        public @NotNull net.neoforged.neoforge.fluids.FluidStack getFluidInTank(int tank) {
+            return new net.neoforged.neoforge.fluids.FluidStack(be.steamTank.getTankType(), be.steamTank.getFill());
+        }
+
+        @Override
+        public int getTankCapacity(int tank) {
+            return be.steamTank.getMaxFill();
+        }
+
+        @Override
+        public boolean isFluidValid(int tank, @NotNull net.neoforged.neoforge.fluids.FluidStack stack) {
+            return be.acceptsAsSteam(stack.getFluid());
+        }
+
+        @Override
+        public int fill(net.neoforged.neoforge.fluids.FluidStack resource, FluidAction action) {
+            if (resource.isEmpty() || !be.acceptsAsSteam(resource.getFluid())) return 0;
+            if (be.steamTank.getFill() > 0 && be.steamTank.getTankType() != resource.getFluid()) return 0;
+            int space = be.steamTank.getMaxFill() - be.steamTank.getFill();
+            int toFill = Math.min(space, resource.getAmount());
+            if (toFill <= 0) return 0;
+            if (action.execute()) {
+                be.steamTank.setTankType(resource.getFluid());
+                be.steamTank.fill(be.steamTank.getFill() + toFill);
+            }
+            return toFill;
+        }
+
+        @Override
+        public @NotNull net.neoforged.neoforge.fluids.FluidStack drain(net.neoforged.neoforge.fluids.FluidStack resource, FluidAction action) {
+            return net.neoforged.neoforge.fluids.FluidStack.EMPTY;
+        }
+
+        @Override
+        public @NotNull net.neoforged.neoforge.fluids.FluidStack drain(int maxDrain, FluidAction action) {
+            return net.neoforged.neoforge.fluids.FluidStack.EMPTY;
+        }
+    }
+
+    private static class SpentSteamOutputHandler implements net.neoforged.neoforge.fluids.capability.IFluidHandler {
+        private final MachineIndustrialTurbineBlockEntity be;
+
+        SpentSteamOutputHandler(MachineIndustrialTurbineBlockEntity be) {
+            this.be = be;
+        }
+
+        @Override
+        public int getTanks() { return 1; }
+
+        @Override
+        public @NotNull net.neoforged.neoforge.fluids.FluidStack getFluidInTank(int tank) {
+            return new net.neoforged.neoforge.fluids.FluidStack(be.spentSteamTank.getTankType(), be.spentSteamTank.getFill());
+        }
+
+        @Override
+        public int getTankCapacity(int tank) {
+            return be.spentSteamTank.getMaxFill();
+        }
+
+        @Override
+        public boolean isFluidValid(int tank, @NotNull net.neoforged.neoforge.fluids.FluidStack stack) {
+            return false;
+        }
+
+        @Override
+        public int fill(net.neoforged.neoforge.fluids.FluidStack resource, FluidAction action) {
+            return 0;
+        }
+
+        @Override
+        public @NotNull net.neoforged.neoforge.fluids.FluidStack drain(net.neoforged.neoforge.fluids.FluidStack resource, FluidAction action) {
+            if (resource.isEmpty() || be.spentSteamTank.getFill() <= 0) return net.neoforged.neoforge.fluids.FluidStack.EMPTY;
+            if (resource.getFluid() != be.spentSteamTank.getTankType()) return net.neoforged.neoforge.fluids.FluidStack.EMPTY;
+            int toDrain = Math.min(resource.getAmount(), be.spentSteamTank.getFill());
+            net.neoforged.neoforge.fluids.FluidStack drained = new net.neoforged.neoforge.fluids.FluidStack(be.spentSteamTank.getTankType(), toDrain);
+            if (action.execute()) {
+                be.spentSteamTank.fill(be.spentSteamTank.getFill() - toDrain);
+            }
+            return drained;
+        }
+
+        @Override
+        public @NotNull net.neoforged.neoforge.fluids.FluidStack drain(int maxDrain, FluidAction action) {
+            if (maxDrain <= 0 || be.spentSteamTank.getFill() <= 0) return net.neoforged.neoforge.fluids.FluidStack.EMPTY;
+            int toDrain = Math.min(maxDrain, be.spentSteamTank.getFill());
+            net.neoforged.neoforge.fluids.FluidStack drained = new net.neoforged.neoforge.fluids.FluidStack(be.spentSteamTank.getTankType(), toDrain);
+            if (action.execute()) {
+                be.spentSteamTank.fill(be.spentSteamTank.getFill() - toDrain);
+            }
+            return drained;
+        }
+    }
+    *///?}
 
 
     public net.minecraft.world.phys.AABB getRenderBoundingBox() {

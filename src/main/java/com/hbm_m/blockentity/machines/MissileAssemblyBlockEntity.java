@@ -1,5 +1,7 @@
 package com.hbm_m.blockentity.machines;
 
+import com.hbm_m.platform.RenderBounds;
+
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -185,12 +187,13 @@ public class MissileAssemblyBlockEntity extends BaseHbmBlockEntity implements Me
         customName = tag.contains("name") ? tag.getString("name") : null;
     }
 
+    // Phase D: auf NeoForge ueber RenderBoundsProvider (HbmBerBounds), daher Methode auf beiden Loadern
     //? if forge {
     @Override
-    public AABB getRenderBoundingBox() {
-        return INFINITE_EXTENT_AABB;
-    }
     //?}
+    public AABB getRenderBoundingBox() {
+        return RenderBounds.INFINITE;
+    }
 
     @Override
     public Component getDisplayName() {

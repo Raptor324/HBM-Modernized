@@ -1,5 +1,7 @@
 package com.hbm_m.world.gen.util;
 
+import com.hbm_m.platform.EffectHooks;
+
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -52,8 +54,8 @@ public class LogicBlockInteractions {
             held.shrink(1);
             player.sendSystemMessage(Component.literal("[RAD CONTAINMENT SYSTEM]").withStyle(ChatFormatting.LIGHT_PURPLE)
                     .append(Component.literal(" Radiation treatment administered").withStyle(ChatFormatting.WHITE) /* 1.7 §r = Grundfarbe */));
-            player.addEffect(new MobEffectInstance(ModEffects.RADAWAY.get(), 3 * 60 * 20, 4));
-            player.addEffect(new MobEffectInstance(ModEffects.RADX.get(), 3 * 60 * 20, 4));
+            player.addEffect(new MobEffectInstance(EffectHooks.of(ModEffects.RADAWAY), 3 * 60 * 20, 4));
+            player.addEffect(new MobEffectInstance(EffectHooks.of(ModEffects.RADX), 3 * 60 * 20, 4));
             logic.phase = 2;
             logic.timer = 0;
         }

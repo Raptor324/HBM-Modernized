@@ -21,7 +21,9 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
+//? if < 1.21.1 {
 import net.minecraft.world.item.alchemy.PotionUtils;
+//?}
 import net.minecraft.world.item.alchemy.Potions;
 import net.minecraft.world.level.material.Fluid;
 
@@ -77,7 +79,11 @@ public final class FluidContainerRegistry {
 
         Fluid water = ModFluids.WATER.getSource();
         registerContainer(new FluidContainer(new ItemStack(Items.WATER_BUCKET), new ItemStack(Items.BUCKET), water, 1000));
+        //? if < 1.21.1 {
         registerContainer(new FluidContainer(PotionUtils.setPotion(new ItemStack(Items.POTION), Potions.WATER), new ItemStack(Items.GLASS_BOTTLE), water, 250));
+        //?} else {
+        /*registerContainer(new FluidContainer(net.minecraft.world.item.alchemy.PotionContents.createItemStack(Items.POTION, Potions.WATER), new ItemStack(Items.GLASS_BOTTLE), water, 250));
+        *///?}
         registerContainer(new FluidContainer(new ItemStack(Items.LAVA_BUCKET), new ItemStack(Items.BUCKET), fluidOrLava(), 1000));
         reg("bucket_mud", "minecraft:bucket", "watz", 1000);
         reg("bucket_schrabidic_acid", "minecraft:bucket", "schrabidic", 1000);
@@ -160,7 +166,12 @@ public final class FluidContainerRegistry {
     public static boolean isItemEqual(ItemStack a, ItemStack b) {
         if (a.isEmpty() || b.isEmpty() || a.getItem() != b.getItem()) return false;
         if (a.getItem() instanceof ItemFluidTank) return ItemFluidTank.getFluid(a) == ItemFluidTank.getFluid(b);
+        //? if < 1.21.1 {
         if (a.getItem() == Items.POTION) return PotionUtils.getPotion(a) == PotionUtils.getPotion(b);
+        //?} else {
+        /*if (a.getItem() == Items.POTION) return a.getOrDefault(net.minecraft.core.component.DataComponents.POTION_CONTENTS, net.minecraft.world.item.alchemy.PotionContents.EMPTY).potion()
+                .equals(b.getOrDefault(net.minecraft.core.component.DataComponents.POTION_CONTENTS, net.minecraft.world.item.alchemy.PotionContents.EMPTY).potion());
+        *///?}
         return true;
     }
 

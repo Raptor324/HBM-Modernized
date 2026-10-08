@@ -1,5 +1,7 @@
 package com.hbm_m.item.tool;
 
+import com.hbm_m.platform.StackNbt;
+
 import java.util.List;
 
 import javax.annotation.Nullable;
@@ -33,7 +35,11 @@ public class ItemColtanCompass extends Item {
     }
 
     @Override
+    //? if < 1.21.1 {
     public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> list, TooltipFlag flag) {
+    //?} else {
+    /*public void appendHoverText(ItemStack stack, net.minecraft.world.item.Item.TooltipContext hbmTooltipCtx, List<Component> list, TooltipFlag flag) {
+    *///?}
         list.add(Component.literal("Points towards the coltan deposit."));
         list.add(Component.literal("The deposit is a large area where coltan ore spawns like standard ore,"));
         list.add(Component.literal("it's not one large blob of ore on that exact location."));
@@ -43,9 +49,9 @@ public class ItemColtanCompass extends Item {
     public void inventoryTick(ItemStack stack, Level world, Entity entity, int slot, boolean inhand) {
 
         if (world.isClientSide) {
-            if (stack.hasTag()) {
-                lastX = stack.getTag().getInt("colX");
-                lastZ = stack.getTag().getInt("colZ");
+            if (StackNbt.has(stack)) {
+                lastX = StackNbt.read(stack).getInt("colX");
+                lastZ = StackNbt.read(stack).getInt("colZ");
                 lease = System.currentTimeMillis() + 1000;
 
                 double dx = entity.getX() - lastX;
@@ -59,12 +65,12 @@ public class ItemColtanCompass extends Item {
             }
 
         } else {
-            if (!stack.hasTag() && world instanceof ServerLevel server) {
+            if (!StackNbt.has(stack) && world instanceof ServerLevel server) {
                 CompoundTag tag = new CompoundTag();
                 int[] col = ColtanDepositFeature.depositCenter(server.getSeed());
                 tag.putInt("colX", col[0]);
                 tag.putInt("colZ", col[1]);
-                stack.setTag(tag);
+                StackNbt.set(stack, tag);
             }
         }
     }

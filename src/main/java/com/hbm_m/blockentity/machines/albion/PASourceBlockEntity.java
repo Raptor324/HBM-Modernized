@@ -327,7 +327,38 @@ public class PASourceBlockEntity extends CooledMachineBlockEntity implements PAP
     private net.minecraftforge.items.IItemHandler itemAccess(int[] slots) {
         return com.hbm_m.blockentity.SidedItemAccess.fixed(() -> inventory, slots, (slot, stack) -> slot == SLOT_INPUT_A || slot == SLOT_INPUT_B, (slot, stack) -> slot == SLOT_CONTAINER_A || slot == SLOT_CONTAINER_B);
     }
-    //?}
+    //?} elif neoforge {
+    /*/^* Original: gelbe Zellen fuehren Slot 2, rote Slot 1, alle anderen nur die Behaelterslots 3/4. ^/
+    @Override
+    public net.neoforged.neoforge.items.IItemHandler getConditionalItemHandler(net.minecraft.core.BlockPos part, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        net.minecraft.world.level.block.state.BlockState state = getBlockState();
+        net.minecraft.core.Direction dir = state.hasProperty(com.hbm_m.block.machines.albion.PAMultiblockBlock.FACING)
+                ? state.getValue(com.hbm_m.block.machines.albion.PAMultiblockBlock.FACING) : net.minecraft.core.Direction.NORTH;
+        net.minecraft.core.Direction rot = dir.getClockWise(); // ForgeDirection.getRotation(UP)
+        net.minecraft.core.BlockPos c = worldPosition;
+
+        if (part.equals(c.relative(dir).relative(rot, -2)) || part.equals(c.relative(dir, -1).relative(rot, 2))) {
+            return itemAccess(SLOTS_YELLOW);
+        }
+        if (part.equals(c.relative(dir, -1).relative(rot, -2)) || part.equals(c.relative(dir).relative(rot, 2))) {
+            return itemAccess(SLOTS_RED);
+        }
+        return itemAccess(SLOTS_DEFAULT);
+    }
+
+    @Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER && side != null) {
+            net.neoforged.neoforge.items.IItemHandler h = itemAccess(SLOTS_DEFAULT);
+            return com.hbm_m.platform.LazyCap.of(() -> h).cast();
+        }
+        return super.getHbmCapability(cap, side);
+    }
+
+    private net.neoforged.neoforge.items.IItemHandler itemAccess(int[] slots) {
+        return com.hbm_m.blockentity.SidedItemAccess.fixed(() -> inventory, slots, (slot, stack) -> slot == SLOT_INPUT_A || slot == SLOT_INPUT_B, (slot, stack) -> slot == SLOT_CONTAINER_A || slot == SLOT_CONTAINER_B);
+    }
+    *///?}
 
     // ── Redstone-over-Radio (1:1 TileEntityPASource) ──
 

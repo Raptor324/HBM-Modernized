@@ -93,6 +93,13 @@ public class CustomMachineBlock extends BaseEntityBlock {
     //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+    //?} else {
+    /*@Override
+    protected net.minecraft.world.ItemInteractionResult useItemOn(net.minecraft.world.item.ItemStack hbmHeld, BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        return com.hbm_m.platform.BlockUseHooks.item(hbmUse(state, level, pos, player, hand, hit));
+    }
+    private InteractionResult hbmUse(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+    *///?}
         if (player.isShiftKeyDown()) return level.isClientSide() ? InteractionResult.SUCCESS : InteractionResult.PASS; // Original: Client true, Server geschlichen false
         if (level.isClientSide) return InteractionResult.SUCCESS;
         if (level.getBlockEntity(pos) instanceof CustomMachineBlockEntity tile) {
@@ -104,7 +111,6 @@ public class CustomMachineBlock extends BaseEntityBlock {
         }
         return InteractionResult.SUCCESS;
     }
-    //?}
 
     /** {@code getDrops}: die Steuerung mit ihrem Maschinentyp. */
     @Override
@@ -118,7 +124,11 @@ public class CustomMachineBlock extends BaseEntityBlock {
     }
 
     @Override
+    //? if < 1.21.1 {
     public ItemStack getCloneItemStack(BlockGetter level, BlockPos pos, BlockState state) {
+    //?} else {
+    /*public ItemStack getCloneItemStack(net.minecraft.world.level.LevelReader level, BlockPos pos, BlockState state) {
+    *///?}
         if (level.getBlockEntity(pos) instanceof CustomMachineBlockEntity tile && tile.machineType != null && !tile.machineType.isEmpty()) {
             return ItemCustomMachine.make(tile.machineType);
         }

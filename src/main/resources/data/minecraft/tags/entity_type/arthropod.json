@@ -1,0 +1,15 @@
+{
+  "replace": false,
+  "values": [
+    "hbm_m:glyphid",
+    "hbm_m:glyphid_brawler",
+    "hbm_m:glyphid_behemoth",
+    "hbm_m:glyphid_brenda",
+    "hbm_m:glyphid_bombardier",
+    "hbm_m:glyphid_blaster",
+    "hbm_m:glyphid_scout",
+    "hbm_m:glyphid_nuclear",
+    "hbm_m:glyphid_digger",
+    "hbm_m:parasite_maggot"
+  ]
+}

@@ -1,5 +1,7 @@
 package com.hbm_m.block.machines;
 
+import com.hbm_m.platform.RenderBounds;
+
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.block.ModBlocks;
@@ -46,7 +48,7 @@ public class SoyuzStructBlock extends BaseEntityBlock {
         return level.isClientSide ? null : createTickerHelper(type, ModBlockEntities.SOYUZ_STRUCT_BE.get(), (l, p, s, be) -> be.tick(l, p));
     }
 
-    public static class StructBE extends BlockEntity {
+    public static class StructBE extends BlockEntity implements com.hbm_m.api.render.RenderBoundsProvider {
 
         int age;
 
@@ -124,7 +126,7 @@ public class SoyuzStructBlock extends BaseEntityBlock {
 
         @Override
         public net.minecraft.world.phys.AABB getRenderBoundingBox() {
-            return INFINITE_EXTENT_AABB;
+            return RenderBounds.INFINITE;
         }
     }
 

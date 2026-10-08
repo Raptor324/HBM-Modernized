@@ -112,7 +112,14 @@ public final class MiscMobRenderers {
         }
 
         @Override
+        //? if < 1.21.1 {
         public void renderToBuffer(PoseStack ps, VertexConsumer vc, int light, int overlay, float r, float g, float b, float a) {
+        //?} else {
+        /*public void renderToBuffer(PoseStack ps, VertexConsumer vc, int light, int overlay, int hbmColor) {
+            float r = net.minecraft.util.FastColor.ARGB32.red(hbmColor) / 255F, g = net.minecraft.util.FastColor.ARGB32.green(hbmColor) / 255F;
+            float b = net.minecraft.util.FastColor.ARGB32.blue(hbmColor) / 255F, a = net.minecraft.util.FastColor.ARGB32.alpha(hbmColor) / 255F;
+        *///?}
+            //? if < 1.21.1 {
             head.render(ps, vc, light, overlay, r, g, b, a);
             beak.render(ps, vc, light, overlay, r, g, b, a);
             (fat ? bodyFat : body).render(ps, vc, light, overlay, r, g, b, a);
@@ -120,6 +127,15 @@ public final class MiscMobRenderers {
             leftLeg.render(ps, vc, light, overlay, r, g, b, a);
             ass.render(ps, vc, light, overlay, r, g, b, a);
             feathers.render(ps, vc, light, overlay, r, g, b, a);
+            //?} else {
+            /*head.render(ps, vc, light, overlay, hbmColor);
+            beak.render(ps, vc, light, overlay, hbmColor);
+            (fat ? bodyFat : body).render(ps, vc, light, overlay, hbmColor);
+            rightLeg.render(ps, vc, light, overlay, hbmColor);
+            leftLeg.render(ps, vc, light, overlay, hbmColor);
+            ass.render(ps, vc, light, overlay, hbmColor);
+            feathers.render(ps, vc, light, overlay, hbmColor);
+            *///?}
         }
     }
 
@@ -253,7 +269,13 @@ public final class MiscMobRenderers {
         }
 
         @Override
+        //? if < 1.21.1 {
         public void renderToBuffer(PoseStack ps, VertexConsumer vc, int light, int overlay, float r, float g, float b, float a) {
+        //?} else {
+        /*public void renderToBuffer(PoseStack ps, VertexConsumer vc, int light, int overlay, int hbmColor) {
+            float r = net.minecraft.util.FastColor.ARGB32.red(hbmColor) / 255F, g = net.minecraft.util.FastColor.ARGB32.green(hbmColor) / 255F;
+            float b = net.minecraft.util.FastColor.ARGB32.blue(hbmColor) / 255F, a = net.minecraft.util.FastColor.ARGB32.alpha(hbmColor) / 255F;
+        *///?}
             ps.pushPose();
             base(ps);
 

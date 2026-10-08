@@ -66,12 +66,21 @@ public class EntityGrenadeUniversal extends EntityThrowableInterp {
         this.setThrowableHeading(yeet.xCoord, yeet.yCoord, yeet.zCoord, (float) shell.getYeetForce(), 0);
     }
 
+    //? if < 1.21.1 {
     @Override
     protected void defineExtraData() {
         this.entityData.define(DW_GRENADE, ItemStack.EMPTY);
         this.entityData.define(DW_BOUNCES, 0);
         this.entityData.define(DW_TRAIL, 0);
     }
+    //?} else {
+    /*@Override
+    protected void defineExtraData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
+        builder.define(DW_GRENADE, ItemStack.EMPTY);
+        builder.define(DW_BOUNCES, 0);
+        builder.define(DW_TRAIL, 0);
+    }
+    *///?}
 
     public EntityGrenadeUniversal setTrail(int trail) {
         this.entityData.set(DW_TRAIL, trail);

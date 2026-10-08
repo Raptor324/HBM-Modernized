@@ -213,7 +213,11 @@ public class GUIRadioTelex extends RttyScreenBase {
     @Override
     public boolean charTyped(char c, int mods) {
         if (this.txFrequency.isFocused() || this.rxFrequency.isFocused()) return super.charTyped(c, mods);
+        //? if < 1.21.1 {
         if (this.textFocus && SharedConstants.isAllowedChatCharacter(c)) {
+        //?} else {
+        /*if (this.textFocus && net.minecraft.util.StringUtil.isAllowedChatCharacter(c)) {
+        *///?}
             submitChar(c);
             return true;
         }

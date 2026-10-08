@@ -11,7 +11,7 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 
 /** 1:1 {@code RenderCapsule}: gelandete Kapsel, schraeg im Boden (-25 Grad Gier, 15 Grad Neigung), rostig bei Meta 3. */
-public class SoyuzCapsuleRenderer implements BlockEntityRenderer<SoyuzCapsuleBlockEntity> {
+public class SoyuzCapsuleRenderer implements com.hbm_m.client.render.HbmBerBounds<SoyuzCapsuleBlockEntity> {
 
     public SoyuzCapsuleRenderer(BlockEntityRendererProvider.Context ctx) { }
 

@@ -1,5 +1,7 @@
 package com.hbm_m.item.special;
 
+import com.hbm_m.platform.StackNbt;
+
 import java.util.List;
 
 import org.jetbrains.annotations.Nullable;
@@ -78,7 +80,7 @@ public class ItemKitNBT extends Item implements ITooltipProvider {
 
     public static ItemStack create(ItemStack... contents) {
         ItemStack stack = new ItemStack(ModItems.KIT_CUSTOM.get());
-        stack.getOrCreateTag();
+        StackNbt.orCreate(stack);
         HeldItemInventory.addStacksToNBT(stack, contents);
         return stack;
     }

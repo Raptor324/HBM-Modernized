@@ -1,5 +1,9 @@
 package com.hbm_m.util;
 
+import com.hbm_m.platform.ItemHooks;
+
+import com.hbm_m.platform.EffectHooks;
+
 import java.util.Locale;
 import java.util.function.Supplier;
 
@@ -73,7 +77,7 @@ public final class ArmorUtil {
     public static void damageSuit(LivingEntity entity, EquipmentSlot slot, int amount) {
         ItemStack stack = entity.getItemBySlot(slot);
         if (stack.isEmpty()) return;
-        stack.hurtAndBreak(amount, entity, e -> e.broadcastBreakEvent(slot));
+        ItemHooks.hurtAndBreak(stack, amount, entity, slot);
     }
 
     /**
@@ -129,7 +133,7 @@ public final class ArmorUtil {
                 || checkForHaz2(player)) {
             return true;
         }
-        return player.hasEffect(com.hbm_m.effect.ModEffects.MUTATION.get());
+        return player.hasEffect(EffectHooks.of(com.hbm_m.effect.ModEffects.MUTATION));
     }
 
     @Deprecated
@@ -151,12 +155,12 @@ public final class ArmorUtil {
     public static boolean checkForDigamma(Player player) {
         if (checkArmorAny(player, ModItems.FAU_HELMET, ModItems.FAU_PLATE, ModItems.FAU_LEGS, ModItems.FAU_BOOTS)) return true;
         if (checkArmorAny(player, ModItems.DNS_HELMET, ModItems.DNS_PLATE, ModItems.DNS_LEGS, ModItems.DNS_BOOTS)) return true;
-        return player.hasEffect(com.hbm_m.effect.ModEffects.STABILITY.get());
+        return player.hasEffect(EffectHooks.of(com.hbm_m.effect.ModEffects.STABILITY));
     }
 
     public static boolean checkForDigamma2(Player player) {
         if (!checkArmorAny(player, ModItems.ROBES_HELMET, ModItems.ROBES_PLATE, ModItems.ROBES_LEGS, ModItems.ROBES_BOOTS)) return false;
-        if (!player.hasEffect(com.hbm_m.effect.ModEffects.STABILITY.get())) return false;
+        if (!player.hasEffect(EffectHooks.of(com.hbm_m.effect.ModEffects.STABILITY))) return false;
         for (ItemStack armor : player.getInventory().armor) {
             if (!armor.isEmpty() && ArmorModificationHelper.hasMods(armor)) {
                 ItemStack[] mods = ArmorModificationHelper.pryMods(armor);

@@ -64,7 +64,7 @@ public class PneumoStorageMonoBlock extends PneumaticStorageBlockBase {
         if (level.getBlockEntity(pos) instanceof PneumoStorageMonoBlockEntity inv) {
             boolean any = false;
             for (int i = 0; i < inv.getInventory().getSlots(); i++) if (!inv.getInventory().getStackInSlot(i).isEmpty()) any = true;
-            if (any) inv.saveToItem(drop);
+            if (any) com.hbm_m.platform.BlockHooks.saveToItem(inv, drop);
         }
         net.minecraft.world.level.block.Block.popResource(level, pos, drop);
     }
@@ -76,4 +76,8 @@ public class PneumoStorageMonoBlock extends PneumaticStorageBlockBase {
         player.awardStat(net.minecraft.stats.Stats.BLOCK_MINED.get(this));
         player.causeFoodExhaustion(0.005F);
     }
+    //? if >= 1.21.1 {
+    /*public static final com.mojang.serialization.MapCodec<PneumoStorageMonoBlock> CODEC = simpleCodec(PneumoStorageMonoBlock::new);
+    @Override protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() { return CODEC; }
+    *///?}
 }

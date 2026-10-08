@@ -64,11 +64,21 @@ public class ModelCrab<T extends Entity> extends EntityModel<T> {
     }
 
     @Override
+    //? if < 1.21.1 {
     public void renderToBuffer(PoseStack ps, VertexConsumer vc, int light, int overlay, float r, float g, float b, float a) {
+    //?} else {
+    /*public void renderToBuffer(PoseStack ps, VertexConsumer vc, int light, int overlay, int hbmColor) {
+        float r = net.minecraft.util.FastColor.ARGB32.red(hbmColor) / 255F, g = net.minecraft.util.FastColor.ARGB32.green(hbmColor) / 255F;
+        float b = net.minecraft.util.FastColor.ARGB32.blue(hbmColor) / 255F, a = net.minecraft.util.FastColor.ARGB32.alpha(hbmColor) / 255F;
+    *///?}
         ps.pushPose();
         ps.translate(0, 1.5F, 0);
         ps.mulPose(Axis.YP.rotationDegrees(-90));
+        //? if < 1.21.1 {
         for (int i = 0; i < 20; i++) this.crabModel[i].render(ps, vc, light, overlay, r, g, b, a);
+        //?} else {
+        /*for (int i = 0; i < 20; i++) this.crabModel[i].render(ps, vc, light, overlay, hbmColor);
+        *///?}
         ps.popPose();
     }
 }

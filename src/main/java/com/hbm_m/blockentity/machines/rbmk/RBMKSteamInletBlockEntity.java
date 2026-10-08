@@ -20,7 +20,7 @@ import net.minecraft.world.level.material.Fluid;
  * of the four horizontally adjacent RBMK columns while the ReaSim boiler dial is on.</p>
  */
 public class RBMKSteamInletBlockEntity extends BlockEntity
-        implements com.hbm_m.api.fluids.IFluidStandardReceiverMK2 {
+        implements com.hbm_m.api.fluids.IFluidStandardReceiverMK2, com.hbm_m.platform.HbmCapabilityProvider {
 
     public final FluidTank waterTank = new FluidTank(com.hbm_m.inventory.fluid.ModFluids.WATER.getSource(), 32_000);
 
@@ -103,7 +103,19 @@ public class RBMKSteamInletBlockEntity extends BlockEntity
         }
         return super.getCapability(cap, side);
     }
-    //?}
+    //?} elif neoforge {
+    /*/^*
+     * Without this the tank existed but nothing could ever reach it - pipes and tanks had no
+     * handler to talk to, so the channel simply refused every connection.
+     ^/
+    @Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == com.hbm_m.platform.HbmCap.FLUID_HANDLER) {
+            return com.hbm_m.platform.LazyCap.ofObj(waterTank.getCapability()).cast();
+        }
+        return com.hbm_m.platform.HbmCapabilityProvider.super.getHbmCapability(cap, side);
+    }
+    *///?}
 
     // ─── NBT / Sync ──────────────────────────────────────────────────────────
 

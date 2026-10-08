@@ -86,19 +86,33 @@ public class SiegeLaserRenderer extends EntityRenderer<EntitySiegeLaser> {
                             float x0, float y0, float z0, float a0,
                             float x1, float y1, float z1, float a1,
                             float x2, float y2, float z2, float a2) {
+        //? if < 1.21.1 {
         vc.vertex(m, x0, y0, z0).color(r, g, b, a0).endVertex();
         vc.vertex(m, x1, y1, z1).color(r, g, b, a1).endVertex();
         vc.vertex(m, x2, y2, z2).color(r, g, b, a2).endVertex();
         vc.vertex(m, x2, y2, z2).color(r, g, b, a2).endVertex();
+        //?} else {
+        /*vc.addVertex(m, x0, y0, z0).setColor(r, g, b, a0);
+        vc.addVertex(m, x1, y1, z1).setColor(r, g, b, a1);
+        vc.addVertex(m, x2, y2, z2).setColor(r, g, b, a2);
+        vc.addVertex(m, x2, y2, z2).setColor(r, g, b, a2);
+        *///?}
     }
 
     /** Schweif-Viereck: die ersten beiden Ecken deckend, die letzten beiden mit Deckkraft 0. */
     private static void quad(VertexConsumer vc, Matrix4f m, float r, float g, float b,
                              float x0, float y0, float z0, float x1, float y1, float z1,
                              float x2, float y2, float z2, float x3, float y3, float z3) {
+        //? if < 1.21.1 {
         vc.vertex(m, x0, y0, z0).color(r, g, b, 1F).endVertex();
         vc.vertex(m, x1, y1, z1).color(r, g, b, 1F).endVertex();
         vc.vertex(m, x2, y2, z2).color(r, g, b, 0F).endVertex();
         vc.vertex(m, x3, y3, z3).color(r, g, b, 0F).endVertex();
+        //?} else {
+        /*vc.addVertex(m, x0, y0, z0).setColor(r, g, b, 1F);
+        vc.addVertex(m, x1, y1, z1).setColor(r, g, b, 1F);
+        vc.addVertex(m, x2, y2, z2).setColor(r, g, b, 0F);
+        vc.addVertex(m, x3, y3, z3).setColor(r, g, b, 0F);
+        *///?}
     }
 }

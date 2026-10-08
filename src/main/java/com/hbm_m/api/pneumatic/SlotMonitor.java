@@ -1,5 +1,7 @@
 package com.hbm_m.api.pneumatic;
 
+import com.hbm_m.platform.StackNbt;
+
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 
@@ -50,7 +52,7 @@ public class SlotMonitor {
     public ItemStack toZeroStack() {
         if (item == null) return null;
         ItemStack stack = new ItemStack(item, 0);
-        if (nbt != null) stack.setTag(nbt.copy());
+        if (nbt != null) StackNbt.set(stack, nbt.copy());
         return stack;
     }
 
@@ -100,7 +102,7 @@ public class SlotMonitor {
         } else if (item != stack.getItem()) {
             hasTypeChanged = true;
         } else {
-            CompoundTag tag = stack.getTag();
+            CompoundTag tag = StackNbt.tag(stack);
             hasTypeChanged = (nbt == null) != (tag == null) || (nbt != null && !nbt.equals(tag));
         }
 
@@ -121,7 +123,7 @@ public class SlotMonitor {
             } else {
                 item = stack.getItem();
                 stacksize = amount;
-                nbt = stack.getTag() != null ? stack.getTag().copy() : null;
+                nbt = StackNbt.read(stack) != null ? StackNbt.read(stack).copy() : null;
             }
 
             // ... und sich neu eintragen.

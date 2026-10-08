@@ -419,7 +419,7 @@ public class FusionTorusBlockEntity extends BaseMachineBlockEntity
     @Nullable
     public FusionRecipe getRecipe(Level level) {
         if (selectedRecipeId == null) return null;
-        return level.getRecipeManager().byKey(selectedRecipeId)
+        return com.hbm_m.platform.recipe.RecipeHooks.getRecipeByKey(level.getRecipeManager(), selectedRecipeId)
                 .filter(r -> r instanceof FusionRecipe)
                 .map(r -> (FusionRecipe) r)
                 .orElse(null);
@@ -648,7 +648,7 @@ public class FusionTorusBlockEntity extends BaseMachineBlockEntity
 
     /** Nur fuer die Rezeptauswahl im GUI: alle registrierten Fusionsrezepte. */
     public static List<FusionRecipe> getAllRecipes(Level level) {
-        return level.getRecipeManager().getAllRecipesFor(ModRecipes.FUSION_TYPE.get());
+        return com.hbm_m.platform.recipe.RecipeHooks.getAllRecipes(level, ModRecipes.FUSION_TYPE.get());
     }
 
     //? if forge {
@@ -671,5 +671,25 @@ public class FusionTorusBlockEntity extends BaseMachineBlockEntity
         super.invalidateCaps();
         sidedItems.invalidate();
     }
-    //?}
+    //?} elif neoforge {
+    /*/^* Original {@code ISidedInventory}: Slot {2}; nichts hinein, Ausgabe heraus. ^/
+    private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
+            new com.hbm_m.blockentity.SidedItemAccess.Rules() {
+                @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return new int[] { 2 }; }
+                @Override public boolean canInsert(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return false; }
+                @Override public boolean canExtract(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return slot == 2; }
+            });
+
+    @Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER && side != null) return sidedItems.get(side).cast();
+        return super.getHbmCapability(cap, side);
+    }
+
+    @Override
+    public void invalidateHbmCaps() {
+        super.invalidateHbmCaps();
+        sidedItems.invalidate();
+    }
+    *///?}
 }

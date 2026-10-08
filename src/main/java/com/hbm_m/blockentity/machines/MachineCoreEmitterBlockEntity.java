@@ -91,7 +91,15 @@ public class MachineCoreEmitterBlockEntity extends BaseMachineBlockEntity
         }
         return super.getCapability(cap, side);
     }
-    //?}
+    //?} elif neoforge {
+    /*@Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == com.hbm_m.platform.HbmCap.FLUID_HANDLER) {
+            return com.hbm_m.platform.LazyCap.ofObj(coolantTank.getCapability()).cast();
+        }
+        return super.getHbmCapability(cap, side);
+    }
+    *///?}
 
     public FluidTank getCoolantTank() { return coolantTank; }
     public int getBeamLength()        { return beam; }
@@ -227,10 +235,8 @@ public class MachineCoreEmitterBlockEntity extends BaseMachineBlockEntity
             e.hurt(com.hbm_m.damagesource.ModDamageSources.amsCore(level), 50F);
             e.setSecondsOnFire(10);
             //?} else {
-            /*if (level instanceof net.minecraft.server.level.ServerLevel serverLevel) {
-                e.hurt(serverLevel, com.hbm_m.damagesource.ModDamageSources.amsCore(level), 50F);
-            }
-            e.setRemainingFireTicks(10 * 20);
+            /*e.hurt(com.hbm_m.damagesource.ModDamageSources.amsCore(level), 50F);
+            com.hbm_m.platform.PlatformHooks.setSecondsOnFire(e, 10);
             *///?}
         }
     }

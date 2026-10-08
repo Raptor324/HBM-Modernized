@@ -1,5 +1,7 @@
 package com.hbm_m.blockentity.machines;
 
+import com.hbm_m.platform.StackNbt;
+
 import java.math.BigInteger;
 
 import org.jetbrains.annotations.Nullable;
@@ -131,7 +133,7 @@ public class MachineAnnihilatorBlockEntity extends BaseMachineBlockEntity implem
                     ItemStack out = inventory.getStackInSlot(SLOT_PAYOUT);
                     if (out.isEmpty()) {
                         inventory.setStackInSlot(SLOT_PAYOUT, payout);
-                    } else if (ItemStack.isSameItemSameTags(out, payout) && out.getMaxStackSize() >= out.getCount() + payout.getCount()) {
+                    } else if (StackNbt.sameItemSameTags(out, payout) && out.getMaxStackSize() >= out.getCount() + payout.getCount()) {
                         out.grow(payout.getCount());
                         inventory.setStackInSlot(SLOT_PAYOUT, out);
                     }
@@ -180,7 +182,7 @@ public class MachineAnnihilatorBlockEntity extends BaseMachineBlockEntity implem
 
         for (int i = 2; i <= 7; i++) {
             ItemStack slot = inventory.getStackInSlot(i);
-            if (!slot.isEmpty() && ItemStack.isSameItemSameTags(slot, payout) && slot.getMaxStackSize() >= slot.getCount() + payout.getCount()) {
+            if (!slot.isEmpty() && StackNbt.sameItemSameTags(slot, payout) && slot.getMaxStackSize() >= slot.getCount() + payout.getCount()) {
                 slot.grow(payout.getCount());
                 inventory.setStackInSlot(i, slot);
                 this.setChanged();
@@ -324,5 +326,25 @@ public class MachineAnnihilatorBlockEntity extends BaseMachineBlockEntity implem
         super.invalidateCaps();
         sidedItems.invalidate();
     }
-    //?}
+    //?} elif neoforge {
+    /*/^* Original {@code ISidedInventory}: Slots {0, 2-7}; Eingang hinein, 2-7 heraus. ^/
+    private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
+            new com.hbm_m.blockentity.SidedItemAccess.Rules() {
+                @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return new int[] { 0, 2, 3, 4, 5, 6, 7 }; }
+                @Override public boolean canInsert(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return slot == 0 && isItemValidForSlot(slot, stack); }
+                @Override public boolean canExtract(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return slot >= 2 && slot <= 7; }
+            });
+
+    @Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER && side != null) return sidedItems.get(side).cast();
+        return super.getHbmCapability(cap, side);
+    }
+
+    @Override
+    public void invalidateHbmCaps() {
+        super.invalidateHbmCaps();
+        sidedItems.invalidate();
+    }
+    *///?}
 }

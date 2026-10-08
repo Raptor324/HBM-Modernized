@@ -1,4 +1,4 @@
-//? if forge {
+//? if forge || neoforge {
 package com.hbm_m.client;
 
 import com.hbm_m.block.UniversalMachinePartBlock;
@@ -17,10 +17,17 @@ import net.minecraft.world.phys.BlockHitResult;
 import net.minecraft.world.phys.Vec3;
 import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.VoxelShape;
+//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.RenderHighlightEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+//?} else {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.neoforge.client.event.RenderHighlightEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+*///?}
 
 /**
  * w16b: Auswahlrahmen fuer Mehrblock-Maschinen.
@@ -30,7 +37,11 @@ import net.minecraftforge.fml.common.Mod;
  * ganze Maschine zeigt - im Original {@code BlockDummyable.drawHighlight} mit der bounding-Liste -, wird hier
  * die Masterform am Kern gezeichnet und der Vanilla-Rahmen der Einzelzelle unterdrueckt.</p>
  */
+//? if forge {
 @Mod.EventBusSubscriber(value = Dist.CLIENT)
+//?} else {
+/*@EventBusSubscriber(value = Dist.CLIENT)
+*///?}
 public final class MultiblockOutlineForge {
     private MultiblockOutlineForge() {}
 
@@ -77,10 +88,17 @@ public final class MultiblockOutlineForge {
             dx /= len;
             dy /= len;
             dz /= len;
+            //? if forge {
             consumer.vertex(pose.pose(), (float) (x0 + x), (float) (y0 + y), (float) (z0 + z))
                     .color(0.0F, 0.0F, 0.0F, 0.4F).normal(pose.normal(), dx, dy, dz).endVertex();
             consumer.vertex(pose.pose(), (float) (x1 + x), (float) (y1 + y), (float) (z1 + z))
                     .color(0.0F, 0.0F, 0.0F, 0.4F).normal(pose.normal(), dx, dy, dz).endVertex();
+            //?} else {
+            /*consumer.addVertex(pose.pose(), (float) (x0 + x), (float) (y0 + y), (float) (z0 + z))
+                    .setColor(0.0F, 0.0F, 0.0F, 0.4F).setNormal(pose, dx, dy, dz);
+            consumer.addVertex(pose.pose(), (float) (x1 + x), (float) (y1 + y), (float) (z1 + z))
+                    .setColor(0.0F, 0.0F, 0.0F, 0.4F).setNormal(pose, dx, dy, dz);
+            *///?}
         });
     }
 }

@@ -137,4 +137,8 @@ public class FileCabinetBlock extends BaseEntityBlock {
     public BlockState mirror(BlockState state, Mirror mirror) {
         return state.rotate(mirror.getRotation(state.getValue(FACING)));
     }
+    //? if >= 1.21.1 {
+    /*public static final com.mojang.serialization.MapCodec<FileCabinetBlock> CODEC = com.hbm_m.platform.BlockCodecs.unsupported(FileCabinetBlock.class);
+    @Override protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() { return CODEC; }
+    *///?}
 }

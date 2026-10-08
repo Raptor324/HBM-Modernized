@@ -1,5 +1,7 @@
 package com.hbm_m.item.machine;
 
+import com.hbm_m.platform.StackNbt;
+
 import com.hbm_m.item.ITooltipProvider;
 
 import java.util.List;
@@ -45,12 +47,12 @@ public class ItemAMSLens extends Item implements ITooltipProvider {
     }
 
     public static long getLensDamage(ItemStack stack) {
-        CompoundTag tag = stack.getTag();
+        CompoundTag tag = StackNbt.read(stack);
         return tag == null ? 0L : tag.getLong(KEY_DAMAGE);
     }
 
     public static void setLensDamage(ItemStack stack, long damage) {
-        stack.getOrCreateTag().putLong(KEY_DAMAGE, damage);
+        StackNbt.orCreate(stack).putLong(KEY_DAMAGE, damage);
     }
 
     /** Die Belastungsgrenze dieses Stapels, oder 0 wenn es gar keine Linse ist. */

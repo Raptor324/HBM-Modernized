@@ -1,5 +1,7 @@
 package com.hbm_m.armormod.item;
 
+import com.hbm_m.platform.StackNbt;
+
 import java.util.List;
 import java.util.function.Supplier;
 
@@ -61,18 +63,18 @@ public abstract class JetpackFueledBase extends JetpackBase implements IFillable
     }
 
     public static int getFuel(ItemStack stack) {
-        if (stack.getTag() == null) {
-            stack.setTag(new CompoundTag());
+        if (StackNbt.read(stack) == null) {
+            StackNbt.set(stack, new CompoundTag());
             return 0;
         }
-        return stack.getTag().getInt("fuel");
+        return StackNbt.read(stack).getInt("fuel");
     }
 
     public static void setFuel(ItemStack stack, int i) {
-        if (stack.getTag() == null) {
-            stack.setTag(new CompoundTag());
+        if (StackNbt.read(stack) == null) {
+            StackNbt.set(stack, new CompoundTag());
         }
-        stack.getTag().putInt("fuel", i);
+        StackNbt.tag(stack).putInt("fuel", i);
     }
 
     public int getMaxFill(ItemStack stack) {

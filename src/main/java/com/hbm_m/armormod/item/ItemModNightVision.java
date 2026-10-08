@@ -1,5 +1,9 @@
 package com.hbm_m.armormod.item;
 
+import com.hbm_m.platform.ItemHooks;
+
+import com.hbm_m.platform.StackNbt;
+
 import java.util.List;
 
 import org.jetbrains.annotations.Nullable;
@@ -44,15 +48,15 @@ public class ItemModNightVision extends ItemArmorMod {
             if (HbmPlayerProps.getData(player).enableHUD) {
                 // 15 seconds to make less flickering if the client lags
                 entity.addEffect(new MobEffectInstance(MobEffects.NIGHT_VISION, 15 * 20, 0));
-                if (!armor.getOrCreateTag().contains(NIGHT_VISION_ACTIVE_NBT_KEY)) {
-                    armor.getOrCreateTag().putBoolean(NIGHT_VISION_ACTIVE_NBT_KEY, true); // Value does not matter, it's just a flag
+                if (!StackNbt.orCreate(armor).contains(NIGHT_VISION_ACTIVE_NBT_KEY)) {
+                    StackNbt.orCreate(armor).putBoolean(NIGHT_VISION_ACTIVE_NBT_KEY, true); // Value does not matter, it's just a flag
                 }
                 if (entity.getRandom().nextInt(200) == 0) {
-                    armor.hurtAndBreak(1, entity, e -> {});
+                    ItemHooks.hurtAndBreakSilent(armor, 1, entity);
                 }
-            } else if (armor.hasTag() && armor.getTag().contains(NIGHT_VISION_ACTIVE_NBT_KEY)) { // Disable night vision if it was the armor mod that applied it to avoid removing other night vision sources.
+            } else if (StackNbt.has(armor) && StackNbt.read(armor).contains(NIGHT_VISION_ACTIVE_NBT_KEY)) { // Disable night vision if it was the armor mod that applied it to avoid removing other night vision sources.
                 entity.removeEffect(MobEffects.NIGHT_VISION);
-                armor.getTag().remove(NIGHT_VISION_ACTIVE_NBT_KEY);
+                StackNbt.tag(armor).remove(NIGHT_VISION_ACTIVE_NBT_KEY);
             }
         }
     }

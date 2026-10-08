@@ -1,5 +1,7 @@
 package com.hbm_m.explosion;
 
+import com.hbm_m.platform.PlatformHooks;
+
 import java.util.List;
 
 import com.hbm_m.block.ModBlocks;
@@ -162,7 +164,7 @@ public final class ExplosionThermo {
             if (Math.sqrt(e.distanceToSqr(x, y, z)) <= radius) {
                 if (!(e instanceof Player p && ArmorUtil.checkForAsbestos(p))) {
                     if (e instanceof LivingEntity l) l.addEffect(new MobEffectInstance(MobEffects.WEAKNESS, 15 * 20, 4));
-                    e.setSecondsOnFire(10);
+                    PlatformHooks.setSecondsOnFire(e, 10);
                 }
             }
         }

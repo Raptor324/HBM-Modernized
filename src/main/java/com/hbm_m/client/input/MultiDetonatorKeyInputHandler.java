@@ -1,8 +1,18 @@
-//? if forge {
+//? if forge || neoforge {
 package com.hbm_m.client.input;
 
 import com.hbm_m.main.MainRegistry;
+//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
+import net.minecraftforge.client.event.InputEvent;
+import net.minecraftforge.eventbus.api.SubscribeEvent;
+import net.minecraftforge.fml.common.Mod;
+//?} else {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.neoforge.client.event.InputEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+*///?}
 import org.lwjgl.glfw.GLFW;
 
 import com.hbm_m.inventory.gui.GUIMultiDetonator;
@@ -11,16 +21,17 @@ import com.hbm_m.item.grenades_and_activators.MultiDetonatorItem;
 import net.minecraft.client.Minecraft;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraftforge.client.event.InputEvent;
-import net.minecraftforge.eventbus.api.SubscribeEvent;
-import net.minecraftforge.fml.common.Mod;
 
 /**
  * Обработчик входных событий для открытия GUI мульти-детонатора по нажатию R
  * ✓ Совместимо с MultiDetonatorItem версии 4 точек
  * ✓ Совместимо с MultiDetonatorScreen версии 4 точек
  */
+//? if forge {
 @Mod.EventBusSubscriber(modid = MainRegistry.MOD_ID, bus = Mod.EventBusSubscriber.Bus.FORGE, value = Dist.CLIENT)
+//?} else {
+/*@EventBusSubscriber(modid = MainRegistry.MOD_ID, bus = EventBusSubscriber.Bus.GAME, value = Dist.CLIENT)
+*///?}
 public class MultiDetonatorKeyInputHandler {
 
     @SubscribeEvent

@@ -82,7 +82,46 @@ public class PylonDummyBlock extends Block implements EntityBlock {
         }
         return net.minecraft.world.item.ItemStack.EMPTY;
     }
-    //?}
+    //?} else {
+    /*// audit13: Original BlockDummyable.onBlockHarvested - Abbau einer Mastzelle droppt den Mast einmal (nicht im Kreativmodus).
+    @Override
+    public BlockState playerWillDestroy(Level level, BlockPos pos, BlockState state, net.minecraft.world.entity.player.Player player) {
+        if (!level.isClientSide) {
+            BlockPos core = findCore(level, pos);
+            if (core != null) level.destroyBlock(core, !player.getAbilities().instabuild);
+        }
+        return super.playerWillDestroy(level, pos, state, player);
+    }
+
+    // audit13: Original PylonRedWire.onBlockActivated -> findCore: Faerben ueber jede Zelle (1.21.1: useItemOn/useWithoutItem des Kerns).
+    @Override
+    protected net.minecraft.world.ItemInteractionResult useItemOn(net.minecraft.world.item.ItemStack stack, BlockState state, Level level, BlockPos pos,
+                                                                 net.minecraft.world.entity.player.Player player, net.minecraft.world.InteractionHand hand,
+                                                                 net.minecraft.world.phys.BlockHitResult hit) {
+        BlockPos core = findCore(level, pos);
+        if (core == null) return net.minecraft.world.ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION;
+        BlockState coreState = level.getBlockState(core);
+        net.minecraft.world.phys.BlockHitResult coreHit = hit.withPosition(core);
+        net.minecraft.world.ItemInteractionResult r = coreState.useItemOn(stack, level, player, hand, coreHit);
+        if (r == net.minecraft.world.ItemInteractionResult.PASS_TO_DEFAULT_BLOCK_INTERACTION && hand == net.minecraft.world.InteractionHand.MAIN_HAND) {
+            return com.hbm_m.platform.BlockUseHooks.item(coreState.useWithoutItem(level, player, coreHit));
+        }
+        return r;
+    }
+
+    // audit13: Pick-Block auf einer Mastzelle gibt den Mast.
+    @Override
+    public net.minecraft.world.item.ItemStack getCloneItemStack(net.minecraft.world.level.LevelReader level, BlockPos pos, BlockState state) {
+        if (level instanceof Level lvl) {
+            BlockPos core = findCore(lvl, pos);
+            if (core != null) {
+                BlockState coreState = level.getBlockState(core);
+                return coreState.getBlock().getCloneItemStack(level, core, coreState);
+            }
+        }
+        return net.minecraft.world.item.ItemStack.EMPTY;
+    }
+    *///?}
 
     /** При разрушении части — рушим ядро (оно в свою очередь убирает остальные части). */
     private static void breakCore(Level level, BlockPos pos) {

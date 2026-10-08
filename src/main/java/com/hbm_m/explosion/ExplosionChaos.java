@@ -1,5 +1,7 @@
 package com.hbm_m.explosion;
 
+import com.hbm_m.platform.EffectHooks;
+
 import com.hbm_m.entity.ModEntities;
 import com.hbm_m.entity.projectile.ClusterRocketEntity;
 import net.minecraft.core.BlockPos;
@@ -240,9 +242,9 @@ public final class ExplosionChaos {
         for (net.minecraft.world.entity.LivingEntity entity : gasTargets(world, x, y, z, range)) {
             damageWholeSuit(entity, 25);
             if (com.hbm_m.util.ArmorUtil.checkForHazmat(entity)) continue;
-            if (entity.hasEffect(com.hbm_m.effect.ModEffects.TAINT.get())) {
-                entity.removeEffect(com.hbm_m.effect.ModEffects.TAINT.get());
-                entity.addEffect(new net.minecraft.world.effect.MobEffectInstance(com.hbm_m.effect.ModEffects.MUTATION.get(), 1 * 60 * 60 * 20, 0, false, true));
+            if (entity.hasEffect(EffectHooks.of(com.hbm_m.effect.ModEffects.TAINT))) {
+                entity.removeEffect(EffectHooks.of(com.hbm_m.effect.ModEffects.TAINT));
+                entity.addEffect(new net.minecraft.world.effect.MobEffectInstance(EffectHooks.of(com.hbm_m.effect.ModEffects.MUTATION), 1 * 60 * 60 * 20, 0, false, true));
             }
             entity.hurt(com.hbm_m.damagesource.ModDamageSources.cloud(world), 5);
         }

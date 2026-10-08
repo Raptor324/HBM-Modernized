@@ -103,6 +103,13 @@ public class MachineFoundryChannelBlock extends BaseEntityBlock {
     //? if < 1.21.1 {
     @Override
     public net.minecraft.world.InteractionResult use(BlockState state, Level level, BlockPos pos, net.minecraft.world.entity.player.Player player, net.minecraft.world.InteractionHand hand, net.minecraft.world.phys.BlockHitResult hit) {
+    //?} else {
+    /*@Override
+    protected net.minecraft.world.ItemInteractionResult useItemOn(net.minecraft.world.item.ItemStack hbmHeld, BlockState state, Level level, BlockPos pos, net.minecraft.world.entity.player.Player player, net.minecraft.world.InteractionHand hand, net.minecraft.world.phys.BlockHitResult hit) {
+        return com.hbm_m.platform.BlockUseHooks.item(hbmUse(state, level, pos, player, hand, hit));
+    }
+    private net.minecraft.world.InteractionResult hbmUse(BlockState state, Level level, BlockPos pos, net.minecraft.world.entity.player.Player player, net.minecraft.world.InteractionHand hand, net.minecraft.world.phys.BlockHitResult hit) {
+    *///?}
         if (level.isClientSide) return net.minecraft.world.InteractionResult.SUCCESS;
         if (FoundryBlockUtil.isShovel(player.getItemInHand(hand)) && level.getBlockEntity(pos) instanceof MachineFoundryChannelBlockEntity cast) {
             FoundryBlockUtil.shovelOut(level, pos, player, cast, 0.5);
@@ -110,7 +117,6 @@ public class MachineFoundryChannelBlock extends BaseEntityBlock {
         }
         return net.minecraft.world.InteractionResult.PASS;
     }
-    //?}
 
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean moving) {

@@ -1,5 +1,7 @@
 package com.hbm_m.block.generic;
 
+import com.hbm_m.platform.StackNbt;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -62,13 +64,13 @@ public class SupplyCrateBlock extends BaseEntityBlock {
                     ItemStack stack = inv.items.get(i);
                     if (stack == null || stack.isEmpty()) continue;
                     CompoundTag slot = new CompoundTag();
-                    stack.save(slot);
+                    com.hbm_m.platform.PlatformHooks.saveItemStack(stack, slot, world.registryAccess());
                     nbt.put("slot" + i, slot);
                 }
                 nbt.putInt("amount", inv.items.size());
             }
 
-            if (!nbt.isEmpty()) drop.setTag(nbt);
+            if (!nbt.isEmpty()) StackNbt.set(drop, nbt);
             world.addFreshEntity(new ItemEntity(world, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, drop));
         }
         return super.onDestroyedByPlayer(state, world, pos, player, willHarvest, fluid);
@@ -77,10 +79,10 @@ public class SupplyCrateBlock extends BaseEntityBlock {
     @Override
     public void setPlacedBy(Level world, BlockPos pos, BlockState state, @Nullable LivingEntity placer, ItemStack stack) {
 
-        if (world.getBlockEntity(pos) instanceof SupplyCrateBlockEntity inv && stack.hasTag()) {
-            int amount = stack.getTag().getInt("amount");
+        if (world.getBlockEntity(pos) instanceof SupplyCrateBlockEntity inv && StackNbt.has(stack)) {
+            int amount = StackNbt.read(stack).getInt("amount");
             for (int i = 0; i < amount; i++) {
-                inv.items.add(ItemStack.of(stack.getTag().getCompound("slot" + i)));
+                inv.items.add(StackNbt.parse(StackNbt.tag(stack).getCompound("slot" + i)));
             }
             inv.setChanged();
         }
@@ -88,8 +90,16 @@ public class SupplyCrateBlock extends BaseEntityBlock {
         super.setPlacedBy(world, pos, state, placer, stack);
     }
 
+    //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+    //?} else {
+    /*@Override
+    protected net.minecraft.world.ItemInteractionResult useItemOn(net.minecraft.world.item.ItemStack hbmHeld, BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        return com.hbm_m.platform.BlockUseHooks.item(hbmUse(state, world, pos, player, hand, hit));
+    }
+    private InteractionResult hbmUse(BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+    *///?}
         if (player.getItemInHand(hand).is(ModItems.CROWBAR.get())) {
             if (!world.isClientSide) {
                 dropContents(world, pos);
@@ -120,21 +130,41 @@ public class SupplyCrateBlock extends BaseEntityBlock {
         }
 
         @Override
+        //? if < 1.21.1 {
         public void load(CompoundTag nbt) {
+        //?} else {
+        /*public void loadAdditional(CompoundTag nbt, net.minecraft.core.HolderLookup.Provider registries) {
+        *///?}
+            //? if < 1.21.1 {
             super.load(nbt);
+            //?} else {
+            /*super.loadAdditional(nbt, registries);
+            *///?}
             items.clear();
             ListTag list = nbt.getList("items", Tag.TAG_COMPOUND);
             for (int i = 0; i < list.size(); i++) {
-                items.add(ItemStack.of(list.getCompound(i)));
+                items.add(StackNbt.parse(list.getCompound(i)));
             }
         }
 
         @Override
+        //? if < 1.21.1 {
         protected void saveAdditional(CompoundTag nbt) {
+        //?} else {
+        /*protected void saveAdditional(CompoundTag nbt, net.minecraft.core.HolderLookup.Provider registries) {
+        *///?}
+            //? if < 1.21.1 {
             super.saveAdditional(nbt);
+            //?} else {
+            /*super.saveAdditional(nbt, registries);
+            *///?}
             ListTag list = new ListTag();
             for (ItemStack stack : items) {
+                //? if < 1.21.1 {
                 list.add(stack.save(new CompoundTag()));
+                //?} else {
+                /*list.add(stack.saveOptional(registries));
+                *///?}
             }
             nbt.put("items", list);
         }

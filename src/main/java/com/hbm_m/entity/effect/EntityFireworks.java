@@ -35,8 +35,13 @@ public class EntityFireworks extends Entity {
         this.character = character;
     }
 
+    //? if < 1.21.1 {
     @Override
     protected void defineSynchedData() { }
+    //?} else {
+    /*@Override
+    protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) { }
+    *///?}
 
     @Override
     public void tick() {

@@ -118,4 +118,8 @@ public class DFCStabilizerBlock extends BaseEntityBlock {
         return InteractionResult.sidedSuccess(level.isClientSide());
     }
     *///?}
+    //? if >= 1.21.1 {
+    /*public static final com.mojang.serialization.MapCodec<DFCStabilizerBlock> CODEC = simpleCodec(DFCStabilizerBlock::new);
+    @Override protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() { return CODEC; }
+    *///?}
 }

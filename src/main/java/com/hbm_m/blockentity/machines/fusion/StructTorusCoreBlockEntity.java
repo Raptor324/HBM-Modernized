@@ -21,7 +21,7 @@ import net.minecraft.world.phys.AABB;
  * Fusionsbauteilen steht. Sobald das der Fall ist, verwandelt er sich selbst in den fertigen
  * {@code fusion_torus} - der beim Setzen die gesamte Struktur uebernimmt.</p>
  */
-public class StructTorusCoreBlockEntity extends BlockEntity {
+public class StructTorusCoreBlockEntity extends BlockEntity implements com.hbm_m.api.render.RenderBoundsProvider {
 
     public StructTorusCoreBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.STRUCT_TORUS_CORE_BE.get(), pos, state);

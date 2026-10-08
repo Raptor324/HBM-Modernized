@@ -1,5 +1,7 @@
 package com.hbm_m.item.industrial;
 
+import com.hbm_m.platform.StackNbt;
+
 import org.jetbrains.annotations.NotNull;
 
 import net.minecraft.nbt.CompoundTag;
@@ -35,7 +37,7 @@ public class ItemArcElectrode extends Item {
     }
 
     public static int getDurability(ItemStack stack) {
-        CompoundTag tag = stack.getTag();
+        CompoundTag tag = StackNbt.read(stack);
         if (tag == null) return 0;
         return tag.getInt("durability");
     }
@@ -43,7 +45,7 @@ public class ItemArcElectrode extends Item {
     /** Original {@code damage}: true, wenn die Elektrode damit verbraucht ist. */
     public static boolean damage(ItemStack stack) {
         if (stack.isEmpty() || !(stack.getItem() instanceof ItemArcElectrode)) return false;
-        CompoundTag tag = stack.getOrCreateTag();
+        CompoundTag tag = StackNbt.orCreate(stack);
         int durability = tag.getInt("durability");
         durability++;
         tag.putInt("durability", durability);

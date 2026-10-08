@@ -168,7 +168,15 @@ public class ForgeFluidHandlerAdapter implements IFluidStandardTransceiverMK2 {
             return;
         }
         handler.drain(Math.min(simulated.getAmount(), clampInt(amount)), FluidAction.EXECUTE);
-        //?}
+        //?} elif neoforge {
+        /*net.neoforged.neoforge.fluids.capability.IFluidHandler handler = getNeoForgeHandler();
+        if (handler == null) return;
+        net.neoforged.neoforge.fluids.FluidStack simulated = handler.drain(clampInt(amount), net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction.SIMULATE);
+        if (simulated.isEmpty() || !VanillaFluidEquivalence.sameSubstance(simulated.getFluid(), fluid)) {
+            return;
+        }
+        handler.drain(Math.min(simulated.getAmount(), clampInt(amount)), net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction.EXECUTE);
+        *///?}
 
         //? if fabric {
         /*Storage<FluidVariant> storage = getFabricStorage();

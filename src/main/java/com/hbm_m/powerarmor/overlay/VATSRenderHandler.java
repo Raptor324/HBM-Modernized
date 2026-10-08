@@ -1,4 +1,4 @@
-//? if forge {
+//? if forge || neoforge {
 package com.hbm_m.powerarmor.overlay;
 
 import org.joml.Matrix4f;
@@ -18,14 +18,26 @@ import net.minecraft.util.Mth;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.item.ItemStack;
+//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 import net.minecraftforge.client.event.RenderLivingEvent;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+//?} else {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.api.distmarker.OnlyIn;
+import net.neoforged.neoforge.client.event.RenderLivingEvent;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+*///?}
 
 @OnlyIn(Dist.CLIENT)
+//? if forge {
 @Mod.EventBusSubscriber(modid = RefStrings.MODID, value = Dist.CLIENT, bus = Mod.EventBusSubscriber.Bus.FORGE)
+//?} else {
+/*@EventBusSubscriber(modid = RefStrings.MODID, value = Dist.CLIENT, bus = EventBusSubscriber.Bus.GAME)
+*///?}
 public class VATSRenderHandler {
 
     @SubscribeEvent

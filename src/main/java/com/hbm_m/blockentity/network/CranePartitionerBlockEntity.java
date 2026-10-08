@@ -1,5 +1,7 @@
 package com.hbm_m.blockentity.network;
 
+import com.hbm_m.platform.StackNbt;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -55,7 +57,22 @@ public class CranePartitionerBlockEntity extends BaseHbmBlockEntity {
             return slot <= SLOT_COUNT - 1 && getAmount(level, stack) >= 1;
         }
     });
-    //?}
+    //?} elif neoforge {
+    /*private final com.hbm_m.platform.LazyCap<net.neoforged.neoforge.items.IItemHandler> sided = com.hbm_m.platform.LazyCap.of(() -> new net.neoforged.neoforge.items.IItemHandler() {
+        @Override public int getSlots() { return inventory.getSlots(); }
+        @Override public @NotNull ItemStack getStackInSlot(int slot) { return inventory.getStackInSlot(slot); }
+        @Override public @NotNull ItemStack insertItem(int slot, @NotNull ItemStack stack, boolean simulate) {
+            return isItemValid(slot, stack) ? inventory.insertItem(slot, stack, simulate) : stack;
+        }
+        @Override public @NotNull ItemStack extractItem(int slot, int amount, boolean simulate) {
+            return slot >= SLOT_COUNT ? inventory.extractItem(slot, amount, simulate) : ItemStack.EMPTY; // declog
+        }
+        @Override public int getSlotLimit(int slot) { return 64; }
+        @Override public boolean isItemValid(int slot, @NotNull ItemStack stack) {
+            return slot <= SLOT_COUNT - 1 && getAmount(level, stack) >= 1;
+        }
+    });
+    *///?}
 
     public CranePartitionerBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.CRANE_PARTITIONER.get(), pos, state);
@@ -74,7 +91,7 @@ public class CranePartitionerBlockEntity extends BaseHbmBlockEntity {
         ItemStack rest = stack.copy();
         for (int i = start; i <= end && !rest.isEmpty(); i++) {
             ItemStack s = inventory.getStackInSlot(i);
-            if (!s.isEmpty() && ItemStack.isSameItemSameTags(s, rest) && s.getCount() < s.getMaxStackSize()) {
+            if (!s.isEmpty() && StackNbt.sameItemSameTags(s, rest) && s.getCount() < s.getMaxStackSize()) {
                 int move = Math.min(rest.getCount(), s.getMaxStackSize() - s.getCount());
                 s.grow(move);
                 rest.shrink(move);
@@ -123,15 +140,27 @@ public class CranePartitionerBlockEntity extends BaseHbmBlockEntity {
         super.invalidateCaps();
         sided.invalidate();
     }
-    //?}
+    //?} elif neoforge {
+    /*@Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER) return sided.cast();
+        return super.getHbmCapability(cap, side);
+    }
+
+    @Override
+    public void invalidateHbmCaps() {
+        super.invalidateHbmCaps();
+        sided.invalidate();
+    }
+    *///?}
 
     @Override
     protected void writeNbtData(@NotNull CompoundTag tag, @Nullable HolderLookup.Provider registries) {
-        tag.put("inventory", inventory.serializeNBT());
+        tag.put("inventory", com.hbm_m.platform.ItemStackSerialization.serialize(inventory, com.hbm_m.platform.BlockHooks.registriesOr(registries, this)));
     }
 
     @Override
     protected void readNbtData(@NotNull CompoundTag tag, @Nullable HolderLookup.Provider registries) {
-        if (tag.contains("inventory")) inventory.deserializeNBT(tag.getCompound("inventory"));
+        if (tag.contains("inventory")) com.hbm_m.platform.ItemStackSerialization.deserialize(inventory, tag.getCompound("inventory"), com.hbm_m.platform.BlockHooks.registriesOr(registries, this));
     }
 }

@@ -1,5 +1,7 @@
 package com.hbm_m.handler;
 
+import com.hbm_m.platform.StackNbt;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Supplier;
@@ -213,7 +215,7 @@ public final class BobmazonOfferFactory {
     }
 
     private static ItemStack named(ItemStack stack, String name) {
-        stack.setHoverName(Component.literal(name));
+        StackNbt.setCustomName(stack, Component.literal(name));
         return stack;
     }
 
@@ -296,7 +298,11 @@ public final class BobmazonOfferFactory {
         }
 
         public boolean fullfills(net.minecraft.server.level.ServerPlayer player) {
+            //? if < 1.21.1 {
             var adv = player.server.getAdvancements().getAdvancement(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, advancement));
+            //?} else {
+            /*var adv = player.server.getAdvancements().get(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, advancement));
+            *///?}
             return adv != null && player.getAdvancements().getOrStartProgress(adv).isDone();
         }
     }

@@ -1,5 +1,7 @@
 package com.hbm_m.item.tool;
 
+import com.hbm_m.platform.StackNbt;
+
 import com.hbm_m.inventory.HeldItemInventory;
 import com.hbm_m.inventory.menu.HeldItemMenu;
 import com.hbm_m.item.ModItems;
@@ -20,7 +22,11 @@ public class ItemAmmoBag extends ItemHeldInventory {
     }
 
     @Override
+    //? if < 1.21.1 {
     public int getUseDuration(ItemStack stack) {
+    //?} else {
+    /*public int getUseDuration(ItemStack stack, net.minecraft.world.entity.LivingEntity hbmUser) {
+    *///?}
         return 1;
     }
 
@@ -28,7 +34,7 @@ public class ItemAmmoBag extends ItemHeldInventory {
     @Override
     public boolean isBarVisible(ItemStack stack) {
         if (stack.is(ModItems.AMMO_BAG_INFINITE.get())) return false;
-        return !stack.hasTag() || getDurabilityForDisplay(stack) != 0;
+        return !StackNbt.has(stack) || getDurabilityForDisplay(stack) != 0;
     }
 
     @Override
@@ -45,7 +51,7 @@ public class ItemAmmoBag extends ItemHeldInventory {
 
     /** Original {@code getDurabilityForDisplay}. */
     public double getDurabilityForDisplay(ItemStack stack) {
-        if (!stack.hasTag()) return 1D;
+        if (!StackNbt.has(stack)) return 1D;
 
         ItemStack[] slots = HeldItemInventory.readStacksFromNBT(stack, HeldItemMenu.Layout.AMMO_BAG.size);
         int capacity = 0;

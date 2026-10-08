@@ -20,6 +20,12 @@ public class ModWorldGen {
     //? if forge {
     public static final net.minecraftforge.registries.DeferredRegister<net.minecraftforge.common.world.BiomeModifier> BIOME_MODIFIERS =
             net.minecraftforge.registries.DeferredRegister.create(net.minecraftforge.registries.ForgeRegistries.Keys.BIOME_MODIFIERS, RefStrings.MODID);
+    /** Phase D: eigener Biom-Modifikator-Typ hbm_m:add_carvers (forge:add_carvers gibt es in Forge 1.20.1 nicht). */
+    public static final net.minecraftforge.registries.DeferredRegister<com.mojang.serialization.Codec<? extends net.minecraftforge.common.world.BiomeModifier>> BIOME_MODIFIER_SERIALIZERS =
+            net.minecraftforge.registries.DeferredRegister.create(net.minecraftforge.registries.ForgeRegistries.Keys.BIOME_MODIFIER_SERIALIZERS, RefStrings.MODID);
+    static {
+        BIOME_MODIFIER_SERIALIZERS.register("add_carvers", () -> AddCarversBiomeModifierForge.CODEC);
+    }
     //?}
 
     public static final DeferredRegister<Feature<?>> FEATURES =
@@ -168,6 +174,7 @@ public class ModWorldGen {
     /** Регистрация worldgen DeferredRegister на Forge mod event bus (как в старом {@code MainRegistry}). */
     public static void register(net.minecraftforge.eventbus.api.IEventBus modEventBus) {
         BIOME_MODIFIERS.register(modEventBus);
+        BIOME_MODIFIER_SERIALIZERS.register(modEventBus);
         register();
     }
     //?}

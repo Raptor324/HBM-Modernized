@@ -1,5 +1,7 @@
 package com.hbm_m.block.network;
 
+import com.hbm_m.platform.StackNbt;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -156,18 +158,22 @@ public class BoxDuctBlock extends BaseEntityBlock implements ILookOverlay {
         ItemStack s = new ItemStack(item);
         CompoundTag bst = new CompoundTag();
         bst.putString("meta", Integer.toString(meta));
-        s.getOrCreateTag().put("BlockStateTag", bst);
+        com.hbm_m.platform.BlockStateItemData.put(s, bst);
         return s;
     }
 
     public static int metaOf(ItemStack stack) {
-        CompoundTag t = stack.getTag();
+        CompoundTag t = StackNbt.tag(stack);
         if (t == null || !t.contains("BlockStateTag")) return 0;
         try { return Integer.parseInt(t.getCompound("BlockStateTag").getString("meta")); } catch (NumberFormatException e) { return 0; }
     }
 
     @Override
+    //? if < 1.21.1 {
     public ItemStack getCloneItemStack(BlockGetter level, BlockPos pos, BlockState state) {
+    //?} else {
+    /*public ItemStack getCloneItemStack(net.minecraft.world.level.LevelReader level, BlockPos pos, BlockState state) {
+    *///?}
         int m = state.getValue(META);
         return stack(asItem(), kind == BoxDuctGeometry.Kind.CABLE ? m % 5 : m % 15);
     }

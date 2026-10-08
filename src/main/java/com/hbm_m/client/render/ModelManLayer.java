@@ -1,4 +1,4 @@
-//? if forge {
+//? if forge || neoforge {
 package com.hbm_m.client.render;
 
 import com.hbm_m.client.render.armor.ArmorObjModel;
@@ -17,12 +17,21 @@ import net.minecraft.client.renderer.entity.LivingEntityRenderer;
 import net.minecraft.client.renderer.entity.RenderLayerParent;
 import net.minecraft.client.renderer.entity.layers.RenderLayer;
 import net.minecraft.resources.ResourceLocation;
+//? if forge {
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.client.event.EntityRenderersEvent;
 import net.minecraftforge.client.event.RenderPlayerEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
 import net.minecraftforge.eventbus.api.SubscribeEvent;
 import net.minecraftforge.fml.common.Mod;
+//?} else {
+/*import net.neoforged.api.distmarker.Dist;
+import net.neoforged.neoforge.client.event.EntityRenderersEvent;
+import net.neoforged.neoforge.client.event.RenderPlayerEvent;
+import net.neoforged.bus.api.EventPriority;
+import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.fml.common.EventBusSubscriber;
+*///?}
 
 import org.jetbrains.annotations.NotNull;
 import org.joml.Quaternionf;
@@ -80,7 +89,11 @@ public class ModelManLayer extends RenderLayer<AbstractClientPlayer, PlayerModel
     }
 
     /** Original {@code onRenderPlayerPre} / {@code onRenderPlayerPost}: Skin-Teile aus- und wieder einblenden. */
+    //? if forge {
     @Mod.EventBusSubscriber(modid = MainRegistry.MOD_ID, value = Dist.CLIENT)
+    //?} else {
+    /*@EventBusSubscriber(modid = MainRegistry.MOD_ID, value = Dist.CLIENT)
+    *///?}
     public static final class ForgeEvents {
 
         private static final boolean[] partsHidden = new boolean[12];
@@ -118,17 +131,30 @@ public class ModelManLayer extends RenderLayer<AbstractClientPlayer, PlayerModel
         private ForgeEvents() {}
     }
 
+    //? if forge {
     @Mod.EventBusSubscriber(modid = MainRegistry.MOD_ID, bus = Mod.EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
+    //?} else {
+    /*@EventBusSubscriber(modid = MainRegistry.MOD_ID, bus = EventBusSubscriber.Bus.MOD, value = Dist.CLIENT)
+    *///?}
     public static final class ModEvents {
 
         @SubscribeEvent
         @SuppressWarnings({"unchecked", "rawtypes"})
         public static void onAddLayers(EntityRenderersEvent.AddLayers event) {
+            //? if forge {
             for (String skin : event.getSkins()) {
                 LivingEntityRenderer renderer = event.getSkin(skin);
                 if (renderer == null) continue;
                 ((LivingEntityRendererInvoker) renderer).hbm_m$getLayers().add(new ModelManLayer((RenderLayerParent) renderer));
             }
+            //?} else {
+            /*// 1.21.1: Skins als PlayerSkin.Model, addLayer ist oeffentlich (kein Mixin-Accessor noetig)
+            for (net.minecraft.client.resources.PlayerSkin.Model skin : event.getSkins()) {
+                Object renderer = event.getSkin(skin);
+                if (!(renderer instanceof LivingEntityRenderer living)) continue;
+                living.addLayer(new ModelManLayer((RenderLayerParent) living));
+            }
+            *///?}
         }
 
         private ModEvents() {}

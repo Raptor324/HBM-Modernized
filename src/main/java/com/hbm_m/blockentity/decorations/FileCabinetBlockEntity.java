@@ -109,7 +109,7 @@ public class FileCabinetBlockEntity extends BaseHbmBlockEntity implements MenuPr
         tag.putInt("timer", timer);
         tag.putInt("playersUsing", playersUsing);
         lockState.write(tag);
-        ClientboundBlockEntityDataPacket packet = ClientboundBlockEntityDataPacket.create(this, be -> tag);
+        ClientboundBlockEntityDataPacket packet = com.hbm_m.platform.BlockHooks.dataPacket(this, tag);
         for (var player : server.getChunkSource().chunkMap.getPlayers(new ChunkPos(worldPosition), false)) {
             if (player.distanceToSqr(worldPosition.getX() + 0.5, worldPosition.getY() + 0.5, worldPosition.getZ() + 0.5) <= (double) range * range)
                 player.connection.send(packet);
@@ -129,13 +129,13 @@ public class FileCabinetBlockEntity extends BaseHbmBlockEntity implements MenuPr
 
     @Override
     protected void writeNbtData(@NotNull CompoundTag nbt, @Nullable HolderLookup.Provider registries) {
-        nbt.put("items", items.serializeNBT());
+        nbt.put("items", com.hbm_m.platform.ItemStackSerialization.serialize(items, com.hbm_m.platform.BlockHooks.registriesOr(registries, this)));
         lockState.write(nbt);
     }
 
     @Override
     protected void readNbtData(@NotNull CompoundTag nbt, @Nullable HolderLookup.Provider registries) {
-        if (nbt.contains("items")) items.deserializeNBT(nbt.getCompound("items"));
+        if (nbt.contains("items")) com.hbm_m.platform.ItemStackSerialization.deserialize(items, nbt.getCompound("items"), com.hbm_m.platform.BlockHooks.registriesOr(registries, this));
         lockState.read(nbt);
     }
 

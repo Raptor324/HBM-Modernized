@@ -154,7 +154,11 @@ public abstract class EntityPlaneBase extends Entity {
 
     /** Original {@code setPositionAndRotation2}: Serverpositionen werden ueber {@code steps} Ticks angenaehert. */
     @Override
+    //? if < 1.21.1 {
     public void lerpTo(double x, double y, double z, float yaw, float pitch, int steps, boolean teleport) {
+    //?} else {
+    /*public void lerpTo(double x, double y, double z, float yaw, float pitch, int steps) {
+    *///?}
         this.syncPosX = x;
         this.syncPosY = y;
         this.syncPosZ = z;

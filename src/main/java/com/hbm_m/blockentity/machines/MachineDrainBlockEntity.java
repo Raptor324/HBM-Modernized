@@ -57,7 +57,15 @@ public class MachineDrainBlockEntity extends BaseMachineBlockEntity implements I
         }
         return super.getCapability(cap, side);
     }
-    //?}
+    //?} elif neoforge {
+    /*@Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == com.hbm_m.platform.HbmCap.FLUID_HANDLER) {
+            return com.hbm_m.platform.LazyCap.ofObj(tank.getCapability()).cast();
+        }
+        return super.getHbmCapability(cap, side);
+    }
+    *///?}
 
     @Override
     public FluidTank[] getAllTanks() { return new FluidTank[] { tank }; }
@@ -136,7 +144,7 @@ public class MachineDrainBlockEntity extends BaseMachineBlockEntity implements I
 
         var hit = level.clip(new net.minecraft.world.level.ClipContext(start, end,
                 net.minecraft.world.level.ClipContext.Block.COLLIDER,
-                net.minecraft.world.level.ClipContext.Fluid.NONE, null));
+                net.minecraft.world.level.ClipContext.Fluid.NONE, (net.minecraft.world.entity.Entity) null));
 
         // Nur auf einer Oberseite bildet sich eine Pfuetze.
         if (hit.getType() != net.minecraft.world.phys.HitResult.Type.BLOCK) return;

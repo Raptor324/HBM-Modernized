@@ -311,8 +311,7 @@ public class GUIMachineTurbineGas extends GuiInfoScreen<MachineTurbineGasMenu> {
         RenderSystem.setShader(GameRenderer::getPositionTexShader);
         RenderSystem.setShaderTexture(0, TEXTURE);
         Matrix4f m = g.pose().last().pose();
-        BufferBuilder buf = Tesselator.getInstance().getBuilder();
-        buf.begin(VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_TEX);
+        BufferBuilder buf = com.hbm_m.platform.RenderHooks.beginTesselator(Tesselator.getInstance(), VertexFormat.Mode.TRIANGLES, DefaultVertexFormat.POSITION_TEX);
 
         // Dreieck 1: links unten -> Mitte -> (links oben | Ziel)
         vertex(buf, m, xDraw, yDraw + yDelta, xStart * var7, (yStart + yDelta) * var8);
@@ -329,14 +328,14 @@ public class GUIMachineTurbineGas extends GuiInfoScreen<MachineTurbineGasMenu> {
         }
         vertex(buf, m, xDraw + xTarget + xMid, yDraw - yTarget + yMid, (float) (xStart + xTarget + xMid) * var7, (float) (yStart - yTarget + yMid) * var8);
 
-        //? if < 1.21.1 {
-        Tesselator.getInstance().end();
-        //?} else {
-        /*com.mojang.blaze3d.vertex.BufferUploader.drawWithShader(buf.buildOrThrow());
-        *///?}
+        com.hbm_m.platform.RenderHooks.drawWithShader(buf);
     }
 
     private static void vertex(BufferBuilder buf, Matrix4f m, double x, double y, float u, float v) {
+        //? if < 1.21.1 {
         buf.vertex(m, (float) x, (float) y, 0F).uv(u, v).endVertex();
+        //?} else {
+        /*buf.addVertex(m, (float) x, (float) y, 0F).setUv(u, v);
+        *///?}
     }
 }

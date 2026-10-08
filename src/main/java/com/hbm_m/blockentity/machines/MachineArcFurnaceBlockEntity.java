@@ -1,5 +1,7 @@
 package com.hbm_m.blockentity.machines;
 
+import com.hbm_m.platform.StackNbt;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
@@ -291,7 +293,7 @@ public class MachineArcFurnaceBlockEntity extends BaseMachineBlockEntity impleme
             // add to existing stacks
             for (int i /* ingredient */ = 5; i < 25; i++) {
                 if (slot(i).isEmpty()) continue;
-                if (!ItemStack.isSameItemSameTags(slot(q), slot(i))) continue;
+                if (!StackNbt.sameItemSameTags(slot(q), slot(i))) continue;
                 int toMove = Math.min(Math.min(slot(i).getMaxStackSize() - slot(i).getCount(), slot(q).getCount()), max - slot(i).getCount());
                 if (toMove > 0) {
                     this.decrStackSize(q, toMove);
@@ -499,7 +501,41 @@ public class MachineArcFurnaceBlockEntity extends BaseMachineBlockEntity impleme
         if (sided != null) sided.invalidate();
         sided = null;
     }
-    //?}
+    //?} elif neoforge {
+    /*private com.hbm_m.platform.LazyCap<net.neoforged.neoforge.items.IItemHandler> sided;
+
+    @Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER && side != null) {
+            if (sided == null) sided = com.hbm_m.platform.LazyCap.of(() -> new net.neoforged.neoforge.items.IItemHandler() {
+                @Override public int getSlots() { return ACCESSIBLE.length; }
+                @Override public @NotNull ItemStack getStackInSlot(int s) { return inventory.getStackInSlot(ACCESSIBLE[s]); }
+                @Override public @NotNull ItemStack insertItem(int s, @NotNull ItemStack stack, boolean simulate) {
+                    int real = ACCESSIBLE[s];
+                    if (!canInsertItem(real, stack)) return stack;
+                    return inventory.insertItem(real, stack, simulate);
+                }
+                @Override public @NotNull ItemStack extractItem(int s, int amount, boolean simulate) {
+                    int real = ACCESSIBLE[s];
+                    ItemStack present = inventory.getStackInSlot(real);
+                    if (present.isEmpty() || !canExtractItem(real, present)) return ItemStack.EMPTY;
+                    return inventory.extractItem(real, amount, simulate);
+                }
+                @Override public int getSlotLimit(int s) { return inventory.getSlotLimit(ACCESSIBLE[s]); }
+                @Override public boolean isItemValid(int s, @NotNull ItemStack stack) { return canInsertItem(ACCESSIBLE[s], stack); }
+            });
+            return sided.cast();
+        }
+        return super.getHbmCapability(cap, side);
+    }
+
+    @Override
+    public void invalidateHbmCaps() {
+        super.invalidateHbmCaps();
+        if (sided != null) sided.invalidate();
+        sided = null;
+    }
+    *///?}
 
     // ── NBT ─────────────────────────────────────────────────────────────────
 

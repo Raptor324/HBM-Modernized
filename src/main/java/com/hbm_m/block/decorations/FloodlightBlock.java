@@ -100,4 +100,8 @@ public class FloodlightBlock extends BaseEntityBlock implements IToolable {
             world.sendBlockUpdated(pos, state, world.getBlockState(pos), 3);
         }
     }
+    //? if >= 1.21.1 {
+    /*public static final com.mojang.serialization.MapCodec<FloodlightBlock> CODEC = simpleCodec(FloodlightBlock::new);
+    @Override protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() { return CODEC; }
+    *///?}
 }

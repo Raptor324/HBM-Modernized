@@ -20,7 +20,7 @@ import net.minecraft.util.Mth;
  * hier laufen nur die Spulen - Drehung um die lokale X-Achse auf Hoehe 1,5, der Winkel wird wie
  * im Original modulo 15 genommen (die Spulen wiederholen sich alle 15 Grad).
  */
-public class FusionMhdtRenderer implements BlockEntityRenderer<FusionMhdtBlockEntity> {
+public class FusionMhdtRenderer implements com.hbm_m.client.render.HbmBerBounds<FusionMhdtBlockEntity> {
 
     private static final String OBJ = "models/block/machines/mhdt.obj";
 

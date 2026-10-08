@@ -1094,9 +1094,9 @@ public class ModBlocks {
             () -> new Block(BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0F, 12.0F).sound(SoundType.METAL).requiresCorrectToolForDrops()));
     public static final RegistrySupplier<Block> BLOCK_RED_COPPER = getIngotBlock(ModMaterials.RED_COPPER);
     public static final RegistrySupplier<Block> BLOCK_SCRAP = registerBlock("block_scrap",
-            () -> new net.minecraft.world.level.block.FallingBlock(BlockProps.copy(Blocks.SAND).strength(2.5F, 3.0F).sound(SoundType.GRAVEL)));
+            () -> com.hbm_m.platform.BlockHooks.fallingBlock(BlockProps.copy(Blocks.SAND).strength(2.5F, 3.0F).sound(SoundType.GRAVEL)));
     public static final RegistrySupplier<Block> BLOCK_ELECTRICAL_SCRAP = registerBlock("block_electrical_scrap",
-            () -> new net.minecraft.world.level.block.FallingBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(2.5F, 3.0F).sound(SoundType.METAL).requiresCorrectToolForDrops()));
+            () -> com.hbm_m.platform.BlockHooks.fallingBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(2.5F, 3.0F).sound(SoundType.METAL).requiresCorrectToolForDrops()));
     public static final RegistrySupplier<Block> BLOCK_STARMETAL = getIngotBlock(ModMaterials.STARMETAL);
 
     public static final RegistrySupplier<Block> DECO_TITANIUM = registerBlock("deco_titanium",
@@ -1126,10 +1126,10 @@ public class ModBlocks {
 
     /** R6c: 1:1 Balefire (BlockFire), kein Kreativ-Reiter. */
     public static final RegistrySupplier<Block> BALEFIRE = registerBlock("balefire",
-            () -> new com.hbm_m.block.bomb.BalefireBlock(BlockBehaviour.Properties.copy(Blocks.FIRE).lightLevel(s -> 15).noLootTable().sound(SoundType.STONE)));
+            () -> new com.hbm_m.block.bomb.BalefireBlock(BlockProps.copy(Blocks.FIRE).lightLevel(s -> 15).noLootTable().sound(SoundType.STONE)));
 
     public static final RegistrySupplier<Block> PLANT_DEAD = registerBlock("plant_dead",
-            () -> new com.hbm_m.block.generic.BlockDeadPlant(BlockProps.copy(Blocks.GRASS).strength(0.0F, 0.0F).sound(SoundType.GRASS).noCollission().instabreak().noOcclusion()));
+            () -> new com.hbm_m.block.generic.BlockDeadPlant(BlockProps.copy(com.hbm_m.platform.BlockHooks.shortGrass()).strength(0.0F, 0.0F).sound(SoundType.GRASS).noCollission().instabreak().noOcclusion()));
 
     /** R6b: 1:1 DecoPoleSatelliteReceiver. */
     public static final RegistrySupplier<Block> POLE_SATELLITE_RECEIVER = registerBlock("pole_satellite_receiver",
@@ -1559,7 +1559,7 @@ public class ModBlocks {
             () -> new com.hbm_m.block.generic.BlockUberConcrete(BlockProps.copy(Blocks.STONE).strength(150.0F, 600.0F).sound(SoundType.STONE).requiresCorrectToolForDrops()));
 
     public static final RegistrySupplier<Block> CONCRETE_SUPER_BROKEN = registerBlock("concrete_super_broken",
-            () -> new net.minecraft.world.level.block.FallingBlock(BlockProps.copy(Blocks.STONE).strength(10.0F, 12.0F).sound(SoundType.STONE).requiresCorrectToolForDrops()));
+            () -> com.hbm_m.platform.BlockHooks.fallingBlock(BlockProps.copy(Blocks.STONE).strength(10.0F, 12.0F).sound(SoundType.STONE).requiresCorrectToolForDrops()));
 
     public static final RegistrySupplier<Block> CONCRETE_SUPER_M0 = registerBlock("concrete_super_m0",
             () -> new Block(BlockProps.copy(Blocks.STONE).strength(5.0f, 4.0f).requiresCorrectToolForDrops()));
@@ -2233,7 +2233,7 @@ public class ModBlocks {
 
     /** Порт {@code ore_oil_sand} (песчаные нефтяные месторождения в пустынях). */
     public static final RegistrySupplier<Block> ORE_OIL_SAND = registerBlock("ore_oil_sand",
-            () -> new net.minecraft.world.level.block.FallingBlock(BlockProps.copy(Blocks.SAND).strength(0.5F, 0.6F).sound(SoundType.SAND)));
+            () -> com.hbm_m.platform.BlockHooks.fallingBlock(BlockProps.copy(Blocks.SAND).strength(0.5F, 0.6F).sound(SoundType.SAND)));
 
 
 
@@ -2677,9 +2677,9 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> DFC_STABILIZER = registerBlock("dfc_stabilizer",
             () -> new com.hbm_m.block.machines.dfc.DFCStabilizerBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0F, 6.0F).sound(SoundType.STONE)));
     public static final RegistrySupplier<Block> DIRT_DEAD = registerBlock("dirt_dead",
-            () -> new net.minecraft.world.level.block.FallingBlock(BlockProps.copy(Blocks.DIRT).strength(0.5F, 0.5F).sound(SoundType.GRAVEL)));
+            () -> com.hbm_m.platform.BlockHooks.fallingBlock(BlockProps.copy(Blocks.DIRT).strength(0.5F, 0.5F).sound(SoundType.GRAVEL)));
     public static final RegistrySupplier<Block> DIRT_OILY = registerBlock("dirt_oily",
-            () -> new net.minecraft.world.level.block.FallingBlock(BlockProps.copy(Blocks.DIRT).strength(0.5F, 0.5F).sound(SoundType.GRAVEL)));
+            () -> com.hbm_m.platform.BlockHooks.fallingBlock(BlockProps.copy(Blocks.DIRT).strength(0.5F, 0.5F).sound(SoundType.GRAVEL)));
     public static final RegistrySupplier<Block> DRONE_CRATE = registerBlock("drone_crate",
             () -> new com.hbm_m.block.machines.MachineDroneCrateBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(0.1F, 6.0F).sound(SoundType.STONE)));
     public static final RegistrySupplier<Block> DRONE_CRATE_PROVIDER = registerBlock("drone_crate_provider",
@@ -2722,7 +2722,7 @@ public class ModBlocks {
             () -> new com.hbm_m.block.machines.FieldDisturberBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0F, 120.0F).requiresCorrectToolForDrops().sound(SoundType.STONE)));
     /** R6c: 1:1 DigammaFlame. */
     public static final RegistrySupplier<Block> FIRE_DIGAMMA = registerBlock("fire_digamma",
-            () -> new com.hbm_m.block.bomb.DigammaBlocks.Flame(BlockBehaviour.Properties.copy(Blocks.FIRE).instabreak().lightLevel(s -> 15).noLootTable().noOcclusion().noCollission().sound(SoundType.STONE)));
+            () -> new com.hbm_m.block.bomb.DigammaBlocks.Flame(BlockProps.copy(Blocks.FIRE).instabreak().lightLevel(s -> 15).noLootTable().noOcclusion().noCollission().sound(SoundType.STONE)));
     /** R6c: 1:1 BlockFireworks. */
     public static final RegistrySupplier<Block> FIREWORKS = registerBlock("fireworks",
             () -> new com.hbm_m.block.bomb.FireworksBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(0.0F, 3.0F).sound(SoundType.STONE)));
@@ -2831,9 +2831,9 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> GLYPHID_SPAWNER = registerBlock("glyphid_spawner",
             () -> new com.hbm_m.block.generic.GlyphidSpawnerBlock(BlockBehaviour.Properties.of().mapColor(MapColor.STONE).strength(0.5F).sound(com.hbm_m.sound.ModSoundTypes.FLESH)));
     public static final RegistrySupplier<Block> GRAVEL_DIAMOND = registerBlock("gravel_diamond",
-            () -> new net.minecraft.world.level.block.FallingBlock(BlockProps.copy(Blocks.SAND).strength(0.6F, 0.6F).sound(SoundType.GRAVEL)));
+            () -> com.hbm_m.platform.BlockHooks.fallingBlock(BlockProps.copy(Blocks.SAND).strength(0.6F, 0.6F).sound(SoundType.GRAVEL)));
     public static final RegistrySupplier<Block> GRAVEL_OBSIDIAN = registerBlock("gravel_obsidian",
-            () -> new net.minecraft.world.level.block.FallingBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0F, 144.0F).sound(SoundType.GRAVEL).requiresCorrectToolForDrops()));
+            () -> com.hbm_m.platform.BlockHooks.fallingBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0F, 144.0F).sound(SoundType.GRAVEL).requiresCorrectToolForDrops()));
     /** R7b: 1:1 BlockHadronCoil. */
     public static final RegistrySupplier<Block> HADRON_COIL_ALLOY = registerBlock("hadron_coil_alloy",
             () -> new com.hbm_m.block.machines.HadronCoilBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(5.0F, 6.0F).sound(SoundType.METAL).requiresCorrectToolForDrops(), 10));
@@ -3025,7 +3025,7 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> MINE_NAVAL = registerBlock("mine_naval", () -> new com.hbm_m.block.bomb.LandmineBlock(BlockProps.copy(Blocks.IRON_BLOCK).noOcclusion().strength(1.0F, 1.0F).sound(SoundType.STONE), 2.5D, 1D));
     public static final RegistrySupplier<Block> MINE_SHRAP = registerBlock("mine_shrap", () -> new com.hbm_m.block.bomb.LandmineBlock(BlockProps.copy(Blocks.STONE).noOcclusion().strength(1.0F, 1.0F), 1.5D, 1D));
     public static final RegistrySupplier<Block> MOON_TURF = registerBlock("moon_turf",
-            () -> new net.minecraft.world.level.block.FallingBlock(BlockProps.copy(Blocks.SAND).strength(0.5F, 0.5F).sound(SoundType.SAND)));
+            () -> com.hbm_m.platform.BlockHooks.fallingBlock(BlockProps.copy(Blocks.SAND).strength(0.5F, 0.5F).sound(SoundType.SAND)));
     /** R6d: 1:1 BlockMush / BlockMushHuge. */
     public static final RegistrySupplier<Block> MUSH = registerBlock("mush",
             () -> new com.hbm_m.block.generic.R6dPlants.Mush(BlockProps.copy(Blocks.BROWN_MUSHROOM).instabreak().sound(SoundType.GRASS).lightLevel(s -> 7).randomTicks().noOcclusion().noCollission()));
@@ -3233,9 +3233,9 @@ public class ModBlocks {
     // reimplementing the original's fall()/onBlockAdded tick logic (vanilla's is equivalent).
     public static final RegistrySupplier<Block> SAND_BORON = registerBlock("sand_boron", () -> new com.hbm_m.block.generic.BlockHazardFalling(BlockProps.copy(Blocks.SAND)));
     public static final RegistrySupplier<Block> SAND_DIRTY = registerBlock("sand_dirty",
-            () -> new net.minecraft.world.level.block.FallingBlock(BlockProps.copy(Blocks.SAND).strength(0.5F, 0.5F).sound(SoundType.SAND)));
+            () -> com.hbm_m.platform.BlockHooks.fallingBlock(BlockProps.copy(Blocks.SAND).strength(0.5F, 0.5F).sound(SoundType.SAND)));
     public static final RegistrySupplier<Block> SAND_DIRTY_RED = registerBlock("sand_dirty_red",
-            () -> new net.minecraft.world.level.block.FallingBlock(BlockProps.copy(Blocks.SAND).strength(0.5F, 0.5F).sound(SoundType.SAND)));
+            () -> com.hbm_m.platform.BlockHooks.fallingBlock(BlockProps.copy(Blocks.SAND).strength(0.5F, 0.5F).sound(SoundType.SAND)));
     public static final RegistrySupplier<Block> SAND_LEAD = registerBlock("sand_lead", () -> new com.hbm_m.block.generic.BlockHazardFalling(BlockProps.copy(Blocks.SAND)));
     public static final RegistrySupplier<Block> SAND_POLONIUM = registerBlock("sand_polonium", () -> new com.hbm_m.block.generic.BlockHazardFalling(BlockProps.copy(Blocks.SAND)));
     public static final RegistrySupplier<Block> SAND_QUARTZ = registerBlock("sand_quartz", () -> new com.hbm_m.block.generic.BlockHazardFalling(BlockProps.copy(Blocks.SAND)));
@@ -3301,7 +3301,7 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> STEEL_SCAFFOLD_YELLOW = registerBlock("steel_scaffold_yellow",
             () -> new com.hbm_m.block.decorations.SteelScaffoldBlock(BlockProps.copy(Blocks.IRON_BLOCK).strength(5F, 9.0F).sound(SoundType.STONE).requiresCorrectToolForDrops().noOcclusion()));
     public static final RegistrySupplier<Block> STONE_CRACKED = registerBlock("stone_cracked",
-            () -> new net.minecraft.world.level.block.FallingBlock(BlockProps.copy(Blocks.STONE).strength(5.0F, 5.0F).sound(SoundType.STONE).requiresCorrectToolForDrops()));
+            () -> com.hbm_m.platform.BlockHooks.fallingBlock(BlockProps.copy(Blocks.STONE).strength(5.0F, 5.0F).sound(SoundType.STONE).requiresCorrectToolForDrops()));
     public static final RegistrySupplier<Block> STONE_DEPTH = registerBlock("stone_depth",
             () -> new com.hbm_m.block.nature.DepthOreBlock(BlockProps.copy(Blocks.STONE).sound(SoundType.STONE).strength(-1.0F, 6.0F)));
     public static final RegistrySupplier<Block> STONE_DEPTH_NETHER = registerBlock("stone_depth_nether",
@@ -3820,7 +3820,7 @@ public class ModBlocks {
 
     // ── Welt-Fluessigkeiten (Original: ModBlocks.*_block + *_fluid, kein Item) ────────────────
     private static BlockBehaviour.Properties fluidProps(boolean lava) {
-        return BlockBehaviour.Properties.copy(lava ? Blocks.LAVA : Blocks.WATER).strength(100F, 500F).noLootTable();
+        return BlockProps.copy(lava ? Blocks.LAVA : Blocks.WATER).strength(100F, 500F).noLootTable();
     }
     public static final RegistrySupplier<LiquidBlock> MUD_BLOCK = BLOCKS.register("mud_block",
             () -> new com.hbm_m.block.fluid.MudBlock(() -> com.hbm_m.inventory.fluid.WorldFluids.MUD.getSource(), fluidProps(false).lightLevel(s -> 5)));
@@ -3839,10 +3839,10 @@ public class ModBlocks {
                     .setDamage((level, e) -> com.hbm_m.damagesource.ModDamageSources.acid(level), 5F));
     /** Original {@code corium_block} = {@code CoriumFinite} (5 Quanten, Tickrate 30). */
     public static final RegistrySupplier<Block> CORIUM_BLOCK = BLOCKS.register("corium_block",
-            () -> new com.hbm_m.block.fluid.CoriumFiniteBlock(BlockBehaviour.Properties.copy(Blocks.LAVA).strength(100F, 500F).lightLevel(s -> 10).noOcclusion().noLootTable().randomTicks()));
+            () -> new com.hbm_m.block.fluid.CoriumFiniteBlock(BlockProps.copy(Blocks.LAVA).strength(100F, 500F).lightLevel(s -> 10).noOcclusion().noLootTable().randomTicks()));
     /** Original {@code concrete_liquid} = {@code GenericFiniteFluid} mit 4 Quanten, Material Stein. */
     public static final RegistrySupplier<Block> CONCRETE_LIQUID = BLOCKS.register("concrete_liquid",
-            () -> new com.hbm_m.block.fluid.FiniteFluidBlock(BlockBehaviour.Properties.copy(Blocks.STONE).strength(100F, 500F).noOcclusion().noLootTable(), 4, 20));
+            () -> new com.hbm_m.block.fluid.FiniteFluidBlock(BlockProps.copy(Blocks.STONE).strength(100F, 500F).noOcclusion().noLootTable(), 4, 20));
 
     // ── Basalterze (Original: ore_basalt, BlockOreBasalt mit EnumBasaltOreType) ─────────────
     public static final RegistrySupplier<Block> ORE_BASALT_SULFUR = registerBlock("ore_basalt_sulfur",
@@ -4081,13 +4081,13 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> NTM_DIRT = registerBlock("ntm_dirt",
             () -> new com.hbm_m.block.generic.BlockDirtHbm(BlockProps.copy(Blocks.DIRT).strength(0.5F, 0.5F).sound(SoundType.GRAVEL), false, true));
     public static final RegistrySupplier<Block> PLANT_DEAD_GRASS = registerBlock("plant_dead_grass",
-            () -> new com.hbm_m.block.generic.BlockDeadPlant(BlockProps.copy(Blocks.GRASS).strength(0.0F, 0.0F).sound(SoundType.GRASS).noCollission().instabreak().noOcclusion()));
+            () -> new com.hbm_m.block.generic.BlockDeadPlant(BlockProps.copy(com.hbm_m.platform.BlockHooks.shortGrass()).strength(0.0F, 0.0F).sound(SoundType.GRASS).noCollission().instabreak().noOcclusion()));
     public static final RegistrySupplier<Block> PLANT_DEAD_FLOWER = registerBlock("plant_dead_flower",
-            () -> new com.hbm_m.block.generic.BlockDeadPlant(BlockProps.copy(Blocks.GRASS).strength(0.0F, 0.0F).sound(SoundType.GRASS).noCollission().instabreak().noOcclusion()));
+            () -> new com.hbm_m.block.generic.BlockDeadPlant(BlockProps.copy(com.hbm_m.platform.BlockHooks.shortGrass()).strength(0.0F, 0.0F).sound(SoundType.GRASS).noCollission().instabreak().noOcclusion()));
     public static final RegistrySupplier<Block> PLANT_DEAD_BIGFLOWER = registerBlock("plant_dead_bigflower",
-            () -> new com.hbm_m.block.generic.BlockDeadPlant(BlockProps.copy(Blocks.GRASS).strength(0.0F, 0.0F).sound(SoundType.GRASS).noCollission().instabreak().noOcclusion()));
+            () -> new com.hbm_m.block.generic.BlockDeadPlant(BlockProps.copy(com.hbm_m.platform.BlockHooks.shortGrass()).strength(0.0F, 0.0F).sound(SoundType.GRASS).noCollission().instabreak().noOcclusion()));
     public static final RegistrySupplier<Block> PLANT_DEAD_FERN = registerBlock("plant_dead_fern",
-            () -> new com.hbm_m.block.generic.BlockDeadPlant(BlockProps.copy(Blocks.GRASS).strength(0.0F, 0.0F).sound(SoundType.GRASS).noCollission().instabreak().noOcclusion()));
+            () -> new com.hbm_m.block.generic.BlockDeadPlant(BlockProps.copy(com.hbm_m.platform.BlockHooks.shortGrass()).strength(0.0F, 0.0F).sound(SoundType.GRASS).noCollission().instabreak().noOcclusion()));
     public static final RegistrySupplier<Block> STONE_BIOME_DESERT = registerBlock("stone_biome_desert",
             () -> new com.hbm_m.block.generic.BlockBiomeStone(BlockProps.copy(Blocks.STONE).strength(5.0F, 6.0F).sound(SoundType.STONE).requiresCorrectToolForDrops()));
     public static final RegistrySupplier<Block> STONE_BIOME_WOODLAND = registerBlock("stone_biome_woodland",
@@ -4145,31 +4145,31 @@ public class ModBlocks {
     public static final RegistrySupplier<Block> DUCRETE_SMOOTH = registerBlock("ducrete_smooth",
             () -> new com.hbm_m.block.generic.BlockNoSpawn(BlockProps.copy(Blocks.STONE).strength(20.0F, 300.0F).sound(SoundType.STONE).requiresCorrectToolForDrops()));
     public static final RegistrySupplier<Block> CONCRETE_SMOOTH_STAIRS = registerBlock("concrete_smooth_stairs",
-            () -> new net.minecraft.world.level.block.StairBlock(() -> ModBlocks.CONCRETE_SMOOTH.get().defaultBlockState(), BlockBehaviour.Properties.copy(ModBlocks.CONCRETE_SMOOTH.get())));
+            () -> com.hbm_m.platform.BlockHooks.stairs(() -> ModBlocks.CONCRETE_SMOOTH.get().defaultBlockState(), BlockProps.copy(ModBlocks.CONCRETE_SMOOTH.get())));
     public static final RegistrySupplier<Block> DUCRETE_SMOOTH_STAIRS = registerBlock("ducrete_smooth_stairs",
-            () -> new net.minecraft.world.level.block.StairBlock(() -> ModBlocks.DUCRETE_SMOOTH.get().defaultBlockState(), BlockBehaviour.Properties.copy(ModBlocks.DUCRETE_SMOOTH.get())));
+            () -> com.hbm_m.platform.BlockHooks.stairs(() -> ModBlocks.DUCRETE_SMOOTH.get().defaultBlockState(), BlockProps.copy(ModBlocks.DUCRETE_SMOOTH.get())));
     public static final RegistrySupplier<Block> BRICK_ASBESTOS_STAIRS = registerBlock("brick_asbestos_stairs",
-            () -> new net.minecraft.world.level.block.StairBlock(() -> ModBlocks.BRICK_ASBESTOS.get().defaultBlockState(), BlockBehaviour.Properties.copy(ModBlocks.BRICK_ASBESTOS.get()).strength(5.0F, 600.0F)));
+            () -> com.hbm_m.platform.BlockHooks.stairs(() -> ModBlocks.BRICK_ASBESTOS.get().defaultBlockState(), BlockProps.copy(ModBlocks.BRICK_ASBESTOS.get()).strength(5.0F, 600.0F)));
     /** Original ducrete_stairs (BlockGenericStairs(ducrete)). */
     public static final RegistrySupplier<Block> DUCRETE_STAIRS = registerBlock("ducrete_stairs",
-            () -> new net.minecraft.world.level.block.StairBlock(() -> ModBlocks.DUCRETE.get().defaultBlockState(), BlockBehaviour.Properties.copy(ModBlocks.DUCRETE.get())));
+            () -> com.hbm_m.platform.BlockHooks.stairs(() -> ModBlocks.DUCRETE.get().defaultBlockState(), BlockProps.copy(ModBlocks.DUCRETE.get())));
     /** Original brick_slab Meta 5 (brick_asbestos) - die uebrigen Metas sind die *_slab-Bloecke. */
     public static final RegistrySupplier<Block> BRICK_ASBESTOS_SLAB = registerBlock("brick_asbestos_slab",
-            () -> new net.minecraft.world.level.block.SlabBlock(BlockBehaviour.Properties.copy(ModBlocks.BRICK_ASBESTOS.get())));
+            () -> new net.minecraft.world.level.block.SlabBlock(BlockProps.copy(ModBlocks.BRICK_ASBESTOS.get())));
     /** Original pink_slab/pink_double_slab (BlockPinkSlab) und pink_stairs; Original ohne Creative-Tab. */
     public static final RegistrySupplier<Block> PINK_SLAB = registerBlock("pink_slab",
-            () -> new net.minecraft.world.level.block.SlabBlock(BlockBehaviour.Properties.copy(ModBlocks.PINK_PLANKS.get())));
+            () -> new net.minecraft.world.level.block.SlabBlock(BlockProps.copy(ModBlocks.PINK_PLANKS.get())));
     /** Original obj_tester (TestObjTester): Testblock ohne Creative-Tab, Hardness 2.5 / Resistance 10. */
     public static final RegistrySupplier<Block> OBJ_TESTER = registerBlock("obj_tester",
             () -> new com.hbm_m.block.generic.TestObjTesterBlock(BlockProps.copy(Blocks.IRON_BLOCK).noOcclusion().strength(2.5F, 6.0F).sound(SoundType.STONE)));
     public static final RegistrySupplier<Block> PINK_STAIRS = registerBlock("pink_stairs",
-            () -> new net.minecraft.world.level.block.StairBlock(() -> ModBlocks.PINK_PLANKS.get().defaultBlockState(), BlockBehaviour.Properties.copy(ModBlocks.PINK_PLANKS.get())));
+            () -> com.hbm_m.platform.BlockHooks.stairs(() -> ModBlocks.PINK_PLANKS.get().defaultBlockState(), BlockProps.copy(ModBlocks.PINK_PLANKS.get())));
     public static final RegistrySupplier<Block> LIGHTSTONE_TILE_STAIRS = registerBlock("lightstone_tile_stairs",
-            () -> new net.minecraft.world.level.block.StairBlock(() -> ModBlocks.LIGHTSTONE_TILE.get().defaultBlockState(), BlockBehaviour.Properties.copy(ModBlocks.LIGHTSTONE_TILE.get())));
+            () -> com.hbm_m.platform.BlockHooks.stairs(() -> ModBlocks.LIGHTSTONE_TILE.get().defaultBlockState(), BlockProps.copy(ModBlocks.LIGHTSTONE_TILE.get())));
     public static final RegistrySupplier<Block> STONES_SLAB_TILE = registerBlock("stones_slab_tile",
-            () -> new net.minecraft.world.level.block.SlabBlock(BlockBehaviour.Properties.copy(ModBlocks.LIGHTSTONE_TILE.get())));
+            () -> new net.minecraft.world.level.block.SlabBlock(BlockProps.copy(ModBlocks.LIGHTSTONE_TILE.get())));
     public static final RegistrySupplier<Block> STONES_SLAB_BRICKS = registerBlock("stones_slab_bricks",
-            () -> new net.minecraft.world.level.block.SlabBlock(BlockBehaviour.Properties.copy(ModBlocks.LIGHTSTONE_BRICKS.get())));
+            () -> new net.minecraft.world.level.block.SlabBlock(BlockProps.copy(ModBlocks.LIGHTSTONE_BRICKS.get())));
     public static final RegistrySupplier<Block> BLOCK_FOAM = registerBlock("block_foam",
             () -> new Block(BlockProps.copy(Blocks.SNOW_BLOCK).strength(0.5F, 0.0F).sound(SoundType.SNOW)));
     public static final RegistrySupplier<Block> FOAM_LAYER = registerBlock("foam_layer",

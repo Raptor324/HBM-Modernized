@@ -50,8 +50,7 @@ public final class RenderOverhead {
         RenderSystem.defaultBlendFunc();
         RenderSystem.setShader(GameRenderer::getPositionColorShader);
         Tesselator tess = Tesselator.getInstance();
-        BufferBuilder buf = tess.getBuilder();
-        buf.begin(VertexFormat.Mode.DEBUG_LINES, DefaultVertexFormat.POSITION_COLOR);
+        BufferBuilder buf = com.hbm_m.platform.RenderHooks.beginTesselator(tess, VertexFormat.Mode.DEBUG_LINES, DefaultVertexFormat.POSITION_COLOR);
         Matrix4f m = pose.last().pose();
 
         Iterator<Entry<BlockPos, Marker>> it = markers.entrySet().iterator();
@@ -68,8 +67,13 @@ public final class RenderOverhead {
                     { x1, y0, z0, x1, y0, z1 }, { x1, y1, z1, x1, y1, z0 }, { x1, y1, z1, x1, y0, z1 }, { x0, y1, z0, x0, y1, z1 },
                     { x0, y1, z1, x0, y0, z1 }, { x0, y1, z1, x1, y1, z1 }, { x0, y0, z1, x1, y0, z1 }, { x0, y0, z0, x0, y0, z1 } };
             for (float[] s : l) {
+                //? if < 1.21.1 {
                 buf.vertex(m, s[0], s[1], s[2]).color(r, g, b, 255).endVertex();
                 buf.vertex(m, s[3], s[4], s[5]).color(r, g, b, 255).endVertex();
+                //?} else {
+                /*buf.addVertex(m, s[0], s[1], s[2]).setColor(r, g, b, 255);
+                buf.addVertex(m, s[3], s[4], s[5]).setColor(r, g, b, 255);
+                *///?}
             }
             tagList.add(entry);
 
@@ -82,7 +86,7 @@ public final class RenderOverhead {
                 if (new Vec3(x - aX, y - aY, z - aZ).length() > mk.maxDist) it.remove();
             }
         }
-        tess.end();
+        com.hbm_m.platform.RenderHooks.drawWithShader(buf);
         RenderSystem.enableDepthTest();
 
         Vec3 look = mc.player.getViewVector(1F);

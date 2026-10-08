@@ -1,5 +1,7 @@
 package com.hbm_m.hazard;
 
+import com.hbm_m.platform.StackNbt;
+
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -92,7 +94,7 @@ public final class HazardSystem {
         }
 
         List<HazardEntry> base = getItemHazards(stack);
-        if (trafos.isEmpty() || !stack.hasTag()) return base;
+        if (trafos.isEmpty() || !StackNbt.has(stack)) return base;
 
         // transformPre (alle Originale leer) laeuft vor den Regeln, transformPost danach - wie im Original.
         List<HazardEntry> entries = new ArrayList<>(base);

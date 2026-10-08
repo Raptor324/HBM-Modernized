@@ -92,7 +92,11 @@ public final class R6dBlocks {
 
     // ================================================================================================
 
+    //? if < 1.21.1 {
     public static final BlockSetType STEEL_TRAPDOOR_SET = new BlockSetType("hbm_m_steel", true, net.minecraft.world.level.block.SoundType.METAL,
+    //?} else {
+    /*public static final BlockSetType STEEL_TRAPDOOR_SET = new BlockSetType("hbm_m_steel", true, true, true, BlockSetType.PressurePlateSensitivity.EVERYTHING, net.minecraft.world.level.block.SoundType.METAL,
+    *///?}
             SoundEvents.WOODEN_DOOR_CLOSE, SoundEvents.WOODEN_DOOR_OPEN, SoundEvents.WOODEN_DOOR_CLOSE, SoundEvents.WOODEN_DOOR_OPEN,
             SoundEvents.METAL_PRESSURE_PLATE_CLICK_OFF, SoundEvents.METAL_PRESSURE_PLATE_CLICK_ON, SoundEvents.STONE_BUTTON_CLICK_OFF, SoundEvents.STONE_BUTTON_CLICK_ON);
 
@@ -101,7 +105,11 @@ public final class R6dBlocks {
      * (Tuergeraeusch 1003). Offen ueber einer Leiter wird sie selbst zur Leiter mit leiterduenner Hitbox.
      */
     public static class SteelTrapdoor extends TrapDoorBlock {
+        //? if < 1.21.1 {
         public SteelTrapdoor(Properties p) { super(p, STEEL_TRAPDOOR_SET); }
+        //?} else {
+        /*public SteelTrapdoor(Properties p) { super(STEEL_TRAPDOOR_SET, p); }
+        *///?}
 
         @Override
         public boolean isLadder(BlockState state, LevelReader world, BlockPos pos, LivingEntity entity) {
@@ -127,13 +135,19 @@ public final class R6dBlocks {
         //? if < 1.21.1 {
         @Override
         public InteractionResult use(BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        //?} else {
+        /*@Override
+        protected net.minecraft.world.ItemInteractionResult useItemOn(net.minecraft.world.item.ItemStack hbmHeld, BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+            return com.hbm_m.platform.BlockUseHooks.item(hbmUse(state, world, pos, player, hand, hit));
+        }
+        private InteractionResult hbmUse(BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        *///?}
             state = state.cycle(OPEN);
             world.setBlock(pos, state, 2);
             if (state.getValue(WATERLOGGED)) world.scheduleTick(pos, net.minecraft.world.level.material.Fluids.WATER, net.minecraft.world.level.material.Fluids.WATER.getTickDelay(world));
             world.playSound(player, pos, state.getValue(OPEN) ? SoundEvents.WOODEN_DOOR_OPEN : SoundEvents.WOODEN_DOOR_CLOSE, SoundSource.BLOCKS, 1.0F, world.random.nextFloat() * 0.1F + 0.9F);
             return InteractionResult.sidedSuccess(world.isClientSide);
         }
-        //?}
     }
 
     // ================================================================================================

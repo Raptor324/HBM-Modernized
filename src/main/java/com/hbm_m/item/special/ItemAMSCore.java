@@ -27,6 +27,9 @@ public class ItemAMSCore extends Item implements ITooltipProvider {
         this.powerBase = powerBase;
         this.heatBase = heatBase;
         this.fuelBase = fuelBase;
+        //? if >= 1.21.1 {
+        /*com.hbm_m.platform.ItemComponentHooks.deferRarity(this, this::hbmRarity);
+        *///?}
     }
 
     public static long getPowerBase(ItemStack stack) {
@@ -77,8 +80,12 @@ public class ItemAMSCore extends Item implements ITooltipProvider {
         }
     }
 
+    //? if < 1.21.1 {
     @Override
     public Rarity getRarity(ItemStack stack) {
+    //?} else {
+    /*private Rarity hbmRarity() {
+    *///?}
         return this == ModItems.AMS_CORE_THINGY.get() ? Rarity.EPIC : Rarity.UNCOMMON;
     }
 

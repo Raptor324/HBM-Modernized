@@ -165,7 +165,7 @@ public class FluidDuctBlockEntity extends BaseHbmBlockEntity implements IFluidPi
         }
     }
 
-    //? if forge {
+    //? if forge || neoforge {
     @Override
     public void onLoad() {
         super.onLoad();
@@ -212,7 +212,7 @@ public class FluidDuctBlockEntity extends BaseHbmBlockEntity implements IFluidPi
         super.setRemoved();
     }
 
-    //? if forge {
+    //? if forge || neoforge {
     @Override
     public void onChunkUnloaded() {
         if (level instanceof ServerLevel serverLevel && node != null && !node.isExpired()) {
@@ -353,7 +353,7 @@ public class FluidDuctBlockEntity extends BaseHbmBlockEntity implements IFluidPi
      */
     private void refreshClientTintMesh() {
         if (level == null || !level.isClientSide) return;
-        //? if forge {
+        //? if forge || neoforge {
         requestModelDataUpdate();
          //?}
         level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), Block.UPDATE_IMMEDIATE);

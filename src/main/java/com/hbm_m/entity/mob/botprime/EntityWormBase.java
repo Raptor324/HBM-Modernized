@@ -188,8 +188,14 @@ public abstract class EntityWormBase extends PathfinderMob {
                                          @NotNull net.minecraft.world.entity.EntityDimensions size) {
         return size.height * 0.5F;
     }
-    //?}
-    // Auf 1.21 gibt es getStandingEyeHeight nicht mehr - die Augenhoehe kommt aus EntityDimensions.
+    //?} else {
+    /*// Auf 1.21 gibt es getStandingEyeHeight nicht mehr - die Augenhoehe kommt aus EntityDimensions.
+    @Override
+    public net.minecraft.world.entity.EntityDimensions getDefaultDimensions(net.minecraft.world.entity.Pose pose) {
+        net.minecraft.world.entity.EntityDimensions size = super.getDefaultDimensions(pose);
+        return size.withEyeHeight(size.height() * 0.5F);
+    }
+    *///?}
 
     protected boolean isCourseTraversable() {
         return this.canFly || this.isInWall();

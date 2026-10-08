@@ -63,7 +63,7 @@ public class GUIScreenGuide extends Screen {
 
     @Override
     public void render(GuiGraphics g, int mouseX, int mouseY, float f) {
-        this.renderBackground(g);
+        com.hbm_m.client.GuiCompat.renderBackground(this, g, mouseX, mouseY, f);
         this.drawGuiContainerBackgroundLayer(g, f, mouseX, mouseY);
         this.drawGuiContainerForegroundLayer(g, mouseX, mouseY);
     }

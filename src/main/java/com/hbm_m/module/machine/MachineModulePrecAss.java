@@ -1,5 +1,7 @@
 package com.hbm_m.module.machine;
 
+import com.hbm_m.platform.StackNbt;
+
 import java.util.List;
 
 import org.jetbrains.annotations.Nullable;
@@ -105,7 +107,7 @@ public class MachineModulePrecAss extends MachineModuleBase<PrecAssRecipe> {
             if (output.possibleMultiOutput()) return false; // output slot needs to be empty to decide on multi outputs
             ItemStack single = output.getSingle();
             if (single == null) return false;
-            if (!ItemStack.isSameItemSameTags(stack, single)) return false;
+            if (!StackNbt.sameItemSameTags(stack, single)) return false;
             if (stack.getCount() + single.getCount() > stack.getMaxStackSize()) return false;
         }
         if (!recipe.getFluidOutputs().isEmpty() && recipe.getFluidOutputs().get(0).amount() + outputTank.getFill() > outputTank.getMaxFill()) return false;

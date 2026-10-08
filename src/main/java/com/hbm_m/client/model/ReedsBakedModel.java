@@ -22,9 +22,15 @@ import net.minecraft.world.inventory.InventoryMenu;
 import net.minecraft.world.level.BlockAndTintGetter;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
+//? if forge {
 import net.minecraftforge.client.model.BakedModelWrapper;
 import net.minecraftforge.client.model.data.ModelData;
 import net.minecraftforge.client.model.data.ModelProperty;
+//?} else {
+/*import net.neoforged.neoforge.client.model.BakedModelWrapper;
+import net.neoforged.neoforge.client.model.data.ModelData;
+import net.neoforged.neoforge.client.model.data.ModelProperty;
+*///?}
 
 /**
  * 1:1 {@code RenderReeds}: das Schilf zeichnet sich von der Wasseroberflaeche bis zum Grund - oben {@code reeds_top},
@@ -91,8 +97,14 @@ public class ReedsBakedModel extends BakedModelWrapper<BakedModel> {
             data[o + 1] = Float.floatToRawIntBits((float) v[i][1]);
             data[o + 2] = Float.floatToRawIntBits((float) v[i][2]);
             data[o + 3] = color;
+            //? if < 1.21.1 {
             data[o + 4] = Float.floatToRawIntBits(icon.getU(v[i][3]));
             data[o + 5] = Float.floatToRawIntBits(icon.getV(v[i][4]));
+            //?} else {
+            /*// 1.21.1: getU/getV erwarten 0..1 statt 0..16
+            data[o + 4] = Float.floatToRawIntBits(icon.getU((float) (v[i][3] / 16.0D)));
+            data[o + 5] = Float.floatToRawIntBits(icon.getV((float) (v[i][4] / 16.0D)));
+            *///?}
             data[o + 6] = 0;
             data[o + 7] = 0x7F00; // Normal nach oben
         }

@@ -116,7 +116,11 @@ public class BlockWandLoot extends BaseEntityBlock implements ILookOverlay, IToo
     }
 
     @Override
+    //? if < 1.21.1 {
     public void appendHoverText(ItemStack stack, @Nullable BlockGetter level, List<Component> list, TooltipFlag flag) {
+    //?} else {
+    /*public void appendHoverText(ItemStack stack, net.minecraft.world.item.Item.TooltipContext hbmTooltipCtx, List<Component> list, TooltipFlag flag) {
+    *///?}
         list.add(Component.literal("Define loot crates/piles in .nbt structures"));
         list.add(Component.literal("Use screwdriver to increase/decrease minimum loot").withStyle(ChatFormatting.GOLD));
         list.add(Component.literal("Use hand drill to increase/decrease maximum loot").withStyle(ChatFormatting.GOLD));
@@ -127,6 +131,13 @@ public class BlockWandLoot extends BaseEntityBlock implements ILookOverlay, IToo
     //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+    //?} else {
+    /*@Override
+    protected net.minecraft.world.ItemInteractionResult useItemOn(net.minecraft.world.item.ItemStack hbmHeld, BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        return com.hbm_m.platform.BlockUseHooks.item(hbmUse(state, world, pos, player, hand, hit));
+    }
+    private InteractionResult hbmUse(BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+    *///?}
         if (!(world.getBlockEntity(pos) instanceof WandLootBlockEntity loot)) return InteractionResult.PASS;
 
         ItemStack held = player.getItemInHand(hand);
@@ -159,7 +170,6 @@ public class BlockWandLoot extends BaseEntityBlock implements ILookOverlay, IToo
 
         return InteractionResult.PASS;
     }
-    //?}
 
     @Nullable
     private Block getLootableBlock(Level world, BlockPos pos, ItemStack stack) {
@@ -240,4 +250,8 @@ public class BlockWandLoot extends BaseEntityBlock implements ILookOverlay, IToo
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
         return level.isClientSide ? null : createTickerHelper(type, ModBlockEntities.WAND_LOOT.get(), WandLootBlockEntity::tick);
     }
+    //? if >= 1.21.1 {
+    /*public static final com.mojang.serialization.MapCodec<BlockWandLoot> CODEC = simpleCodec(BlockWandLoot::new);
+    @Override protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() { return CODEC; }
+    *///?}
 }

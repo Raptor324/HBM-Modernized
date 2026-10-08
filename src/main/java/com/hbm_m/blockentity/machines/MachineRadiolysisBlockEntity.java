@@ -1,5 +1,9 @@
 package com.hbm_m.blockentity.machines;
 
+import com.hbm_m.platform.PlatformHooks;
+
+import com.hbm_m.platform.StackNbt;
+
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -178,7 +182,7 @@ public class MachineRadiolysisBlockEntity extends BaseMachineBlockEntity impleme
         ItemStack in = inventory.getStackInSlot(SLOT_IRRADIATE_IN);
         if (in.isEmpty()) return;
 
-        if (in.getItem().isEdible() && in.getItem() != com.hbm_m.item.ModItems.PANCAKE.get()) {
+        if (PlatformHooks.isEdible(in.getItem()) && in.getItem() != com.hbm_m.item.ModItems.PANCAKE.get()) {
             in = in.copy();
             in.shrink(1);
             inventory.setStackInSlot(SLOT_IRRADIATE_IN, in);
@@ -189,7 +193,7 @@ public class MachineRadiolysisBlockEntity extends BaseMachineBlockEntity impleme
         in = inventory.getStackInSlot(SLOT_IRRADIATE_IN);
         ItemStack output = in.copy();
         output.setCount(1);
-        output.removeTagKey("ntmContagion");
+        StackNbt.removeKey(output, "ntmContagion");
 
         ItemStack out = inventory.getStackInSlot(SLOT_IRRADIATE_OUT);
         if (out.isEmpty()) {
@@ -203,14 +207,14 @@ public class MachineRadiolysisBlockEntity extends BaseMachineBlockEntity impleme
             inventory.setStackInSlot(SLOT_IRRADIATE_IN, rest);
             ItemStack grown = out.copy();
             grown.grow(1);
-            grown.removeTagKey("ntmContagion");
+            StackNbt.removeKey(grown, "ntmContagion");
             inventory.setStackInSlot(SLOT_IRRADIATE_OUT, grown);
         }
     }
 
     private boolean checkIfValid() {
         ItemStack in = inventory.getStackInSlot(SLOT_IRRADIATE_IN);
-        return !in.isEmpty() && in.hasTag() && in.getTag().getBoolean("ntmContagion");
+        return !in.isEmpty() && StackNbt.has(in) && StackNbt.read(in).getBoolean("ntmContagion");
     }
 
     private boolean hasSpace(int left, int right) {
@@ -320,5 +324,25 @@ public class MachineRadiolysisBlockEntity extends BaseMachineBlockEntity impleme
         super.invalidateCaps();
         sidedItems.invalidate();
     }
-    //?}
+    //?} elif neoforge {
+    /*/^* Original {@code ISidedInventory}: Slots {0-9, 12, 13}; Pellets und Bestrahlgut hinein, verbrauchte Pellets und Ergebnis heraus. ^/
+    private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
+            new com.hbm_m.blockentity.SidedItemAccess.Rules() {
+                @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return new int[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 12, 13 }; }
+                @Override public boolean canInsert(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return slot == 12 || (slot < 10 && stack.getItem() instanceof com.hbm_m.item.machine.ItemRTGPellet); }
+                @Override public boolean canExtract(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return (slot < 10 && stack.getItem() instanceof com.hbm_m.item.machine.ItemRTGPelletDepleted) || slot == 13; }
+            });
+
+    @Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER && side != null) return sidedItems.get(side).cast();
+        return super.getHbmCapability(cap, side);
+    }
+
+    @Override
+    public void invalidateHbmCaps() {
+        super.invalidateHbmCaps();
+        sidedItems.invalidate();
+    }
+    *///?}
 }

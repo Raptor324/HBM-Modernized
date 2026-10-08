@@ -1,5 +1,7 @@
 package com.hbm_m.client.render;
 
+import com.hbm_m.platform.StackNbt;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -51,7 +53,7 @@ public final class ConveyorWandPreview {
     }
 
     public static void update(ItemConveyorWand wand, ItemStack stack, Level world, Player player) {
-        if (!stack.hasTag()) {
+        if (!StackNbt.has(stack)) {
             clear();
             return;
         }
@@ -78,7 +80,7 @@ public final class ConveyorWandPreview {
         lastYaw = player.getYRot();
         lastSide = side;
 
-        CompoundTag nbt = stack.getTag();
+        CompoundTag nbt = StackNbt.read(stack);
         BlockPos start = new BlockPos(nbt.getInt("x"), nbt.getInt("y"), nbt.getInt("z"));
         Direction sSide = Direction.from3DDataValue(nbt.getInt("side"));
         int count = nbt.getInt("count");
@@ -118,12 +120,20 @@ public final class ConveyorWandPreview {
             for (Direction d : Direction.values()) {
                 rand.setSeed(42L);
                 for (BakedQuad q : model.getQuads(e.getValue(), d, rand)) {
+                    //? if < 1.21.1 {
                     consumer.putBulkData(pose, q, r, g, b, LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY);
+                    //?} else {
+                    /*consumer.putBulkData(pose, q, r, g, b, 1.0F, LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY);
+                    *///?}
                 }
             }
             rand.setSeed(42L);
             for (BakedQuad q : model.getQuads(e.getValue(), null, rand)) {
+                //? if < 1.21.1 {
                 consumer.putBulkData(pose, q, r, g, b, LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY);
+                //?} else {
+                /*consumer.putBulkData(pose, q, r, g, b, 1.0F, LightTexture.FULL_BRIGHT, OverlayTexture.NO_OVERLAY);
+                *///?}
             }
             poseStack.popPose();
         }

@@ -14,7 +14,9 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
+//? if < 1.21.1 {
 import net.minecraft.world.level.pathfinder.BlockPathTypes;
+//?}
 
 /**
  * 1:1 {@code EntityBlockSpider} ({@code entity_taintcrawler}): ein Block auf acht Beinen. {@link #makeBlock} setzt den
@@ -26,7 +28,11 @@ public class EntityBlockSpider extends Monster {
 
     public EntityBlockSpider(EntityType<? extends EntityBlockSpider> type, Level world) {
         super(type, world);
+        //? if < 1.21.1 {
         this.setPathfindingMalus(BlockPathTypes.WATER, -1.0F);
+        //?} else {
+        /*this.setPathfindingMalus(net.minecraft.world.level.pathfinder.PathType.WATER, -1.0F);
+        *///?}
     }
 
     @Override
@@ -41,12 +47,21 @@ public class EntityBlockSpider extends Monster {
                 .add(Attributes.MOVEMENT_SPEED, 1F);
     }
 
+    //? if < 1.21.1 {
     @Override
     protected void defineSynchedData() {
         super.defineSynchedData();
         // Original: Block-ID 1 (Stein), Meta 0
         this.entityData.define(BLOCK, Block.getId(Blocks.STONE.defaultBlockState()));
     }
+    //?} else {
+    /*@Override
+    protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        // Original: Block-ID 1 (Stein), Meta 0
+        builder.define(BLOCK, Block.getId(Blocks.STONE.defaultBlockState()));
+    }
+    *///?}
 
     public BlockState getBlock() {
         return Block.stateById(this.entityData.get(BLOCK));

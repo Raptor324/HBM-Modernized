@@ -17,7 +17,7 @@ public class ItemParticleCapsule extends Item {
         return new ItemStack(com.hbm_m.item.ModItems.PARTICLE_EMPTY.get());
     }
 
-    //? if forge {
+    //? if forge || neoforge {
     @Override
     public ItemStack getCraftingRemainingItem(ItemStack stack) {
         return emptyCapsule();

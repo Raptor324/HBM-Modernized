@@ -1,5 +1,7 @@
 package com.hbm_m.item.special;
 
+import com.hbm_m.platform.StackNbt;
+
 import java.util.List;
 
 import org.jetbrains.annotations.Nullable;
@@ -30,7 +32,11 @@ public class ItemUnstable extends Item {
     }
 
     @Override
+    //? if < 1.21.1 {
     public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> list, TooltipFlag flag) {
+    //?} else {
+    /*public void appendHoverText(ItemStack stack, net.minecraft.world.item.Item.TooltipContext hbmTooltipCtx, List<Component> list, TooltipFlag flag) {
+    *///?}
         list.add(Component.literal("Decay: " + (getTimer(stack) * 100 / timer) + "%"));
     }
 
@@ -49,11 +55,11 @@ public class ItemUnstable extends Item {
     }
 
     private void setTimer(ItemStack stack, int time) {
-        stack.getOrCreateTag().putInt("timer", time);
+        StackNbt.orCreate(stack).putInt("timer", time);
     }
 
     private int getTimer(ItemStack stack) {
-        CompoundTag tag = stack.getTag();
+        CompoundTag tag = StackNbt.read(stack);
         return tag == null ? 0 : tag.getInt("timer");
     }
 }

@@ -74,12 +74,21 @@ public class EntityHunterChopper extends FlyingMob implements Enemy, IRadiationI
         return FlyingMob.createMobAttributes().add(Attributes.MAX_HEALTH, 750.0D);
     }
 
+    //? if < 1.21.1 {
     @Override
     protected void defineSynchedData() {
         super.defineSynchedData();
         this.entityData.define(CHARGING, (byte) 0);
         this.entityData.define(DYING, (byte) 0);
     }
+    //?} else {
+    /*@Override
+    protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(CHARGING, (byte) 0);
+        builder.define(DYING, (byte) 0);
+    }
+    *///?}
 
     public boolean isCharging() {
         return this.entityData.get(CHARGING) != 0;

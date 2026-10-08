@@ -84,6 +84,13 @@ public class MachineSatDockBlock extends DummyableMachineBlock {
     //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+    //?} else {
+    /*@Override
+    protected net.minecraft.world.ItemInteractionResult useItemOn(net.minecraft.world.item.ItemStack hbmHeld, BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        return com.hbm_m.platform.BlockUseHooks.item(hbmUse(state, world, pos, player, hand, hit));
+    }
+    private InteractionResult hbmUse(BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+    *///?}
         if (world.isClientSide) {
             return InteractionResult.SUCCESS;
         } else if (!player.isShiftKeyDown()) {
@@ -95,7 +102,6 @@ public class MachineSatDockBlock extends DummyableMachineBlock {
             return InteractionResult.PASS;
         }
     }
-    //?}
 
     //? if >1.20.1 {
     /*public static final com.mojang.serialization.MapCodec<MachineSatDockBlock> CODEC = simpleCodec(MachineSatDockBlock::new);

@@ -12,7 +12,7 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 
 /** 1:1 {@code RenderExplosiveCharge}: gruene Zeitanzeige "mm:ss" auf der Ladung. */
-public class ChargeRenderer implements BlockEntityRenderer<ChargeBlockEntity> {
+public class ChargeRenderer implements com.hbm_m.client.render.HbmBerBounds<ChargeBlockEntity> {
 
     public ChargeRenderer(BlockEntityRendererProvider.Context ctx) { }
 

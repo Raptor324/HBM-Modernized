@@ -1,5 +1,7 @@
 package com.hbm_m.block.generic;
 
+import com.hbm_m.platform.PlatformHooks;
+
 import java.util.function.Supplier;
 
 import com.hbm_m.block.gas.OutgasBlock;
@@ -25,7 +27,7 @@ public class BlockNetherCoal extends OutgasBlock {
 
     @Override
     public void stepOn(Level world, BlockPos pos, BlockState state, Entity entity) {
-        entity.setSecondsOnFire(3);
+        PlatformHooks.setSecondsOnFire(entity, 3);
     }
 
     @Override

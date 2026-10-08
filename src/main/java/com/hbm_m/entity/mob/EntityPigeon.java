@@ -91,12 +91,21 @@ public class EntityPigeon extends PathfinderMob implements IFlyingCreature {
         return super.hurt(source, amount);
     }
 
+    //? if < 1.21.1 {
     @Override
     protected void defineSynchedData() {
         super.defineSynchedData();
         this.entityData.define(FLYING, (byte) 0);
         this.entityData.define(FAT, (byte) 0);
     }
+    //?} else {
+    /*@Override
+    protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(FLYING, (byte) 0);
+        builder.define(FAT, (byte) 0);
+    }
+    *///?}
 
     @Override
     protected void playStepSound(@NotNull BlockPos pos, @NotNull BlockState block) {
@@ -104,9 +113,19 @@ public class EntityPigeon extends PathfinderMob implements IFlyingCreature {
     }
 
     /** Original {@code dropFewItems}: 0-2 (+ Pluenderung) Federn und ein (gebratenes) Huhn, dick drei. */
+    //? if < 1.21.1 {
     @Override
     protected void dropCustomDeathLoot(@NotNull DamageSource source, int looting, boolean recentlyHit) {
+    //?} else {
+    /*@Override
+    protected void dropCustomDeathLoot(net.minecraft.server.level.ServerLevel hbmLevel, @NotNull DamageSource source, boolean recentlyHit) {
+        int looting = com.hbm_m.platform.MobHooks.lootingLevel(hbmLevel, source);
+    *///?}
+        //? if < 1.21.1 {
         super.dropCustomDeathLoot(source, looting, recentlyHit);
+        //?} else {
+        /*super.dropCustomDeathLoot(hbmLevel, source, recentlyHit);
+        *///?}
         int j = this.random.nextInt(3) + this.random.nextInt(1 + looting);
 
         for (int k = 0; k < j; ++k) {
@@ -209,7 +228,11 @@ public class EntityPigeon extends PathfinderMob implements IFlyingCreature {
     private static boolean fertilize(ServerLevel world, BlockPos pos) {
         BlockState state = world.getBlockState(pos);
         if (state.getBlock() instanceof net.minecraft.world.level.block.BonemealableBlock growable) {
+            //? if < 1.21.1 {
             if (growable.isValidBonemealTarget(world, pos, state, false)) {
+            //?} else {
+            /*if (growable.isValidBonemealTarget(world, pos, state)) {
+            *///?}
                 growable.performBonemeal(world, world.random, pos, state);
                 return true;
             }

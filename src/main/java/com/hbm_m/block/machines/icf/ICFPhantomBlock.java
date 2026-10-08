@@ -67,7 +67,11 @@ public class ICFPhantomBlock extends BaseEntityBlock {
 
     /** Original: {@code getItemDropped} gibt null - der Platzhalter selbst faellt nie. */
     @Override
+    //? if < 1.21.1 {
     public ItemStack getCloneItemStack(BlockGetter level, BlockPos pos, BlockState state) {
+    //?} else {
+    /*public ItemStack getCloneItemStack(net.minecraft.world.level.LevelReader level, BlockPos pos, BlockState state) {
+    *///?}
         return ItemStack.EMPTY;
     }
 
@@ -105,4 +109,8 @@ public class ICFPhantomBlock extends BaseEntityBlock {
         }
         super.onRemove(state, level, pos, newState, isMoving);
     }
+    //? if >= 1.21.1 {
+    /*public static final com.mojang.serialization.MapCodec<ICFPhantomBlock> CODEC = simpleCodec(ICFPhantomBlock::new);
+    @Override protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() { return CODEC; }
+    *///?}
 }

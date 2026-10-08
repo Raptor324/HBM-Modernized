@@ -358,7 +358,48 @@ public class MachineRotaryFurnaceBlockEntity extends MachinePollutingBlockEntity
         }
         return super.getCapability(cap, side);
     }
-    //?}
+    //?} elif neoforge {
+    /*/^*
+     * Original {@code getAccessibleSlotsFromSide(x, y, z, side)}: die drei Rueckwandzellen (rot, gelb, gruen) fuehren
+     * je in einen Eingabeslot, die vordere Brennstoffklappe in Slot 4. Entnehmen ist nirgends moeglich.
+     ^/
+    @Override
+    public net.neoforged.neoforge.items.IItemHandler getConditionalItemHandler(BlockPos part, @Nullable Direction side) {
+        if (side == null) return null;
+        Direction dir = getDir();
+        Direction rot = dir.getClockWise();
+        BlockPos core = worldPosition;
+
+        int slot = -1;
+        if (side == dir.getOpposite() && part.equals(core.relative(dir, -1).relative(rot, -2))) slot = 0;
+        else if (side == dir.getOpposite() && part.equals(core.relative(dir, -1).relative(rot, -1))) slot = 1;
+        else if (side == dir.getOpposite() && part.equals(core.relative(dir, -1))) slot = 2;
+        else if (side == dir && part.equals(core.relative(dir, 1).relative(rot, -1))) slot = 4;
+
+        if (slot < 0) return null;
+        final int target = slot;
+        return new net.neoforged.neoforge.items.IItemHandler() {
+            @Override public int getSlots() { return 1; }
+            @Override public @NotNull ItemStack getStackInSlot(int s) { return inventory.getStackInSlot(target); }
+            @Override public @NotNull ItemStack insertItem(int s, @NotNull ItemStack stack, boolean simulate) {
+                if (!isItemValidForSlot(target, stack)) return stack;
+                return inventory.insertItem(target, stack, simulate);
+            }
+            @Override public @NotNull ItemStack extractItem(int s, int amount, boolean simulate) { return ItemStack.EMPTY; }
+            @Override public int getSlotLimit(int s) { return inventory.getSlotLimit(target); }
+            @Override public boolean isItemValid(int s, @NotNull ItemStack stack) { return isItemValidForSlot(target, stack); }
+        };
+    }
+
+    /^* Original {@code getAccessibleSlotsFromSide(side)}: der Kern selbst bietet keinen Zugriff. ^/
+    @Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER && side != null) {
+            return com.hbm_m.platform.LazyCap.empty();
+        }
+        return super.getHbmCapability(cap, side);
+    }
+    *///?}
 
     // ── Fluid ────────────────────────────────────────────────────────────────
 

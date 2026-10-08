@@ -152,7 +152,17 @@ public class RBMKCoolerBlockEntity extends RBMKColumnBlockEntity
         }
         return super.getCapability(cap, side);
     }
-    //?}
+    //?} elif neoforge {
+    /*/^* Bottom face takes cold coolant, every other face hands out the warm coolant. ^/
+    @Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == com.hbm_m.platform.HbmCap.FLUID_HANDLER) {
+            if (side == Direction.DOWN || side == null) return com.hbm_m.platform.LazyCap.ofObj(coldTank.getCapability()).cast();
+            return com.hbm_m.platform.LazyCap.ofObj(hotTank.getCapability()).cast();
+        }
+        return super.getHbmCapability(cap, side);
+    }
+    *///?}
 
     @Override public RBMKType getRBMKType()      { return RBMKType.OTHER; }
     @Override public ColumnType getConsoleType() { return ColumnType.COOLER; }

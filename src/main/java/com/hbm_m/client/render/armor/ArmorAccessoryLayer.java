@@ -1,5 +1,7 @@
 package com.hbm_m.client.render.armor;
 
+import com.hbm_m.platform.StackNbt;
+
 import org.jetbrains.annotations.NotNull;
 import org.joml.Quaternionf;
 
@@ -78,7 +80,7 @@ public class ArmorAccessoryLayer<T extends LivingEntity, M extends HumanoidModel
             } else if (head.getItem() instanceof ArmorNo9) {
                 objOnHead(pose, buffer, light, m, "no9", "Helmet", "hbm_m:textures/armor/no9.png");
                 objOnHead(pose, buffer, light, m, "no9", "Insignia", "hbm_m:textures/armor/no9_insignia.png");
-                if (head.hasTag() && head.getTag().getBoolean("isOn")) {
+                if (StackNbt.has(head) && StackNbt.read(head).getBoolean("isOn")) {
                     pose.pushPose();
                     headTransform(pose, m.head);
                     ArmorObjModel.get(rl("hbm_m:models/armor/no9.obj")).renderPart("Flame", pose,
@@ -92,7 +94,11 @@ public class ArmorAccessoryLayer<T extends LivingEntity, M extends HumanoidModel
         if (!chest.isEmpty()) {
             if (chest.getItem() instanceof ArmorModel model && (chest.getItem() == ModItems.CAPE_RADIATION.get() || chest.getItem() == ModItems.CAPE_GASMASK.get()
                     || chest.getItem() == ModItems.CAPE_SCHRABIDIUM.get() || chest.getItem() == ModItems.CAPE_HIDDEN.get())) {
+                //? if forge {
                 renderCloak(pose, buffer, light, entity, model.getArmorTexture(chest, entity, EquipmentSlot.CHEST, null));
+                //?} else {
+                /*renderCloak(pose, buffer, light, entity, cloakTexture(chest));
+                *///?}
             }
 
             // Original ItemModTesla.modRender -> ModelBackTesla (Rueckenspule, folgt dem Koerper)
@@ -245,6 +251,17 @@ public class ArmorAccessoryLayer<T extends LivingEntity, M extends HumanoidModel
     }
 
     /** Original ModelCloak.render (samt der Interpolation mit dem Skalierungsfaktor 0,0625 als Gewicht). */
+    //? if neoforge {
+    /*/^* Auf NeoForge hat ArmorModel kein String-getArmorTexture mehr; gleiche Zuordnung wie ArmorModel (forge). ^/
+    private static String cloakTexture(ItemStack stack) {
+        if (stack.getItem() == ModItems.CAPE_RADIATION.get()) return "hbm_m:textures/models/capes/caperadiation.png";
+        if (stack.getItem() == ModItems.CAPE_GASMASK.get()) return "hbm_m:textures/models/capes/capegasmask.png";
+        if (stack.getItem() == ModItems.CAPE_SCHRABIDIUM.get()) return "hbm_m:textures/models/capes/capeschrabidium.png";
+        if (stack.getItem() == ModItems.CAPE_HIDDEN.get()) return "hbm_m:textures/models/capes/capehidden.png";
+        return "hbm_m:textures/models/capes/capeunknown.png";
+    }
+    *///?}
+
     private void renderCloak(PoseStack pose, MultiBufferSource buffer, int light, T entity, String texture) {
         if (!(entity instanceof AbstractClientPlayer player) || !(getParentModel() instanceof PlayerModel<?> playerModel)) return;
         float s = 0.0625F;

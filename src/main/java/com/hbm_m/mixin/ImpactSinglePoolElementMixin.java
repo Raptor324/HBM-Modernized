@@ -27,7 +27,11 @@ public abstract class ImpactSinglePoolElementMixin {
     @Shadow @Final protected Either<ResourceLocation, StructureTemplate> template;
 
     @Inject(method = "getSettings", at = @At("RETURN"))
+    //? if < 1.21.1 {
     private void hbm_m$impactVillage(Rotation rotation, BoundingBox box, boolean keepJigsaws, CallbackInfoReturnable<StructurePlaceSettings> cir) {
+    //?} else {
+    /*private void hbm_m$impactVillage(Rotation rotation, BoundingBox box, net.minecraft.world.level.levelgen.structure.templatesystem.LiquidSettings liquidSettings, boolean keepJigsaws, CallbackInfoReturnable<StructurePlaceSettings> cir) {
+    *///?}
         ResourceLocation id = this.template.left().orElse(null);
         if (id == null || !id.getPath().startsWith("village/")) return;
         cir.getReturnValue().addProcessor(ImpactWorldGen.VILLAGE);

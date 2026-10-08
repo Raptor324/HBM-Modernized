@@ -1,5 +1,7 @@
 package com.hbm_m.block.bomb;
 
+import com.hbm_m.platform.ItemHooks;
+
 import javax.annotation.Nullable;
 
 import com.hbm_m.api.block.IToolable;
@@ -92,16 +94,26 @@ public abstract class BlockTNTBase extends BlockDetonatable implements IToolable
     //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+    //?} else {
+    /*@Override
+    protected net.minecraft.world.ItemInteractionResult useItemOn(net.minecraft.world.item.ItemStack hbmHeld, BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        return com.hbm_m.platform.BlockUseHooks.item(hbmUse(state, world, pos, player, hand, hit));
+    }
+    private InteractionResult hbmUse(BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+    *///?}
         ItemStack held = player.getItemInHand(hand);
         if (held.is(Items.FLINT_AND_STEEL)) {
             prime(world, pos, true, player);
             world.removeBlock(pos, false);
-            held.hurtAndBreak(1, player, p -> p.broadcastBreakEvent(hand));
+            ItemHooks.hurtAndBreak(held, 1, player, hand);
             return InteractionResult.sidedSuccess(world.isClientSide);
         }
+        //? if < 1.21.1 {
         return super.use(state, world, pos, player, hand, hit);
+        //?} else {
+        /*return net.minecraft.world.InteractionResult.PASS;
+        *///?}
     }
-    //?}
 
     @Override
     public void entityInside(BlockState state, Level world, BlockPos pos, Entity entity) {

@@ -36,7 +36,11 @@ public class ItemHolotapeImage extends Item {
     }
 
     @Override
+    //? if < 1.21.1 {
     public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> list, TooltipFlag flag) {
+    //?} else {
+    /*public void appendHoverText(ItemStack stack, net.minecraft.world.item.Item.TooltipContext hbmTooltipCtx, List<Component> list, TooltipFlag flag) {
+    *///?}
         list.add(Component.literal("Band Color: ").append(Component.literal(holo.colorName).withStyle(holo.colorCode)));
         list.add(Component.literal("Label: " + holo.name));
     }

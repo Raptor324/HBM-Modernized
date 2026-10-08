@@ -1,5 +1,9 @@
 package com.hbm_m.block.generic;
 
+import com.hbm_m.platform.PlatformHooks;
+
+import com.hbm_m.platform.EffectHooks;
+
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.effect.ModEffects;
@@ -23,8 +27,10 @@ import net.minecraft.world.level.block.BushBlock;
 import net.minecraft.world.level.block.LeavesBlock;
 import net.minecraft.world.level.block.MushroomBlock;
 import net.minecraft.world.level.block.state.BlockState;
+//? if forge {
 import net.minecraftforge.common.IPlantable;
 import net.minecraftforge.common.PlantType;
+//?}
 
 /**
  * 1:1 {@link com.hbm.blocks.generic.WasteEarth} ({@code waste_earth}, {@code waste_mycelium}, {@code burning_earth},
@@ -59,10 +65,10 @@ public class WasteEarth extends Block {
                 living.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 2 * 60 * 20, 2));
             }
             if (this == ModBlocks.WASTE_MYCELIUM.get()) {
-                living.addEffect(new MobEffectInstance(ModEffects.RADIATION.get(), 30 * 20, 3));
+                living.addEffect(new MobEffectInstance(EffectHooks.of(ModEffects.RADIATION), 30 * 20, 3));
             }
             if (this == ModBlocks.BURNING_EARTH.get()) {
-                living.setSecondsOnFire(5);
+                PlatformHooks.setSecondsOnFire(living, 5);
             }
         }
     }
@@ -158,6 +164,7 @@ public class WasteEarth extends Block {
         }
     }
 
+    //? if forge {
     @Override
     public boolean canSustainPlant(BlockState state, BlockGetter world, BlockPos pos, Direction facing, IPlantable plantable) {
         if (this == ModBlocks.WASTE_EARTH.get() || this == ModBlocks.WASTE_MYCELIUM.get()) {
@@ -165,4 +172,16 @@ public class WasteEarth extends Block {
         }
         return false;
     }
+    //?} else {
+    /*// NeoForge kennt keinen PlantType mehr: CAVE waren in Forge 1.20.1 nur roter/brauner Pilz. Fuer die gibt DEFAULT
+    // die Vanilla-Pruefung frei (Licht < 13 auf fester Oberseite) - genau das, was Forge mit "true" ergab.
+    @Override
+    public net.neoforged.neoforge.common.util.TriState canSustainPlant(BlockState state, BlockGetter world, BlockPos pos, Direction facing, BlockState plant) {
+        if (this == ModBlocks.WASTE_EARTH.get() || this == ModBlocks.WASTE_MYCELIUM.get()) {
+            return plant.is(Blocks.RED_MUSHROOM) || plant.is(Blocks.BROWN_MUSHROOM)
+                    ? net.neoforged.neoforge.common.util.TriState.DEFAULT : net.neoforged.neoforge.common.util.TriState.FALSE;
+        }
+        return net.neoforged.neoforge.common.util.TriState.FALSE;
+    }
+    *///?}
 }

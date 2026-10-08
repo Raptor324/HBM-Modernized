@@ -92,7 +92,9 @@ public class MachineGasCentrifugeMenu extends AbstractContainerMenu implements I
                         .map(storage -> storage.canExtract())
                         .orElse(false);
                 //?} elif neoforge {
-                /*return stack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM) != null;
+                /*return com.hbm_m.api.energy.ItemEnergyAccess.getForgeEnergy(stack)
+                        .map(storage -> storage.canExtract())
+                        .orElse(false);
                 *///?} else {
                 /*return false;
                 *///?}
@@ -246,7 +248,9 @@ public class MachineGasCentrifugeMenu extends AbstractContainerMenu implements I
                     .map(storage -> storage.canExtract())
                     .orElse(false);
             //?} elif neoforge {
-            /*isBattery = isBattery || slotStack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM) != null;
+            /*isBattery = isBattery || com.hbm_m.api.energy.ItemEnergyAccess.getForgeEnergy(slotStack)
+                    .map(storage -> storage.canExtract())
+                    .orElse(false);
             *///?}
 
             if (isBattery) {

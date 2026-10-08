@@ -18,7 +18,11 @@ import net.minecraft.world.level.Level;
 public class ModSword extends SwordItem implements ITooltipProvider {
 
     public ModSword(Tier mat) {
+        //? if < 1.21.1 {
         super(mat, 4, -2.4F, new Properties());
+        //?} else {
+        /*super(mat, new Properties().attributes(SwordItem.createAttributes(mat, 4, -2.4F)));
+        *///?}
     }
 
     @Override

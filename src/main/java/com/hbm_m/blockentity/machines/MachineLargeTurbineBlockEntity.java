@@ -1,5 +1,7 @@
 package com.hbm_m.blockentity.machines;
 
+import com.hbm_m.platform.RenderBounds;
+
 import java.util.Random;
 
 import com.hbm_m.api.fluids.IFluidStandardTransceiverMK2;
@@ -250,6 +252,6 @@ public class MachineLargeTurbineBlockEntity extends BaseMachineBlockEntity imple
     @Override
     //?}
     public AABB getRenderBoundingBox() {
-        return INFINITE_EXTENT_AABB;
+        return RenderBounds.INFINITE;
     }
 }

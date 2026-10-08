@@ -97,13 +97,88 @@ public final class SidedItemAccess {
             return r >= 0 && rules.canInsert(r, stack, side);
         }
     }
-    //?}
+    //?} elif neoforge {
+    /*private final Supplier<net.neoforged.neoforge.items.IItemHandlerModifiable> inventory;
+    private final Rules rules;
+    private final Map<Direction, com.hbm_m.platform.LazyCap<net.neoforged.neoforge.items.IItemHandler>> cache = new EnumMap<>(Direction.class);
+
+    public SidedItemAccess(Supplier<net.neoforged.neoforge.items.IItemHandlerModifiable> inventory, Rules rules) {
+        this.inventory = inventory;
+        this.rules = rules;
+    }
+
+    public com.hbm_m.platform.LazyCap<net.neoforged.neoforge.items.IItemHandler> get(Direction side) {
+        return cache.computeIfAbsent(side, d -> com.hbm_m.platform.LazyCap.of(() -> new Handler(d)));
+    }
+
+    /^* Feste Slotliste ohne Seitenabhaengigkeit, z.B. fuer eine {@code IConditionalInvAccess}-Anschlusszelle. ^/
+    public static net.neoforged.neoforge.items.IItemHandler fixed(Supplier<net.neoforged.neoforge.items.IItemHandlerModifiable> inventory, int[] slots,
+                                                              java.util.function.BiPredicate<Integer, ItemStack> canInsert,
+                                                              java.util.function.BiPredicate<Integer, ItemStack> canExtract) {
+        SidedItemAccess access = new SidedItemAccess(inventory, new Rules() {
+            @Override public int[] accessibleSlots(Direction side) { return slots; }
+            @Override public boolean canInsert(int slot, ItemStack stack, Direction side) { return canInsert.test(slot, stack); }
+            @Override public boolean canExtract(int slot, ItemStack stack, Direction side) { return canExtract.test(slot, stack); }
+        });
+        return access.new Handler(Direction.NORTH);
+    }
+
+    public void invalidate() {
+        cache.values().forEach(com.hbm_m.platform.LazyCap::invalidate);
+        cache.clear();
+    }
+
+    /^* Bildet die freigegebenen Slots dieser Seite auf 0..n-1 ab. ^/
+    private final class Handler implements net.neoforged.neoforge.items.IItemHandler {
+        private final Direction side;
+
+        Handler(Direction side) { this.side = side; }
+
+        private int[] slots() { return rules.accessibleSlots(side); }
+
+        private int real(int slot) {
+            int[] s = slots();
+            return slot >= 0 && slot < s.length ? s[slot] : -1;
+        }
+
+        @Override public int getSlots() { return slots().length; }
+
+        @Override public @NotNull ItemStack getStackInSlot(int slot) {
+            int r = real(slot);
+            return r < 0 ? ItemStack.EMPTY : inventory.get().getStackInSlot(r);
+        }
+
+        @Override public @NotNull ItemStack insertItem(int slot, @NotNull ItemStack stack, boolean simulate) {
+            int r = real(slot);
+            if (r < 0 || stack.isEmpty() || !rules.canInsert(r, stack, side)) return stack;
+            return inventory.get().insertItem(r, stack, simulate);
+        }
+
+        @Override public @NotNull ItemStack extractItem(int slot, int amount, boolean simulate) {
+            int r = real(slot);
+            if (r < 0) return ItemStack.EMPTY;
+            ItemStack present = inventory.get().getStackInSlot(r);
+            if (present.isEmpty() || !rules.canExtract(r, present, side)) return ItemStack.EMPTY;
+            return inventory.get().extractItem(r, amount, simulate);
+        }
+
+        @Override public int getSlotLimit(int slot) {
+            int r = real(slot);
+            return r < 0 ? 0 : inventory.get().getSlotLimit(r);
+        }
+
+        @Override public boolean isItemValid(int slot, @NotNull ItemStack stack) {
+            int r = real(slot);
+            return r >= 0 && rules.canInsert(r, stack, side);
+        }
+    }
+    *///?}
 
     /** Original {@code IBatteryItem.getCharge}: Ladung eines Akkus, -1 wenn es keiner ist. */
     public static long charge(ItemStack stack) {
         var hbm = com.hbm_m.api.energy.ItemEnergyAccess.getHbmProvider(stack);
         if (hbm.isPresent()) return hbm.get().getEnergyStored();
-        //? if forge {
+        //? if forge || neoforge {
         var fe = com.hbm_m.api.energy.ItemEnergyAccess.getForgeEnergy(stack);
         if (fe.isPresent()) return fe.get().getEnergyStored();
         //?}
@@ -114,7 +189,7 @@ public final class SidedItemAccess {
     public static long maxCharge(ItemStack stack) {
         var hbm = com.hbm_m.api.energy.ItemEnergyAccess.getHbmProvider(stack);
         if (hbm.isPresent()) return hbm.get().getMaxEnergyStored();
-        //? if forge {
+        //? if forge || neoforge {
         var fe = com.hbm_m.api.energy.ItemEnergyAccess.getForgeEnergy(stack);
         if (fe.isPresent()) return fe.get().getMaxEnergyStored();
         //?}

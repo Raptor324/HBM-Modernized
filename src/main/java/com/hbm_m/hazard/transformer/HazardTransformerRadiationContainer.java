@@ -1,5 +1,7 @@
 package com.hbm_m.hazard.transformer;
 
+import com.hbm_m.platform.StackNbt;
+
 import java.util.List;
 
 import com.hbm_m.hazard.HazardEntry;
@@ -33,7 +35,7 @@ public class HazardTransformerRadiationContainer extends HazardTransformerBase {
         boolean isContainer = stack.getItem() == ModItems.TOOLBOX.get(); // For anything using the standard ItemInventory shit.
 
         if (!isCrate && !isBox && !isBag && !isContainer) return;
-        if (!stack.hasTag()) return;
+        if (!StackNbt.has(stack)) return;
 
         float radiation = 0;
 
@@ -48,11 +50,12 @@ public class HazardTransformerRadiationContainer extends HazardTransformerBase {
 
         if (isCrate) {
             // Kisteninhalt: BlockEntityTag.inventory (ItemStackHandler, Liste "Items")
-            CompoundTag be = stack.getTag().getCompound("BlockEntityTag");
+            CompoundTag beData = com.hbm_m.platform.BlockEntityItemData.read(stack);
+            CompoundTag be = beData != null ? beData : new CompoundTag();
             ListTag list = be.getCompound("inventory").getList("Items", 10);
 
             for (int i = 0; i < list.size(); i++) {
-                ItemStack held = ItemStack.of(list.getCompound(i));
+                ItemStack held = StackNbt.parse(list.getCompound(i));
 
                 if (!held.isEmpty()) {
                     radiation += HazardSystem.getHazardLevelFromStack(held, HazardRegistry.RADIATION) * held.getCount();

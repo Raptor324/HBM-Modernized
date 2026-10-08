@@ -43,12 +43,20 @@ public class InfoToastPacket implements S2CPacket {
     }
 
     public static InfoToastPacket decode(FriendlyByteBuf buf) {
+        //? if < 1.21.1 {
         return new InfoToastPacket(buf.readComponent(), buf.readVarInt(), buf.readVarInt(), buf.readInt());
+        //?} else {
+        /*return new InfoToastPacket(net.minecraft.network.chat.ComponentSerialization.TRUSTED_CONTEXT_FREE_STREAM_CODEC.decode(buf), buf.readVarInt(), buf.readVarInt(), buf.readInt());
+        *///?}
     }
 
     @Override
     public void write(FriendlyByteBuf buf) {
+        //? if < 1.21.1 {
         buf.writeComponent(text);
+        //?} else {
+        /*net.minecraft.network.chat.ComponentSerialization.TRUSTED_CONTEXT_FREE_STREAM_CODEC.encode(buf, text);
+        *///?}
         buf.writeVarInt(ticks);
         buf.writeVarInt(id);
         buf.writeInt(rgb);

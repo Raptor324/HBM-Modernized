@@ -139,6 +139,7 @@ public abstract class AbstractArmorBakedModel extends AbstractMultipartBakedMode
         *///?}
     }
 
+    // neo-pendant: 3-arg-Override im 1.21.1-Zweig oben (collectQuads), Welt-Pfad leer wie hier
     //? if forge {
     @Override
     @Deprecated

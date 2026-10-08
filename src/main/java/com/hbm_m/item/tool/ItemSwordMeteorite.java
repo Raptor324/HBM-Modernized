@@ -21,12 +21,17 @@ public class ItemSwordMeteorite extends ItemSwordAbility {
         // setMaxDamage(0)
         super(damage, movement, material, new Properties().stacksTo(1), true);
         swords.add(this);
+        //? if >= 1.21.1 {
+        /*com.hbm_m.platform.ItemComponentHooks.deferUnbreakable(this);
+        *///?}
     }
 
+    //? if < 1.21.1 {
     @Override
     public boolean canBeDepleted() {
         return false;
     }
+    //?}
 
     @Override
     public void appendHbmTooltip(ItemStack stack, @Nullable Level level, List<Component> list, TooltipFlag flag) {

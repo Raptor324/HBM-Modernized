@@ -55,6 +55,7 @@ public abstract class BaseMachineBlockEntity extends BaseHbmBlockEntity implemen
 
     // Инвентарь
     protected final ModItemStackHandler inventory;
+    // neo-pendant: getHbmCapability-Zweig unten (itemHandler/feLow/feHigh als LazyCap)
     //? if forge {
     
     protected LazyOptional<IItemHandler> itemHandler = LazyOptional.empty();//?}
@@ -155,6 +156,7 @@ public abstract class BaseMachineBlockEntity extends BaseHbmBlockEntity implemen
         this.capacity = capacity;
         this.maxReceive = maxReceive;
         this.maxExtract = maxExtract;
+        // neo-pendant: getHbmCapability-Zweig unten (itemHandler/feLow/feHigh als LazyCap)
         //? if forge {
         this.feCapabilityProvider = new PackedEnergyCapabilityProvider(this);//?}
     }
@@ -393,7 +395,49 @@ public abstract class BaseMachineBlockEntity extends BaseHbmBlockEntity implemen
         feCapabilityProvider.invalidate();
         fluidHandlerOpt.invalidate();
     }
-    //?}
+    //?} elif neoforge {
+    /*// Spiegel des Forge-getCapability (ModCapabilities meldet das fuer alle eigenen BE-Typen an).
+    private final com.hbm_m.platform.LazyCap<IEnergyProvider> hbmProvider = com.hbm_m.platform.LazyCap.of(() -> this);
+    private final com.hbm_m.platform.LazyCap<IEnergyReceiver> hbmReceiver = com.hbm_m.platform.LazyCap.of(() -> this);
+    private final com.hbm_m.platform.LazyCap<IEnergyConnector> hbmConnector = com.hbm_m.platform.LazyCap.of(() -> this);
+    private final com.hbm_m.platform.LazyCap<IEnergyStorage> feLow =
+            com.hbm_m.platform.LazyCap.of(() -> new com.hbm_m.api.energy.LongEnergyWrapper(this, com.hbm_m.api.energy.LongEnergyWrapper.BitMode.LOW));
+    private final com.hbm_m.platform.LazyCap<IEnergyStorage> feHigh =
+            com.hbm_m.platform.LazyCap.of(() -> new com.hbm_m.api.energy.LongEnergyWrapper(this, com.hbm_m.api.energy.LongEnergyWrapper.BitMode.HIGH));
+    protected com.hbm_m.platform.LazyCap<net.neoforged.neoforge.items.IItemHandler> itemHandler = com.hbm_m.platform.LazyCap.empty();
+
+    @Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @Nullable Direction side) {
+        if (cap == com.hbm_m.platform.HbmCap.HBM_ENERGY_PROVIDER)  return hbmProvider.cast();
+        if (cap == com.hbm_m.platform.HbmCap.HBM_ENERGY_RECEIVER)  return hbmReceiver.cast();
+        if (cap == com.hbm_m.platform.HbmCap.HBM_ENERGY_CONNECTOR) return hbmConnector.cast();
+        if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER)         return itemHandler.cast();
+        if (cap == com.hbm_m.platform.HbmCap.FLUID_HANDLER && fluidHandlerNeo != null) return com.hbm_m.platform.LazyCap.ofObj(fluidHandlerNeo);
+
+        // PackedEnergyCapabilityProvider: DOWN = obere Bits, sonst untere
+        if (cap == com.hbm_m.platform.HbmCap.ENERGY) return (side == Direction.DOWN ? feHigh : feLow).cast();
+
+        return super.getHbmCapability(cap, side);
+    }
+
+    @Override
+    public void onLoad() {
+        super.onLoad();
+        itemHandler = com.hbm_m.platform.LazyCap.of(() -> inventory);
+        setupFluidCapability();
+    }
+
+    @Override
+    public void invalidateHbmCaps() {
+        super.invalidateHbmCaps();
+        itemHandler.invalidate();
+        hbmProvider.invalidate();
+        hbmReceiver.invalidate();
+        hbmConnector.invalidate();
+        feLow.invalidate();
+        feHigh.invalidate();
+    }
+    *///?}
 
     // ═══════════════════════════ Platform-abstracted energy helpers ════════════════════════════════
 

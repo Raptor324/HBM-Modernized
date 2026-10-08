@@ -95,7 +95,11 @@ public class MachineMiningLaserBlock extends DummyableMachineBlock {
     }
 
     @Override
+    //? if < 1.21.1 {
     public void appendHoverText(ItemStack stack, @Nullable BlockGetter level, List<Component> list, TooltipFlag flag) {
+    //?} else {
+    /*public void appendHoverText(ItemStack stack, net.minecraft.world.item.Item.TooltipContext hbmTooltipCtx, List<Component> list, TooltipFlag flag) {
+    *///?}
         list.add(Component.translatable("block.hbm_m.mining_laser.desc.multiblock"));
         list.add(Component.translatable("block.hbm_m.mining_laser.desc.ceiling"));
     }

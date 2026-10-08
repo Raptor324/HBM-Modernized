@@ -68,7 +68,11 @@ public final class SpecialFoodItems {
         }
 
         @Override
+        //? if < 1.21.1 {
         public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> list, TooltipFlag flag) {
+        //?} else {
+        /*public void appendHoverText(ItemStack stack, net.minecraft.world.item.Item.TooltipContext hbmTooltipCtx, List<Component> list, TooltipFlag flag) {
+        *///?}
             list.add(Component.literal("Can be eaten to recharge lunar cybernetic armor"));
             list.add(Component.literal("Not for people with weak molars"));
             list.add(Component.literal(""));
@@ -83,7 +87,11 @@ public final class SpecialFoodItems {
         }
 
         @Override
+        //? if < 1.21.1 {
         public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> list, TooltipFlag flag) {
+        //?} else {
+        /*public void appendHoverText(ItemStack stack, net.minecraft.world.item.Item.TooltipContext hbmTooltipCtx, List<Component> list, TooltipFlag flag) {
+        *///?}
             list.add(Component.literal("The Comically Large Can"));
         }
     }
@@ -116,7 +124,11 @@ public final class SpecialFoodItems {
         }
 
         @Override
+        //? if < 1.21.1 {
         public int getUseDuration(ItemStack stack) {
+        //?} else {
+        /*public int getUseDuration(ItemStack stack, net.minecraft.world.entity.LivingEntity hbmUser) {
+        *///?}
             return 10;
         }
 
@@ -141,7 +153,11 @@ public final class SpecialFoodItems {
         }
 
         @Override
+        //? if < 1.21.1 {
         public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> list, TooltipFlag flag) {
+        //?} else {
+        /*public void appendHoverText(ItemStack stack, net.minecraft.world.item.Item.TooltipContext hbmTooltipCtx, List<Component> list, TooltipFlag flag) {
+        *///?}
             if (this == ModItems.CANTEEN_VODKA.get()) {
                 list.add(Component.literal("Cooldown: 3 minutes"));
                 list.add(Component.literal("Nausea I for 10 seconds"));
@@ -163,7 +179,11 @@ public final class SpecialFoodItems {
         }
 
         @Override
+        //? if < 1.21.1 {
         public int getUseDuration(ItemStack stack) {
+        //?} else {
+        /*public int getUseDuration(ItemStack stack, net.minecraft.world.entity.LivingEntity hbmUser) {
+        *///?}
             return 40;
         }
 
@@ -223,7 +243,11 @@ public final class SpecialFoodItems {
         }
 
         @Override
+        //? if < 1.21.1 {
         public int getUseDuration(ItemStack stack) {
+        //?} else {
+        /*public int getUseDuration(ItemStack stack, net.minecraft.world.entity.LivingEntity hbmUser) {
+        *///?}
             return 32;
         }
 
@@ -260,7 +284,11 @@ public final class SpecialFoodItems {
         }
 
         @Override
+        //? if < 1.21.1 {
         public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> list, TooltipFlag flag) {
+        //?} else {
+        /*public void appendHoverText(ItemStack stack, net.minecraft.world.item.Item.TooltipContext hbmTooltipCtx, List<Component> list, TooltipFlag flag) {
+        *///?}
             HbmFoodItem.addDescLines(this.getDescriptionId() + ".desc", list);
         }
     }

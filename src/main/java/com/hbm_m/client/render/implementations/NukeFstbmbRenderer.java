@@ -25,7 +25,7 @@ import net.minecraft.world.level.block.state.properties.BlockStateProperties;
  * ({@code renderClassicGlint(..., "Balefire", 0.0F, 0.8F, 0.15F, 5, 2F)}) und die rote Zeitanzeige dazu,
  * beides nur, wenn die Bombe geladen ist. Gezeichnet wird im Rahmen des Blockmodells (dessen Drehung je FACING).
  */
-public class NukeFstbmbRenderer implements BlockEntityRenderer<NukeFstbmbBlockEntity> {
+public class NukeFstbmbRenderer implements com.hbm_m.client.render.HbmBerBounds<NukeFstbmbBlockEntity> {
 
     private static ResourceLocation rl(String p) { return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, p); }
 

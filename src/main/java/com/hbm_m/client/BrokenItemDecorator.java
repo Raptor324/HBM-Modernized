@@ -1,4 +1,4 @@
-//? if forge {
+//? if forge || neoforge {
 package com.hbm_m.client;
 
 import com.hbm_m.item.BrokenItem;
@@ -8,7 +8,11 @@ import net.minecraft.client.gui.Font;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
+//? if forge {
 import net.minecraftforge.client.IItemDecorator;
+//?} else {
+/*import net.neoforged.neoforge.client.IItemDecorator;
+*///?}
 
 /** Original {@code BrokenItem.getIcon}: Pass 0 = Symbol des gebrochenen Gegenstands, Pass 1 = Riss. */
 public final class BrokenItemDecorator implements IItemDecorator {

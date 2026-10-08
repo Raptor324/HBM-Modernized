@@ -47,7 +47,7 @@ public class TrainCargoTram extends EntityRailCarElectric implements ITrainGuiPr
     @Override public double getLengthSpan() { return 1.5; }
     @Override public double getCollisionSpan() { return 2.5; }
     @Override public Vec3NT getRiderSeatPosition() { return Vec3NT.createVectorHelper(0.375, 2.375, 0.5); }
-    //? if forge {
+    //? if forge || neoforge {
     @Override public boolean shouldRiderSit() { return false; }
     //?}
     @Override public int getContainerSize() { return 29; }

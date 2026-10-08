@@ -173,6 +173,7 @@ public class OverlayInfoToast {
         RenderSystem.disableBlend();
     }
 
+    // neo-pendant: ClientSetup.onRegisterGuiOverlays (neoforge-Zweig)
     //? if forge {
     public static final IGuiOverlay OVERLAY = (gui, gfx, partialTick, screenWidth, screenHeight) ->
             render(gfx, partialTick, screenWidth, screenHeight);

@@ -1,5 +1,7 @@
 package com.hbm_m.inventory.gui;
 
+import com.hbm_m.platform.StackNbt;
+
 import com.hbm_m.item.tool.ItemRTTYPager;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.network.FluidIdentifierControlPacket;
@@ -31,8 +33,8 @@ public class GUIScreenPager extends Screen {
     public GUIScreenPager(ItemStack pager) {
         super(Component.translatable("container.rttyPager"));
         this.pager = pager;
-        if (pager != null && pager.hasTag()) {
-            startingChannel = pager.getTag().getString(ItemRTTYPager.KEY_CHANNEL);
+        if (pager != null && StackNbt.has(pager)) {
+            startingChannel = StackNbt.read(pager).getString(ItemRTTYPager.KEY_CHANNEL);
         }
         if (startingChannel == null) this.startingChannel = "";
     }
@@ -61,7 +63,7 @@ public class GUIScreenPager extends Screen {
 
     @Override
     public void render(GuiGraphics g, int mouseX, int mouseY, float f) {
-        this.renderBackground(g);
+        com.hbm_m.client.GuiCompat.renderBackground(this, g, mouseX, mouseY, f);
         g.blit(texture, guiLeft, guiTop, 0, 0, xSize, ySize);
         chan.render(g, mouseX, mouseY, f);
         Component name = Component.translatable("container.rttyPager");

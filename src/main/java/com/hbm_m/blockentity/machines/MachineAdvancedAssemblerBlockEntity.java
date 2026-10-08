@@ -195,7 +195,7 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
 
     @Override
     protected void setupFluidCapability() {
-        //? if forge {
+        //? if forge || neoforge {
         // Экспонируем входной бак (inputTank) через базовый fluidHandlerOpt.
         setFluidHandler(inputTank);
         //?}
@@ -741,7 +741,39 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
         // FLUID_HANDLER для разрешённых сторон отдаёт базовый fluidHandlerOpt (см. setupFluidCapability).
         return super.getCapability(cap, side);
     }
-    //?}
+    //?} elif neoforge {
+    /*@Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER && side != null) return sidedItems.get(side).cast(); // Original ISidedInventory
+        if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER) {
+            return itemHandler.cast();
+        }
+
+        // === Sided IO для контроллера ===
+        if (side != null) {
+            boolean wantsEnergy =
+                    cap == com.hbm_m.platform.HbmCap.HBM_ENERGY_PROVIDER ||
+                            cap == com.hbm_m.platform.HbmCap.HBM_ENERGY_RECEIVER ||
+                            cap == com.hbm_m.platform.HbmCap.HBM_ENERGY_CONNECTOR ||
+                            cap == com.hbm_m.platform.HbmCap.ENERGY;
+            if (wantsEnergy && !allowedEnergySides.isEmpty() && !allowedEnergySides.contains(side)) {
+                return com.hbm_m.platform.LazyCap.empty();
+            }
+            if (cap == com.hbm_m.platform.HbmCap.FLUID_HANDLER && side != null) {
+                if (fluidSidesFromMultiblockStructure) {
+                    if (!allowedFluidSides.contains(side)) {
+                        return com.hbm_m.platform.LazyCap.empty();
+                    }
+                } else if (!allowedFluidSides.isEmpty() && !allowedFluidSides.contains(side)) {
+                    return com.hbm_m.platform.LazyCap.empty();
+                }
+            }
+        }
+
+        // FLUID_HANDLER для разрешённых сторон отдаёт базовый fluidHandlerOpt (см. setupFluidCapability).
+        return super.getHbmCapability(cap, side);
+    }
+    *///?}
 
     //? if fabric {
     /*@Nullable
@@ -763,6 +795,9 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
         this.allowedEnergySides = safeCopyDirectionSet(sides);
         setChanged();
         sendUpdateToClient();
+        //? if neoforge {
+        /*invalidateCapabilities(); // NeoForge-Capability-Cache: Seiten/Rolle geaendert
+        *///?}
     }
 
     @Override
@@ -784,6 +819,9 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
         this.fluidSidesFromMultiblockStructure = false;
         setChanged();
         sendUpdateToClient();
+        //? if neoforge {
+        /*invalidateCapabilities(); // NeoForge-Capability-Cache: Seiten/Rolle geaendert
+        *///?}
     }
 
     /**
@@ -804,7 +842,7 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
         return this.allowedFluidSides;
     }
 
-    //? if forge {
+    //? if forge || neoforge {
     @Override
     public void onLoad() {
         super.onLoad();
@@ -820,7 +858,13 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
         sidedItems.invalidate();
         super.invalidateCaps();
     }
-    //?}
+    //?} elif neoforge {
+    /*@Override
+    public void invalidateHbmCaps() {
+        sidedItems.invalidate();
+        super.invalidateHbmCaps();
+    }
+    *///?}
 
     @Override
     public void setRemoved() {
@@ -984,7 +1028,15 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
                 @Override public boolean canInsert(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return isItemValidForSlot(slot, stack); }
                 @Override public boolean canExtract(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return slot == 16 || (assemblerModule != null && assemblerModule.isSlotClogged(slot)); }
             });
-    //?}
+    //?} elif neoforge {
+    /*/^* Original {@code ISidedInventory}: Slots {4-16}; Zutaten nach Rezept hinein, Ausgabe 16 und verstopfte Eingaenge heraus. ^/
+    private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
+            new com.hbm_m.blockentity.SidedItemAccess.Rules() {
+                @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return com.hbm_m.blockentity.SidedItemAccess.range(4, 16); }
+                @Override public boolean canInsert(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return isItemValidForSlot(slot, stack); }
+                @Override public boolean canExtract(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return slot == 16 || (assemblerModule != null && assemblerModule.isSlotClogged(slot)); }
+            });
+    *///?}
 
     // ── Redstone-over-Radio (1:1 TileEntityMachineAssemblyMachine) ──
 

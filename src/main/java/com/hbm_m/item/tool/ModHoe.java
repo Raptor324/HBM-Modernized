@@ -27,9 +27,13 @@ public class ModHoe extends HoeItem {
         *///?}
     }
 
+    //? if < 1.21.1 {
     @Override
     @SuppressWarnings("deprecation")
     public Multimap<Attribute, AttributeModifier> getDefaultAttributeModifiers(EquipmentSlot slot) {
         return ImmutableMultimap.of();
     }
+    //?} else {
+    /*// 1.21.1: ohne Properties.attributes(..) hat die Hacke ohnehin keine Angriffswerte
+    *///?}
 }

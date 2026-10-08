@@ -29,5 +29,15 @@ public class AnimatedBlockItem extends BlockItem {
             }
         });
     }
-    //?}
+    //?} elif neoforge {
+    /*@Override
+    public void initializeClient(java.util.function.Consumer<net.neoforged.neoforge.client.extensions.common.IClientItemExtensions> consumer) {
+        consumer.accept(new net.neoforged.neoforge.client.extensions.common.IClientItemExtensions() {
+            @Override
+            public net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer getCustomRenderer() {
+                return com.hbm_m.client.render.item.AnimatedMachineItemRenderer.instance();
+            }
+        });
+    }
+    *///?}
 }

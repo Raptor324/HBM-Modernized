@@ -16,7 +16,6 @@ import net.fabricmc.api.Environment;
 import net.minecraftforge.api.distmarker.Dist;
 import net.minecraftforge.api.distmarker.OnlyIn;
 //?}
-import net.minecraft.client.Minecraft;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
@@ -28,19 +27,39 @@ public final class AnvilRecipeManager {
 
     private AnvilRecipeManager() { }
 
+    //? if < 1.21.1 {
     private static final Comparator<AnvilRecipe> ORDER = Comparator.comparingInt(AnvilRecipe::getSort)
             .thenComparing(r -> r.getId().toString());
+    //?} else {
+    /*// 1.21.1: die Rezept-ID steckt nur im RecipeHolder - gleiche Ordnung (sort, dann ID)
+    private static List<AnvilRecipe> ordered(Level level, java.util.function.Predicate<AnvilRecipe> filter) {
+        return RecipeHooks.getAllRecipesById(level, AnvilRecipe.Type.INSTANCE).entrySet().stream()
+                .filter(e -> filter.test(e.getValue()))
+                .sorted(Comparator.<java.util.Map.Entry<ResourceLocation, AnvilRecipe>>comparingInt(e -> e.getValue().getSort())
+                        .thenComparing(e -> e.getKey().toString()))
+                .map(java.util.Map.Entry::getValue)
+                .toList();
+    }
+    *///?}
 
     public static List<AnvilRecipe> getAllRecipes(Level level) {
         return RecipeHooks.getAllRecipes(level, AnvilRecipe.Type.INSTANCE);
     }
 
     public static List<AnvilRecipe> getSmithing(Level level) {
+        //? if < 1.21.1 {
         return getAllRecipes(level).stream().filter(AnvilRecipe::isSmithing).sorted(ORDER).toList();
+        //?} else {
+        /*return ordered(level, AnvilRecipe::isSmithing);
+        *///?}
     }
 
     public static List<AnvilRecipe> getConstruction(Level level) {
+        //? if < 1.21.1 {
         return getAllRecipes(level).stream().filter(AnvilRecipe::isConstruction).sorted(ORDER).toList();
+        //?} else {
+        /*return ordered(level, AnvilRecipe::isConstruction);
+        *///?}
     }
 
     //? if fabric {
@@ -50,7 +69,7 @@ public final class AnvilRecipeManager {
     @OnlyIn(Dist.CLIENT)
     //?}
     public static List<AnvilRecipe> getClientRecipes() {
-        Level level = Minecraft.getInstance().level;
+        Level level = com.hbm_m.client.ClientAccess.level();
         return level != null ? getAllRecipes(level) : Collections.emptyList();
     }
 

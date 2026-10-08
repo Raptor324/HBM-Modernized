@@ -82,7 +82,7 @@ public class FluidIdentifierItem extends Item implements IItemFluidIdentifier, I
         return InteractionResult.PASS;
     }
 
-    //? if forge {
+    //? if forge || neoforge {
     /** Original {@code doesSneakBypassUse}: auch geschlichen bekommt der Block den Rechtsklick. */
     @Override
     public boolean doesSneakBypassUse(ItemStack stack, net.minecraft.world.level.LevelReader level, BlockPos pos, Player player) {
@@ -136,7 +136,7 @@ public class FluidIdentifierItem extends Item implements IItemFluidIdentifier, I
         }
     }
 
-    //? if forge {
+    //? if forge || neoforge {
     /** Original getContainerItem = Kopie: bleibt beim Handwerk im Raster (Rezepte fuer Kanister-Etiketten u. a.). */
     @Override
     public boolean hasCraftingRemainingItem(ItemStack stack) {

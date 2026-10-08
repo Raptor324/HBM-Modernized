@@ -92,7 +92,9 @@ public class PWRControllerBlockEntity extends BaseMachineBlockEntity
 
     //? if forge {
     private final LazyOptional<IItemHandler> automationHandler;
-    //?}
+    //?} elif neoforge {
+    /*private final com.hbm_m.platform.LazyCap<net.neoforged.neoforge.items.IItemHandler> automationHandler;
+    *///?}
 
     public PWRControllerBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.PWR_CONTROLLER_BE.get(), pos, state, 3, 0L, 0L);
@@ -101,7 +103,9 @@ public class PWRControllerBlockEntity extends BaseMachineBlockEntity
         this.tanks[1] = new FluidTank(ModFluids.COOLANT_HOT.getSource(), 128_000);
         //? if forge {
         this.automationHandler = LazyOptional.of(() -> new AutomationHandler(inventory));
-        //?}
+        //?} elif neoforge {
+        /*this.automationHandler = com.hbm_m.platform.LazyCap.of(() -> new AutomationHandler(inventory));
+        *///?}
     }
 
     /** Einrichtung des Reaktors beim Zusammenbau: zaehlt Bauteile und berechnet die Brennstab-Verbindungen. */
@@ -648,5 +652,40 @@ public class PWRControllerBlockEntity extends BaseMachineBlockEntity
         @Override public int getSlotLimit(int slot) { return inv.getSlotLimit(slot); }
         @Override public boolean isItemValid(int slot, @NotNull ItemStack stack) { return isItemValidForSlot(slot, stack); }
     }
-    //?}
+    //?} elif neoforge {
+    /*@Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER) return automationHandler.cast();
+        return super.getHbmCapability(cap, side);
+    }
+
+    @Override
+    public @Nullable Object getItemHandler(@Nullable Direction side) {
+        return automationHandler.orElse(null);
+    }
+
+    @Override
+    public void invalidateHbmCaps() {
+        super.invalidateHbmCaps();
+        automationHandler.invalidate();
+    }
+
+    /^* Original: {@code getAccessibleSlotsFromSide = {0, 1}}, Einfuegen nur gueltig in 0, Entnahme nur aus 1. ^/
+    private class AutomationHandler implements net.neoforged.neoforge.items.IItemHandler {
+        private final ModItemStackHandler inv;
+        AutomationHandler(ModItemStackHandler inv) { this.inv = inv; }
+        @Override public int getSlots() { return 2; }
+        @Override public @NotNull ItemStack getStackInSlot(int slot) { return inv.getStackInSlot(slot); }
+        @Override public @NotNull ItemStack insertItem(int slot, @NotNull ItemStack stack, boolean simulate) {
+            if (!isItemValidForSlot(slot, stack)) return stack;
+            return inv.insertItem(slot, stack, simulate);
+        }
+        @Override public @NotNull ItemStack extractItem(int slot, int amount, boolean simulate) {
+            if (slot != 1) return ItemStack.EMPTY;
+            return inv.extractItem(slot, amount, simulate);
+        }
+        @Override public int getSlotLimit(int slot) { return inv.getSlotLimit(slot); }
+        @Override public boolean isItemValid(int slot, @NotNull ItemStack stack) { return isItemValidForSlot(slot, stack); }
+    }
+    *///?}
 }

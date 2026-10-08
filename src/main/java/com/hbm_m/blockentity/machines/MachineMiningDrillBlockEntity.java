@@ -655,7 +655,16 @@ public class MachineMiningDrillBlockEntity extends BaseMachineBlockEntity implem
             com.hbm_m.blockentity.network.CraneInventoryUtil.addToInventory(inv, item);
             chuteTimer = 40;
         }
-        //?}
+        //?} elif neoforge {
+        /*net.neoforged.neoforge.items.IItemHandler inv = com.hbm_m.blockentity.network.CraneInventoryUtil.inventoryAt(world, pos, dir);
+        if (inv == null) return;
+
+        for (ItemStack item : items) {
+            if (item.getCount() <= 0) continue;
+            com.hbm_m.blockentity.network.CraneInventoryUtil.addToInventory(inv, item);
+            chuteTimer = 40;
+        }
+        *///?}
     }
 
     /** setzt alles auf ein angeschlossenes Foerderband */

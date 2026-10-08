@@ -24,11 +24,13 @@ import net.minecraftforge.common.util.LazyOptional;
  * 1:1 {@code TileEntityCableSwitch} (fuer {@code cable_switch} und {@code cable_detector}): ein Kabelstueck, das nur
  * im Zustand AN (Metadaten 1) einen Netzknoten bildet - nach allen sechs Seiten wie {@code TileEntityCableBaseNT}.
  */
-public class CableSwitchBlockEntity extends BlockEntity implements PowerConductor {
+public class CableSwitchBlockEntity extends BlockEntity implements PowerConductor, com.hbm_m.platform.HbmCapabilityProvider {
 
     //? if forge {
     private final LazyOptional<IEnergyConnector> hbmConnector = LazyOptional.of(() -> this);
-    //?}
+    //?} elif neoforge {
+    /*private final com.hbm_m.platform.LazyCap<com.hbm_m.interfaces.IEnergyConnector> hbmConnector = com.hbm_m.platform.LazyCap.of(() -> this);
+    *///?}
 
     public CableSwitchBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.CABLE_SWITCH.get(), pos, state);
@@ -74,11 +76,32 @@ public class CableSwitchBlockEntity extends BlockEntity implements PowerConducto
         super.onChunkUnloaded();
         destroyOwnNode();
     }
-    //?}
+    //?} elif neoforge {
+    /*@Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == com.hbm_m.platform.HbmCap.HBM_ENERGY_CONNECTOR) return hbmConnector.cast();
+        return com.hbm_m.platform.HbmCapabilityProvider.super.getHbmCapability(cap, side);
+    }
+
+    @Override
+    public void invalidateHbmCaps() {
+        com.hbm_m.platform.HbmCapabilityProvider.super.invalidateHbmCaps();
+        hbmConnector.invalidate();
+    }
+
+    @Override
+    public void onChunkUnloaded() {
+        super.onChunkUnloaded();
+        destroyOwnNode();
+    }
+    *///?}
 
     @Override
     public void setRemoved() {
         super.setRemoved();
+        //? if neoforge {
+        /*invalidateHbmCaps();
+        *///?}
         destroyOwnNode();
     }
 }

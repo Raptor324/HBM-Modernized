@@ -1,5 +1,7 @@
 package com.hbm_m.item.special;
 
+import com.hbm_m.platform.EffectHooks;
+
 import java.util.function.BiConsumer;
 
 import com.hbm_m.effect.ModEffects;
@@ -168,7 +170,7 @@ public class ItemSimpleConsumable extends ItemCustomLore {
         affected.addEffect(new MobEffectInstance(MobEffects.HEALTH_BOOST, 50 * 20, 9));
         affected.addEffect(new MobEffectInstance(MobEffects.ABSORPTION, 50 * 20, 4));
         affected.addEffect(new MobEffectInstance(MobEffects.CONFUSION, 5 * 20, 4));
-        affected.addEffect(new MobEffectInstance(ModEffects.RADX.get(), 50 * 20, 9));
+        affected.addEffect(new MobEffectInstance(EffectHooks.of(ModEffects.RADX), 50 * 20, 9));
         ModConsumables.applyPotionSickness(affected, 5);
     }
 }

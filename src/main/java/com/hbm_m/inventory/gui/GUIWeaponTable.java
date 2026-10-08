@@ -114,7 +114,11 @@ public class GUIWeaponTable extends AbstractContainerScreen<WeaponTableMenu> {
 				pose.mulPose(Axis.YP.rotationDegrees((float) yaw));
 				pose.mulPose(Axis.XP.rotationDegrees((float) pitch));
 
+				//? if < 1.21.1 {
 				ItemRenderWeaponBase.interp = this.minecraft.getFrameTime();
+				//?} else {
+				/*ItemRenderWeaponBase.interp = this.minecraft.getTimer().getGameTimeDeltaPartialTick(true);
+				*///?}
 				GunGL.begin(pose, guiGraphics.bufferSource(), LightTexture.FULL_BRIGHT);
 				GunGL.pushMatrix();
 				renderGun.setupModTable(gun);

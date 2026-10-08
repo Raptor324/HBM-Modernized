@@ -1,5 +1,7 @@
 package com.hbm_m.blockentity.network.pneumatic;
 
+import com.hbm_m.platform.StackNbt;
+
 import com.hbm_m.api.pneumatic.StackCache;
 import com.hbm_m.api.pneumatic.StackCache.CacheSlot;
 import com.hbm_m.blockentity.ModBlockEntities;
@@ -157,7 +159,7 @@ public class PneumoStorageExporterBlockEntity extends PneumaticMachineBlockEntit
             int existingSize = 0;
 
             if (!existing.isEmpty()) {
-                if (ItemStack.isSameItemSameTags(existing, filter)) {
+                if (StackNbt.sameItemSameTags(existing, filter)) {
                     existingSize = existing.getCount();
                 } else {
                     slotDelay[i] = SLOT_DELAY;
@@ -209,7 +211,7 @@ public class PneumoStorageExporterBlockEntity extends PneumaticMachineBlockEntit
         int existingSize = 0;
 
         if (!existing.isEmpty()) {
-            if (!ItemStack.isSameItemSameTags(existing, filter)) return false;
+            if (!StackNbt.sameItemSameTags(existing, filter)) return false;
             existingSize = existing.getCount();
         }
 
@@ -410,5 +412,25 @@ public class PneumoStorageExporterBlockEntity extends PneumaticMachineBlockEntit
         super.invalidateCaps();
         sidedItems.invalidate();
     }
-    //?}
+    //?} elif neoforge {
+    /*/^* Original {@code ISidedInventory}: Slots {9-17}; nichts hinein, Ausgaben heraus. ^/
+    private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
+            new com.hbm_m.blockentity.SidedItemAccess.Rules() {
+                @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return com.hbm_m.blockentity.SidedItemAccess.range(9, 17); }
+                @Override public boolean canInsert(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return false; }
+                @Override public boolean canExtract(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return slot >= 9; }
+            });
+
+    @Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER && side != null) return sidedItems.get(side).cast();
+        return super.getHbmCapability(cap, side);
+    }
+
+    @Override
+    public void invalidateHbmCaps() {
+        super.invalidateHbmCaps();
+        sidedItems.invalidate();
+    }
+    *///?}
 }

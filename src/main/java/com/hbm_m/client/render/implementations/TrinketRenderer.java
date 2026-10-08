@@ -31,7 +31,7 @@ import net.minecraft.world.level.block.state.BlockState;
  * GL-Zustaende sind auf RenderTypes abgebildet (Culling aus -> NoCull, Mischung -> translucent, Lichtkarte 240 ->
  * volle Helligkeit, additiv -> eyes). {@code renderItemIn2D} = flaches Itemmodell von (0,0) bis (1,1), 1/16 dick.
  */
-public class TrinketRenderer implements BlockEntityRenderer<TrinketBlockEntity> {
+public class TrinketRenderer implements com.hbm_m.client.render.HbmBerBounds<TrinketBlockEntity> {
 
     private static ResourceLocation rl(String path) { return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, path); }
 

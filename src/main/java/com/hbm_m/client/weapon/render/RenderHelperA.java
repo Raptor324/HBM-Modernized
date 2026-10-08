@@ -42,7 +42,7 @@ public final class RenderHelperA {
     private RenderHelperA() { }
 
     /** Original {@code RenderMiscEffects.glintBF}. */
-    public static final ResourceLocation glintBF = new ResourceLocation(RefStrings.MODID, "textures/misc/glint_bf.png");
+    public static final ResourceLocation glintBF = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/misc/glint_bf.png");
 
     /** Original {@code MainRegistry.proxy.me()}. */
     public static Player me() {
@@ -73,7 +73,7 @@ public final class RenderHelperA {
      */
     public static TextureAtlasSprite bindItemIcon(String spriteName) {
         GunGL.bindTexture(InventoryMenu.BLOCK_ATLAS);
-        return Minecraft.getInstance().getTextureAtlas(InventoryMenu.BLOCK_ATLAS).apply(new ResourceLocation(spriteName));
+        return Minecraft.getInstance().getTextureAtlas(InventoryMenu.BLOCK_ATLAS).apply(ResourceLocation.parse(spriteName));
     }
 
     /** Original {@code new Color(r, g, b).getRGB()} (Gleitkommaanteile 0..1, deckend). */

@@ -32,10 +32,17 @@ public class EntityEMPBlast extends Entity {
         this.setMaxAge(maxAge);
     }
 
+    //? if < 1.21.1 {
     @Override
     protected void defineSynchedData() {
         this.entityData.define(MAX_AGE, 100);
     }
+    //?} else {
+    /*@Override
+    protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
+        builder.define(MAX_AGE, 100);
+    }
+    *///?}
 
     @Override
     public void tick() {

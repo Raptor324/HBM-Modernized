@@ -151,7 +151,7 @@ public class TeslaBlockEntity extends BaseMachineBlockEntity {
                                         double tx, double ty, double tz) {
         BlockHitResult hit = level.clip(new ClipContext(
                 new Vec3(x, y, z), new Vec3(tx, ty, tz),
-                ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, null));
+                ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, (net.minecraft.world.entity.Entity) null));
         return hit.getType() != HitResult.Type.MISS;
     }
 

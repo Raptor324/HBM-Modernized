@@ -58,7 +58,11 @@ public class WhiteBoxRenderer<T extends Entity> extends EntityRenderer<T> {
 
     private static void v(VertexConsumer vc, Matrix4f m, Matrix3f n, int light, float nx, float ny, float nz,
                           float x, float y, float z, float u, float vv) {
+        //? if < 1.21.1 {
         vc.vertex(m, x, y, z).color(1F, 1F, 1F, 1F).uv(u, vv).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(light).normal(n, nx, ny, nz).endVertex();
+        //?} else {
+        /*com.hbm_m.platform.RenderHooks.normal(vc.addVertex(m, x, y, z).setColor(1F, 1F, 1F, 1F).setUv(u, vv).setOverlay(OverlayTexture.NO_OVERLAY).setLight(light), n, nx, ny, nz);
+        *///?}
     }
 
     @Override

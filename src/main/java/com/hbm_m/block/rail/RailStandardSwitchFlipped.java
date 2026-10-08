@@ -78,9 +78,17 @@ public class RailStandardSwitchFlipped extends BlockRailWaypointSystem implement
         return RailStandardSwitch.canCrossSwitch(world, x, y, z, from, to, def);
     }
 
+    //? if < 1.21.1 {
     @Override
     @SuppressWarnings("deprecation")
     public InteractionResult use(BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+    //?} else {
+    /*@Override
+    protected net.minecraft.world.ItemInteractionResult useItemOn(net.minecraft.world.item.ItemStack hbmHeld, BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        return com.hbm_m.platform.BlockUseHooks.item(hbmUse(state, world, pos, player, hand, hit));
+    }
+    private InteractionResult hbmUse(BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+    *///?}
         if (!world.isClientSide() && player.isShiftKeyDown()) return InteractionResult.PASS; // Original: geschlichen auf dem Server false
         return RailStandardSwitch.useSwitch(this, world, pos, player, hand);
     }

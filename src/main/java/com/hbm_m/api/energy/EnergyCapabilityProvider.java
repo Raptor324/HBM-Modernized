@@ -22,6 +22,7 @@ import org.jetbrains.annotations.Nullable;
  * Совместим с Forge Energy через LongEnergyWrapper.
  */
 
+// neo-pendant: ModCapabilities.registerBatteryItemCaps (RegisterCapabilitiesEvent, Item-Capabilities)
 //? if forge {
 public class EnergyCapabilityProvider implements ICapabilityProvider {
     private final LazyOptional<ItemEnergyStorage> storage;

@@ -171,7 +171,11 @@ public class XFactory12ga {
             BlockState state = bullet.level().getBlockState(pos);
             Block b = state.getBlock();
             // Original: Material.glass
+            //? if < 1.21.1 {
             if (state.getSoundType() == SoundType.GLASS || state.is(net.minecraftforge.common.Tags.Blocks.GLASS) || state.is(net.minecraftforge.common.Tags.Blocks.GLASS_PANES)) {
+            //?} else {
+            /*if (state.getSoundType() == SoundType.GLASS || state.is(net.neoforged.neoforge.common.Tags.Blocks.GLASS_BLOCKS) || state.is(net.neoforged.neoforge.common.Tags.Blocks.GLASS_PANES)) {
+            *///?}
                 bullet.level().destroyBlock(pos, false);
                 bullet.setPosition(mop.hitVec.xCoord, mop.hitVec.yCoord, mop.hitVec.zCoord);
                 return;

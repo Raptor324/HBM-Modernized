@@ -1,5 +1,7 @@
 package com.hbm_m.effect;
 
+import com.hbm_m.platform.PlatformHooks;
+
 import net.minecraft.world.effect.MobEffectCategory;
 import net.minecraft.world.entity.LivingEntity;
 
@@ -22,6 +24,6 @@ public class PhosphorusEffect extends HbmEffect {
 
     @Override
     protected void tick(@NotNull LivingEntity entity, int amplifier) {
-        entity.setSecondsOnFire(1);
+        PlatformHooks.setSecondsOnFire(entity, 1);
     }
 }

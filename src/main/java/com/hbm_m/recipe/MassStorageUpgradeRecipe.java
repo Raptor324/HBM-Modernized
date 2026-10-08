@@ -60,8 +60,13 @@ public class MassStorageUpgradeRecipe extends CustomRecipe {
     }
 
     /** Findet die Stufe, deren Muster im Gitter liegt - oder {@code null}. */
+    //? if < 1.21.1 {
     private static Step match(CraftingContainer container) {
         if (container.getWidth() < 3 || container.getHeight() < 3) return null;
+    //?} else {
+    /*private static Step match(net.minecraft.world.item.crafting.CraftingInput container) {
+        if (container.width() < 3 || container.height() < 3) return null;
+    *///?}
 
         for (Step step : steps()) {
             if (fits(container, step)) return step;
@@ -70,12 +75,21 @@ public class MassStorageUpgradeRecipe extends CustomRecipe {
     }
 
     /** Das Muster {@code " C " / "PMP" / " P "} - alles andere muss leer sein. */
+    //? if < 1.21.1 {
     private static boolean fits(CraftingContainer container, Step step) {
         ItemStack plate = new ItemStack(step.plate().get());
 
         for (int y = 0; y < container.getHeight(); y++) {
             for (int x = 0; x < container.getWidth(); x++) {
                 ItemStack stack = container.getItem(x + y * container.getWidth());
+    //?} else {
+    /*private static boolean fits(net.minecraft.world.item.crafting.CraftingInput container, Step step) {
+        ItemStack plate = new ItemStack(step.plate().get());
+
+        for (int y = 0; y < container.height(); y++) {
+            for (int x = 0; x < container.width(); x++) {
+                ItemStack stack = container.getItem(x + y * container.width());
+    *///?}
 
                 boolean ok;
                 if (y == 0 && x == 1)      ok = stack.is(step.circuit().get());
@@ -120,7 +134,36 @@ public class MassStorageUpgradeRecipe extends CustomRecipe {
         // Die alte Kiste wird verbraucht - sie steckt jetzt im Ergebnis.
         return NonNullList.withSize(container.getContainerSize(), ItemStack.EMPTY);
     }
-    //?}
+    //?} else {
+    /*@Override
+    public boolean matches(net.minecraft.world.item.crafting.CraftingInput container, Level level) {
+        return match(container) != null;
+    }
+
+    @Override
+    public ItemStack assemble(net.minecraft.world.item.crafting.CraftingInput container, net.minecraft.core.HolderLookup.Provider registries) {
+        Step step = match(container);
+        if (step == null) return ItemStack.EMPTY;
+
+        ItemStack out = new ItemStack(step.to());
+
+        // Der eigentliche Sinn: den Inhalt der alten Kiste uebernehmen.
+        for (int i = 0; i < container.size(); i++) {
+            ItemStack stack = container.getItem(i);
+            if (Block.byItem(stack.getItem()) != step.from()) continue;
+            if (!stack.getComponentsPatch().isEmpty()) out.applyComponents(stack.getComponentsPatch());
+            break;
+        }
+
+        return out;
+    }
+
+    @Override
+    public NonNullList<ItemStack> getRemainingItems(net.minecraft.world.item.crafting.CraftingInput container) {
+        // Die alte Kiste wird verbraucht - sie steckt jetzt im Ergebnis.
+        return NonNullList.withSize(container.size(), ItemStack.EMPTY);
+    }
+    *///?}
 
     @Override
     public boolean canCraftInDimensions(int width, int height) {

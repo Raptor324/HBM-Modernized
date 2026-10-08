@@ -33,7 +33,7 @@ import org.joml.Matrix4f;
 //?} elif neoforge {
 /*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
 *///?}
-public class CargoElevatorRenderer implements BlockEntityRenderer<CargoElevatorBlockEntity> {
+public class CargoElevatorRenderer implements com.hbm_m.client.render.HbmBerBounds<CargoElevatorBlockEntity> {
 
     private static final Map<String, Map<String, List<float[]>>> OBJ_CACHE = new HashMap<>();
     private static final Map<String, TextureAtlasSprite> SPRITE_CACHE = new HashMap<>();

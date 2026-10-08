@@ -106,7 +106,11 @@ public class ItemConserve extends Item {
     }
 
     @Override
+    //? if < 1.21.1 {
     public int getUseDuration(ItemStack stack) {
+    //?} else {
+    /*public int getUseDuration(ItemStack stack, net.minecraft.world.entity.LivingEntity hbmUser) {
+    *///?}
         return 32;
     }
 
@@ -123,7 +127,11 @@ public class ItemConserve extends Item {
     }
 
     @Override
+    //? if < 1.21.1 {
     public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
+    //?} else {
+    /*public void appendHoverText(ItemStack stack, net.minecraft.world.item.Item.TooltipContext hbmTooltipCtx, List<Component> tooltip, TooltipFlag flag) {
+    *///?}
         HbmFoodItem.addDescLines(this.getDescriptionId() + ".desc", tooltip);
     }
 }

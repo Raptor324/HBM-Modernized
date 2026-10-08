@@ -16,7 +16,7 @@ import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.resources.ResourceLocation;
 
 /** 1:1 {@code RenderRefueler}: Gehaeuse plus additiver Fluessigkeitsstand, unterhalb Y 0.125 abgeschnitten. */
-public class RefuelerRenderer implements BlockEntityRenderer<RefuelerBlockEntity> {
+public class RefuelerRenderer implements com.hbm_m.client.render.HbmBerBounds<RefuelerBlockEntity> {
 
     public static final SimpleObjModel MODEL = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/block/refueler.obj"));
     public static final ResourceLocation TEX = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/machines/refueler.png");

@@ -129,10 +129,20 @@ public class ModArmorFSB extends ArmorItem implements com.hbm_m.item.ITooltipPro
 
     //? if forge {
     @Override
+    //?}
     public String getArmorTexture(ItemStack stack, Entity entity, EquipmentSlot slot, String type) {
         return texture;
     }
-    //?}
+
+    //? if neoforge {
+    /*/^* NeoForge: Textur ueber die String-Variante (1.20.1 Forge {@code getArmorTexture(.., String type)}). ^/
+    @Override
+    public net.minecraft.resources.ResourceLocation getArmorTexture(ItemStack stack, Entity entity, EquipmentSlot slot,
+            net.minecraft.world.item.ArmorMaterial.Layer layer, boolean innerModel) {
+        String tex = this.getArmorTexture(stack, entity, slot, (String) null);
+        return tex == null ? null : net.minecraft.resources.ResourceLocation.parse(tex);
+    }
+    *///?}
 
     /** Original addInformation: "Full Set Bonus:" mit Effekten und Faehigkeiten. */
     @Override
@@ -303,10 +313,11 @@ public class ModArmorFSB extends ArmorItem implements com.hbm_m.item.ITooltipPro
     //? if forge {
     @Override
     @SuppressWarnings("removal")
+    //?}
+    // NeoForge: Aufruf ueber ArmorTickNeoForge
     public void onArmorTick(@NotNull ItemStack stack, @NotNull Level world, @NotNull Player entity) {
         geigerTick(world, entity);
     }
-    //?}
 
     /** Original onArmorTick: Geigerzaehler-Klang der Brustplatte. */
     protected void geigerTick(Level world, Player entity) {
@@ -395,7 +406,30 @@ public class ModArmorFSB extends ArmorItem implements com.hbm_m.item.ITooltipPro
             }
         });
     }
-    //?}
+    //?} elif neoforge {
+    /*@Override
+    public void initializeClient(java.util.function.Consumer<net.neoforged.neoforge.client.extensions.common.IClientItemExtensions> consumer) {
+        consumer.accept(new net.neoforged.neoforge.client.extensions.common.IClientItemExtensions() {
+            private com.hbm_m.powerarmor.layer.PowerArmorEmptyModel model;
+
+            @Override
+            public void renderHelmetOverlay(ItemStack stack, Player player, int width, int height, float partialTick) {
+                ModArmorFSB.this.renderHelmetOverlay(stack, player, width, height, partialTick);
+            }
+
+            @Override
+            public net.minecraft.client.model.HumanoidModel<?> getHumanoidArmorModel(LivingEntity living, ItemStack stack,
+                    EquipmentSlot slot, net.minecraft.client.model.HumanoidModel<?> original) {
+                if (!isObjArmor()) return net.neoforged.neoforge.client.extensions.common.IClientItemExtensions.super.getHumanoidArmorModel(living, stack, slot, original);
+                if (this.model == null) {
+                    this.model = new com.hbm_m.powerarmor.layer.PowerArmorEmptyModel(net.minecraft.client.Minecraft.getInstance()
+                            .getEntityModels().bakeLayer(com.hbm_m.powerarmor.layer.ModModelLayers.POWER_ARMOR));
+                }
+                return com.hbm_m.powerarmor.layer.PowerArmorEmptyModel.prepare(this.model, slot, original);
+            }
+        });
+    }
+    *///?}
 
     /** Original {@code renderHelmetOverlay}: Standard ist das Overlay aus {@link #setOverlay}. */
     public void renderHelmetOverlay(ItemStack stack, Player player, int width, int height, float partialTick) {

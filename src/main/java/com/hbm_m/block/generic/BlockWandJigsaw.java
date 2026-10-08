@@ -84,6 +84,13 @@ public class BlockWandJigsaw extends BaseEntityBlock implements ILookOverlay {
     //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+    //?} else {
+    /*@Override
+    protected net.minecraft.world.ItemInteractionResult useItemOn(net.minecraft.world.item.ItemStack hbmHeld, BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        return com.hbm_m.platform.BlockUseHooks.item(hbmUse(state, world, pos, player, hand, hit));
+    }
+    private InteractionResult hbmUse(BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+    *///?}
         if (!(world.getBlockEntity(pos) instanceof WandJigsawBlockEntity jigsaw)) return InteractionResult.PASS;
 
         if (!player.isShiftKeyDown()) {
@@ -111,7 +118,6 @@ public class BlockWandJigsaw extends BaseEntityBlock implements ILookOverlay {
 
         return InteractionResult.PASS;
     }
-    //?}
 
     @Override
     public void printHook(GuiGraphics guiGraphics, Level world, BlockPos pos) {
@@ -129,4 +135,8 @@ public class BlockWandJigsaw extends BaseEntityBlock implements ILookOverlay {
 
         ILookOverlay.printGeneric(guiGraphics, getName(), 0xffff00, 0x404000, text);
     }
+    //? if >= 1.21.1 {
+    /*public static final com.mojang.serialization.MapCodec<BlockWandJigsaw> CODEC = simpleCodec(BlockWandJigsaw::new);
+    @Override protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() { return CODEC; }
+    *///?}
 }

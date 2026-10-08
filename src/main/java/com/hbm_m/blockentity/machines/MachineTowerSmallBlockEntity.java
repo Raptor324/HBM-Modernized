@@ -164,7 +164,7 @@ public class MachineTowerSmallBlockEntity extends BaseMachineBlockEntity impleme
         waterTimer = tag.getByte("waterTimer");
     }
 
-    //? if forge {
+    //? if forge || neoforge {
     @Override
     protected void setupFluidCapability() {
         setFluidHandler(new TowerSmallFluidHandler(this));

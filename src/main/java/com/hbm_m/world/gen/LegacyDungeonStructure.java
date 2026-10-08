@@ -89,7 +89,11 @@ public class LegacyDungeonStructure extends Structure {
         }
     }
 
+    //? if < 1.21.1 {
     public static final Codec<LegacyDungeonStructure> CODEC = RecordCodecBuilder.create(instance -> instance.group(
+    //?} else {
+    /*public static final com.mojang.serialization.MapCodec<LegacyDungeonStructure> CODEC = RecordCodecBuilder.mapCodec(instance -> instance.group(
+    *///?}
             settingsCodec(instance),
             Codec.STRING.fieldOf("dungeon").forGetter(s -> s.kind.id)
     ).apply(instance, LegacyDungeonStructure::new));
@@ -260,7 +264,11 @@ public class LegacyDungeonStructure extends Structure {
                     BlockEntity real = level.getBlockEntity(pos);
                     if (real != null) {
                         try {
+                            //? if < 1.21.1 {
                             real.load(virtual.saveWithoutMetadata());
+                            //?} else {
+                            /*com.hbm_m.platform.PlatformHooks.loadBlockEntityTag(real, virtual.saveWithoutMetadata(level.registryAccess()), level.registryAccess());
+                            *///?}
                             real.setChanged();
                         } catch (Exception ex) {
                             MainRegistry.LOGGER.debug("[LegacyDungeon] Blockeinheit bei {} nicht uebertragbar", pos, ex);

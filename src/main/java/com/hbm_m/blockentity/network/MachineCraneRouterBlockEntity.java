@@ -1,5 +1,7 @@
 package com.hbm_m.blockentity.network;
 
+import com.hbm_m.platform.StackNbt;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -153,7 +155,7 @@ public class MachineCraneRouterBlockEntity extends BaseMachineBlockEntity
             if (!stack.isEmpty()) {
                 CompoundTag slotNBT = new CompoundTag();
                 slotNBT.putByte("slot", (byte) count);
-                stack.save(slotNBT);
+                com.hbm_m.platform.StackNbt.save(stack, slotNBT);
                 tags.add(slotNBT);
             }
             count++;
@@ -171,7 +173,7 @@ public class MachineCraneRouterBlockEntity extends BaseMachineBlockEntity
             for (int i = 0; i < listSize; i++) {
                 CompoundTag slotNBT = items.getCompound(i);
                 byte slot = slotNBT.getByte("slot");
-                ItemStack loaded = ItemStack.of(slotNBT);
+                ItemStack loaded = StackNbt.parse(slotNBT);
                 if (!loaded.isEmpty() && slot > index * 5 && slot < Math.min(index * 5 + 5, 30)) {
                     inventory.setStackInSlot(slot, loaded);
                     nextMode(slot);
@@ -186,7 +188,7 @@ public class MachineCraneRouterBlockEntity extends BaseMachineBlockEntity
                 if (i < listSize) {
                     CompoundTag slotNBT = items.getCompound(count);
                     byte slot = slotNBT.getByte("slot");
-                    ItemStack loaded = ItemStack.of(slotNBT);
+                    ItemStack loaded = StackNbt.parse(slotNBT);
                     boolean router = nbt.contains("modes") && slot > index * 5 && slot < index * +5;
                     if (!loaded.isEmpty() && index < listSize && (slot < getFilterSlots()[1] || router)) {
                         inventory.setStackInSlot(slot + getFilterSlots()[0], loaded);
@@ -239,7 +241,16 @@ public class MachineCraneRouterBlockEntity extends BaseMachineBlockEntity
 
     @Override
     public @org.jetbrains.annotations.Nullable Object getItemHandler(@org.jetbrains.annotations.Nullable Direction side) { return null; }
-    //?}
+    //?} elif neoforge {
+    /*@Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER) return com.hbm_m.platform.LazyCap.empty();
+        return super.getHbmCapability(cap, side);
+    }
+
+    @Override
+    public @org.jetbrains.annotations.Nullable Object getItemHandler(@org.jetbrains.annotations.Nullable Direction side) { return null; }
+    *///?}
 
     @Override protected Component getDefaultName() { return Component.translatable("container.craneRouter"); }
     @Override public Component getDisplayName() { return getDefaultName(); }

@@ -1,5 +1,5 @@
 package com.hbm_m.compat.jei;
-//? if forge {
+//? if forge || neoforge {
 
 import java.util.ArrayList;
 import java.util.List;
@@ -12,7 +12,6 @@ import com.hbm_m.inventory.recipes.ElectrolyserFluidRecipes.ElectrolysisRecipe;
 import com.hbm_m.inventory.recipes.ElectrolyserFluidRecipes.FluidOut;
 import com.hbm_m.lib.RefStrings;
 
-import mezz.jei.api.forge.ForgeTypes;
 import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
 import mezz.jei.api.helpers.IGuiHelper;
 import mezz.jei.api.recipe.IFocusGroup;
@@ -69,14 +68,14 @@ public class ElectrolyserFluidJeiCategory extends JeiUniversalRecipeCategory<Ele
 
         builder.addSlot(RecipeIngredientRole.INPUT, inPos[0][0], inPos[0][1])
                 .setBackground(itemSlotBackground, -1, -1)
-                .setCustomRenderer(ForgeTypes.FLUID_STACK, new HbmFluidJeiRenderer(16, 16))
+                .setCustomRenderer(JeiFluidTypes.FLUID_STACK, new HbmFluidJeiRenderer(16, 16))
                 .addFluidStack(e.input(), e.recipe().amount);
 
         int i = 0;
         for (FluidOut f : fluids) {
             builder.addSlot(RecipeIngredientRole.OUTPUT, outPos[i][0], outPos[i][1])
                     .setBackground(itemSlotBackground, -1, -1)
-                    .setCustomRenderer(ForgeTypes.FLUID_STACK, new HbmFluidJeiRenderer(16, 16))
+                    .setCustomRenderer(JeiFluidTypes.FLUID_STACK, new HbmFluidJeiRenderer(16, 16))
                     .addFluidStack(f.type(), f.fill());
             i++;
         }

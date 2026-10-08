@@ -26,11 +26,19 @@ public abstract class EntityRailCarElectric extends EntityRailCarRidable {
     public boolean hasChargeSlot() { return false; }
     public int getChargeSlot() { return 0; }
 
+    //? if < 1.21.1 {
     @Override
     protected void defineSynchedData() {
         super.defineSynchedData();
         this.entityData.define(POWER, 0);
     }
+    //?} else {
+    /*@Override
+    protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(POWER, 0);
+    }
+    *///?}
 
     @Override public boolean canAccelerate() {
         return true;

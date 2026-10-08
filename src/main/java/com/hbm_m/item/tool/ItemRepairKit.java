@@ -1,5 +1,7 @@
 package com.hbm_m.item.tool;
 
+import com.hbm_m.platform.ItemHooks;
+
 import com.hbm_m.item.ModItems;
 import com.hbm_m.item.weapon.sedna.GunConfig;
 import com.hbm_m.item.weapon.sedna.ItemGunBaseNT;
@@ -54,7 +56,7 @@ public class ItemRepairKit extends Item {
             if (this == ModItems.GUN_KIT_1.get()) world.playSound(null, player.getX(), player.getY(), player.getZ(), HbmSoundsNT.get("hbm:item.spray"), SoundSource.PLAYERS, 1.0F, 1.0F);
             if (this == ModItems.GUN_KIT_2.get()) world.playSound(null, player.getX(), player.getY(), player.getZ(), HbmSoundsNT.get("hbm:item.repair"), SoundSource.PLAYERS, 1.0F, 1.0F);
 
-            stack.hurtAndBreak(1, player, p -> p.broadcastBreakEvent(hand));
+            ItemHooks.hurtAndBreak(stack, 1, player, hand);
         }
 
         return InteractionResultHolder.pass(stack);

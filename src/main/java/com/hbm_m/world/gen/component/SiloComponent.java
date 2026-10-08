@@ -1254,7 +1254,7 @@ public class SiloComponent extends Component {
 		return true;
 	}
 
-	private static ItemPool.WeightedContent[] launchKey() { return new ItemPool.WeightedContent[] { new ItemPool.WeightedContent(new net.minecraft.world.item.ItemStack(net.minecraft.core.registries.BuiltInRegistries.ITEM.get(new net.minecraft.resources.ResourceLocation("hbm_m", "launch_key"))), 1, 1, 1) }; }
+	private static ItemPool.WeightedContent[] launchKey() { return new ItemPool.WeightedContent[] { new ItemPool.WeightedContent(new net.minecraft.world.item.ItemStack(net.minecraft.core.registries.BuiltInRegistries.ITEM.get(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("hbm_m", "launch_key"))), 1, 1, 1) }; }
 	
 	protected void setRTTYFreq(LevelAccessor world, BoundingBox box, int featureX, int featureY, int featureZ, int freq) {
 		int posX = this.getXWithOffset(featureX, featureZ);

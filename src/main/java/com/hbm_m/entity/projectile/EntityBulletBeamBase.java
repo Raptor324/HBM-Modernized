@@ -37,7 +37,9 @@ import net.minecraft.world.phys.Vec3;
 public class EntityBulletBeamBase extends Entity
         //? if forge {
         implements net.minecraftforge.entity.IEntityAdditionalSpawnData
-        //?}
+        //?} elif neoforge {
+        /*implements net.neoforged.neoforge.entity.IEntityWithComplexSpawn
+        *///?}
 {
 
     private static final EntityDataAccessor<Integer> CONFIG = SynchedEntityData.defineId(EntityBulletBeamBase.class, EntityDataSerializers.INT);
@@ -328,5 +330,28 @@ public class EntityBulletBeamBase extends Entity
     public net.minecraft.network.protocol.Packet<net.minecraft.network.protocol.game.ClientGamePacketListener> getAddEntityPacket() {
         return net.minecraftforge.network.NetworkHooks.getEntitySpawningPacket(this);
     }
-    //?}
+    //?} elif neoforge {
+    /*// NeoForge: IEntityWithComplexSpawn (Spawn-Paket wird automatisch erweitert)
+    @Override
+    public void writeSpawnData(net.minecraft.network.RegistryFriendlyByteBuf buf) {
+        buf.writeDouble(beamLength);
+        buf.writeFloat(getYRot());
+        buf.writeFloat(getXRot());
+        buf.writeInt(this.config != null ? this.config.id : 0);
+        buf.writeInt(this.thrower != null ? this.thrower.getId() : -1);
+    }
+
+    @Override
+    public void readSpawnData(net.minecraft.network.RegistryFriendlyByteBuf buf) {
+        this.beamLength = buf.readDouble();
+        this.setYRot(buf.readFloat());
+        this.setXRot(buf.readFloat());
+        this.yRotO = getYRot();
+        this.xRotO = getXRot();
+        int id = buf.readInt();
+        if (id >= 0 && id < BulletConfig.configs.size()) this.config = BulletConfig.configs.get(id);
+        Entity e = level().getEntity(buf.readInt());
+        if (e instanceof LivingEntity living) this.thrower = living;
+    }
+    *///?}
 }

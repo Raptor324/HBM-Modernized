@@ -145,6 +145,21 @@ tasks.named<ProcessResources>("processResources") {
 		val dataDir = File(destinationDir, "data")
 		if (!dataDir.isDirectory) return@doLast
 
+		// [Phase D] Eigener Forge-1.20.1-Biom-Modifikator hbm_m:add_carvers -> NeoForge-Standardtyp (gleiches Format).
+		dataDir.walkTopDown().filter { it.isFile && it.extension == "json" && it.path.contains("biome_modifier") }.forEach { file ->
+			val text = file.readText()
+			if (text.contains("\"hbm_m:add_carvers\"")) file.writeText(text.replace("\"hbm_m:add_carvers\"", "\"neoforge:add_carvers\""))
+		}
+
+		// [Phase C/P3] Eigene forge:-Tags merken, bevor sie nach c: wandern: Verweise darauf behalten ihren Namen,
+		// alle anderen forge:-Verweise bekommen den NeoForge-1.21-Namen (stone -> stones usw.).
+		val ownForgeTags = mutableSetOf<String>()
+		File(dataDir, "forge/tags").takeIf { it.isDirectory }?.listFiles()?.filter { it.isDirectory }?.forEach { kindDir ->
+			kindDir.walkTopDown().filter { it.isFile && it.extension == "json" }.forEach {
+				ownForgeTags += it.relativeTo(kindDir).invariantSeparatorsPath.removeSuffix(".json")
+			}
+		}
+
 		fun moveInto(source: File, target: File) {
 			target.mkdirs()
 			source.listFiles()!!.forEach { child ->
@@ -258,7 +273,9 @@ tasks.named<ProcessResources>("processResources") {
 		recipeRoots.forEach { root ->
 			root.walkTopDown().filter { it.isFile && it.extension == "json" }.forEach { file ->
 				val tree = slurper.parse(file) as? Map<*, *> ?: return@forEach
-				if ((tree["type"] as? String)?.startsWith("minecraft:") != true) return@forEach
+				// [Phase D] hbm_m:container_upgrade liest mit dem Vanilla-ShapedRecipe-Codec -> gleiches Ergebnisformat.
+				val rtype = tree["type"] as? String
+				if (rtype?.startsWith("minecraft:") != true && rtype != "hbm_m:container_upgrade") return@forEach
 				val result = tree["result"]
 				val normalized: Any? = when (result) {
 					is String -> mapOf("id" to result)
@@ -268,21 +285,99 @@ tasks.named<ProcessResources>("processResources") {
 						else null
 					else -> null
 				}
-				if (normalized != null) {
+				// [Phase C/P3] 1.20.1-"nbt" am Ergebnis -> Komponenten (wie RecipeHooks fuer hbm_m-Rezepte):
+				// SNBT bleibt komplett custom_data (eigene Leser), BlockStateTag zusaetzlich als minecraft:block_state.
+				val withNbt = (normalized ?: result) as? Map<*, *>
+				val finalResult: Any? = if (withNbt != null && withNbt.containsKey("nbt") && !withNbt.containsKey("components")) {
+					val nbt = withNbt["nbt"]
+					val comps = linkedMapOf<String, Any?>("minecraft:custom_data" to nbt)
+					val snbt = nbt as? String
+					if (snbt != null) {
+						Regex("""BlockStateTag\s*:\s*\{([^}]*)\}""").find(snbt)?.let { m ->
+							val props = linkedMapOf<String, String>()
+							Regex("""([A-Za-z0-9_]+)\s*:\s*"?([^",}]*)"?""").findAll(m.groupValues[1]).forEach { p ->
+								props[p.groupValues[1]] = p.groupValues[2]
+							}
+							if (props.isNotEmpty()) comps["minecraft:block_state"] = props
+						}
+					}
+					withNbt.entries.filter { it.key != "nbt" }.associate { (k, v) -> k to v } + mapOf("components" to comps)
+				} else normalized
+				if (finalResult != null) {
 					val copy = tree.toMutableMap()
-					copy["result"] = normalized
+					copy["result"] = finalResult
 					file.writeText(groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(copy)))
 				}
 			}
 		}
 
-		// Ссылки на теги forge:* внутри рецептов → c:* (неймспейс переименован выше).
-		dataDir.resolve("hbm_m").resolve("recipe").walkTopDown()
+		// [Phase C/P3] Rezept-/Advancement-/Loot-Bedingungen: Forge "conditions" (oberste Ebene, Liste) ->
+		// "neoforge:conditions"; Bedingungstypen forge:* -> neoforge:* (siehe Umschreibung unten).
+		listOf("recipe", "advancement", "loot_table").forEach { dirName ->
+			dataDir.listFiles()!!.mapNotNull { File(it, dirName).takeIf(File::isDirectory) }.forEach { root ->
+				root.walkTopDown().filter { it.isFile && it.extension == "json" }.forEach { file ->
+					val text = file.readText()
+					if (!text.contains("\"conditions\"")) return@forEach
+					val tree = slurper.parseText(text) as? Map<*, *> ?: return@forEach
+					val conds = tree["conditions"] as? List<*> ?: return@forEach
+					val copy = linkedMapOf<Any?, Any?>()
+					tree.forEach { (k, v) -> if (k == "conditions") copy["neoforge:conditions"] = conds else copy[k] = v }
+					file.writeText(groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(copy)))
+				}
+			}
+		}
+
+		// [Phase C/P3] Advancement-Symbole: {"item": X, "nbt": ..} -> {"id": X, "components": {"minecraft:custom_data": ..}}.
+		dataDir.listFiles()!!.mapNotNull { File(it, "advancement").takeIf(File::isDirectory) }.forEach { root ->
+			root.walkTopDown().filter { it.isFile && it.extension == "json" }.forEach { file ->
+				val text = file.readText()
+				if (!text.contains("\"icon\"")) return@forEach
+				@Suppress("UNCHECKED_CAST")
+				val tree = slurper.parseText(text) as? MutableMap<String, Any?> ?: return@forEach
+				@Suppress("UNCHECKED_CAST")
+				val icon = (tree["display"] as? MutableMap<String, Any?>)?.get("icon") as? MutableMap<String, Any?> ?: return@forEach
+				var changed = false
+				icon.remove("item")?.let { if (!icon.containsKey("id")) icon["id"] = it; changed = true }
+				icon.remove("nbt")?.let { icon["components"] = mapOf("minecraft:custom_data" to it); changed = true }
+				if (changed) file.writeText(groovy.json.JsonOutput.prettyPrint(groovy.json.JsonOutput.toJson(tree)))
+			}
+		}
+
+		// [Phase C/P3] Verweise forge:* in allen Daten:
+		//  - Tag-Verweise ("#forge:X", "tag": "forge:X") -> c:X, bzw. NeoForge-1.21-Name bei Vanilla-Konventionstags;
+		//  - Forge-Typen mit NeoForge-Gegenstueck (Zutaten difference/compound/intersection, Bedingungen, Biome-Modifier) -> neoforge:*;
+		//  - forge:nbt / forge:partial_nbt bleiben (eigene NeoForge-Zutatentypen, com.hbm_m.recipe.LegacyNbtIngredients).
+		// Loot: minecraft:set_nbt -> minecraft:set_custom_data (gleiches Feld "tag").
+		val cTagRenames = mapOf(
+			"stone" to "stones", "cobblestone" to "cobblestones", "sand" to "sands", "gravel" to "gravels",
+			"glass" to "glass_blocks", "glass/colorless" to "glass_blocks/colorless", "glass/tinted" to "glass_blocks/tinted",
+			"string" to "strings", "obsidian" to "obsidians", "gunpowder" to "gunpowders", "netherrack" to "netherracks",
+			"leather" to "leathers", "sandstone" to "sandstone/blocks", "end_stones" to "end_stones",
+		)
+		fun cName(name: String) = if (name in ownForgeTags) name else (cTagRenames[name] ?: name)
+		val neoTypes = setOf(
+			"difference", "compound", "intersection",
+			"not", "and", "or", "mod_loaded", "item_exists", "tag_empty", "true", "false",
+			"add_features", "remove_features", "add_spawns", "remove_spawns", "add_carvers", "remove_carvers", "none",
+		)
+		val keyedRef = Regex(""""([A-Za-z0-9_:]+)"(\s*:\s*)"(#?)forge:([a-z0-9_./-]+)"""")
+		val bareTagRef = Regex(""""#forge:([a-z0-9_./-]+)"""")
+		dataDir.walkTopDown()
 			.filter { it.isFile && it.extension == "json" }.forEach { file ->
 				val text = file.readText()
-				if (text.contains("\"forge:")) {
-					file.writeText(text.replace(Regex("\"(tag)\"\\s*:\\s*\"forge:"), "\"$1\": \"c:"))
+				if (!text.contains("forge:") && !text.contains("\"minecraft:set_nbt\"")) return@forEach
+				var out = keyedRef.replace(text) { m ->
+					val (key, sep, hash, name) = m.destructured
+					when {
+						hash == "#" -> "\"$key\"$sep\"#c:${cName(name)}\""
+						key == "tag" -> "\"$key\"$sep\"c:${cName(name)}\""
+						key == "type" && name in neoTypes -> "\"$key\"$sep\"neoforge:$name\""
+						else -> m.value
+					}
 				}
+				out = bareTagRef.replace(out) { m -> "\"#c:${cName(m.groupValues[1])}\"" }
+				out = out.replace("\"minecraft:set_nbt\"", "\"minecraft:set_custom_data\"")
+				if (out != text) file.writeText(out)
 			}
 
 		// Лут-таблицы батарей используют minecraft:copy_nbt, удалённый в 1.20.5+.
@@ -321,7 +416,7 @@ tasks.named<Jar>("jar") {
 }
 
 tasks.withType<JavaCompile>().configureEach {
-	options.compilerArgs.addAll(listOf("-Xmaxerrs", "10000"))
+	options.compilerArgs.addAll(listOf("-Xmaxerrs", "100000", "-XDshould-stop.ifError=FLOW"))
 	options.encoding = "UTF-8"
 }
 

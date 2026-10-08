@@ -1,5 +1,7 @@
 package com.hbm_m.client;
 
+import com.hbm_m.platform.StackNbt;
+
 import com.hbm_m.particle.custom.MissileContrailParticle;
 import com.hbm_m.particle.custom.RadFogParticle;
 import com.hbm_m.particle.custom.SchrabfogParticle;
@@ -256,6 +258,7 @@ public class ClientSetup {
         });
 
         // Экраны меню: на Forge регистрируются напрямую, на NeoForge 1.21.1+ — через RegisterMenuScreensEvent ниже.
+        // neo-pendant: onRegisterMenuScreens (RegisterMenuScreensEvent)
         //? if forge {
         registerScreens();
         //?}
@@ -336,16 +339,9 @@ public class ClientSetup {
         registerScreens();
     }
 
-    @SubscribeEvent
-    public static void onRegisterClientExtensions(net.neoforged.neoforge.client.extensions.common.RegisterClientExtensionsEvent event) {
-        var ext = com.hbm_m.powerarmor.ModPowerArmorItem.createNeoForgeClientExtensions();
-        event.registerItem(ext,
-                ModItems.T51_HELMET.get(), ModItems.T51_PLATE.get(), ModItems.T51_LEGS.get(), ModItems.T51_BOOTS.get(),
-                ModItems.AJR_HELMET.get(), ModItems.AJR_PLATE.get(), ModItems.AJR_LEGS.get(), ModItems.AJR_BOOTS.get(),
-                ModItems.AJRO_HELMET.get(), ModItems.AJRO_PLATE.get(), ModItems.AJRO_LEGS.get(), ModItems.AJRO_BOOTS.get(),
-                ModItems.DNT_HELMET.get(), ModItems.DNT_PLATE.get(), ModItems.DNT_LEGS.get(), ModItems.DNT_BOOTS.get(),
-                ModItems.BISMUTH_HELMET.get(), ModItems.BISMUTH_PLATE.get(), ModItems.BISMUTH_LEGS.get(), ModItems.BISMUTH_BOOTS.get());
-    }
+    // Item-Client-Extensions (Power-Armor, FSB, Waffen-BEWLR ...) registrieren sich auf NeoForge wie auf Forge
+    // ueber Item.initializeClient im neoforge-Zweig der Item-Klasse (siehe VERSIONPORT.md, Abschnitt 8).
+    // Hier zusaetzlich zu registrieren wuerde auf NeoForge mit "Duplicate client extensions registration" abbrechen.
     *///?}
 
     private static void registerDebugClientCommands(RegisterClientCommandsEvent event) {
@@ -400,7 +396,7 @@ public class ClientSetup {
                 });
         net.minecraft.client.renderer.item.ItemProperties.register(ModItems.TOOLBOX.get(),
                 ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "open"),
-                (stack, level, entity, seed) -> stack.hasTag() && stack.getTag().getBoolean("isOpen") ? 1F : 0F);
+                (stack, level, entity, seed) -> StackNbt.has(stack) && StackNbt.read(stack).getBoolean("isOpen") ? 1F : 0F);
         // Original ItemAmmoArty#getIconIndex: Frachtgranate mit Ladung
         net.minecraft.client.renderer.item.ItemProperties.register(ModItems.AMMO_ARTY_CARGO.get(),
                 ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "cargo"),
@@ -429,7 +425,7 @@ public class ClientSetup {
         for (var item : new net.minecraft.world.item.Item[] { ModItems.PIPETTE.get(), ModItems.PIPETTE_BORON.get(), ModItems.PIPETTE_LABORATORY.get() }) {
             net.minecraft.client.renderer.item.ItemProperties.register(item,
                     ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "filled"),
-                    (stack, level, entity, seed) -> stack.hasTag() && stack.getTag().getShort("fill") > 0 ? 1F : 0F);
+                    (stack, level, entity, seed) -> StackNbt.has(stack) && StackNbt.read(stack).getShort("fill") > 0 ? 1F : 0F);
         }
     }
 
@@ -1019,7 +1015,13 @@ public class ClientSetup {
         com.hbm_m.client.compat.itemtransformhelper.ItemTransformHelperCompat.installDisplayTransformGuards(
                 event.getModelBakery().getBakedTopLevelModels());
     }
-    //?}
+    //?} elif neoforge {
+    /*@SubscribeEvent(priority = EventPriority.LOWEST)
+    public static void onBakingCompletedDisplayGuards(ModelEvent.BakingCompleted event) {
+        com.hbm_m.client.compat.itemtransformhelper.ItemTransformHelperCompat.installDisplayTransformGuards(
+                event.getModelBakery().getBakedTopLevelModels());
+    }
+    *///?}
     
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public static void onModelBakeUnwrapContinuity(ModelEvent.ModifyBakingResult event) {
@@ -1077,7 +1079,14 @@ public class ClientSetup {
         // 1:1 ItemRendererMeteorSword: eingefaerbter Glanz der Meteoritenschwerter
         com.hbm_m.client.model.MeteorSwordGlintModel.wrapAll(typedModels);
         com.hbm_m.client.compat.itemtransformhelper.ItemTransformHelperCompat.installDisplayTransformGuards(typedModels);
-        //?}
+        //?} elif neoforge {
+        /*@SuppressWarnings("unchecked")
+        Map<net.minecraft.client.resources.model.ModelResourceLocation, BakedModel> typedModels =
+                (Map<net.minecraft.client.resources.model.ModelResourceLocation, BakedModel>) models;
+        // 1:1 ItemRendererMeteorSword: eingefaerbter Glanz der Meteoritenschwerter
+        com.hbm_m.client.model.MeteorSwordGlintModel.wrapAll(typedModels);
+        com.hbm_m.client.compat.itemtransformhelper.ItemTransformHelperCompat.installDisplayTransformGuards(typedModels);
+        *///?}
     }
 
     private static void wrapConnectedDecoCtTerrainModels(java.util.Map models) {
@@ -1186,18 +1195,17 @@ public class ClientSetup {
     /** R7i: Kastenrohre - jeder Blockzustand und das Gegenstandsmodell bekommen das RenderBoxDuct-Modell. */
     @SuppressWarnings("unchecked")
     private static void wrapTilted(java.util.Map models, Block block, double drop) {
-        //? if < 1.21.1 {
+        // Phase C: auch 1.21.1 (Modelle und Schluessel gibt es dort genauso; vorher fehlten Kippung/Kastenrohre)
         for (net.minecraft.world.level.block.state.BlockState st : block.getStateDefinition().getPossibleStates()) {
             Object loc = net.minecraft.client.renderer.block.BlockModelShaper.stateToModelLocation(st);
             BakedModel baked = (BakedModel) models.get(loc);
             if (baked != null && !(baked instanceof com.hbm_m.client.model.TiltedBakedModel))
                 models.put(loc, new com.hbm_m.client.model.TiltedBakedModel(baked, drop));
         }
-        //?}
     }
 
     private static void wrapBoxDuctModels(java.util.Map models) {
-        //? if < 1.21.1 {
+        // Phase C: auch 1.21.1 (Modelle und Schluessel gibt es dort genauso; vorher fehlten Kippung/Kastenrohre)
         for (RegistrySupplier<Block> sup : java.util.List.of(ModBlocks.FLUID_DUCT_BOX, ModBlocks.FLUID_DUCT_EXHAUST, ModBlocks.RED_CABLE_BOX)) {
             com.hbm_m.block.network.BoxDuctBlock block = (com.hbm_m.block.network.BoxDuctBlock) sup.get();
             BakedModel shared = null;
@@ -1213,7 +1221,6 @@ public class ClientSetup {
             if (itemOrig != null && !(itemOrig instanceof com.hbm_m.client.model.BoxDuctBakedModel.Item))
                 models.put(itemLoc, new com.hbm_m.client.model.BoxDuctBakedModel.Item(block.kind, itemOrig));
         }
-        //?}
     }
 
     /** 1:1 {@code BlockHadronCoil.canConnect}: jede Spule verbindet sich mit jeder anderen Spule. */
@@ -1439,7 +1446,7 @@ public class ClientSetup {
         event.register((stack, tintIndex) -> tintIndex >= 0 && tintIndex < 6
                 ? com.hbm_m.block.machines.MachineCraneRouterBlock.SIDE_COLORS[tintIndex] : 0xffffff, ModBlocks.CRANE_ROUTER.get());
         // Original ItemPipette.getColorFromItemStack (Pass 1 = Fluessigkeitsfarbe)
-        event.register((stack, tintIndex) -> opaqueTint(stack.hasTag() && stack.getItem() instanceof com.hbm_m.item.tool.ItemPipette p ? p.getColor(stack, tintIndex) : 0xFFFFFF),
+        event.register((stack, tintIndex) -> opaqueTint(StackNbt.has(stack) && stack.getItem() instanceof com.hbm_m.item.tool.ItemPipette p ? p.getColor(stack, tintIndex) : 0xFFFFFF),
                 ModItems.PIPETTE.get(), ModItems.PIPETTE_BORON.get(), ModItems.PIPETTE_LABORATORY.get());
         // Мета-предметы вкладки Parts (PartTabMetaItems): тинт базовой текстуры цветом
         // материала/красителя (аппроксимация ItemAutogen/ItemChemicalDye оригинала).
@@ -1731,49 +1738,56 @@ public class ClientSetup {
         MainRegistry.LOGGER.info("GUI overlays registered.");
     }
     //?} elif neoforge {
-    /*@SubscribeEvent
+    /*// NeoForge-Gegenstueck zu onRegisterParticleProviders (Forge): gleiche Fabriken.
+    @SubscribeEvent
+    public static void onRegisterParticleProviders(net.neoforged.neoforge.client.event.RegisterParticleProvidersEvent event) {
+        event.registerSpriteSet(ModParticleTypes.TOWNAURA.get(), TownauraParticle.Provider::new);
+        event.registerSpriteSet(ModParticleTypes.SCHRABFOG.get(), SchrabfogParticle.Provider::new);
+        event.registerSpriteSet(ModParticleTypes.RAD_FOG_PARTICLE.get(), RadFogParticle.Provider::new);
+        event.registerSpriteSet(ModParticleTypes.HADRON.get(), com.hbm_m.particle.custom.HadronParticle.Provider::new);
+        event.registerSpriteSet(ModParticleTypes.RBMK_FLAME.get(), com.hbm_m.particle.custom.RBMKFlameParticle.Provider::new);
+        event.registerSpriteSet(ModParticleTypes.RBMK_STEAM.get(), com.hbm_m.particle.custom.RBMKSteamParticle.Provider::new);
+        event.registerSpriteSet(ModParticleTypes.RBMK_MUSH.get(), com.hbm_m.particle.custom.RBMKMushParticle.Provider::new);
+        event.registerSpriteSet(ModParticleTypes.DIGAMMA_SMOKE.get(), com.hbm_m.particle.custom.DigammaSmokeParticle.Provider::new);
+        MainRegistry.LOGGER.info("Registered custom particle providers.");
+    }
+
+    /^* Original ItemRendererHot: Gluehen der ItemHot-Gegenstaende im Inventar (NeoForge-Gegenstueck). ^/
+    @SubscribeEvent
+    public static void onRegisterItemDecorations(net.neoforged.neoforge.client.event.RegisterItemDecorationsEvent event) {
+        for (net.minecraft.world.item.Item item : net.minecraft.core.registries.BuiltInRegistries.ITEM) {
+            if (item instanceof com.hbm_m.item.special.ItemHot) event.register(item, HotItemDecorator.INSTANCE);
+        }
+        event.register(com.hbm_m.item.ModItems.BROKEN_ITEM.get(), BrokenItemDecorator.INSTANCE);
+    }
+
+    private static int hbmGuiWidth() { return Minecraft.getInstance().getWindow().getGuiScaledWidth(); }
+    private static int hbmGuiHeight() { return Minecraft.getInstance().getWindow().getGuiScaledHeight(); }
+    private static net.minecraft.resources.ResourceLocation hbmLayer(String id) { return net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, id); }
+
+    // Gleiche Ebenen und Reihenfolge wie der Forge-Zweig; PORTAL gibt es auf 1.21.1 nicht mehr einzeln
+    // (Teil von CAMERA_OVERLAYS). leftHeight liegt auf NeoForge direkt an Minecraft.gui.
+    @SubscribeEvent
     public static void onRegisterGuiOverlays(net.neoforged.neoforge.client.event.RegisterGuiLayersEvent event) {
         MainRegistry.LOGGER.info("Registering GUI overlays...");
-        
-        event.registerAbove(net.neoforged.neoforge.client.gui.VanillaGuiLayers.HOTBAR, net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "geiger_counter_hud"), (guiGraphics, deltaTracker) -> {
-            Minecraft mc = Minecraft.getInstance();
-            if (mc != null && mc.getWindow() != null) {
-                float tickDelta = deltaTracker.getGameTimeDeltaPartialTick(true);
-                OverlayGeiger.render(guiGraphics, tickDelta, mc.getWindow().getGuiScaledWidth(), mc.getWindow().getGuiScaledHeight());
-            }
-        });
-        
-        event.registerAbove(net.neoforged.neoforge.client.gui.VanillaGuiLayers.ARMOR_LEVEL, net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "power_armor_hud"), (guiGraphics, deltaTracker) -> {
-            Minecraft mc = Minecraft.getInstance();
-            if (mc != null && mc.getWindow() != null) {
-                float tickDelta = deltaTracker.getGameTimeDeltaPartialTick(true);
-                OverlayPowerArmor.render(guiGraphics, tickDelta, mc.getWindow().getGuiScaledWidth(), mc.getWindow().getGuiScaledHeight());
-            }
-        });
-        
-        event.registerAboveAll(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "radiation_pixels"), (guiGraphics, deltaTracker) -> {
-            Minecraft mc = Minecraft.getInstance();
-            if (mc != null && mc.getWindow() != null) {
-                float tickDelta = deltaTracker.getGameTimeDeltaPartialTick(true);
-                OverlayRadiationVisuals.render(guiGraphics, tickDelta, mc.getWindow().getGuiScaledWidth(), mc.getWindow().getGuiScaledHeight());
-            }
-        });
-        
-        event.registerAboveAll(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "info_toast"), (guiGraphics, deltaTracker) -> {
-            Minecraft mc = Minecraft.getInstance();
-            if (mc != null && mc.getWindow() != null) {
-                float tickDelta = deltaTracker.getGameTimeDeltaPartialTick(true);
-                OverlayInfoToast.render(guiGraphics, tickDelta, mc.getWindow().getGuiScaledWidth(), mc.getWindow().getGuiScaledHeight());
-            }
-        });
-        
-        event.registerAboveAll(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "gas_mask_overlay"), (guiGraphics, deltaTracker) -> {
-            Minecraft mc = Minecraft.getInstance();
-            if (mc != null && mc.getWindow() != null) {
-                com.hbm_m.client.overlay.OverlayGasMask.render(guiGraphics);
-            }
-        });
-        
+        event.registerAbove(net.neoforged.neoforge.client.gui.VanillaGuiLayers.HOTBAR, hbmLayer("geiger_counter_hud"), (g, dt) ->
+                OverlayGeiger.render(g, dt.getGameTimeDeltaPartialTick(true), hbmGuiWidth(), hbmGuiHeight()));
+        event.registerAbove(net.neoforged.neoforge.client.gui.VanillaGuiLayers.ARMOR_LEVEL, hbmLayer("power_armor_hud"), (g, dt) ->
+                OverlayPowerArmor.renderNeo(g, dt.getGameTimeDeltaPartialTick(true), hbmGuiWidth(), hbmGuiHeight()));
+        event.registerAbove(net.neoforged.neoforge.client.gui.VanillaGuiLayers.ARMOR_LEVEL, hbmLayer("jetpack_fuel_hud"), (g, dt) ->
+                com.hbm_m.client.overlay.OverlayJetpackFuel.renderNeo(g, hbmGuiWidth(), hbmGuiHeight()));
+        event.registerAbove(net.neoforged.neoforge.client.gui.VanillaGuiLayers.CAMERA_OVERLAYS, hbmLayer("radiation_pixels"), (g, dt) ->
+                OverlayRadiationVisuals.render(g, dt.getGameTimeDeltaPartialTick(true), hbmGuiWidth(), hbmGuiHeight()));
+        event.registerAboveAll(hbmLayer("info_toast"), (g, dt) ->
+                OverlayInfoToast.render(g, dt.getGameTimeDeltaPartialTick(true), hbmGuiWidth(), hbmGuiHeight()));
+        event.registerAbove(net.neoforged.neoforge.client.gui.VanillaGuiLayers.CROSSHAIR, hbmLayer("tool_ability_indicator"), (g, dt) ->
+                ToolAbilityClient.renderHUD(g, hbmGuiWidth(), hbmGuiHeight()));
+        event.registerAboveAll(hbmLayer("gas_mask_overlay"), (g, dt) -> com.hbm_m.client.overlay.OverlayGasMask.render(g));
+        // Original RenderScreenOverlay.renderDashBar / renderShieldBar
+        event.registerAbove(net.neoforged.neoforge.client.gui.VanillaGuiLayers.HOTBAR, hbmLayer("dash_bar"), (g, dt) ->
+                com.hbm_m.client.overlay.OverlayDashShield.renderDashNeo(g, hbmGuiHeight()));
+        event.registerBelow(net.neoforged.neoforge.client.gui.VanillaGuiLayers.ARMOR_LEVEL, hbmLayer("shield_bar"), (g, dt) ->
+                com.hbm_m.client.overlay.OverlayDashShield.renderShieldNeo(g, hbmGuiWidth(), hbmGuiHeight()));
         MainRegistry.LOGGER.info("GUI overlays registered.");
     }
     *///?}

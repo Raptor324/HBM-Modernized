@@ -2,7 +2,6 @@ package com.hbm_m.block.generic;
 
 import com.hbm_m.item.ModItems;
 
-import net.minecraft.client.Minecraft;
 import net.minecraft.core.BlockPos;
 import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.EquipmentSlot;
@@ -30,7 +29,7 @@ public class BlockAshes extends FallingBlock {
         super.animateTick(state, world, pos, rand);
 
         if (rand.nextInt(25) == 0) {
-            Player me = Minecraft.getInstance().player;
+            Player me = com.hbm_m.client.ClientAccess.player();
             if (me == null) return;
             if (me.getItemBySlot(EquipmentSlot.HEAD).is(ModItems.ASHGLASSES.get())) {
                 if (ashes < 256 * 0.25) {
@@ -55,4 +54,8 @@ public class BlockAshes extends FallingBlock {
         if (ashes > 0) ashes -= 2;
         if (ashes < 0) ashes = 0;
     }
+    //? if >= 1.21.1 {
+    /*public static final com.mojang.serialization.MapCodec<BlockAshes> CODEC = simpleCodec(BlockAshes::new);
+    @Override protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.FallingBlock> codec() { return CODEC; }
+    *///?}
 }

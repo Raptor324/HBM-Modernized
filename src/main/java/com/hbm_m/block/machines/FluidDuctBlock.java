@@ -346,7 +346,15 @@ public class FluidDuctBlock extends BaseEntityBlock implements ILookOverlay, com
                 if (handler == null) return false;
                 int canFill = handler.fill(new net.minecraftforge.fluids.FluidStack(ductFluid, 1), net.minecraftforge.fluids.capability.IFluidHandler.FluidAction.SIMULATE);
                 return canFill > 0;
-                //?}
+                //?} elif neoforge {
+                /*var cap = com.hbm_m.platform.HbmCaps.get(ctrl, com.hbm_m.platform.HbmCap.FLUID_HANDLER, null);
+                if (!cap.isPresent()) return false;
+                if (ductFluid == Fluids.EMPTY) return true;
+                var handler = cap.resolve().orElse(null);
+                if (handler == null) return false;
+                int canFill = handler.fill(new net.neoforged.neoforge.fluids.FluidStack(ductFluid, 1), net.neoforged.neoforge.fluids.capability.IFluidHandler.FluidAction.SIMULATE);
+                return canFill > 0;
+                *///?}
 
                 //? if fabric {
                 /*// Паритет с Forge: capability FLUID_HANDLER с side=null на контроллере.

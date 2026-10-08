@@ -1,5 +1,7 @@
 package com.hbm_m.item.weapon.grenade;
 
+import com.hbm_m.platform.StackNbt;
+
 import java.util.List;
 import java.util.Locale;
 
@@ -143,24 +145,24 @@ public class ItemGrenadeUniversal extends Item implements IEquipReceiver, IAnima
     }
 
     public static EnumGrenadeShell getShell(@Nullable ItemStack stack) {
-        if (stack == null || !stack.hasTag()) return EnumGrenadeShell.FRAG;
-        return grab(EnumGrenadeShell.class, stack.getTag().getInt(KEY_SHELL));
+        if (stack == null || !StackNbt.has(stack)) return EnumGrenadeShell.FRAG;
+        return grab(EnumGrenadeShell.class, StackNbt.read(stack).getInt(KEY_SHELL));
     }
 
     public static EnumGrenadeFilling getFilling(@Nullable ItemStack stack) {
-        if (stack == null || !stack.hasTag()) return EnumGrenadeFilling.HE;
-        return grab(EnumGrenadeFilling.class, stack.getTag().getInt(KEY_FILLING));
+        if (stack == null || !StackNbt.has(stack)) return EnumGrenadeFilling.HE;
+        return grab(EnumGrenadeFilling.class, StackNbt.read(stack).getInt(KEY_FILLING));
     }
 
     public static EnumGrenadeFuze getFuze(@Nullable ItemStack stack) {
-        if (stack == null || !stack.hasTag()) return EnumGrenadeFuze.S3;
-        return grab(EnumGrenadeFuze.class, stack.getTag().getInt(KEY_FUZE));
+        if (stack == null || !StackNbt.has(stack)) return EnumGrenadeFuze.S3;
+        return grab(EnumGrenadeFuze.class, StackNbt.read(stack).getInt(KEY_FUZE));
     }
 
     @Nullable
     public static EnumGrenadeExtra getExtra(@Nullable ItemStack stack) {
-        if (stack == null || !stack.hasTag() || !stack.getTag().contains(KEY_EXTRA)) return null;
-        return grab(EnumGrenadeExtra.class, stack.getTag().getInt(KEY_EXTRA));
+        if (stack == null || !StackNbt.has(stack) || !StackNbt.read(stack).contains(KEY_EXTRA)) return null;
+        return grab(EnumGrenadeExtra.class, StackNbt.read(stack).getInt(KEY_EXTRA));
     }
 
     public static ItemStack make(EnumGrenadeShell shell, EnumGrenadeFilling filling, EnumGrenadeFuze fuze) { return make(shell, filling, fuze, null, 1); }
@@ -173,7 +175,7 @@ public class ItemGrenadeUniversal extends Item implements IEquipReceiver, IAnima
         tag.putInt(KEY_FILLING, filling.ordinal());
         tag.putInt(KEY_FUZE, fuze.ordinal());
         if (extra != null) tag.putInt(KEY_EXTRA, extra.ordinal());
-        stack.setTag(tag);
+        StackNbt.set(stack, tag);
         return stack;
     }
 
@@ -188,7 +190,11 @@ public class ItemGrenadeUniversal extends Item implements IEquipReceiver, IAnima
     }
 
     @Override
+    //? if < 1.21.1 {
     public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> list, TooltipFlag flag) {
+    //?} else {
+    /*public void appendHoverText(ItemStack stack, net.minecraft.world.item.Item.TooltipContext hbmTooltipCtx, List<Component> list, TooltipFlag flag) {
+    *///?}
         list.add(Component.translatable("item.hbm_m.grenade_shell_" + getShell(stack).name().toLowerCase(Locale.US)).withStyle(ChatFormatting.YELLOW));
         list.add(Component.translatable("item.hbm_m.grenade_filling_" + getFilling(stack).name().toLowerCase(Locale.US)).withStyle(ChatFormatting.YELLOW));
         list.add(Component.translatable("item.hbm_m.grenade_fuze_" + getFuze(stack).name().toLowerCase(Locale.US)).withStyle(ChatFormatting.YELLOW));
@@ -241,6 +247,7 @@ public class ItemGrenadeUniversal extends Item implements IEquipReceiver, IAnima
     }
 
     /** Original {@code ClientProxy}: {@code registerItemRenderer(grenade_universal, new ItemRenderGrenade())}. */
+    //? if forge {
     @Override
     public void initializeClient(java.util.function.Consumer<net.minecraftforge.client.extensions.common.IClientItemExtensions> consumer) {
         consumer.accept(new net.minecraftforge.client.extensions.common.IClientItemExtensions() {
@@ -250,6 +257,17 @@ public class ItemGrenadeUniversal extends Item implements IEquipReceiver, IAnima
             }
         });
     }
+    //?} elif neoforge {
+    /*@Override
+    public void initializeClient(java.util.function.Consumer<net.neoforged.neoforge.client.extensions.common.IClientItemExtensions> consumer) {
+        consumer.accept(new net.neoforged.neoforge.client.extensions.common.IClientItemExtensions() {
+            @Override
+            public net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer getCustomRenderer() {
+                return com.hbm_m.client.weapon.GunItemRenderer.INSTANCE;
+            }
+        });
+    }
+    *///?}
 
     @Override public boolean shouldPlayerModelAim(ItemStack stack) { return false; }
     @Override public Class<GunAnimation> getEnum() { return GunAnimation.class; }

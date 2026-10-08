@@ -32,7 +32,7 @@ public class ItemDigamma extends Item implements ITooltipProvider {
         this.digamma = digamma;
     }
 
-    //? if forge {
+    //? if forge || neoforge {
     @Override
     public boolean hasCraftingRemainingItem(ItemStack stack) {
         return true;

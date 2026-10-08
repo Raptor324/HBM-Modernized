@@ -505,7 +505,8 @@ public class NukeTorex extends ParticleNT implements FarCapableParticle {
         long now = System.currentTimeMillis();
         //  Ядерная вспышка и тряска HUD живут в ModEventHandlerClient (Forge-only оверлей).
         //  CameraShakeHandler.addShake() работает на всех лоадерах и даёт ещё и тряску камеры.
-        //? if forge {
+        //  Phase C: ModEventHandlerClient gibt es jetzt auch auf NeoForge (gleicher Blitz/HUD-Schuettler).
+        //? if forge || neoforge {
         if (this.age < 10 && now - com.hbm_m.powerarmor.ModEventHandlerClient.flashTimestamp > 1_000) {
             com.hbm_m.powerarmor.ModEventHandlerClient.triggerNuclearFlash();
         }

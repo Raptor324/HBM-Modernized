@@ -35,7 +35,7 @@ public class RailGenericBlock extends RailBlock {
         this.booster = booster;
     }
 
-    //? if forge {
+    //? if forge || neoforge {
     @Override
     public float getRailMaxSpeed(BlockState state, Level level, BlockPos pos, AbstractMinecart cart) {
         return maxSpeed;
@@ -51,7 +51,11 @@ public class RailGenericBlock extends RailBlock {
     //?}
 
     @Override
+    //? if < 1.21.1 {
     public void appendHoverText(ItemStack stack, @Nullable BlockGetter level, List<Component> list, TooltipFlag flag) {
+    //?} else {
+    /*public void appendHoverText(ItemStack stack, net.minecraft.world.item.Item.TooltipContext hbmTooltipCtx, List<Component> list, TooltipFlag flag) {
+    *///?}
         float speed = this.maxSpeed / baseSpeed;
         if (speed != 1F) list.add(Component.literal("Speed: " + ((int) (speed * 100)) + "%").withStyle(speed > 1 ? ChatFormatting.BLUE : ChatFormatting.RED));
         if (!flexible) list.add(Component.literal("Cannot be used for turns!").withStyle(ChatFormatting.RED));

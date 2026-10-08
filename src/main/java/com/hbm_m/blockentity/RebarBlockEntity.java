@@ -107,7 +107,11 @@ public class RebarBlockEntity extends BaseHbmBlockEntity implements IFluidReceiv
 
     /** Original networkPackNT(100): nur der Fortschritt, ohne den Block neu zu zeichnen. */
     private void networkPackNT(ServerLevel serverLevel) {
+        //? if < 1.21.1 {
         ClientboundBlockEntityDataPacket packet = ClientboundBlockEntityDataPacket.create(this, be -> {
+        //?} else {
+        /*ClientboundBlockEntityDataPacket packet = ClientboundBlockEntityDataPacket.create(this, (be, hbmRa) -> {
+        *///?}
             CompoundTag tag = new CompoundTag();
             tag.putInt("progress", ((RebarBlockEntity) be).progress);
             return tag;

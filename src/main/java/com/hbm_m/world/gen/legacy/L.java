@@ -196,7 +196,11 @@ public final class L {
     /** Forge-1.7.10 {@code ChestGenHooks} (Vanilla-Truhenbeute) -> 1.20-Beutetabelle. */
     public static void setLootTable(Object te, String table, Random rand) {
         if (te instanceof net.minecraft.world.level.block.entity.RandomizableContainerBlockEntity c) {
-            c.setLootTable(new net.minecraft.resources.ResourceLocation(table), rand.nextLong());
+            //? if < 1.21.1 {
+            c.setLootTable(net.minecraft.resources.ResourceLocation.parse(table), rand.nextLong());
+            //?} else {
+            /*c.setLootTable(net.minecraft.resources.ResourceKey.create(net.minecraft.core.registries.Registries.LOOT_TABLE, net.minecraft.resources.ResourceLocation.parse(table)), rand.nextLong());
+            *///?}
         }
     }
 

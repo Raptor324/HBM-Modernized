@@ -143,7 +143,11 @@ public class DynamicSlagBlock extends BaseEntityBlock {
     }
 
     @Override
+    //? if < 1.21.1 {
     public ItemStack getCloneItemStack(BlockGetter world, BlockPos pos, BlockState state) {
+    //?} else {
+    /*public ItemStack getCloneItemStack(net.minecraft.world.level.LevelReader world, BlockPos pos, BlockState state) {
+    *///?}
         if (world.getBlockEntity(pos) instanceof SlagBlockEntity tile && tile.mat != null) {
             return ItemScraps.create(new MaterialStack(tile.mat, tile.amount));
         }

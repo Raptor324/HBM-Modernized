@@ -56,4 +56,8 @@ public class DecoModelTEBlock extends BaseEntityBlock {
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
         return new DecoBlockEntity(pos, state);
     }
+    //? if >= 1.21.1 {
+    /*public static final com.mojang.serialization.MapCodec<DecoModelTEBlock> CODEC = com.hbm_m.platform.BlockCodecs.unsupported(DecoModelTEBlock.class);
+    @Override protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() { return CODEC; }
+    *///?}
 }

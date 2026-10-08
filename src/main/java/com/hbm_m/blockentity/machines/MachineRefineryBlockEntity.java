@@ -1,5 +1,7 @@
 package com.hbm_m.blockentity.machines;
 
+import com.hbm_m.platform.PlatformHooks;
+
 import com.hbm_m.api.fluids.FluidItemAccess;
 import com.hbm_m.api.fluids.IFluidStandardTransceiverMK2;
 import com.hbm_m.api.fluids.VanillaFluidEquivalence;
@@ -161,7 +163,9 @@ public class MachineRefineryBlockEntity extends BaseMachineBlockEntity implement
 
     //? if forge {
     private LazyOptional<IFluidHandler> fluidHandler = LazyOptional.empty();
-    //?}
+    //?} elif neoforge {
+    /*private com.hbm_m.platform.LazyCap<net.neoforged.neoforge.fluids.capability.IFluidHandler> fluidHandler = com.hbm_m.platform.LazyCap.empty();
+    *///?}
 
     public MachineRefineryBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.REFINERY_BE.get(), pos, state,
@@ -365,7 +369,7 @@ public class MachineRefineryBlockEntity extends BaseMachineBlockEntity implement
             int x = worldPosition.getX(), y = worldPosition.getY(), z = worldPosition.getZ();
             java.util.List<net.minecraft.world.entity.Entity> affected = level.getEntitiesOfClass(net.minecraft.world.entity.Entity.class,
                     new net.minecraft.world.phys.AABB(x - 1.5, y, z - 1.5, x + 2.5, y + 8, z + 2.5));
-            for (net.minecraft.world.entity.Entity e : affected) e.setSecondsOnFire(5);
+            for (net.minecraft.world.entity.Entity e : affected) PlatformHooks.setSecondsOnFire(e, 5);
             net.minecraft.util.RandomSource rand = level.random;
             com.hbm_m.util.ParticleUtil.spawnGasFlame(level, x + rand.nextDouble(), y + 1.5 + rand.nextDouble() * 3, z + rand.nextDouble(),
                     rand.nextGaussian() * 0.05, 0.1, rand.nextGaussian() * 0.05);
@@ -502,7 +506,7 @@ public class MachineRefineryBlockEntity extends BaseMachineBlockEntity implement
         return Component.translatable("container.hbm_m.refinery");
     }
 
-    //? if forge {
+    //? if forge || neoforge {
     @Override
     protected void setupFluidCapability() {
         setFluidHandler(new RefineryFluidHandler(this));
@@ -566,5 +570,25 @@ public class MachineRefineryBlockEntity extends BaseMachineBlockEntity implement
         super.invalidateCaps();
         sidedItems.invalidate();
     }
-    //?}
+    //?} elif neoforge {
+    /*/^* Original {@code ISidedInventory}: Slot {11}; nichts hinein, Schwefel heraus. ^/
+    private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
+            new com.hbm_m.blockentity.SidedItemAccess.Rules() {
+                @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return new int[] { 11 }; }
+                @Override public boolean canInsert(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return false; }
+                @Override public boolean canExtract(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return slot == 11; }
+            });
+
+    @Override
+    public <T> com.hbm_m.platform.LazyCap<T> getHbmCapability(com.hbm_m.platform.HbmCap<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == com.hbm_m.platform.HbmCap.ITEM_HANDLER && side != null) return sidedItems.get(side).cast();
+        return super.getHbmCapability(cap, side);
+    }
+
+    @Override
+    public void invalidateHbmCaps() {
+        super.invalidateHbmCaps();
+        sidedItems.invalidate();
+    }
+    *///?}
 }

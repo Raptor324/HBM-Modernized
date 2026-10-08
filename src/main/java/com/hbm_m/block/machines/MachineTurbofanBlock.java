@@ -92,7 +92,11 @@ public class MachineTurbofanBlock extends DummyableMachineBlock {
     }
 
     @Override
+    //? if < 1.21.1 {
     public void appendHoverText(ItemStack stack, @Nullable BlockGetter level, List<Component> list, TooltipFlag flag) {
+    //?} else {
+    /*public void appendHoverText(ItemStack stack, net.minecraft.world.item.Item.TooltipContext hbmTooltipCtx, List<Component> list, TooltipFlag flag) {
+    *///?}
         list.add(Component.literal("Fuel efficiency:").withStyle(ChatFormatting.YELLOW));
         list.add(Component.literal("-").withStyle(ChatFormatting.YELLOW)
                 .append(Component.translatable("hbmfluid.trait.fuel.aviation"))

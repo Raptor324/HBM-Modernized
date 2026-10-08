@@ -1,5 +1,7 @@
 package com.hbm_m.block.generic;
 
+import com.hbm_m.platform.StackNbt;
+
 import java.util.List;
 
 import javax.annotation.Nullable;
@@ -55,12 +57,12 @@ public final class JungleBricks {
         ItemStack s = new ItemStack(item);
         CompoundTag bst = new CompoundTag();
         bst.putString(prop, value);
-        s.getOrCreateTag().put("BlockStateTag", bst);
+        com.hbm_m.platform.BlockStateItemData.put(s, bst);
         return s;
     }
 
     public static String stateOf(ItemStack stack, String prop) {
-        CompoundTag t = stack.getTag();
+        CompoundTag t = StackNbt.tag(stack);
         if (t == null || !t.contains("BlockStateTag")) return "";
         return t.getCompound("BlockStateTag").getString(prop);
     }
@@ -149,7 +151,11 @@ public final class JungleBricks {
         @Override protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> b) { b.add(GLYPH); }
 
         @Override
+        //? if < 1.21.1 {
         public ItemStack getCloneItemStack(BlockGetter level, BlockPos pos, BlockState state) {
+        //?} else {
+        /*public ItemStack getCloneItemStack(net.minecraft.world.level.LevelReader level, BlockPos pos, BlockState state) {
+        *///?}
             return stack(asItem(), "glyph", Integer.toString(state.getValue(GLYPH)));
         }
     }
@@ -209,7 +215,11 @@ public final class JungleBricks {
         }
 
         @Override
+        //? if < 1.21.1 {
         public ItemStack getCloneItemStack(BlockGetter level, BlockPos pos, BlockState state) {
+        //?} else {
+        /*public ItemStack getCloneItemStack(net.minecraft.world.level.LevelReader level, BlockPos pos, BlockState state) {
+        *///?}
             return stack(asItem(), "trap", state.getValue(TRAP).getSerializedName());
         }
 

@@ -1,5 +1,9 @@
 package com.hbm_m.item.tool;
 
+import com.hbm_m.platform.PlatformHooks;
+
+import com.hbm_m.platform.AttributeOps;
+
 import com.google.common.collect.ImmutableMultimap;
 import com.google.common.collect.Multimap;
 import com.hbm_m.api.block.IToolable;
@@ -31,8 +35,17 @@ public class ItemToolingWeapon extends ItemTooling {
 
     @Override
     @SuppressWarnings("deprecation")
+    //? if < 1.21.1 {
     public Multimap<Attribute, AttributeModifier> getDefaultAttributeModifiers(EquipmentSlot slot) {
         if (slot != EquipmentSlot.MAINHAND) return super.getDefaultAttributeModifiers(slot);
-        return ImmutableMultimap.of(Attributes.ATTACK_DAMAGE, new AttributeModifier(BASE_ATTACK_DAMAGE_UUID, "Weapon modifier", damage, AttributeModifier.Operation.ADDITION));
+    //?} else {
+    /*public net.minecraft.world.item.component.ItemAttributeModifiers getDefaultAttributeModifiers(ItemStack stack) {
+        return com.hbm_m.platform.AttributeHooks.fromSlots(this::hbmSlotModifiers);
+    }
+
+    private Multimap<net.minecraft.core.Holder<Attribute>, AttributeModifier> hbmSlotModifiers(EquipmentSlot slot) {
+        if (slot != EquipmentSlot.MAINHAND) return ImmutableMultimap.of();
+    *///?}
+        return ImmutableMultimap.of(Attributes.ATTACK_DAMAGE, com.hbm_m.platform.AttributeHooks.modifier(com.hbm_m.platform.AttributeHooks.BASE_ATTACK_DAMAGE_UUID, "Weapon modifier", damage, AttributeOps.ADDITION));
     }
 }

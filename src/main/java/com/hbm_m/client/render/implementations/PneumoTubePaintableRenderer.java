@@ -27,7 +27,7 @@ import net.minecraft.world.level.block.state.BlockState;
  * {@code ejectionDir}). Das ist so uebernommen - sonst saehen bestehende Anlagen anders aus als
  * gewohnt.</p>
  */
-public class PneumoTubePaintableRenderer implements BlockEntityRenderer<PneumoTubePaintableBlockEntity> {
+public class PneumoTubePaintableRenderer implements com.hbm_m.client.render.HbmBerBounds<PneumoTubePaintableBlockEntity> {
 
     private static final ResourceLocation BASE = rl("block/pneumatic_tube_paintable");
     private static final ResourceLocation OVERLAY = rl("block/pneumatic_tube_paintable_overlay");
@@ -106,8 +106,14 @@ public class PneumoTubePaintableRenderer implements BlockEntityRenderer<PneumoTu
 
     private static void vert(VertexConsumer vc, PoseStack.Pose pose, TextureAtlasSprite sprite,
                              float x, float y, float z, float u, float v, float alpha) {
-        float uu = sprite.getU(u);
+        // u/v 0..1: 1.20.1 erwartet Pixel 0..16, 1.21.1 den Anteil 0..1
+        //? if < 1.21.1 {
+        float uu = sprite.getU(u * 16F);
+        float vv = sprite.getV(v * 16F);
+        //?} else {
+        /*float uu = sprite.getU(u);
         float vv = sprite.getV(v);
+        *///?}
 
         //? if < 1.21.1 {
         vc.vertex(pose.pose(), x, y, z).color(1F, 1F, 1F, alpha).uv(uu, vv).endVertex();

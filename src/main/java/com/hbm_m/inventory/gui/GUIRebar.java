@@ -1,5 +1,7 @@
 package com.hbm_m.inventory.gui;
 
+import com.hbm_m.platform.StackNbt;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -33,7 +35,7 @@ public class GUIRebar extends AbstractContainerScreen<RebarMenu> {
 
     @Override
     public void render(GuiGraphics g, int mouseX, int mouseY, float f) {
-        this.renderBackground(g);
+        com.hbm_m.client.GuiCompat.renderBackground(this, g, mouseX, mouseY, f);
         super.render(g, mouseX, mouseY, f);
 
         Slot slot = this.menu.getSlot(0);
@@ -73,7 +75,7 @@ public class GUIRebar extends AbstractContainerScreen<RebarMenu> {
 
     @Override
     protected void renderLabels(GuiGraphics g, int i, int j) {
-        Component name = this.menu.rebar.target.hasCustomHoverName() ? this.menu.rebar.target.getHoverName() : Component.translatable("container.rebar");
+        Component name = StackNbt.hasCustomName(this.menu.rebar.target) ? this.menu.rebar.target.getHoverName() : Component.translatable("container.rebar");
         g.drawString(this.font, name, this.imageWidth / 2 - this.font.width(name) / 2, 6, 4210752, false);
         g.drawString(this.font, Component.translatable("container.inventory"), 8, this.imageHeight - 96 + 2, 4210752, false);
     }
