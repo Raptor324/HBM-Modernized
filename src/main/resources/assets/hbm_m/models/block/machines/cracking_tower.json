@@ -20,11 +20,7 @@
     "scale": 1.0
   },
   "display": {
-    "gui": {
-      "rotation": [30, 225, 0],
-      "translation": [0, -3.75, 0],
-      "scale": [0.1, 0.1, 0.1]
-    },
+    "gui": {"rotation":[30,225,0],"translation":[-0.3148,-4.9861,0],"scale":[0.0562,0.0562,0.0562]},
     "fixed": {
       "rotation": [0, 180, 0],
       "translation": [0, 0, 0],
