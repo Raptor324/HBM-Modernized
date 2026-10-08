@@ -1,5 +1,5 @@
 {
-  "type": "forge:add_carvers",
+  "type": "hbm_m:add_carvers",
   "biomes": "#minecraft:is_overworld",
   "carvers": [
     "hbm_m:crater",
