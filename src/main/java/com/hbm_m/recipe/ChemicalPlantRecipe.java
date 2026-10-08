@@ -50,6 +50,8 @@ public class ChemicalPlantRecipe extends PlatformRecipe {
 
     private final List<CountedIngredient> itemInputs;
     private final List<FluidStack> fluidInputs;
+    /** Druck je Fluessigkeitseingang (Original {@code FluidStack.pressure}, 528-Druckvarianten); 0 = drucklos. */
+    private final List<Integer> fluidInputPressures;
     private final List<ItemStack> itemOutputs;
     private final List<FluidStack> fluidOutputs;
     private final int duration;
@@ -74,9 +76,28 @@ public class ChemicalPlantRecipe extends PlatformRecipe {
                                @Nullable ItemStack iconItem,
                                @Nullable ResourceLocation iconFluid,
                                @Nullable String blueprintPool) {
+        this(id, itemInputs, fluidInputs, null, itemOutputs, fluidOutputs, duration, powerConsumption, iconItem, iconFluid, blueprintPool);
+    }
+
+    public ChemicalPlantRecipe(ResourceLocation id,
+                               List<CountedIngredient> itemInputs,
+                               List<FluidStack> fluidInputs,
+                               @Nullable List<Integer> fluidInputPressures,
+                               List<ItemStack> itemOutputs,
+                               List<FluidStack> fluidOutputs,
+                               int duration,
+                               int powerConsumption,
+                               @Nullable ItemStack iconItem,
+                               @Nullable ResourceLocation iconFluid,
+                               @Nullable String blueprintPool) {
         super(id);
         this.itemInputs = itemInputs != null ? itemInputs : List.of();
         this.fluidInputs = fluidInputs != null ? fluidInputs : List.of();
+        List<Integer> pr = new ArrayList<>();
+        for (int i = 0; i < this.fluidInputs.size(); i++) {
+            pr.add(fluidInputPressures != null && i < fluidInputPressures.size() ? fluidInputPressures.get(i) : 0);
+        }
+        this.fluidInputPressures = List.copyOf(pr);
         this.itemOutputs = itemOutputs != null ? itemOutputs : List.of();
         this.fluidOutputs = fluidOutputs != null ? fluidOutputs : List.of();
         this.duration = duration;
@@ -93,6 +114,11 @@ public class ChemicalPlantRecipe extends PlatformRecipe {
     /** Жидкостные входы — единый тип {@link FluidStack} (Architectury), как и выходы. */
     public List<FluidStack> getFluidInputs() {
         return fluidInputs;
+    }
+
+    /** Original {@code inputFluid[i].pressure}: der Eingangstank wird beim Rezeptwechsel auf diesen Druck gestellt. */
+    public int getFluidInputPressure(int index) {
+        return index >= 0 && index < fluidInputPressures.size() ? fluidInputPressures.get(index) : 0;
     }
 
     public List<ItemStack> getItemOutputs() {
@@ -193,13 +219,14 @@ public class ChemicalPlantRecipe extends PlatformRecipe {
 
             List<CountedIngredient> itemInputs = readItemInputs(json);
             List<FluidStack> fluidInputs = readFluidInputs(json);
+            List<Integer> fluidInputPressures = readFluidInputPressures(json);
             List<ItemStack> itemOutputs = readItemOutputs(json);
             List<FluidStack> fluidOutputs = readFluidOutputs(json);
 
             ResourceLocation iconFluid = readIconFluid(json);
             ItemStack iconItem = finalizeIconStack(readIconItem(json), iconFluid);
 
-            return new ChemicalPlantRecipe(recipeId, itemInputs, fluidInputs, itemOutputs, fluidOutputs, duration, power, iconItem, iconFluid, blueprintPool);
+            return new ChemicalPlantRecipe(recipeId, itemInputs, fluidInputs, fluidInputPressures, itemOutputs, fluidOutputs, duration, power, iconItem, iconFluid, blueprintPool);
         }
 
         @Override
@@ -223,8 +250,10 @@ public class ChemicalPlantRecipe extends PlatformRecipe {
             // Жидкостные входы — единый кросс-лоадерный формат (RecipeHooks.readFluidStack).
             int fluidInCount = buf.readVarInt();
             List<FluidStack> fluidInputs = new ArrayList<>(fluidInCount);
+            List<Integer> fluidInputPressures = new ArrayList<>(fluidInCount);
             for (int i = 0; i < fluidInCount; i++) {
                 fluidInputs.add(RecipeHooks.readFluidStack(buf));
+                fluidInputPressures.add(buf.readVarInt());
             }
 
             int itemOutCount = buf.readVarInt();
@@ -239,7 +268,7 @@ public class ChemicalPlantRecipe extends PlatformRecipe {
                 fluidOutputs.add(RecipeHooks.readFluidStack(buf));
             }
 
-            return new ChemicalPlantRecipe(recipeId, itemInputs, fluidInputs, itemOutputs, fluidOutputs, duration, power, iconItem, iconFluid, blueprintPool);
+            return new ChemicalPlantRecipe(recipeId, itemInputs, fluidInputs, fluidInputPressures, itemOutputs, fluidOutputs, duration, power, iconItem, iconFluid, blueprintPool);
         }
 
         @Override
@@ -276,8 +305,9 @@ public class ChemicalPlantRecipe extends PlatformRecipe {
 
             // Жидкостные входы — единый кросс-лоадерный формат (RecipeHooks.writeFluidStack).
             buf.writeVarInt(recipe.fluidInputs.size());
-            for (FluidStack fi : recipe.fluidInputs) {
-                RecipeHooks.writeFluidStack(buf, fi);
+            for (int i = 0; i < recipe.fluidInputs.size(); i++) {
+                RecipeHooks.writeFluidStack(buf, recipe.fluidInputs.get(i));
+                buf.writeVarInt(recipe.getFluidInputPressure(i));
             }
 
             buf.writeVarInt(recipe.itemOutputs.size());
@@ -371,6 +401,19 @@ public class ChemicalPlantRecipe extends PlatformRecipe {
                 if (id == null) continue;
                 long amount = GsonHelper.getAsLong(obj, "amount", 0L);
                 result.add(RecipeHooks.fluidStackOf(id, amount));
+            }
+            return result;
+        }
+
+        /** Optionales {@code "pressure"} je Eintrag in {@code fluid_inputs} (Original {@code new FluidStack(type, fill, pressure)}). */
+        private static List<Integer> readFluidInputPressures(JsonObject json) {
+            if (!json.has("fluid_inputs")) return List.of();
+            JsonArray arr = GsonHelper.getAsJsonArray(json, "fluid_inputs");
+            List<Integer> result = new ArrayList<>(arr.size());
+            for (JsonElement el : arr) {
+                JsonObject obj = el.getAsJsonObject();
+                if (ResourceLocation.tryParse(GsonHelper.getAsString(obj, "fluid")) == null) continue;
+                result.add(GsonHelper.getAsInt(obj, "pressure", 0));
             }
             return result;
         }

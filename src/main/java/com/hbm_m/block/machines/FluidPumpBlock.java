@@ -98,6 +98,8 @@ public class FluidPumpBlock extends BaseEntityBlock {
 
     private InteractionResult handleUse(BlockState state, Level level, BlockPos pos,
                                         Player player, InteractionHand hand, BlockHitResult hit) {
+        // Original onBlockActivated: nur ohne Schleichen
+        if (player.isShiftKeyDown()) return InteractionResult.PASS;
         var stack = player.getItemInHand(hand);
         if (!stack.isEmpty() && stack.getItem() instanceof IItemFluidIdentifier idItem) {
             if (!level.isClientSide) {
@@ -112,7 +114,12 @@ public class FluidPumpBlock extends BaseEntityBlock {
             }
             return InteractionResult.sidedSuccess(level.isClientSide);
         }
-        return InteractionResult.PASS;
+        // Original: sonst GUIPump oeffnen (Durchsatz, Druck, Prioritaet)
+        if (level.isClientSide) {
+            dev.architectury.utils.EnvExecutor.runInEnv(dev.architectury.utils.Env.CLIENT, () -> () ->
+                    com.hbm_m.inventory.gui.GUIPump.open(pos));
+        }
+        return InteractionResult.sidedSuccess(level.isClientSide);
     }
 
     //? if >1.20.1 {

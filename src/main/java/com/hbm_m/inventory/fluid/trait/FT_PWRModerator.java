@@ -25,14 +25,13 @@ public class FT_PWRModerator extends FluidTrait {
 
     @Override
     public void addInfo(List<Component> info) {
-        info.add(Component.translatable("fluid.hbm_m.trait.pwr_flux_multiplier").withStyle(ChatFormatting.BLUE));
+        info.add(Component.literal("[").append(Component.translatable("hbmfluid.trait.pwrFluxMultiplier")).append("]").withStyle(ChatFormatting.BLUE));
     }
 
     @Override
     public void addInfoHidden(List<Component> info) {
         int mult = (int) (multiplier * 100 - 100);
-        info.add(Component.translatable("fluid.hbm_m.trait.core_flux_pct", mult >= 0 ? "+" + mult : String.valueOf(mult))
-                .withStyle(ChatFormatting.BLUE));
+        info.add(Component.translatable("hbmfluid.trait.pwrFluxCore").append(" " + (mult >= 0 ? "+" : "") + mult + "%").withStyle(ChatFormatting.BLUE));
     }
 
     @Override

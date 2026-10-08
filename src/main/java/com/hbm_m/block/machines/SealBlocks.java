@@ -118,7 +118,7 @@ public final class SealBlocks {
         @Override
         public InteractionResult use(BlockState state, Level world, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
             if (world.isClientSide) return InteractionResult.SUCCESS;
-            if (player.isShiftKeyDown()) return InteractionResult.PASS;
+            if (player.isShiftKeyDown()) return world.isClientSide() ? InteractionResult.SUCCESS : InteractionResult.PASS; // Original: Client true, Server geschlichen false
             toggle(world, pos);
             return InteractionResult.SUCCESS;
         }

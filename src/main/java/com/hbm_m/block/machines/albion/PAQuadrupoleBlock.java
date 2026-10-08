@@ -40,6 +40,12 @@ public class PAQuadrupoleBlock extends PAMultiblockBlock {
                 .build(() -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState());
     }
 
+    /** audit13: Original {@code onBlockActivated -> standardOpenBehavior} - GUI des Kerns von jeder Zelle aus. */
+    @Override
+    protected boolean hasMenu() {
+        return true;
+    }
+
     @Nullable
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
@@ -61,4 +67,11 @@ public class PAQuadrupoleBlock extends PAMultiblockBlock {
         return CODEC;
     }
     *///?}
+
+    /** Original {@code addInformation}: {@code addStandardInfo} (Umschalttaste zeigt {@code .desc}). */
+    @Override
+    public void appendHoverText(net.minecraft.world.item.ItemStack stack, @org.jetbrains.annotations.Nullable net.minecraft.world.level.BlockGetter level,
+                                java.util.List<net.minecraft.network.chat.Component> list, net.minecraft.world.item.TooltipFlag flag) {
+        com.hbm_m.util.StandardInfo.add(list, getDescriptionId() + ".desc");
+    }
 }

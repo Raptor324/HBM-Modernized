@@ -99,12 +99,45 @@ public class MachineReactorResearchBlock extends BaseEntityBlock implements IMul
 
     @Override
     public RenderShape getRenderShape(BlockState state) {
-        return RenderShape.MODEL;
+        return RenderShape.ENTITYBLOCK_ANIMATED;
+    }
+
+    /** Original {@code onBlockActivated}: FBI-Markierung, dann GUI; mit Schleichen nichts. */
+    private InteractionResult open(Level level, BlockPos pos, Player player) {
+        if (level.isClientSide()) return InteractionResult.SUCCESS;
+        if (player.isShiftKeyDown()) return level.isClientSide() ? InteractionResult.SUCCESS : InteractionResult.PASS; // Original: Client true, Server geschlichen false
+        com.hbm_m.handler.BossSpawnHandler.markFBI((ServerPlayer) player);
+        if (level.getBlockEntity(pos) instanceof MachineReactorResearchBlockEntity reactorEntity) {
+            MenuRegistry.openExtendedMenu((ServerPlayer) player, reactorEntity, buf -> buf.writeBlockPos(pos));
+        }
+        return InteractionResult.CONSUME;
+    }
+
+    /** Original {@code randomDisplayTick}: Blasen an den wasserberuehrten Seiten des Kerns. */
+    @Override
+    public void animateTick(BlockState state, Level level, BlockPos pos, net.minecraft.util.RandomSource rand) {
+        super.animateTick(state, level, pos, rand);
+
+        for (Direction dir : Direction.Plane.HORIZONTAL) {
+            if (level.getBlockState(pos.relative(dir)).getFluidState().is(net.minecraft.tags.FluidTags.WATER)
+                    && level.getBlockState(pos.relative(dir)).is(net.minecraft.world.level.block.Blocks.WATER)) {
+
+                double ix = pos.getX() + 0.5F + dir.getStepX() + rand.nextDouble() - 0.5D;
+                double iy = pos.getY() + 0.5F + rand.nextDouble() - 0.5D;
+                double iz = pos.getZ() + 0.5F + dir.getStepZ() + rand.nextDouble() - 0.5D;
+
+                if (dir.getStepX() != 0) ix = pos.getX() + 0.5F + dir.getStepX() * 0.5 + rand.nextDouble() * 0.125 * dir.getStepX();
+                if (dir.getStepZ() != 0) iz = pos.getZ() + 0.5F + dir.getStepZ() * 0.5 + rand.nextDouble() * 0.125 * dir.getStepZ();
+
+                level.addParticle(net.minecraft.core.particles.ParticleTypes.BUBBLE, ix, iy, iz, 0.0, 0.2, 0.0);
+            }
+        }
     }
 
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        return structureHelper.generateShapeFromParts(state.getValue(FACING));
+        // w16b: nur die Kernzelle (Klicks fallen nicht in fremde Zellen); Umriss der ganzen Maschine: MultiblockOutlineForge
+        return structureHelper.getControllerCellShape(state.getValue(FACING));
     }
 
     @Override
@@ -153,29 +186,13 @@ public class MachineReactorResearchBlock extends BaseEntityBlock implements IMul
     public InteractionResult use(BlockState state, Level level, BlockPos pos,
                                   Player player, InteractionHand hand, BlockHitResult hit) {
 
-        if (!level.isClientSide()) {
-            BlockEntity entity = level.getBlockEntity(pos);
-            if (entity instanceof MachineReactorResearchBlockEntity reactorEntity) {
-                MenuRegistry.openExtendedMenu((ServerPlayer) player, reactorEntity, buf -> buf.writeBlockPos(pos));
-            } else {
-                throw new IllegalStateException("Container provider is missing!");
-            }
-        }
-        return InteractionResult.sidedSuccess(level.isClientSide());
+        return open(level, pos, player);
         }
     //?} else {
     /*@Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
 
-        if (!level.isClientSide()) {
-            BlockEntity entity = level.getBlockEntity(pos);
-            if (entity instanceof MachineReactorResearchBlockEntity reactorEntity) {
-                MenuRegistry.openExtendedMenu((ServerPlayer) player, reactorEntity, buf -> buf.writeBlockPos(pos));
-            } else {
-                throw new IllegalStateException("Container provider is missing!");
-            }
-        }
-        return InteractionResult.sidedSuccess(level.isClientSide());
+        return open(level, pos, player);
         }
     *///?}
 

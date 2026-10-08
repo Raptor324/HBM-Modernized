@@ -68,13 +68,23 @@ public class EntityRADBeast extends Monster implements IRadiationImmune {
                 .add(Attributes.MAX_HEALTH, 120.0D)
                 .add(Attributes.ATTACK_DAMAGE, 16.0D)
                 .add(Attributes.ARMOR, 8.0D)
-                .add(Attributes.FOLLOW_RANGE, 32.0D);
+                // Original: alte KI (EntityMob ohne isAIEnabled) - Zielsuche closestVulnerablePlayer 16 Bloecke,
+                // Lauf mit moveForward 0.7 x getAIMoveSpeed 0.1 -> neue KI quadriert das Attribut: sqrt(0.07)
+                .add(Attributes.FOLLOW_RANGE, 16.0D)
+                .add(Attributes.MOVEMENT_SPEED, Math.sqrt(0.7D * 0.1D));
     }
 
     @Override
     protected void registerGoals() {
         this.goalSelector.addGoal(1, new FloatGoal(this));
-        this.goalSelector.addGoal(2, new MeleeAttackGoal(this, 1.0D, false));
+        // Nur Verfolgung; Nah- und Strahlenangriff macht attackEntity() in aiStep (gemeinsamer attackTime)
+        this.goalSelector.addGoal(2, new MeleeAttackGoal(this, 1.0D, false) {
+            //? if < 1.21.1 {
+            @Override protected void checkAndPerformAttack(@NotNull LivingEntity t, double d) { }
+            //?} else {
+            /*@Override protected void checkAndPerformAttack(@NotNull LivingEntity t) { }
+            *///?}
+        });
         this.goalSelector.addGoal(3, new WaterAvoidingRandomStrollGoal(this, 1.0D));
         this.goalSelector.addGoal(4, new LookAtPlayerGoal(this, Player.class, 8.0F));
         this.goalSelector.addGoal(5, new RandomLookAroundGoal(this));
@@ -115,8 +125,9 @@ public class EntityRADBeast extends Monster implements IRadiationImmune {
     @Override public float getLightLevelDependentMagicValue() { return 1.0F; }
 
     @Override protected SoundEvent getHurtSound(@NotNull DamageSource source) { return SoundEvents.BLAZE_HURT; }
-    @Override protected SoundEvent getDeathSound() { return SoundEvents.IRON_GOLEM_STEP; }
-    @Override protected SoundEvent getAmbientSound() { return SoundEvents.BLAZE_AMBIENT; }
+    // Original: "hbm:step.iron" / "hbm:item.geiger" + (1 + rand.nextInt(6))
+    @Override protected SoundEvent getDeathSound() { return com.hbm_m.sound.HbmSoundsNT.get("hbm:step.iron"); }
+    @Override protected SoundEvent getAmbientSound() { return com.hbm_m.sound.HbmSoundsNT.get("hbm:item.geiger" + (1 + this.random.nextInt(6))); }
 
     /** The beast is a walking reactor: water is its only real weakness. */
     @Override
@@ -140,11 +151,13 @@ public class EntityRADBeast extends Monster implements IRadiationImmune {
 
             if (this.attackCooldown > 0) this.attackCooldown--;
 
-            // Sync who is being zapped so the renderer can draw the beam.
+            // Original: entityToAttack != null && attackTime < 10 -> Strahl zeigen
             this.entityData.set(VICTIM_ID,
-                    target != null && this.attackCooldown > 10 ? target.getId() : 0);
+                    target != null && this.attackCooldown < 10 ? target.getId() : 0);
 
-            radiationAttack(target);
+            if (target != null && target.isAlive() && this.hasLineOfSight(target)) {
+                attackEntity(target, this.distanceTo(target));
+            }
         } else {
             spawnAmbientParticles();
         }
@@ -161,16 +174,29 @@ public class EntityRADBeast extends Monster implements IRadiationImmune {
      * The ranged half of the original's {@code attackEntity}: within 30 blocks it irradiates the
      * target directly rather than closing in, and dumps 100 RAD into its own chunk while doing so.
      */
-    private void radiationAttack(@Nullable LivingEntity target) {
-        if (target == null || this.attackCooldown > 0) return;
-        if (this.distanceTo(target) >= 30.0F || !this.hasLineOfSight(target)) return;
+    private void attackEntity(LivingEntity target, float dist) {
+        // 1:1 attackEntity: Nahkampf unter 2 Bloecken bei Hoehenueberlappung, sonst Strahlung bis 30
+        if (this.attackCooldown <= 0 && dist < 2.0F
+                && target.getBoundingBox().maxY > this.getBoundingBox().minY
+                && target.getBoundingBox().minY < this.getBoundingBox().maxY) {
+            this.attackCooldown = 20;
+            this.doHurtTarget(target);
 
-        ChunkRadiationManager.incrementRad(this.level(),
-                this.getBlockX(), this.getBlockY(), this.getBlockZ(), 100F);
-        target.hurt(ModDamageSources.radiation(this.level()), 16.0F);
-        this.swing(net.minecraft.world.InteractionHand.MAIN_HAND);
-        this.playAmbientSound();
-        this.attackCooldown = 20;
+        } else if (dist < 30.0F) {
+            double deltaX = target.getX() - this.getX();
+            double deltaZ = target.getZ() - this.getZ();
+
+            if (this.attackCooldown == 0) {
+                ChunkRadiationManager.incrementRad(this.level(),
+                        this.getBlockX(), this.getBlockY(), this.getBlockZ(), 100F);
+                target.hurt(ModDamageSources.radiation(this.level()), 16.0F);
+                this.swing(net.minecraft.world.InteractionHand.MAIN_HAND);
+                this.playAmbientSound();
+                this.attackCooldown = 20;
+            }
+
+            this.setYRot((float) (Math.atan2(deltaZ, deltaX) * 180.0D / Math.PI) - 90.0F);
+        }
     }
 
     /** The leader burns with lava; ordinary beasts glow faintly. */

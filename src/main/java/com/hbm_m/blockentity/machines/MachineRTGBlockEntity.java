@@ -37,8 +37,8 @@ public class MachineRTGBlockEntity extends BaseMachineBlockEntity implements IEn
     /** Original: {@code slots = new ItemStack[15]}. */
     public static final int INVENTORY_SIZE = 15;
 
-    /** Original: {@code heatMax = rtgDecay() ? 600 : 200} - der Zerfall ist an, also 600. */
-    private static final int HEAT_MAX = 600;
+    /** Original: {@code heatMax = rtgDecay() ? 600 : 200}. */
+    private static final int HEAT_MAX = com.hbm_m.config.VersatileConfig.rtgDecay() ? 600 : 200;
     /** Original: {@code powerMax = 100000}. */
     private static final long MAX_POWER = 100_000L;
     /** Original: {@code power += heat * 5}. */
@@ -148,4 +148,26 @@ public class MachineRTGBlockEntity extends BaseMachineBlockEntity implements IEn
     public AbstractContainerMenu createMenu(int id, Inventory inv, Player player) {
         return new MachineRTGMenu(id, inv, this);
     }
+
+    //? if forge {
+    /** Original {@code ISidedInventory}: alle 15 Plaetze; nur Pellets hinein, nichts heraus. */
+    private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
+            new com.hbm_m.blockentity.SidedItemAccess.Rules() {
+                @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return com.hbm_m.blockentity.SidedItemAccess.range(0, 14); }
+                @Override public boolean canInsert(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return stack.getItem() instanceof com.hbm_m.item.machine.ItemRTGPellet; }
+                @Override public boolean canExtract(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return false; }
+            });
+
+    @Override
+    public @org.jetbrains.annotations.NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(@org.jetbrains.annotations.NotNull net.minecraftforge.common.capabilities.Capability<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER && side != null) return sidedItems.get(side).cast();
+        return super.getCapability(cap, side);
+    }
+
+    @Override
+    public void invalidateCaps() {
+        super.invalidateCaps();
+        sidedItems.invalidate();
+    }
+    //?}
 }

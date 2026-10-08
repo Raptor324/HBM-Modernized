@@ -101,7 +101,11 @@ public class MachineBatteryBlock extends BaseEntityBlock {
 
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
-        // Вызываем super.onRemove, который сам вызовет loot table
+        // Original breakBlock: Inventar droppt einzeln; Ladung/Modi/Prioritaet gehen ueber IPersistentNBT (Loot) ins Item
+        if (!state.is(newState.getBlock()) && !level.isClientSide()
+                && level.getBlockEntity(pos) instanceof MachineBatteryBlockEntity battery) {
+            battery.dropInventoryContents();
+        }
         super.onRemove(state, level, pos, newState, isMoving);
     }
 
@@ -126,6 +130,7 @@ public class MachineBatteryBlock extends BaseEntityBlock {
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos,
                                  Player player, InteractionHand hand, BlockHitResult hit) {
+        if (!level.isClientSide() && player.isShiftKeyDown()) return InteractionResult.PASS; // Original: geschlichen auf dem Server false
         if (!level.isClientSide) {
             BlockEntity entity = level.getBlockEntity(pos);
             if (entity instanceof MachineBatteryBlockEntity battery) {
@@ -139,6 +144,7 @@ public class MachineBatteryBlock extends BaseEntityBlock {
     /*@Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos,
                                                 Player player, BlockHitResult hit) {
+        if (!level.isClientSide() && player.isShiftKeyDown()) return InteractionResult.PASS; // Original: geschlichen auf dem Server false
         if (!level.isClientSide) {
             BlockEntity entity = level.getBlockEntity(pos);
             if (entity instanceof MachineBatteryBlockEntity battery) {
@@ -178,34 +184,7 @@ public class MachineBatteryBlock extends BaseEntityBlock {
     }
     
 
-    //? if < 1.21.1 {
-    @Override
-    public void appendHoverText(ItemStack pStack, @Nullable BlockGetter pLevel, List<Component> pTooltip, TooltipFlag pFlag) {
-        super.appendHoverText(pStack, pLevel, pTooltip, pFlag);
-    //?} else {
-    /*@Override
-    public void appendHoverText(ItemStack pStack, net.minecraft.world.item.Item.TooltipContext pLevel, List<Component> pTooltip, TooltipFlag pFlag) {
-        super.appendHoverText(pStack, pLevel, pTooltip, pFlag);
-    *///?}
-
-        // 1. Получаем сохраненную энергию из NBT
-        long energy = 0;
-        CompoundTag nbt = PlatformHooks.getItemTag(pStack);
-
-        // Мы читаем тот же "BlockEntityTag", который записали в loot table
-        if (nbt != null && nbt.contains("BlockEntityTag")) {
-            energy = nbt.getCompound("BlockEntityTag").getLong("Energy");
-        }
-
-        // 2. Форматируем
-        // this.capacity берется из поля класса MachineBatteryBlock
-        String energyStr = EnergyFormatter.format(energy);
-        String maxEnergyStr = EnergyFormatter.format(this.capacity);
-
-        // 3. Добавляем в тултип
-        pTooltip.add(Component.translatable("tooltip.hbm_m.machine_battery.stored", energyStr, maxEnergyStr)
-                .withStyle(ChatFormatting.YELLOW));
-    }
+    // Tooltip: MachineBatteryBlockItem (Original MachineBattery.addInformation via IPersistentInfoProvider).
 
     //? if >= 1.21.1 {
     /*public static final com.mojang.serialization.MapCodec<MachineBatteryBlock> CODEC = simpleCodec(props -> new MachineBatteryBlock(props, 0L));
@@ -215,4 +194,20 @@ public class MachineBatteryBlock extends BaseEntityBlock {
         return CODEC;
     }
     *///?}
+
+    /** Original {@code getComparatorInputOverride}: Ladestand {@code frac * 15 + 1}, leer 0. */
+    @Override
+    public boolean hasAnalogOutputSignal(net.minecraft.world.level.block.state.BlockState state) {
+        return true;
+    }
+
+    @Override
+    public int getAnalogOutputSignal(net.minecraft.world.level.block.state.BlockState state, net.minecraft.world.level.Level level, net.minecraft.core.BlockPos pos) {
+        net.minecraft.world.level.block.entity.BlockEntity te = level.getBlockEntity(pos);
+        if (!(te instanceof com.hbm_m.blockentity.machines.MachineBatteryBlockEntity battery)) return 0;
+        long power = battery.getEnergyStored();
+        if (power == 0) return 0;
+        double frac = (double) power / (double) battery.getMaxEnergyStored() * 15D;
+        return net.minecraft.util.Mth.clamp((int) frac + 1, 0, 15);
+    }
 }

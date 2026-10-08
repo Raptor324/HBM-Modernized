@@ -1,7 +1,7 @@
 {
   "display": {
     "icon": {
-      "item": "hbm_m:machine_gascent"
+      "item": "hbm_m:uranium_fuel_ingot"
     },
     "title": {
       "translate": "advancements.hbm_m.gas_cent.title"

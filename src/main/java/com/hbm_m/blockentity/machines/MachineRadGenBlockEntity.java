@@ -240,4 +240,34 @@ public class MachineRadGenBlockEntity extends BaseMachineBlockEntity implements 
     public AbstractContainerMenu createMenu(int id, Inventory inventory, Player player) {
         return MachineRadGenMenu.create(id, inventory, this);
     }
+
+    //? if forge {
+    /** Original {@code ISidedInventory}: alle 24 Plaetze; Brennstoff gleichmaessig in 0-11, Reste aus 12-23 heraus. */
+    private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
+            new com.hbm_m.blockentity.SidedItemAccess.Rules() {
+                @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return com.hbm_m.blockentity.SidedItemAccess.range(0, 23); }
+                @Override public boolean canInsert(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { if (slot >= 12 || !isItemValidForSlot(slot, stack)) return false;
+                    if (inventory.getStackInSlot(slot).isEmpty()) return true;
+                    int size = inventory.getStackInSlot(slot).getCount();
+                    for (int j = 0; j < 12; j++) {
+                        net.minecraft.world.item.ItemStack s = inventory.getStackInSlot(j);
+                        if (s.isEmpty()) return false;
+                        if (net.minecraft.world.item.ItemStack.isSameItem(s, stack) && s.getCount() < size) return false;
+                    }
+                    return true; }
+                @Override public boolean canExtract(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return slot >= 12; }
+            });
+
+    @Override
+    public @org.jetbrains.annotations.NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(@org.jetbrains.annotations.NotNull net.minecraftforge.common.capabilities.Capability<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER && side != null) return sidedItems.get(side).cast();
+        return super.getCapability(cap, side);
+    }
+
+    @Override
+    public void invalidateCaps() {
+        super.invalidateCaps();
+        sidedItems.invalidate();
+    }
+    //?}
 }

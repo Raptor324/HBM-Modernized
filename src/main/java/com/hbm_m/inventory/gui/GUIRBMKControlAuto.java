@@ -27,10 +27,7 @@ import net.minecraft.world.entity.player.Inventory;
  * manual {@link GUIRBMKControl} sibling, where it manifested as the rod level being
  * stuck at 0% and unselectable).
  *
- * <p>Not restored from the original: the power icon/tooltip (the modernized
- * {@code RBMKControlBlockEntity} hierarchy has no {@code power}/{@code maxPower}/
- * {@code isPowered()} fields), matching the same limitation already documented
- * on {@link GUIRBMKControl}.
+ * <p>Stromanzeige/-tooltip wie im Original bei (136, 21).
  */
 public class GUIRBMKControlAuto extends GuiInfoScreen<RBMKControlAutoMenu> {
 
@@ -84,6 +81,11 @@ public class GUIRBMKControlAuto extends GuiInfoScreen<RBMKControlAutoMenu> {
         // Interpolation-function icon (Linear / Quadratic / Inverse Quadratic).
         int f = be.function.ordinal();
         g.blit(TEXTURE, leftPos + 59, topPos + 27, 184, f * 19, 26, 19);
+
+        // Original: Stromanzeige bei (136, 21), Sprite (210, 0/16)
+        if (be.isPowered()) {
+            g.blit(TEXTURE, leftPos + 136, topPos + 21, 210, be.hasPower ? 16 : 0, 16, 16);
+        }
         }
 
         for (EditBox box : fields) {
@@ -120,6 +122,11 @@ public class GUIRBMKControlAuto extends GuiInfoScreen<RBMKControlAutoMenu> {
                 Component.literal("Min heat"), Component.literal("Must be smaller than max heat"));
         drawCustomInfoStat(g, mx, my, 28, 70, 30, 10, mx, my,
                 Component.literal("Save parameters"));
+
+        if (be.isPowered()) {
+            drawCustomInfoStat(g, mx, my, 136, 21, 16, 16, mx, my,
+                    Component.literal(be.getEnergyStored() + " / " + be.getMaxEnergyStored() + "HE"));
+        }
         }
 
         renderTooltip(g, mx, my);
@@ -199,5 +206,13 @@ public class GUIRBMKControlAuto extends GuiInfoScreen<RBMKControlAutoMenu> {
             }
         }
         return super.charTyped(codePoint, modifiers);
+    }
+
+    @Override
+    protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
+        // Original drawGuiContainerForegroundLayer
+        String name = this.title.getString();
+        guiGraphics.drawString(this.font, name, 88 - this.font.width(name) / 2, 6, 4210752, false);
+        guiGraphics.drawString(this.font, this.playerInventoryTitle, 8, 92, 4210752, false);
     }
 }

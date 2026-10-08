@@ -31,16 +31,21 @@ import org.jetbrains.annotations.Nullable;
  * an Kuehlung, Energie oder Spule, endet der Lauf mit dem passenden {@link PAState} - den zeigt die
  * Quelle bis zum naechsten Start an.</p>
  */
-public class PASourceBlockEntity extends CooledMachineBlockEntity implements PAParticleHost {
+public class PASourceBlockEntity extends CooledMachineBlockEntity implements PAParticleHost, com.hbm_m.api.tile.IControlReceiver, com.hbm_m.interfaces.IConditionalInvAccess,
+        com.hbm_m.api.redstoneoverradio.IRORValueProvider, com.hbm_m.api.redstoneoverradio.IRORInteractive {
 
     public static final int SLOT_BATTERY = 0;
     public static final int SLOT_INPUT_A = 1;
     public static final int SLOT_INPUT_B = 2;
-    public static final int INVENTORY_SIZE = 3;
+    /** Original: Rueckgabe der Behaelter (z. B. leere Zellen) der beiden Ausgangsstoffe, nur entnehmbar. */
+    public static final int SLOT_CONTAINER_A = 3;
+    public static final int SLOT_CONTAINER_B = 4;
+    public static final int INVENTORY_SIZE = 5;
 
     /** Original: {@code usage = 100_000} je Start. */
     private static final long USAGE = 100_000L;
-    private static final long MAX_POWER = 1_000_000L;
+    /** Original {@code getMaxPower() = 10_000_000}. */
+    private static final long MAX_POWER = 10_000_000L;
     /**
      * Kettenbetrieb: das Teilchen startet auf dem Bauteil direkt neben der Quelle. Im Original
      * sind es fuenf Bloecke, weil die Quelle dort ein Multiblock ist - siehe die Bauteilklassen.
@@ -176,6 +181,15 @@ public class PASourceBlockEntity extends CooledMachineBlockEntity implements PAP
     private void tryRun(Level level, BlockPos pos) {
         if (!isCool()) return;
 
+        // Original: Behaelter der Ausgangsstoffe wandern in die Slots 3/4 - ist dort belegt, startet nichts
+        ItemStack inA = getInventory().getStackInSlot(SLOT_INPUT_A);
+        ItemStack inB = getInventory().getStackInSlot(SLOT_INPUT_B);
+        if (inA.hasCraftingRemainingItem() && !getInventory().getStackInSlot(SLOT_CONTAINER_A).isEmpty()) return;
+        if (inB.hasCraftingRemainingItem() && !getInventory().getStackInSlot(SLOT_CONTAINER_B).isEmpty()) return;
+
+        if (inA.hasCraftingRemainingItem()) getInventory().setStackInSlot(SLOT_CONTAINER_A, inA.getCraftingRemainingItem().copy());
+        if (inB.hasCraftingRemainingItem()) getInventory().setStackInSlot(SLOT_CONTAINER_B, inB.getCraftingRemainingItem().copy());
+
         setEnergyStored(getEnergyStored() - USAGE);
 
         Direction axis = PAOrientation.beamAxis(getBlockState());
@@ -199,6 +213,20 @@ public class PASourceBlockEntity extends CooledMachineBlockEntity implements PAP
         state = PAState.IDLE;
         setChanged();
     }
+
+    /** Original {@code receiveControl}: "cancel" aus dem GUI bricht den Lauf ab. */
+    @Override
+    public void receiveControl(net.minecraft.nbt.CompoundTag data) {
+        if (data.contains("cancel")) cancel();
+    }
+
+    @Override
+    public boolean hasPermission(net.minecraft.world.entity.player.Player player) {
+        return player.distanceToSqr(worldPosition.getX() + 0.5D, worldPosition.getY() + 0.5D, worldPosition.getZ() + 0.5D) <= 256.0D;
+    }
+
+    /** Original {@code usage} - fuer die Bereitschaftsanzeige im GUI. */
+    public static long getUsage() { return USAGE; }
 
     // ── PAParticleHost ──────────────────────────────────────────────────────
 
@@ -239,6 +267,7 @@ public class PASourceBlockEntity extends CooledMachineBlockEntity implements PAP
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.readNbtData(tag, registries);
+        setEnergyCapacity(MAX_POWER); // alte Welten: frueherer Speicherwert
         PAState[] values = PAState.values();
         int ordinal = tag.getInt("state");
         state = ordinal >= 0 && ordinal < values.length ? values[ordinal] : PAState.IDLE;
@@ -259,5 +288,82 @@ public class PASourceBlockEntity extends CooledMachineBlockEntity implements PAP
     @Override
     public AbstractContainerMenu createMenu(int id, Inventory inv, Player player) {
         return new PASourceMenu(id, inv, this);
+    }
+
+    // ─── Original ISidedInventory / IConditionalInvAccess: farbige Anschlusszellen ──────────────────────
+
+    private static final int[] SLOTS_DEFAULT = new int[] {3, 4};
+    private static final int[] SLOTS_RED = new int[] {1, 3, 4};
+    private static final int[] SLOTS_YELLOW = new int[] {2, 3, 4};
+
+    //? if forge {
+    /** Original: gelbe Zellen fuehren Slot 2, rote Slot 1, alle anderen nur die Behaelterslots 3/4. */
+    @Override
+    public net.minecraftforge.items.IItemHandler getConditionalItemHandler(net.minecraft.core.BlockPos part, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        net.minecraft.world.level.block.state.BlockState state = getBlockState();
+        net.minecraft.core.Direction dir = state.hasProperty(com.hbm_m.block.machines.albion.PAMultiblockBlock.FACING)
+                ? state.getValue(com.hbm_m.block.machines.albion.PAMultiblockBlock.FACING) : net.minecraft.core.Direction.NORTH;
+        net.minecraft.core.Direction rot = dir.getClockWise(); // ForgeDirection.getRotation(UP)
+        net.minecraft.core.BlockPos c = worldPosition;
+
+        if (part.equals(c.relative(dir).relative(rot, -2)) || part.equals(c.relative(dir, -1).relative(rot, 2))) {
+            return itemAccess(SLOTS_YELLOW);
+        }
+        if (part.equals(c.relative(dir, -1).relative(rot, -2)) || part.equals(c.relative(dir).relative(rot, 2))) {
+            return itemAccess(SLOTS_RED);
+        }
+        return itemAccess(SLOTS_DEFAULT);
+    }
+
+    @Override
+    public @org.jetbrains.annotations.NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(@org.jetbrains.annotations.NotNull net.minecraftforge.common.capabilities.Capability<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER && side != null) {
+            net.minecraftforge.items.IItemHandler h = itemAccess(SLOTS_DEFAULT);
+            return net.minecraftforge.common.util.LazyOptional.of(() -> h).cast();
+        }
+        return super.getCapability(cap, side);
+    }
+
+    private net.minecraftforge.items.IItemHandler itemAccess(int[] slots) {
+        return com.hbm_m.blockentity.SidedItemAccess.fixed(() -> inventory, slots, (slot, stack) -> slot == SLOT_INPUT_A || slot == SLOT_INPUT_B, (slot, stack) -> slot == SLOT_CONTAINER_A || slot == SLOT_CONTAINER_B);
+    }
+    //?}
+
+    // ── Redstone-over-Radio (1:1 TileEntityPASource) ──
+
+    @Override
+    public String[] getFunctionInfo() {
+        return new String[] {
+            PREFIX_VALUE + "status",
+            PREFIX_VALUE + "momentum",
+            PREFIX_VALUE + "defocus",
+            PREFIX_VALUE + "temperature",
+            PREFIX_VALUE + "pfmcold",
+            PREFIX_VALUE + "pfm",
+            PREFIX_FUNCTION + "cancel"
+        };
+    }
+
+    @Override
+    public String provideRORValue(String name) {
+        if ((PREFIX_VALUE + "status").equals(name))   return "" + this.state;
+        if ((PREFIX_VALUE + "momentum").equals(name)) return "" + this.lastSpeed;
+        if ((PREFIX_VALUE + "defocus").equals(name)) {
+            return this.particle != null ? "" + this.particle.defocus : "0";
+        }
+        if ((PREFIX_VALUE + "temperature").equals(name)) return "" + (int) this.temperature;
+        if ((PREFIX_VALUE + "pfmcold").equals(name))     return "" + coolantTanks[0].getFill();
+        if ((PREFIX_VALUE + "pfm").equals(name))         return "" + coolantTanks[1].getFill();
+        return null;
+    }
+
+    @Override
+    public String runRORFunction(String name, String[] params) {
+        if ((PREFIX_FUNCTION + "cancel").equals(name)) {
+            particle = null;
+            state = PAState.IDLE;
+            return null;
+        }
+        return null;
     }
 }

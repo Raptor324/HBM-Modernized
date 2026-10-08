@@ -1,15 +1,15 @@
 package com.hbm_m.explosion;
 
-import net.minecraft.core.BlockPos;
+import com.hbm_m.entity.ModEntities;
+import com.hbm_m.entity.effect.EntityMist;
+import com.hbm_m.inventory.fluid.FluidType;
+import com.hbm_m.inventory.fluid.ModFluids;
+
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.sounds.SoundEvents;
-import net.minecraft.sounds.SoundSource;
-import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.Blocks;
 
 /**
- * Конвенциональный взрыв многоцелевой бомбы: усиленный ТНТ,
- * опциональный поджог местности и газовое облако.
+ * 1:1 {@code BombMulti.igniteTestBomb}: Grundwert 8, je Modul (Slot 2 und 5) Schiesspulver +1, TNT +4,
+ * Streuladung 50 Splitter, Brandsatz Radius 10, Gift (Verstrahlung ohne Schrabidium) Radius 15, Chlorgaswolke 50.
  */
 public final class MultiBombExplosion {
 
@@ -17,45 +17,45 @@ public final class MultiBombExplosion {
 
     private MultiBombExplosion() {}
 
-    /** type2: 1 = порох (+1), 2 = ТНТ (+4); type5: 4 = огонь (r10), 6 = газ. */
-    public static void detonate(ServerLevel level, double x, double y, double z, int type2, int type5) {
-        float strength = BASE_STRENGTH;
+    public static void detonate(ServerLevel world, int x, int y, int z, int type2, int type5) {
+        float explosionValue = BASE_STRENGTH;
+        int clusterCount = 0;
         int fireRadius = 0;
-        boolean gas = false;
+        int poisonRadius = 0;
+        int gasCloud = 0;
 
-        for (int type : new int[]{type2, type5}) {
+        for (int type : new int[] { type2, type5 }) {
             switch (type) {
-                case 1 -> strength += 1;
-                case 2 -> strength += 4;
+                case 1 -> explosionValue += 1.0F;
+                case 2 -> explosionValue += 4.0F;
+                case 3 -> clusterCount += 50;
                 case 4 -> fireRadius += 10;
-                case 6 -> gas = true;
-                default -> {}
+                case 5 -> poisonRadius += 15;
+                case 6 -> gasCloud += 50;
+                default -> { }
             }
         }
 
-        com.hbm_m.platform.PlatformHooks.playSound(level, x, y, z, SoundEvents.GENERIC_EXPLODE,
-                SoundSource.BLOCKS, 4.0F, 1.0F);
-        level.explode(null, x, y, z, strength, Level.ExplosionInteraction.TNT);
+        ExplosionLarge.explode(world, x, y, z, explosionValue, true, true, true);
+
+        if (clusterCount > 0) {
+            ExplosionChaos.cluster(world, x + 0.5, y + 0.5, z + 0.5, clusterCount, 0, (float) Math.PI * 0.5F, (float) Math.PI * 2F, (float) Math.PI * 0.125F, 0.375F);
+        }
 
         if (fireRadius > 0) {
-            igniteAllBlocks(level, (int) x, (int) y, (int) z, fireRadius);
+            ExplosionChaos.igniteAllBlocks(world, x, y, z, fireRadius);
         }
-        if (gas) {
-            // Газовое облако — ванильные эффектные частицы по площади.
-            level.sendParticles(net.minecraft.core.particles.ParticleTypes.CAMPFIRE_COSY_SMOKE,
-                    x, y + 1, z, 60, fireRadius > 0 ? 4 : 2.5, 1.5, fireRadius > 0 ? 4 : 2.5, 0.01);
-        }
-    }
 
-    private static void igniteAllBlocks(Level level, int x, int y, int z, int radius) {
-        BlockPos center = new BlockPos(x, y, z);
-        for (BlockPos pos : BlockPos.betweenClosed(
-                center.offset(-radius, -radius / 2, -radius), center.offset(radius, radius, radius))) {
-            if (level.getBlockState(pos).isSolidRender(level, pos)
-                    && level.getBlockState(pos.above()).isAir()
-                    && level.random.nextInt(3) == 0) {
-                level.setBlockAndUpdate(pos.above(), Blocks.FIRE.defaultBlockState());
-            }
+        if (poisonRadius > 0) {
+            ExplosionNukeGeneric.wasteNoSchrab(world, x, y, z, poisonRadius);
+        }
+
+        if (gasCloud > 0) {
+            EntityMist mist = new EntityMist(ModEntities.ENTITY_MIST.get(), world);
+            mist.setFluidType(FluidType.forFluid(ModFluids.CHLORINE.getSource()));
+            mist.setPos(x + 0.5, y + 0.5, z + 0.5);
+            mist.setArea(gasCloud * 15F / 50F, gasCloud * 7.5F / 50F);
+            world.addFreshEntity(mist);
         }
     }
 }

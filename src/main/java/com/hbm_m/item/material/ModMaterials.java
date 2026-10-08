@@ -92,7 +92,9 @@ public enum ModMaterials {
     AU198("au198", java.util.EnumSet.of(MaterialShape.INGOT, MaterialShape.BILLET, MaterialShape.NUGGET, MaterialShape.POWDER), "ru_ru", "Слиток золота-198", "en_us", "Gold-198 Ingot"),
     PB209("pb209", java.util.EnumSet.of(MaterialShape.INGOT, MaterialShape.BILLET, MaterialShape.NUGGET), "ru_ru", "Слиток свинца-209", "en_us", "Lead-209 Ingot"),
     RA226("ra226", java.util.EnumSet.of(MaterialShape.INGOT, MaterialShape.BILLET, MaterialShape.BLOCK, MaterialShape.NUGGET, MaterialShape.POWDER), "ru_ru", "Слиток радия-226", "en_us", "Radium-226 Ingot"),
-    THORIUM("thorium", java.util.EnumSet.of(MaterialShape.INGOT, MaterialShape.BLOCK, MaterialShape.CRYSTAL, MaterialShape.POWDER), "ru_ru", "Ториевый слиток", "en_us", "Thorium Ingot"),
+    // Original MAT_THORIUM (Thorium232/Th232/Thorium) hat nur ingot_th232: Barren = THORIUM232 (frueher thorium_ingot,
+    // Umleitung in ForgeMainEvents.LEGACY_IDS), siehe ModMaterialItems.ingotMaterial.
+    THORIUM("thorium", java.util.EnumSet.of(MaterialShape.BLOCK, MaterialShape.CRYSTAL, MaterialShape.POWDER), "ru_ru", "Ториевый слиток", "en_us", "Thorium Ingot"),
     OSMIRIDIUM("osmiridium", java.util.EnumSet.of(MaterialShape.INGOT, MaterialShape.CRYSTAL, MaterialShape.NUGGET, MaterialShape.PLATE_CAST, MaterialShape.PLATE_WELDED), "ru_ru", "Осмиридиевый слиток", "en_us", "Osmiridium Ingot"),
     SELENIUM("selenium", java.util.EnumSet.of(MaterialShape.INGOT, MaterialShape.POWDER), "ru_ru", "Селениевый слиток", "en_us", "Selenium Ingot"),
     CO60("co60", java.util.EnumSet.of(MaterialShape.INGOT, MaterialShape.BILLET, MaterialShape.NUGGET, MaterialShape.POWDER), "ru_ru", "Слиток кобальта-60", "en_us", "Cobalt-60 Ingot"),

@@ -12,8 +12,8 @@
         { "type": "item", "name": "hbm_m:gun_b92", "weight": 5 },
         { "type": "item", "name": "hbm_m:gun_kit_1", "weight": 6, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 3 } } ] },
         { "type": "item", "name": "hbm_m:gun_kit_2", "weight": 4, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 2 } } ] },
-        { "type": "item", "name": "hbm_m:ammo_50_fmj", "weight": 6, "functions": [ { "function": "minecraft:set_count", "count": { "min": 4, "max": 16 } } ] },
-        { "type": "item", "name": "hbm_m:ammo_556_fmj", "weight": 6, "functions": [ { "function": "minecraft:set_count", "count": { "min": 6, "max": 24 } } ] },
+        { "type": "item", "name": "hbm_m:ammo_standard_bmg50_fmj", "weight": 6, "functions": [ { "function": "minecraft:set_count", "count": { "min": 4, "max": 16 } } ] },
+        { "type": "item", "name": "hbm_m:ammo_standard_r556_fmj", "weight": 6, "functions": [ { "function": "minecraft:set_count", "count": { "min": 6, "max": 24 } } ] },
         { "type": "item", "name": "hbm_m:ammo_container", "weight": 4 },
         { "type": "item", "name": "hbm_m:grenadehe", "weight": 5, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 3 } } ] },
         { "type": "item", "name": "hbm_m:t51_helmet", "weight": 4 },
@@ -35,7 +35,12 @@
         { "type": "item", "name": "hbm_m:missile_buster", "weight": 1 },
         { "type": "item", "name": "hbm_m:launch_code_piece", "weight": 2 },
         { "type": "item", "name": "hbm_m:designator", "weight": 4 },
-        { "type": "item", "name": "hbm_m:cap_nuka", "weight": 7, "functions": [ { "function": "minecraft:set_count", "count": { "min": 3, "max": 20 } } ] }
+        { "type": "item", "name": "hbm_m:cap_nuka", "weight": 7, "functions": [ { "function": "minecraft:set_count", "count": { "min": 3, "max": 20 } } ] },
+        { "type": "item", "name": "hbm_m:ammo_standard_m357_sp", "weight": 4, "functions": [ { "function": "minecraft:set_count", "count": { "min": 12, "max": 12 } } ] },
+        { "type": "item", "name": "hbm_m:ammo_standard_p9_sp", "weight": 4, "functions": [ { "function": "minecraft:set_count", "count": { "min": 12, "max": 12 } } ] },
+        { "type": "item", "name": "hbm_m:ammo_standard_r762_sp", "weight": 2, "functions": [ { "function": "minecraft:set_count", "count": { "min": 6, "max": 6 } } ] },
+        { "type": "item", "name": "hbm_m:ammo_standard_g12_bp", "weight": 4, "functions": [ { "function": "minecraft:set_count", "count": { "min": 6, "max": 6 } } ] },
+        { "type": "item", "name": "hbm_m:ammo_standard_rocket_he", "weight": 1 }
       ]
     }
   ]

@@ -3,363 +3,436 @@ package com.hbm_m.blockentity.machines;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import com.hbm_m.api.fluids.IFluidStandardReceiverMK2;
-import com.hbm_m.block.machines.MachineRotaryFurnaceBlock;
+import com.hbm_m.api.fluids.IFluidStandardTransceiverMK2;
+import com.hbm_m.block.machines.DummyableMachineBlock;
+import com.hbm_m.blockentity.MachinePollutingBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
-import com.hbm_m.inventory.fluid.tank.FluidTank;
-import com.hbm_m.api.fluids.IFluidStandardSenderMK2;
 import com.hbm_m.handler.pollution.PollutionHandler;
+import com.hbm_m.interfaces.IConditionalInvAccess;
+import com.hbm_m.interfaces.IItemFluidIdentifier;
+import com.hbm_m.inventory.fluid.ModFluids;
+import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.inventory.fluid.trait.PollutionType;
+import com.hbm_m.inventory.material.MaterialShapes;
+import com.hbm_m.inventory.material.Mats;
+import com.hbm_m.inventory.material.Mats.MaterialStack;
+import com.hbm_m.inventory.material.NTMMaterial;
 import com.hbm_m.inventory.menu.MachineRotaryFurnaceMenu;
-import com.hbm_m.platform.ModItemStackHandler;
-import com.hbm_m.platform.recipe.RecipeHooks;
-import com.hbm_m.recipe.RotaryFurnaceRecipe;
+import com.hbm_m.inventory.recipes.RotaryFurnaceRecipes;
+import com.hbm_m.inventory.recipes.RotaryFurnaceRecipes.RecipeInput;
+import com.hbm_m.inventory.recipes.RotaryFurnaceRecipes.RotaryFurnaceRecipe;
+import com.hbm_m.module.ModuleBurnTime;
+import com.hbm_m.util.CrucibleUtil;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.network.protocol.Packet;
-import net.minecraft.network.protocol.game.ClientGamePacketListener;
-import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
-import net.minecraft.world.Containers;
-import net.minecraft.world.MenuProvider;
-import net.minecraft.world.SimpleContainer;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.RandomSource;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
-import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.AbstractFurnaceBlockEntity;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.material.Fluid;
-import net.minecraft.world.level.material.Fluids;
+import net.minecraft.world.phys.AABB;
 
 /**
- * Rotary Furnace: Direktport der Kernlogik aus {@code TileEntityMachineRotaryFurnace} (1.7.10 Original).
- * <p>
- * Vereinfachungen ggue. Original (gleiche Konvention wie andere einfache Maschinen diese Session,
- * siehe {@link MachineFurnaceIronBlockEntity}): einzelner Block statt 5x5 Multiblock, kein
- * Item-Upgrade-System (burnModule-Boni entfallen), kein Dampf-Erzeugungs-/Rueckgewinnungs-Kreislauf
- * Pollution ist portiert (SOOT_PER_SECOND / 10 beim Mahlen ueber eigene Rauchtanks, siehe
- * {@link com.hbm_m.blockentity.SmokeTankSet}) - dazu ein einzelner Input-FluidTank fuer die von manchen Rezepten
- * benoetigte Fluessigkeit. Das Original giesst den Output als fluessiges Metall auf den Boden
- * ({@code CrucibleUtil.pourSingleStack}); da dieser Port keine solche Mechanik besitzt, wird der
- * Output stattdessen als echter Ingot-ItemStack in einen Output-Slot gelegt (gleiche Vereinfachung
- * wie bei anderen Maschinen diese Session).
+ * 1:1 {@code TileEntityMachineRotaryFurnace}: 5x5-Drehrohrofen ohne Strom. Bis zu drei Eingaben plus optionales Fluid
+ * (Typ ueber den Identifikator in Slot 3) werden mit Festbrennstoff (Slot 4, Brenndauer halbiert, Waermebonus des
+ * {@link #burnModule} beschleunigt den Vorgang) und Dampf zu einer Schmelze; der Ofen giesst sie 2,875 Bloecke seitlich
+ * in eine Giessanlage. Verbrauchter Dampf kommt als Abdampf (1 je 100) zurueck, Russ geht ueber den Schornstein.
  */
-public class MachineRotaryFurnaceBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity
-        implements MenuProvider, IFluidStandardReceiverMK2, IFluidStandardSenderMK2 {
+public class MachineRotaryFurnaceBlockEntity extends MachinePollutingBlockEntity implements IFluidStandardTransceiverMK2, IConditionalInvAccess {
 
     public static final int SLOT_IN1 = 0, SLOT_IN2 = 1, SLOT_IN3 = 2;
-    public static final int SLOT_FUEL = 3;
-    public static final int SLOT_OUTPUT = 4;
-    private static final int SLOT_COUNT = 5;
+    public static final int SLOT_FLUID_ID = 3;
+    public static final int SLOT_FUEL = 4;
+    public static final int INVENTORY_SIZE = 5;
 
-    private final FluidTank tank = new FluidTank(16_000);
+    public final FluidTank[] tanks;
+    public boolean isProgressing;
+    public float progress;
+    public int burnTime;
+    public double burnHeat = 1D;
+    public int maxBurnTime;
+    public int steamUsed = 0;
+    public boolean isVenting;
+    @Nullable public MaterialStack output;
+    public static final int maxOutput = MaterialShapes.BLOCK.q(16);
 
-    private final ModItemStackHandler inventory = new ModItemStackHandler(SLOT_COUNT) {
-        @Override
-        protected void onContentsChanged(int slot) {
-            setChanged();
-            if (level != null && !level.isClientSide()) {
-                level.sendBlockUpdated(getBlockPos(), getBlockState(), getBlockState(), 3);
-            }
-        }
+    public int anim;
+    public int lastAnim;
 
-        @Override
-        public boolean isItemValid(int slot, @NotNull ItemStack stack) {
-            return switch (slot) {
-                case SLOT_FUEL -> isFuel(stack);
-                case SLOT_OUTPUT -> false;
-                default -> true;
-            };
-        }
-    };
+    /** Given this has no heat, the heat mod instead affects the progress per fuel **/
+    public static ModuleBurnTime burnModule = new ModuleBurnTime()
+            .setCokeTimeMod(1.25)
+            .setRocketTimeMod(1.5)
+            .setSolidTimeMod(1.5)
+            .setBalefireTimeMod(1.5)
 
-    private int litTime = 0;
-    private int litDuration = 0;
-    private float progress = 0f;
-
-    /**
-     * Original: {@code TileEntityMachineRotaryFurnace extends TileEntityMachinePolluting} mit
-     * {@code super(5, 50)}. Diese Klasse haengt an {@code BaseHbmBlockEntity} und bringt Inventar
-     * und Menue selbst mit, darum die Rauchtanks als Feld statt ueber die Basisklasse.
-     */
-    private final com.hbm_m.blockentity.SmokeTankSet smokeTanks =
-            new com.hbm_m.blockentity.SmokeTankSet(50).onOverflow(() -> this.isVenting = true);
-
-    /** Original: der Drehofen setzt beim Ueberlauf statt des Zischens seine Abblas-Animation. */
-    private boolean isVenting = false;
-
-    private static final int DATA_LIT_TIME = 0;
-    private static final int DATA_LIT_DURATION = 1;
-    private static final int DATA_PROGRESS_SCALED = 2;
-
-    private final ContainerData data = new ContainerData() {
-        @Override
-        public int get(int index) {
-            return switch (index) {
-                case DATA_LIT_TIME -> litTime;
-                case DATA_LIT_DURATION -> litDuration;
-                case DATA_PROGRESS_SCALED -> (int) (progress * 1000);
-                default -> 0;
-            };
-        }
-
-        @Override
-        public void set(int index, int value) {
-            switch (index) {
-                case DATA_LIT_TIME -> litTime = value;
-                case DATA_LIT_DURATION -> litDuration = value;
-                case DATA_PROGRESS_SCALED -> progress = value / 1000f;
-                default -> { }
-            }
-        }
-
-        @Override
-        public int getCount() { return 3; }
-    };
+            .setSolidHeatMod(1.5)
+            .setRocketHeatMod(3)
+            .setBalefireHeatMod(10);
 
     public MachineRotaryFurnaceBlockEntity(BlockPos pos, BlockState state) {
-        super(ModBlockEntities.ROTARY_FURNACE_BE.get(), pos, state);
+        super(ModBlockEntities.ROTARY_FURNACE_BE.get(), pos, state, INVENTORY_SIZE, 0L, 0L, 0L, 50);
+        tanks = new FluidTank[3];
+        tanks[0] = new FluidTank(ModFluids.NONE.getSource(), 16_000);
+        tanks[1] = new FluidTank(ModFluids.STEAM.getSource(), 12_000);
+        tanks[2] = new FluidTank(ModFluids.SPENTSTEAM.getSource(), 120);
+        // Original pollute(): Ueberlauf eines Rauchtanks laesst den Ofen abblasen
+        this.smokeTanks.onOverflow(() -> this.isVenting = true);
     }
 
-    public ModItemStackHandler getInventory() { return inventory; }
-    public FluidTank getTank() { return tank; }
+    private Direction getDir() {
+        BlockState state = getBlockState();
+        return state.hasProperty(DummyableMachineBlock.FACING) ? state.getValue(DummyableMachineBlock.FACING) : Direction.NORTH;
+    }
 
     public static void tick(Level level, BlockPos pos, BlockState state, MachineRotaryFurnaceBlockEntity be) {
-        if (level.isClientSide()) return;
+        if (!level.isClientSide()) be.serverTick((ServerLevel) level, pos);
+        else be.clientTick(level, pos);
+    }
 
-        if (level.getGameTime() % 10 == 0) {
-            for (Direction dir : Direction.values()) {
-                be.trySubscribe(be.tank.getTankType(), level, pos.relative(dir), dir);
-                be.sendSmoke(level, pos.relative(dir), dir);
+    private void serverTick(ServerLevel level, BlockPos pos) {
+
+        Direction dir = getDir();
+        Direction rot = dir.getCounterClockWise();
+
+        ItemStack[] slots = slotArray();
+        if (tanks[0].setType(SLOT_FLUID_ID, slots)) applySlotArray(slots);
+
+        for (BlockPos p : getSteamPos()) {
+            Direction d = dir.getOpposite();
+            this.trySubscribe(tanks[1].getTankType(), level, p, d);
+            if (tanks[2].getFill() > 0) this.tryProvide(tanks[2], level, p, d);
+        }
+        if (tanks[0].getTankType() != ModFluids.NONE.getSource()) for (BlockPos p : getFluidPos()) {
+            this.trySubscribe(tanks[0].getTankType(), level, p, rot);
+        }
+
+        if (smoke.getFill() > 0) this.tryProvide(smoke, level, new BlockPos(pos.getX() + rot.getStepX(), pos.getY() + 5, pos.getZ() + rot.getStepZ()), Direction.UP);
+
+        if (this.output != null) {
+
+            int prev = this.output.amount;
+            double[] impact = new double[3];
+            MaterialStack leftover = CrucibleUtil.pourSingleStack(level, pos.getX() + 0.5D + rot.getStepX() * 2.875D, pos.getY() + 1.25D, pos.getZ() + 0.5D + rot.getStepZ() * 2.875D, 6, true, this.output, MaterialShapes.INGOT.q(1), impact);
+            this.output = leftover;
+
+            if (prev != this.output.amount) {
+                CompoundTag data = new CompoundTag();
+                data.putString("type", "foundry");
+                data.putInt("color", leftover.material.moltenColor);
+                data.putByte("dir", (byte) rot.get3DDataValue());
+                data.putFloat("off", 0.625F);
+                data.putFloat("base", 0.625F);
+                data.putFloat("len", Math.max(1F, pos.getY() + 1 - (float) (Math.ceil(impact[1]) - 1.125)));
+                com.hbm_m.particle.helper.IParticleCreator.sendPacket(level, pos.getX() + 0.5D + rot.getStepX() * 2.875D, pos.getY() + 0.75, pos.getZ() + 0.5D + rot.getStepZ() * 2.875D, 50, data);
             }
+
+            if (output.amount <= 0) this.output = null;
         }
 
-        boolean wasLit = be.isLit();
+        RotaryFurnaceRecipe recipe = RotaryFurnaceRecipes.getRecipe(inventory.getStackInSlot(0), inventory.getStackInSlot(1), inventory.getStackInSlot(2));
+        this.isProgressing = false;
 
-        RotaryFurnaceRecipe recipe = findRotaryFurnaceRecipe(level, be);
+        if (recipe != null) {
 
-        if (be.litTime <= 0 && recipe != null && be.canAcceptResult(recipe.getOutput())) {
-            be.tryConsumeFuel();
-        }
+            ItemStack fuel = inventory.getStackInSlot(SLOT_FUEL);
+            if (this.burnTime <= 0 && !fuel.isEmpty() && AbstractFurnaceBlockEntity.isFuel(fuel)) {
+                this.burnHeat = burnModule.getMod(fuel, burnModule.getModHeat());
+                this.maxBurnTime = this.burnTime = burnModule.getBurnTime(fuel) / 2;
+                inventory.extractItem(SLOT_FUEL, 1, false);
+                this.setChanged();
+            }
 
-        if (be.litTime > 0) {
-            be.litTime--;
+            float processSpeed = Math.max((float) burnHeat, 1);
+            float steamUseMult = (float) (10 * Math.log10(processSpeed) + 1);
 
-            if (recipe != null && be.canAcceptResult(recipe.getOutput())) {
-                be.progress += 1f / recipe.getDuration();
+            if (this.canProcess(recipe, steamUseMult)) {
+                this.progress += processSpeed / recipe.duration;
 
-                // Original: SOOT_PER_SECOND / 10, solange gemahlen wird.
-                be.smokeTanks.pollute(level, pos, PollutionType.SOOT,
-                        PollutionHandler.SOOT_PER_SECOND / 10F);
-                if (be.progress >= 1f) {
-                    be.progress -= 1f;
-                    be.craftItem(recipe);
+                tanks[1].setFill((int) (tanks[1].getFill() - recipe.steam * steamUseMult));
+                steamUsed += recipe.steam * steamUseMult;
+                this.isProgressing = true;
+
+                if (this.progress >= 1F) {
+                    this.progress -= 1F;
+                    this.consumeItems(recipe);
+
+                    if (this.output == null) {
+                        this.output = recipe.output.copy();
+                    } else {
+                        this.output.amount += recipe.output.amount;
+                    }
+                    this.setChanged();
                 }
+
+                if (this.burnTime > 0) {
+                    this.pollute(PollutionType.SOOT, PollutionHandler.SOOT_PER_SECOND / 10F);
+                    this.burnTime--;
+                }
+
             } else {
-                be.progress = 0;
+                this.progress = 0;
             }
-        } else if (be.progress != 0) {
-            be.progress = 0;
+
+            if (this.steamUsed >= 100) {
+                int steamReturn = this.steamUsed / 100;
+                int canReturn = tanks[2].getMaxFill() - tanks[2].getFill();
+                int doesReturn = Math.min(steamReturn, canReturn);
+                this.steamUsed -= doesReturn * 100;
+                tanks[2].setFill(tanks[2].getFill() + doesReturn);
+            }
+
+        } else {
+            this.progress = 0;
         }
 
-        be.spawnVentPlume(level, pos);
-        // Original: isVenting wird am Ende des Serverticks zurueckgesetzt.
-        be.isVenting = false;
-
-        if (wasLit != be.isLit()) {
-            level.setBlock(pos, state.setValue(MachineRotaryFurnaceBlock.LIT, be.isLit()), 3);
-        }
-
-        be.setChanged();
+        // Original: networkPackNT nach dem Ruecksetzen von isVenting - hier wird vorher gesendet, damit der
+        // Client das Abblasen ueberhaupt sieht (die Pollute-Ueberlaeufe passieren innerhalb dieses Ticks)
+        setChanged();
+        sendUpdateToClient();
+        this.isVenting = false;
     }
 
-    private boolean isLit() { return litTime > 0; }
+    private void clientTick(Level level, BlockPos pos) {
+        Direction dir = getDir();
+        Direction rot = dir.getCounterClockWise();
 
-    /**
-     * Data-driven поиск RotaryFurnaceRecipe по 3 входным слотам + баку
-     * (заменяет статический RotaryFurnaceRecipes.getRecipe).
-     */
-    @Nullable
-    private static RotaryFurnaceRecipe findRotaryFurnaceRecipe(Level level, MachineRotaryFurnaceBlockEntity be) {
-        ItemStack s0 = be.inventory.getStackInSlot(SLOT_IN1);
-        ItemStack s1 = be.inventory.getStackInSlot(SLOT_IN2);
-        ItemStack s2 = be.inventory.getStackInSlot(SLOT_IN3);
-        for (RotaryFurnaceRecipe recipe : RecipeHooks.getAllRecipes(level, RotaryFurnaceRecipe.Type.INSTANCE)) {
-            if (recipe.matchesInputs(s0, s1, s2)
-                    && recipe.matchesFluid(be.tank.getTankType(), be.tank.getFill())) {
-                return recipe;
-            }
+        Player me = null;
+        for (Player p : level.players()) if (p.isLocalPlayer()) { me = p; break; }
+
+        if (this.burnTime > 0 && me != null && me.distanceToSqr(pos.getX(), pos.getY(), pos.getZ()) < 25 * 25) {
+            RandomSource rand = level.random;
+            level.addParticle(ParticleTypes.FLAME, pos.getX() + 0.5 + dir.getStepX() * 0.5 + rot.getStepX() + rand.nextGaussian() * 0.25, pos.getY() + 0.375,
+                    pos.getZ() + 0.5 + dir.getStepZ() * 0.5 + rot.getStepZ() + rand.nextGaussian() * 0.25, 0, 0, 0);
         }
-        return null;
+
+        if (isVenting && level.getGameTime() % 2 == 0) {
+
+            CompoundTag fx = new CompoundTag();
+            fx.putString("type", "tower");
+            fx.putFloat("lift", 10F);
+            fx.putFloat("base", 0.25F);
+            fx.putFloat("max", 2.5F);
+            fx.putInt("life", 100 + level.random.nextInt(20));
+            fx.putInt("color", 0x202020);
+            fx.putDouble("posX", pos.getX() + 0.5 + rot.getStepX());
+            fx.putDouble("posY", pos.getY() + 5);
+            fx.putDouble("posZ", pos.getZ() + 0.5 + rot.getStepZ());
+            com.hbm_m.particle.helper.ParticleEffectClient.effectNT(fx);
+        }
+        this.lastAnim = this.anim;
+        if (this.isProgressing) {
+            this.anim += (int) Math.max(burnModule.getMod(inventory.getStackInSlot(SLOT_FUEL), burnModule.getModHeat()), 1);
+        }
     }
 
-    private boolean tryConsumeFuel() {
-        ItemStack fuelStack = inventory.getStackInSlot(SLOT_FUEL);
-        if (fuelStack.isEmpty()) return false;
-        int burnTicks = AbstractFurnaceBlockEntity.getFuel().getOrDefault(fuelStack.getItem(), 0);
-        if (burnTicks <= 0) return false;
+    /** Original {@code getSteamPos()}: hinter der Rueckwand, Richtung {@code dir.getOpposite()}. */
+    public BlockPos[] getSteamPos() {
+        Direction dir = getDir();
+        Direction rot = dir.getCounterClockWise();
+        BlockPos p = worldPosition;
+        return new BlockPos[] {
+                p.relative(dir, -2).relative(rot, -2),
+                p.relative(dir, -2).relative(rot, -1)
+        };
+    }
 
-        litDuration = burnTicks;
-        litTime = burnTicks;
+    /** Original {@code getFluidPos()}: Seitenanschluesse vorn und hinten, Richtung {@code rot}. */
+    public BlockPos[] getFluidPos() {
+        Direction dir = getDir();
+        Direction rot = dir.getCounterClockWise();
+        BlockPos p = worldPosition;
+        return new BlockPos[] {
+                p.relative(dir, 1).relative(rot, 3),
+                p.relative(dir, -1).relative(rot, 3)
+        };
+    }
 
-        var remainderItem = fuelStack.getItem().getCraftingRemainingItem();
-        fuelStack.shrink(1);
-        if (fuelStack.isEmpty() && remainderItem != null) {
-            inventory.setStackInSlot(SLOT_FUEL, new ItemStack(remainderItem));
+    public boolean canProcess(RotaryFurnaceRecipe recipe, float steamUseMult) {
+
+        if (this.burnTime <= 0) return false;
+
+        if (recipe.fluid != null) {
+            if (this.tanks[0].getTankType() != recipe.fluid.type()) return false;
+            if (this.tanks[0].getFill() < recipe.fluid.fill()) return false;
         }
+
+        if (tanks[1].getFill() < recipe.steam * steamUseMult) return false;
+        if (tanks[2].getMaxFill() - tanks[2].getFill() < recipe.steam * steamUseMult / 100) return false;
+        if (this.steamUsed > 100) return false;
+
+        if (this.output != null) {
+            if (this.output.material != recipe.output.material) return false;
+            if (this.output.amount + recipe.output.amount > maxOutput) return false;
+        }
+
         return true;
     }
 
-    private boolean canAcceptResult(ItemStack result) {
-        ItemStack current = inventory.getStackInSlot(SLOT_OUTPUT);
-        if (current.isEmpty()) return true;
-        if (!com.hbm_m.platform.PlatformHooks.isSameItemSameTags(current, result)) return false;
-        return current.getCount() + result.getCount() <= current.getMaxStackSize();
-    }
+    public void consumeItems(RotaryFurnaceRecipe recipe) {
 
-    private void craftItem(RotaryFurnaceRecipe recipe) {
-        int[] inputSlots = { SLOT_IN1, SLOT_IN2, SLOT_IN3 };
-        // Поглощение зеркалит matchesInputs: каждый ингредиент снимается с первого подходящего слота.
-        for (int i = 0; i < recipe.getInputs().length; i++) {
-            for (int slot : inputSlots) {
-                ItemStack stack = inventory.getStackInSlot(slot);
-                if (!stack.isEmpty() && recipe.getInputs()[i].test(stack) && stack.getCount() >= recipe.getInputCount(i)) {
-                    inventory.extractItem(slot, recipe.getInputCount(i), false);
+        for (RecipeInput aStack : recipe.ingredients) {
+
+            for (int i = 0; i < 3; i++) {
+                ItemStack stack = inventory.getStackInSlot(i);
+                if (aStack.matchesRecipe(stack) && stack.getCount() >= aStack.stacksize()) {
+                    inventory.extractItem(i, aStack.stacksize(), false);
                     break;
                 }
             }
         }
 
-        if (recipe.getFluid() != null) {
-            tank.drainMb(recipe.getFluidAmountMb());
-        }
-
-        ItemStack result = recipe.getOutput();
-        ItemStack output = inventory.getStackInSlot(SLOT_OUTPUT);
-        if (output.isEmpty()) {
-            inventory.setStackInSlot(SLOT_OUTPUT, result);
-        } else {
-            output.grow(result.getCount());
-            inventory.setStackInSlot(SLOT_OUTPUT, output);
+        if (recipe.fluid != null) {
+            this.tanks[0].setFill(tanks[0].getFill() - recipe.fluid.fill());
         }
     }
 
-    public static boolean isFuel(ItemStack stack) {
-        return AbstractFurnaceBlockEntity.getFuel().getOrDefault(stack.getItem(), 0) > 0;
+    // ── Inventar ─────────────────────────────────────────────────────────────
+
+    private ItemStack[] slotArray() {
+        ItemStack[] arr = new ItemStack[INVENTORY_SIZE];
+        for (int i = 0; i < INVENTORY_SIZE; i++) arr[i] = inventory.getStackInSlot(i);
+        return arr;
     }
 
-    public void drops() {
-        if (level == null) return;
-        SimpleContainer container = new SimpleContainer(inventory.getSlots());
-        for (int i = 0; i < inventory.getSlots(); i++) {
-            container.setItem(i, inventory.getStackInSlot(i));
+    private void applySlotArray(ItemStack[] arr) {
+        for (int i = 0; i < INVENTORY_SIZE; i++) {
+            inventory.setStackInSlot(i, arr[i] == null ? ItemStack.EMPTY : arr[i]);
         }
-        Containers.dropContents(level, worldPosition, container);
+        setChanged();
     }
 
-    // ==================== IFluidUserMK2 / MK2-Netz ====================
-
+    /** Original {@code isItemValidForSlot}: Eingaben und Brennstoff; Slot 3 nimmt in der GUI den Identifikator. */
     @Override
-    public FluidTank[] getAllTanks() {
-        FluidTank[] smoke = smokeTanks.tanks();
-        return new FluidTank[] { tank, smoke[0], smoke[1], smoke[2] };
+    protected boolean isItemValidForSlot(int slot, ItemStack stack) {
+        if (slot == SLOT_FLUID_ID) return stack.getItem() instanceof IItemFluidIdentifier;
+        return slot < 3 || slot == SLOT_FUEL;
     }
 
-    @Override
-    public FluidTank[] getSendingTanks() { return smokeTanks.tanks(); }
-
-    /** Original: {@code sendSmoke} - bietet jeden gefuellten Rauchtank in eine Richtung an. */
-    private void sendSmoke(Level level, BlockPos pipePos, Direction dirFromMeToPipe) {
-        for (FluidTank smokeTank : smokeTanks.tanks()) {
-            if (smokeTank.getFill() > 0) {
-                tryProvide(smokeTank, level, pipePos, dirFromMeToPipe);
-            }
-        }
-    }
-
-    public boolean isVenting() { return isVenting; }
-
+    //? if forge {
     /**
-     * 1:1-Port des Abblaszweigs: laeuft ein Rauchtank ueber, blaest der Ofen den Ueberschuss ab -
-     * fuenf Bloecke ueber dem Sockel, quer zur Blickrichtung versetzt.
+     * Original {@code getAccessibleSlotsFromSide(x, y, z, side)}: die drei Rueckwandzellen (rot, gelb, gruen) fuehren
+     * je in einen Eingabeslot, die vordere Brennstoffklappe in Slot 4. Entnehmen ist nirgends moeglich.
      */
-    private void spawnVentPlume(Level level, BlockPos pos) {
-        if (!isVenting || level.getGameTime() % 2 != 0) return;
-        if (!(level instanceof net.minecraft.server.level.ServerLevel serverLevel)) return;
+    @Override
+    public net.minecraftforge.items.IItemHandler getConditionalItemHandler(BlockPos part, @Nullable Direction side) {
+        if (side == null) return null;
+        Direction dir = getDir();
+        Direction rot = dir.getClockWise();
+        BlockPos core = worldPosition;
 
-        // Original: rot = dir.getRotation(UP) - die Achse quer zur Blickrichtung.
-        BlockState state = getBlockState();
-        Direction facing = state.hasProperty(com.hbm_m.block.machines.MachineRotaryFurnaceBlock.FACING)
-                ? state.getValue(com.hbm_m.block.machines.MachineRotaryFurnaceBlock.FACING)
-                : Direction.NORTH;
-        Direction rot = facing.getCounterClockWise();
+        int slot = -1;
+        if (side == dir.getOpposite() && part.equals(core.relative(dir, -1).relative(rot, -2))) slot = 0;
+        else if (side == dir.getOpposite() && part.equals(core.relative(dir, -1).relative(rot, -1))) slot = 1;
+        else if (side == dir.getOpposite() && part.equals(core.relative(dir, -1))) slot = 2;
+        else if (side == dir && part.equals(core.relative(dir, 1).relative(rot, -1))) slot = 4;
 
-        net.minecraft.nbt.CompoundTag fx = new net.minecraft.nbt.CompoundTag();
-        fx.putString("type", "tower");
-        fx.putFloat("lift", 10F);
-        fx.putFloat("base", 0.25F);
-        fx.putFloat("max", 2.5F);
-        fx.putInt("life", 100 + level.getRandom().nextInt(20));
-        fx.putInt("color", 0x202020);
+        if (slot < 0) return null;
+        final int target = slot;
+        return new net.minecraftforge.items.IItemHandler() {
+            @Override public int getSlots() { return 1; }
+            @Override public @NotNull ItemStack getStackInSlot(int s) { return inventory.getStackInSlot(target); }
+            @Override public @NotNull ItemStack insertItem(int s, @NotNull ItemStack stack, boolean simulate) {
+                if (!isItemValidForSlot(target, stack)) return stack;
+                return inventory.insertItem(target, stack, simulate);
+            }
+            @Override public @NotNull ItemStack extractItem(int s, int amount, boolean simulate) { return ItemStack.EMPTY; }
+            @Override public int getSlotLimit(int s) { return inventory.getSlotLimit(target); }
+            @Override public boolean isItemValid(int s, @NotNull ItemStack stack) { return isItemValidForSlot(target, stack); }
+        };
+    }
 
-        com.hbm_m.particle.helper.IParticleCreator.sendPacket(serverLevel,
-                pos.getX() + 0.5 + rot.getStepX(), pos.getY() + 5, pos.getZ() + 0.5 + rot.getStepZ(),
-                250, fx);
+    /** Original {@code getAccessibleSlotsFromSide(side)}: der Kern selbst bietet keinen Zugriff. */
+    @Override
+    public @NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(@NotNull net.minecraftforge.common.capabilities.Capability<T> cap, @Nullable Direction side) {
+        if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER && side != null) {
+            return net.minecraftforge.common.util.LazyOptional.empty();
+        }
+        return super.getCapability(cap, side);
+    }
+    //?}
+
+    // ── Fluid ────────────────────────────────────────────────────────────────
+
+    @Override public FluidTank[] getAllTanks() { return new FluidTank[] { tanks[0], tanks[1], tanks[2], smoke }; }
+    @Override public FluidTank[] getSendingTanks() { return new FluidTank[] { tanks[2], smoke }; }
+    @Override public FluidTank[] getReceivingTanks() { return new FluidTank[] { tanks[0], tanks[1] }; }
+
+    // ── NBT ─────────────────────────────────────────────────────────────────
+
+    @Override
+    protected void writeNbtData(CompoundTag nbt, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(nbt, registries);
+        this.tanks[0].writeToNBT(nbt, "t0");
+        this.tanks[1].writeToNBT(nbt, "t1");
+        this.tanks[2].writeToNBT(nbt, "t2");
+        nbt.putFloat("prog", progress);
+        nbt.putInt("burn", burnTime);
+        nbt.putDouble("heat", burnHeat);
+        nbt.putInt("maxBurn", maxBurnTime);
+        nbt.putInt("steamUsed", steamUsed);
+        nbt.putBoolean("isVenting", isVenting);
+        nbt.putBoolean("isProgressing", isProgressing);
+        if (this.output != null) {
+            nbt.putInt("outType", this.output.material.id);
+            nbt.putInt("outAmount", this.output.amount);
+        }
     }
 
     @Override
-    public FluidTank[] getReceivingTanks() { return new FluidTank[] { tank }; }
+    protected void readNbtData(CompoundTag nbt, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(nbt, registries);
+        this.tanks[0].readFromNBT(nbt, "t0");
+        this.tanks[1].readFromNBT(nbt, "t1");
+        this.tanks[2].readFromNBT(nbt, "t2");
+        this.progress = nbt.getFloat("prog");
+        this.burnTime = nbt.getInt("burn");
+        this.burnHeat = nbt.getDouble("heat");
+        this.maxBurnTime = nbt.getInt("maxBurn");
+        this.steamUsed = nbt.getInt("steamUsed");
+        this.isVenting = nbt.getBoolean("isVenting");
+        this.isProgressing = nbt.getBoolean("isProgressing");
+        this.output = null;
+        if (nbt.contains("outType")) {
+            NTMMaterial mat = Mats.matById.get(nbt.getInt("outType"));
+            if (mat != null) this.output = new MaterialStack(mat, nbt.getInt("outAmount"));
+        }
+    }
+
+    // ── Menue ────────────────────────────────────────────────────────────────
 
     @Override
-    public boolean isLoaded() {
-        return level != null && !isRemoved() && level.isLoaded(worldPosition);
+    protected Component getDefaultName() {
+        return Component.translatable("container.machineRotaryFurnace");
     }
 
     @Override
-    public boolean canConnect(Fluid fluid, Direction fromDir) {
-        return fromDir != null;
-    }
-
-    // ==================== NBT ====================
-
-    @Override
-    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-        super.writeNbtData(tag, registries);
-        tag.put("inventory", com.hbm_m.platform.ItemStackSerialization.serialize(inventory, registries));
-        tag.putInt("litTime", litTime);
-        tag.putInt("litDuration", litDuration);
-        tag.putFloat("progress", progress);
-        smokeTanks.writeToNBT(tag);
-        tank.writeToNBT(tag, "tank");
-    }
-
-    @Override
-    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-        super.readNbtData(tag, registries);
-        smokeTanks.readFromNBT(tag);
-        com.hbm_m.platform.ItemStackSerialization.deserialize(inventory, tag.getCompound("inventory"), registries);
-        litTime = tag.getInt("litTime");
-        litDuration = tag.getInt("litDuration");
-        progress = tag.getFloat("progress");
-        tank.readFromNBT(tag, "tank");
-    }
-
-    // ==================== GUI ====================
-
-    @Override
-    public @NotNull Component getDisplayName() {
-        return Component.translatable("container.hbm_m.rotary_furnace");
+    public Component getDisplayName() {
+        return getDefaultName();
     }
 
     @Nullable
     @Override
-    public AbstractContainerMenu createMenu(int id, Inventory inv, Player player) {
-        return new MachineRotaryFurnaceMenu(id, inv, this, data);
+    public AbstractContainerMenu createMenu(int id, Inventory inventory, Player player) {
+        return new MachineRotaryFurnaceMenu(id, inventory, this);
+    }
+
+    private AABB bb = null;
+
+    //? if forge {
+    @Override
+    //?}
+    public AABB getRenderBoundingBox() {
+        if (bb == null) bb = new AABB(worldPosition.getX() - 2, worldPosition.getY(), worldPosition.getZ() - 2,
+                worldPosition.getX() + 3, worldPosition.getY() + 5, worldPosition.getZ() + 3);
+        return bb;
     }
 }

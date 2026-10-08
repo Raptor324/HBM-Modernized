@@ -73,7 +73,8 @@ public class FusionPlasmaForgeRenderer implements BlockEntityRenderer<FusionPlas
 
         pose.pushPose();
         pose.translate(0.5D, 0D, 0.5D);
-        FusionTorusRenderer.applyFacing(be.getBlockState(), pose);
+        // Original-Drehschalter (2: 90, 4: 180, 3: 270, 5: 0) = applyFacing + 90
+        FusionTorusRenderer.applyFacing(be.getBlockState(), pose, 90F);
         // Original: eine zusaetzliche 90-Grad-Drehung vor der Ausrichtung.
         pose.mulPose(Axis.YP.rotationDegrees(90F));
 
@@ -143,7 +144,7 @@ public class FusionPlasmaForgeRenderer implements BlockEntityRenderer<FusionPlas
 
     /** Original: {@code BobMathUtil.sps}. */
     private static double sps(double x) {
-        return (Math.sin(x) + 1D) * 0.5D;
+        return Math.sin(Math.PI / 2D * Math.cos(x));
     }
 
     /** 1:1-Port von {@code renderItem}: das Rezeptergebnis schwebt ueber dem Amboss. */

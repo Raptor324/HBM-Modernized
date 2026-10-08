@@ -8,11 +8,11 @@
         { "type": "item", "name": "hbm_m:gun_b92", "weight": 5 },
         { "type": "item", "name": "hbm_m:gun_kit_1", "weight": 6, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 2 } } ] },
         { "type": "item", "name": "hbm_m:gun_kit_2", "weight": 3 },
-        { "type": "item", "name": "hbm_m:ammo_9mm_sp", "weight": 8, "functions": [ { "function": "minecraft:set_count", "count": { "min": 6, "max": 24 } } ] },
-        { "type": "item", "name": "hbm_m:ammo_9mm_fmj", "weight": 6, "functions": [ { "function": "minecraft:set_count", "count": { "min": 6, "max": 24 } } ] },
-        { "type": "item", "name": "hbm_m:ammo_50_sp", "weight": 6, "functions": [ { "function": "minecraft:set_count", "count": { "min": 3, "max": 12 } } ] },
-        { "type": "item", "name": "hbm_m:ammo_556_sp", "weight": 6, "functions": [ { "function": "minecraft:set_count", "count": { "min": 6, "max": 24 } } ] },
-        { "type": "item", "name": "hbm_m:ammo_556_fmj", "weight": 5, "functions": [ { "function": "minecraft:set_count", "count": { "min": 6, "max": 24 } } ] },
+        { "type": "item", "name": "hbm_m:ammo_standard_p9_sp", "weight": 8, "functions": [ { "function": "minecraft:set_count", "count": { "min": 6, "max": 24 } } ] },
+        { "type": "item", "name": "hbm_m:ammo_standard_p9_fmj", "weight": 6, "functions": [ { "function": "minecraft:set_count", "count": { "min": 6, "max": 24 } } ] },
+        { "type": "item", "name": "hbm_m:ammo_standard_bmg50_sp", "weight": 6, "functions": [ { "function": "minecraft:set_count", "count": { "min": 3, "max": 12 } } ] },
+        { "type": "item", "name": "hbm_m:ammo_standard_r556_sp", "weight": 6, "functions": [ { "function": "minecraft:set_count", "count": { "min": 6, "max": 24 } } ] },
+        { "type": "item", "name": "hbm_m:ammo_standard_r556_fmj", "weight": 5, "functions": [ { "function": "minecraft:set_count", "count": { "min": 6, "max": 24 } } ] },
         { "type": "item", "name": "hbm_m:ammo_shell", "weight": 5, "functions": [ { "function": "minecraft:set_count", "count": { "min": 4, "max": 12 } } ] },
         { "type": "item", "name": "hbm_m:ammo_container", "weight": 3 },
         { "type": "item", "name": "hbm_m:grenade", "weight": 5, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 3 } } ] },
@@ -33,7 +33,17 @@
         { "type": "item", "name": "hbm_m:airstrike_heavy", "weight": 1 },
         { "type": "item", "name": "hbm_m:missile_generic", "weight": 1 },
         { "type": "item", "name": "hbm_m:missile_incendiary", "weight": 1 },
-        { "type": "item", "name": "hbm_m:missile_micro", "weight": 1 }
+        { "type": "item", "name": "hbm_m:missile_micro", "weight": 1 },
+        { "type": "item", "name": "hbm_m:gun_light_revolver", "weight": 3 },
+        { "type": "item", "name": "hbm_m:gun_henry", "weight": 3 },
+        { "type": "item", "name": "hbm_m:gun_maresleg", "weight": 3 },
+        { "type": "item", "name": "hbm_m:gun_greasegun", "weight": 3 },
+        { "type": "item", "name": "hbm_m:gun_carbine", "weight": 2 },
+        { "type": "item", "name": "hbm_m:gun_heavy_revolver", "weight": 2 },
+        { "type": "item", "name": "hbm_m:ammo_standard_m357_sp", "weight": 5, "functions": [ { "function": "minecraft:set_count", "count": { "min": 12, "max": 12 } } ] },
+        { "type": "item", "name": "hbm_m:ammo_standard_g12_bp", "weight": 5, "functions": [ { "function": "minecraft:set_count", "count": { "min": 6, "max": 6 } } ] },
+        { "type": "item", "name": "hbm_m:grenade_universal", "weight": 3, "functions": [ { "function": "minecraft:set_nbt", "tag": "{shell:0,filling:1,fuze:0,extra:2}" } ] },
+        { "type": "item", "name": "hbm_m:grenade_universal", "weight": 2, "functions": [ { "function": "minecraft:set_nbt", "tag": "{shell:1,filling:1,fuze:3}" } ] }
       ]
     }
   ]

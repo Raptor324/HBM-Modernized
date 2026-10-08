@@ -59,6 +59,26 @@ public class ItemEnergy extends Item {
         return this;
     }
 
+    /** Original {@code setContainerItem(bottle)}: die leere Flasche bleibt beim Craften zurueck. */
+    private boolean craftingContainer = false;
+
+    public ItemEnergy withCraftingContainer() {
+        this.craftingContainer = true;
+        return this;
+    }
+
+    //? if forge {
+    @Override
+    public boolean hasCraftingRemainingItem(ItemStack stack) {
+        return craftingContainer && container != null;
+    }
+
+    @Override
+    public ItemStack getCraftingRemainingItem(ItemStack stack) {
+        return hasCraftingRemainingItem(stack) ? new ItemStack(container.get()) : ItemStack.EMPTY;
+    }
+    //?}
+
     private boolean is(Supplier<? extends Item> item) {
         return this == item.get();
     }

@@ -1,119 +1,65 @@
 package com.hbm_m.client.render.implementations;
 
-
-import java.util.List;
-
 import com.hbm_m.blockentity.machines.HeatingOvenBlockEntity;
-import com.hbm_m.client.render.RenderDistanceHelper;
+import com.hbm_m.blockentity.machines.MachineFireboxBaseBlockEntity;
+import com.hbm_m.client.render.SimpleObjModel;
+import com.hbm_m.lib.RefStrings;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.mojang.math.Axis;
 
-import dev.architectury.utils.Env;
 import net.minecraft.client.renderer.LightTexture;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.renderer.block.model.BakedQuad;
-import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
-import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.core.Direction;
-import net.minecraft.util.RandomSource;
-//? if forge {
-import net.minecraftforge.client.model.data.ModelData;
-//?}
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 
-/**
- * Renderer for HeatingOven block entity.
- * Renders animated door and inner burning state based on original 1.7.10 code.
- */
-//? if forge {
-@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-//?} elif fabric {
-/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
-*///?} elif neoforge {
-/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-*///?}
+/** 1:1 {@code RenderHeatingOven}: Gehaeuse, Schiebeklappe ({@code door * 0.75 / 135}), Glut voll leuchtend wenn an. */
 public class HeatingOvenRenderer implements com.hbm_m.client.render.HbmBerBounds<HeatingOvenBlockEntity> {
 
-    private static final RandomSource RANDOM = RandomSource.create(42);
+    public static final SimpleObjModel MODEL = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/machines/heating_oven.obj"));
+    public static final ResourceLocation TEX = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/machines/heating_oven.png");
 
-    public HeatingOvenRenderer(BlockEntityRendererProvider.Context context) {
+    public HeatingOvenRenderer(BlockEntityRendererProvider.Context context) { }
+
+    /** Original: Metadaten 3/5/2/4 -> 0/90/180/270 Grad, danach -90. */
+    static void rotate(MachineFireboxBaseBlockEntity tile, PoseStack ps) {
+        Direction facing = tile.getBlockState().hasProperty(HorizontalDirectionalBlock.FACING)
+                ? tile.getBlockState().getValue(HorizontalDirectionalBlock.FACING) : Direction.NORTH;
+        switch (facing) {
+            case SOUTH -> ps.mulPose(Axis.YP.rotationDegrees(0));
+            case EAST -> ps.mulPose(Axis.YP.rotationDegrees(90));
+            case NORTH -> ps.mulPose(Axis.YP.rotationDegrees(180));
+            case WEST -> ps.mulPose(Axis.YP.rotationDegrees(270));
+            default -> { }
+        }
+        ps.mulPose(Axis.YP.rotationDegrees(-90));
     }
 
     @Override
-    public void render(HeatingOvenBlockEntity blockEntity, float partialTick, PoseStack poseStack,
-                       MultiBufferSource bufferSource, int packedLight, int packedOverlay) {
-        // TODO: Re-enable BER for door animation and inner burning effects once model system is working
-        // Currently the block model is rendered statically via RenderShape.MODEL + forge:composite
-    }
+    public void render(HeatingOvenBlockEntity oven, float interp, PoseStack ps, MultiBufferSource buf, int light, int overlay) {
+        ps.pushPose();
+        ps.translate(0.5D, 0D, 0.5D);
+        rotate(oven, ps);
 
-    private void renderPart(BakedModel part, PoseStack poseStack, MultiBufferSource bufferSource,
-                            int packedLight, int packedOverlay) {
-        if (part == null) return;
+        VertexConsumer vc = buf.getBuffer(RenderType.entityCutout(TEX));
+        MODEL.renderPart("Main", ps, vc, light);
 
-        VertexConsumer buffer = bufferSource.getBuffer(RenderType.solid());
+        ps.pushPose();
+        float door = oven.prevDoorAngle + (oven.doorAngle - oven.prevDoorAngle) * interp;
+        ps.translate(0, 0, door * 0.75D / 135D);
+        MODEL.renderPart("Door", ps, vc, light);
+        ps.popPose();
 
-        List<BakedQuad> quads = part.getQuads(null, null, RANDOM);
-        renderQuads(poseStack, buffer, quads, packedLight, packedOverlay);
-
-        for (Direction dir : Direction.values()) {
-            quads = part.getQuads(null, dir, RANDOM);
-            renderQuads(poseStack, buffer, quads, packedLight, packedOverlay);
+        if (oven.wasOn) {
+            MODEL.renderPart("InnerBurning", ps, buf.getBuffer(RenderType.entityCutoutNoCull(TEX)), LightTexture.FULL_BRIGHT);
+        } else {
+            MODEL.renderPart("Inner", ps, vc, light);
         }
-    }
 
-    private void renderDoor(BakedModel doorPart, PoseStack poseStack, MultiBufferSource bufferSource,
-                            int packedLight, int packedOverlay, float doorAngle) {
-        if (doorPart == null) return;
-
-        poseStack.pushPose();
-
-        // Door slides open based on angle (from original code: door * 0.75 / 135)
-        // When fully open (135 degrees), door translates 0.75 blocks
-        float doorTranslation = doorAngle * 0.75f / 135f;
-        poseStack.translate(0, 0, doorTranslation);
-
-        renderPart(doorPart, poseStack, bufferSource, packedLight, packedOverlay);
-
-        poseStack.popPose();
-    }
-
-    private void renderInnerBurning(BakedModel innerBurningPart, PoseStack poseStack, 
-                                     MultiBufferSource bufferSource, int packedOverlay) {
-        if (innerBurningPart == null) return;
-
-        // Full brightness for burning inner
-        int fullBright = LightTexture.pack(15, 15);
-
-        VertexConsumer buffer = bufferSource.getBuffer(RenderType.solid());
-
-        List<BakedQuad> quads = innerBurningPart.getQuads(null, null, RANDOM);
-        renderQuads(poseStack, buffer, quads, fullBright, packedOverlay);
-
-        for (Direction dir : Direction.values()) {
-            quads = innerBurningPart.getQuads(null, dir, RANDOM);
-            renderQuads(poseStack, buffer, quads, fullBright, packedOverlay);
-        }
-    }
-
-    private void renderQuads(PoseStack poseStack, VertexConsumer buffer, List<BakedQuad> quads,
-                             int packedLight, int packedOverlay) {
-        if (quads.isEmpty()) return;
-
-        var pose = poseStack.last();
-        for (BakedQuad quad : quads) {
-            com.hbm_m.platform.RenderHooks.putBulkData(buffer, pose, quad, 1.0f, 1.0f, 1.0f, 1.0f, packedLight, packedOverlay, true);
-        }
-    }
-
-    private float getRotationFromFacing(Direction facing) {
-        return switch (facing) {
-            case NORTH -> 0;
-            case EAST -> 270;
-            case SOUTH -> 180;
-            case WEST -> 90;
-            default -> 0;
-        };
+        ps.popPose();
     }
 
     @Override
@@ -121,8 +67,5 @@ public class HeatingOvenRenderer implements com.hbm_m.client.render.HbmBerBounds
         return true;
     }
 
-    @Override
-    public int getViewDistance() {
-        return RenderDistanceHelper.getStaticViewDistanceBlocks();
-    }
+    @Override public int getViewDistance() { return 256; }
 }

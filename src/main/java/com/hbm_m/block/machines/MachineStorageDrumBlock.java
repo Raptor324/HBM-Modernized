@@ -27,6 +27,23 @@ public class MachineStorageDrumBlock extends BaseEntityBlock {
     @Override
     public RenderShape getRenderShape(BlockState state) { return RenderShape.MODEL; }
 
+    /** Original {@code setBlockBounds(2/16, 0, 2/16, 14/16, 1, 14/16)}. */
+    private static final net.minecraft.world.phys.shapes.VoxelShape SHAPE = net.minecraft.world.level.block.Block.box(2, 0, 2, 14, 16, 14);
+
+    @Override
+    public net.minecraft.world.phys.shapes.VoxelShape getShape(BlockState state, net.minecraft.world.level.BlockGetter level, BlockPos pos, net.minecraft.world.phys.shapes.CollisionContext ctx) {
+        return SHAPE;
+    }
+
+    /** Original {@code BlockMachineBase.breakBlock}: Inhalt fallen lassen. */
+    @Override
+    public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
+        if (!state.is(newState.getBlock()) && level.getBlockEntity(pos) instanceof MachineStorageDrumBlockEntity drum) {
+            drum.dropInventoryContents();
+        }
+        super.onRemove(state, level, pos, newState, isMoving);
+    }
+
     @Nullable @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
         return new MachineStorageDrumBlockEntity(pos, state);
@@ -41,6 +58,7 @@ public class MachineStorageDrumBlock extends BaseEntityBlock {
     //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        if (!level.isClientSide() && player.isShiftKeyDown()) return InteractionResult.PASS; // Original: geschlichen auf dem Server false
 
         if (!level.isClientSide()) {
             BlockEntity entity = level.getBlockEntity(pos);
@@ -53,6 +71,7 @@ public class MachineStorageDrumBlock extends BaseEntityBlock {
     //?} else {
     /*@Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+        if (!level.isClientSide() && player.isShiftKeyDown()) return InteractionResult.PASS; // Original: geschlichen auf dem Server false
 
         if (!level.isClientSide()) {
             BlockEntity entity = level.getBlockEntity(pos);

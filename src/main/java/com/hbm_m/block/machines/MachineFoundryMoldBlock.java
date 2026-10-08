@@ -31,6 +31,8 @@ public class MachineFoundryMoldBlock extends MachineFoundryBasinBlock {
 
     public MachineFoundryMoldBlock(Properties props) { super(props); }
 
+    @Override protected double maxY() { return 0.5D; }
+
     @Override public VoxelShape getShape(BlockState s, BlockGetter l, BlockPos p, CollisionContext c) { return SHAPE; }
     @Override public VoxelShape getCollisionShape(BlockState s, BlockGetter l, BlockPos p, CollisionContext c) { return SHAPE; }
 

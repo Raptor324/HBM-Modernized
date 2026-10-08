@@ -37,6 +37,8 @@ public final class SilexRecipeGenerator {
         String id = switch (orig) {
             case "powder_aluminium" -> "aluminum_powder";
             case "powder_ash_fullerene" -> "fullerene";
+            // Original-Feld nugget_mercury hat die Registry-ID nugget_mercury_tiny ("Tiny Drop of Mercury")
+            case "nugget_mercury" -> "nugget_mercury_tiny";
             default -> {
                 if (orig.startsWith("powder_") && orig.endsWith("_tiny")) yield orig.substring(7, orig.length() - 5) + "_powder_tiny";
                 if (orig.startsWith("powder_")) yield orig.substring(7) + "_powder";

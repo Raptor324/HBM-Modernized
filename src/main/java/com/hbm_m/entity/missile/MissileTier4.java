@@ -94,9 +94,13 @@ public abstract class MissileTier4 extends MissileBaseEntity {
             if (level().isClientSide) {
                 return;
             }
-            level().explode(this, pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D,
-                    10.0F, Level.ExplosionInteraction.BLOCK);
-            // TODO: volcano warhead
+            // 1:1 EntityMissileVolcano: ExplosionLarge(10, Wolke/Truemmer/Splitter), 3x3x3 Vulkanlava, Kern in der Mitte
+            com.hbm_m.explosion.ExplosionLarge.explode(level(), getX(), getY(), getZ(), 10.0F, true, true, true);
+            for (int x = -1; x <= 1; x++) for (int y = -1; y <= 1; y++) for (int z = -1; z <= 1; z++)
+                level().setBlock(BlockPos.containing(Math.floor(getX() + x), Math.floor(getY() + y), Math.floor(getZ() + z)),
+                        com.hbm_m.block.ModBlocks.VOLCANIC_LAVA_BLOCK.get().defaultBlockState(), 3);
+            level().setBlock(BlockPos.containing(Math.floor(getX()), Math.floor(getY()), Math.floor(getZ())),
+                    com.hbm_m.block.ModBlocks.VOLCANO_CORE.get().defaultBlockState(), 3);
         }
     }
 

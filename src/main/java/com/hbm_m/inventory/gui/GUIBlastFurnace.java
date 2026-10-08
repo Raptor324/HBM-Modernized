@@ -102,11 +102,12 @@ public class GUIBlastFurnace extends AbstractContainerScreen<BlastFurnaceMenu> {
 
         for (int i = 0; i < slots.length; i++) {
             Slot slot = slots[i];
-            if (slot != null && !slot.hasItem() && isHovering(slot.x, slot.y, 16, 16, mouseX, mouseY)) {
+            if (slot != null && isHovering(slot.x, slot.y, 16, 16, mouseX, mouseY)) {
                 Component direction = Component.translatable("direction.hbm_m." + menu.getConfiguredDirectionForSlot(i).getName());
                 Component tooltip = Component.translatable("gui.hbm_m.blast_furnace.accepts", direction)
                         .withStyle(ChatFormatting.YELLOW);
-                guiGraphics.renderTooltip(this.font, tooltip, mouseX, mouseY);
+                // Original: bei belegtem Slot 15 px hoeher, damit der Gegenstands-Tooltip frei bleibt
+                guiGraphics.renderTooltip(this.font, tooltip, mouseX, mouseY - (slot.hasItem() ? 15 : 0));
                 break;
             }
         }

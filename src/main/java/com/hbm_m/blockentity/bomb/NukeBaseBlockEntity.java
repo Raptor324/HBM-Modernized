@@ -114,10 +114,8 @@ public abstract class NukeBaseBlockEntity extends BaseHbmBlockEntity implements 
 
     @Override
     public int[] getSlotsForFace(Direction direction) {
-        int n = slots.size();
-        int[] out = new int[n];
-        for (int i = 0; i < n; i++) out[i] = i;
-        return out;
+        // Original (alle Atombomben): getAccessibleSlotsFromSide = new int[0] - kein Trichterzugriff
+        return new int[0];
     }
 
     @Override

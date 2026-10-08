@@ -29,28 +29,28 @@ import net.minecraft.world.level.Level;
 
 /**
  * 1:1 {@code com.hbm.items.special.ItemStarterKit}. Die Inhalte stehen als Registry-IDs in der Reihenfolge
- * des Originals ({@code "id"} oder {@code "id*anzahl"}, ohne Namensraum = hbm_m). IDs, die der Port (noch)
- * nicht kennt, werden beim Oeffnen uebersprungen und geloggt (machine_excavator/statue_elb_f/early_explosive_lenses
- * folgen mit ihren Runden). Gefuellte Behaelter stehen als "behaelter_fluessigkeit" (z. B. canister_full_diesel).
+ * des Originals ({@code "id"} oder {@code "id*anzahl"}, ohne Namensraum = hbm_m). IDs, die der Port
+ * nicht kennt, werden beim Oeffnen uebersprungen und geloggt. Original-IDs sind auf Port-IDs umgesetzt
+ * (machine_excavator=mining_drill, machine_gascent=gas_centrifuge, early_explosive_lenses=fat_man_explosive usw.). Gefuellte Behaelter stehen als "behaelter_fluessigkeit" (z. B. canister_full_diesel).
  */
 public class ItemStarterKit extends Item implements ITooltipProvider {
 
     private static final Map<String, String[]> KITS = Map.ofEntries(
             Map.entry("nuke_starter_kit", new String[] {
-                    "uranium_ingot*32", "yellowcake_powder*32", "press", "machine_blast_furnace", "machine_gascent",
-                    "machine_reactor_breeding", "machine_assembler", "chemical_plant", "reactor_research", "steam_turbine*2",
+                    "uranium_ingot*32", "yellowcake_powder*32", "press", "machine_blast_furnace", "gas_centrifuge",
+                    "breeder", "machine_assembler", "chemical_plant", "reactor_research", "steam_turbine*2",
                     "radaway*8", "radx*2", "stamp_titanium_flat", "stamp_titanium_flat", "stamp_titanium_flat",
                     "steel_ingot*64", "lead_ingot*64", "minecraft:copper_ingot*64", "gas_mask_m65", "geiger_counter", "#haz1"}),
             Map.entry("nuke_advanced_kit", new String[] {
                     "yellowcake_powder*64", "plutonium_powder*64", "steel_ingot*64", "minecraft:copper_ingot*64", "tungsten_ingot*64",
-                    "lead_ingot*64", "polymer_ingot*64", "machine_blast_furnace*3", "machine_gascent*3", "machine_centrifuge*2",
-                    "machine_uf6_tank*2", "machine_puf6_tank*2", "machine_reactor_breeding*2", "reactor_research*4", "steam_turbine*4",
-                    "machine_radgen", "machine_rtg", "machine_assembler*3", "chemical_plant*2", "machine_fluidtank",
+                    "lead_ingot*64", "polymer_ingot*64", "machine_blast_furnace*3", "gas_centrifuge*3", "centrifuge*2",
+                    "machine_uf6_tank*2", "machine_puf6_tank*2", "breeder*2", "reactor_research*4", "steam_turbine*4",
+                    "machine_radgen", "machine_rtg", "machine_assembler*3", "chemical_plant*2", "fluid_tank",
                     "pellet_rtg", "pellet_rtg", "pellet_rtg", "pellet_rtg_weak", "pellet_rtg_weak", "pellet_rtg_weak",
                     "cell_empty*32", "rod_empty*32", "fluid_barrel_full_coolant*4", "radaway_strong*4", "radx*4", "pill_iodine",
                     "geiger_counter", "survey_scanner", "gas_mask_m65", "#haz2"}),
             Map.entry("nuke_commercially_kit", new String[] {
-                    "reactor_research*8", "machine_reactor_breeding*8", "machine_fluidtank*8", "billet_pu238be*40", "u233_ingot*40",
+                    "reactor_research*8", "breeder*8", "fluid_tank*8", "billet_pu238be*40", "u233_ingot*40",
                     "uranium_fuel_ingot*32", "plutonium_fuel_ingot*16", "mox_fuel_ingot*8", "inf_water_mk2", "inf_water_mk2", "inf_water_mk2",
                     "rod_empty*64", "rod_dual_empty*64", "rod_quad_empty*64", "fluid_tank_lead_empty*64", "fluid_barrel_empty*64",
                     "barrel_steel*16", "plate_iron*64", "minecraft:ink_sac*64", "radaway_flush*8", "iv_blood*8", "pill_iodine*8",
@@ -58,16 +58,16 @@ public class ItemStarterKit extends Item implements ITooltipProvider {
             Map.entry("nuke_electric_kit", new String[] {
                     "coil_copper*16", "coil_gold*8", "coil_tungsten*8", "motor*4", "vacuum_tube*16", "capacitor*16", "integrated_circuit*16",
                     "wiring_red_copper", "magnetron*5", "piston_selenium", "piston_selenium", "piston_selenium",
-                    "canister_full_diesel*16", "canister_full_biofuel*16", "battery_potato", "screwdriver", "machine_excavator",
+                    "canister_full_diesel*16", "canister_full_biofuel*16", "battery_potato", "screwdriver", "mining_drill",
                     "dieselgen*2", "red_cable*64", "red_wire_coated*16", "red_pylon*8", "machine_battery_socket*4",
                     "battery_pack_battery_lead*4", "machine_converter_he_rf", "machine_converter_rf_he"}),
             Map.entry("gadget_kit", new String[] {
-                    "nuke_gadget", "early_explosive_lenses", "early_explosive_lenses", "early_explosive_lenses", "early_explosive_lenses",
+                    "nuke_gadget", "fat_man_explosive", "fat_man_explosive", "fat_man_explosive", "fat_man_explosive",
                     "gadget_wireing", "gadget_core", "#haz0"}),
             Map.entry("boy_kit", new String[] {
                     "nuke_boy", "boy_shielding", "boy_target", "boy_bullet", "boy_propellant", "boy_igniter", "#haz0"}),
             Map.entry("man_kit", new String[] {
-                    "nuke_fat_man", "early_explosive_lenses", "early_explosive_lenses", "early_explosive_lenses", "early_explosive_lenses",
+                    "nuke_fat_man", "fat_man_explosive", "fat_man_explosive", "fat_man_explosive", "fat_man_explosive",
                     "fat_man_igniter", "fat_man_core", "#haz0"}),
             Map.entry("mike_kit", new String[] {
                     "nuke_mike", "explosive_lenses", "explosive_lenses", "explosive_lenses", "explosive_lenses", "fat_man_core",
@@ -75,7 +75,7 @@ public class ItemStarterKit extends Item implements ITooltipProvider {
             Map.entry("tsar_kit", new String[] {
                     "nuke_tsar", "explosive_lenses", "explosive_lenses", "explosive_lenses", "explosive_lenses", "fat_man_core", "tsar_core", "#haz0"}),
             Map.entry("multi_kit", new String[] {
-                    "bomb_multi*6", "minecraft:tnt*26", "minecraft:gunpowder*2", "pellet_cluster*2", "powder_fire*2", "powder_poison*2", "pellet_gas*2"}),
+                    "bomb_multi*6", "minecraft:tnt*26", "minecraft:gunpowder*2", "pellet_cluster*2", "fire_powder*2", "powder_poison*2", "pellet_gas*2"}),
             Map.entry("custom_kit", new String[] {
                     "nuke_custom", "custom_tnt", "custom_tnt", "custom_tnt", "custom_tnt", "custom_tnt", "custom_tnt",
                     "custom_nuke", "custom_nuke", "custom_nuke", "custom_nuke", "custom_hydro", "custom_hydro", "custom_amat", "custom_amat",

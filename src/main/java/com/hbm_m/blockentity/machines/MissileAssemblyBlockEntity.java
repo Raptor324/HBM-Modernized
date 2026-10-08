@@ -7,14 +7,17 @@ import com.hbm_m.blockentity.BaseHbmBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.inventory.ModItemStackHandlerContainer;
 import com.hbm_m.inventory.menu.MissileAssemblyMenu;
-import com.hbm_m.item.ModItems;
-import com.hbm_m.item.missile.MissileItem;
+import com.hbm_m.item.missile.ItemCustomMissile;
+import com.hbm_m.item.missile.ItemCustomMissilePart;
+import com.hbm_m.item.missile.ItemCustomMissilePart.FuelType;
+import com.hbm_m.item.missile.ItemCustomMissilePart.PartType;
+import com.hbm_m.item.missile.MissileStruct;
 import com.hbm_m.platform.ModItemStackHandler;
+import com.hbm_m.sound.ModSounds;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.Containers;
 import net.minecraft.world.MenuProvider;
@@ -22,20 +25,16 @@ import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.AABB;
 
 /**
- * MVP-Port der 1.7.10 Missile-Assembly-Maschine ({@code TileEntityMachineMissileAssembly}).
- * <p>
- * Das Original prueft physische "Connector"-IDs zwischen Fuselage/Warhead/Fins/Thruster
- * (Top/Bottom-Pins + Treibstoff-Typ-Abgleich). Diese Attribute existieren in diesem Port
- * nicht (Teile sind einfache Items ohne NBT-Attribute), daher wird hier stattdessen anhand
- * der Item-Namen eine Groessen-Klasse (SMALL/MEDIUM/LARGE/NUCLEAR) abgeleitet und Warhead-
- * gegen Thruster-Klasse verglichen. Das Ergebnis ist eines der bereits registrierten
- * {@link MissileItem}-Presets statt einer frei kombinierten NBT-Rakete.
+ * 1:1 {@code TileEntityMachineMissileAssembly}: Chip (0), Sprengkopf (1), Rumpf (2), Leitwerk (3, optional) und
+ * Triebwerk (4) werden auf Passung geprueft und auf Knopfdruck zu einer {@code missile_custom} (5) verbaut. Die
+ * Anschlussgroessen muessen passen, das Triebwerk muss den Treibstoff des Rumpfs verbrennen und mindestens so viel
+ * Schub liefern wie der Sprengkopf wiegt. Der Slotinhalt wird an die Clients gespiegelt (Original:
+ * TEMissileMultipartPacket), damit der Renderer die halbfertige Rakete auf dem Geruest zeigt.
  */
 public class MissileAssemblyBlockEntity extends BaseHbmBlockEntity implements MenuProvider {
 
@@ -47,10 +46,13 @@ public class MissileAssemblyBlockEntity extends BaseHbmBlockEntity implements Me
     public static final int SLOT_OUTPUT = 5;
     private static final int SLOT_COUNT = 6;
 
+    private String customName;
+
     private final ModItemStackHandler inventory = new ModItemStackHandler(SLOT_COUNT) {
         @Override
         protected void onContentsChanged(int slot) {
             setChanged();
+            if (level != null && !level.isClientSide) level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
         }
 
         @Override
@@ -67,105 +69,90 @@ public class MissileAssemblyBlockEntity extends BaseHbmBlockEntity implements Me
         return inventory;
     }
 
-    private enum Size { SMALL, MEDIUM, LARGE, NUCLEAR, UNKNOWN }
-
-    private static Size sizeOf(ItemStack stack) {
-        if (stack.isEmpty()) return Size.UNKNOWN;
-        String id = stack.getItem().builtInRegistryHolder().key().location().getPath();
-        if (id.contains("nuclear") || id.contains("mirv") || id.contains("volcano")) return Size.NUCLEAR;
-        if (id.contains("_small")) return Size.SMALL;
-        if (id.contains("_medium")) return Size.MEDIUM;
-        if (id.contains("_large")) return Size.LARGE;
-        return Size.UNKNOWN;
+    private ItemStack slot(int i) {
+        return inventory.getStackInSlot(i);
     }
 
-    private static boolean isWarhead(ItemStack stack) {
-        return !stack.isEmpty() && stack.getItem().builtInRegistryHolder().key().location().getPath().startsWith("warhead_");
+    @Nullable
+    private ItemCustomMissilePart part(int i) {
+        return slot(i).getItem() instanceof ItemCustomMissilePart p ? p : null;
     }
 
-    private static boolean isThruster(ItemStack stack) {
-        return !stack.isEmpty() && stack.getItem().builtInRegistryHolder().key().location().getPath().startsWith("thruster_");
-    }
-
-    private static boolean isFins(ItemStack stack) {
-        return !stack.isEmpty() && stack.getItem().builtInRegistryHolder().key().location().getPath().startsWith("fins_");
-    }
-
-    public int chipState() {
-        return inventory.getStackInSlot(SLOT_CHIP).is(ModItems.MISSILE_CHIP.get()) ? 1 : 0;
+    /** Der aktuelle Slotinhalt als Raketenverbund (Renderer, GUI-Vorschau). */
+    public MissileStruct getStruct() {
+        return new MissileStruct(slot(SLOT_WARHEAD), slot(SLOT_FUSELAGE), slot(SLOT_FINS), slot(SLOT_THRUSTER));
     }
 
     public int fuselageState() {
-        return inventory.getStackInSlot(SLOT_FUSELAGE).is(ModItems.MISSILE_FUSELAGE.get()) ? 1 : 0;
+        ItemCustomMissilePart part = part(SLOT_FUSELAGE);
+        return part != null && part.type == PartType.FUSELAGE ? 1 : 0;
     }
 
-    public int thrusterState() {
-        return (fuselageState() == 1 && isThruster(inventory.getStackInSlot(SLOT_THRUSTER))) ? 1 : 0;
-    }
-
-    /** -1 = leer (kein Fins-Teil erforderlich), 0 = ungueltiges Teil, 1 = gueltig. */
-    public int stabilityState() {
-        ItemStack fins = inventory.getStackInSlot(SLOT_FINS);
-        if (fins.isEmpty()) return -1;
-        return isFins(fins) ? 1 : 0;
+    public int chipState() {
+        ItemCustomMissilePart part = part(SLOT_CHIP);
+        return part != null && part.type == PartType.CHIP ? 1 : 0;
     }
 
     public int warheadState() {
-        ItemStack warhead = inventory.getStackInSlot(SLOT_WARHEAD);
-        ItemStack thruster = inventory.getStackInSlot(SLOT_THRUSTER);
-        if (!isWarhead(warhead) || !isThruster(thruster)) return 0;
-        Size warheadSize = sizeOf(warhead);
-        Size thrusterSize = sizeOf(thruster);
-        return (warheadSize != Size.UNKNOWN && warheadSize == thrusterSize) ? 1 : 0;
+        ItemCustomMissilePart part = part(SLOT_WARHEAD);
+        ItemCustomMissilePart fuselage = part(SLOT_FUSELAGE);
+        ItemCustomMissilePart thruster = part(SLOT_THRUSTER);
+
+        if (part != null && fuselage != null && thruster != null) {
+            if (part.type == PartType.WARHEAD && fuselage.type == PartType.FUSELAGE && thruster.type == PartType.THRUSTER) {
+                float weight = (Float) part.attributes[2];
+                float thrust = (Float) thruster.attributes[2];
+
+                if (part.bottom == fuselage.top && weight <= thrust) return 1;
+            }
+        }
+        return 0;
+    }
+
+    public int stabilityState() {
+        if (slot(SLOT_FINS).isEmpty()) return -1;
+
+        ItemCustomMissilePart part = part(SLOT_FINS);
+        ItemCustomMissilePart fuselage = part(SLOT_FUSELAGE);
+        if (part != null && fuselage != null) {
+            if (part.top == fuselage.bottom && part.type == PartType.FINS) return 1;
+        }
+        return 0;
+    }
+
+    public int thrusterState() {
+        ItemCustomMissilePart part = part(SLOT_THRUSTER);
+        ItemCustomMissilePart fuselage = part(SLOT_FUSELAGE);
+        if (part != null && fuselage != null) {
+            if (part.type == PartType.THRUSTER && fuselage.type == PartType.FUSELAGE
+                    && part.top == fuselage.bottom && (FuelType) part.attributes[0] == (FuelType) fuselage.attributes[0]) {
+                return 1;
+            }
+        }
+        return 0;
     }
 
     public boolean canBuild() {
-        if (!inventory.getStackInSlot(SLOT_OUTPUT).isEmpty()) return false;
-        return chipState() == 1 && warheadState() == 1 && fuselageState() == 1
-                && thrusterState() == 1 && stabilityState() != 0;
+        if (slot(SLOT_OUTPUT).isEmpty() && chipState() == 1 && warheadState() == 1 && fuselageState() == 1 && thrusterState() == 1) {
+            return stabilityState() != 0;
+        }
+        return false;
     }
 
     public void construct() {
         if (!canBuild() || level == null) return;
 
-        ItemStack warhead = inventory.getStackInSlot(SLOT_WARHEAD);
-        Item resultMissile = resolveMissile(warhead);
+        inventory.setStackInSlot(SLOT_OUTPUT, ItemCustomMissile.buildMissile(slot(SLOT_CHIP), slot(SLOT_WARHEAD), slot(SLOT_FUSELAGE), slot(SLOT_FINS), slot(SLOT_THRUSTER)).copy());
 
-        inventory.setStackInSlot(SLOT_OUTPUT, new ItemStack(resultMissile));
-        inventory.extractItem(SLOT_CHIP, 1, false);
-        inventory.extractItem(SLOT_WARHEAD, 1, false);
-        inventory.extractItem(SLOT_FUSELAGE, 1, false);
-        inventory.extractItem(SLOT_THRUSTER, 1, false);
-        if (stabilityState() == 1) {
-            inventory.extractItem(SLOT_FINS, 1, false);
-        }
+        if (stabilityState() == 1) inventory.setStackInSlot(SLOT_FINS, ItemStack.EMPTY);
 
-        level.playSound(null, worldPosition, SoundEvents.ANVIL_USE, SoundSource.BLOCKS, 1.0F, 1.0F);
+        inventory.setStackInSlot(SLOT_CHIP, ItemStack.EMPTY);
+        inventory.setStackInSlot(SLOT_WARHEAD, ItemStack.EMPTY);
+        inventory.setStackInSlot(SLOT_FUSELAGE, ItemStack.EMPTY);
+        inventory.setStackInSlot(SLOT_THRUSTER, ItemStack.EMPTY);
+
+        level.playSound(null, worldPosition, ModSounds.MISSILE_ASSEMBLY2.get(), SoundSource.BLOCKS, 1.0F, 1.0F);
         setChanged();
-    }
-
-    private static Item resolveMissile(ItemStack warhead) {
-        String id = warhead.getItem().builtInRegistryHolder().key().location().getPath();
-        Size size = sizeOf(warhead);
-
-        if (size == Size.NUCLEAR) {
-            if (id.contains("mirv")) return ModItems.MISSILE_NUCLEAR_CLUSTER.get();
-            if (id.contains("volcano")) return ModItems.MISSILE_VOLCANO.get();
-            return ModItems.MISSILE_NUCLEAR.get();
-        }
-        if (size == Size.LARGE) {
-            if (id.contains("incendiary")) return ModItems.MISSILE_INCENDIARY_STRONG.get();
-            if (id.contains("cluster")) return ModItems.MISSILE_CLUSTER_STRONG.get();
-            if (id.contains("buster")) return ModItems.MISSILE_BUSTER_STRONG.get();
-            return ModItems.MISSILE_STRONG.get();
-        }
-        if (size == Size.MEDIUM) {
-            if (id.contains("incendiary")) return ModItems.MISSILE_INCENDIARY.get();
-            if (id.contains("cluster")) return ModItems.MISSILE_CLUSTER.get();
-            if (id.contains("buster")) return ModItems.MISSILE_BUSTER.get();
-            return ModItems.MISSILE_GENERIC.get();
-        }
-        return ModItems.MISSILE_MICRO.get();
     }
 
     public void dropInventoryContents() {
@@ -177,12 +164,16 @@ public class MissileAssemblyBlockEntity extends BaseHbmBlockEntity implements Me
         Containers.dropContents(level, worldPosition, c);
     }
 
-    
-    // (устраняет вложенный stonecutter-баг в load())
+    public void setCustomName(String name) {
+        this.customName = name;
+        setChanged();
+    }
+
     @Override
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.writeNbtData(tag, registries);
         tag.put("inventory", com.hbm_m.platform.ItemStackSerialization.serialize(inventory, registries));
+        if (customName != null) tag.putString("name", customName);
     }
 
     @Override
@@ -191,11 +182,19 @@ public class MissileAssemblyBlockEntity extends BaseHbmBlockEntity implements Me
         if (tag.contains("inventory")) {
             com.hbm_m.platform.ItemStackSerialization.deserialize(inventory, tag.getCompound("inventory"), registries);
         }
+        customName = tag.contains("name") ? tag.getString("name") : null;
     }
+
+    //? if forge {
+    @Override
+    public AABB getRenderBoundingBox() {
+        return INFINITE_EXTENT_AABB;
+    }
+    //?}
 
     @Override
     public Component getDisplayName() {
-        return Component.translatable("container.hbm_m.missile_assembly");
+        return customName != null && !customName.isEmpty() ? Component.literal(customName) : Component.translatable("container.missileAssembly");
     }
 
     @Nullable

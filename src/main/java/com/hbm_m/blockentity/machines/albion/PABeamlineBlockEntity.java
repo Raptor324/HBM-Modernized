@@ -38,6 +38,11 @@ public class PABeamlineBlockEntity extends BaseMachineBlockEntity implements IPa
     private boolean window = false;
     /** Original: {@code didPass} - fuer das kurze Aufleuchten beim Durchflug. */
     private boolean didPass = false;
+    /** Haelt {@code didPass} fuer das naechste Client-Paket fest (das Paket wird erst am Tickende gebaut). */
+    private int passSyncTicks = 0;
+    /** Original {@code light/prevLight} - nur Client, Aufleuchten des Glases (RenderPABeamline). */
+    public float light;
+    public float prevLight;
 
     public PABeamlineBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.PA_BEAMLINE_BE.get(), pos, state, 0, 0L, 0L, 0L);
@@ -66,6 +71,30 @@ public class PABeamlineBlockEntity extends BaseMachineBlockEntity implements IPa
         return worldPosition.relative(beamAxis(), EXIT_OFFSET);
     }
 
+    /** Original updateEntity: Client laesst das Licht abklingen, Server meldet einen Durchflug. */
+    public static void tick(net.minecraft.world.level.Level level, BlockPos pos, BlockState state, PABeamlineBlockEntity be) {
+        if (level.isClientSide()) {
+            be.prevLight = be.light;
+            if (be.light > 0) be.light -= 0.25F;
+            if (be.light > be.prevLight) be.prevLight = be.light;
+            return;
+        }
+        if (be.didPass) {
+            be.didPass = false;
+            be.passSyncTicks = 2;
+            be.sendUpdateToClient();
+        } else if (be.passSyncTicks > 0) {
+            be.passSyncTicks--;
+        }
+    }
+
+    /** Original deserialize: {@code if(didPass) light = 2F}. */
+    @Override
+    protected void applyClientUpdate(CompoundTag tag) {
+        super.applyClientUpdate(tag);
+        if (tag.getBoolean("didPass")) this.light = 2F;
+    }
+
     public boolean hasWindow() {
         return window;
     }
@@ -73,6 +102,7 @@ public class PABeamlineBlockEntity extends BaseMachineBlockEntity implements IPa
     public void setWindow(boolean window) {
         this.window = window;
         setChanged();
+        sendUpdateToClient();
     }
 
     /** Wird vom Renderer abgefragt und dabei zurueckgesetzt - wie das {@code didPass} des Originals. */
@@ -91,6 +121,7 @@ public class PABeamlineBlockEntity extends BaseMachineBlockEntity implements IPa
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.writeNbtData(tag, registries);
         tag.putBoolean("window", window);
+        if (passSyncTicks > 0) tag.putBoolean("didPass", true);
     }
 
     @Override

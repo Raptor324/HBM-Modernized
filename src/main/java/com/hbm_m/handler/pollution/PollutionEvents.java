@@ -9,6 +9,7 @@ import dev.architectury.event.EventResult;
 import dev.architectury.event.events.common.EntityEvent;
 import dev.architectury.event.events.common.TickEvent;
 
+import net.minecraft.core.BlockPos;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.LevelAccessor;
@@ -22,8 +23,8 @@ import net.minecraft.world.entity.monster.Enemy;
  * Haengt {@link PollutionHandler} an den Serverlauf - im Original sind das die
  * {@code @SubscribeEvent}-Methoden derselben Klasse.
  *
- * <p><b>Nicht portiert:</b> der Rampant-Modus ({@code rampantTargetSetter},
- * {@code rampantScoutPopulator}) - er setzt Glyphiden voraus, die es im Port nicht gibt.</p>
+ * <p>Rampant-Modus: {@code rampantTargetSetter} (Schlafplatz als Ziel) und {@code rampantScoutPopulator}
+ * (Spaeher samt Graeber-Eskorte unter freiem Himmel in stark verrusster Oberwelt).</p>
  */
 public final class PollutionEvents {
 
@@ -62,7 +63,47 @@ public final class PollutionEvents {
             decorateMob(entity, world, x, y, z);
             return EventResult.pass();
         });
+
+        //? if forge {
+        net.minecraftforge.common.MinecraftForge.EVENT_BUS.addListener((net.minecraftforge.event.entity.player.PlayerSleepInBedEvent event) -> {
+            if (com.hbm_m.config.MobConfig.rampantGlyphidGuidance()) {
+                BlockPos p = event.getPos();
+                PollutionHandler.targetCoords = new net.minecraft.world.phys.Vec3(p.getX(), p.getY(), p.getZ());
+            }
+        });
+        net.minecraftforge.common.MinecraftForge.EVENT_BUS.addListener(PollutionEvents::rampantScoutPopulator);
+        //?}
     }
+
+    //? if forge {
+    /** 1:1 {@code rampantScoutPopulator}. */
+    private static void rampantScoutPopulator(net.minecraftforge.event.level.LevelEvent.PotentialSpawns event) {
+
+        if (com.hbm_m.config.MobConfig.rampantNaturalScoutSpawn() && event.getLevel() instanceof ServerLevel world && world.dimension() == Level.OVERWORLD
+                && world.canSeeSky(event.getPos()) && !event.isCanceled()) {
+
+            if (world.random.nextInt(com.hbm_m.config.MobConfig.rampantScoutSpawnChance()) == 0) {
+
+                BlockPos pos = event.getPos();
+                float soot = PollutionHandler.getPollution(world, pos.getX(), pos.getY(), pos.getZ(), PollutionType.SOOT);
+
+                if (soot >= com.hbm_m.config.MobConfig.rampantScoutSpawnThresh()) {
+                    var scout = new com.hbm_m.entity.mob.glyphid.EntityGlyphidScout(com.hbm_m.entity.ModEntities.GLYPHID_SCOUT.get(), world);
+                    scout.moveTo(pos.getX(), pos.getY(), pos.getZ(), world.random.nextFloat() * 360.0F, 0.0F);
+
+                    if (scout.isValidLightLevel()) {
+                        //escort for the scout, which can also deal with obstacles
+                        var digger = new com.hbm_m.entity.mob.glyphid.EntityGlyphidDigger(com.hbm_m.entity.ModEntities.GLYPHID_DIGGER.get(), world);
+                        scout.moveTo(pos.getX(), pos.getY(), pos.getZ(), world.random.nextFloat() * 360.0F, 0.0F);
+                        digger.moveTo(pos.getX(), pos.getY(), pos.getZ(), world.random.nextFloat() * 360.0F, 0.0F);
+                        if (scout.getCanSpawnHere()) world.addFreshEntity(scout);
+                        if (digger.getCanSpawnHere()) world.addFreshEntity(digger);
+                    }
+                }
+            }
+        }
+    }
+    //?}
 
     // ═══════════════════════════ Mob-Verstaerkung ═══════════════════════════
 
@@ -79,7 +120,7 @@ public final class PollutionEvents {
     public static void decorateMob(LivingEntity living, LevelAccessor world, double x, double y, double z) {
         if (!ModClothConfig.get().enablePollution) return;
         if (!(world instanceof Level level) || level.isClientSide()) return;
-        if (!(living instanceof Enemy)) return;
+        if (!(living instanceof Enemy) || living instanceof com.hbm_m.entity.mob.glyphid.EntityGlyphid) return;
 
         PollutionData data = PollutionHandler.getPollutionData(level,
                 (int) Math.floor(x), (int) Math.floor(y), (int) Math.floor(z));

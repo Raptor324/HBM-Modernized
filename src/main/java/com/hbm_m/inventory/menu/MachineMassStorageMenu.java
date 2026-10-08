@@ -45,6 +45,23 @@ public class MachineMassStorageMenu extends AbstractContainerMenu {
         for (int col = 0; col < 9; col++) {
             this.addSlot(new Slot(inventory, col, 8 + col * 18, 197));
         }
+
+        // Original ContainerMassStorage: tile.openInventory() -> TileEntityCrateBase-Oeffnungsgeraeusch
+        if (!inventory.player.level().isClientSide) playCrateSound(com.hbm_m.sound.ModSounds.CRATE_OPEN.get());
+    }
+
+    /** Original onContainerClosed: tile.closeInventory() -> Schliessgeraeusch. */
+    @Override
+    public void removed(Player player) {
+        super.removed(player);
+        if (!player.level().isClientSide) playCrateSound(com.hbm_m.sound.ModSounds.CRATE_CLOSE.get());
+    }
+
+    private void playCrateSound(net.minecraft.sounds.SoundEvent sound) {
+        if (blockEntity == null || blockEntity.getLevel() == null) return;
+        BlockPos p = blockEntity.getBlockPos();
+        blockEntity.getLevel().playSound(null, p.getX() + 0.5, p.getY() + 0.5, p.getZ() + 0.5,
+                sound, net.minecraft.sounds.SoundSource.BLOCKS, 1.0F, 1.0F);
     }
 
     public static MachineMassStorageMenu create(int id, Inventory inventory, MachineMassStorageBlockEntity blockEntity) {

@@ -35,7 +35,7 @@ import java.util.Map;
  * FACING = pour direction; the spout body is attached to the opposite side
  * (where the channel connects). Original bounds: 6px wide, 8px high, 6px deep.
  */
-public class MachineFoundryOutletBlock extends BaseEntityBlock {
+public class MachineFoundryOutletBlock extends BaseEntityBlock implements com.hbm_m.api.block.IToolable, com.hbm_m.interfaces.ILookOverlay {
 
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
 
@@ -93,18 +93,54 @@ public class MachineFoundryOutletBlock extends BaseEntityBlock {
     private InteractionResult handleUse(BlockState state, Level level, BlockPos pos,
                                         Player player, InteractionHand hand, BlockHitResult hit) {
         if (level.isClientSide) return InteractionResult.SUCCESS;
-        if (player.isShiftKeyDown()) return InteractionResult.PASS;
+        if (player.isShiftKeyDown()) return level.isClientSide() ? InteractionResult.SUCCESS : InteractionResult.PASS; // Original: Client true, Server geschlichen false
 
         BlockEntity be = level.getBlockEntity(pos);
         if (!(be instanceof MachineFoundryOutletBlockEntity outlet)) return InteractionResult.PASS;
 
-        outlet.invertRedstone = !outlet.invertRedstone;
-        outlet.setChanged();
-        level.sendBlockUpdated(pos, state, state, 3);
-        player.displayClientMessage(Component.literal(outlet.invertRedstone
-                ? "Outlet: closed by default, opens with redstone"
-                : "Outlet: open by default, closes with redstone"), true);
-        return InteractionResult.SUCCESS;
+        // Original: Schrott in der Hand setzt den Filter, sonst wird die Redstone-Logik umgekehrt
+        com.hbm_m.inventory.material.Mats.MaterialStack mat = com.hbm_m.item.material.ItemScraps.getMats(player.getItemInHand(hand));
+        if (mat != null) {
+            outlet.filter = mat.material;
+        } else if (!com.hbm_m.item.material.ItemScraps.isScrap(player.getItemInHand(hand))) {
+            outlet.invertRedstone = !outlet.invertRedstone;
+        }
+        outlet.markForUpdate();
+        return InteractionResult.CONSUME;
+    }
+
+    /** Original {@code onScrew}: Schraubenzieher loescht den Filter, Handbohrer kehrt ihn um. */
+    @Override
+    public boolean onScrew(Level world, Player player, BlockPos pos, Direction side, float fX, float fY, float fZ, InteractionHand hand, ToolType tool) {
+        if (!(world.getBlockEntity(pos) instanceof MachineFoundryOutletBlockEntity tile)) return false;
+        if (tool == ToolType.SCREWDRIVER) {
+            if (world.isClientSide) return true;
+            tile.filter = null;
+            tile.invertFilter = false;
+            tile.markForUpdate();
+        }
+        if (tool == ToolType.HAND_DRILL) {
+            if (world.isClientSide) return true;
+            tile.invertFilter = !tile.invertFilter;
+            tile.markForUpdate();
+        }
+        return false;
+    }
+
+    @Override
+    public void printHook(net.minecraft.client.gui.GuiGraphics g, Level world, BlockPos pos) {
+        if (!(world.getBlockEntity(pos) instanceof MachineFoundryOutletBlockEntity outlet)) return;
+        java.util.List<Component> text = new java.util.ArrayList<>();
+        if (outlet.filter != null) {
+            text.add(Component.translatable("foundry.filter", outlet.filter.getLocalizedName()).withStyle(net.minecraft.ChatFormatting.YELLOW));
+        }
+        if (outlet.invertFilter) {
+            text.add(Component.translatable("foundry.invertFilter").withStyle(net.minecraft.ChatFormatting.YELLOW));
+        }
+        if (outlet.invertRedstone) {
+            text.add(Component.translatable("foundry.inverted").withStyle(net.minecraft.ChatFormatting.DARK_RED));
+        }
+        com.hbm_m.interfaces.ILookOverlay.printGeneric(g, Component.translatable(getDescriptionId()), 0xFF4000, 0x401000, text);
     }
 
     @Override
@@ -120,7 +156,9 @@ public class MachineFoundryOutletBlock extends BaseEntityBlock {
 
     @Nullable @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
-        return null;
+        return level.isClientSide ? null : (lvl, pos, st, be) -> {
+            if (be instanceof MachineFoundryOutletBlockEntity outlet) outlet.updateEntity();
+        };
     }
 
     //? if >1.20.1 {

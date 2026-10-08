@@ -1,0 +1,14 @@
+{
+  "type": "hbm_m:combination_oven",
+  "ingredient": {
+    "item": "minecraft:sugar_cane"
+  },
+  "result": {
+    "item": "minecraft:sugar",
+    "count": 2
+  },
+  "fluid": {
+    "fluid": "hbm_m:ethanol",
+    "amount": 50
+  }
+}

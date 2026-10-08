@@ -16,7 +16,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 
-public abstract class RBMKControlBlockEntity extends RBMKColumnBlockEntity implements MenuProvider, IEnergyReceiver {
+public abstract class RBMKControlBlockEntity extends RBMKColumnBlockEntity implements MenuProvider, IEnergyReceiver, com.hbm_m.api.redstoneoverradio.IRORValueProvider {
 
     // 1:1 with the original's TileEntityRBMKControl (level defaults to 0, i.e. fully inserted/
     // SCRAMMED): a freshly placed reactor should start subcritical-safe, not with every rod
@@ -203,6 +203,21 @@ public abstract class RBMKControlBlockEntity extends RBMKColumnBlockEntity imple
         color       = tag.getShort("color");
         power       = tag.getLong("power");
         hasPower    = !tag.contains("hasPower") || tag.getBoolean("hasPower");
+    }
+
+    // ── Redstone-over-Radio (1:1 TileEntityRBMKControl) ──
+
+    @Override
+    public String[] getFunctionInfo() {
+        return new String[] {
+                PREFIX_VALUE + "extraction"
+        };
+    }
+
+    @Override
+    public String provideRORValue(String name) {
+        if ((PREFIX_VALUE + "extraction").equals(name)) return "" + (int) (this.level * 100);
+        return null;
     }
 }
 

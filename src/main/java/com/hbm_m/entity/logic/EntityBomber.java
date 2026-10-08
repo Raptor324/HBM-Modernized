@@ -1,7 +1,10 @@
 package com.hbm_m.entity.logic;
 
+import org.jetbrains.annotations.NotNull;
+
 import com.hbm_m.entity.ModEntities;
 import com.hbm_m.entity.projectile.EntityBombletZeta;
+import com.hbm_m.sound.HbmSoundsNT;
 
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
@@ -9,194 +12,193 @@ import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
-import net.minecraft.world.damagesource.DamageSource;
-import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.level.levelgen.Heightmap;
 import net.minecraft.world.phys.Vec3;
 
-import org.jetbrains.annotations.NotNull;
-
 /**
- * 1:1 port of {@code EntityBomber} with {@code EntityPlaneBase} folded in - the base is only
- * health, a lifetime and chunk loading, and the original marks it as an afterthought anyway.
- *
- * <p>The plane spawns 100 blocks out from the target at Y+50, flies straight through, and drops
- * its payload between {@code bombStart} and {@code bombStop} at one bomb every {@code bombRate}
- * ticks. It can be shot down: 50 health, and it stops bombing the moment it is dead.</p>
- *
- * <p>Only the three bomblet-carrying loadouts are ported. The original also has boxcar rockets and
- * two poison-cloud variants that need {@code EntityBoxcar} and {@code ExplosionChaos}.</p>
+ * 1:1 {@code EntityBomber}: fliegt 100 Bloecke vor dem Ziel auf Hoehe +50 ein und wirft zwischen {@code bombStart}
+ * und {@code bombStop} alle {@code bombRate} Ticks ab. Ladungen: 0 Teppich, 1 Napalm, 2 Chlor, 3 Agent Orange
+ * (Giftwolke am Flugzeug), 4 Atombombe, 5 Stinger (wirft nichts ab), 6 Boxcar-Raketen, 7 Giftwolke am Boden ("PC").
+ * Das Aussehen (Dornier 1-4, B-29 5-8) wird zufaellig gewaehlt; manche Ladungen legen es fest.
  */
-public class EntityBomber extends Entity {
+public class EntityBomber extends EntityPlaneBase {
 
-    /** Synced so the renderer knows which silhouette to draw. */
-    private static final EntityDataAccessor<Integer> PLANE_TYPE =
-            SynchedEntityData.defineId(EntityBomber.class, EntityDataSerializers.INT);
-    private static final EntityDataAccessor<Float> HEALTH =
-            SynchedEntityData.defineId(EntityBomber.class, EntityDataSerializers.FLOAT);
+    /** Datawatcher 16: Flugzeugaussehen. */
+    private static final EntityDataAccessor<Byte> STYLE = SynchedEntityData.defineId(EntityBomber.class, EntityDataSerializers.BYTE);
 
-    private static final float MAX_HEALTH = 50F;
+    /* This was probably the dumbest fucking way that I could have handled this. Not gonna change it now, be glad I made a superclass at all. */
+    int bombStart = 75;
+    int bombStop = 125;
+    int bombRate = 3;
+    int type = 0;
 
-    private int bombStart = 75;
-    private int bombStop = 125;
-    private int bombRate = 3;
-    private int payload = EntityBombletZeta.TYPE_CARPET;
-    private int timer = 200;
-
-    public EntityBomber(EntityType<? extends EntityBomber> type, Level level) {
-        super(type, level);
+    public EntityBomber(EntityType<? extends EntityBomber> type, Level world) {
+        super(type, world);
         this.noCulling = true;
-        this.noPhysics = true;
     }
 
     //? if < 1.21.1 {
     @Override
     protected void defineSynchedData() {
-        this.entityData.define(PLANE_TYPE, 1);
-        this.entityData.define(HEALTH, MAX_HEALTH);
+        super.defineSynchedData();
+        this.entityData.define(STYLE, (byte) 0);
     }
     //?} else {
     /*@Override
-    protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
-        builder.define(PLANE_TYPE, 1);
-        builder.define(HEALTH, MAX_HEALTH);
+    protected void defineSynchedData(SynchedEntityData.Builder builder) {
+        super.defineSynchedData(builder);
+        builder.define(STYLE, (byte) 0);
     }
     *///?}
 
-    public int getPlaneType()  { return this.entityData.get(PLANE_TYPE); }
-    public float getHealth()   { return this.entityData.get(HEALTH); }
+    public int getPlaneType() { return this.entityData.get(STYLE); }
+    private void setStyle(int i) { this.entityData.set(STYLE, (byte) i); }
 
-    @Override public boolean isPickable() { return getHealth() > 0; }
-    @Override public boolean isNoGravity() { return true; }
-
-    @Override
-    public boolean hurt(@NotNull DamageSource source, float amount) {
-        if (this.isInvulnerableTo(source)) return false;
-        if (this.isRemoved() || this.level().isClientSide || getHealth() <= 0) return true;
-
-        this.entityData.set(HEALTH, getHealth() - amount);
-        if (getHealth() <= 0) {
-            this.level().explode(this, this.getX(), this.getY(), this.getZ(),
-                    3.5F, Level.ExplosionInteraction.NONE);
-            this.level().playSound(null, this.getX(), this.getY(), this.getZ(),
-                    SoundEvents.GENERIC_EXPLODE, SoundSource.HOSTILE, 25.0F, 1.0F);
-        }
-        return true;
-    }
-
+    /** This sucks balls. Too bad! */
     @Override
     public void tick() {
-        Vec3 motion = this.getDeltaMovement();
-        this.setPos(this.getX() + motion.x, this.getY() + motion.y, this.getZ() + motion.z);
+        super.tick();
 
-        if (this.level().isClientSide) return;
-
-        // A downed bomber falls out of the sky rather than vanishing.
-        if (getHealth() <= 0) {
-            this.setDeltaMovement(motion.x * 0.98D, motion.y - 0.1D, motion.z * 0.98D);
-            if (this.onGround() || --this.timer <= 0) this.discard();
-            return;
+        if (level().isClientSide) {
+            com.hbm_m.client.sound.ChopperSoundClient.tickPlane(this, getPlaneType() <= 4 ? "hbm:entity.bomberSmallLoop" : "hbm:entity.bomberLoop");
         }
 
-        if (--this.timer <= 0) {
-            this.discard();
-            return;
-        }
+        if (!level().isClientSide && this.health > 0 && this.tickCount > bombStart && this.tickCount < bombStop && this.tickCount % bombRate == 0) {
 
-        if (this.tickCount > this.bombStart && this.tickCount < this.bombStop
-                && this.tickCount % this.bombRate == 0) {
-            dropBomb();
+            Level world = level();
+            if (type == 3) {
+                world.playSound(null, getX() + 0.5, getY() + 0.5, getZ() + 0.5, SoundEvents.FIRE_EXTINGUISH, SoundSource.NEUTRAL, 5.0F, 2.6F + (random.nextFloat() - random.nextFloat()) * 0.8F);
+                com.hbm_m.explosion.ExplosionChaos.spawnPoisonCloud(world, getX(), getY() - 1F, getZ(), 10, 0.5, 3);
+
+            } else if (type == 5) {
+
+            } else if (type == 6) {
+                world.playSound(null, getX() + 0.5, getY() + 0.5, getZ() + 0.5, HbmSoundsNT.get("hbm:weapon.missileTakeOff"), SoundSource.NEUTRAL, 10.0F, 0.9F + random.nextFloat() * 0.2F);
+                com.hbm_m.entity.projectile.EntityBoxcar rocket = new com.hbm_m.entity.projectile.EntityBoxcar(world);
+                rocket.setPos(getX() + random.nextDouble() - 0.5, getY() - random.nextDouble(), getZ() + random.nextDouble() - 0.5);
+                world.addFreshEntity(rocket);
+
+            } else if (type == 7) {
+                world.playSound(null, getX() + 0.5, getY() + 0.5, getZ() + 0.5, SoundEvents.FIRE_EXTINGUISH, SoundSource.NEUTRAL, 5.0F, 2.6F + (random.nextFloat() - random.nextFloat()) * 0.8F);
+                com.hbm_m.explosion.ExplosionChaos.spawnPoisonCloud(world, getX(), world.getHeight(Heightmap.Types.MOTION_BLOCKING, (int) getX(), (int) getZ()) + 2, getZ(), 10, 1, 2);
+
+            } else {
+                world.playSound(null, getX() + 0.5, getY() + 0.5, getZ() + 0.5, HbmSoundsNT.get("hbm:entity.bombWhistle"), SoundSource.NEUTRAL, 10.0F, 0.9F + random.nextFloat() * 0.2F);
+                Vec3 m = getDeltaMovement();
+                EntityBombletZeta zeta = EntityBombletZeta.create(world, getX() + random.nextDouble() - 0.5, getY() - random.nextDouble(), getZ() + random.nextDouble() - 0.5, type);
+                if (type == 0) {
+                    zeta.setDeltaMovement(m.x + random.nextGaussian() * 0.15, 0, m.z + random.nextGaussian() * 0.15);
+                } else {
+                    zeta.setDeltaMovement(m.x, 0, m.z);
+                }
+                zeta.updateRotation();
+                world.addFreshEntity(zeta);
+            }
         }
     }
 
-    private void dropBomb() {
-        this.level().playSound(null, this.getX(), this.getY(), this.getZ(),
-                com.hbm_m.sound.ModSounds.BOMBWHISTLE.get(), SoundSource.HOSTILE,
-                10.0F, 0.9F + this.random.nextFloat() * 0.2F);
+    public void fac(Level world, double x, double y, double z) {
 
-        Vec3 motion = this.getDeltaMovement();
-        EntityBombletZeta zeta = EntityBombletZeta.create(this.level(),
-                this.getX() + this.random.nextDouble() - 0.5,
-                this.getY() - this.random.nextDouble(),
-                this.getZ() + this.random.nextDouble() - 0.5,
-                this.payload);
+        Vec3 vector = new Vec3(world.random.nextDouble() - 0.5, 0, world.random.nextDouble() - 0.5).normalize();
+        double mult = com.hbm_m.config.ModClothConfig.get().enableBomberShortMode ? 1 : 2;
+        vector = new Vec3(vector.x * mult, 0, vector.z * mult);
 
-        // Carpet bombing scatters; everything else drops in a tight line.
-        if (this.payload == EntityBombletZeta.TYPE_CARPET) {
-            zeta.setDeltaMovement(
-                    motion.x + this.random.nextGaussian() * 0.15, 0,
-                    motion.z + this.random.nextGaussian() * 0.15);
-        } else {
-            zeta.setDeltaMovement(motion.x, 0, motion.z);
+        this.moveTo(x - vector.x * 100, y + 50, z - vector.z * 100, 0.0F, 0.0F);
+        this.loadNeighboringChunks((int) (x / 16), (int) (z / 16));
+
+        this.setDeltaMovement(vector.x, 0.0D, vector.z);
+
+        this.rotation();
+
+        int i = 1;
+        int rand = world.random.nextInt(7);
+
+        switch (rand) {
+            case 0, 1 -> i = 1;
+            case 2, 3 -> i = 2;
+            case 4 -> i = 5;
+            case 5 -> i = 6;
+            case 6 -> i = 7;
         }
 
-        zeta.updateRotation();
-        this.level().addFreshEntity(zeta);
+        if (world.random.nextInt(100) == 0) {
+            rand = world.random.nextInt(4);
+            switch (rand) {
+                case 0 -> i = 0;
+                case 1 -> i = 3;
+                case 2 -> i = 4;
+                case 3 -> i = 8;
+            }
+        }
+
+        setStyle(i);
     }
 
-    /** {@code fac}: places the plane on an inbound course towards the given point. */
-    private void setCourse(Level level, double x, double y, double z) {
-        Vec3 heading = new Vec3(level.random.nextDouble() - 0.5, 0, level.random.nextDouble() - 0.5)
-                .normalize().scale(2);
-
-        this.setPos(x - heading.x * 100, y + 50, z - heading.z * 100);
-        this.setDeltaMovement(heading.x, 0, heading.z);
-        this.setYRot((float) (Math.atan2(heading.x, heading.z) * 180.0D / Math.PI));
-        this.yRotO = this.getYRot();
-    }
-
-    // ─── Loadouts (the original's statFac* factories) ────────────────────────
-
-    private static EntityBomber make(Level level, double x, double y, double z,
-                                     int start, int stop, int rate, int payload, int planeType) {
-        EntityBomber bomber = new EntityBomber(ModEntities.BOMBER.get(), level);
+    private static EntityBomber make(Level world, double x, double y, double z, int start, int stop, int rate, int type) {
+        EntityBomber bomber = new EntityBomber(ModEntities.BOMBER.get(), world);
         bomber.timer = 200;
         bomber.bombStart = start;
         bomber.bombStop = stop;
         bomber.bombRate = rate;
-        bomber.payload = payload;
-        bomber.setCourse(level, x, y, z);
-        bomber.entityData.set(PLANE_TYPE, planeType);
+        bomber.fac(world, x, y, z);
+        bomber.type = type;
         return bomber;
     }
 
-    public static EntityBomber carpet(Level level, double x, double y, double z) {
-        return make(level, x, y, z, 50, 100, 2, EntityBombletZeta.TYPE_CARPET, 1);
+    public static EntityBomber carpet(Level world, double x, double y, double z) { return make(world, x, y, z, 50, 100, 2, 0); }
+    public static EntityBomber napalm(Level world, double x, double y, double z) { return make(world, x, y, z, 50, 100, 5, 1); }
+    public static EntityBomber chlorine(Level world, double x, double y, double z) { return make(world, x, y, z, 50, 100, 4, 2); }
+    public static EntityBomber orange(Level world, double x, double y, double z) { return make(world, x, y, z, 75, 125, 1, 3); }
+
+    public static EntityBomber aBomb(Level world, double x, double y, double z) {
+        EntityBomber bomber = make(world, x, y, z, 60, 70, 65, 4);
+        int i = switch (world.random.nextInt(3)) {
+            case 0 -> 5;
+            case 1 -> 6;
+            default -> 7;
+        };
+        if (world.random.nextInt(100) == 0) i = 8;
+        bomber.setStyle(i);
+        return bomber;
     }
 
-    public static EntityBomber napalm(Level level, double x, double y, double z) {
-        return make(level, x, y, z, 50, 100, 5, EntityBombletZeta.TYPE_NAPALM, 2);
+    public static EntityBomber stinger(Level world, double x, double y, double z) {
+        EntityBomber bomber = make(world, x, y, z, 50, 150, 10, 5);
+        bomber.setStyle(4);
+        return bomber;
     }
 
-    public static EntityBomber chlorine(Level level, double x, double y, double z) {
-        return make(level, x, y, z, 50, 100, 4, EntityBombletZeta.TYPE_CHLORINE, 5);
+    public static EntityBomber boxcar(Level world, double x, double y, double z) {
+        EntityBomber bomber = make(world, x, y, z, 50, 150, 10, 6);
+        bomber.setStyle(6);
+        return bomber;
     }
 
-    /** A single nuke, dropped in a ten-tick window in the middle of the run. */
-    public static EntityBomber aBomb(Level level, double x, double y, double z) {
-        return make(level, x, y, z, 60, 70, 65, EntityBombletZeta.TYPE_NUKE, 8);
+    public static EntityBomber pc(Level world, double x, double y, double z) {
+        EntityBomber bomber = make(world, x, y, z, 75, 125, 1, 7);
+        bomber.setStyle(6);
+        return bomber;
     }
 
     @Override
-    protected void readAdditionalSaveData(@NotNull CompoundTag tag) {
-        this.bombStart = tag.getInt("bombStart");
-        this.bombStop = tag.getInt("bombStop");
-        this.bombRate = Math.max(1, tag.getInt("bombRate"));
-        this.payload = tag.getInt("payload");
-        this.timer = tag.getInt("timer");
-        this.entityData.set(PLANE_TYPE, tag.getInt("planeType"));
-        this.entityData.set(HEALTH, tag.getFloat("health"));
+    protected void readAdditionalSaveData(@NotNull CompoundTag nbt) {
+        super.readAdditionalSaveData(nbt);
+        bombStart = nbt.getInt("bombStart");
+        bombStop = nbt.getInt("bombStop");
+        bombRate = Math.max(1, nbt.getInt("bombRate"));
+        type = nbt.getInt("type");
+        setStyle(nbt.getByte("style"));
     }
 
     @Override
-    protected void addAdditionalSaveData(@NotNull CompoundTag tag) {
-        tag.putInt("bombStart", this.bombStart);
-        tag.putInt("bombStop", this.bombStop);
-        tag.putInt("bombRate", this.bombRate);
-        tag.putInt("payload", this.payload);
-        tag.putInt("timer", this.timer);
-        tag.putInt("planeType", getPlaneType());
-        tag.putFloat("health", getHealth());
+    protected void addAdditionalSaveData(@NotNull CompoundTag nbt) {
+        super.addAdditionalSaveData(nbt);
+        nbt.putInt("bombStart", bombStart);
+        nbt.putInt("bombStop", bombStop);
+        nbt.putInt("bombRate", bombRate);
+        nbt.putInt("type", type);
+        nbt.putByte("style", (byte) getPlaneType());
     }
 }

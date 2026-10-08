@@ -224,7 +224,7 @@ public class LandmineBlock extends Block implements EntityBlock, IBomb {
 
                 ExplosionLarge.spawnShrapnelShower(world, x + 0.5, y + 0.5, z + 0.5, 0, 1D, 0, 45, 0.2D);
                 ExplosionLarge.spawnShrapnels(world, x + 0.5, y + 0.5, z + 0.5, 5);
-            } else if (this == ModBlocks.MINE_NAVAL.get() || this == ModBlocks.NAVAL_MINE.get()) {
+            } else if (this == ModBlocks.MINE_NAVAL.get()) {
                 ExplosionVNT vnt = new ExplosionVNT(world, x + 5, y + 5, z + 5, 25F);
                 vnt.setBlockAllocator(new BlockAllocatorWater(32));
                 vnt.setBlockProcessor(new BlockProcessorStandard());

@@ -27,141 +27,91 @@ public class OilDetectorItem extends Item implements ITooltipProvider {
     @Override
     public void appendHbmTooltip(ItemStack stack, @Nullable Level level, @Nullable List<Component> tooltip, TooltipFlag flag) {
         if (tooltip == null) return;
-        tooltip.add(Component.translatable("tooltip.hbm_m.oil_detector.scans_chunks")
-                .withStyle(ChatFormatting.GRAY));
-        tooltip.add(Component.translatable("tooltip.hbm_m.oil_detector.oil_deposits")
-                .withStyle(ChatFormatting.GRAY));
+        // Original ItemOilDetector.addInformation: .desc1 / .desc2
+        tooltip.add(Component.translatable(this.getDescriptionId() + ".desc1").withStyle(ChatFormatting.GRAY));
+        tooltip.add(Component.translatable(this.getDescriptionId() + ".desc2").withStyle(ChatFormatting.GRAY));
     }
 
+    /** 1:1 Original onItemRightClick: Saeulen in 5 und 10 Bloecken Abstand plus die eigene Saeule abfragen. */
     @Override
-    public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
+    public InteractionResultHolder<ItemStack> use(Level world, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
 
-        if (level.isClientSide) {
-            return InteractionResultHolder.pass(stack);
-        }
+        boolean oil = false;
+        boolean direct = false;
+        int x = (int) player.getX();
+        int y = (int) player.getY();
+        int z = (int) player.getZ();
 
-        BlockPos playerPos = player.blockPosition();
-        boolean oilUnderPlayer = checkColumnUnderPlayer(level, playerPos);
-        boolean oilFound = scanChunkForOil(level, playerPos);
-        boolean oilInAdjacentChunk = scanAdjacentChunksForOil(level, playerPos);
+        for (int i = y + 15; i > 5; i--)
+            if (isOil(world, x, i, z))
+                direct = true;
+        for (int i = y + 15; i > 5; i--)
+            if (isOil(world, x + 5, i, z))
+                oil = true;
+        for (int i = y + 15; i > 5; i--)
+            if (isOil(world, x - 5, i, z))
+                oil = true;
+        for (int i = y + 15; i > 5; i--)
+            if (isOil(world, x, i, z + 5))
+                oil = true;
+        for (int i = y + 15; i > 5; i--)
+            if (isOil(world, x, i, z - 5))
+                oil = true;
 
-        if (oilUnderPlayer) {
-            player.displayClientMessage(
-                    Component.translatable("message.hbm_m.oil_detector.directly_below").withStyle(ChatFormatting.DARK_GREEN),
-                    true
-            );
-            if (ModSounds.TOOL_TECH_BLEEP.isPresent()) {
-                SoundEvent soundEvent = ModSounds.TOOL_TECH_BLEEP.get();
-                level.playSound(null, player.getX(), player.getY(), player.getZ(), soundEvent, player.getSoundSource(), 1.0F, 1.0F);
-            }
-        } else if (oilFound) {
-            player.displayClientMessage(
-                    Component.translatable("message.hbm_m.oil_detector.in_chunk").withStyle(ChatFormatting.GREEN),
-                    true
-            );
-            if (ModSounds.TOOL_TECH_BOOP.isPresent()) {
-                SoundEvent soundEvent = ModSounds.TOOL_TECH_BOOP.get();
-                level.playSound(null, player.getX(), player.getY(), player.getZ(), soundEvent, player.getSoundSource(), 1.0F, 1.0F);
-            }
-        } else if (oilInAdjacentChunk) {
-            player.displayClientMessage(
-                    Component.translatable("message.hbm_m.oil_detector.adjacent_chunk").withStyle(ChatFormatting.GOLD),
-                    true
-            );
-            if (ModSounds.TOOL_TECH_BOOP.isPresent()) {
-                SoundEvent soundEvent = ModSounds.TOOL_TECH_BOOP.get();
-                level.playSound(null, player.getX(), player.getY(), player.getZ(), soundEvent, player.getSoundSource(), 1.0F, 1.0F);
-            }
-        } else {
-            player.displayClientMessage(
-                    Component.translatable("message.hbm_m.oil_detector.none_found").withStyle(ChatFormatting.RED),
-                    true
-            );
-            if (ModSounds.TOOL_TECH_BOOP.isPresent()) {
-                SoundEvent soundEvent = ModSounds.TOOL_TECH_BOOP.get();
-                level.playSound(null, player.getX(), player.getY(), player.getZ(), soundEvent, player.getSoundSource(), 1.0F, 1.0F);
-            }
-        }
+        for (int i = y + 15; i > 10; i--)
+            if (isOil(world, x + 10, i, z))
+                oil = true;
+        for (int i = y + 15; i > 10; i--)
+            if (isOil(world, x - 10, i, z))
+                oil = true;
+        for (int i = y + 15; i > 10; i--)
+            if (isOil(world, x, i, z + 10))
+                oil = true;
+        for (int i = y + 15; i > 10; i--)
+            if (isOil(world, x, i, z - 10))
+                oil = true;
 
-        return InteractionResultHolder.success(stack);
-    }
+        for (int i = y + 15; i > 5; i--)
+            if (isOil(world, x + 5, i, z + 5))
+                oil = true;
+        for (int i = y + 15; i > 5; i--)
+            if (isOil(world, x - 5, i, z + 5))
+                oil = true;
+        for (int i = y + 15; i > 5; i--)
+            if (isOil(world, x + 5, i, z - 5))
+                oil = true;
+        for (int i = y + 15; i > 5; i--)
+            if (isOil(world, x - 5, i, z - 5))
+                oil = true;
 
+        if (direct)
+            oil = true;
 
-    private void playSound(Level level, Player player, java.util.Optional<SoundEvent> sound) {
-        sound.ifPresent(soundEvent -> level.playSound(null, player.getX(), player.getY(), player.getZ(),
-                soundEvent, player.getSoundSource(), 1.0F, 1.0F));
-    }
+        if (!world.isClientSide && player instanceof net.minecraft.server.level.ServerPlayer sp) {
 
-    private boolean scanChunkForOil(Level level, BlockPos playerPos) {
-        int chunkX = playerPos.getX() >> 4;
-        int chunkZ = playerPos.getZ() >> 4;
-
-        int minX = chunkX << 4;
-        int maxX = minX + 15;
-        int minZ = chunkZ << 4;
-        int maxZ = minZ + 15;
-
-        for (int x = minX; x <= maxX; x++) {
-            for (int z = minZ; z <= maxZ; z++) {
-                for (int y = level.getMinBuildHeight(); y <= level.getMaxBuildHeight(); y++) {
-                    BlockPos pos = new BlockPos(x, y, z);
-                    if (isOilBlock(level, pos)) {
-                        return true;
-                    }
-                }
+            if (direct) {
+                inform(sp, this.getDescriptionId() + ".bullseye", ChatFormatting.DARK_GREEN, 0x00AA00);
+            } else if (oil) {
+                inform(sp, this.getDescriptionId() + ".detected", ChatFormatting.GOLD, 0xFFAA00);
+            } else {
+                inform(sp, this.getDescriptionId() + ".noOil", ChatFormatting.RED, 0xFF5555);
             }
         }
-        return false;
+
+        world.playSound(null, player.getX(), player.getY(), player.getZ(), ModSounds.TOOL_TECH_BLEEP.get(), player.getSoundSource(), 1.0F, 1.0F);
+
+        player.swing(hand);
+
+        return InteractionResultHolder.pass(stack);
     }
 
-    private boolean scanAdjacentChunksForOil(Level level, BlockPos playerPos) {
-        int chunkX = playerPos.getX() >> 4;
-        int chunkZ = playerPos.getZ() >> 4;
-
-        for (int dx = -1; dx <= 1; dx++) {
-            for (int dz = -1; dz <= 1; dz++) {
-                if (dx == 0 && dz == 0) continue;
-
-                int currentChunkX = chunkX + dx;
-                int currentChunkZ = chunkZ + dz;
-
-                int minX = currentChunkX << 4;
-                int maxX = minX + 15;
-                int minZ = currentChunkZ << 4;
-                int maxZ = minZ + 15;
-
-                for (int x = minX; x <= maxX; x++) {
-                    for (int z = minZ; z <= maxZ; z++) {
-                        for (int y = level.getMinBuildHeight(); y <= level.getMaxBuildHeight(); y++) {
-                            BlockPos pos = new BlockPos(x, y, z);
-                            if (isOilBlock(level, pos)) {
-                                return true;
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        return false;
+    /** Original {@code PlayerInformPacket(..., ID_DETONATOR)}. */
+    private static void inform(net.minecraft.server.level.ServerPlayer sp, String key, ChatFormatting color, int rgb) {
+        com.hbm_m.network.InfoToastPacket.sendTo(sp, Component.translatable(key).withStyle(color), 60, com.hbm_m.client.overlay.OverlayInfoToast.ID_DETONATOR, rgb);
     }
 
-    // Проверка блока нефти по всей высоте столба блока под игроком (фикс по запросу)
-    private boolean checkColumnUnderPlayer(Level level, BlockPos playerPos) {
-        int x = playerPos.getX();
-        int z = playerPos.getZ();
-
-        for (int y = level.getMinBuildHeight(); y <= level.getMaxBuildHeight(); y++) {
-            BlockPos pos = new BlockPos(x, y, z);
-            if (isOilBlock(level, pos)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private boolean isOilBlock(Level level, BlockPos pos) {
-        Block block = level.getBlockState(pos).getBlock();
-        return block == ModBlocks.ORE_OIL.get();
+    private static boolean isOil(Level world, int x, int y, int z) {
+        return world.getBlockState(new BlockPos(x, y, z)).is(ModBlocks.ORE_OIL.get());
     }
 }

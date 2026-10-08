@@ -50,7 +50,20 @@ import net.minecraftforge.common.capabilities.ForgeCapabilities;
  */
 import net.minecraft.world.level.Explosion;
 
-public class MachineRefineryBlock extends BaseEntityBlock implements IMultiblockController {
+public class MachineRefineryBlock extends BaseEntityBlock implements IMultiblockController, com.hbm_m.api.block.IToolable, com.hbm_m.interfaces.ILookOverlay {
+
+    /** Original {@code onScrew}: Schweissbrenner repariert ueber {@code IRepairable.tryRepairMultiblock}. */
+    @Override
+    public boolean onScrew(Level world, Player player, BlockPos pos, net.minecraft.core.Direction side, float fX, float fY, float fZ, InteractionHand hand, com.hbm_m.api.block.IToolable.ToolType tool) {
+        if (tool != com.hbm_m.api.block.IToolable.ToolType.TORCH) return false;
+        return com.hbm_m.api.tile.IRepairable.tryRepairMultiblock(world, pos, player);
+    }
+
+    @Override
+    public void printHook(net.minecraft.client.gui.GuiGraphics g, Level world, BlockPos pos) {
+        com.hbm_m.api.tile.IRepairable.addGenericOverlay(g, world, pos, net.minecraft.network.chat.Component.translatable(getDescriptionId()));
+    }
+
 
     /**
      * Whether this machine has been blown up. Drives the model swap to the wrecked variant - the
@@ -93,7 +106,8 @@ public class MachineRefineryBlock extends BaseEntityBlock implements IMultiblock
 
         return MultiblockStructureHelper.createFromLayersWithRoles(
                 new String[][] {
-                        base, layer, layer, layer, layer, layer, layer, layer, layer, layer
+                        // Original getDimensions {8,0,1,1,1,1}: neun Lagen (Boden + 8)
+                        base, layer, layer, layer, layer, layer, layer, layer, layer
                 },
                 symbolMap,
                 () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState(),
@@ -158,11 +172,13 @@ public class MachineRefineryBlock extends BaseEntityBlock implements IMultiblock
     //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        if (player.isShiftKeyDown()) return InteractionResult.sidedSuccess(level.isClientSide()); // Original standardOpenBehavior: geschlichen true ohne GUI
         return openMenu(state, level, pos, player, hand, hit);
     }
     //?} else {
     /*@Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+        if (player.isShiftKeyDown()) return InteractionResult.sidedSuccess(level.isClientSide()); // Original standardOpenBehavior: geschlichen true ohne GUI
         return openMenu(state, level, pos, player, InteractionHand.MAIN_HAND, hit);
     }
     *///?}
@@ -184,7 +200,8 @@ public class MachineRefineryBlock extends BaseEntityBlock implements IMultiblock
 
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        return structureHelper.generateShapeFromParts(state.getValue(FACING));
+        // w16b: nur die Kernzelle (Klicks fallen nicht in fremde Zellen); Umriss der ganzen Maschine: MultiblockOutlineForge
+        return structureHelper.getControllerCellShape(state.getValue(FACING));
     }
 
     @Override
@@ -210,6 +227,12 @@ public class MachineRefineryBlock extends BaseEntityBlock implements IMultiblock
     @Override
     public PartRole getPartRole(BlockPos localOffset) {
         return structureHelper.resolvePartRole(localOffset, this);
+    }
+
+    /** audit10: Original findCore - Explosionen auf Teilzellen setzen ebenfalls den ganzen Aufbau in Brand. */
+    @Override
+    public boolean forwardPartExplosions() {
+        return true;
     }
 
     /**

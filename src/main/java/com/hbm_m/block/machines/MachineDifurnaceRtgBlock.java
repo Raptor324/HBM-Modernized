@@ -27,8 +27,8 @@ import net.minecraft.world.phys.BlockHitResult;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Port of {@code MachineDiFurnaceRTG} (1.7.10 Original). No lit/unlit block-swap (same
- * simplification already used for Furnace Iron/Steel in this port).
+ * Port of {@code MachineDiFurnaceRTG} (1.7.10 Original). Das Original tauscht zwischen zwei Bloecken
+ * ({@code _off}/{@code _on}); hier gleichwertig ueber die Eigenschaft {@code LIT} (Textur und Licht).
  */
 public class MachineDifurnaceRtgBlock extends BaseEntityBlock {
 
@@ -54,6 +54,36 @@ public class MachineDifurnaceRtgBlock extends BaseEntityBlock {
     @Override
     public RenderShape getRenderShape(BlockState state) { return RenderShape.MODEL; }
 
+    /** audit10: 1:1 {@code MachineDiFurnaceRTG.breakBlock} - Inhalt faellt heraus. */
+    @Override
+    public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean moving) {
+        if (state.getBlock() != newState.getBlock() && level.getBlockEntity(pos) instanceof MachineDifurnaceRtgBlockEntity furnace) {
+            furnace.dropInventoryContents();
+        }
+        super.onRemove(state, level, pos, newState, moving);
+    }
+
+    /** audit10: 1:1 {@code MachineDiFurnaceRTG.randomDisplayTick} - in Betrieb Flamme vor der Front, Rauch oben. */
+    @Override
+    public void animateTick(BlockState state, Level world, BlockPos pos, net.minecraft.util.RandomSource rand) {
+        if (state.getValue(LIT)) {
+            Direction dir = state.getValue(FACING);
+            int x = pos.getX(), y = pos.getY(), z = pos.getZ();
+            float f = x + 0.5F;
+            float f1 = y + 0.25F + rand.nextFloat() * 6.0F / 16.0F;
+            float f2 = z + 0.5F;
+            float f3 = 0.52F;
+            float f4 = rand.nextFloat() * 0.5F - 0.25F;
+            float f5 = rand.nextFloat() * 0.75F + 0.125F;
+            float f6 = rand.nextFloat() * 0.75F + 0.125F;
+
+            double px = dir.getStepX() != 0 ? f + dir.getStepX() * f3 : f + f4;
+            double pz = dir.getStepZ() != 0 ? f2 + dir.getStepZ() * f3 : f2 + f4;
+            world.addParticle(net.minecraft.core.particles.ParticleTypes.FLAME, px, f1, pz, 0.0D, 0.0D, 0.0D);
+            world.addParticle(net.minecraft.core.particles.ParticleTypes.SMOKE, x + f5, (double) y + 1, z + f6, 0.0D, 0.0D, 0.0D);
+        }
+    }
+
     @Nullable @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
         return new MachineDifurnaceRtgBlockEntity(pos, state);
@@ -68,6 +98,7 @@ public class MachineDifurnaceRtgBlock extends BaseEntityBlock {
     //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        if (!level.isClientSide() && player.isShiftKeyDown()) return InteractionResult.PASS; // Original: geschlichen auf dem Server false
 
         if (!level.isClientSide()) {
             BlockEntity entity = level.getBlockEntity(pos);
@@ -80,6 +111,7 @@ public class MachineDifurnaceRtgBlock extends BaseEntityBlock {
     //?} else {
     /*@Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+        if (!level.isClientSide() && player.isShiftKeyDown()) return InteractionResult.PASS; // Original: geschlichen auf dem Server false
 
         if (!level.isClientSide()) {
             BlockEntity entity = level.getBlockEntity(pos);

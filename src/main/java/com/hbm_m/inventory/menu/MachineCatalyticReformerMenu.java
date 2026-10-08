@@ -13,15 +13,15 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
-/** Slot-Koordinaten 1:1 aus {@code ContainerMachineCatalyticReformer} (1.7.10 Original) uebernommen,
- *  wo relevant - die Fluid-Ein/Ausgabe-Slots des Originals entfallen, weil das MK2-Rohrnetz die
- *  Fluidverbindung uebernimmt (siehe {@link MachineCatalyticReformerBlockEntity}). */
+/** Slot-Layout 1:1 aus {@code ContainerMachineCatalyticReformer} (1.7.10 Original): 11 Maschinenslots in Original-Reihenfolge,
+ *  Ein-/Ausgabe nur entnehmbar ueber die Slotpruefung des BE. */
 public class MachineCatalyticReformerMenu extends AbstractContainerMenu {
 
     private final MachineCatalyticReformerBlockEntity blockEntity;
     private static final int SLOT_BATTERY = MachineCatalyticReformerBlockEntity.SLOT_BATTERY;
     private static final int SLOT_CATALYST = MachineCatalyticReformerBlockEntity.SLOT_CATALYST;
-    private static final int MACHINE_SLOT_COUNT = 2;
+    private static final int SLOT_FLUID_ID = MachineCatalyticReformerBlockEntity.SLOT_FLUID_ID;
+    private static final int MACHINE_SLOT_COUNT = MachineCatalyticReformerBlockEntity.SLOT_COUNT;
     private static final int PLAYER_INV_START = MACHINE_SLOT_COUNT;
     private static final int PLAYER_INV_END = MACHINE_SLOT_COUNT + 36;
 
@@ -35,6 +35,15 @@ public class MachineCatalyticReformerMenu extends AbstractContainerMenu {
 
         var container = new ModItemStackHandlerContainer(blockEntity.getInventory(), blockEntity::setChanged);
         this.addSlot(new Slot(container, SLOT_BATTERY, 17, 90));
+        this.addSlot(new Slot(container, 1, 35, 90));   // Kanister Eingang
+        this.addSlot(new Slot(container, 2, 35, 108));  // Kanister Ausgang (nur entnehmbar)
+        this.addSlot(new Slot(container, 3, 107, 90));  // Reformat Eingang
+        this.addSlot(new Slot(container, 4, 107, 108)); // Reformat Ausgang
+        this.addSlot(new Slot(container, 5, 125, 90));  // Gas Eingang
+        this.addSlot(new Slot(container, 6, 125, 108)); // Gas Ausgang
+        this.addSlot(new Slot(container, 7, 143, 90));  // Wasserstoff Eingang
+        this.addSlot(new Slot(container, 8, 143, 108)); // Wasserstoff Ausgang
+        this.addSlot(new Slot(container, SLOT_FLUID_ID, 17, 108));
         this.addSlot(new Slot(container, SLOT_CATALYST, 71, 36));
 
         for (int row = 0; row < 3; row++) {
@@ -66,11 +75,8 @@ public class MachineCatalyticReformerMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        if (blockEntity == null || blockEntity.getLevel() != player.level()) {
-            return false;
-        }
-        BlockPos pos = blockEntity.getBlockPos();
-        return player.distanceToSqr(pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D) <= 64.0D;
+        // w16b: Original isUseableByPlayer (TileEntityMachineBase) = 128 vom Kern, dazu Huelle der Maschine (MultiblockMenuReach)
+        return MultiblockMenuReach.stillValidCore(blockEntity, player, 128.0D);
     }
 
     @Override
@@ -87,8 +93,19 @@ public class MachineCatalyticReformerMenu extends AbstractContainerMenu {
                     return ItemStack.EMPTY;
                 }
             } else {
-                if (!this.moveItemStackTo(slotStack, SLOT_BATTERY, SLOT_CATALYST + 1, false)) {
-                    return ItemStack.EMPTY;
+                // Original transferStackInSlot: Batterie -> 0, Fluidkennung -> 9, Katalysator -> 10, sonst 1/3/5/7
+                if (com.hbm_m.api.energy.ItemEnergyAccess.isEnergySource(slotStack)) {
+                    if (!this.moveItemStackTo(slotStack, SLOT_BATTERY, SLOT_BATTERY + 1, false)) return ItemStack.EMPTY;
+                } else if (slotStack.getItem() instanceof com.hbm_m.interfaces.IItemFluidIdentifier) {
+                    if (!this.moveItemStackTo(slotStack, SLOT_FLUID_ID, SLOT_FLUID_ID + 1, false)) return ItemStack.EMPTY;
+                } else if (slotStack.is(com.hbm_m.item.ModItems.CATALYTIC_CONVERTER.get())) {
+                    if (!this.moveItemStackTo(slotStack, SLOT_CATALYST, SLOT_CATALYST + 1, false)) return ItemStack.EMPTY;
+                } else {
+                    if (!this.moveItemStackTo(slotStack, 1, 2, false))
+                        if (!this.moveItemStackTo(slotStack, 3, 4, false))
+                            if (!this.moveItemStackTo(slotStack, 5, 6, false))
+                                if (!this.moveItemStackTo(slotStack, 7, 8, false))
+                                    return ItemStack.EMPTY;
                 }
             }
 

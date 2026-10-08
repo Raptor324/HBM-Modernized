@@ -42,7 +42,7 @@ public final class HbmLivingProps {
     }
 
     public static float getRadiation(LivingEntity entity) {
-        if (!ModClothConfig.get().enableRadiation) {
+        if (!ModClothConfig.get().enableRadiation || !RadiationConfig.enableContamination) {
             return 0F;
         }
         if (entity instanceof Player player) {
@@ -52,7 +52,7 @@ public final class HbmLivingProps {
     }
 
     public static void setRadiation(LivingEntity entity, float rad) {
-        if (!ModClothConfig.get().enableRadiation) {
+        if (!ModClothConfig.get().enableRadiation || !RadiationConfig.enableContamination) {
             return;
         }
         if (entity instanceof Player player) {
@@ -63,7 +63,7 @@ public final class HbmLivingProps {
     }
 
     public static void incrementRadiation(LivingEntity entity, float rad) {
-        if (!ModClothConfig.get().enableRadiation || rad == 0F) {
+        if (!ModClothConfig.get().enableRadiation || !RadiationConfig.enableContamination || rad == 0F) {
             return;
         }
 

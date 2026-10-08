@@ -29,11 +29,8 @@ import net.minecraft.world.phys.AABB;
  * (see {@link com.hbm_m.item.ItemTeleLink}), which records a position by sneak-right-clicking any
  * block, then applies it by right-clicking a teleporter.
  * <p>
- * SCOPE-Vereinfachung: Interdimensionale Teleportation ist im Original ueber Reflection-Hacks auf
- * private Netty/EntityTracker-Felder gelost (1.7.10-spezifisch) - hier per moderner Forge-API
- * ({@code ServerPlayer#teleportTo}) fuer Spieler; nicht-Spieler-Entities werden nur innerhalb
- * derselben Dimension teleportiert (kein Dimensionswechsel fuer Mobs/Items - selten genutzter
- * Randfall, der Kernmechanismus fuer Spieler bleibt vollstaendig erhalten).
+ * Interdimensional wie im Original fuer Spieler und alle anderen Entities (dort per Reflection auf
+ * EntityTracker/Netty geloest, hier ueber {@code Entity#teleportTo(ServerLevel, ...)}).
  */
 public class MachineTeleporterBlockEntity extends BaseMachineBlockEntity {
 
@@ -50,9 +47,20 @@ public class MachineTeleporterBlockEntity extends BaseMachineBlockEntity {
     }
 
     public static void tick(Level level, BlockPos pos, BlockState state, MachineTeleporterBlockEntity be) {
-        if (level.isClientSide() || !(level instanceof ServerLevel serverLevel)) return;
+        if (level.isClientSide()) {
+            // Original: blaue reddust-Partikel, solange ein Ziel gesetzt und genug Strom da ist
+            if (be.targetY != -1 && be.getEnergyStored() >= CONSUMPTION) {
+                double x = pos.getX() + 0.5 + level.random.nextGaussian() * 0.25D;
+                double y = pos.getY() + 1 + level.random.nextDouble() * 2D;
+                double z = pos.getZ() + 0.5 + level.random.nextGaussian() * 0.25D;
+                level.addParticle(new net.minecraft.core.particles.DustParticleOptions(new org.joml.Vector3f(0.4F, 0.8F, 1F), 1.0F), x, y, z, 0, 0, 0);
+            }
+            return;
+        }
+        if (!(level instanceof ServerLevel serverLevel)) return;
+        be.ensureNetworkInitialized();
+        if (level.getGameTime() % 15 == 0) be.sendUpdateToClient();
         if (be.targetY == -1) return;
-        if (be.getEnergyStored() < CONSUMPTION) return;
 
         AABB box = new AABB(pos.getX() + 0.25, pos.getY(), pos.getZ() + 0.25,
                 pos.getX() + 0.75, pos.getY() + 2, pos.getZ() + 0.75);
@@ -65,7 +73,7 @@ public class MachineTeleporterBlockEntity extends BaseMachineBlockEntity {
     private void teleport(ServerLevel level, Entity entity) {
         if (getEnergyStored() < CONSUMPTION) return;
 
-        level.playSound(null, worldPosition, SoundEvents.ENDERMAN_TELEPORT, SoundSource.BLOCKS, 1.0F, 1.0F);
+        level.playSound(null, worldPosition.getX() + 0.5, worldPosition.getY() + 1.5, worldPosition.getZ() + 0.5, SoundEvents.ENDERMAN_TELEPORT, SoundSource.BLOCKS, 1.0F, 1.0F);
 
         double tx = targetX + 0.5D, ty = targetY + 1.5D, tz = targetZ + 0.5D;
         ResourceKey<Level> destKey = ResourceKey.create(net.minecraft.core.registries.Registries.DIMENSION,
@@ -81,10 +89,12 @@ public class MachineTeleporterBlockEntity extends BaseMachineBlockEntity {
             }
         } else if (destLevel == level) {
             entity.teleportTo(tx, ty, tz);
+        } else {
+            entity.teleportTo(destLevel, tx, ty, tz, java.util.Set.of(), entity.getYRot(), entity.getXRot());
         }
-        // Cross-dimension teleport for non-player entities is intentionally not ported (see class javadoc).
 
-        level.playSound(null, BlockPos.containing(tx, ty, tz), SoundEvents.ENDERMAN_TELEPORT, SoundSource.BLOCKS, 1.0F, 1.0F);
+        // Original: zweiter Ton an der Entity-Position nach dem Sprung
+        level.playSound(null, entity.getX(), entity.getY(), entity.getZ(), SoundEvents.ENDERMAN_TELEPORT, SoundSource.BLOCKS, 1.0F, 1.0F);
 
         setEnergyStored(getEnergyStored() - CONSUMPTION);
         setChanged();

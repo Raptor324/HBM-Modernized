@@ -24,7 +24,7 @@ import net.minecraft.world.level.block.state.BlockState;
  *
  * <p>Der Schraubendreher schaltet das Sichtfenster um.</p>
  */
-public class PABeamlineBlock extends PAMultiblockBlock {
+public class PABeamlineBlock extends PAMultiblockBlock implements com.hbm_m.api.block.IToolable {
 
     public PABeamlineBlock(Properties properties) {
         super(properties);
@@ -39,26 +39,40 @@ public class PABeamlineBlock extends PAMultiblockBlock {
                 .build(() -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState());
     }
 
-    /** 1:1-Port von {@code onScrew}: der Schraubendreher schaltet das Sichtfenster um. */
+    /**
+     * 1:1-Port von {@code onScrew} (IToolable, kein onBlockActivated): der Schraubendreher schaltet das
+     * Sichtfenster um; der Server meldet wie im Original {@code false} (keine Abnutzung).
+     */
     @Override
-    protected net.minecraft.world.InteractionResult interact(BlockState state, Level level, BlockPos pos,
-            net.minecraft.world.entity.player.Player player, net.minecraft.world.InteractionHand hand) {
+    public boolean onScrew(Level world, net.minecraft.world.entity.player.Player player, BlockPos pos, net.minecraft.core.Direction side,
+            float fX, float fY, float fZ, net.minecraft.world.InteractionHand hand, ToolType tool) {
+        if (tool != ToolType.SCREWDRIVER) return false;
+        if (world.isClientSide()) return true;
 
-        if (!player.getItemInHand(hand).is(com.hbm_m.item.ModItems.SCREWDRIVER.get())) {
-            return net.minecraft.world.InteractionResult.PASS;
+        if (world.getBlockEntity(pos) instanceof PABeamlineBlockEntity tile) {
+            tile.setWindow(!tile.hasWindow()); // window = !window; markDirty
         }
-        if (level.isClientSide()) return net.minecraft.world.InteractionResult.SUCCESS;
-
-        if (level.getBlockEntity(pos) instanceof PABeamlineBlockEntity beamline) {
-            beamline.setWindow(!beamline.hasWindow());
-        }
-        return net.minecraft.world.InteractionResult.CONSUME;
+        return false;
     }
 
     @Nullable
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
         return new PABeamlineBlockEntity(pos, state);
+    }
+
+    /** Original updateEntity: Aufleuchten beim Durchflug (Client) und dessen Meldung (Server). */
+    @Nullable
+    @Override
+    public <T extends BlockEntity> net.minecraft.world.level.block.entity.BlockEntityTicker<T> getTicker(
+            Level level, BlockState state, net.minecraft.world.level.block.entity.BlockEntityType<T> type) {
+        return createTickerHelper(type, com.hbm_m.blockentity.ModBlockEntities.PA_BEAMLINE_BE.get(), PABeamlineBlockEntity::tick);
+    }
+
+    /** Rohr, Fenster und leuchtendes Glas zeichnet PABeamlineRenderer (RenderPABeamline). */
+    @Override
+    public net.minecraft.world.level.block.RenderShape getRenderShape(BlockState state) {
+        return net.minecraft.world.level.block.RenderShape.ENTITYBLOCK_ANIMATED;
     }
 
     //? if >1.20.1 {
@@ -69,4 +83,11 @@ public class PABeamlineBlock extends PAMultiblockBlock {
         return CODEC;
     }
     *///?}
+
+    /** Original {@code addInformation}: {@code addStandardInfo} (Umschalttaste zeigt {@code .desc}). */
+    @Override
+    public void appendHoverText(net.minecraft.world.item.ItemStack stack, @org.jetbrains.annotations.Nullable net.minecraft.world.level.BlockGetter level,
+                                java.util.List<net.minecraft.network.chat.Component> list, net.minecraft.world.item.TooltipFlag flag) {
+        com.hbm_m.util.StandardInfo.add(list, getDescriptionId() + ".desc");
+    }
 }

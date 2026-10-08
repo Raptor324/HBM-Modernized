@@ -68,6 +68,8 @@ public class RBMKRodBlock extends RBMKColumnBlock {
     private InteractionResult hbmOnUse(BlockState state, Level level, BlockPos pos,
                                        Player player, InteractionHand hand, BlockHitResult hit) {
         if (level.isClientSide) return InteractionResult.SUCCESS;
+        // Original RBMKRod.onBlockActivated: jedes Bedienen markiert fuer die FBI-Razzia
+        if (player instanceof net.minecraft.server.level.ServerPlayer sp) com.hbm_m.handler.BossSpawnHandler.markFBI(sp);
 
         BlockEntity be = level.getBlockEntity(pos);
         if (!(be instanceof RBMKRodBlockEntity rod)) return InteractionResult.PASS;

@@ -60,7 +60,8 @@ import net.minecraftforge.fluids.capability.IFluidHandler;
  */
 @SuppressWarnings("UnstableApiUsage")
 public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity
-        implements IFrameSupportable, IUpgradeInfoProvider, IFluidStandardTransceiverMK2 {
+        implements IFrameSupportable, IUpgradeInfoProvider, IFluidStandardTransceiverMK2,
+        com.hbm_m.api.redstoneoverradio.IRORValueProvider, com.hbm_m.api.redstoneoverradio.IRORInteractive {
 
     private static final String CHEMICAL_PLANT_SOUND_INSTANCE = "com.hbm_m.sound.ChemicalPlantSoundInstance";
 
@@ -535,6 +536,8 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity
 
     public void setSelectedRecipe(@Nullable ResourceLocation recipeId) {
         module.setSelectedRecipe(recipeId);
+        // Original GUI-Auswahl: setRecipe(selection, false) hebt den RoR-Modus auf
+        module.restrictedMode = false;
         if (level != null && !level.isClientSide) {
             module.syncTankConfigurationToRecipe(level);
         }
@@ -609,6 +612,7 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity
 
     @Override
     public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
+        if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER && side != null) return sidedItems.get(side).cast(); // Original ISidedInventory
         if (cap == ForgeCapabilities.FLUID_HANDLER) {
             // Только горизонтальные стороны (и null) получают объединённый обработчик;
             // вертикальные стороны ничего не отдают.
@@ -722,4 +726,58 @@ public class MachineChemicalPlantBlockEntity extends BaseMachineBlockEntity
             }
         }
         return ports.toArray(new BlockPos[0]);
-    }}
+    }
+    //? if forge {
+    /** Original {@code ISidedInventory}: Slots {4-9}; Feststoffe nach Rezept hinein, Ausgaben 7-9 und verstopfte Eingaenge heraus. */
+    private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
+            new com.hbm_m.blockentity.SidedItemAccess.Rules() {
+                @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return new int[] { 4, 5, 6, 7, 8, 9 }; }
+                @Override public boolean canInsert(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return isItemValidForSlot(slot, stack); }
+                @Override public boolean canExtract(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return (slot >= 7 && slot <= 9) || getModule().isSlotClogged(slot); }
+            });
+
+    @Override
+    public void invalidateCaps() {
+        super.invalidateCaps();
+        sidedItems.invalidate();
+    }
+    //?}
+
+    // ── Redstone-over-Radio (1:1 TileEntityMachineChemicalPlant) ──
+
+    /** Original {@code chemplantModule.restrictedMode} - blaue Fortschrittsleiste im GUI. */
+    public boolean isRestrictedMode() {
+        return module != null && module.restrictedMode;
+    }
+
+    @Override
+    public String[] getFunctionInfo() {
+        return new String[] {
+                PREFIX_VALUE + "progress",
+                PREFIX_VALUE + "recipe",
+                PREFIX_VALUE + "active",
+                PREFIX_FUNCTION + "setrecipe" + NAME_SEPARATOR + "name",
+        };
+    }
+
+    @Override
+    public String provideRORValue(String name) {
+        if ((PREFIX_VALUE + "progress").equals(name)) return "" + (int) Math.round(module.getProgressPercent() * 100);
+        if ((PREFIX_VALUE + "recipe").equals(name))   return com.hbm_m.api.redstoneoverradio.RORRecipeNames.name(module.getSelectedRecipeId());
+        if ((PREFIX_VALUE + "active").equals(name))   return "" + (module.getDidProcess() ? 1 : 0);
+        return null;
+    }
+
+    @Override
+    public String runRORFunction(String name, String[] params) {
+        // Original: params.length == 1; fremde Rezept-IDs ("ns:pfad") zerfallen am Parametertrenner in zwei Teile
+        if ((PREFIX_FUNCTION + "setrecipe").equals(name) && (params.length == 1 || params.length == 2)) {
+            this.setSelectedRecipe(com.hbm_m.api.redstoneoverradio.RORRecipeNames.parse(params));
+            module.restrictedMode = true;
+            this.setChanged();
+            if (level != null && !level.isClientSide) sendUpdateToClient();
+            return null;
+        }
+        return null;
+    }
+}

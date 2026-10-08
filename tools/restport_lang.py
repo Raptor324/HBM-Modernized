@@ -81,5 +81,22 @@ def main(pairs):
     print(len(entries), 'Eintraege')
 
 
+def _locked(fn, *args):
+    # Sperre gegen parallele Laeufe (mehrere Agenten schreiben dieselbe RestportLang.java)
+    import time
+    lock = JAVA + '.lock'
+    for _ in range(600):
+        try:
+            os.mkdir(lock)
+            break
+        except FileExistsError:
+            time.sleep(0.5)
+    try:
+        return fn(*args)
+    finally:
+        try: os.rmdir(lock)
+        except OSError: pass
+
+
 if __name__ == '__main__':
-    main(sys.argv[1:])
+    _locked(main, sys.argv[1:])

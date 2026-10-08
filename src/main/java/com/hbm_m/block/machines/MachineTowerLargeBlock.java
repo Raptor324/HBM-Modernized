@@ -1,155 +1,56 @@
 package com.hbm_m.block.machines;
 
-import java.util.Map;
-import java.util.function.Supplier;
+import java.util.ArrayList;
+import java.util.List;
 
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.blockentity.machines.MachineCoolingTowerBlockEntity;
-import com.hbm_m.interfaces.IMultiblockController;
+import com.hbm_m.inventory.fluid.FluidType;
+import com.hbm_m.multiblock.DummyableStructureBuilder;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
-import com.hbm_m.multiblock.PartRole;
 
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
-import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResult;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.context.BlockPlaceContext;
-import net.minecraft.world.level.BlockGetter;
+import net.minecraft.network.chat.Component;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.BaseEntityBlock;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.block.state.StateDefinition;
-import net.minecraft.world.level.block.state.properties.DirectionProperty;
-import net.minecraft.world.phys.BlockHitResult;
-import net.minecraft.world.phys.shapes.CollisionContext;
-import net.minecraft.world.phys.shapes.Shapes;
-import net.minecraft.world.phys.shapes.VoxelShape;
 
 /**
- * Cooling Tower (Multiblock, WIP).
- * Large cylindrical cooling tower for nuclear reactors.
+ * 1:1 {@code MachineTowerLarge}: {@code getDimensions {12,0,4,4,4,4}} (voller 9x9x13-Quader, Kern unten mittig),
+ * {@code getOffset 4}, je Seite drei Anschlusszellen am Rand (mittig und +-3 quer), kein {@code onBlockActivated}
+ * (kein GUI, Rechtsklick ohne Wirkung), Anzeige beim Hinsehen. Gezeichnet vom {@code CoolingTowerRenderer}
+ * (ungedreht wie {@code RenderLargeTower}).
+ * <p>Alte Port-Welten (hohler 7x7-Ring mit Leiter): {@code attemptAutoRepair} baut die Teile beim Laden um.</p>
  */
-public class MachineTowerLargeBlock extends BaseEntityBlock implements IMultiblockController {
+public class MachineTowerLargeBlock extends DummyableMachineBlock implements com.hbm_m.interfaces.ILookOverlay {
 
-    public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
-
-    private final MultiblockStructureHelper structureHelper;
-
-    public MachineTowerLargeBlock(Properties pProperties) {
-        super(pProperties);
-        this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH));
-        this.structureHelper = defineStructure();
-    }
-
-    private static MultiblockStructureHelper defineStructure() {
-        // Cooling Tower: tall 5x5 circular/square structure, 13 layers
-        // 'C' = CONTROLLER (Pflicht, genau 1!)
-        // 'O' = DEFAULT (normale Strukturteile)
-        // 'X' = LADDER (zentraler Kern)
-        // '.' = leer
-
-        String[] layer0 = {
-            "..OOO..",
-            ".OOOOO.",
-            "OO.C.OO",
-            "OOOOOOO",
-            "OO...OO",
-            ".OOOOO.",
-            "..OOO.."
-        };
-
-        String[] layer1 = {
-            "..OOO..",
-            ".OOOOO.",
-            "OO.X.OO",
-            "OOOOOOO",
-            "OO...OO",
-            ".OOOOO.",
-            "..OOO.."
-        };
-
-        String[] layerMid = {
-            "..OOO..",
-            ".O...O.",
-            "O.....O",
-            "O..X..O",
-            "O.....O",
-            ".O...O.",
-            "..OOO.."
-        };
-
-        String[] layerTop = {
-            "..OOO..",
-            ".OOOOO.",
-            "OOOOOOO",
-            "OOOOOOO",
-            "OOOOOOO",
-            ".OOOOO.",
-            "..OOO.."
-        };
-
-        Map<Character, PartRole> roleMap = Map.of(
-            'O', PartRole.DEFAULT,
-            'X', PartRole.LADDER,
-            'C', PartRole.CONTROLLER
-        );
-
-        Map<Character, Supplier<BlockState>> symbolMap = Map.of();
-
-        Map<Character, VoxelShape> shapeMap = Map.of(
-            'C', Block.box(0, 0, 0, 16, 16, 16),
-            'O', Block.box(0, 0, 0, 16, 16, 16),
-            'X', Block.box(4, 0, 4, 12, 16, 12)
-        );
-
-        Map<Character, VoxelShape> collisionMap = Map.of(
-            'C', Block.box(0, 0, 0, 16, 16, 16),
-            'O', Block.box(0, 0, 0, 16, 16, 16),
-            'X', Block.box(4, 0, 4, 12, 16, 12)
-        );
-
-        return MultiblockStructureHelper.createFromLayersWithRoles(
-            new String[][]{
-                layer0, layer1,
-                layerMid, layerMid, layerMid, layerMid, layerMid,
-                layerMid, layerMid, layerMid, layerMid, layerMid,
-                layerTop
-            },
-            symbolMap,
-            () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState(),
-            roleMap,
-            shapeMap,
-            collisionMap
-        );
-    }
-
-    @Override public MultiblockStructureHelper getStructureHelper() { return this.structureHelper; }
-
-    @Override
-    public PartRole getPartRole(BlockPos localOffset) {
-        if (structureHelper != null) {
-            return structureHelper.resolvePartRole(localOffset, this);
-        }
-        return PartRole.DEFAULT;
+    public MachineTowerLargeBlock(Properties properties) {
+        super(properties);
     }
 
     @Override
-    public VoxelShape getOcclusionShape(BlockState state, BlockGetter level, BlockPos pos) {
-        MultiblockStructureHelper helper = getStructureHelper();
-        if (helper != null && !helper.isFullBlock(helper.getControllerOffset(), state.getValue(FACING))) {
-            return Shapes.empty();
-        }
-        return Shapes.block();
+    protected MultiblockStructureHelper defineStructure() {
+        // fillSpace: je Seite makeExtra bei dr2 * 4 sowie dr2 * 4 +- rot * 3 (12 Anschluesse am Boden).
+        return DummyableStructureBuilder.create()
+                .box(12, 0, 4, 4, 4, 4)
+                .extra(4, 0, 0).extra(4, 0, 3).extra(4, 0, -3)
+                .extra(-4, 0, 0).extra(-4, 0, 3).extra(-4, 0, -3)
+                .extra(0, 0, 4).extra(3, 0, 4).extra(-3, 0, 4)
+                .extra(0, 0, -4).extra(3, 0, -4).extra(-3, 0, -4)
+                .placementOffset(4)
+                .build(() -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState());
+    }
+
+    @Override
+    public RenderShape getRenderShape(BlockState state) {
+        return RenderShape.ENTITYBLOCK_ANIMATED;
     }
 
     @Nullable
@@ -161,110 +62,25 @@ public class MachineTowerLargeBlock extends BaseEntityBlock implements IMultiblo
     @Nullable
     @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
-        return createTickerHelper(type, ModBlockEntities.COOLING_TOWER_BE.get(),
-                MachineCoolingTowerBlockEntity::tick);
+        return createTickerHelper(type, ModBlockEntities.COOLING_TOWER_BE.get(), MachineCoolingTowerBlockEntity::tick);
     }
 
     @Override
-    public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
-        super.onPlace(state, level, pos, oldState, isMoving);
-        if (!state.is(oldState.getBlock()) && !level.isClientSide()) {
-            BlockPos core = placeMultiblockStructure(level, pos, state);
-            if (core == null) {
-                return;
-            }
-            Direction facing = state.getValue(FACING);
+    public void printHook(net.minecraft.client.gui.GuiGraphics g, Level world, BlockPos pos) {
+        if (!(world.getBlockEntity(pos) instanceof MachineCoolingTowerBlockEntity tower)) return;
+
+        List<Component> text = new ArrayList<>();
+        for (int i = 0; i < tower.getTanks().length; i++) {
+            text.add(Component.literal(i < 1 ? "-> " : "<- ").withStyle(i < 1 ? ChatFormatting.GREEN : ChatFormatting.RED)
+                    .append(FluidType.forFluid(tower.getTanks()[i].getTankType()).getLocalizedName().copy().withStyle(ChatFormatting.WHITE) /* 1.7 §r */)
+                    .append(Component.literal(": " + tower.getTanks()[i].getFill() + "/" + tower.getTanks()[i].getMaxFill() + "mB").withStyle(ChatFormatting.WHITE)));
         }
-    }
 
-
-    @Override
-    public boolean canSurvive(BlockState state, net.minecraft.world.level.LevelReader level, BlockPos pos) {
-        return super.canSurvive(state, level, pos) && canSurviveMultiblockPlacement(state, level, pos);
-    }
-
-    @Override
-    public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
-        if (!state.is(newState.getBlock()) && !level.isClientSide()) {
-            Direction facing = state.getValue(FACING);
-            getStructureHelper().destroyStructure(level, pos, facing);
-        }
-        super.onRemove(state, level, pos, newState, isMoving);
-    }
-
-    //? if < 1.21.1 {
-    @Override
-    public InteractionResult use(BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer, InteractionHand pHand, BlockHitResult pHit) {
-        return reportStatus(pState, pLevel, pPos, pPlayer, pHand, pHit);
-    }
-    //?} else {
-    /*@Override
-    protected InteractionResult useWithoutItem(BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer, BlockHitResult pHit) {
-        return reportStatus(pState, pLevel, pPos, pPlayer, InteractionHand.MAIN_HAND, pHit);
-    }
-    *///?}
-
-    private InteractionResult reportStatus(BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer, InteractionHand pHand, BlockHitResult pHit) {
-        // No GUI - this multiblock is a purely passive fluid pipe-to-pipe converter.
-        // Right-clicking just reports the current tank levels via an action bar message.
-        if (!pLevel.isClientSide()) {
-            BlockEntity be = pLevel.getBlockEntity(pPos);
-            if (be instanceof MachineCoolingTowerBlockEntity tower) {
-                var hot = tower.getTank(MachineCoolingTowerBlockEntity.TANK_HOT_IN);
-                var cool = tower.getTank(MachineCoolingTowerBlockEntity.TANK_COOLANT_OUT);
-                pPlayer.displayClientMessage(net.minecraft.network.chat.Component.translatable(
-                        "info.hbm_m.cooling_tower.status",
-                        hot.getFill(), hot.getMaxFill(),
-                        cool.getFill(), cool.getMaxFill(),
-                        tower.isCooling()
-                                ? net.minecraft.network.chat.Component.translatable("info.hbm_m.cooling_tower.active")
-                                : net.minecraft.network.chat.Component.translatable("info.hbm_m.cooling_tower.idle")
-                ), true);
-            }
-        }
-        return InteractionResult.sidedSuccess(pLevel.isClientSide());
-    }
-
-    @Override
-    public VoxelShape getShape(BlockState pState, BlockGetter pLevel, BlockPos pPos, CollisionContext pContext) {
-        MultiblockStructureHelper helper = getStructureHelper();
-        if (helper != null) {
-            return helper.generateShapeFromParts(pState.getValue(FACING));
-        }
-        return Shapes.block();
-    }
-
-    @Override
-    public VoxelShape getCollisionShape(BlockState pState, BlockGetter pLevel, BlockPos pPos, CollisionContext pContext) {
-        MultiblockStructureHelper helper = getStructureHelper();
-        if (helper != null) {
-            return helper.getSpecificPartShape(helper.getControllerOffset(), pState.getValue(FACING));
-        }
-        return Shapes.block();
-    }
-
-    @Override
-    public RenderShape getRenderShape(BlockState state) {
-        return RenderShape.MODEL;
-    }
-
-    @Nullable
-    @Override
-    public BlockState getStateForPlacement(BlockPlaceContext context) {
-        return this.defaultBlockState().setValue(FACING, context.getHorizontalDirection().getOpposite());
-    }
-
-    @Override
-    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(FACING);
+        com.hbm_m.interfaces.ILookOverlay.printGeneric(g, Component.translatable(getDescriptionId()), 0xffff00, 0x404000, text);
     }
 
     //? if >1.20.1 {
     /*public static final com.mojang.serialization.MapCodec<MachineTowerLargeBlock> CODEC = simpleCodec(MachineTowerLargeBlock::new);
-
-    @Override
-    protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
-        return CODEC;
-    }
+    @Override protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() { return CODEC; }
     *///?}
 }

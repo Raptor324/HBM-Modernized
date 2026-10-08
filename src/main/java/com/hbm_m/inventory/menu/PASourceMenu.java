@@ -21,7 +21,9 @@ public class PASourceMenu extends PAMenu {
                 ModBlocks.PA_SOURCE.get(),
                 SlotSpec.in(PASourceBlockEntity.SLOT_BATTERY, 8, 72),
                 SlotSpec.in(PASourceBlockEntity.SLOT_INPUT_A, 62, 16),
-                SlotSpec.in(PASourceBlockEntity.SLOT_INPUT_B, 80, 16));
+                SlotSpec.in(PASourceBlockEntity.SLOT_INPUT_B, 80, 16),
+                SlotSpec.out(PASourceBlockEntity.SLOT_CONTAINER_A, 62, 43),
+                SlotSpec.out(PASourceBlockEntity.SLOT_CONTAINER_B, 80, 43));
     }
 
     /** Zustand des Strahls als Index in {@code PAState.values()}. */

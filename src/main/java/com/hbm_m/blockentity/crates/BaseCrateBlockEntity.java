@@ -65,7 +65,37 @@ public abstract class BaseCrateBlockEntity extends BaseHbmBlockEntity implements
         };
     }
 
-    // Forge item handler capabilities removed for Fabric compilation.
+    //? if forge {
+    /** Original {@code TileEntityCrateBase}: alle Plaetze von allen Seiten, ein und aus nur ohne Schloss. */
+    private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> getItemHandler(),
+            new com.hbm_m.blockentity.SidedItemAccess.Rules() {
+                @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return com.hbm_m.blockentity.SidedItemAccess.range(0, itemHandler.getSlots() - 1); }
+                @Override public boolean canInsert(int slot, ItemStack stack, net.minecraft.core.Direction side) { return canInsertAutomation(slot, stack); }
+                @Override public boolean canExtract(int slot, ItemStack stack, net.minecraft.core.Direction side) { return canExtractAutomation(slot, stack); }
+            });
+
+    @Override
+    public @NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(@NotNull net.minecraftforge.common.capabilities.Capability<T> cap, @Nullable net.minecraft.core.Direction side) {
+        if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER && side != null) return sidedItems.get(side).cast();
+        return super.getCapability(cap, side);
+    }
+
+    @Override
+    public void invalidateCaps() {
+        super.invalidateCaps();
+        sidedItems.invalidate();
+    }
+    //?}
+
+    /** Original {@code canInsertItem}: {@code isItemValidForSlot && !isLocked}. */
+    protected boolean canInsertAutomation(int slot, ItemStack stack) {
+        return !isLocked() && itemHandler.isItemValid(slot, stack);
+    }
+
+    /** Original {@code canExtractItem}: {@code !isLocked}. */
+    protected boolean canExtractAutomation(int slot, ItemStack stack) {
+        return !isLocked();
+    }
 
     
     // (устраняет вложенный stonecutter-баг в load())
@@ -102,8 +132,9 @@ public abstract class BaseCrateBlockEntity extends BaseHbmBlockEntity implements
     }
 
     // ---- ILockableTile ----
+    @Override public com.hbm_m.api.tile.LockState getLockState() { return lockState; }
     @Override public boolean isLocked() { return lockState.isLocked; }
-    @Override public void lock() { lockState.isLocked = true; setChanged(); }
+    @Override public void lock() { lockState.lock(this); setChanged(); }
     @Override public void unlock() { lockState.isLocked = false; setChanged(); }
     @Override public void setPins(int pins) { lockState.lock = pins; setChanged(); }
     @Override public int getPins() { return lockState.lock; }

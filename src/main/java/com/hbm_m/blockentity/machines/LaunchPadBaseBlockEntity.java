@@ -204,6 +204,14 @@ public abstract class LaunchPadBaseBlockEntity extends BaseMachineBlockEntity
     /** Угловые коннекторы мультиблока для подписки в энерго-/жидкостные сети. */
     public abstract NodeDirPos[] getConPos();
 
+    /**
+     * Kleine Rampe (TileEntityLaunchPad): Abklingzeit/Zustand im gemeinsamen Tick. Die grosse Rampe
+     * (TileEntityLaunchPadLarge) rechnet Zustand und Verzoegerung selbst (Aufrichter) und schaltet das ab.
+     */
+    protected boolean usesPadDelayLogic() {
+        return true;
+    }
+
     public static void clientLaunchPadSmokeTick(Level level, BlockPos pos, BlockState state) {
         int x = pos.getX();
         int y = pos.getY();
@@ -257,6 +265,7 @@ public abstract class LaunchPadBaseBlockEntity extends BaseMachineBlockEntity
             }
         }
 
+        if (be.usesPadDelayLogic()) {
         // 1. Кулдаун перезарядки.
         if (be.delay > 0) {
             be.delay--;
@@ -274,6 +283,7 @@ public abstract class LaunchPadBaseBlockEntity extends BaseMachineBlockEntity
             be.state = STATE_LOADING;
         } else {
             be.state = STATE_READY;
+        }
         }
 
         // 3. Триггер по фронту редстоуна: 0 → положительный.
@@ -830,4 +840,26 @@ public abstract class LaunchPadBaseBlockEntity extends BaseMachineBlockEntity
     public boolean canConnect(Fluid fluid, Direction fromDir) {
         return fromDir != Direction.UP && fromDir != Direction.DOWN;
     }
+
+    //? if forge {
+    /** Original {@code ISidedInventory}: Slot {0}; nur gueltige Raketen hinein, nichts heraus. */
+    private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
+            new com.hbm_m.blockentity.SidedItemAccess.Rules() {
+                @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return new int[] { 0 }; }
+                @Override public boolean canInsert(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return slot == 0 && isMissileValid(stack); }
+                @Override public boolean canExtract(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return false; }
+            });
+
+    @Override
+    public @org.jetbrains.annotations.NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(@org.jetbrains.annotations.NotNull net.minecraftforge.common.capabilities.Capability<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER && side != null) return sidedItems.get(side).cast();
+        return super.getCapability(cap, side);
+    }
+
+    @Override
+    public void invalidateCaps() {
+        super.invalidateCaps();
+        sidedItems.invalidate();
+    }
+    //?}
 }

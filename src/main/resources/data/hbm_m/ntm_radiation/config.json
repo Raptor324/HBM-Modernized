@@ -1,0 +1,126 @@
+{
+  "diffusivity": 10,
+  "enable_chunk_rads": true,
+  "fog_chance": 20,
+  "fog_rad": 100,
+  "half_life_seconds": 120,
+  "rad_tick_rate": 1,
+  "world_rad_effects": true,
+  "types": {
+    "gamma": {
+      "weight": 1.0,
+      "half_life_mult": 1.0,
+      "diffusivity_mult": 1.0,
+      "hvl_scale": 1.0
+    },
+    "neutron": {
+      "weight": 1.0,
+      "half_life_mult": 0.1,
+      "diffusivity_mult": 1.0,
+      "hvl_scale": 1.0
+    },
+    "beta": {
+      "weight": 1.0,
+      "half_life_mult": 1.0,
+      "diffusivity_mult": 1.0,
+      "hvl_scale": 1.0
+    }
+  },
+  "default_mix": {
+    "gamma": 0.6,
+    "neutron": 0.1,
+    "beta": 0.3,
+    "alpha": 0.0
+  },
+  "effect_share": 0.5,
+  "near_field": {
+    "enabled": true,
+    "radius": 8,
+    "gain": 8.0,
+    "max_emitters": 32,
+    "cache_ticks": 10
+  },
+  "wall_length_scale": 16,
+  "contamination": {
+    "enabled": true,
+    "one_off_fraction": 0.5,
+    "decon_factor": 1.0,
+    "tick_interval": 20,
+    "fallout_split": {
+      "short": 0.7,
+      "medium": 0.25,
+      "long": 0.05,
+      "exotic": 0.0
+    },
+    "groups": {
+      "short": {
+        "half_life_seconds": 1200,
+        "emission_per_unit": 0.003,
+        "mix": {
+          "gamma": 0.4,
+          "neutron": 0,
+          "beta": 0.6,
+          "alpha": 0
+        }
+      },
+      "medium": {
+        "half_life_seconds": 16800,
+        "emission_per_unit": 0.003,
+        "mix": {
+          "gamma": 0.5,
+          "neutron": 0,
+          "beta": 0.5,
+          "alpha": 0
+        }
+      },
+      "long": {
+        "half_life_seconds": 100000000,
+        "emission_per_unit": 0.003,
+        "mix": {
+          "gamma": 0.3,
+          "neutron": 0,
+          "beta": 0.1,
+          "alpha": 0.6
+        }
+      },
+      "exotic": {
+        "half_life_seconds": 120000,
+        "emission_per_unit": 0.006,
+        "mix": {
+          "gamma": 1.0,
+          "neutron": 0,
+          "beta": 0,
+          "alpha": 0
+        }
+      }
+    }
+  },
+  "weather": {
+    "airborne_fraction": 1.0,
+    "settle_rate": 0.008333,
+    "wind": {
+      "enabled": true,
+      "base_speed": 1.5,
+      "speed_variation": 1.0,
+      "direction_period_seconds": 1200,
+      "gust_strength": 0.5,
+      "gust_period_seconds": 30,
+      "max_fraction_per_step": 0.5
+    },
+    "rain": {
+      "enabled": true,
+      "washout_rate": 0.05,
+      "snow_washout_rate": 0.02,
+      "thunder_mult": 1.5,
+      "runoff_enabled": true,
+      "runoff_rate": 0.0005,
+      "runoff_min_drop": 2
+    },
+    "water": {
+      "enabled": true,
+      "min_depth": 2,
+      "mix_rate": 0.01,
+      "ocean_dilution_half_life_seconds": 2400
+    }
+  }
+}

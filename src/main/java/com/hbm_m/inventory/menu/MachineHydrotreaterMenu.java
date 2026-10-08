@@ -13,15 +13,15 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
-/** Slot-Koordinaten 1:1 aus {@code ContainerMachineHydrotreater} (1.7.10 Original) uebernommen,
- *  wo relevant - die Fluid-Ein/Ausgabe-Slots des Originals entfallen, weil das MK2-Rohrnetz die
- *  Fluidverbindung uebernimmt (siehe {@link MachineHydrotreaterBlockEntity}). */
+/** Slot-Layout 1:1 aus {@code ContainerMachineHydrotreater} (1.7.10 Original): 11 Maschinenslots in Original-Reihenfolge,
+ *  Ein-/Ausgabe nur entnehmbar ueber die Slotpruefung des BE. */
 public class MachineHydrotreaterMenu extends AbstractContainerMenu {
 
     private final MachineHydrotreaterBlockEntity blockEntity;
     private static final int SLOT_BATTERY = MachineHydrotreaterBlockEntity.SLOT_BATTERY;
     private static final int SLOT_CATALYST = MachineHydrotreaterBlockEntity.SLOT_CATALYST;
-    private static final int MACHINE_SLOT_COUNT = 2;
+    private static final int SLOT_FLUID_ID = MachineHydrotreaterBlockEntity.SLOT_FLUID_ID;
+    private static final int MACHINE_SLOT_COUNT = MachineHydrotreaterBlockEntity.SLOT_COUNT;
     private static final int PLAYER_INV_START = MACHINE_SLOT_COUNT;
     private static final int PLAYER_INV_END = MACHINE_SLOT_COUNT + 36;
 
@@ -35,6 +35,15 @@ public class MachineHydrotreaterMenu extends AbstractContainerMenu {
 
         var container = new ModItemStackHandlerContainer(blockEntity.getInventory(), blockEntity::setChanged);
         this.addSlot(new Slot(container, SLOT_BATTERY, 17, 90));
+        this.addSlot(new Slot(container, 1, 35, 90));   // Kanister Eingang
+        this.addSlot(new Slot(container, 2, 35, 108));  // Kanister Ausgang (nur entnehmbar)
+        this.addSlot(new DeprecatedSlot(container, 3, 53, 90));  // Wasserstoff ein (stillgelegt, braucht Druck)
+        this.addSlot(new DeprecatedSlot(container, 4, 53, 108)); // Wasserstoff aus (ebenso)
+        this.addSlot(new Slot(container, 5, 125, 90));  // entschwefeltes Oel Eingang
+        this.addSlot(new Slot(container, 6, 125, 108)); // entschwefeltes Oel Ausgang
+        this.addSlot(new Slot(container, 7, 143, 90));  // Sauergas Eingang
+        this.addSlot(new Slot(container, 8, 143, 108)); // Sauergas Ausgang
+        this.addSlot(new Slot(container, SLOT_FLUID_ID, 17, 108));
         this.addSlot(new Slot(container, SLOT_CATALYST, 89, 36));
 
         for (int row = 0; row < 3; row++) {
@@ -66,11 +75,15 @@ public class MachineHydrotreaterMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        if (blockEntity == null || blockEntity.getLevel() != player.level()) {
-            return false;
-        }
-        BlockPos pos = blockEntity.getBlockPos();
-        return player.distanceToSqr(pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D) <= 64.0D;
+        // w16b: Original isUseableByPlayer (TileEntityMachineBase) = 128 vom Kern, dazu Huelle der Maschine (MultiblockMenuReach)
+        return MultiblockMenuReach.stillValidCore(blockEntity, player, 128.0D);
+    }
+
+    /** Original {@code SlotDeprecated}: haelt Altbestand, sonst weder sichtbar noch bedienbar. */
+    private static final class DeprecatedSlot extends Slot {
+        DeprecatedSlot(net.minecraft.world.Container c, int id, int x, int y) { super(c, id, x, y); }
+        @Override public boolean mayPlace(ItemStack stack) { return false; }
+        @Override public boolean isActive() { return false; }
     }
 
     @Override
@@ -87,8 +100,19 @@ public class MachineHydrotreaterMenu extends AbstractContainerMenu {
                     return ItemStack.EMPTY;
                 }
             } else {
-                if (!this.moveItemStackTo(slotStack, SLOT_BATTERY, SLOT_CATALYST + 1, false)) {
-                    return ItemStack.EMPTY;
+                // Original transferStackInSlot: Batterie -> 0, Fluidkennung -> 9, Katalysator -> 10, sonst 1/3/5/7
+                if (com.hbm_m.api.energy.ItemEnergyAccess.isEnergySource(slotStack)) {
+                    if (!this.moveItemStackTo(slotStack, SLOT_BATTERY, SLOT_BATTERY + 1, false)) return ItemStack.EMPTY;
+                } else if (slotStack.getItem() instanceof com.hbm_m.interfaces.IItemFluidIdentifier) {
+                    if (!this.moveItemStackTo(slotStack, SLOT_FLUID_ID, SLOT_FLUID_ID + 1, false)) return ItemStack.EMPTY;
+                } else if (slotStack.is(com.hbm_m.item.ModItems.CATALYTIC_CONVERTER.get())) {
+                    if (!this.moveItemStackTo(slotStack, SLOT_CATALYST, SLOT_CATALYST + 1, false)) return ItemStack.EMPTY;
+                } else {
+                    if (!this.moveItemStackTo(slotStack, 1, 2, false))
+                        if (!this.moveItemStackTo(slotStack, 3, 4, false))
+                            if (!this.moveItemStackTo(slotStack, 5, 6, false))
+                                if (!this.moveItemStackTo(slotStack, 7, 8, false))
+                                    return ItemStack.EMPTY;
                 }
             }
 

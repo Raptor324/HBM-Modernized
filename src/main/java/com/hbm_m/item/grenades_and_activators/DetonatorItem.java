@@ -40,33 +40,14 @@ public class DetonatorItem extends Item implements ITooltipProvider {
 
     @Override
     public void appendHbmTooltip(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
-
-        if (PlatformHooks.hasItemTag(stack)) {
-            CompoundTag nbt = PlatformHooks.getItemTag(stack);
-            if (nbt != null && nbt.contains("HasTarget") && nbt.getBoolean("HasTarget")) {
-                int x = nbt.getInt("DetPosX");
-                int y = nbt.getInt("DetPosY");
-                int z = nbt.getInt("DetPosZ");
-
-                tooltip.add(Component.translatable("tooltip.hbm_m.detonator.target")
-                        .append(Component.literal(x + ", " + y + ", " + z))
-                        .withStyle(ChatFormatting.GREEN, ChatFormatting.BOLD));
-
-                tooltip.add(Component.translatable("tooltip.hbm_m.detonator.right_click")
-                        .withStyle(ChatFormatting.GRAY));
-                tooltip.add(Component.translatable("tooltip.hbm_m.detonator.shift_right_click")
-                        .withStyle(ChatFormatting.GRAY));
-            } else {
-                tooltip.add(Component.translatable("tooltip.hbm_m.detonator.no_target")
-                        .withStyle(ChatFormatting.RED));
-                tooltip.add(Component.translatable("tooltip.hbm_m.detonator.shift_right_click")
-                        .withStyle(ChatFormatting.GRAY));
-            }
+        // 1:1 Original ItemDetonator.addInformation (NBT-Schluessel des Ports)
+        tooltip.add(com.hbm_m.util.TooltipUtil.gray("Shift right-click to set position,"));
+        tooltip.add(com.hbm_m.util.TooltipUtil.gray("right-click to detonate!"));
+        CompoundTag nbt = PlatformHooks.hasItemTag(stack) ? PlatformHooks.getItemTag(stack) : null;
+        if (nbt == null || !nbt.getBoolean("HasTarget")) {
+            tooltip.add(Component.literal("No position set!").withStyle(ChatFormatting.RED));
         } else {
-            tooltip.add(Component.translatable("tooltip.hbm_m.detonator.no_target")
-                    .withStyle(ChatFormatting.RED));
-            tooltip.add(Component.translatable("tooltip.hbm_m.detonator.shift_right_click")
-                    .withStyle(ChatFormatting.GRAY));
+            tooltip.add(Component.literal("Linked to " + nbt.getInt("DetPosX") + ", " + nbt.getInt("DetPosY") + ", " + nbt.getInt("DetPosZ")).withStyle(ChatFormatting.YELLOW));
         }
     }
 
@@ -74,6 +55,14 @@ public class DetonatorItem extends Item implements ITooltipProvider {
 
 
 
+    /** Original "[Name] "-Praefix in Dunkeltuerkis. */
+    private Component prefix() {
+        return Component.literal("[").withStyle(ChatFormatting.DARK_AQUA)
+                .append(Component.translatable(this.getDescriptionId()).withStyle(ChatFormatting.DARK_AQUA))
+                .append(Component.literal("] ").withStyle(ChatFormatting.DARK_AQUA));
+    }
+
+    /** 1:1 Original onItemUse: Schleich-Rechtsklick auf einen Block merkt die Position. */
     @Override
     public InteractionResult useOn(UseOnContext context) {
         Level level = context.getLevel();
@@ -81,15 +70,7 @@ public class DetonatorItem extends Item implements ITooltipProvider {
         Player player = context.getPlayer();
         ItemStack stack = context.getItemInHand();
 
-        if (player == null) {
-            return InteractionResult.PASS;
-        }
-
-        // Если игрок присел - сохраняем позицию
-        if (player.isCrouching()) {
-            // На 1.21.1 getItemTag() возвращает КОПИЮ (DataComponents.CUSTOM_DATA),
-            // а setItemTag с пустым тегом удаляет компонент — поэтому мутации должны
-            // идти через editItemTag (read-modify-write), иначе NPE/потеря данных.
+        if (player != null && player.isShiftKeyDown()) {
             PlatformHooks.editItemTag(stack, nbt -> {
                 nbt.putInt(NBT_POS_X, pos.getX());
                 nbt.putInt(NBT_POS_Y, pos.getY());
@@ -98,135 +79,59 @@ public class DetonatorItem extends Item implements ITooltipProvider {
             });
 
             if (!level.isClientSide) {
-                player.displayClientMessage(
-
-                        Component.translatable("message.hbm_m.detonator.saved", pos.getX(), pos.getY(), pos.getZ())
-                                .withStyle(ChatFormatting.GREEN),
-                        true
-                );
-                if (ModSounds.TOOL_TECH_BOOP.isPresent()) {
-                    SoundEvent soundEvent = ModSounds.TOOL_TECH_BOOP.get();
-                    level.playSound(null, player.getX(), player.getY(), player.getZ(), soundEvent, player.getSoundSource(), 1.0F, 1.0F);
-                }
+                player.sendSystemMessage(prefix().copy().append(Component.literal("Position set!").withStyle(ChatFormatting.GREEN)));
             }
 
-            return InteractionResult.SUCCESS;
+            level.playSound(null, player.getX(), player.getY(), player.getZ(), ModSounds.TOOL_TECH_BOOP.get(), player.getSoundSource(), 2.0F, 1.0F);
+
+            return InteractionResult.sidedSuccess(level.isClientSide);
         }
 
         return InteractionResult.PASS;
     }
 
+    /** 1:1 Original onItemRightClick: zuendet die gemerkte Bombe ({@code IBomb}), Port-Sprengkoerper ueber {@link IDetonatable}. */
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
+        CompoundTag nbt = PlatformHooks.hasItemTag(stack) ? PlatformHooks.getItemTag(stack) : null;
 
-        // Если игрок НЕ присел - активируем сохраненную позицию
-        if (!player.isCrouching()) {
-            if (!PlatformHooks.hasItemTag(stack)) {
-                if (!level.isClientSide) {
-                    player.displayClientMessage(
-                            Component.translatable("message.hbm_m.detonator.no_saved_position")
-                                    .withStyle(ChatFormatting.RED),
-                            true
-                    );
-                    if (ModSounds.TOOL_TECH_BLEEP.isPresent()) {
-                        SoundEvent soundEvent = ModSounds.TOOL_TECH_BLEEP.get();
-                        level.playSound(null, player.getX(), player.getY(), player.getZ(), soundEvent, player.getSoundSource(), 1.0F, 1.0F);
-                    }
-                }
-                return InteractionResultHolder.fail(stack);
+        if (nbt == null || !nbt.getBoolean(NBT_HAS_TARGET)) {
+            if (!level.isClientSide) {
+                player.sendSystemMessage(prefix().copy().append(Component.literal("No position set!").withStyle(ChatFormatting.RED)));
             }
-
-            CompoundTag nbt = PlatformHooks.getItemTag(stack);
-
-            if (!nbt.contains(NBT_HAS_TARGET) || !nbt.getBoolean(NBT_HAS_TARGET)) {
-                if (!level.isClientSide) {
-                    player.displayClientMessage(
-                            Component.translatable("message.hbm_m.detonator.no_saved_position")
-                                    .withStyle(ChatFormatting.RED),
-                            true
-                    );
-                    if (ModSounds.TOOL_TECH_BLEEP.isPresent()) {
-                        SoundEvent soundEvent = ModSounds.TOOL_TECH_BLEEP.get();
-                        level.playSound(null, player.getX(), player.getY(), player.getZ(), soundEvent, player.getSoundSource(), 1.0F, 1.0F);
-                    }
-
-                }
-                return InteractionResultHolder.fail(stack);
-            }
-
+        } else {
             int x = nbt.getInt(NBT_POS_X);
             int y = nbt.getInt(NBT_POS_Y);
             int z = nbt.getInt(NBT_POS_Z);
             BlockPos targetPos = new BlockPos(x, y, z);
+            BlockState state = level.getBlockState(targetPos);
+            Block block = state.getBlock();
 
-            if (!level.isClientSide) {
-                // Проверяем, загружен ли чанк
-                if (!level.isLoaded(targetPos)) {
-                    player.displayClientMessage(
-                            Component.translatable("message.hbm_m.detonator.pos_not_compatible")
-                                    .withStyle(ChatFormatting.RED),
-                            true
-                    );
-
-                    if (ModSounds.TOOL_TECH_BLEEP.isPresent()) {
-                        SoundEvent soundEvent = ModSounds.TOOL_TECH_BLEEP.get();
-                        level.playSound(null, player.getX(), player.getY(), player.getZ(), soundEvent, player.getSoundSource(), 1.0F, 1.0F);
+            if (block instanceof com.hbm_m.api.bomb.IBomb || block instanceof IDetonatable) {
+                level.playSound(null, player.getX(), player.getY(), player.getZ(), ModSounds.TOOL_TECH_BLEEP.get(), player.getSoundSource(), 1.0F, 1.0F);
+                if (!level.isClientSide) {
+                    com.hbm_m.api.bomb.IBomb.BombReturnCode ret;
+                    if (block instanceof com.hbm_m.api.bomb.IBomb bomb) {
+                        ret = bomb.explode(level, targetPos);
+                    } else {
+                        ret = ((IDetonatable) block).onDetonate(level, targetPos, state, player)
+                                ? com.hbm_m.api.bomb.IBomb.BombReturnCode.DETONATED : com.hbm_m.api.bomb.IBomb.BombReturnCode.ERROR_INCOMPATIBLE;
                     }
-                    return InteractionResultHolder.fail(stack);
+
+                    if (com.hbm_m.config.ModClothConfig.get().enableExtendedLogging)
+                        com.hbm_m.main.MainRegistry.LOGGER.info("[DET] Tried to detonate block at " + x + " / " + y + " / " + z + " by " + player.getName().getString() + "!");
+
+                    player.sendSystemMessage(prefix().copy().append(Component.translatable(ret.getUnlocalizedMessage())
+                            .withStyle(ret.wasSuccessful() ? ChatFormatting.YELLOW : ChatFormatting.RED)));
                 }
 
-                BlockState state = level.getBlockState(targetPos);
-                Block block = state.getBlock();
-
-                // Проверяем, поддерживает ли блок детонацию
-                if (block instanceof IDetonatable) {
-                    IDetonatable detonatable = (IDetonatable) block;
-                    boolean success = detonatable.onDetonate(level, targetPos, state, player);
-
-                    if (success) {
-                        player.displayClientMessage(
-                                Component.translatable("message.hbm_m.detonator.activated")
-                                        .withStyle(ChatFormatting.GREEN),
-                                true
-                        );
-                        if (ModSounds.TOOL_TECH_BLEEP.isPresent()) {
-                            SoundEvent soundEvent = ModSounds.TOOL_TECH_BLEEP.get();
-                            level.playSound(null, player.getX(), player.getY(), player.getZ(), soundEvent, player.getSoundSource(), 1.0F, 1.0F);
-                        }
-
-                        return InteractionResultHolder.success(stack);
-                    } else {
-                        player.displayClientMessage(
-                                Component.translatable("message.hbm_m.detonator.pos_not_compatible")
-                                        .withStyle(ChatFormatting.RED),
-                                true
-                        );
-                        if (ModSounds.TOOL_TECH_BLEEP.isPresent()) {
-                            SoundEvent soundEvent = ModSounds.TOOL_TECH_BLEEP.get();
-                            level.playSound(null, player.getX(), player.getY(), player.getZ(), soundEvent, player.getSoundSource(), 1.0F, 1.0F);
-                        }
-
-                        return InteractionResultHolder.fail(stack);
-                    }
-
-
-                } else {
-                    player.displayClientMessage(
-                            Component.translatable("message.hbm_m.detonator.pos_not_compatible")
-                                    .withStyle(ChatFormatting.RED),
-                            true
-                    );
-                    if (ModSounds.TOOL_TECH_BLEEP.isPresent()) {
-                        SoundEvent soundEvent = ModSounds.TOOL_TECH_BLEEP.get();
-                        level.playSound(null, player.getX(), player.getY(), player.getZ(), soundEvent, player.getSoundSource(), 1.0F, 1.0F);
-                    }
-
-                    return InteractionResultHolder.fail(stack);
+            } else {
+                if (!level.isClientSide) {
+                    player.sendSystemMessage(prefix().copy().append(Component.translatable(com.hbm_m.api.bomb.IBomb.BombReturnCode.ERROR_NO_BOMB.getUnlocalizedMessage())
+                            .withStyle(ChatFormatting.RED)));
                 }
             }
-
-            return InteractionResultHolder.success(stack);
         }
 
         return InteractionResultHolder.pass(stack);

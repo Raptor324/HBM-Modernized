@@ -1,7 +1,7 @@
 {
   "display": {
     "icon": {
-      "item": "hbm_m:plate_polymer"
+      "item": "hbm_m:polymer_ingot"
     },
     "title": {
       "translate": "advancements.hbm_m.polymer.title"

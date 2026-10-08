@@ -56,8 +56,8 @@ public class GUIRBMKRod extends GuiInfoScreen<RBMKRodMenu> {
             if (x > 0) g.blit(TEXTURE, leftPos + 126, topPos + 82 - x, 212, 58 - x, 14, x);
         }
 
-        if (!be.coldEnoughForAutoloader()) drawInfoPanel(g, -16, 20, PanelType.LARGE_YELLOW_EXCLAMATION);
-        if (!be.coldEnoughForManual())     drawInfoPanel(g, -16, 36, PanelType.LARGE_RED_EXCLAMATION);
+        if (!be.coldEnoughForAutoloader()) drawInfoPanel(g, -16, 20, PanelType.LARGE_RED_EXCLAMATION);
+        if (!be.coldEnoughForManual())     drawInfoPanel(g, -16, 36, PanelType.LARGE_YELLOW_EXCLAMATION);
     }
 
     @Override
@@ -77,5 +77,13 @@ public class GUIRBMKRod extends GuiInfoScreen<RBMKRodMenu> {
         }
 
         this.renderTooltip(g, mouseX, mouseY);
+    }
+
+    @Override
+    protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
+        // Original drawGuiContainerForegroundLayer
+        String name = this.title.getString();
+        guiGraphics.drawString(this.font, name, 88 - this.font.width(name) / 2, 6, 4210752, false);
+        guiGraphics.drawString(this.font, this.playerInventoryTitle, 8, 92, 4210752, false);
     }
 }

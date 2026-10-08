@@ -31,6 +31,11 @@ public class CentrifugeRecipeBuilder extends BaseRecipeBuilder<CentrifugeRecipeB
         return new CentrifugeRecipeBuilder(Ingredient.of(item), padOutputs(outputs));
     }
 
+    /** Beliebige Zutat (OreDict-Tag, mehrere Items) - fuer die uebersetzten Original-Rezepte. */
+    public static CentrifugeRecipeBuilder recipe(Ingredient input, ItemStack... outputs) {
+        return new CentrifugeRecipeBuilder(input, padOutputs(outputs));
+    }
+
     private static ItemStack[] padOutputs(ItemStack[] outputs) {
         ItemStack[] padded = new ItemStack[4];
         for (int i = 0; i < 4; i++) {

@@ -60,6 +60,8 @@ public class DataGenerators {
         // Создаем и регистрируем провайдер для тегов ПРЕДМЕТОВ.
         // Он зависит от провайдера блоков, поэтому мы передаем в него blockTagProvider.contentsGetter()
         generator.addProvider(event.includeServer(), new ModItemTagProvider(packOutput, lookupProvider, blockTagProvider.contentsGetter(), existingFileHelper));
+        // OreDict-Schluessel des Originals als Tags hbm_m:oredict/... (Zutaten der uebersetzten Rezepte)
+        generator.addProvider(event.includeServer(), new com.hbm_m.datagen.recipes.custom.OreDictTagProvider(packOutput, lookupProvider, blockTagProvider.contentsGetter(), existingFileHelper));
 
         DatapackBuiltinEntriesProvider datapackProvider = new DatapackBuiltinEntriesProvider(
                 packOutput, lookupProvider, getRegistrySetBuilder(), Set.of(RefStrings.MODID)
@@ -83,7 +85,8 @@ public class DataGenerators {
                             try {
                                 @SuppressWarnings("unchecked")
                                 ResourceKey<DamageType> key = (ResourceKey<DamageType>) field.get(null);
-                                context.register(key, new DamageType(key.location().getPath(), 0.1F));
+                                String path = key.location().getPath();
+                                context.register(key, new DamageType(ModDamageTypes.msgIdFor(path), 0.1F));
                             } catch (IllegalAccessException e) {
                                 throw new RuntimeException("Could not access DamageType key field: " + field.getName(), e);
                             }

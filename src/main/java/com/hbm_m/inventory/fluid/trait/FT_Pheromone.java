@@ -26,9 +26,9 @@ public class FT_Pheromone extends FluidTrait {
     @Override
     public void addInfo(List<Component> info) {
         if (type == 1) {
-            info.add(Component.translatable("fluid.hbm_m.trait.pheromone_glyphid").withStyle(ChatFormatting.AQUA));
+            info.add(Component.literal("[").append(Component.translatable("hbmfluid.trait.glyphidPheromones")).append("]").withStyle(ChatFormatting.AQUA));
         } else {
-            info.add(Component.translatable("fluid.hbm_m.trait.pheromone_modified").withStyle(ChatFormatting.BLUE));
+            info.add(Component.literal("[").append(Component.translatable("hbmfluid.trait.modifiedPheromones")).append("]").withStyle(ChatFormatting.BLUE));
         }
     }
 

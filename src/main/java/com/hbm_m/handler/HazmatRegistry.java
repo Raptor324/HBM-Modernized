@@ -21,7 +21,7 @@ import net.minecraft.world.item.Items;
  * 1:1 {@code com.hbm.handler.HazmatRegistry}: Strahlungsresistenz je Ruestungsteil (Summe ueber die
  * getragenen Teile), plus Verkleidung ({@code hfr_cladding} bzw. Verkleidungs-Mod). FSB-Sets tragen ihre
  * Vollset-Resistenz ueber {@code ArmorFSB.setRadResist} in {@link #external} ein.
- * (Die JSON-Konfiguration hbmRadResist.json des Originals ist noch nicht portiert.)
+ * Wie im Original ueberschreibbar per {@code config/hbm_m/hbmRadResist.json} (Vorlage {@code _hbmRadResist.json}).
  */
 public final class HazmatRegistry {
 
@@ -49,9 +49,86 @@ public final class HazmatRegistry {
         external.add(new ExternalEntry(item, fullSet * mult));
     }
 
+    public static final com.google.gson.Gson gson = new com.google.gson.Gson();
+
+    /**
+     * Original registerHazmats: Standardwerte setzen; fehlt {@code hbmRadResist.json} im Konfig-Ordner, wird die Vorlage
+     * {@code _hbmRadResist.json} geschrieben, sonst ersetzt die Datei alle Eintraege.
+     */
     public static void registerHazmats() {
-        if (!entries.isEmpty()) return;
+        java.io.File folder = com.hbm_m.config.ConfigPaths.configRoot().toFile();
+        folder.mkdirs();
+
+        java.io.File config = new java.io.File(folder.getAbsolutePath() + java.io.File.separatorChar + "hbmRadResist.json");
+        java.io.File template = new java.io.File(folder.getAbsolutePath() + java.io.File.separatorChar + "_hbmRadResist.json");
+
         initDefault();
+
+        if (!config.exists()) {
+            writeDefault(template);
+        } else {
+            HashMap<Item, Double> conf = readConfig(config);
+
+            if (conf != null) {
+                entries.clear();
+                entries.putAll(conf);
+            }
+        }
+    }
+
+    private static void writeDefault(java.io.File file) {
+        try {
+            com.google.gson.stream.JsonWriter writer = new com.google.gson.stream.JsonWriter(new java.io.FileWriter(file));
+            writer.setIndent("  ");                 //pretty formatting
+            writer.beginObject();                   //initial '{'
+            writer.name("comment").value("Template file, remove the underscore ('_') from the name to enable the config.");
+            writer.name("entries").beginArray();    //all recipes are stored in an array called "entries"
+
+            for (Map.Entry<Item, Double> entry : entries.entrySet()) {
+                writer.beginObject();               //begin object for a single recipe
+                writer.name("item").value(net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(entry.getKey()).toString());
+                writer.name("resistance").value(entry.getValue());
+                writer.endObject();                 //end recipe object
+            }
+
+            writer.endArray();                      //end recipe array
+            writer.endObject();                     //final '}'
+            writer.close();
+        } catch (java.io.IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    private static HashMap<Item, Double> readConfig(java.io.File config) {
+        try (java.io.FileReader reader = new java.io.FileReader(config)) {
+            com.google.gson.JsonObject json = gson.fromJson(reader, com.google.gson.JsonObject.class);
+            com.google.gson.JsonArray array = json.get("entries").getAsJsonArray();
+            HashMap<Item, Double> conf = new HashMap<>();
+
+            for (com.google.gson.JsonElement element : array) {
+                com.google.gson.JsonObject object = (com.google.gson.JsonObject) element;
+
+                try {
+                    String name = object.get("item").getAsString();
+                    net.minecraft.resources.ResourceLocation id = net.minecraft.resources.ResourceLocation.tryParse(name);
+                    Item item = id != null && net.minecraft.core.registries.BuiltInRegistries.ITEM.containsKey(id) ? net.minecraft.core.registries.BuiltInRegistries.ITEM.get(id) : null;
+                    double resistance = object.get("resistance").getAsDouble();
+                    if (item != null) {
+                        conf.put(item, resistance);
+                    } else {
+                        com.hbm_m.main.MainRegistry.LOGGER.error("Tried loading unknown item " + name + " for hazmat entry.");
+                    }
+                } catch (Exception ex) {
+                    com.hbm_m.main.MainRegistry.LOGGER.error("Encountered " + ex + " trying to read hazmat entry " + element.toString());
+                }
+            }
+            return conf;
+
+        } catch (Exception ex) {
+            ex.printStackTrace();
+        }
+
+        return null;
     }
 
     private static void reg(RegistrySupplier<Item> item, double resistance) {

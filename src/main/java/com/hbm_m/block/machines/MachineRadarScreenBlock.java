@@ -184,8 +184,8 @@ public class MachineRadarScreenBlock extends BaseEntityBlock implements IMultibl
     public VoxelShape getShape(BlockState pState, BlockGetter pLevel, BlockPos pPos, CollisionContext pContext) {
         MultiblockStructureHelper helper = getStructureHelper();
         if (helper != null) {
-            // Теперь это вернет идеально подогнанную форму 3х3х3
-            return helper.generateShapeFromParts(pState.getValue(FACING));
+            // w16b: nur die Kernzelle (Klicks fallen nicht in fremde Zellen); Umriss der ganzen Maschine: MultiblockOutlineForge
+            return helper.getControllerCellShape(pState.getValue(FACING));
         }
         return Shapes.block();
     }

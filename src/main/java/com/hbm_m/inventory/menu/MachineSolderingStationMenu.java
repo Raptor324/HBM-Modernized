@@ -73,8 +73,8 @@ public class MachineSolderingStationMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        return blockEntity.getLevel() == player.level()
-            && player.distanceToSqr(blockEntity.getBlockPos().getCenter()) <= 64;
+        // audit13: Original isUseableByPlayer (<= 128 zur Kernmitte) oder Huelle <= 64; Vanilla 64 schloss die GUI an grossen Maschinen
+        return MultiblockMenuReach.stillValidCore(blockEntity, player, 128.0D);
     }
 
     // ── Shift-click routing ──────────────────────────────────────────────────

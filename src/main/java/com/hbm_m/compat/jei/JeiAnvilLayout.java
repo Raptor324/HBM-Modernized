@@ -14,12 +14,9 @@ public final class JeiAnvilLayout {
     private JeiAnvilLayout() {
     }
 
-    public static Layout resolve(OverlayType overlay, int inputCount, int outputCount) {
-        OverlayType shape = overlay != OverlayType.NONE
-                ? overlay
-                : resolveShape(inputCount, outputCount);
-
-        return switch (shape) {
+    /** {@code RecipeSet}: die Form ergibt sich allein aus der Anzahl der Zutaten und Ausgaben. */
+    public static Layout resolve(int inputCount, int outputCount) {
+        return switch (resolveShape(inputCount, outputCount)) {
             case SMITHING -> new Layout(1, 1, 48, 24, 102, 24, 75, 31, OverlayType.SMITHING);
             case RECYCLING -> new Layout(1, 6, 12, 24, 48, 6, 30, 31, OverlayType.RECYCLING);
             case CONSTRUCTION -> new Layout(6, 1, 12, 6, 138, 24, 120, 31, OverlayType.CONSTRUCTION);

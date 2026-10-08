@@ -62,25 +62,30 @@ import net.neoforged.api.distmarker.OnlyIn;
  */
 @SuppressWarnings("UnstableApiUsage")
 public class MachineIndustrialTurbineBlockEntity extends BaseMachineBlockEntity
-        implements IEnergyModeHolder, IFluidStandardReceiverMK2, IFluidStandardSenderMK2 {
+        implements IEnergyModeHolder, IFluidStandardReceiverMK2, IFluidStandardSenderMK2,
+        com.hbm_m.api.redstoneoverradio.IRORValueProvider {
 
-    // Capacity constants
-    private static final long ENERGY_CAPACITY = 500_000L;
-    private static final long ENERGY_EXTRACT_RATE = 10_000L;
-    private static final int STEAM_CAPACITY = 64_000;
-    private static final int SPENT_STEAM_CAPACITY = 64_000;
+    // Original TileEntityTurbineBase: kein Speicher, powerBuffer ist die Abgabe dieses Ticks
+    private static final long ENERGY_CAPACITY = 0L;
+    private static final long ENERGY_EXTRACT_RATE = Long.MAX_VALUE;
+    /** Original {@code inputTankSize} / {@code outputTankSize}. */
+    private static final int STEAM_CAPACITY = 750_000;
+    private static final int SPENT_STEAM_CAPACITY = 3_000_000;
 
     // Conversion constants
     private static final double CONSUMPTION_PERCENT = 0.2D; // Anteil des Tankinhalts, der pro Tick verbraucht wird
     /** Original: {@code TileEntityMachineIndustrialTurbine.efficiency = 1D}. */
     private static final double EFFICIENCY = 1.0D;
 
-    // Flywheel (Spin-up/Spin-down-Trägheit der Turbine). Werte sind an ENERGY_CAPACITY angepasst
-    // und ggf. beim Playtesting nachzujustieren.
-    private static final double FLYWHEEL_MAX_ENERGY = ENERGY_CAPACITY * 4.0;
+    // Original-Schwungrad: FLYWHEEL_MAX_ENERGY = 0.5e8 ("aka flywheel mass")
+    private static final double FLYWHEEL_MAX_ENERGY = 0.5e8;
     private double spin = 0.0;
     private long flywheelEnergy = 0L;
     private long maxPower = 0L;
+    public long lastPowerTarget = 0L;
+    public long powerBuffer = 0L;
+    public float rotor;
+    public float lastRotor;
 
     // Fluid tanks
     private final FluidTank steamTank;
@@ -114,11 +119,13 @@ public class MachineIndustrialTurbineBlockEntity extends BaseMachineBlockEntity
         be.prevAnim = be.anim;
 
         if (level.isClientSide()) {
-            if (be.isActive) {
-                be.anim += 0.15F;
-                if (be.anim > (float) (Math.PI * 2.0)) {
-                    be.anim -= (float) (Math.PI * 2.0);
-                }
+            // Original onClientTick: Drehzahl aus dem Schwungrad
+            be.lastRotor = be.rotor;
+            float speed = be.spin >= 0.5 ? 30 : (float) (Math.pow(be.spin * 2, 0.5) * 30);
+            be.rotor += speed;
+            if (be.rotor >= 360) {
+                be.lastRotor -= 360;
+                be.rotor -= 360;
             }
             ClientSoundBootstrap.updateSound(be, be.spin > 0.001D,
                     () -> be.createLoopingSoundReflect(ModSounds.LARGE_TURBINE.get()));
@@ -218,28 +225,27 @@ public class MachineIndustrialTurbineBlockEntity extends BaseMachineBlockEntity
                     steamTank.drainMb(ops * trait.amountReq);
                     spentSteamTank.fillMb(trait.coolsTo, ops * trait.amountProduced);
 
-                    maxPower = (long) (ops * trait.heatEnergy * eff);
-                    flywheelEnergy += maxPower;
+                    // Original generatePower: Zielleistung aus der vollen Tankkapazitaet, Schwungrad += Ertrag
+                    int maxOps = (int) Math.ceil((steamTank.getMaxFill() * CONSUMPTION_PERCENT) / trait.amountReq);
+                    maxPower = (long) (maxOps * trait.heatEnergy * eff);
+                    flywheelEnergy += (long) (ops * trait.heatEnergy * eff);
                 }
             }
         }
 
-        // 2. Flywheel-Trägheit: die Turbine fährt hoch/runter statt sofort volle Leistung zu liefern.
-        spin = flywheelEnergy / FLYWHEEL_MAX_ENERGY;
+        // Original onServerTick
+        boolean wasSpinning = spin > 0;
+        spin = (double) flywheelEnergy / FLYWHEEL_MAX_ENERGY;
+        lastPowerTarget = Math.min((long) (Math.max(spin, 0.05) * maxPower), flywheelEnergy);
+        flywheelEnergy -= lastPowerTarget;
+        powerBuffer = lastPowerTarget;
 
-        long energySpace = Math.max(0L, getMaxEnergyStored() - getEnergyStored());
-        long potentialOutput = (long) (Math.max(spin, 0.05D) * maxPower);
-        long output = Math.min(Math.min(potentialOutput, flywheelEnergy), energySpace);
+        // getPower() == getMaxPower() == powerBuffer
+        this.capacity = powerBuffer;
+        this.energy = powerBuffer;
 
-        boolean generating = output > 0;
-        if (generating) {
-            flywheelEnergy -= output;
-            setEnergyStored(getEnergyStored() + output);
-            setChanged();
-            sendUpdateToClient();
-        }
-
-        isActive = generating || flywheelEnergy > 0;
+        isActive = spin > 0;
+        if (spin > 0 || wasSpinning) sendUpdateToClient();
     }
 
     /**
@@ -345,6 +351,11 @@ public class MachineIndustrialTurbineBlockEntity extends BaseMachineBlockEntity
         return prevAnim + (anim - prevAnim) * partialTicks;
     }
 
+    /** Rotorwinkel in Grad (Original RenderIndustrialTurbine). */
+    public float getRotor(float partialTicks) {
+        return lastRotor + (rotor - lastRotor) * partialTicks;
+    }
+
     // --- NBT ---
 
     @Override
@@ -358,6 +369,7 @@ public class MachineIndustrialTurbineBlockEntity extends BaseMachineBlockEntity
         tag.putLong("flywheelEnergy", flywheelEnergy);
         tag.putLong("maxPower", maxPower);
         tag.putDouble("spin", spin);
+        tag.putLong("power", powerBuffer);
     }
 
     @Override
@@ -371,6 +383,7 @@ public class MachineIndustrialTurbineBlockEntity extends BaseMachineBlockEntity
         flywheelEnergy = tag.getLong("flywheelEnergy");
         maxPower = tag.getLong("maxPower");
         spin = tag.getDouble("spin");
+        powerBuffer = tag.getLong("power");
     }
 
     // --- Capabilities ---
@@ -528,4 +541,21 @@ public class MachineIndustrialTurbineBlockEntity extends BaseMachineBlockEntity
             }
         }
         return ports.toArray(new BlockPos[0]);
-    }}
+    }
+    // ── Redstone-over-Radio (1:1 TileEntityMachineIndustrialTurbine) ──
+
+    @Override
+    public String[] getFunctionInfo() {
+        return new String[] {
+                PREFIX_VALUE + "output",
+                PREFIX_VALUE + "flywheel"
+        };
+    }
+
+    @Override
+    public String provideRORValue(String name) {
+        if ((PREFIX_VALUE + "output").equals(name))   return "" + (int) this.powerBuffer;
+        if ((PREFIX_VALUE + "flywheel").equals(name)) return "" + (int) (spin * 100);
+        return null;
+    }
+}

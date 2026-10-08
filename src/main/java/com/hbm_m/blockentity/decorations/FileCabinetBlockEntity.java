@@ -144,8 +144,9 @@ public class FileCabinetBlockEntity extends BaseHbmBlockEntity implements MenuPr
     }
 
     // ---- ILockableTile ----
+    @Override public com.hbm_m.api.tile.LockState getLockState() { return lockState; }
     @Override public boolean isLocked() { return lockState.isLocked; }
-    @Override public void lock() { lockState.isLocked = true; setChanged(); }
+    @Override public void lock() { lockState.lock(this); setChanged(); }
     @Override public void unlock() { lockState.isLocked = false; setChanged(); }
     @Override public void setPins(int pins) { lockState.lock = pins; setChanged(); }
     @Override public int getPins() { return lockState.lock; }

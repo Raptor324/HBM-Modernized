@@ -1,0 +1,20 @@
+{
+  "loader": "forge:composite",
+  "textures": {
+    "particle": "minecraft:block/gold_block"
+  },
+  "children": {
+    "igen_model": {
+      "loader": "forge:obj",
+      "model": "hbm_m:models/block/machines/igen.obj",
+      "flip_v": true,
+      "textures": {
+        "default": "hbm_m:block/machine/igen"
+      }
+    }
+  },
+  "transform": {"origin": "corner", "translation": [0.5, 0, 0.5833333], "rotation": [0, 180, 0], "scale": 0.16666667},
+  "display": {
+    "gui": {"rotation": [30.0, 135.0, 0.0], "translation": [0.354, 5.105, 3.694], "scale": [1.125, 1.125, 1.125]}
+  }
+}

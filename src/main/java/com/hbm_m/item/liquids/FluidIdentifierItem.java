@@ -9,7 +9,6 @@ import net.minecraft.resources.ResourceLocation;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.api.fluids.HbmFluidRegistry;
-import com.hbm_m.block.machines.FluidDuctBlock;
 import com.hbm_m.blockentity.machines.MachineFluidTankBlockEntity;
 import com.hbm_m.interfaces.IItemControlReceiver;
 import com.hbm_m.interfaces.IItemFluidIdentifier;
@@ -50,6 +49,11 @@ public class FluidIdentifierItem extends Item implements IItemFluidIdentifier, I
         super(properties.stacksTo(1));
     }
 
+    /**
+     * Tanks/Faesser/BAT9000 (Original MachineFluidTank/BlockFluidBarrel/MachineBigAssTank9000, geschlichener Zweig):
+     * die Bloecke geben geschlichen PASS zurueck, die Sorte stellt der Identifikator hier. Rohre laufen ueber
+     * {@link com.hbm_m.api.fluids.PipeTypeChanger#onIdentifier} im Block (dank {@link #doesSneakBypassUse}).
+     */
     @Override
     public InteractionResult useOn(UseOnContext context) {
         Player player = context.getPlayer();
@@ -60,45 +64,31 @@ public class FluidIdentifierItem extends Item implements IItemFluidIdentifier, I
         BlockPos pos = context.getClickedPos();
         ItemStack stack = context.getItemInHand();
 
-        if (level.getBlockState(pos).getBlock() instanceof FluidDuctBlock) {
-            Fluid fluid = getType(level, pos, stack);
-            if (fluid == null) {
+        MachineFluidTankBlockEntity tankBE = findTankEntity(level, pos);
+        if (tankBE != null) {
+            if (tankBE.hasExploded) {
                 return InteractionResult.PASS;
             }
             if (level.isClientSide) {
                 return InteractionResult.SUCCESS;
             }
-            FluidDuctBlock.paintConnectedDuctNetwork(level, pos, fluid);
-            return InteractionResult.sidedSuccess(level.isClientSide());
-        }
-
-        MachineFluidTankBlockEntity tankBE = findTankEntity(level, pos);
-        if (tankBE != null) {
-            if (level.isClientSide) {
-                return InteractionResult.SUCCESS;
-            }
             tankBE.setFilterFromIdentifier(stack);
-            Fluid tankType = tankBE.getFluidTank().getTankType();
-            String nameKey;
-            if (tankType == ModFluids.NONE.getSource() || tankType == Fluids.EMPTY) {
-                nameKey = "fluid.hbm_m.none";
-            } else {
-                nameKey = "fluid."
-                        + BuiltInRegistries.FLUID.getKey(tankType).getNamespace()
-                        + "."
-                        + BuiltInRegistries.FLUID.getKey(tankType).getPath();
-            }
-            Component fluidName = Component.translatable(nameKey).withStyle(ChatFormatting.YELLOW);
-            Component line = Component.translatable("gui.hbm_m.fluid_tank.filter_set", fluidName)
-                    .withStyle(ChatFormatting.YELLOW);
-            player.displayClientMessage(line, true);
-            level.playSound(null, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
-                    SoundEvents.EXPERIENCE_ORB_PICKUP, SoundSource.PLAYERS, 0.3F, 1.25F);
-            return InteractionResult.sidedSuccess(level.isClientSide());
+            Fluid type = getType(level, pos, stack);
+            player.displayClientMessage(Component.literal("Changed type to ").withStyle(ChatFormatting.YELLOW)
+                    .append(getFluidDisplayName(type)).append(Component.literal("!")), false);
+            return InteractionResult.CONSUME;
         }
 
         return InteractionResult.PASS;
     }
+
+    //? if forge {
+    /** Original {@code doesSneakBypassUse}: auch geschlichen bekommt der Block den Rechtsklick. */
+    @Override
+    public boolean doesSneakBypassUse(ItemStack stack, net.minecraft.world.level.LevelReader level, BlockPos pos, Player player) {
+        return true;
+    }
+    //?}
 
     @Nullable
     private static MachineFluidTankBlockEntity findTankEntity(Level level, BlockPos pos) {
@@ -161,11 +151,12 @@ public class FluidIdentifierItem extends Item implements IItemFluidIdentifier, I
 
     @Override
     public void appendHbmTooltip(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
+        // Original ItemFluidIDMulti: alle vier Zeilen ohne Farbcode (grau)
         tooltip.add(Component.translatable(getDescriptionId() + ".info").withStyle(ChatFormatting.GRAY));
-        tooltip.add(Component.literal("   ").append(getFluidDisplayName(getType(stack, true)).copy().withStyle(ChatFormatting.AQUA)));
+        tooltip.add(Component.literal("   ").append(getFluidDisplayName(getType(stack, true)).copy().withStyle(ChatFormatting.GRAY)));
         
         tooltip.add(Component.translatable(getDescriptionId() + ".info2").withStyle(ChatFormatting.GRAY));
-        tooltip.add(Component.literal("   ").append(getFluidDisplayName(getType(stack, false)).copy().withStyle(ChatFormatting.AQUA)));
+        tooltip.add(Component.literal("   ").append(getFluidDisplayName(getType(stack, false)).copy().withStyle(ChatFormatting.GRAY)));
     }
 
     private static Component getFluidDisplayName(Fluid fluid) {

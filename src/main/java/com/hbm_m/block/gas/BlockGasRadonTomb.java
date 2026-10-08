@@ -21,8 +21,7 @@ import net.minecraft.world.level.block.state.BlockState;
  * 1:1-Port von {@code BlockGasRadonTomb} (1.7.10): das Gas aus dem Endlager. Es geht durch jeden
  * Schutz hindurch, entfernt heilende Effekte und toetet die Vegetation darunter ab.
  *
- * <p><b>Abweichung:</b> Das Original entfernt neben Radaway auch Rad-X - diesen Effekt gibt es im
- * Port noch nicht. Die Materialpruefung fuer Bewuchs (Gras/Laub/Pflanzen/Ranken) laeuft hier ueber
+ * <p><b>Abweichung:</b> Die Materialpruefung fuer Bewuchs (Gras/Laub/Pflanzen/Ranken) laeuft hier ueber
  * {@link BlockTags#LEAVES} und {@link BushBlock} statt ueber die 1.7.10-Materialien.</p>
  */
 public class BlockGasRadonTomb extends BlockGasBase {
@@ -33,7 +32,8 @@ public class BlockGasRadonTomb extends BlockGasBase {
 
     @Override
     protected void affect(LivingEntity living) {
-        living.removeEffect(ModEffects.RADX.get()); // Original: removePotionEffect(HbmPotion.radx.id)
+        living.removeEffect(ModEffects.RADAWAY.get()); //get fucked
+        living.removeEffect(ModEffects.RADX.get());
 
         ContaminationUtil.contaminate(living, HazardType.RADIATION, ContaminationType.RAD_BYPASS, 0.5F);
         HbmLivingProps.incrementAsbestos(living, 10);

@@ -69,7 +69,8 @@ public class SpotlightBlock extends Block implements ISpotlight {
     private final Supplier<Block> on;
 
     public SpotlightBlock(Properties properties, int beamLength, LightType type, boolean isOn, Supplier<Block> off, Supplier<Block> on) {
-        super(isOn ? properties.lightLevel(s -> s.getValue(BROKEN) ? 0 : 15) : properties);
+        // Original: if(isOn) setLightLevel(1.0F) - gilt fuer den ganzen Block, auch kaputt (nur der Strahl fehlt dann)
+        super(isOn ? properties.lightLevel(s -> 15) : properties);
         this.beamLength = beamLength;
         this.type = type;
         this.isOn = isOn;
@@ -247,7 +248,7 @@ public class SpotlightBlock extends Block implements ISpotlight {
     }
 
     private void updateBeam(Level world, BlockPos pos, BlockState state) {
-        if (!isOn || state.getValue(BROKEN)) return;
+        if (!isOn) return;
         propagateBeam(world, pos, state.getValue(FACING), beamLength, META_YELLOW);
     }
 

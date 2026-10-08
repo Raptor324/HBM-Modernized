@@ -1,0 +1,5 @@
+{
+  "priority": 15,
+  "blocks": ["minecraft:ice", "minecraft:packed_ice", "minecraft:blue_ice"],
+  "hvl": { "gamma": 4.0, "neutron": 0.4, "beta": 0.4 }
+}

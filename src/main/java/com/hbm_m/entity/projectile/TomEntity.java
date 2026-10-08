@@ -2,7 +2,6 @@ package com.hbm_m.entity.projectile;
 
 import com.hbm_m.entity.ModEntities;
 import com.hbm_m.entity.logic.EntityExplosionChunkloading;
-import com.hbm_m.particle.explosions.nuclear.medium.MediumNuclearMushroomCloud;
 import com.hbm_m.sound.ModSounds;
 
 import net.minecraft.core.BlockPos;
@@ -20,7 +19,7 @@ import net.minecraft.world.level.Level;
  * Gerald/Horizons meteor. Port of legacy {@code com.hbm.entity.projectile.EntityTom}: falls at
  * a fixed speed from orbit height, chimes periodically, and on hitting solid ground (or falling
  * below Y=10) detonates via {@link com.hbm_m.entity.logic.TomBlastEntity} (the authentic
- * tektite-ring/lava crater) plus a mushroom cloud.
+ * tektite-ring/lava crater) plus the {@code EntityCloudTom} fire wall (500 ticks).
  */
 public class TomEntity extends EntityExplosionChunkloading {
 
@@ -49,35 +48,14 @@ public class TomEntity extends EntityExplosionChunkloading {
         }
 
         if (level().isClientSide) {
-            spawnGlowBall();
             return;
         }
 
-        boolean grounded = this.onGround()
-                || !level().getBlockState(BlockPos.containing(getX(), getY() - 0.1, getZ())).isAir()
+        // Original: Block an (int)-Position nicht Luft oder unter Y 10
+        boolean grounded = !level().getBlockState(new BlockPos((int) getX(), (int) getY(), (int) getZ())).isAir()
                 || getY() < 10;
         if (grounded) {
             detonate();
-        }
-    }
-
-    /**
-     * Port of legacy {@code TomPronter.prontTom()}'s glow: instead of one 3D flame model
-     * spun 20x around the bomb casing with additive blending, spawn a ring of blue glow
-     * particles rotating around the meteor each tick - same "swirling ball" silhouette,
-     * particle-based instead of a custom animated model.
-     */
-    private void spawnGlowBall() {
-        final int count = 10;
-        double baseAngle = (tickCount * 6.0D) % 360.0D;
-        for (int i = 0; i < count; i++) {
-            double angle = Math.toRadians(baseAngle + i * (360.0D / count));
-            double radius = 0.5D + (i % 3) * 0.15D;
-            double ox = Math.cos(angle) * radius;
-            double oz = Math.sin(angle) * radius;
-            double oy = (random.nextDouble() - 0.5D) * radius;
-            level().addParticle(com.hbm_m.particle.ModParticleTypes.TOM_GLOW.get(),
-                    getX() + ox, getY() + oy, getZ() + oz, 0.0D, 0.0D, 0.0D);
         }
     }
 
@@ -90,30 +68,12 @@ public class TomEntity extends EntityExplosionChunkloading {
         com.hbm_m.entity.logic.TomBlastEntity blast =
                 com.hbm_m.entity.logic.TomBlastEntity.create(server, getX(), getY(), getZ(), DESTRUCTION_RANGE);
         server.addFreshEntity(blast);
-        spawnMushroomCloud(server, getX(), getY(), getZ());
+
+        com.hbm_m.entity.effect.EntityCloudTom cloud = new com.hbm_m.entity.effect.EntityCloudTom(com.hbm_m.entity.ModEntities.CLOUD_TOM.get(), server, 500);
+        cloud.moveTo(getX(), getY(), getZ(), 0, 0);
+        server.addFreshEntity(cloud);
 
         this.discard();
-    }
-
-    private static void spawnMushroomCloud(ServerLevel level, double x, double y, double z) {
-        MinecraftServer server = level.getServer();
-        if (server == null) {
-            return;
-        }
-        MediumNuclearMushroomCloud.spawnBlackSphere(level, x, y, z, level.random);
-        server.tell(new TickTask(server.getTickCount() + 2, () ->
-                MediumNuclearMushroomCloud.spawnShockwaveRing(level, x, y, z, level.random)));
-        for (int i = 0; i < 10; i++) {
-            final int step = i;
-            server.tell(new TickTask(server.getTickCount() + 5 + i, () ->
-                    MediumNuclearMushroomCloud.spawnStemSegment(level, x, y + (step * 2.0), z, level.random)));
-        }
-        server.tell(new TickTask(server.getTickCount() + 8, () ->
-                MediumNuclearMushroomCloud.spawnMushroomBase(level, x, y, z, level.random)));
-        server.tell(new TickTask(server.getTickCount() + 18, () ->
-                MediumNuclearMushroomCloud.spawnMushroomCap(level, x, y, z, level.random)));
-        server.tell(new TickTask(server.getTickCount() + 22, () ->
-                MediumNuclearMushroomCloud.spawnCondensationRing(level, x, y + 15, z, level.random)));
     }
 
     @Override
@@ -143,10 +103,6 @@ public class TomEntity extends EntityExplosionChunkloading {
     protected void addAdditionalSaveData(CompoundTag tag) {
     }
 
-    @Override
-    public boolean fireImmune() {
-        return true;
-    }
 
     @Override
     public boolean hurt(DamageSource source, float amount) {

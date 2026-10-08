@@ -1,0 +1,5 @@
+{
+  "priority": 15,
+  "blocks": ["hbm_m:block_graphite*"],
+  "hvl": { "gamma": 1.5, "neutron": 1.5, "beta": 0.08 }
+}

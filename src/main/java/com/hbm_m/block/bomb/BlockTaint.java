@@ -140,6 +140,15 @@ public class BlockTaint extends Block {
                 && entity.getClass() == Creeper.class) {
             EntityCreeperTainted.convertFromCreeper((Creeper) entity);
         }
+
+        if (entity instanceof com.hbm_m.entity.mob.EntityTeslaCrab) {
+            com.hbm_m.entity.mob.EntityTaintCrab crab = com.hbm_m.entity.ModEntities.TAINT_CRAB.get().create(level);
+            if (crab != null && !level.isClientSide) {
+                crab.moveTo(entity.getX(), entity.getY(), entity.getZ(), entity.getYRot(), entity.getXRot());
+                entity.discard();
+                level.addFreshEntity(crab);
+            }
+        }
     }
 
     //? if < 1.21.1 {

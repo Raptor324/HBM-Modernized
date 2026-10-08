@@ -22,37 +22,39 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * Port of legacy {@code com.hbm.entity.missile.EntitySoyuz}: accelerates straight up,
- * damages/ignites anything caught underneath, and at altitude either "deploys" its
- * satellite payload (mode 0 - no orbital simulation exists in this port, see plan
- * notes on SoyuzLauncherBlockEntity) or spawns a {@link SoyuzCapsuleEntity} carrying
- * cargo down to the designated target (mode 1).
+ * 1:1 {@code EntitySoyuz}: steigt beschleunigt senkrecht auf (ohne Kollision), verbrennt alles im Abgasstrahl und
+ * liefert auf Hoehe 600 die Nutzlast aus: Satellitenmodus (0) bringt den Satelliten per
+ * {@link com.hbm_m.satellite.SatelliteManager#orbit} in die Umlaufbahn, Frachtmodus (1) schickt eine
+ * {@link SoyuzCapsuleEntity} mit der Fracht zum Ziel des Zielmarkierers.
  */
 public class SoyuzEntity extends Entity {
 
     private static final double DEPLOY_HEIGHT = 600.0D;
 
+    /** Original Datawatcher 8: Skin der Rakete (0-2). */
+    private static final net.minecraft.network.syncher.EntityDataAccessor<Integer> SKIN =
+            net.minecraft.network.syncher.SynchedEntityData.defineId(SoyuzEntity.class, net.minecraft.network.syncher.EntityDataSerializers.INT);
+
+    public void setSkin(int i) { this.entityData.set(SKIN, Math.max(0, i)); }
+    public int getSkin() { return this.entityData.get(SKIN); }
+
     public int mode;
     public int targetX;
     public int targetZ;
     private double acceleration = 0.0D;
-    private boolean firedOnce = false;
+    private boolean memed = false;
 
     private final NonNullList<ItemStack> payload = NonNullList.withSize(18, ItemStack.EMPTY);
 
     public SoyuzEntity(EntityType<? extends SoyuzEntity> type, Level level) {
         super(type, level);
         this.noCulling = true;
-        this.noPhysics = false;
+        this.noPhysics = true;
     }
 
     public void initLaunch(double x, double y, double z, int mode) {
         this.setPos(x, y, z);
         this.mode = mode;
-        // Small instant kick so the rocket is visibly already moving the moment the
-        // takeoff sound fires, instead of creeping up imperceptibly for the first
-        // second or two of the 0.00025/tick acceleration ramp below.
-        this.setDeltaMovement(0.0D, 0.02D, 0.0D);
     }
 
     public void setTarget(int x, int z) {
@@ -74,31 +76,40 @@ public class SoyuzEntity extends Entity {
             acceleration += 0.00025D;
             setDeltaMovement(getDeltaMovement().x, getDeltaMovement().y + acceleration, getDeltaMovement().z);
         }
-        move(net.minecraft.world.entity.MoverType.SELF, getDeltaMovement());
+
+        // Original setLocationAndAngles: fliegt ohne Kollision durch alles hindurch
+        Vec3 m = getDeltaMovement();
+        this.setPos(getX() + m.x, getY() + m.y, getZ() + m.z);
+        this.setYRot(0);
+        this.setXRot(0);
 
         if (!level().isClientSide) {
+
             AABB exhaustZone = new AABB(getX() - 5, getY() - 15, getZ() - 5, getX() + 5, getY(), getZ() + 5);
             List<Entity> caught = level().getEntities(this, exhaustZone);
+
             for (Entity e : caught) {
                 PlatformHooks.setSecondsOnFire(e, 15);
                 DamageSource exhaust = ModDamageSources.exhaust(level());
                 e.hurt(exhaust, 100.0F);
-                firedOnce = true;
 
-                // "Potato In Space": the original awards this to whoever stands in the plume,
-                // which is the joke - you are the potato.
                 if (e instanceof net.minecraft.world.entity.player.Player player) {
-                    com.hbm_m.advancement.ModAdvancements.grant(player,
-                            com.hbm_m.advancement.ModAdvancements.SOYUZ);
+                    if (!memed) {
+                        memed = true;
+                        level().playSound(null, getX(), getY(), getZ(), com.hbm_m.sound.HbmSoundsNT.get("hbm:alarm.soyuzed"), net.minecraft.sounds.SoundSource.NEUTRAL, 100, 1.0F);
+                    }
+
+                    com.hbm_m.advancement.ModAdvancements.grant(player, com.hbm_m.advancement.ModAdvancements.SOYUZ);
                 }
             }
-        } else {
+        }
+
+        if (level().isClientSide) {
             spawnExhaust(getX(), getY(), getZ());
             spawnExhaust(getX() + 2.75, getY(), getZ());
             spawnExhaust(getX() - 2.75, getY(), getZ());
             spawnExhaust(getX(), getY(), getZ() + 2.75);
             spawnExhaust(getX(), getY(), getZ() - 2.75);
-            spawnEngineFlames();
         }
 
         if (getY() > DEPLOY_HEIGHT) {
@@ -106,25 +117,17 @@ public class SoyuzEntity extends Entity {
         }
     }
 
+    /** Original: {@code effectNT} type exhaust, mode soyuz (Breite wie im Original rand * 0.25 - 0.5). */
     private void spawnExhaust(double x, double y, double z) {
-        if (!(level().isClientSide)) return;
-        level().addParticle(ModParticleTypes.SMOKE_COLUMN.get(), x, y, z, 0.0D, -0.05D, 0.0D);
-    }
-
-    /** Big yellow engine glare at the base of the rocket, for the whole ascent (until deployPayload). */
-    private void spawnEngineFlames() {
-        if (!(level() instanceof net.minecraft.client.multiplayer.ClientLevel clientLevel)) return;
-
-        Vec3 step = new Vec3(getX() - xOld, getY() - yOld, getZ() - zOld);
-        double baseY = getY();
-        final float scale = 3.5F;
-        double[][] offsets = {
-                {0.0, 0.0}, {2.75, 0.0}, {-2.75, 0.0}, {0.0, 2.75}, {0.0, -2.75}
-        };
-        for (double[] off : offsets) {
-            com.hbm_m.client.missile.track.MissileNozzleFlare.spawn(
-                    clientLevel, getX() + off[0], baseY, getZ() + off[1], 0.0F, 0.0F, step, scale);
-        }
+        CompoundTag data = new CompoundTag();
+        data.putString("type", "exhaust");
+        data.putString("mode", "soyuz");
+        data.putInt("count", 1);
+        data.putDouble("width", level().random.nextDouble() * 0.25 - 0.5);
+        data.putDouble("posX", x);
+        data.putDouble("posY", y);
+        data.putDouble("posZ", z);
+        com.hbm_m.particle.helper.ParticleEffectClient.effectNT(data);
     }
 
     private void deployPayload() {
@@ -157,9 +160,10 @@ public class SoyuzEntity extends Entity {
             SoyuzCapsuleEntity capsule = ModEntities.SOYUZ_CAPSULE.get().create(server);
             if (capsule != null) {
                 capsule.setPayload(payload);
+                capsule.soyuz = this.getSkin();
                 capsule.setPos(targetX + 0.5, DEPLOY_HEIGHT, targetZ + 0.5);
-                server.getChunkSource().addRegionTicket(net.minecraft.server.level.TicketType.FORCED,
-                        new net.minecraft.world.level.ChunkPos(targetX >> 4, targetZ >> 4), 2, net.minecraft.world.level.ChunkPos.ZERO);
+                // Original provider.loadChunk: Zielchunk einmal laden (kein dauerhaftes Ticket)
+                server.getChunk(targetX >> 4, targetZ >> 4);
                 server.addFreshEntity(capsule);
             }
         }
@@ -171,28 +175,28 @@ public class SoyuzEntity extends Entity {
 
     @Override
     protected void defineSynchedData() {
-        // No synced fields needed - mode/skin only matter server-side and for our own render pose.
+        this.entityData.define(SKIN, 0);
     }
     //?} else {
     /*@Override
     protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
 
-        // No synced fields needed - mode/skin only matter server-side and for our own render pose.
-    
+        builder.define(SKIN, 0);
     }
     *///?}
 
     @Override
     protected void readAdditionalSaveData(CompoundTag tag) {
         this.mode = tag.getInt("mode");
+        this.setSkin(tag.getInt("skin"));
         this.targetX = tag.getInt("targetX");
         this.targetZ = tag.getInt("targetZ");
         this.acceleration = tag.getDouble("acceleration");
 
-        ListTag list = tag.getList("payload", 10);
+        ListTag list = tag.getList("items", 10);
         for (int i = 0; i < list.size(); i++) {
             CompoundTag itemTag = list.getCompound(i);
-            int slot = itemTag.getInt("Slot");
+            int slot = itemTag.getByte("slot");
             if (slot >= 0 && slot < payload.size()) {
                 payload.set(slot, PlatformHooks.itemStackOf(itemTag, PlatformHooks.bestEffortProvider()));
             }
@@ -202,6 +206,7 @@ public class SoyuzEntity extends Entity {
     @Override
     protected void addAdditionalSaveData(CompoundTag tag) {
         tag.putInt("mode", mode);
+        tag.putInt("skin", getSkin());
         tag.putInt("targetX", targetX);
         tag.putInt("targetZ", targetZ);
         tag.putDouble("acceleration", acceleration);
@@ -211,23 +216,19 @@ public class SoyuzEntity extends Entity {
             ItemStack stack = payload.get(i);
             if (!stack.isEmpty()) {
                 CompoundTag itemTag = new CompoundTag();
-                itemTag.putInt("Slot", i);
+                itemTag.putByte("slot", (byte) i);
                 PlatformHooks.saveItemStack(stack, itemTag, PlatformHooks.bestEffortProvider());
                 list.add(itemTag);
             }
         }
-        tag.put("payload", list);
+        tag.put("items", list);
     }
 
     @Override
     public boolean shouldRenderAtSqrDistance(double distance) {
-        return distance < 500_000.0D * 500_000.0D;
+        return distance < 500000;
     }
 
-    @Override
-    public boolean fireImmune() {
-        return true;
-    }
 
     @Override
     public boolean hurt(DamageSource source, float amount) {

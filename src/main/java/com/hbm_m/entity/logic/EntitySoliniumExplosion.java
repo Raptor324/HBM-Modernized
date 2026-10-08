@@ -84,21 +84,12 @@ public class EntitySoliniumExplosion extends EntityExplosionChunkloading {
         }
     }
 
-    /** Линейная доза от 15000 (край) до 250000 (центр), в обход защиты костюма. */
+    /**
+     * Original {@code EntityNukeExplosionMK3} (extType 1): {@code ExplosionHurtUtil.doRadiation(.., 15000, 250000, range)}
+     * - Kontamination CREATIVE, d.h. Schutzausruestung mindert die Dosis (nicht RAD_BYPASS).
+     */
     private void doRadiation() {
-        double range = this.destructionRange;
-        var entities = level().getEntitiesOfClass(LivingEntity.class,
-                new AABB(getX(), getY(), getZ(), getX(), getY(), getZ()).inflate(range));
-        for (LivingEntity entity : entities) {
-            Vec3 vector = new Vec3(getX() - entity.getX(), getY() - entity.getY(), getZ() - entity.getZ());
-            double distance = vector.length();
-            if (distance > range) continue;
-            float rad = (float) (15000.0D + (250000.0D - 15000.0D) * (1.0D - distance / range));
-            ContaminationUtil.contaminate(entity,
-                    ContaminationUtil.HazardType.RADIATION,
-                    ContaminationUtil.ContaminationType.RAD_BYPASS,
-                    rad);
-        }
+        com.hbm_m.explosion.ExplosionHurtUtil.doRadiation(level(), getX(), getY(), getZ(), 15000, 250000, this.destructionRange);
     }
 
     @Override

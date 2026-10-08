@@ -31,6 +31,14 @@ public final class ParticleAcceleratorRecipeGenerator {
         pa(writer, "strange",    ModItems.PARTICLE_MUON.get(),       ModItems.PARTICLE_DARK.get(),        12_500, ModItems.PARTICLE_STRANGE.get());
         pa(writer, "digamma",    ModItems.PARTICLE_SPARKTICLE.get(), ModItems.PARTICLE_HIGGS.get(),       70_000, ModItems.PARTICLE_DIGAMMA.get());
 
+        // Original: item_expensive GOLD_DUST + Schrabidat-Barren -> DEGENERATE_MATTER
+        ParticleAcceleratorRecipeBuilder
+                .paRecipe(Ingredient.of(OreDictIngredients.item("hbm_m:item_expensive_gold_dust")),
+                          OreDictIngredients.ore("oredict/ingot/schrabidate"),
+                          10_000,
+                          OreDictIngredients.stack("hbm_m:item_expensive_degenerate_matter", 1))
+                .save(writer, "particle_accelerator/degenerate_matter");
+
         // Original: liefert zusaetzlich Staub.
         ParticleAcceleratorRecipeBuilder
                 .paRecipe(Ingredient.of(ModItems.PARTICLE_STRANGE.get()),

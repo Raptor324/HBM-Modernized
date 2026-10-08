@@ -100,6 +100,7 @@ public class MachineReactorControlBlock extends BaseEntityBlock {
     //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        if (!level.isClientSide() && player.isShiftKeyDown()) return InteractionResult.PASS; // Original: geschlichen auf dem Server false
         if (!level.isClientSide() && level.getBlockEntity(pos) instanceof MenuProvider menuProvider) {
             MenuRegistry.openExtendedMenu((ServerPlayer) player, menuProvider, buf -> buf.writeBlockPos(pos));
         }
@@ -108,10 +109,24 @@ public class MachineReactorControlBlock extends BaseEntityBlock {
     //?} else {
     /*@Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+        if (!level.isClientSide() && player.isShiftKeyDown()) return InteractionResult.PASS; // Original: geschlichen auf dem Server false
         if (!level.isClientSide() && level.getBlockEntity(pos) instanceof MenuProvider menuProvider) {
             MenuRegistry.openExtendedMenu((ServerPlayer) player, menuProvider, buf -> buf.writeBlockPos(pos));
         }
         return InteractionResult.sidedSuccess(level.isClientSide());
     }
     *///?}
+
+    /** Original {@code getComparatorInputOverride}: {@code ceil(heat * 15 / 50000)}. */
+    @Override
+    public boolean hasAnalogOutputSignal(net.minecraft.world.level.block.state.BlockState state) {
+        return true;
+    }
+
+    @Override
+    public int getAnalogOutputSignal(net.minecraft.world.level.block.state.BlockState state, net.minecraft.world.level.Level level, net.minecraft.core.BlockPos pos) {
+        net.minecraft.world.level.block.entity.BlockEntity te = level.getBlockEntity(pos);
+        if (!(te instanceof com.hbm_m.blockentity.machines.MachineReactorControlBlockEntity control)) return 0;
+        return (int) Math.ceil((double) control.getHeat() * 15D / 50000D);
+    }
 }

@@ -35,6 +35,12 @@ public class BlockGasFlammable extends BlockGasBase {
                 || state.is(Blocks.SOUL_CAMPFIRE);
     }
 
+    /** Original {@code isFlammable}: immer true (Feuer darf am Gas haften). */
+    @Override
+    public boolean isFlammable(BlockState state, net.minecraft.world.level.BlockGetter level, BlockPos pos, Direction direction) {
+        return true;
+    }
+
     /** Original: {@code combust} - der Gasblock wird zu Feuer. */
     protected void combust(ServerLevel level, BlockPos pos) {
         level.setBlock(pos, Blocks.FIRE.defaultBlockState(), 3);

@@ -39,7 +39,7 @@ public class MiningDrillToggleC2SPacket implements C2SPacket {
             BlockEntity be = level.getBlockEntity(msg.pos);
 
             if (be instanceof MachineMiningDrillBlockEntity drill) {
-                drill.receiveToggle(msg.toggle);
+                { net.minecraft.nbt.CompoundTag t = new net.minecraft.nbt.CompoundTag(); t.putBoolean(msg.toggle, true); drill.receiveControl(t); }
             }
         });
     }

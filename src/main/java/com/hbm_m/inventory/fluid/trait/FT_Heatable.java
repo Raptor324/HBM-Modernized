@@ -9,7 +9,6 @@ import java.util.Map.Entry;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonObject;
 import com.google.gson.stream.JsonWriter;
-import com.hbm_m.util.EnergyFormatter;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -46,17 +45,13 @@ public class FT_Heatable extends FluidTrait {
     public void addInfoHidden(List<Component> info) {
         HeatingStep first = getFirstStep();
         if (first == null) return;
-        info.add(Component.translatable("fluid.hbm_m.trait.heatable.thermal_capacity",
-                        EnergyFormatter.formatTooltipNumber(first.heatReq),
-                        String.valueOf(first.amountReq))
-                .withStyle(ChatFormatting.RED));
+        info.add(Component.translatable("hbmfluid.trait.thermalCapacity").append(": " + first.heatReq + " ")
+                .append(Component.translatable("hbmfluid.trait.perTU")).append(" " + first.amountReq + "mB").withStyle(ChatFormatting.RED));
         for (HeatingType type : HeatingType.values()) {
             double eff = getEfficiency(type);
             if (eff > 0) {
-                info.add(Component.literal("[" + type.displayName + "] ")
-                        .withStyle(ChatFormatting.YELLOW)
-                        .append(Component.translatable("fluid.hbm_m.trait.efficiency_pct", (int) (eff * 100D))
-                                .withStyle(ChatFormatting.AQUA)));
+                info.add(Component.literal("[").append(type.getLocalizedName()).append("] ").withStyle(ChatFormatting.YELLOW)
+                        .append(Component.translatable("hbmfluid.trait.efficiency").append(": " + ((int) (eff * 100D)) + "%").withStyle(ChatFormatting.AQUA)));
             }
         }
     }
@@ -76,16 +71,21 @@ public class FT_Heatable extends FluidTrait {
     }
 
     public enum HeatingType {
-        BOILER("Boilable"),
-        HEATEXCHANGER("Heatable"),
-        PWR("PWR Coolant"),
-        ICF("ICF Coolant"),
-        PA("Particle Accelerator Coolant");
+        BOILER("boilable"),
+        HEATEXCHANGER("heatable"),
+        PWR("coolantPWR"),
+        ICF("coolantICF"),
+        PA("coolantPA");
 
         public final String displayName;
 
         HeatingType(String displayName) {
             this.displayName = displayName;
+        }
+
+        /** 1:1 getLocalizedName(): hbmfluid.trait.<name> */
+        public Component getLocalizedName() {
+            return Component.translatable("hbmfluid.trait." + this.displayName);
         }
     }
 

@@ -58,9 +58,7 @@ public final class RedRoomGenerator {
     private record Entry(Supplier<Item> item, int min, int max, int weight) {}
 
     /**
-     * {@code POOL_RED_PEDESTAL} из ItemPoolsRedRoom (1.7.10).
-     * Не портировано (предметов ещё нет в Modernized): flask_infusion,
-     * gun_hangman, gun_mas36, weapon_mod_special (NICKEL, DOUBLOONS).
+     * {@code POOL_RED_PEDESTAL} из ItemPoolsRedRoom (1.7.10), 1:1.
      */
     private static final List<Entry> RED_PEDESTAL = List.of(
             // вес 10
@@ -82,10 +80,15 @@ public final class RedRoomGenerator {
             new Entry(ModItems.STARMETAL_SWORD::get, 1, 1, 5),
             new Entry(ModItems.GEM_ALEXANDRITE::get, 1, 1, 5),
             new Entry(ModItems.CRACKPIPE::get, 1, 1, 5),
+            new Entry(ModItems.FLASK_INFUSION::get, 1, 1, 5),
             new Entry(() -> ModBlocks.BOXCAR.get().asItem(), 1, 1, 5),
             new Entry(ModItems.BOOK_OF_::get, 1, 1, 5),
             // вес 1
-            new Entry(ModItems.ITEM_SECRET_FOLLY::get, 1, 1, 1));
+            new Entry(() -> com.hbm_m.item.weapon.sedna.WeaponItems.gun("gun_hangman"), 1, 1, 1),
+            new Entry(() -> com.hbm_m.item.weapon.sedna.WeaponItems.gun("gun_mas36"), 1, 1, 1),
+            new Entry(ModItems.ITEM_SECRET_FOLLY::get, 1, 1, 1),
+            new Entry(() -> com.hbm_m.item.weapon.sedna.WeaponItems.WEAPON_MOD_SPECIAL.get(com.hbm_m.item.weapon.sedna.factory.GunFactory.EnumModSpecial.NICKEL).get(), 1, 1, 1),
+            new Entry(() -> com.hbm_m.item.weapon.sedna.WeaponItems.WEAPON_MOD_SPECIAL.get(com.hbm_m.item.weapon.sedna.factory.GunFactory.EnumModSpecial.DOUBLOONS).get(), 1, 1, 1));
 
     /** {@code POOL_BLACK_SLAB} — глиняная табличка на центральном постаменте. */
     private static final List<Entry> BLACK_SLAB = List.of(
@@ -96,7 +99,7 @@ public final class RedRoomGenerator {
             new Entry(ModItems.ITEM_SECRET_SELENIUM_STEEL::get, 4, 4, 10),
             new Entry(ModItems.ITEM_SECRET_CONTROLLER::get, 1, 1, 10),
             new Entry(ModItems.ITEM_SECRET_CANISTER::get, 1, 1, 10),
-            new Entry(ModItems.BLUEPRINT_FOLDER::get, 1, 1, 1));
+            new Entry(ModItems.BLUEPRINT_FOLDER_SECRET::get, 1, 1, 1)); // Original: blueprint_folder Meta 2 (geheim)
 
     /**
      * Красная комната — порт {@code BlockKeyhole.generateRoom}.
@@ -324,19 +327,24 @@ public final class RedRoomGenerator {
     /**
      * Куча брони в центре красной комнаты (1/20).
      *
-     * ЗАГЛУШКА: в 1.7.10 сюда кладётся комплект NCRPA (шанс 1/5) или
-     * Trenchmaster — брони в Modernized ещё нет, временно лежит кожаный
-     * комплект. Заменить на предметы брони NCRPA / Trenchmaster при их
-     * портировании.
+     * 1:1 BlockKeyhole: комплект NCRPA (шанс 1/5) или Trenchmaster, все четыре части в (0, 0, 0);
+     * DecoLootRenderer рисует их как надетую на невидимую фигуру броню.
      */
     private static void spawnArmorLoot(ServerLevel level, BlockPos pos, RandomSource rand) {
         level.setBlock(pos, ModBlocks.DECO_LOOT.get().defaultBlockState(), 3);
         if (level.getBlockEntity(pos) instanceof DecoLootBlockEntity loot) {
-            // ЗАГЛУШКА брони (см. выше) — 4 предмета, как addItem(..., 0, 0, 0) в оригинале
-            loot.addItem(new ItemStack(Items.LEATHER_HELMET), 0, 0, 0);
-            loot.addItem(new ItemStack(Items.LEATHER_CHESTPLATE), 0, 0, 0);
-            loot.addItem(new ItemStack(Items.LEATHER_LEGGINGS), 0, 0, 0);
-            loot.addItem(new ItemStack(Items.LEATHER_BOOTS), 0, 0, 0);
+            loot.clearItems();
+            if (rand.nextInt(5) == 0) {
+                loot.addItem(new ItemStack(com.hbm_m.item.ModItems.NCRPA_HELMET.get()), 0, 0, 0);
+                loot.addItem(new ItemStack(com.hbm_m.item.ModItems.NCRPA_PLATE.get()), 0, 0, 0);
+                loot.addItem(new ItemStack(com.hbm_m.item.ModItems.NCRPA_LEGS.get()), 0, 0, 0);
+                loot.addItem(new ItemStack(com.hbm_m.item.ModItems.NCRPA_BOOTS.get()), 0, 0, 0);
+            } else {
+                loot.addItem(new ItemStack(com.hbm_m.item.ModItems.TRENCHMASTER_HELMET.get()), 0, 0, 0);
+                loot.addItem(new ItemStack(com.hbm_m.item.ModItems.TRENCHMASTER_PLATE.get()), 0, 0, 0);
+                loot.addItem(new ItemStack(com.hbm_m.item.ModItems.TRENCHMASTER_LEGS.get()), 0, 0, 0);
+                loot.addItem(new ItemStack(com.hbm_m.item.ModItems.TRENCHMASTER_BOOTS.get()), 0, 0, 0);
+            }
         }
     }
 

@@ -1,119 +1,131 @@
 package com.hbm_m.inventory.gui;
-import com.hbm_m.client.GuiCompat;
+
+import java.util.ArrayList;
+import java.util.List;
 
 import com.hbm_m.blockentity.machines.MachineArcFurnaceBlockEntity;
+import com.hbm_m.client.GuiCompat;
+import com.hbm_m.inventory.material.Mats;
+import com.hbm_m.inventory.material.Mats.MaterialStack;
 import com.hbm_m.inventory.menu.MachineArcFurnaceMenu;
 import com.hbm_m.lib.RefStrings;
+import com.hbm_m.network.NBTControlPacket;
+import com.mojang.blaze3d.platform.GlStateManager;
 import com.mojang.blaze3d.systems.RenderSystem;
+
+import net.minecraft.ChatFormatting;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.client.resources.sounds.SimpleSoundInstance;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.entity.player.Inventory;
 
 /**
- * Eigenes, kompaktes Einzelblock-GUI-Layout (das Original {@code GUIMachineArcFurnaceLarge} ist
- * fuer den Multiblock und dient nur als grobe visuelle Inspiration - siehe Klassenkommentar in
- * {@link MachineArcFurnaceBlockEntity}). Zwei generische Fluid-Ausgabetanks nebeneinander rechts
- * im Panel, Fortschrittsbalken analog zum Combination Oven.
+ * 1:1 {@code GUIMachineArcFurnaceLarge}: Modusschalter (151,17), Betriebslampe (7,17), Strom (8,36) und Fortschritt
+ * (17,36) als Saeulen, Schmelzsaeule (152,36) mit gestapelten Materialfarben.
  */
 public class GUIMachineArcFurnace extends GuiInfoScreen<MachineArcFurnaceMenu> {
 
-    private static final ResourceLocation TEXTURE =
-            //? if fabric && < 1.21.1 {
-            /*new ResourceLocation(RefStrings.MODID, "textures/gui/processing/gui_arc_furnace.png");
-            *///?} else {
-                        ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/processing/gui_arc_furnace.png");
-            //?}
+    private static final ResourceLocation texture = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/processing/gui_arc_furnace.png");
+    private final MachineArcFurnaceBlockEntity arc;
 
-    // Zwei generische Fluid-Ausgabetanks, nebeneinander rechts im Panel (eigenes Layout).
-    private static final int TANK1_X = 116;
-    private static final int TANK1_Y = 18;
-    private static final int TANK2_X = 136;
-    private static final int TANK2_Y = 18;
-    private static final int TANK_WIDTH = 16;
-    private static final int TANK_HEIGHT = 52;
-
-    // Fortschrittsbalken - Texturregion analog Combination Oven (u=176,v=0, max 38x5).
-    private static final int PROGRESS_X = 45;
-    private static final int PROGRESS_Y = 37;
-    private static final int PROGRESS_MAX_WIDTH = 38;
-    private static final int PROGRESS_HEIGHT = 5;
-    private static final int PROGRESS_TEX_U = 176;
-    private static final int PROGRESS_TEX_V = 0;
-
-    public GUIMachineArcFurnace(MachineArcFurnaceMenu menu, Inventory inventory, Component title) {
-        super(menu, inventory, title);
+    public GUIMachineArcFurnace(MachineArcFurnaceMenu menu, Inventory invPlayer, Component title) {
+        super(menu, invPlayer, title);
+        this.arc = menu.getBlockEntity();
 
         this.imageWidth = 176;
-        this.imageHeight = 186;
-        this.inventoryLabelY = 94;
+        this.imageHeight = 256;
     }
 
     @Override
-    protected void init() {
-        super.init();
-        this.titleLabelX = (this.imageWidth - this.font.width(this.title)) / 2;
+    public void render(GuiGraphics g, int x, int y, float interp) {
+        GuiCompat.renderBackground(this, g, x, y, interp);
+        super.render(g, x, y, interp);
+
+        if (arc != null) {
+            drawStackInfo(g, arc.liquids, x, y, 152, 36);
+            this.drawElectricityInfo(g, x, y, 8, 36, 7, 70, arc.getPower(), MachineArcFurnaceBlockEntity.maxPower);
+        }
+
+        this.renderTooltip(g, x, y);
     }
 
     @Override
-    protected void renderBg(GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
+    public boolean mouseClicked(double x, double y, int k) {
+        if (arc != null && isPointInRect(151, 17, 18, 18, (int) x, (int) y)) {
+            Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+            CompoundTag data = new CompoundTag();
+            data.putBoolean("liquid", true);
+            NBTControlPacket.sendToServer(arc.getBlockPos(), data);
+            return true;
+        }
+        return super.mouseClicked(x, y, k);
+    }
+
+    @Override
+    protected void renderLabels(GuiGraphics g, int mouseX, int mouseY) {
+        g.drawString(this.font, this.title, this.imageWidth / 2 - this.font.width(this.title) / 2, 6, 0xffffff, false);
+        g.drawString(this.font, this.playerInventoryTitle, 8, this.imageHeight - 96 + 2, 4210752, false);
+    }
+
+    @Override
+    protected void renderBg(GuiGraphics g, float interp, int x, int y) {
         RenderSystem.setShader(GameRenderer::getPositionTexShader);
-        RenderSystem.setShaderColor(1f, 1f, 1f, 1f);
-        RenderSystem.setShaderTexture(0, TEXTURE);
+        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
+        g.blit(texture, leftPos, topPos, 0, 0, imageWidth, imageHeight);
+        if (arc == null) return;
 
-        int x = (width - imageWidth) / 2;
-        int y = (height - imageHeight) / 2;
+        if (arc.liquidMode) g.blit(texture, leftPos + 151, topPos + 17, 190, 18, 18, 18);
+        if (arc.isProgressing) g.blit(texture, leftPos + 7, topPos + 17, 190, 0, 18, 18);
 
-        guiGraphics.blit(TEXTURE, x, y, 0, 0, imageWidth, imageHeight);
+        int p = (int) (arc.getPower() * 70 / MachineArcFurnaceBlockEntity.maxPower);
+        g.blit(texture, leftPos + 8, topPos + 106 - p, 176, 70 - p, 7, p);
 
-        renderProgress(guiGraphics, x, y);
-        renderTanks(guiGraphics, x, y);
+        int o = (int) (arc.progress * 70);
+        g.blit(texture, leftPos + 17, topPos + 106 - o, 183, 70 - o, 7, o);
+
+        drawStack(g, arc.liquids, MachineArcFurnaceBlockEntity.maxLiquid, 152, 106);
     }
 
-    private void renderTanks(GuiGraphics guiGraphics, int x, int y) {
-        MachineArcFurnaceBlockEntity be = menu.getBlockEntity();
-        if (be == null) return; // тайл может отсутствовать в реплее Flashback
-        be.getTank1().renderTank(guiGraphics, x + TANK1_X, y + TANK1_Y, TANK_WIDTH, TANK_HEIGHT);
-        be.getTank2().renderTank(guiGraphics, x + TANK2_X, y + TANK2_Y, TANK_WIDTH, TANK_HEIGHT);
+    protected void drawStackInfo(GuiGraphics g, List<MaterialStack> stack, int mouseX, int mouseY, int x, int y) {
+        List<Component> list = new ArrayList<>();
+        if (stack.isEmpty()) list.add(Component.literal("Empty").withStyle(ChatFormatting.RED));
+        for (MaterialStack sta : stack) list.add(sta.material.getLocalizedName().copy().append(": " + Mats.formatAmount(sta.amount, Screen.hasShiftDown())).withStyle(ChatFormatting.YELLOW));
+        this.drawCustomInfoStat(g, mouseX, mouseY, x, y, 16, 70, mouseX, mouseY, list.toArray(new Component[0]));
     }
 
-    private void renderProgress(GuiGraphics guiGraphics, int x, int y) {
-        MachineArcFurnaceBlockEntity be = menu.getBlockEntity();
-        int maxProgress = be.getMaxProgress();
-        if (maxProgress <= 0) return;
-        int width = be.getProgressScaled(PROGRESS_MAX_WIDTH);
-        if (width <= 0) return;
+    protected void drawStack(GuiGraphics g, List<MaterialStack> stack, int capacity, int x, int y) {
 
-        RenderSystem.setShaderTexture(0, TEXTURE);
-        guiGraphics.blit(TEXTURE, x + PROGRESS_X, y + PROGRESS_Y, PROGRESS_TEX_U, PROGRESS_TEX_V, width, PROGRESS_HEIGHT);
-    }
+        if (stack.isEmpty()) return;
 
-    @Override
-    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float delta) {
-        GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, delta);
-        super.render(guiGraphics, mouseX, mouseY, delta);
-        renderTooltip(guiGraphics, mouseX, mouseY);
-        renderCustomTooltips(guiGraphics, mouseX, mouseY);
-    }
+        int lastHeight = 0;
+        int lastQuant = 0;
 
-    @Override
-    protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
-        guiGraphics.drawString(this.font, this.title, this.titleLabelX, this.titleLabelY, 4210752, false);
-        guiGraphics.drawString(this.font, this.playerInventoryTitle, this.inventoryLabelX, this.inventoryLabelY, 4210752, false);
-    }
+        for (MaterialStack sta : stack) {
 
-    private void renderCustomTooltips(GuiGraphics guiGraphics, int mouseX, int mouseY) {
-        MachineArcFurnaceBlockEntity be = menu.getBlockEntity();
-        if (be == null) return; // тайл может отсутствовать в реплее Flashback
-        int x = (width - imageWidth) / 2;
-        int y = (height - imageHeight) / 2;
+            int targetHeight = (lastQuant + sta.amount) * 70 / capacity;
 
-        if (isPointInRect(TANK1_X, TANK1_Y, TANK_WIDTH, TANK_HEIGHT, mouseX, mouseY)) {
-            be.getTank1().renderTankInfo(guiGraphics, this.font, mouseX, mouseY, x + TANK1_X, y + TANK1_Y, TANK_WIDTH, TANK_HEIGHT);
+            if (lastHeight == targetHeight) continue; //skip draw calls that would be 0 pixels high
+
+            int hex = sta.material.moltenColor;
+            RenderSystem.setShaderColor((hex >> 16 & 255) / 255F, (hex >> 8 & 255) / 255F, (hex & 255) / 255F, 1F);
+            g.blit(texture, leftPos + x, topPos + y - targetHeight, 208, 70 - targetHeight, 16, targetHeight - lastHeight);
+            RenderSystem.enableBlend();
+            RenderSystem.blendFunc(GlStateManager.SourceFactor.SRC_ALPHA, GlStateManager.DestFactor.ONE);
+            RenderSystem.setShaderColor(1F, 1F, 1F, 0.3F);
+            g.blit(texture, leftPos + x, topPos + y - targetHeight, 208, 70 - targetHeight, 16, targetHeight - lastHeight);
+            RenderSystem.defaultBlendFunc();
+            RenderSystem.disableBlend();
+
+            lastQuant += sta.amount;
+            lastHeight = targetHeight;
         }
-        if (isPointInRect(TANK2_X, TANK2_Y, TANK_WIDTH, TANK_HEIGHT, mouseX, mouseY)) {
-            be.getTank2().renderTankInfo(guiGraphics, this.font, mouseX, mouseY, x + TANK2_X, y + TANK2_Y, TANK_WIDTH, TANK_HEIGHT);
-        }
+
+        RenderSystem.setShaderColor(1F, 1F, 1F, 1F);
     }
 }

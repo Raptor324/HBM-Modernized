@@ -180,18 +180,44 @@ public class MachineAdvancedAssemblerMenu extends AbstractContainerMenu implemen
 
     @Override
     public boolean stillValid(@NotNull Player pPlayer) {
-        if (blockEntity == null) {
-            return false; // тайл может отсутствовать на клиенте (реплей Flashback)
-        }
-        return stillValid(ContainerLevelAccess.create(level, blockEntity.getBlockPos()),
-                pPlayer, ModBlocks.ADVANCED_ASSEMBLY_MACHINE.get());
+        // w16b: Original isUseableByPlayer (TileEntityMachineBase) = 128 vom Kern, dazu Huelle der Maschine (MultiblockMenuReach)
+        return MultiblockMenuReach.stillValidCore(blockEntity, pPlayer, 128.0D);
     }
 
-    // Логика Shift-клика (без изменений)
+    /** 1:1 {@code ContainerMachineAssemblyMachine.transferStackInSlot}. */
     @NotNull
     @Override
     public ItemStack quickMoveStack(@NotNull Player playerIn, int pIndex) {
-        return ItemStack.EMPTY;
+        ItemStack slotOriginal = ItemStack.EMPTY;
+        Slot slot = this.slots.get(pIndex);
+        if (slot == null || !slot.hasItem()) return slotOriginal;
+
+        ItemStack slotStack = slot.getItem();
+        slotOriginal = slotStack.copy();
+        final int teSlots = 17;
+
+        if (pIndex <= teSlots - 1) {
+            if (!this.moveItemStackTo(slotStack, teSlots, this.slots.size(), true)) return ItemStack.EMPTY;
+        } else {
+            if (ItemEnergyAccess.getHbmProvider(slotOriginal).isPresent() || ItemEnergyAccess.getHbmReceiver(slotOriginal).isPresent()
+                    || slotOriginal.getItem() instanceof com.hbm_m.item.fekal_electric.ItemCreativeBattery) {
+                if (!this.moveItemStackTo(slotStack, 0, 1, false)) return ItemStack.EMPTY;
+            } else if (slotOriginal.getItem() instanceof com.hbm_m.item.industrial.ItemBlueprints) {
+                if (!this.moveItemStackTo(slotStack, 1, 2, false)) return ItemStack.EMPTY;
+            } else if (slotOriginal.getItem() instanceof com.hbm_m.item.industrial.ItemMachineUpgrade) {
+                if (!this.moveItemStackTo(slotStack, 2, 4, false)) return ItemStack.EMPTY;
+            } else {
+                if (!this.moveItemStackTo(slotStack, 4, 16, false)) return ItemStack.EMPTY;
+            }
+        }
+
+        if (slotStack.isEmpty()) {
+            slot.set(ItemStack.EMPTY);
+        } else {
+            slot.setChanged();
+        }
+        slot.onTake(playerIn, slotStack);
+        return slotOriginal;
     }
 
     private void addPlayerInventory(Inventory playerInventory) {

@@ -58,11 +58,22 @@ public class MachineStirlingBlockEntity extends BaseMachineBlockEntity {
 
     private int heat = 0;
     private int overspeedTicks = 0;
+    /** Original {@code warnCooldown}. */
+    private int warnCooldown = 0;
     private boolean hasCog = true;
+    /** Waerme des letzten Ticks fuer den Client (Original serialisiert {@code heat} vor dem Nullsetzen). */
+    private int syncHeat = 0;
+
+    /** Original {@code powerBuffer}: synchronisiert, treibt auf dem Client die Zahnraddrehung (RenderStirling). */
+    private long powerBuffer = 0;
+    /** Original {@code spin/lastSpin} - nur Client. */
+    public float spin;
+    public float lastSpin;
 
     public MachineStirlingBlockEntity(BlockPos pos, BlockState state) {
+        // Abgabe unbegrenzt: Original-tryProvide liefert den ganzen Puffer (kreativ ohne Obergrenze)
         super(ModBlockEntities.STIRLING_BE.get(), pos, state, 0,
-                capacityFor(state), 0L, capacityFor(state));
+                capacityFor(state), 0L, Long.MAX_VALUE);
 
         if (state.is(ModBlocks.STIRLING_CREATIVE.get())) {
             this.isCreative = true;
@@ -81,26 +92,81 @@ public class MachineStirlingBlockEntity extends BaseMachineBlockEntity {
     }
 
     public static void tick(Level level, BlockPos pos, BlockState state, MachineStirlingBlockEntity be) {
-        if (level.isClientSide() || !(level instanceof ServerLevel serverLevel)) return;
+        if (level.isClientSide()) {
+            be.clientTick();
+            return;
+        }
+        if (!(level instanceof ServerLevel serverLevel)) return;
         be.serverTick(serverLevel, pos);
     }
 
+    /** Original updateEntity (isRemote-Zweig): momentum = powerBuffer * 50 / maxHeat, kreativ max. 45. */
+    private void clientTick() {
+        float momentum = powerBuffer * 50F / ((float) renderMaxHeat());
+        if (isCreative) momentum = Math.min(momentum, 45F);
+
+        this.lastSpin = this.spin;
+        this.spin += momentum;
+
+        if (this.spin >= 360F) {
+            this.spin -= 360F;
+            this.lastSpin -= 360F;
+        }
+    }
+
+    /** Original {@code maxHeat()}: 300 fuer den normalen Motor, sonst 1500 (auch kreativ). */
+    public int renderMaxHeat() {
+        return getBlockState().is(ModBlocks.STIRLING.get()) ? 300 : 1500;
+    }
+
+    /**
+     * 1:1 Original {@code updateEntity}: der Motor speichert nichts - {@code getPower() == getMaxPower() == powerBuffer},
+     * der Puffer wird jeden Tick aus der Waerme dieses Ticks neu gesetzt ({@code heat * efficiency}), was das Netz
+     * nicht abnimmt, verfaellt. Die Waerme selbst wird am Tickende auf 0 gesetzt.
+     */
     private void serverTick(ServerLevel level, BlockPos pos) {
         ensureNetworkInitialized();
 
-        pullOrDecayHeat(level, pos);
-
         if (hasCog) {
-            long gain = (long) (heat * (isCreative ? 1.0D : EFFICIENCY));
-            if (gain > 0) {
-                setEnergyStored(Math.min(getMaxEnergyStored(), getEnergyStored() + gain));
-            }
+            this.powerBuffer = 0;
+            pullOrDecayHeat(level, pos);
+            this.powerBuffer = (long) (heat * (isCreative ? 1.0D : EFFICIENCY));
+
+            if (warnCooldown > 0) warnCooldown--;
+
+            handleOverspeed(level, pos);
+        } else {
+            this.overspeedTicks = 0;
+            this.warnCooldown = 0;
         }
 
-        handleOverspeed(level, pos);
-
+        // Original networkPackNT vor dem Nullsetzen: der Client sieht die Waerme dieses Ticks
+        this.syncHeat = this.heat;
         setChanged();
         sendUpdateToClient();
+
+        if (hasCog) {
+            // Port-Energiemodell: Speicher == Puffer dieses Ticks
+            setEnergyCapacity(Math.max(0L, powerBuffer));
+            setEnergyStored(powerBuffer);
+            for (net.minecraft.core.Direction d : net.minecraft.core.Direction.Plane.HORIZONTAL) {
+                // Original getConPos: je 2 Bloecke vom Kern in alle vier Himmelsrichtungen
+                BlockPos con = pos.relative(d, 2);
+                this.tryProvide(level, con.getX(), con.getY(), con.getZ(), d);
+            }
+        } else {
+            if (this.powerBuffer > 0) this.powerBuffer--;
+            setEnergyCapacity(Math.max(0L, powerBuffer));
+            setEnergyStored(powerBuffer);
+        }
+
+        this.heat = 0;
+    }
+
+    /** Original: nur mit Zahnrad wird an die Anschluesse geliefert. */
+    @Override
+    public long getProvideSpeed() {
+        return hasCog ? powerBuffer : 0L;
     }
 
     private void pullOrDecayHeat(Level level, BlockPos pos) {
@@ -116,13 +182,14 @@ public class MachineStirlingBlockEntity extends BaseMachineBlockEntity {
         heat = Math.max(heat - Math.max(heat / 1000, 1), 0);
     }
 
+    /** Original: ab 60 Ticks Ueberdrehzahl Warnton (alle 100 Ticks), ab 300 fliegt das Zahnrad heraus. */
     private void handleOverspeed(ServerLevel level, BlockPos pos) {
-        if (isCreative || !hasCog) return;
-
-        if (heat > maxHeat) {
+        if (heat > maxHeat && !isCreative) {
             overspeedTicks++;
-            if (overspeedTicks == WARNING_TICKS) {
-                level.playSound(null, pos, SoundEvents.TNT_PRIMED, SoundSource.BLOCKS, 1.0F, 0.7F);
+            if (overspeedTicks > WARNING_TICKS && warnCooldown == 0) {
+                warnCooldown = 100;
+                level.playSound(null, pos.getX() + 0.5, pos.getY() + 1, pos.getZ() + 0.5,
+                        com.hbm_m.sound.HbmSoundsNT.get("hbm:block.warnOverspeed"), SoundSource.BLOCKS, 2.0F, 1.0F);
             }
             if (overspeedTicks > OVERSPEED_LIMIT) {
                 explode(level, pos);
@@ -133,13 +200,14 @@ public class MachineStirlingBlockEntity extends BaseMachineBlockEntity {
     }
 
     private void explode(ServerLevel level, BlockPos pos) {
+        // Original: newExplosion(..., 5F, false, false) - ohne Feuer und ohne Blockschaden
         level.explode(null, pos.getX() + 0.5, pos.getY() + 1, pos.getZ() + 0.5,
-                5.0F, Level.ExplosionInteraction.BLOCK);
+                5.0F, Level.ExplosionInteraction.NONE);
 
         // 1:1: das Zahnrad fliegt seitlich heraus - je heisser, desto hoeher.
         net.minecraft.core.Direction facing =
-                getBlockState().hasProperty(com.hbm_m.block.machines.MachineStirlingBlock.FACING)
-                        ? getBlockState().getValue(com.hbm_m.block.machines.MachineStirlingBlock.FACING)
+                getBlockState().hasProperty(com.hbm_m.block.machines.DummyableMachineBlock.FACING)
+                        ? getBlockState().getValue(com.hbm_m.block.machines.DummyableMachineBlock.FACING)
                         : net.minecraft.core.Direction.NORTH;
         net.minecraft.core.Direction sideways = facing.getCounterClockWise();
 
@@ -152,14 +220,12 @@ public class MachineStirlingBlockEntity extends BaseMachineBlockEntity {
         level.addFreshEntity(cog);
 
         hasCog = false;
-        heat = 0;
-        overspeedTicks = 0;
-        setEnergyStored(0);
     }
 
     /** Rechtsklick mit passendem Zahnrad repariert die Maschine (1:1 aus dem Original). */
     public boolean tryRepair(Player player, ItemStack held) {
-        if (hasCog || held.isEmpty() || held.getItem() != gearFor(getGeatMeta()).getItem()) return false;
+        ItemStack gear = gearFor(getGeatMeta());
+        if (hasCog || held.isEmpty() || gear.isEmpty() || held.getItem() != gear.getItem()) return false;
         held.shrink(1);
         hasCog = true;
         if (level != null) {
@@ -177,9 +243,13 @@ public class MachineStirlingBlockEntity extends BaseMachineBlockEntity {
         return state.is(ModBlocks.STIRLING.get()) ? 0 : state.is(ModBlocks.STIRLING_CREATIVE.get()) ? 2 : 1;
     }
 
-    /** Das Zahnrad zur Bauart ({@code new ItemStack(gear_large, 1, meta)}). */
+    /**
+     * Das Zahnrad zur Bauart ({@code new ItemStack(gear_large, 1, meta)}). Meta 2 (kreativ) gibt es im Original
+     * als Gegenstand nicht (ItemGear zeigt nur 0 und 1) - der kreative Motor ist also nicht nachruestbar.
+     */
     public static ItemStack gearFor(int meta) {
         if (meta == 1) return new ItemStack(com.hbm_m.item.PartTabMetaItems.get("gear_large_steel").get());
+        if (meta == 2) return ItemStack.EMPTY;
         return new ItemStack(ModItems.GEAR_LARGE.get());
     }
 
@@ -187,8 +257,19 @@ public class MachineStirlingBlockEntity extends BaseMachineBlockEntity {
         return hasCog;
     }
 
+    /** Original {@code MachineStirling.onBlockPlacedBy}: Meta-1-Item ohne Zahnrad. */
+    public void setHasCog(boolean hasCog) {
+        this.hasCog = hasCog;
+        setChanged();
+    }
+
     public int getHeat() {
         return heat;
+    }
+
+    /** Original {@code powerBuffer} (Blick-Overlay). */
+    public long getPowerBuffer() {
+        return powerBuffer;
     }
 
     public int getMaxHeat() {
@@ -198,17 +279,36 @@ public class MachineStirlingBlockEntity extends BaseMachineBlockEntity {
     @Override
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.writeNbtData(tag, registries);
-        tag.putInt("heat", heat);
+        tag.putInt("heat", syncHeat);
         tag.putInt("overspeed_ticks", overspeedTicks);
         tag.putBoolean("has_cog", hasCog);
+        tag.putLong("power_buffer", powerBuffer);
     }
 
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.readNbtData(tag, registries);
-        heat = tag.getInt("heat");
         overspeedTicks = tag.getInt("overspeed_ticks");
         hasCog = !tag.contains("has_cog") || tag.getBoolean("has_cog");
+        powerBuffer = tag.getLong("power_buffer");
+    }
+
+    @Override
+    protected void applyClientUpdate(CompoundTag tag) {
+        super.applyClientUpdate(tag);
+        this.heat = tag.getInt("heat");
+    }
+
+    private net.minecraft.world.phys.AABB bb = null;
+
+    /** Original {@code getRenderBoundingBox}: x-1..x+2, y..y+2, z-1..z+2. */
+    //? if forge {
+    @Override
+    //?}
+    public net.minecraft.world.phys.AABB getRenderBoundingBox() {
+        if (bb == null) bb = new net.minecraft.world.phys.AABB(worldPosition.getX() - 1, worldPosition.getY(), worldPosition.getZ() - 1,
+                worldPosition.getX() + 2, worldPosition.getY() + 2, worldPosition.getZ() + 2);
+        return bb;
     }
 
     @Override

@@ -72,7 +72,7 @@ public class GUIMachineFractionTower extends GuiInfoScreen<MachineFractionTowerM
                     tower.getEnergyStored(), tower.getMaxEnergyStored());
 
             drawCustomInfoStat(guiGraphics, mouseX, mouseY,
-                    this.leftPos + 78, this.topPos + 67, 8, 8,
+                    78, 67, 8, 8,
                     this.leftPos + 78, this.topPos + 67,
                     Component.literal("Progress:"),
                     Component.literal("   " + tower.getProgress() + " / " + tower.getMaxProgress()));

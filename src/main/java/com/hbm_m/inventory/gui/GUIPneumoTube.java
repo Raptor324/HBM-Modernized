@@ -171,4 +171,12 @@ public class GUIPneumoTube extends AbstractContainerScreen<PneumoTubeMenu> {
         int localY = mouseY - this.topPos;
         return localX >= x && localX < x + w && localY >= y && localY < y + h;
     }
+
+    @Override
+    protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
+        // Original drawGuiContainerForegroundLayer
+        String name = this.title.getString();
+        guiGraphics.drawString(this.font, name, 88 - this.font.width(name) / 2, 5, 4210752, false);
+        guiGraphics.drawString(this.font, this.playerInventoryTitle, 8, 91, 4210752, false);
+    }
 }

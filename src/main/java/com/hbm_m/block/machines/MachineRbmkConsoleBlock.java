@@ -166,6 +166,9 @@ public class MachineRbmkConsoleBlock extends BaseEntityBlock implements IMultibl
                 return InteractionResult.SUCCESS;
             }
 
+            // Original RBMKConsole.onBlockActivated: Bedienen ohne Schleichen markiert fuer die FBI-Razzia
+            if (!player.isShiftKeyDown() && player instanceof ServerPlayer sp) com.hbm_m.handler.BossSpawnHandler.markFBI(sp);
+
             // 1:1 RBMKConsole.onBlockActivated: ein Klick oben auf das Buch, das auf dem Pult liegt, gibt das
             // RBMK-Handbuch (book_guide Typ RBMK), falls man es noch nicht hat.
             if (hit.getDirection() == net.minecraft.core.Direction.UP) {
@@ -225,7 +228,7 @@ public class MachineRbmkConsoleBlock extends BaseEntityBlock implements IMultibl
 
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        return structureHelper.generateShapeFromParts(state.getValue(FACING));
+        return structureHelper.getControllerCellShape(state.getValue(FACING)); // w16b: nur die Kernzelle; Umriss der ganzen Maschine: MultiblockOutlineForge
     }
 
     @Override

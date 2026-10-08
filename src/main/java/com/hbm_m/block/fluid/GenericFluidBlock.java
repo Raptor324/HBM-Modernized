@@ -1,7 +1,10 @@
 package com.hbm_m.block.fluid;
 
+import java.util.List;
 import java.util.function.BiFunction;
 import java.util.function.Supplier;
+
+import com.hbm_m.advancement.ModAdvancements;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.particles.ParticleTypes;
@@ -10,6 +13,8 @@ import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.item.ItemEntity;
+import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.FlowingFluid;
@@ -18,8 +23,8 @@ import net.minecraft.world.phys.Vec3;
 /**
  * 1:1-Port von {@code GenericFluidBlock} (hier: Schwefelsaeure): Gegenstaende bleiben stehen,
  * zischen und nehmen alle 20 Ticks 10 % des Schadens, Lebewesen werden im Fall gebremst und
- * bekommen den vollen Schaden. Die Errungenschaft fuer den aufgeloesten Schleimball
- * ({@code achSulfuric}) gibt es im Port noch nicht.
+ * bekommen den vollen Schaden. Ein aufgeloester Schleimball gibt allen Spielern im Umkreis von
+ * 10 Bloecken {@code achSulfuric}.
  */
 public class GenericFluidBlock extends HbmFluidBlock {
 
@@ -44,6 +49,11 @@ public class GenericFluidBlock extends HbmFluidBlock {
             entity.setDeltaMovement(Vec3.ZERO);
             if (entity.tickCount % 20 == 0 && !level.isClientSide) {
                 entity.hurt(damageSource.apply(level, entity), damage * 0.1F);
+
+                if (!entity.isAlive() && ((ItemEntity) entity).getItem().is(Items.SLIME_BALL)) {
+                    List<Player> players = level.getEntitiesOfClass(Player.class, entity.getBoundingBox().inflate(10, 10, 10));
+                    for (Player player : players) ModAdvancements.grant(player, ModAdvancements.SULFURIC);
+                }
             }
             if (entity.tickCount % 5 == 0) {
                 level.addParticle(ParticleTypes.CLOUD, entity.getX(), entity.getY(), entity.getZ(), 0.0, 0.0, 0.0);

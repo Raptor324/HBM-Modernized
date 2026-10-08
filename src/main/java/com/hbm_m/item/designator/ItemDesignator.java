@@ -57,7 +57,7 @@ public class ItemDesignator extends Item implements IDesignatorItem, ITooltipPro
         PlatformHooks.putInt(stack, "zCoord", pos.getZ());
 
         if (level.isClientSide()) {
-            context.getPlayer().displayClientMessage(Component.translatable("message.hbm_m.designator.position_set"), true);
+            context.getPlayer().displayClientMessage(Component.translatable("message.hbm_m.designator.position_set"), false);
         }
         level.playSound(context.getPlayer(), context.getPlayer().blockPosition(),
                 ModSounds.TOOL_TECH_BLEEP.get(), SoundSource.PLAYERS, 1.0F, 1.0F);

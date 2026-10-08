@@ -3,10 +3,17 @@ package com.hbm_m.block.machines.anvils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import com.hbm_m.blockentity.machines.AnvilBlockEntity;
+import com.hbm_m.inventory.menu.AnvilMenu;
 
 import dev.architectury.registry.menu.MenuRegistry;
+import java.util.List;
+
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.SimpleMenuProvider;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
@@ -18,12 +25,8 @@ import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.EntityBlock;
 import net.minecraft.world.level.block.FallingBlock;
 import net.minecraft.world.level.block.RenderShape;
-import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraft.world.level.block.entity.BlockEntityTicker;
-import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.block.state.StateDefinition;
 import net.minecraft.world.level.block.state.properties.BlockStateProperties;
@@ -33,7 +36,7 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
-public class AnvilBlock extends FallingBlock implements EntityBlock {
+public class AnvilBlock extends FallingBlock {
 
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
     private static final VoxelShape SHAPE_X = Shapes.box(4 / 16.0D, 0, 0, 12 / 16.0D, 12 / 16.0D, 1);
@@ -49,19 +52,6 @@ public class AnvilBlock extends FallingBlock implements EntityBlock {
 
     public AnvilTier getTier() {
         return tier;
-    }
-
-    @Nullable
-    @Override
-    public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
-        return new AnvilBlockEntity(pos, state);
-    }
-
-    @Nullable
-    @Override
-    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
-        // AnvilBlockEntity не требует тикера
-        return null;
     }
 
     @Override
@@ -99,31 +89,44 @@ public class AnvilBlock extends FallingBlock implements EntityBlock {
         builder.add(FACING);
     }
 
-    @Override
-    public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
-        if (!state.is(newState.getBlock())) {
-            if (level.getBlockEntity(pos) instanceof AnvilBlockEntity be) {
-                be.drops();
-            }
+    /** {@code NTMAnvil.onBlockActivated}: ohne Schleichen oeffnet sich das Amboss-Fenster der Stufe dieses Blocks. */
+    private InteractionResult openAnvil(Level level, BlockPos pos, Player player) {
+        if (level.isClientSide()) {
+            return InteractionResult.SUCCESS;
+        } else if (!player.isShiftKeyDown()) {
+            MenuRegistry.openExtendedMenu((ServerPlayer) player,
+                    new SimpleMenuProvider((id, inv, p) -> new AnvilMenu(id, inv, pos, tier),
+                            Component.translatable("container.hbm_m.anvil", tier.getLegacyId())),
+                    buf -> {
+                        buf.writeBlockPos(pos);
+                        buf.writeVarInt(tier.ordinal());
+                    });
+            return InteractionResult.SUCCESS;
         }
-        super.onRemove(state, level, pos, newState, isMoving);
+        return InteractionResult.PASS;
     }
 
     //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
-        if (!level.isClientSide() && level.getBlockEntity(pos) instanceof AnvilBlockEntity be) {
-            MenuRegistry.openExtendedMenu((ServerPlayer) player, be, buf -> buf.writeBlockPos(pos));
-        }
-        return InteractionResult.sidedSuccess(level.isClientSide());
+        return openAnvil(level, pos, player);
     }
     //?} else {
     /*@Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
-        if (!level.isClientSide() && level.getBlockEntity(pos) instanceof AnvilBlockEntity be) {
-            MenuRegistry.openExtendedMenu((ServerPlayer) player, be, buf -> buf.writeBlockPos(pos));
-        }
-        return InteractionResult.sidedSuccess(level.isClientSide());
+        return openAnvil(level, pos, player);
+    }
+    *///?}
+
+    //? if < 1.21.1 {
+    @Override
+    public void appendHoverText(ItemStack stack, @Nullable BlockGetter level, List<Component> tooltip, TooltipFlag flag) {
+        tooltip.add(Component.literal("Tier " + tier.getLegacyId() + " Anvil").withStyle(ChatFormatting.GOLD));
+    }
+    //?} else {
+    /*@Override
+    public void appendHoverText(ItemStack stack, net.minecraft.world.item.Item.TooltipContext level, List<Component> tooltip, TooltipFlag flag) {
+        tooltip.add(Component.literal("Tier " + tier.getLegacyId() + " Anvil").withStyle(ChatFormatting.GOLD));
     }
     *///?}
 

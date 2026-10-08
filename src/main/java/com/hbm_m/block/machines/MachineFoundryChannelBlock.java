@@ -79,18 +79,45 @@ public class MachineFoundryChannelBlock extends BaseEntityBlock {
 
     private BlockState connectionState(LevelAccessor level, BlockPos pos) {
         return defaultBlockState()
-                .setValue(NORTH, canConnect(level, pos.relative(Direction.NORTH)))
-                .setValue(EAST,  canConnect(level, pos.relative(Direction.EAST)))
-                .setValue(SOUTH, canConnect(level, pos.relative(Direction.SOUTH)))
-                .setValue(WEST,  canConnect(level, pos.relative(Direction.WEST)));
+                .setValue(NORTH, canConnectTo(level, pos.relative(Direction.NORTH), Direction.NORTH))
+                .setValue(EAST,  canConnectTo(level, pos.relative(Direction.EAST), Direction.EAST))
+                .setValue(SOUTH, canConnectTo(level, pos.relative(Direction.SOUTH), Direction.SOUTH))
+                .setValue(WEST,  canConnectTo(level, pos.relative(Direction.WEST), Direction.WEST));
     }
 
+    /** Original {@code canConnectTo}: Rinnen, flache Formen und Ausguesse/Abstiche, die von dieser Rinne weg zeigen. */
     private boolean canConnect(LevelAccessor level, BlockPos nb) {
-        Block b = level.getBlockState(nb).getBlock();
-        return b instanceof MachineFoundryChannelBlock
-                || b instanceof MachineFoundryOutletBlock
-                || b == ModBlocks.FOUNDRY_BASIN.get()
-                || b == ModBlocks.CRUCIBLE.get();
+        return canConnectTo(level, nb, null);
+    }
+
+    public static boolean canConnectTo(LevelAccessor level, BlockPos nb, @Nullable Direction dirFromChannel) {
+        BlockState st = level.getBlockState(nb);
+        Block b = st.getBlock();
+        if (b instanceof MachineFoundryOutletBlock) {
+            if (dirFromChannel == null) return true;
+            return st.getValue(MachineFoundryOutletBlock.FACING) == dirFromChannel;
+        }
+        return b instanceof MachineFoundryChannelBlock || b == ModBlocks.FOUNDRY_MOLD.get();
+    }
+
+    //? if < 1.21.1 {
+    @Override
+    public net.minecraft.world.InteractionResult use(BlockState state, Level level, BlockPos pos, net.minecraft.world.entity.player.Player player, net.minecraft.world.InteractionHand hand, net.minecraft.world.phys.BlockHitResult hit) {
+        if (level.isClientSide) return net.minecraft.world.InteractionResult.SUCCESS;
+        if (FoundryBlockUtil.isShovel(player.getItemInHand(hand)) && level.getBlockEntity(pos) instanceof MachineFoundryChannelBlockEntity cast) {
+            FoundryBlockUtil.shovelOut(level, pos, player, cast, 0.5);
+            return net.minecraft.world.InteractionResult.CONSUME;
+        }
+        return net.minecraft.world.InteractionResult.PASS;
+    }
+    //?}
+
+    @Override
+    public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean moving) {
+        if (!state.is(newState.getBlock()) && !level.isClientSide && level.getBlockEntity(pos) instanceof MachineFoundryChannelBlockEntity cast) {
+            FoundryBlockUtil.dropContents(level, pos, cast, 0.5);
+        }
+        super.onRemove(state, level, pos, newState, moving);
     }
 
     private VoxelShape buildShape(BlockState s) {

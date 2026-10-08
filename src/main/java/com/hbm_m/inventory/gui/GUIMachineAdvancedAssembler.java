@@ -77,7 +77,9 @@ public class GUIMachineAdvancedAssembler extends AbstractContainerScreen<Machine
             int maxProgress = this.menu.getMaxProgress(); // <-- РР—РњР•РќР•РќРћ
             if (maxProgress > 0) {
                 int progressWidth = (int) Math.ceil(70.0 * progress / maxProgress);
-                guiGraphics.blit(TEXTURE, this.leftPos + 62, this.topPos + 126, 176, 61, progressWidth, 16);
+                // Original: v = 61 + (restrictedMode ? 16 : 0) - blaue Leiste, wenn das Rezept per Funk (RoR) gesetzt wurde
+                boolean restrictedMode = this.menu.getBlockEntity() != null && this.menu.getBlockEntity().isRestrictedMode();
+                guiGraphics.blit(TEXTURE, this.leftPos + 62, this.topPos + 126, 176, 61 + (restrictedMode ? 16 : 0), progressWidth, 16);
             }
         }
 
@@ -92,7 +94,8 @@ public class GUIMachineAdvancedAssembler extends AbstractContainerScreen<Machine
         }
 
         boolean hasRecipe = recipe != null;
-        boolean canProcess = hasRecipe && energyStored >= 100;
+        // Original: rechte LED, wenn power >= recipe.power
+        boolean canProcess = hasRecipe && energyStored >= recipe.getPowerConsumption();
         
         // РћС‚СЂРёСЃРѕРІРєР° СЃРІРµС‚РѕРґРёРѕРґРѕРІ (LEDs) - РёСЃРїРѕР»СЊР·СѓРµРј isCrafting() РёР· menu
         if (this.menu.isCrafting()) { // <-- РџР РђР’РР›Р¬РќРћ: РёСЃРїРѕР»СЊР·СѓРµС‚СЃСЏ menu
@@ -109,8 +112,16 @@ public class GUIMachineAdvancedAssembler extends AbstractContainerScreen<Machine
             }
         }
 
-        // РћС‚СЂРёСЃРѕРІРєР° "РїСЂРёР·СЂР°С‡РЅС‹С…" РїСЂРµРґРјРµС‚РѕРІ РІ РїСѓСЃС‚С‹С… СЃР»РѕС‚Р°С…
-        renderGhostItems(guiGraphics);
+        // Original: recipe.inputItem[i] als Geist im i-ten Eingangsslot (extractForCyclingDisplay(20))
+        if (recipe != null) {
+            renderGhostItems(guiGraphics, recipe);
+        }
+
+        // Original: inputTank (8,99 / 52x16) und outputTank (80,99 / 52x16), waagerecht gefuellt
+        if (this.menu.getBlockEntity() != null) {
+            this.menu.getBlockEntity().getInputTank().renderTank(guiGraphics, this.leftPos + 8, this.topPos + 99, 52, 16, 1);
+            this.menu.getBlockEntity().getOutputTank().renderTank(guiGraphics, this.leftPos + 80, this.topPos + 99, 52, 16, 1);
+        }
         
         // TODO: РћС‚СЂРёСЃРѕРІРєР° Р¶РёРґРєРѕСЃС‚РµР№ РІ С‚Р°РЅРєР°С…
         // РљРѕРіРґР° Сѓ BlockEntity Р±СѓРґСѓС‚ РјРµС‚РѕРґС‹ getInputTank() Рё getOutputTank(), СЂР°СЃРєРѕРјРјРµРЅС‚РёСЂСѓР№С‚Рµ:
@@ -132,7 +143,23 @@ public class GUIMachineAdvancedAssembler extends AbstractContainerScreen<Machine
      * Р“СЂСѓРїРїРёСЂСѓРµС‚ РѕРґРёРЅР°РєРѕРІС‹Рµ РёРЅРіСЂРµРґРёРµРЅС‚С‹ Рё РїРѕРєР°Р·С‹РІР°РµС‚ СЃСѓРјРјР°СЂРЅРѕРµ РєРѕР»РёС‡РµСЃС‚РІРѕ.
      */
 
-    private void renderGhostItems(GuiGraphics guiGraphics) {
+    private void renderGhostItems(GuiGraphics guiGraphics, AssemblerRecipe recipe) {
+        var inputs = recipe.getInputDisplaySlots();
+        for (int i = 0; i < inputs.size() && i < 12; i++) {
+            net.minecraft.world.inventory.Slot slot = this.menu.slots.get(4 + i);
+            if (slot.hasItem()) continue;
+            var in = inputs.get(i);
+            ItemStack[] variants = in.ingredient().getItems();
+            if (variants.length == 0) continue;
+            ItemStack ghost = variants[(int) ((System.currentTimeMillis() / 1000) % variants.length)].copy();
+            ghost.setCount(in.count());
+            GhostItemRenderUtil.renderTranslucent(guiGraphics, ghost, this.leftPos + slot.x, this.topPos + slot.y, 0.5F);
+            if (ghost.getCount() > 1) guiGraphics.renderItemDecorations(this.font, ghost, this.leftPos + slot.x, this.topPos + slot.y);
+        }
+    }
+
+    @SuppressWarnings("unused")
+    private void renderGhostItemsGrouped(GuiGraphics guiGraphics) {
         // РРЎРџРћР›Р¬Р—РЈР•Рњ РјРµС‚РѕРґ РёР· BlockEntity, РєРѕС‚РѕСЂС‹Р№ РїРѕР»СѓС‡Р°РµС‚ РґР°РЅРЅС‹Рµ РёР· РјРѕРґСѓР»СЏ
         if (this.menu.getBlockEntity() == null) return; // тайл может отсутствовать в реплее Flashback
         NonNullList<ItemStack> ghostItems = this.menu.getBlockEntity().getGhostItems();
@@ -269,7 +296,11 @@ public class GUIMachineAdvancedAssembler extends AbstractContainerScreen<Machine
             }
         }
         
-        // TODO: РџРѕРґСЃРєР°Р·РєРё РґР»СЏ С‚Р°РЅРєРѕРІ - Р’РћРЎРЎРўРђРќРћР’Р›Р•РќРћ РёР· РѕСЂРёРіРёРЅР°Р»Р°
+        if (this.menu.getBlockEntity() != null) {
+            this.menu.getBlockEntity().getInputTank().renderTankInfo(guiGraphics, this.font, pMouseX, pMouseY, this.leftPos + 8, this.topPos + 99, 52, 16);
+            this.menu.getBlockEntity().getOutputTank().renderTankInfo(guiGraphics, this.font, pMouseX, pMouseY, this.leftPos + 80, this.topPos + 99, 52, 16);
+        }
+        // (alter Entwurf:)
         /*
         if (isMouseOver(pMouseX, pMouseY, 8, 99, 52, 16)) {
             FluidTank inputTank = this.menu.getBlockEntity().getInputTank();

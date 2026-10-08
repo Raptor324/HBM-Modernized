@@ -9,7 +9,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 
-/** {@code GUILeadBox}, {@code GUIPlasticBag}, {@code GUICasingBag} 1:1 (Texturen, Groessen, Beschriftungen). */
+/** {@code GUILeadBox}, {@code GUIPlasticBag}, {@code GUICasingBag}, {@code GUIAmmoBag} 1:1 (Texturen, Groessen, Beschriftungen). */
 public class GUIHeldItem extends AbstractContainerScreen<HeldItemMenu> {
 
     private final ResourceLocation texture;
@@ -23,6 +23,7 @@ public class GUIHeldItem extends AbstractContainerScreen<HeldItemMenu> {
             case PLASTIC_BAG -> "textures/gui/storage/gui_plastic_bag.png";
             case CASING_BAG -> "textures/gui/gui_casing_bag.png";
             case TOOLBOX -> "textures/gui/gui_toolbox.png";
+            case AMMO_BAG -> "textures/gui/gui_ammo_bag.png";
         });
     }
 
@@ -47,6 +48,12 @@ public class GUIHeldItem extends AbstractContainerScreen<HeldItemMenu> {
                 Component name = menu.box.target.hasCustomHoverName() ? menu.box.target.getHoverName() : Component.translatable("container.toolBox");
                 g.drawString(font, name, this.imageWidth / 2 - font.width(name) / 2, 37, 4210752, false);
                 g.drawString(font, inv, 8, this.imageHeight - 96 + 2, 4210752, false);
+            }
+            case AMMO_BAG -> {
+                // GUIAmmoBag
+                Component name = menu.box.target.hasCustomHoverName() ? menu.box.target.getHoverName() : Component.translatable("container.ammoBag");
+                g.drawString(font, name, this.imageWidth / 2 - font.width(name) / 2, 6, 0xffffff, false);
+                g.drawString(font, inv, 8, this.imageHeight - 98, 4210752, false);
             }
             case CASING_BAG -> {
                 Component name = menu.box.target.hasCustomHoverName() ? menu.box.target.getHoverName() : Component.translatable("container.casingBag");

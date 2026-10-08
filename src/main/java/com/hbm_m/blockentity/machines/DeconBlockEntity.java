@@ -3,6 +3,7 @@ package com.hbm_m.blockentity.machines;
 import java.util.List;
 
 import com.hbm_m.blockentity.ModBlockEntities;
+import com.hbm_m.effect.ModEffects;
 import com.hbm_m.extprop.HbmLivingProps;
 import com.hbm_m.particle.ModParticleTypes;
 
@@ -31,6 +32,8 @@ public class DeconBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity {
 
             for (LivingEntity entity : entities) {
                 HbmLivingProps.incrementRadiation(entity, -0.5F);
+                entity.removeEffect(ModEffects.RADIATION.get());
+                // TODO(port): HbmLivingProps.getCont(e).clear() - Kontaminationsliste gibt es im Port noch nicht.
             }
         } else {
             RandomSource random = level.getRandom();

@@ -253,12 +253,12 @@ public class ItemICFPellet extends Item implements ITooltipProvider {
                 Component.translatable("icffuel.hbm_m." + getType(stack, false).getName()))
                 .withStyle(ChatFormatting.YELLOW));
 
-        tooltip.add(Component.translatable("tooltip.hbm_m.icf_pellet.heat", getFusingDifficulty(stack))
+        tooltip.add(Component.translatable("tooltip.hbm_m.icf_pellet.heat", com.hbm_m.util.BobMathUtil.getShortNumber(getFusingDifficulty(stack)))
                 .withStyle(ChatFormatting.YELLOW));
 
         double mult = getType(stack, true).reactionMult * getType(stack, false).reactionMult;
         tooltip.add(Component.translatable("tooltip.hbm_m.icf_pellet.reactivity",
-                String.format(Locale.US, "%.2f", mult))
+                String.valueOf((int) (mult * 100) / 100D))
                 .withStyle(ChatFormatting.YELLOW));
 
         if (isMuon(stack)) {

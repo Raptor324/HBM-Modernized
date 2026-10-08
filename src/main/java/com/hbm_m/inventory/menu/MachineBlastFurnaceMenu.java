@@ -150,8 +150,8 @@ public class MachineBlastFurnaceMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        return stillValid(ContainerLevelAccess.create(level, blockEntity.getBlockPos()),
-                player, ModBlocks.MACHINE_BLAST_FURNACE.get());
+        // w16b: Original isUseableByPlayer (TileEntityMachineBase) = 128 vom Kern, dazu Huelle der Maschine (MultiblockMenuReach)
+        return MultiblockMenuReach.stillValidCore(blockEntity, player, 128.0D);
     }
 
     private void addPlayerInventory(Inventory playerInventory) {

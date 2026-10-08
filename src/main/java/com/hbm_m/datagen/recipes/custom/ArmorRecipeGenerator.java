@@ -24,7 +24,6 @@ import net.minecraft.world.item.crafting.Ingredient;
  * {@code CraftingManager}. OreDict-Abbildung: ANY_RUBBER = (Bio-)Gummi, ANY_PLASTIC = Polymer/Bakelit,
  * KEY_ANYPANE = Glasscheiben, KEY_RED/KEY_BLACK = Farbstoffe; circuit BASIC = integrated_circuit,
  * ADVANCED = advanced_circuit, QUANTUM = quantum_circuit, ANALOG = analog_circuit, CHIP = microchip.
- * Offen: {@code bj_plate_jetpack} braucht {@code mp_thruster_10_xenon} und den Xenon-Tank (Raketenteile).
  */
 public final class ArmorRecipeGenerator {
 
@@ -109,6 +108,9 @@ public final class ArmorRecipeGenerator {
         g.shapeless(ModItems.AJRO_BOOTS, 1, ModItems.AJR_BOOTS, keyRed, keyBlack);
         g.shaped(ModItems.BJ_HELMET, 1, p("SBS", " C ", " I "), 'S', Items.STRING, 'B', Items.BLACK_WOOL, 'C', advanced, 'I', star);
         g.shaped(ModItems.BJ_PLATE, 1, p("N N", "MSM", "NCN"), 'N', ModItems.PLATE_ARMOR_LUNAR, 'M', ModItems.MOTOR_DESH, 'S', ModItems.STARMETAL_PLATE, 'C', advanced);
+        g.shaped(ModItems.BJ_PLATE_JETPACK, 1, p("NFN", "TPT", "ICI"), 'N', ModItems.PLATE_ARMOR_LUNAR, 'F', ModItems.FINS_QUAD_TITANIUM,
+                'T', net.minecraftforge.common.crafting.StrictNBTIngredient.of(com.hbm_m.item.liquids.ItemFluidTank.make(ModItems.FLUID_TANK_FULL.get(), com.hbm_m.inventory.fluid.ModFluids.XENON.getSource(), 1)),
+                'P', ModItems.BJ_PLATE, 'I', com.hbm_m.item.missile.MissilePartItems.get("mp_thruster_10_xenon").get(), 'C', m(ModMaterials.PHOSPHORUS, MaterialShape.CRYSTAL));
         g.shaped(ModItems.BJ_LEGS, 1, p("MBM", "NSN", "N N"), 'N', ModItems.PLATE_ARMOR_LUNAR, 'M', ModItems.MOTOR_DESH, 'S', ModItems.STARMETAL_LEGS, 'B', ModBlocks.BLOCK_STARMETAL);
         g.shaped(ModItems.BJ_BOOTS, 1, p("N N", "BSB"), 'N', ModItems.PLATE_ARMOR_LUNAR, 'S', ModItems.STARMETAL_BOOTS, 'B', ModBlocks.BLOCK_STARMETAL);
         g.shaped(ModItems.HEV_HELMET, 1, p("PPC", "PBP", "IFI"), 'P', ModItems.PLATE_ARMOR_HEV, 'C', basic, 'B', ModItems.TITANIUM_HELMET, 'I', anyPlastic, 'F', ModItems.GAS_MASK_FILTER);

@@ -1,0 +1,185 @@
+package com.hbm_m.datagen.recipes.custom;
+//? if forge {
+import java.util.Set;
+import java.util.function.Consumer;
+
+import net.minecraft.data.recipes.FinishedRecipe;
+
+/**
+ * Port-Werkbankrezepte, die vom Original abwichen und durch {@link OrigCraftingRecipeGenerator} ersetzt sind.
+ * AUTOMATISCH ERZEUGT durch {@code rc/craftgen.py} (Vergleich {@code recipecmp}/{@code craft.py}).
+ */
+public final class SupersededRecipes {
+
+    private SupersededRecipes() {}
+
+    public static final Set<String> IDS = Set.of(
+            "hbm_m:armor/ajro_boots_40",
+            "hbm_m:armor/ajro_helmet_37",
+            "hbm_m:armor/ajro_legs_39",
+            "hbm_m:armor/ajro_plate_38",
+            "hbm_m:armor/bj_plate_jetpack_43",
+            "hbm_m:armor/jetpack_fly_82",
+            "hbm_m:consumables/can_empty_29",
+            "hbm_m:consumables/heart_container_110",
+            "hbm_m:consumables/ink_113",
+            "hbm_m:consumables/mucho_mango_35",
+            "hbm_m:consumables/night_vision_126",
+            "hbm_m:crafting/ammo_fireext",
+            "hbm_m:crafting/ams_core_eyeofharmony",
+            "hbm_m:crafting/attachment_mask",
+            "hbm_m:crafting/attachment_mask_mono",
+            "hbm_m:crafting/barbed_wire",
+            "hbm_m:crafting/barbed_wire_acid",
+            "hbm_m:crafting/barbed_wire_fire",
+            "hbm_m:crafting/barbed_wire_poison",
+            "hbm_m:crafting/battery_pack_capacitor_copper",
+            "hbm_m:crafting/bdcl",
+            "hbm_m:crafting/billet_americium_fuel_compress",
+            "hbm_m:crafting/billet_plutonium_stub",
+            "hbm_m:crafting/blades_titanium",
+            "hbm_m:crafting/bolt_steel",
+            "hbm_m:crafting/book_guide_rbmk",
+            "hbm_m:crafting/book_guide_starter",
+            "hbm_m:crafting/brick_concrete",
+            "hbm_m:crafting/cable_diode",
+            "hbm_m:crafting/canister_empty",
+            "hbm_m:crafting/capacitor",
+            "hbm_m:crafting/capacitor_tantalum",
+            "hbm_m:crafting/coltan_tool",
+            "hbm_m:crafting/concrete_rebar",
+            "hbm_m:crafting/controller_chassis",
+            "hbm_m:crafting/defuser",
+            "hbm_m:crafting/designator",
+            "hbm_m:crafting/det_miner",
+            "hbm_m:crafting/door_bunker",
+            "hbm_m:crafting/door_office",
+            "hbm_m:crafting/dosimeter",
+            "hbm_m:crafting/fireworks",
+            "hbm_m:crafting/fluid_barrel_empty",
+            "hbm_m:crafting/fluid_tank_empty",
+            "hbm_m:crafting/gas_mask_m65",
+            "hbm_m:crafting/gas_mask_mono",
+            "hbm_m:crafting/geiger2",
+            "hbm_m:crafting/geiger3",
+            "hbm_m:crafting/inf_water",
+            "hbm_m:crafting/lamp_tritium_blue_off",
+            "hbm_m:crafting/lamp_tritium_green_off",
+            "hbm_m:crafting/laser_crystal_co2",
+            "hbm_m:crafting/limestone_cement",
+            "hbm_m:crafting/machine/barrel_antimatter",
+            "hbm_m:crafting/machine/barrel_plastic",
+            "hbm_m:crafting/machine/cargo_elevator",
+            "hbm_m:crafting/machine/crane_boxer",
+            "hbm_m:crafting/machine/drone_crate_provider",
+            "hbm_m:crafting/machine/drone_crate_requester",
+            "hbm_m:crafting/machine/drone_dock",
+            "hbm_m:crafting/machine/drone_waypoint",
+            "hbm_m:crafting/machine/drone_waypoint_request",
+            "hbm_m:crafting/machine/fluid_duct",
+            "hbm_m:crafting/machine/fluid_duct_colored",
+            "hbm_m:crafting/machine/fluid_duct_paintable",
+            "hbm_m:crafting/machine/fluid_duct_silver",
+            "hbm_m:crafting/machine/foundry_mold",
+            "hbm_m:crafting/machine/foundry_tank",
+            "hbm_m:crafting/machine/machine_converter_he_rf",
+            "hbm_m:crafting/machine/machine_keyforge",
+            "hbm_m:crafting/machine/machine_satlinker",
+            "hbm_m:crafting/machine/machine_siren",
+            "hbm_m:crafting/machine/mixer",
+            "hbm_m:crafting/machine/radar_screen",
+            "hbm_m:crafting/machine/radio_telex",
+            "hbm_m:crafting/machine/radiobox",
+            "hbm_m:crafting/machine/radiorec",
+            "hbm_m:crafting/machine/red_cable_gauge",
+            "hbm_m:crafting/machine/solar_boiler",
+            "hbm_m:crafting/machine/solar_mirror",
+            "hbm_m:crafting/machine_battery_socket_frame",
+            "hbm_m:crafting/machine_missile_assembly",
+            "hbm_m:crafting/metal_door",
+            "hbm_m:crafting/motor_desh",
+            "hbm_m:crafting/multi_detonator",
+            "hbm_m:crafting/nugget_americium_fuel_decompress",
+            "hbm_m:crafting/pcb",
+            "hbm_m:crafting/pneumatic_tube",
+            "hbm_m:crafting/pneumatic_tube_paintable",
+            "hbm_m:crafting/pneumatic_tube_welded",
+            "hbm_m:crafting/range_detonator",
+            "hbm_m:crafting/rbmk_element_reasim_mod",
+            "hbm_m:crafting/rbmk_heater",
+            "hbm_m:crafting/red_connector_super",
+            "hbm_m:crafting/red_pylon",
+            "hbm_m:crafting/red_pylon_medium_steel",
+            "hbm_m:crafting/red_pylon_medium_wood",
+            "hbm_m:crafting/red_pylon_steel",
+            "hbm_m:crafting/reinforced_glass",
+            "hbm_m:crafting/steel_scaffold_dye",
+            "hbm_m:crafting/steel_scaffold_red_dye",
+            "hbm_m:crafting/steel_scaffold_white_dye",
+            "hbm_m:crafting/steel_scaffold_yellow_dye",
+            "hbm_m:crafting/template_folder",
+            "hbm_m:crafting/turret_sentry",
+            "hbm_m:crafting/vacuum_tube",
+            "hbm_m:grenades/grenade_shell_frag_0",
+            "hbm_m:grenades/grenade_shell_stick_1",
+            "hbm_m:tools/crystal_charred_2",
+            "hbm_m:tools/upgrade_crystallizer_69",
+            "hbm_m:weapons/gun_pepperbox_16",
+            "hbm_m:weapons/mp_stability_10_space_120",
+            "hbm_m:weapons/mp_stability_15_flat_121",
+            "hbm_m:weapons/mp_stability_15_thin_122",
+            "hbm_m:weapons/part_grip_wood_2",
+            "hbm_m:weapons/part_stock_wood_1",
+            "hbm_m:weapons/weapon_mod_special_drill_hss_103",
+            "hbm_m:weapons/weapon_mod_special_furniture_black_96",
+            "hbm_m:weapons/weapon_mod_special_sifter_112"
+    );
+
+    /**
+     * Port-Rezepte, die 1:1 einem Original-Rezept in einem Konfig-Block ({@code if(GeneralConfig...)}) entsprechen:
+     * Rezept-ID -> Schalter ({@link ConfigRecipes}).
+     */
+    public static final java.util.Map<String, String[]> CONDITIONS = java.util.Map.ofEntries(
+            java.util.Map.entry("hbm_m:armor/schrabidium_boots_123", new String[] { "!lbsm_armor" }),
+            java.util.Map.entry("hbm_m:armor/schrabidium_helmet_120", new String[] { "!lbsm_armor" }),
+            java.util.Map.entry("hbm_m:armor/schrabidium_legs_122", new String[] { "!lbsm_armor" }),
+            java.util.Map.entry("hbm_m:armor/schrabidium_plate_121", new String[] { "!lbsm_armor" }),
+            java.util.Map.entry("hbm_m:armor/starmetal_boots_119", new String[] { "!lbsm_armor" }),
+            java.util.Map.entry("hbm_m:armor/starmetal_helmet_116", new String[] { "!lbsm_armor" }),
+            java.util.Map.entry("hbm_m:armor/starmetal_legs_118", new String[] { "!lbsm_armor" }),
+            java.util.Map.entry("hbm_m:armor/starmetal_plate_117", new String[] { "!lbsm_armor" }),
+            java.util.Map.entry("hbm_m:consumables/siox_51", new String[] { "!lbsm_medicine" }),
+            java.util.Map.entry("hbm_m:consumables/xanax_52", new String[] { "!lbsm_medicine" }),
+            java.util.Map.entry("hbm_m:crafting/book_of_wagons", new String[] { "lbsm_crafting" }),
+            java.util.Map.entry("hbm_m:crafting/rbmk_boiler", new String[] { "!528" }),
+            java.util.Map.entry("hbm_m:crafting/rbmk_console", new String[] { "!528" }),
+            java.util.Map.entry("hbm_m:crafting/rbmk_control", new String[] { "!528" }),
+            java.util.Map.entry("hbm_m:crafting/rbmk_control_auto", new String[] { "!528" }),
+            java.util.Map.entry("hbm_m:crafting/rbmk_control_mod", new String[] { "!528" }),
+            java.util.Map.entry("hbm_m:crafting/rbmk_control_reasim", new String[] { "528" }),
+            java.util.Map.entry("hbm_m:crafting/rbmk_control_reasim_auto", new String[] { "528" }),
+            java.util.Map.entry("hbm_m:crafting/rbmk_cooler", new String[] { "!528" }),
+            java.util.Map.entry("hbm_m:crafting/rbmk_crane_console", new String[] { "!528" }),
+            java.util.Map.entry("hbm_m:crafting/rbmk_element", new String[] { "!528" }),
+            java.util.Map.entry("hbm_m:crafting/rbmk_element_mod", new String[] { "!528" }),
+            java.util.Map.entry("hbm_m:tools/schrabidium_axe_61", new String[] { "!lbsm_tool" }),
+            java.util.Map.entry("hbm_m:tools/schrabidium_hoe_63", new String[] { "!lbsm_tool" }),
+            java.util.Map.entry("hbm_m:tools/schrabidium_pickaxe_60", new String[] { "!lbsm_tool" }),
+            java.util.Map.entry("hbm_m:tools/schrabidium_shovel_62", new String[] { "!lbsm_tool" }),
+            java.util.Map.entry("hbm_m:tools/schrabidium_sword_59", new String[] { "!lbsm_tool" }),
+            java.util.Map.entry("hbm_m:tools/starmetal_axe_56", new String[] { "!lbsm_tool" }),
+            java.util.Map.entry("hbm_m:tools/starmetal_hoe_58", new String[] { "!lbsm_tool" }),
+            java.util.Map.entry("hbm_m:tools/starmetal_pickaxe_55", new String[] { "!lbsm_tool" }),
+            java.util.Map.entry("hbm_m:tools/starmetal_shovel_57", new String[] { "!lbsm_tool" }),
+            java.util.Map.entry("hbm_m:tools/starmetal_sword_54", new String[] { "!lbsm_tool" })
+    );
+
+    /** Laesst die ersetzten Rezepte beim Datagen weg und haengt die Konfig-Bedingungen an. */
+    public static Consumer<FinishedRecipe> filter(Consumer<FinishedRecipe> writer) {
+        Consumer<FinishedRecipe> conditioned = ConfigRecipes.byId(writer, CONDITIONS);
+        return r -> {
+            if (!IDS.contains(r.getId().toString())) conditioned.accept(r);
+        };
+    }
+}
+//?}

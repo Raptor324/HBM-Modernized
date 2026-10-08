@@ -56,6 +56,7 @@ public class RadioTelexBlock extends DummyableMachineBlock {
     //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        if (player.isShiftKeyDown()) return InteractionResult.PASS; // Original: geschlichen false
 
         if (level.isClientSide()) {
             dev.architectury.utils.EnvExecutor.runInEnv(dev.architectury.utils.Env.CLIENT, () -> () ->
@@ -67,6 +68,7 @@ public class RadioTelexBlock extends DummyableMachineBlock {
     //?} else {
     /*@Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+        if (player.isShiftKeyDown()) return InteractionResult.PASS; // Original: geschlichen false
 
         if (level.isClientSide()) {
             dev.architectury.utils.EnvExecutor.runInEnv(dev.architectury.utils.Env.CLIENT, () -> () ->

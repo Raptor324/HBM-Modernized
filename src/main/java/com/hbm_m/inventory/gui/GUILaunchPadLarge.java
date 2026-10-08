@@ -203,7 +203,7 @@ public class GUILaunchPadLarge extends GuiInfoScreen<LaunchPadLargeMenu> {
         LaunchPadBaseBlockEntity be = menu.getBlockEntity();
         if (be != null) {
             drawElectricityInfo(guiGraphics, mouseX, mouseY,
-                    this.leftPos + ENERGY_TANK_X, this.topPos + TANK_TOP_Y, TANK_W, TANK_H,
+                    ENERGY_TANK_X, TANK_TOP_Y, TANK_W, TANK_H,
                     menu.getEnergyLong(), menu.getMaxEnergyLong());
 
             FluidTank[] tanks = be.getTanks();

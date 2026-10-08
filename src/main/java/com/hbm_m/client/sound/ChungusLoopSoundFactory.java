@@ -36,10 +36,11 @@ public final class ChungusLoopSoundFactory {
                 applySpin(turbine.getSpin());
             }
 
+            /** Original: Lautstaerke 0,5 * Drehzahl, Tonhoehe 0,25 + 0,75 * Drehzahl (TURBINE_LEVI_LOOP, Reichweite 20). */
             private void applySpin(double spin) {
-                float spinNum = (float) Math.min(1.0D, spin * 2.0D);
-                this.volume = 0.25F + spinNum * 0.75F;
-                this.pitch = 0.5F + spinNum * 0.5F;
+                float turbineSpeed = (float) spin;
+                this.volume = 0.5F * turbineSpeed;
+                this.pitch = 0.25F + 0.75F * turbineSpeed;
             }
 
             @Override

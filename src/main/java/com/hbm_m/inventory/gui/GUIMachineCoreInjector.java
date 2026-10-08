@@ -13,10 +13,8 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 
-/** Direktport der Slot-/Tank-Koordinaten aus {@code GUICoreInjector} (1.7.10 Original).
- *  Die beiden Crafting-Slotpaare des Originals (Fusionsbrennstab-Rezeptur) entfallen,
- *  weil das BlockEntity diese Crafting-Logik noch nicht implementiert - siehe
- *  {@link MachineCoreInjectorMenu}. */
+/** Direktport der Slot-/Tank-Koordinaten aus {@code GUICoreInjector} (1.7.10 Original);
+ *  die vier Fluidkennungs-Slots liefert {@link MachineCoreInjectorMenu}. */
 public class GUIMachineCoreInjector extends GuiInfoScreen<MachineCoreInjectorMenu> {
 
     private static final ResourceLocation TEXTURE =

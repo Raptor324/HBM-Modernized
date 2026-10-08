@@ -48,13 +48,14 @@ public class AchievementHandler {
         block(ModBlocks.PRESS,         ModAdvancements.BURNER_PRESS);
         item(ModItems.RBMK_FUEL_EMPTY,         ModAdvancements.RBMK);
         block(ModBlocks.CHEMICAL_PLANT,        ModAdvancements.CHEMPLANT);
-        block(ModBlocks.CONCRETE,              ModAdvancements.CONCRETE);
+        block(ModBlocks.CONCRETE_SMOOTH,       ModAdvancements.CONCRETE); // Original: concrete_smooth
         block(ModBlocks.CONCRETE_ASBESTOS,     ModAdvancements.CONCRETE);
-        item(ModMaterialItems.get(ModMaterials.POLYMER, MaterialShape.PLATE), ModAdvancements.POLYMER);
-        item(ModMaterialItems.get(ModMaterials.DESH, MaterialShape.NUGGET),  ModAdvancements.DESH);
+        item(ModMaterialItems.get(ModMaterials.POLYMER, MaterialShape.INGOT), ModAdvancements.POLYMER); // Original: ingot_polymer
+        item(ModMaterialItems.get(ModMaterials.DESH, MaterialShape.INGOT),  ModAdvancements.DESH); // Original: ingot_desh
         item(ModItems.GEM_TANTALIUM,           ModAdvancements.TANTALUM);
         item(ModItems.GAS_CENTRIFUGE,          ModAdvancements.GAS_CENT);
         block(ModBlocks.CENTRIFUGE,    ModAdvancements.CENTRIFUGE);
+        item(ModMaterialItems.get(ModMaterials.SCHRABIDIUM, MaterialShape.INGOT), ModAdvancements.SCHRAB);
         item(ModMaterialItems.get(ModMaterials.SCHRABIDIUM, MaterialShape.NUGGET), ModAdvancements.SCHRAB);
         block(ModBlocks.CRYSTALLIZER,  ModAdvancements.ACIDIZER);
         block(ModBlocks.SILEX,                 ModAdvancements.SILEX);
@@ -69,6 +70,13 @@ public class AchievementHandler {
         block(ModBlocks.STRUCT_TORUS_CORE,     ModAdvancements.FUSION);
         block(ModBlocks.MACHINE_BLAST_FURNACE,  ModAdvancements.BLAST_FURNACE);
         item(ModItems.MACHINE_ASSEMBLER,       ModAdvancements.ASSEMBLY);
+        // Original: machine_assembly_machine = MachineAssemblyMachine, im Port advanced_assembly_machine
+        item(ModItems.ADVANCED_ASSEMBLY_MACHINE, ModAdvancements.ASSEMBLY);
+        item(com.hbm_m.item.missile.MissilePartItems.get("mp_warhead_10_nuclear"), ModAdvancements.RED_BALLOONS);
+        item(com.hbm_m.item.missile.MissilePartItems.get("mp_warhead_10_nuclear_large"), ModAdvancements.RED_BALLOONS);
+        item(com.hbm_m.item.missile.MissilePartItems.get("mp_warhead_15_nuclear"), ModAdvancements.RED_BALLOONS);
+        item(com.hbm_m.item.missile.MissilePartItems.get("mp_warhead_15_nuclear_shark"), ModAdvancements.RED_BALLOONS);
+        item(com.hbm_m.item.missile.MissilePartItems.get("mp_warhead_15_boxcar"), ModAdvancements.RED_BALLOONS);
         item(ModMaterialItems.get(ModMaterials.PU_MIX, MaterialShape.BILLET),  ModAdvancements.CHICAGO_PILE);
         item(ModItems.PARTICLE_DIGAMMA,        ModAdvancements.OMEGA12);
     }

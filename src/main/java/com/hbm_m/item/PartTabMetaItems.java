@@ -629,6 +629,24 @@ public final class PartTabMetaItems {
         add(new Entry("ore_byproduct_b_technetium", "ore_byproduct", "Crystalline Technetium Fragment", "Технециевый побочный продукт", "byproduct", null, 0xCADFDF, null, false, plain()));
         add(new Entry("ore_byproduct_b_polonium", "ore_byproduct", "Crystalline Polonium Fragment", "Полониевый побочный продукт", "byproduct", null, 0xCADFDF, null, false, plain()));
         add(new Entry("ore_byproduct_b_uranium", "ore_byproduct", "Crystalline Uranium Fragment", "Урановый побочный продукт", "byproduct", null, 0x868D82, null, false, plain()));
+        // ── ItemExpensive (item_expensive, EnumExpensiveType): Baugruppen des Expensive-Modus ──
+        String[][] expensive = {
+                {"steel_plating", "Bolted Steel Plating", "Стальная обшивка с болтовым соединением"},
+                {"heavy_frame", "Heavy Framework", "Тяжёлый каркас"},
+                {"circuit", "Extensive Circuit Board", "Обширная печатная плата"},
+                {"lead_plating", "Radiation Resistant Plating", "Радиационно-стойкое покрытие"},
+                {"ferro_plating", "Reinforced Ferrouranium Panels", "Армированные ферроурановые панели"},
+                {"computer", "Mainframe", "Мейнфрейм"},
+                {"bronze_tubes", "Bronze Structural Elements", "Бронзовые конструкционные элементы"},
+                {"plastic", "Plastic Panels", "Пластиковые панели"},
+                {"gold_dust", "Ultra Fine Gold Dust", "Сверхтонкая золотая пыль"},
+                {"degenerate_matter", "Degenerate Matter", "Вырожденная материя"},
+        };
+        for (String[] m : expensive) {
+            add(new Entry("item_expensive_" + m[0], "item_expensive", m[1], m[2], null, null, 0, null, false,
+                    props -> new LoreTooltipItem(List.of(Component.translatable("tooltip.hbm_m.item_expensive.desc")
+                            .withStyle(ChatFormatting.RED)), props)));
+        }
     }
 
     // =====================================================================================

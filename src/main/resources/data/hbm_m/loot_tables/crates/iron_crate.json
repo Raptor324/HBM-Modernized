@@ -13,7 +13,7 @@
         { "type": "item", "name": "hbm_m:titanium_ingot", "weight": 3, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 1 } } ] },
         { "type": "item", "name": "hbm_m:vacuum_tube", "weight": 5 },
         { "type": "item", "name": "hbm_m:gun_b92", "weight": 3 },
-        { "type": "item", "name": "hbm_m:ammo_9mm_sp", "weight": 4, "functions": [ { "function": "minecraft:set_count", "count": { "min": 2, "max": 6 } } ] },
+        { "type": "item", "name": "hbm_m:ammo_standard_p9_sp", "weight": 4, "functions": [ { "function": "minecraft:set_count", "count": { "min": 2, "max": 6 } } ] },
         { "type": "item", "name": "hbm_m:ammo_shell", "weight": 3, "functions": [ { "function": "minecraft:set_count", "count": { "min": 3, "max": 6 } } ] },
         { "type": "item", "name": "hbm_m:gun_kit_1", "weight": 4, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 3 } } ] },
         { "type": "item", "name": "hbm_m:cordite", "weight": 5, "functions": [ { "function": "minecraft:set_count", "count": { "min": 4, "max": 6 } } ] },

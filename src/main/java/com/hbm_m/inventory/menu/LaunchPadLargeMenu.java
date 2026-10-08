@@ -23,14 +23,9 @@ import com.hbm_m.platform.DummyItemStackHandler;
 import com.hbm_m.platform.ModItemStackHandler;
 
 /**
- * Меню для обычной (и большой) пусковой площадки.
- *
- * Это упрощённый порт старого ContainerLaunchPadLarge:
- * - 7 слотов машины (ракета, дизайнатор, батарея, топливо/окислитель in/out)
- * - 36 слотов инвентаря игрока.
- *
- * Логика сортировки/переноса предметов (shift‑клик) упрощена и не
- * повторяет в точности поведение 1.7.10, но достаточно для базового UX.
+ * 1:1 {@code ContainerLaunchPadLarge} (fuer die normale und die grosse Startrampe): Rakete, Zielgeraet, Batterie,
+ * Treibstoff/Oxidator rein/raus; Shift-Klick sortiert wie im Original nach Batterie, Rakete, unendlichem Fass,
+ * Behaelter des jeweiligen Tanks und Zielgeraet.
  */
 public class LaunchPadLargeMenu extends AbstractContainerMenu implements ILongEnergyMenu {
 
@@ -181,15 +176,8 @@ public class LaunchPadLargeMenu extends AbstractContainerMenu implements ILongEn
 
     @Override
     public boolean stillValid(Player player) {
-        if (blockEntity == null || blockEntity.getLevel() != player.level()) {
-            return false;
-        }
-        BlockPos pos = blockEntity.getBlockPos();
-        return player.distanceToSqr(
-                pos.getX() + 0.5D,
-                pos.getY() + 0.5D,
-                pos.getZ() + 0.5D
-        ) <= 64.0D;
+        // w16b: Original isUseableByPlayer (TileEntityMachineBase) = 128 vom Kern, dazu Huelle der Maschine (MultiblockMenuReach)
+        return MultiblockMenuReach.stillValidCore(blockEntity, player, 128.0D);
     }
 
     @Override
@@ -206,8 +194,24 @@ public class LaunchPadLargeMenu extends AbstractContainerMenu implements ILongEn
                     return net.minecraft.world.item.ItemStack.EMPTY;
                 }
             } else {
-                // Из инвентаря игрока в слоты машины (просто первая подходящая позиция)
-                if (!this.moveItemStackTo(stack, 0, MACHINE_SLOTS, false)) {
+                net.minecraft.world.item.ItemStack var3 = originalStack;
+                if (com.hbm_m.api.energy.ItemEnergyAccess.getHbmProvider(var3).isPresent()
+                        || com.hbm_m.api.energy.ItemEnergyAccess.getHbmReceiver(var3).isPresent()
+                        || var3.getItem() instanceof com.hbm_m.item.fekal_electric.ItemCreativeBattery) {
+                    if (!this.moveItemStackTo(stack, 2, 3, false)) return net.minecraft.world.item.ItemStack.EMPTY;
+                } else if (blockEntity != null && blockEntity.isMissileValid(var3)) {
+                    if (!this.moveItemStackTo(stack, 0, 1, false)) return net.minecraft.world.item.ItemStack.EMPTY;
+                } else if (var3.getItem() == com.hbm_m.item.ModItems.FLUID_BARREL_INFINITE.get()) {
+                    if (!this.moveItemStackTo(stack, 3, 4, false)) if (!this.moveItemStackTo(stack, 5, 6, false)) {
+                        return net.minecraft.world.item.ItemStack.EMPTY;
+                    }
+                } else if (blockEntity != null && com.hbm_m.inventory.FluidContainerRegistry.getFluidContent(var3, blockEntity.getTanks()[0].getTankType()) > 0) {
+                    if (!this.moveItemStackTo(stack, 3, 4, false)) return net.minecraft.world.item.ItemStack.EMPTY;
+                } else if (blockEntity != null && com.hbm_m.inventory.FluidContainerRegistry.getFluidContent(var3, blockEntity.getTanks()[1].getTankType()) > 0) {
+                    if (!this.moveItemStackTo(stack, 5, 6, false)) return net.minecraft.world.item.ItemStack.EMPTY;
+                } else if (var3.getItem() instanceof IDesignatorItem) {
+                    if (!this.moveItemStackTo(stack, 1, 2, false)) return net.minecraft.world.item.ItemStack.EMPTY;
+                } else {
                     return net.minecraft.world.item.ItemStack.EMPTY;
                 }
             }

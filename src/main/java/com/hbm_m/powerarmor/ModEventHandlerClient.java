@@ -127,8 +127,8 @@ public class ModEventHandlerClient {
     public static final IGuiOverlay NUCLEAR_FLASH_OVERLAY = (gui, guiGraphics, partialTick, screenWidth, screenHeight) -> {
         // Быстрая проверка - закончилась ли вспышка
         long currentTime = System.currentTimeMillis();
-        if (currentTime - flashTimestamp >= FLASH_DURATION) {
-            return; // Вспышка закончилась, ничего не рендерим
+        if (currentTime - flashTimestamp >= FLASH_DURATION || !com.hbm_m.config.ClientConfig.nukeHudFlash) {
+            return; // Вспышка закончилась, ничего не рендерим (Original: ClientConfig.NUKE_HUD_FLASH)
         }
 
         Minecraft mc = Minecraft.getInstance();
@@ -203,7 +203,7 @@ public class ModEventHandlerClient {
     public static void onRenderGuiPre(RenderGuiEvent.Pre event) {
         long now = System.currentTimeMillis();
         long remaining = shakeTimestamp + SHAKE_DURATION - now;
-        if (remaining <= 0) return;
+        if (remaining <= 0 || !com.hbm_m.config.ClientConfig.nukeHudShake) return; // Original: ClientConfig.NUKE_HUD_SHAKE
         double mult = (double) remaining / (double) SHAKE_DURATION * 2.0;
         double horizontal = Mth.clamp(Math.sin(now * 0.02), -0.7, 0.7) * 15.0;
         double vertical = Mth.clamp(Math.sin(now * 0.01 + 2.0), -0.7, 0.7) * 3.0;
@@ -436,6 +436,8 @@ public class ModEventHandlerClient {
             return;
         }
 
+        com.hbm_m.client.PersistentInfoTooltips.append(stack, event.getToolTip());
+
         // TODO: Добавить сопротивление урону (DamageResistanceHandler.addInfo)
         // TODO: Добавить информацию о радиационной защите (HazmatRegistry)
         // TODO: Добавить информацию о модификациях брони (ArmorModHandler)
@@ -451,6 +453,7 @@ public class ModEventHandlerClient {
     @SubscribeEvent
     public static void onScreenInit(ScreenEvent.Init.Post event) {
         if (!(event.getScreen() instanceof TitleScreen ts)) return;
+        if (!com.hbm_m.config.ClientConfig.mainMenuWackySplashes) { modSplashText = null; return; } // Original: MAIN_MENU_WACKY_SPLASHES
 
         int id = System.identityHashCode(ts);
         if (id != lastTitleScreenId) {
@@ -789,7 +792,7 @@ public class ModEventHandlerClient {
     @SubscribeEvent
     public static void onRenderGuiNuclearFlash(RenderGuiEvent.Post event) {
         long currentTime = System.currentTimeMillis();
-        if (currentTime - flashTimestamp >= FLASH_DURATION) return;
+        if (currentTime - flashTimestamp >= FLASH_DURATION || !com.hbm_m.config.ClientConfig.nukeHudFlash) return;
 
         long elapsed = currentTime - flashTimestamp;
         float brightness = elapsed < 400 ? 1.0F : (flashTimestamp + FLASH_DURATION - currentTime) / (float) FLASH_DURATION;
@@ -953,10 +956,7 @@ public class ModEventHandlerClient {
     // которая еще не портирована на 1.20.1
 
     /**
-     * TODO: Dodd RBMK диагностика
-     * Оригинальный код: onOverlayRender - DODD RBMK DIAGNOSTIC HOOK
-     * Требует: расширение {@link ILookOverlay}, RBMK система
-     * Сложность: Высокая - требует полной RBMK системы
+     * Dodd RBMK: {@link com.hbm_m.client.overlay.RBMKDiagnosticOverlay} (ueber BlockLookOverlayHud).
      */
 
     /**
@@ -993,10 +993,7 @@ public class ModEventHandlerClient {
      */
 
     /**
-     * TODO: Кастомные ядерные боеголовки
-     * Оригинальный код: drawTooltip - TileEntityNukeCustom
-     * Требует: Систему кастомных ядерных боеголовок
-     * Сложность: Высокая - требует nuke системы
+     * Custom-Nuke-Tooltip: {@code ClientModEvents.handleItemTooltip}.
      */
 
     /**

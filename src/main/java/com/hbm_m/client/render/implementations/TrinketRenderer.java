@@ -282,7 +282,11 @@ public class TrinketRenderer implements BlockEntityRenderer<TrinketBlockEntity> 
                 var vc = buf.getBuffer(RenderType.entityCutout(N_I_4_N_I_TEX));
                 for (String p : new String[] { "FrameDark", "Grip", "FrameLight", "Cylinder", "Barrel" }) N_I_4_N_I.renderPart(p, ps, vc, light);
                 ps.popPose();
-                // Original: weapon_mod_special DOUBLOONS in der Hand - die Waffenmods folgen mit der Waffenrunde.
+
+                ps.translate(0.3, 1.4, -0.2);
+                ps.mulPose(Axis.XP.rotationDegrees(-100));
+                ps.scale(0.5F, 0.5F, 0.5F);
+                renderItem2D(ps, buf, new ItemStack(com.hbm_m.item.weapon.sedna.WeaponItems.WEAPON_MOD_SPECIAL.get(com.hbm_m.item.weapon.sedna.factory.GunFactory.EnumModSpecial.DOUBLOONS).get()), light);
             }
             case ADAM29 -> {
                 ps.translate(0.4, 1.15, 0.4);

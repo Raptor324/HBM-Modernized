@@ -2,7 +2,7 @@ package com.hbm_m.api.tile;
 
 import com.hbm_m.item.ItemKeyPin;
 import com.hbm_m.item.ModItems;
-import com.hbm_m.item.tool.ItemLock;
+import com.hbm_m.item.tool.ItemKey;
 import com.hbm_m.sound.HbmSoundsNT;
 import com.hbm_m.util.ArmorUtil;
 
@@ -25,6 +25,14 @@ public class LockState {
     public double lockMod = 0.1D;
     public boolean cheesable = true;
 
+    /** Original {@code TileEntityLockableBase.lock()}: verriegeln, mit Fehlermeldung, wenn noch keine Stifte gesetzt sind. */
+    public void lock(Object owner) {
+        if (lock == 0) {
+            com.hbm_m.main.MainRegistry.LOGGER.error("A block has been set to locked state before setting pins, this should not happen and may cause errors! " + owner);
+        }
+        isLocked = true;
+    }
+
     public void write(CompoundTag nbt) {
         nbt.putInt("lock", lock);
         nbt.putBoolean("cheesable", cheesable);
@@ -44,7 +52,7 @@ public class LockState {
         if (player == null) return false;
 
         ItemStack stack = player.getMainHandItem();
-        if (!stack.isEmpty() && stack.getItem() instanceof ItemKeyPin && !(stack.getItem() instanceof ItemLock) && ItemKeyPin.getCode(stack) == this.lock) {
+        if (!stack.isEmpty() && stack.getItem() instanceof ItemKey && ItemKeyPin.getPins(stack) == this.lock) {
             world.playSound(null, player.getX(), player.getY(), player.getZ(), HbmSoundsNT.get("block.lockOpen"), SoundSource.PLAYERS, 1.0F, 1.0F);
             return true;
         }

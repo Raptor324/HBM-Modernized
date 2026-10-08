@@ -26,7 +26,11 @@ import net.minecraft.world.level.block.state.BlockState;
  * <p><b>Nicht portiert:</b> die AE2-Anbindung und das Redstone-Sperrsystem - beides hat in diesem
  * Port keine Entsprechung.
  */
-public class MachineMassStorageBlockEntity extends BaseMachineBlockEntity {
+public class MachineMassStorageBlockEntity extends BaseMachineBlockEntity implements com.hbm_m.api.tile.ILockableTile, com.hbm_m.api.tile.IControlReceiver,
+        com.hbm_m.api.redstoneoverradio.IRORValueProvider, com.hbm_m.api.redstoneoverradio.IRORInteractive {
+
+    /** Original TileEntityMassStorage extends TileEntityCrateBase extends TileEntityLockableBase: Stiftschloss. */
+    public final com.hbm_m.api.tile.LockState lockState = new com.hbm_m.api.tile.LockState();
 
     public static final int SLOT_INPUT = 0;
     public static final int SLOT_FILTER = 1;
@@ -37,6 +41,8 @@ public class MachineMassStorageBlockEntity extends BaseMachineBlockEntity {
     private static final long DEFAULT_CAPACITY = 1_000_000L;
 
     private long stockpile = 0L;
+    /** Original {@code output}: nur wenn an, fuellt die Kiste den Ausgabeslot nach (Schalter im GUI). */
+    public boolean output = false;
 
     public MachineMassStorageBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.MACHINE_MASS_STORAGE_BE.get(), pos, state, INVENTORY_SIZE, 0L, 0L, 0L);
@@ -64,7 +70,7 @@ public class MachineMassStorageBlockEntity extends BaseMachineBlockEntity {
         ItemStack output = be.inventory.getStackInSlot(SLOT_OUTPUT);
         int maxStack = com.hbm_m.platform.ItemHooks.getItemMaxStackSize(type);
         int outputSpace = output.isEmpty() ? maxStack : (output.getItem() == type ? maxStack - output.getCount() : 0);
-        if (outputSpace > 0 && be.stockpile > 0) {
+        if (be.output && outputSpace > 0 && be.stockpile > 0) {
             int toRelease = (int) Math.min(outputSpace, be.stockpile);
             if (toRelease > 0) {
                 if (output.isEmpty()) {
@@ -76,9 +82,56 @@ public class MachineMassStorageBlockEntity extends BaseMachineBlockEntity {
                 be.setChanged();
             }
         }
+        // Original networkPackNT: Vorrat fuer GUI-Balken und Tooltip an den Client
+        if (be.stockpile != be.lastSyncedStockpile) {
+            be.lastSyncedStockpile = be.stockpile;
+            be.sendUpdateToClient();
+        }
+    }
+
+    private long lastSyncedStockpile = -1L;
+
+    /** Original {@code type} (Filterplatz) wird fuer die Frontanzeige (RenderMassStorage) mitgeschickt. */
+    @Override
+    protected boolean isCriticalSlot(int slot) {
+        return slot == SLOT_FILTER || super.isCriticalSlot(slot);
+    }
+
+    /** Original {@code receiveControl}: "provide" gibt ein Item (Shift: einen Stapel) aus, "toggle" schaltet die Ausgabe. */
+    @Override
+    public void receiveControl(CompoundTag data) {
+        ItemStack filter = this.inventory.getStackInSlot(SLOT_FILTER);
+        if (data.contains("provide") && !filter.isEmpty()) {
+            if (this.stockpile == 0) return;
+            Item type = filter.getItem();
+            int max = com.hbm_m.platform.ItemHooks.getItemMaxStackSize(type);
+            int amount = data.getBoolean("provide") ? max : 1;
+            amount = (int) Math.min(amount, this.stockpile);
+            ItemStack out = this.inventory.getStackInSlot(SLOT_OUTPUT);
+            if (!out.isEmpty() && out.getItem() != type) return;
+            if (out.isEmpty()) {
+                this.inventory.setStackInSlot(SLOT_OUTPUT, new ItemStack(type, amount));
+            } else {
+                amount = Math.min(amount, max - out.getCount());
+                out.grow(amount);
+            }
+            this.stockpile -= amount;
+        }
+        if (data.contains("toggle")) {
+            this.output = !this.output;
+        }
+        setChanged();
+        sendUpdateToClient();
+    }
+
+    @Override
+    public boolean hasPermission(Player player) {
+        return player.distanceToSqr(worldPosition.getX() + 0.5D, worldPosition.getY() + 0.5D, worldPosition.getZ() + 0.5D) <= 128.0D;
     }
 
     public long getStockpile() { return stockpile; }
+    /** Original {@code setStockpile}: Vorrat aus dem Item beim Setzen. */
+    public void setStockpile(long stockpile) { this.stockpile = stockpile; setChanged(); }
     /** Die Groesse dieser Kiste - sie steht am Block, nicht am Blockentity. */
     public long getCapacity() {
         return getBlockState().getBlock() instanceof com.hbm_m.block.machines.MachineMassStorageBlock storage
@@ -118,11 +171,84 @@ public class MachineMassStorageBlockEntity extends BaseMachineBlockEntity {
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.writeNbtData(tag, registries);
         tag.putLong("stockpile", stockpile);
+        tag.putBoolean("output", output);
+        lockState.write(tag);
     }
+
+    public boolean canAccess(Player player) {
+        return lockState.canAccess(level, player);
+    }
+
+    // ---- ILockableTile ----
+    @Override public com.hbm_m.api.tile.LockState getLockState() { return lockState; }
+    @Override public void lock() { lockState.lock(this); setChanged(); }
+    @Override public void unlock() { lockState.isLocked = false; setChanged(); }
+    @Override public void setPins(int pins) { lockState.lock = pins; setChanged(); }
+    @Override public void setMod(double mod) { lockState.lockMod = mod; setChanged(); }
 
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.readNbtData(tag, registries);
         stockpile = tag.getLong("stockpile");
+        output = tag.getBoolean("output");
+        if (tag.contains("lockMod")) lockState.read(tag);
+    }
+
+    //? if forge {
+    /** Original {@code ISidedInventory}: Slots {0, 2}; nur die eingestellte Sorte hinein, Ausgabe heraus - beides nur ohne Schloss. */
+    private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
+            new com.hbm_m.blockentity.SidedItemAccess.Rules() {
+                @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return new int[] { 0, 2 }; }
+                @Override public boolean canInsert(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { if (isLocked() || slot != 0) return false;
+                    net.minecraft.world.item.ItemStack type = inventory.getStackInSlot(SLOT_FILTER);
+                    return type.isEmpty() || com.hbm_m.platform.PlatformHooks.isSameItemSameTags(type, stack); }
+                @Override public boolean canExtract(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return !isLocked() && slot == 2; }
+            });
+
+    @Override
+    public @org.jetbrains.annotations.NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(@org.jetbrains.annotations.NotNull net.minecraftforge.common.capabilities.Capability<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER && side != null) return sidedItems.get(side).cast();
+        return super.getCapability(cap, side);
+    }
+
+    @Override
+    public void invalidateCaps() {
+        super.invalidateCaps();
+        sidedItems.invalidate();
+    }
+    //?}
+
+    // ── Redstone-over-Radio (1:1 TileEntityMassStorage) ──
+
+    @Override
+    public String[] getFunctionInfo() {
+        return new String[] {
+                PREFIX_VALUE + "type",
+                PREFIX_VALUE + "fill",
+                PREFIX_VALUE + "fillpercent",
+                PREFIX_FUNCTION + "toggleoutput",
+        };
+    }
+
+    @Override
+    public String provideRORValue(String name) {
+        if ((PREFIX_VALUE + "fill").equals(name))        return "" + this.stockpile;
+        if ((PREFIX_VALUE + "fillpercent").equals(name)) return "" + this.stockpile * 100 / this.getCapacity();
+        if ((PREFIX_VALUE + "type").equals(name)) {
+            ItemStack type = inventory.getStackInSlot(SLOT_FILTER);
+            if (type.isEmpty()) return "None";
+            return type.getHoverName().getString();
+        }
+        return null;
+    }
+
+    @Override
+    public String runRORFunction(String name, String[] params) {
+        if ((PREFIX_FUNCTION + "toggleoutput").equals(name)) {
+            this.output = !this.output;
+            this.setChanged();
+            this.sendUpdateToClient();
+        }
+        return null;
     }
 }

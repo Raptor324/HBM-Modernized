@@ -34,6 +34,11 @@ public class PileControlBlockEntity extends LoadedMachineBlockEntity
     public static final double SPEED = 1D / 60D;
 
     private double level_ = 0D;
+
+    /** Original Client-Seite: geglaettete Stellung fuer den Renderer ({@code level/lastLevel/syncLevel/turnProgress}). */
+    public double renderLevel;
+    public double lastRenderLevel;
+    private int turnProgress;
     private double targetLevel = 0D;
     private boolean wasRedstone;
     private int chanNum;
@@ -58,7 +63,17 @@ public class PileControlBlockEntity extends LoadedMachineBlockEntity
     }
 
     public static void tick(Level level, BlockPos pos, BlockState state, PileControlBlockEntity be) {
-        if (level.isClientSide()) return;
+        if (level.isClientSide()) {
+            // Original isRemote-Zweig: lastLevel = level; in turnProgress Schritten auf den Sync-Wert zulaufen.
+            be.lastRenderLevel = be.renderLevel;
+            if (be.turnProgress > 0) {
+                be.renderLevel = be.renderLevel + ((be.level_ - be.renderLevel) / (double) be.turnProgress);
+                --be.turnProgress;
+            } else {
+                be.renderLevel = be.level_;
+            }
+            return;
+        }
 
         boolean canMove = false;
         BlockPos below = pos.below();
@@ -131,6 +146,14 @@ public class PileControlBlockEntity extends LoadedMachineBlockEntity
         }
 
         return null;
+    }
+
+    /** Original deserialize: aendert sich der Sync-Wert, wird ueber zwei Ticks nachgezogen. */
+    @Override
+    protected void applyClientUpdate(CompoundTag tag) {
+        double lastSync = this.level_;
+        super.applyClientUpdate(tag);
+        if (this.level_ != lastSync) this.turnProgress = 2;
     }
 
     @Override

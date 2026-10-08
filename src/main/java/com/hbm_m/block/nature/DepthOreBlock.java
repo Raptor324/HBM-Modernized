@@ -32,8 +32,8 @@ import java.util.List;
 public class DepthOreBlock extends Block {
 
     public DepthOreBlock(Properties properties) {
+        // Original BlockDepth: setBlockUnbreakable + setResistance(10) -> Werte kommen aus ModBlocks (-1 / 6)
         super(properties
-                .strength(29.0F, 29.0F)
                 .requiresCorrectToolForDrops()
                 .pushReaction(PushReaction.BLOCK)
         );

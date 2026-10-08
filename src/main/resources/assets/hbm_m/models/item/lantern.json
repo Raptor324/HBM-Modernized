@@ -1,41 +1,25 @@
 {
-  "loader": "forge:obj",
-  "model": "hbm_m:models/item/lantern_item.obj",
-  "flip_v": true,
+  "parent": "builtin/entity",
+  "gui_light": "side",
   "textures": {
-    "texture": "hbm_m:block/lantern",
-    "light": "hbm_m:block/lantern_light",
     "particle": "hbm_m:block/lantern"
-  },
-  "transform": {
-    "translation": [
-      0.5,
-      0,
-      0.5
-    ],
-    "rotation": [
-      0,
-      0,
-      0
-    ],
-    "scale": 1.0
   },
   "display": {
     "gui": {
       "rotation": [
-        30,
-        225,
-        0
+        30.0,
+        -135.0,
+        0.0
       ],
       "translation": [
-        0,
-        -6,
-        0
+        0.0,
+        -5.139,
+        -1.812
       ],
       "scale": [
-        0.35,
-        0.35,
-        0.35
+        0.1719,
+        0.1719,
+        0.1719
       ]
     },
     "ground": {

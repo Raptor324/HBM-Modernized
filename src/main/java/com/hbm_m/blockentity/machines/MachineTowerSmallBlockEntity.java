@@ -1,8 +1,5 @@
 package com.hbm_m.blockentity.machines;
 
-import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
-
 import com.hbm_m.api.fluids.IFluidStandardTransceiverMK2;
 import com.hbm_m.blockentity.BaseMachineBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
@@ -11,53 +8,44 @@ import com.hbm_m.inventory.fluid.tank.FluidTank;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
-//? if forge {
-import net.minecraftforge.common.capabilities.Capability;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.fluids.capability.IFluidHandler;
-//?}
+import net.minecraft.world.phys.AABB;
 
 /**
- * BlockEntity for the Cooling Tower (Small) multiblock.
- *
- * Same passive hot-coolant -> coolant converter logic as the large Cooling
- * Tower, but with smaller tanks and a lower conversion rate matching its
- * smaller 5x5x19 footprint.
+ * 1:1 {@code TileEntityTowerSmall} (ein {@code TileEntityCondenser}): verdichtet Abdampf (Tank 0, 1000 mB) ohne
+ * Strom zu Wasser (Tank 1, 1000 mB) - pro Tick so viel, wie im Wassertank Platz ist. Nach jeder Umsetzung
+ * steigt 20 Ticks lang Dampf aus der Spitze (alle 2 Ticks, 18 Bloecke hoch, Lebensdauer 250-499).
+ * Anschluesse: vier feste Rohrzellen drei Felder neben dem Kern (+-X, +-Z, unabhaengig von der Drehung).
  */
 public class MachineTowerSmallBlockEntity extends BaseMachineBlockEntity implements IFluidStandardTransceiverMK2 {
 
+    /** Tank 0: Abdampf. */
     public static final int TANK_HOT_IN = 0;
+    /** Tank 1: Wasser. */
     public static final int TANK_COOLANT_OUT = 1;
 
-    /** Small tower: 5x5x19 footprint, central ladder shaft. */
-    private static final int TANK_CAPACITY_HOT = 16_000;
-    private static final int TANK_CAPACITY_COOLANT = 16_000;
-    /** mB of hot coolant converted into cooled coolant per tick (passive, no energy). */
-    private static final int CONVERSION_RATE_MB = 15;
-
-    /** Relative Y offset (above the controller) used for the sky-access check and particle spawn. */
-    private static final int STRUCTURE_HEIGHT = 19;
-
-    private static final int PARTICLE_INTERVAL_TICKS = 10;
+    /** Original (konfigurierbar): {@code inputTankSizeTS = outputTankSizeTS = 1_000}. */
+    public static int inputTankSizeTS = 1_000;
+    public static int outputTankSizeTS = 1_000;
 
     private final FluidTank[] tanks = new FluidTank[] {
-        new FluidTank(ModFluids.COOLANT_HOT.getSource(), TANK_CAPACITY_HOT),
-        new FluidTank(ModFluids.COOLANT.getSource(), TANK_CAPACITY_COOLANT)
+        new FluidTank(ModFluids.SPENTSTEAM.getSource(), inputTankSizeTS),
+        new FluidTank(net.minecraft.world.level.material.Fluids.WATER, outputTankSizeTS)
     };
 
-    private boolean isCooling = false;
-    private int particleTimer = 0;
+    public int age = 0;
+    public int waterTimer = 0;
+    protected int throughput;
+
+    /** Zuletzt an den Client geschickter Stand (Original: {@code networkPackNT(150)} jeden Tick). */
+    private int sentIn = -1, sentOut = -1, sentTimer = -1;
 
     public MachineTowerSmallBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.TOWER_SMALL_BE.get(), pos, state, 0, 0L, 0L);
@@ -69,56 +57,54 @@ public class MachineTowerSmallBlockEntity extends BaseMachineBlockEntity impleme
             return;
         }
 
-        FluidTank hotIn = be.tanks[TANK_HOT_IN];
-        FluidTank coolantOut = be.tanks[TANK_COOLANT_OUT];
+        // 1:1 TileEntityCondenser.updateEntity
+        be.age++;
+        if (be.age >= 2) be.age = 0;
 
-        boolean canConvert = hotIn.getFill() > 0
-                && coolantOut.getSpaceMb() > 0
-                && be.hasSkyAccess(level, pos);
+        if (be.waterTimer > 0) be.waterTimer--;
 
-        boolean changed = false;
-        if (canConvert) {
-            int amount = Math.min(CONVERSION_RATE_MB, Math.min(hotIn.getFill(), coolantOut.getSpaceMb()));
-            if (amount > 0) {
-                hotIn.drainMb(amount);
-                coolantOut.fillMb(ModFluids.COOLANT.getSource(), amount);
-                changed = true;
-            }
-        }
+        FluidTank in = be.tanks[TANK_HOT_IN];
+        FluidTank out = be.tanks[TANK_COOLANT_OUT];
 
-        if (be.isCooling != canConvert) {
-            be.isCooling = canConvert;
-            changed = true;
-        }
+        int convert = Math.min(in.getFill(), out.getMaxFill() - out.getFill());
+        be.throughput = convert;
 
-        if (changed) {
-            be.setChanged();
-            be.sendUpdateToClient();
-        }
+        in.setFill(in.getFill() - convert);
+        if (convert > 0) be.waterTimer = 20;
+        out.setFill(out.getFill() + convert);
 
-        be.ensureNetworkInitialized();
+        // subscribeToAllAround / sendFluidToAll des TileEntityTowerSmall
+        for (Direction dir : CON_DIRS) be.trySubscribe(in.getTankType(), level, pos.relative(dir, 3), dir);
+        for (Direction dir : CON_DIRS) be.tryProvide(out, level, pos.relative(dir, 3), dir);
+
+        if (convert > 0) be.setChanged();
+        be.syncIfChanged();
     }
 
-    /** Sky-access check: looks for an unobstructed path to the sky from the top of the structure. */
-    private boolean hasSkyAccess(Level level, BlockPos pos) {
-        BlockPos topPos = pos.above(STRUCTURE_HEIGHT - 1);
-        return level.canSeeSky(topPos);
+    /** Library.POS_X, NEG_X, POS_Z, NEG_Z in Original-Reihenfolge. */
+    private static final Direction[] CON_DIRS = { Direction.EAST, Direction.WEST, Direction.SOUTH, Direction.NORTH };
+
+    private void syncIfChanged() {
+        int i = tanks[0].getFill(), o = tanks[1].getFill();
+        if (i != sentIn || o != sentOut || waterTimer != sentTimer) {
+            sentIn = i; sentOut = o; sentTimer = waterTimer;
+            sendUpdateToClient();
+        }
     }
 
+    /** Original {@code TileEntityTowerSmall}: Dampfschwaden aus der Spitze, solange {@code waterTimer > 0}. */
     private void clientTick(Level level, BlockPos pos) {
-        if (!isCooling) return;
-
-        particleTimer++;
-        if (particleTimer < PARTICLE_INTERVAL_TICKS) return;
-        particleTimer = 0;
-
-        if (!(level instanceof ServerLevel)) {
-            double x = pos.getX() + 0.5D;
-            double y = pos.getY() + STRUCTURE_HEIGHT;
-            double z = pos.getZ() + 0.5D;
-            level.addParticle(ParticleTypes.CLOUD, x, y, z, 0.0D, 0.05D, 0.0D);
-            level.addParticle(ParticleTypes.CLOUD, x + 0.2D, y, z - 0.2D, 0.0D, 0.05D, 0.0D);
-            level.addParticle(ParticleTypes.CLOUD, x - 0.2D, y, z + 0.2D, 0.0D, 0.05D, 0.0D);
+        if (com.hbm_m.config.ClientConfig.coolingTowerParticles && (this.waterTimer > 0 && level.getGameTime() % 2 == 0)) {
+            CompoundTag data = new CompoundTag();
+            data.putString("type", "tower");
+            data.putFloat("lift", 1F);
+            data.putFloat("base", 0.5F);
+            data.putFloat("max", 4F);
+            data.putInt("life", 250 + level.random.nextInt(250));
+            data.putDouble("posX", pos.getX() + 0.5);
+            data.putDouble("posZ", pos.getZ() + 0.5);
+            data.putDouble("posY", pos.getY() + 18);
+            com.hbm_m.particle.helper.ParticleEffectClient.effectNT(data);
         }
     }
 
@@ -130,8 +116,13 @@ public class MachineTowerSmallBlockEntity extends BaseMachineBlockEntity impleme
         return (index >= 0 && index < tanks.length) ? tanks[index] : tanks[0];
     }
 
+    /** Arbeitet gerade (Original: {@code waterTimer > 0}). */
     public boolean isCooling() {
-        return isCooling;
+        return waterTimer > 0;
+    }
+
+    public int getThroughput() {
+        return throughput;
     }
 
     // ═══════════════════════════ IFluidStandardTransceiverMK2 ════════════════════════════════
@@ -159,19 +150,18 @@ public class MachineTowerSmallBlockEntity extends BaseMachineBlockEntity impleme
     @Override
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.writeNbtData(tag, registries);
-        for (int i = 0; i < tanks.length; i++) {
-            tanks[i].writeToNBT(tag, "tank_" + i);
-        }
-        tag.putBoolean("isCooling", isCooling);
+        // Original-Schluessel: "water" = Eingang, "steam" = Ausgang
+        tanks[0].writeToNBT(tag, "water");
+        tanks[1].writeToNBT(tag, "steam");
+        tag.putByte("waterTimer", (byte) waterTimer);
     }
 
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.readNbtData(tag, registries);
-        for (int i = 0; i < tanks.length; i++) {
-            tanks[i].readFromNBT(tag, "tank_" + i);
-        }
-        isCooling = tag.getBoolean("isCooling");
+        tanks[0].readFromNBT(tag, "water");
+        tanks[1].readFromNBT(tag, "steam");
+        waterTimer = tag.getByte("waterTimer");
     }
 
     //? if forge {
@@ -180,6 +170,17 @@ public class MachineTowerSmallBlockEntity extends BaseMachineBlockEntity impleme
         setFluidHandler(new TowerSmallFluidHandler(this));
     }
     //?}
+
+    private AABB bb = null;
+
+    //? if forge {
+    @Override
+    //?}
+    public AABB getRenderBoundingBox() {
+        if (bb == null) bb = new AABB(worldPosition.getX() - 2, worldPosition.getY(), worldPosition.getZ() - 2,
+                worldPosition.getX() + 3, worldPosition.getY() + 20, worldPosition.getZ() + 3);
+        return bb;
+    }
 
     @Override
     protected Component getDefaultName() {
@@ -198,7 +199,7 @@ public class MachineTowerSmallBlockEntity extends BaseMachineBlockEntity impleme
 
     @Override
     public AbstractContainerMenu createMenu(int id, Inventory inventory, Player player) {
-        // No GUI - purely passive fluid-to-fluid converter.
+        // Original: kein GUI
         return null;
     }
 }

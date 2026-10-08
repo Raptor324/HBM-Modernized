@@ -61,6 +61,12 @@ public class DecoLootBlockEntity extends BaseHbmBlockEntity {
         return items;
     }
 
+    /** Ruestungsstapel (RenderLoot: Figur bei y+1.5) ragen bis gut zwei Bloecke hoch. */
+    @Override
+    public net.minecraft.world.phys.AABB getRenderBoundingBox() {
+        return new net.minecraft.world.phys.AABB(worldPosition).inflate(0.5D).expandTowards(0, 2, 0);
+    }
+
     /**
      * Добавляет стопку в «кучу» с ручным смещением (порт
      * {@code TileEntityLoot.addItem}). Используется генератором красной
@@ -73,6 +79,12 @@ public class DecoLootBlockEntity extends BaseHbmBlockEntity {
         if (level != null && !level.isClientSide) {
             level.sendBlockUpdated(getBlockPos(), getBlockState(), getBlockState(), 3);
         }
+    }
+
+    /** Leert den Stapel (Port: vor {@code LootGenerator.applyLoot}, falls die Autogenerierung schon lief). */
+    public void clearItems() {
+        items.clear();
+        setChanged();
     }
 
     @Override

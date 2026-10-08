@@ -78,7 +78,7 @@ public class FusionTorusRenderer implements BlockEntityRenderer<FusionTorusBlock
             pose.mulPose(Axis.ZP.rotationDegrees(10));
             pose.mulPose(Axis.YP.rotationDegrees(5));
         }
-        applyFacing(be.getBlockState(), pose);
+        // RenderFusionTorus dreht nicht nach Metadaten: Bolzen gehoeren zu festen Weltrichtungen (connections[i] = Richtung i + 2)
 
         VertexConsumer solid = buffer.getBuffer(RenderType.cutout());
 
@@ -145,9 +145,9 @@ public class FusionTorusRenderer implements BlockEntityRenderer<FusionTorusBlock
         }
     }
 
-    /** Original: {@code BobMathUtil.sps} - Sinus, auf 0..1 abgebildet. */
+    /** Original: {@code BobMathUtil.sps}. */
     private static double sps(double x) {
-        return (Math.sin(x) + 1D) * 0.5D;
+        return Math.sin(Math.PI / 2D * Math.cos(x));
     }
 
     private static void renderGroup(VertexConsumer vc, PoseStack pose, Map<String, List<float[]>> obj,

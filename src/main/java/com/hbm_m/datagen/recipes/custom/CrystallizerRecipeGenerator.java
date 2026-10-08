@@ -113,6 +113,16 @@ public final class CrystallizerRecipeGenerator {
                         ModBlocks.REBAR.get().asItem(), 1, fluid(ModFluids.CONCRETE, 1_000),
                         new ItemStack(ModBlocks.CONCRETE_REBAR.get()), 10, 0f)
                 .save(writer, "crystallizer/rebar_to_concrete_rebar");
+
+        // Original: for(i < ScrapType.values().length) scrap_plastic@i -> circuit_star_piece@i (baseTime, Perhydrol)
+        for (String type : ModItems.SCRAP_PLASTIC_TYPES) {
+            CrystallizerRecipeBuilder.crystallizerRecipe(
+                            ModItems.scrapPlastic(type), 1, PEROXIDE,
+                            new ItemStack(net.minecraft.core.registries.BuiltInRegistries.ITEM.get(
+                                    net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("hbm_m", "circuit_star_piece_" + type))),
+                            BASE_TIME, 0f)
+                    .save(writer, "crystallizer/scrap_plastic_to_circuit_star_piece_" + type);
+        }
     }
 
     /** Руда по forge-тегу с перекисью 500 mB, baseTime, productivity 0.05 (базовый случай). */

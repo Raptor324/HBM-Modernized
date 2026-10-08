@@ -254,9 +254,23 @@ public final class ModMaterialItems {
             return new com.hbm_m.item.special.ItemHotDusted(200, 0,
                     net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("hbm_m", "textures/item/ingot/ingot_steel_dusted_hot.png"), props);
         }
+        // ingot_u238m2 Meta 0 = ItemUnstable(350, 200): zerfaellt im Inventar zur MK5-Explosion
+        if (shape == MaterialShape.INGOT && mat == ModMaterials.U238M2) {
+            return new com.hbm_m.item.special.ItemUnstable(350, 200, props);
+        }
         // crystal_xen = ItemDrop im Original (maxStack 1, verschiebt beim Aufprall Bloecke).
         if (mat == ModMaterials.XEN && shape == MaterialShape.CRYSTAL) {
             return new com.hbm_m.item.special.ItemDrop(props.stacksTo(1));
+        }
+        // ItemCustomLore 1:1 (item.hbm_m.<id>.desc mit $-Zeilen): Zeilenumbrueche sind je Sprache verschieden
+        if ((mat == ModMaterials.FLASHLEAD && shape == MaterialShape.BILLET)
+                || (mat == ModMaterials.EUPHEMIUM && shape == MaterialShape.NUGGET)
+                || (mat == ModMaterials.BISMUTH && shape == MaterialShape.PLATE)
+                // diese haben im Original zusaetzlich .desc.P11 (Polaroid 11)
+                || (mat == ModMaterials.NEPTUNIUM && shape == MaterialShape.INGOT)
+                || (mat == ModMaterials.LANTHANIUM && shape == MaterialShape.INGOT)
+                || (mat == ModMaterials.TANTALIUM && (shape == MaterialShape.INGOT || shape == MaterialShape.POWDER))) {
+            return new com.hbm_m.item.ItemCustomLore(props);
         }
         // Лор-строки оригинала (desc в 1.7.10) для материалов.
         List<Component> lore = materialLore(mat, shape);
@@ -336,6 +350,11 @@ public final class ModMaterialItems {
                     .withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC));
         }
         return out;
+    }
+
+    /** Material, dessen Barren zum Block/Pulver gehoert: THORIUM -> THORIUM232 (Original ingot_th232). */
+    public static ModMaterials ingotMaterial(ModMaterials mat) {
+        return mat == ModMaterials.THORIUM ? ModMaterials.THORIUM232 : mat;
     }
 
     public static boolean has(ModMaterials mat, MaterialShape shape) {

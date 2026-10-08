@@ -148,10 +148,10 @@ public class MachineBoilerBlock extends DummyableMachineBlock implements com.hbm
 
         List<Component> text = new ArrayList<>();
         text.add(Component.literal(String.format(Locale.US, "%,d", boiler.heat) + "TU"));
-        text.add(Component.literal("-> ").withStyle(ChatFormatting.GREEN).append(Component.literal("").withStyle(ChatFormatting.RESET)
+        text.add(Component.literal("-> ").withStyle(ChatFormatting.GREEN).append(Component.literal("").withStyle(ChatFormatting.WHITE) /* 1.7 §r = Grundfarbe */
                 .append(FluidType.forFluid(boiler.tanks[0].getTankType()).getLocalizedName())
                 .append(": " + String.format(Locale.US, "%,d", boiler.tanks[0].getFill()) + " / " + String.format(Locale.US, "%,d", boiler.tanks[0].getMaxFill()) + "mB")));
-        text.add(Component.literal("<- ").withStyle(ChatFormatting.RED).append(Component.literal("").withStyle(ChatFormatting.RESET)
+        text.add(Component.literal("<- ").withStyle(ChatFormatting.RED).append(Component.literal("").withStyle(ChatFormatting.WHITE) /* 1.7 §r = Grundfarbe */
                 .append(FluidType.forFluid(boiler.tanks[1].getTankType()).getLocalizedName())
                 .append(": " + String.format(Locale.US, "%,d", boiler.tanks[1].getFill()) + " / " + String.format(Locale.US, "%,d", boiler.tanks[1].getMaxFill()) + "mB")));
 

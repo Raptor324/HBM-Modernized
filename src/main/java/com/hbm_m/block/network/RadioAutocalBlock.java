@@ -1,17 +1,18 @@
 package com.hbm_m.block.network;
 
+import com.hbm_m.block.ModBlocks;
+import com.hbm_m.block.machines.DummyableMachineBlock;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.blockentity.network.RadioAutocalBlockEntity;
 
+import com.hbm_m.multiblock.DummyableStructureBuilder;
+import com.hbm_m.multiblock.MultiblockStructureHelper;
+
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.BaseEntityBlock;
-import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
@@ -19,13 +20,21 @@ import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.BlockHitResult;
 import org.jetbrains.annotations.Nullable;
 
-/** Port of {@code RadioAUTOCAL} (1.7.10 Original). */
-public class RadioAutocalBlock extends BaseEntityBlock {
+/**
+ * Port of {@code RadioAUTOCAL} (1.7.10 Original): {@code BlockDummyable} mit {@code getDimensions {1,0,0,0,0,0}},
+ * Versatz 0 - Kern unten, ein Dummy darueber (2 Bloecke hoch, Modell {@code autocal.obj}).
+ */
+public class RadioAutocalBlock extends DummyableMachineBlock {
 
     public RadioAutocalBlock(Properties properties) { super(properties); }
 
     @Override
-    public RenderShape getRenderShape(BlockState state) { return RenderShape.MODEL; }
+    protected MultiblockStructureHelper defineStructure() {
+        return DummyableStructureBuilder.create()
+                .box(1, 0, 0, 0, 0, 0)
+                .placementOffset(0)
+                .build(() -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState());
+    }
 
     @Nullable @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
@@ -38,21 +47,11 @@ public class RadioAutocalBlock extends BaseEntityBlock {
                 (lvl, pos, st, be) -> RadioAutocalBlockEntity.tick(lvl, pos, st, (RadioAutocalBlockEntity) be));
     }
 
-    @Override
-    public boolean isSignalSource(BlockState state) { return true; }
-
-    @Override
-    public int getSignal(BlockState state, BlockGetter level, BlockPos pos, Direction side) {
-        if (level.getBlockEntity(pos) instanceof RadioAutocalBlockEntity be) {
-            return be.getRedstoneOutput(side.ordinal());
-        }
-        return 0;
-    }
 
     //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
-
+        if (player.isShiftKeyDown()) return InteractionResult.PASS;
         if (level.isClientSide()) {
             dev.architectury.utils.EnvExecutor.runInEnv(dev.architectury.utils.Env.CLIENT, () -> () ->
                     com.hbm_m.client.gui.radio.RadioTorchScreenOpener.openRadioAutocal(pos));
@@ -63,7 +62,7 @@ public class RadioAutocalBlock extends BaseEntityBlock {
     //?} else {
     /*@Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
-
+        if (player.isShiftKeyDown()) return InteractionResult.PASS;
         if (level.isClientSide()) {
             dev.architectury.utils.EnvExecutor.runInEnv(dev.architectury.utils.Env.CLIENT, () -> () ->
                     com.hbm_m.client.gui.radio.RadioTorchScreenOpener.openRadioAutocal(pos));

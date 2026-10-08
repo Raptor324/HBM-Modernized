@@ -22,7 +22,7 @@ import dev.architectury.fluid.FluidStack;
  */
 public class GUIBarrelIron extends AbstractContainerScreen<BarrelIronMenu> {
 
-    private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "textures/gui/storage/gui_tank.png");
+    private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "textures/gui/storage/gui_barrel.png");
 
     private final int tankX = 71;
     private final int tankY = 17;
@@ -35,11 +35,7 @@ public class GUIBarrelIron extends AbstractContainerScreen<BarrelIronMenu> {
     private static final int MODE_BUTTON_SIZE = 18;
 
     private static int modeButtonSpriteRow(int logicalMode) {
-        return switch (logicalMode) {
-            case 0 -> 2;
-            case 2 -> 0;
-            default -> logicalMode;
-        };
+        return logicalMode; // Original: Zeile = Modus
     }
 
     public GUIBarrelIron(BarrelIronMenu menu, Inventory inv, Component title) {
@@ -106,5 +102,13 @@ public class GUIBarrelIron extends AbstractContainerScreen<BarrelIronMenu> {
     private boolean isHovering(int x, int y, int w, int h, int mouseX, int mouseY) {
         return mouseX >= this.leftPos + x && mouseX < this.leftPos + x + w &&
                 mouseY >= this.topPos + y && mouseY < this.topPos + y + h;
+    }
+
+    @Override
+    protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
+        // Original drawGuiContainerForegroundLayer
+        String name = this.title.getString();
+        guiGraphics.drawString(this.font, name, 88 - this.font.width(name) / 2, 6, 4210752, false);
+        guiGraphics.drawString(this.font, this.playerInventoryTitle, 8, 72, 4210752, false);
     }
 }

@@ -7,7 +7,9 @@ import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.blockentity.ModBlockEntities;
+import com.hbm_m.block.UniversalMachinePartBlock;
 import com.hbm_m.blockentity.machines.MachineCyclotronBlockEntity;
+import com.hbm_m.interfaces.IMultiblockPart;
 import com.hbm_m.interfaces.IMultiblockController;
 import com.hbm_m.multiblock.MultiblockSideTuples;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
@@ -31,6 +33,7 @@ import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.BaseEntityBlock;
 import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -57,7 +60,7 @@ public class MachineCyclotronBlock extends BaseEntityBlock implements IMultibloc
     }
 
     private static MultiblockStructureHelper defineStructureNew() {
-        // GIT MachineCyclotron: 5×5×5 solid core + outer ring connectors at y=0
+        // Original MachineCyclotron: 5x5x3, Anschlusszellen (makeExtra) im Ring der unteren Lage
         String[] layer0 = {
             "OBBBO",
             "BOOOB",
@@ -91,7 +94,7 @@ public class MachineCyclotronBlock extends BaseEntityBlock implements IMultibloc
         );
 
         return MultiblockStructureHelper.createFromLayersWithRolesAndSides(
-            new String[][]{layer0, layerSolid, layerSolid, layerSolid, layerSolid},
+            new String[][]{layer0, layerSolid, layerSolid}, // Original getDimensions {2,0,2,2,2,2}: drei Lagen
             symbolMap,
             () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState(),
             roleMap,
@@ -99,6 +102,37 @@ public class MachineCyclotronBlock extends BaseEntityBlock implements IMultibloc
             energySideMap,
             fluidSideMap
         );
+    }
+
+    /**
+     * Alte Port-Welten: die Struktur war 5x5x5, jetzt 5x5x3 (Original). Die ueberzaehligen Lagen y+3/y+4 sieht
+     * attemptAutoRepair nicht (sucht nur im neuen Umriss). Hier entfernen - nur Teilzellen, die auf DIESEN Kern zeigen,
+     * ohne Kaskade (runSafeRemove). Der alte Umriss war um den Kern punktsymmetrisch, Drehung daher egal.
+     *
+     * @return false, wenn ein Teil des alten Umrisses noch nicht geladen ist (spaeter erneut versuchen)
+     */
+    public static boolean removeLegacyCells(Level level, BlockPos core) {
+        if (level.isClientSide()) return true;
+        boolean[] complete = {true};
+        MultiblockStructureHelper.runSafeRemove(() -> {
+            for (int dy = 3; dy <= 4; dy++) {
+                for (int dx = -2; dx <= 2; dx++) {
+                    for (int dz = -2; dz <= 2; dz++) {
+                        BlockPos p = core.offset(dx, dy, dz);
+                        if (!level.isLoaded(p)) { complete[0] = false; continue; }
+                        if (!(level.getBlockState(p).getBlock() instanceof UniversalMachinePartBlock)) continue;
+                        BlockEntity be = level.getBlockEntity(p);
+                        if (!(be instanceof IMultiblockPart part) || !core.equals(part.getControllerPos())) continue;
+                        PartRole role = part.getPartRole();
+                        if (role.canReceiveEnergy() || role.canSendEnergy()) {
+                            com.hbm_m.api.energy.EnergySubscriptions.unsubscribeAll(be);
+                        }
+                        level.setBlock(p, Blocks.AIR.defaultBlockState(), 3);
+                    }
+                }
+            }
+        });
+        return complete[0];
     }
 
     @Override
@@ -155,6 +189,7 @@ public class MachineCyclotronBlock extends BaseEntityBlock implements IMultibloc
     @Override
     public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
         if (!state.is(newState.getBlock()) && !level.isClientSide()) {
+            removeLegacyCells(level, pos);
             getStructureHelper().destroyStructure(level, pos, state.getValue(FACING));
         }
         super.onRemove(state, level, pos, newState, isMoving);
@@ -163,11 +198,13 @@ public class MachineCyclotronBlock extends BaseEntityBlock implements IMultibloc
     //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        if (!level.isClientSide() && player.isShiftKeyDown()) return InteractionResult.PASS; // Original: geschlichen auf dem Server false
         return openMenu(state, level, pos, player, hand, hit);
     }
     //?} else {
     /*@Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+        if (!level.isClientSide() && player.isShiftKeyDown()) return InteractionResult.PASS; // Original: geschlichen auf dem Server false
         return openMenu(state, level, pos, player, InteractionHand.MAIN_HAND, hit);
     }
     *///?}
@@ -203,9 +240,10 @@ public class MachineCyclotronBlock extends BaseEntityBlock implements IMultibloc
 
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+        // w16b: nur die Kernzelle (Raycast pro Zelle wie Original); Umriss der ganzen Maschine: MultiblockOutlineForge
         MultiblockStructureHelper helper = getStructureHelper();
         if (helper != null) {
-            return helper.generateShapeFromParts(state.getValue(FACING));
+            return helper.getControllerCellShape(state.getValue(FACING));
         }
         return Shapes.block();
     }
@@ -221,7 +259,7 @@ public class MachineCyclotronBlock extends BaseEntityBlock implements IMultibloc
 
     @Override
     public RenderShape getRenderShape(BlockState state) {
-        return RenderShape.MODEL;
+        return RenderShape.ENTITYBLOCK_ANIMATED; // Stecker und Schriftzug zeichnet CyclotronRenderer (RenderCyclotron)
     }
 
     @Nullable

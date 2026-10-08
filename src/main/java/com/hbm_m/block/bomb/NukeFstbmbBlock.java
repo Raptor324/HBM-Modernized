@@ -52,9 +52,9 @@ public class NukeFstbmbBlock extends NukeBaseBlock implements IBomb {
     @Override
     public BombReturnCode explode(Level level, BlockPos pos) {
         if (level.isClientSide) return BombReturnCode.UNDEFINED;
-        if (level.getBlockEntity(pos) instanceof NukeFstbmbBlockEntity nuke && nuke.isReady()) {
-            level.setBlock(pos, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
-            explode(level, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5);
+        // Original NukeBalefire.explode: bei geladener Bombe TileEntityNukeBalefire.explode()
+        if (level.getBlockEntity(pos) instanceof NukeFstbmbBlockEntity nuke && nuke.isLoaded()) {
+            nuke.explode();
             return BombReturnCode.DETONATED;
         }
         return BombReturnCode.ERROR_MISSING_COMPONENT;

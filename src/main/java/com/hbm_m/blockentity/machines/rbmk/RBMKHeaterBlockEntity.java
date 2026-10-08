@@ -37,7 +37,7 @@ import net.minecraft.world.level.material.Fluid;
  * went in.</p>
  */
 public class RBMKHeaterBlockEntity extends RBMKColumnBlockEntity
-        implements MenuProvider, com.hbm_m.api.fluids.IFluidStandardTransceiverMK2 {
+        implements MenuProvider, com.hbm_m.api.fluids.IFluidStandardTransceiverMK2, com.hbm_m.api.redstoneoverradio.IRORValueProvider {
 
     /** CE: {@code new FluidTankNTM(Fluids.COOLANT, 16_000)} / {@code COOLANT_HOT}. */
     public final FluidTank inputTank  = new FluidTank(ModFluids.COOLANT.getSource(), 16_000);
@@ -243,5 +243,22 @@ public class RBMKHeaterBlockEntity extends RBMKColumnBlockEntity
         //?} else {
         /*if (tag.contains("inventory")) inventory.deserializeNBT(registries, tag.getCompound("inventory"));
         *///?}
+    }
+
+    // ── Redstone-over-Radio (1:1 TileEntityRBMKHeater) ──
+
+    @Override
+    public String[] getFunctionInfo() {
+        return new String[] {
+                PREFIX_VALUE + "in",
+                PREFIX_VALUE + "out"
+        };
+    }
+
+    @Override
+    public String provideRORValue(String name) {
+        if ((PREFIX_VALUE + "in").equals(name))  return "" + this.inputTank.getFill();
+        if ((PREFIX_VALUE + "out").equals(name)) return "" + this.outputTank.getFill();
+        return null;
     }
 }

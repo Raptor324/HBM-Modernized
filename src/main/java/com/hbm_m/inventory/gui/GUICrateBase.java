@@ -36,10 +36,11 @@ public class GUICrateBase<T extends BaseCrateMenu> extends AbstractContainerScre
     @Override
     protected void init() {
         super.init();
-        this.titleLabelX = 8;
+        // Original: Titel zentriert (xSize / 2 - Breite / 2), Inventar bei ySize - 96 + 2 (Desh: x 44, ySize - 96 + 3)
+        this.titleLabelX = this.imageWidth / 2 - this.font.width(this.title) / 2;
         this.titleLabelY = 6;
         this.inventoryLabelX = crateType.getPlayerInvStartX();
-        this.inventoryLabelY = crateType.getPlayerInvStartY() - 12;
+        this.inventoryLabelY = this.imageHeight - 96 + (crateType == CrateType.DESH ? 3 : 2);
     }
 
     @Override

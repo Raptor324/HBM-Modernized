@@ -103,6 +103,37 @@ public class SimpleObjModel {
         if (tris != null) render(pose, vc, light, tris, (int) (r * 255), (int) (g * 255), (int) (b * 255));
     }
 
+    /** Namen aller Teile ({@code o}/{@code g}-Gruppen) in Dateireihenfolge. */
+    public java.util.Set<String> getPartNames() {
+        ensureLoaded();
+        return parts.keySet();
+    }
+
+    /** Wie {@link #renderPartEntity}, fuer alle Teile. */
+    public void renderAllEntity(PoseStack pose, VertexConsumer vc, int light, int overlay, float r, float g, float b, float a) {
+        ensureLoaded();
+        for (String part : parts.keySet()) renderPartEntity(part, pose, vc, light, overlay, r, g, b, a);
+    }
+
+    /** Fuer Wesenmodelle: Teil mit Overlay (Treffer-Rot) und Farbe samt Alpha. */
+    public void renderPartEntity(String part, PoseStack pose, VertexConsumer vc, int light, int overlay, float r, float g, float b, float a) {
+        ensureLoaded();
+        List<float[]> tris = parts.get(part);
+        if (tris == null) return;
+        Matrix4f m = pose.last().pose();
+        org.joml.Matrix3f n = pose.last().normal();
+        org.joml.Vector3f normal = new org.joml.Vector3f();
+        int cr = (int) (r * 255), cg = (int) (g * 255), cb = (int) (b * 255), ca = (int) (a * 255);
+        for (float[] tri : tris) {
+            for (int pass = 0; pass < 4; pass++) {
+                int base = Math.min(pass, 2) * 8;
+                normal.set(tri[base + 5], tri[base + 6], tri[base + 7]).mul(n);
+                RenderHooks.vertexFull(vc, m, tri[base], tri[base + 1], tri[base + 2], cr, cg, cb, ca,
+                        tri[base + 3], 1F - tri[base + 4], overlay, light, normal.x, normal.y, normal.z);
+            }
+        }
+    }
+
     /** Ein Teil nur mit Position + Farbe (POSITION_COLOR/TRIANGLES). */
     public void renderPartColor(String part, PoseStack pose, VertexConsumer vc, float r, float g, float b, float a) {
         ensureLoaded();
@@ -112,6 +143,36 @@ public class SimpleObjModel {
         for (float[] tri : tris) {
             for (int v = 0; v < 3; v++) {
                 vc.vertex(m, tri[v * 8], tri[v * 8 + 1], tri[v * 8 + 2]).color(r, g, b, a).endVertex();
+            }
+        }
+    }
+
+    /**
+     * Wie {@link #renderPartColor}, aber um {@code dy} verschoben und an der Ebene {@code y >= clipY} beschnitten
+     * (Ersatz fuer {@code GL_CLIP_PLANE0} mit {@code {0, 1, 0, -clipY}}, gesetzt vor der Verschiebung).
+     */
+    public void renderPartColorClippedY(String part, PoseStack pose, VertexConsumer vc, float r, float g, float b, float a, float dy, float clipY) {
+        ensureLoaded();
+        List<float[]> tris = parts.get(part);
+        if (tris == null) return;
+        Matrix4f m = pose.last().pose();
+        float[][] in = new float[3][];
+        for (float[] tri : tris) {
+            for (int v = 0; v < 3; v++) in[v] = new float[] { tri[v * 8], tri[v * 8 + 1] + dy, tri[v * 8 + 2] };
+            java.util.List<float[]> poly = new java.util.ArrayList<>(4);
+            for (int v = 0; v < 3; v++) {
+                float[] cur = in[v], nxt = in[(v + 1) % 3];
+                boolean cIn = cur[1] >= clipY, nIn = nxt[1] >= clipY;
+                if (cIn) poly.add(cur);
+                if (cIn != nIn) {
+                    float t = (clipY - cur[1]) / (nxt[1] - cur[1]);
+                    poly.add(new float[] { cur[0] + (nxt[0] - cur[0]) * t, clipY, cur[2] + (nxt[2] - cur[2]) * t });
+                }
+            }
+            for (int k = 1; k + 1 < poly.size(); k++) {
+                for (float[] p : new float[][] { poly.get(0), poly.get(k), poly.get(k + 1) }) {
+                    vc.vertex(m, p[0], p[1], p[2]).color(r, g, b, a).endVertex();
+                }
             }
         }
     }

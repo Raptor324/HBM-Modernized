@@ -6,26 +6,22 @@ import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Rarity;
 import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.Level;
 
 public class ItemCreativeBattery extends ModBatteryItem implements ITooltipProvider {
 
     public ItemCreativeBattery(Properties pProperties) {
-        super(pProperties.rarity(Rarity.EPIC).stacksTo(1), Long.MAX_VALUE, Long.MAX_VALUE, Long.MAX_VALUE);
+        super(pProperties.stacksTo(1), Long.MAX_VALUE, Long.MAX_VALUE, Long.MAX_VALUE);
     }
 
     @Override
     public void appendHbmTooltip(@NotNull ItemStack pStack, @Nullable Level pLevel, @NotNull List<Component> pTooltipComponents, @NotNull TooltipFlag pIsAdvanced) {
-        pTooltipComponents.add(Component.translatable("tooltip.hbm_m.creative_battery_desc")
-                .withStyle(ChatFormatting.LIGHT_PURPLE));
-        pTooltipComponents.add(Component.translatable("tooltip.hbm_m.creative_battery_flavor")
-                .withStyle(ChatFormatting.DARK_PURPLE, ChatFormatting.ITALIC));
+        // Original ItemBatteryCreative hat kein addInformation: keine Zusatzzeilen
+        // (ueberschreibt bewusst die drei Batteriezeilen von ModBatteryItem).
     }
 
     @Override

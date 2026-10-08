@@ -23,9 +23,11 @@ public class MachineDerrickBlockEntity extends OilDrillBaseBlockEntity {
     private static final int  CONSUMPTION   = 100;
     private static final int  DELAY         = 50;
 
-    private static final int OIL_PER_DEPOSIT     = 1000;
+    /** Original {@code TileEntityMachineOilWell}: 500 mB Oel, 100-500 mB Gas, 5 % Chance, das Vorkommen zu leeren. */
+    private static final int OIL_PER_DEPOSIT     = 500;
     private static final int GAS_PER_DEPOSIT_MIN = 100;
     private static final int GAS_PER_DEPOSIT_MAX = 500;
+    private static final double DRAIN_CHANCE     = 0.05D;
 
     public MachineDerrickBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.DERRICK_BE.get(), pos, state);
@@ -50,16 +52,49 @@ public class MachineDerrickBlockEntity extends OilDrillBaseBlockEntity {
         return MAX_POWER;
     }
 
+    /**
+     * Original {@code onDrill}: Uran- bzw. Asbesterz im Bohrloch setzt dichtes Radon bzw. Asbestgas 10 Bloecke ueber dem
+     * Bohrturm frei (die Diagonal-Eigenheit des Originals - geprueft bei (j,j), gesetzt bei (k,k) - bleibt erhalten).
+     */
+    @Override
+    public void onDrill(BlockPos pos) {
+        ItemStack stack = new ItemStack(level.getBlockState(pos).getBlock());
+        int x = worldPosition.getX(), y = worldPosition.getY(), z = worldPosition.getZ();
+
+        if (stack.is(net.minecraft.tags.ItemTags.create(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("forge", "ores/uranium")))) {
+            for (int j = -1; j <= 1; j++) {
+                for (int k = -1; k <= 1; k++) {
+                    if (level.getBlockState(new BlockPos(x + j, y + 10, z + j)).canBeReplaced()) {
+                        level.setBlockAndUpdate(new BlockPos(x + k, y + 10, z + k), com.hbm_m.block.ModBlocks.GAS_RADON_DENSE.get().defaultBlockState());
+                    }
+                }
+            }
+        }
+
+        if (stack.is(net.minecraft.tags.ItemTags.create(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("forge", "ores/asbestos")))) {
+            for (int j = -1; j <= 1; j++) {
+                for (int k = -1; k <= 1; k++) {
+                    if (level.getBlockState(new BlockPos(x + j, y + 10, z + j)).canBeReplaced()) {
+                        level.setBlockAndUpdate(new BlockPos(x + k, y + 10, z + k), com.hbm_m.block.ModBlocks.GAS_ASBESTOS.get().defaultBlockState());
+                    }
+                }
+            }
+        }
+    }
+
     @Override
     public void onSuck(BlockPos pos) {
+        // Original: "game.neutral.swim.splash", 2.0 / 0.5
         level.playSound(null, worldPosition, SoundEvents.GENERIC_SPLASH, SoundSource.BLOCKS, 2.0F, 0.5F);
 
-        int gas = GAS_PER_DEPOSIT_MIN + level.getRandom().nextInt(GAS_PER_DEPOSIT_MAX - GAS_PER_DEPOSIT_MIN + 1);
-        tanks[0].fillMb(ModFluids.CRUDE_OIL.getSource(), OIL_PER_DEPOSIT);
-        tanks[1].fillMb(ModFluids.GAS.getSource(), gas);
+        tanks[0].setFill(tanks[0].getFill() + OIL_PER_DEPOSIT);
+        if (tanks[0].getFill() > tanks[0].getMaxFill()) tanks[0].setFill(tanks[0].getMaxFill());
+        tanks[1].setFill(tanks[1].getFill() + (GAS_PER_DEPOSIT_MIN + level.getRandom().nextInt(GAS_PER_DEPOSIT_MAX - GAS_PER_DEPOSIT_MIN + 1)));
+        if (tanks[1].getFill() > tanks[1].getMaxFill()) tanks[1].setFill(tanks[1].getMaxFill());
 
-        // one pump exhausts the deposit completely
-        level.setBlockAndUpdate(pos, com.hbm_m.block.ModBlocks.ORE_OIL_EMPTY.get().defaultBlockState());
+        if (level.getRandom().nextDouble() < DRAIN_CHANCE) {
+            level.setBlockAndUpdate(pos, com.hbm_m.block.ModBlocks.ORE_OIL_EMPTY.get().defaultBlockState());
+        }
     }
 
     @Override
@@ -74,7 +109,7 @@ public class MachineDerrickBlockEntity extends OilDrillBaseBlockEntity {
 
     @Override
     protected Component getDefaultName() {
-        return Component.translatable("block.hbm_m.derrick");
+        return Component.translatable("container.oilWell");
     }
 
     @Override

@@ -46,6 +46,8 @@ public class ItemSurveyScanner extends Item {
             boolean hasSchist = false;
             boolean hasAussie = false;
 
+            com.hbm_m.blockentity.nature.OreBedrockBlockEntity tile = null;
+
             int bottom = world.getMinBuildHeight() + 1;
 
             for (int a = -5; a <= 5; a++) {
@@ -63,6 +65,13 @@ public class ItemSurveyScanner extends Item {
                         else if (block == ModBlocks.STONE_GNEISS.get()) hasSchist = true;
                         else if (block == ModBlocks.ORE_AUSTRALIUM.get()) hasAussie = true;
                     }
+
+                    // Original: Bedrock-Erz in Hoehe 0 (Port: unterste Weltschicht)
+                    BlockPos bedrock = new BlockPos(x + a * 2, world.getMinBuildHeight(), z + b * 2);
+                    if (world.getBlockState(bedrock).getBlock() == ModBlocks.ORE_BEDROCK.get()
+                            && world.getBlockEntity(bedrock) instanceof com.hbm_m.blockentity.nature.OreBedrockBlockEntity ore) {
+                        tile = ore;
+                    }
                 }
             }
 
@@ -72,6 +81,7 @@ public class ItemSurveyScanner extends Item {
             if (hasDepth) player.sendSystemMessage(Component.literal("Found DEPTH ROCK!").withStyle(ChatFormatting.GRAY));
             if (hasSchist) player.sendSystemMessage(Component.literal("Found SCHIST!").withStyle(ChatFormatting.DARK_AQUA));
             if (hasAussie) player.sendSystemMessage(Component.literal("Found AUSTRALIUM!").withStyle(ChatFormatting.YELLOW));
+            if (tile != null && !tile.resource.isEmpty()) player.sendSystemMessage(Component.literal("Found BEDROCK ORE for ").append(tile.resource.getHoverName()).append("!").withStyle(ChatFormatting.RED));
         }
 
         player.swing(hand);

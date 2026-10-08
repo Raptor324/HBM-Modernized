@@ -51,26 +51,19 @@ public class MachinePumpjackBlock extends BaseEntityBlock implements IMultiblock
     }
 
     private static MultiblockStructureHelper defineStructure() {
-        String[] layer0 = { "C" };
-        String[] layer1 = { "O" };
-        String[] layer2 = { "O" };
-        String[] layer3 = { "O" };
-
-        Map<Character, PartRole> roleMap = Map.of(
-                'O', PartRole.DEFAULT,
-                'C', PartRole.CONTROLLER
-        );
-
-        Map<Character, Supplier<BlockState>> symbolMap = Map.of();
-
-        return MultiblockStructureHelper.createFromLayersWithRoles(
-                new String[][] { layer0, layer1, layer2, layer3 },
-                symbolMap,
-                () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState(),
-                roleMap,
-                null,
-                null
-        );
+        // 1:1 MachinePumpjack: getDimensions {3,0,0,0,0,6} (Balken 7 Felder quer), getOffset 0; fillSpace-Zusatzquader
+        // {0,0,-1,1,1,1} und {0,0,1,-1,2,2} um Kern + rot(DOWN)*3 (= Balkenmitte, side -3), makeExtra an deren vier
+        // Diagonalen.
+        return com.hbm_m.multiblock.DummyableStructureBuilder.create()
+                .box(3, 0, 0, 0, 0, 6)
+                .boxAt(0, 0, -3, 0, 0, -1, 1, 1, 1)
+                .boxAt(0, 0, -3, 0, 0, 1, -1, 2, 2)
+                .extra(1, 0, -2)
+                .extra(1, 0, -4)
+                .extra(-1, 0, -2)
+                .extra(-1, 0, -4)
+                .placementOffset(0)
+                .build(() -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState());
     }
 
     @Override
@@ -123,11 +116,13 @@ public class MachinePumpjackBlock extends BaseEntityBlock implements IMultiblock
     //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        if (player.isShiftKeyDown()) return InteractionResult.sidedSuccess(level.isClientSide()); // Original standardOpenBehavior: geschlichen true ohne GUI
         return openMenu(state, level, pos, player, hand, hit);
     }
     //?} else {
     /*@Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+        if (player.isShiftKeyDown()) return InteractionResult.sidedSuccess(level.isClientSide()); // Original standardOpenBehavior: geschlichen true ohne GUI
         return openMenu(state, level, pos, player, InteractionHand.MAIN_HAND, hit);
     }
     *///?}
@@ -154,7 +149,7 @@ public class MachinePumpjackBlock extends BaseEntityBlock implements IMultiblock
 
     @Override
     public RenderShape getRenderShape(BlockState state) {
-        return RenderShape.MODEL;
+        return RenderShape.ENTITYBLOCK_ANIMATED; // Kurbel/Kopf/Gestaenge zeichnet PumpjackRenderer (RenderPumpjack)
     }
 
     @Override

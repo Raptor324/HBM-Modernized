@@ -2,639 +2,710 @@ package com.hbm_m.datagen.recipes.custom;
 //? if forge {
 import java.util.function.Consumer;
 
-import com.hbm_m.block.ModBlocks;
 import com.hbm_m.inventory.fluid.ModFluids;
-import com.hbm_m.item.ModItems;
-import com.hbm_m.item.material.MaterialShape;
-import com.hbm_m.item.material.ModMaterialItems;
-import com.hbm_m.item.material.ModMaterials;
 
 import net.minecraft.data.recipes.FinishedRecipe;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
+import net.minecraft.world.item.crafting.Ingredient;
+
+import static com.hbm_m.datagen.recipes.custom.OreDictIngredients.*;
 
 /**
- * Groups all chemical plant recipes (ported from 1.7.10 {@code ChemicalPlantRecipes.registerDefaults()}).
+ * 1:1-Port von {@code ChemicalPlantRecipes.registerDefaults()} (Chemiewerk), mit den Konfig-Fassungen ({@link ConfigRecipes}: 528-Druck, LBSM-Chemie).
  *
- * <p>Рецепты пишутся в data-pack как custom recipes {@code hbm_m:chemical_plant}.</p>
+ * <p>AUTOMATISCH ERZEUGT aus dem Original ({@code com.hbm.inventory.recipes.ChemicalPlantRecipes}) durch {@code rc/transpile.py} - nicht von Hand
+ * aendern, sondern Zuordnungen im Skript pflegen. OreDict-Schluessel des Originals sind Item-Tags
+ * {@code hbm_m:oredict/...} ({@link OreDictTagProvider}). Mit OFFEN markierte Rezepte haben im Port
+ * (noch) keine Entsprechung fuer Zutat oder Ergebnis.</p>
  */
 public final class ChemicalPlantRecipeGenerator {
 
     private ChemicalPlantRecipeGenerator() {}
 
     public static void generate(Consumer<FinishedRecipe> writer) {
-        registerRegularFluids(writer);
-        registerOils(writer);
-        registerAcids(writer);
-        registerCoolants(writer);
-        registerSteam(writer);
-        registerOxyhydrogen(writer);
-        registerDeuterium(writer);
-        registerUf6(writer);
-        registerSchrabidium(writer);
-        registerKevlar(writer);
-        registerBasicBlocks(writer);
-        registerExplosives(writer);
-        registerDhc(writer);
-        registerConstructionMaterials(writer);
-        registerBatteries(writer);
-        registerFuelAdditives(writer);
-        registerNapalm(writer);
-        registerFuelsAndElectrodes(writer);
-        registerPolymers(writer);
-        registerMisc(writer);
-
-        // Genuinely blocked — missing item/tag/enum system in this port (see class javadoc history):
-        // chem.hydrogencoke, chem.tarsand, chem.tel, chem.deicer, chem.ducrete,
-        // chem.batterylead, chem.batterylithium, chem.batterysodium, chem.batteryschrabidium, chem.batteryquantum,
-        // chem.cordite, chem.coltancleaning, chem.coltanpain, chem.yellowcake, chem.balefire, chem.osmiridiumdeath, chem.meth
+        part0(writer);
+        part1(writer);
+        part2(writer);
+        checkMissing("ChemicalPlantRecipeGenerator");
     }
 
-    private static net.minecraft.world.item.Item rid(String id) {
-        net.minecraft.world.item.Item item = net.minecraft.core.registries.BuiltInRegistries.ITEM.get(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("hbm_m", id));
-        if (item == Items.AIR) throw new IllegalStateException("Chemiewerk: unbekannter Gegenstand " + id);
-        return item;
-    }
+    private static void part0(Consumer<FinishedRecipe> writer) {
+        // chem.hydrogen
+        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(20, 400)
+                .addItemInput(ore("oredict/gem/coal"), 1)
+                .addFluidInput(ModFluids.WATER.getSource(), 8000)
+                .addFluidOutput(ModFluids.HYDROGEN.getSource(), 500)
+                .save(writer, "chemplant/hydrogen");
 
-    /** 1:1 ChemicalPlantRecipes chem.napalm: leerer Kanister + Benzin + Aromaten (Polystyrol-Ersatz). */
-    private static void registerNapalm(Consumer<FinishedRecipe> writer) {
+        // chem.hydrogencoke
+        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(20, 400)
+                .addItemInput(ore("oredict/gem/any_coke"), 1)
+                .addFluidInput(ModFluids.WATER.getSource(), 8000)
+                .addFluidOutput(ModFluids.HYDROGEN.getSource(), 500)
+                .save(writer, "chemplant/hydrogencoke");
+
+        // chem.oxygen
+        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(20, 400)
+                .addFluidInput(ModFluids.AIR.getSource(), 8000)
+                .addFluidOutput(ModFluids.OXYGEN.getSource(), 500)
+                .save(writer, "chemplant/oxygen");
+
+        // chem.xenon
+        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(300, 1000)
+                .addFluidInput(ModFluids.AIR.getSource(), 16000)
+                .addFluidOutput(ModFluids.XENON.getSource(), 50)
+                .save(writer, "chemplant/xenon");
+
+        // chem.xenonoxy
+        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(20, 1000)
+                .addFluidInput(ModFluids.AIR.getSource(), 8000)
+                .addFluidInput(ModFluids.OXYGEN.getSource(), 250)
+                .addFluidOutput(ModFluids.XENON.getSource(), 50)
+                .withBlueprintPool("alt..xenonoxy")
+                .save(writer, "chemplant/xenonoxy");
+
+        // chem.helium3
+        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(25, 2000)
+                .addItemInput(Ingredient.of(item("hbm_m:moon_turf")), 1)
+                .addFluidOutput(ModFluids.HELIUM3.getSource(), 125)
+                .save(writer, "chemplant/helium3");
+
+        // chem.co2
+        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(60, 100)
+                .addFluidInput(ModFluids.GAS.getSource(), 1000)
+                .addFluidOutput(ModFluids.CARBONDIOXIDE.getSource(), 1000)
+                .save(writer, "chemplant/co2");
+
+        // chem.perfluoromethyl
+        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(20, 100)
+                .addItemInput(ore("oredict/dust/fluorite"), 1)
+                .addFluidInput(ModFluids.PETROLEUM.getSource(), 1000)
+                .addFluidInput(ModFluids.UNSATURATEDS.getSource(), 500)
+                .addFluidOutput(ModFluids.PERFLUOROMETHYL.getSource(), 1000)
+                .save(writer, "chemplant/perfluoromethyl");
+
+        // chem.cccentrifuge
+        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(200, 100)
+                .addFluidInput(ModFluids.CHLOROCALCITE_CLEANED.getSource(), 500)
+                .addFluidInput(ModFluids.SULFURIC_ACID.getSource(), 8000)
+                .addFluidOutput(ModFluids.POTASSIUM_CHLORIDE.getSource(), 250)
+                .addFluidOutput(ModFluids.CALCIUM_CHLORIDE.getSource(), 250)
+                .save(writer, "chemplant/cccentrifuge");
+
+        // chem.ethanol
+        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(50, 100)
+                .addItemInput(Ingredient.of(item("minecraft:sugar")), 10)
+                .addFluidOutput(ModFluids.ETHANOL.getSource(), 1000)
+                .save(writer, "chemplant/ethanol");
+
+        // chem.biogas
+        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(60, 100)
+                .addItemInput(Ingredient.of(item("hbm_m:biomass")), 16)
+                .addFluidInput(ModFluids.AIR.getSource(), 4000)
+                .addFluidOutput(ModFluids.BIOGAS.getSource(), 2000)
+                .save(writer, "chemplant/biogas");
+
+        // chem.biofuel
+        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(60, 100)
+                .addFluidInput(ModFluids.BIOGAS.getSource(), 1500)
+                .addFluidInput(ModFluids.ETHANOL.getSource(), 250)
+                .addFluidOutput(ModFluids.BIOFUEL.getSource(), 1000)
+                .save(writer, "chemplant/biofuel");
+
+        // chem.reoil
         ChemicalPlantRecipeBuilder.chemicalPlantRecipe(40, 100)
-            .addItemInput(ModItems.CANISTER_EMPTY.get(), 1)
-            .addFluidInput(ModFluids.GASOLINE.getSource(), 100)
-            .addFluidInput(ModFluids.AROMATICS.getSource(), 50)
-            .addItemOutput(new ItemStack(ModItems.CANISTER_NAPALM.get()))
-            .save(writer, "chemplant/chem_napalm");
-    }
+                .addFluidInput(ModFluids.SMEAR.getSource(), 1000)
+                .addFluidOutput(ModFluids.RECLAIMED.getSource(), 800)
+                .save(writer, "chemplant/reoil");
 
-    /** 1:1 ChemicalPlantRecipes chem.tel / chem.deicer (fuel_additive). ANY_TAR = alle Teere/Wachse. */
-    private static void registerFuelAdditives(Consumer<FinishedRecipe> writer) {
-        var tar = net.minecraft.world.item.crafting.Ingredient.of(rid("oil_tar_crude"), rid("oil_tar_crack"), rid("oil_tar_coal"), rid("oil_tar_wood"), rid("oil_tar_wax"), rid("oil_tar_paraffin"));
-
+        // chem.gasoline
         ChemicalPlantRecipeBuilder.chemicalPlantRecipe(40, 100)
-            .addItemInput(tar, 1)
-            .addItemInput(rid("lead_powder"), 1)
-            .addFluidInput(ModFluids.PETROLEUM.getSource(), 100)
-            .addFluidInput(ModFluids.STEAM.getSource(), 1_000)
-            .addItemOutput(new ItemStack(ModItems.FUEL_ADDITIVE_ANTIKNOCK.get()))
-            .save(writer, "chemplant/chem_tel");
+                .addFluidInput(ModFluids.NAPHTHA.getSource(), 1000)
+                .addFluidOutput(ModFluids.GASOLINE.getSource(), 800)
+                .save(writer, "chemplant/gasoline");
 
+        // chem.coallube
         ChemicalPlantRecipeBuilder.chemicalPlantRecipe(40, 100)
-            .addFluidInput(ModFluids.GAS.getSource(), 100)
-            .addFluidInput(ModFluids.HYDROGEN.getSource(), 50)
-            .addItemOutput(new ItemStack(ModItems.FUEL_ADDITIVE_DEICER.get()))
-            .save(writer, "chemplant/chem_deicer");
-    }
+                .addFluidInput(ModFluids.COALCREOSOTE.getSource(), 1000)
+                .addFluidOutput(ModFluids.LUBRICANT.getSource(), 1000)
+                .withBlueprintPool("alt..lube")
+                .save(writer, "chemplant/coallube");
 
-    /** 1:1 ChemicalPlantRecipes "BATTERIES": chem.batterylead ... chem.batteryquantum. ANY_PLASTIC = Polymer/Bakelit, ANY_HARDPLASTIC = PC/PVC, ANY_BISMOIDBRONZE = Bismut-/Arsenbronze. */
-    private static void registerBatteries(Consumer<FinishedRecipe> writer) {
-        var plastic = net.minecraft.world.item.crafting.Ingredient.of(rid("polymer_ingot"), rid("bakelite_ingot"));
-        var hardPlastic = net.minecraft.world.item.crafting.Ingredient.of(rid("pc_ingot"), rid("pvc_ingot"));
+        // chem.heavylube
+        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(40, 100)
+                .addFluidInput(ModFluids.HEAVYOIL.getSource(), 2000)
+                .addFluidOutput(ModFluids.LUBRICANT.getSource(), 1000)
+                .withBlueprintPool("alt..lube")
+                .save(writer, "chemplant/heavylube");
 
-        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(100, 100)
-            .addItemInput(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE), 4)
-            .addItemInput(rid("lead_ingot"), 4)
-            .addFluidInput(ModFluids.SULFURIC_ACID.getSource(), 8_000)
-            .addItemOutput(new ItemStack(ModItems.BATTERY_PACK_BATTERY_LEAD.get()))
-            .save(writer, "chemplant/chem_batterylead");
+        // chem.tarsand
+        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(200, 100)
+                .addItemInput(Ingredient.of(item("hbm_m:ore_oil_sand")), 16)
+                .addItemInput(ore("oredict/any/tar"), 1)
+                .addItemOutput(stack("minecraft:sand", 16))
+                .addFluidOutput(ModFluids.BITUMEN.getSource(), 1000)
+                .save(writer, "chemplant/tarsand");
 
-        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(100, 1_000)
-            .addItemInput(rid("lithium_powder"), 12)
-            .addItemInput(rid("cobalt_powder"), 8)
-            .addItemInput(plastic, 4)
-            .addFluidInput(ModFluids.OXYGEN.getSource(), 2_000)
-            .addItemOutput(new ItemStack(ModItems.BATTERY_PACK_BATTERY_LITHIUM.get()))
-            .save(writer, "chemplant/chem_batterylithium");
+        // chem.tel
+        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(40, 100)
+                .addItemInput(ore("oredict/any/tar"), 1)
+                .addItemInput(ore("oredict/dust/lead"), 1)
+                .addFluidInput(ModFluids.PETROLEUM.getSource(), 100)
+                .addFluidInput(ModFluids.STEAM.getSource(), 1000)
+                .addItemOutput(stack("hbm_m:fuel_additive_antiknock", 1))
+                .save(writer, "chemplant/tel");
 
-        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(100, 10_000)
-            .addItemInput(rid("powder_sodium"), 24)
-            .addItemInput(rid("iron_powder"), 24)
-            .addItemInput(hardPlastic, 12)
-            .addItemOutput(new ItemStack(ModItems.BATTERY_PACK_BATTERY_SODIUM.get()))
-            .save(writer, "chemplant/chem_batterysodium");
+        // chem.deicer
+        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(40, 100)
+                .addFluidInput(ModFluids.GAS.getSource(), 100)
+                .addFluidInput(ModFluids.HYDROGEN.getSource(), 50)
+                .addItemOutput(stack("hbm_m:fuel_additive_deicer", 1))
+                .save(writer, "chemplant/deicer");
 
-        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(100, 25_000)
-            .addItemInput(rid("schrabidium_powder"), 24)
-            .addItemInput(net.minecraft.world.item.crafting.Ingredient.of(rid("plate_cast_bbronze"), rid("plate_cast_abronze")), 8)
-            .addFluidInput(ModFluids.HELIUM4.getSource(), 8_000)
-            .addItemOutput(new ItemStack(ModItems.BATTERY_PACK_BATTERY_SCHRABIDIUM.get()))
-            .save(writer, "chemplant/chem_batteryschrabidium");
+        // chem.cobble
+        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(20, 100)
+                .addFluidInput(ModFluids.WATER.getSource(), 1000)
+                .addFluidInput(ModFluids.LAVA.getSource(), 25)
+                .addItemOutput(stack("minecraft:cobblestone", 1))
+                .save(writer, "chemplant/cobble");
 
-        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(100, 100_000)
-            .addItemInput(rid("wire_dense_bscco"), 24)
-            .addItemInput(rid("pellet_charged"), 32)
-            .addItemInput(rid("cft_ingot"), 16)
-            .addFluidInput(ModFluids.PERFLUOROMETHYL_COLD.getSource(), 8_000)
-            .addItemOutput(new ItemStack(ModItems.BATTERY_PACK_BATTERY_QUANTUM.get()))
-            .addFluidOutput(ModFluids.PERFLUOROMETHYL.getSource(), 8_000)
-            .save(writer, "chemplant/chem_batteryquantum");
-    }
-
-    /** Concrete/asphalt/aggregate/obsidian family — port of 1.7.10 chem.concrete/concreteasbestos/liquidconk/asphalt/aggregate/obsidian. */
-    private static void registerConstructionMaterials(Consumer<FinishedRecipe> writer) {
+        // chem.stone
         ChemicalPlantRecipeBuilder.chemicalPlantRecipe(60, 500)
-            .withIconItem(new ItemStack(Items.OBSIDIAN))
-            .addFluidInput(ModFluids.WATER.getSource(), 1_000)
-            .addFluidInput(ModFluids.LAVA.getSource(), 500)
-            .addFluidInput(ModFluids.AIR.getSource(), 4_000)
-            .addItemOutput(new ItemStack(Items.OBSIDIAN))
-            .withBlueprintPool("discover.stone")
-            .save(writer, "chemplant/chem_obsidian");
+                .addFluidInput(ModFluids.WATER.getSource(), 1000)
+                .addFluidInput(ModFluids.LAVA.getSource(), 25)
+                .addFluidInput(ModFluids.AIR.getSource(), 4000)
+                .addItemOutput(stack("minecraft:stone", 1))
+                .withBlueprintPool("discover..stone")
+                .save(writer, "chemplant/stone");
 
+        // chem.obsidian
+        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(60, 500)
+                .addFluidInput(ModFluids.WATER.getSource(), 1000)
+                .addFluidInput(ModFluids.LAVA.getSource(), 500)
+                .addFluidInput(ModFluids.AIR.getSource(), 4000)
+                .addItemOutput(stack("minecraft:obsidian", 1))
+                .withBlueprintPool("discover..stone")
+                .save(writer, "chemplant/obsidian");
+
+        // chem.aggregate
         ChemicalPlantRecipeBuilder.chemicalPlantRecipe(320, 500)
-            .withIconItem(new ItemStack(Items.GRAVEL))
-            .addItemInput(Items.COBBLESTONE, 16)
-            .addItemOutput(new ItemStack(Items.GRAVEL, 8))
-            .addItemOutput(new ItemStack(Items.SAND, 8))
-            .save(writer, "chemplant/chem_aggregate");
+                .addItemInput(Ingredient.of(item("minecraft:cobblestone")), 16)
+                .addItemOutput(stack("minecraft:gravel", 8))
+                .addItemOutput(stack("minecraft:sand", 8))
+                .withBlueprintPool("discover..stone")
+                .save(writer, "chemplant/aggregate");
 
+        // chem.concrete
         ChemicalPlantRecipeBuilder.chemicalPlantRecipe(100, 100)
-            .withIconItem(new ItemStack(ModBlocks.CONCRETE.get()))
-            .addItemInput(ModMaterialItems.item(ModMaterials.CEMENT, MaterialShape.POWDER), 1)
-            .addItemInput(Items.GRAVEL, 8)
-            .addItemInput(Items.SAND, 8)
-            .addFluidInput(ModFluids.WATER.getSource(), 2_000)
-            .addItemOutput(new ItemStack(ModBlocks.CONCRETE.get(), 16))
-            .save(writer, "chemplant/chem_concrete");
+                .addItemInput(Ingredient.of(item("hbm_m:cement_powder")), 1)
+                .addItemInput(Ingredient.of(item("minecraft:gravel")), 8)
+                .addItemInput(ore("oredict/sand"), 8)
+                .addFluidInput(ModFluids.WATER.getSource(), 2000)
+                .addItemOutput(stack("hbm_m:concrete_smooth", 16))
+                .save(writer, "chemplant/concrete");
 
+        // chem.concreteasbestos [Fassungen: lbsm_chemistry]
+        ConfigRecipes.variants(writer)
+                .base(w -> ChemicalPlantRecipeBuilder.chemicalPlantRecipe(100, 100)
+                    .addItemInput(Ingredient.of(item("hbm_m:cement_powder")), 4)
+                    .addItemInput(ore("oredict/ingot/asbestos"), 4)
+                    .addItemInput(ore("oredict/sand"), 8)
+                    .addFluidInput(ModFluids.WATER.getSource(), 2000)
+                    .addItemOutput(stack("hbm_m:concrete_asbestos", 16))
+                    .save(w, "chemplant/concreteasbestos"))
+                .variant(v -> ChemicalPlantRecipeBuilder.chemicalPlantRecipe(100, 100)
+                    .addItemInput(Ingredient.of(item("hbm_m:cement_powder")), 4)
+                    .addItemInput(ore("oredict/ingot/asbestos"), 1)
+                    .addItemInput(ore("oredict/sand"), 8)
+                    .addFluidInput(ModFluids.WATER.getSource(), 2000)
+                    .addItemOutput(stack("hbm_m:concrete_asbestos", 16))
+                    .save(v, "chemplant/concreteasbestos"), "lbsm_chemistry")
+                .save();
+
+        // chem.ducrete
+        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(150, 100)
+                .addItemInput(Ingredient.of(item("hbm_m:cement_powder")), 4)
+                .addItemInput(ore("oredict/ingot/ferrouranium"), 1)
+                .addItemInput(ore("oredict/sand"), 8)
+                .addFluidInput(ModFluids.WATER.getSource(), 2000)
+                .addItemOutput(stack("hbm_m:ducrete_smooth", 8))
+                .save(writer, "chemplant/ducrete");
+
+        // chem.liquidconk
         ChemicalPlantRecipeBuilder.chemicalPlantRecipe(100, 100)
-            .withIconItem(new ItemStack(ModBlocks.CONCRETE_ASBESTOS.get()))
-.addItemInput(ModMaterialItems.item(ModMaterials.CEMENT, MaterialShape.POWDER), 4)
-.addItemInput(ModMaterialItems.item(ModMaterials.ASBESTOS, MaterialShape.INGOT), 4)
-            .addItemInput(Items.SAND, 8)
-            .addFluidInput(ModFluids.WATER.getSource(), 2_000)
-            .addItemOutput(new ItemStack(ModBlocks.CONCRETE_ASBESTOS.get(), 16))
-            .save(writer, "chemplant/chem_concreteasbestos");
+                .addItemInput(Ingredient.of(item("hbm_m:cement_powder")), 1)
+                .addItemInput(Ingredient.of(item("minecraft:gravel")), 8)
+                .addItemInput(ore("oredict/sand"), 8)
+                .addFluidInput(ModFluids.WATER.getSource(), 2000)
+                .addFluidOutput(ModFluids.CONCRETE.getSource(), 16000)
+                .save(writer, "chemplant/liquidconk");
 
+        // chem.asphalt
         ChemicalPlantRecipeBuilder.chemicalPlantRecipe(100, 100)
-            .withIconItem(ModItems.FLUID_IDENTIFIER.get())
-            .withIconFluid(ModFluids.CONCRETE.getSource())
-            .addItemInput(ModMaterialItems.item(ModMaterials.CEMENT, MaterialShape.POWDER), 1)
-            .addItemInput(Items.GRAVEL, 8)
-            .addItemInput(Items.SAND, 8)
-            .addFluidInput(ModFluids.WATER.getSource(), 2_000)
-            .addFluidOutput(ModFluids.CONCRETE.getSource(), 16_000)
-            .save(writer, "chemplant/chem_liquidconk");
+                .addItemInput(Ingredient.of(item("minecraft:gravel")), 2)
+                .addItemInput(ore("oredict/sand"), 6)
+                .addFluidInput(ModFluids.BITUMEN.getSource(), 1000)
+                .addItemOutput(stack("hbm_m:asphalt", 16))
+                .save(writer, "chemplant/asphalt");
 
+        // chem.batterylead
         ChemicalPlantRecipeBuilder.chemicalPlantRecipe(100, 100)
-            .withIconItem(new ItemStack(ModBlocks.ASPHALT.get()))
-            .addItemInput(Items.GRAVEL, 2)
-            .addItemInput(Items.SAND, 6)
-            .addFluidInput(ModFluids.BITUMEN.getSource(), 1_000)
-            .addItemOutput(new ItemStack(ModBlocks.ASPHALT.get(), 16))
-            .save(writer, "chemplant/chem_asphalt");
+                .addItemInput(ore("oredict/plate/steel"), 4)
+                .addItemInput(ore("oredict/ingot/lead"), 4)
+                .addFluidInput(ModFluids.SULFURIC_ACID.getSource(), 8000)
+                .addItemOutput(stack("hbm_m:battery_pack_battery_lead", 1))
+                .save(writer, "chemplant/batterylead");
 
-        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(40, 100)
-            .withIconItem(new ItemStack(ModBlocks.DECO_RUSTY_STEEL.get()))
-            .addItemInput(ModBlocks.DECO_STEEL.get().asItem(), 8)
-            .addFluidInput(ModFluids.WATER.getSource(), 1_000)
-            .addItemOutput(new ItemStack(ModBlocks.DECO_RUSTY_STEEL.get(), 8))
-            .save(writer, "chemplant/chem_rustysteel");
+        // chem.batterylithium
+        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(100, 1000)
+                .addItemInput(ore("oredict/dust/lithium"), 12)
+                .addItemInput(ore("oredict/dust/cobalt"), 8)
+                .addItemInput(ore("oredict/ingot/any_plastic"), 4)
+                .addFluidInput(ModFluids.OXYGEN.getSource(), 2000)
+                .addItemOutput(stack("hbm_m:battery_pack_battery_lithium", 1))
+                .save(writer, "chemplant/batterylithium");
     }
 
-    /** Solid/liquid fuel and arc-electrode chains — port of 1.7.10 chem.biosolidfuel/biooilsolidfuel/oilelectrodes/lubeelectrodes/biogas/rocketfuel. */
-    private static void registerFuelsAndElectrodes(Consumer<FinishedRecipe> writer) {
-        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(40, 100)
-            .withIconItem(ModItems.SOLID_FUEL.get())
-            .addItemInput(ModItems.BIOMASS_COMPRESSED.get(), 4)
-            .addItemOutput(new ItemStack(ModItems.SOLID_FUEL.get(), 1))
-            .withBlueprintPool("alt.biosolidfuel")
-            .save(writer, "chemplant/chem_biosolidfuel");
+    private static void part1(Consumer<FinishedRecipe> writer) {
+        // chem.batterysodium
+        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(100, 10000)
+                .addItemInput(ore("oredict/dust/sodium"), 24)
+                .addItemInput(ore("oredict/dust/iron"), 24)
+                .addItemInput(ore("oredict/ingot/any_hard_plastic"), 12)
+                .addItemOutput(stack("hbm_m:battery_pack_battery_sodium", 1))
+                .save(writer, "chemplant/batterysodium");
 
-        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(40, 100)
-            .withIconItem(ModItems.SOLID_FUEL.get())
-            .addItemInput(ModItems.BIOMASS_COMPRESSED.get(), 2)
-            .addFluidInput(ModFluids.HEATINGOIL.getSource(), 100)
-            .addItemOutput(new ItemStack(ModItems.SOLID_FUEL.get(), 1))
-            .withBlueprintPool("alt.biosolidfuel")
-            .save(writer, "chemplant/chem_biooilsolidfuel");
+        // chem.batteryschrabidium
+        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(100, 25000)
+                .addItemInput(ore("oredict/dust/schrabidium"), 24)
+                .addItemInput(ore("oredict/plate_triple/any_bismoid_bronze"), 8)
+                .addFluidInput(ModFluids.HELIUM4.getSource(), 8000)
+                .addItemOutput(stack("hbm_m:battery_pack_battery_schrabidium", 1))
+                .save(writer, "chemplant/batteryschrabidium");
 
-        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(600, 100)
-            .withIconItem(ModItems.ARC_ELECTRODE.get())
-            .addFluidInput(ModFluids.HEATINGOIL.getSource(), 4_000)
-            .addItemOutput(new ItemStack(ModItems.ARC_ELECTRODE.get(), 1))
-            .withBlueprintPool("alt.electrodes")
-            .save(writer, "chemplant/chem_oilelectrodes");
+        // chem.batteryquantum
+        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(100, 100000)
+                .addItemInput(ore("oredict/wire_dense/bscco"), 24)
+                .addItemInput(Ingredient.of(item("hbm_m:pellet_charged")), 32)
+                .addItemInput(Ingredient.of(item("hbm_m:cft_ingot")), 16)
+                .addFluidInput(ModFluids.PERFLUOROMETHYL_COLD.getSource(), 8000)
+                .addItemOutput(stack("hbm_m:battery_pack_battery_quantum", 1))
+                .addFluidOutput(ModFluids.PERFLUOROMETHYL.getSource(), 8000)
+                .save(writer, "chemplant/batteryquantum");
 
-        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(600, 100)
-            .withIconItem(ModItems.ARC_ELECTRODE.get())
-            .addFluidInput(ModFluids.LUBRICANT.getSource(), 8_000)
-            .addItemOutput(new ItemStack(ModItems.ARC_ELECTRODE.get(), 1))
-            .withBlueprintPool("alt.electrodes")
-            .save(writer, "chemplant/chem_lubeelectrodes");
+        // chem.desh [Fassungen: lbsm_chemistry]
+        ConfigRecipes.variants(writer)
+                .base(w -> ChemicalPlantRecipeBuilder.chemicalPlantRecipe(100, 100)
+                    .addItemInput(Ingredient.of(item("hbm_m:powder_desh_mix")), 1)
+                    .addFluidInput(ModFluids.LIGHTOIL.getSource(), 200)
+                    .addFluidInput(ModFluids.MERCURY.getSource(), 200)
+                    .addItemOutput(stack("hbm_m:desh_ingot", 1))
+                    .save(w, "chemplant/desh"))
+                .variant(v -> ChemicalPlantRecipeBuilder.chemicalPlantRecipe(100, 100)
+                    .addItemInput(Ingredient.of(item("hbm_m:powder_desh_mix")), 1)
+                    .addFluidInput(ModFluids.LIGHTOIL.getSource(), 200)
+                    .addItemOutput(stack("hbm_m:desh_ingot", 1))
+                    .save(v, "chemplant/desh"), "lbsm_chemistry")
+                .save();
 
-        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(60, 100)
-            .withIconItem(ModItems.FLUID_IDENTIFIER.get())
-            .withIconFluid(ModFluids.BIOGAS.getSource())
-            .addItemInput(ModItems.BIOMASS.get(), 16)
-            .addFluidInput(ModFluids.AIR.getSource(), 4_000)
-            .addFluidOutput(ModFluids.BIOGAS.getSource(), 2_000)
-            .save(writer, "chemplant/chem_biogas");
+        // chem.deshcracked [Fassungen: lbsm_chemistry]
+        ConfigRecipes.variants(writer)
+                .base(w -> ChemicalPlantRecipeBuilder.chemicalPlantRecipe(100, 100)
+                    .addItemInput(Ingredient.of(item("hbm_m:powder_desh_mix")), 1)
+                    .addFluidInput(ModFluids.LIGHTOIL_CRACK.getSource(), 500, 1)
+                    .addFluidInput(ModFluids.MERCURY.getSource(), 100)
+                    .addItemOutput(stack("hbm_m:desh_ingot", 1))
+                    .save(w, "chemplant/deshcracked"))
+                .variant(v -> ChemicalPlantRecipeBuilder.chemicalPlantRecipe(100, 100)
+                    .addItemInput(Ingredient.of(item("hbm_m:powder_desh_mix")), 1)
+                    .addFluidInput(ModFluids.LIGHTOIL_CRACK.getSource(), 500)
+                    .addItemOutput(stack("hbm_m:desh_ingot", 1))
+                    .save(v, "chemplant/deshcracked"), "lbsm_chemistry")
+                .save();
 
-        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(200, 100)
-            .withIconItem(ModItems.ROCKET_FUEL.get())
-            .addItemInput(ModItems.SOLID_FUEL.get(), 2)
-            .addFluidInput(ModFluids.PETROLEUM.getSource(), 200)
-            .addFluidInput(ModFluids.NITRIC_ACID.getSource(), 100)
-            .addItemOutput(new ItemStack(ModItems.ROCKET_FUEL.get(), 4))
-            .save(writer, "chemplant/chem_rocketfuel");
+        // chem.polymer [Fassungen: 528_pressurized]
+        ConfigRecipes.variants(writer)
+                .base(w -> ChemicalPlantRecipeBuilder.chemicalPlantRecipe(100, 100)
+                    .addItemInput(ore("oredict/dust/coal"), 2)
+                    .addItemInput(ore("oredict/dust/fluorite"), 1)
+                    .addFluidInput(ModFluids.PETROLEUM.getSource(), 1000)
+                    .addItemOutput(stack("hbm_m:polymer_ingot", 4))
+                    .save(w, "chemplant/polymer"))
+                .variant(v -> ChemicalPlantRecipeBuilder.chemicalPlantRecipe(100, 100)
+                    .addItemInput(ore("oredict/dust/coal"), 2)
+                    .addItemInput(ore("oredict/dust/fluorite"), 1)
+                    .addFluidInput(ModFluids.PETROLEUM.getSource(), 1000, 1)
+                    .addItemOutput(stack("hbm_m:polymer_ingot", 4))
+                    .save(v, "chemplant/polymer"), "528_pressurized")
+                .save();
 
-        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(50, 100)
-            .withIconItem(ModItems.BALL_DYNAMITE.get())
-            .addItemInput(Items.SUGAR, 1)
-            .addItemInput(ModMaterialItems.item(ModMaterials.NITER, MaterialShape.CRYSTAL), 1)
-            .addItemInput(Items.SAND, 1)
-            .addItemOutput(new ItemStack(ModItems.BALL_DYNAMITE.get(), 2))
-            .save(writer, "chemplant/chem_dynamite");
+        // chem.bakelite [Fassungen: 528_pressurized]
+        ConfigRecipes.variants(writer)
+                .base(w -> ChemicalPlantRecipeBuilder.chemicalPlantRecipe(100, 100)
+                    .addFluidInput(ModFluids.AROMATICS.getSource(), 500)
+                    .addFluidInput(ModFluids.PETROLEUM.getSource(), 500)
+                    .addItemOutput(stack("hbm_m:bakelite_ingot", 1))
+                    .save(w, "chemplant/bakelite"))
+                .variant(v -> ChemicalPlantRecipeBuilder.chemicalPlantRecipe(100, 100)
+                    .addFluidInput(ModFluids.AROMATICS.getSource(), 500, 1)
+                    .addFluidInput(ModFluids.PETROLEUM.getSource(), 500, 1)
+                    .addItemOutput(stack("hbm_m:bakelite_ingot", 1))
+                    .save(v, "chemplant/bakelite"), "528_pressurized")
+                .save();
 
-        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(50, 5_000)
-            .withIconItem(ModItems.BALL_TATB.get())
-            .addItemInput(ModItems.BALL_TNT.get(), 1)
-            .addFluidInput(ModFluids.SOURGAS.getSource(), 200)
-            .addFluidInput(ModFluids.NITRIC_ACID.getSource(), 10)
-            .addItemOutput(new ItemStack(ModItems.BALL_TATB.get(), 1))
-            .save(writer, "chemplant/chem_tatb");
-    }
+        // chem.rubber [Fassungen: 528_pressurized]
+        ConfigRecipes.variants(writer)
+                .base(w -> ChemicalPlantRecipeBuilder.chemicalPlantRecipe(100, 200)
+                    .addItemInput(ore("oredict/dust/sulfur"), 1)
+                    .addFluidInput(ModFluids.UNSATURATEDS.getSource(), 500)
+                    .addItemOutput(stack("hbm_m:rubber_ingot", 2))
+                    .save(w, "chemplant/rubber"))
+                .variant(v -> ChemicalPlantRecipeBuilder.chemicalPlantRecipe(100, 200)
+                    .addItemInput(ore("oredict/dust/sulfur"), 1)
+                    .addFluidInput(ModFluids.UNSATURATEDS.getSource(), 500, 2)
+                    .addItemOutput(stack("hbm_m:rubber_ingot", 2))
+                    .save(v, "chemplant/rubber"), "528_pressurized")
+                .save();
 
-    /** Polymer/plastic chain — port of 1.7.10 chem.polymer/bakelite/rubber/hardplastic/pvc/desh/deshcracked. */
-    private static void registerPolymers(Consumer<FinishedRecipe> writer) {
-        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(100, 100)
-            .withIconItem(ModMaterialItems.item(ModMaterials.POLYMER, MaterialShape.INGOT))
-            .addItemInput(ModMaterialItems.item(ModMaterials.COAL, MaterialShape.POWDER), 2)
-            .addItemInput(ModItems.FLUORITE.get(), 1)
-            .addFluidInput(ModFluids.PETROLEUM.getSource(), 1_000)
-            .addItemOutput(new ItemStack(ModMaterialItems.item(ModMaterials.POLYMER, MaterialShape.INGOT), 4))
-            .save(writer, "chemplant/chem_polymer");
+        // chem.hardplastic [Fassungen: 528_pressurized]
+        ConfigRecipes.variants(writer)
+                .base(w -> ChemicalPlantRecipeBuilder.chemicalPlantRecipe(100, 1000)
+                    .addFluidInput(ModFluids.XYLENE.getSource(), 500)
+                    .addFluidInput(ModFluids.PHOSGENE.getSource(), 500)
+                    .addItemOutput(stack("hbm_m:pc_ingot", 1))
+                    .save(w, "chemplant/hardplastic"))
+                .variant(v -> ChemicalPlantRecipeBuilder.chemicalPlantRecipe(100, 1000)
+                    .addFluidInput(ModFluids.XYLENE.getSource(), 500, 2)
+                    .addFluidInput(ModFluids.PHOSGENE.getSource(), 500, 2)
+                    .addItemOutput(stack("hbm_m:pc_ingot", 1))
+                    .save(v, "chemplant/hardplastic"), "528_pressurized")
+                .save();
 
-        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(100, 100)
-            .withIconItem(ModMaterialItems.item(ModMaterials.BAKELITE, MaterialShape.INGOT))
-            .addFluidInput(ModFluids.AROMATICS.getSource(), 500)
-            .addFluidInput(ModFluids.PETROLEUM.getSource(), 500)
-            .addItemOutput(new ItemStack(ModMaterialItems.item(ModMaterials.BAKELITE, MaterialShape.INGOT), 1))
-            .save(writer, "chemplant/chem_bakelite");
+        // chem.pvc [Fassungen: 528_pressurized]
+        ConfigRecipes.variants(writer)
+                .base(w -> ChemicalPlantRecipeBuilder.chemicalPlantRecipe(100, 1000)
+                    .addItemInput(ore("oredict/dust/cadmium"), 1)
+                    .addFluidInput(ModFluids.UNSATURATEDS.getSource(), 250)
+                    .addFluidInput(ModFluids.CHLORINE.getSource(), 250)
+                    .addItemOutput(stack("hbm_m:pvc_ingot", 2))
+                    .save(w, "chemplant/pvc"))
+                .variant(v -> ChemicalPlantRecipeBuilder.chemicalPlantRecipe(100, 1000)
+                    .addItemInput(ore("oredict/dust/cadmium"), 1)
+                    .addFluidInput(ModFluids.UNSATURATEDS.getSource(), 250, 2)
+                    .addFluidInput(ModFluids.CHLORINE.getSource(), 250, 2)
+                    .addItemOutput(stack("hbm_m:pvc_ingot", 2))
+                    .save(v, "chemplant/pvc"), "528_pressurized")
+                .save();
 
-        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(100, 200)
-            .withIconItem(ModMaterialItems.item(ModMaterials.RUBBER, MaterialShape.INGOT))
-            .addItemInput(ModItems.SULFUR.get(), 1)
-            .addFluidInput(ModFluids.UNSATURATEDS.getSource(), 500)
-            .addItemOutput(new ItemStack(ModMaterialItems.item(ModMaterials.RUBBER, MaterialShape.INGOT), 2))
-            .save(writer, "chemplant/chem_rubber");
+        // chem.kevlar [Fassungen: 528_pressurized]
+        ConfigRecipes.variants(writer)
+                .base(w -> ChemicalPlantRecipeBuilder.chemicalPlantRecipe(60, 300)
+                    .addFluidInput(ModFluids.AROMATICS.getSource(), 200)
+                    .addFluidInput(ModFluids.NITRIC_ACID.getSource(), 100)
+                    .addFluidInput(ModFluids.CHLORINE.getSource(), 100)
+                    .addItemOutput(stack("hbm_m:plate_kevlar", 4))
+                    .save(w, "chemplant/kevlar"))
+                .variant(v -> ChemicalPlantRecipeBuilder.chemicalPlantRecipe(60, 300)
+                    .addFluidInput(ModFluids.AROMATICS.getSource(), 200)
+                    .addFluidInput(ModFluids.NITRIC_ACID.getSource(), 100)
+                    .addFluidInput(ModFluids.PHOSGENE.getSource(), 100)
+                    .addItemOutput(stack("hbm_m:plate_kevlar", 4))
+                    .save(v, "chemplant/kevlar"), "528_pressurized")
+                .save();
 
-        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(100, 100)
-            .withIconItem(ModMaterialItems.item(ModMaterials.DESH, MaterialShape.INGOT))
-            .addItemInput(ModItems.POWDER_DESH_MIX.get(), 1)
-            .addFluidInput(ModFluids.LIGHTOIL.getSource(), 200)
-            .addFluidInput(ModFluids.MERCURY.getSource(), 200)
-            .addItemOutput(new ItemStack(ModMaterialItems.item(ModMaterials.DESH, MaterialShape.INGOT), 1))
-            .save(writer, "chemplant/chem_desh");
-
-        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(100, 100)
-            .withIconItem(ModMaterialItems.item(ModMaterials.DESH, MaterialShape.INGOT))
-            .addItemInput(ModItems.POWDER_DESH_MIX.get(), 1)
-            .addFluidInput(ModFluids.LIGHTOIL_CRACK.getSource(), 500)
-            .addFluidInput(ModFluids.MERCURY.getSource(), 100)
-            .addItemOutput(new ItemStack(ModMaterialItems.item(ModMaterials.DESH, MaterialShape.INGOT), 1))
-            .save(writer, "chemplant/chem_deshcracked");
-    }
-
-    /** Miscellaneous late additions — port of 1.7.10 chem.laminate/polarized/epearl/meatprocessing/schrabidate/coltancrystal. */
-    private static void registerMisc(Consumer<FinishedRecipe> writer) {
-        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(20, 100)
-            .withIconItem(new ItemStack(ModBlocks.REINFORCED_LAMINATE.get()))
-            .addItemInput(Items.GLASS, 1)
-            .addItemInput(ModItems.BOLT_STEEL.get(), 4)
-            .addFluidInput(ModFluids.XYLENE.getSource(), 50)
-            .addFluidInput(ModFluids.PHOSGENE.getSource(), 50)
-            .addItemOutput(new ItemStack(ModBlocks.REINFORCED_LAMINATE.get(), 1))
-            .save(writer, "chemplant/chem_laminate");
-
-        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(100, 500)
-            .withIconItem(new ItemStack(ModBlocks.GLASS_POLARIZED.get()))
-            .addItemInput(Items.GLASS_PANE, 1)
-            .addFluidInput(ModFluids.PETROLEUM.getSource(), 1_000)
-            .addItemOutput(new ItemStack(ModBlocks.GLASS_POLARIZED.get(), 16))
-            .save(writer, "chemplant/chem_polarized");
-
-        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(100, 300)
-            .withIconItem(ModItems.FLUID_IDENTIFIER.get())
-            .withIconFluid(ModFluids.ENDERJUICE.getSource())
-            .addItemInput(ModMaterialItems.item(ModMaterials.DIAMOND, MaterialShape.POWDER), 1)
-            .addFluidInput(ModFluids.XPJUICE.getSource(), 500)
-            .addFluidOutput(ModFluids.ENDERJUICE.getSource(), 100)
-            .save(writer, "chemplant/chem_epearl");
-
-        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(200, 200)
-            .withIconItem(ModItems.GLYPHID_MEAT.get())
-            .addItemInput(ModItems.GLYPHID_MEAT.get(), 3)
-            .addFluidInput(ModFluids.WATER.getSource(), 1_000)
-            .addItemOutput(new ItemStack(ModItems.SULFUR.get(), 4))
-            .addItemOutput(new ItemStack(ModMaterialItems.item(ModMaterials.NITER, MaterialShape.CRYSTAL), 3))
-            .addFluidOutput(ModFluids.SALIENT.getSource(), 250)
-            .save(writer, "chemplant/chem_meatprocessing");
-
-        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(150, 5_000)
-            .withIconItem(ModMaterialItems.item(ModMaterials.SCHRABIDATE, MaterialShape.INGOT))
-            .addItemInput(ModMaterialItems.item(ModMaterials.IRON, MaterialShape.POWDER), 1)
-            .addFluidInput(ModFluids.SCHRABIDIC.getSource(), 250)
-            .addItemOutput(new ItemStack(ModMaterialItems.item(ModMaterials.SCHRABIDATE, MaterialShape.INGOT), 1))
-            .save(writer, "chemplant/chem_schrabidate");
-
-        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(80, 100)
-            .withIconItem(ModItems.GEM_TANTALIUM.get())
-            .addFluidInput(ModFluids.PAIN.getSource(), 1_000)
-            .addFluidInput(ModFluids.PEROXIDE.getSource(), 500)
-            .addItemOutput(new ItemStack(ModItems.GEM_TANTALIUM.get(), 1))
-            .addItemOutput(new ItemStack(ModItems.DUST.get(), 3))
-            .addFluidOutput(ModFluids.WATER.getSource(), 250)
-            .save(writer, "chemplant/chem_coltancrystal");
-    }
-
-    private static void registerRegularFluids(Consumer<FinishedRecipe> writer) {
-        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(20, 400)
-            .withIconItem(ModItems.FLUID_IDENTIFIER.get())
-            .withIconFluid(ModFluids.HYDROGEN.getSource())
-            .addItemInput(ModMaterialItems.item(ModMaterials.COAL, MaterialShape.POWDER), 1)
-            .addFluidInput(ModFluids.WATER.getSource(), 8_000)
-            .addFluidOutput(ModFluids.HYDROGEN.getSource(), 500)
-            .save(writer, "chemplant/chem_hydrogen");
-
-        // TODO: chem.hydrogencoke (1.7.10: ANY_COKE.gem()) — нет аналога тега/предмета в Modernized.
-
-        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(20, 400)
-            .withIconItem(ModItems.FLUID_IDENTIFIER.get())
-            .withIconFluid(ModFluids.OXYGEN.getSource())
-            .addFluidInput(ModFluids.AIR.getSource(), 8_000)
-            .addFluidOutput(ModFluids.OXYGEN.getSource(), 500)
-            .save(writer, "chemplant/chem_oxygen");
-
-        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(300, 1_000)
-            .withIconItem(ModItems.FLUID_IDENTIFIER.get())
-            .withIconFluid(ModFluids.XENON.getSource())
-            .addFluidInput(ModFluids.AIR.getSource(), 16_000)
-            .addFluidOutput(ModFluids.XENON.getSource(), 50)
-            .save(writer, "chemplant/chem_xenon");
-
-        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(20, 1_000)
-            .withIconItem(ModItems.FLUID_IDENTIFIER.get())
-            .withIconFluid(ModFluids.XENON.getSource())
-            .addFluidInput(ModFluids.AIR.getSource(), 8_000)
-            .addFluidInput(ModFluids.OXYGEN.getSource(), 250)
-            .addFluidOutput(ModFluids.XENON.getSource(), 50)
-            .withBlueprintPool("alt.xenonoxy")
-            .save(writer, "chemplant/chem_xenonoxy");
-
-        // TODO: chem.helium3 (1.7.10: ModBlocks.moon_turf) — нет блока/предмета в Modernized.
-
-        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(60, 100)
-            .withIconItem(ModItems.FLUID_IDENTIFIER.get())
-            .withIconFluid(ModFluids.CARBONDIOXIDE.getSource())
-            .addFluidInput(ModFluids.GAS.getSource(), 1_000)
-            .addFluidOutput(ModFluids.CARBONDIOXIDE.getSource(), 1_000)
-            .save(writer, "chemplant/chem_co2");
-
-        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(200, 100)
-            .addFluidInput(ModFluids.CHLOROCALCITE_CLEANED.getSource(), 500)
-            .addFluidInput(ModFluids.SULFURIC_ACID.getSource(), 8_000)
-            .addFluidOutput(ModFluids.POTASSIUM_CHLORIDE.getSource(), 250)
-            .addFluidOutput(ModFluids.CALCIUM_CHLORIDE.getSource(), 250)
-            .save(writer, "chemplant/chem_cccentrifuge");
-    }
-
-    private static void registerOils(Consumer<FinishedRecipe> writer) {
-        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(50, 100)
-            .withIconItem(ModItems.FLUID_IDENTIFIER.get())
-            .withIconFluid(ModFluids.ETHANOL.getSource())
-            .addItemInput(Items.SUGAR, 10)
-            .addFluidOutput(ModFluids.ETHANOL.getSource(), 1_000)
-            .save(writer, "chemplant/chem_ethanol");
-
-        // TODO: chem.biogas (1.7.10: ModItems.biomass) — нет предмета в Modernized.
-
-        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(60, 100)
-            .withIconItem(ModItems.FLUID_IDENTIFIER.get())
-            .withIconFluid(ModFluids.BIOFUEL.getSource())
-            .addFluidInput(ModFluids.BIOGAS.getSource(), 1_500)
-            .addFluidInput(ModFluids.ETHANOL.getSource(), 250)
-            .addFluidOutput(ModFluids.BIOFUEL.getSource(), 1_000)
-            .save(writer, "chemplant/chem_biofuel");
-
-        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(40, 100)
-            .withIconItem(ModItems.FLUID_IDENTIFIER.get())
-            .withIconFluid(ModFluids.RECLAIMED.getSource())
-            .addFluidInput(ModFluids.SLOP.getSource(), 1_000)
-            .addFluidOutput(ModFluids.RECLAIMED.getSource(), 800)
-            .save(writer, "chemplant/chem_reoil");
-
-        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(40, 100)
-            .withIconItem(ModItems.FLUID_IDENTIFIER.get())
-            .withIconFluid(ModFluids.GASOLINE.getSource())
-            .addFluidInput(ModFluids.NAPHTHA.getSource(), 1_000)
-            .addFluidOutput(ModFluids.GASOLINE.getSource(), 800)
-            .save(writer, "chemplant/chem_gasoline");
-
-        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(40, 100)
-            .withIconItem(ModItems.FLUID_IDENTIFIER.get())
-            .withIconFluid(ModFluids.LUBRICANT.getSource())
-            .addFluidInput(ModFluids.COALCREOSOTE.getSource(), 1_000)
-            .addFluidOutput(ModFluids.LUBRICANT.getSource(), 1_000)
-            .withBlueprintPool("alt.lube")
-            .save(writer, "chemplant/chem_coallube");
-
-        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(40, 100)
-            .withIconItem(ModItems.FLUID_IDENTIFIER.get())
-            .withIconFluid(ModFluids.LUBRICANT.getSource())
-            .addFluidInput(ModFluids.HEAVYOIL.getSource(), 2_000)
-            .addFluidOutput(ModFluids.LUBRICANT.getSource(), 1_000)
-            .withBlueprintPool("alt.lube")
-            .save(writer, "chemplant/chem_heavylube");
-
-        // TODO: chem.tarsand (1.7.10: ModBlocks.ore_oil_sand, ANY_TAR) — нет блоков/тегов в Modernized.
-        // TODO: chem.tel / chem.deicer (1.7.10: fuel_additive) — нет предметов/enum в Modernized.
-    }
-
-    private static void registerAcids(Consumer<FinishedRecipe> writer) {
-        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(50, 100)
-            .withIconItem(ModItems.FLUID_IDENTIFIER.get())
-            .withIconFluid(ModFluids.PEROXIDE.getSource())
-            .addFluidInput(ModFluids.WATER.getSource(), 1_000)
-            .addFluidOutput(ModFluids.PEROXIDE.getSource(), 1_000)
-            .save(writer, "chemplant/chem_peroxide");
-
-        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(50, 100)
-            .withIconItem(ModItems.FLUID_IDENTIFIER.get())
-            .withIconFluid(ModFluids.SULFURIC_ACID.getSource())
-            .addItemInput(ModItems.SULFUR.get(), 1)
-            .addFluidInput(ModFluids.PEROXIDE.getSource(), 1_000)
-            .addFluidInput(ModFluids.WATER.getSource(), 1_000)
-            .addFluidOutput(ModFluids.SULFURIC_ACID.getSource(), 2_000)
-            .save(writer, "chemplant/chem_sulfuricacid");
-
-        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(50, 100)
-            .withIconItem(ModItems.FLUID_IDENTIFIER.get())
-            .withIconFluid(ModFluids.NITRIC_ACID.getSource())
-            .addItemInput(ModMaterialItems.item(ModMaterials.NITER, MaterialShape.CRYSTAL), 1)
-            .addFluidInput(ModFluids.SULFURIC_ACID.getSource(), 500)
-            .addFluidOutput(ModFluids.NITRIC_ACID.getSource(), 1_000)
-            .save(writer, "chemplant/chem_nitricacid");
-
-        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(200, 5_000)
-            .withIconItem(ModItems.FLUID_IDENTIFIER.get())
-            .withIconFluid(ModFluids.NITRIC_ACID.getSource())
-            .addFluidInput(ModFluids.AIR.getSource(), 8_000)
-            .addFluidInput(ModFluids.WATER.getSource(), 2_000)
-            .addFluidOutput(ModFluids.NITRIC_ACID.getSource(), 1_000)
-            .withBlueprintPool("alt.birkeland")
-            .save(writer, "chemplant/chem_birkeland");
-
-        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(60, 5_000)
-            .withIconItem(ModItems.FLUID_IDENTIFIER.get())
-            .withIconFluid(ModFluids.SCHRABIDIC.getSource())
-            .addFluidInput(ModFluids.SAS3.getSource(), 2_000)
-            .addFluidInput(ModFluids.PEROXIDE.getSource(), 2_000)
-            .addFluidOutput(ModFluids.SCHRABIDIC.getSource(), 2_000)
-            .save(writer, "chemplant/chem_schrabidic");
-
-        // TODO: chem.schrabidate (1.7.10: IRON.dust, powder_schrabidate) — нет порошка/предмета.
-    }
-
-    private static void registerCoolants(Consumer<FinishedRecipe> writer) {
-        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(20, 100)
-            .withIconItem(ModItems.FLUID_IDENTIFIER.get())
-            .withIconFluid(ModFluids.PERFLUOROMETHYL.getSource())
-            .addItemInput(ModItems.FLUORITE.get(), 1)
-            .addFluidInput(ModFluids.PETROLEUM.getSource(), 1_000)
-            .addFluidInput(ModFluids.UNSATURATEDS.getSource(), 500)
-            .addFluidOutput(ModFluids.PERFLUOROMETHYL.getSource(), 1_000)
-            .save(writer, "chemplant/chem_perfluoromethyl");
-    }
-
-    private static void registerSteam(Consumer<FinishedRecipe> writer) {
-        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(10, 50)
-            .withIconItem(ModItems.FLUID_IDENTIFIER.get())
-            .withIconFluid(ModFluids.STEAM.getSource())
-            .addFluidInput(ModFluids.WATER.getSource(), 1_000)
-            .addFluidOutput(ModFluids.STEAM.getSource(), 1_000)
-            .save(writer, "chemplant/chem_steam");
-    }
-
-    private static void registerOxyhydrogen(Consumer<FinishedRecipe> writer) {
-        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(20, 100)
-            .withIconItem(ModItems.FLUID_IDENTIFIER.get())
-            .withIconFluid(ModFluids.OXYHYDROGEN.getSource())
-            .addFluidInput(ModFluids.HYDROGEN.getSource(), 500)
-            .addFluidInput(ModFluids.OXYGEN.getSource(), 250)
-            .addFluidOutput(ModFluids.OXYHYDROGEN.getSource(), 500)
-            .save(writer, "chemplant/chem_oxyhydrogen");
-    }
-
-    private static void registerDeuterium(Consumer<FinishedRecipe> writer) {
-        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(100, 1_000)
-            .withIconItem(ModItems.FLUID_IDENTIFIER.get())
-            .withIconFluid(ModFluids.DEUTERIUM.getSource())
-            .addFluidInput(ModFluids.HEAVYWATER.getSource(), 2_000)
-            .addFluidOutput(ModFluids.DEUTERIUM.getSource(), 500)
-            .save(writer, "chemplant/chem_deuterium");
-    }
-
-    private static void registerUf6(Consumer<FinishedRecipe> writer) {
-        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(100, 500)
-            .withIconItem(ModItems.FLUID_IDENTIFIER.get())
-            .withIconFluid(ModFluids.UF6.getSource())
-            .addItemInput(ModMaterialItems.item(ModMaterials.URANIUM, MaterialShape.POWDER), 1)
-            .addItemInput(ModItems.FLUORITE.get(), 4)
-            .addFluidInput(ModFluids.WATER.getSource(), 1_000)
-            .addItemOutput(new ItemStack(ModItems.SULFUR.get(), 2))
-            .addFluidOutput(ModFluids.UF6.getSource(), 1_200)
-            .save(writer, "chemplant/chem_uf6");
-
-        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(200, 500)
-            .withIconItem(ModItems.FLUID_IDENTIFIER.get())
-            .withIconFluid(ModFluids.PUF6.getSource())
-            .addItemInput(ModMaterialItems.item(ModMaterials.PLUTONIUM, MaterialShape.POWDER), 1)
-            .addItemInput(ModItems.FLUORITE.get(), 3)
-            .addFluidInput(ModFluids.WATER.getSource(), 1_000)
-            .addFluidOutput(ModFluids.PUF6.getSource(), 900)
-            .save(writer, "chemplant/chem_puf6");
-    }
-
-    private static void registerSchrabidium(Consumer<FinishedRecipe> writer) {
-        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(200, 5_000)
-            .withIconItem(ModItems.FLUID_IDENTIFIER.get())
-            .withIconFluid(ModFluids.SAS3.getSource())
-            .addItemInput(ModMaterialItems.item(ModMaterials.SCHRABIDIUM, MaterialShape.POWDER), 1)
-            .addItemInput(ModItems.SULFUR.get(), 2)
-            .addFluidInput(ModFluids.PEROXIDE.getSource(), 2_000)
-            .addFluidOutput(ModFluids.SAS3.getSource(), 1_000)
-            .save(writer, "chemplant/chem_sas3");
-
-    }
-
-    private static void registerKevlar(Consumer<FinishedRecipe> writer) {
+        // chem.meth
         ChemicalPlantRecipeBuilder.chemicalPlantRecipe(60, 300)
-            .withIconItem(ModItems.PLATE_KEVLAR.get())
-            .addFluidInput(ModFluids.AROMATICS.getSource(), 200)
-            .addFluidInput(ModFluids.NITRIC_ACID.getSource(), 100)
-            .addFluidInput(ModFluids.CHLORINE.getSource(), 100)
-            .addItemOutput(new ItemStack(ModItems.PLATE_KEVLAR.get(), 4))
-            .save(writer, "chemplant/chem_kevlar");
+                .addItemInput(Ingredient.of(item("minecraft:wheat")), 1)
+                .addItemInput(Ingredient.of(item("minecraft:cocoa_beans")), 2)
+                .addFluidInput(ModFluids.LUBRICANT.getSource(), 400)
+                .addFluidInput(ModFluids.PEROXIDE.getSource(), 500)
+                .addItemOutput(stack("hbm_m:chocolate", 4))
+                .save(writer, "chemplant/meth");
+
+        // chem.epearl
+        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(100, 300)
+                .addItemInput(ore("oredict/dust/diamond"), 1)
+                .addFluidInput(ModFluids.XPJUICE.getSource(), 500)
+                .addFluidOutput(ModFluids.ENDERJUICE.getSource(), 100)
+                .save(writer, "chemplant/epearl");
+
+        // chem.meatprocessing
+        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(200, 200)
+                .addItemInput(ore("oredict/glyphid_meat"), 3)
+                .addFluidInput(ModFluids.WATER.getSource(), 1000)
+                .addItemOutput(stack("hbm_m:sulfur", 4))
+                .addItemOutput(stack("hbm_m:niter", 3))
+                .addFluidOutput(ModFluids.SALIENT.getSource(), 250)
+                .save(writer, "chemplant/meatprocessing");
+
+        // chem.rustysteel
+        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(40, 100)
+                .addItemInput(Ingredient.of(item("hbm_m:deco_steel")), 8)
+                .addFluidInput(ModFluids.WATER.getSource(), 1000)
+                .addItemOutput(stack("hbm_m:deco_rusty_steel", 8))
+                .save(writer, "chemplant/rustysteel");
+
+        // chem.biosolidfuel
+        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(40, 100)
+                .addItemInput(Ingredient.of(item("hbm_m:biomass_compressed")), 4)
+                .addItemOutput(stack("hbm_m:solid_fuel", 1))
+                .withBlueprintPool("alt..biosolidfuel")
+                .save(writer, "chemplant/biosolidfuel");
+
+        // chem.biooilsolidfuel
+        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(40, 100)
+                .addItemInput(Ingredient.of(item("hbm_m:biomass_compressed")), 2)
+                .addFluidInput(ModFluids.HEATINGOIL.getSource(), 100)
+                .addItemOutput(stack("hbm_m:solid_fuel", 1))
+                .withBlueprintPool("alt..biosolidfuel")
+                .save(writer, "chemplant/biooilsolidfuel");
+
+        // chem.oilelectrodes
+        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(600, 100)
+                .addFluidInput(ModFluids.HEATINGOIL.getSource(), 4000)
+                .addItemOutput(stack("hbm_m:arc_electrode", 1))
+                .withBlueprintPool("alt..electrodes")
+                .save(writer, "chemplant/oilelectrodes");
+
+        // chem.lubeelectrodes
+        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(600, 100)
+                .addFluidInput(ModFluids.LUBRICANT.getSource(), 8000)
+                .addItemOutput(stack("hbm_m:arc_electrode", 1))
+                .withBlueprintPool("alt..electrodes")
+                .save(writer, "chemplant/lubeelectrodes");
+
+        // chem.peroxide
+        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(50, 100)
+                .addFluidInput(ModFluids.WATER.getSource(), 1000)
+                .addFluidOutput(ModFluids.PEROXIDE.getSource(), 1000)
+                .save(writer, "chemplant/peroxide");
+
+        // chem.sulfuricacid
+        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(50, 100)
+                .addItemInput(ore("oredict/dust/sulfur"), 1)
+                .addFluidInput(ModFluids.PEROXIDE.getSource(), 1000)
+                .addFluidInput(ModFluids.WATER.getSource(), 1000)
+                .addFluidOutput(ModFluids.SULFURIC_ACID.getSource(), 2000)
+                .save(writer, "chemplant/sulfuricacid");
+
+        // chem.nitricacid
+        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(50, 100)
+                .addItemInput(ore("oredict/dust/saltpeter"), 1)
+                .addFluidInput(ModFluids.SULFURIC_ACID.getSource(), 500)
+                .addFluidOutput(ModFluids.NITRIC_ACID.getSource(), 1000)
+                .save(writer, "chemplant/nitricacid");
+
+        // chem.birkeland
+        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(200, 5000)
+                .addFluidInput(ModFluids.AIR.getSource(), 8000)
+                .addFluidInput(ModFluids.WATER.getSource(), 2000)
+                .addFluidOutput(ModFluids.NITRIC_ACID.getSource(), 1000)
+                .withBlueprintPool("alt..birkeland")
+                .save(writer, "chemplant/birkeland");
+
+        // chem.schrabidic
+        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(60, 5000)
+                .addItemInput(Ingredient.of(item("hbm_m:pellet_charged")), 1)
+                .addFluidInput(ModFluids.SAS3.getSource(), 2000)
+                .addFluidInput(ModFluids.PEROXIDE.getSource(), 2000)
+                .addFluidOutput(ModFluids.SCHRABIDIC.getSource(), 2000)
+                .save(writer, "chemplant/schrabidic");
+
+        // chem.schrabidate
+        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(150, 5000)
+                .addItemInput(ore("oredict/dust/iron"), 1)
+                .addFluidInput(ModFluids.SCHRABIDIC.getSource(), 250)
+                .addItemOutput(stack("hbm_m:schrabidate_powder", 1))
+                .save(writer, "chemplant/schrabidate");
+
+        // chem.coltancleaning
+        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(60, 100)
+                .addItemInput(ore("oredict/dust/coltan"), 2)
+                .addItemInput(ore("oredict/dust/coal"), 1)
+                .addFluidInput(ModFluids.PEROXIDE.getSource(), 250)
+                .addFluidInput(ModFluids.HYDROGEN.getSource(), 500)
+                .addItemOutput(stack("hbm_m:powder_coltan", 1))
+                .addItemOutput(stack("hbm_m:niobium_powder", 1))
+                .addItemOutput(stack("hbm_m:dust", 1))
+                .addFluidOutput(ModFluids.WATER.getSource(), 500)
+                .save(writer, "chemplant/coltancleaning");
+
+        // chem.coltanpain
+        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(120, 100)
+                .addItemInput(Ingredient.of(item("hbm_m:powder_coltan")), 1)
+                .addItemInput(ore("oredict/dust/fluorite"), 1)
+                .addFluidInput(ModFluids.GAS.getSource(), 1000)
+                .addFluidInput(ModFluids.OXYGEN.getSource(), 500)
+                .addFluidOutput(ModFluids.PAIN.getSource(), 1000)
+                .save(writer, "chemplant/coltanpain");
+
+        // chem.coltancrystal
+        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(80, 100)
+                .addFluidInput(ModFluids.PAIN.getSource(), 1000)
+                .addFluidInput(ModFluids.PEROXIDE.getSource(), 500)
+                .addItemOutput(stack("hbm_m:gem_tantalium", 1))
+                .addItemOutput(stack("hbm_m:dust", 3))
+                .addFluidOutput(ModFluids.WATER.getSource(), 250)
+                .save(writer, "chemplant/coltancrystal");
+
+        // chem.cordite [Fassungen: lbsm_chemistry]
+        ConfigRecipes.variants(writer)
+                .base(w -> ChemicalPlantRecipeBuilder.chemicalPlantRecipe(40, 100)
+                    .addItemInput(ore("oredict/dust/saltpeter"), 2)
+                    .addItemInput(Ingredient.of(item("hbm_m:sawdust_powder")), 2)
+                    .addFluidInput(ModFluids.GAS.getSource(), 200)
+                    .addItemOutput(stack("hbm_m:cordite", 4))
+                    .save(w, "chemplant/cordite"))
+                .variant(v -> ChemicalPlantRecipeBuilder.chemicalPlantRecipe(40, 100)
+                    .addItemInput(ore("oredict/dust/saltpeter"), 2)
+                    .addItemInput(Ingredient.of(item("hbm_m:sawdust_powder")), 2)
+                    .addFluidInput(ModFluids.HEATINGOIL.getSource(), 200)
+                    .addItemOutput(stack("hbm_m:cordite", 4))
+                    .save(v, "chemplant/cordite"), "lbsm_chemistry")
+                .save();
+
+        // chem.rocketfuel [Fassungen: 528_pressurized]
+        ConfigRecipes.variants(writer)
+                .base(w -> ChemicalPlantRecipeBuilder.chemicalPlantRecipe(200, 100)
+                    .addItemInput(Ingredient.of(item("hbm_m:solid_fuel")), 2)
+                    .addFluidInput(ModFluids.PETROLEUM.getSource(), 200)
+                    .addFluidInput(ModFluids.NITRIC_ACID.getSource(), 100)
+                    .addItemOutput(stack("hbm_m:rocket_fuel", 4))
+                    .save(w, "chemplant/rocketfuel"))
+                .variant(v -> ChemicalPlantRecipeBuilder.chemicalPlantRecipe(200, 100)
+                    .addItemInput(Ingredient.of(item("hbm_m:solid_fuel")), 2)
+                    .addFluidInput(ModFluids.PETROLEUM.getSource(), 200, 1)
+                    .addFluidInput(ModFluids.NITRIC_ACID.getSource(), 100)
+                    .addItemOutput(stack("hbm_m:rocket_fuel", 4))
+                    .save(v, "chemplant/rocketfuel"), "528_pressurized")
+                .save();
     }
 
-    private static void registerBasicBlocks(Consumer<FinishedRecipe> writer) {
-        // 1.7.10: chem.cobble
+    private static void part2(Consumer<FinishedRecipe> writer) {
+        // chem.dynamite
+        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(50, 100)
+                .addItemInput(Ingredient.of(item("minecraft:sugar")), 1)
+                .addItemInput(ore("oredict/dust/saltpeter"), 1)
+                .addItemInput(ore("oredict/sand"), 1)
+                .addItemOutput(stack("hbm_m:ball_dynamite", 2))
+                .save(writer, "chemplant/dynamite");
+
+        // chem.tnt [Fassungen: 528_pressurized]
+        ConfigRecipes.variants(writer)
+                .base(w -> ChemicalPlantRecipeBuilder.chemicalPlantRecipe(100, 1000)
+                    .addItemInput(ore("oredict/dust/saltpeter"), 1)
+                    .addFluidInput(ModFluids.AROMATICS.getSource(), 500)
+                    .addItemOutput(stack("hbm_m:ball_tnt", 4))
+                    .save(w, "chemplant/tnt"))
+                .variant(v -> ChemicalPlantRecipeBuilder.chemicalPlantRecipe(100, 1000)
+                    .addItemInput(ore("oredict/dust/saltpeter"), 1)
+                    .addFluidInput(ModFluids.AROMATICS.getSource(), 500, 1)
+                    .addItemOutput(stack("hbm_m:ball_tnt", 4))
+                    .save(v, "chemplant/tnt"), "528_pressurized")
+                .save();
+
+        // chem.tatb
+        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(50, 5000)
+                .addItemInput(Ingredient.of(item("hbm_m:ball_tnt")), 1)
+                .addFluidInput(ModFluids.SOURGAS.getSource(), 200, 1)
+                .addFluidInput(ModFluids.NITRIC_ACID.getSource(), 10)
+                .addItemOutput(stack("hbm_m:ball_tatb", 1))
+                .save(writer, "chemplant/tatb");
+
+        // chem.c4 [Fassungen: 528_pressurized]
+        ConfigRecipes.variants(writer)
+                .base(w -> ChemicalPlantRecipeBuilder.chemicalPlantRecipe(100, 1000)
+                    .addItemInput(ore("oredict/dust/saltpeter"), 1)
+                    .addFluidInput(ModFluids.UNSATURATEDS.getSource(), 500)
+                    .addItemOutput(stack("hbm_m:c4_ingot", 4))
+                    .save(w, "chemplant/c4"))
+                .variant(v -> ChemicalPlantRecipeBuilder.chemicalPlantRecipe(100, 1000)
+                    .addItemInput(ore("oredict/dust/saltpeter"), 1)
+                    .addFluidInput(ModFluids.UNSATURATEDS.getSource(), 500, 1)
+                    .addItemOutput(stack("hbm_m:c4_ingot", 4))
+                    .save(v, "chemplant/c4"), "528_pressurized")
+                .save();
+
+        // chem.napalm
+        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(40, 100)
+                .addItemInput(Ingredient.of(item("hbm_m:canister_empty")), 1)
+                .addFluidInput(ModFluids.GASOLINE.getSource(), 100)
+                .addFluidInput(ModFluids.AROMATICS.getSource(), 50)
+                .addItemOutput(stack("hbm_m:canister_napalm", 1))
+                .save(writer, "chemplant/napalm");
+
+        // chem.laminate
         ChemicalPlantRecipeBuilder.chemicalPlantRecipe(20, 100)
-            .withIconItem(new ItemStack(Items.COBBLESTONE))
-            .addFluidInput(ModFluids.WATER.getSource(), 1_000)
-            .addFluidInput(ModFluids.LAVA.getSource(), 25)
-            .addItemOutput(new ItemStack(Items.COBBLESTONE))
-            .save(writer, "chemplant/chem_cobble");
+                .addItemInput(ore("oredict/block/glass"), 1)
+                .addItemInput(ore("oredict/bolt/steel"), 4)
+                .addFluidInput(ModFluids.XYLENE.getSource(), 50)
+                .addFluidInput(ModFluids.PHOSGENE.getSource(), 50)
+                .addItemOutput(stack("hbm_m:reinforced_laminate", 1))
+                .save(writer, "chemplant/laminate");
 
-        // 1.7.10: chem.stone (discover pool)
-        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(60, 500)
-            .withIconItem(new ItemStack(Items.STONE))
-            .addFluidInput(ModFluids.WATER.getSource(), 1_000)
-            .addFluidInput(ModFluids.LAVA.getSource(), 25)
-            .addFluidInput(ModFluids.AIR.getSource(), 4_000)
-            .addItemOutput(new ItemStack(Items.STONE))
-            .withBlueprintPool("discover")
-            .save(writer, "chemplant/chem_stone");
-    }
+        // chem.polarized
+        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(100, 500)
+                .addItemInput(ore("oredict/pane_glass"), 1)
+                .addFluidInput(ModFluids.PETROLEUM.getSource(), 1000)
+                .addItemOutput(stack("hbm_m:part_generic_glass_polarized", 16))
+                .save(writer, "chemplant/polarized");
 
-    private static void registerDhc(Consumer<FinishedRecipe> writer) {
-        // 1.7.10: chem.dhc
+        // chem.yellowcake
+        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(250, 500)
+                .addItemInput(ore("oredict/billet/uranium"), 2)
+                .addItemInput(ore("oredict/dust/sulfur"), 2)
+                .addFluidInput(ModFluids.PEROXIDE.getSource(), 500)
+                .addItemOutput(stack("hbm_m:yellowcake_powder", 1))
+                .save(writer, "chemplant/yellowcake");
+
+        // chem.uf6
+        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(100, 500)
+                .addItemInput(Ingredient.of(item("hbm_m:yellowcake_powder")), 1)
+                .addItemInput(ore("oredict/dust/fluorite"), 4)
+                .addFluidInput(ModFluids.WATER.getSource(), 1000)
+                .addItemOutput(stack("hbm_m:sulfur", 2))
+                .addFluidOutput(ModFluids.UF6.getSource(), 1200)
+                .save(writer, "chemplant/uf6");
+
+        // chem.puf6
+        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(200, 500)
+                .addItemInput(ore("oredict/dust/plutonium"), 1)
+                .addItemInput(ore("oredict/dust/fluorite"), 3)
+                .addFluidInput(ModFluids.WATER.getSource(), 1000)
+                .addFluidOutput(ModFluids.PUF6.getSource(), 900)
+                .save(writer, "chemplant/puf6");
+
+        // chem.sas3
+        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(200, 5000)
+                .addItemInput(ore("oredict/dust/schrabidium"), 1)
+                .addItemInput(ore("oredict/dust/sulfur"), 2)
+                .addFluidInput(ModFluids.PEROXIDE.getSource(), 2000)
+                .addFluidOutput(ModFluids.SAS3.getSource(), 1000)
+                .save(writer, "chemplant/sas3");
+
+        // chem.balefire
+        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(100, 10000)
+                .addItemInput(Ingredient.of(item("hbm_m:egg_balefire_shard")), 1)
+                .addFluidInput(ModFluids.KEROSENE.getSource(), 6000)
+                .addItemOutput(stack("hbm_m:balefire_powder", 1))
+                .addFluidOutput(ModFluids.BALEFIRE.getSource(), 8000)
+                .save(writer, "chemplant/balefire");
+
+        // chem.dhc
         ChemicalPlantRecipeBuilder.chemicalPlantRecipe(400, 500)
-            .withIconItem(ModItems.FLUID_IDENTIFIER.get())
-            .withIconFluid(ModFluids.DHC.getSource())
-            .addFluidInput(ModFluids.DEUTERIUM.getSource(), 500)
-            .addFluidInput(ModFluids.REFORMGAS.getSource(), 250)
-            .addFluidInput(ModFluids.SYNGAS.getSource(), 250)
-            .addFluidOutput(ModFluids.DHC.getSource(), 500)
-            .save(writer, "chemplant/chem_dhc");
+                .addFluidInput(ModFluids.DEUTERIUM.getSource(), 500)
+                .addFluidInput(ModFluids.REFORMGAS.getSource(), 250)
+                .addFluidInput(ModFluids.SYNGAS.getSource(), 250)
+                .addFluidOutput(ModFluids.DHC.getSource(), 500)
+                .save(writer, "chemplant/dhc");
+
+        // chem.osmiridiumdeath
+        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(240, 1000)
+                .addItemInput(Ingredient.of(item("hbm_m:paleogenite_powder")), 1)
+                .addItemInput(ore("oredict/dust/fluorite"), 8)
+                .addItemInput(Ingredient.of(item("hbm_m:nugget_bismuth")), 4)
+                .addFluidInput(ModFluids.PEROXIDE.getSource(), 1000, 5)
+                .addFluidOutput(ModFluids.DEATH.getSource(), 1000)
+                .save(writer, "chemplant/osmiridiumdeath");
     }
-
-    private static void registerExplosives(Consumer<FinishedRecipe> writer) {
-        // 1.7.10: chem.tnt
-        // KNO.dust() маппим на CRYSTAL_NITER (пока другого аналога в Modernized нет).
-        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(100, 1_000)
-            .withIconItem(ModItems.BALL_TNT.get())
-            .addItemInput(ModMaterialItems.item(ModMaterials.NITER, MaterialShape.CRYSTAL), 1)
-            .addFluidInput(ModFluids.AROMATICS.getSource(), 500)
-            .addItemOutput(new ItemStack(ModItems.BALL_TNT.get(), 4))
-            .save(writer, "chemplant/chem_tnt");
-
-        // 1.7.10: chem.c4
-        ChemicalPlantRecipeBuilder.chemicalPlantRecipe(100, 1_000)
-            .withIconItem(ModMaterialItems.item(ModMaterials.C4, MaterialShape.INGOT))
-            .addItemInput(ModMaterialItems.item(ModMaterials.NITER, MaterialShape.CRYSTAL), 1)
-            .addFluidInput(ModFluids.UNSATURATEDS.getSource(), 500)
-            .addItemOutput(new ItemStack(ModMaterialItems.item(ModMaterials.C4, MaterialShape.INGOT), 4))
-            .save(writer, "chemplant/chem_c4");
-
-        // TODO: chem.cordite (нет sawdust/cordite items)
-        // TODO: chem.rocketfuel (нет solid_fuel/rocket_fuel items)
-        // TODO: chem.dynamite (нет ball_dynamite)
-        // TODO: chem.tatb (нет ball_tatb)
-    }
-
-    // TODO: дальше в 1.7.10 идут большие блоки рецептов (бетон/взрывчатка/стекло/и т.д.) —
-    // переносим по мере появления контента в Modernized.
 }
 //?}

@@ -1,82 +1,105 @@
 package com.hbm_m.inventory.gui.radio;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import com.hbm_m.api.redstoneoverradio.IRORValueProvider;
+import com.hbm_m.block.machines.radio.RadioTorchBaseBlock;
 import com.hbm_m.blockentity.network.radio.RadioTorchReaderBlockEntity;
-import com.hbm_m.client.GuiCompat;
+import com.hbm_m.lib.RefStrings;
 import com.hbm_m.network.RadioTorchControlPacket;
 
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.components.Checkbox;
 import net.minecraft.client.gui.components.EditBox;
-import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 
-/** Port of {@code GUIScreenRadioTorchReader} (1.7.10 Original). 8 rows of Channel + Value-name. */
-public class GUIRadioTorchReader extends Screen {
+/**
+ * 1:1 {@code GUIScreenRadioTorchReader}: acht Zeilen Kanal + Wertname, Abfrage, Speichern; das Fragezeichen (29,17)
+ * listet die lesbaren Werte des Blocks, an dem der Leser haengt.
+ */
+public class GUIRadioTorchReader extends RttyScreenBase {
+
+    protected static final ResourceLocation texture = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/machine/gui_rtty_reader.png");
 
     private final BlockPos pos;
-    private final RadioTorchReaderBlockEntity blockEntity;
+    public final RadioTorchReaderBlockEntity rtty;
+    protected final EditBox[] frequencies = new EditBox[8];
+    protected final EditBox[] names = new EditBox[8];
 
-    private Checkbox pollingBox;
-    private final EditBox[] channelBoxes = new EditBox[8];
-    private final EditBox[] nameBoxes = new EditBox[8];
-
-    public GUIRadioTorchReader(BlockPos pos, RadioTorchReaderBlockEntity blockEntity) {
-        super(Component.literal("Radio Reader"));
+    public GUIRadioTorchReader(BlockPos pos, RadioTorchReaderBlockEntity rtty) {
+        super(Component.translatable("container.rttyReader"), 256, 204);
         this.pos = pos;
-        this.blockEntity = blockEntity;
+        this.rtty = rtty;
     }
 
     @Override
     protected void init() {
-        int cx = this.width / 2;
-        int y = this.height / 2 - 90;
+        super.init();
 
-        pollingBox = com.hbm_m.client.GuiCompat.checkbox(cx - 75, y, 150, 18, Component.literal("Polling"), blockEntity.polling);
-        addRenderableWidget(pollingBox);
-        y += 24;
+        int oX = 4;
+        int oY = 4;
 
         for (int i = 0; i < 8; i++) {
-            EditBox channelBox = new EditBox(this.font, cx - 100, y, 90, 18, Component.literal("Channel " + i));
-            channelBox.setMaxLength(15);
-            channelBox.setValue(blockEntity.channels[i]);
-            channelBoxes[i] = channelBox;
-            addRenderableWidget(channelBox);
-
-            EditBox nameBox = new EditBox(this.font, cx - 4, y, 100, 18, Component.literal("Value name " + i));
-            nameBox.setMaxLength(32);
-            nameBox.setValue(blockEntity.names[i]);
-            nameBoxes[i] = nameBox;
-            addRenderableWidget(nameBox);
-
-            y += 20;
+            this.frequencies[i] = field(guiLeft + 25 + oX, guiTop + 53 + i * 18 + oY, 72 - oX * 2, 14, GUIRadioTorchSimple.MAX_CHANNEL_LENGTH, rtty.channels[i]);
+            this.names[i] = field(guiLeft + 119 + oX, guiTop + 53 + i * 18 + oY, 126 - oX * 2, 14, 25, rtty.names[i]);
         }
-        y += 8;
-
-        addRenderableWidget(Button.builder(Component.literal("Save"), b -> save())
-                .bounds(cx - 40, y, 80, 20).build());
-    }
-
-    private void save() {
-        CompoundTag data = new CompoundTag();
-        data.putBoolean("polling", pollingBox.selected());
-        for (int i = 0; i < 8; i++) {
-            data.putString("channel" + i, channelBoxes[i].getValue());
-            data.putString("name" + i, nameBoxes[i].getValue());
-        }
-        RadioTorchControlPacket.sendToServer(pos, data);
-        onClose();
     }
 
     @Override
-    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        com.hbm_m.client.GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTick);
-        super.render(guiGraphics, mouseX, mouseY, partialTick);
-        guiGraphics.drawCenteredString(this.font, this.title, this.width / 2, this.height / 2 - 110, 0xFFFFFF);
+    public void render(GuiGraphics g, int x, int y, float f) {
+        com.hbm_m.client.GuiCompat.renderBackground(this, g, x, y, f);
+
+        g.blit(texture, guiLeft, guiTop, 0, 0, xSize, ySize);
+        if (rtty.polling) g.blit(texture, guiLeft + 173, guiTop + 17, 0, 204, 18, 18);
+
+        drawFields(g, x, y, f);
+
+        String name = this.title.getString();
+        g.drawString(this.font, name, this.guiLeft + this.xSize / 2 - this.font.width(name) / 2, this.guiTop + 6, 4210752, false);
+
+        if (in(x, y, 173, 17, 18, 18)) tip(g, x, y, rtty.polling ? "Polling" : "State Change");
+        if (in(x, y, 209, 17, 18, 18)) tip(g, x, y, "Save Settings");
+        if (in(x, y, 29, 17, 18, 18) && rtty.getLevel() != null) {
+            Direction dir = rtty.getBlockState().hasProperty(RadioTorchBaseBlock.FACING) ? rtty.getBlockState().getValue(RadioTorchBaseBlock.FACING) : Direction.DOWN;
+            if (com.hbm_m.api.redstoneoverradio.IRORInfo.resolve(rtty.getLevel(), rtty.getBlockPos().relative(dir)) instanceof IRORValueProvider prov) {
+                String[] info = prov.getFunctionInfo();
+                List<Component> lines = new ArrayList<>();
+                lines.add(Component.literal("Readable values:"));
+                for (String s : info) {
+                    if (s.startsWith(IRORValueProvider.PREFIX_VALUE))
+                        lines.add(Component.literal(s.substring(4)).withStyle(ChatFormatting.LIGHT_PURPLE));
+                }
+                g.renderComponentTooltip(this.font, lines, x, y);
+            }
+        }
     }
 
     @Override
-    public boolean isPauseScreen() { return false; }
+    public boolean mouseClicked(double x, double y, int i) {
+        boolean hit = clickFields(x, y, i);
+
+        if (in(x, y, 173, 17, 18, 18)) {
+            click();
+            CompoundTag data = new CompoundTag();
+            data.putBoolean("polling", !rtty.polling);
+            RadioTorchControlPacket.sendToServer(pos, data);
+            return true;
+        }
+
+        if (in(x, y, 209, 17, 18, 18)) {
+            click();
+            CompoundTag data = new CompoundTag();
+            for (int j = 0; j < 8; j++) data.putString("channel" + j, this.frequencies[j].getValue());
+            for (int j = 0; j < 8; j++) data.putString("name" + j, this.names[j].getValue());
+            RadioTorchControlPacket.sendToServer(pos, data);
+            return true;
+        }
+
+        return hit || super.mouseClicked(x, y, i);
+    }
 }

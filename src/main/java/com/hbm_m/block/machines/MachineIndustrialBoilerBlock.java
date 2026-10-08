@@ -49,7 +49,7 @@ import net.minecraftforge.common.capabilities.ForgeCapabilities;
  * Industrial Boiler - converts water to steam using heat.
  * Multiblock structure: 3x3x5 (no ladder parts).
  */
-public class MachineIndustrialBoilerBlock extends BaseEntityBlock implements IMultiblockController {
+public class MachineIndustrialBoilerBlock extends BaseEntityBlock implements IMultiblockController, com.hbm_m.interfaces.ILookOverlay {
 
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
     public static final BooleanProperty LIT = BooleanProperty.create("lit");
@@ -160,13 +160,47 @@ public class MachineIndustrialBoilerBlock extends BaseEntityBlock implements IMu
     }
     *///?}
 
+    /** Original {@code MachineHeatBoilerIndustrial.onBlockActivated}: kein GUI, nur Fluidtyp per Fluid-ID. */
     private InteractionResult openMenu(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
-        if (!level.isClientSide()) {
-            if (level.getBlockEntity(pos) instanceof MenuProvider provider) {
-                MenuRegistry.openExtendedMenu((ServerPlayer) player, provider, buf -> buf.writeBlockPos(pos));
+        if (!level.isClientSide() && !player.isShiftKeyDown()) {
+            net.minecraft.world.item.ItemStack held = player.getItemInHand(hand);
+            if (!held.isEmpty() && held.getItem() instanceof com.hbm_m.item.liquids.FluidIdentifierItem) {
+                if (!(level.getBlockEntity(pos) instanceof MachineIndustrialBoilerBlockEntity boiler)) return InteractionResult.PASS;
+
+                net.minecraft.world.level.material.Fluid type = com.hbm_m.item.liquids.FluidIdentifierItem.resolvePrimaryForTank(held);
+                com.hbm_m.inventory.fluid.trait.FT_Heatable trait = type == null ? null
+                        : com.hbm_m.inventory.fluid.FluidType.getTrait(type, com.hbm_m.inventory.fluid.trait.FT_Heatable.class);
+
+                if (trait != null && trait.getEfficiency(com.hbm_m.inventory.fluid.trait.FT_Heatable.HeatingType.BOILER) > 0) {
+                    boiler.tanks[0].setTankType(type);
+                    boiler.setChanged();
+                    player.displayClientMessage(net.minecraft.network.chat.Component.literal("Changed type to ").withStyle(net.minecraft.ChatFormatting.YELLOW)
+                            .append(com.hbm_m.inventory.fluid.FluidType.forFluid(type).getLocalizedName())
+                            .append(net.minecraft.network.chat.Component.literal("!")), false);
+                }
+                return InteractionResult.SUCCESS;
             }
+            return InteractionResult.PASS;
         }
-        return InteractionResult.sidedSuccess(level.isClientSide());
+        return InteractionResult.SUCCESS;
+    }
+
+    @Override
+    public void printHook(net.minecraft.client.gui.GuiGraphics g, Level world, BlockPos pos) {
+        if (!(world.getBlockEntity(pos) instanceof MachineIndustrialBoilerBlockEntity boiler)) return;
+
+        java.util.List<net.minecraft.network.chat.Component> text = new java.util.ArrayList<>();
+        text.add(net.minecraft.network.chat.Component.literal(String.format(java.util.Locale.US, "%,d", boiler.heat) + "TU"));
+        text.add(net.minecraft.network.chat.Component.literal("-> ").withStyle(net.minecraft.ChatFormatting.GREEN)
+                .append(net.minecraft.network.chat.Component.literal("").withStyle(net.minecraft.ChatFormatting.RESET)
+                .append(com.hbm_m.inventory.fluid.FluidType.forFluid(boiler.tanks[0].getTankType()).getLocalizedName())
+                .append(": " + String.format(java.util.Locale.US, "%,d", boiler.tanks[0].getFill()) + " / " + String.format(java.util.Locale.US, "%,d", boiler.tanks[0].getMaxFill()) + "mB")));
+        text.add(net.minecraft.network.chat.Component.literal("<- ").withStyle(net.minecraft.ChatFormatting.RED)
+                .append(net.minecraft.network.chat.Component.literal("").withStyle(net.minecraft.ChatFormatting.RESET)
+                .append(com.hbm_m.inventory.fluid.FluidType.forFluid(boiler.tanks[1].getTankType()).getLocalizedName())
+                .append(": " + String.format(java.util.Locale.US, "%,d", boiler.tanks[1].getFill()) + " / " + String.format(java.util.Locale.US, "%,d", boiler.tanks[1].getMaxFill()) + "mB")));
+
+        com.hbm_m.interfaces.ILookOverlay.printGeneric(g, net.minecraft.network.chat.Component.translatable(getDescriptionId()), 0xffff00, 0x404000, text);
     }
 
     @Nullable
@@ -177,7 +211,8 @@ public class MachineIndustrialBoilerBlock extends BaseEntityBlock implements IMu
 
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        return structureHelper.generateShapeFromParts(state.getValue(FACING));
+        // w16b: nur die Kernzelle (Raycast pro Zelle wie Original); Umriss der ganzen Maschine: MultiblockOutlineForge
+        return structureHelper.getControllerCellShape(state.getValue(FACING));
     }
 
     @Override
@@ -213,4 +248,11 @@ public class MachineIndustrialBoilerBlock extends BaseEntityBlock implements IMu
         return CODEC;
     }
     *///?}
+
+    /** Original {@code addInformation}: {@code addStandardInfo} (Umschalttaste zeigt {@code .desc}). */
+    @Override
+    public void appendHoverText(net.minecraft.world.item.ItemStack stack, @org.jetbrains.annotations.Nullable net.minecraft.world.level.BlockGetter level,
+                                java.util.List<net.minecraft.network.chat.Component> list, net.minecraft.world.item.TooltipFlag flag) {
+        com.hbm_m.util.StandardInfo.add(list, getDescriptionId() + ".desc");
+    }
 }

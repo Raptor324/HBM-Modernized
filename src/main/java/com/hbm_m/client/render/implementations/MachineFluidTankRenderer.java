@@ -50,20 +50,21 @@ public final class MachineFluidTankRenderer {
     private static final RandomSource RANDOM = RandomSource.create(42);
 
     public static void register() {
-        buildSpec("fluidtank", ModBlockEntities.FLUID_TANK_BE.get(), MachineFluidTankBlockEntity.class);
-        buildSpec("bat9000", ModBlockEntities.BAT9000_BE.get(), com.hbm_m.blockentity.machines.Bat9000BlockEntity.class);
+        buildSpec("fluidtank", ModBlockEntities.FLUID_TANK_BE.get(), MachineFluidTankBlockEntity.class, MachineFluidTankRenderer::applyFluidTankBlockTransform);
+        buildSpec("bat9000", ModBlockEntities.BAT9000_BE.get(), com.hbm_m.blockentity.machines.Bat9000BlockEntity.class, MachineFluidTankRenderer::applyBlockTransform);
     }
 
     private MachineFluidTankRenderer() {}
 
     /** Одна спека на BE-тип; Bat9000 наследует MachineFluidTankBlockEntity — логика общая. */
     private static <T extends MachineFluidTankBlockEntity> void buildSpec(
-            String id, net.minecraft.world.level.block.entity.BlockEntityType<T> type, Class<T> cls) {
+            String id, net.minecraft.world.level.block.entity.BlockEntityType<T> type, Class<T> cls,
+            com.hbm_m.client.render.machine.MachineSpecBuilder.BlockTransform<T> transform) {
         MachineRenderers.machine(id, type, cls)
             .part("Frame")
             .dynamicPart("Tank", MachineFluidTankRenderer::tankQuads,
                     be -> String.valueOf(be.getTankTextureLocation()))
-            .blockTransform(MachineFluidTankRenderer::applyBlockTransform)
+            .blockTransform(transform)
             .hook(MachineFluidTankRenderer::renderDiamonds)
             .facing(MachineFluidTankRenderer::facing)
             .register();
@@ -80,6 +81,47 @@ public final class MachineFluidTankRenderer {
     private static void applyBlockTransform(MachineFluidTankBlockEntity be, LegacyAnimator animator) {
         animator.setupBlockTransform(facing(be));
         animator.translate(-0.5f, 0.0f, -0.5f);
+    }
+
+    /**
+     * 1:1 {@code RenderBAT9000}: im Original T(Kernmitte), keine Drehung nach Ausrichtung, dann RotY(45) und vier
+     * Diamanten bei T(2.5, 2.25, 0), Skalierung (1, 0.75, 0.75), jeweils um 90 Grad weitergedreht.
+     * Der Hook-Stapel ist T(0.5,0,0.5)·RotY(P)·T(-0.5,0,-0.5) mit P = 90 + legacy(FACING); er wird hier mit
+     * T(0.5,0,0.5)·RotY(-P) auf T(Kernmitte) zurueckgefuehrt (die Bewegungen um -0.5/+0.5 heben sich auf).
+     */
+    private static void renderBat9000Diamonds(MachineFluidTankBlockEntity be, PoseStack poseStack, MultiBufferSource buffer,
+                                              FluidType type, int light, int packedOverlay) {
+        float p = 90.0F + com.hbm_m.util.MultipartFacingTransforms.legacyFacingRotationYDegrees(facing(be));
+        poseStack.pushPose();
+        poseStack.translate(0.5F, 0.0F, 0.5F);
+        poseStack.mulPose(Axis.YP.rotationDegrees(-p));
+        poseStack.mulPose(Axis.YP.rotationDegrees(45.0F));
+        for (int j = 0; j < 4; j++) {
+            poseStack.pushPose();
+            poseStack.translate(2.5F, 2.25F, 0.0F);
+            poseStack.scale(1.0F, 0.75F, 0.75F);
+            DiamondPronter.pront(poseStack, buffer, type.poison, type.flammability, type.reactivity, type.symbol, light, packedOverlay);
+            poseStack.popPose();
+            poseStack.mulPose(Axis.YP.rotationDegrees(90.0F));
+        }
+        poseStack.popPose();
+    }
+
+    /**
+     * Nachgerechnet: Blocktransform T(0.5,0,0.5)·RotY(P)·T(-0.5,0,-0.5) mit P = 90 + legacy (N 90, S 270, W 180,
+     * O 0) und Teil-Root B = T(-0.5,0,0.5)·RotY(90) ergibt mit T(FACING) davor exakt RenderFluidTank
+     * T(Kernmitte)·RotY(P + 90) - also in allen vier Richtungen das Original (RotY(-P)·FACING = (1,0,0)).
+     * Fluessigkeitstank: Modell und Diamanten waren auf den alten Kern vorn in der Mitte ausgerichtet. Seit der
+     * Kern 1:1 ({@code getDimensions {2,0,1,1,2,2}}, {@code getOffset 1}) in der Strukturmitte sitzt, liegt die
+     * alte Bezugszelle eine Zelle in Blickrichtung ({@code FACING}) vor ihm - dorthin wird zuerst verschoben.
+     * Noch nicht migrierte Tanks (Kern vorn) zeichnen unveraendert.
+     */
+    private static <T extends MachineFluidTankBlockEntity> void applyFluidTankBlockTransform(T be, LegacyAnimator animator) {
+        if (!be.isLegacyCoreLayout()) {
+            Direction f = facing(be);
+            animator.translate(f.getStepX(), 0.0f, f.getStepZ());
+        }
+        applyBlockTransform(be, animator);
     }
 
     // ── Tank: ретекстурированные квады ─────────────────────────────────
@@ -185,7 +227,7 @@ public final class MachineFluidTankRenderer {
      * <p>
      * ВАЖНО: в 1.7.10 оффсеты заданы в сыром OBJ-фрейме, а наш пайплайн запекает части
      * С root-трансформом из fluid_tank.json (Forge ObjModel компоузит getRootTransform()
-     * всегда, даже с identity ModelState): baked = T(-0.5,0,-2.5)·RotY(90)·raw.
+     * всегда, даже с identity ModelState): baked = T(-0.5,0,0.5)·RotY(90)·raw (Ursprung eingerechnet).
      * Поэтому перед легаси-оффсетами вставляются те же T+R — иначе алмазы оказываются
      * не на тех гранях (сырой Z-фрейм ≠ запечённый, корпус в хуке длинная коробка по Z').
      */
@@ -204,12 +246,20 @@ public final class MachineFluidTankRenderer {
 
         RenderSystem.disableCull();
 
-        // root-трансформ модели B = T(-0.5,0,-2.5)·RotY(90), затем легаси-оффсеты L:
-        // итого B·L — те же координаты, что в 1.7.10, но в запечённом фрейме модели.
-        // Компенсация T(0.5,0,0.5) из старого хука НЕ нужна: она должна была
-        // выравнивать сырой фрейм, а B·L уже даёт запечённые координаты напрямую.
+        if (be instanceof com.hbm_m.blockentity.machines.Bat9000BlockEntity) {
+            renderBat9000Diamonds(be, poseStack, buffer, type, light, packedOverlay);
+            RenderSystem.enableCull();
+            return;
+        }
+        float rootZ = 0.5F;
+
+        // Wirksamer Root-Transform der Teile (Forge TransformationHelper: Ursprung "opposing-corner" (1,1,1),
+        // ObjModel zusaetzlich blockCenterToCorner (0.5,0.5,0.5)): B = T(t + q - R q)·R mit t=(-0.5,0,-2.5),
+        // R=RotY(90), q=(1.5,1.5,1.5) -> B = T(-0.5,0,0.5)·RotY(90). Die fruehere Annahme T(-0.5,0,-2.5) lag
+        // 3 Bloecke daneben. Zusammen mit dem Blocktransform ergibt B·L exakt RenderFluidTank:
+        // T(Kernmitte)·RotY(S 0 / N 180 / W 270 / O 90)·L.
         poseStack.pushPose();
-        poseStack.translate(-0.5F, 0.0F, -2.5F);
+        poseStack.translate(-0.5F, 0.0F, rootZ);
         poseStack.mulPose(Axis.YP.rotationDegrees(90.0F));
         poseStack.translate(-0.25F, 0.5F, -1.501F);
         poseStack.mulPose(Axis.YP.rotationDegrees(90.0F));
@@ -218,7 +268,7 @@ public final class MachineFluidTankRenderer {
         poseStack.popPose();
 
         poseStack.pushPose();
-        poseStack.translate(-0.5F, 0.0F, -2.5F);
+        poseStack.translate(-0.5F, 0.0F, rootZ);
         poseStack.mulPose(Axis.YP.rotationDegrees(90.0F));
         poseStack.translate(0.25F, 0.5F, 1.501F);
         poseStack.mulPose(Axis.YN.rotationDegrees(90.0F));

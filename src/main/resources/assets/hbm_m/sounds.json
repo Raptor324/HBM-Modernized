@@ -104,21 +104,30 @@
     "category": "block",
     "subtitle": "sounds.hbm_m.subtitle.broadcast",
     "sounds": [
-      "hbm_m:broadcast1"
+      {
+        "name": "hbm_m:broadcast1",
+        "stream": true
+      }
     ]
   },
   "block.broadcast2": {
     "category": "block",
     "subtitle": "sounds.hbm_m.subtitle.broadcast",
     "sounds": [
-      "hbm_m:broadcast2"
+      {
+        "name": "hbm_m:broadcast2",
+        "stream": true
+      }
     ]
   },
   "block.broadcast3": {
     "category": "block",
     "subtitle": "sounds.hbm_m.subtitle.broadcast",
     "sounds": [
-      "hbm_m:broadcast3"
+      {
+        "name": "hbm_m:broadcast3",
+        "stream": true
+      }
     ]
   },
   "block.broadcast_random": {
@@ -3608,6 +3617,18 @@
       "hbm_m:alarm/singer2",
       "hbm_m:alarm/singer3",
       "hbm_m:alarm/singer4"
+    ]
+  },
+  "block.missile_assembly": {
+    "category": "blocks",
+    "sounds": [
+      "hbm_m:block/missile_assembly"
+    ]
+  },
+  "block.missile_assembly2": {
+    "category": "blocks",
+    "sounds": [
+      "hbm_m:block/missile_assembly2"
     ]
   }
 }

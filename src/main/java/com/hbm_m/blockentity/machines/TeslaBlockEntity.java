@@ -98,6 +98,24 @@ public class TeslaBlockEntity extends BaseMachineBlockEntity {
 
             if (isObstructed(level, x, y, z, e.getX(), eyeY, e.getZ())) continue;
 
+            // Original: Krabben werden nur angebunden; Tesla-/Taint-Krabben heilen sich dabei.
+            if (e instanceof com.hbm_m.entity.mob.EntityTaintCrab) {
+                hits.add(new Vec3(e.getX(), e.getY() + 1.25, e.getZ()));
+                e.heal(15F);
+                continue;
+            }
+
+            if (e instanceof com.hbm_m.entity.mob.EntityTeslaCrab) {
+                hits.add(new Vec3(e.getX(), e.getY() + 1, e.getZ()));
+                e.heal(10F);
+                continue;
+            }
+
+            if (e instanceof com.hbm_m.entity.mob.EntityCyberCrab) {
+                hits.add(new Vec3(e.getX(), eyeY, e.getZ()));
+                continue;
+            }
+
             // Original: Creeper werden gezuendet statt getroffen.
             if (e instanceof Creeper creeper) {
                 creeper.ignite();
@@ -113,11 +131,16 @@ public class TeslaBlockEntity extends BaseMachineBlockEntity {
 
                 if (e.hurt(ModDamageSources.electricity(level), damage)) {
                     level.playSound(null, e.getX(), e.getY(), e.getZ(),
-                            SoundEvents.LIGHTNING_BOLT_IMPACT, SoundSource.BLOCKS, 1.0F, 1.0F);
+                            com.hbm_m.sound.HbmSoundsNT.get("hbm:weapon.tesla"), SoundSource.BLOCKS, 1.0F, 1.0F);
                 }
             }
 
-            hits.add(new Vec3(e.getX(), eyeY, e.getZ()));
+            // Original: clientseitig (Krabben) endet der Blitz bei Spielern auf Fusshoehe
+            double offset = 0;
+            if (source != null && e instanceof Player && level.isClientSide)
+                offset = e.getBbHeight();
+
+            hits.add(new Vec3(e.getX(), eyeY - offset, e.getZ()));
         }
 
         return hits;
@@ -134,6 +157,32 @@ public class TeslaBlockEntity extends BaseMachineBlockEntity {
 
     public List<Vec3> getTargets() {
         return targets;
+    }
+
+    /** Original serialize/deserialize: die Ziele gehen fuer die Blitze an den Client (RenderTesla). */
+    @Override
+    protected void writeNbtData(net.minecraft.nbt.CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(tag, registries);
+        net.minecraft.nbt.ListTag list = new net.minecraft.nbt.ListTag();
+        for (Vec3 v : targets) {
+            net.minecraft.nbt.CompoundTag t = new net.minecraft.nbt.CompoundTag();
+            t.putDouble("x", v.x);
+            t.putDouble("y", v.y);
+            t.putDouble("z", v.z);
+            list.add(t);
+        }
+        tag.put("targets", list);
+    }
+
+    @Override
+    protected void readNbtData(net.minecraft.nbt.CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
+        targets.clear();
+        net.minecraft.nbt.ListTag list = tag.getList("targets", net.minecraft.nbt.Tag.TAG_COMPOUND);
+        for (int i = 0; i < list.size(); i++) {
+            net.minecraft.nbt.CompoundTag t = list.getCompound(i);
+            targets.add(new Vec3(t.getDouble("x"), t.getDouble("y"), t.getDouble("z")));
+        }
     }
 
     @Override

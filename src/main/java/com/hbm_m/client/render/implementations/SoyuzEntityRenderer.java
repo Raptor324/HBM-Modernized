@@ -44,10 +44,11 @@ public class SoyuzEntityRenderer extends EntityRenderer<SoyuzEntity> {
     @Override
     public void render(SoyuzEntity entity, float entityYaw, float partialTick, PoseStack poseStack,
                         MultiBufferSource bufferSource, int packedLight) {
-        BakedModel part = getRocketPart();
+        int skin = entity.getSkin();
+        BakedModel part = getRocketPart(skin);
         if (part == null) return;
 
-        SingleMeshVboRenderer renderer = MeshRenderCache.getOrCreateRenderer("soyuz_entity", "Rocket", part);
+        SingleMeshVboRenderer renderer = MeshRenderCache.getOrCreateRenderer("soyuz_entity" + skin, "Rocket", part);
         if (renderer == null) return;
 
         poseStack.pushPose();
@@ -63,9 +64,9 @@ public class SoyuzEntityRenderer extends EntityRenderer<SoyuzEntity> {
     }
 
     @Nullable
-    private static BakedModel getRocketPart() {
+    private static BakedModel getRocketPart(int skin) {
         var modelManager = Minecraft.getInstance().getModelManager();
-        BakedModel model = PlatformHooks.getModel(modelManager, ROCKET_MODEL_ID);
+        BakedModel model = PlatformHooks.getModel(modelManager, SoyuzLauncherRenderer.rocketModelId(skin));
         if (model == null || model == modelManager.getMissingModel()) return null;
         if (!(model instanceof SoyuzRocketBakedModel rocketModel)) return null;
         return rocketModel.getPart(SoyuzRocketBakedModel.ROCKET);

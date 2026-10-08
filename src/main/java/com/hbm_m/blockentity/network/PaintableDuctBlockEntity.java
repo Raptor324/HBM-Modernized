@@ -59,6 +59,9 @@ public class PaintableDuctBlockEntity extends BaseHbmBlockEntity implements IFlu
 
     @Override public Fluid getFluidType() { return fluidType; }
 
+    /** Knoten des Rohrnetzes (fuer das Messrohr {@code TileEntityPipeGauge}). */
+    @Nullable public FluidNode getNode() { return node; }
+
     @Override
     public boolean canConnect(Fluid fluid, Direction fromDir) {
         if (fromDir == null) return false;

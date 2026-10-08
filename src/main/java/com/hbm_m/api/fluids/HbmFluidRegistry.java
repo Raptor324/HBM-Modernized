@@ -21,56 +21,72 @@ public final class HbmFluidRegistry {
     private static final List<ModFluids.FluidEntry> ORDERED_FLUIDS = new ArrayList<>();
 
     static {
-        // Build ordered list - same order as ModFluids registration (skip NONE for identifier)
+        // 1:1 Fluids.metaOrder (getInNiceOrder) des Originals, ohne NONE; Port-Basistexturen (oil_base usw.) sind keine Typen
         addAll(
-            ModFluids.WATER, ModFluids.AIR,
-            ModFluids.CRUDE_OIL, ModFluids.PETROLEUM, ModFluids.DIESEL, ModFluids.DIESEL_CRACK,
-            ModFluids.DIESEL_CRACK_REFORM, ModFluids.DIESEL_REFORM, ModFluids.GASOLINE,
-            ModFluids.GASOLINE_LEADED, ModFluids.KEROSENE, ModFluids.KEROSENE_REFORM,
-            ModFluids.HEAVYOIL, ModFluids.HEAVYOIL_VACUUM, ModFluids.LIGHTOIL, ModFluids.LIGHTOIL_CRACK,
-            ModFluids.LIGHTOIL_DS, ModFluids.LIGHTOIL_VACUUM, ModFluids.HEATINGOIL,
-            ModFluids.HEATINGOIL_VACUUM, ModFluids.NAPHTHA, ModFluids.NAPHTHA_COKER,
-            ModFluids.NAPHTHA_CRACK, ModFluids.NAPHTHA_DS, ModFluids.BITUMEN, ModFluids.LUBRICANT,
-            ModFluids.CRACKOIL, ModFluids.CRACKOIL_DS, ModFluids.HOTCRACKOIL, ModFluids.HOTCRACKOIL_DS,
-            ModFluids.HOTOIL, ModFluids.HOTOIL_DS, ModFluids.OIL_BASE, ModFluids.OIL_COKER,
-            ModFluids.OIL_DS, ModFluids.RECLAIMED, ModFluids.SLOP, ModFluids.LPG,
-            ModFluids.PETROIL, ModFluids.PETROIL_LEADED, ModFluids.REFORMATE, ModFluids.AROMATICS,
-            ModFluids.UNSATURATEDS, ModFluids.XYLENE, ModFluids.COALCREOSOTE, ModFluids.COALOIL,
-            ModFluids.WOODOIL, ModFluids.FISHOIL, ModFluids.SUNFLOWEROIL,
-            ModFluids.GAS, ModFluids.GAS_COKER, ModFluids.COALGAS, ModFluids.COALGAS_LEADED,
-            ModFluids.SYNGAS, ModFluids.REFORMGAS, ModFluids.SOURGAS, ModFluids.BIOGAS,
-            ModFluids.HYDROGEN, ModFluids.OXYGEN, ModFluids.CARBONDIOXIDE, ModFluids.OXYHYDROGEN,
-            ModFluids.SMOKE, ModFluids.SMOKE_LEADED, ModFluids.SMOKE_POISON, ModFluids.WASTEGAS,
-            ModFluids.CHLORINE, ModFluids.PHOSGENE, ModFluids.MUSTARDGAS, ModFluids.XENON,
-            ModFluids.DEUTERIUM, ModFluids.TRITIUM, ModFluids.HELIUM3, ModFluids.HELIUM4,
-            ModFluids.UF6, ModFluids.PUF6,
-            ModFluids.PLASMA_DT, ModFluids.PLASMA_HD, ModFluids.PLASMA_HT, ModFluids.PLASMA_DH3,
-            ModFluids.PLASMA_XM, ModFluids.PLASMA_BF,
+            // vanilla
+            ModFluids.AIR, ModFluids.AIRBLAST, ModFluids.WATER, ModFluids.HEAVYWATER,
+            ModFluids.HEAVYWATER_HOT, ModFluids.LAVA,
+            // steams
             ModFluids.STEAM, ModFluids.HOTSTEAM, ModFluids.SUPERHOTSTEAM, ModFluids.ULTRAHOTSTEAM,
             ModFluids.SPENTSTEAM,
-            ModFluids.HEAVYWATER, ModFluids.HEAVYWATER_HOT,
-            ModFluids.COOLANT, ModFluids.COOLANT_HOT, ModFluids.CRYOGEL,
+            // coolants
+            ModFluids.CARBONDIOXIDE, ModFluids.COOLANT, ModFluids.COOLANT_HOT,
             ModFluids.PERFLUOROMETHYL, ModFluids.PERFLUOROMETHYL_COLD, ModFluids.PERFLUOROMETHYL_HOT,
-            ModFluids.SULFURIC_ACID, ModFluids.NITRIC_ACID, ModFluids.NITROGLYCERIN, ModFluids.PEROXIDE,
-            ModFluids.LYE, ModFluids.VITRIOL, ModFluids.SOLVENT, ModFluids.FRACKSOL,
-            ModFluids.ETHANOL, ModFluids.BIOFUEL,
-            ModFluids.MERCURY, ModFluids.LEAD, ModFluids.LEAD_HOT, ModFluids.SODIUM,
-            ModFluids.SODIUM_HOT,
-            ModFluids.CALCIUM_SOLUTION, ModFluids.CALCIUM_CHLORIDE, ModFluids.POTASSIUM_CHLORIDE,
-            ModFluids.CHLOROCALCITE_SOLUTION, ModFluids.CHLOROCALCITE_MIX, ModFluids.CHLOROCALCITE_CLEANED,
-            ModFluids.BAUXITE_SOLUTION, ModFluids.ALUMINA, ModFluids.SODIUM_ALUMINATE, ModFluids.REDMUD,
-            ModFluids.SCHRABIDIC, ModFluids.ASCHRAB, ModFluids.SAS3,
-            ModFluids.BALEFIRE, ModFluids.AMAT,
-            ModFluids.THORIUM_SALT, ModFluids.THORIUM_SALT_HOT, ModFluids.THORIUM_SALT_DEPLETED,
-            ModFluids.WATZ,
-            ModFluids.LAVA, ModFluids.CONCRETE, ModFluids.BLOOD, ModFluids.BLOOD_HOT,
-            ModFluids.COLLOID, ModFluids.SMEAR, ModFluids.WASTEFLUID, ModFluids.RADIOSOLVENT,
-            ModFluids.SALIENT, ModFluids.IONGEL, ModFluids.FULLERENE, ModFluids.NITAN,
-            ModFluids.DHC,
-            ModFluids.EGG, ModFluids.CHOLESTEROL, ModFluids.ESTRADIOL, ModFluids.PHEROMONE,
-            ModFluids.PHEROMONE_M, ModFluids.SEEDSLURRY,
-            ModFluids.ENDERJUICE, ModFluids.XPJUICE, ModFluids.MUG, ModFluids.MUG_HOT,
-            ModFluids.DEATH, ModFluids.PAIN, ModFluids.STELLAR_FLUX
+            ModFluids.CRYOGEL, ModFluids.MUG, ModFluids.MUG_HOT, ModFluids.BLOOD,
+            ModFluids.BLOOD_HOT, ModFluids.SODIUM, ModFluids.SODIUM_HOT, ModFluids.LEAD,
+            ModFluids.LEAD_HOT, ModFluids.THORIUM_SALT, ModFluids.THORIUM_SALT_HOT,
+            ModFluids.THORIUM_SALT_DEPLETED,
+            // pure elements, cyogenic gasses
+            ModFluids.HYDROGEN, ModFluids.DEUTERIUM, ModFluids.TRITIUM, ModFluids.HELIUM3,
+            ModFluids.HELIUM4, ModFluids.OXYGEN, ModFluids.XENON, ModFluids.CHLORINE,
+            ModFluids.MERCURY,
+            // oils, fuels
+            ModFluids.CRUDE_OIL, ModFluids.OIL_DS, ModFluids.CRACKOIL, ModFluids.CRACKOIL_DS,
+            ModFluids.COALOIL, ModFluids.OIL_COKER, ModFluids.HOTOIL, ModFluids.HOTOIL_DS,
+            ModFluids.HOTCRACKOIL, ModFluids.HOTCRACKOIL_DS, ModFluids.HEAVYOIL,
+            ModFluids.HEAVYOIL_VACUUM, ModFluids.NAPHTHA, ModFluids.NAPHTHA_DS,
+            ModFluids.NAPHTHA_CRACK, ModFluids.NAPHTHA_COKER, ModFluids.REFORMATE,
+            ModFluids.LIGHTOIL, ModFluids.LIGHTOIL_DS, ModFluids.LIGHTOIL_CRACK,
+            ModFluids.LIGHTOIL_VACUUM, ModFluids.BITUMEN, ModFluids.SMEAR, ModFluids.HEATINGOIL,
+            ModFluids.HEATINGOIL_VACUUM, ModFluids.RECLAIMED, ModFluids.LUBRICANT, ModFluids.FLUE,
+            ModFluids.GAS, ModFluids.GAS_COKER, ModFluids.PETROLEUM, ModFluids.SOURGAS,
+            ModFluids.LPG, ModFluids.SYNGAS, ModFluids.OXYHYDROGEN, ModFluids.AROMATICS,
+            ModFluids.UNSATURATEDS, ModFluids.XYLENE, ModFluids.REFORMGAS, ModFluids.DIESEL,
+            ModFluids.DIESEL_REFORM, ModFluids.DIESEL_CRACK, ModFluids.DIESEL_CRACK_REFORM,
+            ModFluids.KEROSENE, ModFluids.KEROSENE_REFORM, ModFluids.PETROIL,
+            ModFluids.PETROIL_LEADED, ModFluids.GASOLINE, ModFluids.GASOLINE_LEADED,
+            ModFluids.COALGAS, ModFluids.COALGAS_LEADED, ModFluids.COALCREOSOTE, ModFluids.WOODOIL,
+            ModFluids.BIOGAS, ModFluids.BIOFUEL, ModFluids.ETHANOL, ModFluids.FISHOIL,
+            ModFluids.SUNFLOWEROIL, ModFluids.NITAN, ModFluids.DHC, ModFluids.BALEFIRE,
+            // processing fluids
+            ModFluids.SALIENT, ModFluids.SEEDSLURRY, ModFluids.COLLOID, ModFluids.VITRIOL,
+            ModFluids.SLOP, ModFluids.IONGEL, ModFluids.PEROXIDE, ModFluids.SULFURIC_ACID,
+            ModFluids.NITRIC_ACID, ModFluids.SOLVENT, ModFluids.RADIOSOLVENT, ModFluids.SCHRABIDIC,
+            ModFluids.UF6, ModFluids.PUF6, ModFluids.SAS3, ModFluids.PAIN, ModFluids.DEATH,
+            ModFluids.WATZ, ModFluids.REDMUD, ModFluids.FULLERENE, ModFluids.EGG,
+            ModFluids.CHOLESTEROL, ModFluids.CHLOROCALCITE_SOLUTION, ModFluids.CHLOROCALCITE_MIX,
+            ModFluids.CHLOROCALCITE_CLEANED, ModFluids.POTASSIUM_CHLORIDE,
+            ModFluids.CALCIUM_CHLORIDE, ModFluids.CALCIUM_SOLUTION, ModFluids.SODIUM_ALUMINATE,
+            ModFluids.BAUXITE_SOLUTION, ModFluids.ALUMINA, ModFluids.CONCRETE,
+            // solutions and working fluids
+            ModFluids.FRACKSOL, ModFluids.LYE,
+            // the fun guys
+            ModFluids.PHOSGENE, ModFluids.MUSTARDGAS, ModFluids.ESTRADIOL, ModFluids.NITROGLYCERIN,
+            // antimatter
+            ModFluids.AMAT, ModFluids.ASCHRAB,
+            // nuclear waste
+            ModFluids.WASTEFLUID, ModFluids.WASTEGAS,
+            // garbage
+            ModFluids.XPJUICE, ModFluids.ENDERJUICE,
+            // plasma-esque
+            ModFluids.STELLAR_FLUX,
+            // plasma
+            ModFluids.PLASMA_DT, ModFluids.PLASMA_HD, ModFluids.PLASMA_HT, ModFluids.PLASMA_DH3,
+            ModFluids.PLASMA_XM, ModFluids.PLASMA_BF,
+            // smoke
+            ModFluids.SMOKE, ModFluids.SMOKE_LEADED, ModFluids.SMOKE_POISON,
+            // bug meth
+            ModFluids.PHEROMONE, ModFluids.PHEROMONE_M
         );
     }
 
@@ -131,10 +147,10 @@ public final class HbmFluidRegistry {
     }
 
     /**
-     * Тинт-цвет жидкости. Делегирует в {@link FluidType#getTint()}.
+     * Fluidfarbe ({@code FluidType.getColor()}, Rohr-/Textfarbe). Der GUI-Tint des Originals ist {@link FluidType#getTint()}.
      */
     public static int getTintColor(Fluid fluid) {
-        return FluidType.forFluid(fluid).getTint();
+        return FluidType.forFluid(fluid).getColor();
     }
 
     /** Index of fluid in ordered list, or -1. */

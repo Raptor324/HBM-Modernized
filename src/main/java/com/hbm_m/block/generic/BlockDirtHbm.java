@@ -13,7 +13,7 @@ import net.minecraft.world.level.block.state.BlockState;
 /**
  * 1:1 {@code com.hbm.blocks.generic.BlockDirt} ({@code impact_dirt}) und {@code BlockNTMDirt} ({@code ntm_dirt}):
  * wird zu Erde, sobald Gras daneben liegt, waechst bei genug Licht wieder zu Gras (Tom-Staub/-Brand aus
- * {@code TomSaveData} daempfen das Licht - der Einschlag selbst folgt mit der Weltgen-Runde, bis dahin 0), wirft Erde ab.
+ * {@code TomSaveData} daempfen das Licht), wirft Erde ab.
  * {@code ntm_dirt} heisst wie Erde und tickt nicht.
  */
 public class BlockDirtHbm extends Block {
@@ -56,8 +56,9 @@ public class BlockDirtHbm extends Block {
 
     @Override
     public void randomTick(BlockState state, ServerLevel world, BlockPos pos, RandomSource rand) {
-        float dust = 0F;
-        int fire = 0;
+        com.hbm_m.saveddata.TomSaveData data = com.hbm_m.saveddata.TomSaveData.forWorld(world);
+        float dust = data.dust;
+        float fire = data.fire;
         int light = Math.max(world.getBrightness(LightLayer.BLOCK, pos.above()), (int) (world.getMaxLocalRawBrightness(pos.above()) * (1 - dust)));
         if (light >= 9 && fire == 0) {
             world.setBlock(pos, Blocks.GRASS_BLOCK.defaultBlockState(), 3);

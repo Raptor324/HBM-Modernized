@@ -26,7 +26,7 @@ import java.util.List;
  * the victim is a player. It is a joke at the expense of whoever got riveted, which is why it
  * reads "Go Fish" - so this deliberately awards {@code entity}, not {@code player}.</p>
  */
-public class ItemBoltgun extends Item {
+public class ItemBoltgun extends Item implements com.hbm_m.item.IAnimatedItem<com.hbm_m.render.anim.AnimationEnums.ToolAnimation> {
 
     /** Damage bypasses armour, matching {@code setDamageBypassesArmor()}. */
     private static final float DAMAGE = 10F;
@@ -73,6 +73,8 @@ public class ItemBoltgun extends Item {
                             entity.getX(), entity.getY() + entity.getBbHeight() / 2, entity.getZ(),
                             1, 0, 0, 0, 0);
                 }
+
+                playAnimation(player, com.hbm_m.render.anim.AnimationEnums.ToolAnimation.SWING);
             }
             // True cancels the normal melee swing, exactly as the original returns.
             return true;
@@ -105,6 +107,8 @@ public class ItemBoltgun extends Item {
                     if (world instanceof ServerLevel server) {
                         server.sendParticles(ParticleTypes.EXPLOSION, pos.getX() + fX + dir.getStepX() * off, pos.getY() + fY + dir.getStepY() * off, pos.getZ() + fZ + dir.getStepZ() * off, 1, 0, 0, 0, 0);
                     }
+
+                    playAnimation(player, com.hbm_m.render.anim.AnimationEnums.ToolAnimation.SWING);
                 }
                 // Original gibt auch bei Erfolg false zurueck
                 return net.minecraft.world.InteractionResult.PASS;
@@ -112,6 +116,38 @@ public class ItemBoltgun extends Item {
         }
         return net.minecraft.world.InteractionResult.PASS;
     }
+
+    /** Original getAnimation: kurzer Rueckstoss ({@code RECOIL}) fuer jede Animationsart. */
+    @Override
+    public com.hbm_m.render.anim.BusAnimation getAnimation(com.hbm_m.render.anim.AnimationEnums.ToolAnimation type, ItemStack stack) {
+        return new com.hbm_m.render.anim.BusAnimation()
+                .addBus("RECOIL", new com.hbm_m.render.anim.BusAnimationSequence()
+                        .addPos(1, 0, 1, 50)
+                        .addPos(0, 0, 1, 100));
+    }
+
+    @Override
+    public Class<com.hbm_m.render.anim.AnimationEnums.ToolAnimation> getEnum() {
+        return com.hbm_m.render.anim.AnimationEnums.ToolAnimation.class;
+    }
+
+    @Override
+    public boolean shouldPlayerModelAim(ItemStack stack) {
+        return false;
+    }
+
+    //? if forge {
+    /** Original ClientProxy: eigener Itemrenderer (ItemRenderBoltgun) ueber den Waffen-BEWLR. */
+    @Override
+    public void initializeClient(java.util.function.Consumer<net.minecraftforge.client.extensions.common.IClientItemExtensions> consumer) {
+        consumer.accept(new net.minecraftforge.client.extensions.common.IClientItemExtensions() {
+            @Override
+            public net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer getCustomRenderer() {
+                return com.hbm_m.client.weapon.GunItemRenderer.INSTANCE;
+            }
+        });
+    }
+    //?}
 
     /** The gun itself never damages anything by swinging - only the rivets do. */
     @Override

@@ -28,7 +28,8 @@ public abstract class PlatformRecipeSerializer<R extends Recipe<?>> implements R
     
     @Override
     public @NotNull R fromJson(@NotNull ResourceLocation id, @NotNull JsonObject json) {
-        return readJson(id, json);
+        // Konfig-Fassungen (Original inputItemsEx / 528 / LBSM) vor dem Lesen aufloesen
+        return readJson(id, com.hbm_m.recipe.condition.ConfigRecipeFlags.resolveVariants(json));
     }
 
     @Override
@@ -60,7 +61,7 @@ public abstract class PlatformRecipeSerializer<R extends Recipe<?>> implements R
             try {
                 com.mojang.serialization.Dynamic<T> dynamic = new com.mojang.serialization.Dynamic<>(ops, ops.createMap(input.entries()));
                 com.google.gson.JsonElement json = dynamic.convert(JsonOps.INSTANCE).getValue();
-                R recipe = readJson(ResourceLocation.withDefaultNamespace("dummy"), json.getAsJsonObject());
+                R recipe = readJson(ResourceLocation.withDefaultNamespace("dummy"), com.hbm_m.recipe.condition.ConfigRecipeFlags.resolveVariants(json.getAsJsonObject()));
                 decodeSuccessCount++;
                 if (decodeSuccessCount <= 5) {
                     System.err.println("[HBM DEBUG] PlatformRecipeSerializer.decode SUCCESS #" + decodeSuccessCount + " recipe=" + recipe.getClass().getSimpleName());

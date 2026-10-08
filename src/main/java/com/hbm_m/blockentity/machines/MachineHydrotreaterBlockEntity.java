@@ -31,17 +31,21 @@ import net.minecraft.world.level.material.Fluid;
  * {@code HydrotreatingRecipes}). Erfordert wie im Original einen katalytischen Konverter
  * ({@link ModItems#CATALYTIC_CONVERTER}) im Katalysatorslot.
  */
-public class MachineHydrotreaterBlockEntity extends BaseMachineBlockEntity implements IFluidStandardTransceiverMK2 {
+public class MachineHydrotreaterBlockEntity extends BaseMachineBlockEntity implements com.hbm_m.api.block.IPersistentNBT, IFluidStandardTransceiverMK2 {
 
+    /** Original-Inventar (11): 0 Batterie, 1/2 Kanister Oel ein/aus, 3/4 Wasserstoff (stillgelegt, braucht Druck),
+     *  5/6 entschwefeltes Oel, 7/8 Sauergas, 9 Fluidkennung, 10 Katalysator. */
     public static final int SLOT_BATTERY = 0;
-    public static final int SLOT_CATALYST = 1;
-    private static final int SLOT_COUNT = 2;
+    public static final int SLOT_FLUID_ID = 9;
+    public static final int SLOT_CATALYST = 10;
+    public static final int SLOT_COUNT = 11;
 
-    private static final long MAX_POWER = 500_000L;
+    /** Original: {@code maxPower = 1_000_000}; Tanks Oel 64000, Wasserstoff 64000, Ausgaenge je 24000. */
+    private static final long MAX_POWER = 1_000_000L;
     private static final long POWER_PER_CYCLE = 20_000L;
-    private static final int OIL_CAPACITY_MB = 4000;
-    private static final int HYDROGEN_CAPACITY_MB = 4000;
-    private static final int OUTPUT_CAPACITY_MB = 2000;
+    private static final int OIL_CAPACITY_MB = 64_000;
+    private static final int HYDROGEN_CAPACITY_MB = 64_000;
+    private static final int OUTPUT_CAPACITY_MB = 24_000;
     private static final int OIL_PER_CYCLE_MB = 100;
     private static final int CYCLE_INTERVAL = 2;
 
@@ -67,17 +71,36 @@ public class MachineHydrotreaterBlockEntity extends BaseMachineBlockEntity imple
         tanks[3] = new FluidTank(OUTPUT_CAPACITY_MB);
     }
 
+    /** Original {@code getConPos}: {x, z} relativ zum Kern und Library.POS_X/NEG_X/POS_Z/NEG_Z. */
+    private static final int[][] CON_POS = { {2, 1}, {2, -1}, {-2, 1}, {-2, -1}, {1, 2}, {-1, 2}, {1, -2}, {-1, -2} };
+    private static final Direction[] CON_DIRS = { Direction.EAST, Direction.EAST, Direction.WEST, Direction.WEST,
+            Direction.SOUTH, Direction.SOUTH, Direction.NORTH, Direction.NORTH };
+
     public static void tick(Level level, BlockPos pos, BlockState state, MachineHydrotreaterBlockEntity be) {
         if (level.isClientSide) return;
 
         be.chargeFromBatterySlot(SLOT_BATTERY);
 
+        // Original: tanks[0].setType(9), tanks[0].loadTank(1, 2), tanks[1].loadTank(3, 4)
+        ItemStack[] slots = new ItemStack[SLOT_COUNT];
+        for (int i = 0; i < SLOT_COUNT; i++) slots[i] = be.inventory.getStackInSlot(i);
+        boolean changed = be.tanks[0].setType(SLOT_FLUID_ID, slots);
+        changed |= be.tanks[0].loadTank(1, 2, slots);
+        changed |= be.tanks[1].loadTank(3, 4, slots);
+
         if (level.getGameTime() % CYCLE_INTERVAL == 0) {
             be.reform();
         }
 
-        for (Direction dir : Direction.values()) {
-            BlockPos neighborPos = pos.relative(dir);
+        // Original: tanks[2].unloadTank(5, 6), tanks[3].unloadTank(7, 8)
+        changed |= be.tanks[2].unloadTank(5, 6, slots);
+        changed |= be.tanks[3].unloadTank(7, 8, slots);
+        if (changed) for (int i = 0; i < SLOT_COUNT; i++) be.inventory.setStackInSlot(i, slots[i] == null ? ItemStack.EMPTY : slots[i]);
+
+        // w16b: Original getConPos() - acht Stellen vor den vier Eck-Anschlusszellen (jetzt echter 3x3x7-Mehrblock)
+        for (int i = 0; i < 8; i++) {
+            Direction dir = CON_DIRS[i];
+            BlockPos neighborPos = pos.offset(CON_POS[i][0], 0, CON_POS[i][1]);
             be.trySubscribe(be.tanks[0].getTankType(), level, neighborPos, dir);
             be.trySubscribe(be.tanks[1].getTankType(), level, neighborPos, dir);
             be.tryProvide(be.tanks[2], level, neighborPos, dir);
@@ -165,7 +188,10 @@ public class MachineHydrotreaterBlockEntity extends BaseMachineBlockEntity imple
 
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        int oldSize = tag.getCompound("inventory").getInt("Size");
         super.readNbtData(tag, registries);
+        migrateOldInventory(oldSize);
+        setEnergyCapacity(MAX_POWER); // alte Welten: frueherer Speicherwert
         for (int i = 0; i < tanks.length; i++) {
             tanks[i].readFromNBT(tag, "tank" + i);
         }
@@ -185,12 +211,33 @@ public class MachineHydrotreaterBlockEntity extends BaseMachineBlockEntity imple
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
         if (slot == SLOT_BATTERY) return isEnergyProviderItem(stack);
         if (slot == SLOT_CATALYST) return stack.is(ModItems.CATALYTIC_CONVERTER.get());
-        return false;
+        if (slot == SLOT_FLUID_ID) return stack.getItem() instanceof com.hbm_m.interfaces.IItemFluidIdentifier;
+        // Original: Eingaenge 1/5/7; 3/4 stillgelegt (SlotDeprecated), 2/4/6/8 nur entnehmbar
+        return slot == 1 || slot == 5 || slot == 7;
+    }
+
+    /** Alte Welten (2 Slots: Batterie, Katalysator auf 1) -> Katalysator auf Original-Slot 10. */
+    private void migrateOldInventory(int oldSize) {
+        if (oldSize != 2) return;
+        ItemStack old = inventory.getStackInSlot(1);
+        if (!old.isEmpty() && inventory.getStackInSlot(SLOT_CATALYST).isEmpty()) {
+            inventory.setStackInSlot(SLOT_CATALYST, old);
+            inventory.setStackInSlot(1, ItemStack.EMPTY);
+        }
     }
 
     @Nullable
     @Override
     public AbstractContainerMenu createMenu(int id, Inventory inventory, Player player) {
         return MachineHydrotreaterMenu.create(id, inventory, this);
+    }
+
+    /** Original {@code writeNBT}: die vier Tanks, sofern einer etwas enthaelt. */
+    @Override
+    public void writeNBT(CompoundTag nbt) {
+        boolean empty = true;
+        for (var tank : tanks) if (tank.getFill() > 0) empty = false;
+        if (empty) return;
+        for (int i = 0; i < tanks.length; i++) tanks[i].writeToNBT(nbt, "tank" + i);
     }
 }

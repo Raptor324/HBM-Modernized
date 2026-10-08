@@ -1,153 +1,108 @@
 package com.hbm_m.inventory.menu;
 
-import com.hbm_m.block.ModBlocks;
 import com.hbm_m.blockentity.machines.MachineRotaryFurnaceBlockEntity;
+import com.hbm_m.interfaces.IItemFluidIdentifier;
 import com.hbm_m.inventory.ModItemStackHandlerContainer;
+import com.hbm_m.lib.RefStrings;
+import com.hbm_m.platform.DummyItemStackHandler;
 
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
-import net.minecraft.world.Container;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
-import net.minecraft.world.inventory.ContainerData;
-import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.inventory.Slot;
-import net.minecraft.world.inventory.SimpleContainerData;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.level.block.entity.AbstractFurnaceBlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
-/** Slot-Koordinaten 1:1 aus {@code ContainerMachineRotaryFurnace} (1.7.10 Original) uebernommen:
- *  Inputs (8,18)/(26,18)/(44,18), Brennstoff (44,54). Der Fluid-ID-Slot des Originals (8,54) entfaellt,
- *  da dieser Port echte Forge-Fluid-Tanks statt Item-Fluid-Identifier nutzt. Der Output-Slot (98,36)
- *  ist neu (siehe {@link MachineRotaryFurnaceBlockEntity}). */
+/**
+ * 1:1 {@code ContainerMachineRotaryFurnace}: Eingaben (8,18)/(26,18)/(44,18), Fluid-ID (8,54), Brennstoff (44,54),
+ * Spielerinventar ab (8,104). Shift-Klick: Brennstoff, Identifikator, sonst Eingaben.
+ */
 public class MachineRotaryFurnaceMenu extends AbstractContainerMenu {
 
-    public final MachineRotaryFurnaceBlockEntity blockEntity;
-    private final ContainerData data;
-
-    private static final int SLOT_IN1 = MachineRotaryFurnaceBlockEntity.SLOT_IN1;
-    private static final int SLOT_IN2 = MachineRotaryFurnaceBlockEntity.SLOT_IN2;
-    private static final int SLOT_IN3 = MachineRotaryFurnaceBlockEntity.SLOT_IN3;
-    private static final int SLOT_FUEL = MachineRotaryFurnaceBlockEntity.SLOT_FUEL;
-    private static final int SLOT_OUTPUT = MachineRotaryFurnaceBlockEntity.SLOT_OUTPUT;
-    private static final int MACHINE_SLOT_COUNT = 5;
-    private static final int PLAYER_INV_START = MACHINE_SLOT_COUNT;
-    private static final int PLAYER_INV_END = MACHINE_SLOT_COUNT + 36;
+    private final MachineRotaryFurnaceBlockEntity furnace;
 
     public MachineRotaryFurnaceMenu(int id, Inventory inventory, FriendlyByteBuf extraData) {
-        this(id, inventory, getBlockEntity(inventory, extraData), new SimpleContainerData(3));
+        this(id, inventory, getBlockEntity(inventory, extraData));
     }
 
-    public MachineRotaryFurnaceMenu(int id, Inventory inventory, BlockEntity entity, ContainerData data) {
+    public MachineRotaryFurnaceMenu(int id, Inventory invPlayer, MachineRotaryFurnaceBlockEntity tile) {
         super(ModMenuTypes.ROTARY_FURNACE_MENU.get(), id);
-        checkContainerDataCount(data, 3);
-        this.blockEntity = (MachineRotaryFurnaceBlockEntity) entity;
-        this.data = data;
+        this.furnace = tile;
 
-        var container = new ModItemStackHandlerContainer(blockEntity.getInventory(), blockEntity::setChanged);
-        this.addSlot(new Slot(container, SLOT_IN1, 8, 18));
-        this.addSlot(new Slot(container, SLOT_IN2, 26, 18));
-        this.addSlot(new Slot(container, SLOT_IN3, 44, 18));
-        this.addSlot(new FuelSlot(container, SLOT_FUEL, 44, 54));
-        this.addSlot(new OutputSlot(container, SLOT_OUTPUT, 98, 36));
+        var container = new ModItemStackHandlerContainer(
+                tile != null ? tile.getInventory() : new DummyItemStackHandler(MachineRotaryFurnaceBlockEntity.INVENTORY_SIZE),
+                tile != null ? tile::setChanged : null);
 
-        for (int row = 0; row < 3; row++) {
-            for (int col = 0; col < 9; col++) {
-                this.addSlot(new Slot(inventory, col + row * 9 + 9, 8 + col * 18, 104 + row * 18));
+        //Inputs
+        this.addSlot(new Slot(container, 0, 8, 18));
+        this.addSlot(new Slot(container, 1, 26, 18));
+        this.addSlot(new Slot(container, 2, 44, 18));
+        //Fluid ID
+        this.addSlot(new Slot(container, 3, 8, 54));
+        //Solid fuel
+        this.addSlot(new Slot(container, 4, 44, 54));
+
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 9; j++) {
+                this.addSlot(new Slot(invPlayer, j + i * 9 + 9, 8 + j * 18, 104 + i * 18));
             }
         }
-        for (int col = 0; col < 9; col++) {
-            this.addSlot(new Slot(inventory, col, 8 + col * 18, 162));
-        }
 
-        addDataSlots(data);
+        for (int i = 0; i < 9; i++) {
+            this.addSlot(new Slot(invPlayer, i, 8 + i * 18, 162));
+        }
     }
 
     private static MachineRotaryFurnaceBlockEntity getBlockEntity(Inventory inventory, FriendlyByteBuf buffer) {
-        var pos = buffer.readBlockPos();
-        BlockEntity blockEntity = inventory.player.level().getBlockEntity(pos);
-        if (blockEntity instanceof MachineRotaryFurnaceBlockEntity be) {
-            return be;
-        }
-        throw new IllegalStateException("No MachineRotaryFurnaceBlockEntity found at " + pos);
+        BlockPos pos = buffer.readBlockPos();
+        BlockEntity be = inventory.player.level().getBlockEntity(pos);
+        if (be instanceof MachineRotaryFurnaceBlockEntity furnace) return furnace;
+        if (inventory.player.level().isClientSide) return null;
+        throw new IllegalStateException("No MachineRotaryFurnaceBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":rotary_furnace_menu");
     }
 
-    public int getLitTime() { return data.get(0); }
-    public int getLitDuration() { return data.get(1); }
-    public int getProgressScaled(int scale) { return data.get(2) * scale / 1000; }
-
-    public int getBurnProgressScaled(int scale) {
-        int duration = getLitDuration();
-        return duration > 0 ? getLitTime() * scale / duration : 0;
-    }
-
-    public boolean isLit() {
-        return getLitTime() > 0;
+    public MachineRotaryFurnaceBlockEntity getBlockEntity() {
+        return furnace;
     }
 
     @Override
     public boolean stillValid(Player player) {
-        return stillValid(ContainerLevelAccess.create(blockEntity.getLevel(), blockEntity.getBlockPos()),
-                player, ModBlocks.ROTARY_FURNACE.get());
+        if (furnace == null || furnace.getLevel() != player.level()) return false;
+        BlockPos pos = furnace.getBlockPos();
+        return player.distanceToSqr(pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D) <= 128.0D;
     }
 
     @Override
     public ItemStack quickMoveStack(Player player, int index) {
-        ItemStack result = ItemStack.EMPTY;
+        ItemStack rStack = ItemStack.EMPTY;
         Slot slot = this.slots.get(index);
 
         if (slot != null && slot.hasItem()) {
-            ItemStack slotStack = slot.getItem();
-            result = slotStack.copy();
+            ItemStack stack = slot.getItem();
+            rStack = stack.copy();
 
-            if (index < MACHINE_SLOT_COUNT) {
-                if (!this.moveItemStackTo(slotStack, PLAYER_INV_START, PLAYER_INV_END, true)) {
-                    return ItemStack.EMPTY;
-                }
+            if (index <= 4) {
+                if (!this.moveItemStackTo(stack, 5, this.slots.size(), true)) return ItemStack.EMPTY;
             } else {
-                if (MachineRotaryFurnaceBlockEntity.isFuel(slotStack)) {
-                    if (!this.moveItemStackTo(slotStack, SLOT_FUEL, SLOT_FUEL + 1, false)) {
-                        if (!this.moveItemStackTo(slotStack, SLOT_IN1, SLOT_IN3 + 1, false)) {
-                            return ItemStack.EMPTY;
-                        }
-                    }
-                } else if (!this.moveItemStackTo(slotStack, SLOT_IN1, SLOT_IN3 + 1, false)) {
-                    return ItemStack.EMPTY;
+                if (AbstractFurnaceBlockEntity.isFuel(rStack)) {
+                    if (!this.moveItemStackTo(stack, 4, 5, false)) return ItemStack.EMPTY;
+                } else if (rStack.getItem() instanceof IItemFluidIdentifier) {
+                    if (!this.moveItemStackTo(stack, 3, 4, false)) return ItemStack.EMPTY;
+                } else {
+                    if (!this.moveItemStackTo(stack, 0, 3, false)) return ItemStack.EMPTY;
                 }
             }
 
-            if (slotStack.isEmpty()) {
+            if (stack.isEmpty()) {
                 slot.set(ItemStack.EMPTY);
             } else {
                 slot.setChanged();
             }
-            if (slotStack.getCount() == result.getCount()) {
-                return ItemStack.EMPTY;
-            }
-            slot.onTake(player, slotStack);
-        }
-        return result;
-    }
-
-    private static class FuelSlot extends Slot {
-        public FuelSlot(Container container, int index, int x, int y) {
-            super(container, index, x, y);
         }
 
-        @Override
-        public boolean mayPlace(ItemStack stack) {
-            return MachineRotaryFurnaceBlockEntity.isFuel(stack);
-        }
-    }
-
-    private static class OutputSlot extends Slot {
-        public OutputSlot(Container container, int index, int x, int y) {
-            super(container, index, x, y);
-        }
-
-        @Override
-        public boolean mayPlace(ItemStack stack) {
-            return false;
-        }
+        return rStack;
     }
 }

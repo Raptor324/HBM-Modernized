@@ -40,6 +40,18 @@ import dev.architectury.registry.menu.MenuRegistry;
 
 public class MachineGasCentrifugeBlock extends BaseEntityBlock implements IMultiblockController {
 
+    /** w16b: Original {@code MachineGasCent.bounding} (detaillierte Hitbox, um die Kernmitte), je FACING gedreht. */
+    private static final java.util.Map<net.minecraft.core.Direction, net.minecraft.world.phys.shapes.VoxelShape> BOUNDING_W16B =
+            com.hbm_m.multiblock.MultiblockStructureHelper.boundingMasters(new double[][] {
+            {-0.5D, 0D, -0.5D, 0.5D, 1D, 0.5D},
+            {-0.4375D, 1D, -0.4375D, 0.4375D, 4D, 0.4375D}
+    });
+
+    @Override
+    public net.minecraft.world.phys.shapes.VoxelShape getCustomMasterVoxelShape(BlockState state) {
+        return BOUNDING_W16B.get(state.getValue(FACING));
+    }
+
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
     private final MultiblockStructureHelper structureHelper;
 
@@ -56,7 +68,8 @@ public class MachineGasCentrifugeBlock extends BaseEntityBlock implements IMulti
         // C = Controller (the main block, placed by the player; holds the real BlockEntity)
         String[] layer0 = { "C" }; // Bottom - placed block
         String[] layer1 = { "A" }; // Middle
-        String[] layer2 = { "A" }; // Top
+        String[] layer2 = { "A" };
+        String[] layer3 = { "A" }; // Top - w16b: getDimensions UP=3 -> vier Zellen (Kern + 3), wie bounding bis y=4
 
         Map<Character, PartRole> roleMap = Map.of(
             'A', PartRole.DEFAULT,
@@ -68,7 +81,7 @@ public class MachineGasCentrifugeBlock extends BaseEntityBlock implements IMulti
         );
 
         return MultiblockStructureHelper.createFromLayersWithRoles(
-            new String[][]{layer0, layer1, layer2},
+            new String[][]{layer0, layer1, layer2, layer3},
             symbolMap,
             () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState(),
             roleMap
@@ -109,11 +122,13 @@ public class MachineGasCentrifugeBlock extends BaseEntityBlock implements IMulti
     //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        if (!level.isClientSide() && player.isShiftKeyDown()) return InteractionResult.PASS; // Original: geschlichen auf dem Server false
         return openMenu(state, level, pos, player, hand, hit);
     }
     //?} else {
     /*@Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+        if (!level.isClientSide() && player.isShiftKeyDown()) return InteractionResult.PASS; // Original: geschlichen auf dem Server false
         return openMenu(state, level, pos, player, InteractionHand.MAIN_HAND, hit);
     }
     *///?}
@@ -130,20 +145,21 @@ public class MachineGasCentrifugeBlock extends BaseEntityBlock implements IMulti
 
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+        // w16b: nur die Kernzelle (Raycast pro Zelle wie Original); Umriss der ganzen Maschine: MultiblockOutlineForge
         // Full 3x3x3 outline, used for the selection/outline box.
-        return structureHelper.generateShapeFromParts(state.getValue(FACING));
+        return MultiblockStructureHelper.cellShape(getCustomMasterVoxelShape(state), BlockPos.ZERO);
     }
 
     @Override
     public VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
         // Only this cell's own collision shape - the other 26 cells are covered by their
         // own UNIVERSAL_MACHINE_PART phantom blocks, each providing their own collision.
-        return structureHelper.getSpecificPartShape(structureHelper.getControllerOffset(), state.getValue(FACING));
+        return getCustomMasterVoxelShape(state); // w16b: Original bounding gilt fuer alle Zellen
     }
 
     @Override
     public VoxelShape getOcclusionShape(BlockState state, BlockGetter level, BlockPos pos) {
-        if (!structureHelper.isFullBlock(structureHelper.getControllerOffset(), state.getValue(FACING))) {
+        if (true) { // w16b: Kern hat die Original-bounding-Form (kein Vollblock)
             return Shapes.empty();
         }
         return Shapes.block();

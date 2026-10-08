@@ -4,10 +4,6 @@ import javax.annotation.Nullable;
 
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.blockentity.machines.MachineCoreReceiverBlockEntity;
-import com.hbm_m.interfaces.IMultiblockController;
-import com.hbm_m.multiblock.MultiblockStructureHelper;
-import com.hbm_m.multiblock.MultiblockStructureStubs;
-import com.hbm_m.multiblock.PartRole;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -36,20 +32,18 @@ import net.minecraftforge.common.capabilities.ForgeCapabilities;
 //?}
 import dev.architectury.registry.menu.MenuRegistry;
 
-public class MachineCoreReceiverBlock extends BaseEntityBlock implements IMultiblockController {
-    public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
-
-    private final MultiblockStructureHelper structureHelper;
+public class MachineCoreReceiverBlock extends BaseEntityBlock {
+    // Original CoreComponent: volle Sechsrichtungs-Metadate (determineOrientation), auch senkrecht
+    public static final DirectionProperty FACING = net.minecraft.world.level.block.state.properties.BlockStateProperties.FACING;
 
     public MachineCoreReceiverBlock(BlockBehaviour.Properties properties) {
         super(properties);
         this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH));
-        this.structureHelper = MultiblockStructureStubs.singleController();
     }
 
     @Override
     public RenderShape getRenderShape(BlockState state) {
-        return RenderShape.MODEL;
+        return RenderShape.ENTITYBLOCK_ANIMATED; // Gehaeuse zeichnet DFCRenderers.Receiver (RenderCoreComponent)
     }
 
     @Override
@@ -60,7 +54,7 @@ public class MachineCoreReceiverBlock extends BaseEntityBlock implements IMultib
     @Nullable
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext context) {
-        return this.defaultBlockState().setValue(FACING, context.getHorizontalDirection().getOpposite());
+        return this.defaultBlockState().setValue(FACING, com.hbm_m.block.machines.dfc.DFCOrientation.determineOrientation(context));
     }
 
     @Override
@@ -82,11 +76,13 @@ public class MachineCoreReceiverBlock extends BaseEntityBlock implements IMultib
     //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        if (!level.isClientSide() && player.isShiftKeyDown()) return InteractionResult.PASS; // Original: geschlichen auf dem Server false
         return openMenu(state, level, pos, player, hand, hit);
     }
     //?} else {
     /*@Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+        if (!level.isClientSide() && player.isShiftKeyDown()) return InteractionResult.PASS; // Original: geschlichen auf dem Server false
         return openMenu(state, level, pos, player, InteractionHand.MAIN_HAND, hit);
     }
     *///?}
@@ -105,13 +101,19 @@ public class MachineCoreReceiverBlock extends BaseEntityBlock implements IMultib
     }
 
     @Override
-    public MultiblockStructureHelper getStructureHelper() {
-        return structureHelper;
+    public BlockState rotate(BlockState state, net.minecraft.world.level.block.Rotation rotation) {
+        return state.setValue(FACING, rotation.rotate(state.getValue(FACING)));
     }
 
     @Override
-    public PartRole getPartRole(BlockPos localOffset) {
-        return structureHelper.resolvePartRole(localOffset, this);
+    public BlockState mirror(BlockState state, net.minecraft.world.level.block.Mirror mirror) {
+        return state.rotate(mirror.getRotation(state.getValue(FACING)));
+    }
+
+    /** Original {@code isOpaqueCube() = false}. */
+    @Override
+    public net.minecraft.world.phys.shapes.VoxelShape getOcclusionShape(BlockState state, net.minecraft.world.level.BlockGetter level, BlockPos pos) {
+        return net.minecraft.world.phys.shapes.Shapes.empty();
     }
 
     //? if >1.20.1 {

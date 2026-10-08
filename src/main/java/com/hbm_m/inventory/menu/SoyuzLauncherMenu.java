@@ -58,56 +58,55 @@ public class SoyuzLauncherMenu extends AbstractContainerMenu {
                 : new ModItemStackHandlerContainer(new DummyItemStackHandler(SoyuzLauncherBlockEntity.SLOT_COUNT), () -> {});
 
         // Rocket
-        addSlot(new Slot(container, SoyuzLauncherBlockEntity.SLOT_ROCKET, 62, 18) {
+        addSlot(new Slot(container, SoyuzLauncherBlockEntity.SLOT_ROCKET, 98, 80) {
             @Override
             public boolean mayPlace(@NotNull ItemStack stack) {
-                return stack.is(SoyuzLauncherBlockEntity.rocketItem());
+                return (stack.getItem() instanceof com.hbm_m.item.special.ItemSoyuz);
             }
         });
         // Designator
-        addSlot(new Slot(container, SoyuzLauncherBlockEntity.SLOT_DESIGNATOR, 62, 36) {
+        addSlot(new Slot(container, SoyuzLauncherBlockEntity.SLOT_DESIGNATOR, 80, 80) {
             @Override
             public boolean mayPlace(@NotNull ItemStack stack) {
                 return stack.getItem() instanceof IDesignatorItem;
             }
         });
         // Satellite payload
-        addSlot(new Slot(container, SoyuzLauncherBlockEntity.SLOT_SATELLITE, 116, 18));
+        addSlot(new Slot(container, SoyuzLauncherBlockEntity.SLOT_SATELLITE, 98, 26));
         // Landing module
-        addSlot(new Slot(container, SoyuzLauncherBlockEntity.SLOT_LANDER, 116, 36) {
+        addSlot(new Slot(container, SoyuzLauncherBlockEntity.SLOT_LANDER, 80, 26) {
             @Override
             public boolean mayPlace(@NotNull ItemStack stack) {
                 return stack.is(ModItems.MISSILE_SOYUZ_LANDER.get());
             }
         });
         // Kerosene in/out
-        addSlot(new Slot(container, SoyuzLauncherBlockEntity.SLOT_FUEL_IN, 8, 90));
-        addSlot(new Slot(container, SoyuzLauncherBlockEntity.SLOT_FUEL_OUT, 8, 108));
+        addSlot(new Slot(container, SoyuzLauncherBlockEntity.SLOT_FUEL_IN, 152, 98));
+        addSlot(new Slot(container, SoyuzLauncherBlockEntity.SLOT_FUEL_OUT, 152, 116));
         // Oxygen in/out
-        addSlot(new Slot(container, SoyuzLauncherBlockEntity.SLOT_OXIDIZER_IN, 26, 90));
-        addSlot(new Slot(container, SoyuzLauncherBlockEntity.SLOT_OXIDIZER_OUT, 26, 108));
+        addSlot(new Slot(container, SoyuzLauncherBlockEntity.SLOT_OXIDIZER_IN, 170, 98));
+        addSlot(new Slot(container, SoyuzLauncherBlockEntity.SLOT_OXIDIZER_OUT, 170, 116));
         // Battery
-        addSlot(new Slot(container, SoyuzLauncherBlockEntity.SLOT_BATTERY, 44, 108) {
+        addSlot(new Slot(container, SoyuzLauncherBlockEntity.SLOT_BATTERY, 134, 98) {
             @Override
             public boolean mayPlace(@NotNull ItemStack stack) {
                 return isEnergyProviderItem(stack) || stack.getItem() instanceof ItemCreativeBattery;
             }
         });
-        // Cargo grid (18 slots, 6x3)
-        for (int row = 0; row < 3; row++) {
-            for (int col = 0; col < 6; col++) {
-                int idx = SoyuzLauncherBlockEntity.CARGO_START + col + row * 6;
-                addSlot(new Slot(container, idx, 62 + col * 18, 72 + row * 18));
+        // Fracht: drei Spalten zu sechs, von rechts nach links (Original ContainerSoyuzLauncher)
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 6; j++) {
+                addSlot(new Slot(container, j + i * 6 + SoyuzLauncherBlockEntity.CARGO_START, 44 - i * 18, 26 + j * 18));
             }
         }
 
-        for (int row = 0; row < 3; row++) {
-            for (int col = 0; col < 9; col++) {
-                addSlot(new Slot(inv, col + row * 9 + 9, 8 + col * 18, 140 + row * 18));
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 9; j++) {
+                addSlot(new Slot(inv, j + i * 9 + 9, 17 + j * 18, 162 + i * 18));
             }
         }
-        for (int col = 0; col < 9; col++) {
-            addSlot(new Slot(inv, col, 8 + col * 18, 198));
+        for (int i = 0; i < 9; i++) {
+            addSlot(new Slot(inv, i, 17 + i * 18, 220));
         }
 
         addDataSlots(data);
@@ -155,28 +154,9 @@ public class SoyuzLauncherMenu extends AbstractContainerMenu {
             if (!moveItemStackTo(stack, VANILLA_FIRST_SLOT_INDEX, VANILLA_FIRST_SLOT_INDEX + VANILLA_SLOT_COUNT, true)) {
                 return ItemStack.EMPTY;
             }
-        } else {
-            if (stack.is(SoyuzLauncherBlockEntity.rocketItem())) {
-                if (!moveItemStackTo(stack, SoyuzLauncherBlockEntity.SLOT_ROCKET, SoyuzLauncherBlockEntity.SLOT_ROCKET + 1, false)) {
-                    return ItemStack.EMPTY;
-                }
-            } else if (stack.getItem() instanceof IDesignatorItem) {
-                if (!moveItemStackTo(stack, SoyuzLauncherBlockEntity.SLOT_DESIGNATOR, SoyuzLauncherBlockEntity.SLOT_DESIGNATOR + 1, false)) {
-                    return ItemStack.EMPTY;
-                }
-            } else if (stack.is(ModItems.MISSILE_SOYUZ_LANDER.get())) {
-                if (!moveItemStackTo(stack, SoyuzLauncherBlockEntity.SLOT_LANDER, SoyuzLauncherBlockEntity.SLOT_LANDER + 1, false)) {
-                    return ItemStack.EMPTY;
-                }
-            } else if (isEnergyProviderItem(stack) || stack.getItem() instanceof ItemCreativeBattery) {
-                if (!moveItemStackTo(stack, SoyuzLauncherBlockEntity.SLOT_BATTERY, SoyuzLauncherBlockEntity.SLOT_BATTERY + 1, false)) {
-                    return ItemStack.EMPTY;
-                }
-            } else if (!moveItemStackTo(stack, SoyuzLauncherBlockEntity.CARGO_START, SoyuzLauncherBlockEntity.CARGO_END + 1, false)) {
-                if (!moveItemStackTo(stack, SoyuzLauncherBlockEntity.SLOT_SATELLITE, SoyuzLauncherBlockEntity.SLOT_SATELLITE + 1, false)) {
-                    return ItemStack.EMPTY;
-                }
-            }
+        } else if (!moveItemStackTo(stack, SoyuzLauncherBlockEntity.SLOT_ROCKET, SoyuzLauncherBlockEntity.SLOT_ROCKET + 1, false)) {
+            // Original: Shift-Klick aus dem Inventar geht nur in den Raketenplatz
+            return ItemStack.EMPTY;
         }
 
         if (stack.isEmpty()) {

@@ -23,10 +23,12 @@ public class HeldItemMenu extends AbstractContainerMenu {
         LEAD_BOX(20, 1, 5, 43, 18, 104, 186, true, true),
         /** ContainerPlasticBag: 1 Platz bei (80,65), Spieler ab y 134, GUI 176x216. */
         PLASTIC_BAG(1, 1, 1, 80, 65, 134, 216, false, false),
-        /** ContainerCasingBag: 3x5 ab (44,18), Spieler ab y 100, GUI 176x186. */
+        /** ContainerCasingBag: 3x5 ab (44,18), Spieler ab y 100, GUI 176x186; SlotNonRetarded mit isItemValidForSlot = false. */
         CASING_BAG(15, 64, 5, 44, 18, 100, 186, false, false),
         /** ContainerToolBox: 3x8 ab (17,49), Spieler ab y 129, GUI 176x211; Plaetze pruefen (SlotNonRetarded). */
-        TOOLBOX(24, 64, 8, 17, 49, 129, 211, true, true);
+        TOOLBOX(24, 64, 8, 17, 49, 129, 211, true, true),
+        /** SEDNA ContainerAmmoBag: 2x4 ab (53,18), Spieler ab y 82, GUI 176x168; Plaetze pruefen (SlotNonRetarded, nur Stapel ohne NBT). */
+        AMMO_BAG(8, 64, 4, 53, 18, 82, 168, false, false);
 
         public final int size, stackLimit, cols, x, y, playerY, ySize;
         public final boolean crateSounds, checkSize;
@@ -59,12 +61,15 @@ public class HeldItemMenu extends AbstractContainerMenu {
         this.selected = inv.selected;
         ItemStack held = inv.player.getItemInHand(hand);
         this.box = new HeldItemInventory(inv.player, held, layout.size, layout.stackLimit,
-                layout == Layout.TOOLBOX ? (s, st) -> !(st.getItem() instanceof com.hbm_m.item.tool.ItemToolBox) : (s, st) -> true,
+                layout == Layout.TOOLBOX ? (s, st) -> !(st.getItem() instanceof com.hbm_m.item.tool.ItemToolBox)
+                        : layout == Layout.AMMO_BAG ? (s, st) -> !st.hasTag()
+                        : layout == Layout.CASING_BAG ? (s, st) -> false : (s, st) -> true,
                 layout.crateSounds, layout.checkSize);
         this.box.startOpen(inv.player);
 
         for (int i = 0; i < layout.size; i++) {
-            if (layout == Layout.TOOLBOX) {
+            // SlotNonRetarded: Werkzeugkasten, Munitionstasche, Huelsentasche (letztere nimmt nichts von Hand an)
+            if (layout == Layout.TOOLBOX || layout == Layout.AMMO_BAG || layout == Layout.CASING_BAG) {
                 this.addSlot(new Slot(box, i, layout.x + (i % layout.cols) * 18, layout.y + (i / layout.cols) * 18) {
                     @Override public boolean mayPlace(ItemStack stack) { return container.canPlaceItem(getContainerSlot(), stack); }
                 });

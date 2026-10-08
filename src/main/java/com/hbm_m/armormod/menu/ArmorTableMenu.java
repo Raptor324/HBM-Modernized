@@ -57,18 +57,18 @@ public class ArmorTableMenu extends AbstractContainerMenu {
         this.access = ContainerLevelAccess.create(pPlayerInventory.player.level(), pPos);
 
         // РЎР»РѕС‚С‹ 0-8: РјРѕРґС‹ (РєР°Рє ContainerArmorTable.UpgradeSlot)
-        this.addSlot(new ModificationSlot(modsInventory, ArmorModificationHelper.helmet_only, 26, 27));
-        this.addSlot(new ModificationSlot(modsInventory, ArmorModificationHelper.plate_only, 62, 27));
-        this.addSlot(new ModificationSlot(modsInventory, ArmorModificationHelper.legs_only, 98, 27));
-        this.addSlot(new ModificationSlot(modsInventory, ArmorModificationHelper.boots_only, 134, 45));
-        this.addSlot(new ModificationSlot(modsInventory, ArmorModificationHelper.servos, 134, 81));
-        this.addSlot(new ModificationSlot(modsInventory, ArmorModificationHelper.cladding, 98, 99));
-        this.addSlot(new ModificationSlot(modsInventory, ArmorModificationHelper.kevlar, 62, 99));
-        this.addSlot(new ModificationSlot(modsInventory, ArmorModificationHelper.extra, 26, 99));
-        this.addSlot(new ModificationSlot(modsInventory, ArmorModificationHelper.battery, 8, 63));
+        this.addSlot(new ModificationSlot(modsInventory, ArmorModificationHelper.helmet_only, 26 + 22, 27));
+        this.addSlot(new ModificationSlot(modsInventory, ArmorModificationHelper.plate_only, 62 + 22, 27));
+        this.addSlot(new ModificationSlot(modsInventory, ArmorModificationHelper.legs_only, 98 + 22, 27));
+        this.addSlot(new ModificationSlot(modsInventory, ArmorModificationHelper.boots_only, 134 + 22, 45));
+        this.addSlot(new ModificationSlot(modsInventory, ArmorModificationHelper.servos, 134 + 22, 81));
+        this.addSlot(new ModificationSlot(modsInventory, ArmorModificationHelper.cladding, 98 + 22, 99));
+        this.addSlot(new ModificationSlot(modsInventory, ArmorModificationHelper.kevlar, 62 + 22, 99));
+        this.addSlot(new ModificationSlot(modsInventory, ArmorModificationHelper.extra, 26 + 22, 99));
+        this.addSlot(new ModificationSlot(modsInventory, ArmorModificationHelper.battery, 8 + 22, 63));
 
         // РЎР»РѕС‚ 9: С†РµРЅС‚СЂР°Р»СЊРЅР°СЏ Р±СЂРѕРЅСЏ
-        this.addSlot(new CentralArmorSlot(armorInventory, 0, 44, 63));
+        this.addSlot(new CentralArmorSlot(armorInventory, 0, 44 + 22, 63));
 
         addPlayerArmorSlots(pPlayerInventory);
         addPlayerInventory(pPlayerInventory);
@@ -232,14 +232,14 @@ public class ArmorTableMenu extends AbstractContainerMenu {
     private void addPlayerInventory(Inventory playerInventory) {
         for (int i = 0; i < 3; ++i) {
             for (int j = 0; j < 9; ++j) {
-                this.addSlot(new Slot(playerInventory, j + i * 9 + 9, 8 + j * 18, 140 + i * 18));
+                this.addSlot(new Slot(playerInventory, j + i * 9 + 9, 8 + j * 18 + 22, 140 + i * 18));
             }
         }
     }
 
     private void addPlayerHotbar(Inventory playerInventory) {
         for (int i = 0; i < 9; ++i) {
-            this.addSlot(new Slot(playerInventory, i, 8 + i * 18, 198));
+            this.addSlot(new Slot(playerInventory, i, 8 + i * 18 + 22, 198));
         }
     }
 
@@ -253,7 +253,7 @@ public class ArmorTableMenu extends AbstractContainerMenu {
             this.addSlot(new ArmorSidePanelSlot(
                     playerInventory,
                     39 - i,
-                    -17, 36 + i * 18,
+                    -17 + 22, 36 + i * 18, // Original ContainerArmorTable: GUI 176 + 22 breit
                     player,
                     slotType
             ));

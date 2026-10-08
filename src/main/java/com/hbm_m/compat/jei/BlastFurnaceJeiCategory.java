@@ -59,7 +59,8 @@ public class BlastFurnaceJeiCategory extends JeiGenericRecipeCategory<BlastFurna
         for (int i = 0; i < ingredients.size() && i < positions.length; i++) {
             Ingredient ingredient = ingredients.get(i);
             var slot = addItemSlot(builder, RecipeIngredientRole.INPUT, positions[i][0] + inputXOffset, positions[i][1]);
-            JeiIngredientSlots.addCountedIngredient(slot, ingredient, 1);
+            // Zutatenmengen (BlastFurnaceRecipesNT: z.B. 2x Eisen + 1x Kohle) wie im Original anzeigen
+            JeiIngredientSlots.addCountedIngredient(slot, ingredient, recipe.getCount(i));
         }
     }
 

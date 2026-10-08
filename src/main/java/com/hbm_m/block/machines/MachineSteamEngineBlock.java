@@ -73,7 +73,7 @@ public class MachineSteamEngineBlock extends DummyableMachineBlock implements co
     }
 
     private static MutableComponent tankLine(String arrow, ChatFormatting color, FluidTank tank) {
-        return Component.literal(arrow).withStyle(color).append(Component.literal("").withStyle(ChatFormatting.RESET)
+        return Component.literal(arrow).withStyle(color).append(Component.literal("").withStyle(ChatFormatting.WHITE) /* 1.7 §r = Grundfarbe */
                 .append(FluidType.forFluid(tank.getTankType()).getLocalizedName())
                 .append(": " + String.format(Locale.US, "%,d", tank.getFill()) + " / " + String.format(Locale.US, "%,d", tank.getMaxFill()) + "mB"));
     }

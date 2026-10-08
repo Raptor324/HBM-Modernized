@@ -1,11 +1,10 @@
 package com.hbm_m.blockentity.machines;
 
-import org.jetbrains.annotations.NotNull;
+import java.util.HashSet;
+
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.api.fluids.IFluidStandardTransceiverMK2;
-import com.hbm_m.block.ModBlocks;
-import com.hbm_m.block.machines.MachineSolarBoilerBlock;
 import com.hbm_m.blockentity.BaseMachineBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.inventory.fluid.ModFluids;
@@ -13,367 +12,142 @@ import com.hbm_m.inventory.fluid.tank.FluidTank;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
-import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.world.Containers;
-import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
-import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
-//? if forge {
-import net.minecraftforge.common.capabilities.Capability;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.fluids.capability.IFluidHandler;
-//?}
+import net.minecraft.world.phys.AABB;
 
 /**
- * Solar Boiler BlockEntity - converts water to steam using sunlight.
- *
- * Mirrors the original HBM 1.7.10 "Solar Boiler" multiblock: it requires direct sky
- * access and daytime to operate, and its conversion rate scales up with the number of
- * nearby "Solar Mirror" blocks that themselves have sky access.
- *
- * No RF energy consumption - purely solar driven.
+ * 1:1 {@code TileEntitySolarBoiler}: die Spiegel schreiben pro Tick ihre Sonnenhitze in {@link #heat}; daraus werden
+ * {@code heat / 50} mB Wasser zu je 100 mB Dampf (Wassertank 100 mB, Dampftank 10.000 mB). Anschluesse oben
+ * ({@code y + 3}) und unten ({@code y - 1}). Auf dem Client sammeln {@link #primary}/{@link #secondary} die
+ * Spiegelpositionen fuer die Lichtstrahlen (verzoegert, weil der Kessel nicht zwingend zuerst tickt).
  */
 public class MachineSolarBoilerBlockEntity extends BaseMachineBlockEntity implements IFluidStandardTransceiverMK2 {
 
-    // Slot definitions (item-based fluid container loading/unloading)
-    public static final int SLOT_WATER_IN  = 0;
-    public static final int SLOT_WATER_OUT = 1;
-    public static final int SLOT_STEAM_IN  = 2;
-    public static final int SLOT_STEAM_OUT = 3;
-    public static final int INVENTORY_SIZE = 4;
+    private final FluidTank water;
+    private final FluidTank steam;
+    public int display;
+    public int heat;
 
-    // Tank indices
-    public static final int TANK_WATER = 0;
-    public static final int TANK_STEAM = 1;
-
-    // Capacity constants
-    private static final int WATER_CAPACITY = 16_000;        // 16,000 mB
-    private static final int STEAM_CAPACITY = 1_600_000;     // 1,600,000 mB
-
-    // Conversion constants
-    private static final int STEAM_PER_WATER = 100;          // 1 mB water -> 100 mB steam
-    private static final int BASE_WATER_PER_TICK = 2;        // base mB water/tick with sun and zero mirrors
-    private static final int WATER_PER_MIRROR = 1;           // additional mB water/tick per active nearby mirror
-
-    // Solar mirror scan: horizontal radius around the boiler, scanned at the boiler's
-    // controller Y level (and one level below, to catch mirrors placed on the ground
-    // next to a boiler raised up on a pedestal).
-    private static final int MIRROR_SCAN_RADIUS = 7;
-    private static final int MAX_EFFECTIVE_MIRRORS = 32;
-
-    // Fluid tanks
-    private final FluidTank[] tanks = new FluidTank[] {
-            new FluidTank(ModFluids.WATER.getSource(), WATER_CAPACITY),
-            new FluidTank(ModFluids.STEAM.getSource(), STEAM_CAPACITY)
-    };
-
-    // Cached solar brightness (0-15 sky light at the block above the structure)
-    private int solarBrightness = 0;
-    // Cached count of nearby mirrors with sky access (for GUI / debugging)
-    private int activeMirrorCount = 0;
-
-    // GUI data
-    protected final ContainerData data;
+    public HashSet<BlockPos> primary = new HashSet<>();
+    public HashSet<BlockPos> secondary = new HashSet<>();
 
     public MachineSolarBoilerBlockEntity(BlockPos pos, BlockState state) {
-        // No RF energy capacity/receive rate - solar powered
-        super(ModBlockEntities.SOLAR_BOILER_BE.get(), pos, state, INVENTORY_SIZE, 0L, 0L);
-
-        this.data = new ContainerData() {
-            @Override
-            public int get(int index) {
-                return switch (index) {
-                    case 0 -> getWaterAmount();
-                    case 1 -> getWaterCapacity();
-                    case 2 -> getSteamAmount();
-                    case 3 -> getSteamCapacity();
-                    case 4 -> solarBrightness;
-                    case 5 -> isActive() ? 1 : 0;
-                    default -> 0;
-                };
-            }
-
-            @Override
-            public void set(int index, int value) {
-                if (index == 4) solarBrightness = value;
-            }
-
-            @Override
-            public int getCount() { return 6; }
-        };
+        super(ModBlockEntities.SOLAR_BOILER_BE.get(), pos, state, 0, 0L, 0L, 0L);
+        water = new FluidTank(ModFluids.WATER.getSource(), 100);
+        steam = new FluidTank(ModFluids.STEAM.getSource(), 10_000);
     }
 
     public static void tick(Level level, BlockPos pos, BlockState state, MachineSolarBoilerBlockEntity be) {
-        if (level.isClientSide()) {
-            be.clientTick(level, pos);
-            return;
-        }
-
-        boolean wasActive = be.isActive();
-
-        // Update solar brightness (sky brightness above the top of the 3x3x3 structure)
-        be.solarBrightness = level.getBrightness(net.minecraft.world.level.LightLayer.SKY, pos.above(2));
-
-        // Process item-based fluid containers (buckets, canisters, etc.)
-        boolean changed = be.processFluidContainers();
-
-        // Convert water to steam using solar energy + nearby mirrors
-        changed |= be.processSolarBoiling(level, pos);
-
-        // Update visual state (LIT property)
-        boolean nowActive = be.isActive();
-        if (wasActive != nowActive) {
-            level.setBlock(pos, state.setValue(MachineSolarBoilerBlock.LIT, nowActive), 3);
-            changed = true;
-        }
-
-        if (changed) {
-            be.setChanged();
-            be.sendUpdateToClient();
-        }
-
-        be.ensureNetworkInitialized();
+        be.updateEntity(level);
     }
 
-    /** Client-side: spawn steam particles above the boiler while it's actively producing steam. */
-    private void clientTick(Level level, BlockPos pos) {
-        if (!isActive()) return;
-        if (level.getGameTime() % 4 != 0) return;
+    private void updateEntity(Level worldObj) {
 
-        double x = pos.getX() + 0.5 + (level.random.nextDouble() - 0.5) * 1.5;
-        double y = pos.getY() + 3.05; // top of the 3x3x3 structure
-        double z = pos.getZ() + 0.5 + (level.random.nextDouble() - 0.5) * 1.5;
+        if (!worldObj.isClientSide) {
 
-        level.addParticle(ParticleTypes.CLOUD, x, y, z, 0.0, 0.05, 0.0);
+            BlockPos top = worldPosition.above(3);
+            BlockPos bottom = worldPosition.below();
+
+            this.trySubscribe(water.getTankType(), worldObj, top, Direction.UP);
+            this.trySubscribe(water.getTankType(), worldObj, bottom, Direction.DOWN);
+
+            int process = heat / 50;
+            this.display = process;
+            process = Math.min(process, water.getFill());
+            process = Math.min(process, (steam.getMaxFill() - steam.getFill()) / 100);
+
+            if (process < 0) process = 0;
+
+            water.setFill(water.getFill() - process);
+            steam.setFill(steam.getFill() + process * 100);
+
+            this.tryProvide(steam, worldObj, top, Direction.UP);
+            this.tryProvide(steam, worldObj, bottom, Direction.DOWN);
+
+            heat = 0;
+
+            // Original networkPackNT(15)
+            setChanged();
+            sendUpdateToClient();
+        } else {
+
+            // a delayed queue of mirror positions because we can't expect the boiler to always tick first
+            secondary.clear();
+            secondary.addAll(primary);
+            primary.clear();
+        }
     }
 
-    private boolean processFluidContainers() {
-        ItemStack[] slots = new ItemStack[INVENTORY_SIZE];
-        for (int i = 0; i < INVENTORY_SIZE; i++) {
-            slots[i] = inventory.getStackInSlot(i);
-        }
+    // ==================== NBT ====================
 
-        boolean changed = false;
-
-        if (getTank(TANK_WATER).loadTank(SLOT_WATER_IN, SLOT_WATER_OUT, slots)) {
-            changed = true;
-        }
-        if (getTank(TANK_STEAM).unloadTank(SLOT_STEAM_IN, SLOT_STEAM_OUT, slots)) {
-            changed = true;
-        }
-
-        if (changed) {
-            for (int i = 0; i < INVENTORY_SIZE; i++) {
-                inventory.setStackInSlot(i, slots[i]);
-            }
-        }
-
-        return changed;
-    }
-
-    /**
-     * Core conversion logic. Conversion rate formula:
-     * <pre>
-     *   waterPerTick = (BASE_WATER_PER_TICK + activeMirrors * WATER_PER_MIRROR) * (solarBrightness / 15)
-     *   steamProduced = waterPerTick * STEAM_PER_WATER
-     * </pre>
-     * Gated on: direct sky access above the structure, daytime (sun above the horizon),
-     * available water, and free space in the steam tank.
-     */
-    private boolean processSolarBoiling(Level level, BlockPos pos) {
-        if (!hasSkyAccess(level, pos) || !level.isDay()) {
-            if (activeMirrorCount != 0) {
-                activeMirrorCount = 0;
-                return true;
-            }
-            return false;
-        }
-
-        activeMirrorCount = countActiveMirrors(level, pos);
-
-        if (solarBrightness <= 0) return false;
-
-        FluidTank waterTank = getTank(TANK_WATER);
-        FluidTank steamTank = getTank(TANK_STEAM);
-
-        if (waterTank.getFill() <= 0 || steamTank.getFill() >= steamTank.getMaxFill()) return true;
-
-        int mirrors = Math.min(activeMirrorCount, MAX_EFFECTIVE_MIRRORS);
-        int baseRate = BASE_WATER_PER_TICK + mirrors * WATER_PER_MIRROR;
-
-        int waterToProcess = (baseRate * solarBrightness) / 15;
-        if (waterToProcess <= 0) return true;
-
-        waterToProcess = Math.min(waterToProcess, waterTank.getFill());
-        if (waterToProcess <= 0) return true;
-
-        int steamProduced = waterToProcess * STEAM_PER_WATER;
-        int steamSpace = steamTank.getMaxFill() - steamTank.getFill();
-
-        if (steamSpace < steamProduced) {
-            steamProduced = steamSpace;
-            waterToProcess = steamProduced / STEAM_PER_WATER;
-        }
-
-        if (waterToProcess <= 0) return true;
-
-        // Consume water, produce steam
-        waterTank.drainMb(waterToProcess);
-        steamTank.fillMb(ModFluids.STEAM.getSource(), steamProduced);
-
-        return true;
-    }
-
-    /** Direct sky access check above the top of the 3x3x3 structure. */
-    private boolean hasSkyAccess(Level level, BlockPos pos) {
-        return level.canSeeSky(pos.above(2));
-    }
-
-    /**
-     * Scans a horizontal area around the boiler for "Solar Mirror" blocks that themselves
-     * have sky access. Scanned at the boiler's controller Y level and one level below it,
-     * within {@link #MIRROR_SCAN_RADIUS} blocks horizontally.
-     */
-    private int countActiveMirrors(Level level, BlockPos pos) {
-        int count = 0;
-        BlockPos.MutableBlockPos cursor = new BlockPos.MutableBlockPos();
-
-        for (int dy = 0; dy >= -1; dy--) {
-            int y = pos.getY() + dy;
-            for (int dx = -MIRROR_SCAN_RADIUS; dx <= MIRROR_SCAN_RADIUS; dx++) {
-                for (int dz = -MIRROR_SCAN_RADIUS; dz <= MIRROR_SCAN_RADIUS; dz++) {
-                    if (dx == 0 && dz == 0) continue;
-                    cursor.set(pos.getX() + dx, y, pos.getZ() + dz);
-
-                    if (!level.isLoaded(cursor)) continue;
-                    if (!level.getBlockState(cursor).is(ModBlocks.SOLAR_MIRRORS.get())) continue;
-                    if (!level.canSeeSky(cursor)) continue;
-
-                    count++;
-                    if (count >= MAX_EFFECTIVE_MIRRORS) return count;
-                }
-            }
-        }
-        return count;
-    }
-
-    public boolean isActive() {
-        return solarBrightness > 0
-                && level != null && level.isDay()
-                && getTank(TANK_WATER).getFill() > 0
-                && getTank(TANK_STEAM).getFill() < getTank(TANK_STEAM).getMaxFill();
-    }
-
-    // ═══════════════════════════ Tanks ════════════════════════════════
-
-    public FluidTank[] getTanks() {
-        return tanks;
-    }
-
-    public FluidTank getTank(int index) {
-        return (index >= 0 && index < tanks.length) ? tanks[index] : tanks[TANK_WATER];
+    @Override
+    protected void writeNbtData(CompoundTag nbt, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(nbt, registries);
+        this.water.writeToNBT(nbt, "water");
+        this.steam.writeToNBT(nbt, "steam");
+        // Original nur im Paket (serialize); hier laeuft das Paket ueber das NBT
+        nbt.putInt("display", display);
     }
 
     @Override
-    public FluidTank[] getReceivingTanks() {
-        return new FluidTank[] { getTank(TANK_WATER) };
+    protected void readNbtData(CompoundTag nbt, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(nbt, registries);
+        this.water.readFromNBT(nbt, "water");
+        this.steam.readFromNBT(nbt, "steam");
+        this.display = nbt.getInt("display");
     }
 
+    private AABB bb = null;
+
+    //? if forge {
     @Override
-    public FluidTank[] getSendingTanks() {
-        return new FluidTank[] { getTank(TANK_STEAM) };
+    //?}
+    public AABB getRenderBoundingBox() {
+        if (bb == null) {
+            int xCoord = worldPosition.getX(), yCoord = worldPosition.getY(), zCoord = worldPosition.getZ();
+            bb = new AABB(xCoord - 1, yCoord, zCoord - 1, xCoord + 2, yCoord + 3, zCoord + 2);
+        }
+        return bb;
     }
 
-    @Override
-    public FluidTank[] getAllTanks() {
-        return tanks;
-    }
+    // ==================== Fluid ====================
+
+    @Override public FluidTank[] getSendingTanks() { return new FluidTank[] { steam }; }
+    @Override public FluidTank[] getReceivingTanks() { return new FluidTank[] { water }; }
+    @Override public FluidTank[] getAllTanks() { return new FluidTank[] { water, steam }; }
 
     @Override
     public boolean isLoaded() {
         return level != null && !isRemoved() && level.isLoaded(worldPosition);
     }
 
-    // ═══════════════════════════ Getters ════════════════════════════════
-
-    public int getWaterAmount()    { return getTank(TANK_WATER).getFill(); }
-    public int getWaterCapacity()  { return getTank(TANK_WATER).getMaxFill(); }
-    public int getSteamAmount()    { return getTank(TANK_STEAM).getFill(); }
-    public int getSteamCapacity()  { return getTank(TANK_STEAM).getMaxFill(); }
-    public int getSolarBrightness() { return solarBrightness; }
-    public int getActiveMirrorCount() { return activeMirrorCount; }
-
-    // --- NBT ---
-    @Override
-    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-        super.writeNbtData(tag, registries);
-        for (int i = 0; i < tanks.length; i++) {
-            tanks[i].writeToNBT(tag, "tank_" + i);
-        }
-        tag.putInt("SolarBrightness", solarBrightness);
-        tag.putInt("ActiveMirrorCount", activeMirrorCount);
-    }
-
-    @Override
-    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-        super.readNbtData(tag, registries);
-        for (int i = 0; i < tanks.length; i++) {
-            tanks[i].readFromNBT(tag, "tank_" + i);
-        }
-        solarBrightness = tag.getInt("SolarBrightness");
-        activeMirrorCount = tag.getInt("ActiveMirrorCount");
-    }
-
-    // --- Capabilities ---
-    //? if forge {
-    @Override
-    protected void setupFluidCapability() {
-        setFluidHandler(new SolarBoilerFluidHandler(this));
-    }
-    //?}
-
-    // --- GUI ---
-    @Override
-    public Component getDisplayName() {
-        return Component.translatable("container.hbm_m.solar_boiler");
-    }
-
-    @Nullable
-    @Override
-    public AbstractContainerMenu createMenu(int id, Inventory inv, Player player) {
-        return new com.hbm_m.inventory.menu.MachineSolarBoilerMenu(id, inv, this, data);
-    }
+    // ==================== Sonstiges ====================
 
     @Override
     protected Component getDefaultName() {
-        return Component.translatable("container.hbm_m.solar_boiler");
+        return Component.translatable("block.hbm_m.solar_boiler");
+    }
+
+    @Override
+    public Component getDisplayName() {
+        return getDefaultName();
     }
 
     @Override
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
-        return switch (slot) {
-            case SLOT_WATER_IN  -> com.hbm_m.api.fluids.FluidItemAccess.hasFluidHandler(stack);
-            case SLOT_STEAM_IN  -> com.hbm_m.api.fluids.FluidItemAccess.hasFluidHandler(stack);
-            case SLOT_WATER_OUT, SLOT_STEAM_OUT -> false;
-            default -> false;
-        };
+        return false;
     }
 
-    public void drops() {
-        if (level != null) {
-            SimpleContainer container = new SimpleContainer(inventory.getSlots());
-            for (int i = 0; i < inventory.getSlots(); i++) {
-                container.setItem(i, inventory.getStackInSlot(i));
-            }
-            Containers.dropContents(level, worldPosition, container);
-        }
+    @Nullable
+    @Override
+    public AbstractContainerMenu createMenu(int containerId, Inventory playerInventory, Player player) {
+        return null; // Kein GUI im Original.
     }
 }

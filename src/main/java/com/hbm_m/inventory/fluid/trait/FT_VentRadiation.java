@@ -28,14 +28,13 @@ public class FT_VentRadiation extends FluidTrait {
     
     @Override
     public void onFluidRelease(Level level, BlockPos pos, FluidTank tank, int overflowAmount, FluidReleaseType type) {
-        // TODO: Интеграция с системой радиации 1.20.1
-        // Пример вызова из 1.7.10:
-        // ChunkRadiationManager.proxy.incrementRad(level, pos.getX(), pos.getY(), pos.getZ(), overflowAmount * radPerMB);
+        // 1:1 ChunkRadiationManager.proxy.incrementRad(world, x, y, z, overflowAmount * radPerMB) - nur Aufruf der oeffentlichen API
+        com.hbm_m.radiation.ChunkRadiationManager.incrementRad(level, pos.getX(), pos.getY(), pos.getZ(), overflowAmount * radPerMB);
     }
     
     @Override
     public void addInfo(List<Component> info) {
-        info.add(Component.literal("[Radioactive]").withStyle(ChatFormatting.YELLOW));
+        info.add(Component.literal("[").append(Component.translatable("hbmfluid.trait.radioactive")).append("]").withStyle(ChatFormatting.YELLOW));
     }
 
     @Override

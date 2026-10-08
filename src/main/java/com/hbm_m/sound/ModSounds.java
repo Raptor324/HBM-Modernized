@@ -21,6 +21,9 @@ public class ModSounds {
     public static final RegistrySupplier<SoundEvent> GEIGER_5 = registerSoundEvents("item.geiger5");
     public static final RegistrySupplier<SoundEvent> GEIGER_6 = registerSoundEvents("item.geiger6");
 
+    public static final RegistrySupplier<SoundEvent> MISSILE_ASSEMBLY = registerSoundEvents("block.missile_assembly");
+    public static final RegistrySupplier<SoundEvent> MISSILE_ASSEMBLY2 = registerSoundEvents("block.missile_assembly2");
+
     public static final RegistrySupplier<SoundEvent> SOYUZ_ALARM = registerSoundEvents("soyuz.alarm");
     public static final RegistrySupplier<SoundEvent> SOYUZ_READY = registerSoundEvents("soyuz.ready");
     public static final RegistrySupplier<SoundEvent> SOYUZ_TAKEOFF = registerSoundEvents("soyuz.takeoff");

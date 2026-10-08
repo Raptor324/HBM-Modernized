@@ -43,7 +43,7 @@ public abstract class BaseCrateBlock extends BaseEntityBlock {
         // Original: mit Schloss oder Nachschluessel-Set in der Hand oeffnet sich nichts (das Item handelt selbst)
         ItemStack held = player.getItemInHand(hand);
         if (!held.isEmpty() && (held.getItem() instanceof com.hbm_m.item.tool.ItemLock || held.is(com.hbm_m.item.ModItems.KEY_KIT.get()))) return InteractionResult.PASS;
-        if (player.isShiftKeyDown()) return InteractionResult.PASS;
+        if (player.isShiftKeyDown()) return level.isClientSide() ? InteractionResult.SUCCESS : InteractionResult.PASS; // Original: Client true, Server geschlichen false
         return openCrateMenu(state, level, pos, player);
     }
     //?} else {
@@ -149,6 +149,6 @@ public abstract class BaseCrateBlock extends BaseEntityBlock {
 
     private void playOpenSound(Level level, BlockPos pos) {
         level.playSound(null, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
-                ModSounds.CRATE_OPEN.get(), net.minecraft.sounds.SoundSource.BLOCKS, 0.6F, 1.0F);
+                ModSounds.CRATE_OPEN.get(), net.minecraft.sounds.SoundSource.BLOCKS, 1.0F, 1.0F); // Original openInventory: 1.0F, 1.0F
     }
 }

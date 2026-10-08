@@ -28,8 +28,8 @@ public class ItemLock extends ItemKeyPin {
     @Override
     public InteractionResult useOn(UseOnContext ctx) {
         ItemStack stack = ctx.getItemInHand();
-        int pins = getCode(stack);
-        if (pins != 0 && pins != -1) {
+        int pins = getPins(stack);
+        if (pins != 0) {
             Level world = ctx.getLevel();
             BlockEntity te = com.hbm_m.util.CompatExternal.getCoreFromPos(world, ctx.getClickedPos());
             if (te instanceof ILockableTile tile) {

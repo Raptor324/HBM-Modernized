@@ -12,8 +12,7 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 
-/** Direktport der Slot-/Tank-Koordinaten aus {@code GUILiquefactor} (1.7.10 Original). Die
- *  Lade-Icon-Deko (176,52 / 9x12) des Originals wurde nicht uebernommen (rein kosmetisch). */
+/** Direktport der Slot-/Tank-Koordinaten aus {@code GUILiquefactor} (1.7.10 Original), inkl. Lade-Symbol (176,52 / 9x12). */
 public class GUIMachineLiquefactor extends GuiInfoScreen<MachineLiquefactorMenu> {
 
     private static final ResourceLocation TEXTURE =

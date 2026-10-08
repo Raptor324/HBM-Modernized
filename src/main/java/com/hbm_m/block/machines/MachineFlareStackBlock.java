@@ -51,6 +51,19 @@ public class MachineFlareStackBlock extends BaseEntityBlock implements IMultiblo
         this.structureHelper = defineStructureNew();
     }
 
+    /** w16b: Original {@code MachineGasFlare.bounding}: Sockel 3x3 bis 3.875, Schaft 1.5 breit, Buehne bei 9, Spitze bis 12. */
+    private static final Map<Direction, VoxelShape> BOUNDING_W16B = MultiblockStructureHelper.boundingMasters(new double[][] {
+            {-1.5D, 0D, -1.5D, 1.5D, 3.875D, 1.5D},
+            {-0.75D, 3.875D, -0.75D, 0.75D, 9D, 0.75D},
+            {-1.5D, 9D, -1.5D, 1.5D, 9.375D, 1.5D},
+            {-0.75D, 9.375D, -0.75D, 0.75D, 12D, 0.75D}
+    });
+
+    @Override
+    public VoxelShape getCustomMasterVoxelShape(BlockState state) {
+        return BOUNDING_W16B.get(state.getValue(FACING));
+    }
+
     private static MultiblockStructureHelper defineStructureNew() {
         // GIT MachineGasFlare: 3×3×12 + cardinal fluid/power proxies at y=0
         String[] layer0 = {
@@ -72,16 +85,6 @@ public class MachineFlareStackBlock extends BaseEntityBlock implements IMultiblo
 
         Map<Character, Supplier<BlockState>> symbolMap = Map.of();
 
-        Map<Character, VoxelShape> shapeMap = Map.of(
-            'C', Shapes.or(
-                Block.box(0, 0, 0, 16, 62, 16),
-                Block.box(4, 62, 4, 12, 144, 12),
-                Block.box(0, 144, 0, 16, 150, 16),
-                Block.box(4, 150, 4, 12, 192, 12)
-            ),
-            'O', Block.box(4, 0, 4, 12, 16, 12)
-        );
-
         Map<Character, boolean[]> energySideMap = Map.of(
             'B', MultiblockSideTuples.energy(true, true, true, true, true, false),
             'C', MultiblockSideTuples.energy(true, true, true, true, true, false)
@@ -99,8 +102,8 @@ public class MachineFlareStackBlock extends BaseEntityBlock implements IMultiblo
             symbolMap,
             () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState(),
             roleMap,
-            shapeMap,
-            shapeMap,
+            null, // w16b: Form = Original bounding (getCustomMasterVoxelShape), nicht je Zelle
+            null,
             null,
             energySideMap,
             fluidSideMap
@@ -157,11 +160,13 @@ public class MachineFlareStackBlock extends BaseEntityBlock implements IMultiblo
     //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        if (player.isShiftKeyDown()) return InteractionResult.sidedSuccess(level.isClientSide()); // Original standardOpenBehavior: geschlichen true ohne GUI
         return openMenu(state, level, pos, player, hand, hit);
     }
     //?} else {
     /*@Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+        if (player.isShiftKeyDown()) return InteractionResult.sidedSuccess(level.isClientSide()); // Original standardOpenBehavior: geschlichen true ohne GUI
         return openMenu(state, level, pos, player, InteractionHand.MAIN_HAND, hit);
     }
     *///?}
@@ -207,12 +212,13 @@ public class MachineFlareStackBlock extends BaseEntityBlock implements IMultiblo
 
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        return structureHelper.generateShapeFromParts(state.getValue(FACING));
+        // w16b: nur die Kernzelle (Raycast pro Zelle wie Original); Umriss der ganzen Maschine: MultiblockOutlineForge
+        return MultiblockStructureHelper.cellShape(getCustomMasterVoxelShape(state), BlockPos.ZERO);
     }
 
     @Override
     public VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        return structureHelper.getSpecificPartShape(structureHelper.getControllerOffset(), state.getValue(FACING));
+        return getCustomMasterVoxelShape(state); // w16b: Original bounding gilt fuer alle Zellen
     }
 
     @Override

@@ -76,6 +76,7 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
         registerRbmkBlockRecipes(writer);
         registerBookOfWagons(writer);
         registerPileRecipes(writer);
+        registerPinkWoodRecipes(writer);
         registerMassStorageRecipes(writer);
         registerPneumaticRecipes(writer);
         registerWasteCompression(writer);
@@ -136,6 +137,32 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .save(writer, recipeId("crafting/pile_control"));
     }
 
+    /** 1:1 CraftingManager 632/633: pink_slab x6 "WWW", pink_stairs x6 "W  ","WW ","WWW" aus pink_planks. */
+    private void registerPinkWoodRecipes(Consumer<FinishedRecipe> writer) {
+        ShapedRecipeBuilder.shaped(RecipeCategory.BUILDING_BLOCKS, ModBlocks.PINK_SLAB.get(), 6)
+                .pattern("WWW")
+                .define('W', ModBlocks.PINK_PLANKS.get())
+                .unlockedBy(getHasName(ModBlocks.PINK_PLANKS.get()), has(ModBlocks.PINK_PLANKS.get()))
+                .save(writer, recipeId("crafting/pink_slab"));
+        ShapedRecipeBuilder.shaped(RecipeCategory.BUILDING_BLOCKS, ModBlocks.PINK_STAIRS.get(), 6)
+                .pattern("W  ")
+                .pattern("WW ")
+                .pattern("WWW")
+                .define('W', ModBlocks.PINK_PLANKS.get())
+                .unlockedBy(getHasName(ModBlocks.PINK_PLANKS.get()), has(ModBlocks.PINK_PLANKS.get()))
+                .save(writer, recipeId("crafting/pink_stairs"));
+        // CraftingManager 676: obj_tester "P","I","S" = Polaroid, Flammenpony, Stahlplatte
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.OBJ_TESTER.get())
+                .pattern("P")
+                .pattern("I")
+                .pattern("S")
+                .define('P', ModItems.POLAROID.get())
+                .define('I', ModItems.FLAME_PONY.get())
+                .define('S', ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE))
+                .unlockedBy(getHasName(ModItems.POLAROID.get()), has(ModItems.POLAROID.get()))
+                .save(writer, recipeId("crafting/obj_tester"));
+    }
+
     /** 1:1-Port der beiden Rohrrezepte aus {@code CraftingManager} (1.7.10). */
     /** 1:1-Port der vier Massenspeicher-Rezepte aus {@code CraftingManager} (1.7.10). */
     private void registerMassStorageRecipes(Consumer<FinishedRecipe> writer) {
@@ -162,12 +189,8 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .unlockedBy(getHasName(ModItems.CRATE_STEEL.get()), has(ModItems.CRATE_STEEL.get()))
                 .save(writer, recipeId("crafting/mass_storage_iron"));
 
-        // Die beiden Aufwertungen laufen ueber MassStorageUpgradeRecipe, damit der Inhalt der
-        // alten Kiste mitgeht - ein gewoehnliches Rezept wuerde ihn verschlucken.
-        net.minecraft.data.recipes.SpecialRecipeBuilder
-                .special((net.minecraft.world.item.crafting.SimpleCraftingRecipeSerializer<?>)
-                        com.hbm_m.recipe.ModRecipes.MASS_STORAGE_UPGRADE.get())
-                .save(writer, recipeId("crafting/mass_storage_upgrade").toString());
+        // Die Aufwertungen Eisen -> Desh -> Stahl: Original ContainerUpgradeCraftingHandler, siehe
+        // RestRecipeGenerator.crafting() (hbm_m:container_upgrade, Inhalt geht mit).
     }
 
     private void registerPneumaticRecipes(Consumer<FinishedRecipe> writer) {
@@ -270,6 +293,24 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .special((net.minecraft.world.item.crafting.SimpleCraftingRecipeSerializer<?>)
                         com.hbm_m.recipe.RBMKFuelDisassemblyRecipe.SERIALIZER)
                 .save(writer, recipeId("crafting/rbmk_fuel_disassembly").toString());
+
+        // GrenadeCraftingHandler - Baukastengranate aus Huelle, Fuellung, Zuender (+ Extra)
+        net.minecraft.data.recipes.SpecialRecipeBuilder
+                .special((net.minecraft.world.item.crafting.SimpleCraftingRecipeSerializer<?>)
+                        com.hbm_m.recipe.GrenadeCraftingRecipe.SERIALIZER)
+                .save(writer, recipeId("crafting/grenades").toString());
+
+        // CargoShellCraftingHandler - leere Frachtgranate + ein Gegenstand = beladene Frachtgranate
+        net.minecraft.data.recipes.SpecialRecipeBuilder
+                .special((net.minecraft.world.item.crafting.SimpleCraftingRecipeSerializer<?>)
+                        com.hbm_m.recipe.CargoShellCraftingRecipe.SERIALIZER)
+                .save(writer, recipeId("crafting/cargo_shell").toString());
+
+        // MKUCraftingHandler - MKUNICORN, Anordnung haengt vom Weltseed ab
+        net.minecraft.data.recipes.SpecialRecipeBuilder
+                .special((net.minecraft.world.item.crafting.SimpleCraftingRecipeSerializer<?>)
+                        com.hbm_m.recipe.MKUCraftingRecipe.SERIALIZER)
+                .save(writer, recipeId("crafting/mku").toString());
     }
 
     /** RodRecipes.java:246 - empty casing + 8 billets, shapeless. */
@@ -733,144 +774,8 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .unlockedBy(getHasName(ModItems.CRT_DISPLAY.get()), has(ModItems.CRT_DISPLAY.get()))
                 .save(writer, recipeId("crafting/turret_sentry"));
 
-        ShapedRecipeBuilder.shaped(RecipeCategory.COMBAT, ModItems.TURRET_AMMO.get(), 8)
-                .pattern("L")
-                .pattern("G")
-                .pattern("C")
-                .define('L', ModMaterialItems.item(ModMaterials.LEAD, MaterialShape.INGOT))
-                .define('G', Items.GUNPOWDER)
-                .define('C', ModItems.CASING_BAG.get())
-                .unlockedBy(getHasName(Items.GUNPOWDER), has(Items.GUNPOWDER))
-                .save(writer, recipeId("crafting/turret_ammo"));
-
-        // 9mm-Munition fuer den Sentry-Turret (Original hatte hierfuer keine dokumentierten Table-Rezepte -
-        // plausible Annaeherung analog turret_ammo, siehe TurretBaseBlockEntity#isAcceptedAmmo).
-        ShapedRecipeBuilder.shaped(RecipeCategory.COMBAT, ModItems.AMMO_9MM_SP.get(), 12)
-                .pattern("L")
-                .pattern("G")
-                .pattern("C")
-                .define('L', ModMaterialItems.item(ModMaterials.LEAD, MaterialShape.INGOT))
-                .define('G', Items.GUNPOWDER)
-                .define('C', ModItems.CASING_BAG.get())
-                .unlockedBy(getHasName(Items.GUNPOWDER), has(Items.GUNPOWDER))
-                .save(writer, recipeId("crafting/ammo_9mm_sp"));
-
-        ShapedRecipeBuilder.shaped(RecipeCategory.COMBAT, ModItems.AMMO_9MM_JHP.get(), 12)
-                .pattern("L")
-                .pattern("G")
-                .pattern("C")
-                .define('L', ModMaterialItems.item(ModMaterials.LEAD, MaterialShape.INGOT))
-                .define('G', Items.GUNPOWDER)
-                .define('C', ModItems.CASING_BAG.get())
-                .unlockedBy(getHasName(Items.GUNPOWDER), has(Items.GUNPOWDER))
-                .save(writer, recipeId("crafting/ammo_9mm_jhp"));
-
-        ShapedRecipeBuilder.shaped(RecipeCategory.COMBAT, ModItems.AMMO_9MM_FMJ.get(), 12)
-                .pattern("L")
-                .pattern("I")
-                .pattern("C")
-                .define('L', ModMaterialItems.item(ModMaterials.LEAD, MaterialShape.INGOT))
-                .define('I', Items.IRON_INGOT)
-                .define('C', ModItems.CASING_BAG.get())
-                .unlockedBy(getHasName(Items.IRON_INGOT), has(Items.IRON_INGOT))
-                .save(writer, recipeId("crafting/ammo_9mm_fmj"));
-
-        ShapedRecipeBuilder.shaped(RecipeCategory.COMBAT, ModItems.AMMO_9MM_AP.get(), 12)
-                .pattern("L")
-                .pattern("I")
-                .pattern("C")
-                .define('L', ModMaterialItems.item(ModMaterials.LEAD, MaterialShape.INGOT))
-                .define('I', Items.IRON_INGOT)
-                .define('C', ModItems.CASING_BAG.get())
-                .unlockedBy(getHasName(Items.IRON_INGOT), has(Items.IRON_INGOT))
-                .save(writer, recipeId("crafting/ammo_9mm_ap"));
-
-        // .50 BMG-Munition fuer den Chekhov-Turret
-        ShapedRecipeBuilder.shaped(RecipeCategory.COMBAT, ModItems.AMMO_50_SP.get(), 8)
-                .pattern("L").pattern("G").pattern("C")
-                .define('L', ModMaterialItems.item(ModMaterials.LEAD, MaterialShape.INGOT))
-                .define('G', Items.GUNPOWDER)
-                .define('C', ModItems.CASING_BAG.get())
-                .unlockedBy(getHasName(Items.GUNPOWDER), has(Items.GUNPOWDER))
-                .save(writer, recipeId("crafting/ammo_50_sp"));
-
-        ShapedRecipeBuilder.shaped(RecipeCategory.COMBAT, ModItems.AMMO_50_JHP.get(), 8)
-                .pattern("L").pattern("G").pattern("C")
-                .define('L', ModMaterialItems.item(ModMaterials.LEAD, MaterialShape.INGOT))
-                .define('G', Items.GUNPOWDER)
-                .define('C', ModItems.CASING_BAG.get())
-                .unlockedBy(getHasName(Items.GUNPOWDER), has(Items.GUNPOWDER))
-                .save(writer, recipeId("crafting/ammo_50_jhp"));
-
-        ShapedRecipeBuilder.shaped(RecipeCategory.COMBAT, ModItems.AMMO_50_FMJ.get(), 8)
-                .pattern("L").pattern("I").pattern("C")
-                .define('L', ModMaterialItems.item(ModMaterials.LEAD, MaterialShape.INGOT))
-                .define('I', Items.IRON_INGOT)
-                .define('C', ModItems.CASING_BAG.get())
-                .unlockedBy(getHasName(Items.IRON_INGOT), has(Items.IRON_INGOT))
-                .save(writer, recipeId("crafting/ammo_50_fmj"));
-
-        ShapedRecipeBuilder.shaped(RecipeCategory.COMBAT, ModItems.AMMO_50_AP.get(), 8)
-                .pattern("L").pattern("I").pattern("C")
-                .define('L', ModMaterialItems.item(ModMaterials.LEAD, MaterialShape.INGOT))
-                .define('I', Items.IRON_INGOT)
-                .define('C', ModItems.CASING_BAG.get())
-                .unlockedBy(getHasName(Items.IRON_INGOT), has(Items.IRON_INGOT))
-                .save(writer, recipeId("crafting/ammo_50_ap"));
-
-        ShapedRecipeBuilder.shaped(RecipeCategory.COMBAT, ModItems.AMMO_50_DU.get(), 8)
-                .pattern("L").pattern("I").pattern("C")
-                .define('L', ModMaterialItems.item(ModMaterials.LEAD, MaterialShape.INGOT))
-                .define('I', ModMaterialItems.item(ModMaterials.URANIUM238, MaterialShape.INGOT))
-                .define('C', ModItems.CASING_BAG.get())
-                .unlockedBy(getHasName(Items.IRON_INGOT), has(Items.IRON_INGOT))
-                .save(writer, recipeId("crafting/ammo_50_du"));
-
-        // 5.56mm-Munition fuer den Friendly-Turret
-        ShapedRecipeBuilder.shaped(RecipeCategory.COMBAT, ModItems.AMMO_556_SP.get(), 12)
-                .pattern("L").pattern("G").pattern("C")
-                .define('L', ModMaterialItems.item(ModMaterials.LEAD, MaterialShape.INGOT))
-                .define('G', Items.GUNPOWDER)
-                .define('C', ModItems.CASING_BAG.get())
-                .unlockedBy(getHasName(Items.GUNPOWDER), has(Items.GUNPOWDER))
-                .save(writer, recipeId("crafting/ammo_556_sp"));
-
-        ShapedRecipeBuilder.shaped(RecipeCategory.COMBAT, ModItems.AMMO_556_JHP.get(), 12)
-                .pattern("L").pattern("G").pattern("C")
-                .define('L', ModMaterialItems.item(ModMaterials.LEAD, MaterialShape.INGOT))
-                .define('G', Items.GUNPOWDER)
-                .define('C', ModItems.CASING_BAG.get())
-                .unlockedBy(getHasName(Items.GUNPOWDER), has(Items.GUNPOWDER))
-                .save(writer, recipeId("crafting/ammo_556_jhp"));
-
-        ShapedRecipeBuilder.shaped(RecipeCategory.COMBAT, ModItems.AMMO_556_FMJ.get(), 12)
-                .pattern("L").pattern("I").pattern("C")
-                .define('L', ModMaterialItems.item(ModMaterials.LEAD, MaterialShape.INGOT))
-                .define('I', Items.IRON_INGOT)
-                .define('C', ModItems.CASING_BAG.get())
-                .unlockedBy(getHasName(Items.IRON_INGOT), has(Items.IRON_INGOT))
-                .save(writer, recipeId("crafting/ammo_556_fmj"));
-
-        ShapedRecipeBuilder.shaped(RecipeCategory.COMBAT, ModItems.AMMO_556_AP.get(), 12)
-                .pattern("L").pattern("I").pattern("C")
-                .define('L', ModMaterialItems.item(ModMaterials.LEAD, MaterialShape.INGOT))
-                .define('I', Items.IRON_INGOT)
-                .define('C', ModItems.CASING_BAG.get())
-                .unlockedBy(getHasName(Items.IRON_INGOT), has(Items.IRON_INGOT))
-                .save(writer, recipeId("crafting/ammo_556_ap"));
-
-        // Gelenkte Raketen fuer Richard/Himars-Turret (Original hatte hierfuer keine dokumentierten
+        // Gelenkte Raketen fuer den Himars-Turret (Original hatte hierfuer keine dokumentierten
         // Table-Rezepte - plausible Annaeherung, siehe TurretRocketEntity).
-        ShapedRecipeBuilder.shaped(RecipeCategory.COMBAT, ModItems.ROCKET_TURRET_STANDARD.get())
-                .pattern(" P ")
-                .pattern(" M ")
-                .pattern(" G ")
-                .define('P', ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE))
-                .define('M', ModItems.MOTOR.get())
-                .define('G', Items.GUNPOWDER)
-                .unlockedBy(getHasName(Items.GUNPOWDER), has(Items.GUNPOWDER))
-                .save(writer, recipeId("crafting/rocket_turret_standard"));
-
         ShapedRecipeBuilder.shaped(RecipeCategory.COMBAT, ModItems.ROCKET_HIMARS_STANDARD.get())
                 .pattern(" P ")
                 .pattern(" M ")
@@ -880,24 +785,6 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .define('G', Items.GUNPOWDER)
                 .unlockedBy(getHasName(Items.GUNPOWDER), has(Items.GUNPOWDER))
                 .save(writer, recipeId("crafting/rocket_himars_standard"));
-
-        // Tauon-Turret Munition (Original hatte hierfuer keine dokumentierte Table-Rezept)
-        ShapedRecipeBuilder.shaped(RecipeCategory.COMBAT, ModItems.AMMO_TAU_URANIUM.get(), 4)
-                .pattern("U")
-                .pattern("C")
-                .define('U', ModMaterialItems.item(ModMaterials.URANIUM, MaterialShape.INGOT))
-                .define('C', ModItems.CASING_BAG.get())
-                .unlockedBy(getHasName(ModMaterialItems.item(ModMaterials.URANIUM, MaterialShape.INGOT)), has(ModMaterialItems.item(ModMaterials.URANIUM, MaterialShape.INGOT)))
-                .save(writer, recipeId("crafting/ammo_tau_uranium"));
-
-        // Fritz-Turret Brennstoff (MVP-Item statt Fluid-Tank, siehe TurretBaseBlockEntity#tickFritz)
-        ShapedRecipeBuilder.shaped(RecipeCategory.COMBAT, ModItems.AMMO_FLAME_DIESEL.get(), 8)
-                .pattern("C")
-                .pattern("B")
-                .define('C', ModItems.CANNED_DIESEL.get())
-                .define('B', ModItems.CASING_BAG.get())
-                .unlockedBy(getHasName(ModItems.CANNED_DIESEL.get()), has(ModItems.CANNED_DIESEL.get()))
-                .save(writer, recipeId("crafting/ammo_flame_diesel"));
 
         // Missile-Assembly-Station + fehlende Teile (Original-Rezept nicht auffindbar, plausible Annaeherung)
         ShapedRecipeBuilder.shaped(RecipeCategory.COMBAT, ModBlocks.MACHINE_MISSILE_ASSEMBLY.get())
@@ -1277,9 +1164,9 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
         ShapedRecipeBuilder.shaped(RecipeCategory.TOOLS, ModItems.COLTAN_TOOL.get())
                 .pattern("ACA").pattern("CXC").pattern("ACA")
                 .define('A', Items.COPPER_INGOT)
-                .define('C', ModItems.CINNABAR.get())
+                .define('C', ModItems.CINNEBAR.get())
                 .define('X', Items.COMPASS)
-                .unlockedBy("has_cinnabar", has(ModItems.CINNABAR.get()))
+                .unlockedBy("has_cinnabar", has(ModItems.CINNEBAR.get()))
                 .save(writer, recipeId("crafting/coltan_tool"));
         ShapedRecipeBuilder.shaped(RecipeCategory.TOOLS, ModItems.TOOLBOX.get())
                 .pattern("CCC").pattern("CIC")
@@ -2121,6 +2008,18 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .unlockedBy(getHasName(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE)), has(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE)))
                 .save(writer, recipeId("crafting/armor_table"));
 
+        // SEDNA: Original WeaponRecipes - "PPP", "TCT", "TST" (P Geschuetzbronzeplatte, T Stahlbarren, C Werkbank, S Stahlblock)
+        ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModBlocks.MACHINE_WEAPON_TABLE.get())
+                .pattern("PPP")
+                .pattern("TCT")
+                .pattern("TST")
+                .define('P', ModMaterialItems.item(ModMaterials.GUNMETAL, MaterialShape.PLATE))
+                .define('T', ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.INGOT))
+                .define('C', Items.CRAFTING_TABLE)
+                .define('S', ModBlocks.getIngotBlock(ModMaterials.STEEL).get())
+                .unlockedBy(getHasName(ModMaterialItems.item(ModMaterials.GUNMETAL, MaterialShape.PLATE)), has(ModMaterialItems.item(ModMaterials.GUNMETAL, MaterialShape.PLATE)))
+                .save(writer, recipeId("crafting/machine_weapon_table"));
+
         ShapedRecipeBuilder.shaped(RecipeCategory.MISC, ModItems.DETONATOR.get())
                 .pattern("#  ")
                 .pattern("@  ")
@@ -2702,23 +2601,8 @@ public class ModVanillaRecipeProvider extends RecipeProvider {
                 .unlockedBy(getHasName(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE)), has(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE)))
                 .save(writer, recipeId("crafting/crate_steel"));
 
-        ShapedRecipeBuilder.shaped(RecipeCategory.DECORATIONS, ModBlocks.CRATE_DESH.get())
-                .pattern("AAA")
-                .pattern("ABA")
-                .pattern("AAA")
-                .define('A', ModMaterialItems.item(ModMaterials.DESH, MaterialShape.PLATE))
-                .define('B', ModBlocks.CRATE_STEEL.get())
-                .unlockedBy(getHasName(ModMaterialItems.item(ModMaterials.DESH, MaterialShape.PLATE)), has(ModMaterialItems.item(ModMaterials.DESH, MaterialShape.PLATE)))
-                .save(writer, recipeId("crafting/crate_desh"));
-
-        ShapedRecipeBuilder.shaped(RecipeCategory.DECORATIONS, ModBlocks.CRATE_TUNGSTEN.get())
-                .pattern("AAA")
-                .pattern("B B")
-                .pattern("BBB")
-                .define('A', ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE))
-                .define('B', ModMaterialItems.item(ModMaterials.TUNGSTEN, MaterialShape.INGOT))
-                .unlockedBy(getHasName(ModMaterialItems.item(ModMaterials.TUNGSTEN, MaterialShape.INGOT)), has(ModMaterialItems.item(ModMaterials.TUNGSTEN, MaterialShape.INGOT)))
-                .save(writer, recipeId("crafting/crate_tungsten"));
+        // Desh- und Wolframkiste: Original ContainerUpgradeCraftingHandler (Inhalt der Stahlkiste geht mit),
+        // siehe RestRecipeGenerator.crafting().
 
         ShapedRecipeBuilder.shaped(RecipeCategory.DECORATIONS, ModBlocks.CRATE_TEMPLATE.get())
                 .pattern("ABA")

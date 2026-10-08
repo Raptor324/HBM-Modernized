@@ -31,9 +31,9 @@ public class FT_Corrosive extends FluidTrait {
     @Override
     public void addInfo(List<Component> info) {
         if(isHighlyCorrosive())
-            info.add(Component.literal("[Strongly Corrosive]").withStyle(ChatFormatting.GOLD));
+            info.add(Component.literal("[").append(Component.translatable("hbmfluid.trait.corrosiveStrong")).append("]").withStyle(ChatFormatting.GOLD));
         else
-            info.add(Component.literal("[Corrosive]").withStyle(ChatFormatting.YELLOW));
+            info.add(Component.literal("[").append(Component.translatable("hbmfluid.trait.corrosive")).append("]").withStyle(ChatFormatting.YELLOW));
     }
 
     @Override

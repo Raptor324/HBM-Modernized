@@ -1,6 +1,7 @@
 package com.hbm_m.block.gas;
 
 import com.hbm_m.block.ModBlocks;
+import com.hbm_m.effect.ModEffects;
 import com.hbm_m.extprop.HbmLivingProps;
 import com.hbm_m.handler.ArmorRegistry;
 import com.hbm_m.handler.HazardClass;
@@ -14,6 +15,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
@@ -22,9 +24,6 @@ import net.minecraft.world.level.block.state.BlockState;
  * 1:1-Port von {@code BlockGasMeltdown} (1.7.10): die Wolke ueber einer Kernschmelze. Sie
  * verstrahlt jeden im Inneren ungefiltert, setzt unter freiem Himmel Chunkstrahlung frei und
  * gebiert laufend dichtes Radon. Sehr langlebig (Zerfall 1/350).
- *
- * <p><b>Abweichung:</b> Der zusaetzliche Trank {@code HbmPotion.radiation} des Originals fehlt -
- * dieser Effekt ist im Port nicht vorhanden.</p>
  */
 public class BlockGasMeltdown extends BlockGasBase {
 
@@ -35,6 +34,7 @@ public class BlockGasMeltdown extends BlockGasBase {
     @Override
     protected void affect(LivingEntity living) {
         ContaminationUtil.contaminate(living, HazardType.RADIATION, ContaminationType.CREATIVE, 0.5F);
+        living.addEffect(new MobEffectInstance(ModEffects.RADIATION.get(), 60 * 20, 2));
 
         if (ArmorRegistry.hasProtection(living, 3, HazardClass.PARTICLE_FINE)) {
             damageWornFilter(living);

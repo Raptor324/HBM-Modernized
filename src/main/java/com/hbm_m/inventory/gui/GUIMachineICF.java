@@ -102,4 +102,12 @@ public class GUIMachineICF extends AbstractContainerScreen<MachineICFMenu> {
         int localY = mouseY - topPos;
         return localX >= x && localX < x + w && localY >= y && localY < y + h;
     }
+
+    @Override
+    protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
+        // Original drawGuiContainerForegroundLayer
+        String name = this.title.getString();
+        guiGraphics.drawString(this.font, name, 124 - this.font.width(name) / 2, 6, 4210752, false);
+        guiGraphics.drawString(this.font, this.playerInventoryTitle, 44, 129, 4210752, false);
+    }
 }

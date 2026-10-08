@@ -1,110 +1,73 @@
 package com.hbm_m.inventory.gui;
-import com.hbm_m.client.GuiCompat;
+
+import java.util.Locale;
 
 import com.hbm_m.blockentity.machines.MachineCombinationOvenBlockEntity;
+import com.hbm_m.client.GuiCompat;
 import com.hbm_m.inventory.menu.MachineCombinationOvenMenu;
 import com.hbm_m.lib.RefStrings;
 import com.mojang.blaze3d.systems.RenderSystem;
+
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 
+/**
+ * 1:1 {@code GUIFurnaceCombo}: Fortschrittsbalken (45,37) und Hitzebalken (45,46) mit TU-Tooltips, Tank 16x52 bei
+ * (118,18).
+ */
 public class GUIMachineCombinationOven extends GuiInfoScreen<MachineCombinationOvenMenu> {
 
     private static final ResourceLocation TEXTURE =
-            //? if fabric && < 1.21.1 {
-            /*new ResourceLocation(RefStrings.MODID, "textures/gui/processing/gui_furnace_combination.png");
-            *///?} else {
-                        ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/processing/gui_furnace_combination.png");
-            //?}
+            ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/processing/gui_furnace_combination.png");
 
-    // Fluessigkeitstank - rechts im Panel (Koordinaten aus dem 1.7.10-Original, GUIFurnaceCombo:
-    // renderTankInfo/renderTank bei guiLeft + 118, guiTop + 18/70, 16x52).
-    private static final int TANK_X = 118;
-    private static final int TANK_Y = 18;
-    private static final int TANK_WIDTH = 16;
-    private static final int TANK_HEIGHT = 52;
-
-    // Fortschrittsbalken - Texturregion aus dem 1.7.10-Original (u=176,v=0, max 38x5), an
-    // Position (guiLeft + 45, guiTop + 37).
-    private static final int PROGRESS_X = 45;
-    private static final int PROGRESS_Y = 37;
-    private static final int PROGRESS_MAX_WIDTH = 38;
-    private static final int PROGRESS_HEIGHT = 5;
-    private static final int PROGRESS_TEX_U = 176;
-    private static final int PROGRESS_TEX_V = 0;
+    private final MachineCombinationOvenBlockEntity furnace;
 
     public GUIMachineCombinationOven(MachineCombinationOvenMenu menu, Inventory inventory, Component title) {
         super(menu, inventory, title);
-
+        this.furnace = menu.getBlockEntity();
         this.imageWidth = 176;
         this.imageHeight = 186;
-        this.inventoryLabelY = 94;
     }
 
     @Override
-    protected void init() {
-        super.init();
-        this.titleLabelX = (this.imageWidth - this.font.width(this.title)) / 2;
-    }
+    public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
+        GuiCompat.renderBackground(this, g, mouseX, mouseY, partialTick);
+        super.render(g, mouseX, mouseY, partialTick);
 
-    @Override
-    protected void renderBg(GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
-        RenderSystem.setShader(GameRenderer::getPositionTexShader);
-        RenderSystem.setShaderColor(1f, 1f, 1f, 1f);
-        RenderSystem.setShaderTexture(0, TEXTURE);
+        if (furnace != null) {
+            furnace.getTank().renderTankInfo(g, this.font, mouseX, mouseY, leftPos + 118, topPos + 18, 16, 52);
 
-        int x = (width - imageWidth) / 2;
-        int y = (height - imageHeight) / 2;
-
-        guiGraphics.blit(TEXTURE, x, y, 0, 0, imageWidth, imageHeight);
-
-        renderProgress(guiGraphics, x, y);
-        renderTank(guiGraphics, x, y);
-    }
-
-    private void renderTank(GuiGraphics guiGraphics, int x, int y) {
-        MachineCombinationOvenBlockEntity be = menu.getBlockEntity();
-        if (be == null) return; // тайл может отсутствовать в реплее Flashback
-        be.getTank().renderTank(guiGraphics, x + TANK_X, y + TANK_Y, TANK_WIDTH, TANK_HEIGHT);
-    }
-
-    private void renderProgress(GuiGraphics guiGraphics, int x, int y) {
-        MachineCombinationOvenBlockEntity be = menu.getBlockEntity();
-        if (be == null) return; // тайл может отсутствовать в реплее Flashback
-        int maxProgress = be.getMaxProgress();
-        if (maxProgress <= 0) return;
-        int width = be.getProgressScaled(PROGRESS_MAX_WIDTH);
-        if (width <= 0) return;
-
-        RenderSystem.setShaderTexture(0, TEXTURE);
-        guiGraphics.blit(TEXTURE, x + PROGRESS_X, y + PROGRESS_Y, PROGRESS_TEX_U, PROGRESS_TEX_V, width, PROGRESS_HEIGHT);
-    }
-
-    @Override
-    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float delta) {
-        GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, delta);
-        super.render(guiGraphics, mouseX, mouseY, delta);
-        renderTooltip(guiGraphics, mouseX, mouseY);
-        renderCustomTooltips(guiGraphics, mouseX, mouseY);
-    }
-
-    @Override
-    protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
-        guiGraphics.drawString(this.font, this.title, this.titleLabelX, this.titleLabelY, 4210752, false);
-        guiGraphics.drawString(this.font, this.playerInventoryTitle, this.inventoryLabelX, this.inventoryLabelY, 4210752, false);
-    }
-
-    private void renderCustomTooltips(GuiGraphics guiGraphics, int mouseX, int mouseY) {
-        MachineCombinationOvenBlockEntity be = menu.getBlockEntity();
-        if (be == null) return; // тайл может отсутствовать в реплее Flashback
-        int x = (width - imageWidth) / 2;
-        int y = (height - imageHeight) / 2;
-
-        if (isPointInRect(TANK_X, TANK_Y, TANK_WIDTH, TANK_HEIGHT, mouseX, mouseY)) {
-            be.getTank().renderTankInfo(guiGraphics, this.font, mouseX, mouseY, x + TANK_X, y + TANK_Y, TANK_WIDTH, TANK_HEIGHT);
+            drawCustomInfoStat(g, mouseX, mouseY, 44, 36, 39, 7, mouseX, mouseY, Component.literal(
+                    String.format(Locale.US, "%,d", furnace.getProgress()) + " / " + String.format(Locale.US, "%,d", MachineCombinationOvenBlockEntity.processTime) + "TU"));
+            drawCustomInfoStat(g, mouseX, mouseY, 44, 45, 39, 7, mouseX, mouseY, Component.literal(
+                    String.format(Locale.US, "%,d", furnace.getHeat()) + " / " + String.format(Locale.US, "%,d", MachineCombinationOvenBlockEntity.maxHeat) + "TU"));
         }
+
+        this.renderTooltip(g, mouseX, mouseY);
+    }
+
+    @Override
+    protected void renderLabels(GuiGraphics g, int mouseX, int mouseY) {
+        g.drawString(this.font, this.title, this.imageWidth / 2 - this.font.width(this.title) / 2, 6, 4210752, false);
+        g.drawString(this.font, this.playerInventoryTitle, 8, this.imageHeight - 96 + 2, 4210752, false);
+    }
+
+    @Override
+    protected void renderBg(GuiGraphics g, float partialTick, int mouseX, int mouseY) {
+        RenderSystem.setShader(GameRenderer::getPositionTexShader);
+        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
+        g.blit(TEXTURE, leftPos, topPos, 0, 0, imageWidth, imageHeight);
+        if (furnace == null) return;
+
+        int p = furnace.getProgress() * 38 / MachineCombinationOvenBlockEntity.processTime;
+        g.blit(TEXTURE, leftPos + 45, topPos + 37, 176, 0, p, 5);
+
+        int h = furnace.getHeat() * 37 / MachineCombinationOvenBlockEntity.maxHeat;
+        g.blit(TEXTURE, leftPos + 45, topPos + 46, 176, 5, h, 5);
+
+        furnace.getTank().renderTank(g, leftPos + 118, topPos + 18, 16, 52);
     }
 }

@@ -24,7 +24,7 @@ import net.minecraft.world.level.block.state.BlockState;
  * auf einer seiner Dummyzellen; der Kern wird von dort aus gesucht. Daraus ergeben sich die
  * Spruenge von zwei bis fuenf Feldern - und damit die tatsaechliche Groesse eines Rings.</p>
  */
-public class PAQuadrupoleBlockEntity extends CooledMachineBlockEntity implements IParticleUser {
+public class PAQuadrupoleBlockEntity extends CooledMachineBlockEntity implements IParticleUser, com.hbm_m.api.redstoneoverradio.IRORValueProvider {
 
     public static final int SLOT_BATTERY = 0;
     public static final int SLOT_COIL = 1;
@@ -34,7 +34,8 @@ public class PAQuadrupoleBlockEntity extends CooledMachineBlockEntity implements
     private static final long USAGE = 100_000L;
     /** Original: {@code focusGain = 100}. */
     private static final int FOCUS_GAIN = 100;
-    private static final long MAX_POWER = 1_000_000L;
+    /** Original {@code getMaxPower() = 2_500_000}. */
+    private static final long MAX_POWER = 2_500_000L;
     /** Original: {@code addDistance(3)}. */
     private static final int DISTANCE = 3;
     /** Kettenbetrieb: einen Block weiter (siehe Klassenkommentar). */
@@ -112,6 +113,34 @@ public class PAQuadrupoleBlockEntity extends CooledMachineBlockEntity implements
 
     @Override
     public AbstractContainerMenu createMenu(int id, Inventory inv, Player player) {
-        return new com.hbm_m.inventory.menu.PAQuadrupoleMenu(id, inv, this); // Original: kein eigenes GUI, die Spule wird per Rechtsklick eingesetzt.
+        return new com.hbm_m.inventory.menu.PAQuadrupoleMenu(id, inv, this); // Original: ContainerPAQuadrupole / GUIPAQuadrupole
+    }
+
+    @Override
+    protected void readNbtData(net.minecraft.nbt.CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
+        setEnergyCapacity(MAX_POWER); // alte Welten: frueherer Speicherwert
+    }
+
+    /** Original {@code usage} - fuer die Bereitschaftsanzeige im GUI. */
+    public static long getUsage() { return USAGE; }
+
+    // ── Redstone-over-Radio (1:1 TileEntityPAQuadrupole) ──
+
+    @Override
+    public String[] getFunctionInfo() {
+        return new String[] {
+            PREFIX_VALUE + "temperature",
+            PREFIX_VALUE + "pfmcold",
+            PREFIX_VALUE + "pfm"
+        };
+    }
+
+    @Override
+    public String provideRORValue(String name) {
+        if ((PREFIX_VALUE + "temperature").equals(name)) return "" + (int) this.temperature;
+        if ((PREFIX_VALUE + "pfmcold").equals(name))     return "" + coolantTanks[0].getFill();
+        if ((PREFIX_VALUE + "pfm").equals(name))         return "" + coolantTanks[1].getFill();
+        return null;
     }
 }

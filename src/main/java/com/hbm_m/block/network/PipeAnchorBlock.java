@@ -83,12 +83,8 @@ public class PipeAnchorBlock extends BaseEntityBlock implements ILookOverlay {
     *///?}
 
     private InteractionResult identify(Level level, BlockPos pos, Player player, ItemStack held) {
-        if (held.isEmpty() || !(held.getItem() instanceof IItemFluidIdentifier id)) return InteractionResult.PASS;
-        if (!level.isClientSide) {
-            Fluid fluid = id.getType(level, pos, held);
-            if (fluid != null) PipeTypeChanger.apply(level, pos, fluid == ModFluids.NONE.getSource() ? Fluids.EMPTY : fluid, player.isShiftKeyDown());
-        }
-        return InteractionResult.sidedSuccess(level.isClientSide);
+        if (held.isEmpty() || !(held.getItem() instanceof IItemFluidIdentifier)) return InteractionResult.PASS;
+        return PipeTypeChanger.onIdentifier(level, pos, player, held) ? InteractionResult.sidedSuccess(level.isClientSide) : InteractionResult.PASS;
     }
 
     @Override

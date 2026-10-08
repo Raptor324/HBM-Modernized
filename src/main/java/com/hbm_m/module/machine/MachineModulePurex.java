@@ -59,10 +59,6 @@ public class MachineModulePurex extends MachineModuleBase<PurexRecipe> {
         return needsSync;
     }
 
-    @Override
-    protected boolean requiresFullEnergyBufferToStart() {
-        return true;
-    }
 
     @Override
     protected void onRecipeChanged(@Nullable PurexRecipe previous, @Nullable PurexRecipe current) {

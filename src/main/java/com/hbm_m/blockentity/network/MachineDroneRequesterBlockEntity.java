@@ -25,12 +25,8 @@ import net.minecraft.world.level.block.state.BlockState;
  * Filter-Slots (0-8) + 9 Lager-Slots (9-17), {@link ModulePatternMatcher} entscheidet pro Filter,
  * ob der zugehoerige Lager-Slot als "ausreichend befuellt" gilt - falls nicht, wird das Filter-Item
  * dem {@link RequestNode}s Wunschzettel hinzugefuegt.
- * <p>
- * SCOPE-Vereinfachung: Das Original nutzt {@code AStack}/{@code ComparableStack}/{@code OreDictStack}
- * fuer den Wunschzettel-Eintrag. Hier: einfache {@link ItemStack}-Repraesentanten (1 Stueck), Matching
- * erfolgt weiterhin ueber {@link ModulePatternMatcher} beim Provider-Pairing in
- * {@link MachineDroneDockBlockEntity} - der Kernmechanismus (Filter-Modus-abhaengiges Matching)
- * bleibt vollstaendig erhalten, nur die AStack-Zwischenschicht entfaellt.
+ * Wunschzettel wie im Original als {@code AStack} (RequestNetwork.RequestStack): genau, Wildcard
+ * oder Ore-Dictionary-Schluessel je nach Filtermodus.
  */
 public class MachineDroneRequesterBlockEntity extends BaseMachineBlockEntity {
 
@@ -54,21 +50,25 @@ public class MachineDroneRequesterBlockEntity extends BaseMachineBlockEntity {
     }
 
     private RequestNode createRequestNode(BlockPos pos) {
-        List<ItemStack> request = new ArrayList<>();
+        List<com.hbm_m.blockentity.network.request.RequestNetwork.RequestStack> request = new ArrayList<>();
         for (int i = FILTER_START; i <= FILTER_END; i++) {
             ItemStack filter = inventory.getStackInSlot(i);
+            ItemStack stock = inventory.getStackInSlot(i + STOCK_START);
             if (filter.isEmpty()) continue;
             String mode = matcher.getMode(i);
-            if (mode == null) continue;
+            com.hbm_m.blockentity.network.request.RequestNetwork.RequestStack aStack = null;
 
-            ItemStack stock = inventory.getStackInSlot(i + STOCK_START);
-            boolean sufficient = !stock.isEmpty() && matcher.isValidForFilter(filter, i, stock)
-                    && stock.getCount() >= filter.getCount();
-            if (!sufficient) {
-                ItemStack representative = filter.copy();
-                representative.setCount(1);
-                request.add(representative);
+            if (ModulePatternMatcher.MODE_EXACT.equals(mode)) {
+                aStack = com.hbm_m.blockentity.network.request.RequestNetwork.RequestStack.comp(filter, false);
+            } else if (ModulePatternMatcher.MODE_WILDCARD.equals(mode)) {
+                aStack = com.hbm_m.blockentity.network.request.RequestNetwork.RequestStack.comp(filter, true);
+            } else if (mode != null) {
+                aStack = com.hbm_m.blockentity.network.request.RequestNetwork.RequestStack.dict(mode);
             }
+
+            if (aStack == null) continue;
+
+            if (stock.isEmpty() || !matcher.isValidForFilter(filter, i, stock)) request.add(aStack);
         }
         return new RequestNode(pos, network.reachableNodes, request);
     }
@@ -78,22 +78,23 @@ public class MachineDroneRequesterBlockEntity extends BaseMachineBlockEntity {
 
     /** Merges cargo into the stock slot matching {@code index}'s filter (used by EntityRequestDrone's unload step). */
     public ItemStack depositStock(ItemStack cargo) {
-        for (int i = FILTER_START; i <= FILTER_END && !cargo.isEmpty(); i++) {
-            ItemStack filter = inventory.getStackInSlot(i);
-            if (filter.isEmpty() || !matcher.isValidForFilter(filter, i, cargo)) continue;
+        // Original UNLOAD: erst gleiche Stapel (Item + Schaden) in 9-17 aufstocken, Rest in den ersten leeren Platz
+        for (int i = STOCK_START; i <= STOCK_END; i++) {
+            ItemStack stack = inventory.getStackInSlot(i);
+            if (!stack.isEmpty() && stack.getItem() == cargo.getItem() && stack.getDamageValue() == cargo.getDamageValue()) {
+                int toTransfer = Math.min(stack.getMaxStackSize() - stack.getCount(), cargo.getCount());
+                stack.grow(toTransfer);
+                cargo.shrink(toTransfer);
+            }
+        }
 
-            int stockSlot = i + STOCK_START;
-            ItemStack stock = inventory.getStackInSlot(stockSlot);
-            if (stock.isEmpty()) {
-                inventory.setStackInSlot(stockSlot, cargo.copy());
+        if (cargo.getCount() <= 0) cargo = ItemStack.EMPTY;
+
+        if (!cargo.isEmpty()) for (int i = STOCK_START; i <= STOCK_END; i++) {
+            if (inventory.getStackInSlot(i).isEmpty()) {
+                inventory.setStackInSlot(i, cargo.copy());
                 cargo = ItemStack.EMPTY;
-            } else if (com.hbm_m.platform.PlatformHooks.isSameItemSameTags(stock, cargo)) {
-                int space = stock.getMaxStackSize() - stock.getCount();
-                int toMove = Math.min(space, cargo.getCount());
-                if (toMove > 0) {
-                    stock.grow(toMove);
-                    cargo.shrink(toMove);
-                }
+                break;
             }
         }
         setChanged();
@@ -146,4 +147,26 @@ public class MachineDroneRequesterBlockEntity extends BaseMachineBlockEntity {
     public AbstractContainerMenu createMenu(int id, Inventory inventory, Player player) {
         return MachineDroneRequesterMenu.create(id, inventory, this);
     }
+
+    //? if forge {
+    /** Original {@code ISidedInventory}: Slots {9-17}; nichts hinein, alles heraus. */
+    private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
+            new com.hbm_m.blockentity.SidedItemAccess.Rules() {
+                @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return com.hbm_m.blockentity.SidedItemAccess.range(9, 17); }
+                @Override public boolean canInsert(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return false; }
+                @Override public boolean canExtract(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return true; }
+            });
+
+    @Override
+    public @org.jetbrains.annotations.NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(@org.jetbrains.annotations.NotNull net.minecraftforge.common.capabilities.Capability<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER && side != null) return sidedItems.get(side).cast();
+        return super.getCapability(cap, side);
+    }
+
+    @Override
+    public void invalidateCaps() {
+        super.invalidateCaps();
+        sidedItems.invalidate();
+    }
+    //?}
 }

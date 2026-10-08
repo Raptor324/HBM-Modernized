@@ -1,53 +1,305 @@
 package com.hbm_m.util;
 
-/**
- * Math helpers used by particle and explosion code
- */
-public final class BobMathUtil {
+import net.minecraft.util.Mth;
 
-    private BobMathUtil() {}
+import java.lang.reflect.Field;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.text.NumberFormat;
+import java.util.*;
+import java.util.function.ToIntFunction;
 
-    /** Soft sqrt-like curve used for nuke scale. */
-    public static double squirt(double x) {
-        return Math.sqrt(x + 1.0 / ((x + 2.0) * (x + 2.0))) - 1.0 / (x + 2.0);
-    }
+public class BobMathUtil {
 
-    /** 1:1 {@code BobMathUtil.getShortNumber}. */
-    public static String getShortNumber(long l) {
+	//finally!
+	public static int min(int... nums) {
+		int smallest = Integer.MAX_VALUE;
+		for(int num : nums) if(num < smallest) smallest = num;
+		return smallest;
+	}
+	public static int max(int... nums) {
+		int largest = Integer.MIN_VALUE;
+		for(int num : nums) if(num > largest) largest = num;
+		return largest;
+	}
+	public static long min(long... nums) {
+		long smallest = Long.MAX_VALUE;
+		for(long num : nums) if(num < smallest) smallest = num;
+		return smallest;
+	}
+	public static long max(long... nums) {
+		long largest = Long.MIN_VALUE;
+		for(long num : nums) if(num > largest) largest = num;
+		return largest;
+	}
+	public static float min(float... nums) {
+		float smallest = Float.MAX_VALUE;
+		for(float num : nums) if(num < smallest) smallest = num;
+		return smallest;
+	}
+	public static float max(float... nums) {
+		float largest = Float.MIN_VALUE;
+		for(float num : nums) if(num > largest) largest = num;
+		return largest;
+	}
+	public static double min(double... nums) {
+		double smallest = Double.MAX_VALUE;
+		for(double num : nums) if(num < smallest) smallest = num;
+		return smallest;
+	}
+	public static double max(double... nums) {
+		double largest = Double.MIN_VALUE;
+		for(double num : nums) if(num > largest) largest = num;
+		return largest;
+	}
 
-        double res;
-        String suffix = "";
-        long abs = Math.abs(l);
+	public static double safeClamp(double val, double min, double max) {
 
-        if (abs >= Math.pow(10, 18)) {
-            res = l / Math.pow(10, 18);
-            suffix = "E";
-        } else if (abs >= Math.pow(10, 15)) {
-            res = l / Math.pow(10, 15);
-            suffix = "P";
-        } else if (abs >= Math.pow(10, 12)) {
-            res = l / Math.pow(10, 12);
-            suffix = "T";
-        } else if (abs >= Math.pow(10, 9)) {
-            res = l / Math.pow(10, 9);
-            suffix = "G";
-        } else if (abs >= Math.pow(10, 6)) {
-            res = l / Math.pow(10, 6);
-            suffix = "M";
-        } else if (abs >= Math.pow(10, 3)) {
-            res = l / Math.pow(10, 3);
-            suffix = "k";
-        } else {
-            return Long.toString(l);
-        }
+		val = Mth.clamp(val, min, max);
 
-        // Edgecase: a negative triple digit number would result in a 8 character long result so we will loose one decimal place
-        if (res <= -100.0) {
-            res = Math.round(res * 10.0) / 10.0;
-        } else {
-            res = Math.round(res * 100.0) / 100.0;
-        }
+		if(val == Double.NaN) {
+			val = (min + max) / 2D;
+		}
 
-        return res + suffix;
-    }
+		return val;
+	}
+
+	public static Vec3NT interpVec(Vec3NT vec1, Vec3NT vec2, float interp) {
+		return Vec3NT.createVectorHelper(
+				interp(vec1.xCoord,  vec2.xCoord, interp),
+				interp(vec1.yCoord,  vec2.yCoord, interp),
+				interp(vec1.zCoord,  vec2.zCoord, interp)
+				);
+	}
+
+	public static double interp(double x, double y, float interp) { return x + (y - x) * interp; }
+	public static double interp(double x, double y, double interp) { return x + (y - x) * interp; }
+
+	public static double getAngleFrom2DVecs(double x1, double z1, double x2, double z2) {
+
+		double upper = x1 * x2 + z1 * z2;
+		double lower = Math.sqrt(x1 * x1 + z1 * z1) * Math.sqrt(x2 * x2 + z2 * z2);
+
+		double result = Math.toDegrees(Math.cos(upper / lower));
+
+		if(result >= 180)
+			result -= 180;
+
+		return result;
+	}
+
+	public static double getCrossAngle(Vec3NT vel, Vec3NT rel) {
+
+		vel.normalize();
+		rel.normalize();
+
+		double vecProd = rel.xCoord * vel.xCoord + rel.yCoord * vel.yCoord + rel.zCoord * vel.zCoord;
+		double bot = rel.lengthVector() * vel.lengthVector();
+		double angle = Math.acos(vecProd / bot) * 180 / Math.PI;
+
+		if(angle >= 180)
+			angle -= 180;
+
+		return angle;
+	}
+
+	public static float remap(float num, float min1, float max1, float min2, float max2){
+		return ((num - min1) / (max1 - min1)) * (max2 - min2) + min2;
+	}
+
+	public static float remap01(float num, float min1, float max1){
+		return (num - min1) / (max1 - min1);
+	}
+
+	public static float remap01_clamp(float num, float min1, float max1){
+		return Mth.clamp((num - min1) / (max1 - min1), 0F, 1F);
+	}
+
+	public static ForgeDirection[] getShuffledDirs() {
+
+		ForgeDirection[] dirs = new ForgeDirection[6];
+		List<Integer> indices = new ArrayList() {{ add(0); add(1); add(2); add(3); add(4); add(5); }};
+		Collections.shuffle(indices);
+
+		for(int i = 0; i < 6; i++) {
+			dirs[i] = ForgeDirection.getOrientation(indices.get(i));
+		}
+
+		return dirs;
+	}
+
+	public static String toPercentage(float amount, float total) {
+		return NumberFormat.getPercentInstance().format(amount / total);
+	}
+
+	public static String[] ticksToDate(long ticks) {
+
+		int tickDay = 48000;
+		int tickYear = tickDay * 100;
+
+		final String[] dateOut = new String[3];
+		long year = Math.floorDiv(ticks, tickYear);
+		byte day = (byte) Math.floorDiv(ticks - tickYear * year, tickDay);
+		float time = ticks - (tickYear * year + tickDay * day);
+		time = (float) convertScale(time, 0, tickDay, 0, 10F);
+		dateOut[0] = String.valueOf(year);
+		dateOut[1] = String.valueOf(day);
+		dateOut[2] = String.valueOf(time);
+		return dateOut;
+	}
+
+	/**
+	 * Rescale a number from one range to another
+	 * @param toScale - The integer to scale
+	 * @param oldMin - The current minimum value
+	 * @param oldMax - The current maximum value
+	 * @param newMin - The desired minimum value
+	 * @param newMax - The desired maximum value
+	 * @return The scaled number
+	 */
+	public static double convertScale(double toScale, double oldMin, double oldMax, double newMin, double newMax) {
+		double prevRange = oldMax - oldMin;
+		double newRange = newMax - newMin;
+		return (((toScale - oldMin) * newRange) / prevRange) + newMin;
+	}
+
+	/**
+	 * Rounds a number to so many significant digits
+	 * @param num The number to round
+	 * @param digits Amount of digits
+	 * @return The rounded double
+	 */
+	public static double roundDecimal(double num, int digits) {
+		if(digits < 0)
+			throw new IllegalArgumentException("Attempted negative number in non-negative field! Attempted value: " + digits);
+
+		return new BigDecimal(num).setScale(digits, RoundingMode.HALF_UP).doubleValue();
+	}
+	
+	/**
+	 * @param amount
+	 * @return the number as a string with thousand group commas
+	 */
+	public static String format(Number amount) {
+		return String.format(Locale.US, "%,d", amount);
+	}
+
+	public static boolean getBlink() {
+		return System.currentTimeMillis() % 1000 < 500;
+	}
+
+	public static String getShortNumber(long l) {
+		
+		double res;
+		String suffix = "";
+		long abs = Math.abs(l);
+
+		if(abs >= Math.pow(10, 18)) {
+			res = l / Math.pow(10, 18);
+			suffix = "E";
+		}
+		else if(abs >= Math.pow(10, 15)) {
+			res = l / Math.pow(10, 15);
+			suffix = "P";
+		}
+		else if(abs >= Math.pow(10, 12)) {
+			res = l / Math.pow(10, 12);
+			suffix = "T";
+		}
+		else if(abs >= Math.pow(10, 9)) {
+			res = l / Math.pow(10, 9);
+			suffix = "G";
+		}
+		else if(abs >= Math.pow(10, 6)) {
+			res = l / Math.pow(10, 6);
+			suffix = "M";
+		}
+		else if(abs >= Math.pow(10, 3)) {
+			res = l / Math.pow(10, 3);
+			suffix = "k";
+		}
+		else {
+			return Long.toString(l);
+		}
+
+		// Edgecase: a negative triple digit number would result in a 8 character long result so we will loose one decimal place
+		if (res <= -100.0) {
+			res = Math.round(res * 10.0) / 10.0;
+		} else {
+			res = Math.round(res * 100.0) / 100.0;
+		}
+
+		return res + suffix;
+	}
+
+	/**
+	 * Adjusted sqrt, approaches standard sqrt but sqrt(x) is never bigger than x
+	 *
+	 *      ____________
+	 *     /       1    |     1
+	 * _  / x + ――――――――  - ―――――
+	 *  \/      (x + 2)²    x + 2
+	 *
+	 * @param x
+	 * @return
+	 */
+	public static double squirt(double x) {
+		return Math.sqrt(x + 1D / ((x + 2D) * (x + 2D))) - 1D / (x + 2D);
+	}
+
+	/** A convenient way to re-define the value of pi, should the laws of nature change. */
+	public static void setPi(double pi) {
+		Field field; try { field = Math.class.getDeclaredField("PI"); field.setAccessible(true); } catch (NoSuchFieldException e) { return; }
+		try { field.setDouble(null, pi); } catch(Exception e) { }
+	}
+
+	public static double angularDifference(double alpha, double beta) {
+		double delta = (beta - alpha + 180) % 360 - 180;
+		return delta < -180 ? delta + 360 : delta;
+	}
+
+	// I am sick of trying to remember the ridiculous quirks of Java 8
+	// so I wrote this thing that can shit any int-ish list-ish into a regular fucking int[]
+	// made by mellow, thrown here by 70k
+	public static int[] intCollectionToArray(Collection<Integer> in) {
+		return intCollectionToArray(in, i -> (int)i);
+	}
+
+	public static int[] intCollectionToArray(Collection<Integer> in, ToIntFunction<? super Object> mapper) {
+		return Arrays.stream(in.toArray()).mapToInt(mapper).toArray();
+	}
+
+	public static int[] collectionToIntArray(Collection<? extends Object> in, ToIntFunction<? super Object> mapper) {
+		return Arrays.stream(in.toArray()).mapToInt(mapper).toArray();
+	}
+	
+	public static void shuffleIntArray(int[] array) {
+		Random rand = new Random();
+		for(int i = array.length - 1; i > 0; i--) {
+			int r = rand.nextInt(i + 1);
+			int temp = array[r];
+			array[r] = array[i];
+			array[i] = temp;
+		}
+	}
+	
+	public static void reverseIntArray(int[] array) {
+		int len = array.length;
+		for(int i = 0; i < len / 2; i++) {
+			int temp = array[i];
+			array[i] = array[len - 1 - i];
+			array[len - 1 - i] = temp;
+		}
+	}
+
+	/** Soft peak sine */
+	public static double sps(double x) {
+		return Math.sin(Math.PI / 2D * Math.cos(x));
+	}
+
+	/** Square wave sine, make sure squarination is [0;1] */
+	public static double sws(double x, double squarination) {
+		double s = Math.sin(x);
+		return Math.pow(Math.abs(s), 2 - squarination) / s;
+	}
 }

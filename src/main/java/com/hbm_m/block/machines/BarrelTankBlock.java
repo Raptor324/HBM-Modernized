@@ -51,7 +51,8 @@ public class BarrelTankBlock extends BaseEntityBlock implements com.hbm_m.interf
 
     public static final DirectionProperty FACING = DirectionProperty.create("facing", Direction.Plane.HORIZONTAL);
 
-    private static final VoxelShape SHAPE = Shapes.box(0, 0, 0, 1, 1, 1);
+    /** w16b: Original BlockFluidBarrel.setBlockBoundsBasedOnState: 2/16 .. 14/16 (Einzelfass). */
+    private static final VoxelShape SHAPE = Shapes.box(0.125D, 0, 0.125D, 0.875D, 1, 0.875D);
 
     /**
      * Die meisten Faesser sind Einzelbloecke; der Orbus ist im Original ein Multiblock. Steht hier
@@ -181,13 +182,18 @@ public class BarrelTankBlock extends BaseEntityBlock implements com.hbm_m.interf
 
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext ctx) {
+        // w16b: Mehrblock - nur die Kernzelle (Umriss der ganzen Maschine: MultiblockOutlineForge)
         return structureHelper != null
-                ? structureHelper.generateShapeFromParts(state.getValue(FACING))
+                ? structureHelper.getControllerCellShape(state.getValue(FACING))
                 : SHAPE;
     }
 
     @Override
     public RenderShape getRenderShape(@NotNull BlockState state) {
+        // Orbus und Grosstank zeichnet TankRenderers komplett (RenderOrbus/RenderBigAssTank); Faesser behalten das Blockmodell.
+        if (this == com.hbm_m.block.ModBlocks.ORBUS.get() || this == com.hbm_m.block.ModBlocks.MACHINE_BIGASSTANK.get()) {
+            return RenderShape.ENTITYBLOCK_ANIMATED;
+        }
         return RenderShape.MODEL;
     }
 
@@ -204,6 +210,10 @@ public class BarrelTankBlock extends BaseEntityBlock implements com.hbm_m.interf
     *///?}
 
     private InteractionResult hbmOnUse(@NotNull BlockState state, @NotNull Level level, @NotNull BlockPos pos, @NotNull Player player, @NotNull InteractionHand hand, @NotNull BlockHitResult hit) {
+        // Original BlockFluidBarrel: geschlichen keine GUI; der Identifikator (doesSneakBypassUse) stellt dann im useOn die Sorte
+        if (player.isShiftKeyDown()) {
+            return InteractionResult.PASS;
+        }
         if (level.isClientSide) {
             return InteractionResult.sidedSuccess(true);
         }
@@ -237,4 +247,16 @@ public class BarrelTankBlock extends BaseEntityBlock implements com.hbm_m.interf
         return CODEC;
     }
     *///?}
+
+    /** Original {@code getComparatorInputOverride}: Fuellstand des Fasses. */
+    @Override
+    public boolean hasAnalogOutputSignal(net.minecraft.world.level.block.state.BlockState state) {
+        return true;
+    }
+
+    @Override
+    public int getAnalogOutputSignal(net.minecraft.world.level.block.state.BlockState state, net.minecraft.world.level.Level level, net.minecraft.core.BlockPos pos) {
+        net.minecraft.world.level.block.entity.BlockEntity te = level.getBlockEntity(pos);
+        return te instanceof com.hbm_m.blockentity.machines.MachineFluidTankBlockEntity tank ? tank.getComparatorPower() : 0;
+    }
 }

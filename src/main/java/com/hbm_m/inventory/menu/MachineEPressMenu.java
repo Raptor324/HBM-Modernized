@@ -40,13 +40,12 @@ public class MachineEPressMenu extends AbstractContainerMenu {
 
         var handler = this.blockEntity.getInventory();
         var container = new ModItemStackHandlerContainer(handler, this.blockEntity::setChanged);
-        this.addSlot(new BatterySlot(container, 0, 26, 53));
-        this.addSlot(new StampSlot(container, 1, 80, 17));
-        this.addSlot(new MaterialSlot(container, 2, 80, 53));
-        this.addSlot(new OutputSlot(container, 3, 139, 34));
-        // Upgrade slot - the original has one (ContainerMachineEPress, SlotUpgrade); placed to fit
-        // this port's own GUI layout rather than the original's coordinates.
-        this.addSlot(new Slot(container, 4, 139, 53) {
+        this.addSlot(new BatterySlot(container, 0, 152, 54));
+        this.addSlot(new StampSlot(container, 1, 19, 15));
+        this.addSlot(new MaterialSlot(container, 2, 19, 51));
+        this.addSlot(new OutputSlot(container, 3, 79, 33));
+        // Upgrade slot - Original ContainerMachineEPress: SlotUpgrade bei (111, 32)
+        this.addSlot(new Slot(container, 4, 111, 32) {
             @Override public boolean mayPlace(net.minecraft.world.item.ItemStack stack) {
                 return stack.getItem() instanceof com.hbm_m.item.industrial.ItemMachineUpgrade;
             }
@@ -127,21 +126,21 @@ public class MachineEPressMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        return stillValid(ContainerLevelAccess.create(level, blockEntity.getBlockPos()),
-                player, ModBlocks.EPRESS.get());
+        // w16b: Original isUseableByPlayer (TileEntityMachineBase) = 128 vom Kern, dazu Huelle der Maschine (MultiblockMenuReach)
+        return MultiblockMenuReach.stillValidCore(blockEntity, player, 128.0D);
     }
 
     private void addPlayerInventory(Inventory playerInventory) {
         for (int i = 0; i < 3; ++i) {
             for (int l = 0; l < 9; ++l) {
-                this.addSlot(new Slot(playerInventory, l + i * 9 + 9, 8 + l * 18, 84 + i * 18));
+                this.addSlot(new Slot(playerInventory, l + i * 9 + 9, 8 + l * 18, 104 + i * 18));
             }
         }
     }
 
     private void addPlayerHotbar(Inventory playerInventory) {
         for (int i = 0; i < 9; ++i) {
-            this.addSlot(new Slot(playerInventory, i, 8 + i * 18, 142));
+            this.addSlot(new Slot(playerInventory, i, 8 + i * 18, 162));
         }
     }
 

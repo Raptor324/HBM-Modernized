@@ -36,36 +36,37 @@ public class MachineRefineryMenu extends AbstractContainerMenu {
                 blockEntity != null ? blockEntity.getInventory() : new DummyItemStackHandler(MACHINE_SLOT_COUNT),
                 blockEntity != null ? blockEntity::setChanged : null);
 
+        // Original ContainerMachineRefinery: Positionen 1:1
         // Battery
-        this.addSlot(new Slot(machineContainer, 0, 186, 72));
+        this.addSlot(new Slot(machineContainer, 0, 158, 108));
         // Canister input/output
-        this.addSlot(new Slot(machineContainer, 1, 8, 99));
-        this.addSlot(new TakeOnlySlot(machineContainer, 2, 8, 119));
+        this.addSlot(new Slot(machineContainer, 1, 12, 90));
+        this.addSlot(new TakeOnlySlot(machineContainer, 2, 12, 108));
         // Heavy oil input/output
-        this.addSlot(new Slot(machineContainer, 3, 86, 99));
-        this.addSlot(new TakeOnlySlot(machineContainer, 4, 86, 119));
+        this.addSlot(new Slot(machineContainer, 3, 64, 90));
+        this.addSlot(new TakeOnlySlot(machineContainer, 4, 64, 108));
         // Naphtha input/output
-        this.addSlot(new Slot(machineContainer, 5, 106, 99));
-        this.addSlot(new TakeOnlySlot(machineContainer, 6, 106, 119));
+        this.addSlot(new Slot(machineContainer, 5, 82, 90));
+        this.addSlot(new TakeOnlySlot(machineContainer, 6, 82, 108));
         // Light oil input/output
-        this.addSlot(new Slot(machineContainer, 7, 126, 99));
-        this.addSlot(new TakeOnlySlot(machineContainer, 8, 126, 119));
+        this.addSlot(new Slot(machineContainer, 7, 100, 90));
+        this.addSlot(new TakeOnlySlot(machineContainer, 8, 100, 108));
         // Petroleum/Gas input/output
-        this.addSlot(new Slot(machineContainer, 9, 146, 99));
-        this.addSlot(new TakeOnlySlot(machineContainer, 10, 146, 119));
+        this.addSlot(new Slot(machineContainer, 9, 118, 90));
+        this.addSlot(new TakeOnlySlot(machineContainer, 10, 118, 108));
         // Sulfur output
-        this.addSlot(new TakeOnlySlot(machineContainer, 11, 58, 119));
+        this.addSlot(new TakeOnlySlot(machineContainer, 11, 38, 90));
         // Fluid ID slot
-        this.addSlot(new Slot(machineContainer, 12, 186, 106));
+        this.addSlot(new Slot(machineContainer, 12, 38, 108));
 
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 9; col++) {
-                this.addSlot(new Slot(inventory, col + row * 9 + 9, 8 + col * 18, 150 + row * 18));
+                this.addSlot(new Slot(inventory, col + row * 9 + 9, 11 + col * 18, 158 + row * 18));
             }
         }
 
         for (int col = 0; col < 9; col++) {
-            this.addSlot(new Slot(inventory, col, 8 + col * 18, 208));
+            this.addSlot(new Slot(inventory, col, 11 + col * 18, 216));
         }
     }
 
@@ -92,12 +93,9 @@ public class MachineRefineryMenu extends AbstractContainerMenu {
     }
 
     @Override
-    public boolean stillValid(@NotNull Player player) {
-        if (blockEntity == null || blockEntity.getLevel() != player.level()) {
-            return false;
-        }
-        BlockPos pos = blockEntity.getBlockPos();
-        return player.distanceToSqr(pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D) <= 64.0D;
+    public boolean stillValid(Player player) {
+        // audit13: Original isUseableByPlayer (<= 128 zur Kernmitte) oder Huelle <= 64; Vanilla 64 schloss die GUI an grossen Maschinen
+        return MultiblockMenuReach.stillValidCore(blockEntity, player, 128.0D);
     }
 
     @Override

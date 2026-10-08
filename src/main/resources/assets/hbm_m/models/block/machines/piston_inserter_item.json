@@ -1,0 +1,31 @@
+{
+  "parent": "minecraft:block/block",
+  "textures": {
+    "particle": "hbm_m:block/block_steel"
+  },
+  "loader": "forge:composite",
+  "children": {
+    "piston_inserter": {
+      "loader": "forge:obj",
+      "model": "hbm_m:models/block/machines/piston_inserter_item.obj",
+      "flip_v": true,
+      "render_type": "minecraft:cutout",
+      "textures": {
+        "default": "hbm_m:models/machines/piston_inserter"
+      }
+    }
+  },
+  "transform": {
+    "translation": [
+      0.5,
+      0,
+      0.5
+    ],
+    "rotation": [
+      0,
+      0,
+      0
+    ],
+    "scale": 1.0
+  }
+}

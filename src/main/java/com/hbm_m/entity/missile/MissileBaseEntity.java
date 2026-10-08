@@ -583,6 +583,12 @@ public abstract class MissileBaseEntity extends Projectile implements IRadarDete
         return true;
     }
 
+    /** 1:1 EntityMissileBaseNT#canBeSeenBy - Stealth ueberschreibt canBeDetectedByRadar mit false. */
+    @Override
+    public boolean canBeSeenBy(Object radar) {
+        return canBeDetectedByRadar();
+    }
+
     //? if < 1.21.1 {
     @Override
     protected void defineSynchedData() {

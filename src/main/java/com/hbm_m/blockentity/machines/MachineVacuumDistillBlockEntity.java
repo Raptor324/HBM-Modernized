@@ -31,7 +31,7 @@ import net.minecraft.world.phys.AABB;
  * Jeden Tick 100 mB Eingang + 10.000 HE -> vier Fraktionen ({@code VacuumRefineryRecipes}). Strom und Fluide an acht
  * Anschluessen; Kochgeraeusch, solange sie arbeitet.
  */
-public class MachineVacuumDistillBlockEntity extends BaseMachineBlockEntity implements IFluidStandardTransceiverMK2 {
+public class MachineVacuumDistillBlockEntity extends BaseMachineBlockEntity implements com.hbm_m.api.block.IPersistentNBT, IFluidStandardTransceiverMK2 {
 
     public static final int SLOT_BATTERY = 0;
     public static final int SLOT_COUNT = 12;
@@ -236,5 +236,18 @@ public class MachineVacuumDistillBlockEntity extends BaseMachineBlockEntity impl
     public AABB getRenderBoundingBox() {
         return new AABB(worldPosition.getX() - 1, worldPosition.getY(), worldPosition.getZ() - 1,
                 worldPosition.getX() + 2, worldPosition.getY() + 9, worldPosition.getZ() + 2);
+    }
+
+    /** Original {@code TileEntityMachineVacuumDistill.writeNBT}: die fuenf Tanks, sofern einer etwas enthaelt. */
+    @Override
+    public void writeNBT(CompoundTag nbt) {
+        boolean empty = true;
+        for (var tank : tanks) if (tank.getFill() > 0) empty = false;
+        if (empty) return;
+        tanks[0].writeToNBT(nbt, "input");
+        tanks[1].writeToNBT(nbt, "heavy");
+        tanks[2].writeToNBT(nbt, "reformate");
+        tanks[3].writeToNBT(nbt, "light");
+        tanks[4].writeToNBT(nbt, "gas");
     }
 }

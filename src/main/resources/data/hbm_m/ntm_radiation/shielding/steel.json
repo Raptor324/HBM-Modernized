@@ -1,0 +1,5 @@
+{
+  "priority": 10,
+  "blocks": ["hbm_m:*steel*", "hbm_m:*desh*", "minecraft:iron_block", "minecraft:anvil"],
+  "hvl": { "gamma": 0.6, "neutron": 3.0, "beta": 0.05 }
+}

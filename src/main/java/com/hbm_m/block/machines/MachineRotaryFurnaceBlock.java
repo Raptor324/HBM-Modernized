@@ -1,93 +1,68 @@
 package com.hbm_m.block.machines;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.jetbrains.annotations.Nullable;
 
+import com.hbm_m.block.ModBlocks;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.blockentity.machines.MachineRotaryFurnaceBlockEntity;
+import com.hbm_m.inventory.fluid.FluidType;
+import com.hbm_m.multiblock.DummyableStructureBuilder;
+import com.hbm_m.multiblock.MultiblockStructureHelper;
 
+import dev.architectury.registry.menu.MenuRegistry;
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
+import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
-import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.context.BlockPlaceContext;
-import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.BaseEntityBlock;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.Mirror;
 import net.minecraft.world.level.block.RenderShape;
-import net.minecraft.world.level.block.Rotation;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
-import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.block.state.StateDefinition;
-import net.minecraft.world.level.block.state.properties.BlockStateProperties;
-import net.minecraft.world.level.block.state.properties.BooleanProperty;
-import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
-import net.minecraft.world.phys.shapes.CollisionContext;
-import net.minecraft.world.phys.shapes.Shapes;
-import net.minecraft.world.phys.shapes.VoxelShape;
-import dev.architectury.registry.menu.MenuRegistry;
 
 /**
- * Rotary Furnace - Direktport des 1.7.10 Originals ({@code MachineRotaryFurnace}/
- * {@code TileEntityMachineRotaryFurnace}) als einzelner Block, siehe
- * {@link MachineRotaryFurnaceBlockEntity} fuer Details zur Vereinfachung ggue. dem Multiblock-Original.
+ * 1:1 {@code MachineRotaryFurnace}: {@code getDimensions {4,0,1,1,2,2}}, {@code getOffset 1}; Anschluesse an der ganzen
+ * Rueckwand, Fluid seitlich vorn, Schornstein oben, Brennstoffklappe vorn. Blickhilfe zeigt Dampf, Fluid und Brennstoff
+ * je nach angeschauter Zelle.
  */
-public class MachineRotaryFurnaceBlock extends BaseEntityBlock {
-    public static final BooleanProperty LIT = BlockStateProperties.LIT;
-    public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
-    public static final VoxelShape SHAPE = Block.box(0, 0, 0, 16, 16, 16);
+public class MachineRotaryFurnaceBlock extends DummyableMachineBlock implements com.hbm_m.interfaces.ILookOverlay {
 
-    public MachineRotaryFurnaceBlock(BlockBehaviour.Properties properties) {
+    public MachineRotaryFurnaceBlock(Properties properties) {
         super(properties);
-        this.registerDefaultState(this.stateDefinition.any()
-                .setValue(LIT, false)
-                .setValue(FACING, Direction.NORTH));
     }
 
     @Override
-    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(LIT, FACING);
-    }
-
-    @Override
-    public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        return SHAPE;
-    }
-
-    @Nullable
-    @Override
-    public BlockState getStateForPlacement(BlockPlaceContext context) {
-        return this.defaultBlockState()
-                .setValue(FACING, context.getHorizontalDirection().getOpposite())
-                .setValue(LIT, false);
-    }
-
-    @Override
-    public BlockState rotate(BlockState state, Rotation rotation) {
-        return state.setValue(FACING, rotation.rotate(state.getValue(FACING)));
-    }
-
-    @Override
-    public BlockState mirror(BlockState state, Mirror mirror) {
-        return state.rotate(mirror.getRotation(state.getValue(FACING)));
+    protected MultiblockStructureHelper defineStructure() {
+        return DummyableStructureBuilder.create()
+                .box(4, 0, 1, 1, 2, 2)
+                // back (Original: rot = getRotation(DOWN), hier entlang getRotation(UP) gespiegelt)
+                .extra(-1, 0, -2)
+                .extra(-1, 0, -1)
+                .extra(-1, 0, 0)
+                .extra(-1, 0, 1)
+                .extra(-1, 0, 2)
+                // side fluid
+                .extra(1, 0, -2)
+                // exhaust
+                .extra(0, 4, -1)
+                // solid fuel
+                .extra(1, 0, -1)
+                .placementOffset(1)
+                .build(() -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState());
     }
 
     @Override
     public RenderShape getRenderShape(BlockState state) {
-        return RenderShape.MODEL;
-    }
-
-    @Override
-    public VoxelShape getOcclusionShape(BlockState state, BlockGetter level, BlockPos pos) {
-        return Shapes.block();
+        return RenderShape.ENTITYBLOCK_ANIMATED;
     }
 
     @Nullable
@@ -96,50 +71,74 @@ public class MachineRotaryFurnaceBlock extends BaseEntityBlock {
         return new MachineRotaryFurnaceBlockEntity(pos, state);
     }
 
-    @Override
-    public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean moving) {
-        if (state.getBlock() != newState.getBlock()) {
-            BlockEntity be = level.getBlockEntity(pos);
-            if (be instanceof MachineRotaryFurnaceBlockEntity furnace) {
-                furnace.drops();
-            }
-        }
-        super.onRemove(state, level, pos, newState, moving);
-    }
-
-    //? if < 1.21.1 {
-    @Override
-    public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
-
-        if (!level.isClientSide() && level.getBlockEntity(pos) instanceof MenuProvider p) {
-            MenuRegistry.openExtendedMenu((ServerPlayer) player, p, buf -> buf.writeBlockPos(pos));
-        }
-        return InteractionResult.sidedSuccess(level.isClientSide());
-        }
-    //?} else {
-    /*@Override
-    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
-
-        if (!level.isClientSide() && level.getBlockEntity(pos) instanceof MenuProvider p) {
-            MenuRegistry.openExtendedMenu((ServerPlayer) player, p, buf -> buf.writeBlockPos(pos));
-        }
-        return InteractionResult.sidedSuccess(level.isClientSide());
-        }
-    *///?}
-
-
     @Nullable
     @Override
     public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
         return createTickerHelper(type, ModBlockEntities.ROTARY_FURNACE_BE.get(), MachineRotaryFurnaceBlockEntity::tick);
     }
 
-    //? if >1.20.1 {
-    /*public static final com.mojang.serialization.MapCodec<MachineRotaryFurnaceBlock> CODEC = simpleCodec(MachineRotaryFurnaceBlock::new);
+    //? if < 1.21.1 {
+    @Override
+    public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        return open(level, pos, player);
+    }
+    //?} else {
+    /*@Override
+    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+        return open(level, pos, player);
+    }
+    *///?}
+
+    /** Original {@code standardOpenBehavior}: ohne Schleichen die GUI. */
+    private InteractionResult open(Level level, BlockPos pos, Player player) {
+        if (level.isClientSide) return InteractionResult.SUCCESS;
+        if (player.isShiftKeyDown()) return InteractionResult.sidedSuccess(level.isClientSide()); // Original standardOpenBehavior: geschlichen true ohne GUI
+        if (level.getBlockEntity(pos) instanceof MachineRotaryFurnaceBlockEntity furnace) {
+            MenuRegistry.openExtendedMenu((ServerPlayer) player, furnace, buf -> buf.writeBlockPos(pos));
+        }
+        return InteractionResult.CONSUME;
+    }
 
     @Override
-    protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() {
-        return CODEC;
+    public void printHook(net.minecraft.client.gui.GuiGraphics g, Level world, BlockPos pos) {
+        if (!(world.getBlockEntity(pos) instanceof MachineRotaryFurnaceBlockEntity furnace)) return;
+
+        BlockPos hit = pos;
+        if (net.minecraft.client.Minecraft.getInstance().hitResult instanceof BlockHitResult bhr) hit = bhr.getBlockPos();
+
+        Direction dir = furnace.getBlockState().getValue(FACING);
+
+        List<Component> text = new ArrayList<>();
+
+        //steam
+        if (hitCheck(dir, pos, -1, -1, 0, hit) || hitCheck(dir, pos, -1, -2, 0, hit)) {
+            text.add(Component.literal("-> ").withStyle(ChatFormatting.GREEN).append(FluidType.forFluid(furnace.tanks[1].getTankType()).getLocalizedName()));
+            text.add(Component.literal("<- ").withStyle(ChatFormatting.RED).append(FluidType.forFluid(furnace.tanks[2].getTankType()).getLocalizedName()));
+        }
+
+        //fluids
+        if (hitCheck(dir, pos, 1, 2, 0, hit) || hitCheck(dir, pos, -1, 2, 0, hit)) {
+            text.add(Component.literal("-> ").withStyle(ChatFormatting.GREEN).append(FluidType.forFluid(furnace.tanks[0].getTankType()).getLocalizedName()));
+        }
+
+        if (hitCheck(dir, pos, 1, 1, 0, hit)) {
+            text.add(Component.literal("-> ").withStyle(ChatFormatting.YELLOW).append("Fuel"));
+        }
+
+        if (!text.isEmpty()) {
+            com.hbm_m.interfaces.ILookOverlay.printGeneric(g, Component.translatable(getDescriptionId()), 0xffff00, 0x404000, text);
+        }
     }
+
+    /** Original {@code hitCheck}: {@code turn = dir.getRotation(DOWN)}. */
+    protected boolean hitCheck(Direction dir, BlockPos core, int exDir, int exRot, int exY, BlockPos hit) {
+        Direction turn = dir.getCounterClockWise();
+        BlockPos i = core.relative(dir, exDir).relative(turn, exRot).above(exY);
+        return i.equals(hit);
+    }
+
+    //? if >1.20.1 {
+    /*public static final com.mojang.serialization.MapCodec<MachineRotaryFurnaceBlock> CODEC = simpleCodec(MachineRotaryFurnaceBlock::new);
+    @Override protected com.mojang.serialization.MapCodec<? extends net.minecraft.world.level.block.BaseEntityBlock> codec() { return CODEC; }
     *///?}
 }

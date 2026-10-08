@@ -65,6 +65,7 @@ public class MachineOilburnerBlock extends DummyableMachineBlock {
     //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        if (player.isShiftKeyDown()) return InteractionResult.sidedSuccess(level.isClientSide()); // Original standardOpenBehavior: geschlichen true ohne GUI
 
         ItemStack held = player.getItemInHand(hand);
         if (held.getItem() == ModItems.SCREWDRIVER.get()) {
@@ -86,6 +87,7 @@ public class MachineOilburnerBlock extends DummyableMachineBlock {
     //?} else {
     /*@Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+        if (player.isShiftKeyDown()) return InteractionResult.sidedSuccess(level.isClientSide()); // Original standardOpenBehavior: geschlichen true ohne GUI
 
         ItemStack held = player.getItemInHand(InteractionHand.MAIN_HAND);
         if (held.getItem() == ModItems.SCREWDRIVER.get()) {
@@ -115,4 +117,11 @@ public class MachineOilburnerBlock extends DummyableMachineBlock {
         return CODEC;
     }
     *///?}
+
+    /** Original {@code addInformation}: {@code addStandardInfo} (Umschalttaste zeigt {@code .desc}). */
+    @Override
+    public void appendHoverText(net.minecraft.world.item.ItemStack stack, @org.jetbrains.annotations.Nullable net.minecraft.world.level.BlockGetter level,
+                                java.util.List<net.minecraft.network.chat.Component> list, net.minecraft.world.item.TooltipFlag flag) {
+        com.hbm_m.util.StandardInfo.add(list, "block.hbm_m.oilburner.desc");
+    }
 }

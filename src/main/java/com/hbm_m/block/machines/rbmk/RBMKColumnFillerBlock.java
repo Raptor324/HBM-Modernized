@@ -28,7 +28,7 @@ import net.minecraft.world.phys.shapes.VoxelShape;
  * Every interaction (right-click, breaking) is forwarded to the real column at the base position,
  * found by scanning downward (bounded by {@code RBMKDials.getColumnHeight}).
  */
-public class RBMKColumnFillerBlock extends Block {
+public class RBMKColumnFillerBlock extends Block implements com.hbm_m.interfaces.ILookOverlay {
 
     private static final VoxelShape SHAPE = Shapes.block();
     /** Matches the original's {@code getCollisionBoundingBoxFromPool} extra 0.25 lid height. */
@@ -38,8 +38,15 @@ public class RBMKColumnFillerBlock extends Block {
         super(props);
     }
 
+    /** Original {@code RBMKBase.findCore}: auch die oberen Teile der Saeule zeigen das DODD-Overlay des Fusses. */
+    @Override
+    public void printHook(net.minecraft.client.gui.GuiGraphics guiGraphics, Level level, BlockPos pos) {
+        BlockPos basePos = findBase(level, pos);
+        if (basePos != null && level.getBlockState(basePos).getBlock() instanceof RBMKColumnBlock column) column.printHook(guiGraphics, level, basePos);
+    }
+
     /** Scans downward for the real column block this filler belongs to. */
-    private static BlockPos findBase(BlockGetter level, BlockPos pos) {
+    public static BlockPos findBase(BlockGetter level, BlockPos pos) {
         BlockPos cursor = pos;
         // getColumnHeight() ignores its parameter (a static dial constant); null is safe here and
         // avoids needing a real Level in contexts where only a BlockGetter is available.

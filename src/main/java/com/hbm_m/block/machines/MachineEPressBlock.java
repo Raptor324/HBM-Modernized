@@ -64,7 +64,7 @@ public class MachineEPressBlock extends BaseEntityBlock implements IMultiblockCo
 
     @Override
     public RenderShape getRenderShape(BlockState state) {
-        return RenderShape.MODEL;
+        return RenderShape.ENTITYBLOCK_ANIMATED; // Koerper/Kopf/Material zeichnet EPressRenderer (RenderEPress)
     }
 
     @Override
@@ -106,6 +106,7 @@ public class MachineEPressBlock extends BaseEntityBlock implements IMultiblockCo
     //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        if (player.isShiftKeyDown()) return InteractionResult.sidedSuccess(level.isClientSide()); // Original standardOpenBehavior: geschlichen true ohne GUI
 
         if (!level.isClientSide()) {
             BlockEntity entity = level.getBlockEntity(pos);
@@ -120,6 +121,7 @@ public class MachineEPressBlock extends BaseEntityBlock implements IMultiblockCo
     //?} else {
     /*@Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+        if (player.isShiftKeyDown()) return InteractionResult.sidedSuccess(level.isClientSide()); // Original standardOpenBehavior: geschlichen true ohne GUI
 
         if (!level.isClientSide()) {
             BlockEntity entity = level.getBlockEntity(pos);

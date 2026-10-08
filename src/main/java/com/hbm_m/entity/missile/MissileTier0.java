@@ -41,7 +41,14 @@ public abstract class MissileTier0 extends MissileBaseEntity {
                 return;
             }
 
-            NuclearExplosionAPI.startFatMan(level(), pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D);
+            // 1:1 EntityMissileMicro: ExplosionNukeSmall.explode(posX, posY + 0.5, posZ, PARAMS_HIGH)
+            com.hbm_m.explosion.ExplosionNukeSmall.explode(level(), getX(), getY() + 0.5D, getZ(), com.hbm_m.explosion.ExplosionNukeSmall.PARAMS_HIGH);
+        }
+
+        /** Original: {@code DictFrame.fromOne(ModItems.ammo_standard, EnumAmmo.NUKE_HIGH)}. */
+        @Override
+        protected ItemStack getDebrisRareDrop() {
+            return new ItemStack(com.hbm_m.item.weapon.sedna.WeaponItems.ammo(com.hbm_m.item.weapon.sedna.factory.GunFactory.EnumAmmo.NUKE_HIGH));
         }
     }
 
@@ -124,7 +131,12 @@ public abstract class MissileTier0 extends MissileBaseEntity {
 
             }
 
-            MissileWarheadEffects.blackHole(level(), pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D);
+            // 1:1 EntityMissileBHole: createExplosion(this, posX, posY, posZ, 1.5F, true) (kein Feuer) + Schwarzes Loch 1.5
+            level().explode(this, getX(), getY(), getZ(), 1.5F, false, Level.ExplosionInteraction.TNT);
+            com.hbm_m.entity.effect.BlackHoleEntity hole = new com.hbm_m.entity.effect.BlackHoleEntity(com.hbm_m.entity.ModEntities.BLACK_HOLE.get(), level());
+            hole.setPos(getX(), getY(), getZ());
+            hole.setSize(1.5F);
+            level().addFreshEntity(hole);
 
         }
 

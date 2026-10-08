@@ -80,16 +80,29 @@ public class EntityCreeperNuclear extends Creeper {
         }
     }
 
+    /** Original onDeath: jeder Spieler im Umkreis von 50 Bloecken bekommt bossCreeper (unabhaengig von doMobLoot). */
+    @Override
+    public void die(DamageSource source) {
+        super.die(source);
+        if (!this.level().isClientSide() && this.isDeadOrDying()) {
+            com.hbm_m.advancement.ModAdvancements.grantNearby(this, 50D,
+                    com.hbm_m.advancement.ModAdvancements.BOSS_CREEPER);
+        }
+    }
+
     //? if < 1.21.1 {
     @Override
     protected void dropCustomDeathLoot(DamageSource source, int looting, boolean recentlyHit) {
-        this.spawnAtLocation(new ItemStack(Blocks.TNT));
-        this.spawnAtLocation(new ItemStack(com.hbm_m.item.ModItems.COIN_CREEPER.get()));
-        // Everyone within 50 blocks is credited, as in the original - the kill may well have been
-        // a group effort, or nobody's in particular.
-        com.hbm_m.advancement.ModAdvancements.grantNearby(this, 50D,
-                com.hbm_m.advancement.ModAdvancements.BOSS_CREEPER);
-        // TODO: NUKE_STANDARD ammo drop still needs the ammo system.
+        // Original getDropItem TNT ueber dropFewItems-Standard (0-2 + Pluenderung), Muenze 1/3
+        CreeperDrops.dropDefault(this, Blocks.TNT, looting);
+        if (this.random.nextInt(3) == 0)
+            this.spawnAtLocation(new ItemStack(com.hbm_m.item.ModItems.COIN_CREEPER.get()));
+        CreeperDrops.dropRecord(this, source);
+        // Original onDeath: von Skelett oder herrenlosem Pfeil getoetet -> eine Mini-Atombombe
+        if (source.getEntity() instanceof net.minecraft.world.entity.monster.AbstractSkeleton
+                || (source.is(net.minecraft.tags.DamageTypeTags.IS_PROJECTILE) && source.getDirectEntity() instanceof net.minecraft.world.entity.projectile.AbstractArrow arrow && arrow.getOwner() == null)) {
+            this.spawnAtLocation(new ItemStack(com.hbm_m.item.weapon.sedna.WeaponItems.ammo(com.hbm_m.item.weapon.sedna.factory.GunFactory.EnumAmmo.NUKE_STANDARD)), 1);
+        }
     }
     //?} else {
     /*@Override

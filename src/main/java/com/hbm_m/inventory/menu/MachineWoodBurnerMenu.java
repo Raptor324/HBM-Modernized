@@ -33,11 +33,15 @@ public class MachineWoodBurnerMenu extends AbstractContainerMenu implements ILon
     private long clientEnergy;
     private long clientMaxEnergy;
 
-    private static final int PLAYER_INV_START = 0;
-    private static final int PLAYER_INV_END = 36;
-    private static final int FUEL_SLOT = 36;
-    private static final int ASH_SLOT = 37;
-    private static final int CHARGE_SLOT = 38;
+    /** Menue-Reihenfolge wie Original ContainerMachineWoodBurner: 0 Brennstoff, 1 Asche, 2 Fluid-ID,
+     *  3/4 Kanister ein/aus, 5 Batterie; danach Spielerinventar. (BE-Slots: 0, 1, 3, 4, 5, 2) */
+    private static final int FUEL_SLOT = 0;
+    private static final int FLUID_ID_SLOT = 2;
+    private static final int FLUID_IN_SLOT = 3;
+    private static final int CHARGE_SLOT = 5;
+    private static final int MACHINE_SLOTS = 6;
+    private static final int PLAYER_INV_START = MACHINE_SLOTS;
+    private static final int PLAYER_INV_END = MACHINE_SLOTS + 36;
 
     // Клиентский конструктор
     public MachineWoodBurnerMenu(int id, Inventory inv, FriendlyByteBuf extraData) {
@@ -60,10 +64,15 @@ public class MachineWoodBurnerMenu extends AbstractContainerMenu implements ILon
 
         this.addSlot(new Slot(container, 0, 26, 18) { // Fuel slot
             @Override public boolean mayPlace(ItemStack stack) {
-                return AbstractFurnaceBlockEntity.getFuel().getOrDefault(stack.getItem(), 0) > 0;
+                return MachineWoodBurnerBlockEntity.burnModule.getBurnTime(stack) > 0; // wie BE (ModuleBurnTime)
             }
         });
         this.addSlot(new Slot(container, 1, 26, 54) { // Ash slot
+            @Override public boolean mayPlace(ItemStack stack) { return false; }
+        });
+        this.addSlot(new Slot(container, 3, 98, 54));  // Fluid-ID
+        this.addSlot(new Slot(container, 4, 98, 18));  // Kanister Eingang
+        this.addSlot(new Slot(container, 5, 98, 36) {  // Kanister Ausgang (nur entnehmbar)
             @Override public boolean mayPlace(ItemStack stack) { return false; }
         });
         this.addSlot(new Slot(container, 2, 143, 54) { // Charge slot
@@ -157,6 +166,7 @@ public class MachineWoodBurnerMenu extends AbstractContainerMenu implements ILon
 
     @Override
     public ItemStack quickMoveStack(Player pPlayer, int pIndex) {
+        // Original transferStackInSlot: Maschine -> Spieler; sonst Batterie -> 5, Fluid-ID -> 2, Brennstoff -> 0, Rest -> 3
         ItemStack itemstack = ItemStack.EMPTY;
         Slot slot = this.slots.get(pIndex);
 
@@ -164,44 +174,17 @@ public class MachineWoodBurnerMenu extends AbstractContainerMenu implements ILon
             ItemStack slotStack = slot.getItem();
             itemstack = slotStack.copy();
 
-            if (pIndex == FUEL_SLOT || pIndex == ASH_SLOT || pIndex == CHARGE_SLOT) {
-                if (!this.moveItemStackTo(slotStack, PLAYER_INV_START, PLAYER_INV_END, true)) {
-                    return ItemStack.EMPTY;
-                }
+            if (pIndex < MACHINE_SLOTS) {
+                if (!this.moveItemStackTo(slotStack, PLAYER_INV_START, PLAYER_INV_END, true)) return ItemStack.EMPTY;
                 slot.onQuickCraft(slotStack, itemstack);
-            }
-            else if (pIndex >= PLAYER_INV_START && pIndex < PLAYER_INV_END) {
-                if (AbstractFurnaceBlockEntity.getFuel().getOrDefault(slotStack.getItem(), 0) > 0) {
-                    if (!this.moveItemStackTo(slotStack, FUEL_SLOT, FUEL_SLOT + 1, false)) {
-                        // continue
-                    } else {
-                        if (slotStack.isEmpty()) slot.set(ItemStack.EMPTY);
-                        else slot.setChanged();
-                        return itemstack;
-                    }
-                }
-
-                // Пробуем в СЛОТ ЗАРЯДКИ
-                //? if forge {
-                if (com.hbm_m.api.energy.ItemEnergyAccess.getForgeEnergy(slotStack).map(IEnergyStorage::canReceive).orElse(false) ||
-                    slotStack.getItem() instanceof com.hbm_m.powerarmor.ModArmorFSBPowered) {
-                //?} else {
-                /*if (ItemEnergyAccess.getHbmReceiver(slotStack).isPresent() ||
-                    slotStack.getItem() instanceof com.hbm_m.powerarmor.ModArmorFSBPowered) {
-                *///?}
-                    if (!this.moveItemStackTo(slotStack, CHARGE_SLOT, CHARGE_SLOT + 1, false)) {
-                        // continue
-                    } else {
-                        if (slotStack.isEmpty()) slot.set(ItemStack.EMPTY);
-                        else slot.setChanged();
-                        return itemstack;
-                    }
-                }
-                if (pIndex < 27) {
-                    if (!this.moveItemStackTo(slotStack, 27, 36, false)) return ItemStack.EMPTY;
-                } else {
-                    if (!this.moveItemStackTo(slotStack, 0, 27, false)) return ItemStack.EMPTY;
-                }
+            } else if (this.slots.get(CHARGE_SLOT).mayPlace(slotStack)) {
+                if (!this.moveItemStackTo(slotStack, CHARGE_SLOT, CHARGE_SLOT + 1, false)) return ItemStack.EMPTY;
+            } else if (slotStack.getItem() instanceof com.hbm_m.interfaces.IItemFluidIdentifier) {
+                if (!this.moveItemStackTo(slotStack, FLUID_ID_SLOT, FLUID_ID_SLOT + 1, false)) return ItemStack.EMPTY;
+            } else if (MachineWoodBurnerBlockEntity.burnModule.getBurnTime(slotStack) > 0) {
+                if (!this.moveItemStackTo(slotStack, FUEL_SLOT, FUEL_SLOT + 1, false)) return ItemStack.EMPTY;
+            } else {
+                if (!this.moveItemStackTo(slotStack, FLUID_IN_SLOT, FLUID_IN_SLOT + 1, false)) return ItemStack.EMPTY;
             }
 
             if (slotStack.isEmpty()) {
@@ -221,7 +204,8 @@ public class MachineWoodBurnerMenu extends AbstractContainerMenu implements ILon
 
     @Override
     public boolean stillValid(Player pPlayer) {
-        return stillValid(ContainerLevelAccess.create(blockEntity.getLevel(), blockEntity.getBlockPos()), pPlayer, ModBlocks.WOOD_BURNER.get());
+        // audit13: Original isUseableByPlayer (<= 128 zur Kernmitte) oder Huelle <= 64; Vanilla 64 schloss die GUI an grossen Maschinen
+        return MultiblockMenuReach.stillValidCore(blockEntity, pPlayer, 128.0D);
     }
 
     private void addPlayerInventory(Inventory i) { for(int y=0; y<3; ++y) for(int x=0; x<9; ++x) this.addSlot(new Slot(i, x+y*9+9, 8+x*18, 104+y*18)); }

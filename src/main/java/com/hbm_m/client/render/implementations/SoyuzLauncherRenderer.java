@@ -34,6 +34,15 @@ public final class SoyuzLauncherRenderer {
     private static final ResourceLocation ROCKET_MODEL_ID =
             ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/deco_soyuz_rocket");
 
+    /** Original {@code SoyuzPronter.SoyuzSkin}: 0 Original, 1 Luna, 2 Post War (authentic). */
+    public static ResourceLocation rocketModelId(int skin) {
+        return switch (skin) {
+            case 1 -> ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/soyuz_rocket_luna");
+            case 2 -> ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/soyuz_rocket_authentic");
+            default -> ROCKET_MODEL_ID;
+        };
+    }
+
     /** Ticks over which the arms fully open/close, matching legacy {@code timer = 20}. */
     private static final int ARM_ANIM_TICKS = 20;
     private static final double ARM_OPEN_DEGREES = 45.0D;
@@ -48,8 +57,13 @@ public final class SoyuzLauncherRenderer {
             .part(SoyuzLauncherBakedModel.TOWER, SoyuzLauncherRenderer::animateTower)
             .part(SoyuzLauncherBakedModel.SUPPORT, SoyuzLauncherRenderer::animateSupport)
             .dynamicPart("Rocket", SoyuzLauncherRenderer::animateRocket,
-                    SoyuzLauncherRenderer::rocketQuads, be -> "rocket")
+                    SoyuzLauncherRenderer::rocketQuads, be -> "rocket" + be.getRocketType())
             .facing(be -> be.getBlockState().getValue(SoyuzLauncherBlock.FACING))
+            // Original RenderSoyuzLauncher: glTranslate(x + 0.5, y - 4, z + 0.5) - der Kern sitzt 4 Bloecke ueber dem Boden
+            .blockTransform((be, anim) -> {
+                anim.setupBlockTransform(be.getBlockState().getValue(SoyuzLauncherBlock.FACING));
+                anim.translate(0.0, -SoyuzLauncherBlock.HEIGHT, 0.0);
+            })
             .register();
     }
 
@@ -96,17 +110,18 @@ public final class SoyuzLauncherRenderer {
 
     private static List<net.minecraft.client.renderer.block.model.BakedQuad> rocketQuads(
             SoyuzLauncherBlockEntity be) {
-        BakedModel rocketModel = getRocketModel();
+        int skin = Math.max(0, be.getRocketType());
+        BakedModel rocketModel = getRocketModel(skin);
         if (!(rocketModel instanceof SoyuzRocketBakedModel model)) return List.of();
         BakedModel part = model.getPart(SoyuzRocketBakedModel.ROCKET);
         if (part == null) return List.of();
-        return MeshRenderCache.getOrCompilePartGeometry("soyuzlauncher/rocket", part).solidQuads();
+        return MeshRenderCache.getOrCompilePartGeometry("soyuzlauncher/rocket" + skin, part).solidQuads();
     }
 
     @Nullable
-    private static BakedModel getRocketModel() {
+    private static BakedModel getRocketModel(int skin) {
         var modelManager = Minecraft.getInstance().getModelManager();
-        BakedModel model = PlatformHooks.getModel(modelManager, ROCKET_MODEL_ID);
+        BakedModel model = PlatformHooks.getModel(modelManager, rocketModelId(skin));
         return (model == null || model == modelManager.getMissingModel()) ? null : model;
     }
 }

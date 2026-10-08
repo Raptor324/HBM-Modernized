@@ -99,6 +99,34 @@ public final class HbmForgeEvents {
             EquipmentSlot.FEET, EquipmentSlot.LEGS, EquipmentSlot.CHEST, EquipmentSlot.HEAD
     };
 
+    // ---------------------------------------------------------------- Custom Machines
+
+    /** Original: Steuerungsrezepte aus hbmCustomMachines.json per CraftingManager - hier in den RecipeManager gelegt. */
+    @SubscribeEvent
+    public static void onServerStarted(net.minecraftforge.event.server.ServerStartedEvent event) {
+        injectCustomMachineRecipes(event.getServer());
+    }
+
+    /** Nach /reload ist der RecipeManager neu - die Steuerungsrezepte wieder einhaengen und an alle schicken. */
+    @SubscribeEvent
+    public static void onDatapackSync(net.minecraftforge.event.OnDatapackSyncEvent event) {
+        if (event.getPlayer() == null && injectCustomMachineRecipes(event.getPlayerList().getServer())) {
+            event.getPlayerList().broadcastAll(new net.minecraft.network.protocol.game.ClientboundUpdateRecipesPacket(
+                    event.getPlayerList().getServer().getRecipeManager().getRecipes()));
+        }
+    }
+
+    private static boolean injectCustomMachineRecipes(net.minecraft.server.MinecraftServer server) {
+        var rm = server.getRecipeManager();
+        java.util.List<net.minecraft.world.item.crafting.Recipe<?>> all = new java.util.ArrayList<>(rm.getRecipes());
+        boolean changed = false;
+        for (var r : com.hbm_m.config.CustomMachineConfigJSON.controllerRecipes) {
+            if (rm.byKey(r.getId()).isEmpty()) { all.add(r); changed = true; }
+        }
+        if (changed) rm.replaceRecipes(all);
+        return changed;
+    }
+
     // ---------------------------------------------------------------- Spieler-Lebenszyklus
 
     @SubscribeEvent
@@ -185,6 +213,15 @@ public final class HbmForgeEvents {
         Level level = entity.level();
         if (level.isClientSide) return;
 
+        // Original enableCataclysm: bei jedem Tod faellt ein brennender FOEQ aus 500 Bloecken Hoehe
+        if (com.hbm_m.config.ModClothConfig.get().enableCataclysm) {
+            com.hbm_m.entity.projectile.EntityBurningFOEQ foeq = com.hbm_m.entity.ModEntities.BURNING_FOEQ.get().create(level);
+            if (foeq != null) {
+                foeq.moveTo(entity.getX(), 500, entity.getZ(), 0.0F, 0.0F);
+                level.addFreshEntity(foeq);
+            }
+        }
+
         if (entity.getUUID().toString().equals(ShadyUtil.HbMinecraft) || entity.getName().getString().equals("HbMinecraft")) {
             entity.spawnAtLocation(ModItems.BOOK_OF_.get(), 0);
         }
@@ -270,12 +307,26 @@ public final class HbmForgeEvents {
         }
     }
 
+    /** Ersatz fuer {@code EntityLivingBase.previousEquipment[0]} (nur die Gegenstandsart zaehlt). */
+    private static final java.util.Map<Player, net.minecraft.world.item.Item> PREV_HELD = new java.util.WeakHashMap<>();
+
     @SubscribeEvent
     public static void onLivingUpdate(LivingEvent.LivingTickEvent event) {
         LivingEntity living = event.getEntity();
 
         if (living instanceof net.minecraft.world.entity.monster.Creeper creeper && creeper.getPersistentData().getBoolean("hfr_defused")) {
             com.hbm_m.armormod.item.ItemModDefuser.castrateCreeper(creeper, null, false);
+        }
+
+        // Original: previousEquipment[0] != getHeldItem() -> IEquipReceiver.onEquip
+        if (living instanceof net.minecraft.server.level.ServerPlayer sp) {
+            ItemStack heldNow = sp.getMainHandItem();
+            net.minecraft.world.item.Item prev = PREV_HELD.get(sp);
+            net.minecraft.world.item.Item now = heldNow.isEmpty() ? null : heldNow.getItem();
+            if (now != null && prev != now && now instanceof com.hbm_m.item.IEquipReceiver receiver) {
+                receiver.onEquip(sp, heldNow);
+            }
+            if (now == null) PREV_HELD.remove(sp); else PREV_HELD.put(sp, now);
         }
 
         // HazardSystem.updateLivingInventory: Hand + vier Ruestungsslots von Nicht-Spielern.
@@ -377,6 +428,25 @@ public final class HbmForgeEvents {
 
         event.setAmount(hurt.amount);
         if (hurt.canceled) event.setCanceled(true);
+    }
+
+    /** Original {@code ModEventHandler}: ein Schild mit dem richtigen Text wird zum versteckten Bobmazon-Katalog. */
+    @SubscribeEvent
+    public static void onSignClick(net.minecraftforge.event.entity.player.PlayerInteractEvent.RightClickBlock event) {
+        net.minecraft.world.level.Level world = event.getLevel();
+        net.minecraft.core.BlockPos pos = event.getPos();
+        if (world.isClientSide || !(world.getBlockEntity(pos) instanceof net.minecraft.world.level.block.entity.SignBlockEntity sign)) return;
+
+        var text = sign.getFrontText();
+        String result = ShadyUtil.smoosh(text.getMessage(0, false).getString(), text.getMessage(1, false).getString(),
+                text.getMessage(2, false).getString(), text.getMessage(3, false).getString());
+
+        if (ShadyUtil.hashes.contains(result)) {
+            world.destroyBlock(pos, false);
+            net.minecraft.world.entity.item.ItemEntity entityitem = new net.minecraft.world.entity.item.ItemEntity(world, pos.getX(), pos.getY(), pos.getZ(), new net.minecraft.world.item.ItemStack(ModItems.BOBMAZON_HIDDEN.get()));
+            entityitem.setPickUpDelay(10);
+            world.addFreshEntity(entityitem);
+        }
     }
 
     @SubscribeEvent

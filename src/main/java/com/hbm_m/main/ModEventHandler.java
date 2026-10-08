@@ -14,6 +14,10 @@ public final class ModEventHandler {
 
 	public static void register() {
 		PlayerEvent.PLAYER_JOIN.register(ModEventHandler::onPlayerJoin);
+		// Original ModEventHandler.onPlayerTick (START): PermaSyncPacket, Abschnitt POLLUTION
+		dev.architectury.event.events.common.TickEvent.PLAYER_PRE.register(player -> {
+			if (player instanceof ServerPlayer sp) com.hbm_m.network.PollutionSyncPacket.sendTo(sp);
+		});
 	}
 
 	private static void onPlayerJoin(Player player) {
@@ -24,6 +28,11 @@ public final class ModEventHandler {
 		// MOTD теперь чисто клиентский (ClientMotdHandler, client.json -> enableMOTD).
 		if (player instanceof ServerPlayer sp) {
 			ConfigSyncS2CPacket.sendTo(sp);
+
+			// Original ModEventHandler.onPlayerLogin: Enten-Hinweis (PlayerInformPacket, 30 000 ms)
+			net.minecraft.nbt.CompoundTag perDat = com.hbm_m.platform.PlayerPersistentData.get(sp).getCompound(Player.PERSISTED_NBT_TAG);
+			if (com.hbm_m.config.MobConfig.enableDucks && !perDat.getBoolean("hasDucked"))
+				com.hbm_m.network.InfoToastPacket.sendTo(sp, net.minecraft.network.chat.Component.literal("Press O to Duck!"), 600, com.hbm_m.network.InfoToastPacket.ID_DUCK, 0xFFFFFF);
 		}
 	}
 }

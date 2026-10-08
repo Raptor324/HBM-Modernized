@@ -1,8 +1,9 @@
 package com.hbm_m.inventory.menu;
 
-import com.hbm_m.api.energy.ItemEnergyAccess;
 import com.hbm_m.blockentity.machines.MachineMiningDrillBlockEntity;
 import com.hbm_m.inventory.ModItemStackHandlerContainer;
+import com.hbm_m.item.industrial.ItemDrillbit;
+import com.hbm_m.item.industrial.ItemMachineUpgrade;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.platform.DummyItemStackHandler;
 
@@ -15,15 +16,15 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
+/**
+ * 1:1 {@code ContainerMachineExcavator}: Batterie (220,72), Fluidkennung (202,72), Aufwertungen und Bohrkopf in einer
+ * Reihe ab (136,75), 3x3-Puffer ab (136,5) nur zum Entnehmen, Spielerinventar ab (41,122).
+ */
 public class MachineMiningDrillMenu extends AbstractContainerMenu {
 
-    private final MachineMiningDrillBlockEntity blockEntity;
+    private static final int MACHINE_SLOT_COUNT = MachineMiningDrillBlockEntity.INVENTORY_SIZE;
 
-    private static final int OUTPUT_START = 1;
-    private static final int OUTPUT_COUNT = 9;
-    private static final int MACHINE_SLOT_COUNT = 11;
-    private static final int PLAYER_INV_START = MACHINE_SLOT_COUNT;
-    private static final int PLAYER_INV_END = MACHINE_SLOT_COUNT + 36;
+    private final MachineMiningDrillBlockEntity blockEntity;
 
     public MachineMiningDrillMenu(int id, Inventory inventory, FriendlyByteBuf extraData) {
         this(id, inventory, getBlockEntity(inventory, extraData));
@@ -33,39 +34,31 @@ public class MachineMiningDrillMenu extends AbstractContainerMenu {
         super(ModMenuTypes.MINING_DRILL_MENU.get(), id);
         this.blockEntity = blockEntity;
 
-        // На клиенте тайл может отсутствовать (реплей Flashback) — подставляем пустую заглушку,
-        // чтобы конструктор дошёл до конца и пакет открытия меню не уронил клиент
+        // На клиенте тайл может отсутствовать (реплей Flashback) — подставляем пустую заглушку
         var container = new ModItemStackHandlerContainer(
                 blockEntity != null ? blockEntity.getInventory() : new DummyItemStackHandler(MACHINE_SLOT_COUNT),
                 blockEntity != null ? blockEntity::setChanged : null);
 
-        this.addSlot(new Slot(container, MachineMiningDrillBlockEntity.SLOT_DRILLBIT, 172, 75));
-
-        for (int row = 0; row < 3; row++) {
-            for (int col = 0; col < 3; col++) {
-                this.addSlot(new Slot(container, OUTPUT_START + row * 3 + col, 136 + col * 18, 5 + row * 18) {
-                    @Override
-                    public boolean mayPlace(ItemStack stack) {
-                        return false; 
-                    }
+        this.addSlot(new Slot(container, 0, 220, 72));
+        this.addSlot(new Slot(container, 1, 202, 72));
+        for (int i = 0; i < 3; i++) {
+            this.addSlot(new Slot(container, 2 + i, 136 + i * 18, 75));
+        }
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 3; j++) {
+                this.addSlot(new Slot(container, 5 + j + i * 3, 136 + j * 18, 5 + i * 18) {
+                    @Override public boolean mayPlace(ItemStack stack) { return false; }
                 });
             }
         }
 
-        this.addSlot(new Slot(container, MachineMiningDrillBlockEntity.SLOT_BATTERY, 220, 72) {
-            @Override
-            public boolean mayPlace(ItemStack stack) {
-                return ItemEnergyAccess.isEnergySource(stack);
-            }
-        });
-
-        for (int row = 0; row < 3; ++row) {
-            for (int col = 0; col < 9; ++col) {
-                this.addSlot(new Slot(inventory, col + row * 9 + 9, 41 + col * 18, 122 + row * 18));
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 9; j++) {
+                this.addSlot(new Slot(inventory, j + i * 9 + 9, 41 + j * 18, 122 + i * 18));
             }
         }
-        for (int col = 0; col < 9; ++col) {
-            this.addSlot(new Slot(inventory, col, 41 + col * 18, 180));
+        for (int i = 0; i < 9; i++) {
+            this.addSlot(new Slot(inventory, i, 41 + i * 18, 180));
         }
     }
 
@@ -76,14 +69,8 @@ public class MachineMiningDrillMenu extends AbstractContainerMenu {
     private static MachineMiningDrillBlockEntity getBlockEntity(Inventory inventory, FriendlyByteBuf buffer) {
         BlockPos pos = buffer.readBlockPos();
         BlockEntity blockEntity = inventory.player.level().getBlockEntity(pos);
-        if (blockEntity instanceof MachineMiningDrillBlockEntity miningDrillBlockEntity) {
-            return miningDrillBlockEntity;
-        }
-        // На клиенте тайл может отсутствовать (реплей Flashback) — не крашим пакет, возвращаем null.
-        // На сервере отсутствие тайла — реальный баг, поэтому там падаем как раньше.
-        if (inventory.player.level().isClientSide) {
-            return null;
-        }
+        if (blockEntity instanceof MachineMiningDrillBlockEntity drill) return drill;
+        if (inventory.player.level().isClientSide) return null;
         throw new IllegalStateException("No MachineMiningDrillBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":mining_drill_menu");
     }
 
@@ -93,47 +80,36 @@ public class MachineMiningDrillMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        if (blockEntity == null || blockEntity.getLevel() != player.level()) {
-            return false;
-        }
-        BlockPos pos = blockEntity.getBlockPos();
-        return player.distanceToSqr(pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D) <= 64.0D;
+        // w16b: Original isUseableByPlayer (TileEntityMachineBase) = 128 vom Kern, dazu Huelle der Maschine (MultiblockMenuReach)
+        return MultiblockMenuReach.stillValidCore(blockEntity, player, 128.0D);
     }
 
+    /** Original {@code transferStackInSlot}: Batterie, Fluidkennung, Aufwertungen, Bohrkopf in ihre Plaetze. */
     @Override
     public ItemStack quickMoveStack(Player player, int index) {
-        ItemStack result = ItemStack.EMPTY;
         Slot slot = this.slots.get(index);
+        if (slot == null || !slot.hasItem()) return ItemStack.EMPTY;
 
-        if (slot != null && slot.hasItem()) {
-            ItemStack slotStack = slot.getItem();
-            result = slotStack.copy();
+        ItemStack stack = slot.getItem();
+        ItemStack result = stack.copy();
 
-            if (index < MACHINE_SLOT_COUNT) {
-                if (!this.moveItemStackTo(slotStack, PLAYER_INV_START, PLAYER_INV_END, true)) {
-                    return ItemStack.EMPTY;
-                }
-            } else {
-                if (ItemEnergyAccess.isEnergySource(slotStack)) {
-                    if (!this.moveItemStackTo(slotStack, MachineMiningDrillBlockEntity.SLOT_BATTERY, MachineMiningDrillBlockEntity.SLOT_BATTERY + 1, false)) {
-                        return ItemStack.EMPTY;
-                    }
-                } else if (!this.moveItemStackTo(slotStack, MachineMiningDrillBlockEntity.SLOT_DRILLBIT, MachineMiningDrillBlockEntity.SLOT_DRILLBIT + 1, false)) {
-                    return ItemStack.EMPTY;
-                }
-            }
-
-            if (slotStack.isEmpty()) {
-                slot.set(ItemStack.EMPTY);
-            } else {
-                slot.setChanged();
-            }
-
-            if (slotStack.getCount() == result.getCount()) {
-                return ItemStack.EMPTY;
-            }
-            slot.onTake(player, slotStack);
+        if (index <= 13) {
+            if (!this.moveItemStackTo(stack, 14, this.slots.size(), true)) return ItemStack.EMPTY;
+        } else if (com.hbm_m.api.energy.ItemEnergyAccess.getHbmProvider(result).isPresent()
+                || com.hbm_m.api.energy.ItemEnergyAccess.getHbmReceiver(result).isPresent()) {
+            if (!this.moveItemStackTo(stack, 0, 1, false)) return ItemStack.EMPTY;
+        } else if (result.getItem() instanceof com.hbm_m.interfaces.IItemFluidIdentifier) {
+            if (!this.moveItemStackTo(stack, 1, 2, false)) return ItemStack.EMPTY;
+        } else if (result.getItem() instanceof ItemMachineUpgrade) {
+            if (!this.moveItemStackTo(stack, 2, 4, false)) return ItemStack.EMPTY;
+        } else if (result.getItem() instanceof ItemDrillbit) {
+            if (!this.moveItemStackTo(stack, 4, 5, false)) return ItemStack.EMPTY;
+        } else {
+            return ItemStack.EMPTY;
         }
+
+        if (stack.isEmpty()) slot.set(ItemStack.EMPTY);
+        else slot.setChanged();
         return result;
     }
 }

@@ -9,6 +9,14 @@ import com.hbm_m.item.ModItems;
 import com.hbm_m.item.material.MaterialShape;
 import com.hbm_m.item.material.ModMaterialItems;
 import com.hbm_m.item.material.ModMaterials;
+import com.hbm_m.item.weapon.grenade.ItemGrenadeExtra.EnumGrenadeExtra;
+import com.hbm_m.item.weapon.grenade.ItemGrenadeFilling.EnumGrenadeFilling;
+import com.hbm_m.item.weapon.grenade.ItemGrenadeFuze.EnumGrenadeFuze;
+import com.hbm_m.item.weapon.grenade.ItemGrenadeShell.EnumGrenadeShell;
+import com.hbm_m.item.weapon.grenade.ItemGrenadeUniversal;
+import com.hbm_m.item.weapon.sedna.WeaponItems;
+import com.hbm_m.item.weapon.sedna.factory.GunFactory.EnumAmmo;
+import com.hbm_m.item.weapon.sedna.factory.GunFactory.EnumAmmoSecret;
 import com.hbm_m.sound.ModSounds;
 
 import net.minecraft.core.BlockPos;
@@ -44,6 +52,12 @@ public final class CrateBlocks {
         for (int i = 0; i < weight; i++) list.add(new ItemStack(item));
     }
 
+    /** Original {@code addToListWithWeight(list, ItemStack, weight)} (z.B. Baukastengranaten mit NBT). */
+    static void add(List<ItemStack> list, ItemStack stack, int weight) {
+        if (stack == null || stack.isEmpty()) return;
+        for (int i = 0; i < weight; i++) list.add(stack.copy());
+    }
+
     static void add(List<ItemStack> list, String name, int weight) { add(list, id(name), weight); }
 
     static void mat(List<ItemStack> list, ModMaterials m, MaterialShape s, int weight) { add(list, ModMaterialItems.item(m, s), weight); }
@@ -60,7 +74,6 @@ public final class CrateBlocks {
      * 1:1 {@code BlockCrate} ({@code crate}, {@code crate_weapon}, {@code crate_lead}, {@code crate_metal},
      * {@code crate_red}): faellt wie Sand; mit der Brechstange aufgehebelt verteilt sie 3-5 gewichtete Zufallsfunde
      * (Waffenkiste 1-2, mit 1 % Chance 25), die rote Kiste ihren kompletten Inhalt.
-     * Noch nicht portierte Waffen/Munition/Granaten fehlen in den Listen, bis die Waffenrunde sie nachliefert.
      */
     public static class Supply extends FallingBlock {
 
@@ -105,7 +118,9 @@ public final class CrateBlocks {
                 case SUPPLY -> {
                     add(l, "syringe_metal_stimpak", 10);
                     add(l, "syringe_antidote", 5);
-                    // ItemGrenadeUniversal FRAG/HE/S3/FRAG_SLEEVE 8, STICK/HE/IMPACT 6, FRAG/INC/S7 4 - Waffenrunde
+                    add(l, ItemGrenadeUniversal.make(EnumGrenadeShell.FRAG, EnumGrenadeFilling.HE, EnumGrenadeFuze.S3, EnumGrenadeExtra.FRAG_SLEEVE), 8);
+                    add(l, ItemGrenadeUniversal.make(EnumGrenadeShell.STICK, EnumGrenadeFilling.HE, EnumGrenadeFuze.IMPACT), 6);
+                    add(l, ItemGrenadeUniversal.make(EnumGrenadeShell.FRAG, EnumGrenadeFilling.INC, EnumGrenadeFuze.S7), 4);
                     add(l, "ammo_container", 2);
                 }
                 case WEAPON -> {
@@ -166,7 +181,9 @@ public final class CrateBlocks {
                     add(l, "gun_heavy_revolver_lilmac", 1);
                     add(l, "gun_autoshotgun_sexy", 1);
                     add(l, "gun_maresleg_broken", 1);
-                    // ammo_secret M44/G12/BMG50 EQUESTRIAN - Waffenrunde
+                    add(l, WeaponItems.ammo(EnumAmmoSecret.M44_EQUESTRIAN), 1);
+                    add(l, WeaponItems.ammo(EnumAmmoSecret.G12_EQUESTRIAN), 1);
+                    add(l, WeaponItems.ammo(EnumAmmoSecret.BMG50_EQUESTRIAN), 1);
                     add(l, "battery_spark", 1);
                     add(l, "bottle_sparkle", 1);
                     add(l, "bottle_rad", 1);
@@ -237,21 +254,31 @@ public final class CrateBlocks {
             return InteractionResult.PASS;
         }
 
-        private static void ammo(List<ItemStack> ret, String name, int count) {
-            Item it = id(name);
-            if (it != Items.AIR) ret.add(new ItemStack(it, count));
+        /** Original {@code new ItemStack(ModItems.ammo_standard, count, EnumAmmo.X.ordinal())} -> {@code ammo_standard_<x>}. */
+        private static void ammo(List<ItemStack> ret, EnumAmmo type, int count) {
+            Item it = WeaponItems.ammo(type);
+            if (it != null && it != Items.AIR) ret.add(new ItemStack(it, count));
         }
 
         public static List<ItemStack> getContents(net.minecraft.util.RandomSource rand) {
             List<ItemStack> ret = new ArrayList<>();
             ret.add(new ItemStack(id("cap_nuka"), 12 + rand.nextInt(21)));
             ret.add(new ItemStack(id("syringe_metal_stimpak"), 1 + rand.nextInt(3)));
-            // EnumAmmo P9_SP ... ROCKET_HE (ammo_standard) - Namen der Waffenrunde
-            for (String n : new String[] { "ammo_9mm_sp", "ammo_9mm_fmj", "ammo_357_sp", "ammo_357_fmj", "ammo_44_sp", "ammo_44_fmj",
-                    "ammo_556_sp", "ammo_556_fmj", "ammo_762_sp", "ammo_762_fmj", "ammo_12gauge", "ammo_12gauge_slug" })
-                if (rand.nextBoolean()) ammo(ret, n, 16 + rand.nextInt(17));
-            if (rand.nextBoolean()) ammo(ret, "ammo_40mm_he", 2 + rand.nextInt(3));
-            if (rand.nextBoolean()) ammo(ret, "ammo_rocket_he", 2 + rand.nextInt(3));
+
+            if (rand.nextBoolean()) ammo(ret, EnumAmmo.P9_SP, 16 + rand.nextInt(17));
+            if (rand.nextBoolean()) ammo(ret, EnumAmmo.P9_FMJ, 16 + rand.nextInt(17));
+            if (rand.nextBoolean()) ammo(ret, EnumAmmo.M357_SP, 16 + rand.nextInt(17));
+            if (rand.nextBoolean()) ammo(ret, EnumAmmo.M357_FMJ, 16 + rand.nextInt(17));
+            if (rand.nextBoolean()) ammo(ret, EnumAmmo.M44_SP, 16 + rand.nextInt(17));
+            if (rand.nextBoolean()) ammo(ret, EnumAmmo.M44_FMJ, 16 + rand.nextInt(17));
+            if (rand.nextBoolean()) ammo(ret, EnumAmmo.R556_SP, 16 + rand.nextInt(17));
+            if (rand.nextBoolean()) ammo(ret, EnumAmmo.R556_FMJ, 16 + rand.nextInt(17));
+            if (rand.nextBoolean()) ammo(ret, EnumAmmo.R762_SP, 16 + rand.nextInt(17));
+            if (rand.nextBoolean()) ammo(ret, EnumAmmo.R762_FMJ, 16 + rand.nextInt(17));
+            if (rand.nextBoolean()) ammo(ret, EnumAmmo.G12, 16 + rand.nextInt(17));
+            if (rand.nextBoolean()) ammo(ret, EnumAmmo.G12_SLUG, 16 + rand.nextInt(17));
+            if (rand.nextBoolean()) ammo(ret, EnumAmmo.G40_HE, 2 + rand.nextInt(3));
+            if (rand.nextBoolean()) ammo(ret, EnumAmmo.ROCKET_HE, 2 + rand.nextInt(3));
             if (rand.nextInt(10) == 0) ret.add(new ItemStack(id("syringe_metal_super"), 2));
             ret.removeIf(ItemStack::isEmpty);
             return ret;

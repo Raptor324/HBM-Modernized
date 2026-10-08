@@ -1,99 +1,113 @@
 package com.hbm_m.inventory.menu;
 
+import com.hbm_m.blockentity.machines.MachineFireboxBaseBlockEntity;
 import com.hbm_m.blockentity.machines.MachineFireboxBlockEntity;
 import com.hbm_m.inventory.ModItemStackHandlerContainer;
-import com.hbm_m.lib.RefStrings;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.ContainerData;
+import net.minecraft.world.inventory.MenuType;
+import net.minecraft.world.inventory.SimpleContainerData;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.block.entity.BlockEntity;
 
-/** Port of {@code ContainerFirebox} (1.7.10 Original). */
+/** 1:1 {@code ContainerFirebox} (Feuerbuechse und Heizofen): oeffnet beim Bau die Klappe, schliesst sie beim Schliessen. */
 public class MachineFireboxMenu extends AbstractContainerMenu {
 
-    private static final int MACHINE_SLOT_COUNT = MachineFireboxBlockEntity.INVENTORY_SIZE;
-    private static final int PLAYER_SLOT_START = MACHINE_SLOT_COUNT;
-
-    private final MachineFireboxBlockEntity blockEntity;
+    protected final MachineFireboxBaseBlockEntity firebox;
+    private final ContainerData data;
 
     public MachineFireboxMenu(int id, Inventory inventory, FriendlyByteBuf extraData) {
-        this(id, inventory, getBlockEntity(inventory, extraData));
-    }
-
-    public MachineFireboxMenu(int id, Inventory inventory, MachineFireboxBlockEntity blockEntity) {
-        super(ModMenuTypes.MACHINE_FIREBOX_MENU.get(), id);
-        this.blockEntity = blockEntity;
-
-        var container = new ModItemStackHandlerContainer(blockEntity.getInventory(), blockEntity::setChanged);
-        this.addSlot(new Slot(container, 0, 44, 27));
-        this.addSlot(new Slot(container, 1, 62, 27));
-
-        for (int row = 0; row < 3; row++) {
-            for (int col = 0; col < 9; col++) {
-                this.addSlot(new Slot(inventory, col + row * 9 + 9, 8 + col * 18, 86 + row * 18));
-            }
-        }
-        for (int col = 0; col < 9; col++) {
-            this.addSlot(new Slot(inventory, col, 8 + col * 18, 144));
-        }
+        this(ModMenuTypes.MACHINE_FIREBOX_MENU.get(), id, inventory, lookup(inventory, extraData), new SimpleContainerData(6));
     }
 
     public static MachineFireboxMenu create(int id, Inventory inventory, MachineFireboxBlockEntity blockEntity) {
-        return new MachineFireboxMenu(id, inventory, blockEntity);
+        return new MachineFireboxMenu(ModMenuTypes.MACHINE_FIREBOX_MENU.get(), id, inventory, blockEntity, blockEntity.getData());
     }
 
-    private static MachineFireboxBlockEntity getBlockEntity(Inventory inventory, FriendlyByteBuf buffer) {
-        BlockPos pos = buffer.readBlockPos();
-        BlockEntity blockEntity = inventory.player.level().getBlockEntity(pos);
-        if (blockEntity instanceof MachineFireboxBlockEntity fireboxBlockEntity) {
-            return fireboxBlockEntity;
+    protected MachineFireboxMenu(MenuType<?> type, int id, Inventory invPlayer, MachineFireboxBaseBlockEntity furnace, ContainerData data) {
+        super(type, id);
+        this.firebox = furnace;
+        this.data = data;
+        this.firebox.openInventory();
+
+        var container = new ModItemStackHandlerContainer(furnace.getInventory(), furnace::setChanged);
+        this.addSlot(new Slot(container, 0, 44, 27));
+        this.addSlot(new Slot(container, 1, 62, 27));
+
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 9; j++) {
+                this.addSlot(new Slot(invPlayer, j + i * 9 + 9, 8 + j * 18, 86 + i * 18));
+            }
         }
-        throw new IllegalStateException("No MachineFireboxBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":machine_firebox_menu");
+
+        for (int i = 0; i < 9; i++) {
+            this.addSlot(new Slot(invPlayer, i, 8 + i * 18, 144));
+        }
+
+        addDataSlots(data);
     }
 
-    public MachineFireboxBlockEntity getBlockEntity() {
-        return blockEntity;
+    protected static MachineFireboxBaseBlockEntity lookup(Inventory inventory, FriendlyByteBuf buffer) {
+        BlockPos pos = buffer.readBlockPos();
+        if (inventory.player.level().getBlockEntity(pos) instanceof MachineFireboxBaseBlockEntity be) return be;
+        throw new IllegalStateException("No firebox at " + pos);
+    }
+
+    public MachineFireboxBaseBlockEntity getBlockEntity() {
+        return firebox;
+    }
+
+    public int getHeatEnergy() { return data.get(0); }
+    public int getMaxHeat() { return data.get(1); }
+    public int getBurnHeat() { return data.get(2); }
+    public int getBurnTime() { return data.get(3); }
+    public int getMaxBurnTime() { return data.get(4); }
+    public boolean wasOn() { return data.get(5) != 0; }
+
+    @Override
+    public ItemStack quickMoveStack(Player player, int index) {
+        ItemStack stack = ItemStack.EMPTY;
+        Slot slot = this.slots.get(index);
+
+        if (slot != null && slot.hasItem()) {
+            ItemStack originalStack = slot.getItem();
+            stack = originalStack.copy();
+
+            if (index <= 1) {
+                if (!this.moveItemStackTo(originalStack, 2, this.slots.size(), true)) {
+                    return ItemStack.EMPTY;
+                }
+
+                slot.onQuickCraft(originalStack, stack);
+
+            } else if (!this.moveItemStackTo(originalStack, 0, 2, false)) {
+                return ItemStack.EMPTY;
+            }
+
+            if (originalStack.isEmpty()) {
+                slot.set(ItemStack.EMPTY);
+            } else {
+                slot.setChanged();
+            }
+        }
+
+        return stack;
     }
 
     @Override
     public boolean stillValid(Player player) {
-        if (blockEntity == null || blockEntity.getLevel() != player.level()) {
-            return false;
-        }
-        BlockPos pos = blockEntity.getBlockPos();
-        return player.distanceToSqr(pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D) <= 64.0D;
+        // w16b: Original isUseableByPlayer (TileEntityMachineBase) = 128 vom Kern, dazu Huelle der Maschine (MultiblockMenuReach)
+        return MultiblockMenuReach.stillValidCore(firebox, player, 128.0D);
     }
 
     @Override
-    public ItemStack quickMoveStack(Player player, int index) {
-        ItemStack result = ItemStack.EMPTY;
-        Slot slot = this.slots.get(index);
-        if (slot == null || !slot.hasItem()) return result;
-
-        ItemStack stack = slot.getItem();
-        result = stack.copy();
-
-        if (index < MACHINE_SLOT_COUNT) {
-            if (!this.moveItemStackTo(stack, PLAYER_SLOT_START, this.slots.size(), true)) {
-                return ItemStack.EMPTY;
-            }
-        } else {
-            if (!this.moveItemStackTo(stack, 0, MACHINE_SLOT_COUNT, false)) {
-                return ItemStack.EMPTY;
-            }
-        }
-
-        if (stack.isEmpty()) {
-            slot.set(ItemStack.EMPTY);
-        } else {
-            slot.setChanged();
-        }
-        slot.onTake(player, stack);
-        return result;
+    public void removed(Player player) {
+        super.removed(player);
+        this.firebox.closeInventory();
     }
 }

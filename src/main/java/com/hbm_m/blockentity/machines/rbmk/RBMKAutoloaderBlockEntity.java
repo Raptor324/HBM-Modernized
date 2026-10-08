@@ -231,5 +231,5 @@ public class RBMKAutoloaderBlockEntity extends RBMKColumnBlockEntity implements 
                 slots[idx] = ItemStack.of(s.getCompound("item"));
         }
     }
-}
 
+}

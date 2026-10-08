@@ -108,4 +108,15 @@ public class ItemSwordAbility extends SwordItem implements ITooltipProvider {
     protected boolean canOperate(ItemStack stack) {
         return true;
     }
+
+    /** BEWLR fuer die 1.7-IItemRenderer (ItemRenderGavel/Shim/RedstoneSword); greift nur bei builtin/entity-Itemmodellen. */
+    @Override
+    public void initializeClient(java.util.function.Consumer<net.minecraftforge.client.extensions.common.IClientItemExtensions> consumer) {
+        consumer.accept(new net.minecraftforge.client.extensions.common.IClientItemExtensions() {
+            @Override
+            public net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer getCustomRenderer() {
+                return com.hbm_m.client.weapon.GunItemRenderer.INSTANCE;
+            }
+        });
+    }
 }

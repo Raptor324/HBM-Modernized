@@ -21,9 +21,9 @@ import net.minecraft.world.level.block.state.BlockState;
 /**
  * 1:1 {@code BlockOre} als {@code block_meteor_molten}: leuchtet (0.75), kuehlt bei einem Zufallstick zu
  * {@code block_meteor_cobble} ab (Zischen), setzt Wesen, die darueber laufen, 5 s in Brand und wird beim Abbauen
- * durch einen Spieler zu Lava. Ohne Behutsamkeit laesst er nichts fallen (Beutetabelle).
+ * durch einen Spieler zu Lava. Ohne Behutsamkeit laesst er nichts fallen (Beutetabelle). Erbt das uebrige BlockOre-Verhalten.
  */
-public class BlockMeteorMolten extends Block {
+public class BlockMeteorMolten extends BlockOre {
 
     public BlockMeteorMolten(Properties properties) {
         super(properties.randomTicks());
@@ -42,9 +42,9 @@ public class BlockMeteorMolten extends Block {
         super.stepOn(world, pos, state, entity);
     }
 
+    /** Original {@code onBlockDestroyedByPlayer}: auch im Kreativmodus, vor den Drops (Block#destroy). */
     @Override
-    public void playerDestroy(Level world, Player player, BlockPos pos, BlockState state, @Nullable BlockEntity be, ItemStack tool) {
-        super.playerDestroy(world, player, pos, state, be, tool);
-        if (!world.isClientSide) world.setBlock(pos, Blocks.LAVA.defaultBlockState(), 3);
+    public void destroy(net.minecraft.world.level.LevelAccessor world, BlockPos pos, BlockState state) {
+        if (!world.isClientSide()) world.setBlock(pos, Blocks.LAVA.defaultBlockState(), 3);
     }
 }

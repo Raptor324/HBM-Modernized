@@ -276,7 +276,7 @@ public class MachinePUREXBlockEntity extends BaseMachineBlockEntity implements I
     @Override
     public String provideRORValue(String name) {
         if ((PREFIX_VALUE + "progress").equals(name)) return "" + (int) Math.round(getProgressFraction() * 100);
-        if ((PREFIX_VALUE + "recipe").equals(name)) return getSelectedRecipeId() == null ? "null" : getSelectedRecipeId().toString();
+        if ((PREFIX_VALUE + "recipe").equals(name)) return com.hbm_m.api.redstoneoverradio.RORRecipeNames.name(getSelectedRecipeId());
         if ((PREFIX_VALUE + "active").equals(name)) return "" + (this.didProcess ? 1 : 0);
         return null;
     }
@@ -307,4 +307,26 @@ public class MachinePUREXBlockEntity extends BaseMachineBlockEntity implements I
         return new AABB(worldPosition.getX() - 2, worldPosition.getY(), worldPosition.getZ() - 2,
                 worldPosition.getX() + 3, worldPosition.getY() + 5, worldPosition.getZ() + 3);
     }
+
+    //? if forge {
+    /** Original {@code ISidedInventory}: Slots {4-12}; Zutaten nach Rezept hinein, Ausgaben 7-12 und verstopfte Eingaenge heraus. */
+    private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
+            new com.hbm_m.blockentity.SidedItemAccess.Rules() {
+                @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return com.hbm_m.blockentity.SidedItemAccess.range(4, 12); }
+                @Override public boolean canInsert(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return isItemValidForSlot(slot, stack); }
+                @Override public boolean canExtract(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return (slot >= 7 && slot <= 12) || purexModule.isSlotClogged(slot); }
+            });
+
+    @Override
+    public @org.jetbrains.annotations.NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(@org.jetbrains.annotations.NotNull net.minecraftforge.common.capabilities.Capability<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER && side != null) return sidedItems.get(side).cast();
+        return super.getCapability(cap, side);
+    }
+
+    @Override
+    public void invalidateCaps() {
+        super.invalidateCaps();
+        sidedItems.invalidate();
+    }
+    //?}
 }

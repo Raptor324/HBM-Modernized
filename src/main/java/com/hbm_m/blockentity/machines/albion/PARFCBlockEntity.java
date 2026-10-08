@@ -24,7 +24,7 @@ import net.minecraft.world.level.block.state.BlockState;
  * auf einer seiner Dummyzellen; der Kern wird von dort aus gesucht. Daraus ergeben sich die
  * Spruenge von zwei bis fuenf Feldern - und damit die tatsaechliche Groesse eines Rings.</p>
  */
-public class PARFCBlockEntity extends CooledMachineBlockEntity implements IParticleUser {
+public class PARFCBlockEntity extends CooledMachineBlockEntity implements IParticleUser, com.hbm_m.api.redstoneoverradio.IRORValueProvider {
 
     public static final int SLOT_BATTERY = 0;
     public static final int INVENTORY_SIZE = 1;
@@ -35,7 +35,8 @@ public class PARFCBlockEntity extends CooledMachineBlockEntity implements IParti
     private static final int MOMENTUM_GAIN = 100;
     /** Original: {@code defocusGain = 100}. */
     private static final int DEFOCUS_GAIN = 100;
-    private static final long MAX_POWER = 2_500_000L;
+    /** Original {@code getMaxPower() = 1_000_000}. */
+    private static final long MAX_POWER = 1_000_000L;
     /** Original: {@code addDistance(9)}. */
     private static final int DISTANCE = 9;
     /** Kettenbetrieb: einen Block weiter (siehe Klassenkommentar). */
@@ -106,5 +107,30 @@ public class PARFCBlockEntity extends CooledMachineBlockEntity implements IParti
     @Override
     public AbstractContainerMenu createMenu(int id, Inventory inv, Player player) {
         return new com.hbm_m.inventory.menu.PARFCMenu(id, inv, this);
+    }
+
+    @Override
+    protected void readNbtData(net.minecraft.nbt.CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(tag, registries);
+        setEnergyCapacity(MAX_POWER); // alte Welten: frueherer Speicherwert
+    }
+
+    // ── Redstone-over-Radio (1:1 TileEntityPARFC) ──
+
+    @Override
+    public String[] getFunctionInfo() {
+        return new String[] {
+            PREFIX_VALUE + "temperature",
+            PREFIX_VALUE + "pfmcold",
+            PREFIX_VALUE + "pfm"
+        };
+    }
+
+    @Override
+    public String provideRORValue(String name) {
+        if ((PREFIX_VALUE + "temperature").equals(name)) return "" + (int) this.temperature;
+        if ((PREFIX_VALUE + "pfmcold").equals(name))     return "" + coolantTanks[0].getFill();
+        if ((PREFIX_VALUE + "pfm").equals(name))         return "" + coolantTanks[1].getFill();
+        return null;
     }
 }

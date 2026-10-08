@@ -48,7 +48,8 @@ public class ItemDesignatorRange extends Item implements IDesignatorItem, IToolt
         ItemStack stack = player.getItemInHand(hand);
         HitResult hit = player.pick(300, 1f, false);
 
-        if (hit.getType() != HitResult.Type.BLOCK) {
+        // Original rayTrace(..., mopOnMiss = true): auch ohne Treffer gilt der Block am Strahlende
+        if (!(hit instanceof BlockHitResult)) {
             return InteractionResultHolder.pass(stack);
         }
 
@@ -67,7 +68,7 @@ public class ItemDesignatorRange extends Item implements IDesignatorItem, IToolt
 
         if (level.isClientSide()) {
             player.displayClientMessage(
-                    Component.translatable("message.hbm_m.designator.position_set_xy", pos.getX(), pos.getZ()), true);
+                    Component.translatable("message.hbm_m.designator.position_set_xy", pos.getX(), pos.getZ()), false);
         }
         level.playSound(player, player.blockPosition(), ModSounds.TOOL_TECH_BLEEP.get(),
                 SoundSource.PLAYERS, 1.0F, 1.0F);

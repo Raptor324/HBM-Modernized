@@ -33,6 +33,30 @@ public class Meteorite {
 
     public static boolean safeMode = false;
 
+    /**
+     * R9: Weltgenerierung ({@code HbmWorldGen}: {@code generate(world, rand, x, y, z, false, false, false)}) - ohne
+     * Sonderformen und Einschlagschaden, daher auch fuer {@code WorldGenLevel}.
+     */
+    public void generateWorldgen(net.minecraft.world.level.LevelAccessor world, RandomSource rand, int x, int y, int z) {
+        safeMode = false;
+
+        if (replacables.isEmpty()) {
+            generateReplacables();
+        }
+
+        switch (rand.nextInt(3)) {
+        case 0:
+            generateLarge(world, rand, x, y, z);
+            break;
+        case 1:
+            generateMedium(world, rand, x, y, z);
+            break;
+        case 2:
+            generateSmall(world, rand, x, y, z);
+            break;
+        }
+    }
+
     public void generate(Level world, RandomSource rand, int x, int y, int z, boolean safe, boolean allowSpecials, boolean damagingImpact) {
         safeMode = safe;
 
@@ -251,7 +275,7 @@ public class Meteorite {
         return sCore;
     }
 
-    public void generateLarge(Level world, RandomSource rand, int x, int y, int z) {
+    public void generateLarge(net.minecraft.world.level.LevelAccessor world, RandomSource rand, int x, int y, int z) {
         // 0 - Molten, 1 - Cobble, 2 - Broken, 3 - Mix
         int hull = rand.nextInt(4);
         // 0 - Cobble, 1 - Broken, 2 - Mix
@@ -281,7 +305,7 @@ public class Meteorite {
         }
     }
 
-    public void generateMedium(Level world, RandomSource rand, int x, int y, int z) {
+    public void generateMedium(net.minecraft.world.level.LevelAccessor world, RandomSource rand, int x, int y, int z) {
         int hull = rand.nextInt(4);
         int outerPadding = 0;
         if (hull == 2)
@@ -309,7 +333,7 @@ public class Meteorite {
         }
     }
 
-    public void generateSmall(Level world, RandomSource rand, int x, int y, int z) {
+    public void generateSmall(net.minecraft.world.level.LevelAccessor world, RandomSource rand, int x, int y, int z) {
         int hull = rand.nextInt(4);
         int core = rand.nextInt(3);
 
@@ -320,33 +344,33 @@ public class Meteorite {
         setCore(world, rand, x, y, z, sCore);
     }
 
-    private void setCore(Level world, RandomSource rand, int x, int y, int z, List<Block> core) {
+    private void setCore(net.minecraft.world.level.LevelAccessor world, RandomSource rand, int x, int y, int z, List<Block> core) {
         Block b = core.get(rand.nextInt(core.size()));
         setBlock(world, x, y, z, b.defaultBlockState(), 2);
     }
 
-    public void genL1(Level world, RandomSource rand, int x, int y, int z, List<Block> hull, List<Block> op, List<Block> ip, List<Block> core) {
+    public void genL1(net.minecraft.world.level.LevelAccessor world, RandomSource rand, int x, int y, int z, List<Block> hull, List<Block> op, List<Block> ip, List<Block> core) {
         generateSphere7x7(world, rand, x, y, z, hull);
         generateStar5x5(world, rand, x, y, z, op);
         generateStar3x3(world, rand, x, y, z, ip);
         setCore(world, rand, x, y, z, core);
     }
 
-    public void genL2(Level world, RandomSource rand, int x, int y, int z, List<Block> hull, List<Block> op, List<Block> ip, List<Block> core) {
+    public void genL2(net.minecraft.world.level.LevelAccessor world, RandomSource rand, int x, int y, int z, List<Block> hull, List<Block> op, List<Block> ip, List<Block> core) {
         generateSphere7x7(world, rand, x, y, z, hull);
         generateSphere5x5(world, rand, x, y, z, op);
         generateStar3x3(world, rand, x, y, z, ip);
         setCore(world, rand, x, y, z, core);
     }
 
-    public void genL3(Level world, RandomSource rand, int x, int y, int z, List<Block> hull, List<Block> op, List<Block> ip, List<Block> core) {
+    public void genL3(net.minecraft.world.level.LevelAccessor world, RandomSource rand, int x, int y, int z, List<Block> hull, List<Block> op, List<Block> ip, List<Block> core) {
         generateSphere7x7(world, rand, x, y, z, hull);
         generateSphere5x5(world, rand, x, y, z, op);
         generateBox(world, rand, x, y, z, ip);
         setCore(world, rand, x, y, z, core);
     }
 
-    public void genL4(Level world, RandomSource rand, int x, int y, int z, List<Block> hull, List<Block> op, List<Block> ip, List<Block> core) {
+    public void genL4(net.minecraft.world.level.LevelAccessor world, RandomSource rand, int x, int y, int z, List<Block> hull, List<Block> op, List<Block> ip, List<Block> core) {
         generateSphere7x7(world, rand, x, y, z, hull);
         generateSphere5x5(world, rand, x, y, z, op);
         generateBox(world, rand, x, y, z, ip);
@@ -354,7 +378,7 @@ public class Meteorite {
         setCore(world, rand, x, y, z, core);
     }
 
-    public void genL5(Level world, RandomSource rand, int x, int y, int z, List<Block> hull, List<Block> op, List<Block> ip, List<Block> core) {
+    public void genL5(net.minecraft.world.level.LevelAccessor world, RandomSource rand, int x, int y, int z, List<Block> hull, List<Block> op, List<Block> ip, List<Block> core) {
         generateSphere7x7(world, rand, x, y, z, hull);
         generateSphere5x5(world, rand, x, y, z, op);
         generateStar5x5(world, rand, x, y, z, ip);
@@ -362,37 +386,37 @@ public class Meteorite {
         setCore(world, rand, x, y, z, core);
     }
 
-    public void genM1(Level world, RandomSource rand, int x, int y, int z, List<Block> hull, List<Block> op, List<Block> ip, List<Block> core) {
+    public void genM1(net.minecraft.world.level.LevelAccessor world, RandomSource rand, int x, int y, int z, List<Block> hull, List<Block> op, List<Block> ip, List<Block> core) {
         generateSphere5x5(world, rand, x, y, z, hull);
         setCore(world, rand, x, y, z, core);
     }
 
-    public void genM2(Level world, RandomSource rand, int x, int y, int z, List<Block> hull, List<Block> op, List<Block> ip, List<Block> core) {
+    public void genM2(net.minecraft.world.level.LevelAccessor world, RandomSource rand, int x, int y, int z, List<Block> hull, List<Block> op, List<Block> ip, List<Block> core) {
         generateSphere5x5(world, rand, x, y, z, hull);
         generateStar3x3(world, rand, x, y, z, op);
         setCore(world, rand, x, y, z, core);
     }
 
-    public void genM3(Level world, RandomSource rand, int x, int y, int z, List<Block> hull, List<Block> op, List<Block> ip, List<Block> core) {
+    public void genM3(net.minecraft.world.level.LevelAccessor world, RandomSource rand, int x, int y, int z, List<Block> hull, List<Block> op, List<Block> ip, List<Block> core) {
         generateSphere5x5(world, rand, x, y, z, hull);
         generateBox(world, rand, x, y, z, op);
         setCore(world, rand, x, y, z, core);
     }
 
-    public void genM4(Level world, RandomSource rand, int x, int y, int z, List<Block> hull, List<Block> op, List<Block> ip, List<Block> core) {
+    public void genM4(net.minecraft.world.level.LevelAccessor world, RandomSource rand, int x, int y, int z, List<Block> hull, List<Block> op, List<Block> ip, List<Block> core) {
         generateSphere5x5(world, rand, x, y, z, hull);
         generateBox(world, rand, x, y, z, op);
         generateStar3x3(world, rand, x, y, z, ip);
         setCore(world, rand, x, y, z, core);
     }
 
-    public void genM5(Level world, RandomSource rand, int x, int y, int z, List<Block> hull, List<Block> op, List<Block> ip, List<Block> core) {
+    public void genM5(net.minecraft.world.level.LevelAccessor world, RandomSource rand, int x, int y, int z, List<Block> hull, List<Block> op, List<Block> ip, List<Block> core) {
         generateSphere5x5(world, rand, x, y, z, hull);
         generateBox(world, rand, x, y, z, ip);
         setCore(world, rand, x, y, z, core);
     }
 
-    public void genM6(Level world, RandomSource rand, int x, int y, int z, List<Block> hull, List<Block> op, List<Block> ip, List<Block> core) {
+    public void genM6(net.minecraft.world.level.LevelAccessor world, RandomSource rand, int x, int y, int z, List<Block> hull, List<Block> op, List<Block> ip, List<Block> core) {
         generateSphere5x5(world, rand, x, y, z, hull);
         generateBox(world, rand, x, y, z, ip);
         generateStar3x3(world, rand, x, y, z, this.getRandomOre(rand));
@@ -400,7 +424,7 @@ public class Meteorite {
     }
 
     /** Fuellt den Quader [a0,a1) x [b0,b1) x [c0,c1) um (x,y,z), je Block zufaellig aus der Liste. */
-    private void fill(Level world, RandomSource rand, int x, int y, int z, List<Block> set, int a0, int a1, int b0, int b1, int c0, int c1) {
+    private void fill(net.minecraft.world.level.LevelAccessor world, RandomSource rand, int x, int y, int z, List<Block> set, int a0, int a1, int b0, int b1, int c0, int c1) {
         for (int a = a0; a < a1; a++)
             for (int b = b0; b < b1; b++)
                 for (int c = c0; c < c1; c++) {
@@ -409,7 +433,7 @@ public class Meteorite {
                 }
     }
 
-    public void generateSphere7x7(Level world, RandomSource rand, int x, int y, int z, List<Block> set) {
+    public void generateSphere7x7(net.minecraft.world.level.LevelAccessor world, RandomSource rand, int x, int y, int z, List<Block> set) {
         fill(world, rand, x, y, z, set, -3, 4, -1, 2, -1, 2);
         fill(world, rand, x, y, z, set, -1, 2, -3, 4, -1, 2);
         fill(world, rand, x, y, z, set, -1, 2, -1, 2, -3, 4);
@@ -418,13 +442,13 @@ public class Meteorite {
         fill(world, rand, x, y, z, set, -2, 3, -1, 2, -2, 3);
     }
 
-    public void generateSphere5x5(Level world, RandomSource rand, int x, int y, int z, List<Block> set) {
+    public void generateSphere5x5(net.minecraft.world.level.LevelAccessor world, RandomSource rand, int x, int y, int z, List<Block> set) {
         fill(world, rand, x, y, z, set, -2, 3, -1, 2, -1, 2);
         fill(world, rand, x, y, z, set, -1, 2, -2, 3, -1, 2);
         fill(world, rand, x, y, z, set, -1, 2, -1, 2, -2, 3);
     }
 
-    public void generateSphere9x9(Level world, RandomSource rand, int x, int y, int z, List<Block> set) {
+    public void generateSphere9x9(net.minecraft.world.level.LevelAccessor world, RandomSource rand, int x, int y, int z, List<Block> set) {
         fill(world, rand, x, y, z, set, -4, 5, -1, 2, -1, 2);
         fill(world, rand, x, y, z, set, -1, 2, -4, 5, -1, 2);
         fill(world, rand, x, y, z, set, -1, 2, -1, 2, -4, 5);
@@ -436,11 +460,11 @@ public class Meteorite {
         fill(world, rand, x, y, z, set, -2, 3, -2, 3, -3, 4);
     }
 
-    public void generateBox(Level world, RandomSource rand, int x, int y, int z, List<Block> set) {
+    public void generateBox(net.minecraft.world.level.LevelAccessor world, RandomSource rand, int x, int y, int z, List<Block> set) {
         fill(world, rand, x, y, z, set, -1, 2, -1, 2, -1, 2);
     }
 
-    public void generateStar5x5(Level world, RandomSource rand, int x, int y, int z, List<Block> set) {
+    public void generateStar5x5(net.minecraft.world.level.LevelAccessor world, RandomSource rand, int x, int y, int z, List<Block> set) {
         fill(world, rand, x, y, z, set, -1, 2, -1, 2, -1, 2);
         single(world, rand, x + 2, y, z, set);
         single(world, rand, x - 2, y, z, set);
@@ -450,7 +474,7 @@ public class Meteorite {
         single(world, rand, x, y, z - 2, set);
     }
 
-    public void generateStar3x3(Level world, RandomSource rand, int x, int y, int z, List<Block> set) {
+    public void generateStar3x3(net.minecraft.world.level.LevelAccessor world, RandomSource rand, int x, int y, int z, List<Block> set) {
         single(world, rand, x, y, z, set);
         single(world, rand, x + 1, y, z, set);
         single(world, rand, x - 1, y, z, set);
@@ -460,7 +484,7 @@ public class Meteorite {
         single(world, rand, x, y, z - 1, set);
     }
 
-    private void single(Level world, RandomSource rand, int x, int y, int z, List<Block> set) {
+    private void single(net.minecraft.world.level.LevelAccessor world, RandomSource rand, int x, int y, int z, List<Block> set) {
         Block block = set.get(rand.nextInt(set.size()));
         setBlock(world, x, y, z, block.defaultBlockState(), 2);
     }
@@ -475,7 +499,7 @@ public class Meteorite {
         return ores;
     }
 
-    private void setBlock(Level world, int x, int y, int z, BlockState b, int flag) {
+    private void setBlock(net.minecraft.world.level.LevelAccessor world, int x, int y, int z, BlockState b, int flag) {
         BlockPos pos = new BlockPos(x, y, z);
         BlockState target = world.getBlockState(pos);
 

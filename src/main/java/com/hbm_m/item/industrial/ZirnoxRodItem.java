@@ -82,15 +82,18 @@ public class ZirnoxRodItem extends Item implements ITooltipProvider {
 
     @Override
     public void appendHbmTooltip(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
-        int life = getLifeTime(stack);
-        float depletion = Math.min(100.0F, (life * 100.0F) / Math.max(1, maxLife));
-        tooltip.add(Component.literal(String.format("Depletion: %.2f%%", depletion)).withStyle(ChatFormatting.YELLOW));
-
-        if (breeding) {
-            tooltip.add(Component.literal("Breeding rod").withStyle(ChatFormatting.GRAY));
-        } else {
-            tooltip.add(Component.literal("Heat per pulse: " + heat).withStyle(ChatFormatting.GRAY));
+        // 1:1 Original ItemZirnoxRod.addInformation: gelbe Abbrandzeile, dann desc.item.zirnox(Breeding)Rod ($-getrennt, Farben aus dem Lang-Text)
+        tooltip.add(Component.translatable("trait.rbmk.depletion", ((int) ((((double) getLifeTime(stack)) / (double) maxLife) * 100000)) / 1000D + "%").withStyle(ChatFormatting.YELLOW));
+        // Original reicht fuer %d einen getShortNumber-String durch (ergibt dort "Format error"); hier die gemeinten Zahlen.
+        String raw = net.minecraft.locale.Language.getInstance().getOrDefault(breeding ? "desc.item.zirnoxBreedingRod" : "desc.item.zirnoxRod");
+        String text;
+        try {
+            text = breeding ? String.format(java.util.Locale.US, raw, maxLife) : String.format(java.util.Locale.US, raw, heat, maxLife);
+        } catch (java.util.IllegalFormatException e) {
+            text = raw;
         }
-        tooltip.add(Component.literal("Lifetime: " + maxLife).withStyle(ChatFormatting.DARK_GRAY));
+        for (String s : text.split("\\$")) {
+            tooltip.add(Component.literal(s));
+        }
     }
 }

@@ -74,13 +74,9 @@ public class MachineBatterySocketBakedModel extends AbstractMultipartBakedModel 
                 List<BakedQuad> scQuads = getPackQuads(part, "SC", "block/machine/battery_sc", querySide, rand);
                 quads.addAll(rotationY != 0 ? ModelHelper.transformQuadsByFacing(scQuads, rotationY) : scQuads);
             }
-        } else if (showBattery) {
-            BakedModel battery = getPart("Battery");
-            if (battery != null) {
-                List<BakedQuad> batteryQuads = getRetexturedBatteryQuads(battery, querySide, rand);
-                quads.addAll(rotationY != 0 ? ModelHelper.transformQuadsByFacing(batteryQuads, rotationY) : batteryQuads);
-            }
         }
+        // Original RenderBatterySocket: andere Batterien (und die kreative) zeichnet nur der TESR als drehenden
+        // Gegenstand bzw. Sonnenpony (BatterySocketRenderer) - kein zusaetzliches Batteriemodell im Sockel.
 
         return quads;
     }

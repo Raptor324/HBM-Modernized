@@ -207,6 +207,8 @@ public class MachineZirnoxBlock extends BaseEntityBlock implements IMultiblockCo
 
     private InteractionResult openMenu(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
         if (!level.isClientSide) {
+            // Original ReactorZirnox.onBlockActivated: Bedienen ohne Schleichen markiert fuer die FBI-Razzia
+            if (!player.isShiftKeyDown()) com.hbm_m.handler.BossSpawnHandler.markFBI((ServerPlayer) player);
             BlockEntity entity = level.getBlockEntity(pos);
             if (entity instanceof MenuProvider menuProvider) {
                 MenuRegistry.openExtendedMenu((ServerPlayer) player, menuProvider, buf -> buf.writeBlockPos(pos));
@@ -219,7 +221,8 @@ public class MachineZirnoxBlock extends BaseEntityBlock implements IMultiblockCo
     public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
         MultiblockStructureHelper helper = getStructureHelper();
         if (helper != null) {
-            return helper.generateShapeFromParts(state.getValue(FACING));
+        // w16b: nur die Kernzelle (Klicks fallen nicht in fremde Zellen); Umriss der ganzen Maschine: MultiblockOutlineForge
+            return helper.getControllerCellShape(state.getValue(FACING));
         }
         return Shapes.block();
     }

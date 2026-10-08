@@ -1,0 +1,10 @@
+{
+  "type": "hbm_m:combination_oven",
+  "ingredient": {
+    "item": "hbm_m:powder_sodium"
+  },
+  "fluid": {
+    "fluid": "hbm_m:sodium",
+    "amount": 100
+  }
+}

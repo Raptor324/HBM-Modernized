@@ -1,7 +1,6 @@
 package com.hbm_m.entity.projectile;
 
 import com.hbm_m.entity.ModEntities;
-import com.hbm_m.item.ModItems;
 
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
@@ -64,7 +63,7 @@ public class TurretBulletEntity extends ThrowableItemProjectile {
     @Override
     protected Item getDefaultItem() {
         String id = this.entityData.get(ICON_ITEM_ID);
-        if (id.isEmpty()) return ModItems.TURRET_AMMO.get();
+        if (id.isEmpty()) return Items.SNOWBALL;
         Item item = net.minecraft.core.registries.BuiltInRegistries.ITEM.get(
                 net.minecraft.resources.ResourceLocation.tryParse(id));
         return item == null ? Items.SNOWBALL : item;

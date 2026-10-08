@@ -50,6 +50,13 @@ public class MachineAshpitBlockEntity extends BaseMachineBlockEntity {
 
     private final int[] ashLevel = new int[AshType.values().length];
 
+    /** Original {@code playersUsing}/{@code isFull}: synchronisiert fuer die Klappe und die Glut (RenderAshpit). */
+    private int playersUsing = 0;
+    public boolean isFull;
+    /** Original {@code doorAngle/prevDoorAngle} - nur Client. */
+    public float doorAngle = 0;
+    public float prevDoorAngle = 0;
+
     public MachineAshpitBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.ASHPIT_BE.get(), pos, state, INVENTORY_SIZE, 0L, 0L, 0L);
     }
@@ -57,6 +64,16 @@ public class MachineAshpitBlockEntity extends BaseMachineBlockEntity {
     public static void tick(Level level, BlockPos pos, BlockState state, MachineAshpitBlockEntity be) {
         if (!level.isClientSide) {
             be.serverTick();
+        } else {
+            // Original isRemote-Zweig: Klappe schwingt mit (doorAngle / 10) + 3 je Tick auf 0..135
+            be.prevDoorAngle = be.doorAngle;
+            float swingSpeed = (be.doorAngle / 10F) + 3;
+            if (be.playersUsing > 0) {
+                be.doorAngle += swingSpeed;
+            } else {
+                be.doorAngle -= swingSpeed;
+            }
+            be.doorAngle = net.minecraft.util.Mth.clamp(be.doorAngle, 0F, 135F);
         }
     }
 
@@ -65,10 +82,20 @@ public class MachineAshpitBlockEntity extends BaseMachineBlockEntity {
         for (AshType type : AshType.values()) {
             if (processAsh(type)) dirty = true;
         }
-        if (dirty) {
-            setChanged();
-            sendUpdateToClient();
+        // Original openInventory/closeInventory: hier ueber die offenen Menues gezaehlt.
+        int using = 0;
+        for (Player p : level.players()) {
+            if (p.containerMenu instanceof com.hbm_m.inventory.menu.MachineAshpitMenu m && m.getBlockEntity() == this) using++;
         }
+        boolean full = false;
+        for (int i = 0; i < INVENTORY_SIZE; i++) {
+            if (!inventory.getStackInSlot(i).isEmpty()) full = true;
+        }
+        boolean sync = using != playersUsing || full != isFull;
+        playersUsing = using;
+        isFull = full;
+        if (dirty) setChanged();
+        if (dirty || sync) sendUpdateToClient();
     }
 
     /** Von Feuerungs-Maschinen aufzurufen, die unter sich einen Ash Pit finden (siehe Klassenkommentar). */
@@ -104,6 +131,8 @@ public class MachineAshpitBlockEntity extends BaseMachineBlockEntity {
         for (AshType type : AshType.values()) {
             tag.putInt("ash_" + type.name(), ashLevel[type.ordinal()]);
         }
+        tag.putInt("playersUsing", playersUsing);
+        tag.putBoolean("isFull", isFull);
     }
 
     @Override
@@ -112,6 +141,8 @@ public class MachineAshpitBlockEntity extends BaseMachineBlockEntity {
         for (AshType type : AshType.values()) {
             ashLevel[type.ordinal()] = tag.getInt("ash_" + type.name());
         }
+        playersUsing = tag.getInt("playersUsing");
+        isFull = tag.getBoolean("isFull");
     }
 
     // ── Slot validation ──────────────────────────────────────────────────────
@@ -137,4 +168,26 @@ public class MachineAshpitBlockEntity extends BaseMachineBlockEntity {
     public AbstractContainerMenu createMenu(int id, Inventory inventory, Player player) {
         return com.hbm_m.inventory.menu.MachineAshpitMenu.create(id, inventory, this);
     }
+
+    //? if forge {
+    /** Original {@code ISidedInventory}: Slots {0-4}; nichts hinein, alles heraus. */
+    private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
+            new com.hbm_m.blockentity.SidedItemAccess.Rules() {
+                @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return new int[] { 0, 1, 2, 3, 4 }; }
+                @Override public boolean canInsert(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return false; }
+                @Override public boolean canExtract(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return true; }
+            });
+
+    @Override
+    public @org.jetbrains.annotations.NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(@org.jetbrains.annotations.NotNull net.minecraftforge.common.capabilities.Capability<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER && side != null) return sidedItems.get(side).cast();
+        return super.getCapability(cap, side);
+    }
+
+    @Override
+    public void invalidateCaps() {
+        super.invalidateCaps();
+        sidedItems.invalidate();
+    }
+    //?}
 }

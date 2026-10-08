@@ -43,7 +43,7 @@ import net.minecraftforge.fluids.capability.IFluidHandler;
  * - Поддержка апгрейдов скорости и энергии
  */
 @SuppressWarnings("UnstableApiUsage")
-public class MachineFrackingTowerBlockEntity extends BaseMachineBlockEntity {
+public class MachineFrackingTowerBlockEntity extends BaseMachineBlockEntity implements com.hbm_m.api.block.IPersistentNBT {
     
     // Энергия
     protected static long maxPower = 5_000_000L;
@@ -115,14 +115,14 @@ public class MachineFrackingTowerBlockEntity extends BaseMachineBlockEntity {
         // Инициализация танков - единая инициализация для всех лоадеров
         // Capacities: oil/gas = 128_000 mB (Forge/NeoForge) / 64_000 mB (Fabric), fracksol = 64_000 mB
         // Using 128_000 as base capacity - Fabric will handle droplet conversion via FluidTank
-        this.oilTank = new FluidTank(128_000) {
+        this.oilTank = new FluidTank(64_000) { // Original 64.000 mB
             @Override
             public boolean isFluidValid(net.minecraft.world.level.material.Fluid fluid) {
                 return fluid.isSame(ModFluids.CRUDE_OIL.getSource());
             }
         };
 
-        this.gasTank = new FluidTank(128_000) {
+        this.gasTank = new FluidTank(64_000) { // Original 64.000 mB
             @Override
             public boolean isFluidValid(net.minecraft.world.level.material.Fluid fluid) {
                 return fluid.isSame(ModFluids.GAS.getSource());
@@ -553,5 +553,15 @@ public class MachineFrackingTowerBlockEntity extends BaseMachineBlockEntity {
         gasPerBedrockDepositMin = config.gasPerBedrockDepositMin;
         gasPerBedrockDepositMax = config.gasPerBedrockDepositMax;
         destructionRange = config.destructionRange;
+    }
+
+    /** Original {@code TileEntityOilDrillBase.writeNBT}: Strom und Tanks, sofern nicht leer. */
+    @Override
+    public void writeNBT(CompoundTag nbt) {
+        if (getEnergyStored() == 0 && oilTank.getFill() == 0 && gasTank.getFill() == 0 && fracksolTank.getFill() == 0) return;
+        nbt.putLong("energy", getEnergyStored());
+        nbt.put("oilTank", oilTank.writeNBT(new CompoundTag()));
+        nbt.put("gasTank", gasTank.writeNBT(new CompoundTag()));
+        nbt.put("fracksolTank", fracksolTank.writeNBT(new CompoundTag()));
     }
 }

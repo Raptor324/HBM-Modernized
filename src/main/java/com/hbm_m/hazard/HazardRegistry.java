@@ -64,7 +64,9 @@ public class HazardRegistry {
     /** Original registerTrafos: NBT-Strahlung und Behaelterinhalt (LBSM "safe crates" gibt es im Port nicht). */
     public static void registerTrafos() {
         HazardSystem.trafos.add(new com.hbm_m.hazard.transformer.HazardTransformerRadiationNBT());
-        HazardSystem.trafos.add(new com.hbm_m.hazard.transformer.HazardTransformerRadiationContainer());
+        // Original: if(!(GeneralConfig.enableLBSM && GeneralConfig.enableLBSMSafeCrates)) - LBSM-Kisten strahlen nicht
+        if (!(com.hbm_m.config.GeneralConfig.lbsm() && com.hbm_m.config.GeneralConfig.enableLBSMSafeCrates))
+            HazardSystem.trafos.add(new com.hbm_m.hazard.transformer.HazardTransformerRadiationContainer());
     }
 
     public static void registerItems() {
@@ -103,8 +105,6 @@ public class HazardRegistry {
                 case CO60 -> HazardSystem.register(ModMaterialItems.item(ingot, MaterialShape.INGOT), new HazardData(
                         new HazardEntry(RADIATION, 30f),
                         new HazardEntry(HOT, 1.0f)));
-                case THORIUM -> HazardSystem.register(ModMaterialItems.item(ingot, MaterialShape.INGOT), new HazardData(
-                        new HazardEntry(RADIATION, 0.1f)));
                 case RA226 -> HazardSystem.register(ModMaterialItems.item(ingot, MaterialShape.INGOT), new HazardData(
                         new HazardEntry(RADIATION, 7.5f)));
                 case PB209 -> HazardSystem.register(ModMaterialItems.item(ingot, MaterialShape.INGOT), new HazardData(
@@ -152,7 +152,7 @@ public class HazardRegistry {
                 case URANIUM238 -> HazardSystem.register(ModMaterialItems.item(ingot, MaterialShape.INGOT), new HazardData(
                         new HazardEntry(RADIATION, 0.25f)));
                 case THORIUM232 -> HazardSystem.register(ModMaterialItems.item(ingot, MaterialShape.INGOT), new HazardData(
-                        new HazardEntry(RADIATION, 1.0f)));
+                        new HazardEntry(RADIATION, 0.1f))); // Original th232 = 0.1F
                 case PLUTONIUM -> HazardSystem.register(ModMaterialItems.item(ingot, MaterialShape.INGOT), new HazardData(
                         new HazardEntry(RADIATION, 7.5f)));
                 case PLUTONIUM238 -> HazardSystem.register(ModMaterialItems.item(ingot, MaterialShape.INGOT), new HazardData(
@@ -183,6 +183,13 @@ public class HazardRegistry {
                 new HazardEntry(RADIATION, 750f),
                 new HazardEntry(HOT, 3f)));
 
+        // Restport: Original sellafield Meta 0-5
+        HazardSystem.register(ModBlocks.SELLAFIELD_0.get(), new HazardData(new HazardEntry(RADIATION, 0.5f)));
+        HazardSystem.register(ModBlocks.SELLAFIELD_1.get(), new HazardData(new HazardEntry(RADIATION, 1f)));
+        HazardSystem.register(ModBlocks.SELLAFIELD_2.get(), new HazardData(new HazardEntry(RADIATION, 2.5f)));
+        HazardSystem.register(ModBlocks.SELLAFIELD_3.get(), new HazardData(new HazardEntry(RADIATION, 4f)));
+        HazardSystem.register(ModBlocks.SELLAFIELD_4.get(), new HazardData(new HazardEntry(RADIATION, 5f)));
+        HazardSystem.register(ModBlocks.SELLAFIELD_5.get(), new HazardData(new HazardEntry(RADIATION, 10f)));
         HazardSystem.register(ModBlocks.ORE_SELLAFIELD_RADGEM.get(), new HazardData(
                 new HazardEntry(RADIATION, 25f)));
         HazardSystem.register(ModBlocks.WASTE_TRINITITE.get(), new HazardData(
@@ -318,6 +325,22 @@ public class HazardRegistry {
         HazardSystem.register(ModItems.ROD_ZIRNOX_TRITIUM.get(), new HazardData(new HazardEntry(RADIATION, 0.001F)));
         HazardSystem.register(ModItems.ROD_ZIRNOX_ZFB_MOX_DEPLETED.get(), new HazardData(new HazardEntry(RADIATION, 15F * 5F)));
 
+        // Brutstaebe (Original :362-375, registerBreedingRodRadiation; rod_dual = 1.0, rod_quad = 2.0)
+        breedingRod(com.hbm_m.item.nuclear.BreedingRodType.TRITIUM, 0.001F);
+        breedingRod(com.hbm_m.item.nuclear.BreedingRodType.CO60, 30.0F);
+        breedingRod(com.hbm_m.item.nuclear.BreedingRodType.RA226, 7.5F);
+        breedingRod(com.hbm_m.item.nuclear.BreedingRodType.AC227, 30.0F);
+        breedingRod(com.hbm_m.item.nuclear.BreedingRodType.TH232, 0.1F);
+        breedingRod(com.hbm_m.item.nuclear.BreedingRodType.THF, 1.75F);
+        breedingRod(com.hbm_m.item.nuclear.BreedingRodType.U235, 1.0F);
+        breedingRod(com.hbm_m.item.nuclear.BreedingRodType.NP237, 2.5F);
+        breedingRod(com.hbm_m.item.nuclear.BreedingRodType.U238, 0.25F);
+        breedingRod(com.hbm_m.item.nuclear.BreedingRodType.PU238, 10.0F);
+        breedingRod(com.hbm_m.item.nuclear.BreedingRodType.PU239, 5.0F);
+        breedingRod(com.hbm_m.item.nuclear.BreedingRodType.RGP, 6.25F);
+        breedingRod(com.hbm_m.item.nuclear.BreedingRodType.WASTE, 15.0F);
+        breedingRod(com.hbm_m.item.nuclear.BreedingRodType.URANIUM, 0.35F);
+
         // Watz-Pellets (Original :444-453, ingot = 1)
         watzPellet(com.hbm_m.item.nuclear.WatzPelletType.SCHRABIDIUM, 15.0F * 4);
         watzPellet(com.hbm_m.item.nuclear.WatzPelletType.HES, 5.85F * 4);
@@ -432,6 +455,13 @@ public class HazardRegistry {
         if (cooling != null) {
             HazardSystem.register(cooling, new HazardData(new HazardEntry(RADIATION, base), new HazardEntry(HOT, 5F)));
         }
+    }
+
+    /** Original {@code registerBreedingRodRadiation}: rod = base, rod_dual = base * 1, rod_quad = base * 2. */
+    private static void breedingRod(com.hbm_m.item.nuclear.BreedingRodType type, float base) {
+        HazardSystem.register(ModItems.ROD.get(type).get(), new HazardData(new HazardEntry(RADIATION, base)));
+        HazardSystem.register(ModItems.ROD_DUAL.get(type).get(), new HazardData(new HazardEntry(RADIATION, base * 1.0F)));
+        HazardSystem.register(ModItems.ROD_QUAD.get(type).get(), new HazardData(new HazardEntry(RADIATION, base * 2.0F)));
     }
 
     private static void watzPellet(com.hbm_m.item.nuclear.WatzPelletType type, float rad) {

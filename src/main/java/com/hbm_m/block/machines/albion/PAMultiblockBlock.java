@@ -128,6 +128,8 @@ public abstract class PAMultiblockBlock extends BaseEntityBlock implements IMult
 
     protected InteractionResult openMenu(Level level, BlockPos pos, Player player) {
         if (!hasMenu()) return InteractionResult.PASS;
+        // audit13: Original standardOpenBehavior - geschlichen wird der Klick verbraucht, ohne GUI
+        if (player.isShiftKeyDown()) return InteractionResult.sidedSuccess(level.isClientSide());
 
         if (!level.isClientSide()) {
             BlockEntity entity = level.getBlockEntity(pos);
@@ -140,8 +142,9 @@ public abstract class PAMultiblockBlock extends BaseEntityBlock implements IMult
 
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+        // w16b: nur die Kernzelle (Raycast pro Zelle wie Original); Umriss der ganzen Maschine: MultiblockOutlineForge
         MultiblockStructureHelper helper = getStructureHelper();
-        return helper != null ? helper.generateShapeFromParts(state.getValue(FACING)) : Shapes.block();
+        return helper != null ? helper.getControllerCellShape(state.getValue(FACING)) : Shapes.block();
     }
 
     @Override

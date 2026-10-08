@@ -1,6 +1,7 @@
 package com.hbm_m.datagen.recipes.custom;
 //? if forge {
 import com.hbm_m.item.ModItems;
+import com.hbm_m.item.nuclear.BreedingRodType;
 import com.hbm_m.item.material.MaterialShape;
 import com.hbm_m.item.material.ModMaterialItems;
 import com.hbm_m.item.material.ModMaterials;
@@ -28,7 +29,7 @@ public final class BreederRecipeGenerator {
     public static void generate(Consumer<FinishedRecipe> writer) {
         breed(writer, "cobalt_to_co60",            ModMaterials.COBALT,       ModMaterials.CO60,          100);
         breed(writer, "radium_to_actinium",        ModMaterials.RA226,        ModMaterials.ACTINIUM,      300);
-        breed(writer, "thorium232_to_thorium",     ModMaterials.THORIUM232,   ModMaterials.THORIUM,       500);
+        breed(writer, "thorium232_to_thorium_fuel", ModMaterials.THORIUM232,  ModMaterials.THORIUM_FUEL,  500); // Original TH232 -> THF
         breed(writer, "uranium235_to_neptunium",   ModMaterials.URANIUM235,   ModMaterials.NEPTUNIUM,     300);
         breed(writer, "neptunium_to_plutonium238", ModMaterials.NEPTUNIUM,    ModMaterials.PLUTONIUM238,  200);
         breed(writer, "plutonium238_to_239",       ModMaterials.PLUTONIUM238, ModMaterials.PLUTONIUM239, 1000);
@@ -41,6 +42,28 @@ public final class BreederRecipeGenerator {
                         new ItemStack(ModItems.NUCLEAR_WASTE.get()),
                         200)
                 .save(writer, "breeder/pu_mix_to_nuclear_waste");
+
+        // Original BreederRecipes.registerDefaults: Brutstaebe (Einzel = flux, Doppel = flux * 2, Vierfach = flux * 3)
+        rods(writer, BreedingRodType.LITHIUM, BreedingRodType.TRITIUM, 200);
+        rods(writer, BreedingRodType.CO, BreedingRodType.CO60, 100);
+        rods(writer, BreedingRodType.RA226, BreedingRodType.AC227, 300);
+        rods(writer, BreedingRodType.TH232, BreedingRodType.THF, 500);
+        rods(writer, BreedingRodType.U235, BreedingRodType.NP237, 300);
+        rods(writer, BreedingRodType.NP237, BreedingRodType.PU238, 200);
+        rods(writer, BreedingRodType.PU238, BreedingRodType.PU239, 1000);
+        rods(writer, BreedingRodType.U238, BreedingRodType.RGP, 300);
+        rods(writer, BreedingRodType.URANIUM, BreedingRodType.RGP, 200);
+        rods(writer, BreedingRodType.RGP, BreedingRodType.WASTE, 200);
+    }
+
+    /** Original {@code BreederRecipes.setRecipe}. */
+    private static void rods(Consumer<FinishedRecipe> writer, BreedingRodType in, BreedingRodType out, int flux) {
+        BreederRecipeBuilder.breederRecipe(Ingredient.of(ModItems.ROD.get(in).get()), new ItemStack(ModItems.ROD.get(out).get()), flux)
+                .save(writer, "breeder/rod_" + in.id());
+        BreederRecipeBuilder.breederRecipe(Ingredient.of(ModItems.ROD_DUAL.get(in).get()), new ItemStack(ModItems.ROD_DUAL.get(out).get()), flux * 2)
+                .save(writer, "breeder/rod_dual_" + in.id());
+        BreederRecipeBuilder.breederRecipe(Ingredient.of(ModItems.ROD_QUAD.get(in).get()), new ItemStack(ModItems.ROD_QUAD.get(out).get()), flux * 3)
+                .save(writer, "breeder/rod_quad_" + in.id());
     }
 
     // ─── helpers ──────────────────────────────────────────────────────────────────

@@ -3,6 +3,8 @@ package com.hbm_m.block.entity.doors;
 
 import org.jetbrains.annotations.Nullable;
 
+import com.hbm_m.api.tile.ILockableTile;
+import com.hbm_m.api.tile.LockState;
 import com.hbm_m.block.decorations.DoorBlock;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.client.model.variant.DoorModelRegistry;
@@ -29,6 +31,7 @@ import net.minecraft.network.protocol.game.ClientGamePacketListener;
 import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.entity.player.Player;
 import net.minecraft.sounds.SoundEvent;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
@@ -37,7 +40,7 @@ import net.minecraft.world.phys.AABB;
 // Forge-only model-data / distmarker imports intentionally removed for Fabric compilation.
 
 
-public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity implements IMultiblockPart
+public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity implements IMultiblockPart, ILockableTile
     //? if fabric {
     /*, net.fabricmc.fabric.api.rendering.data.v1.RenderAttachmentBlockEntity
     *///?}
@@ -48,7 +51,8 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
     public byte state = 0;
     private int openTicks = 0;
     public long animStartTime = 0;
-    private boolean locked = false;
+    /** Original TileEntityDoorGeneric extends TileEntityLockableBase: Stiftschloss der Tuer. */
+    public final LockState lockState = new LockState();
     private boolean lastRedstoneState = false;
 
     /**
@@ -316,7 +320,9 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
     private void updateRedstoneState(boolean powered) {
         if (powered == this.lastRedstoneState) return;
         this.lastRedstoneState = powered;
-    
+        // Original: Redstone schaltet ueber tryToggle(-1) - eine verschlossene Tuer reagiert nicht
+        if (isLocked() && lockState.lock != -1) return;
+
         if (powered) {
             // Если дверь закрыта или в процессе закрытия - открываем
             if (state == 0 || state == 2) {
@@ -462,11 +468,63 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
     }
 
     public boolean isOpen() { return state == 1; }
-    public boolean isLocked() { return locked; }
-
     public void setLocked(boolean locked) {
-        this.locked = locked;
+        if (locked) lock(); else unlock();
+    }
+
+    // ==================== Schloss (Original TileEntityLockableBase / TileEntityDoorGeneric) ====================
+
+    @Override public com.hbm_m.api.tile.LockState getLockState() { return lockState; }
+    @Override public boolean isLocked() { return lockState.isLocked; }
+
+    @Override
+    public void lock() {
+        lockState.lock(this);
+        setChanged();
         syncToClient();
+    }
+
+    @Override public void unlock() { lockState.isLocked = false; setChanged(); syncToClient(); }
+    @Override public void setPins(int pins) { lockState.lock = pins; setChanged(); }
+    @Override public int getPins() { return lockState.lock; }
+    @Override public void setMod(double mod) { lockState.lockMod = mod; setChanged(); }
+    @Override public double getMod() { return lockState.lockMod; }
+    @Override public boolean isCheesable() { return lockState.cheesable; }
+
+    /** Original {@code TileEntityLockableBase.canAccess}: passender Schluessel, roter Schluessel oder Knackversuch. */
+    public boolean canAccess(@Nullable Player player) {
+        return lockState.canAccess(level, player);
+    }
+
+    /** Original {@code tryToggle(EntityPlayer)}: Spieler-Klick; verschlossene Tueren brauchen Schluessel oder Dietrich. */
+    public boolean tryToggle(@Nullable Player player) {
+        if (this.isLocked() && player == null) return false;
+
+        // audit10: Original - Redstone "verriegelt" geschlossene Tueren wie Eisentueren
+        if (state == 0 && lastRedstoneState) return false;
+
+        if (state == 0) {
+            if (level != null && !level.isClientSide && canAccess(player)) open();
+            return true;
+        } else if (state == 1) {
+            if (level != null && !level.isClientSide && canAccess(player)) close();
+            return true;
+        }
+        return false;
+    }
+
+    /** Original {@code tryToggle(int passcode)}: Logik-/Redstone-Ansteuerung, verschlossen nur mit passendem Code. */
+    public boolean tryToggle(int passcode) {
+        if (this.isLocked() && passcode != lockState.lock) return false;
+
+        if (state == 0) {
+            if (level != null && !level.isClientSide) open();
+            return true;
+        } else if (state == 1) {
+            if (level != null && !level.isClientSide) close();
+            return true;
+        }
+        return false;
     }
 
     // ==================== Server Tick ====================
@@ -715,7 +773,8 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
         tag.putInt("openTicks", openTicks);
         tag.putLong("animStartTime", animStartTime);
         tag.putString("doorDeclId", doorDeclId);
-        tag.putBoolean("locked", locked);
+        // Original TileEntityLockableBase: lock, cheesable, isLocked, lockMod
+        lockState.write(tag);
         tag.putBoolean("redstoneState", lastRedstoneState);
         modelSelection.save(tag);
         if (controllerPos != null) {
@@ -737,7 +796,12 @@ public class DoorBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity im
         this.state = tag.getByte("state");
         this.openTicks = tag.getInt("openTicks");
         this.animStartTime = tag.getLong("animStartTime");
-        this.locked = tag.getBoolean("locked");
+        if (tag.contains("lockMod")) {
+            lockState.read(tag);
+        } else {
+            // Alte Spielstaende: nur ein "locked"-Flag ohne Stifte
+            lockState.isLocked = tag.getBoolean("locked");
+        }
         this.lastRedstoneState = tag.getBoolean("redstoneState");
 
         boolean hadModelSelectionInNbt = tag.contains("modelType");

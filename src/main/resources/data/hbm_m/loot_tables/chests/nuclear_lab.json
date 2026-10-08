@@ -27,7 +27,7 @@
         { "type": "item", "name": "hbm_m:hazmat_kit", "weight": 3 },
         { "type": "item", "name": "hbm_m:gas_mask_m65", "weight": 6 },
         { "type": "item", "name": "hbm_m:gas_mask_filter", "weight": 7 },
-        { "type": "item", "name": "hbm_m:barrel_yellow", "weight": 4, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 3 } } ] },
+        { "type": "item", "name": "hbm_m:yellow_barrel", "weight": 4, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 3 } } ] },
         { "type": "item", "name": "hbm_m:pwr_fuel", "weight": 4, "functions": [ { "function": "minecraft:set_count", "count": { "min": 1, "max": 2 } } ] },
         { "type": "item", "name": "hbm_m:bottle_quantum", "weight": 2 }
       ]

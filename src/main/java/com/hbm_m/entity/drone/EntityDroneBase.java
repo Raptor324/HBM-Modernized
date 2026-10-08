@@ -17,10 +17,8 @@ import net.minecraft.world.phys.Vec3;
  * auf {@link #targetPos} zu, mit einem Ausweich-Hack (nach oben ausweichen) bei horizontaler
  * Kollision - 1:1 aus dem Original uebernommen (siehe Klassenkommentar dort: "no real AI").
  * <p>
- * SCOPE-Vereinfachung: Das Original nutzt clientseitiges {@code turnProgress}-Lerp-Smoothing fuer
- * die Netzwerk-Positions-Interpolation. Hier: direkte Positionsuebernahme wie bei
- * {@link com.hbm_m.entity.conveyor.MovingConveyorItemEntity} - bei den hier verwendeten
- * Geschwindigkeiten (max. 1.125 Bloecke/Tick) optisch kaum wahrnehmbar, spart die Lerp-Infrastruktur.
+ * Wie im Original bewegt sich die Drohne nur auf dem Server; der Client interpoliert die Netzwerkposition ueber
+ * {@code turnProgress} (Original {@code setPositionAndRotation2}) und laesst an den vier Rotoren Rauch aufsteigen.
  */
 public abstract class EntityDroneBase extends Entity {
 
@@ -87,41 +85,64 @@ public abstract class EntityDroneBase extends Entity {
         return 0.125D;
     }
 
+    protected int turnProgress;
+    protected double syncPosX;
+    protected double syncPosY;
+    protected double syncPosZ;
+
+    /** Original {@code setPositionAndRotation2}: Zielposition merken, ueber {@code steps} Ticks hinterherziehen. */
+    @Override
+    public void lerpTo(double x, double y, double z, float yRot, float xRot, int steps, boolean teleport) {
+        this.syncPosX = x;
+        this.syncPosY = y;
+        this.syncPosZ = z;
+        this.turnProgress = steps;
+    }
+
     @Override
     public void tick() {
-        super.tick();
-
-        this.setDeltaMovement(Vec3.ZERO);
-
-        if (hasTarget()) {
-            double dx = targetX - getX();
-            double dy = targetY - getY();
-            double dz = targetZ - getZ();
-            Vec3 toTarget = new Vec3(dx, dy, dz);
-            double dist = toTarget.length();
-
-            if (dist < 0.05) {
-                clearTarget();
-                onTargetReached();
-            } else {
-                double speed = Math.min(getSpeed(), dist);
-                Vec3 motion = toTarget.scale(speed / dist);
-                this.setDeltaMovement(motion);
-            }
-        }
-
-        move(MoverType.SELF, getDeltaMovement());
-
-        if (horizontalCollision) {
-            // Original's crude escape hatch: nudge upward to try to clear the obstruction.
-            this.setDeltaMovement(getDeltaMovement().add(0, 1, 0));
-        }
-
-        loadNeighboringChunks();
 
         if (level().isClientSide) {
-            spawnTrailParticles();
+            if (this.turnProgress > 0) {
+                double interpX = getX() + (this.syncPosX - getX()) / (double) this.turnProgress;
+                double interpY = getY() + (this.syncPosY - getY()) / (double) this.turnProgress;
+                double interpZ = getZ() + (this.syncPosZ - getZ()) / (double) this.turnProgress;
+                --this.turnProgress;
+                this.setPos(interpX, interpY, interpZ);
+            } else {
+                this.setPos(getX(), getY(), getZ());
+            }
+
+            level().addParticle(ParticleTypes.SMOKE, getX() + 1.125, getY() + 0.75, getZ(), 0, -0.2, 0);
+            level().addParticle(ParticleTypes.SMOKE, getX() - 1.125, getY() + 0.75, getZ(), 0, -0.2, 0);
+            level().addParticle(ParticleTypes.SMOKE, getX(), getY() + 0.75, getZ() + 1.125, 0, -0.2, 0);
+            level().addParticle(ParticleTypes.SMOKE, getX(), getY() + 0.75, getZ() - 1.125, 0, -0.2, 0);
+        } else {
+
+            boolean collided = this.horizontalCollision;
+            Vec3 motion = Vec3.ZERO;
+
+            if (hasTarget()) {
+                Vec3 dist = new Vec3(targetX - getX(), targetY - getY(), targetZ - getZ());
+                double len = dist.length();
+                double speed = Math.min(getSpeed(), len);
+
+                if (len < 0.05) {
+                    clearTarget();
+                    onTargetReached();
+                } else {
+                    motion = dist.normalize().scale(speed);
+                }
+            }
+            if (collided) {
+                motion = motion.add(0, 1, 0);
+            }
+            this.setDeltaMovement(motion);
+            this.loadNeighboringChunks();
+            move(MoverType.SELF, getDeltaMovement());
         }
+
+        super.tick();
     }
 
     /** Called once when the drone reaches its target (dist < 0.05) and clears it. Hook for subclasses. */
@@ -130,14 +151,6 @@ public abstract class EntityDroneBase extends Entity {
 
     /** Hook for chunk-loading drones (see {@link com.hbm_m.entity.drone.EntityDeliveryDrone}). No-op by default. */
     protected void loadNeighboringChunks() {
-    }
-
-    private void spawnTrailParticles() {
-        for (int i = 0; i < 4; i++) {
-            double ox = (random.nextDouble() - 0.5) * getBbWidth();
-            double oz = (random.nextDouble() - 0.5) * getBbWidth();
-            level().addParticle(ParticleTypes.CLOUD, getX() + ox, getY() - 0.1, getZ() + oz, 0, 0, 0);
-        }
     }
 
     @Override

@@ -27,13 +27,8 @@ public class MachineBatteryBlockItem extends BlockItem implements ITooltipProvid
 
     @Override
     public void appendHbmTooltip(ItemStack pStack, @Nullable Level pLevel, List<Component> pTooltip, TooltipFlag pFlag) {
-        // Используем long для вычислений
-        // Если у тебя есть утилита EnergyFormatter.format(long), лучше использовать её для красивых чисел (1M, 1G и т.д.)
-
-        pTooltip.add(Component.translatable("tooltip.hbm_m.machine_battery.capacity", maxPower).withStyle(ChatFormatting.GOLD));
-        pTooltip.add(Component.translatable("tooltip.hbm_m.machine_battery.charge_speed", maxPower / 200).withStyle(ChatFormatting.GOLD));
-        pTooltip.add(Component.translatable("tooltip.hbm_m.machine_battery.discharge_speed", maxPower / 600).withStyle(ChatFormatting.GOLD));
-
+        // 1:1 Original MachineBattery.addInformation (IPersistentInfoProvider): alle vier Zeilen nur, wenn der
+        // Gegenstand gespeicherte Blockdaten traegt (ItemBlockBase prueft NBT_PERSISTENT_KEY).
         // Читаем энергию из NBT
         if (PlatformHooks.hasItemTag(pStack)) {
             // BlockEntityTag на 1.20.1 — NBT-подтег (getTagElement); на 1.21.1 — тот же ключ
@@ -45,19 +40,19 @@ public class MachineBatteryBlockItem extends BlockItem implements ITooltipProvid
             CompoundTag blockEntityTag = custom != null && custom.contains("BlockEntityTag")
                     ? custom.getCompound("BlockEntityTag") : null;
             *///?}
-            // Важно: в MachineBatteryBlockEntity мы сохраняем как "Energy" (с большой буквы), проверь это!
-            // В старом коде было "Energy", здесь "energy". Лучше проверять оба варианта или привести к одному.
+            // Ladung liegt wie in der Blockentitaet unter "energy" (IPersistentNBT.writeNBT); "Energy" = alte Drops.
             if (blockEntityTag != null) {
                 long energy = 0;
-                if (blockEntityTag.contains("Energy")) {
+                if (blockEntityTag.contains("energy")) {
+                    energy = blockEntityTag.getLong("energy");
+                } else if (blockEntityTag.contains("Energy")) {
                     energy = blockEntityTag.getLong("Energy");
-                } else if (blockEntityTag.contains("energy")) {
-                    energy = blockEntityTag.getInt("energy"); // Поддержка старых сохранений
                 }
 
-                if (energy > 0) {
-                    pTooltip.add(Component.translatable("tooltip.hbm_m.machine_battery.stored", energy, maxPower).withStyle(ChatFormatting.YELLOW));
-                }
+                pTooltip.add(Component.literal("Stores up to " + com.hbm_m.util.BobMathUtil.getShortNumber(maxPower) + "HE").withStyle(ChatFormatting.GOLD));
+                pTooltip.add(Component.literal("Charge speed: " + com.hbm_m.util.BobMathUtil.getShortNumber(maxPower / 200) + "HE").withStyle(ChatFormatting.GOLD));
+                pTooltip.add(Component.literal("Discharge speed: " + com.hbm_m.util.BobMathUtil.getShortNumber(maxPower / 600) + "HE").withStyle(ChatFormatting.GOLD));
+                pTooltip.add(Component.literal(com.hbm_m.util.BobMathUtil.getShortNumber(energy) + "/" + com.hbm_m.util.BobMathUtil.getShortNumber(maxPower) + "HE").withStyle(ChatFormatting.YELLOW));
             }
         }
 

@@ -49,11 +49,11 @@ public class NukeCustomMenu extends AbstractContainerMenu {
 
         for (int y = 0; y < 3; y++) {
             for (int x = 0; x < 9; x++) {
-                addSlot(new Slot(inventory, x + y * 9 + 9, 8 + x * 18, 86 + y * 18));
+                addSlot(new Slot(inventory, x + y * 9 + 9, 8 + x * 18, 84 + y * 18 + 56));
             }
         }
         for (int x = 0; x < 9; x++) {
-            addSlot(new Slot(inventory, x, 8 + x * 18, 144));
+            addSlot(new Slot(inventory, x, 8 + x * 18, 142 + 56));
         }
     }
 
@@ -63,8 +63,32 @@ public class NukeCustomMenu extends AbstractContainerMenu {
         return be != null && be.stillValid(player);
     }
 
+    /** Original {@code transferStackInSlot}: Bombe <-> Inventar (jeweils von hinten). */
     @Override
     public ItemStack quickMoveStack(Player player, int index) {
-        return ItemStack.EMPTY;
+        ItemStack var3 = ItemStack.EMPTY;
+        Slot var4 = this.slots.get(index);
+
+        if (var4 != null && var4.hasItem()) {
+            ItemStack var5 = var4.getItem();
+            var3 = var5.copy();
+
+            if (index <= 26) {
+                if (!this.moveItemStackTo(var5, 27, this.slots.size(), true)) {
+                    return ItemStack.EMPTY;
+                }
+            } else {
+                if (!this.moveItemStackTo(var5, 0, 27, true))
+                    return ItemStack.EMPTY;
+            }
+
+            if (var5.isEmpty()) {
+                var4.set(ItemStack.EMPTY);
+            } else {
+                var4.setChanged();
+            }
+        }
+
+        return var3;
     }
 }

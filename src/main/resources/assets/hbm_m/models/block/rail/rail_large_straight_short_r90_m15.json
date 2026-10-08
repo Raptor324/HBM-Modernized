@@ -1,0 +1,22 @@
+{
+  "loader": "forge:obj",
+  "model": "hbm_m:models/block/rail/rail_standard_short.obj",
+  "flip_v": true,
+  "automatic_culling": false,
+  "render_type": "minecraft:cutout",
+  "textures": {
+    "default": "hbm_m:block/rail_standard_straight",
+    "particle": "hbm_m:block/rail_standard_straight"
+  },
+  "transform": {
+    "origin": "corner",
+    "translation": [
+      0.5,
+      0,
+      1.0
+    ],
+    "rotation": {
+      "y": 90
+    }
+  }
+}

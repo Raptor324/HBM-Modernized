@@ -175,6 +175,10 @@ public final class MachineCraftingRecipeGenerator {
                 'S', Items.IRON_INGOT,
                 'A', mat(ModMaterials.POLYMER, MaterialShape.PLATE));
 
+        // CraftingManager: fluid_duct_gauge (addShapelessAuto)
+        shapeless(writer, "fluid_duct_gauge", ModBlocks.FLUID_DUCT_GAUGE.get(), 1,
+                ModBlocks.FLUID_DUCT_PAINTABLE.get(), mat(ModMaterials.STEEL, MaterialShape.INGOT), ModItems.INTEGRATED_CIRCUIT.get());
+
         // CraftingManager: fluid_valve / fluid_switch / fluid_counter_valve
         shaped(writer, "fluid_valve", ModBlocks.FLUID_VALVE.get(), 1,
                 new String[]{"S", "W"},
@@ -269,12 +273,7 @@ public final class MachineCraftingRecipeGenerator {
                 'B', Blocks.IRON_BARS,
                 'R', ModItems.ROD_QUAD_EMPTY.get());
 
-        // Original: " L ", "ICI", " I "
-        shaped(writer, "mass_storage", ModBlocks.MASS_STORAGE.get(), 1,
-                new String[]{" L ", "ICI", " I "},
-                'I', mat(ModMaterials.TITANIUM, MaterialShape.INGOT),
-                'C', ModBlocks.CRATE_STEEL.get(),
-                'L', ModItems.VACUUM_TUBE.get());
+        // mass_storage (Stahl, Original-Meta 2): nur als Aufwertung aus Desh, siehe RestRecipeGenerator (container_upgrade).
 
         // Original: "SHS", "DHD", "SHS" (machine_solar_boiler)
         shaped(writer, "solar_boiler", ModBlocks.SOLAR_BOILER.get(), 1,
@@ -283,10 +282,12 @@ public final class MachineCraftingRecipeGenerator {
                 'H', ModItems.SHELL_STEEL.get(),
                 'D', Items.BLACK_DYE);
 
-        shaped(writer, "solar_mirrors", ModBlocks.SOLAR_MIRRORS.get(), 4,
-                new String[]{"GGG", "SSS"},
-                'G', Blocks.GLASS_PANE,
-                'S', mat(ModMaterials.STEEL, MaterialShape.PLATE));
+        // Original: "AAA", " B ", "SSS" (solar_mirror, 3 Stueck)
+        shaped(writer, "solar_mirror", ModBlocks.SOLAR_MIRROR.get(), 3,
+                new String[]{"AAA", " B ", "SSS"},
+                'A', mat(ModMaterials.ALUMINUM, MaterialShape.PLATE),
+                'B', ModBlocks.STEEL_BEAM.get(),
+                'S', mat(ModMaterials.STEEL, MaterialShape.INGOT));
 
         // Original: "SIS", "ICI", "SRS"
         shaped(writer, "machine_siren", ModBlocks.MACHINE_SIREN.get(), 1,
@@ -412,11 +413,7 @@ public final class MachineCraftingRecipeGenerator {
                 'C', ModBlocks.CRATE_STEEL.get(),
                 'B', ModItems.MICROCHIP.get());
 
-        // Speicheraufwertung: wie im Original der naechste Behaelter aus dem vorigen.
-        shaped(writer, "mass_storage_desh", ModBlocks.MASS_STORAGE_DESH.get(), 1,
-                new String[]{"DDD", "DMD", "DDD"},
-                'D', mat(ModMaterials.DESH, MaterialShape.PLATE),
-                'M', ModBlocks.MASS_STORAGE.get());
+        // Speicheraufwertungen: Original ContainerUpgradeCraftingHandler, siehe RestRecipeGenerator (container_upgrade).
 
         capacitor(writer, "capacitor_niobium", ModBlocks.CAPACITOR_NIOBIUM.get(),
                 mat(ModMaterials.NIOBIUM, MaterialShape.INGOT));

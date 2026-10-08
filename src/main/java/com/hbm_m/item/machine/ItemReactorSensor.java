@@ -45,11 +45,24 @@ public class ItemReactorSensor extends Item {
             return InteractionResult.PASS;
         }
 
+        net.minecraft.world.entity.player.Player player = context.getPlayer();
+
         if (!level.isClientSide()) {
+            if (player != null) {
+                // Original: "[Reaktorfuehler] Position set!" (Name/Klammern dunkeltuerkis, Text gruen)
+                player.sendSystemMessage(Component.literal("[").withStyle(ChatFormatting.DARK_AQUA)
+                        .append(Component.translatable(this.getDescriptionId()).withStyle(ChatFormatting.DARK_AQUA))
+                        .append(Component.literal("] ").withStyle(ChatFormatting.DARK_AQUA))
+                        .append(Component.literal("Position set!").withStyle(ChatFormatting.GREEN)));
+            }
+
             CompoundTag tag = context.getItemInHand().getOrCreateTag();
             tag.putInt(NBT_X, core.getX());
             tag.putInt(NBT_Y, core.getY());
             tag.putInt(NBT_Z, core.getZ());
+
+            if (player != null)
+                level.playSound(null, player.getX(), player.getY(), player.getZ(), com.hbm_m.sound.ModSounds.TOOL_TECH_BOOP.get(), net.minecraft.sounds.SoundSource.PLAYERS, 1.0F, 1.0F);
         }
 
         return InteractionResult.sidedSuccess(level.isClientSide());
@@ -90,11 +103,13 @@ public class ItemReactorSensor extends Item {
     public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
         BlockPos bound = getBoundPos(stack);
 
-        if (bound == null) {
-            tooltip.add(Component.translatable("item.hbm_m.reactor_sensor.unbound").withStyle(ChatFormatting.GRAY));
+        // 1:1 Original ItemReactorSensor.addInformation: drei graue Koordinatenzeilen bzw. Hinweis
+        if (bound != null) {
+            tooltip.add(Component.literal("x: " + bound.getX()).withStyle(ChatFormatting.GRAY));
+            tooltip.add(Component.literal("y: " + bound.getY()).withStyle(ChatFormatting.GRAY));
+            tooltip.add(Component.literal("z: " + bound.getZ()).withStyle(ChatFormatting.GRAY));
         } else {
-            tooltip.add(Component.translatable("item.hbm_m.reactor_sensor.bound",
-                    bound.getX(), bound.getY(), bound.getZ()).withStyle(ChatFormatting.YELLOW));
+            tooltip.add(Component.literal("No reactor selected!").withStyle(ChatFormatting.GRAY));
         }
     }
 }

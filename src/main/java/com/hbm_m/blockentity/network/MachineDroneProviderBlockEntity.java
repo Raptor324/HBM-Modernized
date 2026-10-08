@@ -51,16 +51,14 @@ public class MachineDroneProviderBlockEntity extends BaseMachineBlockEntity {
     public RequestNetworkParticipant getNetwork() { return network; }
 
     /** Pulls up to {@code amount} of the first slot matching {@code pattern} (used by EntityRequestDrone's pickup step). */
-    public ItemStack extractMatching(ItemStack pattern, int amount) {
+    public ItemStack extractMatching(com.hbm_m.blockentity.network.request.RequestNetwork.RequestStack pattern) {
+        // Original: der ganze passende Stapel wird mitgenommen
         for (int i = 0; i < INVENTORY_SIZE; i++) {
             ItemStack stack = inventory.getStackInSlot(i);
-            if (stack.isEmpty() || !com.hbm_m.platform.PlatformHooks.isSameItemSameTags(stack, pattern)) continue;
+            if (stack.isEmpty() || !pattern.matches(stack)) continue;
 
-            int toTake = Math.min(amount, stack.getCount());
             ItemStack taken = stack.copy();
-            taken.setCount(toTake);
-            stack.shrink(toTake);
-            if (stack.isEmpty()) inventory.setStackInSlot(i, ItemStack.EMPTY);
+            inventory.setStackInSlot(i, ItemStack.EMPTY);
             setChanged();
             return taken;
         }
@@ -86,4 +84,26 @@ public class MachineDroneProviderBlockEntity extends BaseMachineBlockEntity {
     public AbstractContainerMenu createMenu(int id, Inventory inventory, Player player) {
         return MachineDroneProviderMenu.create(id, inventory, this);
     }
+
+    //? if forge {
+    /** Original {@code ISidedInventory}: Slots {0-8}; alles hinein, nichts heraus. */
+    private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
+            new com.hbm_m.blockentity.SidedItemAccess.Rules() {
+                @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return com.hbm_m.blockentity.SidedItemAccess.range(0, 8); }
+                @Override public boolean canInsert(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return true; }
+                @Override public boolean canExtract(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return false; }
+            });
+
+    @Override
+    public @org.jetbrains.annotations.NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(@org.jetbrains.annotations.NotNull net.minecraftforge.common.capabilities.Capability<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER && side != null) return sidedItems.get(side).cast();
+        return super.getCapability(cap, side);
+    }
+
+    @Override
+    public void invalidateCaps() {
+        super.invalidateCaps();
+        sidedItems.invalidate();
+    }
+    //?}
 }

@@ -43,4 +43,12 @@ public class GUIRBMKAutoloader extends GuiInfoScreen<RBMKAutoloaderMenu> {
         super.render(guiGraphics, mouseX, mouseY, partialTick);
         this.renderTooltip(guiGraphics, mouseX, mouseY);
     }
+
+    @Override
+    protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
+        // Original drawGuiContainerForegroundLayer
+        String name = this.title.getString();
+        guiGraphics.drawString(this.font, name, 88 - this.font.width(name) / 2, 6, 16777215, false);
+        guiGraphics.drawString(this.font, this.playerInventoryTitle, 8, 88, 4210752, false);
+    }
 }

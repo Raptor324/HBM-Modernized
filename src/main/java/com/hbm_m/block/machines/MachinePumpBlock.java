@@ -88,7 +88,7 @@ public class MachinePumpBlock extends DummyableMachineBlock implements com.hbm_m
     }
 
     private static MutableComponent tankLine(String arrow, ChatFormatting color, FluidTank tank) {
-        return Component.literal(arrow).withStyle(color).append(Component.literal("").withStyle(ChatFormatting.RESET)
+        return Component.literal(arrow).withStyle(color).append(Component.literal("").withStyle(ChatFormatting.WHITE) /* 1.7 §r = Grundfarbe */
                 .append(FluidType.forFluid(tank.getTankType()).getLocalizedName())
                 .append(": " + String.format(Locale.US, "%,d", tank.getFill()) + " / " + String.format(Locale.US, "%,d", tank.getMaxFill()) + "mB"));
     }
@@ -106,7 +106,7 @@ public class MachinePumpBlock extends DummyableMachineBlock implements com.hbm_m
             text.add(tankLine("<- ", ChatFormatting.RED, pump.getWaterTank()));
             onGround = pump.onGround;
         } else if (te instanceof MachinePumpElectricBlockEntity pump) {
-            text.add(Component.literal("-> ").withStyle(ChatFormatting.GREEN).append(Component.literal("").withStyle(ChatFormatting.RESET)
+            text.add(Component.literal("-> ").withStyle(ChatFormatting.GREEN).append(Component.literal("").withStyle(ChatFormatting.WHITE) /* 1.7 §r = Grundfarbe */
                     .append(String.format(Locale.US, "%,d", pump.getEnergyStored()) + " / " + String.format(Locale.US, "%,d", MachinePumpElectricBlockEntity.MAX_POWER) + "HE")));
             text.add(tankLine("<- ", ChatFormatting.RED, pump.getWaterTank()));
             onGround = pump.onGround;

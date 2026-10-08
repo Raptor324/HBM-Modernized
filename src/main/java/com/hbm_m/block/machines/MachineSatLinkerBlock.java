@@ -37,6 +37,15 @@ public class MachineSatLinkerBlock extends BaseEntityBlock {
         return RenderShape.MODEL;
     }
 
+
+    /** audit10: 1:1 {@code MachineSatLinker.breakBlock} - Inhalt faellt beim Entfernen heraus. */
+    @Override
+    public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean moving) {
+        if (!state.is(newState.getBlock()) && level.getBlockEntity(pos) instanceof com.hbm_m.blockentity.machines.MachineSatLinkerBlockEntity be) {
+            com.hbm_m.block.BlockDropUtil.dropSlots(level, pos, be.getInventory(), 0, Integer.MAX_VALUE);
+        }
+        super.onRemove(state, level, pos, newState, moving);
+    }
     @Nullable
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
@@ -52,11 +61,13 @@ public class MachineSatLinkerBlock extends BaseEntityBlock {
     //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        if (!level.isClientSide() && player.isShiftKeyDown()) return InteractionResult.PASS; // Original: geschlichen auf dem Server false
         return openMenu(state, level, pos, player, hand, hit);
     }
     //?} else {
     /*@Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+        if (!level.isClientSide() && player.isShiftKeyDown()) return InteractionResult.PASS; // Original: geschlichen auf dem Server false
         return openMenu(state, level, pos, player, InteractionHand.MAIN_HAND, hit);
     }
     *///?}

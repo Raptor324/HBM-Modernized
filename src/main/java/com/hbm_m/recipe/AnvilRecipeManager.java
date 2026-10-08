@@ -2,10 +2,9 @@ package com.hbm_m.recipe;
 
 
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
-import java.util.Locale;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import com.hbm_m.block.machines.anvils.AnvilTier;
 import com.hbm_m.platform.recipe.RecipeHooks;
@@ -22,13 +21,26 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 
-
+/**
+ * {@code AnvilRecipes.getSmithing()} / {@code getConstruction()}: beide Listen in Original-Reihenfolge ({@code sort}).
+ */
 public final class AnvilRecipeManager {
 
     private AnvilRecipeManager() { }
 
+    private static final Comparator<AnvilRecipe> ORDER = Comparator.comparingInt(AnvilRecipe::getSort)
+            .thenComparing(r -> r.getId().toString());
+
     public static List<AnvilRecipe> getAllRecipes(Level level) {
         return RecipeHooks.getAllRecipes(level, AnvilRecipe.Type.INSTANCE);
+    }
+
+    public static List<AnvilRecipe> getSmithing(Level level) {
+        return getAllRecipes(level).stream().filter(AnvilRecipe::isSmithing).sorted(ORDER).toList();
+    }
+
+    public static List<AnvilRecipe> getConstruction(Level level) {
+        return getAllRecipes(level).stream().filter(AnvilRecipe::isConstruction).sorted(ORDER).toList();
     }
 
     //? if fabric {
@@ -38,31 +50,24 @@ public final class AnvilRecipeManager {
     @OnlyIn(Dist.CLIENT)
     //?}
     public static List<AnvilRecipe> getClientRecipes() {
-        Minecraft minecraft = Minecraft.getInstance();
-        Level level = minecraft.level;
+        Level level = Minecraft.getInstance().level;
         return level != null ? getAllRecipes(level) : Collections.emptyList();
     }
 
-    public static List<AnvilRecipe> searchRecipes(Level level, String query) {
-        List<AnvilRecipe> recipes = getAllRecipes(level);
-        if (query == null || query.trim().isEmpty()) {
-            return recipes;
+    /** {@code ContainerAnvil.updateSmithing}: erste passende Schmiede-Regel, deren Stufe reicht. */
+    public static Optional<AnvilRecipe> findSmithing(Level level, ItemStack left, ItemStack right, AnvilTier tier) {
+        for (AnvilRecipe rec : getSmithing(level)) {
+            if (rec.matchesSmithing(left, right) && rec.canCraftOn(tier)) return Optional.of(rec);
         }
-
-        String lowerQuery = query.toLowerCase(Locale.ROOT);
-        return recipes.stream()
-                .filter(recipe -> {
-                    ItemStack output = recipe.getResultItemSafe();
-                    String itemName = output.getHoverName().getString().toLowerCase(Locale.ROOT);
-                    return itemName.contains(lowerQuery);
-                })
-                .collect(Collectors.toList());
+        return Optional.empty();
     }
 
-    public static Optional<AnvilRecipe> findRecipe(Level level, ItemStack slotA, ItemStack slotB, AnvilTier tier) {
-        return RecipeHooks.getAllRecipes(level, AnvilRecipe.Type.INSTANCE).stream()
-                .filter(recipe -> recipe.matches(slotA, slotB) && recipe.canCraftOn(tier))
-                .findFirst();
+    /** {@code ContainerAnvil}-Verbrauch: erste passende Schmiede-Regel ohne Stufenpruefung ({@code matchesInt}). */
+    public static Optional<AnvilRecipe> findSmithingAnyTier(Level level, ItemStack left, ItemStack right) {
+        for (AnvilRecipe rec : getSmithing(level)) {
+            if (rec.matchesSmithing(left, right)) return Optional.of(rec);
+        }
+        return Optional.empty();
     }
 
     public static Optional<AnvilRecipe> getRecipe(Level level, ResourceLocation id) {

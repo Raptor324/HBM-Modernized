@@ -1,0 +1,5 @@
+{
+  "priority": 15,
+  "blocks": ["hbm_m:block_polymer", "hbm_m:block_bakelite", "hbm_m:block_rubber", "hbm_m:barrel_plastic", "minecraft:snow_block"],
+  "hvl": { "gamma": 4.0, "neutron": 0.3, "beta": 0.2 }
+}

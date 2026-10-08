@@ -58,144 +58,52 @@ public class MachineFrackingTowerBlock extends BaseEntityBlock implements IMulti
         this.structureHelper = defineStructureNew();
     }
 
+    /**
+     * w16b: 1:1 {@code MachineFrackingTower.fillSpace} (getOffset 0, alle Zellen voll - das Original hat keine bounding-Liste):
+     * <ul>
+     *   <li>{@code {3,0,0,0,0,0}} Kernsaeule y0..3, {@code {1,0,3,3,3,3}} ab y2: Plattform 7x7 (y2..3)</li>
+     *   <li>vier 2x2-Fuesse y0..1 in den Ecken ({@code {-1,2,0,1,0,1}} an x/z -2 bzw. +3)</li>
+     *   <li>{@code {10,-4,2,2,2,2}} Turm 5x5 y4..10, {@code {24,-9,1,1,1,1}} Schaft 3x3 y9..24</li>
+     *   <li>{@code {1,0,1,1,-2,3}} mit festem {@code WEST}: Ausleger y15..16, x-1..1, z+2..3</li>
+     * </ul>
+     * Frueher hohle Ringe ('N' ohne Kollision) und eine Ebene zu wenig: Spieler fiel durch den Turm.
+     * Die Kernsaeule ('X') bleibt Leiter wie bisher im Port.
+     */
     private static MultiblockStructureHelper defineStructureNew() {
-        // - 'A' = DEFAULT (обычная часть структуры)
-        // - 'B' = UNIVERSAL_CONNECTOR (универсальный коннектор)
-        // - 'L' = LADDER (по нему можно взобраться как по лестнице)
-        // - 'C' = CONTROLLER (блок контроллера - ОБЯЗАТЕЛЬНО, ровно 1!)
-        // - '.' = пустота (символ не в roleMap, будет игнорирован)
-        
-        // Слои структуры 3x3x3
-        String[] layer0 = {
-            "OO...OO",
-            "OO...OO",
-            ".......",
-            "...C...",
-            ".......",
-            "OO...OO",
-            "OO...OO"
-        };
-        
-        String[] layer1 = {
-            "OO...OO",
-            "OO...OO",
-            ".......",
-            "...X...",
-            ".......",
-            "OO...OO",
-            "OO...OO"
-        };
+        String[][] layers = new String[25][7];
+        for (int y = 0; y <= 24; y++) {
+            for (int z = -3; z <= 3; z++) {
+                StringBuilder row = new StringBuilder();
+                for (int x = -3; x <= 3; x++) {
+                    int ax = Math.abs(x), az = Math.abs(z);
+                    boolean cell = (x == 0 && z == 0 && y <= 3)
+                            || (y >= 2 && y <= 3)
+                            || (y <= 1 && ax >= 2 && az >= 2)
+                            || (y >= 4 && y <= 10 && ax <= 2 && az <= 2)
+                            || (y >= 9 && ax <= 1 && az <= 1)
+                            || (y >= 15 && y <= 16 && ax <= 1 && z >= 2);
+                    char c = '.';
+                    if (cell) c = (x == 0 && z == 0) ? (y == 0 ? 'C' : 'X') : 'O';
+                    row.append(c);
+                }
+                layers[y][z + 3] = row.toString();
+            }
+        }
 
-        String[] layer2 = {
-            "OOHHHOO",
-            "OOHHHOO",
-            "HHHHHHH",
-            "HHHXHHH",
-            "HHHHHHH",
-            "OOHHHOO",
-            "OOHHHOO"
-        };
-
-        String[] layer3 = {
-            "OOOOOOO",
-            "OOOOOOO",
-            "OOOOOOO",
-            "OOOOOOO",
-            "OOOOOOO",
-            "OOOOOOO",
-            "OOOOOOO"
-        };
-        String[] layer4 = {
-            ".......",
-            ".NNNNN.",
-            ".N...N.",
-            ".N.X.N.",
-            ".N...N.",
-            ".NNNNN.",
-            "......."
-        };
-
-        String[] layer6 = {
-            ".......",
-            ".......",
-            "..NNN..",
-            "..NXN..",
-            "..NNN..",
-            ".......",
-            "......."
-        };
-        String[] layer9 = {
-            ".......",
-            ".......",
-            "..NNN..",
-            "..N.N..",
-            "..NNN..",
-            ".......",
-            "......."
-        };
-
-        String[] layer7 = {
-            "..OOO..",
-            ".NOOON.",
-            ".N...N.",
-            ".N.X.N.",
-            ".N...N.",
-            ".NNNNN.",
-            "......."
-        };
-
-        String[] layer8 = {
-            ".......",
-            ".......",
-            "..OOO..",
-            "..OOO..",
-            "..OOO..",
-            ".......",
-            "......."
-        };
-        
-        // === roleMap: программист сам определяет маппинг ===
-        // ВАЖНО: роль CONTROLLER ОБЯЗАТЕЛЬНА и должен быть ровно ОДИН контроллер!
         Map<Character, PartRole> roleMap = Map.of(
-            'O', PartRole.DEFAULT,              // Обычная часть структуры
-            'X', PartRole.LADDER,              // Обычная часть структуры
-            'H', PartRole.DEFAULT,              // Обычная часть структуры
-            'N', PartRole.DEFAULT,              // Обычная часть структуры
-            'C', PartRole.CONTROLLER           // Контроллер (ОБЯЗАТЕЛЬНО!)
+            'O', PartRole.DEFAULT,
+            'X', PartRole.LADDER,
+            'C', PartRole.CONTROLLER
         );
-        
-        // === symbolMap: какой BlockState использовать для каждого символа. Может пригодиться, если вдруг понадобится 
-        // назначить кастомные blockstate для каждого блока-части. Например, для освещения. ===
-        // Контроллер 'C' НЕ добавляется в symbolMap - он размещается игроком отдельно!
-        Map<Character, Supplier<BlockState>> symbolMap = Map.of(
-            // 'O', () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState()
-            // 'X', () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState(),
-            // 'L', () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState()
-        );
+        Map<Character, Supplier<BlockState>> symbolMap = Map.of();
 
-        // Задаем специфичные формы для символов
-        Map<Character, VoxelShape> shapeMap = Map.of(
-            'C', Block.box(2, 0, 2, 14, 16, 14),
-            'X', Block.box(2, 0, 2, 14, 16, 14), // central pole
-            'H', Block.box(0, 8, 0, 16, 16, 16), // upper slab
-            'N', Block.box(0, 0, 0, 16, 16, 16)
-        );
-        Map<Character, VoxelShape> collisionMap = Map.of(
-            'C', Block.box(2, 0, 2, 14, 16, 14),
-            'X', Block.box(2, 0, 2, 14, 16, 14), // central pole
-            'H', Block.box(0, 8, 0, 16, 16, 16), // upper slab
-            'O', Block.box(0, 0, 0, 16, 16, 16)
-        );
-        
-        // Используем createFromLayersWithRoles - автоматически найдёт позицию контроллера
+        // Original getOffset() = 0: der Kern sitzt auf der Klickzelle
         return MultiblockStructureHelper.createFromLayersWithRoles(
-            new String[][]{layer0, layer1, layer2, layer3, layer4, layer4, layer4, layer4, layer4, layer4, layer4, layer4, layer4, layer4, layer4, layer7, layer7, layer6, layer6, layer9, layer9, layer9, layer9, layer8},
+            layers,
             symbolMap,
             () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState(),
-            roleMap,
-            shapeMap,
-            collisionMap
-        );
+            roleMap
+        ).withPlacementOffset(0);
     }
 
     @Override public MultiblockStructureHelper getStructureHelper() { return this.structureHelper; }
@@ -271,11 +179,13 @@ public class MachineFrackingTowerBlock extends BaseEntityBlock implements IMulti
     //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer, InteractionHand pHand, BlockHitResult pHit) {
+        if (pPlayer.isShiftKeyDown()) return InteractionResult.sidedSuccess(pLevel.isClientSide()); // Original standardOpenBehavior: geschlichen true ohne GUI
         return hbmOnUse(pState, pLevel, pPos, pPlayer, pHand, pHit);
     }
     //?} else {
     /*@Override
     protected InteractionResult useWithoutItem(BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer, BlockHitResult pHit) {
+        if (pPlayer.isShiftKeyDown()) return InteractionResult.sidedSuccess(pLevel.isClientSide()); // Original standardOpenBehavior: geschlichen true ohne GUI
         return hbmOnUse(pState, pLevel, pPos, pPlayer, InteractionHand.MAIN_HAND, pHit);
     }
     *///?}
@@ -292,10 +202,11 @@ public class MachineFrackingTowerBlock extends BaseEntityBlock implements IMulti
     // 1. РАМКА ВЫДЕЛЕНИЯ: Показывает всю структуру целиком
     @Override
     public VoxelShape getShape(BlockState pState, BlockGetter pLevel, BlockPos pPos, CollisionContext pContext) {
+        // w16b: nur die Kernzelle (Raycast pro Zelle wie Original); Umriss der ganzen Maschine: MultiblockOutlineForge
         MultiblockStructureHelper helper = getStructureHelper();
         if (helper != null) {
             // Возвращаем объединенную форму всех частей
-            return helper.generateShapeFromParts(pState.getValue(FACING));
+            return helper.getControllerCellShape(pState.getValue(FACING));
         }
         return Shapes.block();
     }
@@ -320,7 +231,10 @@ public class MachineFrackingTowerBlock extends BaseEntityBlock implements IMulti
     @Nullable
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext context) {
-        return this.defaultBlockState().setValue(FACING, context.getHorizontalDirection().getOpposite());
+        // w16d: Original MachineFrackingTower ist weltfest - alle Fuellbereiche ausser dem Ausleger sind symmetrisch, der
+        // Ausleger ({1,0,1,1,-2,3}) wird mit festem ForgeDirection.WEST gefuellt und liegt immer bei z+2..3 (Sueden);
+        // RenderFrackingTower dreht fest um 180 Grad. FACING bleibt deshalb immer NORTH (lokal = Welt).
+        return this.defaultBlockState().setValue(FACING, Direction.NORTH);
     }
 
     @Override

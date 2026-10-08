@@ -57,6 +57,11 @@ public class OverlayGeiger {
         }
         
         // 2. БЫСТРАЯ ПРОВЕРКА КЭША (КАЖДЫЙ КАДР)
+        // Original ModEventHandlerRenderer.onRenderHUD: Modus-Plaketten (528/Expensive/Rampant) unabhaengig vom Geigerzaehler.
+        if (com.hbm_m.config.ClientConfig.badgesHud && !mc.options.hideGui) {
+            renderBadges(guiGraphics);
+        }
+
         // Если кэш говорит, что счетчика нет, просто выходим.
         if (!hasGeigerCached || player == null || mc.options.hideGui) {
             return;
@@ -78,9 +83,9 @@ public class OverlayGeiger {
         int barLength = (int)(74 * Math.min(playerRadForBar / maxPlayerRadForBar, 1.0f));
 
 
-        // ЛОГИКА РЕНДЕРА
-        int posX = 3;
-        int posY = screenHeight - 20;
+        // ЛОГИКА РЕНДЕРА (Original: 16 + GEIGER_OFFSET_HORIZONTAL, Hoehe - 20 - GEIGER_OFFSET_VERTICAL; Port-Basis x = 3)
+        int posX = 3 + com.hbm_m.config.ClientConfig.geigerOffsetHorizontal;
+        int posY = screenHeight - 20 - com.hbm_m.config.ClientConfig.geigerOffsetVertical;
 
         // Рендер фона
         guiGraphics.blit(OVERLAY, posX, posY, 0, 0, 94, 18);
@@ -121,6 +126,23 @@ public class OverlayGeiger {
 
     public static final IGuiOverlay GEIGER_HUD_OVERLAY = OverlayGeiger::onRenderOverlay;
     //?}
+
+    /** 1:1 {@code RenderScreenOverlay.renderBadges}: Plaketten aus overlay_misc.png (v = 218/226/234/242). */
+    private static void renderBadges(GuiGraphics guiGraphics) {
+        int offsetX = 2;
+        int offsetY = 2;
+        int width = 26;
+
+        boolean true528 = com.hbm_m.config.GeneralConfig.true528();
+        boolean trueExp = com.hbm_m.config.GeneralConfig.trueExp();
+        boolean trueRam = com.hbm_m.config.MobConfig.trueRam();
+        boolean true328 = true528 && trueExp && trueRam;
+
+        if (true528) { guiGraphics.blit(OVERLAY, offsetX, offsetY, 0, 218, 24, 8); offsetX += width; }
+        if (trueExp) { guiGraphics.blit(OVERLAY, offsetX, offsetY, 0, 226, 24, 8); offsetX += width; }
+        if (trueRam) { guiGraphics.blit(OVERLAY, offsetX, offsetY, 0, 234, 24, 8); offsetX += width; }
+        if (true328) { guiGraphics.blit(OVERLAY, offsetX, offsetY, 0, 242, 24, 8); }
+    }
 
     private static boolean checkForGeiger(LocalPlayer player) {
         // Проверяем руки в первую очередь

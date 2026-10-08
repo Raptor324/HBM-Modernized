@@ -78,6 +78,8 @@ public class GUIPneumoStorageAccess extends AbstractContainerScreen<PneumoStorag
     @Override
     protected void init() {
         super.init();
+        // Original: 34 + 176 / 2 - Breite / 2
+        this.titleLabelX = H_OFFSET + 88 - this.font.width(this.title) / 2;
 
         String previous = search != null ? search.getValue() : "";
 

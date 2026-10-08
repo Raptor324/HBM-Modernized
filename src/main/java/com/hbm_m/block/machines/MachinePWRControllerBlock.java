@@ -96,7 +96,7 @@ public class MachinePWRControllerBlock extends BaseEntityBlock {
 
     private InteractionResult activate(BlockState state, Level level, BlockPos pos, Player player, ItemStack held) {
         if (level.isClientSide) return InteractionResult.SUCCESS;
-        if (player.isShiftKeyDown()) return InteractionResult.PASS;
+        if (player.isShiftKeyDown()) return level.isClientSide() ? InteractionResult.SUCCESS : InteractionResult.PASS; // Original: Client true, Server geschlichen false
         if (!(level.getBlockEntity(pos) instanceof PWRControllerBlockEntity controller)) return InteractionResult.PASS;
 
         if (!controller.assembled) {

@@ -1,109 +1,145 @@
 package com.hbm_m.inventory.gui.radio;
 
 import com.hbm_m.blockentity.network.radio.RadioTorchLogicBlockEntity;
-import com.hbm_m.client.GuiCompat;
+import com.hbm_m.lib.RefStrings;
 import com.hbm_m.network.RadioTorchControlPacket;
 
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.components.Checkbox;
 import net.minecraft.client.gui.components.EditBox;
-import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 
 /**
- * Port of {@code GUIScreenRadioTorchLogic} (1.7.10 Original). 16 rule rows, each a comparison-value
- * text field plus a cycle-button for the operator (0-9: &lt; &lt;= &gt;= &gt; == != equals !equals contains !contains).
+ * 1:1 {@code GUIScreenRadioTorchLogic}: Kanal, Reihenfolge, Abfrage, Speichern; 16 Regeln mit Bedingungssymbol
+ * (Klick oder Mausrad schaltet 0-9 weiter) und Vergleichswert. Bedingungen werden erst mit "Speichern" uebernommen.
  */
-public class GUIRadioTorchLogic extends Screen {
+public class GUIRadioTorchLogic extends RttyScreenBase {
 
-    private static final String[] OPS = {"<", "<=", ">=", ">", "==", "!=", "equals", "!equals", "contains", "!contains"};
+    protected static final ResourceLocation texture = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/machine/gui_rtty_logic_receiver.png");
 
     private final BlockPos pos;
-    private final RadioTorchLogicBlockEntity blockEntity;
+    protected final RadioTorchLogicBlockEntity logic;
+    protected EditBox frequency;
+    protected final EditBox[] map = new EditBox[16];
+    protected final int[] conditions = new int[16];
 
-    private EditBox channelBox;
-    private Checkbox pollingBox;
-    private Checkbox descendingBox;
-    private final EditBox[] valueBoxes = new EditBox[16];
-    private final Button[] opButtons = new Button[16];
-    private final int[] conditions = new int[16];
-
-    public GUIRadioTorchLogic(BlockPos pos, RadioTorchLogicBlockEntity blockEntity) {
-        super(Component.literal("Radio Logic"));
+    public GUIRadioTorchLogic(BlockPos pos, RadioTorchLogicBlockEntity logic) {
+        super(Component.translatable("container.rttyLogic"), 256, 204);
         this.pos = pos;
-        this.blockEntity = blockEntity;
-        System.arraycopy(blockEntity.conditions, 0, conditions, 0, 16);
+        this.logic = logic;
     }
 
     @Override
     protected void init() {
-        int cx = this.width / 2;
-        int y = this.height / 2 - 110;
+        super.init();
 
-        channelBox = new EditBox(this.font, cx - 75, y, 150, 18, Component.literal("Channel"));
-        channelBox.setMaxLength(15);
-        channelBox.setValue(blockEntity.channel);
-        addRenderableWidget(channelBox);
-        y += 22;
+        int oX = 4;
+        int oY = 4;
 
-        pollingBox = com.hbm_m.client.GuiCompat.checkbox(cx - 100, y, 90, 18, Component.literal("Polling"), blockEntity.polling);
-        addRenderableWidget(pollingBox);
-        descendingBox = com.hbm_m.client.GuiCompat.checkbox(cx + 10, y, 100, 18, Component.literal("Descending"), blockEntity.descending);
-        addRenderableWidget(descendingBox);
-        y += 24;
+        this.frequency = field(guiLeft + 25 + oX, guiTop + 17 + oY, 90 - oX * 2, 14, GUIRadioTorchSimple.MAX_CHANNEL_LENGTH, logic.channel);
 
         for (int i = 0; i < 16; i++) {
-            final int idx = i;
-            int row = i / 2;
-            int col = i % 2;
-            int rowX = cx - 155 + col * 160;
-            int rowY = y + row * 20;
-
-            EditBox box = new EditBox(this.font, rowX, rowY, 90, 18, Component.literal("Value " + i));
-            box.setMaxLength(32);
-            box.setValue(blockEntity.mapping[i]);
-            valueBoxes[i] = box;
-            addRenderableWidget(box);
-
-            Button opButton = Button.builder(Component.literal(OPS[conditions[i]]), b -> cycleOp(idx))
-                    .bounds(rowX + 94, rowY, 60, 18).build();
-            opButtons[i] = opButton;
-            addRenderableWidget(opButton);
+            this.map[i] = field(guiLeft + 7 + (130 * (i / 8)) + oX + 18, guiTop + 53 + (18 * (i % 8)) + oY, 54 - oX * 2, 14, 15, logic.mapping[i]);
+            this.conditions[i] = logic.conditions[i];
         }
-        y += 8 * 20 + 8;
-
-        addRenderableWidget(Button.builder(Component.literal("Save"), b -> save())
-                .bounds(cx - 40, y, 80, 20).build());
     }
 
-    private void cycleOp(int idx) {
-        conditions[idx] = (conditions[idx] + 1) % OPS.length;
-        opButtons[idx].setMessage(Component.literal(OPS[conditions[idx]]));
-    }
-
-    private void save() {
-        CompoundTag data = new CompoundTag();
-        data.putString("channel", channelBox.getValue());
-        data.putBoolean("polling", pollingBox.selected());
-        data.putBoolean("descending", descendingBox.selected());
-        for (int i = 0; i < 16; i++) {
-            data.putString("mapping" + i, valueBoxes[i].getValue());
-            data.putInt("cond" + i, conditions[i]);
-        }
-        RadioTorchControlPacket.sendToServer(pos, data);
-        onClose();
+    private boolean inCond(double x, double y, int j) {
+        return guiLeft + 7 + (130 * (j / 8)) <= x && guiLeft + 7 + 18 + (130 * (j / 8)) > x
+                && guiTop + 53 + (18 * (j % 8)) <= y && guiTop + 53 + 18 + (18 * (j % 8)) > y;
     }
 
     @Override
-    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        com.hbm_m.client.GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTick);
-        super.render(guiGraphics, mouseX, mouseY, partialTick);
-        guiGraphics.drawCenteredString(this.font, this.title, this.width / 2, this.height / 2 - 128, 0xFFFFFF);
+    public void render(GuiGraphics g, int x, int y, float f) {
+        com.hbm_m.client.GuiCompat.renderBackground(this, g, x, y, f);
+
+        g.blit(texture, guiLeft, guiTop, 0, 0, xSize, ySize);
+        if (logic.descending) g.blit(texture, guiLeft + 137, guiTop + 17, 0, 204, 18, 18);
+        if (logic.polling) g.blit(texture, guiLeft + 173, guiTop + 17, 0, 222, 18, 18);
+
+        for (int i = 0; i < 16; i++) {
+            if (logic.mapping[i] == null || logic.mapping[i].isEmpty()) {
+                if (this.conditions[i] != 0)
+                    g.blit(texture, guiLeft + 7 + (130 * (i / 8)), guiTop + 53 + (18 * (i % 8)), 18 + this.conditions[i] * 18, 222, 18, 18);
+            } else {
+                g.blit(texture, guiLeft + 7 + (130 * (i / 8)), guiTop + 53 + (18 * (i % 8)), 18 + this.conditions[i] * 18, 204, 18, 18);
+                g.blit(texture, guiLeft + 85 + (130 * (i / 8)), guiTop + 57 + (18 * (i % 8)), 198, 204, 14, 10);
+            }
+        }
+
+        drawFields(g, x, y, f);
+
+        String name = this.title.getString();
+        g.drawString(this.font, name, this.guiLeft + this.xSize / 2 - this.font.width(name) / 2, this.guiTop + 6, 4210752, false);
+
+        if (in(x, y, 137, 17, 18, 18)) tip(g, x, y, logic.descending ? "Descending Order" : "Ascending Order");
+        if (in(x, y, 173, 17, 18, 18)) tip(g, x, y, logic.polling ? "Polling" : "State Change");
+        if (in(x, y, 209, 17, 18, 18)) tip(g, x, y, "Save Settings");
+        for (int j = 0; j < 16; j++) {
+            if (inCond(x, y, j)) {
+                tip(g, x, y, Component.translatable("desc.gui.rttyLogic.cond" + this.conditions[j]));
+                break;
+            }
+        }
+    }
+
+    /** Original "easy selection": Mausrad ueber einem Bedingungssymbol schaltet vor/zurueck. */
+    @Override
+    //? if < 1.21.1 {
+    public boolean mouseScrolled(double x, double y, double scroll) {
+    //?} else {
+    /*public boolean mouseScrolled(double x, double y, double scrollX, double scroll) {
+    *///?}
+        for (int j = 0; j < 16; j++) {
+            if (inCond(x, y, j)) {
+                if (scroll > 0) this.conditions[j] = (this.conditions[j] + 1) % 10;
+                if (scroll < 0) this.conditions[j] = (this.conditions[j] + 9) % 10;
+                return true;
+            }
+        }
+        return false;
     }
 
     @Override
-    public boolean isPauseScreen() { return false; }
+    public boolean mouseClicked(double x, double y, int i) {
+        boolean hit = clickFields(x, y, i);
+
+        if (in(x, y, 137, 17, 18, 18)) {
+            click();
+            CompoundTag data = new CompoundTag();
+            data.putBoolean("descending", !logic.descending);
+            RadioTorchControlPacket.sendToServer(pos, data);
+            return true;
+        }
+
+        if (in(x, y, 173, 17, 18, 18)) {
+            click();
+            CompoundTag data = new CompoundTag();
+            data.putBoolean("polling", !logic.polling);
+            RadioTorchControlPacket.sendToServer(pos, data);
+            return true;
+        }
+
+        if (in(x, y, 209, 17, 18, 18)) {
+            click();
+            CompoundTag data = new CompoundTag();
+            data.putString("channel", this.frequency.getValue());
+            for (int j = 0; j < 16; j++) data.putString("mapping" + j, this.map[j].getValue());
+            for (int j = 0; j < 16; j++) data.putInt("cond" + j, this.conditions[j]);
+            RadioTorchControlPacket.sendToServer(pos, data);
+            return true;
+        }
+
+        for (int j = 0; j < 16; j++) {
+            if (inCond(x, y, j)) {
+                click();
+                this.conditions[j] = (this.conditions[j] + 1) % 10;
+                return true;
+            }
+        }
+
+        return hit || super.mouseClicked(x, y, i);
+    }
 }

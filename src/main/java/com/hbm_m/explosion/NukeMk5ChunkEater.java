@@ -184,7 +184,8 @@ public class NukeMk5ChunkEater implements IExplosionRay {
         for (int i = 0; i <= rayLength; i++) {
             double fac = 100 - ((double) i) / ((double) rayLength) * 100;
             fac *= 0.07D;
-            rayExp[i] = (float) Math.max(1.0D, 7.5D - fac);
+            // 1:1 ExplosionNukeRayBatched: Math.pow(res, 7.5D - fac) ohne Untergrenze (Exponent 0.5 .. 7.5)
+            rayExp[i] = (float) (7.5D - fac);
         }
 
         while (this.gspNumMax >= this.gspNum) {
@@ -275,15 +276,18 @@ public class NukeMk5ChunkEater implements IExplosionRay {
     }
 
     private static float computeResistance(BlockState state) {
-        if (!state.getFluidState().isEmpty()) {
-            return 0.05F; // Жидкости не тормозят ударную волну
+        // 1:1 ExplosionNukeRayBatched: reine Fluessigkeitsbloecke ziehen gar nichts ab
+        // (pow(0, exp) = 0); wassergeflutete Bloecke zaehlen mit ihrem eigenen Widerstand.
+        if (state.getBlock() instanceof net.minecraft.world.level.block.LiquidBlock) {
+            return 0F;
         }
         Block block = state.getBlock();
         if (block == Blocks.SANDSTONE || block == Blocks.RED_SANDSTONE) {
             return Blocks.STONE.getExplosionResistance();
         }
+        // Original masqueradeResistance: Obsidian = Stein * 3
         if (block == Blocks.OBSIDIAN || block == Blocks.CRYING_OBSIDIAN) {
-            return Blocks.STONE.getExplosionResistance() * 2.5F;
+            return Blocks.STONE.getExplosionResistance() * 3F;
         }
         return state.getBlock().getExplosionResistance();
     }

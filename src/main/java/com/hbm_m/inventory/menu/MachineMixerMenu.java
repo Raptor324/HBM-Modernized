@@ -1,10 +1,9 @@
 package com.hbm_m.inventory.menu;
 
 import com.hbm_m.blockentity.machines.MachineMixerBlockEntity;
-import com.hbm_m.capability.ModCapabilities;
+import com.hbm_m.interfaces.IItemFluidIdentifier;
 import com.hbm_m.inventory.ModItemStackHandlerContainer;
-import com.hbm_m.lib.RefStrings;
-import com.hbm_m.platform.DummyItemStackHandler;
+import com.hbm_m.item.industrial.ItemMachineUpgrade;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
@@ -15,174 +14,106 @@ import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.inventory.SimpleContainerData;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.block.entity.BlockEntity;
-//? if forge {
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-//?}
 
+/** 1:1 {@code ContainerMixer}: Batterie (12,72), fester Stoff (52,72), Fluid-ID (126,72), Upgrades (148,18/36). */
 public class MachineMixerMenu extends AbstractContainerMenu {
 
-    private static final int SLOT_BATTERY = 0;
-    private static final int MACHINE_SLOTS = 1;
-
-    private final MachineMixerBlockEntity blockEntity;
+    private final MachineMixerBlockEntity mixer;
     private final ContainerData data;
 
     public MachineMixerMenu(int id, Inventory inventory, FriendlyByteBuf extraData) {
-        this(id, inventory, getBlockEntity(inventory, extraData));
-    }
-
-    public MachineMixerMenu(int id, Inventory inventory, MachineMixerBlockEntity blockEntity) {
-        this(id, inventory, blockEntity, new SimpleContainerData(6));
-    }
-
-    public MachineMixerMenu(int id, Inventory inventory, MachineMixerBlockEntity blockEntity, ContainerData data) {
-        super(ModMenuTypes.MIXER_MENU.get(), id);
-        this.blockEntity = blockEntity;
-        this.data = data;
-
-        // На клиенте тайл может отсутствовать (реплей Flashback) — подставляем пустую заглушку,
-        // чтобы конструктор дошёл до конца и пакет открытия меню не уронил клиент
-        ModItemStackHandlerContainer machineInventory =
-                new ModItemStackHandlerContainer(
-                        blockEntity != null ? blockEntity.getInventory() : new DummyItemStackHandler(MACHINE_SLOTS),
-                        blockEntity != null ? blockEntity::setChanged : null);
-
-        // Battery slot, positioned over the battery icon under input tank A.
-        this.addSlot(new Slot(machineInventory, SLOT_BATTERY, 23, 95) {
-            @Override
-            public boolean mayPlace(ItemStack stack) {
-                boolean hbm = com.hbm_m.api.energy.ItemEnergyAccess.getHbmProvider(stack)
-                        .map(provider -> provider.canExtract())
-                        .orElse(false);
-                if (hbm) return true;
-                //? if forge {
-                return com.hbm_m.api.energy.ItemEnergyAccess.getForgeEnergy(stack)
-                        .map(storage -> storage.canExtract())
-                        .orElse(false);
-                //?} elif neoforge {
-                /*return stack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM) != null;
-                *///?} else {
-                /*return false;
-                *///?}
-            }
-        });
-
-        for (int row = 0; row < 3; row++) {
-            for (int col = 0; col < 9; col++) {
-                this.addSlot(new Slot(inventory, col + row * 9 + 9, 8 + col * 18, 122 + row * 18));
-            }
-        }
-
-        for (int col = 0; col < 9; col++) {
-            this.addSlot(new Slot(inventory, col, 8 + col * 18, 180));
-        }
-
-        addDataSlots(this.data);
+        this(id, inventory, (MachineMixerBlockEntity) inventory.player.level().getBlockEntity(extraData.readBlockPos()), new SimpleContainerData(5));
     }
 
     public static MachineMixerMenu create(int id, Inventory inventory, MachineMixerBlockEntity blockEntity) {
         return new MachineMixerMenu(id, inventory, blockEntity, blockEntity.getContainerData());
     }
 
-    private static MachineMixerBlockEntity getBlockEntity(Inventory inventory, FriendlyByteBuf buffer) {
-        BlockPos pos = buffer.readBlockPos();
-        BlockEntity blockEntity = inventory.player.level().getBlockEntity(pos);
-        if (blockEntity instanceof MachineMixerBlockEntity mixerBlockEntity) {
-            return mixerBlockEntity;
+    public MachineMixerMenu(int id, Inventory player, MachineMixerBlockEntity mixer, ContainerData data) {
+        super(ModMenuTypes.MIXER_MENU.get(), id);
+        this.mixer = mixer;
+        this.data = data;
+
+        var c = new ModItemStackHandlerContainer(mixer.getInventory(), mixer::setChanged);
+        // Battery
+        this.addSlot(new Slot(c, 0, 12, 72));
+        // Item Input
+        this.addSlot(new Slot(c, 1, 52, 72));
+        // Fluid ID
+        this.addSlot(new Slot(c, 2, 126, 72));
+        // Upgrades
+        this.addSlot(new Slot(c, 3, 148, 18));
+        this.addSlot(new Slot(c, 4, 148, 36));
+
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 9; j++) {
+                this.addSlot(new Slot(player, j + i * 9 + 9, 8 + j * 18, 122 + i * 18));
+            }
         }
-        // На клиенте тайл может отсутствовать (реплей Flashback) — не крашим пакет, возвращаем null.
-        // На сервере отсутствие тайла — реальный баг, поэтому там падаем как раньше.
-        if (inventory.player.level().isClientSide) {
-            return null;
+
+        for (int i = 0; i < 9; i++) {
+            this.addSlot(new Slot(player, i, 8 + i * 18, 180));
         }
-        throw new IllegalStateException("No MachineMixerBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":mixer_menu");
+
+        addDataSlots(data);
     }
 
-    public MachineMixerBlockEntity getBlockEntity() {
-        return blockEntity;
+    public MachineMixerBlockEntity getBlockEntity() { return mixer; }
+
+    public int getProgress() { return data.get(0); }
+    public int getProcessTime() { return data.get(1); }
+    public long getPower() { return data.get(2); }
+    public int getRecipeIndex() { return data.get(3); }
+    public boolean wasOn() { return data.get(4) != 0; }
+
+    @Override
+    public ItemStack quickMoveStack(Player p, int par2) {
+        ItemStack var3 = ItemStack.EMPTY;
+        Slot var4 = this.slots.get(par2);
+
+        if (var4 != null && var4.hasItem()) {
+            ItemStack var5 = var4.getItem();
+            var3 = var5.copy();
+
+            if (par2 <= 4) {
+                if (!this.moveItemStackTo(var5, 5, this.slots.size(), true)) {
+                    return ItemStack.EMPTY;
+                }
+            } else {
+
+                if (com.hbm_m.api.energy.ItemEnergyAccess.getHbmProvider(var3).isPresent()
+                        || com.hbm_m.api.energy.ItemEnergyAccess.getHbmReceiver(var3).isPresent()) {
+                    if (!this.moveItemStackTo(var5, 0, 1, false)) {
+                        return ItemStack.EMPTY;
+                    }
+                } else if (var3.getItem() instanceof IItemFluidIdentifier) {
+                    if (!this.moveItemStackTo(var5, 2, 3, false)) {
+                        return ItemStack.EMPTY;
+                    }
+                } else if (var3.getItem() instanceof ItemMachineUpgrade) {
+                    if (!this.moveItemStackTo(var5, 3, 4, false)) {
+                        return ItemStack.EMPTY;
+                    }
+                } else {
+                    if (!this.moveItemStackTo(var5, 1, 2, false)) {
+                        return ItemStack.EMPTY;
+                    }
+                }
+            }
+
+            if (var5.isEmpty()) {
+                var4.set(ItemStack.EMPTY);
+            } else {
+                var4.setChanged();
+            }
+        }
+
+        return var3;
     }
 
     @Override
     public boolean stillValid(Player player) {
-        if (blockEntity == null || blockEntity.getLevel() != player.level()) {
-            return false;
-        }
-        BlockPos pos = blockEntity.getBlockPos();
-        return player.distanceToSqr(pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D) <= 64.0D;
-    }
-
-    @Override
-    public ItemStack quickMoveStack(Player player, int index) {
-        Slot slot = this.slots.get(index);
-        if (slot == null || !slot.hasItem()) {
-            return ItemStack.EMPTY;
-        }
-
-        ItemStack slotStack = slot.getItem();
-        ItemStack copy = slotStack.copy();
-
-        int playerInvStart = MACHINE_SLOTS;
-        int playerInvEnd = this.slots.size();
-
-        if (index < MACHINE_SLOTS) {
-            if (!this.moveItemStackTo(slotStack, playerInvStart, playerInvEnd, true)) {
-                return ItemStack.EMPTY;
-            }
-        } else {
-            boolean isBattery = com.hbm_m.api.energy.ItemEnergyAccess.getHbmProvider(slotStack)
-                    .map(provider -> provider.canExtract())
-                    .orElse(false);
-            //? if forge {
-            isBattery = isBattery || com.hbm_m.api.energy.ItemEnergyAccess.getForgeEnergy(slotStack)
-                    .map(storage -> storage.canExtract())
-                    .orElse(false);
-            //?} elif neoforge {
-            /*isBattery = isBattery || slotStack.getCapability(net.neoforged.neoforge.capabilities.Capabilities.EnergyStorage.ITEM) != null;
-            *///?}
-
-            if (isBattery) {
-                if (!this.moveItemStackTo(slotStack, SLOT_BATTERY, SLOT_BATTERY + 1, false)) {
-                    return ItemStack.EMPTY;
-                }
-            } else {
-                return ItemStack.EMPTY;
-            }
-        }
-
-        if (slotStack.isEmpty()) {
-            slot.set(ItemStack.EMPTY);
-        } else {
-            slot.setChanged();
-        }
-
-        slot.onTake(player, slotStack);
-        return copy;
-    }
-
-    public int getProgress() {
-        return data.get(0);
-    }
-
-    public int getMaxProgress() {
-        return data.get(1);
-    }
-
-    public int getScaledProgress(int scale) {
-        int progress = getProgress();
-        int maxProgress = getMaxProgress();
-        return maxProgress == 0 ? 0 : progress * scale / maxProgress;
-    }
-
-    public long getEnergyLong() {
-        long lo = data.get(2) & 0xFFFFFFFFL;
-        long hi = (long) data.get(3) << 32;
-        return hi | lo;
-    }
-
-    public long getMaxEnergyLong() {
-        long lo = data.get(4) & 0xFFFFFFFFL;
-        long hi = (long) data.get(5) << 32;
-        return hi | lo;
+        // w16b: Original isUseableByPlayer (TileEntityMachineBase) = 128 vom Kern, dazu Huelle der Maschine (MultiblockMenuReach)
+        return MultiblockMenuReach.stillValidCore(mixer, player, 128.0D);
     }
 }

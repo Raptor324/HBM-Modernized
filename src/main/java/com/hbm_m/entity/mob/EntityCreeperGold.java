@@ -78,6 +78,7 @@ public class EntityCreeperGold extends Creeper {
         for (int i = 0; i < amount; ++i) {
             this.spawnAtLocation(ModMaterialItems.stack(ModMaterials.GOLD, MaterialShape.CRYSTAL, 1));
         }
+        CreeperDrops.dropRecord(this, source);
     }
     //?} else {
     /*@Override
@@ -88,6 +89,7 @@ public class EntityCreeperGold extends Creeper {
         for (int i = 0; i < amount; ++i) {
             this.spawnAtLocation(ModMaterialItems.stack(ModMaterials.GOLD, MaterialShape.CRYSTAL, 1));
         }
+        CreeperDrops.dropRecord(this, source);
     }
     *///?}
 }

@@ -15,7 +15,8 @@ public interface IRadarDetectable {
         MISSILE_20("Size 20 Custom Missile"),
         MISSILE_AB("Anti-Ballistic Missile"),
         MIRVLET("Mirvlet"),
-        PLAYER("Player");
+        PLAYER("Player"),
+        ARTILLERY("Artillery Shell");
 
         public final String name;
 
@@ -25,4 +26,9 @@ public interface IRadarDetectable {
     }
 
     RadarTargetType getTargetType();
+
+    /** 1:1 IRadarDetectableNT#canBeSeenBy: ob das Objekt von diesem Radar/Geschuetz gesehen werden kann (Tarnung). */
+    default boolean canBeSeenBy(Object radar) {
+        return true;
+    }
 }

@@ -1,19 +1,25 @@
 package com.hbm_m.blockentity.machines;
 
-import org.jetbrains.annotations.NotNull;
+import java.util.List;
+import java.util.Map;
+
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.api.fluids.IFluidStandardTransceiverMK2;
-import com.hbm_m.api.fluids.VanillaFluidEquivalence;
 import com.hbm_m.blockentity.BaseMachineBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
+import com.hbm_m.interfaces.IUpgradeInfoProvider;
+import com.hbm_m.inventory.UpgradeManager;
 import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.inventory.menu.MachineMixerMenu;
 import com.hbm_m.item.fekal_electric.ItemCreativeBattery;
-import com.hbm_m.platform.recipe.RecipeHooks;
-import com.hbm_m.recipe.MixerRecipe;
+import com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType;
+import com.hbm_m.recipe.MixerRecipes;
+import com.hbm_m.recipe.MixerRecipes.MixerRecipe;
+import com.hbm_m.util.BobMathUtil;
 
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
@@ -25,282 +31,284 @@ import net.minecraft.world.inventory.ContainerData;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.material.Fluid;
-//? if forge {
-import net.minecraftforge.common.capabilities.Capability;
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-import net.minecraftforge.common.util.LazyOptional;
-import net.minecraftforge.fluids.capability.IFluidHandler;
-//?}
+import net.minecraft.world.phys.AABB;
 
 /**
- * Industrial Mixer BlockEntity.
- *
- * <p>Combines two input fluids into a single output fluid over time, consuming energy.
- * Direct port of the relevant subset of {@code com.hbm.tileentity.machine.TileEntityMachineMixer}
- * from 1.7.10, adapted to the {@link FluidTank} + {@link IFluidStandardTransceiverMK2}
- * conventions established by {@code MachineRefineryBlockEntity} / {@code MachineChemicalPlantBlockEntity}.</p>
+ * 1:1 {@code TileEntityMachineMixer}: Ausgabefluid per Fluid-ID (Platz 2) bestimmt die Rezeptliste
+ * ({@link MixerRecipes}), ein Klick in der GUI schaltet zwischen mehreren Rezepten desselben Ausgangs um. Bis zu zwei
+ * Eingangsfluide und ein fester Stoff (Platz 1), Verbrauch 50 HE/t mit Tempo-/Strom-/Overdrive-Upgrades (Plaetze 3-4).
+ * Anschluesse unten und an den vier Seiten des Kerns.
  */
-public class MachineMixerBlockEntity extends BaseMachineBlockEntity implements IFluidStandardTransceiverMK2 {
+public class MachineMixerBlockEntity extends BaseMachineBlockEntity
+        implements IFluidStandardTransceiverMK2, IUpgradeInfoProvider, com.hbm_m.api.tile.IControlReceiver {
 
-    private static final int SLOT_COUNT = 1;
-    private static final int SLOT_BATTERY = 0;
+    public static final int SLOT_BATTERY = 0;
+    public static final int SLOT_SOLID = 1;
+    public static final int SLOT_FLUID_ID = 2;
+    public static final int SLOT_UPGRADE_1 = 3;
+    public static final int SLOT_UPGRADE_2 = 4;
+    public static final int SLOT_COUNT = 5;
 
-    public static final int TANK_INPUT_A = 0;
-    public static final int TANK_INPUT_B = 1;
-    public static final int TANK_OUTPUT = 2;
+    public static final long maxPower = 10_000;
 
-    private static final int TANK_CAPACITY = 12_000;
+    public int progress;
+    public int processTime;
+    public int recipeIndex;
 
-    private static final long ENERGY_CAPACITY = 100_000L;
-    private static final long ENERGY_RECEIVE_RATE = 1_000L;
+    public float rotation;
+    public float prevRotation;
+    public boolean wasOn = false;
 
-    private static final int DEFAULT_MAX_PROGRESS = 100;
+    private int consumption = 50;
 
-    private final FluidTank[] tanks = new FluidTank[] {
-        new FluidTank(TANK_CAPACITY) {
-            @Override
-            public void onContentsChanged() {
-                setChanged();
-            }
-        },
-        new FluidTank(TANK_CAPACITY) {
-            @Override
-            public void onContentsChanged() {
-                setChanged();
-            }
-        },
-        new FluidTank(TANK_CAPACITY) {
-            @Override
-            public void onContentsChanged() {
-                setChanged();
-            }
-        }
-    };
+    public final FluidTank[] tanks = new FluidTank[3];
 
-    private int progress = 0;
-    private int maxProgress = DEFAULT_MAX_PROGRESS;
-    private boolean active = false;
+    private final UpgradeManager upgradeManager = new UpgradeManager();
+
+    private static final Map<UpgradeType, Integer> VALID_UPGRADES = Map.of(
+            UpgradeType.SPEED, 3,
+            UpgradeType.POWER, 3,
+            UpgradeType.OVERDRIVE, 6);
 
     protected final ContainerData data = new ContainerData() {
         @Override
         public int get(int index) {
             return switch (index) {
                 case 0 -> progress;
-                case 1 -> maxProgress;
-                case 2 -> (int) (getEnergyStored() & 0xFFFFFFFFL);
-                case 3 -> (int) ((getEnergyStored() >> 32) & 0xFFFFFFFFL);
-                case 4 -> (int) (getMaxEnergyStored() & 0xFFFFFFFFL);
-                case 5 -> (int) ((getMaxEnergyStored() >> 32) & 0xFFFFFFFFL);
+                case 1 -> processTime;
+                case 2 -> (int) getEnergyStored();
+                case 3 -> recipeIndex;
+                case 4 -> wasOn ? 1 : 0;
                 default -> 0;
             };
         }
-
-        @Override
-        public void set(int index, int value) {}
-
-        @Override
-        public int getCount() {
-            return 6;
-        }
+        @Override public void set(int index, int value) { }
+        @Override public int getCount() { return 5; }
     };
 
     public MachineMixerBlockEntity(BlockPos pos, BlockState state) {
-        super(ModBlockEntities.MIXER_BE.get(), pos, state, SLOT_COUNT, ENERGY_CAPACITY, ENERGY_RECEIVE_RATE);
+        super(ModBlockEntities.MIXER_BE.get(), pos, state, SLOT_COUNT, maxPower, maxPower);
+        this.tanks[0] = new FluidTank(ModFluids.NONE.getSource(), 16_000);
+        this.tanks[1] = new FluidTank(ModFluids.NONE.getSource(), 16_000);
+        this.tanks[2] = new FluidTank(ModFluids.NONE.getSource(), 24_000);
     }
 
-    public static void tick(Level level, BlockPos pos, BlockState state, MachineMixerBlockEntity blockEntity) {
-        if (!level.isClientSide) {
-            blockEntity.serverTick();
-        }
+    public static void tick(Level level, BlockPos pos, BlockState state, MachineMixerBlockEntity be) {
+        if (!level.isClientSide) be.serverTick(level, pos);
+        else be.clientTick();
     }
 
-    private void serverTick() {
+    private void serverTick(Level level, BlockPos pos) {
         ensureNetworkInitialized();
-        chargeFromBattery();
 
-        boolean changed = mix();
+        ItemStack battery = inventory.getStackInSlot(SLOT_BATTERY);
+        if (!battery.isEmpty() && battery.getItem() instanceof ItemCreativeBattery) setEnergyStored(getMaxEnergyStored());
+        else chargeFromBatterySlot(SLOT_BATTERY);
 
-        if (changed) {
-            setChanged();
-            sendUpdateToClient();
+        ItemStack[] slots = new ItemStack[SLOT_COUNT];
+        for (int i = 0; i < SLOT_COUNT; i++) slots[i] = inventory.getStackInSlot(i);
+        if (tanks[2].setType(SLOT_FLUID_ID, slots)) inventory.setStackInSlot(SLOT_FLUID_ID, slots[SLOT_FLUID_ID] == null ? ItemStack.EMPTY : slots[SLOT_FLUID_ID]);
+
+        upgradeManager.checkSlots(inventory, SLOT_UPGRADE_1, SLOT_UPGRADE_2, VALID_UPGRADES);
+        int speedLevel = upgradeManager.getLevel(UpgradeType.SPEED);
+        int powerLevel = upgradeManager.getLevel(UpgradeType.POWER);
+        int overLevel = upgradeManager.getLevel(UpgradeType.OVERDRIVE);
+
+        this.consumption = 50;
+
+        this.consumption += speedLevel * 150;
+        this.consumption -= this.consumption * powerLevel * 0.25;
+        this.consumption *= (overLevel * 3 + 1);
+
+        for (Direction d : CON_DIRS) {
+            BlockPos con = pos.relative(d);
+            if (FluidTank.isFluidTypeExplicitlySet(tanks[0].getTankType())) this.trySubscribe(tanks[0].getTankType(), level, con, d);
+            if (FluidTank.isFluidTypeExplicitlySet(tanks[1].getTankType())) this.trySubscribe(tanks[1].getTankType(), level, con, d);
+        }
+
+        this.wasOn = this.canProcess();
+
+        if (this.wasOn) {
+            this.progress++;
+            this.energy -= this.getConsumption();
+
+            this.processTime -= this.processTime * speedLevel / 4;
+            this.processTime /= (overLevel + 1);
+
+            if (processTime <= 0) this.processTime = 1;
+
+            if (this.progress >= this.processTime) {
+                this.process();
+                this.progress = 0;
+            }
+
+        } else {
+            this.progress = 0;
+        }
+
+        for (Direction d : CON_DIRS) {
+            if (tanks[2].getFill() > 0) this.tryProvide(tanks[2], level, pos.relative(d), d);
+        }
+
+        setChanged();
+        sendUpdateToClient();
+    }
+
+    /** Original getConPos: unten und die vier Seiten. */
+    private static final Direction[] CON_DIRS = { Direction.DOWN, Direction.EAST, Direction.WEST, Direction.SOUTH, Direction.NORTH };
+
+    private void clientTick() {
+        this.prevRotation = this.rotation;
+
+        if (this.wasOn) {
+            this.rotation += 20F;
+        }
+
+        if (this.rotation >= 360) {
+            this.rotation -= 360;
+            this.prevRotation -= 360;
         }
     }
 
-    /**
-     * Core mixing logic: looks up a recipe matching the two input tanks, and if there is enough
-     * fluid, energy and output space, progresses the recipe over {@code duration} ticks before
-     * draining the inputs and filling the output.
-     */
-    private boolean mix() {
-        // Рецепты data-driven (JSON) — поиск по двум бакам через RecipeManager (кросс-версионный RecipeHooks).
-        // level доступен из BaseMachineBlockEntity на момент serverTick().
-        MixerRecipe recipe = null;
-        if (level != null) {
-            Fluid tankAFluid = tanks[TANK_INPUT_A].getTankType();
-            Fluid tankBFluid = tanks[TANK_INPUT_B].getTankType();
-            for (MixerRecipe r : RecipeHooks.getAllRecipes(level, MixerRecipe.Type.INSTANCE)) {
-                if (r.matches(tankAFluid, tankBFluid)) {
-                    recipe = r;
-                    break;
-                }
-            }
+    public boolean canProcess() {
+
+        MixerRecipe[] recipes = MixerRecipes.getOutput(tanks[2].getTankType());
+        if (recipes == null || recipes.length <= 0) {
+            this.recipeIndex = 0;
+            return false;
         }
 
+        this.recipeIndex = this.recipeIndex % recipes.length;
+        MixerRecipe recipe = recipes[this.recipeIndex];
         if (recipe == null) {
-            if (active || progress != 0) {
-                active = false;
-                progress = 0;
-                return true;
-            }
+            this.recipeIndex = 0;
             return false;
         }
 
-        boolean directOrder = recipe.isDirectOrder(tanks[TANK_INPUT_A].getTankType());
-        FluidTank tankA = directOrder ? tanks[TANK_INPUT_A] : tanks[TANK_INPUT_B];
-        FluidTank tankB = directOrder ? tanks[TANK_INPUT_B] : tanks[TANK_INPUT_A];
-        int amountA = directOrder ? (int) recipe.getInputA().getAmount() : (int) recipe.getInputB().getAmount();
-        int amountB = directOrder ? (int) recipe.getInputB().getAmount() : (int) recipe.getInputA().getAmount();
+        tanks[0].setTankType(recipe.input1 != null ? recipe.input1.type() : ModFluids.NONE.getSource());
+        tanks[1].setTankType(recipe.input2 != null ? recipe.input2.type() : ModFluids.NONE.getSource());
 
-        Fluid outputFluid = recipe.getOutput().getFluid();
-        int outputAmount = (int) recipe.getOutput().getAmount();
+        if (recipe.input1 != null && tanks[0].getFill() < recipe.input1.fill()) return false;
+        if (recipe.input2 != null && tanks[1].getFill() < recipe.input2.fill()) return false;
 
-        boolean hasFluids = tankA.getFill() >= amountA && tankB.getFill() >= amountB;
-        boolean hasEnergy = this.energy >= recipe.getEnergyPerTick();
-        boolean hasOutputSpace = canFillOutput(outputFluid, outputAmount);
+        /* simplest check would usually go first, but fluid checks also do the setup and we want that to happen even without power */
+        if (this.energy < getConsumption()) return false;
 
-        maxProgress = Math.max(1, recipe.getDuration());
+        if (recipe.output + tanks[2].getFill() > tanks[2].getMaxFill()) return false;
 
-        if (!hasFluids || !hasEnergy || !hasOutputSpace) {
-            if (active) {
-                active = false;
-                return true;
-            }
-            return false;
+        if (recipe.solidInput != null) {
+            ItemStack solid = inventory.getStackInSlot(SLOT_SOLID);
+            if (solid.isEmpty()) return false;
+
+            if (!recipe.solidInput.matchesRecipe(solid) || recipe.solidInput.stacksize() > solid.getCount()) return false;
         }
 
-        active = true;
-        boolean changed = false;
-
-        if (progress < maxProgress) {
-            progress++;
-            this.energy -= recipe.getEnergyPerTick();
-            changed = true;
-        }
-
-        if (progress >= maxProgress) {
-            tankA.drainMb(amountA);
-            tankB.drainMb(amountB);
-            tanks[TANK_OUTPUT].fillMb(outputFluid, outputAmount);
-            progress = 0;
-            changed = true;
-        }
-
-        return changed;
+        this.processTime = recipe.processTime;
+        return true;
     }
 
-    private boolean canFillOutput(Fluid output, int amount) {
-        FluidTank out = tanks[TANK_OUTPUT];
-        Fluid configured = out.getTankType();
-        if (out.getFill() > 0 && !VanillaFluidEquivalence.sameSubstance(configured, output)) {
-            return false;
-        }
-        return out.getFill() + amount <= out.getMaxFill();
+    protected void process() {
+
+        MixerRecipe[] recipes = MixerRecipes.getOutput(tanks[2].getTankType());
+        MixerRecipe recipe = recipes[this.recipeIndex % recipes.length];
+
+        if (recipe.input1 != null) tanks[0].drainMb(recipe.input1.fill());
+        if (recipe.input2 != null) tanks[1].drainMb(recipe.input2.fill());
+        if (recipe.solidInput != null) inventory.extractItem(SLOT_SOLID, recipe.solidInput.stacksize(), false);
+        tanks[2].fillMb(tanks[2].getTankType(), recipe.output);
     }
 
-    private void chargeFromBattery() {
-        ItemStack stack = inventory.getStackInSlot(SLOT_BATTERY);
-        if (!stack.isEmpty() && stack.getItem() instanceof ItemCreativeBattery) {
-            setEnergyStored(getMaxEnergyStored());
-            return;
-        }
-        chargeFromBatterySlot(SLOT_BATTERY);
+    public int getConsumption() {
+        return consumption;
     }
 
-    public FluidTank[] getTanks() {
-        return tanks;
-    }
+    public ContainerData getContainerData() { return data; }
+    public FluidTank[] getTanks() { return tanks; }
 
-    public FluidTank getTank(int index) {
-        return (index >= 0 && index < tanks.length) ? tanks[index] : tanks[0];
-    }
-
-    public ContainerData getContainerData() {
-        return data;
-    }
-
-    // ═══════════════════════════ IFluidStandardTransceiverMK2 ════════════════════════════════
-
-    @Override
-    public FluidTank[] getReceivingTanks() {
-        return new FluidTank[] { tanks[TANK_INPUT_A], tanks[TANK_INPUT_B] };
-    }
-
-    @Override
-    public FluidTank[] getSendingTanks() {
-        return new FluidTank[] { tanks[TANK_OUTPUT] };
-    }
-
-    @Override
-    public FluidTank[] getAllTanks() {
-        return tanks;
-    }
+    @Override public FluidTank[] getAllTanks() { return tanks; }
+    @Override public FluidTank[] getSendingTanks() { return new FluidTank[] { tanks[2] }; }
+    @Override public FluidTank[] getReceivingTanks() { return new FluidTank[] { tanks[0], tanks[1] }; }
 
     @Override
     public boolean isLoaded() {
         return level != null && !isRemoved() && level.isLoaded(worldPosition);
     }
 
-    public int getProgressScaled(int scale) {
-        if (maxProgress <= 0) {
-            return 0;
-        }
-        return progress * scale / maxProgress;
+    /** Original {@code isItemValidForSlot}: nur der feste Stoff des gewaehlten Rezepts (fuer Trichter). */
+    @Override
+    protected boolean isItemValidForSlot(int i, ItemStack itemStack) {
+        if (i == SLOT_BATTERY || i == SLOT_FLUID_ID || i == SLOT_UPGRADE_1 || i == SLOT_UPGRADE_2) return true; // GUI-Plaetze
+        MixerRecipe[] recipes = MixerRecipes.getOutput(tanks[2].getTankType());
+        if (recipes == null || recipes.length <= 0) return false;
+
+        MixerRecipe recipe = recipes[this.recipeIndex % recipes.length];
+        if (recipe == null || recipe.solidInput == null) return false;
+
+        return recipe.solidInput.matchesRecipe(itemStack);
     }
 
-    public int getProgress() {
-        return progress;
+    @Override
+    public boolean hasPermission(Player player) {
+        return player.distanceToSqr(worldPosition.getX() + 0.5, worldPosition.getY() + 0.5, worldPosition.getZ() + 0.5) <= 16 * 16;
     }
 
-    public int getMaxProgress() {
-        return maxProgress;
-    }
-
-    public boolean isActive() {
-        return active;
-    }
-
-    public void setActive(boolean active) {
-        this.active = active;
+    @Override
+    public void receiveControl(CompoundTag data) {
+        if (data.contains("toggle")) this.recipeIndex++;
         setChanged();
     }
 
     @Override
-    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-        super.writeNbtData(tag, registries);
-        tag.putInt("progress", progress);
-        tag.putInt("max_progress", maxProgress);
-        tag.putBoolean("active", active);
-        for (int i = 0; i < tanks.length; i++) {
-            tag.put("tank_" + i, tanks[i].writeNBT(new CompoundTag()));
+    public boolean canProvideInfo(UpgradeType type, int level, boolean extendedInfo) {
+        return type == UpgradeType.SPEED || type == UpgradeType.POWER || type == UpgradeType.OVERDRIVE;
+    }
+
+    @Override
+    public void provideInfo(UpgradeType type, int level, List<Component> info, boolean extendedInfo) {
+        info.add(IUpgradeInfoProvider.getStandardLabel(com.hbm_m.block.ModBlocks.MIXER.get()));
+        if (type == UpgradeType.SPEED) {
+            info.add(Component.translatable(KEY_DELAY, "-" + (level * 25) + "%").withStyle(ChatFormatting.GREEN));
+            info.add(Component.translatable(KEY_CONSUMPTION, "+" + (level * 300) + "%").withStyle(ChatFormatting.RED));
+        }
+        if (type == UpgradeType.POWER) {
+            info.add(Component.translatable(KEY_CONSUMPTION, "-" + (level * 25) + "%").withStyle(ChatFormatting.GREEN));
+        }
+        if (type == UpgradeType.OVERDRIVE) {
+            info.add(Component.literal("YES").withStyle(BobMathUtil.getBlink() ? ChatFormatting.RED : ChatFormatting.DARK_GRAY));
         }
     }
 
     @Override
-    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-        super.readNbtData(tag, registries);
-        progress = tag.getInt("progress");
-        maxProgress = tag.getInt("max_progress");
-        if (maxProgress <= 0) {
-            maxProgress = DEFAULT_MAX_PROGRESS;
-        }
-        active = tag.getBoolean("active");
-        for (int i = 0; i < tanks.length; i++) {
-            String key = "tank_" + i;
-            if (tag.contains(key)) {
-                tanks[i].readNBT(tag.getCompound(key));
-            }
-        }
+    public Map<UpgradeType, Integer> getValidUpgrades() {
+        return VALID_UPGRADES;
+    }
+
+    //? if forge {
+    @Override
+    //?}
+    public AABB getRenderBoundingBox() {
+        return new AABB(worldPosition.getX(), worldPosition.getY(), worldPosition.getZ(),
+                worldPosition.getX() + 1, worldPosition.getY() + 3, worldPosition.getZ() + 1);
+    }
+
+    @Override
+    protected void writeNbtData(CompoundTag nbt, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(nbt, registries);
+        nbt.putInt("progress", progress);
+        nbt.putInt("processTime", processTime);
+        nbt.putInt("recipe", recipeIndex);
+        nbt.putBoolean("wasOn", wasOn);
+        for (int i = 0; i < 3; i++) this.tanks[i].writeToNBT(nbt, i + "");
+    }
+
+    @Override
+    protected void readNbtData(CompoundTag nbt, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(nbt, registries);
+        this.progress = nbt.getInt("progress");
+        this.processTime = nbt.getInt("processTime");
+        this.recipeIndex = nbt.getInt("recipe");
+        this.wasOn = nbt.getBoolean("wasOn");
+        for (int i = 0; i < 3; i++) this.tanks[i].readFromNBT(nbt, i + "");
     }
 
     @Override
@@ -313,14 +321,6 @@ public class MachineMixerBlockEntity extends BaseMachineBlockEntity implements I
         return getDefaultName();
     }
 
-    @Override
-    protected boolean isItemValidForSlot(int slot, ItemStack stack) {
-        return switch (slot) {
-            case SLOT_BATTERY -> isEnergyProviderItem(stack) || stack.getItem() instanceof ItemCreativeBattery;
-            default -> false;
-        };
-    }
-
     @Nullable
     @Override
     public AbstractContainerMenu createMenu(int id, Inventory inventory, Player player) {
@@ -328,91 +328,24 @@ public class MachineMixerBlockEntity extends BaseMachineBlockEntity implements I
     }
 
     //? if forge {
+    /** Original {@code ISidedInventory}: Slot {1}; nur der Feststoff des Rezepts hinein, nichts heraus. */
+    private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
+            new com.hbm_m.blockentity.SidedItemAccess.Rules() {
+                @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return new int[] { 1 }; }
+                @Override public boolean canInsert(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return slot == 1 && isItemValidForSlot(slot, stack); }
+                @Override public boolean canExtract(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return false; }
+            });
+
     @Override
-    protected void setupFluidCapability() {
-        setFluidHandler(new MixerFluidHandler(this));
+    public @org.jetbrains.annotations.NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(@org.jetbrains.annotations.NotNull net.minecraftforge.common.capabilities.Capability<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER && side != null) return sidedItems.get(side).cast();
+        return super.getCapability(cap, side);
     }
 
-    /**
-     * Combined Forge fluid handler exposing the two input tanks (fillable) and the output tank
-     * (drainable) through a single capability, mirroring {@code MachineRefineryBlockEntity}'s
-     * approach for chemical plant pipes.
-     */
-    private static class MixerFluidHandler implements IFluidHandler {
-        private final MachineMixerBlockEntity be;
-
-        MixerFluidHandler(MachineMixerBlockEntity be) {
-            this.be = be;
-        }
-
-        @Override
-        public int getTanks() {
-            return be.tanks.length;
-        }
-
-        @Override
-        public net.minecraftforge.fluids.FluidStack getFluidInTank(int tank) {
-            FluidTank t = be.getTank(tank);
-            if (t.isEmpty()) return net.minecraftforge.fluids.FluidStack.EMPTY;
-            return new net.minecraftforge.fluids.FluidStack(t.getStoredFluid(), t.getFluidAmountMb());
-        }
-
-        @Override
-        public int getTankCapacity(int tank) {
-            return TANK_CAPACITY;
-        }
-
-        @Override
-        public boolean isFluidValid(int tank, net.minecraftforge.fluids.FluidStack stack) {
-            return tank == TANK_INPUT_A || tank == TANK_INPUT_B;
-        }
-
-        @Override
-        public int fill(net.minecraftforge.fluids.FluidStack resource, FluidAction action) {
-            if (resource.isEmpty()) return 0;
-            for (int i = TANK_INPUT_A; i <= TANK_INPUT_B; i++) {
-                FluidTank tank = be.tanks[i];
-                Fluid configured = tank.getConfiguredFluid();
-                if (configured != ModFluids.NONE.getSource()
-                        && !VanillaFluidEquivalence.sameSubstance(configured, resource.getFluid())
-                        && tank.getFill() > 0) {
-                    continue;
-                }
-                int space = tank.getCapacityMb() - tank.getFluidAmountMb();
-                if (space <= 0) continue;
-                int toFill = Math.min(resource.getAmount(), space);
-                if (action.execute()) {
-                    tank.fillMb(resource.getFluid(), toFill);
-                    be.setChanged();
-                }
-                return toFill;
-            }
-            return 0;
-        }
-
-        @Override
-        public net.minecraftforge.fluids.FluidStack drain(net.minecraftforge.fluids.FluidStack resource, FluidAction action) {
-            FluidTank out = be.tanks[TANK_OUTPUT];
-            if (out.isEmpty()) return net.minecraftforge.fluids.FluidStack.EMPTY;
-            if (!VanillaFluidEquivalence.sameSubstance(out.getStoredFluid(), resource.getFluid())) {
-                return net.minecraftforge.fluids.FluidStack.EMPTY;
-            }
-            return drain(resource.getAmount(), action);
-        }
-
-        @Override
-        public net.minecraftforge.fluids.FluidStack drain(int maxDrain, FluidAction action) {
-            FluidTank out = be.tanks[TANK_OUTPUT];
-            if (out.isEmpty() || maxDrain <= 0) return net.minecraftforge.fluids.FluidStack.EMPTY;
-            int toDrain = Math.min(maxDrain, out.getFluidAmountMb());
-            Fluid fluid = out.getStoredFluid();
-            if (action.execute()) {
-                out.drainMb(toDrain);
-                be.setChanged();
-            }
-            Fluid normalized = VanillaFluidEquivalence.forVanillaContainerFill(fluid);
-            return new net.minecraftforge.fluids.FluidStack(normalized, toDrain);
-        }
+    @Override
+    public void invalidateCaps() {
+        super.invalidateCaps();
+        sidedItems.invalidate();
     }
     //?}
 }

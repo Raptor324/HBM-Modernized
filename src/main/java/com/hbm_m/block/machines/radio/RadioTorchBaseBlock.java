@@ -25,14 +25,11 @@ import org.jetbrains.annotations.Nullable;
  * {@code RadioTorchBase} (1.7.10 Original). Thin, any-face-attachable marker block; right-click
  * opens the configuration GUI.
  * <p>
- * SCOPE-Vereinfachung: Das Original berechnet eine praezise, richtungsabhaengige duenne Hitbox samt
- * Support-Block-Abriss-Logik. Hier: einfache kleine Box (wie bei den Drone-Waypoint-Bloecken dieses
- * Ports), platziert an der geklickten Flaeche - gleiches bereits etabliertes Vereinfachungsmuster.
+ * Auswahlbox, fehlende Kollision und Abfallen ohne Halt wie im Original ({@link AttachedTorchShape}).
  */
-public abstract class RadioTorchBaseBlock extends BaseEntityBlock {
+public abstract class RadioTorchBaseBlock extends BaseEntityBlock implements com.hbm_m.interfaces.ILookOverlay {
 
     public static final DirectionProperty FACING = BlockStateProperties.FACING;
-    private static final VoxelShape SHAPE = Block.box(6, 6, 6, 10, 10, 10);
 
     protected RadioTorchBaseBlock(Properties properties) {
         super(properties);
@@ -52,7 +49,55 @@ public abstract class RadioTorchBaseBlock extends BaseEntityBlock {
 
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        return SHAPE;
+        return com.hbm_m.block.machines.radio.AttachedTorchShape.shape(state.getValue(FACING));
+    }
+
+    /** Original: {@code getCollisionBoundingBoxFromPool} = null. */
+    @Override
+    public VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+        return net.minecraft.world.phys.shapes.Shapes.empty();
+    }
+
+    @Override
+    public boolean canSurvive(BlockState state, net.minecraft.world.level.LevelReader level, BlockPos pos) {
+        return canBlockStay(level, pos, state.getValue(FACING));
+    }
+
+    /**
+     * Original {@code RadioTorchRWBase.printHook} (Sender/Empfaenger) bzw. {@code RadioTorchLogic.printHook}:
+     * Frequenz und letzter Zustand. Leser, Steuerung und Zaehler ueberschreiben das.
+     */
+    @Override
+    public void printHook(net.minecraft.client.gui.GuiGraphics g, Level level, BlockPos pos) {
+        net.minecraft.world.level.block.entity.BlockEntity te = level.getBlockEntity(pos);
+        String channel;
+        int lastState;
+        if (te instanceof com.hbm_m.blockentity.network.radio.RadioTorchBaseBlockEntity radio) {
+            channel = radio.channel; lastState = radio.lastState;
+        } else if (te instanceof com.hbm_m.blockentity.network.radio.RadioTorchLogicBlockEntity radio) {
+            channel = radio.channel; lastState = radio.lastState;
+        } else {
+            return;
+        }
+        java.util.List<net.minecraft.network.chat.Component> text = new java.util.ArrayList<>();
+        if (channel != null && !channel.isEmpty()) text.add(net.minecraft.network.chat.Component.literal("Freq: " + channel).withStyle(net.minecraft.ChatFormatting.AQUA));
+        text.add(net.minecraft.network.chat.Component.literal("Signal: " + lastState).withStyle(net.minecraft.ChatFormatting.RED));
+        com.hbm_m.interfaces.ILookOverlay.printGeneric(g, getName(), 0xffff00, 0x404000, text);
+    }
+
+    /** Original {@code canBlockStay}; Leser und Steuerung verlangen statt dessen einen Funk-Baustein dahinter. */
+    protected boolean canBlockStay(net.minecraft.world.level.LevelReader level, BlockPos pos, Direction facing) {
+        return com.hbm_m.block.machines.radio.AttachedTorchShape.canStay(level, pos, facing);
+    }
+
+    /** Original {@code onNeighborBlockChange}: ohne Halt faellt der Block als Gegenstand ab. */
+    @Override
+    public BlockState updateShape(BlockState state, net.minecraft.core.Direction dir, BlockState neighbor,
+                                  net.minecraft.world.level.LevelAccessor level, BlockPos pos, BlockPos neighborPos) {
+        if (dir == state.getValue(FACING) && !state.canSurvive(level, pos)) {
+            return net.minecraft.world.level.block.Blocks.AIR.defaultBlockState();
+        }
+        return super.updateShape(state, dir, neighbor, level, pos, neighborPos);
     }
 
     @Override
@@ -73,4 +118,11 @@ public abstract class RadioTorchBaseBlock extends BaseEntityBlock {
     /*@Override
     protected abstract InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit);
     *///?}
+
+    /** Original {@code addInformation}: {@code addStandardInfo} (Umschalttaste zeigt {@code .desc}). */
+    @Override
+    public void appendHoverText(net.minecraft.world.item.ItemStack stack, @org.jetbrains.annotations.Nullable net.minecraft.world.level.BlockGetter level,
+                                java.util.List<net.minecraft.network.chat.Component> list, net.minecraft.world.item.TooltipFlag flag) {
+        com.hbm_m.util.StandardInfo.add(list, getDescriptionId() + ".desc");
+    }
 }

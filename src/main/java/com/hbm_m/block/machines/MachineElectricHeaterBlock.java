@@ -31,17 +31,30 @@ import com.hbm_m.multiblock.MultiblockStructureHelper;
  * ({@code getDimensions {0,0,1,2,1,1}}, Setzversatz 2) - die vordere Zelle ist zugleich der
  * Anschluss, an dem das Kabel andockt.</p>
  */
-public class MachineElectricHeaterBlock extends DummyableMachineBlock {
+public class MachineElectricHeaterBlock extends DummyableMachineBlock implements com.hbm_m.api.block.IToolable, com.hbm_m.interfaces.ILookOverlay {
+
+    /** w16b: Original {@code HeaterElectric.printHook} (Kern ueber findCore - Dummy-Zellen reichen an den Kern weiter). */
+    @Override
+    public void printHook(net.minecraft.client.gui.GuiGraphics g, Level world, BlockPos pos) {
+        if (!(world.getBlockEntity(pos) instanceof MachineElectricHeaterBlockEntity heater)) return;
+        java.util.List<Component> text = new java.util.ArrayList<>();
+        text.add(Component.literal(String.format(java.util.Locale.US, "%,d", heater.getHeatStored()) + " TU"));
+        text.add(Component.literal("-> ").withStyle(net.minecraft.ChatFormatting.GREEN)
+                .append(Component.literal(heater.getConsumption() + " HE/t").withStyle(net.minecraft.ChatFormatting.RESET)));
+        text.add(Component.literal("<- ").withStyle(net.minecraft.ChatFormatting.RED)
+                .append(Component.literal(heater.getHeatGen() + " TU/t").withStyle(net.minecraft.ChatFormatting.RESET)));
+        com.hbm_m.interfaces.ILookOverlay.printGeneric(g, Component.translatable(getDescriptionId()), 0xffff00, 0x404000, text);
+    }
 
     public MachineElectricHeaterBlock(Properties properties) { super(properties); }
 
     @Override
     protected MultiblockStructureHelper defineStructure() {
-        // Original: getDimensions {0,0,1,2,1,1}, getOffset 2, makeExtra auf der Fassade
-        // (= Kern minus zwei in Blickrichtung).
+        // Original: getDimensions {0,0,1,2,1,1}, getOffset 2, makeExtra(x, y, z) auf dem angeklickten Feld
+        // (Kern = Klick + dir * -2, also Fassade = Kern plus zwei in Blickrichtung dir).
         return DummyableStructureBuilder.create()
                 .box(0, 0, 1, 2, 1, 1)
-                .extra(-2, 0, 0)
+                .extra(2, 0, 0)
                 .placementOffset(2)
                 .build(() -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState());
     }
@@ -57,36 +70,15 @@ public class MachineElectricHeaterBlock extends DummyableMachineBlock {
                 (lvl, pos, st, be) -> MachineElectricHeaterBlockEntity.tick(lvl, pos, st, (MachineElectricHeaterBlockEntity) be));
     }
 
-    //? if < 1.21.1 {
+    /** 1:1 {@code HeaterElectric.onScrew}: Schraubenzieher schaltet die Heizstufe um (kein onBlockActivated, kein GUI). */
     @Override
-    public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
-
-        ItemStack held = player.getItemInHand(hand);
-        if (held.getItem() == ModItems.SCREWDRIVER.get()) {
-            if (!level.isClientSide() && level.getBlockEntity(pos) instanceof MachineElectricHeaterBlockEntity be) {
-                be.cycleSetting();
-                player.displayClientMessage(Component.literal("Setting: " + be.getSetting()), true);
-            }
-            return InteractionResult.sidedSuccess(level.isClientSide());
-        }
-        return InteractionResult.PASS;
-        }
-    //?} else {
-    /*@Override
-    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
-
-        ItemStack held = player.getItemInHand(InteractionHand.MAIN_HAND);
-        if (held.getItem() == ModItems.SCREWDRIVER.get()) {
-            if (!level.isClientSide() && level.getBlockEntity(pos) instanceof MachineElectricHeaterBlockEntity be) {
-                be.cycleSetting();
-                player.displayClientMessage(Component.literal("Setting: " + be.getSetting()), true);
-            }
-            return InteractionResult.sidedSuccess(level.isClientSide());
-        }
-        return InteractionResult.PASS;
-        }
-    *///?}
-
+    public boolean onScrew(Level world, Player player, BlockPos pos, net.minecraft.core.Direction side, float fX, float fY, float fZ, InteractionHand hand, ToolType tool) {
+        if (tool != ToolType.SCREWDRIVER) return false;
+        if (world.isClientSide()) return true;
+        if (!(world.getBlockEntity(pos) instanceof MachineElectricHeaterBlockEntity tile)) return false;
+        tile.cycleSetting(); // toggleSetting + markDirty
+        return true;
+    }
 
     //? if >1.20.1 {
     /*public static final com.mojang.serialization.MapCodec<MachineElectricHeaterBlock> CODEC = simpleCodec(MachineElectricHeaterBlock::new);
@@ -96,4 +88,11 @@ public class MachineElectricHeaterBlock extends DummyableMachineBlock {
         return CODEC;
     }
     *///?}
+
+    /** Original {@code addInformation}: {@code addStandardInfo} (Umschalttaste zeigt {@code .desc}). */
+    @Override
+    public void appendHoverText(net.minecraft.world.item.ItemStack stack, @org.jetbrains.annotations.Nullable net.minecraft.world.level.BlockGetter level,
+                                java.util.List<net.minecraft.network.chat.Component> list, net.minecraft.world.item.TooltipFlag flag) {
+        com.hbm_m.util.StandardInfo.add(list, getDescriptionId() + ".desc");
+    }
 }

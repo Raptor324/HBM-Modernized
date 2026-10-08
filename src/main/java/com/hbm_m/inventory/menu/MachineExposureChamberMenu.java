@@ -71,8 +71,8 @@ public class MachineExposureChamberMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        return blockEntity != null && blockEntity.getLevel() == player.level()
-            && player.distanceToSqr(blockEntity.getBlockPos().getCenter()) <= 64;
+        // w16b: Original isUseableByPlayer (TileEntityMachineBase) = 128 vom Kern, dazu Huelle der Maschine (MultiblockMenuReach)
+        return MultiblockMenuReach.stillValidCore(blockEntity, player, 128.0D);
     }
 
     @Override

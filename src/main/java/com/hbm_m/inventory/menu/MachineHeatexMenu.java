@@ -12,14 +12,7 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
-/**
- * Port of {@code ContainerHeaterHeatex} (1.7.10 Original).
- * <p>
- * SCOPE-Vereinfachung: Das Original besitzt einen Item-Slot (Index 0, bei 80/72) zur Neuzuweisung des
- * heissen Fluid-Typs per Item ({@code IFluidCopiable}). {@link MachineHeatexBlockEntity} wurde ohne
- * Item-Inventar portiert (0 Slots, Tanks sind fest auf coolant_hot/coolant typisiert) - daher enthaelt
- * dieses Menu nur die Spielerinventar-Slots, 1:1 in den Original-Koordinaten uebernommen.
- */
+/** 1:1 {@code ContainerHeaterHeatex}: Fluid-ID-Platz (80,72), Spielerinventar ab (8,122). */
 public class MachineHeatexMenu extends AbstractContainerMenu {
 
     private final MachineHeatexBlockEntity blockEntity;
@@ -31,6 +24,8 @@ public class MachineHeatexMenu extends AbstractContainerMenu {
     public MachineHeatexMenu(int id, Inventory inventory, MachineHeatexBlockEntity blockEntity) {
         super(ModMenuTypes.HEATEX_MENU.get(), id);
         this.blockEntity = blockEntity;
+
+        this.addSlot(new Slot(new com.hbm_m.inventory.ModItemStackHandlerContainer(blockEntity.getInventory(), blockEntity::setChanged), 0, 80, 72));
 
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 9; col++) {
@@ -62,38 +57,36 @@ public class MachineHeatexMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        if (blockEntity == null || blockEntity.getLevel() != player.level()) {
-            return false;
-        }
-        BlockPos pos = blockEntity.getBlockPos();
-        return player.distanceToSqr(pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D) <= 64.0D;
+        // w16b: Original isUseableByPlayer (TileEntityMachineBase) = 128 vom Kern, dazu Huelle der Maschine (MultiblockMenuReach)
+        return MultiblockMenuReach.stillValidCore(blockEntity, player, 128.0D);
     }
 
     @Override
-    public ItemStack quickMoveStack(Player player, int index) {
-        // Keine Maschinen-Slots vorhanden (siehe Klassenkommentar) - Shift-Klick verhaelt sich wie im
-        // Original fuer alle Nicht-Slot-0-Faelle: nur innerhalb des Spielerinventars zusammenfuehren.
-        ItemStack result = ItemStack.EMPTY;
-        Slot slot = this.slots.get(index);
+    public ItemStack quickMoveStack(Player player, int par2) {
+        ItemStack var3 = ItemStack.EMPTY;
+        Slot var4 = this.slots.get(par2);
 
-        if (slot != null && slot.hasItem()) {
-            ItemStack slotStack = slot.getItem();
-            result = slotStack.copy();
+        if (var4 != null && var4.hasItem()) {
+            ItemStack var5 = var4.getItem();
+            var3 = var5.copy();
 
-            if (!this.moveItemStackTo(slotStack, 0, this.slots.size(), true)) {
-                return ItemStack.EMPTY;
-            }
-
-            if (slotStack.isEmpty()) {
-                slot.set(ItemStack.EMPTY);
+            if (par2 == 0) {
+                if (!this.moveItemStackTo(var5, 1, this.slots.size(), true)) {
+                    return ItemStack.EMPTY;
+                }
             } else {
-                slot.setChanged();
+                if (!this.moveItemStackTo(var5, 0, 1, false)) {
+                    return ItemStack.EMPTY;
+                }
             }
-            if (slotStack.getCount() == result.getCount()) {
-                return ItemStack.EMPTY;
+
+            if (var5.isEmpty()) {
+                var4.set(ItemStack.EMPTY);
+            } else {
+                var4.setChanged();
             }
-            slot.onTake(player, slotStack);
         }
-        return result;
+
+        return var3;
     }
 }

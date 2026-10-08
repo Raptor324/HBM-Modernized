@@ -20,6 +20,13 @@ public class TungstenCrateBlock extends BaseCrateBlock {
         return new TungstenCrateBlockEntity(pos, state);
     }
 
+    /** Original {@code updateEntity}: Gluehzustand (Metadate 1) und Flammen/Rauch. */
+    @Nullable
+    @Override
+    public <T extends BlockEntity> net.minecraft.world.level.block.entity.BlockEntityTicker<T> getTicker(net.minecraft.world.level.Level level, BlockState state, net.minecraft.world.level.block.entity.BlockEntityType<T> type) {
+        return createTickerHelper(type, com.hbm_m.blockentity.ModBlockEntities.TUNGSTEN_CRATE_BE.get(), TungstenCrateBlockEntity::tick);
+    }
+
     //? if >1.20.1 {
     /*public static final com.mojang.serialization.MapCodec<TungstenCrateBlock> CODEC = simpleCodec(TungstenCrateBlock::new);
 

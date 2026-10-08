@@ -7,7 +7,6 @@ import com.hbm_m.blockentity.bomb.LargeNukeBlockEntity;
 import com.hbm_m.explosion.NuclearExplosionAPI;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.world.Containers;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
@@ -51,7 +50,7 @@ public class LargeNukeBlock extends NukeBaseBlock implements IBomb {
             net.minecraft.world.item.ItemStack[] items = nuke.slots.toArray(new net.minecraft.world.item.ItemStack[0]);
             int radius = type.detonationRadius(items);
             if (nuke.isReady()) {
-                Containers.dropContents(level, pos, nuke);
+                // Original clearSlots: die Bombenteile werden verbraucht, nicht fallengelassen
                 nuke.clearContent();
                 level.setBlock(pos, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
                 NuclearExplosionAPI.startLargeNuke(level, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, radius);

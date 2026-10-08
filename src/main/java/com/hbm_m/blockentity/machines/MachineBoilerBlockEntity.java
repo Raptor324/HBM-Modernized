@@ -39,7 +39,7 @@ import net.minecraft.world.phys.AABB;
  * 3,2 Mio. TU) und wandelt das Eingangsfluid nach dessen erster {@link FT_Heatable}-Stufe um (Wasser -> Dampf); der
  * Ausgangstank waechst mit dem Umrechnungsverhaeltnis. Anschluesse seitlich zwei Bloecke vom Kern ({@code rot}) und
  * oben. Laeuft der Ausgangstank voll, platzt der Kessel (oberer Teil wird geraeumt, Explosion Staerke 5); danach
- * liefert er nur noch Stahl und Kupfer. Rampant-Heizen durch den Tom-Brand kommt mit dem Einschlag (R9).
+ * liefert er nur noch Stahl und Kupfer. Im Tom-Feuersturm heizt er sich unter freiem Himmel von selbst auf (TomSaveData.fire).
  */
 public class MachineBoilerBlockEntity extends BaseMachineBlockEntity implements IFluidStandardTransceiverMK2, IRORValueProvider {
 
@@ -79,6 +79,11 @@ public class MachineBoilerBlockEntity extends BaseMachineBlockEntity implements 
             this.setupTanks();
             this.updateConnections(world);
             this.tryPullHeat();
+
+            int light = world.getBrightness(net.minecraft.world.level.LightLayer.SKY, worldPosition);
+            if (light > 7 && com.hbm_m.saveddata.TomSaveData.forWorld(world).fire > 1e-5) {
+                this.heat += ((maxHeat - heat) * 0.000005D); //constantly heat up 0.0005% of the remaining heat buffer for rampant but diminishing heating
+            }
 
             this.isOn = false;
             this.tryConvert(world);

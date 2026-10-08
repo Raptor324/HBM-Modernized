@@ -54,7 +54,8 @@ public abstract class PileDeviceBlock extends BaseEntityBlock {
 
     @Override
     public RenderShape getRenderShape(BlockState state) {
-        return RenderShape.MODEL;
+        // Bewegte Teile (Stab, Hebel/Schieber, Luefterrad) zeichnet PileDeviceRenderers (RenderPile*).
+        return RenderShape.ENTITYBLOCK_ANIMATED;
     }
 
     /**

@@ -1,13 +1,14 @@
 package com.hbm_m.entity.projectile;
 
 import com.hbm_m.entity.ModEntities;
-import com.hbm_m.item.ModItems;
 
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.sounds.SoundSource;
 import net.minecraft.world.InteractionHand;
@@ -15,28 +16,24 @@ import net.minecraft.world.InteractionResult;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
-import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.ClipContext;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.EntityHitResult;
 import net.minecraft.world.phys.HitResult;
 import net.minecraft.world.phys.Vec3;
 
 /**
- * 1:1-Port von {@code EntityCog} (1.7.10): das Zahnrad, das aus einem ueberdrehten Stirlingmotor
- * fliegt.
+ * 1:1-Port von {@code EntityCog} (1.7.10, {@code extends EntityThrowableInterp}): das Zahnrad, das
+ * aus einem ueberdrehten Stirlingmotor fliegt.
  *
- * <p>Das ist kein blosser Effekt. Das Rad <b>toetet, was es trifft</b> (tausend Schaden, also
- * alles), <b>sprengt beim Aufprall</b> auf einen Block und prallt dabei ab - erst wenn es langsam
- * genug ist, bleibt es liegen. Dann laesst es sich mit einem Rechtsklick <b>aufsammeln</b> und
- * wieder in den Motor einbauen.</p>
- *
- * <p>Genau darum ist ein durchgehender Stirlingmotor gefaehrlich und nicht nur teuer: das Rad
- * fliegt in die Halle, und wer im Weg steht, ist weg.</p>
+ * <p>Das Rad <b>toetet, was es trifft</b> (1000 Schaden, rubble), <b>sprengt beim Aufprall</b> auf
+ * einen Block (Staerke 3, Bloecke unter Widerstand 50 zerbrechen) und prallt dabei ab - erst unter
+ * 0.75 Tempo bleibt es liegen. Dann laesst es sich mit einem Rechtsklick aufsammeln.
+ * Flugbahn: EntityThrowableNT mit Schwerkraft 0.03, Luftwiderstand 0.99.</p>
  */
-public class CogEntity extends Entity {
+public class CogEntity extends EntityThrowableInterp {
 
     /** Original: {@code dataWatcher} 10 - unter 6 fliegt es, ab 6 liegt es. */
     private static final EntityDataAccessor<Integer> ORIENTATION =
@@ -45,13 +42,6 @@ public class CogEntity extends Entity {
     /** Original: {@code dataWatcher} 11 - Bauart des Motors (0 normal, 1 Stahl, 2 kreativ). */
     private static final EntityDataAccessor<Integer> META =
             SynchedEntityData.defineId(CogEntity.class, EntityDataSerializers.INT);
-
-    /** Original: {@code newExplosion(..., 3F, false)} beim Aufprall. */
-    private static final float IMPACT_POWER = 3F;
-    /** Original: unter dieser Geschwindigkeit bleibt es liegen. */
-    private static final double REST_SPEED = 0.75D;
-
-    private int age = 0;
 
     public CogEntity(EntityType<? extends CogEntity> type, Level level) {
         super(type, level);
@@ -64,6 +54,16 @@ public class CogEntity extends Entity {
         return cog;
     }
 
+    /** Fuer abgeleitete Wurfteile ({@link SawbladeEntity}). */
+    protected void setOrientationValue(int orientation) {
+        entityData.set(ORIENTATION, orientation);
+    }
+
+    /** Was das liegende Teil beim Aufheben zurueckgibt ({@code gear_large} mit Meta). */
+    protected ItemStack pickupStack() {
+        return com.hbm_m.blockentity.machines.MachineStirlingBlockEntity.gearFor(getMeta());
+    }
+
     public CogEntity setMeta(int meta) {
         entityData.set(META, meta);
         return this;
@@ -72,15 +72,14 @@ public class CogEntity extends Entity {
     public int getMeta() { return entityData.get(META); }
 
     //? if < 1.21.1 {
-
     @Override
-    protected void defineSynchedData() {
+    protected void defineExtraData() {
         entityData.define(ORIENTATION, 0);
         entityData.define(META, 0);
     }
     //?} else {
     /*@Override
-    protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
+    protected void defineExtraData(SynchedEntityData.Builder builder) {
         builder.define(ORIENTATION, 0);
         builder.define(META, 0);
     }
@@ -91,76 +90,16 @@ public class CogEntity extends Entity {
     /** Original: {@code orientation >= 6} - es liegt und dreht sich nicht mehr. */
     public boolean isResting() { return getOrientation() >= 6; }
 
-    @Override
-    public void tick() {
-        if (isResting()) return;
-
-        Vec3 motion = getDeltaMovement();
-        Vec3 start = position();
-        Vec3 end = start.add(motion);
-
-        // Alles Lebende auf der Bahn - das Rad macht keinen Unterschied.
-        for (LivingEntity victim : level().getEntitiesOfClass(LivingEntity.class,
-                getBoundingBox().expandTowards(motion).inflate(0.5D), LivingEntity::isAlive)) {
-
-            //? if < 1.21.1 {
-            victim.hurt(com.hbm_m.damagesource.ModDamageSources.rubble(level()), 1000F);
-            //?} else {
-            /*if (level() instanceof net.minecraft.server.level.ServerLevel serverLevel) {
-                victim.hurt(serverLevel, com.hbm_m.damagesource.ModDamageSources.rubble(level()), 1000F);
-            }
-            *///?}
-        }
-
-        BlockHitResult hit = level().clip(new ClipContext(
-                start, end, ClipContext.Block.COLLIDER, ClipContext.Fluid.NONE, this));
-
-        if (hit.getType() != HitResult.Type.MISS && age > 1) {
-            onBlockHit(hit);
-        } else {
-            move(MoverType.SELF, motion);
-        }
-
-        // Schwerkraft und Reibung.
-        motion = getDeltaMovement();
-        setDeltaMovement(motion.x * 0.98D, (motion.y - 0.04D) * 0.98D, motion.z * 0.98D);
-
-        if (!level().isClientSide()) age++;
-    }
-
-    /** 1:1-Port von {@code onImpact} fuer Blocktreffer: abprallen und sprengen, sonst liegenbleiben. */
-    private void onBlockHit(BlockHitResult hit) {
-        Vec3 motion = getDeltaMovement();
-
-        if (motion.length() < REST_SPEED) {
-            // Es ist ausgerollt - ab jetzt liegt es da und laesst sich aufheben.
-            entityData.set(ORIENTATION, getOrientation() + 6);
-            setDeltaMovement(Vec3.ZERO);
-            return;
-        }
-
-        Direction side = hit.getDirection();
-        setDeltaMovement(
-                motion.x * (1 - Math.abs(side.getStepX()) * 2),
-                motion.y * (1 - Math.abs(side.getStepY()) * 2),
-                motion.z * (1 - Math.abs(side.getStepZ()) * 2));
-
-        if (!level().isClientSide()) {
-            level().explode(this, getX(), getY(), getZ(), IMPACT_POWER, Level.ExplosionInteraction.NONE);
-        }
-    }
-
-    /** 1:1-Port von {@code interactFirst}: aufheben gibt das Zahnrad zurueck. */
+    /** 1:1 {@code interactFirst}: aufheben gibt das Zahnrad zurueck. */
     @Override
     public InteractionResult interact(Player player, InteractionHand hand) {
-        if (level().isClientSide()) return InteractionResult.SUCCESS;
-
-        if (player.getInventory().add(com.hbm_m.blockentity.machines.MachineStirlingBlockEntity.gearFor(getMeta()))) {
-            level().playSound(null, getX(), getY(), getZ(), SoundEvents.ITEM_PICKUP,
-                    SoundSource.PLAYERS, 0.2F, 1.0F);
-            discard();
+        if (!level().isClientSide()) {
+            if (player.getInventory().add(pickupStack())) {
+                discard();
+            }
+            player.inventoryMenu.broadcastChanges();
         }
-        return InteractionResult.CONSUME;
+        return InteractionResult.PASS;
     }
 
     @Override
@@ -169,22 +108,101 @@ public class CogEntity extends Entity {
     }
 
     @Override
-    protected void readAdditionalSaveData(CompoundTag tag) {
-        entityData.set(ORIENTATION, tag.getInt("orientation"));
-        entityData.set(META, tag.getInt("meta"));
-        age = tag.getInt("age");
+    protected void onImpact(HitResult mop) {
+
+        if (mop instanceof EntityHitResult ehr && ehr.getEntity().isAlive()) {
+            Entity e = ehr.getEntity();
+            //? if < 1.21.1 {
+            e.hurt(com.hbm_m.damagesource.ModDamageSources.rubble(level()), 1000);
+            //?} else {
+            /*if (level() instanceof ServerLevel serverLevel) e.hurt(serverLevel, com.hbm_m.damagesource.ModDamageSources.rubble(level()), 1000);
+            *///?}
+            if (!e.isAlive() && e instanceof LivingEntity && level() instanceof ServerLevel sl) {
+                CompoundTag vdat = new CompoundTag();
+                vdat.putString("type", "giblets");
+                vdat.putInt("ent", e.getId());
+                vdat.putInt("cDiv", 5);
+                com.hbm_m.particle.helper.IParticleCreator.sendPacket(sl, e.getX(), e.getY() + e.getBbHeight() * 0.5, e.getZ(), 150, vdat);
+
+                // "mob.zombie.woodbreak"
+                level().playSound(null, e.getX(), e.getY(), e.getZ(), SoundEvents.ZOMBIE_BREAK_WOODEN_DOOR, SoundSource.HOSTILE, 2.0F, 0.95F + level().random.nextFloat() * 0.2F);
+            }
+        }
+
+        if (this.tickCount > 1 && mop instanceof BlockHitResult bhr) {
+
+            int orientation = this.entityData.get(ORIENTATION);
+
+            if (orientation < 6) {
+
+                Vec3 motion = getDeltaMovement();
+                if (motion.length() < 0.75) {
+                    this.entityData.set(ORIENTATION, orientation + 6);
+                    orientation += 6;
+                } else {
+                    Direction side = bhr.getDirection();
+                    setDeltaMovement(
+                            motion.x * (1 - (Math.abs(side.getStepX()) * 2)),
+                            motion.y * (1 - (Math.abs(side.getStepY()) * 2)),
+                            motion.z * (1 - (Math.abs(side.getStepZ()) * 2)));
+                    if (!level().isClientSide()) {
+                        // createExplosion(this, ..., 3F, false): ohne Feuer, mit Blockschaden
+                        level().explode(this, getX(), getY(), getZ(), 3F, Level.ExplosionInteraction.TNT);
+
+                        BlockPos bp = bhr.getBlockPos();
+                        if (level().getBlockState(bp).getBlock().getExplosionResistance() < 50) {
+                            level().destroyBlock(bp, false);
+                        }
+                    }
+                }
+            }
+
+            if (orientation >= 6) {
+                setDeltaMovement(Vec3.ZERO);
+                this.inGround = true;
+            }
+        }
     }
 
     @Override
-    protected void addAdditionalSaveData(CompoundTag tag) {
-        tag.putInt("orientation", getOrientation());
-        tag.putInt("meta", getMeta());
-        tag.putInt("age", age);
+    public void tick() {
+
+        if (!level().isClientSide()) {
+            int orientation = this.entityData.get(ORIENTATION);
+            if (orientation >= 6 && !this.inGround) {
+                this.entityData.set(ORIENTATION, orientation - 6);
+            }
+        }
+
+        super.tick();
     }
 
-    /** Nur zur Vollstaendigkeit - das Rad wird nie geschoben. */
     @Override
-    public boolean isPushable() {
-        return false;
+    public boolean shouldRenderAtSqrDistance(double distance) {
+        return true;
+    }
+
+    @Override
+    public double getGravityVelocity() {
+        return inGround ? 0 : 0.03D;
+    }
+
+    @Override
+    protected int groundDespawn() {
+        return 0;
+    }
+
+    @Override
+    protected void addAdditionalSaveData(CompoundTag nbt) {
+        super.addAdditionalSaveData(nbt);
+        nbt.putInt("rot", this.getOrientation());
+        nbt.putInt("meta", this.getMeta());
+    }
+
+    @Override
+    protected void readAdditionalSaveData(CompoundTag nbt) {
+        super.readAdditionalSaveData(nbt);
+        this.entityData.set(ORIENTATION, nbt.getInt("rot"));
+        this.entityData.set(META, nbt.getInt("meta"));
     }
 }

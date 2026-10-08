@@ -58,7 +58,10 @@ public class GUIMachineSolderingStation extends GuiInfoScreen<MachineSolderingSt
         if (solderer.getEnergyStored() > 0)
             g.blit(TEXTURE, leftPos + 156, topPos + 4, 176, 52, 9, 12);
 
-        drawInfoPanel(g, 78, 67, PanelType.SMALL_BLUE_INFO);
+        drawInfoPanel(g, 78, 67, PanelType.SMALL_BLUE_STAR);
+
+        // Original: tank.renderTank(guiLeft + 35, guiTop + 79, ..., 34, 16, 1) - waagrecht; Port erwartet die Oberkante
+        solderer.tank.renderTank(g, leftPos + 35, topPos + 79 - 16, 34, 16, 1);
     }
 
     // ─── Labels ───────────────────────────────────────────────────────────────
@@ -77,20 +80,18 @@ public class GUIMachineSolderingStation extends GuiInfoScreen<MachineSolderingSt
     public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
         GuiCompat.renderBackground(this, g, mouseX, mouseY, partialTick);
         super.render(g, mouseX, mouseY, partialTick);
+        if (solderer != null) solderer.tank.renderTankInfo(g, this.font, mouseX, mouseY, leftPos + 35, topPos + 63, 34, 16);
 
         // тайл может отсутствовать в реплее Flashback
         if (solderer != null) {
         drawElectricityInfo(g, mouseX, mouseY, 152, 18, 16, 52,
                 solderer.getEnergyStored(), solderer.getMaxEnergyStored());
 
-        drawCustomInfoStat(g, mouseX, mouseY,
-                leftPos + 78, topPos + 67, 8, 8, leftPos + 78, topPos + 67,
-                Component.literal("Progress:"),
-                Component.literal("   " + solderer.getProgress() + " / " + solderer.getMaxProgress()));
+        drawCustomInfoStat(g, mouseX, mouseY, 78, 67, 8, 8, leftPos + 78, topPos + 67, getUpgradeInfo(solderer));
 
         // Collision Prevention button tooltip
         drawCustomInfoStat(g, mouseX, mouseY,
-                leftPos + 5, topPos + 66, 10, 10, mouseX, mouseY,
+                5, 66, 10, 10, mouseX, mouseY,
                 Component.literal("Recipe Collision Prevention: "
                         + (solderer.collisionPrevention
                                 ? ChatFormatting.GREEN + "ON"

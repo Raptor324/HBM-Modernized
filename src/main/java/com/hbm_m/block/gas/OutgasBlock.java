@@ -79,15 +79,21 @@ public class OutgasBlock extends Block {
     public void stepOn(Level level, BlockPos pos, BlockState state, Entity entity) {
         super.stepOn(level, pos, state, entity);
 
-        if (!dustOnStep || !(level instanceof ServerLevel serverLevel)) return;
+        if (!dustOnStep) return;
 
         BlockPos above = pos.above();
-        if (level.getBlockState(above).isAir() && level.random.nextInt(10) == 0) {
-            serverLevel.setBlock(above, gasState(), 3);
+        if (!level.getBlockState(above).isAir()) return;
+
+        if (level instanceof ServerLevel serverLevel) {
+            if (level.random.nextInt(10) == 0) serverLevel.setBlock(above, gasState(), 3);
+        } else {
+            // audit10: Original spawnt dabei 5 "townaura"-Partikel (clientseitig)
+            for (int i = 0; i < 5; i++)
+                level.addParticle(com.hbm_m.particle.ModParticleTypes.TOWNAURA.get(), pos.getX() + level.random.nextFloat(), pos.getY() + 1.1, pos.getZ() + level.random.nextFloat(), 0.0D, 0.0D, 0.0D);
         }
     }
 
-    /** Original: {@code dropBlockAsItemWithChance} bzw. {@code breakBlock}. */
+    /** Original: {@code dropBlockAsItemWithChance} - Gas bleibt an der Stelle des abgebauten Blocks. */
     @Override
     public void spawnAfterBreak(BlockState state, ServerLevel level, BlockPos pos, ItemStack tool, boolean dropXp) {
         super.spawnAfterBreak(state, level, pos, tool, dropXp);
@@ -95,8 +101,14 @@ public class OutgasBlock extends Block {
         if (onBreak) {
             gasIfAir(level, pos);
         }
+    }
 
-        if (burstOnBreak) {
+    /** Original {@code breakBlock} (ancient_scrap): bei jedem Entfernen, nicht nur beim Abbau mit Drops (audit10). */
+    @Override
+    public void onRemove(BlockState state, Level world, BlockPos pos, BlockState newState, boolean isMoving) {
+        super.onRemove(state, world, pos, newState, isMoving);
+
+        if (burstOnBreak && !state.is(newState.getBlock()) && world instanceof ServerLevel level) {
             // Original: 5x5x5 um den Block herum, gefiltert ueber |dx+dy+dz| in (0, 5).
             for (int ix = -2; ix <= 2; ix++) {
                 for (int iy = -2; iy <= 2; iy++) {

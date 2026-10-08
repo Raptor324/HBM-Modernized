@@ -41,7 +41,9 @@ public final class ConfigField {
     private final FieldType type;
     private final Double min;           // Нижняя граница (для числовых полей; null = без клэмпа)
     private final Double max;           // Верхняя граница
-    private String comment = null;      // Комментарий в JSON (для ручного редактирования пользователем; null = без комментария)
+    /** Restport: statisches Feld dieser Klasse statt ModClothConfig (Original-*Config-Klassen, Lesestellen bleiben). */
+    private final Class<?> staticOwner;
+    private String comment = null;     // Комментарий в JSON (для ручного редактирования пользователем; null = без комментария)
 
     private ConfigField(Builder b) {
         this.key = Objects.requireNonNull(b.key);
@@ -53,6 +55,7 @@ public final class ConfigField {
         this.type = Objects.requireNonNull(b.type);
         this.min = b.min;
         this.max = b.max;
+        this.staticOwner = b.staticOwner;
     }
 
     // ================================================================
@@ -79,6 +82,7 @@ public final class ConfigField {
         private String fieldName;      // null → last(key)
         private Double min;
         private Double max;
+        private Class<?> staticOwner;  // null → Feld in ModClothConfig
 
         private Builder(String key, FieldType type) {
             this.key = Objects.requireNonNull(key);
@@ -104,6 +108,9 @@ public final class ConfigField {
 
         /** Явное имя поля (по умолчанию — сегмент ключа после последней точки). */
         public Builder fieldName(String name) { this.fieldName = name; return this; }
+
+        /** Public static Feld {@code key} der Klasse {@code owner} (z.B. WorldConfig) statt eines ModClothConfig-Feldes. */
+        public Builder staticIn(Class<?> owner) { this.staticOwner = owner; return this; }
 
         public ConfigField build() { return new ConfigField(this); }
     }
@@ -171,8 +178,9 @@ public final class ConfigField {
 
     /** Публичное поле-адаптер. Применяет валидацию границ перед записью. */
     public Object get(ModClothConfig cfg) {
-        Object target = resolveTarget(cfg);
         try {
+            if (staticOwner != null) return staticOwner.getField(fieldName).get(null);
+            Object target = resolveTarget(cfg);
             var f = target.getClass().getField(fieldName);
             return f.get(target);
         } catch (ReflectiveOperationException e) {
@@ -182,9 +190,13 @@ public final class ConfigField {
 
     /** Записывает значение в поле с применением клэмпа (для числовых) и приведением типа. */
     public void set(ModClothConfig cfg, Object value) {
-        Object target = resolveTarget(cfg);
         Object clamped = clamp(value);
         try {
+            if (staticOwner != null) {
+                staticOwner.getField(fieldName).set(null, clamped);
+                return;
+            }
+            Object target = resolveTarget(cfg);
             var f = target.getClass().getField(fieldName);
             f.set(target, clamped);
         } catch (ReflectiveOperationException e) {
@@ -316,6 +328,8 @@ public final class ConfigField {
     public FieldType getType() { return type; }
     public Double getMin() { return min; }
     public Double getMax() { return max; }
+    /** Liegt der Wert in einem statischen Feld (Original-*Config-Klasse) statt in ModClothConfig? */
+    public boolean isStatic() { return staticOwner != null; }
 
     /** Требуется ли перезапуск после изменения. */
     public boolean requiresRestart() { return applyMode == ApplyMode.REQUIRES_RESTART; }

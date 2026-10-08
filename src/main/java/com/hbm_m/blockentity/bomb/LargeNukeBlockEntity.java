@@ -42,12 +42,25 @@ public class LargeNukeBlockEntity extends NukeBaseBlockEntity {
 
     @Override
     public int getMaxStackSize() {
-        return 1;
+        return getNukeType().stackLimit();
+    }
+
+    /** Original {@code isItemValidForSlot}: immer false - nur per Hand im GUI befuellbar (dort jeder Gegenstand). */
+    @Override
+    public boolean canPlaceItem(int slot, ItemStack stack) {
+        return false;
+    }
+
+    /** Original {@code getAccessibleSlotsFromSide}: keine Automatisierung. */
+    @Override
+    public int[] getSlotsForFace(net.minecraft.core.Direction direction) {
+        return new int[0];
     }
 
     @Override
-    public boolean canPlaceItem(int slot, ItemStack stack) {
-        return getNukeType().canPlace(slot, stack);
+    public boolean stillValid(Player player) {
+        if (level == null || level.getBlockEntity(worldPosition) != this) return false;
+        return player.distanceToSqr(worldPosition.getX() + 0.5, worldPosition.getY() + 0.5, worldPosition.getZ() + 0.5) <= 64;
     }
 
     @Override

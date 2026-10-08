@@ -46,10 +46,15 @@ public class FoundryChannelRenderer implements com.hbm_m.client.render.HbmBerBou
 
         if (be.type == null || be.amount <= 0) return;
 
-        float fill = Math.min(1f, (float) be.amount / MachineFoundryChannelBlockEntity.CAPACITY);
-        float surfaceY = FLOOR + fill * (MAX_LEVEL - FLOOR);
+        // Original RenderFoundryChannel: Pegel 0,125 + Menge * 0,25 / Fassung, Farbe = Schmelzfarbe aufgehellt
+        float surfaceY = (float) (0.125D + be.amount * 0.25D / be.getCapacity());
 
-        int color = 0xFF000000 | be.type.color;
+        java.awt.Color c = new java.awt.Color(be.type.moltenColor).brighter();
+        double brightener = 0.7D;
+        int nr = (int) (255D - (255D - c.getRed()) * brightener);
+        int ng = (int) (255D - (255D - c.getGreen()) * brightener);
+        int nb = (int) (255D - (255D - c.getBlue()) * brightener);
+        int color = 0xFF000000 | (nr << 16) | (ng << 8) | nb;
         float a = ((color >> 24) & 0xFF) / 255f;
         float r = ((color >> 16) & 0xFF) / 255f;
         float g = ((color >>  8) & 0xFF) / 255f;

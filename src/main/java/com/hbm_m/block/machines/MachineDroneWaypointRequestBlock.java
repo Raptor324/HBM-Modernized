@@ -31,7 +31,6 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 public class MachineDroneWaypointRequestBlock extends BaseEntityBlock {
 
     public static final DirectionProperty FACING = BlockStateProperties.FACING;
-    private static final VoxelShape SHAPE = Block.box(6, 6, 6, 10, 10, 10);
 
     public MachineDroneWaypointRequestBlock(Properties properties) {
         super(properties);
@@ -51,7 +50,28 @@ public class MachineDroneWaypointRequestBlock extends BaseEntityBlock {
 
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        return SHAPE;
+        return com.hbm_m.block.machines.radio.AttachedTorchShape.shape(state.getValue(FACING));
+    }
+
+    /** Original: {@code getCollisionBoundingBoxFromPool} = null. */
+    @Override
+    public VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+        return net.minecraft.world.phys.shapes.Shapes.empty();
+    }
+
+    @Override
+    public boolean canSurvive(BlockState state, net.minecraft.world.level.LevelReader level, BlockPos pos) {
+        return com.hbm_m.block.machines.radio.AttachedTorchShape.canStayWaypoint(level, pos, state.getValue(FACING));
+    }
+
+    /** Original {@code onNeighborBlockChange}: ohne Halt faellt der Block als Gegenstand ab. */
+    @Override
+    public BlockState updateShape(BlockState state, net.minecraft.core.Direction dir, BlockState neighbor,
+                                  net.minecraft.world.level.LevelAccessor level, BlockPos pos, BlockPos neighborPos) {
+        if (dir == state.getValue(FACING) && !state.canSurvive(level, pos)) {
+            return net.minecraft.world.level.block.Blocks.AIR.defaultBlockState();
+        }
+        return super.updateShape(state, dir, neighbor, level, pos, neighborPos);
     }
 
     @Override
@@ -72,32 +92,7 @@ public class MachineDroneWaypointRequestBlock extends BaseEntityBlock {
                 (lvl, pos, st, be) -> MachineDroneWaypointRequestBlockEntity.tick(lvl, pos, st, (MachineDroneWaypointRequestBlockEntity) be));
     }
 
-    //? if < 1.21.1 {
-    @Override
-    public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
-
-        if (level.isClientSide()) return InteractionResult.SUCCESS;
-
-        BlockEntity be = level.getBlockEntity(pos);
-        if (be instanceof MachineDroneWaypointRequestBlockEntity waypoint) {
-            waypoint.adjustHeight(!player.isShiftKeyDown());
-        }
-        return InteractionResult.CONSUME;
-        }
-    //?} else {
-    /*@Override
-    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
-
-        if (level.isClientSide()) return InteractionResult.SUCCESS;
-
-        BlockEntity be = level.getBlockEntity(pos);
-        if (be instanceof MachineDroneWaypointRequestBlockEntity waypoint) {
-            waypoint.adjustHeight(!player.isShiftKeyDown());
-        }
-        return InteractionResult.CONSUME;
-        }
-    *///?}
-
+    // Original DroneWaypointRequest: kein onBlockActivated - die Hoehe bleibt fest bei 5 (addHeight wird nie gerufen).
 
     //? if >1.20.1 {
     /*public static final com.mojang.serialization.MapCodec<MachineDroneWaypointRequestBlock> CODEC = simpleCodec(MachineDroneWaypointRequestBlock::new);

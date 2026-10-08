@@ -1,23 +1,33 @@
 package com.hbm_m.inventory.gui;
 import com.hbm_m.client.GuiCompat;
 
+import java.util.Random;
+
 import com.hbm_m.blockentity.machines.LaunchPadRustedBlockEntity;
 import com.hbm_m.inventory.menu.LaunchPadRustedMenu;
+import com.hbm_m.item.ModItems;
 import com.hbm_m.lib.RefStrings;
+import com.hbm_m.network.NBTControlPacket;
 
+import com.mojang.blaze3d.platform.Lighting;
 import com.mojang.blaze3d.systems.RenderSystem;
+import com.mojang.math.Axis;
+import net.minecraft.ChatFormatting;
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.client.renderer.LightTexture;
+import net.minecraft.client.resources.sounds.SimpleSoundInstance;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.entity.player.Inventory;
+import net.minecraft.world.item.ItemStack;
 
 /**
- * Новый GUI для ржавой пусковой площадки.
- *
- * Пока отображает только фон и инвентарь, без сетевых пакетов
- * и сложной логики "Release Missile" из 1.7.10. Всё, что связано
- * с управлением ракетой, будет добавлено позже.
+ * 1:1 {@code GUILaunchPadRusted}: Knopf "Release Missile", Anzeigen fuer Codes/Schluessel, achtstelliger
+ * Startcode (aus der Position gewuerfelt) und die eingebaute Rakete als Vorschau.
  */
 public class GUILaunchPadRusted extends GuiInfoScreen<LaunchPadRustedMenu> {
 
@@ -36,6 +46,18 @@ public class GUILaunchPadRusted extends GuiInfoScreen<LaunchPadRustedMenu> {
     }
 
     @Override
+    public boolean mouseClicked(double x, double y, int button) {
+        LaunchPadRustedBlockEntity be = menu.getBlockEntity();
+        if (be != null && leftPos + 26 <= x && leftPos + 26 + 16 > x && topPos + 36 < y && topPos + 36 + 16 >= y) {
+            Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0F));
+            CompoundTag data = new CompoundTag();
+            data.putBoolean("release", true);
+            NBTControlPacket.sendToServer(be.getBlockPos(), data);
+        }
+        return super.mouseClicked(x, y, button);
+    }
+
+    @Override
     protected void renderBg(GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
         RenderSystem.setShader(GameRenderer::getPositionTexShader);
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
@@ -47,7 +69,43 @@ public class GUILaunchPadRusted extends GuiInfoScreen<LaunchPadRustedMenu> {
             return;
         }
 
-        // Простые индикаторы наличия ключа/кодов можно будет восстановить позже.
+        boolean hasCodes = be.getInventory().getStackInSlot(1).getItem() == ModItems.LAUNCH_CODE.get();
+        boolean hasKey = be.getInventory().getStackInSlot(2).getItem() == ModItems.LAUNCH_KEY.get();
+
+        if (hasCodes) guiGraphics.blit(TEXTURE, leftPos + 121, topPos + 32, 192, 0, 6, 8);
+        if (hasKey) guiGraphics.blit(TEXTURE, leftPos + 139, topPos + 32, 192, 0, 6, 8);
+
+        if (hasCodes && hasKey && be.missileLoaded) {
+            Random rand = new Random(be.getBlockPos().getX() * 131_071 + be.getBlockPos().getZ());
+            int launchCodes = rand.nextInt(100_000_000);
+
+            for (int i = 0; i < 8; i++) {
+                int magnitude = (int) Math.pow(10, i);
+                int digit = (launchCodes % (magnitude * 10)) / magnitude;
+                guiGraphics.blit(TEXTURE, leftPos + 109 + 6 * i, topPos + 85, 192 + 6 * digit, 8, 6, 8);
+            }
+        }
+
+        //? if forge || neoforge {
+        if (be.missileLoaded) {
+            ItemStack missile = new ItemStack(ModItems.MISSILE_DOOMSDAY_RUSTED.get());
+            guiGraphics.pose().pushPose();
+            guiGraphics.pose().translate(this.leftPos + 70.0F, this.topPos + 120.0F, 100.0F);
+            guiGraphics.pose().mulPose(Axis.YP.rotationDegrees(90.0F));
+            float scale = 0.875F;
+            guiGraphics.pose().scale(scale, scale, scale);
+            guiGraphics.pose().scale(-8.0F, -8.0F, -8.0F);
+            Lighting.setupForFlatItems();
+
+            var bufferSource = guiGraphics.bufferSource();
+            com.hbm_m.client.render.missile.MissileRenderHelper.drawBakedQuads(
+                    guiGraphics.pose(), bufferSource, LightTexture.FULL_BRIGHT, missile);
+            bufferSource.endBatch(net.minecraft.client.renderer.RenderType.solid());
+
+            Lighting.setupFor3DItems();
+            guiGraphics.pose().popPose();
+        }
+        //?}
     }
 
     @Override
@@ -72,6 +130,12 @@ public class GUILaunchPadRusted extends GuiInfoScreen<LaunchPadRustedMenu> {
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
         GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
+        drawCustomInfoStat(guiGraphics, mouseX, mouseY, 26, 36, 16, 16, mouseX, mouseY,
+                Component.literal("Release Missile").withStyle(ChatFormatting.YELLOW),
+                Component.literal("Missile is locked in lauch position,"),
+                Component.literal("releasing may cause damage to the missile."),
+                Component.literal("Damaged missile can not be put back"),
+                Component.literal("into launching position."));
         this.renderTooltip(guiGraphics, mouseX, mouseY);
     }
 }

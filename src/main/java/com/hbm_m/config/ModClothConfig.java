@@ -82,8 +82,8 @@ public class ModClothConfig {
     public boolean structureDebug = false;
     /** Original: ServerConfig.AUTOCAL_MAX_CLOCK. */
     public int autocalMaxClock = 20;
-    /** Original: GeneralConfig.enable528NetherBurn - Spieler brennen im Nether (528-Modus). */
-    public boolean enable528NetherBurn = false;
+    /** Original: GeneralConfig.enable528NetherBurn - Spieler brennen im Nether (nur wirksam mit enable528, Vorgabe wie Original an). */
+    public boolean enable528NetherBurn = true;
     /** Original: GeneralConfig.enableMachineGravity - grosse Maschinen brauchen ein Fundament (checkTilt). */
     public boolean enableMachineGravity = false;
     /** Original: GeneralConfig.enable528MachineGravity - dasselbe im 528-Modus (nur wirksam mit enable528). */
@@ -121,6 +121,13 @@ public class ModClothConfig {
     public boolean renderRebarSimple = false;
     /** Original ClientConfig.RENDER_REEDS: Schilf bis zum Gewaessergrund zeichnen. */
     public boolean renderReeds = true;
+    /** Original ClientConfig GUN_ANIMS_LEGACY / GUN_MODEL_FOV / GUN_VISUAL_RECOIL / GUN_ANIMATION_SPEED. */
+    public boolean gunAnimsLegacy = false;
+    public boolean gunModelFov = false;
+    public boolean gunVisualRecoil = true;
+    public float gunAnimationSpeed = 1.0F;
+    /** Original GeneralConfig 1.20_enableGuns: neue Waffen koennen abgefeuert werden. */
+    public boolean enableGuns = true;
     public int renderRebarLimit = 250;
     /** Original: generalOverride (1-18 erzwingt die Polaroid-Zahl, 0 = zufaellig). */
     public int polaroidOverride = 0;
@@ -137,6 +144,17 @@ public class ModClothConfig {
     public boolean enableRadiation = true;
     public boolean enableChunkRads = true;
 
+    /**
+     * Welt-Strahlungssystem: RAPTOR = bisheriges Chunk-System (Standard), ADVANCED = Port des
+     * NTM-Next-Feldes (com.hbm_m.radiation.ntmnext). Wird beim Serverstart uebernommen.
+     */
+    public RadiationSystemMode radiationSystem = RadiationSystemMode.RAPTOR;
+
+    public enum RadiationSystemMode {
+        RAPTOR,
+        ADVANCED
+    }
+
     // ════════════════════════════════════════════════════════════════
     // Verschmutzung (1.7.10 RadiationConfig / MobConfig)
     // ════════════════════════════════════════════════════════════════
@@ -145,13 +163,81 @@ public class ModClothConfig {
     /** Original: MobConfig.pollutionMult - Faktor auf jeden Eintrag ins Raster. */
     public double pollutionMult = 1.0D;
     /** Original: RadiationConfig.buffMobThreshold - ab so viel Russ spawnen verstaerkte Monster. */
-    public float buffMobThreshold = 50F;
+    public float buffMobThreshold = 15F;
     /** Original: RadiationConfig.enablePoison - Giftwirkung auf Kreaturen in der Zelle. */
     public boolean enablePoison = true;
     /** Original: RadiationConfig.enableLeadPoisoning - Bleivergiftung durch Schwermetall in der Luft. */
     public boolean enableLeadPoisoning = true;
     /** Original: RadiationConfig.enableLeadFromBlocks - Bleivergiftung beim Abbauen in belasteten Zellen. */
     public boolean enableLeadFromBlocks = true;
+
+    // ════════════════════════════════════════════════════════════════
+    // Glyphiden (1.7.10 MobConfig, Werte wie nach dem Laden der Originalkonfig)
+    // ════════════════════════════════════════════════════════════════
+    /** Original GeneralConfig.enableVirus (Konfigvorgabe false): Dunkelkristall breitet sich aus. */
+    public boolean enableVirus = false;
+    /** Original GeneralConfig.enableCataclysm: bei jedem Tod stuerzt ein Satellit ab. */
+    public boolean enableCataclysm = false;
+    /** Original MobConfig 12.M*: Maskman (Verzoegerung in Weltsekunden). */
+    public boolean enableMaskman = true;
+    public int maskmanDelay = 20 * 60;
+    public int maskmanMinRad = 50;
+    public boolean maskmanUnderground = true;
+    /** Original MobConfig 12.E*: Strahlungs-Elementare nach Kernschmelzen. */
+    public boolean enableElementals = true;
+    public int elementalDelay = 30 * 60 * 60;
+    public int elementalChance = 2;
+    public int elementalAmount = 10;
+    public int elementalDistance = 32;
+    /** Original MobConfig.enableRaids und 12.F*: FBI-Razzien. */
+    public boolean enableRaids = false;
+    public int raidDelay = 30 * 60 * 60;
+    public int raidChance = 3;
+    public int raidAmount = 15;
+    public int raidDrones = 5;
+    public int raidAttackDelay = 40;
+    public int raidAttackReach = 2;
+    public int raidAttackDistance = 32;
+    public boolean enableHives = true;
+    public int hiveSpawn = 256;
+    /** Original WorldConfig 4.21_capsuleSpawn: Landekapsel am Strand in jedem n-ten Chunk (0 = aus). */
+    public int capsuleStructure = 100;
+    /** Original GeneralConfig 1.14_enableBomberShortMode: Bomber erscheinen naeher am Ziel. */
+    public boolean enableBomberShortMode = false;
+    public float scoutThreshold = 1F;
+    public int scoutSwarmSpawnChance = 3;
+    public boolean waypointDebug = false;
+    public int largeHiveChance = 5;
+    public int largeHiveThreshold = 20;
+    public int swarmCooldown = 120;
+    public int baseSwarmSize = 5;
+    public float swarmScalingMult = 1.2F;
+    public int sootStep = 50;
+    public float spawnMax = 50F;
+    public boolean enableInfestation = true;
+    public float baseInfestChance = 5F;
+    public float targetingThreshold = 1F;
+    public boolean rampantMode = false;
+    public boolean rampantNaturalScoutSpawn = false;
+    public float rampantScoutSpawnThresh = 13F;
+    public int rampantScoutSpawnChance = 1400;
+    public boolean scoutInitialSpawn = false;
+    public boolean rampantExtendedTargetting = false;
+    public boolean rampantDig = false;
+    /** Original MobConfig 12.D02/12.D03: Skelette mit Schusswaffen bei hohem Russ. */
+    public boolean enableMobWeapons = true;
+    public double mobWeaponSootReduction = 0D;
+    public boolean rampantGlyphidGuidance = false;
+    public float rampantSmokeStackOverride = 0.4F;
+    /** Basischance, Russmodifikator, Mindestruss je Art (nicht in der Konfigdatei, Werte der Originalkonfig). */
+    public int[] glyphidChance = {50, -45, 0};
+    public int[] brawlerChance = {10, 30, 1};
+    public int[] bombardierChance = {20, -15, 1};
+    public int[] blasterChance = {-5, 40, 5};
+    public int[] diggerChance = {-15, 25, 5};
+    public int[] behemothChance = {-30, 45, 10};
+    public int[] brendaChance = {-50, 60, 20};
+    public int[] johnsonChance = {-50, 60, 50};
 
     /** MOTD при входе в мир и уведомление о новой версии на Modrinth (ориг. GeneralConfig.enableMOTD). */
     public boolean enableMOTD = true;

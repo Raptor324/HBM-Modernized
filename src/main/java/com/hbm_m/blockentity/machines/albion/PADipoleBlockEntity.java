@@ -30,7 +30,8 @@ import net.minecraft.world.level.block.state.BlockState;
  * auf einer seiner Dummyzellen; der Kern wird von dort aus gesucht. Daraus ergeben sich die
  * Spruenge von zwei bis fuenf Feldern - und damit die tatsaechliche Groesse eines Rings.</p>
  */
-public class PADipoleBlockEntity extends CooledMachineBlockEntity implements IParticleUser {
+public class PADipoleBlockEntity extends CooledMachineBlockEntity implements IParticleUser, com.hbm_m.api.tile.IControlReceiver,
+        com.hbm_m.api.redstoneoverradio.IRORValueProvider, com.hbm_m.api.redstoneoverradio.IRORInteractive {
 
     public static final int SLOT_BATTERY = 0;
     public static final int SLOT_COIL = 1;
@@ -38,7 +39,8 @@ public class PADipoleBlockEntity extends CooledMachineBlockEntity implements IPa
 
     /** Original: {@code usage = 100_000}. */
     private static final long USAGE = 100_000L;
-    private static final long MAX_POWER = 1_000_000L;
+    /** Original {@code getMaxPower() = 2_500_000}. */
+    private static final long MAX_POWER = 2_500_000L;
     /** Original: geradeaus zaehlen drei Bloecke Strecke. */
     private static final int DISTANCE_INLINE = 3;
     /** Kettenbetrieb: einen Block weiter (siehe Klassenkommentar). */
@@ -134,6 +136,24 @@ public class PADipoleBlockEntity extends CooledMachineBlockEntity implements IPa
     public Direction getDirRedstone() { return dirRedstone; }
     public int getThreshold()         { return threshold; }
 
+    /** Original {@code receiveControl}: Richtungen reihum (N, O, S, W) weiterschalten, Schwelle setzen. */
+    @Override
+    public void receiveControl(net.minecraft.nbt.CompoundTag data) {
+        if (data.contains("lower")) this.dirLower = this.dirLower.getClockWise();
+        if (data.contains("upper")) this.dirUpper = this.dirUpper.getClockWise();
+        if (data.contains("redstone")) this.dirRedstone = this.dirRedstone.getClockWise();
+        if (data.contains("threshold")) this.threshold = net.minecraft.util.Mth.clamp(data.getInt("threshold"), 0, 999_999_999);
+        setChanged();
+    }
+
+    @Override
+    public boolean hasPermission(net.minecraft.world.entity.player.Player player) {
+        return player.distanceToSqr(worldPosition.getX() + 0.5D, worldPosition.getY() + 0.5D, worldPosition.getZ() + 0.5D) <= 256.0D;
+    }
+
+    /** Original {@code usage} - fuer die Bereitschaftsanzeige im GUI. */
+    public static long getUsage() { return USAGE; }
+
     public void configure(Direction lower, Direction upper, Direction redstone, int threshold) {
         this.dirLower = lower;
         this.dirUpper = upper;
@@ -161,6 +181,7 @@ public class PADipoleBlockEntity extends CooledMachineBlockEntity implements IPa
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.readNbtData(tag, registries);
+        setEnergyCapacity(MAX_POWER); // alte Welten: frueherer Speicherwert
         dirLower = Direction.from2DDataValue(tag.getInt("dirLower"));
         dirUpper = Direction.from2DDataValue(tag.getInt("dirUpper"));
         dirRedstone = Direction.from2DDataValue(tag.getInt("dirRedstone"));
@@ -180,5 +201,35 @@ public class PADipoleBlockEntity extends CooledMachineBlockEntity implements IPa
     @Override
     public AbstractContainerMenu createMenu(int id, Inventory inv, Player player) {
         return new com.hbm_m.inventory.menu.PADipoleMenu(id, inv, this);
+    }
+
+    // ── Redstone-over-Radio (1:1 TileEntityPADipole) ──
+
+    @Override
+    public String[] getFunctionInfo() {
+        return new String[] {
+            PREFIX_VALUE + "temperature",
+            PREFIX_VALUE + "pfmcold",
+            PREFIX_VALUE + "pfm",
+            PREFIX_FUNCTION + "setthreshold" + NAME_SEPARATOR + "threshold"
+        };
+    }
+
+    @Override
+    public String provideRORValue(String name) {
+        if ((PREFIX_VALUE + "temperature").equals(name)) return "" + (int) this.temperature;
+        if ((PREFIX_VALUE + "pfmcold").equals(name))     return "" + coolantTanks[0].getFill();
+        if ((PREFIX_VALUE + "pfm").equals(name))         return "" + coolantTanks[1].getFill();
+        return null;
+    }
+
+    @Override
+    public String runRORFunction(String name, String[] params) {
+        if ((PREFIX_FUNCTION + "setthreshold").equals(name) && params.length > 0) {
+            this.threshold = com.hbm_m.api.redstoneoverradio.IRORInteractive.parseInt(params[0], 0, 999_999_999);
+            this.setChanged();
+            this.sendUpdateToClient();
+        }
+        return null;
     }
 }

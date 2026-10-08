@@ -20,7 +20,7 @@ public class MachineCombinationOvenMenu extends AbstractContainerMenu {
 
     private static final int SLOT_INPUT = MachineCombinationOvenBlockEntity.SLOT_INPUT;
     private static final int SLOT_OUTPUT = MachineCombinationOvenBlockEntity.SLOT_OUTPUT;
-    private static final int MACHINE_SLOT_COUNT = 2;
+    private static final int MACHINE_SLOT_COUNT = MachineCombinationOvenBlockEntity.INVENTORY_SIZE;
     private static final int PLAYER_INV_START = MACHINE_SLOT_COUNT;
     private static final int PLAYER_INV_END = MACHINE_SLOT_COUNT + 36;
 
@@ -46,6 +46,14 @@ public class MachineCombinationOvenMenu extends AbstractContainerMenu {
             @Override
             public boolean mayPlace(ItemStack stack) {
                 return false; // Nur Entnahme - wird von der Maschine befuellt.
+            }
+        });
+
+        this.addSlot(new Slot(container, MachineCombinationOvenBlockEntity.SLOT_CONTAINER_IN, 136, 18));
+        this.addSlot(new Slot(container, MachineCombinationOvenBlockEntity.SLOT_CONTAINER_OUT, 136, 54) {
+            @Override
+            public boolean mayPlace(ItemStack stack) {
+                return false;
             }
         });
 
@@ -82,11 +90,8 @@ public class MachineCombinationOvenMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        if (blockEntity == null || blockEntity.getLevel() != player.level()) {
-            return false;
-        }
-        BlockPos pos = blockEntity.getBlockPos();
-        return player.distanceToSqr(pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D) <= 64.0D;
+        // w16b: Original isUseableByPlayer (TileEntityMachineBase) = 128 vom Kern, dazu Huelle der Maschine (MultiblockMenuReach)
+        return MultiblockMenuReach.stillValidCore(blockEntity, player, 128.0D);
     }
 
     @Override

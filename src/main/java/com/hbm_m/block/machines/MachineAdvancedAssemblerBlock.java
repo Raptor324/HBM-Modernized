@@ -114,11 +114,13 @@ public class MachineAdvancedAssemblerBlock extends BaseEntityBlock implements IM
     //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer, InteractionHand pHand, BlockHitResult pHit) {
+        if (pPlayer.isShiftKeyDown()) return InteractionResult.sidedSuccess(pLevel.isClientSide()); // Original standardOpenBehavior: geschlichen true ohne GUI
         return openMenu(pState, pLevel, pPos, pPlayer, pHand, pHit);
     }
     //?} else {
     /*@Override
     protected InteractionResult useWithoutItem(BlockState pState, Level pLevel, BlockPos pPos, Player pPlayer, BlockHitResult pHit) {
+        if (pPlayer.isShiftKeyDown()) return InteractionResult.sidedSuccess(pLevel.isClientSide()); // Original standardOpenBehavior: geschlichen true ohne GUI
         return openMenu(pState, pLevel, pPos, pPlayer, InteractionHand.MAIN_HAND, pHit);
     }
     *///?}
@@ -134,10 +136,11 @@ public class MachineAdvancedAssemblerBlock extends BaseEntityBlock implements IM
 
     @Override
     public VoxelShape getShape(BlockState pState, BlockGetter pLevel, BlockPos pPos, CollisionContext pContext) {
+        // w16b: nur die Kernzelle (Raycast pro Zelle wie Original); Umriss der ganzen Maschine: MultiblockOutlineForge
         MultiblockStructureHelper helper = getStructureHelper();
         if (helper != null) {
             // Теперь это вернет идеально подогнанную форму 3х3х3
-            return helper.generateShapeFromParts(pState.getValue(FACING));
+            return helper.getControllerCellShape(pState.getValue(FACING));
         }
         return Shapes.block();
     }

@@ -1,121 +1,145 @@
 package com.hbm_m.blockentity.machines;
 
+import org.jetbrains.annotations.Nullable;
+
 import com.hbm_m.api.block.ICrucibleAcceptor;
-import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.block.machines.MachineFoundryOutletBlock;
-import com.hbm_m.inventory.material.MaterialStack;
-import com.hbm_m.inventory.material.MaterialType;
+import com.hbm_m.blockentity.ModBlockEntities;
+import com.hbm_m.inventory.material.Mats;
+import com.hbm_m.inventory.material.Mats.MaterialStack;
+import com.hbm_m.inventory.material.NTMMaterial;
 import com.hbm_m.util.CrucibleUtil;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.protocol.Packet;
-import net.minecraft.network.protocol.game.ClientGamePacketListener;
-import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
-import org.jetbrains.annotations.Nullable;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.Vec3;
 
 /**
- * Port of the 1.7.10 TileEntityFoundryOutlet.
- * Holds no material itself: it accepts sideways flow from the channel behind it
- * (opposite of FACING) and immediately re-pours it straight down, up to 4 blocks,
- * into the first ICrucibleAcceptor below (basin, channel, crucible, ...).
- * Flow is only accepted if the target below can actually take the material.
+ * 1:1 {@code TileEntityFoundryOutlet}: Ausguss am Ende einer Rinne. Nimmt nur von hinten auf und giesst direkt
+ * in den Abnehmer bis vier Bloecke darunter. Filtermaterial (auch umkehrbar) und Redstone-Sperre (umkehrbar).
  */
-public class MachineFoundryOutletBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity implements ICrucibleAcceptor {
+public class MachineFoundryOutletBlockEntity extends MachineFoundryBaseBlockEntity {
 
-    /** Raytrace depth of the original: y-0.125 down to y+0.125-4 → 4 blocks below. */
-    private static final int POUR_RANGE = 3;
-
-    /** Only let this material through (null = all materials allowed). */
-    @Nullable public MaterialType filter = null;
-
-    /** When true: let everything EXCEPT the filter material through. */
+    public NTMMaterial filter = null;
+    public NTMMaterial lastFilter = null;
+    /* inverts filter behavior, will let everything but the filter material pass */
     public boolean invertFilter = false;
-
-    /** When true: outlet is closed by default and OPENS with redstone.
-     *  When false (default): outlet is open by default and CLOSES with redstone. */
+    /** inverts redstone behavior, i.e. when TRUE, the outlet will be blocked by default and only open with redstone */
     public boolean invertRedstone = false;
+    public boolean lastClosed = false;
 
     public MachineFoundryOutletBlockEntity(BlockPos pos, BlockState state) {
-        super(ModBlockEntities.FOUNDRY_OUTLET_BE.get(), pos, state);
+        this(ModBlockEntities.FOUNDRY_OUTLET_BE.get(), pos, state);
     }
 
-    /** Used by {@link MachineFoundrySlagtapBlockEntity}, which reuses this class's filter/redstone logic under a different registered type. */
-    protected MachineFoundryOutletBlockEntity(net.minecraft.world.level.block.entity.BlockEntityType<?> type, BlockPos pos, BlockState state) {
+    protected MachineFoundryOutletBlockEntity(BlockEntityType<?> type, BlockPos pos, BlockState state) {
         super(type, pos, state);
     }
 
+    /** if TRUE, prevents all fluids from flowing through the outlet and renders a small barrier */
     public boolean isClosed() {
-        if (level == null) return true;
-        boolean powered = level.hasNeighborSignal(worldPosition);
-        return invertRedstone ^ powered;
+        return level != null && (invertRedstone ^ this.level.hasNeighborSignal(worldPosition));
     }
 
-    public boolean passesFilter(MaterialType type) {
-        if (filter == null) return true;
-        boolean matches = filter == type;
-        return invertFilter ? !matches : matches;
-    }
-
-    private Direction getFacing() {
+    protected Direction facing() {
         BlockState state = getBlockState();
-        return state.hasProperty(MachineFoundryOutletBlock.FACING)
-                ? state.getValue(MachineFoundryOutletBlock.FACING)
-                : Direction.NORTH;
+        return state.hasProperty(MachineFoundryOutletBlock.FACING) ? state.getValue(MachineFoundryOutletBlock.FACING) : Direction.NORTH;
     }
 
-    /* ── ICrucibleAcceptor ──────────────────────────────────────────────── */
+    @Override
+    public void updateEntity() {
+        super.updateEntity();
 
-    /* Outlets can't be poured into, only flowed through. */
-    @Override public boolean canAcceptPartialPour(Level level, BlockPos pos, Direction side, MaterialStack stack) { return false; }
-    @Override public @Nullable MaterialStack pour(Level level, BlockPos pos, Direction side, MaterialStack stack) { return stack; }
+        if (level != null && !level.isClientSide) {
+            boolean closed = isClosed();
+            if (this.lastClosed != closed || this.filter != this.lastFilter) {
+                this.lastFilter = this.filter;
+                this.lastClosed = closed;
+                markForUpdate();
+            }
+        }
+    }
+
+    @Override public boolean canAcceptPartialPour(Level world, BlockPos pos, double dX, double dY, double dZ, Direction side, MaterialStack stack) { return false; }
+    @Override @Nullable public MaterialStack pour(Level world, BlockPos pos, double dX, double dY, double dZ, Direction side, MaterialStack stack) { return stack; }
 
     @Override
-    public boolean canAcceptPartialFlow(Level level, BlockPos pos, Direction side, MaterialStack stack) {
-        if (!passesFilter(stack.type)) return false;
+    public boolean canAcceptPartialFlow(Level world, BlockPos pos, Direction side, MaterialStack stack) {
+
+        if (filter != null && (filter != stack.material ^ invertFilter)) return false;
         if (isClosed()) return false;
-        // material must arrive from behind (channel side), i.e. opposite of the pour direction
-        if (side != getFacing().getOpposite()) return false;
+        if (side != facing().getOpposite()) return false;
 
-        BlockPos target = CrucibleUtil.getPouringTarget(level, pos.below(), POUR_RANGE);
-        if (target == null) return false;
+        Vec3 start = new Vec3(pos.getX() + 0.5, pos.getY() - 0.125, pos.getZ() + 0.5);
+        Vec3 end = new Vec3(pos.getX() + 0.5, pos.getY() + 0.125 - 4, pos.getZ() + 0.5);
 
-        BlockEntity be = level.getBlockEntity(target);
-        return be instanceof ICrucibleAcceptor acc
-                && acc.canAcceptPartialPour(level, target, Direction.UP, stack);
+        BlockHitResult[] mop = new BlockHitResult[1];
+        ICrucibleAcceptor acc = CrucibleUtil.getPouringTarget(world, start, end, mop);
+
+        if (acc == null) {
+            return false;
+        }
+
+        Vec3 hit = mop[0].getLocation();
+        return acc.canAcceptPartialPour(world, mop[0].getBlockPos(), hit.x, hit.y, hit.z, Direction.UP, stack);
     }
 
     @Override
-    public @Nullable MaterialStack flow(Level level, BlockPos pos, Direction side, MaterialStack stack) {
-        BlockPos target = CrucibleUtil.getPouringTarget(level, pos.below(), POUR_RANGE);
-        if (target == null) return stack;
+    @Nullable
+    public MaterialStack flow(Level world, BlockPos pos, Direction side, MaterialStack stack) {
 
-        BlockEntity be = level.getBlockEntity(target);
-        if (!(be instanceof ICrucibleAcceptor acc)) return stack;
+        Vec3 start = new Vec3(pos.getX() + 0.5, pos.getY() - 0.125, pos.getZ() + 0.5);
+        Vec3 end = new Vec3(pos.getX() + 0.5, pos.getY() + 0.125 - 4, pos.getZ() + 0.5);
 
-        return acc.pour(level, target, Direction.UP, stack);
+        BlockHitResult[] mop = new BlockHitResult[1];
+        ICrucibleAcceptor acc = CrucibleUtil.getPouringTarget(world, start, end, mop);
+
+        if (acc == null)
+            return stack;
+
+        Vec3 hit = mop[0].getLocation();
+        MaterialStack didPour = acc.pour(world, mop[0].getBlockPos(), hit.x, hit.y, hit.z, Direction.UP, stack);
+
+        if (stack != null && world instanceof ServerLevel server) {
+            Direction dir = side.getOpposite();
+            double hitY = mop[0].getBlockPos().getY() + 1;
+            CompoundTag data = new CompoundTag();
+            data.putString("type", "foundry");
+            data.putInt("color", stack.material.moltenColor);
+            data.putByte("dir", (byte) dir.get3DDataValue());
+            data.putFloat("off", 0.375F);
+            data.putFloat("base", 0F);
+            data.putFloat("len", Math.max(1F, worldPosition.getY() - (float) (Math.ceil(hitY) - 0.875)));
+            com.hbm_m.particle.helper.IParticleCreator.sendPacket(server, worldPosition.getX() + 0.5D - dir.getStepX() * 0.125, worldPosition.getY() + 0.125, worldPosition.getZ() + 0.5D - dir.getStepZ() * 0.125, 50, data);
+        }
+
+        return didPour;
     }
 
-    /* ── NBT / sync ─────────────────────────────────────────────────────── */
-
-    
     @Override
-    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-        super.writeNbtData(tag, registries);
-        if (filter != null) tag.putString("filter", filter.name);
-        tag.putBoolean("invertFilter",   invertFilter);
-        tag.putBoolean("invertRedstone", invertRedstone);
+    public int getCapacity() {
+        return 0;
     }
 
     @Override
-    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-        super.readNbtData(tag, registries);
-        if (tag.contains("filter")) filter = MaterialType.byName(tag.getString("filter"));
-        else filter = null;
-        invertFilter   = tag.getBoolean("invertFilter");
-        invertRedstone = tag.getBoolean("invertRedstone");
+    protected void readNbtData(CompoundTag nbt, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(nbt, registries);
+        this.invertRedstone = nbt.getBoolean("invert");
+        this.invertFilter = nbt.getBoolean("invertFilter");
+        this.filter = Mats.matById.get((int) nbt.getShort("filter"));
+    }
+
+    @Override
+    protected void writeNbtData(CompoundTag nbt, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(nbt, registries);
+        nbt.putBoolean("invert", this.invertRedstone);
+        nbt.putBoolean("invertFilter", this.invertFilter);
+        nbt.putShort("filter", this.filter == null ? -1 : (short) this.filter.id);
     }
 }

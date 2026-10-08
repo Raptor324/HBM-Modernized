@@ -158,29 +158,35 @@ public class DFCStabilizerBlockEntity extends BaseMachineBlockEntity
 
     // ── Redstone-over-Radio ──
 
-    /** 1:1 aus {@code TileEntityCoreStabilizer}. */
+    /** 1:1 aus {@code TileEntityCoreStabilizer}: Linsenhaltbarkeit und Leistungsvorgabe in Prozent. */
     @Override
     public String[] getFunctionInfo() {
         return new String[] {
-                PREFIX_VALUE + "watts",
-                PREFIX_VALUE + "beam",
-                PREFIX_VALUE + "power",
-                PREFIX_FUNCTION + "setwatts" + NAME_SEPARATOR + "watts"
+                PREFIX_VALUE + "durability",
+                PREFIX_VALUE + "durabilitypercent",
+                PREFIX_FUNCTION + "setpower" + NAME_SEPARATOR + "percent",
         };
     }
 
     @Override
     public String provideRORValue(String name) {
-        if ((PREFIX_VALUE + "watts").equals(name)) return "" + watts;
-        if ((PREFIX_VALUE + "beam").equals(name))  return "" + beam;
-        if ((PREFIX_VALUE + "power").equals(name)) return "" + getEnergyStored();
+        ItemStack lens = getInventory().getStackInSlot(SLOT_LENS);
+        boolean hasLens = lens.is(ModItems.AMS_LENS.get());
+        if ((PREFIX_VALUE + "durability").equals(name))
+            return hasLens ? "" + (ItemAMSLens.maxDamageOf(lens) - ItemAMSLens.getLensDamage(lens)) : "0";
+        if ((PREFIX_VALUE + "durabilitypercent").equals(name))
+            return hasLens ? "" + ((ItemAMSLens.maxDamageOf(lens) - ItemAMSLens.getLensDamage(lens)) * 100 / ItemAMSLens.maxDamageOf(lens)) : "0";
         return null;
     }
 
     @Override
     public String runRORFunction(String name, String[] params) {
-        if ((PREFIX_FUNCTION + "setwatts").equals(name) && params.length > 0) {
-            setWatts(com.hbm_m.api.redstoneoverradio.IRORInteractive.parseInt(params[0], 1, 100));
+        if ((PREFIX_FUNCTION + "setpower").equals(name) && params.length > 0) {
+            // Original: this.watts = parseInt(params[0], 0, 100) - ohne die Klemmung von setWatts
+            this.watts = com.hbm_m.api.redstoneoverradio.IRORInteractive.parseInt(params[0], 0, 100);
+            setChanged();
+            sendUpdateToClient();
+            return null;
         }
         return null;
     }

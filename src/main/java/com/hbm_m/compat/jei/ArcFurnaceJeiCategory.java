@@ -1,126 +1,79 @@
 package com.hbm_m.compat.jei;
+//? if forge {
+
+import java.util.ArrayList;
+import java.util.List;
 
 import com.hbm_m.block.ModBlocks;
+import com.hbm_m.inventory.material.MaterialShapes;
+import com.hbm_m.inventory.material.Mats;
+import com.hbm_m.inventory.material.Mats.MaterialStack;
+import com.hbm_m.inventory.material.NTMMaterial;
+import com.hbm_m.inventory.material.NTMMaterial.SmeltingBehavior;
+import com.hbm_m.inventory.recipes.ArcFurnaceRecipes;
+import com.hbm_m.inventory.recipes.ArcFurnaceRecipes.ArcFurnaceRecipe;
+import com.hbm_m.item.material.ItemScraps;
 import com.hbm_m.lib.RefStrings;
-import com.hbm_m.recipe.ArcFurnaceRecipe;
 
-import dev.architectury.fluid.FluidStack;
-//? if forge {
-//? if forge {
-import mezz.jei.api.forge.ForgeTypes;
-//?} elif neoforge {
-/*import mezz.jei.api.neoforge.NeoForgeTypes;
-*///?}
-//? if forge {
-import dev.architectury.hooks.fluid.forge.FluidStackHooksForge;
-//?}
-//?} elif neoforge {
-/*import mezz.jei.api.neoforge.NeoForgeTypes;
-*///?}
-import mezz.jei.api.gui.builder.IRecipeLayoutBuilder;
 import mezz.jei.api.helpers.IGuiHelper;
-import mezz.jei.api.recipe.RecipeIngredientRole;
 import mezz.jei.api.recipe.RecipeType;
-import net.minecraft.client.gui.GuiGraphics;
+import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.Items;
+import net.minecraft.world.level.Level;
 
 /**
- * JEI category for Arc Furnace recipes - 1 Item-Eingang -&gt; optionaler Item-Ausgang + bis zu 2
- * Fluid-Ausgaenge (siehe {@link ArcFurnaceRecipe}).
+ * Original {@code ArcFurnaceRecipes.getSolidRecipes()} / {@code getFluidRecipes()}: je eine Kategorie fuer den Fest- und
+ * den Fluessig-Modus des grossen Lichtbogenofens. Die Liste entsteht aus {@link ArcFurnaceRecipes#getOutput} ueber alle
+ * Items, damit Autogenerierung und Ofenrezepte genau so erscheinen wie in der Maschine.
  */
-//? if forge {
-public class ArcFurnaceJeiCategory extends JeiGenericRecipeCategory<ArcFurnaceRecipe> {
+public class ArcFurnaceJeiCategory extends JeiUniversalRecipeCategory<ArcFurnaceJeiCategory.Entry> {
 
-    public static final RecipeType<ArcFurnaceRecipe> RECIPE_TYPE =
-            RecipeType.create(RefStrings.MODID, "arc_furnace", ArcFurnaceRecipe.class);
+    public record Entry(ItemStack input, List<ItemStack> outputs) { }
 
-    private static final int FLUID_RENDERER_CAPACITY = 4_000;
+    public static final RecipeType<Entry> SOLID = RecipeType.create(RefStrings.MODID, "arc_furnace_solid", Entry.class);
+    public static final RecipeType<Entry> FLUID = RecipeType.create(RefStrings.MODID, "arc_furnace_fluid", Entry.class);
 
-    public ArcFurnaceJeiCategory(IGuiHelper guiHelper) {
-        super(guiHelper, new ItemStack[]{
-                new ItemStack(ModBlocks.ARC_FURNACE.get())
-        });
+    private final boolean liquid;
+
+    public ArcFurnaceJeiCategory(IGuiHelper guiHelper, boolean liquid) {
+        super(guiHelper, new ItemStack[] { new ItemStack(ModBlocks.ARC_FURNACE.get()) });
+        this.liquid = liquid;
     }
 
-    @Override
-    public RecipeType<ArcFurnaceRecipe> getRecipeType() {
-        return RECIPE_TYPE;
-    }
-
-    @Override
-    public Component getTitle() {
-        return Component.translatable("container.hbm_m.arc_furnace");
-    }
-
-    @Override
-    protected int getInputCount(ArcFurnaceRecipe recipe) {
-        return 1;
-    }
-
-    @Override
-    protected int getOutputCount(ArcFurnaceRecipe recipe) {
-        int count = recipe.hasItemOutput() ? 1 : 0;
-        if (recipe.hasFluidOutput1()) count++;
-        if (recipe.hasFluidOutput2()) count++;
-        return count;
-    }
-
-    @Override
-    protected boolean hasBlueprintTemplate(ArcFurnaceRecipe recipe) {
-        return false;
-    }
-
-    @Override
-    protected void addInputSlots(IRecipeLayoutBuilder builder, ArcFurnaceRecipe recipe, int inputXOffset) {
-        var slot = addItemSlot(builder, RecipeIngredientRole.INPUT, inputXOffset, 22);
-        JeiIngredientSlots.addCountedIngredient(slot, recipe.getInput(), recipe.getInputCount());
-    }
-
-    @Override
-    protected void addOutputSlots(IRecipeLayoutBuilder builder, ArcFurnaceRecipe recipe, int outputXOffset) {
-        int[][] positions = JeiNeiLayout.getGenericOutputSlotPositions(getOutputCount(recipe));
-        int slotIndex = 0;
-
-        if (recipe.hasItemOutput()) {
-            addItemSlot(builder, RecipeIngredientRole.OUTPUT,
-                    positions[slotIndex][0] + outputXOffset, positions[slotIndex][1])
-                    .addItemStack(recipe.getOutput());
-            slotIndex++;
+    public static List<Entry> recipes(Level level, boolean liquid) {
+        List<Entry> list = new ArrayList<>();
+        for (Item item : BuiltInRegistries.ITEM) {
+            if (item == Items.AIR) continue;
+            ItemStack stack = new ItemStack(item);
+            if (ItemScraps.isScrap(stack)) continue;
+            ArcFurnaceRecipe recipe = ArcFurnaceRecipes.getOutput(stack, liquid, level);
+            if (recipe == null) continue;
+            List<ItemStack> outs = new ArrayList<>();
+            if (!liquid && recipe.solidOutput != null && !recipe.solidOutput.isEmpty()) outs.add(recipe.solidOutput.copy());
+            if (liquid && recipe.fluidOutput != null) for (MaterialStack m : recipe.fluidOutput) outs.add(ItemScraps.create(m, true));
+            if (!outs.isEmpty()) list.add(new Entry(stack, outs));
         }
-        if (recipe.hasFluidOutput1()) {
-            addFluidSlot(builder, positions[slotIndex][0] + outputXOffset, positions[slotIndex][1],
-                    FluidStack.create(recipe.getFluid1(), recipe.getFluidAmount1()));
-            slotIndex++;
+        if (liquid) {
+            for (NTMMaterial mat : Mats.orderedList) {
+                if (mat.smeltable == SmeltingBehavior.SMELTABLE) {
+                    MaterialStack ingot = new MaterialStack(mat, MaterialShapes.INGOT.q(1));
+                    ItemStack scrap = ItemScraps.create(ingot);
+                    if (!scrap.isEmpty()) list.add(new Entry(scrap, List.of(ItemScraps.create(ingot, true))));
+                }
+            }
         }
-        if (recipe.hasFluidOutput2()) {
-            addFluidSlot(builder, positions[slotIndex][0] + outputXOffset, positions[slotIndex][1],
-                    FluidStack.create(recipe.getFluid2(), recipe.getFluidAmount2()));
-            slotIndex++;
-        }
+        return list;
     }
 
-    private void addFluidSlot(IRecipeLayoutBuilder builder, int x, int y, FluidStack fluid) {
-        addItemSlot(builder, RecipeIngredientRole.OUTPUT, x, y)
-                .setFluidRenderer(FLUID_RENDERER_CAPACITY, false, 16, 16)
-                //? if forge {
-                .setCustomRenderer(ForgeTypes.FLUID_STACK, new HbmFluidJeiRenderer(16, 16))
-                .addIngredient(ForgeTypes.FLUID_STACK, FluidStackHooksForge.toForge(fluid));
-                //?} elif neoforge {
-                /*.setCustomRenderer(NeoForgeTypes.FLUID_STACK, new HbmFluidJeiRenderer(16, 16))
-                .addIngredient(NeoForgeTypes.FLUID_STACK, new net.neoforged.neoforge.fluids.FluidStack(fluid.getFluid(), (int) fluid.getAmount()));
-                *///?}
-    }
-
-    @Override
-    protected void addBlueprintSlot(IRecipeLayoutBuilder builder, ArcFurnaceRecipe recipe, int machineXOffset) {
-        // Kein Blueprint-Slot fuer Arc-Furnace-Rezepte.
-    }
-
-    @Override
-    protected void drawRecipeExtras(ArcFurnaceRecipe recipe, GuiGraphics graphics) {
-        JeiNeiRendering.drawGenericRecipeExtras(graphics, recipe.getDuration(), 0);
-    }
+    @Override public RecipeType<Entry> getRecipeType() { return liquid ? FLUID : SOLID; }
+    @Override public Component getTitle() { return Component.translatable("container.machineArcFurnaceLarge"); }
+    @Override protected int getInputCount(Entry e) { return 1; }
+    @Override protected int getOutputCount(Entry e) { return e.outputs().size(); }
+    @Override protected List<List<ItemStack>> getInputStacks(Entry e) { return List.of(List.of(e.input())); }
+    @Override protected List<ItemStack> getOutputStacks(Entry e) { return e.outputs(); }
 }
 //?} else {
 /*public final class ArcFurnaceJeiCategory {

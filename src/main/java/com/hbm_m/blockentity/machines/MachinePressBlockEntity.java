@@ -47,7 +47,8 @@ import com.hbm_m.platform.recipe.RecipeInputWrapper;
 public class MachinePressBlockEntity extends BaseMachineBlockEntity {
     
     // Слоты
-    private static final int SLOT_COUNT = 4;
+    /** Original {@code super(13)}: 4 Arbeitsslots + 9 Ablageslots (4-12, "Extra Storage") unter der Presse. */
+    private static final int SLOT_COUNT = 13;
     private static final int FUEL_SLOT = 0;
     private static final int STAMP_SLOT = 1;
     private static final int MATERIAL_SLOT = 2;
@@ -130,7 +131,22 @@ public class MachinePressBlockEntity extends BaseMachineBlockEntity {
                 || cap == ForgeCapabilities.ENERGY) {
             return LazyOptional.empty();
         }
+        if (cap == ForgeCapabilities.ITEM_HANDLER && side != null) return sidedItems.get(side).cast();
         return super.getCapability(cap, side);
+    }
+
+    /** Original: alle Seiten {0, 1, 2, 3}, einfuegen nach isItemValidForSlot, entnehmen nur den Ausgang. */
+    private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
+            new com.hbm_m.blockentity.SidedItemAccess.Rules() {
+                @Override public int[] accessibleSlots(Direction side) { return new int[] { 0, 1, 2, 3 }; }
+                @Override public boolean canInsert(int slot, ItemStack stack, Direction side) { return isItemValidForSlot(slot, stack); }
+                @Override public boolean canExtract(int slot, ItemStack stack, Direction side) { return slot == OUTPUT_SLOT; }
+            });
+
+    @Override
+    public void invalidateCaps() {
+        super.invalidateCaps();
+        sidedItems.invalidate();
     }
     //?}
 
@@ -149,9 +165,10 @@ public class MachinePressBlockEntity extends BaseMachineBlockEntity {
     @Override
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
         return switch (slot) {
-            case FUEL_SLOT -> getBurnTime(stack.getItem()) > 0;
-            case STAMP_SLOT -> true; // Проверка на stamp type может быть добавлена
-            case MATERIAL_SLOT -> true;
+            // Original isItemValidForSlot: Stempel nur in Slot 1, Brennbares in Slot 0, alles andere in Slot 2
+            case FUEL_SLOT -> !(stack.getItem() instanceof com.hbm_m.item.industrial.ItemStamp) && AbstractFurnaceBlockEntity.getFuel().getOrDefault(stack.getItem(), 0) > 0;
+            case STAMP_SLOT -> stack.getItem() instanceof com.hbm_m.item.industrial.ItemStamp;
+            case MATERIAL_SLOT -> !(stack.getItem() instanceof com.hbm_m.item.industrial.ItemStamp);
             case OUTPUT_SLOT -> false; // Выходной слот только для результатов
             default -> false;
         };
@@ -189,16 +206,28 @@ public class MachinePressBlockEntity extends BaseMachineBlockEntity {
         // Добавление топлива (как у генератора)
         ItemStack fuelStack = inventory.getStackInSlot(FUEL_SLOT);
         if (!fuelStack.isEmpty() && burnTime < FUEL_PER_OPERATION) {
-            int fuelValue = getBurnTime(fuelStack.getItem());
+            // Original: TileEntityFurnace.getItemBurnTime in Ticks; ein letzter Eimer hinterlaesst den Behaelter
+            int fuelValue = AbstractFurnaceBlockEntity.getFuel().getOrDefault(fuelStack.getItem(), 0);
             if (fuelValue > 0) {
-                burnTime += fuelValue * 20; // Конвертируем секунды в тики
-                fuelStack.shrink(1);
+                burnTime += fuelValue;
+                if (fuelStack.getCount() == 1 && fuelStack.getItem().hasCraftingRemainingItem()) {
+                    inventory.setStackInSlot(FUEL_SLOT, new ItemStack(fuelStack.getItem().getCraftingRemainingItem()));
+                } else {
+                    fuelStack.shrink(1);
+                }
                 needsSync = true;
             }
         }
 
         boolean canProcess = canProcess();
-        boolean preheated = level.getBlockState(worldPosition.below()).is(com.hbm_m.block.ModBlocks.PRESS_PREHEATER.get());
+        // Original: Vorheizer an einer beliebigen der sechs Seiten
+        boolean preheated = false;
+        for (Direction dir : Direction.values()) {
+            if (level.getBlockState(worldPosition.relative(dir)).is(com.hbm_m.block.ModBlocks.PRESS_PREHEATER.get())) {
+                preheated = true;
+                break;
+            }
+        }
 
         // Логика ускорения/замедления (как в 1.7.10)
         if ((canProcess || isRetracting) && burnTime >= FUEL_PER_OPERATION) {
@@ -323,11 +352,8 @@ public class MachinePressBlockEntity extends BaseMachineBlockEntity {
             
             // Если штамп сломался - удаляем его
             if (stamp.getDamageValue() >= stamp.getMaxDamage()) {
+                // Original: der Stempel verschwindet ohne eigenes Geraeusch
                 inventory.setStackInSlot(STAMP_SLOT, ItemStack.EMPTY);
-                
-                // Звук ломающегося предмета
-                level.playSound(null, worldPosition, SoundEvents.ITEM_BREAK,
-                    SoundSource.BLOCKS, 1.5f, 0.8f);
             }
         }
         

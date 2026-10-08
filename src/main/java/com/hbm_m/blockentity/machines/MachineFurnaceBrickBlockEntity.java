@@ -309,4 +309,26 @@ public class MachineFurnaceBrickBlockEntity extends com.hbm_m.blockentity.BaseHb
     public AbstractContainerMenu createMenu(int id, Inventory inv, Player player) {
         return new MachineFurnaceBrickMenu(id, inv, this, data);
     }
+
+    //? if forge {
+    /** Original {@code ISidedInventory}: unten {2, 1, 3}, oben {0}, Seiten {1}; Schmelzgut oben, Brennstoff seitlich, unten Ergebnis und Asche heraus. */
+    private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
+            new com.hbm_m.blockentity.SidedItemAccess.Rules() {
+                @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return side == net.minecraft.core.Direction.DOWN ? new int[] { 2, 1, 3 } : side == net.minecraft.core.Direction.UP ? new int[] { 0 } : new int[] { 1 }; }
+                @Override public boolean canInsert(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return slot < 2 && inventory.isItemValid(slot, stack); }
+                @Override public boolean canExtract(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return slot >= 2; }
+            });
+
+    @Override
+    public @org.jetbrains.annotations.NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(@org.jetbrains.annotations.NotNull net.minecraftforge.common.capabilities.Capability<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER && side != null) return sidedItems.get(side).cast();
+        return super.getCapability(cap, side);
+    }
+
+    @Override
+    public void invalidateCaps() {
+        super.invalidateCaps();
+        sidedItems.invalidate();
+    }
+    //?}
 }

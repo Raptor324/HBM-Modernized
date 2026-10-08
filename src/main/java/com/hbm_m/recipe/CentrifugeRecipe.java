@@ -84,7 +84,7 @@ public class CentrifugeRecipe extends PlatformRecipe {
 
         @Override
         public CentrifugeRecipe readJson(ResourceLocation recipeId, JsonObject json) {
-            Ingredient input = RecipeHooks.ingredientFromJson(GsonHelper.getAsJsonObject(json, "ingredient"));
+            Ingredient input = RecipeHooks.ingredientFromJson(json.get("ingredient")); // Objekt oder Liste (mehrere Items)
             JsonArray results = GsonHelper.getAsJsonArray(json, "results");
             ItemStack[] outputs = new ItemStack[4];
             for (int i = 0; i < Math.min(results.size(), 4); i++) {

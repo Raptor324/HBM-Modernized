@@ -146,7 +146,7 @@ public class MachineConveyorPressBlock extends com.hbm_m.block.machines.Dummyabl
 
     @Override
     public RenderShape getRenderShape(BlockState state) {
-        return RenderShape.MODEL;
+        return RenderShape.ENTITYBLOCK_ANIMATED; // Kolben/Band zeichnet ConveyorPressRenderer (RenderConveyorPress)
     }
 
     @Override
@@ -238,4 +238,11 @@ public class MachineConveyorPressBlock extends com.hbm_m.block.machines.Dummyabl
         return CODEC;
     }
     *///?}
+
+    /** Original {@code addInformation}: {@code addStandardInfo} (Umschalttaste zeigt {@code .desc}). */
+    @Override
+    public void appendHoverText(net.minecraft.world.item.ItemStack stack, @org.jetbrains.annotations.Nullable net.minecraft.world.level.BlockGetter level,
+                                java.util.List<net.minecraft.network.chat.Component> list, net.minecraft.world.item.TooltipFlag flag) {
+        com.hbm_m.util.StandardInfo.add(list, getDescriptionId() + ".desc");
+    }
 }

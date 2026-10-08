@@ -1,0 +1,8 @@
+{
+  "type": "hbm_m:legacy_dungeon",
+  "dungeon": "jungle_dungeon",
+  "biomes": "#minecraft:is_overworld",
+  "spawn_overrides": {},
+  "step": "underground_structures",
+  "terrain_adaptation": "none"
+}

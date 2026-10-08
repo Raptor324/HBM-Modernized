@@ -163,9 +163,10 @@ public class MobileLaunchPadBlock extends BaseEntityBlock implements IMultiblock
 
     @Override
     public VoxelShape getShape(BlockState pState, BlockGetter pLevel, BlockPos pPos, CollisionContext pContext) {
+        // w16b: nur die Kernzelle (Raycast pro Zelle wie Original); Umriss der ganzen Maschine: MultiblockOutlineForge
         MultiblockStructureHelper helper = getStructureHelper();
         if (helper != null) {
-            return helper.generateShapeFromParts(pState.getValue(FACING));
+            return helper.getControllerCellShape(pState.getValue(FACING));
         }
         return Shapes.block();
     }

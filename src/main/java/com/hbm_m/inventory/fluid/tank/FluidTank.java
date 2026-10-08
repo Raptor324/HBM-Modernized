@@ -365,7 +365,8 @@ public class FluidTank implements Cloneable {
 
         if (fluidAmt <= 0 || drawType == null || drawType == Fluids.EMPTY || drawType == ModFluids.NONE.getSource()) return;
 
-        int fluidColor = com.hbm_m.api.fluids.HbmFluidRegistry.getTintColor(drawType) & 0xFFFFFF;
+        // 1:1 renderTank: type.getTint() (0xFFFFFF fuer eingebaute Typen), nicht die Rohrfarbe
+        int fluidColor = com.hbm_m.inventory.fluid.FluidType.forFluid(drawType).getTint() & 0xFFFFFF;
         float r = (fluidColor >> 16 & 255) / 255.0F;
         float g = (fluidColor >> 8 & 255) / 255.0F;
         float b = (fluidColor & 255) / 255.0F;

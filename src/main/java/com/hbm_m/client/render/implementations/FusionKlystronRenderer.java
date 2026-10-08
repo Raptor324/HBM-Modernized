@@ -47,7 +47,8 @@ public class FusionKlystronRenderer implements BlockEntityRenderer<FusionKlystro
 
         pose.pushPose();
         pose.translate(0.5D, 0D, 0.5D);
-        FusionTorusRenderer.applyFacing(be.getBlockState(), pose);
+        // Original-Drehschalter (2: 90, 4: 180, 3: 270, 5: 0) = applyFacing + 90
+        FusionTorusRenderer.applyFacing(be.getBlockState(), pose, 90F);
         // Original: glTranslated(-1, 0, 0) nach der Ausrichtungsdrehung.
         pose.translate(-1D, 0D, 0D);
 

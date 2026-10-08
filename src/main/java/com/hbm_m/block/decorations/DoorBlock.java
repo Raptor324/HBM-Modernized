@@ -42,7 +42,23 @@ import net.minecraft.world.phys.shapes.CollisionContext;
 import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
-public class DoorBlock extends BaseEntityBlock implements IMultiblockController {
+public class DoorBlock extends BaseEntityBlock implements IMultiblockController, com.hbm_m.api.bomb.IBomb {
+
+    /** audit10: 1:1 {@code BlockDoorGeneric.explode} - Zuender schalten fernsteuerbare Tueren um. */
+    @Override
+    public BombReturnCode explode(Level world, BlockPos pos) {
+        BlockEntity be = world.getBlockEntity(pos);
+        if (be instanceof DoorBlockEntity door && !door.isController() && door.getControllerPos() != null) {
+            be = world.getBlockEntity(door.getControllerPos());
+        }
+        if (!(be instanceof DoorBlockEntity door)) return BombReturnCode.ERROR_INCOMPATIBLE;
+        DoorDecl decl = door.getDoorDecl();
+        if (decl == null || !decl.remoteControllable()) return BombReturnCode.ERROR_INCOMPATIBLE;
+        if (door.tryToggle((Player) null)) {
+            return BombReturnCode.TRIGGERED;
+        }
+        return BombReturnCode.ERROR_INCOMPATIBLE;
+    }
 
     public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
     public static final EnumProperty<PartRole> PART_ROLE = EnumProperty.create("part_role", PartRole.class);
@@ -198,13 +214,16 @@ public class DoorBlock extends BaseEntityBlock implements IMultiblockController 
     *///?}
 
     private InteractionResult hbmOnUse(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
-        if (hasScrewdriver(player)) {
+        BlockEntity be = level.getBlockEntity(pos);
+        // Verschlossene Tuer: Schraubenzieher (ohne Schleichen) dient wie im Original zum Knacken mit Stift
+        boolean pickAttempt = be instanceof DoorBlockEntity d && d.isLocked() && !player.isShiftKeyDown();
+        if (hasScrewdriver(player) && !pickAttempt) {
             return InteractionResult.sidedSuccess(level.isClientSide);
         }
         if (!level.isClientSide) {
-            BlockEntity be = level.getBlockEntity(pos);
             if (be instanceof DoorBlockEntity doorBE) {
-                doorBE.toggle();
+                // Original BlockDoorGeneric.onBlockActivated -> door.tryToggle(player) (Schloss, Schluessel, Dietrich)
+                doorBE.tryToggle(player);
             }
         }
         return InteractionResult.sidedSuccess(level.isClientSide);

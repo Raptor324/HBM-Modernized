@@ -1,7 +1,7 @@
 {
   "display": {
     "icon": {
-      "item": "hbm_m:no9"
+      "item": "hbm_m:achievement_icon_gofish"
     },
     "title": {
       "translate": "advancements.hbm_m.go_fish.title"

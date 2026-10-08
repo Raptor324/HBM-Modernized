@@ -287,29 +287,12 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add(ModItems.POWDER_DESH_READY.get(), "DeshReady™ Blend");
         // Оригинал: 4310 powder_coltan_ore "Crushed Coltan" / 4311 powder_coltan "Purified Tantalite".
         add(ModItems.POWDER_COLTAN.get(), "Crushed Coltan");
-        add(ModItems.TURRET_AMMO.get(), "Turret Ammo");
-        add(ModItems.AMMO_9MM_SP.get(), "9mm Round (Soft Point)");
-        add(ModItems.AMMO_9MM_FMJ.get(), "9mm Round (FMJ)");
-        add(ModItems.AMMO_9MM_JHP.get(), "9mm Round (Hollow Point)");
-        add(ModItems.AMMO_9MM_AP.get(), "9mm Round (Armor Piercing)");
-        add(ModItems.AMMO_50_SP.get(), ".50 Round (Soft Point)");
-        add(ModItems.AMMO_50_FMJ.get(), ".50 Round (FMJ)");
-        add(ModItems.AMMO_50_JHP.get(), ".50 Round (Hollow Point)");
-        add(ModItems.AMMO_50_AP.get(), ".50 Round (Armor Piercing)");
-        add(ModItems.AMMO_50_DU.get(), ".50 Round (Depleted Uranium)");
-        add(ModItems.AMMO_556_SP.get(), "5.56mm Round (Soft Point)");
-        add(ModItems.AMMO_556_FMJ.get(), "5.56mm Round (FMJ)");
-        add(ModItems.AMMO_556_JHP.get(), "5.56mm Round (Hollow Point)");
-        add(ModItems.AMMO_556_AP.get(), "5.56mm Round (Armor Piercing)");
-        add(ModItems.ROCKET_TURRET_STANDARD.get(), "Turret Guided Rocket");
         add(ModItems.ROCKET_HIMARS_STANDARD.get(), "HIMARS Rocket (Standard)");
         add(ModItems.ROCKET_HIMARS_HE.get(), "HIMARS Rocket (HE)");
         add(ModItems.ROCKET_HIMARS_LAVA.get(), "HIMARS Rocket (Lava)");
         add(ModItems.ROCKET_HIMARS_MINI_NUKE.get(), "HIMARS Rocket (Mini-Nuke)");
         add(ModItems.ROCKET_HIMARS_WP.get(), "HIMARS Rocket (White Phosphorus)");
         add(ModItems.ROCKET_HIMARS_THERMOBARIC.get(), "HIMARS Rocket (Thermobaric)");
-        add(ModItems.AMMO_TAU_URANIUM.get(), "Uranium Charge (Tau Accelerator)");
-        add(ModItems.AMMO_FLAME_DIESEL.get(), "Diesel Fuel (Flamethrower)");
 
         // =========================================================================
         // СЮДА ВСТАВЛЯЕТСЯ ВЕСЬ КОД ИЗ СТАРЫХ МЕТОДОВ ПО ПОРЯДКУ:
@@ -324,7 +307,6 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("damage.other", "Other");
         // Missile prototype + shared missile strings
         add("item.hbm_m.missile_test", "Test Ballistic Missile");
-        add("item.hbm_m.missile_abm", "Anti Ballistic Missile");
         add("item.hbm_m.missile_micro", "Micro-Nuclear Missile");
         add("item.hbm_m.missile_schrabidium", "Schrabidium Missile");
         add("item.hbm_m.missile_bhole", "Black Hole Missile");
@@ -495,6 +477,9 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("pseudofluid.hbm_m.pf6", "PuF6 (enriched)");
         add("pseudofluid.hbm_m.mud", "WATZ Sludge");
         add("pseudofluid.hbm_m.mud_heavy", "WATZ Sludge (concentrated)");
+        add("jei.hbm_m.crucible_smelting", "Crucible Smelting");
+        add("jei.hbm_m.crucible_alloying", "Crucible Alloying");
+        add("jei.hbm_m.crucible_casting", "Casting");
         add("jei.hbm_m.gas_centrifuge.info", "Requires %s centrifuge(s)");
         add("jei.hbm_m.gas_centrifuge.info_high_speed", "Requires %s centrifuge(s) (high-speed)");
         add("gui.launchPad.notReady", "Not ready");
@@ -891,7 +876,6 @@ public class ModLanguageProviderEn extends LanguageProvider {
         // === ИНСТРУМЕНТЫ И УСТРОЙСТВА ===
         add("tooltip.hbm_m.defuser.line2", "RMB on a compatible device to disarm");
         add("tooltip.hbm_m.mine.line1", "Can be defused");
-        add("tooltip.hbm_m.naval_mine.line1", "Explodes on contact with a player");
         add("tooltip.hbm_m.gigadet.line1", "Was made for fun");
 
         // Сигарета (порт ItemCigarette, 1.7.10)
@@ -1055,13 +1039,6 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add(ModBlocks.CONCRETE_BLACK.get(), "Black Concrete");
         add(ModBlocks.CONCRETE_BLUE.get(), "Blue Concrete");
         add(ModBlocks.CONCRETE_BROWN.get(), "Brown Concrete");
-        add(ModBlocks.CONCRETE_COLORED_BRONZE.get(), "Bronze Concrete");
-        add(ModBlocks.CONCRETE_COLORED_INDIGO.get(), "Indigo Concrete");
-        add(ModBlocks.CONCRETE_COLORED_MACHINE.get(), "Concrete 'Machine'");
-        add(ModBlocks.CONCRETE_COLORED_MACHINE_STRIPE.get(), "Striped Concrete 'Machine'");
-        add(ModBlocks.CONCRETE_COLORED_PINK.get(), "Pink Concrete");
-        add(ModBlocks.CONCRETE_COLORED_PURPLE.get(), "Purple Concrete");
-        add(ModBlocks.CONCRETE_COLORED_SAND.get(), "Concrete 'Texas'");
         add(ModBlocks.CONCRETE_CYAN.get(), "Cyan Concrete");
         add(ModBlocks.CONCRETE_GRAY.get(), "Gray Concrete");
         add(ModBlocks.CONCRETE_GREEN.get(), "Green Concrete");
@@ -1293,35 +1270,13 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("gui.hbm_m.fluid_tank.empty_locked", "Empty (tank type: %s)");
         add("gui.hbm_m.fluid_tank.empty_filter", "Empty (filter: %s)");
         add("gui.hbm_m.fluid_tank.filter_set", "Type set to %s!");
-        add("gui.hbm_m.fluid_tank.mode.0", "Mode: Output only");
+        add("gui.hbm_m.fluid_tank.mode.0", "Mode: Input only");
         add("gui.hbm_m.fluid_tank.mode.1", "Mode: Buffer");
-        add("gui.hbm_m.fluid_tank.mode.2", "Mode: Input only");
+        add("gui.hbm_m.fluid_tank.mode.2", "Mode: Output only");
         add("gui.hbm_m.fluid_tank.mode.3", "Mode: Disabled");
         add("gui.hbm_m.fluid_tank.pressure", "Pressure: %s PU");
         add("gui.hbm_m.fluid_tank.pressurized", "Pressurized — use a compressor!");
         add("gui.hbm_m.fluid_tank.hold_shift_more", "Hold <LSHIFT> for more info");
-        add("fluid.hbm_m.trait.polluting", "[Polluting]");
-        add("fluid.hbm_m.trait.polluting.when_spilled", "When spilled:");
-        add("fluid.hbm_m.trait.polluting.when_burned", "When burned:");
-        add("fluid.hbm_m.trait.polluting.line", "%s — %s");
-        add("fluid.hbm_m.trait.heatable.thermal_capacity", "Thermal capacity: %s TU per %s mB");
-        add("fluid.hbm_m.trait.efficiency_pct", "Efficiency: %s%%");
-        add("fluid.hbm_m.trait.pwr_flux_multiplier", "[PWR flux moderator]");
-        add("fluid.hbm_m.trait.core_flux_pct", "Core flux: %s%%");
-        add("fluid.hbm_m.trait.pheromone_glyphid", "[Pheromones — glyphid]");
-        add("fluid.hbm_m.trait.pheromone_modified", "[Pheromones — modified]");
-        add("fluid.hbm_m.trait.toxin_header", "[Toxin]");
-        add("fluid.hbm_m.trait.toxic_fumes", "Toxic fumes");
-        add("fluid.hbm_m.toxin.chlorine.line1", "Lung damage (cloud)");
-        add("fluid.hbm_m.toxin.chlorine.line2", "Strong respiratory irritant");
-        add("fluid.hbm_m.toxin.phosgene.line1", "Severe lung injury (cloud)");
-        add("fluid.hbm_m.toxin.phosgene.line2", "Extremely hazardous if inhaled");
-        add("fluid.hbm_m.toxin.mustard.line1", "Skin and lung injury");
-        add("fluid.hbm_m.toxin.mustard.line2", "Chemical burns and systemic poisoning possible");
-        add("fluid.hbm_m.toxin.estradiol.line1", "Hazardous fine particulates");
-        add("fluid.hbm_m.toxin.estradiol.line2", "Systemic effects on exposure");
-        add("fluid.hbm_m.toxin.redmud.line1", "Caustic and heavy-metal exposure");
-        add("fluid.hbm_m.toxin.redmud.line2", "Skin burns and systemic intoxication");
         add("item.hbm_m.lignite_powder", "Lignite Powder");
         add("item.hbm_m.nuclear_waste_long_depleted_tiny", "Tiny Depleted Long-lived Nuclear Waste");
         add("item.hbm_m.nuclear_waste_long_tiny", "Tiny Long-lived Nuclear Waste");
@@ -1593,7 +1548,7 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add(ModBlocks.BARREL_ANTIMATTER.get(), "Magnetic Antimatter Container");
         add(ModBlocks.BARREL_PLASTIC.get(), "Safe Barrel™");
         add(ModBlocks.BARREL_PINK.get(), "Pink Barrel");
-        add(ModBlocks.BARREL_YELLOW.get(), "Yellow Barrel");
+        add(ModBlocks.BARREL_YELLOW.get(), "Radioactive Barrel");
         add(ModBlocks.BARREL_VITRIFIED.get(), "Vitrified Barrel");
         add(ModBlocks.BARREL_TAINT.get(), "Tainted Barrel");
         add(ModBlocks.TAINT.get(), "Taint");
@@ -1639,7 +1594,6 @@ public class ModLanguageProviderEn extends LanguageProvider {
 
         add(ModBlocks.MINE_FAT.get(), "FatMan Mine");
         add(ModBlocks.MINE_AP.get(), "Anti-Personnel Mine");
-        add(ModBlocks.NAVAL_MINE.get(), "N45 Naval Mine");
         add(ModItems.GRENADE_NUC.get(), "Nuclear Grenade");
         add(ModItems.GRENADE_IF_HE.get(), "IF Grenade: HE");
         add(ModItems.GRENADE_IF_FIRE.get(), "IF Grenade: Incendiary");
@@ -1678,12 +1632,11 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add(ModMaterialItems.item(ModMaterials.LEAD, MaterialShape.PLATE), "Lead Plate");
         add(ModItems.PLATE_MIXED.get(), "Mixed Plate");
         add(ModItems.PLATE_PAA.get(), "PAA Plate");
-        add(ModItems.INSULATOR.get(), "Insulator");
+        // insulator == plate_polymer ("Insulator" steht bei den Materialplatten)
         add(ModMaterialItems.item(ModMaterials.SATURNITE, MaterialShape.PLATE), "Saturnite Plate");
         add(ModMaterialItems.item(ModMaterials.SCHRABIDIUM, MaterialShape.PLATE), "Schrabidium Plate");
         add(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE), "Steel Plate");
         add(ModMaterialItems.item(ModMaterials.ADVANCED_ALLOY, MaterialShape.PLATE), "Advanced Alloy Plate");
-        add(ModMaterialItems.item(ModMaterials.ALUMINUM, MaterialShape.PLATE), "Aluminum Plate");
         add(ModMaterialItems.item(ModMaterials.COPPER, MaterialShape.PLATE), "Copper Plate");
         add(ModMaterialItems.item(ModMaterials.BISMUTH, MaterialShape.PLATE), "Bismuth Plate");
         add(ModItems.PLATE_ARMOR_AJR.get(), "AJR Armor Plate");
@@ -1728,13 +1681,11 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("item.hbm_m.rareearth_raw", "Raw Rare Earth");
         add("item.hbm_m.powder_chlorocalcite", "Chlorocalcite Powder");
         add("item.hbm_m.powder_sodium", "Sodium Powder");
-        add("item.hbm_m.cinnabar", "Cinnabar");
         add("item.hbm_m.sulfur", "Sulfur");
         add("item.hbm_m.rareground_ore_chunk", "Rareground Ore Chunk");
         add("item.hbm_m.lignite", "Lignite");
         add("item.hbm_m.fluorite", "Fluorite");
         add("item.hbm_m.fireclay_ball", "Fireclay Ball");
-        add("item.hbm_m.wood_ash_powder", "Wood Ash Powder");
 
         // КРИСТАЛЛЫ
         add("item.hbm_m.crystal_aluminium", "Aluminium Crystal");
@@ -1989,7 +1940,7 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("block.hbm_m.mush_block_stem", "Mush Block Stem");
         add("block.hbm_m.oil_pipe", "Oil Pipe");
         add("block.hbm_m.ore_alexandrite", "Ore Alexandrite");
-        add("block.hbm_m.ore_aluminium", "Ore Aluminium");
+        add("block.hbm_m.ore_aluminium", "Aluminium-Bearing Ore");
         add("block.hbm_m.ore_australium", "Ore Australium");
         add("block.hbm_m.ore_bedrock_mineral", "Bedrock Mineral Deposit");
         add("block.hbm_m.ore_bedrock_oil", "Bedrock Oil Deposit");
@@ -2084,11 +2035,7 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add(ModBlocks.LARGE_PYLON.get(), "Large Pylon (WIP)");
         add(ModBlocks.HYDRAULIC_FRACKINING_TOWER.get(), "Hydraulic Fracking Tower");
         add(ModBlocks.COOLING_TOWER.get(), "Cooling Tower");
-        add(ModBlocks.TOWER_SMALL.get(), "Cooling Tower (Small)");
-        add("container.hbm_m.cooling_tower", "Cooling Tower");
-        add("info.hbm_m.cooling_tower.status", "Hot Coolant: %d / %d mB | Coolant: %d / %d mB | %s");
-        add("info.hbm_m.cooling_tower.active", "Cooling");
-        add("info.hbm_m.cooling_tower.idle", "Idle");
+        add(ModBlocks.TOWER_SMALL.get(), "Auxiliary Cooling Tower");
         add(ModBlocks.CYCLOTRON.get(), "Cyclotron (WIP)");
         add(ModItems.PART_LITHIUM.get(),   "Lithium Part");
         add(ModItems.PART_BERYLLIUM.get(), "Beryllium Part");
@@ -2198,8 +2145,7 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add(ModBlocks.FLUID_EXHAUST.get(), "Fluid Exhaust");
         add("gui.hbm_m.fluid_duct.overlay.fluid_empty", "No fluid assigned");
         add(ModBlocks.INDUSTRIAL_BOILER.get(), "Industrial Boiler");
-        add(ModBlocks.SOLAR_BOILER.get(), "Solar Boiler");
-            add(ModBlocks.SOLAR_MIRRORS.get(), "Solar Mirrors (WIP)");
+        add(ModBlocks.SOLAR_BOILER.get(), "Solar Tower Boiler");
             add(ModBlocks.HYDROTREATER.get(), "Hydrotreater (WIP)");
             add(ModBlocks.CATALYTIC_REFORMER.get(), "Catalytic Reformer (WIP)");
             add(ModBlocks.DEUTERIUM_TOWER.get(), "Deuterium Tower (WIP)");
@@ -2212,7 +2158,6 @@ public class ModLanguageProviderEn extends LanguageProvider {
             add(ModBlocks.VACUUM_DISTILL.get(), "Vacuum Distill (WIP)");
             add(ModBlocks.TURBOFAN.get(), "Turbofan (WIP)");
             add(ModBlocks.INDUSTRIAL_TURBINE.get(), "Industrial Turbine");
-        add(ModBlocks.TURBINE.get(), "Turbine (WIP)");
         add(ModBlocks.SUBSTATION.get(), "Substation (WIP)");
 
         // --- WIP Machines (3D OBJ models) ---
@@ -2223,7 +2168,7 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("gui.hbm_m.annihilator.pool", "Pool: %s");
         add("gui.hbm_m.annihilator.destroyed", "Destroyed: %s");
         add(ModBlocks.ARC_FURNACE.get(), "Arc Furnace");
-        add(ModBlocks.ASSEMBLY_FACTORY.get(), "Assembly Factory (WIP)");
+        add(ModBlocks.ASSEMBLY_FACTORY.get(), "Assembly Factory");
         add(ModBlocks.AUTOSAW.get(), "Autosaw");
         add(ModBlocks.BEAMLINE.get(), "Beamline");
         add(ModBlocks.BOILER.get(), "Boiler");
@@ -2249,6 +2194,12 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add(ModBlocks.LPW2.get(), "LPW2");
         add(ModItems.COKE_PETROLEUM.get(), "Petroleum Coke");
         add(ModItems.ASH_WOOD.get(), "Wood Ash");
+        // Original ItemPlasticScrap (multiName=false): jede Meta heisst "Plastic Scraps"
+        for (var scrap : ModItems.SCRAP_PLASTIC_VARIANTS.values()) add(scrap.get(), "Plastic Scraps");
+        // Original ItemUnstable.getItemStackDisplayName: feste Namen der Metas 1-3
+        add(ModItems.INGOT_U238M2_1.get(), "ELEMENTS");
+        add(ModItems.INGOT_U238M2_2.get(), "ARSENIC");
+        add(ModItems.INGOT_U238M2_3.get(), "VAULT");
         add(ModItems.ASH_COAL.get(), "Coal Ash");
         add(ModItems.ASH_MISC.get(), "Ash");
         add(ModItems.ASH_FLY.get(), "Fly Ash");
@@ -2271,8 +2222,7 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("container.hbm_m.epress", "Electric Press");
         add(ModBlocks.EXPOSURE_CHAMBER.get(), "Exposure Chamber");
         add("container.hbm_m.exposure_chamber", "Exposure Chamber");
-        add(ModBlocks.FENSU.get(), "Industrial Fan (WIP)");
-        add(ModBlocks.FENSU2.get(), "Reddendite Battery");
+        add(ModBlocks.FENSU2.get(), "FEnSU");
         add("container.hbm_m.machine_battery_redd", "Reddendite Battery");
         add(ModBlocks.FIREBOX.get(), "Firebox");
         add("container.hbm_m.firebox", "Firebox");
@@ -2284,7 +2234,7 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("container.hbm_m.heatex", "Heat Exchanger");
         add(ModBlocks.HEPHAESTUS.get(), "Hephaestus");
         add(ModBlocks.ICF.get(), "Inertial Confinement Fusion (WIP)");
-        add(ModBlocks.INTAKE.get(), "Air Intake (WIP)");
+        add(ModBlocks.INTAKE.get(), "Air Intake");
         add(ModBlocks.KLYSTRON.get(), "Klystron");
         add(ModBlocks.KLYSTRON_CREATIVE.get(), "Creative Klystron");
         add(ModBlocks.MHDT.get(), "MHD Turbine");
@@ -2373,7 +2323,6 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("block.hbm_m.brick_concrete_mossy_stairs", "Mossy Concrete Bricks Stairs");
         add("block.hbm_m.brick_concrete_marked", "Marked Concrete Bricks");
 
-        add("block.hbm_m.concrete_hazard", "Concrete Block with Hazard line");
         add("block.hbm_m.concrete_hazard_slab", "Concrete Slab with Hazard line");
         add("block.hbm_m.concrete_hazard_stairs", "Concrete Stairs with Hazard line");
         add("block.hbm_m.concrete_stairs", "Concrete Stairs");
@@ -2396,7 +2345,6 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("block.hbm_m.block_pu241", "Plutonium-241 Block");
         add("block.hbm_m.block_actinium", "Actinium Block");
         add("block.hbm_m.block_advanced_alloy", "Advanced Alloy Block");
-        add("block.hbm_m.block_aluminum", "Aluminum Block");
         add("block.hbm_m.block_schrabidium", "Schrabidium Block");
         add("block.hbm_m.block_saturnite", "Saturnite Block");
         add("block.hbm_m.block_lead", "Lead Block");
@@ -2493,7 +2441,6 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("block.hbm_m.cinnabar_ore_deepslate", "Deepslate Cinnabar Ore");
         add("block.hbm_m.cobalt_ore_deepslate", "Deepslate Cobalt Ore");
         add("block.hbm_m.uranium_ore", "Uranium Ore");
-        add("block.hbm_m.aluminum_ore", "Aluminum Ore");
         add("block.hbm_m.aluminum_ore_deepslate", "Deepslate Aluminum Ore");
         add("block.hbm_m.titanium_ore", "Titanium Ore");
         add("block.hbm_m.titanium_ore_deepslate", "Deepslate Titanium Ore");
@@ -2586,9 +2533,6 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("gui.hbm_m.industrial_boiler.water", "Water");
         add("gui.hbm_m.industrial_boiler.steam", "Steam");
         add("gui.hbm_m.industrial_boiler.heat", "Heat");
-        add("gui.hbm_m.solar_boiler.sunlight", "Sunlight");
-        add("gui.hbm_m.solar_boiler.mirrors", "Active mirrors: %s");
-        add("container.hbm_m.solar_boiler", "Solar Boiler");
         add("tooltip.hbm_m.barrel.capacity", "Capacity: %s mB");
         add("tooltip.hbm_m.barrel.hot.yes", "Can store hot fluids");
         add("tooltip.hbm_m.barrel.hot.no", "Cannot store hot fluids");
@@ -2598,9 +2542,6 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("tooltip.hbm_m.barrel.highly_corrosive.no", "Cannot store highly corrosive fluids properly");
         add("tooltip.hbm_m.barrel.antimatter.yes", "Can store antimatter");
         add("tooltip.hbm_m.barrel.antimatter.no", "Cannot store antimatter");
-        add("container.hbm_m.solar_mirrors", "Solar Mirrors");
-        add("msg.hbm_m.solar_mirror.sky_access", "Mirror has sky access");
-        add("msg.hbm_m.solar_mirror.no_sky_access", "Mirror is shaded");
         add("container.hbm_m.hydrotreater", "Hydrotreater");
         add("container.hbm_m.catalytic_reformer", "Catalytic Reformer");
         add("container.hbm_m.deuterium_tower", "Deuterium Tower");
@@ -2734,6 +2675,7 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("gui.recipe.consumption", "Consumption");
         add("gui.recipe.input", "Input");
         add("gui.recipe.output", "Output");
+        add("gui.recipe.atPressure", "at");
         add("gui.hbm_m.fluid.empty", "Empty");
 
         add("tooltip.hbm_m.battery.stored", "Stored energy:");
@@ -2928,6 +2870,10 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("text.autoconfig.hbm_m.category.general", "General Settings");
         add("text.autoconfig.hbm_m.option.enableRadiation", "Enable radiation");
         add("text.autoconfig.hbm_m.option.enableChunkRads", "Enable chunk radiation");
+        add("text.autoconfig.hbm_m.option.radiationSystem", "World radiation system");
+        add("text.autoconfig.hbm_m.option.radiationSystem.@Tooltip", "Raptor: the classic per-chunk radiation (default). Advanced: pocket-based radiation field ported from NTM Next (diffusion, shielding blocks, half-life). Takes effect after reloading the world; each system keeps its own saved data.");
+        add("text.autoconfig.hbm_m.option.radiationSystem.RAPTOR", "Raptor (classic)");
+        add("text.autoconfig.hbm_m.option.radiationSystem.ADVANCED", "Advanced (NTM Next based)");
         add("text.autoconfig.hbm_m.option.enableMOTD", "Join MOTD and update notice");
         add("text.autoconfig.hbm_m.option.usePrismSystem", "Use PRISM system (otherwise Simple), WIP");
 
@@ -3311,6 +3257,8 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add(ModItems.MOLD_BLADE.get(), "Cast Mold: Blade");
         add(ModItems.MOLD_BLADES.get(), "Cast Mold: Blades");
         add(ModItems.MOLD_BLOCK.get(), "Cast Mold: Block");
+        add(ModItems.MOLD_C9.get(), "Cast Mold: Small Caliber Casing");
+        add(ModItems.MOLD_C50.get(), "Cast Mold: Large Caliber Casing");
         add(ModItems.MOLD_C357.get(), "Cast Mold: .357 Casing");
         add(ModItems.MOLD_CBUCKSHOT.get(), "Cast Mold: Buckshot");
         add(ModItems.MOLD_GEM.get(), "Cast Mold: Gem");
@@ -3351,7 +3299,6 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add(ModBlocks.MACHINE_RTG.get(), "RTG");
         add(ModBlocks.MACHINE_BIGASSTANK.get(), "Bulk Storage Tank");
         add(ModBlocks.CHARGER.get(), "Charging Pad");
-        add(ModBlocks.YELLOW_BARREL.get(), "Radioactive Waste Barrel");
 
         // Teilchenbeschleuniger
         add(ModBlocks.PA_SOURCE.get(), "Particle Source");
@@ -3406,7 +3353,7 @@ public class ModLanguageProviderEn extends LanguageProvider {
         // Kapsel und ihre Brennstoffe
         add("tooltip.hbm_m.icf_pellet.depletion", "Depletion: %s%%");
         add("tooltip.hbm_m.icf_pellet.fuel", "Fuel: %s / %s");
-        add("tooltip.hbm_m.icf_pellet.heat", "Heat required: %s TU");
+        add("tooltip.hbm_m.icf_pellet.heat", "Heat required: %sTU");
         add("tooltip.hbm_m.icf_pellet.reactivity", "Reactivity multiplier: x%s");
         add("tooltip.hbm_m.icf_pellet.muon", "Muon catalyzed!");
         add("icffuel.hbm_m.hydrogen", "Hydrogen");
@@ -3462,7 +3409,6 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add(ModBlocks.MACHINE_ICF_PRESS.get(), "ICF Fuel Pellet Maker");
         add(ModBlocks.MACHINE_KEYFORGE.get(), "Locksmith Table");
         add("container.hbm_m.machine_keyforge", "Locksmith Table");
-        add("item.hbm_m.key_pin", "Key Pin");
         add(ModBlocks.MACHINE_LARGE_TURBINE.get(), "Industrial Steam Turbine (LEGACY)");
         add(ModBlocks.MACHINE_MISSILE_ASSEMBLY.get(), "Missile Assembly Station");
         add(ModBlocks.MACHINE_PUF6_TANK.get(), "Plutonium Hexafluoride Tank");
@@ -3718,6 +3664,13 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add(ModItems.APPLE_LEAD.get(), "Lead Apple");
         add(ModItems.APPLE_SCHRABIDIUM.get(), "Schrabidium Apple");
         add(ModItems.ARC_ELECTRODE.get(), "Graphite Electrode");
+        add(ModItems.ARC_ELECTRODE_LANTHANIUM.get(), "Lanthanium Electrode");
+        add(ModItems.ARC_ELECTRODE_DESH.get(), "Desh Electrode");
+        add(ModItems.ARC_ELECTRODE_SATURNITE.get(), "Saturnite Electrode");
+        add(ModItems.ARC_ELECTRODE_BURNT_GRAPHITE.get(), "Molten Graphite Electrode");
+        add(ModItems.ARC_ELECTRODE_BURNT_LANTHANIUM.get(), "Molten Lanthanium Electrode");
+        add(ModItems.ARC_ELECTRODE_BURNT_DESH.get(), "Molten Desh Electrode");
+        add(ModItems.ARC_ELECTRODE_BURNT_SATURNITE.get(), "Molten Saturnite Electrode");
         add(ModItems.ARMOR_POLISH.get(), "ShiningArmor™ Armor Polish");
         add(ModItems.ASBESTOS_LEGS.get(), "Fire Proximity Leggings");
         add(ModItems.ASBESTOS_PLATE.get(), "Fire Proximity Chestplate");
@@ -3790,6 +3743,10 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("item.hbm_m.bomb_caller_atomic", "Airstrike Designator (Atomic)");
         add("item.hbm_m.bomb_caller_chlorine", "Airstrike Designator (Poison Gas)");
         add("item.hbm_m.bomb_caller_napalm", "Airstrike Designator (Napalm)");
+        add("item.hbm_m.bomb_caller_orange", "Airstrike Designator (Agent Orange)");
+        add("item.hbm_m.bomb_caller_stinger", "Airstrike Designator (VT Stinger)");
+        add("item.hbm_m.bomb_caller_boxcar", "Airstrike Designator (Boxcar)");
+        add("item.hbm_m.bomb_caller_pc", "Airstrike Designator (Cloud)");
         add("item.hbm_m.bot_prime_spawn_egg", "BOT Prime Spawn Egg");
         add("item.hbm_m.circuit_numitron", "Numitron Tube Circuit");
         add("item.hbm_m.maskman_spawn_egg", "Maskman Spawn Egg");
@@ -3806,10 +3763,6 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add("item.hbm_m.rbmk_fuel_test", "RBMK Fuel Rod (Test)");
         add("item.hbm_m.rocket_himars_single", "HIMARS Rocket (Single)");
         add("item.hbm_m.rocket_himars_single_tb", "HIMARS Rocket (Single Thermobaric)");
-        add("item.hbm_m.rocket_turret_demo", "Turret Rocket (Demolition)");
-        add("item.hbm_m.rocket_turret_heat", "Turret Rocket (HEAT)");
-        add("item.hbm_m.rocket_turret_inc", "Turret Rocket (Incendiary)");
-        add("item.hbm_m.rocket_turret_phosphorus", "Turret Rocket (Phosphorus)");
         add("item.hbm_m.ufo_spawn_egg", "UFO Spawn Egg");
         add("item.hbm_m.upgrade_5g", "5G Upgrade");
         add("item.hbm_m.upgrade_screm", "Screaming Upgrade");
@@ -4466,12 +4419,9 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add(ModItems.GLYPHID_MEAT.get(), "Glyphid Meat");
         add(ModItems.GLYPHID_MEAT_GRILLED.get(), "Grilled Glyphid Meat");
         add(ModItems.GOGGLES.get(), "Protection Goggles");
-        add(ModItems.GRENADE_UNIVERSAL.get(), "Grenade");
         add(ModItems.GUN_B92.get(), "§9B92 Energy Pistol§r");
-        add(ModItems.GUN_FIREEXT.get(), "Fire Extinguisher");
         add(ModItems.GUN_KIT_1.get(), "Gun Oil");
         add(ModItems.GUN_KIT_2.get(), "Gun Repair Kit");
-        add(ModItems.GUN_PA_RANGED.get(), "Power Armor - Ranged Controller");
         add(ModItems.HAND_DRILL.get(), "Hand Drill");
         add(ModItems.HAND_DRILL_DESH.get(), "Desh Hand Drill");
         add(ModItems.HAZMAT_BOOTS_GREY.get(), "High-Performance Hazmat Boots");
@@ -4507,7 +4457,6 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add(ModItems.ICF_PELLET_DEPLETED.get(), "Depleted ICF Fuel Pellet");
         add(ModItems.ICF_PELLET_EMPTY.get(), "Empty ICF Fuel Pellet");
         add(ModItems.INDUSTRIAL_MAGNET.get(), "Industrial Magnet");
-        add(ModItems.INGOT_ALUMINIUM.get(), "Aluminium Ingot");
         add(ModItems.INJECTOR_5HTP.get(), "5-HTP Autoinjector");
         add(ModItems.INJECTOR_KNIFE.get(), "8 Inch Blade Autoinjector");
         add(ModItems.INK.get(), "林 Ink");
@@ -4582,18 +4531,13 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add(ModItems.MIKE_DEUT.get(), "Deuterium Tank");
         add(ModItems.MIKE_KIT.get(), "Ivy Mike Kit");
         add(ModItems.MIRROR_TOOL.get(), "Mirror Adjustment Tool");
-        add(ModItems.MISSILE_ANTI_BALLISTIC.get(), "Anti-Ballistic Missile");
+        add(ModItems.MISSILE_ABM.get(), "Anti-Ballistic Missile");
         add(ModItems.MISSILE_CARRIER.get(), "HTR-01 Carrier Rocket");
         add(ModItems.MISSILE_CUSTOM.get(), "Custom Missile");
         add(ModItems.MISSILE_ENDO.get(), "Endothermic Missile");
         add(ModItems.MISSILE_EXO.get(), "Exothermic Missile");
         add(ModItems.MISSILE_KIT.get(), "Missile Kit");
         add(ModItems.MORNING_GLORY.get(), "Morning Glory");
-        add(ModItems.MP_C_1.get(), "Tier 1 Missile Targeting Circuit");
-        add(ModItems.MP_C_2.get(), "Tier 2 Missile Targeting Circuit");
-        add(ModItems.MP_C_3.get(), "Tier 3 Missile Targeting Circuit");
-        add(ModItems.MP_C_4.get(), "Tier 4 Missile Targeting Circuit");
-        add(ModItems.MP_C_5.get(), "Tier 5 Missile Targeting Circuit");
         add(ModItems.MUCHO_MANGO.get(), "AriZona Mucho Mango");
         add(ModItems.MULTI_KIT.get(), "Multi Purpose Bomb Kit");
         add(ModItems.N2_CHARGE.get(), "Large Explosive Charge");
@@ -5043,13 +4987,6 @@ public class ModLanguageProviderEn extends LanguageProvider {
         add(ModItems.WASTE_U233.get(), "Depleted Uranium-233 Fuel");
         add(ModItems.WASTE_U235.get(), "Depleted Uranium-235 Fuel");
         add(ModItems.WIRE_DENSE.get(), "Dense Wire");
-        add(ModItems.CASSETTE_AMS_SIREN.get(), "Cassette: AMS Siren");
-        add(ModItems.CASSETTE_BEEP_SIREN.get(), "Cassette: Beep Siren");
-        add(ModItems.CASSETTE_CLASSIC_SIREN.get(), "Cassette: Classic Siren");
-        add(ModItems.CASSETTE_NOSTROMO_SIREN.get(), "Cassette: Nostromo Self Destruct");
-        add(ModItems.CASSETTE_REGULAR_SIREN.get(), "Cassette: Standard Siren");
-        add(ModItems.CASSETTE_STRIDER_SIREN.get(), "Cassette: Missile Silo Siren");
-        add(ModItems.CASSETTE_SWEEP_SIREN.get(), "Cassette: Sweep Siren");
         add(ModItems.WATCH.get(), "Broken Pocket Watch");
         add(ModItems.WD40.get(), "VT-40");
         add(ModItems.WILD_P.get(), "Wild Pegasus Dry Whiskey");

@@ -54,7 +54,21 @@ import net.minecraft.world.phys.shapes.Shapes;
 import net.minecraft.world.phys.shapes.VoxelShape;
 
 public class UniversalMachinePartBlock extends BaseEntityBlock
-        implements IDetonatable, com.hbm_m.interfaces.ILookOverlay {
+        implements IDetonatable, com.hbm_m.interfaces.ILookOverlay, com.hbm_m.api.block.IToolable {
+
+    /** Original {@code BlockDummyable}: Werkzeuge auf eine Dummy-Zelle wirken auf den Kern. */
+    @Override
+    public boolean onScrew(Level world, net.minecraft.world.entity.player.Player player, BlockPos pos, net.minecraft.core.Direction side, float fX, float fY, float fZ, net.minecraft.world.InteractionHand hand, ToolType tool) {
+        BlockEntity be = world.getBlockEntity(pos);
+        if (!(be instanceof IMultiblockPart part)) return false;
+        BlockPos controllerPos = part.getControllerPos();
+        if (controllerPos == null) return false;
+        if (world.getBlockState(controllerPos).getBlock() instanceof com.hbm_m.api.block.IToolable toolable) {
+            return toolable.onScrew(world, player, controllerPos, side, fX, fY, fZ, hand, tool);
+        }
+        return false;
+    }
+
 
     /**
      * Fadenkreuz-Anzeige: Der Spieler schaut fast immer auf eine Dummy-Zelle, nicht auf das Kern-
@@ -84,6 +98,10 @@ public class UniversalMachinePartBlock extends BaseEntityBlock
         Block controllerBlock = controllerState.getBlock();
         if (controllerBlock instanceof IDetonatable detonatable) {
             return detonatable.onDetonate(level, controllerPos, controllerState, player);
+        }
+        // audit10: Original BlockDummyable - Zuender auf eine Dummy-Zelle zielen auf den Kern (IBomb.explode)
+        if (controllerBlock instanceof com.hbm_m.api.bomb.IBomb bomb) {
+            return bomb.explode(level, controllerPos).wasSuccessful();
         }
         return false;
     }
@@ -162,33 +180,42 @@ public class UniversalMachinePartBlock extends BaseEntityBlock
         if (controllerPos == null) return Shapes.block();
 
         BlockState controllerState = pLevel.getBlockState(controllerPos);
-        Block controllerBlock = controllerState.getBlock();
-
-        if (!(controllerBlock instanceof IMultiblockController controller)) {
+        VoxelShape masterShape = resolveMasterShape(pLevel, controllerPos, controllerState, pContext);
+        if (masterShape == null) {
             return Shapes.block();
         }
 
-        VoxelShape masterShape;
+        // w16b: nur der Anteil dieser Zelle (siehe MultiblockStructureHelper.cellShape) - sonst verwirft der
+        // Server Klicks, deren Treffpunkt in einer anderen Zelle liegt. Den Umriss der ganzen Maschine
+        // zeichnet MultiblockOutlineForge.
+        return MultiblockStructureHelper.cellShape(masterShape, pPos.subtract(controllerPos));
+    }
 
+    /**
+     * w16b: Form der ganzen Maschine relativ zum Kern, wie sie die Dummy-Zellen verwenden
+     * ({@code getCustomMasterVoxelShape} -> Tuer -> Teilekarte). {@code null}, wenn am Kern kein Controller steht.
+     */
+    @Nullable
+    public static VoxelShape resolveMasterShape(BlockGetter level, BlockPos controllerPos, BlockState controllerState, CollisionContext ctx) {
+        Block controllerBlock = controllerState.getBlock();
+        if (!(controllerBlock instanceof IMultiblockController controller)) {
+            return null;
+        }
         VoxelShape customShape = controller.getCustomMasterVoxelShape(controllerState);
         if (customShape != null && !customShape.isEmpty()) {
-            masterShape = customShape;
-        } else if (controllerBlock instanceof DoorBlock doorBlock) {
-            DoorDecl decl = DoorDeclRegistry.getById(doorBlock.getDoorDeclId());
-
-            if (decl != null && decl.isDynamicShape()) {
-                masterShape = doorBlock.getShape(controllerState, pLevel, controllerPos, pContext);
-            } else {
-                Direction facing = controllerState.getValue(DoorBlock.FACING);
-                masterShape = controller.getStructureHelper().generateShapeFromParts(facing);
-            }
-        } else {
-            Direction facing = controllerState.getValue(HorizontalDirectionalBlock.FACING);
-            masterShape = controller.getStructureHelper().generateShapeFromParts(facing);
+            return customShape;
         }
-
-        BlockPos vecToController = controllerPos.subtract(pPos);
-        return masterShape.move(vecToController.getX(), vecToController.getY(), vecToController.getZ());
+        if (controllerBlock instanceof DoorBlock doorBlock) {
+            DoorDecl decl = DoorDeclRegistry.getById(doorBlock.getDoorDeclId());
+            if (decl != null && decl.isDynamicShape()) {
+                return doorBlock.getShape(controllerState, level, controllerPos, ctx);
+            }
+            return controller.getStructureHelper().generateShapeFromParts(controllerState.getValue(DoorBlock.FACING));
+        }
+        if (controller.getStructureHelper() == null || !controllerState.hasProperty(HorizontalDirectionalBlock.FACING)) {
+            return null;
+        }
+        return controller.getStructureHelper().generateShapeFromParts(controllerState.getValue(HorizontalDirectionalBlock.FACING));
     }
 
     @Override
@@ -337,6 +364,11 @@ public class UniversalMachinePartBlock extends BaseEntityBlock
                 if (ctrlBlock instanceof DoorBlock || ctrlBlock instanceof TransitionSealBlock) {
                     return Shapes.empty();
                 }
+                // w16b (Wunsch N-Z): Teilform aus bounding-Liste -> Zelle verdeckt keine Nachbarflaechen
+                if (ctrlBlock instanceof IMultiblockController mc) {
+                    VoxelShape master = mc.getCustomMasterVoxelShape(level.getBlockState(ctrlPos));
+                    if (master != null && !master.isEmpty()) return Shapes.empty();
+                }
             }
         }
         
@@ -394,7 +426,7 @@ public class UniversalMachinePartBlock extends BaseEntityBlock
             BlockState controllerState = pLevel.getBlockState(controllerPos);
             if (controllerState.getBlock() instanceof IMultiblockController) {
                 BlockEntity ctrlBe = pLevel.getBlockEntity(controllerPos);
-                if (ctrlBe instanceof DoorBlockEntity && hasScrewdriver(pPlayer)) {
+                if (ctrlBe instanceof DoorBlockEntity door && hasScrewdriver(pPlayer) && !(door.isLocked() && !pPlayer.isShiftKeyDown())) {
                     return InteractionResult.sidedSuccess(pLevel.isClientSide());
                 }
                 //? if < 1.21.1 {
@@ -417,6 +449,20 @@ public class UniversalMachinePartBlock extends BaseEntityBlock
                 || player.getItemInHand(net.minecraft.world.InteractionHand.OFF_HAND).getItem() == ModItems.SCREWDRIVER.get()
                 || player.getItemInHand(net.minecraft.world.InteractionHand.MAIN_HAND).getItem() == ModItems.SCREWDRIVER_DESH.get()
                 || player.getItemInHand(net.minecraft.world.InteractionHand.OFF_HAND).getItem() == ModItems.SCREWDRIVER_DESH.get();
+    }
+
+    /** audit10: Original {@code BlockDummyable} - Explosion auf einer Dummy-Zelle laeuft in die Kernlogik ({@code findCore}). */
+    @Override
+    public void onBlockExploded(BlockState state, Level level, BlockPos pos, net.minecraft.world.level.Explosion explosion) {
+        if (!level.isClientSide && level.getBlockEntity(pos) instanceof IMultiblockPart part && part.getControllerPos() != null) {
+            BlockPos controllerPos = part.getControllerPos();
+            BlockState controllerState = level.getBlockState(controllerPos);
+            if (controllerState.getBlock() instanceof IMultiblockController controller && controller.forwardPartExplosions()) {
+                controllerState.getBlock().onBlockExploded(controllerState, level, controllerPos, explosion);
+                return;
+            }
+        }
+        super.onBlockExploded(state, level, pos, explosion);
     }
 
     @Override

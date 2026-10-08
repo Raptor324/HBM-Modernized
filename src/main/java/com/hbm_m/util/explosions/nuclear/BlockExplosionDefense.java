@@ -185,6 +185,12 @@ public class BlockExplosionDefense {
             // Получаем блок из предмета
             var block = blockItem.getBlock();
 
+            // Bloecke des Originals mit ItemBlockBlastInfo zeigen dort schon "Blast Resistance" (1:1) -
+            // keine zweite, abweichende Zeile.
+            if (com.hbm_m.item.block.ItemBlockBlastInfo.has(block)) {
+                return;
+            }
+
             // Проверяем, это ли один из наших модульных блоков
             if (isModularBlock(block)) {
                 // Определяем коэффициент защиты по типу блока

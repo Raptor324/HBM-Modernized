@@ -2,34 +2,35 @@ package com.hbm_m.entity.missile;
 
 import java.util.List;
 
+import com.hbm_m.block.ModBlocks;
+import com.hbm_m.blockentity.machines.SoyuzCapsuleBlockEntity;
 import com.hbm_m.platform.PlatformHooks;
+
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.NonNullList;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
-import net.minecraft.world.Containers;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
-import net.minecraft.world.entity.MoverType;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
+import net.minecraft.world.phys.Vec3;
 
 /**
- * Simplified stand-in for the legacy player-pilotable {@code EntitySoyuzCapsule}:
- * descends at a fixed speed from orbit height and drops its cargo payload on the
- * ground near the launcher's designated target, then removes itself. No parachute
- * animation/physics or player-boarding GUI - that's the separate legacy
- * {@code ItemSoyuz}/capsule-block feature, not part of the launcher itself.
+ * 1:1 {@code EntitySoyuzCapsule}: die Frachtkapsel einer Sojus im Frachtmodus. Sie startet auf Hoehe 600 ueber dem
+ * Ziel, faellt am Fallschirm mit hoechstens 0,2 Bloecken/Tick und wird beim ersten Nicht-Luft-Block zu einer
+ * {@code soyuz_capsule} einen Block hoeher - mit den 18 Frachtplaetzen und der Rakete im Platz 18.
  */
 public class SoyuzCapsuleEntity extends Entity {
 
-    private static final double DESCENT_SPEED = 0.6D;
-
+    public int soyuz;
     private final NonNullList<ItemStack> payload = NonNullList.withSize(18, ItemStack.EMPTY);
 
     public SoyuzCapsuleEntity(EntityType<? extends SoyuzCapsuleEntity> type, Level level) {
         super(type, level);
         this.noCulling = true;
+        this.noPhysics = true;
     }
 
     public void setPayload(List<ItemStack> items) {
@@ -40,44 +41,53 @@ public class SoyuzCapsuleEntity extends Entity {
 
     @Override
     public void tick() {
-        super.tick();
 
-        setDeltaMovement(0.0D, -DESCENT_SPEED, 0.0D);
-        move(MoverType.SELF, getDeltaMovement());
+        this.xo = this.xOld = getX();
+        this.yo = this.yOld = getY();
+        this.zo = this.zOld = getZ();
+        Vec3 m = getDeltaMovement();
+        this.setPos(getX() + m.x, getY() + m.y, getZ() + m.z);
 
-        if (level().isClientSide) {
-            return;
-        }
+        if (m.y > -0.2) setDeltaMovement(m.x, m.y - 0.02, m.z);
 
-        if (this.onGround() || getY() < level().getMinBuildHeight()) {
-            for (ItemStack stack : payload) {
-                if (!stack.isEmpty()) {
-                    Containers.dropItemStack(level(), getX(), getY(), getZ(), stack);
+        if (getY() > 600) setPos(getX(), 600, getZ());
+
+        BlockPos at = new BlockPos((int) getX(), (int) getY(), (int) getZ());
+        if (!level().getBlockState(at).isAir()) {
+
+            this.discard();
+
+            if (!level().isClientSide) {
+                BlockPos pos = new BlockPos((int) getX(), (int) (getY() + 1), (int) getZ());
+                level().setBlockAndUpdate(pos, ModBlocks.SOYUZ_CAPSULE.get().defaultBlockState());
+
+                if (level().getBlockEntity(pos) instanceof SoyuzCapsuleBlockEntity capsule) {
+                    for (int i = 0; i < payload.size(); i++) {
+                        capsule.setItem(i, payload.get(i));
+                    }
+                    capsule.setItem(18, com.hbm_m.item.special.ItemSoyuz.forSkin(soyuz));
                 }
             }
-            this.discard();
         }
     }
 
     //? if < 1.21.1 {
-
     @Override
     protected void defineSynchedData() {
     }
     //?} else {
     /*@Override
     protected void defineSynchedData(net.minecraft.network.syncher.SynchedEntityData.Builder builder) {
-
-    
     }
     *///?}
 
     @Override
     protected void readAdditionalSaveData(CompoundTag tag) {
-        ListTag list = tag.getList("payload", 10);
+        soyuz = tag.getInt("soyuz");
+        ListTag list = tag.getList("items", 10);
         for (int i = 0; i < list.size(); i++) {
             CompoundTag itemTag = list.getCompound(i);
-            int slot = itemTag.getInt("Slot");
+            int slot = itemTag.getByte("slot");
             if (slot >= 0 && slot < payload.size()) {
                 payload.set(slot, PlatformHooks.itemStackOf(itemTag, PlatformHooks.bestEffortProvider()));
             }
@@ -86,26 +96,32 @@ public class SoyuzCapsuleEntity extends Entity {
 
     @Override
     protected void addAdditionalSaveData(CompoundTag tag) {
+        tag.putInt("soyuz", soyuz);
         ListTag list = new ListTag();
         for (int i = 0; i < payload.size(); i++) {
             ItemStack stack = payload.get(i);
             if (!stack.isEmpty()) {
                 CompoundTag itemTag = new CompoundTag();
-                itemTag.putInt("Slot", i);
+                itemTag.putByte("slot", (byte) i);
                 PlatformHooks.saveItemStack(stack, itemTag, PlatformHooks.bestEffortProvider());
                 list.add(itemTag);
             }
         }
-        tag.put("payload", list);
+        tag.put("items", list);
     }
 
     @Override
     public boolean shouldRenderAtSqrDistance(double distance) {
-        return distance < 500_000.0D * 500_000.0D;
+        return distance < 500000;
     }
 
     @Override
     public boolean fireImmune() {
+        return true;
+    }
+
+    @Override
+    public boolean isNoGravity() {
         return true;
     }
 

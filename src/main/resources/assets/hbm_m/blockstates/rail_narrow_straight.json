@@ -1,0 +1,52 @@
+{
+  "variants": {
+    "meta=0": {
+      "model": "hbm_m:block/rail/rail_narrow_straight_r0"
+    },
+    "meta=1": {
+      "model": "hbm_m:block/rail/rail_narrow_straight_r0"
+    },
+    "meta=2": {
+      "model": "hbm_m:block/rail/rail_narrow_straight_r90"
+    },
+    "meta=3": {
+      "model": "hbm_m:block/rail/rail_narrow_straight_r90"
+    },
+    "meta=4": {
+      "model": "hbm_m:block/rail/rail_narrow_straight_r0"
+    },
+    "meta=5": {
+      "model": "hbm_m:block/rail/rail_narrow_straight_r0"
+    },
+    "meta=6": {
+      "model": "hbm_m:block/rail/rail_narrow_straight_r0"
+    },
+    "meta=7": {
+      "model": "hbm_m:block/rail/rail_narrow_straight_r0"
+    },
+    "meta=8": {
+      "model": "hbm_m:block/rail/rail_narrow_straight_r0"
+    },
+    "meta=9": {
+      "model": "hbm_m:block/rail/rail_narrow_straight_r0"
+    },
+    "meta=10": {
+      "model": "hbm_m:block/rail/rail_narrow_straight_r0"
+    },
+    "meta=11": {
+      "model": "hbm_m:block/rail/rail_narrow_straight_r0"
+    },
+    "meta=12": {
+      "model": "hbm_m:block/rail/rail_narrow_straight_r90"
+    },
+    "meta=13": {
+      "model": "hbm_m:block/rail/rail_narrow_straight_r90"
+    },
+    "meta=14": {
+      "model": "hbm_m:block/rail/rail_narrow_straight_r0"
+    },
+    "meta=15": {
+      "model": "hbm_m:block/rail/rail_narrow_straight_r0"
+    }
+  }
+}

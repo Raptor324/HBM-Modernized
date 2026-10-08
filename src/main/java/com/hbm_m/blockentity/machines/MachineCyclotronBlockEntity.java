@@ -28,7 +28,7 @@ import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
 
-public class MachineCyclotronBlockEntity extends BaseMachineBlockEntity implements IFluidStandardTransceiverMK2 {
+public class MachineCyclotronBlockEntity extends BaseMachineBlockEntity implements IFluidStandardTransceiverMK2, com.hbm_m.interfaces.IConditionalInvAccess {
 
     public static final long MAX_POWER = 100_000_000L;
     public static final int BASE_CONSUMPTION = 1_000_000;
@@ -60,6 +60,8 @@ public class MachineCyclotronBlockEntity extends BaseMachineBlockEntity implemen
     private final UpgradeManager upgradeManager = new UpgradeManager();
 
     private int progress;
+    /** Alte 5x5x5-Lagen schon geprueft (nicht gespeichert: einmal je Laden). */
+    private boolean legacyCellsChecked;
 
     public MachineCyclotronBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.CYCLOTRON_BE.get(), pos, state, INVENTORY_SIZE, MAX_POWER, 5_000_000L);
@@ -75,6 +77,9 @@ public class MachineCyclotronBlockEntity extends BaseMachineBlockEntity implemen
             return;
         }
 
+        if (!blockEntity.legacyCellsChecked) {
+            blockEntity.legacyCellsChecked = com.hbm_m.block.machines.MachineCyclotronBlock.removeLegacyCells(level, pos);
+        }
         blockEntity.ensureNetworkInitialized();
         blockEntity.chargeFromBattery();
         blockEntity.upgradeManager.checkSlots(blockEntity.inventory, SLOT_UPGRADE_START, SLOT_UPGRADE_END_EXCLUSIVE - 1, VALID_UPGRADES);
@@ -364,4 +369,37 @@ public class MachineCyclotronBlockEntity extends BaseMachineBlockEntity implemen
         net.minecraft.core.Direction facing = state.getValue(com.hbm_m.block.machines.MachineCyclotronBlock.FACING);
         return block.getStructureHelper().getRenderBoundingBox(worldPosition, facing, 0.0);
     }
+
+    // ─── Original IConditionalInvAccess: je Ringseite drei Anschlusszellen fuer die drei Spuren ───────────
+
+    //? if forge {
+    /** Original: die drei Zellen jeder Seite fuehren Eingang/Ziel der Spur 0/1/2 plus alle Ausgaenge; sonst nur Ausgaenge. */
+    @Override
+    public net.minecraftforge.items.IItemHandler getConditionalItemHandler(net.minecraft.core.BlockPos part, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        for (net.minecraft.core.Direction dir : new net.minecraft.core.Direction[] {
+                net.minecraft.core.Direction.NORTH, net.minecraft.core.Direction.SOUTH,
+                net.minecraft.core.Direction.WEST, net.minecraft.core.Direction.EAST }) {
+            net.minecraft.core.Direction rot = dir.getClockWise(); // ForgeDirection.getRotation(UP)
+            net.minecraft.core.BlockPos mid = worldPosition.relative(dir, 2);
+            net.minecraft.core.BlockPos a = mid.relative(rot), b = mid.relative(rot, -1);
+            if (part.getX() == a.getX() && part.getZ() == a.getZ()) return itemAccess(new int[] {0, 3, 6, 7, 8});
+            if (part.getX() == mid.getX() && part.getZ() == mid.getZ()) return itemAccess(new int[] {1, 4, 6, 7, 8});
+            if (part.getX() == b.getX() && part.getZ() == b.getZ()) return itemAccess(new int[] {2, 5, 6, 7, 8});
+        }
+        return itemAccess(new int[] {6, 7, 8});
+    }
+
+    @Override
+    public @org.jetbrains.annotations.NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(@org.jetbrains.annotations.NotNull net.minecraftforge.common.capabilities.Capability<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER && side != null) {
+            net.minecraftforge.items.IItemHandler h = itemAccess(new int[] { });
+            return net.minecraftforge.common.util.LazyOptional.of(() -> h).cast();
+        }
+        return super.getCapability(cap, side);
+    }
+
+    private net.minecraftforge.items.IItemHandler itemAccess(int[] slots) {
+        return com.hbm_m.blockentity.SidedItemAccess.fixed(() -> inventory, slots, (slot, stack) -> slot < SLOT_OUTPUT_START && isItemValidForSlot(slot, stack), (slot, stack) -> slot >= SLOT_OUTPUT_START && slot < SLOT_OUTPUT_END_EXCLUSIVE);
+    }
+    //?}
 }

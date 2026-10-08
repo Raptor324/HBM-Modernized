@@ -131,7 +131,8 @@ public class MachineRadarBlockEntity extends BaseMachineBlockEntity {
     public final List<int[]> nearbyMissiles = new ArrayList<>();
 
     public MachineRadarBlockEntity(BlockPos pos, BlockState state) {
-        super(ModBlockEntities.RADAR_BE.get(), pos, state, SLOT_COUNT, 250_000L, 2_500L, 0L);
+        // Original: maxPower = 100_000, Annahme bis zum vollen Speicher
+        super(ModBlockEntities.RADAR_BE.get(), pos, state, SLOT_COUNT, 100_000L, 100_000L, 0L);
     }
 
     /**
@@ -569,7 +570,7 @@ public class MachineRadarBlockEntity extends BaseMachineBlockEntity {
             if (missile.getY() < worldPosition.getY() + RADAR_BUFFER) {
                 continue;
             }
-            if (!missile.canBeDetectedByRadar()) {
+            if (!missile.canBeSeenBy(this)) {
                 continue;
             }
             int type = getTargetTypeIndex(missile);
@@ -981,6 +982,7 @@ public class MachineRadarBlockEntity extends BaseMachineBlockEntity {
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.readNbtData(tag, registries);
+        setEnergyCapacity(100_000L); // alte Welten: frueher 250000
         progress = tag.getInt("progress");
         maxProgress = tag.getInt("max_progress");
         if (maxProgress <= 0) {

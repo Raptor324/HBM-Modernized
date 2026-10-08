@@ -7,7 +7,6 @@ import java.util.Map.Entry;
 
 import com.google.gson.JsonObject;
 import com.google.gson.stream.JsonWriter;
-import com.hbm_m.util.EnergyFormatter;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.core.registries.BuiltInRegistries;
@@ -46,28 +45,30 @@ public class FT_Coolable extends FluidTrait {
     
     @Override
     public void addInfoHidden(List<Component> info) {
-        info.add(Component.literal("Thermal capacity: "
-                        + EnergyFormatter.formatTooltipNumber(heatEnergy) + " TU per "
-                        + amountReq + " mB")
-                .withStyle(ChatFormatting.RED));
-        for(CoolingType type : CoolingType.values()) {
+        info.add(Component.translatable("hbmfluid.trait.thermalCapacity").append(": " + heatEnergy + " ")
+                .append(Component.translatable("hbmfluid.trait.perTU")).append(" " + amountReq + "mB").withStyle(ChatFormatting.RED));
+        for (CoolingType type : CoolingType.values()) {
             double eff = getEfficiency(type);
-            if(eff > 0) {
-                info.add(Component.literal("[" + type.name + "] ")
-                        .withStyle(ChatFormatting.YELLOW)
-                        .append(Component.literal("Efficiency: " + ((int) (eff * 100D)) + "%").withStyle(ChatFormatting.AQUA)));
+            if (eff > 0) {
+                info.add(Component.literal("[").append(type.getLocalizedName()).append("] ").withStyle(ChatFormatting.YELLOW)
+                        .append(Component.translatable("hbmfluid.trait.efficiency").append(": " + ((int) (eff * 100D)) + "%").withStyle(ChatFormatting.AQUA)));
             }
         }
     }
     
     public enum CoolingType {
-        TURBINE("Turbine Steam"),
-        HEATEXCHANGER("Coolable");
+        TURBINE("steam"),
+        HEATEXCHANGER("coolable");
         
         public final String name;
         
         CoolingType(String name) {
             this.name = name;
+        }
+
+        /** 1:1 getLocalizedName(): hbmfluid.trait.<name> */
+        public Component getLocalizedName() {
+            return Component.translatable("hbmfluid.trait." + this.name);
         }
     }
 

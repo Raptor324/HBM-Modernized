@@ -131,8 +131,8 @@ public class ModFluids {
     public static final FluidEntry AIR = registerGas("air", 0xE7EAEB);
 
     // Blast furnace fluids (airblast speed booster / flue gas output)
-    public static final FluidEntry AIRBLAST = registerGas("airblast", 0xE7EAEB);
-    public static final FluidEntry FLUE = registerGas("flue", 0x4A4A4A);
+    public static final FluidEntry AIRBLAST = registerGas("airblast", 0xFFDADA);
+    public static final FluidEntry FLUE = registerGas("flue", 0x131313);
 
     // Oils and petroleum products
     public static final FluidEntry CRUDE_OIL = registerHeavyFluid("crude_oil", 0x020202);

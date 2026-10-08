@@ -188,12 +188,8 @@ public class BoxDuctBlock extends BaseEntityBlock implements ILookOverlay {
 
     /** {@code FluidDuctBase.onBlockActivated}: der Identifikator setzt die Fluessigkeit. */
     private InteractionResult identify(Level level, BlockPos pos, Player player, ItemStack held) {
-        if (kind != BoxDuctGeometry.Kind.FLUID || held.isEmpty() || !(held.getItem() instanceof IItemFluidIdentifier id)) return InteractionResult.PASS;
-        if (!level.isClientSide) {
-            Fluid fluid = id.getType(level, pos, held);
-            if (fluid != null) com.hbm_m.api.fluids.PipeTypeChanger.apply(level, pos, fluid == ModFluids.NONE.getSource() ? Fluids.EMPTY : fluid, player.isShiftKeyDown());
-        }
-        return InteractionResult.sidedSuccess(level.isClientSide);
+        if (kind != BoxDuctGeometry.Kind.FLUID || held.isEmpty() || !(held.getItem() instanceof IItemFluidIdentifier)) return InteractionResult.PASS;
+        return com.hbm_m.api.fluids.PipeTypeChanger.onIdentifier(level, pos, player, held) ? InteractionResult.sidedSuccess(level.isClientSide) : InteractionResult.PASS;
     }
 
     @Override

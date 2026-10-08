@@ -9,15 +9,21 @@
     "CreeperMixin",
     "CreeperAccessor",
     "MobAccessor",
+    "LivingEntityUseAccessor",
     "LivingEntityRadiationMixin",
     "SuperGlueSelectionHelperMixin",
     "ContraptionMixin",
     "LevelChunkSilentRemovalMixin",
+    "LevelChunkNtmRadiationMixin",
     "ContraptionWindowMixin",
     "SubLevelMoveWindowMixin",
     "SubLevelRelinkMixin",
     "SubLevelAssembleExpansionMixin",
-    "HoneyGlueSelectionExpansionMixin"
+    "HoneyGlueSelectionExpansionMixin",
+    "ChunkMapAccessor",
+    "LevelImpactMixin",
+    "ImpactSinglePoolElementMixin",
+    "ImpactConfiguredFeatureMixin"
   ],
   "server": [
   ],
@@ -28,7 +34,10 @@
     "LivingEntityRendererInvoker",
     "client.MixinItemRendererTemplatePreview",
     "client.MixinAbstractClientPlayerSkin",
-    "client.MixinPlayerRendererHide"
+    "client.MixinPlayerRendererHide",
+    "client.ClientLevelImpactMixin",
+    "client.DimensionSpecialEffectsImpactMixin",
+    "client.LevelRendererImpactMixin"
   ],
   "injectors": {
     "defaultRequire": 1

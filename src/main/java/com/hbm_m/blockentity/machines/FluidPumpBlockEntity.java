@@ -33,7 +33,7 @@ import net.minecraft.world.level.material.Fluids;
  * Ориентация: хранится в BlockState направление «вперёд» (direction.name() в NBT),
  * входная сторона — повёрнутая на 90° по часовой CW, выходная — её противоположность.
  */
-public class FluidPumpBlockEntity extends BaseHbmBlockEntity implements IFluidStandardTransceiverMK2 {
+public class FluidPumpBlockEntity extends BaseHbmBlockEntity implements IFluidStandardTransceiverMK2, com.hbm_m.api.tile.IControlReceiver {
 
     /** Размер буфера по умолчанию (мБ). */
     public int bufferSize = 100;
@@ -148,6 +148,27 @@ public class FluidPumpBlockEntity extends BaseHbmBlockEntity implements IFluidSt
     public void setFacing(Direction facing) {
         this.facing = facing != null && facing.getAxis() != Direction.Axis.Y ? facing : Direction.NORTH;
         setChanged();
+    }
+
+    /** Original {@code receiveControl} (GUIPump): Durchsatz 0-10.000 mB, Druck 0-5 PU, Prioritaet. */
+    @Override
+    public void receiveControl(CompoundTag data) {
+        if (data.contains("capacity")) {
+            this.bufferSize = net.minecraft.util.Mth.clamp(data.getInt("capacity"), 0, 10_000);
+        }
+        if (data.contains("pressure")) {
+            this.tank.withPressure(net.minecraft.util.Mth.clamp(data.getByte("pressure"), 0, 5));
+        }
+        if (data.contains("priority")) {
+            this.priority = fromOrdinal(ConnectionPriority.class, data.getByte("priority"));
+        }
+        setChanged();
+        if (level != null) level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
+    }
+
+    @Override
+    public boolean hasPermission(net.minecraft.world.entity.player.Player player) {
+        return player.distanceToSqr(worldPosition.getX() + 0.5D, worldPosition.getY() + 0.5D, worldPosition.getZ() + 0.5D) <= 128.0D;
     }
 
     // =====================================================================================

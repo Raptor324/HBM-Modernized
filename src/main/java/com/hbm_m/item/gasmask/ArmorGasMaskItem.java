@@ -106,21 +106,14 @@ public class ArmorGasMaskItem extends ArmorItem implements IGasMask, ITooltipPro
 
     @Override
     public void appendHbmTooltip(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
-        if (!IGasMask.hasFilter(stack)) {
-            tooltip.add(Component.translatable("tooltip.hbm_m.mask.noFilter").withStyle(ChatFormatting.RED));
-        } else {
-            tooltip.add(Component.translatable("tooltip.hbm_m.mask.filter").withStyle(ChatFormatting.GOLD));
-            ItemStack filter = new ItemStack(IGasMask.getFilterItem(IGasMask.getFilterId(stack)));
-            int dmg = IGasMask.getFilterDamage(stack);
-            int max = filter.getItem() instanceof ItemGasMaskFilter f ? f.maxFilterDamage : ItemGasMaskFilter.DEFAULT_MAX_DAMAGE;
-            tooltip.add(Component.literal("  ").append(filter.getHoverName())
-                    .append(Component.literal(" (" + Math.max(0, (max - dmg) * 100 / max) + "%)"))
-                    .withStyle(ChatFormatting.YELLOW));
-        }
-        tooltip.add(Component.translatable("hazard.neverProtects").withStyle(ChatFormatting.DARK_RED));
-        for (HazardClass clazz : getBlacklist()) {
-            tooltip.add(Component.literal("  ").append(Component.translatable(clazz.translationKey))
-                    .withStyle(ChatFormatting.DARK_RED));
+        // 1:1 Original ArmorGasMask.addInformation: ArmorUtil.addGasMaskTooltip, dann (nur wenn nicht leer) die Blacklist
+        GasMaskUtil.addGasMaskTooltip(stack, tooltip, getBlacklist());
+        EnumSet<HazardClass> haz = getBlacklist();
+        if (!haz.isEmpty()) {
+            tooltip.add(Component.translatable("hazard.neverProtects").withStyle(ChatFormatting.RED));
+            for (HazardClass clazz : haz) {
+                tooltip.add(Component.literal(" -").append(Component.translatable(clazz.translationKey)).withStyle(ChatFormatting.DARK_RED));
+            }
         }
     }
 }

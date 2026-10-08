@@ -1,0 +1,5 @@
+{
+  "priority": 15,
+  "blocks": ["hbm_m:block_boron", "hbm_m:glass_boron"],
+  "hvl": { "gamma": 2.0, "neutron": 0.2, "beta": 0.1 }
+}

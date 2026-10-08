@@ -38,7 +38,8 @@ public class RadioTorchControllerBlockEntity extends com.hbm_m.blockentity.BaseH
         if (be.channel.isEmpty()) return;
 
         Direction facing = state.hasProperty(RadioTorchBaseBlock.FACING) ? state.getValue(RadioTorchBaseBlock.FACING) : Direction.UP;
-        BlockPos sourcePos = pos.relative(facing.getOpposite());
+        // FACING zeigt in den Halteblock (Original: getOrientation(meta).getOpposite())
+        BlockPos sourcePos = pos.relative(facing);
         if (!(com.hbm_m.api.redstoneoverradio.IRORInfo.resolve(level, sourcePos) instanceof IRORInteractive ror)) return;
 
         RTTYNetwork.RttyChannel chan = RTTYNetwork.listen(level, be.channel);
@@ -49,9 +50,7 @@ public class RadioTorchControllerBlockEntity extends com.hbm_m.blockentity.BaseH
         // 1:1-Port: der Sonderbefehl sprengt den Empfaenger. Wer den Kanal kennt, kann eine
         // fremde Anlage damit lahmlegen - genau das ist im Original der Reiz daran.
         if ("selfdestruct".equals(rec)) {
-            level.destroyBlock(pos, false);
-            level.explode(null, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
-                    5.0F, Level.ExplosionInteraction.BLOCK);
+            RTTYNetwork.selfDestruct(level, pos);
             return;
         }
 

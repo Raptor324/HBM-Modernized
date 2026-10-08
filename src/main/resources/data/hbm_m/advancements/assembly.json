@@ -1,7 +1,7 @@
 {
   "display": {
     "icon": {
-      "item": "hbm_m:machine_assembler"
+      "item": "hbm_m:advanced_assembly_machine"
     },
     "title": {
       "translate": "advancements.hbm_m.assembly.title"

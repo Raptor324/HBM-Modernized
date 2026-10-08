@@ -81,7 +81,7 @@ public final class EntityEffectHandlerExtra {
         }
 
         // only sets players on fire so mod compatibility doesnt die
-        if (ModClothConfig.get().enable528NetherBurn && entity instanceof Player && !entity.fireImmune()
+        if (com.hbm_m.config.GeneralConfig.enable528 && ModClothConfig.get().enable528NetherBurn && entity instanceof Player && !entity.fireImmune()
                 && entity.level().dimensionType().ultraWarm()) {
             entity.setSecondsOnFire(5);
         }

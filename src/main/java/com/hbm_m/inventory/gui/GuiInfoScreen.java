@@ -81,6 +81,35 @@ public abstract class GuiInfoScreen<T extends AbstractContainerMenu> extends Abs
         return x >= relX && x < relX + width && y >= relY && y < relY + height;
     }
 
+    /** Original {@code I18nUtil.resolveKeyArray}: "$" trennt die Zeilen. */
+    public static Component[] resolveKeyArray(String key, Object... args) {
+        return Arrays.stream(Component.translatable(key, args).getString().split("\\$"))
+                .map(Component::literal).toArray(Component[]::new);
+    }
+
+    /** Original {@code GuiInfoContainer.getUpgradeInfo}: Liste der zulaessigen Upgrades mit Hoechststufe. */
+    public static Component[] getUpgradeInfo(Object tile) {
+        java.util.List<Component> lines = new java.util.ArrayList<>();
+        if (tile instanceof com.hbm_m.interfaces.IUpgradeInfoProvider provider) {
+            lines.add(Component.translatable("upgrade.gui.title"));
+            for (com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType type : com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType.values()) {
+                if (provider.canProvideInfo(type, 0, false)) {
+                    Integer maxLevel = provider.getValidUpgrades().get(type);
+                    String key = switch (type) {
+                        case SPEED -> "upgrade.gui.speed";
+                        case POWER -> "upgrade.gui.power";
+                        case EFFECT -> "upgrade.gui.effectiveness";
+                        case AFTERBURN -> "upgrade.gui.afterburner";
+                        case OVERDRIVE -> "upgrade.gui.overdrive";
+                        default -> null;
+                    };
+                    if (key != null) lines.add(Component.translatable(key, maxLevel));
+                }
+            }
+        }
+        return lines.toArray(new Component[0]);
+    }
+
     protected void playClickSound() {
         Minecraft.getInstance().getSoundManager()
                 .play(SimpleSoundInstance.forUI(SoundEvents.UI_BUTTON_CLICK, 1.0F));

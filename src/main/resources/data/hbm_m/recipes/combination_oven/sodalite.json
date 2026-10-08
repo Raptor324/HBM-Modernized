@@ -1,0 +1,14 @@
+{
+  "type": "hbm_m:combination_oven",
+  "ingredient": {
+    "item": "hbm_m:gem_sodalite"
+  },
+  "result": {
+    "item": "hbm_m:powder_sodium",
+    "count": 1
+  },
+  "fluid": {
+    "fluid": "hbm_m:chlorine",
+    "amount": 100
+  }
+}

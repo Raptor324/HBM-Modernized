@@ -57,6 +57,30 @@ import net.fabricmc.fabric.api.transfer.v1.transaction.Transaction;
 public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity
         implements com.hbm_m.api.fluids.IFluidStandardReceiverMK2 {
 
+    /** Original {@code setInventorySlotContents}: Aufwertung einstecken macht das Steckgeraeusch. */
+    @Override
+    protected com.hbm_m.platform.ModItemStackHandler createInventoryHandler(int size) {
+        return new com.hbm_m.platform.ModItemStackHandler(size) {
+            @Override
+            protected void onContentsChanged(int slot) {
+                setChanged();
+                if (isCriticalSlot(slot)) sendUpdateToClient();
+                net.minecraft.world.item.ItemStack stack = getStackInSlot(slot);
+                if (level != null && !level.isClientSide && slot >= 5 && slot <= 6
+                        && stack.getItem() instanceof com.hbm_m.item.industrial.ItemMachineUpgrade) {
+                    level.playSound(null, worldPosition.getX() + 0.5, worldPosition.getY() + 0.5, worldPosition.getZ() + 0.5,
+                            com.hbm_m.sound.HbmSoundsNT.get("hbm:item.upgradePlug"), net.minecraft.sounds.SoundSource.BLOCKS, 1.0F, 1.0F);
+                }
+            }
+
+            @Override
+            public boolean isItemValid(int slot, @org.jetbrains.annotations.NotNull net.minecraft.world.item.ItemStack stack) {
+                return isItemValidForSlot(slot, stack);
+            }
+        };
+    }
+
+
     private static final String CRYSTALLIZER_SOUND_INSTANCE = "com.hbm_m.sound.CrystallizerSoundInstance";
 
     private static final int SLOT_INPUT = 0;
@@ -70,10 +94,19 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity
 
     private static final int SLOT_COUNT = 8;
     private static final long MAX_POWER = 1_000_000;
-    private static final long MAX_RECEIVE = 1_000;
+    /** Original nimmt bis maxPower beliebig schnell an. */
+    private static final long MAX_RECEIVE = MAX_POWER;
     private static final int TANK_CAPACITY = 8_000;
     private static final int DEFAULT_DURATION = 600;
+    /** Original: {@code demand = 1000}. */
     private static final int BASE_POWER_PER_TICK = 1_000;
+
+    /** Original getValidUpgrades: Tempo, Wirkung, Overdrive je bis 3. */
+    private static final java.util.Map<com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType, Integer> VALID_UPGRADES = java.util.Map.of(
+            com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType.SPEED, 3,
+            com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType.EFFECT, 3,
+            com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType.OVERDRIVE, 3);
+    private final com.hbm_m.inventory.UpgradeManager upgradeManager = new com.hbm_m.inventory.UpgradeManager();
 
     private final FluidTank tank = new FluidTank(TANK_CAPACITY) {
         @Override
@@ -142,33 +175,30 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity
         boolean wasOn = entity.isOn;
         entity.isOn = false;
 
-        if (recipe != null) {
-            entity.duration = entity.calcDuration(recipe);
+        entity.upgradeManager.checkSlots(entity.inventory, SLOT_UPGRADE_1, SLOT_UPGRADE_2, VALID_UPGRADES);
+        entity.duration = entity.calcDuration(recipe);
 
-            if (entity.canProcess(recipe)) {
-                int powerCost = entity.getPowerRequired();
-                entity.setEnergyStored(entity.getEnergyStored() - powerCost);
+        // 1:1 Original: bis zu getCycleCount() Durchlaeufe pro Tick (Overdrive)
+        for (int i = 0; i < entity.getCycleCount(); i++) {
+
+            if (recipe != null && entity.canProcess(recipe)) {
                 entity.progress++;
+                entity.setEnergyStored(entity.getEnergyStored() - entity.getPowerRequired());
                 entity.isOn = true;
 
-                if (entity.progress >= entity.duration) {
+                if (entity.progress > entity.duration) {
                     entity.progress = 0;
                     entity.processItem(recipe);
+                    // nach dem Verbrauch kann sich das Rezept erledigt haben
+                    ItemStack in = entity.inventory.getStackInSlot(SLOT_INPUT);
+                    if (in.isEmpty() || in.getCount() < recipe.getInputCount()) recipe = null;
                 }
                 entity.setChanged();
-                entity.sendUpdateToClient();
             } else {
-                if (entity.progress != 0) {
-                    entity.progress = 0;
-                    entity.setChanged();
-                }
-            }
-        } else {
-            if (entity.progress != 0) {
                 entity.progress = 0;
-                entity.setChanged();
             }
         }
+        if (entity.isOn) entity.sendUpdateToClient();
 
         if (wasOn != entity.isOn) {
             entity.sendUpdateToClient();
@@ -252,8 +282,9 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity
             tank.drainMb(recipe.getAcidAmount());
         }
 
-        float freeChance = recipe.getProductivity();
-        if (freeChance <= 0f || level.random.nextFloat() >= freeChance) {
+        // Original getFreeChance: nur mit Wirkungs-Aufwertung, min(Stufe * productivity, 0.99)
+        float freeChance = getFreeChance(recipe);
+        if (freeChance == 0f || freeChance < level.random.nextFloat()) {
             inventory.getStackInSlot(SLOT_INPUT).shrink(recipe.getInputCount());
         }
 
@@ -383,8 +414,28 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity
         chargeFromBatterySlot(SLOT_BATTERY);
     }
 
-    private int calcDuration(CrystallizerRecipe recipe) {
-        return recipe.getDuration();
+    /** Original {@code getDuration}: Grundzeit (600 ohne Rezept), Tempo kuerzt um je 25 % bis auf 25 %. */
+    private int calcDuration(@Nullable CrystallizerRecipe recipe) {
+        int base = recipe != null ? recipe.getDuration() : DEFAULT_DURATION;
+        int speed = upgradeManager.getLevel(com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType.SPEED);
+        if (speed > 0) {
+            return (short) Math.ceil((base * Math.max(1F - 0.25F * speed, 0.25F)));
+        }
+        return (short) base;
+    }
+
+    public float getFreeChance(CrystallizerRecipe recipe) {
+        int efficiency = upgradeManager.getLevel(com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType.EFFECT);
+        if (efficiency > 0) {
+            return Math.min(efficiency * recipe.getProductivity(), 0.99F);
+        }
+        return 0;
+    }
+
+    /** Original {@code getCycleCount}: 1 + 2 je Overdrive-Stufe, hoechstens 7. */
+    public float getCycleCount() {
+        int speed = upgradeManager.getLevel(com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType.OVERDRIVE);
+        return Math.min(1 + speed * 2, 7);
     }
 
     private FluidStack getTankFluidStack() {
@@ -396,8 +447,11 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity
         return FluidStack.create(fluid, amount);
     }
 
+    /** Original: {@code demand + speed * demand + effect * demand * 2}. */
     public int getPowerRequired() {
-        return BASE_POWER_PER_TICK;
+        int speed = upgradeManager.getLevel(com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType.SPEED);
+        int effect = upgradeManager.getLevel(com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType.EFFECT);
+        return BASE_POWER_PER_TICK + speed * BASE_POWER_PER_TICK + effect * BASE_POWER_PER_TICK * 2;
     }
 
     public int getDuration() {
@@ -543,6 +597,28 @@ public class MachineCrystallizerBlockEntity extends BaseMachineBlockEntity
     @Override
     protected void setupFluidCapability() {
         setFluidHandler(tank);
+    }
+    //?}
+
+    //? if forge {
+    /** Original {@code ISidedInventory}: Slots {0, 2}; nur der Eingang hinein, nur das Ergebnis heraus. */
+    private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
+            new com.hbm_m.blockentity.SidedItemAccess.Rules() {
+                @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return new int[] { 0, 2 }; }
+                @Override public boolean canInsert(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return slot == 0 && isItemValidForSlot(slot, stack); }
+                @Override public boolean canExtract(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return slot == 2; }
+            });
+
+    @Override
+    public @org.jetbrains.annotations.NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(@org.jetbrains.annotations.NotNull net.minecraftforge.common.capabilities.Capability<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER && side != null) return sidedItems.get(side).cast();
+        return super.getCapability(cap, side);
+    }
+
+    @Override
+    public void invalidateCaps() {
+        super.invalidateCaps();
+        sidedItems.invalidate();
     }
     //?}
 }

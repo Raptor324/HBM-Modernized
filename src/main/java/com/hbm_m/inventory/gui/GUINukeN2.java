@@ -5,6 +5,7 @@ import org.jetbrains.annotations.NotNull;
 import com.hbm_m.blockentity.bomb.NukeN2BlockEntity;
 import com.hbm_m.client.GuiCompat;
 import com.hbm_m.inventory.menu.NukeN2Menu;
+import com.hbm_m.item.ModItems;
 import com.hbm_m.lib.RefStrings;
 
 import net.minecraft.client.gui.GuiGraphics;
@@ -40,11 +41,16 @@ public class GUINukeN2 extends GuiInfoScreen<NukeN2Menu> {
     protected void renderBg(@NotNull GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
         guiGraphics.blit(TEXTURE, this.leftPos, this.topPos, 0, 0, imageWidth, imageHeight);
 
-        if (be != null && be.isReady()) { // тайл может отсутствовать в реплее Flashback
-            guiGraphics.blit(TEXTURE, this.leftPos + imageWidth - 42, this.topPos + 6, 176, 48, 16, 16);
+        // Original: Fuellsaeule je eingelegter N2-Ladung (6 Pixel pro Ladung), kein Info-Panel
+        if (be != null) { // тайл может отсутствовать в реплее Flashback
+            int count = 0;
+            for (int i = 0; i < 12; i++) {
+                if (be.slots.get(i).is(ModItems.N2_CHARGE.get())) count++;
+            }
+            if (count > 0) {
+                guiGraphics.blit(TEXTURE, leftPos + 35, topPos + 120 - 6 * count, 176, 0, 34, 6 * count);
+            }
         }
-
-        this.drawInfoPanel(guiGraphics, -16, 16, PanelType.LARGE_BLUE_INFO);
     }
 
     @Override

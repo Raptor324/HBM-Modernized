@@ -41,7 +41,8 @@ import net.minecraftforge.common.capabilities.ForgeCapabilities;
  * Battery socket: one portable battery slot, modes like machine battery, energy from item capabilities.
  */
 @SuppressWarnings("UnstableApiUsage")
-public class BatterySocketBlockEntity extends BaseMachineBlockEntity implements IEnergyModeHolder, com.hbm_m.api.energy.PowerBuffer {
+public class BatterySocketBlockEntity extends BaseMachineBlockEntity implements IEnergyModeHolder, com.hbm_m.api.energy.PowerBuffer,
+        com.hbm_m.api.redstoneoverradio.IRORValueProvider, com.hbm_m.api.redstoneoverradio.IRORInteractive {
 
     //? if forge {
     public static final ModelProperty<Boolean> HAS_INSERT = new ModelProperty<>();
@@ -161,15 +162,33 @@ public class BatterySocketBlockEntity extends BaseMachineBlockEntity implements 
         this.scPowerMult = net.minecraft.util.Mth.clamp(scPowerMult, 0.1D, 1D);
     }
 
-    /**
-     * 1:1 {@code discharge()}: auf jedes Lebewesen im Umkreis von 15 Bloecken geht ein durchschlagender Elektrostrahl
-     * (BulletConfig "discharge": 50 Schaden, elektrisch). Der Strahl trifft Bloecke/Wesen auf dem Weg und loest dort
-     * {@link #explodeDischarge} aus; ein getroffener Block wird ohne Drop zerstoert (BEAM_DISCHARGE_HIT).
-     * Die Strahl-Optik des Waffensystems (EntityBulletBeamBase) steht noch aus, bis dahin Funken entlang der Bahn.
-     */
+    /** 1:1 {@code discharge}: SEDNA-Strahl (EntityBulletBeamBase), Renderer RENDER_LIGHTNING_SUB in GunFactoryClient. */
+    public static com.hbm_m.item.weapon.sedna.BulletConfig discharge;
+    public static java.util.function.BiConsumer<com.hbm_m.entity.projectile.EntityBulletBeamBase, com.hbm_m.util.MovingObjectPosition> BEAM_DISCHARGE_HIT = (beam, mop) -> {
+
+        if (mop.typeOfHit == com.hbm_m.util.MovingObjectPosition.MovingObjectType.BLOCK) {
+            beam.level().destroyBlock(mop.getBlockPos(), false); // func_147480_a(x, y, z, false)
+            explodeDischarge(beam.level(), mop.hitVec.xCoord, mop.hitVec.yCoord, mop.hitVec.zCoord);
+        }
+
+        if (mop.typeOfHit == com.hbm_m.util.MovingObjectPosition.MovingObjectType.ENTITY) {
+            explodeDischarge(beam.level(), mop.hitVec.xCoord, mop.hitVec.yCoord, mop.hitVec.zCoord);
+        }
+    };
+
+    private static boolean configsDone = false;
+
+    /** Original: static-Block; im Port aus GunFactory.init, damit die Config-ID auf beiden Seiten gleich ist. */
+    public static void initConfigs() {
+        if (configsDone) return;
+        configsDone = true;
+        discharge = new com.hbm_m.item.weapon.sedna.BulletConfig().setupDamageClass(com.hbm_m.powerarmor.resist.DamageResistanceHandler.DamageClass.ELECTRIC).setBeam().setSpread(0.0F).setLife(3).setThresholdNegation(20F).setArmorPiercing(0.5F).setRenderRotations(false).setDoesPenetrate(true)
+                .setOnBeamImpact(BEAM_DISCHARGE_HIT);
+    }
+
+    /** 1:1 {@code discharge()}: auf jedes Lebewesen im Umkreis von 15 Bloecken geht ein Strahl {@link #discharge} mit 50 Schaden. */
     protected void discharge() {
         pickNewSCTarget();
-        if (!(level instanceof ServerLevel server)) return;
 
         Direction dir = getBlockState().getValue(MachineBatterySocketBlock.FACING);
         Direction rot = dir.getClockWise();
@@ -184,50 +203,27 @@ public class BatterySocketBlockEntity extends BaseMachineBlockEntity implements 
         java.util.Collections.shuffle(potentialTargets);
 
         for (net.minecraft.world.entity.LivingEntity target : potentialTargets) {
-            net.minecraft.world.phys.Vec3 initialDelta = new net.minecraft.world.phys.Vec3(target.getX() - x, target.getY() + target.getBbHeight() / 2 - y, target.getZ() - z);
-            if (initialDelta.length() > range) continue;
-            initialDelta = initialDelta.normalize();
-            double dominantAxis = Math.max(Math.abs(initialDelta.x), Math.max(Math.abs(initialDelta.y), Math.abs(initialDelta.z)));
-            initialDelta = initialDelta.scale(1.125D / dominantAxis); // move 1.125 blocks outwards
-            net.minecraft.world.phys.Vec3 start = new net.minecraft.world.phys.Vec3(worldPosition.getX() + initialDelta.x, worldPosition.getY() + initialDelta.y, worldPosition.getZ() + initialDelta.z);
-            net.minecraft.world.phys.Vec3 actualDelta = new net.minecraft.world.phys.Vec3(target.getX() - start.x, target.getY() + target.getBbHeight() / 2 - start.y, target.getZ() - start.z);
-            beamHitscan(server, start, actualDelta);
+
+            com.hbm_m.util.Vec3NT initialDelta = new com.hbm_m.util.Vec3NT(target.getX() - x, target.getY() + target.getBbHeight() / 2 - y, target.getZ() - z);
+            if (initialDelta.lengthVector() > range) continue;
+            com.hbm_m.entity.projectile.EntityBulletBeamBase sub = new com.hbm_m.entity.projectile.EntityBulletBeamBase(level, discharge, 50F);
+            initialDelta.normalizeSelf();
+            double dominantAxis = com.hbm_m.util.BobMathUtil.max(Math.abs(initialDelta.xCoord), Math.abs(initialDelta.yCoord), Math.abs(initialDelta.zCoord));
+            initialDelta.multiply(1.125D / dominantAxis); // move 1.125 blocks outwards
+            sub.setPos(worldPosition.getX() + initialDelta.xCoord, worldPosition.getY() + initialDelta.yCoord, worldPosition.getZ() + initialDelta.zCoord);
+            com.hbm_m.util.Vec3NT actualDelta = new com.hbm_m.util.Vec3NT(target.getX() - sub.getX(), target.getY() + target.getBbHeight() / 2 - sub.getY(), target.getZ() - sub.getZ());
+
+            sub.setRotationsFromVector(actualDelta);
+            sub.performHitscanExternal(actualDelta.lengthVector());
+            level.addFreshEntity(sub);
         }
 
         explodeDischarge(level, x + level.random.nextGaussian() * 0.5, y + level.random.nextGaussian() * 0.5, z + level.random.nextGaussian() * 0.5);
     }
 
-    /** performHitscanExternal eines durchschlagenden Strahls: ein Block begrenzt die Bahn, alle Wesen davor werden getroffen. */
-    private void beamHitscan(ServerLevel server, net.minecraft.world.phys.Vec3 start, net.minecraft.world.phys.Vec3 delta) {
-        net.minecraft.world.phys.Vec3 end = start.add(delta);
-        net.minecraft.world.phys.BlockHitResult blockHit = server.clip(new net.minecraft.world.level.ClipContext(start, end,
-                net.minecraft.world.level.ClipContext.Block.COLLIDER, net.minecraft.world.level.ClipContext.Fluid.NONE, null));
-        if (blockHit.getType() != net.minecraft.world.phys.HitResult.Type.MISS) end = blockHit.getLocation();
-
-        net.minecraft.world.phys.Vec3 from = start;
-        net.minecraft.world.phys.Vec3 to = end;
-        for (net.minecraft.world.entity.Entity e : server.getEntities((net.minecraft.world.entity.Entity) null, new AABB(from, to).inflate(1D), ent -> ent.isPickable() && ent.isAlive())) {
-            java.util.Optional<net.minecraft.world.phys.Vec3> hit = e.getBoundingBox().inflate(0.3D).clip(from, to);
-            if (hit.isEmpty()) continue;
-            e.hurt(com.hbm_m.damagesource.ModDamageSources.create(server, com.hbm_m.damagesource.ModDamageTypes.ELECTRICITY), 50F);
-            explodeDischarge(server, hit.get().x, hit.get().y, hit.get().z);
-        }
-
-        if (blockHit.getType() == net.minecraft.world.phys.HitResult.Type.BLOCK) {
-            server.destroyBlock(blockHit.getBlockPos(), false);
-            explodeDischarge(server, end.x, end.y, end.z);
-        }
-
-        double len = start.distanceTo(end);
-        for (double d = 0; d < len; d += 0.25D) {
-            net.minecraft.world.phys.Vec3 p = start.add(end.subtract(start).scale(d / len));
-            server.sendParticles(net.minecraft.core.particles.ParticleTypes.ELECTRIC_SPARK, p.x, p.y, p.z, 1, 0, 0, 0, 0);
-        }
-    }
-
     public static void explodeDischarge(Level world, double x, double y, double z) {
         com.hbm_m.explosion.vanillant.ExplosionVNT vnt = new com.hbm_m.explosion.vanillant.ExplosionVNT(world, x, y, z, 5F);
-        vnt.setEntityProcessor(new com.hbm_m.explosion.vanillant.standard.EntityProcessorCrossSmooth(1, 20));
+        vnt.setEntityProcessor(new com.hbm_m.explosion.vanillant.standard.EntityProcessorCrossSmooth(1, 20).setDamageClass(com.hbm_m.powerarmor.resist.DamageResistanceHandler.DamageClass.ELECTRIC));
         vnt.setPlayerProcessor(new com.hbm_m.explosion.vanillant.standard.PlayerProcessorStandard());
         vnt.setSFX(new com.hbm_m.explosion.vanillant.standard.ExplosionEffectStandard());
         vnt.explode();
@@ -563,5 +559,108 @@ public class BatterySocketBlockEntity extends BaseMachineBlockEntity implements 
     @Override
     public AbstractContainerMenu createMenu(int containerId, Inventory inv, Player player) {
         return new BatterySocketMenu(containerId, inv, this, data);
+    }
+
+    //? if forge {
+    /** Original {@code ISidedInventory}: Slot {0}; Akkus hinein, nur volle heraus (Original vergleicht den Slot mit mode_input = 0). */
+    private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
+            new com.hbm_m.blockentity.SidedItemAccess.Rules() {
+                @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return new int[] { 0 }; }
+                @Override public boolean canInsert(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return isItemValidForSlot(slot, stack); }
+                @Override public boolean canExtract(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return com.hbm_m.blockentity.SidedItemAccess.isFullBattery(stack); }
+            });
+
+    @Override
+    public @org.jetbrains.annotations.NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(@org.jetbrains.annotations.NotNull net.minecraftforge.common.capabilities.Capability<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER && side != null) return sidedItems.get(side).cast();
+        return super.getCapability(cap, side);
+    }
+
+    @Override
+    public void invalidateCaps() {
+        super.invalidateCaps();
+        sidedItems.invalidate();
+    }
+    //?}
+
+    // ── Redstone-over-Radio (1:1 TileEntityBatterySocket) ──
+
+    @Override
+    public String[] getFunctionInfo() {
+        return new String[] {
+                PREFIX_VALUE + "fill",
+                PREFIX_VALUE + "maxfill",
+                PREFIX_VALUE + "fillpercent",
+                PREFIX_VALUE + "delta",
+                PREFIX_FUNCTION + "setmode" + NAME_SEPARATOR + "mode (0-3)",
+                PREFIX_FUNCTION + "setmode" + NAME_SEPARATOR + "mode" + PARAM_SEPARATOR + "fallback (0-3)",
+                PREFIX_FUNCTION + "setredmode" + NAME_SEPARATOR + "mode (0-3)",
+                PREFIX_FUNCTION + "setredmode" + NAME_SEPARATOR + "mode" + PARAM_SEPARATOR + "fallback (0-3)",
+                PREFIX_FUNCTION + "setpriority" + NAME_SEPARATOR + "priority (0-2)",
+        };
+    }
+
+    @Override
+    public String provideRORValue(String name) {
+        if ((PREFIX_VALUE + "fill").equals(name))        return "" + this.getEnergyStored();
+        if ((PREFIX_VALUE + "maxfill").equals(name))     return "" + this.getMaxEnergyStored();
+        if ((PREFIX_VALUE + "fillpercent").equals(name)) return "" + this.getEnergyStored() * 100 / (Math.max(this.getMaxEnergyStored(), 1));
+        if ((PREFIX_VALUE + "delta").equals(name))       return "" + energyDelta;
+        return null;
+    }
+
+    /**
+     * Original-Zaehlung der Modi (0 = Eingang, 1 = Puffer, 2 = Ausgang, 3 = aus) - der Port zaehlt
+     * 0 = Puffer, 1 = Eingang; die Funkbefehle bleiben bei der Original-Zaehlung.
+     */
+    private static int swapModeROR(int mode) {
+        return mode == 0 ? 1 : mode == 1 ? 0 : mode;
+    }
+
+    @Override
+    public String runRORFunction(String name, String[] params) {
+        // redLow = Modus ohne Redstone, redHigh = Modus mit Redstone
+        if ((PREFIX_FUNCTION + "setmode").equals(name) && params.length > 0) {
+            int mode = com.hbm_m.api.redstoneoverradio.IRORInteractive.parseInt(params[0], 0, 3);
+            if (mode != swapModeROR(this.modeOnNoSignal)) {
+                this.modeOnNoSignal = swapModeROR(mode);
+                this.markChangedROR();
+                return null;
+            } else if (params.length > 1) {
+                int altmode = com.hbm_m.api.redstoneoverradio.IRORInteractive.parseInt(params[1], 0, 3);
+                this.modeOnNoSignal = swapModeROR(altmode);
+                this.markChangedROR();
+                return null;
+            }
+            return null;
+        }
+        if ((PREFIX_FUNCTION + "setredmode").equals(name) && params.length > 0) {
+            int mode = com.hbm_m.api.redstoneoverradio.IRORInteractive.parseInt(params[0], 0, 3);
+            if (mode != swapModeROR(this.modeOnSignal)) {
+                this.modeOnSignal = swapModeROR(mode);
+                this.markChangedROR();
+                return null;
+            } else if (params.length > 1) {
+                int altmode = com.hbm_m.api.redstoneoverradio.IRORInteractive.parseInt(params[1], 0, 3);
+                this.modeOnSignal = swapModeROR(altmode);
+                this.markChangedROR();
+                return null;
+            }
+            return null;
+        }
+        if ((PREFIX_FUNCTION + "setpriority").equals(name) && params.length > 0) {
+            // Original: parseInt(0..2) + 1 -> LOW, NORMAL, HIGH
+            int priority = com.hbm_m.api.redstoneoverradio.IRORInteractive.parseInt(params[0], 0, 2) + 1;
+            this.priority = IEnergyReceiver.Priority.values()[priority];
+            this.markChangedROR();
+            return null;
+        }
+        return null;
+    }
+
+    /** Original {@code markChanged()}. */
+    private void markChangedROR() {
+        setChanged();
+        if (level != null && !level.isClientSide) level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
     }
 }

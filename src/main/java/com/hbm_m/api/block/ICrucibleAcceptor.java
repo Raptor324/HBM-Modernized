@@ -1,30 +1,30 @@
 package com.hbm_m.api.block;
 
-import com.hbm_m.inventory.material.MaterialStack;
+import org.jetbrains.annotations.Nullable;
+
+import com.hbm_m.inventory.material.Mats.MaterialStack;
+
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
 import net.minecraft.world.level.Level;
-import org.jetbrains.annotations.Nullable;
 
 /**
- * Port of the 1.7.10 api.hbm.block.ICrucibleAcceptor.
- * Implemented by block entities that can receive molten material, either by
- * sideways flowing (channels, outlets) or by being poured into from above
- * (basins, channels, crucibles).
- *
- * flow/pour return the leftover stack, or null if everything was accepted.
+ * 1:1 {@code api.hbm.block.ICrucibleAcceptor}: nimmt fluessiges Material auf - durch Giessen von oben (mit genauem
+ * Auftreffpunkt) oder seitliches Fliessen. Im Original vom Block implementiert, im Port vom Block-Entity (bei
+ * Multiblocks vom Kern). Rueckgabe ist jeweils der Rest, {@code null} wenn alles aufgenommen wurde.
  */
 public interface ICrucibleAcceptor {
 
-    /** Whether material may flow in sideways from the given side. */
-    boolean canAcceptPartialFlow(Level level, BlockPos pos, Direction side, MaterialStack stack);
+    /*
+     * Pouring: The metal leaves the channel/crucible and usually (but not always) falls down. The additional double coords give a more precise impact location.
+     * Also useful for entities like large crucibles since they are filled from the top.
+     */
+    boolean canAcceptPartialPour(Level world, BlockPos pos, double dX, double dY, double dZ, Direction side, MaterialStack stack);
+    @Nullable MaterialStack pour(Level world, BlockPos pos, double dX, double dY, double dZ, Direction side, MaterialStack stack);
 
-    /** Sideways flow. Returns the leftover, or null if fully accepted. */
-    @Nullable MaterialStack flow(Level level, BlockPos pos, Direction side, MaterialStack stack);
-
-    /** Whether material may be poured in from above (side is usually UP). */
-    boolean canAcceptPartialPour(Level level, BlockPos pos, Direction side, MaterialStack stack);
-
-    /** Pour from above. Returns the leftover, or null if fully accepted. */
-    @Nullable MaterialStack pour(Level level, BlockPos pos, Direction side, MaterialStack stack);
+    /*
+     * Flowing: The "safe" transfer of metal using a channel or other means, usually from block to block and usually horizontally (but not necessarily).
+     */
+    boolean canAcceptPartialFlow(Level world, BlockPos pos, Direction side, MaterialStack stack);
+    @Nullable MaterialStack flow(Level world, BlockPos pos, Direction side, MaterialStack stack);
 }

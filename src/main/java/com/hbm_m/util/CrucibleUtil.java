@@ -1,55 +1,178 @@
 package com.hbm_m.util;
 
-import com.hbm_m.api.block.ICrucibleAcceptor;
-import com.hbm_m.inventory.material.MaterialStack;
-import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
-import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.entity.BlockEntity;
+import java.util.List;
+
 import org.jetbrains.annotations.Nullable;
 
+import com.hbm_m.api.block.ICrucibleAcceptor;
+import com.hbm_m.inventory.material.Mats.MaterialStack;
+import com.hbm_m.inventory.material.NTMMaterial.SmeltingBehavior;
+
+import net.minecraft.core.BlockPos;
+import net.minecraft.world.level.ClipContext;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.phys.BlockHitResult;
+import net.minecraft.world.phys.HitResult;
+import net.minecraft.world.phys.Vec3;
+
 /**
- * Port of the 1.7.10 com.hbm.util.CrucibleUtil.
- * The original casts a hitscan straight down to find a pouring target;
- * here we scan block positions downward until we hit the first non-air block.
+ * 1:1 {@code com.hbm.util.CrucibleUtil}: Giessen per Strahl senkrecht nach unten auf den ersten Block (auch Fluessig-
+ * keiten halten ihn auf). Ist er ein {@link ICrucibleAcceptor}, wird dorthin gegossen, sonst - wenn nicht sicher -
+ * verschuettet. {@code impactPosHolder} (drei Werte) bekommt die Auftreffstelle des Strahls.
  */
 public class CrucibleUtil {
 
     /**
-     * Finds the first non-air block from startPos (inclusive) downward within range
-     * and returns its position if its block entity is an ICrucibleAcceptor, else null.
+     * Standard pouring, casting a hitscan straight down at the given coordinates with the given range. Returns the leftover material, just like ICrucibleAcceptor's pour.
+     * The method directly modifies the original stack, so be careful and make a copy beforehand if you don't want that.
      */
-    public static @Nullable BlockPos getPouringTarget(Level level, BlockPos startPos, int range) {
-        for (int i = 0; i <= range; i++) {
-            BlockPos pos = startPos.below(i);
-            if (level.getBlockState(pos).isAir()) continue;
-            BlockEntity be = level.getBlockEntity(pos);
-            return be instanceof ICrucibleAcceptor ? pos : null;
+    @Nullable
+    public static MaterialStack pourSingleStack(Level world, double x, double y, double z, double range, boolean safe, MaterialStack stack, int quanta, @Nullable double[] impactPosHolder) {
+
+        Vec3 start = new Vec3(x, y, z);
+        Vec3 end = new Vec3(x, y - range, z);
+
+        BlockHitResult[] mopHolder = new BlockHitResult[1];
+        ICrucibleAcceptor acc = getPouringTarget(world, start, end, mopHolder);
+        BlockHitResult mop = mopHolder[0];
+
+        if (acc == null) {
+            spill(mop, safe, stack, quanta, impactPosHolder);
+            return stack;
+        }
+
+        MaterialStack ret = tryPourStack(world, acc, mop, stack, impactPosHolder);
+
+        if (ret != null) {
+            return ret;
+        }
+
+        spill(mop, safe, stack, quanta, impactPosHolder);
+        return stack;
+    }
+
+    /**
+     * Standard pouring, casting a hitscan straight down at the given coordinates with the given range. Returns the materialStack that has been removed.
+     * The method doesn't make copies of the MaterialStacks in the list, so the materials being subtracted or outright removed will apply to the original list.
+     */
+    @Nullable
+    public static MaterialStack pourFullStack(Level world, double x, double y, double z, double range, boolean safe, List<MaterialStack> stacks, int quanta, @Nullable double[] impactPosHolder) {
+
+        if (stacks.isEmpty()) return null;
+
+        Vec3 start = new Vec3(x, y, z);
+        Vec3 end = new Vec3(x, y - range, z);
+
+        BlockHitResult[] mopHolder = new BlockHitResult[1];
+        ICrucibleAcceptor acc = getPouringTarget(world, start, end, mopHolder);
+        BlockHitResult mop = mopHolder[0];
+
+        if (acc == null) {
+            return spill(mop, safe, stacks, quanta, impactPosHolder);
+        }
+
+        for (MaterialStack stack : stacks) {
+            if (stack.material == null) continue;
+
+            int amountToPour = Math.min(stack.amount, quanta);
+            MaterialStack toPour = new MaterialStack(stack.material, amountToPour);
+            MaterialStack left = tryPourStack(world, acc, mop, toPour, impactPosHolder);
+
+            if (left != null) {
+                stack.amount -= (amountToPour - left.amount);
+                return new MaterialStack(stack.material, stack.amount - left.amount);
+            }
+        }
+
+        return spill(mop, safe, stacks, quanta, impactPosHolder);
+    }
+
+    /**
+     * Tries to pour the stack onto the supplied crucible acceptor instance.
+     * Returns whatever is left of the stack when successful or null when unsuccessful (potential spillage).
+     */
+    @Nullable
+    public static MaterialStack tryPourStack(Level world, ICrucibleAcceptor acc, BlockHitResult mop, MaterialStack stack, @Nullable double[] impactPosHolder) {
+        Vec3 hit = mop.getLocation();
+
+        if (stack.material.smeltable != SmeltingBehavior.SMELTABLE) {
+            return null;
+        }
+
+        if (acc.canAcceptPartialPour(world, mop.getBlockPos(), hit.x, hit.y, hit.z, mop.getDirection(), stack)) {
+            MaterialStack left = acc.pour(world, mop.getBlockPos(), hit.x, hit.y, hit.z, mop.getDirection(), stack);
+            if (left == null) {
+                left = new MaterialStack(stack.material, 0);
+            }
+
+            if (impactPosHolder != null) {
+                impactPosHolder[0] = hit.x;
+                impactPosHolder[1] = hit.y;
+                impactPosHolder[2] = hit.z;
+            }
+
+            return left;
+        }
+
+        return null;
+    }
+
+    /** Uses hitscan to find the target of the pour, from start (the top) to end (the bottom). */
+    @Nullable
+    public static ICrucibleAcceptor getPouringTarget(Level world, Vec3 start, Vec3 end, @Nullable BlockHitResult[] mopHolder) {
+
+        BlockHitResult mop = world.clip(new ClipContext(start, end, ClipContext.Block.OUTLINE, ClipContext.Fluid.ANY, null));
+
+        if (mopHolder != null) {
+            mopHolder[0] = mop;
+        }
+
+        if (mop == null || mop.getType() != HitResult.Type.BLOCK) {
+            return null;
+        }
+
+        return acceptorAt(world, mop.getBlockPos());
+    }
+
+    /** Der Abnehmer an einer Stelle - Block-Entity selbst oder der Kern eines Multiblocks. */
+    @Nullable
+    public static ICrucibleAcceptor acceptorAt(Level world, BlockPos pos) {
+        BlockEntity be = world.getBlockEntity(pos);
+        if (be instanceof ICrucibleAcceptor acc) return acc;
+        if (be instanceof com.hbm_m.blockentity.machines.UniversalMachinePartBlockEntity part) {
+            BlockPos core = part.getControllerPos();
+            if (core != null && world.getBlockEntity(core) instanceof ICrucibleAcceptor acc) return acc;
         }
         return null;
     }
 
-    /**
-     * Standard pouring: finds a target below startPos and pours the stack into it.
-     * Modifies the passed stack. Returns the amount that was actually poured.
-     * "Safe" semantics of the original (safe = true): nothing is lost when no
-     * valid target exists, pouring simply does not happen.
-     */
-    public static int pourSingleStack(Level level, BlockPos startPos, int range, MaterialStack stack) {
-        if (stack.isEmpty()) return 0;
+    /** Regular spillage routine but accepts a stack list instead of a stack. simply uses the first available stack from the list. */
+    @Nullable
+    public static MaterialStack spill(@Nullable BlockHitResult mop, boolean safe, List<MaterialStack> stacks, int quanta, @Nullable double[] impactPos) {
+        MaterialStack top = stacks.get(0);
+        MaterialStack ret = spill(mop, safe, top, quanta, impactPos);
+        stacks.removeIf(o -> o.amount <= 0);
+        return ret;
+    }
 
-        BlockPos target = getPouringTarget(level, startPos, range);
-        if (target == null) return 0;
+    /** The routine used for then there is no valid crucible acceptor found. Will NOP with safe mode on. Returns the MaterialStack that was lost. */
+    @Nullable
+    public static MaterialStack spill(@Nullable BlockHitResult mop, boolean safe, MaterialStack stack, int quanta, @Nullable double[] impactPos) {
 
-        BlockEntity be = level.getBlockEntity(target);
-        if (!(be instanceof ICrucibleAcceptor acc)) return 0;
+        if (safe) {
+            return null;
+        }
 
-        if (!acc.canAcceptPartialPour(level, target, Direction.UP, stack)) return 0;
+        MaterialStack toWaste = new MaterialStack(stack.material, Math.min(stack.amount, quanta));
+        stack.amount -= toWaste.amount;
 
-        int before = stack.amount;
-        MaterialStack left = acc.pour(level, target, Direction.UP, stack);
-        int poured = left == null ? before : before - left.amount;
-        stack.amount = left == null ? 0 : left.amount;
-        return poured;
+        if (impactPos != null && mop != null) {
+            impactPos[0] = mop.getLocation().x;
+            impactPos[1] = mop.getLocation().y;
+            impactPos[2] = mop.getLocation().z;
+        }
+
+        return toWaste;
     }
 }

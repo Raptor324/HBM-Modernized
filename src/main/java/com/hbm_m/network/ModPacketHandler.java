@@ -52,6 +52,15 @@ public class ModPacketHandler {
     public static final ResourceLocation VANILLA_EXPLOSION     = id("vanilla_explosion");
     public static final ResourceLocation DOOR_CONTRAPTION_STATE = id("door_contrap_state");
     public static final ResourceLocation CONFIG_SYNC           = id("config_sync");
+    public static final ResourceLocation HBM_ANIMATION         = id("hbm_animation");
+    /** Original PermaSyncHandler, Abschnitt TOM IMPACT DATA. */
+    public static final ResourceLocation IMPACT_SYNC           = id("impact_sync");
+    /** Original PermaSyncHandler "POLLUTION". */
+    public static final ResourceLocation POLLUTION_SYNC        = id("pollution_sync");
+    /** Original PermaSyncHandler, Abschnitt SHITTY MEMES (Spieler mit Death-Effekt). */
+    public static final ResourceLocation PERMA_SYNC_MEME       = id("perma_sync_meme");
+    /** Original ParticleBurstPacket (Blockzerfallspartikel, EMP / Truemmer). */
+    public static final ResourceLocation PARTICLE_BURST        = id("particle_burst");
 
     // C2S
     public static final ResourceLocation GIVE_TEMPLATE         = id("give_template");
@@ -61,7 +70,6 @@ public class ModPacketHandler {
     public static final ResourceLocation SET_FUSION_RECIPE     = id("set_fusion_recipe");
     public static final ResourceLocation SET_PLASMA_FORGE_RECIPE = id("set_plasma_forge_recipe");
     public static final ResourceLocation SET_KLYSTRON_OUTPUT   = id("set_klystron_output");
-    public static final ResourceLocation TOGGLE_WOOD_BURNER    = id("toggle_wood_burner");
     public static final ResourceLocation TOGGLE_FORCE_FIELD    = id("toggle_force_field");
     public static final ResourceLocation PNEUMO_TUBE_CONTROL   = id("pneumo_tube_control");
     public static final ResourceLocation PNEUMO_STORAGE_CONTROL = id("pneumo_storage_control");
@@ -70,6 +78,8 @@ public class ModPacketHandler {
     public static final ResourceLocation COMBUSTION_ENGINE_CONTROL = id("combustion_engine_control");
     public static final ResourceLocation DIESEL_GENERATOR_TOGGLE = id("diesel_generator_toggle");
     public static final ResourceLocation MINING_LASER_TOGGLE = id("mining_laser_toggle");
+    /** Original AuxButtonPacket 999: Taste O wirft eine Ente. */
+    public static final ResourceLocation DUCK = id("duck");
     public static final ResourceLocation AMMO_PRESS_SELECT = id("ammo_press_select");
     public static final ResourceLocation PNEUMO_ACCESS_STATE   = id("pneumo_access_state");
     public static final ResourceLocation BUILD_MISSILE         = id("build_missile");
@@ -79,7 +89,6 @@ public class ModPacketHandler {
     public static final ResourceLocation CLEAR_POINT           = id("clear_point");
     public static final ResourceLocation SYNC_POINT            = id("sync_point");
     public static final ResourceLocation ANVIL_CRAFT           = id("anvil_craft");
-    public static final ResourceLocation ANVIL_SELECT_RECIPE   = id("anvil_select_recipe");
     public static final ResourceLocation DOOR_MODEL            = id("door_model");
     public static final ResourceLocation FLUID_IDENTIFIER_CTRL = id("fluid_identifier_ctrl");
     public static final ResourceLocation ITEM_DESIGNATOR       = id("item_designator");
@@ -103,6 +112,7 @@ public class ModPacketHandler {
     public static final ResourceLocation FUNNEL_MODE            = id("funnel_mode");
     public static final ResourceLocation RADIO_TORCH_CONTROL    = id("radio_torch_control");
     public static final ResourceLocation NBT_CONTROL            = id("nbt_control");
+    public static final ResourceLocation ITEM_BOBMAZON          = id("item_bobmazon");
 
 
     // ══════════════════════════ Регистрация ═══════════════════════════════════
@@ -123,6 +133,10 @@ public class ModPacketHandler {
         registerS2C(INFO_TOAST,
                 InfoToastPacket::decode,
                 InfoToastPacket::handle);
+
+        registerS2C(HBM_ANIMATION,
+                HbmAnimationPacket::decode,
+                HbmAnimationPacket::handle);
 
         registerS2C(RADIATION_DATA,
                 RadiationDataPacket::decode,
@@ -185,6 +199,22 @@ public class ModPacketHandler {
                 ConfigSyncS2CPacket::decode,
                 ConfigSyncS2CPacket::handle);
 
+        registerS2C(IMPACT_SYNC,
+                ImpactSyncPacket::decode,
+                ImpactSyncPacket::handle);
+
+        registerS2C(POLLUTION_SYNC,
+                PollutionSyncPacket::decode,
+                PollutionSyncPacket::handle);
+
+        registerS2C(PERMA_SYNC_MEME,
+                PermaSyncMemePacket::decode,
+                PermaSyncMemePacket::handle);
+
+        registerS2C(PARTICLE_BURST,
+                ParticleBurstPacket::decode,
+                ParticleBurstPacket::handle);
+
     }
 
     public static void register() {
@@ -229,10 +259,6 @@ public class ModPacketHandler {
                 SetReactorControlC2SPacket::decode,
                 SetReactorControlC2SPacket::handle);
 
-        registerC2S(TOGGLE_WOOD_BURNER,
-                ToggleWoodBurnerPacket::decode,
-                ToggleWoodBurnerPacket::handle);
-
         registerC2S(TOGGLE_FORCE_FIELD,
                 ToggleForceFieldC2SPacket::decode,
                 ToggleForceFieldC2SPacket::handle);
@@ -264,6 +290,10 @@ public class ModPacketHandler {
         registerC2S(MINING_LASER_TOGGLE,
                 MiningLaserToggleC2SPacket::decode,
                 MiningLaserToggleC2SPacket::handle);
+
+        registerC2S(DUCK,
+                DuckC2SPacket::decode,
+                DuckC2SPacket::handle);
 
         registerC2S(AMMO_PRESS_SELECT,
                 AmmoPressSelectC2SPacket::decode,
@@ -300,10 +330,6 @@ public class ModPacketHandler {
         registerC2S(ANVIL_CRAFT,
                 AnvilCraftC2SPacket::decode,
                 AnvilCraftC2SPacket::handle);
-
-        registerC2S(ANVIL_SELECT_RECIPE,
-                AnvilSelectRecipeC2SPacket::decode,
-                AnvilSelectRecipeC2SPacket::handle);
 
         registerC2S(DOOR_MODEL,
                 ServerboundDoorModelPacket::decode,
@@ -382,6 +408,10 @@ public class ModPacketHandler {
         registerC2S(NBT_CONTROL,
                 NBTControlPacket::decode,
                 NBTControlPacket::handle);
+
+        registerC2S(ITEM_BOBMAZON,
+                ItemBobmazonPacket::decode,
+                ItemBobmazonPacket::handle);
     }
 
     // ══════════════════════ Вспомогательные методы ════════════════════════════

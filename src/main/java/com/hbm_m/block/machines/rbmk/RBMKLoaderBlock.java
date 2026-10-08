@@ -68,10 +68,8 @@ public class RBMKLoaderBlock extends Block implements IFluidConnectorBlock {
     }
     *///?}
 
-    /** The original's {@code tile.rbmk_loader.desc}, split into its three "$"-separated lines. */
+    /** Original {@code RBMKLoader.addInformation}: {@code addStandardInfo} (Umschalttaste, gelb). */
     private static void addDesc(List<Component> tooltip) {
-        for (int i = 0; i < 3; i++) {
-            tooltip.add(Component.translatable("block.hbm_m.rbmk_loader.desc" + i).withStyle(ChatFormatting.GRAY));
-        }
+        com.hbm_m.util.StandardInfo.add(tooltip, "block.hbm_m.rbmk_loader.desc");
     }
 }

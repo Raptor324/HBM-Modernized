@@ -109,11 +109,8 @@ public class MachineZirnoxMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        if (blockEntity == null || blockEntity.getLevel() != player.level()) {
-            return false;
-        }
-        BlockPos pos = blockEntity.getBlockPos();
-        return player.distanceToSqr(pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D) <= 64.0D;
+        // audit13: Original isUseableByPlayer (<= 128 zur Kernmitte) oder Huelle <= 64; Vanilla 64 schloss die GUI an grossen Maschinen
+        return MultiblockMenuReach.stillValidCore(blockEntity, player, 128.0D);
     }
 
     @Override
@@ -129,18 +126,18 @@ public class MachineZirnoxMenu extends AbstractContainerMenu {
                 if (!this.moveItemStackTo(stack, PLAYER_SLOT_START, this.slots.size(), true)) {
                     return ItemStack.EMPTY;
                 }
+            // Original-Menueindizes: 24/25 = CO2 rein/raus, 26/27 = Wasser rein/raus
             } else if (holdsFluid(stack, ModFluids.CARBONDIOXIDE.getSource())) {
-                if (!this.moveItemStackTo(stack, MachineZirnoxBlockEntity.SLOT_CO2_IN,
-                        MachineZirnoxBlockEntity.SLOT_CO2_IN + 1, false)) {
+                if (!this.moveItemStackTo(stack, 24, 26, false)) {
                     return ItemStack.EMPTY;
                 }
             } else if (holdsFluid(stack, ModFluids.WATER.getSource()) || stack.is(Items.WATER_BUCKET)) {
-                if (!this.moveItemStackTo(stack, MachineZirnoxBlockEntity.SLOT_WATER_IN,
-                        MachineZirnoxBlockEntity.SLOT_WATER_IN + 1, false)) {
+                if (!this.moveItemStackTo(stack, 26, 28, false)) {
                     return ItemStack.EMPTY;
                 }
-            } else if (stack.is(ModTags.Items.ZIRNOX_RODS)) {
-                if (!this.moveItemStackTo(stack, 0, MachineZirnoxBlockEntity.ROD_SLOT_COUNT, false)) {
+            } else if (stack.getItem() instanceof com.hbm_m.item.industrial.ZirnoxRodItem) {
+                // Original mergeItemStack(stack, 0, 24, true): von hinten auffuellen
+                if (!this.moveItemStackTo(stack, 0, MachineZirnoxBlockEntity.ROD_SLOT_COUNT, true)) {
                     return ItemStack.EMPTY;
                 }
             } else {

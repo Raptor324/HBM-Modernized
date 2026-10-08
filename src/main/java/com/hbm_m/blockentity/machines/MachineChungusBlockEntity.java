@@ -45,7 +45,8 @@ import net.neoforged.api.distmarker.OnlyIn;
  * Kein Inventar/GUI (wie im Original) - Dampf kommt ausschließlich über Rohre an den
  * UNIVERSAL_CONNECTOR-Phantomblöcken der Multiblock-Struktur an, Energie geht über den
  * ENERGY_CONNECTOR-Phantomblock raus. Verbraucht (anders als die Industrial Turbine) pro Tick
- * 100% des verfügbaren Dampfs - das Flywheel ist hier der einzige Puffer/Dämpfer.
+ * 100% des verfügbaren Dampfs; wie im Original ({@code TileEntityTurbineBase}) gibt es keinen Energiespeicher,
+ * die Leistung eines Ticks wird im selben Tick abgegeben.
  * <p>
  * Dampfumsatz, Ausgabefluid und Energie kommen wie im Original ({@code TileEntityTurbineBase})
  * aus der {@code FT_Coolable}-Eigenschaft; der Ausgang ist die naechstniedrigere Dampfstufe.
@@ -59,11 +60,12 @@ import net.neoforged.api.distmarker.OnlyIn;
  */
 @SuppressWarnings("UnstableApiUsage")
 public class MachineChungusBlockEntity extends BaseMachineBlockEntity
-        implements IEnergyModeHolder, IFluidStandardReceiverMK2, IFluidStandardSenderMK2 {
+        implements IEnergyModeHolder, IFluidStandardReceiverMK2, IFluidStandardSenderMK2,
+        com.hbm_m.api.redstoneoverradio.IRORValueProvider {
 
-    // Capacity constants (Platzhalter, ~16x Industrial Turbine - beim Playtesten nachjustieren)
-    private static final long ENERGY_CAPACITY = 8_000_000L;
-    private static final long ENERGY_EXTRACT_RATE = 160_000L;
+    // Original TileEntityTurbineBase: kein Speicher - powerBuffer ist die Leistung dieses Ticks (getMaxPower == powerBuffer)
+    private static final long ENERGY_CAPACITY = 0L;
+    private static final long ENERGY_EXTRACT_RATE = Long.MAX_VALUE;
     // 1:1 mit TileEntityChungus.inputTankSize/outputTankSize. Die Groesse ist beim Leviathan
     // Absicht, nicht Willkuer: consumptionPercent() ist 1.0, die Turbine leert ihren Eingangstank
     // also jeden Tick vollstaendig ("consumes all availible steam per tick") und muss dafuer einen
@@ -76,11 +78,13 @@ public class MachineChungusBlockEntity extends BaseMachineBlockEntity
     private static final double CONSUMPTION_PERCENT = 1.0D; // Original: consumptionPercent() = 1D (alles pro Tick)
     private static final double EFFICIENCY = 0.85D;         // Original: efficiency-Feld, Default 0.85
 
-    // Flywheel (Spin-up/Spin-down-Trägheit), gleiches Prinzip wie bei der Industrial Turbine.
-    private static final double FLYWHEEL_MAX_ENERGY = ENERGY_CAPACITY * 4.0;
-    private double spin = 0.0;
-    private long flywheelEnergy = 0L;
-    private long maxPower = 0L;
+    // Original TileEntityChungus: kein Schwungrad (das hat nur die Industrieturbine), sondern Rotor mit Anlaufkurve
+    public long powerBuffer;
+    private int turnTimer;
+    public float rotor;
+    public float lastRotor;
+    public float fanAcceleration = 0F;
+    private final float audioDesync = new java.util.Random().nextFloat() * 0.05F;
 
     // Fluid tanks
     private final FluidTank steamTank;
@@ -90,15 +94,12 @@ public class MachineChungusBlockEntity extends BaseMachineBlockEntity
     private LazyOptional<IFluidHandler> lazySpentHandler;
     //?}
 
-    private boolean isActive = false;
     /**
      * Ergebnis, kein Schalter: wird in {@link #processTurbine} jeden Tick aus dem tatsaechlichen
      * Durchsatz neu bestimmt ({@code operational = ops > 0}), genau wie in
      * {@code TileEntityTurbineBase.updateEntity}.
      */
     private boolean operational = false;
-    private float anim = 0.0F;
-    private float prevAnim = 0.0F;
 
     public MachineChungusBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.MACHINE_CHUNGUS_BE.get(), pos, state,
@@ -116,36 +117,62 @@ public class MachineChungusBlockEntity extends BaseMachineBlockEntity
     }
 
     public static void tick(Level level, BlockPos pos, BlockState state, MachineChungusBlockEntity be) {
-        be.prevAnim = be.anim;
 
         if (level.isClientSide()) {
-            if (be.isActive) {
-                be.anim += 0.15F;
-                if (be.anim > (float) (Math.PI * 2.0)) {
-                    be.anim -= (float) (Math.PI * 2.0);
-                }
-            }
-            if (be.isActive) be.spawnExhaust(level, pos);
-            ClientSoundBootstrap.updateSound(be, be.spin > 0.001D,
-                    () -> be.createLoopingSoundReflect(ModSounds.CHUNGUS_TURBINE.get()));
+            be.onClientTick(level, pos);
             return;
         }
 
         be.ensureNetworkInitialized();
 
-        boolean wasActive = be.isActive;
+        boolean wasTurning = be.turnTimer > 0;
 
+        be.powerBuffer = 0;
         be.processTurbine();
+        be.onServerTick();
+
+        // getPower() == getMaxPower() == powerBuffer
+        be.capacity = be.powerBuffer;
+        be.energy = be.powerBuffer;
+
         be.exchangeFluids(level);
 
-        if (be.energy > 0 && level.getGameTime() % 10L == 0L) {
+        if (level.getGameTime() % 10L == 0L) {
             be.updateEnergyDelta(be.getEnergyStored());
         }
 
-        if (wasActive != be.isActive) {
+        if (wasTurning != (be.turnTimer > 0)) {
             be.setChanged();
             be.sendUpdateToClient();
         }
+    }
+
+    /** Original {@code onServerTick}. */
+    private void onServerTick() {
+        turnTimer--;
+        if (operational) turnTimer = 25;
+    }
+
+    /** Original {@code onClientTick}: Rotor beschleunigt mit zufaelligem Versatz, Abdampffahne, Klang nach Drehzahl. */
+    private void onClientTick(Level level, BlockPos pos) {
+
+        this.lastRotor = this.rotor;
+        this.rotor += this.fanAcceleration;
+
+        if (this.rotor >= 360) {
+            this.rotor -= 360;
+            this.lastRotor -= 360;
+        }
+
+        if (turnTimer > 0) {
+            this.fanAcceleration = Math.max(0F, Math.min(25F, this.fanAcceleration += 0.075F + audioDesync));
+            spawnExhaust(level, pos);
+        } else {
+            this.fanAcceleration = Math.max(0F, Math.min(25F, this.fanAcceleration -= 0.1F));
+        }
+
+        ClientSoundBootstrap.updateSound(this, this.fanAcceleration > 0,
+                () -> createLoopingSoundReflect(ModSounds.CHUNGUS_TURBINE.get()));
     }
 
     /**
@@ -218,33 +245,11 @@ public class MachineChungusBlockEntity extends BaseMachineBlockEntity
                     steamTank.drainMb(ops * trait.amountReq);
                     spentSteamTank.fillMb(trait.coolsTo, ops * trait.amountProduced);
 
-                    maxPower = (long) (ops * trait.heatEnergy * eff);
-                    // Deckeln: spin ist als Bruchteil 0..1 gedacht. Ungedeckelt wuchs
-                    // flywheelEnergy bei grossen Tanks unbegrenzt weiter (Ultraheissdampf liefert
-                    // 120 HE je mB), spin lief weit ueber 1 und die Turbine haette nach einem
-                    // einzigen Dampfstoss noch stundenlang Leistung "nachgeliefert".
-                    flywheelEnergy = Math.min(flywheelEnergy + maxPower, (long) FLYWHEEL_MAX_ENERGY);
+                    // Original generatePower: powerBuffer += power
+                    powerBuffer += (long) (ops * trait.heatEnergy * eff);
                 }
             }
         }
-
-        // 2. Flywheel-Trägheit: die Turbine fährt hoch/runter statt sofort volle Leistung zu liefern.
-        // Läuft auch weiter, wenn operational == false, damit das Flywheel sichtbar auslaufen kann.
-        spin = flywheelEnergy / FLYWHEEL_MAX_ENERGY;
-
-        long energySpace = Math.max(0L, getMaxEnergyStored() - getEnergyStored());
-        long potentialOutput = (long) (Math.max(spin, 0.05D) * maxPower);
-        long output = Math.min(Math.min(potentialOutput, flywheelEnergy), energySpace);
-
-        boolean generating = output > 0;
-        if (generating) {
-            flywheelEnergy -= output;
-            setEnergyStored(getEnergyStored() + output);
-            setChanged();
-            sendUpdateToClient();
-        }
-
-        isActive = generating || flywheelEnergy > 0;
     }
 
     /**
@@ -414,12 +419,12 @@ public class MachineChungusBlockEntity extends BaseMachineBlockEntity
     }
 
     public boolean isActive() {
-        return isActive;
+        return turnTimer > 0;
     }
 
-    /** 0.0 = Flywheel steht, 1.0 = volle Drehzahl. Steuert Sound-Pitch/Volume und Anim-Geschwindigkeit. */
+    /** Original {@code fanAcceleration / 25}: 0 = Stillstand, 1 = volle Drehzahl (Klang). */
     public double getSpin() {
-        return spin;
+        return fanAcceleration / 25F;
     }
 
     private static final String CHUNGUS_LOOP_SOUND_FACTORY = "com.hbm_m.client.sound.ChungusLoopSoundFactory";
@@ -437,8 +442,9 @@ public class MachineChungusBlockEntity extends BaseMachineBlockEntity
         }
     }
 
+    /** Rotorwinkel in Grad (Original {@code lastRotor + (rotor - lastRotor) * interp}). */
     public float getAnim(float partialTicks) {
-        return prevAnim + (anim - prevAnim) * partialTicks;
+        return lastRotor + (rotor - lastRotor) * partialTicks;
     }
 
     // --- NBT ---
@@ -448,13 +454,9 @@ public class MachineChungusBlockEntity extends BaseMachineBlockEntity
         super.writeNbtData(tag, registries);
         steamTank.writeToNBT(tag, "steam");
         spentSteamTank.writeToNBT(tag, "spent");
-        tag.putBoolean("active", isActive);
         tag.putBoolean("operational", operational);
-        tag.putFloat("anim", anim);
-        tag.putFloat("prevAnim", prevAnim);
-        tag.putLong("flywheelEnergy", flywheelEnergy);
-        tag.putLong("maxPower", maxPower);
-        tag.putDouble("spin", spin);
+        tag.putLong("power", powerBuffer);
+        tag.putInt("turnTimer", turnTimer);
     }
 
     @Override
@@ -462,13 +464,9 @@ public class MachineChungusBlockEntity extends BaseMachineBlockEntity
         super.readNbtData(tag, registries);
         steamTank.readFromNBT(tag, "steam");
         spentSteamTank.readFromNBT(tag, "spent");
-        isActive = tag.getBoolean("active");
         operational = tag.getBoolean("operational");
-        anim = tag.getFloat("anim");
-        prevAnim = tag.getFloat("prevAnim");
-        flywheelEnergy = tag.getLong("flywheelEnergy");
-        maxPower = tag.getLong("maxPower");
-        spin = tag.getDouble("spin");
+        powerBuffer = tag.getLong("power");
+        turnTimer = tag.getInt("turnTimer");
     }
 
     // --- Capabilities ---
@@ -625,4 +623,19 @@ public class MachineChungusBlockEntity extends BaseMachineBlockEntity
             }
         }
         return ports.toArray(new BlockPos[0]);
-    }}
+    }
+    // ── Redstone-over-Radio (1:1 TileEntityChungus) ──
+
+    @Override
+    public String[] getFunctionInfo() {
+        return new String[] {
+                PREFIX_VALUE + "output"
+        };
+    }
+
+    @Override
+    public String provideRORValue(String name) {
+        if ((PREFIX_VALUE + "output").equals(name)) return "" + (int) this.powerBuffer;
+        return null;
+    }
+}

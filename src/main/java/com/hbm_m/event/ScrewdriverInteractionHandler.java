@@ -32,6 +32,8 @@ public class ScrewdriverInteractionHandler {
             Level level = player.level();
             DoorBlockEntity doorEntity = resolveDoorController(level, pos);
             if (doorEntity == null) return EventResult.pass();
+            // Verschlossene Tuer ohne Schleichen: normaler Klick = Knackversuch (Original tryToggle/canAccess)
+            if (doorEntity.isLocked() && !player.isShiftKeyDown()) return EventResult.pass();
 
             // Блокируем стандартное взаимодействие (открытие/закрытие двери).
             // GUI выбора скина открываем только на клиенте.

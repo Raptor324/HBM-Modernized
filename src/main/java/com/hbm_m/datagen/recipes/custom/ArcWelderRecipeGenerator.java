@@ -76,10 +76,15 @@ public final class ArcWelderRecipeGenerator {
                 p(new ItemStack(ModMaterialItems.item(ModMaterials.ADVANCED_ALLOY, MaterialShape.WIRE_DENSE))),
                 p(new ItemStack(ModMaterialItems.item(ModMaterials.COPPER, MaterialShape.WIRE_DENSE))));
 
-        emit(writer, "low_density_element", new ItemStack(ModItems.LOW_DENSITY_ELEMENT.get()), 200, 5_000L,
-                p(tag("ingots/plastic"), 1),
-                p(new ItemStack(ModMaterialItems.item(ModMaterials.FIBERGLASS, MaterialShape.INGOT), 4)),
-                p(new ItemStack(ModMaterialItems.item(ModMaterials.ALUMINUM, MaterialShape.PLATE), 4)));
+        // Original: part_generic LDE (Port-ID part_generic_lde, von den Montagerezepten verlangt) - zwei Varianten
+        emit(writer, "low_density_element", new ItemStack(OreDictIngredients.item("hbm_m:part_generic_lde")), 200, 5_000L,
+                p(OreDictIngredients.ore("oredict/plate/aluminum"), 4),
+                p(OreDictIngredients.ore("oredict/ingot/fiberglass"), 4),
+                p(OreDictIngredients.ore("oredict/ingot/any_hard_plastic"), 1));
+        emit(writer, "low_density_element_titanium", new ItemStack(OreDictIngredients.item("hbm_m:part_generic_lde")), 200, 10_000L,
+                p(OreDictIngredients.ore("oredict/plate/titanium"), 2),
+                p(OreDictIngredients.ore("oredict/ingot/fiberglass"), 4),
+                p(OreDictIngredients.ore("oredict/ingot/any_hard_plastic"), 1));
 
         emit(writer, "neutron_reflector", new ItemStack(ModItems.NEUTRON_REFLECTOR.get()), 200, 10_000L,
                 p(new ItemStack(ModMaterialItems.item(ModMaterials.DURA_STEEL, MaterialShape.PLATE))),
@@ -109,123 +114,70 @@ public final class ArcWelderRecipeGenerator {
     // ─── Missiles / rocketry ─────────────────────────────────────────────────────
 
     private static void registerMissiles(Consumer<FinishedRecipe> writer) {
-        // Fuel tanks
-        emit(writer, "fuel_tank_small_a", new ItemStack(ModItems.FUEL_TANK_SMALL.get()), 100, 1_000L,
-                p(new ItemStack(ModBlocks.STEEL_SCAFFOLD.get().asItem(), 4)),
-                p(new ItemStack(ModMaterialItems.item(ModMaterials.COPPER, MaterialShape.PLATE), 4)),
-                p(new ItemStack(ModMaterialItems.item(ModMaterials.ALUMINUM, MaterialShape.PLATE), 6)));
-
-        emit(writer, "fuel_tank_small_b", new ItemStack(ModItems.FUEL_TANK_SMALL.get()), 100, 1_000L,
-                p(new ItemStack(ModMaterialItems.item(ModMaterials.COPPER, MaterialShape.PLATE), 4)),
-                p(new ItemStack(ModMaterialItems.item(ModMaterials.ALUMINIUM, MaterialShape.WIRE), 4)),
-                p(new ItemStack(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE), 4)));
-
-        emit(writer, "fuel_tank_medium", new ItemStack(ModItems.FUEL_TANK_MEDIUM.get()), 100, 2_000L,
-                p(new ItemStack(ModBlocks.STEEL_SCAFFOLD.get().asItem(), 12)),
-                p(new ItemStack(ModMaterialItems.item(ModMaterials.TITANIUM, MaterialShape.PLATE), 8)),
-                p(new ItemStack(ModMaterialItems.item(ModMaterials.ALUMINIUM, MaterialShape.PLATE_CAST), 4)));
-
-        emit(writer, "fuel_tank_large", new ItemStack(ModItems.FUEL_TANK_LARGE.get()), 400, 50_000L,
-                p(new ItemStack(ModBlocks.STEEL_SCAFFOLD.get().asItem(), 16)),
-                p(new ItemStack(ModMaterialItems.item(ModMaterials.SATURNITE, MaterialShape.PLATE), 12)),
-                p(new ItemStack(ModMaterialItems.item(ModMaterials.ALUMINIUM, MaterialShape.PLATE_WELDED), 8)));
-
-        // Thrusters
-        emit(writer, "thruster_small", new ItemStack(ModItems.THRUSTER_SMALL.get()), 100, 1_000L,
-                p(new ItemStack(ModMaterialItems.item(ModMaterials.COPPER, MaterialShape.PLATE), 4)),
-                p(new ItemStack(ModMaterialItems.item(ModMaterials.ALUMINIUM, MaterialShape.WIRE), 4)),
-                p(new ItemStack(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE), 4)));
-
+        // 1:1 ArcWelderRecipes "Missile Parts" / "Missiles" (Zeiten, Energie, Mengen wie im Original)
+        Ingredient scaffold = Ingredient.of(ModBlocks.STEEL_SCAFFOLD.get());
+        emit(writer, "thruster_small", new ItemStack(ModItems.THRUSTER_SMALL.get()), 60, 1_000L,
+                p(ore("oredict/plate/steel"), 4), p(ore("oredict/wire_fine/aluminum"), 4), p(ore("oredict/plate/copper"), 4));
         emit(writer, "thruster_medium", new ItemStack(ModItems.THRUSTER_MEDIUM.get()), 100, 2_000L,
-                p(new ItemStack(ModMaterialItems.item(ModMaterials.GRAPHITE, MaterialShape.INGOT), 8)),
-                p(new ItemStack(ModItems.MOTOR.get())),
-                p(new ItemStack(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE), 8)));
+                p(ore("oredict/plate/steel"), 8), p(new ItemStack(ModItems.MOTOR.get())), p(ore("oredict/ingot/graphite"), 8));
+        emit(writer, "thruster_large", new ItemStack(ModItems.THRUSTER_LARGE.get()), 200, 5_000L,
+                p(ore("oredict/ingot/dura_steel"), 10), p(new ItemStack(ModItems.MOTOR.get())), p(ore("oredict/ingot/tungsten_carbide"), 12));
 
-        emit(writer, "thruster_large", new ItemStack(ModItems.THRUSTER_LARGE.get()), 400, 50_000L,
-                p(new ItemStack(ModItems.INGOT_TUNGSTEN_CARBIDE.get(), 12)),
-                p(new ItemStack(ModItems.MOTOR.get())),
-                p(new ItemStack(ModItems.INGOT_HIGHSPEED_STEEL.get(), 10)));
+        emit(writer, "fuel_tank_small_a", new ItemStack(ModItems.FUEL_TANK_SMALL.get()), 60, 1_000L,
+                p(ore("oredict/plate/aluminum"), 6), p(ore("oredict/plate/copper"), 4), p(scaffold, 4));
+        emit(writer, "fuel_tank_medium", new ItemStack(ModItems.FUEL_TANK_MEDIUM.get()), 100, 2_000L,
+                p(ore("oredict/plate_triple/aluminum"), 4), p(ore("oredict/plate/titanium"), 8), p(scaffold, 12));
+        emit(writer, "fuel_tank_large", new ItemStack(ModItems.FUEL_TANK_LARGE.get()), 200, 5_000L,
+                p(ore("oredict/plate_sextuple/aluminum"), 8), p(ore("oredict/plate/saturnite"), 12), p(scaffold, 16));
 
-        // Missiles
-        emit(writer, "missile_generic", new ItemStack(ModItems.MISSILE_GENERIC.get()), 60, 1_000L,
-                p(new ItemStack(ModItems.FUEL_TANK_SMALL.get())),
-                p(new ItemStack(ModItems.THRUSTER_SMALL.get())),
-                p(new ItemStack(ModItems.WARHEAD_GENERIC_SMALL.get())));
+        // Original: missile_anti_ballistic
+        emit(writer, "missile_anti_ballistic", new ItemStack(ModItems.MISSILE_ABM.get()), 100, 5_000L,
+                p(ore("oredict/ingot/any_highexplosive"), 3), p(new ItemStack(ModItems.MISSILE_ASSEMBLY.get())),
+                p(new ItemStack(ModItems.THRUSTER_SMALL.get(), 4)));
+        small(writer, "missile_generic", ModItems.MISSILE_GENERIC.get(), ModItems.WARHEAD_GENERIC_SMALL.get());
+        small(writer, "missile_incendiary", ModItems.MISSILE_INCENDIARY.get(), ModItems.WARHEAD_INCENDIARY_SMALL.get());
+        small(writer, "missile_cluster", ModItems.MISSILE_CLUSTER.get(), ModItems.WARHEAD_CLUSTER_SMALL.get());
+        small(writer, "missile_buster", ModItems.MISSILE_BUSTER.get(), ModItems.WARHEAD_BUSTER_SMALL.get());
+        emit(writer, "missile_decoy", new ItemStack(ModItems.MISSILE_DECOY.get()), 60, 2_500L,
+                p(ore("oredict/ingot/steel"), 1), p(new ItemStack(ModItems.FUEL_TANK_SMALL.get())),
+                p(new ItemStack(ModItems.THRUSTER_SMALL.get())));
 
-        emit(writer, "missile_rain", new ItemStack(ModItems.MISSILE_RAIN.get()), 200, 20_000L,
-                p(new ItemStack(ModItems.THRUSTER_MEDIUM.get(), 4)),
-                p(new ItemStack(ModItems.FUEL_TANK_MEDIUM.get(), 2)),
-                p(new ItemStack(ModItems.WARHEAD_CLUSTER_LARGE.get())));
+        medium(writer, "missile_strong", ModItems.MISSILE_STRONG.get(), new ItemStack(ModItems.WARHEAD_GENERIC_MEDIUM.get()));
+        medium(writer, "missile_incendiary_strong", ModItems.MISSILE_INCENDIARY_STRONG.get(), new ItemStack(ModItems.WARHEAD_INCENDIARY_MEDIUM.get()));
+        medium(writer, "missile_cluster_strong", ModItems.MISSILE_CLUSTER_STRONG.get(), new ItemStack(ModItems.WARHEAD_CLUSTER_MEDIUM.get()));
+        medium(writer, "missile_buster_strong", ModItems.MISSILE_BUSTER_STRONG.get(), new ItemStack(ModItems.WARHEAD_BUSTER_MEDIUM.get()));
+        medium(writer, "missile_emp_strong", ModItems.MISSILE_EMP_STRONG.get(), new ItemStack(ModBlocks.EMP.get().asItem(), 3));
 
-        emit(writer, "missile_incendiary_strong", new ItemStack(ModItems.MISSILE_INCENDIARY_STRONG.get()), 100, 5_000L,
-                p(new ItemStack(ModItems.THRUSTER_MEDIUM.get())),
-                p(new ItemStack(ModItems.FUEL_TANK_MEDIUM.get())),
-                p(new ItemStack(ModItems.WARHEAD_INCENDIARY_MEDIUM.get())));
+        large(writer, "missile_burst", ModItems.MISSILE_BURST.get(), ModItems.WARHEAD_GENERIC_LARGE.get());
+        large(writer, "missile_inferno", ModItems.MISSILE_INFERNO.get(), ModItems.WARHEAD_INCENDIARY_LARGE.get());
+        large(writer, "missile_rain", ModItems.MISSILE_RAIN.get(), ModItems.WARHEAD_CLUSTER_LARGE.get());
+        large(writer, "missile_drill", ModItems.MISSILE_DRILL.get(), ModItems.WARHEAD_BUSTER_LARGE.get());
 
-        emit(writer, "missile_buster", new ItemStack(ModItems.MISSILE_BUSTER.get()), 60, 1_000L,
-                p(new ItemStack(ModItems.THRUSTER_SMALL.get())),
-                p(new ItemStack(ModItems.FUEL_TANK_SMALL.get())),
-                p(new ItemStack(ModItems.WARHEAD_BUSTER_SMALL.get())));
+        huge(writer, "missile_nuclear", ModItems.MISSILE_NUCLEAR.get(), ModItems.WARHEAD_NUCLEAR.get());
+        huge(writer, "missile_nuclear_cluster", ModItems.MISSILE_NUCLEAR_CLUSTER.get(), ModItems.WARHEAD_MIRV.get());
+        huge(writer, "missile_volcano", ModItems.MISSILE_VOLCANO.get(), ModItems.WARHEAD_VOLCANO.get());
+    }
 
-        emit(writer, "missile_incendiary", new ItemStack(ModItems.MISSILE_INCENDIARY.get()), 60, 1_000L,
-                p(new ItemStack(ModItems.THRUSTER_SMALL.get())),
-                p(new ItemStack(ModItems.FUEL_TANK_SMALL.get())),
-                p(new ItemStack(ModItems.WARHEAD_INCENDIARY_SMALL.get())));
+    private static Ingredient ore(String path) { return OreDictIngredients.ore(path); }
 
-        emit(writer, "missile_abm", new ItemStack(ModItems.MISSILE_ABM.get()), 60, 1_000L,
-                p(new ItemStack(ModItems.THRUSTER_SMALL.get(), 4)),
-                p(new ItemStack(ModItems.MISSILE_ASSEMBLY.get())),
-                p(new ItemStack(ModItems.BALL_TNT.get(), 3)));
+    private static void small(Consumer<FinishedRecipe> w, String id, net.minecraft.world.item.Item out, net.minecraft.world.item.Item warhead) {
+        emit(w, id, new ItemStack(out), 100, 5_000L, p(new ItemStack(warhead)),
+                p(new ItemStack(ModItems.FUEL_TANK_SMALL.get())), p(new ItemStack(ModItems.THRUSTER_SMALL.get())));
+    }
 
-        emit(writer, "missile_cluster", new ItemStack(ModItems.MISSILE_CLUSTER.get()), 60, 1_000L,
-                p(new ItemStack(ModItems.THRUSTER_SMALL.get())),
-                p(new ItemStack(ModItems.FUEL_TANK_SMALL.get())),
-                p(new ItemStack(ModItems.WARHEAD_CLUSTER_SMALL.get())));
+    private static void medium(Consumer<FinishedRecipe> w, String id, net.minecraft.world.item.Item out, ItemStack warhead) {
+        emit(w, id, new ItemStack(out), 200, 10_000L, p(warhead),
+                p(new ItemStack(ModItems.FUEL_TANK_MEDIUM.get())), p(new ItemStack(ModItems.THRUSTER_MEDIUM.get())));
+    }
 
-        emit(writer, "missile_strong", new ItemStack(ModItems.MISSILE_STRONG.get()), 200, 10_000L,
-                p(new ItemStack(ModItems.THRUSTER_MEDIUM.get())),
-                p(new ItemStack(ModItems.FUEL_TANK_MEDIUM.get())),
-                p(new ItemStack(ModItems.WARHEAD_GENERIC_MEDIUM.get())));
+    private static void large(Consumer<FinishedRecipe> w, String id, net.minecraft.world.item.Item out, net.minecraft.world.item.Item warhead) {
+        emit(w, id, new ItemStack(out), 300, 25_000L, p(new ItemStack(warhead)),
+                p(new ItemStack(ModItems.FUEL_TANK_MEDIUM.get(), 2)), p(new ItemStack(ModItems.THRUSTER_MEDIUM.get(), 4)));
+    }
 
-        emit(writer, "missile_emp_strong", new ItemStack(ModItems.MISSILE_EMP_STRONG.get()), 100, 5_000L,
-                p(new ItemStack(ModItems.THRUSTER_MEDIUM.get())),
-                p(new ItemStack(ModItems.FUEL_TANK_MEDIUM.get())),
-                p(new ItemStack(ModBlocks.EMP.get().asItem(), 3)));
-
-        emit(writer, "missile_buster_strong", new ItemStack(ModItems.MISSILE_BUSTER_STRONG.get()), 100, 5_000L,
-                p(new ItemStack(ModItems.THRUSTER_MEDIUM.get())),
-                p(new ItemStack(ModItems.FUEL_TANK_MEDIUM.get())),
-                p(new ItemStack(ModItems.WARHEAD_BUSTER_MEDIUM.get())));
-
-        emit(writer, "missile_cluster_strong", new ItemStack(ModItems.MISSILE_CLUSTER_STRONG.get()), 100, 5_000L,
-                p(new ItemStack(ModItems.THRUSTER_MEDIUM.get())),
-                p(new ItemStack(ModItems.FUEL_TANK_MEDIUM.get())),
-                p(new ItemStack(ModItems.WARHEAD_CLUSTER_MEDIUM.get())));
-
-        emit(writer, "missile_drill", new ItemStack(ModItems.MISSILE_DRILL.get()), 200, 20_000L,
-                p(new ItemStack(ModItems.THRUSTER_MEDIUM.get(), 4)),
-                p(new ItemStack(ModItems.FUEL_TANK_MEDIUM.get(), 2)),
-                p(new ItemStack(ModItems.WARHEAD_BUSTER_LARGE.get())));
-
-        emit(writer, "missile_burst", new ItemStack(ModItems.MISSILE_BURST.get()), 200, 20_000L,
-                p(new ItemStack(ModItems.THRUSTER_MEDIUM.get(), 4)),
-                p(new ItemStack(ModItems.FUEL_TANK_MEDIUM.get(), 2)),
-                p(new ItemStack(ModItems.WARHEAD_GENERIC_LARGE.get())));
-
-        emit(writer, "missile_nuclear", new ItemStack(ModItems.MISSILE_NUCLEAR.get()), 200, 50_000L,
-                p(new ItemStack(ModItems.THRUSTER_LARGE.get(), 3)),
-                p(new ItemStack(ModItems.FUEL_TANK_LARGE.get())),
-                p(new ItemStack(ModItems.WARHEAD_NUCLEAR.get())));
-
-        emit(writer, "missile_volcano", new ItemStack(ModItems.MISSILE_VOLCANO.get()), 200, 50_000L,
-                p(new ItemStack(ModItems.THRUSTER_LARGE.get(), 3)),
-                p(new ItemStack(ModItems.FUEL_TANK_LARGE.get())),
-                p(new ItemStack(ModItems.WARHEAD_VOLCANO.get())));
-
-        emit(writer, "missile_nuclear_cluster", new ItemStack(ModItems.MISSILE_NUCLEAR_CLUSTER.get()), 200, 50_000L,
-                p(new ItemStack(ModItems.THRUSTER_LARGE.get(), 3)),
-                p(new ItemStack(ModItems.FUEL_TANK_LARGE.get())),
-                p(new ItemStack(ModItems.WARHEAD_MIRV.get())));
+    private static void huge(Consumer<FinishedRecipe> w, String id, net.minecraft.world.item.Item out, net.minecraft.world.item.Item warhead) {
+        emit(w, id, new ItemStack(out), 600, 50_000L, p(new ItemStack(warhead)),
+                p(new ItemStack(ModItems.FUEL_TANK_LARGE.get())), p(new ItemStack(ModItems.THRUSTER_LARGE.get(), 3)));
     }
 
     // ─── Dense Wires ────────────────────────────────────────────────────────────

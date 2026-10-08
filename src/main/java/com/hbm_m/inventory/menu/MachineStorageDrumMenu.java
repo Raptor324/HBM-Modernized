@@ -30,19 +30,26 @@ public class MachineStorageDrumMenu extends AbstractContainerMenu {
 
         var container = new ModItemStackHandlerContainer(blockEntity.getInventory(), blockEntity::setChanged);
 
-        for (int row = 0; row < 4; row++) {
-            for (int col = 0; col < 6; col++) {
-                this.addSlot(new Slot(container, col + row * 6, 26 + col * 18, 17 + row * 18));
+        // Original ContainerStorageDrum: 24 Plaetze als Achteck im 6x6-Raster ab (35,24), je ein Stueck
+        int index = 0;
+        for (int j = 0; j < 6; j++) {
+            for (int i = 0; i < 6; i++) {
+                if (i + j > 1 && i + j < 9 && 5 - i + j > 1 && i + 5 - j > 1) {
+                    this.addSlot(new Slot(container, index, 35 + i * 18, 24 + j * 18) {
+                        @Override public int getMaxStackSize() { return 1; }
+                    });
+                    index++;
+                }
             }
         }
 
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 9; col++) {
-                this.addSlot(new Slot(inventory, col + row * 9 + 9, 8 + col * 18, 103 + row * 18));
+                this.addSlot(new Slot(inventory, col + row * 9 + 9, 8 + col * 18, 152 + row * 18));
             }
         }
         for (int col = 0; col < 9; col++) {
-            this.addSlot(new Slot(inventory, col, 8 + col * 18, 161));
+            this.addSlot(new Slot(inventory, col, 8 + col * 18, 210));
         }
     }
 

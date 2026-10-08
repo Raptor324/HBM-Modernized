@@ -184,9 +184,12 @@ public class FluidType {
         return ModFluids.getTintColor(getName());
     }
 
-    /** 1.7.10 {@code getTint()} — GUI-тинт. В 1.20.1 хранится в {@code ModFluids.TINT_COLORS}. */
+    /**
+     * 1:1 {@code getTint()} = {@code guiTint}: fuer alle eingebauten Typen 0xFFFFFF (renderWithTint = false), die
+     * GUI-Texturen sind bereits eingefaerbt. Nur Custom-/Fremdfluessigkeiten des Originals hatten einen eigenen Tint.
+     */
     public int getTint() {
-        return ModFluids.getTintColor(getName());
+        return 0xFFFFFF;
     }
 
     /**
@@ -315,8 +318,10 @@ public class FluidType {
         }
 
         if (!hidden.isEmpty() && !shiftDown) {
-            info.add(Component.translatable("gui.hbm_m.fluid_tank.hold_shift_more")
-                    .withStyle(ChatFormatting.DARK_GRAY, ChatFormatting.ITALIC));
+            // 1:1 fest im Original: "Hold <LSHIFT> to display more info", LSHIFT gelb
+            info.add(Component.literal("Hold <").withStyle(ChatFormatting.DARK_GRAY, ChatFormatting.ITALIC)
+                    .append(Component.literal("LSHIFT").withStyle(ChatFormatting.YELLOW, ChatFormatting.ITALIC))
+                    .append(Component.literal("> to display more info").withStyle(ChatFormatting.DARK_GRAY, ChatFormatting.ITALIC)));
         }
     }
 }

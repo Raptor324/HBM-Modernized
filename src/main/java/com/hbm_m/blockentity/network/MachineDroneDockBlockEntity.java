@@ -75,11 +75,11 @@ public class MachineDroneDockBlockEntity extends BaseMachineBlockEntity {
             }
             if (firstRequest == null) continue;
 
-            ItemStack wanted = firstRequest.request.get(level.random.nextInt(firstRequest.request.size()));
+            RequestNetwork.RequestStack wanted = firstRequest.request.get(level.random.nextInt(firstRequest.request.size()));
 
             for (OfferNode offer : offers) {
                 if (!offer.active) continue;
-                boolean matches = offer.offer.stream().anyMatch(stack -> com.hbm_m.platform.PlatformHooks.isSameItemSameTags(stack, wanted));
+                boolean matches = offer.offer.stream().anyMatch(wanted::matches);
                 if (!matches) continue;
 
                 if (be.tryEmbark(level, own, firstRequest, offer, wanted, localNodes)) return;
@@ -88,7 +88,7 @@ public class MachineDroneDockBlockEntity extends BaseMachineBlockEntity {
         }
     }
 
-    private boolean tryEmbark(Level level, PathNode dock, RequestNode request, OfferNode offer, ItemStack wanted, Set<PathNode> localNodes) {
+    private boolean tryEmbark(Level level, PathNode dock, RequestNode request, OfferNode offer, RequestNetwork.RequestStack wanted, Set<PathNode> localNodes) {
         List<PathNode> dockToOffer = generatePath(dock, offer, localNodes);
         if (dockToOffer == null) return false;
         List<PathNode> offerToRequest = generatePath(offer, request, localNodes);
@@ -125,11 +125,12 @@ public class MachineDroneDockBlockEntity extends BaseMachineBlockEntity {
         init.add(start);
         paths.add(init);
 
+        // Original: "continue outer" beim Notstopp springt in die naechste Tiefe, ohne paths zu ersetzen
+        depthLoop:
         for (int depth = 0; depth < PATHING_DEPTH; depth++) {
             int iterationBrake = 1000;
             List<List<PathNode>> newPaths = new ArrayList<>();
 
-            depthLoop:
             for (List<PathNode> oldPath : paths) {
                 for (PathNode connectedUnsafe : oldPath.get(oldPath.size() - 1).reachableNodes) {
                     PathNode connectedSafe = lookup(localNodes, connectedUnsafe);

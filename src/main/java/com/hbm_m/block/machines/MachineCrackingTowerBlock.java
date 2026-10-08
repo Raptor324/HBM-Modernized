@@ -115,7 +115,7 @@ public class MachineCrackingTowerBlock extends DummyableMachineBlock implements 
         List<Component> text = new ArrayList<>();
         for (int i = 0; i < cracker.tanks.length; i++) {
             text.add((i < 2 ? Component.literal("-> ").withStyle(ChatFormatting.GREEN) : Component.literal("<- ").withStyle(ChatFormatting.RED))
-                    .append(Component.literal("").withStyle(ChatFormatting.RESET)
+                    .append(Component.literal("").withStyle(ChatFormatting.WHITE) /* 1.7 §r = Grundfarbe */
                             .append(FluidType.forFluid(cracker.tanks[i].getTankType()).getLocalizedName())
                             .append(": " + cracker.tanks[i].getFill() + "/" + cracker.tanks[i].getMaxFill() + "mB")));
         }

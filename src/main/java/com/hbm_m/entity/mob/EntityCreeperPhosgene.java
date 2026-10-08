@@ -90,4 +90,21 @@ public class EntityCreeperPhosgene extends Creeper {
 
         this.discard();
     }
+
+    /** Original EntityCreeper.getDropItem = Schwarzpulver (dropFewItems-Standard 0-2 + Pluenderung); dazu die Schallplatte aus EntityCreeper.onDeath. */
+    //? if < 1.21.1 {
+    @Override
+    protected void dropCustomDeathLoot(net.minecraft.world.damagesource.DamageSource source, int looting, boolean recentlyHit) {
+        super.dropCustomDeathLoot(source, looting, recentlyHit);
+        CreeperDrops.dropDefault(this, net.minecraft.world.item.Items.GUNPOWDER, looting);
+        CreeperDrops.dropRecord(this, source);
+    }
+    //?} else {
+    /*@Override
+    protected void dropCustomDeathLoot(net.minecraft.server.level.ServerLevel serverLevel, net.minecraft.world.damagesource.DamageSource source, boolean recentlyHit) {
+        super.dropCustomDeathLoot(serverLevel, source, recentlyHit);
+        CreeperDrops.dropDefault(this, net.minecraft.world.item.Items.GUNPOWDER, 0);
+        CreeperDrops.dropRecord(this, source);
+    }
+    *///?}
 }

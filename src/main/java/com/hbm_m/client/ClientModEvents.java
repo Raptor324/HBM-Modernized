@@ -85,6 +85,7 @@ public class ClientModEvents {
             if (client.player != null) {
                 ParticleEffectClient.tickRadiationAura(client.player);
             }
+            DuckKeyHandler.tick(client);
         });
 
         //? if fabric {
@@ -129,6 +130,9 @@ public class ClientModEvents {
             provider.appendHbmTooltip(stack, level, lines, flag);
         }
 
+        // Original ItemBlockLore / ItemBlockBlastInfo / BlockMassStorage.addInformation
+        com.hbm_m.item.block.ItemBlockLore.appendTooltip(stack, lines);
+
         // Hazard-тултипы и теги не применяются к броне (у неё свой обработчик).
         if (stack.getItem() instanceof ArmorItem) {
             return;
@@ -136,7 +140,8 @@ public class ClientModEvents {
 
         HazardTooltipHandler.appendHazardTooltips(stack, Minecraft.getInstance().player, lines);
 
-        boolean hasTags = stack.getTags().findAny().isPresent();
+        // Original ClientConfig.ITEM_TOOLTIP_SHOW_OREDICT (Ore-Dictionary -> Tags)
+        boolean hasTags = com.hbm_m.config.ClientConfig.itemTooltipShowOredict && stack.getTags().findAny().isPresent();
         if (hasTags) {
             if (Screen.hasShiftDown()) {
                 lines.add(Component.empty());
@@ -155,6 +160,23 @@ public class ClientModEvents {
                         Component.translatable("tooltip.hbm_m.hold_shift_for_details")
                                 .withStyle(ChatFormatting.GRAY, ChatFormatting.ITALIC)
                 );
+            }
+        }
+
+        /// CUSTOM NUKE /// (Original ClientConfig.ITEM_TOOLTIP_SHOW_CUSTOM_NUKE, TileEntityNukeCustom.entries)
+        if (com.hbm_m.config.ClientConfig.itemTooltipShowCustomNuke) {
+            com.hbm_m.explosion.CustomNukeExplosion.CustomNukeEntry entry = com.hbm_m.explosion.CustomNukeExplosion.entries().get(stack.getItem());
+
+            if (entry != null) {
+
+                if (!lines.isEmpty())
+                    lines.add(Component.empty());
+
+                if (entry.entry() == com.hbm_m.explosion.CustomNukeExplosion.EnumEntryType.ADD)
+                    lines.add(Component.literal("Adds " + entry.value() + " to the custom nuke stage " + entry.type()).withStyle(ChatFormatting.GOLD));
+
+                if (entry.entry() == com.hbm_m.explosion.CustomNukeExplosion.EnumEntryType.MULT)
+                    lines.add(Component.literal("Adds multiplier " + entry.value() + " to the custom nuke stage " + entry.type()).withStyle(ChatFormatting.GOLD));
             }
         }
     }
@@ -189,6 +211,13 @@ public class ClientModEvents {
         // событие в кадре — AFTER_SKY: восстанавливаем троицу до энтити/BER.
         if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_SKY) {
             com.hbm_m.client.render.shader.ShaderBindResync.restoreVanillaTextureBindings();
+            // Original RenderNTMSkyboxChainloader / RenderNTMSkyboxImpact: Zusaetze direkt nach dem Himmel
+            //? if < 1.21.1 {
+            com.hbm_m.client.render.world.RenderNTMSkybox.renderAfterSky(event.getPoseStack(), event.getPartialTick());
+            //?} else {
+            /*com.hbm_m.client.render.world.RenderNTMSkybox.renderAfterSky(event.getPoseStack(),
+                    event.getPartialTick().getGameTimeDeltaPartialTick(true));
+            *///?}
         }
 
         if (event.getStage() == RenderLevelStageEvent.Stage.AFTER_SKY) {
@@ -240,6 +269,27 @@ public class ClientModEvents {
             com.hbm_m.client.compat.dh.DhClientState.onAfterLevel();
         }
     }
+
+    //? if forge {
+    /**
+     * Original GuiScreen.drawHoveringText: alle Zeilen ausser dem Namen bekommen "§7" - Zeilen ohne eigenen
+     * Farbcode sind grau. Laeuft zuletzt (LOWEST), damit alle Tooltip-Quellen (appendHoverText, ITooltipProvider,
+     * PersistentInfoTooltips, Hazard ...) erfasst sind; nur Gegenstaende dieses Mods.
+     */
+    @SubscribeEvent(priority = net.minecraftforge.eventbus.api.EventPriority.LOWEST)
+    public static void onItemTooltipLegacyGray(net.minecraftforge.event.entity.player.ItemTooltipEvent event) {
+        if (com.hbm_m.util.TooltipUtil.isHbmStack(event.getItemStack())) {
+            com.hbm_m.util.TooltipUtil.applyLegacyGray(event.getToolTip());
+        }
+    }
+    //?} elif neoforge {
+    /*@SubscribeEvent(priority = net.neoforged.bus.api.EventPriority.LOWEST)
+    public static void onItemTooltipLegacyGray(net.neoforged.neoforge.event.entity.player.ItemTooltipEvent event) {
+        if (com.hbm_m.util.TooltipUtil.isHbmStack(event.getItemStack())) {
+            com.hbm_m.util.TooltipUtil.applyLegacyGray(event.getToolTip());
+        }
+    }
+    *///?}
 
     //? if forge {
     @SubscribeEvent

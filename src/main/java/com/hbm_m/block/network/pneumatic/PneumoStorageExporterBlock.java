@@ -32,4 +32,10 @@ public class PneumoStorageExporterBlock extends PneumaticStorageBlockBase {
         return createTickerHelper(type, ModBlockEntities.PNEUMO_STORAGE_EXPORTER_BE.get(),
                 (lvl, p, st, be) -> PneumoStorageExporterBlockEntity.tick(lvl, p, st, (PneumoStorageExporterBlockEntity) be));
     }
+
+    /** audit10: Original PneumoStorageExporter.breakBlock - nur ab Slot 9 (die Filter 0-8 sind Attrappen). */
+    @Override
+    protected int spillFrom() {
+        return 9;
+    }
 }

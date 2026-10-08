@@ -31,7 +31,7 @@ import net.minecraft.world.level.block.state.BlockState;
  * <p><b>Anmerkung:</b> die Rohranbindung laeuft ueber die Fluid-Schnittstelle von 1.20 statt der
  * manuellen Nachbarabfrage des Originals - dasselbe Ergebnis, anderer Weg.
  */
-public class MachineDeuteriumTowerBlockEntity extends BaseMachineBlockEntity {
+public class MachineDeuteriumTowerBlockEntity extends BaseMachineBlockEntity implements com.hbm_m.api.fluids.IFluidStandardTransceiverMK2 {
 
     public static final int TANK_WATER = 0;
     public static final int TANK_HEAVY_WATER = 1;
@@ -83,10 +83,47 @@ public class MachineDeuteriumTowerBlockEntity extends BaseMachineBlockEntity {
             }
         }
 
+        // Original getConPos/subscribeToAllAround/sendFluidToAll: alle acht Nachbarfelder rund um den 2x2-Sockel
+        if (level instanceof net.minecraft.server.level.ServerLevel server) {
+            java.util.Set<BlockPos> base = be.basePositions(state);
+            for (BlockPos b : base) {
+                for (net.minecraft.core.Direction d : net.minecraft.core.Direction.Plane.HORIZONTAL) {
+                    BlockPos at = b.relative(d);
+                    if (base.contains(at)) continue;
+                    be.trySubscribe(water.getTankType(), server, at, d);
+                    if (heavyWater.getFill() > 0) be.tryProvide(heavyWater, server, at, d);
+                }
+            }
+        }
+
         if (dirty) {
             be.setChanged();
             be.sendUpdateToClient();
         }
+    }
+
+    /** Weltpositionen der untersten Strukturebene (Sockel) samt Controller. */
+    private java.util.Set<BlockPos> basePositions(BlockState state) {
+        java.util.Set<BlockPos> set = new java.util.HashSet<>();
+        set.add(worldPosition);
+        if (state.getBlock() instanceof com.hbm_m.block.machines.MachineDeuteriumTowerBlock block) {
+            var helper = block.getStructureHelper();
+            var facing = state.getValue(com.hbm_m.block.machines.MachineDeuteriumTowerBlock.FACING);
+            for (BlockPos local : helper.getPartOffsets()) {
+                BlockPos world = helper.getRotatedPos(worldPosition, local, facing);
+                if (world.getY() == worldPosition.getY()) set.add(world);
+            }
+        }
+        return set;
+    }
+
+    @Override public FluidTank[] getSendingTanks() { return new FluidTank[] { tanks[TANK_HEAVY_WATER] }; }
+    @Override public FluidTank[] getReceivingTanks() { return new FluidTank[] { tanks[TANK_WATER] }; }
+    @Override public FluidTank[] getAllTanks() { return tanks; }
+
+    @Override
+    public boolean isLoaded() {
+        return level != null && !isRemoved() && level.isLoaded(worldPosition);
     }
 
     public FluidTank getTank(int index) {

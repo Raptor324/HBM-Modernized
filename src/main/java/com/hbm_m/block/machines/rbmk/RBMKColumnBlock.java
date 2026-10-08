@@ -30,10 +30,16 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 import dev.architectury.registry.menu.MenuRegistry;
 import org.jetbrains.annotations.Nullable;
 
-public abstract class RBMKColumnBlock extends BaseEntityBlock {
+public abstract class RBMKColumnBlock extends BaseEntityBlock implements com.hbm_m.interfaces.ILookOverlay {
 
     /** Set to false to suppress lid drops globally (e.g. during world gen). */
     public static boolean dropLids = true;
+
+    /** 1:1 {@code RBMKBase.printHook} -> {@code TileEntityRBMKBase.diagnosticPrintHook} (DODD). */
+    @Override
+    public void printHook(net.minecraft.client.gui.GuiGraphics guiGraphics, Level level, BlockPos pos) {
+        com.hbm_m.client.overlay.RBMKDiagnosticOverlay.print(guiGraphics, level, pos);
+    }
 
     protected RBMKColumnBlock(Properties props) {
         super(props);

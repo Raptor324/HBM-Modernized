@@ -60,72 +60,27 @@ public class MachineChungusBlock extends BaseEntityBlock implements IMultiblockC
     }
 
     private static MultiblockStructureHelper defineStructure() {
-        // Layer-Raster: jede Zeile = eine Tiefenreihe (Z, Reihe 0 = depth-10 .. Reihe 20 = depth+10),
-        // jedes Zeichen = eine Seiten-Spalte (X, Spalte 0 = side-2 .. Spalte 4 = side+2).
-        // Symmetrisch auf 21x5 gepolstert, damit der Controller exakt im Array-Zentrum landet (lokal 0,0,0).
-        String[] height0 = {
-            " OEO ", " OOO ", " OOO ", " OOO ",   // Heck-Schacht fern (depth -10..-7), Rückconnector bei -10
-            " OOO ", " OOO ", " OOO ", " OOO ", " OOO ", " OOO ", // Heck-Schacht nah (depth -6..-1)
-            "UOCOU",                                              // Controller-Reihe (depth 0) mit Seiten-Connectoren
-            "OOOOO", "OOOOO", "OOOOO",                            // Hauptkörper (depth 1..3)
-            "     ",                                              // depth+4 (kein Block auf Bodenebene)
-            "     ", "     ", "     ", "     ", "     ", "     "  // depth+5..+10 (ungenutztes Padding)
-        };
-        String[] height1 = {
-            " OOO ", " OOO ", " OOO ", " OOO ",
-            " OOO ", " OOO ", " OOO ", " OOO ", " OOO ", " OOO ",
-            "OOOOO",
-            "OOOOO", "OOOOO", "OOOOO",
-            "     ",
-            "     ", "     ", "     ", "     ", "     ", "     "
-        };
-        String[] height2 = {
-            " OOO ", " OOO ", " OOO ", " OOO ",
-            " OOO ", " OOO ", " OOO ", " OOO ", " OOO ", " OOO ",
-            "OOOOO",
-            "OOOOO", "OOOOO", "OOOOO",
-            "  U  ",                                              // Front-Connector bei depth+4
-            "     ", "     ", "     ", "     ", "     ", "     "
-        };
-        String[] height3 = {
-            "     ", "     ", "     ", "     ",                   // Heck-Schacht fern endet bei Höhe 2
-            " OOO ", " OOO ", " OOO ", " OOO ", " OOO ", " OOO ",
-            "OOOOO",
-            "OOOOO", "OOOOO", "OOOOO",
-            "     ",
-            "     ", "     ", "     ", "     ", "     ", "     "
-        };
-        String[] height4 = {
-            "     ", "     ", "     ", "     ",
-            "     ", "     ", "     ", "     ", "     ", "     ",
-            " OOO ",                                              // Kappe (schmaler als Hauptkörper)
-            " OOO ", " OOO ", " OOO ",
-            "     ",
-            "     ", "     ", "     ", "     ", "     ", "     "
-        };
-
-        Map<Character, PartRole> roleMap = Map.of(
-                'C', PartRole.CONTROLLER,
-                'O', PartRole.DEFAULT,
-                'E', PartRole.ENERGY_CONNECTOR,
-                'U', PartRole.UNIVERSAL_CONNECTOR
-        );
-
-        Map<Character, Supplier<BlockState>> symbolMap = Map.of();
-
-        return MultiblockStructureHelper.createFromLayersWithRoles(
-                new String[][] { height0, height1, height2, height3, height4 },
-                symbolMap,
-                () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState(),
-                roleMap,
-                null,
-                null
-        );
+        // 1:1 MachineChungus: getDimensions {3,0,0,3,2,2}, getOffset 3 (Kern hinten im Gehaeuse, Gehaeuse zum Spieler),
+        // fillSpace-Zusatzquader {4,-4,0,3,1,1}, {3,0,6,-1,1,1}, {2,0,10,-7,1,1} (Schacht nach hinten),
+        // Dummy + Frontanschluss bei Klick + dir auf Hoehe 2 (= Kern + 4 dir), Heckanschluss Kern - 10 dir,
+        // Seitenanschluesse Kern +- 2 rot.
+        return com.hbm_m.multiblock.DummyableStructureBuilder.create()
+                .box(3, 0, 0, 3, 2, 2)
+                .box(4, -4, 0, 3, 1, 1)
+                .box(3, 0, 6, -1, 1, 1)
+                .box(2, 0, 10, -7, 1, 1)
+                .extra(4, 2, 0)
+                .extra(-10, 0, 0)
+                .extra(0, 0, 2)
+                .extra(0, 0, -2)
+                .placementOffset(3)
+                .build(() -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState());
     }
 
     @Override
     public RenderShape getRenderShape(BlockState state) {
-        return RenderShape.MODEL;
+        // Original RenderChungus (BER)
+        return RenderShape.ENTITYBLOCK_ANIMATED;
     }
 
     @Override
@@ -173,11 +128,13 @@ public class MachineChungusBlock extends BaseEntityBlock implements IMultiblockC
     //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        if (player.isShiftKeyDown()) return InteractionResult.PASS; // Original: geschlichen false
         return handleUse(state, level, pos, player, hand, hit);
     }
     //?} else {
     /*@Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+        if (player.isShiftKeyDown()) return InteractionResult.PASS; // Original: geschlichen false
         return handleUse(state, level, pos, player, InteractionHand.MAIN_HAND, hit);
     }
     *///?}
@@ -209,7 +166,8 @@ public class MachineChungusBlock extends BaseEntityBlock implements IMultiblockC
 
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        return structureHelper.generateShapeFromParts(state.getValue(FACING));
+        // w16b: nur die Kernzelle (Raycast pro Zelle wie Original); Umriss der ganzen Maschine: MultiblockOutlineForge
+        return structureHelper.getControllerCellShape(state.getValue(FACING));
     }
 
     @Override
@@ -245,4 +203,11 @@ public class MachineChungusBlock extends BaseEntityBlock implements IMultiblockC
         return CODEC;
     }
     *///?}
+
+    /** Original {@code addInformation}: {@code addStandardInfo} (Umschalttaste zeigt {@code .desc}). */
+    @Override
+    public void appendHoverText(net.minecraft.world.item.ItemStack stack, @org.jetbrains.annotations.Nullable net.minecraft.world.level.BlockGetter level,
+                                java.util.List<net.minecraft.network.chat.Component> list, net.minecraft.world.item.TooltipFlag flag) {
+        com.hbm_m.util.StandardInfo.add(list, getDescriptionId() + ".desc");
+    }
 }

@@ -53,11 +53,10 @@ public class GUIMachineCatalyticReformer extends GuiInfoScreen<MachineCatalyticR
             }
 
             var tanks = be.getTanks();
-            // Tank0 (Eingang) wird analog zum Original nicht separat visualisiert (kein eigener
-            // Balken im Original-GUI - nur die drei Ausgangstanks werden gezeigt).
-            tanks[1].renderTank(guiGraphics, leftPos + TANK_X[0], topPos + TANK_Y, TANK_W, TANK_H);
-            tanks[2].renderTank(guiGraphics, leftPos + TANK_X[1], topPos + TANK_Y, TANK_W, TANK_H);
-            tanks[3].renderTank(guiGraphics, leftPos + TANK_X[2], topPos + TANK_Y, TANK_W, TANK_H);
+            // Original: alle vier Tanks - [0] Eingang bei 35, [1..3] Ausgaenge bei 107/125/143
+            for (int i = 0; i < 4; i++) {
+                tanks[i].renderTank(guiGraphics, leftPos + TANK_X[i], topPos + TANK_Y, TANK_W, TANK_H);
+            }
         }
     }
 
@@ -79,7 +78,7 @@ public class GUIMachineCatalyticReformer extends GuiInfoScreen<MachineCatalyticR
             FluidTankArr(tanks, guiGraphics, mouseX, mouseY);
         }
 
-        if (isPointInRect(CATALYST_X, CATALYST_Y, 16, 16, mouseX, mouseY) && menu.getCarried().isEmpty()) {
+        if (isPointInRect(CATALYST_X, CATALYST_Y, 16, 16, mouseX, mouseY) && menu.getCarried().isEmpty() && !menu.getSlot(10).hasItem()) { // Original: nur bei leerem Katalysator-Slot (10)
             ItemStack converter = new ItemStack(ModItems.CATALYTIC_CONVERTER.get());
             guiGraphics.renderTooltip(font, converter, mouseX, mouseY);
         }
@@ -88,14 +87,8 @@ public class GUIMachineCatalyticReformer extends GuiInfoScreen<MachineCatalyticR
     }
 
     private void FluidTankArr(com.hbm_m.inventory.fluid.tank.FluidTank[] tanks, GuiGraphics guiGraphics, int mouseX, int mouseY) {
-        if (isPointInRect(TANK_X[0], TANK_Y, TANK_W, TANK_H, mouseX, mouseY)) {
-            tanks[1].renderTankInfo(guiGraphics, font, mouseX, mouseY, leftPos + TANK_X[0], topPos + TANK_Y, TANK_W, TANK_H);
-        }
-        if (isPointInRect(TANK_X[1], TANK_Y, TANK_W, TANK_H, mouseX, mouseY)) {
-            tanks[2].renderTankInfo(guiGraphics, font, mouseX, mouseY, leftPos + TANK_X[1], topPos + TANK_Y, TANK_W, TANK_H);
-        }
-        if (isPointInRect(TANK_X[2], TANK_Y, TANK_W, TANK_H, mouseX, mouseY)) {
-            tanks[3].renderTankInfo(guiGraphics, font, mouseX, mouseY, leftPos + TANK_X[2], topPos + TANK_Y, TANK_W, TANK_H);
+        for (int i = 0; i < 4; i++) {
+            tanks[i].renderTankInfo(guiGraphics, font, mouseX, mouseY, leftPos + TANK_X[i], topPos + TANK_Y, TANK_W, TANK_H);
         }
     }
 }

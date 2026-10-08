@@ -38,6 +38,18 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 
 public class MachineCentrifugeBlock extends BaseEntityBlock implements IMultiblockController {
 
+    /** w16b: Original {@code MachineCentrifuge.bounding} (detaillierte Hitbox, um die Kernmitte), je FACING gedreht. */
+    private static final java.util.Map<net.minecraft.core.Direction, net.minecraft.world.phys.shapes.VoxelShape> BOUNDING_W16B =
+            com.hbm_m.multiblock.MultiblockStructureHelper.boundingMasters(new double[][] {
+            {-0.5D, 0D, -0.5D, 0.5D, 1D, 0.5D},
+            {-0.375D, 1D, -0.375D, 0.375D, 4D, 0.375D}
+    });
+
+    @Override
+    public net.minecraft.world.phys.shapes.VoxelShape getCustomMasterVoxelShape(BlockState state) {
+        return BOUNDING_W16B.get(state.getValue(FACING));
+    }
+
     public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
     private final MultiblockStructureHelper structureHelper;
 
@@ -110,8 +122,19 @@ public class MachineCentrifugeBlock extends BaseEntityBlock implements IMultiblo
 
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+        // w16b: nur die Kernzelle (Raycast pro Zelle wie Original); Umriss der ganzen Maschine: MultiblockOutlineForge
         // Возвращаем форму всей структуры (1х4х1), чтобы рамка выделения была правильной
-        return structureHelper.generateShapeFromParts(state.getValue(FACING));
+        return MultiblockStructureHelper.cellShape(getCustomMasterVoxelShape(state), BlockPos.ZERO);
+    }
+
+    @Override
+    public VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+        return getCustomMasterVoxelShape(state); // w16b: Original bounding gilt fuer alle Zellen
+    }
+
+    @Override
+    public VoxelShape getOcclusionShape(BlockState state, BlockGetter level, BlockPos pos) {
+        return net.minecraft.world.phys.shapes.Shapes.empty();
     }
 
     @Override
@@ -148,11 +171,13 @@ public class MachineCentrifugeBlock extends BaseEntityBlock implements IMultiblo
     //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        if (!level.isClientSide() && player.isShiftKeyDown()) return InteractionResult.PASS; // Original: geschlichen auf dem Server false
         return openMenu(state, level, pos, player, hand, hit);
     }
     //?} else {
     /*@Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+        if (!level.isClientSide() && player.isShiftKeyDown()) return InteractionResult.PASS; // Original: geschlichen auf dem Server false
         return openMenu(state, level, pos, player, InteractionHand.MAIN_HAND, hit);
     }
     *///?}

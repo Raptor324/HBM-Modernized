@@ -1,147 +1,163 @@
 package com.hbm_m.datagen.recipes.custom;
 //? if forge {
-import com.hbm_m.item.ModItems;
-import com.hbm_m.item.material.MaterialShape;
-import com.hbm_m.item.material.ModMaterialItems;
-import com.hbm_m.item.material.ModMaterials;
-
-import net.minecraft.data.recipes.FinishedRecipe;
-import net.minecraft.tags.ItemTags;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.item.Items;
-import net.minecraft.world.item.crafting.Ingredient;
-import net.minecraftforge.common.Tags;
-
 import java.util.function.Consumer;
 
+import com.hbm_m.inventory.fluid.ModFluids;
+
+import net.minecraft.data.recipes.FinishedRecipe;
+import net.minecraft.world.item.crafting.Ingredient;
+
+import static com.hbm_m.datagen.recipes.custom.OreDictIngredients.*;
+
 /**
- * Handles Blast Furnace recipe generation to keep {@code ModRecipeProvider} focused on orchestration.
- * Recipes based on original HBM BlastFurnaceRecipes.
+ * 1:1-Port von {@code BlastFurnaceRecipes} (Legierungsofen) und {@code BlastFurnaceRecipesNT} (Hochofen, mit Schlacke).
  *
- * <p>Использует {@code save(writer, "id")} из {@link BaseRecipeBuilder} — Stonecutter-блоки
- * с {@code ResourceLocation} больше не нужны.</p>
+ * <p>AUTOMATISCH ERZEUGT aus dem Original ({@code com.hbm.inventory.recipes.BlastFurnaceRecipes / BlastFurnaceRecipesNT}) durch {@code rc/transpile.py} - nicht von Hand
+ * aendern, sondern Zuordnungen im Skript pflegen. OreDict-Schluessel des Originals sind Item-Tags
+ * {@code hbm_m:oredict/...} ({@link OreDictTagProvider}). Mit OFFEN markierte Rezepte haben im Port
+ * (noch) keine Entsprechung fuer Zutat oder Ergebnis.</p>
  */
 public final class BlastFurnaceRecipeGenerator {
 
     private BlastFurnaceRecipeGenerator() {}
 
     public static void generate(Consumer<FinishedRecipe> writer) {
-        // IRON + COAL -> steel x1
-        // BlastFurnaceRecipes: Benzinkanister + Schleimball = Napalmkanister
-        BlastFurnaceRecipeBuilder.blastFurnaceRecipe(
-                new ItemStack(ModItems.CANISTER_NAPALM.get()),
-                net.minecraftforge.common.crafting.StrictNBTIngredient.of(com.hbm_m.item.liquids.ItemFluidTank.make(ModItems.CANISTER_FULL.get(), com.hbm_m.inventory.fluid.ModFluids.GASOLINE.getSource(), 1)),
-                Ingredient.of(net.minecraftforge.common.Tags.Items.SLIMEBALLS)
-        ).save(writer, "blast_furnace/canister_napalm");
+        part0(writer);
+        checkMissing("BlastFurnaceRecipeGenerator");
+    }
 
-        BlastFurnaceRecipeBuilder.blastFurnaceRecipe(
-                new ItemStack(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.INGOT)),
-                Ingredient.of(Items.IRON_INGOT),
-                Ingredient.of(ItemTags.COALS)
-        ).duration(800).save(writer, "blast_furnace/steel_from_ingot");
+    private static void part0(Consumer<FinishedRecipe> writer) {
+        // BlastFurnaceRecipes: ['ingotIron', 'plateIron', 'gemIron', 'dustIron'] + ['ingotCoal', 'plateCoal', 'gemCoal', 'dustCoal']
+        BlastFurnaceRecipeBuilder.blastFurnaceRecipe(stack("hbm_m:steel_ingot", 1), net.minecraftforge.common.crafting.CompoundIngredient.of(ore("oredict/ingot/iron"), ore("oredict/plate/iron"), ore("oredict/dust/iron")), net.minecraftforge.common.crafting.CompoundIngredient.of(ore("oredict/gem/coal"), ore("oredict/dust/coal")))
+                .save(writer, "blast_furnace/legacy_steel_ingot_0");
 
-        // IRON.ore() + COAL -> steel x2
-        BlastFurnaceRecipeBuilder.blastFurnaceRecipe(
-                new ItemStack(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.INGOT), 2),
-                Ingredient.of(Tags.Items.ORES_IRON),
-                Ingredient.of(ItemTags.COALS)
-        ).duration(800).save(writer, "blast_furnace/steel_from_ore");
+        // BlastFurnaceRecipes: ['ingotIron', 'plateIron', 'gemIron', 'dustIron'] + ['ingotAnyCoke', 'plateAnyCoke', 'gemAnyCoke', 'dustAnyCoke']
+        BlastFurnaceRecipeBuilder.blastFurnaceRecipe(stack("hbm_m:steel_ingot", 1), net.minecraftforge.common.crafting.CompoundIngredient.of(ore("oredict/ingot/iron"), ore("oredict/plate/iron"), ore("oredict/dust/iron")), ore("oredict/gem/any_coke"))
+                .save(writer, "blast_furnace/legacy_steel_ingot_1");
 
-        // IRON.ore() + COAL_BLOCK -> steel x3 (coal block burns hotter, like coke)
-        BlastFurnaceRecipeBuilder.blastFurnaceRecipe(
-                new ItemStack(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.INGOT), 3),
-                Ingredient.of(Tags.Items.ORES_IRON),
-                Ingredient.of(Items.COAL_BLOCK)
-        ).duration(1200).save(writer, "blast_furnace/steel_from_ore_coal_block");
+        // BlastFurnaceRecipes: ['oreIron'] + ['ingotCoal', 'plateCoal', 'gemCoal', 'dustCoal']
+        BlastFurnaceRecipeBuilder.blastFurnaceRecipe(stack("hbm_m:steel_ingot", 2), ore("oredict/ore/iron"), net.minecraftforge.common.crafting.CompoundIngredient.of(ore("oredict/gem/coal"), ore("oredict/dust/coal")))
+                .save(writer, "blast_furnace/legacy_steel_ingot_2");
 
-        // IRON.ore() + coal powder -> steel x3 (flux-like)
-        BlastFurnaceRecipeBuilder.blastFurnaceRecipe(
-                new ItemStack(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.INGOT), 3),
-                Ingredient.of(Tags.Items.ORES_IRON),
-                Ingredient.of(ModMaterialItems.item(ModMaterials.COAL, MaterialShape.POWDER))
-        ).duration(1200).save(writer, "blast_furnace/steel_from_ore_powder");
+        // BlastFurnaceRecipes: ['oreIron'] + ['ingotAnyCoke', 'plateAnyCoke', 'gemAnyCoke', 'dustAnyCoke']
+        BlastFurnaceRecipeBuilder.blastFurnaceRecipe(stack("hbm_m:steel_ingot", 3), ore("oredict/ore/iron"), ore("oredict/gem/any_coke"))
+                .save(writer, "blast_furnace/legacy_steel_ingot_3");
 
-        // CU + REDSTONE -> red_copper x2
-        BlastFurnaceRecipeBuilder.blastFurnaceRecipe(
-                new ItemStack(ModMaterialItems.item(ModMaterials.RED_COPPER, MaterialShape.INGOT), 2),
-                Ingredient.of(Items.COPPER_INGOT),
-                Ingredient.of(Items.REDSTONE)
-        ).duration(400).save(writer, "blast_furnace/red_copper");
+        // BlastFurnaceRecipes: ['oreIron'] + ModItems.powder_flux x1
+        BlastFurnaceRecipeBuilder.blastFurnaceRecipe(stack("hbm_m:steel_ingot", 3), ore("oredict/ore/iron"), Ingredient.of(item("hbm_m:flux_powder")))
+                .save(writer, "blast_furnace/legacy_steel_ingot_4");
 
-        // STEEL + RED_COPPER (MINGRADE analogue) -> advanced_alloy x2
-        BlastFurnaceRecipeBuilder.blastFurnaceRecipe(
-                new ItemStack(ModMaterialItems.item(ModMaterials.ADVANCED_ALLOY, MaterialShape.INGOT), 2),
-                Ingredient.of(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.INGOT)),
-                Ingredient.of(ModMaterialItems.item(ModMaterials.RED_COPPER, MaterialShape.INGOT))
-        ).save(writer, "blast_furnace/advanced_alloy");
+        // BlastFurnaceRecipes: ['ingotCopper', 'plateCopper', 'gemCopper', 'dustCopper'] + ['ingotRedstone', 'plateRedstone', 'gemRedstone', 'dustRedstone']
+        BlastFurnaceRecipeBuilder.blastFurnaceRecipe(stack("hbm_m:red_copper_ingot", 2), net.minecraftforge.common.crafting.CompoundIngredient.of(ore("oredict/ingot/copper"), ore("oredict/plate/copper"), ore("oredict/dust/copper")), net.minecraftforge.common.crafting.CompoundIngredient.of(ore("oredict/ingot/redstone"), ore("oredict/dust/redstone")))
+                .save(writer, "blast_furnace/legacy_red_copper_ingot_5");
 
+        // BlastFurnaceRecipes: ModItems.canister_full@EXPR:Fluids.GASOLINE.getID() x1 + ['slimeball']
+        BlastFurnaceRecipeBuilder.blastFurnaceRecipe(stack("hbm_m:canister_napalm", 1), filled("hbm_m:canister_full", ModFluids.GASOLINE.getSource()), ore("oredict/slimeball"))
+                .save(writer, "blast_furnace/legacy_canister_napalm_6");
 
-        // --- Weitere Rezepte aus dem Original BlastFurnaceRecipesNT.java (1.7.10) ---
-        // Original hat zusaetzlich einen Schlacke-Nebenprodukt-Output (ingot_raw:MAT_SLAG) auf den
-        // Erz-Rezepten - dieser Port unterstuetzt nur einen einzigen Output pro Blast-Furnace-Rezept,
-        // das Nebenprodukt entfaellt daher (gleiche Vereinfachung wie an anderer Stelle diese Session).
+        // BlastFurnaceRecipes: ['ingotTungsten', 'plateTungsten', 'gemTungsten', 'dustTungsten'] + ['nuggetSchrabidium']
+        BlastFurnaceRecipeBuilder.blastFurnaceRecipe(stack("hbm_m:magnetized_tungsten_ingot", 1), net.minecraftforge.common.crafting.CompoundIngredient.of(ore("oredict/ingot/tungsten"), ore("oredict/dust/tungsten")), ore("oredict/nugget/schrabidium"))
+                .save(writer, "blast_furnace/legacy_magnetized_tungsten_ingot_7");
 
-        // CU (dust/dust) + REDSTONE dust -> red_copper x2 (blast.mingradeDust)
-        BlastFurnaceRecipeBuilder.blastFurnaceRecipe(
-                new ItemStack(ModMaterialItems.item(ModMaterials.RED_COPPER, MaterialShape.INGOT), 2),
-                Ingredient.of(ModMaterialItems.item(ModMaterials.COPPER, MaterialShape.POWDER)),
-                Ingredient.of(Items.REDSTONE)
-                ).duration(400).save(writer, "blast_furnace/red_copper_dust");
+        // BlastFurnaceRecipes: ['ingotSteel', 'plateSteel', 'gemSteel', 'dustSteel'] + ['nuggetTechnetium99']
+        BlastFurnaceRecipeBuilder.blastFurnaceRecipe(stack("hbm_m:tcalloy_ingot", 1), net.minecraftforge.common.crafting.CompoundIngredient.of(ore("oredict/ingot/steel"), ore("oredict/plate/steel"), ore("oredict/dust/steel")), ore("oredict/nugget/technetium99"))
+                .save(writer, "blast_furnace/legacy_tcalloy_ingot_8");
 
+        // BlastFurnaceRecipes: ['plateGold'] + ModItems.plate_mixed x1
+        BlastFurnaceRecipeBuilder.blastFurnaceRecipe(stack("hbm_m:plate_paa", 2), ore("oredict/plate/gold"), Ingredient.of(item("hbm_m:plate_mixed")))
+                .save(writer, "blast_furnace/legacy_plate_paa_9");
 
-        // GOLD + plate_mixed -> plate_paa (blast.paa)
-        BlastFurnaceRecipeBuilder.blastFurnaceRecipe(
-                new ItemStack(ModItems.PLATE_PAA.get()),
-                Ingredient.of(Items.GOLD_INGOT),
-                Ingredient.of(ModItems.PLATE_MIXED.get())
-                ).save(writer, "blast_furnace/paa");
+        // BlastFurnaceRecipes: ['ingotSaturnite', 'plateSaturnite', 'gemSaturnite', 'dustSaturnite'] + ModItems.ingot_meteorite x1
+        BlastFurnaceRecipeBuilder.blastFurnaceRecipe(stack("hbm_m:starmetal_ingot", 2), net.minecraftforge.common.crafting.CompoundIngredient.of(ore("oredict/ingot/saturnite"), ore("oredict/plate/saturnite")), Ingredient.of(item("hbm_m:meteorite_ingot")))
+                .save(writer, "blast_furnace/legacy_starmetal_ingot_10");
 
+        // BlastFurnaceRecipes: ['ingotCobalt', 'plateCobalt', 'gemCobalt', 'dustCobalt'] + ModItems.powder_meteorite x1
+        BlastFurnaceRecipeBuilder.blastFurnaceRecipe(stack("hbm_m:meteorite_ingot", 1), net.minecraftforge.common.crafting.CompoundIngredient.of(ore("oredict/ingot/cobalt"), ore("oredict/dust/cobalt")), Ingredient.of(item("hbm_m:meteorite_powder")))
+                .save(writer, "blast_furnace/legacy_meteorite_ingot_11");
 
-        // ALUMINUM powder + 7x clay_ball -> firebrick x8 (blast.firebrick)
-        BlastFurnaceRecipeBuilder.blastFurnaceRecipe(
-                new ItemStack(ModItems.FIREBRICK.get(), 8),
-                Ingredient.of(ModMaterialItems.item(ModMaterials.ALUMINUM, MaterialShape.POWDER)),
-                Ingredient.of(Items.CLAY_BALL)
-                ).save(writer, "blast_furnace/firebrick");
+        // BlastFurnaceRecipes: ModItems.meteorite_sword_hardened x1 + ['ingotCobalt', 'plateCobalt', 'gemCobalt', 'dustCobalt']
+        BlastFurnaceRecipeBuilder.blastFurnaceRecipe(stack("hbm_m:meteorite_sword_alloyed", 1), Ingredient.of(item("hbm_m:meteorite_sword_hardened")), net.minecraftforge.common.crafting.CompoundIngredient.of(ore("oredict/ingot/cobalt"), ore("oredict/dust/cobalt")))
+                .save(writer, "blast_furnace/legacy_meteorite_sword_alloyed_12");
 
+        // blast.steelFromIngot
+        BlastFurnaceRecipeBuilder.blastFurnaceRecipe(stack("hbm_m:steel_ingot", 2), ore("oredict/ingot/iron"), ore("oredict/sand")).nt()
+                .counts(2, 1).duration(800)
+                .secondaryOutput(stack("hbm_m:ingot_slag", 1))
+                .save(writer, "blast_furnace/steelfromingot");
 
-        // LIMESTONE + clay_ball -> firebrick x8 (blast.firebrickLimestone)
-        BlastFurnaceRecipeBuilder.blastFurnaceRecipe(
-                new ItemStack(ModItems.FIREBRICK.get(), 8),
-                Ingredient.of(ModItems.LIMESTONE.get()),
-                Ingredient.of(Items.CLAY_BALL)
-                ).save(writer, "blast_furnace/firebrick_limestone");
+        // blast.steelFromDust
+        BlastFurnaceRecipeBuilder.blastFurnaceRecipe(stack("hbm_m:steel_ingot", 2), ore("oredict/dust/iron"), ore("oredict/sand")).nt()
+                .counts(2, 1).duration(800)
+                .secondaryOutput(stack("hbm_m:ingot_slag", 1))
+                .save(writer, "blast_furnace/steelfromdust");
 
-        // --- Previously flagged as "skipped" - all three actually portable, the required items just live
-        // under this port's generic per-ingot naming (ModMaterials.METEORITE/STARMETAL/SATURNITE + MaterialShape.POWDER)
-        // rather than individually declared ModItems fields, so an earlier pass missed them. ---
+        // blast.steelFromOre
+        BlastFurnaceRecipeBuilder.blastFurnaceRecipe(stack("hbm_m:steel_ingot", 2), ore("oredict/ore/iron"), ore("oredict/sand")).nt()
+                .counts(1, 1).duration(800)
+                .secondaryOutput(stack("hbm_m:ingot_slag", 2))
+                .save(writer, "blast_furnace/steelfromore");
 
-        // Cobalt + meteorite powder -> meteorite ingot (blast.meteor)
-        BlastFurnaceRecipeBuilder.blastFurnaceRecipe(
-                new ItemStack(ModMaterialItems.item(ModMaterials.METEORITE, MaterialShape.INGOT)),
-                Ingredient.of(ModMaterialItems.item(ModMaterials.COBALT, MaterialShape.INGOT)),
-                Ingredient.of(ModMaterialItems.item(ModMaterials.METEORITE, MaterialShape.POWDER))
-                ).save(writer, "blast_furnace/meteorite_ingot");
+        // blast.steelWithFlux
+        BlastFurnaceRecipeBuilder.blastFurnaceRecipe(stack("hbm_m:steel_ingot", 3), ore("oredict/ore/iron"), Ingredient.of(item("hbm_m:flux_powder"))).nt()
+                .counts(1, 1).duration(1200)
+                .secondaryOutput(stack("hbm_m:ingot_slag", 2))
+                .save(writer, "blast_furnace/steelwithflux");
 
+        // blast.mingrade
+        BlastFurnaceRecipeBuilder.blastFurnaceRecipe(stack("hbm_m:red_copper_ingot", 2), ore("oredict/ingot/copper"), ore("oredict/dust/redstone")).nt()
+                .counts(1, 1).duration(400)
+                .save(writer, "blast_furnace/mingrade");
 
-        // Saturnite (BIGMT) + meteorite ingot -> starmetal ingot x2 (blast.starmetal)
-        BlastFurnaceRecipeBuilder.blastFurnaceRecipe(
-                new ItemStack(ModMaterialItems.item(ModMaterials.STARMETAL, MaterialShape.INGOT), 2),
-                Ingredient.of(ModMaterialItems.item(ModMaterials.SATURNITE, MaterialShape.INGOT)),
-                Ingredient.of(ModMaterialItems.item(ModMaterials.METEORITE, MaterialShape.INGOT))
-                ).save(writer, "blast_furnace/starmetal_ingot");
+        // blast.mingradeDust
+        BlastFurnaceRecipeBuilder.blastFurnaceRecipe(stack("hbm_m:red_copper_ingot", 2), ore("oredict/dust/copper"), ore("oredict/dust/redstone")).nt()
+                .counts(1, 1).duration(400)
+                .save(writer, "blast_furnace/mingradedust");
 
+        // blast.mingradeIngot
+        BlastFurnaceRecipeBuilder.blastFurnaceRecipe(stack("hbm_m:red_copper_ingot", 2), ore("oredict/ingot/copper"), ore("oredict/ingot/redstone")).nt()
+                .counts(1, 1).duration(400)
+                .save(writer, "blast_furnace/mingradeingot");
 
-        // Meteorite Sword (Hardened) + Cobalt -> Meteorite Sword (Alloyed) (blast.meteorSword)
-        // Note: meteorite_sword_hardened itself has no crafting path yet in this port (original obtains it via
-        // a Press-stamped "reforged" precursor, which isn't ported) - added here so the Blast Furnace link in
-        // the chain isn't silently dropped, but the item is currently only reachable via creative/JEI.
-        BlastFurnaceRecipeBuilder.blastFurnaceRecipe(
-                new ItemStack(ModItems.METEORITE_SWORD_ALLOYED.get()),
-                Ingredient.of(ModItems.METEORITE_SWORD_HARDENED.get()),
-                Ingredient.of(ModMaterialItems.item(ModMaterials.COBALT, MaterialShape.INGOT))
-                ).save(writer, "blast_furnace/meteorite_sword_alloyed");
+        // blast.mingradeCursed
+        BlastFurnaceRecipeBuilder.blastFurnaceRecipe(stack("hbm_m:red_copper_ingot", 2), ore("oredict/dust/copper"), ore("oredict/ingot/redstone")).nt()
+                .counts(1, 1).duration(400)
+                .save(writer, "blast_furnace/mingradecursed");
+
+        // blast.mingradeOre
+        BlastFurnaceRecipeBuilder.blastFurnaceRecipe(stack("hbm_m:red_copper_ingot", 6), ore("oredict/ore/copper"), ore("oredict/dust/redstone")).nt()
+                .counts(1, 6).duration(1200)
+                .secondaryOutput(stack("hbm_m:ingot_slag", 1))
+                .save(writer, "blast_furnace/mingradeore");
+
+        // blast.meteorSword
+        BlastFurnaceRecipeBuilder.blastFurnaceRecipe(stack("hbm_m:meteorite_sword_alloyed", 1), ore("oredict/ingot/cobalt"), Ingredient.of(item("hbm_m:meteorite_sword_hardened"))).nt()
+                .counts(1, 1).duration(1200)
+                .save(writer, "blast_furnace/meteorsword");
+
+        // blast.meteor
+        BlastFurnaceRecipeBuilder.blastFurnaceRecipe(stack("hbm_m:meteorite_ingot", 1), ore("oredict/ingot/cobalt"), Ingredient.of(item("hbm_m:meteorite_powder"))).nt()
+                .counts(1, 1).duration(600)
+                .save(writer, "blast_furnace/meteor");
+
+        // blast.starmetal
+        BlastFurnaceRecipeBuilder.blastFurnaceRecipe(stack("hbm_m:starmetal_ingot", 1), ore("oredict/ingot/saturnite"), Ingredient.of(item("hbm_m:meteorite_ingot"))).nt()
+                .counts(1, 1).duration(600)
+                .save(writer, "blast_furnace/starmetal");
+
+        // blast.paa
+        BlastFurnaceRecipeBuilder.blastFurnaceRecipe(stack("hbm_m:plate_paa", 1), ore("oredict/ingot/gold"), Ingredient.of(item("hbm_m:plate_mixed"))).nt()
+                .counts(1, 1).duration(600)
+                .save(writer, "blast_furnace/paa");
+
+        // blast.firebrick
+        BlastFurnaceRecipeBuilder.blastFurnaceRecipe(stack("hbm_m:firebrick", 8), ore("oredict/dust/aluminum"), Ingredient.of(item("minecraft:clay_ball"))).nt()
+                .counts(1, 7).duration(800)
+                .save(writer, "blast_furnace/firebrick");
+
+        // blast.firebrickLimestone
+        BlastFurnaceRecipeBuilder.blastFurnaceRecipe(stack("hbm_m:firebrick", 8), ore("oredict/ore/limestone"), Ingredient.of(item("minecraft:clay_ball"))).nt()
+                .counts(1, 6).duration(800)
+                .save(writer, "blast_furnace/firebricklimestone");
     }
 }
 //?}
-

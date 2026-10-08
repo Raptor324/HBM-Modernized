@@ -8,7 +8,7 @@ import com.hbm_m.block.machines.anvils.AnvilBlock;
 import com.hbm_m.block.machines.anvils.AnvilTier;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.recipe.AnvilRecipe;
-import com.hbm_m.recipe.AnvilRecipe.OverlayType;
+import com.hbm_m.recipe.AnvilRecipe.AStack;
 import com.hbm_m.recipe.AnvilRecipe.ResultEntry;
 
 import mezz.jei.api.constants.VanillaTypes;
@@ -27,7 +27,8 @@ import net.minecraft.network.chat.Component;
 import net.minecraft.world.item.ItemStack;
 
 /**
- * JEI port of {@code AnvilRecipeHandler}: {@code gui_nei_anvil.png} and per-shape slot layout.
+ * JEI-Port von {@code AnvilRecipeHandler} (Konstruktion): {@code gui_nei_anvil.png}, Anordnung nach Anzahl der
+ * Zutaten/Ausgaben, Ambosse genau der unteren Stufe als Katalysator, Chance als roter Tooltip.
  */
 public class AnvilJeiCategory implements IRecipeCategory<AnvilRecipe> {
 
@@ -51,7 +52,7 @@ public class AnvilJeiCategory implements IRecipeCategory<AnvilRecipe> {
 
     @Override
     public Component getTitle() {
-        return Component.translatable("container.hbm_m.anvil", AnvilTier.STEEL.getDisplayName());
+        return Component.literal("Anvil");
     }
 
     @Override
@@ -77,26 +78,23 @@ public class AnvilJeiCategory implements IRecipeCategory<AnvilRecipe> {
 
     @Override
     public void setRecipe(IRecipeLayoutBuilder builder, AnvilRecipe recipe, IFocusGroup focuses) {
-        List<ItemStack> inputs = getDisplayInputs(recipe);
-        List<ItemStack> outputs = getDisplayOutputs(recipe);
-        JeiAnvilLayout.Layout layout = JeiAnvilLayout.resolve(recipe.getOverlay(), inputs.size(), outputs.size());
+        List<AStack> inputs = recipe.getInputs();
+        List<ResultEntry> outputs = recipe.getOutputs();
+        JeiAnvilLayout.Layout layout = JeiAnvilLayout.resolve(inputs.size(), outputs.size());
 
         int[][] inPos = JeiAnvilLayout.getInputPositions(layout, inputs.size());
         for (int i = 0; i < inputs.size(); i++) {
             addItemSlot(builder, RecipeIngredientRole.INPUT, inPos[i][0], inPos[i][1])
-                    .addItemStack(inputs.get(i));
+                    .addItemStacks(inputs.get(i).displayStacks());
         }
 
         int[][] outPos = JeiAnvilLayout.getOutputPositions(layout, outputs.size());
         for (int i = 0; i < outputs.size(); i++) {
-            ItemStack output = outputs.get(i);
-            if (output.isEmpty()) {
-                continue;
-            }
+            ItemStack output = outputs.get(i).stack();
             IRecipeSlotBuilder slot = addItemSlot(builder, RecipeIngredientRole.OUTPUT, outPos[i][0], outPos[i][1])
                     .addItemStack(output);
-            float chance = recipe.getOutputs().get(i).chance();
-            if (chance < 1.0F) {
+            float chance = outputs.get(i).chance();
+            if (chance != 1.0F) {
                 double percent = ((int) (chance * 1000)) / 10.0D;
                 slot.addRichTooltipCallback((view, tooltip) ->
                         tooltip.add(Component.literal(percent + "%").withStyle(ChatFormatting.RED)));
@@ -110,9 +108,7 @@ public class AnvilJeiCategory implements IRecipeCategory<AnvilRecipe> {
     @Override
     public void draw(AnvilRecipe recipe, IRecipeSlotsView recipeSlotsView, GuiGraphics guiGraphics,
                      double mouseX, double mouseY) {
-        List<ItemStack> inputs = getDisplayInputs(recipe);
-        List<ItemStack> outputs = getDisplayOutputs(recipe);
-        JeiAnvilLayout.Layout layout = JeiAnvilLayout.resolve(recipe.getOverlay(), inputs.size(), outputs.size());
+        JeiAnvilLayout.Layout layout = JeiAnvilLayout.resolve(recipe.getInputs().size(), recipe.getOutputs().size());
         JeiAnvilRendering.drawOverlay(layout.shape(), guiGraphics);
     }
 
@@ -120,60 +116,13 @@ public class AnvilJeiCategory implements IRecipeCategory<AnvilRecipe> {
         return builder.addSlot(role, x, y).setBackground(itemSlotBackground, -1, -1);
     }
 
-    private static List<ItemStack> getDisplayInputs(AnvilRecipe recipe) {
-        List<ItemStack> inputs = new ArrayList<>();
-        OverlayType overlay = recipe.getOverlay();
-
-        switch (overlay) {
-            case SMITHING -> {
-                if (!recipe.getInputA().isEmpty()) {
-                    inputs.add(recipe.getInputA());
-                }
-                if (!recipe.getInputB().isEmpty()) {
-                    inputs.add(recipe.getInputB());
-                }
-            }
-            case RECYCLING -> {
-                ItemStack recyclingInput = recipe.getRecyclingInputStack();
-                if (!recyclingInput.isEmpty()) {
-                    inputs.add(recyclingInput);
-                }
-            }
-            case CONSTRUCTION -> inputs.addAll(recipe.getInventoryInputs());
-            default -> {
-                if (!recipe.getInventoryInputs().isEmpty()) {
-                    inputs.addAll(recipe.getInventoryInputs());
-                } else {
-                    if (!recipe.getInputA().isEmpty()) {
-                        inputs.add(recipe.getInputA());
-                    }
-                    if (!recipe.getInputB().isEmpty()) {
-                        inputs.add(recipe.getInputB());
-                    }
-                }
-            }
-        }
-
-        return inputs;
-    }
-
-    private static List<ItemStack> getDisplayOutputs(AnvilRecipe recipe) {
-        List<ItemStack> outputs = new ArrayList<>();
-        for (ResultEntry entry : recipe.getOutputs()) {
-            outputs.add(entry.stack());
-        }
-        return outputs;
-    }
-
-    private static List<ItemStack> getAnvilsForTier(AnvilTier tier) {
+    /** {@code NTMAnvil.getAnvilsFromTier}: genau diese Stufe. */
+    public static List<ItemStack> getAnvilsForTier(AnvilTier tier) {
         List<ItemStack> stacks = new ArrayList<>();
         for (var block : ModBlocks.getAnvilBlocks()) {
             if (block.get() instanceof AnvilBlock anvil && anvil.getTier() == tier) {
                 stacks.add(new ItemStack(block.get()));
             }
-        }
-        if (stacks.isEmpty()) {
-            stacks.add(new ItemStack(ModBlocks.ANVIL_STEEL.get()));
         }
         return stacks;
     }

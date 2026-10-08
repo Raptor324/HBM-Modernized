@@ -16,12 +16,15 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
 /** Slot-Koordinaten (176x186 Textur) 1:1 aus {@code ContainerElectricFurnace} (1.7.10 Original)
- *  uebernommen: Batterie (152,54), Input (20,35), Output (80,35). Der Upgrade-Slot (152,20) des
- *  Originals entfaellt - siehe {@link MachineElectricFurnaceBlockEntity}. */
-public class MachineElectricFurnaceMenu extends AbstractContainerMenu {
+ *  uebernommen: Batterie (152,54), Input (20,35), Output (80,35), Upgrade (111,34). */
+public class MachineElectricFurnaceMenu extends AbstractContainerMenu implements com.hbm_m.interfaces.ILongEnergyMenu {
 
     public final MachineElectricFurnaceBlockEntity blockEntity;
     private final ContainerData data;
+    private final Player player;
+    // Original zeigt den Energiebalken und power/maxPower im Tooltip - per PacketSyncEnergy synchronisiert
+    private long clientEnergy;
+    private long clientMaxEnergy;
 
     private static final int SLOT_BATTERY = MachineElectricFurnaceBlockEntity.SLOT_BATTERY;
     private static final int SLOT_INPUT = MachineElectricFurnaceBlockEntity.SLOT_INPUT;
@@ -45,6 +48,7 @@ public class MachineElectricFurnaceMenu extends AbstractContainerMenu {
         checkContainerDataCount(data, DATA_COUNT);
         this.blockEntity = (MachineElectricFurnaceBlockEntity) entity;
         this.data = data;
+        this.player = inventory.player;
 
         var container = new ModItemStackHandlerContainer(blockEntity.getInventory(), blockEntity::setChanged);
         this.addSlot(new Slot(container, SLOT_BATTERY, 152, 54));
@@ -85,6 +89,35 @@ public class MachineElectricFurnaceMenu extends AbstractContainerMenu {
 
     public int getCookProgressScaled(int scale) {
         return getProgress() * scale / getMaxProgress();
+    }
+
+    public long getEnergyLong() {
+        return blockEntity != null && !blockEntity.getLevel().isClientSide ? blockEntity.getEnergyStored() : clientEnergy;
+    }
+
+    public long getMaxEnergyLong() {
+        return blockEntity != null && !blockEntity.getLevel().isClientSide ? blockEntity.getMaxEnergyStored() : clientMaxEnergy;
+    }
+
+    @Override
+    public void setEnergy(long energy, long maxEnergy, long delta) {
+        this.clientEnergy = energy;
+        this.clientMaxEnergy = maxEnergy;
+    }
+
+    @Override public long getEnergyStatic() { return blockEntity != null ? blockEntity.getEnergyStored() : 0L; }
+    @Override public long getMaxEnergyStatic() { return blockEntity != null ? blockEntity.getMaxEnergyStored() : 0L; }
+    @Override public long getEnergyDeltaStatic() { return 0L; }
+
+    @Override
+    public void broadcastChanges() {
+        super.broadcastChanges();
+        if (blockEntity != null && blockEntity.getLevel() != null && !blockEntity.getLevel().isClientSide
+                && player instanceof net.minecraft.server.level.ServerPlayer sp) {
+            com.hbm_m.network.ModPacketHandler.sendToPlayer(sp, com.hbm_m.network.ModPacketHandler.SYNC_ENERGY,
+                    new com.hbm_m.network.packet.PacketSyncEnergy(this.containerId,
+                            blockEntity.getEnergyStored(), blockEntity.getMaxEnergyStored(), 0L));
+        }
     }
 
     @Override

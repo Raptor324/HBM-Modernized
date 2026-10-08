@@ -65,6 +65,12 @@ public class ChemicalPlantRecipeBuilder extends BaseRecipeBuilder<ChemicalPlantR
         return this;
     }
 
+    /** Original {@code new FluidStack(type, fill, pressure)} (528-Druckvarianten). */
+    public ChemicalPlantRecipeBuilder addFluidInput(Fluid fluid, int amountMb, int pressure) {
+        this.fluidInputs.add(new FluidAmount(fluid, amountMb, pressure));
+        return this;
+    }
+
     public ChemicalPlantRecipeBuilder addItemOutput(ItemStack stack) {
         this.itemOutputs.add(stack);
         return this;
@@ -111,7 +117,11 @@ public class ChemicalPlantRecipeBuilder extends BaseRecipeBuilder<ChemicalPlantR
 
     private record CountedIngredient(Ingredient ingredient, int count) {}
 
-    private record FluidAmount(Fluid fluid, int amount) {}
+    private record FluidAmount(Fluid fluid, int amount, int pressure) {
+        FluidAmount(Fluid fluid, int amount) {
+            this(fluid, amount, 0);
+        }
+    }
 
     @Override
     public Item getResult() {
@@ -152,7 +162,9 @@ public class ChemicalPlantRecipeBuilder extends BaseRecipeBuilder<ChemicalPlantR
         JsonArray fluidInputsJson = new JsonArray();
         for (FluidAmount fa : fluidInputs) {
             if (fa.fluid() == null) continue;
-            fluidInputsJson.add(fluidStackToJson(FluidStack.create(fa.fluid(), fa.amount())));
+            JsonObject fj = fluidStackToJson(FluidStack.create(fa.fluid(), fa.amount()));
+            if (fa.pressure() != 0) fj.addProperty("pressure", fa.pressure());
+            fluidInputsJson.add(fj);
         }
         json.add("fluid_inputs", fluidInputsJson);
 

@@ -462,6 +462,8 @@ public class MachineAssemblerBlockEntity extends BaseMachineBlockEntity {
 
         return RecipeHooks.getAllRecipes(level, AssemblerRecipe.Type.INSTANCE).stream()
                 .filter(r -> PlatformHooks.isSameItemSameTags(r.getResultItemSafe(), outputStack))
+                // Alte Montagemaschine hat keine Tanks: Rezepte mit Fluessigkeiten nur in der neuen
+                .filter(r -> r.getFluidInputs().isEmpty() && r.getFluidOutputs().isEmpty())
                 .findFirst();
     }
 

@@ -1,5 +1,6 @@
 package com.hbm_m.datagen.recipes.custom;
 //? if forge {
+import com.hbm_m.block.ModBlocks;
 import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.item.ModItems;
 import com.hbm_m.item.material.MaterialShape;
@@ -49,6 +50,18 @@ public final class SolidificationRecipeGenerator {
         put(writer, "redmud",      ModFluids.REDMUD,       450, new ItemStack(Items.IRON_INGOT));
         put(writer, "sodium",      ModFluids.SODIUM,       100, new ItemStack(ModItems.POWDER_SODIUM.get()));
         put(writer, "lead",        ModFluids.LEAD,         100, new ItemStack(ModMaterialItems.item(ModMaterials.LEAD, MaterialShape.INGOT)));
+        // Restport: fehlende Eintraege des Originals (SALIENT, SLOP, Teer aus Oelen; SF_* wie im Original)
+        put(writer, "salient",     ModFluids.SALIENT,     1280, new ItemStack(ModItems.BIO_WAFER.get(), 8));
+        put(writer, "slop",        ModFluids.SLOP,         250, new ItemStack(ModBlocks.ORE_OIL_SAND.get()));
+        put(writer, "oil",             ModFluids.CRUDE_OIL,       200, tar("crude"));   // SF_OIL
+        put(writer, "crackoil",        ModFluids.CRACKOIL,        200, tar("crack"));   // SF_CRACK
+        put(writer, "coaloil",         ModFluids.COALOIL,         200, tar("coal"));    // SF_COALOIL
+        put(writer, "heavyoil",        ModFluids.HEAVYOIL,        150, tar("crude"));   // SF_HEAVY
+        put(writer, "heavyoil_vacuum", ModFluids.HEAVYOIL_VACUUM, 150, tar("crude"));   // SF_HEAVY
+        put(writer, "bitumen",         ModFluids.BITUMEN,         100, tar("crude"));   // SF_BITUMEN
+        put(writer, "coalcreosote",    ModFluids.COALCREOSOTE,    200, tar("coal"));    // SF_CREOSOTE
+        put(writer, "woodoil",         ModFluids.WOODOIL,        1000, tar("wood"));    // SF_WOOD
+        put(writer, "lubricant",       ModFluids.LUBRICANT,       100, tar("paraffin")); // SF_LUBE
         // BALEFIRE 250 mB -> SOLID_FUEL_BF из manual-блока ПЕРЕЗАПИСЫВАЛСЯ в оригинале последним
         // registerSFAuto(BALEFIRE, 24_000_000L) — поэтому эмитим только финальное (auto) значение.
     }
@@ -112,6 +125,10 @@ public final class SolidificationRecipeGenerator {
         put(writer, "xylene",              ModFluids.XYLENE,                 570, solidFuel);
         // heat=256_000_000 →    110 mB (tuPerSF = 24_000_000; перекрывает manual-запись 250 mB)
         put(writer, "balefire",            ModFluids.BALEFIRE,               110, solidFuelBf);
+    }
+
+    private static ItemStack tar(String type) {
+        return new ItemStack(OreDictIngredients.item("hbm_m:oil_tar_" + type));
     }
 
     private static void put(Consumer<FinishedRecipe> writer, String id, ModFluids.FluidEntry fluid,

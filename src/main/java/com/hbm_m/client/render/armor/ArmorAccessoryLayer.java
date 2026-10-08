@@ -95,6 +95,12 @@ public class ArmorAccessoryLayer<T extends LivingEntity, M extends HumanoidModel
                 renderCloak(pose, buffer, light, entity, model.getArmorTexture(chest, entity, EquipmentSlot.CHEST, null));
             }
 
+            // Original ItemModTesla.modRender -> ModelBackTesla (Rueckenspule, folgt dem Koerper)
+            ItemStack plateMod = ArmorModificationHelper.pryMods(chest)[ArmorModificationHelper.plate_only];
+            if (plateMod != null && plateMod.getItem() instanceof com.hbm_m.armormod.item.ItemModTesla) {
+                objOnBody(pose, buffer, light, m, "mod_tesla", null, "hbm_m:textures/armor/mod_tesla.png");
+            }
+
             // Allein getragen oder als Brustplatten-Mod (Original JetpackBase.modRender)
             ItemStack jet = chest.getItem() instanceof JetpackBase ? chest : ArmorModificationHelper.pryMods(chest)[ArmorModificationHelper.plate_only];
             if (jet != null && !jet.isEmpty() && jet.getItem() instanceof JetpackBase pack) {
@@ -106,6 +112,116 @@ public class ArmorAccessoryLayer<T extends LivingEntity, M extends HumanoidModel
                     jetpack.render(pose, buffer.getBuffer(RenderType.armorCutoutNoCull(rl(pack.getModelTexture()))), light, OverlayTexture.NO_OVERLAY);
                     pose.popPose();
                 }
+            }
+        }
+
+        // Original ModEventHandlerClient.onRenderArmorEvent: Spielerzubehoer nur ohne Brustplatte und ohne Unsichtbarkeit
+        if (chest.isEmpty() && entity instanceof net.minecraft.world.entity.player.Player player
+                && !player.hasEffect(net.minecraft.world.effect.MobEffects.INVISIBILITY)) {
+            if (com.hbm_m.util.ShadyUtil.is(player, com.hbm_m.util.ShadyUtil.HbMinecraft, "HbMinecraft"))
+                renderWings(pose, buffer, light, entity, m, 2, "hbm_m:textures/armor/wings_bob.png");
+            if (com.hbm_m.util.ShadyUtil.is(player, com.hbm_m.util.ShadyUtil.the_NCR, "the_NCR"))
+                renderWings(pose, buffer, light, entity, m, 3, "hbm_m:textures/armor/wings_black.png");
+            if (com.hbm_m.util.ShadyUtil.is(player, com.hbm_m.util.ShadyUtil.Barnaby99_x, "pheo7"))
+                renderAxePack(pose, buffer, light, entity, m);
+            if (com.hbm_m.util.ShadyUtil.is(player, com.hbm_m.util.ShadyUtil.LePeeperSauvage, "LePeeperSauvage"))
+                objOnBody(pose, buffer, light, m, "tail_peep", "FaggyAssFuckingTailThing", "hbm_m:textures/armor/tail_peep.png");
+        }
+    }
+
+    /** ModelRendererObj mit den Koerperwinkeln ({@code body.copyTo(obj)}, dann {@code obj.render(0.0625)}). */
+    private void objOnBody(PoseStack pose, MultiBufferSource buffer, int light, M m, String obj, String part, String tex) {
+        pose.pushPose();
+        headTransform(pose, m.body);
+        ArmorObjModel model = ArmorObjModel.get(rl("hbm_m:models/armor/" + obj + ".obj"));
+        var vc = buffer.getBuffer(RenderType.armorCutoutNoCull(rl(tex)));
+        if (part == null) model.renderAll(pose, vc, light, 1F, 1F, 1F, 1F);
+        else model.renderPart(part, pose, vc, light, 1F, 1F, 1F, 1F);
+        pose.popPose();
+    }
+
+    /**
+     * Original {@code ModelArmorWingsPheo.render}: Axtrucksack am Koerper, dazu sechs additive Duesenflammen
+     * (vollhell, ohne Textur) im Modellraum, beim Schleichen um 0.5 rad (28.6479 Grad) gekippt.
+     */
+    private void renderAxePack(PoseStack pose, MultiBufferSource buffer, int light, T entity, M m) {
+        objOnBody(pose, buffer, light, m, "wings_pheo", "Wings", "hbm_m:textures/armor/axepack.png");
+
+        var vc = buffer.getBuffer(com.hbm_m.client.ClientRenderHandler.CustomRenderTypes.ADDITIVE_TRIANGLES);
+        double pixel = 0.0625D;
+
+        pose.pushPose();
+        if (entity.isCrouching()) pose.mulPose(Axis.XP.rotationDegrees(28.6479F));
+
+        pose.pushPose();
+        pose.translate(0, pixel * 15, pixel * 5.5);
+        renderFlame(pose, vc);
+        pose.popPose();
+
+        pose.pushPose();
+        pose.translate(0, pixel * 3, pixel * 5.5);
+        pose.mulPose(Axis.YP.rotationDegrees(-25));
+        pose.mulPose(Axis.ZP.rotationDegrees(-90));
+        pose.translate(0, pixel * 5, 0);
+        renderFlame(pose, vc);
+        pose.pushPose();
+        pose.translate(0, -pixel * 5, 0);
+        pose.mulPose(Axis.ZP.rotationDegrees(45));
+        pose.translate(-pixel, pixel * 5.5, 0);
+        renderFlame(pose, vc);
+        pose.popPose();
+        pose.pushPose();
+        pose.translate(0, -pixel * 5, 0);
+        pose.mulPose(Axis.ZP.rotationDegrees(-45));
+        pose.translate(pixel, pixel * 5.5, 0);
+        renderFlame(pose, vc);
+        pose.popPose();
+        pose.popPose();
+
+        pose.pushPose();
+        pose.translate(0, pixel * 15, pixel * 5.5);
+        renderFlame(pose, vc);
+        pose.popPose();
+
+        pose.pushPose();
+        pose.translate(0, pixel * 3, pixel * 5.5);
+        pose.mulPose(Axis.YP.rotationDegrees(25));
+        pose.mulPose(Axis.ZP.rotationDegrees(90));
+        pose.translate(0, pixel * 5, 0);
+        renderFlame(pose, vc);
+        pose.pushPose();
+        pose.translate(0, -pixel * 5, 0);
+        pose.mulPose(Axis.ZP.rotationDegrees(45));
+        pose.translate(-pixel, pixel * 5.5, 0);
+        renderFlame(pose, vc);
+        pose.popPose();
+        pose.pushPose();
+        pose.translate(0, -pixel * 5, 0);
+        pose.mulPose(Axis.ZP.rotationDegrees(-45));
+        pose.translate(pixel, pixel * 5.5, 0);
+        renderFlame(pose, vc);
+        pose.popPose();
+        pose.popPose();
+
+        pose.popPose();
+    }
+
+    /** Original {@code ModelArmorWingsPheo.renderFlame}: achtseitiger Doppelkegel, Fuss grau, Mitte tuerkis, Spitze schwarz. */
+    private static void renderFlame(PoseStack pose, com.mojang.blaze3d.vertex.VertexConsumer vc) {
+        org.joml.Matrix4f mat = pose.last().pose();
+        float b = 0.125F;
+        float t = 0.375F;
+        float w = 0.0625F;
+        float s2 = (float) (Math.sqrt(2D) / 2D * w);
+        float[][] ring = { { w, 0 }, { s2, s2 }, { 0, w }, { -s2, s2 }, { -w, 0 }, { -s2, -s2 }, { 0, -w }, { s2, -s2 } };
+        for (int k = 0; k < 2; k++) {
+            float tipY = k == 0 ? 0F : t;
+            int tip = k == 0 ? 0x80 : 0x00; // colorBase 0x808080 / colorTip 0x000000
+            for (int i = 0; i < 8; i++) {
+                float[] a = ring[i], c = ring[(i + 1) % 8];
+                com.hbm_m.platform.RenderHooks.vertexColor(vc, mat, 0F, tipY, 0F, tip, tip, tip, 255);
+                com.hbm_m.platform.RenderHooks.vertexColor(vc, mat, a[0], b, a[1], 0x00, 0x40, 0x40, 255);
+                com.hbm_m.platform.RenderHooks.vertexColor(vc, mat, c[0], b, c[1], 0x00, 0x40, 0x40, 255);
             }
         }
     }

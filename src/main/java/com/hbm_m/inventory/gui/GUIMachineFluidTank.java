@@ -52,11 +52,7 @@ public class GUIMachineFluidTank extends AbstractContainerScreen<MachineFluidTan
      * логика BE: 0 — только вывод, 2 — только ввод — поэтому для иконки меняем местами 0↔2.
      */
     private static int modeButtonSpriteRow(int logicalMode) {
-        return switch (logicalMode) {
-            case 0 -> 2;
-            case 2 -> 0;
-            default -> logicalMode;
-        };
+        return logicalMode; // Original: Zeile = Modus
     }
 
     public GUIMachineFluidTank(MachineFluidTankMenu menu, Inventory inv, Component title) {
@@ -125,5 +121,13 @@ public class GUIMachineFluidTank extends AbstractContainerScreen<MachineFluidTan
     private boolean isHovering(int x, int y, int w, int h, int mouseX, int mouseY) {
         return mouseX >= this.leftPos + x && mouseX < this.leftPos + x + w &&
                 mouseY >= this.topPos + y && mouseY < this.topPos + y + h;
+    }
+
+    @Override
+    protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
+        // Original drawGuiContainerForegroundLayer
+        String name = this.title.getString();
+        guiGraphics.drawString(this.font, name, 88 - this.font.width(name) / 2, 6, 4210752, false);
+        guiGraphics.drawString(this.font, this.playerInventoryTitle, 8, 72, 4210752, false);
     }
 }

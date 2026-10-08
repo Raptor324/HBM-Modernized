@@ -3,13 +3,13 @@ package com.hbm_m.blockentity.machines;
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.api.fluids.IFluidStandardReceiverMK2;
+import com.hbm_m.block.machines.MachineChimneyBlock;
 import com.hbm_m.blockentity.BaseMachineBlockEntity;
-import com.hbm_m.block.ModBlocks;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.handler.pollution.PollutionHandler;
-import com.hbm_m.inventory.fluid.trait.PollutionType;
 import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
+import com.hbm_m.inventory.fluid.trait.PollutionType;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.Direction;
@@ -22,98 +22,116 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.material.Fluid;
+import net.minecraft.world.phys.AABB;
 
 /**
- * Chimney (Brick/Industrial) - Port von {@code TileEntityChimneyBase}/{@code TileEntityChimneyBrick}/
- * {@code TileEntityChimneyIndustrial} (1.7.10 Original). Eine Klasse fuer beide Varianten,
- * unterschieden per Block-Identitaet (analog {@code MachineStirlingBlockEntity}).
- * <p>
- * Im Original ist der Schornstein die Senke der Rauch-Fluid-Pipeline: er zieht SMOKE/SMOKE_LEADED/
- * SMOKE_POISON aus dem Rohrnetz (gespeist von Diesel Generator/Combustion Engine/Boiler-Abgas) und
- * wandelt es ueber {@code PollutionHandler.incrementPollution} in ein Welt-Verschmutzungsraster um,
- * plus optionales Russ-/Asche-Abwerfen in einen darunterliegenden Ashpit.
- * <p>
- * Das Verschmutzungsraster gibt es inzwischen ({@link com.hbm_m.handler.pollution.PollutionHandler}),
- * der Schornstein traegt also wieder ein: SMOKE wird zu Russ, SMOKE_LEADED zu Schwermetall,
- * SMOKE_POISON zu Gift, jeweils {@code Menge / 100} mal dem Faktor der Bauart.
- * <p>
- * Weiterhin offen: der Ashpit-Block und damit {@code cpaturesAsh()}/{@code cpaturesSoot()} des
- * Originals - der Industrieschornstein faengt dort zusaetzlich Russ als Gegenstand ab.
+ * 1:1 {@code TileEntityChimneyBase}/{@code Brick}/{@code Industrial}: nimmt an den vier Seitenzellen Rauch (normal,
+ * verbleit, giftig) in beliebiger Menge an und gibt ihn sofort als Verschmutzung ab - der Ziegelschornstein mit
+ * Faktor 0,25, der Industrieschornstein mit 0,1. Ein Aschekasten direkt darunter faengt Flugasche (beide) bzw. Russ
+ * (nur Industrie) im Verhaeltnis zur Rauchmenge auf. Solange Rauch kommt, qualmt die Spitze.
  */
 public class MachineChimneyBlockEntity extends BaseMachineBlockEntity implements IFluidStandardReceiverMK2 {
 
-    private static final int TANK_CAPACITY_MB = 16_000;
-
-    private final FluidTank tank = new FluidTank(TANK_CAPACITY_MB);
+    public long ashTick = 0;
+    public long sootTick = 0;
+    public int onTicks;
 
     public MachineChimneyBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.CHIMNEY_BE.get(), pos, state, 0, 0L, 0L, 0L);
     }
 
-    //? if forge {
-    @Override
-    public @org.jetbrains.annotations.NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(
-            net.minecraftforge.common.capabilities.Capability<T> cap, @Nullable Direction side) {
-        if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER) {
-            return tank.getForgeFluidCapability().cast();
-        }
-        return super.getCapability(cap, side);
+    private boolean industrial() {
+        return getBlockState().getBlock() instanceof MachineChimneyBlock c && c.isIndustrial();
     }
-    //?}
 
     public static void tick(Level level, BlockPos pos, BlockState state, MachineChimneyBlockEntity be) {
-        if (level.isClientSide()) return;
+        if (!level.isClientSide()) be.serverTick(level, pos);
+        else if (be.onTicks > 0) be.spawnParticles(level, pos);
+    }
+
+    private static boolean isSmoke(Fluid f) {
+        return f == ModFluids.SMOKE.getSource() || f == ModFluids.SMOKE_LEADED.getSource() || f == ModFluids.SMOKE_POISON.getSource();
+    }
+
+    private void serverTick(Level level, BlockPos pos) {
 
         if (level.getGameTime() % 20 == 0) {
-            for (Direction dir : Direction.values()) {
-                be.trySubscribe(be.tank.getTankType(), level, pos.relative(dir), dir);
+            Fluid[] types = { ModFluids.SMOKE.getSource(), ModFluids.SMOKE_LEADED.getSource(), ModFluids.SMOKE_POISON.getSource() };
+            for (Fluid type : types) {
+                this.trySubscribe(type, level, pos.offset(2, 0, 0), Direction.EAST);
+                this.trySubscribe(type, level, pos.offset(-2, 0, 0), Direction.WEST);
+                this.trySubscribe(type, level, pos.offset(0, 0, 2), Direction.SOUTH);
+                this.trySubscribe(type, level, pos.offset(0, 0, -2), Direction.NORTH);
             }
         }
 
-        int amount = be.tank.getFluidAmountMb();
-        if (amount > 0) {
-            be.pollute(level, pos, be.tank.getTankType(), amount);
-            be.tank.drainMb(amount);
-            be.setChanged();
+        if (ashTick > 0 || sootTick > 0) {
+            if (level.getBlockEntity(pos.below()) instanceof MachineAshpitBlockEntity ashpit) {
+                ashpit.addAsh(MachineAshpitBlockEntity.AshType.FLY, (int) ashTick);
+                ashpit.addAsh(MachineAshpitBlockEntity.AshType.SOOT, (int) sootTick);
+            }
+            this.ashTick = 0;
+            this.sootTick = 0;
+        }
+
+        sendUpdateToClient();
+
+        if (onTicks > 0) onTicks--;
+    }
+
+    private void spawnParticles(Level level, BlockPos pos) {
+        if (level.getGameTime() % 2 == 0) {
+            boolean ind = industrial();
+            CompoundTag fx = new CompoundTag();
+            fx.putString("type", "tower");
+            fx.putFloat("lift", 10F);
+            fx.putFloat("base", ind ? 0.75F : 0.5F);
+            fx.putFloat("max", 3F);
+            fx.putInt("life", 250 + level.random.nextInt(50));
+            fx.putInt("color", 0x404040);
+            fx.putDouble("posX", pos.getX() + 0.5);
+            fx.putDouble("posY", pos.getY() + (ind ? 22 : 12));
+            fx.putDouble("posZ", pos.getZ() + 0.5);
+            com.hbm_m.particle.helper.ParticleEffectClient.effectNT(fx);
         }
     }
 
-    /**
-     * Original: {@code TileEntityChimneyBase.transferFluid} - der Rauch geht nicht verloren,
-     * sondern landet als Verschmutzung im Raster.
-     */
-    private void pollute(Level level, BlockPos pos, Fluid fluid, int amountMb) {
-        PollutionType type;
-
-        if (fluid == ModFluids.SMOKE.getSource()) {
-            type = PollutionType.SOOT;
-        } else if (fluid == ModFluids.SMOKE_LEADED.getSource()) {
-            type = PollutionType.HEAVYMETAL;
-        } else if (fluid == ModFluids.SMOKE_POISON.getSource()) {
-            type = PollutionType.POISON;
-        } else {
-            return;
-        }
-
-        PollutionHandler.incrementPollution(level, pos, type,
-                (float) (amountMb * getPollutionMod() / 100F));
+    /** Original: Ziegel 0,25, Industrie 0,1; im Rampant-Modus {@code rampantSmokeStackOverride} (Industrie halbiert). */
+    public double getPollutionMod() {
+        boolean rampant = com.hbm_m.config.ModClothConfig.get().rampantMode;
+        double override = com.hbm_m.config.MobConfig.rampantSmokeStackOverride();
+        if (industrial()) return rampant ? override / 2 : 0.1D;
+        return rampant ? override : 0.25D;
     }
 
-    /**
-     * Original: {@code getPollutionMod} - der gemauerte Schornstein laesst ein Viertel durch,
-     * der industrielle nur ein Zehntel. (Der Rampant-Modus des Originals ist nicht portiert.)
-     */
-    private double getPollutionMod() {
-        return getBlockState().is(ModBlocks.CHIMNEY_INDUSTRIAL.get()) ? 0.1D : 0.25D;
+    // ==================== Fluid ====================
+
+    @Override
+    public long getDemand(Fluid fluid, int pressure) {
+        return isSmoke(fluid) ? 1_000_000 : 0;
     }
 
-    // ==================== IFluidUserMK2 / MK2-Netz ====================
-
     @Override
-    public FluidTank[] getAllTanks() { return new FluidTank[] { tank }; }
+    public long transferFluid(Fluid type, int pressure, long fluid) {
+        if (!isSmoke(type) || level == null) return fluid;
 
-    @Override
-    public FluidTank[] getReceivingTanks() { return new FluidTank[] { tank }; }
+        onTicks = 20;
+
+        ashTick += fluid;
+        if (industrial()) sootTick += fluid;
+
+        double amount = fluid * getPollutionMod();
+
+        if (type == ModFluids.SMOKE.getSource()) PollutionHandler.incrementPollution(level, worldPosition, PollutionType.SOOT, (float) (amount / 100F));
+        if (type == ModFluids.SMOKE_LEADED.getSource()) PollutionHandler.incrementPollution(level, worldPosition, PollutionType.HEAVYMETAL, (float) (amount / 100F));
+        if (type == ModFluids.SMOKE_POISON.getSource()) PollutionHandler.incrementPollution(level, worldPosition, PollutionType.POISON, (float) (amount / 100F));
+
+        setChanged();
+        return 0;
+    }
+
+    @Override public FluidTank[] getAllTanks() { return new FluidTank[0]; }
+    @Override public FluidTank[] getReceivingTanks() { return new FluidTank[0]; }
 
     @Override
     public boolean isLoaded() {
@@ -122,10 +140,7 @@ public class MachineChimneyBlockEntity extends BaseMachineBlockEntity implements
 
     @Override
     public boolean canConnect(Fluid fluid, Direction fromDir) {
-        return fromDir != null
-                && (fluid == ModFluids.SMOKE.getSource()
-                        || fluid == ModFluids.SMOKE_LEADED.getSource()
-                        || fluid == ModFluids.SMOKE_POISON.getSource());
+        return fromDir != null && fromDir.getAxis().isHorizontal() && isSmoke(fluid);
     }
 
     // ==================== NBT ====================
@@ -133,16 +148,14 @@ public class MachineChimneyBlockEntity extends BaseMachineBlockEntity implements
     @Override
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.writeNbtData(tag, registries);
-        tank.writeToNBT(tag, "tank");
+        tag.putInt("onTicks", onTicks);
     }
 
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.readNbtData(tag, registries);
-        tank.readFromNBT(tag, "tank");
+        onTicks = tag.getInt("onTicks");
     }
-
-    // ==================== GETTERS / MENU ====================
 
     @Override
     protected Component getDefaultName() {
@@ -156,12 +169,22 @@ public class MachineChimneyBlockEntity extends BaseMachineBlockEntity implements
 
     @Override
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
-        return false; // Kein Inventar.
+        return false;
     }
 
     @Nullable
     @Override
     public AbstractContainerMenu createMenu(int containerId, Inventory playerInventory, Player player) {
-        return null; // Kein GUI im Original.
+        return null;
+    }
+
+    /** Original: 3x13x3 (Ziegel) bzw. 3x23x3 (Industrie). */
+    //? if forge {
+    @Override
+    //?}
+    public AABB getRenderBoundingBox() {
+        int h = industrial() ? 23 : 13;
+        return new AABB(worldPosition.getX() - 1, worldPosition.getY(), worldPosition.getZ() - 1,
+                worldPosition.getX() + 2, worldPosition.getY() + h, worldPosition.getZ() + 2);
     }
 }

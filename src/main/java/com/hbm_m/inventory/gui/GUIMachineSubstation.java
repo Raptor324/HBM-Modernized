@@ -73,7 +73,7 @@ public class GUIMachineSubstation extends GuiInfoScreen<MachineSubstationMenu> {
                 substation.getEnergyStored(), substation.getMaxEnergyStored());
 
         drawCustomInfoStat(guiGraphics, mouseX, mouseY,
-                this.leftPos + 78, this.topPos + 58, 8, 8,
+                78, 58, 8, 8,
                 this.leftPos + 78, this.topPos + 58,
                 Component.literal("Load:"),
                 Component.literal("   " + substation.getProgress() + " / " + substation.getMaxProgress()));

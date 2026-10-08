@@ -18,7 +18,31 @@ import net.minecraft.world.item.crafting.Ingredient;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
 
-public class MachineSolderingStationBlockEntity extends BaseMachineBlockEntity {
+public class MachineSolderingStationBlockEntity extends BaseMachineBlockEntity implements com.hbm_m.api.fluids.IFluidStandardReceiverMK2 {
+
+    /** Original {@code setInventorySlotContents}: Aufwertung einstecken macht das Steckgeraeusch. */
+    @Override
+    protected com.hbm_m.platform.ModItemStackHandler createInventoryHandler(int size) {
+        return new com.hbm_m.platform.ModItemStackHandler(size) {
+            @Override
+            protected void onContentsChanged(int slot) {
+                setChanged();
+                if (isCriticalSlot(slot)) sendUpdateToClient();
+                net.minecraft.world.item.ItemStack stack = getStackInSlot(slot);
+                if (level != null && !level.isClientSide && slot >= 9 && slot <= 10
+                        && stack.getItem() instanceof com.hbm_m.item.industrial.ItemMachineUpgrade) {
+                    level.playSound(null, worldPosition.getX() + 0.5, worldPosition.getY() + 0.5, worldPosition.getZ() + 0.5,
+                            com.hbm_m.sound.HbmSoundsNT.get("hbm:item.upgradePlug"), net.minecraft.sounds.SoundSource.BLOCKS, 1.0F, 1.0F);
+                }
+            }
+
+            @Override
+            public boolean isItemValid(int slot, @org.jetbrains.annotations.NotNull net.minecraft.world.item.ItemStack stack) {
+                return isItemValidForSlot(slot, stack);
+            }
+        };
+    }
+
 
     // ─── Slot map (11 total) ──────────────────────────────────────────────────
     public static final int SLOTS      = 11;
@@ -31,12 +55,23 @@ public class MachineSolderingStationBlockEntity extends BaseMachineBlockEntity {
     public static final int SLOT_UPG1  = 9, SLOT_UPG2 = 10; // upgrades
 
     // ─── Energy constants ─────────────────────────────────────────────────────
-    public static final long MAX_ENERGY  = 100_000L;
-    public static final long CONSUMPTION =   2_000L;
+    /** Original: {@code maxPower = 2_000}, ohne Rezept {@code consumption = 100}; mit Rezept {@code maxPower = consumption * 20}. */
+    public static final long MAX_ENERGY  = 2_000L;
+    public static final long CONSUMPTION =   100L;
+    /** Original nimmt beliebig viel an (bis maxPower). */
+    private static final long RECEIVE_RATE = 1_000_000_000_000L;
+
+    private static final java.util.Map<com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType, Integer> VALID_UPGRADES = java.util.Map.of(
+            com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType.SPEED, 3,
+            com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType.POWER, 3,
+            com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType.OVERDRIVE, 3);
+    private final com.hbm_m.inventory.UpgradeManager upgradeManager = new com.hbm_m.inventory.UpgradeManager();
 
     // ─── Processing state ─────────────────────────────────────────────────────
+    /** Original {@code display}: Ergebnis des passenden Rezepts, nur zur Darstellung synchronisiert. */
+    public ItemStack display = ItemStack.EMPTY;
     public int  progress    = 0;
-    public int  processTime = 200;
+    public int  processTime = 1;
     public long consumption = CONSUMPTION;
 
     // ─── Fluid tank (solder flux / coolant) ──────────────────────────────────
@@ -53,7 +88,7 @@ public class MachineSolderingStationBlockEntity extends BaseMachineBlockEntity {
     // ─── Constructor ──────────────────────────────────────────────────────────
 
     public MachineSolderingStationBlockEntity(BlockPos pos, BlockState state) {
-        super(ModBlockEntities.SOLDERING_STATION_BE.get(), pos, state, SLOTS, MAX_ENERGY, CONSUMPTION);
+        super(ModBlockEntities.SOLDERING_STATION_BE.get(), pos, state, SLOTS, MAX_ENERGY, RECEIVE_RATE);
     }
 
     /** Exposes the machine inventory for SlotItemHandler in the menu. */
@@ -74,6 +109,10 @@ public class MachineSolderingStationBlockEntity extends BaseMachineBlockEntity {
     public static void tick(Level level, BlockPos pos, BlockState state, MachineSolderingStationBlockEntity be) {
         if (level.isClientSide) return;
 
+        // Original: Strom- und Fluessigkeitsanschluesse rund um den Sockel
+        be.ensureNetworkInitialized();
+        if (level.getGameTime() % 20 == 0) be.subscribeFluid(level);
+
         // Charge from battery slot
         com.hbm_m.api.energy.ItemEnergyAccess.getHbmProvider(
                 be.inventory.getStackInSlot(SLOT_BAT)).ifPresent(provider -> {
@@ -83,17 +122,54 @@ public class MachineSolderingStationBlockEntity extends BaseMachineBlockEntity {
         });
 
         // Data-driven поиск рецепта: итерируем SolderingRecipe из RecipeManager (заменяет статику SolderingRecipes).
+        // Original: tank.setType(8, slots)
+        ItemStack[] slotArr = new ItemStack[SLOTS];
+        for (int i = 0; i < SLOTS; i++) slotArr[i] = be.inventory.getStackInSlot(i);
+        be.tank.setType(SLOT_FLUID, slotArr);
+
         SolderingRecipe recipe = findSolderingRecipe(level, be);
+        // Original serialize: das Rezeptergebnis geht als display an den Client (Renderer zeigt es auf dem Tisch)
+        be.display = recipe != null ? recipe.getOutput() : ItemStack.EMPTY;
+        long intendedMaxPower;
+
+        // 1:1 Original: Tempo (rot), Sparsamkeit (blau), Overdrive (schwarz)
+        be.upgradeManager.checkSlots(be.inventory, SLOT_UPG1, SLOT_UPG2, VALID_UPGRADES);
+        int redLevel = be.upgradeManager.getLevel(com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType.SPEED);
+        int blueLevel = be.upgradeManager.getLevel(com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType.POWER);
+        int blackLevel = be.upgradeManager.getLevel(com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType.OVERDRIVE);
+
         if (recipe != null) {
-            be.processTime  = recipe.getDuration();
-            be.consumption  = recipe.getConsumption();
+            int duration = recipe.getDuration();
+            long cons = recipe.getConsumption();
+            be.processTime  = duration - (duration * redLevel / 6) + (duration * blueLevel / 3);
+            be.consumption  = cons + (cons * redLevel) - (cons * blueLevel / 6);
+            be.consumption *= (long) Math.pow(2, blackLevel);
+            intendedMaxPower = be.consumption * 20;
+        } else {
+            be.consumption = CONSUMPTION;
+            intendedMaxPower = MAX_ENERGY;
         }
+        be.setEnergyCapacity(Math.max(intendedMaxPower, be.energy));
+
         // matchesFluid на SolderingRecipe заменяет прежний recipe.fluid.satisfiedBy(tank) (FluidStack-based).
         boolean hasRecipe  = recipe != null && recipe.matchesFluid(be.tank);
-        boolean canProcess = hasRecipe && be.canProcess();
+        boolean canProcess = hasRecipe && be.canProcess(recipe);
 
         if (canProcess) {
-            be.progress++;
+            be.progress += (1 + blackLevel);
+
+            // Original: alle 20 Ticks drei Tau-Funken ueber der Loetstelle
+            if (level.getGameTime() % 20 == 0 && level instanceof net.minecraft.server.level.ServerLevel serverLevel
+                    && state.hasProperty(net.minecraft.world.level.block.HorizontalDirectionalBlock.FACING)) {
+                net.minecraft.core.Direction dir = state.getValue(net.minecraft.world.level.block.HorizontalDirectionalBlock.FACING);
+                net.minecraft.core.Direction rot = dir.getClockWise();
+                CompoundTag dPart = new CompoundTag();
+                dPart.putString("type", "tau");
+                dPart.putByte("count", (byte) 3);
+                com.hbm_m.particle.helper.IParticleCreator.sendPacket(serverLevel,
+                        pos.getX() + 0.5 - dir.getStepX() * 0.5 + rot.getStepX() * 0.5, pos.getY() + 1.125,
+                        pos.getZ() + 0.5 - dir.getStepZ() * 0.5 + rot.getStepZ() * 0.5, 25, dPart);
+            }
             be.energy = Math.max(0, be.energy - be.consumption);
             if (be.progress >= be.processTime) {
                 be.progress = 0;
@@ -147,14 +223,18 @@ public class MachineSolderingStationBlockEntity extends BaseMachineBlockEntity {
         return null;
     }
 
-    public boolean canProcess() {
+    /** 1:1 Original {@code canProcess(recipe)}. */
+    public boolean canProcess(SolderingRecipe recipe) {
         if (energy < consumption) return false;
-        // Collision prevention: don't process a fluid-less recipe if tank has fluid
-        // (actual recipe fluid check will be added when SolderingRecipes is ported)
-        if (collisionPrevention && tank.getFill() > 0) return false;
-        // Output slot must be empty or stackable
+        // Original: Kollisionsschutz nur fuer Rezepte ohne Fluessigkeit
+        if (collisionPrevention && recipe.getFluid() == null && tank.getFill() > 0) return false;
         ItemStack out = inventory.getStackInSlot(SLOT_OUT);
-        return out.isEmpty();
+        if (!out.isEmpty()) {
+            ItemStack result = recipe.getOutput();
+            if (!com.hbm_m.platform.PlatformHooks.isSameItemSameTags(out, result)) return false;
+            if (out.getCount() + result.getCount() > out.getMaxStackSize()) return false;
+        }
+        return true;
     }
 
     // ─── Progress helpers (for GUI) ───────────────────────────────────────────
@@ -216,6 +296,7 @@ public class MachineSolderingStationBlockEntity extends BaseMachineBlockEntity {
     @Override
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.writeNbtData(tag, registries);
+        if (!display.isEmpty()) tag.put("display", com.hbm_m.platform.PlatformHooks.saveItemStack(display, new CompoundTag(), registries));
         tag.putInt("progress",    progress);
         tag.putInt("processTime", processTime);
         tag.putBoolean("collision", collisionPrevention);
@@ -225,10 +306,81 @@ public class MachineSolderingStationBlockEntity extends BaseMachineBlockEntity {
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.readNbtData(tag, registries);
+        display = tag.contains("display") ? com.hbm_m.platform.PlatformHooks.itemStackOf(tag.getCompound("display"), registries) : ItemStack.EMPTY;
         progress            = tag.getInt("progress");
         processTime         = tag.getInt("processTime");
-        if (processTime <= 0) processTime = 200;
+        if (processTime <= 0) processTime = 1;
         collisionPrevention = tag.getBoolean("collision");
         tank.readFromNBT(tag, "tank");
+    }
+
+    //? if forge {
+    /** Original {@code ISidedInventory}: Slots {0-6}; Bauteile nach isItemValidForSlot hinein, nur das Ergebnis heraus. */
+    private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
+            new com.hbm_m.blockentity.SidedItemAccess.Rules() {
+                @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return new int[] { 0, 1, 2, 3, 4, 5, 6 }; }
+                @Override public boolean canInsert(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return slot < 6 && isItemValidForSlot(slot, stack); }
+                @Override public boolean canExtract(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return slot == 6; }
+            });
+
+    @Override
+    public @org.jetbrains.annotations.NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(@org.jetbrains.annotations.NotNull net.minecraftforge.common.capabilities.Capability<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER && side != null) return sidedItems.get(side).cast();
+        return super.getCapability(cap, side);
+    }
+
+    @Override
+    public void invalidateCaps() {
+        super.invalidateCaps();
+        sidedItems.invalidate();
+    }
+    //?}
+
+    // ─── Anschluesse (Original getConPos: Strom und Fluessigkeit rund um den Sockel) ───────────────────────
+
+    private net.minecraft.core.BlockPos[] structureCells = null;
+
+    /** Alle Zellen der unteren Lage; Kabel und Rohre an jeder Seite davon zaehlen als Anschluss. */
+    private net.minecraft.core.BlockPos[] baseCells() {
+        if (structureCells != null) return structureCells;
+        java.util.List<net.minecraft.core.BlockPos> cells = new java.util.ArrayList<>();
+        cells.add(worldPosition);
+        if (getBlockState().getBlock() instanceof com.hbm_m.interfaces.IMultiblockController ctrl
+                && getBlockState().hasProperty(net.minecraft.world.level.block.HorizontalDirectionalBlock.FACING)) {
+            net.minecraft.core.Direction facing = getBlockState().getValue(net.minecraft.world.level.block.HorizontalDirectionalBlock.FACING);
+            var helper = ctrl.getStructureHelper();
+            for (net.minecraft.core.BlockPos local : helper.getStructureMap().keySet()) {
+                if (local.getY() == 0) cells.add(helper.getRotatedPos(worldPosition, local, facing));
+            }
+        }
+        structureCells = cells.toArray(new net.minecraft.core.BlockPos[0]);
+        return structureCells;
+    }
+
+    @Override
+    protected net.minecraft.core.BlockPos[] getExtraEnergyPorts() {
+        if (level == null || level.isClientSide) return new net.minecraft.core.BlockPos[0];
+        return baseCells();
+    }
+
+    /** Original: {@code trySubscribe(tank.getTankType(), ...)} an allen Anschluessen, alle 20 Ticks. */
+    private void subscribeFluid(Level level) {
+        if (tank.getTankType() == com.hbm_m.inventory.fluid.ModFluids.NONE.getSource()
+                || tank.getTankType() == net.minecraft.world.level.material.Fluids.EMPTY) return;
+        java.util.Set<net.minecraft.core.BlockPos> cells = new java.util.HashSet<>(java.util.Arrays.asList(baseCells()));
+        for (net.minecraft.core.BlockPos cell : cells) {
+            for (net.minecraft.core.Direction dir : net.minecraft.core.Direction.Plane.HORIZONTAL) {
+                net.minecraft.core.BlockPos n = cell.relative(dir);
+                if (!cells.contains(n)) trySubscribe(tank.getTankType(), level, n, dir);
+            }
+        }
+    }
+
+    @Override public com.hbm_m.inventory.fluid.tank.FluidTank[] getAllTanks() { return new com.hbm_m.inventory.fluid.tank.FluidTank[] { tank }; }
+    @Override public com.hbm_m.inventory.fluid.tank.FluidTank[] getReceivingTanks() { return new com.hbm_m.inventory.fluid.tank.FluidTank[] { tank }; }
+
+    @Override
+    public boolean isLoaded() {
+        return level != null && !isRemoved() && level.isLoaded(worldPosition);
     }
 }

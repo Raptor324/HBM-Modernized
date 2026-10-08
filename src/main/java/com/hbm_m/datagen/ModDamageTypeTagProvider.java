@@ -74,6 +74,10 @@ public class ModDamageTypeTagProvider extends DamageTypeTagsProvider {
         );
         
         // Тег: Урон, который является снарядом
+        // SEDNA: Original setProjectile / setFireDamage / setExplosion je DamageClass
+        tag(DamageTypeTags.IS_PROJECTILE).add(ModDamageTypes.SEDNA_PHYSICAL);
+        tag(DamageTypeTags.IS_FIRE).add(ModDamageTypes.SEDNA_FIRE);
+        tag(DamageTypeTags.IS_EXPLOSION).add(ModDamageTypes.SEDNA_EXPLOSIVE);
         tag(DamageTypeTags.IS_PROJECTILE).add(
                 ModDamageTypes.REVOLVER_BULLET,
                 ModDamageTypes.CHOPPER_BULLET,

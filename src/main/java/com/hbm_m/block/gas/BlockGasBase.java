@@ -37,9 +37,7 @@ public abstract class BlockGasBase extends Block {
 
     /**
      * @param r,g,b Wolkenfarbe aus dem Original-Konstruktor. Sie faerbt dort die Partikelwolke,
-     *              die nur mit aufgesetzter Aschebrille ({@code ashglasses}) sichtbar wird.
-     *              Im Port ist {@code ASHGLASSES} noch ein reiner Gegenstand ohne Ruestungsslot,
-     *              darum wird die Farbe bisher nur vorgehalten - siehe {@link #animateTick}.
+     *              die nur mit aufgesetzter Aschebrille ({@code ashglasses}) sichtbar wird - siehe {@link #animateTick}.
      */
     protected BlockGasBase(float r, float g, float b) {
         super(gasProps());
@@ -51,6 +49,26 @@ public abstract class BlockGasBase extends Block {
     public float getRed()   { return red; }
     public float getGreen() { return green; }
     public float getBlue()  { return blue; }
+
+    /** 1:1 {@code randomDisplayTick}: mit Aschebrille (Helmplatz) eine eingefaerbte "vanillaExt"-Wolke. */
+    @Override
+    public void animateTick(BlockState state, Level world, BlockPos pos, RandomSource rand) {
+        super.animateTick(state, world, pos, rand);
+
+        Player p = net.minecraft.client.Minecraft.getInstance().player;
+        if (p != null && p.getItemBySlot(net.minecraft.world.entity.EquipmentSlot.HEAD).is(com.hbm_m.item.ModItems.ASHGLASSES.get())) {
+            net.minecraft.nbt.CompoundTag data = new net.minecraft.nbt.CompoundTag();
+            data.putString("type", "vanillaExt");
+            data.putString("mode", "cloud");
+            data.putDouble("posX", pos.getX() + 0.5);
+            data.putDouble("posY", pos.getY() + 0.5);
+            data.putDouble("posZ", pos.getZ() + 0.5);
+            data.putFloat("r", red);
+            data.putFloat("g", green);
+            data.putFloat("b", blue);
+            com.hbm_m.particle.helper.ParticleEffectClient.effectNT(data);
+        }
+    }
 
     protected static Block.Properties gasProps() {
         return Block.Properties.of()

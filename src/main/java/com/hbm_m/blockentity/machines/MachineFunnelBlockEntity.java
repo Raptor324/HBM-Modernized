@@ -155,4 +155,26 @@ public class MachineFunnelBlockEntity extends BaseMachineBlockEntity {
     public AbstractContainerMenu createMenu(int containerId, Inventory playerInventory, Player player) {
         return new MachineFunnelMenu(containerId, playerInventory, this);
     }
+
+    //? if forge {
+    /** Original {@code ISidedInventory}: unten {9-17}, sonst {0-8}; unten nur Ausgaenge, seitlich Eingaenge heraus, oben nichts. */
+    private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
+            new com.hbm_m.blockentity.SidedItemAccess.Rules() {
+                @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return side == net.minecraft.core.Direction.DOWN ? com.hbm_m.blockentity.SidedItemAccess.range(9, 17) : com.hbm_m.blockentity.SidedItemAccess.range(0, 8); }
+                @Override public boolean canInsert(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return slot < 9 && isItemValidForSlot(slot, stack); }
+                @Override public boolean canExtract(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { if (side == net.minecraft.core.Direction.DOWN) return slot > 8; return side != net.minecraft.core.Direction.UP && slot < 9; }
+            });
+
+    @Override
+    public @org.jetbrains.annotations.NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(@org.jetbrains.annotations.NotNull net.minecraftforge.common.capabilities.Capability<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER && side != null) return sidedItems.get(side).cast();
+        return super.getCapability(cap, side);
+    }
+
+    @Override
+    public void invalidateCaps() {
+        super.invalidateCaps();
+        sidedItems.invalidate();
+    }
+    //?}
 }

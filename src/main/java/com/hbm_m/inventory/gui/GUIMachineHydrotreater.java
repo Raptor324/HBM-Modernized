@@ -47,9 +47,10 @@ public class GUIMachineHydrotreater extends GuiInfoScreen<MachineHydrotreaterMen
         if (be != null) { // тайл может отсутствовать в реплее Flashback
             long power = be.getEnergyStored();
             long maxPower = Math.max(1L, be.getMaxEnergyStored());
-            int j = (int) (power * TANK_H / maxPower);
+            // Original 1:1: Fuellhoehe auf 54 skaliert, Ziel guiTop + 70 - j, Quelle v = 52 - j (voll: 2 px ueber den Rahmen)
+            int j = (int) (power * 54 / maxPower);
             if (j > 0) {
-                guiGraphics.blit(TEXTURE, leftPos + ENERGY_X, topPos + TANK_Y + TANK_H - j, 176, TANK_H - j, TANK_W, j);
+                guiGraphics.blit(TEXTURE, leftPos + ENERGY_X, topPos + 70 - j, 176, 52 - j, TANK_W, j);
             }
 
             var tanks = be.getTanks();
@@ -81,7 +82,7 @@ public class GUIMachineHydrotreater extends GuiInfoScreen<MachineHydrotreaterMen
             }
         }
 
-        if (isPointInRect(CATALYST_X, CATALYST_Y, 16, 16, mouseX, mouseY) && menu.getCarried().isEmpty()) {
+        if (isPointInRect(CATALYST_X, CATALYST_Y, 16, 16, mouseX, mouseY) && menu.getCarried().isEmpty() && !menu.getSlot(10).hasItem()) { // Original: nur bei leerem Katalysator-Slot (10)
             ItemStack converter = new ItemStack(ModItems.CATALYTIC_CONVERTER.get());
             guiGraphics.renderTooltip(font, converter, mouseX, mouseY);
         }

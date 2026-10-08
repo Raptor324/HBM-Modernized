@@ -13,14 +13,8 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
 /**
- * Port von {@code ContainerCoreInjector} (1.7.10 Original). Das Original hatte 4 Slots
- * (2x Crafting-In/Out-Paare bei 26/17, 26/53, 134/17, 134/53) fuer eine Fusionsbrennstab-
- * Craftingrezeptur (SlotCraftingOutput). Dieser Port des BlockEntity implementiert diese
- * Crafting-Logik (noch) nicht - {@code isItemValidForSlot} liefert dort unbedingt
- * {@code false}, es gibt also keine funktionalen Item-Slots zu verkabeln. Das Menu zeigt
- * daher nur die beiden Fluid-Tanks (Deuterium/Tritium, per Rohr/Pumpe befuellbar ueber
- * {@link com.hbm_m.blockentity.machines.CoreInjectorFluidHandler}) sowie das Spieler-
- * inventar - 1:1 aus dem Original uebernommene Koordinaten fuer Letzteres.
+ * Port von {@code ContainerCoreInjector} (1.7.10 Original): Fluidkennung Deuterium ein/aus (26/17, 26/53),
+ * Tritium ein/aus (134/17, 134/53); die Ausgaenge sind nur entnehmbar (Original SlotCraftingOutput).
  */
 public class MachineCoreInjectorMenu extends AbstractContainerMenu {
 
@@ -33,6 +27,12 @@ public class MachineCoreInjectorMenu extends AbstractContainerMenu {
     public MachineCoreInjectorMenu(int id, Inventory inventory, MachineCoreInjectorBlockEntity blockEntity) {
         super(ModMenuTypes.CORE_INJECTOR_MENU.get(), id);
         this.blockEntity = blockEntity;
+
+        var container = new com.hbm_m.inventory.ModItemStackHandlerContainer(blockEntity.getInventory(), blockEntity::setChanged);
+        this.addSlot(new Slot(container, 0, 26, 17));
+        this.addSlot(new Slot(container, 1, 26, 53));
+        this.addSlot(new Slot(container, 2, 134, 17));
+        this.addSlot(new Slot(container, 3, 134, 53));
 
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 9; col++) {
@@ -73,8 +73,14 @@ public class MachineCoreInjectorMenu extends AbstractContainerMenu {
 
     @Override
     public ItemStack quickMoveStack(Player player, int index) {
-        // Keine funktionalen Item-Slots vorhanden (nur Spielerinventar) - Original-Verhalten
-        // fuer die Nicht-Crafting-Slots war ohnehin "return null" (kein Transfer moeglich).
-        return ItemStack.EMPTY;
+        // Original transferStackInSlot: nur aus den Maschinenslots (0-3) ins Spielerinventar, sonst nichts
+        Slot slot = this.slots.get(index);
+        if (index > 3 || slot == null || !slot.hasItem()) return ItemStack.EMPTY;
+        ItemStack stack = slot.getItem();
+        ItemStack copy = stack.copy();
+        if (!this.moveItemStackTo(stack, 4, this.slots.size(), true)) return ItemStack.EMPTY;
+        if (stack.isEmpty()) slot.set(ItemStack.EMPTY);
+        else slot.setChanged();
+        return copy;
     }
 }

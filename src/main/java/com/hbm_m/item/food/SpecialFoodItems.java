@@ -193,6 +193,12 @@ public final class SpecialFoodItems {
                 this.finishUsingItem(stack, world, entity);
                 entity.stopUsingItem();
                 entity.playSound(HbmSoundsNT.get("hbm:player.groan"), 1F, 1F);
+                return;
+            }
+            // Original: itemInUseCount-- - die letzten Schlucke laufen doppelt so schnell
+            if (count <= 24 && count % 4 == 0) {
+                com.hbm_m.mixin.LivingEntityUseAccessor acc = (com.hbm_m.mixin.LivingEntityUseAccessor) entity;
+                acc.hbm_m$setUseItemRemaining(acc.hbm_m$getUseItemRemaining() - 1);
             }
         }
     }
@@ -255,7 +261,7 @@ public final class SpecialFoodItems {
 
         @Override
         public void appendHoverText(ItemStack stack, @Nullable Level level, List<Component> list, TooltipFlag flag) {
-            HbmFoodItem.addDescLines("item.peas.desc", list);
+            HbmFoodItem.addDescLines(this.getDescriptionId() + ".desc", list);
         }
     }
 

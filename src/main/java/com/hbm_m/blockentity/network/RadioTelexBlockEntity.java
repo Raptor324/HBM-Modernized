@@ -1,5 +1,8 @@
 package com.hbm_m.blockentity.network;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.blockentity.network.radio.IRadioTorchConfigurable;
 import com.hbm_m.blockentity.network.radio.RTTYNetwork;
@@ -15,197 +18,203 @@ import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
-import java.util.List;
-
 /**
- * Port of {@code TileEntityRadioTelex} (1.7.10 Original) - "Telex Machine" text teleprinter, wired
- * directly into the existing {@link RTTYNetwork} pub/sub bus. Sends its tx buffer one character per
- * tick on {@code txChannel}, decodes incoming characters from {@code rxChannel} into a 5-line rx
- * buffer, and can print the received message as a physical paper item.
- * <p>
- * <p>Er belegt wie im Original zwei Felder nebeneinander ({@code getDimensions {0,0,0,0,1,0}}).</p>
- *
- * <p><b>Nicht portiert:</b> die OpenComputers-Komponente ({@code ntm_telex}) - dafuer gibt es hier
- * keine Anbindung. <b>Offen:</b> die Verzoegerung durch Pause-Steuerzeichen; Zeichen gehen
- * gleichmaessig eines je Tick heraus, End-of-Line und End-of-Transmission bleiben erhalten.
+ * 1:1 {@code TileEntityRadioTelex}: Fernschreiber am RTTY-Netz. Sendet den Puffer zeichenweise (ein Zeichen je Tick,
+ * Pause-Zeichen = eine Sekunde warten, Zeilenende/Uebertragungsende als Steuerzeichen) und schreibt Empfangenes in den
+ * Empfangspuffer: Glocke, "nach Empfang drucken", "Bildschirm loeschen"; eine neue Uebertragung loescht den alten Text.
+ * <p>Er belegt wie im Original zwei Felder nebeneinander ({@code getDimensions {0,0,0,0,1,0}}).
+ * Die OpenComputers-Komponente ({@code ntm_telex}) wird nicht portiert (keine OC-Anbindung).</p>
  */
 public class RadioTelexBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity implements IRadioTorchConfigurable {
 
-    private static final int LINE_WIDTH = 33;
-    private static final int LINE_COUNT = 5;
-    private static final char EOL = '\n';
-    private static final char EOT = (char) 4;   // end-of-transmission control char
-    private static final char CLEAR = (char) 127; // clear-buffer control char
-
+    public static final int lineWidth = 33;
     public String txChannel = "";
     public String rxChannel = "";
-    public final String[] txLines = new String[LINE_COUNT];
-    public final String[] rxLines = new String[LINE_COUNT];
-
+    public String[] txBuffer = new String[] {"", "", "", "", ""};
+    public String[] rxBuffer = new String[] {"", "", "", "", ""};
+    public int sendingLine = 0;
+    public int sendingIndex = 0;
     public boolean isSending = false;
-    private int sendLine = 0;
-    private int sendChar = 0;
-    private int writingRxLine = 0;
-    private long lastRxTick = -1;
+    public int sendingWait = 0;
+    public int writingLine = 0;
+    public boolean printAfterRx = false;
+    public boolean deleteOnReceive = true;
+    public char sendingChar = ' ';
+    private long lastRxStamp = -1;
+
+    public static final char eol = '\n';
+    public static final char eot = '\u0004';
+    public static final char bell = '\u0007';
+    public static final char print = '\u000c';
+    public static final char pause = '\u0016';
+    public static final char clear = '\u007f';
 
     public RadioTelexBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.RADIO_TELEX_BE.get(), pos, state);
-        for (int i = 0; i < LINE_COUNT; i++) {
-            txLines[i] = "";
-            rxLines[i] = "";
-        }
     }
 
     public static void tick(Level level, BlockPos pos, BlockState state, RadioTelexBlockEntity be) {
         if (level.isClientSide) return;
-
         RTTYNetwork.tickIfNeeded(level.getGameTime());
-
-        be.tickSend(level);
-        be.tickReceive(level);
+        be.update(level);
     }
 
-    private void tickSend(Level level) {
-        if (!isSending || txChannel.isEmpty()) return;
+    private void update(Level worldObj) {
 
-        if (sendLine >= LINE_COUNT) {
-            RTTYNetwork.broadcast(level, txChannel, String.valueOf(EOT));
-            isSending = false;
-            setChanged();
-            return;
-        }
+        this.sendingChar = ' ';
 
-        String line = txLines[sendLine] != null ? txLines[sendLine] : "";
-        if (sendChar >= line.length()) {
-            RTTYNetwork.broadcast(level, txChannel, String.valueOf(EOL));
-            sendLine++;
-            sendChar = 0;
-        } else {
-            RTTYNetwork.broadcast(level, txChannel, String.valueOf(line.charAt(sendChar)));
-            sendChar++;
-        }
-        setChanged();
-    }
+        if (this.isSending && this.txChannel.isEmpty()) this.isSending = false;
 
-    private void tickReceive(Level level) {
-        if (rxChannel.isEmpty()) return;
+        if (this.isSending) {
 
-        RTTYNetwork.RttyChannel sig = RTTYNetwork.listen(level, rxChannel);
-        if (sig == null || sig.signal == null || sig.timeStamp == lastRxTick) return;
-        lastRxTick = sig.timeStamp;
+            if (sendingWait > 0) {
+                sendingWait--;
+            } else {
 
-        String signal = String.valueOf(sig.signal);
-        if (signal.isEmpty()) return;
-        char c = signal.charAt(0);
+                String line = txBuffer[sendingLine];
 
-        if (c == EOT) {
-            // end of transmission - nothing further to do
-        } else if (c == EOL) {
-            writingRxLine = Math.min(writingRxLine + 1, LINE_COUNT - 1);
-        } else if (c == CLEAR) {
-            clearRx();
-        } else {
-            String cur = rxLines[writingRxLine] != null ? rxLines[writingRxLine] : "";
-            if (cur.length() < LINE_WIDTH) {
-                rxLines[writingRxLine] = cur + c;
+                if (line.length() > sendingIndex) {
+                    char c = line.charAt(sendingIndex);
+                    sendingIndex++;
+                    if (c == pause) {
+                        sendingWait = 20;
+                    } else {
+                        RTTYNetwork.broadcast(worldObj, this.txChannel, c);
+                        this.sendingChar = c;
+                    }
+                } else {
+
+                    if (sendingLine >= 4) {
+                        this.isSending = false;
+                        RTTYNetwork.broadcast(worldObj, this.txChannel, eot);
+                        this.sendingLine = 0;
+                        this.sendingIndex = 0;
+                    } else {
+                        RTTYNetwork.broadcast(worldObj, this.txChannel, eol);
+                        this.sendingLine++;
+                        this.sendingIndex = 0;
+                    }
+                }
             }
         }
-        setChanged();
-        if (level != null && !level.isClientSide) {
-            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
+
+        if (!this.rxChannel.isEmpty()) {
+            RTTYNetwork.RttyChannel chan = RTTYNetwork.listen(worldObj, this.rxChannel);
+
+            // Original: frisch (timeStamp > Weltzeit - 2); hier zusaetzlich jeder Stempel nur einmal
+            if (chan != null && chan.signal instanceof Character && (chan.timeStamp > worldObj.getGameTime() - 2 && chan.timeStamp != -1)
+                    && chan.timeStamp != lastRxStamp) {
+                lastRxStamp = chan.timeStamp;
+                char c = (Character) chan.signal;
+
+                if (this.deleteOnReceive) {
+                    this.deleteOnReceive = false;
+                    for (int i = 0; i < 5; i++) this.rxBuffer[i] = "";
+                    this.writingLine = 0;
+                }
+
+                if (c == eot) {
+                    if (this.printAfterRx) {
+                        this.printAfterRx = false;
+                        this.print();
+                    }
+                    this.deleteOnReceive = true;
+                } else if (c == eol) {
+                    if (this.writingLine < 4) this.writingLine++;
+                    this.setChanged();
+                } else if (c == bell) {
+                    worldObj.playSound(null, worldPosition, SoundEvents.EXPERIENCE_ORB_PICKUP, SoundSource.BLOCKS, 2F, 0.5F);
+                } else if (c == print) {
+                    this.printAfterRx = true;
+                } else if (c == clear) {
+                    for (int i = 0; i < 5; i++) this.rxBuffer[i] = "";
+                    this.writingLine = 0;
+                } else {
+                    this.rxBuffer[this.writingLine] += c;
+                    this.setChanged();
+                }
+            }
         }
+
+        // Original networkPackNT(16): Puffer, Kanaele, gesendetes Zeichen (Oszilloskop)
+        worldObj.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 2);
     }
 
-    private void clearRx() {
-        for (int i = 0; i < LINE_COUNT; i++) rxLines[i] = "";
-        writingRxLine = 0;
-    }
+    @Override
+    public void receiveControl(CompoundTag data) {
 
-    public void startSending() {
-        if (isSending) return;
-        isSending = true;
-        sendLine = 0;
-        sendChar = 0;
+        for (int i = 0; i < 5; i++) {
+            if (data.contains("tx" + i)) this.txBuffer[i] = data.getString("tx" + i);
+        }
+
+        String cmd = data.getString("cmd");
+
+        if ("snd".equals(cmd) && !this.isSending) {
+            this.isSending = true;
+            this.sendingLine = 0;
+            this.sendingIndex = 0;
+        }
+
+        if ("rxprt".equals(cmd)) {
+            print();
+        }
+
+        if ("rxcls".equals(cmd)) {
+            for (int i = 0; i < 5; i++) this.rxBuffer[i] = "";
+            this.writingLine = 0;
+        }
+
+        if ("sve".equals(cmd)) {
+            this.txChannel = data.getString("txChan");
+            this.rxChannel = data.getString("rxChan");
+        }
+
         setChanged();
     }
 
     public void print() {
         if (level == null || level.isClientSide) return;
 
-        ItemStack paper = new ItemStack(Items.PAPER);
+        ItemStack stack = new ItemStack(Items.PAPER);
+        List<String> text = new ArrayList<>();
+        for (int i = 0; i < 5; i++) {
+            if (!rxBuffer[i].isEmpty()) text.add(rxBuffer[i]);
+        }
         //? if < 1.21.1 {
-        paper.setHoverName(Component.literal("Message"));
+        stack.setHoverName(Component.literal("Message"));
         ListTag lore = new ListTag();
-        for (String line : rxLines) {
-            lore.add(StringTag.valueOf(Component.Serializer.toJson(Component.literal(line != null ? line : ""))));
-        }
-        CompoundTag display = paper.getOrCreateTagElement("display");
-        display.put("Lore", lore);
+        for (String line : text) lore.add(StringTag.valueOf(Component.Serializer.toJson(Component.literal(line))));
+        stack.getOrCreateTagElement("display").put("Lore", lore);
         //?} else {
-        /*paper.set(net.minecraft.core.component.DataComponents.CUSTOM_NAME, Component.literal("Message"));
-        List<Component> lore = new java.util.ArrayList<>();
-        for (String line : rxLines) {
-            lore.add(Component.literal(line != null ? line : ""));
-        }
-        paper.set(net.minecraft.core.component.DataComponents.LORE, new net.minecraft.world.item.component.ItemLore(lore));
+        /*stack.set(net.minecraft.core.component.DataComponents.CUSTOM_NAME, Component.literal("Message"));
+        List<Component> lore = new ArrayList<>();
+        for (String line : text) lore.add(Component.literal(line));
+        stack.set(net.minecraft.core.component.DataComponents.LORE, new net.minecraft.world.item.component.ItemLore(lore));
         *///?}
-
-        ItemEntity item = new ItemEntity(level, worldPosition.getX() + 0.5, worldPosition.getY() + 1.0, worldPosition.getZ() + 0.5, paper);
-        level.addFreshEntity(item);
-        com.hbm_m.platform.PlatformHooks.playSound(level, worldPosition, SoundEvents.ITEM_PICKUP, SoundSource.BLOCKS, 0.5F, 1.5F);
+        level.addFreshEntity(new ItemEntity(level, worldPosition.getX() + 0.5, worldPosition.getY() + 1, worldPosition.getZ() + 0.5, stack));
     }
 
     @Override
-    public void receiveControl(CompoundTag data) {
-        if (data.contains("txChannel")) txChannel = data.getString("txChannel");
-        if (data.contains("rxChannel")) rxChannel = data.getString("rxChannel");
-        for (int i = 0; i < LINE_COUNT; i++) {
-            String key = "tx" + i;
-            if (data.contains(key)) {
-                String line = data.getString(key);
-                txLines[i] = line.length() > LINE_WIDTH ? line.substring(0, LINE_WIDTH) : line;
-            }
+    protected void writeNbtData(CompoundTag nbt, net.minecraft.core.HolderLookup.Provider registries) {
+        for (int i = 0; i < 5; i++) {
+            nbt.putString("tx" + i, txBuffer[i]);
+            nbt.putString("rx" + i, rxBuffer[i]);
         }
-
-        String cmd = data.contains("cmd") ? data.getString("cmd") : "";
-        if (cmd.equals("snd")) startSending();
-        else if (cmd.equals("rxprt")) print();
-        else if (cmd.equals("rxcls")) clearRx();
-
-        setChanged();
-        if (level != null && !level.isClientSide) {
-            level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
-        }
+        nbt.putString("txChan", txChannel);
+        nbt.putString("rxChan", rxChannel);
+        nbt.putInt("sendingChar", sendingChar);
     }
 
     @Override
-    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-        tag.putString("txChannel", txChannel);
-        tag.putString("rxChannel", rxChannel);
-        tag.putBoolean("isSending", isSending);
-        tag.putInt("sendLine", sendLine);
-        tag.putInt("sendChar", sendChar);
-        tag.putInt("writingRxLine", writingRxLine);
-        for (int i = 0; i < LINE_COUNT; i++) {
-            tag.putString("tx" + i, txLines[i] != null ? txLines[i] : "");
-            tag.putString("rx" + i, rxLines[i] != null ? rxLines[i] : "");
+    protected void readNbtData(CompoundTag nbt, net.minecraft.core.HolderLookup.Provider registries) {
+        for (int i = 0; i < 5; i++) {
+            txBuffer[i] = nbt.getString("tx" + i);
+            rxBuffer[i] = nbt.getString("rx" + i);
         }
-    }
-
-    @Override
-    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-        txChannel = tag.getString("txChannel");
-        rxChannel = tag.getString("rxChannel");
-        isSending = tag.getBoolean("isSending");
-        sendLine = tag.getInt("sendLine");
-        sendChar = tag.getInt("sendChar");
-        writingRxLine = tag.getInt("writingRxLine");
-        for (int i = 0; i < LINE_COUNT; i++) {
-            txLines[i] = tag.contains("tx" + i) ? tag.getString("tx" + i) : "";
-            rxLines[i] = tag.contains("rx" + i) ? tag.getString("rx" + i) : "";
-        }
+        this.txChannel = nbt.getString("txChan");
+        this.rxChannel = nbt.getString("rxChan");
+        this.sendingChar = (char) nbt.getInt("sendingChar");
     }
 }

@@ -35,8 +35,9 @@ import net.minecraftforge.fluids.capability.IFluidHandler.FluidAction;
 public class MachineSteamCondenserBlockEntity extends BaseMachineBlockEntity implements IFluidStandardTransceiverMK2 {
 
     private static final int INVENTORY_SIZE = 0;
-    private static final int INPUT_CAPACITY = 8_000;
-    private static final int OUTPUT_CAPACITY = 8_000;
+    /** Original (konfigurierbar): {@code inputTankSize = outputTankSize = 100}. */
+    private static final int INPUT_CAPACITY = 100;
+    private static final int OUTPUT_CAPACITY = 100;
     private final FluidTank inputSteamTank;
     private final FluidTank outputWaterTank;
 

@@ -27,6 +27,15 @@ public class MachineSirenBlock extends BaseEntityBlock {
     @Override
     public RenderShape getRenderShape(BlockState state) { return RenderShape.MODEL; }
 
+
+    /** audit10: 1:1 {@code MachineSiren.breakBlock} - Inhalt faellt beim Entfernen heraus. */
+    @Override
+    public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean moving) {
+        if (!state.is(newState.getBlock()) && level.getBlockEntity(pos) instanceof com.hbm_m.blockentity.machines.MachineSirenBlockEntity be) {
+            com.hbm_m.block.BlockDropUtil.dropSlots(level, pos, be.getInventory(), 0, Integer.MAX_VALUE);
+        }
+        super.onRemove(state, level, pos, newState, moving);
+    }
     @Nullable @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
         return new MachineSirenBlockEntity(pos, state);

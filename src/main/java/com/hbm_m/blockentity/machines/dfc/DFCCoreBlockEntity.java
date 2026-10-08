@@ -82,6 +82,9 @@ public class DFCCoreBlockEntity extends BaseMachineBlockEntity implements IFluid
     /** Die Mischfarbe beider Katalysatoren; 0 heisst "kein Betrieb moeglich". */
     private int color;
     private boolean meltdownTick = false;
+    /** Original serialize schickt heat und meltdownTick vor dem Zuruecksetzen - nur zur Darstellung (RenderCore). */
+    private int syncHeat;
+    private boolean syncMeltdown;
 
     /**
      * 1:1-Port von {@code EntityNukeExplosionMK3.at}: jede Atomexplosion traegt sich hier ein und
@@ -173,6 +176,8 @@ public class DFCCoreBlockEntity extends BaseMachineBlockEntity implements IFluid
             }
         }
 
+        be.syncHeat = be.heat;
+        be.syncMeltdown = be.meltdownTick;
         be.heat = 0;
         if (be.field > 0) be.field--;
 
@@ -362,6 +367,8 @@ public class DFCCoreBlockEntity extends BaseMachineBlockEntity implements IFluid
         tanks[1].writeToNBT(tag, "fuel2");
         tag.putInt("field", field);
         tag.putInt("color", color);
+        tag.putInt("renderHeat", syncHeat);
+        tag.putBoolean("renderMeltdown", syncMeltdown);
     }
 
     @Override
@@ -371,7 +378,14 @@ public class DFCCoreBlockEntity extends BaseMachineBlockEntity implements IFluid
         tanks[1].readFromNBT(tag, "fuel2");
         field = tag.getInt("field");
         color = tag.getInt("color");
+        syncHeat = tag.getInt("renderHeat");
+        syncMeltdown = tag.getBoolean("renderMeltdown");
     }
+
+    /** Fuer RenderCore: Hitze des letzten Ticks (0 = Bereitschaft). */
+    public int getRenderHeat() { return syncHeat; }
+    /** Fuer RenderCore: Durchschmelzen im letzten Tick (Flare statt Kugel). */
+    public boolean isRenderMeltdown() { return syncMeltdown; }
 
     @Override
     protected Component getDefaultName() {

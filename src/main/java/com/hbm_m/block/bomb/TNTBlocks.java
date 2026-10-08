@@ -36,6 +36,14 @@ public final class TNTBlocks {
         }
     }
 
+    /** 1:1 {@code BlockC4} ({@code c4}): Explosion 15. */
+    public static class C4 extends BlockTNTBase {
+        public C4(Properties p) { super(p); }
+        @Override public void explodeEntity(Level world, double x, double y, double z, @Nullable EntityTNTPrimedBase entity) {
+            world.explode(entity, x, y, z, 15F, Level.ExplosionInteraction.TNT);
+        }
+    }
+
     /** 1:1 {@code BlockTNT} ({@code tnt_ntm}): Explosion 10. */
     public static class TNT extends BlockTNTBase {
         public TNT(Properties p) { super(p); }

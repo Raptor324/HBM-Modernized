@@ -40,6 +40,8 @@ public class ColtanDepositFeature extends Feature<NoneFeatureConfiguration> {
     @Override
     public boolean place(FeaturePlaceContext<NoneFeatureConfiguration> context) {
         WorldGenLevel level = context.level();
+        // Original: innerhalb von if(WorldConfig.overworldOre)
+        if (!com.hbm_m.config.WorldConfig.overworldOre) return false;
         RandomSource rand = context.random();
         int i = context.origin().getX() & ~15;
         int j = context.origin().getZ() & ~15;

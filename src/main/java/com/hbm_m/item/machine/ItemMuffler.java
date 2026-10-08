@@ -1,6 +1,6 @@
 package com.hbm_m.item.machine;
 
-import com.hbm_m.blockentity.LoadedMachineBlockEntity;
+import com.hbm_m.blockentity.IMuffleable;
 import com.hbm_m.sound.HbmSoundsNT;
 import com.hbm_m.util.CompatExternal;
 
@@ -25,13 +25,13 @@ public class ItemMuffler extends Item {
         Player player = ctx.getPlayer();
         BlockEntity te = CompatExternal.getCoreFromPos(world, ctx.getClickedPos());
 
-        if (te instanceof LoadedMachineBlockEntity tile && !tile.isMuffled()) {
+        if (te instanceof IMuffleable tile && !tile.isMuffled()) {
             tile.setMuffled(true);
             if (player != null) {
                 world.playSound(null, player.getX(), player.getY(), player.getZ(), HbmSoundsNT.get("hbm:item.upgradePlug"), SoundSource.PLAYERS, 1.0F, 1.0F);
             }
             ctx.getItemInHand().shrink(1);
-            tile.setChanged();
+            te.setChanged();
             return InteractionResult.sidedSuccess(world.isClientSide);
         }
 

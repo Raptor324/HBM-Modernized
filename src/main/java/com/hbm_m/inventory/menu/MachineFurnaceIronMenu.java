@@ -17,8 +17,7 @@ import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
 /** Slot-Koordinaten (176x166 Textur) 1:1 aus {@code ContainerFurnaceIron} (1.7.10 Original)
- *  uebernommen: Input (53,17), Brennstoff (53,53)+(71,53), Output (125,35). Der Upgrade-Slot
- *  (17,35) des Originals entfaellt - siehe {@link MachineFurnaceIronBlockEntity}. */
+ *  uebernommen: Input (53,17), Brennstoff (53,53)+(71,53), Output (125,35), Upgrade (17,35). */
 public class MachineFurnaceIronMenu extends AbstractContainerMenu {
 
     public final MachineFurnaceIronBlockEntity blockEntity;
@@ -102,8 +101,8 @@ public class MachineFurnaceIronMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        return stillValid(ContainerLevelAccess.create(blockEntity.getLevel(), blockEntity.getBlockPos()),
-                player, ModBlocks.FURNACE_IRON.get());
+        // w16b: Original isUseableByPlayer (TileEntityMachineBase) = 128 vom Kern, dazu Huelle der Maschine (MultiblockMenuReach)
+        return MultiblockMenuReach.stillValidCore(blockEntity, player, 128.0D);
     }
 
     @Override

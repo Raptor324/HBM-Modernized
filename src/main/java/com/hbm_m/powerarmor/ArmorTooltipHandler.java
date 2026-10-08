@@ -24,6 +24,13 @@ public class ArmorTooltipHandler {
     private ArmorTooltipHandler() {}
 
     public static void drawTooltip(ItemStack stack, List<Component> list, boolean armorTableOpen) {
+        int start = list.size();
+        drawTooltip0(stack, list, armorTableOpen);
+        // Original: auch an fremder Ruestung sind Zeilen ohne Farbcode grau ("§7"-Praefix von drawHoveringText)
+        com.hbm_m.util.TooltipUtil.applyLegacyGray(list, start);
+    }
+
+    private static void drawTooltip0(ItemStack stack, List<Component> list, boolean armorTableOpen) {
 
         /// DAMAGE RESISTANCE ///
         DamageResistanceHandler.addInfo(stack, list);

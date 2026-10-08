@@ -14,7 +14,6 @@ import java.util.WeakHashMap;
 
 import org.jetbrains.annotations.Nullable;
 
-import com.hbm_m.recipe.AnvilRecipe;
 import com.hbm_m.recipe.AssemblerRecipe;
 import com.hbm_m.recipe.ChemicalPlantRecipe;
 import com.hbm_m.platform.recipe.RecipeHooks;
@@ -173,7 +172,6 @@ public final class ModRecipeIndex {
     public static String blueprintPoolOf(Recipe<?> recipe) {
         if (recipe instanceof ChemicalPlantRecipe c) return c.getBlueprintPool();
         if (recipe instanceof AssemblerRecipe a) return a.getBlueprintPool();
-        if (recipe instanceof AnvilRecipe an) return an.getBlueprintPool();
         return null;
     }
 

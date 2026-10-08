@@ -1,0 +1,14 @@
+{
+  "type": "hbm_m:combination_oven",
+  "ingredient": {
+    "item": "hbm_m:limestone_powder"
+  },
+  "result": {
+    "item": "hbm_m:calcium_powder",
+    "count": 1
+  },
+  "fluid": {
+    "fluid": "hbm_m:carbondioxide",
+    "amount": 50
+  }
+}

@@ -13,9 +13,7 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
-/** Slot-Koordinaten 1:1 aus {@code ContainerLiquefactor} (1.7.10 Original) uebernommen. Die
- *  Upgrade-Slots des Originals wurden nicht uebernommen (siehe Klassenkommentar in
- *  {@link MachineLiquefactorBlockEntity}). */
+/** Slot-Koordinaten 1:1 aus {@code ContainerLiquefactor} (1.7.10 Original), inkl. der zwei Upgrade-Plaetze (98,36/54). */
 public class MachineLiquefactorMenu extends AbstractContainerMenu {
 
     private final MachineLiquefactorBlockEntity blockEntity;
@@ -73,11 +71,8 @@ public class MachineLiquefactorMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        if (blockEntity == null || blockEntity.getLevel() != player.level()) {
-            return false;
-        }
-        BlockPos pos = blockEntity.getBlockPos();
-        return player.distanceToSqr(pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D) <= 64.0D;
+        // w16b: Original isUseableByPlayer (TileEntityMachineBase) = 128 vom Kern, dazu Huelle der Maschine (MultiblockMenuReach)
+        return MultiblockMenuReach.stillValidCore(blockEntity, player, 128.0D);
     }
 
     @Override

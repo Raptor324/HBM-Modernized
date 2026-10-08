@@ -5,6 +5,7 @@ import org.jetbrains.annotations.NotNull;
 import com.hbm_m.blockentity.bomb.NukeSoliniumBlockEntity;
 import com.hbm_m.client.GuiCompat;
 import com.hbm_m.inventory.menu.NukeSoliniumMenu;
+import com.hbm_m.item.ModItems;
 import com.hbm_m.lib.RefStrings;
 
 import net.minecraft.client.gui.GuiGraphics;
@@ -40,11 +41,23 @@ public class GUINukeSolinium extends GuiInfoScreen<NukeSoliniumMenu> {
     protected void renderBg(@NotNull GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
         guiGraphics.blit(TEXTURE, this.leftPos, this.topPos, 0, 0, imageWidth, imageHeight);
 
-        if (be != null && be.isReady()) { // тайл может отсутствовать в реплее Flashback
-            guiGraphics.blit(TEXTURE, this.leftPos + imageWidth - 42, this.topPos + 6, 176, 48, 16, 16);
+        // Original: Teile-Overlays je Slot, Bereitschaftsanzeige bei (134, 90), kein Info-Panel
+        if (be != null) { // тайл может отсутствовать в реплее Flashback
+            if (has(0, ModItems.SOLINIUM_IGNITER.get())) guiGraphics.blit(TEXTURE, leftPos + 24, topPos + 84, 0, 222, 22, 14);
+            if (has(1, ModItems.SOLINIUM_PROPELLANT.get())) guiGraphics.blit(TEXTURE, leftPos + 46, topPos + 84, 22, 222, 18, 14);
+            if (has(2, ModItems.SOLINIUM_PROPELLANT.get())) guiGraphics.blit(TEXTURE, leftPos + 76, topPos + 84, 52, 222, 18, 14);
+            if (has(3, ModItems.SOLINIUM_IGNITER.get())) guiGraphics.blit(TEXTURE, leftPos + 94, topPos + 84, 70, 222, 22, 14);
+            if (has(4, ModItems.SOLINIUM_CORE.get())) guiGraphics.blit(TEXTURE, leftPos + 64, topPos + 84, 40, 222, 12, 28);
+            if (has(5, ModItems.SOLINIUM_IGNITER.get())) guiGraphics.blit(TEXTURE, leftPos + 24, topPos + 98, 0, 236, 22, 14);
+            if (has(6, ModItems.SOLINIUM_PROPELLANT.get())) guiGraphics.blit(TEXTURE, leftPos + 46, topPos + 98, 22, 236, 18, 14);
+            if (has(7, ModItems.SOLINIUM_PROPELLANT.get())) guiGraphics.blit(TEXTURE, leftPos + 76, topPos + 98, 52, 236, 18, 14);
+            if (has(8, ModItems.SOLINIUM_IGNITER.get())) guiGraphics.blit(TEXTURE, leftPos + 94, topPos + 98, 70, 236, 22, 14);
+            if (be.isReady()) guiGraphics.blit(TEXTURE, leftPos + 134, topPos + 90, 176, 0, 16, 16);
         }
+    }
 
-        this.drawInfoPanel(guiGraphics, -16, 16, PanelType.LARGE_BLUE_INFO);
+    private boolean has(int slot, net.minecraft.world.item.Item item) {
+        return be.slots.get(slot).is(item);
     }
 
     @Override

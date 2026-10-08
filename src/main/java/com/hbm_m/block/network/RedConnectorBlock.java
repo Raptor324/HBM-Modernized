@@ -122,6 +122,37 @@ public class RedConnectorBlock extends BaseEntityBlock {
         return RenderShape.MODEL;
     }
 
+    /** audit10: 1:1 {@code PylonBase.breakBlock} - beim Entfernen alle Kabelverbindungen loesen. */
+    @Override
+    public void onRemove(BlockState state, Level level, BlockPos pos, BlockState newState, boolean isMoving) {
+        if (!level.isClientSide && newState.getBlock() != this && level.getBlockEntity(pos) instanceof PylonBaseBlockEntity pylon) {
+            pylon.disconnectAll();
+        }
+        super.onRemove(state, level, pos, newState, isMoving);
+    }
+
+    /** audit10: 1:1 {@code PylonBase.onBlockActivated} - nicht schleichend faerbt ein Farbstoff das Kabel ({@code setColor}). */
+    //? if < 1.21.1 {
+    @Override
+    public net.minecraft.world.InteractionResult use(BlockState state, Level level, BlockPos pos, net.minecraft.world.entity.player.Player player,
+                                                     net.minecraft.world.InteractionHand hand, net.minecraft.world.phys.BlockHitResult hit) {
+        return interact(level, pos, player, hand);
+    }
+    //?} else {
+    /*@Override
+    protected net.minecraft.world.InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, net.minecraft.world.entity.player.Player player, net.minecraft.world.phys.BlockHitResult hit) {
+        return interact(level, pos, player, net.minecraft.world.InteractionHand.MAIN_HAND);
+    }
+    *///?}
+
+    private net.minecraft.world.InteractionResult interact(Level level, BlockPos pos, net.minecraft.world.entity.player.Player player, net.minecraft.world.InteractionHand hand) {
+        if (level.isClientSide) return net.minecraft.world.InteractionResult.SUCCESS;
+        if (!player.isShiftKeyDown() && level.getBlockEntity(pos) instanceof PylonBaseBlockEntity pylon) {
+            if (pylon.setColor(player.getItemInHand(hand))) return net.minecraft.world.InteractionResult.CONSUME;
+        }
+        return net.minecraft.world.InteractionResult.PASS;
+    }
+
     @Nullable
     @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {

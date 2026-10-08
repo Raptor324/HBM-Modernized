@@ -69,6 +69,15 @@ public interface IMultiblockController {
     }
 
     /**
+     * audit10: Original {@code BlockDummyable} - {@code onBlockExploded} auf einer Dummy-Zelle laeuft ueber
+     * {@code findCore} in die Kernlogik. Liefert true, leitet {@code UniversalMachinePartBlock} Explosionen
+     * an {@code onBlockExploded} des Kerns weiter (Tank, Raffinerie, Bohrturm).
+     */
+    default boolean forwardPartExplosions() {
+        return false;
+    }
+
+    /**
      * Если вы изменили размер или компоновку структуры в новой версии мода,
      * из-за чего контроллер сместился в координатах шаблона (local grid),
      * верните здесь его СТАРЫЙ офсет.

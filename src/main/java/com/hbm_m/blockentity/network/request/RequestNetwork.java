@@ -18,9 +18,9 @@ import net.minecraft.world.level.Level;
  * (2000ms Timeout) am Leben halten - kein manuelles An-/Abmelden noetig, ein Block der aufhoert zu
  * ticken (Chunk entladen, kaputt) faellt automatisch nach spaetestens 2s aus dem Netz.
  * <p>
- * SCOPE-Vereinfachung: Das Original nutzt eine eigene {@code HashedSet}-Klasse (reine
- * Positions-Deduplizierung). {@link PathNode#equals}/{@link PathNode#hashCode} bereits nach Position
- * ueberschrieben, deshalb reicht hier ein normales {@link java.util.HashSet}.
+ * Das Original nutzt {@code HashedSet} (Schluessel = hashCode, ein neues Element ersetzt das alte). Hier
+ * gleichwertig: {@link PathNode#equals}/{@link PathNode#hashCode} nach Position, {@link #push} entfernt vor dem
+ * Einfuegen, und der Drohnenhafen sucht die aktuelle Instanz per equals ({@code getMap().get(hash)}).
  */
 public final class RequestNetwork {
 
@@ -128,14 +128,78 @@ public final class RequestNetwork {
         }
     }
 
-    /** Node created by requesters - lists the (simplified, exact-match) wanted item stacks. */
+    /** Node created by requesters - Original {@code List<AStack>}. */
     public static class RequestNode extends PathNode {
-        public final List<ItemStack> request;
+        public final List<RequestStack> request;
 
-        public RequestNode(BlockPos pos, Set<PathNode> reachableNodes, List<ItemStack> request) {
+        public RequestNode(BlockPos pos, Set<PathNode> reachableNodes, List<RequestStack> request) {
             super(pos, reachableNodes);
             this.request = request;
             this.torchWaypoint = false;
+        }
+    }
+
+    /**
+     * Original {@code AStack} des Wunschzettels: {@code ComparableStack} (Item + Schaden, oder Item mit
+     * WILDCARD_VALUE) bzw. {@code OreDictStack} (hier der Filtermodus, im Port {@code "tag:<id>"}).
+     * Vergleich wie {@code matchesRecipe(stack, true)} - die Stueckzahl zaehlt nicht.
+     */
+    public static final class RequestStack {
+        public final ItemStack item;
+        public final boolean wildcard;
+        @org.jetbrains.annotations.Nullable public final String dict;
+
+        private RequestStack(ItemStack item, boolean wildcard, @org.jetbrains.annotations.Nullable String dict) {
+            this.item = item;
+            this.wildcard = wildcard;
+            this.dict = dict;
+        }
+
+        public static RequestStack comp(ItemStack filter, boolean wildcard) {
+            ItemStack single = filter.copy();
+            single.setCount(1);
+            return new RequestStack(single, wildcard, null);
+        }
+
+        public static RequestStack dict(String name) {
+            return new RequestStack(ItemStack.EMPTY, false, name);
+        }
+
+        public boolean matches(ItemStack stack) {
+            if (stack == null || stack.isEmpty()) return false;
+            if (dict != null) {
+                if (!dict.startsWith(com.hbm_m.inventory.filter.ModulePatternMatcher.MODE_TAG_PREFIX)) return false;
+                net.minecraft.resources.ResourceLocation id = net.minecraft.resources.ResourceLocation.tryParse(
+                        dict.substring(com.hbm_m.inventory.filter.ModulePatternMatcher.MODE_TAG_PREFIX.length()));
+                return id != null && stack.is(net.minecraft.tags.TagKey.create(net.minecraft.core.registries.Registries.ITEM, id));
+            }
+            if (stack.getItem() != item.getItem()) return false;
+            return wildcard || stack.getDamageValue() == item.getDamageValue();
+        }
+
+        /** Original writeEntityToNBT: "comp" (id, meta) bzw. "dict". */
+        public net.minecraft.nbt.CompoundTag save(net.minecraft.nbt.CompoundTag tag) {
+            if (dict != null) {
+                tag.putString("type", "dict");
+                tag.putString("dict", dict);
+            } else {
+                tag.putString("type", "comp");
+                tag.putString("id", net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(item.getItem()).toString());
+                tag.putInt("meta", wildcard ? -1 : item.getDamageValue());
+            }
+            return tag;
+        }
+
+        @org.jetbrains.annotations.Nullable
+        public static RequestStack load(net.minecraft.nbt.CompoundTag tag) {
+            if ("dict".equals(tag.getString("type"))) return dict(tag.getString("dict"));
+            if (!"comp".equals(tag.getString("type"))) return null;
+            net.minecraft.resources.ResourceLocation id = net.minecraft.resources.ResourceLocation.tryParse(tag.getString("id"));
+            if (id == null) return null;
+            ItemStack stack = new ItemStack(net.minecraft.core.registries.BuiltInRegistries.ITEM.get(id));
+            int meta = tag.getInt("meta");
+            if (meta > 0) stack.setDamageValue(meta);
+            return new RequestStack(stack, meta < 0, null);
         }
     }
 }

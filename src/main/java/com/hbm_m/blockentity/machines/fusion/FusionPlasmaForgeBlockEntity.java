@@ -479,13 +479,39 @@ public class FusionPlasmaForgeBlockEntity extends BaseMachineBlockEntity
         }
         if (slot >= SLOT_INPUT_FIRST && slot < SLOT_INPUT_FIRST + SLOT_INPUT_COUNT) {
             if (level == null) return true;
-            PlasmaForgeRecipe recipe = getRecipe(level);
-            if (recipe == null) return false;
-            int index = slot - SLOT_INPUT_FIRST;
-            List<CountedIngredient> inputs = recipe.getItemInputs();
-            return index < inputs.size() && inputs.get(index).ingredient().test(stack);
+            return isModuleItemValid(slot, stack);
         }
         return false;
+    }
+
+    /** 1:1 {@code ModuleMachineBase.isItemValid}: Rezeptzutat am passenden Slot, im ersten Slot auch jede Zutat der Umschaltgruppe. */
+    private boolean isModuleItemValid(int slot, ItemStack stack) {
+        if (level == null) return false;
+        PlasmaForgeRecipe recipe = getRecipe(level);
+        if (recipe == null) return false;
+        List<CountedIngredient> inputs = recipe.getItemInputs();
+
+        for (int i = 0; i < Math.min(SLOT_INPUT_COUNT, inputs.size()); i++) {
+            if (SLOT_INPUT_FIRST + i == slot && inputs.get(i).ingredient().test(stack)) return true;
+        }
+
+        String group = recipe.getGroup();
+        if (group != null && !group.isEmpty() && slot == SLOT_INPUT_FIRST) {
+            for (PlasmaForgeRecipe next : ModRecipeIndex.of(level.getRecipeManager())
+                    .getAutoSwitchGroup(ModRecipes.PLASMA_FORGE_TYPE.get(), group)) {
+                List<CountedIngredient> nextInputs = next.getItemInputs();
+                if (!nextInputs.isEmpty() && nextInputs.get(0).ingredient().test(stack)) return true;
+            }
+        }
+        return false;
+    }
+
+    /** 1:1 {@code ModuleMachineBase.isSlotClogged}: ein Eingangsslot mit etwas, das nicht (mehr) zum Rezept passt. */
+    public boolean isSlotClogged(int slot) {
+        if (slot < SLOT_INPUT_FIRST || slot >= SLOT_INPUT_FIRST + SLOT_INPUT_COUNT) return false;
+        ItemStack stack = getInventory().getStackInSlot(slot);
+        if (stack.isEmpty()) return false;
+        return !isModuleItemValid(slot, stack);
     }
 
     @Override
@@ -570,7 +596,7 @@ public class FusionPlasmaForgeBlockEntity extends BaseMachineBlockEntity
     @Override
     public String provideRORValue(String name) {
         if ((PREFIX_VALUE + "progress").equals(name)) return "" + (int) Math.round(this.progress * 100);
-        if ((PREFIX_VALUE + "recipe").equals(name))   return selectedRecipeId != null ? selectedRecipeId.toString() : "null";
+        if ((PREFIX_VALUE + "recipe").equals(name))   return com.hbm_m.api.redstoneoverradio.RORRecipeNames.name(selectedRecipeId);
         if ((PREFIX_VALUE + "active").equals(name))   return "" + (this.didProcess ? 1 : 0);
         if ((PREFIX_VALUE + "booster").equals(name))  return "" + this.booster;
         if ((PREFIX_VALUE + "plasma").equals(name))   return "" + this.plasmaEnergySync;
@@ -794,4 +820,26 @@ public class FusionPlasmaForgeBlockEntity extends BaseMachineBlockEntity
         double[] newPos = positions[RAND.nextInt(positions.length)];
         System.arraycopy(newPos, 0, arm.targetAngles, 0, newPos.length);
     }
+
+    //? if forge {
+    /** Original {@code ISidedInventory}: Slots {2-15}; Zutaten und Booster nach Rezept hinein, Ergebnis und verstopfte Eingaenge heraus. */
+    private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
+            new com.hbm_m.blockentity.SidedItemAccess.Rules() {
+                @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return com.hbm_m.blockentity.SidedItemAccess.range(2, 15); }
+                @Override public boolean canInsert(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return isItemValidForSlot(slot, stack); }
+                @Override public boolean canExtract(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return slot == 15 || isSlotClogged(slot); }
+            });
+
+    @Override
+    public @org.jetbrains.annotations.NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(@org.jetbrains.annotations.NotNull net.minecraftforge.common.capabilities.Capability<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER && side != null) return sidedItems.get(side).cast();
+        return super.getCapability(cap, side);
+    }
+
+    @Override
+    public void invalidateCaps() {
+        super.invalidateCaps();
+        sidedItems.invalidate();
+    }
+    //?}
 }

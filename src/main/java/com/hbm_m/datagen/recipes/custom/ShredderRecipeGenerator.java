@@ -76,6 +76,22 @@ public final class ShredderRecipeGenerator {
                         new ItemStack(Items.SAND, 1))
                 .save(writer, "gravel_to_sand");
 
+        // Restport: Original "Sellafite scrapping"
+        ShredderRecipeBuilder.shredderRecipe(ModBlocks.SELLAFIELD_SLAKED.get().asItem(), new ItemStack(Items.GRAVEL, 1)).save(writer, "sellafield_slaked_to_gravel");
+        ShredderRecipeBuilder.shredderRecipe(ModBlocks.SELLAFIELD_0.get().asItem(), new ItemStack(ModMaterialItems.item(ModMaterials.SCRAP_NUCLEAR, MaterialShape.SCRAP), 1)).save(writer, "sellafield_0_to_scrap_nuclear");
+        ShredderRecipeBuilder.shredderRecipe(ModBlocks.SELLAFIELD_1.get().asItem(), new ItemStack(ModMaterialItems.item(ModMaterials.SCRAP_NUCLEAR, MaterialShape.SCRAP), 2)).save(writer, "sellafield_1_to_scrap_nuclear");
+        ShredderRecipeBuilder.shredderRecipe(ModBlocks.SELLAFIELD_2.get().asItem(), new ItemStack(ModMaterialItems.item(ModMaterials.SCRAP_NUCLEAR, MaterialShape.SCRAP), 3)).save(writer, "sellafield_2_to_scrap_nuclear");
+        ShredderRecipeBuilder.shredderRecipe(ModBlocks.SELLAFIELD_3.get().asItem(), new ItemStack(ModMaterialItems.item(ModMaterials.SCRAP_NUCLEAR, MaterialShape.SCRAP), 5)).save(writer, "sellafield_3_to_scrap_nuclear");
+        ShredderRecipeBuilder.shredderRecipe(ModBlocks.SELLAFIELD_4.get().asItem(), new ItemStack(ModMaterialItems.item(ModMaterials.SCRAP_NUCLEAR, MaterialShape.SCRAP), 7)).save(writer, "sellafield_4_to_scrap_nuclear");
+        ShredderRecipeBuilder.shredderRecipe(ModBlocks.SELLAFIELD_5.get().asItem(), new ItemStack(ModMaterialItems.item(ModMaterials.SCRAP_NUCLEAR, MaterialShape.SCRAP), 15)).save(writer, "sellafield_5_to_scrap_nuclear");
+        // Original: jeder Wackelkopf (Meta = BobbleType) -> 1 scrap_plastic mit Meta BobbleType.scrap
+        for (com.hbm_m.block.decorations.TrinketTypes.BobbleType type : com.hbm_m.block.decorations.TrinketTypes.BobbleType.values()) {
+            ItemStack bobble = com.hbm_m.item.TrinketBlockItem.make(ModBlocks.BOBBLEHEAD.get().asItem(), type.ordinal());
+            ShredderRecipeBuilder.shredderRecipe(net.minecraftforge.common.crafting.PartialNBTIngredient.of(bobble.getItem(), bobble.getTag()),
+                            new ItemStack(ModItems.scrapPlastic(type.scrap), 1))
+                    .save(writer, "bobblehead_" + type.name().toLowerCase(java.util.Locale.ROOT) + "_to_scrap_plastic");
+        }
+
         ShredderRecipeBuilder.shredderRecipe(Items.GLOWSTONE,
                         new ItemStack(Items.GLOWSTONE_DUST, 4))
                 .save(writer, "glowstone_to_dust");
@@ -208,7 +224,7 @@ public final class ShredderRecipeGenerator {
             ModMaterials ingot = ModMaterials.byId(powderName);
             if (ingot == null) continue;
 
-            var ingotRegistry = ModMaterialItems.get(ingot, MaterialShape.INGOT);
+            var ingotRegistry = ModMaterialItems.get(ModMaterialItems.ingotMaterial(ingot), MaterialShape.INGOT);
             var powderRegistry = ModMaterialItems.get(ingot, MaterialShape.POWDER);
 
             // Если нет предмета слитка или порошка - пропускаем

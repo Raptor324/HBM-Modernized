@@ -33,6 +33,7 @@ public final class ContaminationUtil {
         IMMUNE_ENTITIES.add(MushroomCow.class);
         IMMUNE_ENTITIES.add(Zombie.class);
         IMMUNE_ENTITIES.add(Skeleton.class);
+        IMMUNE_ENTITIES.add(com.hbm_m.entity.mob.EntityQuackos.class);
         IMMUNE_ENTITIES.add(Ocelot.class);
         IMMUNE_ENTITIES.add(IRadiationImmune.class);
     }

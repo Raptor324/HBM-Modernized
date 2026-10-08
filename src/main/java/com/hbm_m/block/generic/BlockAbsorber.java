@@ -28,7 +28,8 @@ public class BlockAbsorber extends Block {
             EnumProperty.create("tier", EnumAbsorberTier.class);
 
     public BlockAbsorber(Properties properties) {
-        super(properties);
+        // Original setTickRandomly(true): Zufallsticks laufen ueber randomTick -> tick zusaetzlich
+        super(properties.randomTicks());
         registerDefaultState(defaultBlockState().setValue(TIER, EnumAbsorberTier.BASE));
     }
 

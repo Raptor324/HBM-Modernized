@@ -73,10 +73,12 @@ public final class MainRegistry {
         DoorDeclRegistry.init();
         ModBiomes.init();
         ModBlocks.init();
+        com.hbm_m.loot.ModLootFunctions.init();
         ModEntities.init();
         ModExplosionParticles.init();
         ModSounds.init();
         ModItems.init();
+        com.hbm_m.advancement.ModStats.init();
         //? if neoforge {
         /*com.hbm_m.item.tools_and_armor.ModArmorMaterialsAccess.init();
         *///?}
@@ -88,11 +90,14 @@ public final class MainRegistry {
         ModRecipes.init();
         MobGearHandler.init();
         CrateBreaker.init();
+        com.hbm_m.worldgen.ChestGenHooksPort.init();
         HazardEventHandler.init();
+        com.hbm_m.event.TrainEventHandler.init();
         PlayerHazardHandler.init();
         ScrewdriverInteractionHandler.init();
         PlayerHandler.register();
         ChunkRadiationManager.init();
+        com.hbm_m.radiation.ntmnext.RadiationSystemSelector.init();
         com.hbm_m.handler.pollution.PollutionEvents.init();
         com.hbm_m.satellite.RayScanEvents.init();
         ModEventHandler.register();
@@ -158,10 +163,17 @@ public final class MainRegistry {
         com.hbm_m.armormod.event.ArmorModTickHandler.init();
         com.hbm_m.handler.BossSpawnHandler.init();
         com.hbm_m.config.FalloutConfigJSON.initialize();
+        com.hbm_m.inventory.recipes.CustomMachineRecipes.initialize();
+        com.hbm_m.config.CustomMachineConfigJSON.initialize();
+        com.hbm_m.item.weapon.sedna.factory.GunFactory.init();
+        com.hbm_m.item.weapon.sedna.mods.XWeaponModManager.init();
+        com.hbm_m.item.weapon.grenade.GrenadeItems.registerDispenser();
         DamageResistanceHandler.init();
         com.hbm_m.blockentity.machines.LaunchPadBaseBlockEntity.registerLaunchables();
         com.hbm_m.satellite.Satellite.register();
         com.hbm_m.satellite.CommandSatellites.init();
+        com.hbm_m.commands.CommandCustomize.init();
+        com.hbm_m.commands.HbmCommandsNT.init();
 
         // Диагностика загрузки рецептов на 1.21.1 — запускается ПОСЛЕ RegisterEvent.
         //? if >= 1.21.1 {

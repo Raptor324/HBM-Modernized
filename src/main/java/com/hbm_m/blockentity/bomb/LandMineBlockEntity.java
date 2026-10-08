@@ -33,6 +33,11 @@ public class LandMineBlockEntity extends BaseHbmBlockEntity {
 
         if (!(state.getBlock() instanceof LandmineBlock landmine)) return;
 
+        // mine_ap: Tarnung je Biom/Ueberdachung wie RenderLandmine (Original pro Frame, hier sekuendlich).
+        if (landmine instanceof com.hbm_m.block.bomb.LandmineAPBlock && Math.floorMod(level.getGameTime() + pos.asLong(), 20L) == 0) {
+            com.hbm_m.block.bomb.LandmineAPBlock.updateCamo(level, pos, state);
+        }
+
         double range = landmine.range;
         double height = landmine.height;
 

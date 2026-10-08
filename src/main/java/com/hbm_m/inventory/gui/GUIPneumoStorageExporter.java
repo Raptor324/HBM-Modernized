@@ -147,4 +147,12 @@ public class GUIPneumoStorageExporter extends AbstractContainerScreen<PneumoStor
         int localY = mouseY - topPos;
         return localX >= x && localX < x + 18 && localY >= y && localY < y + 18;
     }
+
+    @Override
+    protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
+        // Original drawGuiContainerForegroundLayer
+        String name = this.title.getString();
+        guiGraphics.drawString(this.font, name, 88 - this.font.width(name) / 2, 5, 4210752, false);
+        guiGraphics.drawString(this.font, this.playerInventoryTitle, 8, 91, 4210752, false);
+    }
 }

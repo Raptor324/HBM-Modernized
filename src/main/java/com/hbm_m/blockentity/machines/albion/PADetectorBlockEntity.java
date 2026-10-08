@@ -29,17 +29,18 @@ import org.jetbrains.annotations.Nullable;
  * {@link com.hbm_m.satellite.RayScanEvents Strahlenscanner} als Teilchenquelle, die noch eine halbe
  * Minute nachleuchtet. Wer einen Beschleuniger betreibt, ist damit ortbar.</p>
  *
- * <p><b>Abweichungen:</b> Die Behaelterrueckgabe des Originals ({@code getContainerItem}, Slots 1
- * und 2) entfaellt - keines der portierten Rezepte nutzt Behaelter. Der Omega-12-Erfolg beim
- * Digamma-Teilchen fehlt, weil dieser Port keine Erfolge dieser Art kennt.</p>
+ * <p><b>Abweichungen:</b> keine - Behaelterplaetze 1/2 (leere Teilchenkapseln) und der
+ * Omega-12-Erfolg beim Digamma-Teilchen sind wie im Original.</p>
  */
-public class PADetectorBlockEntity extends CooledMachineBlockEntity implements IParticleUser {
+public class PADetectorBlockEntity extends CooledMachineBlockEntity implements IParticleUser, com.hbm_m.api.redstoneoverradio.IRORValueProvider {
 
     public static final int SLOT_BATTERY = 0;
-    /** Original: Slots 3 und 4 sind die Ausgaben. */
-    public static final int SLOT_OUTPUT_A = 1;
-    public static final int SLOT_OUTPUT_B = 2;
-    public static final int INVENTORY_SIZE = 3;
+    /** Original: Slots 1 und 2 nehmen die Behaelter (z. B. leere Teilchenkapseln) auf, 3 und 4 sind die Ausgaben. */
+    public static final int SLOT_CONTAINER_A = 1;
+    public static final int SLOT_CONTAINER_B = 2;
+    public static final int SLOT_OUTPUT_A = 3;
+    public static final int SLOT_OUTPUT_B = 4;
+    public static final int INVENTORY_SIZE = 5;
 
     /** Original: {@code usage = 100_000}. */
     private static final long USAGE = 100_000L;
@@ -98,8 +99,25 @@ public class PADetectorBlockEntity extends CooledMachineBlockEntity implements I
         }
 
         if (canAccept(recipe)) {
-            insert(SLOT_OUTPUT_A, recipe.getOutputA());
-            if (recipe.hasOutputB()) insert(SLOT_OUTPUT_B, recipe.getOutputB());
+            ItemStack outA = recipe.getOutputA();
+            ItemStack outB = recipe.hasOutputB() ? recipe.getOutputB() : ItemStack.EMPTY;
+            if (!outA.isEmpty() && outA.hasCraftingRemainingItem()) getInventory().extractItem(SLOT_CONTAINER_A, 1, false);
+            if (!outB.isEmpty() && outB.hasCraftingRemainingItem()) getInventory().extractItem(SLOT_CONTAINER_B, 1, false);
+
+            insert(SLOT_OUTPUT_A, outA);
+            if (recipe.hasOutputB()) insert(SLOT_OUTPUT_B, outB);
+        }
+
+        // Original: ein Digamma-Teilchen gibt allen Spielern im Umkreis den Omega-12-Erfolg
+        if ((recipe.getOutputA().is(com.hbm_m.item.ModItems.PARTICLE_DIGAMMA.get()))
+                || (recipe.hasOutputB() && recipe.getOutputB().is(com.hbm_m.item.ModItems.PARTICLE_DIGAMMA.get()))) {
+            if (getLevel() != null) {
+                for (net.minecraft.world.entity.player.Player player : getLevel().getEntitiesOfClass(net.minecraft.world.entity.player.Player.class,
+                        new net.minecraft.world.phys.AABB(worldPosition.getX() + 0.5, worldPosition.getY() + 0.5, worldPosition.getZ() + 0.5,
+                                worldPosition.getX() + 0.5, worldPosition.getY() + 0.5, worldPosition.getZ() + 0.5).inflate(100, 50, 100))) {
+                    com.hbm_m.advancement.ModAdvancements.grant(player, com.hbm_m.advancement.ModAdvancements.OMEGA12);
+                }
+            }
         }
 
         if (getLevel() != null) {
@@ -111,20 +129,29 @@ public class PADetectorBlockEntity extends CooledMachineBlockEntity implements I
         particle.crash(PAState.SUCCESS);
     }
 
-    /** Original: {@code canAccept} - beide Ausgaben muessen Platz haben. */
+    /** Original: {@code canAccept} - beide Ausgaben muessen Platz und ggf. ihren Behaelter haben. */
     private boolean canAccept(ParticleAcceleratorRecipe recipe) {
-        return fits(SLOT_OUTPUT_A, recipe.getOutputA())
-                && (!recipe.hasOutputB() || fits(SLOT_OUTPUT_B, recipe.getOutputB()));
+        return checkSlot(recipe.getOutputA(), SLOT_CONTAINER_A, SLOT_OUTPUT_A)
+                && (!recipe.hasOutputB() || checkSlot(recipe.getOutputB(), SLOT_CONTAINER_B, SLOT_OUTPUT_B));
     }
 
-    private boolean fits(int slot, ItemStack output) {
+    /** Original {@code checkSlot}: Ausgabe passt dazu und - braucht sie einen Behaelter - liegt der passende bereit. */
+    private boolean checkSlot(ItemStack output, int containerSlot, int outputSlot) {
         if (output == null || output.isEmpty()) return true;
 
-        ItemStack present = getInventory().getStackInSlot(slot);
-        if (present.isEmpty()) return true;
+        ItemStack present = getInventory().getStackInSlot(outputSlot);
+        if (!present.isEmpty()) {
+            if (!com.hbm_m.platform.PlatformHooks.isSameItemSameTags(present, output)
+                    || present.getCount() + output.getCount() > output.getMaxStackSize()) return false;
+        }
 
-        return com.hbm_m.platform.PlatformHooks.isSameItemSameTags(present, output)
-                && present.getCount() + output.getCount() <= output.getMaxStackSize();
+        if (output.hasCraftingRemainingItem()) {
+            ItemStack container = output.getCraftingRemainingItem();
+            ItemStack inSlot = getInventory().getStackInSlot(containerSlot);
+            if (inSlot.isEmpty() || inSlot.getItem() != container.getItem()) return false;
+        }
+
+        return true;
     }
 
     private void insert(int slot, ItemStack output) {
@@ -146,8 +173,41 @@ public class PADetectorBlockEntity extends CooledMachineBlockEntity implements I
 
     @Override
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
-        return slot == SLOT_BATTERY && isEnergyReceiverItem(stack);
+        return slot == SLOT_CONTAINER_A || slot == SLOT_CONTAINER_B || (slot == SLOT_BATTERY && isEnergyReceiverItem(stack));
     }
+
+    //? if forge {
+    private final java.util.Map<Direction, net.minecraftforge.common.util.LazyOptional<net.minecraftforge.items.IItemHandler>> sided = new java.util.EnumMap<>(Direction.class);
+
+    /** Original: Zugriff auf 1-4, hinein nur in die Behaelterplaetze 1/2, heraus nur aus den Ausgaben 3/4. */
+    @Override
+    public @org.jetbrains.annotations.NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(@org.jetbrains.annotations.NotNull net.minecraftforge.common.capabilities.Capability<T> cap, @Nullable Direction side) {
+        if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER && side != null) {
+            return sided.computeIfAbsent(side, d -> net.minecraftforge.common.util.LazyOptional.of(() -> new net.minecraftforge.items.IItemHandler() {
+                @Override public int getSlots() { return 4; }
+                @Override public @org.jetbrains.annotations.NotNull ItemStack getStackInSlot(int slot) { return getInventory().getStackInSlot(slot + 1); }
+                @Override public @org.jetbrains.annotations.NotNull ItemStack insertItem(int slot, @org.jetbrains.annotations.NotNull ItemStack stack, boolean simulate) {
+                    if (slot + 1 != SLOT_CONTAINER_A && slot + 1 != SLOT_CONTAINER_B) return stack;
+                    return getInventory().insertItem(slot + 1, stack, simulate);
+                }
+                @Override public @org.jetbrains.annotations.NotNull ItemStack extractItem(int slot, int amount, boolean simulate) {
+                    if (slot + 1 != SLOT_OUTPUT_A && slot + 1 != SLOT_OUTPUT_B) return ItemStack.EMPTY;
+                    return getInventory().extractItem(slot + 1, amount, simulate);
+                }
+                @Override public int getSlotLimit(int slot) { return getInventory().getSlotLimit(slot + 1); }
+                @Override public boolean isItemValid(int slot, @org.jetbrains.annotations.NotNull ItemStack stack) { return slot + 1 == SLOT_CONTAINER_A || slot + 1 == SLOT_CONTAINER_B; }
+            })).cast();
+        }
+        return super.getCapability(cap, side);
+    }
+
+    @Override
+    public void invalidateCaps() {
+        super.invalidateCaps();
+        sided.values().forEach(net.minecraftforge.common.util.LazyOptional::invalidate);
+        sided.clear();
+    }
+    //?}
 
     @Override
     protected Component getDefaultName() {
@@ -162,5 +222,27 @@ public class PADetectorBlockEntity extends CooledMachineBlockEntity implements I
     @Override
     public AbstractContainerMenu createMenu(int id, Inventory inv, Player player) {
         return new com.hbm_m.inventory.menu.PADetectorMenu(id, inv, this);
+    }
+
+    /** Original {@code usage} - fuer die Bereitschaftsanzeige im GUI. */
+    public static long getUsage() { return USAGE; }
+
+    // ── Redstone-over-Radio (1:1 TileEntityPADetector) ──
+
+    @Override
+    public String[] getFunctionInfo() {
+        return new String[] {
+            PREFIX_VALUE + "temperature",
+            PREFIX_VALUE + "pfmcold",
+            PREFIX_VALUE + "pfm"
+        };
+    }
+
+    @Override
+    public String provideRORValue(String name) {
+        if ((PREFIX_VALUE + "temperature").equals(name)) return "" + (int) this.temperature;
+        if ((PREFIX_VALUE + "pfmcold").equals(name))     return "" + coolantTanks[0].getFill();
+        if ((PREFIX_VALUE + "pfm").equals(name))         return "" + coolantTanks[1].getFill();
+        return null;
     }
 }

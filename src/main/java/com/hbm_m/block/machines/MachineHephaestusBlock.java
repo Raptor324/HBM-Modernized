@@ -109,8 +109,8 @@ public class MachineHephaestusBlock extends DummyableMachineBlock implements com
         for (int i = 0; i < heatex.getAllTanks().length; i++) {
             FluidTank tank = heatex.getAllTanks()[i];
             text.add(Component.literal(i == 0 ? "-> " : "<- ").withStyle(i == 0 ? ChatFormatting.GREEN : ChatFormatting.RED)
-                    .append(FluidType.forFluid(tank.getTankType()).getLocalizedName().copy().withStyle(ChatFormatting.RESET))
-                    .append(Component.literal(": " + tank.getFill() + "/" + tank.getMaxFill() + "mB").withStyle(ChatFormatting.RESET)));
+                    .append(FluidType.forFluid(tank.getTankType()).getLocalizedName().copy().withStyle(ChatFormatting.WHITE) /* 1.7 §r = Grundfarbe */)
+                    .append(Component.literal(": " + tank.getFill() + "/" + tank.getMaxFill() + "mB").withStyle(ChatFormatting.WHITE) /* 1.7 §r = Grundfarbe */));
         }
 
         com.hbm_m.interfaces.ILookOverlay.printGeneric(g, Component.translatable(getDescriptionId()), 0xffff00, 0x404000, text);

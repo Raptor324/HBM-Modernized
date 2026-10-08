@@ -41,6 +41,12 @@ public class MachinePressMenu extends AbstractContainerMenu {
         this.addSlot(new StampSlot(container, 1, 80, 17));
         this.addSlot(new MaterialSlot(container, 2, 80, 53));
         this.addSlot(new OutputSlot(container, 3, 140, 35));
+        // Original: Extra Storage (Slots 4-12) unter der Presse
+        if (handler.getSlots() >= 13) {
+            for (int i = 0; i < 9; i++) {
+                this.addSlot(new Slot(container, 4 + i, 8 + i * 18, 84));
+            }
+        }
 
         addDataSlots(data);
     }
@@ -117,7 +123,7 @@ public class MachinePressMenu extends AbstractContainerMenu {
                     + TE_INVENTORY_SLOT_COUNT, false)) {
                 return ItemStack.EMPTY;
             }
-        } else if (index < TE_INVENTORY_FIRST_SLOT_INDEX + TE_INVENTORY_SLOT_COUNT) {
+        } else if (index < slots.size()) {
             if (!moveItemStackTo(sourceStack, VANILLA_FIRST_SLOT_INDEX, VANILLA_FIRST_SLOT_INDEX + VANILLA_SLOT_COUNT, false)) {
                 return ItemStack.EMPTY;
             }
@@ -138,21 +144,21 @@ public class MachinePressMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        return stillValid(ContainerLevelAccess.create(level, blockEntity.getBlockPos()),
-                player, ModBlocks.PRESS.get());
+        // audit13: Original isUseableByPlayer (<= 128 zur Kernmitte) oder Huelle <= 64; Vanilla 64 schloss die GUI an grossen Maschinen
+        return MultiblockMenuReach.stillValidCore(blockEntity, player, 128.0D);
     }
 
     private void addPlayerInventory(Inventory playerInventory) {
         for (int i = 0; i < 3; ++i) {
             for (int l = 0; l < 9; ++l) {
-                this.addSlot(new Slot(playerInventory, l + i * 9 + 9, 8 + l * 18, 84 + i * 18));
+                this.addSlot(new Slot(playerInventory, l + i * 9 + 9, 8 + l * 18, 132 + i * 18));
             }
         }
     }
 
     private void addPlayerHotbar(Inventory playerInventory) {
         for (int i = 0; i < 9; ++i) {
-            this.addSlot(new Slot(playerInventory, i, 8 + i * 18, 142));
+            this.addSlot(new Slot(playerInventory, i, 8 + i * 18, 190));
         }
     }
 

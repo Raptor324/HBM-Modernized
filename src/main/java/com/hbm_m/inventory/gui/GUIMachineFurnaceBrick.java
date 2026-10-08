@@ -41,8 +41,8 @@ public class GUIMachineFurnaceBrick extends AbstractContainerScreen<MachineFurna
 
     @Override
     protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
-        guiGraphics.drawString(font, title, imageWidth / 2 - font.width(title) / 2, 6, 0x404040, false);
-        guiGraphics.drawString(font, playerInventoryTitle, 8, inventoryLabelY, 4210752, false);
+        guiGraphics.drawString(font, title, imageWidth / 2 - font.width(title) / 2, 6, 0xffffff, false);
+        guiGraphics.drawString(font, playerInventoryTitle, 8, inventoryLabelY, 0xffffff, false);
     }
 
     @Override

@@ -28,7 +28,7 @@ import net.minecraft.world.level.block.state.BlockState;
  *
  * <p>Redstone-over-Radio wie im Original ({@code fill}, {@code fillpercent}); OpenComputers gibt es hier nicht.</p>
  */
-public class MachineCapacitorBlockEntity extends BaseMachineBlockEntity implements com.hbm_m.api.redstoneoverradio.IRORValueProvider {
+public class MachineCapacitorBlockEntity extends BaseMachineBlockEntity implements com.hbm_m.api.block.IPersistentNBT, com.hbm_m.api.redstoneoverradio.IRORValueProvider {
 
     @Override
     public String[] getFunctionInfo() {
@@ -113,5 +113,12 @@ public class MachineCapacitorBlockEntity extends BaseMachineBlockEntity implemen
     @Override
     public AbstractContainerMenu createMenu(int id, Inventory inventory, Player player) {
         return null;
+    }
+
+    /** Original {@code TileEntityCapacitor.writeNBT}: Ladung und Kapazitaet. */
+    @Override
+    public void writeNBT(net.minecraft.nbt.CompoundTag nbt) {
+        nbt.putLong("energy", getEnergyStored());
+        nbt.putLong("capacity", getMaxEnergyStored());
     }
 }

@@ -41,13 +41,19 @@ public class ChargerBlockEntity extends BaseMachineBlockEntity {
     private int lastUsingTicks = 0;
     /** Original: {@code lastOp} - haelt die Partikel/Klaenge noch ein paar Ticks am Laufen. */
     private int lastOp = 0;
+    /** Original {@code charge > 0} / {@code particles}: synchronisiert, der Client faehrt die Platte selbst (RenderCharger). */
+    private boolean charging = false;
+    private boolean particlesSync = false;
 
     public ChargerBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.CHARGER_BE.get(), pos, state, 0, MAX_POWER, MAX_POWER, 0L);
     }
 
     public static void tick(Level level, BlockPos pos, BlockState state, ChargerBlockEntity be) {
-        if (level.isClientSide()) return;
+        if (level.isClientSide()) {
+            be.clientTick(level, pos);
+            return;
+        }
 
         be.ensureNetworkInitialized();
 
@@ -63,6 +69,8 @@ public class ChargerBlockEntity extends BaseMachineBlockEntity {
         }
 
         boolean particles = be.lastOp > 0;
+        be.charging = anythingToCharge;
+        be.particlesSync = particles;
         if (particles) {
             be.lastOp--;
             if (level.getGameTime() % 20 == 0) {
@@ -93,6 +101,29 @@ public class ChargerBlockEntity extends BaseMachineBlockEntity {
 
         be.setChanged();
         be.sendUpdateToClient();
+    }
+
+    /** Original updateEntity auf dem Client: Platte aus-/einfahren und magicCrit-Partikel ({@code -dir}). */
+    private void clientTick(Level level, BlockPos pos) {
+        lastUsingTicks = usingTicks;
+
+        if ((charging || particlesSync) && usingTicks < DELAY) usingTicks++;
+        if (!charging && !particlesSync && usingTicks > 0) usingTicks--;
+
+        if (particlesSync) {
+            BlockState state = getBlockState();
+            // Original: ForgeDirection.getOrientation(meta).getOpposite()
+            net.minecraft.core.Direction dir = state.hasProperty(com.hbm_m.block.machines.ChargerBlock.FACING)
+                    ? state.getValue(com.hbm_m.block.machines.ChargerBlock.FACING).getOpposite() : net.minecraft.core.Direction.SOUTH;
+            net.minecraft.util.RandomSource rand = level.random;
+            level.addParticle(net.minecraft.core.particles.ParticleTypes.ENCHANTED_HIT,
+                    pos.getX() + 0.5 + rand.nextDouble() * 0.0625 + dir.getStepX() * 0.75,
+                    pos.getY() + 0.1,
+                    pos.getZ() + 0.5 + rand.nextDouble() * 0.0625 + dir.getStepZ() * 0.75,
+                    -dir.getStepX() + rand.nextGaussian() * 0.1,
+                    0,
+                    -dir.getStepZ() + rand.nextGaussian() * 0.1);
+        }
     }
 
     /** Original: {@code transferPower} - jeder Gegenstand bekommt hoechstens ein Fuenftel. */
@@ -137,12 +168,24 @@ public class ChargerBlockEntity extends BaseMachineBlockEntity {
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.writeNbtData(tag, registries);
         tag.putInt("usingTicks", usingTicks);
+        tag.putBoolean("charging", charging);
+        tag.putBoolean("particles", particlesSync);
+    }
+
+    /** Original synchronisiert nur charge/particles; usingTicks rechnet der Client selbst weiter. */
+    @Override
+    protected void applyClientUpdate(CompoundTag tag) {
+        int keep = usingTicks;
+        super.applyClientUpdate(tag);
+        usingTicks = keep;
     }
 
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.readNbtData(tag, registries);
         usingTicks = tag.getInt("usingTicks");
+        charging = tag.getBoolean("charging");
+        particlesSync = tag.getBoolean("particles");
     }
 
     @Override

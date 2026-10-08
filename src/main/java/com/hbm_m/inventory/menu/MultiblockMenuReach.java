@@ -48,6 +48,30 @@ public final class MultiblockMenuReach {
                 <= MAX_DISTANCE_SQ;
     }
 
+    /**
+     * w16b: Original {@code isUseableByPlayer}: Abstandsquadrat vom Kernmittelpunkt ({@code TileEntityMachineBase}: 128,
+     * sonst meist 64). Zusaetzlich gilt die Huellenpruefung oben, damit grosse Maschinen, an deren Rand der Spieler
+     * steht, das Menue nicht sofort wieder schliessen.
+     *
+     * @param maxDistSq Original-Wert aus {@code isUseableByPlayer}
+     */
+    public static boolean stillValidCore(Level level, BlockPos corePos, Block controller, Player player, double maxDistSq) {
+        if (level == null || corePos == null) return false;
+        if (player.level() != level) return false;
+        BlockState state = level.getBlockState(corePos);
+        if (!state.is(controller)) return false;
+        if (player.distanceToSqr(corePos.getX() + 0.5D, corePos.getY() + 0.5D, corePos.getZ() + 0.5D) <= maxDistSq) return true;
+        return player.distanceToSqr(nearestPoint(hull(state, corePos, controller), player.position())) <= MAX_DISTANCE_SQ;
+    }
+
+    /** w16b: wie {@link #stillValidCore}, Block aus der BlockEntity (Menues, die nur die BlockEntity kennen). */
+    public static boolean stillValidCore(net.minecraft.world.level.block.entity.BlockEntity be, Player player, double maxDistSq) {
+        if (be == null || be.isRemoved() || be.getLevel() == null) return false;
+        Level level = be.getLevel();
+        if (level.getBlockEntity(be.getBlockPos()) != be) return false;
+        return stillValidCore(level, be.getBlockPos(), be.getBlockState().getBlock(), player, maxDistSq);
+    }
+
     /** The machine's full world-space footprint, or just the controller cell if it has no structure. */
     private static AABB hull(BlockState state, BlockPos corePos, Block controller) {
         if (controller instanceof IMultiblockController mb && state.hasProperty(HorizontalDirectionalBlock.FACING)) {

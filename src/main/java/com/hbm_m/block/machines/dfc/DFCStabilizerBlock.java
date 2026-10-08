@@ -49,16 +49,22 @@ public class DFCStabilizerBlock extends BaseEntityBlock {
         builder.add(FACING);
     }
 
+    /** Original {@code isOpaqueCube() = false}: der unsichtbare Block darf Nachbarflaechen nicht verdecken. */
+    @Override
+    public net.minecraft.world.phys.shapes.VoxelShape getOcclusionShape(BlockState state, net.minecraft.world.level.BlockGetter level, net.minecraft.core.BlockPos pos) {
+        return net.minecraft.world.phys.shapes.Shapes.empty();
+    }
+
     @Override
     public RenderShape getRenderShape(BlockState state) {
-        return RenderShape.MODEL;
+        return RenderShape.ENTITYBLOCK_ANIMATED; // Gehaeuse und Strahl zeichnet DFCRenderers.Stabilizer (RenderCoreComponent)
     }
 
     @Nullable
     @Override
     public BlockState getStateForPlacement(BlockPlaceContext ctx) {
-        // Der Strahl geht vom Spieler weg - also in die Richtung, in die er beim Setzen blickt.
-        return defaultBlockState().setValue(FACING, ctx.getNearestLookingDirection().getOpposite());
+        // Original: BlockPistonBase.determineOrientation - der Block zeigt zum Spieler.
+        return defaultBlockState().setValue(FACING, DFCOrientation.determineOrientation(ctx));
     }
 
     @Override
@@ -96,6 +102,7 @@ public class DFCStabilizerBlock extends BaseEntityBlock {
     //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        if (!level.isClientSide() && player.isShiftKeyDown()) return InteractionResult.PASS; // Original: geschlichen auf dem Server false
         if (!level.isClientSide() && level.getBlockEntity(pos) instanceof MenuProvider menuProvider) {
             MenuRegistry.openExtendedMenu((ServerPlayer) player, menuProvider, buf -> buf.writeBlockPos(pos));
         }
@@ -104,6 +111,7 @@ public class DFCStabilizerBlock extends BaseEntityBlock {
     //?} else {
     /*@Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+        if (!level.isClientSide() && player.isShiftKeyDown()) return InteractionResult.PASS; // Original: geschlichen auf dem Server false
         if (!level.isClientSide() && level.getBlockEntity(pos) instanceof MenuProvider menuProvider) {
             MenuRegistry.openExtendedMenu((ServerPlayer) player, menuProvider, buf -> buf.writeBlockPos(pos));
         }

@@ -1,18 +1,21 @@
 package com.hbm_m.client.render.implementations;
 
-import com.hbm_m.block.ModBlocks;
+import com.hbm_m.client.render.SimpleObjModel;
 import com.hbm_m.entity.projectile.ZirnoxDebrisEntity;
+import com.hbm_m.lib.RefStrings;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.math.Axis;
 
 import net.minecraft.client.renderer.MultiBufferSource;
-import net.minecraft.client.renderer.block.BlockRenderDispatcher;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
-import net.minecraft.client.renderer.texture.OverlayTexture;
 import net.minecraft.resources.ResourceLocation;
-import net.minecraft.world.level.block.state.BlockState;
+import org.joml.Vector3f;
 
+/**
+ * 1:1 {@code RenderZirnoxDebris}: je Art das Original-OBJ, um die Entity-ID gedreht und im Flug um (1,1,1) taumelnd.
+ */
 //? if forge {
 @net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
 //?} elif fabric {
@@ -22,55 +25,55 @@ import net.minecraft.world.level.block.state.BlockState;
 *///?}
 public class ZirnoxDebrisRenderer extends EntityRenderer<ZirnoxDebrisEntity> {
 
-    private final BlockRenderDispatcher blockRenderer;
+    private static ResourceLocation rl(String p) {
+        return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, p);
+    }
+
+    private static final SimpleObjModel BLANK = new SimpleObjModel(rl("models/block/zirnox/deb_blank.obj"));
+    private static final SimpleObjModel ELEMENT = new SimpleObjModel(rl("models/block/zirnox/deb_element.obj"));
+    private static final SimpleObjModel SHRAPNEL = new SimpleObjModel(rl("models/block/zirnox/deb_shrapnel.obj"));
+    private static final SimpleObjModel CONCRETE = new SimpleObjModel(rl("models/block/zirnox/deb_concrete.obj"));
+    private static final SimpleObjModel EXCHANGER = new SimpleObjModel(rl("models/block/zirnox/deb_exchanger.obj"));
+    private static final SimpleObjModel GRAPHITE = new SimpleObjModel(rl("models/rbmk/models/deb_graphite.obj"));
+
+    private static final ResourceLocation TEX_ZIRNOX = rl("textures/block/machine/zirnox.png");
+    private static final ResourceLocation TEX_ROD = rl("textures/block/machine/zirnox_deb_element.png");
+    private static final ResourceLocation TEX_DESTROYED = rl("textures/block/machine/zirnox_destroyed.png");
+    private static final ResourceLocation TEX_GRAPHITE = rl("textures/block/block_graphite.png");
+
+    private static final Vector3f DIAG = new Vector3f(1, 1, 1).normalize();
 
     public ZirnoxDebrisRenderer(EntityRendererProvider.Context context) {
         super(context);
-        this.blockRenderer = context.getBlockRenderDispatcher();
     }
 
     @Override
-    public void render(ZirnoxDebrisEntity entity, float entityYaw, float partialTicks,
-                       PoseStack poseStack, MultiBufferSource buffer, int packedLight) {
-        poseStack.pushPose();
+    public void render(ZirnoxDebrisEntity debris, float entityYaw, float partialTicks,
+                       PoseStack ps, MultiBufferSource buffer, int light) {
+        ps.pushPose();
+        ps.translate(0, 0.125D, 0);
 
-        float rot = entity.lastRot + (entity.rot - entity.lastRot) * partialTicks;
-        poseStack.mulPose(Axis.YP.rotationDegrees(rot));
-        poseStack.mulPose(Axis.XP.rotationDegrees(rot * 0.5F));
+        ps.mulPose(Axis.YP.rotationDegrees(debris.getId() % 360)); //rotate based on entity ID to add unique randomness
+        ps.mulPose(Axis.of(DIAG).rotationDegrees(debris.lastRot + (debris.rot - debris.lastRot) * partialTicks));
 
-        float scale = getScale(entity.getDebrisType());
-        poseStack.scale(scale, scale, scale);
-        poseStack.translate(-0.5, -0.25, -0.5);
+        SimpleObjModel model;
+        ResourceLocation tex;
+        switch (debris.getDebrisType()) {
+            case BLANK -> { model = BLANK; tex = TEX_ZIRNOX; }
+            case ELEMENT -> { model = ELEMENT; tex = TEX_ROD; }
+            case SHRAPNEL -> { model = SHRAPNEL; tex = TEX_ZIRNOX; }
+            case GRAPHITE -> { model = GRAPHITE; tex = TEX_GRAPHITE; }
+            case CONCRETE -> { model = CONCRETE; tex = TEX_DESTROYED; }
+            default -> { model = EXCHANGER; tex = TEX_ZIRNOX; }
+        }
+        model.renderAll(ps, buffer.getBuffer(RenderType.entityCutoutNoCull(tex)), light);
 
-        BlockState state = getBlockState(entity.getDebrisType());
-        blockRenderer.renderSingleBlock(state, poseStack, buffer, packedLight, OverlayTexture.NO_OVERLAY);
-
-        poseStack.popPose();
-        super.render(entity, entityYaw, partialTicks, poseStack, buffer, packedLight);
-    }
-
-    private BlockState getBlockState(ZirnoxDebrisEntity.DebrisType type) {
-        return switch (type) {
-            case BLANK     -> ModBlocks.ZIRNOX_DEB_BLANK.get().defaultBlockState();
-            case ELEMENT   -> ModBlocks.ZIRNOX_DEB_ELEMENT.get().defaultBlockState();
-            case SHRAPNEL  -> ModBlocks.ZIRNOX_DEB_SHRAPNEL.get().defaultBlockState();
-            case CONCRETE  -> ModBlocks.ZIRNOX_DEB_CONCRETE.get().defaultBlockState();
-            case EXCHANGER -> ModBlocks.ZIRNOX_DEB_EXCHANGER.get().defaultBlockState();
-        };
-    }
-
-    private float getScale(ZirnoxDebrisEntity.DebrisType type) {
-        return switch (type) {
-            case EXCHANGER -> 1.2F;
-            case ELEMENT   -> 1.0F;
-            case CONCRETE  -> 1.1F;
-            case SHRAPNEL  -> 0.9F;
-            default        -> 0.9F;
-        };
+        ps.popPose();
+        super.render(debris, entityYaw, partialTicks, ps, buffer, light);
     }
 
     @Override
     public ResourceLocation getTextureLocation(ZirnoxDebrisEntity entity) {
-        return ResourceLocation.fromNamespaceAndPath("minecraft", "textures/block/iron_block.png");
+        return TEX_GRAPHITE;
     }
 }

@@ -67,6 +67,9 @@ public class ModBlockLootTableProvider extends BlockLootSubProvider {
         }
 
         // 1.0.0c) R6b: Lampen geben die eingeschaltete (Scheinwerfer) bzw. ausgeschaltete (Tritium) Form
+        // Original getItemDropped: Kompaktwerfer/Starttisch geben nur ihren Strukturkern zurueck
+        this.dropOther(ModBlocks.COMPACT_LAUNCHER.get(), ModBlocks.STRUCT_LAUNCHER_CORE.get());
+        this.dropOther(ModBlocks.LAUNCH_TABLE.get(), ModBlocks.STRUCT_LAUNCHER_CORE_LARGE.get());
         this.dropOther(ModBlocks.CAGE_LAMP_OFF.get(), ModBlocks.CAGE_LAMP.get());
         // R6e: BlockNTMFlower.damageDropped - die gewachsene Cadmiumweide gibt die junge
         this.dropOther(ModBlocks.PLANT_FLOWER_CD1.get(), ModBlocks.PLANT_FLOWER_CD0.get());
@@ -82,13 +85,13 @@ public class ModBlockLootTableProvider extends BlockLootSubProvider {
                 .add(net.minecraft.world.level.storage.loot.entries.AlternativesEntry.alternatives(
                         net.minecraft.world.level.storage.loot.entries.LootItem.lootTableItem(net.minecraft.world.level.block.Blocks.STONE).when(HAS_SILK_TOUCH),
                         this.applyExplosionCondition(b, net.minecraft.world.level.storage.loot.entries.LootItem.lootTableItem(net.minecraft.world.level.block.Blocks.COBBLESTONE))))));
-        this.add(ModBlocks.ORE_OIL.get(), b -> r6aDrop(b, net.minecraft.core.registries.BuiltInRegistries.ITEM.get(net.minecraft.resources.ResourceLocation.parse("hbm_m:oil_tar_crude")), 1, 1, "nosilk_fortune"));
+        this.add(ModBlocks.ORE_OIL.get(), b -> r6aDrop(b, net.minecraft.core.registries.BuiltInRegistries.ITEM.get(net.minecraft.resources.ResourceLocation.parse("hbm_m:oil_tar_crude")), 1, 1, "nosilk_orefortune"));
         this.add(ModBlocks.BLOCK_METEOR_COBBLE.get(), b -> r6aDrop(b, net.minecraft.core.registries.BuiltInRegistries.ITEM.get(net.minecraft.resources.ResourceLocation.parse("hbm_m:fragment_meteorite")), 1, 1, "nofortune"));
         this.add(ModBlocks.BLOCK_METEOR_BROKEN.get(), b -> r6aDrop(b, net.minecraft.core.registries.BuiltInRegistries.ITEM.get(net.minecraft.resources.ResourceLocation.parse("hbm_m:fragment_meteorite")), 1, 3, "nofortune"));
-        this.add(ModBlocks.WASTE_PLANKS.get(), b -> r6aDrop(b, net.minecraft.core.registries.BuiltInRegistries.ITEM.get(net.minecraft.resources.ResourceLocation.parse("minecraft:charcoal")), 1, 1, "fortune"));
-        this.add(ModBlocks.FROZEN_DIRT.get(), b -> r6aDrop(b, net.minecraft.core.registries.BuiltInRegistries.ITEM.get(net.minecraft.resources.ResourceLocation.parse("minecraft:snowball")), 1, 1, "fortune"));
-        this.add(ModBlocks.FROZEN_PLANKS.get(), b -> r6aDrop(b, net.minecraft.core.registries.BuiltInRegistries.ITEM.get(net.minecraft.resources.ResourceLocation.parse("minecraft:snowball")), 1, 1, "fortune"));
-        this.add(ModBlocks.ORE_RARE.get(), b -> r6aDrop(b, net.minecraft.core.registries.BuiltInRegistries.ITEM.get(net.minecraft.resources.ResourceLocation.parse("hbm_m:rareground_ore_chunk")), 1, 1, "fortune"));
+        this.add(ModBlocks.WASTE_PLANKS.get(), b -> r6aDrop(b, net.minecraft.core.registries.BuiltInRegistries.ITEM.get(net.minecraft.resources.ResourceLocation.parse("minecraft:charcoal")), 1, 1, "orefortune"));
+        this.add(ModBlocks.FROZEN_DIRT.get(), b -> r6aDrop(b, net.minecraft.core.registries.BuiltInRegistries.ITEM.get(net.minecraft.resources.ResourceLocation.parse("minecraft:snowball")), 1, 1, "orefortune"));
+        this.add(ModBlocks.FROZEN_PLANKS.get(), b -> r6aDrop(b, net.minecraft.core.registries.BuiltInRegistries.ITEM.get(net.minecraft.resources.ResourceLocation.parse("minecraft:snowball")), 1, 1, "orefortune"));
+        this.add(ModBlocks.ORE_RARE.get(), b -> r6aDrop(b, net.minecraft.core.registries.BuiltInRegistries.ITEM.get(net.minecraft.resources.ResourceLocation.parse("hbm_m:rareground_ore_chunk")), 1, 1, "orefortune"));
         this.add(ModBlocks.CLUSTER_IRON.get(), b -> r6aDrop(b, net.minecraft.core.registries.BuiltInRegistries.ITEM.get(net.minecraft.resources.ResourceLocation.parse("hbm_m:crystal_iron")), 1, 1, "plain"));
         this.add(ModBlocks.CLUSTER_TITANIUM.get(), b -> r6aDrop(b, net.minecraft.core.registries.BuiltInRegistries.ITEM.get(net.minecraft.resources.ResourceLocation.parse("hbm_m:crystal_titanium")), 1, 1, "plain"));
         this.add(ModBlocks.CLUSTER_ALUMINIUM.get(), b -> r6aDrop(b, net.minecraft.core.registries.BuiltInRegistries.ITEM.get(net.minecraft.resources.ResourceLocation.parse("hbm_m:crystal_aluminium")), 1, 1, "plain"));
@@ -105,6 +108,31 @@ public class ModBlockLootTableProvider extends BlockLootSubProvider {
         this.add(ModBlocks.NTM_DIRT.get(), b -> r6aDrop(b, net.minecraft.core.registries.BuiltInRegistries.ITEM.get(net.minecraft.resources.ResourceLocation.parse("minecraft:dirt")), 1, 1, "plain"));
         this.dropOther(ModBlocks.REINFORCED_LAMP_ON.get(), ModBlocks.REINFORCED_LAMP_OFF.get());
         this.add(ModBlocks.BARRICADE.get(), noDrop());
+        // BlockMassStorage#getItemDropped -> null: nur removedByPlayer laesst das (NBT-)Item fallen
+        this.add(ModBlocks.MASS_STORAGE.get(), noDrop());
+        this.add(ModBlocks.MASS_STORAGE_WOOD.get(), noDrop());
+        this.add(ModBlocks.MASS_STORAGE_IRON.get(), noDrop());
+        this.add(ModBlocks.MASS_STORAGE_DESH.get(), noDrop());
+        // Original TurretSentryDamaged/TurretHowardDamaged#getItemDropped -> null
+        this.add(ModBlocks.TURRET_SENTRY_DAMAGED.get(), noDrop());
+        this.add(ModBlocks.TURRET_HOWARD_DAMAGED.get(), noDrop());
+        this.add(ModBlocks.CRATE_SUPPLY.get(), noDrop());
+        // MachineRtgFurnace#getItemDropped -> null (nur der Inhalt faellt)
+        this.add(ModBlocks.MACHINE_RTG_FURNACE.get(), noDrop());
+        // BlockGlyphid: getItemDropped null
+        this.add(ModBlocks.GLYPHID_BASE.get(), noDrop());
+        // audit10: DetMiner#getItemDropped -> null
+        this.add(ModBlocks.DET_MINER.get(), noDrop());
+        // audit10: PneumoStorageClutter#getItemDropped -> null (Drop nur ueber removedByPlayer)
+        this.add(ModBlocks.PNEUMATIC_STORAGE_CLUTTER.get(), noDrop());
+        // audit10: Lastenaufzug - der Spieler-Abbau gibt height+1 Bloecke (CargoElevatorBlock#playerWillDestroy)
+        this.add(ModBlocks.CARGO_ELEVATOR.get(), noDrop());
+        // BlockGlyphidSpawner: egg_glyphid, quantityDropped 1 + rand(3) + fortune
+        this.add(ModBlocks.GLYPHID_SPAWNER.get(), net.minecraft.world.level.storage.loot.LootTable.lootTable().withPool(
+                net.minecraft.world.level.storage.loot.LootPool.lootPool().setRolls(net.minecraft.world.level.storage.loot.providers.number.ConstantValue.exactly(1))
+                        .add(net.minecraft.world.level.storage.loot.entries.LootItem.lootTableItem(ModItems.EGG_GLYPHID.get())
+                                .apply(net.minecraft.world.level.storage.loot.functions.SetItemCountFunction.setCount(net.minecraft.world.level.storage.loot.providers.number.UniformGenerator.between(1, 3)))
+                                .apply(net.minecraft.world.level.storage.loot.functions.ApplyBonusCount.addUniformBonusCount(net.minecraft.world.item.enchantment.Enchantments.BLOCK_FORTUNE)))));
         this.add(ModBlocks.FLUID_DUCT_BOX.get(), b -> LootTable.lootTable().withPool(net.minecraft.world.level.storage.loot.LootPool.lootPool()
                 .setRolls(net.minecraft.world.level.storage.loot.providers.number.ConstantValue.exactly(1))
                 .add(net.minecraft.world.level.storage.loot.entries.LootItem.lootTableItem(b)
@@ -151,6 +179,8 @@ public class ModBlockLootTableProvider extends BlockLootSubProvider {
         this.add(ModBlocks.BLOCK_CAP_FRITZ.get(), b -> r6aDrop(b, net.minecraft.core.registries.BuiltInRegistries.ITEM.get(net.minecraft.resources.ResourceLocation.parse("hbm_m:cap_fritz")), 128, 128, "plain"));
         this.add(ModBlocks.STONES_SLAB_TILE.get(), b -> createSlabItemTable(b));
         this.add(ModBlocks.STONES_SLAB_BRICKS.get(), b -> createSlabItemTable(b));
+        this.add(ModBlocks.BRICK_ASBESTOS_SLAB.get(), b -> createSlabItemTable(b));
+        this.add(ModBlocks.PINK_SLAB.get(), b -> createSlabItemTable(b));
         this.add(ModBlocks.FOAM_LAYER.get(), noDrop());
         this.add(ModBlocks.SAND_BORON_LAYER.get(), noDrop());
         this.add(ModBlocks.LEAVES_LAYER.get(), noDrop());
@@ -164,7 +194,7 @@ public class ModBlockLootTableProvider extends BlockLootSubProvider {
         this.dropOther(ModBlocks.CONVEYOR_TRIPLE.get(), com.hbm_m.item.ModItems.CONVEYOR_WAND_TRIPLE.get());
 
         // 1.0.0) Landminen (Original Landmine.getItemDropped = null): nichts.
-        for (var sup : java.util.List.of(ModBlocks.MINE_AP, ModBlocks.MINE_HE, ModBlocks.MINE_SHRAP, ModBlocks.MINE_FAT, ModBlocks.MINE_NAVAL, ModBlocks.NAVAL_MINE)) {
+        for (var sup : java.util.List.of(ModBlocks.MINE_AP, ModBlocks.MINE_HE, ModBlocks.MINE_SHRAP, ModBlocks.MINE_FAT, ModBlocks.MINE_NAVAL)) {
             dropEmptyTable(sup.get());
         }
 
@@ -183,11 +213,22 @@ public class ModBlockLootTableProvider extends BlockLootSubProvider {
         this.add(ModBlocks.BLOCK_METEOR_MOLTEN.get(), b -> createSilkTouchOnlyTable(b));
         this.add(ModBlocks.BLOCK_METEOR_TREASURE.get(), b -> meteoriteTreasure(b));
 
-        // 1.1) Батареи должны сохранять заряд/режимы в BlockEntityTag при дропе.
-        dropMachineBatteryWithNbt(ModBlocks.MACHINE_BATTERY.get());
-        dropMachineBatteryWithNbt(ModBlocks.MACHINE_BATTERY_LITHIUM.get());
-        dropMachineBatteryWithNbt(ModBlocks.MACHINE_BATTERY_SCHRABIDIUM.get());
-        dropMachineBatteryWithNbt(ModBlocks.MACHINE_BATTERY_DINEUTRONIUM.get());
+        // 1.0.9) Original IPersistentNBT: Tanks/Ladung wandern mit in den Drop (BlockEntityTag, hbm_m:persistent_nbt)
+        for (var b : java.util.List.of(ModBlocks.FLUID_TANK, ModBlocks.BAT9000, ModBlocks.ORBUS, ModBlocks.MACHINE_BIGASSTANK,
+                ModBlocks.BARREL_CORRODED, ModBlocks.BARREL_IRON, ModBlocks.BARREL_PLASTIC, ModBlocks.BARREL_STEEL,
+                ModBlocks.BARREL_TCALLOY, ModBlocks.BARREL_ANTIMATTER, ModBlocks.HYDROTREATER, ModBlocks.CATALYTIC_REFORMER,
+                ModBlocks.VACUUM_DISTILL, ModBlocks.REFINERY, ModBlocks.PUMPJACK, ModBlocks.DERRICK, ModBlocks.HYDRAULIC_FRACKINING_TOWER, ModBlocks.FENSU2,
+                ModBlocks.CAPACITOR_BUS, ModBlocks.CAPACITOR_COPPER, ModBlocks.CAPACITOR_GOLD, ModBlocks.CAPACITOR_NIOBIUM,
+                ModBlocks.CAPACITOR_SCHRABIDATE, ModBlocks.CAPACITOR_TANTALIUM)) {
+            dropPersistent(b);
+        }
+
+        // 1.1) Original MachineBattery/MachineFENSU: IPersistentNBT.getDrops - nur Ladung/Modi/Prioritaet, Inventar droppt einzeln
+        dropPersistent(ModBlocks.MACHINE_BATTERY);
+        dropPersistent(ModBlocks.MACHINE_BATTERY_LITHIUM);
+        dropPersistent(ModBlocks.MACHINE_BATTERY_SCHRABIDIUM);
+        dropPersistent(ModBlocks.MACHINE_BATTERY_DINEUTRONIUM);
+        dropPersistent(ModBlocks.MACHINE_FENSU);
 
         // 1.2) Breaking a stacked RBMK panel slab returns both singles it was made of.
         dropDoubleSlab(ModBlocks.DECO_RBMK_PANEL_SLAB4.get(), ModBlocks.DECO_RBMK_PANEL_SLAB2.get());
@@ -231,25 +272,12 @@ public class ModBlockLootTableProvider extends BlockLootSubProvider {
                 ModBlocks.URANIUM_ORE_DEEPSLATE.get(),
                 ModItems.URANIUM_RAW.get()
         );
-        dropOreType1(
-                ModBlocks.SCHRABIDIUM_ORE.get(),
-                ModBlocks.SCHRABIDIUM_ORE.get(),
-                ModMaterialItems.item(ModMaterials.SCHRABIDIUM, MaterialShape.CRYSTAL)
-        );
-        dropOreType1(
-                ModBlocks.SCHRABIDIUM_ORE_NETHER.get(),
-                ModBlocks.SCHRABIDIUM_ORE_NETHER.get(),
-                ModMaterialItems.item(ModMaterials.SCHRABIDIUM, MaterialShape.CRYSTAL)
-        );
-        dropOreType1(
-                ModBlocks.SCHRABIDIUM_ORE_GNEISS.get(),
-                ModBlocks.SCHRABIDIUM_ORE_GNEISS.get(),
-                ModMaterialItems.item(ModMaterials.SCHRABIDIUM, MaterialShape.CRYSTAL)
-        );
-        dropOreType1(
+        // Original BlockOre: ore_cobalt -> fragment_cobalt, 4 + rand(6)
+        dropOreType2(
                 ModBlocks.COBALT_ORE.get(),
                 ModBlocks.COBALT_ORE.get(),
-                ModItems.COBALT_RAW.get()
+                ModItems.FRAGMENT_COBALT.get(),
+                4.0f, 9.0f
         );
         dropOreType1(
                 ModBlocks.COBALT_ORE_DEEPSLATE.get(),
@@ -318,7 +346,7 @@ public class ModBlockLootTableProvider extends BlockLootSubProvider {
         dropOreType2(
                 ModBlocks.DEPTH_CINNABAR.get(),
                 ModBlocks.DEPTH_CINNABAR.get(),
-                ModItems.CINNABAR.get(),
+                ModItems.CINNEBAR.get(),
                 3.0f, 5.0f
         );
 
@@ -347,23 +375,25 @@ public class ModBlockLootTableProvider extends BlockLootSubProvider {
                 ModItems.ZIRCONIUM_SHARP.get(),
                 3.0f, 5.0f
         );
+        // Original BlockOre.quantityDropped: 2 + rand(3)
         dropOreType2(
                 ModBlocks.FLUORITE_ORE.get(),
                 ModBlocks.FLUORITE_ORE.get(),
                 ModItems.FLUORITE.get(),
-                1.0f, 3.0f
+                2.0f, 4.0f
         );
+        // Original BlockOre.quantityDropped: 2 + rand(3)
         dropOreType2(
                 ModBlocks.SULFUR_ORE.get(),
                 ModBlocks.SULFUR_ORE.get(),
                 ModItems.SULFUR.get(),
-                1.0f, 3.0f
+                2.0f, 4.0f
         );
-        dropOreType2(
+        // Original BlockOre.quantityDropped: 1
+        dropOreType1(
                 ModBlocks.LIGNITE_ORE.get(),
                 ModBlocks.LIGNITE_ORE.get(),
-                ModItems.LIGNITE.get(),
-                1.0f, 3.0f
+                ModItems.LIGNITE.get()
         );
         dropOreType2(
                 ModBlocks.RAREGROUND_ORE.get(),
@@ -383,16 +413,16 @@ public class ModBlockLootTableProvider extends BlockLootSubProvider {
                 ModItems.STRAWBERRY.get(),
                 1.0f, 3.0f
         );
-        dropOreType2(
+        // Original BlockOre.quantityDropped: 1
+        dropOreType1(
                 ModBlocks.CINNABAR_ORE.get(),
                 ModBlocks.CINNABAR_ORE.get(),
-                ModItems.CINNABAR.get(),
-                1.0f, 3.0f
+                ModItems.CINNEBAR.get()
         );
         dropOreType2(
                 ModBlocks.CINNABAR_ORE_DEEPSLATE.get(),
                 ModBlocks.CINNABAR_ORE_DEEPSLATE.get(),
-                ModItems.CINNABAR.get(),
+                ModItems.CINNEBAR.get(),
                 1.0f, 3.0f
         );
         dropOreType2(
@@ -401,11 +431,11 @@ public class ModBlockLootTableProvider extends BlockLootSubProvider {
                 Items.RAW_IRON,
                 1.0f, 3.0f
         );
-        dropOreType2(
+        // Original BlockOre.quantityDropped: 1
+        dropOreType1(
                 ModBlocks.ASBESTOS_ORE.get(),
                 ModBlocks.ASBESTOS_ORE.get(),
-                ModMaterialItems.item(ModMaterials.ASBESTOS, MaterialShape.INGOT),
-                1.0f, 3.0f
+                ModMaterialItems.item(ModMaterials.ASBESTOS, MaterialShape.INGOT)
         );
         dropOreType2(
                 ModBlocks.RESOURCE_ASBESTOS.get(),
@@ -474,13 +504,14 @@ public class ModBlockLootTableProvider extends BlockLootSubProvider {
                 ModItems.FRAGMENT_COBALT.get(),
                 5.0f, 12.0f
         );
-        // ore_nether_fire → powder_fire (в оригинале ещё 10% ingot_phosphorus —
-        // предмета ingot_phosphorus в порту нет)
-        dropOreType1(
-                ModBlocks.NETHER_FIRE_ORE.get(),
-                ModBlocks.NETHER_FIRE_ORE.get(),
-                ModItems.FIRE_POWDER.get()
-        );
+        // ore_nether_fire: Original rand.nextInt(10) == 0 ? ingot_phosphorus (Port phosphorus_ingot) : powder_fire (fire_powder)
+        this.add(ModBlocks.NETHER_FIRE_ORE.get(), b -> createSilkTouchDispatchTable(b,
+                AlternativesEntry.alternatives(
+                        this.applyExplosionDecay(b, LootItem.lootTableItem(net.minecraft.core.registries.BuiltInRegistries.ITEM.get(net.minecraft.resources.ResourceLocation.parse("hbm_m:phosphorus_ingot")))
+                                .apply(ApplyBonusCount.addOreBonusCount(Enchantments.BLOCK_FORTUNE)))
+                                .when(LootItemRandomChanceCondition.randomChance(0.1f)),
+                        this.applyExplosionDecay(b, LootItem.lootTableItem(ModItems.FIRE_POWDER.get())
+                                .apply(ApplyBonusCount.addOreBonusCount(Enchantments.BLOCK_FORTUNE))))));
         // ore_gneiss_rare → chunk_ore (порт: rareground_ore_chunk) ×1
         dropOreType1(
                 ModBlocks.GNEISS_RARE_ORE.get(),
@@ -529,6 +560,13 @@ public class ModBlockLootTableProvider extends BlockLootSubProvider {
                                 .add(this.applyExplosionDecay(block, LootItem.lootTableItem(item)))
                 );
         this.add(block, tableBuilder);
+    }
+
+    private void dropPersistent(RegistrySupplier<Block> entry) {
+        Block block = entry.get();
+        Item item = block.asItem() != Items.AIR ? block.asItem() : BuiltInRegistries.ITEM.get(entry.getId());
+        this.add(block, LootTable.lootTable().withPool(LootPool.lootPool().setRolls(ConstantValue.exactly(1.0f))
+                .add(this.applyExplosionDecay(block, LootItem.lootTableItem(item).apply(com.hbm_m.loot.PersistentNbtFunction.persistent())))));
     }
 
     private void dropMachineBatteryWithNbt(Block block) {
@@ -679,7 +717,11 @@ public class ModBlockLootTableProvider extends BlockLootSubProvider {
         if (mode.equals("fortune") || mode.equals("nosilk_fortune") || mode.equals("depthfortune")) {
             entry.apply(net.minecraft.world.level.storage.loot.functions.ApplyBonusCount.addUniformBonusCount(net.minecraft.world.item.enchantment.Enchantments.BLOCK_FORTUNE));
         }
-        if (mode.equals("nosilk_fortune") || mode.equals("depthfortune")) {
+        // Original BlockOre.quantityDroppedWithBonus: Menge * (max(rand(Glueck + 2) - 1, 0) + 1) = Vanilla-Erzformel
+        if (mode.equals("orefortune") || mode.equals("nosilk_orefortune")) {
+            entry.apply(ApplyBonusCount.addOreBonusCount(Enchantments.BLOCK_FORTUNE));
+        }
+        if (mode.equals("nosilk_fortune") || mode.equals("nosilk_orefortune") || mode.equals("depthfortune")) {
             return LootTable.lootTable().withPool(this.applyExplosionDecay(block, net.minecraft.world.level.storage.loot.LootPool.lootPool()
                     .setRolls(net.minecraft.world.level.storage.loot.providers.number.ConstantValue.exactly(1.0F)).add(entry)));
         }

@@ -1,0 +1,22 @@
+{
+  "priority": 10,
+  "blocks": [
+    "hbm_m:*fallout*",
+    "hbm_m:*waste*",
+    "hbm_m:*sellafield*",
+    "hbm_m:*trinitite*",
+    "hbm_m:*corium*",
+    "hbm_m:gas_meltdown",
+    "hbm_m:*yellowcake*"
+  ],
+  "mix": {
+    "gamma": 0.5,
+    "neutron": 0.0,
+    "beta": 0.5
+  },
+  "contamination": {
+    "short": 0.4,
+    "medium": 0.45,
+    "long": 0.15
+  }
+}

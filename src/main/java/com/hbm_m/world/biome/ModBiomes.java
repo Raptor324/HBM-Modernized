@@ -58,6 +58,14 @@ public class ModBiomes {
                     //?}
                     );
 
+    /**
+     * 1:1 {@code BiomeGenNoMansLand} ("No Man's Land"): Biom nur als Datenpaket-JSON
+     * ({@code data/hbm_m/worldgen/biome/no_mans_land.json}). Wie im Original ({@code initDictionary} auskommentiert)
+     * nicht in die Oberwelt-Generierung eingetragen.
+     */
+    public static final ResourceKey<Biome> NO_MANS_LAND_KEY =
+            ResourceKey.create(Registries.BIOME, ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "no_mans_land"));
+
     //? if forge {
     public static final DeferredRegister<Biome> BIOMES =
             DeferredRegister.create(MainRegistry.MOD_ID, Registries.BIOME);

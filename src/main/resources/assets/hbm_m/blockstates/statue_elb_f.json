@@ -1,0 +1,8 @@
+{
+  "variants": {
+    "facing=north": { "model": "hbm_m:block/deco/statue_elb_f" },
+    "facing=south": { "model": "hbm_m:block/deco/statue_elb_f" },
+    "facing=west": { "model": "hbm_m:block/deco/statue_elb_f" },
+    "facing=east": { "model": "hbm_m:block/deco/statue_elb_f" }
+  }
+}

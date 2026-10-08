@@ -1,130 +1,136 @@
 package com.hbm_m.inventory.gui;
-import com.hbm_m.client.GuiCompat;
 
 import com.hbm_m.blockentity.machines.MachineMiningDrillBlockEntity;
+import com.hbm_m.client.GuiCompat;
 import com.hbm_m.inventory.menu.MachineMiningDrillMenu;
 import com.hbm_m.lib.RefStrings;
-import com.hbm_m.network.MiningDrillToggleC2SPacket;
+import com.hbm_m.network.NBTControlPacket;
 import com.mojang.blaze3d.systems.RenderSystem;
 
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.client.resources.sounds.SimpleSoundInstance;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 
 /**
- * 1:1-Port von {@code GUIMachineExcavator} (1.7.10, vom User bereitgestellt) auf GuiGraphics.
- * Alle Koordinaten/Source-Rechtecke sind direkt aus dem Original uebernommen - {@code gui_mining_drill.png}
- * ist wie eine klassische Vanilla-Textur aufgebaut (xSize=242, ySize=204), inklusive einer
- * "versteckten" Sprite-Region rechts/unterhalb von (204,96) fuer Zustands-Overlays (Schalter-an,
- * Lampen gruen/rot-blinkend, Blitz-Symbol, fehlendes-Drillbit-Warnsymbol, Energie-Fuellbalken).
+ * 1:1 {@code GUIMachineExcavator} (242x204): fuenf Kippschalter (Bohrer, Brecher, Wand, Adernabbau, Behutsamkeit)
+ * mit Statuslampen, Energiebalken + Betriebslampe, blinkender Bohrkopf-Hinweis, Saeuretank.
  */
 public class GUIMachineMiningDrill extends GuiInfoScreen<MachineMiningDrillMenu> {
 
     private static final ResourceLocation TEXTURE =
             ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/machine/gui_mining_drill.png");
 
-    private record ToggleButton(String key, int x) {}
+    private static final String[] TOGGLES = { "drill", "crusher", "walling", "veinminer", "silktouch" };
 
-    private static final ToggleButton[] TOGGLES = {
-            new ToggleButton("drill", 6),
-            new ToggleButton("crusher", 30),
-            new ToggleButton("walling", 54),
-            new ToggleButton("veinminer", 78),
-            new ToggleButton("silktouch", 102),
-    };
+    private final MachineMiningDrillBlockEntity drill;
 
-    private final MachineMiningDrillBlockEntity miningDrill;
-
-    public GUIMachineMiningDrill(MachineMiningDrillMenu menu, Inventory playerInventory, Component title) {
-        super(menu, playerInventory, title);
-        this.miningDrill = menu.getBlockEntity();
+    public GUIMachineMiningDrill(MachineMiningDrillMenu menu, Inventory inventory, Component title) {
+        super(menu, inventory, title);
+        this.drill = menu.getBlockEntity();
         this.imageWidth = 242;
         this.imageHeight = 204;
     }
 
     @Override
-    protected void renderBg(GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
+    public void render(GuiGraphics g, int x, int y, float interp) {
+        GuiCompat.renderBackground(this, g, x, y, interp);
+        super.render(g, x, y, interp);
+
+        if (drill != null) {
+            for (int i = 0; i < 5; i++) {
+                drawCustomInfoStat(g, x, y, 6 + i * 24, 42, 20, 40, x, y, Component.translatable("excavator." + TOGGLES[i]));
+            }
+
+            drawElectricityInfo(g, x, y, 220, 18, 16, 52, drill.getEnergyStored(), MachineMiningDrillBlockEntity.maxPower);
+            drill.tank.renderTankInfo(g, this.font, x, y, leftPos + 202, topPos + 18, 16, 52);
+        }
+
+        this.renderTooltip(g, x, y);
+    }
+
+    @Override
+    public boolean mouseClicked(double mx, double my, int button) {
+        boolean handled = super.mouseClicked(mx, my, button);
+        int x = (int) mx;
+        int y = (int) my;
+
+        String toggle = null;
+
+        for (int i = 0; i < 5; i++) {
+            int bx = leftPos + 6 + i * 24;
+            if (bx <= x && bx + 20 > x && topPos + 42 < y && topPos + 42 + 40 >= y) toggle = TOGGLES[i];
+        }
+
+        if (toggle != null && drill != null) {
+            Minecraft.getInstance().getSoundManager().play(SimpleSoundInstance.forUI(com.hbm_m.sound.HbmSoundsNT.get("hbm:block.leverLarge"), 1.0F));
+            CompoundTag data = new CompoundTag();
+            data.putBoolean(toggle, true);
+            NBTControlPacket.sendToServer(drill.getBlockPos(), data);
+            return true;
+        }
+
+        return handled;
+    }
+
+    @Override
+    protected void renderLabels(GuiGraphics g, int mouseX, int mouseY) {
+        g.drawString(this.font, this.playerInventoryTitle, 8 + 33, this.imageHeight - 96 + 2, 4210752, false);
+    }
+
+    @Override
+    protected void renderBg(GuiGraphics g, float interp, int mouseX, int mouseY) {
         RenderSystem.setShader(GameRenderer::getPositionTexShader);
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
+        g.blit(TEXTURE, leftPos, topPos, 0, 0, 242, 96);
+        g.blit(TEXTURE, leftPos + 33, topPos + 104, 33, 104, 176, 100);
+        if (drill == null) return;
 
-        guiGraphics.blit(TEXTURE, this.leftPos, this.topPos, 0, 0, 242, 96);
-        guiGraphics.blit(TEXTURE, this.leftPos + 33, this.topPos + 104, 33, 104, 176, 100);
+        int i = (int) (drill.getEnergyStored() * 52 / MachineMiningDrillBlockEntity.maxPower);
+        g.blit(TEXTURE, leftPos + 220, topPos + 70 - i, 229, 156 - i, 16, i);
 
-        if (miningDrill != null) { // тайл может отсутствовать в реплее Flashback
-            long energy = miningDrill.getEnergyStored();
-            long maxEnergy = Math.max(1L, miningDrill.getMaxEnergyStored());
-            int barHeight = (int) (52L * energy / maxEnergy);
-            if (barHeight > 0) {
-                guiGraphics.blit(TEXTURE, this.leftPos + 220, this.topPos + 70 - barHeight, 229, 156 - barHeight, 16, barHeight);
-            }
-
-            if (energy > miningDrill.getEnergyPerTick()) {
-                guiGraphics.blit(TEXTURE, this.leftPos + 224, this.topPos + 4, 239, 156, 9, 12);
-            }
-
-            boolean blink = System.currentTimeMillis() % 1000 < 500;
-            if (!miningDrill.hasDrillbitInstalled() && blink) {
-                guiGraphics.blit(TEXTURE, this.leftPos + 171, this.topPos + 74, 209, 154, 18, 18);
-            }
-
-            drawToggle(guiGraphics, 0, miningDrill.enableDrill,
-                    miningDrill.hasDrillbitInstalled() && energy >= miningDrill.getEnergyPerTick(), blink);
-            drawToggle(guiGraphics, 1, miningDrill.enableCrusher, true, blink);
-            drawToggle(guiGraphics, 2, miningDrill.enableWalling, true, blink);
-            drawToggle(guiGraphics, 3, miningDrill.enableVeinMiner, miningDrill.canVeinMine(), blink);
-            drawToggle(guiGraphics, 4, miningDrill.enableSilkTouch, miningDrill.canSilkTouch(), blink);
-        }
-    }
-
-    private void drawToggle(GuiGraphics guiGraphics, int index, boolean enabled, boolean lampOk, boolean blink) {
-        int x = TOGGLES[index].x();
-        if (!enabled) return;
-
-        guiGraphics.blit(TEXTURE, this.leftPos + x, this.topPos + 42, 209, 114, 20, 40);
-        if (lampOk) {
-            guiGraphics.blit(TEXTURE, this.leftPos + x + 5, this.topPos + 5, 209, 104, 10, 10);
-        } else if (blink) {
-            guiGraphics.blit(TEXTURE, this.leftPos + x + 5, this.topPos + 5, 219, 104, 10, 10);
-        }
-    }
-
-    @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        for (ToggleButton toggle : TOGGLES) {
-            if (miningDrill != null && isPointInRect(toggle.x(), 42, 20, 40, (int) mouseX, (int) mouseY)) {
-                playClickSound();
-                MiningDrillToggleC2SPacket.sendToServer(miningDrill.getBlockPos(), toggle.key());
-                return true;
-            }
-        }
-        return super.mouseClicked(mouseX, mouseY, button);
-    }
-
-    @Override
-    protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
-        guiGraphics.drawString(this.font, this.playerInventoryTitle, 41, this.imageHeight - 96 + 2, 0x404040, false);
-    }
-
-    @Override
-    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTick);
-        super.render(guiGraphics, mouseX, mouseY, partialTick);
-
-        if (miningDrill != null) { // тайл может отсутствовать в реплее Flashback
-            drawElectricityInfo(guiGraphics, mouseX, mouseY,
-                220, 18, 16, 52,
-                miningDrill.getEnergyStored(), miningDrill.getMaxEnergyStored());
-
-            drawCustomInfoStat(guiGraphics, mouseX, mouseY,
-                6, 42, 96, 40,
-                this.leftPos + 6, this.topPos + 42,
-                    Component.literal("Progress:"),
-                    Component.literal("   " + miningDrill.getProgress() + " / " + miningDrill.getMaxProgress()
-                            + "   |   Depth: " + miningDrill.getDrillDepth()));
+        if (drill.getEnergyStored() > drill.getPowerConsumption()) {
+            g.blit(TEXTURE, leftPos + 224, topPos + 4, 239, 156, 9, 12);
         }
 
-        this.renderTooltip(guiGraphics, mouseX, mouseY);
+        boolean blink = System.currentTimeMillis() % 1000 < 500;
+
+        if (drill.getInstalledDrill() == null && blink) {
+            g.blit(TEXTURE, leftPos + 171, topPos + 74, 209, 154, 18, 18);
+        }
+
+        if (drill.enableDrill) {
+            g.blit(TEXTURE, leftPos + 6, topPos + 42, 209, 114, 20, 40);
+            if (drill.getInstalledDrill() != null && drill.getEnergyStored() >= drill.getPowerConsumption()) g.blit(TEXTURE, leftPos + 11, topPos + 5, 209, 104, 10, 10);
+            else if (blink) g.blit(TEXTURE, leftPos + 11, topPos + 5, 219, 104, 10, 10);
+        }
+
+        if (drill.enableCrusher) {
+            g.blit(TEXTURE, leftPos + 30, topPos + 42, 209, 114, 20, 40);
+            g.blit(TEXTURE, leftPos + 35, topPos + 5, 209, 104, 10, 10);
+        }
+
+        if (drill.enableWalling) {
+            g.blit(TEXTURE, leftPos + 54, topPos + 42, 209, 114, 20, 40);
+            g.blit(TEXTURE, leftPos + 59, topPos + 5, 209, 104, 10, 10);
+        }
+
+        if (drill.enableVeinMiner) {
+            g.blit(TEXTURE, leftPos + 78, topPos + 42, 209, 114, 20, 40);
+            if (drill.canVeinMine()) g.blit(TEXTURE, leftPos + 83, topPos + 5, 209, 104, 10, 10);
+            else if (blink) g.blit(TEXTURE, leftPos + 83, topPos + 5, 219, 104, 10, 10);
+        }
+
+        if (drill.enableSilkTouch) {
+            g.blit(TEXTURE, leftPos + 102, topPos + 42, 209, 114, 20, 40);
+            if (drill.canSilkTouch()) g.blit(TEXTURE, leftPos + 107, topPos + 5, 209, 104, 10, 10);
+            else if (blink) g.blit(TEXTURE, leftPos + 107, topPos + 5, 219, 104, 10, 10);
+        }
+
+        drill.tank.renderTank(g, leftPos + 202, topPos + 18, 16, 52);
     }
 }

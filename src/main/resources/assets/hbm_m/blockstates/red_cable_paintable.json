@@ -1,6 +1,9 @@
 {
   "variants": {
-    "": {
+    "overlay=true": {
+      "model": "hbm_m:block/red_cable_base_cube"
+    },
+    "overlay=false": {
       "model": "hbm_m:block/red_cable_base_cube"
     }
   }

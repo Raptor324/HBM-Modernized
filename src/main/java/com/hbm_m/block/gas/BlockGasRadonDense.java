@@ -1,6 +1,7 @@
 package com.hbm_m.block.gas;
 
 import com.hbm_m.block.ModBlocks;
+import com.hbm_m.effect.ModEffects;
 import com.hbm_m.extprop.HbmLivingProps;
 import com.hbm_m.handler.ArmorRegistry;
 import com.hbm_m.handler.HazardClass;
@@ -13,6 +14,7 @@ import net.minecraft.core.Direction;
 import net.minecraft.core.particles.ParticleTypes;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.util.RandomSource;
+import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.Blocks;
@@ -21,10 +23,6 @@ import net.minecraft.world.level.block.state.BlockState;
 /**
  * 1:1-Port von {@code BlockGasRadonDense} (1.7.10): dichtes Radon aus einer Kernschmelze.
  * Verwandelt Gras darunter in verseuchte Erde und hinterlaesst beim Zerfall Fallout.
- *
- * <p><b>Abweichung:</b> Das Original setzt zusaetzlich den Trank {@code HbmPotion.radiation};
- * dieser Effekt ist im Port nicht vorhanden (nur Radaway und Taint sind portiert), die
- * Strahlungsdosis selbst wird aber wie im Original gesetzt.</p>
  */
 public class BlockGasRadonDense extends BlockGasBase {
 
@@ -38,6 +36,7 @@ public class BlockGasRadonDense extends BlockGasBase {
             damageWornFilter(living);
         } else {
             ContaminationUtil.contaminate(living, HazardType.RADIATION, ContaminationType.CREATIVE, 0.5F);
+            living.addEffect(new MobEffectInstance(ModEffects.RADIATION.get(), 15 * 20, 0));
             HbmLivingProps.incrementAsbestos(living, 5);
         }
     }

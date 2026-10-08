@@ -270,10 +270,16 @@ public class UniversalMachinePartBlockEntity extends BaseHbmBlockEntity implemen
      * {@code tryProvide}. У нас контроллер скрыт за мультиблоком; роль "посредника" играет коннектор.
      */
     private void tickFluidConnector(ServerLevel serverLevel) {
-        BlockEntity controller = serverLevel.getBlockEntity(controllerPos);
-        if (controller == null || controller.isRemoved()) {
+        BlockEntity controllerBe = serverLevel.getBlockEntity(controllerPos);
+        if (controllerBe == null || controllerBe.isRemoved()) {
             destroyAllFluidNodes(serverLevel);
             return;
+        }
+        // Original IProxyDelegateProvider: manche Zellen reichen nur einen Teil der Tanks weiter
+        Object controller = controllerBe;
+        if (controllerBe instanceof com.hbm_m.interfaces.IFluidPartDelegateProvider dp) {
+            Object delegate = dp.getFluidDelegateForPart(worldPosition);
+            if (delegate != null) controller = delegate;
         }
 
         // 1) Собираем уникальные типы жидкостей, которые контроллер хочет видеть в сетях.
@@ -369,9 +375,9 @@ public class UniversalMachinePartBlockEntity extends BaseHbmBlockEntity implemen
      * Для MK2 — все баки {@code getAllTanks()} с непустым типом; для остальных — пробуем читать
      * Forge IFluidHandler / Fabric Transfer API (а для цистерны — её настроенный тип, даже если бак пуст).
      */
-    private java.util.Set<Fluid> collectControllerFluidTypes(BlockEntity controller) {
+    private java.util.Set<Fluid> collectControllerFluidTypes(Object controllerObj) {
         java.util.Set<Fluid> result = new java.util.LinkedHashSet<>();
-        if (controller instanceof IFluidUserMK2 mk2) {
+        if (controllerObj instanceof IFluidUserMK2 mk2) {
             for (FluidTank tank : mk2.getAllTanks()) {
                 Fluid type = tank.getTankType();
                 if (type != null && type != Fluids.EMPTY
@@ -381,6 +387,7 @@ public class UniversalMachinePartBlockEntity extends BaseHbmBlockEntity implemen
             }
             return result;
         }
+        if (!(controllerObj instanceof BlockEntity controller)) return result;
         if (controller instanceof MachineFluidTankBlockEntity tank) {
             Fluid type = tank.getFluidTank().getTankType();
             if (type != null && type != Fluids.EMPTY
@@ -621,6 +628,11 @@ public class UniversalMachinePartBlockEntity extends BaseHbmBlockEntity implemen
         if (cap == ForgeCapabilities.ITEM_HANDLER &&
                 (this.role == PartRole.ITEM_INPUT || this.role == PartRole.ITEM_OUTPUT
                         || this.role == PartRole.UNIVERSAL_CONNECTOR)) {
+            // Original IConditionalInvAccess: Zugriff haengt von dieser Zelle ab
+            if (controllerBE instanceof com.hbm_m.interfaces.IConditionalInvAccess cond) {
+                net.minecraftforge.items.IItemHandler h = cond.getConditionalItemHandler(this.worldPosition, side);
+                return h == null ? LazyOptional.empty() : LazyOptional.of(() -> h).cast();
+            }
             // MachineAssemblerBlockEntity вернет специальный proxy-handler
             if (controllerBE instanceof MachineAssemblerBlockEntity assembler && this.role != PartRole.UNIVERSAL_CONNECTOR) {
                 return assembler.getItemHandlerForPart(this.role).cast();

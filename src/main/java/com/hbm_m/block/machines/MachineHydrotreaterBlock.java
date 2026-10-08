@@ -2,86 +2,74 @@ package com.hbm_m.block.machines;
 
 import javax.annotation.Nullable;
 
+import com.hbm_m.block.ModBlocks;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.blockentity.machines.MachineHydrotreaterBlockEntity;
-import com.hbm_m.interfaces.IMultiblockController;
+import com.hbm_m.multiblock.DummyableStructureBuilder;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
-import com.hbm_m.multiblock.MultiblockStructureStubs;
-import com.hbm_m.multiblock.PartRole;
 import dev.architectury.registry.menu.MenuRegistry;
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
 import net.minecraft.server.level.ServerPlayer;
-import net.minecraft.world.Containers;
 import net.minecraft.world.InteractionHand;
 import net.minecraft.world.InteractionResult;
 import net.minecraft.world.MenuProvider;
 import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.context.BlockPlaceContext;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.BaseEntityBlock;
-import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.block.state.StateDefinition;
-import net.minecraft.world.level.block.state.properties.DirectionProperty;
 import net.minecraft.world.phys.BlockHitResult;
-//? if forge {
-import net.minecraftforge.common.capabilities.ForgeCapabilities;
-//?}
 
-import com.hbm_m.blockentity.BaseMachineBlockEntity;
+/**
+ * 1:1 {@code MachineHydrotreater}: {@code getDimensions {6,0,1,1,1,1}} (3x3x7), {@code getOffset 1},
+ * vier Anschlusszellen ({@code makeExtra}) in den Ecken der untersten Ebene.
+ * w16b: vorher Einzelblock-Platzhalter (MultiblockStructureStubs) - nur der Kern hatte eine Hitbox.
+ */
+public class MachineHydrotreaterBlock extends DummyableMachineBlock {
 
-public class MachineHydrotreaterBlock extends BaseEntityBlock implements IMultiblockController {
-    public static final DirectionProperty FACING = HorizontalDirectionalBlock.FACING;
-    private final MultiblockStructureHelper structureHelper;
     public MachineHydrotreaterBlock(BlockBehaviour.Properties p) {
         super(p);
-        this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH));
-        this.structureHelper = MultiblockStructureStubs.singleController();
     }
+
+    @Override
+    protected MultiblockStructureHelper defineStructure() {
+        return DummyableStructureBuilder.create()
+                .box(6, 0, 1, 1, 1, 1)
+                .extra(1, 0, 1)
+                .extra(1, 0, -1)
+                .extra(-1, 0, 1)
+                .extra(-1, 0, -1)
+                .placementOffset(1)
+                .build(() -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState());
+    }
+
     @Override public RenderShape getRenderShape(BlockState s) { return RenderShape.MODEL; }
-    @Override protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> b) { b.add(FACING); }
-    @Nullable @Override public BlockState getStateForPlacement(BlockPlaceContext c) { return this.defaultBlockState().setValue(FACING, c.getHorizontalDirection().getOpposite()); }
-    @Override public void onRemove(BlockState s, Level l, BlockPos p, BlockState ns, boolean m) {
-        if (s.getBlock() != ns.getBlock() && l.getBlockEntity(p) instanceof BaseMachineBlockEntity machine) {
-            machine.dropInventoryContents();
-        }
-        super.onRemove(s, l, p, ns, m);
-    }
+
     @Nullable @Override public BlockEntity newBlockEntity(BlockPos p, BlockState s) { return new MachineHydrotreaterBlockEntity(p, s); }
+
     //? if < 1.21.1 {
     @Override public InteractionResult use(BlockState s, Level l, BlockPos p, Player pl, InteractionHand h, BlockHitResult r) {
-        return openMenu(s, l, p, pl, h, r);
+        if (pl.isShiftKeyDown()) return InteractionResult.sidedSuccess(l.isClientSide()); // Original standardOpenBehavior: geschlichen true ohne GUI
+        return openMenu(l, p, pl);
     }
     //?} else {
     /*@Override
     protected InteractionResult useWithoutItem(BlockState s, Level l, BlockPos p, Player pl, BlockHitResult r) {
-        return openMenu(s, l, p, pl, InteractionHand.MAIN_HAND, r);
+        if (pl.isShiftKeyDown()) return InteractionResult.sidedSuccess(l.isClientSide()); // Original standardOpenBehavior: geschlichen true ohne GUI
+        return openMenu(l, p, pl);
     }
     *///?}
 
-    private InteractionResult openMenu(BlockState s, Level l, BlockPos p, Player pl, InteractionHand h, BlockHitResult r) {
+    private InteractionResult openMenu(Level l, BlockPos p, Player pl) {
         if (!l.isClientSide() && l.getBlockEntity(p) instanceof MenuProvider mp) MenuRegistry.openExtendedMenu((ServerPlayer) pl, mp, buf -> buf.writeBlockPos(p));
         return InteractionResult.sidedSuccess(l.isClientSide());
     }
+
     @Nullable @Override public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level l, BlockState s, BlockEntityType<T> t) {
         return createTickerHelper(t, ModBlockEntities.HYDROTREATER_BE.get(), MachineHydrotreaterBlockEntity::tick);
-    }
-
-    @Override
-    public MultiblockStructureHelper getStructureHelper() {
-        return structureHelper;
-    }
-
-    @Override
-    public PartRole getPartRole(BlockPos localOffset) {
-        return structureHelper.resolvePartRole(localOffset, this);
     }
 
     //? if >1.20.1 {

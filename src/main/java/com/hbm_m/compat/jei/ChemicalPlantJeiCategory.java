@@ -109,23 +109,31 @@ public class ChemicalPlantJeiCategory extends JeiGenericRecipeCategory<ChemicalP
             slotIndex++;
         }
 
-        for (FluidStack fluid : recipe.getFluidInputs()) {
+        for (int fi = 0; fi < recipe.getFluidInputs().size(); fi++) {
+            FluidStack fluid = recipe.getFluidInputs().get(fi);
             if (fluid.isEmpty()) {
                 continue;
             }
+            IRecipeSlotBuilder fluidSlot = null;
             //? if forge {
-            addItemSlot(builder, RecipeIngredientRole.INPUT,
+            fluidSlot = addItemSlot(builder, RecipeIngredientRole.INPUT,
                     positions[slotIndex][0] + inputXOffset, positions[slotIndex][1])
                     .setFluidRenderer(FLUID_RENDERER_CAPACITY, false, 16, 16)
                     .setCustomRenderer(mezz.jei.api.forge.ForgeTypes.FLUID_STACK, new HbmFluidJeiRenderer(16, 16))
                     .addIngredient(mezz.jei.api.forge.ForgeTypes.FLUID_STACK, new net.minecraftforge.fluids.FluidStack(fluid.getFluid(), (int) fluid.getAmount(), fluid.getTag()));
             //?} elif neoforge {
-            /*addItemSlot(builder, RecipeIngredientRole.INPUT,
+            /*fluidSlot = addItemSlot(builder, RecipeIngredientRole.INPUT,
                     positions[slotIndex][0] + inputXOffset, positions[slotIndex][1])
                     .setFluidRenderer(FLUID_RENDERER_CAPACITY, false, 16, 16)
                     .setCustomRenderer(mezz.jei.api.neoforge.NeoForgeTypes.FLUID_STACK, new HbmFluidJeiRenderer(16, 16))
                     .addIngredient(mezz.jei.api.neoforge.NeoForgeTypes.FLUID_STACK, new net.neoforged.neoforge.fluids.FluidStack(fluid.getFluid(), (int) fluid.getAmount()));
             *///?}
+            // Original ItemFluidIcon: rote Zeile "<N>PU" bei Druckeingaengen
+            int pressure = recipe.getFluidInputPressure(fi);
+            if (fluidSlot != null && pressure > 0) {
+                Component pu = Component.literal(pressure + "PU").withStyle(net.minecraft.ChatFormatting.RED);
+                fluidSlot.addRichTooltipCallback((view, tooltip) -> tooltip.add(pu));
+            }
             slotIndex++;
         }
     }

@@ -96,12 +96,8 @@ public class PaintableDuctBlock extends BaseEntityBlock implements IToolable, IL
             if (!level.isClientSide) pipe.setCamo(ib.getBlock().defaultBlockState());
             return InteractionResult.sidedSuccess(level.isClientSide);
         }
-        if (!exhaust && !held.isEmpty() && held.getItem() instanceof IItemFluidIdentifier id) {
-            if (!level.isClientSide) {
-                Fluid fluid = id.getType(level, pos, held);
-                if (fluid != null) com.hbm_m.api.fluids.PipeTypeChanger.apply(level, pos, fluid == ModFluids.NONE.getSource() ? Fluids.EMPTY : fluid, player.isShiftKeyDown());
-            }
-            return InteractionResult.sidedSuccess(level.isClientSide);
+        if (!exhaust && !held.isEmpty() && held.getItem() instanceof IItemFluidIdentifier) {
+            if (com.hbm_m.api.fluids.PipeTypeChanger.onIdentifier(level, pos, player, held)) return InteractionResult.sidedSuccess(level.isClientSide);
         }
         return InteractionResult.PASS;
     }

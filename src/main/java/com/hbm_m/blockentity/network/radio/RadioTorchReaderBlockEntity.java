@@ -40,7 +40,8 @@ public class RadioTorchReaderBlockEntity extends com.hbm_m.blockentity.BaseHbmBl
         RTTYNetwork.tickIfNeeded(level.getGameTime());
 
         Direction facing = state.hasProperty(RadioTorchBaseBlock.FACING) ? state.getValue(RadioTorchBaseBlock.FACING) : Direction.UP;
-        BlockPos sourcePos = pos.relative(facing.getOpposite());
+        // FACING zeigt in den Halteblock (Original: getOrientation(meta).getOpposite())
+        BlockPos sourcePos = pos.relative(facing);
         if (!(com.hbm_m.api.redstoneoverradio.IRORInfo.resolve(level, sourcePos) instanceof IRORValueProvider provider)) return;
 
         for (int i = 0; i < 8; i++) {

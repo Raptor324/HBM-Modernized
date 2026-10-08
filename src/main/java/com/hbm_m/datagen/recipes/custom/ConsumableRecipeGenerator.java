@@ -272,5 +272,8 @@ public final class ConsumableRecipeGenerator {
 
         // Stealth boy
         shaped(w, ModItems.STEALTH_BOY, 1, p(" B", "LI", "LC"), 'B', Items.STONE_BUTTON, 'L', Items.LEATHER, 'I', m(ModMaterials.STEEL, MaterialShape.INGOT), 'C', ModItems.INTEGRATED_CIRCUIT);
+
+        // MineralRecipes: Behelfs-Munitionskiste (ammo_container Meta 1) aus 4 Nitra
+        shaped(w, ModItems.AMMO_CONTAINER_1, 1, p("##", "##"), '#', ModItems.NITRA);
     }
 }

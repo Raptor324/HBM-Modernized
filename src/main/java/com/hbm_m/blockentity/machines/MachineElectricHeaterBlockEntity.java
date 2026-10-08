@@ -21,36 +21,67 @@ import net.minecraft.world.level.block.state.BlockState;
  * <p>Er belegt wie im Original zwei Felder in der Tiefe und drei in der Breite
  * ({@code getDimensions {0,0,1,2,1,1}}, Setzversatz 2).</p>
  *
- * <p><b>Offen:</b> die Zusatzwaerme, die das Original passiv vom Block direkt darunter zieht.
+ * <p>1:1: Verbrauch {@code setting^1.4 * 200} HE/t, Speicher {@code Verbrauch * 20}, Waerme {@code setting * 100} TU/t,
+ * Abklingen x0.999/t, zieht 85 % der Waerme einer Quelle direkt darunter ab (Durchreichen), Brummen solange an.</p>
  */
 public class MachineElectricHeaterBlockEntity extends BaseMachineBlockEntity implements IHeatSource {
 
     public static final int MAX_SETTING = 10;
+    /** Nur fuer Anzeigen; das Original kennt keine Obergrenze. */
     private static final int MAX_HEAT = 100_000;
-    private static final long CAPACITY = 200_000L;
-    private static final long MAX_RECEIVE = 4_096L;
+    /** Original nimmt bis {@code getMaxPower()} beliebig schnell an. */
+    private static final long MAX_RECEIVE = 1_000_000_000L;
 
     private int setting = 0;
     private int heat = 0;
+    public boolean isOn = false;
 
     public MachineElectricHeaterBlockEntity(BlockPos pos, BlockState state) {
-        super(ModBlockEntities.ELECTRIC_HEATER_BE.get(), pos, state, 0, CAPACITY, MAX_RECEIVE, 0L);
+        super(ModBlockEntities.ELECTRIC_HEATER_BE.get(), pos, state, 0, 0L, MAX_RECEIVE, 0L);
     }
 
     public static void tick(Level level, BlockPos pos, BlockState state, MachineElectricHeaterBlockEntity be) {
-        if (level.isClientSide) return;
+        if (level.isClientSide) {
+            // Original: ELECTRIC_HUM_LOOP, Lautstaerke 0.25, Reichweite 7.5
+            com.hbm_m.client.sound.MachineLoopSoundClient.tick(be, "hbm:block.electricHum", be.isOn, 0.25F, 1.0F, 7.5);
+            return;
+        }
+
+        // Original: getMaxPower() = getConsumption() * 20
+        be.setEnergyCapacity(be.getConsumption() * 20);
 
         be.heat = (int) (be.heat * 0.999D);
 
-        if (be.setting > 0) {
-            int consumption = (int) (Math.pow(be.setting, 1.4D) * 200D);
-            if (be.getEnergyStored() >= consumption) {
-                be.setEnergyStored(be.getEnergyStored() - consumption);
-                be.heat = Math.min(MAX_HEAT, be.heat + be.setting * 100);
-            }
+        be.tryPullHeat();
+
+        boolean wasOn = be.isOn;
+        be.isOn = false;
+        if (be.setting > 0 && be.getEnergyStored() >= be.getConsumption()) {
+            be.setEnergyStored(be.getEnergyStored() - be.getConsumption());
+            be.heat += be.getHeatGen();
+            be.isOn = true;
         }
 
         be.setChanged();
+        if (wasOn != be.isOn) be.sendUpdateToClient();
+    }
+
+    /** Original {@code tryPullHeat}: 85 % der Waerme des Blocks darunter, die Quelle wird geleert. */
+    protected void tryPullHeat() {
+        if (level == null) return;
+        net.minecraft.world.level.block.entity.BlockEntity con = level.getBlockEntity(worldPosition.below());
+        if (con instanceof IHeatSource source) {
+            this.heat += (int) (source.getHeatStored() * 0.85);
+            source.useUpHeat(source.getHeatStored());
+        }
+    }
+
+    public long getConsumption() {
+        return (long) (Math.pow(setting, 1.4D) * 200D);
+    }
+
+    public int getHeatGen() {
+        return this.setting * 100;
     }
 
     public void cycleSetting() {
@@ -103,6 +134,7 @@ public class MachineElectricHeaterBlockEntity extends BaseMachineBlockEntity imp
         super.writeNbtData(tag, registries);
         tag.putInt("setting", setting);
         tag.putInt("heat", heat);
+        tag.putBoolean("isOn", isOn);
     }
 
     @Override
@@ -110,5 +142,6 @@ public class MachineElectricHeaterBlockEntity extends BaseMachineBlockEntity imp
         super.readNbtData(tag, registries);
         setting = tag.getInt("setting");
         heat = tag.getInt("heat");
+        isOn = tag.getBoolean("isOn");
     }
 }

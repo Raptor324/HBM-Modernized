@@ -22,6 +22,36 @@ public class ModDamageTypes {
 
     }
     
+    /** SEDNA-Waffen: ein Typ je DamageClass ({@code sedna_physical} usw.), Meldungs-ID = Klassenname klein. */
+    public static final ResourceKey<DamageType> SEDNA_PHYSICAL = createKey("sedna_physical");
+    public static final ResourceKey<DamageType> SEDNA_FIRE = createKey("sedna_fire");
+    public static final ResourceKey<DamageType> SEDNA_EXPLOSIVE = createKey("sedna_explosive");
+    public static final ResourceKey<DamageType> SEDNA_ELECTRIC = createKey("sedna_electric");
+    public static final ResourceKey<DamageType> SEDNA_PLASMA = createKey("sedna_plasma");
+    public static final ResourceKey<DamageType> SEDNA_LASER = createKey("sedna_laser");
+    public static final ResourceKey<DamageType> SEDNA_MICROWAVE = createKey("sedna_microwave");
+    public static final ResourceKey<DamageType> SEDNA_SUBATOMIC = createKey("sedna_subatomic");
+    public static final ResourceKey<DamageType> SEDNA_OTHER = createKey("sedna_other");
+
+    public static ResourceKey<DamageType> sedna(String clazz) {
+        return createKey("sedna_" + clazz);
+    }
+
+    /**
+     * Meldungs-ID je Schadenstyp (Datagen): SEDNA-Typen ohne Praefix ({@code laser}, {@code microwave} ...), die alten
+     * Typen {@link #LASER} / {@link #MICROWAVE} (Original {@code ModDamageSource.s_laser} / {@code microwave}) bekommen
+     * eigene IDs, sonst teilen sie sich die Todesmeldungen mit den SEDNA-Klassen.
+     */
+    public static String msgIdFor(String path) {
+        if (path.startsWith("sedna_")) return path.substring(6);
+        if (path.equals("laser")) return LEGACY_LASER_MSG;
+        if (path.equals("microwave")) return LEGACY_MICROWAVE_MSG;
+        return path;
+    }
+
+    public static final String LEGACY_LASER_MSG = "legacy_laser";
+    public static final String LEGACY_MICROWAVE_MSG = "legacy_microwave";
+
     public static final ResourceKey<DamageType> BLAST = createKey("blast");
     public static final ResourceKey<DamageType> NUCLEAR_BLAST = createKey("nuclear_blast");
     public static final ResourceKey<DamageType> MUD_POISONING = createKey("mud_poisoning");

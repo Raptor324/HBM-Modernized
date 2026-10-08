@@ -38,6 +38,45 @@ public class CrateItem extends BlockItem implements ITooltipProvider {
         this.totalSlots = totalSlots;
     }
 
+    /** Platzzahl der Kiste (ContainerUpgradeRecipe kuerzt uebernommene Inhalte darauf). */
+    public int getTotalSlots() {
+        return totalSlots;
+    }
+
+    // ---- 1:1 ItemBlockStorageCrate: Kiste aus der Hand oeffnen (ServerConfig.CRATE_OPEN_HELD) ----
+
+    /** Original: nur Eisen-, Stahl-, Desh-, Wolframkiste und Tresor sind {@code ItemBlockStorageCrate}. */
+    private boolean opensHeld() {
+        Block b = getBlock();
+        return b == com.hbm_m.block.ModBlocks.CRATE_IRON.get() || b == com.hbm_m.block.ModBlocks.CRATE_STEEL.get()
+                || b == com.hbm_m.block.ModBlocks.CRATE_DESH.get() || b == com.hbm_m.block.ModBlocks.CRATE_TUNGSTEN.get()
+                || b == com.hbm_m.block.ModBlocks.SAFE.get();
+    }
+
+    /** Original {@code onItemUse}: mit CRATE_OPEN_HELD setzt man die Kiste nur schleichend. */
+    @Override
+    public net.minecraft.world.InteractionResult useOn(net.minecraft.world.item.context.UseOnContext ctx) {
+        if (com.hbm_m.config.ModClothConfig.get().crateOpenHeld && opensHeld() && ctx.getPlayer() != null && !ctx.getPlayer().isShiftKeyDown()) {
+            return net.minecraft.world.InteractionResult.PASS;
+        }
+        return super.useOn(ctx);
+    }
+
+    /** Original {@code onItemRightClick}. */
+    @Override
+    public net.minecraft.world.InteractionResultHolder<ItemStack> use(Level level, net.minecraft.world.entity.player.Player player, net.minecraft.world.InteractionHand hand) {
+        ItemStack stack = player.getItemInHand(hand);
+        if (!com.hbm_m.config.ModClothConfig.get().crateOpenHeld || !opensHeld() || hand != net.minecraft.world.InteractionHand.MAIN_HAND) {
+            return super.use(level, player, hand);
+        }
+
+        if (!level.isClientSide && stack.getCount() == 1 && player instanceof net.minecraft.server.level.ServerPlayer sp) {
+            HeldCrate.tryOpen(sp, stack, getBlock());
+        }
+
+        return net.minecraft.world.InteractionResultHolder.sidedSuccess(stack, level.isClientSide);
+    }
+
     @Override
     public void appendHbmTooltip(ItemStack stack, @Nullable Level level,
                                 List<Component> tooltip, TooltipFlag flag) {

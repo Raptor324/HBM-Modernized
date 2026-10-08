@@ -25,9 +25,6 @@ import net.minecraft.world.item.crafting.Ingredient;
  * сетки и сравниваются с входами рецепта попозиционно (сортировка в оригинале была
  * закомментирована — это часть «магии»). Поведение сохранено 1:1.</p>
  *
- * <p>Рецепты, ссылающиеся на ещё не портированные предметы (mysteryshovel,
- * ingot_electronium/pellet_charged, метаварианты ingot_u238m2), не переносятся —
- * в 1.7.10 {@code CyclotronRecipes} аналогично пропускал отсутствующие в реестре предметы.</p>
  */
 public class MagicRecipes {
 
@@ -60,7 +57,11 @@ public class MagicRecipes {
     }
 
     private static void register() {
-        // Слиток урана-238M2 (в оригинале — три метаварианта одного слитка; меты не портированы)
+        // Слиток урана-238M2 aus den drei Bruchstuecken (Original ingot_u238m2 Meta 1-3)
+        recipes.add(new MagicRecipe(() -> ModMaterialItems.item(ModMaterials.U238M2, MaterialShape.INGOT),
+                () -> Ingredient.of(ModItems.INGOT_U238M2_1.get()),
+                () -> Ingredient.of(ModItems.INGOT_U238M2_2.get()),
+                () -> Ingredient.of(ModItems.INGOT_U238M2_3.get())));
         // Раковина дискордии
         recipes.add(new MagicRecipe(ModItems.ROD_OF_DISCORD,
                 () -> Ingredient.of(Items.ENDER_PEARL),
@@ -71,6 +72,20 @@ public class MagicRecipes {
         recipes.add(new MagicRecipe(ModItems.BALEFIRE_AND_STEEL,
                 () -> Ingredient.of(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.INGOT)),
                 () -> Ingredient.of(ModItems.EGG_BALEFIRE_SHARD.get())));
+
+        // Brittle Spade (mysteryshovel)
+        recipes.add(new MagicRecipe(ModItems.MYSTERYSHOVEL,
+                () -> Ingredient.of(Items.IRON_SHOVEL),
+                () -> Ingredient.of(Items.BONE),
+                () -> Ingredient.of(ModMaterialItems.item(ModMaterials.STARMETAL, MaterialShape.INGOT)),
+                () -> Ingredient.of(ModItems.DUCTTAPE.get())));
+
+        // Elektroniumbarren
+        recipes.add(new MagicRecipe(() -> ModMaterialItems.item(ModMaterials.ELECTRONIUM, MaterialShape.INGOT),
+                () -> Ingredient.of(ModItems.PELLET_CHARGED.get()),
+                () -> Ingredient.of(ModItems.PELLET_CHARGED.get()),
+                () -> Ingredient.of(ModMaterialItems.item(ModMaterials.DINEUTRONIUM, MaterialShape.INGOT)),
+                () -> Ingredient.of(ModMaterialItems.item(ModMaterials.DINEUTRONIUM, MaterialShape.INGOT))));
 
         // Алмазная кувалда
         recipes.add(new MagicRecipe(ModItems.DIAMOND_GAVEL,

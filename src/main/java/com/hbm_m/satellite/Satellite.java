@@ -77,7 +77,11 @@ public abstract class Satellite {
     }
 
     private static void registerSatellite(Class<? extends Satellite> sat, Supplier<? extends Item> item) {
-        ITEM_TO_CLASS.putIfAbsent(item.get(), sat);
+        // Original: nur wenn weder der Gegenstand noch die Satellitenklasse schon vergeben ist -
+        // die Legacy-Chips (sat_mapper ...) bekommen dadurch keinen Satelliten
+        if (!ITEM_TO_CLASS.containsKey(item.get()) && !ITEM_TO_CLASS.containsValue(sat)) {
+            ITEM_TO_CLASS.put(item.get(), sat);
+        }
     }
 
     public static Satellite createFromId(int i) {

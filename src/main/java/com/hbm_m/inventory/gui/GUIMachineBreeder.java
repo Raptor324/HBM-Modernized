@@ -22,11 +22,6 @@ public class GUIMachineBreeder extends GuiInfoScreen<MachineBreederMenu> {
     private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(
             RefStrings.MODID, "textures/gui/processing/gui_breeder.png");
 
-    private static final int FLUX_X = 73;
-    private static final int FLUX_Y = 19;
-    private static final int FLUX_WIDTH = 30;
-    private static final int FLUX_HEIGHT = 37;
-
     public GUIMachineBreeder(MachineBreederMenu menu, Inventory playerInventory, Component title) {
         super(menu, playerInventory, title);
         this.imageWidth = 176;
@@ -40,15 +35,11 @@ public class GUIMachineBreeder extends GuiInfoScreen<MachineBreederMenu> {
 
         guiGraphics.blit(TEXTURE, this.leftPos, this.topPos, 0, 0, this.imageWidth, this.imageHeight);
 
-        // The flux bar is baked fully "lit" into the background art; cover the unfilled top
-        // portion with the panel's own background color so it fills bottom-up with progress,
-        // matching vanilla's furnace-flame convention.
-        int filled = menu.getProgressScaled(FLUX_HEIGHT);
-        int unfilled = FLUX_HEIGHT - filled;
-        if (unfilled > 0) {
-            guiGraphics.fill(this.leftPos + FLUX_X, this.topPos + FLUX_Y,
-                    this.leftPos + FLUX_X + FLUX_WIDTH, this.topPos + FLUX_Y + unfilled, 0xFFC6C6C6);
-        }
+        // Original: Fortschrittsbalken (53,32) aus (176,0), 70 px breit, 20 hoch
+        int i = menu.getProgressScaled(70);
+        guiGraphics.blit(TEXTURE, this.leftPos + 53, this.topPos + 32, 176, 0, i, 20);
+
+        this.drawInfoPanel(guiGraphics, -16, 16, PanelType.LARGE_GREEN_INFO);
     }
 
     @Override
@@ -73,14 +64,10 @@ public class GUIMachineBreeder extends GuiInfoScreen<MachineBreederMenu> {
     protected void renderTooltip(GuiGraphics guiGraphics, int mouseX, int mouseY) {
         super.renderTooltip(guiGraphics, mouseX, mouseY);
 
-        // Original: ein Hinweisfeld statt einer Energieanzeige - der Brutreaktor braucht keinen Strom.
-        if (mouseX >= this.leftPos + FLUX_X && mouseX < this.leftPos + FLUX_X + FLUX_WIDTH
-                && mouseY >= this.topPos + FLUX_Y && mouseY < this.topPos + FLUX_Y + FLUX_HEIGHT) {
-            guiGraphics.renderComponentTooltip(this.font,
-                    java.util.List.of(
-                            net.minecraft.network.chat.Component.translatable("gui.hbm_m.breeder.flux", menu.getFlux()),
-                            net.minecraft.network.chat.Component.translatable("gui.hbm_m.breeder.hint")),
-                    mouseX, mouseY);
-        }
+        // Original: Info-Panel links (fester englischer Text)
+        this.drawCustomInfoStat(guiGraphics, mouseX, mouseY, -16, 16, 16, 16, this.leftPos - 8, this.topPos + 16 + 16,
+                Component.literal("The reactor has to recieve"),
+                Component.literal("neutron flux from adjacent"),
+                Component.literal("research reactors to breed."));
     }
 }

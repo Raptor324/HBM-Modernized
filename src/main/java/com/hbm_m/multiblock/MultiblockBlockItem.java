@@ -118,4 +118,21 @@ public class MultiblockBlockItem extends BlockItem {
                 )
         );
     }
+
+    //? if forge {
+    /**
+     * Audit 7: Maschinen, deren Original-Itemrenderer animiert ist (z.B. drehende Raeder), haben ein
+     * builtin/entity-Itemmodell; gezeichnet wird dann ueber den AnimatedMachineItemRenderer. Fuer alle uebrigen
+     * Modelle wird der Renderer nie gefragt.
+     */
+    @Override
+    public void initializeClient(java.util.function.Consumer<net.minecraftforge.client.extensions.common.IClientItemExtensions> consumer) {
+        consumer.accept(new net.minecraftforge.client.extensions.common.IClientItemExtensions() {
+            @Override
+            public net.minecraft.client.renderer.BlockEntityWithoutLevelRenderer getCustomRenderer() {
+                return com.hbm_m.client.render.item.AnimatedMachineItemRenderer.instance();
+            }
+        });
+    }
+    //?}
 }

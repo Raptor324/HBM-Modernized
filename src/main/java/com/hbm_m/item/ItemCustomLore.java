@@ -39,7 +39,9 @@ public class ItemCustomLore extends Item implements ITooltipProvider {
         String key = (Polaroid.id() == 11 && p11) ? p11Key : unlocalized + ".desc";
         String loc = net.minecraft.locale.Language.getInstance().getOrDefault(key);
         if (loc.equals(key)) return;
-        for (String s : loc.split("\\$")) tooltip.add(Component.literal(s));
+        loc = loc.replace("%%", "%"); // I18n.format des Originals loest %% auf
+        // 1.7.10 faerbt jede Zusatzzeile grau (GuiContainer.renderToolTip); Farbcodes im Text gelten weiter
+        for (String s : loc.split("\\$")) tooltip.add(Component.literal(s).withStyle(net.minecraft.ChatFormatting.GRAY));
     }
 
     @Override

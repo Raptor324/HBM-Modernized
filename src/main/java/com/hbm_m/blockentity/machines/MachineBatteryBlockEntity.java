@@ -25,7 +25,8 @@ import org.jetbrains.annotations.Nullable;
  * Режимы: 0 = BOTH, 1 = INPUT, 2 = OUTPUT, 3 = DISABLED
  */
 @SuppressWarnings("UnstableApiUsage")
-public class MachineBatteryBlockEntity extends BaseMachineBlockEntity implements IEnergyModeHolder, com.hbm_m.api.energy.PowerBuffer {
+public class MachineBatteryBlockEntity extends BaseMachineBlockEntity implements IEnergyModeHolder, com.hbm_m.api.energy.PowerBuffer, com.hbm_m.api.block.IPersistentNBT,
+        com.hbm_m.api.redstoneoverradio.IRORValueProvider, com.hbm_m.api.redstoneoverradio.IRORInteractive {
 
     private static final int SLOT_CHARGE = 0;
     private static final int SLOT_DISCHARGE = 1;
@@ -35,8 +36,9 @@ public class MachineBatteryBlockEntity extends BaseMachineBlockEntity implements
     private static final long TRANSFER_RATE = 100_000_000_000L;
 
     // Режимы работы (0 = BOTH, 1 = INPUT, 2 = OUTPUT, 3 = DISABLED)
-    public int modeOnNoSignal = 0;
-    public int modeOnSignal = 0;
+    // Original: redLow = mode_input, redHigh = mode_output (Port-Zaehlung: 1 = INPUT, 2 = OUTPUT)
+    public int modeOnNoSignal = 1;
+    public int modeOnSignal = 2;
     private Priority priority = Priority.LOW;
 
     private long lastEnergySample = 0;
@@ -45,14 +47,20 @@ public class MachineBatteryBlockEntity extends BaseMachineBlockEntity implements
     protected final ContainerData data;
 
     public MachineBatteryBlockEntity(BlockPos pos, BlockState state) {
+        this(ModBlockEntities.MACHINE_BATTERY_BE.get(), pos, state, getCapacityFromState(state), TRANSFER_RATE);
+    }
+
+    /** Fuer Unterklassen mit eigenem Typ, eigener Kapazitaet und eigenem Uebertragungslimit (FEnSU). */
+    protected MachineBatteryBlockEntity(net.minecraft.world.level.block.entity.BlockEntityType<?> type, BlockPos pos, BlockState state,
+                                        long capacity, long transferRate) {
         super(
-                ModBlockEntities.MACHINE_BATTERY_BE.get(),
+                type,
                 pos,
                 state,
                 SLOT_COUNT,
-                getCapacityFromState(state),
-                TRANSFER_RATE,
-                TRANSFER_RATE
+                capacity,
+                transferRate,
+                transferRate
         );
 
         this.data = new ContainerData() {
@@ -128,13 +136,17 @@ public class MachineBatteryBlockEntity extends BaseMachineBlockEntity implements
     @Override
     public long getProvideSpeed() {
         int mode = getCurrentMode();
-        return (mode == 0 || mode == 2) ? super.getProvideSpeed() : 0;
+        if (mode != 0 && mode != 2) return 0;
+        // Original: getMaxPower() / 600 (FEnSU: fester maxTransfer)
+        return this instanceof MachineFENSUBlockEntity ? super.getProvideSpeed() : getMaxEnergyStored() / 600;
     }
 
     @Override
     public long getReceiveSpeed() {
         int mode = getCurrentMode();
-        return (mode == 0 || mode == 1) ? super.getReceiveSpeed() : 0;
+        if (mode != 0 && mode != 1) return 0;
+        // Original: getMaxPower() / 200 (FEnSU: fester maxTransfer)
+        return this instanceof MachineFENSUBlockEntity ? super.getReceiveSpeed() : getMaxEnergyStored() / 200;
     }
 
     public long getEnergyDeltaAveraged() {
@@ -225,6 +237,15 @@ public class MachineBatteryBlockEntity extends BaseMachineBlockEntity implements
         this.averagedEnergyDelta = tag.getLong("averagedEnergyDelta");
     }
 
+    /** Original {@code writeNBT}: nur Ladung, Redstone-Modi und Prioritaet wandern in den Drop, nicht das Inventar. */
+    @Override
+    public void writeNBT(CompoundTag nbt) {
+        nbt.putLong("energy", this.getEnergyStored());
+        nbt.putInt("modeOnNoSignal", this.modeOnNoSignal);
+        nbt.putInt("modeOnSignal", this.modeOnSignal);
+        nbt.putInt("priorityV2", this.priority.ordinal());
+    }
+
     /**
      * 1.21.1: copy_nbt в лут-таблицах удалён (1.20.5+), поэтому перенос состояния
      * батареи в дропнутый предмет делается кодом — как у ящиков
@@ -234,8 +255,8 @@ public class MachineBatteryBlockEntity extends BaseMachineBlockEntity implements
      */
     //? if >= 1.21.1 {
     /*public void saveToItemStack(net.minecraft.world.item.ItemStack stack) {
-        net.minecraft.core.HolderLookup.Provider registries = this.level.registryAccess();
-        CompoundTag beTag = this.saveWithoutMetadata(registries);
+        CompoundTag beTag = new CompoundTag();
+        this.writeNBT(beTag);
         if (!beTag.isEmpty()) {
             CompoundTag root = new CompoundTag();
             root.put("BlockEntityTag", beTag);
@@ -244,4 +265,108 @@ public class MachineBatteryBlockEntity extends BaseMachineBlockEntity implements
         }
     }
     *///?}
+
+    //? if forge {
+    /** Original {@code ISidedInventory}: unten {0, 1}, oben {0}, Seiten {1}; Akkus hinein, leere aus 0 und volle aus 1 heraus. */
+    private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
+            new com.hbm_m.blockentity.SidedItemAccess.Rules() {
+                @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return side == net.minecraft.core.Direction.DOWN ? new int[] { 0, 1 } : side == net.minecraft.core.Direction.UP ? new int[] { 0 } : new int[] { 1 }; }
+                @Override public boolean canInsert(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return isItemValidForSlot(slot, stack); }
+                @Override public boolean canExtract(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { if (com.hbm_m.blockentity.SidedItemAccess.charge(stack) < 0) return false;
+                    if (slot == 0 && com.hbm_m.blockentity.SidedItemAccess.isEmptyBattery(stack)) return true;
+                    return slot == 1 && com.hbm_m.blockentity.SidedItemAccess.isFullBattery(stack); }
+            });
+
+    @Override
+    public @org.jetbrains.annotations.NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(@org.jetbrains.annotations.NotNull net.minecraftforge.common.capabilities.Capability<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER && side != null) return sidedItems.get(side).cast();
+        return super.getCapability(cap, side);
+    }
+
+    @Override
+    public void invalidateCaps() {
+        super.invalidateCaps();
+        sidedItems.invalidate();
+    }
+    //?}
+
+    // ── Redstone-over-Radio (1:1 TileEntityMachineBattery) ──
+
+    @Override
+    public String[] getFunctionInfo() {
+        return new String[] {
+                PREFIX_VALUE + "fill",
+                PREFIX_VALUE + "fillpercent",
+                PREFIX_VALUE + "delta",
+                PREFIX_FUNCTION + "setmode" + NAME_SEPARATOR + "mode (0-3)",
+                PREFIX_FUNCTION + "setmode" + NAME_SEPARATOR + "mode" + PARAM_SEPARATOR + "fallback (0-3)",
+                PREFIX_FUNCTION + "setredmode" + NAME_SEPARATOR + "mode (0-3)",
+                PREFIX_FUNCTION + "setredmode" + NAME_SEPARATOR + "mode" + PARAM_SEPARATOR + "fallback (0-3)",
+                PREFIX_FUNCTION + "setpriority" + NAME_SEPARATOR + "priority (0-2)",
+        };
+    }
+
+    @Override
+    public String provideRORValue(String name) {
+        if ((PREFIX_VALUE + "fill").equals(name))        return "" + getEnergyStored();
+        // Original getPowerRemainingScaled(100) = power * 100 / getMaxPower()
+        if ((PREFIX_VALUE + "fillpercent").equals(name)) return "" + (getEnergyStored() * 100 / getMaxEnergyStored());
+        if ((PREFIX_VALUE + "delta").equals(name))       return "" + averagedEnergyDelta;
+        return null;
+    }
+
+    /**
+     * Original-Zaehlung der Modi (0 = Eingang, 1 = Puffer, 2 = Ausgang, 3 = aus) - der Port zaehlt
+     * 0 = Puffer, 1 = Eingang; die Funkbefehle bleiben bei der Original-Zaehlung.
+     */
+    private static int swapModeROR(int mode) {
+        return mode == 0 ? 1 : mode == 1 ? 0 : mode;
+    }
+
+    @Override
+    public String runRORFunction(String name, String[] params) {
+        // redLow = Modus ohne Redstone, redHigh = Modus mit Redstone
+        if ((PREFIX_FUNCTION + "setmode").equals(name) && params.length > 0) {
+            int mode = com.hbm_m.api.redstoneoverradio.IRORInteractive.parseInt(params[0], 0, 3);
+            if (mode != swapModeROR(this.modeOnNoSignal)) {
+                this.modeOnNoSignal = swapModeROR(mode);
+                this.markChangedROR();
+                return null;
+            } else if (params.length > 1) {
+                int altmode = com.hbm_m.api.redstoneoverradio.IRORInteractive.parseInt(params[1], 0, 3);
+                this.modeOnNoSignal = swapModeROR(altmode);
+                this.markChangedROR();
+                return null;
+            }
+            return null;
+        }
+        if ((PREFIX_FUNCTION + "setredmode").equals(name) && params.length > 0) {
+            int mode = com.hbm_m.api.redstoneoverradio.IRORInteractive.parseInt(params[0], 0, 3);
+            if (mode != swapModeROR(this.modeOnSignal)) {
+                this.modeOnSignal = swapModeROR(mode);
+                this.markChangedROR();
+                return null;
+            } else if (params.length > 1) {
+                int altmode = com.hbm_m.api.redstoneoverradio.IRORInteractive.parseInt(params[1], 0, 3);
+                this.modeOnSignal = swapModeROR(altmode);
+                this.markChangedROR();
+                return null;
+            }
+            return null;
+        }
+        if ((PREFIX_FUNCTION + "setpriority").equals(name) && params.length > 0) {
+            // Original: parseInt(0..2) + 1 -> LOW, NORMAL, HIGH
+            int priority = com.hbm_m.api.redstoneoverradio.IRORInteractive.parseInt(params[0], 0, 2) + 1;
+            this.priority = Priority.values()[priority];
+            this.markChangedROR();
+            return null;
+        }
+        return null;
+    }
+
+    /** Original {@code markChanged()}. */
+    private void markChangedROR() {
+        setChanged();
+        if (level != null && !level.isClientSide) level.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 3);
+    }
 }

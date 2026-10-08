@@ -78,7 +78,7 @@ public class ShredderRecipe extends PlatformRecipe {
 
         @Override
         public ShredderRecipe readJson(ResourceLocation recipeId, JsonObject json) {
-            Ingredient input = RecipeHooks.ingredientFromJson(GsonHelper.getAsJsonObject(json, "ingredient"));
+            Ingredient input = RecipeHooks.ingredientFromJson(json.get("ingredient")); // Objekt oder Liste (mehrere Items)
             JsonObject result = GsonHelper.getAsJsonObject(json, "result");
             ItemStack output = new ItemStack(
                     GsonHelper.getAsItem(result, "item"),

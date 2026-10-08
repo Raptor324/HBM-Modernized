@@ -30,7 +30,7 @@ import net.minecraft.world.level.material.Fluid;
  * ordinary steam from ultra-hot steam.</p>
  */
 public class RBMKBoilerBlockEntity extends RBMKColumnBlockEntity
-        implements MenuProvider, com.hbm_m.api.fluids.IFluidStandardTransceiverMK2 {
+        implements MenuProvider, com.hbm_m.api.fluids.IFluidStandardTransceiverMK2, com.hbm_m.api.redstoneoverradio.IRORValueProvider {
 
     public final FluidTank waterTank;
     public final FluidTank steamTank;
@@ -375,5 +375,24 @@ public class RBMKBoilerBlockEntity extends RBMKColumnBlockEntity
         waterTank.readFromNBT(tag, "water");
         steamTank.readFromNBT(tag, "steam");
         ventDelay = tag.getInt("ventDelay");
+    }
+
+    // ── Redstone-over-Radio (1:1 TileEntityRBMKBoiler) ──
+
+    @Override
+    public String[] getFunctionInfo() {
+        return new String[] {
+                PREFIX_VALUE + "feed",
+                PREFIX_VALUE + "steam",
+                PREFIX_VALUE + "consumption"
+        };
+    }
+
+    @Override
+    public String provideRORValue(String name) {
+        if ((PREFIX_VALUE + "feed").equals(name))        return "" + this.waterTank.getFill();
+        if ((PREFIX_VALUE + "steam").equals(name))       return "" + this.steamTank.getFill();
+        if ((PREFIX_VALUE + "consumption").equals(name)) return "" + this.lastConsumption;
+        return null;
     }
 }

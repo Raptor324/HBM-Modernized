@@ -65,12 +65,7 @@ import com.hbm_m.client.render.implementations.LaunchPadMissileRenderer;
 import com.hbm_m.client.render.implementations.MachineAdvancedAssemblerRenderer;
 import com.hbm_m.client.render.implementations.MachineAssemblerRenderer;
 import com.hbm_m.client.render.implementations.MachineChemicalPlantRenderer;
-import com.hbm_m.client.loader.MachineCoolingTowerModelLoader;
 import com.hbm_m.client.render.implementations.CrucibleRenderer;
-import com.hbm_m.client.render.implementations.MachineCoolingTowerRenderer;
-import com.hbm_m.client.render.implementations.MachineMiningDrillRenderer;
-import com.hbm_m.client.render.implementations.MachineOreSlopperRenderer;
-import com.hbm_m.client.render.implementations.MachineArcFurnaceRenderer;
 import com.hbm_m.client.render.implementations.SoyuzRocketRenderer;
 import com.hbm_m.client.render.implementations.MachineCrystallizerRenderer;
 import com.hbm_m.client.render.implementations.MachineHydraulicFrackiningTowerRenderer;
@@ -110,8 +105,6 @@ import com.hbm_m.inventory.gui.GUIMachineDerrick;
 import com.hbm_m.inventory.gui.GUIMachineFel;
 import com.hbm_m.inventory.gui.GUIMachineFlareStack;
 import com.hbm_m.inventory.gui.GUIMachineGasCentrifuge;
-import com.hbm_m.inventory.gui.GUIMachineIndustrialBoiler;
-import com.hbm_m.inventory.gui.GUIMachineSolarBoiler;
 import com.hbm_m.inventory.gui.GUIMachineFractionTower;
 import com.hbm_m.inventory.gui.GUIMachineLargePylon;
 import com.hbm_m.inventory.gui.GUIMachineMixer;
@@ -132,7 +125,6 @@ import com.hbm_m.inventory.gui.GUIMachineSilex;
 import com.hbm_m.inventory.gui.GUIMachineSolderingStation;
 import com.hbm_m.inventory.gui.GUIMachineSubstation;
 import com.hbm_m.inventory.gui.GUIMachineSteamTurbine;
-import com.hbm_m.inventory.gui.GUIMachineTurbine;
 import com.hbm_m.inventory.gui.GUIMachineZirnox;
 import com.hbm_m.inventory.gui.GUIMachineChemicalPlant;
 import com.hbm_m.inventory.gui.GUIMachineChemicalFactory;
@@ -290,6 +282,12 @@ public class ClientSetup {
         *///?}
 
         event.enqueueWork(ClientSetup::registerRadAbsorberItemProperties);
+        // SEDNA: Original GunFactoryClient.init() + Client-Empfaenger der Orchestras
+        event.enqueueWork(() -> {
+            com.hbm_m.item.weapon.sedna.factory.GunFactory.init();
+            com.hbm_m.client.weapon.OrchestrasClient.init();
+            com.hbm_m.client.weapon.GunFactoryClient.init();
+        });
         event.enqueueWork(ClientSetup::registerAlexandriteItemProperties);
         event.enqueueWork(ClientSetup::registerR4ItemProperties);
         event.enqueueWork(ClientSetup::registerPolaroidItemProperties);
@@ -361,6 +359,8 @@ public class ClientSetup {
                     return 1;
                 })
         );
+        // Original ClientCommandHandler: /ntmclient, /dumpthreadsandcrashgame
+        com.hbm_m.commands.HbmClientCommandsNT.register(event.getDispatcher());
     }
 
     @SuppressWarnings("removal")
@@ -401,6 +401,15 @@ public class ClientSetup {
         net.minecraft.client.renderer.item.ItemProperties.register(ModItems.TOOLBOX.get(),
                 ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "open"),
                 (stack, level, entity, seed) -> stack.hasTag() && stack.getTag().getBoolean("isOpen") ? 1F : 0F);
+        // Original ItemAmmoArty#getIconIndex: Frachtgranate mit Ladung
+        net.minecraft.client.renderer.item.ItemProperties.register(ModItems.AMMO_ARTY_CARGO.get(),
+                ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "cargo"),
+                (stack, level, entity, seed) -> com.hbm_m.item.weapon.ItemAmmoArty.hasCargo(stack) ? 1F : 0F);
+        // Original RenderStirling: Item-Schaden 1 = Motor ohne Zahnrad
+        for (net.minecraft.world.level.ItemLike s : new net.minecraft.world.level.ItemLike[] { ModBlocks.STIRLING.get(), ModBlocks.STIRLING_STEEL.get() })
+            net.minecraft.client.renderer.item.ItemProperties.register(s.asItem(),
+                    ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "no_cog"),
+                    (stack, level, entity, seed) -> com.hbm_m.block.machines.MachineStirlingBlock.isNoCog(stack) ? 1F : 0F);
     }
 
     private static void registerAlexandriteItemProperties() {
@@ -495,7 +504,7 @@ public class ClientSetup {
         MenuRegistry.registerScreenFactory(ModMenuTypes.RADIO_TORCH_COUNTER_MENU.get(), com.hbm_m.inventory.gui.radio.GUIRadioTorchCounter::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.MACHINE_STORAGE_DRUM_MENU.get(), com.hbm_m.inventory.gui.GUIMachineStorageDrum::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.MACHINE_SIREN_MENU.get(), com.hbm_m.inventory.gui.GUIMachineSiren::new);
-        MenuRegistry.registerScreenFactory(ModMenuTypes.MACHINE_FIREBOX_MENU.get(), com.hbm_m.inventory.gui.GUIMachineFirebox::new);
+        MenuRegistry.registerScreenFactory(ModMenuTypes.MACHINE_FIREBOX_MENU.get(), com.hbm_m.inventory.gui.GUIMachineFirebox<com.hbm_m.inventory.menu.MachineFireboxMenu>::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.MACHINE_KEYFORGE_MENU.get(), com.hbm_m.inventory.gui.GUIMachineKeyforge::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.MACHINE_MASS_STORAGE_MENU.get(), com.hbm_m.inventory.gui.GUIMachineMassStorage::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.RBMK_CONSOLE_MENU.get(), GUIMachineRbmkConsole::new);
@@ -525,9 +534,6 @@ public class ClientSetup {
         MenuRegistry.registerScreenFactory(ModMenuTypes.FEL_MENU.get(), GUIMachineFel::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.SILEX_MENU.get(), GUIMachineSilex::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.GAS_CENTRIFUGE_MENU.get(), GUIMachineGasCentrifuge::new);
-        MenuRegistry.registerScreenFactory(ModMenuTypes.INDUSTRIAL_BOILER_MENU.get(), GUIMachineIndustrialBoiler::new);
-        MenuRegistry.registerScreenFactory(ModMenuTypes.SOLAR_BOILER_MENU.get(), GUIMachineSolarBoiler::new);
-        MenuRegistry.registerScreenFactory(ModMenuTypes.TURBINE_MENU.get(), GUIMachineTurbine::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.LARGE_TURBINE_MENU.get(), com.hbm_m.inventory.gui.GUIMachineLargeTurbine::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.TURBINEGAS_MENU.get(), com.hbm_m.inventory.gui.GUIMachineTurbineGas::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.STEAM_TURBINE_MENU.get(), GUIMachineSteamTurbine::new);
@@ -537,6 +543,7 @@ public class ClientSetup {
         MenuRegistry.registerScreenFactory(ModMenuTypes.MACHINE_ASSEMBLER_MENU.get(), GUIMachineAssembler::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.ADVANCED_ASSEMBLY_MACHINE_MENU.get(), GUIMachineAdvancedAssembler::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.MACHINE_DIFURNACE_RTG_MENU.get(), com.hbm_m.inventory.gui.GUIMachineDifurnaceRtg::new);
+        MenuRegistry.registerScreenFactory(ModMenuTypes.MACHINE_RTG_FURNACE_MENU.get(), com.hbm_m.inventory.gui.GUIRtgFurnace::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.MACHINE_BATTERY_MENU.get(), GUIMachineBattery::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.BATTERY_SOCKET_MENU.get(), GUIBatterySocket::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.BLAST_FURNACE_MENU.get(), GUIBlastFurnace::new);
@@ -558,14 +565,21 @@ public class ClientSetup {
         MenuRegistry.registerScreenFactory(ModMenuTypes.TURBOFAN_MENU.get(), com.hbm_m.inventory.gui.GUIMachineTurbofan::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.FUNNEL_MENU.get(), com.hbm_m.inventory.gui.GUIMachineFunnel::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.PUREX_MENU.get(), com.hbm_m.inventory.gui.GUIMachinePUREX::new);
+        MenuRegistry.registerScreenFactory(ModMenuTypes.PRECASS_MENU.get(), com.hbm_m.inventory.gui.GUIMachinePrecAss::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.WOOD_BURNER_MENU.get(), GUIMachineWoodBurner::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.TURRET_MENU.get(), com.hbm_m.inventory.gui.GUITurret::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.MISSILE_ASSEMBLY_MENU.get(), com.hbm_m.inventory.gui.GUIMissileAssembly::new);
+        MenuRegistry.registerScreenFactory(ModMenuTypes.CUSTOM_LAUNCHER_MENU.get(), com.hbm_m.inventory.gui.GUICustomLauncher::new);
+        MenuRegistry.registerScreenFactory(ModMenuTypes.CUSTOM_MACHINE_MENU.get(), com.hbm_m.inventory.gui.GUIMachineCustom::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.ANVIL_MENU.get(), GUIAnvil::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.CENTRIFUGE_MENU.get(), GUIMachineCentrifuge::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.IRON_CRATE_MENU.get(), GUIIronCrate::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.FILE_CABINET_MENU.get(), com.hbm_m.inventory.gui.GUIFileCabinet::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.STEEL_CRATE_MENU.get(), GUISteelCrate::new);
+        MenuRegistry.registerScreenFactory(ModMenuTypes.CART_CRATE_MENU.get(), com.hbm_m.inventory.gui.GUICartScreens.Crate::new);
+        MenuRegistry.registerScreenFactory(ModMenuTypes.CART_DESTROYER_MENU.get(), com.hbm_m.inventory.gui.GUICartScreens.Destroyer::new);
+        MenuRegistry.registerScreenFactory(ModMenuTypes.TRAIN_CARGO_TRAM_MENU.get(), com.hbm_m.inventory.gui.GUITrainCargoTram::new);
+        MenuRegistry.registerScreenFactory(ModMenuTypes.TRAIN_CARGO_TRAM_TRAILER_MENU.get(), com.hbm_m.inventory.gui.GUITrainCargoTramTrailer::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.DESH_CRATE_MENU.get(), GUIDeshCrate::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.TUNGSTEN_CRATE_MENU.get(), GUITungstenCrate::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.SAFE_MENU.get(), com.hbm_m.inventory.gui.GUISafe::new);
@@ -574,6 +588,9 @@ public class ClientSetup {
         MenuRegistry.registerScreenFactory(ModMenuTypes.BAT9000_MENU.get(), com.hbm_m.inventory.gui.GUIBat9000::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.BOOK_MENU.get(), com.hbm_m.inventory.gui.GUIBook::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.HELD_ITEM_MENU.get(), com.hbm_m.inventory.gui.GUIHeldItem::new);
+        // SEDNA: Waffenmodifikationstisch + Huelsen-Partikel ("casingNT")
+        MenuRegistry.registerScreenFactory(ModMenuTypes.WEAPON_TABLE_MENU.get(), com.hbm_m.inventory.gui.GUIWeaponTable::new);
+        com.hbm_m.client.particle.CasingClientCreator.register();
         MenuRegistry.registerScreenFactory(ModMenuTypes.REBAR_MENU.get(), com.hbm_m.inventory.gui.GUIRebar::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.SAT_DOCK_MENU.get(), com.hbm_m.inventory.gui.GUISatDock::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.LEMEGETON_MENU.get(), com.hbm_m.inventory.gui.GUILemegeton::new);
@@ -587,7 +604,10 @@ public class ClientSetup {
         MenuRegistry.registerScreenFactory(ModMenuTypes.BARREL_ANTIMATTER_MENU.get(), com.hbm_m.inventory.gui.GUIFluidTank::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.CHEMICAL_PLANT_MENU.get(), GUIMachineChemicalPlant::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.CHEMICAL_FACTORY_MENU.get(), GUIMachineChemicalFactory::new);
+        MenuRegistry.registerScreenFactory(ModMenuTypes.ASSEMBLY_FACTORY_MENU.get(), com.hbm_m.inventory.gui.GUIMachineAssemblyFactory::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.SOYUZ_LAUNCHER_MENU.get(), com.hbm_m.inventory.gui.GUISoyuzLauncher::new);
+        MenuRegistry.registerScreenFactory(ModMenuTypes.SOYUZ_CAPSULE_MENU.get(), com.hbm_m.inventory.gui.GUISoyuzCapsule::new);
+        MenuRegistry.registerScreenFactory(ModMenuTypes.BATTERY_REDD_MENU.get(), com.hbm_m.inventory.gui.GUIBatteryREDD::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.MACHINE_SATLINKER_MENU.get(), com.hbm_m.inventory.gui.GUIMachineSatLinker::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.FRACTURING_TOWER_MENU.get(), GUIMachineFrackingTower::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.REFINERY_MENU.get(), GUIMachineRefinery::new);
@@ -614,7 +634,8 @@ public class ClientSetup {
         MenuRegistry.registerScreenFactory(ModMenuTypes.MICROWAVE_MENU.get(), com.hbm_m.inventory.gui.GUIMachineMicrowave::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.EXPOSURE_CHAMBER_MENU.get(), com.hbm_m.inventory.gui.GUIMachineExposureChamber::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.RADIOLYSIS_MENU.get(), com.hbm_m.inventory.gui.GUIMachineRadiolysis::new);
-        MenuRegistry.registerScreenFactory(ModMenuTypes.ELECTROLYSER_MENU.get(), com.hbm_m.inventory.gui.GUIMachineElectrolyser::new);
+        MenuRegistry.registerScreenFactory(ModMenuTypes.ELECTROLYSER_FLUID_MENU.get(), com.hbm_m.inventory.gui.GUIElectrolyserFluid::new);
+        MenuRegistry.registerScreenFactory(ModMenuTypes.ELECTROLYSER_METAL_MENU.get(), com.hbm_m.inventory.gui.GUIElectrolyserMetal::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.COMPRESSOR_MENU.get(), com.hbm_m.inventory.gui.GUIMachineCompressor::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.ELECTRIC_FURNACE_MENU.get(), com.hbm_m.inventory.gui.GUIMachineElectricFurnace::new);
         MenuRegistry.registerScreenFactory(ModMenuTypes.FURNACE_BRICK_MENU.get(), com.hbm_m.inventory.gui.GUIMachineFurnaceBrick::new);
@@ -624,6 +645,8 @@ public class ClientSetup {
 
         ModEntities.SOYUZ.ifPresent(entityType -> EntityRenderers.register(entityType, com.hbm_m.client.render.implementations.SoyuzEntityRenderer::new));
         ModEntities.SOYUZ_CAPSULE.ifPresent(entityType -> EntityRenderers.register(entityType, com.hbm_m.client.render.implementations.SoyuzCapsuleEntityRenderer::new));
+        ModEntities.ARTILLERY_SHELL.ifPresent(entityType -> EntityRenderers.register(entityType, com.hbm_m.client.render.projectile.RenderArtilleryShell::new));
+        ModEntities.ARTILLERY_ROCKET.ifPresent(entityType -> EntityRenderers.register(entityType, com.hbm_m.client.render.projectile.RenderArtilleryRocket::new));
         ModEntities.ZIRNOX_DEBRIS.ifPresent(entityType -> EntityRenderers.register(entityType, ZirnoxDebrisRenderer::new));
         ModEntities.RBMK_DEBRIS.ifPresent(entityType -> EntityRenderers.register(entityType, com.hbm_m.client.render.rbmk.RBMKDebrisRenderer::new));
         ModEntities.MOVING_CONVEYOR_ITEM.ifPresent(entityType -> EntityRenderers.register(entityType, com.hbm_m.client.render.entity.MovingConveyorRenderers.Item::new));
@@ -649,8 +672,18 @@ public class ClientSetup {
         ModEntities.DEATH_BLAST.ifPresent(entityType -> EntityRenderers.register(entityType, com.hbm_m.client.render.effect.OrbitalStrikeRenderer::deathBlast));
         ModEntities.ORBITAL_LASER.ifPresent(entityType -> EntityRenderers.register(entityType, com.hbm_m.client.render.effect.OrbitalStrikeRenderer::orbitalLaser));
         ModEntities.MINER_ROCKET.ifPresent(entityType -> EntityRenderers.register(entityType, com.hbm_m.client.render.implementations.MinerRocketRenderer::new));
+        ModEntities.BOBMAZON.ifPresent(entityType -> EntityRenderers.register(entityType, com.hbm_m.client.render.implementations.BobmazonRenderer::new));
         ModEntities.METEOR.ifPresent(entityType -> EntityRenderers.register(entityType, com.hbm_m.client.render.implementations.MeteorRenderer::new));
         ModEntities.BOXCAR.ifPresent(entityType -> EntityRenderers.register(entityType, com.hbm_m.client.render.implementations.BoxcarRenderer::new));
+        ModEntities.DUCHESS_GAMBIT.ifPresent(entityType -> EntityRenderers.register(entityType, com.hbm_m.client.render.implementations.FallingProjectileRenderer::new));
+        ModEntities.BUILDING.ifPresent(entityType -> EntityRenderers.register(entityType, com.hbm_m.client.render.implementations.FallingProjectileRenderer::new));
+        ModEntities.TORPEDO.ifPresent(entityType -> EntityRenderers.register(entityType, com.hbm_m.client.render.implementations.FallingProjectileRenderer::new));
+        ModEntities.SIEGE_LASER.ifPresent(entityType -> EntityRenderers.register(entityType, com.hbm_m.client.render.projectile.SiegeLaserRenderer::new));
+        ModEntities.FOG_FX.ifPresent(entityType -> EntityRenderers.register(entityType, com.hbm_m.client.render.entity.FogRenderer::new));
+        ModEntities.WASTE_PEARL.ifPresent(entityType -> EntityRenderers.register(entityType, com.hbm_m.client.render.entity.WhiteBoxRenderer::new));
+        ModEntities.UNDEAD_SOLDIER.ifPresent(entityType -> EntityRenderers.register(entityType, com.hbm_m.client.render.entity.UndeadSoldierRenderer::new));
+        ModEntities.SIEGE_CRAFT.ifPresent(entityType -> EntityRenderers.register(entityType, com.hbm_m.client.render.mob.SiegeCraftRenderer::new));
+        ModEntities.SIEGE_TUNNELER.ifPresent(entityType -> EntityRenderers.register(entityType, com.hbm_m.client.render.mob.SiegeTunnelerRenderer::new));
         ModEntities.BOAT_RUBBER.ifPresent(entityType -> EntityRenderers.register(entityType, com.hbm_m.client.render.implementations.BoatRubberRenderer::new));
         ModEntities.ITEM_BUOYANT.ifPresent(entityType -> EntityRenderers.register(entityType, net.minecraft.client.renderer.entity.ItemEntityRenderer::new));
         ModEntities.GRENADEHE_PROJECTILE.ifPresent(entityType -> EntityRenderers.register(entityType, ThrownItemRenderer::new));
@@ -658,6 +691,7 @@ public class ClientSetup {
         ModEntities.GRENADESMART_PROJECTILE.ifPresent(entityType -> EntityRenderers.register(entityType, ThrownItemRenderer::new));
         ModEntities.GRENADESLIME_PROJECTILE.ifPresent(entityType -> EntityRenderers.register(entityType, ThrownItemRenderer::new));
         ModEntities.GRENADE_IF_PROJECTILE.ifPresent(entityType -> EntityRenderers.register(entityType, ThrownItemRenderer::new));
+        ModEntities.MISSILE_CUSTOM.ifPresent(entityType -> EntityRenderers.register(entityType, com.hbm_m.client.render.entity.MissileCustomRenderer::new));
         ModEntities.MISSILE_TEST.ifPresent(entityType -> EntityRenderers.register(entityType, MissileEntityRenderer::new));
         ModEntities.MISSILE_ABM.ifPresent(entityType -> EntityRenderers.register(entityType, MissileEntityRenderer::new));
         ModEntities.MISSILE_MICRO.ifPresent(entityType -> EntityRenderers.register(entityType, MissileEntityRenderer::new));
@@ -698,8 +732,8 @@ public class ClientSetup {
         ModEntities.DIGAMMA_SPEAR.ifPresent(entityType -> EntityRenderers.register(entityType, com.hbm_m.client.render.effect.SpearRenderer::new));
         ModEntities.RUBBLE.ifPresent(entityType -> EntityRenderers.register(entityType, RubbleEntityRenderer::new));
         ModEntities.SHRAPNEL.ifPresent(entityType -> EntityRenderers.register(entityType, com.hbm_m.client.render.effect.ShrapnelRenderer::new));
-        ModEntities.PILE_DEBRIS.ifPresent(entityType -> EntityRenderers.register(entityType, com.hbm_m.client.render.effect.PileDebrisRenderer::new));
         ModEntities.COG.ifPresent(entityType -> EntityRenderers.register(entityType, com.hbm_m.client.render.effect.CogRenderer::new));
+        ModEntities.SAWBLADE.ifPresent(entityType -> EntityRenderers.register(entityType, com.hbm_m.client.render.effect.SawbladeRenderer::new));
 
         // Сеть длинной ЛЭП: один рендерер кабелей для всех пилонов/коннекторов.
         {
@@ -707,17 +741,28 @@ public class ClientSetup {
                     com.hbm_m.client.render.implementations.RedPylonWireRenderer::new;
             BlockEntityRenderers.register(ModBlockEntities.FORCE_FIELD_BE.get(),
                     com.hbm_m.client.render.implementations.ForceFieldRenderer::new);
+            BlockEntityRenderers.register(ModBlockEntities.RAIL_SWITCH.get(),
+                    com.hbm_m.client.render.implementations.RailSwitchRenderer::new);
             BlockEntityRenderers.register(ModBlockEntities.PNEUMO_TUBE_PAINTABLE_BE.get(),
                     com.hbm_m.client.render.implementations.PneumoTubePaintableRenderer::new);
             BlockEntityRenderers.register(ModBlockEntities.RED_CONNECTOR_BE.get(), wireRenderer);
+            BlockEntityRenderers.register(ModBlockEntities.MISSILE_ASSEMBLY_BE.get(), com.hbm_m.client.render.implementations.MissileAssemblyRenderer::new);
+            BlockEntityRenderers.register(ModBlockEntities.COMPACT_LAUNCHER_BE.get(), com.hbm_m.client.render.implementations.CustomLauncherRenderers.Compact::new);
+            BlockEntityRenderers.register(ModBlockEntities.LAUNCH_TABLE_BE.get(), com.hbm_m.client.render.implementations.CustomLauncherRenderers.Table::new);
+            BlockEntityRenderers.register(ModBlockEntities.STRUCT_LAUNCHER_CORE_BE.get(), com.hbm_m.client.render.implementations.CustomLauncherRenderers.Struct::new);
+            BlockEntityRenderers.register(ModBlockEntities.CUSTOM_MACHINE_BE.get(), com.hbm_m.client.render.implementations.CustomMachineRenderer::new);
             BlockEntityRenderers.register(ModBlockEntities.FLOODLIGHT.get(), com.hbm_m.client.render.implementations.FloodlightRenderer::new);
             BlockEntityRenderers.register(ModBlockEntities.LANTERN.get(), com.hbm_m.client.render.implementations.LanternRenderer::new);
             BlockEntityRenderers.register(ModBlockEntities.DECO_BLOCK.get(), com.hbm_m.client.render.implementations.DecoBlockRenderer::new);
             BlockEntityRenderers.register(ModBlockEntities.DECO_EMITTER.get(), com.hbm_m.client.render.implementations.EmitterRenderer::new);
             BlockEntityRenderers.register(ModBlockEntities.SKELETON_HOLDER.get(), com.hbm_m.client.render.implementations.SkeletonHolderRenderer::new);
+            BlockEntityRenderers.register(ModBlockEntities.WAND_STRUCTURE.get(), com.hbm_m.client.render.implementations.WandStructureRenderer::new);
+            BlockEntityRenderers.register(ModBlockEntities.LOGIC_BLOCK.get(), com.hbm_m.client.render.implementations.LogicBlockRenderer::new);
             BlockEntityRenderers.register(ModBlockEntities.VENDING_MACHINE.get(), com.hbm_m.client.render.implementations.VendingMachineRenderer::new);
             BlockEntityRenderers.register(ModBlockEntities.TRINKET.get(), com.hbm_m.client.render.implementations.TrinketRenderer::new);
+            BlockEntityRenderers.register(ModBlockEntities.OBJ_TESTER.get(), com.hbm_m.client.render.implementations.ObjTesterRenderer::new);
             BlockEntityRenderers.register(ModBlockEntities.FILE_CABINET.get(), com.hbm_m.client.render.implementations.FileCabinetRenderer::new);
+            BlockEntityRenderers.register(ModBlockEntities.STATUE_ELB_F.get(), com.hbm_m.client.render.implementations.StatueRenderer::new);
             BlockEntityRenderers.register(ModBlockEntities.CHARGE.get(), com.hbm_m.client.render.implementations.ChargeRenderer::new);
             BlockEntityRenderers.register(ModBlockEntities.DEMON_LAMP.get(), com.hbm_m.client.render.implementations.DemonLampRenderer::new);
             BlockEntityRenderers.register(ModBlockEntities.THRESHER_BE.get(), com.hbm_m.client.render.implementations.ThresherRenderer::new);
@@ -725,6 +770,8 @@ public class ClientSetup {
             BlockEntityRenderers.register(ModBlockEntities.PYROOVEN_BE.get(), com.hbm_m.client.render.implementations.PyroOvenRenderer::new);
             BlockEntityRenderers.register(ModBlockEntities.ANNIHILATOR_BE.get(), com.hbm_m.client.render.implementations.AnnihilatorRenderer::new);
             BlockEntityRenderers.register(ModBlockEntities.BOILER_BE.get(), com.hbm_m.client.render.implementations.BoilerRenderer::new);
+            BlockEntityRenderers.register(ModBlockEntities.SOLAR_BOILER_BE.get(), com.hbm_m.client.render.implementations.SolarBoilerRenderer::new);
+            BlockEntityRenderers.register(ModBlockEntities.SOLAR_MIRROR_BE.get(), com.hbm_m.client.render.implementations.SolarMirrorRenderer::new);
             BlockEntityRenderers.register(ModBlockEntities.COMBUSTION_ENGINE_BE.get(), com.hbm_m.client.render.implementations.CombustionEngineRenderer::new);
             BlockEntityRenderers.register(ModBlockEntities.COMPRESSOR_BE.get(), com.hbm_m.client.render.implementations.CompressorRenderer.Large::new);
             BlockEntityRenderers.register(ModBlockEntities.COMPRESSOR_COMPACT_BE.get(), com.hbm_m.client.render.implementations.CompressorRenderer.Compact::new);
@@ -738,6 +785,8 @@ public class ClientSetup {
             BlockEntityRenderers.register(ModBlockEntities.MACHINE_PUMP_STEAM_BE.get(), com.hbm_m.client.render.implementations.PumpRenderer::new);
             BlockEntityRenderers.register(ModBlockEntities.MACHINE_PUMP_ELECTRIC_BE.get(), com.hbm_m.client.render.implementations.PumpRenderer::new);
             BlockEntityRenderers.register(ModBlockEntities.PUREX_BE.get(), com.hbm_m.client.render.implementations.PurexRenderer::new);
+            BlockEntityRenderers.register(ModBlockEntities.PRECASS_BE.get(), com.hbm_m.client.render.implementations.MachinePrecAssRenderer::new);
+            BlockEntityRenderers.register(ModBlockEntities.SOYUZ_STRUCT_BE.get(), com.hbm_m.client.render.implementations.StructSoyuzCoreRenderer::new);
             BlockEntityRenderers.register(ModBlockEntities.RADGEN_BE.get(), com.hbm_m.client.render.implementations.RadGenRenderer::new);
             BlockEntityRenderers.register(ModBlockEntities.RADIOLYSIS_BE.get(), com.hbm_m.client.render.implementations.RadiolysisRenderer::new);
             BlockEntityRenderers.register(ModBlockEntities.SOLIDIFIER_BE.get(), com.hbm_m.client.render.implementations.SolidifierRenderer::solidifier);
@@ -749,6 +798,30 @@ public class ClientSetup {
             BlockEntityRenderers.register(ModBlockEntities.VACUUM_DISTILL_BE.get(), com.hbm_m.client.render.implementations.VacuumDistillRenderer::new);
             BlockEntityRenderers.register(ModBlockEntities.FEL_BE.get(), com.hbm_m.client.render.implementations.FelRenderer::new);
             BlockEntityRenderers.register(ModBlockEntities.SILEX_BE.get(), com.hbm_m.client.render.implementations.SilexRenderer::new);
+            BlockEntityRenderers.register(ModBlockEntities.CHIMNEY_BE.get(), com.hbm_m.client.render.implementations.ChimneyRenderer::new);
+            BlockEntityRenderers.register(ModBlockEntities.AMMO_PRESS_BE.get(), com.hbm_m.client.render.implementations.AmmoPressRenderer::new);
+            BlockEntityRenderers.register(ModBlockEntities.COMBINATION_OVEN_BE.get(), com.hbm_m.client.render.implementations.CombinationOvenRenderer::new);
+            BlockEntityRenderers.register(ModBlockEntities.ORE_SLOPPER_BE.get(), com.hbm_m.client.render.implementations.MachineOreSlopperRenderer::new);
+            BlockEntityRenderers.register(ModBlockEntities.REACTOR_RESEARCH_BE.get(), com.hbm_m.client.render.implementations.ReactorResearchRenderer::new);
+            BlockEntityRenderers.register(ModBlockEntities.SAWMILL_BE.get(), com.hbm_m.client.render.implementations.SawmillRenderer::new);
+            BlockEntityRenderers.register(ModBlockEntities.TURBOFAN_BE.get(), com.hbm_m.client.render.implementations.TurbofanRenderer::new);
+            BlockEntityRenderers.register(ModBlockEntities.RADIOBOX_BE.get(), com.hbm_m.client.render.implementations.RadioboxRenderer::new);
+            BlockEntityRenderers.register(ModBlockEntities.MINING_DRILL_BE.get(), com.hbm_m.client.render.implementations.MachineMiningDrillRenderer::new);
+            BlockEntityRenderers.register(ModBlockEntities.SLAG_BE.get(), com.hbm_m.client.render.implementations.SlagRenderer::new);
+            BlockEntityRenderers.register(ModBlockEntities.ROTARY_FURNACE_BE.get(), com.hbm_m.client.render.implementations.RotaryFurnaceRenderer::new);
+            BlockEntityRenderers.register(ModBlockEntities.ELECTROLYSER_BE.get(), com.hbm_m.client.render.implementations.ElectrolyserRenderer::new);
+            BlockEntityRenderers.register(ModBlockEntities.ARC_FURNACE_BE.get(), com.hbm_m.client.render.implementations.ArcFurnaceRenderer::new);
+            BlockEntityRenderers.register(ModBlockEntities.FAN_BE.get(), com.hbm_m.client.render.implementations.FanRenderer::new);
+            BlockEntityRenderers.register(ModBlockEntities.BATTERY_REDD_BE.get(), com.hbm_m.client.render.implementations.BatteryREDDRenderer::new);
+            BlockEntityRenderers.register(ModBlockEntities.MACHINE_FENSU_BE.get(), com.hbm_m.client.render.implementations.FENSURenderer::new);
+            BlockEntityRenderers.register(ModBlockEntities.ASSEMBLY_FACTORY_BE.get(), com.hbm_m.client.render.implementations.AssemblyFactoryRenderer::new);
+            BlockEntityRenderers.register(ModBlockEntities.INTAKE_BE.get(), com.hbm_m.client.render.implementations.IntakeRenderer::new);
+            BlockEntityRenderers.register(ModBlockEntities.NUKE_FSTBMB_BE.get(), com.hbm_m.client.render.implementations.NukeFstbmbRenderer::new);
+            BlockEntityRenderers.register(ModBlockEntities.SOYUZ_CAPSULE_BE.get(), com.hbm_m.client.render.implementations.SoyuzCapsuleRenderer::new);
+            BlockEntityRenderers.register(ModBlockEntities.PISTON_INSERTER_BE.get(), com.hbm_m.client.render.implementations.PistonInserterRenderer::new);
+            BlockEntityRenderers.register(ModBlockEntities.REFUELER_BE.get(), com.hbm_m.client.render.implementations.RefuelerRenderer::new);
+            BlockEntityRenderers.register(ModBlockEntities.LANTERN_BEHEMOTH_BE.get(), com.hbm_m.client.render.implementations.LanternBehemothRenderer::new);
+            BlockEntityRenderers.register(ModBlockEntities.STRAND_CASTER_BE.get(), com.hbm_m.client.render.implementations.StrandCasterRenderer::new);
             BlockEntityRenderers.register(ModBlockEntities.CRASHED_BOMB.get(), com.hbm_m.client.render.implementations.CrashedBombRenderer::new);
             BlockEntityRenderers.register(ModBlockEntities.RED_CONNECTOR_SUPER_BE.get(), wireRenderer);
             BlockEntityRenderers.register(ModBlockEntities.RED_PYLON_BE.get(), wireRenderer);
@@ -759,6 +832,7 @@ public class ClientSetup {
             BlockEntityRenderers.register(ModBlockEntities.PIPE_ANCHOR.get(), com.hbm_m.client.render.implementations.PipeAnchorRenderer::new);
             BlockEntityRenderers.register(ModBlockEntities.BLAST_DOOR.get(), com.hbm_m.client.render.implementations.BlastDoorRenderer::new);
             BlockEntityRenderers.register(ModBlockEntities.STRUCT_WATZ_CORE.get(), com.hbm_m.client.render.implementations.StructWatzCoreRenderer::new);
+            BlockEntityRenderers.register(ModBlockEntities.ICF_STRUCT_BE.get(), com.hbm_m.client.render.implementations.ICFStructRenderer::new);
         }
 
         MachineAdvancedAssemblerRenderer.register();
@@ -773,21 +847,27 @@ public class ClientSetup {
         MachineHydraulicFrackiningTowerRenderer.register();
         SoyuzLauncherRenderer.register();
         SoyuzRocketRenderer.register();
+        com.hbm_m.client.render.implementations.DynamicMachineRenderers.register(); // Audit 6: vorher nur statische Modelle
         BlockEntityRenderers.register(ModBlockEntities.HEATING_OVEN_BE.get(), HeatingOvenRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.FIREBOX_BE.get(), com.hbm_m.client.render.implementations.FireboxRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.CHEMICAL_FACTORY_BE.get(), com.hbm_m.client.render.implementations.ChemicalFactoryRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.MACHINE_CHUNGUS_BE.get(), com.hbm_m.client.render.implementations.ChungusRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.MIXER_BE.get(), com.hbm_m.client.render.implementations.MixerRenderer::new);
         // BlockEntityRenderers.register(ModBlockEntities.TEST_BE.get(), TestBlockRenderer::new);
         MachineCrystallizerRenderer.register();
         BlockEntityRenderers.register(ModBlockEntities.INDUSTRIAL_TURBINE_BE.get(), IndustrialTurbineRenderer::new);
-        BlockEntityRenderers.register(ModBlockEntities.BATTERY_SOCKET_BE.get(), BatterySocketCreativeRenderer::new);
+        // Audit 6: 1:1 RenderBatterySocket (Stuetzen, Sonnenpony, drehende Batterie) statt der freien Spielerfigur
+        BlockEntityRenderers.register(ModBlockEntities.BATTERY_SOCKET_BE.get(), com.hbm_m.client.render.implementations.BatterySocketRenderer::new);
         MachineFluidTankRenderer.register();
         BlockEntityRenderers.register(ModBlockEntities.LAUNCH_PAD_BE.get(), LaunchPadMissileRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.MOBILE_LAUNCH_PAD_BE.get(), com.hbm_m.client.render.implementations.MobileLaunchPadMissileRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.TOPOL_LAUNCH_PAD_BE.get(), com.hbm_m.client.render.implementations.TopolLauncherRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.LAUNCH_PAD_RUSTED_BE.get(), LaunchPadMissileRenderer::new);
-        MachineCoolingTowerRenderer.register();
+        BlockEntityRenderers.register(ModBlockEntities.COOLING_TOWER_BE.get(), com.hbm_m.client.render.implementations.CoolingTowerRenderer::large);
+        BlockEntityRenderers.register(ModBlockEntities.TOWER_SMALL_BE.get(), com.hbm_m.client.render.implementations.CoolingTowerRenderer::small);
         BlockEntityRenderers.register(ModBlockEntities.GAS_CENTRIFUGE_BE.get(), GasCentrifugeRenderer::new);
-        MachineMiningDrillRenderer.register();
-        MachineOreSlopperRenderer.register();
-        MachineArcFurnaceRenderer.register();
+
+
         BlockEntityRenderers.register(ModBlockEntities.TURRET_SENTRY_BE.get(), com.hbm_m.client.render.implementations.MachineTurretRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.TURRET_CHEKHOV_BE.get(), com.hbm_m.client.render.implementations.MachineTurretRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.TURRET_FRIENDLY_BE.get(), com.hbm_m.client.render.implementations.MachineTurretRenderer::new);
@@ -799,10 +879,13 @@ public class ClientSetup {
         BlockEntityRenderers.register(ModBlockEntities.TURRET_FRITZ_BE.get(), com.hbm_m.client.render.implementations.MachineTurretRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.TURRET_ARTY_BE.get(), com.hbm_m.client.render.implementations.MachineTurretRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.TURRET_HIMARS_BE.get(), com.hbm_m.client.render.implementations.MachineTurretRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.TURRET_SENTRY_DAMAGED_BE.get(), com.hbm_m.client.render.implementations.MachineTurretRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.TURRET_HOWARD_DAMAGED_BE.get(), com.hbm_m.client.render.implementations.MachineTurretRenderer::new);
         MachineRadarRenderer.register();
         BlockEntityRenderers.register(ModBlockEntities.RADAR_SCREEN_BE.get(), com.hbm_m.client.render.implementations.MachineRadarScreenRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.CRUCIBLE_BE.get(), CrucibleRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.FOUNDRY_BASIN_BE.get(), com.hbm_m.client.render.implementations.FoundryBasinRenderer::new);
+        BlockEntityRenderers.register(ModBlockEntities.FOUNDRY_MOLD_BE.get(), com.hbm_m.client.render.implementations.FoundryBasinRenderer::new);
         BlockEntityRenderers.register(ModBlockEntities.FOUNDRY_CHANNEL_BE.get(), com.hbm_m.client.render.implementations.FoundryChannelRenderer::new);
         // ─── RBMK column renderers ─────
         // ===== Fusionsreaktor =====
@@ -991,6 +1074,8 @@ public class ClientSetup {
         //? if forge {
         @SuppressWarnings("unchecked")
         Map<ResourceLocation, BakedModel> typedModels = (Map<ResourceLocation, BakedModel>) models;
+        // 1:1 ItemRendererMeteorSword: eingefaerbter Glanz der Meteoritenschwerter
+        com.hbm_m.client.model.MeteorSwordGlintModel.wrapAll(typedModels);
         com.hbm_m.client.compat.itemtransformhelper.ItemTransformHelperCompat.installDisplayTransformGuards(typedModels);
         //?}
     }
@@ -1030,6 +1115,9 @@ public class ClientSetup {
                 new CtEntry(ModBlocks.PLATEMETAL_LIGHT_BLUE, "platemetal_light_blue"),
                 new CtEntry(ModBlocks.PLATEMETAL_MAGENTA, "platemetal_magenta"),
                 new CtEntry(ModBlocks.PLATEMETAL_ORANGE, "platemetal_orange"),
+                // Original BlockNTMGlassCT reinforced_glass und WireCoated red_wire_coated (IBlockCT)
+                new CtEntry(ModBlocks.REINFORCED_GLASS, "reinforced_glass"),
+                new CtEntry(ModBlocks.RED_WIRE_COATED, "red_wire_coated"),
         };
 
         for (CtEntry e : entries) {
@@ -1197,6 +1285,11 @@ public class ClientSetup {
         PlatformHooks.registerItemModel(event, com.hbm_m.powerarmor.render.ClientPowerArmorRender.DNT_MODEL_ID);
 
         PlatformHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/doors/round_airlock_door_legacy"));
+        // Original SoyuzPronter.SoyuzSkin LUNA / AUTHENTIC
+        PlatformHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/soyuz_rocket_luna"));
+        PlatformHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/soyuz_rocket_authentic"));
+        // Restport: flaches Inventar-Icon der B92 (GunB92ItemRenderer, GUI-Zweig)
+        PlatformHooks.registerAdditionalModel(event, com.hbm_m.client.render.item.GunB92ItemRenderer.ICON_MODEL);
         // ClientConfig.RENDER_REBAR_SIMPLE: nur drei Staebe
         PlatformHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/rebar_simple"));
         PlatformHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/machines/crystallizer_fluid"));
@@ -1214,8 +1307,6 @@ public class ClientSetup {
         PlatformHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/machines/ore_slopper_blades_right"));
 
         // arc_furnace
-        PlatformHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/machines/arc_furnace_electrodes_cold"));
-        PlatformHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/machines/arc_furnace_electrodes_hot"));
 
         PlatformHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/deco_soyuz_rocket"));
 
@@ -1226,7 +1317,11 @@ public class ClientSetup {
                 "fritz_gun", "maxwell_microwave",
                 "arty_carriage", "arty_cannon", "arty_barrel",
                 "himars_carriage", "himars_launcher", "himars_crane",
-                "sentry_pivot", "sentry_body", "sentry_drum", "sentry_barrell", "sentry_barrelr"
+                "sentry_pivot", "sentry_body", "sentry_drum", "sentry_barrell", "sentry_barrelr",
+                "sentry_damaged_pivot", "sentry_damaged_body", "sentry_damaged_drum", "sentry_damaged_barrell", "sentry_damaged_barrelr",
+                "howard_damaged_carriage", "howard_damaged_body", "howard_damaged_barrelstop", "howard_damaged_barrelsbottom",
+                // Sockel der Mehrblock-Tuerme (zeichnet der BER am Turm-Zentrum)
+                "chekhov_base", "chekhov_base_friendly", "chekhov_base_rusted", "arty_base", "chekhov_connectors"
         }) {
             PlatformHooks.registerAdditionalModel(event, ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/turret_parts/" + part));
         }
@@ -1306,7 +1401,6 @@ public class ClientSetup {
         event.register(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("forge", "obj"), net.neoforged.neoforge.client.model.obj.ObjLoader.INSTANCE);
         *///?}
         
-        PlatformHooks.registerGeometryLoader(event, "cooling_tower_loader", new MachineCoolingTowerModelLoader());
         PlatformHooks.registerGeometryLoader(event, "radar_loader", new MachineRadarModelLoader());
         PlatformHooks.registerGeometryLoader(event, "soyuz_launcher_loader", new com.hbm_m.client.loader.SoyuzLauncherModelLoader());
         PlatformHooks.registerGeometryLoader(event, "soyuz_rocket_loader", new com.hbm_m.client.loader.SoyuzRocketModelLoader());
@@ -1336,6 +1430,9 @@ public class ClientSetup {
 
     @SubscribeEvent
     public static void onRegisterItemColors(RegisterColorHandlersEvent.Item event) {
+        // Original ItemCassette.getColorFromItemStack: Overlay in Trackfarbe
+        event.register((stack, tintIndex) -> com.hbm_m.item.machine.ItemCassette.getColor(stack, tintIndex),
+                ModItems.CASSETTES.stream().map(r -> (net.minecraft.world.level.ItemLike) r.get()).toArray(net.minecraft.world.level.ItemLike[]::new));
         // R6e: getRenderColor - Gras-Farbe (0.5, 1.0) fuer Tabak/Hanf
         event.register((stack, tintIndex) -> tintIndex == 0 ? net.minecraft.world.level.GrassColor.get(0.5D, 1.0D) : 0xFFFFFF,
                 ModBlocks.PLANT_FLOWER_TOBACCO.get(), ModBlocks.PLANT_FLOWER_WEED.get(), ModBlocks.PLANT_TALL_WEED.get());
@@ -1349,6 +1446,8 @@ public class ClientSetup {
         // Двухслойные (dye/crayon) тинтуруются только на layer1 (оверлей).
         // Original ItemBookLore.getColorFromItemStack: Schicht 1 Einband, Schicht 2 Titel
         event.register((stack, tintIndex) -> opaqueTint(com.hbm_m.item.special.ItemBookLore.getColor(stack, tintIndex)), ModItems.BOOK_LORE.get());
+        // Original ItemKitCustom.getColorFromItemStack: Pass 1/2 aus dem NBT
+        event.register((stack, tintIndex) -> opaqueTint(com.hbm_m.item.special.ItemKitCustom.getRenderColor(stack, tintIndex)), ModItems.KIT_CUSTOM.get());
         event.register((stack, tintIndex) ->
                 opaqueTint(com.hbm_m.item.PartTabMetaItems.tintFor(stack.getItem(), tintIndex)),
                 com.hbm_m.item.PartTabMetaItems.tintedItems());
@@ -1447,9 +1546,27 @@ public class ClientSetup {
         event.registerEntityRenderer(ModEntities.NUKE_MK3.get(), ctx -> new EmptyEntityRenderer<>(ctx));
         event.registerEntityRenderer(ModEntities.SOLINIUM_EXPLOSION.get(), ctx -> new EmptyEntityRenderer<>(ctx));
         event.registerEntityRenderer(ModEntities.BALEFIRE_EXPLOSION.get(), ctx -> new EmptyEntityRenderer<>(ctx));
-        event.registerEntityRenderer(ModEntities.TOM_METEOR.get(), ctx -> new EmptyEntityRenderer<>(ctx));
+        event.registerEntityRenderer(ModEntities.TOM_METEOR.get(), com.hbm_m.client.render.effect.TomRenderers.Tom::new);
+        event.registerEntityRenderer(ModEntities.B92_BEAM.get(), com.hbm_m.client.render.projectile.B92BeamRenderer::new);
+        event.registerEntityRenderer(ModEntities.BULLET_BASE_NT.get(), com.hbm_m.client.render.projectile.RenderBulletNT::new);
+        event.registerEntityRenderer(ModEntities.CLOUD_TOM.get(), com.hbm_m.client.render.effect.TomRenderers.CloudTom::new);
+        event.registerEntityRenderer(ModEntities.CART_CRATE.get(), com.hbm_m.client.render.entity.NeoCartRenderer::new);
+        event.registerEntityRenderer(ModEntities.CART_DESTROYER.get(), com.hbm_m.client.render.entity.NeoCartRenderer::new);
+        event.registerEntityRenderer(ModEntities.CART_ORE.get(), com.hbm_m.client.render.entity.NeoCartRenderer::new);
+        event.registerEntityRenderer(ModEntities.CART_POWDER.get(), com.hbm_m.client.render.entity.NeoCartRenderer::new);
+        event.registerEntityRenderer(ModEntities.CART_SEMTEX.get(), com.hbm_m.client.render.entity.NeoCartRenderer::new);
+        // Zugsystem + Test-Lore (Original ClientProxy: RenderMinecartTest, RenderEmpty fuer Sitz-/Hitbox-Dummys)
+        event.registerEntityRenderer(ModEntities.MINECART_TEST.get(), com.hbm_m.client.render.entity.RenderMinecartTest::new);
+        event.registerEntityRenderer(ModEntities.TRAIN_SEAT_DUMMY.get(), net.minecraft.client.renderer.entity.NoopRenderer::new);
+        event.registerEntityRenderer(ModEntities.TRAIN_BOUNDING_DUMMY.get(), net.minecraft.client.renderer.entity.NoopRenderer::new);
+        event.registerEntityRenderer(ModEntities.TRAIN_CARGO_TRAM.get(), com.hbm_m.client.render.entity.RenderTrainCargoTram::new);
+        event.registerEntityRenderer(ModEntities.TRAIN_CARGO_TRAM_TRAILER.get(), com.hbm_m.client.render.entity.RenderTrainCargoTramTrailer::new);
         event.registerEntityRenderer(ModEntities.TOM_BLAST.get(), ctx -> new EmptyEntityRenderer<>(ctx));
         event.registerEntityRenderer(ModEntities.CLOUD_FLEIJA.get(), RenderCloudFleija::new);
+        event.registerEntityRenderer(ModEntities.CLOUD_FLEIJA_RAINBOW.get(), com.hbm_m.client.render.effect.RenderCloudRainbow::new);
+        event.registerEntityRenderer(ModEntities.CLOUD_SOLINIUM.get(), com.hbm_m.client.render.effect.RenderCloudSolinium::new);
+        event.registerEntityRenderer(ModEntities.FALLING_NUKE.get(), com.hbm_m.client.render.projectile.FallingNukeRenderer::new);
+        event.registerEntityRenderer(ModEntities.BURNING_FOEQ.get(), com.hbm_m.client.render.projectile.BurningFOEQRenderer::new);
         event.registerEntityRenderer(ModEntities.NUKE_MK5.get(), ctx -> new EmptyEntityRenderer<>(ctx));
         event.registerEntityRenderer(ModEntities.FALLING_SELLAFIT_ENTITY_TYPE.get(), FallingBlockRenderer::new);
         event.registerEntityRenderer(ModEntities.MISSILE_TEST.get(), MissileEntityRenderer::new);
@@ -1492,15 +1609,50 @@ public class ClientSetup {
         event.registerEntityRenderer(ModEntities.DIGAMMA_SPEAR.get(), com.hbm_m.client.render.effect.SpearRenderer::new);
         event.registerEntityRenderer(ModEntities.RUBBLE.get(), RubbleEntityRenderer::new);
         event.registerEntityRenderer(ModEntities.SHRAPNEL.get(), com.hbm_m.client.render.effect.ShrapnelRenderer::new);
+        event.registerEntityRenderer(ModEntities.BULLET_MK4.get(), com.hbm_m.client.weapon.BulletRenderers.MK4::new);
+        event.registerEntityRenderer(ModEntities.BULLET_MK4_CL.get(), com.hbm_m.client.weapon.BulletRenderers.MK4::new);
+        event.registerEntityRenderer(ModEntities.BULLET_BEAM.get(), com.hbm_m.client.weapon.BulletRenderers.Beam::new);
+        event.registerEntityRenderer(ModEntities.COIN.get(), net.minecraft.client.renderer.entity.NoopRenderer::new);
+        event.registerEntityRenderer(ModEntities.FIRE_LINGERING.get(), net.minecraft.client.renderer.entity.NoopRenderer::new);
+        event.registerEntityRenderer(ModEntities.GRENADE_UNIVERSAL.get(), com.hbm_m.client.weapon.render.RenderGrenadeUniversal::new);
         event.registerEntityRenderer(ModEntities.RAD_BEAST.get(), com.hbm_m.client.render.mob.RADBeastRenderer::new);
         event.registerEntityRenderer(ModEntities.BOT_PRIME_HEAD.get(), com.hbm_m.client.render.mob.BOTPrimeRenderer::head);
         event.registerEntityRenderer(ModEntities.BOT_PRIME_BODY.get(), com.hbm_m.client.render.mob.BOTPrimeRenderer::body);
         event.registerEntityRenderer(ModEntities.UFO.get(), com.hbm_m.client.render.mob.UFORenderer::new);
         event.registerEntityRenderer(ModEntities.BOMBER.get(), com.hbm_m.client.render.plane.BomberRenderer::new);
-        // The bomblet is a 0.5-block object falling at terminal velocity; the original renders a
-        // small model, but it is on screen for a fraction of a second either way.
-        event.registerEntityRenderer(ModEntities.BOMBLET_ZETA.get(), com.hbm_m.client.render.EmptyEntityRenderer::new);
+        // 1:1 RenderBombletTheta (Zeta: halbe Groesse, eigene Textur)
+        event.registerEntityRenderer(ModEntities.BOMBLET_ZETA.get(), com.hbm_m.client.render.projectile.BombletThetaRenderer::new);
         event.registerEntityRenderer(ModEntities.MASKMAN.get(), com.hbm_m.client.render.mob.MaskManRenderer::new);
+        event.registerEntityRenderer(ModEntities.GLYPHID.get(), com.hbm_m.client.render.mob.GlyphidRenderer::new);
+        event.registerEntityRenderer(ModEntities.HUNTER_CHOPPER.get(), com.hbm_m.client.render.mob.HunterChopperRenderer::new);
+        event.registerEntityRenderer(ModEntities.C130.get(), com.hbm_m.client.render.entity.C130Renderers.C130Renderer::new);
+        event.registerEntityRenderer(ModEntities.PARACHUTE_CRATE.get(), com.hbm_m.client.render.entity.C130Renderers.ParachuteCrateRenderer::new);
+        event.registerEntityRenderer(ModEntities.DUCK.get(), com.hbm_m.client.render.mob.DuckRenderer::new);
+        event.registerEntityRenderer(ModEntities.FBI.get(), com.hbm_m.client.render.mob.FBIRenderers.FBI::new);
+        event.registerEntityRenderer(ModEntities.FBI_DRONE.get(), com.hbm_m.client.render.mob.FBIRenderers.Drone::new);
+        event.registerEntityRenderer(ModEntities.QUACKOS.get(), com.hbm_m.client.render.mob.MiscMobRenderers.Quackos::new);
+        event.registerEntityRenderer(ModEntities.PIGEON.get(), com.hbm_m.client.render.mob.MiscMobRenderers.Pigeon::new);
+        event.registerEntityRenderer(ModEntities.PLASTIC_BAG.get(), com.hbm_m.client.render.mob.MiscMobRenderers.PlasticBag::new);
+        event.registerEntityRenderer(ModEntities.TEST_DUMMY.get(), com.hbm_m.client.render.mob.MiscMobRenderers.Dummy::new);
+        event.registerEntityRenderer(ModEntities.GHOST.get(), com.hbm_m.client.render.mob.MiscMobRenderers.Ghost::new);
+        event.registerEntityRenderer(ModEntities.BLOCK_SPIDER.get(), com.hbm_m.client.render.mob.MiscMobRenderers.BlockSpider::new);
+        event.registerEntityRenderer(ModEntities.CYBER_CRAB.get(), com.hbm_m.client.render.mob.CrabRenderers.Cyber::new);
+        event.registerEntityRenderer(ModEntities.TESLA_CRAB.get(), com.hbm_m.client.render.mob.CrabRenderers.Tesla::new);
+        event.registerEntityRenderer(ModEntities.TAINT_CRAB.get(), com.hbm_m.client.render.mob.CrabRenderers.Taint::new);
+        event.registerEntityRenderer(ModEntities.CHOPPER_MINE.get(), com.hbm_m.client.render.projectile.ChopperMineRenderer::new);
+        event.registerEntityRenderer(ModEntities.BULLET.get(), com.hbm_m.client.render.projectile.BulletRenderer::new);
+        event.registerEntityRenderer(ModEntities.GLYPHID_BRAWLER.get(), com.hbm_m.client.render.mob.GlyphidRenderer::new);
+        event.registerEntityRenderer(ModEntities.GLYPHID_BEHEMOTH.get(), com.hbm_m.client.render.mob.GlyphidRenderer::new);
+        event.registerEntityRenderer(ModEntities.GLYPHID_BRENDA.get(), com.hbm_m.client.render.mob.GlyphidRenderer::new);
+        event.registerEntityRenderer(ModEntities.GLYPHID_BOMBARDIER.get(), com.hbm_m.client.render.mob.GlyphidRenderer::new);
+        event.registerEntityRenderer(ModEntities.GLYPHID_BLASTER.get(), com.hbm_m.client.render.mob.GlyphidRenderer::new);
+        event.registerEntityRenderer(ModEntities.GLYPHID_SCOUT.get(), com.hbm_m.client.render.mob.GlyphidRenderer::new);
+        event.registerEntityRenderer(ModEntities.GLYPHID_NUCLEAR.get(), com.hbm_m.client.render.mob.GlyphidRenderer::new);
+        event.registerEntityRenderer(ModEntities.GLYPHID_DIGGER.get(), com.hbm_m.client.render.mob.GlyphidRenderer::new);
+        event.registerEntityRenderer(ModEntities.PARASITE_MAGGOT.get(), com.hbm_m.client.render.mob.ParasiteMaggotRenderer::new);
+        event.registerEntityRenderer(ModEntities.WAYPOINT.get(), net.minecraft.client.renderer.entity.NoopRenderer::new);
+        event.registerEntityRenderer(ModEntities.ACID_BOMB.get(), net.minecraft.client.renderer.entity.ThrownItemRenderer::new);
+        event.registerEntityRenderer(ModEntities.CHEMICAL.get(), com.hbm_m.client.render.projectile.ChemicalRenderer::new);
         event.registerEntityRenderer(ModEntities.NOLO.get(), NoloEntityRenderer::new);
         event.registerEntityRenderer(ModEntities.ENTITY_MOB_TAINTED_CREEPER.get(), RenderCreeperUniversal::tainted);
         event.registerEntityRenderer(ModEntities.ENTITY_MOB_VOLATILE_CREEPER.get(), RenderCreeperUniversal::volatileCreeper);
@@ -1568,10 +1720,14 @@ public class ClientSetup {
         MainRegistry.LOGGER.info("Registering GUI overlays...");
         event.registerAbove(net.minecraftforge.client.gui.overlay.VanillaGuiOverlay.HOTBAR.id(), "geiger_counter_hud", OverlayGeiger.GEIGER_HUD_OVERLAY);
         event.registerAbove(net.minecraftforge.client.gui.overlay.VanillaGuiOverlay.ARMOR_LEVEL.id(), "power_armor_hud", OverlayPowerArmor.POWER_ARMOR_OVERLAY);
+        event.registerAbove(net.minecraftforge.client.gui.overlay.VanillaGuiOverlay.ARMOR_LEVEL.id(), "jetpack_fuel_hud", com.hbm_m.client.overlay.OverlayJetpackFuel.OVERLAY);
         event.registerAbove(net.minecraftforge.client.gui.overlay.VanillaGuiOverlay.PORTAL.id(), "radiation_pixels", OverlayRadiationVisuals.RADIATION_PIXELS_OVERLAY);
         event.registerAboveAll("info_toast", OverlayInfoToast.OVERLAY);
         event.registerAbove(net.minecraftforge.client.gui.overlay.VanillaGuiOverlay.CROSSHAIR.id(), "tool_ability_indicator", ToolAbilityClient.OVERLAY);
         event.registerAboveAll("gas_mask_overlay", com.hbm_m.client.overlay.OverlayGasMask.OVERLAY);
+        // Original RenderScreenOverlay.renderDashBar / renderShieldBar
+        event.registerAbove(net.minecraftforge.client.gui.overlay.VanillaGuiOverlay.HOTBAR.id(), "dash_bar", com.hbm_m.client.overlay.OverlayDashShield.DASH_OVERLAY);
+        event.registerBelow(net.minecraftforge.client.gui.overlay.VanillaGuiOverlay.ARMOR_LEVEL.id(), "shield_bar", com.hbm_m.client.overlay.OverlayDashShield.SHIELD_OVERLAY);
         MainRegistry.LOGGER.info("GUI overlays registered.");
     }
     //?} elif neoforge {

@@ -23,27 +23,19 @@ import com.hbm_m.datagen.recipes.custom.CokerRecipeGenerator;
 import com.hbm_m.datagen.recipes.custom.CompressorRecipeGenerator;
 import com.hbm_m.datagen.recipes.custom.CrackingTowerRecipeGenerator;
 import com.hbm_m.datagen.recipes.custom.CrystallizerRecipeGenerator;
-import com.hbm_m.datagen.recipes.custom.CrucibleSmeltingRecipeGenerator;
 import com.hbm_m.datagen.recipes.custom.CyclotronRecipeGenerator;
 import com.hbm_m.datagen.recipes.custom.FusionRecipeGenerator;
-import com.hbm_m.datagen.recipes.custom.FusionAssemblerRecipeGenerator;
 import com.hbm_m.datagen.recipes.custom.PlasmaForgeRecipeGenerator;
-import com.hbm_m.datagen.recipes.custom.ElectrolyserFluidRecipeGenerator;
-import com.hbm_m.datagen.recipes.custom.ElectrolyserMetalRecipeGenerator;
 import com.hbm_m.datagen.recipes.custom.ExposureChamberRecipeGenerator;
 import com.hbm_m.datagen.recipes.custom.FractionTowerRecipeGenerator;
 import com.hbm_m.datagen.recipes.custom.GasCentrifugeRecipeGenerator;
 import com.hbm_m.datagen.recipes.custom.HydrotreaterRecipeGenerator;
 import com.hbm_m.datagen.recipes.custom.LiquefactorRecipeGenerator;
 import com.hbm_m.datagen.recipes.custom.MachineCraftingRecipeGenerator;
-import com.hbm_m.datagen.recipes.custom.MixerRecipeGenerator;
-import com.hbm_m.datagen.recipes.custom.MoldCastingRecipeGenerator;
-import com.hbm_m.datagen.recipes.custom.MoltenAlloyRecipeGenerator;
 import com.hbm_m.datagen.recipes.custom.PressRecipeGenerator;
 import com.hbm_m.datagen.recipes.custom.PyroOvenRecipeGenerator;
 import com.hbm_m.datagen.recipes.custom.RadGenRecipeGenerator;
 import com.hbm_m.datagen.recipes.custom.RadiolysisRecipeGenerator;
-import com.hbm_m.datagen.recipes.custom.RotaryFurnaceRecipeGenerator;
 import com.hbm_m.datagen.recipes.custom.ShredderRecipeGenerator;
 import com.hbm_m.datagen.recipes.custom.SilexRecipeGenerator;
 import com.hbm_m.datagen.recipes.custom.SolidificationRecipeGenerator;
@@ -72,10 +64,21 @@ public class ModRecipeProvider extends RecipeProvider {
     }
 
     @Override
-    protected void buildRecipes(@NotNull Consumer<FinishedRecipe> pWriter) {
+    protected void buildRecipes(@NotNull Consumer<FinishedRecipe> rawWriter) {
+        // Vom Original abweichende Port-Werkbankrezepte weglassen (ersetzt durch OrigCraftingRecipeGenerator)
+        Consumer<FinishedRecipe> pWriter = com.hbm_m.datagen.recipes.custom.SupersededRecipes.filter(
+                com.hbm_m.datagen.recipes.custom.OrigMachineRecipeGenerator.filter(rawWriter));
+        com.hbm_m.datagen.recipes.custom.OrigCraftingRecipeGenerator.generate(pWriter);
+        // Fehlende Schredder-/Kristallisierer-/Ofenrezepte des Originals (rc/machines.py) + Handuebersetzungen
+        com.hbm_m.datagen.recipes.custom.OrigMachineRecipeGenerator.generate(pWriter);
+        com.hbm_m.datagen.recipes.custom.RestRecipeGenerator.generate(pWriter);
+        // Konfig-Rezepte (LBSM-Hilfsaufrufe/Feindraht/Legierungsofen) - rc/config_extra.py
+        com.hbm_m.datagen.recipes.custom.ConfigVariantRecipeGenerator.generate(pWriter);
 
         BlastFurnaceRecipeGenerator.generate(pWriter);
         PressRecipeGenerator.generate(pWriter);
+        // 1:1 aus AssemblyMachineRecipes (automatisch uebersetzt) + verbliebene Port-Notbehelfe
+        com.hbm_m.datagen.recipes.custom.AssemblyMachineRecipeGenerator.generate(pWriter);
         AssemblerRecipeGenerator.generate(pWriter);
         ChemicalPlantRecipeGenerator.generate(pWriter);
         AnvilRecipeGenerator.generate(pWriter);
@@ -86,22 +89,21 @@ public class ModRecipeProvider extends RecipeProvider {
         CyclotronRecipeGenerator.generate(pWriter);
         FusionRecipeGenerator.generate(pWriter);
         PlasmaForgeRecipeGenerator.generate(pWriter);
-        FusionAssemblerRecipeGenerator.generate(pWriter);
         com.hbm_m.datagen.recipes.custom.ConsumableRecipeGenerator.generate(pWriter);
         com.hbm_m.datagen.recipes.custom.RodRecipeGenerator.generate(pWriter);
         com.hbm_m.datagen.recipes.custom.WeaponRecipeGenerator.generate(pWriter);
+        com.hbm_m.datagen.recipes.custom.GrenadeRecipeGenerator.generate(pWriter);
         com.hbm_m.datagen.recipes.custom.ArmorRecipeGenerator.generate(pWriter);
+        com.hbm_m.datagen.recipes.custom.CustomMachineRecipeGenerator.generate(pWriter);
         com.hbm_m.datagen.recipes.custom.LegacyBedrockOreRecipeGenerator.generate(pWriter);
         com.hbm_m.datagen.recipes.custom.ToolRecipeGenerator.generate(pWriter);
-        MixerRecipeGenerator.generate(pWriter);
-        CrucibleSmeltingRecipeGenerator.generate(pWriter);
-        MoltenAlloyRecipeGenerator.generate(pWriter);
-        MoldCastingRecipeGenerator.generate(pWriter);
+        // Mischer: Rezepte wie im Original statisch in com.hbm_m.recipe.MixerRecipes
         ArcWelderRecipeGenerator.generate(pWriter);
         SolderingRecipeGenerator.generate(pWriter);
         GasCentrifugeRecipeGenerator.generate(pWriter);
         AmmoPressRecipeGenerator.generate(pWriter);
         PurexRecipeGenerator.generate(pWriter);
+        com.hbm_m.datagen.recipes.custom.PrecAssRecipeGenerator.generate(pWriter);
         BreederRecipeGenerator.generate(pWriter);
         RadGenRecipeGenerator.generate(pWriter);
         ExposureChamberRecipeGenerator.generate(pWriter);
@@ -116,15 +118,13 @@ public class ModRecipeProvider extends RecipeProvider {
         LiquefactorRecipeGenerator.generate(pWriter);
         PyroOvenRecipeGenerator.generate(pWriter);
         RadiolysisRecipeGenerator.generate(pWriter);
-        RotaryFurnaceRecipeGenerator.generate(pWriter);
         SolidificationRecipeGenerator.generate(pWriter);
         VacuumDistillRecipeGenerator.generate(pWriter);
-        ElectrolyserFluidRecipeGenerator.generate(pWriter);
-        ElectrolyserMetalRecipeGenerator.generate(pWriter);
 
         // ==================== АВТОМАТИЧЕСКАЯ ГЕНЕРАЦИЯ РЕЦЕПТОВ ДЛЯ БЛОКОВ СЛИТКОВ ====================
         for (ModMaterials mat : ModMaterials.values()) {
-            if (!mat.has(MaterialShape.INGOT)) continue;
+            // Barren ueber ModMaterialItems.ingotMaterial (block_thorium <-> th232_ingot wie Original)
+            if (!ModMaterialItems.has(ModMaterialItems.ingotMaterial(mat), MaterialShape.INGOT)) continue;
 
             // !!! ВАЖНОЕ ИСПРАВЛЕНИЕ !!!
             // Сначала проверяем, есть ли вообще блок у этого слитка.
@@ -134,7 +134,7 @@ public class ModRecipeProvider extends RecipeProvider {
             }
 
             // Теперь безопасно получаем предмет и блок
-            var ingotItem = ModMaterialItems.get(mat, MaterialShape.INGOT);
+            var ingotItem = ModMaterialItems.get(ModMaterialItems.ingotMaterial(mat), MaterialShape.INGOT);
             var ingotBlock = ModBlocks.getIngotBlock(mat);
 
             if (ingotItem != null && ingotItem.isPresent() && ingotBlock != null && ingotBlock.isPresent()) {

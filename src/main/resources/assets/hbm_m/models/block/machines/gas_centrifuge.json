@@ -7,37 +7,9 @@
     "default": "hbm_m:block/machine/gascent",
     "particle": "hbm_m:block/machine/gascent"
   },
-  "transform": {
-    "translation": [
-      0.5,
-      0,
-      0.5
-    ],
-    "rotation": [
-      0,
-      0,
-      0
-    ],
-    "scale": 1.0
-  },
+  "transform": {"origin": "corner", "translation": [-0.5, 0, 0.5], "rotation": [0, 270, 0], "scale": 1.0},
   "display": {
-    "gui": {
-      "rotation": [
-        30,
-        225,
-        0
-      ],
-      "translation": [
-        0,
-        -2.8,
-        0
-      ],
-      "scale": [
-        0.21,
-        0.21,
-        0.21
-      ]
-    },
+    "gui": {"rotation": [30.0, -45.0, 0.0], "translation": [0.0, -3.949, -1.125], "scale": [0.2188, 0.2188, 0.2188]},
     "fixed": {
       "rotation": [
         0,

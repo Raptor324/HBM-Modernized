@@ -22,6 +22,20 @@ public class RadioTorchCounterBlock extends RadioTorchBaseBlock {
 
     public RadioTorchCounterBlock(Properties properties) { super(properties); }
 
+    /** Original {@code printHook}: je belegtem Kanal Frequenz und letzter Zaehlstand. */
+    @Override
+    public void printHook(net.minecraft.client.gui.GuiGraphics g, Level level, BlockPos pos) {
+        if (!(level.getBlockEntity(pos) instanceof RadioTorchCounterBlockEntity radio)) return;
+        java.util.List<net.minecraft.network.chat.Component> text = new java.util.ArrayList<>();
+        for (int i = 0; i < 3; i++) {
+            if (radio.channel[i] != null && !radio.channel[i].isEmpty()) {
+                text.add(net.minecraft.network.chat.Component.literal("Freq " + (i + 1) + ": " + radio.channel[i]).withStyle(net.minecraft.ChatFormatting.AQUA));
+                text.add(net.minecraft.network.chat.Component.literal("Signal " + (i + 1) + ": " + radio.lastCount[i]).withStyle(net.minecraft.ChatFormatting.RED));
+            }
+        }
+        com.hbm_m.interfaces.ILookOverlay.printGeneric(g, getName(), 0xffff00, 0x404000, text);
+    }
+
     @Nullable @Override
     public BlockEntity newBlockEntity(BlockPos pos, BlockState state) {
         return new RadioTorchCounterBlockEntity(pos, state);
@@ -36,6 +50,7 @@ public class RadioTorchCounterBlock extends RadioTorchBaseBlock {
     //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        if (player.isShiftKeyDown()) return InteractionResult.PASS; // Original: geschlichen false
         if (!level.isClientSide()) {
             BlockEntity entity = level.getBlockEntity(pos);
             if (entity instanceof MenuProvider menuProvider) {
@@ -47,6 +62,7 @@ public class RadioTorchCounterBlock extends RadioTorchBaseBlock {
     //?} else {
     /*@Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+        if (player.isShiftKeyDown()) return InteractionResult.PASS; // Original: geschlichen false
         if (!level.isClientSide()) {
             BlockEntity entity = level.getBlockEntity(pos);
             if (entity instanceof MenuProvider menuProvider) {

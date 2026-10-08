@@ -116,7 +116,63 @@ public class MachineZirnoxDestroyedBlock extends BaseEntityBlock implements IMul
         super.onPlace(state, level, pos, oldState, isMoving);
         if (!state.is(oldState.getBlock()) && !level.isClientSide()) {
             getStructureHelper().placeStructure(level, pos, state.getValue(FACING), this);
+
+            // audit10: 1:1 ZirnoxDestroyed.onBlockAdded - im Original fuer jede Zelle (Kern und Dummies)
+            if (level instanceof net.minecraft.server.level.ServerLevel server) {
+                for (BlockPos p : allCells(pos, state)) {
+                    if (level.random.nextInt(4) == 0) {
+                        net.minecraft.nbt.CompoundTag data = new net.minecraft.nbt.CompoundTag();
+                        data.putString("type", "rbmkflame");
+                        data.putInt("maxAge", 90);
+                        com.hbm_m.particle.helper.IParticleCreator.sendPacket(server, p.getX() + 0.25 + level.random.nextDouble() * 0.5, p.getY() + 1.75, p.getZ() + 0.25 + level.random.nextDouble() * 0.5, 75, data);
+                        level.playSound(null, p.getX() + 0.5F, p.getY() + 0.5, p.getZ() + 0.5, net.minecraft.sounds.SoundEvents.FIRE_AMBIENT, net.minecraft.sounds.SoundSource.BLOCKS,
+                                1.0F + level.random.nextFloat(), level.random.nextFloat() * 0.7F + 0.3F);
+                    }
+                }
+                level.scheduleTick(pos, this, tickRate(level));
+            }
         }
+    }
+
+    /** Kern und alle Teilzellen - im Original ticken alle Zellen des BlockDummyable einzeln. */
+    private java.util.List<BlockPos> allCells(BlockPos pos, BlockState state) {
+        java.util.List<BlockPos> cells = new java.util.ArrayList<>();
+        cells.add(pos);
+        cells.addAll(getStructureHelper().getAllPartPositions(pos, state.getValue(FACING)));
+        return cells;
+    }
+
+    /** Original {@code tickRate}: 100 + rand(20). */
+    private int tickRate(Level level) {
+        return 100 + level.random.nextInt(20);
+    }
+
+    /**
+     * audit10: 1:1 {@code ZirnoxDestroyed.updateTick} je Zelle: ueber Luft mit 1/10 (zweimal gewuerfelt) Kernschmelzgas,
+     * unter Schaum mit 1/25 erlischt das Feuer des Kerns.
+     */
+    @Override
+    public void tick(BlockState state, net.minecraft.server.level.ServerLevel world, BlockPos pos, net.minecraft.util.RandomSource rand) {
+        for (BlockPos p : allCells(pos, state)) {
+            BlockPos up = p.above();
+            BlockState above = world.getBlockState(up);
+
+            if (above.isAir()) {
+                if (rand.nextInt(10) == 0)
+                    world.setBlock(up, ModBlocks.GAS_MELTDOWN.get().defaultBlockState(), 3);
+
+            } else if (above.is(ModBlocks.FOAM_LAYER.get()) || above.is(ModBlocks.BLOCK_FOAM.get())) {
+                if (rand.nextInt(25) == 0) {
+                    if (world.getBlockEntity(pos) instanceof MachineZirnoxDestroyedBlockEntity te)
+                        te.onFire = false;
+                }
+            }
+
+            if (rand.nextInt(10) == 0 && world.getBlockState(up).isAir())
+                world.setBlock(up, ModBlocks.GAS_MELTDOWN.get().defaultBlockState(), 3);
+        }
+
+        world.scheduleTick(pos, this, tickRate(world));
     }
 
     @Override
@@ -147,7 +203,7 @@ public class MachineZirnoxDestroyedBlock extends BaseEntityBlock implements IMul
     public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
         MultiblockStructureHelper helper = getStructureHelper();
         if (helper != null) {
-            return helper.generateShapeFromParts(state.getValue(FACING));
+            return helper.getControllerCellShape(state.getValue(FACING)); // w16b: nur die Kernzelle; Umriss der ganzen Maschine: MultiblockOutlineForge
         }
         return Shapes.block();
     }

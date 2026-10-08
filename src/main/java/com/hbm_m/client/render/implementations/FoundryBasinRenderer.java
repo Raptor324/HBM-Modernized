@@ -1,75 +1,101 @@
 package com.hbm_m.client.render.implementations;
 
-import com.hbm_m.blockentity.machines.MachineFoundryBasinBlockEntity;
-import com.hbm_m.client.render.shader.ShaderCompatibilityDetector;
+import com.hbm_m.blockentity.machines.IRenderFoundry;
+import com.hbm_m.blockentity.machines.MachineFoundryCastingBaseBlockEntity;
 import com.hbm_m.lib.RefStrings;
 import com.mojang.blaze3d.vertex.PoseStack;
 import com.mojang.blaze3d.vertex.VertexConsumer;
+import com.mojang.math.Axis;
+
+import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
 import net.minecraft.client.renderer.RenderType;
-import net.minecraft.client.renderer.blockentity.BlockEntityRenderer;
 import net.minecraft.client.renderer.blockentity.BlockEntityRendererProvider;
 import net.minecraft.client.renderer.texture.OverlayTexture;
+import net.minecraft.client.renderer.texture.TextureAtlas;
+import net.minecraft.client.renderer.texture.TextureAtlasSprite;
 import net.minecraft.resources.ResourceLocation;
-
-import org.joml.Matrix4f;
+import net.minecraft.world.item.BlockItem;
+import net.minecraft.world.item.ItemDisplayContext;
+import net.minecraft.world.item.ItemStack;
 
 /**
- * Renders the molten metal surface inside the foundry basin.
- * Original level formula (TileEntityFoundryBasin.getLevel):
- * 0.125 + amount * 0.75 / capacity
+ * 1:1 {@code RenderFoundry} fuer Giessbecken und flache Formen: die eingesetzte Form und das fertige Gussstueck liegen
+ * flach im Becken (Bloecke als halbdurchsichtige Oberflaeche), darueber der vollhelle Schmelzspiegel in der Farbe des
+ * Materials mit einer additiven Glanzschicht.
  */
-//? if forge {
-@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-//?} elif fabric {
-/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
-*///?} elif neoforge {
-/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-*///?}
-public class FoundryBasinRenderer implements com.hbm_m.client.render.HbmBerBounds<MachineFoundryBasinBlockEntity> {
+public class FoundryBasinRenderer<T extends MachineFoundryCastingBaseBlockEntity & IRenderFoundry> implements com.hbm_m.client.render.HbmBerBounds<T> {
 
-    private static final ResourceLocation LAVA_TEXTURE =
-            ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/block/fluids/lava.png");
+    public static final ResourceLocation LAVA = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/lava_gray.png");
 
-    private static final float INNER = 2f / 16f;
-    private static final float INNER_MAX = 1f - INNER;
+    public FoundryBasinRenderer(BlockEntityRendererProvider.Context ctx) { }
 
-    public FoundryBasinRenderer(BlockEntityRendererProvider.Context context) { }
+    private void drawItem(T tile, ItemStack stack, double height, PoseStack ps, MultiBufferSource buf, int light) {
+        ps.pushPose();
+        ps.translate(0.5D, height, 0.5D);
+        ps.mulPose(Axis.XP.rotationDegrees(90));
+        ps.scale(0.75F, 0.75F, 0.01F);
+        Minecraft.getInstance().getItemRenderer().renderStatic(stack, ItemDisplayContext.GUI, light, OverlayTexture.NO_OVERLAY, ps, buf, tile.getLevel(), 0);
+        ps.popPose();
+    }
 
-    @Override
-    public void render(MachineFoundryBasinBlockEntity be, float partialTick, PoseStack poseStack,
-                       MultiBufferSource bufferSource, int packedLight, int packedOverlay) {
-
-        float fill = be.getFillLevel();
-        if (fill <= 0f) return;
-
-        float surfaceY = 0.125f + fill * 0.75f;
-
-        int argb = be.getFillColor();
-        float a = ((argb >> 24) & 0xFF) / 255f;
-        float r = ((argb >> 16) & 0xFF) / 255f;
-        float g = ((argb >>  8) & 0xFF) / 255f;
-        float b = ( argb        & 0xFF) / 255f;
-
-        VertexConsumer vc = bufferSource.getBuffer(RenderType.entityTranslucent(LAVA_TEXTURE));
-        Matrix4f m = poseStack.last().pose();
-        int fullbright = 0xF000F0;
-
-        //? if < 1.21.1 {
-        vc.vertex(m, INNER,     surfaceY, INNER    ).color(r, g, b, a).uv(0, 0).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(fullbright).normal(0, 1, 0).endVertex();
-        vc.vertex(m, INNER,     surfaceY, INNER_MAX).color(r, g, b, a).uv(0, 1).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(fullbright).normal(0, 1, 0).endVertex();
-        vc.vertex(m, INNER_MAX, surfaceY, INNER_MAX).color(r, g, b, a).uv(1, 1).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(fullbright).normal(0, 1, 0).endVertex();
-        vc.vertex(m, INNER_MAX, surfaceY, INNER    ).color(r, g, b, a).uv(1, 0).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(fullbright).normal(0, 1, 0).endVertex();
-        //?} else {
-        /*vc.addVertex(m, INNER,     surfaceY, INNER    ).setColor(r, g, b, a).setUv(0, 0).setOverlay(OverlayTexture.NO_OVERLAY).setLight(fullbright).setNormal(0, 1, 0);
-        vc.addVertex(m, INNER,     surfaceY, INNER_MAX).setColor(r, g, b, a).setUv(0, 1).setOverlay(OverlayTexture.NO_OVERLAY).setLight(fullbright).setNormal(0, 1, 0);
-        vc.addVertex(m, INNER_MAX, surfaceY, INNER_MAX).setColor(r, g, b, a).setUv(1, 1).setOverlay(OverlayTexture.NO_OVERLAY).setLight(fullbright).setNormal(0, 1, 0);
-        vc.addVertex(m, INNER_MAX, surfaceY, INNER    ).setColor(r, g, b, a).setUv(1, 0).setOverlay(OverlayTexture.NO_OVERLAY).setLight(fullbright).setNormal(0, 1, 0);
-        *///?}
+    private void drawBlock(ItemStack stack, IRenderFoundry foundry, PoseStack ps, MultiBufferSource buf, int light) {
+        BlockItem item = (BlockItem) stack.getItem();
+        TextureAtlasSprite icon = Minecraft.getInstance().getBlockRenderer().getBlockModel(item.getBlock().defaultBlockState()).getParticleIcon();
+        VertexConsumer vc = buf.getBuffer(RenderType.entityTranslucent(TextureAtlas.LOCATION_BLOCKS));
+        org.joml.Matrix4f m = ps.last().pose();
+        org.joml.Matrix3f n = ps.last().normal();
+        float h = (float) foundry.outHeight();
+        float x0 = (float) foundry.minX(), x1 = (float) foundry.maxX(), z0 = (float) foundry.minZ(), z1 = (float) foundry.maxZ();
+        vertex(vc, m, n, x0, h, z0, 1F, 1F, 1F, 0.3F, icon.getU0(), icon.getV1(), light);
+        vertex(vc, m, n, x0, h, z1, 1F, 1F, 1F, 0.3F, icon.getU1(), icon.getV1(), light);
+        vertex(vc, m, n, x1, h, z1, 1F, 1F, 1F, 0.3F, icon.getU1(), icon.getV0(), light);
+        vertex(vc, m, n, x1, h, z0, 1F, 1F, 1F, 0.3F, icon.getU0(), icon.getV0(), light);
     }
 
     @Override
-    public boolean shouldRenderOffScreen(MachineFoundryBasinBlockEntity blockEntity) {
-        return ShaderCompatibilityDetector.shouldRenderBlockEntityOffScreen();
+    public void render(T tile, float interp, PoseStack ps, MultiBufferSource buf, int light, int overlay) {
+        IRenderFoundry foundry = tile;
+
+        ItemStack mold = tile.slots[0];
+        if (!mold.isEmpty()) {
+            drawItem(tile, mold, foundry.moldHeight(), ps, buf, light);
+        }
+
+        ItemStack out = tile.slots[1];
+        if (!out.isEmpty()) {
+            if (out.getItem() instanceof BlockItem) {
+                drawBlock(out, foundry, ps, buf, light);
+            } else {
+                drawItem(tile, out, foundry.outHeight(), ps, buf, light);
+            }
+        }
+
+        if (foundry.shouldRender() && foundry.getMat() != null) {
+            int hex = foundry.getMat().moltenColor;
+            float r = (hex >> 16 & 255) / 255F, g = (hex >> 8 & 255) / 255F, b = (hex & 255) / 255F;
+            float y = (float) foundry.getMoltenLevel();
+            float x0 = (float) foundry.minX(), x1 = (float) foundry.maxX(), z0 = (float) foundry.minZ(), z1 = (float) foundry.maxZ();
+            int full = 0xF000F0;
+
+            VertexConsumer vc = buf.getBuffer(RenderType.entityCutoutNoCull(LAVA));
+            org.joml.Matrix4f m = ps.last().pose();
+            org.joml.Matrix3f n = ps.last().normal();
+            vertex(vc, m, n, x0, y, z0, r, g, b, 1F, z0, x1, full);
+            vertex(vc, m, n, x0, y, z1, r, g, b, 1F, z1, x1, full);
+            vertex(vc, m, n, x1, y, z1, r, g, b, 1F, z1, x0, full);
+            vertex(vc, m, n, x1, y, z0, r, g, b, 1F, z0, x0, full);
+
+            VertexConsumer glow = buf.getBuffer(RenderType.eyes(LAVA));
+            vertex(glow, m, n, x0, y, z0, 1F, 1F, 1F, 0.3F, z0, x1, full);
+            vertex(glow, m, n, x0, y, z1, 1F, 1F, 1F, 0.3F, z1, x1, full);
+            vertex(glow, m, n, x1, y, z1, 1F, 1F, 1F, 0.3F, z1, x0, full);
+            vertex(glow, m, n, x1, y, z0, 1F, 1F, 1F, 0.3F, z0, x0, full);
+        }
+    }
+
+    private static void vertex(VertexConsumer vc, org.joml.Matrix4f m, org.joml.Matrix3f n, float x, float y, float z,
+                               float r, float g, float b, float a, float u, float v, int light) {
+        vc.vertex(m, x, y, z).color(r, g, b, a).uv(u, v).overlayCoords(OverlayTexture.NO_OVERLAY).uv2(light).normal(n, 0, 1, 0).endVertex();
     }
 }

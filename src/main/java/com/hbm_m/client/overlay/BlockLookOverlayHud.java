@@ -18,6 +18,8 @@ public final class BlockLookOverlayHud {
     private BlockLookOverlayHud() {}
 
     public static void render(GuiGraphics guiGraphics) {
+        // Original: der ganze Look-Overlay-Hook steht unter "DODD DIAG HOOK FOR RBMK" (ClientConfig.DODD_RBMK_DIAGNOSTIC).
+        if (!com.hbm_m.config.ClientConfig.doddRbmkDiagnostic) return;
         Minecraft mc = Minecraft.getInstance();
         if (mc == null || mc.player == null) return;
 

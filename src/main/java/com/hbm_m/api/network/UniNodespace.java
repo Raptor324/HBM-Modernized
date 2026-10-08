@@ -110,6 +110,19 @@ public class UniNodespace {
         }
     }
 
+    /** Original {@code CommandReapNetworks}: alle Netze und Knotenwelten verwerfen. */
+    @SuppressWarnings("rawtypes")
+    public static void reapAll() {
+        for (NodeNet net : activeNodeNets) {
+            for (Object link : net.links) ((GenNode<?>) link).expired = true;
+            net.links.clear();
+            net.providerEntries.clear();
+            net.receiverEntries.clear();
+        }
+        activeNodeNets.clear();
+        worlds.clear();
+    }
+
     /** Вызывается при остановке сервера. */
     public static void onServerStop() {
         worlds.clear();

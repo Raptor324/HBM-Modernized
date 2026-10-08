@@ -91,11 +91,8 @@ public class MachineTurbofanMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        if (blockEntity == null || blockEntity.getLevel() != player.level()) {
-            return false;
-        }
-        BlockPos pos = blockEntity.getBlockPos();
-        return player.distanceToSqr(pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D) <= 64.0D;
+        // audit13: Original isUseableByPlayer (<= 128 zur Kernmitte) oder Huelle <= 64; Vanilla 64 schloss die GUI an grossen Maschinen
+        return MultiblockMenuReach.stillValidCore(blockEntity, player, 128.0D);
     }
 
     private static boolean isEnergySource(ItemStack stack) {
@@ -125,6 +122,10 @@ public class MachineTurbofanMenu extends AbstractContainerMenu {
             } else {
                 if (isEnergySource(slotStack)) {
                     if (!this.moveItemStackTo(slotStack, SLOT_BATTERY, SLOT_BATTERY + 1, false)) {
+                        return ItemStack.EMPTY;
+                    }
+                } else if (slotStack.getItem() instanceof com.hbm_m.item.industrial.ItemMachineUpgrade) {
+                    if (!this.moveItemStackTo(slotStack, SLOT_UPGRADE, SLOT_UPGRADE + 1, false)) {
                         return ItemStack.EMPTY;
                     }
                 } else if (slotStack.getItem() instanceof IItemFluidIdentifier) {

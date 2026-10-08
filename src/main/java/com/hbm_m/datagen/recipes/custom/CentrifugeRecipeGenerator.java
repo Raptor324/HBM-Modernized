@@ -26,6 +26,7 @@ public final class CentrifugeRecipeGenerator {
         registerOreRecipes(writer);
         registerCrystalRecipes(writer);
         registerBedrockRecipes(writer);
+        OreDictIngredients.checkMissing("CentrifugeRecipeGenerator");
     }
 
     private static void registerOreRecipes(Consumer<FinishedRecipe> writer) {
@@ -34,10 +35,13 @@ public final class CentrifugeRecipeGenerator {
                 modPowderCount(ModMaterials.COAL, 2), modPowderCount(ModMaterials.COAL, 2), modPowderCount(ModMaterials.COAL, 2), gravel());
         tagRecipe(writer, "iron_ore", "forge:ores/iron",
                 modPowder(ModMaterials.IRON), modPowder(ModMaterials.IRON), modPowder(ModMaterials.IRON), gravel());
-        tagRecipe(writer, "gold_ore", "forge:ores/gold",
-                modPowder(ModMaterials.GOLD), modPowder(ModMaterials.GOLD), modPowder(ModMaterials.GOLD), gravel());
-        tagRecipe(writer, "copper_ore", "forge:ores/copper",
-                modPowder(ModMaterials.COPPER), modPowder(ModMaterials.COPPER), modPowder(ModMaterials.GOLD), gravel());
+        // Original CentrifugeRecipes: "lbs ? A : B" (enableLBSMSimpleCentrifuge) als Konfig-Fassung
+        tagRecipeLbsm(writer, "gold_ore", "forge:ores/gold",
+                new ItemStack[] { modPowder(ModMaterials.GOLD), modPowder(ModMaterials.GOLD), modPowder(ModMaterials.GOLD), gravel() },
+                new ItemStack[] { modPowderCount(ModMaterials.GOLD, 2), modPowder(ModMaterials.GOLD), lbsmStack("hbm_m:nugget_bismuth", 1), gravel() });
+        tagRecipeLbsm(writer, "copper_ore", "forge:ores/copper",
+                new ItemStack[] { modPowder(ModMaterials.COPPER), modPowder(ModMaterials.COPPER), modPowder(ModMaterials.GOLD), gravel() },
+                new ItemStack[] { modPowderCount(ModMaterials.COPPER, 2), modPowder(ModMaterials.COPPER), modPowder(ModMaterials.GOLD), gravel() });
         tagRecipe(writer, "diamond_ore", "forge:ores/diamond",
                 modPowder(ModMaterials.DIAMOND), modPowder(ModMaterials.DIAMOND), modPowder(ModMaterials.DIAMOND), gravel());
         tagRecipe(writer, "emerald_ore", "forge:ores/emerald",
@@ -54,12 +58,15 @@ public final class CentrifugeRecipeGenerator {
                 ingotPowder(ModMaterials.URANIUM), ingotPowder(ModMaterials.URANIUM), ingot(ModMaterials.RA226, 1), gravel());
         tagRecipe(writer, "thorium_ore", "forge:ores/thorium",
                 ingotPowder(ModMaterials.THORIUM), ingotPowder(ModMaterials.THORIUM), ingotPowder(ModMaterials.URANIUM), gravel());
-        tagRecipe(writer, "titanium_ore", "forge:ores/titanium",
-                ingotPowder(ModMaterials.TITANIUM), ingotPowder(ModMaterials.TITANIUM), modPowder(ModMaterials.IRON), gravel());
-        tagRecipe(writer, "tungsten_ore", "forge:ores/tungsten",
-                ingotPowder(ModMaterials.TUNGSTEN), ingotPowder(ModMaterials.TUNGSTEN), modPowder(ModMaterials.IRON), gravel());
-        tagRecipe(writer, "lead_ore", "forge:ores/lead",
-                ingotPowder(ModMaterials.LEAD), ingotPowder(ModMaterials.LEAD), modPowder(ModMaterials.GOLD), gravel());
+        tagRecipeLbsm(writer, "titanium_ore", "forge:ores/titanium",
+                new ItemStack[] { ingotPowder(ModMaterials.TITANIUM), ingotPowder(ModMaterials.TITANIUM), modPowder(ModMaterials.IRON), gravel() },
+                new ItemStack[] { ingotPowderCount(ModMaterials.TITANIUM, 2), ingotPowderCount(ModMaterials.TITANIUM, 2), modPowder(ModMaterials.IRON), gravel() });
+        tagRecipeLbsm(writer, "tungsten_ore", "forge:ores/tungsten",
+                new ItemStack[] { ingotPowder(ModMaterials.TUNGSTEN), ingotPowder(ModMaterials.TUNGSTEN), modPowder(ModMaterials.IRON), gravel() },
+                new ItemStack[] { ingotPowderCount(ModMaterials.TUNGSTEN, 2), ingotPowder(ModMaterials.TUNGSTEN), modPowder(ModMaterials.IRON), gravel() });
+        tagRecipeLbsm(writer, "lead_ore", "forge:ores/lead",
+                new ItemStack[] { ingotPowder(ModMaterials.LEAD), ingotPowder(ModMaterials.LEAD), modPowder(ModMaterials.GOLD), gravel() },
+                new ItemStack[] { ingotPowderCount(ModMaterials.LEAD, 2), lbsmStack("hbm_m:nugget_bismuth", 1), modPowder(ModMaterials.GOLD), gravel() });
         tagRecipe(writer, "beryllium_ore", "forge:ores/beryllium",
                 ingotPowder(ModMaterials.BERYLLIUM), ingotPowder(ModMaterials.BERYLLIUM), stack(Items.EMERALD, 1), gravel());
         tagRecipe(writer, "fluorite_ore", "forge:ores/fluorite",
@@ -73,7 +80,7 @@ public final class CentrifugeRecipeGenerator {
         tagRecipe(writer, "asbestos_ore", "forge:ores/asbestos",
                 ingotPowder(ModMaterials.ASBESTOS), ingotPowder(ModMaterials.ASBESTOS), ingotPowder(ModMaterials.ASBESTOS), gravel());
         tagRecipe(writer, "cinnabar_ore", "forge:ores/cinnabar",
-                stack(ModItems.CINNABAR.get(), 2), stack(ModItems.CINNABAR.get(), 2), stack(ModItems.SULFUR.get(), 1), gravel());
+                stack(ModItems.CINNEBAR.get(), 2), stack(ModItems.CINNEBAR.get(), 2), stack(ModItems.SULFUR.get(), 1), gravel());
         tagRecipe(writer, "rareground_ore", "forge:ores/rareground",
                 stack(ModItems.RAREGROUND_ORE_CHUNK.get(), 1), stack(ModItems.RAREGROUND_ORE_CHUNK.get(), 1), stack(ModItems.DUST.get(), 2), gravel());
         tagRecipe(writer, "cobalt_ore", "forge:ores/cobalt",
@@ -155,9 +162,9 @@ public final class CentrifugeRecipeGenerator {
         itemRecipe(writer, "bedrock_rad_washed_nonmetal", ModItems.BEDROCK_ORE_RAD_WASHED_NONMETAL.get(), stack(ModItems.POWDER_CHLOROCALCITE.get(), 6), ingot(ModMaterials.SILICON, 2), ingot(ModMaterials.SILICON, 2));
 
         // Crystal
-        addBedrockPhase(writer, "crystal", ModItems.BEDROCK_ORE_BASE_CRYSTAL.get(), ModItems.BEDROCK_ORE_PRIMARY_CRYSTAL.get(), stack(Items.REDSTONE, 9), stack(ModItems.CINNABAR.get(), 4), ModItems.BEDROCK_ORE_SULFURIC_BYPRODUCT_CRYSTAL.get(), ModItems.BEDROCK_ORE_SOLVENT_BYPRODUCT_CRYSTAL.get(), ModItems.BEDROCK_ORE_RAD_BYPRODUCT_CRYSTAL.get(), ModItems.BEDROCK_ORE_CRUMBS_CRYSTAL.get());
+        addBedrockPhase(writer, "crystal", ModItems.BEDROCK_ORE_BASE_CRYSTAL.get(), ModItems.BEDROCK_ORE_PRIMARY_CRYSTAL.get(), stack(Items.REDSTONE, 9), stack(ModItems.CINNEBAR.get(), 4), ModItems.BEDROCK_ORE_SULFURIC_BYPRODUCT_CRYSTAL.get(), ModItems.BEDROCK_ORE_SOLVENT_BYPRODUCT_CRYSTAL.get(), ModItems.BEDROCK_ORE_RAD_BYPRODUCT_CRYSTAL.get(), ModItems.BEDROCK_ORE_CRUMBS_CRYSTAL.get());
         itemRecipe(writer, "bedrock_sulfuric_washed_crystal", ModItems.BEDROCK_ORE_SULFURIC_WASHED_CRYSTAL.get(), stack(ModItems.GEM_SODALITE.get(), 9), ingot(ModMaterials.ASBESTOS, 6), stack(Items.DIAMOND, 3));
-        itemRecipe(writer, "bedrock_solvent_washed_crystal", ModItems.BEDROCK_ORE_SOLVENT_WASHED_CRYSTAL.get(), stack(ModItems.CINNABAR.get(), 3), ingot(ModMaterials.ASBESTOS, 5), stack(Items.EMERALD, 3));
+        itemRecipe(writer, "bedrock_solvent_washed_crystal", ModItems.BEDROCK_ORE_SOLVENT_WASHED_CRYSTAL.get(), stack(ModItems.CINNEBAR.get(), 3), ingot(ModMaterials.ASBESTOS, 5), stack(Items.EMERALD, 3));
         itemRecipe(writer, "bedrock_rad_washed_crystal", ModItems.BEDROCK_ORE_RAD_WASHED_CRYSTAL.get(), stack(ModItems.BORAX.get(), 3), stack(ModItems.MOLYSITE.get(), 3), stack(ModItems.GEM_SODALITE.get(), 9));
 
         // Misc
@@ -190,6 +197,18 @@ public final class CentrifugeRecipeGenerator {
         CentrifugeRecipeBuilder.tagRecipe(tag, outputs).save(writer, recipeId(name));
     }
     
+    /** Rezept mit LBSM-Fassung ({@link ConfigRecipes}, Schalter {@code lbsm_centrifuge}), gleiche ID. */
+    private static void tagRecipeLbsm(Consumer<FinishedRecipe> writer, String name, String tag, ItemStack[] normal, ItemStack[] lbsm) {
+        ConfigRecipes.variants(writer)
+                .base(w -> CentrifugeRecipeBuilder.tagRecipe(tag, normal).save(w, recipeId(name)))
+                .variant(v -> CentrifugeRecipeBuilder.tagRecipe(tag, lbsm).save(v, recipeId(name)), "lbsm_centrifuge")
+                .save();
+    }
+
+    private static ItemStack lbsmStack(String id, int count) {
+        return OreDictIngredients.stack(id, count);
+    }
+
     private static void itemRecipe(Consumer<FinishedRecipe> writer, String name, ItemLike input, ItemStack... outputs) {
         CentrifugeRecipeBuilder.itemRecipe(input.asItem(), outputs).save(writer, recipeId(name));
     }

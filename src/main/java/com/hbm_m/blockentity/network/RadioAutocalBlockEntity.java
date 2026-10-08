@@ -1,66 +1,36 @@
 package com.hbm_m.blockentity.network;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.blockentity.network.radio.IRadioTorchConfigurable;
 import com.hbm_m.blockentity.network.radio.RTTYNetwork;
+import com.hbm_m.module.autocal.IParse;
+import com.hbm_m.module.autocal.IParse.EnumStatementReturn;
+import com.hbm_m.module.autocal.IParse.ParseContext;
+import com.hbm_m.module.autocal.ParseMSES1Ext1;
 
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.StringTag;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 
 /**
- * Port of {@code TileEntityRadioAUTOCAL} (1.7.10 Original) - a small in-world programmable
- * terminal. Runs a stored line-based script, up to {@link #LINES_PER_TICK} lines per tick, with
- * label/jump control flow, a small integer variable store, redstone output pins, and RTTY channel
- * I/O via the existing {@link RTTYNetwork} bus.
- * <p>
- * SCOPE-Vereinfachung: Das Original benutzt eine eigene bytecode-artige Assemblersprache
- * ("MSES1Ext1", {@code com.hbm.module.ParseMSES1Ext1}) mit einem groesseren Befehlssatz. Ein
- * 1:1-Port dieser bespoke-VM wuerde den Rahmen sprengen; stattdessen implementiert dieser Port eine
- * eigene, kleinere aber real ausfuehrbare Skriptsprache mit demselben Grundprinzip (zeilenweise
- * Befehle, Labels/Sprungmarken, bedingte Sprachsteuerung, Redstone- und RTTY-I/O) - der
- * Kernmechanismus "programmierbares Redstone-/Funkterminal" bleibt erhalten, der genaue Befehlssatz
- * ist neu:
- * <pre>
- * LBL name                  - jump target marker (no-op)
- * SET var value             - set integer variable
- * ADD var value             - add to variable
- * JMP label                 - unconditional jump
- * IFEQ/IFLT/IFGT var value label - conditional jump
- * RS side value             - set redstone output (0..15) on side 0..5 (Direction ordinal)
- * RTTY.SEND channel value   - broadcast a value (literal or $var) on an RTTY channel
- * RTTY.LISTEN channel var   - store latest RTTY signal on a channel into a variable
- * WAIT ticks                - pause execution for N ticks
- * STOP                      - turn the terminal off
- * </pre>
+ * 1:1 {@code TileEntityRadioAUTOCAL}: der Automatische Rechner. Fuehrt ein MS-ES1.1-Skript ({@link ParseMSES1Ext1})
+ * mit {@code clockSpeed} Zeilen je Tick aus, Ein/Aus, "Fehler ignorieren" und "Automatischer Neustart" als Schalter,
+ * die letzten Zeilen als Verlauf. Ein- und Ausgabe ausschliesslich ueber Redstone-over-Radio.
  */
 public class RadioAutocalBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity implements IRadioTorchConfigurable {
 
-    private static final int LINES_PER_TICK = 20;
-    private static final int MAX_ITERATIONS = 200;
-    private static final int HISTORY_SIZE = 6;
-
-    public final List<String> script = new ArrayList<>();
-    public final List<String> history = new ArrayList<>();
     public boolean isOn = false;
     public boolean ignoreError = false;
     public boolean autoReboot = false;
 
-    private final Map<String, Long> vars = new HashMap<>();
-    private final Map<String, Integer> labels = new HashMap<>();
-    private final int[] redstoneOut = new int[6];
+    public String[] script = new String[0];
+    public IParse msesv1ext = new ParseMSES1Ext1();
+    public ParseContext ctx;
 
-    private int pc = 0;
-    private int waitTicks = 0;
+    public String[] history = new String[] {"", "", "", "", "", ""};
 
     public RadioAutocalBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.RADIO_AUTOCAL_BE.get(), pos, state);
@@ -68,131 +38,92 @@ public class RadioAutocalBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockE
 
     public static void tick(Level level, BlockPos pos, BlockState state, RadioAutocalBlockEntity be) {
         if (level.isClientSide) return;
-        if (!be.isOn) return;
+        RTTYNetwork.tickIfNeeded(level.getGameTime());
+        be.update(level);
+    }
 
-        if (be.waitTicks > 0) {
-            be.waitTicks--;
-            return;
+    private void update(Level worldObj) {
+
+        if (worldObj.getGameTime() % 60 == 0) this.setChanged(); // ensure we're always saved to disk
+
+        if (this.ctx == null) {
+            this.ctx = new ParseContext(worldObj);
+        }
+        if (this.ctx.world != worldObj) this.ctx.world = worldObj;
+
+        if (!this.isOn && this.autoReboot) {
+            this.isOn = true;
         }
 
-        int executed = 0;
-        int iterations = 0;
-        while (be.isOn && executed < LINES_PER_TICK && iterations < MAX_ITERATIONS) {
-            iterations++;
-            if (be.pc >= be.script.size()) {
-                be.isOn = false;
-                be.log("END");
-                break;
-            }
+        if (this.isOn) {
 
-            String line = be.script.get(be.pc).trim();
-            be.pc++;
-            if (line.isEmpty() || line.startsWith("#")) continue;
+            int emergencyBrake = 100;
+            for (int i = 0; i < this.ctx.clockSpeed && emergencyBrake > 0; i++) {
+                emergencyBrake--;
 
-            executed++;
-            try {
-                if (!be.execute(level, line)) break; // WAIT hit, stop this tick
-            } catch (Exception ex) {
-                be.log("ERROR: " + line);
-                if (!be.ignoreError) {
-                    be.isOn = false;
-                    break;
+                if (this.ctx.current == this.script.length) { this.stop("Program has terminated"); break; }
+                if (this.ctx.current < 0 || this.ctx.current >= this.script.length) { this.stop("Program index is out of bounds"); break; }
+
+                try {
+                    int index = this.ctx.current;
+                    this.ctx.current++;
+                    String line = this.script[index];
+                    EnumStatementReturn ret = msesv1ext.eval(ctx, line);
+                    if (ret != EnumStatementReturn.SKIP) pushMsg(index + ": " + line);
+                    this.history[0] = "Buffer: " + ctx.readBuffer();
+                    if (ret == EnumStatementReturn.END_TICK) break;
+                    if (ret == EnumStatementReturn.SHUTDOWN) this.stop("Program requested shutdown");
+                    if (!this.ignoreError) {
+                        if (ret == EnumStatementReturn.UNRECOGNIZED_COMMAND) this.stop("Unrecognized command");
+                        if (ret == EnumStatementReturn.PARAMETER_ERROR) this.stop("Parameter error");
+                        if (ret == EnumStatementReturn.UNDEFINED) this.stop("Undefined behavior");
+                        if (ret == EnumStatementReturn.STACK_EXCEEDED) this.stop("Stack exceeded capacity");
+                    }
+                    if (ret == EnumStatementReturn.SKIP) i--;
+                } catch (Exception ex) {
+                    this.stop("Evaluation unsuccessful");
                 }
             }
         }
 
-        be.setChanged();
+        // Original networkPackNT(15) - Anzeige von Schaltern und Verlauf
+        if (worldObj.getGameTime() % 5 == 0) worldObj.sendBlockUpdated(worldPosition, getBlockState(), getBlockState(), 2);
     }
 
-    /** Returns false if execution should pause for the rest of this tick (WAIT). */
-    private boolean execute(Level level, String line) {
-        String[] tok = line.split("\\s+");
-        String cmd = tok[0].toUpperCase(java.util.Locale.ROOT);
+    public void pushMsg(String msg) {
 
-        switch (cmd) {
-            case "LBL" -> { }
-            case "SET" -> vars.put(tok[1], resolve(tok[2]));
-            case "ADD" -> vars.merge(tok[1], resolve(tok[2]), Long::sum);
-            case "JMP" -> jumpTo(tok[1]);
-            case "IFEQ" -> { if (resolveVar(tok[1]) == resolve(tok[2])) jumpTo(tok[3]); }
-            case "IFLT" -> { if (resolveVar(tok[1]) < resolve(tok[2])) jumpTo(tok[3]); }
-            case "IFGT" -> { if (resolveVar(tok[1]) > resolve(tok[2])) jumpTo(tok[3]); }
-            case "RS" -> {
-                int side = Integer.parseInt(tok[1]);
-                if (side >= 0 && side < 6) redstoneOut[side] = (int) Math.max(0, Math.min(15, resolve(tok[2])));
-            }
-            case "RTTY.SEND" -> RTTYNetwork.broadcast(level, tok[1], String.valueOf(resolve(tok[2])));
-            case "RTTY.LISTEN" -> {
-                RTTYNetwork.RttyChannel sig = RTTYNetwork.listen(level, tok[1]);
-                if (sig != null && sig.signal != null) {
-                    try { vars.put(tok[2], Long.parseLong(String.valueOf(sig.signal))); } catch (NumberFormatException ignored) {}
-                }
-            }
-            case "WAIT" -> { waitTicks = Math.max(0, (int) resolve(tok[1])); return false; }
-            case "STOP" -> isOn = false;
-            case "PRINT" -> log(line.substring(Math.min(line.length(), 6)));
-            default -> throw new IllegalArgumentException("unknown command: " + cmd);
+        for (int i = 2; i < history.length; i++) {
+            history[i - 1] = history[i];
         }
-        return true;
+
+        history[history.length - 1] = msg;
     }
 
-    private long resolve(String token) {
-        if (token.startsWith("$")) return resolveVar(token.substring(1));
-        try { return Long.parseLong(token); } catch (NumberFormatException e) { return 0L; }
-    }
-
-    private long resolveVar(String name) {
-        return vars.getOrDefault(name.startsWith("$") ? name.substring(1) : name, 0L);
-    }
-
-    private void jumpTo(String label) {
-        Integer target = labels.get(label);
-        if (target != null) pc = target;
-    }
-
-    private void log(String msg) {
-        history.add(0, msg);
-        while (history.size() > HISTORY_SIZE) history.remove(history.size() - 1);
-    }
-
-    public int getRedstoneOutput(int side) {
-        return side >= 0 && side < 6 ? redstoneOut[side] : 0;
-    }
-
-    private void regenerateLabels() {
-        labels.clear();
-        for (int i = 0; i < script.size(); i++) {
-            String line = script.get(i).trim();
-            if (line.toUpperCase(java.util.Locale.ROOT).startsWith("LBL ")) {
-                labels.put(line.substring(4).trim(), i);
-            }
-        }
-    }
-
-    public void setScript(List<String> lines) {
-        script.clear();
-        script.addAll(lines);
-        regenerateLabels();
-        pc = 0;
-        waitTicks = 0;
-        setChanged();
+    public void stop(String reason) {
+        this.isOn = false;
+        if (this.ctx != null) this.ctx.turnOff();
+        this.pushMsg(reason);
     }
 
     @Override
     public void receiveControl(CompoundTag data) {
-        if (data.contains("payload")) {
-            String payload = data.getString("payload");
-            List<String> lines = new ArrayList<>();
-            for (String l : payload.split("\n")) lines.add(l.trim());
-            setScript(lines);
-        }
+        if (this.ctx == null) this.ctx = new ParseContext(level);
         if (data.contains("on")) {
-            boolean on = data.getBoolean("on");
-            if (on && !isOn) { pc = 0; waitTicks = 0; regenerateLabels(); }
-            isOn = on;
+            if (this.isOn) stop("User requested shutdown");
+            else this.isOn = true;
         }
-        if (data.contains("ignore")) ignoreError = data.getBoolean("ignore");
-        if (data.contains("auto")) autoReboot = data.getBoolean("auto");
+        if (data.contains("ignore")) this.ignoreError = !this.ignoreError;
+        if (data.contains("auto")) this.autoReboot = !this.autoReboot;
+
+        if (data.contains("payload")) {
+            this.ctx.jmp.clear();
+            this.script = data.getString("payload").split("\n");
+            for (int i = 0; i < script.length; i++) {
+                script[i] = script[i].trim();
+                this.msesv1ext.generateJumpPoints(ctx, script[i], i);
+            }
+            if (this.isOn) stop("Script has changed");
+        }
 
         setChanged();
         if (level != null && !level.isClientSide) {
@@ -201,27 +132,39 @@ public class RadioAutocalBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockE
     }
 
     @Override
-    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-        ListTag scriptTag = new ListTag();
-        for (String line : script) scriptTag.add(StringTag.valueOf(line));
-        tag.put("script", scriptTag);
-        tag.putBoolean("isOn", isOn);
-        tag.putBoolean("ignoreError", ignoreError);
-        tag.putBoolean("autoReboot", autoReboot);
-        tag.putInt("pc", pc);
-        tag.putInt("waitTicks", waitTicks);
+    protected void writeNbtData(CompoundTag nbt, net.minecraft.core.HolderLookup.Provider registries) {
+        nbt.putBoolean("isOn", isOn);
+        nbt.putBoolean("ignoreError", ignoreError);
+        nbt.putBoolean("autoReboot", autoReboot);
+
+        ListTag lineList = new ListTag();
+        for (String line : this.script) {
+            lineList.add(StringTag.valueOf(line));
+        }
+        nbt.put("script", lineList);
+
+        if (this.ctx == null) this.ctx = new ParseContext(level);
+        this.ctx.writeToNBT(nbt);
+
+        // Original serialize(): Verlauf nur fuer den Client
+        for (int i = 0; i < history.length; i++) nbt.putString("history" + i, history[i]);
     }
 
     @Override
-    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-        script.clear();
-        ListTag scriptTag = tag.getList("script", 8);
-        for (int i = 0; i < scriptTag.size(); i++) script.add(scriptTag.getString(i));
-        regenerateLabels();
-        isOn = tag.getBoolean("isOn");
-        ignoreError = tag.getBoolean("ignoreError");
-        autoReboot = tag.getBoolean("autoReboot");
-        pc = tag.getInt("pc");
-        waitTicks = tag.getInt("waitTicks");
+    protected void readNbtData(CompoundTag nbt, net.minecraft.core.HolderLookup.Provider registries) {
+        this.isOn = nbt.getBoolean("isOn");
+        this.ignoreError = nbt.getBoolean("ignoreError");
+        this.autoReboot = nbt.getBoolean("autoReboot");
+
+        ListTag lineList = nbt.getList("script", 8);
+        this.script = new String[lineList.size()];
+        for (int i = 0; i < script.length; i++) {
+            this.script[i] = lineList.getString(i);
+        }
+
+        this.ctx = new ParseContext(null);
+        this.ctx.readFromNBT(nbt, script, msesv1ext);
+
+        for (int i = 0; i < history.length; i++) if (nbt.contains("history" + i)) history[i] = nbt.getString("history" + i);
     }
 }

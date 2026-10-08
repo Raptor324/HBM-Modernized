@@ -1,75 +1,51 @@
 package com.hbm_m.client.render.implementations;
 
-import org.jetbrains.annotations.Nullable;
-
-import com.hbm_m.client.model.SoyuzRocketBakedModel;
-import com.hbm_m.client.render.MeshRenderCache;
-import com.hbm_m.client.render.SingleMeshVboRenderer;
+import com.hbm_m.client.render.SimpleObjModel;
 import com.hbm_m.entity.missile.SoyuzCapsuleEntity;
 import com.hbm_m.lib.RefStrings;
-import com.hbm_m.platform.PlatformHooks;
 import com.mojang.blaze3d.vertex.PoseStack;
+import com.mojang.math.Axis;
 
-import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.MultiBufferSource;
+import net.minecraft.client.renderer.RenderType;
 import net.minecraft.client.renderer.entity.EntityRenderer;
 import net.minecraft.client.renderer.entity.EntityRendererProvider;
-import net.minecraft.client.resources.model.BakedModel;
 import net.minecraft.resources.ResourceLocation;
 
-/**
- * Renders the cargo-mode descent capsule as a small scaled-down instance of the
- * Soyuz rocket mesh - there's no dedicated capsule OBJ asset ported (the legacy
- * player-pilotable capsule is a separate feature outside this launcher's scope).
- */
-
-//? if forge {
-@net.minecraftforge.api.distmarker.OnlyIn(net.minecraftforge.api.distmarker.Dist.CLIENT)
-//?} elif fabric {
-/*@net.fabricmc.api.Environment(net.fabricmc.api.EnvType.CLIENT)
-*///?} elif neoforge {
-/*@net.neoforged.api.distmarker.OnlyIn(net.neoforged.api.distmarker.Dist.CLIENT)
-*///?}
+/** 1:1 {@code RenderSoyuzCapsule}: Kapsel unter dem Fallschirm, pendelt um einen Punkt 7 Bloecke ueber ihr. */
 public class SoyuzCapsuleEntityRenderer extends EntityRenderer<SoyuzCapsuleEntity> {
 
-    private static final ResourceLocation ROCKET_MODEL_ID =
-            ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "block/deco_soyuz_rocket");
-    private static final ResourceLocation DUMMY_TEXTURE =
-            ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/block/soyuz/launcher_table.png");
-    private static final float SCALE = 0.15F;
+    public static final SimpleObjModel SOYUZ_LANDER = new SimpleObjModel(ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "models/soyuz_lander.obj"));
+    public static final ResourceLocation LANDER_TEX = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/soyuz_capsule/soyuz_lander.png");
+    public static final ResourceLocation LANDER_RUST_TEX = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/soyuz_capsule/soyuz_lander_rust.png");
+    public static final ResourceLocation CHUTE_TEX = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/models/soyuz_capsule/soyuz_chute.png");
 
     public SoyuzCapsuleEntityRenderer(EntityRendererProvider.Context context) {
         super(context);
     }
 
     @Override
-    public void render(SoyuzCapsuleEntity entity, float entityYaw, float partialTick, PoseStack poseStack,
-                        MultiBufferSource bufferSource, int packedLight) {
-        BakedModel part = getRocketPart();
-        if (part == null) return;
+    public void render(SoyuzCapsuleEntity entity, float entityYaw, float partialTick, PoseStack ps, MultiBufferSource buffers, int light) {
+        ps.pushPose();
 
-        SingleMeshVboRenderer renderer = MeshRenderCache.getOrCreateRenderer("soyuz_capsule_entity", "Rocket", part);
-        if (renderer == null) return;
+        double time = entity.level().getGameTime();
+        double sine = Math.sin(time * 0.05) * 5;
+        double sin3 = Math.sin(time * 0.05 + Math.PI * 0.5) * 5;
+        int height = 7;
+        ps.translate(0.0F, height, 0.0F);
+        ps.mulPose(Axis.ZP.rotationDegrees((float) sine));
+        ps.mulPose(Axis.XP.rotationDegrees((float) sin3));
+        ps.translate(0.0F, -height, 0.0F);
 
-        poseStack.pushPose();
-        poseStack.scale(SCALE, SCALE, SCALE);
-        renderer.render(poseStack, packedLight, entity.blockPosition(), null, bufferSource);
-        poseStack.popPose();
+        SOYUZ_LANDER.renderPart("Capsule", ps, buffers.getBuffer(RenderType.entityCutout(LANDER_TEX)), light);
+        SOYUZ_LANDER.renderPart("Chute", ps, buffers.getBuffer(RenderType.entityCutout(CHUTE_TEX)), light);
 
-        super.render(entity, entityYaw, partialTick, poseStack, bufferSource, packedLight);
+        ps.popPose();
+        super.render(entity, entityYaw, partialTick, ps, buffers, light);
     }
 
     @Override
     public ResourceLocation getTextureLocation(SoyuzCapsuleEntity entity) {
-        return DUMMY_TEXTURE;
-    }
-
-    @Nullable
-    private static BakedModel getRocketPart() {
-        var modelManager = Minecraft.getInstance().getModelManager();
-        BakedModel model = PlatformHooks.getModel(modelManager, ROCKET_MODEL_ID);
-        if (model == null || model == modelManager.getMissingModel()) return null;
-        if (!(model instanceof SoyuzRocketBakedModel rocketModel)) return null;
-        return rocketModel.getPart(SoyuzRocketBakedModel.ROCKET);
+        return LANDER_TEX;
     }
 }

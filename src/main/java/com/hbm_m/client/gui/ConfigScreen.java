@@ -657,7 +657,13 @@ public class ConfigScreen extends Screen {
     private static List<Component> fieldDescription(ConfigField f) {
         List<Component> primary = langLines(ConfigSchema.tooltipKey(f));
         if (primary != null) return primary;
-        return langLines("text.autoconfig.hbm_m.option." + f.getKey() + ".@Tooltip");
+        List<Component> legacy = langLines("text.autoconfig.hbm_m.option." + f.getKey() + ".@Tooltip");
+        if (legacy != null) return legacy;
+        // Restport: ohne Uebersetzung der Original-Kommentar aus dem Schema
+        if (f.getComment() == null || f.getComment().isEmpty()) return null;
+        List<Component> l = new ArrayList<>();
+        l.add(Component.literal(f.getComment()).withStyle(ChatFormatting.GRAY));
+        return l;
     }
 
     /** Список строк перевода (с разделением по \n), либо null, если перевода нет. */
@@ -687,14 +693,32 @@ public class ConfigScreen extends Screen {
     private static Component fieldLabel(ConfigField f) {
         String k = ConfigSchema.labelKey(f);
         if (Language.getInstance().has(k)) return Component.translatable(k);
-        return Component.translatable("text.autoconfig.hbm_m.option." + f.getKey());
+        String legacy = "text.autoconfig.hbm_m.option." + f.getKey();
+        if (Language.getInstance().has(legacy)) return Component.translatable(legacy);
+        return Component.literal(humanize(f.getKey()));
+    }
+
+    /** Restport: "bedrockIronSpawn" -> "Bedrock Iron Spawn" fuer Felder ohne Uebersetzung. */
+    private static String humanize(String key) {
+        String k = key.substring(key.lastIndexOf('.') + 1);
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < k.length(); i++) {
+            char c = k.charAt(i);
+            if (i == 0) sb.append(Character.toUpperCase(c));
+            else if (Character.isUpperCase(c) && !Character.isUpperCase(k.charAt(i - 1))) sb.append(' ').append(c);
+            else if (Character.isDigit(c) && !Character.isDigit(k.charAt(i - 1))) sb.append(' ').append(c);
+            else sb.append(c);
+        }
+        return sb.toString();
     }
 
     /** Заголовок категории: config.hbm_m.category.* с fallback на text.autoconfig.*. */
     private static Component categoryLabel(String category) {
         String k = ConfigSchema.categoryKey(category);
         if (Language.getInstance().has(k)) return Component.translatable(k);
-        return Component.translatable("text.autoconfig.hbm_m.category." + category);
+        String legacy = "text.autoconfig.hbm_m.category." + category;
+        if (Language.getInstance().has(legacy)) return Component.translatable(legacy);
+        return Component.literal(humanize(category));
     }
 
     /** Название группы вложенного объекта (аккордеон). */

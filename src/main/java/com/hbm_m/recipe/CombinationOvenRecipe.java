@@ -23,116 +23,67 @@ import net.minecraft.world.level.material.Fluid;
 import net.minecraft.world.level.material.Fluids;
 
 /**
- * Datapack-facing recipe shape ({@code hbm_m:combination_oven}) for the Combination Oven —
- * generic port of the 1.7.10 {@code TileEntityFurnaceCombination}/{@code CombinationRecipes}.
+ * 1:1 {@code CombinationRecipes}: ein Item rein, ein Item <b>und/oder</b> ein Fluid heraus
+ * ({@code Pair<ItemStack, FluidStack>}). Die Verarbeitungszeit ist fest und haengt an der Hitze des Ofens,
+ * nicht am Rezept.
  *
- * <p>Shape: 1 item input (with count) + N mB of a specific fluid -> 1 item output, over a
- * fixed duration. Unlike the original (which is a hand-populated Java {@code HashMap}), this
- * is a proper vanilla {@link net.minecraft.world.item.crafting.Recipe}/{@link RecipeSerializer}
- * pair so recipes can be added as datapack JSON later without touching machine code.</p>
- *
- * <p><b>Унификация жидкостей:</b> жидкостный вход хранится как Architectury {@link FluidStack}
- * (единый формат с {@code ChemicalPlantRecipe}/{@code ArcFurnaceRecipe}/...).
- * Прежняя зависимость от {@code ChemicalPlantRecipe.FluidIngredient} устранена — это был
- * дублирующий слой абстракции, мешавший использовать общий сериализатор
- * {@link RecipeHooks#readFluidStack}/{@link RecipeHooks#writeFluidStack}.
- * Getters {@link #getFluidId()}/{@link #getFluidAmount()}/{@link #getFluid()} сохранены для
- * совместимости с {@code MachineCombinationOvenBlockEntity}.</p>
+ * <pre>{@code
+ * { "type": "hbm_m:combination_oven", "ingredient": {...},
+ *   "result": { "item": "...", "count": 1 },          // optional
+ *   "fluid": { "fluid": "hbm_m:coalcreosote", "amount": 100 } }   // optional, AUSGABE
+ * }</pre>
  */
 public class CombinationOvenRecipe extends PlatformRecipe {
 
-    @Nullable
-    private final FluidStack fluidInput;
     private final Ingredient input;
-    private final int inputCount;
     private final ItemStack output;
-    private final int duration;
+    @Nullable private final FluidStack fluidOutput;
 
-    public CombinationOvenRecipe(ResourceLocation id, Ingredient input, int inputCount,
-                                  @Nullable FluidStack fluidInput,
-                                  ItemStack output, int duration) {
+    public CombinationOvenRecipe(ResourceLocation id, Ingredient input, ItemStack output, @Nullable FluidStack fluidOutput) {
         super(id);
         this.input = input;
-        this.inputCount = Math.max(1, inputCount);
-        this.fluidInput = (fluidInput != null && !fluidInput.isEmpty() && fluidInput.getAmount() > 0)
-                ? fluidInput : null;
-        this.output = output;
-        this.duration = Math.max(1, duration);
+        this.output = output == null ? ItemStack.EMPTY : output;
+        this.fluidOutput = (fluidOutput != null && !fluidOutput.isEmpty() && fluidOutput.getAmount() > 0) ? fluidOutput : null;
     }
 
-    public Ingredient getInput() {
-        return input;
-    }
+    public Ingredient getInput() { return input; }
 
-    public int getInputCount() {
-        return inputCount;
-    }
+    /** Item-Ausgabe, kann leer sein. */
+    public ItemStack getOutput() { return output.copy(); }
 
-    @Nullable
-    public ResourceLocation getFluidId() {
-        if (fluidInput == null || fluidInput.isEmpty()) return null;
-        return net.minecraft.core.registries.BuiltInRegistries.FLUID.getKey(fluidInput.getFluid());
-    }
+    @Nullable public FluidStack getFluidOutput() { return fluidOutput; }
 
-    public int getFluidAmount() {
-        return fluidInput != null ? (int) Math.min(Integer.MAX_VALUE, fluidInput.getAmount()) : 0;
-    }
-
-    /** Resolves the required fluid lazily (registries may not be fully populated at recipe-load time). */
     @NotNull
-    public Fluid getFluid() {
-        if (fluidInput == null || fluidInput.isEmpty()) return Fluids.EMPTY;
-        Fluid f = fluidInput.getFluid();
+    public Fluid getOutputFluid() {
+        if (fluidOutput == null) return Fluids.EMPTY;
+        Fluid f = fluidOutput.getFluid();
         return f != null ? f : Fluids.EMPTY;
     }
 
-    /** Прямой доступ к жидкостному входу как {@link FluidStack} (унифицированный формат). */
-    @Nullable
-    public FluidStack getFluidInput() {
-        return fluidInput;
-    }
-
-    public ItemStack getOutput() {
-        return output.copy();
-    }
-
-    public int getDuration() {
-        return duration;
+    public int getOutputFluidAmount() {
+        return fluidOutput != null ? (int) Math.min(Integer.MAX_VALUE, fluidOutput.getAmount()) : 0;
     }
 
     public boolean matchesInput(ItemStack stack) {
-        return input.test(stack);
-    }
-
-    public boolean matchesFluid(Fluid tankFluid) {
-        if (fluidInput == null || fluidInput.isEmpty() || fluidInput.getAmount() <= 0) return true;
-        return getFluid() == tankFluid;
+        return !stack.isEmpty() && input.test(stack);
     }
 
     @Override
     public boolean matchesRecipe(@NotNull RecipeInputWrapper container, @NotNull Level level) {
-        return input.test(container.getItem(0));
+        return matchesInput(container.getItem(0));
     }
 
     @Override
-    public @NotNull ItemStack assembleSafe() {
-        return output.copy();
-    }
+    public @NotNull ItemStack assembleSafe() { return output.copy(); }
 
     @Override
-    public @NotNull ItemStack getResultItemSafe() {
-        return output.copy();
-    }
+    public @NotNull ItemStack getResultItemSafe() { return output.copy(); }
 
     @Override
-    public @NotNull RecipeSerializer<?> getSerializer() {
-        return Serializer.INSTANCE;
-    }
+    public @NotNull RecipeSerializer<?> getSerializer() { return Serializer.INSTANCE; }
 
     @Override
-    public @NotNull RecipeType<?> getType() {
-        return Type.INSTANCE;
-    }
+    public @NotNull RecipeType<?> getType() { return Type.INSTANCE; }
 
     public static class Type implements RecipeType<CombinationOvenRecipe> {
         public static final Type INSTANCE = new Type();
@@ -150,49 +101,33 @@ public class CombinationOvenRecipe extends PlatformRecipe {
         @Override
         public @NotNull CombinationOvenRecipe readJson(@NotNull ResourceLocation recipeId, @NotNull JsonObject json) {
             Ingredient input = RecipeHooks.ingredientFromJson(json.get("ingredient"));
-            int inputCount = GsonHelper.getAsInt(json, "count", 1);
 
-            // Жидкостный вход — единый формат { "fluid": <id>, "amount": <mB> } через RecipeHooks.fluidStackOf.
-            FluidStack fluidInput = FluidStack.empty();
+            FluidStack fluid = FluidStack.empty();
             if (json.has("fluid")) {
                 JsonObject fluidObj = GsonHelper.getAsJsonObject(json, "fluid");
                 ResourceLocation id = ResourceLocation.tryParse(GsonHelper.getAsString(fluidObj, "fluid"));
                 int amount = GsonHelper.getAsInt(fluidObj, "amount", 0);
-                if (id != null && amount > 0) {
-                    fluidInput = RecipeHooks.fluidStackOf(id, amount);
-                }
+                if (id != null && amount > 0) fluid = RecipeHooks.fluidStackOf(id, amount);
             }
 
-            ItemStack output = RecipeHooks.itemStackFromJson(GsonHelper.getAsJsonObject(json, "result"));
-            int duration = GsonHelper.getAsInt(json, "duration", 200);
+            ItemStack output = json.has("result") ? RecipeHooks.itemStackFromJson(GsonHelper.getAsJsonObject(json, "result")) : ItemStack.EMPTY;
 
-            return new CombinationOvenRecipe(recipeId, input, inputCount, fluidInput, output, duration);
+            return new CombinationOvenRecipe(recipeId, input, output, fluid);
         }
 
         @Override
         public CombinationOvenRecipe readNetwork(@NotNull ResourceLocation recipeId, @NotNull FriendlyByteBuf buf) {
             Ingredient input = RecipeHooks.readIngredient(buf);
-            int inputCount = buf.readVarInt();
-
-            // Жидкостный вход — единый кросс-лоадерный формат (RecipeHooks.readFluidStack).
-            FluidStack fluidInput = RecipeHooks.readFluidStack(buf);
-
             ItemStack output = RecipeHooks.readItem(buf);
-            int duration = buf.readVarInt();
-
-            return new CombinationOvenRecipe(recipeId, input, inputCount, fluidInput, output, duration);
+            FluidStack fluid = RecipeHooks.readFluidStack(buf);
+            return new CombinationOvenRecipe(recipeId, input, output, fluid);
         }
 
         @Override
         public void writeNetwork(@NotNull FriendlyByteBuf buf, @NotNull CombinationOvenRecipe recipe) {
             RecipeHooks.writeIngredient(buf, recipe.input);
-            buf.writeVarInt(recipe.inputCount);
-
-            // Жидкостный вход — единый кросс-лоадерный формат (RecipeHooks.writeFluidStack).
-            RecipeHooks.writeFluidStack(buf, recipe.fluidInput != null ? recipe.fluidInput : FluidStack.empty());
-
             RecipeHooks.writeItem(buf, recipe.output);
-            buf.writeVarInt(recipe.duration);
+            RecipeHooks.writeFluidStack(buf, recipe.fluidOutput != null ? recipe.fluidOutput : FluidStack.empty());
         }
     }
 }

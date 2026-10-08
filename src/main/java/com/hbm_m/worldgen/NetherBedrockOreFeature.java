@@ -3,9 +3,6 @@ package com.hbm_m.worldgen;
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.blockentity.nature.OreBedrockBlockEntity;
 import com.hbm_m.item.ModItems;
-import com.hbm_m.item.material.MaterialShape;
-import com.hbm_m.item.material.ModMaterialItems;
-import com.hbm_m.item.material.ModMaterials;
 
 import com.mojang.serialization.Codec;
 
@@ -34,6 +31,8 @@ public class NetherBedrockOreFeature extends Feature<NoneFeatureConfiguration> {
 
     @Override
     public boolean place(FeaturePlaceContext<NoneFeatureConfiguration> context) {
+        // Original: nur innerhalb von if(WorldConfig.netherOre)
+        if (!com.hbm_m.config.WorldConfig.netherOre) return false;
         BlockPos origin = context.origin();
         LevelAccessor level = context.level();
         var rand = context.random();
@@ -53,7 +52,7 @@ public class NetherBedrockOreFeature extends Feature<NoneFeatureConfiguration> {
 
                 BlockPos pos = new BlockPos(ix, baseY, iz);
                 BlockState existing = level.getBlockState(pos);
-                if (!existing.is(Blocks.BEDROCK) && !existing.canBeReplaced()) continue;
+                if (!existing.is(Blocks.BEDROCK)) continue; // Original: isReplaceableOreGen(bedrock)
 
                 level.setBlock(pos, oreState, 3);
                 if (level.getBlockEntity(pos) instanceof OreBedrockBlockEntity ore) {
@@ -73,7 +72,10 @@ public class NetherBedrockOreFeature extends Feature<NoneFeatureConfiguration> {
                     for (int iy = baseY + 1; iy <= baseY + 6; iy++) {
                         BlockPos pos = new BlockPos(ix, iy, iz);
                         BlockState existing = level.getBlockState(pos);
-                        if (existing.is(Blocks.BEDROCK) || existing.canBeReplaced()) {
+                        if ((iy < baseY + 3 || existing.is(net.minecraft.world.level.block.Blocks.BEDROCK))
+                                && (existing.is(net.minecraft.world.level.block.Blocks.BEDROCK)
+                                || existing.is(net.minecraft.tags.BlockTags.STONE_ORE_REPLACEABLES)
+                                || existing.is(net.minecraft.tags.BlockTags.DEEPSLATE_ORE_REPLACEABLES))) {
                             level.setBlock(pos, depthRock.defaultBlockState(), 3);
                         }
                     }
@@ -84,11 +86,19 @@ public class NetherBedrockOreFeature extends Feature<NoneFeatureConfiguration> {
         return placed > 0;
     }
 
-    /** Весовая таблица оригинала: glowstone 100, phosphorus 50, quartz 100 (стаков по 4). */
+    /**
+     * Весовая таблица оригинала (WeightedRandom): glowstone / phosphorus / quartz, стаков по 4.
+     * Restport: Gewichte aus WorldConfig.bedrock{Glowstone,Phosphorus,Quartz}Spawn (Vorgabe 100/50/100).
+     */
     private ItemStack pickResource(net.minecraft.util.RandomSource rand) {
-        int roll = rand.nextInt(250);
-        if (roll < 100) return new ItemStack(Items.GLOWSTONE_DUST, 4);
-        if (roll < 150) return ModMaterialItems.stack(ModMaterials.PHOSPHORUS, MaterialShape.CRYSTAL, 4);
+        int glow = Math.max(0, com.hbm_m.config.WorldConfig.bedrockGlowstoneSpawn);
+        int phos = Math.max(0, com.hbm_m.config.WorldConfig.bedrockPhosphorusSpawn);
+        int quartz = Math.max(0, com.hbm_m.config.WorldConfig.bedrockQuartzSpawn);
+        int total = glow + phos + quartz;
+        if (total <= 0) return new ItemStack(Items.GLOWSTONE_DUST, 4);
+        int roll = rand.nextInt(total);
+        if (roll < glow) return new ItemStack(Items.GLOWSTONE_DUST, 4);
+        if (roll < glow + phos) return new ItemStack(com.hbm_m.item.ModItems.FIRE_POWDER.get(), 4); // Original: powder_fire
         return new ItemStack(Items.QUARTZ, 4);
     }
 }

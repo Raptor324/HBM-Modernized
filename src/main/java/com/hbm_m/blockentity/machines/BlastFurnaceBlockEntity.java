@@ -63,7 +63,10 @@ import java.util.List;
 *///?}
 
 @SuppressWarnings("UnstableApiUsage")
-public class BlastFurnaceBlockEntity extends BaseHbmBlockEntity implements MenuProvider {
+public class BlastFurnaceBlockEntity extends BaseHbmBlockEntity implements MenuProvider, com.hbm_m.api.fluids.IFluidStandardSenderMK2 {
+
+    /** Original {@code TileEntityMachinePolluting(4, 50)}: drei Rauchtanks a 50 mB, Abgabe an alle Nachbarn. */
+    private final com.hbm_m.blockentity.SmokeTankSet smokeTanks = new com.hbm_m.blockentity.SmokeTankSet(50);
 
     private static final int FUEL_SLOT = 0;
     private static final int INPUT_SLOT_TOP = 1;
@@ -86,9 +89,7 @@ public class BlastFurnaceBlockEntity extends BaseHbmBlockEntity implements MenuP
             if (slot == OUTPUT_SLOT) {
                 return false;
             }
-            if (slot == FUEL_SLOT) {
-                return isFuel(stack);
-            }
+            // Original isItemValidForSlot: alles ausser dem Ausgang
             return true;
         }
     };
@@ -258,6 +259,7 @@ public class BlastFurnaceBlockEntity extends BaseHbmBlockEntity implements MenuP
         tag.putInt("blast_furnace.side_upper", sideUpper);
         tag.putInt("blast_furnace.side_lower", sideLower);
         tag.putInt("blast_furnace.side_fuel", sideFuel);
+        smokeTanks.writeToNBT(tag);
         super.writeNbtData(tag, registries);
     }
 
@@ -270,6 +272,7 @@ public class BlastFurnaceBlockEntity extends BaseHbmBlockEntity implements MenuP
         sideUpper = tag.getInt("blast_furnace.side_upper");
         sideLower = tag.getInt("blast_furnace.side_lower");
         sideFuel = tag.getInt("blast_furnace.side_fuel");
+        smokeTanks.readFromNBT(tag);
     }
 
     public void tick(Level level, BlockPos pos, BlockState state) {
@@ -278,25 +281,40 @@ public class BlastFurnaceBlockEntity extends BaseHbmBlockEntity implements MenuP
         }
 
         boolean dirty = false;
-        boolean wasBurning = isBurning();
+        boolean extension = hasExtension();
 
-        if (fuel < MAX_FUEL && tryConsumeFuelItem()) {
+        // Original: Rauch an alle sechs Nachbarn, mit Aufsatz zusaetzlich nach oben ueber dem Aufsatz
+        for (Direction dir : Direction.values()) {
+            for (com.hbm_m.inventory.fluid.tank.FluidTank tank : smokeTanks.tanks()) {
+                if (tank.getFill() > 0) tryProvide(tank, level, pos.relative(dir), dir);
+            }
+        }
+        if (extension) {
+            for (com.hbm_m.inventory.fluid.tank.FluidTank tank : smokeTanks.tanks()) {
+                if (tank.getFill() > 0) tryProvide(tank, level, pos.above(2), Direction.UP);
+            }
+        }
+
+        if (tryConsumeFuelItem()) {
             dirty = true;
         }
 
         boolean canProcess = hasRecipe() && fuel > 0;
         if (canProcess) {
-            fuel = Math.max(0, fuel - 1);
-            progress += getProgressPerTick();
+            fuel -= 1;
+            progress += extension ? 3 : 1;
 
-            // Original (TileEntityFurnaceSteel): SOOT_PER_SECOND * 2 im Sekundentakt.
-            if (level.getGameTime() % 20 == 0) {
-                PollutionHandler.incrementPollution(level, worldPosition, PollutionType.SOOT,
-                        PollutionHandler.SOOT_PER_SECOND * 2);
-            }
             if (progress >= PROCESS_TIME) {
-                craftItem();
                 progress -= PROCESS_TIME;
+                craftItem();
+            }
+
+            if (fuel < 0) fuel = 0;
+
+            // Original: SOOT_PER_SECOND * (Aufsatz ? 3 : 1), zuerst in den Rauchtank
+            if (level.getGameTime() % 20 == 0) {
+                smokeTanks.pollute(level, worldPosition, PollutionType.SOOT,
+                        PollutionHandler.SOOT_PER_SECOND * (extension ? 3 : 1));
             }
             dirty = true;
         } else if (progress != 0) {
@@ -304,18 +322,16 @@ public class BlastFurnaceBlockEntity extends BaseHbmBlockEntity implements MenuP
             dirty = true;
         }
 
-        if (wasBurning != isBurning()) {
-            level.setBlock(pos, state.setValue(BlastFurnaceBlock.LIT, isBurning()), 3);
+        // Original: MachineDiFurnace.updateBlockState(progress > 0), ausser beim nahtlosen Weiterlaufen
+        boolean trigger = !(hasRecipe() && fuel > 0 && this.progress == 0);
+        if (trigger && state.getValue(BlastFurnaceBlock.LIT) != (this.progress > 0)) {
+            level.setBlock(pos, state.setValue(BlastFurnaceBlock.LIT, this.progress > 0), 3);
             dirty = true;
         }
 
         if (dirty) {
             setChanged();
         }
-    }
-
-    private int getProgressPerTick() {
-        return hasExtension() ? 3 : 1;
     }
 
     private boolean hasExtension() {
@@ -332,15 +348,11 @@ public class BlastFurnaceBlockEntity extends BaseHbmBlockEntity implements MenuP
             return false;
         }
         int value = getFuelValue(stack);
-        if (value <= 0) {
+        // Original: nur nachlegen, wenn der ganze Brennwert noch hineinpasst
+        if (value <= 0 || fuel > MAX_FUEL - value) {
             return false;
         }
-
-        int newFuelLevel = Math.min(MAX_FUEL, fuel + value);
-        if (newFuelLevel == fuel) {
-            return false;
-        }
-        fuel = newFuelLevel;
+        fuel += value;
 
         Item remaining = stack.getItem().getCraftingRemainingItem();
         ItemStack remainder = remaining != null ? new ItemStack(remaining) : ItemStack.EMPTY;
@@ -382,7 +394,8 @@ public class BlastFurnaceBlockEntity extends BaseHbmBlockEntity implements MenuP
         }
         RecipeInputWrapper wrapper = new RecipeInputWrapper(inventory);
         for (BlastFurnaceRecipe recipe : RecipeHooks.getAllRecipes(level, BlastFurnaceRecipe.Type.INSTANCE)) {
-            if (recipe.matchesRecipe(wrapper, level)) {
+            // Original: Legierungsofen nutzt BlastFurnaceRecipes, nicht die NT-Liste des Hochofens
+            if (!recipe.isNT() && recipe.matchesRecipe(wrapper, level)) {
                 return Optional.of(recipe);
             }
         }
@@ -416,38 +429,32 @@ public class BlastFurnaceBlockEntity extends BaseHbmBlockEntity implements MenuP
         return getFuelValue(stack) > 0;
     }
 
+    /** Original {@code TileEntityDiFurnace.getItemPower} (Meta-Items des Originals = je Variante eine ID). */
     private static int getFuelValue(ItemStack stack) {
         Item item = stack.getItem();
-        if (item == Items.LAVA_BUCKET) {
-            return 12_800;
-        }
-        if (item == Items.COAL || item == Items.CHARCOAL) {
-            return 200;
-        }
-        if (item == Items.COAL_BLOCK) {
-            return 2_000;
-        }
-        if (item == Items.BLAZE_ROD) {
-            return 1_000;
-        }
-        if (item == Items.DRIED_KELP) {
-            return 15;
-        }
-        if (item == Items.DRIED_KELP_BLOCK) {
-            return 150;
-        }
-        if (item == Items.BLAZE_POWDER) {
-            return 300;
-        }
-        if (item == ModItems.LIGNITE.get()) {
-            return 150;
-        }
-        // Coal powder (original: powder_coal 200)
-        if (item == ModMaterialItems.item(ModMaterials.COAL, MaterialShape.POWDER)) {
-            return 200;
-        }
+        if (item == Items.COAL || item == Items.CHARCOAL) return 200; // Items.coal inkl. Holzkohle (Meta 1)
+        if (item == Items.COAL_BLOCK) return 2000;
+        if (item == ModBlocks.BLOCK_COKE_COAL.get().asItem() || item == ModBlocks.BLOCK_COKE_LIGNITE.get().asItem()
+                || item == ModBlocks.BLOCK_COKE_PETROLEUM.get().asItem()) return 4000;
+        if (item == Items.LAVA_BUCKET) return 12800;
+        if (item == Items.BLAZE_ROD) return 1000;
+        if (item == Items.BLAZE_POWDER) return 300;
+        if (item == ModItems.LIGNITE.get()) return 150;
+        String id = net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(item).toString();
+        if (id.equals("hbm_m:lignite_powder")) return 150;
+        if (item == ModMaterialItems.item(ModMaterials.COAL, MaterialShape.POWDER)) return 200;
+        if (item == ModItems.COAL_BRIQUETTE.get() || item == ModItems.LIGNITE_BRIQUETTE.get() || item == ModItems.SAWDUST_BRIQUETTE.get()) return 200;
+        if (item == ModItems.COAL_COKE.get() || item == ModItems.LIGNITE_COKE.get() || item == ModItems.COKE_PETROLEUM.get()) return 400;
+        if (item == ModItems.SOLID_FUEL.get()) return 400;
         return 0;
     }
+
+    // -- Rauch (Original TileEntityMachinePolluting) --
+
+    @Override public com.hbm_m.inventory.fluid.tank.FluidTank[] getSendingTanks() { return smokeTanks.tanks(); }
+    /** Original {@code getAllTanks}: leer - die Rauchtanks werden nur abgegeben. */
+    @Override public com.hbm_m.inventory.fluid.tank.FluidTank[] getAllTanks() { return new com.hbm_m.inventory.fluid.tank.FluidTank[0]; }
+    @Override public boolean isLoaded() { return level != null && !isRemoved() && level.isLoaded(worldPosition); }
 
     public void cycleSide(int slot) {
         switch (slot) {

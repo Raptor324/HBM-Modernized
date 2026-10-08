@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 
 import com.hbm_m.block.ModBlocks;
+import com.hbm_m.config.WorldConfig;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.worldgen.ModWorldGen;
 
@@ -88,22 +89,22 @@ public final class ModWorldGenProvider {
         RuleTest gneiss = new BlockMatchTest(ModBlocks.STONE_GNEISS.get());
 
         // --- обычные руды верхнего мира (камень + глубинный сланец) ---
-        ore(ctx, "uranium_ore", stone, deepslate, ModBlocks.URANIUM_ORE.get(), ModBlocks.URANIUM_ORE_DEEPSLATE.get(), 4);
-        ore(ctx, "thorium_ore", stone, deepslate, ModBlocks.THORIUM_ORE.get(), ModBlocks.THORIUM_ORE_DEEPSLATE.get(), 7);
-        ore(ctx, "titanium_ore", stone, deepslate, ModBlocks.TITANIUM_ORE.get(), ModBlocks.TITANIUM_ORE_DEEPSLATE.get(), 7);
-        ore(ctx, "sulfur_ore", stone, deepslate, ModBlocks.SULFUR_ORE.get(), ModBlocks.SULFUR_ORE_DEEPSLATE.get(), 7);
-        ore(ctx, "aluminum_ore", stone, deepslate, ModBlocks.ALUMINUM_ORE.get(), ModBlocks.ALUMINUM_ORE_DEEPSLATE.get(), 7);
+        ore(ctx, "uranium_ore", stone, deepslate, ModBlocks.URANIUM_ORE.get(), ModBlocks.URANIUM_ORE_DEEPSLATE.get(), 5);
+        ore(ctx, "thorium_ore", stone, deepslate, ModBlocks.THORIUM_ORE.get(), ModBlocks.THORIUM_ORE_DEEPSLATE.get(), 5);
+        ore(ctx, "titanium_ore", stone, deepslate, ModBlocks.TITANIUM_ORE.get(), ModBlocks.TITANIUM_ORE_DEEPSLATE.get(), 6);
+        ore(ctx, "sulfur_ore", stone, deepslate, ModBlocks.SULFUR_ORE.get(), ModBlocks.SULFUR_ORE_DEEPSLATE.get(), 8);
+        ore(ctx, "aluminum_ore", stone, deepslate, ModBlocks.ALUMINUM_ORE.get(), ModBlocks.ALUMINUM_ORE_DEEPSLATE.get(), 6);
         // Медную руду не генерируем — в 1.18+ есть ванильная медь.
-        ore(ctx, "fluorite_ore", stone, deepslate, ModBlocks.FLUORITE_ORE.get(), ModBlocks.FLUORITE_ORE_DEEPSLATE.get(), 7);
+        ore(ctx, "fluorite_ore", stone, deepslate, ModBlocks.FLUORITE_ORE.get(), ModBlocks.FLUORITE_ORE_DEEPSLATE.get(), 4);
         ore(ctx, "niter_ore", stone, deepslate, ModBlocks.NITER_ORE.get(), ModBlocks.NITER_ORE_DEEPSLATE.get(), 6);
-        ore(ctx, "tungsten_ore", stone, deepslate, ModBlocks.TUNGSTEN_ORE.get(), ModBlocks.TUNGSTEN_ORE_DEEPSLATE.get(), 6);
-        ore(ctx, "lead_ore", stone, deepslate, ModBlocks.LEAD_ORE.get(), ModBlocks.LEAD_ORE_DEEPSLATE.get(), 6);
-        ore(ctx, "beryllium_ore", stone, deepslate, ModBlocks.BERYLLIUM_ORE.get(), ModBlocks.BERYLLIUM_ORE_DEEPSLATE.get(), 6);
-        ore(ctx, "rareground_ore", stone, deepslate, ModBlocks.RAREGROUND_ORE.get(), ModBlocks.RAREGROUND_ORE_DEEPSLATE.get(), 4);
-        ore(ctx, "lignite_ore", stone, deepslate, ModBlocks.LIGNITE_ORE.get(), ModBlocks.LIGNITE_ORE_DEEPSLATE.get(), 15);
-        ore(ctx, "asbestos_ore", stone, deepslate, ModBlocks.ASBESTOS_ORE.get(), ModBlocks.ASBESTOS_ORE_DEEPSLATE.get(), 7);
+        ore(ctx, "tungsten_ore", stone, deepslate, ModBlocks.TUNGSTEN_ORE.get(), ModBlocks.TUNGSTEN_ORE_DEEPSLATE.get(), 8);
+        ore(ctx, "lead_ore", stone, deepslate, ModBlocks.LEAD_ORE.get(), ModBlocks.LEAD_ORE_DEEPSLATE.get(), 9);
+        ore(ctx, "beryllium_ore", stone, deepslate, ModBlocks.BERYLLIUM_ORE.get(), ModBlocks.BERYLLIUM_ORE_DEEPSLATE.get(), 4);
+        ore(ctx, "rareground_ore", stone, deepslate, ModBlocks.RAREGROUND_ORE.get(), ModBlocks.RAREGROUND_ORE_DEEPSLATE.get(), 5);
+        ore(ctx, "lignite_ore", stone, deepslate, ModBlocks.LIGNITE_ORE.get(), ModBlocks.LIGNITE_ORE_DEEPSLATE.get(), 24);
+        ore(ctx, "asbestos_ore", stone, deepslate, ModBlocks.ASBESTOS_ORE.get(), ModBlocks.ASBESTOS_ORE_DEEPSLATE.get(), 4);
         ore(ctx, "cinnabar_ore", stone, deepslate, ModBlocks.CINNABAR_ORE.get(), ModBlocks.CINNABAR_ORE_DEEPSLATE.get(), 4);
-        ore(ctx, "cobalt_ore", stone, deepslate, ModBlocks.COBALT_ORE.get(), ModBlocks.COBALT_ORE_DEEPSLATE.get(), 5);
+        ore(ctx, "cobalt_ore", stone, deepslate, ModBlocks.COBALT_ORE.get(), ModBlocks.COBALT_ORE_DEEPSLATE.get(), 4);
         ore(ctx, "lithium_ore", stone, deepslate, ModBlocks.LITHIUM_ORE.get(), ModBlocks.LITHIUM_ORE_DEEPSLATE.get(), 6);
         ore(ctx, "coltan_ore", stone, deepslate, ModBlocks.COLTAN_ORE.get(), ModBlocks.COLTAN_ORE_DEEPSLATE.get(), 4);
         ore(ctx, "alexandrite_ore", stone, null, ModBlocks.ALEXANDRITE_ORE.get(), null, 3);
@@ -111,7 +112,10 @@ public final class ModWorldGenProvider {
         ore(ctx, "sequestrum_ore", stone, deepslate, ModBlocks.SEQUESTRUM_ORE.get(), null, 7);
 
         // Потайные скважины красной комнаты (1/4 чанка, y 6..19 в 1.7.10 -> 6..30)
-        simpleBlock(ctx, "stone_keyhole", ModBlocks.STONE_KEYHOLE.get());
+        // Audit 11: Original setzt nur, wenn isReplaceableOreGen(stone) - also Einzelblock-Ersetzung statt random_patch
+        ctx.register(cf("stone_keyhole"), new ConfiguredFeature<>(Feature.REPLACE_SINGLE_BLOCK,
+                new net.minecraft.world.level.levelgen.feature.configurations.ReplaceBlockConfiguration(
+                        List.of(OreConfiguration.target(stone, ModBlocks.STONE_KEYHOLE.get().defaultBlockState())))));
 
         // Газовые пузыри под землёй (gasbubbleSpawn оригинала)
         ore(ctx, "gas_flammable", stone, deepslate, ModBlocks.GAS_FLAMMABLE.get(), null, 10);
@@ -156,7 +160,14 @@ public final class ModWorldGenProvider {
         ctx.register(cf("nether_bedrock_ore"), new ConfiguredFeature<>(ModWorldGen.NETHER_BEDROCK_ORE.get(), new NoneFeatureConfiguration()));
         ctx.register(cf("oil_deposit"), new ConfiguredFeature<>(ModWorldGen.OIL_DEPOSIT.get(), new NoneFeatureConfiguration()));
         ctx.register(cf("coltan_deposit"), new ConfiguredFeature<>(ModWorldGen.COLTAN_DEPOSIT.get(), new NoneFeatureConfiguration()));
+        ctx.register(cf("glyphid_hive"), new ConfiguredFeature<>(ModWorldGen.GLYPHID_HIVE.get(), new NoneFeatureConfiguration()));
+        ctx.register(cf("lantern_behemoth"), new ConfiguredFeature<>(ModWorldGen.LANTERN_BEHEMOTH.get(), new NoneFeatureConfiguration()));
+        ctx.register(cf("no_mans_land_spots"), new ConfiguredFeature<>(ModWorldGen.NO_MANS_LAND_SPOTS.get(), new NoneFeatureConfiguration()));
+        ctx.register(cf("soyuz_capsule"), new ConfiguredFeature<>(ModWorldGen.SOYUZ_CAPSULE.get(), new NoneFeatureConfiguration()));
         ctx.register(cf("sand_oil_deposit"), new ConfiguredFeature<>(ModWorldGen.SAND_OIL_DEPOSIT.get(), new NoneFeatureConfiguration()));
+        // R9: 1:1-Weltgenerierung des Originals (HbmWorldGen + Ereignis-Generatoren)
+        ctx.register(cf("hbm_strata"), new ConfiguredFeature<>(ModWorldGen.HBM_STRATA.get(), new NoneFeatureConfiguration()));
+        ctx.register(cf("hbm_worldgen"), new ConfiguredFeature<>(ModWorldGen.HBM_WORLDGEN.get(), new NoneFeatureConfiguration()));
 
         simpleBlock(ctx, "mine_ap", ModBlocks.MINE_AP.get());
         simpleBlock(ctx, "dud_conventional", ModBlocks.DUD_CONVENTIONAL.get());
@@ -175,21 +186,23 @@ public final class ModWorldGenProvider {
         // Порядок модификаторов: (rarity) → count → in_square → height → biome
         Map<String, PlacementParams> p = new LinkedHashMap<>();
         // Существующий баланс 1.20.1 (высоты уже адаптированы под 1.18+)
-        p.put("uranium_ore", PlacementParams.of(6, -64, -20));
-        p.put("thorium_ore", PlacementParams.of(6, -64, -20));
-        p.put("titanium_ore", PlacementParams.of(12, -64, 30));
-        p.put("sulfur_ore", PlacementParams.of(10, 0, 60));
-        p.put("aluminum_ore", PlacementParams.of(13, -60, 128));
-        p.put("fluorite_ore", PlacementParams.of(10, 0, 60));
-        p.put("niter_ore", PlacementParams.of(6, -64, -8));
-        p.put("tungsten_ore", PlacementParams.of(8, 1, 30));
-        p.put("lead_ore", PlacementParams.of(20, -64, 10));
-        p.put("beryllium_ore", PlacementParams.of(12, -64, 30));
-        p.put("rareground_ore", PlacementParams.of(8, -64, 10));
-        p.put("lignite_ore", PlacementParams.of(12, 0, 128));
-        p.put("asbestos_ore", PlacementParams.of(10, 0, 128));
-        p.put("cinnabar_ore", PlacementParams.of(8, -64, 10));
-        p.put("cobalt_ore", PlacementParams.of(6, -64, -20));
+        // Audit 11: Adern/Chunk = WorldConfig-Vorgabe, Adergroesse oben = Original (HbmWorldGen.generateOre);
+        // Hoehen (inkl. Dreiecksverteilung) bleiben die bewusste 1.18+-Skalierung des Port-Teams
+        p.put("uranium_ore", PlacementParams.of(WorldConfig.uraniumSpawn, -64, -20));
+        p.put("thorium_ore", PlacementParams.of(WorldConfig.thoriumSpawn, -64, -20));
+        p.put("titanium_ore", PlacementParams.of(WorldConfig.titaniumSpawn, -64, 30));
+        p.put("sulfur_ore", PlacementParams.of(WorldConfig.sulfurSpawn, 0, 60));
+        p.put("aluminum_ore", PlacementParams.of(WorldConfig.aluminiumSpawn, -60, 128));
+        p.put("fluorite_ore", PlacementParams.of(WorldConfig.fluoriteSpawn, 0, 60));
+        p.put("niter_ore", PlacementParams.of(WorldConfig.niterSpawn, -64, -8));
+        p.put("tungsten_ore", PlacementParams.of(WorldConfig.tungstenSpawn, 1, 30));
+        p.put("lead_ore", PlacementParams.of(WorldConfig.leadSpawn, -64, 10));
+        p.put("beryllium_ore", PlacementParams.of(WorldConfig.berylliumSpawn, -64, 30));
+        p.put("rareground_ore", PlacementParams.of(WorldConfig.rareSpawn, -64, 10));
+        p.put("lignite_ore", PlacementParams.of(WorldConfig.ligniteSpawn, 0, 128));
+        p.put("asbestos_ore", PlacementParams.of(WorldConfig.asbestosSpawn, 0, 128));
+        p.put("cinnabar_ore", PlacementParams.of(WorldConfig.cinnebarSpawn, -64, 10));
+        p.put("cobalt_ore", PlacementParams.of(WorldConfig.cobaltSpawn, -64, -20));
         p.put("lithium_ore", PlacementParams.of(4, -64, -40));
         p.put("coltan_ore", PlacementParams.of(2, -56, 0));
         p.put("alexandrite_ore", PlacementParams.of(1, -48, -24));
@@ -237,8 +250,9 @@ public final class ModWorldGenProvider {
         }
 
         // Кастомные фичи
+        // Original HbmWorldGen: rand.nextInt(10) == 0
         placed(ctx, features, "ore_bedrock_mineral", List.of(
-                RarityFilter.onAverageOnceEvery(12), InSquarePlacement.spread(),
+                RarityFilter.onAverageOnceEvery(10), InSquarePlacement.spread(),
                 HeightRangePlacement.uniform(VerticalAnchor.absolute(-64), VerticalAnchor.absolute(-64)),
                 BiomeFilter.biome()));
         placed(ctx, features, "ore_bedrock_oil", List.of(
@@ -248,6 +262,12 @@ public final class ModWorldGenProvider {
         // Нефтяные месторождения (MapGenBubble oilSpawn=100: 1/100 чанков, y 15..40 → -48..-8)
         // 1:1 HbmWorldGen: einmal pro Chunk, das Feature verteilt selbst (Lagerstaette + optionale Zufallsadern)
         placed(ctx, features, "coltan_deposit", List.of(BiomeFilter.biome()));
+        placed(ctx, features, "glyphid_hive", List.of(BiomeFilter.biome()));
+        placed(ctx, features, "lantern_behemoth", List.of(BiomeFilter.biome()));
+        placed(ctx, features, "no_mans_land_spots", List.of(BiomeFilter.biome()));
+        placed(ctx, features, "soyuz_capsule", List.of(BiomeFilter.biome()));
+        placed(ctx, features, "hbm_strata", List.of(BiomeFilter.biome()));
+        placed(ctx, features, "hbm_worldgen", List.of(BiomeFilter.biome()));
         placed(ctx, features, "oil_deposit", List.of(
                 RarityFilter.onAverageOnceEvery(100), InSquarePlacement.spread(),
                 HeightRangePlacement.uniform(VerticalAnchor.absolute(-48), VerticalAnchor.absolute(-8)),
@@ -290,24 +310,34 @@ public final class ModWorldGenProvider {
         HolderGetter<PlacedFeature> placed = ctx.lookup(Registries.PLACED_FEATURE);
 
         // Overworld: все подземные руды
+        // R9: Alexandrit, Australium, Gasblasen, Gneisschiefer + Gneiserze, Kalkstein/Haematit/Bauxit/Malachit,
+        // Schwefel-/Asbesthoehlen laufen 1:1 ueber hbm_strata/hbm_worldgen; Erdoel (Gestein, Oelsand, Grundgestein)
+        // ueber die Carver in data/hbm_m/forge/biome_modifier/add_ntm_terrain.json.
         List<String> overworldOres = List.of(
                 "uranium_ore", "thorium_ore", "titanium_ore", "sulfur_ore", "aluminum_ore",
                 "fluorite_ore", "niter_ore", "tungsten_ore", "lead_ore",
                 "beryllium_ore", "rareground_ore", "lignite_ore", "asbestos_ore", "cinnabar_ore",
-                "cobalt_ore", "lithium_ore", "coltan_deposit", "alexandrite_ore", "australium_ore",
-                "sequestrum_ore", "gas_flammable",
-                "stone_gneiss", "gneiss_iron_ore", "gneiss_gold_ore", "gneiss_uranium_ore",
-                "gneiss_copper_ore", "gneiss_asbestos_ore", "gneiss_lithium_ore", "gneiss_rare_ore", "gneiss_gas_ore",
-                "resource_asbestos", "resource_bauxite", "resource_hematite", "resource_limestone",
-                "resource_malachite", "resource_sulfur",
-                "ore_bedrock_mineral", "ore_bedrock_oil", "oil_deposit", "stone_keyhole");
+                "cobalt_ore", "lithium_ore", "coltan_deposit",
+                "sequestrum_ore",
+                "ore_bedrock_mineral", "stone_keyhole");
         addModifier(ctx, biomes, placed, "add_overworld_ores", BiomeTags.IS_OVERWORLD, overworldOres,
                 GenerationStep.Decoration.UNDERGROUND_ORES);
 
         // Overworld: поверхностные структуры
+        // R9: Landminen und Blindgaenger 1:1 ueber hbm_worldgen
         addModifier(ctx, biomes, placed, "add_surface_features", BiomeTags.IS_OVERWORLD,
-                List.of("mine_ap", "dud_conventional", "dud_nuke", "dud_salted"),
+                List.of("glyphid_hive", "lantern_behemoth"),
                 GenerationStep.Decoration.SURFACE_STRUCTURES);
+
+        // R9: 1:1-Weltgenerierung des Originals
+        addModifier(ctx, biomes, placed, "add_hbm_strata", BiomeTags.IS_OVERWORLD,
+                List.of("hbm_strata"), GenerationStep.Decoration.UNDERGROUND_ORES);
+        addModifier(ctx, biomes, placed, "add_hbm_worldgen_overworld", BiomeTags.IS_OVERWORLD,
+                List.of("hbm_worldgen"), GenerationStep.Decoration.TOP_LAYER_MODIFICATION);
+        addModifier(ctx, biomes, placed, "add_hbm_worldgen_nether", BiomeTags.IS_NETHER,
+                List.of("hbm_worldgen"), GenerationStep.Decoration.TOP_LAYER_MODIFICATION);
+        addModifier(ctx, biomes, placed, "add_hbm_worldgen_end", BiomeTags.IS_END,
+                List.of("hbm_worldgen"), GenerationStep.Decoration.TOP_LAYER_MODIFICATION);
 
         // Overworld: растительность
         addModifier(ctx, biomes, placed, "add_vegetal_features", BiomeTags.IS_OVERWORLD,
@@ -315,26 +345,34 @@ public final class ModWorldGenProvider {
 
         // Nether
         addModifier(ctx, biomes, placed, "add_nether_ores", BiomeTags.IS_NETHER,
-                List.of("nether_uranium_ore", "nether_tungsten_ore", "nether_sulfur_ore", "nether_fire_ore",
-                        "nether_coal_ore", "nether_cobalt_ore", "nether_plutonium_ore", "nether_smoldering_ore",
-                        "depth_nether_neodymium_bottom", "depth_nether_neodymium_top", "nether_bedrock_ore"),
+                // R9: Schwelerz und Neodym-Tiefenerz 1:1 ueber hbm_worldgen
+                // Audit 11: die sieben Nether-Erze ebenfalls 1:1 ueber hbm_worldgen (Netherhoehe unveraendert:
+                // Adern/Y/netherOre/enablePlutoniumOre wie im Original); die nether_*_ore-Merkmale bleiben unbenutzt registriert
+                List.of("nether_bedrock_ore"),
                 GenerationStep.Decoration.UNDERGROUND_ORES);
 
-        // End: тикит (endOre оригинала)
-        addModifier(ctx, biomes, placed, "add_end_ores", BiomeTags.IS_END,
-                List.of("tikite_ore"), GenerationStep.Decoration.UNDERGROUND_ORES);
+        // Original EntityMappings.addSpawn: Creeper-Varianten in allen Biomen, Plastiktueten im Ozean, Tauben in Ebenen
+        for (var tag : List.of(BiomeTags.IS_OVERWORLD, BiomeTags.IS_NETHER, BiomeTags.IS_END)) {
+            String suffix = tag == BiomeTags.IS_OVERWORLD ? "overworld" : tag == BiomeTags.IS_NETHER ? "nether" : "end";
+            ctx.register(bm("spawn_creepers_" + suffix), new ForgeBiomeModifiers.AddSpawnsBiomeModifier(biomes.getOrThrow(tag), List.of(
+                    new net.minecraft.world.level.biome.MobSpawnSettings.SpawnerData(com.hbm_m.entity.ModEntities.ENTITY_MOB_PHOSGENE_CREEPER.get(), 5, 1, 1),
+                    new net.minecraft.world.level.biome.MobSpawnSettings.SpawnerData(com.hbm_m.entity.ModEntities.ENTITY_MOB_VOLATILE_CREEPER.get(), 10, 1, 1),
+                    new net.minecraft.world.level.biome.MobSpawnSettings.SpawnerData(com.hbm_m.entity.ModEntities.ENTITY_MOB_GOLD_CREEPER.get(), 1, 1, 1))));
+        }
+        ctx.register(bm("spawn_plastic_bag"), new ForgeBiomeModifiers.AddSpawnsBiomeModifier(biomes.getOrThrow(BiomeTags.IS_OCEAN), List.of(
+                new net.minecraft.world.level.biome.MobSpawnSettings.SpawnerData(com.hbm_m.entity.ModEntities.PLASTIC_BAG.get(), 1, 1, 3))));
+        ctx.register(bm("spawn_pigeon"), new ForgeBiomeModifiers.AddSpawnsBiomeModifier(biomes.getOrThrow(net.minecraftforge.common.Tags.Biomes.IS_PLAINS), List.of(
+                new net.minecraft.world.level.biome.MobSpawnSettings.SpawnerData(com.hbm_m.entity.ModEntities.PIGEON.get(), 1, 5, 10))));
 
-        // Пустынные биомы: песчаные нефтяные месторождения (canSpawn: !rain && t>=1.5)
-        addModifierForBiomes(ctx, biomes, placed, "add_sand_oil",
-                List.of(net.minecraft.world.level.biome.Biomes.DESERT,
-                        net.minecraft.world.level.biome.Biomes.BADLANDS,
-                        net.minecraft.world.level.biome.Biomes.WOODED_BADLANDS,
-                        net.minecraft.world.level.biome.Biomes.ERODED_BADLANDS,
-                        net.minecraft.world.level.biome.Biomes.SAVANNA,
-                        net.minecraft.world.level.biome.Biomes.SAVANNA_PLATEAU,
-                        net.minecraft.world.level.biome.Biomes.WINDSWEPT_SAVANNA,
-                        net.minecraft.world.level.biome.Biomes.BEACH),
-                List.of("sand_oil_deposit"), GenerationStep.Decoration.UNDERGROUND_ORES);
+        // End: тикит (endOre оригинала)
+        // Audit 11: 1:1 ueber hbm_worldgen (HbmWorldGen.generateEnd: endTikiteSpawn Adern, Groesse 6, Y 0..126)
+
+        // Original: biome == BiomeGenBase.beach - Landekapseln
+        addModifierForBiomes(ctx, biomes, placed, "add_soyuz_capsule",
+                List.of(net.minecraft.world.level.biome.Biomes.BEACH), List.of("soyuz_capsule"),
+                GenerationStep.Decoration.SURFACE_STRUCTURES);
+
+        // R9: Oelsand-Blasen 1:1 als Carver (add_ntm_terrain)
     }
 
     private static void addModifier(BootstapContext<BiomeModifier> ctx,

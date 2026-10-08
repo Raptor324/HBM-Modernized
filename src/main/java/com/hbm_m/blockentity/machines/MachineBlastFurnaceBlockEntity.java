@@ -451,7 +451,8 @@ public class MachineBlastFurnaceBlockEntity extends BaseHbmBlockEntity implement
         }
         RecipeInputWrapper wrapper = new RecipeInputWrapper(inventory);
         for (BlastFurnaceRecipe recipe : RecipeHooks.getAllRecipes(level, BlastFurnaceRecipe.Type.INSTANCE)) {
-            if (recipe.matchesRecipe(wrapper, level)) {
+            // Original: der Hochofen nutzt nur BlastFurnaceRecipesNT
+            if (recipe.isNT() && recipe.matchesRecipe(wrapper, level)) {
                 return recipe;
             }
         }
@@ -479,8 +480,11 @@ public class MachineBlastFurnaceBlockEntity extends BaseHbmBlockEntity implement
         addOutput(OUTPUT_SLOT_FIRST, primary);
         addOutput(OUTPUT_SLOT_SECOND, secondary);
 
-        itemHandler.extractItem(INPUT_SLOT_FIRST, 1, false);
-        itemHandler.extractItem(INPUT_SLOT_SECOND, 1, false);
+        // Mengen des Rezepts (z. B. 2 Eisenbarren + 1 Sand), Zutaten in beliebiger Reihenfolge
+        int[] use = recipe.getConsumption(itemHandler.getStackInSlot(INPUT_SLOT_FIRST), itemHandler.getStackInSlot(INPUT_SLOT_SECOND));
+        if (use == null) use = new int[] {1, 1};
+        if (use[0] > 0) itemHandler.extractItem(INPUT_SLOT_FIRST, use[0], false);
+        if (use[1] > 0) itemHandler.extractItem(INPUT_SLOT_SECOND, use[1], false);
 
         fuel -= FUEL_RATE;
 

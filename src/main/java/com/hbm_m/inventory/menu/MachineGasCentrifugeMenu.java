@@ -278,9 +278,7 @@ public class MachineGasCentrifugeMenu extends AbstractContainerMenu implements I
 
     @Override
     public boolean stillValid(Player player) {
-        if (blockEntity == null) {
-            return false; // тайл может отсутствовать на клиенте (реплей Flashback)
-        }
-        return stillValid(ContainerLevelAccess.create(level, blockEntity.getBlockPos()), player, ModBlocks.GAS_CENTRIFUGE.get());
+        // w16b: Original isUseableByPlayer (TileEntityMachineBase) = 128 vom Kern, dazu Huelle der Maschine (MultiblockMenuReach)
+        return MultiblockMenuReach.stillValidCore(blockEntity, player, 128.0D);
     }
 }

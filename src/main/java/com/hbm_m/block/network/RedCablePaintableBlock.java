@@ -33,7 +33,7 @@ import net.minecraft.world.phys.BlockHitResult;
  * ПКМ любым блоком окрашивается под него (allowedPaint 1:1), сброс — отвёрткой в оригинале,
  * здесь — ПКМ пустой рукой при Shift. Рендер замаскированного блока — RedCablePaintableRenderer.
  */
-public class RedCablePaintableBlock extends BaseEntityBlock {
+public class RedCablePaintableBlock extends BaseEntityBlock implements com.hbm_m.api.block.IToolable {
 
     //? if > 1.20.1 {
     /*public static final com.mojang.serialization.MapCodec<RedCablePaintableBlock> CODEC = simpleCodec(RedCablePaintableBlock::new);
@@ -41,8 +41,21 @@ public class RedCablePaintableBlock extends BaseEntityBlock {
     protected com.mojang.serialization.MapCodec<? extends BaseEntityBlock> codec() { return CODEC; }
     *///?}
 
+    /**
+     * Original Metadate 0 ({@code true}): im zweiten Renderdurchgang liegt ueber dem Anstrich das Kabel-Overlay;
+     * Metadate 1 ({@code false}): der Anstrich bleibt ohne Overlay. Der Entschaerfer schaltet um.
+     */
+    public static final net.minecraft.world.level.block.state.properties.BooleanProperty OVERLAY =
+            net.minecraft.world.level.block.state.properties.BooleanProperty.create("overlay");
+
     public RedCablePaintableBlock(Properties properties) {
         super(properties);
+        registerDefaultState(stateDefinition.any().setValue(OVERLAY, true));
+    }
+
+    @Override
+    protected void createBlockStateDefinition(net.minecraft.world.level.block.state.StateDefinition.Builder<Block, BlockState> builder) {
+        builder.add(OVERLAY);
     }
 
     @Override
@@ -82,12 +95,8 @@ public class RedCablePaintableBlock extends BaseEntityBlock {
         if (level.getBlockEntity(pos) instanceof RedCablePaintableBlockEntity paintable) {
             ItemStack held = player.getItemInHand(hand);
 
-            if (player.isShiftKeyDown() && held.isEmpty() && paintable.getCamo() != null) {
-                if (!level.isClientSide) paintable.setCamo(null);
-                return InteractionResult.sidedSuccess(level.isClientSide);
-            }
-
-            if (!held.isEmpty() && held.getItem() instanceof BlockItem blockItem) {
+            // audit10: Original - nur ein ungestrichenes Kabel laesst sich anstreichen; Entfernen per Schraubenzieher (onScrew)
+            if (!held.isEmpty() && held.getItem() instanceof BlockItem blockItem && paintable.getCamo() == null) {
                 Block paint = blockItem.getBlock();
                 BlockState paintState = paint.defaultBlockState();
                 if (allowedPaint(level, pos, paint, paintState)) {
@@ -97,6 +106,26 @@ public class RedCablePaintableBlock extends BaseEntityBlock {
             }
         }
         return InteractionResult.PASS;
+    }
+
+    /**
+     * audit10: 1:1 {@code BlockCablePaintable.onScrew} - der Schraubenzieher entfernt den Anstrich, der Entschaerfer
+     * schaltet Metadate 0/1 ({@link #OVERLAY}) um - auch am ungestrichenen Kabel, dort ohne sichtbare Wirkung.
+     */
+    @Override
+    public boolean onScrew(Level world, Player player, BlockPos pos, net.minecraft.core.Direction side, float fX, float fY, float fZ,
+                           InteractionHand hand, ToolType tool) {
+        if (tool == ToolType.SCREWDRIVER && world.getBlockEntity(pos) instanceof RedCablePaintableBlockEntity pipe && pipe.getCamo() != null) {
+            if (!world.isClientSide) pipe.setCamo(null);
+            return true;
+        }
+
+        if (tool == ToolType.DEFUSER) {
+            BlockState state = world.getBlockState(pos);
+            if (state.hasProperty(OVERLAY)) world.setBlock(pos, state.setValue(OVERLAY, !state.getValue(OVERLAY)), 3);
+            return true;
+        }
+        return false;
     }
 
     /** Порт allowedPaint: красить можно любым «нормально рендерящимся» блоком, кроме самого кабеля и травы. */

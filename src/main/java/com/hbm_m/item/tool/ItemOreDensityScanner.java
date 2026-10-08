@@ -1,75 +1,89 @@
 package com.hbm_m.item.tool;
 
+import com.hbm_m.network.InfoToastPacket;
 import com.hbm_m.worldgen.BedrockOreDensity;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
+import net.minecraft.network.chat.MutableComponent;
+import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.entity.player.Player;
+import net.minecraft.world.level.material.Fluid;
 
 /**
- * 1:1-Aequivalent zu {@code ItemOreDensityScanner} aus dem 1.7.10-Original: zeigt alle 5 Ticks
- * die Bedrock-Erz-Dichte jeder der 6 Kategorien an der Spielerposition als Actionbar-Text an,
- * plus den daraus resultierenden Gesamt-Tier und das benoetigte Bohr-Fluid (siehe
- * {@link BedrockOreDensity}).
+ * 1:1 {@code ItemOreDensityScanner} aus dem 1.7.10-Original: schickt alle 5 Ticks je Erzkategorie eine
+ * Infozeile (Dichte + Bewertung, IDs 777-782) und eine Zeile mit Gesamt-Tier und Bohrfluessigkeit (ID 783),
+ * jeweils 4 Sekunden sichtbar (siehe {@link BedrockOreDensity}).
  */
 public class ItemOreDensityScanner extends Item {
+
+    /** Original {@code BedrockOreType.suffix}. */
+    private static final String[] SUFFIX = { "light", "heavy", "rare", "actinide", "nonmetal", "crystal" };
 
     public ItemOreDensityScanner(Properties properties) {
         super(properties);
     }
 
     @Override
-    public void inventoryTick(ItemStack stack, Level level, Entity entity, int slot, boolean selected) {
-        if (level.isClientSide || !(entity instanceof Player player)) return;
-        if (level.getGameTime() % 5 != 0) return;
+    public void inventoryTick(ItemStack stack, Level world, Entity entity, int slot, boolean selected) {
 
-        int x = player.getBlockX();
-        int z = player.getBlockZ();
+        if (!(entity instanceof ServerPlayer player) || world.getGameTime() % 5 != 0) return;
 
-        StringBuilder line = new StringBuilder();
+        double totalLevel = 0D;
+
         for (BedrockOreDensity.Type type : BedrockOreDensity.Type.values()) {
-            double density = BedrockOreDensity.getDensity(x, z, type);
-            line.append(typeLabel(type)).append(": ").append(formatDensity(density)).append("  ");
+            double level = BedrockOreDensity.getDensity((int) Math.floor(player.getX()), (int) Math.floor(player.getZ()), type);
+            MutableComponent msg = Component.translatable("item.hbm_m.bedrock_ore.type." + SUFFIX[type.ordinal()] + ".name")
+                    .append(": " + ((int) (level * 100) / 100D) + " (")
+                    .append(Component.translatable(translateDensity(level)).withStyle(getColor(level)))
+                    .append(Component.literal(")").withStyle(ChatFormatting.RESET));
+            InfoToastPacket.sendTo(player, msg, 80, 777 + type.ordinal(), 0xFFFFFF);
+            totalLevel += level;
+        }
+        totalLevel /= BedrockOreDensity.Type.values().length;
+
+        int tier = BedrockOreDensity.getTier(totalLevel);
+        int fill = BedrockOreDensity.getBoreFluidAmountMb(totalLevel);
+
+        MutableComponent builder = Component.literal("Tier " + tier).withStyle(ChatFormatting.YELLOW);
+        if (fill > 0) {
+            builder.append(Component.literal(" - " + fill + "mB ").withStyle(ChatFormatting.YELLOW))
+                    .append(fluidName(BedrockOreDensity.getBoreFluid(totalLevel)).copy().withStyle(ChatFormatting.YELLOW));
         }
 
-        double total = BedrockOreDensity.getTotalDensity(x, z);
-        int tier = BedrockOreDensity.getTier(total);
-        int fluidAmount = BedrockOreDensity.getBoreFluidAmountMb(total);
-        String fluidName = fluidAmount <= 0 ? "none"
-                : net.minecraft.core.registries.BuiltInRegistries.FLUID.getKey(BedrockOreDensity.getBoreFluid(total)).getPath();
-
-        line.append(ChatFormatting.YELLOW).append("Tier ").append(tier);
-        if (fluidAmount > 0) {
-            line.append(" - ").append(fluidAmount).append("mB ").append(fluidName);
-        }
-
-        player.displayClientMessage(Component.literal(line.toString()), true);
+        InfoToastPacket.sendTo(player, builder, 80, 777 + BedrockOreDensity.Type.values().length, 0xFFFF55);
     }
 
-    private static String typeLabel(BedrockOreDensity.Type type) {
-        return switch (type) {
-            case LIGHT -> "Light";
-            case HEAVY -> "Heavy";
-            case RARE -> "Rare";
-            case ACTINIDE -> "Actinide";
-            case NONMETAL -> "NonMetal";
-            case CRYSTAL -> "Crystal";
-        };
+    public static String translateDensity(double density) {
+        if (density <= 0.1) return "item.hbm_m.ore_density_scanner.verypoor";
+        if (density <= 0.35) return "item.hbm_m.ore_density_scanner.poor";
+        if (density <= 0.75) return "item.hbm_m.ore_density_scanner.low";
+        if (density >= 1.9) return "item.hbm_m.ore_density_scanner.excellent";
+        if (density >= 1.65) return "item.hbm_m.ore_density_scanner.veryhigh";
+        if (density >= 1.25) return "item.hbm_m.ore_density_scanner.high";
+        return "item.hbm_m.ore_density_scanner.moderate";
     }
 
-    private static String formatDensity(double density) {
-        ChatFormatting color;
-        if (density <= 0.1) color = ChatFormatting.DARK_RED;
-        else if (density <= 0.35) color = ChatFormatting.RED;
-        else if (density <= 0.75) color = ChatFormatting.GOLD;
-        else if (density >= 1.9) color = ChatFormatting.AQUA;
-        else if (density >= 1.65) color = ChatFormatting.BLUE;
-        else if (density >= 1.25) color = ChatFormatting.GREEN;
-        else color = ChatFormatting.YELLOW;
-        return color + String.valueOf((int) (density * 100) / 100D) + ChatFormatting.RESET;
+    public static ChatFormatting getColor(double density) {
+        if (density <= 0.1) return ChatFormatting.DARK_RED;
+        if (density <= 0.35) return ChatFormatting.RED;
+        if (density <= 0.75) return ChatFormatting.GOLD;
+        if (density > 2) return ChatFormatting.LIGHT_PURPLE; // only for BO items that got mined with fortune
+        if (density >= 1.9) return ChatFormatting.AQUA;
+        if (density >= 1.65) return ChatFormatting.BLUE;
+        if (density >= 1.25) return ChatFormatting.GREEN;
+        return ChatFormatting.YELLOW;
+    }
+
+    private static Component fluidName(Fluid fluid) {
+        //? if forge {
+        return Component.translatable(fluid.getFluidType().getDescriptionId());
+        //?} else {
+        /*var key = net.minecraft.core.registries.BuiltInRegistries.FLUID.getKey(fluid);
+        return Component.translatable("fluid." + key.getNamespace() + "." + key.getPath());
+        *///?}
     }
 }

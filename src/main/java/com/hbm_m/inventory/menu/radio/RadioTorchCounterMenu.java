@@ -10,14 +10,18 @@ import net.minecraft.network.FriendlyByteBuf;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
+import net.minecraft.world.inventory.ClickType;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
+/**
+ * 1:1 {@code ContainerCounterTorch}: drei Musterplaetze (Geisterplaetze, 138/18+44*i) - ein Klick kopiert den Stapel in
+ * der Hand, ein Rechtsklick auf einen belegten Platz schaltet den Vergleichsmodus weiter. Kein Shift-Klick.
+ */
 public class RadioTorchCounterMenu extends AbstractContainerMenu {
 
     private static final int MACHINE_SLOT_COUNT = RadioTorchCounterBlockEntity.SLOT_COUNT;
-    private static final int PLAYER_SLOT_START = MACHINE_SLOT_COUNT;
 
     private final RadioTorchCounterBlockEntity blockEntity;
 
@@ -32,23 +36,16 @@ public class RadioTorchCounterMenu extends AbstractContainerMenu {
         var container = new ModItemStackHandlerContainer(blockEntity.getInventory(), blockEntity::setChanged);
 
         for (int i = 0; i < MACHINE_SLOT_COUNT; i++) {
-            final int idx = i;
-            this.addSlot(new Slot(container, i, 44 + i * 30, 20) {
-                @Override
-                public void set(ItemStack stack) {
-                    super.set(stack);
-                    blockEntity.getMatcher().initPattern(idx, stack);
-                }
-            });
+            this.addSlot(new Slot(container, i, 138, 18 + 44 * i));
         }
 
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 9; col++) {
-                this.addSlot(new Slot(inventory, col + row * 9 + 9, 8 + col * 18, 103 + row * 18));
+                this.addSlot(new Slot(inventory, col + row * 9 + 9, 12 + col * 18, 156 + row * 18));
             }
         }
         for (int col = 0; col < 9; col++) {
-            this.addSlot(new Slot(inventory, col, 8 + col * 18, 161));
+            this.addSlot(new Slot(inventory, col, 12 + col * 18, 214));
         }
     }
 
@@ -70,6 +67,34 @@ public class RadioTorchCounterMenu extends AbstractContainerMenu {
     }
 
     @Override
+    public void clicked(int index, int button, ClickType clickType, Player player) {
+        if (index < 0 || index > 2) {
+            super.clicked(index, button, clickType, player);
+            return;
+        }
+
+        Slot slot = this.getSlot(index);
+
+        if (button == 1 && clickType == ClickType.PICKUP && slot.hasItem()) {
+            if (!player.level().isClientSide) {
+                blockEntity.nextFilterMode(index);
+                syncToClient();
+            }
+            return;
+        }
+
+        slot.set(this.getCarried().copy());
+        blockEntity.getMatcher().initPattern(index, slot.getItem());
+        if (!player.level().isClientSide) syncToClient();
+    }
+
+    private void syncToClient() {
+        if (blockEntity.getLevel() != null) {
+            blockEntity.getLevel().sendBlockUpdated(blockEntity.getBlockPos(), blockEntity.getBlockState(), blockEntity.getBlockState(), 3);
+        }
+    }
+
+    @Override
     public boolean stillValid(Player player) {
         if (blockEntity == null || blockEntity.getLevel() != player.level()) {
             return false;
@@ -80,29 +105,6 @@ public class RadioTorchCounterMenu extends AbstractContainerMenu {
 
     @Override
     public ItemStack quickMoveStack(Player player, int index) {
-        ItemStack result = ItemStack.EMPTY;
-        Slot slot = this.slots.get(index);
-        if (slot == null || !slot.hasItem()) return result;
-
-        ItemStack stack = slot.getItem();
-        result = stack.copy();
-
-        if (index < MACHINE_SLOT_COUNT) {
-            if (!this.moveItemStackTo(stack, PLAYER_SLOT_START, this.slots.size(), true)) {
-                return ItemStack.EMPTY;
-            }
-        } else {
-            if (!this.moveItemStackTo(stack, 0, MACHINE_SLOT_COUNT, false)) {
-                return ItemStack.EMPTY;
-            }
-        }
-
-        if (stack.isEmpty()) {
-            slot.set(ItemStack.EMPTY);
-        } else {
-            slot.setChanged();
-        }
-        slot.onTake(player, stack);
-        return result;
+        return ItemStack.EMPTY;
     }
 }

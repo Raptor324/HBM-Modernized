@@ -46,7 +46,8 @@ public class RadioTorchCounterBlockEntity extends BaseMachineBlockEntity impleme
         RTTYNetwork.tickIfNeeded(level.getGameTime());
 
         Direction facing = state.hasProperty(RadioTorchBaseBlock.FACING) ? state.getValue(RadioTorchBaseBlock.FACING) : Direction.UP;
-        BlockPos sourcePos = pos.relative(facing.getOpposite());
+        // FACING zeigt in den Halteblock (Original: getOrientation(meta).getOpposite())
+        BlockPos sourcePos = pos.relative(facing);
         BlockEntity sourceBe = level.getBlockEntity(sourcePos);
         if (sourceBe == null) return;
 
@@ -68,6 +69,8 @@ public class RadioTorchCounterBlockEntity extends BaseMachineBlockEntity impleme
             if (be.polling || be.lastCount[i] != count) {
                 RTTYNetwork.broadcast(level, be.channel[i], String.valueOf(count));
             }
+            // Original networkPackNT: der Zaehlstand geht an den Client (Blick-Anzeige "Signal n")
+            if (be.lastCount[i] != count) level.sendBlockUpdated(pos, state, state, 2);
             be.lastCount[i] = count;
         }
         //?}

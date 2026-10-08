@@ -66,12 +66,7 @@ public class FluidDuctItem extends Item implements ITooltipProvider {
 
     @Override
     public void appendHbmTooltip(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
-
-        FluidStack fluid = getFluidType(stack);
-        if (!fluid.isEmpty()) {
-            tooltip.add(Component.literal("Fluid: ").withStyle(ChatFormatting.GRAY)
-                    .append(fluid.getName().copy().withStyle(ChatFormatting.AQUA)));
-        }
+        // Original ItemFluidDuct hat kein addInformation - das Fluid steht nur im Namen (getName).
     }
 
     @Override
@@ -79,7 +74,8 @@ public class FluidDuctItem extends Item implements ITooltipProvider {
         Level level = context.getLevel();
         BlockPos clickedPos = context.getClickedPos();
         Direction face = context.getClickedFace();
-        BlockPos placePos = clickedPos.relative(face);
+        // Original: eine Schneeschicht wird direkt ersetzt, sonst kommt das Rohr vor die angeklickte Seite
+        BlockPos placePos = level.getBlockState(clickedPos).is(net.minecraft.world.level.block.Blocks.SNOW) ? clickedPos : clickedPos.relative(face);
 
         BlockState existingState = level.getBlockState(placePos);
         if (!existingState.canBeReplaced()) {

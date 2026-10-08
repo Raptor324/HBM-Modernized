@@ -29,7 +29,8 @@ import net.minecraft.world.level.ItemLike;
 public class AmmoPressRecipeBuilder implements RecipeBuilder {
 
     private final ItemStack output;
-    private final JsonObject[] slots = new JsonObject[AmmoPressRecipe.GRID_SIZE];
+    private final com.google.gson.JsonElement[] slots = new com.google.gson.JsonElement[AmmoPressRecipe.GRID_SIZE];
+    private final int[] counts = { 1, 1, 1, 1, 1, 1, 1, 1, 1 };
     private final Advancement.Builder advancement = Advancement.Builder.advancement();
 
     private AmmoPressRecipeBuilder(ItemStack output) {
@@ -46,8 +47,21 @@ public class AmmoPressRecipeBuilder implements RecipeBuilder {
         return this;
     }
 
+    /** Original {@code stack.copy(n)}: das Feld braucht n Stueck. */
+    public AmmoPressRecipeBuilder slot(int index, ItemLike item, int count) {
+        slot(index, item);
+        counts[index] = count;
+        return this;
+    }
+
+    public AmmoPressRecipeBuilder slot(int index, Ingredient ingredient, int count) {
+        slot(index, ingredient);
+        counts[index] = count;
+        return this;
+    }
+
     public AmmoPressRecipeBuilder slot(int index, Ingredient ingredient) {
-        slots[index] = ingredient.toJson().getAsJsonObject();
+        slots[index] = ingredient.toJson(); // Mehrfachzutat (OreDict) = JSON-Array
         return this;
     }
 
@@ -101,10 +115,13 @@ public class AmmoPressRecipeBuilder implements RecipeBuilder {
         public void serializeRecipeData(@NotNull JsonObject pJson) {
             JsonArray jsonIngredients = new JsonArray();
             for (int i = 0; i < AmmoPressRecipe.GRID_SIZE; i++) {
-                JsonObject slot = builder.slots[i];
+                com.google.gson.JsonElement slot = builder.slots[i];
                 jsonIngredients.add(slot != null ? slot.deepCopy() : com.google.gson.JsonNull.INSTANCE);
             }
             pJson.add("ingredients", jsonIngredients);
+            JsonArray jsonCounts = new JsonArray();
+            for (int c : builder.counts) jsonCounts.add(c);
+            pJson.add("counts", jsonCounts);
 
             JsonObject jsonOutput = new JsonObject();
             jsonOutput.addProperty("item", Objects.requireNonNull(

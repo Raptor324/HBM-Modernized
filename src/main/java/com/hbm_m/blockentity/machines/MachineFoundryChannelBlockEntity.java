@@ -1,208 +1,214 @@
 package com.hbm_m.blockentity.machines;
 
-import com.hbm_m.api.block.ICrucibleAcceptor;
-import com.hbm_m.blockentity.ModBlockEntities;
-import com.hbm_m.inventory.material.MaterialStack;
-import com.hbm_m.inventory.material.MaterialType;
-import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.protocol.Packet;
-import net.minecraft.network.protocol.game.ClientGamePacketListener;
-import net.minecraft.network.protocol.game.ClientboundBlockEntityDataPacket;
-import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.entity.BlockEntity;
-import net.minecraft.world.level.block.state.BlockState;
-import org.jetbrains.annotations.Nullable;
-
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import org.jetbrains.annotations.Nullable;
+
+import com.hbm_m.api.block.ICrucibleAcceptor;
+import com.hbm_m.api.foundry.FoundryNetworkProvider;
+import com.hbm_m.api.foundry.FoundryNode;
+import com.hbm_m.api.network.NodeDirPos;
+import com.hbm_m.api.network.UniNodespace;
+import com.hbm_m.blockentity.ModBlockEntities;
+import com.hbm_m.inventory.material.MaterialShapes;
+import com.hbm_m.inventory.material.Mats.MaterialStack;
+import com.hbm_m.util.CrucibleUtil;
+
+import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
+import net.minecraft.nbt.CompoundTag;
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.entity.BlockEntity;
+import net.minecraft.world.level.block.state.BlockState;
+
 /**
- * Port of the 1.7.10 TileEntityFoundryChannel.
- * Every 5 ticks: first tries to flow the whole content into an adjacent
- * non-channel ICrucibleAcceptor (e.g. a foundry outlet); if none accepts,
- * the content is equalized/swapped with ALL neighbouring channels.
+ * 1:1 {@code TileEntityFoundryChannel}: Giessrinne mit 2 Barren Fassung. Alle 5 Ticks gibt sie an einen benachbarten
+ * Abnehmer (keine Rinne) ab, sonst gleicht sie sich mit Nachbarrinnen aus (1:4 Tausch, sonst Halbierung). Die Rinnen
+ * bilden ein Netz; gegossen werden darf nur, wenn kein Knoten ein anderes Material fuehrt.
  */
-public class MachineFoundryChannelBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity implements ICrucibleAcceptor {
+public class MachineFoundryChannelBlockEntity extends MachineFoundryBaseBlockEntity {
 
-    public static final int CAPACITY = MaterialStack.MB_PER_INGOT * 2;
-
-    @Nullable public MaterialType type = null;
-    public int amount = 0;
+    public int nextUpdate;
     public int lastFlow = 0;
-    private int nextUpdate = 5;
-
-    @Nullable private MaterialType lastSyncType = null;
-    private int lastSyncAmount = 0;
-
-    private static final Direction[] H_DIRS = {
-            Direction.NORTH, Direction.SOUTH, Direction.EAST, Direction.WEST
-    };
+    protected FoundryNode node;
 
     public MachineFoundryChannelBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.FOUNDRY_CHANNEL_BE.get(), pos, state);
     }
 
-    public static void tick(Level level, BlockPos pos, BlockState state, MachineFoundryChannelBlockEntity be) {
-        if (level.isClientSide) return;
+    @Override
+    public void updateEntity() {
 
-        if (be.type != null && be.amount == 0) be.type = null;
-        if (be.type == null && be.amount != 0) be.amount = 0;
+        if (level instanceof ServerLevel world) {
 
-        be.nextUpdate--;
+            initNode();
 
-        if (be.nextUpdate <= 0 && be.amount > 0 && be.type != null) {
-
-            boolean hasOp = false;
-            be.nextUpdate = 5;
-
-            List<Direction> dirs = new ArrayList<>(List.of(H_DIRS));
-            Collections.shuffle(dirs);
-            if (be.lastFlow > 0) {
-                Direction preferred = Direction.from3DDataValue(be.lastFlow);
-                dirs.remove(preferred);
-                dirs.add(preferred);
+            if (this.node.type != null && this.amount == 0) {
+                this.node.type = null;
             }
 
-            /* Phase 1: flow into an adjacent non-channel acceptor (outlets etc.) */
-            for (Direction dir : dirs) {
-                BlockPos neighbor = pos.relative(dir);
-                BlockEntity te = level.getBlockEntity(neighbor);
+            if (this.type == null && this.amount != 0) {
+                this.amount = 0;
+            }
 
-                if (te instanceof ICrucibleAcceptor acc && !(te instanceof MachineFoundryChannelBlockEntity)) {
+            nextUpdate--;
 
-                    MaterialStack offer = new MaterialStack(be.type, be.amount);
-                    if (acc.canAcceptPartialFlow(level, neighbor, dir.getOpposite(), offer)) {
-                        MaterialStack left = acc.flow(level, neighbor, dir.getOpposite(), offer);
-                        if (left == null) {
-                            be.type = null;
-                            be.amount = 0;
-                        } else {
-                            be.amount = left.amount;
+            if (nextUpdate <= 0 && this.amount > 0 && this.type != null) {
+
+                boolean hasOp = false;
+                nextUpdate = 5;
+
+                List<Integer> ints = new ArrayList<>(List.of(2, 3, 4, 5));
+                Collections.shuffle(ints);
+                if (lastFlow > 0) {
+                    ints.remove((Integer) this.lastFlow);
+                    ints.add(this.lastFlow);
+                }
+
+                for (Integer i : ints) {
+                    Direction dir = Direction.from3DDataValue(i);
+                    BlockPos np = worldPosition.relative(dir);
+                    BlockEntity nb = world.getBlockEntity(np);
+                    if (nb instanceof MachineFoundryChannelBlockEntity) continue;
+                    ICrucibleAcceptor acc = CrucibleUtil.acceptorAt(world, np);
+
+                    if (acc != null) {
+                        if (acc.canAcceptPartialFlow(world, np, dir.getOpposite(), new MaterialStack(this.type, this.amount))) {
+                            MaterialStack left = acc.flow(world, np, dir.getOpposite(), new MaterialStack(this.type, this.amount));
+                            if (left == null) {
+                                this.type = null;
+                                this.amount = 0;
+                                this.node.type = null;
+                            } else {
+                                this.amount = left.amount;
+                            }
+                            hasOp = true;
+                            break;
                         }
-                        be.lastFlow = dir.get3DDataValue();
-                        hasOp = true;
-                        break;
                     }
                 }
-            }
 
-            /* Phase 2: equalize with ALL neighbouring channels (original: no break) */
-            if (!hasOp) {
-                for (Direction dir : dirs) {
-                    BlockPos neighbor = pos.relative(dir);
-                    BlockEntity te = level.getBlockEntity(neighbor);
+                if (!hasOp) {
+                    for (Integer i : ints) {
+                        Direction dir = Direction.from3DDataValue(i);
+                        BlockEntity b = world.getBlockEntity(worldPosition.relative(dir));
 
-                    if (te instanceof MachineFoundryChannelBlockEntity acc) {
+                        if (b instanceof MachineFoundryChannelBlockEntity acc) {
 
-                        if (acc.type == null || acc.type == be.type || acc.amount == 0) {
-                            acc.type = be.type;
-                            acc.lastFlow = dir.getOpposite().get3DDataValue();
+                            if (acc.type == null || acc.type == this.type || acc.amount == 0) {
 
-                            if (level.getRandom().nextInt(5) == 0 || be.amount == 1) {
-                                // 1:4 chance (or single quantum): swap fill states to keep material moving
-                                int buf = be.amount;
-                                be.amount = acc.amount;
-                                acc.amount = buf;
-                            } else {
-                                // otherwise, equalize the neighbours
-                                int diff = be.amount - acc.amount;
-                                if (diff > 0) {
-                                    diff /= 2;
-                                    be.amount -= diff;
-                                    acc.amount += diff;
+                                acc.type = this.type;
+                                acc.initNode();
+                                acc.node.type = this.type;
+                                acc.lastFlow = dir.getOpposite().get3DDataValue();
+
+                                if (world.random.nextInt(5) == 0 || this.amount == 1) { //force swap operations with single quanta to keep them moving
+                                    //1:4 chance that the fill states are simply swapped
+                                    int buf = this.amount;
+                                    this.amount = acc.amount;
+                                    acc.amount = buf;
+
+                                } else {
+                                    //otherwise, equalize the neighbors
+                                    int diff = this.amount - acc.amount;
+
+                                    if (diff > 0) {
+                                        diff /= 2;
+                                        this.amount -= diff;
+                                        acc.amount += diff;
+                                    }
                                 }
                             }
-
-                            if (be.amount <= 0)  { be.amount = 0;  be.type = null; }
-                            if (acc.amount <= 0) { acc.amount = 0; acc.type = null; }
-
-                            acc.setChanged();
                         }
                     }
                 }
             }
+
+            if (this.amount == 0) {
+                this.lastFlow = 0;
+                this.nextUpdate = 5;
+            }
         }
 
-        if (be.amount == 0) {
-            be.lastFlow = 0;
-            be.nextUpdate = 5;
+        super.updateEntity();
+    }
+
+    protected void initNode() {
+        if (!(level instanceof ServerLevel world)) return;
+        if (this.node == null || this.node.expired) {
+            this.node = (FoundryNode) (Object) UniNodespace.getNode(world, worldPosition, FoundryNetworkProvider.THE_PROVIDER);
+
+            if (this.node == null || this.node.expired) {
+                this.node = this.createNode();
+                this.node.type = this.type;
+                UniNodespace.createNode(world, this.node);
+            }
+        }
+    }
+
+    @Override
+    public int getCapacity() {
+        return MaterialShapes.INGOT.q(2);
+    }
+
+    @Override
+    protected void readNbtData(CompoundTag nbt, net.minecraft.core.HolderLookup.Provider registries) {
+        super.readNbtData(nbt, registries);
+        this.lastFlow = nbt.getByte("flow");
+    }
+
+    @Override
+    protected void writeNbtData(CompoundTag nbt, net.minecraft.core.HolderLookup.Provider registries) {
+        super.writeNbtData(nbt, registries);
+        nbt.putByte("flow", (byte) this.lastFlow);
+    }
+
+    @Override
+    public void setRemoved() {
+        super.setRemoved();
+        if (level instanceof ServerLevel world && this.node != null) {
+            UniNodespace.destroyNode(world, worldPosition, FoundryNetworkProvider.THE_PROVIDER);
+        }
+    }
+
+    public FoundryNode createNode() {
+        int x = worldPosition.getX(), y = worldPosition.getY(), z = worldPosition.getZ();
+        return new FoundryNode(FoundryNetworkProvider.THE_PROVIDER, worldPosition).setConnections(
+                new NodeDirPos(new BlockPos(x + 1, y, z), Direction.EAST),
+                new NodeDirPos(new BlockPos(x - 1, y, z), Direction.WEST),
+                new NodeDirPos(new BlockPos(x, y, z + 1), Direction.SOUTH),
+                new NodeDirPos(new BlockPos(x, y, z - 1), Direction.NORTH)
+        );
+    }
+
+    @Override
+    public boolean canAcceptPartialPour(Level world, BlockPos pos, double dX, double dY, double dZ, Direction side, MaterialStack stack) {
+
+        if (this.node == null || !this.node.hasValidNet()) return false;
+
+        for (FoundryNode node : this.node.net.links) {
+            if (node.type != null && node.type != stack.material) {
+                return false;
+            }
         }
 
-        if (be.lastSyncType != be.type || be.lastSyncAmount != be.amount) {
-            be.lastSyncType = be.type;
-            be.lastSyncAmount = be.amount;
-            be.setChanged();
-            level.sendBlockUpdated(pos, state, state, 3);
-        }
-    }
-
-    public int getCapacity() { return CAPACITY; }
-
-    /* ── ICrucibleAcceptor ──────────────────────────────────────────────── */
-
-    private boolean standardCheck(MaterialStack stack) {
-        if (this.type != null && this.type != stack.type && this.amount > 0) return false;
-        if (this.amount >= getCapacity()) return false;
-        return true;
-    }
-
-    private @Nullable MaterialStack standardAdd(MaterialStack stack) {
-        this.type = stack.type;
-
-        if (stack.amount + this.amount <= getCapacity()) {
-            this.amount += stack.amount;
-            setChanged();
-            return null;
-        }
-
-        int required = getCapacity() - this.amount;
-        this.amount = getCapacity();
-        stack.amount -= required;
-        setChanged();
-        return stack;
+        return super.canAcceptPartialPour(world, pos, dX, dY, dZ, side, stack);
     }
 
     @Override
-    public boolean canAcceptPartialFlow(Level level, BlockPos pos, Direction side, MaterialStack stack) {
-        return standardCheck(stack);
+    @Nullable
+    public MaterialStack flow(Level world, BlockPos pos, Direction side, MaterialStack stack) {
+        if (this.node != null) this.node.type = stack.material;
+        return super.flow(world, pos, side, stack);
     }
 
     @Override
-    public @Nullable MaterialStack flow(Level level, BlockPos pos, Direction side, MaterialStack stack) {
-        return standardAdd(stack);
-    }
-
-    @Override
-    public boolean canAcceptPartialPour(Level level, BlockPos pos, Direction side, MaterialStack stack) {
-        if (side != Direction.UP) return false;
-        return standardCheck(stack);
-    }
-
-    @Override
-    public @Nullable MaterialStack pour(Level level, BlockPos pos, Direction side, MaterialStack stack) {
-        return standardAdd(stack);
-    }
-
-    /* ── NBT / sync ─────────────────────────────────────────────────────── */
-
-    
-    @Override
-    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-        super.writeNbtData(tag, registries);
-        if (type != null) tag.putString("mat_type", type.name);
-        tag.putInt("mat_amount", amount);
-        tag.putInt("lastFlow", lastFlow);
-    }
-
-    @Override
-    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-        super.readNbtData(tag, registries);
-        if (tag.contains("mat_type")) type = MaterialType.byName(tag.getString("mat_type"));
-        else type = null;
-        amount   = tag.getInt("mat_amount");
-        lastFlow = tag.getInt("lastFlow");
+    @Nullable
+    public MaterialStack pour(Level world, BlockPos pos, double dX, double dY, double dZ, Direction side, MaterialStack stack) {
+        if (this.node != null) this.node.type = stack.material;
+        return super.pour(world, pos, dX, dY, dZ, side, stack);
     }
 }

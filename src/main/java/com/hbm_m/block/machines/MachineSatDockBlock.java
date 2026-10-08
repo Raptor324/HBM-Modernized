@@ -29,11 +29,14 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 
 /**
  * 1:1 {@code com.hbm.blocks.machine.MachineSatDock} ({@code sat_dock}, Frachtschiff-Andockstation): 3x3 Felder,
- * alle 12/16 hoch (Original: Kern + acht {@code dummy_plate_cargo}), Modell {@code sat_dock.obj}.
+ * Kern 12/16 hoch ({@code setBlockBounds(0, 0, 0, 1, 12*f, 1)}), die acht {@code dummy_plate_cargo} ringsum
+ * 8/16 hoch ({@code setBounds(0, 0, 0, 16, 8, 16)}), Modell {@code sat_dock.obj}.
  */
 public class MachineSatDockBlock extends DummyableMachineBlock {
 
-    private static final VoxelShape PLATE = Block.box(0, 0, 0, 16, 12, 16);
+    private static final VoxelShape CORE = Block.box(0, 0, 0, 16, 12, 16);
+    /** audit13: Original {@code dummy_plate_cargo} ist nur 8/16 hoch, nicht 12/16 wie der Kern. */
+    private static final VoxelShape PLATE = Block.box(0, 0, 0, 16, 8, 16);
 
     public MachineSatDockBlock(Properties properties) {
         super(properties);
@@ -49,7 +52,7 @@ public class MachineSatDockBlock extends DummyableMachineBlock {
         for (int k = -1; k <= 1; k++) {
             for (int l = -1; l <= 1; l++) {
                 BlockPos pos = new BlockPos(k, 0, l);
-                shapes.put(pos, PLATE);
+                shapes.put(pos, k == 0 && l == 0 ? CORE : PLATE);
                 if (k == 0 && l == 0) {
                     symbols.put(pos, 'C');
                     continue;

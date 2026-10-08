@@ -1,0 +1,12 @@
+{
+  "structures": [
+    {
+      "structure": "hbm_m:ntm_structures",
+      "weight": 1
+    }
+  ],
+  "placement": {
+    "type": "hbm_m:ntm_grid",
+    "salt": 996996996
+  }
+}

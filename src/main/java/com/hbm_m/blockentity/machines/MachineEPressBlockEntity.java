@@ -43,8 +43,8 @@ import net.minecraft.world.phys.AABB;
  * zwischen zwei Huben wird kuerzer ({@code 5 - speed + 1}). Drei Stufen halbieren die Zeit je Hub
  * ungefaehr.</p>
  *
- * <p><b>Offen:</b> die Kopfanimation des Original-Renderers - das kombinierte
- * {@code epress.json}-Modell steht still.
+ * <p>Die Kopfanimation des Original-Renderers zeichnet {@code EPressRenderer} aus dem synchronisierten
+ * {@code press} ({@code renderPress/lastPress} wie im Original ueber zwei Ticks nachgezogen).
  */
 public class MachineEPressBlockEntity extends BaseMachineBlockEntity {
 
@@ -72,6 +72,10 @@ public class MachineEPressBlockEntity extends BaseMachineBlockEntity {
 
     private int press = 0;
     private boolean isRetracting = false;
+    /** Original Client-Seite: {@code renderPress/lastPress/turnProgress} fuer RenderEPress. */
+    public double renderPress;
+    public double lastPress;
+    private int turnProgress;
     private int delay = 0;
     private int pressPosition = 0;
 
@@ -109,7 +113,16 @@ public class MachineEPressBlockEntity extends BaseMachineBlockEntity {
     }
 
     public static void tick(Level level, BlockPos pos, BlockState state, MachineEPressBlockEntity be) {
-        if (level.isClientSide()) return;
+        if (level.isClientSide()) {
+            be.lastPress = be.renderPress;
+            if (be.turnProgress > 0) {
+                be.renderPress = be.renderPress + ((be.press - be.renderPress) / (double) be.turnProgress);
+                --be.turnProgress;
+            } else {
+                be.renderPress = be.press;
+            }
+            return;
+        }
         be.serverTick();
     }
 
@@ -120,46 +133,42 @@ public class MachineEPressBlockEntity extends BaseMachineBlockEntity {
         chargeFromBatterySlot(SLOT_BATTERY);
         upgradeManager.checkSlots(inventory, SLOT_UPGRADE, SLOT_UPGRADE, VALID_UPGRADES);
 
-        // 1:1: speed = 1 + Stufe, der Hub wird mit (1 + speed/4) gestreckt.
-        int speedLevel = Math.min(upgradeManager.getLevel(UpgradeType.SPEED), 3);
-        int speed = 1 + speedLevel;
-        double stampMult = 1D + speed / 4D;
-        int pause = 5 - speed + 1;
-
-        // Der Verbrauch waechst mit dem Tempo - das Original zieht ihn ausserhalb dieser Schleife.
-        long drawPerTick = Math.max(1L, (long) (POWER_PER_TICK * stampMult));
-
         boolean canProcess = canProcess();
 
-        if (delay <= 0) {
-            if ((canProcess || isRetracting) && getEnergyStored() >= drawPerTick) {
-                setEnergyStored(getEnergyStored() - drawPerTick);
+        // 1:1 Original: 100 HE je Tick, solange gearbeitet, eingefahren oder pausiert wird - unabhaengig vom Tempo
+        if ((canProcess || isRetracting || delay > 0) && getEnergyStored() >= POWER_PER_TICK) {
+            setEnergyStored(getEnergyStored() - POWER_PER_TICK);
+
+            if (delay <= 0) {
+                upgradeManager.checkSlots(inventory, SLOT_UPGRADE, SLOT_UPGRADE, VALID_UPGRADES);
+                int speed = 1 + upgradeManager.getLevel(UpgradeType.SPEED);
+
+                int stampSpeed = isRetracting ? RETRACT_SPEED : EXTEND_SPEED;
+                stampSpeed = (int) (stampSpeed * (1D + (double) speed / 4D));
 
                 if (isRetracting) {
-                    press -= (int) (RETRACT_SPEED * stampMult);
+                    press -= stampSpeed;
                     if (press <= 0) {
-                        press = 0;
                         isRetracting = false;
-                        delay = pause;
+                        delay = 5 - speed + 1;
                     }
-                } else {
-                    press += (int) (EXTEND_SPEED * stampMult);
+                } else if (canProcess) {
+                    press += stampSpeed;
                     if (press >= MAX_PRESS) {
-                        press = MAX_PRESS;
                         craftItem();
                         isRetracting = true;
-                        delay = pause;
+                        delay = 5 - speed + 1;
                     }
+                } else if (press > 0) {
+                    isRetracting = true;
                 }
-                needsSync = true;
-            } else if (!canProcess && press > 0 && !isRetracting) {
-                isRetracting = true;
+            } else {
+                delay--;
             }
-        } else {
-            delay--;
+            needsSync = true;
         }
 
-        pressPosition = Math.min(20, (press * 20) / MAX_PRESS);
+        pressPosition = Math.max(0, Math.min(20, (press * 20) / MAX_PRESS));
 
         if (needsSync) {
             setChanged();
@@ -256,6 +265,23 @@ public class MachineEPressBlockEntity extends BaseMachineBlockEntity {
                 worldPosition.getX() + 1, worldPosition.getY() + 3, worldPosition.getZ() + 1);
     }
 
+    /** Original deserialize: {@code turnProgress = 2} bei jedem Paket. */
+    @Override
+    protected void applyClientUpdate(CompoundTag tag) {
+        super.applyClientUpdate(tag);
+        this.turnProgress = 2;
+    }
+
+    /** Original {@code syncStack = slots[2]} - das Material unter dem Stempel. */
+    public ItemStack getSyncStack() {
+        return inventory.getStackInSlot(SLOT_MATERIAL);
+    }
+
+    /** Original {@code maxPress}. */
+    public static int getMaxPress() {
+        return MAX_PRESS;
+    }
+
     @Override
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.writeNbtData(tag, registries);
@@ -299,4 +325,26 @@ public class MachineEPressBlockEntity extends BaseMachineBlockEntity {
     public AbstractContainerMenu createMenu(int containerId, Inventory playerInventory, Player player) {
         return new MachineEPressMenu(containerId, playerInventory, this, this.data);
     }
+
+    //? if forge {
+    /** Original {@code ISidedInventory}: Slots {1, 2, 3}; Stempel nur in 1, alles andere in 2, nur das Ergebnis heraus. */
+    private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
+            new com.hbm_m.blockentity.SidedItemAccess.Rules() {
+                @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return new int[] { 1, 2, 3 }; }
+                @Override public boolean canInsert(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return stack.getItem() instanceof com.hbm_m.item.industrial.ItemStamp ? slot == 1 : slot == 2; }
+                @Override public boolean canExtract(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return slot == 3; }
+            });
+
+    @Override
+    public @org.jetbrains.annotations.NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(@org.jetbrains.annotations.NotNull net.minecraftforge.common.capabilities.Capability<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER && side != null) return sidedItems.get(side).cast();
+        return super.getCapability(cap, side);
+    }
+
+    @Override
+    public void invalidateCaps() {
+        super.invalidateCaps();
+        sidedItems.invalidate();
+    }
+    //?}
 }

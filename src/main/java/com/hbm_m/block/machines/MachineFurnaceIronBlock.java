@@ -36,9 +36,8 @@ import net.minecraft.world.phys.shapes.VoxelShape;
 import dev.architectury.registry.menu.MenuRegistry;
 
 /**
- * Iron Furnace - Direktport des 1.7.10 Originals ({@code MachineFurnaceIron}/
- * {@code TileEntityFurnaceIron}) als einzelner Block, siehe
- * {@link MachineFurnaceIronBlockEntity} fuer Details zur Vereinfachung ggue. dem Multiblock-Original.
+ * Iron Furnace - 1:1 {@code MachineFurnaceIron}/{@code TileEntityFurnaceIron}, 2x2x2-Multiblock
+ * (siehe {@link MachineFurnaceIronBlockEntity}).
  */
 public class MachineFurnaceIronBlock extends com.hbm_m.block.machines.DummyableMachineBlock {
     public static final BooleanProperty LIT = BlockStateProperties.LIT;
@@ -93,7 +92,7 @@ public class MachineFurnaceIronBlock extends com.hbm_m.block.machines.DummyableM
 
     @Override
     public RenderShape getRenderShape(BlockState state) {
-        return RenderShape.MODEL;
+        return RenderShape.ENTITYBLOCK_ANIMATED; // Glut an/aus zeichnet FurnaceIronRenderer (RenderFurnaceIron)
     }
 
     @Nullable
@@ -115,6 +114,7 @@ public class MachineFurnaceIronBlock extends com.hbm_m.block.machines.DummyableM
     //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        if (player.isShiftKeyDown()) return InteractionResult.sidedSuccess(level.isClientSide()); // Original standardOpenBehavior: geschlichen true ohne GUI
 
         if (!level.isClientSide() && level.getBlockEntity(pos) instanceof MenuProvider p) {
             MenuRegistry.openExtendedMenu((ServerPlayer) player, p, buf -> buf.writeBlockPos(pos));
@@ -124,6 +124,7 @@ public class MachineFurnaceIronBlock extends com.hbm_m.block.machines.DummyableM
     //?} else {
     /*@Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+        if (player.isShiftKeyDown()) return InteractionResult.sidedSuccess(level.isClientSide()); // Original standardOpenBehavior: geschlichen true ohne GUI
 
         if (!level.isClientSide() && level.getBlockEntity(pos) instanceof MenuProvider p) {
             MenuRegistry.openExtendedMenu((ServerPlayer) player, p, buf -> buf.writeBlockPos(pos));
@@ -147,4 +148,11 @@ public class MachineFurnaceIronBlock extends com.hbm_m.block.machines.DummyableM
         return CODEC;
     }
     *///?}
+
+    /** Original {@code addInformation}: {@code addStandardInfo} (Umschalttaste zeigt {@code .desc}). */
+    @Override
+    public void appendHoverText(net.minecraft.world.item.ItemStack stack, @org.jetbrains.annotations.Nullable net.minecraft.world.level.BlockGetter level,
+                                java.util.List<net.minecraft.network.chat.Component> list, net.minecraft.world.item.TooltipFlag flag) {
+        com.hbm_m.util.StandardInfo.add(list, getDescriptionId() + ".desc");
+    }
 }

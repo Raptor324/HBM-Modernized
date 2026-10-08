@@ -221,29 +221,12 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add(ModItems.POWDER_DESH_READY.get(), "ГотоваяДеш™ смесь");
         // Оригинал: 4310 powder_coltan_ore "Измельчённый колтан" / 4311 powder_coltan "Очищенный танталит".
         add(ModItems.POWDER_COLTAN.get(), "Измельчённый колтан");
-        add(ModItems.TURRET_AMMO.get(), "Патроны для турели");
-        add(ModItems.AMMO_9MM_SP.get(), "9-мм патрон (мягкая пуля)");
-        add(ModItems.AMMO_9MM_FMJ.get(), "9-мм патрон (оболочечная пуля)");
-        add(ModItems.AMMO_9MM_JHP.get(), "9-мм патрон (экспансивная пуля)");
-        add(ModItems.AMMO_9MM_AP.get(), "9-мм патрон (бронебойный)");
-        add(ModItems.AMMO_50_SP.get(), ".50 патрон (мягкая пуля)");
-        add(ModItems.AMMO_50_FMJ.get(), ".50 патрон (оболочечная пуля)");
-        add(ModItems.AMMO_50_JHP.get(), ".50 патрон (экспансивная пуля)");
-        add(ModItems.AMMO_50_AP.get(), ".50 патрон (бронебойный)");
-        add(ModItems.AMMO_50_DU.get(), ".50 патрон (обеднённый уран)");
-        add(ModItems.AMMO_556_SP.get(), "5.56-мм патрон (мягкая пуля)");
-        add(ModItems.AMMO_556_FMJ.get(), "5.56-мм патрон (оболочечная пуля)");
-        add(ModItems.AMMO_556_JHP.get(), "5.56-мм патрон (экспансивная пуля)");
-        add(ModItems.AMMO_556_AP.get(), "5.56-мм патрон (бронебойный)");
-        add(ModItems.ROCKET_TURRET_STANDARD.get(), "Ракета турели (наведение)");
         add(ModItems.ROCKET_HIMARS_STANDARD.get(), "Ракета HIMARS (стандартная)");
         add(ModItems.ROCKET_HIMARS_HE.get(), "Ракета HIMARS (фугасная)");
         add(ModItems.ROCKET_HIMARS_LAVA.get(), "Ракета HIMARS (лава)");
         add(ModItems.ROCKET_HIMARS_MINI_NUKE.get(), "Ракета HIMARS (мини-ядерная)");
         add(ModItems.ROCKET_HIMARS_WP.get(), "Ракета HIMARS (белый фосфор)");
         add(ModItems.ROCKET_HIMARS_THERMOBARIC.get(), "Ракета HIMARS (термобарическая)");
-        add(ModItems.AMMO_TAU_URANIUM.get(), "Урановый заряд (тау-ускоритель)");
-        add(ModItems.AMMO_FLAME_DIESEL.get(), "Дизельное топливо (огнемёт)");
         add(ModItems.MISSILE_FUSELAGE.get(), "Фюзеляж ракеты");
         add(ModItems.MISSILE_CHIP.get(), "Чип наведения ракеты");
 
@@ -295,7 +278,7 @@ public class ModLanguageProviderRu extends LanguageProvider {
 
         // ПРОТОТИП РАКЕТЫ
         add("item.hbm_m.missile_test", "Тестовая баллистическая ракета");
-        add("item.hbm_m.missile_abm", "Противобаллистическая ракета");
+        add("item.hbm_m.missile_anti_ballistic", "Антибаллистическая ракета");
         add("item.hbm_m.missile_micro", "Микроядерная ракета");
         add("item.hbm_m.missile_schrabidium", "Ракета со шрабидием");
         add("item.hbm_m.missile_bhole", "Ракета с чёрной дырой");
@@ -384,6 +367,9 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("pseudofluid.hbm_m.pf6", "PuF6 (обогащённый)");
         add("pseudofluid.hbm_m.mud", "Отходы WATZ");
         add("pseudofluid.hbm_m.mud_heavy", "Отходы WATZ (концентрат)");
+        add("jei.hbm_m.crucible_smelting", "Плавка в тигле");
+        add("jei.hbm_m.crucible_alloying", "Сплавы в тигле");
+        add("jei.hbm_m.crucible_casting", "Литьё");
         add("jei.hbm_m.gas_centrifuge.info", "Требуется %s центрифуг(и)");
         add("jei.hbm_m.gas_centrifuge.info_high_speed", "Требуется %s центрифуг(и) (ускоренная)");
         add("gui.launchPad.notReady", "Не готова");
@@ -697,7 +683,6 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("tooltip.hbm_m.mine_nuke.line3", "Может быть обезврежена");
 
         add("tooltip.hbm_m.mine.line1", "Может быть обезврежена");
-        add("tooltip.hbm_m.naval_mine.line1", "Взрывается при контакте с игроком");
 
         // Сигарета (порт ItemCigarette, 1.7.10)
         add("tooltip.hbm_m.cigarette.line1", "✓ Асбестовый фильтр");
@@ -808,7 +793,7 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add(ModBlocks.BARREL_ANTIMATTER.get(), "Магнитный контейнер антиматерии");
         add(ModBlocks.BARREL_PLASTIC.get(), "Безопасная бочка™");
         add(ModBlocks.BARREL_PINK.get(), "Бочка с керосином");
-        add(ModBlocks.BARREL_YELLOW.get(), "Бочка с ядерными отходами");
+        add(ModBlocks.BARREL_YELLOW.get(), "Радиоактивная бочка");
         add(ModBlocks.BARREL_VITRIFIED.get(), "Бочка с остеклованными ядерными отходами");
         add(ModBlocks.BARREL_TAINT.get(), "Бочка с говном");
         add(ModBlocks.TAINT.get(), "Порча");
@@ -847,10 +832,6 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("item.hbm_m.rad_beast_spawn_egg", "Яйцо призыва РАД-зверя");
         add("item.hbm_m.rocket_himars_single", "Ракета HIMARS (одиночная)");
         add("item.hbm_m.rocket_himars_single_tb", "Ракета HIMARS (одиночная термобарическая)");
-        add("item.hbm_m.rocket_turret_demo", "Ракета турели (фугасная)");
-        add("item.hbm_m.rocket_turret_heat", "Ракета турели (кумулятивная)");
-        add("item.hbm_m.rocket_turret_inc", "Ракета турели (зажигательная)");
-        add("item.hbm_m.rocket_turret_phosphorus", "Ракета турели (фосфорная)");
         add("item.hbm_m.ufo_spawn_egg", "Яйцо призыва НЛО");
         add("item.hbm_m.upgrade_5g", "Улучшение 5G");
         add("item.hbm_m.upgrade_screm", "Кричащее улучшение");
@@ -989,7 +970,6 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add(ModItems.GRENADE_IF.get(), "IF граната");
 
         add("item.hbm_m.radaway", "Антирадин");
-        add("item.hbm_m.wood_ash_powder", "Древесный пепел");
         add("effect.hbm_m.radaway", "Очищение от радиации");
 
 
@@ -1014,13 +994,6 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add(ModBlocks.CONCRETE_BLACK.get(), "Чёрный бетон");
         add(ModBlocks.CONCRETE_BLUE.get(), "Синий бетон");
         add(ModBlocks.CONCRETE_BROWN.get(), "Коричневый бетон");
-        add(ModBlocks.CONCRETE_COLORED_BRONZE.get(), "Бронзовый бетон");
-        add(ModBlocks.CONCRETE_COLORED_INDIGO.get(), "Индиго бетон");
-        add(ModBlocks.CONCRETE_COLORED_MACHINE.get(), "Бетон 'Выбор Пломбира'");
-        add(ModBlocks.CONCRETE_COLORED_MACHINE_STRIPE.get(), "Полосатый бетон 'Выбор Пломбира'");
-        add(ModBlocks.CONCRETE_COLORED_PINK.get(), "Розовый бетон");
-        add(ModBlocks.CONCRETE_COLORED_PURPLE.get(), "Фиолетовый бетон");
-        add(ModBlocks.CONCRETE_COLORED_SAND.get(), "Бетон 'Техас'");
         add(ModBlocks.CONCRETE_CYAN.get(), "Бирюзовый бетон");
         add(ModBlocks.CONCRETE_GRAY.get(), "Серый бетон");
         add(ModBlocks.CONCRETE_GREEN.get(), "Зелёный бетон");
@@ -1257,35 +1230,13 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("gui.hbm_m.fluid_tank.empty_locked", "Пусто (тип цистерны: %s)");
         add("gui.hbm_m.fluid_tank.empty_filter", "Пусто (фильтр: %s)");
         add("gui.hbm_m.fluid_tank.filter_set", "Тип установлен: %s!");
-        add("gui.hbm_m.fluid_tank.mode.0", "Режим: Только вывод");
+        add("gui.hbm_m.fluid_tank.mode.0", "Режим: Только ввод");
         add("gui.hbm_m.fluid_tank.mode.1", "Режим: Буфер");
-        add("gui.hbm_m.fluid_tank.mode.2", "Режим: Только ввод");
+        add("gui.hbm_m.fluid_tank.mode.2", "Режим: Только вывод");
         add("gui.hbm_m.fluid_tank.mode.3", "Режим: Отключено");
         add("gui.hbm_m.fluid_tank.pressure", "Давление: %s PU");
         add("gui.hbm_m.fluid_tank.pressurized", "Под давлением — используйте компрессор!");
         add("gui.hbm_m.fluid_tank.hold_shift_more", "Удерживайте <LSHIFT> для подробностей");
-        add("fluid.hbm_m.trait.polluting", "[Загрязняющая]");
-        add("fluid.hbm_m.trait.polluting.when_spilled", "При разливе:");
-        add("fluid.hbm_m.trait.polluting.when_burned", "При сжигании:");
-        add("fluid.hbm_m.trait.polluting.line", "%s — %s");
-        add("fluid.hbm_m.trait.heatable.thermal_capacity", "Теплоёмкость: %s TU на %s mB");
-        add("fluid.hbm_m.trait.efficiency_pct", "КПД: %s%%");
-        add("fluid.hbm_m.trait.pwr_flux_multiplier", "[Модератор потока PWR]");
-        add("fluid.hbm_m.trait.core_flux_pct", "Поток в активной зоне: %s%%");
-        add("fluid.hbm_m.trait.pheromone_glyphid", "[Феромоны — глифид]");
-        add("fluid.hbm_m.trait.pheromone_modified", "[Феромоны — модифицированные]");
-        add("fluid.hbm_m.trait.toxin_header", "[Токсин]");
-        add("fluid.hbm_m.trait.toxic_fumes", "Токсичные испарения");
-        add("fluid.hbm_m.toxin.chlorine.line1", "Повреждение лёгких (облако)");
-        add("fluid.hbm_m.toxin.chlorine.line2", "Сильный раздражитель дыхательных путей");
-        add("fluid.hbm_m.toxin.phosgene.line1", "Тяжёлое поражение лёгких (облако)");
-        add("fluid.hbm_m.toxin.phosgene.line2", "Очень опасен при вдыхании");
-        add("fluid.hbm_m.toxin.mustard.line1", "Кожные и лёгочные поражения");
-        add("fluid.hbm_m.toxin.mustard.line2", "Возможны химические ожоги и отравление");
-        add("fluid.hbm_m.toxin.estradiol.line1", "Опасные мелкодисперсные частицы");
-        add("fluid.hbm_m.toxin.estradiol.line2", "Системное воздействие при контакте");
-        add("fluid.hbm_m.toxin.redmud.line1", "Щёлочные и тяжёлые металлы");
-        add("fluid.hbm_m.toxin.redmud.line2", "Кожные ожоги и системная интоксикация");
 
 
         add("tooltip.hbm_m.depthstone.line1", "Может быть уничтожен только взрывом!");
@@ -1570,7 +1521,6 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("item.hbm_m.cobalt_raw", "Рудный кобальт");
         add("item.hbm_m.beryllium_raw", "Рудный бериллий");
         add("item.hbm_m.aluminum_raw", "Рудный алюминий");
-        add("item.hbm_m.cinnabar", "Киноварь");
         add("item.hbm_m.sulfur", "Сера");
         add("item.hbm_m.rareground_ore_chunk", "Кусок редкоземельной руды");
         add("item.hbm_m.lignite", "Бурый уголь");
@@ -1647,7 +1597,6 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("item.hbm_m.hazmat_cloth", "Защитная ткань");
         add("item.hbm_m.hazmat_cloth_grey", "Освинцованная защитная ткань");
         add("item.hbm_m.hazmat_cloth_red", "Дополнительная защитная ткань");
-        add("item.hbm_m.ingot_aluminium", "Алюминиевый слиток");
         add("item.hbm_m.launch_code", "Код запуска");
         add("item.hbm_m.launch_code_piece", "Кусок кода запуска");
         add("item.hbm_m.launch_key", "Ключ запуска");
@@ -1669,7 +1618,6 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("item.hbm_m.pellet_gas", "Ядовитый газовый баллон");
         add("item.hbm_m.photo_panel", "Фотоэлектрическая панель");
         add("item.hbm_m.pipes_steel", "Стальные трубы");
-        add("item.hbm_m.plate_aluminium", "Алюминиевая пластина");
         add("item.hbm_m.powder_chlorocalcite", "Хлоркальцит");
         add("item.hbm_m.powder_sodium", "Натрий");
         add("item.hbm_m.rag_damp", "Влажная тряпка");
@@ -1853,8 +1801,7 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add(ModBlocks.FLUID_EXHAUST.get(), "Выхлопная труба");
         add("gui.hbm_m.fluid_duct.overlay.fluid_empty", "Жидкость не задана");
         add(ModBlocks.INDUSTRIAL_BOILER.get(), "Промышленный котел");
-        add(ModBlocks.SOLAR_BOILER.get(), "Солнечный котел");
-        add(ModBlocks.SOLAR_MIRRORS.get(), "Солнечные зеркала (WIP)");
+        add(ModBlocks.SOLAR_BOILER.get(), "Бойлер солнечной башни");
         add(ModBlocks.HYDROTREATER.get(), "Гидроочиститель (WIP)");
         add(ModBlocks.CATALYTIC_REFORMER.get(), "Каталитический риформер (WIP)");
         add(ModBlocks.DEUTERIUM_TOWER.get(), "Башня дейтерия (WIP)");
@@ -1875,7 +1822,7 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("gui.hbm_m.annihilator.pool", "Пул: %s");
         add("gui.hbm_m.annihilator.destroyed", "Уничтожено: %s");
         add(ModBlocks.ARC_FURNACE.get(), "Дуговая печь");
-        add(ModBlocks.ASSEMBLY_FACTORY.get(), "Сборочный завод (WIP)");
+        add(ModBlocks.ASSEMBLY_FACTORY.get(), "Сборочный завод");
         add(ModBlocks.AUTOSAW.get(), "Автопила");
         add(ModBlocks.BEAMLINE.get(), "Канал пучка (WIP)");
         add(ModBlocks.BOILER.get(), "Котёл");
@@ -1901,6 +1848,10 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add(ModBlocks.LPW2.get(), "LPW2");
         add(ModItems.COKE_PETROLEUM.get(), "Нефтяной кокс");
         add(ModItems.ASH_WOOD.get(), "Древесная зола");
+        for (var scrap : ModItems.SCRAP_PLASTIC_VARIANTS.values()) add(scrap.get(), "Куски пластмассы");
+        add(ModItems.INGOT_U238M2_1.get(), "ELEMENTS");
+        add(ModItems.INGOT_U238M2_2.get(), "ARSENIC");
+        add(ModItems.INGOT_U238M2_3.get(), "VAULT");
         add(ModItems.ASH_COAL.get(), "Угольная зола");
         add(ModItems.ASH_MISC.get(), "Пепел");
         add(ModItems.ASH_FLY.get(), "Летучая зола");
@@ -1952,7 +1903,6 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("container.hbm_m.epress", "Электрический пресс");
         add(ModBlocks.EXPOSURE_CHAMBER.get(), "Камера облучения");
         add("container.hbm_m.exposure_chamber", "Камера облучения");
-        add(ModBlocks.FENSU.get(), "Промышленный вентилятор (WIP)");
         add(ModBlocks.FENSU2.get(), "Реддендитовая батарея");
         add("container.hbm_m.machine_battery_redd", "Реддендитовая батарея");
         add(ModBlocks.FIREBOX.get(), "Топка");
@@ -1965,7 +1915,7 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("container.hbm_m.heatex", "Теплообменник");
         add(ModBlocks.HEPHAESTUS.get(), "Гефест");
         add(ModBlocks.ICF.get(), "Инерциальный термоядерный синтез (WIP)");
-        add(ModBlocks.INTAKE.get(), "Воздухозаборник (WIP)");
+        add(ModBlocks.INTAKE.get(), "Воздухозаборник");
         add(ModBlocks.KLYSTRON.get(), "Клистрон (WIP)");
         add(ModBlocks.MHDT.get(), "МГД-турбина (WIP)");
         add(ModBlocks.MICROWAVE.get(), "Микроволновка");
@@ -1988,6 +1938,14 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add(ModBlocks.REACTOR_SMALL.get(), "Малый реактор (WIP)");
         add(ModBlocks.RFC.get(), "Генератор RFC (WIP)");
         add(ModBlocks.ROTARY_FURNACE.get(), "Вращающаяся печь");
+        add(ModItems.ARC_ELECTRODE.get(), "Графитовый электрод");
+        add(ModItems.ARC_ELECTRODE_LANTHANIUM.get(), "Лантановый электрод");
+        add(ModItems.ARC_ELECTRODE_DESH.get(), "Электрод из деш");
+        add(ModItems.ARC_ELECTRODE_SATURNITE.get(), "Сатурнитовый электрод");
+        add(ModItems.ARC_ELECTRODE_BURNT_GRAPHITE.get(), "Расплавленный графитовый электрод");
+        add(ModItems.ARC_ELECTRODE_BURNT_LANTHANIUM.get(), "Расплавленный лантановый электрод");
+        add(ModItems.ARC_ELECTRODE_BURNT_DESH.get(), "Расплавленный электрод из деш");
+        add(ModItems.ARC_ELECTRODE_BURNT_SATURNITE.get(), "Расплавленный сатурнитовый электрод");
         add("container.hbm_m.rotary_furnace", "Вращающаяся печь");
         add(ModBlocks.SAWMILL.get(), "Лесопилка");
         add(ModBlocks.SOLIDIFIER.get(), "Затвердитель");
@@ -2033,7 +1991,6 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("block.hbm_m.block_pu241", "Блок плутония-241");
         add("block.hbm_m.block_actinium", "Актиниевый блок");
         add("block.hbm_m.block_advanced_alloy", "Блок продвинутого сплава");
-        add("block.hbm_m.block_aluminum", "Алюминиевый блок");
         add("block.hbm_m.block_schrabidium", "Шрабидиевый блок");
         add("block.hbm_m.block_saturnite", "Сатурнитовый блок");
         add("block.hbm_m.block_lead", "Свинцовый блок");
@@ -2136,7 +2093,6 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("block.hbm_m.reinforced_stone", "Уплотнённый камень");
         add("block.hbm_m.reinforced_stone_slab", "Плита из уплотнённого камня");
         add("block.hbm_m.reinforced_stone_stairs", "Ступеньки из уплотнённого камня");
-        add("block.hbm_m.concrete_hazard", "Бетон ''Выбор строителя'' - Полоса опасности");
         add("block.hbm_m.concrete_hazard_slab", "Бетонная плита ''Выбор строителя'' - Полоса опасности");
         add("block.hbm_m.concrete_hazard_stairs", "Бетонные ступеньки ''Выбор строителя'' - Полоса опасности");
         add("block.hbm_m.concrete_stairs", "Бетонные ступеньки");
@@ -2326,7 +2282,6 @@ public class ModLanguageProviderRu extends LanguageProvider {
         // РУДЫ
 
         add("block.hbm_m.uranium_ore", "Урановая руда");
-        add("block.hbm_m.aluminum_ore", "Алюминиевая руда");
         add("block.hbm_m.aluminum_ore_deepslate", "Глубинная алюминиевая руда");
         add("block.hbm_m.cinnabar_ore_deepslate", "Глубинная киноварная руда");
         add("block.hbm_m.cobalt_ore_deepslate", "Глубинная кобальтовая руда");
@@ -2866,11 +2821,7 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add(ModBlocks.LARGE_PYLON.get(), "Большой пилон (WIP)");
         add(ModBlocks.HYDRAULIC_FRACKINING_TOWER.get(), "Башня гидроразрыва пласта");
         add(ModBlocks.COOLING_TOWER.get(), "Градирня");
-        add(ModBlocks.TOWER_SMALL.get(), "Градирня (малая)");
-        add("container.hbm_m.cooling_tower", "Градирня");
-        add("info.hbm_m.cooling_tower.status", "Горячий теплоноситель: %d / %d мБ | Теплоноситель: %d / %d мБ | %s");
-        add("info.hbm_m.cooling_tower.active", "Охлаждение");
-        add("info.hbm_m.cooling_tower.idle", "Простой");
+        add(ModBlocks.TOWER_SMALL.get(), "Вспомогательная градирня");
         add(ModBlocks.CYCLOTRON.get(), "Циклотрон (WIP)");
         add(ModItems.PART_LITHIUM.get(),   "Частица лития");
         add(ModItems.PART_BERYLLIUM.get(), "Частица бериллия");
@@ -2953,7 +2904,6 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add(ModBlocks.CHEMICAL_PLANT.get(), "Химическая установка");
         add(ModBlocks.CENTRIFUGE.get(), "Центрифуга (WIP)");
         add(ModBlocks.INDUSTRIAL_TURBINE.get(), "Промышленная турбина");
-        add(ModBlocks.TURBINE.get(), "Турбина (WIP)");
         add(ModBlocks.SUBSTATION.get(), "Подстанция (WIP)");
         add("container.hbm_m.wood_burner", "Дровяной генератор");
         add(ModBlocks.TURRET_SENTRY.get(), "Турель \"Часовой\"");
@@ -3127,9 +3077,6 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("advancements.hbm_m.radiation_200.description", "Достигнуть уровня радиации в 200 РАД");
         add("advancements.hbm_m.radiation_1000.title", "Ай, Радиация!");
         add("advancements.hbm_m.radiation_1000.description", "Умереть от лучевой болезни");
-        add("gui.hbm_m.solar_boiler.sunlight", "Солнечный свет");
-        add("gui.hbm_m.solar_boiler.mirrors", "Активные зеркала: %s");
-        add("container.hbm_m.solar_boiler", "Солнечный котел");
         add("tooltip.hbm_m.barrel.capacity", "Объём: %s мБ");
         add("tooltip.hbm_m.barrel.hot.yes", "Может хранить горячие жидкости");
         add("tooltip.hbm_m.barrel.hot.no", "Не может хранить горячие жидкости");
@@ -3139,9 +3086,6 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("tooltip.hbm_m.barrel.highly_corrosive.no", "Не может хранить сильно едкие жидкости как следует");
         add("tooltip.hbm_m.barrel.antimatter.yes", "Может хранить антиматерию");
         add("tooltip.hbm_m.barrel.antimatter.no", "Не может хранить антиматерию");
-        add("container.hbm_m.solar_mirrors", "Солнечные зеркала");
-        add("msg.hbm_m.solar_mirror.sky_access", "Зеркало освещено солнцем");
-        add("msg.hbm_m.solar_mirror.no_sky_access", "Зеркало затенено");
         add("container.hbm_m.hydrotreater", "Гидроочиститель");
         add("container.hbm_m.catalytic_reformer", "Каталитический риформер");
         add("container.hbm_m.deuterium_tower", "Башня дейтерия");
@@ -3266,6 +3210,7 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("gui.recipe.consumption", "Потребление");
         add("gui.recipe.input", "Вход");
         add("gui.recipe.output", "Выход");
+        add("gui.recipe.atPressure", "при давлении в");
         add("gui.hbm_m.fluid.empty", "Пусто");
 
         add("tooltip.hbm_m.battery.stored", "Хранится энергии:");
@@ -3416,6 +3361,10 @@ public class ModLanguageProviderRu extends LanguageProvider {
         add("text.autoconfig.hbm_m.category.general", "Общие настройки");
         add("text.autoconfig.hbm_m.option.enableRadiation", "Включить радиацию");
         add("text.autoconfig.hbm_m.option.enableChunkRads", "Включить радиацию в чанках");
+        add("text.autoconfig.hbm_m.option.radiationSystem", "Система радиации мира");
+        add("text.autoconfig.hbm_m.option.radiationSystem.@Tooltip", "Raptor: классическая радиация по чанкам (по умолчанию). Advanced: поле радиации с карманами, порт из NTM Next (диффузия, экранирующие блоки, период полураспада). Вступает в силу после перезагрузки мира; у каждой системы свои сохранённые данные.");
+        add("text.autoconfig.hbm_m.option.radiationSystem.RAPTOR", "Raptor (классическая)");
+        add("text.autoconfig.hbm_m.option.radiationSystem.ADVANCED", "Advanced (на основе NTM Next)");
         add("text.autoconfig.hbm_m.option.enableMOTD", "Сообщение при входе в мир (MOTD)");
         add("text.autoconfig.hbm_m.option.usePrismSystem", "Использовать систему PRISM (иначе Simple, WIP)");
 

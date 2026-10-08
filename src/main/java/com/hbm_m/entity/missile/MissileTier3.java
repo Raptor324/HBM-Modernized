@@ -182,9 +182,15 @@ public abstract class MissileTier3 extends MissileBaseEntity {
 
             }
 
-            if (level() instanceof net.minecraft.server.level.ServerLevel server) {
-                MissileWarheadEffects.warheadDrill(this, server, pos);
+            // 1:1 EntityMissileDrill: 30x ExplosionNT(10F, ERRODE) nach unten, Partikel 25, Splitter 12, jolt(10, 50, 1)
+            for (int i = 0; i < 30; i++) {
+                com.hbm_m.explosion.ExplosionNT explosion = new com.hbm_m.explosion.ExplosionNT(level(), this, getX(), getY() - i, getZ(), 10F);
+                explosion.addAllAttrib(com.hbm_m.explosion.ExplosionNT.ExAttrib.ERRODE);
+                explosion.explode();
             }
+            com.hbm_m.explosion.ExplosionLarge.spawnParticles(level(), getX(), getY(), getZ(), 25);
+            com.hbm_m.explosion.ExplosionLarge.spawnShrapnels(level(), getX(), getY(), getZ(), 12);
+            com.hbm_m.explosion.ExplosionLarge.jolt(level(), getX(), getY(), getZ(), 10, 50, 1);
         }
 
     }

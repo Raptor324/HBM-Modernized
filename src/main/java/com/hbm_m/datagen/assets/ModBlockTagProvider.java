@@ -64,9 +64,13 @@ public class ModBlockTagProvider extends BlockTagsProvider {
         for (var s : java.util.List.of(ModBlocks.VENT_CHLORINE, ModBlocks.STALAGMITE_SULFUR, ModBlocks.STALAGMITE_ASBESTOS, ModBlocks.STALAGMITE_ICE, ModBlocks.STALAGMITE_SNOW, ModBlocks.STALAGMITE_GLYPHID1, ModBlocks.STALAGMITE_GLYPHID2, ModBlocks.STALAGMITE_GLYPHID3, ModBlocks.STALACTITE_SULFUR, ModBlocks.STALACTITE_ASBESTOS, ModBlocks.STALACTITE_ICE, ModBlocks.STALACTITE_SNOW, ModBlocks.STALACTITE_GLYPHID1, ModBlocks.STALACTITE_GLYPHID2, ModBlocks.STALACTITE_GLYPHID3, ModBlocks.STONE_RESOURCE_SULFUR, ModBlocks.STONE_RESOURCE_ASBESTOS, ModBlocks.STONE_RESOURCE_HEMATITE, ModBlocks.STONE_RESOURCE_MALACHITE, ModBlocks.STONE_RESOURCE_LIMESTONE, ModBlocks.STONE_RESOURCE_BAUXITE, ModBlocks.PWR_BLOCK, ModBlocks.CRANE_SPLITTER, ModBlocks.SEAL_CONTROLLER, ModBlocks.SEAL_FRAME, ModBlocks.BLAST_DOOR, ModBlocks.DUMMY_BLOCK_BLAST, ModBlocks.FRACTION_SPACER, ModBlocks.CRANE_PARTITIONER, ModBlocks.PIPE_ANCHOR, ModBlocks.FLUID_DUCT_BOX, ModBlocks.FLUID_DUCT_EXHAUST, ModBlocks.RED_CABLE_BOX, ModBlocks.FLUID_DUCT_PAINTABLE, ModBlocks.FLUID_DUCT_PAINTABLE_BLOCK_EXHAUST, ModBlocks.FLUID_VALVE, ModBlocks.FLUID_SWITCH, ModBlocks.FLUID_COUNTER_VALVE, ModBlocks.MACHINE_UF6_TANK, ModBlocks.MACHINE_PUF6_TANK, ModBlocks.CABLE_SWITCH, ModBlocks.CABLE_DETECTOR, ModBlocks.CABLE_DIODE, ModBlocks.RAIL_NARROW, ModBlocks.RAIL_HIGHSPEED, ModBlocks.RAIL_BOOSTER, ModBlocks.FIELD_DISTURBER, ModBlocks.TELEANCHOR, ModBlocks.CM_FLUX, ModBlocks.CM_HEAT, ModBlocks.HADRON_COIL_ALLOY, ModBlocks.HADRON_COIL_GOLD, ModBlocks.HADRON_COIL_NEODYMIUM, ModBlocks.HADRON_COIL_MAGTUNG, ModBlocks.HADRON_COIL_SCHRABIDIUM, ModBlocks.HADRON_COIL_SCHRABIDATE, ModBlocks.HADRON_COIL_STARMETAL, ModBlocks.HADRON_COIL_CHLOROPHYTE, ModBlocks.HADRON_COIL_MESE, ModBlocks.BLOCK_GRAPHITE_DRILLED, ModBlocks.BLOCK_GRAPHITE_FUEL, ModBlocks.BLOCK_GRAPHITE_PLUTONIUM, ModBlocks.BLOCK_GRAPHITE_SOURCE, ModBlocks.BLOCK_GRAPHITE_LITHIUM, ModBlocks.BLOCK_GRAPHITE_TRITIUM, ModBlocks.BLOCK_GRAPHITE_DETECTOR, ModBlocks.BLOCK_GRAPHITE_ROD, ModBlocks.GEYSIR_NETHER, ModBlocks.GEYSIR_CHLORINE, ModBlocks.CRATE_LEAD, ModBlocks.CRATE_METAL, ModBlocks.CRATE_RED, ModBlocks.CRATE_AMMO, ModBlocks.CRATE_JUNGLE, ModBlocks.SAFE, ModBlocks.BRICK_JUNGLE, ModBlocks.BRICK_JUNGLE_CRACKED, ModBlocks.BRICK_JUNGLE_LAVA, ModBlocks.BRICK_JUNGLE_CIRCLE, ModBlocks.BRICK_JUNGLE_FRAGILE, ModBlocks.BRICK_JUNGLE_GLYPH, ModBlocks.BRICK_JUNGLE_TRAP, ModBlocks.VENT_CLOUD, ModBlocks.VENT_PINK_CLOUD, ModBlocks.BLOCK_SCRAP, ModBlocks.BLOCK_ELECTRICAL_SCRAP, ModBlocks.CONCRETE_SUPER_BROKEN, ModBlocks.ORE_OIL_SAND, ModBlocks.DIRT_DEAD, ModBlocks.DIRT_OILY, ModBlocks.GRAVEL_DIAMOND, ModBlocks.GRAVEL_OBSIDIAN, ModBlocks.MOON_TURF, ModBlocks.SAND_DIRTY, ModBlocks.SAND_DIRTY_RED, ModBlocks.STONE_CRACKED, ModBlocks.ORE_OIL, ModBlocks.BLOCK_METEOR, ModBlocks.BLOCK_METEOR_COBBLE, ModBlocks.BLOCK_METEOR_BROKEN, ModBlocks.DECO_TITANIUM, ModBlocks.WASTE_PLANKS, ModBlocks.FROZEN_DIRT, ModBlocks.FROZEN_PLANKS, ModBlocks.ORE_RARE, ModBlocks.BRICK_JUNGLE_OOZE, ModBlocks.BRICK_JUNGLE_MYSTIC, ModBlocks.BLOCK_COPPER, ModBlocks.BLOCK_ALUMINIUM, ModBlocks.BLOCK_BAKELITE, ModBlocks.BLOCK_COLTAN, ModBlocks.BLOCK_FLUORITE, ModBlocks.BLOCK_MAGNETIZED_TUNGSTEN, ModBlocks.BLOCK_NITER, ModBlocks.BLOCK_POLYMER, ModBlocks.BLOCK_RUBBER, ModBlocks.BLOCK_SULFUR, ModBlocks.BLOCK_TANTALIUM, ModBlocks.METEOR_PILLAR, ModBlocks.CONCRETE_PILLAR, ModBlocks.BLOCK_EUPHEMIUM_CLUSTER, ModBlocks.BLOCK_FIBERGLASS, ModBlocks.BLOCK_INSULATOR, ModBlocks.BLOCK_TRITIUM, ModBlocks.GNEISS_CHISELED, ModBlocks.BASALT, ModBlocks.WATZ_COOLER, ModBlocks.WATZ_ELEMENT, ModBlocks.BLOCK_SMORE, ModBlocks.METEOR_BATTERY, ModBlocks.CLUSTER_IRON, ModBlocks.CLUSTER_TITANIUM, ModBlocks.CLUSTER_ALUMINIUM, ModBlocks.CLUSTER_COPPER, ModBlocks.CLUSTER_DEPTH_IRON, ModBlocks.CLUSTER_DEPTH_TITANIUM, ModBlocks.CLUSTER_DEPTH_TUNGSTEN, ModBlocks.DEPTH_DNT, ModBlocks.STONE_DEPTH, ModBlocks.STONE_DEPTH_NETHER, ModBlocks.BLOCK_CORIUM, ModBlocks.BLOCK_PU_MIX, ModBlocks.BLOCK_TRINITITE, ModBlocks.BLOCK_WHITE_PHOSPHORUS, ModBlocks.BLOCK_WASTE, ModBlocks.BLOCK_WASTE_VITRIFIED, ModBlocks.BLOCK_WASTE_PAINTED, ModBlocks.BLOCK_RED_PHOSPHORUS, ModBlocks.BLOCK_YELLOWCAKE, ModBlocks.BLOCK_CORIUM_COBBLE, ModBlocks.ORE_GNEISS_URANIUM_SCORCHED, ModBlocks.ORE_NETHER_URANIUM_SCORCHED, ModBlocks.ORE_URANIUM_SCORCHED, ModBlocks.DECO_ASBESTOS, ModBlocks.ASPHALT, ModBlocks.ASPHALT_LIGHT, ModBlocks.WASTE_LOG, ModBlocks.FROZEN_LOG, ModBlocks.BARBED_WIRE, ModBlocks.BARBED_WIRE_FIRE, ModBlocks.BARBED_WIRE_POISON, ModBlocks.BARBED_WIRE_ACID, ModBlocks.BARBED_WIRE_WITHER, ModBlocks.BARBED_WIRE_ULTRADEATH, ModBlocks.WASTE_EARTH, ModBlocks.FROZEN_GRASS, ModBlocks.BURNING_EARTH, ModBlocks.IMPACT_DIRT, ModBlocks.NTM_DIRT, ModBlocks.REINFORCED_LAMP_OFF, ModBlocks.REINFORCED_LAMP_ON, ModBlocks.BLOCK_LITHIUM, ModBlocks.BARRICADE, ModBlocks.CONCRETE_SUPER, ModBlocks.BRICK_CONCRETE_MARKED, ModBlocks.ASH_DIGAMMA, ModBlocks.GLASS_BORON, ModBlocks.GLASS_LEAD, ModBlocks.GLASS_URANIUM, ModBlocks.GLASS_TRINITITE, ModBlocks.GLASS_POLONIUM, ModBlocks.GLASS_ASH, ModBlocks.GLASS_QUARTZ, ModBlocks.GLASS_POLARIZED, ModBlocks.REINFORCED_LAMINATE, ModBlocks.STONE_BIOME_DESERT, ModBlocks.STONE_BIOME_WOODLAND, ModBlocks.BLOCK_COKE_COAL, ModBlocks.BLOCK_COKE_LIGNITE, ModBlocks.BLOCK_COKE_PETROLEUM, ModBlocks.BLOCK_CAP_NUKA, ModBlocks.BLOCK_CAP_QUANTUM, ModBlocks.BLOCK_CAP_SPARKLE, ModBlocks.BLOCK_CAP_RAD, ModBlocks.BLOCK_CAP_KORL, ModBlocks.BLOCK_CAP_FRITZ, ModBlocks.PLATEMETAL_BASE, ModBlocks.PLATEMETAL_BLACK, ModBlocks.PLATEMETAL_WHITE, ModBlocks.PLATEMETAL_RED, ModBlocks.PLATEMETAL_GREEN, ModBlocks.PLATEMETAL_LIGHT_GRAY, ModBlocks.PLATEMETAL_BLUE, ModBlocks.PLATEMETAL_PURPLE, ModBlocks.PLATEMETAL_CYAN, ModBlocks.PLATEMETAL_PINK, ModBlocks.PLATEMETAL_LIME, ModBlocks.PLATEMETAL_YELLOW, ModBlocks.PLATEMETAL_LIGHT_BLUE, ModBlocks.PLATEMETAL_MAGENTA, ModBlocks.PLATEMETAL_ORANGE, ModBlocks.CONCRETE_SMOOTH, ModBlocks.DUCRETE_SMOOTH, ModBlocks.CONCRETE_SMOOTH_STAIRS, ModBlocks.DUCRETE_SMOOTH_STAIRS, ModBlocks.BRICK_ASBESTOS_STAIRS, ModBlocks.LIGHTSTONE_TILE_STAIRS, ModBlocks.STONES_SLAB_TILE, ModBlocks.STONES_SLAB_BRICKS, ModBlocks.BLOCK_FOAM, ModBlocks.FOAM_LAYER, ModBlocks.SAND_BORON_LAYER)) r6aNoTier.add(s.get());
         // R6b: Deko aus Material.iron (beliebige Spitzhacke)
         for (var s : java.util.List.of(ModBlocks.TAPE_RECORDER, ModBlocks.STEEL_POLE, ModBlocks.ANTENNA_TOP, ModBlocks.POLE_SATELLITE_RECEIVER, ModBlocks.PUTER, ModBlocks.CRT_CLEAN, ModBlocks.CRT_BROKEN, ModBlocks.CRT_BLINKING, ModBlocks.CRT_BSOD, ModBlocks.TOASTER, ModBlocks.TOASTER_STEEL, ModBlocks.TOASTER_WOOD, ModBlocks.STEEL_CORNER, ModBlocks.STEEL_WALL, ModBlocks.STEEL_ROOF, ModBlocks.STEEL_BEAM, ModBlocks.STEEL_SCAFFOLD, ModBlocks.STEEL_SCAFFOLD_RED, ModBlocks.STEEL_SCAFFOLD_WHITE, ModBlocks.STEEL_SCAFFOLD_YELLOW, ModBlocks.DUNGEON_CHAIN, ModBlocks.DECO_EMITTER, ModBlocks.PART_EMITTER, ModBlocks.DET_CORD, ModBlocks.DET_CHARGE, ModBlocks.DET_NUKE, ModBlocks.DUD_BALEFIRE, ModBlocks.DUD_CONVENTIONAL, ModBlocks.DUD_NUKE, ModBlocks.DUD_SALTED, ModBlocks.FIREWORKS, ModBlocks.VOLCANO_CORE, ModBlocks.VOLCANO_RAD_CORE, ModBlocks.SPIKES, ModBlocks.TRAPDOOR_STEEL, ModBlocks.REINFORCED_LAMINATE_PANE, ModBlocks.STONE_POROUS, ModBlocks.LAMP_DEMON, ModBlocks.THERM_ENDO, ModBlocks.THERM_EXO, ModBlocks.FLOAT_BOMB, ModBlocks.EMP_BOMB, ModBlocks.FLAME_WAR, ModBlocks.SKELETON_HOLDER, ModBlocks.FILE_CABINET, ModBlocks.FILE_CABINET_STEEL, ModBlocks.VENDING_MACHINE, ModBlocks.VENDING_MACHINE_SNACKS, ModBlocks.STEEL_GRATE, ModBlocks.STEEL_GRATE_WIDE, ModBlocks.BOXCAR, ModBlocks.BOAT, ModBlocks.DECO_PIPE, ModBlocks.DECO_PIPE_RUSTED, ModBlocks.DECO_PIPE_GREEN, ModBlocks.DECO_PIPE_GREEN_RUSTED, ModBlocks.DECO_PIPE_RED, ModBlocks.DECO_PIPE_MARKED, ModBlocks.DECO_PIPE_RIM, ModBlocks.DECO_PIPE_RIM_RUSTED, ModBlocks.DECO_PIPE_RIM_GREEN, ModBlocks.DECO_PIPE_RIM_GREEN_RUSTED, ModBlocks.DECO_PIPE_RIM_RED, ModBlocks.DECO_PIPE_RIM_MARKED, ModBlocks.DECO_PIPE_FRAMED, ModBlocks.DECO_PIPE_FRAMED_RUSTED, ModBlocks.DECO_PIPE_FRAMED_GREEN, ModBlocks.DECO_PIPE_FRAMED_GREEN_RUSTED, ModBlocks.DECO_PIPE_FRAMED_RED, ModBlocks.DECO_PIPE_FRAMED_MARKED, ModBlocks.DECO_PIPE_QUAD, ModBlocks.DECO_PIPE_QUAD_RUSTED, ModBlocks.DECO_PIPE_QUAD_GREEN, ModBlocks.DECO_PIPE_QUAD_GREEN_RUSTED, ModBlocks.DECO_PIPE_QUAD_RED, ModBlocks.DECO_PIPE_QUAD_MARKED)) r6aNoTier.add(s.get());
+        // SEDNA: Waffenmodifikationstisch, Original Material.iron (beliebige Spitzhacke)
+        r6aNoTier.add(ModBlocks.MACHINE_WEAPON_TABLE.get());
+        // Zugsystem: Schienen im Original Material.iron (beliebige Spitzhacke)
+        for (var s : java.util.List.of(ModBlocks.RAIL_NARROW_STRAIGHT, ModBlocks.RAIL_NARROW_CURVE, ModBlocks.RAIL_LARGE_STRAIGHT, ModBlocks.RAIL_LARGE_STRAIGHT_SHORT, ModBlocks.RAIL_LARGE_CURVE, ModBlocks.RAIL_LARGE_CURVE_7, ModBlocks.RAIL_LARGE_CURVE_9, ModBlocks.RAIL_LARGE_RAMP, ModBlocks.RAIL_LARGE_BUFFER, ModBlocks.RAIL_LARGE_SWITCH, ModBlocks.RAIL_LARGE_SWITCH_FLIPPED)) r6aNoTier.add(s.get());
         Set<Block> r6aNoTool = new java.util.HashSet<>();
         // R6d: Holz/Erde/Sand ohne Spitzhacke
-        for (var s : java.util.List.of(ModBlocks.VINE_PHOSPHOR, ModBlocks.MUSH, ModBlocks.MUSH_BLOCK, ModBlocks.MUSH_BLOCK_STEM, ModBlocks.SANDBAGS, ModBlocks.BARRICADE, ModBlocks.PINK_LOG, ModBlocks.PINK_PLANKS, ModBlocks.WOOD_BARRIER, ModBlocks.WOOD_STRUCTURE, ModBlocks.WOOD_STRUCTURE_SCAFFOLD, ModBlocks.WOOD_STRUCTURE_CEILING)) r6aNoTool.add(s.get());
+        for (var s : java.util.List.of(ModBlocks.VINE_PHOSPHOR, ModBlocks.MUSH, ModBlocks.MUSH_BLOCK, ModBlocks.MUSH_BLOCK_STEM, ModBlocks.SANDBAGS, ModBlocks.BARRICADE, ModBlocks.PINK_LOG, ModBlocks.PINK_PLANKS, ModBlocks.PINK_SLAB, ModBlocks.PINK_STAIRS, ModBlocks.WOOD_BARRIER, ModBlocks.WOOD_STRUCTURE, ModBlocks.WOOD_STRUCTURE_SCAFFOLD, ModBlocks.WOOD_STRUCTURE_CEILING)) r6aNoTool.add(s.get());
         for (var s : java.util.List.of(ModBlocks.DYNAMITE, ModBlocks.SEMTEX, ModBlocks.TNT_NTM, ModBlocks.FISSURE_BOMB, ModBlocks.BLOCK_C4, ModBlocks.BLOCK_SEMTEX, ModBlocks.CHARGE_DYNAMITE, ModBlocks.CHARGE_MINER, ModBlocks.CHARGE_C4, ModBlocks.CHARGE_SEMTEX)) r6aNoTool.add(s.get());
         for (var s : java.util.List.of(ModBlocks.PLANT_DEAD, ModBlocks.PLANT_DEAD_GRASS, ModBlocks.PLANT_DEAD_FLOWER, ModBlocks.PLANT_DEAD_BIGFLOWER, ModBlocks.PLANT_DEAD_FERN, ModBlocks.LEAVES_LAYER)) r6aNoTool.add(s.get());
 
@@ -75,9 +79,9 @@ public class ModBlockTagProvider extends BlockTagsProvider {
                 ModBlocks.WASTE_LOG.get(),
                 ModBlocks.WASTE_PLANKS.get(),
                 ModBlocks.CRATE.get(),        // Деревянный ящик
-                ModBlocks.CRATE_WEAPON.get(), // Оружейный ящик (обычно дерево)
                 // door_office: im Original Material.iron (Spitzhacke), siehe unten
-                ModBlocks.WOOD_BURNER.get()   // В названии Wood, возможно логично рубить топором? (если нет - уберите)
+                ModBlocks.CRATE_WEAPON.get()
+                // wood_burner: im Original Material.iron (Spitzhacke)
         ));
         for (var s : java.util.List.of(ModBlocks.WASTE_PLANKS, ModBlocks.FROZEN_PLANKS, ModBlocks.WASTE_LOG, ModBlocks.FROZEN_LOG)) axeBlocks.add(s.get());
         for (var s : java.util.List.of(ModBlocks.RAIL_WOOD)) axeBlocks.add(s.get());
@@ -106,9 +110,28 @@ public class ModBlockTagProvider extends BlockTagsProvider {
                 // ModBlocks.HARD_WOOD_LOG.get() // Пример
         );
 
+        // audit4: Werkzeugtyp nach Original-Material (rock/iron/anvil -> Spitzhacke, wood -> Axt,
+        // ground/grass/sand/snow -> Schaufel, alles andere ohne Werkzeug).
+        Set<String> a4Shovel = Set.of("block_fallout", "oil_spill", "ore_tektite_osmiridium", "sand_boron", "tektite",
+                "waste_mycelium", "waste_trinitite", "waste_trinitite_red", "barricade", "sandbags");
+        Set<String> a4Axe = Set.of("crate_can", "crate_supply", "radio_telex", "red_pylon_medium_wood",
+                "red_pylon_medium_wood_transformer", "pink_planks", "pink_slab", "pink_stairs", "wood_barrier", "wood_structure");
+        Set<String> a4NoTool = Set.of("block_asbestos", "block_fiberglass", "block_insulator", "block_tritium", "c4",
+                "deco_asbestos", "digamma_matter", "drone_waypoint", "drone_waypoint_request", "fire_digamma", "floodlight_beam",
+                "glass_ash", "glass_boron", "glass_lead", "glass_polarized", "glass_polonium", "glass_quartz", "glass_trinitite",
+                "glass_uranium", "glyphid_base", "glyphid_spawner", "lamp_tritium_blue_off", "lamp_tritium_blue_on",
+                "lamp_tritium_green_off", "lamp_tritium_green_on", "plant_reeds", "plant_tall_cd2", "plant_tall_cd3",
+                "plant_tall_cd4", "plant_tall_weed", "plushie", "rad_lava_block", "radio_torch_controller", "radio_torch_counter",
+                "radio_torch_logic", "radio_torch_reader", "radio_torch_receiver", "radio_torch_sender", "snowglobe",
+                "spotlight_beam", "sulfuric_acid_block", "volcanic_lava_block", "wand_air");
+
         // --- 3. Автоматический цикл ---
         for (RegistrySupplier<Block> regObject : ModBlocks.BLOCKS) {
             Block block = regObject.get();
+            String a4Id = regObject.getId().getPath();
+            if (a4NoTool.contains(a4Id)) continue;
+            if (a4Shovel.contains(a4Id)) { shovelTag.add(block); continue; }
+            if (a4Axe.contains(a4Id)) { axeTag.add(block); continue; }
 
             // Фильтр: пропускаем растения, листья, паутину
             boolean isPlantOrSoft = block instanceof FlowerBlock
@@ -137,14 +160,8 @@ public class ModBlockTagProvider extends BlockTagsProvider {
                     // -> КИРКА (По умолчанию для всех машин и руд)
                     pickaxeTag.add(block);
 
-                    // Определяем уровень кирки
-                    if (r6aNoTier.contains(block)) {
-                        // R6a: keine Stufe
-                    } else if (stoneTierPickaxeBlocks.contains(block)) {
-                        stoneToolTag.add(block); // Каменная
-                    } else {
-                        ironToolTag.add(block);  // Железная (по умолчанию)
-                    }
+                    // audit4: Das Original setzt fuer keinen Block eine Abbaustufe (kein setHarvestLevel ausser
+                    // den Schienen mit Stufe 0) - jede Spitzhacke reicht. Daher keine needs_*_tool-Tags.
                 }
             }
         }

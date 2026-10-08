@@ -56,7 +56,7 @@ import org.jetbrains.annotations.Nullable;
  * mit leicht streuender Tonhoehe.</p>
  */
 public class PneumoTubeBlockEntity extends BaseMachineBlockEntity
-        implements IFluidStandardReceiverMK2 {
+        implements IFluidStandardReceiverMK2, com.hbm_m.blockentity.IMuffleable {
 
     /** Original: fuenfzehn Filterplaetze. */
     public static final int FILTER_SLOTS = 15;

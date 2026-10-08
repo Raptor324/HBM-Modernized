@@ -103,6 +103,7 @@ public class MachineDifurnaceRtgBlockEntity extends BaseMachineBlockEntity {
         container.setItem(2, bottom);
         return com.hbm_m.platform.recipe.RecipeHooks
                 .getAllRecipes(level, BlastFurnaceRecipe.Type.INSTANCE).stream()
+                .filter(r -> !r.isNT()) // Original: Legierungsofen nutzt BlastFurnaceRecipes, nicht die NT-Liste
                 .filter(r -> r.matchesRecipe(new com.hbm_m.platform.recipe.RecipeInputWrapper(container), level))
                 .findFirst();
     }

@@ -205,19 +205,8 @@ public class MachineBatteryMenu extends AbstractContainerMenu implements ILongEn
 
     @Override
     public boolean stillValid(Player pPlayer) {
-        // Создаем доступ к уровню
-        return ContainerLevelAccess.create(level, blockEntity.getBlockPos()).evaluate((level, pos) -> {
-            // Получаем блок, на который смотрит игрок
-            Block block = level.getBlockState(pos).getBlock();
-
-            // ПРОВЕРКА: Является ли этот блок батарейкой (любой: обычной, литиевой и т.д.)
-            if (!(block instanceof MachineBatteryBlock)) {
-                return false;
-            }
-
-            // Стандартная проверка дистанции (64 блока)
-            return pPlayer.distanceToSqr((double)pos.getX() + 0.5D, (double)pos.getY() + 0.5D, (double)pos.getZ() + 0.5D) <= 64.0D;
-        }, true);
+        // w16b: Original isUseableByPlayer (TileEntityMachineBase) = 128 vom Kern, dazu Huelle der Maschine (MultiblockMenuReach)
+        return MultiblockMenuReach.stillValidCore(blockEntity, pPlayer, 128.0D);
     }
 
     private void addPlayerInventory(Inventory playerInventory) {

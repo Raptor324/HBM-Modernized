@@ -1,0 +1,52 @@
+{
+  "variants": {
+    "meta=0": {
+      "model": "hbm_m:block/rail/rail_large_ramp_empty"
+    },
+    "meta=1": {
+      "model": "hbm_m:block/rail/rail_large_ramp_empty"
+    },
+    "meta=2": {
+      "model": "hbm_m:block/rail/rail_large_ramp_empty"
+    },
+    "meta=3": {
+      "model": "hbm_m:block/rail/rail_large_ramp_empty"
+    },
+    "meta=4": {
+      "model": "hbm_m:block/rail/rail_large_ramp_empty"
+    },
+    "meta=5": {
+      "model": "hbm_m:block/rail/rail_large_ramp_empty"
+    },
+    "meta=6": {
+      "model": "hbm_m:block/rail/rail_large_ramp_empty"
+    },
+    "meta=7": {
+      "model": "hbm_m:block/rail/rail_large_ramp_empty"
+    },
+    "meta=8": {
+      "model": "hbm_m:block/rail/rail_large_ramp_empty"
+    },
+    "meta=9": {
+      "model": "hbm_m:block/rail/rail_large_ramp_empty"
+    },
+    "meta=10": {
+      "model": "hbm_m:block/rail/rail_large_ramp_empty"
+    },
+    "meta=11": {
+      "model": "hbm_m:block/rail/rail_large_ramp_empty"
+    },
+    "meta=12": {
+      "model": "hbm_m:block/rail/rail_large_ramp_r180_m12"
+    },
+    "meta=13": {
+      "model": "hbm_m:block/rail/rail_large_ramp_r0_m13"
+    },
+    "meta=14": {
+      "model": "hbm_m:block/rail/rail_large_ramp_r270_m14"
+    },
+    "meta=15": {
+      "model": "hbm_m:block/rail/rail_large_ramp_r90_m15"
+    }
+  }
+}

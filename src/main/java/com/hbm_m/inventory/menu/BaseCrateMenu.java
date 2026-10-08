@@ -40,7 +40,11 @@ public abstract class BaseCrateMenu extends AbstractContainerMenu {
         this.blockEntity = blockEntity;
         this.level = inv.player.level();
         this.crateType = crateType;
-        this.crateContainer = new ModItemStackHandlerContainer(blockEntity.getItemHandler(), blockEntity::setChanged);
+        this.crateContainer = new ModItemStackHandlerContainer(blockEntity.getItemHandler(), () -> {
+            blockEntity.setChanged();
+            // Original InventoryCrate.markDirty: aus der Hand geoeffnet -> sofort ins Item schreiben
+            if (heldCrate != null && !level.isClientSide) com.hbm_m.item.crates.HeldCrate.markDirty(blockEntity, heldCrate);
+        });
         this.crateSlots = crateType.getSlotCount();
         this.playerInvStart = crateSlots;
         this.totalSlots = crateSlots + 36;
@@ -133,8 +137,36 @@ public abstract class BaseCrateMenu extends AbstractContainerMenu {
         return copy;
     }
 
+    /** Original {@code ItemBlockStorageCrate.InventoryCrate}: die Kiste in der Hand, falls so geoeffnet. */
+    private ItemStack heldCrate;
+
+    public void bindHeldCrate(ItemStack stack) {
+        this.heldCrate = stack;
+    }
+
+    @Override
+    public void removed(@NotNull Player player) {
+        super.removed(player);
+        // InventoryCrate.closeInventory
+        if (heldCrate != null && !player.level().isClientSide) {
+            com.hbm_m.item.crates.HeldCrate.closeInventory(blockEntity, heldCrate, player);
+            // ItemInventory.closeInventory: Schliessen am Spieler, Tonhoehe 0.8
+            player.level().playSound(null, player.getX(), player.getY(), player.getZ(),
+                    com.hbm_m.sound.ModSounds.CRATE_CLOSE.get(), net.minecraft.sounds.SoundSource.PLAYERS, 1.0F, 0.8F);
+        } else if (!player.level().isClientSide && blockEntity.getLevel() != null) {
+            // TileEntityCrateBase.closeInventory (ContainerCrateBase.onContainerClosed)
+            net.minecraft.core.BlockPos p = blockEntity.getBlockPos();
+            player.level().playSound(null, p.getX() + 0.5, p.getY() + 0.5, p.getZ() + 0.5,
+                    com.hbm_m.sound.ModSounds.CRATE_CLOSE.get(), net.minecraft.sounds.SoundSource.BLOCKS, 1.0F, 1.0F);
+        }
+    }
+
     @Override
     public boolean stillValid(@NotNull Player player) {
+        // InventoryCrate.isUseableByPlayer: genau dieser Stapel muss in der Hand bleiben
+        if (heldCrate != null) {
+            return player.getMainHandItem() == heldCrate;
+        }
         // тайл может отсутствовать на клиенте (реплей Flashback): подменный тайл не привязан к миру
         if (blockEntity.getLevel() == null) {
             return false;

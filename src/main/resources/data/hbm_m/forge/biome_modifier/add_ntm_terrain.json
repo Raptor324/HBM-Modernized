@@ -1,0 +1,11 @@
+{
+  "type": "forge:add_carvers",
+  "biomes": "#minecraft:is_overworld",
+  "carvers": [
+    "hbm_m:crater",
+    "hbm_m:oil_bubble",
+    "hbm_m:bedrock_oil",
+    "hbm_m:sand_oil_bubble"
+  ],
+  "step": "air"
+}

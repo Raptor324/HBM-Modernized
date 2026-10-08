@@ -25,7 +25,31 @@ import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
 
-public abstract class OilDrillBaseBlockEntity extends BaseMachineBlockEntity implements IFluidStandardSenderMK2 {
+public abstract class OilDrillBaseBlockEntity extends BaseMachineBlockEntity implements com.hbm_m.api.block.IPersistentNBT, IFluidStandardSenderMK2 {
+
+    /** Original {@code setInventorySlotContents}: Aufwertung einstecken macht das Steckgeraeusch. */
+    @Override
+    protected com.hbm_m.platform.ModItemStackHandler createInventoryHandler(int size) {
+        return new com.hbm_m.platform.ModItemStackHandler(size) {
+            @Override
+            protected void onContentsChanged(int slot) {
+                setChanged();
+                if (isCriticalSlot(slot)) sendUpdateToClient();
+                net.minecraft.world.item.ItemStack stack = getStackInSlot(slot);
+                if (level != null && !level.isClientSide && slot >= 5 && slot <= 7
+                        && stack.getItem() instanceof com.hbm_m.item.industrial.ItemMachineUpgrade) {
+                    level.playSound(null, worldPosition.getX() + 0.5, worldPosition.getY() + 1.5, worldPosition.getZ() + 0.5,
+                            com.hbm_m.sound.HbmSoundsNT.get("hbm:item.upgradePlug"), net.minecraft.sounds.SoundSource.BLOCKS, 1.0F, 1.0F);
+                }
+            }
+
+            @Override
+            public boolean isItemValid(int slot, @org.jetbrains.annotations.NotNull net.minecraft.world.item.ItemStack stack) {
+                return isItemValidForSlot(slot, stack);
+            }
+        };
+    }
+
 
     public int indicator = 0;
     public FluidTank[] tanks;
@@ -321,5 +345,15 @@ public abstract class OilDrillBaseBlockEntity extends BaseMachineBlockEntity imp
         // Принимаем подключение к трубам нефти или попутного газа.
         return VanillaFluidEquivalence.sameSubstance(fluid, tanks[0].getTankType())
                 || VanillaFluidEquivalence.sameSubstance(fluid, tanks[1].getTankType());
+    }
+
+    /** Original {@code TileEntityOilDrillBase.writeNBT}: Strom und Tanks, sofern nicht leer. */
+    @Override
+    public void writeNBT(CompoundTag nbt) {
+        boolean empty = this.energy == 0;
+        for (var tank : tanks) if (tank.getFill() > 0) empty = false;
+        if (empty) return;
+        nbt.putLong("power", this.energy);
+        for (int i = 0; i < this.tanks.length; i++) this.tanks[i].writeToNBT(nbt, "t" + i);
     }
 }

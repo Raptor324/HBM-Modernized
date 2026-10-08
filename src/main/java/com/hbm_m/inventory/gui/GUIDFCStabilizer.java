@@ -15,7 +15,6 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.entity.player.Inventory;
 
-import java.util.List;
 
 /**
  * 1:1-Port von {@code GUICoreStabilizer} (1.7.10), 176x166.
@@ -75,12 +74,14 @@ public class GUIDFCStabilizer extends AbstractContainerScreen<DFCStabilizerMenu>
         com.mojang.blaze3d.systems.RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
         guiGraphics.blit(TEXTURE, leftPos, topPos, 0, 0, imageWidth, imageHeight);
 
-        // Energiebalken, von unten gefuellt.
-        int fill = menu.getPowerPermille() * POWER_H / 1000;
-        if (fill > 0) {
-            guiGraphics.fill(leftPos + POWER_X, topPos + POWER_Y + POWER_H - fill,
-                    leftPos + POWER_X + POWER_W, topPos + POWER_Y + POWER_H, 0xFFE8C33F);
-        }
+        // Original: Eingabefeld-Hintergrund bei Fokus, Leistungsleiste (watts * 34 / 100), Energiebalken
+        if (wattsField != null && wattsField.isFocused())
+            guiGraphics.blit(TEXTURE, leftPos + 71, topPos + 53, 192, 4, 34, 16);
+
+        guiGraphics.blit(TEXTURE, leftPos + 71, topPos + 45, 192, 0, menu.getWatts() * 34 / 100, 4);
+
+        int i = menu.getPowerPermille() * POWER_H / 1000;
+        guiGraphics.blit(TEXTURE, leftPos + POWER_X, topPos + 69 - i, 176, 52 - i, 16, i);
     }
 
     @Override
@@ -89,18 +90,11 @@ public class GUIDFCStabilizer extends AbstractContainerScreen<DFCStabilizerMenu>
         super.render(guiGraphics, mouseX, mouseY, partialTick);
         this.renderTooltip(guiGraphics, mouseX, mouseY);
 
+        // Original: drawElectricityInfo(guiLeft + 35, guiTop + 17, 16, 52)
         if (isOver(POWER_X, POWER_W, POWER_Y, POWER_H, mouseX, mouseY)) {
-            guiGraphics.renderComponentTooltip(font, List.of(
-                    Component.literal(menu.getBlockEntity().getEnergyStored() + " / "
-                            + DFCStabilizerBlockEntity.MAX_POWER + " HE")), mouseX, mouseY);
-        }
-
-        if (isOver(BUTTON_X, 18, BUTTON_Y, 18, mouseX, mouseY)) {
-            guiGraphics.renderComponentTooltip(font, List.of(
-                    Component.translatable("gui.hbm_m.dfc.watts.apply"),
-                    Component.translatable("gui.hbm_m.dfc.watts.current", menu.getWatts()),
-                    Component.translatable("gui.hbm_m.dfc.watts.draw",
-                            menu.getBlockEntity().getDemand())), mouseX, mouseY);
+            guiGraphics.renderTooltip(font, Component.translatable("gui.hbm_m.energy",
+                    com.hbm_m.util.EnergyFormatter.format(menu.getBlockEntity().getEnergyStored()),
+                    com.hbm_m.util.EnergyFormatter.format(DFCStabilizerBlockEntity.MAX_POWER)), mouseX, mouseY);
         }
     }
 
@@ -138,5 +132,13 @@ public class GUIDFCStabilizer extends AbstractContainerScreen<DFCStabilizerMenu>
         int localX = mouseX - leftPos;
         int localY = mouseY - topPos;
         return localX >= x && localX < x + w && localY >= y && localY < y + h;
+    }
+
+    @Override
+    protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
+        // Original drawGuiContainerForegroundLayer
+        String name = this.title.getString();
+        guiGraphics.drawString(this.font, name, 88 - this.font.width(name) / 2, 6, 4210752, false);
+        guiGraphics.drawString(this.font, this.playerInventoryTitle, 8, 72, 4210752, false);
     }
 }

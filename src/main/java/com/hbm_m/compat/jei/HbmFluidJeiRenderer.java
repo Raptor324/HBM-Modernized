@@ -56,7 +56,8 @@ public class HbmFluidJeiRenderer implements IIngredientRenderer<FluidStack> {
         ResourceLocation fluidPng = FluidGuiRendering.guiTexturePngForFluid(fluid, fStack);
         if (fluidPng == null) return;
 
-        int tint = HbmFluidRegistry.getTintColor(fluid) & 0xFFFFFF;
+        // wie FluidTank.renderTank: GUI-Tint des Typs (0xFFFFFF), Textur ist bereits eingefaerbt
+        int tint = com.hbm_m.inventory.fluid.FluidType.forFluid(fluid).getTint() & 0xFFFFFF;
         float r = (tint >> 16 & 255) / 255.0F;
         float g = (tint >> 8 & 255) / 255.0F;
         float b = (tint & 255) / 255.0F;

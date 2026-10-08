@@ -22,7 +22,7 @@ import net.minecraft.world.level.block.state.BlockState;
  * Порт TileEntityCableGauge (вложен в BlockCableGauge 1.7.10): цельноблочный кабель-датчик.
  * Считает энергию, протекающую через сеть узла (HE/тик и HE/сек), и показывает её в HUD.
  */
-public class RedCableGaugeBlockEntity extends BaseHbmBlockEntity implements PowerConductor {
+public class RedCableGaugeBlockEntity extends BaseHbmBlockEntity implements PowerConductor, com.hbm_m.api.redstoneoverradio.IRORValueProvider {
 
     public long deltaTick;
     public long deltaLastSecond;
@@ -77,5 +77,22 @@ public class RedCableGaugeBlockEntity extends BaseHbmBlockEntity implements Powe
         super.readNbtData(tag, registries);
         deltaTick = Math.max(tag.getLong("deltaTick"), 0);
         deltaLastSecond = Math.max(tag.getLong("deltaLastSecond"), 0);
+    }
+
+    // ── Redstone-over-Radio (1:1 BlockCableGauge.TileEntityCableGauge) ──
+
+    @Override
+    public String[] getFunctionInfo() {
+        return new String[] {
+                PREFIX_VALUE + "deltatick",
+                PREFIX_VALUE + "deltasecond",
+        };
+    }
+
+    @Override
+    public String provideRORValue(String name) {
+        if ((PREFIX_VALUE + "deltatick").equals(name))   return "" + deltaTick;
+        if ((PREFIX_VALUE + "deltasecond").equals(name)) return "" + deltaLastSecond;
+        return null;
     }
 }

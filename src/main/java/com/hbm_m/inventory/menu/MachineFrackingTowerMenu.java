@@ -25,7 +25,7 @@ import net.minecraft.world.item.ItemStack;
  * - Слот 2: Канистра вывод (80, 53)
  * - Слот 3: Газ баллон ввод (125, 17)
  * - Слот 4: Газ баллон вывод (125, 53)
- * - Слоты 5-7: Апгрейды (152, 17), (152, 35), (152, 53)
+ * - Слоты 5-6: Апгрейды (156, 36), (156, 54) - wie im Original
  */
 public class MachineFrackingTowerMenu extends AbstractContainerMenu {
 
@@ -72,15 +72,15 @@ public class MachineFrackingTowerMenu extends AbstractContainerMenu {
 
         // Слот 0: Батарея (8, 53)
         this.addSlot(new Slot(machineInventory,
-                MachineFrackingTowerBlockEntity.SLOT_BATTERY, 8, 53));
+                MachineFrackingTowerBlockEntity.SLOT_BATTERY, 8, 58));
 
         // Слот 1: Канистра ввод (80, 17)
         this.addSlot(new Slot(machineInventory,
-                MachineFrackingTowerBlockEntity.SLOT_CANISTER_IN, 80, 17));
+                MachineFrackingTowerBlockEntity.SLOT_CANISTER_IN, 94, 22));
 
         // Слот 2: Канистра вывод - только вывод (80, 53)
         this.addSlot(new Slot(machineInventory,
-                MachineFrackingTowerBlockEntity.SLOT_CANISTER_OUT, 80, 53) {
+                MachineFrackingTowerBlockEntity.SLOT_CANISTER_OUT, 94, 58) {
             @Override
             public boolean mayPlace(ItemStack stack) {
                 return false; // Только вывод
@@ -89,36 +89,35 @@ public class MachineFrackingTowerMenu extends AbstractContainerMenu {
 
         // Слот 3: Газ баллон ввод (125, 17)
         this.addSlot(new Slot(machineInventory,
-                MachineFrackingTowerBlockEntity.SLOT_GAS_IN, 125, 17));
+                MachineFrackingTowerBlockEntity.SLOT_GAS_IN, 130, 22));
 
         // Слот 4: Газ баллон вывод - только вывод (125, 53)
         this.addSlot(new Slot(machineInventory,
-                MachineFrackingTowerBlockEntity.SLOT_GAS_OUT, 125, 53) {
+                MachineFrackingTowerBlockEntity.SLOT_GAS_OUT, 130, 58) {
             @Override
             public boolean mayPlace(ItemStack stack) {
                 return false; // Только вывод
             }
         });
 
-        // Слоты 5-7: Апгрейды (152, 17), (152, 35), (152, 53)
+        // Слоты 5-6: Апгрейды (156, 36), (156, 54) - wie im Original
         this.addSlot(new SlotUpgrade(machineInventory,
-                MachineFrackingTowerBlockEntity.SLOT_UPGRADE_1, 152, 17));
+                MachineFrackingTowerBlockEntity.SLOT_UPGRADE_1, 156, 36));
         this.addSlot(new SlotUpgrade(machineInventory,
-                MachineFrackingTowerBlockEntity.SLOT_UPGRADE_2, 152, 35));
-        this.addSlot(new SlotUpgrade(machineInventory,
-                MachineFrackingTowerBlockEntity.SLOT_UPGRADE_3, 152, 53));
+                MachineFrackingTowerBlockEntity.SLOT_UPGRADE_2, 156, 54));
+        // Original zeigt nur zwei Upgrade-Slots (SLOT_UPGRADE_3 bleibt im Inventar, ohne Slot)
 
         // Инвентарь игрока (3 строки по 9 слотов)
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 9; col++) {
                 this.addSlot(new Slot(playerInventory,
-                        col + row * 9 + 9, 8 + col * 18, 84 + row * 18));
+                        col + row * 9 + 9, 12 + col * 18, 108 + row * 18));
             }
         }
 
         // Хотбар игрока (9 слотов)
         for (int col = 0; col < 9; col++) {
-            this.addSlot(new Slot(playerInventory, col, 8 + col * 18, 142));
+            this.addSlot(new Slot(playerInventory, col, 12 + col * 18, 166));
         }
     }
 
@@ -151,9 +150,9 @@ public class MachineFrackingTowerMenu extends AbstractContainerMenu {
             result = slotStack.copy();
 
             // Слоты машины (0-7)
-            if (slotIndex < 8) {
+            if (slotIndex < 7) {
                 // Перемещение в инвентарь игрока
-                if (!this.moveItemStackTo(slotStack, 8, this.slots.size(), true)) {
+                if (!this.moveItemStackTo(slotStack, 7, this.slots.size(), true)) {
                     return ItemStack.EMPTY;
                 }
             }
@@ -162,7 +161,7 @@ public class MachineFrackingTowerMenu extends AbstractContainerMenu {
                 // Проверка на апгрейд
                 if (slotStack.getItem() instanceof ItemMachineUpgrade) {
                     // Сначала пробуем в слоты апгрейдов (5-8)
-                    if (!this.moveItemStackTo(slotStack, 5, 8, false)) {
+                    if (!this.moveItemStackTo(slotStack, 5, 7, false)) {
                         return ItemStack.EMPTY;
                     }
                 }
@@ -187,8 +186,8 @@ public class MachineFrackingTowerMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        if (blockEntity == null) return true; // Для клиента
-        return stillValid(this.access, player, blockEntity.getBlockState().getBlock());
+        // w16b: Original isUseableByPlayer (TileEntityMachineBase) = 128 vom Kern, dazu Huelle der Maschine (MultiblockMenuReach)
+        return MultiblockMenuReach.stillValidCore(blockEntity, player, 128.0D);
     }
 
     //=====================================================================================//

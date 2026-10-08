@@ -109,15 +109,8 @@ public class LaunchPadRustedMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        if (blockEntity == null || blockEntity.getLevel() != player.level()) {
-            return false;
-        }
-        BlockPos pos = blockEntity.getBlockPos();
-        return player.distanceToSqr(
-                pos.getX() + 0.5D,
-                pos.getY() + 0.5D,
-                pos.getZ() + 0.5D
-        ) <= 64.0D;
+        // w16b: Original isUseableByPlayer (TileEntityMachineBase) = 128 vom Kern, dazu Huelle der Maschine (MultiblockMenuReach)
+        return MultiblockMenuReach.stillValidCore(blockEntity, player, 128.0D);
     }
 
     @Override
@@ -133,8 +126,15 @@ public class LaunchPadRustedMenu extends AbstractContainerMenu {
                     return net.minecraft.world.item.ItemStack.EMPTY;
                 }
             } else {
-                if (!this.moveItemStackTo(stack, 0, MACHINE_SLOTS, false)) {
-                    return net.minecraft.world.item.ItemStack.EMPTY;
+                // Original transferStackInSlot: nur Zielgeber -> 3, Startcodes -> 1, Schluessel -> 2
+                if (originalStack.getItem() instanceof IDesignatorItem) {
+                    if (!this.moveItemStackTo(stack, SLOT_DESIGNATOR, SLOT_DESIGNATOR + 1, false)) return ItemStack.EMPTY;
+                } else if (originalStack.getItem() == com.hbm_m.item.ModItems.LAUNCH_CODE.get()) {
+                    if (!this.moveItemStackTo(stack, SLOT_CODES, SLOT_CODES + 1, false)) return ItemStack.EMPTY;
+                } else if (originalStack.getItem() == com.hbm_m.item.ModItems.LAUNCH_KEY.get()) {
+                    if (!this.moveItemStackTo(stack, SLOT_KEY, SLOT_KEY + 1, false)) return ItemStack.EMPTY;
+                } else {
+                    return ItemStack.EMPTY;
                 }
             }
 

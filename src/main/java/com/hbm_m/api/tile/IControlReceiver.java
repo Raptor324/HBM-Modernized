@@ -9,4 +9,9 @@ public interface IControlReceiver {
     boolean hasPermission(Player player);
 
     void receiveControl(CompoundTag data);
+
+    /** Original {@code receiveControl(EntityPlayer, NBTTagCompound)}: Variante mit dem sendenden Spieler. */
+    default void receiveControl(Player player, CompoundTag data) {
+        receiveControl(data);
+    }
 }

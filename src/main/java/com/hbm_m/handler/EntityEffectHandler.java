@@ -288,7 +288,16 @@ public final class EntityEffectHandler {
             return;
         }
 
-        // EntityDuck → EntityQuackos: пропущено до портирования утки и Quackos (1.7.10 parity)
+        // Original: eine Ente ab 200 RAD wird zu Quackos
+        if (entity.getClass() == com.hbm_m.entity.mob.EntityDuck.class && eRad >= 200F) {
+            com.hbm_m.entity.mob.EntityQuackos quacc = ModEntities.QUACKOS.get().create(level);
+            if (quacc != null) {
+                quacc.moveTo(entity.getX(), entity.getY(), entity.getZ(), entity.getYRot(), entity.getXRot());
+                level.addFreshEntity(quacc);
+                entity.discard();
+            }
+            return;
+        }
 
         if (entity instanceof Cow && !(entity instanceof MushroomCow) && eRad >= 50F) {
             MushroomCow cow = net.minecraft.world.entity.EntityType.MOOSHROOM.create(level);

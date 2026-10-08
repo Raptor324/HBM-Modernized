@@ -39,6 +39,26 @@ public class ItemPlateFuel extends Item {
         PlatformHooks.putLong(stack, "lifetime", value);
     }
 
+    /** 1:1 {@code ItemPlateFuel.addInformation}. */
+    @Override
+    public void appendHoverText(ItemStack stack, @org.jetbrains.annotations.Nullable Level level,
+                                java.util.List<net.minecraft.network.chat.Component> list, net.minecraft.world.item.TooltipFlag flag) {
+        list.add(net.minecraft.network.chat.Component.literal("[Research Reactor Plate Fuel]").withStyle(net.minecraft.ChatFormatting.YELLOW));
+        list.add(net.minecraft.network.chat.Component.literal("   " + getFunctionDesc()).withStyle(net.minecraft.ChatFormatting.DARK_AQUA));
+        list.add(net.minecraft.network.chat.Component.literal("   Yield of " + com.hbm_m.util.BobMathUtil.getShortNumber(lifeTime) + " events").withStyle(net.minecraft.ChatFormatting.DARK_AQUA));
+    }
+
+    /** 1:1 {@code getFunctionDesc}. */
+    public String getFunctionDesc() {
+        return switch (function) {
+            case LOGARITHM -> "f(x) = log10(x + 1) * 0.5 * " + reactivity;
+            case SQUARE_ROOT -> "f(x) = sqrt(x) * " + reactivity + " / 10";
+            case NEGATIVE_QUADRATIC -> "f(x) = [x - (x² / 10000)] / 100 * " + reactivity;
+            case LINEAR -> "f(x) = x / 100 * " + reactivity;
+            case PASSIVE -> "f(x) = " + reactivity;
+        };
+    }
+
     /** 1:1 aus dem Original ({@code react(World, ItemStack, int)}). */
     public int react(Level level, ItemStack stack, int flux) {
         if (function != FunctionEnum.PASSIVE) {

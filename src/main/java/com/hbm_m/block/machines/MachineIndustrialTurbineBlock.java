@@ -51,45 +51,25 @@ public class MachineIndustrialTurbineBlock extends BaseEntityBlock implements IM
     }
 
     private static MultiblockStructureHelper defineStructure() {
-        // 7 рядов по Z (от фронта к заду), 3 по X; контроллер — центр переднего ряда нижнего слоя.
-        String[] base = {
-            "UOOOUOO",
-            "OOOOOOO",
-            "UOOCUOO"
-        };
-        String[] medium = {
-            "OOOOOOO",
-            "OOOOOOE",
-            "OOOOOOO"
-        };
-        String[] upper = {
-            "OOOOOOO",
-            "OOOOOOO",
-            "OOOOOOO"
-        };
-
-        Map<Character, PartRole> roleMap = Map.of(
-                'C', PartRole.CONTROLLER,
-                'O', PartRole.DEFAULT,
-                'E', PartRole.ENERGY_CONNECTOR,
-                'U', PartRole.UNIVERSAL_CONNECTOR
-        );
-
-        Map<Character, Supplier<BlockState>> symbolMap = Map.of();
-
-        return MultiblockStructureHelper.createFromLayersWithRoles(
-                new String[][] { base, medium, upper },
-                symbolMap,
-                () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState(),
-                roleMap,
-                null,
-                null
-        );
+        // 1:1 MachineIndustrialTurbine: getDimensions {2,0,3,3,1,1}, getOffset 3 (Kern in der Mitte, 3x3x7 laengs dir);
+        // makeExtra (fluid+power) bei dir*3 +- rot, -dir +- rot, dir*3 / -dir auf Hoehe 2, -dir*3 auf Hoehe 1.
+        return com.hbm_m.multiblock.DummyableStructureBuilder.create()
+                .box(2, 0, 3, 3, 1, 1)
+                .extra(3, 0, 1)
+                .extra(3, 0, -1)
+                .extra(-1, 0, 1)
+                .extra(-1, 0, -1)
+                .extra(3, 2, 0)
+                .extra(-1, 2, 0)
+                .extra(-3, 1, 0)
+                .placementOffset(3)
+                .build(() -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState());
     }
 
     @Override
     public RenderShape getRenderShape(BlockState state) {
-        return RenderShape.MODEL;
+        // Original RenderIndustrialTurbine (BER)
+        return RenderShape.ENTITYBLOCK_ANIMATED;
     }
 
     @Override
@@ -150,12 +130,14 @@ public class MachineIndustrialTurbineBlock extends BaseEntityBlock implements IM
     public net.minecraft.world.InteractionResult use(BlockState state, Level level, BlockPos pos,
             net.minecraft.world.entity.player.Player player, net.minecraft.world.InteractionHand hand,
             net.minecraft.world.phys.BlockHitResult hit) {
+        if (player.isShiftKeyDown()) return net.minecraft.world.InteractionResult.PASS; // Original: geschlichen false
         return pullLever(level, pos, player);
     }
     //?} else {
     /*@Override
     protected net.minecraft.world.InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos,
             net.minecraft.world.entity.player.Player player, net.minecraft.world.phys.BlockHitResult hit) {
+        if (player.isShiftKeyDown()) return net.minecraft.world.InteractionResult.PASS; // Original: geschlichen false
         return pullLever(level, pos, player);
     }
     *///?}
@@ -184,7 +166,8 @@ public class MachineIndustrialTurbineBlock extends BaseEntityBlock implements IM
 
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        return structureHelper.generateShapeFromParts(state.getValue(FACING));
+        // w16b: nur die Kernzelle (Raycast pro Zelle wie Original); Umriss der ganzen Maschine: MultiblockOutlineForge
+        return structureHelper.getControllerCellShape(state.getValue(FACING));
     }
 
     @Override
@@ -220,4 +203,11 @@ public class MachineIndustrialTurbineBlock extends BaseEntityBlock implements IM
         return CODEC;
     }
     *///?}
+
+    /** Original {@code addInformation}: {@code addStandardInfo} (Umschalttaste zeigt {@code .desc}). */
+    @Override
+    public void appendHoverText(net.minecraft.world.item.ItemStack stack, @org.jetbrains.annotations.Nullable net.minecraft.world.level.BlockGetter level,
+                                java.util.List<net.minecraft.network.chat.Component> list, net.minecraft.world.item.TooltipFlag flag) {
+        com.hbm_m.util.StandardInfo.add(list, getDescriptionId() + ".desc");
+    }
 }

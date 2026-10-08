@@ -69,7 +69,11 @@ public enum HbmToolMaterial implements Tier {
     /** enumToolMaterialBottleOpener "OPENER" */
     OPENER(1, 250, 1.5F, 0.5F, 200, () -> ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE)),
     /** enumToolMaterialSledge "SHIMMERSLEDGE" */
-    SLEDGE(1, 0, 25.0F, 26F, 200, null);
+    SLEDGE(1, 0, 25.0F, 26F, 200, null),
+    /** enumToolMaterialMultitool "MULTITOOL" (im Original ungenutzt: multitool_* dort entfernt, nur ignoreMappings) */
+    MULTITOOL(3, 5000, 25F, 5.5F, 25, null),
+    /** matCrucible "CRUCIBLE" (ItemCrucible: drei Ladungen) */
+    CRUCIBLE(10, 3, 50.0F, 100.0F, 0, null);
 
     private final int level;
     private final int uses;

@@ -75,11 +75,8 @@ public class MachineArcWelderMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        if (blockEntity == null) {
-            return false; // тайл может отсутствовать на клиенте (реплей Flashback)
-        }
-        return blockEntity.getLevel() == player.level()
-            && player.distanceToSqr(blockEntity.getBlockPos().getCenter()) <= 64;
+        // w16b: Original isUseableByPlayer (TileEntityMachineBase) = 128 vom Kern, dazu Huelle der Maschine (MultiblockMenuReach)
+        return MultiblockMenuReach.stillValidCore(blockEntity, player, 128.0D);
     }
 
     // ── Shift-click routing ──────────────────────────────────────────────────

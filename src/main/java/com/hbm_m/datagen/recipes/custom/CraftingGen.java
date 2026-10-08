@@ -28,6 +28,8 @@ public final class CraftingGen {
     private final Consumer<FinishedRecipe> w;
     private final String prefix;
     private int counter = 0;
+    /** Konfig-Schalter fuer das naechste Rezept (Original if(GeneralConfig...)-Block), siehe {@link #when}. */
+    private String[] pending = new String[0];
 
     public CraftingGen(Consumer<FinishedRecipe> w, String prefix) {
         this.w = w;
@@ -58,6 +60,18 @@ public final class CraftingGen {
         return rows;
     }
 
+    /** Das naechste Rezept existiert nur bei diesen Konfig-Schaltern ({@link ConfigRecipes#when}). */
+    public CraftingGen when(String... flags) {
+        this.pending = flags;
+        return this;
+    }
+
+    private Consumer<FinishedRecipe> writer() {
+        Consumer<FinishedRecipe> out = pending.length == 0 ? w : ConfigRecipes.when(w, pending);
+        pending = new String[0];
+        return out;
+    }
+
     private ResourceLocation id(Object out) {
         String name = BuiltInRegistries.ITEM.getKey(like(out).asItem()).getPath();
         return ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, prefix + "/" + name + "_" + (counter++));
@@ -73,13 +87,13 @@ public final class CraftingGen {
             b.define(c, ing(keys[i + 1]));
         }
         b.unlockedBy("has_item", InventoryChangeTrigger.TriggerInstance.hasItems(like(out)));
-        b.save(w, id(out));
+        b.save(writer(), id(out));
     }
 
     public void shapeless(Object out, int count, Object... inputs) {
         ShapelessRecipeBuilder b = ShapelessRecipeBuilder.shapeless(RecipeCategory.MISC, like(out), count);
         for (Object o : inputs) b.requires(ing(o));
         b.unlockedBy("has_item", InventoryChangeTrigger.TriggerInstance.hasItems(like(out)));
-        b.save(w, id(out));
+        b.save(writer(), id(out));
     }
 }

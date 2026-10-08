@@ -28,7 +28,15 @@ public class MachineModuleChemplant extends MachineModuleBase<ChemicalPlantRecip
                                   int[] solidIn, int[] solidOut,
                                   FluidTank[] fluidIn, FluidTank[] fluidOut,
                                   Level level) {
-        super(0, energy, inv, level);
+        this(0, energy, inv, solidIn, solidOut, fluidIn, fluidOut, level);
+    }
+
+    /** Mit Modulindex - die Chemiefabrik haelt vier dieser Module (Original: {@code new ModuleMachineChemplant(i, ...)}). */
+    public MachineModuleChemplant(int index, com.hbm_m.interfaces.IEnergyReceiver energy, com.hbm_m.platform.ModItemStackHandler inv,
+                                  int[] solidIn, int[] solidOut,
+                                  FluidTank[] fluidIn, FluidTank[] fluidOut,
+                                  Level level) {
+        super(index, energy, inv, level);
         this.inputSlots = solidIn;
         this.outputSlots = solidOut;
         this.inputTanks = fluidIn;
@@ -62,10 +70,6 @@ public class MachineModuleChemplant extends MachineModuleBase<ChemicalPlantRecip
         return needsSync;
     }
 
-    @Override
-    protected boolean requiresFullEnergyBufferToStart() {
-        return true;
-    }
 
     @Override
     protected void onRecipeChanged(@Nullable ChemicalPlantRecipe previous, @Nullable ChemicalPlantRecipe current) {
@@ -157,7 +161,8 @@ public class MachineModuleChemplant extends MachineModuleBase<ChemicalPlantRecip
             if (i < fluidInputs.size() && !fluidInputs.get(i).isEmpty()) {
                 Fluid fluid = fluidInputs.get(i).getFluid();
                 if (fluid != null && fluid != Fluids.EMPTY) {
-                    inputTanks[i].conform(fluid);
+                    // Original conform(stack): Sorte und Druck (528-Druckvarianten)
+                    inputTanks[i].conform(fluid, recipe.getFluidInputPressure(i));
                 } else {
                     inputTanks[i].resetTank();
                 }

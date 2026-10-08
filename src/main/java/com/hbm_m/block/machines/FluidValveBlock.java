@@ -100,15 +100,11 @@ public class FluidValveBlock extends BaseEntityBlock implements ILookOverlay {
 
     private InteractionResult handleUse(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand) {
         var stack = player.getItemInHand(hand);
-        // FluidDuctBase.onBlockActivated: Identifikator setzt die Fluessigkeit
-        if (!stack.isEmpty() && stack.getItem() instanceof IItemFluidIdentifier idItem) {
-            if (!level.isClientSide) {
-                Fluid fluid = idItem.getType(level, pos, stack);
-                if (fluid != null) {
-                    if (fluid == ModFluids.NONE.getSource()) fluid = Fluids.EMPTY;
-                    com.hbm_m.api.fluids.PipeTypeChanger.apply(level, pos, fluid, player.isShiftKeyDown());
-                }
-            }
+        // Original FluidValve: Client immer true, sonst erst super (Identifikator), dann Ventil umlegen;
+        // FluidSwitch/FluidCounterValve haben nur FluidDuctBase.onBlockActivated
+        if (mode == Mode.VALVE && level.isClientSide) return InteractionResult.SUCCESS;
+        if (!stack.isEmpty() && stack.getItem() instanceof IItemFluidIdentifier
+                && com.hbm_m.api.fluids.PipeTypeChanger.onIdentifier(level, pos, player, stack)) {
             return InteractionResult.sidedSuccess(level.isClientSide);
         }
         if (mode == Mode.VALVE && !player.isShiftKeyDown()) {

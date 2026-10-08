@@ -66,6 +66,8 @@ public class MachineShredderBlockEntity extends BaseMachineBlockEntity {
     private static final long ENERGY_PER_TICK = 5L; 
 
     private int progress = 0;
+    /** Original {@code soundCycle}: alle 50 Arbeitsticks ein Lorengeraeusch (Tonhoehe 0.75). */
+    private int soundCycle = 0;
     private boolean isActive = false;
     private boolean clientIsActive = false;
     private int syncCounter = 0;
@@ -178,7 +180,7 @@ public class MachineShredderBlockEntity extends BaseMachineBlockEntity {
 @OnlyIn(Dist.CLIENT)
 //?}
     private void clientTick() {
-        ClientSoundBootstrap.updateSound(this, getIsActive(), () -> newShredderSoundInstance());
+        // Original: kein Dauerklang, das Geraeusch kommt serverseitig (siehe serverTick)
     }
 
     private Object newShredderSoundInstance() {
@@ -210,6 +212,8 @@ public class MachineShredderBlockEntity extends BaseMachineBlockEntity {
         boolean canProcess = canProcess();
         boolean wasActive = isActive;
 
+        if (progress == 0) soundCycle = 0;
+
         boolean canWork = false;
         if (canProcess) {
             long currentEnergy = this.getEnergyStored();
@@ -233,9 +237,6 @@ public class MachineShredderBlockEntity extends BaseMachineBlockEntity {
                             if (newDamage != oldDamage) {
                                 blade.setDamageValue(newDamage);
                                 dirty = true;
-                                if (oldDamage < maxDamage && newDamage >= maxDamage) {
-                                    level.playSound(null, pos, SoundEvents.ITEM_BREAK, SoundSource.BLOCKS, 1.0F, 0.8F);
-                                }
                             }
                         }
                     }
@@ -246,6 +247,12 @@ public class MachineShredderBlockEntity extends BaseMachineBlockEntity {
             } else {
                 dirty = true;
             }
+            // Original: NTMSounds.VANILLA_MINECART, Lautstaerke 1, Tonhoehe 0.75, alle 50 Ticks
+            if (soundCycle == 0) {
+                level.playSound(null, pos, SoundEvents.MINECART_RIDING, SoundSource.BLOCKS, 1.0F, 0.75F);
+            }
+            soundCycle++;
+            if (soundCycle >= 50) soundCycle = 0;
         } else {
             if (progress > 0) {
                 progress = 0;
@@ -492,4 +499,34 @@ public class MachineShredderBlockEntity extends BaseMachineBlockEntity {
     public ContainerData getContainerData() {
         return containerData;
     }
+
+    //? if forge {
+    /** Original {@code ISidedInventory}: alle Slots; Eingaenge gleichmaessig befuellt, Ausgaenge und stumpfe Klingen heraus. */
+    private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
+            new com.hbm_m.blockentity.SidedItemAccess.Rules() {
+                @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return com.hbm_m.blockentity.SidedItemAccess.range(0, 29); }
+                @Override public boolean canInsert(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { if ((slot >= 9 && slot != 27 && slot != 28) || !isItemValidForSlot(slot, stack)) return false;
+                    if (inventory.getStackInSlot(slot).isEmpty()) return true;
+                    int size = inventory.getStackInSlot(slot).getCount();
+                    for (int k = 0; k < 9; k++) {
+                        net.minecraft.world.item.ItemStack s = inventory.getStackInSlot(k);
+                        if (s.isEmpty()) return false;
+                        if (net.minecraft.world.item.ItemStack.isSameItem(s, stack) && s.getCount() < size) return false;
+                    }
+                    return true; }
+                @Override public boolean canExtract(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { if (slot >= 9 && slot <= 26) return true; return (slot == 27 || slot == 28) && stack.getMaxDamage() > 0 && stack.getDamageValue() >= stack.getMaxDamage(); }
+            });
+
+    @Override
+    public @org.jetbrains.annotations.NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(@org.jetbrains.annotations.NotNull net.minecraftforge.common.capabilities.Capability<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER && side != null) return sidedItems.get(side).cast();
+        return super.getCapability(cap, side);
+    }
+
+    @Override
+    public void invalidateCaps() {
+        super.invalidateCaps();
+        sidedItems.invalidate();
+    }
+    //?}
 }

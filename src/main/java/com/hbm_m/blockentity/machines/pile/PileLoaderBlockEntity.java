@@ -39,6 +39,11 @@ public class PileLoaderBlockEntity extends LoadedMachineBlockEntity
     public static final double SPEED = 1D / 7D;
 
     private double level_ = 0D;
+
+    /** Original Client-Seite: geglaettete Stellung fuer den Renderer ({@code level/lastLevel/syncLevel/turnProgress}). */
+    public double renderLevel;
+    public double lastRenderLevel;
+    private int turnProgress;
     private boolean loading = false;
     private int delay = 0;
     private boolean wasRedstone;
@@ -96,7 +101,17 @@ public class PileLoaderBlockEntity extends LoadedMachineBlockEntity
     }
 
     public static void tick(Level level, BlockPos pos, BlockState state, PileLoaderBlockEntity be) {
-        if (level.isClientSide()) return;
+        if (level.isClientSide()) {
+            // Original isRemote-Zweig: lastLevel = level; in turnProgress Schritten auf den Sync-Wert zulaufen.
+            be.lastRenderLevel = be.renderLevel;
+            if (be.turnProgress > 0) {
+                be.renderLevel = be.renderLevel + ((be.level_ - be.renderLevel) / (double) be.turnProgress);
+                --be.turnProgress;
+            } else {
+                be.renderLevel = be.level_;
+            }
+            return;
+        }
 
         Direction dir = be.getOrientation();
         PileChannel fuelChan = null;
@@ -169,13 +184,13 @@ public class PileLoaderBlockEntity extends LoadedMachineBlockEntity
     // ── Redstone-over-Radio ──
 
     /**
-     * 1:1 aus {@code TileEntityPileLoader.getFunctionInfo}. Das urspruengliche {@code meta} ist
-     * hier weggefallen: es gab die Metadatenzahl des Stabs zurueck, und die gibt es in 1.20 nicht
-     * mehr - dieselbe Auskunft liefert {@code lifetime}.
+     * 1:1 aus {@code TileEntityPileLoader.getFunctionInfo}. {@code meta} war die Metadatenzahl des Stabs -
+     * im Port die Ordnungszahl von {@link ItemPileRodMK2.EnumPileRod} (gleiche Reihenfolge wie die Metas).
      */
     @Override
     public String[] getFunctionInfo() {
         return new String[] {
+                PREFIX_VALUE + "meta",
                 PREFIX_VALUE + "depletion",
                 PREFIX_VALUE + "deppercent",
                 PREFIX_VALUE + "lifetime",
@@ -185,6 +200,10 @@ public class PileLoaderBlockEntity extends LoadedMachineBlockEntity
 
     @Override
     public String provideRORValue(String name) {
+        if ((PREFIX_VALUE + "meta").equals(name)) {
+            ItemPileRodMK2.EnumPileRod rod = ItemPileRodMK2.rodOf(channelStack);
+            return channelStack.isEmpty() ? "-1" : (rod == null ? "0" : rod.ordinal() + "");
+        }
         if ((PREFIX_VALUE + "deppercent").equals(name)) {
             return "" + (int) Math.round(channelDepletion);
         }
@@ -211,6 +230,14 @@ public class PileLoaderBlockEntity extends LoadedMachineBlockEntity
             stack = ItemStack.EMPTY;
         }
         super.setRemoved();
+    }
+
+    /** Original deserialize: aendert sich der Sync-Wert, wird ueber zwei Ticks nachgezogen. */
+    @Override
+    protected void applyClientUpdate(CompoundTag tag) {
+        double lastSync = this.level_;
+        super.applyClientUpdate(tag);
+        if (this.level_ != lastSync) this.turnProgress = 2;
     }
 
     @Override
@@ -246,4 +273,35 @@ public class PileLoaderBlockEntity extends LoadedMachineBlockEntity
         channelDepletion = tag.getDouble("chanDepletion");
         channelTemp = tag.getDouble("chanTemp");
     }
+
+    //? if forge {
+    /** Original {@code ISidedInventory}: Slot {0}, nur ladbare Meilerstaebe hinein (einer), nichts heraus. */
+    private final net.minecraftforge.common.util.LazyOptional<net.minecraftforge.items.IItemHandler> automation =
+            net.minecraftforge.common.util.LazyOptional.of(() -> new net.minecraftforge.items.IItemHandler() {
+                @Override public int getSlots() { return 1; }
+                @Override public @org.jetbrains.annotations.NotNull ItemStack getStackInSlot(int slot) { return stack; }
+                @Override public @org.jetbrains.annotations.NotNull ItemStack insertItem(int slot, @org.jetbrains.annotations.NotNull ItemStack in, boolean simulate) {
+                    if (slot != 0 || !stack.isEmpty() || !isItemLoadable(in)) return in;
+                    if (!simulate) { stack = in.copyWithCount(1); setChanged(); }
+                    ItemStack rest = in.copy();
+                    rest.shrink(1);
+                    return rest;
+                }
+                @Override public @org.jetbrains.annotations.NotNull ItemStack extractItem(int slot, int amount, boolean simulate) { return ItemStack.EMPTY; }
+                @Override public int getSlotLimit(int slot) { return 1; }
+                @Override public boolean isItemValid(int slot, @org.jetbrains.annotations.NotNull ItemStack in) { return isItemLoadable(in); }
+            });
+
+    @Override
+    public @org.jetbrains.annotations.NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(@org.jetbrains.annotations.NotNull net.minecraftforge.common.capabilities.Capability<T> cap, @org.jetbrains.annotations.Nullable Direction side) {
+        if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER && side != null) return automation.cast();
+        return super.getCapability(cap, side);
+    }
+
+    @Override
+    public void invalidateCaps() {
+        super.invalidateCaps();
+        automation.invalidate();
+    }
+    //?}
 }

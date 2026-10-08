@@ -1,7 +1,5 @@
 package com.hbm_m.blockentity.machines;
 
-import org.jetbrains.annotations.Nullable;
-
 import com.hbm_m.api.fluids.IFluidStandardTransceiverMK2;
 import com.hbm_m.blockentity.BaseMachineBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
@@ -18,73 +16,52 @@ import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.util.Mth;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.level.block.state.properties.BlockStateProperties;
 
 /**
- * Port of {@code TileEntityHeaterHeatex} (1.7.10 Original) - converts a hot fluid into its cooled
- * form (via the already-ported {@link FT_Coolable}/{@code CoolingType.HEATEXCHANGER} fluid-trait
- * data, e.g. hot reactor coolant &rarr; coolant) and, as a byproduct, generates heat exposed via
- * {@link IHeatSource}.
- * <p>
- * <p>Er belegt wie im Original drei mal drei Felder ({@code getDimensions {0,0,1,1,1,1}}), und
- * die vier <b>Ecken</b> sind die Anschlusszellen - dort setzt man die Rohre an, nicht gerade.</p>
- *
- * <p><b>Offen:</b> der Platz zum Umtypisieren des heissen Fluids; die Tanks stehen fest auf
- * {@code coolant_hot} und {@code coolant}.
+ * 1:1 {@code TileEntityHeaterHeatex}: Waermetauscher. Heisses Fluid (Typ per Fluid-ID im Platz 0) wird nach
+ * {@code FT_Coolable}/HEATEXCHANGER abgekuehlt; je Zyklus hoechstens {@code amountToCool} Vorgaenge, ein Zyklus alle
+ * {@code tickDelay} Ticks (beides in der GUI einstellbar). Die Waerme verfaellt je Tick um 0,1 %.
+ * Rohranschluesse vor und hinter den vier Ecken ({@code getConPos}), nur in Blickrichtung und entgegen.
  */
-public class MachineHeatexBlockEntity extends BaseMachineBlockEntity implements IFluidStandardTransceiverMK2, IHeatSource {
+public class MachineHeatexBlockEntity extends BaseMachineBlockEntity
+        implements IFluidStandardTransceiverMK2, IHeatSource, com.hbm_m.api.tile.IControlReceiver,
+        com.hbm_m.api.redstoneoverradio.IRORValueProvider {
 
-    private static final int TANK_CAPACITY = 24_000;
-    private static final int MAX_HEAT = 100_000;
-    private static final int MAX_OPS_PER_TICK = 100;
-
-    private final FluidTank hotTank = new FluidTank(ModFluids.COOLANT_HOT.getSource(), TANK_CAPACITY);
-    private final FluidTank coldTank = new FluidTank(ModFluids.COOLANT.getSource(), TANK_CAPACITY);
-
-    private int heat = 0;
+    public final FluidTank[] tanks = new FluidTank[2];
+    public int amountToCool = 24_000;
+    public int tickDelay = 1;
+    public int heatEnergy;
 
     public MachineHeatexBlockEntity(BlockPos pos, BlockState state) {
-        super(ModBlockEntities.HEATEX_BE.get(), pos, state, 0, 0L, 0L, 0L);
+        super(ModBlockEntities.HEATEX_BE.get(), pos, state, 1, 0L, 0L, 0L);
+        this.tanks[0] = new FluidTank(ModFluids.COOLANT_HOT.getSource(), 24_000);
+        this.tanks[1] = new FluidTank(ModFluids.COOLANT.getSource(), 24_000);
     }
 
-    //? if forge {
-    @Override
-    public @org.jetbrains.annotations.NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(
-            net.minecraftforge.common.capabilities.Capability<T> cap, @Nullable Direction side) {
-        if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.FLUID_HANDLER) {
-            return hotTank.getForgeFluidCapability().cast();
-        }
-        return super.getCapability(cap, side);
-    }
-    //?}
-
-    @Override
-    public FluidTank[] getReceivingTanks() {
-        return new FluidTank[] { hotTank };
-    }
-
-    @Override
-    public FluidTank[] getSendingTanks() {
-        return new FluidTank[] { coldTank };
-    }
-
-    @Override
-    public FluidTank[] getAllTanks() {
-        return new FluidTank[] { hotTank, coldTank };
-    }
+    @Override public FluidTank[] getReceivingTanks() { return new FluidTank[] { tanks[0] }; }
+    @Override public FluidTank[] getSendingTanks() { return new FluidTank[] { tanks[1] }; }
+    @Override public FluidTank[] getAllTanks() { return tanks; }
 
     @Override
     public boolean isLoaded() {
         return level != null && !isRemoved() && level.isLoaded(worldPosition);
     }
 
-    public FluidTank getHotTank() { return hotTank; }
-    public FluidTank getColdTank() { return coldTank; }
+    public FluidTank getHotTank() { return tanks[0]; }
+    public FluidTank getColdTank() { return tanks[1]; }
+
+    private Direction getDir() {
+        BlockState s = getBlockState();
+        return s.hasProperty(BlockStateProperties.HORIZONTAL_FACING) ? s.getValue(BlockStateProperties.HORIZONTAL_FACING) : Direction.NORTH;
+    }
 
     public static void tick(Level level, BlockPos pos, BlockState state, MachineHeatexBlockEntity be) {
         if (level.isClientSide() || !(level instanceof ServerLevel serverLevel)) return;
@@ -92,60 +69,103 @@ public class MachineHeatexBlockEntity extends BaseMachineBlockEntity implements 
     }
 
     private void serverTick(ServerLevel level, BlockPos pos) {
-        if (level.getGameTime() % 20 == 0) {
-            for (Direction dir : Direction.values()) {
-                trySubscribe(hotTank.getTankType(), level, pos.relative(dir), dir);
-                tryProvide(coldTank, level, pos.relative(dir), dir);
-            }
-        }
 
-        tryConvert();
+        ItemStack[] slots = { inventory.getStackInSlot(0) };
+        if (this.tanks[0].setType(0, slots)) inventory.setStackInSlot(0, slots[0] == null ? ItemStack.EMPTY : slots[0]);
+        this.setupTanks();
+        this.updateConnections(level);
+
+        this.heatEnergy *= 0.999;
+
+        this.tryConvert(level);
+
+        for (BlockPos[] con : getConPos()) {
+            Direction d = con[1].equals(BlockPos.ZERO) ? getDir() : getDir().getOpposite();
+            if (this.tanks[1].getFill() > 0) this.tryProvide(tanks[1], level, con[0], d);
+        }
 
         setChanged();
+        sendUpdateToClient();
     }
 
-    private void tryConvert() {
-        FT_Coolable trait = FluidType.getTrait(hotTank.getStoredFluid(), FT_Coolable.class);
-        double eff = trait != null ? trait.getEfficiency(CoolingType.HEATEXCHANGER) : 0.0D;
-
-        if (trait == null || eff <= 0.0D || trait.amountReq <= 0) {
-            heat = Math.max(heat - Math.max(heat / 1000, 1), 0);
+    protected void setupTanks() {
+        FT_Coolable trait = FluidType.getTrait(tanks[0].getTankType(), FT_Coolable.class);
+        if (trait != null && trait.getEfficiency(CoolingType.HEATEXCHANGER) > 0) {
+            tanks[1].setTankType(trait.coolsTo);
             return;
         }
 
-        int inputOps = hotTank.getFluidAmountMb() / trait.amountReq;
-        int outputOps = trait.amountProduced > 0 ? coldTank.getSpaceMb() / trait.amountProduced : 0;
-        int ops = Math.min(Math.min(inputOps, outputOps), MAX_OPS_PER_TICK);
+        tanks[0].setTankType(ModFluids.NONE.getSource());
+        tanks[1].setTankType(ModFluids.NONE.getSource());
+    }
 
-        if (ops <= 0) {
-            heat = Math.max(heat - Math.max(heat / 1000, 1), 0);
-            return;
+    protected void updateConnections(Level level) {
+        for (BlockPos[] con : getConPos()) {
+            Direction d = con[1].equals(BlockPos.ZERO) ? getDir() : getDir().getOpposite();
+            this.trySubscribe(tanks[0].getTankType(), level, con[0], d);
         }
+    }
 
-        hotTank.drainMb(trait.amountReq * ops);
-        coldTank.fillMb(trait.coolsTo, trait.amountProduced * ops);
-        heat = Math.min(MAX_HEAT, heat + (int) (trait.heatEnergy * ops * eff));
+    protected void tryConvert(Level level) {
+        FT_Coolable trait = FluidType.getTrait(tanks[0].getTankType(), FT_Coolable.class);
+        if (trait == null) return;
+        if (tickDelay < 1) tickDelay = 1;
+        if (level.getGameTime() % tickDelay != 0) return;
+
+        int inputOps = tanks[0].getFill() / trait.amountReq;
+        int outputOps = (tanks[1].getMaxFill() - tanks[1].getFill()) / trait.amountProduced;
+        int opCap = this.amountToCool;
+
+        int ops = Math.min(inputOps, Math.min(outputOps, opCap));
+        tanks[0].drainMb(trait.amountReq * ops);
+        tanks[1].fillMb(tanks[1].getTankType(), trait.amountProduced * ops);
+        this.heatEnergy += trait.heatEnergy * ops * trait.getEfficiency(CoolingType.HEATEXCHANGER);
+    }
+
+    /** Original getConPos: {Position, Marker} - Marker ZERO = Richtung dir, sonst dir.getOpposite(). */
+    private BlockPos[][] getConPos() {
+        Direction dir = getDir();
+        Direction rot = dir.getClockWise();
+        BlockPos p = worldPosition;
+        BlockPos back = new BlockPos(0, 1, 0);
+        return new BlockPos[][] {
+                { p.relative(dir, 2).relative(rot, 1), BlockPos.ZERO },
+                { p.relative(dir, 2).relative(rot, -1), BlockPos.ZERO },
+                { p.relative(dir, -2).relative(rot, 1), back },
+                { p.relative(dir, -2).relative(rot, -1), back },
+        };
     }
 
     @Override
-    public int getHeatStored() {
-        return heat;
+    public boolean canConnect(net.minecraft.world.level.material.Fluid fluid, Direction dir) {
+        Direction facing = getDir();
+        return dir == facing || dir == facing.getOpposite();
     }
 
-    @Override
-    public int getMaxHeatStored() {
-        return MAX_HEAT;
-    }
+    @Override public int getHeatStored() { return heatEnergy; }
+    @Override public int getMaxHeatStored() { return Integer.MAX_VALUE; }
 
     @Override
     public void useUpHeat(int amount) {
-        heat = Math.max(0, heat - amount);
+        heatEnergy = Math.max(0, heatEnergy - amount);
+        setChanged();
+    }
+
+    @Override
+    public boolean hasPermission(Player player) {
+        return player.distanceToSqr(worldPosition.getX() + 0.5, worldPosition.getY() + 0.5, worldPosition.getZ() + 0.5) < 16 * 16;
+    }
+
+    @Override
+    public void receiveControl(CompoundTag data) {
+        if (data.contains("toCool")) this.amountToCool = Mth.clamp(data.getInt("toCool"), 1, tanks[0].getMaxFill());
+        if (data.contains("delay")) this.tickDelay = Math.max(data.getInt("delay"), 1);
         setChanged();
     }
 
     @Override
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
-        return false;
+        return true;
     }
 
     @Override
@@ -166,16 +186,39 @@ public class MachineHeatexBlockEntity extends BaseMachineBlockEntity implements 
     @Override
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.writeNbtData(tag, registries);
-        tag.putInt("heat", heat);
-        tag.put("hotTank", hotTank.writeNBT(new CompoundTag()));
-        tag.put("coldTank", coldTank.writeNBT(new CompoundTag()));
+        tanks[0].writeToNBT(tag, "0");
+        tanks[1].writeToNBT(tag, "1");
+        tag.putInt("heatEnergy", heatEnergy);
+        tag.putInt("toCool", amountToCool);
+        tag.putInt("delay", tickDelay);
     }
 
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.readNbtData(tag, registries);
-        heat = tag.getInt("heat");
-        if (tag.contains("hotTank")) hotTank.readNBT(tag.getCompound("hotTank"));
-        if (tag.contains("coldTank")) coldTank.readNBT(tag.getCompound("coldTank"));
+        tanks[0].readFromNBT(tag, "0");
+        tanks[1].readFromNBT(tag, "1");
+        heatEnergy = tag.getInt("heatEnergy");
+        amountToCool = tag.contains("toCool") ? tag.getInt("toCool") : 24_000;
+        tickDelay = tag.contains("delay") ? tag.getInt("delay") : 1;
+    }
+
+    // ── Redstone-over-Radio (1:1 TileEntityHeaterHeatex) ──
+
+    @Override
+    public String[] getFunctionInfo() {
+        return new String[] {
+                PREFIX_VALUE + "hotfluid",
+                PREFIX_VALUE + "coldfluid",
+                PREFIX_VALUE + "heat"
+        };
+    }
+
+    @Override
+    public String provideRORValue(String name) {
+        if ((PREFIX_VALUE + "hotfluid").equals(name))  return "" + tanks[0].getFill();
+        if ((PREFIX_VALUE + "coldfluid").equals(name)) return "" + tanks[1].getFill();
+        if ((PREFIX_VALUE + "heat").equals(name))      return "" + heatEnergy;
+        return null;
     }
 }

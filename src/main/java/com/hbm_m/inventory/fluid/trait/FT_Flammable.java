@@ -6,7 +6,7 @@ import java.util.List;
 import com.google.gson.JsonObject;
 import com.google.gson.stream.JsonWriter;
 
-import com.hbm_m.util.EnergyFormatter;
+import com.hbm_m.util.BobMathUtil;
 
 import net.minecraft.ChatFormatting;
 import net.minecraft.network.chat.Component;
@@ -28,16 +28,11 @@ public class FT_Flammable extends FluidTrait {
     @Override
     public void addInfo(List<Component> info) {
         super.addInfo(info);
-        
-        info.add(Component.literal("[Flammable]").withStyle(ChatFormatting.YELLOW));
-        
-        if (energy > 0) {
-            String formattedEnergy = EnergyFormatter.formatTooltipNumber(energy);
-            info.add(Component.literal("Provides ")
-                    .withStyle(ChatFormatting.YELLOW)
-                    .append(Component.literal(formattedEnergy + " TU ").withStyle(ChatFormatting.RED))
-                    .append(Component.literal("per bucket").withStyle(ChatFormatting.YELLOW)));
-        }
+        info.add(Component.literal("[").append(Component.translatable("hbmfluid.trait.flammable")).append("]").withStyle(ChatFormatting.YELLOW));
+        if (energy > 0)
+            info.add(Component.translatable("hbmfluid.trait.provides").append(" ").withStyle(ChatFormatting.YELLOW)
+                    .append(Component.literal(BobMathUtil.getShortNumber(energy) + "TU ").withStyle(ChatFormatting.RED))
+                    .append(Component.translatable("hbmfluid.trait.perBucket").withStyle(ChatFormatting.YELLOW)));
     }
 
     @Override

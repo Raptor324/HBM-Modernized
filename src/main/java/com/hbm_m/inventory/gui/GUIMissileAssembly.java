@@ -49,6 +49,34 @@ public class GUIMissileAssembly extends AbstractContainerScreen<MissileAssemblyM
         if (menu.canBuild()) {
             gui.blit(TEXTURE, x + 115, y + 35, 176, 0, 18, 18);
         }
+
+        // DRAW MISSILE: liegend, um die Hochachse kreisend, auf 8 Slots Breite skaliert
+        if (menu.blockEntity == null) return;
+        com.hbm_m.item.missile.MissileStruct missile = menu.blockEntity.getStruct();
+        double height = com.hbm_m.client.render.util.MissilePronter.guiHeight(missile);
+
+        var ps = gui.pose();
+        ps.pushPose();
+        ps.translate(x + 88, y + 98, 100);
+        ps.mulPose(com.mojang.math.Axis.YN.rotationDegrees(System.currentTimeMillis() / 10 % 360));
+
+        double size = 8 * 18;
+        float scale = (float) (size / Math.max(height, 6));
+
+        ps.translate(height / 2 * scale, 0, 0);
+        ps.scale(scale, scale, scale);
+
+        ps.mulPose(com.mojang.math.Axis.XP.rotationDegrees(90));
+        ps.mulPose(com.mojang.math.Axis.ZP.rotationDegrees(-90));
+        ps.scale(-1, -1, -1);
+
+        com.mojang.blaze3d.platform.Lighting.setupFor3DItems();
+        RenderSystem.disableCull();
+        com.hbm_m.client.render.util.MissilePronter.prontMissile(missile, ps, gui.bufferSource(), net.minecraft.client.renderer.LightTexture.FULL_BRIGHT);
+        gui.flush();
+        RenderSystem.enableCull();
+        com.mojang.blaze3d.platform.Lighting.setupForFlatItems();
+        ps.popPose();
     }
 
     @Override
@@ -60,7 +88,9 @@ public class GUIMissileAssembly extends AbstractContainerScreen<MissileAssemblyM
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (menu.canBuild() && isMouseOver(mouseX, mouseY, 115, 35, 18, 18)) {
+        if (isMouseOver(mouseX, mouseY, 115, 35, 18, 18)) {
+            net.minecraft.client.Minecraft.getInstance().getSoundManager().play(
+                    net.minecraft.client.resources.sounds.SimpleSoundInstance.forUI(net.minecraft.sounds.SoundEvents.UI_BUTTON_CLICK, 1.0F));
             // тайл может отсутствовать в реплее Flashback
             if (menu.blockEntity == null) return super.mouseClicked(mouseX, mouseY, button);
             ModPacketHandler.sendToServer(ModPacketHandler.BUILD_MISSILE,

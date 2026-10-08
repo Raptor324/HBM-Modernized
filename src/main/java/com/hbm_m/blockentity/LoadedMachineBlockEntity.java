@@ -12,7 +12,7 @@ import net.minecraft.world.level.block.state.BlockState;
  * <p>Наследует {@link BaseHbmBlockEntity} : персистенция и клиент-синхронизация
  * идут через writeNbtData/readNbtData/applyClientUpdate — без stonecutter-ветвлений.
  */
-public abstract class LoadedMachineBlockEntity extends BaseHbmBlockEntity {
+public abstract class LoadedMachineBlockEntity extends BaseHbmBlockEntity implements IMuffleable {
     
     protected boolean isLoaded = true;
     protected boolean muffled = false;

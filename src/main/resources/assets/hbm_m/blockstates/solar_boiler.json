@@ -1,6 +1,8 @@
 {
   "variants": {
-    "lit=false": { "model": "hbm_m:block/machines/solar_boiler" },
-    "lit=true":  { "model": "hbm_m:block/machines/solar_boiler" }
+    "facing=north": { "model": "hbm_m:block/machines/solar_boiler" },
+    "facing=south": { "model": "hbm_m:block/machines/solar_boiler" },
+    "facing=west":  { "model": "hbm_m:block/machines/solar_boiler" },
+    "facing=east":  { "model": "hbm_m:block/machines/solar_boiler" }
   }
 }

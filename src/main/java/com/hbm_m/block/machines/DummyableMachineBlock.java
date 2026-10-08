@@ -69,6 +69,8 @@ public abstract class DummyableMachineBlock extends BaseEntityBlock implements I
 
     @Override
     public VoxelShape getOcclusionShape(BlockState state, BlockGetter level, BlockPos pos) {
+        VoxelShape master = getCustomMasterVoxelShape(state);
+        if (master != null && !master.isEmpty()) return Shapes.empty(); // w16b: Kern mit bounding-Teilform
         MultiblockStructureHelper helper = getStructureHelper();
         if (helper != null && !helper.isFullBlock(helper.getControllerOffset(), state.getValue(FACING))) {
             return Shapes.empty();
@@ -102,15 +104,21 @@ public abstract class DummyableMachineBlock extends BaseEntityBlock implements I
 
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+        // w16b: nur die eigene Zelle (Original BlockDummyable); Umriss der ganzen Maschine zeichnet MultiblockOutlineForge
+        VoxelShape master = getCustomMasterVoxelShape(state);
+        if (master != null && !master.isEmpty()) return MultiblockStructureHelper.cellShape(master, BlockPos.ZERO);
         MultiblockStructureHelper helper = getStructureHelper();
-        return helper != null ? helper.generateShapeFromParts(state.getValue(FACING)) : Shapes.block();
+        return helper != null ? helper.getControllerCellShape(state.getValue(FACING)) : Shapes.block();
     }
 
     @Override
     public VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
+        // w16b: Masterform (Original bounding-Liste) gilt auch fuer die Kernzelle, wie bei den Dummy-Zellen
+        VoxelShape master = getCustomMasterVoxelShape(state);
+        if (master != null && !master.isEmpty()) return master;
         MultiblockStructureHelper helper = getStructureHelper();
         return helper != null
-                ? helper.getSpecificPartShape(helper.getControllerOffset(), state.getValue(FACING))
+                ? helper.getSpecificCollisionShape(helper.getControllerOffset(), state.getValue(FACING))
                 : Shapes.block();
     }
 

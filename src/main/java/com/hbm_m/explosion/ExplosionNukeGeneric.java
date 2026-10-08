@@ -122,6 +122,10 @@ public class ExplosionNukeGeneric {
     private static boolean isExplosionExempt(Entity entity) {
         if (entity instanceof Ocelot) return true;
         if (entity instanceof EntityCloudFleija) return true;
+        // Original: EntityB92Beam / EntityBulletBaseNT / EntityBulletBaseMK4 sind ausgenommen
+        if (entity instanceof com.hbm_m.entity.projectile.EntityB92Beam) return true;
+        if (entity instanceof com.hbm_m.entity.projectile.EntityBulletBaseNT) return true;
+        if (entity instanceof com.hbm_m.entity.projectile.EntityBulletBaseMK4) return true;
         if (entity instanceof EntityExplosionChunkloading) return true;
         if (entity instanceof Player player && player.isCreative()) return true;
         return false;
@@ -181,4 +185,133 @@ public class ExplosionNukeGeneric {
         *///?}
         return hit.getType() != HitResult.Type.MISS;
     }
+
+    // ─── 1:1 waste / wasteDest / wasteNoSchrab / wasteDestNoSchrab ─────────────
+
+    /** Original {@code waste}: verstrahlt Bloecke in einer ausgefransten Kugel ({@code r^2/2 + rand(r^2/10)}). */
+    public static void waste(Level world, int x, int y, int z, int radius) {
+        wasteSphere(world, x, y, z, radius, false);
+    }
+
+    public static void wasteNoSchrab(Level world, int x, int y, int z, int radius) {
+        wasteSphere(world, x, y, z, radius, true);
+    }
+
+    private static void wasteSphere(Level world, int x, int y, int z, int radius, boolean noSchrab) {
+        if (world.isClientSide) return;
+        int r = radius;
+        int r2 = r * r;
+        int r22 = r2 / 2;
+        BlockPos.MutableBlockPos pos = new BlockPos.MutableBlockPos();
+        for (int xx = -r; xx < r; xx++) {
+            int X = xx + x;
+            int XX = xx * xx;
+            for (int yy = -r; yy < r; yy++) {
+                int Y = yy + y;
+                int YY = XX + yy * yy;
+                for (int zz = -r; zz < r; zz++) {
+                    int Z = zz + z;
+                    int ZZ = YY + zz * zz;
+                    if (ZZ < r22 + world.random.nextInt(Math.max(1, r22 / 5))) {
+                        pos.set(X, Y, Z);
+                        if (!world.getBlockState(pos).isAir()) {
+                            if (noSchrab) wasteDestNoSchrab(world, pos.immutable());
+                            else wasteDest(world, pos.immutable());
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private static boolean isMushroomBlock(BlockState s) {
+        return s.is(Blocks.BROWN_MUSHROOM_BLOCK) || s.is(Blocks.RED_MUSHROOM_BLOCK) || s.is(Blocks.MUSHROOM_STEM);
+    }
+
+    /** Pilzbloecke: Stiel (Meta 10) wird verstrahltes Holz, der Rest verschwindet. */
+    private static void wasteMushroom(Level world, BlockPos pos, BlockState s) {
+        if (s.is(Blocks.MUSHROOM_STEM)) world.setBlock(pos, ModBlocks.WASTE_LOG.get().defaultBlockState(), 3);
+        else world.setBlock(pos, Blocks.AIR.defaultBlockState(), 2);
+    }
+
+    public static void wasteDest(Level world, BlockPos pos) {
+        if (world.isClientSide) return;
+        int rand;
+        BlockState s = world.getBlockState(pos);
+        Block b = s.getBlock();
+
+        if (s.is(BlockTags.WOODEN_DOORS) || b == Blocks.IRON_DOOR) {
+            world.setBlock(pos, Blocks.AIR.defaultBlockState(), 2);
+        } else if (b == Blocks.GRASS_BLOCK) {
+            world.setBlock(pos, ModBlocks.WASTE_EARTH.get().defaultBlockState(), 3);
+        } else if (b == Blocks.MYCELIUM) {
+            world.setBlock(pos, ModBlocks.WASTE_MYCELIUM.get().defaultBlockState(), 3);
+        } else if (b == Blocks.SAND || b == Blocks.RED_SAND) {
+            rand = RANDOM.nextInt(20);
+            if (rand == 1 && b == Blocks.SAND) world.setBlock(pos, ModBlocks.WASTE_TRINITITE.get().defaultBlockState(), 3);
+            if (rand == 1 && b == Blocks.RED_SAND) world.setBlock(pos, ModBlocks.WASTE_TRINITITE_RED.get().defaultBlockState(), 3);
+        } else if (b == Blocks.CLAY) {
+            world.setBlock(pos, Blocks.TERRACOTTA.defaultBlockState(), 3);
+        } else if (b == Blocks.MOSSY_COBBLESTONE) {
+            world.setBlock(pos, Blocks.COAL_ORE.defaultBlockState(), 3);
+        } else if (b == Blocks.COAL_ORE) {
+            rand = RANDOM.nextInt(10);
+            if (rand == 1 || rand == 2 || rand == 3) world.setBlock(pos, Blocks.DIAMOND_ORE.defaultBlockState(), 3);
+            if (rand == 9) world.setBlock(pos, Blocks.EMERALD_ORE.defaultBlockState(), 3);
+        } else if (s.is(BlockTags.LOGS_THAT_BURN)) {
+            world.setBlock(pos, ModBlocks.WASTE_LOG.get().defaultBlockState(), 3);
+        } else if (isMushroomBlock(s)) {
+            wasteMushroom(world, pos, s);
+        } else if (s.getSoundType() == net.minecraft.world.level.block.SoundType.WOOD && s.isSolidRender(world, pos) && b != ModBlocks.WASTE_LOG.get()) {
+            // Original: Material.wood && isOpaqueCube
+            world.setBlock(pos, ModBlocks.WASTE_PLANKS.get().defaultBlockState(), 3);
+        } else if (b == ModBlocks.URANIUM_ORE.get() || b == ModBlocks.URANIUM_ORE_DEEPSLATE.get()) {
+            rand = RANDOM.nextInt(com.hbm_m.config.VersatileConfig.getSchrabOreChance());
+            if (rand == 1) world.setBlock(pos, ModBlocks.SCHRABIDIUM_ORE.get().defaultBlockState(), 3);
+            else world.setBlock(pos, ModBlocks.ORE_URANIUM_SCORCHED.get().defaultBlockState(), 3);
+        } else if (b == ModBlocks.NETHER_URANIUM_ORE.get()) {
+            rand = RANDOM.nextInt(com.hbm_m.config.VersatileConfig.getSchrabOreChance());
+            if (rand == 1) world.setBlock(pos, ModBlocks.SCHRABIDIUM_ORE_NETHER.get().defaultBlockState(), 3);
+            else world.setBlock(pos, ModBlocks.ORE_NETHER_URANIUM_SCORCHED.get().defaultBlockState(), 3);
+        } else if (b == ModBlocks.GNEISS_URANIUM_ORE.get()) {
+            rand = RANDOM.nextInt(com.hbm_m.config.VersatileConfig.getSchrabOreChance());
+            if (rand == 1) world.setBlock(pos, ModBlocks.SCHRABIDIUM_ORE_GNEISS.get().defaultBlockState(), 3);
+            else world.setBlock(pos, ModBlocks.ORE_GNEISS_URANIUM_SCORCHED.get().defaultBlockState(), 3);
+        }
+    }
+
+    public static void wasteDestNoSchrab(Level world, BlockPos pos) {
+        if (world.isClientSide) return;
+        int rand;
+        BlockState s = world.getBlockState(pos);
+        Block b = s.getBlock();
+
+        if (s.is(net.minecraftforge.common.Tags.Blocks.GLASS) || s.is(BlockTags.WOODEN_DOORS) || b == Blocks.IRON_DOOR || s.is(BlockTags.LEAVES)) {
+            world.setBlock(pos, Blocks.AIR.defaultBlockState(), 3);
+        } else if (b == Blocks.GRASS_BLOCK) {
+            world.setBlock(pos, ModBlocks.WASTE_EARTH.get().defaultBlockState(), 3);
+        } else if (b == Blocks.MYCELIUM) {
+            world.setBlock(pos, ModBlocks.WASTE_MYCELIUM.get().defaultBlockState(), 3);
+        } else if (b == Blocks.SAND || b == Blocks.RED_SAND) {
+            rand = RANDOM.nextInt(20);
+            if (rand == 1 && b == Blocks.SAND) world.setBlock(pos, ModBlocks.WASTE_TRINITITE.get().defaultBlockState(), 3);
+            if (rand == 1 && b == Blocks.RED_SAND) world.setBlock(pos, ModBlocks.WASTE_TRINITITE_RED.get().defaultBlockState(), 3);
+        } else if (b == Blocks.CLAY) {
+            world.setBlock(pos, Blocks.TERRACOTTA.defaultBlockState(), 3);
+        } else if (b == Blocks.MOSSY_COBBLESTONE) {
+            world.setBlock(pos, Blocks.COAL_ORE.defaultBlockState(), 3);
+        } else if (b == Blocks.COAL_ORE) {
+            rand = RANDOM.nextInt(30);
+            if (rand == 1 || rand == 2 || rand == 3) world.setBlock(pos, Blocks.DIAMOND_ORE.defaultBlockState(), 3);
+            if (rand == 29) world.setBlock(pos, Blocks.EMERALD_ORE.defaultBlockState(), 3);
+        } else if (s.is(BlockTags.LOGS_THAT_BURN)) {
+            world.setBlock(pos, ModBlocks.WASTE_LOG.get().defaultBlockState(), 3);
+        } else if (s.is(BlockTags.PLANKS)) {
+            world.setBlock(pos, ModBlocks.WASTE_PLANKS.get().defaultBlockState(), 3);
+        } else if (isMushroomBlock(s)) {
+            wasteMushroom(world, pos, s);
+        }
+    }
+
+    private static final java.util.Random RANDOM = new java.util.Random();
 }

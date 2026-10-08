@@ -15,7 +15,7 @@ import net.minecraft.world.entity.player.Inventory;
 public class GUIMachineCyclotron extends GuiInfoScreen<MachineCyclotronMenu> {
 
     private static final ResourceLocation TEXTURE =
-            ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/gui_cyclotron.png");
+            ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/machine/gui_cyclotron.png");
 
     private final MachineCyclotronBlockEntity cyclotron;
 
@@ -45,7 +45,7 @@ public class GUIMachineCyclotron extends GuiInfoScreen<MachineCyclotronMenu> {
             }
         }
 
-        drawInfoPanel(guiGraphics, 49, 85, PanelType.SMALL_BLUE_INFO);
+        drawInfoPanel(guiGraphics, 49, 85, PanelType.SMALL_BLUE_STAR);
 
         if (cyclotron != null) {
             var tanks = cyclotron.getAllTanks();
@@ -58,8 +58,8 @@ public class GUIMachineCyclotron extends GuiInfoScreen<MachineCyclotronMenu> {
     @Override
     protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
         Component title = this.title;
-        guiGraphics.drawString(this.font, title, this.imageWidth / 2 - this.font.width(title) / 2, 6, 0x404040, false);
-        guiGraphics.drawString(this.font, this.playerInventoryTitle, 8, this.imageHeight - 96 + 2, 0x404040, false);
+        guiGraphics.drawString(this.font, title, 79 - this.font.width(title) / 2, 6, 4210752, false);
+        guiGraphics.drawString(this.font, this.playerInventoryTitle, 15, this.imageHeight - 96 + 2, 4210752, false);
     }
 
     @Override
@@ -79,7 +79,7 @@ public class GUIMachineCyclotron extends GuiInfoScreen<MachineCyclotronMenu> {
         }
 
         drawCustomInfoStat(guiGraphics, mouseX, mouseY,
-                this.leftPos + 49, this.topPos + 85, 8, 8,
+                49, 85, 8, 8,
                 mouseX, mouseY,
                 Component.translatable("desc.gui.upgrade"),
                 Component.translatable("desc.gui.upgrade.speed"),

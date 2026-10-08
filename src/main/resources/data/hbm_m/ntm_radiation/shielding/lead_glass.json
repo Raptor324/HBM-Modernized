@@ -1,0 +1,5 @@
+{
+  "priority": 20,
+  "blocks": ["hbm_m:glass_lead"],
+  "hvl": { "gamma": 0.5, "neutron": 6.0, "beta": 0.2 }
+}

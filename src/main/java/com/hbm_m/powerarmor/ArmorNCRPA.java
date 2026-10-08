@@ -4,6 +4,9 @@ import java.util.UUID;
 
 import com.hbm_m.extprop.HbmPlayerProps;
 import com.hbm_m.item.ModItems;
+import com.hbm_m.item.weapon.sedna.impl.IPAMelee;
+import com.hbm_m.item.weapon.sedna.impl.IPARanged;
+import com.hbm_m.item.weapon.sedna.impl.IPAWeaponsProvider;
 import com.hbm_m.item.tools_and_armor.ModArmorMaterials;
 
 import net.minecraft.world.effect.MobEffectInstance;
@@ -14,9 +17,9 @@ import net.minecraft.world.level.Level;
 
 /**
  * 1:1 {@code com.hbm.items.armor.ArmorNCRPA}: NCR-Ranger-Powerarmor, Sprintschub und Nachtsicht bei
- * eingeschaltetem HUD. Nah-/Fernkampfkomponenten folgen mit dem Sedna-Waffensystem.
+ * eingeschaltetem HUD; Nah-/Fernkampfkomponenten fuer gun_pa_melee/gun_pa_ranged.
  */
-public class ArmorNCRPA extends ModPowerArmorItem {
+public class ArmorNCRPA extends ModPowerArmorItem implements IPAWeaponsProvider {
 
     public ArmorNCRPA(ModArmorMaterials material, Type type, Properties properties, String texture,
                       long maxPower, long chargeRate, long consumption, long drain) {
@@ -38,5 +41,20 @@ public class ArmorNCRPA extends ModPowerArmorItem {
             if (world.getGameTime() % 20 != 0) return;
             if (HbmPlayerProps.getData(player).enableHUD) player.addEffect(new MobEffectInstance(MobEffects.NIGHT_VISION, 300, 0, true, true));
         }
+    }
+
+    public static final ArmorNCRPAMelee meleeComponent = new ArmorNCRPAMelee();
+    public static final ArmorNCRPARanged rangedComponent = new ArmorNCRPARanged();
+
+    @Override
+    public IPAMelee getMeleeComponent(Player entity) {
+        if (hasFSBArmorIgnoreCharge(entity)) return meleeComponent;
+        return null;
+    }
+
+    @Override
+    public IPARanged getRangedComponent(Player entity) {
+        if (hasFSBArmorIgnoreCharge(entity)) return rangedComponent;
+        return null;
     }
 }

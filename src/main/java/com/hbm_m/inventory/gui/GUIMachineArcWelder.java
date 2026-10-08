@@ -51,7 +51,7 @@ public class GUIMachineArcWelder extends GuiInfoScreen<MachineArcWelderMenu> {
             }
         }
 
-        drawInfoPanel(guiGraphics, 78, 67, PanelType.SMALL_BLUE_INFO);
+        drawInfoPanel(guiGraphics, 78, 67, PanelType.SMALL_BLUE_STAR);
 
         if (arcWelder != null) {
             arcWelder.tank.renderTank(guiGraphics, this.leftPos + 35, this.topPos + 63, 34, 16);
@@ -75,11 +75,7 @@ public class GUIMachineArcWelder extends GuiInfoScreen<MachineArcWelderMenu> {
                 152, 18, 16, 52,
                 arcWelder.getEnergyStored(), arcWelder.getMaxEnergyStored());
 
-            drawCustomInfoStat(guiGraphics, mouseX, mouseY,
-                this.leftPos + 78, this.topPos + 67, 8, 8,
-                this.leftPos + 78, this.topPos + 67,
-                    Component.literal("Progress:"),
-                    Component.literal("   " + arcWelder.getProgress() + " / " + arcWelder.getMaxProgress()));
+            drawCustomInfoStat(guiGraphics, mouseX, mouseY, 78, 67, 8, 8, leftPos + 78, topPos + 67, getUpgradeInfo(arcWelder));
 
             if (isPointInRect(35, 63, 34, 16, mouseX, mouseY)) {
                 arcWelder.tank.renderTankInfo(guiGraphics, this.font, mouseX, mouseY,

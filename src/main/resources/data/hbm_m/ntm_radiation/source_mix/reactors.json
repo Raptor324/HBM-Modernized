@@ -1,0 +1,9 @@
+{
+  "priority": 10,
+  "blocks": [
+    "hbm_m:*rbmk*", "hbm_m:*reactor*", "hbm_m:*watz*", "hbm_m:*zirnox*", "hbm_m:*pile*",
+    "hbm_m:breeder*", "hbm_m:*fusion*", "hbm_m:iter",
+    "hbm_m:block_graphite_fuel", "hbm_m:block_graphite_plutonium", "hbm_m:block_graphite_source"
+  ],
+  "mix": { "gamma": 0.6, "neutron": 0.4, "beta": 0.0 }
+}

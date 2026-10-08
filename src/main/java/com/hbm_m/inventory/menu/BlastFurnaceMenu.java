@@ -50,7 +50,7 @@ public class BlastFurnaceMenu extends AbstractContainerMenu {
 
         var handler = this.blockEntity.getInventory();
         var container = new ModItemStackHandlerContainer(handler, this.blockEntity::setChanged);
-        this.addSlot(new FuelSlot(container, 0, 8, 36)); // Топливо (лава ведро)
+        this.addSlot(new Slot(container, 0, 8, 36)); // Brennstoff (Original: einfacher Slot, nimmt alles)
         this.addSlot(new Slot(container, 1, 80, 18)); // Первый входной слот
         this.addSlot(new Slot(container, 2, 80, 54)); // Второй входной слот
         this.addSlot(new OutputSlot(container, 3, 134, 36)); // Выходной слот
@@ -93,7 +93,7 @@ public class BlastFurnaceMenu extends AbstractContainerMenu {
     public int getScaledFuelProgress() {
         int fuelLevel = this.data.get(DATA_INDEX_FUEL);
         int maxFuelLevel = this.data.get(DATA_INDEX_MAX_FUEL);
-        int fuelPixelHeight = 53; // Высота индикатора топлива
+        int fuelPixelHeight = 52; // Original getPowerRemainingScaled(52)
 
         return maxFuelLevel != 0 ? fuelLevel * fuelPixelHeight / maxFuelLevel : 0;
     }
@@ -149,16 +149,16 @@ public class BlastFurnaceMenu extends AbstractContainerMenu {
         ItemStack sourceStack = sourceSlot.getItem();
         ItemStack copyOfSourceStack = sourceStack.copy();
 
-        // Check if the slot clicked is one of the vanilla container slots
+        // Original ContainerDiFurnace.transferStackInSlot: Spieler -> obere Zutat, untere Zutat, Brennstoff (in dieser Reihenfolge)
         if (index < VANILLA_FIRST_SLOT_INDEX + VANILLA_SLOT_COUNT) {
-            // This is a vanilla container slot so merge the stack into the tile inventory
-            if (!moveItemStackTo(sourceStack, TE_INVENTORY_FIRST_SLOT_INDEX, TE_INVENTORY_FIRST_SLOT_INDEX
-                    + TE_INVENTORY_SLOT_COUNT, false)) {
+            if (!moveItemStackTo(sourceStack, TE_INVENTORY_FIRST_SLOT_INDEX + 1, TE_INVENTORY_FIRST_SLOT_INDEX + 3, false)
+                    && !moveItemStackTo(sourceStack, TE_INVENTORY_FIRST_SLOT_INDEX, TE_INVENTORY_FIRST_SLOT_INDEX + 1, false)) {
                 return ItemStack.EMPTY;
             }
         } else if (index < TE_INVENTORY_FIRST_SLOT_INDEX + TE_INVENTORY_SLOT_COUNT) {
-            // This is a TE slot so merge the stack into the players inventory
-            if (!moveItemStackTo(sourceStack, VANILLA_FIRST_SLOT_INDEX, VANILLA_FIRST_SLOT_INDEX + VANILLA_SLOT_COUNT, false)) {
+            // Maschine -> Spieler, rueckwaerts (Original mergeItemStack(..., true): Schnellleiste zuerst)
+            if (!moveItemStackTo(sourceStack, VANILLA_FIRST_SLOT_INDEX + PLAYER_INVENTORY_SLOT_COUNT, VANILLA_FIRST_SLOT_INDEX + VANILLA_SLOT_COUNT, true)
+                    && !moveItemStackTo(sourceStack, VANILLA_FIRST_SLOT_INDEX, VANILLA_FIRST_SLOT_INDEX + PLAYER_INVENTORY_SLOT_COUNT, true)) {
                 return ItemStack.EMPTY;
             }
         } else {

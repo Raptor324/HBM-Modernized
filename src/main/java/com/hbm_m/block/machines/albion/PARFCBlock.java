@@ -31,16 +31,23 @@ public class PARFCBlock extends PAMultiblockBlock {
     @Override
     protected MultiblockStructureHelper defineStructure() {
         // Original: BlockPARFC - getDimensions {1,1,1,1,4,4}, getOffset 0, sechs Zusatzzellen.
+        // fillSpace setzt dir = dir.getRotation(UP): die Zellen liegen quer (+-3 rot), nicht laengs.
         return DummyableStructureBuilder.create()
                 .box(1, 1, 1, 1, 4, 4)
-                .extra(3, 1, 0)
-                .extra(-3, 1, 0)
+                .extra(0, 1, 3)
+                .extra(0, 1, -3)
                 .extra(0, 1, 0)
-                .extra(3, -1, 0)
-                .extra(-3, -1, 0)
+                .extra(0, -1, 3)
+                .extra(0, -1, -3)
                 .extra(0, -1, 0)
                 .placementOffset(0)
                 .build(() -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState());
+    }
+
+    /** audit13: Original {@code onBlockActivated -> standardOpenBehavior} - GUI des Kerns von jeder Zelle aus. */
+    @Override
+    protected boolean hasMenu() {
+        return true;
     }
 
     @Nullable
@@ -64,4 +71,11 @@ public class PARFCBlock extends PAMultiblockBlock {
         return CODEC;
     }
     *///?}
+
+    /** Original {@code addInformation}: {@code addStandardInfo} (Umschalttaste zeigt {@code .desc}). */
+    @Override
+    public void appendHoverText(net.minecraft.world.item.ItemStack stack, @org.jetbrains.annotations.Nullable net.minecraft.world.level.BlockGetter level,
+                                java.util.List<net.minecraft.network.chat.Component> list, net.minecraft.world.item.TooltipFlag flag) {
+        com.hbm_m.util.StandardInfo.add(list, getDescriptionId() + ".desc");
+    }
 }

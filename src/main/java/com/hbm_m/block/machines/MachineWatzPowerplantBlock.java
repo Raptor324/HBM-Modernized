@@ -96,7 +96,7 @@ public class MachineWatzPowerplantBlock extends DummyableMachineBlock {
 
     /** Original: {@code standardOpenBehavior}. */
     private InteractionResult openMenu(Level level, BlockPos pos, Player player) {
-        if (player.isShiftKeyDown()) return InteractionResult.PASS;
+        if (player.isShiftKeyDown()) return InteractionResult.sidedSuccess(level.isClientSide()); // Original standardOpenBehavior: geschlichen true ohne GUI
         if (!level.isClientSide() && level.getBlockEntity(pos) instanceof MenuProvider p)
             MenuRegistry.openExtendedMenu((ServerPlayer) player, p, buf -> buf.writeBlockPos(pos));
         return InteractionResult.sidedSuccess(level.isClientSide());

@@ -41,7 +41,7 @@ public class ItemCounterfeitKeys extends Item implements ITooltipProvider {
 
             if (locked.isLocked() && locked.isCheesable()) {
                 ItemStack st = new ItemStack(ModItems.KEY_FAKE.get());
-                ItemKeyPin.setCode(st, locked.getPins());
+                ItemKeyPin.setPins(st, locked.getPins());
                 player.getInventory().setItem(player.getInventory().selected, st.copy());
 
                 if (!player.getInventory().add(st.copy())) {

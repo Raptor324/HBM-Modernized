@@ -8,6 +8,7 @@
 			"loader": "forge:obj",
 			"model": "hbm_m:models/block/solar_boiler.obj",
 			"flip_v": true,
+			"visibility": { "Overglow_1": false, "Overglow_2": false, "Overglow_3": false },
 			"textures": {
 				"default": "hbm_m:block/machine/solar_boiler"
 			}

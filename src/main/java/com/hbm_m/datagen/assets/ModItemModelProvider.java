@@ -133,23 +133,6 @@ public class ModItemModelProvider extends ItemModelProvider {
         // Crushed Coltan (ориг. 4310 powder_coltan_ore) — своя текстура powder_coltan_ore.
         powderTexture(ModItems.POWDER_COLTAN, "powders/powder_coltan_ore");
 
-        // Sentry-Turret Munition (MVP-Platzhalter, nutzt vorhandene Ammo-DGK-Textur)
-        powderTexture(ModItems.TURRET_AMMO, "turret_ammo");
-
-        // Echte 9mm/.50/5.56mm-Munition fuer Sentry/Chekhov/Friendly (Platzhalter-Textur, bis eigene Assets vorhanden sind)
-        powderTexture(ModItems.AMMO_9MM_SP, "ammo_9mm_sp");
-        powderTexture(ModItems.AMMO_9MM_FMJ, "ammo_9mm_fmj");
-        powderTexture(ModItems.AMMO_9MM_JHP, "ammo_9mm_jhp");
-        powderTexture(ModItems.AMMO_9MM_AP, "ammo_9mm_ap");
-        powderTexture(ModItems.AMMO_50_SP, "ammo_50_sp");
-        powderTexture(ModItems.AMMO_50_FMJ, "ammo_50_fmj");
-        powderTexture(ModItems.AMMO_50_JHP, "ammo_50_jhp");
-        powderTexture(ModItems.AMMO_50_AP, "ammo_50_ap");
-        powderTexture(ModItems.AMMO_50_DU, "ammo_50_du");
-        powderTexture(ModItems.AMMO_556_SP, "ammo_556_sp");
-        powderTexture(ModItems.AMMO_556_FMJ, "ammo_556_fmj");
-        powderTexture(ModItems.AMMO_556_JHP, "ammo_556_jhp");
-        powderTexture(ModItems.AMMO_556_AP, "ammo_556_ap");
         // Every rocket used to fall back to the DGK grenade icon; each now carries its own
         // art, taken from the original's projectile textures.
         powderTexture(ModItems.ROCKET_HIMARS_STANDARD, "rocket_himars_standard");
@@ -160,13 +143,6 @@ public class ModItemModelProvider extends ItemModelProvider {
         powderTexture(ModItems.ROCKET_HIMARS_THERMOBARIC, "rocket_himars_standard_tb");
         powderTexture(ModItems.ROCKET_HIMARS_SINGLE, "rocket_himars_single");
         powderTexture(ModItems.ROCKET_HIMARS_SINGLE_TB, "rocket_himars_single_tb");
-        powderTexture(ModItems.ROCKET_TURRET_STANDARD, "rocket_turret_he");
-        powderTexture(ModItems.ROCKET_TURRET_HEAT, "rocket_turret_heat");
-        powderTexture(ModItems.ROCKET_TURRET_DEMO, "rocket_turret_demo");
-        powderTexture(ModItems.ROCKET_TURRET_INC, "rocket_turret_inc");
-        powderTexture(ModItems.ROCKET_TURRET_PHOSPHORUS, "rocket_turret_phosphorus");
-        powderTexture(ModItems.AMMO_TAU_URANIUM, "ammo_tau_uranium");
-        powderTexture(ModItems.AMMO_FLAME_DIESEL, "ammo_flame_diesel");
 
         // Missile-Assembly-Teile (Platzhalter-Texturen, bis eigene Assets vorhanden sind)
         powderTexture(ModItems.MISSILE_FUSELAGE, "pipes_steel");
@@ -189,15 +165,12 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.WARHEAD_MIRV);
         simpleItem(ModItems.WARHEAD_VOLCANO);
 
-        // Siren cassettes all share the single ported "cassette" texture (no per-track overlay tint,
-        // simplified from the original's dye-tinted overlay layer)
-        simpleItemModelByName(ModItems.CASSETTE_AMS_SIREN.getId().getPath(), "cassette");
-        simpleItemModelByName(ModItems.CASSETTE_BEEP_SIREN.getId().getPath(), "cassette");
-        simpleItemModelByName(ModItems.CASSETTE_CLASSIC_SIREN.getId().getPath(), "cassette");
-        simpleItemModelByName(ModItems.CASSETTE_NOSTROMO_SIREN.getId().getPath(), "cassette");
-        simpleItemModelByName(ModItems.CASSETTE_REGULAR_SIREN.getId().getPath(), "cassette");
-        simpleItemModelByName(ModItems.CASSETTE_STRIDER_SIREN.getId().getPath(), "cassette");
-        simpleItemModelByName(ModItems.CASSETTE_SWEEP_SIREN.getId().getPath(), "cassette");
+        // Original ItemCassette: Grundtextur + mit der Trackfarbe eingefaerbtes Overlay (tintIndex 1)
+        for (var c : ModItems.CASSETTES) {
+            withExistingParent(c.getId().getPath(), mcLoc("item/generated"))
+                    .texture("layer0", modLoc("item/cassette"))
+                    .texture("layer1", modLoc("item/cassette_overlay"));
+        }
         simpleItem(ModItems.WARHEAD_NUCLEAR);
         simpleItem(ModItems.THRUSTER_SMALL);
         simpleItem(ModItems.THRUSTER_MEDIUM);
@@ -209,7 +182,6 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.MISSILE_ASSEMBLY);
         simpleItem(ModItems.MISSILE_SOYUZ_LANDER);
         simpleItem(ModItems.NEUTRON_REFLECTOR);
-        simpleItem(ModItems.LOW_DENSITY_ELEMENT);
         simpleItem(ModItems.SAT_BASE);
         simpleItem(ModItems.SAT_LASER);
         simpleItem(ModItems.SAT_HEAD_LASER);
@@ -228,7 +200,8 @@ public class ModItemModelProvider extends ItemModelProvider {
         // The original is a single damage-variant item with one texture; the port splits it into
         // four items, so they all share that texture rather than inventing three new ones.
         for (var caller : java.util.List.of(ModItems.BOMB_CALLER_NAPALM,
-                ModItems.BOMB_CALLER_CHLORINE, ModItems.BOMB_CALLER_ATOMIC)) {
+                ModItems.BOMB_CALLER_CHLORINE, ModItems.BOMB_CALLER_ATOMIC, ModItems.BOMB_CALLER_ORANGE,
+                ModItems.BOMB_CALLER_STINGER, ModItems.BOMB_CALLER_BOXCAR, ModItems.BOMB_CALLER_PC)) {
             withExistingParent(caller.getId().getPath(), "item/generated")
                     .texture("layer0", modLoc("item/bomb_caller"));
         }
@@ -428,6 +401,10 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.CAN_CREATURE);
         simpleItem(ModItems.CAN_EMPTY);
         simpleItem(ModItems.CAN_KEY);
+        // Zugsystem: coupling_tool, train (Meta-Texturen train.cargo_tram/_trailer)
+        simpleItem(ModItems.COUPLING_TOOL);
+        simpleItem(ModItems.TRAIN_CARGO_TRAM);
+        simpleItem(ModItems.TRAIN_CARGO_TRAM_TRAILER);
         simpleItem(ModItems.CAN_LUNA);
         simpleItem(ModItems.CAN_MRSUGAR);
         simpleItem(ModItems.CAN_MUG);
@@ -577,6 +554,10 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.PWR_FUEL_BFB_PU241_HOT);
         for (var sup : ModItems.WATZ_PELLET.values()) simpleItem(sup);
         for (var sup : ModItems.WATZ_PELLET_DEPLETED.values()) simpleItem(sup);
+        // Brutstaebe rod_/rod_dual_/rod_quad_<typ> (Original-Texturen rod.<typ>.png usw.)
+        for (var sup : ModItems.ROD.values()) simpleItem(sup);
+        for (var sup : ModItems.ROD_DUAL.values()) simpleItem(sup);
+        for (var sup : ModItems.ROD_QUAD.values()) simpleItem(sup);
 
         simpleItem(ModMaterialItems.get(ModMaterials.IRON, MaterialShape.PLATE));
         simpleItem(ModMaterialItems.get(ModMaterials.STEEL, MaterialShape.PLATE));
@@ -589,7 +570,7 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModMaterialItems.get(ModMaterials.LEAD, MaterialShape.PLATE));
         simpleItem(ModItems.PLATE_MIXED);
         simpleItem(ModItems.PLATE_PAA);
-        simpleItem(ModItems.INSULATOR);
+        // insulator: jetzt plate_polymer (Materialplatte, Modell kommt von dort)
         simpleItem(ModMaterialItems.get(ModMaterials.SATURNITE, MaterialShape.PLATE));
         simpleItem(ModMaterialItems.get(ModMaterials.SCHRABIDIUM, MaterialShape.PLATE));
         simpleItem(ModMaterialItems.get(ModMaterials.ADVANCED_ALLOY, MaterialShape.PLATE));
@@ -748,8 +729,14 @@ public class ModItemModelProvider extends ItemModelProvider {
         // WeaponSpecial (Original ItemSword -> in der Hand gehalten)
 
         // Faehigkeitswerkzeuge und Schwerter (Original: ItemTool/ItemSword, isFull3D)
-        handheldItem(ModItems.CHAINSAW);
+        // ItemChainsaw (ItemRenderChainsaw per BEWLR)
+        getBuilder("chainsaw").parent(new ModelFile.UncheckedModelFile("minecraft:builtin/entity"));
         handheldItem(ModItems.WAND_K);
+        handheldItem(ModItems.STRUCTURE_SINGLE);
+        handheldItem(ModItems.STRUCTURE_SOLID);
+        handheldItem(ModItems.STRUCTURE_PATTERN);
+        handheldItem(ModItems.STRUCTURE_RANDOMIZED);
+        handheldItem(ModItems.STRUCTURE_RANDOMLY);
         handheldItem(ModItems.MYSTERYSHOVEL);
         // R5: Fluessigkeitsbehaelter (Pass 1/2 werden per ItemColor eingefaerbt)
         for (String e : new String[] { "fluid_tank_empty", "fluid_tank_lead_empty", "fluid_barrel_empty", "fluid_pack_empty", "disperser_canister_empty", "glyphid_gland_empty" })
@@ -791,6 +778,10 @@ public class ModItemModelProvider extends ItemModelProvider {
         withExistingParent("toolbox_open", "item/generated").texture("layer0", modLoc("item/toolbox")).texture("layer1", modLoc("item/toolbox_open"));
         withExistingParent("toolbox", "item/generated").texture("layer0", modLoc("item/toolbox"))
                 .override().predicate(modLoc("open"), 1F).model(new net.minecraftforge.client.model.generators.ModelFile.UncheckedModelFile(modLoc("item/toolbox_open"))).end();
+        // Original ItemAmmoArty#getIconIndex: Frachtgranate mit Ladung = ammo_arty_cargo_full
+        withExistingParent("ammo_arty_cargo_full", "item/generated").texture("layer0", modLoc("item/ammo_arty_cargo_full"));
+        withExistingParent("ammo_arty_cargo", "item/generated").texture("layer0", modLoc("item/ammo_arty_cargo"))
+                .override().predicate(modLoc("cargo"), 1F).model(new net.minecraftforge.client.model.generators.ModelFile.UncheckedModelFile(modLoc("item/ammo_arty_cargo_full"))).end();
         handheldItem(ModItems.SCHRABIDIUM_SWORD);
         handheldItem(ModItems.SCHRABIDIUM_PICKAXE);
         handheldItem(ModItems.SCHRABIDIUM_AXE);
@@ -853,10 +844,10 @@ public class ModItemModelProvider extends ItemModelProvider {
         handheldItem(ModItems.DNT_SWORD);
         handheldItem(ModItems.DWARVEN_PICKAXE);
         handheldItem(ModItems.CROWBAR);
-        handheldItem(ModItems.MESE_GAVEL);
+        legacyRendererItem("mese_gavel", modLoc("item/mese_gavel")); // ItemRenderGavel
         handheldItem(ModItems.WEAPON_PIPE_LEAD);
         handheldItem(ModItems.REER_GRAAR);
-        handheldItem(ModItems.REDSTONE_SWORD);
+        legacyRendererItem("redstone_sword", modLoc("item/redstone_sword")); // ItemRenderRedstoneSword
         handheldItem(ModItems.BIG_SWORD);
         // ingot_steel_dusted Meta 1-9 (gleiche Textur wie Meta 0)
         for (var dusted : ModItems.STEEL_DUSTED_INGOTS) {
@@ -864,6 +855,16 @@ public class ModItemModelProvider extends ItemModelProvider {
         }
         handheldItem(ModItems.MATCHSTICK);
         handheldItem(ModItems.BALEFIRE_AND_STEEL);
+        // Restport: Meta-1-Varianten (ItemAmmoContainer altIcon, ItemClayTablet gleiche Textur)
+        withExistingParent("ammo_container_1", "item/generated").texture("layer0", modLoc("item/ammo_container_alt"));
+        withExistingParent("clay_tablet_1", "item/generated").texture("layer0", modLoc("item/clay_tablet"));
+        // setFull3D() im Original
+        handheldItem(ModItems.DESIGNATOR_ARTY_RANGE);
+        handheldItem(ModItems.MARSHMALLOW);
+        handheldItem(ModItems.MARSHMALLOW_ROASTED);
+        handheldItem(ModItems.BISMUTH_TOOL);
+        handheldItem(ModItems.WAND_D);
+        handheldItem(ModItems.STRUCTURE_CUSTOMMACHINE);
         // Alexandrit: Frame = Blocklicht (Eigenschaft hbm_m:light, 16 Stufen)
         {
             var alex = withExistingParent("gem_alexandrite", "item/generated").texture("layer0", modLoc("item/alexandrite/gem_alexandrite_0"));
@@ -905,14 +906,15 @@ public class ModItemModelProvider extends ItemModelProvider {
         handheldItem(ModItems.BOTTLE_OPENER);
         handheldItem(ModItems.WRENCH_FLIPPED);
         handheldItem(ModItems.MEMESPOON);
-        handheldItem(ModItems.WOOD_GAVEL);
-        handheldItem(ModItems.LEAD_GAVEL);
-        handheldItem(ModItems.DIAMOND_GAVEL);
-        handheldItem(ModItems.STOPSIGN);
-        handheldItem(ModItems.SOPSIGN);
-        handheldItem(ModItems.CHERNOBYLSIGN);
-        withExistingParent("shimmer_sledge", "item/handheld").texture("layer0", modLoc("item/shimmer_sledge_original"));
-        handheldItem(ModItems.SHIMMER_AXE);
+        // ItemRenderGavel / ItemRenderShim: 3D in Hand und am Boden, Inventar flach
+        legacyRendererItem("wood_gavel", modLoc("item/wood_gavel"));
+        legacyRendererItem("lead_gavel", modLoc("item/lead_gavel"));
+        legacyRendererItem("diamond_gavel", modLoc("item/diamond_gavel"));
+        legacyRendererItem("stopsign", modLoc("item/stopsign"));
+        legacyRendererItem("sopsign", modLoc("item/sopsign"));
+        legacyRendererItem("chernobylsign", modLoc("item/chernobylsign"));
+        legacyRendererItem("shimmer_sledge", modLoc("item/shimmer_sledge_original"));
+        legacyRendererItem("shimmer_axe", modLoc("item/shimmer_axe"));
         withExistingParent("pch", "item/handheld").texture("layer0", modLoc("item/schrabidium_hammer"));
 
         trimmedArmorItem(ModItems.ALLOY_HELMET);
@@ -1054,7 +1056,7 @@ public class ModItemModelProvider extends ItemModelProvider {
         blockItemFromBlockModelMachine(ModBlocks.FLARE_STACK);
         blockItemFromBlockModelMachine(ModBlocks.PUMPJACK);
         blockItemFromBlockModelMachine(ModBlocks.RADAR, "radar_item");
-        blockItemFromBlockModelMachine(ModBlocks.LARGE_RADAR, "large_radar_item");
+        withExistingParent("large_radar", modLoc("item/large_radar_anim")); // Audit 7: animiertes Item (AnimatedMachineItemRenderer)
         blockItemFromBlockModelMachine(ModBlocks.RADAR_SCREEN);
         blockItemFromBlockModelMachine(ModBlocks.CRACKING_TOWER);
         blockItemFromBlockModelMachine(ModBlocks.FRACTION_TOWER);
@@ -1066,11 +1068,13 @@ public class ModItemModelProvider extends ItemModelProvider {
         blockItemFromBlockModelMachine(ModBlocks.FLUID_TANK);
         blockItemFromBlockModelMachine(ModBlocks.BAT9000);
         blockItemFromBlockModelMachine(ModBlocks.LAUNCH_PAD);
+        blockItemFromBlockModelMachine(ModBlocks.LAUNCH_PAD_LARGE);
         blockItemFromBlockModelMachine(ModBlocks.MOBILE_LAUNCH_PAD);
         // Der Topol-M-Werfer wird nur vom TESR gezeichnet, sein Item bekommt ein flaches Symbol.
         withExistingParent("topol_launch_pad", "item/generated").texture("layer0", modLoc("block/topol_launch_pad"));
         blockItemFromBlockModelMachine(ModBlocks.LAUNCH_PAD_RUSTED);
         blockItemFromBlockModelBomb(ModBlocks.NUKE_FAT_MAN);
+        blockItemFromBlockModelBomb(ModBlocks.NUKE_PROTOTYPE); // fehlte: Item ohne Modell
         blockItemFromBlockModelBomb(ModBlocks.NUKE_GADGET);
         blockItemFromBlockModelBomb(ModBlocks.NUKE_BOY);
         blockItemFromBlockModelBomb(ModBlocks.NUKE_MIKE);
@@ -1085,7 +1089,7 @@ public class ModItemModelProvider extends ItemModelProvider {
         blockItemFromBlockModelMachine(ModBlocks.INDUSTRIAL_BOILER);
         blockItemFromBlockModelMachine(ModBlocks.HEATING_OVEN);
         blockItemFromBlockModelMachine(ModBlocks.SOLAR_BOILER);
-        blockItemFromBlockModelMachine(ModBlocks.SOLAR_MIRRORS);
+        blockItemFromBlockModelMachine(ModBlocks.SOLAR_MIRROR);
         blockItemFromBlockModelMachine(ModBlocks.WATZ_POWERPLANT);
         blockItemFromBlockModelMachine(ModBlocks.HYDROTREATER);
         blockItemFromBlockModelMachine(ModBlocks.CATALYTIC_REFORMER);
@@ -1098,8 +1102,7 @@ public class ModItemModelProvider extends ItemModelProvider {
         blockItemFromBlockModelMachine(ModBlocks.CORE_RECEIVER);
         blockItemFromBlockModelMachine(ModBlocks.VACUUM_DISTILL);
         blockItemFromBlockModelMachine(ModBlocks.TURBOFAN);
-        blockItemFromBlockModelMachine(ModBlocks.INDUSTRIAL_TURBINE);
-        blockItemFromBlockModelMachine(ModBlocks.TURBINE);
+        withExistingParent("industrial_turbine", modLoc("item/industrial_turbine_anim")); // Audit 7: animiertes Item (AnimatedMachineItemRenderer)
         blockItemFromBlockModelMachine(ModBlocks.MACHINE_CHUNGUS, "chungus");
         blockItemFromBlockModelMachine(ModBlocks.SUBSTATION);
 
@@ -1108,13 +1111,11 @@ public class ModItemModelProvider extends ItemModelProvider {
         blockItemFromBlockModelMachine(ModBlocks.ANNIHILATOR);
         blockItemFromBlockModelMachine(ModBlocks.ARC_FURNACE);
         blockItemFromBlockModelMachine(ModBlocks.ASSEMBLY_FACTORY);
-        blockItemFromBlockModelMachine(ModBlocks.AUTOSAW);
+        withExistingParent("autosaw", modLoc("item/autosaw_anim")); // Audit 7: animiertes Item (AnimatedMachineItemRenderer)
         blockItemFromBlockModelMachine(ModBlocks.BEAMLINE);
         blockItemFromBlockModelMachine(ModBlocks.BOILER);
-        withExistingParent(ModBlocks.PUMP_STEAM.getId().getPath(),
-                modLoc("block/" + ModBlocks.PUMP_STEAM.getId().getPath()));
-        withExistingParent(ModBlocks.PUMP_ELECTRIC.getId().getPath(),
-                modLoc("block/" + ModBlocks.PUMP_ELECTRIC.getId().getPath()));
+        withExistingParent("pump_steam", modLoc("item/pump_steam_anim")); // Audit 7: animiertes Item (AnimatedMachineItemRenderer)
+        withExistingParent("pump_electric", modLoc("item/pump_electric_anim")); // Audit 7: animiertes Item (AnimatedMachineItemRenderer)
         blockItemFromBlockModelMachine(ModBlocks.BOILER_FUSION);
         blockItemFromBlockModelMachine(ModBlocks.BREEDER_FUSION);
         blockItemFromBlockModelMachine(ModBlocks.CHIMNEY_BRICK);
@@ -1123,12 +1124,12 @@ public class ModItemModelProvider extends ItemModelProvider {
         blockItemFromBlockModelMachine(ModBlocks.COLLECTOR);
         blockItemFromBlockModelMachine(ModBlocks.COMBINATION_OVEN);
         blockItemFromBlockModelMachine(ModBlocks.COMBUSTION_ENGINE);
-        blockItemFromBlockModelMachine(ModBlocks.COMPRESSOR);
+        withExistingParent("compressor", modLoc("item/compressor_anim")); // Audit 7: animiertes Item (AnimatedMachineItemRenderer)
         blockItemFromBlockModelMachine(ModBlocks.COMPRESSOR_COMPACT);
         blockItemFromBlockModelMachine(ModBlocks.CONDENSER_POWERED);
         blockItemFromBlockModelMachine(ModBlocks.CONVEYOR_PRESS);
         blockItemFromBlockModelMachine(ModBlocks.COUPLER);
-        blockItemFromBlockModelMachine(ModBlocks.DETECTOR);
+        withExistingParent("detector", modLoc("block/detector"));
         blockItemFromBlockModelMachine(ModBlocks.DIESELGEN);
         blockItemFromBlockModelMachine(ModBlocks.DIPOLE);
         blockItemFromBlockModelMachine(ModBlocks.DRONE);
@@ -1136,18 +1137,21 @@ public class ModItemModelProvider extends ItemModelProvider {
         blockItemFromBlockModelMachine(ModBlocks.ELECTROLYSER);
         blockItemFromBlockModelMachine(ModBlocks.EPRESS);
         blockItemFromBlockModelMachine(ModBlocks.EXPOSURE_CHAMBER);
-        blockItemFromBlockModelMachine(ModBlocks.FENSU);
-        // FENSU2 (machine_battery_redd) item model is generated by orientableBlockWithItem in ModBlockStateProvider.
+        // machine_fensu (Multiblock-FEnSU): Item = statisches OBJ (Base + Disc + Lights wie ItemRenderLibrary)
+        blockItemFromBlockModelMachine(ModBlocks.MACHINE_FENSU, "fensu");
+        withExistingParent("machine_battery_redd", modLoc("block/machines/fensu2_item"));
         blockItemFromBlockModelMachine(ModBlocks.FIREBOX);
         blockItemFromBlockModelMachine(ModBlocks.FURNACE_IRON);
         blockItemFromBlockModelMachine(ModBlocks.FURNACE_STEEL);
+        blockItemFromBlockModelMachine(ModBlocks.ELECTRIC_FURNACE);
+        blockItemFromBlockModelMachine(ModBlocks.FURNACE_BRICK);
         blockItemFromBlockModelMachine(ModBlocks.HEATEX);
         blockItemFromBlockModelMachine(ModBlocks.HEPHAESTUS);
         blockItemFromBlockModelMachine(ModBlocks.ICF);
         blockItemFromBlockModelMachine(ModBlocks.INTAKE);
-        blockItemFromBlockModelMachine(ModBlocks.KLYSTRON);
-        blockItemFromBlockModelMachine(ModBlocks.KLYSTRON_CREATIVE);
-        blockItemFromBlockModelMachine(ModBlocks.MHDT);
+        withExistingParent("klystron", modLoc("item/klystron_anim")); // Audit 7: animiertes Item (AnimatedMachineItemRenderer)
+        withExistingParent("klystron_creative", modLoc("item/klystron_creative_anim")); // Audit 7: animiertes Item (AnimatedMachineItemRenderer)
+        withExistingParent("mhdt", modLoc("item/mhdt_anim")); // Audit 7: animiertes Item (AnimatedMachineItemRenderer)
         blockItemFromBlockModelMachine(ModBlocks.MICROWAVE);
         blockItemFromBlockModelMachine(ModBlocks.MINING_LASER);
         blockItemFromBlockModelMachine(ModBlocks.OILBURNER);
@@ -1162,7 +1166,28 @@ public class ModItemModelProvider extends ItemModelProvider {
         blockItemFromBlockModelMachine(ModBlocks.REACTOR_SMALL);
         blockItemFromBlockModelMachine(ModBlocks.RFC);
         blockItemFromBlockModelMachine(ModBlocks.ROTARY_FURNACE);
-        blockItemFromBlockModelMachine(ModBlocks.SAWMILL);
+        blockItemFromBlockModelMachine(ModBlocks.FAN);
+        withExistingParent("machine_precass", modLoc("block/machines/precass_item"));
+        withExistingParent("soyuz_capsule", modLoc("block/machines/soyuz_capsule_item"));
+        withExistingParent("piston_inserter", modLoc("block/machines/piston_inserter_item"));
+        withExistingParent("refueler", modLoc("block/machines/refueler_item"));
+        withExistingParent("lantern_behemoth", "minecraft:block/cube_all").texture("all", modLoc("block/block_rust"));
+        // Original ItemModMinecart: Basis-Symbol + Art-Overlay
+        withExistingParent("cart_empty_wood", "item/generated").texture("layer0", modLoc("item/cart_base_wood")).texture("layer1", modLoc("item/cart_overlay_empty"));
+        withExistingParent("cart_empty_steel", "item/generated").texture("layer0", modLoc("item/cart_base_steel")).texture("layer1", modLoc("item/cart_overlay_empty"));
+        withExistingParent("cart_empty_painted", "item/generated").texture("layer0", modLoc("item/cart_base_painted")).texture("layer1", modLoc("item/cart_overlay_empty"));
+        withExistingParent("cart_crate", "item/generated").texture("layer0", modLoc("item/cart_base_vanilla")).texture("layer1", modLoc("item/cart_overlay_crate"));
+        withExistingParent("cart_destroyer_steel", "item/generated").texture("layer0", modLoc("item/cart_base_steel")).texture("layer1", modLoc("item/cart_overlay_destroyer"));
+        withExistingParent("cart_destroyer_painted", "item/generated").texture("layer0", modLoc("item/cart_base_painted")).texture("layer1", modLoc("item/cart_overlay_destroyer"));
+        withExistingParent("cart_powder_wood", "item/generated").texture("layer0", modLoc("item/cart_base_wood")).texture("layer1", modLoc("item/cart_overlay_powder"));
+        withExistingParent("cart_powder_steel", "item/generated").texture("layer0", modLoc("item/cart_base_steel")).texture("layer1", modLoc("item/cart_overlay_powder"));
+        withExistingParent("cart_powder_painted", "item/generated").texture("layer0", modLoc("item/cart_base_painted")).texture("layer1", modLoc("item/cart_overlay_powder"));
+        withExistingParent("cart_semtex_wood", "item/generated").texture("layer0", modLoc("item/cart_base_wood")).texture("layer1", modLoc("item/cart_overlay_semtex"));
+        withExistingParent("cart_semtex_steel", "item/generated").texture("layer0", modLoc("item/cart_base_steel")).texture("layer1", modLoc("item/cart_overlay_semtex"));
+        withExistingParent("cart_semtex_painted", "item/generated").texture("layer0", modLoc("item/cart_base_painted")).texture("layer1", modLoc("item/cart_overlay_semtex"));
+        withExistingParent("bobmazon_hidden", "item/generated").texture("layer0", modLoc("item/bobmazon_special"));
+        withExistingParent("kit_custom", "item/generated").texture("layer0", modLoc("item/kit")).texture("layer1", modLoc("item/kit_1")).texture("layer2", modLoc("item/kit_2"));
+        withExistingParent("sawmill", modLoc("item/sawmill_anim")); // Audit 7: animiertes Item (AnimatedMachineItemRenderer)
         blockItemFromBlockModelMachine(ModBlocks.SOLIDIFIER);
         blockItemFromBlockModelMachine(ModBlocks.ASHPIT);
         blockItemFromBlockModelMachine(ModBlocks.REACTOR_RESEARCH);
@@ -1175,21 +1200,22 @@ public class ModItemModelProvider extends ItemModelProvider {
         blockItemFromBlockModelMachine(ModBlocks.SOURCE);
         blockItemFromBlockModelMachine(ModBlocks.MACHINE_LARGE_TURBINE);
         blockItemFromBlockModelMachine(ModBlocks.LPW2);
-        blockItemFromBlockModelMachine(ModBlocks.STEAM_ENGINE);
-        blockItemFromBlockModelMachine(ModBlocks.STIRLING);
+        withExistingParent("steam_engine", modLoc("item/steam_engine_anim")); // Audit 7: animiertes Item (AnimatedMachineItemRenderer)
+        // Original RenderStirling#renderCommonWithStack: drehendes Zahnrad, Item-Schaden 1 (Tag no_cog) ohne "Cog"
+        withExistingParent("stirling", modLoc("item/stirling_anim")); // Audit 7: animiertes Item (AnimatedMachineItemRenderer)
         blockItemFromBlockModelMachine(ModBlocks.MACHINE_SATLINK);
         blockItemFromBlockModelMachine(ModBlocks.SAT_DOCK);
-        blockItemFromBlockModelMachine(ModBlocks.STIRLING_CREATIVE);
-        blockItemFromBlockModelMachine(ModBlocks.STIRLING_STEEL);
+        withExistingParent("stirling_creative", modLoc("item/stirling_creative_anim")); // Audit 7: animiertes Item (AnimatedMachineItemRenderer)
+        withExistingParent("stirling_steel", modLoc("item/stirling_steel_anim")); // Audit 7: animiertes Item (AnimatedMachineItemRenderer)
         blockItemFromBlockModelMachine(ModBlocks.STRAND_CASTER);
-        blockItemFromBlockModelMachine(ModBlocks.THRESHER);
-        blockItemFromBlockModelMachine(ModBlocks.TORUS);
+        withExistingParent("thresher", modLoc("item/thresher_anim")); // Audit 7: animiertes Item (AnimatedMachineItemRenderer)
+        withExistingParent("torus", modLoc("item/torus_anim")); // Audit 7: animiertes Item (AnimatedMachineItemRenderer)
         blockItemFromBlockModelMachine(ModBlocks.TURBINEGAS);
         blockItemFromBlockModelMachine(ModBlocks.WATZ_PUMP);
         blockItemFromBlockModelMachine(ModBlocks.CHUNGUS);
 
 
-        blockItemFromBlockModel(ModBlocks.FLUID_PUMP);
+        withExistingParent("fluid_pump", modLoc("block/machines/fluid_pump"));
         blockItemFromBlockModel(ModBlocks.FLUID_EXHAUST);
 
         // Ранее: assets/.../models/item/*.json с parent = блок или простая generated/handheld-текстура
@@ -1204,6 +1230,33 @@ public class ModItemModelProvider extends ItemModelProvider {
         blockItemFromBlockModel(ModBlocks.B29);
         blockItemFromBlockModel(ModBlocks.SOYUZ_LAUNCHER);
         blockItemFromBlockModel(ModBlocks.DECO_SOYUZ_ROCKET);
+        // Original ItemCustomMissilePart: Symbol je Teiltyp (mp_thruster/mp_fuselage/...), Chips eigene
+        com.hbm_m.item.missile.MissilePartItems.ICONS.forEach((id, icon) -> withExistingParent(id, "item/generated").texture("layer0", modLoc("item/" + icon)));
+        builtinEntityItem("missile_custom");
+        // Baukastengranate (ItemRenderGrenade per BEWLR) und ihre Teile
+        // ItemCrucible (ItemRenderCrucible per BEWLR)
+        getBuilder("crucible_sword").parent(new ModelFile.UncheckedModelFile("minecraft:builtin/entity"));
+        // ItemBoltgun (ItemRenderBoltgun per BEWLR)
+        getBuilder("boltgun").parent(new ModelFile.UncheckedModelFile("minecraft:builtin/entity"));
+        getBuilder("grenade_universal").parent(new ModelFile.UncheckedModelFile("minecraft:builtin/entity")); // wie die SEDNA-Waffen: Transformationen macht GunItemRenderer
+        for (var m : new java.util.Map[] { com.hbm_m.item.weapon.grenade.GrenadeItems.GRENADE_SHELL, com.hbm_m.item.weapon.grenade.GrenadeItems.GRENADE_FILLING,
+                com.hbm_m.item.weapon.grenade.GrenadeItems.GRENADE_FUZE, com.hbm_m.item.weapon.grenade.GrenadeItems.GRENADE_EXTRA }) {
+            for (Object sup : m.values()) basicItem(((dev.architectury.registry.registries.RegistrySupplier<net.minecraft.world.item.Item>) sup).get());
+        }
+        generateSednaWeaponItemModels();
+        // Restport: B92 (BEWLR GunB92ItemRenderer; Inventar zeigt das flache Icon gun_b92_icon), Zellen, Achievement-Icons
+        getBuilder("gun_b92").parent(new ModelFile.UncheckedModelFile("minecraft:builtin/entity")).guiLight(net.minecraft.client.renderer.block.model.BlockModel.GuiLight.FRONT);
+        simpleItemModelByName("gun_b92_icon", "gun_b92");
+        simpleItem(ModItems.GUN_B92_AMMO);
+        simpleItem(ModItems.WEAPONIZED_STARBLASTER_CELL);
+        for (RegistrySupplier<Item> ach : java.util.List.of(ModItems.ACHIEVEMENT_ICON_GOFISH, ModItems.ACHIEVEMENT_ICON_ACID, ModItems.ACHIEVEMENT_ICON_BALLS,
+                ModItems.ACHIEVEMENT_ICON_DIGAMMASEE, ModItems.ACHIEVEMENT_ICON_DIGAMMAFEEL, ModItems.ACHIEVEMENT_ICON_DIGAMMAKNOW,
+                ModItems.ACHIEVEMENT_ICON_DIGAMMAKAUAIMOHO, ModItems.ACHIEVEMENT_ICON_DIGAMMAUPONTOP, ModItems.ACHIEVEMENT_ICON_DIGAMMAFOROURRIGHT,
+                ModItems.ACHIEVEMENT_ICON_QUESTIONMARK)) simpleItem(ach);
+        withExistingParent("custom_machine", modLoc("block/custom_machine"));
+        withExistingParent("missile_soyuz", "item/generated").texture("layer0", modLoc("item/missile_soyuz_0"));
+        withExistingParent("missile_soyuz_luna", "item/generated").texture("layer0", modLoc("item/missile_soyuz_1"));
+        withExistingParent("missile_soyuz_postwar", "item/generated").texture("layer0", modLoc("item/missile_soyuz_2"));
         // Колючая проволока: item-модели ссылаются на ручные составные OBJ-модели блоков
         blockItemFromBlockModel(ModBlocks.BARBED_WIRE);
         blockItemFromBlockModel(ModBlocks.BARBED_WIRE_FIRE);
@@ -1237,7 +1290,6 @@ public class ModItemModelProvider extends ItemModelProvider {
         blockItemFromBlockModel(ModBlocks.LIGNITE_ORE);
         blockItemFromBlockModelBomb(ModBlocks.MINE_AP);
         blockItemFromBlockModelBomb(ModBlocks.MINE_FAT);
-        blockItemFromBlockModelBomb(ModBlocks.NAVAL_MINE);
         blockItemFromBlockModelBomb(ModBlocks.MINE_NAVAL);
         blockItemFromBlockModel(ModBlocks.NUCLEAR_CHARGE);
         blockItemFromBlockModel(ModBlocks.RAREGROUND_ORE);
@@ -1259,6 +1311,28 @@ public class ModItemModelProvider extends ItemModelProvider {
         withExistingParent(ModItems.UFO_SPAWN_EGG.getId().getPath(), mcLoc("item/template_spawn_egg"));
         withExistingParent(ModItems.RAD_BEAST_SPAWN_EGG.getId().getPath(), mcLoc("item/template_spawn_egg"));
         withExistingParent(ModItems.MASKMAN_SPAWN_EGG.getId().getPath(), mcLoc("item/template_spawn_egg"));
+        withExistingParent(ModItems.GLYPHID_SPAWN_EGG.getId().getPath(), mcLoc("item/template_spawn_egg"));
+        withExistingParent(ModItems.HUNTER_CHOPPER_SPAWN_EGG.getId().getPath(), mcLoc("item/template_spawn_egg"));
+        withExistingParent(ModItems.DUCK_SPAWN_EGG.getId().getPath(), mcLoc("item/template_spawn_egg"));
+        withExistingParent(ModItems.FBI_SPAWN_EGG.getId().getPath(), mcLoc("item/template_spawn_egg"));
+        withExistingParent(ModItems.FBI_DRONE_SPAWN_EGG.getId().getPath(), mcLoc("item/template_spawn_egg"));
+        withExistingParent(ModItems.QUACKOS_SPAWN_EGG.getId().getPath(), mcLoc("item/template_spawn_egg"));
+        withExistingParent(ModItems.PIGEON_SPAWN_EGG.getId().getPath(), mcLoc("item/template_spawn_egg"));
+        withExistingParent(ModItems.UNDEAD_SOLDIER_SPAWN_EGG.getId().getPath(), mcLoc("item/template_spawn_egg"));
+        withExistingParent(ModItems.PLASTIC_BAG_SPAWN_EGG.getId().getPath(), mcLoc("item/template_spawn_egg"));
+        withExistingParent(ModItems.TEST_DUMMY_SPAWN_EGG.getId().getPath(), mcLoc("item/template_spawn_egg"));
+        withExistingParent(ModItems.CYBER_CRAB_SPAWN_EGG.getId().getPath(), mcLoc("item/template_spawn_egg"));
+        withExistingParent(ModItems.TESLA_CRAB_SPAWN_EGG.getId().getPath(), mcLoc("item/template_spawn_egg"));
+        withExistingParent(ModItems.TAINT_CRAB_SPAWN_EGG.getId().getPath(), mcLoc("item/template_spawn_egg"));
+        withExistingParent(ModItems.GLYPHID_BRAWLER_SPAWN_EGG.getId().getPath(), mcLoc("item/template_spawn_egg"));
+        withExistingParent(ModItems.GLYPHID_BEHEMOTH_SPAWN_EGG.getId().getPath(), mcLoc("item/template_spawn_egg"));
+        withExistingParent(ModItems.GLYPHID_BRENDA_SPAWN_EGG.getId().getPath(), mcLoc("item/template_spawn_egg"));
+        withExistingParent(ModItems.GLYPHID_BOMBARDIER_SPAWN_EGG.getId().getPath(), mcLoc("item/template_spawn_egg"));
+        withExistingParent(ModItems.GLYPHID_BLASTER_SPAWN_EGG.getId().getPath(), mcLoc("item/template_spawn_egg"));
+        withExistingParent(ModItems.GLYPHID_SCOUT_SPAWN_EGG.getId().getPath(), mcLoc("item/template_spawn_egg"));
+        withExistingParent(ModItems.GLYPHID_NUCLEAR_SPAWN_EGG.getId().getPath(), mcLoc("item/template_spawn_egg"));
+        withExistingParent(ModItems.GLYPHID_DIGGER_SPAWN_EGG.getId().getPath(), mcLoc("item/template_spawn_egg"));
+        withExistingParent(ModItems.PARASITE_MAGGOT_SPAWN_EGG.getId().getPath(), mcLoc("item/template_spawn_egg"));
         withExistingParent(ModItems.NOLO_SPAWN_EGG.getId().getPath(), mcLoc("item/template_spawn_egg"));
         withExistingParent(ModItems.ENTITY_MOB_TAINTED_CREEPER_SPAWN_EGG.getId().getPath(), mcLoc("item/template_spawn_egg"));
         withExistingParent(ModItems.ENTITY_MOB_VOLATILE_CREEPER_SPAWN_EGG.getId().getPath(), mcLoc("item/template_spawn_egg"));
@@ -1272,6 +1346,14 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.SULFUR);
         simpleItem(ModItems.COKE_PETROLEUM);
         simpleItem(ModItems.ASH_WOOD);
+        // Original ItemPlasticScrap: alle Metas mit derselben Textur scrap_plastic
+        for (var scrap : ModItems.SCRAP_PLASTIC_VARIANTS.values()) {
+            withExistingParent(scrap.getId().getPath(), "item/generated").texture("layer0", modLoc("item/scrap_plastic"));
+        }
+        // Original ItemUnstable Meta 1-3: hs-elements / hs-arsenic / hs-vault
+        simpleItem(ModItems.INGOT_U238M2_1);
+        simpleItem(ModItems.INGOT_U238M2_2);
+        simpleItem(ModItems.INGOT_U238M2_3);
         simpleItem(ModItems.ASH_COAL);
         simpleItem(ModItems.ASH_MISC);
         simpleItem(ModItems.ASH_FLY);
@@ -1284,14 +1366,12 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.OIL_TAR_PARAFFIN);
         simpleItem(ModItems.FLUORITE);
         simpleItem(ModItems.LIGNITE);
-        simpleItem(ModItems.CINNABAR);
         simpleItem(ModItems.FIREBRICK);
         simpleItem(ModItems.FIRECLAY_BALL);
         simpleItem(ModItems.ARMOR_BATTERY);
         simpleItem(ModItems.ARMOR_BATTERY_MK2);
         simpleItem(ModItems.ARMOR_BATTERY_MK3);
         simpleItem(ModItems.RAREGROUND_ORE_CHUNK);
-        simpleItem(ModItems.WOOD_ASH_POWDER);
         simpleItem(ModItems.URANIUM_RAW);
         simpleItem(ModItems.LEAD_RAW);
         simpleItem(ModItems.THORIUM_RAW);
@@ -1429,6 +1509,15 @@ public class ModItemModelProvider extends ItemModelProvider {
                 ModItems.APPLE_LEAD,
                 ModItems.APPLE_SCHRABIDIUM,
                 ModItems.ARC_ELECTRODE,
+                ModItems.CRYSTAL_HORN,
+                ModItems.CRYSTAL_CHARRED,
+                ModItems.ARC_ELECTRODE_LANTHANIUM,
+                ModItems.ARC_ELECTRODE_DESH,
+                ModItems.ARC_ELECTRODE_SATURNITE,
+                ModItems.ARC_ELECTRODE_BURNT_GRAPHITE,
+                ModItems.ARC_ELECTRODE_BURNT_LANTHANIUM,
+                ModItems.ARC_ELECTRODE_BURNT_DESH,
+                ModItems.ARC_ELECTRODE_BURNT_SATURNITE,
                 ModItems.ARMOR_POLISH,
                 ModItems.ASBESTOS_LEGS,
                 ModItems.ASBESTOS_PLATE,
@@ -1509,7 +1598,6 @@ public class ModItemModelProvider extends ItemModelProvider {
                 ModItems.BIOMASS_COMPRESSED,
                 ModItems.BISMUTH_LEGS,
                 ModItems.BISMUTH_PLATE,
-                ModItems.BISMUTH_TOOL,
                 ModItems.BJ_BOOTS,
                 ModItems.BJ_HELMET,
                 ModItems.BJ_LEGS,
@@ -1605,10 +1693,10 @@ public class ModItemModelProvider extends ItemModelProvider {
                 ModItems.RECORD_LC,
                 ModItems.RECORD_SS,
                 ModItems.RECORD_VC,
+                ModItems.RECORD_GLASS,
                 ModItems.BOAT_RUBBER,
                 ModItems.BOBMAZON,
                 ModItems.BOLT_SPIKE,
-                ModItems.BOLTGUN,
                 ModItems.BOMB_CALLER,
                 ModItems.BOMB_WAFFLE,
                 ModItems.BOOK_GUIDE,
@@ -1730,7 +1818,6 @@ public class ModItemModelProvider extends ItemModelProvider {
                 ModItems.DEFUSER_GOLD,
                 ModItems.DEMON_CORE_CLOSED,
                 ModItems.DEMON_CORE_OPEN,
-                ModItems.DESIGNATOR_ARTY_RANGE,
                 ModItems.DETONATOR_DE,
                 ModItems.DETONATOR_DEADMAN,
                 ModItems.DEUTERIUM_FILTER,
@@ -1838,12 +1925,9 @@ public class ModItemModelProvider extends ItemModelProvider {
                 ModItems.GLYPHID_MEAT,
                 ModItems.GLYPHID_MEAT_GRILLED,
                 ModItems.GOGGLES,
-                ModItems.GRENADE_UNIVERSAL,
-                ModItems.GUN_B92,
-                ModItems.GUN_FIREEXT,
+                // gun_fireext / gun_pa_ranged sind SEDNA-Waffen (BEWLR) -> generateSednaWeaponItemModels()
                 ModItems.GUN_KIT_1,
                 ModItems.GUN_KIT_2,
-                ModItems.GUN_PA_RANGED,
                 ModItems.HAZMAT_BOOTS_GREY,
                 ModItems.HAZMAT_BOOTS_RED,
                 ModItems.HAZMAT_GREY_KIT,
@@ -1876,7 +1960,6 @@ public class ModItemModelProvider extends ItemModelProvider {
                 ModItems.ICF_PELLET_DEPLETED,
                 ModItems.ICF_PELLET_EMPTY,
                 ModItems.INDUSTRIAL_MAGNET,
-                ModItems.INGOT_ALUMINIUM,
                 ModItems.INJECTOR_5HTP,
                 ModItems.INJECTOR_KNIFE,
                 ModItems.INK,
@@ -1928,7 +2011,6 @@ public class ModItemModelProvider extends ItemModelProvider {
                 ModItems.LOOT_15,
                 ModItems.LOOT_MISC,
                 ModItems.MAN_KIT,
-                ModItems.MARSHMALLOW,
                 ModItems.MASK_OF_INFAMY,
                 ModItems.MASK_PISS,
                 ModItems.MASK_RAG,
@@ -1947,7 +2029,6 @@ public class ModItemModelProvider extends ItemModelProvider {
                 ModItems.APPLE_LEAD_2,
                 ModItems.TEM_FLAKES_1,
                 ModItems.TEM_FLAKES_2,
-                ModItems.MARSHMALLOW_ROASTED,
                 ModItems.MEDAL_LIQUIDATOR,
                 ModItems.MELTDOWN_TOOL,
                 ModItems.METEOR_CHARM,
@@ -1957,18 +2038,11 @@ public class ModItemModelProvider extends ItemModelProvider {
                 ModItems.MIKE_DEUT,
                 ModItems.MIKE_KIT,
                 ModItems.MIRROR_TOOL,
-                ModItems.MISSILE_ANTI_BALLISTIC,
                 ModItems.MISSILE_CARRIER,
-                ModItems.MISSILE_CUSTOM,
                 ModItems.MISSILE_ENDO,
                 ModItems.MISSILE_EXO,
                 ModItems.MISSILE_KIT,
                 ModItems.MORNING_GLORY,
-                ModItems.MP_C_1,
-                ModItems.MP_C_2,
-                ModItems.MP_C_3,
-                ModItems.MP_C_4,
-                ModItems.MP_C_5,
                 ModItems.MUCHO_MANGO,
                 ModItems.MULTI_KIT,
                 ModItems.N2_CHARGE,
@@ -2075,7 +2149,6 @@ public class ModItemModelProvider extends ItemModelProvider {
                 ModItems.PART_RECEIVER_HEAVY,
                 ModItems.PART_RECEIVER_LIGHT,
                 ModItems.PART_STOCK,
-                ModItems.KEY_PIN,
                 ModItems.PARTICLE_AMAT,
                 ModItems.PARTICLE_ASCHRAB,
                 ModItems.PARTICLE_COPPER,
@@ -2132,7 +2205,6 @@ public class ModItemModelProvider extends ItemModelProvider {
                 ModItems.PISTON_SET_STEEL,
                 ModItems.PLAN_C,
                 ModItems.PLASTIC_BAG,
-                ModItems.PLATE_ALUMINIUM,
                 ModMaterialItems.get(ModMaterials.POLYMER, MaterialShape.PLATE),
                 ModItems.POLLUTION_DETECTOR,
                 ModItems.POWER_NET_TOOL,
@@ -2274,7 +2346,6 @@ public class ModItemModelProvider extends ItemModelProvider {
                 ModItems.STICK_DYNAMITE_FISHING,
                 ModItems.STICK_SEMTEX,
                 ModItems.STICK_TNT,
-                ModItems.STRUCTURE_CUSTOMMACHINE,
                 ModItems.SURVEY_SCANNER,
                 ModItems.TANK_STEEL,
                 ModItems.TAURUN_BOOTS,
@@ -2298,7 +2369,6 @@ public class ModItemModelProvider extends ItemModelProvider {
                 ModItems.TURRET_CHIP,
                 ModItems.TWINKIE,
                 ModItems.UNDEFINED,
-                ModItems.WAND_D,
                 ModItems.WAND_S,
                 ModItems.WARHEAD_INCENDIARY_LARGE,
                 ModItems.WASTE_MOX,
@@ -2397,6 +2467,17 @@ public class ModItemModelProvider extends ItemModelProvider {
                 ModItems.BEDROCK_ORE_FRAGMENT_ASBESTOS)) {
             simpleItem(fragment);
         }
+
+        // audit4: Original setFull3D() -> in der Hand wie ein Werkzeug (item/handheld) gehalten.
+        for (String id : new String[] {
+                "anchor_remote", "arc_electrode", "arc_electrode_burnt_desh", "arc_electrode_burnt_graphite", "arc_electrode_burnt_lanthanium",
+                "arc_electrode_burnt_saturnite", "bomb_caller", "cotton_candy", "defuser", "designator_range",
+                "detonator", "detonator_de", "detonator_deadman", "meteor_remote", "multi_detonator",
+                "reacher", "sat_designator", "screwdriver_desh", "wand_s"
+        }) {
+            if (generatedModels.containsKey(modLoc("item/" + id)))
+                getBuilder(id).parent(new ModelFile.UncheckedModelFile("minecraft:item/handheld"));
+        }
     };
 
     /**
@@ -2474,6 +2555,32 @@ public class ModItemModelProvider extends ItemModelProvider {
                 .end();
     }
 
+    /**
+     * SEDNA-Waffensystem ({@link com.hbm_m.item.weapon.sedna.WeaponItems}): Waffen zeichnet der {@code GunItemRenderer}
+     * (BEWLR) samt aller Original-Transformationen, daher {@code builtin/entity} ohne eigene Anzeigetransformationen.
+     * Munition und Mods sind flach mit den Original-Texturen ({@code ammo_standard.<typ>.png} usw. als
+     * {@code ammo_standard_<typ>.png}); {@code ammo_debug} nutzt wie im Original {@code ammo_45}.
+     */
+    private void generateSednaWeaponItemModels() {
+        for (String gun : com.hbm_m.item.weapon.sedna.WeaponItems.GUN_NAMES) {
+            getBuilder(gun).parent(new ModelFile.UncheckedModelFile("minecraft:builtin/entity"));
+        }
+        simpleItemModelByName("ammo_debug", "ammo_45");
+        java.util.List<java.util.Map<? extends Enum<?>, RegistrySupplier<Item>>> maps = java.util.List.of(
+                com.hbm_m.item.weapon.sedna.WeaponItems.AMMO_STANDARD,
+                com.hbm_m.item.weapon.sedna.WeaponItems.AMMO_SECRET,
+                com.hbm_m.item.weapon.sedna.WeaponItems.WEAPON_MOD_TEST,
+                com.hbm_m.item.weapon.sedna.WeaponItems.WEAPON_MOD_GENERIC,
+                com.hbm_m.item.weapon.sedna.WeaponItems.WEAPON_MOD_SPECIAL,
+                com.hbm_m.item.weapon.sedna.WeaponItems.WEAPON_MOD_CALIBER);
+        for (java.util.Map<? extends Enum<?>, RegistrySupplier<Item>> map : maps) {
+            for (RegistrySupplier<Item> sup : map.values()) {
+                String id = sup.getId().getPath();
+                simpleItemModelByName(id, id);
+            }
+        }
+    }
+
     private void itemModelFromBlockResourcePath(String itemModelName, String pathUnderModWithoutNamespace) {
         withExistingParent(itemModelName, modLoc(pathUnderModWithoutNamespace));
     }
@@ -2481,6 +2588,21 @@ public class ModItemModelProvider extends ItemModelProvider {
     private void handheldItem(RegistrySupplier<Item> itemObject) {
         String name = itemObject.getId().getPath();
         withExistingParent(name, "item/handheld").texture("layer0", modLoc("item/" + name));
+    }
+
+    /**
+     * 1.7-IItemRenderer, der INVENTORY nicht behandelt (ItemRenderGavel/Shim/RedstoneSword): im Inventar das flache
+     * Symbol, sonst {@code builtin/entity} fuer den BEWLR ({@code GunItemRenderer}).
+     */
+    private void legacyRendererItem(String name, ResourceLocation icon) {
+        getBuilder(name)
+                .guiLight(net.minecraft.client.renderer.block.model.BlockModel.GuiLight.FRONT)
+                .texture("particle", icon)
+                .customLoader(net.minecraftforge.client.model.generators.loaders.SeparateTransformsModelBuilder::begin)
+                .base(nested().parent(new ModelFile.UncheckedModelFile("minecraft:builtin/entity")).texture("particle", icon))
+                .perspective(net.minecraft.world.item.ItemDisplayContext.GUI,
+                        nested().parent(new ModelFile.UncheckedModelFile("minecraft:item/handheld")).texture("layer0", icon))
+                .end();
     }
 
     private void crystalItem(RegistrySupplier<Item> itemObject) {
@@ -2504,6 +2626,11 @@ public class ModItemModelProvider extends ItemModelProvider {
     private void ingotItem(RegistrySupplier<Item> itemObject) {
         // 1. Получаем регистрационное имя (например, "uranium_ingot")
         String registrationName = itemObject.getId().getPath();
+        // Original-ID ingot_aluminium (MaterialShape.itemId): Textur item/ingot_aluminium wie im Original
+        if (registrationName.startsWith("ingot_")) {
+            withExistingParent(registrationName, "item/generated").texture("layer0", modLoc("item/" + registrationName));
+            return;
+        }
         
         // 2. Получаем базовое имя (например, "uranium")
         String baseName = registrationName.replace("_ingot", "");

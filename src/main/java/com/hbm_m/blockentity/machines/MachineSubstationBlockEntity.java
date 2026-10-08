@@ -1,113 +1,85 @@
 package com.hbm_m.blockentity.machines;
 
-import com.hbm_m.blockentity.BaseMachineBlockEntity;
+import com.hbm_m.api.energy.Nodespace;
+import com.hbm_m.api.network.NodeDirPos;
 import com.hbm_m.blockentity.ModBlockEntities;
-import com.hbm_m.inventory.menu.MachineSubstationMenu;
+import com.hbm_m.blockentity.network.PylonBaseBlockEntity;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.network.chat.Component;
-import net.minecraft.world.entity.player.Inventory;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.inventory.AbstractContainerMenu;
-import net.minecraft.world.item.ItemStack;
-import net.minecraft.world.level.Level;
+import net.minecraft.core.Direction;
+import net.minecraft.world.level.block.HorizontalDirectionalBlock;
 import net.minecraft.world.level.block.state.BlockState;
+import net.minecraft.world.phys.Vec3;
 
-public class MachineSubstationBlockEntity extends BaseMachineBlockEntity {
-
-    private static final int DEFAULT_MAX_PROGRESS = 200;
-
-    private int progress = 0;
-    private int maxProgress = DEFAULT_MAX_PROGRESS;
-    private boolean active = false;
+/**
+ * 1:1 {@code TileEntitySubstation} (1.7.10): Umspannwerk als Pylon (QUAD, 20 m), vier Kabelhalter auf 5,25 m Hoehe
+ * quer zur Blickrichtung. Der Knoten belegt Kern und die vier Eck-Anschluesse ({@code makeExtra}) und verbindet
+ * nach aussen ueber die acht Randpositionen.
+ */
+public class MachineSubstationBlockEntity extends PylonBaseBlockEntity {
 
     public MachineSubstationBlockEntity(BlockPos pos, BlockState state) {
-        super(ModBlockEntities.SUBSTATION_BE.get(), pos, state, 0, 1_000_000L, 20_000L, 20_000L);
+        super(ModBlockEntities.SUBSTATION_BE.get(), pos, state);
     }
 
-    public static void tick(Level level, BlockPos pos, BlockState state, MachineSubstationBlockEntity blockEntity) {
-        if (!level.isClientSide) {
-            blockEntity.serverTick();
+    @Override
+    public ConnectionType getConnectionType() {
+        return ConnectionType.QUAD;
+    }
+
+    @Override
+    public Vec3[] getMountPos() {
+        double topOff = 5.25;
+        // Vec3(1,0,0); bei Metadaten 4/5 rotateAroundY(PI/2) -> (0,0,-1)
+        Direction dir = getBlockState().hasProperty(HorizontalDirectionalBlock.FACING)
+                ? getBlockState().getValue(HorizontalDirectionalBlock.FACING) : Direction.NORTH;
+        double vx = 1, vz = 0;
+        if (dir == Direction.WEST || dir == Direction.EAST) {
+            vx = 0;
+            vz = -1;
         }
-    }
-
-    private void serverTick() {
-        ensureNetworkInitialized();
-
-        boolean wasActive = active;
-        active = getEnergyStored() > 0;
-
-        if (active) {
-            progress++;
-            if (progress >= maxProgress) {
-                progress = 0;
-            }
-        } else if (progress != 0) {
-            progress = 0;
-        }
-
-        if (wasActive != active || active || progress == 0) {
-            setChanged();
-            sendUpdateToClient();
-        }
-    }
-
-    public int getProgressScaled(int scale) {
-        if (maxProgress <= 0) {
-            return 0;
-        }
-        return progress * scale / maxProgress;
-    }
-
-    public int getProgress() {
-        return progress;
-    }
-
-    public int getMaxProgress() {
-        return maxProgress;
-    }
-
-    public boolean isActive() {
-        return active;
+        return new Vec3[] {
+                new Vec3(0.5 + vx * 0.5, topOff, 0.5 + vz * 0.5),
+                new Vec3(0.5 + vx * 1.5, topOff, 0.5 + vz * 1.5),
+                new Vec3(0.5 - vx * 0.5, topOff, 0.5 - vz * 0.5),
+                new Vec3(0.5 - vx * 1.5, topOff, 0.5 - vz * 1.5),
+        };
     }
 
     @Override
-    protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-        super.writeNbtData(tag, registries);
-        tag.putInt("progress", progress);
-        tag.putInt("max_progress", maxProgress);
-        tag.putBoolean("active", active);
+    public Vec3 getConnectionPoint() {
+        BlockPos p = getBlockPos();
+        return new Vec3(p.getX() + 0.5, p.getY() + 5.25, p.getZ() + 0.5);
     }
 
     @Override
-    protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
-        super.readNbtData(tag, registries);
-        progress = tag.getInt("progress");
-        maxProgress = tag.getInt("max_progress");
-        if (maxProgress <= 0) {
-            maxProgress = DEFAULT_MAX_PROGRESS;
-        }
-        active = tag.getBoolean("active");
+    public double getMaxWireLength() {
+        return 20;
     }
 
     @Override
-    protected Component getDefaultName() {
-        return Component.translatable("container.hbm_m.substation");
+    protected void addExtraConnections(Nodespace.PowerNode node, BlockPos pos) {
+        int x = pos.getX(), y = pos.getY(), z = pos.getZ();
+        node.positions.add(new BlockPos(x + 1, y, z + 1));
+        node.positions.add(new BlockPos(x + 1, y, z - 1));
+        node.positions.add(new BlockPos(x - 1, y, z + 1));
+        node.positions.add(new BlockPos(x - 1, y, z - 1));
+        node.addConnection(new NodeDirPos(x + 2, y, z - 1, Direction.EAST));
+        node.addConnection(new NodeDirPos(x + 2, y, z + 1, Direction.EAST));
+        node.addConnection(new NodeDirPos(x - 2, y, z - 1, Direction.WEST));
+        node.addConnection(new NodeDirPos(x - 2, y, z + 1, Direction.WEST));
+        node.addConnection(new NodeDirPos(x - 1, y, z + 2, Direction.SOUTH));
+        node.addConnection(new NodeDirPos(x + 1, y, z + 2, Direction.SOUTH));
+        node.addConnection(new NodeDirPos(x - 1, y, z - 2, Direction.NORTH));
+        node.addConnection(new NodeDirPos(x + 1, y, z - 2, Direction.NORTH));
     }
 
-    @Override
-    public Component getDisplayName() {
-        return getDefaultName();
-    }
-
-    @Override
-    protected boolean isItemValidForSlot(int slot, ItemStack stack) {
-        return false;
-    }
-
-    @Override
-    public AbstractContainerMenu createMenu(int id, Inventory inventory, Player player) {
-        return MachineSubstationMenu.create(id, inventory, this);
-    }
+    // Das Original hat keine GUI; die Zugriffe bleiben nur, damit GUIMachineSubstation/MachineSubstationMenu
+    // (nicht mehr geoeffnet) uebersetzbar bleiben. TODO(port): GUI/Menue des Umspannwerks entfernen.
+    public long getEnergyStored() { return 0; }
+    public long getMaxEnergyStored() { return 0; }
+    public int getProgressScaled(int scale) { return 0; }
+    public int getProgress() { return 0; }
+    public int getMaxProgress() { return 0; }
+    public boolean isActive() { return false; }
 }

@@ -35,6 +35,9 @@ public class AssemblerRecipe extends PlatformRecipe {
     
     @Nullable
     private final String blueprintPool;
+    /** Original GenericRecipe inputFluid/outputFluid (Montagemaschine: je hoechstens eine). */
+    private List<dev.architectury.fluid.FluidStack> fluidInputs = List.of();
+    private List<dev.architectury.fluid.FluidStack> fluidOutputs = List.of();
 
     public AssemblerRecipe(ResourceLocation id, ItemStack output, NonNullList<Ingredient> recipeItems,
                            int duration, int power) {
@@ -62,6 +65,15 @@ public class AssemblerRecipe extends PlatformRecipe {
 
     public record AssemblerInputSlot(Ingredient ingredient, int count) {
     }
+
+    public AssemblerRecipe withFluids(List<dev.architectury.fluid.FluidStack> in, List<dev.architectury.fluid.FluidStack> out) {
+        this.fluidInputs = List.copyOf(in);
+        this.fluidOutputs = List.copyOf(out);
+        return this;
+    }
+
+    public List<dev.architectury.fluid.FluidStack> getFluidInputs() { return fluidInputs; }
+    public List<dev.architectury.fluid.FluidStack> getFluidOutputs() { return fluidOutputs; }
 
     @Override
     public boolean matchesRecipe(RecipeInputWrapper pContainer, Level pLevel) {
@@ -141,7 +153,8 @@ public class AssemblerRecipe extends PlatformRecipe {
             int power = GsonHelper.getAsInt(pSerializedRecipe, "power", 1000);
             String blueprintPool = GsonHelper.getAsString(pSerializedRecipe, "blueprint_pool", null);
             
-            return new AssemblerRecipe(pRecipeId, output, inputs, displaySlots, duration, power, blueprintPool);
+            return new AssemblerRecipe(pRecipeId, output, inputs, displaySlots, duration, power, blueprintPool)
+                    .withFluids(readFluids(pSerializedRecipe, "fluid_inputs"), readFluids(pSerializedRecipe, "fluid_outputs"));
         }
 
         @Override
@@ -163,8 +176,13 @@ public class AssemblerRecipe extends PlatformRecipe {
             int power = pBuffer.readInt();
             
             String blueprintPool = pBuffer.readBoolean() ? pBuffer.readUtf() : null;
+
+            List<dev.architectury.fluid.FluidStack> fin = new ArrayList<>();
+            for (int i = pBuffer.readVarInt(); i > 0; i--) fin.add(RecipeHooks.readFluidStack(pBuffer));
+            List<dev.architectury.fluid.FluidStack> fout = new ArrayList<>();
+            for (int i = pBuffer.readVarInt(); i > 0; i--) fout.add(RecipeHooks.readFluidStack(pBuffer));
             
-            return new AssemblerRecipe(pRecipeId, output, inputs, displaySlots, duration, power, blueprintPool);
+            return new AssemblerRecipe(pRecipeId, output, inputs, displaySlots, duration, power, blueprintPool).withFluids(fin, fout);
         }
 
         @Override
@@ -185,6 +203,24 @@ public class AssemblerRecipe extends PlatformRecipe {
             } else {
                 pBuffer.writeBoolean(false);
             }
+
+            pBuffer.writeVarInt(pRecipe.fluidInputs.size());
+            for (dev.architectury.fluid.FluidStack fs : pRecipe.fluidInputs) RecipeHooks.writeFluidStack(pBuffer, fs);
+            pBuffer.writeVarInt(pRecipe.fluidOutputs.size());
+            for (dev.architectury.fluid.FluidStack fs : pRecipe.fluidOutputs) RecipeHooks.writeFluidStack(pBuffer, fs);
+        }
+
+        /** {@code [{"fluid": id, "amount": mB}]} wie beim Chemiewerk. */
+        private static List<dev.architectury.fluid.FluidStack> readFluids(JsonObject json, String key) {
+            if (!json.has(key)) return List.of();
+            List<dev.architectury.fluid.FluidStack> result = new ArrayList<>();
+            for (JsonElement el : GsonHelper.getAsJsonArray(json, key)) {
+                JsonObject obj = el.getAsJsonObject();
+                ResourceLocation id = ResourceLocation.tryParse(GsonHelper.getAsString(obj, "fluid"));
+                if (id == null) continue;
+                result.add(RecipeHooks.fluidStackOf(id, GsonHelper.getAsLong(obj, "amount", 0L)));
+            }
+            return result;
         }
     }
 

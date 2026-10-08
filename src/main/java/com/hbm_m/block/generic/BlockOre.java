@@ -18,7 +18,7 @@ import net.minecraft.world.level.block.state.BlockState;
  * 1:1 {@link com.hbm.blocks.generic.BlockOre} (1.7.10). Die Drops ({@code getItemDropped}/{@code quantityDropped}/
  * Glueck, {@code noFortune}, keine Behutsamkeit fuer {@code ore_oil}) stehen in den Loot-Tabellen
  * ({@code ModBlockLootTableProvider}); hier das Verhalten: Effekte beim Betreten, Partikel der Trinitit-/Muellbloecke
- * und das Nachruecken des Oelerzes. Das veraltete {@code rad}-Feld ist bei allen Original-Erzen 0 - keine Strahlung.
+ * und das Nachruecken des Oelerzes. Das veraltete {@code rad}-Feld nutzt nur {@code ore_schrabidium} -> {@link BlockOreRad}.
  */
 public class BlockOre extends Block {
 

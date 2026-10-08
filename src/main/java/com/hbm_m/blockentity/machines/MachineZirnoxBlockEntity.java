@@ -46,7 +46,8 @@ import net.minecraftforge.fluids.capability.IFluidHandler;
 //?}
 
 @SuppressWarnings("UnstableApiUsage")
-public class MachineZirnoxBlockEntity extends BaseMachineBlockEntity implements IFluidStandardTransceiverMK2, IMultiblockSidedIO {
+public class MachineZirnoxBlockEntity extends BaseMachineBlockEntity implements IFluidStandardTransceiverMK2, IMultiblockSidedIO,
+        com.hbm_m.api.redstoneoverradio.IRORValueProvider, com.hbm_m.api.redstoneoverradio.IRORInteractive {
 
     public static final int INVENTORY_SIZE   = 28;
     public static final int ROD_SLOT_COUNT   = 24;
@@ -57,9 +58,10 @@ public class MachineZirnoxBlockEntity extends BaseMachineBlockEntity implements 
 
     public static final long MAX_HEAT      = 100_000;
     public static final long MAX_PRESSURE  = 100_000;
-    public static final int  STEAM_MAX     = 32_000;
+    /** Original: steam 8000, carbonDioxide 16000, water 32000. */
+    public static final int  STEAM_MAX     = 8_000;
     public static final int  CO2_MAX       = 16_000;
-    public static final int  WATER_MAX     = 64_000;
+    public static final int  WATER_MAX     = 32_000;
 
     private static final int[] NEIGHBOR_MASK_0  = {1, 7};
     private static final int[] NEIGHBOR_MASK_1  = {0, 2, 8};
@@ -142,10 +144,10 @@ public class MachineZirnoxBlockEntity extends BaseMachineBlockEntity implements 
         if (heat > 0 && heat < MAX_HEAT) {
             if (waterTank.getFill() > 0 && co2Tank.getFill() > 0 && steamTank.getFill() < STEAM_MAX) {
                 generateSteam();
-                long cooling = Math.max(1L, (heat * pressure) / 1_000_000L);
-                heat = Math.max(0L, heat - cooling);
+                // Original: heat -= (int) (heat * pressure / 1000000F)
+                heat -= (int) ((float) heat * (float) pressure / 1000000F);
             } else {
-                heat = Math.max(0L, heat - 10L);
+                heat -= 10;
             }
 
             if (level != null && level.getGameTime() % 100 == 0) {
@@ -295,21 +297,22 @@ public class MachineZirnoxBlockEntity extends BaseMachineBlockEntity implements 
         return Math.max(0L, byTank + byHeat);
     }
 
+    /** 1:1 {@code generateSteam}: Wasser und Dampf werden unabhaengig voneinander begrenzt (wie im Original). */
     private void generateSteam() {
-        if (heat <= 10_256L) return;
+        if (this.heat > 10256) {
+            float mult = 7.5F; // was 5 originally
+            int cycle = (int) ((((float) heat - 10256F) / (float) MAX_HEAT) * Math.min(((float) co2Tank.getFill() / 14000F), 1F) * 25F * mult);
+            this.output = cycle;
 
-        double efficiency = Math.min((double) co2Tank.getFill() / 14_000.0D, 1.0D);
-        int cycle = (int) ((((double) heat - 10_256.0D) / (double) MAX_HEAT) * efficiency * 25.0D * 5.0D);
-        if (cycle <= 0) return;
+            waterTank.setFill(waterTank.getFill() - cycle);
+            steamTank.setFill(steamTank.getFill() + cycle);
 
-        int space = STEAM_MAX - steamTank.getFill();
-        int water = waterTank.getFill();
-        int transfer = Math.min(cycle, Math.min(water, space));
-        if (transfer <= 0) return;
+            if (waterTank.getFill() < 0)
+                waterTank.setFill(0);
 
-        output = transfer;
-        waterTank.drainMb(transfer);
-        steamTank.fillMb(ModFluids.SUPERHOTSTEAM.getSource(), transfer);
+            if (steamTank.getFill() > steamTank.getMaxFill())
+                steamTank.setFill(steamTank.getMaxFill());
+        }
     }
 
     private void processFluidInputs() {
@@ -343,46 +346,68 @@ public class MachineZirnoxBlockEntity extends BaseMachineBlockEntity implements 
                 if (destroyed.hasProperty(property)) destroyed = copyPropertyUnsafe(destroyed, current, property);
             }
             level.setBlock(worldPosition, destroyed, 3);
-            spawnDebrisBurst((ServerLevel) level);
-            ExplosionNukeGeneric.incrementRad(level,
-                worldPosition.getX() + 0.5D, worldPosition.getY() + 1.0D, worldPosition.getZ() + 0.5D, 35F);
-            level.explode(null,
-                worldPosition.getX() + 0.5D, worldPosition.getY() + 1.0D, worldPosition.getZ() + 0.5D,
-                8.0F, Level.ExplosionInteraction.BLOCK);
+            level.playSound(null, worldPosition.getX(), worldPosition.getY() + 2, worldPosition.getZ(),
+                com.hbm_m.sound.HbmSoundsNT.get("hbm:block.rbmk_explosion"), net.minecraft.sounds.SoundSource.BLOCKS, 10.0F, 1.0F);
+            level.explode(null, worldPosition.getX(), worldPosition.getY() + 3, worldPosition.getZ(),
+                12.0F, Level.ExplosionInteraction.BLOCK);
+            zirnoxDebris();
+            ExplosionNukeGeneric.waste(level, worldPosition.getX(), worldPosition.getY(), worldPosition.getZ(), 35);
+
             // Everyone within 100 blocks gets credited, exactly as the original does - there is
             // no single player to blame for a runaway reactor.
             com.hbm_m.advancement.ModAdvancements.grantNearby(level,
                 worldPosition.getX() + 0.5D, worldPosition.getY() + 0.5D, worldPosition.getZ() + 0.5D,
                 100D, com.hbm_m.advancement.ModAdvancements.ZIRNOX_BOOM);
+
+            // Original: radMark fuer die Strahlungs-Elementare
+            if (com.hbm_m.config.MobConfig.enableElementals()) {
+                for (net.minecraft.world.entity.player.Player p : level.getEntitiesOfClass(net.minecraft.world.entity.player.Player.class,
+                        new net.minecraft.world.phys.AABB(worldPosition.getX() + 0.5, worldPosition.getY() + 0.5, worldPosition.getZ() + 0.5,
+                                worldPosition.getX() + 0.5, worldPosition.getY() + 0.5, worldPosition.getZ() + 0.5).inflate(100, 100, 100))) {
+                    if (p instanceof net.minecraft.server.level.ServerPlayer sp) com.hbm_m.handler.BossSpawnHandler.markForRadBeasts(sp);
+                }
+            }
         }
     }
 
-    private void spawnDebrisBurst(ServerLevel level) {
-        double x = worldPosition.getX() + 0.5D;
-        double y = worldPosition.getY() + 2.0D;
-        double z = worldPosition.getZ() + 0.5D;
+    /** 1:1 {@code spawnDebris}: Start 4 ueber dem Kern, Beton steiler, Waermetauscher flach und seitlich. */
+    private void spawnDebris(com.hbm_m.entity.projectile.ZirnoxDebrisEntity.DebrisType type) {
+        var debris = com.hbm_m.entity.projectile.ZirnoxDebrisEntity.create(level, worldPosition.getX() + 0.5D, worldPosition.getY() + 4D, worldPosition.getZ() + 0.5D, type);
+        double mx = level.random.nextGaussian() * 0.75D;
+        double mz = level.random.nextGaussian() * 0.75D;
+        double my = 0.01D + level.random.nextDouble() * 1.25D;
 
-        level.sendParticles(ParticleTypes.EXPLOSION,   x, y, z, 10,  1.2D, 0.8D, 1.2D, 0.02D);
-        level.sendParticles(ParticleTypes.LARGE_SMOKE, x, y, z, 80,  2.5D, 1.2D, 2.5D, 0.03D);
-        level.sendParticles(ParticleTypes.FLAME,       x, y, z, 60,  2.0D, 1.0D, 2.0D, 0.05D);
-        level.sendParticles(ParticleTypes.ASH,         x, y, z, 100, 2.5D, 1.5D, 2.5D, 0.01D);
+        if (type == com.hbm_m.entity.projectile.ZirnoxDebrisEntity.DebrisType.CONCRETE) {
+            mx *= 0.25D;
+            my += level.random.nextDouble();
+            mz *= 0.25D;
+        }
 
-        com.hbm_m.entity.projectile.ZirnoxDebrisEntity.DebrisType[] types = {
-            com.hbm_m.entity.projectile.ZirnoxDebrisEntity.DebrisType.BLANK,
-            com.hbm_m.entity.projectile.ZirnoxDebrisEntity.DebrisType.ELEMENT,
-            com.hbm_m.entity.projectile.ZirnoxDebrisEntity.DebrisType.SHRAPNEL,
-            com.hbm_m.entity.projectile.ZirnoxDebrisEntity.DebrisType.CONCRETE,
-            com.hbm_m.entity.projectile.ZirnoxDebrisEntity.DebrisType.EXCHANGER
-        };
-        int[] counts = {4, 3, 5, 2, 2};
-        for (int t = 0; t < types.length; t++) {
-            for (int i = 0; i < counts[t]; i++) {
-                var debris = com.hbm_m.entity.projectile.ZirnoxDebrisEntity.create(level, x, y, z, types[t]);
-                double speed = 0.3D + level.random.nextDouble() * 0.5D;
-                double angle = level.random.nextDouble() * Math.PI * 2;
-                debris.setDeltaMovement(Math.cos(angle) * speed, 0.4D + level.random.nextDouble() * 0.6D, Math.sin(angle) * speed);
-                level.addFreshEntity(debris);
-            }
+        if (type == com.hbm_m.entity.projectile.ZirnoxDebrisEntity.DebrisType.EXCHANGER) {
+            mx += 0.5D;
+            my *= 0.1D;
+            mz += 0.5D;
+        }
+
+        debris.setDeltaMovement(mx, my, mz);
+        level.addFreshEntity(debris);
+    }
+
+    /** 1:1 {@code zirnoxDebris}. */
+    private void zirnoxDebris() {
+        for (int i = 0; i < 2; i++) {
+            spawnDebris(com.hbm_m.entity.projectile.ZirnoxDebrisEntity.DebrisType.EXCHANGER);
+        }
+
+        for (int i = 0; i < 20; i++) {
+            spawnDebris(com.hbm_m.entity.projectile.ZirnoxDebrisEntity.DebrisType.CONCRETE);
+            spawnDebris(com.hbm_m.entity.projectile.ZirnoxDebrisEntity.DebrisType.BLANK);
+        }
+
+        for (int i = 0; i < 10; i++) {
+            spawnDebris(com.hbm_m.entity.projectile.ZirnoxDebrisEntity.DebrisType.ELEMENT);
+            spawnDebris(com.hbm_m.entity.projectile.ZirnoxDebrisEntity.DebrisType.GRAPHITE);
+            spawnDebris(com.hbm_m.entity.projectile.ZirnoxDebrisEntity.DebrisType.SHRAPNEL);
         }
     }
 
@@ -449,16 +474,11 @@ public class MachineZirnoxBlockEntity extends BaseMachineBlockEntity implements 
 
     // ── Item-slot validation ──────────────────────────────────────────────
 
+    /** Original {@code isItemValidForSlot}: nur Zirnox-Staebe in die 24 Stabplaetze (Behaelter nur per Hand im GUI). */
     @Override
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
         if (stack == null || stack.isEmpty()) return false;
-        if (slot >= 0 && slot < ROD_SLOT_COUNT)
-            return stack.is(ModTags.Items.ZIRNOX_RODS) || stack.is(ModItems.METEORITE_SWORD_BRED.get());
-        if (slot == SLOT_CO2_IN)
-            return holdsFluid(stack, ModFluids.CARBONDIOXIDE.getSource());
-        if (slot == SLOT_WATER_IN)
-            return holdsFluid(stack, ModFluids.WATER.getSource()) || stack.is(Items.WATER_BUCKET);
-        return false;
+        return slot >= 0 && slot < ROD_SLOT_COUNT && stack.getItem() instanceof ZirnoxRodItem;
     }
 
     private static boolean holdsFluid(ItemStack stack, Fluid targetFluid) {
@@ -480,7 +500,7 @@ public class MachineZirnoxBlockEntity extends BaseMachineBlockEntity implements 
     private record RodSpec(int maxLife, int heat, boolean breeding, ItemStack depletedOrProduct) {}
 
     @Override
-    protected Component getDefaultName() { return Component.translatable("block.hbm_m.zirnox"); }
+    protected Component getDefaultName() { return Component.translatable("container.zirnox"); }
     @Override
     public Component getDisplayName()    { return getDefaultName(); }
 
@@ -532,6 +552,7 @@ public class MachineZirnoxBlockEntity extends BaseMachineBlockEntity implements 
 
     @Override
     public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
+        if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER && side != null) return sidedItems.get(side).cast(); // Original ISidedInventory
         if (cap == ForgeCapabilities.FLUID_HANDLER && side != null) {
             if (fluidSidesFromMultiblockStructure && !allowedFluidSides.contains(side)) {
                 return LazyOptional.empty();
@@ -627,4 +648,67 @@ public class MachineZirnoxBlockEntity extends BaseMachineBlockEntity implements 
         }
     }
     //?}
+
+    //? if forge {
+    /** Original {@code ISidedInventory}: Plaetze 0-23; nur Zirnox-Staebe hinein, nur verbrauchte (keine Zirnox-Staebe mehr) heraus. */
+    private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
+            new com.hbm_m.blockentity.SidedItemAccess.Rules() {
+                @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return com.hbm_m.blockentity.SidedItemAccess.range(0, 23); }
+                @Override public boolean canInsert(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return isItemValidForSlot(slot, stack); }
+                @Override public boolean canExtract(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return slot < 24 && !(stack.getItem() instanceof com.hbm_m.item.industrial.ZirnoxRodItem); }
+            });
+
+    @Override
+    public void invalidateCaps() {
+        super.invalidateCaps();
+        sidedItems.invalidate();
+    }
+    //?}
+
+    // ── Redstone-over-Radio (1:1 TileEntityReactorZirnox) ──
+
+    @Override
+    public String[] getFunctionInfo() {
+        return new String[] {
+                PREFIX_VALUE + "heat",
+                PREFIX_VALUE + "pressure",
+                PREFIX_VALUE + "water",
+                PREFIX_VALUE + "steam",
+                PREFIX_VALUE + "co2",
+                PREFIX_VALUE + "state",
+                PREFIX_FUNCTION + "setstate" + NAME_SEPARATOR + "active (0 or 1)",
+                PREFIX_FUNCTION + "ventco2"
+        };
+    }
+
+    @Override
+    public String provideRORValue(String name) {
+        if ((PREFIX_VALUE + "heat").equals(name))     return "" + (int) Math.round(heat * 1.0E-5D * 780.0D + 20.0D);
+        if ((PREFIX_VALUE + "pressure").equals(name)) return "" + (int) Math.round(pressure * 1.0E-5D * 30.0D);
+        if ((PREFIX_VALUE + "water").equals(name))    return "" + waterTank.getFill();
+        if ((PREFIX_VALUE + "steam").equals(name))    return "" + steamTank.getFill();
+        if ((PREFIX_VALUE + "co2").equals(name))      return "" + co2Tank.getFill();
+        if ((PREFIX_VALUE + "state").equals(name))    return "" + (isOn ? 1 : 0);
+        return null;
+    }
+
+    @Override
+    public String runRORFunction(String name, String[] params) {
+        if ((PREFIX_FUNCTION + "setstate").equals(name) && params.length > 0) {
+            if (redstonePowered) return null;
+            try {
+                int val = Integer.parseInt(params[0]);
+                this.isOn = (val == 1);
+                this.setChanged();
+            } catch (NumberFormatException e) {}
+            return null;
+        }
+        if ((PREFIX_FUNCTION + "ventco2").equals(name)) {
+            // Original: carbonDioxide.setFill(Math.max(fill - 1000, 0))
+            co2Tank.drainMb(Math.min(1_000, co2Tank.getFill()));
+            this.setChanged();
+            return null;
+        }
+        return null;
+    }
 }

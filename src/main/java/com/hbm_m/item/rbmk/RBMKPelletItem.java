@@ -138,6 +138,18 @@ public class RBMKPelletItem extends Item {
             list.add(Component.literal("High Xenon Poison").withStyle(ChatFormatting.DARK_PURPLE));
     }
 
+    /** Original: ItemRBMKPellet extends ItemNuclearWaste - fallengelassen unverwundbar und ohne Verschwinde-Timer. */
+    @Override
+    public boolean onEntityItemUpdate(ItemStack stack, net.minecraft.world.entity.item.ItemEntity entity) {
+        if (!entity.isInvulnerable()) {
+            entity.setInvulnerable(true);
+            //? if forge {
+            entity.lifespan = Integer.MAX_VALUE;
+            //?}
+        }
+        return false;
+    }
+
     /** Copies pellet stats onto a rod item. */
     public static void applyToRod(RBMKPelletItem pellet, RBMKRodItem rod) {
         rod.reactivity  = pellet.reactivity;

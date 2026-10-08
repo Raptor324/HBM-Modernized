@@ -176,6 +176,8 @@ public class SkeletonCreator implements IParticleCreator {
         SKULLANIZER.put(EntityType.PIGLIN, BONES_ZOMBIE);
         SKULLANIZER.put(EntityType.PIGLIN_BRUTE, BONES_ZOMBIE);
         SKULLANIZER.put(EntityType.ZOMBIFIED_PIGLIN, BONES_ZOMBIE);
+        // Original: skullanizer.put(EntityUndeadSoldier, BONES_ZOMBIE)
+        SKULLANIZER.put(com.hbm_m.entity.ModEntities.UNDEAD_SOLDIER.get(), BONES_ZOMBIE);
 
         SKULLANIZER.put(EntityType.VILLAGER, BONES_VILLAGER);
         SKULLANIZER.put(EntityType.PILLAGER, BONES_VILLAGER);

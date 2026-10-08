@@ -4,6 +4,7 @@ import com.hbm_m.block.bomb.BlockTaint;
 import com.hbm_m.config.ModClothConfig;
 import com.hbm_m.damagesource.ModDamageSources;
 import com.hbm_m.entity.mob.EntityCreeperTainted;
+import com.hbm_m.entity.mob.EntityTaintCrab;
 import com.hbm_m.effect.render.TaintEffectRenderer;
 
 import net.minecraft.client.gui.GuiGraphics;
@@ -42,11 +43,9 @@ public class TaintEffect extends MobEffect {
             return;
         }
 
-        if (entity instanceof EntityCreeperTainted) {
-            return;
-        }
-
-        if (level.random.nextInt(40) == 0) {
+        // Original: getainte Creeper und Krabben nehmen keinen Schaden, die Spur hinterlassen sie trotzdem.
+        if (!(entity instanceof EntityCreeperTainted) && !(entity instanceof EntityTaintCrab)
+                && level.random.nextInt(40) == 0) {
             entity.hurt(ModDamageSources.taint(level), amplifier + 1);
         }
 
@@ -68,11 +67,9 @@ public class TaintEffect extends MobEffect {
             return false;
         }
 
-        if (entity instanceof EntityCreeperTainted) {
-            return false;
-        }
-
-        if (level.random.nextInt(40) == 0) {
+        // Original: getainte Creeper und Krabben nehmen keinen Schaden, die Spur hinterlassen sie trotzdem.
+        if (!(entity instanceof EntityCreeperTainted) && !(entity instanceof EntityTaintCrab)
+                && level.random.nextInt(40) == 0) {
             entity.hurt(ModDamageSources.taint(level), amplifier + 1);
         }
 

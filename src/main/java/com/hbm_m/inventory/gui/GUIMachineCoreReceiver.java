@@ -44,22 +44,9 @@ public class GUIMachineCoreReceiver extends GuiInfoScreen<MachineCoreReceiverMen
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
         guiGraphics.blit(TEXTURE, this.leftPos, this.topPos, 0, 0, this.imageWidth, this.imageHeight);
 
-        // Original: receiver.tank.renderTank(guiLeft + 8, guiTop + 69, ..., 16, 52) - kein UV-Bereich
-        // fuer die gefuellte Tankgrafik in der Original-Textur vorhanden, daher als Fuellstands-
-        // Rechteck (Cryogel = hellblau) nachgebildet, bottom-up wie im Original.
+        // Original: receiver.tank.renderTank(guiLeft + 8, guiTop + 69, ..., 16, 52) - Port-renderTank erwartet die Oberkante
         if (receiver != null) { // тайл может отсутствовать в реплее Flashback
-            int capacity = receiver.getCoolantTank().getMaxFill();
-            int fill = receiver.getCoolantTank().getFill();
-            if (capacity > 0 && fill > 0) {
-                int tankHeight = 52;
-                int filled = Math.min(tankHeight, fill * tankHeight / capacity);
-                if (filled > 0) {
-                    int x0 = this.leftPos + 8;
-                    int y1 = this.topPos + 69 + tankHeight;
-                    int y0 = y1 - filled;
-                    guiGraphics.fill(x0, y0, x0 + 16, y1, 0xFF7FE0FF);
-                }
-            }
+            receiver.getCoolantTank().renderTank(guiGraphics, this.leftPos + 8, this.topPos + 69 - 52, 16, 52);
         }
     }
 
@@ -88,9 +75,7 @@ public class GUIMachineCoreReceiver extends GuiInfoScreen<MachineCoreReceiverMen
         super.render(guiGraphics, mouseX, mouseY, partialTick);
 
         if (receiver != null) { // тайл может отсутствовать в реплее Flashback
-            drawElectricityInfo(guiGraphics, mouseX, mouseY,
-                    40, 25, 100, 20,
-                    receiver.getEnergyStored(), receiver.getMaxEnergyStored());
+            receiver.getCoolantTank().renderTankInfo(guiGraphics, this.font, mouseX, mouseY, leftPos + 8, topPos + 17, 16, 52);
         }
 
         this.renderTooltip(guiGraphics, mouseX, mouseY);

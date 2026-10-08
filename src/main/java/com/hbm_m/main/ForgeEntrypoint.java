@@ -26,6 +26,8 @@ public final class ForgeEntrypoint {
         EventBuses.registerModEventBus(RefStrings.MODID, modBus);
         MainRegistry.init();
         com.hbm_m.recipe.FluidContainerIngredient.register();
+        // Rezeptbedingung hbm_m:config (LBSM/528/Expensive-Varianten des Originals)
+        com.hbm_m.recipe.condition.ConfigRecipeCondition.register();
         ModWorldGen.register(modBus);
         ModFluids.register(modBus);
         modBus.addListener(ModCapabilities::register);

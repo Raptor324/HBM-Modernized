@@ -196,7 +196,7 @@ public class ICFControllerBlock extends BaseEntityBlock {
 
     private InteractionResult interact(Level level, BlockPos pos, Player player) {
         if (level.isClientSide()) return InteractionResult.SUCCESS;
-        if (player.isShiftKeyDown()) return InteractionResult.PASS;
+        if (player.isShiftKeyDown()) return level.isClientSide() ? InteractionResult.SUCCESS : InteractionResult.PASS; // Original: Client true, Server geschlichen false
 
         if (level.getBlockEntity(pos) instanceof ICFControllerBlockEntity controller
                 && !controller.isAssembled()) {

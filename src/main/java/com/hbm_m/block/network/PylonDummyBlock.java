@@ -50,6 +50,40 @@ public class PylonDummyBlock extends Block implements EntityBlock {
         }
     }
 
+    //? if < 1.21.1 {
+    /** audit13: Original {@code BlockDummyable.onBlockHarvested} - Abbau einer Mastzelle droppt den Mast einmal (nicht im Kreativmodus). */
+    @Override
+    public void playerWillDestroy(Level level, BlockPos pos, BlockState state, net.minecraft.world.entity.player.Player player) {
+        if (!level.isClientSide) {
+            BlockPos core = findCore(level, pos);
+            if (core != null) level.destroyBlock(core, !player.getAbilities().instabuild);
+        }
+        super.playerWillDestroy(level, pos, state, player);
+    }
+
+    /** audit13: Original {@code PylonRedWire.onBlockActivated -> findCore}: Faerben ueber jede Zelle. */
+    @Override
+    public net.minecraft.world.InteractionResult use(BlockState state, Level level, BlockPos pos, net.minecraft.world.entity.player.Player player,
+                                                     net.minecraft.world.InteractionHand hand, net.minecraft.world.phys.BlockHitResult hit) {
+        BlockPos core = findCore(level, pos);
+        if (core == null) return net.minecraft.world.InteractionResult.PASS;
+        return level.getBlockState(core).use(level, player, hand, hit.withPosition(core));
+    }
+
+    /** audit13: Pick-Block auf einer Mastzelle gibt den Mast. */
+    @Override
+    public net.minecraft.world.item.ItemStack getCloneItemStack(BlockGetter level, BlockPos pos, BlockState state) {
+        if (level instanceof Level lvl) {
+            BlockPos core = findCore(lvl, pos);
+            if (core != null) {
+                BlockState coreState = level.getBlockState(core);
+                return coreState.getBlock().getCloneItemStack(level, core, coreState);
+            }
+        }
+        return net.minecraft.world.item.ItemStack.EMPTY;
+    }
+    //?}
+
     /** При разрушении части — рушим ядро (оно в свою очередь убирает остальные части). */
     private static void breakCore(Level level, BlockPos pos) {
         BlockPos core = findCore(level, pos);

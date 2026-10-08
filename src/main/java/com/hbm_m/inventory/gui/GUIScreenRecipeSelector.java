@@ -81,6 +81,13 @@ public class GUIScreenRecipeSelector extends Screen {
 
     @Nullable
     private com.hbm_m.blockentity.machines.MachinePUREXBlockEntity purex;
+    private com.hbm_m.blockentity.machines.MachinePrecAssBlockEntity precass;
+    @Nullable
+    private com.hbm_m.blockentity.machines.MachineChemicalFactoryBlockEntity chemFactory;
+    /** Montagefabrik: vier Felder, Rezeptwahl je Modul (Original GUIMachineAssemblyFactory). */
+    private com.hbm_m.blockentity.machines.MachineAssemblyFactoryBlockEntity assemFactory;
+    /** Modulindex der Chemiefabrik (Original openSelector(..., index, ...)). */
+    private final int moduleIndex;
 
     private record RecipeEntry(ResourceLocation id, ItemStack icon, @Nullable net.minecraft.world.item.crafting.Recipe<?> recipe) {}
 
@@ -95,7 +102,12 @@ public class GUIScreenRecipeSelector extends Screen {
     }
     
     public GUIScreenRecipeSelector(BlockPos machinePos, ResourceLocation currentRecipe, Screen parentScreen) {
+        this(machinePos, currentRecipe, parentScreen, 0);
+    }
+
+    public GUIScreenRecipeSelector(BlockPos machinePos, ResourceLocation currentRecipe, Screen parentScreen, int moduleIndex) {
         super(Component.translatable("gui.hbm_m.assembler_recipe_selector"));
+        this.moduleIndex = moduleIndex;
         this.machinePos = machinePos;
         this.parentScreen = parentScreen;
         this.selectedRecipe = currentRecipe;
@@ -360,9 +372,9 @@ public class GUIScreenRecipeSelector extends Screen {
         if (assembler != null) {
             ModPacketHandler.sendToServer(ModPacketHandler.SET_ASSEMBLER_RECIPE,
                 new SetAssemblerRecipeC2SPacket(machinePos, selectedRecipe));
-        } else if (chemicalPlant != null || purex != null) {
+        } else if (chemicalPlant != null || purex != null || precass != null || chemFactory != null || assemFactory != null) {
             ModPacketHandler.sendToServer(ModPacketHandler.SET_CHEM_RECIPE,
-                new SetChemPlantRecipeC2SPacket(machinePos, selectedRecipe));
+                new SetChemPlantRecipeC2SPacket(machinePos, selectedRecipe, moduleIndex));
         } else if (fusionTorus != null) {
             ModPacketHandler.sendToServer(ModPacketHandler.SET_FUSION_RECIPE,
                 new SetFusionRecipeC2SPacket(machinePos, selectedRecipe));
@@ -412,6 +424,12 @@ public class GUIScreenRecipeSelector extends Screen {
                 currentFolder = chemicalPlant.getBlueprintFolder();
             } else if (purex != null) {
                 currentFolder = purex.getBlueprintFolder();
+            } else if (precass != null) {
+                currentFolder = precass.getBlueprintFolder();
+            } else if (chemFactory != null) {
+                currentFolder = chemFactory.getBlueprintFolder(moduleIndex);
+            } else if (assemFactory != null) {
+                currentFolder = assemFactory.getBlueprintFolder(moduleIndex);
             }
 
             if (!ItemStack.matches(lastFolderStack, currentFolder)) {
@@ -452,6 +470,29 @@ public class GUIScreenRecipeSelector extends Screen {
                     if (icon.isEmpty()) icon = new ItemStack(com.hbm_m.item.ModItems.TEMPLATE_FOLDER.get());
                     allRecipes.add(new RecipeEntry(RecipeHooks.recipeId(this.minecraft.level.getRecipeManager(), ChemicalPlantRecipe.Type.INSTANCE, recipe), icon, recipe));
                 }
+            } else if (assemFactory != null) {
+                List<RecipeEntry> poolRecipes = new ArrayList<>();
+                List<RecipeEntry> baseRecipes = new ArrayList<>();
+                for (AssemblerRecipe recipe : assemFactory.getAvailableRecipes(moduleIndex)) {
+                    ItemStack icon = recipe.getResultItem(this.minecraft.level.registryAccess());
+                    RecipeEntry entry = new RecipeEntry(RecipeHooks.recipeId(this.minecraft.level.getRecipeManager(), AssemblerRecipe.Type.INSTANCE, recipe), icon, recipe);
+                    if (recipe.getBlueprintPool() != null && !recipe.getBlueprintPool().isEmpty()) poolRecipes.add(entry);
+                    else baseRecipes.add(entry);
+                }
+                allRecipes.addAll(poolRecipes);
+                allRecipes.addAll(baseRecipes);
+            } else if (chemFactory != null) {
+                for (ChemicalPlantRecipe recipe : chemFactory.getAvailableRecipes(moduleIndex)) {
+                    ItemStack icon = recipe.getResultItem(this.minecraft.level.registryAccess());
+                    if (icon.isEmpty()) icon = new ItemStack(com.hbm_m.item.ModItems.TEMPLATE_FOLDER.get());
+                    allRecipes.add(new RecipeEntry(RecipeHooks.recipeId(this.minecraft.level.getRecipeManager(), ChemicalPlantRecipe.Type.INSTANCE, recipe), icon, recipe));
+                }
+            } else if (precass != null) {
+                for (com.hbm_m.recipe.PrecAssRecipe recipe : precass.getAvailableRecipes()) {
+                    ItemStack icon = recipe.getResultItemSafe();
+                    if (icon.isEmpty()) icon = new ItemStack(com.hbm_m.item.ModItems.TEMPLATE_FOLDER.get());
+                    allRecipes.add(new RecipeEntry(RecipeHooks.recipeId(this.minecraft.level.getRecipeManager(), com.hbm_m.recipe.PrecAssRecipe.Type.INSTANCE, recipe), icon, recipe));
+                }
             } else if (purex != null) {
                 for (com.hbm_m.recipe.PurexRecipe recipe : purex.getAvailableRecipes()) {
                     ItemStack icon = recipe.getResultItem(this.minecraft.level.registryAccess());
@@ -486,6 +527,9 @@ public class GUIScreenRecipeSelector extends Screen {
         if (this.minecraft == null || this.minecraft.level == null) return;
         BlockEntity be = this.minecraft.level.getBlockEntity(this.machinePos);
         this.purex = be instanceof com.hbm_m.blockentity.machines.MachinePUREXBlockEntity p ? p : null;
+        this.precass = be instanceof com.hbm_m.blockentity.machines.MachinePrecAssBlockEntity pa ? pa : null;
+        this.chemFactory = be instanceof com.hbm_m.blockentity.machines.MachineChemicalFactoryBlockEntity cf ? cf : null;
+        this.assemFactory = be instanceof com.hbm_m.blockentity.machines.MachineAssemblyFactoryBlockEntity af ? af : null;
         if (be instanceof MachineAdvancedAssemblerBlockEntity a) {
             this.assembler = a;
             this.chemicalPlant = null;
@@ -529,6 +573,11 @@ public class GUIScreenRecipeSelector extends Screen {
 
             tooltip.add(Component.empty());
             com.hbm_m.util.TemplateTooltipUtil.buildRecipeTooltip(assemblerRecipe, tooltip);
+            return;
+        }
+
+        if (recipe instanceof com.hbm_m.recipe.PrecAssRecipe precRecipe) {
+            GUIMachinePrecAss.appendRecipeLines(precRecipe, tooltip);
             return;
         }
 
@@ -594,9 +643,15 @@ public class GUIScreenRecipeSelector extends Screen {
                 String name = variants.length == 0 ? "?" : variants[0].getHoverName().getString();
                 tooltip.add(Component.literal("  " + in.count() + "x " + name).withStyle(ChatFormatting.GRAY));
             }
-            for (var fin : chemicalRecipe.getFluidInputs()) {
-                tooltip.add(Component.literal("  " + fin.getAmount() + "mB ").withStyle(ChatFormatting.BLUE)
-                        .append(FluidLocalization.nameFromFluidId(BuiltInRegistries.FLUID.getKey(fin.getFluid())).copy().withStyle(ChatFormatting.GRAY)));
+            for (int fi = 0; fi < chemicalRecipe.getFluidInputs().size(); fi++) {
+                var fin = chemicalRecipe.getFluidInputs().get(fi);
+                var line = Component.literal("  " + fin.getAmount() + "mB ").withStyle(ChatFormatting.BLUE)
+                        .append(FluidLocalization.nameFromFluidId(BuiltInRegistries.FLUID.getKey(fin.getFluid())).copy().withStyle(ChatFormatting.GRAY));
+                // Original GenericRecipe.input(): " at <rot>N PU" bei Druckeingaengen
+                int pressure = chemicalRecipe.getFluidInputPressure(fi);
+                if (pressure != 0) line.append(Component.literal(" ").append(Component.translatable("gui.recipe.atPressure")).append(" ").withStyle(ChatFormatting.BLUE))
+                        .append(Component.literal(pressure + " PU").withStyle(ChatFormatting.RED));
+                tooltip.add(line);
             }
 
             tooltip.add(Component.translatable("gui.recipe.output").withStyle(ChatFormatting.BOLD));

@@ -71,7 +71,8 @@ import com.hbm_m.platform.PlatformHooks;
  * - Энергосистема остается long-ориентированной с совместимостью Forge Energy
  */
 @SuppressWarnings("UnstableApiUsage")
-public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity implements IFrameSupportable, IMultiblockSidedIO {
+public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity implements IFrameSupportable, IMultiblockSidedIO,
+        com.hbm_m.api.redstoneoverradio.IRORValueProvider, com.hbm_m.api.redstoneoverradio.IRORInteractive {
 
     private static final int SLOT_COUNT = 17;
     private static final int ENERGY_SLOT = 0;
@@ -167,7 +168,7 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
 
         // Инициализируем модуль здесь, передавая СЕБЯ (this) как IEnergyReceiver
         if (this.level != null && !this.level.isClientSide) {
-            this.assemblerModule = new MachineModuleAdvancedAssembler(0, this, this.inventory, this.level);
+            this.assemblerModule = new MachineModuleAdvancedAssembler(0, this, this.inventory, this.level).setFluidTanks(inputTank, outputTank);
         }
     }
 
@@ -345,7 +346,7 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
         }
         if (assemblerModule == null && level != null) {
             // Передаем 'this' как IEnergyReceiver
-            assemblerModule = new MachineModuleAdvancedAssembler(0, this, inventory, level);
+            assemblerModule = new MachineModuleAdvancedAssembler(0, this, inventory, level).setFluidTanks(inputTank, outputTank);
         }
         if (assemblerModule != null) {
             boolean wasCrafting = assemblerModule.isProcessing();
@@ -536,6 +537,8 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
             AssemblerRecipe recipe = getCachedRecipe();
             assemblerModule.setPreferredRecipe(recipe);
             assemblerModule.resetProgress();
+            // Original GUI-Auswahl: setRecipe(selection, false) hebt den RoR-Modus auf
+            assemblerModule.restrictedMode = false;
             if (wasCrafting) {
                 level.playSound(null, worldPosition, ModSounds.ASSEMBLER_STOP.get(),
                         SoundSource.BLOCKS, 0.5f, 1.0f);
@@ -579,6 +582,10 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
         // 4. Иначе возвращаем пустой список
         return NonNullList.create();
     }
+
+    /** Original {@code inputTank}/{@code outputTank} - fuer die GUI-Anzeige. */
+    public FluidTank getInputTank() { return inputTank; }
+    public FluidTank getOutputTank() { return outputTank; }
 
     public ItemStack getBlueprintFolder() {
         return inventory.getStackInSlot(BLUEPRINT_FOLDER_SLOT);
@@ -658,7 +665,7 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
 
         if (tag.contains("AssemblerModule") && level != null) {
             if (assemblerModule == null) {
-                assemblerModule = new MachineModuleAdvancedAssembler(0, this, inventory, level);
+                assemblerModule = new MachineModuleAdvancedAssembler(0, this, inventory, level).setFluidTanks(inputTank, outputTank);
             }
             assemblerModule.readFromNBT(tag.getCompound("AssemblerModule"));
         }
@@ -705,6 +712,7 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
     //? if forge {
     @Override
     public @NotNull <T> LazyOptional<T> getCapability(@NotNull Capability<T> cap, @Nullable Direction side) {
+        if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER && side != null) return sidedItems.get(side).cast(); // Original ISidedInventory
         if (cap == ForgeCapabilities.ITEM_HANDLER) {
             return itemHandler.cast();
         }
@@ -801,7 +809,7 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
     public void onLoad() {
         super.onLoad();
         if (level != null && !level.isClientSide && assemblerModule == null) {
-            this.assemblerModule = new MachineModuleAdvancedAssembler(0, this, this.inventory, this.level);
+            this.assemblerModule = new MachineModuleAdvancedAssembler(0, this, this.inventory, this.level).setFluidTanks(inputTank, outputTank);
         }
     }
     //?}
@@ -809,6 +817,7 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
     //? if forge {
     @Override
     public void invalidateCaps() {
+        sidedItems.invalidate();
         super.invalidateCaps();
     }
     //?}
@@ -965,5 +974,53 @@ public class MachineAdvancedAssemblerBlockEntity extends BaseMachineBlockEntity 
             }
         }
         return ports.toArray(new BlockPos[0]);
+    }
+
+    //? if forge {
+    /** Original {@code ISidedInventory}: Slots {4-16}; Zutaten nach Rezept hinein, Ausgabe 16 und verstopfte Eingaenge heraus. */
+    private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
+            new com.hbm_m.blockentity.SidedItemAccess.Rules() {
+                @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return com.hbm_m.blockentity.SidedItemAccess.range(4, 16); }
+                @Override public boolean canInsert(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return isItemValidForSlot(slot, stack); }
+                @Override public boolean canExtract(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return slot == 16 || (assemblerModule != null && assemblerModule.isSlotClogged(slot)); }
+            });
+    //?}
+
+    // ── Redstone-over-Radio (1:1 TileEntityMachineAssemblyMachine) ──
+
+    /** Original {@code assemblerModule.restrictedMode} - blaue Fortschrittsleiste im GUI. */
+    public boolean isRestrictedMode() {
+        return assemblerModule != null && assemblerModule.restrictedMode;
+    }
+
+    @Override
+    public String[] getFunctionInfo() {
+        return new String[] {
+                PREFIX_VALUE + "progress",
+                PREFIX_VALUE + "recipe",
+                PREFIX_VALUE + "active",
+                PREFIX_FUNCTION + "setrecipe" + NAME_SEPARATOR + "name",
+        };
+    }
+
+    @Override
+    public String provideRORValue(String name) {
+        if ((PREFIX_VALUE + "progress").equals(name)) return "" + (assemblerModule != null ? (int) Math.round(assemblerModule.getProgressPercent() * 100) : 0);
+        if ((PREFIX_VALUE + "recipe").equals(name))   return com.hbm_m.api.redstoneoverradio.RORRecipeNames.name(selectedRecipeId);
+        if ((PREFIX_VALUE + "active").equals(name))   return "" + (assemblerModule != null && assemblerModule.isProcessing() ? 1 : 0);
+        return null;
+    }
+
+    @Override
+    public String runRORFunction(String name, String[] params) {
+        // Original: params.length == 1; fremde Rezept-IDs ("ns:pfad") zerfallen am Parametertrenner in zwei Teile
+        if ((PREFIX_FUNCTION + "setrecipe").equals(name) && (params.length == 1 || params.length == 2)) {
+            this.setSelectedRecipe(com.hbm_m.api.redstoneoverradio.RORRecipeNames.parse(params));
+            if (assemblerModule != null) assemblerModule.restrictedMode = true;
+            this.setChanged();
+            if (level != null && !level.isClientSide) sendUpdateToClient();
+            return null;
+        }
+        return null;
     }
 }

@@ -31,16 +31,20 @@ import net.minecraft.world.level.material.Fluid;
  * {@link CatalyticReformerRecipe} (Port von {@code ReformingRecipes}). Erfordert wie im
  * Original einen katalytischen Konverter ({@link ModItems#CATALYTIC_CONVERTER}) im Katalysatorslot.
  */
-public class MachineCatalyticReformerBlockEntity extends BaseMachineBlockEntity implements IFluidStandardTransceiverMK2 {
+public class MachineCatalyticReformerBlockEntity extends BaseMachineBlockEntity implements com.hbm_m.api.block.IPersistentNBT, IFluidStandardTransceiverMK2 {
 
+    /** Original-Inventar (11): 0 Batterie, 1/2 Kanister Eingang ein/aus, 3/4 Reformat, 5/6 Gas,
+     *  7/8 Wasserstoff, 9 Fluidkennung, 10 Katalysator. */
     public static final int SLOT_BATTERY = 0;
-    public static final int SLOT_CATALYST = 1;
-    private static final int SLOT_COUNT = 2;
+    public static final int SLOT_FLUID_ID = 9;
+    public static final int SLOT_CATALYST = 10;
+    public static final int SLOT_COUNT = 11;
 
-    private static final long MAX_POWER = 500_000L;
+    /** Original: {@code maxPower = 1_000_000}; Tanks Naphtha 64000, Reformat/Petroleum/Wasserstoff je 24000. */
+    private static final long MAX_POWER = 1_000_000L;
     private static final long POWER_PER_CYCLE = 20_000L;
-    private static final int INPUT_CAPACITY_MB = 4000;
-    private static final int OUTPUT_CAPACITY_MB = 2000;
+    private static final int INPUT_CAPACITY_MB = 64_000;
+    private static final int OUTPUT_CAPACITY_MB = 24_000;
     private static final int INPUT_PER_CYCLE_MB = 100;
 
     private final FluidTank[] tanks = new FluidTank[4];
@@ -63,7 +67,20 @@ public class MachineCatalyticReformerBlockEntity extends BaseMachineBlockEntity 
         if (level.isClientSide) return;
 
         be.chargeFromBatterySlot(SLOT_BATTERY);
+
+        // Original: tanks[0].setType(9), tanks[0].loadTank(1, 2)
+        ItemStack[] slots = new ItemStack[SLOT_COUNT];
+        for (int i = 0; i < SLOT_COUNT; i++) slots[i] = be.inventory.getStackInSlot(i);
+        boolean changed = be.tanks[0].setType(SLOT_FLUID_ID, slots);
+        changed |= be.tanks[0].loadTank(1, 2, slots);
+
         be.reform();
+
+        // Original: tanks[1..3].unloadTank(3, 4), (5, 6), (7, 8)
+        changed |= be.tanks[1].unloadTank(3, 4, slots);
+        changed |= be.tanks[2].unloadTank(5, 6, slots);
+        changed |= be.tanks[3].unloadTank(7, 8, slots);
+        if (changed) for (int i = 0; i < SLOT_COUNT; i++) be.inventory.setStackInSlot(i, slots[i] == null ? ItemStack.EMPTY : slots[i]);
 
         for (Direction dir : Direction.values()) {
             BlockPos neighborPos = pos.relative(dir);
@@ -155,7 +172,10 @@ public class MachineCatalyticReformerBlockEntity extends BaseMachineBlockEntity 
 
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
+        int oldSize = tag.getCompound("inventory").getInt("Size");
         super.readNbtData(tag, registries);
+        migrateOldInventory(oldSize);
+        setEnergyCapacity(MAX_POWER); // alte Welten: frueherer Speicherwert
         for (int i = 0; i < tanks.length; i++) {
             tanks[i].readFromNBT(tag, "tank" + i);
         }
@@ -175,12 +195,33 @@ public class MachineCatalyticReformerBlockEntity extends BaseMachineBlockEntity 
     protected boolean isItemValidForSlot(int slot, ItemStack stack) {
         if (slot == SLOT_BATTERY) return isEnergyProviderItem(stack);
         if (slot == SLOT_CATALYST) return stack.is(ModItems.CATALYTIC_CONVERTER.get());
-        return false;
+        if (slot == SLOT_FLUID_ID) return stack.getItem() instanceof com.hbm_m.interfaces.IItemFluidIdentifier;
+        // Original: Eingaenge 1/3/5/7, Ausgaenge 2/4/6/8 nur entnehmbar
+        return slot == 1 || slot == 3 || slot == 5 || slot == 7;
+    }
+
+    /** Alte Welten (2 Slots: Batterie, Katalysator auf 1) -> Katalysator auf Original-Slot 10. */
+    private void migrateOldInventory(int oldSize) {
+        if (oldSize != 2) return;
+        ItemStack old = inventory.getStackInSlot(1);
+        if (!old.isEmpty() && inventory.getStackInSlot(SLOT_CATALYST).isEmpty()) {
+            inventory.setStackInSlot(SLOT_CATALYST, old);
+            inventory.setStackInSlot(1, ItemStack.EMPTY);
+        }
     }
 
     @Nullable
     @Override
     public AbstractContainerMenu createMenu(int id, Inventory inventory, Player player) {
         return MachineCatalyticReformerMenu.create(id, inventory, this);
+    }
+
+    /** Original {@code writeNBT}: die vier Tanks, sofern einer etwas enthaelt. */
+    @Override
+    public void writeNBT(CompoundTag nbt) {
+        boolean empty = true;
+        for (var tank : tanks) if (tank.getFill() > 0) empty = false;
+        if (empty) return;
+        for (int i = 0; i < tanks.length; i++) tanks[i].writeToNBT(nbt, "tank" + i);
     }
 }

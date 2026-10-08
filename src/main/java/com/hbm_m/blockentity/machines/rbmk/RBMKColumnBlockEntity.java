@@ -560,7 +560,17 @@ public abstract class RBMKColumnBlockEntity extends BaseHbmBlockEntity {
         tag.putDouble("heat", heat);
         tag.putInt("reasimWater", reasimWater);
         tag.putInt("reasimSteam", reasimSteam);
-        tag.putInt("lidState", lidState);
+        if (!diag) tag.putInt("lidState", lidState);
+    }
+
+    /** Original {@code diag}: waehrend {@link #getDiagData} schreiben die Unterklassen ihre Diagnosewerte statt der Speicherdaten. */
+    protected static boolean diag = false;
+
+    /** 1:1 {@code getDiagData} - Datenquelle des DODD-Overlays (ClientConfig.doddRbmkDiagnostic). */
+    public void getDiagData(CompoundTag nbt) {
+        diag = true;
+        this.writeNbtData(nbt, null);
+        diag = false;
     }
 
     @Override

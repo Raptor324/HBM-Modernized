@@ -20,7 +20,7 @@ import net.minecraft.world.level.block.state.BlockState;
 /**
  * Порт {@link com.hbm.tileentity.machine.TileEntityGeiger} (1.7.10).
  */
-public class GeigerCounterBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity {
+public class GeigerCounterBlockEntity extends com.hbm_m.blockentity.BaseHbmBlockEntity implements com.hbm_m.api.redstoneoverradio.IRORValueProvider {
 
     private static final Random RANDOM = new Random();
 
@@ -101,5 +101,20 @@ public class GeigerCounterBlockEntity extends com.hbm_m.blockentity.BaseHbmBlock
         if (sound != null) {
             level.playSound(null, pos, sound, SoundSource.BLOCKS, 1.0F, 1.0F);
         }
+    }
+
+    // ── Redstone-over-Radio (1:1 TileEntityGeiger) ──
+
+    @Override
+    public String[] getFunctionInfo() {
+        return new String[] {
+                PREFIX_VALUE + "rad",
+        };
+    }
+
+    @Override
+    public String provideRORValue(String name) {
+        if ((PREFIX_VALUE + "rad").equals(name)) return "" + (int) Math.ceil(ticker);
+        return null;
     }
 }

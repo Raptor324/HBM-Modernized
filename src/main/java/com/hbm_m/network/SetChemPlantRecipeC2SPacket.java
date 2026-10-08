@@ -18,10 +18,17 @@ public class SetChemPlantRecipeC2SPacket implements C2SPacket {
     private final BlockPos blockPos;
     @Nullable
     private final ResourceLocation recipeId;
+    /** Modulindex (Chemiefabrik: 0-3, sonst 0) - Original receiveControl "index". */
+    private final int index;
 
     public SetChemPlantRecipeC2SPacket(BlockPos blockPos, @Nullable ResourceLocation recipeId) {
+        this(blockPos, recipeId, 0);
+    }
+
+    public SetChemPlantRecipeC2SPacket(BlockPos blockPos, @Nullable ResourceLocation recipeId, int index) {
         this.blockPos = blockPos;
         this.recipeId = recipeId;
+        this.index = index;
     }
 
     // ── Serialization ─────────────────────────────────────────────────────────
@@ -30,7 +37,8 @@ public class SetChemPlantRecipeC2SPacket implements C2SPacket {
         BlockPos         blockPos  = buf.readBlockPos();
         boolean          hasRecipe = buf.readBoolean();
         ResourceLocation recipeId  = hasRecipe ? buf.readResourceLocation() : null;
-        return new SetChemPlantRecipeC2SPacket(blockPos, recipeId);
+        int              index     = buf.readVarInt();
+        return new SetChemPlantRecipeC2SPacket(blockPos, recipeId, index);
     }
 
     @Override
@@ -38,6 +46,7 @@ public class SetChemPlantRecipeC2SPacket implements C2SPacket {
         buf.writeBlockPos(blockPos);
         buf.writeBoolean(recipeId != null);
         if (recipeId != null) buf.writeResourceLocation(recipeId);
+        buf.writeVarInt(index);
     }
 
     // ── Handler ───────────────────────────────────────────────────────────────
@@ -56,6 +65,12 @@ public class SetChemPlantRecipeC2SPacket implements C2SPacket {
                 chemPlant.setSelectedRecipe(msg.recipeId);
             } else if (be instanceof com.hbm_m.blockentity.machines.MachinePUREXBlockEntity purex) {
                 purex.setSelectedRecipe(msg.recipeId);
+            } else if (be instanceof com.hbm_m.blockentity.machines.MachinePrecAssBlockEntity precass) {
+                precass.setSelectedRecipe(msg.recipeId);
+            } else if (be instanceof com.hbm_m.blockentity.machines.MachineChemicalFactoryBlockEntity factory) {
+                factory.setSelectedRecipe(msg.index, msg.recipeId);
+            } else if (be instanceof com.hbm_m.blockentity.machines.MachineAssemblyFactoryBlockEntity assemFac) {
+                assemFac.setSelectedRecipe(msg.index, msg.recipeId);
             }
         });
     }

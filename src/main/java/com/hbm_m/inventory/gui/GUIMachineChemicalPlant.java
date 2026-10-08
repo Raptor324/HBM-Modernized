@@ -65,7 +65,9 @@ public class GUIMachineChemicalPlant extends AbstractContainerScreen<MachineChem
             int maxProgress = menu.getMaxProgress();
             if (maxProgress > 0) {
                 int j = (int) Math.ceil(70.0 * progress / maxProgress);
-                guiGraphics.blit(TEXTURE, this.leftPos + 62, this.topPos + 126, 176, 61, j, 16);
+                // Original: v = 61 + (restrictedMode ? 16 : 0) - blaue Leiste, wenn das Rezept per Funk (RoR) gesetzt wurde
+                boolean restrictedMode = this.menu.getBlockEntity() != null && this.menu.getBlockEntity().isRestrictedMode();
+                guiGraphics.blit(TEXTURE, this.leftPos + 62, this.topPos + 126, 176, 61 + (restrictedMode ? 16 : 0), j, 16);
             }
         }
 
@@ -189,11 +191,13 @@ public class GUIMachineChemicalPlant extends AbstractContainerScreen<MachineChem
                 .orElse(null);
     }
 
-    private List<Component> buildRecipeTooltip(ChemicalPlantRecipe recipe) {
+    /** Auch von der Chemiefabrik genutzt (Original {@code recipe.print()}). */
+    static List<Component> buildRecipeTooltip(ChemicalPlantRecipe recipe) {
         List<Component> lines = new ArrayList<>();
+        net.minecraft.client.Minecraft mc = net.minecraft.client.Minecraft.getInstance();
 
-        ItemStack icon = recipe.getResultItem(this.minecraft != null && this.minecraft.level != null
-                ? this.minecraft.level.registryAccess()
+        ItemStack icon = recipe.getResultItem(mc.level != null
+                ? mc.level.registryAccess()
                 : null);
         if (!icon.isEmpty()) {
             lines.add(icon.getHoverName().copy().withStyle(ChatFormatting.YELLOW));
@@ -204,7 +208,7 @@ public class GUIMachineChemicalPlant extends AbstractContainerScreen<MachineChem
             //?} else {
             /*lines.add(Component.literal(
                     RecipeHooks.recipeId(
-                            this.minecraft.level.getRecipeManager(),
+                            mc.level.getRecipeManager(),
                             ChemicalPlantRecipe.Type.INSTANCE,
                             recipe).toString()).withStyle(ChatFormatting.YELLOW));
             *///?}
@@ -238,9 +242,15 @@ public class GUIMachineChemicalPlant extends AbstractContainerScreen<MachineChem
             String name = variants.length == 0 ? "?" : variants[0].getHoverName().getString();
             lines.add(Component.literal("  " + in.count() + "x " + name).withStyle(ChatFormatting.GRAY));
         }
-        for (var fin : recipe.getFluidInputs()) {
-            lines.add(Component.literal("  " + fin.getAmount() + "mB ").withStyle(ChatFormatting.BLUE)
-                    .append(FluidLocalization.nameFromFluidId(BuiltInRegistries.FLUID.getKey(fin.getFluid())).copy().withStyle(ChatFormatting.GRAY)));
+        for (int fi = 0; fi < recipe.getFluidInputs().size(); fi++) {
+            var fin = recipe.getFluidInputs().get(fi);
+            var line = Component.literal("  " + fin.getAmount() + "mB ").withStyle(ChatFormatting.BLUE)
+                    .append(FluidLocalization.nameFromFluidId(BuiltInRegistries.FLUID.getKey(fin.getFluid())).copy().withStyle(ChatFormatting.GRAY));
+            // Original GenericRecipe.input(): " at <rot>N PU" bei Druckeingaengen
+            int pressure = recipe.getFluidInputPressure(fi);
+            if (pressure != 0) line.append(Component.literal(" ").append(Component.translatable("gui.recipe.atPressure")).append(" ").withStyle(ChatFormatting.BLUE))
+                    .append(Component.literal(pressure + " PU").withStyle(ChatFormatting.RED));
+            lines.add(line);
         }
 
         lines.add(Component.translatable("gui.recipe.output").withStyle(ChatFormatting.BOLD));

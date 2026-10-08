@@ -46,28 +46,13 @@ public class ItemCastMold extends Item implements ITooltipProvider {
         STAMP         ("Cast Stamp Mold"),
         C357          ("Cast .357 Casing Mold"),
         CBUCKSHOT     ("Cast Buckshot Mold"),
-        MOGUS         ("Cast Mogus Mold");
+        MOGUS         ("Cast Mogus Mold"),
+        C9            ("Small Caliber Casing Mold"),
+        C50           ("Large Caliber Casing Mold");
 
         public final String label;
         MoldType(String label) { this.label = label; }
 
-        /**
-         * Стоимость заливки в mB (ёмкость формы foundry basin).
-         * Порт прежнего {@code MoldCastingRecipes.getCost(mold)} — статическая таблица,
-         * не имеет data-driven источника правды (зависит только от типа формы, не от материала).
-         */
-        public int getCostMb() {
-            return switch (this) {
-                case NUGGET                        -> com.hbm_m.inventory.material.MaterialStack.MB_PER_NUGGET;
-                case PLATE, INGOT, WIRE, WIRE_DENSE,
-                     SHELL, PIPE, BILLET            -> com.hbm_m.inventory.material.MaterialStack.MB_PER_INGOT;
-                case PLATE_CAST                    -> com.hbm_m.inventory.material.MaterialStack.MB_PER_PLATE;
-                case PLATES_CAST                   -> com.hbm_m.inventory.material.MaterialStack.MB_PER_PLATE * 3;
-                case INGOTS, PLATES, WIRES_DENSE,
-                     BLOCK                          -> com.hbm_m.inventory.material.MaterialStack.MB_PER_INGOT * 9;
-                default                            -> 0;
-            };
-        }
     }
 
     private final MoldType moldType;
@@ -81,7 +66,13 @@ public class ItemCastMold extends Item implements ITooltipProvider {
 
     @Override
     public void appendHbmTooltip(ItemStack stack, @Nullable Level level, List<Component> list, TooltipFlag flag) {
-        list.add(Component.literal(ChatFormatting.GRAY + moldType.label));
-        list.add(Component.literal(ChatFormatting.DARK_GRAY + "Place in Foundry Basin"));
+        // Original ItemMold.addInformation: Formtitel, darunter das passende Becken
+        ItemMold.Mold mold = ItemMold.getMold(stack);
+        if (mold == null) {
+            list.add(Component.literal(moldType.label).withStyle(ChatFormatting.GRAY));
+            return;
+        }
+        list.add(mold.getTitle().copy().withStyle(ChatFormatting.YELLOW));
+        list.add(ItemMold.sizeName(mold).copy().withStyle(mold.size == 0 ? ChatFormatting.GOLD : ChatFormatting.RED));
     }
 }

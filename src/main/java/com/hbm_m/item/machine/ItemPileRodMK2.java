@@ -193,9 +193,11 @@ public class ItemPileRodMK2 extends Item implements ITooltipProvider {
             }
         }
 
-        if (rod.neutronSource > 0D) {
-            tooltip.add(Component.translatable("tooltip.hbm_m.pile_rod.source")
-                    .withStyle(ChatFormatting.YELLOW));
+        // Original: I18nUtil.autoBreak(fontRenderer, <name>.desc, 225), jede Zeile gelb
+        String desc = net.minecraft.client.resources.language.I18n.get(this.getDescriptionId() + ".desc");
+        for (net.minecraft.network.chat.FormattedText line : net.minecraft.client.Minecraft.getInstance().font.getSplitter()
+                .splitLines(desc, 225, net.minecraft.network.chat.Style.EMPTY)) {
+            tooltip.add(Component.literal(line.getString()).withStyle(ChatFormatting.YELLOW));
         }
     }
 }

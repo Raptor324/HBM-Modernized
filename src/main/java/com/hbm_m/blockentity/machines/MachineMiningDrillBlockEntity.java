@@ -1,99 +1,78 @@
 package com.hbm_m.blockentity.machines;
 
-import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Deque;
+import java.util.EnumMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
-import java.util.Set;
 
+import org.jetbrains.annotations.Nullable;
+
+import com.hbm_m.api.fluids.IFluidStandardReceiverMK2;
 import com.hbm_m.block.ModBlocks;
+import com.hbm_m.block.machines.DummyableMachineBlock;
 import com.hbm_m.blockentity.BaseMachineBlockEntity;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.blockentity.nature.OreBedrockBlockEntity;
+import com.hbm_m.inventory.UpgradeManager;
 import com.hbm_m.inventory.fluid.ModFluids;
 import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.inventory.menu.MachineMiningDrillMenu;
 import com.hbm_m.item.ModItems;
-import com.hbm_m.recipe.ModRecipes;
-import com.hbm_m.recipe.ShredderRecipe;
-import com.hbm_m.worldgen.BedrockOreDensity;
+import com.hbm_m.item.industrial.ItemDrillbit;
+import com.hbm_m.item.industrial.ItemDrillbit.EnumDrillType;
+import com.hbm_m.item.industrial.ItemMachineUpgrade;
+import com.hbm_m.item.industrial.ItemMachineUpgrade.UpgradeType;
 import com.hbm_m.platform.PlatformHooks;
 import com.hbm_m.platform.recipe.RecipeHooks;
 import com.hbm_m.platform.recipe.RecipeInputWrapper;
+import com.hbm_m.recipe.ModRecipes;
+import com.hbm_m.recipe.ShredderRecipe;
+import com.hbm_m.worldgen.BedrockOreDensity;
 
+import net.minecraft.ChatFormatting;
 import net.minecraft.core.BlockPos;
+import net.minecraft.core.Direction;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
-import net.minecraft.sounds.SoundEvents;
-import net.minecraft.sounds.SoundSource;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.world.SimpleContainer;
+import net.minecraft.world.entity.item.ItemEntity;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
-import net.minecraft.world.item.Item;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
-import net.minecraft.world.item.enchantment.Enchantments;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.level.storage.loot.LootParams;
 import net.minecraft.world.level.storage.loot.parameters.LootContextParams;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.minecraft.server.level.ServerLevel;
 
 /**
- * Port des Large Mining Drill (1.7.10: {@code MachineExcavator}/{@code TileEntityMachineExcavator}).
- * Nachgebaut anhand der Original-Java-Quelle (vom User bereitgestellt) - siehe
- * {@link com.hbm_m.client.render.implementations.MachineMiningDrillRenderer} fuer die Teleskop-/Pendel-
- * Animation und {@link com.hbm_m.block.machines.MachineMiningDrillBlock#getStructureHelper()} fuer die
- * 7x4x7-Struktur.
- * <p>
- * Bewusst NICHT 1:1 uebernommen (Phase 2, siehe Gespraech): Conveyor-Belt-Ausgabe (kein
- * IConveyorBelt-System in diesem Port), Bedrock-Erz/Saeure-Sonderfall (kein BlockDepth/TileEntity-
- * BedrockOre-Aequivalent). Ausgabe geht nur ins interne Puffer-Inventar bzw. als Item-Entity in die Welt,
- * wenn der Puffer voll ist.
+ * 1:1 {@code TileEntityMachineExcavator}: grosser Bergbaubohrer. Bohrt Ring um Ring ({@code 1 + 2 * Effekt}) bis
+ * vier Bloecke ueber dem Kern nach unten, Arbeitszeit = Summe der Haerten / Bohrkopftempo. Schalter: Bohrer, Brecher
+ * (Schredderrezepte), Wand (Barrikaden statt Fluessigkeiten/Luft), Adernabbau (rekursiv, 10 tief, Ore-Tag) und
+ * Behutsamkeit. Grundgestein-Erz wird je Stufe des Bohrkopfs (ggf. mit Saeure aus dem Tank) abgebaut. Alles landet
+ * zuerst in einem Behaelter, dann auf einem Foerderband vor der Rutsche (4 vor, 3 unter dem Kern), sonst im 9er-Puffer.
  */
-public class MachineMiningDrillBlockEntity extends BaseMachineBlockEntity {
+public class MachineMiningDrillBlockEntity extends BaseMachineBlockEntity implements IFluidStandardReceiverMK2,
+        com.hbm_m.api.tile.IControlReceiver, com.hbm_m.interfaces.IUpgradeInfoProvider {
 
-    public static final int SLOT_DRILLBIT = 0;
-    private static final int OUTPUT_START = 1;
-    private static final int OUTPUT_COUNT = 9;
-    public static final int SLOT_BATTERY = 10;
-    private static final int SLOT_COUNT = 11;
+    /** Original: 0 Batterie, 1 Fluidkennung, 2-3 Aufwertungen, 4 Bohrkopf, 5-13 Puffer. */
+    public static final int SLOT_BATTERY = 0;
+    public static final int SLOT_FLUID_ID = 1;
+    public static final int SLOT_UPGRADE_1 = 2;
+    public static final int SLOT_UPGRADE_2 = 3;
+    public static final int SLOT_DRILLBIT = 4;
+    public static final int OUTPUT_START = 5;
+    public static final int OUTPUT_END = 13;
+    public static final int INVENTORY_SIZE = 14;
 
-    private static final long CAPACITY = 1_000_000L;
-    private static final long MAX_RECEIVE = 2_000L;
-    private static final long ENERGY_PER_TICK = 200L;
-
-    /** Eigenschaften je Drillbit-Tier, 1:1 aus {@code ItemDrillbit.EnumDrillType} des Originals. */
-    private record DrillProps(double speed, int tier, int fortune, boolean vein, boolean silk) {}
-
-    private static final Map<Item, DrillProps> DRILL_PROPS = Map.ofEntries(
-            Map.entry(ModItems.DRILLBIT_STEEL.get(),          new DrillProps(1.0D, 1, 0, false, false)),
-            Map.entry(ModItems.DRILLBIT_STEEL_DIAMOND.get(),  new DrillProps(1.0D, 1, 2, false, true)),
-            Map.entry(ModItems.DRILLBIT_HSS.get(),            new DrillProps(1.2D, 2, 0, true, false)),
-            Map.entry(ModItems.DRILLBIT_HSS_DIAMOND.get(),    new DrillProps(1.2D, 2, 3, true, true)),
-            Map.entry(ModItems.DRILLBIT_DESH.get(),           new DrillProps(1.5D, 3, 1, true, true)),
-            Map.entry(ModItems.DRILLBIT_DESH_DIAMOND.get(),   new DrillProps(1.5D, 3, 4, true, true)),
-            Map.entry(ModItems.DRILLBIT_TCALLOY.get(),        new DrillProps(2.0D, 4, 1, true, true)),
-            Map.entry(ModItems.DRILLBIT_TCALLOY_DIAMOND.get(),new DrillProps(2.0D, 4, 4, true, true)),
-            Map.entry(ModItems.DRILLBIT_FERRO.get(),          new DrillProps(2.5D, 5, 1, true, true)),
-            Map.entry(ModItems.DRILLBIT_FERRO_DIAMOND.get(),  new DrillProps(2.5D, 5, 4, true, true))
-    );
-
-    private static final int RADIUS = 1; // kein Effect-Upgrade in diesem Port -> immer ring=1 (3x3)
-    private static final Set<Block> IGNORED_BLOCKS = Set.of(Blocks.BEDROCK, Blocks.BARRIER);
-
-    private boolean operational = false;
-    private int targetDepth = 0;
-    private int ticksWorked = 0;
-    private int currentTicksToWork = 100;
+    public static final long maxPower = 1_000_000;
+    public boolean operational = false;
 
     public boolean enableDrill = false;
     public boolean enableCrusher = false;
@@ -101,404 +80,736 @@ public class MachineMiningDrillBlockEntity extends BaseMachineBlockEntity {
     public boolean enableVeinMiner = false;
     public boolean enableSilkTouch = false;
 
-    /** Client-seitige Animation (siehe MachineMiningDrillRenderer): Rotation Bohrkopf/Crusher, Teleskop-Tiefe. */
-    public float drillRotation, prevDrillRotation;
-    public float drillExtension, prevDrillExtension;
-    public float crusherRotation, prevCrusherRotation;
+    protected int ticksWorked = 0;
+    protected int targetDepth = 0; // 0 ist der erste Block unter der Nullposition
+    protected boolean bedrockDrilling = false;
 
-    private final HashSet<BlockPos> veinRecursionBrake = new HashSet<>();
+    public float drillRotation = 0F;
+    public float prevDrillRotation = 0F;
+    public float drillExtension = 0F;
+    public float prevDrillExtension = 0F;
+    public float crusherRotation = 0F;
+    public float prevCrusherRotation = 0F;
+    public int chuteTimer = 0;
 
-    /** Bohr-Fluid-Tank fuer Bedrock-Erz (Wasser/Schwefelsaeure/Solvent, siehe {@link BedrockOreDensity}). */
-    private final FluidTank tank = new FluidTank(ModFluids.NONE.getSource(), 4000);
+    public double speed = 1.0D;
+    public final long baseConsumption = 10_000L;
+    public long consumption = baseConsumption;
+
+    public final FluidTank tank = new FluidTank(ModFluids.NONE.getSource(), 16_000);
+
+    public final UpgradeManager upgradeManager = new UpgradeManager();
+
+    private static final Map<UpgradeType, Integer> VALID_UPGRADES = new EnumMap<>(UpgradeType.class);
+    static {
+        VALID_UPGRADES.put(UpgradeType.SPEED, 3);
+        VALID_UPGRADES.put(UpgradeType.POWER, 3);
+        VALID_UPGRADES.put(UpgradeType.EFFECT, 3);
+    }
 
     public MachineMiningDrillBlockEntity(BlockPos pos, BlockState state) {
-        super(ModBlockEntities.MINING_DRILL_BE.get(), pos, state, SLOT_COUNT, CAPACITY, MAX_RECEIVE, 0L);
+        super(ModBlockEntities.MINING_DRILL_BE.get(), pos, state, INVENTORY_SIZE, maxPower, maxPower, 0L);
     }
 
-    //? if forge {
-    @Override
-    protected void setupFluidCapability() {
-        setFluidHandler(tank);
+    private Direction facing() {
+        BlockState state = getBlockState();
+        return state.hasProperty(DummyableMachineBlock.FACING) ? state.getValue(DummyableMachineBlock.FACING) : Direction.NORTH;
     }
-    //?}
 
     public static void tick(Level level, BlockPos pos, BlockState state, MachineMiningDrillBlockEntity be) {
-        if (level.isClientSide) {
-            be.clientTick();
-        } else {
-            be.serverTick((ServerLevel) level, pos);
-        }
+        be.updateEntity(level, pos);
     }
 
-    private void clientTick() {
-        prevDrillExtension = drillExtension;
-        if (drillExtension != targetDepth) {
-            float diff = Math.abs(drillExtension - targetDepth);
-            float speed = Math.max(0.15F, diff / 10F);
-            if (diff <= speed) {
-                drillExtension = targetDepth;
-            } else {
-                float sig = Math.signum(drillExtension - targetDepth);
-                drillExtension -= sig * speed;
-            }
-        }
+    private void updateEntity(Level world, BlockPos pos) {
 
-        prevDrillRotation = drillRotation;
-        prevCrusherRotation = crusherRotation;
+        // muss auch clientseitig laufen, fuer die GUI
+        upgradeManager.checkSlots(inventory, SLOT_UPGRADE_1, SLOT_UPGRADE_2, VALID_UPGRADES);
+        int speedLevel = upgradeManager.getLevel(UpgradeType.SPEED);
+        int powerLevel = upgradeManager.getLevel(UpgradeType.POWER);
 
-        if (operational) {
-            drillRotation += 15F;
-            if (enableCrusher) {
-                crusherRotation += 15F;
-            }
-        }
+        consumption = baseConsumption * (1 + speedLevel);
+        consumption /= (1 + powerLevel);
 
-        if (drillRotation >= 360F) {
-            drillRotation -= 360F;
-            prevDrillRotation -= 360F;
-        }
-        if (crusherRotation >= 360F) {
-            crusherRotation -= 360F;
-            prevCrusherRotation -= 360F;
-        }
-    }
+        if (world instanceof ServerLevel server) {
 
-    private void serverTick(ServerLevel level, BlockPos pos) {
-        ensureNetworkInitialized();
-        chargeFromBatterySlot(SLOT_BATTERY);
+            ItemStack[] slots = slotArray();
+            if (tank.setType(SLOT_FLUID_ID, slots)) applySlotArray(slots);
 
-        boolean wasOperational = operational;
-        operational = canWork(level, pos);
+            if (world.getGameTime() % 20 == 0) {
+                tryEjectBuffer(server);
 
-        if (operational) {
-            setEnergyStored(getEnergyStored() - ENERGY_PER_TICK);
-
-            if (tryDrill(level, pos)) {
-                targetDepth++;
-                setChanged();
-                sendUpdateToClient();
-
-                if (targetDepth > maxDepth(level, pos)) {
-                    enableDrill = false;
+                for (DirPos con : getConPos()) {
+                    this.trySubscribe(server, con.pos.getX(), con.pos.getY(), con.pos.getZ(), con.dir);
+                    this.trySubscribe(tank.getTankType(), server, con.pos, con.dir);
                 }
             }
-        } else {
-            ticksWorked = 0;
 
-            // Ausgeschaltet (nicht nur pausiert) -> Bohrkopf faehrt wieder komplett hoch.
-            if (!enableDrill && targetDepth != 0) {
-                targetDepth = 0;
-                setChanged();
-                sendUpdateToClient();
+            if (chuteTimer > 0) chuteTimer--;
+
+            chargeFromBatterySlot(SLOT_BATTERY);
+            this.operational = false;
+            int radiusLevel = upgradeManager.getLevel(UpgradeType.EFFECT);
+
+            EnumDrillType type = this.getInstalledDrill();
+            if (this.enableDrill && type != null && getEnergyStored() >= this.getPowerConsumption()) {
+
+                operational = true;
+                setEnergyStored(getEnergyStored() - this.getPowerConsumption());
+
+                this.speed = type.speed;
+                this.speed *= (1 + speedLevel / 2D);
+
+                int maxDepth = pos.getY() - 4 - world.getMinBuildHeight();
+
+                if ((bedrockDrilling || targetDepth <= maxDepth) && tryDrill(server, pos, 1 + radiusLevel * 2)) {
+                    targetDepth++;
+
+                    if (targetDepth > maxDepth) {
+                        this.enableDrill = false;
+                    }
+                }
+            } else {
+                this.targetDepth = 0;
             }
-        }
 
-        if (wasOperational != operational) {
             setChanged();
             sendUpdateToClient();
+
+        } else {
+
+            this.prevDrillExtension = this.drillExtension;
+
+            if (this.drillExtension != this.targetDepth) {
+                float diff = Math.abs(this.drillExtension - this.targetDepth);
+                float speed = Math.max(0.15F, diff / 10F);
+
+                if (diff <= speed) {
+                    this.drillExtension = this.targetDepth;
+                } else {
+                    float sig = Math.signum(this.drillExtension - this.targetDepth);
+                    this.drillExtension -= sig * speed;
+                }
+            }
+
+            this.prevDrillRotation = this.drillRotation;
+            this.prevCrusherRotation = this.crusherRotation;
+
+            if (this.operational) {
+                this.drillRotation += 15F;
+
+                if (this.enableCrusher) {
+                    this.crusherRotation += 15F;
+                }
+            }
+
+            if (this.drillRotation >= 360F) {
+                this.drillRotation -= 360F;
+                this.prevDrillRotation -= 360F;
+            }
+
+            if (this.crusherRotation >= 360F) {
+                this.crusherRotation -= 360F;
+                this.prevCrusherRotation -= 360F;
+            }
         }
     }
 
-    private boolean canWork(Level level, BlockPos pos) {
-        if (!enableDrill) return false;
-        if (getEnergyStored() < ENERGY_PER_TICK) return false;
-        if (getInstalledDrillProps() == null) return false;
-        return targetDepth <= maxDepth(level, pos);
+    /** Anschluss samt Richtung (Original {@code DirPos}). */
+    private record DirPos(BlockPos pos, Direction dir) { }
+
+    protected DirPos[] getConPos() {
+        Direction dir = facing();
+        Direction rot = dir.getClockWise();
+        BlockPos p = worldPosition.above();
+
+        return new DirPos[] {
+                new DirPos(p.relative(dir, 4).relative(rot), dir),
+                new DirPos(p.relative(dir, 4).relative(rot, -1), dir),
+                new DirPos(p.relative(rot, 4), rot),
+                new DirPos(p.relative(rot, -4), rot.getOpposite())
+        };
     }
 
-    private int maxDepth(Level level, BlockPos pos) {
-        return pos.getY() - level.getMinBuildHeight() - 4;
+    protected int getY() {
+        return worldPosition.getY() - targetDepth - 4;
     }
 
-    private int getTargetY(BlockPos pos) {
-        return pos.getY() - 1 - targetDepth;
-    }
+    /** Original: Ring fuer Ring; true, wenn alle Ringe frei sind und der Bohrer tiefer gehen soll. */
+    protected boolean tryDrill(ServerLevel world, BlockPos core, int radius) {
+        int y = getY();
 
-    private DrillProps getInstalledDrillProps() {
-        ItemStack stack = inventory.getStackInSlot(SLOT_DRILLBIT);
-        if (stack.isEmpty()) return null;
-        return DRILL_PROPS.get(stack.getItem());
-    }
+        if (targetDepth == 0 || y == world.getMinBuildHeight()) {
+            radius = 1;
+        }
 
-    private boolean shouldIgnoreBlock(Level level, BlockState state, BlockPos pos) {
-        if (state.isAir()) return true;
-        if (IGNORED_BLOCKS.contains(state.getBlock())) return true;
-        if (!state.getFluidState().isEmpty()) return true;
-        return state.getDestroySpeed(level, pos) < 0;
-    }
+        for (int ring = 1; ring <= radius; ring++) {
 
-    /**
-     * Bohrt einen Ring (bei uns immer 3x3, radius=1 - kein Effect-Upgrade in diesem Port).
-     * @return true wenn der Ring frei (fertig abgebaut) ist und die Tiefe erhoeht werden soll.
-     */
-    private boolean tryDrill(ServerLevel level, BlockPos pos) {
-        int y = getTargetY(pos);
-        DrillProps drill = getInstalledDrillProps();
+            boolean ignoreAll = true;
+            float combinedHardness = 0F;
+            BlockPos bedrockOre = null;
+            bedrockDrilling = false;
 
-        boolean ignoreAll = true;
-        float combinedHardness = 0F;
+            outer:
+            for (int x = core.getX() - ring; x <= core.getX() + ring; x++) {
+                for (int z = core.getZ() - ring; z <= core.getZ() + ring; z++) {
 
-        for (int x = pos.getX() - RADIUS; x <= pos.getX() + RADIUS; x++) {
-            for (int z = pos.getZ() - RADIUS; z <= pos.getZ() + RADIUS; z++) {
-                BlockPos target = new BlockPos(x, y, z);
-                BlockState state = level.getBlockState(target);
-                if (shouldIgnoreBlock(level, state, target)) continue;
+                    if (ring == 1 || (x == core.getX() - ring || x == core.getX() + ring || z == core.getZ() - ring || z == core.getZ() + ring)) {
 
-                ignoreAll = false;
-                combinedHardness += state.getDestroySpeed(level, target);
+                        BlockPos p = new BlockPos(x, y, z);
+                        BlockState b = world.getBlockState(p);
+
+                        if (b.getBlock() == ModBlocks.ORE_BEDROCK.get()) {
+                            combinedHardness = 5 * 60 * 20;
+                            bedrockOre = p;
+                            bedrockDrilling = true;
+                            enableCrusher = false;
+                            ignoreAll = false;
+                            break outer;
+                        }
+
+                        // Tiefengestein schaltet den Bohrer ab
+                        if (isDepthRock(b)) {
+                            this.enableDrill = false;
+                        }
+
+                        if (shouldIgnoreBlock(world, b, p)) continue;
+
+                        ignoreAll = false;
+
+                        combinedHardness += b.getDestroySpeed(world, p);
+                    }
+                }
+            }
+
+            if (!ignoreAll) {
+                ticksWorked++;
+
+                int ticksToWork = (int) Math.ceil(combinedHardness / this.speed);
+
+                if (ticksWorked >= ticksToWork) {
+
+                    if (bedrockOre == null) {
+                        breakBlocks(world, core, ring);
+                        buildWall(world, core, ring + 1, ring == radius && this.enableWalling);
+                        if (ring == radius) mineOuterOres(world, core, ring + 1);
+                        tryCollect(world, core, radius + 1);
+                    } else {
+                        collectBedrock(world, bedrockOre);
+                    }
+                    ticksWorked = 0;
+                }
+
+                return false;
+            } else {
+                tryCollect(world, core, radius + 1);
             }
         }
 
-        if (ignoreAll) {
-            if (enableWalling) buildWall(level, pos, y);
-            ticksWorked = 0;
-            return true;
-        }
-
-        ticksWorked++;
-        currentTicksToWork = Math.max(1, (int) Math.ceil(combinedHardness / drill.speed()));
-
-        if (ticksWorked >= currentTicksToWork) {
-            breakRing(level, pos, y, drill);
-            ticksWorked = 0;
-        }
-
-        return false;
+        buildWall(world, core, radius + 1, this.enableWalling);
+        ticksWorked = 0;
+        return true;
     }
 
-    private void breakRing(ServerLevel level, BlockPos pos, int y, DrillProps drill) {
-        for (int x = pos.getX() - RADIUS; x <= pos.getX() + RADIUS; x++) {
-            for (int z = pos.getZ() - RADIUS; z <= pos.getZ() + RADIUS; z++) {
-                BlockPos target = new BlockPos(x, y, z);
-                BlockState state = level.getBlockState(target);
-                if (shouldIgnoreBlock(level, state, target)) continue;
+    /** Original {@code instanceof BlockDepth}: das Tiefengestein und seine Erze ({@code depth_*}). */
+    private static boolean isDepthRock(BlockState b) {
+        net.minecraft.resources.ResourceLocation id = net.minecraft.core.registries.BuiltInRegistries.BLOCK.getKey(b.getBlock());
+        return id.getNamespace().equals(com.hbm_m.lib.RefStrings.MODID) && (id.getPath().startsWith("depth_") || id.getPath().startsWith("cluster_depth_"));
+    }
 
-                if (enableVeinMiner && drill.vein() && isOre(state)) {
-                    veinRecursionBrake.clear();
-                    breakVeinRecursively(level, target, state.getBlock(), drill, 64);
-                } else {
-                    mineSingleBlock(level, target, drill);
+    protected void collectBedrock(ServerLevel world, BlockPos pos) {
+        if (!(world.getBlockEntity(pos) instanceof OreBedrockBlockEntity ore)) return;
+
+        if (ore.resource == null || ore.resource.isEmpty()) return;
+        if (ore.tier > this.getInstalledDrill().tier) return;
+        if (ore.acidAmountMb > 0) {
+
+            if (ore.acidType != tank.getTankType() || ore.acidAmountMb > tank.getFill()) return;
+
+            tank.setFill(tank.getFill() - ore.acidAmountMb);
+        }
+
+        ItemStack stack = ore.resource.copy();
+        List<ItemStack> stacks = new ArrayList<>();
+        stacks.add(stack);
+
+        if (stack.getItem() == ModItems.BEDROCK_ORE_BASE.get()) {
+            double mult = 1D + this.getInstalledDrill().fortune * 0.1D;
+            CompoundTag nbt = new CompoundTag();
+            for (BedrockOreDensity.Type type : BedrockOreDensity.Type.values()) {
+                nbt.putDouble(type.name().toLowerCase(java.util.Locale.ROOT), BedrockOreDensity.getDensity(pos.getX(), pos.getZ(), type) * mult);
+            }
+            PlatformHooks.setItemTag(stack, nbt);
+        }
+
+        Direction dir = facing();
+        BlockPos chute = worldPosition.relative(dir, 4).below(3);
+
+        supplyContainer(world, chute, stacks, dir.getOpposite());
+
+        if (stack.getCount() <= 0) return;
+
+        supplyConveyor(world, chute, stacks);
+
+        if (stack.getCount() <= 0) return;
+
+        for (int i = OUTPUT_START; i <= OUTPUT_END; i++) {
+            ItemStack s = inventory.getStackInSlot(i);
+            if (!s.isEmpty() && s.getCount() < s.getMaxStackSize() && PlatformHooks.isSameItemSameTags(stack, s)) {
+                int toAdd = Math.min(s.getMaxStackSize() - s.getCount(), stack.getCount());
+                ItemStack grown = s.copy();
+                grown.grow(toAdd);
+                inventory.setStackInSlot(i, grown);
+                stack.shrink(toAdd);
+
+                chuteTimer = 40;
+
+                if (stack.getCount() <= 0) {
+                    return;
                 }
             }
         }
 
-        level.playSound(null, pos, SoundEvents.STONE_BREAK, SoundSource.BLOCKS, 1.0F, 0.8F);
+        for (int i = OUTPUT_START; i <= OUTPUT_END; i++) {
+            if (inventory.getStackInSlot(i).isEmpty()) {
+                chuteTimer = 40;
+                inventory.setStackInSlot(i, stack.copy());
+                return;
+            }
+        }
     }
 
-    private boolean isOre(BlockState state) {
-        return state.is(net.minecraft.tags.BlockTags.create(
-                net.minecraft.resources.ResourceLocation.parse("forge:ores")))
-                || state.getBlock().builtInRegistryHolder().key().location().getPath().contains("ore");
+    /** bricht alle Bloecke des Rings ab und laesst sie fallen */
+    protected void breakBlocks(ServerLevel world, BlockPos core, int ring) {
+        int y = getY();
+
+        for (int x = core.getX() - ring; x <= core.getX() + ring; x++) {
+            for (int z = core.getZ() - ring; z <= core.getZ() + ring; z++) {
+
+                if (ring == 1 || (x == core.getX() - ring || x == core.getX() + ring || z == core.getZ() - ring || z == core.getZ() + ring)) {
+
+                    BlockPos p = new BlockPos(x, y, z);
+                    if (!this.shouldIgnoreBlock(world, world.getBlockState(p), p)) {
+                        tryMineAtLocation(world, p);
+                    }
+                }
+            }
+        }
     }
 
-    private void breakVeinRecursively(ServerLevel level, BlockPos pos, Block match, DrillProps drill, int depth) {
-        if (depth < 0 || veinRecursionBrake.contains(pos)) return;
-        veinRecursionBrake.add(pos);
+    public void tryMineAtLocation(ServerLevel world, BlockPos pos) {
 
-        if (level.getBlockState(pos).getBlock() != match) return;
+        BlockState b = world.getBlockState(pos);
 
-        for (net.minecraft.core.Direction dir : net.minecraft.core.Direction.values()) {
-            BlockPos neighbor = pos.relative(dir);
-            if (level.getBlockState(neighbor).getBlock() == match) {
-                breakVeinRecursively(level, neighbor, match, drill, depth - 1);
+        if (this.enableVeinMiner && this.getInstalledDrill().vein) {
+
+            if (isOre(b)) {
+                minX = pos.getX();
+                minY = pos.getY();
+                minZ = pos.getZ();
+                maxX = pos.getX();
+                maxY = pos.getY();
+                maxZ = pos.getZ();
+                breakRecursively(world, pos, 10);
+                recursionBrake.clear();
+
+                // alle abgebauten Teile an die letzte bohrbare Stelle im Sammelbereich holen
+                List<ItemEntity> items = world.getEntitiesOfClass(ItemEntity.class, new AABB(minX, minY, minZ, maxX + 1, maxY + 1, maxZ + 1));
+                for (ItemEntity item : items) item.setPos(pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5);
+
+                return;
+            }
+        }
+        breakSingleBlock(world, b, pos);
+    }
+
+    /** Original: Ore-Dictionary-Name beginnt mit "ore" - hier der Erz-Tag. */
+    protected boolean isOre(BlockState b) {
+        return b.is(net.minecraft.tags.BlockTags.create(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("forge", "ores")));
+    }
+
+    private final HashSet<BlockPos> recursionBrake = new HashSet<>();
+    private int minX = 0, minY = 0, minZ = 0, maxX = 0, maxY = 0, maxZ = 0;
+
+    protected void breakRecursively(ServerLevel world, BlockPos pos, int depth) {
+
+        if (depth < 0) return;
+        if (recursionBrake.contains(pos)) return;
+        recursionBrake.add(pos);
+
+        BlockState b = world.getBlockState(pos);
+
+        for (Direction dir : Direction.values()) {
+            BlockPos n = pos.relative(dir);
+            if (world.getBlockState(n).getBlock() == b.getBlock()) {
+                breakRecursively(world, n, depth - 1);
             }
         }
 
-        mineSingleBlock(level, pos, drill);
+        breakSingleBlock(world, b, pos);
+
+        if (pos.getX() < minX) minX = pos.getX();
+        if (pos.getX() > maxX) maxX = pos.getX();
+        if (pos.getY() < minY) minY = pos.getY();
+        if (pos.getY() > maxY) maxY = pos.getY();
+        if (pos.getZ() < minZ) minZ = pos.getZ();
+        if (pos.getZ() > maxZ) maxZ = pos.getZ();
+
+        if (this.enableWalling) {
+            world.setBlockAndUpdate(pos, ModBlocks.BARRICADE.get().defaultBlockState());
+        }
     }
 
-    private void mineSingleBlock(ServerLevel level, BlockPos pos, DrillProps drill) {
-        BlockState state = level.getBlockState(pos);
-
-        if (state.getBlock() instanceof com.hbm_m.block.nature.OreBedrockBlock) {
-            mineBedrockOre(level, pos, drill);
-            return;
-        }
+    protected void breakSingleBlock(ServerLevel world, BlockState b, BlockPos pos) {
 
         ItemStack tool = new ItemStack(Items.DIAMOND_PICKAXE);
-        boolean silk = enableSilkTouch && drill.silk();
-        if (silk) {
-            com.hbm_m.platform.ItemHooks.setEnchantmentLevel(tool, level, "silk_touch", 1);
-        } else if (drill.fortune() > 0) {
-            com.hbm_m.platform.ItemHooks.setEnchantmentLevel(tool, level, "fortune", drill.fortune());
-        }
+        if (this.getFortuneLevel() > 0) com.hbm_m.platform.ItemHooks.setEnchantmentLevel(tool, world, "fortune", this.getFortuneLevel());
+        if (this.canSilkTouch()) com.hbm_m.platform.ItemHooks.setEnchantmentLevel(tool, world, "silk_touch", 1);
 
-        LootParams.Builder builder = new LootParams.Builder(level)
+        LootParams.Builder builder = new LootParams.Builder(world)
                 .withParameter(LootContextParams.ORIGIN, Vec3.atCenterOf(pos))
                 .withParameter(LootContextParams.TOOL, tool)
-                .withParameter(LootContextParams.BLOCK_STATE, state)
-                .withOptionalParameter(LootContextParams.BLOCK_ENTITY, level.getBlockEntity(pos));
+                .withParameter(LootContextParams.BLOCK_STATE, b)
+                .withOptionalParameter(LootContextParams.BLOCK_ENTITY, world.getBlockEntity(pos));
 
-        List<ItemStack> drops = new ArrayList<>(state.getDrops(builder));
-        level.removeBlock(pos, false);
+        List<ItemStack> items = new ArrayList<>(b.getDrops(builder));
 
-        if (enableCrusher) {
-            drops = crushDrops(level, drops);
+        if (this.enableCrusher) {
+
+            List<ItemStack> list = new ArrayList<>();
+
+            for (ItemStack stack : items) {
+                ItemStack crushed = shredderResult(world, stack);
+
+                if (crushed.isEmpty() || crushed.getItem() == item("scrap") || crushed.getItem() == ModItems.DUST.get()) {
+                    list.add(stack);
+                } else {
+                    crushed.setCount(crushed.getCount() * stack.getCount());
+                    list.add(crushed);
+                }
+            }
+
+            items = list;
         }
 
-        for (ItemStack drop : drops) {
-            insertOrDrop(pos, drop);
+        if (b.getBlock() == ModBlocks.BARRICADE.get())
+            items.clear();
+
+        for (ItemStack item : items) {
+            world.addFreshEntity(new ItemEntity(world, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, item));
+        }
+
+        world.destroyBlock(pos, false);
+    }
+
+    private static net.minecraft.world.item.Item item(String id) {
+        return net.minecraft.core.registries.BuiltInRegistries.ITEM.get(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(com.hbm_m.lib.RefStrings.MODID, id));
+    }
+
+    private static ItemStack shredderResult(ServerLevel world, ItemStack stack) {
+        SimpleContainer container = new SimpleContainer(1);
+        container.setItem(0, new ItemStack(stack.getItem(), 1));
+        RecipeInputWrapper wrapper = new RecipeInputWrapper(container);
+        for (ShredderRecipe r : RecipeHooks.getAllRecipes(world, ModRecipes.SHREDDER_TYPE.get())) {
+            if (r.matchesRecipe(wrapper, world)) return r.getOutput().copy();
+        }
+        return ItemStack.EMPTY;
+    }
+
+    /** setzt eine Wand auf den Ring und ersetzt dabei Fluessigkeiten; mit wallEverything auch Luft und Gras */
+    protected void buildWall(ServerLevel world, BlockPos core, int ring, boolean wallEverything) {
+        int y = getY();
+
+        for (int x = core.getX() - ring; x <= core.getX() + ring; x++) {
+            for (int z = core.getZ() - ring; z <= core.getZ() + ring; z++) {
+
+                BlockPos p = new BlockPos(x, y, z);
+                BlockState b = world.getBlockState(p);
+
+                if (x == core.getX() - ring || x == core.getX() + ring || z == core.getZ() - ring || z == core.getZ() + ring) {
+
+                    if (b.canBeReplaced() && (wallEverything || b.liquid())) {
+                        world.setBlockAndUpdate(p, ModBlocks.BARRICADE.get().defaultBlockState());
+                    }
+                } else {
+
+                    if (b.liquid()) {
+                        world.setBlockAndUpdate(p, Blocks.AIR.defaultBlockState());
+                    }
+                }
+            }
         }
     }
 
-    /**
-     * 1:1-Aequivalent zu {@code TileEntityMachineExcavator.collectBedrock}: Drillbit-Tier muss
-     * mindestens {@code ore.tier} sein, und bei Tier 2+ muss der Tank den passenden Fluid-Typ in
-     * ausreichender Menge enthalten - sonst bleibt der Block (noch) stehen. Das gewonnene Item ist
-     * das generische {@code bedrock_ore_base}, mit den 6 Kategorie-Dichten der Fundposition als NBT
-     * getaggt (analog {@code ItemBedrockOreBase.setOreAmount}), skaliert mit Fortune.
-     */
-    private void mineBedrockOre(ServerLevel level, BlockPos pos, DrillProps drill) {
-        if (!(level.getBlockEntity(pos) instanceof OreBedrockBlockEntity ore)) return;
-        if (drill.tier() < ore.tier) return;
+    protected void mineOuterOres(ServerLevel world, BlockPos core, int ring) {
+        int y = getY();
 
-        if (ore.acidAmountMb > 0) {
-            if (tank.getStoredFluid() != ore.acidType || tank.getFluidAmountMb() < ore.acidAmountMb) return;
-            tank.drainMb(ore.acidAmountMb);
+        for (int x = core.getX() - ring; x <= core.getX() + ring; x++) {
+            for (int z = core.getZ() - ring; z <= core.getZ() + ring; z++) {
+
+                if (ring == 1 || (x == core.getX() - ring || x == core.getX() + ring || z == core.getZ() - ring || z == core.getZ() + ring)) {
+
+                    BlockPos p = new BlockPos(x, y, z);
+                    BlockState b = world.getBlockState(p);
+
+                    if (!this.shouldIgnoreBlock(world, b, p) && this.isOre(b)) {
+                        tryMineAtLocation(world, p);
+                    }
+                }
+            }
         }
-
-        level.removeBlock(pos, false);
-
-        double mult = 1.0D + drill.fortune() * 0.1D;
-        ItemStack drop = new ItemStack(ModItems.BEDROCK_ORE_BASE.get());
-        CompoundTag nbt = new CompoundTag();
-        for (BedrockOreDensity.Type type : BedrockOreDensity.Type.values()) {
-            double density = BedrockOreDensity.getDensity(pos.getX(), pos.getZ(), type) * mult;
-            nbt.putDouble(type.name().toLowerCase(java.util.Locale.ROOT), density);
-        }
-        PlatformHooks.setItemTag(drop, nbt);
-
-        insertOrDrop(pos, drop);
     }
 
-    private List<ItemStack> crushDrops(ServerLevel level, List<ItemStack> drops) {
-        List<ItemStack> result = new ArrayList<>(drops.size());
-        for (ItemStack stack : drops) {
-            SimpleContainer container = new SimpleContainer(1);
-            container.setItem(0, new ItemStack(stack.getItem(), 1));
-            RecipeInputWrapper wrapper = new RecipeInputWrapper(container);
-            Optional<ShredderRecipe> recipe = RecipeHooks.getAllRecipes(level, ModRecipes.SHREDDER_TYPE.get()).stream()
-                    .filter(r -> r.matchesRecipe(wrapper, level))
-                    .findFirst();
-            if (recipe.isPresent()) {
-                ItemStack crushed = recipe.get().getOutput();
-                crushed.setCount(crushed.getCount() * stack.getCount());
-                result.add(crushed);
+    protected void tryEjectBuffer(ServerLevel world) {
+
+        Direction dir = facing();
+        BlockPos chute = worldPosition.relative(dir, 4).below(3);
+
+        List<ItemStack> items = new ArrayList<>();
+
+        for (int i = OUTPUT_START; i <= OUTPUT_END; i++) {
+            ItemStack stack = inventory.getStackInSlot(i);
+            if (!stack.isEmpty()) {
+                items.add(stack.copy());
+            }
+        }
+
+        supplyContainer(world, chute, items, dir.getOpposite());
+        supplyConveyor(world, chute, items);
+
+        items.removeIf(i -> i == null || i.getCount() <= 0);
+
+        for (int i = OUTPUT_START; i <= OUTPUT_END; i++) {
+            int index = i - OUTPUT_START;
+
+            if (items.size() > index) {
+                inventory.setStackInSlot(i, items.get(index).copy());
             } else {
-                result.add(stack);
-            }
-        }
-        return result;
-    }
-
-    /** Baut eine duenne Barricade-Wand einen Ring ausserhalb des Bohrbereichs (nur ersetzbare/fluessige Bloecke). */
-    private void buildWall(ServerLevel level, BlockPos pos, int y) {
-        int ring = RADIUS + 1;
-        for (int x = pos.getX() - ring; x <= pos.getX() + ring; x++) {
-            for (int z = pos.getZ() - ring; z <= pos.getZ() + ring; z++) {
-                if (x != pos.getX() - ring && x != pos.getX() + ring && z != pos.getZ() - ring && z != pos.getZ() + ring) {
-                    continue; // nur der aussere Rand
-                }
-                BlockPos target = new BlockPos(x, y, z);
-                BlockState state = level.getBlockState(target);
-                if (state.canBeReplaced() || !state.getFluidState().isEmpty()) {
-                    level.setBlockAndUpdate(target, ModBlocks.BARRICADE.get().defaultBlockState());
-                }
+                inventory.setStackInSlot(i, ItemStack.EMPTY);
             }
         }
     }
 
-    private void insertOrDrop(BlockPos minedAt, ItemStack toInsert) {
-        if (toInsert.isEmpty()) return;
+    /** sammelt alles um den Bohrkopf ein und gibt es an die Rutsche oder den Puffer */
+    protected void tryCollect(ServerLevel world, BlockPos core, int radius) {
+        int yLevel = getY();
 
-        for (int i = OUTPUT_START; i < OUTPUT_START + OUTPUT_COUNT && !toInsert.isEmpty(); i++) {
-            ItemStack slotStack = inventory.getStackInSlot(i);
-            if (!slotStack.isEmpty() && PlatformHooks.isSameItemSameTags(slotStack, toInsert)) {
-                int room = slotStack.getMaxStackSize() - slotStack.getCount();
-                int move = Math.min(room, toInsert.getCount());
-                if (move > 0) {
-                    slotStack.grow(move);
-                    toInsert.shrink(move);
+        List<ItemEntity> items = world.getEntitiesOfClass(ItemEntity.class,
+                new AABB(core.getX() - radius, yLevel - 1, core.getZ() - radius, core.getX() + radius + 1, yLevel + 2, core.getZ() + radius + 1));
+
+        Direction dir = facing();
+        BlockPos chute = worldPosition.relative(dir, 4).below(3);
+
+        List<ItemStack> stacks = new ArrayList<>();
+        items.forEach(i -> { if (i.isAlive()) stacks.add(i.getItem()); });
+
+        supplyContainer(world, chute, stacks, dir.getOpposite());
+        supplyConveyor(world, chute, stacks);
+
+        for (ItemEntity i : items) if (i.isAlive() && i.getItem().getCount() <= 0) i.discard();
+        items.removeIf(i -> !i.isAlive() || i.getItem().getCount() <= 0);
+
+        outer:
+        for (ItemEntity item : items) {
+            if (!item.isAlive()) continue;
+
+            ItemStack stack = item.getItem();
+
+            for (int i = OUTPUT_START; i <= OUTPUT_END; i++) {
+                ItemStack s = inventory.getStackInSlot(i);
+
+                if (!s.isEmpty() && s.getCount() < s.getMaxStackSize() && PlatformHooks.isSameItemSameTags(stack, s)) {
+                    int toAdd = Math.min(s.getMaxStackSize() - s.getCount(), stack.getCount());
+                    ItemStack grown = s.copy();
+                    grown.grow(toAdd);
+                    inventory.setStackInSlot(i, grown);
+                    stack.shrink(toAdd);
+
+                    chuteTimer = 40;
+
+                    if (stack.getCount() <= 0) {
+                        item.discard();
+                        continue outer;
+                    }
+                }
+            }
+
+            for (int i = OUTPUT_START; i <= OUTPUT_END; i++) {
+                if (inventory.getStackInSlot(i).isEmpty()) {
+                    chuteTimer = 40;
+                    inventory.setStackInSlot(i, stack.copy());
+                    item.discard();
+                    break;
                 }
             }
         }
-        for (int i = OUTPUT_START; i < OUTPUT_START + OUTPUT_COUNT && !toInsert.isEmpty(); i++) {
-            if (inventory.getStackInSlot(i).isEmpty()) {
-                inventory.setStackInSlot(i, toInsert.copy());
-                toInsert.setCount(0);
-            }
-        }
+    }
 
-        if (!toInsert.isEmpty() && level != null) {
-            Block.popResource(level, minedAt, toInsert);
+    /** legt alles in einen angeschlossenen Behaelter, soweit moeglich */
+    protected void supplyContainer(ServerLevel world, BlockPos pos, List<ItemStack> items, Direction dir) {
+        //? if forge {
+        net.minecraftforge.items.IItemHandler inv = com.hbm_m.blockentity.network.CraneInventoryUtil.inventoryAt(world, pos, dir);
+        if (inv == null) return;
+
+        for (ItemStack item : items) {
+            if (item.getCount() <= 0) continue;
+            com.hbm_m.blockentity.network.CraneInventoryUtil.addToInventory(inv, item);
+            chuteTimer = 40;
+        }
+        //?}
+    }
+
+    /** setzt alles auf ein angeschlossenes Foerderband */
+    protected void supplyConveyor(ServerLevel world, BlockPos pos, List<ItemStack> items) {
+        if (!(world.getBlockState(pos).getBlock() instanceof com.hbm_m.block.network.IConveyorBelt belt)) return;
+
+        for (ItemStack item : items) {
+
+            if (item.getCount() <= 0) continue;
+
+            Vec3 base = new Vec3(pos.getX() + world.random.nextDouble(), pos.getY() + 0.5, pos.getZ() + world.random.nextDouble());
+            Vec3 vec = belt.getClosestSnappingPosition(world, pos, base);
+
+            world.addFreshEntity(com.hbm_m.entity.conveyor.MovingConveyorItemEntity.create(world, base.x, vec.y, base.z, item.copy()));
+            item.setCount(0);
+
+            chuteTimer = 40;
         }
     }
 
-    public void receiveToggle(String key) {
-        switch (key) {
-            case "drill" -> enableDrill = !enableDrill;
-            case "crusher" -> enableCrusher = !enableCrusher;
-            case "walling" -> enableWalling = !enableWalling;
-            case "veinminer" -> enableVeinMiner = !enableVeinMiner;
-            case "silktouch" -> enableSilkTouch = !enableSilkTouch;
-            default -> { return; }
-        }
-        setChanged();
-        sendUpdateToClient();
+    public long getPowerConsumption() {
+        return consumption;
+    }
+
+    public int getFortuneLevel() {
+        EnumDrillType type = getInstalledDrill();
+        if (type != null) return type.fortune;
+        return 0;
+    }
+
+    public boolean shouldIgnoreBlock(Level world, BlockState block, BlockPos pos) {
+        return block.isAir() || block.getBlock() instanceof com.hbm_m.block.gas.BlockGasBase || block.getDestroySpeed(world, pos) < 0
+                || block.liquid() || block.getBlock() == Blocks.BEDROCK;
+    }
+
+    @Override
+    public boolean hasPermission(Player player) {
+        return player.distanceToSqr(worldPosition.getX() + 0.5, worldPosition.getY() + 0.5, worldPosition.getZ() + 0.5) <= 128;
+    }
+
+    @Override
+    public void receiveControl(CompoundTag data) {
+        if (data.contains("drill")) this.enableDrill = !this.enableDrill;
+        if (data.contains("crusher")) this.enableCrusher = !this.enableCrusher;
+        if (data.contains("walling")) this.enableWalling = !this.enableWalling;
+        if (data.contains("veinminer")) this.enableVeinMiner = !this.enableVeinMiner;
+        if (data.contains("silktouch")) this.enableSilkTouch = !this.enableSilkTouch;
+
+        this.setChanged();
+    }
+
+    @Nullable
+    public EnumDrillType getInstalledDrill() {
+        return ItemDrillbit.typeOf(inventory.getStackInSlot(SLOT_DRILLBIT));
     }
 
     public boolean canVeinMine() {
-        DrillProps drill = getInstalledDrillProps();
-        return enableVeinMiner && drill != null && drill.vein();
+        EnumDrillType type = getInstalledDrill();
+        return this.enableVeinMiner && type != null && type.vein;
     }
 
     public boolean canSilkTouch() {
-        DrillProps drill = getInstalledDrillProps();
-        return enableSilkTouch && drill != null && drill.silk();
+        EnumDrillType type = getInstalledDrill();
+        return this.enableSilkTouch && type != null && type.silk;
     }
 
-    public int getProgressScaled(int scale) {
-        if (currentTicksToWork <= 0) return 0;
-        return Math.min(scale, ticksWorked * scale / currentTicksToWork);
+    // ── Inventar-Hilfen ──────────────────────────────────────────────────────
+
+    private ItemStack[] slotArray() {
+        ItemStack[] arr = new ItemStack[INVENTORY_SIZE];
+        for (int i = 0; i < INVENTORY_SIZE; i++) arr[i] = inventory.getStackInSlot(i);
+        return arr;
     }
 
-    public int getProgress() { return ticksWorked; }
-    public int getMaxProgress() { return currentTicksToWork; }
-    public int getDrillDepth() { return targetDepth; }
-    public boolean isActive() { return operational; }
-    public boolean isOperational() { return operational; }
-    public boolean hasDrillbitInstalled() { return !inventory.getStackInSlot(SLOT_DRILLBIT).isEmpty(); }
-    public long getEnergyPerTick() { return ENERGY_PER_TICK; }
+    private void applySlotArray(ItemStack[] arr) {
+        for (int i = 0; i < INVENTORY_SIZE; i++) inventory.setStackInSlot(i, arr[i] == null ? ItemStack.EMPTY : arr[i]);
+    }
+
+    @Override
+    protected boolean isItemValidForSlot(int slot, ItemStack stack) {
+        return slot < OUTPUT_START;
+    }
+
+    // ── NBT ─────────────────────────────────────────────────────────────────
 
     @Override
     protected void writeNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.writeNbtData(tag, registries);
-        tag.putInt("target_depth", targetDepth);
-        tag.putBoolean("enable_drill", enableDrill);
-        tag.putBoolean("enable_crusher", enableCrusher);
-        tag.putBoolean("enable_walling", enableWalling);
-        tag.putBoolean("enable_veinminer", enableVeinMiner);
-        tag.putBoolean("enable_silktouch", enableSilkTouch);
-        tag.putBoolean("operational", operational);
+        tag.putBoolean("d", enableDrill);
+        tag.putBoolean("c", enableCrusher);
+        tag.putBoolean("w", enableWalling);
+        tag.putBoolean("v", enableVeinMiner);
+        tag.putBoolean("s", enableSilkTouch);
+        tag.putInt("t", targetDepth);
         tank.writeToNBT(tag, "tank");
+        tag.putBoolean("operational", operational);
+        tag.putInt("chuteTimer", chuteTimer);
     }
 
     @Override
     protected void readNbtData(CompoundTag tag, net.minecraft.core.HolderLookup.Provider registries) {
         super.readNbtData(tag, registries);
-        tank.readFromNBT(tag, "tank");
-        targetDepth = tag.getInt("target_depth");
-        enableDrill = tag.getBoolean("enable_drill");
-        enableCrusher = tag.getBoolean("enable_crusher");
-        enableWalling = tag.getBoolean("enable_walling");
-        enableVeinMiner = tag.getBoolean("enable_veinminer");
-        enableSilkTouch = tag.getBoolean("enable_silktouch");
-        operational = tag.getBoolean("operational");
+        this.enableDrill = tag.getBoolean("d");
+        this.enableCrusher = tag.getBoolean("c");
+        this.enableWalling = tag.getBoolean("w");
+        this.enableVeinMiner = tag.getBoolean("v");
+        this.enableSilkTouch = tag.getBoolean("s");
+        this.targetDepth = tag.getInt("t");
+        this.tank.readFromNBT(tag, "tank");
+        this.operational = tag.getBoolean("operational");
+        this.chuteTimer = tag.getInt("chuteTimer");
+    }
+
+    // ── Fluid ────────────────────────────────────────────────────────────────
+
+    @Override public FluidTank[] getAllTanks() { return new FluidTank[] { tank }; }
+    @Override public FluidTank[] getReceivingTanks() { return new FluidTank[] { tank }; }
+
+    @Override
+    public boolean isLoaded() {
+        return level != null && !isRemoved() && level.isLoaded(worldPosition);
+    }
+
+    public FluidTank getTank() { return tank; }
+
+    // ── Upgrades ─────────────────────────────────────────────────────────────
+
+    @Override
+    public boolean canProvideInfo(UpgradeType type, int level, boolean extendedInfo) {
+        return type == UpgradeType.SPEED || type == UpgradeType.POWER;
     }
 
     @Override
+    public void provideInfo(UpgradeType type, int level, List<Component> info, boolean extendedInfo) {
+        info.add(com.hbm_m.interfaces.IUpgradeInfoProvider.getStandardLabel(getBlockState().getBlock()));
+        if (type == UpgradeType.SPEED) {
+            info.add(Component.translatable(KEY_DELAY, "-" + (100 - 200 / (level + 2)) + "%").withStyle(ChatFormatting.GREEN));
+            info.add(Component.translatable(KEY_CONSUMPTION, "+" + (level * 100) + "%").withStyle(ChatFormatting.RED));
+        }
+        if (type == UpgradeType.POWER) {
+            info.add(Component.translatable(KEY_CONSUMPTION, "-" + (100 - 100 / (level + 1)) + "%").withStyle(ChatFormatting.GREEN));
+        }
+    }
+
+    @Override
+    public Map<UpgradeType, Integer> getValidUpgrades() {
+        return VALID_UPGRADES;
+    }
+
+    // ── Menue ────────────────────────────────────────────────────────────────
+
+    @Override
     protected Component getDefaultName() {
-        return Component.translatable("block.hbm_m.mining_drill");
+        return Component.translatable("container.hbm_m.mining_drill");
     }
 
     @Override
@@ -507,33 +818,15 @@ public class MachineMiningDrillBlockEntity extends BaseMachineBlockEntity {
     }
 
     @Override
-    protected boolean isItemValidForSlot(int slot, ItemStack stack) {
-        if (slot == SLOT_DRILLBIT) {
-            return DRILL_PROPS.containsKey(stack.getItem());
-        }
-        if (slot == SLOT_BATTERY) {
-            return isEnergyProviderItem(stack);
-        }
-        return false; // Ausgabe-Slots: kein manuelles Einlegen.
-    }
-
-    @Override
     public AbstractContainerMenu createMenu(int id, Inventory inventory, Player player) {
-        return MachineMiningDrillMenu.create(id, inventory, this);
+        return new MachineMiningDrillMenu(id, inventory, this);
     }
 
-    /**
-     * Der Bohrkopf/Shaft haengt bis zu {@code targetDepth} Bloecke unterhalb der Maschine (siehe
-     * {@link MachineMiningDrillRenderer} bzw. dessen Ur-Aequivalent {@code RenderExcavator}). Ohne
-     * diese Erweiterung kuerzt Minecraft den Cull-Check auf die 1x1x1-Blockbox und der Bohrkopf
-     * verschwindet, sobald die Maschine selbst nicht mehr im Sichtfeld ist (z.B. wenn man tief im
-     * eigenen Schacht steht).
-     */
     //? if forge {
     @Override
     //?}
     public AABB getRenderBoundingBox() {
-        double depth = targetDepth + 4.0D;
-        return super.getRenderBoundingBox().expandTowards(0, -depth, 0);
+        return new AABB(worldPosition.getX() - 3, worldPosition.getY() - 512, worldPosition.getZ() - 3,
+                worldPosition.getX() + 4, worldPosition.getY() + 5, worldPosition.getZ() + 4);
     }
 }

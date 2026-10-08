@@ -2,7 +2,6 @@ package com.hbm_m.entity.mob;
 
 import com.hbm_m.advancement.ModAdvancements;
 import com.hbm_m.api.entity.IRadiationImmune;
-import com.hbm_m.entity.projectile.TurretBulletEntity;
 import com.hbm_m.item.ModItems;
 
 import net.minecraft.sounds.SoundEvent;
@@ -16,9 +15,10 @@ import net.minecraft.world.entity.ai.attributes.AttributeSupplier;
 import net.minecraft.world.entity.ai.attributes.Attributes;
 import net.minecraft.world.entity.ai.goal.FloatGoal;
 import net.minecraft.world.entity.ai.goal.LookAtPlayerGoal;
-import net.minecraft.world.entity.ai.goal.MeleeAttackGoal;
+import net.minecraft.world.entity.PathfinderMob;
+import net.minecraft.world.entity.ai.goal.Goal;
 import net.minecraft.world.entity.ai.goal.RandomLookAroundGoal;
-import net.minecraft.world.entity.ai.goal.WaterAvoidingRandomStrollGoal;
+import net.minecraft.world.entity.ai.goal.RandomStrollGoal;
 import net.minecraft.world.entity.ai.goal.target.HurtByTargetGoal;
 import net.minecraft.world.entity.ai.goal.target.NearestAttackableTargetGoal;
 import net.minecraft.world.entity.monster.Monster;
@@ -40,11 +40,8 @@ import org.jetbrains.annotations.NotNull;
  * halved past that threshold, so burst damage is heavily punished. Half health triggers a one-off
  * explosion above its head, and its face changes to a skull - see the renderer.</p>
  *
- * <p><b>Substitution:</b> the original's three-phase laser gun fires {@code EntityBulletBaseNT}
- * with configs from {@code BulletConfigSyncingUtil}, and its minigun fires 7.62 FMJ from
- * {@code XFactory762mm}. Neither system exists in this port, so all four projectile types are
- * carried by {@link TurretBulletEntity} with the original's damage, counts and cadences kept
- * intact. The attack pattern is faithful; the bullet entity underneath is not.</p>
+ * <p>Die Laserkanone feuert wie im Original {@code EntityBulletBaseNT} (BulletConfigSyncingUtil),
+ * das Minigun 7.62 FMJ aus {@code XFactory762mm} (SEDNA).</p>
  */
 public class EntityMaskMan extends Monster implements IRadiationImmune {
 
@@ -73,11 +70,6 @@ public class EntityMaskMan extends Monster implements IRadiationImmune {
         }
     }
 
-    private LaserAttack attack = LaserAttack.ORB;
-    private int attackCount;
-    private int laserTimer;
-    private int minigunTimer;
-
     public EntityMaskMan(EntityType<? extends Monster> type, Level level) {
         super(type, level);
         this.xpReward = 100;
@@ -95,14 +87,265 @@ public class EntityMaskMan extends Monster implements IRadiationImmune {
 
     @Override
     protected void registerGoals() {
+        // 1:1 Konstruktor EntityMaskMan (Prioritaeten und Mutex wie im Original)
         this.goalSelector.addGoal(1, new FloatGoal(this));
-        // EntityAIMaskmanCasualApproach: it walks, it does not charge.
-        this.goalSelector.addGoal(2, new MeleeAttackGoal(this, 1.0D, false));
-        this.goalSelector.addGoal(3, new WaterAvoidingRandomStrollGoal(this, 1.0D));
+        this.goalSelector.addGoal(2, new CasualApproachGoal(this, Player.class, 1.0D, false));
+        this.goalSelector.addGoal(2, new MinigunGoal(this, 3));
+        this.goalSelector.addGoal(3, new LasergunGoal(this));
+        this.goalSelector.addGoal(3, new RandomStrollGoal(this, 1.0D));
         this.goalSelector.addGoal(4, new RandomLookAroundGoal(this));
         this.goalSelector.addGoal(5, new LookAtPlayerGoal(this, Player.class, 8.0F));
         this.targetSelector.addGoal(1, new HurtByTargetGoal(this));
-        this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Player.class, true));
+        // EntityAINearestAttackableTarget(this, EntityPlayer.class, 0, true): Chance 0 = jeden Tick
+        this.targetSelector.addGoal(2, new NearestAttackableTargetGoal<>(this, Player.class, 0, true, false, null));
+    }
+
+    // ─── KI 1:1 aus com.hbm.entity.mob.ai ───────────────────────────────────
+
+    /** {@code EntityAIMaskmanCasualApproach}: haelt ~10 Bloecke Abstand, greift nie im Nahkampf an. */
+    static class CasualApproachGoal extends Goal {
+        private final PathfinderMob attacker;
+        private final double speedTowardsTarget;
+        private final boolean longMemory;
+        private final Class<?> classTarget;
+        private net.minecraft.world.level.pathfinder.Path entityPathEntity;
+        private int attackTick;
+        private int pathTimer;
+        private double lastX, lastY, lastZ;
+        private int failedPathFindingPenalty;
+
+        CasualApproachGoal(PathfinderMob owner, Class<?> target, double speed, boolean longMemory) {
+            this.attacker = owner;
+            this.classTarget = target;
+            this.speedTowardsTarget = speed;
+            this.longMemory = longMemory;
+            this.setFlags(java.util.EnumSet.of(Goal.Flag.MOVE, Goal.Flag.LOOK)); // setMutexBits(3)
+        }
+
+        @Override
+        public boolean canUse() {
+            LivingEntity target = this.attacker.getTarget();
+            if (target == null) return false;
+            if (!target.isAlive()) return false;
+            if (this.classTarget != null && !this.classTarget.isAssignableFrom(target.getClass())) return false;
+
+            if (--this.pathTimer <= 0) {
+                double[] pos = getApproachPos();
+                this.entityPathEntity = this.attacker.getNavigation().createPath(pos[0], pos[1], pos[2], 0);
+                this.pathTimer = 4 + this.attacker.getRandom().nextInt(7);
+                return this.entityPathEntity != null;
+            }
+            return true;
+        }
+
+        @Override
+        public boolean canContinueToUse() {
+            LivingEntity target = this.attacker.getTarget();
+            if (target == null || !target.isAlive()) return false;
+            return !this.longMemory ? !this.attacker.getNavigation().isDone()
+                    : this.attacker.isWithinRestriction(target.blockPosition());
+        }
+
+        @Override
+        public void start() {
+            this.attacker.getNavigation().moveTo(this.entityPathEntity, this.speedTowardsTarget);
+            this.pathTimer = 0;
+        }
+
+        @Override
+        public void stop() {
+            this.attacker.getNavigation().stop();
+        }
+
+        @Override
+        public boolean requiresUpdateEveryTick() {
+            return true;
+        }
+
+        @Override
+        public void tick() {
+            LivingEntity target = this.attacker.getTarget();
+            if (target == null) return;
+            this.attacker.getLookControl().setLookAt(target, 30.0F, 30.0F);
+            double d0 = this.attacker.distanceToSqr(target.getX(), target.getBoundingBox().minY, target.getZ());
+
+            this.pathTimer--;
+
+            if ((this.longMemory || this.attacker.getSensing().hasLineOfSight(target)) && this.pathTimer <= 0
+                    && (this.lastX == 0.0D && this.lastY == 0.0D && this.lastZ == 0.0D
+                    || target.distanceToSqr(this.lastX, this.lastY, this.lastZ) >= 1.0D
+                    || this.attacker.getRandom().nextFloat() < 0.05F)) {
+
+                this.lastX = target.getX();
+                this.lastY = target.getBoundingBox().minY;
+                this.lastZ = target.getZ();
+                this.pathTimer = this.failedPathFindingPenalty + 4 + this.attacker.getRandom().nextInt(7);
+
+                net.minecraft.world.level.pathfinder.Path path = this.attacker.getNavigation().getPath();
+                if (path != null) {
+                    net.minecraft.world.level.pathfinder.Node finalPathPoint = path.getEndNode();
+                    if (finalPathPoint != null && target.distanceToSqr(finalPathPoint.x, finalPathPoint.y, finalPathPoint.z) < 1) {
+                        this.failedPathFindingPenalty = 0;
+                    } else {
+                        this.failedPathFindingPenalty += 10;
+                    }
+                } else {
+                    this.failedPathFindingPenalty += 10;
+                }
+
+                if (d0 > 1024.0D) {
+                    this.pathTimer += 10;
+                } else if (d0 > 256.0D) {
+                    this.pathTimer += 5;
+                }
+
+                double[] pos = getApproachPos();
+                if (!this.attacker.getNavigation().moveTo(pos[0], pos[1], pos[2], this.speedTowardsTarget)) {
+                    this.pathTimer += 15;
+                }
+            }
+
+            this.attackTick = Math.max(this.attackTick - 1, 0);
+            // Nahkampf ist im Original auskommentiert.
+        }
+
+        private double[] getApproachPos() {
+            LivingEntity target = this.attacker.getTarget();
+            Vec3 vec = new Vec3(this.attacker.getX() - target.getX(), this.attacker.getY() - target.getY(), this.attacker.getZ() - target.getZ());
+            double range = Math.min(vec.length(), 20) - 10;
+            vec = vec.normalize();
+            double x = this.attacker.getX() + vec.x * range + this.attacker.getRandom().nextGaussian() * 2;
+            double y = this.attacker.getY() + vec.y - 5 + this.attacker.getRandom().nextInt(11);
+            double z = this.attacker.getZ() + vec.z * range + this.attacker.getRandom().nextGaussian() * 2;
+            return new double[] {x, y, z};
+        }
+    }
+
+    /** {@code EntityAIMaskmanMinigun}: 7.62 FMJ alle {@code delay} Ticks im 5-10-Bloecke-Band. */
+    static class MinigunGoal extends Goal {
+        private final PathfinderMob owner;
+        private LivingEntity target;
+        private final int delay;
+        private int timer;
+
+        MinigunGoal(PathfinderMob owner, int delay) {
+            this.owner = owner;
+            this.delay = delay;
+            this.timer = delay;
+        }
+
+        @Override
+        public boolean canUse() {
+            LivingEntity entity = this.owner.getTarget();
+            if (entity == null || !entity.isAlive()) return false;
+            this.target = entity;
+            double dist = new Vec3(target.getX() - owner.getX(), target.getY() - owner.getY(), target.getZ() - owner.getZ()).length();
+            return dist > 5 && dist < 10;
+        }
+
+        @Override
+        public boolean canContinueToUse() {
+            return this.canUse() || !this.owner.getNavigation().isDone();
+        }
+
+        @Override
+        public boolean requiresUpdateEveryTick() {
+            return true;
+        }
+
+        @Override
+        public void tick() {
+            timer--;
+
+            if (target != null) this.owner.getLookControl().setLookAt(this.target, 15F, 15F);
+
+            if (timer <= 0) {
+                timer = delay;
+                // 1:1: SEDNA-Geschoss 7.62 FMJ aus XFactory762mm
+                com.hbm_m.entity.projectile.EntityBulletBaseMK4 bullet = new com.hbm_m.entity.projectile.EntityBulletBaseMK4(this.owner,
+                        com.hbm_m.item.weapon.sedna.factory.XFactory762mm.r762_fmj, 5F, 0.075F, -1.5, -1.5, 0);
+                owner.level().addFreshEntity(bullet);
+                owner.playSound(com.hbm_m.sound.HbmSoundsNT.get("hbm:weapon.calShoot"), 1.0F, 1.0F);
+            }
+        }
+    }
+
+    /** {@code EntityAIMaskmanLasergun}: ab 10 Bloecken Kugel-, Raketen- und Leuchtspursalven. */
+    static class LasergunGoal extends Goal {
+        private final PathfinderMob owner;
+        private LivingEntity target;
+        private LaserAttack attack;
+        private int timer;
+        private int attackCount;
+
+        LasergunGoal(PathfinderMob owner) {
+            this.owner = owner;
+            this.attack = LaserAttack.values()[owner.getRandom().nextInt(3)];
+        }
+
+        @Override
+        public boolean canUse() {
+            LivingEntity entity = this.owner.getTarget();
+            if (entity == null) return false;
+            this.target = entity;
+            double dist = new Vec3(target.getX() - owner.getX(), target.getY() - owner.getY(), target.getZ() - owner.getZ()).length();
+            return dist > 10;
+        }
+
+        @Override
+        public boolean canContinueToUse() {
+            return this.canUse() || !this.owner.getNavigation().isDone();
+        }
+
+        @Override
+        public boolean requiresUpdateEveryTick() {
+            return true;
+        }
+
+        @Override
+        public void tick() {
+            timer--;
+
+            if (timer <= 0) {
+                timer = attack.delay;
+
+                // 1:1 EntityAIMaskmanLasergun mit EntityBulletBaseNT (MASKMAN_ORB / _ROCKET / _TRACER)
+                switch (attack) {
+                    case ORB -> {
+                        com.hbm_m.entity.projectile.EntityBulletBaseNT orb = com.hbm_m.entity.projectile.EntityBulletBaseNT.create(owner.level(),
+                                com.hbm_m.handler.BulletConfigSyncingUtil.MASKMAN_ORB, owner, target, 2.0F, 0);
+                        orb.setDeltaMovement(orb.getDeltaMovement().add(0, 0.5D, 0));
+                        owner.level().addFreshEntity(orb);
+                        owner.playSound(com.hbm_m.sound.HbmSoundsNT.get("hbm:weapon.teslaShoot"), 1.0F, 1.0F);
+                    }
+                    case MISSILE -> {
+                        com.hbm_m.entity.projectile.EntityBulletBaseNT missile = com.hbm_m.entity.projectile.EntityBulletBaseNT.create(owner.level(),
+                                com.hbm_m.handler.BulletConfigSyncingUtil.MASKMAN_ROCKET, owner, target, 1.0F, 0);
+                        Vec3 vec = new Vec3(target.getX() - owner.getX(), 0, target.getZ() - owner.getZ());
+                        missile.setDeltaMovement(vec.x * 0.05D, 0.5D + owner.getRandom().nextDouble() * 0.5D, vec.z * 0.05D);
+                        owner.level().addFreshEntity(missile);
+                        owner.playSound(com.hbm_m.sound.HbmSoundsNT.get("hbm:weapon.hkShoot"), 1.0F, 1.0F);
+                    }
+                    case SPLASH -> {
+                        for (int i = 0; i < 5; i++) {
+                            com.hbm_m.entity.projectile.EntityBulletBaseNT tracer = com.hbm_m.entity.projectile.EntityBulletBaseNT.create(owner.level(),
+                                    com.hbm_m.handler.BulletConfigSyncingUtil.MASKMAN_TRACER, owner, target, 1.0F, 0.05F);
+                            owner.level().addFreshEntity(tracer);
+                        }
+                    }
+                }
+
+                attackCount++;
+
+                if (attackCount >= attack.amount) {
+                    attackCount = 0;
+                    int newAtk = attack.ordinal() + owner.getRandom().nextInt(LaserAttack.values().length - 1);
+                    attack = LaserAttack.values()[newAtk % LaserAttack.values().length];
+                }
+            }
+
+            this.owner.setYRot(this.owner.getYHeadRot());
+        }
     }
 
     @Override public boolean fireImmune()                { return true; }
@@ -160,92 +403,15 @@ public class EntityMaskMan extends Monster implements IRadiationImmune {
             halfHealthBlown = true;
             if (!this.level().isClientSide) {
                 this.level().explode(this, this.getX(), this.getY() + 4, this.getZ(),
-                        2.5F, Level.ExplosionInteraction.MOB);
+                        2.5F, Level.ExplosionInteraction.TNT); // createExplosion(..., true): zerstoert immer Bloecke
             }
         }
         this.lastHealth = this.getHealth();
 
         if (!this.level().isClientSide) {
             updateBossBar();
-
-            LivingEntity target = this.getTarget();
-            if (target != null && this.hasLineOfSight(target)) {
-                this.getLookControl().setLookAt(target, 15F, 15F);
-                double distance = this.distanceTo(target);
-                // EntityAIMaskmanMinigun: only in the 5-10 block band.
-                if (distance > 5 && distance < 10) minigun(target);
-                laserGun(target);
-            }
         }
-    }
-
-    /** {@code EntityAIMaskmanMinigun}: a shot every three ticks while in the mid band. */
-    private void minigun(LivingEntity target) {
-        if (--this.minigunTimer > 0) return;
-        this.minigunTimer = 3;
-
-        fireAt(target, 5F, 1.5D, 0D, ModItems.BOLT_STEEL.get());
-        emitSound(SoundEvents.CROSSBOW_SHOOT, 1.0F, 1.0F);
-    }
-
-    /** {@code EntityAIMaskmanLasergun}: cycles orb, missile and splash volleys. */
-    private void laserGun(LivingEntity target) {
-        if (--this.laserTimer > 0) return;
-        this.laserTimer = this.attack.delay;
-
-        switch (this.attack) {
-            case ORB -> {
-                TurretBulletEntity orb = fireAt(target, 2F, 1.2D, 0.5D, ModItems.PARTICLE_DIGAMMA.get());
-                if (orb != null) emitSound(SoundEvents.BEACON_POWER_SELECT, 1.0F, 1.0F);
-            }
-            case MISSILE -> {
-                // Lobbed rather than aimed: a flat push towards the target plus a steep arc.
-                Vec3 flat = new Vec3(target.getX() - this.getX(), 0, target.getZ() - this.getZ());
-                TurretBulletEntity missile = TurretBulletEntity.create(this.level(),
-                        this.getX(), this.getEyeY(), this.getZ(),
-                        flat.x * 0.05D, 0.5D + this.random.nextDouble() * 0.5D, flat.z * 0.05D,
-                        1F, ModItems.MISSILE_NUCLEAR.get());
-                missile.setOwner(this);
-                missile.setNoGravity(false);
-                this.level().addFreshEntity(missile);
-                emitSound(SoundEvents.FIREWORK_ROCKET_LAUNCH, 1.0F, 1.0F);
-            }
-            case SPLASH -> {
-                for (int i = 0; i < 5; i++) {
-                    fireAt(target, 1F, 1.2D, 0.05D, ModItems.BOLT_STEEL.get());
-                }
-            }
-        }
-
-        if (++this.attackCount >= this.attack.amount) {
-            this.attackCount = 0;
-            // The original advances by a random non-zero step so it never repeats the same phase.
-            int next = this.attack.ordinal() + this.random.nextInt(LaserAttack.values().length - 1);
-            this.attack = LaserAttack.values()[next % LaserAttack.values().length];
-        }
-    }
-
-    private TurretBulletEntity fireAt(LivingEntity target, float damage, double speed, double spread,
-                                      net.minecraft.world.item.Item icon) {
-        Vec3 dir = new Vec3(
-                target.getX() - this.getX(),
-                target.getEyeY() - this.getEyeY(),
-                target.getZ() - this.getZ()).normalize();
-
-        TurretBulletEntity bullet = TurretBulletEntity.create(this.level(),
-                this.getX(), this.getEyeY(), this.getZ(),
-                dir.x * speed + this.random.nextGaussian() * spread,
-                dir.y * speed + this.random.nextGaussian() * spread,
-                dir.z * speed + this.random.nextGaussian() * spread,
-                damage, icon);
-        bullet.setOwner(this);
-        this.level().addFreshEntity(bullet);
-        return bullet;
-    }
-
-    private void emitSound(SoundEvent sound, float volume, float pitch) {
-        this.level().playSound(null, this.getX(), this.getY(), this.getZ(),
-                sound, SoundSource.HOSTILE, volume, pitch);
+        // Minigun/Laserkanone/Annaeherung laufen wie im Original als KI-Aufgaben (registerGoals).
     }
 
     // ─── Death ───────────────────────────────────────────────────────────────
@@ -267,10 +433,10 @@ public class EntityMaskMan extends Monster implements IRadiationImmune {
     *///?}
         if (this.level().isClientSide) return;
 
-        // The original hands over its own gas mask with a combo filter already installed; the
-        // port has no filter-install helper, so the two drop separately.
-        this.spawnAtLocation(new ItemStack(ModItems.GAS_MASK_M65.get()));
-        this.spawnAtLocation(new ItemStack(ModItems.GAS_MASK_FILTER_COMBO.get()));
+        // Original: Gasmaske mit bereits eingesetztem Kombifilter (ArmorUtil.installGasMaskFilter)
+        ItemStack mask = new ItemStack(ModItems.GAS_MASK_M65.get());
+        com.hbm_m.item.gasmask.IGasMask.installFilter(mask, ModItems.GAS_MASK_FILTER_COMBO.get());
+        this.spawnAtLocation(mask);
         this.spawnAtLocation(new ItemStack(ModItems.COIN_MASKMAN.get()));
         this.spawnAtLocation(new ItemStack(ModItems.BOTTLED_CLOUD.get()));
         this.spawnAtLocation(new ItemStack(Items.SKELETON_SKULL));

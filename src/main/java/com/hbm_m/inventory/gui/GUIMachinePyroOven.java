@@ -42,6 +42,9 @@ public class GUIMachinePyroOven extends GuiInfoScreen<MachinePyroOvenMenu> {
 
         pyro.getTank0().renderTank(guiGraphics, this.leftPos + 8, this.topPos + 18, 16, 52);
         pyro.getTank1().renderTank(guiGraphics, this.leftPos + 116, this.topPos + 18, 16, 52);
+
+        // Original: drawInfoPanel(guiLeft + 108, guiTop + 76, 8, 8, 8)
+        this.drawInfoPanel(guiGraphics, 108, 76, PanelType.SMALL_BLUE_STAR);
     }
 
     @Override
@@ -64,6 +67,8 @@ public class GUIMachinePyroOven extends GuiInfoScreen<MachinePyroOvenMenu> {
         drawElectricityInfo(guiGraphics, mouseX, mouseY,
                 152, 18, 16, 52,
                 pyro.getEnergyStored(), pyro.getMaxEnergyStored());
+
+        this.drawCustomInfoStat(guiGraphics, mouseX, mouseY, 108, 76, 8, 8, leftPos + 108, topPos + 76, getUpgradeInfo(pyro));
         }
 
         this.renderTooltip(guiGraphics, mouseX, mouseY);

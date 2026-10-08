@@ -1,8 +1,9 @@
 package com.hbm_m.inventory.menu;
 
-import com.hbm_m.api.energy.ItemEnergyAccess;
 import com.hbm_m.blockentity.machines.MachineOreSlopperBlockEntity;
 import com.hbm_m.inventory.ModItemStackHandlerContainer;
+import com.hbm_m.item.ModItems;
+import com.hbm_m.item.industrial.ItemMachineUpgrade;
 import com.hbm_m.lib.RefStrings;
 import com.hbm_m.platform.DummyItemStackHandler;
 
@@ -15,15 +16,15 @@ import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
+/**
+ * 1:1 {@code ContainerOreSlopper}: Batterie (8,72), Fluid-ID (26,72), Eingang (71,27), sechs Ausgaenge 2x3 ab (134,18),
+ * Upgrades (62,72)/(80,72), Spielerinventar ab y 122.
+ */
 public class MachineOreSlopperMenu extends AbstractContainerMenu {
 
-    private final MachineOreSlopperBlockEntity blockEntity;
+    private static final int MACHINE_SLOT_COUNT = MachineOreSlopperBlockEntity.INVENTORY_SIZE;
 
-    private static final int SLOT_INPUT = MachineOreSlopperBlockEntity.SLOT_INPUT;
-    private static final int OUTPUT_START = 1;
-    private static final int MACHINE_SLOT_COUNT = 8; // 1 Eingang + 6 Ausgaenge + 1 Batterie
-    private static final int PLAYER_INV_START = MACHINE_SLOT_COUNT;
-    private static final int PLAYER_INV_END = MACHINE_SLOT_COUNT + 36;
+    private final MachineOreSlopperBlockEntity blockEntity;
 
     public MachineOreSlopperMenu(int id, Inventory inventory, FriendlyByteBuf extraData) {
         this(id, inventory, getBlockEntity(inventory, extraData));
@@ -33,60 +34,38 @@ public class MachineOreSlopperMenu extends AbstractContainerMenu {
         super(ModMenuTypes.ORE_SLOPPER_MENU.get(), id);
         this.blockEntity = blockEntity;
 
-        // На клиенте тайл может отсутствовать (реплей Flashback) — подставляем пустую заглушку,
-        // чтобы конструктор дошёл до конца и пакет открытия меню не уронил клиент
+        // На клиенте тайл может отсутствовать (реплей Flashback) — подставляем пустую заглушку
         var container = new ModItemStackHandlerContainer(
                 blockEntity != null ? blockEntity.getInventory() : new DummyItemStackHandler(MACHINE_SLOT_COUNT),
                 blockEntity != null ? blockEntity::setChanged : null);
 
-        // Eingangsslot (bedrock_ore_base) - links im Panel, ueber dem Wassertank-Bereich.
-        this.addSlot(new Slot(container, SLOT_INPUT, 44, 37));
-
-        // 6 Ausgabeslots (LIGHT, HEAVY, RARE, ACTINIDE, NONMETAL, CRYSTAL) - 3x2-Raster rechts.
-        for (int row = 0; row < 2; row++) {
-            for (int col = 0; col < 3; col++) {
-                int index = OUTPUT_START + row * 3 + col;
-                this.addSlot(new Slot(container, index, 98 + col * 18, 18 + row * 18) {
-                    @Override
-                    public boolean mayPlace(ItemStack stack) {
-                        return false; // Nur Entnahme - wird von der Maschine befuellt.
-                    }
-                });
-            }
+        this.addSlot(new Slot(container, 0, 8, 72));
+        this.addSlot(new Slot(container, 1, 26, 72));
+        this.addSlot(new Slot(container, 2, 71, 27));
+        int[][] out = { {134, 18}, {152, 18}, {134, 36}, {152, 36}, {134, 54}, {152, 54} };
+        for (int i = 0; i < 6; i++) {
+            this.addSlot(new Slot(container, 3 + i, out[i][0], out[i][1]) {
+                @Override public boolean mayPlace(ItemStack stack) { return false; }
+            });
         }
+        this.addSlot(new Slot(container, 9, 62, 72));
+        this.addSlot(new Slot(container, 10, 80, 72));
 
-        // Batterie-Slot - unterhalb der Ausgabe-Slots.
-        this.addSlot(new Slot(container, MachineOreSlopperBlockEntity.SLOT_BATTERY, 152, 37) {
-            @Override
-            public boolean mayPlace(ItemStack stack) {
-                return ItemEnergyAccess.isEnergySource(stack);
-            }
-        });
-
-        int playerInvX = 8;
-        int playerInvY = 124;
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 9; col++) {
-                this.addSlot(new Slot(inventory, col + row * 9 + 9, playerInvX + col * 18, playerInvY + row * 18));
+                this.addSlot(new Slot(inventory, col + row * 9 + 9, 8 + col * 18, 122 + row * 18));
             }
         }
-        int hotbarY = playerInvY + 58;
         for (int col = 0; col < 9; col++) {
-            this.addSlot(new Slot(inventory, col, playerInvX + col * 18, hotbarY));
+            this.addSlot(new Slot(inventory, col, 8 + col * 18, 180));
         }
     }
 
     private static MachineOreSlopperBlockEntity getBlockEntity(Inventory inventory, FriendlyByteBuf buffer) {
         BlockPos pos = buffer.readBlockPos();
         BlockEntity blockEntity = inventory.player.level().getBlockEntity(pos);
-        if (blockEntity instanceof MachineOreSlopperBlockEntity oreSlopper) {
-            return oreSlopper;
-        }
-        // На клиенте тайл может отсутствовать (реплей Flashback) — не крашим пакет, возвращаем null.
-        // На сервере отсутствие тайла — реальный баг, поэтому там падаем как раньше.
-        if (inventory.player.level().isClientSide) {
-            return null;
-        }
+        if (blockEntity instanceof MachineOreSlopperBlockEntity slopper) return slopper;
+        if (inventory.player.level().isClientSide) return null;
         throw new IllegalStateException("No MachineOreSlopperBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":ore_slopper_menu");
     }
 
@@ -96,48 +75,36 @@ public class MachineOreSlopperMenu extends AbstractContainerMenu {
 
     @Override
     public boolean stillValid(Player player) {
-        if (blockEntity == null || blockEntity.getLevel() != player.level()) {
-            return false;
-        }
-        BlockPos pos = blockEntity.getBlockPos();
-        return player.distanceToSqr(pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D) <= 64.0D;
+        // audit13: Original isUseableByPlayer (<= 128 zur Kernmitte) oder Huelle <= 64; Vanilla 64 schloss die GUI an grossen Maschinen
+        return MultiblockMenuReach.stillValidCore(blockEntity, player, 128.0D);
     }
 
+    /** Original {@code transferStackInSlot}: Erz, Upgrades, Fluid-IDs und Batterien in ihre Plaetze. */
     @Override
     public ItemStack quickMoveStack(Player player, int index) {
-        ItemStack result = ItemStack.EMPTY;
         Slot slot = this.slots.get(index);
+        if (slot == null || !slot.hasItem()) return ItemStack.EMPTY;
 
-        if (slot != null && slot.hasItem()) {
-            ItemStack slotStack = slot.getItem();
-            result = slotStack.copy();
+        ItemStack stack = slot.getItem();
+        ItemStack result = stack.copy();
 
-            if (index < MACHINE_SLOT_COUNT) {
-                if (!this.moveItemStackTo(slotStack, PLAYER_INV_START, PLAYER_INV_END, true)) {
-                    return ItemStack.EMPTY;
-                }
-            } else {
-                boolean isEnergySource = ItemEnergyAccess.isEnergySource(slotStack);
-                if (isEnergySource) {
-                    if (!this.moveItemStackTo(slotStack, MachineOreSlopperBlockEntity.SLOT_BATTERY, MachineOreSlopperBlockEntity.SLOT_BATTERY + 1, false)) {
-                        return ItemStack.EMPTY;
-                    }
-                } else if (!this.moveItemStackTo(slotStack, SLOT_INPUT, SLOT_INPUT + 1, false)) {
-                    return ItemStack.EMPTY;
-                }
-            }
-
-            if (slotStack.isEmpty()) {
-                slot.set(ItemStack.EMPTY);
-            } else {
-                slot.setChanged();
-            }
-
-            if (slotStack.getCount() == result.getCount()) {
-                return ItemStack.EMPTY;
-            }
-            slot.onTake(player, slotStack);
+        if (index <= 10) {
+            if (!this.moveItemStackTo(stack, 11, this.slots.size(), true)) return ItemStack.EMPTY;
+        } else if (result.getItem() == ModItems.BEDROCK_ORE_BASE.get()) {
+            if (!this.moveItemStackTo(stack, 2, 3, false)) return ItemStack.EMPTY;
+        } else if (result.getItem() instanceof ItemMachineUpgrade) {
+            if (!this.moveItemStackTo(stack, 9, 11, false)) return ItemStack.EMPTY;
+        } else if (result.getItem() instanceof com.hbm_m.interfaces.IItemFluidIdentifier) {
+            if (!this.moveItemStackTo(stack, 1, 2, false)) return ItemStack.EMPTY;
+        } else if (com.hbm_m.api.energy.ItemEnergyAccess.getHbmProvider(result).isPresent()
+                || com.hbm_m.api.energy.ItemEnergyAccess.getHbmReceiver(result).isPresent()) {
+            if (!this.moveItemStackTo(stack, 0, 1, false)) return ItemStack.EMPTY;
+        } else {
+            return ItemStack.EMPTY;
         }
+
+        if (stack.isEmpty()) slot.set(ItemStack.EMPTY);
+        else slot.setChanged();
         return result;
     }
 }

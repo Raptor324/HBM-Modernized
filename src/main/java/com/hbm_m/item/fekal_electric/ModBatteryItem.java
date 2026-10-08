@@ -9,9 +9,9 @@ import org.jetbrains.annotations.Nullable;
 import com.hbm_m.api.energy.EnergyCapabilityProvider;
 import com.hbm_m.api.energy.ItemEnergyAccess;
 import com.hbm_m.platform.PlatformHooks;
-import com.hbm_m.util.EnergyFormatter;
+import com.hbm_m.util.BobMathUtil;
+import com.hbm_m.util.TooltipUtil;
 
-import net.minecraft.ChatFormatting;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.util.Mth;
@@ -133,36 +133,12 @@ public class ModBatteryItem extends Item implements ITooltipProvider {
 
     @Override
     public void appendHbmTooltip(@NotNull ItemStack stack, @Nullable Level level, @NotNull List<Component> tooltip, @NotNull TooltipFlag flag) {
-        ItemEnergyAccess.getHbmProvider(stack)
-                .ifPresent(energy -> addEnergyTooltip(tooltip, energy.getEnergyStored(), energy.getMaxEnergyStored(), ChatFormatting.AQUA));
+        // 1:1 Original ItemBattery.addInformation: drei Zeilen ohne Farbcode (grau), immer alle drei
+        long charge = ItemEnergyAccess.getHbmProvider(stack).map(e -> e.getEnergyStored())
+                .orElseGet(() -> ItemEnergyAccess.getHbmReceiver(stack).map(e -> e.getEnergyStored()).orElse(getEnergy(stack)));
 
-        if (ItemEnergyAccess.getHbmProvider(stack).isEmpty()) {
-            ItemEnergyAccess.getHbmReceiver(stack)
-                    .ifPresent(energy -> addEnergyTooltip(tooltip, energy.getEnergyStored(), energy.getMaxEnergyStored(), ChatFormatting.AQUA));
-        }
-
-        if (maxReceive > 0) {
-            // [🔥 ИЗМЕНЕНО: Вся строка теперь ChatFormatting.GOLD 🔥]
-            tooltip.add(Component.translatable("tooltip.hbm_m.battery.transfer_rate",
-                    EnergyFormatter.format(maxReceive)).withStyle(ChatFormatting.GOLD));
-        }
-        if (maxExtract > 0) {
-            // [🔥 ИЗМЕНЕНО: Вся строка теперь ChatFormatting.GOLD 🔥]
-            tooltip.add(Component.translatable("tooltip.hbm_m.battery.discharge_rate",
-                    EnergyFormatter.format(maxExtract)).withStyle(ChatFormatting.GOLD));
-        }
-    }
-
-    private void addEnergyTooltip(List<Component> tooltip, long stored, long max, ChatFormatting color) {
-        // [🔥 ИЗМЕНЕНО: Теперь обе строки используют переданный 'color' 🔥]
-
-        // Строка 1: "Хранится энергии:"
-        tooltip.add(Component.translatable("tooltip.hbm_m.battery.stored").withStyle(color));
-
-        // Строка 2: " X / Y HE"
-        tooltip.add(Component.literal(String.format(" %s / %s HE",
-                        EnergyFormatter.format(stored),
-                        EnergyFormatter.format(max)))
-                .withStyle(color));
+        tooltip.add(TooltipUtil.gray("Energy stored: " + BobMathUtil.getShortNumber(charge) + "/" + BobMathUtil.getShortNumber(capacity) + "HE"));
+        tooltip.add(TooltipUtil.gray("Charge rate: " + BobMathUtil.getShortNumber(maxReceive) + "HE/t"));
+        tooltip.add(TooltipUtil.gray("Discharge rate: " + BobMathUtil.getShortNumber(maxExtract) + "HE/t"));
     }
 }

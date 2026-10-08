@@ -59,7 +59,12 @@ public class PileVentBlockEntity extends LoadedMachineBlockEntity implements IFl
 
         if (level.isClientSide()) {
             be.lastFan = be.fan;
-            if (be.isActive) be.fan += 45F;
+            if (be.isActive) {
+                be.fan += 45F;
+                // Original: worldObj.spawnParticle("cloud", x + 0.5, y + 1, z + 0.5, 0, 0.05, 0) bei 1 aus 20
+                if (level.random.nextInt(20) == 0) level.addParticle(net.minecraft.core.particles.ParticleTypes.CLOUD,
+                        pos.getX() + 0.5, pos.getY() + 1, pos.getZ() + 0.5, 0, 0.05, 0);
+            }
             if (be.fan >= 360F) {
                 be.lastFan -= 360F;
                 be.fan -= 360F;

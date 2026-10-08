@@ -1,7 +1,7 @@
 {
   "display": {
     "icon": {
-      "item": "hbm_m:machine_crystallizer"
+      "item": "hbm_m:crystallizer"
     },
     "title": {
       "translate": "advancements.hbm_m.acidizer.title"

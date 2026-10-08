@@ -1,0 +1,51 @@
+package com.hbm_m.item.weapon.sedna.mods;
+
+import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
+
+import com.hbm_m.extprop.HbmLivingProps;
+import com.hbm_m.item.weapon.sedna.BulletConfig;
+import com.hbm_m.item.weapon.sedna.GunConfig;
+import com.hbm_m.item.weapon.sedna.Receiver;
+import com.hbm_m.item.weapon.sedna.ItemGunBaseNT.LambdaContext;
+import com.hbm_m.item.weapon.sedna.factory.Lego;
+import com.hbm_m.item.weapon.sedna.factory.XFactoryRocket;
+import com.hbm_m.powerarmor.resist.DamageResistanceHandler.DamageClass;
+import com.hbm_m.render.anim.AnimationEnums.GunAnimation;
+import com.hbm_m.render.anim.BusAnimation;
+import com.hbm_m.render.anim.BusAnimationSequence;
+import com.hbm_m.render.anim.BusAnimationKeyframe.IType;
+import com.hbm_m.util.EntityDamageUtil;
+
+import net.minecraft.world.item.ItemStack;
+
+@SuppressWarnings("unchecked")
+public class WeaponModPanzerschreckSawedOff extends WeaponModBase {
+
+	public WeaponModPanzerschreckSawedOff(int id) {
+		super(id, "SHIELD");
+	}
+
+	@Override
+	public <T> T eval(T base, ItemStack gun, String key, Object parent) {
+		if(key == GunConfig.I_DRAWDURATION) return cast(5, base);
+		if(key == Receiver.CON_ONFIRE) { return (T) LAMBDA_FIRE; }
+		if(key == GunConfig.FUN_ANIMNATIONS) { return (T) LAMBDA_PANZERSCHRECK_ANIMS; }
+		return base;
+	}
+
+	@SuppressWarnings("incomplete-switch") public static BiFunction<ItemStack, GunAnimation, BusAnimation> LAMBDA_PANZERSCHRECK_ANIMS = (stack, type) -> {
+		switch(type) {
+		case EQUIP: return new BusAnimation().addBus("EQUIP", new BusAnimationSequence().addPos(60, 0, 0, 0).addPos(0, 0, 0, 250, IType.SIN_DOWN));
+		}
+		return XFactoryRocket.LAMBDA_PANZERSCHRECK_ANIMS.apply(stack, type);
+	};
+
+	public static BiConsumer<ItemStack, LambdaContext> LAMBDA_FIRE = (stack, ctx) -> {
+		Lego.LAMBDA_STANDARD_FIRE.accept(stack, ctx);
+		if(ctx.entity != null) {
+			HbmLivingProps.setFire(ctx.entity, HbmLivingProps.getFire(ctx.entity) + 100);
+			EntityDamageUtil.attackEntityFromNT(ctx.entity, BulletConfig.getDamage(ctx.entity, ctx.entity, DamageClass.FIRE), 4F, true, false, 0F, 0F, 0F);
+		}
+	};
+}

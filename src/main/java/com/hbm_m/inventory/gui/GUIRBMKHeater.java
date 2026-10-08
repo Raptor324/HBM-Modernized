@@ -23,10 +23,7 @@ import net.minecraft.world.entity.player.Inventory;
  * direkt genutzt werden. Die zwei kleinen 10x10-Icons (Pfeile/Ventile) bei (72,72) und (130,72)
  * kommen weiterhin statisch aus dem GUI-Sheet.
  *
- * <p>Das Original besitzt einen einzelnen Item-Slot (Fluid-Identifier zum Setzen des
- * Kuehlmitteltyps); die modernisierte {@link RBMKHeaterBlockEntity} hat kein Item-Inventar
- * (nur Fluid-Tanks), daher entfaellt dieser Slot analog zu {@code GUIRBMKBoiler} - siehe
- * {@link RBMKHeaterMenu}.</p>
+ * <p>Der Fluid-Identifier-Platz des Originals (41,45) sitzt im {@link RBMKHeaterMenu}.</p>
  */
 public class GUIRBMKHeater extends GuiInfoScreen<RBMKHeaterMenu> {
 

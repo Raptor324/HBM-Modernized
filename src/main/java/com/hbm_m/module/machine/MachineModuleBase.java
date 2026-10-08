@@ -57,6 +57,8 @@ public abstract class MachineModuleBase<T extends Recipe<?>> {
     // === SIGNALS ===
     public boolean didProcess = false;
     public boolean needsSync = false;
+    /** Original {@code restrictedMode}: per Funk (RoR) gesetztes Rezept - Maschine laeuft mit Viertelgeschwindigkeit. */
+    public boolean restrictedMode = false;
 
     // РР—РњР•РќР•РќРР•: РљРѕРЅСЃС‚СЂСѓРєС‚РѕСЂ С‚РµРїРµСЂСЊ РїСЂРёРЅРёРјР°РµС‚ ILongEnergyStorage
     public MachineModuleBase(int moduleIndex, IEnergyReceiver energyStorage, ModItemStackHandler itemHandler, Level level) {
@@ -104,7 +106,8 @@ public abstract class MachineModuleBase<T extends Recipe<?>> {
      * - false: РєР°Рє Сѓ С…РёРјРјР°С€РёРЅС‹ РІ 1.7.10 вЂ” РґРѕСЃС‚Р°С‚РѕС‡РЅРѕ СЌРЅРµСЂРіРёРё С‚РѕР»СЊРєРѕ РЅР° С‚РµРєСѓС‰РёР№ С‚РёРє.
      */
     protected boolean requiresFullEnergyBufferToStart() {
-        return true;
+        // Original ModuleMachineBase.canProcess prueft nur die Energie fuer den aktuellen Tick
+        return false;
     }
 
     /**
@@ -250,12 +253,14 @@ public abstract class MachineModuleBase<T extends Recipe<?>> {
     public void writeToNBT(CompoundTag nbt) {
         nbt.putDouble("Progress_" + moduleIndex, progress);
         nbt.putInt("MaxProgress_" + moduleIndex, maxProgress);
+        nbt.putBoolean("restrictedMode", restrictedMode);
         writeExtraToNbt(nbt);
     }
 
     public void readFromNBT(CompoundTag nbt) {
         this.progress = nbt.getDouble("Progress_" + moduleIndex);
         this.maxProgress = nbt.getInt("MaxProgress_" + moduleIndex);
+        this.restrictedMode = nbt.getBoolean("restrictedMode");
         readExtraFromNbt(nbt);
     }
 
@@ -265,12 +270,14 @@ public abstract class MachineModuleBase<T extends Recipe<?>> {
     public void serialize(FriendlyByteBuf buf) {
         buf.writeDouble(progress);
         buf.writeInt(maxProgress);
+        buf.writeBoolean(restrictedMode);
         writeExtraToBuf(buf);
     }
 
     public void deserialize(FriendlyByteBuf buf) {
         this.progress = buf.readDouble();
         this.maxProgress = buf.readInt();
+        this.restrictedMode = buf.readBoolean();
         readExtraFromBuf(buf);
     }
 
@@ -347,12 +354,21 @@ public abstract class MachineModuleBase<T extends Recipe<?>> {
                 return;
             }
             if (!hasEnoughEnergyForTick(storedEnergy, energyPerTick)) {
+                // Original: zu wenig Strom heisst canProcess == false, der Fortschritt verfaellt
+                if (progress > 0.0) {
+                    progress = 0.0;
+                    needsSync = true;
+                }
                 return;
             }
 
             energyStorage.setEnergyStored(storedEnergy - energyPerTick);
 
-            double step = Math.max(0.0, speedMultiplier);
+            // Original process(): if(restrictedMode) speed *= 0.25 - RoR-gesteuerte Maschinen sind langsamer
+            if (this.restrictedMode) speedMultiplier *= 0.25;
+
+            // Original: step = min(speed / duration, 1) - hoechstens ein Durchlauf pro Tick
+            double step = Math.min(Math.max(0.0, speedMultiplier), Math.max(1, maxProgress));
             if (step <= 0.0) return;
 
             this.progress += step;

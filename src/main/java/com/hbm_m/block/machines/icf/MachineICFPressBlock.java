@@ -60,6 +60,7 @@ public class MachineICFPressBlock extends BaseEntityBlock {
     //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        if (!level.isClientSide() && player.isShiftKeyDown()) return InteractionResult.PASS; // Original: geschlichen auf dem Server false
         if (!level.isClientSide() && level.getBlockEntity(pos) instanceof MenuProvider menuProvider) {
             MenuRegistry.openExtendedMenu((ServerPlayer) player, menuProvider, buf -> buf.writeBlockPos(pos));
         }
@@ -68,10 +69,19 @@ public class MachineICFPressBlock extends BaseEntityBlock {
     //?} else {
     /*@Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+        if (!level.isClientSide() && player.isShiftKeyDown()) return InteractionResult.PASS; // Original: geschlichen auf dem Server false
         if (!level.isClientSide() && level.getBlockEntity(pos) instanceof MenuProvider menuProvider) {
             MenuRegistry.openExtendedMenu((ServerPlayer) player, menuProvider, buf -> buf.writeBlockPos(pos));
         }
         return InteractionResult.sidedSuccess(level.isClientSide());
     }
     *///?}
+
+    /** Original {@code addInformation}: alle {@code .desc}-Zeilen gelb, ohne Umschalttaste. */
+    @Override
+    public void appendHoverText(net.minecraft.world.item.ItemStack stack, @org.jetbrains.annotations.Nullable net.minecraft.world.level.BlockGetter level,
+                                java.util.List<net.minecraft.network.chat.Component> list, net.minecraft.world.item.TooltipFlag flag) {
+        for (String s : net.minecraft.client.resources.language.I18n.get(getDescriptionId() + ".desc").split(java.util.regex.Pattern.quote("$")))
+            list.add(net.minecraft.network.chat.Component.literal(s).withStyle(net.minecraft.ChatFormatting.YELLOW));
+    }
 }

@@ -3,17 +3,22 @@ package com.hbm_m.inventory.gui;
 import com.hbm_m.blockentity.machines.MachineStorageDrumBlockEntity;
 import com.hbm_m.client.GuiCompat;
 import com.hbm_m.inventory.menu.MachineStorageDrumMenu;
+import com.hbm_m.lib.RefStrings;
+import com.mojang.blaze3d.systems.RenderSystem;
 
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 
 /**
- * Simple GUI for the Storage Drum - no dedicated original texture found, uses a plain background
- * with two colored fluid-level bars (liquid/gas waste tanks) instead.
+ * 1:1 {@code GUIStorageDrum}: achteckiges Lager, links der Fluessig-, rechts der Gasabfall als Pegel (106 px hoch).
  */
-public class GUIMachineStorageDrum extends AbstractContainerScreen<MachineStorageDrumMenu> {
+public class GUIMachineStorageDrum extends GuiInfoScreen<MachineStorageDrumMenu> {
+
+    private static final ResourceLocation TEXTURE =
+            ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/processing/gui_drum.png");
 
     private final MachineStorageDrumBlockEntity drum;
 
@@ -21,36 +26,39 @@ public class GUIMachineStorageDrum extends AbstractContainerScreen<MachineStorag
         super(menu, playerInventory, title);
         this.drum = menu.getBlockEntity();
         this.imageWidth = 176;
-        this.imageHeight = 186;
+        this.imageHeight = 234;
     }
 
     @Override
-    protected void renderBg(GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
-        guiGraphics.fill(leftPos, topPos, leftPos + imageWidth, topPos + imageHeight, 0xF0303030);
-        // тайл может отсутствовать в реплее Flashback
+    public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
+        GuiCompat.renderBackground(this, g, mouseX, mouseY, partialTick);
+        super.render(g, mouseX, mouseY, partialTick);
+
+        if (drum != null) {
+            drum.getLiquidTank().renderTankInfo(g, this.font, mouseX, mouseY, leftPos + 16, topPos + 23, 9, 108);
+            drum.getGasTank().renderTankInfo(g, this.font, mouseX, mouseY, leftPos + 151, topPos + 23, 9, 108);
+        }
+
+        this.renderTooltip(g, mouseX, mouseY);
+    }
+
+    @Override
+    protected void renderLabels(GuiGraphics g, int mouseX, int mouseY) {
+        g.drawString(this.font, this.title, this.imageWidth / 2 - this.font.width(this.title) / 2, 6, 4210752, false);
+        g.drawString(this.font, this.playerInventoryTitle, 8, this.imageHeight - 96 + 2, 4210752, false);
+    }
+
+    @Override
+    protected void renderBg(GuiGraphics g, float partialTick, int mouseX, int mouseY) {
+        RenderSystem.setShader(GameRenderer::getPositionTexShader);
+        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
+        g.blit(TEXTURE, leftPos, topPos, 0, 0, imageWidth, imageHeight);
         if (drum == null) return;
 
-        int liquidPct = drum.getLiquidTank().getMaxFill() > 0
-                ? drum.getLiquidTank().getFill() * 40 / drum.getLiquidTank().getMaxFill() : 0;
-        int gasPct = drum.getGasTank().getMaxFill() > 0
-                ? drum.getGasTank().getFill() * 40 / drum.getGasTank().getMaxFill() : 0;
+        int liquid = drum.getLiquidTank().getFill() * 106 / drum.getLiquidTank().getMaxFill();
+        g.blit(TEXTURE, leftPos + 17, topPos + 130 - liquid, 176, 106 - liquid, 7, liquid);
 
-        guiGraphics.fill(leftPos + 152, topPos + 17 + (40 - liquidPct), lexRight(), topPos + 57, 0xFF544400);
-        guiGraphics.fill(leftPos + 160, topPos + 17 + (40 - gasPct), leftPos + 168, topPos + 57, 0xFFB8B8B8);
-    }
-
-    private int lexRight() { return leftPos + 160; }
-
-    @Override
-    protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
-        guiGraphics.drawString(this.font, this.title, this.imageWidth / 2 - this.font.width(this.title) / 2, 6, 0x404040, false);
-        guiGraphics.drawString(this.font, this.playerInventoryTitle, 8, this.imageHeight - 96 + 2, 0x404040, false);
-    }
-
-    @Override
-    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        com.hbm_m.client.GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTick);
-        super.render(guiGraphics, mouseX, mouseY, partialTick);
-        this.renderTooltip(guiGraphics, mouseX, mouseY);
+        int gas = drum.getGasTank().getFill() * 106 / drum.getGasTank().getMaxFill();
+        g.blit(TEXTURE, leftPos + 152, topPos + 130 - gas, 183, 106 - gas, 7, gas);
     }
 }

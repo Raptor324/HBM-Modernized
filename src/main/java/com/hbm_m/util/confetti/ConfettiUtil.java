@@ -28,7 +28,7 @@ public final class ConfettiUtil {
         if (entity.isAlive()) return;
 
         String type = source.getMsgId().toLowerCase(java.util.Locale.US);
-        if (type.equals("laser")) pulverize(entity);
+        if (type.equals("laser") || type.equals(ModDamageTypes.LEGACY_LASER_MSG)) pulverize(entity); // Port: alter Typ heisst "legacy_laser"
         if (type.equals("electric")) pulverize(entity);
         if (type.equals("plasma")) cremate(entity);
         if (source.is(net.minecraft.tags.DamageTypeTags.IS_EXPLOSION)) gib(entity);

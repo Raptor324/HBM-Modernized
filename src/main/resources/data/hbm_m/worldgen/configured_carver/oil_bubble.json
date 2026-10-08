@@ -1,0 +1,14 @@
+{
+  "type": "hbm_m:oil_bubble",
+  "config": {
+    "probability": 1.0,
+    "y": {
+      "type": "minecraft:uniform",
+      "min_inclusive": { "absolute": 0 },
+      "max_inclusive": { "absolute": 0 }
+    },
+    "yScale": 1.0,
+    "lava_level": { "above_bottom": 8 },
+    "replaceable": "#minecraft:overworld_carver_replaceables"
+  }
+}

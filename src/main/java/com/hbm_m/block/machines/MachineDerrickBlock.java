@@ -137,14 +137,54 @@ public class MachineDerrickBlock extends BaseEntityBlock implements IMultiblockC
         super.onRemove(state, level, pos, newState, isMoving);
     }
 
+    /** audit10: Explosionen auf Teilzellen laufen wie im Original ueber findCore hierher. */
+    @Override
+    public boolean forwardPartExplosions() {
+        return true;
+    }
+
+    /**
+     * audit10: 1:1 {@code MachineOilWell.onBlockExploded} - der Turm wird zerstoert; war noch Oel oder Gas in den
+     * Tanks, explodiert er zusaetzlich (VNT 15, Aufloesung 24, ohne Drops) mit grosser Explosionswolke.
+     */
+    @Override
+    public void onBlockExploded(BlockState state, Level world, BlockPos pos, net.minecraft.world.level.Explosion explosion) {
+        if (!(world.getBlockEntity(pos) instanceof MachineDerrickBlockEntity well)) {
+            super.onBlockExploded(state, world, pos, explosion);
+            return;
+        }
+
+        boolean filled = well.tanks[0].getFill() > 0 || well.tanks[1].getFill() > 0;
+
+        world.setBlock(pos, net.minecraft.world.level.block.Blocks.AIR.defaultBlockState(), 3);
+        wasExploded(world, pos, explosion);
+
+        if (filled) {
+            well.tanks[0].setFill(0);
+            well.tanks[1].setFill(0);
+
+            com.hbm_m.explosion.vanillant.ExplosionVNT xnt = new com.hbm_m.explosion.vanillant.ExplosionVNT(world, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 15F);
+            xnt.setBlockAllocator(new com.hbm_m.explosion.vanillant.standard.BlockAllocatorStandard(24));
+            xnt.setBlockProcessor(new com.hbm_m.explosion.vanillant.standard.BlockProcessorStandard().setNoDrop());
+            xnt.setEntityProcessor(new com.hbm_m.explosion.vanillant.standard.EntityProcessorStandard());
+            xnt.setPlayerProcessor(new com.hbm_m.explosion.vanillant.standard.PlayerProcessorStandard());
+            xnt.explode();
+
+            if (world instanceof net.minecraft.server.level.ServerLevel server)
+                com.hbm_m.particle.helper.ExplosionCreator.composeEffect(server, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 10, 2F, 0.5F, 25F, 5, 8, 20, 0.75F, 1F, -2F, 150);
+        }
+    }
+
     //? if < 1.21.1 {
     @Override
     public InteractionResult use(BlockState state, Level level, BlockPos pos, Player player, InteractionHand hand, BlockHitResult hit) {
+        if (player.isShiftKeyDown()) return InteractionResult.sidedSuccess(level.isClientSide()); // Original standardOpenBehavior: geschlichen true ohne GUI
         return openMenu(state, level, pos, player, hand, hit);
     }
     //?} else {
     /*@Override
     protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
+        if (player.isShiftKeyDown()) return InteractionResult.sidedSuccess(level.isClientSide()); // Original standardOpenBehavior: geschlichen true ohne GUI
         return openMenu(state, level, pos, player, InteractionHand.MAIN_HAND, hit);
     }
     *///?}
@@ -161,7 +201,8 @@ public class MachineDerrickBlock extends BaseEntityBlock implements IMultiblockC
 
     @Override
     public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        return structureHelper.generateShapeFromParts(state.getValue(FACING));
+        // w16b: nur die Kernzelle (Raycast pro Zelle wie Original); Umriss der ganzen Maschine: MultiblockOutlineForge
+        return structureHelper.getControllerCellShape(state.getValue(FACING));
     }
 
     @Override

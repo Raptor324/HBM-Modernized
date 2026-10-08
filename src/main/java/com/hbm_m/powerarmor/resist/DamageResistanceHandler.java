@@ -521,6 +521,8 @@ public class DamageResistanceHandler {
         if (source.is(ModDamageTypes.SPIKES)) return CATEGORY_PHYSICAL;
         if (source.is(ModDamageTypes.ELECTRICITY)) return CATEGORY_ENERGY;
         if (source.is(ModDamageTypes.MICROWAVE)) return CATEGORY_ENERGY;
+        // alter Laser-Typ (eigene Meldungs-ID "legacy_laser"): im Original hiess er wie die SEDNA-Klasse "laser"
+        if (source.is(ModDamageTypes.LASER)) return CATEGORY_ENERGY;
         if (source.getEntity() != null || source.getDirectEntity() != null) return CATEGORY_PHYSICAL;
         return damageType;
     }
@@ -604,7 +606,7 @@ public class DamageResistanceHandler {
         public Resistance otherResistance;
 
         public Resistance getResistance(DamageSource source) {
-            Resistance exact = exactResistances.get(source.getMsgId().toLowerCase());
+            Resistance exact = exactResistances.get(source.is(ModDamageTypes.LASER) ? "laser" : source.is(ModDamageTypes.MICROWAVE) ? "microwave" : source.getMsgId().toLowerCase());
             if (exact != null) return exact;
             Resistance category = categoryResistances.get(typeToCategory(source));
             if (category != null) return category;

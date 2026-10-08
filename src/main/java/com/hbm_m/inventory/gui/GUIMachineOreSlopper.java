@@ -1,107 +1,72 @@
 package com.hbm_m.inventory.gui;
-import com.hbm_m.client.GuiCompat;
 
 import com.hbm_m.blockentity.machines.MachineOreSlopperBlockEntity;
+import com.hbm_m.client.GuiCompat;
 import com.hbm_m.inventory.menu.MachineOreSlopperMenu;
 import com.hbm_m.lib.RefStrings;
 import com.mojang.blaze3d.systems.RenderSystem;
+
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 
+/**
+ * 1:1 {@code GUIOreSlopper}: Wasser- (26,18) und Schlammtank (116,18), Energiebalken (8,18), Fortschritt als
+ * steigender Pegel (62,52), Betriebslampe (12,4) sobald genug Strom fuer einen Tick da ist.
+ */
 public class GUIMachineOreSlopper extends GuiInfoScreen<MachineOreSlopperMenu> {
 
     private static final ResourceLocation TEXTURE =
-            //? if fabric && < 1.21.1 {
-            /*new ResourceLocation(RefStrings.MODID, "textures/gui/processing/gui_ore_slopper.png");
-            *///?} else {
-                        ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/processing/gui_ore_slopper.png");
-            //?}
+            ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/processing/gui_ore_slopper.png");
 
-    // Wassertank - links im Panel (vermessen anhand der Textur, siehe gui_ore_slopper.png).
-    private static final int TANK_X = 8;
-    private static final int TANK_Y = 8;
-    private static final int TANK_WIDTH = 16;
-    private static final int TANK_HEIGHT = 80;
+    private final MachineOreSlopperBlockEntity slopper;
 
     public GUIMachineOreSlopper(MachineOreSlopperMenu menu, Inventory inventory, Component title) {
         super(menu, inventory, title);
-
+        this.slopper = menu.getBlockEntity();
         this.imageWidth = 176;
         this.imageHeight = 204;
-        this.inventoryLabelY = 112;
     }
 
     @Override
-    protected void init() {
-        super.init();
-        this.titleLabelX = (this.imageWidth - this.font.width(this.title)) / 2;
+    public void render(GuiGraphics g, int mouseX, int mouseY, float partialTick) {
+        GuiCompat.renderBackground(this, g, mouseX, mouseY, partialTick);
+        super.render(g, mouseX, mouseY, partialTick);
+
+        if (slopper != null) {
+            slopper.getWaterTank().renderTankInfo(g, this.font, mouseX, mouseY, leftPos + 26, topPos + 18, 34, 52);
+            slopper.getSlopTank().renderTankInfo(g, this.font, mouseX, mouseY, leftPos + 116, topPos + 18, 16, 52);
+            drawElectricityInfo(g, mouseX, mouseY, 8, 18, 16, 52, slopper.getEnergyStored(), MachineOreSlopperBlockEntity.maxPower);
+        }
+
+        this.renderTooltip(g, mouseX, mouseY);
     }
 
     @Override
-    protected void renderBg(GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
+    protected void renderLabels(GuiGraphics g, int mouseX, int mouseY) {
+        g.drawString(this.font, this.title, this.imageWidth / 2 - this.font.width(this.title) / 2 - 9, 6, 4210752, false);
+        g.drawString(this.font, this.playerInventoryTitle, 8, this.imageHeight - 96 + 2, 4210752, false);
+    }
+
+    @Override
+    protected void renderBg(GuiGraphics g, float partialTick, int mouseX, int mouseY) {
         RenderSystem.setShader(GameRenderer::getPositionTexShader);
-        RenderSystem.setShaderColor(1f, 1f, 1f, 1f);
-        RenderSystem.setShaderTexture(0, TEXTURE);
+        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
+        g.blit(TEXTURE, leftPos, topPos, 0, 0, imageWidth, imageHeight);
+        if (slopper == null) return;
 
-        int x = (width - imageWidth) / 2;
-        int y = (height - imageHeight) / 2;
+        int i = (int) (slopper.progress * 35);
+        g.blit(TEXTURE, leftPos + 62, topPos + 52 - i, 176, 34 - i, 34, i);
 
-        guiGraphics.blit(TEXTURE, x, y, 0, 0, imageWidth, imageHeight);
+        int j = (int) (slopper.getEnergyStored() * 52 / MachineOreSlopperBlockEntity.maxPower);
+        g.blit(TEXTURE, leftPos + 8, topPos + 70 - j, 176, 86 - j, 16, j);
 
-        renderTank(guiGraphics, x, y);
-        renderProgress(guiGraphics, x, y);
-    }
+        if (slopper.getEnergyStored() >= slopper.consumption)
+            g.blit(TEXTURE, leftPos + 12, topPos + 4, 202, 34, 9, 12);
 
-    private void renderTank(GuiGraphics guiGraphics, int x, int y) {
-        MachineOreSlopperBlockEntity be = menu.getBlockEntity();
-        // тайл может отсутствовать в реплее Flashback
-        if (be == null) return;
-        be.getTank().renderTank(guiGraphics, x + TANK_X, y + TANK_Y, TANK_WIDTH, TANK_HEIGHT);
-    }
-
-    private void renderProgress(GuiGraphics guiGraphics, int x, int y) {
-        MachineOreSlopperBlockEntity be = menu.getBlockEntity();
-        // тайл может отсутствовать в реплее Flashback
-        if (be == null) return;
-        int progressPct = (be.getMaxProgress() <= 0) ? 0 : be.getProgressScaled(100);
-        if (progressPct > 0) {
-            guiGraphics.drawString(this.font, progressPct + "%", x + 100, y + 60, 4210752, false);
-        }
-    }
-
-    @Override
-    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float delta) {
-        GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, delta);
-        super.render(guiGraphics, mouseX, mouseY, delta);
-
-        MachineOreSlopperBlockEntity be = menu.getBlockEntity();
-        // тайл может отсутствовать в реплее Flashback
-        if (be != null) {
-        drawElectricityInfo(guiGraphics, mouseX, mouseY,
-                152, 18, 16, 16,
-                be.getEnergyStored(), be.getMaxEnergyStored());
-        }
-
-        renderTooltip(guiGraphics, mouseX, mouseY);
-        renderCustomTooltips(guiGraphics, mouseX, mouseY);
-    }
-
-    @Override
-    protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
-        guiGraphics.drawString(this.font, this.title, this.titleLabelX, this.titleLabelY, 4210752, false);
-        guiGraphics.drawString(this.font, this.playerInventoryTitle, this.inventoryLabelX, this.inventoryLabelY, 4210752, false);
-    }
-
-    private void renderCustomTooltips(GuiGraphics guiGraphics, int mouseX, int mouseY) {
-        MachineOreSlopperBlockEntity be = menu.getBlockEntity();
-        int x = (width - imageWidth) / 2;
-        int y = (height - imageHeight) / 2;
-
-        if (be != null && isPointInRect(TANK_X, TANK_Y, TANK_WIDTH, TANK_HEIGHT, mouseX, mouseY)) {
-            be.getTank().renderTankInfo(guiGraphics, this.font, mouseX, mouseY, x + TANK_X, y + TANK_Y, TANK_WIDTH, TANK_HEIGHT);
-        }
+        slopper.getWaterTank().renderTank(g, leftPos + 26, topPos + 18, 16, 52);
+        slopper.getSlopTank().renderTank(g, leftPos + 116, topPos + 18, 16, 52);
     }
 }

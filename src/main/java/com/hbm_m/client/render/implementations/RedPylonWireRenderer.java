@@ -81,6 +81,10 @@ public class RedPylonWireRenderer implements BlockEntityRenderer<PylonBaseBlockE
         if (pylon.getBlockState().getBlock() instanceof RedPylonMediumBlock) {
             return pylon.getBlockState().getValue(RedPylonMediumBlock.FACING);
         }
+        // Umspannwerk: FACING = Original-Metadate - 10
+        if (pylon.getBlockState().getBlock() instanceof com.hbm_m.block.machines.MachineSubstationBlock) {
+            return pylon.getBlockState().getValue(com.hbm_m.block.machines.MachineSubstationBlock.FACING);
+        }
         return Direction.NORTH;
     }
 
@@ -95,7 +99,8 @@ public class RedPylonWireRenderer implements BlockEntityRenderer<PylonBaseBlockE
                                    float cr, float cg, float cb) {
         double dX = x0 - x1, dY = y0 - y1, dZ = z0 - z1;
         double span = Math.sqrt(dX * dX + dY * dY + dZ * dZ);
-        double hang = Math.min(span / 15D, 2.5D);
+        // Original ClientConfig.RENDER_CABLE_HANG: aus = gerades Kabel (ohne Durchhang)
+        double hang = com.hbm_m.config.ClientConfig.renderCableHang ? Math.min(span / 15D, 2.5D) : 0D;
 
         // Ортогональные оси сечения (аналог i/j из оригинала).
         double jX = -dZ, jZ = dX;

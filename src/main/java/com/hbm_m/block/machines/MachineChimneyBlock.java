@@ -1,127 +1,68 @@
 package com.hbm_m.block.machines;
 
-import java.util.Map;
-import java.util.function.Supplier;
+import java.util.List;
 
 import org.jetbrains.annotations.Nullable;
 
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.blockentity.ModBlockEntities;
 import com.hbm_m.blockentity.machines.MachineChimneyBlockEntity;
-import com.hbm_m.interfaces.IMultiblockController;
+import com.hbm_m.multiblock.DummyableStructureBuilder;
 import com.hbm_m.multiblock.MultiblockStructureHelper;
-import com.hbm_m.multiblock.PartRole;
 
 import net.minecraft.core.BlockPos;
-import net.minecraft.core.Direction;
-import net.minecraft.world.InteractionHand;
-import net.minecraft.world.InteractionResult;
-import net.minecraft.world.entity.player.Player;
-import net.minecraft.world.item.context.BlockPlaceContext;
+import net.minecraft.network.chat.Component;
+import net.minecraft.world.item.ItemStack;
+import net.minecraft.world.item.TooltipFlag;
 import net.minecraft.world.level.BlockGetter;
 import net.minecraft.world.level.Level;
-import net.minecraft.world.level.block.BaseEntityBlock;
-import net.minecraft.world.level.block.Block;
 import net.minecraft.world.level.block.RenderShape;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.entity.BlockEntityTicker;
 import net.minecraft.world.level.block.entity.BlockEntityType;
 import net.minecraft.world.level.block.state.BlockState;
-import net.minecraft.world.level.block.state.StateDefinition;
-import net.minecraft.world.level.block.state.properties.BlockStateProperties;
-import net.minecraft.world.level.block.state.properties.DirectionProperty;
-import net.minecraft.world.phys.BlockHitResult;
-import net.minecraft.world.phys.shapes.CollisionContext;
-import net.minecraft.world.phys.shapes.Shapes;
-import net.minecraft.world.phys.shapes.VoxelShape;
 
 /**
- * Chimney (Brick/Industrial) - Port von {@code MachineChimneyBrick}/{@code MachineChimneyIndustrial}
- * (1.7.10 Original), auf diesem Repo-eigenen {@link IMultiblockController}-Framework. Echte volle
- * Original-Hoehe uebernommen (Brick=12, Industrial=22 Bloecke), Controller unten - anders als bei
- * den meisten anderen Multiblocks dieser Session wird hier NICHT auf ein kleineres Footprint
- * vereinfacht, da eine einfache vertikale Saeule trivial in voller Original-Groesse abbildbar ist.
- * Kein GUI (siehe Klassenkommentar in {@link MachineChimneyBlockEntity}).
+ * 1:1 {@code MachineChimneyBrick} ({@code getDimensions {12,0,1,1,1,1}}) und {@code MachineChimneyIndustrial}
+ * ({@code {22,0,1,1,1,1}}), beide {@code getOffset 1}; die vier Seitenzellen des Sockels nehmen Rauch an. Gezeichnet
+ * vom {@code ChimneyRenderer}.
  */
-public class MachineChimneyBlock extends BaseEntityBlock implements IMultiblockController {
+public class MachineChimneyBlock extends DummyableMachineBlock {
 
-    public static final DirectionProperty FACING = BlockStateProperties.HORIZONTAL_FACING;
+    /** defineStructure laeuft im Superkonstruktor, bevor {@code height} gesetzt ist. */
+    private static final ThreadLocal<Integer> PENDING_HEIGHT = ThreadLocal.withInitial(() -> 12);
 
-    private final MultiblockStructureHelper structureHelper;
     private final int height;
 
+    private static Properties stash(Properties properties, int height) {
+        PENDING_HEIGHT.set(height);
+        return properties;
+    }
+
     public MachineChimneyBlock(Properties properties, int height) {
-        super(properties);
-        this.registerDefaultState(this.stateDefinition.any().setValue(FACING, Direction.NORTH));
+        super(stash(properties, height));
         this.height = height;
-        this.structureHelper = defineStructure(height);
     }
 
-    private static MultiblockStructureHelper defineStructure(int height) {
-        String[][] layers = new String[height][];
-        layers[0] = new String[] { "C" };
-        for (int i = 1; i < height; i++) {
-            layers[i] = new String[] { "O" };
-        }
+    public int getHeight() { return height; }
 
-        Map<Character, PartRole> roleMap = Map.of(
-                'O', PartRole.DEFAULT,
-                'C', PartRole.CONTROLLER
-        );
-
-        Map<Character, Supplier<BlockState>> symbolMap = Map.of();
-
-        return MultiblockStructureHelper.createFromLayersWithRoles(
-                layers,
-                symbolMap,
-                () -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState(),
-                roleMap,
-                null,
-                null
-        );
-    }
+    public boolean isIndustrial() { return height > 12; }
 
     @Override
-    public MultiblockStructureHelper getStructureHelper() {
-        return this.structureHelper;
-    }
-
-    @Override
-    public PartRole getPartRole(BlockPos localOffset) {
-        return structureHelper.resolvePartRole(localOffset, this);
-    }
-
-    @Override
-    protected void createBlockStateDefinition(StateDefinition.Builder<Block, BlockState> builder) {
-        builder.add(FACING);
-    }
-
-    @Override
-    public BlockState getStateForPlacement(BlockPlaceContext context) {
-        return this.defaultBlockState().setValue(FACING, context.getHorizontalDirection().getOpposite());
+    protected MultiblockStructureHelper defineStructure() {
+        return DummyableStructureBuilder.create()
+                .box(PENDING_HEIGHT.get(), 0, 1, 1, 1, 1)
+                .extra(1, 0, 0)
+                .extra(-1, 0, 0)
+                .extra(0, 0, 1)
+                .extra(0, 0, -1)
+                .placementOffset(1)
+                .build(() -> ModBlocks.UNIVERSAL_MACHINE_PART.get().defaultBlockState());
     }
 
     @Override
     public RenderShape getRenderShape(BlockState state) {
-        return RenderShape.MODEL;
-    }
-
-    @Override
-    public VoxelShape getShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        return structureHelper.generateShapeFromParts(state.getValue(FACING));
-    }
-
-    @Override
-    public VoxelShape getCollisionShape(BlockState state, BlockGetter level, BlockPos pos, CollisionContext context) {
-        return structureHelper.getSpecificPartShape(structureHelper.getControllerOffset(), state.getValue(FACING));
-    }
-
-    @Override
-    public VoxelShape getOcclusionShape(BlockState state, BlockGetter level, BlockPos pos) {
-        if (!structureHelper.isFullBlock(structureHelper.getControllerOffset(), state.getValue(FACING))) {
-            return Shapes.empty();
-        }
-        return Shapes.block();
+        return RenderShape.ENTITYBLOCK_ANIMATED;
     }
 
     @Nullable
@@ -132,51 +73,14 @@ public class MachineChimneyBlock extends BaseEntityBlock implements IMultiblockC
 
     @Nullable
     @Override
-    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(
-            Level level,
-            BlockState state,
-            BlockEntityType<T> type
-    ) {
-        return createTickerHelper(
-                type,
-                ModBlockEntities.CHIMNEY_BE.get(),
-                (lvl, pos, st, be) -> MachineChimneyBlockEntity.tick(lvl, pos, st, (MachineChimneyBlockEntity) be)
-        );
+    public <T extends BlockEntity> BlockEntityTicker<T> getTicker(Level level, BlockState state, BlockEntityType<T> type) {
+        return createTickerHelper(type, ModBlockEntities.CHIMNEY_BE.get(),
+                (lvl, pos, st, be) -> MachineChimneyBlockEntity.tick(lvl, pos, st, (MachineChimneyBlockEntity) be));
     }
 
     @Override
-    public void onPlace(BlockState state, Level level, BlockPos pos, BlockState oldState, boolean isMoving) {
-        super.onPlace(state, level, pos, oldState, isMoving);
-        if (!state.is(oldState.getBlock()) && !level.isClientSide()) {
-            structureHelper.placeStructure(level, pos, state.getValue(FACING), this);
-        }
-    }
-
-    //? if < 1.21.1 {
-    @Override
-    public InteractionResult use(BlockState state, Level level, BlockPos pos,
-                                  Player player, InteractionHand hand, BlockHitResult hit) {
-
-        return InteractionResult.PASS; // Kein GUI im Original.
-        }
-    //?} else {
-    /*@Override
-    protected InteractionResult useWithoutItem(BlockState state, Level level, BlockPos pos, Player player, BlockHitResult hit) {
-
-        return InteractionResult.PASS; // Kein GUI im Original.
-        }
-    *///?}
-
-
-    @Override
-    public void onRemove(BlockState state, Level level, BlockPos pos,
-                          BlockState newState, boolean isMoving) {
-        if (!state.is(newState.getBlock())) {
-            if (!level.isClientSide()) {
-                structureHelper.destroyStructure(level, pos, state.getValue(FACING));
-            }
-        }
-        super.onRemove(state, level, pos, newState, isMoving);
+    public void appendHoverText(ItemStack stack, @Nullable BlockGetter level, List<Component> list, TooltipFlag flag) {
+        com.hbm_m.util.StandardInfo.add(list, getDescriptionId() + ".desc");
     }
 
     //? if >1.20.1 {
@@ -185,5 +89,4 @@ public class MachineChimneyBlock extends BaseEntityBlock implements IMultiblockC
         return simpleCodec(p -> new MachineChimneyBlock(p, this.height));
     }
     *///?}
-
 }

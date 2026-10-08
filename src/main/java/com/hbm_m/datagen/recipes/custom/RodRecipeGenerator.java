@@ -7,6 +7,7 @@ import java.util.function.Consumer;
 
 import com.hbm_m.block.ModBlocks;
 import com.hbm_m.item.ModItems;
+import com.hbm_m.item.nuclear.BreedingRodType;
 import com.hbm_m.item.nuclear.WatzPelletType;
 import com.hbm_m.item.PartTabMetaItems;
 import com.hbm_m.item.material.MaterialShape;
@@ -19,7 +20,7 @@ import net.minecraft.world.item.crafting.Ingredient;
 /**
  * 1:1 {@code com.hbm.crafting.RodRecipes} ohne den RBMK-Teil (der steht in
  * {@code ModVanillaRecipeProvider}). Brutstaebe ({@code rod/rod_dual/rod_quad} mit
- * {@code BreedingRodType}) folgen mit ihren Items.
+ * {@code BreedingRodType}) als {@code rod_<typ>}, {@code rod_dual_<typ>}, {@code rod_quad_<typ>}.
  */
 public final class RodRecipeGenerator {
 
@@ -61,6 +62,41 @@ public final class RodRecipeGenerator {
         g.shapeless(ModItems.ROD_QUAD_EMPTY, 1, ModItems.ROD_EMPTY, ModItems.ROD_EMPTY, ModItems.ROD_EMPTY, ModItems.ROD_EMPTY);
         g.shapeless(ModItems.ROD_QUAD_EMPTY, 1, ModItems.ROD_DUAL_EMPTY, ModItems.ROD_DUAL_EMPTY);
 
+        //Breeding Rods (befuellt)
+        g.shapeless(rod(BreedingRodType.LITHIUM), 1, ModItems.ROD_EMPTY, ModItems.LITHIUM);
+        g.shapeless(ModItems.LITHIUM, 1, rod(BreedingRodType.LITHIUM));
+        g.shapeless(dual(BreedingRodType.LITHIUM), 1, ModItems.ROD_DUAL_EMPTY, ModItems.LITHIUM, ModItems.LITHIUM);
+        g.shapeless(ModItems.LITHIUM, 2, dual(BreedingRodType.LITHIUM));
+        g.shapeless(quad(BreedingRodType.LITHIUM), 1, ModItems.ROD_QUAD_EMPTY, ModItems.LITHIUM, ModItems.LITHIUM, ModItems.LITHIUM, ModItems.LITHIUM);
+        g.shapeless(ModItems.LITHIUM, 4, quad(BreedingRodType.LITHIUM));
+
+        g.shapeless(ModItems.CELL_TRITIUM, 1, rod(BreedingRodType.TRITIUM), ModItems.CELL_EMPTY);
+        g.shapeless(ModItems.CELL_TRITIUM, 2, dual(BreedingRodType.TRITIUM), ModItems.CELL_EMPTY, ModItems.CELL_EMPTY);
+        g.shapeless(ModItems.CELL_TRITIUM, 4, quad(BreedingRodType.TRITIUM), ModItems.CELL_EMPTY, ModItems.CELL_EMPTY, ModItems.CELL_EMPTY, ModItems.CELL_EMPTY);
+
+        breedingRod(g, m(ModMaterials.COBALT, MaterialShape.BILLET), BreedingRodType.CO);
+        breedingRod(g, m(ModMaterials.CO60, MaterialShape.BILLET), BreedingRodType.CO60);
+        breedingRod(g, m(ModMaterials.RA226, MaterialShape.BILLET), BreedingRodType.RA226);
+        breedingRod(g, m(ModMaterials.ACTINIUM, MaterialShape.BILLET), BreedingRodType.AC227);
+        breedingRod(g, m(ModMaterials.THORIUM232, MaterialShape.BILLET), BreedingRodType.TH232);
+        breedingRod(g, m(ModMaterials.THORIUM_FUEL, MaterialShape.BILLET), BreedingRodType.THF);
+        breedingRod(g, m(ModMaterials.URANIUM235, MaterialShape.BILLET), BreedingRodType.U235);
+        breedingRod(g, m(ModMaterials.NEPTUNIUM, MaterialShape.BILLET), BreedingRodType.NP237);
+        breedingRod(g, m(ModMaterials.URANIUM238, MaterialShape.BILLET), BreedingRodType.U238);
+        breedingRod(g, m(ModMaterials.PLUTONIUM238, MaterialShape.BILLET), BreedingRodType.PU238);
+        breedingRod(g, m(ModMaterials.PLUTONIUM239, MaterialShape.BILLET), BreedingRodType.PU239);
+        breedingRod(g, m(ModMaterials.PU_MIX, MaterialShape.BILLET), BreedingRodType.RGP);
+        breedingRod(g, m(ModMaterials.NUCLEAR_WASTE, MaterialShape.BILLET), BreedingRodType.WASTE);
+        Item pbNugget = m(ModMaterials.LEAD, MaterialShape.NUGGET);
+        Item pbIngot = m(ModMaterials.LEAD, MaterialShape.INGOT);
+        g.shapeless(rod(BreedingRodType.LEAD), 1, ModItems.ROD_EMPTY, pbNugget, pbNugget, pbNugget, pbNugget, pbNugget, pbNugget);
+        g.shapeless(pbNugget, 6, rod(BreedingRodType.LEAD));
+        g.shapeless(dual(BreedingRodType.LEAD), 1, ModItems.ROD_DUAL_EMPTY, pbIngot, pbNugget, pbNugget, pbNugget);
+        g.shapeless(pbNugget, 12, dual(BreedingRodType.LEAD));
+        g.shapeless(quad(BreedingRodType.LEAD), 1, ModItems.ROD_QUAD_EMPTY, pbIngot, pbIngot, pbNugget, pbNugget, pbNugget, pbNugget, pbNugget, pbNugget);
+        g.shapeless(pbNugget, 24, quad(BreedingRodType.LEAD));
+        breedingRod(g, m(ModMaterials.URANIUM, MaterialShape.BILLET), BreedingRodType.URANIUM);
+
         //PWR fuel
         Item polymer = m(ModMaterials.POLYMER, MaterialShape.PLATE);
         pwr(g, ModItems.PWR_FUEL_MEU.get(), m(ModMaterials.URANIUM_FUEL, MaterialShape.BILLET), polymer);
@@ -101,6 +137,20 @@ public final class RodRecipeGenerator {
                 'C', ModItems.BISMOID_CIRCUIT, 'S', ModItems.PIPE_DURA_STEEL);
         g.shaped(ModBlocks.STRUCT_WATZ_CORE.get(), 1, p("CBC", "BHB", "CBC"), 'C', ModItems.ADVANCED_CIRCUIT, 'B', resistantCast,
                 'H', ModBlocks.WATZ_COOLER.get());
+    }
+
+    private static Item rod(BreedingRodType t) { return ModItems.ROD.get(t).get(); }
+    private static Item dual(BreedingRodType t) { return ModItems.ROD_DUAL.get(t).get(); }
+    private static Item quad(BreedingRodType t) { return ModItems.ROD_QUAD.get(t).get(); }
+
+    /** Original {@code RodRecipes.addBreedingRod}: Laden und Entladen von Einzel-, Doppel- und Vierfachstab. */
+    private static void breedingRod(CraftingGen g, Item billet, BreedingRodType type) {
+        g.shapeless(rod(type), 1, ModItems.ROD_EMPTY, billet);
+        g.shapeless(dual(type), 1, ModItems.ROD_DUAL_EMPTY, billet, billet);
+        g.shapeless(quad(type), 1, ModItems.ROD_QUAD_EMPTY, billet, billet, billet, billet);
+        g.shapeless(billet, 1, rod(type));
+        g.shapeless(billet, 2, dual(type));
+        g.shapeless(billet, 4, quad(type));
     }
 
     /** Original: {@code RodRecipes.addPellet}. */

@@ -164,14 +164,17 @@ public class MachineBreederMenu extends AbstractContainerMenu implements ILongEn
         int playerStart = MACHINE_SLOTS;
         int playerEnd = slots.size();
 
-        if (index < MACHINE_SLOTS) {
+        // Original ContainerMachineReactorBreeding: index <= 2 raus, nur Brutstaebe hinein
+        if (index <= 2) {
             if (!moveItemStackTo(stack, playerStart, playerEnd, true)) {
                 return ItemStack.EMPTY;
             }
-        } else {
+        } else if (stack.getItem() instanceof com.hbm_m.item.nuclear.ItemBreedingRod) {
             if (!moveItemStackTo(stack, SLOT_INPUT, SLOT_INPUT + 1, false)) {
                 return ItemStack.EMPTY;
             }
+        } else {
+            return ItemStack.EMPTY;
         }
 
         if (stack.isEmpty()) {
@@ -185,6 +188,7 @@ public class MachineBreederMenu extends AbstractContainerMenu implements ILongEn
 
     @Override
     public boolean stillValid(Player player) {
-        return stillValid(ContainerLevelAccess.create(level, blockEntity.getBlockPos()), player, ModBlocks.BREEDER.get());
+        // w16b: Original isUseableByPlayer (TileEntityMachineBase) = 128 vom Kern, dazu Huelle der Maschine (MultiblockMenuReach)
+        return MultiblockMenuReach.stillValidCore(blockEntity, player, 128.0D);
     }
 }

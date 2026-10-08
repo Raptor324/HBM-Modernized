@@ -1,7 +1,7 @@
 {
   "display": {
     "icon": {
-      "item": "hbm_m:machine_press"
+      "item": "hbm_m:press"
     },
     "title": {
       "translate": "advancements.hbm_m.burner_press.title"

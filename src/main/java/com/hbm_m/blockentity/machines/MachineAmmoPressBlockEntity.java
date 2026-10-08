@@ -36,8 +36,9 @@ import net.minecraft.world.level.block.state.BlockState;
  * gleichzeitig ein, was ueberhaupt in die neun Eingabefelder passt. Ohne Auswahl steht sie
  * still.</p>
  *
- * <p>Nicht uebernommen: die animierte Press-Kolben-3D-Bewegung (Original-Renderer) -
- * {@link #animTicks} haelt nur einen kurzen Fortschritts-Flash-Zustand fuers GUI.</p>
+ * <p>Nach jedem Pressen laeuft 40 Ticks lang die Animation des Originals (Heben, Pressen, Zurueckfahren,
+ * Absenken), gezeichnet vom {@code AmmoPressRenderer}. Es wird im selben Tick so oft gepresst, wie Material
+ * und Ausgabeplatz reichen.</p>
  */
 public class MachineAmmoPressBlockEntity extends BaseMachineBlockEntity {
 
@@ -45,9 +46,16 @@ public class MachineAmmoPressBlockEntity extends BaseMachineBlockEntity {
     public static final int SLOT_OUTPUT = GRID_SIZE;
     private static final int SLOT_COUNT = GRID_SIZE + 1;
 
-    private static final int ANIM_DURATION = 20;
-
+    /** Original {@code playAnimation}. */
     private int animTicks = 0;
+
+    public enum AnimationState { LIFTING, PRESSING, RETRACTING, LOWERING }
+
+    public AnimationState animState = AnimationState.LIFTING;
+    public float prevLift = 0F;
+    public float lift = 0F;
+    public float prevPress = 0F;
+    public float press = 0F;
 
     /**
      * Original: {@code selectedRecipe} - dort ein Index in die globale Rezeptliste. Hier die
@@ -80,39 +88,74 @@ public class MachineAmmoPressBlockEntity extends BaseMachineBlockEntity {
 
     public static void tick(Level level, BlockPos pos, BlockState state, MachineAmmoPressBlockEntity be) {
         if (level.isClientSide()) {
-            if (be.animTicks > 0) be.animTicks--;
+            be.clientTick();
             return;
         }
         be.serverTick(level);
     }
 
+    private void clientTick() {
+        this.prevLift = this.lift;
+        this.prevPress = this.press;
+
+        if (animTicks > 0 || lift > 0) switch (animState) {
+            case LIFTING -> {
+                this.lift += 1F / 40F;
+                if (this.lift >= 1F) { this.lift = 1F; this.animState = AnimationState.PRESSING; }
+            }
+            case PRESSING -> {
+                this.press += 1F / 20F;
+                if (this.press >= 1F) { this.press = 1F; this.animState = AnimationState.RETRACTING; }
+            }
+            case RETRACTING -> {
+                this.press -= 1F / 20F;
+                if (this.press <= 0F) { this.press = 0F; this.animState = AnimationState.LOWERING; }
+            }
+            case LOWERING -> {
+                this.lift -= 1F / 40F;
+                if (this.lift <= 0F) { this.lift = 0F; this.animState = AnimationState.LIFTING; }
+            }
+        }
+    }
+
     private void serverTick(Level level) {
-        // 1:1: ohne gewaehltes Zielrezept passiert nichts.
+        if (animTicks > 0) animTicks--;
+        // Original performRecipe: rekursiv, solange es geht
+        while (performRecipe(level)) { }
+        sendUpdateToClient();
+    }
+
+    private boolean performRecipe(Level level) {
         AmmoPressRecipe recipe = getSelectedRecipe(level);
-        if (recipe == null) return;
-        if (!matchesInputs(recipe)) return;
+        if (recipe == null) return false;
 
         ItemStack output = recipe.getOutput();
         ItemStack outSlot = inventory.getStackInSlot(SLOT_OUTPUT);
         if (!outSlot.isEmpty()) {
-            if (!com.hbm_m.platform.PlatformHooks.isSameItemSameTags(outSlot, output)) return;
-            if (outSlot.getCount() + output.getCount() > outSlot.getMaxStackSize()) return;
+            if (!com.hbm_m.platform.PlatformHooks.isSameItemSameTags(outSlot, output)) return false;
+            if (outSlot.getCount() + output.getCount() > outSlot.getMaxStackSize()) return false;
         }
 
+        if (!matchesInputs(recipe)) return false;
+
         for (int i = 0; i < GRID_SIZE; i++) {
-            inventory.getStackInSlot(i).shrink(1);
+            if (!recipe.getInputs().get(i).isEmpty()) {
+                ItemStack s = inventory.getStackInSlot(i).copy();
+                s.shrink(recipe.getCount(i));
+                inventory.setStackInSlot(i, s);
+            }
         }
         if (outSlot.isEmpty()) {
             inventory.setStackInSlot(SLOT_OUTPUT, output);
         } else {
-            outSlot.grow(output.getCount());
+            ItemStack grown = outSlot.copy();
+            grown.grow(output.getCount());
+            inventory.setStackInSlot(SLOT_OUTPUT, grown);
         }
 
-        animTicks = ANIM_DURATION;
-        level.playSound(null, worldPosition, SoundEvents.ANVIL_LAND, SoundSource.BLOCKS, 0.6F, 1.4F);
-
+        animTicks = 40;
         setChanged();
-        sendUpdateToClient();
+        return true;
     }
 
     /** Das gewaehlte Rezept, oder {@code null} wenn keins gewaehlt ist oder es nicht mehr existiert. */
@@ -143,6 +186,15 @@ public class MachineAmmoPressBlockEntity extends BaseMachineBlockEntity {
         selectedRecipe = java.util.Objects.equals(selectedRecipe, id) ? null : id;
         setChanged();
         sendUpdateToClient();
+    }
+
+    /** Original: 3x2x3 um den Kern. */
+    //? if forge {
+    @Override
+    //?}
+    public net.minecraft.world.phys.AABB getRenderBoundingBox() {
+        return new net.minecraft.world.phys.AABB(worldPosition.getX() - 1, worldPosition.getY(), worldPosition.getZ() - 1,
+                worldPosition.getX() + 2, worldPosition.getY() + 2, worldPosition.getZ() + 2);
     }
 
     public int getAnimTicks() {
@@ -203,4 +255,26 @@ public class MachineAmmoPressBlockEntity extends BaseMachineBlockEntity {
     public AbstractContainerMenu createMenu(int containerId, Inventory playerInventory, Player player) {
         return new MachineAmmoPressMenu(containerId, playerInventory, this);
     }
+
+    //? if forge {
+    /** Original {@code ISidedInventory}: Slots {0-9}; Zutaten nach Rezept in 0-8, nur das Ergebnis heraus. */
+    private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
+            new com.hbm_m.blockentity.SidedItemAccess.Rules() {
+                @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return new int[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 }; }
+                @Override public boolean canInsert(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return slot < 9 && isItemValidForSlot(slot, stack); }
+                @Override public boolean canExtract(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return slot == 9; }
+            });
+
+    @Override
+    public @org.jetbrains.annotations.NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(@org.jetbrains.annotations.NotNull net.minecraftforge.common.capabilities.Capability<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER && side != null) return sidedItems.get(side).cast();
+        return super.getCapability(cap, side);
+    }
+
+    @Override
+    public void invalidateCaps() {
+        super.invalidateCaps();
+        sidedItems.invalidate();
+    }
+    //?}
 }

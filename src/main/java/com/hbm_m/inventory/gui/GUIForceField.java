@@ -5,7 +5,6 @@ import com.hbm_m.lib.RefStrings;
 import com.hbm_m.network.ToggleForceFieldC2SPacket;
 
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
 import net.minecraft.client.renderer.GameRenderer;
 import net.minecraft.client.resources.sounds.SimpleSoundInstance;
 import net.minecraft.network.chat.Component;
@@ -13,7 +12,6 @@ import net.minecraft.resources.ResourceLocation;
 import net.minecraft.sounds.SoundEvents;
 import net.minecraft.world.entity.player.Inventory;
 
-import java.util.List;
 
 /**
  * 1:1-Port von {@code GUIForceField} (1.7.10), Textur {@code gui_field.png}.
@@ -21,7 +19,7 @@ import java.util.List;
  * <p>Links der Energiebalken, daneben die Schildstaerke - beide 16 mal 52 gross und von unten
  * gefuellt. Rechts bei (142, 34) sitzt der Schalter; leuchtet er, laeuft das Feld.</p>
  */
-public class GUIForceField extends AbstractContainerScreen<ForceFieldMenu> {
+public class GUIForceField extends GuiInfoScreen<ForceFieldMenu> {
 
     private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(
             RefStrings.MODID, "textures/gui/gui_field.png");
@@ -78,28 +76,23 @@ public class GUIForceField extends AbstractContainerScreen<ForceFieldMenu> {
     }
 
     @Override
+    protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
+        String name = this.title.getString();
+        guiGraphics.drawString(this.font, name, this.imageWidth / 2 - this.font.width(name) / 2, 6, 4210752, false);
+        guiGraphics.drawString(this.font, this.playerInventoryTitle, 8, this.imageHeight - 96 + 2, 4210752, false);
+    }
+
+    @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
         com.hbm_m.client.GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTick);
         super.render(guiGraphics, mouseX, mouseY, partialTick);
         this.renderTooltip(guiGraphics, mouseX, mouseY);
 
-        // Die beiden Balken zeigen ihre Werte im Original als Kurzhinweis.
-        if (isOver(mouseX, mouseY, 8)) {
-            guiGraphics.renderComponentTooltip(font, List.of(
-                    Component.literal(menu.getBlockEntity().getEnergyStored() + " / "
-                            + menu.getBlockEntity().getMaxEnergyStored() + " HE"),
-                    Component.translatable("gui.hbm_m.forcefield.draw", menu.getPowerCons())),
-                    mouseX, mouseY);
-        } else if (isOver(mouseX, mouseY, 62)) {
-            guiGraphics.renderComponentTooltip(font, List.of(
-                    Component.literal(menu.getHealth() + " / " + menu.getMaxHealth() + " HP"),
-                    Component.translatable("gui.hbm_m.forcefield.radius", menu.getRadius())),
-                    mouseX, mouseY);
-        }
+        // Original: drawElectricityInfo(8, 17, 16, 52) und Schild "health / maxHealth HP" (62, 17, 16, 52)
+        this.drawElectricityInfo(guiGraphics, mouseX, mouseY, 8, BAR_BOTTOM - BAR_HEIGHT, 16, BAR_HEIGHT,
+                menu.getBlockEntity().getEnergyStored(), menu.getBlockEntity().getMaxEnergyStored());
+        this.drawCustomInfoStat(guiGraphics, mouseX, mouseY, 62, BAR_BOTTOM - BAR_HEIGHT, 16, BAR_HEIGHT, mouseX, mouseY,
+                Component.literal(menu.getHealth() + " / " + menu.getMaxHealth() + "HP"));
     }
 
-    private boolean isOver(int mouseX, int mouseY, int barX) {
-        return mouseX >= leftPos + barX && mouseX < leftPos + barX + 16
-                && mouseY >= topPos + BAR_BOTTOM - BAR_HEIGHT && mouseY < topPos + BAR_BOTTOM;
-    }
 }

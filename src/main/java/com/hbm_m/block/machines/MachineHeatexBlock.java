@@ -65,6 +65,20 @@ public class MachineHeatexBlock extends DummyableMachineBlock {
 
         if (!level.isClientSide()) {
             BlockEntity entity = level.getBlockEntity(pos);
+            // Original HeaterHeatex: geschlichen stellt der Identifikator tanks[0], keine GUI
+            if (player.isShiftKeyDown()) {
+                net.minecraft.world.item.ItemStack held = player.getItemInHand(hand);
+                if (entity instanceof MachineHeatexBlockEntity heatex && !held.isEmpty()
+                        && held.getItem() instanceof com.hbm_m.interfaces.IItemFluidIdentifier id) {
+                    net.minecraft.world.level.material.Fluid type = id.getType(level, pos, held);
+                    heatex.tanks[0].setTankType(type);
+                    heatex.setChanged();
+                    player.displayClientMessage(net.minecraft.network.chat.Component.literal("Changed type to ").withStyle(net.minecraft.ChatFormatting.YELLOW)
+                            .append(com.hbm_m.inventory.fluid.FluidType.forFluid(type).getLocalizedName())
+                            .append(net.minecraft.network.chat.Component.literal("!")), false);
+                }
+                return InteractionResult.SUCCESS;
+            }
             if (entity instanceof MenuProvider menuProvider) {
                 MenuRegistry.openExtendedMenu((ServerPlayer) player, menuProvider, buf -> buf.writeBlockPos(pos));
             }
@@ -77,6 +91,20 @@ public class MachineHeatexBlock extends DummyableMachineBlock {
 
         if (!level.isClientSide()) {
             BlockEntity entity = level.getBlockEntity(pos);
+            // Original HeaterHeatex: geschlichen stellt der Identifikator tanks[0], keine GUI
+            if (player.isShiftKeyDown()) {
+                net.minecraft.world.item.ItemStack held = player.getMainHandItem();
+                if (entity instanceof MachineHeatexBlockEntity heatex && !held.isEmpty()
+                        && held.getItem() instanceof com.hbm_m.interfaces.IItemFluidIdentifier id) {
+                    net.minecraft.world.level.material.Fluid type = id.getType(level, pos, held);
+                    heatex.tanks[0].setTankType(type);
+                    heatex.setChanged();
+                    player.displayClientMessage(net.minecraft.network.chat.Component.literal("Changed type to ").withStyle(net.minecraft.ChatFormatting.YELLOW)
+                            .append(com.hbm_m.inventory.fluid.FluidType.forFluid(type).getLocalizedName())
+                            .append(net.minecraft.network.chat.Component.literal("!")), false);
+                }
+                return InteractionResult.SUCCESS;
+            }
             if (entity instanceof MenuProvider menuProvider) {
                 MenuRegistry.openExtendedMenu((ServerPlayer) player, menuProvider, buf -> buf.writeBlockPos(pos));
             }
@@ -94,4 +122,11 @@ public class MachineHeatexBlock extends DummyableMachineBlock {
         return CODEC;
     }
     *///?}
+
+    /** Original {@code addInformation}: {@code addStandardInfo} (Umschalttaste zeigt {@code .desc}). */
+    @Override
+    public void appendHoverText(net.minecraft.world.item.ItemStack stack, @org.jetbrains.annotations.Nullable net.minecraft.world.level.BlockGetter level,
+                                java.util.List<net.minecraft.network.chat.Component> list, net.minecraft.world.item.TooltipFlag flag) {
+        com.hbm_m.util.StandardInfo.add(list, getDescriptionId() + ".desc");
+    }
 }

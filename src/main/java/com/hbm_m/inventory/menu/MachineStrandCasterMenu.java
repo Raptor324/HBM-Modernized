@@ -1,106 +1,121 @@
 package com.hbm_m.inventory.menu;
 
-import com.hbm_m.block.ModBlocks;
 import com.hbm_m.blockentity.machines.MachineStrandCasterBlockEntity;
-import com.hbm_m.inventory.ModItemStackHandlerContainer;
+import com.hbm_m.lib.RefStrings;
 
+import net.minecraft.core.BlockPos;
 import net.minecraft.network.FriendlyByteBuf;
+import net.minecraft.world.Container;
+import net.minecraft.world.SimpleContainer;
 import net.minecraft.world.entity.player.Inventory;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.inventory.AbstractContainerMenu;
-import net.minecraft.world.inventory.ContainerLevelAccess;
 import net.minecraft.world.inventory.Slot;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.level.block.entity.BlockEntity;
 
-/** Slot-Koordinaten angelehnt an {@code ContainerMachineStrandCaster} (1.7.10 Original): Mold-Slot
- *  bei (8,18), Output bei (98,36) (Original hat 6 Output-Slots, hier auf 1 vereinfacht siehe
- *  {@link MachineStrandCasterBlockEntity}). */
+/**
+ * 1:1 {@code ContainerMachineStrandCaster}: Formplatz (57,62), sechs Ausgaben 2x3 ab (125,26), Spielerinventar ab
+ * (8,132). Shift-Klick setzt eine Form ein.
+ */
 public class MachineStrandCasterMenu extends AbstractContainerMenu {
 
-    public final MachineStrandCasterBlockEntity blockEntity;
+    private final MachineStrandCasterBlockEntity caster;
 
-    private static final int SLOT_MOLD = MachineStrandCasterBlockEntity.SLOT_MOLD;
-    private static final int SLOT_OUTPUT = MachineStrandCasterBlockEntity.SLOT_OUTPUT;
-    private static final int MACHINE_SLOT_COUNT = 2;
-    private static final int PLAYER_INV_START = MACHINE_SLOT_COUNT;
-    private static final int PLAYER_INV_END = MACHINE_SLOT_COUNT + 36;
+    /** Sicht auf das Slot-Feld des Block-Entities. */
+    private static final class CasterContainer implements Container {
+        private final MachineStrandCasterBlockEntity be;
+        CasterContainer(MachineStrandCasterBlockEntity be) { this.be = be; }
+        @Override public int getContainerSize() { return be.slots.length; }
+        @Override public boolean isEmpty() { for (ItemStack s : be.slots) if (!s.isEmpty()) return false; return true; }
+        @Override public ItemStack getItem(int i) { return be.slots[i]; }
+        @Override public ItemStack removeItem(int i, int n) {
+            ItemStack s = be.slots[i];
+            if (s.isEmpty()) return ItemStack.EMPTY;
+            ItemStack out = s.split(n);
+            if (s.isEmpty()) be.slots[i] = ItemStack.EMPTY;
+            be.setChanged();
+            return out;
+        }
+        @Override public ItemStack removeItemNoUpdate(int i) { ItemStack s = be.slots[i]; be.slots[i] = ItemStack.EMPTY; return s; }
+        @Override public void setItem(int i, ItemStack stack) { be.slots[i] = stack; be.setChanged(); }
+        @Override public void setChanged() { be.setChanged(); }
+        @Override public boolean stillValid(Player player) { return true; }
+        @Override public void clearContent() { for (int i = 0; i < be.slots.length; i++) be.slots[i] = ItemStack.EMPTY; }
+        @Override public boolean canPlaceItem(int i, ItemStack stack) { return be.isItemValidForSlot(i, stack); }
+    }
 
     public MachineStrandCasterMenu(int id, Inventory inventory, FriendlyByteBuf extraData) {
         this(id, inventory, getBlockEntity(inventory, extraData));
     }
 
-    public MachineStrandCasterMenu(int id, Inventory inventory, BlockEntity entity) {
+    public MachineStrandCasterMenu(int id, Inventory invPlayer, MachineStrandCasterBlockEntity caster) {
         super(ModMenuTypes.STRAND_CASTER_MENU.get(), id);
-        this.blockEntity = (MachineStrandCasterBlockEntity) entity;
+        this.caster = caster;
 
-        var container = new ModItemStackHandlerContainer(blockEntity.getInventory(), blockEntity::setChanged);
-        this.addSlot(new Slot(container, SLOT_MOLD, 8, 18));
-        this.addSlot(new OutputSlot(container, SLOT_OUTPUT, 98, 36));
+        Container container = caster != null ? new CasterContainer(caster) : new SimpleContainer(7);
 
-        for (int row = 0; row < 3; row++) {
-            for (int col = 0; col < 9; col++) {
-                this.addSlot(new Slot(inventory, col + row * 9 + 9, 8 + col * 18, 104 + row * 18));
+        this.addSlot(new Slot(container, 0, 57, 62) {
+            @Override public int getMaxStackSize() { return 1; }
+            @Override public boolean mayPlace(ItemStack stack) { return container.canPlaceItem(0, stack); }
+        });
+
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 2; j++) {
+                this.addSlot(new Slot(container, j + i * 2 + 1, 125 + j * 18, 26 + i * 18) {
+                    @Override public boolean mayPlace(ItemStack stack) { return false; }
+                });
             }
         }
-        for (int col = 0; col < 9; col++) {
-            this.addSlot(new Slot(inventory, col, 8 + col * 18, 162));
+
+        for (int i = 0; i < 3; i++) {
+            for (int j = 0; j < 9; j++) {
+                this.addSlot(new Slot(invPlayer, j + i * 9 + 9, 8 + j * 18, 132 + i * 18));
+            }
+        }
+
+        for (int i = 0; i < 9; i++) {
+            this.addSlot(new Slot(invPlayer, i, 8 + i * 18, 190));
         }
     }
 
     private static MachineStrandCasterBlockEntity getBlockEntity(Inventory inventory, FriendlyByteBuf buffer) {
-        var pos = buffer.readBlockPos();
-        BlockEntity blockEntity = inventory.player.level().getBlockEntity(pos);
-        if (blockEntity instanceof MachineStrandCasterBlockEntity be) {
-            return be;
-        }
-        throw new IllegalStateException("No MachineStrandCasterBlockEntity found at " + pos);
+        BlockPos pos = buffer.readBlockPos();
+        BlockEntity be = inventory.player.level().getBlockEntity(pos);
+        if (be instanceof MachineStrandCasterBlockEntity caster) return caster;
+        if (inventory.player.level().isClientSide) return null;
+        throw new IllegalStateException("No MachineStrandCasterBlockEntity found at " + pos + " for menu " + RefStrings.MODID + ":strand_caster_menu");
+    }
+
+    public MachineStrandCasterBlockEntity getBlockEntity() {
+        return caster;
     }
 
     @Override
     public boolean stillValid(Player player) {
-        return stillValid(ContainerLevelAccess.create(blockEntity.getLevel(), blockEntity.getBlockPos()),
-                player, ModBlocks.STRAND_CASTER.get());
+        if (caster == null || caster.getLevel() != player.level()) return false;
+        BlockPos pos = caster.getBlockPos();
+        return player.distanceToSqr(pos.getX() + 0.5D, pos.getY() + 0.5D, pos.getZ() + 0.5D) <= 128.0D;
     }
 
     @Override
     public ItemStack quickMoveStack(Player player, int index) {
-        ItemStack result = ItemStack.EMPTY;
         Slot slot = this.slots.get(index);
+        if (slot == null || !slot.hasItem()) return ItemStack.EMPTY;
 
-        if (slot != null && slot.hasItem()) {
-            ItemStack slotStack = slot.getItem();
-            result = slotStack.copy();
+        ItemStack originalStack = slot.getItem();
+        ItemStack stack = originalStack.copy();
 
-            if (index < MACHINE_SLOT_COUNT) {
-                if (!this.moveItemStackTo(slotStack, PLAYER_INV_START, PLAYER_INV_END, true)) {
-                    return ItemStack.EMPTY;
-                }
-            } else if (!this.moveItemStackTo(slotStack, SLOT_MOLD, SLOT_MOLD + 1, false)) {
-                return ItemStack.EMPTY;
-            }
-
-            if (slotStack.isEmpty()) {
-                slot.set(ItemStack.EMPTY);
-            } else {
-                slot.setChanged();
-            }
-            if (slotStack.getCount() == result.getCount()) {
-                return ItemStack.EMPTY;
-            }
-            slot.onTake(player, slotStack);
-        }
-        return result;
-    }
-
-    private static class OutputSlot extends Slot {
-        public OutputSlot(net.minecraft.world.Container container, int index, int x, int y) {
-            super(container, index, x, y);
+        if (index <= 6) {
+            if (!this.moveItemStackTo(originalStack, 7, this.slots.size(), true)) return ItemStack.EMPTY;
+            slot.onQuickCraft(originalStack, stack);
+        } else if (!this.moveItemStackTo(originalStack, 0, 1, false)) {
+            return ItemStack.EMPTY;
         }
 
-        @Override
-        public boolean mayPlace(ItemStack stack) {
-            return false;
-        }
+        if (originalStack.isEmpty()) slot.set(ItemStack.EMPTY);
+        else slot.setChanged();
+
+        return stack;
     }
 }

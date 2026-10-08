@@ -259,7 +259,15 @@ public class MultiDetonatorItem extends Item implements ITooltipProvider {
             BlockState state = level.getBlockState(targetPos);
             Block block = state.getBlock();
 
-            if (block instanceof IDetonatable) {
+            // audit10: Original ItemMultiDetonator zuendet IBomb-Bloecke
+            if (block instanceof com.hbm_m.api.bomb.IBomb bomb) {
+                com.hbm_m.api.bomb.IBomb.BombReturnCode ret = bomb.explode(level, targetPos);
+                player.displayClientMessage(Component.translatable(ret.getUnlocalizedMessage())
+                        .withStyle(ret.wasSuccessful() ? ChatFormatting.YELLOW : ChatFormatting.RED), true);
+                level.playSound(null, player.getX(), player.getY(), player.getZ(),
+                        ModSounds.TOOL_TECH_BLEEP.get(), player.getSoundSource(), 1.0F, 1.0F);
+                return InteractionResultHolder.success(stack);
+            } else if (block instanceof IDetonatable) {
                 IDetonatable detonatable = (IDetonatable) block;
 
                 try {

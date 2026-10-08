@@ -1,157 +1,138 @@
 package com.hbm_m.inventory.gui;
-import com.hbm_m.client.GuiCompat;
 
+import com.hbm_m.blockentity.machines.MachineWoodBurnerBlockEntity;
+import com.hbm_m.client.GuiCompat;
 import com.hbm_m.inventory.menu.MachineWoodBurnerMenu;
-import com.hbm_m.main.MainRegistry; // ЗАМЕНИ НА СВОЙ КЛАСС
-import com.hbm_m.network.ModPacketHandler;
-import com.hbm_m.network.ToggleWoodBurnerPacket;
-import com.hbm_m.util.EnergyFormatter;
+import com.hbm_m.lib.RefStrings;
+import com.hbm_m.network.NBTControlPacket;
 import com.mojang.blaze3d.systems.RenderSystem;
+
 import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.screens.inventory.AbstractContainerScreen;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
-import java.util.ArrayList;
+import net.minecraft.world.inventory.Slot;
+
 import java.util.List;
 
-public class GUIMachineWoodBurner extends AbstractContainerScreen<MachineWoodBurnerMenu> {
-    //? if fabric && < 1.21.1 {
-    /*private static final ResourceLocation TEXTURE = new ResourceLocation(MainRegistry.MOD_ID, "textures/gui/generators/gui_wood_burner_alt.png");
-    *///?} else {
-        private static final ResourceLocation TEXTURE = ResourceLocation.fromNamespaceAndPath(MainRegistry.MOD_ID, "textures/gui/generators/gui_wood_burner_alt.png");
-    //?}
+/**
+ * 1:1 {@code GUIMachineWoodBurner} (176x186): Ein/Aus (53/17), Umschalter fest/fluessig (46/37),
+ * Brennzeitbalken (17/18) bzw. im Fluessigbetrieb Holzoeltank (80/18), Energie (143/18, 34 hoch),
+ * Brennwert-Tooltip ueber dem leeren Brennstoffslot.
+ */
+public class GUIMachineWoodBurner extends GuiInfoScreen<MachineWoodBurnerMenu> {
 
+    private static final ResourceLocation TEXTURE =
+            ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/generators/gui_wood_burner_alt.png");
 
     public GUIMachineWoodBurner(MachineWoodBurnerMenu pMenu, Inventory pPlayerInventory, Component pTitle) {
         super(pMenu, pPlayerInventory, pTitle);
         this.imageWidth = 176;
-        this.imageHeight = 200;
+        this.imageHeight = 186;
     }
 
-    @Override
-    protected void init() {
-        super.init();
-
-        this.topPos -= 20;
-        this.leftPos = (this.width - this.imageWidth) / 2;
-
-        // Позиция заголовка (по умолчанию 6)
-        this.titleLabelY = 6;
-        this.titleLabelX = 17;// Можете изменить на нужное значение
-        this.inventoryLabelY = this.imageHeight - 110;
-    }
-
-    @Override
-    protected void renderLabels(GuiGraphics pGuiGraphics, int pMouseX, int pMouseY) {
-        // Рисуем заголовок белым цветом (0xFFFFFF)
-        pGuiGraphics.drawString(this.font, this.title, this.titleLabelX, this.titleLabelY, 0xFFFFFF, false);
-
-        // Рисуем надпись инвентаря стандартным цветом
-        pGuiGraphics.drawString(this.font, this.playerInventoryTitle, this.inventoryLabelX, this.inventoryLabelY, 4210752, false);
-    }
-
-    @Override
-    protected void renderBg(GuiGraphics gui, float partialTick, int mouseX, int mouseY) {
-        RenderSystem.setShaderTexture(0, TEXTURE);
-        int x = this.leftPos;
-        int y = this.topPos;
-        gui.blit(TEXTURE, x, y, 0, 0, this.imageWidth, this.imageHeight);
-
-        if (menu.isLit()) {
-            gui.blit(TEXTURE, x +46, y +37, 206, 72, 30, 14); // Flame
-        }
-
-        int burnHeight = menu.getBurnTimeScaled(52);
-        if (burnHeight > 0) {
-            gui.blit(TEXTURE, x + 17, y + 18 + 52 - burnHeight, 192, 52 - burnHeight, 4, burnHeight); // Fuel bar
-        }
-
-        int energyHeight = menu.getEnergyScaled(34);
-        if (energyHeight > 0) {
-            gui.blit(TEXTURE, x + 143, y + 18 + 34 - energyHeight, 176, 52 - energyHeight, 16, energyHeight); // Energy bar
-        }
-
-        if (!menu.isEnabled()) {
-            gui.blit(TEXTURE, x + 53, y + 17, 196, 0, 16, 16); // Disabled overlay
-        }
+    private MachineWoodBurnerBlockEntity burner() {
+        return menu.blockEntity;
     }
 
     @Override
     public void render(GuiGraphics gui, int mouseX, int mouseY, float delta) {
         GuiCompat.renderBackground(this, gui, mouseX, mouseY, delta);
         super.render(gui, mouseX, mouseY, delta);
+
+        MachineWoodBurnerBlockEntity burner = burner();
+        // тайл может отсутствовать в реплее Flashback
+        if (burner != null) {
+            drawElectricityInfo(gui, mouseX, mouseY, 143, 18, 16, 34, menu.getEnergyLong(), menu.getMaxEnergyLong());
+
+            // Original: Brennwert-Boni ueber dem leeren Brennstoffslot (Menue-Slot 0)
+            if (menu.getCarried().isEmpty()) {
+                Slot slot = menu.slots.get(0);
+                if (isHovering(slot.x, slot.y, 16, 16, mouseX, mouseY) && !slot.hasItem()) {
+                    List<Component> bonuses = MachineWoodBurnerBlockEntity.burnModule.getDesc();
+                    if (!bonuses.isEmpty()) gui.renderComponentTooltip(this.font, bonuses, mouseX, mouseY);
+                }
+            }
+
+            if (burner.liquidBurn) burner.tank.renderTankInfo(gui, this.font, mouseX, mouseY, leftPos + 80, topPos + 18, 16, 52);
+
+            if (!burner.liquidBurn && inRect(mouseX, mouseY, 16, 17, 8, 54)) {
+                gui.renderComponentTooltip(this.font, List.of(Component.literal((menu.getBurnTime() / 20) + "s")), mouseX, mouseY);
+            }
+
+            if (inRect(mouseX, mouseY, 53, 17, 16, 15)) {
+                gui.renderComponentTooltip(this.font, List.of(menu.isEnabled()
+                        ? Component.literal("ON").withStyle(ChatFormatting.GREEN)
+                        : Component.literal("OFF").withStyle(ChatFormatting.RED)), mouseX, mouseY);
+            }
+        }
+
         this.renderTooltip(gui, mouseX, mouseY);
     }
 
-
     @Override
-    protected void renderTooltip(GuiGraphics gui, int mouseX, int mouseY) {
-        super.renderTooltip(gui, mouseX, mouseY);
+    public boolean mouseClicked(double x, double y, int button) {
+        boolean result = super.mouseClicked(x, y, button);
+        MachineWoodBurnerBlockEntity burner = burner();
+        if (burner == null) return result;
 
-        // Тултип для энергии
-        if (isMouseOver(mouseX, mouseY, 143, 18, 16, 34)) {
-            List<Component> tooltip = new ArrayList<>();
-
-            long energy = menu.getEnergyLong();
-            long maxEnergy = menu.getMaxEnergyLong();
-
-            String energyStr = EnergyFormatter.format(energy);
-            String maxEnergyStr = EnergyFormatter.format(maxEnergy);
-
-            tooltip.add(Component.literal(energyStr + " / " + maxEnergyStr + " HE")
-                    .withStyle(ChatFormatting.GREEN));
-
-            if (menu.isLit()) {
-                tooltip.add(Component.literal("+50 HE/t").withStyle(ChatFormatting.YELLOW));
-            }
-
-            gui.renderTooltip(this.font, tooltip, java.util.Optional.empty(), mouseX, mouseY);
+        if (inRect(x, y, 53, 17, 16, 15)) {
+            playClickSound();
+            CompoundTag data = new CompoundTag();
+            data.putBoolean("toggle", false);
+            NBTControlPacket.sendToServer(burner.getBlockPos(), data);
+            return true;
         }
 
-        if (isMouseOver(mouseX, mouseY, 17, 18, 4, 52)) {
-            List<Component> tooltip = new ArrayList<>();
-            int burnTime = menu.getBurnTime();
-            int maxBurnTime = menu.getMaxBurnTime();
-
-            if (maxBurnTime > 0) {
-                int seconds = burnTime / 20;
-                tooltip.add(Component.literal("Burn Time: " + seconds + "s")
-                        .withStyle(ChatFormatting.GOLD));
-            } else {
-                tooltip.add(Component.literal("No Fuel")
-                        .withStyle(ChatFormatting.RED));
-            }
-
-            gui.renderTooltip(this.font, tooltip, java.util.Optional.empty(), mouseX, mouseY);
+        if (inRect(x, y, 46, 37, 30, 14)) {
+            playClickSound();
+            CompoundTag data = new CompoundTag();
+            data.putBoolean("switch", false);
+            NBTControlPacket.sendToServer(burner.getBlockPos(), data);
+            return true;
         }
-
-        if (isMouseOver(mouseX, mouseY, 53, 17, 16, 16)) {
-            String status = menu.isEnabled() ? "Enabled" : "Disabled";
-            ChatFormatting color = menu.isEnabled() ? ChatFormatting.GREEN : ChatFormatting.RED;
-            gui.renderTooltip(this.font,
-                    Component.literal(status).withStyle(color), mouseX, mouseY);
-        }
+        return result;
     }
 
     @Override
-    public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        if (isMouseOver(mouseX, mouseY, 53, 17, 16, 16)) {
-            // Отправка пакета на сервер для переключения 'enabled'
-            // тайл может отсутствовать в реплее Flashback
-            if (menu.blockEntity != null) {
-                ModPacketHandler.sendToServer(ModPacketHandler.TOGGLE_WOOD_BURNER,
-                    new ToggleWoodBurnerPacket(menu.blockEntity.getBlockPos()));
-                return true;
-            }
-            return super.mouseClicked(mouseX, mouseY, button);
-        }
-        return super.mouseClicked(mouseX, mouseY, button);
+    protected void renderLabels(GuiGraphics gui, int mouseX, int mouseY) {
+        gui.drawString(this.font, this.title, 70 - this.font.width(this.title) / 2, 6, 0xffffff, false);
+        gui.drawString(this.font, this.playerInventoryTitle, 8, this.imageHeight - 96 + 2, 4210752, false);
     }
 
-    private boolean isMouseOver(double mouseX, double mouseY, int x, int y, int sizeX, int sizeY) {
-        return (mouseX >= this.leftPos + x && mouseX <= this.leftPos + x + sizeX &&
-                mouseY >= this.topPos + y && mouseY <= this.topPos + y + sizeY);
+    @Override
+    protected void renderBg(GuiGraphics gui, float partialTick, int mouseX, int mouseY) {
+        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
+        gui.blit(TEXTURE, leftPos, topPos, 0, 0, imageWidth, imageHeight);
+
+        MachineWoodBurnerBlockEntity burner = burner();
+        if (burner == null) return;
+
+        if (burner.liquidBurn) {
+            gui.blit(TEXTURE, leftPos + 16, topPos + 17, 176, 52, 60, 54);
+            gui.blit(TEXTURE, leftPos + 79, topPos + 17, 176, 106, 36, 54);
+        }
+
+        if (menu.isEnabled()) {
+            gui.blit(TEXTURE, leftPos + 53, topPos + 17, 196, 0, 16, 15);
+        }
+
+        long max = menu.getMaxEnergyLong();
+        int p = max > 0 ? (int) (menu.getEnergyLong() * 34 / max) : 0;
+        if (p > 0) gui.blit(TEXTURE, leftPos + 143, topPos + 52 - p, 176, 52 - p, 16, p);
+
+        if (menu.getMaxBurnTime() > 0 && !burner.liquidBurn) {
+            int b = menu.getBurnTime() * 52 / menu.getMaxBurnTime();
+            if (b > 0) gui.blit(TEXTURE, leftPos + 17, topPos + 70 - b, 192, 52 - b, 4, b);
+        }
+
+        if (burner.liquidBurn) burner.tank.renderTank(gui, leftPos + 80, topPos + 18, 16, 52);
+    }
+
+    /** Original: {@code guiLeft + x <= mx && guiLeft + x + w > mx && guiTop + y < my && guiTop + y + h >= my}. */
+    private boolean inRect(double mx, double my, int x, int y, int w, int h) {
+        return leftPos + x <= mx && leftPos + x + w > mx && topPos + y < my && topPos + y + h >= my;
     }
 }

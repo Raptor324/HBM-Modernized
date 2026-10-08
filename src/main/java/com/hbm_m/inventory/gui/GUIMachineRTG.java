@@ -24,7 +24,8 @@ public class GUIMachineRTG extends GuiInfoScreen<MachineRTGMenu> {
     private static final int POWER_X = 146;
     private static final int BAR_BOTTOM = 61;
     private static final int BAR_WIDTH = 16;
-    private static final int BAR_HEIGHT = 52;
+    /** Original skaliert auf 51 ("was 50"). */
+    private static final int BAR_HEIGHT = 51;
     private static final int HEAT_U = 176;
     private static final int POWER_U = 192;
     private static final int BAR_V_BOTTOM = 10 + 51;
@@ -44,6 +45,9 @@ public class GUIMachineRTG extends GuiInfoScreen<MachineRTGMenu> {
 
         drawBar(guiGraphics, HEAT_X, HEAT_U, menu.getHeatScaled(BAR_HEIGHT));
         drawBar(guiGraphics, POWER_X, POWER_U, menu.getPowerScaled(BAR_HEIGHT));
+
+        // Original: drawInfoPanel(guiLeft - 12, guiTop + 25, 16, 16, 2)
+        this.drawInfoPanel(guiGraphics, -12, 25, PanelType.LARGE_BLUE_INFO);
     }
 
     /** Fuellt von unten nach oben - genau die Rechnung des Originals. */
@@ -60,7 +64,8 @@ public class GUIMachineRTG extends GuiInfoScreen<MachineRTGMenu> {
     @Override
     protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
         String name = this.title.getString();
-        guiGraphics.drawString(this.font, name, this.imageWidth / 2 - this.font.width(name) / 2, 6, 0x404040, false);
+        // Original: Titel bei 60 - Breite/2, y=7, Farbe 10925486
+        guiGraphics.drawString(this.font, name, 60 - this.font.width(name) / 2, 7, 10925486, false);
         guiGraphics.drawString(this.font, this.playerInventoryTitle, 8, this.imageHeight - 96 + 2, 0x404040, false);
     }
 
@@ -75,19 +80,25 @@ public class GUIMachineRTG extends GuiInfoScreen<MachineRTGMenu> {
     protected void renderTooltip(GuiGraphics guiGraphics, int mouseX, int mouseY) {
         super.renderTooltip(guiGraphics, mouseX, mouseY);
 
-        if (isOver(mouseX, mouseY, HEAT_X)) {
-            guiGraphics.renderTooltip(this.font,
-                    Component.translatable("gui.hbm_m.rtg.heat", menu.getHeat(), menu.getMaxHeat()),
-                    mouseX, mouseY);
-        }
-
         drawElectricityInfo(guiGraphics, mouseX, mouseY,
-                POWER_X, BAR_BOTTOM - BAR_HEIGHT, BAR_WIDTH, BAR_HEIGHT,
+                POWER_X, 9, BAR_WIDTH, 51,
                 menu.getEnergyLong(), menu.getMaxEnergyLong());
-    }
 
-    private boolean isOver(int mouseX, int mouseY, int x) {
-        return mouseX >= this.leftPos + x && mouseX < this.leftPos + x + BAR_WIDTH
-                && mouseY >= this.topPos + BAR_BOTTOM - BAR_HEIGHT && mouseY < this.topPos + BAR_BOTTOM;
+        // Original: drawCustomInfoStat(guiLeft + 124, guiTop + 9, 16, 51, heatText)
+        String[] heat = Component.translatable("desc.gui.rtg.heat", menu.getHeat()).getString().split("\\$");
+        this.drawCustomInfoStat(guiGraphics, mouseX, mouseY, HEAT_X, 9, BAR_WIDTH, 51, mouseX, mouseY,
+                java.util.Arrays.stream(heat).map(Component::literal).toArray(Component[]::new));
+
+        // Original: Liste aller Pellets mit Leistung (Waerme * 5)
+        java.util.List<com.hbm_m.item.machine.ItemRTGPellet> pellets = com.hbm_m.item.machine.ItemRTGPellet.PELLETS;
+        Component[] pelletText = new Component[pellets.size() + 1];
+        pelletText[0] = Component.translatable("desc.gui.rtg.pellets");
+        for (int i = 0; i < pellets.size(); i++) {
+            com.hbm_m.item.machine.ItemRTGPellet pellet = pellets.get(i);
+            pelletText[i + 1] = Component.translatable("desc.gui.rtg.pelletPower",
+                    Component.translatable(pellet.getDescriptionId()), pellet.getHeat() * 5);
+        }
+        this.drawCustomInfoStat(guiGraphics, mouseX, mouseY, -12, 25, 16, 16,
+                this.leftPos - 8, this.topPos + 36 + 16, pelletText);
     }
 }

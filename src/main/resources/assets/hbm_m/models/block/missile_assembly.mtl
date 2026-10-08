@@ -1,0 +1,5 @@
+newmtl missile_assembly
+Kd 1.0 1.0 1.0
+d 1.0
+illum 1
+map_Kd hbm_m:block/missile_assembly

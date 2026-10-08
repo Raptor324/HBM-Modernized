@@ -1,94 +1,171 @@
 package com.hbm_m.inventory.gui.radio;
 
+import java.util.List;
+
 import com.hbm_m.blockentity.network.radio.RadioTorchBaseBlockEntity;
-import com.hbm_m.client.GuiCompat;
+import com.hbm_m.blockentity.network.radio.RadioTorchSenderBlockEntity;
+import com.hbm_m.lib.RefStrings;
 import com.hbm_m.network.RadioTorchControlPacket;
 
 import net.minecraft.client.gui.GuiGraphics;
-import net.minecraft.client.gui.components.Button;
-import net.minecraft.client.gui.components.Checkbox;
 import net.minecraft.client.gui.components.EditBox;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 
 /**
- * Port of {@code GUIScreenRadioTorch} (1.7.10 Original, shared by Sender/Receiver/Logic's base
- * fields). Plain vanilla-widget config screen (no container) - channel string, polling toggle,
- * custom-mapping toggle plus 16 mapping text fields when custom-mapping is enabled.
- * <p>
- * SCOPE-Vereinfachung: Vanille-Widgets statt eigener texturierter Oberflaeche - funktional
- * vollstaendig aequivalent, spart die aufwendige Custom-Textur-Layout-Arbeit fuer eine reine
- * Text-Konfigurationsmaske.
+ * 1:1 {@code GUIScreenRadioTorch} (Sender/Empfaenger): Kanalfeld, Schalter "Eigene Zuordnung", "Abfrage",
+ * "Speichern"; mit eigener Zuordnung die 16 Zuordnungsfelder auf der Original-Textur.
  */
 public class GUIRadioTorchSimple extends Screen {
 
     public static final int MAX_CHANNEL_LENGTH = 15;
 
+    protected static final ResourceLocation textureSender = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/machine/gui_rtty_sender.png");
+    protected static final ResourceLocation textureReceiver = ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/machine/gui_rtty_receiver.png");
+
     private final BlockPos pos;
-    private final RadioTorchBaseBlockEntity blockEntity;
+    protected final RadioTorchBaseBlockEntity radio;
+    protected final ResourceLocation texture;
+    protected int xSize = 256;
+    protected int ySize = 204;
+    protected int guiLeft;
+    protected int guiTop;
+    protected EditBox frequency;
+    protected final EditBox[] remap = new EditBox[16];
 
-    private EditBox channelBox;
-    private Checkbox pollingBox;
-    private Checkbox customMapBox;
-    private final EditBox[] mappingBoxes = new EditBox[16];
-
-    public GUIRadioTorchSimple(BlockPos pos, RadioTorchBaseBlockEntity blockEntity, Component title) {
-        super(title);
+    public GUIRadioTorchSimple(BlockPos pos, RadioTorchBaseBlockEntity radio, Component title) {
+        super(Component.translatable(radio instanceof RadioTorchSenderBlockEntity ? "container.rttySender" : "container.rttyReceiver"));
         this.pos = pos;
-        this.blockEntity = blockEntity;
+        this.radio = radio;
+        this.texture = radio instanceof RadioTorchSenderBlockEntity ? textureSender : textureReceiver;
     }
 
     @Override
     protected void init() {
-        int cx = this.width / 2;
-        int y = this.height / 2 - 90;
+        this.guiLeft = (this.width - this.xSize) / 2;
+        this.guiTop = (this.height - this.ySize) / 2;
 
-        channelBox = new EditBox(this.font, cx - 75, y, 150, 18, Component.literal("Channel"));
-        channelBox.setMaxLength(MAX_CHANNEL_LENGTH);
-        channelBox.setValue(blockEntity.channel);
-        addRenderableWidget(channelBox);
-        y += 24;
+        int oX = 4;
+        int oY = 4;
+        int in = radio instanceof RadioTorchSenderBlockEntity ? 18 : 0;
 
-        pollingBox = com.hbm_m.client.GuiCompat.checkbox(cx - 75, y, 150, 18, Component.literal("Polling (always re-send/re-read)"), blockEntity.polling);
-        addRenderableWidget(pollingBox);
-        y += 22;
-
-        customMapBox = com.hbm_m.client.GuiCompat.checkbox(cx - 75, y, 150, 18, Component.literal("Custom string mapping"), blockEntity.customMap);
-        addRenderableWidget(customMapBox);
-        y += 22;
+        this.frequency = new EditBox(this.font, guiLeft + 25 + oX, guiTop + 17 + oY, 90 - oX * 2, 14, Component.empty());
+        this.frequency.setTextColor(0x00ff00);
+        this.frequency.setTextColorUneditable(0x00ff00);
+        this.frequency.setBordered(false);
+        this.frequency.setMaxLength(MAX_CHANNEL_LENGTH);
+        this.frequency.setValue(radio.channel == null ? "" : radio.channel);
+        addWidget(this.frequency);
 
         for (int i = 0; i < 16; i++) {
-            int col = i % 4;
-            int row = i / 4;
-            EditBox box = new EditBox(this.font, cx - 75 + col * 38, y + row * 20, 34, 18, Component.literal("Map " + i));
-            box.setMaxLength(32);
-            box.setValue(blockEntity.mapping[i] != null ? blockEntity.mapping[i] : "");
-            mappingBoxes[i] = box;
-            addRenderableWidget(box);
+            this.remap[i] = new EditBox(this.font, guiLeft + 7 + (130 * (i / 8)) + oX + in, guiTop + 53 + (18 * (i % 8)) + oY, 90 - oX * 2, 14, Component.empty());
+            this.remap[i].setTextColor(0x00ff00);
+            this.remap[i].setTextColorUneditable(0x00ff00);
+            this.remap[i].setBordered(false);
+            this.remap[i].setMaxLength(32);
+            this.remap[i].setValue(radio.mapping[i] == null ? "" : radio.mapping[i]);
+            addWidget(this.remap[i]);
         }
-        y += 4 * 20 + 8;
-
-        addRenderableWidget(Button.builder(Component.literal("Save"), b -> save())
-                .bounds(cx - 40, y, 80, 20).build());
-    }
-
-    private void save() {
-        CompoundTag data = new CompoundTag();
-        data.putString("channel", channelBox.getValue());
-        data.putBoolean("polling", pollingBox.selected());
-        data.putBoolean("customMap", customMapBox.selected());
-        for (int i = 0; i < 16; i++) data.putString("mapping" + i, mappingBoxes[i].getValue());
-        RadioTorchControlPacket.sendToServer(pos, data);
-        onClose();
     }
 
     @Override
-    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        com.hbm_m.client.GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTick);
-        super.render(guiGraphics, mouseX, mouseY, partialTick);
-        guiGraphics.drawCenteredString(this.font, this.title, this.width / 2, this.height / 2 - 110, 0xFFFFFF);
+    public void render(GuiGraphics g, int x, int y, float f) {
+        com.hbm_m.client.GuiCompat.renderBackground(this, g, x, y, f);
+
+        if (radio.customMap) {
+            g.blit(texture, guiLeft, guiTop, 0, 0, xSize, ySize);
+            g.blit(texture, guiLeft + 137, guiTop + 17, 0, 204, 18, 18);
+            if (radio.polling) g.blit(texture, guiLeft + 173, guiTop + 17, 0, 222, 18, 18);
+            for (int j = 0; j < 16; j++) this.remap[j].render(g, x, y, f);
+        } else {
+            g.blit(texture, guiLeft, guiTop, 0, 0, xSize, 35);
+            g.blit(texture, guiLeft, guiTop + 35, 0, 197, xSize, 7);
+            if (radio.polling) g.blit(texture, guiLeft + 173, guiTop + 17, 0, 222, 18, 18);
+        }
+
+        this.frequency.render(g, x, y, f);
+
+        String name = this.title.getString();
+        g.drawString(this.font, name, this.guiLeft + this.xSize / 2 - this.font.width(name) / 2, this.guiTop + 6, 4210752, false);
+
+        if (inRect(x, y, 137)) g.renderComponentTooltip(this.font, List.of(Component.literal(radio.customMap ? "Custom Mapping" : "Redstone Passthrough")), x, y);
+        if (inRect(x, y, 173)) g.renderComponentTooltip(this.font, List.of(Component.literal(radio.polling ? "Polling" : "State Change")), x, y);
+        if (inRect(x, y, 209)) g.renderComponentTooltip(this.font, List.of(Component.literal("Save Settings")), x, y);
+    }
+
+    private boolean inRect(double x, double y, int left) {
+        return guiLeft + left <= x && guiLeft + left + 18 > x && guiTop + 17 < y && guiTop + 17 + 18 >= y;
+    }
+
+    @Override
+    public boolean mouseClicked(double x, double y, int i) {
+        boolean focusHit = false;
+        this.frequency.setFocused(this.frequency.mouseClicked(x, y, i));
+        focusHit |= this.frequency.isFocused();
+
+        if (radio.customMap) {
+            for (int j = 0; j < 16; j++) {
+                this.remap[j].setFocused(this.remap[j].mouseClicked(x, y, i));
+                focusHit |= this.remap[j].isFocused();
+            }
+        }
+
+        if (inRect(x, y, 137)) {
+            click();
+            CompoundTag data = new CompoundTag();
+            data.putBoolean("customMap", !radio.customMap);
+            RadioTorchControlPacket.sendToServer(pos, data);
+            return true;
+        }
+
+        if (inRect(x, y, 173)) {
+            click();
+            CompoundTag data = new CompoundTag();
+            data.putBoolean("polling", !radio.polling);
+            RadioTorchControlPacket.sendToServer(pos, data);
+            return true;
+        }
+
+        if (inRect(x, y, 209)) {
+            click();
+            CompoundTag data = new CompoundTag();
+            data.putString("channel", this.frequency.getValue());
+            for (int j = 0; j < 16; j++) data.putString("mapping" + j, this.remap[j].getValue());
+            RadioTorchControlPacket.sendToServer(pos, data);
+            return true;
+        }
+
+        return focusHit || super.mouseClicked(x, y, i);
+    }
+
+    private void click() {
+        if (this.minecraft != null) this.minecraft.getSoundManager().play(
+                net.minecraft.client.resources.sounds.SimpleSoundInstance.forUI(net.minecraft.sounds.SoundEvents.UI_BUTTON_CLICK, 1.0F));
+    }
+
+    @Override
+    public boolean charTyped(char c, int mods) {
+        if (this.frequency.charTyped(c, mods)) return true;
+        if (radio.customMap) for (int j = 0; j < 16; j++) if (this.remap[j].charTyped(c, mods)) return true;
+        return super.charTyped(c, mods);
+    }
+
+    @Override
+    public boolean keyPressed(int key, int scan, int mods) {
+        if (key != 256) {
+            if (this.frequency.isFocused() && this.frequency.keyPressed(key, scan, mods)) return true;
+            if (radio.customMap) for (int j = 0; j < 16; j++) if (this.remap[j].isFocused() && this.remap[j].keyPressed(key, scan, mods)) return true;
+            if (this.frequency.isFocused()) return true;
+            if (radio.customMap) for (int j = 0; j < 16; j++) if (this.remap[j].isFocused()) return true;
+        }
+        if (this.minecraft != null && this.minecraft.options.keyInventory.matches(key, scan)) {
+            this.onClose();
+            return true;
+        }
+        return super.keyPressed(key, scan, mods);
     }
 
     @Override

@@ -41,6 +41,43 @@ public final class ToolRecipeGenerator {
         Ingredient stick = tag("forge", "rods/wooden");
         Ingredient anyPlastic = Ingredient.of(m(ModMaterials.POLYMER, MaterialShape.INGOT), m(ModMaterials.BAKELITE, MaterialShape.INGOT));
 
+        g.shaped(com.hbm_m.block.ModBlocks.FAN, 1, p("BPB", "PRP", "BPB"), 'B', ModItems.BOLT_STEEL, 'P', m(ModMaterials.IRON, MaterialShape.PLATE), 'R', net.minecraft.world.item.Items.REDSTONE);
+        // Original CraftingManager: Kristallhorn, verkohlter Kristall, Dunkel- und Pulsarkristall
+        g.shapeless(ModItems.CRYSTAL_HORN, 1, m(ModMaterials.NEPTUNIUM, MaterialShape.POWDER), m(ModMaterials.IODINE, MaterialShape.POWDER), m(ModMaterials.THORIUM, MaterialShape.POWDER),
+                m(ModMaterials.ASTATINE, MaterialShape.POWDER), m(ModMaterials.NEODYMIUM, MaterialShape.POWDER), m(ModMaterials.CAESIUM, MaterialShape.POWDER),
+                com.hbm_m.block.ModBlocks.BLOCK_METEOR, com.hbm_m.block.ModBlocks.GRAVEL_OBSIDIAN, net.minecraft.world.item.Items.WATER_BUCKET);
+        g.shapeless(ModItems.CRYSTAL_CHARRED, 1, m(ModMaterials.STRONTIUM, MaterialShape.POWDER), m(ModMaterials.COBALT, MaterialShape.POWDER), m(ModMaterials.BROMINE, MaterialShape.POWDER),
+                m(ModMaterials.NIOBIUM, MaterialShape.POWDER), m(ModMaterials.TENNESSINE, MaterialShape.POWDER), m(ModMaterials.CERIUM, MaterialShape.POWDER),
+                com.hbm_m.block.ModBlocks.BLOCK_METEOR, m(ModMaterials.ALUMINUM, MaterialShape.BLOCK), net.minecraft.world.item.Items.WATER_BUCKET);
+        g.shaped(com.hbm_m.block.ModBlocks.CRYSTAL_VIRUS, 1, p("STS", "THT", "STS"), 'S', ModItems.PARTICLE_STRANGE, 'T', m(ModMaterials.TUNGSTEN, MaterialShape.POWDER), 'H', ModItems.CRYSTAL_HORN);
+        g.shaped(com.hbm_m.block.ModBlocks.CRYSTAL_PULSAR, 32, p("STS", "THT", "STS"), 'S', ModItems.CELL_UF6, 'T', m(ModMaterials.ALUMINUM, MaterialShape.POWDER), 'H', ModItems.CRYSTAL_CHARRED);
+        // Original ConsumableRecipes: Zielmarkierer (Napalm/Atom brauchen Granatfuellung bzw. SEDNA-Munition -> Waffenrunde)
+        g.shaped(ModItems.BOMB_CALLER, 1, p("TTT", "TRT", "TTT"), 'T', net.minecraft.world.item.Items.TNT, 'R', ModItems.RANGEFINDER);
+        g.shaped(ModItems.BOMB_CALLER_CHLORINE, 1, p("TTT", "TRT", "TTT"), 'T', ModItems.PELLET_GAS, 'R', ModItems.RANGEFINDER);
+        // Original CraftingManager: Betankungsstation
+        g.shaped(com.hbm_m.block.ModBlocks.REFUELER, 1, p("SS", "HC", "SS"), 'S', m(ModMaterials.TITANIUM, MaterialShape.PLATE), 'H', com.hbm_m.item.PartTabMetaItems.get("part_generic_piston_hydraulic"), 'C', ModItems.INTEGRATED_CIRCUIT);
+        // Original ToolRecipes: NTM-Loren
+        g.shaped(ModItems.CART_EMPTY_WOOD, 1, p("P P", "WPW"), 'P', Ingredient.of(net.minecraft.tags.ItemTags.WOODEN_SLABS), 'W', Ingredient.of(net.minecraft.tags.ItemTags.PLANKS));
+        g.shaped(ModItems.CART_EMPTY_STEEL, 1, p("P P", "IPI"), 'P', m(ModMaterials.STEEL, MaterialShape.PLATE), 'I', m(ModMaterials.STEEL, MaterialShape.INGOT));
+        g.shapeless(ModItems.CART_EMPTY_PAINTED, 1, ModItems.CART_EMPTY_STEEL, Ingredient.of(net.minecraftforge.common.Tags.Items.DYES_RED));
+        g.shaped(ModItems.CART_DESTROYER_STEEL, 1, p("S S", "BLB", "SCS"), 'S', m(ModMaterials.STEEL, MaterialShape.INGOT), 'B', ModItems.BLADES_STEEL, 'L', net.minecraft.world.item.Items.LAVA_BUCKET, 'C', ModItems.CART_EMPTY_STEEL);
+        g.shaped(ModItems.CART_DESTROYER_PAINTED, 1, p("S S", "BLB", "SCS"), 'S', m(ModMaterials.STEEL, MaterialShape.INGOT), 'B', ModItems.BLADES_STEEL, 'L', net.minecraft.world.item.Items.LAVA_BUCKET, 'C', ModItems.CART_EMPTY_PAINTED);
+        g.shaped(ModItems.CART_POWDER_WOOD, 1, p("PPP", "PCP", "PPP"), 'P', net.minecraft.world.item.Items.GUNPOWDER, 'C', ModItems.CART_EMPTY_WOOD);
+        g.shaped(ModItems.CART_SEMTEX_WOOD, 1, p("S", "C"), 'S', com.hbm_m.block.ModBlocks.SEMTEX, 'C', ModItems.CART_EMPTY_WOOD);
+        g.shaped(ModItems.CART_POWDER_STEEL, 1, p("PPP", "PCP", "PPP"), 'P', net.minecraft.world.item.Items.GUNPOWDER, 'C', ModItems.CART_EMPTY_STEEL);
+        g.shaped(ModItems.CART_SEMTEX_STEEL, 1, p("S", "C"), 'S', com.hbm_m.block.ModBlocks.SEMTEX, 'C', ModItems.CART_EMPTY_STEEL);
+        g.shaped(ModItems.CART_POWDER_PAINTED, 1, p("PPP", "PCP", "PPP"), 'P', net.minecraft.world.item.Items.GUNPOWDER, 'C', ModItems.CART_EMPTY_PAINTED);
+        g.shaped(ModItems.CART_SEMTEX_PAINTED, 1, p("S", "C"), 'S', com.hbm_m.block.ModBlocks.SEMTEX, 'C', ModItems.CART_EMPTY_PAINTED);
+        g.shaped(ModItems.CART_CRATE, 1, p("C", "S"), 'C', ModItems.CRATE_STEEL, 'S', net.minecraft.world.item.Items.MINECART);
+        // Original CraftingManager: Lichtbogenofen-Elektroden
+        Ingredient anyTar = Ingredient.of(ModItems.OIL_TAR_CRUDE.get(), ModItems.OIL_TAR_CRACK.get(), ModItems.OIL_TAR_COAL.get(), ModItems.OIL_TAR_WOOD.get());
+        g.shaped(ModItems.ARC_ELECTRODE, 1, p("C", "T", "C"), 'C', m(ModMaterials.GRAPHITE, MaterialShape.INGOT), 'T', ModItems.BOLT_STEEL);
+        g.shaped(ModItems.ARC_ELECTRODE, 1, p("C", "T", "C"), 'C', ModItems.COKE_PETROLEUM, 'T', anyTar);
+        g.shaped(ModItems.ARC_ELECTRODE_LANTHANIUM, 1, p("C", "T", "C"), 'C', m(ModMaterials.LANTHANIUM, MaterialShape.INGOT), 'T', net.minecraft.world.item.Items.BRICK);
+        g.shaped(ModItems.ARC_ELECTRODE_DESH, 1, p("C", "T", "C"), 'C', m(ModMaterials.DESH, MaterialShape.INGOT), 'T', m(ModMaterials.TITANIUM, MaterialShape.INGOT));
+        g.shaped(ModItems.ARC_ELECTRODE_DESH, 1, p("C", "T", "C"), 'C', m(ModMaterials.DESH, MaterialShape.INGOT), 'T', m(ModMaterials.TUNGSTEN, MaterialShape.INGOT));
+        g.shaped(ModItems.ARC_ELECTRODE_SATURNITE, 1, p("C", "T", "C"), 'C', m(ModMaterials.SATURNITE, MaterialShape.INGOT), 'T', m(ModMaterials.NIOBIUM, MaterialShape.INGOT));
+
         tools(g, stick, m(ModMaterials.COBALT, MaterialShape.INGOT), ModItems.COBALT_SWORD, ModItems.COBALT_PICKAXE, ModItems.COBALT_AXE, ModItems.COBALT_SHOVEL, ModItems.COBALT_HOE);
         tools(g, stick, m(ModMaterials.COMBINE_STEEL, MaterialShape.INGOT), ModItems.CMB_SWORD, ModItems.CMB_PICKAXE, ModItems.CMB_AXE, ModItems.CMB_SHOVEL, ModItems.CMB_HOE);
         tools(g, stick, m(ModMaterials.DESH, MaterialShape.INGOT), ModItems.DESH_SWORD, ModItems.DESH_PICKAXE, ModItems.DESH_AXE, ModItems.DESH_SHOVEL, ModItems.DESH_HOE);

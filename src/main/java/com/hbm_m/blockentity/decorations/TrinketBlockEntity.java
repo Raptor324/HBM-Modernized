@@ -16,13 +16,22 @@ import net.minecraft.world.level.block.state.BlockState;
  * 1:1 {@code TileEntityBobble} / {@code TileEntitySnowglobe} / {@code TileEntityPlushie}: der Figurentyp (Ordnungszahl,
  * als Byte "type" gespeichert). Plueschtiere haben zusaetzlich den clientseitigen Quetsch-Zaehler.
  */
-public class TrinketBlockEntity extends BaseHbmBlockEntity {
+public class TrinketBlockEntity extends BaseHbmBlockEntity implements com.hbm_m.world.gen.nbt.INBTTileEntityTransformable {
 
     public int type;
     public int squishTimer;
 
     public TrinketBlockEntity(BlockPos pos, BlockState state) {
         super(ModBlockEntities.TRINKET.get(), pos, state);
+    }
+
+    /** Original TileEntityBobble/TileEntityPlushie.transformTE: in NBT-Strukturen eine zufaellige Figur (nie NONE); Schneekugel bleibt. */
+    @Override
+    public void transformTE(net.minecraft.world.level.LevelAccessor world, int coordBaseMode) {
+        if (!(getBlockState().getBlock() instanceof com.hbm_m.block.decorations.TrinketBlock block)) return;
+        if (block.kind == com.hbm_m.block.decorations.TrinketBlock.Kind.SNOWGLOBE) return;
+        type = world.getRandom().nextInt(block.typeCount() - 1) + 1;
+        setChanged();
     }
 
     public static void clientTick(Level level, BlockPos pos, BlockState state, TrinketBlockEntity te) {

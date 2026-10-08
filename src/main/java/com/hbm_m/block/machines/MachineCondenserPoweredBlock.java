@@ -78,9 +78,9 @@ public class MachineCondenserPoweredBlock extends DummyableMachineBlock implemen
 
         for (int i = 0; i < tower.tanks.length; i++) {
             text.add(Component.literal(i < 1 ? "-> " : "<- ").withStyle(i < 1 ? ChatFormatting.GREEN : ChatFormatting.RED)
-                    .append(FluidType.forFluid(tower.tanks[i].getTankType()).getLocalizedName().copy().withStyle(ChatFormatting.RESET))
+                    .append(FluidType.forFluid(tower.tanks[i].getTankType()).getLocalizedName().copy().withStyle(ChatFormatting.WHITE) /* 1.7 §r = Grundfarbe */)
                     .append(Component.literal(": " + String.format(Locale.US, "%,d", tower.tanks[i].getFill()) + "/"
-                            + String.format(Locale.US, "%,d", tower.tanks[i].getMaxFill()) + "mB").withStyle(ChatFormatting.RESET)));
+                            + String.format(Locale.US, "%,d", tower.tanks[i].getMaxFill()) + "mB").withStyle(ChatFormatting.WHITE) /* 1.7 §r = Grundfarbe */));
         }
 
         com.hbm_m.interfaces.ILookOverlay.printGeneric(g, Component.translatable(getDescriptionId()), 0xffff00, 0x404000, text);

@@ -14,17 +14,9 @@
       }
     }
   },
-  "transform": {
-    "translation": [0.5, 0, 0.5],
-    "rotation": [0, 0, 0],
-    "scale": 1.0
-  },
+  "transform": {"origin": "corner", "translation": [0.5, 0, 0.5], "rotation": [0, 180, 0], "scale": 1.0},
   "display": {
-    "gui": {
-      "rotation": [30, 225, 0],
-      "translation": [0, -3.75, 0],
-      "scale": [0.18, 0.18, 0.18]
-    },
+    "gui": {"rotation": [30.0, 45.0, 0.0], "translation": [0.0, -4.977, -1.719], "scale": [0.0703, 0.0703, 0.0703]},
     "fixed": {
       "rotation": [0, 180, 0],
       "translation": [0, 0, 0],

@@ -616,7 +616,7 @@ public class FusionTorusBlockEntity extends BaseMachineBlockEntity
         if ((PREFIX_VALUE + "plasma").equals(name))      return "" + this.plasmaEnergy;
         if ((PREFIX_VALUE + "consumption").equals(name)) return "" + (int) (this.fuelConsumption * 100);
         if ((PREFIX_VALUE + "progress").equals(name))    return "" + (int) Math.round(this.progress * 100);
-        if ((PREFIX_VALUE + "recipe").equals(name))      return selectedRecipeId != null ? selectedRecipeId.toString() : "null";
+        if ((PREFIX_VALUE + "recipe").equals(name))      return com.hbm_m.api.redstoneoverradio.RORRecipeNames.name(selectedRecipeId);
         if ((PREFIX_VALUE + "active").equals(name))      return "" + (this.didProcess ? 1 : 0);
         if ((PREFIX_VALUE + "temp").equals(name))        return "" + (int) this.temperature;
         return null;
@@ -624,8 +624,9 @@ public class FusionTorusBlockEntity extends BaseMachineBlockEntity
 
     @Override
     public String runRORFunction(String name, String[] params) {
-        if ((PREFIX_FUNCTION + "setrecipe").equals(name) && params.length == 1) {
-            setSelectedRecipeId(ResourceLocation.tryParse(params[0]));
+        // Original: params.length == 1; Rezept-IDs mit Namensraum zerfallen am Parametertrenner (RORRecipeNames)
+        if ((PREFIX_FUNCTION + "setrecipe").equals(name) && (params.length == 1 || params.length == 2)) {
+            setSelectedRecipeId(com.hbm_m.api.redstoneoverradio.RORRecipeNames.parse(params));
             sendUpdateToClient();
         }
         return null;
@@ -649,4 +650,26 @@ public class FusionTorusBlockEntity extends BaseMachineBlockEntity
     public static List<FusionRecipe> getAllRecipes(Level level) {
         return level.getRecipeManager().getAllRecipesFor(ModRecipes.FUSION_TYPE.get());
     }
+
+    //? if forge {
+    /** Original {@code ISidedInventory}: Slot {2}; nichts hinein, Ausgabe heraus. */
+    private final com.hbm_m.blockentity.SidedItemAccess sidedItems = new com.hbm_m.blockentity.SidedItemAccess(() -> inventory,
+            new com.hbm_m.blockentity.SidedItemAccess.Rules() {
+                @Override public int[] accessibleSlots(net.minecraft.core.Direction side) { return new int[] { 2 }; }
+                @Override public boolean canInsert(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return false; }
+                @Override public boolean canExtract(int slot, net.minecraft.world.item.ItemStack stack, net.minecraft.core.Direction side) { return slot == 2; }
+            });
+
+    @Override
+    public @org.jetbrains.annotations.NotNull <T> net.minecraftforge.common.util.LazyOptional<T> getCapability(@org.jetbrains.annotations.NotNull net.minecraftforge.common.capabilities.Capability<T> cap, @org.jetbrains.annotations.Nullable net.minecraft.core.Direction side) {
+        if (cap == net.minecraftforge.common.capabilities.ForgeCapabilities.ITEM_HANDLER && side != null) return sidedItems.get(side).cast();
+        return super.getCapability(cap, side);
+    }
+
+    @Override
+    public void invalidateCaps() {
+        super.invalidateCaps();
+        sidedItems.invalidate();
+    }
+    //?}
 }

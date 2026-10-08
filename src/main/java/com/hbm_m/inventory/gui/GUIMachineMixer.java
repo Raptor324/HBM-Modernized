@@ -1,54 +1,30 @@
 package com.hbm_m.inventory.gui;
-import com.hbm_m.client.GuiCompat;
 
-import org.jetbrains.annotations.NotNull;
+import java.util.ArrayList;
+import java.util.List;
 
+import com.hbm_m.api.fluids.FluidLocalization;
 import com.hbm_m.blockentity.machines.MachineMixerBlockEntity;
-import com.hbm_m.inventory.fluid.tank.FluidTank;
 import com.hbm_m.inventory.menu.MachineMixerMenu;
 import com.hbm_m.lib.RefStrings;
+import com.hbm_m.recipe.MixerRecipes;
+import com.hbm_m.recipe.MixerRecipes.MixerRecipe;
 import com.mojang.blaze3d.systems.RenderSystem;
 
+import net.minecraft.ChatFormatting;
 import net.minecraft.client.gui.GuiGraphics;
 import net.minecraft.client.renderer.GameRenderer;
+import net.minecraft.core.registries.BuiltInRegistries;
+import net.minecraft.nbt.CompoundTag;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.entity.player.Inventory;
 
-/**
- * GUI for the Industrial Mixer.
- *
- * <p>Layout (derived from {@code gui_mixer.png}, 256x256, panel area 176x204):</p>
- * <ul>
- *   <li>Tank A (input): x=23, y=23, 16x69</li>
- *   <li>Tank B (input): x=43, y=23, 16x69</li>
- *   <li>Output tank:    x=117, y=23, 16x69</li>
- *   <li>Mixer paddle / progress area: x=62-111, y=22-77</li>
- *   <li>Battery slot: bottom-left under tank A, x=23, y=95</li>
- *   <li>Energy bar: solid-fill overlay (no dedicated texture region)</li>
- * </ul>
- */
+/** 1:1 {@code GUIMixer}: Energie, zwei Eingangstanks, Ausgangstank, Fortschritt, Rezeptumschalter (71,17). */
 public class GUIMachineMixer extends GuiInfoScreen<MachineMixerMenu> {
 
     private static final ResourceLocation TEXTURE =
             ResourceLocation.fromNamespaceAndPath(RefStrings.MODID, "textures/gui/processing/gui_mixer.png");
-
-    private static final int TANK_A_X = 23;
-    private static final int TANK_B_X = 43;
-    private static final int OUTPUT_X = 117;
-    private static final int TANK_Y = 23;
-    private static final int TANK_W = 16;
-    private static final int TANK_H = 69;
-
-    private static final int ENERGY_BAR_X = 156;
-    private static final int ENERGY_BAR_Y = 22;
-    private static final int ENERGY_BAR_W = 8;
-    private static final int ENERGY_BAR_H = 66;
-
-    private static final int PROGRESS_X = 72;
-    private static final int PROGRESS_Y = 37;
-    private static final int PROGRESS_W = 33;
-    private static final int PROGRESS_H = 14;
 
     private final MachineMixerBlockEntity mixer;
 
@@ -59,86 +35,84 @@ public class GUIMachineMixer extends GuiInfoScreen<MachineMixerMenu> {
         this.imageHeight = 204;
     }
 
+    private static Component fluidName(net.minecraft.world.level.material.Fluid f) {
+        return FluidLocalization.nameFromFluidId(BuiltInRegistries.FLUID.getKey(f));
+    }
+
     @Override
-    protected void renderBg(GuiGraphics guiGraphics, float partialTick, int mouseX, int mouseY) {
-        RenderSystem.setShader(GameRenderer::getPositionTexShader);
-        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
-        guiGraphics.blit(TEXTURE, this.leftPos, this.topPos, 0, 0, this.imageWidth, this.imageHeight);
+    public void render(GuiGraphics g, int x, int y, float interp) {
+        com.hbm_m.client.GuiCompat.renderBackground(this, g, x, y, interp);
+        super.render(g, x, y, interp);
 
-        if (mixer != null) { // тайл может отсутствовать в реплее Flashback
-            // Fluid tank levels
-            mixer.getTank(MachineMixerBlockEntity.TANK_INPUT_A)
-                    .renderTank(guiGraphics, this.leftPos + TANK_A_X, this.topPos + TANK_Y, TANK_W, TANK_H);
-            mixer.getTank(MachineMixerBlockEntity.TANK_INPUT_B)
-                    .renderTank(guiGraphics, this.leftPos + TANK_B_X, this.topPos + TANK_Y, TANK_W, TANK_H);
-            mixer.getTank(MachineMixerBlockEntity.TANK_OUTPUT)
-                    .renderTank(guiGraphics, this.leftPos + OUTPUT_X, this.topPos + TANK_Y, TANK_W, TANK_H);
+        this.drawElectricityInfo(g, x, y, 12, 18, 16, 52, menu.getPower(), MachineMixerBlockEntity.maxPower);
 
-            // Re-draw the panel overlay so the tank fill doesn't cover the gauge frame graphics
-            RenderSystem.setShader(GameRenderer::getPositionTexShader);
-            RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
+        this.drawCustomInfoStat(g, x, y, 152, 55, 8, 8, x, y,
+                Component.translatable("desc.gui.upgrade"),
+                Component.translatable("desc.gui.upgrade.speed"),
+                Component.translatable("desc.gui.upgrade.power"),
+                Component.translatable("desc.gui.upgrade.overdrive"));
 
-            // Energy bar (no dedicated texture region, drawn as a solid overlay)
-            long power = mixer.getEnergyStored();
-            long maxPower = Math.max(mixer.getMaxEnergyStored(), 1L);
-            int filled = (int) (power * ENERGY_BAR_H / maxPower);
-            if (filled > 0) {
-                if (filled > ENERGY_BAR_H) {
-                    filled = ENERGY_BAR_H;
-                }
-                int x0 = this.leftPos + ENERGY_BAR_X;
-                int y0 = this.topPos + ENERGY_BAR_Y + (ENERGY_BAR_H - filled);
-                guiGraphics.fill(x0, y0, x0 + ENERGY_BAR_W, y0 + filled, 0xFF3FCFE0);
+        if (mixer != null) {
+            MixerRecipe[] recipes = MixerRecipes.getOutput(mixer.tanks[2].getTankType());
+
+            if (recipes != null && recipes.length > 1) {
+                List<Component> label = new ArrayList<>();
+                label.add(Component.literal("Current recipe (" + (menu.getRecipeIndex() + 1) + "/" + recipes.length + "):").withStyle(ChatFormatting.YELLOW));
+                MixerRecipe recipe = recipes[menu.getRecipeIndex() % recipes.length];
+                if (recipe.input1 != null) label.add(Component.literal("-").append(fluidName(recipe.input1.type())));
+                if (recipe.input2 != null) label.add(Component.literal("-").append(fluidName(recipe.input2.type())));
+                if (recipe.solidInput != null) label.add(Component.literal("-").append(recipe.solidInput.extractForCyclingDisplay(20).getHoverName()));
+                label.add(Component.literal("Click to change!").withStyle(ChatFormatting.RED));
+                this.drawCustomInfoStat(g, x, y, 71, 17, 12, 12, x, y, label.toArray(new Component[0]));
             }
 
-            // Progress arrow / mixing animation
-            int progress = mixer.getProgressScaled(PROGRESS_W);
-            if (progress > 0) {
-                guiGraphics.blit(TEXTURE, this.leftPos + PROGRESS_X, this.topPos + PROGRESS_Y, 192, 0, progress, PROGRESS_H);
-            }
+            mixer.tanks[0].renderTankInfo(g, this.font, x, y, leftPos + 52, topPos + 18, 7, 52);
+            mixer.tanks[1].renderTankInfo(g, this.font, x, y, leftPos + 61, topPos + 18, 7, 52);
+            mixer.tanks[2].renderTankInfo(g, this.font, x, y, leftPos + 126, topPos + 18, 16, 52);
         }
 
-        drawInfoPanel(guiGraphics, 78, 67, PanelType.SMALL_BLUE_INFO);
+        this.renderTooltip(g, x, y);
     }
 
     @Override
-    protected void renderLabels(GuiGraphics guiGraphics, int mouseX, int mouseY) {
-        Component title = this.title;
-        guiGraphics.drawString(this.font, title, this.imageWidth / 2 - this.font.width(title) / 2, 6, 0x404040, false);
-        guiGraphics.drawString(this.font, this.playerInventoryTitle, 8, this.imageHeight - 96 + 2, 0x404040, false);
+    public boolean mouseClicked(double x, double y, int i) {
+        if (mixer != null && leftPos + 71 <= x && leftPos + 71 + 12 > x && topPos + 17 < y && topPos + 17 + 12 >= y) {
+            playClickSound();
+            CompoundTag data = new CompoundTag();
+            data.putBoolean("toggle", true);
+            com.hbm_m.network.NBTControlPacket.sendToServer(mixer.getBlockPos(), data);
+            return true;
+        }
+        return super.mouseClicked(x, y, i);
     }
 
     @Override
-    protected void renderTooltip(@NotNull GuiGraphics guiGraphics, int mouseX, int mouseY) {
-        super.renderTooltip(guiGraphics, mouseX, mouseY);
-        if (mixer == null) return; // тайл может отсутствовать в реплее Flashback
-
-        FluidTank tankA = mixer.getTank(MachineMixerBlockEntity.TANK_INPUT_A);
-        FluidTank tankB = mixer.getTank(MachineMixerBlockEntity.TANK_INPUT_B);
-        FluidTank tankOut = mixer.getTank(MachineMixerBlockEntity.TANK_OUTPUT);
-
-        tankA.renderTankInfo(guiGraphics, this.font, mouseX, mouseY,
-                this.leftPos + TANK_A_X, this.topPos + TANK_Y, TANK_W, TANK_H);
-        tankB.renderTankInfo(guiGraphics, this.font, mouseX, mouseY,
-                this.leftPos + TANK_B_X, this.topPos + TANK_Y, TANK_W, TANK_H);
-        tankOut.renderTankInfo(guiGraphics, this.font, mouseX, mouseY,
-                this.leftPos + OUTPUT_X, this.topPos + TANK_Y, TANK_W, TANK_H);
-
-        drawElectricityInfo(guiGraphics, mouseX, mouseY,
-                ENERGY_BAR_X, ENERGY_BAR_Y, ENERGY_BAR_W, ENERGY_BAR_H,
-                mixer.getEnergyStored(), mixer.getMaxEnergyStored());
-
-        drawCustomInfoStat(guiGraphics, mouseX, mouseY,
-                78, 67, 8, 8,
-                this.leftPos + 78, this.topPos + 67,
-                Component.literal("Progress:"),
-                Component.literal("   " + mixer.getProgress() + " / " + mixer.getMaxProgress()));
+    protected void renderLabels(GuiGraphics g, int mouseX, int mouseY) {
+        String name = this.title.getString();
+        g.drawString(this.font, name, this.imageWidth / 2 + 40 / 2 - this.font.width(name) / 2, 6, 4210752, false);
+        g.drawString(this.font, this.playerInventoryTitle, 8, this.imageHeight - 96 + 2, 4210752, false);
     }
 
     @Override
-    public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {
-        GuiCompat.renderBackground(this, guiGraphics, mouseX, mouseY, partialTick);
-        super.render(guiGraphics, mouseX, mouseY, partialTick);
-        this.renderTooltip(guiGraphics, mouseX, mouseY);
+    protected void renderBg(GuiGraphics g, float interp, int x, int y) {
+        RenderSystem.setShader(GameRenderer::getPositionTexShader);
+        RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, 1.0F);
+        g.blit(TEXTURE, leftPos, topPos, 0, 0, imageWidth, imageHeight);
+
+        int i = (int) (menu.getPower() * 52 / MachineMixerBlockEntity.maxPower);
+        g.blit(TEXTURE, leftPos + 12, topPos + 70 - i, 176, 52 - i, 16, i);
+
+        if (menu.getProcessTime() > 0 && menu.getProgress() > 0) {
+            int j = menu.getProgress() * 52 / menu.getProcessTime();
+            g.blit(TEXTURE, leftPos + 71, topPos + 31, 192, 0, j, 44);
+        }
+
+        if (mixer != null) {
+            mixer.tanks[0].renderTank(g, leftPos + 52, topPos + 18, 7, 52);
+            mixer.tanks[1].renderTank(g, leftPos + 61, topPos + 18, 7, 52);
+            mixer.tanks[2].renderTank(g, leftPos + 126, topPos + 18, 16, 52);
+        }
+
+        this.drawInfoPanel(g, 152, 55, PanelType.SMALL_BLUE_STAR);
     }
 }

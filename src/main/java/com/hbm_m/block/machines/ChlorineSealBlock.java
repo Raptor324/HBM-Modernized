@@ -27,8 +27,8 @@ public class ChlorineSealBlock extends Block {
     public ChlorineSealBlock() {
         super(Block.Properties.of()
                 .mapColor(MapColor.METAL)
-                .strength(5.0F, 10.0F)
-                .sound(SoundType.METAL)
+                .strength(5.0F, 6.0F) // Original setHardness(5)/setResistance(10), Steinklang
+                .sound(SoundType.STONE)
                 .requiresCorrectToolForDrops());
     }
 

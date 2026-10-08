@@ -80,7 +80,7 @@ public class EntityRequestDrone extends EntityDroneBase {
 
         if (next instanceof BlockPos pos) {
             setTarget(pos.getX() + 0.5, pos.getY(), pos.getZ() + 0.5);
-        } else if (next instanceof ItemStack pattern && heldItem.isEmpty()) {
+        } else if (next instanceof com.hbm_m.blockentity.network.request.RequestNetwork.RequestStack pattern && heldItem.isEmpty()) {
             tryPickup(pattern);
             nextActionTimer = 5;
         } else if (next == ProgramStep.UNLOAD && !heldItem.isEmpty()) {
@@ -103,10 +103,10 @@ public class EntityRequestDrone extends EntityDroneBase {
         return level().getBlockEntity(hit.getBlockPos());
     }
 
-    private void tryPickup(ItemStack pattern) {
+    private void tryPickup(com.hbm_m.blockentity.network.request.RequestNetwork.RequestStack pattern) {
         if (!(raytraceBelow() instanceof MachineDroneProviderBlockEntity provider)) return;
 
-        ItemStack taken = provider.extractMatching(pattern, pattern.getMaxStackSize());
+        ItemStack taken = provider.extractMatching(pattern);
         if (!taken.isEmpty()) {
             heldItem = taken;
             setAppearance(APPEARANCE_CRATE);
@@ -182,11 +182,10 @@ public class EntityRequestDrone extends EntityDroneBase {
                 }
                 case "unload" -> program.add(ProgramStep.UNLOAD);
                 case "dock" -> program.add(ProgramStep.DOCK);
-                //? if < 1.21.1 {
-                case "pattern" -> program.add(com.hbm_m.platform.PlatformHooks.itemStackOf(entry.getCompound("stack"), com.hbm_m.platform.PlatformHooks.bestEffortProvider()));
-                //?} else {
-                /*case "pattern" -> program.add(com.hbm_m.platform.PlatformHooks.itemStackOf(entry.getCompound("stack"), this.registryAccess()));
-                *///?}
+                case "comp", "dict" -> {
+                    com.hbm_m.blockentity.network.request.RequestNetwork.RequestStack rs = com.hbm_m.blockentity.network.request.RequestNetwork.RequestStack.load(entry);
+                    if (rs != null) program.add(rs);
+                }
                 default -> {}
             }
         }
@@ -212,13 +211,8 @@ public class EntityRequestDrone extends EntityDroneBase {
                 entry.putString("type", "unload");
             } else if (step == ProgramStep.DOCK) {
                 entry.putString("type", "dock");
-            } else if (step instanceof ItemStack pattern) {
-                entry.putString("type", "pattern");
-                //? if < 1.21.1 {
-                entry.put("stack", com.hbm_m.platform.PlatformHooks.safeItemSave(pattern, com.hbm_m.platform.PlatformHooks.bestEffortProvider()));
-                //?} else {
-                /*entry.put("stack", com.hbm_m.platform.PlatformHooks.safeItemSave(pattern, this.registryAccess()));
-                *///?}
+            } else if (step instanceof com.hbm_m.blockentity.network.request.RequestNetwork.RequestStack pattern) {
+                pattern.save(entry);
             }
             list.add(entry);
         }

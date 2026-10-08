@@ -41,7 +41,14 @@ public class NukeSoliniumBlock extends NukeBaseBlock implements IBomb {
         }
         if (!level.isClientSide) {
             EntitySoliniumExplosion explosion = EntitySoliniumExplosion.statFac(level, x, y, z, radius);
+            // Original igniteTestBomb: Knall, Explosion, dann die tuerkise Kugel (Lebensdauer = Radius) an der Blockecke
+            level.playSound(null, x, y, z, net.minecraft.sounds.SoundEvents.GENERIC_EXPLODE, net.minecraft.sounds.SoundSource.BLOCKS,
+                    1.0F, level.random.nextFloat() * 0.1F + 0.9F);
             WorldUtil.loadAndSpawnEntityInWorld(explosion);
+
+            com.hbm_m.entity.effect.EntityCloudSolinium cloud = new com.hbm_m.entity.effect.EntityCloudSolinium(ModEntities.CLOUD_SOLINIUM.get(), level, radius);
+            cloud.setPos(Math.floor(x), Math.floor(y), Math.floor(z));
+            level.addFreshEntity(cloud);
         }
     }
 

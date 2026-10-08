@@ -23,7 +23,8 @@ public class RadioTorchSenderBlockEntity extends RadioTorchBaseBlockEntity {
         RTTYNetwork.tickIfNeeded(level.getGameTime());
 
         Direction facing = state.hasProperty(RadioTorchBaseBlock.FACING) ? state.getValue(RadioTorchBaseBlock.FACING) : Direction.UP;
-        BlockPos sourcePos = pos.relative(facing.getOpposite());
+        // FACING zeigt in den Halteblock (Original: getOrientation(meta).getOpposite())
+        BlockPos sourcePos = pos.relative(facing);
         int input = level.getBlockState(sourcePos).getSignal(level, sourcePos, facing.getOpposite());
 
         boolean shouldSend = be.polling;

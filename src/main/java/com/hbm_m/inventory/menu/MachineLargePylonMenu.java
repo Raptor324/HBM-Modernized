@@ -222,6 +222,7 @@ public class MachineLargePylonMenu extends AbstractContainerMenu implements ILon
         if (blockEntity == null) {
             return false; // тайл может отсутствовать на клиенте (реплей Flashback)
         }
-        return stillValid(ContainerLevelAccess.create(level, blockEntity.getBlockPos()), player, ModBlocks.LARGE_PYLON.get());
+        // w16b: Port-eigene Maschine (6 hoch) - Huelle statt nur Kernmitte
+        return MultiblockMenuReach.stillValid(level, blockEntity.getBlockPos(), ModBlocks.LARGE_PYLON.get(), player);
     }
 }

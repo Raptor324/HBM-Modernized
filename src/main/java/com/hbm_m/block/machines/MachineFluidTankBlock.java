@@ -45,7 +45,20 @@ import net.minecraftforge.common.capabilities.ForgeCapabilities;
 
 import net.minecraft.world.level.Explosion;
 
-public class MachineFluidTankBlock extends BaseEntityBlock implements IMultiblockController {
+public class MachineFluidTankBlock extends BaseEntityBlock implements IMultiblockController, com.hbm_m.api.block.IToolable, com.hbm_m.interfaces.ILookOverlay {
+
+    /** Original {@code onScrew}: Schweissbrenner repariert ueber {@code IRepairable.tryRepairMultiblock}. */
+    @Override
+    public boolean onScrew(Level world, Player player, BlockPos pos, net.minecraft.core.Direction side, float fX, float fY, float fZ, InteractionHand hand, com.hbm_m.api.block.IToolable.ToolType tool) {
+        if (tool != com.hbm_m.api.block.IToolable.ToolType.TORCH) return false;
+        return com.hbm_m.api.tile.IRepairable.tryRepairMultiblock(world, pos, player);
+    }
+
+    @Override
+    public void printHook(net.minecraft.client.gui.GuiGraphics g, Level world, BlockPos pos) {
+        com.hbm_m.api.tile.IRepairable.addGenericOverlay(g, world, pos, net.minecraft.network.chat.Component.translatable(getDescriptionId()));
+    }
+
 
     /**
      * Whether this machine has been blown up. Drives the model swap to the wrecked variant - the
@@ -65,23 +78,24 @@ public class MachineFluidTankBlock extends BaseEntityBlock implements IMultibloc
     }
 
     /**
-     * Определяем структуру 5x3x3 через слои.
-     * 5 в ширину, 3 в высоту, 3 в глубину.
-     * Контроллер 'C' находится в центре переднего ряда нижнего слоя.
+     * 1:1 {@code MachineFluidTank}: {@code getDimensions {2,0,1,1,2,2}} (5 breit, 3 hoch, 3 tief), {@code getOffset 1}
+     * - der Kern sitzt in der Mitte der unteren Lage, die Klickzelle ist die Mitte der vorderen Reihe.
+     * {@code makeExtra} an den vier Diagonalen des Kerns (x +-1, z +-1) = 'F'. Der ganze Quader ist belegt
+     * (frueher standen hier zwei Reihen 'E' ohne Rolle, also Luftloecher im Tank).
      */
     protected MultiblockStructureHelper defineStructure() {
         // Строка 0 - передняя (ближняя к игроку), Строка 2 - задняя.
 
         // Направления лестницы: MultiblockSideTuples.ladder(north, south, west, east) - локально к схеме до поворота FACING.
         String[] layer0 = {
-            "LFCFA",
-            "LEEEA",
+            "LFAFA",
+            "LACAA",
             "AFAFA"
         };
 
         String[] layer1 = {
             "LAAAA",
-            "LEEEA",
+            "LAAAA",
             "AAAAA"
         };
 
@@ -128,6 +142,17 @@ public class MachineFluidTankBlock extends BaseEntityBlock implements IMultibloc
         return this.structureHelper;
     }
 
+    /**
+     * Migration: bis zur 1:1-Umstellung sass der Kern in der Mitte der vorderen Reihe (Raster (0,0,-1)). Die
+     * Auto-Reparatur verschiebt ihn samt NBT um eine Zelle nach hinten in die Mitte; die Grundflaeche bleibt
+     * gleich. Nur fuer den Tank selbst, nicht fuer abgeleitete Bloecke (BAT9000 hat eine eigene Struktur).
+     */
+    @Nullable
+    @Override
+    public BlockPos getLegacyControllerOffset() {
+        return getClass() == MachineFluidTankBlock.class ? new BlockPos(0, 0, -1) : null;
+    }
+
     @Override
     public PartRole getPartRole(BlockPos localOffset) {
         // Используем хелпер для автоматического определения ролей из схемы
@@ -160,7 +185,10 @@ public class MachineFluidTankBlock extends BaseEntityBlock implements IMultibloc
             if (blockEntity instanceof com.hbm_m.blockentity.BaseMachineBlockEntity be) {
                 be.dropInventoryContents();
             }
-            structureHelper.destroyStructure(level, pos, facing);
+            // Kernverschiebung der Migration: die Teile raeumt attemptAutoRepair selbst um - hier nichts abreissen
+            if (!MultiblockStructureHelper.isRepairing()) {
+                structureHelper.destroyStructure(level, pos, facing);
+            }
         }
         super.onRemove(state, level, pos, newState, isMoving);
     }
@@ -168,10 +196,11 @@ public class MachineFluidTankBlock extends BaseEntityBlock implements IMultibloc
     // 1. РАМКА ВЫДЕЛЕНИЯ: Показывает всю структуру целиком (3x3x3)
     @Override
     public VoxelShape getShape(BlockState pState, BlockGetter pLevel, BlockPos pPos, CollisionContext pContext) {
+        // w16b: nur die Kernzelle (Raycast pro Zelle wie Original); Umriss der ganzen Maschine: MultiblockOutlineForge
         MultiblockStructureHelper helper = getStructureHelper();
         if (helper != null) {
             // Возвращаем объединенную форму всех частей
-            return helper.generateShapeFromParts(pState.getValue(FACING));
+            return helper.getControllerCellShape(pState.getValue(FACING));
         }
         return Shapes.block();
     }
@@ -201,6 +230,10 @@ public class MachineFluidTankBlock extends BaseEntityBlock implements IMultibloc
     *///?}
 
     private InteractionResult openMenu(@NotNull BlockState state, @NotNull Level level, @NotNull BlockPos pos, @NotNull Player player, @NotNull InteractionHand hand, @NotNull BlockHitResult hit) {
+        // Original: geschlichen keine GUI; der Identifikator (doesSneakBypassUse) stellt dann im useOn die Sorte
+        if (player.isShiftKeyDown()) {
+            return InteractionResult.PASS;
+        }
         if (level.isClientSide) {
             return InteractionResult.sidedSuccess(true);
         }
@@ -237,6 +270,12 @@ public class MachineFluidTankBlock extends BaseEntityBlock implements IMultibloc
     @Override
     protected void createBlockStateDefinition(@NotNull StateDefinition.Builder<Block, BlockState> builder) {
         builder.add(FACING, EXPLODED);
+    }
+
+    /** audit10: Original findCore - Explosionen auf Teilzellen setzen ebenfalls den ganzen Aufbau in Brand. */
+    @Override
+    public boolean forwardPartExplosions() {
+        return true;
     }
 
     /**
@@ -291,4 +330,16 @@ public class MachineFluidTankBlock extends BaseEntityBlock implements IMultibloc
         return CODEC;
     }
     *///?}
+
+    /** Original {@code getComparatorInputOverride}: Fuellstand des Tanks (gilt auch fuer BAT9000). */
+    @Override
+    public boolean hasAnalogOutputSignal(net.minecraft.world.level.block.state.BlockState state) {
+        return true;
+    }
+
+    @Override
+    public int getAnalogOutputSignal(net.minecraft.world.level.block.state.BlockState state, net.minecraft.world.level.Level level, net.minecraft.core.BlockPos pos) {
+        net.minecraft.world.level.block.entity.BlockEntity te = level.getBlockEntity(pos);
+        return te instanceof com.hbm_m.blockentity.machines.MachineFluidTankBlockEntity tank ? tank.getComparatorPower() : 0;
+    }
 }

@@ -1,0 +1,29 @@
+{
+  "loader": "forge:obj",
+  "model": "hbm_m:models/block/red_cable.obj",
+  "flip_v": true,
+  "render_type": "minecraft:solid",
+  "textures": {
+    "particle": "hbm_m:block/red_cable_classic",
+    "surface": "hbm_m:block/red_cable_classic"
+  },
+  "transform": {
+    "translation": [
+      0.5,
+      0.5,
+      0.5
+    ]
+  },
+  "visibility": {
+    "Core": false,
+    "CX": false,
+    "CY": false,
+    "CZ": true,
+    "negZ": false,
+    "posZ": false,
+    "negX": false,
+    "posX": false,
+    "posY": false,
+    "negY": false
+  }
+}

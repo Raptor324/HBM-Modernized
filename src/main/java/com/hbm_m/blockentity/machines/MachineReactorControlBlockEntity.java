@@ -51,9 +51,10 @@ public class MachineReactorControlBlockEntity extends BaseMachineBlockEntity {
     private double rodLevel = 0D;
 
     private double levelLower = 0D;
-    private double levelUpper = 100D;
+    // Original: alle Schwellen starten bei 0
+    private double levelUpper = 0D;
     private double heatLower = 0D;
-    private double heatUpper = 100_000D;
+    private double heatUpper = 0D;
     private RodFunction function = RodFunction.LINEAR;
 
     protected final ContainerData data = new ContainerData() {

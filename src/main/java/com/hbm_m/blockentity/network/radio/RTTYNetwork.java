@@ -14,9 +14,8 @@ import net.minecraft.world.level.Level;
  * exactly one tick by design (write into {@link #newMessages}, flipped into the readable
  * {@link #broadcast} map once per server tick via {@link #updateBroadcastQueue()}).
  * <p>
- * SCOPE-Vereinfachung: Das Original haelt einen Bonus-"2012-08-06"-Kanal, der in jeder geladenen
- * Welt automatisch eine Melodie ("Song of Storms") sendet (Easter Egg fuer ein RTTY-Notenblock-
- * Geraet). Nicht portiert - rein kosmetisch, kein tragendes Feature.
+ * Wie im Original sendet der Kanal "2012-08-06" in jeder Welt fortlaufend "Song of Storms"
+ * ({@link com.hbm_m.util.NoteBuilder#getTestSender}); Zeitstempel = Weltzeit - 1 wie nach dem Flip im Original.
  */
 public final class RTTYNetwork {
 
@@ -47,8 +46,17 @@ public final class RTTYNetwork {
 
     /** Returns the RTTY channel with that name, or null. */
     public static RttyChannel listen(Level level, String channelName) {
+        if (TEST_CHANNEL.equals(channelName)) {
+            // Original updateBroadcastQueue: je Welt ein frischer Kanal mit getTestSender(timeStamp)
+            RttyChannel chan = new RttyChannel();
+            chan.timeStamp = level.getGameTime() - 1;
+            chan.signal = com.hbm_m.util.NoteBuilder.getTestSender(chan.timeStamp);
+            return chan;
+        }
         return BROADCAST.get(new ChannelKey(level.dimension(), channelName));
     }
+
+    public static final String TEST_CHANNEL = "2012-08-06";
 
     private static long lastProcessedTick = -1;
 
@@ -81,6 +89,19 @@ public final class RTTYNetwork {
         } catch (NumberFormatException e) {
             return false;
         }
+    }
+
+    /**
+     * Original {@code selfdestruct} von Empfaenger und Steuerung: Block weg, dann ExplosionVNT(5) ohne Blockschaden,
+     * {@code EntityProcessorCrossSmooth(1, 50).setupPiercing(5F, 0.5F)}, {@code ExplosionEffectWeapon(10, 2.5F, 1F)}.
+     */
+    public static void selfDestruct(Level level, net.minecraft.core.BlockPos pos) {
+        level.destroyBlock(pos, false);
+        com.hbm_m.explosion.vanillant.ExplosionVNT vnt = new com.hbm_m.explosion.vanillant.ExplosionVNT(level, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5, 5, null);
+        vnt.setEntityProcessor(new com.hbm_m.explosion.vanillant.standard.EntityProcessorCrossSmooth(1, 50).setupPiercing(5F, 0.5F));
+        vnt.setPlayerProcessor(new com.hbm_m.explosion.vanillant.standard.PlayerProcessorStandard());
+        vnt.setSFX(new com.hbm_m.explosion.vanillant.standard.ExplosionEffectWeapon(10, 2.5F, 1F));
+        vnt.explode();
     }
 
     public static class RttyChannel {

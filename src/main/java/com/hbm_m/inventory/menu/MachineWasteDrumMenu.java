@@ -30,19 +30,20 @@ public class MachineWasteDrumMenu extends AbstractContainerMenu {
         this.blockEntity = blockEntity;
 
         var container = new ModItemStackHandlerContainer(blockEntity.getInventory(), blockEntity::setChanged);
-        for (int row = 0; row < 3; row++) {
-            for (int col = 0; col < 4; col++) {
-                this.addSlot(new Slot(container, col + row * 4, 62 + col * 18, 17 + row * 18));
-            }
+        // Original ContainerWasteDrum: Kreuzform 2-4-4-2
+        int[][] pos = { {71, 21}, {89, 21}, {53, 39}, {71, 39}, {89, 39}, {107, 39},
+                {53, 57}, {71, 57}, {89, 57}, {107, 57}, {71, 75}, {89, 75} };
+        for (int i = 0; i < pos.length; i++) {
+            this.addSlot(new Slot(container, i, pos[i][0], pos[i][1]));
         }
 
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 9; col++) {
-                this.addSlot(new Slot(inventory, col + row * 9 + 9, 8 + col * 18, 103 + row * 18));
+                this.addSlot(new Slot(inventory, col + row * 9 + 9, 8 + col * 18, 84 + row * 18 + 23));
             }
         }
         for (int col = 0; col < 9; col++) {
-            this.addSlot(new Slot(inventory, col, 8 + col * 18, 161));
+            this.addSlot(new Slot(inventory, col, 8 + col * 18, 142 + 23));
         }
     }
 

@@ -26,10 +26,15 @@ public class TurretMenu extends AbstractContainerMenu implements ILongEnergyMenu
     private long clientEnergy;
     private long clientMaxEnergy;
 
-    private static final int PLAYER_INV_START = 10;
-    private static final int PLAYER_INV_END = 46;
+    /** Menue-Slots wie Original ContainerTurretBase: 0 KI-Chip (98/27), 1-9 Munition, 10 Batterie.
+     *  BE-Inventar bleibt: 0-8 Munition, 9 Batterie, 10 Chip. */
+    private static final int CHIP_MENU_SLOT = 0;
+    private static final int PLAYER_INV_START = 11;
+    private static final int PLAYER_INV_END = 47;
+    private static final int AMMO_MENU_START = 1;
     private static final int AMMO_SLOT_COUNT = 9;
     private static final int BATTERY_SLOT = 9;
+    private static final int BATTERY_MENU_SLOT = 10;
 
     public TurretMenu(int id, Inventory inv, FriendlyByteBuf extraData) {
         this(id, inv, getBlockEntity(inv, extraData));
@@ -53,9 +58,17 @@ public class TurretMenu extends AbstractContainerMenu implements ILongEnergyMenu
         // тайл может отсутствовать на клиенте (реплей Flashback) — подставляем пустую заглушку
         var handler = this.blockEntity != null
                 ? this.blockEntity.getInventory()
-                : new DummyItemStackHandler(BATTERY_SLOT + 1);
+                : new DummyItemStackHandler(TurretBaseBlockEntity.CHIP_SLOT + 1);
         var container = new ModItemStackHandlerContainer(handler,
                 this.blockEntity != null ? this.blockEntity::setChanged : () -> {});
+
+        // Original ContainerTurretBase: zuerst KI-Chip (98/27), dann 3x3 Munition, dann Batterie
+        this.addSlot(new Slot(container, TurretBaseBlockEntity.CHIP_SLOT, 98, 27) {
+            @Override
+            public boolean mayPlace(ItemStack stack) {
+                return stack.is(com.hbm_m.item.ModItems.TURRET_CHIP.get());
+            }
+        });
 
         for (int row = 0; row < 3; row++) {
             for (int col = 0; col < 3; col++) {
@@ -72,6 +85,22 @@ public class TurretMenu extends AbstractContainerMenu implements ILongEnergyMenu
 
         addPlayerInventory(inv);
         addPlayerHotbar(inv);
+
+        // Original openInventory(): "hbm:block.openC"
+        if (this.blockEntity != null && !inv.player.level().isClientSide) playTurretSound("hbm:block.openC");
+    }
+
+    @Override
+    public void removed(Player player) {
+        super.removed(player);
+        // Original closeInventory(): "hbm:block.closeC"
+        if (this.blockEntity != null && !player.level().isClientSide) playTurretSound("hbm:block.closeC");
+    }
+
+    private void playTurretSound(String sound) {
+        var pos = blockEntity.getBlockPos();
+        blockEntity.getLevel().playSound(null, pos.getX() + 0.5, pos.getY() + 0.5, pos.getZ() + 0.5,
+                com.hbm_m.sound.HbmSoundsNT.get(sound), net.minecraft.sounds.SoundSource.BLOCKS, 1.0F, 1.0F);
     }
 
     @Override
@@ -144,14 +173,19 @@ public class TurretMenu extends AbstractContainerMenu implements ILongEnergyMenu
                 }
                 slot.onQuickCraft(slotStack, itemstack);
             } else if (pIndex >= PLAYER_INV_START && pIndex < PLAYER_INV_END) {
+                // Original: turret_chip geht in den KI-Slot
+                if (slotStack.is(com.hbm_m.item.ModItems.TURRET_CHIP.get())) {
+                    if (!this.moveItemStackTo(slotStack, CHIP_MENU_SLOT, CHIP_MENU_SLOT + 1, false)) {
+                        return ItemStack.EMPTY;
+                    }
                 // тайл может отсутствовать на клиенте (реплей Flashback)
-                if (blockEntity != null && blockEntity.isAcceptedAmmoPublic(slotStack)) {
-                    if (!this.moveItemStackTo(slotStack, 0, AMMO_SLOT_COUNT, false)) {
+                } else if (blockEntity != null && blockEntity.isAcceptedAmmoPublic(slotStack)) {
+                    if (!this.moveItemStackTo(slotStack, AMMO_MENU_START, AMMO_MENU_START + AMMO_SLOT_COUNT, false)) {
                         return ItemStack.EMPTY;
                     }
                 } else {
                     boolean isEnergySource = ItemEnergyAccess.isEnergySource(slotStack);
-                    if (isEnergySource && !this.moveItemStackTo(slotStack, BATTERY_SLOT, BATTERY_SLOT + 1, false)) {
+                    if (isEnergySource && !this.moveItemStackTo(slotStack, BATTERY_MENU_SLOT, BATTERY_MENU_SLOT + 1, false)) {
                         return ItemStack.EMPTY;
                     } else if (!isEnergySource) {
                         return ItemStack.EMPTY;
@@ -176,24 +210,21 @@ public class TurretMenu extends AbstractContainerMenu implements ILongEnergyMenu
 
     @Override
     public boolean stillValid(Player pPlayer) {
-        // тайл может отсутствовать на клиенте (реплей Flashback)
-        if (blockEntity == null) {
-            return false;
-        }
-        return stillValid(ContainerLevelAccess.create(blockEntity.getLevel(), blockEntity.getBlockPos()), pPlayer, blockEntity.getBlockState().getBlock());
+        // audit13: Original isUseableByPlayer (<= 128 zur Kernmitte) oder Huelle <= 64; Vanilla 64 schloss die GUI an grossen Maschinen
+        return MultiblockMenuReach.stillValidCore(blockEntity, pPlayer, 128.0D);
     }
 
     private void addPlayerInventory(Inventory i) {
         for (int y = 0; y < 3; ++y) {
             for (int x = 0; x < 9; ++x) {
-                this.addSlot(new Slot(i, x + y * 9 + 9, 8 + x * 18, 122 + y * 18));
+                this.addSlot(new Slot(i, x + y * 9 + 9, 8 + x * 18, 84 + y * 18 + (18 * 3) + 2));
             }
         }
     }
 
     private void addPlayerHotbar(Inventory i) {
         for (int x = 0; x < 9; ++x) {
-            this.addSlot(new Slot(i, x, 8 + x * 18, 180));
+            this.addSlot(new Slot(i, x, 8 + x * 18, 142 + (18 * 3) + 2));
         }
     }
 }

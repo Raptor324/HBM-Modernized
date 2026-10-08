@@ -148,9 +148,9 @@ public class GUIReactorControl extends GuiInfoScreen<MachineReactorControlMenu> 
         guiGraphics.drawString(this.font, this.playerInventoryTitle, 8, this.imageHeight - 96 + 2, 0x404040, false);
 
         // Original: drei Zahlenanzeigen - Stabstellung, Fluss, Temperatur.
-        drawNumber(guiGraphics, 6, 20, menu.getRodPercent());
-        drawNumber(guiGraphics, 66, 20, menu.getFlux());
-        drawNumber(guiGraphics, 126, 20, menu.getTemperature());
+        displays[0].drawNumber(guiGraphics, 0, 0, menu.getRodPercent());
+        displays[1].drawNumber(guiGraphics, 0, 0, menu.getFlux());
+        displays[2].drawNumber(guiGraphics, 0, 0, menu.getTemperature());
 
         // Die aktive Kennlinie wird links markiert.
         String marker = ">";
@@ -158,9 +158,12 @@ public class GUIReactorControl extends GuiInfoScreen<MachineReactorControlMenu> 
                 FUNC_X - 4, FUNC_Y + menu.getFunction().ordinal() * FUNC_DY + 1, 0x08FF00, false);
     }
 
-    private void drawNumber(GuiGraphics guiGraphics, int x, int y, int value) {
-        guiGraphics.drawString(this.font, String.valueOf(value), x, y, 0x08FF00, false);
-    }
+    /** Original: drei {@code NumberDisplay}-Siebensegmentanzeigen. */
+    private final NumberDisplay[] displays = {
+            new NumberDisplay(6, 20, 0x08FF00).setDigitLength(3),
+            new NumberDisplay(66, 20, 0x08FF00).setDigitLength(4),
+            new NumberDisplay(126, 20, 0x08FF00).setDigitLength(3)
+    };
 
     @Override
     public void render(GuiGraphics guiGraphics, int mouseX, int mouseY, float partialTick) {

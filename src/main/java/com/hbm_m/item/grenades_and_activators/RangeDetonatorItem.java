@@ -27,7 +27,8 @@ import java.util.List;
 
 public class RangeDetonatorItem extends Item implements ITooltipProvider {
 
-    private static final int MAX_RANGE = 256;
+    /** Original {@code Library.rayTrace(player, 500, 1)}. */
+    private static final int MAX_RANGE = 500;
 
     public RangeDetonatorItem(Properties properties) {
         super(properties.stacksTo(1));
@@ -58,87 +59,46 @@ public class RangeDetonatorItem extends Item implements ITooltipProvider {
     @Override
     public InteractionResultHolder<ItemStack> use(Level level, Player player, InteractionHand hand) {
         ItemStack stack = player.getItemInHand(hand);
+        // Original Library.rayTrace(player, 500, 1) mit mopOnMiss: auch ohne Treffer zaehlt der Block am Strahlende
         BlockHitResult hitResult = (BlockHitResult) player.pick(MAX_RANGE, 1.0F, false);
-        Vec3 target = hitResult.getType() == HitResult.Type.BLOCK
-                ? Vec3.atCenterOf(hitResult.getBlockPos())
-                : hitResult.getLocation();
+        BlockPos targetPos = hitResult.getBlockPos();
 
-        if (level.isClientSide) {
-            spawnLaserBeam(level, player, target);
-            return InteractionResultHolder.sidedSuccess(stack, true);
-        }
+        if (!level.isClientSide) {
+            BlockState state = level.getBlockState(targetPos);
+            Block block = state.getBlock();
 
-        if (hitResult.getType() == HitResult.Type.BLOCK) {
-                BlockPos targetPos = hitResult.getBlockPos();
+            if (block instanceof com.hbm_m.api.bomb.IBomb bomb) {
+                com.hbm_m.api.bomb.IBomb.BombReturnCode ret = bomb.explode(level, targetPos);
 
-                // Проверяем, загружен ли чанк
-                if (!level.isLoaded(targetPos)) {
-                    player.displayClientMessage(
-                            Component.translatable("message.hbm_m.range_detonator.pos_not_loaded")
-                                    .withStyle(ChatFormatting.RED),
-                            true
-                    );
-                    return InteractionResultHolder.fail(stack);
-                }
+                if (com.hbm_m.config.ModClothConfig.get().enableExtendedLogging)
+                    com.hbm_m.main.MainRegistry.LOGGER.info("[DET] Tried to detonate block at " + targetPos.getX() + " / " + targetPos.getY() + " / " + targetPos.getZ() + " by " + player.getName().getString() + "!");
 
-                BlockState state = level.getBlockState(targetPos);
-                Block block = state.getBlock();
+                level.playSound(null, player.getX(), player.getY(), player.getZ(), ModSounds.TOOL_TECH_BLEEP.get(), player.getSoundSource(), 1.0F, 1.0F);
+                inform(player, ret.getUnlocalizedMessage(), ret.wasSuccessful());
 
-                // Original ItemLaserDetonator: IBomb-Bloecke melden ihren BombReturnCode
-                if (block instanceof com.hbm_m.api.bomb.IBomb bomb) {
-                    com.hbm_m.api.bomb.IBomb.BombReturnCode ret = bomb.explode(level, targetPos);
-                    player.displayClientMessage(Component.translatable(ret.getUnlocalizedMessage())
-                            .withStyle(ret.wasSuccessful() ? ChatFormatting.YELLOW : ChatFormatting.RED), true);
-                    level.playSound(null, player.getX(), player.getY(), player.getZ(),
-                            ModSounds.TOOL_TECH_BLEEP.get(), player.getSoundSource(), 1.0F, 1.0F);
-                    return InteractionResultHolder.success(stack);
-                }
+            } else if (block instanceof IDetonatable detonatable) {
+                // Port: Sprengkoerper, die im Port ueber IDetonatable statt IBomb laufen
+                boolean success = detonatable.onDetonate(level, targetPos, state, player);
+                level.playSound(null, player.getX(), player.getY(), player.getZ(), success ? ModSounds.TOOL_TECH_BLEEP.get() : ModSounds.TOOL_TECH_BOOP.get(), player.getSoundSource(), 1.0F, 1.0F);
+                inform(player, (success ? com.hbm_m.api.bomb.IBomb.BombReturnCode.DETONATED : com.hbm_m.api.bomb.IBomb.BombReturnCode.ERROR_INCOMPATIBLE).getUnlocalizedMessage(), success);
 
-                // Проверяем, поддерживает ли блок детонацию
-                if (block instanceof IDetonatable detonatable) {
-                    boolean success = detonatable.onDetonate(level, targetPos, state, player);
-
-                    if (success) {
-                        player.displayClientMessage(
-                                Component.translatable("message.hbm_m.range_detonator.activated")
-                                        .withStyle(ChatFormatting.GREEN),
-                                true
-                        );
-                        if (ModSounds.TOOL_TECH_BLEEP.isPresent()) {
-                            SoundEvent soundEvent = ModSounds.TOOL_TECH_BLEEP.get();
-                            level.playSound(null, player.getX(), player.getY(), player.getZ(),
-                                    soundEvent, player.getSoundSource(), 1.0F, 1.0F);
-                        }
-                        return InteractionResultHolder.success(stack);
-                    } else {
-                        player.displayClientMessage(
-                                Component.translatable("message.hbm_m.range_detonator.pos_not_loaded")
-                                        .withStyle(ChatFormatting.RED),
-                                true
-                        );
-                        if (ModSounds.TOOL_TECH_BOOP.isPresent()) {
-                            SoundEvent soundEvent = ModSounds.TOOL_TECH_BOOP.get();
-                            level.playSound(null, player.getX(), player.getY(), player.getZ(),
-                                    soundEvent, player.getSoundSource(), 1.0F, 1.0F);
-                        }
-                        return InteractionResultHolder.fail(stack);
-                    }
-                } else {
-                    player.displayClientMessage(
-                            Component.translatable("message.hbm_m.range_detonator.pos_not_loaded")
-                                    .withStyle(ChatFormatting.RED),
-                            true
-                    );
-                    if (ModSounds.TOOL_TECH_BOOP.isPresent()) {
-                        SoundEvent soundEvent = ModSounds.TOOL_TECH_BOOP.get();
-                        level.playSound(null, player.getX(), player.getY(), player.getZ(),
-                                soundEvent, player.getSoundSource(), 1.0F, 1.0F);
-                    }
-                    return InteractionResultHolder.fail(stack);
-                }
+            } else {
+                level.playSound(null, player.getX(), player.getY(), player.getZ(), ModSounds.TOOL_TECH_BOOP.get(), player.getSoundSource(), 1.0F, 1.0F);
+                inform(player, com.hbm_m.api.bomb.IBomb.BombReturnCode.ERROR_NO_BOMB.getUnlocalizedMessage(), false);
+            }
+        } else {
+            spawnLaserBeam(level, player, Vec3.atCenterOf(targetPos));
         }
 
         return InteractionResultHolder.pass(stack);
+    }
+
+    /** Original {@code PlayerInformPacket(..., ID_DETONATOR)}: gelb bei Erfolg, sonst rot. */
+    private static void inform(Player player, String key, boolean success) {
+        if (player instanceof net.minecraft.server.level.ServerPlayer sp) {
+            com.hbm_m.network.InfoToastPacket.sendTo(sp, Component.translatable(key).withStyle(success ? ChatFormatting.YELLOW : ChatFormatting.RED),
+                    60, com.hbm_m.client.overlay.OverlayInfoToast.ID_DETONATOR, success ? 0xFFFF55 : 0xFF5555);
+        }
     }
 
     /** Луч redstone dust — 1.7.10 {@code ItemLaserDetonator} / {@code reddust}, только на клиенте. */
@@ -151,7 +111,7 @@ public class RangeDetonatorItem extends Item implements ITooltipProvider {
         if (len < 1.0E-4D) {
             return;
         }
-        vec = vec.scale(1.0D / len);
+        vec = vec.normalize();
 
         DustParticleOptions dust = new DustParticleOptions(DustParticleOptions.REDSTONE_PARTICLE_COLOR, 1.0F);
         for (int i = 0; i < len; i++) {

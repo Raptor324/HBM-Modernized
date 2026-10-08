@@ -40,7 +40,7 @@ public class ScrewdriverItem extends com.hbm_m.item.tool.ItemTooling implements 
 
     @Override
     public void appendHbmTooltip(ItemStack stack, @Nullable Level level, List<Component> tooltip, TooltipFlag flag) {
-        tooltip.add(Component.translatable("tooltip." + RefStrings.MODID + ".screwdriver").withStyle(ChatFormatting.GRAY));
+        // Original ItemTooling/ItemCraftingDegradation hat kein addInformation - kein Tooltip (Port-Text entfernt)
     }
 
     @Override

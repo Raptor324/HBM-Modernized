@@ -1,7 +1,7 @@
 {
   "display": {
     "icon": {
-      "item": "hbm_m:particle_digamma"
+      "item": "hbm_m:achievement_icon_digammaupontop"
     },
     "title": {
       "translate": "advancements.hbm_m.digamma_up_on_top.title"

@@ -200,7 +200,7 @@ HBM_MAP = {
     "yellow_barrel":          M("barrel_yellow"),
     "pink_barrel":            M("barrel_pink"),
     "lox_barrel":             M("barrel_lox"),
-    "vitrified_barrel":       M("barrel_vitrified"),
+    "vitrified_barrel":       M("vitrified_barrel"),
     "barrel_iron":            M("barrel_iron", hbm_facing),
     "barrel_plastic":         M("barrel_plastic"),
     "barrel_corroded":        M("barrel_corroded"),
