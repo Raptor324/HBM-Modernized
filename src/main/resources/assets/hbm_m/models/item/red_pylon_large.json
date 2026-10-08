@@ -8,23 +8,7 @@
     "surface": "hbm_m:block/red_pylon_large"
   },
   "display": {
-    "gui": {
-      "rotation": [
-        30,
-        225,
-        0
-      ],
-      "translation": [
-        0,
-        -7.3,
-        0
-      ],
-      "scale": [
-        0.06,
-        0.06,
-        0.06
-      ]
-    },
+    "gui": {"rotation":[30,225,0],"translation":[0,-5.9137,0],"scale":[0.0712,0.0712,0.0712]},
     "thirdperson_righthand": {
       "rotation": [
         75,

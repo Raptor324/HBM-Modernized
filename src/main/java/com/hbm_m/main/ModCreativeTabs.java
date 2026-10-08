@@ -126,7 +126,7 @@ public class ModCreativeTabs {
     public static final RegistrySupplier<CreativeModeTab> NTM_DEV_TAB = CREATIVE_MODE_TABS.register("ntm_dev_tab",
             () -> tabBuilderAfter("ntm_consumable_tab")
                     .title(Component.translatable("itemGroup." + RefStrings.MODID + ".ntm_dev_tab"))
-                    .icon(() -> new ItemStack(ModBlocks.BROADCASTER.get()))
+                    .icon(() -> new ItemStack(ModBlocks.BROADCASTER_PC.get()))
                     .displayItems((params, output) -> CreativeModeTabEventHandler.populateDevItemsTab(CreativeModeTabEventHandler.deduplicated(output::accept)))
                     .build());
 

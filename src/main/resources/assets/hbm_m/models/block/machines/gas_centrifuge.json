@@ -9,7 +9,7 @@
   },
   "transform": {"origin": "corner", "translation": [-0.5, 0, 0.5], "rotation": [0, 270, 0], "scale": 1.0},
   "display": {
-    "gui": {"rotation": [30.0, -45.0, 0.0], "translation": [0.0, -3.949, -1.125], "scale": [0.2188, 0.2188, 0.2188]},
+    "gui": {"rotation":[30,-45,0],"translation":[2.6773,-5.9904,-1.125],"scale":[0.2362,0.2362,0.2362]},
     "fixed": {
       "rotation": [
         0,

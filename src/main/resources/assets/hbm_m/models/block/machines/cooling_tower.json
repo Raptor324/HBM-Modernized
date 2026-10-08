@@ -28,23 +28,7 @@
     "scale": 1.0
   },
   "display": {
-    "gui": {
-      "rotation": [
-        30,
-        225,
-        0
-      ],
-      "translation": [
-        0,
-        -4.7,
-        0
-      ],
-      "scale": [
-        0.059,
-        0.059,
-        0.059
-      ]
-    },
+    "gui": {"rotation":[30,225,0],"translation":[0,-4.176,0],"scale":[0.0584,0.0584,0.0584]},
     "fixed": {
       "rotation": [
         0,

@@ -115,8 +115,10 @@ public class ParticleSmokeFXNT extends ParticleQuadNT {
 
     public static TextureAtlasSprite genericSprite(int index) {
         index = Mth.clamp(index, 0, 7);
-        return Minecraft.getInstance().getTextureAtlas(TextureAtlas.LOCATION_PARTICLES)
-                .apply(ResourceLocation.fromNamespaceAndPath("minecraft", "generic_" + index));
+        // Der Partikel-Atlas gehoert der ParticleEngine, nicht dem ModelManager: getTextureAtlas(LOCATION_PARTICLES)
+        // liefert dort null (NPE in AtlasSet.getAtlas) - daher direkt ueber den TextureManager holen.
+        TextureAtlas atlas = (TextureAtlas) Minecraft.getInstance().getTextureManager().getTexture(TextureAtlas.LOCATION_PARTICLES);
+        return atlas.getSprite(ResourceLocation.fromNamespaceAndPath("minecraft", "generic_" + index));
     }
 
     @Override
