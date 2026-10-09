@@ -11,7 +11,7 @@
       "flip_v": true,
       "render_type": "minecraft:cutout",
       "textures": {
-        "default": "hbm_m:models/machines/refueler"
+        "default": "hbm_m:block/machine/refueler"
       }
     }
   },
@@ -27,5 +27,24 @@
       0
     ],
     "scale": 1.0
+  },
+  "display": {
+    "gui": {
+      "rotation": [
+        30.0,
+        -135.0,
+        0.0
+      ],
+      "translation": [
+        -4.243,
+        -1.523,
+        5.174
+      ],
+      "scale": [
+        0.75,
+        0.75,
+        0.75
+      ]
+    }
   }
 }

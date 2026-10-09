@@ -24,23 +24,7 @@
     "SignStraight": false
   },
   "display": {
-    "gui": {
-      "rotation": [
-        30,
-        225,
-        0
-      ],
-      "translation": [
-        0,
-        0,
-        0
-      ],
-      "scale": [
-        0.0625,
-        0.0625,
-        0.0625
-      ]
-    },
+    "gui": {"rotation": [30.0, -45.0, 0.0], "translation": [2.033, 0.475, 7.927], "scale": [0.0625, 0.0625, 0.0625]},
     "ground": {
       "rotation": [
         0,

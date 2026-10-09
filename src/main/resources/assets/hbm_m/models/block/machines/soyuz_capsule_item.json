@@ -14,7 +14,7 @@
         "Chute": false
       },
       "textures": {
-        "default": "hbm_m:models/soyuz_capsule/soyuz_lander"
+        "default": "hbm_m:block/soyuz_lander_item"
       }
     }
   },
@@ -32,23 +32,7 @@
     "scale": 1.0
   },
   "display": {
-    "gui": {
-      "rotation": [
-        30,
-        225,
-        0
-      ],
-      "translation": [
-        0,
-        -3,
-        0
-      ],
-      "scale": [
-        0.3,
-        0.3,
-        0.3
-      ]
-    },
+    "gui": {"rotation": [30.0, -135.0, 0.0], "translation": [0.0, -3.299, -0.75], "scale": [0.3125, 0.3125, 0.3125]},
     "ground": {
       "translation": [
         0,

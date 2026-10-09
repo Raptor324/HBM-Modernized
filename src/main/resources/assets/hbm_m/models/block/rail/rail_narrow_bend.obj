@@ -1,3 +1,4 @@
+mtllib rail_narrow_bend.mtl
 # Blender v2.79 (sub 0) OBJ File: 'rail_narrow_bend.blend'
 # www.blender.org
 o Plane
@@ -447,6 +448,7 @@ vn -0.2903 0.0000 0.9569
 vn 0.2903 0.0000 -0.9569
 vn 0.0980 0.0000 -0.9952
 s off
+usemtl default
 f 56/1/1 92/2/1 54/3/1
 f 50/4/2 90/5/2 56/6/2
 f 52/7/3 96/8/3 50/9/3

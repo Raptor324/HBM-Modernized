@@ -27,7 +27,12 @@ public class ItemRenderMissileCustom extends BlockEntityWithoutLevelRenderer {
     @Override
     public void renderByItem(ItemStack stack, ItemDisplayContext ctx, PoseStack ps, MultiBufferSource buffers, int light, int overlay) {
         MissileStruct missile = ItemCustomMissile.getStruct(stack);
-        if (missile == null) return;
+        // Port-getStruct liefert nie null; "kein Bauplan" = alle Teile leer (Original: Stack ohne NBT)
+        if (missile == null || (missile.warhead == null && missile.fuselage == null && missile.fins == null && missile.thruster == null)) {
+            // vI2: Original handleRenderType == false ohne Bauplan -> Vanilla zeichnet das flache Icon "missile_custom"
+            if (ctx == ItemDisplayContext.GUI) renderFlatIcon(ps, buffers);
+            return;
+        }
 
         ps.pushPose();
         ps.translate(0.5, 0, 0.5);
@@ -51,5 +56,21 @@ public class ItemRenderMissileCustom extends BlockEntityWithoutLevelRenderer {
 
         MissilePronter.prontMissile(missile, ps, buffers, light);
         ps.popPose();
+    }
+
+    /** vI2: flaches Inventar-Icon (Textur item/missile_custom) im Einheitswuerfel, wie ein item/generated-Modell. */
+    private static void renderFlatIcon(PoseStack ps, MultiBufferSource buffers) {
+        net.minecraft.client.renderer.texture.TextureAtlasSprite sp = Minecraft.getInstance()
+                .getTextureAtlas(net.minecraft.client.renderer.texture.TextureAtlas.LOCATION_BLOCKS)
+                .apply(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(com.hbm_m.lib.RefStrings.MODID, "item/missile_custom"));
+        com.mojang.blaze3d.vertex.VertexConsumer vc = buffers.getBuffer(
+                net.minecraft.client.renderer.RenderType.entityCutoutNoCull(net.minecraft.client.renderer.texture.TextureAtlas.LOCATION_BLOCKS));
+        org.joml.Matrix4f m = ps.last().pose();
+        int light = 15728880, ov = net.minecraft.client.renderer.texture.OverlayTexture.NO_OVERLAY;
+        com.mojang.blaze3d.platform.Lighting.setupForFlatItems();
+        com.hbm_m.platform.RenderHooks.vertexFull(vc, m, 0, 0, 0.5F, 255, 255, 255, 255, sp.getU0(), sp.getV1(), ov, light, 0, 0, 1);
+        com.hbm_m.platform.RenderHooks.vertexFull(vc, m, 1, 0, 0.5F, 255, 255, 255, 255, sp.getU1(), sp.getV1(), ov, light, 0, 0, 1);
+        com.hbm_m.platform.RenderHooks.vertexFull(vc, m, 1, 1, 0.5F, 255, 255, 255, 255, sp.getU1(), sp.getV0(), ov, light, 0, 0, 1);
+        com.hbm_m.platform.RenderHooks.vertexFull(vc, m, 0, 1, 0.5F, 255, 255, 255, 255, sp.getU0(), sp.getV0(), ov, light, 0, 0, 1);
     }
 }

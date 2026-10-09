@@ -68,6 +68,16 @@ public class AnimatedMachineItemRenderer extends BlockEntityWithoutLevelRenderer
         double time = System.currentTimeMillis();
 
         ps.pushPose();
+        // vI: Der Anzeige-Waechter (ItemTransformHelperCompat.HbmItemDisplayWrapper) unterdrueckt fuer builtin/entity-
+        // Modelle die Display-Transformation vor renderByItem -> hier selbst anwenden, in derselben Reihenfolge wie
+        // ItemRenderer (T(.5) * display * T(-.5)); sonst wird das Modell im Inventar unskaliert/ungedreht gezeichnet.
+        net.minecraft.client.resources.model.BakedModel displayModel = Minecraft.getInstance().getItemRenderer().getModel(stack, null, null, 0);
+        boolean leftHand = ctx == ItemDisplayContext.FIRST_PERSON_LEFT_HAND || ctx == ItemDisplayContext.THIRD_PERSON_LEFT_HAND;
+        ps.translate(0.5F, 0.5F, 0.5F);
+        com.hbm_m.client.compat.itemtransformhelper.ItemTransformHelperCompat.resolveDisplayTransforms(displayModel,
+                com.hbm_m.client.compat.itemtransformhelper.ItemTransformHelperCompat.unwrapToDelegate(displayModel))
+                .getTransform(ctx).apply(leftHand, ps);
+        ps.translate(-0.5F, -0.5F, -0.5F);
         switch (id) {
             case "stirling", "stirling_steel", "stirling_creative" -> {
                 // RenderStirling#renderCommonWithStack: cog = Schaden != 1; Textur 0 normal, 1 Stahl, 2 kreativ

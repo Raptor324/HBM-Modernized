@@ -153,6 +153,8 @@ public class ItemRenderMissileGeneric extends BlockEntityWithoutLevelRenderer {
                 poseStack.scale(GUI_BLOCK_SCALE, GUI_BLOCK_SCALE, GUI_BLOCK_SCALE);
                 poseStack.translate(0.0F, GUI_BLOCK_PIVOT_Y, GUI_BLOCK_PIVOT_Z);
                 poseStack.scale(gui.scale(), gui.scale(), gui.scale());
+                // vI2: Topol-M (nicht im Original) ist laenger als die Atlas-Rakete seines Typs -> in den Slot einpassen
+                if (stack.is(com.hbm_m.item.ModItems.MISSILE_TOPOL.get())) poseStack.scale(0.7F, 0.7F, 0.7F);
                 poseStack.mulPose(Axis.ZP.rotationDegrees(45.0F));
                 poseStack.mulPose(Axis.YP.rotationDegrees((System.currentTimeMillis() / 15L) % 360));
                 poseStack.translate(0.0F, -16.0F + gui.offset(), 0.0F);

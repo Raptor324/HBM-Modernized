@@ -9,12 +9,10 @@
       "y": 0
     },
     "facing=east": {
-      "model": "hbm_m:block/red_pylon_large",
-      "y": 45
+      "model": "hbm_m:block/red_pylon_large_e"
     },
     "facing=west": {
-      "model": "hbm_m:block/red_pylon_large",
-      "y": -45
+      "model": "hbm_m:block/red_pylon_large_w"
     }
   }
 }

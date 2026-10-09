@@ -33,9 +33,6 @@ public class RBMKColumnItemRenderer extends BlockEntityWithoutLevelRenderer {
 
     public static final RBMKColumnItemRenderer INSTANCE = new RBMKColumnItemRenderer();
 
-    /** Matches the lid plate thickness in {@code RBMKColumnRenderer}. */
-    private static final float LID_HEIGHT = 0.25F;
-
     private final Map<BlockState, BlockEntity> cache = new ConcurrentHashMap<>();
 
     private RBMKColumnItemRenderer() {
@@ -50,10 +47,41 @@ public class RBMKColumnItemRenderer extends BlockEntityWithoutLevelRenderer {
 
         if (!(state.getBlock() instanceof net.minecraft.world.level.block.EntityBlock entityBlock)) return;
         BlockEntity be = cache.computeIfAbsent(state, s -> entityBlock.newBlockEntity(BlockPos.ZERO, s));
-        if (!(be instanceof RBMKColumnBlockEntity)
-                && !(be instanceof com.hbm_m.blockentity.machines.MachineRbmkConsoleBlockEntity)) return;
+
+        // vI: Autolader im Inventar 1:1 RenderRBMKAutoloader#getRenderer (ItemRenderBase):
+        // renderInventory T(0,-6,0) S(1.75); renderCommon Ry(180), Base + Piston.
+        if (displayContext == ItemDisplayContext.GUI && be instanceof com.hbm_m.blockentity.machines.rbmk.RBMKAutoloaderBlockEntity) {
+            java.util.Map<String, java.util.List<float[]>> obj = com.hbm_m.client.render.implementations.RBMKColumnRenderer.getObj("models/rbmk/models/autoloader.obj");
+            net.minecraft.client.renderer.texture.TextureAtlasSprite sprite = com.hbm_m.client.render.implementations.RBMKColumnRenderer.sprite(com.hbm_m.lib.RefStrings.MODID, "block/rbmk/model_rbmk_autoloader");
+            com.mojang.blaze3d.vertex.VertexConsumer vc = buffer.getBuffer(net.minecraft.client.renderer.RenderType.solid());
+            poseStack.pushPose();
+            OrigInventoryTransform.apply(poseStack);
+            poseStack.translate(0, -6, 0);
+            poseStack.scale(1.75F, 1.75F, 1.75F);
+            poseStack.mulPose(com.mojang.math.Axis.YP.rotationDegrees(180));
+            for (String part : new String[] {"Base", "Piston"}) {
+                java.util.List<float[]> g = obj.get(part);
+                if (g != null) com.hbm_m.client.render.implementations.RBMKColumnRenderer.renderObjGroup(vc, poseStack.last().pose(), g, sprite, 1f, 1f, 1f, packedLight, packedOverlay);
+            }
+            poseStack.popPose();
+            return;
+        }
+
+        boolean column = be instanceof RBMKColumnBlockEntity;
+        if (!column && !(be instanceof com.hbm_m.blockentity.machines.MachineRbmkConsoleBlockEntity)) {
+            // vI: Dampfein-/-auslass sind im Original einfache Bloecke (RBMKInlet/RBMKOutlet) ohne Saeulenrenderer ->
+            // Blockmodell zeichnen statt nichts (Icon war leer).
+            poseStack.pushPose();
+            applyDisplay(stack, displayContext, poseStack);
+            Minecraft.getInstance().getBlockRenderer().renderSingleBlock(state, poseStack, buffer, packedLight, packedOverlay);
+            poseStack.popPose();
+            return;
+        }
 
         poseStack.pushPose();
+        // vI: Anzeige-Waechter unterdrueckt die Display-Werte des builtin/entity-Modells (Blockwerte aus dem Datagen)
+        // -> hier anwenden, sonst stehen die Saeulen ungedreht/frontal im Slot.
+        if (column) applyDisplay(stack, displayContext, poseStack);
         // RBMKColumnRenderer draws the column at its true in-world size: RBMKDials.COLUMN_HEIGHT+1
         // blocks tall, plus a 0.25 lid plate on top. Handed to the item renderer unscaled that is
         // four times the height of an item slot, so it would render as a single cube's worth of
@@ -61,15 +89,29 @@ public class RBMKColumnItemRenderer extends BlockEntityWithoutLevelRenderer {
         // the item transforms expect, keeping it centred in X/Z and standing on the bottom face -
         // the icon then shows the complete column instead of its lowest block.
         if (be instanceof RBMKColumnBlockEntity) {
-            float columnHeight = com.hbm_m.handler.rbmk.RBMKDials.COLUMN_HEIGHT + 1 + LID_HEIGHT;
-            float scale = 1.0F / columnHeight;
-            poseStack.translate(0.5F, 0.0F, 0.5F);
-            poseStack.scale(scale, scale, scale);
+            // vI: 1:1 renderInventoryBlock des Originals (RenderRBMKRod/-Reflector: T(0,-0.675,0), RenderRBMKControl
+            // fuer alle uebrigen Saeulen: T(0,-0.75,0); jeweils S(0.35)), Blockmitte als Ursprung.
+            Object b = state.getBlock();
+            float dy = b instanceof com.hbm_m.block.machines.rbmk.RBMKRodBlock
+                    || b instanceof com.hbm_m.block.machines.rbmk.RBMKReflectorBlock ? -0.675F : -0.75F;
+            poseStack.translate(0.5F, 0.5F + dy, 0.5F);
+            poseStack.scale(0.35F, 0.35F, 0.35F);
             poseStack.translate(-0.5F, 0.0F, -0.5F);
         }
         Minecraft.getInstance().getBlockEntityRenderDispatcher()
                 .renderItem(be, poseStack, buffer, packedLight, packedOverlay);
         poseStack.popPose();
+    }
+
+    /** Wie ItemRenderer: T(.5) * display(ctx) * T(-.5). */
+    static void applyDisplay(ItemStack stack, ItemDisplayContext ctx, PoseStack ps) {
+        net.minecraft.client.resources.model.BakedModel displayModel = Minecraft.getInstance().getItemRenderer().getModel(stack, null, null, 0);
+        boolean leftHand = ctx == ItemDisplayContext.FIRST_PERSON_LEFT_HAND || ctx == ItemDisplayContext.THIRD_PERSON_LEFT_HAND;
+        ps.translate(0.5F, 0.5F, 0.5F);
+        com.hbm_m.client.compat.itemtransformhelper.ItemTransformHelperCompat.resolveDisplayTransforms(displayModel,
+                com.hbm_m.client.compat.itemtransformhelper.ItemTransformHelperCompat.unwrapToDelegate(displayModel))
+                .getTransform(ctx).apply(leftHand, ps);
+        ps.translate(-0.5F, -0.5F, -0.5F);
     }
 }
 //?}

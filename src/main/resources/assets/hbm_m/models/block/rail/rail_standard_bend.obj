@@ -1,3 +1,4 @@
+mtllib rail_standard_bend.mtl
 # Blender v2.79 (sub 0) OBJ File: 'rail_standard_curve.blend'
 # www.blender.org
 o Plane.001
@@ -668,6 +669,7 @@ vn -0.9239 0.0000 -0.3827
 vn 0.9914 0.0000 0.1305
 vn -0.9914 0.0000 -0.1305
 s off
+usemtl default
 f 20/1/1 5/2/1 6/3/1
 f 7/4/2 3/5/2 1/6/2
 f 10/7/3 14/8/3 12/9/3

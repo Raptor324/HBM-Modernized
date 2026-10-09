@@ -2587,7 +2587,8 @@ public class ModBlockStateProvider extends BlockStateProvider {
         // Порт BlockNTMGlassPane: ванильная панель (Post/Side/NoSide)
         paneBlock((net.minecraft.world.level.block.IronBarsBlock) ModBlocks.REINFORCED_GLASS_PANE.get(),
                 modLoc("block/reinforced_glass_pane"), modLoc("block/reinforced_glass_pane_edge"));
-        simpleBlockItem(ModBlocks.REINFORCED_GLASS_PANE.get(), models().getExistingFile(modLoc("block/reinforced_glass_pane_post")));
+        // vI: Pfosten-Modell war im Inventar unsichtbar; Scheiben zeigen wie Vanilla/Original das flache Scheibenbild
+        itemModels().withExistingParent("reinforced_glass_pane", mcLoc("item/generated")).texture("layer0", modLoc("block/reinforced_glass_pane"));
         simpleBlockWithItem(ModBlocks.REINFORCED_LAMP_OFF.get(),
                 models().cubeAll(
                         ModBlocks.REINFORCED_LAMP_OFF.getId().getPath(),
@@ -2929,6 +2930,8 @@ public class ModBlockStateProvider extends BlockStateProvider {
         simpleBlockWithItem(ModBlocks.SAND_DIRTY_RED.get(), models().cubeAll("sand_dirty_red", mcOrMod("block/sand_dirty_red")));
         simpleBlockWithItem(ModBlocks.STONE_CRACKED.get(), models().cubeAll("stone_cracked", mcOrMod("block/stone_cracked")));
         simpleBlockWithItem(ModBlocks.ORE_OIL.get(), models().cubeAll("ore_oil", mcOrMod("block/ore_oil")));
+        // vI: erschoepftes Oelvorkommen hatte weder Blockzustand noch Modell (Missing-Model); Original BlockGeneric "ore_oil_empty"
+        simpleBlockWithItem(ModBlocks.ORE_OIL_EMPTY.get(), models().cubeAll("ore_oil_empty", modLoc("block/ore_oil_empty")));
         simpleBlockWithItem(ModBlocks.BLOCK_METEOR.get(), models().cubeAll("block_meteor", mcOrMod("block/meteor")));
         simpleBlockWithItem(ModBlocks.BLOCK_METEOR_COBBLE.get(), models().cubeAll("block_meteor_cobble", mcOrMod("block/meteor_cobble")));
         simpleBlockWithItem(ModBlocks.BLOCK_METEOR_BROKEN.get(), models().cubeAll("block_meteor_broken", mcOrMod("block/meteor_crushed")));

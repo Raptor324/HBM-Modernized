@@ -1,3 +1,4 @@
+mtllib rail_narrow.mtl
 # Blender v2.79 (sub 0) OBJ File: 'rail_narrow.blend'
 # www.blender.org
 o Plane
@@ -232,6 +233,7 @@ vn 0.0000 0.0000 1.0000
 vn 1.0000 0.0000 0.0000
 vn 0.0000 0.0000 -1.0000
 s off
+usemtl default
 f 3/1/1 15/2/1 16/3/1
 f 8/4/2 11/5/2 7/6/2
 f 10/7/2 5/8/2 6/9/2

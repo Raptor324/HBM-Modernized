@@ -3206,7 +3206,7 @@ public class ModItems {
     public static final RegistrySupplier<Item> GAS_MASK_MONO = ITEMS.register("gas_mask_mono", () -> new ArmorGasMaskItem(Variant.MONO, new Item.Properties()));
     public static final RegistrySupplier<Item> GAS_MASK_OLDE = ITEMS.register("gas_mask_olde", () -> new ArmorGasMaskItem(Variant.OLDE, new Item.Properties()));
     public static final RegistrySupplier<Item> GAS_TESTER = ITEMS.register("gas_tester", () -> new com.hbm_m.armormod.item.ItemModSensor());
-    public static final RegistrySupplier<Item> GEAR_LARGE = ITEMS.register("gear_large", () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> GEAR_LARGE = ITEMS.register("gear_large", () -> new com.hbm_m.item.AnimatedPartItem(new Item.Properties())); // vI: drehendes Inventar-Icon wie Original
     public static final RegistrySupplier<Item> GEM_ALEXANDRITE = ITEMS.register("gem_alexandrite", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> GEM_RAD = ITEMS.register("gem_rad", () -> new Item(new Item.Properties().rarity(net.minecraft.world.item.Rarity.UNCOMMON))); // gem_rad: uncommon в оригинале (setRarity)
     public static final RegistrySupplier<Item> GEM_SODALITE = ITEMS.register("gem_sodalite", () -> new Item(new Item.Properties()));
@@ -4084,7 +4084,7 @@ public class ModItems {
     public static final RegistrySupplier<Item> SAT_LUNAR_MINER = ITEMS.register("sat_lunar_miner", () -> new com.hbm_m.item.satellite.ItemSatChip(new Item.Properties()));
     public static final RegistrySupplier<Item> SAT_MINER = ITEMS.register("sat_miner", () -> new com.hbm_m.item.satellite.ItemSatChip(new Item.Properties()));
     public static final RegistrySupplier<Item> SAT_RELAY = ITEMS.register("sat_relay", () -> new com.hbm_m.item.satellite.ItemSatChip(new Item.Properties()));
-    public static final RegistrySupplier<Item> SAWBLADE = ITEMS.register("sawblade", () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> SAWBLADE = ITEMS.register("sawblade", () -> new com.hbm_m.item.AnimatedPartItem(new Item.Properties())); // vI: drehendes Inventar-Icon wie Original
     public static final RegistrySupplier<Item> SCHNITZEL_VEGAN = ITEMS.register("schnitzel_vegan",
             () -> com.hbm_m.item.food.HbmFoodItem.of(0, 0.6F, true).noDesc().onEaten(com.hbm_m.item.food.FoodBehaviors::schnitzelVegan).build());
     public static final RegistrySupplier<Item> SCHRABIDIUM_AXE = ITEMS.register("schrabidium_axe",

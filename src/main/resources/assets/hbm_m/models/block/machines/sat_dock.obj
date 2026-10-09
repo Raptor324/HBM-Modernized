@@ -1,3 +1,4 @@
+mtllib sat_dock.mtl
 # Blender v2.76 (sub 0) OBJ File: 'sat_dock.blend'
 # www.blender.org
 o Cube_Cube.001
@@ -56,6 +57,7 @@ vn 0.000000 0.000000 1.000000
 vn 0.000000 -1.000000 0.000000
 vn 0.000000 1.000000 0.000000
 s off
+usemtl default
 f 4/1/1 3/2/1 1/3/1
 f 8/4/2 7/5/2 3/6/2
 f 6/7/3 5/8/3 7/9/3

@@ -7,7 +7,7 @@
 		"radgen_model": {
 			"loader": "forge:obj",
 			"model": "hbm_m:models/block/machines/radgen.obj",
-			"flip_v": true,
+			"flip_v": true, "visibility": {"Light": false},
 			"render_type": "minecraft:cutout",
 			"textures": {
 				"default": "hbm_m:block/machine/radgen"
@@ -96,23 +96,7 @@
 				0.1437
 			]
 		},
-		"gui": {
-			"rotation": [
-				30,
-				225,
-				0
-			],
-			"translation": [
-				0.0,
-				-4.75,
-				0.0
-			],
-			"scale": [
-				0.1567,
-				0.1567,
-				0.1567
-			]
-		},
+		"gui": {"rotation": [30.0, -135.0, 0.0], "translation": [-0.795, -2.289, 0.751], "scale": [0.1406, 0.1406, 0.1406]},
 		"head": {
 			"rotation": [
 				0,

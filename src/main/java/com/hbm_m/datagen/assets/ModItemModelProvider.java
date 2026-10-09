@@ -437,6 +437,14 @@ public class ModItemModelProvider extends ItemModelProvider {
         simpleItem(ModItems.MOTOR);
         simpleItem(ModItems.BATTERY_SCHRABIDIUM);
         simpleItem(ModItems.BATTERY_POTATO);
+        // vI: Icons ohne Item-Modell (Missing-Model im Creative-Tab); Texturen 1:1 aus dem Original
+        simpleItem(ModItems.CELL_SAS3);
+        simpleItemModelByName("igniter", "trigger"); // Original: setTextureName("hbm:trigger")
+        for (var pellet : java.util.List.of(ModItems.PELLET_RTG_DEPLETED_BISMUTH, ModItems.PELLET_RTG_DEPLETED_MERCURY,
+                ModItems.PELLET_RTG_DEPLETED_NEPTUNIUM, ModItems.PELLET_RTG_DEPLETED_LEAD,
+                ModItems.PELLET_RTG_DEPLETED_ZIRCONIUM, ModItems.PELLET_RTG_DEPLETED_NICKEL)) {
+            simpleItem(pellet);
+        }
         simpleItem(ModItems.BATTERY);
         simpleItem(ModItems.AIRSTRIKE_NUKE);
         simpleItem(ModItems.BATTERY_RED_CELL);
@@ -771,7 +779,7 @@ public class ModItemModelProvider extends ItemModelProvider {
             var coltass = withExistingParent("coltan_tool", "item/generated").texture("layer0", modLoc("item/coltan_tool/coltan_tool_00"));
             for (int i = 1; i < 32; i++) {
                 String n = String.format("coltan_tool/coltan_tool_%02d", i);
-                withExistingParent(n, "item/generated").texture("layer0", modLoc("item/" + n));
+                withExistingParent("item/" + n, "item/generated").texture("layer0", modLoc("item/" + n)); // vI: "item/" noetig, sonst models/coltan_tool/
                 coltass.override().predicate(modLoc("angle"), i / 32F - 0.001F).model(new net.minecraftforge.client.model.generators.ModelFile.UncheckedModelFile(modLoc("item/" + n))).end();
             }
         }
@@ -869,7 +877,8 @@ public class ModItemModelProvider extends ItemModelProvider {
         {
             var alex = withExistingParent("gem_alexandrite", "item/generated").texture("layer0", modLoc("item/alexandrite/gem_alexandrite_0"));
             for (int i = 1; i < 16; i++) {
-                withExistingParent("alexandrite/gem_alexandrite_" + i, "item/generated").texture("layer0", modLoc("item/alexandrite/gem_alexandrite_" + i));
+                // vI: wie Polaroid - ohne "item/" landete das Modell in models/alexandrite/ (Overrides ins Leere)
+                withExistingParent("item/alexandrite/gem_alexandrite_" + i, "item/generated").texture("layer0", modLoc("item/alexandrite/gem_alexandrite_" + i));
                 alex.override().predicate(modLoc("light"), i / 15F - 0.01F).model(new net.minecraftforge.client.model.generators.ModelFile.UncheckedModelFile(modLoc("item/alexandrite/gem_alexandrite_" + i))).end();
             }
         }
@@ -878,7 +887,8 @@ public class ModItemModelProvider extends ItemModelProvider {
         for (String base : new String[] { "polaroid", "glitch" }) {
             var model = withExistingParent(base, "item/generated").texture("layer0", modLoc("item/polaroid/" + base + "_1"));
             for (int i = 2; i <= 18; i++) {
-                withExistingParent("polaroid/" + base + "_" + i, "item/generated").texture("layer0", modLoc("item/polaroid/" + base + "_" + i));
+                // vI: Pfad mit "/" wird nicht unter item/ eingeordnet -> landete in models/polaroid/ (Overrides ins Leere)
+                withExistingParent("item/polaroid/" + base + "_" + i, "item/generated").texture("layer0", modLoc("item/polaroid/" + base + "_" + i));
                 model.override().predicate(modLoc("polaroid"), i / 18F - 0.01F).model(new net.minecraftforge.client.model.generators.ModelFile.UncheckedModelFile(modLoc("item/polaroid/" + base + "_" + i))).end();
             }
         }
@@ -1100,7 +1110,7 @@ public class ModItemModelProvider extends ItemModelProvider {
         blockItemFromBlockModelMachine(ModBlocks.CORE_EMITTER);
         blockItemFromBlockModelMachine(ModBlocks.CORE_INJECTOR);
         blockItemFromBlockModelMachine(ModBlocks.CORE_RECEIVER);
-        blockItemFromBlockModelMachine(ModBlocks.VACUUM_DISTILL);
+        blockItemFromBlockModelMachine(ModBlocks.VACUUM_DISTILL, "vacuum_distill_item"); // vI: Blockmodell leer (BER), Item braucht OBJ mit Material
         blockItemFromBlockModelMachine(ModBlocks.TURBOFAN);
         withExistingParent("industrial_turbine", modLoc("item/industrial_turbine_anim")); // Audit 7: animiertes Item (AnimatedMachineItemRenderer)
         blockItemFromBlockModelMachine(ModBlocks.MACHINE_CHUNGUS, "chungus");
@@ -1153,7 +1163,7 @@ public class ModItemModelProvider extends ItemModelProvider {
         withExistingParent("klystron_creative", modLoc("item/klystron_creative_anim")); // Audit 7: animiertes Item (AnimatedMachineItemRenderer)
         withExistingParent("mhdt", modLoc("item/mhdt_anim")); // Audit 7: animiertes Item (AnimatedMachineItemRenderer)
         blockItemFromBlockModelMachine(ModBlocks.MICROWAVE);
-        blockItemFromBlockModelMachine(ModBlocks.MINING_LASER);
+        blockItemFromBlockModelMachine(ModBlocks.MINING_LASER, "mining_laser_item"); // vI: s. o.
         blockItemFromBlockModelMachine(ModBlocks.OILBURNER);
         blockItemFromBlockModelMachine(ModBlocks.OILBURNER_HP);
         blockItemFromBlockModelMachine(ModBlocks.ORBUS);
@@ -1199,11 +1209,11 @@ public class ModItemModelProvider extends ItemModelProvider {
         itemModelFromBlockResourcePath(ModBlocks.CRANE_UNBOXER.getId().getPath(), "block/crane_unboxer_inventory");
         blockItemFromBlockModelMachine(ModBlocks.SOURCE);
         blockItemFromBlockModelMachine(ModBlocks.MACHINE_LARGE_TURBINE);
-        blockItemFromBlockModelMachine(ModBlocks.LPW2);
+        blockItemFromBlockModelMachine(ModBlocks.LPW2, "lpw2_item"); // vI: s. o.
         withExistingParent("steam_engine", modLoc("item/steam_engine_anim")); // Audit 7: animiertes Item (AnimatedMachineItemRenderer)
         // Original RenderStirling#renderCommonWithStack: drehendes Zahnrad, Item-Schaden 1 (Tag no_cog) ohne "Cog"
         withExistingParent("stirling", modLoc("item/stirling_anim")); // Audit 7: animiertes Item (AnimatedMachineItemRenderer)
-        blockItemFromBlockModelMachine(ModBlocks.MACHINE_SATLINK);
+        blockItemFromBlockModelMachine(ModBlocks.MACHINE_SATLINK, "machine_satlink_item"); // vI: s. o.
         blockItemFromBlockModelMachine(ModBlocks.SAT_DOCK);
         withExistingParent("stirling_creative", modLoc("item/stirling_creative_anim")); // Audit 7: animiertes Item (AnimatedMachineItemRenderer)
         withExistingParent("stirling_steel", modLoc("item/stirling_steel_anim")); // Audit 7: animiertes Item (AnimatedMachineItemRenderer)
@@ -2391,6 +2401,9 @@ public class ModItemModelProvider extends ItemModelProvider {
                 ModItems.XANAX,
                 ModItems.ZIRCONIUM_LEGS
         ).forEach(this::simpleItem);
+        // vI: Grosses Zahnrad/Saegeblatt drehen sich im Original-Inventar (ItemRenderLibrary) -> BEWLR AnimatedPartItemRenderer
+        builtinEntityItem("gear_large");
+        builtinEntityItem("sawblade");
 
         // Заглушки хвоста вкладки Parts (id 4502+)
         java.util.List.of(
@@ -2565,6 +2578,8 @@ public class ModItemModelProvider extends ItemModelProvider {
         for (String gun : com.hbm_m.item.weapon.sedna.WeaponItems.GUN_NAMES) {
             getBuilder(gun).parent(new ModelFile.UncheckedModelFile("minecraft:builtin/entity"));
         }
+        // vI: gun_pa_ranged hat im Original keinen Itemrenderer (nur setTextureName) -> flaches Icon statt leerem BEWLR
+        simpleItemModelByName("gun_pa_ranged", "gun_pa_ranged");
         simpleItemModelByName("ammo_debug", "ammo_45");
         java.util.List<java.util.Map<? extends Enum<?>, RegistrySupplier<Item>>> maps = java.util.List.of(
                 com.hbm_m.item.weapon.sedna.WeaponItems.AMMO_STANDARD,

@@ -1,3 +1,4 @@
+mtllib rail_standard_buffer.mtl
 # Blender v2.79 (sub 0) OBJ File: 'rail_standard_stop.blend'
 # www.blender.org
 o Plane.001
@@ -769,6 +770,7 @@ vn -0.7071 0.7071 0.0000
 vn 0.0000 -0.7071 0.7071
 vn 0.0000 0.7071 -0.7071
 s off
+usemtl default
 f 2/1/1 4/2/1 3/3/1
 f 7/4/2 6/5/2 5/6/2
 f 11/7/2 10/8/2 9/9/2

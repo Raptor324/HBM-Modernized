@@ -1,3 +1,4 @@
+mtllib fraction_spacer.mtl
 # Blender v2.79 (sub 0) OBJ File: 'fraction_spacer.blend'
 # www.blender.org
 o Plane
@@ -498,6 +499,7 @@ vn -0.7071 0.0000 -0.7071
 vn -0.7071 -0.0000 0.7071
 vn 0.0000 -1.0000 -0.0000
 s off
+usemtl default
 f 2/1/1 4/2/1 1/3/1
 f 6/4/2 8/5/2 5/6/2
 f 10/7/3 12/8/3 9/9/3

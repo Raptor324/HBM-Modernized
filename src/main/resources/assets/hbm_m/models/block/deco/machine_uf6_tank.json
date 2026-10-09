@@ -7,5 +7,24 @@
   "textures": {
     "texture": "hbm_m:block/deco/uf6_tank",
     "particle": "hbm_m:block/deco/uf6_tank"
+  },
+  "display": {
+    "gui": {
+      "rotation": [
+        30.0,
+        135.0,
+        0.0
+      ],
+      "translation": [
+        0.0,
+        -0.745,
+        -4.174
+      ],
+      "scale": [
+        0.375,
+        0.375,
+        0.375
+      ]
+    }
   }
 }

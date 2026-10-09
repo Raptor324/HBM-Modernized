@@ -7,7 +7,7 @@
 		"solidifier_model": {
 			"loader": "forge:obj",
 			"model": "hbm_m:models/block/machines/solidifier.obj",
-			"flip_v": true,
+			"flip_v": true, "visibility": {"Glass": false, "Fluid": false},
 			"render_type": "minecraft:cutout",
 			"textures": {
 				"default": "hbm_m:block/machine/solidifier"
@@ -96,7 +96,7 @@
 				0.22
 			]
 		},
-		"gui": {"rotation":[30,225,0],"translation":[0,-3.0758,0],"scale":[0.1869,0.1869,0.1869]},
+		"gui": {"rotation": [30.0, -135.0, 0.0], "translation": [0.0, -2.866, -0.5], "scale": [0.1875, 0.1875, 0.1875]},
 		"head": {
 			"rotation": [
 				0,

@@ -20,20 +20,11 @@ public class ModWorldGen {
     //? if forge {
     public static final net.minecraftforge.registries.DeferredRegister<net.minecraftforge.common.world.BiomeModifier> BIOME_MODIFIERS =
             net.minecraftforge.registries.DeferredRegister.create(net.minecraftforge.registries.ForgeRegistries.Keys.BIOME_MODIFIERS, RefStrings.MODID);
-<<<<<<< HEAD
-    /** Phase D: eigener Biom-Modifikator-Typ hbm_m:add_carvers (forge:add_carvers gibt es in Forge 1.20.1 nicht). */
-    public static final net.minecraftforge.registries.DeferredRegister<com.mojang.serialization.Codec<? extends net.minecraftforge.common.world.BiomeModifier>> BIOME_MODIFIER_SERIALIZERS =
-            net.minecraftforge.registries.DeferredRegister.create(net.minecraftforge.registries.ForgeRegistries.Keys.BIOME_MODIFIER_SERIALIZERS, RefStrings.MODID);
-    static {
-        BIOME_MODIFIER_SERIALIZERS.register("add_carvers", () -> AddCarversBiomeModifierForge.CODEC);
-    }
-=======
     /** Forge 1.20.1 hat kein forge:add_carvers → eigener Typ hbm_m:add_carvers (siehe forge/biome_modifier/add_ntm_terrain.json). */
     public static final net.minecraftforge.registries.DeferredRegister<com.mojang.serialization.Codec<? extends net.minecraftforge.common.world.BiomeModifier>> BIOME_MODIFIER_SERIALIZERS =
             net.minecraftforge.registries.DeferredRegister.create(net.minecraftforge.registries.ForgeRegistries.Keys.BIOME_MODIFIER_SERIALIZERS, RefStrings.MODID);
     public static final net.minecraftforge.registries.RegistryObject<com.mojang.serialization.Codec<AddCarversBiomeModifier>> ADD_CARVERS =
             BIOME_MODIFIER_SERIALIZERS.register("add_carvers", () -> AddCarversBiomeModifier.CODEC);
->>>>>>> f49f29f728805e3271ef07eb065f24c7350937c9
     //?}
 
     public static final DeferredRegister<Feature<?>> FEATURES =

@@ -7,7 +7,7 @@
 "liquefactor_model": {
 "loader": "forge:obj",
 "model": "hbm_m:models/block/liquefactor.obj",
-"flip_v": true,
+"flip_v": true, "visibility": {"Glass": false},
 "textures": {
 "default": "hbm_m:block/machine/liquefactor"
 }
@@ -23,7 +23,7 @@
 "thirdperson_lefthand":  { "rotation": [75,45,0], "translation": [0,2.5,0], "scale": [0.15,0.15,0.15] },
 "firstperson_righthand": { "rotation": [0,45,0],  "translation": [0,0,0],   "scale": [0.13,0.13,0.13] },
 "firstperson_lefthand":  { "rotation": [0,45,0],  "translation": [0,0,0],   "scale": [0.15,0.15,0.15] },
-"gui":   { "rotation": [30,45,0], "translation": [0.25,-4,0], "scale": [0.16,0.16,0.16] },
+"gui": {"rotation": [30.0, -135.0, 0.0], "translation": [0.0, -2.866, -0.5], "scale": [0.1875, 0.1875, 0.1875]},
 "ground": { "rotation": [0,0,0], "translation": [0,3,0], "scale": [0.25,0.25,0.25] },
 "fixed":  { "rotation": [0,0,0], "translation": [0,0,0], "scale": [0.5,0.5,0.5] }
 }

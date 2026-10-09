@@ -3004,6 +3004,9 @@ public final class CreativeModeTabEventHandler {
         List<Item> items = new ArrayList<>();
         for (Item item : BuiltInRegistries.ITEM) {
             if (RefStrings.MODID.equals(BuiltInRegistries.ITEM.getKey(item).getNamespace())) {
+                // vI2: reine Port-Testbloecke ohne Modell/Original-Gegenstueck nicht im Dev-Tab (Icon war Missing-Model)
+                String p = BuiltInRegistries.ITEM.getKey(item).getPath();
+                if (p.equals("test_block") || p.equals("broadcaster")) continue;
                 items.add(item);
             }
         }
