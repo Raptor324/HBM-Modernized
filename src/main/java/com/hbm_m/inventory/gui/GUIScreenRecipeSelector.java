@@ -81,6 +81,10 @@ public class GUIScreenRecipeSelector extends Screen {
 
     @Nullable
     private com.hbm_m.blockentity.machines.MachinePUREXBlockEntity purex;
+    @Nullable
+    private com.hbm_m.blockentity.machines.MachineSuperComputerBlockEntity supercomputer;
+    @Nullable
+    private com.hbm_m.blockentity.machines.MachineRockMillBlockEntity rockMill;
     private com.hbm_m.blockentity.machines.MachinePrecAssBlockEntity precass;
     @Nullable
     private com.hbm_m.blockentity.machines.MachineChemicalFactoryBlockEntity chemFactory;
@@ -372,7 +376,7 @@ public class GUIScreenRecipeSelector extends Screen {
         if (assembler != null) {
             ModPacketHandler.sendToServer(ModPacketHandler.SET_ASSEMBLER_RECIPE,
                 new SetAssemblerRecipeC2SPacket(machinePos, selectedRecipe));
-        } else if (chemicalPlant != null || purex != null || precass != null || chemFactory != null || assemFactory != null) {
+        } else if (chemicalPlant != null || purex != null || supercomputer != null || rockMill != null || precass != null || chemFactory != null || assemFactory != null) {
             ModPacketHandler.sendToServer(ModPacketHandler.SET_CHEM_RECIPE,
                 new SetChemPlantRecipeC2SPacket(machinePos, selectedRecipe, moduleIndex));
         } else if (fusionTorus != null) {
@@ -422,6 +426,10 @@ public class GUIScreenRecipeSelector extends Screen {
                 currentFolder = assembler.getBlueprintFolder();
             } else if (chemicalPlant != null) {
                 currentFolder = chemicalPlant.getBlueprintFolder();
+            } else if (supercomputer != null) {
+                currentFolder = supercomputer.getBlueprintFolder();
+            } else if (rockMill != null) {
+                currentFolder = rockMill.getBlueprintFolder();
             } else if (purex != null) {
                 currentFolder = purex.getBlueprintFolder();
             } else if (precass != null) {
@@ -493,6 +501,18 @@ public class GUIScreenRecipeSelector extends Screen {
                     if (icon.isEmpty()) icon = new ItemStack(com.hbm_m.item.ModItems.TEMPLATE_FOLDER.get());
                     allRecipes.add(new RecipeEntry(RecipeHooks.recipeId(this.minecraft.level.getRecipeManager(), com.hbm_m.recipe.PrecAssRecipe.Type.INSTANCE, recipe), icon, recipe));
                 }
+            } else if (rockMill != null) {
+                for (com.hbm_m.recipe.RockMillRecipe recipe : rockMill.getAvailableRecipes()) {
+                    ItemStack icon = recipe.getResultItem(this.minecraft.level.registryAccess());
+                    if (icon.isEmpty()) icon = new ItemStack(com.hbm_m.item.ModItems.TEMPLATE_FOLDER.get());
+                    allRecipes.add(new RecipeEntry(RecipeHooks.recipeId(this.minecraft.level.getRecipeManager(), com.hbm_m.recipe.RockMillRecipe.Type.INSTANCE, recipe), icon, recipe));
+                }
+            } else if (supercomputer != null) {
+                for (com.hbm_m.recipe.SuperComputerRecipe recipe : supercomputer.getAvailableRecipes()) {
+                    ItemStack icon = recipe.getResultItem(this.minecraft.level.registryAccess());
+                    if (icon.isEmpty()) icon = new ItemStack(com.hbm_m.item.ModItems.TEMPLATE_FOLDER.get());
+                    allRecipes.add(new RecipeEntry(RecipeHooks.recipeId(this.minecraft.level.getRecipeManager(), com.hbm_m.recipe.SuperComputerRecipe.Type.INSTANCE, recipe), icon, recipe));
+                }
             } else if (purex != null) {
                 for (com.hbm_m.recipe.PurexRecipe recipe : purex.getAvailableRecipes()) {
                     ItemStack icon = recipe.getResultItem(this.minecraft.level.registryAccess());
@@ -527,6 +547,8 @@ public class GUIScreenRecipeSelector extends Screen {
         if (this.minecraft == null || this.minecraft.level == null) return;
         BlockEntity be = this.minecraft.level.getBlockEntity(this.machinePos);
         this.purex = be instanceof com.hbm_m.blockentity.machines.MachinePUREXBlockEntity p ? p : null;
+        this.supercomputer = be instanceof com.hbm_m.blockentity.machines.MachineSuperComputerBlockEntity sc ? sc : null;
+        this.rockMill = be instanceof com.hbm_m.blockentity.machines.MachineRockMillBlockEntity rm ? rm : null;
         this.precass = be instanceof com.hbm_m.blockentity.machines.MachinePrecAssBlockEntity pa ? pa : null;
         this.chemFactory = be instanceof com.hbm_m.blockentity.machines.MachineChemicalFactoryBlockEntity cf ? cf : null;
         this.assemFactory = be instanceof com.hbm_m.blockentity.machines.MachineAssemblyFactoryBlockEntity af ? af : null;
@@ -578,6 +600,82 @@ public class GUIScreenRecipeSelector extends Screen {
 
         if (recipe instanceof com.hbm_m.recipe.PrecAssRecipe precRecipe) {
             GUIMachinePrecAss.appendRecipeLines(precRecipe, tooltip);
+            return;
+        }
+
+        if (recipe instanceof com.hbm_m.recipe.RockMillRecipe rmRecipe) {
+            String pool = rmRecipe.getBlueprintPool();
+            if (pool != null && !pool.isEmpty()) {
+                tooltip.add(Component.empty());
+                tooltip.add(Component.translatable("gui.hbm_m.recipe_from_group").withStyle(ChatFormatting.AQUA));
+                tooltip.add(Component.literal("  " + pool).withStyle(ChatFormatting.GOLD));
+            }
+            tooltip.add(Component.empty());
+            tooltip.add(Component.translatable("gui.recipe.duration").append(": ")
+                    .append(Component.literal(String.format(java.util.Locale.ROOT, "%.1fs", rmRecipe.getDuration() / 20.0)))
+                    .withStyle(ChatFormatting.RED));
+            tooltip.add(Component.translatable("gui.recipe.consumption").append(": ")
+                    .append(Component.literal(rmRecipe.getPowerConsumption() + "HE/t"))
+                    .withStyle(ChatFormatting.RED));
+            tooltip.add(Component.empty());
+            tooltip.add(Component.translatable("gui.recipe.input").withStyle(ChatFormatting.BOLD));
+            for (var in : rmRecipe.getItemInputs()) {
+                ItemStack[] variants = in.ingredient().getItems();
+                String name = variants.length == 0 ? "?" : variants[0].getHoverName().getString();
+                tooltip.add(Component.literal("  " + in.count() + "x " + name).withStyle(ChatFormatting.GRAY));
+            }
+            for (var fin : rmRecipe.getFluidInputs()) {
+                tooltip.add(Component.literal("  " + fin.amount() + "mB ").withStyle(ChatFormatting.BLUE)
+                        .append(FluidLocalization.nameFromFluidId(fin.fluidId()).copy().withStyle(ChatFormatting.GRAY)));
+            }
+            tooltip.add(Component.translatable("gui.recipe.output").withStyle(ChatFormatting.BOLD));
+            for (ItemStack out : rmRecipe.getItemOutputs()) {
+                if (out.isEmpty()) continue;
+                tooltip.add(Component.literal("  " + out.getCount() + "x ").withStyle(ChatFormatting.GRAY).append(out.getHoverName()));
+            }
+            GUIMachineRockMill.addChanceLines(rmRecipe, tooltip);
+            for (var out : rmRecipe.getFluidOutputs()) {
+                if (out.isEmpty()) continue;
+                tooltip.add(Component.literal("  " + out.getAmount() + "mB ").withStyle(ChatFormatting.BLUE).append(FluidStackHooks.getName(out)));
+            }
+            return;
+        }
+
+        if (recipe instanceof com.hbm_m.recipe.SuperComputerRecipe scRecipe) {
+            String pool = scRecipe.getBlueprintPool();
+            if (pool != null && !pool.isEmpty()) {
+                tooltip.add(Component.empty());
+                tooltip.add(Component.translatable("gui.hbm_m.recipe_from_group").withStyle(ChatFormatting.AQUA));
+                tooltip.add(Component.literal("  " + pool).withStyle(ChatFormatting.GOLD));
+            }
+            tooltip.add(Component.empty());
+            tooltip.add(Component.translatable("gui.recipe.duration").append(": ")
+                    .append(Component.literal(String.format(java.util.Locale.ROOT, "%.1fs", scRecipe.getDuration() / 20.0)))
+                    .withStyle(ChatFormatting.RED));
+            tooltip.add(Component.translatable("gui.recipe.consumption").append(": ")
+                    .append(Component.literal(scRecipe.getPowerConsumption() + "HE/t"))
+                    .withStyle(ChatFormatting.RED));
+            tooltip.add(Component.empty());
+            tooltip.add(Component.translatable("gui.recipe.input").withStyle(ChatFormatting.BOLD));
+            for (var in : scRecipe.getItemInputs()) {
+                ItemStack[] variants = in.ingredient().getItems();
+                String name = variants.length == 0 ? "?" : variants[0].getHoverName().getString();
+                tooltip.add(Component.literal("  " + in.count() + "x " + name).withStyle(ChatFormatting.GRAY));
+            }
+            for (var fin : scRecipe.getFluidInputs()) {
+                tooltip.add(Component.literal("  " + fin.amount() + "mB ").withStyle(ChatFormatting.BLUE)
+                        .append(FluidLocalization.nameFromFluidId(fin.fluidId()).copy().withStyle(ChatFormatting.GRAY)));
+            }
+            tooltip.add(Component.translatable("gui.recipe.output").withStyle(ChatFormatting.BOLD));
+            for (ItemStack out : scRecipe.getItemOutputs()) {
+                if (out.isEmpty()) continue;
+                tooltip.add(Component.literal("  " + out.getCount() + "x ").withStyle(ChatFormatting.GRAY).append(out.getHoverName()));
+            }
+            GUIMachineSuperComputer.addChanceLines(scRecipe, tooltip);
+            for (var out : scRecipe.getFluidOutputs()) {
+                if (out.isEmpty()) continue;
+                tooltip.add(Component.literal("  " + out.getAmount() + "mB ").withStyle(ChatFormatting.BLUE).append(FluidStackHooks.getName(out)));
+            }
             return;
         }
 

@@ -116,6 +116,8 @@ public class HbmJeiPlugin implements IModPlugin {
         registration.addRecipeCategories(new ArcFurnaceJeiCategory(registration.getJeiHelpers().getGuiHelper(), true));
         registration.addRecipeCategories(new AmmoPressJeiCategory(registration.getJeiHelpers().getGuiHelper()));
         registration.addRecipeCategories(new PurexJeiCategory(registration.getJeiHelpers().getGuiHelper()));
+        registration.addRecipeCategories(new SuperComputerJeiCategory(registration.getJeiHelpers().getGuiHelper()));
+        registration.addRecipeCategories(new RockMillJeiCategory(registration.getJeiHelpers().getGuiHelper()));
         registration.addRecipeCategories(new PrecAssJeiCategory(registration.getJeiHelpers().getGuiHelper()));
         registration.addRecipeCategories(new ExposureChamberJeiCategory(registration.getJeiHelpers().getGuiHelper()));
         registration.addRecipeCategories(new RotaryFurnaceJeiCategory(registration.getJeiHelpers().getGuiHelper()));
@@ -192,6 +194,8 @@ public class HbmJeiPlugin implements IModPlugin {
         registration.addRecipes(ArcFurnaceJeiCategory.FLUID, ArcFurnaceJeiCategory.recipes(level, true));
         registration.addRecipes(AmmoPressJeiCategory.RECIPE_TYPE, RecipeHooks.getAllRecipes(level, AmmoPressRecipe.Type.INSTANCE));
         registration.addRecipes(PurexJeiCategory.RECIPE_TYPE, RecipeHooks.getAllRecipes(level, PurexRecipe.Type.INSTANCE));
+        registration.addRecipes(SuperComputerJeiCategory.RECIPE_TYPE, RecipeHooks.getAllRecipes(level, com.hbm_m.recipe.SuperComputerRecipe.Type.INSTANCE));
+        registration.addRecipes(RockMillJeiCategory.RECIPE_TYPE, RecipeHooks.getAllRecipes(level, com.hbm_m.recipe.RockMillRecipe.Type.INSTANCE));
         registration.addRecipes(PrecAssJeiCategory.RECIPE_TYPE, RecipeHooks.getAllRecipes(level, com.hbm_m.recipe.PrecAssRecipe.Type.INSTANCE));
         registration.addRecipes(ExposureChamberJeiCategory.RECIPE_TYPE, RecipeHooks.getAllRecipes(level, ExposureChamberRecipe.Type.INSTANCE));
         registration.addRecipes(RotaryFurnaceJeiCategory.RECIPE_TYPE, RotaryFurnaceJeiCategory.recipes());
@@ -254,6 +258,8 @@ public class HbmJeiPlugin implements IModPlugin {
         registration.addRecipeCatalyst(new ItemStack(ModBlocks.ARC_FURNACE.get()), ArcFurnaceJeiCategory.FLUID);
         registration.addRecipeCatalyst(new ItemStack(ModBlocks.AMMO_PRESS.get()), AmmoPressJeiCategory.RECIPE_TYPE);
         registration.addRecipeCatalyst(new ItemStack(ModBlocks.PUREX.get()), PurexJeiCategory.RECIPE_TYPE);
+        registration.addRecipeCatalyst(new ItemStack(ModBlocks.MACHINE_SUPERCOMPUTER.get()), SuperComputerJeiCategory.RECIPE_TYPE);
+        registration.addRecipeCatalyst(new ItemStack(ModBlocks.MACHINE_ROCKMILL.get()), RockMillJeiCategory.RECIPE_TYPE);
         registration.addRecipeCatalyst(new ItemStack(ModBlocks.MACHINE_PRECASS.get()), PrecAssJeiCategory.RECIPE_TYPE);
         // E-Press und Conveyor Press teilen sich PressRecipe mit dem Basis-Press.
         registration.addRecipeCatalyst(new ItemStack(ModBlocks.EPRESS.get()), PressJeiCategory.RECIPE_TYPE);
@@ -308,6 +314,8 @@ public class HbmJeiPlugin implements IModPlugin {
         registration.addRecipeClickArea(com.hbm_m.inventory.gui.GUIMachineBlastFurnace.class, 62, 60, 56, 46, BlastFurnaceJeiCategory.RECIPE_TYPE);
         registration.addRecipeClickArea(com.hbm_m.inventory.gui.GUIMachineAmmoPress.class, 96, 20, 20, 32, AmmoPressJeiCategory.RECIPE_TYPE);
         registration.addRecipeClickArea(com.hbm_m.inventory.gui.GUIMachinePUREX.class, 45, 40, 24, 8, PurexJeiCategory.RECIPE_TYPE);
+        registration.addRecipeClickArea(com.hbm_m.inventory.gui.GUIMachineSuperComputer.class, 62, 81, 70, 16, SuperComputerJeiCategory.RECIPE_TYPE);
+        registration.addRecipeClickArea(com.hbm_m.inventory.gui.GUIMachineRockMill.class, 62, 90, 70, 16, RockMillJeiCategory.RECIPE_TYPE);
         registration.addRecipeClickArea(com.hbm_m.inventory.gui.GUIMachinePrecAss.class, 62, 126, 70, 16, PrecAssJeiCategory.RECIPE_TYPE);
 
         NeiPortJeiCategories.registerGuiHandlers(registration);

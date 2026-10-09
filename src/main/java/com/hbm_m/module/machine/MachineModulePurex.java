@@ -200,7 +200,14 @@ public class MachineModulePurex extends MachineModuleBase<PurexRecipe> {
             inputTanks[i].drainMb(fluidInputs.get(i).amount());
         }
 
-        placeAllItemOutputs(recipe.getItemOutputs(), outputSlots);
+        // Original ChanceOutput: jede Ausgabe faellt nur mit ihrer Wahrscheinlichkeit an
+        List<ItemStack> outputs = new java.util.ArrayList<>();
+        net.minecraft.util.RandomSource rand = level != null ? level.random : net.minecraft.util.RandomSource.create();
+        for (int i = 0; i < recipe.getItemOutputs().size(); i++) {
+            float chance = recipe.getItemOutputChance(i);
+            if (chance >= 1F || rand.nextFloat() < chance) outputs.add(recipe.getItemOutputs().get(i));
+        }
+        placeAllItemOutputs(outputs, outputSlots);
 
         List<FluidStack> fluidOutputs = recipe.getFluidOutputs();
         for (int i = 0; i < fluidOutputs.size(); i++) {

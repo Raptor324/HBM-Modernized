@@ -643,6 +643,7 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModItems.RAREGROUND_ORE_CHUNK.get()));                                         // 4447/0
         add.accept(new ItemStack(ModItems.MALACHITE_CHUNK.get()));                                              // 4447/1
         add.accept(new ItemStack(ModItems.CRYOLITE_CHUNK.get()));                                               // 4447/2 (chunk_ore.cryolite)
+        add.accept(new ItemStack(ModItems.ILMENITE_CHUNK.get()));                                              // chunk_ore.ilmenite
         add.accept(new ItemStack(ModItems.MOONSTONE.get()));                                                    // 4447/3 (stub)
         add.accept(new ItemStack(ModItems.BIOMASS.get()));                                                      // 4448
         add.accept(new ItemStack(ModItems.BIOMASS_COMPRESSED.get()));                                           // 4449
@@ -1839,6 +1840,7 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModBlocks.BLAST_FURNACE.get()));
         add.accept(new ItemStack(ModBlocks.BLAST_FURNACE_EXTENSION.get()));
         add.accept(new ItemStack(ModBlocks.MACHINE_BLAST_FURNACE.get()));
+        add.accept(new ItemStack(ModBlocks.MACHINE_ROCKMILL.get()));
         add.accept(new ItemStack(ModItems.FEL.get()));
         add.accept(new ItemStack(ModItems.GAS_CENTRIFUGE.get()));
         add.accept(new ItemStack(ModItems.SILEX.get()));
@@ -1893,6 +1895,8 @@ public final class CreativeModeTabEventHandler {
         for (int i = 0; i < 15; i += 3) add.accept(com.hbm_m.block.network.BoxDuctBlock.stack(ModBlocks.FLUID_DUCT_EXHAUST.get().asItem(), i));
         add.accept(new ItemStack(ModBlocks.FLUID_DUCT_PAINTABLE_BLOCK_EXHAUST.get()));
         add.accept(new ItemStack(ModBlocks.PIPE_ANCHOR.get()));
+        add.accept(new ItemStack(ModBlocks.PIPE_ANCHOR_EXHAUST.get()));
+        add.accept(new ItemStack(ModBlocks.PIPE_ANCHOR_PNEUMATIC.get()));
         add.accept(new ItemStack(ModBlocks.FLUID_DUCT_PAINTABLE.get()));
         add.accept(new ItemStack(ModItems.FLUID_VALVE.get()));
         add.accept(new ItemStack(ModBlocks.FLUID_SWITCH.get()));
@@ -1964,6 +1968,8 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModItems.PILE_ROD_MK2_PU239.get()));
         add.accept(new ItemStack(ModItems.PILE_ROD_RGP.get()));
         add.accept(new ItemStack(ModItems.PILE_ROD_WASTE.get()));
+        add.accept(new ItemStack(ModItems.PILE_ROD_THORIUM.get()));
+        add.accept(new ItemStack(ModItems.PILE_ROD_THORIUM_FUEL.get()));
         add.accept(new ItemStack(ModBlocks.PWR_FUEL.get()));
         add.accept(new ItemStack(ModBlocks.PWR_CONTROL.get()));
         add.accept(new ItemStack(ModBlocks.PWR_CHANNEL.get()));
@@ -2085,6 +2091,7 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModItems.ADVANCED_ASSEMBLY_MACHINE.get()));
         add.accept(new ItemStack(ModItems.MACHINE_ASSEMBLER.get()));
         add.accept(new ItemStack(ModBlocks.PUREX.get()));
+        add.accept(new ItemStack(ModBlocks.MACHINE_SUPERCOMPUTER.get()));
         add.accept(new ItemStack(ModBlocks.MACHINE_PRECASS.get()));
         add.accept(new ItemStack(ModItems.MIXER.get()));
         add.accept(new ItemStack(ModItems.BAT9000.get()));
@@ -2341,6 +2348,9 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModItems.MISSILE_SHUTTLE.get()));
         add.accept(new ItemStack(ModItems.MISSILE_STEALTH.get()));
         add.accept(new ItemStack(ModItems.MISSILE_SOYUZ_LANDER.get()));
+        add.accept(new ItemStack(ModItems.MISSILE_LAMBDA.get()));
+        add.accept(new ItemStack(ModBlocks.LAUNCHPAD_LAMBDA.get()));
+        add.accept(new ItemStack(ModBlocks.MACHINE_TAPE_DRIVE.get()));
         add.accept(new ItemStack(ModItems.SATELLITE_SPY.get()));
         add.accept(new ItemStack(ModItems.SATELLITE_SCANNER.get()));
         add.accept(new ItemStack(ModItems.SATELLITE_RADAR.get()));
@@ -2352,6 +2362,11 @@ public final class CreativeModeTabEventHandler {
         add.accept(new ItemStack(ModItems.SATELLITE_RELAY.get()));
         add.accept(new ItemStack(ModItems.SATELLITE_DETECTOR.get()));
         add.accept(new ItemStack(ModItems.SATELLITE_RAY_SCAN.get()));
+        add.accept(new ItemStack(ModItems.SATELLITE_SCIENCE.get()));
+        add.accept(new ItemStack(ModItems.SATELLITE_SCIENCE_ASSEMBLER.get()));
+        add.accept(new ItemStack(ModItems.SATELLITE_SCIENCE_SENSOR.get()));
+        add.accept(new ItemStack(ModItems.ORBITAL_ASSEMBLY_CRYSTAL_CIRCUIT.get()));
+        add.accept(new ItemStack(ModItems.CIRCUIT_CRYSTAL.get()));
         add.accept(new ItemStack(ModBlocks.MACHINE_SATLINK.get()));
         add.accept(new ItemStack(ModItems.SAT_GERALD.get()));
         add.accept(new ItemStack(ModItems.SAT_CHIP.get()));

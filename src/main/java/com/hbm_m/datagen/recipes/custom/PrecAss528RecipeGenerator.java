@@ -34,6 +34,52 @@ public final class PrecAss528RecipeGenerator {
         return PartialNBTIngredient.of(b.getItem(), b.getTag());
     }
 
+    /**
+     * 1:1 {@code precass.crystalcircuit} (auch ausserhalb des 528-Modus): Orbital-Baugruppe fuer die 0G-Fabrik,
+     * 50% (Expensive 25%) gelingt sie, sonst kaputt; das Recycling gewinnt alles zurueck.
+     */
+    public static void crystalCircuit(Consumer<FinishedRecipe> writer) {
+        String out = "hbm_m:orbital_assembly_crystal_circuit";
+        ConfigRecipes.variants(writer)
+                .base(w -> new PrecAssRecipeGenerator.Builder(600, 20000L)
+                    .in(Ingredient.of(item("hbm_m:quantum_chip")), 4)
+                    .in(Ingredient.of(item("hbm_m:cft_ingot")), 4)
+                    .in(Ingredient.of(item("hbm_m:pcb")), 16)
+                    .in(ore("oredict/wire_fine/gold"), 32)
+                    .out(1F, stack(out, 1), 50, broken(out), 50)
+                    .save(w, "precass/crystalcircuit"))
+                .variant(v -> new PrecAssRecipeGenerator.Builder(600, 20000L)
+                    .in(Ingredient.of(item("hbm_m:quantum_chip")), 8)
+                    .in(Ingredient.of(item("hbm_m:capacitor_tantalum")), 16)
+                    .in(Ingredient.of(item("hbm_m:cft_ingot")), 4)
+                    .in(Ingredient.of(item("hbm_m:pcb")), 16)
+                    .in(ore("oredict/wire_dense/bscco"), 4)
+                    .out(1F, stack(out, 1), 25, broken(out), 75)
+                    .save(v, "precass/crystalcircuit"), "expensive")
+                .save();
+
+        // precass.crystalcircuit.recycle (100%)
+        ConfigRecipes.variants(writer)
+                .base(w -> new PrecAssRecipeGenerator.Builder(600, 20000L)
+                    .icon(broken(out))
+                    .in(brokenIn(out), 1)
+                    .out(1F, stack("hbm_m:quantum_chip", 4), 1)
+                    .out(1F, stack("hbm_m:cft_ingot", 4), 1)
+                    .out(1F, stack("hbm_m:pcb", 16), 1)
+                    .out(1F, stack("hbm_m:wire_gold", 32), 1)
+                    .save(w, "precass/crystalcircuit.recycle"))
+                .variant(v -> new PrecAssRecipeGenerator.Builder(600, 20000L)
+                    .icon(broken(out))
+                    .in(brokenIn(out), 1)
+                    .out(1F, stack("hbm_m:quantum_chip", 8), 1)
+                    .out(1F, stack("hbm_m:capacitor_tantalum", 16), 1)
+                    .out(1F, stack("hbm_m:cft_ingot", 4), 1)
+                    .out(1F, stack("hbm_m:pcb", 16), 1)
+                    .out(1F, stack("hbm_m:wire_dense_bscco", 4), 1)
+                    .save(v, "precass/crystalcircuit.recycle"), "expensive")
+                .save();
+    }
+
     public static void generate(Consumer<FinishedRecipe> writer) {
         // precass.chip
         new PrecAssRecipeGenerator.Builder(100, 200L)

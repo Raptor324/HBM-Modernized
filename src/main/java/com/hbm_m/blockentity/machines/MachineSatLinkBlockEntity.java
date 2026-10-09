@@ -55,10 +55,12 @@ public class MachineSatLinkBlockEntity extends BaseHbmBlockEntity implements IRO
         if (level instanceof ServerLevel server) {
             this.connected = false;
 
-            if (server.getHeight(Heightmap.Types.MOTION_BLOCKING, worldPosition.getX(), worldPosition.getZ()) <= worldPosition.getY()) {
+            boolean canConnect = server.getHeight(Heightmap.Types.MOTION_BLOCKING, worldPosition.getX(), worldPosition.getZ()) <= worldPosition.getY();
+            if (canConnect) {
                 this.connected = SatelliteManager.get(server).isFreqTaken(freq);
             }
 
+            this.updateInfo(server, canConnect);
             this.networkPackNT(server, 150);
         } else {
             this.prevRot = this.rot;
@@ -77,11 +79,33 @@ public class MachineSatLinkBlockEntity extends BaseHbmBlockEntity implements IRO
         }
     }
 
+    /** Original {@code info}: Statuszeilen des verbundenen Satelliten (z.B. Abklingzeit des Weltraumlabors). */
+    public java.util.List<net.minecraft.network.chat.Component> info = java.util.List.of();
+
+    /** Original {@code updateInfo}. */
+    protected void updateInfo(ServerLevel server, boolean canConnect) {
+        if (!canConnect) {
+            this.info = java.util.List.of();
+            return;
+        }
+        Satellite sat = SatelliteManager.get(server).getSatFromFreq(freq);
+        if (sat != null) this.info = sat.getInfo(server);
+    }
+
     private void networkPackNT(ServerLevel server, int range) {
         CompoundTag tag = new CompoundTag();
         tag.putBoolean("connected", connected);
         tag.putInt("freq", freq);
+<<<<<<< HEAD
+        net.minecraft.nbt.ListTag lines = new net.minecraft.nbt.ListTag();
+        for (net.minecraft.network.chat.Component line : info) {
+            lines.add(net.minecraft.nbt.StringTag.valueOf(net.minecraft.network.chat.Component.Serializer.toJson(line)));
+        }
+        tag.put("info", lines);
+        ClientboundBlockEntityDataPacket packet = ClientboundBlockEntityDataPacket.create(this, be -> tag);
+=======
         ClientboundBlockEntityDataPacket packet = com.hbm_m.platform.BlockHooks.dataPacket(this, tag);
+>>>>>>> 5cf60b6108d271636c3d48b21b60db45caf65f6b
         for (var player : server.getChunkSource().chunkMap.getPlayers(new ChunkPos(worldPosition), false)) {
             if (player.distanceToSqr(worldPosition.getX() + 0.5, worldPosition.getY() + 0.5, worldPosition.getZ() + 0.5) <= (double) range * range)
                 player.connection.send(packet);
@@ -92,6 +116,15 @@ public class MachineSatLinkBlockEntity extends BaseHbmBlockEntity implements IRO
     protected void applyClientUpdate(@NotNull CompoundTag tag) {
         if (tag.contains("connected")) this.connected = tag.getBoolean("connected");
         if (tag.contains("freq")) this.freq = tag.getInt("freq");
+        if (tag.contains("info")) {
+            net.minecraft.nbt.ListTag lines = tag.getList("info", 8);
+            java.util.List<net.minecraft.network.chat.Component> parsed = new java.util.ArrayList<>();
+            for (int i = 0; i < lines.size(); i++) {
+                net.minecraft.network.chat.Component line = net.minecraft.network.chat.Component.Serializer.fromJson(lines.getString(i));
+                if (line != null) parsed.add(line);
+            }
+            this.info = parsed;
+        }
     }
 
     @Override

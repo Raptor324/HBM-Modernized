@@ -163,6 +163,18 @@ public final class PyroOvenRecipeGenerator {
                 new ItemStack(Items.CHARCOAL), fluid(ModFluids.SYNGAS, 1_000), 100
         ).save(writer, "pyro_oven/biomass_to_charcoal");
 
+        // Original PyroOvenRecipes l.96: Russ aus Teer (ANY_TAR = Roh-, Kohle-, Crack- und Holzteer), 40 Ticks
+        PyroOvenRecipeBuilder.pyroOvenRecipe(
+                null, Ingredient.of(ModItems.OIL_TAR_CRUDE.get(), ModItems.OIL_TAR_COAL.get(), ModItems.OIL_TAR_CRACK.get(), ModItems.OIL_TAR_WOOD.get()), 4,
+                new ItemStack(ModItems.ASH_SOOT.get()), fluid(ModFluids.CARBONDIOXIDE, 1_000), 40
+        ).save(writer, "pyro_oven/soot_from_tar");
+
+        // Original PyroOvenRecipes l.125: Ilmenit-/TiCl4-Verarbeitung
+        PyroOvenRecipeBuilder.pyroOvenRecipe(
+                fluid(ModFluids.TITANIUM_TETRACHLORIDE, 1_000), null, 1,
+                new ItemStack(ModMaterialItems.item(ModMaterials.TITANIUM, MaterialShape.INGOT), 5), fluid(ModFluids.CHLORINE, 125), 60
+        ).save(writer, "pyro_oven/titanium_from_ticl4");
+
         // Schweroel aus Kohle (Wasserstoff + Kohle).
         PyroOvenRecipeBuilder.pyroOvenRecipe(
                 fluid(ModFluids.HYDROGEN, 500), Ingredient.of(Items.COAL), 1,

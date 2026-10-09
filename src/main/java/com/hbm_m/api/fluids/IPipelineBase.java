@@ -13,6 +13,14 @@ public interface IPipelineBase {
 
     enum ConnectionType { SMALL }
 
+    /** Original {@code TileEntityPipelineBase.NetworkType}: Anker verschiedener Netze lassen sich nicht verbinden. */
+    enum NetworkType { FLUID, EXHAUST, PNEUMATIC }
+
+    default NetworkType getNetworkType() { return NetworkType.FLUID; }
+
+    /** Verbundene Gegenanker (fuer den Renderer). */
+    java.util.List<BlockPos> getConnected();
+
     ConnectionType getConnectionType();
     Vec3 getMountPos();
     double getMaxPipeLength();
@@ -36,6 +44,7 @@ public interface IPipelineBase {
      */
     static int canConnect(IPipelineBase first, IPipelineBase second) {
 
+        if (first.getNetworkType() != second.getNetworkType()) return 1;
         if (first.getConnectionType() != second.getConnectionType()) return 1;
         if (first == second) return 2;
 

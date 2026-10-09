@@ -61,6 +61,8 @@ public final class RotaryFurnaceRecipes {
         recipes.add(new RotaryFurnaceRecipe(new MaterialStack(MAT_SATURN, INGOT.q(4)), 200, 300, fluid(ModFluids.REFORMGAS.getSource(), 250), shape(MAT_DURA, DUST, 4), shape(MAT_COPPER, DUST, 1), shape(MAT_BORAX, DUST, 1)));
         recipes.add(new RotaryFurnaceRecipe(new MaterialStack(MAT_ALUMINIUM, INGOT.q(2)), 100, 400, fluid(ModFluids.SODIUM_ALUMINATE.getSource(), 150)));
         recipes.add(new RotaryFurnaceRecipe(new MaterialStack(MAT_ALUMINIUM, INGOT.q(3)), 40, 200, fluid(ModFluids.SODIUM_ALUMINATE.getSource(), 150), item(ModItems.POWDER_FLUX.get(), 2)));
+        // Original l.53: Titan aus Titantetrachlorid + Flussmittel
+        recipes.add(new RotaryFurnaceRecipe(new MaterialStack(MAT_TITANIUM, INGOT.q(4)), 40, 100, fluid(ModFluids.TITANIUM_TETRACHLORIDE.getSource(), 1_000), item(ModItems.POWDER_FLUX.get(), 1)));
     }
 
     // ═══════════════════════════ Eingaben ═══════════════════════════

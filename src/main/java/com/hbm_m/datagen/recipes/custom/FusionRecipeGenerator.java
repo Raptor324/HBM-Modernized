@@ -123,7 +123,7 @@ public final class FusionRecipeGenerator {
                 .inputEnergy(10_000_000L).outputEnergy(50_000_000L).outputFlux(BREEDER_CAPACITY / 1)
                 .rgb(1F, 0.4F, 0.1F)
                 .icon(ModFluids.STELLAR_FLUX.getSource())
-                .addFluidInput(ModFluids.STELLAR_FLUX.getSource(), 10)
+                .addFluidInput(ModFluids.STELLAR_FLUX.getSource(), 5)
                 .addItemOutput(new ItemStack(ModMaterialItems.item(ModMaterials.GOLD, MaterialShape.POWDER)))
                 .save(writer, "fusion/stellar");
     }

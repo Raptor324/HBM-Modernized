@@ -53,6 +53,7 @@ public abstract class Satellite {
         ID_TO_CLASS.put(9, SatellitePrecisionLaser.class);
         ID_TO_CLASS.put(10, SatelliteDetector.class);
         ID_TO_CLASS.put(11, SatelliteRayScan.class);
+        ID_TO_CLASS.put(12, SatelliteScience.class);
 
         registerSatellite(SatelliteMapper.class, ModItems.SATELLITE_SPY);
         registerSatellite(SatelliteScanner.class, ModItems.SATELLITE_SCANNER);
@@ -66,6 +67,7 @@ public abstract class Satellite {
         registerSatellite(SatellitePrecisionLaser.class, ModItems.SATELLITE_PRECISION_LASER);
         registerSatellite(SatelliteDetector.class, ModItems.SATELLITE_DETECTOR);
         registerSatellite(SatelliteRayScan.class, ModItems.SATELLITE_RAY_SCAN);
+        registerSatellite(SatelliteScience.class, ModItems.SATELLITE_SCIENCE);
         // and all the legacy crap
         registerSatellite(SatelliteMapper.class, ModItems.SAT_MAPPER);
         registerSatellite(SatelliteScanner.class, ModItems.SAT_SCANNER);
@@ -107,16 +109,106 @@ public abstract class Satellite {
 
     public abstract String getType();
 
+    // ---------------- Daten & Fracht (Original driveInput/driveOutput, requestableSlots) ----------------
+
+    /** Original {@code EnumDriveType}: im Port eigene Gegenstaende, hier per Registriername ({@code drive_disk_empty} ...). */
+    @org.jetbrains.annotations.Nullable public String driveInput = null;
+    @org.jetbrains.annotations.Nullable public String driveOutput = null;
+
+    /** Fertige Fracht, die ein Sat-Dock mit passendem Chip per Landekapsel abruft. */
+    public ItemStack[] requestableSlots = new ItemStack[0];
+
+    /** Original {@code isDirty}: der Weltticker markiert danach die Satellitendaten als geaendert. */
+    public boolean isDirty = false;
+
+    public void markDirty() {
+        this.isDirty = true;
+    }
+
     public void writeToNBT(CompoundTag nbt) {
         nbt.putInt("targetX", targetX);
         nbt.putInt("targetZ", targetZ);
         nbt.putString("tx", tx);
+
+        if (driveInput != null) nbt.putString("driveInput", driveInput);
+        if (driveOutput != null) nbt.putString("driveOutput", driveOutput);
+
+        nbt.putInt("itemCount", this.requestableSlots.length);
+        net.minecraft.nbt.ListTag items = new net.minecraft.nbt.ListTag();
+        for (int i = 0; i < this.requestableSlots.length; i++) {
+            if (this.requestableSlots[i] == null || this.requestableSlots[i].isEmpty()) continue;
+            CompoundTag itemTag = new CompoundTag();
+            itemTag.putByte("slot", (byte) i);
+            com.hbm_m.platform.PlatformHooks.saveItemStack(this.requestableSlots[i], itemTag, com.hbm_m.platform.PlatformHooks.bestEffortProvider());
+            items.add(itemTag);
+        }
+        nbt.put("requestableSlots", items);
     }
 
     public void readFromNBT(CompoundTag nbt) {
         this.targetX = nbt.getInt("targetX");
         this.targetZ = nbt.getInt("targetZ");
         this.tx = nbt.getString("tx");
+
+        this.driveInput = nbt.contains("driveInput") ? nbt.getString("driveInput") : null;
+        this.driveOutput = nbt.contains("driveOutput") ? nbt.getString("driveOutput") : null;
+
+        int itemCount = nbt.getInt("itemCount");
+        net.minecraft.nbt.ListTag items = nbt.getList("requestableSlots", 10);
+        this.requestableSlots = new ItemStack[itemCount];
+        java.util.Arrays.fill(this.requestableSlots, ItemStack.EMPTY);
+        for (int i = 0; i < items.size(); i++) {
+            CompoundTag itemTag = items.getCompound(i);
+            int j = itemTag.getByte("slot") & 255;
+            if (j < this.requestableSlots.length) this.requestableSlots[j] = com.hbm_m.platform.PlatformHooks.itemStackOf(itemTag, com.hbm_m.platform.PlatformHooks.bestEffortProvider());
+        }
+    }
+
+    /** Ob Daten zum Abholen bereitliegen; darf {@link #produceData} ausloesen, wenn eine Abklingzeit abgelaufen ist. */
+    public boolean hasData(ServerLevel world) {
+        return this.driveInput != null && this.driveOutput != null;
+    }
+
+    /** Original {@code getOutputData}: das beschriebene Laufwerk fuer ein passendes leeres, sonst {@code null}. */
+    @org.jetbrains.annotations.Nullable
+    public Item getOutputData(ItemStack input) {
+        if (driveInput == null || driveOutput == null || input.isEmpty()) return null;
+        if (!net.minecraft.core.registries.BuiltInRegistries.ITEM.getKey(input.getItem()).getPath().equals(driveInput)) return null;
+        Item out = net.minecraft.core.registries.BuiltInRegistries.ITEM.get(net.minecraft.resources.ResourceLocation.fromNamespaceAndPath(com.hbm_m.lib.RefStrings.MODID, driveOutput));
+        return out == net.minecraft.world.item.Items.AIR ? null : out;
+    }
+
+    public void produceData(String input, String output) {
+        this.driveInput = input;
+        this.driveOutput = output;
+    }
+
+    public void consumeData() {
+        this.driveInput = null;
+        this.driveOutput = null;
+    }
+
+    /** Jeden Weltentick (Original {@code ModEventHandler.onWorldTick}). */
+    public void onUpdateTick(ServerLevel world) { }
+
+    /** Original {@code getInfo}: Zeilen fuer die Anzeige am Satelliten-Uplink (leer = keine). */
+    public java.util.List<net.minecraft.network.chat.Component> getInfo(ServerLevel world) {
+        return java.util.List.of();
+    }
+
+    /** Original {@code tryRequestItems}: schickt die fertige Fracht per Landekapsel zum Dock. */
+    public boolean tryRequestItems(ServerLevel world, int x, int y, int z) {
+        if (this.requestableSlots == null || this.requestableSlots.length <= 0) return false;
+
+        com.hbm_m.entity.missile.SatellitePodEntity pod = com.hbm_m.entity.ModEntities.SATELLITE_POD.get().create(world);
+        if (pod == null) return false;
+        pod.setup(y, requestableSlots);
+        pod.setPos(x + 0.5, 300, z + 0.5);
+        if (!world.addFreshEntity(pod)) return false;
+
+        this.requestableSlots = new ItemStack[0];
+        this.markDirty();
+        return true;
     }
 
     /** When a satellite is created, i.e. this frequency is occupied for the first time */

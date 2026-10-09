@@ -467,5 +467,15 @@ public class AmmoPressRecipeGenerator {
                 null,	he.copy(4),	null,
                 null,	pipe,		null,
                 null,	smokeless,	null);
+
+        // Original AmmoPressRecipes l.449: CIWS-Gurt (frueher Werkbank, jetzt in der Munitionspresse)
+        S gunmetal = s(ModMaterialItems.item(ModMaterials.GUNMETAL, MaterialShape.PLATE));
+        S[] dgk = {
+                null,	steel.copy(5),		null,
+                null,	smokeless.copy(5),	null,
+                null,	gunmetal.copy(5),	null};
+        AmmoPressRecipeBuilder b = AmmoPressRecipeBuilder.ammoPressRecipe(new ItemStack(ModItems.AMMO_DGK.get()));
+        for (int i = 0; i < 9; i++) if (dgk[i] != null) b.slot(i, dgk[i].ing, dgk[i].count);
+        b.save(writer, "ammo_press/ammo_dgk");
     }
 }

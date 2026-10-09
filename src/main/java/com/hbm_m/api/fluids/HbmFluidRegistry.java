@@ -67,7 +67,7 @@ public final class HbmFluidRegistry {
             ModFluids.CHOLESTEROL, ModFluids.CHLOROCALCITE_SOLUTION, ModFluids.CHLOROCALCITE_MIX,
             ModFluids.CHLOROCALCITE_CLEANED, ModFluids.POTASSIUM_CHLORIDE,
             ModFluids.CALCIUM_CHLORIDE, ModFluids.CALCIUM_SOLUTION, ModFluids.SODIUM_ALUMINATE,
-            ModFluids.BAUXITE_SOLUTION, ModFluids.ALUMINA, ModFluids.CONCRETE,
+            ModFluids.BAUXITE_SOLUTION, ModFluids.ALUMINA, ModFluids.TITANIUM_TETRACHLORIDE, ModFluids.CONCRETE,
             // solutions and working fluids
             ModFluids.FRACKSOL, ModFluids.LYE,
             // the fun guys

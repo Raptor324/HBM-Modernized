@@ -80,6 +80,15 @@ public class ModRecipes {
 
     public static final RegistrySupplier<RecipeType<PurexRecipe>> PUREX_TYPE =
             RECIPE_TYPES.register("purex", () -> PurexRecipe.Type.INSTANCE);
+
+    public static final RegistrySupplier<RecipeSerializer<SuperComputerRecipe>> SUPERCOMPUTER_SERIALIZER =
+            SERIALIZERS.register("supercomputer", () -> SuperComputerRecipe.Serializer.INSTANCE);
+    public static final RegistrySupplier<RecipeType<SuperComputerRecipe>> SUPERCOMPUTER_TYPE =
+            RECIPE_TYPES.register("supercomputer", () -> SuperComputerRecipe.Type.INSTANCE);
+    public static final RegistrySupplier<RecipeSerializer<RockMillRecipe>> ROCKMILL_SERIALIZER =
+            SERIALIZERS.register("rockmill", () -> RockMillRecipe.Serializer.INSTANCE);
+    public static final RegistrySupplier<RecipeType<RockMillRecipe>> ROCKMILL_TYPE =
+            RECIPE_TYPES.register("rockmill", () -> RockMillRecipe.Type.INSTANCE);
     public static final RegistrySupplier<RecipeType<PrecAssRecipe>> PRECASS_TYPE =
             RECIPE_TYPES.register("precass", () -> PrecAssRecipe.Type.INSTANCE);
 

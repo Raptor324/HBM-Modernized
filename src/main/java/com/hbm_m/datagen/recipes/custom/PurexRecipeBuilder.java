@@ -44,6 +44,7 @@ public class PurexRecipeBuilder implements RecipeBuilder {
     private final List<CountedIngredient> itemInputs = new ArrayList<>();
     private final List<FluidAmount> fluidInputs = new ArrayList<>();
     private final List<ItemStack> itemOutputs = new ArrayList<>();
+    private final List<Float> itemOutputChances = new ArrayList<>();
     private final List<FluidAmount> fluidOutputs = new ArrayList<>();
 
     @Nullable
@@ -82,6 +83,14 @@ public class PurexRecipeBuilder implements RecipeBuilder {
 
     public PurexRecipeBuilder addItemOutput(ItemStack stack) {
         this.itemOutputs.add(stack);
+        this.itemOutputChances.add(1F);
+        return this;
+    }
+
+    /** Ausgabe mit Wahrscheinlichkeit (Original {@code new ChanceOutput(stack, chance)}). */
+    public PurexRecipeBuilder addItemOutput(ItemStack stack, float chance) {
+        this.itemOutputs.add(stack);
+        this.itemOutputChances.add(chance);
         return this;
     }
 
@@ -213,6 +222,11 @@ public class PurexRecipeBuilder implements RecipeBuilder {
                 itemOutputs.add(o);
             }
             json.add("item_outputs", itemOutputs);
+            if (builder.itemOutputChances.stream().anyMatch(c -> c < 1F)) {
+                JsonArray chances = new JsonArray();
+                for (Float c : builder.itemOutputChances) chances.add(c);
+                json.add("item_output_chances", chances);
+            }
 
             JsonArray fluidOutputs = new JsonArray();
             for (FluidAmount fa : builder.fluidOutputs) {

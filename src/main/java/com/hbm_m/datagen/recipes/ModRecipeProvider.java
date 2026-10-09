@@ -103,6 +103,8 @@ public class ModRecipeProvider extends RecipeProvider {
         GasCentrifugeRecipeGenerator.generate(pWriter);
         AmmoPressRecipeGenerator.generate(pWriter);
         PurexRecipeGenerator.generate(pWriter);
+        com.hbm_m.datagen.recipes.custom.SuperComputerRecipeGenerator.generate(pWriter);
+        com.hbm_m.datagen.recipes.custom.RockMillRecipeGenerator.generate(pWriter);
         com.hbm_m.datagen.recipes.custom.PrecAssRecipeGenerator.generate(pWriter);
         BreederRecipeGenerator.generate(pWriter);
         RadGenRecipeGenerator.generate(pWriter);

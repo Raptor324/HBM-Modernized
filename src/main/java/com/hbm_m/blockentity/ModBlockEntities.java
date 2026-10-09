@@ -172,6 +172,16 @@ public class ModBlockEntities {
 		BLOCK_ENTITIES.register("pipe_anchor", () ->
 			BlockEntityType.Builder.of(com.hbm_m.blockentity.network.PipeAnchorBlockEntity::new, ModBlocks.PIPE_ANCHOR.get()).build(null));
 
+	/** 1:1 TileEntityPipeExhaustAnchor. */
+	public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.network.ExhaustPipeAnchorBlockEntity>> PIPE_ANCHOR_EXHAUST =
+		BLOCK_ENTITIES.register("pipe_anchor_exhaust", () ->
+			BlockEntityType.Builder.of(com.hbm_m.blockentity.network.ExhaustPipeAnchorBlockEntity::new, ModBlocks.PIPE_ANCHOR_EXHAUST.get()).build(null));
+
+	/** 1:1 TileEntityPneumaticPipeAnchor. */
+	public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.network.PneumaticPipeAnchorBlockEntity>> PIPE_ANCHOR_PNEUMATIC =
+		BLOCK_ENTITIES.register("pipe_anchor_pneumatic", () ->
+			BlockEntityType.Builder.of(com.hbm_m.blockentity.network.PneumaticPipeAnchorBlockEntity::new, ModBlocks.PIPE_ANCHOR_PNEUMATIC.get()).build(null));
+
 	/** R7i: 1:1 FluidDuctBox/FluidDuctBoxExhaust (TileEntityPipeBaseNT/TileEntityPipeExhaust). */
 	public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.network.BoxDuctBlockEntities.Pipe>> FLUID_DUCT_BOX =
 		BLOCK_ENTITIES.register("fluid_duct_box", () ->
@@ -902,6 +912,26 @@ public class ModBlockEntities {
             BLOCK_ENTITIES.register("purex_be", () ->
                     BlockEntityType.Builder.of(com.hbm_m.blockentity.machines.MachinePUREXBlockEntity::new,
                             ModBlocks.PUREX.get()).build(null));
+
+    public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.machines.MachineSuperComputerBlockEntity>> SUPERCOMPUTER_BE =
+            BLOCK_ENTITIES.register("supercomputer_be", () ->
+                    BlockEntityType.Builder.of(com.hbm_m.blockentity.machines.MachineSuperComputerBlockEntity::new,
+                            ModBlocks.MACHINE_SUPERCOMPUTER.get()).build(null));
+
+    public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.machines.LaunchpadLambdaBlockEntity>> LAUNCHPAD_LAMBDA_BE =
+            BLOCK_ENTITIES.register("launchpad_lambda_be", () ->
+                    BlockEntityType.Builder.of(com.hbm_m.blockentity.machines.LaunchpadLambdaBlockEntity::new,
+                            ModBlocks.LAUNCHPAD_LAMBDA.get()).build(null));
+
+    public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.machines.MachineTapeDriveBlockEntity>> TAPE_DRIVE_BE =
+            BLOCK_ENTITIES.register("tape_drive_be", () ->
+                    BlockEntityType.Builder.of(com.hbm_m.blockentity.machines.MachineTapeDriveBlockEntity::new,
+                            ModBlocks.MACHINE_TAPE_DRIVE.get()).build(null));
+
+    public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.machines.MachineRockMillBlockEntity>> ROCKMILL_BE =
+            BLOCK_ENTITIES.register("rockmill_be", () ->
+                    BlockEntityType.Builder.of(com.hbm_m.blockentity.machines.MachineRockMillBlockEntity::new,
+                            ModBlocks.MACHINE_ROCKMILL.get()).build(null));
 
     public static final RegistrySupplier<BlockEntityType<com.hbm_m.blockentity.machines.MachineCombustionEngineBlockEntity>> COMBUSTION_ENGINE_BE =
             BLOCK_ENTITIES.register("combustion_engine_be", () ->

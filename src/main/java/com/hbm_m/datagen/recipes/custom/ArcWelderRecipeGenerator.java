@@ -5,6 +5,7 @@ import com.hbm_m.item.ModItems;
 import com.hbm_m.item.material.MaterialShape;
 import com.hbm_m.item.material.ModMaterialItems;
 import com.hbm_m.item.material.ModMaterials;
+import com.hbm_m.inventory.fluid.ModFluids;
 
 import net.minecraft.data.recipes.FinishedRecipe;
 import net.minecraft.world.item.ItemStack;
@@ -49,13 +50,19 @@ public final class ArcWelderRecipeGenerator {
      */
     private static void emit(Consumer<FinishedRecipe> writer, String id, ItemStack output,
                               int duration, long consumption, Pair... inputs) {
+        emitFluid(writer, id, output, duration, consumption, null, inputs);
+    }
+
+    /** Wie {@link #emit}, mit Fluessigkeitsbedarf (Original {@code new FluidStack(Fluids.X, mB)}). */
+    private static void emitFluid(Consumer<FinishedRecipe> writer, String id, ItemStack output, int duration, long consumption,
+                                  @javax.annotation.Nullable dev.architectury.fluid.FluidStack fluid, Pair... inputs) {
         Ingredient[] ins = new Ingredient[inputs.length];
         int[] cnts = new int[inputs.length];
         for (int i = 0; i < inputs.length; i++) {
             ins[i] = inputs[i].ing;
             cnts[i] = inputs[i].count;
         }
-        ArcWelderRecipeBuilder.arcWelderRecipe(ins, cnts, output, duration, consumption)
+        ArcWelderRecipeBuilder.arcWelderRecipe(ins, cnts, fluid, output, duration, consumption)
                 .save(writer, "arc_welder/" + id);
     }
 
@@ -66,10 +73,10 @@ public final class ArcWelderRecipeGenerator {
     // ─── Machine Parts ──────────────────────────────────────────────────────────
 
     private static void registerMachineParts(Consumer<FinishedRecipe> writer) {
+        // Original ArcWelderRecipes l.36: 2 Stahlplatten + 2 dichter Rotkupferdraht (MINGRADE)
         emit(writer, "motor_2x", new ItemStack(ModItems.MOTOR.get(), 2), 100, 400L,
-                p(new ItemStack(ModItems.COIL_COPPER.get())),
-                p(new ItemStack(ModItems.COIL_COPPER_TORUS.get())),
-                p(new ItemStack(ModMaterialItems.item(ModMaterials.IRON, MaterialShape.PLATE), 2)));
+                p(new ItemStack(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE), 2)),
+                p(new ItemStack(ModMaterialItems.item(ModMaterials.RED_COPPER, MaterialShape.WIRE_DENSE), 2)));
 
         emit(writer, "motor_4x", new ItemStack(ModItems.MOTOR.get(), 4), 200, 2_000L,
                 p(new ItemStack(ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.PLATE), 2)),
@@ -86,7 +93,7 @@ public final class ArcWelderRecipeGenerator {
                 p(OreDictIngredients.ore("oredict/ingot/fiberglass"), 4),
                 p(OreDictIngredients.ore("oredict/ingot/any_hard_plastic"), 1));
 
-        emit(writer, "neutron_reflector", new ItemStack(ModItems.NEUTRON_REFLECTOR.get()), 200, 10_000L,
+        emit(writer, "neutron_reflector", new ItemStack(ModItems.NEUTRON_REFLECTOR.get(), 2), 400, 50_000L,
                 p(new ItemStack(ModMaterialItems.item(ModMaterials.DURA_STEEL, MaterialShape.PLATE))),
                 p(new ItemStack(ModItems.INGOT_TUNGSTEN_CARBIDE.get(), 2)));
     }
@@ -146,7 +153,7 @@ public final class ArcWelderRecipeGenerator {
         medium(writer, "missile_incendiary_strong", ModItems.MISSILE_INCENDIARY_STRONG.get(), new ItemStack(ModItems.WARHEAD_INCENDIARY_MEDIUM.get()));
         medium(writer, "missile_cluster_strong", ModItems.MISSILE_CLUSTER_STRONG.get(), new ItemStack(ModItems.WARHEAD_CLUSTER_MEDIUM.get()));
         medium(writer, "missile_buster_strong", ModItems.MISSILE_BUSTER_STRONG.get(), new ItemStack(ModItems.WARHEAD_BUSTER_MEDIUM.get()));
-        medium(writer, "missile_emp_strong", ModItems.MISSILE_EMP_STRONG.get(), new ItemStack(ModBlocks.EMP.get().asItem(), 3));
+        medium(writer, "missile_emp_strong", ModItems.MISSILE_EMP_STRONG.get(), new ItemStack(ModBlocks.EMP_BOMB.get().asItem(), 3));
 
         large(writer, "missile_burst", ModItems.MISSILE_BURST.get(), ModItems.WARHEAD_GENERIC_LARGE.get());
         large(writer, "missile_inferno", ModItems.MISSILE_INFERNO.get(), ModItems.WARHEAD_INCENDIARY_LARGE.get());
@@ -187,9 +194,10 @@ public final class ArcWelderRecipeGenerator {
         denseWire(writer, "aluminium",     ModMaterialItems.item(ModMaterials.ALUMINIUM, MaterialShape.WIRE_DENSE),     ModMaterialItems.stack(ModMaterials.ALUMINIUM, MaterialShape.WIRE,     8), 100, 1_000L);
         denseWire(writer, "titanium",      ModMaterialItems.item(ModMaterials.TITANIUM, MaterialShape.WIRE_DENSE),      ModMaterialItems.stack(ModMaterials.TITANIUM, MaterialShape.WIRE,      8), 200, 10_000L);
         denseWireWithTag(writer, "lead",   ModMaterialItems.item(ModMaterials.LEAD, MaterialShape.WIRE_DENSE),          tag("wires_fine/lead"),      8, 100,   500L);
-        denseWire(writer, "copper",        ModMaterialItems.item(ModMaterials.COPPER, MaterialShape.WIRE_DENSE),        ModMaterialItems.stack(ModMaterials.COPPER, MaterialShape.WIRE,        8), 100, 1_000L);
+        denseWire(writer, "copper",        ModMaterialItems.item(ModMaterials.COPPER, MaterialShape.WIRE_DENSE),        ModMaterialItems.stack(ModMaterials.COPPER, MaterialShape.WIRE,        8), 100, 10_000L);
+        denseWire(writer, "red_copper",    ModMaterialItems.item(ModMaterials.RED_COPPER, MaterialShape.WIRE_DENSE),    ModMaterialItems.stack(ModMaterials.RED_COPPER, MaterialShape.WIRE,    8), 100, 10_000L);
         denseWire(writer, "steel",         ModMaterialItems.item(ModMaterials.STEEL, MaterialShape.WIRE_DENSE),         ModMaterialItems.stack(ModMaterials.STEEL, MaterialShape.WIRE,         8), 100, 2_000L);
-        denseWire(writer, "gold",          ModMaterialItems.item(ModMaterials.GOLD, MaterialShape.WIRE_DENSE),          ModMaterialItems.stack(ModMaterials.GOLD, MaterialShape.WIRE,          8), 100, 1_000L);
+        denseWire(writer, "gold",          ModMaterialItems.item(ModMaterials.GOLD, MaterialShape.WIRE_DENSE),          ModMaterialItems.stack(ModMaterials.GOLD, MaterialShape.WIRE,          8), 100, 10_000L);
         denseWire(writer, "advanced_alloy",ModMaterialItems.item(ModMaterials.ADVANCED_ALLOY, MaterialShape.WIRE_DENSE), ModMaterialItems.stack(ModMaterials.ADVANCED_ALLOY, MaterialShape.WIRE,8), 200, 20_000L);
         denseWire(writer, "schrabidium",   ModMaterialItems.item(ModMaterials.SCHRABIDIUM, MaterialShape.WIRE_DENSE),   ModMaterialItems.stack(ModMaterials.SCHRABIDIUM, MaterialShape.WIRE,   8), 400, 50_000L);
         denseWire(writer, "saturnite",     ModMaterialItems.item(ModMaterials.SATURNITE, MaterialShape.WIRE_DENSE),     ModMaterialItems.stack(ModMaterials.SATURNITE, MaterialShape.WIRE,     8), 200, 20_000L);
@@ -214,12 +222,19 @@ public final class ArcWelderRecipeGenerator {
         weldedPlate(writer, "copper",     ModMaterialItems.item(ModMaterials.COPPER, MaterialShape.PLATE_WELDED),  ModMaterialItems.stack(ModMaterials.COPPER, MaterialShape.PLATE_CAST,    2), 200,  1_000L);
         weldedPlate(writer, "titanium",   ModMaterialItems.item(ModMaterials.TITANIUM, MaterialShape.PLATE_WELDED), ModMaterialItems.stack(ModMaterials.TITANIUM, MaterialShape.PLATE_CAST,  2), 600, 50_000L);
         weldedPlate(writer, "aluminium",  ModMaterialItems.item(ModMaterials.ALUMINIUM, MaterialShape.PLATE_WELDED),ModMaterialItems.stack(ModMaterials.ALUMINIUM, MaterialShape.PLATE_CAST, 2), 300, 10_000L);
-        weldedPlate(writer, "tungsten",   ModMaterialItems.item(ModMaterials.TUNGSTEN, MaterialShape.PLATE_WELDED), ModMaterialItems.stack(ModMaterials.TUNGSTEN, MaterialShape.PLATE_CAST,  2), 600, 50_000L);
         weldedPlate(writer, "zirconium",  ModMaterialItems.item(ModMaterials.ZIRCONIUM, MaterialShape.PLATE_WELDED),ModMaterialItems.stack(ModMaterials.ZIRCONIUM, MaterialShape.PLATE_CAST, 2), 600, 10_000L);
-        weldedPlate(writer, "osmiridium", ModMaterialItems.item(ModMaterials.OSMIRIDIUM, MaterialShape.PLATE_WELDED),ModMaterialItems.stack(ModMaterials.OSMIRIDIUM, MaterialShape.PLATE_CAST,2),800,100_000L);
-        weldedPlate(writer, "tcalloy",    ModMaterialItems.item(ModMaterials.TCALLOY, MaterialShape.PLATE_WELDED),  ModMaterialItems.stack(ModMaterials.TCALLOY, MaterialShape.PLATE_CAST,   2),1200,1_000_000L);
-        weldedPlate(writer, "cdalloy",    ModMaterialItems.item(ModMaterials.CDALLOY, MaterialShape.PLATE_WELDED),  ModMaterialItems.stack(ModMaterials.CDALLOY, MaterialShape.PLATE_CAST,   2),1200,1_000_000L);
-        weldedPlate(writer, "cmb",        ModMaterialItems.item(ModMaterials.CMB, MaterialShape.PLATE_WELDED),      ModMaterialItems.stack(ModMaterials.CMB, MaterialShape.PLATE_CAST,       2),1200,1_000_000L);
+        // Spaetspiel (Original l.70-80): mit Sauerstoff bzw. Reformgas
+        weldedPlateFluid(writer, "tcalloy",    ModMaterials.TCALLOY,    1_200,  1_000_000L, ModFluids.OXYGEN,     1_000);
+        weldedPlateFluid(writer, "cdalloy",    ModMaterials.CDALLOY,    1_200,  1_000_000L, ModFluids.OXYGEN,     1_000);
+        weldedPlateFluid(writer, "tungsten",   ModMaterials.TUNGSTEN,   1_200,    250_000L, ModFluids.OXYGEN,     1_000);
+        weldedPlateFluid(writer, "cmb",        ModMaterials.CMB,        1_200, 10_000_000L, ModFluids.REFORMGAS,  1_000);
+        weldedPlateFluid(writer, "osmiridium", ModMaterials.OSMIRIDIUM, 6_000, 50_000_000L, ModFluids.REFORMGAS, 16_000);
+    }
+
+    private static void weldedPlateFluid(Consumer<FinishedRecipe> writer, String id, ModMaterials mat, int duration, long consumption,
+                                         com.hbm_m.inventory.fluid.ModFluids.FluidEntry fluid, int mB) {
+        emitFluid(writer, "plate_welded_" + id, new ItemStack(ModMaterialItems.item(mat, MaterialShape.PLATE_WELDED)), duration, consumption,
+                dev.architectury.fluid.FluidStack.create(fluid.getSource(), mB), p(ModMaterialItems.stack(mat, MaterialShape.PLATE_CAST, 2)));
     }
 
     private static void weldedPlate(Consumer<FinishedRecipe> writer, String id, net.minecraft.world.item.Item out,

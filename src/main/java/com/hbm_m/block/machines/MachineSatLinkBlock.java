@@ -108,6 +108,7 @@ public class MachineSatLinkBlock extends DummyableMachineBlock implements ILookO
         List<Component> text = new ArrayList<>();
         text.add(Component.literal("Freq: " + link.freq));
         text.add(Component.literal("Connected: " + (link.connected ? (ChatFormatting.GREEN + "Yes") : (ChatFormatting.RED + "No"))));
+        if (link.connected) text.addAll(link.info);
         ILookOverlay.printGeneric(guiGraphics, Component.translatable(this.getDescriptionId()), 0xffff00, 0x404000, text);
     }
 

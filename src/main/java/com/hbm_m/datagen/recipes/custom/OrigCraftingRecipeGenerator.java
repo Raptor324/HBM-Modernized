@@ -37,6 +37,7 @@ public final class OrigCraftingRecipeGenerator {
         part13(g);
         part14(g);
         part15(g);
+        part16(g);
         checkMissing("OrigCraftingRecipeGenerator");
     }
 
@@ -1935,9 +1936,9 @@ public final class OrigCraftingRecipeGenerator {
         // WeaponRecipes.java:247 (FEHLT)
         g.shaped(item("hbm_m:ammo_arty_cargo"), 1, p(" I ", " S ", "CCC"), 'C', Ingredient.of(item("hbm_m:cordite")), 'I', Ingredient.of(item("hbm_m:sphere_steel")), 'S', ore("oredict/shell/copper"));
         // WeaponRecipes.java:250 (FEHLT)
-        g.shaped(item("hbm_m:ammo_dgk"), 1, p("LLL", "GGG", "CCC"), 'L', ore("oredict/plate/lead"), 'G', Ingredient.of(item("hbm_m:ballistite")), 'C', ore("oredict/ingot/copper"));
+        // Entfernt im aktuellen Original (CIWS-Gurt kommt aus der Munitionspresse): g.shaped(item("hbm_m:ammo_dgk"), 1, p("LLL", "GGG", "CCC"), 'L', ore("oredict/plate/lead"), 'G', Ingredient.of(item("hbm_m:ballistite")), 'C', ore("oredict/ingot/copper"));
         // WeaponRecipes.java:251 (FEHLT)
-        g.shaped(item("hbm_m:ammo_dgk"), 1, p("LLL", "GGG", "CCC"), 'L', ore("oredict/plate/lead"), 'G', Ingredient.of(item("hbm_m:cordite")), 'C', ore("oredict/ingot/copper"));
+        // Entfernt im aktuellen Original (CIWS-Gurt kommt aus der Munitionspresse): g.shaped(item("hbm_m:ammo_dgk"), 1, p("LLL", "GGG", "CCC"), 'L', ore("oredict/plate/lead"), 'G', Ingredient.of(item("hbm_m:cordite")), 'C', ore("oredict/ingot/copper"));
         // WeaponRecipes.java:254 (ABW)
         g.shaped(item("hbm_m:ammo_fireext"), 1, p(" P ", "BDB", " P "), 'P', ore("oredict/plate/steel"), 'B', ore("oredict/bolt/steel"), 'D', filled("hbm_m:fluid_tank_full", ModFluids.WATER.getSource()));
         // WeaponRecipes.java:255 (FEHLT)
@@ -1981,5 +1982,59 @@ public final class OrigCraftingRecipeGenerator {
         // WeaponRecipes.java:318 (FEHLT)
         g.shaped(item("hbm_m:custom_schrab"), 1, p(" C ", "LUL", "LUL"), 'C', ore("oredict/plate/copper"), 'L', ore("oredict/plate/lead"), 'U', ore("oredict/ingot/schrabidium"));
     }
+    /** Lueckenabgleich 2026-10: Rezepte des Originals, deren Ergebnis im Port existiert, die aber noch fehlten. */
+    private static void part16(CraftingGen g) {
+        // CraftingManager.java:919
+        g.shaped(item("hbm_m:gear_large_steel"), 1, p("III", "ICI", "III"), 'I', ore("oredict/plate/steel"), 'C', ore("oredict/ingot/titanium"));
+        // PowderRecipes.java:100 (Farbstoff-Schleife, weiss)
+        g.shapeless(item("hbm_m:crayon_white"), 4, Ingredient.of(item("hbm_m:chemical_dye_white")), ore("oredict/any/tar"), Ingredient.of(item("minecraft:paper")));
+        // WeaponRecipes.java:318 (crucible, Meta 3)
+        g.shaped(item("hbm_m:crucible"), 1, p("MEM", "YDY", "YCY"), 'M', Ingredient.of(item("hbm_m:meteorite_forged_ingot")), 'E', ore("oredict/ingot/euphemium"),
+                'Y', Ingredient.of(item("hbm_m:billet_yharonite")), 'D', Ingredient.of(item("hbm_m:demon_core_closed")), 'C', Ingredient.of(item("hbm_m:chainsteel_ingot")));
+
+        // CraftingManager.java:876-880 (Kran-Varianten mit dem Foerderband-Block): entfallen, der Port hat das Foerderband nur als Stab-Item
+
+        // CraftingManager.java:161-169: Spulen mit Stahlkern (die Eisenvarianten gibt es schon)
+        g.shaped(item("hbm_m:coil_copper"), 1, p("WWW", "WIW", "WWW"), 'W', ore("oredict/wire_fine/mingrade"), 'I', ore("oredict/ingot/steel"));
+        g.shaped(item("hbm_m:coil_gold"), 1, p("WWW", "WIW", "WWW"), 'W', ore("oredict/wire_fine/gold"), 'I', ore("oredict/ingot/steel"));
+        g.shaped(item("hbm_m:coil_magnetized_tungsten"), 1, p("WWW", "WIW", "WWW"), 'W', ore("oredict/wire_fine/magnetized_tungsten"), 'I', ore("oredict/ingot/steel"));
+        g.shaped(item("hbm_m:coil_tungsten"), 1, p("WWW", "WIW", "WWW"), 'W', ore("oredict/wire_fine/tungsten"), 'I', ore("oredict/ingot/steel"));
+        g.shaped(item("hbm_m:coil_copper_torus"), 2, p(" C ", "CPC", " C "), 'C', Ingredient.of(item("hbm_m:coil_copper")), 'P', ore("oredict/plate/steel"));
+        g.shaped(item("hbm_m:coil_gold_torus"), 2, p(" C ", "CPC", " C "), 'C', Ingredient.of(item("hbm_m:coil_gold")), 'P', ore("oredict/plate/steel"));
+
+        // CraftingManager.java:347-353: flache Stempel auch mit Netherziegeln
+        Ingredient nb = Ingredient.of(item("minecraft:nether_brick"));
+        g.shaped(item("hbm_m:stamp_stone_flat"), 1, p("III", "SSS"), 'I', nb, 'S', ore("oredict/stone"));
+        g.shaped(item("hbm_m:stamp_iron_flat"), 1, p("III", "SSS"), 'I', nb, 'S', ore("oredict/ingot/iron"));
+        g.shaped(item("hbm_m:stamp_steel_flat"), 1, p("III", "SSS"), 'I', nb, 'S', ore("oredict/ingot/steel"));
+        g.shaped(item("hbm_m:stamp_titanium_flat"), 1, p("III", "SSS"), 'I', nb, 'S', ore("oredict/ingot/titanium"));
+        g.shaped(item("hbm_m:stamp_obsidian_flat"), 1, p("III", "SSS"), 'I', nb, 'S', Ingredient.of(item("minecraft:obsidian")));
+        // CraftingManager.java:354: Desh-Stempel hat ein eigenes Muster mit Ferrouran-Kern (Ziegel und Netherziegel)
+        for (Ingredient brick : new Ingredient[] {Ingredient.of(item("minecraft:brick")), nb}) {
+            g.shaped(item("hbm_m:stamp_desh_flat"), 1, p("BDB", "DSD", "BDB"), 'B', brick, 'D', ore("oredict/ingot/desh"), 'S', ore("oredict/ingot/ferrouranium"));
+        }
+
+        // CraftingManager.java:90-95 (BlockMultiSlab/BlockGenericStairs.recipeGen): 6 Stufen bzw. 4 Treppen
+        String[][] slabs = {
+                {"concrete_slab", "concrete_smooth"}, {"concrete_asbestos_slab", "concrete_asbestos"}, {"asphalt_slab", "asphalt"},
+                {"brick_concrete_mossy_slab", "brick_concrete_mossy"}, {"brick_concrete_cracked_slab", "brick_concrete_cracked"},
+                {"brick_concrete_broken_slab", "brick_concrete_broken"}, {"brick_ducrete_slab", "brick_ducrete"},
+                {"reinforced_brick_slab", "reinforced_brick"}, {"brick_obsidian_slab", "brick_obsidian"}, {"brick_light_slab", "brick_light"},
+                {"brick_compound_slab", "brick_compound"}, {"brick_asbestos_slab", "brick_asbestos"}, {"brick_fire_slab", "brick_fire"},
+                {"stones_slab_tile", "lightstone_tile"}, {"stones_slab_bricks", "lightstone_bricks"},
+        };
+        for (String[] s : slabs) g.shaped(item("hbm_m:" + s[0]), 6, p("###"), '#', Ingredient.of(item("hbm_m:" + s[1])));
+        String[][] stairs = {
+                {"concrete_smooth_stairs", "concrete_smooth"}, {"concrete_stairs", "concrete"}, {"concrete_asbestos_stairs", "concrete_asbestos"},
+                {"ducrete_smooth_stairs", "ducrete_smooth"}, {"ducrete_stairs", "ducrete"},
+                {"brick_concrete_mossy_stairs", "brick_concrete_mossy"}, {"brick_concrete_cracked_stairs", "brick_concrete_cracked"},
+                {"brick_concrete_broken_stairs", "brick_concrete_broken"}, {"brick_ducrete_stairs", "brick_ducrete"},
+                {"reinforced_brick_stairs", "reinforced_brick"}, {"brick_obsidian_stairs", "brick_obsidian"}, {"brick_light_stairs", "brick_light"},
+                {"brick_compound_stairs", "brick_compound"}, {"brick_asbestos_stairs", "brick_asbestos"}, {"brick_fire_stairs", "brick_fire"},
+                {"lightstone_tile_stairs", "lightstone_tile"}, {"lightstone_bricks_stairs", "lightstone_bricks"},
+        };
+        for (String[] s : stairs) g.shaped(item("hbm_m:" + s[0]), 4, p("#  ", "## ", "###"), '#', Ingredient.of(item("hbm_m:" + s[1])));
+    }
+
 }
 //?}

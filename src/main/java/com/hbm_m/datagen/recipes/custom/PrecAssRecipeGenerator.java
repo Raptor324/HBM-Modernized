@@ -46,6 +46,7 @@ public final class PrecAssRecipeGenerator {
                 .out(1F, new ItemStack(ModItems.BLUEPRINT_FOLDER_DISCOVER.get()), 5, new ItemStack(Items.PAPER, 24), 95)
                 .save(writer, "precass/beigeprints");
 
+        PrecAss528RecipeGenerator.crystalCircuit(writer);
         PrecAss528RecipeGenerator.generate(writer);
     }
 

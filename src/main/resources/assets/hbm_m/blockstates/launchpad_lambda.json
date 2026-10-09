@@ -1,0 +1,8 @@
+{
+  "variants": {
+    "facing=north": { "model": "hbm_m:block/machines/launchpad_lambda_particle" },
+    "facing=south": { "model": "hbm_m:block/machines/launchpad_lambda_particle" },
+    "facing=west": { "model": "hbm_m:block/machines/launchpad_lambda_particle" },
+    "facing=east": { "model": "hbm_m:block/machines/launchpad_lambda_particle" }
+  }
+}

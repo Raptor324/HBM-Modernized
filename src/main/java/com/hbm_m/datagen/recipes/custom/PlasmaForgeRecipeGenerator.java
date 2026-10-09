@@ -40,6 +40,7 @@ public final class PlasmaForgeRecipeGenerator {
         icf(writer);
         darkFusionCore(writer);
         specials(writer);
+        expensiveParts(writer);
         OreDictIngredients.checkMissing("PlasmaForgeRecipeGenerator");
     }
 
@@ -140,31 +141,107 @@ public final class PlasmaForgeRecipeGenerator {
                     .addIngredient(mi(ModMaterials.CFT, MaterialShape.INGOT), 64);
         }, true, false);
 
-        // plsm.gerald: Bauplan-Pool discover.gerald (inputItemsEx im Expensive-Modus); CONTROLLER_QUANTUM = quantum_computer
+        // plsm.gerald (aktuelles Original): Kristall-Schaltkreise aus der 0G-Fabrik und ausgewertete Orbitdaten;
+        // Expensive-Modus mit CMB-Strukturelementen. CONTROLLER_QUANTUM = quantum_computer
         cfg(writer, "plasma_forge/sat_gerald", ex -> {
             PlasmaForgeRecipeBuilder gerald = PlasmaForgeRecipeBuilder.plasmaForgeRecipe(new ItemStack(ModItems.SAT_GERALD.get()), 12_000, 50_000_000L)
                     .inputEnergy(25_000_000L);
+            Item hde = com.hbm_m.item.PartTabMetaItems.get("part_generic_hde").get();
             if (ex) {
                 gerald.addIngredient(mi(ModMaterials.SCHRABIDATE, MaterialShape.PLATE_CAST), 64)
                         .addIngredient(mi(ModMaterials.BSCCO, MaterialShape.WIRE_DENSE), 64)
                         .addIngredient(ModBlocks.DET_NUKE.get().asItem(), 64);
-                for (int i = 0; i < 3; i++) gerald.addIngredient(it("hbm_m:item_expensive_bronze_tubes"), 64);
-                for (int i = 0; i < 3; i++) gerald.addIngredient(com.hbm_m.item.PartTabMetaItems.get("part_generic_hde").get(), 64);
+                for (int i = 0; i < 2; i++) gerald.addIngredient(it("hbm_m:item_expensive_cmb_tubes"), 64);
+                for (int i = 0; i < 3; i++) gerald.addIngredient(hde, 64);
                 gerald.addIngredient(it("hbm_m:quantum_computer"), 64)
+                        .addIngredient(ModItems.CIRCUIT_CRYSTAL.get(), 64)
                         .addIngredient(it("hbm_m:item_expensive_computer"), 64)
-                        .addIngredient(ModItems.COIN_UFO.get(), 1);
+                        .addIngredient(it("hbm_m:drive_disk_orbitdata_processed"), 64);
             } else {
                 gerald.addIngredient(mi(ModMaterials.SCHRABIDATE, MaterialShape.PLATE_CAST), 64)
                         .addIngredient(mi(ModMaterials.SCHRABIDATE, MaterialShape.PLATE_CAST), 64)
                         .addIngredient(mi(ModMaterials.BSCCO, MaterialShape.WIRE_DENSE), 64)
                         .addIngredient(mi(ModMaterials.BSCCO, MaterialShape.WIRE_DENSE), 64)
                         .addIngredient(ModBlocks.DET_NUKE.get().asItem(), 64);
-                for (int i = 0; i < 4; i++) gerald.addIngredient(com.hbm_m.item.PartTabMetaItems.get("part_generic_hde").get(), 64);
+                for (int i = 0; i < 4; i++) gerald.addIngredient(hde, 64);
                 gerald.addIngredient(it("hbm_m:quantum_computer"), 64)
-                        .addIngredient(ModItems.COIN_UFO.get(), 1);
+                        .addIngredient(ModItems.CIRCUIT_CRYSTAL.get(), 12)
+                        .addIngredient(it("hbm_m:drive_disk_orbitdata_processed"), 16);
             }
-            return gerald.blueprintPool("discover.gerald");
+            return gerald;
         }, true, false);
+    }
+
+    // ════════ Expensive-Baugruppen (Original "Expensive mode"-Block, gilt immer) ════════
+
+    private static void expensiveParts(Consumer<FinishedRecipe> writer) {
+        Ingredient plastic = OreDictIngredients.ore("oredict/ingot/any_plastic");
+        Ingredient rubber = OreDictIngredients.ore("oredict/ingot/rubber");
+
+        ex(writer, "steel_plating", 40, 100_000L, 1_000_000L, null, 0)
+                .addIngredient(mi(ModMaterials.STEEL, MaterialShape.PLATE_CAST), 4)
+                .addIngredient(mi(ModMaterials.TITANIUM, MaterialShape.PLATE), 4)
+                .addIngredient(OreDictIngredients.ore("oredict/bolt/steel"), 16)
+                .save(writer, "plasma_forge/exsteelplating");
+        ex(writer, "heavy_frame", 120, 100_000L, 1_000_000L, null, 0)
+                .addIngredient(it("hbm_m:item_expensive_steel_plating"), 3)
+                .addIngredient(plastic, 8)
+                .addIngredient(mi(ModMaterials.COPPER, MaterialShape.PLATE_WELDED), 4)
+                .addIngredient(OreDictIngredients.ore("oredict/ingot/desh"), 1)
+                .addIngredient(OreDictIngredients.ore("oredict/bolt/dura_steel"), 32)
+                .save(writer, "plasma_forge/exheavyframe");
+        ex(writer, "circuit", 80, 100_000L, 1_000_000L, ModFluids.SULFURIC_ACID.getSource(), 1_000)
+                .addIngredient(it("hbm_m:integrated_circuit"), 12)
+                .addIngredient(it("hbm_m:capacitor"), 8)
+                .addIngredient(rubber, 4)
+                .save(writer, "plasma_forge/excircuit");
+        ex(writer, "lead_plating", 80, 100_000L, 1_000_000L, ModFluids.LUBRICANT.getSource(), 1_000)
+                .addIngredient(it("hbm_m:item_expensive_steel_plating"), 2)
+                .addIngredient(mi(ModMaterials.LEAD, MaterialShape.PLATE_CAST), 8)
+                .addIngredient(OreDictIngredients.ore("oredict/ingot/boron"), 2)
+                .addIngredient(OreDictIngredients.ore("oredict/bolt/tungsten"), 32)
+                .save(writer, "plasma_forge/exleadplating");
+        ex(writer, "ferro_plating", 240, 100_000L, 1_000_000L, ModFluids.UNSATURATEDS.getSource(), 1_000)
+                .addIngredient(it("hbm_m:item_expensive_lead_plating"), 3)
+                .addIngredient(mi(ModMaterials.FERROURANIUM, MaterialShape.PLATE_CAST), 4)
+                .addIngredient(OreDictIngredients.ore("oredict/ingot/any_resistant_alloy"), 4)
+                .save(writer, "plasma_forge/exferroplating");
+        ex(writer, "computer", 240, 100_000L, 1_000_000L, ModFluids.PERFLUOROMETHYL.getSource(), 2_000)
+                .addIngredient(it("hbm_m:item_expensive_circuit"), 3)
+                .addIngredient(it("hbm_m:controller"), 4)
+                .addIngredient(it("hbm_m:capacitor_board"), 4)
+                .addIngredient(ModBlocks.GLASS_QUARTZ.get().asItem(), 8)
+                .save(writer, "plasma_forge/excomputer");
+        // Original gibt zusaetzlich 4.000 mB Perfluormethan aus; die Plasmaschmiede hat keinen Ausgangstank
+        ex(writer, "bronze_tubes", 600, 1_000_000L, 10_000_000L, ModFluids.PERFLUOROMETHYL_COLD.getSource(), 4_000)
+                .addIngredient(it("hbm_m:item_expensive_heavy_frame"), 3)
+                .addIngredient(it("hbm_m:item_expensive_ferro_plating"), 1)
+                .addIngredient(bismoidCast(), 4)
+                .addIngredient(mi(ModMaterials.ZIRCONIUM, MaterialShape.PLATE_WELDED), 1)
+                .save(writer, "plasma_forge/bronzetubes");
+        ex(writer, "plastic", 120, 100_000L, 1_000_000L, ModFluids.SOLVENT.getSource(), 1_000)
+                .addIngredient(hardPlastic(), 4)
+                .addIngredient(plastic, 16)
+                .addIngredient(rubber, 8)
+                .save(writer, "plasma_forge/explastic");
+        ex(writer, "gold_dust", 120, 100_000L, 1_000_000L, null, 0)
+                .addIngredient(OreDictIngredients.ore("oredict/dust/gold"), 64)
+                .addIngredient(OreDictIngredients.ore("oredict/dust/gold"), 64)
+                .save(writer, "plasma_forge/exgold");
+        ex(writer, "cmb_tubes", 6_000, 10_000_000L, 12_500_000L, ModFluids.REFORMGAS.getSource(), 4_000)
+                .addIngredient(it("hbm_m:item_expensive_bronze_tubes"), 3)
+                .addIngredient(mi(ModMaterials.CMB, MaterialShape.PLATE_CAST), 4)
+                .addIngredient(ModItems.POWDER_CHLOROPHYTE.get(), 12)
+                .save(writer, "plasma_forge/cmbtubes");
+    }
+
+    private static PlasmaForgeRecipeBuilder ex(Consumer<FinishedRecipe> writer, String type, int duration, long power, long ignition,
+                                               Fluid fluid, int amount) {
+        PlasmaForgeRecipeBuilder b = PlasmaForgeRecipeBuilder.plasmaForgeRecipe(
+                        new ItemStack(OreDictIngredients.item("hbm_m:item_expensive_" + type)), duration, power)
+                .inputEnergy(ignition);
+        if (fluid != null) b.addFluidInput(fluid, amount);
+        return b;
     }
 
     // ════════════════ Dunkler Fusionskern ════════════════
@@ -211,6 +288,7 @@ public final class PlasmaForgeRecipeGenerator {
                 .addIngredient(ModMaterialItems.item(ModMaterials.OSMIRIDIUM, MaterialShape.PLATE_WELDED), 16)
                 .addIngredient(ModMaterialItems.item(ModMaterials.STAR_METAL, MaterialShape.WIRE_DENSE), 16)
                 .addIngredient(ModItems.QUANTUM_COMPUTER.get(), 8)
+                .addIngredient(ModItems.CIRCUIT_CRYSTAL.get(), 4)
                 .save(writer, "plasma_forge/core_emitter");
 
         // plsm.dfcreceiver

@@ -1,0 +1,17 @@
+{
+  "loader": "forge:obj",
+  "model": "hbm_m:models/machines/launchpad_lambda.obj",
+  "flip_v": true,
+  "render_type": "minecraft:cutout",
+  "textures": { "default": "hbm_m:block/machine/launchpad_lambda", "particle": "hbm_m:block/machine/launchpad_lambda" },
+  "transform": { "translation": [0.5, 0, 0.5], "rotation": [0, 0, 0], "scale": 1.0 },
+  "display": {
+    "gui": {"rotation":[30,225,0],"translation":[0,-4.7924,0],"scale":[0.0303,0.0303,0.0303]},
+    "ground": { "rotation": [0, 0, 0], "translation": [0, 3, 0], "scale": [0.03, 0.03, 0.03] },
+    "fixed": { "rotation": [0, 180, 0], "translation": [0, 0, 0], "scale": [0.05, 0.05, 0.05] },
+    "thirdperson_righthand": { "rotation": [75, 45, 0], "translation": [0, 2.5, 0], "scale": [0.03, 0.03, 0.03] },
+    "thirdperson_lefthand": { "rotation": [75, 45, 0], "translation": [0, 2.5, 0], "scale": [0.03, 0.03, 0.03] },
+    "firstperson_righthand": { "rotation": [0, 45, 0], "translation": [0, 0, 0], "scale": [0.03, 0.03, 0.03] },
+    "firstperson_lefthand": { "rotation": [0, 45, 0], "translation": [0, 0, 0], "scale": [0.03, 0.03, 0.03] }
+  }
+}

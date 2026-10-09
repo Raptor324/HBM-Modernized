@@ -76,6 +76,9 @@ public final class ArcFurnaceRecipes {
         // Original: sand_mix (QUARTZ) - im Port als eigener Block sand_quartz
         register(item(ModBlocks.SAND_QUARTZ.get().asItem()), new ArcFurnaceRecipe().solid(new ItemStack(ModBlocks.GLASS_QUARTZ.get())));
         register(item(ModItems.BORAX.get()), new ArcFurnaceRecipe().solid(new ItemStack(ModMaterialItems.item(ModMaterials.BORON, MaterialShape.POWDER_TINY), 3)).fluid(new MaterialStack(Mats.MAT_BORON, MaterialShapes.NUGGET.q(3))));
+        // Original l.63: Ilmenit -> Titan (fest) bzw. Titan + Eisen (fluessig)
+        register(item(ModItems.ILMENITE_CHUNK.get()), new ArcFurnaceRecipe().solid(new ItemStack(ModMaterialItems.item(ModMaterials.TITANIUM, MaterialShape.INGOT), 3))
+                .fluid(new MaterialStack(Mats.MAT_TITANIUM, MaterialShapes.INGOT.q(3)), new MaterialStack(Mats.MAT_IRON, MaterialShapes.INGOT.q(2))));
 
         for (BedrockOreType type : BedrockOreType.values()) {
             bedrock(type, "sulfuric_byproduct", new ArcFurnaceRecipe().solid(stack(type.item("sulfuric_arc"), 2)));

@@ -179,9 +179,12 @@ public class GUIMachinePUREX extends GuiInfoScreen<MachinePUREXMenu> {
         }
 
         lines.add(Component.translatable("gui.recipe.output").withStyle(ChatFormatting.BOLD));
-        for (ItemStack out : recipe.getItemOutputs()) {
+        for (int i = 0; i < recipe.getItemOutputs().size(); i++) {
+            ItemStack out = recipe.getItemOutputs().get(i);
             if (out.isEmpty()) continue;
-            lines.add(Component.literal("  " + out.getCount() + "x ").withStyle(ChatFormatting.GRAY).append(out.getHoverName()));
+            float chance = recipe.getItemOutputChance(i);
+            String prefix = chance < 1F ? (int) (chance * 100) + "% " : "";
+            lines.add(Component.literal("  " + prefix + out.getCount() + "x ").withStyle(ChatFormatting.GRAY).append(out.getHoverName()));
         }
         for (dev.architectury.fluid.FluidStack out : recipe.getFluidOutputs()) {
             if (out.isEmpty()) continue;

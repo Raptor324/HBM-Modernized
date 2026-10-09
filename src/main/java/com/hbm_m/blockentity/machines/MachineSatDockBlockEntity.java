@@ -53,6 +53,13 @@ public class MachineSatDockBlockEntity extends BaseMachineBlockEntity {
         SatelliteManager data = SatelliteManager.get(world);
         int x = worldPosition.getX(), y = worldPosition.getY(), z = worldPosition.getZ();
 
+        // Original (neueres TileEntityMachineSatDock): mit Satelliten-Chip einmal je Sekunde fertige Fracht anfordern
+        long time = world.getGameTime() + worldPosition.asLong();
+        if (time % 20 == 0 && slot(SLOT_CHIP).is(com.hbm_m.item.ModItems.SAT_CHIP.get())) {
+            Satellite sat = data.getSatFromFreq(ISatChip.getFreqS(slot(SLOT_CHIP)));
+            if (sat != null && sat.tryRequestItems(world, x, y, z)) data.setDirty();
+        }
+
         if (!slot(SLOT_CHIP).isEmpty()) {
             int freq = ISatChip.getFreqS(slot(SLOT_CHIP));
 
@@ -103,6 +110,30 @@ public class MachineSatDockBlockEntity extends BaseMachineBlockEntity {
             if (!stack.isEmpty()) addToInv(stack);
         }
         setChanged();
+    }
+
+    /**
+     * Original {@code InventoryUtil.tryAddItemToInventory(slots, 0, 14, stack)} fuer die Landekapsel: fuellt gleiche
+     * Stapel auf, dann freie Plaetze; gibt den Rest zurueck.
+     */
+    public ItemStack tryAddToInventory(ItemStack stack) {
+        ItemStack rest = stack.copy();
+        for (int i = 0; i < 15 && !rest.isEmpty(); i++) {
+            ItemStack s = slot(i);
+            if (!s.isEmpty() && ItemStack.isSameItemSameTags(s, rest) && s.getCount() < s.getMaxStackSize()) {
+                int toAdd = Math.min(s.getMaxStackSize() - s.getCount(), rest.getCount());
+                s.grow(toAdd);
+                rest.shrink(toAdd);
+            }
+        }
+        for (int i = 0; i < 15 && !rest.isEmpty(); i++) {
+            if (slot(i).isEmpty()) {
+                inventory.setStackInSlot(i, rest.copy());
+                rest = ItemStack.EMPTY;
+            }
+        }
+        setChanged();
+        return rest;
     }
 
     /** Original addToInv: fuellt gleiche Stapel auf, sonst legt es in den ersten freien Platz nur EIN Stueck. */

@@ -59,6 +59,7 @@ public final class AnnihilatorRecipes {
             put("dict:" + AnnihilatorPoolManager.ANY_RESISTANTALLOY, "1024", "tcalloy");
             put("item:hbm_m:powder_chlorophyte", "1024", "chlorophyte");
 
+            put("item:hbm_m:drive_flash_flightsim", "64", "soyuz");
             put("comp:hbm_m:ammo_standard_bmg50_fmj", "256", "bmg");
             put("comp:hbm_m:ammo_arty", "128", "arty");
             put("comp:hbm_m:controller", "128", "controller");

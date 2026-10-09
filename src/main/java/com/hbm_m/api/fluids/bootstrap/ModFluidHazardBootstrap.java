@@ -237,6 +237,7 @@ public final class ModFluidHazardBootstrap {
         h(ModFluids.POTASSIUM_CHLORIDE, 0, 0, 0, FluidHazardSymbol.NONE);
         h(ModFluids.CALCIUM_CHLORIDE, 0, 0, 0, FluidHazardSymbol.NONE);
         h(ModFluids.CALCIUM_SOLUTION, 0, 0, 0, FluidHazardSymbol.NONE);
+        h(ModFluids.TITANIUM_TETRACHLORIDE, 3, 0, 2, FluidHazardSymbol.NOWATER);
         h(ModFluids.SMOKE, 0, 0, 0, FluidHazardSymbol.NONE);
         h(ModFluids.SMOKE_LEADED, 0, 0, 0, FluidHazardSymbol.NONE);
         h(ModFluids.SMOKE_POISON, 0, 0, 0, FluidHazardSymbol.NONE);

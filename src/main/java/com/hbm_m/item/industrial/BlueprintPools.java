@@ -39,6 +39,10 @@ public final class BlueprintPools {
             add(pools, r.getBlueprintPool(), r.getResultItem(access).getHoverName());
         for (PurexRecipe r : RecipeHooks.getAllRecipes(level, PurexRecipe.Type.INSTANCE))
             add(pools, r.getBlueprintPool(), r.getResultItem(access).getHoverName());
+        for (com.hbm_m.recipe.SuperComputerRecipe r : RecipeHooks.getAllRecipes(level, com.hbm_m.recipe.SuperComputerRecipe.Type.INSTANCE))
+            add(pools, r.getBlueprintPool(), r.getResultItem(access).getHoverName());
+        for (com.hbm_m.recipe.RockMillRecipe r : RecipeHooks.getAllRecipes(level, com.hbm_m.recipe.RockMillRecipe.Type.INSTANCE))
+            add(pools, r.getBlueprintPool(), r.getResultItem(access).getHoverName());
         return pools;
     }
 

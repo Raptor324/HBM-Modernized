@@ -912,6 +912,9 @@ public class ModItems {
 
     public static final RegistrySupplier<Item> MALACHITE_CHUNK = ITEMS.register("malachite_chunk",
             () -> new Item(new Item.Properties()));
+    /** Original chunk_ore ILMENITE: aus Titanerz (Zentrifuge), wird zu Titantetrachlorid verarbeitet. */
+    public static final RegistrySupplier<Item> ILMENITE_CHUNK = ITEMS.register("ilmenite_chunk",
+            () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> LIMESTONE = ITEMS.register("limestone",
             () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> SHELL_STEEL = ITEMS.register("shell_steel",
@@ -1758,6 +1761,10 @@ public class ModItems {
             () -> new com.hbm_m.item.special.ItemSoyuz(2, new Item.Properties()));
     public static final RegistrySupplier<Item> MISSILE_SOYUZ_LANDER = ITEMS.register("missile_soyuz_lander",
             () -> new com.hbm_m.item.ItemCustomLore(new Item.Properties().stacksTo(1)));
+    /** 1:1 {@code missile_lambda}: Lambda-Rakete fuer die Lambda-Startrampe. */
+    public static final RegistrySupplier<Item> MISSILE_LAMBDA = ITEMS.register("missile_lambda",
+            () -> new Item(new Item.Properties().stacksTo(1)));
+
 
     // Tier 4
     public static final RegistrySupplier<Item> MISSILE_NUCLEAR = ITEMS.register("missile_nuclear",
@@ -2360,7 +2367,7 @@ public class ModItems {
     public static final RegistrySupplier<Item> AMMO_CONTAINER = ITEMS.register("ammo_container", () -> new com.hbm_m.item.tool.ItemAmmoContainer(false, new Item.Properties()));
     /** {@code ItemAmmoContainer} Meta 1 (Behelfskiste, Textur ammo_container_alt). */
     public static final RegistrySupplier<Item> AMMO_CONTAINER_1 = ITEMS.register("ammo_container_1", () -> new com.hbm_m.item.tool.ItemAmmoContainer(true, new Item.Properties()));
-    public static final RegistrySupplier<Item> AMMO_DGK = ITEMS.register("ammo_dgk", () -> new Item(new Item.Properties()));
+    public static final RegistrySupplier<Item> AMMO_DGK = ITEMS.register("ammo_dgk", () -> new Item(new Item.Properties().stacksTo(4)));
     public static final RegistrySupplier<Item> AMMO_FIREEXT = ITEMS.register("ammo_fireext", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> AMMO_FIREEXT_FOAM = ITEMS.register("ammo_fireext_foam", () -> new Item(new Item.Properties()));
     public static final RegistrySupplier<Item> AMMO_FIREEXT_SAND = ITEMS.register("ammo_fireext_sand", () -> new Item(new Item.Properties()));
@@ -3524,6 +3531,13 @@ public class ModItems {
     public static final RegistrySupplier<Item> PILE_ROD_WASTE = ITEMS.register("pile_rod_mk2_waste",
             () -> new com.hbm_m.item.machine.ItemPileRodMK2(new Item.Properties(),
                     com.hbm_m.item.machine.ItemPileRodMK2.EnumPileRod.WASTE));
+    /** Original: Thorium-Brutstab (wird zu Thorium-Brennstoff) und Thorium-Brennstoffstab. */
+    public static final RegistrySupplier<Item> PILE_ROD_THORIUM = ITEMS.register("pile_rod_mk2_thorium",
+            () -> new com.hbm_m.item.machine.ItemPileRodMK2(new Item.Properties(),
+                    com.hbm_m.item.machine.ItemPileRodMK2.EnumPileRod.THORIUM));
+    public static final RegistrySupplier<Item> PILE_ROD_THORIUM_FUEL = ITEMS.register("pile_rod_mk2_thorium_fuel",
+            () -> new com.hbm_m.item.machine.ItemPileRodMK2(new Item.Properties(),
+                    com.hbm_m.item.machine.ItemPileRodMK2.EnumPileRod.THORIUM_FUEL));
 
     public static final RegistrySupplier<Item> PILE_ROD_BORON = ITEMS.register("pile_rod_boron", () -> new com.hbm_m.item.machine.ItemPileRod(new Item.Properties()));
     public static final RegistrySupplier<Item> PILE_ROD_DETECTOR = ITEMS.register("pile_rod_detector", () -> new com.hbm_m.item.machine.ItemPileRod(new Item.Properties()));
@@ -3938,6 +3952,14 @@ public class ModItems {
     public static final RegistrySupplier<Item> SATELLITE_RELAY = ITEMS.register("satellite_relay", () -> new com.hbm_m.item.satellite.ItemSatellite(new Item.Properties()));
     public static final RegistrySupplier<Item> SATELLITE_DETECTOR = ITEMS.register("satellite_detector", () -> new com.hbm_m.item.satellite.ItemSatellite(new Item.Properties()));
     public static final RegistrySupplier<Item> SATELLITE_RAY_SCAN = ITEMS.register("satellite_ray_scan", () -> new com.hbm_m.item.satellite.ItemSatellite(new Item.Properties()));
+    /** Original {@code satellite} Meta SCIENCE / SCIENCE_ASSEMBLER / SCIENCE_SENSOR: Weltraumlabor und seine Erweiterungen. */
+    public static final RegistrySupplier<Item> SATELLITE_SCIENCE = ITEMS.register("satellite_science", () -> new com.hbm_m.item.satellite.ItemSatellite(new Item.Properties()));
+    public static final RegistrySupplier<Item> SATELLITE_SCIENCE_ASSEMBLER = ITEMS.register("satellite_science_assembler", () -> new com.hbm_m.item.satellite.ItemSatellite(new Item.Properties()));
+    public static final RegistrySupplier<Item> SATELLITE_SCIENCE_SENSOR = ITEMS.register("satellite_science_sensor", () -> new com.hbm_m.item.satellite.ItemSatellite(new Item.Properties()));
+    /** Original {@code orbital_assembly} Meta CRYSTAL_CIRCUIT: wird per Lambda-Rakete zur 0G-Fabrik geschickt. */
+    public static final RegistrySupplier<Item> ORBITAL_ASSEMBLY_CRYSTAL_CIRCUIT = ITEMS.register("orbital_assembly_crystal_circuit", () -> new com.hbm_m.item.satellite.ItemSatellite(new Item.Properties()));
+    /** Original {@code circuit} Meta CRYSTAL. */
+    public static final RegistrySupplier<Item> CIRCUIT_CRYSTAL = ITEMS.register("circuit_crystal", () -> new Item(new Item.Properties()));
     // ---- R4: fehlende einfache Items (1:1 aus ModItems 1.7.10) ----
     public static final RegistrySupplier<Item> BOOK_LORE = ITEMS.register("book_lore", () -> new com.hbm_m.item.special.ItemBookLore(new Item.Properties()));
     public static final RegistrySupplier<Item> HOLOTAPE_IMAGE_DIGAMMA = ITEMS.register("holotape_image_digamma", () -> new com.hbm_m.item.special.ItemHolotapeImage(new Item.Properties(), com.hbm_m.item.special.ItemHolotapeImage.EnumHoloImage.HOLO_DIGAMMA));

@@ -165,6 +165,24 @@ public final class MachineCraftingRecipeGenerator {
                 'P', ModItems.PIPE_STEEL.get(),
                 'S', mat(ModMaterials.STEEL, MaterialShape.INGOT));
 
+        // CraftingManager: pipe_anchor_exhaust
+        shaped(writer, "pipe_anchor_exhaust", ModBlocks.PIPE_ANCHOR_EXHAUST.get(), 2,
+                new String[]{"P", "P", "S"},
+                'P', ModItems.PIPE_IRON.get(),
+                'S', polymer(MaterialShape.PLATE));
+
+        // CraftingManager: machine_tape_drive (P = beliebiger Kunststoff, C = Leiterplatte)
+        shaped(writer, "machine_tape_drive", ModBlocks.MACHINE_TAPE_DRIVE.get(), 1,
+                new String[]{"PPP", "CCC", "PPP"},
+                'C', com.hbm_m.item.ModItems.PCB.get(),
+                'P', OreDictIngredients.ore("oredict/ingot/any_plastic"));
+
+        // CraftingManager: pipe_anchor_pneumatic (P = geschweisste Kupferplatte, S = beliebiger Gummi)
+        shaped(writer, "pipe_anchor_pneumatic", ModBlocks.PIPE_ANCHOR_PNEUMATIC.get(), 2,
+                new String[]{"P", "P", "S"},
+                'P', ModMaterialItems.item(ModMaterials.COPPER, MaterialShape.PLATE_WELDED),
+                'S', OreDictIngredients.ore("oredict/ingot/any_rubber"));
+
         // CraftingManager: fluid_duct_paintable / fluid_duct_paintable_block_exhaust
         shaped(writer, "fluid_duct_paintable", ModBlocks.FLUID_DUCT_PAINTABLE.get(), 8,
                 new String[]{"SAS", "A A", "SAS"},

@@ -59,8 +59,9 @@ public final class CentrifugeRecipeGenerator {
         tagRecipe(writer, "thorium_ore", "forge:ores/thorium",
                 ingotPowder(ModMaterials.THORIUM), ingotPowder(ModMaterials.THORIUM), ingotPowder(ModMaterials.URANIUM), gravel());
         tagRecipeLbsm(writer, "titanium_ore", "forge:ores/titanium",
-                new ItemStack[] { ingotPowder(ModMaterials.TITANIUM), ingotPowder(ModMaterials.TITANIUM), modPowder(ModMaterials.IRON), gravel() },
-                new ItemStack[] { ingotPowderCount(ModMaterials.TITANIUM, 2), ingotPowderCount(ModMaterials.TITANIUM, 2), modPowder(ModMaterials.IRON), gravel() });
+                // Original CentrifugeRecipes l.90: Titanstaub, Ilmenit (2 bzw. 4 mit LBSM), Eisenstaub, Kies
+                new ItemStack[] { ingotPowder(ModMaterials.TITANIUM), stack(ModItems.ILMENITE_CHUNK.get(), 2), modPowder(ModMaterials.IRON), gravel() },
+                new ItemStack[] { ingotPowderCount(ModMaterials.TITANIUM, 2), stack(ModItems.ILMENITE_CHUNK.get(), 4), modPowder(ModMaterials.IRON), gravel() });
         tagRecipeLbsm(writer, "tungsten_ore", "forge:ores/tungsten",
                 new ItemStack[] { ingotPowder(ModMaterials.TUNGSTEN), ingotPowder(ModMaterials.TUNGSTEN), modPowder(ModMaterials.IRON), gravel() },
                 new ItemStack[] { ingotPowderCount(ModMaterials.TUNGSTEN, 2), ingotPowder(ModMaterials.TUNGSTEN), modPowder(ModMaterials.IRON), gravel() });
@@ -133,7 +134,7 @@ public final class CentrifugeRecipeGenerator {
     private static void registerBedrockRecipes(Consumer<FinishedRecipe> writer) {
         // Light
         addBedrockPhase(writer, "light", ModItems.BEDROCK_ORE_BASE_LIGHT.get(), ModItems.BEDROCK_ORE_PRIMARY_LIGHT.get(), stack(Items.RAW_IRON, 9), stack(Items.RAW_COPPER, 9), ModItems.BEDROCK_ORE_SULFURIC_BYPRODUCT_LIGHT.get(), ModItems.BEDROCK_ORE_SOLVENT_BYPRODUCT_LIGHT.get(), ModItems.BEDROCK_ORE_RAD_BYPRODUCT_LIGHT.get(), ModItems.BEDROCK_ORE_CRUMBS_LIGHT.get());
-        itemRecipe(writer, "bedrock_sulfuric_washed_light", ModItems.BEDROCK_ORE_SULFURIC_WASHED_LIGHT.get(), stack(ModItems.TITANIUM_RAW.get(), 6), stack(ModBlocks.RESOURCE_BAUXITE.get(), 9), stack(ModItems.CRYOLITE.get(), 3));
+        itemRecipe(writer, "bedrock_sulfuric_washed_light", ModItems.BEDROCK_ORE_SULFURIC_WASHED_LIGHT.get(), stack(ModItems.ILMENITE_CHUNK.get(), 6), stack(ModBlocks.RESOURCE_BAUXITE.get(), 9), stack(ModItems.CRYOLITE.get(), 3));
         itemRecipe(writer, "bedrock_solvent_washed_light", ModItems.BEDROCK_ORE_SOLVENT_WASHED_LIGHT.get(), stack(ModItems.POWDER_CHLOROCALCITE.get(), 5), stack(ModItems.BEDROCK_ORE_FRAGMENT_LITHIUM.get(), 5), stack(ModItems.POWDER_SODIUM.get(), 3));
         itemRecipe(writer, "bedrock_rad_washed_light", ModItems.BEDROCK_ORE_RAD_WASHED_LIGHT.get(), stack(ModItems.POWDER_CHLOROCALCITE.get(), 6), stack(ModItems.BEDROCK_ORE_FRAGMENT_LITHIUM.get(), 6), stack(ModItems.POWDER_SODIUM.get(), 6));
 
@@ -185,6 +186,19 @@ public final class CentrifugeRecipeGenerator {
         
         itemRecipe(writer, "bedrock_primary_first_" + name, getSubItem(primary, "first"), mOut1_18, mOut2_9, stack(crumbs, 1));
         itemRecipe(writer, "bedrock_primary_second_" + name, getSubItem(primary, "second"), mOut1_9, mOut2_18, stack(crumbs, 1));
+
+        // Original CentrifugeRecipes l.267-286: geroestete/gewaschene Basis und die "no*"-Stufen nach dem Saeurebad
+        itemRecipe(writer, "bedrock_base_roasted_" + name, getBaseSub(base, "roasted"), stack(primary, 1), gravel());
+        itemRecipe(writer, "bedrock_base_washed_" + name, getBaseSub(base, "washed"), stack(primary, 2), gravel());
+        itemRecipe(writer, "bedrock_primary_roasted_" + name, getSubItem(primary, "roasted"), out1, out2);
+        itemRecipe(writer, "bedrock_primary_nosulfuric_" + name, getSubItem(primary, "nosulfuric"), out1, out2, stack(crumbs, 1));
+        itemRecipe(writer, "bedrock_primary_nosolvent_" + name, getSubItem(primary, "nosolvent"), out1, out2, stack(crumbs, 1));
+        itemRecipe(writer, "bedrock_primary_norad_" + name, getSubItem(primary, "norad"), out1, out2, stack(crumbs, 1));
+    }
+
+    private static Item getBaseSub(ItemLike base, String sub) {
+        String path = BuiltInRegistries.ITEM.getKey(base.asItem()).getPath();
+        return BuiltInRegistries.ITEM.get(BaseRecipeBuilder.resLoc(path.replace("_base_", "_base_" + sub + "_")));
     }
 
     private static Item getSubItem(ItemLike parent, String sub) {

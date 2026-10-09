@@ -48,6 +48,7 @@ public final class CrystallizerRecipeGenerator {
     private CrystallizerRecipeGenerator() {}
 
     public static void generate(Consumer<FinishedRecipe> writer) {
+        bedrockChain(writer);
         // ═══════════════════════════════════════════════════════════════════
         // БАЗОВЫЕ РУДЫ (перекись водорода 500 mB, baseTime, prod 0.05)
         // ═══════════════════════════════════════════════════════════════════
@@ -102,16 +103,12 @@ public final class CrystallizerRecipeGenerator {
                         new ItemStack(Items.SLIME_BALL, 16), MIXING_TIME, 0f)
                 .save(writer, "crystallizer/bone_to_slime");
 
-        // Чёрный краситель → 4 слизи (mixing, серная 250 mB).
-        CrystallizerRecipeBuilder.crystallizerRecipe(
-                        Items.BLACK_DYE, 1, fluid(ModFluids.SULFURIC_ACID, 250),
-                        new ItemStack(Items.SLIME_BALL, 4), MIXING_TIME, 0f)
-                .save(writer, "crystallizer/black_dye_to_slime");
+        // (Original dye:15 = Knochenmehl, nicht schwarzer Farbstoff - steht schon als orig_machines/crystallizer/slime_ball_1)
 
-        // Bewehrung + 1000 mB Beton -> Bewehrter Beton (Zeit 10).
+        // Bewehrung + 1000 mB Beton -> Bewehrter Beton (Zeit 1 wie im Original).
         CrystallizerRecipeBuilder.crystallizerRecipe(
                         ModBlocks.REBAR.get().asItem(), 1, fluid(ModFluids.CONCRETE, 1_000),
-                        new ItemStack(ModBlocks.CONCRETE_REBAR.get()), 10, 0f)
+                        new ItemStack(ModBlocks.CONCRETE_REBAR.get()), 1, 0f)
                 .save(writer, "crystallizer/rebar_to_concrete_rebar");
 
         // Original: for(i < ScrapType.values().length) scrap_plastic@i -> circuit_star_piece@i (baseTime, Perhydrol)
@@ -148,5 +145,59 @@ public final class CrystallizerRecipeGenerator {
     private static FluidStack fluid(ModFluids.FluidEntry entry, int amountMb) {
         return FluidStack.create(entry.getSource(), (long) amountMb);
     }
+    // ─── Neue Grundgestein-Erzkette (Original CrystallizerRecipes l.146-201) ──────────────
+    // Fuer jeden der 6 Erztypen 37 Rezepte: Waschen (Wasser), Saeure-/Loesungsmittel-/Radiobad, Anreicherung
+    // (Wasserstoff → primary_first, Chlor → primary_second) und Kruemel → Basis.
+
+    private static final String[] BEDROCK_TYPES = {"light", "heavy", "rare", "actinide", "nonmetal", "crystal"};
+
+    private static void bedrockChain(Consumer<FinishedRecipe> writer) {
+        final int bedrock = 200, washing = 100;
+        for (String t : BEDROCK_TYPES) {
+            br(writer, t, "base", 1, ModFluids.WATER, 250, "base_washed", washing);
+            br(writer, t, "base_roasted", 1, ModFluids.WATER, 250, "base_washed", washing);
+
+            br(writer, t, "primary", 1, ModFluids.SULFURIC_ACID, 250, "primary_sulfuric", bedrock);
+            br(writer, t, "primary_roasted", 1, ModFluids.SULFURIC_ACID, 250, "primary_sulfuric", bedrock);
+
+            br(writer, t, "primary", 1, ModFluids.SOLVENT, 250, "primary_solvent", bedrock);
+            br(writer, t, "primary_roasted", 1, ModFluids.SOLVENT, 250, "primary_solvent", bedrock);
+            br(writer, t, "primary_nosulfuric", 1, ModFluids.SOLVENT, 250, "primary_solvent", bedrock);
+
+            br(writer, t, "primary", 1, ModFluids.RADIOSOLVENT, 250, "primary_rad", bedrock);
+            br(writer, t, "primary_roasted", 1, ModFluids.RADIOSOLVENT, 250, "primary_rad", bedrock);
+            br(writer, t, "primary_nosulfuric", 1, ModFluids.RADIOSOLVENT, 250, "primary_rad", bedrock);
+            br(writer, t, "primary_nosolvent", 1, ModFluids.RADIOSOLVENT, 250, "primary_rad", bedrock);
+
+            for (String kind : new String[] {"sulfuric", "solvent", "rad"}) {
+                br(writer, t, kind + "_byproduct", 4, ModFluids.WATER, 250, kind + "_washed", washing);
+                br(writer, t, kind + "_roasted", 4, ModFluids.WATER, 250, kind + "_washed", washing);
+                br(writer, t, kind + "_arc", 4, ModFluids.WATER, 250, kind + "_washed", washing);
+            }
+
+            String[] primaries = {"primary", "primary_roasted", "primary_sulfuric", "primary_nosulfuric",
+                    "primary_solvent", "primary_nosolvent", "primary_rad", "primary_norad"};
+            for (String p : primaries) br(writer, t, p, 1, ModFluids.HYDROGEN, 250, "primary_first", bedrock);
+            for (String p : primaries) br(writer, t, p, 1, ModFluids.CHLORINE, 250, "primary_second", bedrock);
+
+            br(writer, t, "crumbs", 64, ModFluids.SLOP, 1000, "base", bedrock);
+        }
+    }
+
+    private static net.minecraft.world.item.Item bedrockOre(String grade, String type) {
+        return net.minecraft.core.registries.BuiltInRegistries.ITEM.get(
+                net.minecraft.resources.ResourceLocation.fromNamespaceAndPath("hbm_m", "bedrock_ore_" + grade + "_" + type));
+    }
+
+    /** {@code count}× Erz der Stufe {@code from} + Fluessigkeit → 1× Stufe {@code to}; fehlende Items werden uebersprungen. */
+    private static void br(Consumer<FinishedRecipe> writer, String type, String from, int count, ModFluids.FluidEntry fluid, int mB,
+                           String to, int duration) {
+        net.minecraft.world.item.Item in = bedrockOre(from, type), out = bedrockOre(to, type);
+        if (in == Items.AIR || out == Items.AIR) return;
+        String fluidName = net.minecraft.core.registries.BuiltInRegistries.FLUID.getKey(fluid.getSource()).getPath();
+        CrystallizerRecipeBuilder.crystallizerRecipe(in, count, FluidStack.create(fluid.getSource(), mB), new ItemStack(out), duration, 0F)
+                .save(writer, "crystallizer/bedrock/" + type + "_" + from + "_" + fluidName);
+    }
+
 }
 //?}

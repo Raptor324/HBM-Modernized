@@ -186,6 +186,7 @@ public final class OreDictTagData {
         put("oredict/ingot/lead", "hbm_m:lead_ingot", "#forge:ingots/lead?");
         put("oredict/ingot/lithium", "hbm_m:lithium", "#forge:ingots/lithium?");
         put("oredict/ingot/magnetized_tungsten", "hbm_m:magnetized_tungsten_ingot", "#forge:ingots/magnetized_tungsten?");
+        put("oredict/ingot/ilmenite", "hbm_m:ilmenite_chunk", "#forge:ingots/ilmenite?");
         put("oredict/ingot/malachite", "hbm_m:malachite_chunk", "#forge:ingots/malachite?");
         put("oredict/ingot/mingrade", "hbm_m:red_copper_ingot", "#forge:ingots/red_copper?");
         put("oredict/ingot/nether_brick", "minecraft:nether_brick", "#forge:ingots/nether_brick?");

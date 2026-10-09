@@ -376,6 +376,11 @@ public final class AssemblyMachineRecipeGenerator {
                 .addIngredient(ore("oredict/billet/uranium"), 3)
                 .save(writer, "assembler/pilenu");
 
+        // ass.pilethorium
+        AssemblerRecipeBuilder.assemblerRecipe(stack("hbm_m:pile_rod_mk2_thorium", 1), 40, 200)
+                .addIngredient(Ingredient.of(item("hbm_m:billet_th232")), 3)
+                .save(writer, "assembler/pilethorium");
+
         // ass.partlith
         AssemblerRecipeBuilder.assemblerRecipe(stack("hbm_m:part_lithium", 8), 40, 100)
                 .addIngredient(ore("oredict/dust/lithium"), 1)
@@ -628,6 +633,25 @@ public final class AssemblyMachineRecipeGenerator {
                     .addIngredient(ore("oredict/plate/copper"), 4)
                     .addIngredient(Ingredient.of(item("hbm_m:motor")), 2)
                     .save(v, "assembler/shredder"), "expensive")
+                .save();
+
+        // ass.sal9000 [Fassungen: expensive]
+        ConfigRecipes.variants(writer)
+                .base(w -> AssemblerRecipeBuilder.assemblerRecipe(stack("hbm_m:machine_supercomputer", 1), 400, 1000)
+                    .addIngredient(ore("oredict/ingot/any_resistant_alloy"), 16)
+                    .addIngredient(ore("oredict/ingot/any_plastic"), 64)
+                    .addIngredient(ore("oredict/wire_dense/gold"), 32)
+                    .addIngredient(ore("oredict/ntmpipe/copper"), 8)
+                    .addIngredient(Ingredient.of(item("hbm_m:integrated_circuit")), 32)
+                    .addIngredient(Ingredient.of(item("hbm_m:bismoid_circuit")), 1)
+                    .save(w, "assembler/sal9000"))
+                .variant(v -> AssemblerRecipeBuilder.assemblerRecipe(stack("hbm_m:machine_supercomputer", 1), 400, 1000)
+                    .addIngredient(ore("oredict/ingot/any_resistant_alloy"), 16)
+                    .addIngredient(Ingredient.of(item("hbm_m:item_expensive_plastic")), 8)
+                    .addIngredient(ore("oredict/wire_dense/gold"), 64)
+                    .addIngredient(Ingredient.of(item("hbm_m:item_expensive_computer")), 8)
+                    .addIngredient(Ingredient.of(item("hbm_m:bismoid_circuit")), 8)
+                    .save(v, "assembler/sal9000"), "expensive")
                 .save();
 
         // ass.assembler
@@ -2352,23 +2376,29 @@ public final class AssemblyMachineRecipeGenerator {
                     .addIngredient(ore("oredict/plate_sextuple/any_resistant_alloy"), 8)
                     .addIngredient(ore("oredict/ingot/any_hard_plastic"), 32)
                     .addIngredient(Ingredient.of(item("hbm_m:bismoid_circuit")), 8)
+                    .addIngredient(Ingredient.of(item("hbm_m:drive_flash_particlesim")), 4)
                     .save(w, "assembler/fusioncore"))
                 .variant(v -> AssemblerRecipeBuilder.assemblerRecipe(stack("hbm_m:struct_torus_core", 1), 600, 100)
-                    .addIngredient(Ingredient.of(item("hbm_m:item_expensive_ferro_plating")), 8)
+                    .addIngredient(Ingredient.of(item("hbm_m:item_expensive_bronze_tubes")), 4)
                     .addIngredient(Ingredient.of(item("hbm_m:item_expensive_plastic")), 8)
-                    .addIngredient(Ingredient.of(item("hbm_m:bismoid_circuit")), 16)
+                    .addIngredient(Ingredient.of(item("hbm_m:item_expensive_computer")), 1)
+                    .addIngredient(Ingredient.of(item("hbm_m:bismoid_circuit")), 8)
+                    .addIngredient(Ingredient.of(item("hbm_m:drive_flash_particlesim")), 16)
                     .withBlueprintPool("528.tcalloy")
                     .save(v, "assembler/fusioncore"), "528", "expensive")
                 .variant(v -> AssemblerRecipeBuilder.assemblerRecipe(stack("hbm_m:struct_torus_core", 1), 600, 100)
                     .addIngredient(ore("oredict/plate_sextuple/any_resistant_alloy"), 8)
                     .addIngredient(ore("oredict/ingot/any_hard_plastic"), 32)
                     .addIngredient(Ingredient.of(item("hbm_m:bismoid_circuit")), 8)
+                    .addIngredient(Ingredient.of(item("hbm_m:drive_flash_particlesim")), 4)
                     .withBlueprintPool("528.tcalloy")
                     .save(v, "assembler/fusioncore"), "528")
                 .variant(v -> AssemblerRecipeBuilder.assemblerRecipe(stack("hbm_m:struct_torus_core", 1), 600, 100)
-                    .addIngredient(Ingredient.of(item("hbm_m:item_expensive_ferro_plating")), 8)
+                    .addIngredient(Ingredient.of(item("hbm_m:item_expensive_bronze_tubes")), 4)
                     .addIngredient(Ingredient.of(item("hbm_m:item_expensive_plastic")), 8)
-                    .addIngredient(Ingredient.of(item("hbm_m:bismoid_circuit")), 16)
+                    .addIngredient(Ingredient.of(item("hbm_m:item_expensive_computer")), 1)
+                    .addIngredient(Ingredient.of(item("hbm_m:bismoid_circuit")), 8)
+                    .addIngredient(Ingredient.of(item("hbm_m:drive_flash_particlesim")), 16)
                     .save(v, "assembler/fusioncore"), "expensive")
                 .save();
 
@@ -4096,28 +4126,136 @@ public final class AssemblyMachineRecipeGenerator {
                 .withBlueprintPool("discover.soyuz")
                 .save(writer, "assembler/soyuzcore");
 
-        // ass.soyuz
-        AssemblerRecipeBuilder.assemblerRecipe(stack("hbm_m:missile_soyuz", 1), 6000, 25000)
-                .addIngredient(ore("oredict/shell/titanium"), 32)
-                .addIngredient(ore("oredict/ingot/rubber"), 64)
-                .addIngredient(Ingredient.of(item("hbm_m:rocket_fuel")), 64)
-                .addIngredient(Ingredient.of(item("hbm_m:thruster_small")), 12)
-                .addIngredient(Ingredient.of(item("hbm_m:thruster_medium")), 12)
-                .addIngredient(Ingredient.of(item("hbm_m:controller")), 4)
-                .addIngredient(Ingredient.of(item("hbm_m:part_generic_lde")), 32)
-                .withBlueprintPool("discover.soyuz")
-                .save(writer, "assembler/soyuz");
+        // ass.soyuz [Fassungen: 528] - Original: Flugsimulationsdaten statt Blaupause, Pool nur im 528-Modus
+        ConfigRecipes.variants(writer)
+                .base(w -> AssemblerRecipeBuilder.assemblerRecipe(stack("hbm_m:missile_soyuz", 1), 6000, 25000)
+                    .addIngredient(ore("oredict/shell/titanium"), 32)
+                    .addIngredient(ore("oredict/ingot/rubber"), 64)
+                    .addIngredient(Ingredient.of(item("hbm_m:rocket_fuel")), 64)
+                    .addIngredient(Ingredient.of(item("hbm_m:thruster_small")), 12)
+                    .addIngredient(Ingredient.of(item("hbm_m:thruster_medium")), 12)
+                    .addIngredient(Ingredient.of(item("hbm_m:controller")), 4)
+                    .addIngredient(Ingredient.of(item("hbm_m:part_generic_lde")), 32)
+                    .addIngredient(Ingredient.of(item("hbm_m:drive_flash_flightsim")), 4)
+                    .save(w, "assembler/soyuz"))
+                .variant(v -> AssemblerRecipeBuilder.assemblerRecipe(stack("hbm_m:missile_soyuz", 1), 6000, 25000)
+                    .addIngredient(ore("oredict/shell/titanium"), 32)
+                    .addIngredient(ore("oredict/ingot/rubber"), 64)
+                    .addIngredient(Ingredient.of(item("hbm_m:rocket_fuel")), 64)
+                    .addIngredient(Ingredient.of(item("hbm_m:thruster_small")), 12)
+                    .addIngredient(Ingredient.of(item("hbm_m:thruster_medium")), 12)
+                    .addIngredient(Ingredient.of(item("hbm_m:controller")), 4)
+                    .addIngredient(Ingredient.of(item("hbm_m:part_generic_lde")), 32)
+                    .addIngredient(Ingredient.of(item("hbm_m:drive_flash_flightsim")), 4)
+                    .withBlueprintPool("528.soyuz")
+                    .save(v, "assembler/soyuz"), "528")
+                .save();
 
-        // ass.lander
-        AssemblerRecipeBuilder.assemblerRecipe(stack("hbm_m:missile_soyuz_lander", 1), 2400, 25000)
+        // ass.lander [Fassungen: 528] - Original: Flugsimulationsdaten statt Blaupause, Pool nur im 528-Modus
+        ConfigRecipes.variants(writer)
+                .base(w -> AssemblerRecipeBuilder.assemblerRecipe(stack("hbm_m:missile_soyuz_lander", 1), 2400, 25000)
+                    .addIngredient(ore("oredict/shell/aluminum"), 4)
+                    .addIngredient(ore("oredict/ingot/rubber"), 16)
+                    .addIngredient(Ingredient.of(item("hbm_m:rocket_fuel")), 16)
+                    .addIngredient(Ingredient.of(item("hbm_m:thruster_small")), 3)
+                    .addIngredient(Ingredient.of(item("hbm_m:controller_advanced")), 3)
+                    .addIngredient(Ingredient.of(item("hbm_m:part_generic_lde")), 12)
+                    .addIngredient(Ingredient.of(item("hbm_m:drive_flash_flightsim")), 8)
+                    .save(w, "assembler/lander"))
+                .variant(v -> AssemblerRecipeBuilder.assemblerRecipe(stack("hbm_m:missile_soyuz_lander", 1), 2400, 25000)
+                    .addIngredient(ore("oredict/shell/aluminum"), 4)
+                    .addIngredient(ore("oredict/ingot/rubber"), 16)
+                    .addIngredient(Ingredient.of(item("hbm_m:rocket_fuel")), 16)
+                    .addIngredient(Ingredient.of(item("hbm_m:thruster_small")), 3)
+                    .addIngredient(Ingredient.of(item("hbm_m:controller_advanced")), 3)
+                    .addIngredient(Ingredient.of(item("hbm_m:part_generic_lde")), 12)
+                    .addIngredient(Ingredient.of(item("hbm_m:drive_flash_flightsim")), 8)
+                    .withBlueprintPool("528.soyuz")
+                    .save(v, "assembler/lander"), "528")
+                .save();
+
+        // ass.launchpadlambda [Fassungen: expensive]
+        ConfigRecipes.variants(writer)
+                .base(w -> AssemblerRecipeBuilder.assemblerRecipe(stack("hbm_m:launchpad_lambda", 1), 1200, 5000)
+                    .addIngredient(Ingredient.of(item("hbm_m:concrete_rebar")), 64)
+                    .addIngredient(ore("oredict/plate_sextuple/steel"), 24)
+                    .addIngredient(Ingredient.of(item("hbm_m:motor_bismuth")), 4)
+                    .addIngredient(Ingredient.of(item("hbm_m:controller_advanced")), 1)
+                    .addIngredient(Ingredient.of(item("hbm_m:drive_disk_flightdata_processed")), 1)
+                    .save(w, "assembler/launchpadlambda"))
+                .variant(v -> AssemblerRecipeBuilder.assemblerRecipe(stack("hbm_m:launchpad_lambda", 1), 1200, 5000)
+                    .addIngredient(Ingredient.of(item("hbm_m:concrete_rebar")), 64)
+                    .addIngredient(Ingredient.of(item("hbm_m:item_expensive_bronze_tubes")), 8)
+                    .addIngredient(Ingredient.of(item("hbm_m:controller_advanced")), 3)
+                    .addIngredient(Ingredient.of(item("hbm_m:drive_disk_flightdata_processed")), 16)
+                    .save(v, "assembler/launchpadlambda"), "expensive")
+                .save();
+
+        // ass.alclad
+        AssemblerRecipeBuilder.assemblerRecipe(stack("hbm_m:part_generic_alclad", 1), 200, 50000)
+                .addIngredient(ore("oredict/dust/aluminum"), 8)
+                .addIngredient(ore("oredict/plate/copper"), 2)
+                .save(writer, "assembler/alclad");
+
+        // ass.titaniumconstruction
+        AssemblerRecipeBuilder.assemblerRecipe(stack("hbm_m:part_generic_alclad", 1), 600, 1000)
+                .addIngredient(ore("oredict/plate/titanium"), 4)
+                .addIngredient(ore("oredict/ingot/any_plastic"), 8)
+                .save(writer, "assembler/titaniumconstruction");
+
+        // ass.lambdarocket [Fassungen: 528] - Original: Flugdaten statt Blaupause, Pool nur im 528-Modus
+        ConfigRecipes.variants(writer)
+                .base(w -> AssemblerRecipeBuilder.assemblerRecipe(stack("hbm_m:missile_lambda", 1), 1200, 50000)
+                    .addIngredient(Ingredient.of(item("hbm_m:part_generic_alclad")), 32)
+                    .addIngredient(Ingredient.of(item("hbm_m:ingot_tungsten_carbide")), 12)
+                    .addIngredient(Ingredient.of(item("hbm_m:rocket_fuel")), 64)
+                    .addIngredient(Ingredient.of(item("hbm_m:integrated_circuit")), 24)
+                    .addIngredient(Ingredient.of(item("hbm_m:drive_disk_flightdata_processed")), 1)
+                    .save(w, "assembler/lambdarocket"))
+                .variant(v -> AssemblerRecipeBuilder.assemblerRecipe(stack("hbm_m:missile_lambda", 1), 1200, 50000)
+                    .addIngredient(Ingredient.of(item("hbm_m:part_generic_alclad")), 32)
+                    .addIngredient(Ingredient.of(item("hbm_m:ingot_tungsten_carbide")), 12)
+                    .addIngredient(Ingredient.of(item("hbm_m:rocket_fuel")), 64)
+                    .addIngredient(Ingredient.of(item("hbm_m:integrated_circuit")), 24)
+                    .addIngredient(Ingredient.of(item("hbm_m:drive_disk_flightdata_processed")), 1)
+                    .withBlueprintPool("528.soyuz")
+                    .save(v, "assembler/lambdarocket"), "528")
+                .save();
+
+        // ass.spacelab
+        AssemblerRecipeBuilder.assemblerRecipe(stack("hbm_m:satellite_science", 1), 1200, 25000)
+                .addIngredient(ore("oredict/shell/aluminum"), 16)
+                .addIngredient(Ingredient.of(item("hbm_m:photo_panel")), 32)
+                .addIngredient(Ingredient.of(item("hbm_m:integrated_circuit")), 16)
+                .addIngredient(Ingredient.of(item("hbm_m:atomic_clock")), 4)
+                .addIngredient(Ingredient.of(item("hbm_m:part_generic_lde")), 16)
+                .addIngredient(Ingredient.of(item("hbm_m:controller")), 1)
+                .save(writer, "assembler/spacelab");
+
+        // ass.sensorrelay [Fassungen: expensive]
+        ConfigRecipes.variants(writer)
+                .base(w -> AssemblerRecipeBuilder.assemblerRecipe(stack("hbm_m:satellite_science_sensor", 1), 600, 25000)
+                    .addIngredient(ore("oredict/shell/aluminum"), 1)
+                    .addIngredient(Ingredient.of(item("hbm_m:coil_gold")), 4)
+                    .addIngredient(Ingredient.of(item("hbm_m:quantum_circuit")), 1)
+                    .addIngredient(Ingredient.of(item("hbm_m:part_generic_lde")), 1)
+                    .save(w, "assembler/sensorrelay"))
+                .variant(v -> AssemblerRecipeBuilder.assemblerRecipe(stack("hbm_m:satellite_science_sensor", 1), 600, 25000)
+                    .addIngredient(Ingredient.of(item("hbm_m:item_expensive_bronze_tubes")), 1)
+                    .addIngredient(Ingredient.of(item("hbm_m:quantum_circuit")), 1)
+                    .addIngredient(Ingredient.of(item("hbm_m:part_generic_lde")), 1)
+                    .save(v, "assembler/sensorrelay"), "expensive")
+                .save();
+
+        // ass.0gassembler
+        AssemblerRecipeBuilder.assemblerRecipe(stack("hbm_m:satellite_science_assembler", 1), 600, 25000)
                 .addIngredient(ore("oredict/shell/aluminum"), 4)
-                .addIngredient(ore("oredict/ingot/rubber"), 16)
-                .addIngredient(Ingredient.of(item("hbm_m:rocket_fuel")), 16)
-                .addIngredient(Ingredient.of(item("hbm_m:thruster_small")), 3)
-                .addIngredient(Ingredient.of(item("hbm_m:controller_advanced")), 3)
-                .addIngredient(Ingredient.of(item("hbm_m:part_generic_lde")), 12)
-                .withBlueprintPool("discover.soyuz")
-                .save(writer, "assembler/lander");
+                .addIngredient(ore("oredict/plate_triple/any_bismoid_bronze"), 4)
+                .addIngredient(ore("oredict/billet/plutonium_rg"), 16)
+                .addIngredient(Ingredient.of(item("hbm_m:motor_bismuth")), 4)
+                .addIngredient(Ingredient.of(item("hbm_m:quantum_circuit")), 4)
+                .addIngredient(Ingredient.of(item("hbm_m:part_generic_lde")), 4)
+                .save(writer, "assembler/0gassembler");
 
         // ass.spysat
         AssemblerRecipeBuilder.assemblerRecipe(stack("hbm_m:satellite_spy", 1), 1200, 25000)
@@ -4138,6 +4276,36 @@ public final class AssemblyMachineRecipeGenerator {
                 .addIngredient(Ingredient.of(item("hbm_m:part_generic_lde")), 16)
                 .addIngredient(Ingredient.of(item("hbm_m:controller")), 3)
                 .save(writer, "assembler/scansat");
+
+        // ass.relaysat
+        AssemblerRecipeBuilder.assemblerRecipe(stack("hbm_m:satellite_relay", 1), 1200, 25000)
+                .addIngredient(ore("oredict/shell/aluminum"), 16)
+                .addIngredient(Ingredient.of(item("hbm_m:photo_panel")), 16)
+                .addIngredient(Ingredient.of(item("hbm_m:integrated_circuit")), 24)
+                .addIngredient(Ingredient.of(item("hbm_m:part_generic_lde")), 16)
+                .addIngredient(Ingredient.of(item("hbm_m:controller")), 1)
+                .save(writer, "assembler/relaysat");
+
+        // ass.flashdrive
+        AssemblerRecipeBuilder.assemblerRecipe(stack("hbm_m:drive_flash_empty", 1), 100, 250)
+                .addIngredient(ore("oredict/ingot/any_plastic"), 2)
+                .addIngredient(Ingredient.of(item("hbm_m:microchip")), 1)
+                .addIngredient(ore("oredict/plate/gold"), 1)
+                .save(writer, "assembler/flashdrive");
+
+        // ass.diskdrive
+        AssemblerRecipeBuilder.assemblerRecipe(stack("hbm_m:drive_disk_empty", 1), 200, 250)
+                .addIngredient(ore("oredict/ingot/any_plastic"), 8)
+                .addIngredient(Ingredient.of(item("hbm_m:integrated_circuit")), 1)
+                .addIngredient(ore("oredict/wire_dense/neodymium"), 1)
+                .save(writer, "assembler/diskdrive");
+
+        // ass.satdock
+        AssemblerRecipeBuilder.assemblerRecipe(stack("hbm_m:sat_dock", 1), 100, 5000)
+                .addIngredient(ore("oredict/ingot/any_resistant_alloy"), 2)
+                .addIngredient(ore("oredict/ingot/any_hard_plastic"), 8)
+                .addIngredient(Ingredient.of(item("hbm_m:controller")), 1)
+                .save(writer, "assembler/satdock");
     }
 
     private static void part11(Consumer<FinishedRecipe> writer) {

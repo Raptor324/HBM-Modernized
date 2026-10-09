@@ -62,12 +62,33 @@ public class SatelliteManager extends SavedData {
         return byFrequency.get(freq);
     }
 
+    private static boolean ticking = false;
+
+    /** Original {@code ModEventHandler.onWorldTick} (Phase START): jeder Satellit jeder Welt tickt einmal je Tick. */
+    public static void initTicking() {
+        if (ticking) return;
+        ticking = true;
+        dev.architectury.event.events.common.TickEvent.SERVER_LEVEL_PRE.register(server -> {
+            SatelliteManager data = get(server);
+            boolean dirty = false;
+            for (Satellite sat : data.byFrequency.values()) {
+                sat.onUpdateTick(server);
+                if (sat.isDirty) {
+                    sat.isDirty = false;
+                    dirty = true;
+                }
+            }
+            if (dirty) data.setDirty();
+        });
+    }
+
     /** 1:1 {@code XSatelliteRegistry.orbit}: belegt die Frequenz oder liefert ein Teil an den vorhandenen Satelliten. */
     public void orbit(ServerLevel level, ItemStack stack, int freq, double x, double y, double z) {
         Satellite existing = byFrequency.get(freq);
 
         if (existing != null) {
             existing.onPartDelivered(level, stack);
+            setDirty();
         } else {
             Satellite sat = Satellite.createFromItem(stack);
             if (sat != null) {
